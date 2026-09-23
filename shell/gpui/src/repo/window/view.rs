@@ -337,7 +337,11 @@ impl RepoWindow {
             this.recompute_find_matches(cx);
             this.reset_context_expansion_if_basis_changed(cx);
             this.clear_notes_only_if_empty(cx);
-            this.prune_file_multi_select(cx);
+            if this.vm.read(cx).selected_file_ix.is_some() {
+                this.reconcile_file_selection(cx);
+            } else {
+                this.prune_file_multi_select(cx);
+            }
             this.sync_diff_edit_loaded_files(cx);
             this.sync_commit_box_from_working_copy(cx);
             cx.notify();

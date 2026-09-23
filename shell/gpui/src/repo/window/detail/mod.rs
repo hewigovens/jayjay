@@ -62,6 +62,7 @@ pub(super) fn detail_pane(
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
+    let file_stats = vm.file_stats.clone();
     let selected_file_has_conflict = vm.selected_file_has_conflict();
     let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
         view.diff.rich_preview.as_ref().is_some_and(|selection| {
@@ -90,6 +91,9 @@ pub(super) fn detail_pane(
 
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
+        line_stats: selected_hunk
+            .as_ref()
+            .and_then(|hunk| file_stats.get(&hunk.path)),
         no_changes: file_count == Some(0),
         file_diff: current_diff.as_ref(),
         loaded_projection: current_projection.as_ref(),

@@ -16,6 +16,7 @@ struct FileRow: View {
     var agentMarked: Bool = false
     var noteCount: Int = 0
     var hasConflict: Bool = false
+    var lineStats: FileDiffStats?
     var onToggleReview: (() -> Void)?
 
     var reviewChrome: FileRowReviewChrome {
@@ -117,6 +118,10 @@ struct FileRow: View {
                             .padding(.vertical, 2)
                             .background(Color.orange.opacity(0.12), in: Capsule())
                             .help(noteCount.reviewNoteCountLabel)
+                        }
+                        if let lineStats {
+                            Spacer(minLength: 0)
+                            LineStatsLabel(stats: lineStats, size: 10, muted: true)
                         }
                     }
                     Text(hunk.hunkType == .renamed

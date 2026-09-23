@@ -51,9 +51,7 @@ fn compute_file_diff_impl(
     let old_line_index = LineIndex::from_text(old);
     let new_line_index = LineIndex::from_text(new);
 
-    let old_lines: Vec<&str> = old.lines().collect();
-    let new_lines: Vec<&str> = new.lines().collect();
-    let line_ops = line_diff(&old_lines, &new_lines, ignore_whitespace);
+    let line_ops = line_diff(old, new, ignore_whitespace);
 
     let mut result_lines = Vec::new();
     let mut old_idx: u32 = 1;
@@ -211,45 +209,12 @@ fn compute_file_diff_impl(
     }
 }
 
-/// Mark each side's last line with `no_eof_newline`; split a shared-Context last line into a pair so the marker can attribute per side.
-fn apply_eof_markers(lines: &mut Vec<DiffLine>, no_eof_old: bool, no_eof_new: bool) {
-    let last_old_idx = lines.iter().rposition(|l| l.old_line_no.is_some());
-    let last_new_idx = lines.iter().rposition(|l| l.new_line_no.is_some());
-
-    if let (Some(oi), Some(ni)) = (last_old_idx, last_new_idx)
-        && oi == ni
-        && lines[oi].style == DiffSpanStyle::Context
-    {
-        split_context_for_eof(lines, oi, no_eof_old, no_eof_new);
-        return;
-    }
-
-    if no_eof_old && let Some(idx) = last_old_idx {
+/// Mark each side's last line with `no_eof_newline`; `line_diff` never matches an unterminated last line, so the two sides' last lines are always distinct rows here.
+fn apply_eof_markers(lines: &mut [DiffLine], no_eof_old: bool, no_eof_new: bool) {
+    if no_eof_old && let Some(idx) = lines.iter().rposition(|l| l.old_line_no.is_some()) {
         lines[idx].no_eof_newline = true;
     }
-    if no_eof_new && let Some(idx) = last_new_idx {
+    if no_eof_new && let Some(idx) = lines.iter().rposition(|l| l.new_line_no.is_some()) {
         lines[idx].no_eof_newline = true;
     }
-}
-
-/// Spans stay as Context — the text is identical, so no word-level highlight.
-fn split_context_for_eof(
-    lines: &mut Vec<DiffLine>,
-    idx: usize,
-    no_eof_old: bool,
-    no_eof_new: bool,
-) {
-    let original = lines.remove(idx);
-    let mut removed = original.clone();
-    removed.new_line_no = None;
-    removed.style = DiffSpanStyle::Removed;
-    removed.no_eof_newline = no_eof_old;
-
-    let mut added = original;
-    added.old_line_no = None;
-    added.style = DiffSpanStyle::Added;
-    added.no_eof_newline = no_eof_new;
-
-    lines.insert(idx, removed);
-    lines.insert(idx + 1, added);
 }

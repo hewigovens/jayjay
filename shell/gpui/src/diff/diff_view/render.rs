@@ -55,6 +55,7 @@ pub fn diff_view(
     let header = file_header(
         FileHeaderState {
             hunk,
+            line_stats: state.line_stats,
             view_mode,
             projection: ProjectionHeaderState {
                 projection: state.effective_projection(),

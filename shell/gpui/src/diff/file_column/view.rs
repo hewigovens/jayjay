@@ -5,7 +5,7 @@ use gpui::{
     AnyElement, Context, FocusHandle, IntoElement, ParentElement, ScrollHandle, Styled,
     UniformListScrollHandle, div, rgb,
 };
-use jayjay_core::DiffHunk;
+use jayjay_core::{DiffHunk, FileDiffStats};
 use jayjay_review::ReviewFileRollup;
 
 use super::flat::{FlatBodyState, flat_body};
@@ -46,6 +46,7 @@ pub struct FileColumnState<'a> {
     pub(crate) note_counts: Arc<HashMap<String, usize>>,
     pub(crate) conflicted: Arc<HashSet<String>>,
     pub(crate) notes_only: bool,
+    pub(crate) file_stats: Arc<HashMap<String, FileDiffStats>>,
     pub(crate) file_filter: Option<&'a LineInput>,
     pub(crate) file_filter_focus: FocusHandle,
     pub(crate) visible_indices: Option<Arc<Vec<usize>>>,
@@ -74,6 +75,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         note_counts,
         conflicted,
         notes_only,
+        file_stats,
         file_filter,
         file_filter_focus,
         visible_indices,
@@ -160,6 +162,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 show_review,
                 note_counts: note_counts.clone(),
                 conflicted: conflicted.clone(),
+                file_stats: file_stats.clone(),
                 column_width,
                 pane_active,
             },
@@ -180,6 +183,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 show_review,
                 note_counts: note_counts.clone(),
                 conflicted: conflicted.clone(),
+                file_stats: file_stats.clone(),
                 column_width,
                 pane_active,
             },

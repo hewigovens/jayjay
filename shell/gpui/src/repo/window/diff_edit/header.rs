@@ -6,7 +6,7 @@ use gpui::{
 use super::rows::DiffEditCardFile;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
-use crate::diff::file_status;
+use crate::diff::{file_status, line_stats};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{CheckCircleState, check_circle};
@@ -140,30 +140,6 @@ fn collapse_chevron(
 
 fn stats_badge(view: &RepoWindow, card: &DiffEditCardFile, t: &Theme) -> Option<AnyElement> {
     let stats = view.diff_edit.stats.as_ref()?.get(card.path.as_ref())?;
-    if stats.insertions == 0 && stats.deletions == 0 {
-        return None;
-    }
-    let mut badge = div()
-        .flex()
-        .flex_row()
-        .items_baseline()
-        .gap(px(4.))
-        .font_family(fonts::mono())
-        .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(ui_font_size(10.));
-    if stats.insertions > 0 {
-        badge = badge.child(
-            div()
-                .text_color(rgb(t.diff_gutter_added_fg))
-                .child(format!("+{}", stats.insertions)),
-        );
-    }
-    if stats.deletions > 0 {
-        badge = badge.child(
-            div()
-                .text_color(rgb(t.diff_gutter_removed_fg))
-                .child(format!("-{}", stats.deletions)),
-        );
-    }
-    Some(badge.into_any_element())
+    line_stats(stats, 10., t.diff_gutter_added_fg, t.diff_gutter_removed_fg)
+        .map(IntoElement::into_any_element)
 }

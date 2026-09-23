@@ -57,6 +57,7 @@ impl RepoViewModel {
         let rev = change.selection_revision().to_owned();
 
         cx.notify();
+        self.load_file_stats(rev.clone(), cx);
 
         Self::background_update(
             cx,
@@ -103,6 +104,33 @@ impl RepoViewModel {
                         vm.present_error(error);
                     }
                 }
+                cx.notify();
+            },
+        );
+    }
+
+    pub(in crate::repo) fn load_file_stats(&mut self, rev: String, cx: &mut Context<Self>) {
+        let Some(repo) = self.repo.clone() else {
+            return;
+        };
+        self.file_stats = Arc::default();
+        let generation = self.loading.change_gen;
+        let ignore_whitespace = self.ignore_whitespace;
+        Self::background_update(
+            cx,
+            async move { repo.diff_file_stats(&rev, ignore_whitespace) },
+            move |vm, stats, cx| {
+                if vm.loading.change_gen != generation || vm.ignore_whitespace != ignore_whitespace
+                {
+                    return;
+                }
+                vm.file_stats = Arc::new(
+                    stats
+                        .unwrap_or_default()
+                        .into_iter()
+                        .map(|stats| (stats.path.clone(), stats))
+                        .collect(),
+                );
                 cx.notify();
             },
         );
@@ -458,6 +486,7 @@ impl RepoViewModel {
         self.current_diff_supports_file_editor = false;
         self.clear_diff_cache_state();
         self.change_stats = None;
+        self.file_stats = Arc::default();
         self.loading.files = false;
         self.loading.diff = false;
     }

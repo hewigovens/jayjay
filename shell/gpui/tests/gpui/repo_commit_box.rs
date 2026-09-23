@@ -459,6 +459,48 @@ fn file_column_hide_reviewed_button_filters_reviewed_files(cx: &mut TestAppConte
 }
 
 #[gpui::test]
+fn a_new_window_skips_a_hidden_reviewed_file_when_selecting_the_first_file(
+    cx: &mut TestAppContext,
+) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    install_test_globals(cx);
+    let (first, vcx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    load_selected_change_files(&first, vcx);
+    settle_visual(vcx);
+    first.update_in(vcx, |view, _, cx| {
+        let (change_id, path, identity) = {
+            let vm = view.view_model().read(cx);
+            let change = vm.selected_change().expect("selected working copy");
+            let file = &vm.files.as_ref().expect("working copy files loaded")[0];
+            (
+                change.change_id.id.clone(),
+                file.path.clone(),
+                file.review_identity.clone(),
+            )
+        };
+        view.toggle_reviewed(change_id, path, identity, cx);
+    });
+    settle_visual(vcx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.hide_reviewed_files = true));
+
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.files.as_ref().is_some_and(|files| files.len() >= 2));
+        assert!(
+            vm.selected_file_ix.is_some_and(|ix| ix != 0),
+            "the initial selection should skip the hidden reviewed file: {:?}",
+            vm.selected_file_ix
+        );
+    });
+}
+
+#[gpui::test]
 fn hide_reviewed_files_preference_hydrates_new_windows(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     fixture.add_tracked_working_copy_edits();

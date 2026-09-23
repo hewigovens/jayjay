@@ -21,7 +21,8 @@ use jayjay_core::dag::{DagLayout, OrderedSelection, SelectionGraph, SelectionSta
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
-    DiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset, default_revset_depth,
+    DiffStats, FileDiffStats, GraphEntry, PrInfo, Repo, WorkspaceInfo, build_default_revset,
+    default_revset_depth,
 };
 use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
@@ -120,6 +121,7 @@ pub struct RepoViewModel {
     diff_preloads_in_flight: HashSet<String>,
     diff_load_failures: HashSet<String>,
     pub change_stats: Option<DiffStats>,
+    pub file_stats: Arc<HashMap<String, FileDiffStats>>,
     pub working_copy_stats: Option<DiffStats>,
     pub current_operation_description: String,
     pub view_mode: DiffViewMode,
@@ -291,6 +293,7 @@ impl RepoViewModel {
             diff_preloads_in_flight: HashSet::new(),
             diff_load_failures: HashSet::new(),
             change_stats: None,
+            file_stats: Arc::default(),
             working_copy_stats: None,
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
@@ -344,6 +347,7 @@ impl RepoViewModel {
             diff_preloads_in_flight: HashSet::new(),
             diff_load_failures: HashSet::new(),
             change_stats: None,
+            file_stats: Arc::default(),
             working_copy_stats: None,
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,

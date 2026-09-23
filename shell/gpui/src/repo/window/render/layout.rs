@@ -85,6 +85,7 @@ pub(super) fn file_column_wrapper(
                 note_counts,
                 conflicted,
                 notes_only,
+                file_stats: vm.file_stats.clone(),
                 file_filter: view.file_column.filter.as_ref(),
                 file_filter_focus: view.file_filter_focus.clone(),
                 visible_indices,

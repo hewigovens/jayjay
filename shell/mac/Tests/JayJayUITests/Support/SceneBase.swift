@@ -75,6 +75,7 @@ class SceneBase: XCTestCase {
         if Self.startsWithDefaultSettings {
             // The runner machine's own settings must not decide how a scene's descriptions open.
             app.launchArguments += ["-jayjay.autoExpandDescription", "NO"]
+            app.launchArguments += ["-jayjay.hideReviewedFiles", "NO"]
         }
         app.launchArguments += Self.additionalLaunchArguments
         if Self.startsWithDefaultLayout {

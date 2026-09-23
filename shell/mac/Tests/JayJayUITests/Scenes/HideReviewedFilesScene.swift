@@ -1,10 +1,6 @@
 import XCTest
 
 final class HideReviewedFilesScene: SceneBase {
-    override class var additionalLaunchArguments: [String] {
-        ["-jayjay.hideReviewedFiles", "NO"]
-    }
-
     func testFilteringKeepsSelectionAndReviewActionsOnVisibleFiles() throws {
         let app = try XCTUnwrap(app)
         let first = fileRows(of: app).matching(identifier: AID.FileList.row("wip1.txt")).firstMatch

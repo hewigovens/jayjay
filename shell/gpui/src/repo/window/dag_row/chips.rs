@@ -12,7 +12,7 @@ use crate::repo::window::ref_chips;
 use crate::ui::primitives::{capsule, text_tooltip};
 
 const CHIP_GAP: f32 = 5.;
-pub(crate) const CHAR_WIDTH_FACTOR: f32 = 0.6;
+const CHAR_WIDTH_FACTOR: f32 = 0.6;
 
 enum DagChip {
     WorkingCopy,

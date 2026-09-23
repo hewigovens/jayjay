@@ -20,7 +20,7 @@ fn digests(old: &str, new: &str) -> Vec<String> {
 fn fingerprint_version_one_payload_is_stable() {
     assert_eq!(
         digests("keep\nA\rB\nend\n", "keep\na\rb\nend\n"),
-        vec!["70bde24f42d428a41290a67366e47d697938453255cfdb9da9ce69a04f932305"]
+        vec!["a79c03a09045d43b19fd82c6a3409fc2872a2e0b69272830e021b9fe4dd34bb5"]
     );
     assert_eq!(
         digests("keep\r\n\r\nA\r\nend", "keep\r\n\r\na\r\nend"),

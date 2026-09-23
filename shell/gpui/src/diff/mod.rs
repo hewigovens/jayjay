@@ -6,6 +6,7 @@ pub(crate) mod file_status;
 mod image_diff;
 mod image_diff_split;
 pub(crate) mod line;
+mod line_stats;
 mod markdown_diff;
 pub(crate) use markdown_diff::{MarkdownImageCache, MarkdownImageCacheSlot};
 mod media_diff;
@@ -27,5 +28,6 @@ pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, Not
 pub(crate) use file_column::{FileColumnState, file_column};
 pub(crate) use file_column::{FileTreeCache, file_row_height};
 pub(crate) use image_diff::{hunk_is_image, image_diff_view};
+pub(crate) use line_stats::line_stats;
 pub(crate) use selection::word_at;
 pub use selection::{DiffSelection, GutterLineSelection, SbsSide};

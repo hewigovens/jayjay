@@ -39,6 +39,7 @@ extension ChangeDetailView {
         loadConflictedPaths()
         loadTrackedGitLfsPaths()
         loadDiffStats()
+        loadFileStats()
         // No clear(): content-addressed by commit id, so prior changes stay warm and never go stale.
         diffStore.preload(
             hunks: detail.diff,
@@ -96,6 +97,24 @@ extension ChangeDetailView {
             await MainActor.run {
                 guard diffStatsCommitId == commitId else { return }
                 diffStats = stats
+            }
+        }
+    }
+
+    func loadFileStats() {
+        // Compare mode shows an interdiff, which the per-revision counts would misstate.
+        guard !isCompareMode, let repo else { return }
+        let rev = detailRevision
+        let ignoreWhitespace = appSettings.ignoreWhitespace
+        let key = "\(detail.info.commitId.id)|\(ignoreWhitespace)"
+        guard fileStatsKey != key else { return }
+        fileStatsKey = key
+        fileStats = [:]
+        Task.detached {
+            let stats = (try? repo.diffFileStats(rev: rev, ignoreWhitespace: ignoreWhitespace)) ?? []
+            await MainActor.run {
+                guard fileStatsKey == key else { return }
+                fileStats = Dictionary(uniqueKeysWithValues: stats.map { ($0.path, $0) })
             }
         }
     }

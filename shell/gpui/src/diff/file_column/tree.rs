@@ -6,7 +6,7 @@ use gpui::{
     MouseDownEvent, ParentElement, ScrollHandle, SharedString, StatefulInteractiveElement, Styled,
     Window, div, px, rgb,
 };
-use jayjay_core::{DiffHunk, FileTreeEntry};
+use jayjay_core::{DiffHunk, FileDiffStats, FileTreeEntry};
 use jayjay_review::ReviewFileRollup;
 
 use super::row::{
@@ -17,7 +17,6 @@ use super::row::{
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::text_tooltip;
 
 const TREE_DIR_ROW_HEIGHT: f32 = 28.;
 const TREE_ROW_HORIZONTAL_MARGIN: f32 = 4.;
@@ -52,6 +51,7 @@ pub(super) struct TreeBodyState {
     pub(super) show_review: bool,
     pub(super) note_counts: Arc<std::collections::HashMap<String, usize>>,
     pub(super) conflicted: Arc<HashSet<String>>,
+    pub(super) file_stats: Arc<HashMap<String, FileDiffStats>>,
     pub(super) column_width: f32,
     pub(super) pane_active: bool,
 }
@@ -72,6 +72,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         show_review,
         note_counts,
         conflicted,
+        file_stats,
         column_width,
         pane_active,
     } = state;
@@ -122,6 +123,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                                 has_conflict: conflicted.contains(&path)
                                     || hunk.is_conflict_only_placeholder(),
                                 note_count,
+                                line_stats: file_stats.get(&path),
                                 ix,
                                 theme: &theme,
                             },
@@ -194,10 +196,9 @@ where
         review_rollup,
         agent_marked,
         show_review,
-        has_conflict,
-        note_count,
         ix,
         theme,
+        ..
     } = state;
     let FileRowHandlers {
         on_click,
@@ -236,7 +237,6 @@ where
         .bg(bg_row)
         .relative()
         .cursor_pointer()
-        .tooltip(text_tooltip(path))
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
         .child(row_separator(
@@ -252,15 +252,7 @@ where
             on_review_click,
         ));
     }
-    finish_file_row(
-        row,
-        hunk,
-        show_review,
-        has_conflict,
-        content,
-        note_count,
-        theme,
-    )
+    finish_file_row(row, &state, content)
 }
 
 fn tree_dir_row<F>(

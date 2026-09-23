@@ -2,15 +2,16 @@ use gpui::{
     AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, Rgba,
     SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
-use jayjay_core::{DiffHunk, HunkType};
+use jayjay_core::{DiffHunk, FileDiffStats, HunkType};
 use jayjay_review::ReviewFileRollup;
 
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
-use crate::diff::file_status;
+use crate::diff::{file_status, line_stats};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{CheckCircleState, check_circle, text_tooltip};
 
+#[derive(Clone, Copy)]
 pub(super) struct FileRowState<'a> {
     pub(super) hunk: &'a DiffHunk,
     pub(super) is_selected: bool,
@@ -20,6 +21,7 @@ pub(super) struct FileRowState<'a> {
     pub(super) show_review: bool,
     pub(super) has_conflict: bool,
     pub(super) note_count: usize,
+    pub(super) line_stats: Option<&'a FileDiffStats>,
     pub(super) ix: usize,
     pub(super) theme: &'a Theme,
 }
@@ -207,18 +209,26 @@ fn status_indicator(
 
 pub(super) fn finish_file_row(
     row: impl ParentElement + IntoElement,
-    hunk: &DiffHunk,
-    show_review: bool,
-    has_conflict: bool,
+    state: &FileRowState,
     content: impl IntoElement,
-    note_count: usize,
-    t: &Theme,
 ) -> AnyElement {
+    let t = state.theme;
     let mut row = row
-        .child(status_indicator(hunk, show_review, has_conflict, t))
+        .child(status_indicator(
+            state.hunk,
+            state.show_review,
+            state.has_conflict,
+            t,
+        ))
         .child(super::file_name_container(content));
-    if note_count > 0 {
-        row = row.child(note_badge(note_count, t));
+    if state.note_count > 0 {
+        row = row.child(note_badge(state.note_count, t));
+    }
+    if let Some(stats) = state.line_stats
+        && let Some(label) = line_stats(stats, 10., t.fg_faint, t.fg_faint)
+    {
+        let selector = format!("file-line-stats-{}", state.hunk.path);
+        row = row.child(label.debug_selector(move || selector.clone()));
     }
     row.into_any_element()
 }

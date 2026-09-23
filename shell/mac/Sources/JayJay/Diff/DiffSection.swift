@@ -22,6 +22,7 @@ struct DiffSection: View {
     var onReviewStateChanged: (() -> Void)?
     var onReviewSnapshotLoaded: ((DiffHunk, ReviewFileSnapshot?) -> Void)?
     var compareFromRev: String?
+    var lineStats: FileDiffStats?
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
