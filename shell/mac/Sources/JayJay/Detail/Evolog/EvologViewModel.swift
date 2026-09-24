@@ -199,8 +199,8 @@ final class EvologViewModel {
         copyToPasteboard(commitId)
     }
 
-    func copyRestoreCommand(_ commitId: String) {
-        copyToPasteboard("jj restore --from \(commitId) --into @")
+    func copyRestoreCommand(_ commitId: String, into rev: String) {
+        copyToPasteboard("jj restore --from \(commitId) --into \(rev)")
     }
 
     private func copyToPasteboard(_ value: String) {

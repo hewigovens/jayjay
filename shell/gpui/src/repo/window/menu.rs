@@ -138,17 +138,17 @@ impl RepoWindow {
                 let Some(repo) = vm.repo.clone() else {
                     return;
                 };
-                let change_id = vm
+                let target = vm
                     .graph
                     .changes
                     .iter()
                     .find(|change| change.selection_revision() == rev.as_ref())
-                    .map(|change| change.change_id.clone())
-                    .unwrap_or_else(|| jayjay_core::ShortId::new(rev.to_string(), 0));
+                    .cloned();
                 let rev_string = rev.to_string();
+                let repo_vm = self.vm.clone();
                 cx.spawn(async move |_, cx| {
                     cx.update(|cx| {
-                        EvologView::open(repo, rev_string, change_id, cx);
+                        EvologView::open(repo, rev_string, repo_vm, target, cx);
                     });
                 })
                 .detach();

@@ -259,6 +259,35 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         )
     }
 
+    func testEvologRestoreRunsOnceAtATimeAndReloadsTheEvolog() async throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        let file = URL(fileURLWithPath: repoPath).appendingPathComponent("restore.txt")
+        try "v1\n".write(to: file, atomically: true, encoding: .utf8)
+        _ = try runJj(["describe", "-m", "restore target"], in: repoPath)
+        try "v2\n".write(to: file, atomically: true, encoding: .utf8)
+        _ = try runJj(["st"], in: repoPath)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.showEvolog(rev: "@")
+        try await waitUntil("the evolog loads") { viewModel.evologEntries != nil }
+        let entries = try XCTUnwrap(viewModel.evologEntries)
+        let v1 = try XCTUnwrap(entries.first {
+            (try? viewModel.repo.fileContent(rev: $0.commitId.id, path: "restore.txt")) == "v1"
+        })
+
+        viewModel.restoreEvologVersion(v1.commitId.id)
+        viewModel.restoreEvologVersion(v1.commitId.id)
+        XCTAssertEqual(viewModel.info, "A version is already being restored")
+
+        try await waitUntil("the evolog reloads with the restored version") {
+            (viewModel.evologEntries?.count ?? 0) > entries.count
+        }
+        XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "v1\n")
+        XCTAssertEqual(try runJj(["log", "--no-graph", "-r", "divergent()", "-T", "change_id"], in: repoPath), "")
+    }
+
     func testCombinedComparisonCannotReverse() throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.compareFromId = "roots"

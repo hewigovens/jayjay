@@ -3,19 +3,20 @@ use std::sync::Arc;
 
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{
-    AnyElement, App, AppContext, Bounds, ClickEvent, Context, FocusHandle, Focusable,
+    AnyElement, App, AppContext, Bounds, ClickEvent, Context, Entity, FocusHandle, Focusable,
     InteractiveElement, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
     ParentElement, Pixels, Point, Render, SharedString, Size, StatefulInteractiveElement, Styled,
     TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, uniform_list,
 };
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::FileDiff;
-use jayjay_core::{DiffHunk, EvologEntry, EvologRow, Repo, ShortId};
+use jayjay_core::{ChangeInfo, DiffHunk, EvologEntry, EvologRow, Repo, ShortId};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
@@ -33,9 +34,12 @@ pub struct EvologView {
     repo: Arc<Repo>,
     rev: String,
     change_id: ShortId,
+    repo_vm: Entity<RepoViewModel>,
+    target: Option<ChangeInfo>,
     entries: Option<Arc<Vec<EvologEntry>>>,
     error: Option<SharedString>,
     loading: bool,
+    restoring: bool,
     hide_snapshots: bool,
     expanded_runs: HashSet<u32>,
     selection: OrderedSelection,
@@ -54,7 +58,17 @@ pub struct EvologView {
 }
 
 impl EvologView {
-    pub(crate) fn open(repo: Arc<Repo>, rev: String, change_id: ShortId, cx: &mut App) {
+    pub(crate) fn open(
+        repo: Arc<Repo>,
+        rev: String,
+        repo_vm: Entity<RepoViewModel>,
+        target: Option<ChangeInfo>,
+        cx: &mut App,
+    ) {
+        let change_id = target.as_ref().map_or_else(
+            || ShortId::new(rev.clone(), 0),
+            |target| target.change_id.clone(),
+        );
         let bounds = Bounds::centered(
             None,
             Size {
@@ -83,9 +97,12 @@ impl EvologView {
                             repo,
                             rev,
                             change_id,
+                            repo_vm,
+                            target,
                             entries: None,
                             error: None,
                             loading: true,
+                            restoring: false,
                             hide_snapshots: true,
                             expanded_runs: HashSet::new(),
                             selection: OrderedSelection::default(),
@@ -140,7 +157,15 @@ impl EvologView {
         commit_id: String,
         cx: &mut Context<Self>,
     ) {
-        self.context_menu = Some(EvologContextMenuState { anchor, commit_id });
+        self.context_menu = Some(EvologContextMenuState {
+            anchor,
+            commit_id,
+            into_rev: self.rev.clone(),
+            is_immutable: self
+                .target
+                .as_ref()
+                .is_some_and(|target| target.is_immutable),
+        });
         cx.notify();
     }
 
@@ -148,6 +173,30 @@ impl EvologView {
         if self.context_menu.take().is_some() {
             cx.notify();
         }
+    }
+
+    pub(super) fn restore_version(&mut self, commit_id: String, cx: &mut Context<Self>) {
+        if self.restoring {
+            return;
+        }
+        let rev = self.rev.clone();
+        let task = self
+            .repo_vm
+            .update(cx, |vm, cx| vm.restore_version(rev, commit_id, cx));
+        self.restoring = true;
+        cx.spawn(async move |this, cx| {
+            let result = task.await;
+            let _ = this.update(cx, move |view, cx| {
+                view.restoring = false;
+                if result.is_ok() {
+                    // The restore prepends a version, which shifts the index-based selection.
+                    view.selection = OrderedSelection::default();
+                    view.load_interdiff(cx);
+                    view.load(cx);
+                }
+            });
+        })
+        .detach();
     }
 }
 

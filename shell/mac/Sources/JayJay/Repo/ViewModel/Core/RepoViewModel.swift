@@ -132,6 +132,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var prHostName: String?
     var evologEntries: [EvologEntry]?
     var evologRev: String?
+    var isRestoringEvologVersion = false
 
     convenience init(path: String, includeSubmoduleStatuses: Bool = false) throws {
         let repo = try JayJayRepo.open(path: path)

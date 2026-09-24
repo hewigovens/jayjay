@@ -136,6 +136,9 @@ struct RepoContentView: View {
                         activePane: Bindable(keyboardFocus).activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
+                        evologTarget: viewModel.evologRev.flatMap { viewModel.change(for: $0) },
+                        isRestoringEvologVersion: viewModel.isRestoringEvologVersion,
+                        onRestoreEvologVersion: { viewModel.restoreEvologVersion($0) },
                         onDismissEvolog: { viewModel.dismissEvolog() },
                         conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                         selectionWithoutDiffCount: viewModel.compareFromId == nil

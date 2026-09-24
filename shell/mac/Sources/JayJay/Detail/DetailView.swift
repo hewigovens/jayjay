@@ -17,6 +17,9 @@ struct DetailView: View {
     @Binding var activePane: ActivePane
     var evologEntries: [EvologEntry]?
     var evologRev: String?
+    var evologTarget: ChangeInfo?
+    var isRestoringEvologVersion = false
+    var onRestoreEvologVersion: ((String) -> Void)?
     var onDismissEvolog: (() -> Void)?
     var conflictedBookmarkNames: Set<String> = []
     var selectionWithoutDiffCount = 0
@@ -29,9 +32,13 @@ struct DetailView: View {
                 changeId: rev,
                 repo: repo,
                 diffStore: diffStore,
+                target: evologTarget,
+                isRestoring: isRestoringEvologVersion,
+                onRestore: { onRestoreEvologVersion?($0) },
                 onDismiss: { onDismissEvolog?() }
             )
-            .id(rev)
+            // EvologViewModel copies its entries at init, so a reload after a restore must remount it.
+            .id("\(rev)-\(entries.first?.commitId.id ?? "")")
         } else if selectionWithoutDiffCount > 1 {
             ContentUnavailableView(
                 "\(selectionWithoutDiffCount) Changes Selected",

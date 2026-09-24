@@ -13,7 +13,8 @@ impl Repo {
     /// Evolution history of a single change. Most recent rewrite first.
     pub fn evolog(&self, rev: &str) -> CoreResult<Vec<EvologEntry>> {
         let repo = self.get_repo();
-        let head = self.resolve_commit(&repo, rev)?;
+        // A divergent change is shown by commit id, which a restore hides; start from its successor so the reload includes the new version.
+        let head = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
         on_worker_stack(|| {
             let mut entries = Vec::new();
             let stream = walk_predecessors(repo.as_ref(), &[head.id().clone()]);

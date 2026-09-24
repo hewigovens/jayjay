@@ -170,6 +170,31 @@ fn restore_files_from_a_parent_rewrites_the_merge_not_the_parent() {
     );
 }
 
+#[test]
+fn restore_files_from_a_rewritten_parent_uses_the_parent_current_content() {
+    let (_tmp, _repo_path, repo) = merge_fixture();
+    repo.new_change("@", "child").expect("create child");
+    let merge = change_by_description(&repo, "merge");
+    let (p1_commit, stale_p2_commit) = (merge.parents[0].clone(), merge.parents[1].clone());
+
+    let p2 = change_by_description(&repo, "parent two");
+    repo.restore_files(&p2.change_id.id, Some(&p1_commit), &["a.txt".to_owned()])
+        .expect("rewrite parent two after the menu captured it");
+    repo.restore_files(
+        &merge.change_id,
+        Some(&stale_p2_commit),
+        &["a.txt".to_owned()],
+    )
+    .expect("restore a.txt from the stale parent id");
+
+    assert_eq!(
+        repo.file_content(&merge.change_id, "a.txt")
+            .expect("read a.txt from merge")
+            .trim_end(),
+        "a from p1"
+    );
+}
+
 /// Octopus adjacency: with three parents each holding a DISTINCT a.txt, the result can only match the parent actually passed as `from`, so a parent-index or source/target mixup cannot pass.
 #[test]
 fn restore_files_from_the_third_parent_of_an_octopus_merge_uses_that_parent() {
@@ -306,5 +331,118 @@ fn restore_files_from_a_parent_on_a_working_copy_merge_updates_the_disk_file() {
         change_by_description(&repo, "parent two").commit_id.id,
         p2_commit,
         "parent two must not be rewritten"
+    );
+}
+
+#[test]
+fn restore_version_in_working_copy_from_a_hidden_predecessor() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("a.txt"), "v1\n").expect("write a v1");
+    fs::write(repo_path.join("b.txt"), "v1\n").expect("write b v1");
+    repo.refresh_working_copy().expect("snapshot v1");
+    repo.describe("@", "versioned").expect("describe v1");
+
+    fs::write(repo_path.join("a.txt"), "v2\n").expect("write a v2");
+    fs::write(repo_path.join("b.txt"), "v2\n").expect("write b v2");
+    repo.refresh_working_copy().expect("snapshot v2");
+
+    let before = repo.show("@").expect("show @ before restore");
+    let change_id = before.info.change_id.id.clone();
+    let predecessor = repo
+        .evolog("@")
+        .expect("evolog @")
+        .into_iter()
+        .find(|entry| {
+            repo.file_content(&entry.commit_id.id, "a.txt")
+                .is_ok_and(|content| content.trim_end() == "v1")
+        })
+        .expect("v1 predecessor present");
+
+    repo.restore_version("@", &predecessor.commit_id.id)
+        .expect("whole-tree restore @ from v1");
+
+    assert_eq!(
+        fs::read_to_string(repo_path.join("a.txt")).expect("read a from disk"),
+        "v1\n"
+    );
+    assert_eq!(
+        fs::read_to_string(repo_path.join("b.txt")).expect("read b from disk"),
+        "v1\n"
+    );
+    assert_eq!(
+        repo.show("@")
+            .expect("show @ after restore")
+            .info
+            .change_id
+            .id,
+        change_id
+    );
+}
+
+#[test]
+fn restore_version_in_a_historical_change_keeps_its_change_id() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("a.txt"), "a base\n").expect("write a base");
+    fs::write(repo_path.join("b.txt"), "b base\n").expect("write b base");
+    repo.describe("@", "parent P").expect("describe parent");
+
+    repo.new_change("@", "target X").expect("create X");
+    fs::write(repo_path.join("a.txt"), "a from X\n").expect("write a in X");
+    fs::write(repo_path.join("b.txt"), "b from X\n").expect("write b in X");
+    repo.refresh_working_copy().expect("snapshot X");
+
+    repo.new_change("@", "child C").expect("create child");
+    fs::write(repo_path.join("c.txt"), "c from child\n").expect("write c in child");
+    repo.refresh_working_copy().expect("snapshot child");
+
+    let x = change_by_description(&repo, "target X");
+    let (change_id, commit_id) = (x.change_id.id.clone(), x.commit_id.id.clone());
+    let empty_version = repo
+        .evolog(&change_id)
+        .expect("evolog X")
+        .into_iter()
+        .find(|entry| {
+            repo.file_content(&entry.commit_id.id, "a.txt")
+                .is_ok_and(|content| content.trim_end() == "a base")
+        })
+        .expect("X's version before its edits");
+
+    repo.restore_version(&change_id, &empty_version.commit_id.id)
+        .expect("whole-tree restore X to its first version");
+
+    let after = change_by_description(&repo, "target X");
+    assert_eq!(after.change_id.id, change_id);
+    assert_ne!(after.commit_id.id, commit_id);
+    assert_eq!(
+        repo.evolog(&commit_id)
+            .expect("evolog by the pre-restore commit id")[0]
+            .commit_id
+            .id,
+        after.commit_id.id,
+        "a divergent change's evolog is keyed by commit id, so reloading it must reach the restored version"
+    );
+    assert_eq!(
+        repo.file_content(&change_id, "a.txt")
+            .expect("read a from X")
+            .trim_end(),
+        "a base"
+    );
+    assert_eq!(
+        repo.file_content(&change_id, "b.txt")
+            .expect("read b from X")
+            .trim_end(),
+        "b base"
+    );
+    assert_eq!(
+        repo.file_content("@", "c.txt")
+            .expect("read c from child")
+            .trim_end(),
+        "c from child"
     );
 }

@@ -769,6 +769,10 @@ impl JayJayRepo {
         Ok(self.inner.restore_files(&rev, None, &paths)?)
     }
 
+    fn restore_version(&self, rev: String, version: String) -> Result<(), JayJayError> {
+        Ok(self.inner.restore_version(&rev, &version)?)
+    }
+
     fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
         Ok(self.inner.move_to_working_copy(&rev, &paths)?)
     }
