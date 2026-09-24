@@ -39,8 +39,8 @@ impl RepoWindow {
         cx: &mut App,
     ) -> gpui::Result<WindowHandle<Self>> {
         let title = match path.file_name().and_then(|s| s.to_str()) {
-            Some(name) if !name.is_empty() => format!("JayJay (Beta) — {name}"),
-            _ => "JayJay (Beta)".to_string(),
+            Some(name) if !name.is_empty() => format!("JayJay — {name}"),
+            _ => "JayJay".to_string(),
         };
         let handle = cx.open_window(
             WindowOptions {

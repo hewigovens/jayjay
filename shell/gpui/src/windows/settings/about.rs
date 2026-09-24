@@ -12,7 +12,7 @@ const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
 const GITHUB_URL: &str = "https://github.com/hewigovens/jayjay";
 
 pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
-    let version = format!("Version {} (GPUI Beta)", env!("CARGO_PKG_VERSION"));
+    let version = format!("Version {} (GPUI)", env!("CARGO_PKG_VERSION"));
 
     div()
         .debug_selector(|| "settings-about-section".to_owned())

@@ -1,10 +1,11 @@
 #!/usr/bin/env bash
-# Installs the latest JayJay for Linux into ~/.local: the AppImage, a jayjay command, a desktop entry, and icons.
+# Installs JayJay for Linux as a local AppImage or through the signed Arch pacman repo.
 # Usage: curl -fsSL https://jayjay.hewig.dev/install.sh | bash
-#        JAYJAY_VERSION=0.3.17-beta.4 bash install.sh   # a specific release instead of the latest stable
+#        JAYJAY_VERSION=0.3.19 bash install.sh   # a specific AppImage release instead of the latest stable
+#        curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo   # Arch Linux: signed pacman repo
+#        bash install.sh --pacman-repo --no-install   # configure the repo without upgrading or installing
 set -euo pipefail
 
-repo="hewigovens/jayjay"
 # The default install follows the XDG data directory the desktop searches; a custom prefix keeps everything under itself.
 if [ -n "${JAYJAY_PREFIX:-}" ]; then
   prefix="$JAYJAY_PREFIX"
@@ -16,6 +17,7 @@ else
   bin_dir="$HOME/.local/bin"
 fi
 app_dir="$data_dir/jayjay"
+exec_path="$(printf '%s' "$app_dir/JayJay.AppImage" | sed 's/[\\"$`]/\\&/g')"
 
 case "$(uname -m)" in
   x86_64 | amd64) arch="x86_64" ;;
@@ -23,8 +25,79 @@ case "$(uname -m)" in
   *) echo "JayJay ships Linux builds for x86_64 and aarch64 only; this machine is $(uname -m)." >&2; exit 1 ;;
 esac
 
+if [ "${1:-}" = "--pacman-repo" ]; then
+  shift
+  no_install=false
+  if [ "${1:-}" = "--no-install" ]; then
+    no_install=true
+    shift
+  fi
+  [ "$#" -eq 0 ] || { echo "Usage: install.sh --pacman-repo [--no-install]" >&2; exit 1; }
+  for tool in pacman pacman-key curl gpg; do
+    command -v "$tool" >/dev/null || { echo "$tool is required for the Arch Linux repo setup." >&2; exit 1; }
+  done
+  elevate=()
+  if [ "$(id -u)" -ne 0 ]; then
+    elevate=(sudo)
+  fi
+  if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
+    echo "Run this installer without sudo so it can check your per-user AppImage launchers; it elevates package operations itself." >&2
+    exit 1
+  fi
+  local_artifacts=()
+  for launcher in "$bin_dir/jayjay" "$bin_dir/jayjay-gpui"; do
+    if [ -L "$launcher" ] && [ "$(readlink "$launcher")" = "$app_dir/JayJay.AppImage" ]; then
+      local_artifacts+=("$launcher")
+    fi
+  done
+  desktop_entry="$data_dir/applications/dev.hewig.JayJay.desktop"
+  if [ -f "$desktop_entry" ] && grep -Fxq "Exec=\"$exec_path\" %F" "$desktop_entry"; then
+    local_artifacts+=("$desktop_entry")
+  fi
+  if [ "${#local_artifacts[@]}" -ne 0 ]; then
+    echo "Existing AppImage launchers would override the pacman package. Remove these launchers, then rerun this command:" >&2
+    printf '  rm --' >&2
+    printf ' %q' "${local_artifacts[@]}" >&2
+    printf '\nThe AppImage itself is left in place.\n' >&2
+    exit 1
+  fi
+  key_fpr="BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF"
+  conf="/etc/pacman.conf"
+  tmp="$(mktemp -d)"
+  trap 'rm -rf "$tmp"' EXIT
+  curl -fsSL --retry 3 -o "$tmp/jayjay-packages.asc" https://pkgs.hewig.dev/arch/jayjay-packages.asc
+  fingerprint="$(gpg --batch --with-colons --show-keys "$tmp/jayjay-packages.asc" | awk -F: '$1 == "fpr" && !seen { print $10; seen = 1 }')"
+  [ "$fingerprint" = "$key_fpr" ] || { echo "Key fingerprint mismatch; refusing to trust the downloaded key." >&2; exit 1; }
+  "${elevate[@]}" pacman-key --add "$tmp/jayjay-packages.asc"
+  "${elevate[@]}" pacman-key --lsign-key "$key_fpr"
+  if grep -q '^\[jayjay\]' "$conf"; then
+    echo "[jayjay] is already in $conf; leaving it in place."
+  else
+    printf '\n[jayjay]\nSigLevel = Required DatabaseOptional\nServer = https://pkgs.hewig.dev/arch/$arch\n' | "${elevate[@]}" tee -a "$conf" >/dev/null
+    echo "Added [jayjay] to $conf."
+  fi
+  if "$no_install"; then
+    echo "Repo configured. Run sudo pacman -Syu; if JayJay is not installed, use sudo pacman -Syu jayjay-appimage."
+    exit 0
+  fi
+  packages=()
+  # An explicit target would downgrade a newer installed beta to the repo's stable version.
+  if ! pacman -Q jayjay-appimage >/dev/null 2>&1; then
+    packages=(jayjay-appimage)
+  fi
+  echo "Updating the system and installing JayJay from the signed pacman repo..."
+  # Read confirmation from the terminal even when the installer itself is piped into bash.
+  "${elevate[@]}" pacman -Syu "${packages[@]}" </dev/tty
+  echo "Repo configured; future stable upgrades arrive with sudo pacman -Syu."
+  echo "Betas are not in the repo: install those with pacman -U from the pre-release page."
+  exit 0
+fi
+
+repo="hewigovens/jayjay"
+
 if command -v pacman >/dev/null && pacman -Q jayjay-appimage >/dev/null 2>&1; then
   echo "JayJay is installed as the jayjay-appimage package; upgrade it with sudo pacman -Syu (stable repo) or pacman -U from the release page (betas)." >&2
+  echo "Missing the repo? Run: curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo" >&2
   exit 1
 fi
 for tool in curl sha256sum; do
@@ -80,7 +153,6 @@ install -m755 "$tmp/$asset" "$app_dir/JayJay.AppImage"
 ln -sfn "$app_dir/JayJay.AppImage" "$bin_dir/jayjay"
 ln -sfn "$app_dir/JayJay.AppImage" "$bin_dir/jayjay-gpui"
 # The menu entry must not depend on the session PATH, so it launches the image by its absolute path, quoted per the desktop-entry rules.
-exec_path="$(printf '%s' "$app_dir/JayJay.AppImage" | sed 's/[\\"$`]/\\&/g')"
 while IFS= read -r line || [ -n "$line" ]; do
   case "$line" in
     Exec=*) printf 'Exec="%s" %%F\n' "$exec_path" ;;

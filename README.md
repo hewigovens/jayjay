@@ -3,10 +3,10 @@
 **JayJay is a native macOS and Linux GUI for [Jujutsu](https://github.com/jj-vcs/jj), with reusable Rust libraries for diff and review tooling.**
 
 - **macOS:** native SwiftUI app.
-- **Linux:** GPUI shell in beta. Its macOS build is for development.
+- **Linux:** GPUI shell. Its macOS build is for development.
 - **Rust libraries:** diffing, review state, repository operations, and app bindings.
 
-[Install on macOS](#install) · [Linux beta](#gpui-shell-beta) · [Rust libraries](#rust-libraries) · [Discord](https://discord.gg/ekknRNkVrT) · [Contribute](CONTRIBUTING.md)
+[Install on macOS](#install) · [Linux](#gpui-shell) · [Rust libraries](#rust-libraries) · [Discord](https://discord.gg/ekknRNkVrT) · [Contribute](CONTRIBUTING.md)
 
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
@@ -129,11 +129,11 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 - [FAQ](https://jayjay.hewig.dev/#faq) - install, licensing, platform support, and common feature questions.
 - [Blog](https://jayjay.hewig.dev/blog/) - notes on Jujutsu, collaboration, and the tools around them.
 
-### GPUI Shell (Beta)
+### GPUI Shell
 
-There is also a GPUI shell, now in beta, whose current parity target is Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. Remaining work is tracked in the [GPUI Beta checklist](https://github.com/hewigovens/jayjay/issues/165).
+The GPUI shell targets Linux. Its macOS build is for development; the released macOS product remains the SwiftUI app. Remaining work is tracked in the [GPUI checklist](https://github.com/hewigovens/jayjay/issues/165).
 
-Linux builds ship with every release: download the AppImage for your architecture from the release page, or on Arch Linux install the attached `jayjay-appimage` package with `pacman -U`. Stable releases are also in a signed pacman repo — trust `https://pkgs.hewig.dev/arch/jayjay-packages.asc`, point a `[jayjay]` section in `/etc/pacman.conf` at `https://pkgs.hewig.dev/arch/$arch`, then `sudo pacman -Syu jayjay-appimage`; the [guide](https://jayjay.hewig.dev/guide.html#gpui) has the full block.
+Linux builds ship with every release: download the AppImage for your architecture from the release page, or on Arch Linux (x86_64 and aarch64) use the signed pacman repo: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo`. Betas are not in the repo; install the attached `jayjay-appimage` package with `pacman -U`. The [guide](https://jayjay.hewig.dev/guide.html#gpui) has the one-liner and the reviewable manual steps.
 
 ```bash
 just gpui           # Build and launch the GPUI shell

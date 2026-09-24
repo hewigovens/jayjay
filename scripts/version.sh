@@ -22,10 +22,11 @@ fields=(
 # Read/replace the version-or-build number on the matching line, leaving any quotes intact.
 read_field() { grep -m1 "$2" "$1" | grep -oE '[0-9][0-9.]*(-beta\.[0-9]+)?' | head -1; }
 write_field() { sed -i '' -E "s|($2[^0-9]*)[0-9][0-9.]*(-beta\.[0-9]+)?|\\1$3|" "$1"; }
-write_gpui_release_date() {
-  local release_date
+write_gpui_release() {
+  local release_date release_type=stable
+  [[ "$version" != *-beta.* ]] || release_type=development
   release_date="$(date -u +%F)"
-  sed -i '' -E "s|(<release version=\"[^\"]+\" type=\"development\" date=\")[0-9-]+|\\1$release_date|" "$gpui_metainfo"
+  sed -i '' -E "s|(<release version=\"[^\"]+\" type=\")[^\"]+(\" date=\")[0-9-]+|\\1$release_type\\2$release_date|" "$gpui_metainfo"
 }
 want() {
   case "$1" in
@@ -44,7 +45,7 @@ case "$cmd" in
       IFS='|' read -r file prefix which _ <<<"$f"
       write_field "$file" "$prefix" "$(want "$which")"
     done
-    write_gpui_release_date
+    write_gpui_release
     echo "Set $version (build $build). Cargo.lock and the Xcode project regenerate on the next build."
     ;;
   check)
