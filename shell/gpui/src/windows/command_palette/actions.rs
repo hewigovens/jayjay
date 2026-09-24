@@ -1,9 +1,11 @@
+use std::sync::Arc;
+
 use gpui::{App, Context, Entity};
 
 use crate::app::config::{self, AppearanceMode};
 use crate::app::links::GUIDE_URL;
 use crate::app::tools;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{ChangeAction, RepoWindow};
 use crate::ui::icons::glyph;
 use crate::windows::keyboard_shortcuts::KeyboardShortcutsView;
 use crate::windows::repo_list::RepoListWindow;
@@ -203,6 +205,19 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_fetch_origin),
+    },
+    PaletteAction {
+        name: "Rebase Working Copy onto Trunk",
+        keywords: &["rebase", "trunk", "main", "update", "working copy"],
+        glyph_str: glyph::ARROW_UP,
+        dispatch: |ctx, cx| {
+            with_repo_window(ctx, cx, |view, cx| {
+                let action = ChangeAction::RebaseOntoTrunk {
+                    rev: "@".to_owned(),
+                };
+                view.run_change_action(Arc::new(action), cx);
+            })
+        },
     },
     PaletteAction {
         name: "Git Push",

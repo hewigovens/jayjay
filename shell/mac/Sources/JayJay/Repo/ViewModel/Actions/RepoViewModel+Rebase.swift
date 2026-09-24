@@ -73,7 +73,7 @@ extension RepoViewModel {
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRebaseRefreshResult {
         let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
-        try repo.rebase(rev: request.sourceRev, dest: request.destRev)
+        try repo.rebase(rev: request.sourceRev, dest: request.destRev, mode: .source)
         try repo.refreshWorkingCopy()
 
         let graph = try repo.logGraphWithLayout(revset: revset)

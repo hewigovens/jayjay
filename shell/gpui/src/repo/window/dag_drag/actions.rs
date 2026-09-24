@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{ChangeInfo, ShortId};
+use jayjay_core::{ChangeInfo, RebaseMode, ShortId};
 
 use super::payload::DagDrag;
 use super::state::DagRebaseRequest;
@@ -80,7 +80,7 @@ impl RepoWindow {
         let source_label = request.source_label.clone();
         let dest_label = request.dest_label.clone();
         let task = self.vm.update(cx, |vm, cx| {
-            vm.rebase_change(request.source_rev, request.dest_rev, cx)
+            vm.rebase_change(request.source_rev, request.dest_rev, RebaseMode::Source, cx)
         });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {

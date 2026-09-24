@@ -6,8 +6,8 @@ use jayjay_core::{
     DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
     EvologRow, FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry,
     InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
-    PullRequestImportPreview, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer,
-    SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack, StackedPrResult,
+    SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -848,8 +848,8 @@ impl JayJayRepo {
         Ok(self.inner.abandon_many(&revs)?)
     }
 
-    fn rebase(&self, rev: String, dest: String) -> Result<(), JayJayError> {
-        self.inner.rebase(&rev, &dest)?;
+    fn rebase(&self, rev: String, dest: String, mode: RebaseMode) -> Result<(), JayJayError> {
+        self.inner.rebase(&rev, &dest, mode)?;
         Ok(())
     }
 

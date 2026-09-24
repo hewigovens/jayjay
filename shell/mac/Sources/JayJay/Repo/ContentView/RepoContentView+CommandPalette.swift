@@ -111,6 +111,14 @@ extension RepoContentView {
             .append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
                 viewModel.gitFetch()
             })
+        items.append(CommandPaletteItem(
+            title: "Rebase Working Copy onto Trunk",
+            icon: "arrow.uturn.up",
+            category: "Git",
+            keywords: ["rebase", "trunk", "main", "update"]
+        ) {
+            viewModel.rebase(rev: "@", dest: "trunk()", mode: .branch)
+        })
         items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
             viewModel.gitPush(bookmark: "")
         })

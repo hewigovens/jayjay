@@ -1,6 +1,6 @@
 use std::fs;
 
-use jayjay_core::{InsertPosition, Repo};
+use jayjay_core::{InsertPosition, RebaseMode, Repo};
 use jj_test::{init_jj_repo, run_git, run_jj_in};
 
 /// Defense in depth behind the shells' menu gating: these mutations rewrite through jj-lib directly, so core must refuse immutable targets itself.
@@ -30,7 +30,14 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
         ("describe", Box::new(|| repo.describe(rev, "rewritten"))),
         ("edit", Box::new(|| repo.edit(rev))),
         ("abandon", Box::new(|| repo.abandon(rev))),
-        ("rebase", Box::new(|| repo.rebase(rev, "@").map(drop))),
+        (
+            "rebase",
+            Box::new(|| repo.rebase(rev, "@", RebaseMode::Source).map(drop)),
+        ),
+        (
+            "rebase selected",
+            Box::new(|| repo.rebase_many(&[rev.to_owned(), "@".to_owned()], "root()")),
+        ),
         ("squash", Box::new(|| repo.squash(rev, Some("@")))),
         ("squash into", Box::new(|| repo.squash("@", Some(rev)))),
         (
@@ -69,7 +76,7 @@ fn rebase_onto_the_current_parent_records_nothing() {
     let before = repo.op_log().expect("op log");
     let commit_before = repo.show_summary("@").expect("show").info.commit_id.id;
 
-    repo.rebase("@", "main")
+    repo.rebase("@", "main", RebaseMode::Source)
         .expect("rebase onto the existing parent");
 
     assert_eq!(repo.op_log().expect("op log").len(), before.len());
@@ -91,7 +98,7 @@ fn rebase_onto_a_descendant_is_refused_without_recording_anything() {
 
     for dest in ["base", "@"] {
         let error = repo
-            .rebase("base", dest)
+            .rebase("base", dest, RebaseMode::Source)
             .expect_err("rebasing onto itself or a descendant must be refused");
         assert!(error.to_string().contains("descendants"), "{error}");
     }

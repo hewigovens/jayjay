@@ -174,6 +174,43 @@ fn rebase_many_preserves_dependencies_within_the_selection() {
     let selected_tip = change_by_description(&repo, "selected tip");
     assert_eq!(selected_root.parents, vec![destination.commit_id.id]);
     assert_eq!(selected_tip.parents, vec![selected_root.commit_id.id]);
+
+    let operation = repo.op_log().expect("op log")[0].id.clone();
+    repo.rebase_many(
+        &[selected_tip.change_id.id, selected_root.change_id.id],
+        &destination.change_id.id,
+    )
+    .expect("repeating the same rebase is a no-op");
+    assert_eq!(repo.op_log().expect("op log")[0].id, operation);
+}
+
+#[test]
+fn rebase_many_refuses_a_destination_below_the_selection() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "base"]);
+    run_jj_in(&repo_path, &["new", "-m", "selected"]);
+    run_jj_in(&repo_path, &["new", "-m", "between"]);
+    run_jj_in(&repo_path, &["new", "-m", "below"]);
+    run_jj_in(
+        &repo_path,
+        &["new", "subject(exact:base)", "-m", "also selected"],
+    );
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.op_log().expect("op log").len();
+
+    let error = repo
+        .rebase_many(
+            &[
+                change_by_description(&repo, "selected").change_id.id,
+                change_by_description(&repo, "also selected").change_id.id,
+            ],
+            &change_by_description(&repo, "below").change_id.id,
+        )
+        .expect_err("a destination descending from the selection must be refused");
+
+    assert!(error.to_string().contains("descendants"), "{error}");
+    assert_eq!(repo.op_log().expect("op log").len(), before);
 }
 
 #[test]

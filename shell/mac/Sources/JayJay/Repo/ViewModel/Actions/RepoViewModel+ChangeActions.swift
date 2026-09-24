@@ -161,8 +161,8 @@ extension RepoViewModel {
         perform { try $0.revertChange(rev: rev) }
     }
 
-    func rebase(rev: String, dest: String) {
-        perform { try $0.rebase(rev: rev, dest: dest) }
+    func rebase(rev: String, dest: String, mode: RebaseMode) {
+        perform { try $0.rebase(rev: rev, dest: dest, mode: mode) }
     }
 
     func rebase(revs: [String], dest: String) {
