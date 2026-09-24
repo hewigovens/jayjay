@@ -80,7 +80,7 @@
         <li><a href="#inspection">Inspection Tools</a></li>
         <li><a href="#palette">Command Palette</a></li>
         <li><a href="#settings">Tools &amp; Settings</a></li>
-        <li><a href="#gpui">GPUI Shell Beta</a></li>
+        <li><a href="#gpui">GPUI Shell</a></li>
         <li><a href="#shortcuts">Keyboard Shortcuts</a></li>
       </ol>
     </nav>
@@ -413,24 +413,34 @@
     </section>
 
     <section class="g" id="gpui">
-      <h2>GPUI Shell Beta <a href="#gpui">#</a></h2>
-      <p>Download the Linux AppImage for your architecture from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, make it executable, and launch it; beta assets are on the corresponding pre-release page. Arch Linux users can install the attached <code>jayjay-appimage</code> package with <code>sudo pacman -U /path/to/jayjay-appimage.pkg.tar.zst</code>, using the actual downloaded filename.</p>
-      <p>Stable releases are also in a signed pacman repo, so upgrades arrive with the rest of your system. Trust the key once, add the repo to <code>/etc/pacman.conf</code>, then install:</p>
+      <h2>GPUI Shell <a href="#gpui">#</a></h2>
+      <p>Download the Linux AppImage for your architecture from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, make it executable, and launch it; beta assets are on the corresponding pre-release page.</p>
+      <p>On Arch Linux (x86_64 and aarch64), use the signed pacman repo instead so stable upgrades arrive with the rest of your system. One command trusts the key, adds the repo, and prompts for a full system upgrade and installation:</p>
+      <pre><code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code></pre>
+      <p>Prefer reviewable steps? Trust the key once, append the repo to <code>/etc/pacman.conf</code> if it is not already present, then install:</p>
       <pre><code>curl -fsSL https://pkgs.hewig.dev/arch/jayjay-packages.asc -o /tmp/jayjay-packages.asc
 sudo pacman-key --add /tmp/jayjay-packages.asc
 sudo pacman-key --lsign-key BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF
-# append to /etc/pacman.conf
+if ! grep -q '^\[jayjay\]' /etc/pacman.conf; then
+  sudo tee -a /etc/pacman.conf &gt;/dev/null &lt;&lt;'EOF'
+
 [jayjay]
 SigLevel = Required DatabaseOptional
 Server = https://pkgs.hewig.dev/arch/$arch
-sudo pacman -Syu jayjay-appimage</code></pre>
+EOF
+fi
+if pacman -Q jayjay-appimage &gt;/dev/null 2&gt;&amp;1; then
+  sudo pacman -Syu
+else
+  sudo pacman -Syu jayjay-appimage
+fi</code></pre>
       <p>The repo carries stable releases only, for x86_64 and aarch64; a beta installed with <code>pacman -U</code> is correctly left in place until the repo's stable version is newer.</p>
       <ul>
         <li>To build from source, run <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
         <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, a Remote Only section in the bookmark picker, drag-and-drop rebase and bookmark moves in the DAG, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same seven Settings pages as macOS, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, New Workspace from Pull Request, a history sidebar that hides and shows from the View menu, diff-header line counts, synchronized and line-numbered conflict panes, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
         <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution including Use Ours and Use Theirs for submodule and other non-text conflicts, and the dedicated multi-file Diff Edit destinations.</li>
-        <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI Beta checklist</a>.</li>
+        <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI checklist</a>.</li>
       </ul>
     </section>
 

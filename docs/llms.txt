@@ -2,7 +2,7 @@
 
 > JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux — DAG graph, unified and side-by-side diffs, interdiff, diff edit, evolog, bookmark diff, and one-click conflict resolution. Fast, keyboard-friendly, built in Rust on jj-lib, with SwiftUI on macOS and GPUI on Linux.
 
-JayJay is a desktop client for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is free and source-available and wraps `jj-lib` directly rather than scraping the CLI. The macOS app requires macOS 26 or later. The Linux app, built on Zed's GPUI framework, shares the same Rust core, ships as an AppImage for x86_64 and aarch64 and as an Arch Linux package, and is in beta.
+JayJay is a desktop client for [Jujutsu (jj)](https://github.com/jj-vcs/jj), the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. It is free and source-available and wraps `jj-lib` directly rather than scraping the CLI. The macOS app requires macOS 26 or later. The Linux app, built on Zed's GPUI framework, shares the same Rust core and ships as an AppImage for x86_64 and aarch64 and as an Arch Linux package.
 
 Beta updates are opt-in via the Beta update channel in Settings. Anonymous build and OS statistics are enabled by default and can be disabled in Settings. JayJay sends no repository, file, or command data; rotating identifiers cannot link an installation across months.
 
@@ -21,11 +21,11 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 
 macOS: `brew install --cask hewigovens/tap/jayjay` (Homebrew 6.0 trusts the cask on first install), or download the signed, notarized app from GitHub Releases. Requires macOS 26 or later.
 
-Linux: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash` installs the latest AppImage for x86_64 or aarch64 into `~/.local` with a `jayjay` command and a desktop entry, after verifying its checksum; run it again to upgrade. On Arch Linux, add the pacman repo or install the attached `jayjay-appimage` package with `pacman -U` instead.
+Linux: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash` installs the latest AppImage for x86_64 or aarch64 into `~/.local` with a `jayjay` command and a desktop entry, after verifying its checksum; run it again to upgrade. On Arch Linux, use the signed pacman repo instead: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo`.
 
-Arch Linux: the pacman repo at `https://pkgs.hewig.dev/arch/` carries stable releases for x86_64 and aarch64. Add the signing key from `https://pkgs.hewig.dev/arch/jayjay-packages.asc` with `pacman-key --add`, locally sign `BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF`, append a `[jayjay]` section to `/etc/pacman.conf` with `SigLevel = Required DatabaseOptional` and `Server = https://pkgs.hewig.dev/arch/$arch`, then run `sudo pacman -Syu jayjay-appimage`.
+Arch Linux: the signed pacman repo at `https://pkgs.hewig.dev/arch/` carries stable releases for x86_64 and aarch64. One command trusts the key, adds the repo, and installs: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo`. Manual alternative: add the signing key from `https://pkgs.hewig.dev/arch/jayjay-packages.asc` with `pacman-key --add`, locally sign `BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF`, append a `[jayjay]` section to `/etc/pacman.conf` with `SigLevel = Required DatabaseOptional` and `Server = https://pkgs.hewig.dev/arch/$arch`, then run `sudo pacman -Syu jayjay-appimage` for a first install, or `sudo pacman -Syu` if already installed.
 
-Linux beta: download the AppImage for your architecture or the Arch package from the corresponding [GitHub release](https://github.com/hewigovens/jayjay/releases); betas are not in the pacman repo. GPUI macOS builds are for development.
+Linux prereleases: download the AppImage for your architecture or the Arch package from the corresponding [GitHub release](https://github.com/hewigovens/jayjay/releases); betas are not in the pacman repo. GPUI macOS builds are for development.
 
 ## Features
 
