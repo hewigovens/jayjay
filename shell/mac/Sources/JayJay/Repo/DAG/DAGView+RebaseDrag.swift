@@ -107,19 +107,27 @@ extension DAGView {
 
         activePane = .dag
         rebaseArmTask?.cancel()
+        let selection = selectionCommitIds(draggedWith: entry)
         rebaseDrag = DAGRebaseDragState(
             sourceCommitId: entry.change.commitId.id,
             sourceChangeId: entry.change.changeId.id,
             sourceRev: DAGRebaseGesturePolicy.revision(for: entry.change),
-            sourceLabel: DAGRebaseGesturePolicy.displayLabel(for: entry.change),
+            sourceLabel: selection.isEmpty
+                ? DAGRebaseGesturePolicy.displayLabel(for: entry.change)
+                : "\(selection.count) changes",
             sourceParents: entry.change.parents,
             startLocation: location,
-            armedAt: nil,
             phase: .pressing,
             location: seedLocation,
-            hoveredCommitId: nil
+            hoveredCommitId: nil,
+            selectionCommitIds: selection
         )
         scheduleRebaseArm(for: entry)
+    }
+
+    private func selectionCommitIds(draggedWith entry: GraphEntry) -> [String] {
+        guard selectedIds.count > 1, selectedIds.contains(entry.change.selectionRevision) else { return [] }
+        return entries.filter { selectedIds.contains($0.change.selectionRevision) }.map(\.change.commitId.id)
     }
 
     private func scheduleRebaseArm(for entry: GraphEntry) {
@@ -133,7 +141,6 @@ extension DAGView {
                       rebaseDrag.phase == .pressing
                 else { return }
                 rebaseDrag.phase = .armed
-                rebaseDrag.armedAt = .now
                 self.rebaseDrag = rebaseDrag
             }
         }
@@ -142,7 +149,13 @@ extension DAGView {
     private func beginDraggingIfNeeded() {
         guard var rebaseDrag, rebaseDrag.phase != .dragging else { return }
         rebaseDrag.phase = .dragging
-        rebaseDrag.descendantCommitIds = Set(descendantCommitIds(entries: entries, commitId: rebaseDrag.sourceCommitId))
+        if rebaseDrag.selectionCommitIds.isEmpty {
+            rebaseDrag.descendantCommitIds = Set(descendantCommitIds(entries: entries, commitId: rebaseDrag.sourceCommitId))
+        } else {
+            rebaseDrag.selectionTargets = Set(
+                entries.lazy.filter { capabilities.canRebase(onto: $0.change) }.map(\.change.commitId.id)
+            )
+        }
         self.rebaseDrag = rebaseDrag
     }
 

@@ -288,6 +288,122 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(try runJj(["log", "--no-graph", "-r", "divergent()", "-T", "change_id"], in: repoPath), "")
     }
 
+    func testSelectionDropRebasesEverySelectedChange() async throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        _ = try runJj(["describe", "-m", "base"], in: repoPath)
+        _ = try runJj(["new", "-m", "first"], in: repoPath)
+        _ = try runJj(["new", "-m", "second"], in: repoPath)
+        _ = try runJj(["new", "-m", "destination", "subject(exact:base)"], in: repoPath)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        let find = { (subject: String) in
+            try viewModel.repo.logGraph(revset: "all()").map(\.change).first {
+                $0.description.trimmingCharacters(in: .whitespacesAndNewlines) == subject
+            }
+        }
+        let first = try XCTUnwrap(find("first"))
+        let second = try XCTUnwrap(find("second"))
+        let destination = try XCTUnwrap(find("destination"))
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
+        let request = DAGRebaseRequest(
+            sourceRev: second.selectionRevision,
+            sourceChangeId: second.changeId.id,
+            sourceCommitId: second.commitId.id,
+            sourceLabel: "2 changes",
+            destRev: destination.selectionRevision,
+            destChangeId: destination.changeId.id,
+            destCommitId: destination.commitId.id,
+            destLabel: "destination",
+            selectionCommitIds: [second.commitId.id, first.commitId.id]
+        )
+
+        var message: String?
+        viewModel.rebase(request: request, onSuccess: { _, feedback in message = feedback.message })
+        try await waitUntil("the rebase finishes") { message != nil }
+
+        XCTAssertEqual(message, "Rebased 2 changes onto destination.")
+        let movedFirst = try XCTUnwrap(find("first"))
+        XCTAssertEqual(movedFirst.parents, [destination.commitId.id])
+        XCTAssertEqual(try XCTUnwrap(find("second")).parents, [movedFirst.commitId.id])
+    }
+
+    func testSelectionDropReportsConflictsOutsideTheDraggedChange() async throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        let file = URL(fileURLWithPath: repoPath).appendingPathComponent("shared.txt")
+        try "base\n".write(to: file, atomically: true, encoding: .utf8)
+        _ = try runJj(["describe", "-m", "base"], in: repoPath)
+        _ = try runJj(["new", "-m", "conflicting"], in: repoPath)
+        try "selected\n".write(to: file, atomically: true, encoding: .utf8)
+        _ = try runJj(["new", "-m", "clean", "subject(exact:base)"], in: repoPath)
+        _ = try runJj(["new", "-m", "destination", "subject(exact:base)"], in: repoPath)
+        try "destination\n".write(to: file, atomically: true, encoding: .utf8)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        let clean = try viewModel.repo.showSummary(rev: "subject(exact:clean)").info
+        let conflicting = try viewModel.repo.showSummary(rev: "subject(exact:conflicting)").info
+        let destination = try viewModel.repo.showSummary(rev: "@").info
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
+        let request = DAGRebaseRequest(
+            sourceRev: clean.selectionRevision,
+            sourceChangeId: clean.changeId.id,
+            sourceCommitId: clean.commitId.id,
+            sourceLabel: "2 changes",
+            destRev: destination.selectionRevision,
+            destChangeId: destination.changeId.id,
+            destCommitId: destination.commitId.id,
+            destLabel: "destination",
+            selectionCommitIds: [clean.commitId.id, conflicting.commitId.id]
+        )
+
+        var message: String?
+        viewModel.rebase(request: request, onSuccess: { _, feedback in message = feedback.message })
+        try await waitUntil("the rebase finishes") { message != nil }
+
+        XCTAssertFalse(try viewModel.repo.showSummary(rev: clean.changeId.id).info.hasConflict)
+        XCTAssertTrue(try viewModel.repo.showSummary(rev: conflicting.changeId.id).info.hasConflict)
+        XCTAssertEqual(message, "Rebased 2 changes onto destination. Conflicts need resolution.")
+    }
+
+    func testRebaseIsCancelledWhenADraggedChangeWasRewrittenMeanwhile() throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        _ = try runJj(["describe", "-m", "base"], in: repoPath)
+        _ = try runJj(["new", "-m", "first"], in: repoPath)
+        _ = try runJj(["new", "-m", "second"], in: repoPath)
+        _ = try runJj(["new", "-m", "destination", "subject(exact:base)"], in: repoPath)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        let before = try viewModel.repo.logGraph(revset: "all()").map(\.change)
+        let find = { (subject: String) in
+            try XCTUnwrap(before.first { $0.description.trimmingCharacters(in: .whitespacesAndNewlines) == subject })
+        }
+        let (first, second, destination) = try (find("first"), find("second"), find("destination"))
+        let request = DAGRebaseRequest(
+            sourceRev: second.selectionRevision,
+            sourceChangeId: second.changeId.id,
+            sourceCommitId: second.commitId.id,
+            sourceLabel: "2 changes",
+            destRev: destination.selectionRevision,
+            destChangeId: destination.changeId.id,
+            destCommitId: destination.commitId.id,
+            destLabel: "destination",
+            selectionCommitIds: [second.commitId.id, first.commitId.id]
+        )
+        try viewModel.repo.describe(rev: first.changeId.id, message: "first, reworded")
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
+
+        var failure: String?
+        viewModel.rebase(request: request, onSuccess: { _, _ in XCTFail("stale rebase ran") }, onFailure: { _, message in failure = message })
+
+        XCTAssertEqual(failure, "Rebase cancelled: the changes moved while confirming")
+        XCTAssertEqual(try runJj(["log", "--no-graph", "-r", "parents(\(first.changeId.id))", "-T", "description"], in: repoPath), "base")
+    }
+
     func testCombinedComparisonCannotReverse() throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.compareFromId = "roots"

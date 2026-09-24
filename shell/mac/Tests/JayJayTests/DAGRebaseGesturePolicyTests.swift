@@ -214,6 +214,34 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
         XCTAssertNil(DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: state, targetCommitId: "other-commit"))
     }
 
+    func testDraggingPartOfASelectionTargetsTheWholeSelection() {
+        let source = makeEntry(changeId: "change", commitId: "source", description: "feat-x", isImmutable: false)
+        let allowed = makeEntry(changeId: "main-change", commitId: "main-commit", description: "main", isImmutable: false)
+        let refused = makeEntry(changeId: "other-change", commitId: "other-commit", description: "other", isImmutable: false)
+        var state = makeDragState(phase: .dragging)
+        state.selectionCommitIds = ["change", "sibling"]
+        state.selectionTargets = ["main-commit"]
+
+        let request = DAGRebaseGesturePolicy.dropRequest(
+            rebaseDrag: state,
+            previewTargetCommitId: nil,
+            hoveredCommitId: "main-commit",
+            entries: [source, allowed, refused]
+        )
+        XCTAssertEqual(request?.selectionCommitIds, ["change", "sibling"])
+        XCTAssertNil(DAGRebaseGesturePolicy.dropRequest(
+            rebaseDrag: state,
+            previewTargetCommitId: nil,
+            hoveredCommitId: "other-commit",
+            entries: [source, allowed, refused]
+        ))
+        XCTAssertNil(DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: state, targetCommitId: "main-commit"))
+        XCTAssertEqual(
+            DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: state, targetCommitId: "other-commit"),
+            "Can't rebase the selection here"
+        )
+    }
+
     private func makeDragState(
         phase: DAGRebasePhase,
         startLocation: CGPoint = .zero,
@@ -226,7 +254,6 @@ final class DAGRebaseGesturePolicyTests: XCTestCase {
             sourceLabel: "feat-x",
             sourceParents: sourceParents,
             startLocation: startLocation,
-            armedAt: phase == .pressing ? nil : Date(timeIntervalSinceReferenceDate: 10),
             phase: phase,
             location: startLocation,
             hoveredCommitId: nil
@@ -360,7 +387,6 @@ final class BookmarkDragGesturePolicyTests: XCTestCase {
             sourceCommitId: sourceCommitId,
             isConflicted: isConflicted,
             startLocation: .zero,
-            armedAt: phase == .pressing ? nil : Date(timeIntervalSinceReferenceDate: 10),
             phase: phase,
             location: .zero,
             hoveredCommitId: nil
