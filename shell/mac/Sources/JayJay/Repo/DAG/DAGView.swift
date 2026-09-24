@@ -88,7 +88,7 @@ struct DAGView: View {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 0) {
-                            ForEach(Array(entries.enumerated()), id: \.element.change.commitId) { index, entry in
+                            ForEach(Array(entries.enumerated()), id: \.element.change.selectionRevision) { index, entry in
                                 let rowId = entry.change.selectionRevision
                                 let rowViewModel = viewModel.rowViewModel(
                                     for: entry,
