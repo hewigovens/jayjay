@@ -10,6 +10,23 @@ extension RepoViewModel {
         }
         evologRev = rev
         evologEntries = nil
+        loadEvolog(rev: rev)
+    }
+
+    func restoreEvologVersion(_ commitId: String) {
+        guard let rev = evologRev else { return }
+        performResult(
+            selecting: rev,
+            gatedBy: RepoActionGate(
+                state: \.isRestoringEvologVersion,
+                busyMessage: "A version is already being restored"
+            ),
+            onSuccess: { viewModel, _ in viewModel.loadEvolog(rev: rev) },
+            { try $0.restoreVersion(rev: rev, version: commitId) }
+        )
+    }
+
+    private func loadEvolog(rev: String) {
         runRepoTask { repo in
             try repo.evolog(rev: rev)
         } onSuccess: { vm, entries in

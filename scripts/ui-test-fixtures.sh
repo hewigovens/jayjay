@@ -227,6 +227,17 @@ fixture_evolog_hide_snapshots() {
   )
 }
 
+fixture_evolog_restore() {
+  copy_fixture simple evolog-restore
+  (
+    cd "$fixtures/evolog-restore"
+    echo "restored content" > wip1.txt
+    jj describe -m "restore base"
+    echo "current content" > wip1.txt
+    jj st
+  )
+}
+
 # One boundary edit leaves exactly one 53-line unchanged region for collapsed-context expansion.
 fixture_context_expansion() {
   jj git init --colocate "$fixtures/context-expansion"
@@ -448,6 +459,7 @@ fixture_formats
 fixture_image_diff
 fixture_review_notes
 fixture_evolog_hide_snapshots
+fixture_evolog_restore
 fixture_context_expansion
 fixture_complex
 fixture_conflict

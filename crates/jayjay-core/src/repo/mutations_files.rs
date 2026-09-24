@@ -1,4 +1,8 @@
+use std::sync::Arc;
+
+use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId;
+use jj_lib::repo::ReadonlyRepo;
 
 use super::Repo;
 use super::path_operands::{fileset_literal, gitignore_pattern, reject_control_chars};
@@ -8,16 +12,33 @@ use crate::types::*;
 impl Repo {
     /// Restore `paths` in `rev` from `from`'s tree when given (`jj restore --from` semantics, used to pick one parent of a merge), else from the auto-merged parent tree. `rev` is always the change being rewritten; `from` is only ever a content source.
     pub fn restore_files(&self, rev: &str, from: Option<&str>, paths: &[String]) -> CoreResult<()> {
+        self.restore(rev, paths, |repo| {
+            from.map(|f| {
+                self.resolve_commit(repo, f)
+                    .and_then(|commit| self.follow_rewrites(repo, commit, f))
+            })
+            .transpose()
+        })
+    }
+
+    /// Replace `rev`'s whole tree with `version`'s. Evolog versions are hidden predecessors, so `version` is taken exactly as named instead of following its rewrites to the current version.
+    pub fn restore_version(&self, rev: &str, version: &str) -> CoreResult<()> {
+        self.restore(rev, &[], |repo| {
+            self.resolve_commit(repo, version).map(Some)
+        })
+    }
+
+    fn restore(
+        &self,
+        rev: &str,
+        paths: &[String],
+        resolve_source: impl FnOnce(&Arc<ReadonlyRepo>) -> CoreResult<Option<Commit>>,
+    ) -> CoreResult<()> {
         self.refresh_working_copy()?;
 
         let repo = self.get_repo();
         let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
-        let source = from
-            .map(|f| {
-                self.resolve_commit(&repo, f)
-                    .and_then(|commit| self.follow_rewrites(&repo, commit, f))
-            })
-            .transpose()?;
+        let source = resolve_source(&repo)?;
         let is_wc = repo
             .view()
             .get_wc_commit_id(self.workspace_name.as_ref())
@@ -41,14 +62,17 @@ impl Repo {
                 true,
                 "rewrite commit",
                 move |repo, commit| {
-                    let old_tree = commit.tree();
                     let source_tree = match &source {
                         Some(source) => source.tree(),
                         None => self.load_parent_tree(repo, commit, "load parent tree")?,
                     };
+                    if repo_paths.is_empty() {
+                        return Ok(source_tree);
+                    }
                     let matcher = jj_lib::matchers::FilesMatcher::new(
                         repo_paths.iter().map(|path| path.as_ref()),
                     );
+                    let old_tree = commit.tree();
                     let new_tree = jj_lib::rewrite::restore_tree(
                         &source_tree,
                         &old_tree,

@@ -10,6 +10,9 @@ struct EvologView: View {
     @Environment(AppSettings.self) private var appSettings
     @State private var entryListWidth = PaneLayout.secondaryPaneDefault
     @State private var fileListWidth = PaneLayout.secondaryPaneDefault
+    let target: ChangeInfo?
+    let isRestoring: Bool
+    let onRestore: (String) -> Void
     let onDismiss: () -> Void
 
     init(
@@ -17,11 +20,17 @@ struct EvologView: View {
         changeId: String,
         repo: JayJayRepo?,
         diffStore: DiffStore,
+        target: ChangeInfo?,
+        isRestoring: Bool,
+        onRestore: @escaping (String) -> Void,
         onDismiss: @escaping () -> Void
     ) {
         _viewModel = State(wrappedValue: EvologViewModel(
             entries: entries, changeId: changeId, repo: repo, diffStore: diffStore
         ))
+        self.target = target
+        self.isRestoring = isRestoring
+        self.onRestore = onRestore
         self.onDismiss = onDismiss
     }
 
@@ -194,15 +203,36 @@ struct EvologView: View {
     @ViewBuilder
     private func copyMenu(commitId: String) -> some View {
         Button {
+            onRestore(commitId)
+        } label: {
+            Label("Restore this version", systemImage: "arrow.uturn.backward")
+        }
+        .disabled(isRestoring || target?.isImmutable == true)
+        .help(restoreHelp)
+        Button {
             viewModel.copyCommitId(commitId)
         } label: {
             Label("Copy Commit ID", systemImage: "doc.on.doc")
         }
         Button {
-            viewModel.copyRestoreCommand(commitId)
+            viewModel.copyRestoreCommand(commitId, into: restoreIntoRev)
         } label: {
             Label("Copy ‘jj restore’ command", systemImage: "terminal")
         }
+    }
+
+    private var restoreIntoRev: String {
+        if target?.isWorkingCopy == true {
+            return "@"
+        }
+        return target?.selectionRevision ?? viewModel.changeId
+    }
+
+    private var restoreHelp: String {
+        if target?.isImmutable == true {
+            return "Immutable changes cannot be restored"
+        }
+        return "Restore this version into \(restoreIntoRev)"
     }
 
     private var diffPane: some View {

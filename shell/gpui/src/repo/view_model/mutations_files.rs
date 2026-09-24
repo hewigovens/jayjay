@@ -21,6 +21,19 @@ impl RepoViewModel {
         )
     }
 
+    pub(crate) fn restore_version(
+        &mut self,
+        rev: String,
+        version: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.restore_version(&rev, &version),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
     /// Delete working-copy files from disk; jj picks the deletions up on the snapshot the refresh triggers.
     pub(crate) fn delete_files(
         &mut self,

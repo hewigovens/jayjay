@@ -1,17 +1,19 @@
 use gpui::{
     Anchor, AnyElement, ClipboardItem, Entity, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, anchored, deferred, div,
-    px, rgb,
+    MouseDownEvent, ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled,
+    anchored, deferred, div, px, rgb,
 };
 
 use super::EvologView;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
-use crate::ui::primitives::icon_label;
+use crate::ui::primitives::{icon_label, text_tooltip};
 
 pub(super) struct EvologContextMenuState {
     pub anchor: Point<Pixels>,
     pub commit_id: String,
+    pub into_rev: String,
+    pub is_immutable: bool,
 }
 
 pub(super) fn render_context_menu(
@@ -42,7 +44,7 @@ pub(super) fn render_context_menu(
         .anchor(Anchor::TopLeft)
         .position(state.anchor)
         .snap_to_window_with_margin(px(6.))
-        .child(menu_panel(&state.commit_id, theme, view));
+        .child(menu_panel(state, theme, view));
 
     deferred(
         div()
@@ -57,8 +59,61 @@ pub(super) fn render_context_menu(
     .into_any_element()
 }
 
-fn menu_panel(commit_id: &str, theme: &Theme, view: &Entity<EvologView>) -> AnyElement {
-    div()
+#[derive(Clone)]
+enum EvologMenuAction {
+    Copy(String),
+    Restore(String),
+}
+
+struct EvologMenuItem {
+    selector: &'static str,
+    label: &'static str,
+    icon: &'static str,
+    action: EvologMenuAction,
+    tooltip: Option<SharedString>,
+    enabled: bool,
+}
+
+fn menu_panel(
+    state: &EvologContextMenuState,
+    theme: &Theme,
+    view: &Entity<EvologView>,
+) -> AnyElement {
+    let restore_help: SharedString = if state.is_immutable {
+        "Immutable changes cannot be restored".into()
+    } else {
+        format!("Restore this version into {}", state.into_rev).into()
+    };
+    let items = [
+        EvologMenuItem {
+            selector: "evolog-context-restore",
+            label: "Restore this version",
+            icon: glyph::ARROW_CLOCKWISE,
+            action: EvologMenuAction::Restore(state.commit_id.clone()),
+            tooltip: Some(restore_help),
+            enabled: !state.is_immutable,
+        },
+        EvologMenuItem {
+            selector: "evolog-context-copy-commit",
+            label: "Copy Commit ID",
+            icon: glyph::COPY,
+            action: EvologMenuAction::Copy(state.commit_id.clone()),
+            tooltip: None,
+            enabled: true,
+        },
+        EvologMenuItem {
+            selector: "evolog-context-copy-restore",
+            label: "Copy ‘jj restore’ command",
+            icon: glyph::TERMINAL,
+            action: EvologMenuAction::Copy(format!(
+                "jj restore --from {} --into {}",
+                state.commit_id, state.into_rev
+            )),
+            tooltip: None,
+            enabled: true,
+        },
+    ];
+    let mut col = div()
         .flex()
         .flex_col()
         .min_w(px(210.))
@@ -66,39 +121,22 @@ fn menu_panel(commit_id: &str, theme: &Theme, view: &Entity<EvologView>) -> AnyE
         .bg(rgb(theme.detail_bg))
         .border_1()
         .border_color(rgb(theme.border))
-        .rounded_sm()
-        .child(menu_row(
-            0,
-            "evolog-context-copy-commit",
-            "Copy Commit ID",
-            glyph::COPY,
-            commit_id.to_owned(),
-            theme,
-            view,
-        ))
-        .child(menu_row(
-            1,
-            "evolog-context-copy-restore",
-            "Copy ‘jj restore’ command",
-            glyph::TERMINAL,
-            format!("jj restore --from {commit_id} --into @"),
-            theme,
-            view,
-        ))
-        .into_any_element()
+        .rounded_sm();
+    for (ix, item) in items.iter().enumerate() {
+        col = col.child(menu_row(ix, item, theme, view));
+    }
+    col.into_any_element()
 }
 
 fn menu_row(
     index: usize,
-    selector: &'static str,
-    label: &'static str,
-    icon: &'static str,
-    value: String,
+    item: &EvologMenuItem,
     theme: &Theme,
     view: &Entity<EvologView>,
 ) -> AnyElement {
     let view = view.clone();
-    div()
+    let selector = item.selector;
+    let row = div()
         .id(("evolog-context-menu-row", index))
         .debug_selector(move || selector.to_owned())
         .flex()
@@ -108,19 +146,40 @@ fn menu_row(
         .px(px(10.))
         .py(px(5.))
         .text_size(ui_font_size(12.))
-        .text_color(rgb(theme.fg))
-        .cursor_pointer()
-        .hover(|style| style.bg(rgb(theme.selected_bg)))
-        .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
-            cx.stop_propagation();
-            cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
-            view.update(cx, |this, cx| this.close_context_menu(cx));
-        })
         .child(icon_label(
-            icon,
-            SharedString::from(label),
+            item.icon,
+            SharedString::from(item.label),
             12.,
             theme.fg_dim,
-        ))
-        .into_any_element()
+        ));
+    let row = match &item.tooltip {
+        Some(help) => row.tooltip(text_tooltip(help.clone())),
+        None => row,
+    };
+    if item.enabled {
+        let action = item.action.clone();
+        row.text_color(rgb(theme.fg))
+            .cursor_pointer()
+            .hover(|style| style.bg(rgb(theme.selected_bg)))
+            .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
+                cx.stop_propagation();
+                match action.clone() {
+                    EvologMenuAction::Copy(value) => {
+                        cx.write_to_clipboard(ClipboardItem::new_string(value));
+                        view.update(cx, |this, cx| this.close_context_menu(cx));
+                    }
+                    EvologMenuAction::Restore(commit_id) => {
+                        view.update(cx, |this, cx| {
+                            this.restore_version(commit_id.clone(), cx);
+                            this.close_context_menu(cx);
+                        });
+                    }
+                }
+            })
+            .into_any_element()
+    } else {
+        row.text_color(rgb(theme.fg_faint))
+            .opacity(0.45)
+            .into_any_element()
+    }
 }

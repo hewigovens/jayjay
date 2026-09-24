@@ -136,6 +136,14 @@ fn evolog_modifier_selection_diffs_at_most_two_versions(cx: &mut TestAppContext)
         snapshot_working_copy(&fixture, &format!("version {index}\n"));
     }
 
+    let working_copy = String::from_utf8(
+        run_jj_in(
+            &fixture.path,
+            &["log", "--no-graph", "-r", "@", "-T", "change_id"],
+        )
+        .stdout,
+    )
+    .expect("utf-8 change id");
     let mut evolog_cx = open_evolog(&fixture, cx);
     click_hide_toggle(&mut evolog_cx);
     let evolog = evolog_window(&evolog_cx);
@@ -190,7 +198,10 @@ fn evolog_modifier_selection_diffs_at_most_two_versions(cx: &mut TestAppContext)
             .cx
             .read_from_clipboard()
             .and_then(|item| item.text()),
-        Some(format!("jj restore --from {} --into @", before_reverse.0))
+        Some(format!(
+            "jj restore --from {} --into {working_copy}",
+            before_reverse.0
+        ))
     );
 
     let version_id = evolog_cx
@@ -344,6 +355,56 @@ fn evolog_pane_widths_survive_version_switch_and_reopen(cx: &mut TestAppContext)
         entry_resized,
         "the file list should start from the shared pane width, not its own last drag"
     );
+}
+
+#[gpui::test]
+fn evolog_restore_version_replaces_working_copy_tree(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["describe", "-m", "described"]);
+    for index in 0..4 {
+        snapshot_working_copy(&fixture, &format!("version {index}\n"));
+    }
+
+    let (repo_view, repo_cx) = open_fixture(&fixture, cx);
+    let mut evolog_cx = show_evolog(&repo_view, repo_cx);
+    click_hide_toggle(&mut evolog_cx);
+    let evolog = evolog_window(&evolog_cx);
+
+    evolog
+        .update(&mut evolog_cx.cx, |view, _, cx| {
+            view.select_version(2, Modifiers::default(), cx);
+        })
+        .expect("select older version");
+    settle_visual(&mut evolog_cx);
+    let older = evolog
+        .read_with(&evolog_cx.cx, |view, _| view.selected_endpoints())
+        .expect("read endpoints")
+        .expect("selected endpoints")
+        .0;
+
+    let row = evolog_cx
+        .debug_bounds(selector(format!("evolog-row-{older}")))
+        .expect("older version row");
+    evolog_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(&mut evolog_cx);
+    let restore = evolog_cx
+        .debug_bounds("evolog-context-restore")
+        .expect("restore menu item");
+    evolog_cx.simulate_click(restore.center(), Modifiers::default());
+    settle_visual(&mut evolog_cx);
+
+    assert_eq!(
+        std::fs::read_to_string(fixture.path.join("wip1.txt")).expect("read restored file"),
+        "version 1\n"
+    );
+    evolog
+        .read_with(&evolog_cx.cx, |view, _| {
+            assert!(
+                view.selected_endpoints().is_none(),
+                "the restored version shifts every index, so the old comparison must not survive"
+            );
+        })
+        .expect("read endpoints after restore");
 }
 
 fn secondary_modifiers() -> Modifiers {
