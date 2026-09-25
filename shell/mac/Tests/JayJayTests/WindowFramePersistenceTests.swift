@@ -27,7 +27,7 @@ final class WindowFramePersistenceTests: XCTestCase {
         XCTAssertEqual(window.frame, saved, "the saved frame must be in place before the window is ordered front")
     }
 
-    func testObserversStopAtClose() throws {
+    func testClosedWindowStopsReportingFramesUntilShownAgain() throws {
         _ = NSApplication.shared
         let (defaults, key) = try makeIsolatedDefaults()
         let window = NSWindow(
@@ -50,6 +50,11 @@ final class WindowFramePersistenceTests: XCTestCase {
         window.close()
         window.setFrame(NSRect(x: 10, y: 10, width: 200, height: 150), display: false)
         XCTAssertEqual(WindowFrameStore.frame(key: key, defaults: defaults), moved, "a closed window must stop reporting frames")
+
+        window.orderFront(nil)
+        let reshown = NSRect(x: 160, y: 130, width: 340, height: 220)
+        window.setFrame(reshown, display: false)
+        XCTAssertEqual(WindowFrameStore.frame(key: key, defaults: defaults), reshown, "a Window scene reshows the same window, which must keep persisting")
     }
 
     func testFrameChangesAfterTheRunLoopIdlesAreTheUsers() throws {

@@ -1,6 +1,6 @@
 use std::time::Duration;
 
-use crate::harness::{install_test_globals, settle_visual};
+use crate::harness::{drag_handle, install_test_globals, pane_width, settle_visual};
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_core::repositories::normalize_repository_path;
 use jayjay_gpui::app::config;
@@ -161,4 +161,42 @@ fn settle_slide(visual: &mut VisualTestContext) {
         .advance_clock(Duration::from_millis(200));
     visual.update(|window, cx| window.simulate_next_frame(cx));
     settle_visual(visual);
+}
+
+#[gpui::test]
+fn dragging_the_recent_panel_edge_resizes_it_and_the_width_persists(cx: &mut TestAppContext) {
+    let recent = tempfile::tempdir().expect("recent repository");
+    install_test_globals(cx);
+    cx.update(|cx| config::update(cx, |cfg| cfg.record_opened_repo(recent.path())));
+    cx.update(RepoListWindow::open);
+    let window = cx.windows().last().copied().expect("repo list window");
+    let mut visual = VisualTestContext::from_window(window, cx);
+    visual.simulate_resize(size(px(1100.), px(600.)));
+    settle_slide(&mut visual);
+    let dragged = pane_width(&mut visual, "repo-list-recent-panel") + 150.;
+
+    drag_handle(&mut visual, "repo-list-recent-resize-handle", 150.);
+    assert_eq!(pane_width(&mut visual, "repo-list-recent-panel"), dragged);
+    assert_eq!(
+        visual
+            .cx
+            .update(|cx| config::current(cx).layout.recent_repos_panel_width),
+        dragged
+    );
+
+    visual.simulate_resize(size(px(800.), px(600.)));
+    settle_visual(&mut visual);
+    let detail = pane_width(&mut visual, "repo-list-detail");
+    assert!(
+        detail >= 480.,
+        "the panel gives way before the pinned column narrows: {detail}"
+    );
+
+    visual.update(|window, _| window.remove_window());
+    cx.update(RepoListWindow::open);
+    let window = cx.windows().last().copied().expect("reopened list");
+    let mut visual = VisualTestContext::from_window(window, cx);
+    visual.simulate_resize(size(px(1100.), px(600.)));
+    settle_slide(&mut visual);
+    assert_eq!(pane_width(&mut visual, "repo-list-recent-panel"), dragged);
 }

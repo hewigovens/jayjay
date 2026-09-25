@@ -4,7 +4,7 @@ use gpui::{
 };
 use jayjay_core::repositories::RepoListGroups;
 
-use super::view::PanelSlide;
+use super::panel::RecentPanel;
 use crate::app::config::{self, AppConfigStore};
 use crate::app::repositories::{self, StoreHandle};
 use crate::app::theme::{Theme, observe_window_appearance};
@@ -24,8 +24,7 @@ pub struct RepoListWindow {
     pub(super) recent: Vec<String>,
     pub(super) groups: RepoListGroups,
     pub(super) grouping_generation: u64,
-    pub(super) panel_shown: Option<bool>,
-    pub(super) panel_slide: Option<PanelSlide>,
+    pub(super) panel: RecentPanel,
 }
 
 impl RepoListWindow {
@@ -88,8 +87,9 @@ impl RepoListWindow {
                             recent: Vec::new(),
                             groups: RepoListGroups::default(),
                             grouping_generation: 0,
-                            panel_shown: None,
-                            panel_slide: None,
+                            panel: RecentPanel::new(
+                                config::current(cx).layout.recent_repos_panel_width,
+                            ),
                         }
                     })
                 },

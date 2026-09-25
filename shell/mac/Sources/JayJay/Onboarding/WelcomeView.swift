@@ -17,16 +17,13 @@ struct WelcomeView: View {
 
         NavigationSplitView(columnVisibility: recentPanelVisibility) {
             recentPanel(model.groups.recent)
-                .navigationSplitViewColumnWidth(280)
+                .navigationSplitViewColumnWidth(min: 220, ideal: 280, max: 560)
         } detail: {
             detail(pinned: model.groups.pinned)
+                // A column minimum stops the divider; a frame minimum let the split view overflow the window and clip the panel.
+                .navigationSplitViewColumnWidth(min: Self.minimumSize.width, ideal: Self.minimumSize.width)
         }
-        .frame(
-            minWidth: Self.minimumSize.width,
-            maxWidth: .infinity,
-            minHeight: Self.minimumSize.height,
-            maxHeight: .infinity
-        )
+        .frame(maxWidth: .infinity, minHeight: Self.minimumSize.height, maxHeight: .infinity)
         .onAppear { repositoryStore.reload() }
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             repositoryStore.reload()
@@ -96,7 +93,7 @@ struct WelcomeView: View {
                 }
             }
         }
-        .frame(minWidth: Self.minimumSize.width, maxWidth: .infinity, maxHeight: .infinity)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var header: some View {
@@ -187,6 +184,7 @@ struct WelcomeView: View {
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(path)
 
             pinAndRemoveButtons(path: path, pinned: pinned)
         }
@@ -216,22 +214,26 @@ struct WelcomeView: View {
     private func workspaceEntryRow(name: String, path: String, nested: Bool) -> some View {
         HStack(spacing: 8) {
             Button { onOpen(path) } label: {
-                HStack(spacing: 6) {
+                HStack(alignment: .top, spacing: 6) {
                     Image(systemName: "folder")
                         .jayjayFont(10)
                         .foregroundStyle(.secondary)
-                    Text(name)
-                        .jayjayFont(12, weight: .medium)
-                    Text(path)
-                        .jayjayFont(10)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
+                        .padding(.top, 2)
+                    VStack(alignment: .leading, spacing: 2) {
+                        Text(name)
+                            .jayjayFont(12, weight: .medium)
+                        Text(path)
+                            .jayjayFont(10)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                    }
                 }
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .contentShape(Rectangle())
             }
             .buttonStyle(.plain)
+            .help(path)
 
             if nested {
                 pinAndRemoveButtons(path: path, pinned: repositoryStore.paths.contains(path))

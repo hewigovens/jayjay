@@ -46,19 +46,16 @@ struct WindowFramePersistence: NSViewRepresentable {
                 NSWindow.didEndLiveResizeNotification,
                 NSWindow.willCloseNotification
             ]
-            // Weak: the blocks live in NotificationCenter and would keep a closed window alive.
+            // Weak: the blocks live in NotificationCenter and would keep a closed window alive. Kept past a close: a Window scene reshows the same window without attaching again.
             for name in names {
-                coordinator.observers.append(center.addObserver(forName: name, object: window, queue: .main) { [weak window, weak coordinator] notification in
+                coordinator.observers.append(center.addObserver(forName: name, object: window, queue: .main) { [weak window, weak coordinator] _ in
                     guard let window else { return }
                     if coordinator?.settling == true {
                         if let restored, window.frame != restored {
                             window.setFrame(restored, display: false)
                         }
-                    } else if !window.inLiveResize {
+                    } else if !window.inLiveResize, window.isVisible {
                         WindowFrameStore.save(window.frame, key: key, defaults: defaults)
-                    }
-                    if notification.name == NSWindow.willCloseNotification {
-                        coordinator?.removeObservers()
                     }
                 })
             }

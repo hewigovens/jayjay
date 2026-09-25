@@ -1,10 +1,10 @@
-use std::time::{Duration, Instant};
-
 use gpui::{
-    Context, Div, InteractiveElement, IntoElement, ParentElement, Render, Stateful,
-    StatefulInteractiveElement, Styled, Window, div, ease_in_out, px, rgb,
+    AnyElement, Context, Div, InteractiveElement, IntoElement, MouseButton, MouseMoveEvent,
+    MouseUpEvent, ParentElement, Render, Stateful, StatefulInteractiveElement, Styled, Window, div,
+    px, rgb,
 };
 
+use super::panel::PanelFrame;
 use super::window::{DETAIL_WIDTH, RepoListWindow};
 use super::{header, sections};
 use crate::app::actions::CloseWindow;
@@ -14,24 +14,9 @@ use crate::app::theme::Theme;
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{divider_h, icon_button, text_tooltip};
+use crate::ui::resize_handle::resize_handle;
 
-const PANEL_WIDTH: f32 = 270.;
-const PANEL_SLIDE: Duration = Duration::from_millis(180);
 const TOP_INSET: f32 = 38.;
-
-#[derive(Clone, Copy)]
-pub(super) struct PanelSlide {
-    started: Instant,
-    from: f32,
-    to: f32,
-}
-
-impl PanelSlide {
-    fn width_at(&self, now: Instant) -> f32 {
-        let progress = (now - self.started).as_secs_f32() / PANEL_SLIDE.as_secs_f32();
-        self.from + (self.to - self.from) * ease_in_out(progress.min(1.))
-    }
-}
 
 impl Render for RepoListWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
@@ -43,14 +28,16 @@ impl Render for RepoListWindow {
             div().flex().flex_1().min_h_0().child(onboarding.clone())
         } else {
             let panel_shown = cfg.layout.recent_repos_panel;
-            let panel_width = self.panel_width(panel_shown, window, cx);
+            let panel = self
+                .panel_frame(panel_shown, window, cx)
+                .map(|frame| self.recent_panel(&pinned, frame, &t, cx));
             div()
                 .relative()
                 .flex()
                 .flex_1()
                 .flex_row()
                 .min_h_0()
-                .children(panel_width.map(|width| self.recent_panel(&pinned, width, &t)))
+                .children(panel.into_iter().flatten())
                 .child(self.detail(&pinned, &t))
                 .child(panel_toggle(panel_shown, &t))
         };
@@ -63,6 +50,14 @@ impl Render for RepoListWindow {
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| {
                 window.remove_window();
             }))
+            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
+                let viewport_width = f32::from(window.viewport_size().width);
+                view.drag_panel_to(f32::from(ev.position.x), viewport_width, cx);
+            }))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(|view, _: &MouseUpEvent, _, cx| view.end_panel_drag(cx)),
+            )
             .size_full()
             .flex()
             .flex_col()
@@ -73,65 +68,42 @@ impl Render for RepoListWindow {
 }
 
 impl RepoListWindow {
-    fn panel_width(
-        &mut self,
-        shown: bool,
-        window: &mut Window,
+    fn recent_panel(
+        &self,
+        pinned: &[String],
+        frame: PanelFrame,
+        t: &Theme,
         cx: &mut Context<Self>,
-    ) -> Option<f32> {
-        let now = cx.background_executor().now();
-        let to = if shown { PANEL_WIDTH } else { 0. };
-        if self
-            .panel_shown
-            .replace(shown)
-            .is_some_and(|was| was != shown)
-            && !cx.reduce_motion()
-        {
-            let from = self
-                .panel_slide
-                .map_or(PANEL_WIDTH - to, |slide| slide.width_at(now));
-            self.panel_slide = Some(PanelSlide {
-                started: now,
-                from,
-                to,
-            });
-        }
-        if self
-            .panel_slide
-            .is_some_and(|slide| now - slide.started >= PANEL_SLIDE)
-        {
-            self.panel_slide = None;
-        }
-        match self.panel_slide {
-            Some(slide) => {
-                window.request_animation_frame();
-                Some(slide.width_at(now))
-            }
-            None => shown.then_some(PANEL_WIDTH),
-        }
-    }
-
-    fn recent_panel(&self, pinned: &[String], width: f32, t: &Theme) -> Div {
-        div().flex_none().overflow_hidden().w(px(width)).child(
-            div()
-                .debug_selector(|| "repo-list-recent-panel".to_owned())
-                .flex()
-                .flex_col()
-                .w(px(PANEL_WIDTH))
-                .h_full()
-                .ml(px(width - PANEL_WIDTH))
-                .pt(px(TOP_INSET))
-                .bg(rgb(t.header_bg))
-                .border_r_1()
-                .border_color(rgb(t.border))
-                .child(
-                    scroll_column("repo-list-recent-scroll").child(
-                        sections::recent_section(self.groups.recent.clone(), pinned, t)
-                            .px(px(14.))
-                            .py(px(18.)),
+    ) -> [AnyElement; 2] {
+        let panel = div()
+            .flex_none()
+            .overflow_hidden()
+            .w(px(frame.visible))
+            .child(
+                div()
+                    .debug_selector(|| "repo-list-recent-panel".to_owned())
+                    .flex()
+                    .flex_col()
+                    .w(px(frame.full))
+                    .h_full()
+                    .ml(px(frame.visible - frame.full))
+                    .pt(px(TOP_INSET))
+                    .bg(rgb(t.header_bg))
+                    .child(
+                        scroll_column("repo-list-recent-scroll").child(
+                            sections::recent_section(self.groups.recent.clone(), pinned, t)
+                                .px(px(14.))
+                                .py(px(18.)),
+                        ),
                     ),
-                ),
-        )
+            );
+        let handle = resize_handle(
+            "repo-list-recent-resize-handle",
+            t,
+            |view: &mut Self, x, viewport_width, cx| view.start_panel_drag(x, viewport_width, cx),
+            cx,
+        );
+        [panel.into_any_element(), handle]
     }
 
     fn detail(&self, pinned: &[String], t: &Theme) -> Div {
