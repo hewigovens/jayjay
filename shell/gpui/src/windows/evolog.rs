@@ -1,7 +1,6 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use chrono::{DateTime, Local, TimeZone};
 use gpui::{
     AnyElement, App, AppContext, Bounds, ClickEvent, Context, Entity, FocusHandle, Focusable,
     InteractiveElement, IntoElement, MouseButton, MouseDownEvent, ParentElement, Pixels, Point,
@@ -17,7 +16,7 @@ use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
-use crate::repo::window::{compact_id, id_cell};
+use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
@@ -477,14 +476,6 @@ fn evolog_row(
                 )),
         )
         .into_any_element()
-}
-
-fn format_when(ts: i64) -> String {
-    let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts).single() {
-        Some(d) => d,
-        None => return String::new(),
-    };
-    dt.format("%Y-%m-%d %H:%M").to_string()
 }
 
 fn placeholder(text: &'static str, t: &Theme) -> AnyElement {

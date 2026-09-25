@@ -1,7 +1,6 @@
 use std::sync::Arc;
 
 use jj_lib::commit::Commit;
-use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
 
 use super::Repo;
@@ -41,51 +40,36 @@ impl Repo {
         let repo = self.get_repo();
         let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
         let source = resolve_source(&repo)?;
-        let is_wc = repo
-            .view()
-            .get_wc_commit_id(self.workspace_name.as_ref())
-            .is_some_and(|id| id == commit.id());
-
-        if is_wc {
-            // Resolving the source up front turns it into a fixed hex operand, so an option- or revset-shaped string can never become extra CLI syntax.
-            let from_arg = source.map_or_else(|| "@-".to_owned(), |c| c.id().hex());
-            let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
-            let mut args = vec!["restore", "--from", from_arg.as_str(), "--"];
-            args.extend(operands.iter().map(String::as_str));
-            self.run_jj_reload(&args)
-        } else {
-            // The working-copy branch above shells out to jj, which enforces immutability itself; this direct jj-lib rewrite must refuse immutable targets on its own.
-            self.ensure_commit_mutable(&repo, &commit, rev)?;
-            let repo_paths = self.parse_repo_paths(paths)?;
-            self.rewrite_existing_commit_with_tree(
-                repo,
-                commit,
-                "restore files",
-                true,
-                "rewrite commit",
-                move |repo, commit| {
-                    let source_tree = match &source {
-                        Some(source) => source.tree(),
-                        None => self.load_parent_tree(repo, commit, "load parent tree")?,
-                    };
-                    if repo_paths.is_empty() {
-                        return Ok(source_tree);
-                    }
-                    let matcher = jj_lib::matchers::FilesMatcher::new(
-                        repo_paths.iter().map(|path| path.as_ref()),
-                    );
-                    let old_tree = commit.tree();
-                    let new_tree = jj_lib::rewrite::restore_tree(
-                        &source_tree,
-                        &old_tree,
-                        "parent".to_owned(),
-                        "current".to_owned(),
-                        &matcher,
-                    );
-                    block_on_result("restore tree", new_tree)
-                },
-            )
-        }
+        self.ensure_commit_mutable(&repo, &commit, rev)?;
+        let repo_paths = self.parse_repo_paths(paths)?;
+        self.rewrite_existing_commit_with_tree(
+            repo,
+            commit,
+            "restore files",
+            true,
+            "rewrite commit",
+            move |repo, commit| {
+                let source_tree = match &source {
+                    Some(source) => source.tree(),
+                    None => self.load_parent_tree(repo, commit, "load parent tree")?,
+                };
+                if repo_paths.is_empty() {
+                    return Ok(source_tree);
+                }
+                let matcher = jj_lib::matchers::FilesMatcher::new(
+                    repo_paths.iter().map(|path| path.as_ref()),
+                );
+                let old_tree = commit.tree();
+                let new_tree = jj_lib::rewrite::restore_tree(
+                    &source_tree,
+                    &old_tree,
+                    "parent".to_owned(),
+                    "current".to_owned(),
+                    &matcher,
+                );
+                block_on_result("restore tree", new_tree)
+            },
+        )
     }
 
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.

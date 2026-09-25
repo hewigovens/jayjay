@@ -651,3 +651,108 @@ fn log_reloads_immutability_config_without_a_new_operation() {
         );
     }
 }
+
+#[test]
+fn jj_commit_describes_the_working_copy_and_starts_an_empty_child() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::write(repo_path.join("hello.txt"), "committed\n").expect("edit hello");
+
+    repo.jj_commit("finish hello").expect("commit");
+
+    let changes = repo.log("all()").expect("log");
+    let committed = change_by_description(&changes, "finish hello");
+    let head = changes
+        .iter()
+        .find(|change| change.is_working_copy)
+        .expect("working copy");
+    assert!(!committed.is_empty && !committed.is_working_copy);
+    assert_eq!(head.description, "");
+    assert_eq!(head.parents, vec![committed.commit_id.id.clone()]);
+    assert!(head.is_empty, "the new working copy must start empty");
+    assert_eq!(
+        fs::read_to_string(repo_path.join("hello.txt")).expect("read hello"),
+        "committed\n",
+        "the committed edit must stay on disk"
+    );
+    assert_eq!(
+        run_git(&repo_path, &["rev-parse", "HEAD"]).stdout,
+        format!("{}\n", committed.commit_id.id).into_bytes(),
+        "the colocated Git HEAD must follow @'s parent"
+    );
+}
+
+#[test]
+fn native_bookmark_moves_reach_the_colocated_git_refs() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.create_bookmark("topic", "@").expect("create bookmark");
+
+    assert_eq!(
+        run_git(&repo_path, &["rev-parse", "refs/heads/topic"]).stdout,
+        format!("{}\n", repo.log("@").expect("log")[0].commit_id.id).into_bytes()
+    );
+}
+
+#[test]
+fn op_log_snapshots_pending_edits_before_listing() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::write(repo_path.join("hello.txt"), "pending\n").expect("edit hello");
+
+    let entries = repo.op_log().expect("op log");
+
+    assert!(entries[0].is_current);
+    assert_eq!(entries[0].description, "snapshot working copy");
+}
+
+#[test]
+fn op_log_matches_the_cli_listing() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.describe("@", "described natively").expect("describe");
+
+    let entries = repo.op_log().expect("op log");
+    let cli = run_jj_in(
+        &repo_path,
+        &[
+            "op",
+            "log",
+            "--no-graph",
+            "--limit",
+            "20",
+            "-T",
+            r#"self.id() ++ "\t" ++ self.description() ++ "\t" ++ self.time().start().format("%s") ++ "\n""#,
+        ],
+    );
+    let cli: Vec<Vec<&str>> = std::str::from_utf8(&cli.stdout)
+        .expect("utf8")
+        .lines()
+        .map(|line| line.split('\t').collect())
+        .collect();
+
+    assert_eq!(entries.len(), cli.len());
+    for (entry, line) in entries.iter().zip(&cli) {
+        assert_eq!(entry.id.id, line[0]);
+        assert_eq!(
+            entry.timestamp_millis / 1000,
+            line[2].parse::<i64>().expect("epoch seconds")
+        );
+    }
+    assert!(entries[0].is_current);
+    assert!(entries[1..].iter().all(|entry| !entry.is_current));
+    assert_eq!(entries[0].description, "describe");
+    let fixture_describe = cli[1][1]
+        .strip_prefix("describe commit ")
+        .expect("the fixture's CLI describe carries a full commit id");
+    assert_eq!(fixture_describe.len(), 40);
+    assert_eq!(
+        entries[1].description,
+        format!("describe commit {}", &fixture_describe[..12])
+    );
+}

@@ -3,6 +3,7 @@ mod env;
 use std::collections::HashMap;
 
 use jj_lib::local_working_copy::LocalWorkingCopyFactory;
+use jj_lib::settings::UserSettings;
 use jj_lib::workspace::WorkingCopyFactories;
 
 pub(crate) use env::ConfigEnv;
@@ -12,22 +13,23 @@ use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
 impl Repo {
     /// Warning message when `user.name`/`user.email` are missing from jj config, else `None`.
     pub fn check_user_config(&self) -> Option<String> {
-        let has_name = self.run_jj(&["config", "get", JJ_CONFIG_USER_NAME]).is_ok();
-        let has_email = self
-            .run_jj(&["config", "get", JJ_CONFIG_USER_EMAIL])
-            .is_ok();
-        if has_name && has_email {
-            return None;
-        }
-        let mut missing = Vec::new();
-        if !has_name {
-            missing.push(JJ_CONFIG_USER_NAME);
-        }
-        if !has_email {
-            missing.push(JJ_CONFIG_USER_EMAIL);
-        }
-        Some(missing_user_config_message(&missing))
+        missing_user_config(self.get_repo().settings())
     }
+}
+
+fn missing_user_config(settings: &UserSettings) -> Option<String> {
+    let missing: Vec<&str> = [
+        (JJ_CONFIG_USER_NAME, settings.user_name()),
+        (JJ_CONFIG_USER_EMAIL, settings.user_email()),
+    ]
+    .into_iter()
+    .filter(|(_, value)| value.is_empty())
+    .map(|(key, _)| key)
+    .collect();
+    if missing.is_empty() {
+        return None;
+    }
+    Some(missing_user_config_message(&missing))
 }
 
 fn missing_user_config_message(missing: &[&str]) -> String {
@@ -50,17 +52,37 @@ pub(crate) fn working_copy_factories() -> WorkingCopyFactories {
 
 #[cfg(test)]
 mod tests {
-    use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, missing_user_config_message};
+    use jj_lib::config::{ConfigLayer, ConfigSource, StackedConfig};
+    use jj_lib::settings::UserSettings;
+
+    use super::missing_user_config;
+
+    fn settings(user_toml: &str) -> UserSettings {
+        let mut config = StackedConfig::with_defaults();
+        config.add_layer(ConfigLayer::parse(ConfigSource::User, user_toml).expect("parse config"));
+        UserSettings::from_config(config).expect("settings")
+    }
 
     #[test]
-    fn missing_user_config_message_formats_each_command() {
-        let message = missing_user_config_message(&[JJ_CONFIG_USER_NAME, JJ_CONFIG_USER_EMAIL]);
-
+    fn missing_user_config_names_each_unset_key() {
         assert_eq!(
-            message,
-            "jj is not fully configured — user.name and user.email not set. \
-             Run `jj config set --user user.name <value>` and \
-             `jj config set --user user.email <value>` or edit your config file."
+            missing_user_config(&settings("[user]\nname = 'Dev'\nemail = 'dev@example.com'")),
+            None
+        );
+        assert_eq!(
+            missing_user_config(&settings("[user]\nname = 'Dev'")).as_deref(),
+            Some(
+                "jj is not fully configured — user.email not set. \
+                 Run `jj config set --user user.email <value>` or edit your config file."
+            )
+        );
+        assert_eq!(
+            missing_user_config(&settings("")).as_deref(),
+            Some(
+                "jj is not fully configured — user.name and user.email not set. \
+                 Run `jj config set --user user.name <value>` and \
+                 `jj config set --user user.email <value>` or edit your config file."
+            )
         );
     }
 }

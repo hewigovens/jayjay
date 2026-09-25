@@ -66,8 +66,8 @@ struct UndoView: View {
                                 .background(Capsule().fill(Color.accentColor))
                         }
                     }
-                    Text(entry.timestamp)
-                        .jayjayFont(11, design: .monospaced)
+                    Text(EvologDisplay.timestamp(entry.timestampMillis))
+                        .jayjayFont(11)
                         .foregroundStyle(.tertiary)
                 }
                 Spacer()

@@ -1,48 +1,36 @@
+use futures::{StreamExt as _, TryStreamExt as _};
+use jj_lib::object_id::ObjectId as _;
+use jj_lib::op_walk;
+use jj_lib::operation::Operation;
+
 use super::Repo;
 use super::support::block_on_result;
 use crate::types::*;
 
+const OP_LOG_LIMIT: usize = 20;
+
 impl Repo {
-    /// List the last 20 operations from `jj op log`.
+    /// The 20 most recent operations, newest first. Snapshots first so the current entry already holds pending edits and restoring to it later cannot drop them.
     pub fn op_log(&self) -> CoreResult<Vec<OpLogEntry>> {
-        let stdout = self.run_jj(&[
-            "op",
-            "log",
-            "--limit",
-            "20",
-            "--no-graph",
-            "--template",
-            r#"self.id() ++ "\t" ++ self.description() ++ "\t" ++ self.time().start() ++ "\t" ++ self.current_operation() ++ "\n""#,
-        ])?;
-
-        let mut raw: Vec<(String, String, String, bool)> = Vec::new();
-        for line in stdout.lines() {
-            let line = line.trim();
-            if line.is_empty() {
-                continue;
-            }
-            let parts: Vec<&str> = line.splitn(4, '\t').collect();
-            if parts.len() < 4 {
-                continue;
-            }
-            raw.push((
-                parts[0].to_string(),
-                parts[1].to_string(),
-                parts[2].to_string(),
-                parts[3].trim() == "true",
-            ));
-        }
-
-        let ids: Vec<String> = raw.iter().map(|(id, ..)| id.clone()).collect();
-        let entries = raw
-            .into_iter()
-            .map(|(id, description, timestamp, is_current)| {
-                let short_len = unique_prefix_len(&id, &ids);
+        self.refresh_working_copy()?;
+        let repo = self.get_repo();
+        let ops: Vec<Operation> = block_on_result(
+            "walk operations",
+            op_walk::walk_ancestors(std::slice::from_ref(repo.operation()))
+                .take(OP_LOG_LIMIT)
+                .try_collect(),
+        )?;
+        let ids: Vec<String> = ops.iter().map(|op| op.id().hex()).collect();
+        let entries = ops
+            .iter()
+            .zip(&ids)
+            .map(|(op, id)| {
+                let metadata = op.metadata();
                 OpLogEntry {
-                    id: ShortId::new(id, short_len),
-                    description: shorten_embedded_ids(&description),
-                    timestamp,
-                    is_current,
+                    id: ShortId::new(id.clone(), unique_prefix_len(id, &ids)),
+                    description: shorten_embedded_ids(&metadata.description),
+                    timestamp_millis: metadata.time.start.timestamp.0,
+                    is_current: op.id() == repo.op_id(),
                 }
             })
             .collect();

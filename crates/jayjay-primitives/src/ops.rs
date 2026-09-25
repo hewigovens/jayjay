@@ -5,7 +5,7 @@ pub struct OpLogEntry {
     /// Operation id. Its `short_len` is the prefix unique among the listed operations (op ids have no templater `shortest()`, so it's computed in `op_log`).
     pub id: ShortId,
     pub description: String,
-    pub timestamp: String,
+    pub timestamp_millis: i64,
     pub is_current: bool,
 }
 

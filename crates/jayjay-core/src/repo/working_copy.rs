@@ -32,7 +32,11 @@ impl Repo {
             .map_err(|error| CoreError::internal(format!("load working-copy commit: {error}")))
     }
 
-    pub(super) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
+    pub(super) fn commit_transaction(
+        &self,
+        mut tx: Transaction,
+        description: &str,
+    ) -> CoreResult<()> {
         self.debug_assert_write_guarded();
         let context = "sync working copy after transaction";
         let old_commit = self.working_copy_commit(&self.get_repo())?;
@@ -40,6 +44,7 @@ impl Repo {
         let repo_loader = workspace.repo_loader().clone();
         // Hold the working-copy lock across publication and checkout so a snapshot cannot restore the pre-mutation files.
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        self.sync_colocated_git(&mut tx)?;
         let new_repo = block_on_result("commit tx", tx.commit(description))?;
         self.set_repo(new_repo);
         let repo = block_on_result(context, repo_loader.load_at_head())?;

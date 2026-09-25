@@ -306,7 +306,7 @@ fn restore_files_refuses_to_rewrite_an_immutable_commit() {
     );
 }
 
-/// A merge that IS the working copy takes the `jj restore --from <parent>` fast path: the disk file reverts to the chosen parent's content and neither parent is rewritten.
+/// Restoring in a working-copy merge checks the chosen parent's content out to disk and rewrites neither parent.
 #[test]
 fn restore_files_from_a_parent_on_a_working_copy_merge_updates_the_disk_file() {
     let (_tmp, repo_path, repo) = merge_fixture();

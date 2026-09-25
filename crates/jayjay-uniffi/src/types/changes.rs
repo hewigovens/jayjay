@@ -113,6 +113,6 @@ pub struct ChangeDetail {
 pub struct OpLogEntry {
     pub id: core::ShortId,
     pub description: String,
-    pub timestamp: String,
+    pub timestamp_millis: i64,
     pub is_current: bool,
 }

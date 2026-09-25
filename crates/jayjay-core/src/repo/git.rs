@@ -1,3 +1,4 @@
+mod colocated;
 mod commit;
 pub(super) mod lfs;
 mod remote;
