@@ -3,9 +3,7 @@ use std::sync::Arc;
 
 use futures::StreamExt as _;
 use jj_lib::commit::Commit;
-use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::matchers::EverythingMatcher;
-use jj_lib::object_id::ObjectId;
 use jj_lib::ref_name::WorkspaceName;
 use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as _;
@@ -14,7 +12,7 @@ use pollster::FutureExt as _;
 
 use super::super::Repo;
 use super::super::support::{
-    block_on, block_on_result, load_repo_at_head, load_workspace_internal,
+    block_on_result, load_repo_at_head, load_workspace_internal, short_change_id,
 };
 use crate::repositories::normalize_repository_path;
 use crate::types::*;
@@ -28,10 +26,6 @@ impl Repo {
             let Ok(commit) = repo.store().get_commit(commit_id) else {
                 continue;
             };
-            let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-            let change_id_short_len =
-                block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
-                    .unwrap_or(change_id.len()) as u32;
             let files_changed = self.workspace_files_changed(&repo, name, &commit)?;
             let is_current = name.as_str() == self.workspace_name.as_str();
             let (path, is_path_resolved) = if is_current {
@@ -56,7 +50,7 @@ impl Repo {
                     None
                 },
                 is_current,
-                change_id: ShortId::new(change_id, change_id_short_len),
+                change_id: short_change_id(&repo, &commit),
                 description: commit.description().lines().next().unwrap_or("").to_owned(),
                 timestamp: commit.committer().timestamp.timestamp.0,
                 has_conflict: commit.has_conflict(),

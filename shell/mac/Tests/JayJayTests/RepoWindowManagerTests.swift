@@ -157,7 +157,7 @@ final class RepoWindowManagerTests: XCTestCase {
         let fixture = try makeWorkspaceRemovalFixture()
         defer { fixture.window.close() }
 
-        await fixture.manager.withWorkspaceRemoval(fixture.workspace, from: fixture.source) {
+        await fixture.manager.withWorkspaceRemoval(fixture.workspace, repositoryStorePath: fixture.source.repo.repositoryStorePath()) {
             XCTAssertTrue(fixture.target.isShuttingDown, "an unresolved row must still quiesce its open workspace window")
             return false
         }
@@ -169,8 +169,11 @@ final class RepoWindowManagerTests: XCTestCase {
     func testWorkspaceRemovalClosesCapturedWindowAfterPathMoves() async throws {
         let fixture = try makeWorkspaceRemovalFixture()
         defer { fixture.window.close() }
+        let overview = makeWindow(representing: fixture.checkout)
+        defer { overview.close() }
+        fixture.manager.overviewWindowDidAppear(overview, for: fixture.checkout.path)
 
-        await fixture.manager.withWorkspaceRemoval(fixture.workspace, from: fixture.source) {
+        await fixture.manager.withWorkspaceRemoval(fixture.workspace, repositoryStorePath: fixture.source.repo.repositoryStorePath()) {
             do {
                 try FileManager.default.moveItem(at: fixture.checkout, to: fixture.movedCheckout)
                 return true
@@ -181,6 +184,7 @@ final class RepoWindowManagerTests: XCTestCase {
         }
 
         XCTAssertFalse(fixture.window.isVisible, "success must close the captured window after its path moves")
+        XCTAssertFalse(overview.isVisible, "the checkout's overview has nothing left to load")
     }
 
     func testNormalWindowCloseDoesNotRetainTheViewModelForRepoWork() async throws {
@@ -189,6 +193,7 @@ final class RepoWindowManagerTests: XCTestCase {
         var viewModel: RepoViewModel? = try makeViewModel(at: directory, repo: repo)
         let releasedViewModel = { [weak viewModel] in viewModel }
         XCTAssertTrue(try manager.register(XCTUnwrap(viewModel)))
+        viewModel?.onRevealAncestors = { [viewModel] _, _ in _ = viewModel }
         let completed = LockedFlag()
         viewModel?.runRepoTask { _ in
             completed.setAfterBlocking(seconds: 0.2)
@@ -197,7 +202,7 @@ final class RepoWindowManagerTests: XCTestCase {
         manager.repoWindowWillClose(at: directory.path)
         viewModel = nil
 
-        XCTAssertNil(releasedViewModel(), "background repo work retained a closed window's model")
+        XCTAssertNil(releasedViewModel(), "background repo work or the reveal hook retained a closed window's model")
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertTrue(completed.isSet)
     }

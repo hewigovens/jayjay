@@ -9,7 +9,7 @@ struct PickerPanelRoot: View {
     let placeholder: String
     let actionLabel: String?
     let onAction: (() -> Void)?
-    var onRefresh: (() -> Void)?
+    var onOverview: (() -> Void)?
     let sections: [PickerSection]
     var emptyText = "No matches"
     let onDismiss: () -> Void
@@ -70,13 +70,16 @@ struct PickerPanelRoot: View {
                 .font(.system(size: 13))
                 .focused($isSearchFocused)
                 .onSubmit(activateSelection)
-            if let onRefresh {
-                Button(action: onRefresh) {
-                    Label("Refresh", systemImage: "arrow.triangle.2.circlepath")
+            if let onOverview {
+                Button {
+                    onDismiss()
+                    onOverview()
+                } label: {
+                    Label("Overview", systemImage: "rectangle.split.3x1")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
-                .accessibilityIdentifier(AID.Picker.refresh)
+                .accessibilityIdentifier(AID.Picker.overview)
             }
             if let actionLabel, let onAction {
                 Button {

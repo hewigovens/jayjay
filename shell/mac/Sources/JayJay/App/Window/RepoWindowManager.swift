@@ -26,6 +26,8 @@ final class RepoWindowManager {
     private var registeredRepos: [ObjectIdentifier: RegisteredRepo] = [:]
     private var removalCountsByRepoPath: [String: Int] = [:]
     private var removalCountsByWorkspace: [WorkspaceKey: Int] = [:]
+    private var pendingReveals: [String: (headCommitId: String, rev: String)] = [:]
+    private var overviewWindows: [String: WeakWindow] = [:]
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -112,12 +114,18 @@ final class RepoWindowManager {
         NSApp.windows.filter { $0.isVisible || $0.isMiniaturized }
     }
 
+    /// Overview windows carry their repository's URL for the Repository menu, so lookups by that URL must skip them.
+    private var liveRepoWindows: [NSWindow] {
+        let overviews = Set(overviewWindows.values.compactMap { $0.window.map(ObjectIdentifier.init) })
+        return liveWindows.filter { !overviews.contains(ObjectIdentifier($0)) }
+    }
+
     func repoWindowWillClose(at path: String) {
         let normalizedPath = normalizedRepositoryPath(path: path)
         compactRegistrations()
         let closing = registeredRepos.filter { $0.value.path == normalizedPath }
         for registration in closing.values {
-            registration.viewModel?.beginShutdown()
+            registration.viewModel?.windowWillClose()
         }
         registeredRepos = registeredRepos.filter { $0.value.path != normalizedPath }
         DispatchQueue.main.async { [weak self] in
@@ -146,7 +154,7 @@ final class RepoWindowManager {
 
     func refreshOpenRepoPaths() {
         var seen = Set<String>()
-        openRepoPaths = liveWindows.compactMap { window in
+        openRepoPaths = liveRepoWindows.compactMap { window in
             guard let path = window.representedURL?.standardizedFileURL.path,
                   seen.insert(path).inserted
             else { return nil }
@@ -211,18 +219,16 @@ final class RepoWindowManager {
         await body()
         registeredRepos = registeredRepos.filter { $0.value.path != normalizedPath }
         closeRepoWindow(at: path)
+        closeOverviewWindows(at: [normalizedPath])
     }
 
-    /// Keep windows quiesced but visible until the forget succeeds, then close every path for that workspace identity.
+    /// Keep windows quiesced but visible until the forget succeeds, then drop the path from recents and close every window on it.
     func withWorkspaceRemoval(
         _ workspace: WorkspaceInfo,
-        from sourceViewModel: RepoViewModel,
+        repositoryStorePath: String,
         _ body: @MainActor () async -> Bool
     ) async {
-        let key = WorkspaceKey(
-            repositoryStorePath: sourceViewModel.repo.repositoryStorePath(),
-            name: workspace.name
-        )
+        let key = WorkspaceKey(repositoryStorePath: repositoryStorePath, name: workspace.name)
         let normalizedPath = workspace.path.isEmpty ? nil : normalizedRepositoryPath(path: workspace.path)
         incrementRemovalCount(for: key, path: normalizedPath)
         defer { decrementRemovalCount(for: key, path: normalizedPath) }
@@ -243,9 +249,20 @@ final class RepoWindowManager {
             return
         }
 
+        if !workspace.path.isEmpty {
+            settings.removeRecentRepo(workspace.path)
+        }
         registeredRepos = registeredRepos.filter { !removing.keys.contains($0.key) }
         windows.forEach { $0.close() }
         paths.forEach(closeRepoWindow)
+        closeOverviewWindows(at: paths)
+    }
+
+    /// An overview on a removed checkout has nothing left to load, so it goes with the repo windows.
+    private func closeOverviewWindows(at paths: Set<String>) {
+        for path in paths {
+            overviewWindows.removeValue(forKey: path)?.window?.close()
+        }
     }
 
     func isRemovingRepo(at path: String) -> Bool {
@@ -284,14 +301,14 @@ final class RepoWindowManager {
     }
 
     private func repoWindows(at paths: Set<String>) -> [NSWindow] {
-        liveWindows.filter {
+        liveRepoWindows.filter {
             guard let path = $0.representedURL?.path else { return false }
             return paths.contains(normalizedRepositoryPath(path: path))
         }
     }
 
     private func activateRepoWindow(matching path: String) -> Bool {
-        guard let window = liveWindows.first(where: {
+        guard let window = liveRepoWindows.first(where: {
             $0.representedURL?.standardizedFileURL.path == path
         }) else { return false }
         activate(window)
@@ -304,6 +321,39 @@ final class RepoWindowManager {
         window.deminiaturize(nil)
         window.makeKeyAndOrderFront(nil)
         NSApp.activate(ignoringOtherApps: true)
+    }
+
+    /// One overview per repository: an existing window comes forward instead of a second one opening on the same value.
+    func openOverview(for path: String) {
+        let normalizedPath = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
+        if let window = overviewWindows[normalizedPath]?.window, liveWindows.contains(window) {
+            activate(window)
+            return
+        }
+        openWindowAction?(AppWindows.overview, normalizedPath)
+    }
+
+    func overviewWindowDidAppear(_ window: NSWindow, for path: String) {
+        overviewWindows[normalizedRepositoryPath(path: path)] = WeakWindow(window: window)
+    }
+
+    /// Filters the repo window's graph to the ancestors of `headCommitId` and selects `revision`; a window that is not open yet applies it on its first load.
+    func showInGraph(repoPath: String, headCommitId: String, selecting revision: String) {
+        let normalizedPath = normalizedRepositoryPath(path: repoPath)
+        compactRegistrations()
+        if let registered = registeredRepos.values.first(where: { $0.path == normalizedPath }),
+           let viewModel = registered.viewModel
+        {
+            viewModel.revealAncestors(of: headCommitId, selecting: revision)
+            _ = activateRepo(repoPath)
+            return
+        }
+        pendingReveals[normalizedPath] = (headCommitId, revision)
+        openRepo(repoPath)
+    }
+
+    func takePendingReveal(for path: String) -> (headCommitId: String, rev: String)? {
+        pendingReveals.removeValue(forKey: normalizedRepositoryPath(path: path))
     }
 
     func openRepo(_ path: String) {
@@ -320,4 +370,8 @@ final class RepoWindowManager {
         }
         openWindowAction?(AppWindows.repo, normalizedPath)
     }
+}
+
+private struct WeakWindow {
+    weak var window: NSWindow?
 }

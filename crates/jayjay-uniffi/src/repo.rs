@@ -1,11 +1,12 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
+use jayjay_core::overview::{OverviewGroup, overview_groups};
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
     EvologRow, FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry,
-    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
+    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, Overview, PrInfo,
     PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack, StackedPrResult,
     SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
@@ -18,6 +19,13 @@ use jayjay_review::ReviewStore;
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use crate::error::JayJayError;
+
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct OverviewSnapshot {
+    pub overview: Overview,
+    pub groups: Vec<OverviewGroup>,
+    pub workspaces: Vec<WorkspaceInfo>,
+}
 
 #[uniffi::export]
 fn default_revset() -> String {
@@ -594,6 +602,18 @@ impl JayJayRepo {
 
     fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayJayError> {
         Ok(self.inner.workspace_list()?)
+    }
+
+    /// Lanes, their groups, and the workspace rows the menus need, in one crossing.
+    fn overview_snapshot(&self) -> Result<OverviewSnapshot, JayJayError> {
+        let overview = self.inner.overview()?;
+        let groups = overview_groups(&overview);
+        let workspaces = self.inner.workspace_list()?;
+        Ok(OverviewSnapshot {
+            overview,
+            groups,
+            workspaces,
+        })
     }
 
     fn workspace_add(

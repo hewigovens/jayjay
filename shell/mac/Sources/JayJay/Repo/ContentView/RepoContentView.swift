@@ -35,11 +35,15 @@ struct RepoContentView: View {
             .onAppear {
                 revsetDraft = viewModel.revset
                 sidebarWidth = settings.sidebarWidth
+                viewModel.onRevealAncestors = { headCommitId, revision in
+                    filterToAncestors(of: headCommitId, selecting: revision)
+                }
                 menuCoordinator.onAction = { action in
                     switch action {
                         case .commandPalette: showCommandPalette()
                         case .undo: showUndo()
                         case .bookmarkManager: modal = .bookmarkManager
+                        case .overview: windowManager.openOverview(for: viewModel.repoPath)
                         case .newWorkspace: modal = .workspaceCreate
                         case .pullRequestImport: modal = .pullRequestImport
                     }

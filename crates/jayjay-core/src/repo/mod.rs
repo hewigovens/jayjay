@@ -17,6 +17,7 @@ mod init;
 mod log;
 mod mutations;
 mod mutations_files;
+mod overview;
 mod path_operands;
 mod platform;
 mod pull_requests;

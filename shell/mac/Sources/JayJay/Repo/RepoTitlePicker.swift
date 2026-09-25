@@ -9,7 +9,7 @@ struct RepoTitlePicker: View {
     let onForget: (WorkspaceInfo) -> Void
     let onForgetDelete: (WorkspaceInfo) -> Void
     let onCreateWorkspace: () -> Void
-    let onRefresh: () -> Void
+    let onOpenOverview: () -> Void
 
     @Environment(AppSettings.self) private var settings
     @Environment(RepositoryStore.self) private var repositoryStore
@@ -96,7 +96,7 @@ struct RepoTitlePicker: View {
             placeholder: "Filter",
             actionLabel: "New",
             onAction: { deferred { onCreateWorkspace() } },
-            onRefresh: onRefresh,
+            onOverview: { deferred { onOpenOverview() } },
             sections: sections,
             onDismiss: { [weak panel] in panel?.dismiss() }
         )

@@ -20,7 +20,7 @@ enum AID {
     }
 
     enum Picker {
-        static let refresh = "picker.refresh"
+        static let overview = "picker.overview"
 
         static func row(_ id: String) -> String {
             "picker.row.\(id)"
@@ -86,6 +86,15 @@ enum AID {
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.
         static func diffStats(insertions: UInt32, deletions: UInt32) -> String {
             "detail.diffStats.\(insertions).\(deletions)"
+        }
+    }
+
+    enum Overview {
+        static let changePanel = "overview.changePanel"
+        static let filterField = "overview.filterField"
+
+        static func lane(_ headChangeIdPrefix: String) -> String {
+            "overview.lane.\(headChangeIdPrefix)"
         }
     }
 

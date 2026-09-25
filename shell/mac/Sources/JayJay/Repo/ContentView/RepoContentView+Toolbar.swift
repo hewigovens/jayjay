@@ -132,7 +132,7 @@ extension RepoContentView {
                     requestWorkspaceDelete(workspace)
                 },
                 onCreateWorkspace: { modal = .workspaceCreate },
-                onRefresh: { viewModel.refreshWorkspaces() }
+                onOpenOverview: { windowManager.openOverview(for: viewModel.repoPath) }
             )
         }
         .sharedBackgroundVisibility(.hidden)

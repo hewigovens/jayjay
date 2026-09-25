@@ -10,6 +10,7 @@ mod external_tool;
 mod file_tree;
 mod mutation_effect;
 mod network;
+mod overview;
 mod rebase_mode;
 #[cfg(feature = "desktop")]
 mod repo;
@@ -28,6 +29,7 @@ pub use editor::*;
 pub use external_tool::*;
 pub use file_tree::*;
 pub use mutation_effect::*;
+pub use overview::*;
 pub use rebase_mode::*;
 #[cfg(feature = "desktop")]
 pub use repo::*;

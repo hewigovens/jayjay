@@ -13,7 +13,7 @@ struct AppCommands: Commands {
                 Label(settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.leading")
             }
             .keyboardShortcut("s", modifiers: [.control, .command])
-            .disabled(ActiveRepoTracker.shared.repoPath == nil)
+            .disabled(ActiveRepoTracker.shared.handler == nil)
         }
 
         CommandGroup(after: .pasteboard) {

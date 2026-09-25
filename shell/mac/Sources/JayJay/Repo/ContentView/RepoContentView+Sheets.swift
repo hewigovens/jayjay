@@ -282,16 +282,11 @@ extension RepoContentView {
     }
 
     func removeWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) {
-        let settings = settings
         let viewModel = viewModel
         let windowManager = windowManager
         Task { @MainActor in
-            await windowManager.withWorkspaceRemoval(workspace, from: viewModel) {
-                let removed = await viewModel.forgetWorkspace(workspace, deleteFromDisk: deleteFromDisk)
-                if removed, !workspace.path.isEmpty {
-                    settings.removeRecentRepo(workspace.path)
-                }
-                return removed
+            await windowManager.withWorkspaceRemoval(workspace, repositoryStorePath: viewModel.repo.repositoryStorePath()) {
+                await viewModel.forgetWorkspace(workspace, deleteFromDisk: deleteFromDisk)
             }
         }
     }

@@ -12,6 +12,7 @@ mod format_projections;
 mod insert_change;
 mod lfs;
 mod mutations_immutable;
+mod overview;
 mod palette_command;
 mod path_injection;
 mod pull_request_import;

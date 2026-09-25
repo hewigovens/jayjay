@@ -20,13 +20,13 @@ struct RepositoryCommands: Commands {
                 Label("Command Palette", systemImage: "command")
             }
             .keyboardShortcut("p", modifiers: [.command, .shift])
-            .disabled(repoPath == nil)
+            .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showUndo() } label: {
                 Label("Undo Last Operation", systemImage: "arrow.uturn.backward.circle")
             }
             .keyboardShortcut("u", modifiers: [.command, .shift])
-            .disabled(repoPath == nil)
+            .disabled(tracker.handler == nil)
 
             Divider()
 
@@ -34,17 +34,23 @@ struct RepositoryCommands: Commands {
                 Label("Bookmark Manager", systemImage: "bookmark")
             }
             .keyboardShortcut("b", modifiers: [.command, .shift])
-            .disabled(repoPath == nil)
+            .disabled(tracker.handler == nil)
+
+            Button { tracker.handler?.showOverview() } label: {
+                Label("Repo Overview", systemImage: "rectangle.split.3x1")
+            }
+            .keyboardShortcut("o", modifiers: [.command, .shift])
+            .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showNewWorkspace() } label: {
                 Label("New Workspace...", systemImage: "plus.rectangle.on.folder")
             }
-            .disabled(repoPath == nil)
+            .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showPullRequestImport() } label: {
                 Label("\(PullRequestImportSheet.title)…", systemImage: "arrow.triangle.pull")
             }
-            .disabled(repoPath == nil)
+            .disabled(tracker.handler == nil)
 
             Divider()
 
