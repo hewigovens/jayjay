@@ -88,11 +88,11 @@ final class KeyboardFocusTests: XCTestCase {
         )
         window.contentView = host
         host.layoutSubtreeIfNeeded()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        runUntilMainRunLoopWaits()
         model.paths = ["new.txt"]
         model.selected = "new.txt"
         host.layoutSubtreeIfNeeded()
-        RunLoop.main.run(until: Date().addingTimeInterval(0.1))
+        runUntilMainRunLoopWaits()
 
         XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
         XCTAssertEqual(model.activatedPaths, ["new.txt"])

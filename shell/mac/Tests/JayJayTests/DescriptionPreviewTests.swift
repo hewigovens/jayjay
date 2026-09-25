@@ -23,7 +23,7 @@ final class DescriptionPreviewTests: XCTestCase {
             let host = NSHostingView(rootView: body)
             window.contentView = host
             window.layoutIfNeeded()
-            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            runUntilMainRunLoopWaits()
             let scroll = try XCTUnwrap(descriptionScrollView(in: host))
             XCTAssertEqual(scroll.textView.font?.fontName, family.nsFont(size: size).fontName)
             XCTAssertEqual(scroll.textView.font?.pointSize, CGFloat(size))
@@ -51,7 +51,7 @@ final class DescriptionPreviewTests: XCTestCase {
         for expanded in [false, true, false] {
             host.rootView = preview(expanded: expanded)
             window.layoutIfNeeded()
-            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            runUntilMainRunLoopWaits()
             let scroll = try XCTUnwrap(descriptionScrollView(in: host))
             positions.append(scroll.textView.convert(.zero, to: nil).y)
         }

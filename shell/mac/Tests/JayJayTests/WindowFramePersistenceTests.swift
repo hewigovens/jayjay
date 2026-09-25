@@ -41,7 +41,7 @@ final class WindowFramePersistenceTests: XCTestCase {
         window.contentView = NSHostingView(rootView: Color.clear.background(WindowFramePersistence(key: key, defaults: defaults)))
         window.layoutIfNeeded()
         window.orderFront(nil)
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+        runUntilMainRunLoopWaits()
 
         let moved = NSRect(x: 140, y: 120, width: 320, height: 210)
         window.setFrame(moved, display: false)
@@ -74,7 +74,7 @@ final class WindowFramePersistenceTests: XCTestCase {
         window.setFrame(nudged, display: false)
         XCTAssertEqual(window.frame, saved, "a move in the attaching run-loop turn is SwiftUI's placement and is undone")
 
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+        runUntilMainRunLoopWaits()
         window.setFrame(nudged, display: false)
         XCTAssertEqual(window.frame, nudged, "a move after the run loop idled is the user's")
         XCTAssertEqual(WindowFrameStore.frame(key: key, defaults: defaults), nudged)

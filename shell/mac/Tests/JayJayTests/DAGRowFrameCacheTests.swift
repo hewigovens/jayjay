@@ -16,7 +16,7 @@ final class DAGRowFrameCacheTests: XCTestCase {
         defer { window.close() }
         window.contentView = NSHostingView(rootView: FrameTrackingView(measurements: measurements, probe: probe))
         window.layoutIfNeeded()
-        RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+        runUntilMainRunLoopWaits()
         let initialBodyCount = probe.bodyCount
 
         for count in [7, 200, 22, 0] {
@@ -25,7 +25,7 @@ final class DAGRowFrameCacheTests: XCTestCase {
             })
             measurements.frames = frames
             window.layoutIfNeeded()
-            RunLoop.main.run(until: Date(timeIntervalSinceNow: 0.05))
+            runUntilMainRunLoopWaits()
 
             XCTAssertEqual(probe.cache?.frames, frames, "Drag targets must be ready before a gesture, with old rows removed")
             XCTAssertEqual(probe.bodyCount, initialBodyCount, "Collecting row frames must not invalidate their owning view")
