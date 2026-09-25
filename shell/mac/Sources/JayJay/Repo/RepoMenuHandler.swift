@@ -5,7 +5,7 @@ final class RepoMenuHandler: RepositoryMenuHandler {
     var onAction: ((MenuAction) -> Void)?
 
     enum MenuAction {
-        case commandPalette, undo, bookmarkManager, newWorkspace, pullRequestImport
+        case commandPalette, undo, bookmarkManager, overview, newWorkspace, pullRequestImport
     }
 
     func showCommandPalette() {
@@ -18,6 +18,10 @@ final class RepoMenuHandler: RepositoryMenuHandler {
 
     func showBookmarkManager() {
         onAction?(.bookmarkManager)
+    }
+
+    func showOverview() {
+        onAction?(.overview)
     }
 
     func showNewWorkspace() {

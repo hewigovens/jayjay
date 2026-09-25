@@ -274,7 +274,7 @@ impl Repo {
             })
     }
 
-    fn evaluate_revset<'a>(
+    pub(crate) fn evaluate_revset<'a>(
         &self,
         repo: &'a Arc<ReadonlyRepo>,
         revset_str: &str,

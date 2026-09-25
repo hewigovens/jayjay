@@ -1,19 +1,22 @@
 import AppKit
 import SwiftUI
 
-/// AppKit search field: a SwiftUI TextField in the repo window ignores programmatic focus and never forwards Escape to `onExitCommand`; the field exists only while the filter is open, so it takes focus on creation.
+/// AppKit search field: a SwiftUI TextField in the repo window ignores programmatic focus and never forwards Escape to `onExitCommand`; the field exists only while the filter is open, so it takes focus on creation and again whenever `focusGeneration` changes.
 struct FileFilterField: NSViewRepresentable {
     @Binding var text: String
+    var placeholder = "Filter files"
+    var accessibilityIdentifier = AID.FileList.filterField
+    var focusGeneration = 0
     let onSubmit: () -> Void
     let onCancel: () -> Void
 
     func makeNSView(context: Context) -> NSSearchField {
         let field = NSSearchField()
-        field.placeholderString = "Filter files"
+        field.placeholderString = placeholder
         field.controlSize = .small
         field.font = .systemFont(ofSize: 11)
         field.delegate = context.coordinator
-        field.setAccessibilityIdentifier(AID.FileList.filterField)
+        field.setAccessibilityIdentifier(accessibilityIdentifier)
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
         (field.cell as? NSSearchFieldCell)?.cancelButtonCell = nil
@@ -22,9 +25,13 @@ struct FileFilterField: NSViewRepresentable {
     }
 
     func updateNSView(_ field: NSSearchField, context: Context) {
+        let refocus = context.coordinator.parent.focusGeneration != focusGeneration
         context.coordinator.parent = self
         if field.stringValue != text {
             field.stringValue = text
+        }
+        if refocus {
+            field.window?.makeFirstResponder(field)
         }
     }
 

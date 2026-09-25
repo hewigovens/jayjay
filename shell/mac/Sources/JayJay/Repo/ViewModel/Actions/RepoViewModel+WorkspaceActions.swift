@@ -24,12 +24,6 @@ extension RepoViewModel {
         )
     }
 
-    func refreshWorkspaces() {
-        runRepoTask { try $0.workspaceList() } onSuccess: { viewModel, workspaces in
-            viewModel.workspaces = workspaces
-        }
-    }
-
     @MainActor
     func forgetWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) async -> Bool {
         lastInternalMutationAt = Date()

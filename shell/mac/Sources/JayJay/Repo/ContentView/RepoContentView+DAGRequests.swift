@@ -38,11 +38,11 @@ extension RepoContentView {
         }
     }
 
-    private func filterToAncestors(of commitId: String) {
+    func filterToAncestors(of commitId: String, selecting revision: String? = nil) {
         if previousAncestorFilter == nil {
             previousAncestorFilter = viewModel.revset
         }
         showRevsetFilter = true
-        viewModel.applyRevset(ancestorsRevset(commitId: commitId), selecting: commitId)
+        viewModel.applyRevset(ancestorsRevset(commitId: commitId), selecting: revision ?? commitId)
     }
 }

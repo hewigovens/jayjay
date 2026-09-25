@@ -52,7 +52,7 @@ Before scoping a cross-layer bug, trace the real path end to end: input or persi
 
 ## Core Modules
 
-Keep `jayjay-core` logic split by responsibility under `repo/` (one file or folder per operation family: `log`, `diff/`, `mutations`, `bookmarks`, `git/`, `working_copy`, `resolve/`, `conflicts`, `annotate`, `evolog`, `diffedit/`, `stacked_pr/`, `pull_requests`, `review_notes`, `undo`, `workspace`). Top-level portable modules (`dag`, `file_tree`, `fuzzy`, `palette`, `theme`, `commit_message`) are repo-free helpers. The native-only `repositories` module owns the file-backed pin contract shared by both desktop shells, and the native-only `cli` module owns the shared app CLI dispatcher (`--version`, `config`, `review …`) that both shells adapt.
+Keep `jayjay-core` logic split by responsibility under `repo/` (one file or folder per operation family: `log`, `diff/`, `mutations`, `bookmarks`, `git/`, `working_copy`, `resolve/`, `conflicts`, `annotate`, `evolog`, `diffedit/`, `stacked_pr/`, `pull_requests`, `review_notes`, `undo`, `workspace`, `overview`). Top-level portable modules (`dag`, `overview` grouping, `file_tree`, `fuzzy`, `palette`, `theme`, `commit_message`) are repo-free helpers. The native-only `repositories` module owns the file-backed pin contract shared by both desktop shells, and the native-only `cli` module owns the shared app CLI dispatcher (`--version`, `config`, `review …`) that both shells adapt.
 
 ## Repository Operation Contracts
 

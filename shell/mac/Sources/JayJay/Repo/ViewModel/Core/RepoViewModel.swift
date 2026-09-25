@@ -113,6 +113,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isShuttingDown = false
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
+    /// Set by the content view so a reveal from another window uses its ancestor-filter presentation.
+    @ObservationIgnored var onRevealAncestors: ((_ headCommitId: String, _ revision: String) -> Void)?
     /// FS-triggered refreshes wait while a sheet or editor owns transient user input.
     var isBackgroundRefreshSuspended = false
     var pendingBackgroundRefresh: BackgroundRefreshRequest?
@@ -176,6 +178,13 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
         repoTasks.values.forEach { $0.cancel() }
         refreshTask = nil
         prFetchTask = nil
+    }
+
+    /// Only a closing window drops the reveal hook: it retains the content view, and a failed removal keeps that view.
+    @MainActor
+    func windowWillClose() {
+        beginShutdown()
+        onRevealAncestors = nil
     }
 
     @MainActor

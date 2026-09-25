@@ -135,6 +135,12 @@ extension RepoContentView {
             shortcut: "⇧⌘B"
         ) { modal = .bookmarkManager })
         items.append(CommandPaletteItem(
+            title: "Repo Overview",
+            icon: "rectangle.split.3x1",
+            category: "Repository",
+            shortcut: "⇧⌘O"
+        ) { windowManager.openOverview(for: viewModel.repoPath) })
+        items.append(CommandPaletteItem(
             title: "Clean Up Stale Bookmarks",
             icon: "bookmark.slash",
             category: "Repository"

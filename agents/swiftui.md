@@ -30,6 +30,8 @@ shell/mac/
 │   ├── Diff/           DiffSection (+Content, +ReviewActions, +NoteActions, +EditActions), DiffStore,
 │   │                   ReviewNoteSheet
 │   ├── DiffEdit/       DiffEditView, selection models
+│   ├── Overview/       OverviewWindow, OverviewViewModel, OverviewView, OverviewCanvas, OverviewLaneCard,
+│   │                   OverviewChangePanel (its own window; lanes and groups come from core's `overview`)
 │   ├── Onboarding/     OnboardingView, WelcomeView
 │   ├── Settings/       SettingsView (+Tools, +CLI), JJConfigView, AboutView
 │   ├── StatusBar/      StatusBarView and items

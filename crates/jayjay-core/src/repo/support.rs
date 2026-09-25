@@ -5,9 +5,12 @@ use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use futures::StreamExt as _;
+use jj_lib::hex_util::encode_reverse_hex;
+use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::OperationId;
 use jj_lib::op_walk;
 use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo::Repo as _;
 use jj_lib::workspace::{
     DefaultWorkspaceLoaderFactory, Workspace, WorkspaceLoadError, WorkspaceLoaderFactory as _,
 };
@@ -102,6 +105,24 @@ pub(crate) fn op_is_ancestor_of(
         }
         Ok(false)
     })
+}
+
+/// Shortest prefix that still uniquely identifies the change; the index is cached on the repo, so per-commit calls stay cheap.
+pub(crate) fn short_change_id(repo: &ReadonlyRepo, commit: &jj_lib::commit::Commit) -> ShortId {
+    let change_id = encode_reverse_hex(commit.change_id().as_bytes());
+    let short_len = block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
+        .unwrap_or(change_id.len()) as u32;
+    ShortId::new(change_id, short_len)
+}
+
+pub(crate) fn short_commit_id(repo: &ReadonlyRepo, commit: &jj_lib::commit::Commit) -> ShortId {
+    let commit_id = commit.id().hex();
+    let short_len = block_on(
+        repo.index()
+            .shortest_unique_commit_id_prefix_len(commit.id()),
+    )
+    .unwrap_or(commit_id.len()) as u32;
+    ShortId::new(commit_id, short_len)
 }
 
 /// Deterministic for a given state, so a preview and the action that follows pick the same name.

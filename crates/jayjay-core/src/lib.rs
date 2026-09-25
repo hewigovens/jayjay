@@ -26,6 +26,7 @@ mod jj_command;
 mod merge_editor;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
+pub mod overview;
 pub mod palette;
 pub mod placeholder;
 pub mod projection;

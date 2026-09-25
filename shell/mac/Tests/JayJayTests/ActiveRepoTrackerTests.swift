@@ -8,6 +8,7 @@ final class ActiveRepoTrackerTests: XCTestCase {
         func showCommandPalette() {}
         func showUndo() {}
         func showBookmarkManager() {}
+        func showOverview() {}
         func showNewWorkspace() {}
         func showPullRequestImport() {}
     }
@@ -33,6 +34,17 @@ final class ActiveRepoTrackerTests: XCTestCase {
         repoWindow.representedURL = URL(fileURLWithPath: "/tmp/repo")
         NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: repoWindow)
         XCTAssertEqual(tracker.repoPath, "/tmp/repo")
+        XCTAssertTrue(tracker.handler === handler)
+
+        let overview = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.titled], backing: .buffered, defer: false)
+        overview.isReleasedWhenClosed = false
+        overview.representedURL = URL(fileURLWithPath: "/tmp/repo")
+        tracker.registerOverview(overview)
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: overview)
+        XCTAssertEqual(tracker.repoPath, "/tmp/repo", "path-based commands still act on the overview's repository")
+        XCTAssertNil(tracker.handler, "window-based commands have no repo window to act on")
+
+        NotificationCenter.default.post(name: NSWindow.didBecomeKeyNotification, object: repoWindow)
         XCTAssertTrue(tracker.handler === handler)
     }
 }
