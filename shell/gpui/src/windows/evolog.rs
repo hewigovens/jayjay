@@ -4,9 +4,9 @@ use std::sync::Arc;
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{
     AnyElement, App, AppContext, Bounds, ClickEvent, Context, Entity, FocusHandle, Focusable,
-    InteractiveElement, IntoElement, MouseButton, MouseDownEvent, MouseMoveEvent, MouseUpEvent,
-    ParentElement, Pixels, Point, Render, SharedString, Size, StatefulInteractiveElement, Styled,
-    TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, uniform_list,
+    InteractiveElement, IntoElement, MouseButton, MouseDownEvent, ParentElement, Pixels, Point,
+    Render, SharedString, Size, StatefulInteractiveElement, Styled, TitlebarOptions, Window,
+    WindowBounds, WindowOptions, div, px, rgb, uniform_list,
 };
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::FileDiff;
@@ -19,6 +19,7 @@ use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
+use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
 use crate::ui::resize_handle::resize_handle;
 
@@ -247,13 +248,12 @@ impl Render for EvologView {
             .on_action(cx.listener(|_, _: &Dismiss, window, _cx| {
                 window.remove_window();
             }))
-            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
-                let viewport_width = f32::from(window.viewport_size().width);
-                view.drag_pane_to(f32::from(ev.position.x), viewport_width, cx);
-            }))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(|view, _: &MouseUpEvent, _, cx| view.end_pane_drag(cx)),
+            .track_pane_drag(
+                |view: &mut EvologView, x, viewport_width, cx| {
+                    view.drag_pane_to(x, viewport_width, cx)
+                },
+                EvologView::end_pane_drag,
+                cx,
             )
             .relative()
             .flex()

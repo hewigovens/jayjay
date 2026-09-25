@@ -1,7 +1,6 @@
 use gpui::{
-    AnyElement, Context, Div, InteractiveElement, IntoElement, MouseButton, MouseMoveEvent,
-    MouseUpEvent, ParentElement, Render, Stateful, StatefulInteractiveElement, Styled, Window, div,
-    px, rgb,
+    AnyElement, Context, Div, InteractiveElement, IntoElement, ParentElement, Render, Stateful,
+    StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 
 use super::panel::PanelFrame;
@@ -13,6 +12,7 @@ use crate::app::repositories;
 use crate::app::theme::Theme;
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::ui::icons::glyph;
+use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::primitives::{divider_h, icon_button, text_tooltip};
 use crate::ui::resize_handle::resize_handle;
 
@@ -50,13 +50,12 @@ impl Render for RepoListWindow {
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| {
                 window.remove_window();
             }))
-            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
-                let viewport_width = f32::from(window.viewport_size().width);
-                view.drag_panel_to(f32::from(ev.position.x), viewport_width, cx);
-            }))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(|view, _: &MouseUpEvent, _, cx| view.end_panel_drag(cx)),
+            .track_pane_drag(
+                |view: &mut RepoListWindow, x, viewport_width, cx| {
+                    view.drag_panel_to(x, viewport_width, cx)
+                },
+                RepoListWindow::end_panel_drag,
+                cx,
             )
             .size_full()
             .flex()

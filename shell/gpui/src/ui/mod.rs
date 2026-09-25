@@ -14,6 +14,7 @@ pub(crate) mod merge_scroll;
 pub mod navigation;
 pub(crate) mod onboarding;
 pub(crate) mod overlay;
+pub(crate) mod pane_drag;
 pub mod primitives;
 pub(crate) mod resize_handle;
 pub mod scrollbar;

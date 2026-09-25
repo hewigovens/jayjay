@@ -1,9 +1,10 @@
 use gpui::Context;
 
 use super::{
-    ColumnDrag, DragTarget, LayoutState, PREVIEW_MIN, RepoWindow, SECONDARY_PANE_MAX,
-    SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, pane_max,
+    DragTarget, LayoutState, PREVIEW_MIN, RepoWindow, SECONDARY_PANE_MAX, SECONDARY_PANE_MIN,
+    SIDEBAR_MAX, SIDEBAR_MIN,
 };
+use crate::ui::pane_drag::{PaneDrag, pane_max};
 use crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
 
 impl LayoutState {
@@ -38,20 +39,16 @@ impl RepoWindow {
     pub(crate) fn start_drag(
         &mut self,
         target: DragTarget,
-        start_pos: f32,
+        start_x: f32,
         viewport_width: f32,
         cx: &mut Context<Self>,
     ) {
         let (sidebar_width, file_column_width) = self.layout.fitted(viewport_width);
-        let start_size = match target {
+        let start_width = match target {
             DragTarget::Sidebar => sidebar_width,
             DragTarget::FileColumn => file_column_width,
         };
-        self.layout.drag = Some(ColumnDrag {
-            target,
-            start_pos,
-            start_size,
-        });
+        self.layout.drag = Some(PaneDrag::new(target, start_x, start_width));
         cx.notify();
     }
 
@@ -59,16 +56,18 @@ impl RepoWindow {
         let Some(drag) = self.layout.drag else {
             return;
         };
-        match drag.target {
+        match drag.pane {
             DragTarget::Sidebar => {
-                let new_size = drag.start_size + (current_x - drag.start_pos);
-                self.layout.sidebar_width =
-                    new_size.clamp(SIDEBAR_MIN, LayoutState::sidebar_max(viewport_width));
+                self.layout.sidebar_width = drag.width_at(
+                    current_x,
+                    SIDEBAR_MIN,
+                    LayoutState::sidebar_max(viewport_width),
+                );
             }
             DragTarget::FileColumn => {
-                let new_size = drag.start_size + (current_x - drag.start_pos);
                 let (sidebar_width, _) = self.layout.fitted(viewport_width);
-                self.layout.file_column_width = new_size.clamp(
+                self.layout.file_column_width = drag.width_at(
+                    current_x,
                     SECONDARY_PANE_MIN,
                     LayoutState::file_column_max(viewport_width, sidebar_width),
                 );
@@ -79,7 +78,7 @@ impl RepoWindow {
 
     pub(crate) fn end_drag(&mut self, cx: &mut Context<Self>) {
         if let Some(drag) = self.layout.drag.take() {
-            match drag.target {
+            match drag.pane {
                 DragTarget::Sidebar => {
                     let width = self.layout.sidebar_width;
                     crate::app::config::update(cx, move |c| {

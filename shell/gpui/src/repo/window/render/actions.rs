@@ -1,6 +1,4 @@
-use gpui::{
-    Context, Div, InteractiveElement, MouseButton, MouseMoveEvent, MouseUpEvent, Styled, div, rgb,
-};
+use gpui::{Context, Div, InteractiveElement, Styled, div, rgb};
 
 use super::super::RepoWindow;
 use crate::app::actions::{
@@ -12,6 +10,7 @@ use crate::app::actions::{
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
+use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::text_area::Newline;
 use crate::windows::command_palette::CommandPalette;
 use crate::windows::repo_list::RepoListWindow;
@@ -149,17 +148,10 @@ impl RepoWindow {
                 }
                 view.handle_nav_key(ev, cx);
             }))
-            .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
-                if view.layout.drag.is_some() {
-                    let viewport_width = f32::from(window.viewport_size().width);
-                    view.drag_to(f32::from(ev.position.x), viewport_width, cx);
-                }
-            }))
-            .on_mouse_up(
-                MouseButton::Left,
-                cx.listener(|view, _: &MouseUpEvent, _w, cx| {
-                    view.end_drag(cx);
-                }),
+            .track_pane_drag(
+                |view: &mut RepoWindow, x, viewport_width, cx| view.drag_to(x, viewport_width, cx),
+                RepoWindow::end_drag,
+                cx,
             )
             .relative()
             .flex()

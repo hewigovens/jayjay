@@ -73,8 +73,8 @@ pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use pr_import::PrImportState;
 pub(crate) use view::{
-    ColumnDrag, DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,
+    DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,
     FileTreeCacheSlot, LayoutState, PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX,
     SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalCheckbox,
-    TextModalContext, TextModalState, pane_max,
+    TextModalContext, TextModalState,
 };

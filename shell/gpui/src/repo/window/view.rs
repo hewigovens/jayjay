@@ -1,4 +1,5 @@
 use crate::ui::commit_message_editor::CommitMessageEditor;
+use crate::ui::pane_drag::PaneDrag;
 use std::cell::{Cell, RefCell};
 use std::path::PathBuf;
 use std::rc::Rc;
@@ -95,7 +96,7 @@ pub(crate) struct LayoutState {
     pub(crate) sidebar_closing: bool,
     pub(crate) sidebar_slide: usize,
     pub(crate) file_column_width: f32,
-    pub(crate) drag: Option<ColumnDrag>,
+    pub(crate) drag: Option<PaneDrag<DragTarget>>,
 }
 
 #[derive(Default)]
@@ -268,13 +269,6 @@ pub enum ActivePane {
 }
 
 #[derive(Debug, Clone, Copy)]
-pub(crate) struct ColumnDrag {
-    pub(crate) target: DragTarget,
-    pub(crate) start_pos: f32,
-    pub(crate) start_size: f32,
-}
-
-#[derive(Debug, Clone, Copy)]
 pub(crate) enum DragTarget {
     Sidebar,
     FileColumn,
@@ -287,10 +281,6 @@ pub(crate) const SECONDARY_PANE_MIN: f32 = 220.;
 pub(crate) const SECONDARY_PANE_MAX: f32 = 480.;
 /// Both shells fit the sidebar and file column so the preview keeps at least this.
 pub(crate) const PREVIEW_MIN: f32 = 420.;
-
-pub(crate) fn pane_max(min: f32, max: f32, room: f32) -> f32 {
-    max.min(room.max(min))
-}
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {

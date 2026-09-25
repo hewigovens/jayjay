@@ -1,7 +1,8 @@
 use gpui::{App, Context};
 
 use super::EvologView;
-use crate::repo::window::{SECONDARY_PANE_MAX, SECONDARY_PANE_MIN, pane_max};
+use crate::repo::window::{SECONDARY_PANE_MAX, SECONDARY_PANE_MIN};
+use crate::ui::pane_drag::{PaneDrag, pane_max};
 use crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
 
 #[derive(Clone, Copy, PartialEq)]
@@ -10,18 +11,11 @@ pub(super) enum EvologPane {
     FileList,
 }
 
-#[derive(Clone, Copy)]
-struct PaneDrag {
-    pane: EvologPane,
-    start_x: f32,
-    start_width: f32,
-}
-
 /// Entry list and file list widths; both seed from the shared secondary-pane preference, only the entry list writes it back.
 pub(super) struct EvologLayout {
     entry_list_width: f32,
     file_list_width: f32,
-    drag: Option<PaneDrag>,
+    drag: Option<PaneDrag<EvologPane>>,
 }
 
 impl EvologLayout {
@@ -72,11 +66,7 @@ impl EvologView {
             EvologPane::EntryList => entry_list,
             EvologPane::FileList => file_list,
         };
-        self.layout.drag = Some(PaneDrag {
-            pane,
-            start_x,
-            start_width,
-        });
+        self.layout.drag = Some(PaneDrag::new(pane, start_x, start_width));
         cx.notify();
     }
 
@@ -84,17 +74,18 @@ impl EvologView {
         let Some(drag) = self.layout.drag else {
             return;
         };
-        let width = drag.start_width + (x - drag.start_x);
         match drag.pane {
             EvologPane::EntryList => {
-                self.layout.entry_list_width = width.clamp(
+                self.layout.entry_list_width = drag.width_at(
+                    x,
                     SECONDARY_PANE_MIN,
                     EvologLayout::entry_list_max(viewport_width),
                 );
             }
             EvologPane::FileList => {
                 let (entry_list, _) = self.layout.fitted(viewport_width);
-                self.layout.file_list_width = width.clamp(
+                self.layout.file_list_width = drag.width_at(
+                    x,
                     SECONDARY_PANE_MIN,
                     EvologLayout::file_list_max(viewport_width, entry_list),
                 );

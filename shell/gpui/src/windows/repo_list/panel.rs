@@ -3,7 +3,7 @@ use std::time::{Duration, Instant};
 use gpui::{Context, Window, ease_in_out};
 
 use super::window::{DETAIL_WIDTH, RepoListWindow};
-use crate::repo::window::pane_max;
+use crate::ui::pane_drag::{PaneDrag, pane_max};
 use crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
 
 pub(crate) const RECENT_PANEL_DEFAULT: f32 = 270.;
@@ -25,17 +25,11 @@ impl PanelSlide {
     }
 }
 
-#[derive(Clone, Copy)]
-struct PanelDrag {
-    start_x: f32,
-    start_width: f32,
-}
-
 pub(super) struct RecentPanel {
     width: f32,
     shown: Option<bool>,
     slide: Option<PanelSlide>,
-    drag: Option<PanelDrag>,
+    drag: Option<PaneDrag<()>>,
 }
 
 /// The panel's width and its on-screen width this frame, which is narrower mid-slide.
@@ -120,10 +114,11 @@ impl RepoListWindow {
         viewport_width: f32,
         cx: &mut Context<Self>,
     ) {
-        self.panel.drag = Some(PanelDrag {
+        self.panel.drag = Some(PaneDrag::new(
+            (),
             start_x,
-            start_width: self.panel.fitted(viewport_width),
-        });
+            self.panel.fitted(viewport_width),
+        ));
         cx.notify();
     }
 
@@ -131,8 +126,7 @@ impl RepoListWindow {
         let Some(drag) = self.panel.drag else {
             return;
         };
-        self.panel.width = (drag.start_width + x - drag.start_x)
-            .clamp(PANEL_MIN, RecentPanel::max_width(viewport_width));
+        self.panel.width = drag.width_at(x, PANEL_MIN, RecentPanel::max_width(viewport_width));
         cx.notify();
     }
 
