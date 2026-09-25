@@ -43,6 +43,68 @@ fn change_row_drag_confirms_and_rebases_onto_target(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn dragging_part_of_a_selection_rebases_every_selected_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["new", "--no-edit", "-m", "side", "subject(\"initial\")"],
+    );
+    let (view, cx) = open_fixture(&fixture, cx);
+    let hello = change_with_subject(&view, cx, "add hello");
+    let feature = change_with_subject(&view, cx, "add feature");
+    let side_commit_id = change_with_subject(&view, cx, "side").commit_id.id;
+    let row_of = |view: &gpui::Entity<jayjay_gpui::repo::window::RepoWindow>,
+                  cx: &mut gpui::VisualTestContext,
+                  commit_id: &str| {
+        view.read_with(cx, |view, cx| {
+            view.view_model()
+                .read(cx)
+                .graph
+                .changes
+                .iter()
+                .position(|change| change.commit_id.id == commit_id)
+                .expect("row shown")
+        })
+    };
+    let hello_row = row_of(&view, cx, &hello.commit_id.id);
+    let feature_row = row_of(&view, cx, &feature.commit_id.id);
+    view.update(cx, |view, cx| {
+        view.handle_change_row_click(hello_row, Modifiers::default(), cx);
+        view.handle_change_row_click(feature_row, Modifiers::secondary_key(), cx);
+    });
+    settle_visual(cx);
+
+    drag_between(
+        cx,
+        selector(format!("dag-change-{}", feature.commit_id.id)),
+        selector(format!("dag-change-{side_commit_id}")),
+    );
+    let confirm = cx
+        .debug_bounds("rebase-confirm-submit")
+        .expect("rebase confirmation button");
+    cx.simulate_click(confirm.center(), Modifiers::default());
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let changes = &view.view_model().read(cx).graph.changes;
+        let find = |change_id: &str| {
+            changes
+                .iter()
+                .find(|change| change.change_id.id == change_id)
+                .expect("change still shown")
+                .clone()
+        };
+        let moved_hello = find(&hello.change_id.id);
+        assert_eq!(moved_hello.parents, vec![side_commit_id.clone()]);
+        assert_eq!(
+            find(&feature.change_id.id).parents,
+            vec![moved_hello.commit_id.id]
+        );
+        assert_eq!(view.toast().as_deref(), Some("Rebased 2 changes onto side"));
+    });
+}
+
+#[gpui::test]
 fn change_row_drag_can_disable_future_confirmation(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);

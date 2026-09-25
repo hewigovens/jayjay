@@ -2,6 +2,8 @@ use std::sync::Arc;
 
 use jayjay_core::{ChangeInfo, GraphEntry};
 
+use super::selection::DagDragSelection;
+
 #[derive(Clone)]
 pub(crate) enum DagDrag {
     WorkingCopy,
@@ -12,6 +14,7 @@ pub(crate) enum DagDrag {
     Change {
         source_ix: usize,
         entries: Arc<Vec<GraphEntry>>,
+        selection: Option<Arc<DagDragSelection>>,
     },
 }
 
@@ -19,18 +22,35 @@ impl DagDrag {
     pub(in crate::repo::window) fn for_change(
         ix: usize,
         entries: &Arc<Vec<GraphEntry>>,
+        selection: Option<Arc<DagDragSelection>>,
     ) -> Option<Self> {
         (!entries.get(ix)?.change.is_immutable).then(|| Self::Change {
             source_ix: ix,
             entries: entries.clone(),
+            selection,
         })
+    }
+
+    pub(super) fn selection(&self) -> Option<&DagDragSelection> {
+        match self {
+            Self::Change { selection, .. } => selection.as_deref(),
+            _ => None,
+        }
+    }
+
+    pub(super) fn source_label(&self) -> String {
+        match (self.selection(), self.source_change()) {
+            (Some(selection), _) => format!("{} changes", selection.commit_ids.len()),
+            (None, Some(source)) => Self::label_for_change(source),
+            (None, None) => String::new(),
+        }
     }
 
     pub(super) fn source_change(&self) -> Option<&ChangeInfo> {
         match self {
-            Self::Change { source_ix, entries } => {
-                entries.get(*source_ix).map(|entry| &entry.change)
-            }
+            Self::Change {
+                source_ix, entries, ..
+            } => entries.get(*source_ix).map(|entry| &entry.change),
             _ => None,
         }
     }
@@ -60,6 +80,10 @@ impl DagDrag {
             Self::Bookmark { name, conflicted } => {
                 *conflicted || !change.bookmarks.iter().any(|bookmark| bookmark == name)
             }
+            Self::Change {
+                selection: Some(selection),
+                ..
+            } => selection.targets.contains(change.commit_id.as_str()),
             Self::Change { entries, .. } => {
                 let Some(source) = self.source_change() else {
                     return false;

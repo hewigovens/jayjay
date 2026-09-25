@@ -9,4 +9,5 @@ pub(crate) struct DagRebaseRequest {
     pub(crate) dest_change_id: ShortId,
     pub(crate) dest_commit_id: ShortId,
     pub(crate) dest_label: String,
+    pub(crate) selection_commit_ids: Vec<String>,
 }

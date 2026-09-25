@@ -54,12 +54,7 @@ impl Render for DagDragGhost {
                 .opacity(0.92)
                 .child(icon_label(
                     glyph::ARROW_UP,
-                    SharedString::from(
-                        self.drag
-                            .source_change()
-                            .map(DagDrag::label_for_change)
-                            .unwrap_or_default(),
-                    ),
+                    SharedString::from(self.drag.source_label()),
                     t.scaled_font_size(12.),
                     t.selected_accent,
                 ))
