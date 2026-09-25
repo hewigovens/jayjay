@@ -24,6 +24,7 @@ impl Repo {
         message: &str,
         ignore_whitespace: bool,
     ) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         // Snapshot disk edits first so the post-rewrite checkout can't clobber un-snapshotted edits.
         self.refresh_working_copy()?;
         match destination {

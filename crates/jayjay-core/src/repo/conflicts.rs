@@ -59,6 +59,7 @@ impl Repo {
 
     /// Resolve a conflicted file using a named tool (e.g. ":ours", ":theirs", or an editor).
     pub fn resolve_with_tool(&self, rev: &str, path: &str, tool: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         let rev = self.snapshot_and_follow_one(rev)?;
         self.run_jj_reload(&["resolve", "-r", &rev, "--tool", tool, path])
     }
@@ -135,6 +136,7 @@ impl Repo {
         data: &ConflictEditorData,
         content: &str,
     ) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         let path = data.path.as_str();
         if !data.is_text {
             return Err(CoreError::internal(format!(
@@ -228,11 +230,13 @@ impl Repo {
 
     /// Resolve a file by accepting "ours" (side #1).
     pub fn resolve_use_ours(&self, rev: &str, path: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":ours")
     }
 
     /// Resolve a file by accepting "theirs" (side #2).
     pub fn resolve_use_theirs(&self, rev: &str, path: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":theirs")
     }
 

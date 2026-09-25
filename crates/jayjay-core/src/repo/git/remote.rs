@@ -65,6 +65,7 @@ impl Repo {
     }
 
     pub(crate) fn git_remote_add(&self, name: &str, url: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         if !is_valid_remote_url(url) {
             return Err(CoreError::Internal {
                 message: format!("invalid remote URL: {url}"),

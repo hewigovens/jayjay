@@ -97,10 +97,7 @@ impl Repo {
 
         // The panel is only a preview. Reload and resolve every change again before the first bookmark move so an external abandon, divergence, or reparent cannot leave a partially submitted stack.
         self.reload()?;
-        let current_changes = self.resolve_stack_changes(&layers)?;
-        validate_stack_changes(&current_changes)?;
-
-        self.ensure_bookmarks_unclaimed(&layers)?;
+        self.validate_stack(&layers)?;
 
         // Dependent bases work the same on GitHub (`gh`), GitLab (`glab`), and Cursor Origin (`origin`).
         let remote = self
@@ -142,6 +139,9 @@ impl Repo {
         // Point each bookmark at its change (create-or-move) and compute the
         // dependent base from the submitted order: bottom → trunk, others → below.
         let mut targets: Vec<ForgeTarget> = Vec::with_capacity(layers.len());
+        let write = self.write_guard()?;
+        // Forge authentication can take a while; validate again against the head the lock just reloaded.
+        self.validate_stack(&layers)?;
         for (i, layer) in layers.iter().enumerate() {
             self.move_bookmark(&layer.bookmark, &layer.change_id)?;
             let base = if i == 0 {
@@ -156,6 +156,8 @@ impl Repo {
                 body: layer.body.clone(),
             });
         }
+
+        drop(write);
 
         // Push the whole set first so every PR base/head exists, then create.
         let names: Vec<&str> = targets.iter().map(|t| t.bookmark.as_str()).collect();
@@ -187,6 +189,11 @@ impl Repo {
             message,
             open_urls,
         })
+    }
+
+    fn validate_stack(&self, layers: &[SubmitStackLayer]) -> CoreResult<()> {
+        validate_stack_changes(&self.resolve_stack_changes(layers)?)?;
+        self.ensure_bookmarks_unclaimed(layers)
     }
 
     // An edited name may already belong to another local or origin change (worst case: trunk), so reject the plan before preflight or any bookmark move instead of silently retargeting it.

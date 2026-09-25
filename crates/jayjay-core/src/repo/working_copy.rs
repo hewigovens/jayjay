@@ -33,6 +33,7 @@ impl Repo {
     }
 
     pub(super) fn commit_transaction(&self, tx: Transaction, description: &str) -> CoreResult<()> {
+        self.debug_assert_write_guarded();
         let context = "sync working copy after transaction";
         let old_commit = self.working_copy_commit(&self.get_repo())?;
         let mut workspace = load_workspace_internal(&self.path, context)?;
@@ -52,6 +53,7 @@ impl Repo {
     }
 
     pub fn refresh_working_copy(&self) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         // Swift cooperative executor threads have small stacks; jj descendant rebases can need substantially more while polling tree merges.
         std::thread::scope(|scope| {
             let worker = std::thread::Builder::new()
@@ -183,6 +185,7 @@ mod tests {
                 repo.rewrite_commit_tree(tx.repo_mut(), &commit, tree, "remove file")
                     .expect("rewrite");
                 started_tx.send(()).unwrap();
+                let _write = repo.write_guard()?;
                 let result = repo.commit_transaction_rebase(tx, "remove file");
                 finished_tx.send(()).unwrap();
                 result

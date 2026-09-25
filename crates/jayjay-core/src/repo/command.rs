@@ -12,7 +12,13 @@ impl Repo {
         self.checked_stdout(output)
     }
 
+    /// Every jj subprocess except fetch and push runs under the write lock: even a read like `jj diff` snapshots the working copy and publishes an operation.
     pub(crate) fn run_jj_output(&self, args: &[&str]) -> CoreResult<Output> {
+        let _write = if is_git_fetch_or_push(args) {
+            None
+        } else {
+            Some(self.write_guard()?)
+        };
         let binary = environment::jj_binary();
         let context = format!("run jj {}", args.first().unwrap_or(&""));
         let mut command = environment::command(&binary);
@@ -42,6 +48,7 @@ impl Repo {
     }
 
     pub(crate) fn run_jj_reload(&self, args: &[&str]) -> CoreResult<()> {
+        self.debug_assert_write_guarded();
         self.run_jj(args)?;
         self.reload()
     }
@@ -110,5 +117,54 @@ impl Repo {
             (true, false) => stderr,
             (false, false) => format!("{stdout}\n{stderr}"),
         }
+    }
+}
+
+/// Fetch and push wait on the network for minutes, and jj merges them with concurrent operations itself.
+fn is_git_fetch_or_push(args: &[&str]) -> bool {
+    const VALUED_OPTIONS: &[&str] = &[
+        "--config",
+        "--config-file",
+        "-R",
+        "--repository",
+        "--at-op",
+        "--at-operation",
+        "--color",
+    ];
+    let mut words = Vec::new();
+    let mut args = args.iter();
+    while let Some(&arg) = args.next() {
+        if VALUED_OPTIONS.contains(&arg) {
+            args.next();
+        } else if !arg.starts_with('-') {
+            words.push(arg);
+            if words.len() == 2 {
+                break;
+            }
+        }
+    }
+    matches!(words[..], ["git", "fetch" | "push"])
+}
+
+#[cfg(test)]
+mod tests {
+    use super::is_git_fetch_or_push;
+
+    #[test]
+    fn only_the_fetch_and_push_subcommands_skip_the_write_lock() {
+        assert!(is_git_fetch_or_push(&[
+            "git", "fetch", "--remote", "origin"
+        ]));
+        assert!(is_git_fetch_or_push(&[
+            "--config",
+            "ui.editor=[\"false\"]",
+            "--ignore-working-copy",
+            "git",
+            "push"
+        ]));
+        assert!(!is_git_fetch_or_push(&[
+            "bookmark", "create", "git", "fetch"
+        ]));
+        assert!(!is_git_fetch_or_push(&["git", "import"]));
     }
 }

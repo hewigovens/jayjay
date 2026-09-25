@@ -73,6 +73,7 @@ impl Repo {
         let _enter = sync.enter();
         let tracking_before = self.tracking_bookmark_names();
         let msg = fetch(self)?;
+        let _write = self.write_guard();
         if let Some(track_args) = track_args {
             let _ = self.run_jj_reload(track_args);
         }

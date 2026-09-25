@@ -13,6 +13,7 @@ const WORKSPACE_COMMAND: &str = "workspace";
 impl Repo {
     /// Create a new workspace at the given path, optionally on a specific revision.
     pub fn workspace_add(&self, dest: &str, name: &str, rev: &str) -> CoreResult<String> {
+        let _write = self.write_guard()?;
         if !name.is_empty() && !is_valid_workspace_name(name) {
             return Err(CoreError::Internal {
                 message: format!("invalid workspace name: {name}"),
@@ -39,6 +40,7 @@ impl Repo {
 
     /// `expected_root` prevents a stale workspace row from forgetting a replacement with the same name.
     pub fn workspace_forget(&self, name: &str, expected_root: Option<&str>) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.ensure_workspace_is_not_current(name)?;
         if let Some(expected_root) = expected_root {
             self.verify_workspace_root(name, expected_root)?;

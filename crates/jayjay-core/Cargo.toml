@@ -23,6 +23,7 @@ repository = [
     "dep:jayjay-review",
     "dep:jj-lib",
     "dep:libc",
+    "dep:parking_lot",
     "dep:percent-encoding",
     "dep:plist",
     "dep:pollster",
@@ -49,6 +50,7 @@ jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
 jayjay-review = { version = "0.1.0", path = "../jayjay-review", optional = true }
 jayjay-network = { version = "0.1.0", path = "../jayjay-network", default-features = false, optional = true }
 nucleo-matcher = { workspace = true }
+parking_lot = { workspace = true, optional = true }
 pollster = { workspace = true, optional = true }
 stacker = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }

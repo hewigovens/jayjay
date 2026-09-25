@@ -89,6 +89,7 @@ impl Repo {
         data: &FileEditorData,
         content: &str,
     ) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let target = self.working_copy_file_target(&data.path)?;
         if encode_reverse_hex(target.commit.change_id().as_bytes()) != data.change_id {

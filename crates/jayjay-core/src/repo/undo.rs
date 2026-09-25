@@ -51,6 +51,7 @@ impl Repo {
 
     /// Restore the repo to a given operation via `jj op restore`.
     pub fn op_restore(&self, op_id: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.run_jj_reload(&["op", "restore", op_id])
     }
 
