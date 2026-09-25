@@ -31,6 +31,10 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
         ("edit", Box::new(|| repo.edit(rev))),
         ("abandon", Box::new(|| repo.abandon(rev))),
         (
+            "abandon selected",
+            Box::new(|| repo.abandon_many(&[rev.to_owned(), "@".to_owned()])),
+        ),
+        (
             "rebase",
             Box::new(|| repo.rebase(rev, "@", RebaseMode::Source).map(drop)),
         ),

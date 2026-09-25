@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::Arc;
 
 use futures::TryStreamExt as _;
@@ -17,7 +18,7 @@ use crate::types::*;
 
 impl Repo {
     pub fn describe(&self, rev: &str, message: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         // Snapshot disk edits first so rewriting @'s ancestry does not clobber them on checkout.
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "describe", true, |repo, commit, repo_mut| {
@@ -33,7 +34,7 @@ impl Repo {
     /// 3. Edit working copy to point at new commit
     /// 4. Rebase descendants + sync working copy on disk
     pub fn new_change(&self, parent_rev: &str, message: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         // Step 1: snapshot working copy (same as jj CLI's workspace_helper)
         self.refresh_working_copy()?;
         // Steps 2-4: create commit, edit @, rebase descendants, checkout
@@ -59,7 +60,7 @@ impl Repo {
         position: InsertPosition,
         message: &str,
     ) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "new change", true, |repo, target, repo_mut| {
             let (parents, displaced) = match position {
@@ -119,7 +120,7 @@ impl Repo {
     }
 
     pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
             self.ensure_commit_mutable(repo, commit, rev)?;
@@ -176,7 +177,7 @@ impl Repo {
     /// Switch the working copy to point at an existing revision (`jj edit`).
     /// Replicates the full `jj edit` lifecycle: snapshot → edit → rebase → checkout.
     pub fn edit(&self, rev: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "edit", true, |repo, commit, repo_mut| {
             // @ on an immutable commit would let the next snapshot rewrite it.
@@ -186,7 +187,7 @@ impl Repo {
     }
 
     pub fn abandon(&self, rev: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "abandon", true, |repo, commit, repo_mut| {
             self.ensure_commit_mutable(repo, commit, rev)?;
@@ -196,18 +197,22 @@ impl Repo {
     }
 
     pub fn abandon_many(&self, revs: &[String]) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Abandon selected")?;
-        let revs = self.snapshot_and_follow(revs)?;
-        let mut args = Vec::with_capacity(revs.len() + 2);
-        args.extend(["abandon", "--"]);
-        args.extend(revs.iter().map(String::as_str));
-        self.run_jj_reload(&args)
+        let (repo, commits) = self.snapshot_and_follow_commits(revs)?;
+        for (commit, rev) in commits.iter().zip(revs) {
+            self.ensure_commit_mutable(&repo, commit, rev)?;
+        }
+        let mut tx = repo.start_transaction();
+        for commit in &commits {
+            tx.repo_mut().record_abandoned_commit(commit);
+        }
+        self.commit_transaction_rebase(tx, "abandon")
     }
 
     /// Returns the commit id of `rev` after the rebase.
     pub fn rebase(&self, rev: &str, dest: &str, mode: RebaseMode) -> CoreResult<String> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
         let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
@@ -298,7 +303,7 @@ impl Repo {
     }
 
     pub fn rebase_many(&self, revs: &[String], dest: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Rebase selected")?;
         let mut targets = revs.to_vec();
         targets.push(dest.to_owned());
@@ -332,7 +337,7 @@ impl Repo {
     /// Squash a newest-first, consecutive linear selection into its oldest change.
     /// Returns the destination's commit id after the squash.
     pub fn squash_many(&self, revs: &[String]) -> CoreResult<String> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Squash selected")?;
         let (_, commits) = self.snapshot_and_follow_commits(revs)?;
         if commits
@@ -370,7 +375,7 @@ impl Repo {
 
     /// Create a merge commit with multiple parents (`jj new A B`).
     pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         require_multiple_revisions(parent_revs, "Merge")?;
         let (repo, parents) = self.snapshot_and_follow_commits(parent_revs)?;
         for (index, parent) in parents.iter().enumerate() {
@@ -387,22 +392,37 @@ impl Repo {
             }
         }
 
-        let parent_ids: Vec<String> = parents.iter().map(|parent| parent.id().hex()).collect();
-        let mut args = vec!["new"];
-        args.extend(parent_ids.iter().map(String::as_str));
-        self.run_jj_reload(&args)
+        let mut tx = repo.start_transaction();
+        let repo_mut = tx.repo_mut();
+        let tree = block_on_result(
+            "merge",
+            jj_lib::rewrite::merge_commit_trees(repo_mut, &parents),
+        )?;
+        let parent_ids = parents.iter().map(|parent| parent.id().clone()).collect();
+        let merge = block_on_result("merge", repo_mut.new_commit(parent_ids, tree).write())?;
+        self.edit_working_copy_commit(repo_mut, &merge, "edit working copy")?;
+        self.commit_transaction_rebase(tx, "merge")
     }
 
     /// Duplicate a revision (`jj duplicate`).
     pub fn duplicate(&self, rev: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
-        let rev = self.snapshot_and_follow_one(rev)?;
-        self.run_jj_reload(&["duplicate", &rev])
+        let _write = self.write_guard()?;
+        let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
+        if commits[0].parent_ids().is_empty() {
+            return Err(CoreError::internal("The root change cannot be duplicated"));
+        }
+        let mut tx = repo.start_transaction();
+        let targets = [commits[0].id().clone()];
+        let descriptions = HashMap::new();
+        let duplicated =
+            jj_lib::rewrite::duplicate_commits_onto_parents(tx.repo_mut(), &targets, &descriptions);
+        block_on_result("duplicate", duplicated)?;
+        self.commit_transaction(tx, "duplicate")
     }
 
     /// Absorb source hunks into ancestor commits based on blame.
     pub fn absorb(&self, rev: &str) -> CoreResult<MutationEffect> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         let rev = self.snapshot_and_follow_one(rev)?;
         let output = self.run_jj_output(&["absorb", "--from", &rev])?;
         self.ensure_success(&output, "command failed")?;
@@ -420,7 +440,7 @@ impl Repo {
 
     /// Create a new change that inverts the diff of a prior change on top of `@` (`jj revert`).
     pub fn revert_change(&self, rev: &str) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         let rev = self.snapshot_and_follow_one(rev)?;
         let repo = self.get_repo();
         let onto = self.working_copy_commit(&repo)?.id().hex();
@@ -436,7 +456,7 @@ impl Repo {
         message: &str,
         parallel: bool,
     ) -> CoreResult<()> {
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         let rev = self.snapshot_and_follow_one(rev)?;
         let mut args = vec!["split", "--revision", rev.as_str()];
         if parallel {

@@ -9,6 +9,7 @@ impl Repo {
     pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<String> {
         let _enter = sync.enter();
         if !bookmark.is_empty() {
+            let _write = self.write_guard()?;
             self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
         }
 
@@ -32,8 +33,11 @@ impl Repo {
         if bookmarks.is_empty() {
             return Ok("Nothing to push.".to_owned());
         }
-        for bookmark in bookmarks {
-            self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
+        {
+            let _write = self.write_guard()?;
+            for bookmark in bookmarks {
+                self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
+            }
         }
         // `--bookmark` creates and tracks new remote bookmarks on its own; jj 0.42
         // has no `--allow-new` flag.
@@ -73,7 +77,7 @@ impl Repo {
         let _enter = sync.enter();
         let tracking_before = self.tracking_bookmark_names();
         let msg = fetch(self)?;
-        let _write = self.write_guard();
+        let _write = self.write_guard()?;
         if let Some(track_args) = track_args {
             let _ = self.run_jj_reload(track_args);
         }
@@ -152,7 +156,7 @@ impl Repo {
             if c.is_empty {
                 sync.check()?;
                 // 100% safe: empty after rebase = content already in parent
-                self.run_jj_quiet(&["abandon", &c.change_id.id]);
+                let _ = self.abandon(&c.commit_id.id);
                 abandoned.extend(lost_on_commit);
             } else if c.has_conflict {
                 // High confidence but user should confirm

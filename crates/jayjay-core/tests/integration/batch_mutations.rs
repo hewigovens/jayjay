@@ -150,6 +150,50 @@ fn abandon_many_targets_the_selection_not_a_moved_working_copy() {
 }
 
 #[test]
+fn duplicate_copies_a_change_onto_the_same_parents() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "base"]);
+    run_jj_in(&repo_path, &["new", "-m", "original"]);
+    fs::write(repo_path.join("a.txt"), "original\n").expect("write a.txt");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let original = change_by_description(&repo, "original");
+
+    repo.duplicate(&original.change_id.id).expect("duplicate");
+
+    let copies: Vec<_> = repo
+        .log("all()")
+        .expect("log")
+        .into_iter()
+        .filter(|change| change.description.trim() == "original")
+        .collect();
+    assert_eq!(copies.len(), 2);
+    let copy = copies
+        .iter()
+        .find(|change| change.change_id.id != original.change_id.id)
+        .expect("a copy with its own change id");
+    assert_eq!(copy.parents, original.parents);
+    assert_eq!(
+        repo.file_content(&copy.commit_id.id, "a.txt")
+            .expect("read copy")
+            .trim_end(),
+        "original"
+    );
+}
+
+#[test]
+fn duplicate_refuses_the_root_change() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+
+    let error = repo
+        .duplicate("root()")
+        .expect_err("the root has no parents to copy onto");
+
+    assert!(error.to_string().contains("root"), "{error}");
+}
+
+#[test]
 fn rebase_many_preserves_dependencies_within_the_selection() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
