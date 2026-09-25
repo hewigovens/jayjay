@@ -31,17 +31,10 @@ struct DAGRow: View {
 
     var body: some View {
         let viewModel = viewModel.contextTargeted(isContextTarget)
-        Group {
-            if viewModel.isRebaseArmed {
-                TimelineView(.animation) { timeline in
-                    rowBody(viewModel, wiggleAngle: viewModel.wiggleAngle(at: timeline.date))
-                }
-            } else {
-                rowBody(viewModel, wiggleAngle: 0)
-            }
-        }
-        .contentShape(Rectangle())
-        .onHover { isContextTarget = $0 }
+        rowBody(viewModel)
+            .modifier(DAGRowWiggle(isArmed: viewModel.isRebaseArmed))
+            .contentShape(Rectangle())
+            .onHover { isContextTarget = $0 }
     }
 
     private func summaryColumn(_ viewModel: DAGRowViewModel) -> some View {
@@ -77,7 +70,7 @@ struct DAGRow: View {
         .padding(.trailing, 10)
     }
 
-    private func rowBody(_ viewModel: DAGRowViewModel, wiggleAngle: Double) -> some View {
+    private func rowBody(_ viewModel: DAGRowViewModel) -> some View {
         HStack(alignment: .top, spacing: 0) {
             Color.clear.frame(width: viewModel.graphWidth)
             summaryColumn(viewModel)
@@ -95,7 +88,6 @@ struct DAGRow: View {
         }
         .padding(.leading, dagRowLeadingPadding)
         .background(viewModel.rowBackground)
-        .rotationEffect(.degrees(wiggleAngle))
         .scaleEffect(viewModel.scale)
         .opacity(viewModel.opacity)
         .overlay(alignment: .leading) {
@@ -160,5 +152,18 @@ struct DAGRow: View {
             .padding(.horizontal, 4)
             .padding(.vertical, 2)
             .background(Color.primary.opacity(0.06), in: Capsule())
+    }
+}
+
+/// A modifier rather than a TimelineView branch: swapping the row's view when it arms cancels the drag in flight.
+private struct DAGRowWiggle: ViewModifier {
+    let isArmed: Bool
+    @State private var tilted = false
+
+    func body(content: Content) -> some View {
+        content
+            .rotationEffect(.degrees(isArmed ? (tilted ? 1.1 : -1.1) : 0))
+            .animation(isArmed ? .easeInOut(duration: 0.09).repeatForever(autoreverses: true) : .default, value: tilted)
+            .onChange(of: isArmed) { _, armed in tilted = armed }
     }
 }

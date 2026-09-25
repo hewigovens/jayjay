@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::{App, Context};
 use jayjay_core::compare;
-use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect};
+use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect, RebaseMode};
 
 use super::RepoWindow;
 use super::confirmation::{Confirmation, ConfirmedAction};
@@ -14,6 +14,7 @@ pub enum ChangeAction {
     Insert { rev: String, at: InsertPosition },
     Squash { rev: String, into: Option<String> },
     Rebase { rev: String, dest: String },
+    RebaseOntoTrunk { rev: String },
     RebaseMany { revs: Vec<String>, dest: String },
     Merge { parents: Vec<String> },
     SquashMany { revs: Vec<String> },
@@ -182,6 +183,11 @@ impl RepoWindow {
                     }),
                 ));
             }
+            items.push(ContextMenuItem::new(
+                "Rebase onto trunk",
+                glyph::ARROW_UP,
+                change_action(ChangeAction::RebaseOntoTrunk { rev: rev.clone() }),
+            ));
         }
 
         if bookmark_diff.is_some() || selected_rev.is_some() {
@@ -317,9 +323,12 @@ impl RepoWindow {
             ChangeAction::Squash { rev, into } => self
                 .vm
                 .update(cx, |vm, cx| vm.squash_change(rev.clone(), into.clone(), cx)),
-            ChangeAction::Rebase { rev, dest } => self
-                .vm
-                .update(cx, |vm, cx| vm.rebase_change(rev.clone(), dest.clone(), cx)),
+            ChangeAction::Rebase { rev, dest } => self.vm.update(cx, |vm, cx| {
+                vm.rebase_change(rev.clone(), dest.clone(), RebaseMode::Source, cx)
+            }),
+            ChangeAction::RebaseOntoTrunk { rev } => self.vm.update(cx, |vm, cx| {
+                vm.rebase_change(rev.clone(), "trunk()".to_owned(), RebaseMode::Branch, cx)
+            }),
             ChangeAction::RebaseMany { revs, dest } => self.vm.update(cx, |vm, cx| {
                 vm.rebase_changes(revs.clone(), dest.clone(), cx)
             }),

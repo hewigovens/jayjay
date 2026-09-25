@@ -165,7 +165,7 @@ extension RepoContentView {
 
     private func rebaseConfirmationSheet(request: DAGRebaseRequest) -> some View {
         SheetContainer(
-            title: "Rebase Change?",
+            title: request.selectionCommitIds.isEmpty ? "Rebase Change?" : "Rebase \(request.selectionCommitIds.count) Changes?",
             subtitle: "\(String(request.sourceCommitId.prefix(12))) -> \(String(request.destCommitId.prefix(12)))",
             cancelLabel: "Cancel",
             confirmLabel: "Rebase",

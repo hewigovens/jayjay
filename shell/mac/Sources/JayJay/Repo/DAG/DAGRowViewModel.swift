@@ -22,7 +22,7 @@ enum DAGRowOutlineState: Equatable {
 
 enum DAGRowRebaseState: Equatable {
     case none
-    case sourceArmed(armedAt: Date?)
+    case sourceArmed
     case sourceDragging
     case candidate
     case hoverTarget(previewText: String?)
@@ -98,7 +98,7 @@ struct DAGRowViewModel {
     ) -> DAGRowRebaseState {
         if rebaseDrag?.sourceCommitId == commitId {
             switch rebaseDrag?.phase {
-                case .armed?: return .sourceArmed(armedAt: rebaseDrag?.armedAt)
+                case .armed?: return .sourceArmed
                 case .dragging?: return .sourceDragging
                 default: return .none
             }
@@ -263,13 +263,5 @@ struct DAGRowViewModel {
 
     var opacity: Double {
         isRebaseDragging ? 0.56 : 1
-    }
-
-    func wiggleAngle(at date: Date) -> Double {
-        guard case let .sourceArmed(armedAt) = rebaseState,
-              let armedAt,
-              date.timeIntervalSince(armedAt) >= 0.12
-        else { return 0 }
-        return sin(date.timeIntervalSinceReferenceDate * 18) * 1.1
     }
 }

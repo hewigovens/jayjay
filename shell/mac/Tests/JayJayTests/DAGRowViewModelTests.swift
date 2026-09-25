@@ -28,7 +28,6 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertFalse(viewModel.isRebaseSource)
         XCTAssertFalse(viewModel.isRebaseArmed)
         XCTAssertNil(viewModel.dragTargetText)
-        XCTAssertEqual(viewModel.wiggleAngle(at: Date()), 0)
     }
 
     func testArmedSourceShowsDragAffordances() {
@@ -38,7 +37,6 @@ final class DAGRowViewModelTests: XCTestCase {
             description: "feat-x",
             isImmutable: false
         )
-        let armedAt = Date(timeIntervalSinceReferenceDate: 10)
 
         let viewModel = DAGRowViewModel(
             entry: entry,
@@ -46,11 +44,7 @@ final class DAGRowViewModelTests: XCTestCase {
             index: 0,
             selectedId: nil,
             compareFromId: nil,
-            rebaseDrag: makeDragState(
-                sourceCommitId: "source-commit",
-                phase: .armed,
-                armedAt: armedAt
-            ),
+            rebaseDrag: makeDragState(sourceCommitId: "source-commit", phase: .armed),
             rebasePreviewText: nil,
             bookmarkDrag: nil,
             bookmarkPreviewText: nil,
@@ -60,7 +54,6 @@ final class DAGRowViewModelTests: XCTestCase {
         XCTAssertTrue(viewModel.isRebaseSource)
         XCTAssertTrue(viewModel.isRebaseArmed)
         XCTAssertEqual(viewModel.dragTargetText, "Drag to choose a new parent")
-        XCTAssertNotEqual(viewModel.wiggleAngle(at: armedAt.addingTimeInterval(0.2)), 0)
     }
 
     func testHoverTargetShowsPreview() {
@@ -464,8 +457,7 @@ final class DAGRowViewModelTests: XCTestCase {
 
     private func makeDragState(
         sourceCommitId: String,
-        phase: DAGRebasePhase,
-        armedAt: Date? = nil
+        phase: DAGRebasePhase
     ) -> DAGRebaseDragState {
         DAGRebaseDragState(
             sourceCommitId: sourceCommitId,
@@ -474,7 +466,6 @@ final class DAGRowViewModelTests: XCTestCase {
             sourceLabel: "feat-x",
             sourceParents: [],
             startLocation: .zero,
-            armedAt: armedAt,
             phase: phase,
             location: .zero,
             hoveredCommitId: "target-commit"

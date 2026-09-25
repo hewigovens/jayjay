@@ -85,6 +85,9 @@ extension DAGView {
                     )
                 }
             }
+            Button { actions?.rebase(rev: rev, dest: "trunk()", mode: .branch) } label: {
+                Label("Rebase onto trunk", systemImage: "arrow.uturn.up")
+            }
         }
 
         divergentCompareSection(entry: entry, rev: rev, viewModel: viewModel)
@@ -235,7 +238,7 @@ extension DAGView {
             // Rebase and squash rewrite the selected change; this row is only the destination.
             let selectedImmutable = viewModel.change(for: sel)?.isImmutable ?? false
             if !selectedImmutable {
-                Button { actions?.rebase(rev: selRev, dest: rev) } label: {
+                Button { actions?.rebase(rev: selRev, dest: rev, mode: .source) } label: {
                     Label("Rebase selected onto this", systemImage: "arrow.uturn.up")
                 }
                 if !entry.change.isImmutable {

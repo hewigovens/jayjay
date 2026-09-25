@@ -31,11 +31,13 @@ enum DAGRebaseGesturePolicy {
         guard let rebaseDrag,
               let targetCommitId = previewTargetCommitId ?? hoveredCommitId,
               let targetEntry = entries.first(where: { $0.change.commitId.id == targetCommitId }),
-              canRebaseOnto(
+              rebaseDrag.selectionCommitIds.isEmpty
+              ? canRebaseOnto(
                   entries: entries,
                   sourceCommitId: rebaseDrag.sourceCommitId,
                   targetCommitId: targetCommitId
               )
+              : rebaseDrag.selectionTargets.contains(targetCommitId)
         else {
             return nil
         }
@@ -48,12 +50,16 @@ enum DAGRebaseGesturePolicy {
             destRev: revision(for: targetEntry.change),
             destChangeId: targetEntry.change.changeId.id,
             destCommitId: targetEntry.change.commitId.id,
-            destLabel: displayLabel(for: targetEntry.change)
+            destLabel: displayLabel(for: targetEntry.change),
+            selectionCommitIds: rebaseDrag.selectionCommitIds
         )
     }
 
     /// What the hover bubble says when dropping here would cancel; nil when the target is valid.
     static func targetRefusal(rebaseDrag: DAGRebaseDragState, targetCommitId: String) -> String? {
+        if !rebaseDrag.selectionCommitIds.isEmpty {
+            return rebaseDrag.selectionTargets.contains(targetCommitId) ? nil : "Can't rebase the selection here"
+        }
         if rebaseDrag.sourceParents == [targetCommitId] {
             return "Already its parent"
         }

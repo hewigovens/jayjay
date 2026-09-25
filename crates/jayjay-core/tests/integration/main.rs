@@ -17,6 +17,7 @@ mod path_injection;
 mod pull_request_import;
 mod pull_request_import_live;
 mod pull_requests;
+mod rebase_modes;
 mod remote_operations;
 mod repo;
 mod restore_files;

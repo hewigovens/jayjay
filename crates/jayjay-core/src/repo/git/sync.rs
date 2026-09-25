@@ -76,9 +76,9 @@ impl Repo {
         if let Some(track_args) = track_args {
             let _ = self.run_jj_reload(track_args);
         }
-        self.rebase_to_trunk();
-        let _ = self.reload();
+        // The in-process rebase cannot be interrupted, so honour a cancel before it instead of reporting one after it has landed.
         sync.check()?;
+        self.rebase_to_trunk();
         self.post_fetch_cleanup(msg, &tracking_before, sync)
     }
 
@@ -101,7 +101,7 @@ impl Repo {
     }
 
     fn rebase_to_trunk(&self) {
-        let _ = self.run_jj(&["rebase", "-d", "trunk()"]);
+        let _ = self.rebase("@", "trunk()", RebaseMode::Branch);
     }
 
     fn tracking_bookmark_names(&self) -> HashSet<String> {
@@ -182,5 +182,47 @@ fn combine_output(stdout: &str, stderr: &str) -> String {
         "Done.".to_owned()
     } else {
         parts.join("\n")
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use jj_test::{init_jj_repo, run_jj_in};
+
+    use crate::repo::Repo;
+    use crate::types::CoreError;
+
+    #[test]
+    fn a_pull_canceled_after_its_fetch_does_not_rebase() {
+        let temp_dir = init_jj_repo();
+        let repo_path = temp_dir.path().join("repo");
+        run_jj_in(
+            &repo_path,
+            &[
+                "config",
+                "set",
+                "--repo",
+                "revset-aliases.'trunk()'",
+                "main",
+            ],
+        );
+        run_jj_in(&repo_path, &["describe", "-m", "trunk"]);
+        run_jj_in(&repo_path, &["bookmark", "create", "main", "-r", "@"]);
+        run_jj_in(&repo_path, &["new", "root()", "-m", "work"]);
+        let repo = Repo::open(&repo_path).expect("open repo");
+        let before = repo.op_log().expect("op log").len();
+        let sync = repo.sync_token();
+
+        let result = repo.pull(
+            &sync,
+            |_| {
+                sync.cancel();
+                Ok(String::new())
+            },
+            None,
+        );
+
+        assert!(matches!(result, Err(CoreError::Canceled)));
+        assert_eq!(repo.op_log().expect("op log").len(), before);
     }
 }

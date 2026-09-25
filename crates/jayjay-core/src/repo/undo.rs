@@ -40,7 +40,7 @@ impl Repo {
                 let short_len = unique_prefix_len(&id, &ids);
                 OpLogEntry {
                     id: ShortId::new(id, short_len),
-                    description,
+                    description: shorten_embedded_ids(&description),
                     timestamp,
                     is_current,
                 }
@@ -63,14 +63,15 @@ impl Repo {
 
     /// Description of the operation the repo is currently at, read in-process from the loaded repo (no subprocess) so the status bar can show it cheaply.
     pub fn current_operation_description(&self) -> String {
-        self.get_repo()
-            .operation()
-            .metadata()
-            .description
-            .lines()
-            .next()
-            .unwrap_or("")
-            .to_owned()
+        shorten_embedded_ids(
+            self.get_repo()
+                .operation()
+                .metadata()
+                .description
+                .lines()
+                .next()
+                .unwrap_or(""),
+        )
     }
 }
 
@@ -85,9 +86,47 @@ fn unique_prefix_len(id: &str, all: &[String]) -> u32 {
     id.len() as u32
 }
 
+/// jj writes full 128-hex operation ids (and 40-hex commit ids) into descriptions such as "restore to operation …"; show 12 characters like `jj op log`.
+fn shorten_embedded_ids(description: &str) -> String {
+    const COMMIT_ID_LEN: usize = 40;
+    const OPERATION_ID_LEN: usize = 128;
+    const SHORT_LEN: usize = 12;
+    description
+        .split(' ')
+        .map(|word| {
+            if matches!(word.len(), COMMIT_ID_LEN | OPERATION_ID_LEN)
+                && word.bytes().all(|b| b.is_ascii_hexdigit())
+            {
+                &word[..SHORT_LEN]
+            } else {
+                word
+            }
+        })
+        .collect::<Vec<_>>()
+        .join(" ")
+}
+
 #[cfg(test)]
 mod tests {
-    use super::unique_prefix_len;
+    use super::{shorten_embedded_ids, unique_prefix_len};
+
+    #[test]
+    fn long_hex_ids_in_descriptions_are_shortened() {
+        let op = "909d5af891b700efb60cf5c1469d8d4a3b6557a4cc0d0a8382cc5e413e8a97d4d6149cd61939704e0300b9d5468a2d386a0f5687211facf2bd693eaf61529b5f";
+        assert_eq!(
+            shorten_embedded_ids(&format!("restore to operation {op}")),
+            "restore to operation 909d5af891b7"
+        );
+        assert_eq!(
+            shorten_embedded_ids("rebase commit 55e50b53f4f09d24c56bc5c7d90b9545c6b871f3"),
+            "rebase commit 55e50b53f4f0"
+        );
+        let remote = "0123456789abcdef0123456789abcdef";
+        assert_eq!(
+            shorten_embedded_ids(&format!("add git remote {remote}")),
+            format!("add git remote {remote}")
+        );
+    }
 
     #[test]
     fn unique_prefix_grows_until_distinct() {

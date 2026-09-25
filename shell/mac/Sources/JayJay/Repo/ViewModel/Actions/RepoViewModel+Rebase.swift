@@ -24,6 +24,12 @@ extension RepoViewModel {
             viewModel.error = message
         }
     ) {
+        // The confirmation can stay open across a refresh; never rebase commits it did not show.
+        let shown = Set(graphEntries.map(\.change.commitId.id))
+        guard ([request.sourceCommitId, request.destCommitId] + request.selectionCommitIds).allSatisfy(shown.contains) else {
+            MainActor.assumeIsolated { onFailure(self, "Rebase cancelled: the changes moved while confirming") }
+            return
+        }
         lastInternalMutationAt = Date()
         isRefreshingInFlight = true
         error = nil
@@ -73,7 +79,14 @@ extension RepoViewModel {
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRebaseRefreshResult {
         let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
-        try repo.rebase(rev: request.sourceRev, dest: request.destRev)
+        let rebasedChangeIds = try request.selectionCommitIds.isEmpty
+            ? [request.sourceChangeId]
+            : request.selectionCommitIds.map { try repo.showSummary(rev: $0).info.changeId.id }
+        if request.selectionCommitIds.isEmpty {
+            try repo.rebase(rev: request.sourceRev, dest: request.destRev, mode: .source)
+        } else {
+            try repo.rebaseMany(revs: request.selectionCommitIds, dest: request.destRev)
+        }
         try repo.refreshWorkingCopy()
 
         let graph = try repo.logGraphWithLayout(revset: revset)
@@ -86,9 +99,8 @@ extension RepoViewModel {
             includeSubmoduleStatuses: includeSubmoduleStatuses
         )
         let workingCopy = log.first(where: { $0.isWorkingCopy })
-        let hadConflicts = graphEntries.contains(where: {
-            $0.change.changeId.id == request.sourceChangeId && $0.change.hasConflict
-        })
+        let hadConflicts = try repo.log(revset: rebasedChangeIds.joined(separator: " | "))
+            .contains(where: \.hasConflict)
 
         return try RepoRebaseRefreshResult(
             graph: graph,

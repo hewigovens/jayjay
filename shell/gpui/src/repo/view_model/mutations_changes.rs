@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{CoreResult, MutationEffect};
+use jayjay_core::{CoreResult, MutationEffect, RebaseMode};
 
 use super::RepoViewModel;
 
@@ -35,6 +35,7 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         dest: String,
+        mode: RebaseMode,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<()>> {
         let change_id = self
@@ -46,7 +47,7 @@ impl RepoViewModel {
             .unwrap_or_default();
         let task = self.repo_result_task(
             cx,
-            move |repo| repo.rebase(&rev, &dest),
+            move |repo| repo.rebase(&rev, &dest, mode),
             move |vm, rebased: &String, cx| {
                 vm.refresh_preferring(false, Some((change_id, rebased.clone())), cx)
             },

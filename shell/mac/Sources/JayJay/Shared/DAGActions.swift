@@ -13,7 +13,7 @@ protocol DAGActions: AnyObject {
     func squash(rev: String, into: String)
     func absorb(rev: String)
     func revertChange(rev: String)
-    func rebase(rev: String, dest: String)
+    func rebase(rev: String, dest: String, mode: RebaseMode)
     func rebase(revs: [String], dest: String)
     func abandon(rev: String)
     func compareWith(from: String, to: String)

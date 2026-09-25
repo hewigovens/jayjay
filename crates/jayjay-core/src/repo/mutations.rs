@@ -5,7 +5,10 @@ use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId as _;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
-use jj_lib::revset::UserRevsetExpression;
+use jj_lib::revset::{ResolvedRevsetExpression, RevsetStreamExt as _, UserRevsetExpression};
+use jj_lib::rewrite::{
+    MoveCommitsLocation, MoveCommitsStats, MoveCommitsTarget, RebaseOptions, RebasedCommit,
+};
 
 use super::Repo;
 use super::path_operands::fileset_literal;
@@ -196,70 +199,132 @@ impl Repo {
     }
 
     /// Returns the commit id of `rev` after the rebase.
-    pub fn rebase(&self, rev: &str, dest: &str) -> CoreResult<String> {
+    pub fn rebase(&self, rev: &str, dest: &str, mode: RebaseMode) -> CoreResult<String> {
         self.refresh_working_copy()?;
         let repo = self.get_repo();
         let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
         let dest_commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, dest)?, dest)?;
+        let roots = match mode {
+            RebaseMode::Source => vec![commit.clone()],
+            RebaseMode::Branch => self.branch_roots(&repo, &commit, &dest_commit)?,
+        };
         // jj-lib rewrites even an already-in-place commit, which would only record an operation and stale any other checkout of the change.
-        if commit.parent_ids() == std::slice::from_ref(dest_commit.id()) {
+        if roots
+            .iter()
+            .all(|root| root.parent_ids() == std::slice::from_ref(dest_commit.id()))
+        {
             return Ok(commit.id().hex());
         }
-        // Only the rebased commit is rewritten; the destination just gains a child and may be immutable.
-        self.ensure_commit_mutable(&repo, &commit, rev)?;
-        // Descendants follow the rebased commit, so a destination below it forms a cycle that jj-lib panics on.
-        let dest_is_descendant = block_on_result(
-            "rebase",
-            repo.index().is_ancestor(commit.id(), dest_commit.id()),
-        )?;
-        if dest_is_descendant {
+        // Only the moved commits are rewritten; the destination just gains a child and may be immutable.
+        for root in &roots {
+            let label = if root.id() == commit.id() {
+                rev.to_owned()
+            } else {
+                root.change_id().reverse_hex()
+            };
+            self.ensure_commit_mutable(&repo, root, &label)?;
+        }
+        // Descendants follow the rebased commit, so a destination below it forms a cycle that jj-lib panics on; branch roots are never ancestors of the destination.
+        if mode == RebaseMode::Source
+            && block_on_result(
+                "rebase",
+                repo.index().is_ancestor(commit.id(), dest_commit.id()),
+            )?
+        {
             return Err(CoreError::Internal {
                 message: format!(
                     "Cannot rebase {rev} onto {dest}: it is the same change or one of its descendants"
                 ),
             });
         }
-        let mut rebased = None;
-        self.with_existing_commit_transaction(
-            repo,
-            commit,
-            "rebase",
-            true,
-            |_, commit, repo_mut| {
-                let rebase = jj_lib::rewrite::rebase_commit(
-                    repo_mut,
-                    commit.clone(),
-                    vec![dest_commit.id().clone()],
-                );
-                rebased = Some(block_on_result("rebase", rebase)?.id().hex());
-                Ok(())
-            },
-        )?;
-        rebased.ok_or_else(|| CoreError::Internal {
-            message: "rebase: no rewritten commit".to_owned(),
+        let root_ids = roots.iter().map(|root| root.id().clone()).collect();
+        let stats = self.move_onto(&repo, MoveCommitsTarget::Roots(root_ids), &dest_commit)?;
+        Ok(match stats.rebased_commits.get(commit.id()) {
+            Some(RebasedCommit::Rewritten(new_commit)) => new_commit.id().hex(),
+            _ => commit.id().hex(),
         })
+    }
+
+    /// Runs on `repo`, the snapshot the operands were resolved against, so a concurrent operation is merged rather than handed stale ids.
+    fn move_onto(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        target: MoveCommitsTarget,
+        dest: &Commit,
+    ) -> CoreResult<MoveCommitsStats> {
+        let location = MoveCommitsLocation {
+            new_parent_ids: vec![dest.id().clone()],
+            new_child_ids: Vec::new(),
+            target,
+        };
+        let mut tx = repo.start_transaction();
+        let options = RebaseOptions::default();
+        let stats = block_on_result(
+            "rebase",
+            jj_lib::rewrite::move_commits(tx.repo_mut(), &location, &options),
+        )?;
+        if tx.repo().has_changes() {
+            self.commit_transaction_rebase(tx, "rebase")?;
+        }
+        Ok(stats)
+    }
+
+    /// `roots(dest..rev)`: the bottom of every line of work leading to `rev` that `dest` does not already contain.
+    fn branch_roots(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        commit: &Commit,
+        dest: &Commit,
+    ) -> CoreResult<Vec<Commit>> {
+        let roots = ResolvedRevsetExpression::commits(vec![dest.id().clone()])
+            .range(&ResolvedRevsetExpression::commits(vec![
+                commit.id().clone(),
+            ]))
+            .roots()
+            .evaluate(repo.as_ref())
+            .map_err(|e| CoreError::internal(format!("branch roots: {e}")))?;
+        block_on_result(
+            "branch roots",
+            roots.stream().commits(repo.store()).try_collect(),
+        )
     }
 
     pub fn rebase_many(&self, revs: &[String], dest: &str) -> CoreResult<()> {
         require_multiple_revisions(revs, "Rebase selected")?;
         let mut targets = revs.to_vec();
         targets.push(dest.to_owned());
-        let followed = self.snapshot_and_follow(&targets)?;
-        let (revs, dest) = followed.split_at(revs.len());
-        let mut args = Vec::with_capacity(revs.len() * 2 + 3);
-        args.push("rebase");
-        for rev in revs {
-            args.extend(["--revisions", rev]);
+        let (repo, mut commits) = self.snapshot_and_follow_commits(&targets)?;
+        let dest_commit = commits.pop().expect("destination pushed above");
+        // A destination inside or below the selection forms a cycle that jj-lib panics on.
+        for commit in &commits {
+            if block_on_result(
+                "rebase",
+                repo.index().is_ancestor(commit.id(), dest_commit.id()),
+            )? {
+                return Err(CoreError::internal(
+                    "Cannot rebase the selection onto one of its own changes or their descendants",
+                ));
+            }
         }
-        args.extend(["--onto", &dest[0]]);
-        self.run_jj_reload(&args)
+        for (commit, rev) in commits.iter().zip(revs) {
+            self.ensure_commit_mutable(&repo, commit, rev)?;
+        }
+        // move_commits expects children before parents, which is the order a revset yields.
+        let ordered = ResolvedRevsetExpression::commits(
+            commits.iter().map(|commit| commit.id().clone()).collect(),
+        )
+        .evaluate(repo.as_ref())
+        .map_err(|e| CoreError::internal(format!("order selection: {e}")))?;
+        let ids = block_on_result("order selection", ordered.stream().try_collect())?;
+        self.move_onto(&repo, MoveCommitsTarget::Commits(ids), &dest_commit)
+            .map(drop)
     }
 
     /// Squash a newest-first, consecutive linear selection into its oldest change.
     /// Returns the destination's commit id after the squash.
     pub fn squash_many(&self, revs: &[String]) -> CoreResult<String> {
         require_multiple_revisions(revs, "Squash selected")?;
-        let commits = self.snapshot_and_follow_commits(revs)?;
+        let (_, commits) = self.snapshot_and_follow_commits(revs)?;
         if commits
             .windows(2)
             .any(|pair| pair[0].parent_ids() != std::slice::from_ref(pair[1].id()))
@@ -296,8 +361,7 @@ impl Repo {
     /// Create a merge commit with multiple parents (`jj new A B`).
     pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
         require_multiple_revisions(parent_revs, "Merge")?;
-        let parents = self.snapshot_and_follow_commits(parent_revs)?;
-        let repo = self.get_repo();
+        let (repo, parents) = self.snapshot_and_follow_commits(parent_revs)?;
         for (index, parent) in parents.iter().enumerate() {
             for other in &parents[index + 1..] {
                 let related = parent.id() == other.id()
@@ -377,17 +441,23 @@ impl Repo {
     }
 
     // Snapshot first, then retarget each selected commit id at its visible successor, as concrete ids and never `@`: a snapshot may have just rewritten the selection, and a late-bound operand would follow a concurrent working-copy move.
-    fn snapshot_and_follow_commits(&self, revs: &[String]) -> CoreResult<Vec<Commit>> {
+    fn snapshot_and_follow_commits(
+        &self,
+        revs: &[String],
+    ) -> CoreResult<(Arc<ReadonlyRepo>, Vec<Commit>)> {
         self.refresh_working_copy()?;
         let repo = self.get_repo();
-        revs.iter()
+        let commits = revs
+            .iter()
             .map(|rev| self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev))
-            .collect()
+            .collect::<CoreResult<_>>()?;
+        Ok((repo, commits))
     }
 
     pub(crate) fn snapshot_and_follow(&self, revs: &[String]) -> CoreResult<Vec<String>> {
         Ok(self
             .snapshot_and_follow_commits(revs)?
+            .1
             .iter()
             .map(|commit| commit.id().hex())
             .collect())
