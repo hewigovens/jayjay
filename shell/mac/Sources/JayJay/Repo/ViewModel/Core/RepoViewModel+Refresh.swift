@@ -88,7 +88,7 @@ extension RepoViewModel {
         let includeSubmoduleStatuses = includeSubmoduleStatuses
         let shouldLoadBeforeSnapshot = graphEntries.isEmpty && snapshotWorkingCopy
         // A requested revision wins the first pass; later passes preserve subsequent user selections.
-        var selectionBaseline = preferredRev == nil ? selectedChangeIds : nil
+        let initialSelectionBaseline = preferredRev == nil ? selectedChangeIds : nil
         let repo = repo
         let load = { includeContext in
             try Self.loadRefreshContent(
@@ -100,6 +100,7 @@ extension RepoViewModel {
             )
         }
         refreshTask = startRepoTask { [weak self, repo] in
+            var selectionBaseline = initialSelectionBaseline
             do {
                 if shouldLoadBeforeSnapshot {
                     let content = try load(false)
