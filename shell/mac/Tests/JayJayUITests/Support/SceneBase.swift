@@ -83,6 +83,9 @@ class SceneBase: XCTestCase {
                 app.launchArguments += ["-\(key)", ""]
             }
         }
+        // The runner has no jj identity of its own; without one every repo window opens behind the configuration alert.
+        app.launchEnvironment["JJ_USER"] = "JayJay CI"
+        app.launchEnvironment["JJ_EMAIL"] = "ci@jayjay.local"
         app.launchEnvironment["JAYJAY_REVIEW_STORE_PATH"] = reviewStorePath
         app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = root
             .appendingPathComponent(Self.repositoryStoreFixtureName)

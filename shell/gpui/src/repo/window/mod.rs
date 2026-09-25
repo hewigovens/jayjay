@@ -67,7 +67,7 @@ pub use stacked_pr_snapshot::StackedPrSnapshot;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use context_expansion::ContextExpansionState;
-pub(crate) use dag_row::{compact_id, format_relative, id_cell};
+pub(crate) use dag_row::{compact_id, format_relative, format_when, id_cell};
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;

@@ -9,7 +9,7 @@ use jayjay_core::OpLogEntry;
 use super::OperationLogView;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::window::{compact_id, id_cell};
+use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
 
@@ -48,7 +48,7 @@ fn operation_row(
     let description = description_label(&entry.description);
     let glyph_str = operation_glyph(&entry.description);
     let is_current = entry.is_current;
-    let timestamp = entry.timestamp.clone();
+    let timestamp = format_when(entry.timestamp_millis);
     let short_id = compact_id(&entry.id);
     let (bg, fg) = if selected {
         (t.selected_bg, t.fg)
