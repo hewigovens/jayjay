@@ -40,20 +40,20 @@ fn new_parallel_splits_added_and_deleted_files(cx: &mut TestAppContext) {
     let source = change_by_id(&repo, &source_change_id);
     assert_eq!(
         repo.file_content(&source.change_id, "added.txt").unwrap(),
-        "added two"
+        "added two\n"
     );
     assert_eq!(
         repo.file_content(&source.change_id, "deleted.txt").unwrap(),
-        "deleted one"
+        "deleted one\n"
     );
     assert_eq!(
         repo.file_content(&parallel.change_id, "added.txt").unwrap(),
-        "added one"
+        "added one\n"
     );
     assert_eq!(
         repo.file_content(&parallel.change_id, "deleted.txt")
             .unwrap(),
-        "deleted two"
+        "deleted two\n"
     );
 }
 

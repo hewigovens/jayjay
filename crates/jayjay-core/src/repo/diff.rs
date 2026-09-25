@@ -155,6 +155,16 @@ impl Repo {
         Ok(ChangeDetail { info, diff })
     }
 
+    /// A file's text at `rev` with conflict markers materialized; empty when the path is absent. Binary, oversized and non-file paths yield the diff view's placeholder text rather than raw bytes.
+    pub fn file_content(&self, rev: &str, path: &str) -> CoreResult<String> {
+        let repo = self.get_repo();
+        let commit = self.resolve_commit(&repo, rev)?;
+        let repo_path = self.parse_repo_path(path)?;
+        Ok(self
+            .materialize_path_text(&repo, &commit.tree(), repo_path.as_ref())?
+            .unwrap_or_default())
+    }
+
     /// Show a single file's diff content — only materializes that one file.
     pub fn show_file(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;

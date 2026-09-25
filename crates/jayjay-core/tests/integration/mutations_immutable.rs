@@ -213,3 +213,34 @@ fn snapshot_never_rewrites_an_immutable_working_copy() {
         "the colocated HEAD follows the new working copy's parent"
     );
 }
+
+#[test]
+fn moving_files_into_an_immutable_working_copy_is_refused() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "protected"]);
+    run_jj_in(&repo_path, &["bookmark", "create", "freeze", "-r", "@"]);
+    run_jj_in(&repo_path, &["new", "root()", "-m", "sibling"]);
+    fs::write(repo_path.join("sibling.txt"), "sibling\n").expect("write sibling");
+    run_jj_in(&repo_path, &["new", "freeze"]);
+    run_jj_in(&repo_path, &["edit", "freeze"]);
+    protect_bookmark(&repo_path, "freeze");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let changes = repo.log("all()").expect("log");
+    let sibling = changes
+        .iter()
+        .find(|change| change.description.trim() == "sibling")
+        .unwrap_or_else(|| panic!("sibling change missing from {changes:?}"));
+    let protected = repo.log("@").expect("log")[0].clone();
+    assert!(protected.is_immutable, "fixture @ must be immutable");
+
+    let err = repo
+        .move_to_working_copy(&sibling.change_id.id, &["sibling.txt".to_owned()])
+        .expect_err("a protected @ must not be rewritten");
+
+    assert!(err.to_string().contains("immutable"), "{err}");
+    assert_eq!(
+        repo.log("@").expect("log")[0].commit_id.id,
+        protected.commit_id.id
+    );
+}

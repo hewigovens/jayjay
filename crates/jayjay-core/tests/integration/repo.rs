@@ -137,6 +137,12 @@ fn show_file_materializes_conflicted_file_content() {
     assert!(new_content.contains("<<<<<<< conflict 1 of 1"));
     assert!(new_content.contains("%%%%%%%"));
     assert!(new_content.contains(">>>>>>> conflict 1 of 1 ends"));
+    assert_eq!(
+        repo.file_content("@", "hello.txt").expect("file content"),
+        new_content,
+        "file content must carry the same materialized markers as the diff"
+    );
+    assert_eq!(repo.file_content("@", "missing.txt").expect("absent"), "");
 
     let diff = compute_file_diff_full(
         "hello.txt",
@@ -367,6 +373,180 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
         reverted.description
     );
     assert_eq!(reverted.parents, vec![current.info.commit_id.id.clone()]);
+    let reverted = repo.show(&reverted.change_id.id).expect("show revert");
+    assert_eq!(
+        reverted
+            .diff
+            .iter()
+            .map(|hunk| hunk.path.as_str())
+            .collect::<Vec<_>>(),
+        ["hello.txt"],
+        "the revert must take back the fixture's initial file"
+    );
+    assert!(
+        reverted.diff[0].new.content.is_none(),
+        "the file is removed again"
+    );
+}
+
+#[test]
+fn split_parallel_makes_a_sibling_and_moves_the_working_copy_to_the_remainder() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    run_jj_in(&repo_path, &["describe", "-m", "both files"]);
+    run_jj_in(&repo_path, &["bookmark", "create", "topic", "-r", "@"]);
+    fs::write(repo_path.join("other.txt"), "other\n").expect("write other");
+    repo.refresh_working_copy().expect("snapshot");
+    let original = repo.log("@").expect("log")[0].clone();
+
+    repo.split("@", &["other.txt".to_owned()], "just other", true)
+        .expect("parallel split");
+
+    let changes = repo.log("all()").expect("log");
+    let first = change_by_description(&changes, "just other");
+    let remainder = change_by_description(&changes, "both files");
+    assert_eq!(
+        first.change_id.id, original.change_id.id,
+        "the split-out part keeps the change id"
+    );
+    assert_ne!(remainder.change_id.id, original.change_id.id);
+    assert_eq!(
+        first.parents, remainder.parents,
+        "parallel split makes siblings"
+    );
+    assert!(
+        remainder.is_working_copy,
+        "the working copy follows the remainder"
+    );
+    assert_eq!(
+        remainder.bookmarks,
+        ["topic"],
+        "bookmarks follow the remainder"
+    );
+    let first_paths: Vec<_> = repo
+        .show(&first.commit_id.id)
+        .expect("show")
+        .diff
+        .into_iter()
+        .map(|h| h.path)
+        .collect();
+    let remainder_paths: Vec<_> = repo
+        .show("@")
+        .expect("show")
+        .diff
+        .into_iter()
+        .map(|h| h.path)
+        .collect();
+    assert_eq!(first_paths, ["other.txt"]);
+    assert_eq!(remainder_paths, ["hello.txt"]);
+}
+
+#[test]
+fn split_refuses_a_selection_that_no_longer_differs() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.op_log().expect("op log").len();
+
+    let err = repo
+        .split("@", &["missing.txt".to_owned()], "nothing", false)
+        .expect_err("a selection without changes must not split");
+
+    assert!(err.to_string().contains("differ from the parent"), "{err}");
+    assert_eq!(repo.op_log().expect("op log").len(), before);
+}
+
+#[test]
+fn split_without_legacy_bookmark_behavior_keeps_bookmarks_on_the_split_out_part() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(
+        &repo_path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "split.legacy-bookmark-behavior",
+            "false",
+        ],
+    );
+    run_jj_in(&repo_path, &["describe", "-m", "both files"]);
+    run_jj_in(&repo_path, &["bookmark", "create", "topic", "-r", "@"]);
+    fs::write(repo_path.join("other.txt"), "other\n").expect("write other");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.split("@", &["other.txt".to_owned()], "just other", false)
+        .expect("split");
+
+    let changes = repo.log("all()").expect("log");
+    assert_eq!(
+        change_by_description(&changes, "just other").bookmarks,
+        ["topic"]
+    );
+    assert!(
+        change_by_description(&changes, "both files")
+            .bookmarks
+            .is_empty()
+    );
+}
+
+#[test]
+fn move_to_working_copy_refuses_a_selection_that_does_not_differ() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.new_change("@", "on top").expect("new change");
+    let before = repo.op_log().expect("op log").len();
+
+    let err = repo
+        .move_to_working_copy("@-", &["missing.txt".to_owned()])
+        .expect_err("nothing to move");
+
+    assert!(err.to_string().contains("differ from the parent"), "{err}");
+    assert_eq!(repo.op_log().expect("op log").len(), before);
+
+    repo.new_change("@", "empty source").expect("empty change");
+    repo.new_change("@", "on top of empty").expect("new change");
+    let before = repo.op_log().expect("op log").len();
+    let err = repo
+        .move_to_working_copy("@-", &["hello.txt".to_owned()])
+        .expect_err("an already-empty source must not be abandoned into @");
+    assert!(err.to_string().contains("differ from the parent"), "{err}");
+    assert_eq!(repo.op_log().expect("op log").len(), before);
+    assert!(
+        repo.log("all()")
+            .expect("log")
+            .iter()
+            .any(|change| change.description.trim() == "empty source"),
+        "the empty source must survive"
+    );
+    assert_eq!(
+        repo.log("@").expect("log")[0].description.trim(),
+        "on top of empty"
+    );
+}
+
+#[test]
+fn move_to_working_copy_abandons_an_emptied_source_and_keeps_its_message() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.new_change("@", "on top").expect("new change");
+
+    repo.move_to_working_copy("@-", &["hello.txt".to_owned()])
+        .expect("move the only file");
+
+    let changes = repo.log("all()").expect("log");
+    assert!(
+        changes
+            .iter()
+            .all(|change| change.description.trim() != "initial change"),
+        "the emptied source is abandoned"
+    );
+    let head = &repo.log("@").expect("log")[0];
+    assert_eq!(head.description.trim(), "on top\ninitial change");
+    assert!(!head.is_empty);
 }
 
 #[test]

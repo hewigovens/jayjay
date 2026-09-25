@@ -3,17 +3,21 @@ use std::sync::Arc;
 
 use futures::TryStreamExt as _;
 use jj_lib::backend::CommitId;
-use jj_lib::commit::Commit;
+use jj_lib::commit::{Commit, conflict_label_for_commits};
+use jj_lib::config::ConfigGetError;
+use jj_lib::matchers::FilesMatcher;
+use jj_lib::merge::Merge;
+use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId as _;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::revset::{ResolvedRevsetExpression, RevsetStreamExt as _, UserRevsetExpression};
 use jj_lib::rewrite::{
     CommitWithSelection, MoveCommitsLocation, MoveCommitsStats, MoveCommitsTarget, RebaseOptions,
-    RebasedCommit, squash_commits,
+    RebasedCommit, restore_tree, squash_commits,
 };
+use jj_lib::settings::UserSettings;
 
 use super::Repo;
-use super::path_operands::fileset_literal;
 use super::support::block_on_result;
 use crate::types::*;
 
@@ -156,15 +160,7 @@ impl Repo {
                 block_on_result("squash", squash_commits(repo_mut, &[source], &dest, false))?;
 
             if let Some(squashed) = result {
-                let source_desc = commit.description().trim();
-                let dest_desc = dest.description().trim();
-                let combined = if source_desc.is_empty() {
-                    dest_desc.to_owned()
-                } else if dest_desc.is_empty() {
-                    source_desc.to_owned()
-                } else {
-                    format!("{dest_desc}\n{source_desc}")
-                };
+                let combined = combined_description(dest.description(), commit.description());
                 let write = squashed.commit_builder.set_description(combined).write();
                 block_on_result("write squashed", write)?;
             }
@@ -452,17 +448,50 @@ impl Repo {
         })
     }
 
-    /// Create a new change that inverts the diff of a prior change on top of `@` (`jj revert`).
+    /// `jj revert -r rev --onto @`: a new child of `@` whose tree takes back `rev`'s changes.
     pub fn revert_change(&self, rev: &str) -> CoreResult<()> {
         let _write = self.write_guard()?;
-        let rev = self.snapshot_and_follow_one(rev)?;
-        let repo = self.get_repo();
-        let onto = self.working_copy_commit(&repo)?.id().hex();
-        self.run_jj_reload(&["revert", "-r", &rev, "--onto", &onto])
+        let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
+        let target = &commits[0];
+        let onto = self.working_copy_commit(&repo)?;
+        let old_parents = block_on_result("load parents", target.parents())?;
+        let old_base_tree = self.load_parent_tree(&repo, target, "parent tree")?;
+        let reverted_tree = block_on_result(
+            "revert",
+            MergedTree::merge(Merge::from_vec(vec![
+                (
+                    onto.tree(),
+                    format!("{} (revert destination)", onto.conflict_label()),
+                ),
+                (
+                    target.tree(),
+                    format!("{} (reverted revision)", target.conflict_label()),
+                ),
+                (
+                    old_base_tree,
+                    format!(
+                        "{} (parents of reverted revision)",
+                        conflict_label_for_commits(&old_parents)
+                    ),
+                ),
+            ])),
+        )?;
+        let description = format!(
+            "Revert \"{}\"\n\nThis reverts commit {}.\n",
+            target.description().lines().next().unwrap_or(""),
+            target.id().hex()
+        );
+        let mut tx = repo.start_transaction();
+        let write = tx
+            .repo_mut()
+            .new_commit(vec![onto.id().clone()], reverted_tree)
+            .set_description(description)
+            .write();
+        block_on_result("revert", write)?;
+        self.commit_transaction_rebase(tx, &format!("revert commit {}", target.id().hex()))
     }
 
-    /// Split selected files out of a change into a new change.
-    /// When `parallel` is true, creates a sibling (--parallel); otherwise a child.
+    /// `jj split -r rev -m message -- paths`: the named files become a commit described by `message` that keeps the change id; the rest becomes a new change on top, or a sibling when `parallel`. Workspaces on `rev` move to the remainder.
     pub fn split(
         &self,
         rev: &str,
@@ -471,22 +500,93 @@ impl Repo {
         parallel: bool,
     ) -> CoreResult<()> {
         let _write = self.write_guard()?;
-        let rev = self.snapshot_and_follow_one(rev)?;
-        let mut args = vec!["split", "--revision", rev.as_str()];
-        if parallel {
-            args.push("--parallel");
+        let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
+        let target = &commits[0];
+        self.ensure_commit_mutable(&repo, target, rev)?;
+        let repo_paths = self.parse_repo_paths(paths)?;
+        let matcher = FilesMatcher::new(repo_paths.iter().map(|path| path.as_ref()));
+        let parent_tree = self.load_parent_tree(&repo, target, "parent tree")?;
+        let target_tree = target.tree();
+        let selected_tree = block_on_result(
+            "select split files",
+            restore_tree(
+                &target_tree,
+                &parent_tree,
+                "split revision".to_owned(),
+                "parents of split revision".to_owned(),
+                &matcher,
+            ),
+        )?;
+        if selected_tree.tree_ids() == parent_tree.tree_ids() {
+            return Err(CoreError::internal(
+                "none of the selected files differ from the parent",
+            ));
         }
-        if !message.is_empty() {
-            args.extend(["-m", message]);
+        let remainder_tree = if parallel {
+            block_on_result(
+                "remove split files",
+                restore_tree(
+                    &parent_tree,
+                    &target_tree,
+                    "parents of split revision".to_owned(),
+                    "split revision".to_owned(),
+                    &matcher,
+                ),
+            )?
         } else {
-            args.extend(["-m", "split"]);
+            target_tree
+        };
+        let message = if message.is_empty() { "split" } else { message };
+        let legacy_bookmark_behavior = legacy_split_bookmark_behavior(repo.settings())?;
+        let mut tx = repo.start_transaction();
+        let first = {
+            let mut builder = tx.repo_mut().rewrite_commit(target).detach();
+            builder.set_tree(selected_tree).set_description(message);
+            block_on_result("write split commit", builder.write(tx.repo_mut()))?
+        };
+        let second = {
+            let parents = if parallel {
+                target.parent_ids().to_vec()
+            } else {
+                vec![first.id().clone()]
+            };
+            let mut builder = tx.repo_mut().rewrite_commit(target).detach();
+            builder.set_parents(parents).set_tree(remainder_tree);
+            builder.clear_rewrite_source();
+            builder.generate_new_change_id();
+            block_on_result("write remainder commit", builder.write(tx.repo_mut()))?
+        };
+        // With the legacy behavior bookmarks on the split change follow the remainder; otherwise they stay on the part that kept the change id.
+        if legacy_bookmark_behavior {
+            tx.repo_mut()
+                .set_rewritten_commit(target.id().clone(), second.id().clone());
         }
-        // Literal fileset operands after `--`, so an option- or fileset-shaped filename
-        // (e.g. `--config=ui.diff-editor=...`) can't become a jj flag or expression.
-        let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
-        args.push("--");
-        args.extend(operands.iter().map(String::as_str));
-        self.run_jj_reload(&args)
+        block_on_result(
+            "rebase descendants",
+            tx.repo_mut()
+                .transform_descendants(vec![target.id().clone()], async |mut rewriter| {
+                    match (parallel, legacy_bookmark_behavior) {
+                        (true, true) => {
+                            rewriter.replace_parent(second.id(), [first.id(), second.id()]);
+                        }
+                        (true, false) => {
+                            rewriter.replace_parent(first.id(), [first.id(), second.id()]);
+                        }
+                        (false, _) => rewriter.replace_parent(first.id(), [second.id()]),
+                    }
+                    rewriter.rebase().await?.write().await?;
+                    Ok(())
+                }),
+        )?;
+        for (name, wc_commit_id) in repo.view().wc_commit_ids() {
+            if wc_commit_id == target.id() {
+                block_on_result(
+                    "edit working copy",
+                    tx.repo_mut().edit(name.clone(), &second),
+                )?;
+            }
+        }
+        self.commit_transaction_rebase(tx, &format!("split commit {}", target.id().hex()))
     }
 
     // Snapshot first, then retarget each selected commit id at its visible successor, as concrete ids and never `@`: a snapshot may have just rewritten the selection, and a late-bound operand would follow a concurrent working-copy move.
@@ -514,6 +614,24 @@ impl Repo {
 
     pub(crate) fn snapshot_and_follow_one(&self, rev: &str) -> CoreResult<String> {
         Ok(self.snapshot_and_follow(&[rev.to_owned()])?.remove(0))
+    }
+}
+
+/// `split.legacy-bookmark-behavior` is defined by the CLI's config, not jj-lib's, so an unset key means the CLI default.
+fn legacy_split_bookmark_behavior(settings: &UserSettings) -> CoreResult<bool> {
+    match settings.get_bool("split.legacy-bookmark-behavior") {
+        Ok(value) => Ok(value),
+        Err(ConfigGetError::NotFound { .. }) => Ok(true),
+        Err(error) => Err(CoreError::internal(error)),
+    }
+}
+
+/// The description a squash leaves on its destination: both messages, with an empty side dropped.
+pub(super) fn combined_description(destination: &str, source: &str) -> String {
+    match (destination.trim(), source.trim()) {
+        (destination, "") => destination.to_owned(),
+        ("", source) => source.to_owned(),
+        (destination, source) => format!("{destination}\n{source}"),
     }
 }
 

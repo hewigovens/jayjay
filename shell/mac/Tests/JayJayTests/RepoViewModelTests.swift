@@ -274,7 +274,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         try await waitUntil("the evolog loads") { viewModel.evologEntries != nil }
         let entries = try XCTUnwrap(viewModel.evologEntries)
         let v1 = try XCTUnwrap(entries.first {
-            (try? viewModel.repo.fileContent(rev: $0.commitId.id, path: "restore.txt")) == "v1"
+            (try? viewModel.repo.fileContent(rev: $0.commitId.id, path: "restore.txt")) == "v1\n"
         })
 
         viewModel.restoreEvologVersion(v1.commitId.id)
