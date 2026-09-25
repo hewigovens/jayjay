@@ -114,7 +114,6 @@ final class RepoWindowManager {
         NSApp.windows.filter { $0.isVisible || $0.isMiniaturized }
     }
 
-    /// Overview windows carry their repository's URL for the Repository menu, so lookups by that URL must skip them.
     private var liveRepoWindows: [NSWindow] {
         let overviews = Set(overviewWindows.values.compactMap { $0.window.map(ObjectIdentifier.init) })
         return liveWindows.filter { !overviews.contains(ObjectIdentifier($0)) }
@@ -258,7 +257,6 @@ final class RepoWindowManager {
         closeOverviewWindows(at: paths)
     }
 
-    /// An overview on a removed checkout has nothing left to load, so it goes with the repo windows.
     private func closeOverviewWindows(at paths: Set<String>) {
         for path in paths {
             overviewWindows.removeValue(forKey: path)?.window?.close()
@@ -323,7 +321,6 @@ final class RepoWindowManager {
         NSApp.activate(ignoringOtherApps: true)
     }
 
-    /// One overview per repository: an existing window comes forward instead of a second one opening on the same value.
     func openOverview(for path: String) {
         let normalizedPath = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
         if let window = overviewWindows[normalizedPath]?.window, liveWindows.contains(window) {
@@ -337,7 +334,6 @@ final class RepoWindowManager {
         overviewWindows[normalizedRepositoryPath(path: path)] = WeakWindow(window: window)
     }
 
-    /// Filters the repo window's graph to the ancestors of `headCommitId` and selects `revision`; a window that is not open yet applies it on its first load.
     func showInGraph(repoPath: String, headCommitId: String, selecting revision: String) {
         let normalizedPath = normalizedRepositoryPath(path: repoPath)
         compactRegistrations()

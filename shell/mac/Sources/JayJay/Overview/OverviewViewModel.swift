@@ -1,18 +1,14 @@
 import Foundation
 import JayJayCore
 
-/// Owns the Overview window's repo handle: one snapshot per load, refreshed when the repository's operation log changes.
 @MainActor
 @Observable
 final class OverviewViewModel {
     let repoPath: String
     private var repo: JayJayRepo?
     private(set) var snapshot: OverviewSnapshot?
-    /// Why the snapshot could not load; cleared by the next successful load.
     private(set) var error: String?
-    /// Why the last rebase, abandon, or forget failed; stays until the next action so a reload cannot hide it.
     private(set) var actionError: String?
-    /// One of `laneIds`: it survives rewrites and reorders, which a lane index would not.
     var selectedLaneId: String?
     var selectedChangeId: String?
     private(set) var selectedChangeFiles: [FileDiffStats]?
@@ -22,7 +18,6 @@ final class OverviewViewModel {
 
     var pendingAbandon: OverviewAbandonRequest?
     var pendingWorkspaceDelete: WorkspaceInfo?
-    /// A repo window on this checkout snapshots working-copy edits itself; only without one does the overview do it.
     var hasRepoWindow: () -> Bool = { false }
 
     @ObservationIgnored private var fsWatcher: RepoFSWatcher?
@@ -38,7 +33,7 @@ final class OverviewViewModel {
         snapshot?.overview.lanes ?? []
     }
 
-    /// Head change id per lane, which stays put across rewrites; divergent heads share one, so those carry the commit too.
+    /// Divergent heads share a change id, so those lanes carry the commit id too.
     var laneIds: [String] {
         Self.laneIds(for: lanes)
     }
@@ -54,7 +49,6 @@ final class OverviewViewModel {
         }
     }
 
-    /// Groups with the filter applied; a lane that matches nothing disappears rather than dims, and empty groups go with it.
     var visibleGroups: [OverviewGroup] {
         guard let snapshot else { return [] }
         return snapshot.groups.compactMap { group in
@@ -63,7 +57,6 @@ final class OverviewViewModel {
         }
     }
 
-    /// Only an unambiguous name: with several bookmarks on trunk, the rebase target is still `trunk()`, so say so.
     var trunkName: String {
         let bookmarks = snapshot?.groups.first { $0.base.kind == .trunk }?.base.bookmarks ?? []
         return bookmarks.count == 1 ? bookmarks[0] : "trunk"
@@ -87,7 +80,6 @@ final class OverviewViewModel {
         snapshot?.workspaces.first { $0.name == name }
     }
 
-    /// The window a lane should open in: its own workspace when it has one on disk, else the Overview's repository.
     func targetRepoPath(for lane: OverviewLane) -> String {
         if lane.currentWorkspace != nil {
             return repoPath
@@ -121,7 +113,6 @@ final class OverviewViewModel {
         }
     }
 
-    /// A closed AppKit window can linger with its SwiftUI state, so the watcher and any open or load stop here rather than at deinit.
     func close() {
         fsWatcher = nil
         loadTask?.cancel()
@@ -150,7 +141,6 @@ final class OverviewViewModel {
         }
     }
 
-    /// A reload can drop or rewrite what the user pointed at; selection follows identity and a stale confirmation closes.
     private func reconcileSelection(with loaded: OverviewSnapshot) {
         let lanes = loaded.overview.lanes
         let ids = Self.laneIds(for: lanes)
@@ -167,7 +157,6 @@ final class OverviewViewModel {
         keepSelectionVisible()
     }
 
-    /// A filtered-out selection would keep the panel open on nothing visible; move it to the first lane still shown.
     private func keepSelectionVisible() {
         let visible = visibleGroups.flatMap(\.lanes).map { laneIds[Int($0)] }
         if let selectedLaneId, visible.contains(selectedLaneId) {
@@ -177,8 +166,7 @@ final class OverviewViewModel {
         selectedChangeId = nil
     }
 
-    /// Two handles snapshotting one working copy can fork `@`, so this yields to an open repo window on the same checkout,
-    /// and skips the echo of its own writes.
+    /// Two handles snapshotting one working copy can fork `@`, so an open repo window on this checkout wins.
     private func snapshotWorkingCopyIfUnwatched() {
         guard !hasRepoWindow() else { return }
         if let last = lastInternalMutationAt, Date().timeIntervalSince(last) < 5 {
@@ -197,7 +185,6 @@ final class OverviewViewModel {
         selectedChangeFiles = files
     }
 
-    /// Left and right move through the lanes as drawn, group by group.
     func selectNeighbor(_ delta: Int) {
         let order = visibleGroups.flatMap(\.lanes).map { laneIds[Int($0)] }
         guard !order.isEmpty else { return }
@@ -206,7 +193,6 @@ final class OverviewViewModel {
         selectedChangeId = nil
     }
 
-    /// Up and down move through the selected lane's changes, head first; past either end clears the change.
     func selectChangeNeighbor(_ delta: Int) {
         guard let lane = selectedLane else { return }
         let ids = lane.changes.map(\.commitId.id)
@@ -218,7 +204,6 @@ final class OverviewViewModel {
         self.selectedChangeId = ids.indices.contains(next) ? ids[next] : nil
     }
 
-    /// Moves the whole lane: descendants follow the rebased root, and a checkout in the lane moves with it.
     func rebaseLaneOntoTrunk(_ lane: OverviewLane) {
         guard let root = lane.changes.last else { return }
         let rev = root.commitId.id
@@ -234,7 +219,6 @@ final class OverviewViewModel {
         }
     }
 
-    /// Returns whether the workspace was forgotten; the caller quiesces and closes its window around this.
     func forgetWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) async -> Bool {
         guard let repo else { return false }
         actionError = nil
@@ -296,7 +280,6 @@ extension OverviewLane {
         base.kind == .olderTrunk
     }
 
-    /// One sentence about the base, worded for a card.
     func baseSentence(trunkName: String) -> String {
         switch base.kind {
             case .trunk:
@@ -330,11 +313,9 @@ extension ShortId {
     }
 }
 
-/// What an Abandon confirmation is about: one change, or every change of a lane.
 struct OverviewAbandonRequest: Identifiable {
     let title: String
     let commitIds: [String]
-    /// Set for a whole-lane request, so a lane that gained or lost changes since invalidates it.
     let laneId: String?
 
     var id: String {
@@ -359,7 +340,6 @@ struct OverviewAbandonRequest: Identifiable {
             : "Abandon all \(commitIds.count) changes of this lane? A workspace checked out in it moves to a new empty change on the base."
     }
 
-    /// Whether the confirmation still describes what is on screen after a reload.
     func isCurrent(in lanes: [OverviewLane], ids: [String]) -> Bool {
         if let laneId {
             return ids.firstIndex(of: laneId).map { lanes[$0].changes.map(\.commitId.id) } == commitIds

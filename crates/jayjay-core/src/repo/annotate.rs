@@ -7,7 +7,6 @@ use jj_lib::annotate::FileAnnotator;
 use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit as JjCommit;
 use jj_lib::fileset::FilesetExpression;
-use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 use jj_lib::revset::RevsetExpression;
 use jj_lib::revset::RevsetFilterPredicate;
@@ -15,7 +14,7 @@ use jj_lib::revset::SymbolResolver;
 use jj_lib::revset::SymbolResolverExtension;
 
 use super::Repo;
-use super::support::{block_on, on_worker_stack};
+use super::support::{block_on, on_worker_stack, short_change_id};
 use crate::types::*;
 
 impl Repo {
@@ -99,11 +98,8 @@ impl AnnotationMeta {
         let Ok(commit) = repo.store().get_commit(commit_id) else {
             return Self::placeholder(commit_id);
         };
-        let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-        let short_len = block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
-            .unwrap_or(change_id.len()) as u32;
         Self {
-            change_id: ShortId::new(change_id, short_len),
+            change_id: short_change_id(repo, &commit),
             author: commit.author().email.clone(),
             timestamp: format_timestamp(&commit),
         }

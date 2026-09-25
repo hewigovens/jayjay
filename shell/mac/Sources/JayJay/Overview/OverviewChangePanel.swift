@@ -1,7 +1,6 @@
 import JayJayCore
 import SwiftUI
 
-/// The selected change: description and changed files with line counts. The diff itself opens in the repository window.
 struct OverviewChangePanel: View {
     let change: OverviewChange
     let files: [FileDiffStats]?

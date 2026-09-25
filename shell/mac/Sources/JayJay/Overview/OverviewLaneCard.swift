@@ -12,7 +12,6 @@ struct OverviewLaneCard: View {
         !lane.attention.isEmpty
     }
 
-    /// Selection wins over attention; the orange sentence on the card still says why.
     private var borderColor: Color {
         if isSelected {
             return .accentColor

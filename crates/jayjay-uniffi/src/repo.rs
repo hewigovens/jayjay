@@ -604,7 +604,6 @@ impl JayJayRepo {
         Ok(self.inner.workspace_list()?)
     }
 
-    /// Lanes, their groups, and the workspace rows the menus need, in one crossing.
     fn overview_snapshot(&self) -> Result<OverviewSnapshot, JayJayError> {
         let overview = self.inner.overview()?;
         let groups = overview_groups(&overview);

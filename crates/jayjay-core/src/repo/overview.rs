@@ -15,9 +15,6 @@ use super::support::{
 use crate::types::*;
 
 impl Repo {
-    /// Every mutable change grouped into lanes: maximal chains with no fork inside, newest lane first. Reads the
-    /// current operation and keeps the handle on it, so changes made by other windows or the CLI show up and the
-    /// commits shown resolve for the reads that follow.
     pub fn overview(&self) -> CoreResult<Overview> {
         let repo = block_on_result("load overview", self.get_repo().loader().load_at_head())?;
         self.set_repo(repo.clone());
@@ -109,12 +106,21 @@ impl Repo {
                 _ => 0,
             };
             let base = OverviewBase {
-                change_id: short_change_id(repo, &base_commit),
-                commit_id: short_commit_id(repo, &base_commit),
-                description: first_line(base_commit.description()),
+                change_id: short_change_id(&**repo, &base_commit),
+                commit_id: short_commit_id(&**repo, &base_commit),
+                description: base_commit
+                    .description()
+                    .lines()
+                    .next()
+                    .unwrap_or("")
+                    .to_owned(),
                 timestamp_millis: base_commit.committer().timestamp.timestamp.0,
                 kind,
-                bookmarks: local_bookmarks(repo, base_commit.id()),
+                bookmarks: repo
+                    .view()
+                    .local_bookmarks_for_commit(base_commit.id())
+                    .map(|(name, _)| name.as_str().to_owned())
+                    .collect(),
                 behind_trunk,
             };
             let workspaces = changes
@@ -128,19 +134,7 @@ impl Repo {
                     })
                 })
                 .collect();
-            let latest_timestamp_millis = changes
-                .iter()
-                .map(|change| change.timestamp_millis)
-                .max()
-                .unwrap_or(0);
-            let attention = lane_attention(&changes);
-            lanes.push(OverviewLane {
-                changes,
-                base,
-                workspaces,
-                latest_timestamp_millis,
-                attention,
-            });
+            lanes.push(OverviewLane::new(changes, base, workspaces));
         }
 
         Ok(Overview {
@@ -156,14 +150,18 @@ impl Repo {
         workspaces_by_commit: &HashMap<CommitId, Vec<String>>,
     ) -> OverviewChange {
         OverviewChange {
-            change_id: short_change_id(repo, commit),
-            commit_id: short_commit_id(repo, commit),
-            description: first_line(commit.description()),
+            change_id: short_change_id(&**repo, commit),
+            commit_id: short_commit_id(&**repo, commit),
+            description: commit.description().lines().next().unwrap_or("").to_owned(),
             full_description: commit.description().trim_end().to_owned(),
             timestamp_millis: commit.committer().timestamp.timestamp.0,
             is_empty: block_on(commit.is_empty(repo.as_ref())).unwrap_or(false),
             has_conflict: commit.has_conflict(),
-            bookmarks: local_bookmarks(repo, commit.id()),
+            bookmarks: repo
+                .view()
+                .local_bookmarks_for_commit(commit.id())
+                .map(|(name, _)| name.as_str().to_owned())
+                .collect(),
             workspaces: workspaces_by_commit
                 .get(commit.id())
                 .cloned()
@@ -179,7 +177,6 @@ impl Repo {
             })
     }
 
-    /// Commit ids of `revset_str` in the revset's own order (descendants before ancestors).
     fn revset_commits(
         &self,
         repo: &Arc<ReadonlyRepo>,
@@ -195,45 +192,4 @@ impl Repo {
         }
         Ok(ids)
     }
-}
-
-fn first_line(description: &str) -> String {
-    description.lines().next().unwrap_or("").to_owned()
-}
-
-fn local_bookmarks(repo: &Arc<ReadonlyRepo>, id: &CommitId) -> Vec<String> {
-    repo.view()
-        .local_bookmarks_for_commit(id)
-        .map(|(name, _)| name.as_str().to_owned())
-        .collect()
-}
-
-fn lane_attention(changes: &[OverviewChange]) -> Vec<String> {
-    let mut attention = Vec::new();
-    let head = &changes[0];
-    if head.is_empty && head.description.is_empty() && changes.len() > 1 {
-        let below = changes.len() - 1;
-        attention.push(format!(
-            "Empty, undescribed checkout above {below} change{}",
-            if below == 1 { "" } else { "s" }
-        ));
-    }
-    let conflicted = changes.iter().filter(|change| change.has_conflict).count();
-    if conflicted > 0 {
-        attention.push(format!(
-            "{conflicted} change{} with conflicts",
-            if conflicted == 1 { "" } else { "s" }
-        ));
-    }
-    let undescribed = changes
-        .iter()
-        .filter(|change| change.description.is_empty() && !change.is_empty)
-        .count();
-    if undescribed > 0 {
-        attention.push(format!(
-            "{undescribed} change{} without a description",
-            if undescribed == 1 { "" } else { "s" }
-        ));
-    }
-    attention
 }

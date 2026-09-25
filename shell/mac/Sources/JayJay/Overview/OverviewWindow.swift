@@ -22,7 +22,7 @@ struct OverviewWindow: View {
             .navigationTitle("Repo Overview")
             .navigationSubtitle(URL(fileURLWithPath: repoPath).repositoryDisplayName)
             .background(WindowFramePersistence(key: AppWindows.overview))
-            // The URL binds the Repository menu's path-based commands to this repository; the registrations keep the window out of repo-window lookups and its handler-based commands disabled.
+            // The URL feeds the Repository menu; the registrations keep this window out of repo-window lookups.
             .background(WindowConfigurator { window in
                 window.representedURL = URL(fileURLWithPath: repoPath)
                 windowNumber = window.windowNumber

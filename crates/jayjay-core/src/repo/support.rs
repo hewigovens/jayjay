@@ -10,7 +10,7 @@ use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::OperationId;
 use jj_lib::op_walk;
 use jj_lib::repo::ReadonlyRepo;
-use jj_lib::repo::Repo as _;
+use jj_lib::repo::Repo as JjRepo;
 use jj_lib::workspace::{
     DefaultWorkspaceLoaderFactory, Workspace, WorkspaceLoadError, WorkspaceLoaderFactory as _,
 };
@@ -107,15 +107,14 @@ pub(crate) fn op_is_ancestor_of(
     })
 }
 
-/// Shortest prefix that still uniquely identifies the change; the index is cached on the repo, so per-commit calls stay cheap.
-pub(crate) fn short_change_id(repo: &ReadonlyRepo, commit: &jj_lib::commit::Commit) -> ShortId {
+pub(crate) fn short_change_id(repo: &dyn JjRepo, commit: &jj_lib::commit::Commit) -> ShortId {
     let change_id = encode_reverse_hex(commit.change_id().as_bytes());
     let short_len = block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
         .unwrap_or(change_id.len()) as u32;
     ShortId::new(change_id, short_len)
 }
 
-pub(crate) fn short_commit_id(repo: &ReadonlyRepo, commit: &jj_lib::commit::Commit) -> ShortId {
+pub(crate) fn short_commit_id(repo: &dyn JjRepo, commit: &jj_lib::commit::Commit) -> ShortId {
     let commit_id = commit.id().hex();
     let short_len = block_on(
         repo.index()

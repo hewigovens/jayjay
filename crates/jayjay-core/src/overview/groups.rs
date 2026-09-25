@@ -2,15 +2,12 @@ use std::collections::HashMap;
 
 use crate::types::{Overview, OverviewBase, OverviewBaseKind};
 
-/// The lanes that sit on one base, in display order.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OverviewGroup {
     pub base: OverviewBase,
-    /// Indices into `Overview::lanes`: the current workspace's lane first, then by latest activity.
     pub lanes: Vec<u32>,
 }
 
-/// Groups lanes by base: trunk, then fork points, then older trunk commits nearest trunk first, then anything else by recency.
 pub fn overview_groups(overview: &Overview) -> Vec<OverviewGroup> {
     let mut groups: Vec<OverviewGroup> = Vec::new();
     let mut group_by_commit: HashMap<&str, usize> = HashMap::new();

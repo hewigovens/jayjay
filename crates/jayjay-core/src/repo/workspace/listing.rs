@@ -50,7 +50,7 @@ impl Repo {
                     None
                 },
                 is_current,
-                change_id: short_change_id(&repo, &commit),
+                change_id: short_change_id(&*repo, &commit),
                 description: commit.description().lines().next().unwrap_or("").to_owned(),
                 timestamp: commit.committer().timestamp.timestamp.0,
                 has_conflict: commit.has_conflict(),

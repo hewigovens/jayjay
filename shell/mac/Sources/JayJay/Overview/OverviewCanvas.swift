@@ -2,8 +2,6 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
-/// Lanes drawn the way a tree grows: the trunk runs down the left edge (newest trunk commit at the top), each trunk
-/// commit sends a band to the right, and every lane grows upward from its band, root first, with its card on the head.
 struct OverviewCanvas: View {
     let lanes: [OverviewLane]
     let laneIds: [String]
@@ -69,7 +67,6 @@ struct OverviewCanvas: View {
         .background(OverviewScrollRevealer(rect: selectionRect(in: placement)))
     }
 
-    /// The selected change row, or the selected lane's card, with a margin so it never sits flush at the viewport edge.
     private func selectionRect(in placement: OverviewPlacement) -> CGRect? {
         guard let placed = placement.lanes.first(where: { laneIds[$0.laneIndex] == selectedLaneId }) else { return nil }
         let changes = lanes[placed.laneIndex].changes
@@ -161,7 +158,6 @@ struct OverviewCanvas: View {
     }
 }
 
-/// Actions the context menus dispatch; the view model and window manager own the work.
 struct OverviewLaneActions {
     let workspaceInfo: (String) -> WorkspaceInfo?
     let openWorkspace: (WorkspaceInfo) -> Void
@@ -181,12 +177,9 @@ enum OverviewGeometry {
     static let rowHeight: CGFloat = 24
     static let nodeInset: CGFloat = 12
     static let topPadding: CGFloat = 14
-    /// Room between two trunk commits on the spine.
     static let bandSpacing: CGFloat = 40
 }
 
-/// Pixel placement for the tree: one band per group down the spine, each group's lanes starting again at the first
-/// column, with the band placed low enough that the group's tallest lane (card plus stack) fits above it.
 struct OverviewPlacement {
     struct Band {
         let base: OverviewBase
@@ -246,8 +239,7 @@ struct OverviewPlacement {
     }
 }
 
-/// Keeps the keyboard selection in view. `ScrollViewReader` cannot target positioned views, so this asks AppKit to scroll
-/// the enclosing clip view to `rect`, given in canvas coordinates.
+/// `ScrollViewReader` cannot target positioned views, so AppKit scrolls the enclosing clip view instead.
 private struct OverviewScrollRevealer: NSViewRepresentable {
     let rect: CGRect?
 

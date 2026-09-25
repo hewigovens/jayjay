@@ -60,7 +60,6 @@ extension RepoViewModel {
         prInfo = info
     }
 
-    /// Filters to `headCommitId`'s ancestry through the content view when it is showing, which keeps the previous filter behind a Back button.
     func revealAncestors(of headCommitId: String, selecting revision: String) {
         if let onRevealAncestors {
             onRevealAncestors(headCommitId, revision)

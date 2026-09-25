@@ -1,12 +1,10 @@
 use futures::StreamExt as _;
 use jj_lib::evolution::CommitEvolutionEntry;
 use jj_lib::evolution::walk_predecessors;
-use jj_lib::hex_util::encode_reverse_hex;
-use jj_lib::object_id::ObjectId;
-use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
+use jj_lib::repo::ReadonlyRepo;
 
 use super::Repo;
-use super::support::{block_on, on_worker_stack};
+use super::support::{block_on, on_worker_stack, short_change_id, short_commit_id};
 use crate::types::*;
 
 impl Repo {
@@ -32,16 +30,6 @@ impl Repo {
 
 fn to_dto(repo: &ReadonlyRepo, entry: &CommitEvolutionEntry) -> EvologEntry {
     let commit = &entry.commit;
-    let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-    let change_id_short_len =
-        block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
-            .unwrap_or(change_id.len()) as u32;
-    let commit_id = commit.id().hex();
-    let commit_id_short_len = block_on(
-        repo.index()
-            .shortest_unique_commit_id_prefix_len(commit.id()),
-    )
-    .unwrap_or(commit_id.len()) as u32;
     let (timestamp_millis, operation) = match &entry.operation {
         Some(op) => {
             let meta = op.metadata();
@@ -51,8 +39,8 @@ fn to_dto(repo: &ReadonlyRepo, entry: &CommitEvolutionEntry) -> EvologEntry {
     };
     let description = commit.description().lines().next().unwrap_or("").to_owned();
     EvologEntry {
-        change_id: ShortId::new(change_id, change_id_short_len),
-        commit_id: ShortId::new(commit_id, commit_id_short_len),
+        change_id: short_change_id(repo, commit),
+        commit_id: short_commit_id(repo, commit),
         timestamp_millis,
         operation,
         description,

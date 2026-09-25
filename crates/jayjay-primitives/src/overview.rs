@@ -1,32 +1,23 @@
 use super::change::ShortId;
 
-/// One change inside a lane, in the order the lane lists them (head first).
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OverviewChange {
     pub change_id: ShortId,
     pub commit_id: ShortId,
-    /// First line of the description; empty when undescribed.
     pub description: String,
-    /// The whole description, for a detail view.
     pub full_description: String,
     pub timestamp_millis: i64,
     pub is_empty: bool,
     pub has_conflict: bool,
     pub bookmarks: Vec<String>,
-    /// Every workspace checked out on this change, the current one included.
     pub workspaces: Vec<String>,
 }
 
-/// What a lane sits on. The kind decides how the base row is drawn and whether the lane counts as behind trunk.
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
 pub enum OverviewBaseKind {
-    /// The current trunk head.
     Trunk,
-    /// An immutable ancestor of trunk: trunk has moved on since this lane forked.
     OlderTrunk,
-    /// A mutable change shared by several lanes (a fork point).
     Mutable,
-    /// Immutable but not on trunk, such as a tagged release.
     Other,
 }
 
@@ -38,7 +29,6 @@ pub struct OverviewBase {
     pub timestamp_millis: i64,
     pub kind: OverviewBaseKind,
     pub bookmarks: Vec<String>,
-    /// Trunk commits after this base; 0 unless the kind is `OlderTrunk`.
     pub behind_trunk: u32,
 }
 
@@ -46,19 +36,15 @@ pub struct OverviewBase {
 pub struct OverviewWorkspace {
     pub name: String,
     pub is_current: bool,
-    /// Changes in the lane above this checkout; 0 means the workspace sits on the head.
     pub changes_above: u32,
 }
 
-/// A maximal chain of mutable changes with no fork inside it: every change but the head has exactly one mutable child.
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct OverviewLane {
-    /// Head first, the change on the base last.
     pub changes: Vec<OverviewChange>,
     pub base: OverviewBase,
     pub workspaces: Vec<OverviewWorkspace>,
     pub latest_timestamp_millis: i64,
-    /// Plain sentences describing conditions worth a look; empty when there are none.
     pub attention: Vec<String>,
 }
 
@@ -69,6 +55,57 @@ pub struct Overview {
 }
 
 impl OverviewLane {
+    pub fn new(
+        changes: Vec<OverviewChange>,
+        base: OverviewBase,
+        workspaces: Vec<OverviewWorkspace>,
+    ) -> Self {
+        let latest_timestamp_millis = changes
+            .iter()
+            .map(|change| change.timestamp_millis)
+            .max()
+            .unwrap_or(0);
+        let attention = Self::attention(&changes);
+        Self {
+            changes,
+            base,
+            workspaces,
+            latest_timestamp_millis,
+            attention,
+        }
+    }
+
+    fn attention(changes: &[OverviewChange]) -> Vec<String> {
+        let plural = |count: usize| if count == 1 { "" } else { "s" };
+        let mut attention = Vec::new();
+        let head = &changes[0];
+        if head.is_empty && head.description.is_empty() && changes.len() > 1 {
+            let below = changes.len() - 1;
+            attention.push(format!(
+                "Empty, undescribed checkout above {below} change{}",
+                plural(below)
+            ));
+        }
+        let conflicted = changes.iter().filter(|change| change.has_conflict).count();
+        if conflicted > 0 {
+            attention.push(format!(
+                "{conflicted} change{} with conflicts",
+                plural(conflicted)
+            ));
+        }
+        let undescribed = changes
+            .iter()
+            .filter(|change| change.description.is_empty() && !change.is_empty)
+            .count();
+        if undescribed > 0 {
+            attention.push(format!(
+                "{undescribed} change{} without a description",
+                plural(undescribed)
+            ));
+        }
+        attention
+    }
+
     pub fn head(&self) -> &OverviewChange {
         &self.changes[0]
     }

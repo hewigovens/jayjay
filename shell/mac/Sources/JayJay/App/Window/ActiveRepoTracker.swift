@@ -22,7 +22,6 @@ final class ActiveRepoTracker {
     var repoPath: String?
     var settings: AppSettings?
 
-    /// The handler for the currently active window; an overview window binds the path-based commands only.
     var handler: RepositoryMenuHandler? {
         guard let repoPath, !keyWindowIsOverview else { return nil }
         return handlers[repoPath]?.value
@@ -57,7 +56,6 @@ final class ActiveRepoTracker {
         handlers[repoPath] = WeakRef(handler)
     }
 
-    /// Registration can come after the window already became key, so it settles the flag and path too.
     func registerOverview(_ window: NSWindow) {
         overviewWindows.add(window)
         if window.isKeyWindow {

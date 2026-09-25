@@ -77,7 +77,6 @@ struct OverviewView: View {
         })
     }
 
-    /// Expands from the magnifier; Escape or Return on an empty filter folds it back.
     private var filterField: some View {
         FileFilterField(
             text: $viewModel.filter,
@@ -219,7 +218,6 @@ struct OverviewView: View {
         }
     }
 
-    /// Same quiesce-then-forget flow as the repo window, so an open window on that workspace closes only after success.
     private func removeWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) {
         guard let storePath = viewModel.repositoryStorePath else { return }
         let viewModel = viewModel
@@ -231,7 +229,6 @@ struct OverviewView: View {
         }
     }
 
-    /// The lane's workspace window (or this repository's) shows the lane's ancestry with `change` selected, so its diff opens there.
     private func showInGraph(_ lane: OverviewLane, _ change: OverviewChange?) {
         windowManager.showInGraph(
             repoPath: viewModel.targetRepoPath(for: lane),

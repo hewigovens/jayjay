@@ -6,11 +6,10 @@ use jj_lib::commit::Commit as JjCommit;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
-use jj_lib::repo::Repo as JjRepo;
 
 use super::super::Repo;
 use super::super::log::ImmutableIds;
-use super::super::support::block_on;
+use super::super::support::{block_on, short_change_id, short_commit_id};
 use crate::types::*;
 
 impl Repo {
@@ -21,18 +20,8 @@ impl Repo {
         immutable_ids: Option<&ImmutableIds>,
         divergent_change_ids: Option<&HashSet<String>>,
     ) -> ChangeInfo {
-        let change_id = encode_reverse_hex(commit.change_id().as_bytes());
-        // Shortest prefix that still uniquely identifies this change. The index
-        // is cached on the ReadonlyRepo, so per-commit calls stay cheap.
-        let change_id_short_len =
-            block_on(repo.shortest_unique_change_id_prefix_len(commit.change_id()))
-                .unwrap_or(change_id.len()) as u32;
+        let change_id = short_change_id(&**repo, commit);
         let commit_id = commit.id().hex();
-        let commit_id_short_len = block_on(
-            repo.index()
-                .shortest_unique_commit_id_prefix_len(commit.id()),
-        )
-        .unwrap_or(commit_id.len()) as u32;
         let author = commit.author();
         let bookmarks: Vec<String> = repo
             .view()
@@ -98,12 +87,12 @@ impl Repo {
             after: has_children && !has_immutable_child,
         };
         let is_divergent = divergent_change_ids
-            .map(|ids| ids.contains(&change_id))
+            .map(|ids| ids.contains(&change_id.id))
             .unwrap_or(false);
 
         ChangeInfo {
-            change_id: ShortId::new(change_id, change_id_short_len),
-            commit_id: ShortId::new(commit_id, commit_id_short_len),
+            change_id,
+            commit_id: short_commit_id(&**repo, commit),
             description: commit.description().to_owned(),
             author: CommitAuthor::new(
                 author.name.clone(),
