@@ -4115,6 +4115,7 @@ dependencies = [
  "jj-test",
  "libc",
  "nucleo-matcher",
+ "parking_lot",
  "percent-encoding",
  "plist",
  "pollster 1.0.1",

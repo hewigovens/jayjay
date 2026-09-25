@@ -12,6 +12,7 @@ use crate::types::*;
 impl Repo {
     /// Restore `paths` in `rev` from `from`'s tree when given (`jj restore --from` semantics, used to pick one parent of a merge), else from the auto-merged parent tree. `rev` is always the change being rewritten; `from` is only ever a content source.
     pub fn restore_files(&self, rev: &str, from: Option<&str>, paths: &[String]) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.restore(rev, paths, |repo| {
             from.map(|f| {
                 self.resolve_commit(repo, f)
@@ -23,6 +24,7 @@ impl Repo {
 
     /// Replace `rev`'s whole tree with `version`'s. Evolog versions are hidden predecessors, so `version` is taken exactly as named instead of following its rewrites to the current version.
     pub fn restore_version(&self, rev: &str, version: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.restore(rev, &[], |repo| {
             self.resolve_commit(repo, version).map(Some)
         })
@@ -88,6 +90,7 @@ impl Repo {
 
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
     pub fn delete_files(&self, paths: &[String]) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         for path in paths {
             let abs_path = self.path.join(path);
             if abs_path.exists() {
@@ -103,6 +106,7 @@ impl Repo {
 
     /// Add paths to .gitignore and untrack them via `jj file untrack`.
     pub fn ignore_and_untrack(&self, paths: &[String]) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         // Reject control chars first: a newline would inject extra .gitignore patterns.
         reject_control_chars(paths)?;
 
@@ -142,6 +146,7 @@ impl Repo {
 
     /// Move files from a change to working copy using `jj squash --from rev --into @`.
     pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
         let mut args = vec!["squash", "--from", rev, "--into", "@", "--"];
         args.extend(operands.iter().map(String::as_str));

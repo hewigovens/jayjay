@@ -12,11 +12,15 @@ impl Repo {
         name: &str,
         expected_root: &str,
     ) -> CoreResult<Option<String>> {
-        self.ensure_workspace_is_not_current(name)?;
-        let staged = self.stage_workspace_for_deletion(name, expected_root)?;
-        if let Err(error) = self.forget_workspace_name(name) {
-            return Err(staged.restore_or_recovery_error(error));
-        }
+        let staged = {
+            let _write = self.write_guard()?;
+            self.ensure_workspace_is_not_current(name)?;
+            let staged = self.stage_workspace_for_deletion(name, expected_root)?;
+            if let Err(error) = self.forget_workspace_name(name) {
+                return Err(staged.restore_or_recovery_error(error));
+            }
+            staged
+        };
 
         Ok(staged.delete(self, name).err().map(|error| {
             format!(

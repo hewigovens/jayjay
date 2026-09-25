@@ -25,6 +25,7 @@ impl Repo {
         message: &str,
         paths: &[String],
     ) -> CoreResult<String> {
+        let _write = self.write_guard()?;
         if paths.is_empty() {
             return Ok("No safe submodule updates to commit.".to_owned());
         }

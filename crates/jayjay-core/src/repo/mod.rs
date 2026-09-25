@@ -34,6 +34,7 @@ mod working_copy;
 mod working_copy_ignore;
 mod workspace;
 mod workspace_path;
+mod write_lock;
 
 pub use ai::{AiProvider, DiffExcerpt};
 pub(crate) use diffedit::partition_validated_text_selection;
@@ -96,6 +97,7 @@ pub struct Repo {
     /// A workspace's changed-file count costs a full parent-tree diff, so keep the last count per workspace and re-diff only the ones whose working-copy commit moved.
     workspace_files_changed_cache: RwLock<HashMap<String, (CommitId, u32)>>,
     lfs_cache: Mutex<git::lfs::LfsCache>,
+    write_lock: Arc<parking_lot::ReentrantMutex<()>>,
 }
 
 impl Repo {
@@ -114,9 +116,11 @@ impl Repo {
 
         let repo = load_repo_at_head(&workspace, "failed to load repo")?;
 
+        let repo_path = canonicalize(workspace.repo_path());
         Ok(Self {
             path: workspace.workspace_root().to_owned(),
-            repo_path: canonicalize(workspace.repo_path()),
+            write_lock: write_lock::for_store(&repo_path),
+            repo_path,
             workspace_name: workspace.workspace_name().to_owned(),
             repo: RwLock::new(repo),
             running_jj_processes: RunningJjProcesses::default(),

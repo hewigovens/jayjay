@@ -161,6 +161,7 @@ impl Repo {
     }
 
     pub fn create_bookmark(&self, name: &str, rev: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.with_resolved_commit_transaction(
             rev,
             "create bookmark",
@@ -177,6 +178,7 @@ impl Repo {
     }
 
     pub fn move_bookmark(&self, name: &str, to_rev: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.with_resolved_commit_transaction(
             to_rev,
             "move bookmark",
@@ -193,11 +195,13 @@ impl Repo {
     }
 
     pub fn delete_bookmark(&self, name: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.update_local_bookmark(name, RefTarget::absent(), "delete bookmark")
     }
 
     /// Drop this bookmark from the commit `rev` resolves to. Pass the DAG chip's commit id so a working-copy snapshot cannot miss the target. Remaining targets stay; one remaining target resolves the conflict; none deletes the bookmark.
     pub fn remove_bookmark_from_rev(&self, name: &str, rev: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let current = repo.view().get_local_bookmark(RefName::new(name)).clone();
@@ -227,10 +231,12 @@ impl Repo {
 
     /// Forget a bookmark entirely (local + remote-tracking, incl. the colocated `@git` ref). Unlike delete, it doesn't stage a deletion to push. This is how a leftover deleted bookmark (e.g. `test@git`) is cleared from jj.
     pub fn forget_bookmark(&self, name: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.run_jj_reload(&["bookmark", "forget", "--", name])
     }
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         if old_name == new_name {
             return Ok(());
         }
@@ -261,6 +267,7 @@ impl Repo {
     }
 
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
+        let _write = self.write_guard()?;
         self.run_jj_reload(&[
             "bookmark",
             "track",
@@ -277,6 +284,7 @@ impl Repo {
     pub fn forget_stale_bookmarks(&self) -> CoreResult<u32> {
         // Step 1: Prune remote tracking refs via git fetch
         let _ = self.run_jj(&["git", "fetch", "--remote", "origin"]);
+        let _write = self.write_guard()?;
 
         // Step 2: Delete local git branches whose remote is gone
         // (equivalent to: git branch -vv | grep ': gone]' | awk '{print $1}' | xargs git branch -D)
