@@ -5,6 +5,7 @@ use gpui::{
 };
 
 use super::dag::{DagRowLanes, dag_column};
+use super::dag_drag::DagDragSelection;
 use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
 use super::revset_filter::revset_filter_panel;
 use super::{ActivePane, RepoWindow};
@@ -66,7 +67,7 @@ pub(super) fn sidebar(
             cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
                 let t = t_clone.clone();
                 let is_pane_active = this.active_pane() == ActivePane::Sidebar;
-                let (selected, selected_changes, compare_source_change_id) = {
+                let (selected, selected_changes, compare_source_change_id, drag_selection) = {
                     let vm = this.vm.read(cx);
                     (
                         vm.selected,
@@ -74,6 +75,7 @@ pub(super) fn sidebar(
                         vm.compare
                             .as_ref()
                             .and_then(|compare| compare.source_change_id.clone()),
+                        DagDragSelection::of(vm),
                     )
                 };
                 let view_handle = view_handle.clone();
@@ -156,6 +158,9 @@ pub(super) fn sidebar(
                                 refs_budget,
                                 bookmarks: bookmarks_for_processor.as_ref(),
                                 entries: &entries,
+                                drag_selection: drag_selection
+                                    .clone()
+                                    .filter(|_| is_selected_change),
                             },
                             on_click,
                             on_right_click,

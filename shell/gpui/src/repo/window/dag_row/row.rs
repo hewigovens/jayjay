@@ -10,7 +10,7 @@ use jayjay_core::{BookmarkInfo, ChangeInfo, GraphEntry};
 use super::chips::tags_row;
 use super::text::{compact_id, first_line, format_relative, id_cell};
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_font_size};
-use crate::repo::window::dag_drag::{DagDrag, DagDragGhost};
+use crate::repo::window::dag_drag::{DagDrag, DagDragGhost, DagDragSelection};
 use crate::ui::primitives::text_tooltip;
 
 const DAG_ROW_GAP: f32 = 3.;
@@ -34,6 +34,7 @@ pub(crate) struct DagRow<'a> {
     pub refs_budget: f32,
     pub bookmarks: &'a [BookmarkInfo],
     pub entries: &'a Arc<Vec<GraphEntry>>,
+    pub drag_selection: Option<Arc<DagDragSelection>>,
 }
 
 pub(crate) fn dag_row<F, FR>(
@@ -59,6 +60,7 @@ where
         refs_budget,
         bookmarks,
         entries,
+        drag_selection,
     } = row;
     let summary = first_line(&change.description);
 
@@ -108,7 +110,7 @@ where
         .on_drop(move |drag: &DagDrag, w, cx| {
             on_drop(drag, w, cx);
         });
-    if let Some(drag) = DagDrag::for_change(ix, entries) {
+    if let Some(drag) = DagDrag::for_change(ix, entries, drag_selection) {
         row_div = row_div.on_drag(drag, move |drag: &DagDrag, _offset, _window, cx| {
             cx.new(|_| DagDragGhost::new(drag.clone()))
         });

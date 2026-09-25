@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{ChangeInfo, RebaseMode, ShortId};
+use jayjay_core::{ChangeInfo, RebaseMode};
 
 use super::payload::DagDrag;
 use super::state::DagRebaseRequest;
@@ -35,11 +35,15 @@ impl RepoWindow {
                     source_rev: source.selection_revision().to_owned(),
                     source_change_id: source.change_id.clone(),
                     source_commit_id: source.commit_id.clone(),
-                    source_label: DagDrag::label_for_change(source),
+                    source_label: drag.source_label(),
                     dest_rev: destination.selection_revision().to_owned(),
                     dest_change_id: destination.change_id.clone(),
                     dest_commit_id: destination.commit_id.clone(),
                     dest_label: DagDrag::label_for_change(&destination),
+                    selection_commit_ids: drag
+                        .selection()
+                        .map(|selection| selection.commit_ids.clone())
+                        .unwrap_or_default(),
                 };
                 if config::current(cx).features.confirm_drag_rebase {
                     self.pending_rebase = Some(request);
@@ -55,15 +59,24 @@ impl RepoWindow {
         let Some(request) = self.pending_rebase.take() else {
             return;
         };
-        let still_shown = |commit: &ShortId| {
-            self.vm
+        let all_shown = {
+            let shown: std::collections::HashSet<&str> = self
+                .vm
                 .read(cx)
                 .graph
                 .changes
                 .iter()
-                .any(|change| change.commit_id.as_str() == commit.as_str())
+                .map(|change| change.commit_id.as_str())
+                .collect();
+            [
+                request.source_commit_id.as_str(),
+                request.dest_commit_id.as_str(),
+            ]
+            .into_iter()
+            .chain(request.selection_commit_ids.iter().map(String::as_str))
+            .all(|id| shown.contains(id))
         };
-        if !still_shown(&request.source_commit_id) || !still_shown(&request.dest_commit_id) {
+        if !all_shown {
             self.show_toast("Rebase cancelled: the changes moved while confirming", cx);
             return;
         }
@@ -80,7 +93,11 @@ impl RepoWindow {
         let source_label = request.source_label.clone();
         let dest_label = request.dest_label.clone();
         let task = self.vm.update(cx, |vm, cx| {
-            vm.rebase_change(request.source_rev, request.dest_rev, RebaseMode::Source, cx)
+            if request.selection_commit_ids.is_empty() {
+                vm.rebase_change(request.source_rev, request.dest_rev, RebaseMode::Source, cx)
+            } else {
+                vm.rebase_changes(request.selection_commit_ids, request.dest_rev, cx)
+            }
         });
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {

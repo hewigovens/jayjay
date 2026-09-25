@@ -34,7 +34,11 @@ pub(super) fn rebase_confirmation_overlay(
                 .child(overlay_header(
                     glyph::ARROW_UP,
                     t.fg_dim,
-                    "Rebase Change?",
+                    if request.selection_commit_ids.is_empty() {
+                        "Rebase Change?".to_owned()
+                    } else {
+                        format!("Rebase {} Changes?", request.selection_commit_ids.len())
+                    },
                     format!(
                         "{} -> {}",
                         request.source_commit_id.prefix(12),

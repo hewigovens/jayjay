@@ -437,7 +437,7 @@ impl RepoViewModel {
             .position(|candidate| candidate.commit_id == change.commit_id)
     }
 
-    fn selection_state(&self) -> Arc<SelectionState> {
+    pub(crate) fn selection_state(&self) -> Arc<SelectionState> {
         let selected = self.selected_change_indices();
         let mut cache = self.selection_cache.borrow_mut();
         if cache
