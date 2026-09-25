@@ -9,8 +9,7 @@ impl Repo {
     pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<String> {
         let _enter = sync.enter();
         if !bookmark.is_empty() {
-            let _write = self.write_guard()?;
-            self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
+            let _ = self.track_bookmark(bookmark, "origin");
         }
 
         let mut args = vec!["git", "push"];
@@ -33,11 +32,8 @@ impl Repo {
         if bookmarks.is_empty() {
             return Ok("Nothing to push.".to_owned());
         }
-        {
-            let _write = self.write_guard()?;
-            for bookmark in bookmarks {
-                self.run_jj_quiet(&["bookmark", "track", "--remote=origin", "--", bookmark]);
-            }
+        for bookmark in bookmarks {
+            let _ = self.track_bookmark(bookmark, "origin");
         }
         // `--bookmark` creates and tracks new remote bookmarks on its own; jj 0.42
         // has no `--allow-new` flag.
@@ -64,7 +60,7 @@ impl Repo {
         self.pull(
             sync,
             |repo| repo.git_fetch_raw("", bookmark),
-            Some(&["bookmark", "track", "--remote=origin", "--", bookmark]),
+            Some(bookmark),
         )
     }
 
@@ -72,14 +68,14 @@ impl Repo {
         &self,
         sync: &SyncToken,
         fetch: impl FnOnce(&Self) -> CoreResult<String>,
-        track_args: Option<&[&str]>,
+        track: Option<&str>,
     ) -> CoreResult<FetchResult> {
         let _enter = sync.enter();
         let tracking_before = self.tracking_bookmark_names();
         let msg = fetch(self)?;
         let _write = self.write_guard()?;
-        if let Some(track_args) = track_args {
-            let _ = self.run_jj_reload(track_args);
+        if let Some(bookmark) = track {
+            let _ = self.track_bookmark(bookmark, "origin");
         }
         // The in-process rebase cannot be interrupted, so honour a cancel before it instead of reporting one after it has landed.
         sync.check()?;

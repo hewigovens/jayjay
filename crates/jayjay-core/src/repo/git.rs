@@ -1,5 +1,6 @@
 mod colocated;
 mod commit;
+mod import;
 pub(super) mod lfs;
 mod remote;
 mod submodules;

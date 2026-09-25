@@ -180,3 +180,19 @@ fn working_copy_is_large_tracks_tree_state_size() {
         "an oversized tree_state should be flagged large"
     );
 }
+
+#[test]
+fn snapshot_adds_new_files_to_the_colocated_git_index() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::write(repo_path.join("added.txt"), "new\n").expect("write added");
+
+    repo.refresh_working_copy().expect("snapshot");
+
+    let listed = run_git(&repo_path, &["ls-files", "--", "added.txt"]).stdout;
+    assert_eq!(
+        listed, b"added.txt\n",
+        "git must see the file jj started tracking"
+    );
+}

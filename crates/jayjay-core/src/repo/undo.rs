@@ -37,10 +37,35 @@ impl Repo {
         Ok(entries)
     }
 
-    /// Restore the repo to a given operation via `jj op restore`.
+    /// `jj op restore`: put the repo view back as it was at `op_id`. Git refs and heads stay current, as the CLI keeps them, because they mirror the Git repo rather than jj history.
     pub fn op_restore(&self, op_id: &str) -> CoreResult<()> {
         let _write = self.write_guard()?;
-        self.run_jj_reload(&["op", "restore", op_id])
+        self.refresh_working_copy()?;
+        let repo = self.get_repo();
+        let target = block_on_result(
+            "resolve operation",
+            op_walk::resolve_op_with_repo(&repo, op_id),
+        )?;
+        let target_view = block_on_result("load operation view", target.view())?;
+        if target_view
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .is_none()
+        {
+            return Err(CoreError::internal(format!(
+                "operation {} predates workspace '{}'",
+                &target.id().hex()[..12],
+                self.workspace_name.as_symbol()
+            )));
+        }
+        let current = repo.view().store_view();
+        let restored = jj_lib::op_store::View {
+            git_refs: current.git_refs.clone(),
+            git_heads: current.git_heads.clone(),
+            ..target_view.store_view().clone()
+        };
+        let mut tx = repo.start_transaction();
+        tx.repo_mut().set_view(restored);
+        self.commit_transaction(tx, &format!("restore to operation {}", target.id().hex()))
     }
 
     /// Whether the loaded repo matches the sole on-disk operation head.

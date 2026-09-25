@@ -53,10 +53,6 @@ impl Repo {
         self.reload()
     }
 
-    pub(crate) fn run_jj_quiet(&self, args: &[&str]) {
-        let _ = self.run_jj_output(args);
-    }
-
     pub(crate) fn command_output(
         &self,
         binary: &str,

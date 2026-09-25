@@ -8,7 +8,8 @@ use jj_lib::object_id::ObjectId as _;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::revset::{ResolvedRevsetExpression, RevsetStreamExt as _, UserRevsetExpression};
 use jj_lib::rewrite::{
-    MoveCommitsLocation, MoveCommitsStats, MoveCommitsTarget, RebaseOptions, RebasedCommit,
+    CommitWithSelection, MoveCommitsLocation, MoveCommitsStats, MoveCommitsTarget, RebaseOptions,
+    RebasedCommit, squash_commits,
 };
 
 use super::Repo;
@@ -145,16 +146,14 @@ impl Repo {
             self.ensure_commit_mutable(repo, &dest, into.unwrap_or("the parent"))?;
 
             let parent_tree = self.load_parent_tree(repo, commit, "parent tree")?;
-            let source = jj_lib::rewrite::CommitWithSelection {
+            let source = CommitWithSelection {
                 selected_tree: commit.tree(),
                 parent_tree,
                 commit: commit.clone(),
             };
 
-            let result = block_on_result(
-                "squash",
-                jj_lib::rewrite::squash_commits(repo_mut, &[source], &dest, false),
-            )?;
+            let result =
+                block_on_result("squash", squash_commits(repo_mut, &[source], &dest, false))?;
 
             if let Some(squashed) = result {
                 let source_desc = commit.description().trim();
@@ -339,7 +338,7 @@ impl Repo {
     pub fn squash_many(&self, revs: &[String]) -> CoreResult<String> {
         let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Squash selected")?;
-        let (_, commits) = self.snapshot_and_follow_commits(revs)?;
+        let (repo, commits) = self.snapshot_and_follow_commits(revs)?;
         if commits
             .windows(2)
             .any(|pair| pair[0].parent_ids() != std::slice::from_ref(pair[1].id()))
@@ -356,17 +355,32 @@ impl Repo {
             .filter(|description| !description.is_empty())
             .collect::<Vec<_>>()
             .join("\n");
-        let revs: Vec<String> = commits.iter().map(|commit| commit.id().hex()).collect();
-        let mut args = Vec::with_capacity(revs.len() * 2 + 4);
-        args.push("squash");
-        for rev in &revs[..revs.len() - 1] {
-            args.extend(["--from", rev]);
+        let (destination, sources) = commits.split_last().expect("validated non-empty");
+        for commit in &commits {
+            self.ensure_commit_mutable(&repo, commit, &commit.id().hex())?;
         }
-        args.extend(["--into", revs.last().expect("validated non-empty")]);
-        args.extend(["--message", &message]);
-        self.run_jj_reload(&args)?;
+        let sources = sources
+            .iter()
+            .map(|commit| {
+                Ok(CommitWithSelection {
+                    selected_tree: commit.tree(),
+                    parent_tree: self.load_parent_tree(&repo, commit, "parent tree")?,
+                    commit: commit.clone(),
+                })
+            })
+            .collect::<CoreResult<Vec<_>>>()?;
 
-        let destination = commits.last().expect("validated non-empty");
+        let mut tx = repo.start_transaction();
+        let squashed = block_on_result(
+            "squash",
+            squash_commits(tx.repo_mut(), &sources, destination, false),
+        )?;
+        if let Some(squashed) = squashed {
+            let write = squashed.commit_builder.set_description(message).write();
+            block_on_result("write squashed", write)?;
+        }
+        self.commit_transaction_rebase(tx, "squash")?;
+
         let repo = self.get_repo();
         let destination =
             self.follow_rewrites(&repo, destination.clone(), &destination.id().hex())?;

@@ -830,10 +830,7 @@ fn failed_bookmark_track_toasts_the_unwrapped_error(cx: &mut TestAppContext) {
 
     view.read_with(cx, |view, cx| {
         let toast = view.toast().expect("track failure toast");
-        assert!(
-            toast.starts_with("Failed to parse name pattern"),
-            "toast should drop the jj command wrapper: {toast}"
-        );
+        assert_eq!(toast, "no such remote bookmark: main@not a remote");
         assert_eq!(
             view.view_model().read(cx).error.as_deref(),
             Some(toast.as_ref()),

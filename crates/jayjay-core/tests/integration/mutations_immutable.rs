@@ -43,6 +43,13 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
             Box::new(|| repo.rebase_many(&[rev.to_owned(), "@".to_owned()], "root()")),
         ),
         ("squash", Box::new(|| repo.squash(rev, Some("@")))),
+        (
+            "squash selected",
+            Box::new(|| {
+                repo.squash_many(&["@".to_owned(), rev.to_owned()])
+                    .map(drop)
+            }),
+        ),
         ("squash into", Box::new(|| repo.squash("@", Some(rev)))),
         (
             "new before",
