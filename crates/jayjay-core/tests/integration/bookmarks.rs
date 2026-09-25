@@ -169,12 +169,34 @@ fn deleted_bookmark_preserves_tracking_per_remote() {
     let repo = Repo::open(&fixture.path).expect("open repo");
     repo.track_bookmark("feature", "origin")
         .expect("track origin bookmark");
+    let operations = repo.op_log().expect("op log").len();
+    repo.track_bookmark("feature", "origin")
+        .expect("track again");
+    assert_eq!(
+        repo.op_log().expect("op log").len(),
+        operations,
+        "tracking an already-tracked bookmark must not record an operation"
+    );
     repo.delete_bookmark("feature")
         .expect("delete local bookmark");
     let deleted = listed_feature(&repo);
     assert!(deleted.is_deleted && !deleted.has_local_target);
     assert_eq!(deleted.available_remotes, ["origin", "upstream"]);
     assert_eq!(deleted.tracked_remotes, ["origin"]);
+
+    repo.forget_bookmark("feature").expect("forget bookmark");
+    let forgotten = listed_feature(&repo);
+    assert!(!forgotten.is_deleted && !forgotten.has_local_target);
+    assert_eq!(forgotten.available_remotes, ["origin", "upstream"]);
+    assert!(
+        forgotten.tracked_remotes.is_empty(),
+        "forget must untrack, not delete on the remote"
+    );
+    assert!(repo.forget_bookmark("unknown").is_err());
+    assert!(
+        repo.track_bookmark("feature", "nowhere").is_err(),
+        "an absent remote bookmark cannot be tracked"
+    );
 }
 
 struct ConflictedFeatureFixture {

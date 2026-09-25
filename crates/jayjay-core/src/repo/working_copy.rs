@@ -108,6 +108,7 @@ impl Repo {
         let (new_tree, _) = block_on_result("snapshot working copy", snapshot)?;
 
         if new_tree.tree_ids_and_labels() != wc_commit.tree().tree_ids_and_labels() {
+            self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
             let mut tx = repo.start_transaction();
             tx.set_is_snapshot(true);
             self.rewrite_commit_tree(

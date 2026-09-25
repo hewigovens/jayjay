@@ -756,3 +756,58 @@ fn op_log_matches_the_cli_listing() {
         format!("describe commit {}", &fixture_describe[..12])
     );
 }
+
+#[test]
+fn op_restore_returns_the_view_to_the_target_operation() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.op_log().expect("op log")[0].id.id.clone();
+    repo.describe("@", "rewritten").expect("describe");
+    assert_eq!(
+        repo.log("@").expect("log")[0].description.trim(),
+        "rewritten"
+    );
+
+    repo.op_restore(&before).expect("restore");
+
+    assert_eq!(
+        repo.log("@").expect("log")[0].description.trim(),
+        "initial change"
+    );
+    let entries = repo.op_log().expect("op log");
+    assert!(entries[0].is_current);
+    assert_eq!(
+        entries[0].description,
+        format!("restore to operation {}", &before[..12])
+    );
+    assert!(repo.op_restore("0000000000000000").is_err());
+}
+
+#[test]
+fn op_restore_refuses_an_operation_that_predates_this_workspace() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let before = repo.op_log().expect("op log")[0].id.id.clone();
+    let dest = temp_dir.path().join("repo-feature");
+    repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "")
+        .expect("workspace add");
+    let feature = Repo::open(&dest).expect("open feature workspace");
+
+    let err = feature
+        .op_restore(&before)
+        .expect_err("restore must be refused");
+
+    assert!(
+        err.to_string().contains("predates workspace 'feature'"),
+        "{err}"
+    );
+    assert!(
+        feature
+            .workspace_list()
+            .expect("workspaces")
+            .iter()
+            .any(|ws| ws.name == "feature")
+    );
+}

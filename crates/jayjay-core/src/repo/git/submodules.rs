@@ -40,7 +40,7 @@ impl Repo {
         let output = self.command_output("git", &commit_args, "git commit submodule updates")?;
         self.ensure_success(&output, "git commit submodule updates")?;
 
-        self.run_jj_reload(&["git", "import"])?;
+        self.git_import()?;
 
         if self.has_jj_working_copy_changes()? {
             self.jj_commit(message)?;

@@ -5,11 +5,11 @@ use jj_lib::backend::CommitId;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::RefTarget;
-use jj_lib::ref_name::RefName;
+use jj_lib::ref_name::{RefName, RemoteName, RemoteNameBuf};
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use super::Repo;
-use super::support::short_change_id;
+use super::support::{block_on_result, short_change_id};
 use crate::types::*;
 
 impl Repo {
@@ -224,10 +224,30 @@ impl Repo {
         )
     }
 
-    /// Forget a bookmark entirely (local + remote-tracking, incl. the colocated `@git` ref). Unlike delete, it doesn't stage a deletion to push. This is how a leftover deleted bookmark (e.g. `test@git`) is cleared from jj.
+    /// `jj bookmark forget`: drop the local bookmark and stop tracking its remote counterparts, so nothing is staged for a push. The `git` remote is left to the export, which drops a colocated branch along with its bookmark, as the CLI does.
     pub fn forget_bookmark(&self, name: &str) -> CoreResult<()> {
         let _write = self.write_guard()?;
-        self.run_jj_reload(&["bookmark", "forget", "--", name])
+        self.with_repo_transaction("forget bookmark", false, move |_, repo_mut| {
+            let bookmark = RefName::new(name);
+            let remotes: Vec<RemoteNameBuf> = repo_mut
+                .view()
+                .all_remote_bookmarks()
+                .filter(|(symbol, _)| {
+                    symbol.name == bookmark && symbol.remote != REMOTE_NAME_FOR_LOCAL_GIT_REPO
+                })
+                .map(|(symbol, _)| symbol.remote.to_owned())
+                .collect();
+            if remotes.is_empty() && repo_mut.view().get_local_bookmark(bookmark).is_absent() {
+                return Err(CoreError::Internal {
+                    message: format!("bookmark '{name}' not found"),
+                });
+            }
+            self.set_bookmark_target(repo_mut, name, RefTarget::absent());
+            for remote in &remotes {
+                repo_mut.untrack_remote_bookmark(bookmark.to_remote_symbol(remote));
+            }
+            Ok(())
+        })
     }
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
@@ -261,15 +281,25 @@ impl Repo {
         })
     }
 
+    /// `jj bookmark track name@remote`: merge the remote bookmark into the local one and follow it from now on. Already-tracked is not an error.
     pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
         let _write = self.write_guard()?;
-        self.run_jj_reload(&[
-            "bookmark",
-            "track",
-            &format!("--remote={remote}"),
-            "--",
-            name,
-        ])
+        let symbol = RefName::new(name).to_remote_symbol(RemoteName::new(remote));
+        let remote_ref = self.get_repo().view().get_remote_bookmark(symbol).clone();
+        if remote_ref.is_absent() {
+            return Err(CoreError::Internal {
+                message: format!("no such remote bookmark: {name}@{remote}"),
+            });
+        }
+        if remote_ref.is_tracked() {
+            return Ok(());
+        }
+        self.with_repo_transaction("track remote bookmark", false, move |_, repo_mut| {
+            block_on_result(
+                "track remote bookmark",
+                repo_mut.track_remote_bookmark(symbol),
+            )
+        })
     }
 
     /// Prune stale remote refs, then forget bookmarks that are locally deleted
@@ -297,7 +327,7 @@ impl Repo {
 
         // Step 3: Re-import git refs so jj sees the deletions
         if !gone_branches.is_empty() {
-            let _ = self.run_jj(&["git", "import"]);
+            let _ = self.git_import();
         }
         self.reload()?;
 
@@ -310,7 +340,7 @@ impl Repo {
             .collect();
         let count = gone_branches.len() as u32 + stale.len() as u32;
         for name in stale {
-            self.run_jj(&["bookmark", "forget", "--", name])?;
+            self.forget_bookmark(name)?;
         }
         if count > 0 {
             self.reload()?;
