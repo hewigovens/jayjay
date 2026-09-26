@@ -38,6 +38,7 @@ mod workspace_path;
 mod write_lock;
 
 pub use ai::{AiProvider, DiffExcerpt};
+pub use config::{JjConfigEntry, JjConfigSection, JjUserConfig, jj_user_config};
 pub(crate) use diffedit::partition_validated_text_selection;
 pub use environment::check_gh_environment;
 pub use environment::check_glab_environment;

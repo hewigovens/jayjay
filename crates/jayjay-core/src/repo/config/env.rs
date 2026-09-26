@@ -1,8 +1,10 @@
 use std::collections::HashMap;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use etcetera::BaseStrategy as _;
-use jj_lib::config::{ConfigLayer, ConfigResolutionContext, ConfigSource, StackedConfig};
+use jj_lib::config::{
+    ConfigLayer, ConfigLoadError, ConfigResolutionContext, ConfigSource, StackedConfig,
+};
 use jj_lib::secure_config::SecureConfig;
 use jj_lib::settings::UserSettings;
 use jj_lib::workspace::WorkspaceLoader;
@@ -47,7 +49,7 @@ impl ConfigEnv {
         )
     }
 
-    fn new(
+    pub(super) fn new(
         home_dir: Option<PathBuf>,
         user_config_dir: Option<PathBuf>,
         system_config_dir: Option<PathBuf>,
@@ -94,15 +96,9 @@ impl ConfigEnv {
         let repo_path = canonicalize(loader.repo_path());
         let workspace_path = canonicalize(loader.workspace_root());
 
-        let mut config = StackedConfig::with_defaults();
-        config.add_layer(self.env_base_layer());
-        for (source, path) in &self.config_paths {
-            if path.is_dir() {
-                config.load_dir(*source, path).map_err(Error::internal)?;
-            } else if path.is_file() {
-                config.load_file(*source, path).map_err(Error::internal)?;
-            }
-        }
+        let mut config = self
+            .file_config()
+            .map_err(|failure| Error::internal(failure.message))?;
         if let Some(path) =
             self.secure_config_path(SecureConfig::new_repo(repo_path.clone()), "repos")?
         {
@@ -130,6 +126,59 @@ impl ConfigEnv {
         };
         let config = jj_lib::config::resolve(&config, &context).map_err(Error::internal)?;
         UserSettings::from_config(config).map_err(Error::internal)
+    }
+
+    /// The config `jj config list` sees outside any repository: system and user files under the environment layers, with `[[--scope]]` tables resolved for that command.
+    pub(crate) fn user_level_config(&self) -> Result<StackedConfig, ConfigLoadFailure> {
+        let mut config = self.file_config()?;
+        config.add_layer(self.env_overrides_layer());
+        let context = ConfigResolutionContext {
+            home_dir: self.home_dir.as_deref(),
+            repo_path: None,
+            workspace_path: None,
+            command: Some("config list"),
+            hostname: &self.hostname,
+            environment: &self.environment,
+        };
+        jj_lib::config::resolve(&config, &context).map_err(|error| ConfigLoadFailure {
+            path: None,
+            message: error.to_string(),
+        })
+    }
+
+    /// One of the paths `jj config path --user` lists: the first user config file or directory that exists, else the file jj would create, which under `JJ_CONFIG` is the first path named there.
+    pub(crate) fn user_config_path(&self) -> Option<PathBuf> {
+        let user_paths: Vec<&PathBuf> = self
+            .config_paths
+            .iter()
+            .filter(|(source, _)| *source == ConfigSource::User)
+            .map(|(_, path)| path)
+            .collect();
+        if let Some(existing) = user_paths.iter().find(|path| path.exists()) {
+            return Some((*existing).clone());
+        }
+        if self.environment.contains_key("JJ_CONFIG") {
+            return user_paths.first().map(|path| (*path).clone());
+        }
+        self.root_config_dir
+            .as_ref()
+            .map(|root| root.join("config.toml"))
+    }
+
+    fn file_config(&self) -> Result<StackedConfig, ConfigLoadFailure> {
+        let mut config = StackedConfig::with_defaults();
+        config.add_layer(self.env_base_layer());
+        for (source, path) in &self.config_paths {
+            let loaded = if path.is_dir() {
+                config.load_dir(*source, path)
+            } else if path.is_file() {
+                config.load_file(*source, path)
+            } else {
+                continue;
+            };
+            loaded.map_err(|error| ConfigLoadFailure::from_load(error, path))?;
+        }
+        Ok(config)
     }
 
     /// Per-repo and per-workspace config live under the user config dir, keyed by the id file jj keeps next to the repo.
@@ -162,6 +211,25 @@ impl ConfigEnv {
             ConfigSource::EnvOverrides,
             ENV_OVERRIDES.map(|(variable, key)| (key, self.environment.get(variable))),
         )
+    }
+}
+
+/// A config file that could not be read or parsed, named so the Settings tab can offer to open it.
+pub(crate) struct ConfigLoadFailure {
+    pub(crate) path: Option<PathBuf>,
+    pub(crate) message: String,
+}
+
+impl ConfigLoadFailure {
+    fn from_load(error: ConfigLoadError, requested: &Path) -> Self {
+        let path = match &error {
+            ConfigLoadError::Read(path_error) => Some(path_error.path.clone()),
+            ConfigLoadError::Parse { source_path, .. } => source_path.clone(),
+        };
+        Self {
+            path: path.or_else(|| Some(requested.to_path_buf())),
+            message: Error::internal(error).to_string(),
+        }
     }
 }
 
@@ -261,5 +329,41 @@ mod tests {
         jj_test::run_command("jj", &args.map(String::from), &mut command);
 
         assert_eq!(fixture.settings().user_name(), "Repo Config");
+    }
+
+    #[test]
+    fn user_config_path_prefers_an_existing_path_then_jj_config_then_the_default_location() {
+        let fixture = Fixture::build("");
+        let env = |environment: HashMap<String, String>| {
+            ConfigEnv::new(
+                Some(fixture.home.clone()),
+                Some(fixture.config_dir.clone()),
+                None,
+                "test-host".to_owned(),
+                environment,
+            )
+        };
+        let existing = fixture.config_dir.join("jj").join("config.toml");
+        assert_eq!(
+            env(HashMap::new()).user_config_path(),
+            Some(existing.clone())
+        );
+
+        std::fs::remove_file(&existing).expect("remove user config");
+        assert_eq!(env(HashMap::new()).user_config_path(), Some(existing));
+
+        let jj_config = |path: &PathBuf| {
+            env(HashMap::from([(
+                "JJ_CONFIG".to_owned(),
+                path.to_string_lossy().into_owned(),
+            )]))
+        };
+        let named = fixture.home.join("elsewhere.toml");
+        assert_eq!(jj_config(&named).user_config_path(), Some(named));
+        assert_eq!(
+            jj_config(&fixture.home).user_config_path(),
+            Some(fixture.home.clone()),
+            "a JJ_CONFIG directory of TOML files is the user config"
+        );
     }
 }

@@ -6,12 +6,12 @@ use gpui::{
     AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
     SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
+use jayjay_core::{JjConfigEntry, JjConfigSection};
 
 use super::SettingsView;
 use super::shared::{detail_row, feedback_copy_icon_button, row_container, section_title};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
-use model::{JjConfigEntry, JjConfigSection};
 
 const CONFIG_PATH_COPY_ID: &str = "jj-config-copy-path";
 
@@ -27,6 +27,7 @@ impl SettingsView {
     pub fn set_jj_config_path(&mut self, path: String, cx: &mut Context<Self>) {
         self.jj_config = Some(JjConfigSnapshot(model::JjConfigSnapshot {
             path,
+            exists: true,
             sections: Vec::new(),
             error: None,
         }));
@@ -62,19 +63,19 @@ pub(super) fn jujutsu_section(
     };
     let snapshot = &snapshot.0;
 
-    if let Some(error) = snapshot.error.as_ref() {
-        return root
-            .child(status_message(error.as_str(), t))
-            .into_any_element();
-    }
-
-    if !snapshot.path.is_empty() {
+    // The path row stays above a load error, so a config that fails to parse can still be opened for repair; a missing config has nothing to open.
+    if snapshot.exists && !snapshot.path.is_empty() {
         root = root.child(config_path_row(
             &snapshot.path,
             recently_copied.is_some_and(|id| id.as_ref() == CONFIG_PATH_COPY_ID),
             t,
             cx,
         ));
+    }
+    if let Some(error) = snapshot.error.as_ref() {
+        return root
+            .child(status_message(error.as_str(), t))
+            .into_any_element();
     }
     for section in &snapshot.sections {
         root = root.child(config_section(section, t));
