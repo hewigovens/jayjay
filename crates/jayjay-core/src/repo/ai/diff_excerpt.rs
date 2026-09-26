@@ -39,7 +39,7 @@ impl DiffExcerpt {
 }
 
 impl Repo {
-    /// The working copy's changes as a stat plus a unified diff for a commit-message model; lock files appear only in the stat unless they are the whole change.
+    /// The working copy's changes as a stat plus a unified diff for a commit-message model.
     pub fn diff_excerpt(&self) -> CoreResult<Option<DiffExcerpt>> {
         self.refresh_working_copy()?;
         let hunks = self.show("@")?.diff;
