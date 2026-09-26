@@ -1,9 +1,12 @@
 use std::sync::Arc;
 
 use jj_lib::commit::Commit;
+use jj_lib::matchers::FilesMatcher;
 use jj_lib::repo::ReadonlyRepo;
+use jj_lib::rewrite::{CommitWithSelection, restore_tree, squash_commits};
 
 use super::Repo;
+use super::mutations::combined_description;
 use super::path_operands::{fileset_literal, gitignore_pattern, reject_control_chars};
 use super::support::block_on_result;
 use crate::types::*;
@@ -56,11 +59,9 @@ impl Repo {
                 if repo_paths.is_empty() {
                     return Ok(source_tree);
                 }
-                let matcher = jj_lib::matchers::FilesMatcher::new(
-                    repo_paths.iter().map(|path| path.as_ref()),
-                );
+                let matcher = FilesMatcher::new(repo_paths.iter().map(|path| path.as_ref()));
                 let old_tree = commit.tree();
-                let new_tree = jj_lib::rewrite::restore_tree(
+                let new_tree = restore_tree(
                     &source_tree,
                     &old_tree,
                     "parent".to_owned(),
@@ -128,12 +129,59 @@ impl Repo {
         self.run_jj_reload(&args)
     }
 
-    /// Move files from a change to working copy using `jj squash --from rev --into @`.
+    /// `jj squash --from rev --into @ -- paths`: the named files' changes move to the working copy; a source left empty is abandoned and its description joins `@`'s.
     pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
         let _write = self.write_guard()?;
-        let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
-        let mut args = vec!["squash", "--from", rev, "--into", "@", "--"];
-        args.extend(operands.iter().map(String::as_str));
-        self.run_jj_reload(&args)
+        self.refresh_working_copy()?;
+        let repo = self.get_repo();
+        let source = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
+        self.ensure_commit_mutable(&repo, &source, rev)?;
+        let destination = self.working_copy_commit(&repo)?;
+        self.ensure_commit_mutable(&repo, &destination, "@")?;
+        if source.id() == destination.id() {
+            return Err(CoreError::internal("cannot move files from @ to @"));
+        }
+        let repo_paths = self.parse_repo_paths(paths)?;
+        let matcher = FilesMatcher::new(repo_paths.iter().map(|path| path.as_ref()));
+        let parent_tree = self.load_parent_tree(&repo, &source, "load parent tree")?;
+        let selected_tree = block_on_result(
+            "select files",
+            restore_tree(
+                &source.tree(),
+                &parent_tree,
+                "source".to_owned(),
+                "parent".to_owned(),
+                &matcher,
+            ),
+        )?;
+        // jj-lib reads an empty selection of an empty source as "everything" and abandons the source, so refuse it here like split does.
+        if selected_tree.tree_ids() == parent_tree.tree_ids() {
+            return Err(CoreError::internal(
+                "none of the selected files differ from the parent",
+            ));
+        }
+        let selection = CommitWithSelection {
+            commit: source.clone(),
+            selected_tree,
+            parent_tree,
+        };
+        let mut tx = repo.start_transaction();
+        let squashed = block_on_result(
+            "move files to working copy",
+            squash_commits(tx.repo_mut(), &[selection], &destination, false),
+        )?;
+        let Some(squashed) = squashed else {
+            return Err(CoreError::internal(
+                "none of the selected files differ from the parent",
+            ));
+        };
+        let description = if squashed.abandoned_commits.is_empty() {
+            destination.description().to_owned()
+        } else {
+            combined_description(destination.description(), source.description())
+        };
+        let write = squashed.commit_builder.set_description(description).write();
+        block_on_result("write working-copy change", write)?;
+        self.commit_transaction_rebase(tx, "move files to working copy")
     }
 }

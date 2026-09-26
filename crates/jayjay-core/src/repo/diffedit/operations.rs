@@ -91,6 +91,7 @@ impl Repo {
         let source = self.resolve_commit(&repo, rev)?;
         self.ensure_commit_mutable(&repo, &source, rev)?;
         let destination = self.resolve_commit(&repo, "@")?;
+        self.ensure_commit_mutable(&repo, &destination, "@")?;
         if source.id() == destination.id() {
             return Err(CoreError::Internal {
                 message: "cannot move selected changes from @ to @".to_owned(),

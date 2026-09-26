@@ -239,11 +239,6 @@ impl Repo {
         let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":theirs")
     }
-
-    /// Read a file's content (including conflict markers) from a revision.
-    pub fn file_content(&self, rev: &str, path: &str) -> CoreResult<String> {
-        self.run_jj(&["file", "show", "-r", rev, path])
-    }
 }
 
 #[cfg(test)]

@@ -52,7 +52,7 @@ fn loads_and_applies_an_embedded_conflict_edit() {
     assert!(!repo.show("@").expect("show change").info.has_conflict);
     assert_eq!(
         repo.file_content("@", "hello.txt").expect("file content"),
-        "combined"
+        "combined\n"
     );
     assert_eq!(
         fs::read_to_string(temp_dir.path().join("repo/hello.txt")).expect("working-copy content"),
@@ -142,10 +142,7 @@ fn applies_one_hunk_source_without_editing_marker_prefixes() {
         .expect("apply hunk resolution");
 
     assert!(!repo.show("@").expect("show change").info.has_conflict);
-    assert_eq!(
-        repo.file_content("@", "hello.txt").unwrap(),
-        hunk.right.trim_end()
-    );
+    assert_eq!(repo.file_content("@", "hello.txt").unwrap(), hunk.right);
 }
 
 #[cfg(unix)]
@@ -202,7 +199,7 @@ fn applies_after_the_same_change_was_amended() {
     assert!(!repo.show("@").expect("show change").info.has_conflict);
     assert_eq!(
         repo.file_content("@", "hello.txt").expect("file content"),
-        "combined"
+        "combined\n"
     );
 }
 

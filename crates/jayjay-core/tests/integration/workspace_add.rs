@@ -1,5 +1,5 @@
 use jayjay_core::Repo;
-use jj_test::init_jj_repo;
+use jj_test::{init_jj_repo, run_jj_in};
 
 fn workspace_names(repo: &Repo) -> Vec<String> {
     repo.workspace_list()
@@ -13,6 +13,7 @@ fn workspace_names(repo: &Repo) -> Vec<String> {
 fn workspace_add_and_forget_roundtrip() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["new"]);
     let repo = Repo::open(&repo_path).expect("open repo");
 
     let dest = temp_dir.path().join("repo-feature");
@@ -24,6 +25,10 @@ fn workspace_add_and_forget_roundtrip() {
     let workspaces = repo.workspace_list().expect("workspace list");
     let current = workspaces.iter().find(|ws| ws.is_current).expect("current");
     assert_eq!(current.name, "default", "adding must not switch workspaces");
+    assert!(
+        dest.join("hello.txt").exists(),
+        "the new workspace is checked out on the current change's parent"
+    );
 
     repo.workspace_forget("feature", Some(dest.to_str().expect("utf8 dest")))
         .expect("workspace forget");
@@ -89,15 +94,13 @@ fn workspace_add_rejects_invalid_names_in_core() {
 }
 
 #[test]
-fn workspace_add_rejects_option_shaped_revision() {
+fn workspace_add_leaves_no_directory_behind_when_the_revision_does_not_resolve() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
 
     let dest = temp_dir.path().join("dest");
-    let err = repo
-        .workspace_add(dest.to_str().expect("utf8 dest"), "feature", "--config=x=y")
-        .expect_err("option-shaped revision must be rejected");
-    assert!(err.to_string().contains("invalid revision"), "{err}");
+    repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "--config=x=y")
+        .expect_err("an unresolvable revision must be rejected");
     assert!(!dest.exists());
 }
