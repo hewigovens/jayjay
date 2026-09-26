@@ -2,9 +2,9 @@
   {
     "id": "open",
     "title": "Open a repository",
-    "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI, and switch workspaces from the title picker.",
+    "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI, switch workspaces from the title picker, and see every lane of work in the Repo Overview.",
     "category": "Getting Started",
-    "keywords": ["help", "open", "repo", "repository", "workspace", "switch workspace", "forget workspace", "folder", "cli", "launcher", "jayjay .", "jj git init"],
+    "keywords": ["help", "open", "repo", "repository", "workspace", "switch workspace", "forget workspace", "overview", "repo overview", "lanes", "folder", "cli", "launcher", "jayjay .", "jj git init"],
     "shortcut": "Cmd+O",
     "menuPath": "File > Open Repository...",
     "guideAnchor": "open"
@@ -14,7 +14,7 @@
     "title": "Navigate history",
     "summary": "Move through the DAG, use revset chips, and drag changes or bookmarks when you need to rewrite.",
     "category": "History",
-    "keywords": ["help", "history", "dag", "graph", "revset", "mine", "trunk", "conflicts", "heads", "drag", "rebase", "move", "working copy", "edit"],
+    "keywords": ["help", "history", "dag", "graph", "revset", "mine", "trunk", "conflicts", "heads", "drag", "rebase", "rebase onto trunk", "trunk()", "move", "working copy", "edit"],
     "shortcut": "J / K",
     "guideAnchor": "navigate"
   },
@@ -94,7 +94,7 @@
     "title": "Inspect file history and evolog",
     "summary": "Open annotate, file history, or change evolution to understand where code and rewritten changes came from.",
     "category": "Inspection",
-    "keywords": ["help", "annotate", "blame", "file history", "history", "evolog", "evolution", "snapshot", "restore", "prior version"],
+    "keywords": ["help", "annotate", "blame", "file history", "history", "evolog", "evolution", "snapshot", "restore", "restore this version", "prior version"],
     "guideAnchor": "inspection"
   },
   {

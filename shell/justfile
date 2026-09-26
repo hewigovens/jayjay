@@ -26,8 +26,8 @@ macos_min_flag := "-mmacosx-version-min=" + deployment_target
 # App identity + signing
 app_name := "JayJay"
 bundle_id := "dev.hewig.jayjay"
-version := "0.3.19"
-build_number := "62"
+version := "0.3.20-beta.1"
+build_number := "63"
 team_id := "V28VJH6B6S"
 signing_identity := "Developer ID Application: Tao Xu (" + team_id + ")"
 
@@ -49,6 +49,7 @@ list:
   @echo "  just shell::test             Run the macOS app unit tests"
   @echo "  just shell::run              Build and launch the app"
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
+  @echo "  just shell::demo [appearance] Rebuild the Overview demo repo and open it"
   @echo "  just shell::format           Format Swift sources"
   @echo "  just shell::lint             Lint Swift sources"
   @echo "  just shell::clean            Remove generated shell/macOS build artifacts"
@@ -211,12 +212,17 @@ screenshots *test_ids: ffi sync-icon help
     -derivedDataPath "{{derived_data}}"
   )
   if [ -z "{{test_ids}}" ]; then
-    args+=(-only-testing:JayJayUITests/ReleaseScreenshots)
+    args+=(-only-testing:JayJayUITests/ReleaseScreenshots -only-testing:JayJayUITests/OverviewScreenshots)
   fi
   for test_id in {{test_ids}}; do
-    args+=(-only-testing:"JayJayUITests/ReleaseScreenshots/$test_id")
+    case "$test_id" in
+      */*) args+=(-only-testing:"JayJayUITests/$test_id") ;;
+      *) args+=(-only-testing:"JayJayUITests/ReleaseScreenshots/$test_id") ;;
+    esac
   done
   xcodebuild "${args[@]}" build-for-testing | xcbeautify
+  # The demo's review marks come from the app binary, so it waits for the build.
+  JAYJAY_BIN="{{app}}/Contents/MacOS/JayJay" bash "{{root}}/scripts/demo-fixture.sh"
   status=0
   for appearance in light dark; do
     # The runner cannot always delete the previous pass's review marks and notes, so each appearance starts clean here.
@@ -239,6 +245,21 @@ screenshots *test_ids: ffi sync-icon help
               print(f"docs/imgs/{name}.webp")
   PY
   exit "$status"
+
+# Rebuild the demo repository behind the Overview screenshot and the intro video, and open it in a fresh debug app that reads the demo's jj config and review store; rerun to reset between takes.
+demo appearance="system" demo_root="/tmp/jayjay-demo": build
+  pkill -f "{{app}}/Contents/MacOS/JayJay" || true
+  JAYJAY_BIN="{{app}}/Contents/MacOS/JayJay" bash "{{root}}/scripts/demo-fixture.sh" "{{demo_root}}"
+  open -n "{{app}}" \
+    --env JJ_CONFIG="{{demo_root}}/jj-config.toml" \
+    --env JAYJAY_REVIEW_STORE_PATH="{{demo_root}}/review-store.json" \
+    --env JAYJAY_REPOSITORIES_PATH="{{demo_root}}/repositories.json" \
+    --args --repo "{{demo_root}}/flightdeck" \
+    -jayjay.appearanceMode "{{appearance}}" \
+    -jayjay.tintWindowWithWallpaper NO \
+    -jayjay.hideReviewedFiles NO \
+    -jayjay.hasCompletedOnboarding YES \
+    -jayjay.sponsorDismissed YES
 
 reset-help-cache:
   #!/usr/bin/env bash

@@ -1,60 +1,7 @@
-import AppKit
 import XCTest
 
 /// Captures the public screenshots in docs/imgs from the scripts/screenshot-fixture.sh repository; see agents/release.md.
-/// Skipped unless JAYJAY_SCREENSHOT_APPEARANCE (light or dark) reaches the runner, so CI never runs it.
-final class ReleaseScreenshots: SceneBase {
-    private static let environment = ProcessInfo.processInfo.environment
-    private static let appearance = environment["JAYJAY_SCREENSHOT_APPEARANCE"]
-    private var mainFrame = CGRect.zero
-
-    override class var fixtureName: String {
-        "flightdeck"
-    }
-
-    override class var fixtureRoot: URL {
-        URL(fileURLWithPath: environment["JAYJAY_SCREENSHOT_ROOT"] ?? "/tmp/jayjay-screenshots", isDirectory: true)
-    }
-
-    override class var repositoryStoreFixtureName: String {
-        "repositories.json"
-    }
-
-    override class var launchEnvironment: [String: String] {
-        ["JJ_CONFIG": fixtureRoot.appendingPathComponent("jj-config.toml").path]
-    }
-
-    override class var startsWithDefaultLayout: Bool {
-        false
-    }
-
-    override class var additionalLaunchArguments: [String] {
-        [
-            "-jayjay.appearanceMode", appearance ?? "light",
-            "-jayjay.tintWindowWithWallpaper", "NO",
-            "-jayjay.fontFamily", "system",
-            "-jayjay.fontSize", "12",
-            "-jayjay.treeFileList", "NO",
-            "-jayjay.sideBySideDiff", "NO",
-            "-jayjay.hasCompletedOnboarding", "YES",
-            "-jayjay.windowFrame.repo-window", "{{80, 80}, {1600, 960}}",
-            "-jayjay.sidebarWidth", "",
-            "-jayjay.secondaryPaneWidth", "",
-            "-jayjay.fileColumnWidth", "",
-            "-jayjay.sidebarHidden", "NO",
-            "-commandPalette.frameOrigin", "{0, 0}"
-        ]
-    }
-
-    override func setUpWithError() throws {
-        try XCTSkipIf(Self.appearance == nil, "Set JAYJAY_SCREENSHOT_APPEARANCE to capture release screenshots")
-        try super.setUpWithError()
-        let app = try XCTUnwrap(app)
-        XCTAssertTrue(dagRows(of: app).element(boundBy: 0).waitForExistence(timeout: 15), "DAG never populated")
-        mainFrame = app.windows.firstMatch.frame
-        settle()
-    }
-
+final class ReleaseScreenshots: ScreenshotScene {
     // MARK: - Main window
 
     func testHome() throws {
@@ -236,11 +183,7 @@ final class ReleaseScreenshots: SceneBase {
     }
 
     private func row(_ subject: String, in app: XCUIApplication) -> XCUIElement {
-        let rows = (try? String(contentsOf: Self.fixtureRoot.appendingPathComponent("rows.tsv"), encoding: .utf8)) ?? ""
-        let id = rows.split(separator: "\n")
-            .map { $0.split(separator: "\t", maxSplits: 1).map(String.init) }
-            .first { $0.count == 2 && $0[1].contains(subject) }?[0] ?? subject
-        return app.descendants(matching: .any)[AID.DAG.row(id)].firstMatch
+        app.descendants(matching: .any)[AID.DAG.row(Self.fixtureRowId(for: subject))].firstMatch
     }
 
     private func selectChange(_ subject: String, in app: XCUIApplication) {
@@ -266,30 +209,5 @@ final class ReleaseScreenshots: SceneBase {
         let field = app.textFields[AID.Palette.textField]
         XCTAssertTrue(field.waitForExistence(timeout: 5), "Command palette missing")
         return field
-    }
-
-    /// Lets highlighting, avatars, and animations finish before the capture.
-    private func settle() {
-        _ = XCTWaiter().wait(for: [XCTestExpectation(description: "settle")], timeout: 1.5)
-    }
-
-    /// A screen capture cropped to the window, so open menus and popovers are included and the pointer is not.
-    private func capture(_ name: String, frame: CGRect) {
-        settle()
-        let screenshot = XCUIScreen.main.screenshot()
-        let image = screenshot.image
-        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
-            return XCTFail("Screen capture failed for \(name)")
-        }
-        let scale = CGFloat(cgImage.width) / (NSScreen.screens.first?.frame.width ?? image.size.width)
-        let crop = CGRect(x: frame.minX * scale, y: frame.minY * scale, width: frame.width * scale, height: frame.height * scale)
-        guard let cropped = cgImage.cropping(to: crop.integral) else {
-            return XCTFail("Could not crop the capture for \(name)")
-        }
-        let suffix = Self.appearance == "dark" ? "-dark" : ""
-        let attachment = XCTAttachment(image: NSImage(cgImage: cropped, size: frame.size))
-        attachment.name = "\(name)\(suffix)"
-        attachment.lifetime = .keepAlways
-        add(attachment)
     }
 }

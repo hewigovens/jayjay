@@ -1,0 +1,28 @@
+<h2>Repo Overview</h2>
+<ul>
+  <li>Choose <strong>Repo Overview</strong> from the Repository menu, <code>Cmd+Shift+O</code>, the command palette, or the Overview button in the workspace picker to see every lane of mutable work as a tree growing from trunk. Each lane lists its changes, the workspaces checked out in it and how far below the head they sit, and notes for conflicts, undescribed changes, and an empty undescribed checkout above finished work.</li>
+  <li>Filter lanes with <code>Cmd+F</code>, move between lanes and changes with the arrow keys, and press Return to show the selection in its workspace window. The context menu rebases a lane onto trunk, abandons a lane or change, copies ids, opens or forgets a workspace, and reveals it in Finder.</li>
+</ul>
+
+<h2>Rebase and restore</h2>
+<ul>
+  <li><strong>Rebase onto trunk</strong> in a change's context menu, or <strong>Rebase Working Copy onto Trunk</strong> in the command palette, moves that whole line of work onto trunk, including a workspace's working copy. A rebase that moves nothing records no operation.</li>
+  <li>Dragging a change in the graph rebases again, and rows redraw after the rebase. Dragging one change of a multi-selection rebases the whole selection and reports conflicts in any moved change.</li>
+  <li><strong>Restore this version</strong> in Change Evolution puts that version's content back into the working copy or the change you opened the evolog for, in one undoable operation. Immutable changes cannot be restored, and <strong>Copy ‘jj restore’ command</strong> now names the target change.</li>
+</ul>
+
+<h2>Repository List</h2>
+<ul>
+  <li>Drag the Recent panel to the width you want. The panel keeps that width and the list keeps its window size across launches, and the panel no longer clips when it is wider than the window allows. Workspace rows show their path under the name.</li>
+</ul>
+
+<h2>Faster and steadier</h2>
+<ul>
+  <li>Almost every repository action now runs in-process through jj-lib instead of spawning the <code>jj</code> binary: commit, describe, squash, split, revert, absorb, restore, untrack, bookmarks, workspaces, git import, the operation log, and undo. Only fetch, push, external merge tools, and raw palette commands still run <code>jj</code>.</li>
+  <li>Actions from different windows and workspaces of one repository run one at a time, so overlapping operations no longer leave a change divergent.</li>
+  <li>Undo records pending working-copy edits before it lists operations, so rolling back an operation cannot discard work typed after it.</li>
+  <li>Colocated Git repositories see the updated HEAD, branches, and newly tracked files right after each action instead of after the next <code>jj</code> command.</li>
+  <li>Settings &gt; Jujutsu reads your config files directly, so it works without <code>jj</code> on the PATH, groups values by section, and names the file that failed to load with an Open action.</li>
+  <li>The alert for a missing <code>user.name</code> or <code>user.email</code> now appears when jj has no identity configured; it never fired before.</li>
+  <li>Absorb with nothing to move reports Unchanged instead of recording an operation, and the status bar and operation log shorten embedded operation and commit ids.</li>
+</ul>
