@@ -25,9 +25,38 @@ fn diff_excerpt_leaves_lock_files_to_the_stat_unless_nothing_else_changed() {
         .diff_excerpt()
         .expect("read excerpt")
         .expect("mixed change");
-    assert!(mixed.diff.contains("real change"));
+    assert!(mixed.diff.contains("Modified hello.txt:\n"));
+    assert!(mixed.diff.contains("-hello from jayjay\n+real change\n"));
     assert!(!mixed.diff.contains("cargo lock body"));
     assert!(!mixed.diff.contains("npm lock body"));
-    assert!(mixed.stat.contains("Cargo.lock"));
+    assert!(mixed.stat.contains("Cargo.lock | 1 +\n"));
     assert!(mixed.stat.contains("package-lock.json"));
+    assert!(
+        mixed
+            .stat
+            .ends_with("3 files changed, 3 insertions(+), 1 deletions(-)")
+    );
+}
+
+#[test]
+fn diff_excerpt_describes_a_content_free_rename_as_a_rename() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["new"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::rename(repo_path.join("hello.txt"), repo_path.join("greeting.txt")).expect("rename");
+
+    let excerpt = repo
+        .diff_excerpt()
+        .expect("excerpt")
+        .expect("rename is a change");
+
+    assert!(
+        excerpt
+            .diff
+            .contains("Renamed hello.txt => greeting.txt:\n"),
+        "{}",
+        excerpt.diff
+    );
+    assert!(!excerpt.diff.contains("(binary)"), "{}", excerpt.diff);
 }

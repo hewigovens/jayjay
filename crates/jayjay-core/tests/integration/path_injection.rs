@@ -5,7 +5,7 @@
 use std::fs;
 
 use jayjay_core::Repo;
-use jj_test::{init_jj_repo, run_jj_in};
+use jj_test::{init_jj_repo, run_git, run_jj_in};
 
 /// Paths in a change's diff, for asserting exactly which files an action touched.
 fn diff_paths(repo: &Repo, rev: &str) -> Vec<String> {
@@ -177,5 +177,59 @@ fn ignore_and_untrack_escapes_negation_filename() {
             .lines()
             .any(|line| line.trim() == "\\!important.txt"),
         "leading ! must be escaped: {gitignore:?}"
+    );
+}
+
+#[test]
+fn ignore_and_untrack_keeps_the_file_on_disk_and_out_of_git() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::write(repo_path.join("secret.env"), "token\n").expect("write secret");
+    repo.refresh_working_copy().expect("snapshot");
+
+    repo.ignore_and_untrack(&["secret.env".to_owned()])
+        .expect("ignore and untrack");
+
+    assert_eq!(
+        fs::read_to_string(repo_path.join("secret.env")).expect("file stays"),
+        "token\n"
+    );
+    let tracked = run_jj_in(&repo_path, &["file", "list"]).stdout;
+    assert!(!String::from_utf8_lossy(&tracked).contains("secret.env"));
+    assert!(
+        run_git(&repo_path, &["ls-files", "--", "secret.env"])
+            .stdout
+            .is_empty(),
+        "git must not keep an intent-to-add entry"
+    );
+    repo.refresh_working_copy().expect("second snapshot");
+    let paths = diff_paths(&repo, "@");
+    assert!(
+        !paths.contains(&"secret.env".to_owned()),
+        "the ignored file must not be tracked again: {paths:?}"
+    );
+}
+
+#[test]
+fn ignore_and_untrack_reports_a_path_a_nested_ignore_file_takes_back() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::create_dir(repo_path.join("sub")).expect("create sub");
+    fs::write(repo_path.join("sub/.gitignore"), "!secret.env\n").expect("write nested ignore");
+    fs::write(repo_path.join("sub/secret.env"), "token\n").expect("write secret");
+    repo.refresh_working_copy().expect("snapshot");
+
+    let err = repo
+        .ignore_and_untrack(&["sub/secret.env".to_owned()])
+        .expect_err("a path the nested ignore file re-includes cannot be untracked");
+
+    assert!(err.to_string().contains("is not ignored"), "{err}");
+    let tracked = String::from_utf8_lossy(&run_jj_in(&repo_path, &["file", "list"]).stdout)
+        .replace('\\', "/");
+    assert!(
+        tracked.contains("sub/secret.env"),
+        "the file stays tracked: {tracked}"
     );
 }

@@ -7,7 +7,7 @@ use jj_lib::rewrite::{CommitWithSelection, restore_tree, squash_commits};
 
 use super::Repo;
 use super::mutations::combined_description;
-use super::path_operands::{fileset_literal, gitignore_pattern, reject_control_chars};
+use super::path_operands::{gitignore_pattern, reject_control_chars};
 use super::support::block_on_result;
 use crate::types::*;
 
@@ -89,7 +89,7 @@ impl Repo {
         self.refresh_working_copy()
     }
 
-    /// Add paths to .gitignore and untrack them via `jj file untrack`.
+    /// Add paths to .gitignore, then stop tracking them (`jj file untrack`).
     pub fn ignore_and_untrack(&self, paths: &[String]) -> CoreResult<()> {
         let _write = self.write_guard()?;
         // Reject control chars first: a newline would inject extra .gitignore patterns.
@@ -123,10 +123,8 @@ impl Repo {
             }
         }
 
-        let operands: Vec<String> = paths.iter().map(|p| fileset_literal(p)).collect();
-        let mut args = vec!["file", "untrack", "--"];
-        args.extend(operands.iter().map(String::as_str));
-        self.run_jj_reload(&args)
+        self.refresh_working_copy()?;
+        self.untrack_paths(&self.parse_repo_paths(paths)?)
     }
 
     /// `jj squash --from rev --into @ -- paths`: the named files' changes move to the working copy; a source left empty is abandoned and its description joins `@`'s.

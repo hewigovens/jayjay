@@ -3,8 +3,11 @@ use std::sync::Arc;
 use std::sync::Mutex;
 
 use jj_lib::commit::Commit;
-use jj_lib::matchers::{EverythingMatcher, NothingMatcher};
+use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
+use jj_lib::merge::Merge;
+use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::transaction::Transaction;
 use jj_lib::working_copy::SnapshotOptions;
 use jj_lib::workspace::LockedWorkspace;
@@ -178,6 +181,67 @@ impl Repo {
             )?;
             self.set_repo(repo);
         }
+        Ok(())
+    }
+
+    /// `jj file untrack`: drop `paths` from the working-copy change and its on-disk state, leaving the files in place; a path that is not ignored would only be tracked again by the next snapshot, so it is refused.
+    pub(crate) fn untrack_paths(&self, paths: &[RepoPathBuf]) -> CoreResult<()> {
+        self.debug_assert_write_guarded();
+        let context = "untrack paths";
+        let mut workspace = load_workspace_internal(&self.path, context)?;
+        let repo_loader = workspace.repo_loader().clone();
+        let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let wc_commit = self.working_copy_commit(&repo)?;
+        self.ensure_commit_mutable(&repo, &wc_commit, "@")?;
+        let wc_tree = wc_commit.tree();
+        let matcher = FilesMatcher::new(paths.iter().map(|path| path.as_ref()));
+        let mut builder = MergedTreeBuilder::new(wc_tree.clone());
+        for (path, _) in wc_tree.entries_matching(&matcher) {
+            builder.set_or_remove(path, Merge::absent());
+        }
+        let new_tree = block_on_result(context, builder.write_tree())?;
+        let mut tx = repo.start_transaction();
+        let mut new_commit = block_on_result(
+            context,
+            tx.repo_mut()
+                .rewrite_commit(&wc_commit)
+                .set_tree(new_tree)
+                .write(),
+        )?;
+        block_on_result(context, locked_ws.locked_wc().reset(&new_commit))?;
+        // Tracking stays wide open here on purpose: a path the ignore rules do not actually cover comes straight back and is reported below.
+        let snapshot_options = SnapshotOptions {
+            base_ignores: base_git_ignores(&repo, &self.path)?,
+            progress: None,
+            start_tracking_matcher: &EverythingMatcher,
+            force_tracking_matcher: &NothingMatcher,
+            max_new_file_size: u64::MAX,
+        };
+        let (snapshot_tree, _) =
+            block_on_result(context, locked_ws.locked_wc().snapshot(&snapshot_options))?;
+        if snapshot_tree.tree_ids() != new_commit.tree_ids() {
+            if let Some((path, _)) = snapshot_tree.entries_matching(&matcher).next() {
+                return Err(CoreError::internal(format!(
+                    "{} is not ignored, so the next snapshot would track it again",
+                    path.as_internal_file_string()
+                )));
+            }
+            // Concurrent edits landed in the validation snapshot; they stay in the change, since the snapshot already advanced the file monitor past them.
+            new_commit = block_on_result(
+                context,
+                tx.repo_mut()
+                    .rewrite_commit(&new_commit)
+                    .set_tree(snapshot_tree)
+                    .write(),
+            )?;
+        }
+        block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
+        self.sync_colocated_index(&repo, &wc_tree, &new_commit.tree())?;
+        self.sync_colocated_git(&mut tx)?;
+        let new_repo = block_on_result(context, tx.commit(context))?;
+        block_on_result(context, locked_ws.finish(new_repo.op_id().clone()))?;
+        self.set_repo(new_repo);
         Ok(())
     }
 

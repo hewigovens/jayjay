@@ -19,6 +19,17 @@ impl Repo {
         } else {
             Some(self.write_guard()?)
         };
+        self.spawn_jj(args)
+    }
+
+    /// A read that cannot snapshot, run outside the write lock. The snapshot worker thread evaluates revsets while the calling thread holds the lock, and the lock is not reentrant across threads, so a read it needs must not take it.
+    pub(crate) fn run_jj_unlocked_read(&self, args: &[&str]) -> CoreResult<String> {
+        debug_assert!(args.contains(&"--ignore-working-copy"));
+        let output = self.spawn_jj(args)?;
+        self.checked_stdout(output)
+    }
+
+    fn spawn_jj(&self, args: &[&str]) -> CoreResult<Output> {
         let binary = environment::jj_binary();
         let context = format!("run jj {}", args.first().unwrap_or(&""));
         let mut command = environment::command(&binary);
