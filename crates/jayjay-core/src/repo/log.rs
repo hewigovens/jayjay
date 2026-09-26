@@ -2,10 +2,12 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use futures::StreamExt as _;
+use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId;
-use jj_lib::repo::ReadonlyRepo;
-use jj_lib::repo::Repo as _;
+use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
 use jj_lib::revset::{self, SymbolResolver, UserRevsetExpression};
+use jj_lib::settings::UserSettings;
+use jj_lib::transaction::Transaction;
 
 use super::Repo;
 use super::support::{block_on, on_worker_stack};
@@ -29,7 +31,7 @@ impl Repo {
         expression: Arc<UserRevsetExpression>,
     ) -> CoreResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
-        let revset = self.evaluate_typed_revset(&repo, expression)?;
+        let revset = self.evaluate_typed_revset(repo.as_ref(), expression)?;
         self.collect_changes(&repo, revset)
     }
 
@@ -136,15 +138,27 @@ impl Repo {
     pub(crate) fn is_commit_immutable(
         &self,
         repo: &Arc<ReadonlyRepo>,
-        commit: &jj_lib::commit::Commit,
+        commit: &Commit,
     ) -> CoreResult<bool> {
         self.revset_contains(repo, "immutable()", commit)
+    }
+
+    /// Immutability in the view `tx` is building, which is where a bookmark move or a restore can make a commit immutable before the operation lands.
+    pub(crate) fn is_commit_immutable_in(
+        &self,
+        tx: &Transaction,
+        commit: &Commit,
+    ) -> CoreResult<bool> {
+        let revset =
+            self.evaluate_revset_in(tx.repo(), tx.base_repo().settings(), "immutable()")?;
+        block_on(revset.containing_fn()(commit.id()))
+            .map_err(|e| CoreError::internal(format!("immutable() check: {e}")))
     }
 
     pub(crate) fn has_immutable_child(
         &self,
         repo: &Arc<ReadonlyRepo>,
-        commit: &jj_lib::commit::Commit,
+        commit: &Commit,
     ) -> CoreResult<bool> {
         self.revset_contains(repo, "parents(immutable())", commit)
     }
@@ -153,7 +167,7 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         revset_str: &str,
-        commit: &jj_lib::commit::Commit,
+        commit: &Commit,
     ) -> CoreResult<bool> {
         let revset = self.evaluate_revset(repo, revset_str)?;
         block_on(revset.containing_fn()(commit.id())).map_err(|e| CoreError::Internal {
@@ -256,22 +270,20 @@ impl Repo {
 
     pub(crate) fn evaluate_typed_revset<'a>(
         &self,
-        repo: &'a Arc<ReadonlyRepo>,
+        repo: &'a dyn JjRepo,
         expression: Arc<UserRevsetExpression>,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
-        let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
+        let symbol_resolver = SymbolResolver::new(repo, empty_extensions);
         let resolved = expression
-            .resolve_user_expression(repo.as_ref(), &symbol_resolver)
+            .resolve_user_expression(repo, &symbol_resolver)
             .map_err(|e| CoreError::Internal {
                 message: format!("resolve revset: {e}"),
             })?;
-        resolved
-            .evaluate(repo.as_ref())
-            .map_err(|e| CoreError::Internal {
-                message: format!("eval revset: {e}"),
-            })
+        resolved.evaluate(repo).map_err(|e| CoreError::Internal {
+            message: format!("eval revset: {e}"),
+        })
     }
 
     pub(crate) fn evaluate_revset<'a>(
@@ -279,7 +291,15 @@ impl Repo {
         repo: &'a Arc<ReadonlyRepo>,
         revset_str: &str,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
-        let settings = repo.settings();
+        self.evaluate_revset_in(repo.as_ref(), repo.settings(), revset_str)
+    }
+
+    fn evaluate_revset_in<'a>(
+        &self,
+        repo: &'a dyn JjRepo,
+        settings: &UserSettings,
+        revset_str: &str,
+    ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         let aliases_map = self.revset_aliases_map(settings)?;
         let fileset_aliases_map = self.fileset_aliases_map(settings)?;
         let expression = self

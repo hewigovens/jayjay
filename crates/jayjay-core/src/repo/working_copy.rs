@@ -44,6 +44,7 @@ impl Repo {
         let repo_loader = workspace.repo_loader().clone();
         // Hold the working-copy lock across publication and checkout so a snapshot cannot restore the pre-mutation files.
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        self.keep_working_copy_mutable(&mut tx)?;
         self.sync_colocated_git(&mut tx)?;
         let new_repo = block_on_result("commit tx", tx.commit(description))?;
         self.set_repo(new_repo);
@@ -54,6 +55,36 @@ impl Repo {
         }
         block_on_result(context, locked_ws.finish(repo.op_id().clone()))?;
         self.set_repo(repo);
+        Ok(())
+    }
+
+    /// The CLI's finalization step: when a mutation leaves `@` immutable (tracking a protected bookmark onto it, restoring an old view), start a fresh change on top so the next snapshot cannot rewrite the protected commit.
+    fn keep_working_copy_mutable(&self, tx: &mut Transaction) -> CoreResult<()> {
+        let Some(wc_commit_id) = tx
+            .repo()
+            .view()
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .cloned()
+        else {
+            return Ok(());
+        };
+        let wc_commit = tx
+            .repo()
+            .store()
+            .get_commit(&wc_commit_id)
+            .map_err(|error| CoreError::internal(format!("load working-copy commit: {error}")))?;
+        if !self.is_commit_immutable_in(tx, &wc_commit)? {
+            return Ok(());
+        }
+        let new_commit = block_on_result(
+            "start a mutable working copy",
+            tx.repo_mut()
+                .new_commit(vec![wc_commit_id], wc_commit.tree())
+                .write(),
+        )?;
+        tx.repo_mut()
+            .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
+            .map_err(|error| CoreError::internal(format!("move working copy: {error}")))?;
         Ok(())
     }
 
@@ -111,12 +142,26 @@ impl Repo {
             self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
             let mut tx = repo.start_transaction();
             tx.set_is_snapshot(true);
-            self.rewrite_commit_tree(
-                tx.repo_mut(),
-                &wc_commit,
-                new_tree,
-                "rewrite working-copy commit",
-            )?;
+            // An immutable `@` (a bookmark it carries became protected) keeps its tree; the edits become a new change on top, as the CLI snapshots them.
+            if self.is_commit_immutable_in(&tx, &wc_commit)? {
+                let new_commit = block_on_result(
+                    "snapshot onto a new change",
+                    tx.repo_mut()
+                        .new_commit(vec![wc_commit.id().clone()], new_tree)
+                        .write(),
+                )?;
+                tx.repo_mut()
+                    .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
+                    .map_err(|error| CoreError::internal(format!("move working copy: {error}")))?;
+                self.sync_colocated_git(&mut tx)?;
+            } else {
+                self.rewrite_commit_tree(
+                    tx.repo_mut(),
+                    &wc_commit,
+                    new_tree,
+                    "rewrite working-copy commit",
+                )?;
+            }
             let rebase = tx.repo_mut().rebase_descendants();
             block_on_result("rebase descendants after snapshot", rebase)?;
             let commit = tx.commit("snapshot working copy");
