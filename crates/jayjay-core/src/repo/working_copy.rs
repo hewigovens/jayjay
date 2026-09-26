@@ -5,6 +5,7 @@ use std::sync::Mutex;
 use jj_lib::commit::Commit;
 use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
 use jj_lib::merge::Merge;
+use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathBuf;
@@ -129,17 +130,7 @@ impl Repo {
         repo: Arc<ReadonlyRepo>,
     ) -> CoreResult<()> {
         let wc_commit = self.working_copy_commit(&repo)?;
-
-        let snapshot_options = SnapshotOptions {
-            base_ignores: base_git_ignores(&repo, &self.path)?,
-            progress: None,
-            start_tracking_matcher: &EverythingMatcher,
-            force_tracking_matcher: &NothingMatcher,
-            max_new_file_size: u64::MAX,
-        };
-
-        let snapshot = locked_ws.locked_wc().snapshot(&snapshot_options);
-        let (new_tree, _) = block_on_result("snapshot working copy", snapshot)?;
+        let new_tree = self.snapshot_tree(&repo, &mut locked_ws, "snapshot working copy")?;
 
         if new_tree.tree_ids_and_labels() != wc_commit.tree().tree_ids_and_labels() {
             self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
@@ -184,6 +175,24 @@ impl Repo {
         Ok(())
     }
 
+    /// Snapshots with jj's defaults: every unignored new file starts tracked.
+    fn snapshot_tree(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        locked_ws: &mut LockedWorkspace<'_>,
+        context: &str,
+    ) -> CoreResult<MergedTree> {
+        let options = SnapshotOptions {
+            base_ignores: base_git_ignores(repo, &self.path)?,
+            progress: None,
+            start_tracking_matcher: &EverythingMatcher,
+            force_tracking_matcher: &NothingMatcher,
+            max_new_file_size: u64::MAX,
+        };
+        let (tree, _) = block_on_result(context, locked_ws.locked_wc().snapshot(&options))?;
+        Ok(tree)
+    }
+
     /// `jj file untrack`: drop `paths` from the working-copy change and its on-disk state, leaving the files in place; a path that is not ignored would only be tracked again by the next snapshot, so it is refused.
     pub(crate) fn untrack_paths(&self, paths: &[RepoPathBuf]) -> CoreResult<()> {
         self.debug_assert_write_guarded();
@@ -210,16 +219,8 @@ impl Repo {
                 .write(),
         )?;
         block_on_result(context, locked_ws.locked_wc().reset(&new_commit))?;
-        // Tracking stays wide open here on purpose: a path the ignore rules do not actually cover comes straight back and is reported below.
-        let snapshot_options = SnapshotOptions {
-            base_ignores: base_git_ignores(&repo, &self.path)?,
-            progress: None,
-            start_tracking_matcher: &EverythingMatcher,
-            force_tracking_matcher: &NothingMatcher,
-            max_new_file_size: u64::MAX,
-        };
-        let (snapshot_tree, _) =
-            block_on_result(context, locked_ws.locked_wc().snapshot(&snapshot_options))?;
+        // A path the ignore rules do not actually cover comes straight back in this snapshot and is reported below.
+        let snapshot_tree = self.snapshot_tree(&repo, &mut locked_ws, context)?;
         if snapshot_tree.tree_ids() != new_commit.tree_ids() {
             if let Some((path, _)) = snapshot_tree.entries_matching(&matcher).next() {
                 return Err(CoreError::internal(format!(

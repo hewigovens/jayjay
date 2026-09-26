@@ -2,10 +2,11 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use futures::TryStreamExt as _;
+use jj_lib::absorb::{AbsorbSource, absorb_hunks, split_hunks_to_trees};
 use jj_lib::backend::CommitId;
 use jj_lib::commit::{Commit, conflict_label_for_commits};
 use jj_lib::config::ConfigGetError;
-use jj_lib::matchers::FilesMatcher;
+use jj_lib::matchers::{EverythingMatcher, FilesMatcher};
 use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId as _;
@@ -430,22 +431,37 @@ impl Repo {
         self.commit_transaction(tx, "duplicate")
     }
 
-    /// Absorb source hunks into ancestor commits based on blame.
+    /// `jj absorb --from rev`: each hunk moves into the mutable ancestor that last touched those lines; hunks without an unambiguous home stay in the source.
     pub fn absorb(&self, rev: &str) -> CoreResult<MutationEffect> {
         let _write = self.write_guard()?;
-        let rev = self.snapshot_and_follow_one(rev)?;
-        let output = self.run_jj_output(&["absorb", "--from", &rev])?;
-        self.ensure_success(&output, "command failed")?;
-        let nothing_changed = [Self::stdout_text(&output), Self::stderr_text(&output)]
-            .iter()
-            .flat_map(|text| text.lines())
-            .any(|line| line.trim() == "Nothing changed.");
-        self.reload()?;
-        Ok(if nothing_changed {
-            MutationEffect::Unchanged
-        } else {
-            MutationEffect::Changed
-        })
+        let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
+        // Destinations come from mutable(), so the source is the only rewritten commit left to check.
+        self.ensure_commit_mutable(&repo, &commits[0], rev)?;
+        let source = block_on_result(
+            "absorb",
+            AbsorbSource::from_commit(repo.as_ref(), commits[0].clone()),
+        )?;
+        let destinations = self.resolve_revset(&repo, "mutable()")?;
+        let selected = block_on_result(
+            "absorb",
+            split_hunks_to_trees(repo.as_ref(), &source, &destinations, &EverythingMatcher),
+        )?;
+        if selected.target_commits.is_empty() {
+            return Ok(MutationEffect::Unchanged);
+        }
+        let mut tx = repo.start_transaction();
+        let stats = block_on_result(
+            "absorb",
+            absorb_hunks(tx.repo_mut(), &source, selected.target_commits),
+        )?;
+        self.commit_transaction_rebase(
+            tx,
+            &format!(
+                "absorb changes into {} commits",
+                stats.rewritten_destinations.len()
+            ),
+        )?;
+        Ok(MutationEffect::Changed)
     }
 
     /// `jj revert -r rev --onto @`: a new child of `@` whose tree takes back `rev`'s changes.

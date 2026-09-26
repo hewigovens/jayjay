@@ -1,7 +1,7 @@
 use std::fs;
 
-use jayjay_core::{InsertPosition, RebaseMode, Repo};
-use jj_test::{init_jj_repo, run_git, run_jj_in};
+use jayjay_core::{InsertPosition, MutationEffect, RebaseMode, Repo};
+use jj_test::{LinearFixture, init_jj_repo, run_git, run_jj_in};
 
 /// Defense in depth behind the shells' menu gating: these mutations rewrite through jj-lib directly, so core must refuse immutable targets itself.
 #[test]
@@ -51,6 +51,7 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
             }),
         ),
         ("squash into", Box::new(|| repo.squash("@", Some(rev)))),
+        ("absorb", Box::new(|| repo.absorb(rev).map(drop))),
         (
             "new before",
             Box::new(|| repo.new_change_inserted(rev, InsertPosition::Before, "")),
@@ -267,4 +268,33 @@ fn untracking_from_an_immutable_working_copy_is_refused() {
         repo.log("@").expect("log")[0].commit_id.id,
         protected.commit_id.id
     );
+}
+
+#[test]
+fn absorb_leaves_a_hunk_whose_only_home_is_immutable_in_the_source() {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["bookmark", "delete", "main"]);
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "freeze", "-r", "subject(\"initial\")"],
+    );
+    protect_bookmark(&fixture.path, "freeze");
+    fixture.add_tracked_working_copy_edits();
+    let repo = Repo::open(&fixture.path).expect("open fixture");
+
+    assert_eq!(repo.absorb("@").expect("absorb"), MutationEffect::Changed);
+
+    assert_eq!(
+        repo.file_content("freeze", "README.md")
+            .expect("read README"),
+        "# Sample project\n"
+    );
+    let changed: Vec<String> = repo
+        .show_summary("@")
+        .expect("summary")
+        .diff
+        .into_iter()
+        .map(|hunk| hunk.path)
+        .collect();
+    assert_eq!(changed, ["README.md", "wip1.txt", "wip2.txt"]);
 }

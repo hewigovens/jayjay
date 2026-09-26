@@ -5,7 +5,7 @@ use futures::StreamExt as _;
 use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
-use jj_lib::revset::{self, SymbolResolver, UserRevsetExpression};
+use jj_lib::revset::{self, ResolvedRevsetExpression, SymbolResolver, UserRevsetExpression};
 use jj_lib::settings::UserSettings;
 use jj_lib::transaction::Transaction;
 
@@ -273,17 +273,36 @@ impl Repo {
         repo: &'a dyn JjRepo,
         expression: Arc<UserRevsetExpression>,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
+        self.resolve_typed_revset(repo, expression)?
+            .evaluate(repo)
+            .map_err(|e| CoreError::Internal {
+                message: format!("eval revset: {e}"),
+            })
+    }
+
+    fn resolve_typed_revset(
+        &self,
+        repo: &dyn JjRepo,
+        expression: Arc<UserRevsetExpression>,
+    ) -> CoreResult<Arc<ResolvedRevsetExpression>> {
         #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo, empty_extensions);
-        let resolved = expression
+        expression
             .resolve_user_expression(repo, &symbol_resolver)
             .map_err(|e| CoreError::Internal {
                 message: format!("resolve revset: {e}"),
-            })?;
-        resolved.evaluate(repo).map_err(|e| CoreError::Internal {
-            message: format!("eval revset: {e}"),
-        })
+            })
+    }
+
+    /// The symbols of `revset_str` resolved against `repo`, for jj-lib calls that take a revset rather than its commits.
+    pub(crate) fn resolve_revset(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        revset_str: &str,
+    ) -> CoreResult<Arc<ResolvedRevsetExpression>> {
+        let expression = self.parse_revset_str(repo.settings(), revset_str)?;
+        self.resolve_typed_revset(repo.as_ref(), expression)
     }
 
     pub(crate) fn evaluate_revset<'a>(
@@ -300,18 +319,25 @@ impl Repo {
         settings: &UserSettings,
         revset_str: &str,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
+        let expression = self.parse_revset_str(settings, revset_str)?;
+        self.evaluate_typed_revset(repo, expression)
+    }
+
+    fn parse_revset_str(
+        &self,
+        settings: &UserSettings,
+        revset_str: &str,
+    ) -> CoreResult<Arc<UserRevsetExpression>> {
         let aliases_map = self.revset_aliases_map(settings)?;
         let fileset_aliases_map = self.fileset_aliases_map(settings)?;
-        let expression = self
-            .parse_revset(
-                &aliases_map,
-                &fileset_aliases_map,
-                settings.user_email(),
-                revset_str,
-            )
-            .map_err(|e| CoreError::Internal {
-                message: format!("parse revset: {e}"),
-            })?;
-        self.evaluate_typed_revset(repo, expression)
+        self.parse_revset(
+            &aliases_map,
+            &fileset_aliases_map,
+            settings.user_email(),
+            revset_str,
+        )
+        .map_err(|e| CoreError::Internal {
+            message: format!("parse revset: {e}"),
+        })
     }
 }
