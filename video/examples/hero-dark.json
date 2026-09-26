@@ -1,0 +1,4 @@
+{
+  "extends": "hero.json",
+  "defaults": { "jayjay.appearanceMode": "dark" }
+}

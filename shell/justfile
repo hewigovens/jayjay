@@ -50,6 +50,8 @@ list:
   @echo "  just shell::run              Build and launch the app"
   @echo "  just shell::run /path/to/repo Build and launch the app for a repo"
   @echo "  just shell::demo [appearance] Rebuild the Overview demo repo and open it"
+  @echo "  just shell::record [scene…]  Record video scenes into build/recordings"
+  @echo "  just shell::site-tour        Publish the hero tour clips to R2 and stills to docs/imgs"
   @echo "  just shell::format           Format Swift sources"
   @echo "  just shell::lint             Lint Swift sources"
   @echo "  just shell::clean            Remove generated shell/macOS build artifacts"
@@ -263,6 +265,45 @@ demo appearance="system" demo_root="/tmp/jayjay-demo": build
     -jayjay.hideReviewedFiles NO \
     -jayjay.hasCompletedOnboarding YES \
     -jayjay.sponsorDismissed YES
+
+# Record scenes as 60 fps clips in build/recordings by driving the debug app through Accessibility: every scene in video/scenes, or the names and .json paths given. See agents/video.md.
+record *scenes: build
+  #!/usr/bin/env bash
+  set -euo pipefail
+  cd "{{root}}"
+  swift build -c release --package-path video --product director
+  shopt -s nullglob
+  paths=(video/scenes/[!_]*.json)
+  if [ $# -gt 0 ]; then
+    paths=()
+    for scene in "$@"; do
+      case "$scene" in
+        *.json) paths+=("$scene") ;;
+        *) paths+=("video/scenes/$scene.json") ;;
+      esac
+    done
+  fi
+  if [ ${#paths[@]} -eq 0 ]; then
+    echo "No scenes in video/scenes; pass a scene file, such as video/examples/hero.json." >&2
+    exit 1
+  fi
+  video/.build/release/director record --app "{{app}}" --out build/recordings "${paths[@]}"
+
+# Publish the landing page's hero tour from the hero takes in build/recordings: stills into docs/imgs, clips to the jayjay-media R2 bucket under content-hashed names. Prints each clip's URL and click cues for docs/js/tour.js.
+site-tour:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  cd "{{root}}"
+  swift build -c release --package-path video --product director
+  out=build/recordings/web
+  for take in hero hero-dark; do
+    name="${take/hero/tour}"
+    video/.build/release/director web --from 1.0 --out "$out" "build/recordings/$take.mov"
+    cwebp -quiet -q 90 "$out/$take.png" -o "docs/imgs/$name.webp"
+    key="$name-$(shasum -a 256 "$out/$take.mp4" | cut -c1-8).mp4"
+    wrangler r2 object put "jayjay-media/$key" --file "$out/$take.mp4" --content-type video/mp4 --cache-control "public, max-age=31536000, immutable" --remote
+    echo "https://media.hewig.dev/$key"
+  done
 
 reset-help-cache:
   #!/usr/bin/env bash

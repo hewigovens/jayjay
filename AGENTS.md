@@ -26,6 +26,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | parity matrix | [Parity](agents/shell-parity.md) — **release only** |
 | version bump, notarize, appcast | [Release](agents/release.md) |
 | run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
+| recording product or guide videos, writing a scene | [Video](agents/video.md) |
 | dispatching subagents or parallel search | [Subagents](agents/subagents.md) |
 | pre-mark straightforward changes before a human review | skill `review-triage` in `.agents/skills/` |
 | refresh agent guidance from past sessions | skill `refresh-agent-guidance` in `.agents/skills/` |
