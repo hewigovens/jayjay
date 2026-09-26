@@ -116,3 +116,100 @@ fn rebase_onto_a_descendant_is_refused_without_recording_anything() {
 
     assert_eq!(repo.op_log().expect("op log").len(), before.len());
 }
+
+fn protect_bookmark(repo_path: &std::path::Path, name: &str) {
+    run_jj_in(
+        repo_path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "revset-aliases.'immutable_heads()'",
+            &format!("bookmarks(\"{name}\")"),
+        ],
+    );
+}
+
+#[test]
+fn tracking_a_protected_bookmark_onto_the_working_copy_starts_a_new_change() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let protected = repo.log("@").expect("log")[0].clone();
+    run_git(
+        &repo_path,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "https://example.invalid/origin.git",
+        ],
+    );
+    run_git(
+        &repo_path,
+        &[
+            "update-ref",
+            "refs/remotes/origin/freeze",
+            &protected.commit_id.id,
+        ],
+    );
+    protect_bookmark(&repo_path, "freeze");
+    run_jj_in(&repo_path, &["status"]);
+    let repo = Repo::open(&repo_path).expect("reopen repo");
+
+    repo.track_bookmark("freeze", "origin").expect("track");
+
+    let head = repo.log("@").expect("log")[0].clone();
+    assert!(
+        head.is_empty && !head.is_immutable,
+        "@ must move to a fresh mutable change"
+    );
+    assert_eq!(head.parents, std::slice::from_ref(&protected.commit_id.id));
+    fs::write(repo_path.join("hello.txt"), "edited after freeze\n").expect("edit");
+    repo.refresh_working_copy().expect("snapshot");
+    let frozen = repo.log(&protected.change_id.id).expect("log frozen");
+    assert_eq!(frozen.len(), 1);
+    assert_eq!(
+        frozen[0].commit_id.id, protected.commit_id.id,
+        "the protected commit must not be rewritten"
+    );
+    assert!(frozen[0].is_immutable);
+    assert!(
+        !repo.log("@").expect("log")[0].is_empty,
+        "the edit lands in the new change"
+    );
+}
+
+#[test]
+fn snapshot_never_rewrites_an_immutable_working_copy() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["bookmark", "create", "freeze", "-r", "@"]);
+    protect_bookmark(&repo_path, "freeze");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let protected = repo.log("@").expect("log")[0].clone();
+    assert!(
+        protected.is_immutable,
+        "fixture working copy must be immutable"
+    );
+    fs::write(repo_path.join("hello.txt"), "edited while frozen\n").expect("edit");
+
+    repo.refresh_working_copy().expect("snapshot");
+
+    let head = repo.log("@").expect("log")[0].clone();
+    assert_ne!(head.change_id.id, protected.change_id.id);
+    assert_eq!(head.parents, std::slice::from_ref(&protected.commit_id.id));
+    assert!(!head.is_empty && !head.is_immutable);
+    assert_eq!(
+        repo.log(&protected.change_id.id).expect("log frozen")[0]
+            .commit_id
+            .id,
+        protected.commit_id.id,
+        "the protected commit must not be rewritten"
+    );
+    assert_eq!(
+        run_git(&repo_path, &["rev-parse", "HEAD"]).stdout,
+        format!("{}\n", protected.commit_id.id).into_bytes(),
+        "the colocated HEAD follows the new working copy's parent"
+    );
+}

@@ -110,7 +110,7 @@ impl Repo {
 
     fn children(&self, repo: &Arc<ReadonlyRepo>, commit: &Commit) -> CoreResult<Vec<Commit>> {
         let expression = UserRevsetExpression::commit(commit.id().clone()).children();
-        let revset = self.evaluate_typed_revset(repo, expression)?;
+        let revset = self.evaluate_typed_revset(repo.as_ref(), expression)?;
         let ids: Vec<CommitId> = block_on_result("children revset", revset.stream().try_collect())?;
         ids.iter()
             .map(|id| repo.store().get_commit(id))
