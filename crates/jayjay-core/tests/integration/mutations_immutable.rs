@@ -244,3 +244,27 @@ fn moving_files_into_an_immutable_working_copy_is_refused() {
         protected.commit_id.id
     );
 }
+
+#[test]
+fn untracking_from_an_immutable_working_copy_is_refused() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    // The ignore rule already exists, so nothing is left for the snapshot to move onto a mutable child.
+    fs::write(repo_path.join(".gitignore"), "hello.txt\n").expect("write ignore");
+    run_jj_in(&repo_path, &["bookmark", "create", "freeze", "-r", "@"]);
+    run_jj_in(&repo_path, &["status"]);
+    protect_bookmark(&repo_path, "freeze");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let protected = repo.log("@").expect("log")[0].clone();
+    assert!(protected.is_immutable);
+
+    let err = repo
+        .ignore_and_untrack(&["hello.txt".to_owned()])
+        .expect_err("a protected @ must not be rewritten");
+
+    assert!(err.to_string().contains("immutable"), "{err}");
+    assert_eq!(
+        repo.log("@").expect("log")[0].commit_id.id,
+        protected.commit_id.id
+    );
+}

@@ -1,23 +1,6 @@
-//! Safe encodings of repository-controlled paths for jj command operands and
-//! `.gitignore` lines, so an attacker-chosen filename can't act as an option, a
-//! fileset expression, or an extra ignore rule.
+//! Safe encodings of repository-controlled paths for `.gitignore` lines, so an attacker-chosen filename can't add an extra ignore rule.
 
 use crate::types::*;
-
-/// Wrap a repo-relative path as an exact-match jj fileset operand, so a filename with
-/// fileset syntax (`all()`, `glob:`) or a leading `-` is matched literally, not evaluated
-/// as an expression or parsed as an option. `root-file:` is repo-root-relative (cwd-independent).
-pub(crate) fn fileset_literal(path: &str) -> String {
-    let mut escaped = String::with_capacity(path.len() + 2);
-    for ch in path.chars() {
-        match ch {
-            '\\' => escaped.push_str("\\\\"),
-            '"' => escaped.push_str("\\\""),
-            _ => escaped.push(ch),
-        }
-    }
-    format!("root-file:\"{escaped}\"")
-}
 
 /// Reject paths with control characters: a newline in a filename would otherwise
 /// inject extra `.gitignore` patterns.
@@ -56,15 +39,6 @@ pub(crate) fn gitignore_pattern(path: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
-
-    #[test]
-    fn fileset_literal_wraps_and_escapes() {
-        assert_eq!(fileset_literal("a/b.txt"), "root-file:\"a/b.txt\"");
-        assert_eq!(fileset_literal("all()"), "root-file:\"all()\"");
-        assert_eq!(fileset_literal("--config=x"), "root-file:\"--config=x\"");
-        assert_eq!(fileset_literal("a\"b"), "root-file:\"a\\\"b\"");
-        assert_eq!(fileset_literal("a\\b"), "root-file:\"a\\\\b\"");
-    }
 
     #[test]
     fn reject_control_chars_flags_newline_and_tab() {

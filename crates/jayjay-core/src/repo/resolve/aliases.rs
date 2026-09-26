@@ -51,7 +51,7 @@ impl Repo {
         static DEFAULT_ALIASES: OnceLock<Vec<(String, String)>> = OnceLock::new();
         DEFAULT_ALIASES.get_or_init(|| {
             let output = self
-                .run_jj(&[
+                .run_jj_unlocked_read(&[
                     "--ignore-working-copy",
                     "config",
                     "list",
