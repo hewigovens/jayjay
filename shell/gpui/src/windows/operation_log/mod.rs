@@ -14,7 +14,8 @@ use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::repo::window::RepoWindow;
-use chrome::{footer, header, placeholder, placeholder_err};
+use crate::ui::primitives::{placeholder, placeholder_err};
+use chrome::{footer, header};
 use rows::operation_list;
 
 pub struct OperationLogView {

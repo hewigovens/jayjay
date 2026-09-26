@@ -1,12 +1,12 @@
 use std::path::PathBuf;
 use std::sync::Arc;
 
-use jayjay_core::overview::{OverviewGroup, overview_groups};
+use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
     EvologRow, FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry,
-    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, Overview, PrInfo,
+    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
     PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack, StackedPrResult,
     SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
@@ -19,13 +19,6 @@ use jayjay_review::ReviewStore;
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use crate::error::JayJayError;
-
-#[derive(uniffi::Record, Debug, Clone)]
-pub struct OverviewSnapshot {
-    pub overview: Overview,
-    pub groups: Vec<OverviewGroup>,
-    pub workspaces: Vec<WorkspaceInfo>,
-}
 
 #[uniffi::export]
 fn default_revset() -> String {
@@ -48,8 +41,8 @@ fn branch_name_slug(text: String) -> String {
 }
 
 #[uniffi::export]
-fn ancestors_revset(commit_id: String) -> String {
-    jayjay_core::ancestors_revset(&commit_id)
+fn ancestors_revset(change_id: String) -> String {
+    jayjay_core::ancestors_revset(&change_id)
 }
 
 #[uniffi::export]
@@ -605,14 +598,7 @@ impl JayJayRepo {
     }
 
     fn overview_snapshot(&self) -> Result<OverviewSnapshot, JayJayError> {
-        let overview = self.inner.overview()?;
-        let groups = overview_groups(&overview);
-        let workspaces = self.inner.workspace_list()?;
-        Ok(OverviewSnapshot {
-            overview,
-            groups,
-            workspaces,
-        })
+        Ok(self.inner.overview_snapshot()?)
     }
 
     fn workspace_add(

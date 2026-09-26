@@ -6,6 +6,7 @@ use gpui::{
 };
 use jayjay_core::diff::DiffSpanStyle;
 
+use crate::app::theme::Theme;
 use crate::ui::input::{CaretBlink, TextSelection};
 
 mod highlighting;
@@ -34,6 +35,14 @@ pub struct TextArea {
     pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
     syntax: Option<SyntaxHighlightState>,
+    pub(super) tints: Vec<Tint>,
+}
+
+/// The color is read from the theme at layout time so it follows appearance changes.
+#[derive(Clone)]
+pub(crate) struct Tint {
+    pub(crate) range: Range<usize>,
+    pub(crate) color: fn(&Theme) -> u32,
 }
 
 pub(crate) struct TextAreaUpdated;
@@ -54,6 +63,7 @@ enum TextAreaMode {
 enum TextAreaPresentation {
     Field,
     FullBleedPane,
+    Label,
 }
 
 pub(in crate::ui::text_area) struct TextLayout {
@@ -69,7 +79,7 @@ pub(in crate::ui::text_area) struct TextLayoutKey {
     pub(super) font_size: Pixels,
     pub(super) line_height: Pixels,
     pub(super) text_color: Hsla,
-    pub(super) theme_colors: [u32; 9],
+    pub(super) theme_colors: [u32; 11],
 }
 
 pub(in crate::ui::text_area) struct LineLayout {
@@ -112,6 +122,7 @@ impl TextArea {
             caret: CaretBlink::default(),
             focus_subscriptions: Vec::new(),
             syntax: None,
+            tints: Vec::new(),
         }
     }
 
@@ -120,6 +131,22 @@ impl TextArea {
         self.scroll_y = px(0.);
         self.scroll_caret_into_view = false;
         self
+    }
+
+    pub(crate) fn label(content: impl Into<SharedString>, cx: &mut Context<Self>) -> Self {
+        let mut view = Self::new(content, "", true, 0., cx).starting_at_top();
+        view.presentation = TextAreaPresentation::Label;
+        view.set_read_only(true, cx);
+        view
+    }
+
+    pub(crate) fn with_tints(mut self, tints: Vec<Tint>) -> Self {
+        self.tints = tints;
+        self
+    }
+
+    pub(crate) fn is_label(&self) -> bool {
+        self.presentation == TextAreaPresentation::Label
     }
 
     pub(crate) fn full_bleed_pane(mut self) -> Self {

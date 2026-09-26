@@ -6,19 +6,19 @@ use jayjay_core::trunk::is_trunk_bookmark;
 const NODE_RADIUS_BASE: f32 = 4.5;
 
 #[derive(Clone, Copy)]
-pub(super) enum NodeShape {
+pub(crate) enum NodeShape {
     Circle,
     Diamond,
 }
 
 #[derive(Clone, Copy)]
-pub(super) enum NodeFill {
+pub(crate) enum NodeFill {
     Filled(u32),
     Outlined(u32, f32),
 }
 
 #[derive(Clone, Copy)]
-pub(super) struct DagNodeStyle {
+pub(crate) struct DagNodeStyle {
     pub shape: NodeShape,
     pub radius: f32,
     pub fill: NodeFill,

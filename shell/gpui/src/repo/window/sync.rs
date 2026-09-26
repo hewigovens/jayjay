@@ -121,7 +121,7 @@ impl RepoWindow {
         );
     }
 
-    pub(super) fn delete_workspace(&mut self, name: String, path: String, cx: &mut Context<Self>) {
+    pub(crate) fn delete_workspace(&mut self, name: String, path: String, cx: &mut Context<Self>) {
         let closing = path.clone();
         cx.defer(move |cx| super::open::close_repo_window_at(Path::new(&closing), cx));
         let recent_entry = normalize_repository_path(Path::new(&path))

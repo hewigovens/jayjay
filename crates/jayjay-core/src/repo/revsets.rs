@@ -65,9 +65,9 @@ pub fn default_revset_depth(revset: &str) -> Option<u32> {
         .ok()
 }
 
-/// Selects the exact commit and all its ancestors, independent of bookmark names.
-pub fn ancestors_revset(commit_id: &str) -> String {
-    format!("::commit_id({commit_id})")
+/// Follows the change rather than one commit, so the filter survives a rewrite such as resolving a conflict.
+pub fn ancestors_revset(change_id: &str) -> String {
+    format!("::change_id({change_id})")
 }
 
 #[cfg(test)]

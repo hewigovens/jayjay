@@ -117,7 +117,7 @@ extension DAGView {
 
     @ViewBuilder
     private func historySection(entry: GraphEntry, rev: String) -> some View {
-        Button { onRequest?(.showAncestors(commitId: entry.change.commitId.id)) } label: {
+        Button { onRequest?(.showAncestors(changeId: entry.change.changeId.id, commitId: entry.change.commitId.id)) } label: {
             Label("Show ancestors…", systemImage: "arrow.triangle.branch")
         }
         Button { actions?.showEvolog(rev: rev) } label: {

@@ -15,8 +15,8 @@ extension RepoContentView {
                 presentBookmarkCreate(rev: rev)
             case let .createStackedPRs(rev):
                 modal = .stackedPr(rev: rev)
-            case let .showAncestors(commitId):
-                filterToAncestors(of: commitId)
+            case let .showAncestors(changeId, commitId):
+                filterToAncestors(of: changeId, selecting: commitId)
             case let .openWorkspace(workspace):
                 windowManager.openRepo(workspace.path)
         }
@@ -38,11 +38,11 @@ extension RepoContentView {
         }
     }
 
-    func filterToAncestors(of commitId: String, selecting revision: String? = nil) {
+    func filterToAncestors(of changeId: String, selecting revision: String) {
         if previousAncestorFilter == nil {
             previousAncestorFilter = viewModel.revset
         }
         showRevsetFilter = true
-        viewModel.applyRevset(ancestorsRevset(commitId: commitId), selecting: revision ?? commitId)
+        viewModel.applyRevset(ancestorsRevset(changeId: changeId), selecting: revision)
     }
 }

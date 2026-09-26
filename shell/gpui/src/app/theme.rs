@@ -88,6 +88,7 @@ pub struct Theme {
     pub(crate) file_badge_modified_fg: u32,
     pub(crate) note_accent: u32,
     pub(crate) error_fg: u32,
+    pub(crate) warning_fg: u32,
     pub(crate) find_match_bg: u32,
     pub(crate) find_match_fg: u32,
     pub(crate) toggle_active_bg: u32,

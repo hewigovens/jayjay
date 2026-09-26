@@ -54,6 +54,16 @@ pub struct Overview {
     pub workspace_count: u32,
 }
 
+impl OverviewChange {
+    pub fn title(&self) -> &str {
+        match (self.description.as_str(), self.is_empty) {
+            ("", true) => "(empty)",
+            ("", false) => "(no description)",
+            (description, _) => description,
+        }
+    }
+}
+
 impl OverviewLane {
     pub fn new(
         changes: Vec<OverviewChange>,
@@ -108,6 +118,25 @@ impl OverviewLane {
 
     pub fn head(&self) -> &OverviewChange {
         &self.changes[0]
+    }
+
+    pub fn title(&self) -> &str {
+        match self.head().description.as_str() {
+            "" => "(no description)",
+            description => description,
+        }
+    }
+
+    pub fn matches(&self, filter: &str) -> bool {
+        let needle = filter.trim().to_lowercase();
+        needle.is_empty()
+            || self.changes.iter().any(|change| {
+                [&change.description, &change.change_id.id]
+                    .into_iter()
+                    .chain(&change.bookmarks)
+                    .chain(&change.workspaces)
+                    .any(|haystack| haystack.to_lowercase().contains(&needle))
+            })
     }
 
     pub fn has_current_workspace(&self) -> bool {

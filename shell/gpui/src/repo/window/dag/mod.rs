@@ -3,14 +3,16 @@
 mod paint;
 mod style;
 
+pub(crate) use paint::{LinePattern, paint_node, stroke_line_pattern};
+pub(crate) use style::{DagNodeStyle, NodeFill, NodeShape};
+
 use gpui::{AnyElement, ContentMask, IntoElement, Pixels, Styled, canvas, px};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{EdgeType, GraphEntry};
 
 use crate::app::theme::Theme;
 
-use paint::{LinePattern, paint_node, stroke_curve_pattern, stroke_line_pattern};
-use style::DagNodeStyle;
+use paint::stroke_curve_pattern;
 
 const LANE_WIDTH: f32 = 18.0;
 const LEADING_PAD: f32 = 8.0;

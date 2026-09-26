@@ -8,6 +8,6 @@ enum DAGRequest {
     case squashSelection(revisions: [String])
     case createBookmark(rev: String)
     case createStackedPRs(rev: String)
-    case showAncestors(commitId: String)
+    case showAncestors(changeId: String, commitId: String)
     case openWorkspace(WorkspaceInfo)
 }

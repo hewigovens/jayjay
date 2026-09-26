@@ -1,6 +1,8 @@
-use gpui::{Div, IntoElement, ParentElement, Styled, UniformList, div, px, rgb};
+use gpui::{
+    AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, UniformList, div, px, rgb,
+};
 
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, ui_font_size};
 
 /// uniform_list reserves a 15px gutter for an OS scrollbar by default; we don't render one, so collapse it to 0.
 pub(crate) fn no_scrollbar_gutter(mut list: UniformList) -> UniformList {
@@ -18,4 +20,26 @@ pub(crate) fn divider_v(theme: &Theme) -> impl IntoElement {
 
 pub(crate) fn dot_separator(theme: &Theme) -> Div {
     div().flex_none().text_color(rgb(theme.fg_faint)).child("·")
+}
+
+/// Centered status text filling a window body: loading, empty, or unavailable.
+pub(crate) fn placeholder(text: impl Into<SharedString>, theme: &Theme) -> AnyElement {
+    centered_message(text.into(), theme.fg_dim)
+}
+
+pub(crate) fn placeholder_err(text: &SharedString, theme: &Theme) -> AnyElement {
+    centered_message(text.clone(), theme.error_fg)
+}
+
+fn centered_message(text: SharedString, color: u32) -> AnyElement {
+    div()
+        .flex()
+        .flex_1()
+        .items_center()
+        .justify_center()
+        .px(px(24.))
+        .text_size(ui_font_size(12.))
+        .text_color(rgb(color))
+        .child(text)
+        .into_any_element()
 }

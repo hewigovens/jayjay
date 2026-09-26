@@ -4,9 +4,9 @@ use super::super::RepoWindow;
 use crate::app::actions::{
     CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, ForgetStaleBookmarks,
     GitFetchOrigin, GitPushDefault, NewWorkspace, NewWorkspaceFromPullRequest, OpenAbout,
-    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenRemoteRepository,
-    OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh, SaveFileEditor, SaveNoteComposer,
-    ShowRepoInFileManager, ToggleSidebar,
+    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenOverview,
+    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh,
+    SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager, ToggleSidebar,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -33,6 +33,7 @@ impl RepoWindow {
             .on_action(cx.listener(|view, _: &OpenBookmarkManager, _, cx| {
                 view.open_bookmark_manager(cx);
             }))
+            .on_action(cx.listener(|view, _: &OpenOverview, _, cx| view.open_overview(cx)))
             .on_action(cx.listener(|view, _: &NewWorkspace, _, cx| {
                 view.open_create_workspace(cx);
             }))

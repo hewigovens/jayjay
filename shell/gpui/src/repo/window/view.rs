@@ -51,6 +51,7 @@ pub struct RepoWindow {
     pub(crate) find: FindState,
     pub(crate) revset_filter: Option<LineInput>,
     pub(crate) previous_ancestor_filter: Option<String>,
+    pub(crate) pending_reveal: Option<(String, String)>,
     pub(crate) revset_filter_focus: FocusHandle,
     pub(crate) diff: DiffPanelState,
     pub(crate) diff_edit: DiffEditState,
@@ -317,6 +318,11 @@ impl RepoWindow {
             if !this.fs_watcher_armed {
                 this.start_fs_watcher(cx);
             }
+            if this.vm.read(cx).repo.is_some()
+                && let Some((head, select)) = this.pending_reveal.take()
+            {
+                this.reveal_ancestors(head, select, cx);
+            }
             let vm = this.vm.read(cx);
             let selected = if vm.compare.is_none() && !vm.has_multiple_change_selection() {
                 vm.selected_change()
@@ -383,6 +389,7 @@ impl RepoWindow {
             find: FindState::default(),
             revset_filter: None,
             previous_ancestor_filter: None,
+            pending_reveal: None,
             revset_filter_focus: cx.focus_handle(),
             diff: DiffPanelState::default(),
             diff_edit: DiffEditState::default(),

@@ -18,6 +18,7 @@ actions!(
         ReportIssue,
         SendFeedback,
         OpenBookmarkManager,
+        OpenOverview,
         OpenOperationLog,
         OpenRepoInEditor,
         OpenRepoInTerminal,
@@ -81,6 +82,7 @@ pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
             OpenBookmarkManager,
             None,
         ),
+        gpui::KeyBinding::new(format!("{mod_key}-shift-o").as_str(), OpenOverview, None),
         gpui::KeyBinding::new(
             format!("{mod_key}-shift-u").as_str(),
             OpenOperationLog,

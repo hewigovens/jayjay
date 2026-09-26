@@ -54,7 +54,7 @@ struct RepoWindow: View {
                 }
                 viewModel = model
                 if let reveal = windowManager.takePendingReveal(for: path) {
-                    model.revealAncestors(of: reveal.headCommitId, selecting: reveal.rev)
+                    model.revealAncestors(of: reveal.headChangeId, selecting: reveal.rev)
                     return
                 }
                 // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.

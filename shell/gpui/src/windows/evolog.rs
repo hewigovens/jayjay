@@ -19,7 +19,7 @@ use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::pane_drag::TrackPaneDrag;
-use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter};
+use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter, placeholder, placeholder_err};
 use crate::ui::resize_handle::resize_handle;
 
 mod context_menu;
@@ -475,27 +475,5 @@ fn evolog_row(
                     t,
                 )),
         )
-        .into_any_element()
-}
-
-fn placeholder(text: &'static str, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_color(rgb(t.fg_dim))
-        .child(text)
-        .into_any_element()
-}
-
-fn placeholder_err(text: &SharedString, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_color(rgb(t.error_fg))
-        .child(text.clone())
         .into_any_element()
 }

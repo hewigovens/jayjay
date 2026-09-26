@@ -116,6 +116,8 @@ impl Theme {
                 mix(seed.red, 0x000000, 0.3)
             },
 
+            warning_fg: seed.orange,
+
             find_match_bg: diff.find_match_bg,
             find_match_fg: diff.find_match_fg,
 

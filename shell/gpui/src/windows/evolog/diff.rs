@@ -9,14 +9,14 @@ use jayjay_core::diff::{
 };
 use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 
+use super::EvologView;
 use super::layout::EvologPane;
-use super::{EvologView, placeholder, placeholder_err};
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::diff::{hunk_is_image, image_diff_view};
 use crate::ui::icons::{glyph, icon};
-use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::primitives::{no_scrollbar_gutter, placeholder, placeholder_err};
 use crate::ui::resize_handle::resize_handle;
 
 impl EvologView {

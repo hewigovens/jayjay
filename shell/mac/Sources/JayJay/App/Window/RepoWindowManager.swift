@@ -26,7 +26,7 @@ final class RepoWindowManager {
     private var registeredRepos: [ObjectIdentifier: RegisteredRepo] = [:]
     private var removalCountsByRepoPath: [String: Int] = [:]
     private var removalCountsByWorkspace: [WorkspaceKey: Int] = [:]
-    private var pendingReveals: [String: (headCommitId: String, rev: String)] = [:]
+    private var pendingReveals: [String: (headChangeId: String, rev: String)] = [:]
     private var overviewWindows: [String: WeakWindow] = [:]
 
     init(settings: AppSettings) {
@@ -334,21 +334,21 @@ final class RepoWindowManager {
         overviewWindows[normalizedRepositoryPath(path: path)] = WeakWindow(window: window)
     }
 
-    func showInGraph(repoPath: String, headCommitId: String, selecting revision: String) {
+    func showInGraph(repoPath: String, headChangeId: String, selecting revision: String) {
         let normalizedPath = normalizedRepositoryPath(path: repoPath)
         compactRegistrations()
         if let registered = registeredRepos.values.first(where: { $0.path == normalizedPath }),
            let viewModel = registered.viewModel
         {
-            viewModel.revealAncestors(of: headCommitId, selecting: revision)
+            viewModel.revealAncestors(of: headChangeId, selecting: revision)
             _ = activateRepo(repoPath)
             return
         }
-        pendingReveals[normalizedPath] = (headCommitId, revision)
+        pendingReveals[normalizedPath] = (headChangeId, revision)
         openRepo(repoPath)
     }
 
-    func takePendingReveal(for path: String) -> (headCommitId: String, rev: String)? {
+    func takePendingReveal(for path: String) -> (headChangeId: String, rev: String)? {
         pendingReveals.removeValue(forKey: normalizedRepositoryPath(path: path))
     }
 

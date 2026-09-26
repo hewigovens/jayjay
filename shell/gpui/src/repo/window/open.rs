@@ -82,14 +82,37 @@ pub(crate) fn activate_repo_window(path: &Path, cx: &mut App) -> bool {
     activate_normalized_repo_window(&normalized, cx)
 }
 
+pub(crate) fn reveal_in_repo_window(
+    path: &Path,
+    head_change_id: String,
+    select_commit_id: String,
+    cx: &mut App,
+) {
+    open_repo_window(path.to_path_buf(), cx);
+    let normalized = normalize_repository_path(path);
+    if let Some(handle) = repo_windows_at(&normalized, cx).into_iter().next() {
+        let _ = handle.update(cx, |view, _, cx| {
+            view.reveal_ancestors(head_change_id, select_commit_id, cx);
+        });
+    }
+}
+
+fn repo_windows_at(normalized: &Path, cx: &App) -> Vec<WindowHandle<RepoWindow>> {
+    cx.windows()
+        .into_iter()
+        .filter_map(|handle| {
+            let handle = handle.downcast::<RepoWindow>()?;
+            let view = handle.read(cx).ok()?;
+            let open_path = PathBuf::from(view.vm.read(cx).repo_path.as_ref());
+            (normalize_repository_path(&open_path) == normalized).then_some(handle)
+        })
+        .collect()
+}
+
 fn activate_normalized_repo_window(normalized: &Path, cx: &mut App) -> bool {
-    let handle = cx.windows().into_iter().find_map(|handle| {
-        let handle = handle.downcast::<RepoWindow>()?;
-        let view = handle.read(cx).ok()?;
-        let open_path = PathBuf::from(view.vm.read(cx).repo_path.as_ref());
-        (normalize_repository_path(&open_path) == normalized).then_some(handle)
-    });
-    let Some(handle) = handle else { return false };
+    let Some(handle) = repo_windows_at(normalized, cx).into_iter().next() else {
+        return false;
+    };
     let _ = handle.update(cx, |view, window, cx| {
         if view.vm.read(cx).repo.is_some() {
             config::update(cx, |config| config.record_opened_repo(normalized));
@@ -102,17 +125,7 @@ fn activate_normalized_repo_window(normalized: &Path, cx: &mut App) -> bool {
 
 pub(crate) fn close_repo_window_at(path: &Path, cx: &mut App) {
     let normalized = normalize_repository_path(path);
-    let handles: Vec<_> = cx
-        .windows()
-        .into_iter()
-        .filter_map(|handle| {
-            let handle = handle.downcast::<RepoWindow>()?;
-            let view = handle.read(cx).ok()?;
-            let open_path = PathBuf::from(view.vm.read(cx).repo_path.as_ref());
-            (normalize_repository_path(&open_path) == normalized).then_some(handle)
-        })
-        .collect();
-    for handle in handles {
+    for handle in repo_windows_at(&normalized, cx) {
         let _ = handle.update(cx, |_, window, _| window.remove_window());
     }
 }

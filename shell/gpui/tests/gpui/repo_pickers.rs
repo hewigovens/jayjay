@@ -45,7 +45,7 @@ fn repository_title_picker_combines_workspaces_repositories_and_actions(cx: &mut
     for selector in [
         "repo-switcher-panel",
         "repo-switcher-filter",
-        "repo-switcher-refresh",
+        "repo-switcher-overview",
         "repo-switcher-new",
         "repo-switcher-workspaces",
         "repo-switcher-workspace-feature-picker",

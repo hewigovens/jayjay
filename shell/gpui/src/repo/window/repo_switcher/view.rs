@@ -32,21 +32,21 @@ fn menu_panel(
     t: &Theme,
     view: &Entity<RepoWindow>,
 ) -> AnyElement {
-    let refresh_view = view.clone();
+    let overview_view = view.clone();
     let new_view = view.clone();
     let header = picker::header(
         "repo-switcher-filter",
         &state.query,
         [
             picker::header_button(
-                "repo-switcher-refresh",
-                glyph::ARROW_CLOCKWISE,
-                "Refresh",
+                "repo-switcher-overview",
+                glyph::COLUMNS,
+                "Overview",
                 t,
-                move |window, cx| {
-                    let current_window = window.window_handle();
-                    refresh_view.update(cx, |view, cx| {
-                        view.refresh_repo_switcher(current_window, cx);
+                move |_, cx| {
+                    overview_view.update(cx, |view, cx| {
+                        view.close_repo_switcher(cx);
+                        view.open_overview(cx);
                     });
                 },
             ),

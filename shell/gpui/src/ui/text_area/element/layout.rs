@@ -1,22 +1,64 @@
 use std::ops::Range;
 
-use gpui::{Bounds, Hsla, Pixels, SharedString, TextRun, Window, hsla, px, rgb};
+use gpui::{Bounds, Font, Hsla, Pixels, ShapedLine, SharedString, TextRun, Window, hsla, px, rgb};
 use jayjay_core::diff::DiffSpanStyle;
 
-use super::super::{LineLayout, TextArea};
+use super::super::{LineLayout, TextArea, Tint};
 use super::gutter;
 use crate::app::theme::Theme;
 use crate::ui::input::{next_boundary, previous_boundary};
 
+/// Captured so a measured layout can shape lines outside the element's own style scope.
+pub(super) struct Typeset {
+    font: Font,
+    font_size: Pixels,
+    color: Hsla,
+    line_height: Pixels,
+}
+
+impl Typeset {
+    pub(super) fn current(window: &Window) -> Self {
+        let style = window.text_style();
+        Self {
+            font: style.font(),
+            font_size: style.font_size.to_pixels(window.rem_size()),
+            color: style.color,
+            line_height: window.line_height(),
+        }
+    }
+
+    fn shape(
+        &self,
+        text: SharedString,
+        colors: Vec<(usize, Hsla, Option<Hsla>)>,
+        window: &mut Window,
+    ) -> ShapedLine {
+        let runs = colors
+            .into_iter()
+            .map(|(len, color, background_color)| TextRun {
+                len,
+                font: self.font.clone(),
+                color,
+                background_color,
+                underline: None,
+                strikethrough: None,
+            })
+            .collect::<Vec<_>>();
+        window
+            .text_system()
+            .shape_line(text, self.font_size, &runs, None)
+    }
+}
+
 pub(super) fn build_lines(
     input: &TextArea,
     bounds: Bounds<Pixels>,
+    typeset: &Typeset,
     window: &mut Window,
     theme: &Theme,
 ) -> (Vec<LineLayout>, Pixels) {
     let content = input.content.clone();
-    let style = window.text_style();
-    let line_height = window.line_height();
+    let line_height = typeset.line_height;
     let max_width = bounds.size.width.max(px(1.));
     let ranges = if content.is_empty() {
         std::iter::once(0..0).collect()
@@ -30,36 +72,40 @@ pub(super) fn build_lines(
             .emphasized_line()
             .is_some_and(|line| line != logical_line_ix)
         {
-            style.color.opacity(0.6)
+            typeset.color.opacity(0.6)
         } else {
-            style.color
+            typeset.color
         };
         if content.is_empty() {
             let placeholder_len = input.placeholder.len();
             lines.push(line_layout(
                 logical_line_ix,
-                input.placeholder.clone(),
                 0..0,
                 px(lines.len() as f32 * f32::from(line_height)),
                 DiffSpanStyle::Context,
-                vec![(placeholder_len, text_run_color(true, style.color), None)],
-                window,
+                typeset.shape(
+                    input.placeholder.clone(),
+                    vec![(placeholder_len, text_run_color(true, typeset.color), None)],
+                    window,
+                ),
             ));
             continue;
         }
         if range.is_empty() {
             lines.push(line_layout(
                 logical_line_ix,
-                SharedString::from(""),
                 range,
                 px(lines.len() as f32 * f32::from(line_height)),
                 line_style,
-                vec![(
-                    0,
-                    content_color,
-                    line_background(line_style, DiffSpanStyle::Unchanged, theme),
-                )],
-                window,
+                typeset.shape(
+                    SharedString::from(""),
+                    vec![(
+                        0,
+                        content_color,
+                        line_background(line_style, DiffSpanStyle::Unchanged, theme),
+                    )],
+                    window,
+                ),
             ));
             continue;
         }
@@ -72,14 +118,13 @@ pub(super) fn build_lines(
                 line_style,
                 theme,
             );
+            let text = SharedString::from(content[range.clone()].to_string());
             lines.push(line_layout(
                 logical_line_ix,
-                SharedString::from(content[range.clone()].to_string()),
                 range,
                 px(lines.len() as f32 * f32::from(line_height)),
                 line_style,
-                runs,
-                window,
+                typeset.shape(text, runs, window),
             ));
             continue;
         }
@@ -87,23 +132,31 @@ pub(super) fn build_lines(
         let mut start = range.start;
         let line_start = range.start;
         while start < range.end {
-            let end = wrapped_segment_end(content.as_ref(), start..range.end, max_width, window);
-            let segment = SharedString::from(content[start..end].to_string());
-            let runs = highlighted_runs(
-                input.syntax_spans(logical_line_ix),
-                start - line_start..end - line_start,
-                content_color,
-                line_style,
-                theme,
+            let end = wrapped_segment_end(
+                content.as_ref(),
+                start..range.end,
+                max_width,
+                typeset,
+                window,
             );
+            let segment = SharedString::from(content[start..end].to_string());
+            let runs = if input.tints.is_empty() {
+                highlighted_runs(
+                    input.syntax_spans(logical_line_ix),
+                    start - line_start..end - line_start,
+                    content_color,
+                    line_style,
+                    theme,
+                )
+            } else {
+                tinted_runs(&input.tints, start..end, content_color, theme)
+            };
             lines.push(line_layout(
                 logical_line_ix,
-                segment,
                 start..end,
                 px(lines.len() as f32 * f32::from(line_height)),
                 line_style,
-                runs,
-                window,
+                typeset.shape(segment, runs, window),
             ));
             start = end;
         }
@@ -129,30 +182,11 @@ fn number_first_rows(lines: &mut [LineLayout], window: &mut Window, theme: &Them
 
 fn line_layout(
     logical_line: usize,
-    display_text: SharedString,
     range: Range<usize>,
     top: Pixels,
     style: DiffSpanStyle,
-    colors: Vec<(usize, Hsla, Option<Hsla>)>,
-    window: &mut Window,
+    shaped: ShapedLine,
 ) -> LineLayout {
-    let text_style = window.text_style();
-    let font = text_style.font();
-    let font_size = text_style.font_size.to_pixels(window.rem_size());
-    let runs = colors
-        .into_iter()
-        .map(|(len, color, background_color)| TextRun {
-            len,
-            font: font.clone(),
-            color,
-            background_color,
-            underline: None,
-            strikethrough: None,
-        })
-        .collect::<Vec<_>>();
-    let shaped = window
-        .text_system()
-        .shape_line(display_text, font_size, &runs, None);
     LineLayout {
         logical_line,
         range,
@@ -161,6 +195,31 @@ fn line_layout(
         top,
         style,
     }
+}
+
+fn tinted_runs(
+    tints: &[Tint],
+    segment: Range<usize>,
+    fallback: Hsla,
+    theme: &Theme,
+) -> Vec<(usize, Hsla, Option<Hsla>)> {
+    let mut runs = Vec::new();
+    let mut at = segment.start;
+    for tint in tints {
+        let start = tint.range.start.clamp(at, segment.end);
+        let end = tint.range.end.clamp(start, segment.end);
+        if start > at {
+            runs.push((start - at, fallback, None));
+        }
+        if end > start {
+            runs.push((end - start, rgb((tint.color)(theme)).into(), None));
+        }
+        at = at.max(end);
+    }
+    if at < segment.end {
+        runs.push((segment.end - at, fallback, None));
+    }
+    runs
 }
 
 fn highlighted_runs(
@@ -229,19 +288,15 @@ fn wrapped_segment_end(
     content: &str,
     range: Range<usize>,
     max_width: Pixels,
+    typeset: &Typeset,
     window: &mut Window,
 ) -> usize {
     let text = &content[range.clone()];
-    let shaped = line_layout(
-        0,
+    let shaped = typeset.shape(
         SharedString::from(text.to_string()),
-        range.clone(),
-        px(0.),
-        DiffSpanStyle::Context,
-        vec![(text.len(), window.text_style().color, None)],
+        vec![(text.len(), typeset.color, None)],
         window,
-    )
-    .shaped;
+    );
     if shaped.width() <= max_width {
         return range.end;
     }
@@ -297,6 +352,26 @@ fn text_run_color(is_placeholder: bool, content_color: gpui::Hsla) -> gpui::Hsla
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn tints_split_a_wrapped_segment_at_their_boundaries() {
+        let theme = Theme::light();
+        let fallback: Hsla = rgb(theme.fg_dim).into();
+        let prefix: Hsla = rgb(theme.change_id_prefix).into();
+        let tints = [Tint {
+            range: 0..3,
+            color: |theme| theme.change_id_prefix,
+        }];
+        let lens = |segment| {
+            tinted_runs(&tints, segment, fallback, &theme)
+                .into_iter()
+                .map(|(len, color, _)| (len, color == prefix))
+                .collect::<Vec<_>>()
+        };
+        assert_eq!(lens(0..8), [(3, true), (5, false)]);
+        assert_eq!(lens(2..8), [(1, true), (5, false)]);
+        assert_eq!(lens(4..8), [(4, false)]);
+    }
 
     #[test]
     fn word_wrap_prefers_whitespace_boundary() {

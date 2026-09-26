@@ -91,6 +91,7 @@ enum AID {
 
     enum Overview {
         static let changePanel = "overview.changePanel"
+        static let lanePanel = "overview.lanePanel"
         static let filterField = "overview.filterField"
 
         static func lane(_ headChangeIdPrefix: String) -> String {

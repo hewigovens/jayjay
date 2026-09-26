@@ -1,13 +1,14 @@
 use std::{ops::Range, sync::Arc};
 
 use gpui::{
-    App, Bounds, ContentMask, Element, ElementId, ElementInputHandler, Entity, GlobalElementId,
-    IntoElement, LayoutId, PaintQuad, Pixels, Style, Window, point, px, relative, size,
+    App, AvailableSpace, Bounds, ContentMask, Element, ElementId, ElementInputHandler, Entity,
+    GlobalElementId, IntoElement, LayoutId, PaintQuad, Pixels, Style, Window, point, px, relative,
+    size,
 };
 
 use super::super::{LineLayout, TextArea, TextAreaScrolled, TextLayout, TextLayoutKey};
 use super::gutter::{gutter_quads, gutter_width, number_origin};
-use super::layout::build_lines;
+use super::layout::{Typeset, build_lines};
 use super::paint::{cursor_quad, line_background_quads, selection_quads};
 use crate::app::theme::theme;
 
@@ -57,6 +58,22 @@ impl Element for TextAreaElement {
     ) -> (LayoutId, Self::RequestLayoutState) {
         let mut style = Style::default();
         style.size.width = relative(1.).into();
+        if self.input.read(cx).is_label() {
+            let input = self.input.clone();
+            let typeset = Typeset::current(window);
+            let layout =
+                window.request_measured_layout(style, move |known, available, window, cx| {
+                    let width = known.width.unwrap_or(match available.width {
+                        AvailableSpace::Definite(width) => width,
+                        _ => px(f32::MAX),
+                    });
+                    let bounds = Bounds::new(point(px(0.), px(0.)), size(width, px(0.)));
+                    let (lines, line_height) =
+                        build_lines(input.read(cx), bounds, &typeset, window, theme(cx));
+                    size(width, line_height * lines.len() as f32)
+                });
+            return (layout, ());
+        }
         style.size.height = self
             .height
             .map_or_else(|| relative(1.).into(), |height| px(height).into());
@@ -82,7 +99,9 @@ impl Element for TextAreaElement {
             .filter(|layout| layout.key == key)
             .map_or_else(
                 || {
-                    let (lines, line_height) = build_lines(input, bounds, window, theme(cx));
+                    let typeset = Typeset::current(window);
+                    let (lines, line_height) =
+                        build_lines(input, bounds, &typeset, window, theme(cx));
                     (Arc::from(lines), line_height)
                 },
                 |layout| (layout.lines.clone(), layout.line_height),
@@ -268,6 +287,8 @@ fn layout_key(
             theme.tok_comment,
             theme.tok_number,
             theme.tok_type,
+            theme.change_id_prefix,
+            theme.commit_id_prefix,
         ],
     }
 }

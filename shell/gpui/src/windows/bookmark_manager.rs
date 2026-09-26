@@ -18,10 +18,12 @@ use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
 use crate::ui::overlay::{PromptSlots, PromptStyle, TextPrompt};
+use crate::ui::popup_menu::PopupMenu;
+use crate::ui::primitives::{placeholder, placeholder_err};
 use crate::ui::text_area::{Newline, TextArea};
-use chrome::{BookmarkStats, footer, header, placeholder, placeholder_err, stats_bar};
+use chrome::{BookmarkStats, footer, header, stats_bar};
 use context_menu::render_context_menu as render_bookmark_context_menu;
-use context_menu::{BookmarkContextAction, BookmarkContextMenuState, bookmark_menu_items};
+use context_menu::{BookmarkContextAction, bookmark_menu_items};
 use rows::bookmark_list;
 
 pub struct BookmarkManagerView {
@@ -34,7 +36,7 @@ pub struct BookmarkManagerView {
     show_deleted: bool,
     loading: bool,
     error: Option<SharedString>,
-    context_menu: Option<BookmarkContextMenuState>,
+    context_menu: Option<PopupMenu<BookmarkContextAction>>,
     rename: Option<TextPrompt>,
     focus_handle: FocusHandle,
 }
@@ -171,9 +173,9 @@ impl BookmarkManagerView {
         bookmark: BookmarkInfo,
         cx: &mut Context<Self>,
     ) {
-        self.context_menu = Some(BookmarkContextMenuState {
+        self.context_menu = Some(PopupMenu {
             anchor,
-            items: bookmark_menu_items(&bookmark, self.pr_host_name.as_deref()),
+            entries: bookmark_menu_items(&bookmark, self.pr_host_name.as_deref()),
         });
         cx.notify();
     }

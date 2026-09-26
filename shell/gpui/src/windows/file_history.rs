@@ -14,7 +14,7 @@ use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::window::{RepoWindow, compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::no_scrollbar_gutter;
+use crate::ui::primitives::{no_scrollbar_gutter, placeholder, placeholder_err};
 
 pub struct FileHistoryView {
     repo: Arc<Repo>,
@@ -270,27 +270,5 @@ fn history_row(
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(description)),
         )
-        .into_any_element()
-}
-
-fn placeholder(text: &'static str, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_color(rgb(t.fg_dim))
-        .child(text)
-        .into_any_element()
-}
-
-fn placeholder_err(text: &SharedString, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_color(rgb(t.error_fg))
-        .child(text.clone())
         .into_any_element()
 }

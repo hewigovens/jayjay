@@ -125,28 +125,6 @@ impl RepoViewModel {
             .is_some_and(|at| at.elapsed() < MUTATION_ECHO_WINDOW)
     }
 
-    /// Refresh only the workspace picker without reloading the graph or selected change.
-    pub(crate) fn refresh_workspaces(&mut self, cx: &mut Context<Self>) {
-        let Some(repo) = self.repo.clone() else {
-            return;
-        };
-        self.loading.workspaces_gen = self.loading.workspaces_gen.wrapping_add(1);
-        let generation = self.loading.workspaces_gen;
-        Self::background_update(
-            cx,
-            async move { repo.workspace_list() },
-            move |vm, workspaces, cx| {
-                if vm.loading.workspaces_gen != generation {
-                    return;
-                }
-                if let Ok(workspaces) = workspaces {
-                    vm.graph.workspaces = Arc::new(workspaces);
-                    cx.notify();
-                }
-            },
-        );
-    }
-
     pub fn refresh(&mut self, is_auto_triggered: bool, cx: &mut Context<Self>) {
         let selection = self
             .selected
@@ -272,6 +250,21 @@ impl RepoViewModel {
     }
 
     pub fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+        self.set_revset(revset);
+        self.refresh(false, cx);
+    }
+
+    pub(crate) fn apply_revset_selecting(
+        &mut self,
+        revset: &str,
+        commit_id: String,
+        cx: &mut Context<Self>,
+    ) {
+        self.set_revset(revset);
+        self.refresh_preferring(false, Some((commit_id.clone(), commit_id)), cx);
+    }
+
+    fn set_revset(&mut self, revset: &str) {
         let trimmed = revset.trim();
         self.revset = if trimmed.is_empty() {
             build_default_revset(DEFAULT_REVSET_DEPTH).into()
@@ -279,7 +272,6 @@ impl RepoViewModel {
             trimmed.to_owned().into()
         };
         self.can_load_more = false;
-        self.refresh(false, cx);
     }
 
     pub(crate) fn revset_depth(&self) -> Option<u32> {

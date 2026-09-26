@@ -1,5 +1,5 @@
 use gpui::{
-    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
+    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
@@ -91,26 +91,4 @@ fn restore_button(
     } else {
         base.opacity(0.55).into_any_element()
     }
-}
-
-pub(super) fn placeholder(text: &'static str, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_color(rgb(t.fg_dim))
-        .child(text)
-        .into_any_element()
-}
-
-pub(super) fn placeholder_err(text: &SharedString, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_color(rgb(t.error_fg))
-        .child(text.clone())
-        .into_any_element()
 }

@@ -24,6 +24,18 @@ struct OverviewView: View {
                         onShowInGraph: { showInGraph(lane, change) }
                     )
                     .task(id: change.commitId.id) { await viewModel.loadSelectedChangeFiles() }
+                } else if viewModel.isLanePanelShown, let lane = viewModel.selectedLane {
+                    Divider()
+                    OverviewLanePanel(
+                        lane: lane,
+                        trunkName: viewModel.trunkName,
+                        workspaceInfo: viewModel.workspaceInfo(named:),
+                        onClose: { viewModel.isLanePanelShown = false },
+                        onShowInGraph: { showInGraph(lane, nil) },
+                        onRebase: { viewModel.rebaseLaneOntoTrunk(lane) },
+                        onOpenWorkspace: { windowManager.openRepo($0.path) },
+                        onSelectChange: { viewModel.selectedChangeId = $0.commitId.id }
+                    )
                 }
             }
         }
@@ -115,6 +127,7 @@ struct OverviewView: View {
                             trunkName: viewModel.trunkName,
                             selectedLaneId: $viewModel.selectedLaneId,
                             selectedChangeId: $viewModel.selectedChangeId,
+                            isLanePanelShown: $viewModel.isLanePanelShown,
                             onShowInGraph: showInGraph,
                             actions: OverviewLaneActions(
                                 workspaceInfo: viewModel.workspaceInfo(named:),
@@ -126,7 +139,10 @@ struct OverviewView: View {
                         )
                         .frame(minWidth: proxy.size.width, minHeight: proxy.size.height, alignment: .topLeading)
                         .contentShape(Rectangle())
-                        .onTapGesture { viewModel.selectedChangeId = nil }
+                        .onTapGesture {
+                            viewModel.selectedChangeId = nil
+                            viewModel.isLanePanelShown = false
+                        }
                     }
                 }
                 .background(Color(nsColor: .windowBackgroundColor))
@@ -152,8 +168,13 @@ struct OverviewView: View {
                     return .handled
                 }
                 .onKeyPress(.escape) {
-                    guard viewModel.selectedChangeId != nil else { return .ignored }
-                    viewModel.selectedChangeId = nil
+                    if viewModel.selectedChangeId != nil {
+                        viewModel.selectedChangeId = nil
+                    } else if viewModel.isLanePanelShown {
+                        viewModel.isLanePanelShown = false
+                    } else {
+                        return .ignored
+                    }
                     return .handled
                 }
                 .onKeyPress(.return) {
@@ -232,7 +253,7 @@ struct OverviewView: View {
     private func showInGraph(_ lane: OverviewLane, _ change: OverviewChange?) {
         windowManager.showInGraph(
             repoPath: viewModel.targetRepoPath(for: lane),
-            headCommitId: lane.head.commitId.id,
+            headChangeId: lane.head.changeId.id,
             selecting: (change ?? lane.head).commitId.id
         )
     }

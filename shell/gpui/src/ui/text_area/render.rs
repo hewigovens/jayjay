@@ -58,7 +58,14 @@ impl Render for TextArea {
             .on_mouse_up_out(MouseButton::Left, cx.listener(Self::on_mouse_up))
             .on_mouse_move(cx.listener(Self::on_mouse_move))
             .on_scroll_wheel(cx.listener(Self::on_scroll_wheel))
-            .w_full()
+            .w_full();
+        if self.is_label() {
+            return root.child(TextAreaElement {
+                input: cx.entity(),
+                height: None,
+            });
+        }
+        root = root
             .text_color(rgb(if self.is_read_only() { t.fg_dim } else { t.fg }))
             .line_height(px(line_height));
         if uses_code_font {

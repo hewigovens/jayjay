@@ -1,4 +1,6 @@
 mod chips;
+
+pub(crate) use chips::{chip_width, visible_chip_count};
 mod row;
 mod text;
 

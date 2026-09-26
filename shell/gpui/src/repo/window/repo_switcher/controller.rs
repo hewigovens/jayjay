@@ -53,27 +53,6 @@ impl RepoWindow {
         }
     }
 
-    pub(super) fn refresh_repo_switcher(
-        &mut self,
-        current_window: AnyWindowHandle,
-        cx: &mut Context<Self>,
-    ) {
-        let current = self.vm.read(cx).repo_path.to_string();
-        let (open, pinned) = repository_rows(current_window, &current, cx);
-        if let Some(state) = self.repo_switcher.as_mut() {
-            state.current = current;
-            state.open = open;
-            state.pinned = pinned;
-        }
-        // The rows just moved under the selection, so a remembered index would activate a different row.
-        let count = self.repo_switcher_actions(cx).len();
-        if let Some(state) = self.repo_switcher.as_mut() {
-            state.query.reset_selection_after_edit(count);
-        }
-        self.vm.update(cx, |vm, cx| vm.refresh_workspaces(cx));
-        cx.notify();
-    }
-
     pub(super) fn dispatch_repo_switcher(
         &mut self,
         action: RepoSwitcherAction,

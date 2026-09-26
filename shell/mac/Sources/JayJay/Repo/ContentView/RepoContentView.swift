@@ -35,8 +35,8 @@ struct RepoContentView: View {
             .onAppear {
                 revsetDraft = viewModel.revset
                 sidebarWidth = settings.sidebarWidth
-                viewModel.onRevealAncestors = { headCommitId, revision in
-                    filterToAncestors(of: headCommitId, selecting: revision)
+                viewModel.onRevealAncestors = { headChangeId, revision in
+                    filterToAncestors(of: headChangeId, selecting: revision)
                 }
                 menuCoordinator.onAction = { action in
                     switch action {

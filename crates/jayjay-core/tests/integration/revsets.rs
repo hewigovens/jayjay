@@ -187,12 +187,13 @@ fn ancestors_filter_includes_merge_parents_but_excludes_other_heads() {
     run_jj(&["-R", repo_str, "new", "base", "-m", "right"]);
     run_jj(&["-R", repo_str, "new", "left", "@", "-m", "merge"]);
     let repo = Repo::open(&path).unwrap();
-    let target = repo.log("@").unwrap().remove(0).commit_id.id;
+    let target = repo.log("@").unwrap().remove(0).change_id.id;
+    let revset = jayjay_core::ancestors_revset(&target);
+    run_jj(&["-R", repo_str, "describe", "-m", "merge rewritten"]);
     run_jj(&["-R", repo_str, "new", "base", "-m", "unrelated"]);
     let repo = Repo::open(&path).unwrap();
-    let changes = repo.log(&jayjay_core::ancestors_revset(&target)).unwrap();
+    let changes = repo.log(&revset).unwrap();
     let mut descriptions: Vec<_> = changes.iter().map(|c| c.description.trim()).collect();
     descriptions.sort_unstable();
-    assert_eq!(descriptions, ["base", "left", "merge", "right"]);
-    assert!(changes.iter().any(|c| c.commit_id.id == target));
+    assert_eq!(descriptions, ["base", "left", "merge rewritten", "right"]);
 }

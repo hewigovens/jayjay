@@ -150,28 +150,3 @@ fn stat_badge(label: &'static str, count: usize, color: u32) -> AnyElement {
         .child(SharedString::from(format!("{count} {label}")))
         .into_any_element()
 }
-
-pub(super) fn placeholder(message: &str, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .text_size(ui_font_size(12.))
-        .text_color(rgb(t.fg_dim))
-        .child(SharedString::from(message.to_owned()))
-        .into_any_element()
-}
-
-pub(super) fn placeholder_err(message: &SharedString, t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .items_center()
-        .justify_center()
-        .px(px(24.))
-        .text_size(ui_font_size(12.))
-        .text_color(rgb(t.error_fg))
-        .child(message.clone())
-        .into_any_element()
-}

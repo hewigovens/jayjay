@@ -60,11 +60,11 @@ extension RepoViewModel {
         prInfo = info
     }
 
-    func revealAncestors(of headCommitId: String, selecting revision: String) {
+    func revealAncestors(of headChangeId: String, selecting revision: String) {
         if let onRevealAncestors {
-            onRevealAncestors(headCommitId, revision)
+            onRevealAncestors(headChangeId, revision)
         } else {
-            applyRevset(ancestorsRevset(commitId: headCommitId), selecting: revision)
+            applyRevset(ancestorsRevset(changeId: headChangeId), selecting: revision)
         }
     }
 

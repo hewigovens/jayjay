@@ -1,5 +1,5 @@
 use jayjay_core as core;
-use jayjay_core::overview::OverviewGroup;
+use jayjay_core::overview::{OverviewGroup, OverviewSnapshot};
 use jayjay_core::{
     Overview, OverviewBase, OverviewBaseKind, OverviewChange, OverviewLane, OverviewWorkspace,
 };
@@ -62,4 +62,11 @@ pub struct Overview {
 pub struct OverviewGroup {
     pub base: core::OverviewBase,
     pub lanes: Vec<u32>,
+}
+
+#[uniffi::remote(Record)]
+pub struct OverviewSnapshot {
+    pub overview: core::Overview,
+    pub groups: Vec<core::overview::OverviewGroup>,
+    pub workspaces: Vec<core::WorkspaceInfo>,
 }

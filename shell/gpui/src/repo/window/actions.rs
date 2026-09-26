@@ -10,6 +10,7 @@ use crate::ui::overlay::TextPrompt;
 use crate::ui::selection::click_from_modifiers;
 use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::operation_log::OperationLogView;
+use crate::windows::overview::OverviewView;
 
 impl RepoWindow {
     pub fn handle_change_row_click(
@@ -85,6 +86,14 @@ impl RepoWindow {
 
     pub(crate) fn open_bookmark_manager(&mut self, cx: &mut Context<Self>) {
         BookmarkManagerView::open(cx.entity(), self.vm.clone(), cx);
+    }
+
+    pub(crate) fn open_overview(&mut self, cx: &mut Context<Self>) {
+        if self.vm.read(cx).repo.is_none() {
+            self.show_toast("Repository is not open", cx);
+            return;
+        }
+        OverviewView::open(cx.entity(), self.vm.clone(), cx);
     }
 
     pub(crate) fn open_operation_log(&mut self, cx: &mut Context<Self>) {

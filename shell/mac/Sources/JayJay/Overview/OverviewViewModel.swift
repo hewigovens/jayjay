@@ -11,6 +11,7 @@ final class OverviewViewModel {
     private(set) var actionError: String?
     var selectedLaneId: String?
     var selectedChangeId: String?
+    var isLanePanelShown = false
     private(set) var selectedChangeFiles: [FileDiffStats]?
     var filter = "" {
         didSet { keepSelectionVisible() }
@@ -285,12 +286,16 @@ extension OverviewLane {
             case .trunk:
                 "On \(trunkName)"
             case .olderTrunk:
-                "\(base.behindTrunk) commit\(base.behindTrunk == 1 ? "" : "s") behind \(trunkName), based on \(Date.relativeLabel(millis: base.timestampMillis))"
+                "\(base.behindTrunk) commit\(base.behindTrunk == 1 ? "" : "s") behind \(trunkName)"
             case .mutable:
-                "On \(base.description.isEmpty ? base.changeId.prefix : base.description)"
+                "Forked from \(base.description.isEmpty ? base.changeId.prefix : base.description)"
             case .other:
-                "On \(base.bookmarks.first ?? base.changeId.prefix), off trunk"
+                "On \(base.bookmarks.first ?? base.changeId.prefix), off \(trunkName)"
         }
+    }
+
+    var footer: String {
+        attention.first ?? "\(changes.count) change\(changes.count == 1 ? "" : "s") · \(Date.relativeLabel(millis: latestTimestampMillis))"
     }
 
     func matches(filter: String) -> Bool {
@@ -298,6 +303,12 @@ extension OverviewLane {
         guard !needle.isEmpty else { return true }
         let haystacks = changes.flatMap { [$0.description, $0.changeId.id] + $0.bookmarks + $0.workspaces }
         return haystacks.contains { $0.localizedCaseInsensitiveContains(needle) }
+    }
+}
+
+extension OverviewWorkspace {
+    var label: String {
+        isCurrent ? "@ \(name)" : "\(name)@"
     }
 }
 

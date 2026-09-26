@@ -9,6 +9,7 @@ struct OverviewCanvas: View {
     let trunkName: String
     @Binding var selectedLaneId: String?
     @Binding var selectedChangeId: String?
+    @Binding var isLanePanelShown: Bool
     let onShowInGraph: (OverviewLane, OverviewChange?) -> Void
     let actions: OverviewLaneActions
 
@@ -29,6 +30,9 @@ struct OverviewCanvas: View {
                 OverviewTrunkLabel(base: band.base, trunkName: trunkName)
                     .frame(width: Geo.trunkLabelWidth, height: Geo.rowHeight, alignment: .leading)
                     .position(x: Geo.spineX + 12 + Geo.trunkLabelWidth / 2, y: band.y - Geo.rowHeight / 2 - 2)
+                OverviewBaseDetail(base: band.base)
+                    .frame(width: Geo.trunkLabelWidth, height: Geo.rowHeight, alignment: .leading)
+                    .position(x: Geo.spineX + 12 + Geo.trunkLabelWidth / 2, y: band.y + Geo.rowHeight / 2 + 2)
             }
 
             ForEach(placement.lanes) { placed in
@@ -37,8 +41,9 @@ struct OverviewCanvas: View {
                 Button {
                     selectedLaneId = laneId
                     selectedChangeId = nil
+                    isLanePanelShown = true
                 } label: {
-                    OverviewLaneCard(lane: lane, trunkName: trunkName, isSelected: selectedLaneId == laneId)
+                    OverviewLaneCard(lane: lane, isSelected: selectedLaneId == laneId)
                         .frame(width: Geo.columnWidth, height: Geo.cardHeight)
                 }
                 .buttonStyle(.plain)
@@ -59,7 +64,6 @@ struct OverviewCanvas: View {
                     .simultaneousGesture(TapGesture(count: 2).onEnded { onShowInGraph(lane, change) })
                     .contextMenu { changeMenu(lane, change) }
                     .position(x: placed.x + Geo.columnWidth / 2, y: placed.nodeY(offset))
-                    .help(change.title)
                 }
             }
         }
@@ -170,7 +174,7 @@ enum OverviewGeometry {
     static let spineX: CGFloat = 20
     static let trunkLabelWidth: CGFloat = 170
     static let gutterWidth: CGFloat = 200
-    static let columnWidth: CGFloat = 232
+    static let columnWidth: CGFloat = 260
     static let columnGap: CGFloat = 14
     static let cardHeight: CGFloat = 86
     static let cardGap: CGFloat = 10
@@ -333,25 +337,14 @@ private struct OverviewTrunkLabel: View {
     let trunkName: String
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
 
     var body: some View {
-        HStack(spacing: 6) {
-            Text(label)
-                .jayjayFont(11, weight: .semibold)
-                .foregroundStyle(tint)
-                .lineLimit(1)
-            Text(base.commitId.highlighted(
-                scheme: colorScheme,
-                font: fontFamily.scaledFont(10, baseSize: baseFontSize, design: .monospaced),
-                prefixColor: AppColors.commitIdPrefix(colorScheme)
-            ))
+        Text(label)
+            .jayjayFont(11, weight: .semibold)
+            .foregroundStyle(tint)
             .lineLimit(1)
-        }
-        .padding(.horizontal, 4)
-        .background(Color(nsColor: .windowBackgroundColor))
-        .help(base.description)
+            .padding(.horizontal, 4)
+            .background(Color(nsColor: .windowBackgroundColor))
     }
 
     private var label: String {
@@ -369,5 +362,28 @@ private struct OverviewTrunkLabel: View {
             case .olderTrunk: .orange
             case .mutable, .other: .secondary
         }
+    }
+}
+
+private struct OverviewBaseDetail: View {
+    let base: OverviewBase
+
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.jayjayFontSize) private var baseFontSize
+    @Environment(\.jayjayFontFamily) private var fontFamily
+
+    var body: some View {
+        HStack(spacing: 6) {
+            Text(base.commitId.highlighted(
+                scheme: colorScheme,
+                font: fontFamily.scaledFont(10, baseSize: baseFontSize, design: .monospaced),
+                prefixColor: AppColors.commitIdPrefix(colorScheme)
+            ))
+            Text(Date.relativeLabel(millis: base.timestampMillis))
+                .jayjayFont(10)
+                .foregroundStyle(.tertiary)
+        }
+        .lineLimit(1)
+        .padding(.horizontal, 4)
     }
 }

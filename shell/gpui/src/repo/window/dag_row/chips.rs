@@ -57,7 +57,7 @@ fn dag_chips(change: &ChangeInfo) -> Vec<DagChip> {
     chips
 }
 
-fn chip_width(label: &str, has_icon: bool, t: &Theme) -> f32 {
+pub(crate) fn chip_width(label: &str, has_icon: bool, t: &Theme) -> f32 {
     let text = label.chars().count() as f32 * t.scaled_font_size(FONT_TAG) * CHAR_WIDTH_FACTOR;
     text + 12.
         + if has_icon {
@@ -67,7 +67,7 @@ fn chip_width(label: &str, has_icon: bool, t: &Theme) -> f32 {
         }
 }
 
-fn visible_chip_count(
+pub(crate) fn visible_chip_count(
     widths: &[f32],
     budget: f32,
     gap: f32,

@@ -235,3 +235,39 @@ fn overview_reflects_operations_made_outside_the_handle() {
             .any(|lane| lane.head().description == "cli: added elsewhere")
     );
 }
+
+#[test]
+fn overview_snapshot_filters_lanes_by_description_bookmark_or_workspace() {
+    let (_temp_dir, repo_path) = build_fixture();
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let snapshot = repo.overview_snapshot().expect("snapshot");
+    assert_eq!(snapshot.trunk_name(), "main");
+    assert_eq!(snapshot.workspaces.len(), 3);
+    let heads = |groups: Vec<jayjay_core::overview::OverviewGroup>| -> Vec<String> {
+        groups
+            .iter()
+            .flat_map(|group| group.lanes.iter())
+            .map(|&lane| snapshot.overview.lanes[lane as usize].title().to_owned())
+            .collect()
+    };
+    assert_eq!(heads(snapshot.visible_groups("  ")).len(), 4);
+    assert_eq!(
+        heads(snapshot.visible_groups("FORECAST")),
+        ["inventory: nightly rollups"]
+    );
+    assert_eq!(
+        heads(snapshot.visible_groups("planner")),
+        ["inventory: nightly rollups"]
+    );
+    assert!(snapshot.visible_groups("no such lane").is_empty());
+    assert_eq!(
+        snapshot.lane_ids(),
+        snapshot
+            .overview
+            .lanes
+            .iter()
+            .map(|lane| lane.head().change_id.id.clone())
+            .collect::<Vec<_>>()
+    );
+}

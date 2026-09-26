@@ -5,12 +5,12 @@ use super::style::{DagNodeStyle, NodeFill, NodeShape};
 const LINE_WIDTH: f32 = 1.5;
 
 #[derive(Clone, Copy)]
-pub(super) enum LinePattern {
+pub(crate) enum LinePattern {
     Solid,
     Dashed(&'static [f32]),
 }
 
-pub(super) fn stroke_line_pattern(
+pub(crate) fn stroke_line_pattern(
     window: &mut Window,
     x0: Pixels,
     y0: Pixels,
@@ -56,7 +56,7 @@ fn path_builder(pattern: LinePattern) -> PathBuilder {
     }
 }
 
-pub(super) fn paint_node(window: &mut Window, cx_x: Pixels, cy_y: Pixels, style: DagNodeStyle) {
+pub(crate) fn paint_node(window: &mut Window, cx_x: Pixels, cy_y: Pixels, style: DagNodeStyle) {
     let r = px(style.radius);
     match style.shape {
         NodeShape::Circle => match style.fill {

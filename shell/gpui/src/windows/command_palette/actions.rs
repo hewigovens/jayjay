@@ -82,6 +82,19 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
+        name: "Repo Overview",
+        keywords: &[
+            "overview",
+            "lanes",
+            "workspaces",
+            "work",
+            "stacks",
+            "branches",
+        ],
+        glyph_str: glyph::COLUMNS,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_overview),
+    },
+    PaletteAction {
         name: "Repository List",
         keywords: &[
             "repository",

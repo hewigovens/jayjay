@@ -17,42 +17,27 @@ struct OverviewChangePanel: View {
     }
 
     var body: some View {
-        ScrollView {
-            panel
-        }
-        .frame(width: 400)
-        .accessibilityIdentifier(AID.Overview.changePanel)
-    }
-
-    private var panel: some View {
-        VStack(alignment: .leading, spacing: 12) {
-            HStack(alignment: .top, spacing: 8) {
+        OverviewPanel(accessibilityIdentifier: AID.Overview.changePanel) {
+            OverviewPanelHeader(onClose: onClose) {
                 Text(change.title)
-                    .jayjayFont(13, weight: .semibold)
                     .foregroundStyle(change.description.isEmpty ? .tertiary : .primary)
-                    .lineLimit(4)
-                Spacer(minLength: 0)
-                Button(action: onClose) {
-                    Image(systemName: "xmark")
-                        .jayjayFont(10, weight: .semibold)
-                }
-                .buttonStyle(.plain)
-                .foregroundStyle(.secondary)
-                .help("Close")
+                    .textSelection(.enabled)
             }
             HStack(spacing: 8) {
-                Text(change.changeId.highlighted(scheme: colorScheme, font: fontFamily.identifierFont(baseSize: baseFontSize)))
+                Text(change.changeId.highlighted(scheme: colorScheme, font: idFont))
                 Text(change.commitId.highlighted(
                     scheme: colorScheme,
-                    font: fontFamily.identifierFont(baseSize: baseFontSize),
+                    font: idFont,
                     prefixColor: AppColors.commitIdPrefix(colorScheme)
                 ))
+                Text("·").foregroundStyle(.tertiary)
                 Text(Date.relativeLabel(millis: change.timestampMillis))
-                    .jayjayFont(11)
                     .foregroundStyle(.secondary)
             }
+            .jayjayFont(11)
+            .textSelection(.enabled)
             if !change.workspaces.isEmpty || change.hasConflict {
-                HStack(spacing: 4) {
+                FlowLayout(spacing: 4) {
                     ForEach(change.workspaces, id: \.self) { name in
                         OverviewChip(text: "\(name)@", tint: AppColors.workspace(colorScheme))
                     }
@@ -61,6 +46,8 @@ struct OverviewChangePanel: View {
                     }
                 }
             }
+            Button("Show in Graph", action: onShowInGraph)
+                .controlSize(.small)
             if !descriptionBody.isEmpty {
                 Text(descriptionBody)
                     .jayjayFont(11)
@@ -68,11 +55,11 @@ struct OverviewChangePanel: View {
                     .textSelection(.enabled)
             }
             fileList
-            Button("Show in Graph", action: onShowInGraph)
-                .controlSize(.small)
         }
-        .padding(14)
-        .frame(maxWidth: .infinity, alignment: .topLeading)
+    }
+
+    private var idFont: Font {
+        fontFamily.scaledFont(11, baseSize: baseFontSize, design: .monospaced)
     }
 
     @ViewBuilder
@@ -83,11 +70,7 @@ struct OverviewChangePanel: View {
                     .jayjayFont(11)
                     .foregroundStyle(.tertiary)
             } else {
-                VStack(alignment: .leading, spacing: 3) {
-                    Text("\(files.count) file\(files.count == 1 ? "" : "s")")
-                        .jayjayFont(10, weight: .semibold)
-                        .foregroundStyle(.secondary)
-                        .textCase(.uppercase)
+                OverviewPanelSection(title: "\(files.count) file\(files.count == 1 ? "" : "s")") {
                     ForEach(files, id: \.path) { file in
                         HStack(spacing: 6) {
                             Text(file.path)

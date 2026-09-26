@@ -1,12 +1,12 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, rgb,
+    StatefulInteractiveElement,
 };
 
 use super::RepoWindow;
 use crate::app::config::{self, AppConfig};
-use crate::app::theme::{Theme, ui_font_size};
-use crate::ui::overlay::{overlay_actions, overlay_card, overlay_layer};
+use crate::app::theme::Theme;
+use crate::ui::overlay::{confirmation_card, overlay_actions, overlay_layer};
 use crate::ui::primitives::{button, checkbox_row};
 
 pub(crate) struct Confirmation {
@@ -74,22 +74,7 @@ pub(super) fn confirmation_overlay(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let mut card = overlay_card(t, 400.)
-        .debug_selector(|| "confirmation".to_owned())
-        .child(
-            div()
-                .text_size(ui_font_size(14.))
-                .font_weight(gpui::FontWeight::SEMIBOLD)
-                .text_color(rgb(t.fg))
-                .child(confirmation.title.clone()),
-        )
-        .child(
-            div()
-                .text_size(ui_font_size(12.))
-                .text_color(rgb(t.fg_dim))
-                .whitespace_normal()
-                .child(confirmation.message.clone()),
-        );
+    let mut card = confirmation_card(confirmation.title.clone(), confirmation.message.clone(), t);
     if let Some(dont_ask_again) = &confirmation.dont_ask_again {
         let toggle = dont_ask_again.toggle;
         card = card.child(

@@ -60,6 +60,7 @@ pub use file_actions_batch::FileBatchAction;
 pub(crate) use file_editor::FileEditorState;
 pub use keyboard_focus::FocusStop;
 pub use open::open_repo_window;
+pub(crate) use open::reveal_in_repo_window;
 pub use review::install_from_path as install_review_store_from_path;
 pub use review::install_in_memory as install_in_memory_review_store;
 pub use review::shared as shared_review_store;
@@ -67,7 +68,12 @@ pub use stacked_pr_snapshot::StackedPrSnapshot;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use context_expansion::ContextExpansionState;
-pub(crate) use dag_row::{compact_id, format_relative, format_when, id_cell};
+pub(crate) use dag::{
+    DagNodeStyle, LinePattern, NodeFill, NodeShape, paint_node, stroke_line_pattern,
+};
+pub(crate) use dag_row::{
+    chip_width, compact_id, format_relative, format_when, id_cell, visible_chip_count,
+};
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;

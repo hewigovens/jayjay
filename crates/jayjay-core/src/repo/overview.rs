@@ -12,9 +12,19 @@ use super::Repo;
 use super::support::{
     block_on, block_on_result, on_worker_stack, short_change_id, short_commit_id,
 };
+use crate::overview::{OverviewSnapshot, overview_groups};
 use crate::types::*;
 
 impl Repo {
+    pub fn overview_snapshot(&self) -> CoreResult<OverviewSnapshot> {
+        let overview = self.overview()?;
+        Ok(OverviewSnapshot {
+            groups: overview_groups(&overview),
+            workspaces: self.workspace_list()?,
+            overview,
+        })
+    }
+
     pub fn overview(&self) -> CoreResult<Overview> {
         let repo = block_on_result("load overview", self.get_repo().loader().load_at_head())?;
         self.set_repo(repo.clone());

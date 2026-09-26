@@ -38,6 +38,29 @@ pub(crate) fn overlay_card(t: &Theme, width: f32) -> Div {
         .bg(rgb(t.header_bg))
 }
 
+pub(crate) fn confirmation_card(
+    title: impl Into<SharedString>,
+    message: impl Into<SharedString>,
+    t: &Theme,
+) -> Div {
+    overlay_card(t, 400.)
+        .debug_selector(|| "confirmation".to_owned())
+        .child(
+            div()
+                .text_size(ui_font_size(14.))
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(rgb(t.fg))
+                .child(title.into()),
+        )
+        .child(
+            div()
+                .text_size(ui_font_size(12.))
+                .text_color(rgb(t.fg_dim))
+                .whitespace_normal()
+                .child(message.into()),
+        )
+}
+
 pub(crate) fn overlay_header(
     icon: &'static str,
     icon_color: u32,

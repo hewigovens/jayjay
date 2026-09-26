@@ -5,29 +5,54 @@ use crate::ui::input::LineInput;
 
 impl RepoWindow {
     pub(in super::super) fn show_ancestors(&mut self, commit_id: &str, cx: &mut Context<Self>) {
-        let Some(index) = self
+        let Some((index, change_id)) = self
             .vm
             .read(cx)
             .graph
             .changes
             .iter()
-            .position(|change| change.commit_id.id == commit_id)
+            .enumerate()
+            .find(|(_, change)| change.commit_id.id == commit_id)
+            .map(|(index, change)| (index, change.change_id.id.clone()))
         else {
             return;
         };
+        let revset = self.begin_ancestor_filter(&change_id, cx);
+        self.select_change(index, cx);
+        self.vm.update(cx, |vm, cx| vm.apply_revset(&revset, cx));
+        cx.notify();
+    }
+
+    /// A window still opening applies the reveal once its repository has loaded.
+    pub(crate) fn reveal_ancestors(
+        &mut self,
+        head_change_id: String,
+        select_commit_id: String,
+        cx: &mut Context<Self>,
+    ) {
+        if self.vm.read(cx).repo.is_none() {
+            self.pending_reveal = Some((head_change_id, select_commit_id));
+            return;
+        }
+        let revset = self.begin_ancestor_filter(&head_change_id, cx);
+        self.vm.update(cx, |vm, cx| {
+            vm.apply_revset_selecting(&revset, select_commit_id, cx);
+        });
+        cx.notify();
+    }
+
+    fn begin_ancestor_filter(&mut self, change_id: &str, cx: &mut Context<Self>) -> String {
         self.show_sidebar(cx);
         if self.previous_ancestor_filter.is_none() {
             self.previous_ancestor_filter = Some(self.vm.read(cx).revset.to_string());
         }
-        let revset = jayjay_core::ancestors_revset(commit_id);
+        let revset = jayjay_core::ancestors_revset(change_id);
         if let Some(input) = self.revset_filter.as_mut() {
             input.set_text(revset.clone());
         } else {
             self.revset_filter = Some(LineInput::new(revset.clone()));
         }
-        self.select_change(index, cx);
-        self.vm.update(cx, |vm, cx| vm.apply_revset(&revset, cx));
-        cx.notify();
+        revset
     }
 
     fn revset_input(view: &mut Self) -> Option<&mut LineInput> {

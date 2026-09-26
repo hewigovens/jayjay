@@ -16,6 +16,18 @@ pub(crate) fn button(
     button_container(id, theme, primary).child(label.into())
 }
 
+pub(crate) fn small_button(
+    id: impl Into<SharedString>,
+    label: impl Into<SharedString>,
+    theme: &Theme,
+) -> Stateful<Div> {
+    button_container(id, theme, false)
+        .h(px(theme.scaled_control_height(22., 11.)))
+        .px(px(8.))
+        .text_size(ui_font_size(11.))
+        .child(label.into())
+}
+
 pub(crate) fn button_container(
     id: impl Into<SharedString>,
     theme: &Theme,

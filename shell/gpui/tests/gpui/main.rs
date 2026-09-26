@@ -32,6 +32,7 @@ mod repo_markdown_preview_scroll;
 mod repo_mutations;
 mod repo_navigation;
 mod repo_operation_log;
+mod repo_overview;
 mod repo_pickers;
 mod repo_pinning;
 mod repo_pr_import;

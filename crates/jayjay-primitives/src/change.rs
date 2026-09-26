@@ -40,6 +40,10 @@ impl ShortId {
     pub fn prefix(&self, max_chars: usize) -> String {
         self.id.chars().take(max_chars).collect()
     }
+
+    pub fn unique_prefix(&self) -> String {
+        self.prefix(self.short_len as usize)
+    }
 }
 
 impl std::ops::Deref for ShortId {

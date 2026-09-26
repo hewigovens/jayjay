@@ -3,7 +3,6 @@ import SwiftUI
 
 struct OverviewLaneCard: View {
     let lane: OverviewLane
-    let trunkName: String
     let isSelected: Bool
 
     @Environment(\.colorScheme) private var colorScheme
@@ -30,31 +29,11 @@ struct OverviewLaneCard: View {
                 .lineLimit(2)
                 .frame(maxWidth: .infinity, alignment: .leading)
                 .frame(height: 30, alignment: .top)
-            HStack(spacing: 4) {
-                if lane.workspaces.isEmpty {
-                    Text("no workspace")
-                        .jayjayFont(10)
-                        .foregroundStyle(.tertiary)
-                } else {
-                    ForEach(lane.workspaces, id: \.name) { workspace in
-                        OverviewChip(text: workspace.isCurrent ? "@ \(workspace.name)" : "\(workspace.name)@", tint: AppColors.workspace(colorScheme))
-                            .fixedSize()
-                    }
-                }
-                ForEach(lane.changes.flatMap(\.bookmarks), id: \.self) { bookmark in
-                    OverviewChip(text: bookmark, tint: AppColors.bookmark(colorScheme))
-                }
-                Spacer(minLength: 4)
-                Text("\(lane.changes.count) change\(lane.changes.count == 1 ? "" : "s") · \(Date.relativeLabel(millis: lane.latestTimestampMillis))")
-                    .jayjayFont(10)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-            }
-            .frame(height: 16)
-            .clipped()
-            Text(lane.attention.first ?? lane.baseSentence(trunkName: trunkName))
+            OverviewChipRow(chips: chips)
+                .frame(height: 16)
+            Text(lane.footer)
                 .jayjayFont(10)
-                .foregroundStyle(needsAttention || lane.isBehindTrunk ? Color.orange : Color.secondary)
+                .foregroundStyle(needsAttention ? Color.orange : Color.secondary)
                 .lineLimit(1)
         }
         .padding(.leading, 12)
@@ -73,18 +52,11 @@ struct OverviewLaneCard: View {
     }
 }
 
-struct OverviewChip: View {
-    let text: String
-    let tint: Color
-
-    var body: some View {
-        Text(text)
-            .jayjayFont(9, weight: .semibold, design: .monospaced)
-            .lineLimit(1)
-            .truncationMode(.middle)
-            .padding(.horizontal, 5)
-            .padding(.vertical, 1)
-            .background(tint.opacity(0.16), in: RoundedRectangle(cornerRadius: 4))
-            .foregroundStyle(tint)
+private extension OverviewLaneCard {
+    var chips: [OverviewChipRow.Chip] {
+        let workspace = AppColors.workspace(colorScheme)
+        let bookmark = AppColors.bookmark(colorScheme)
+        return lane.workspaces.map { .init(text: $0.label, tint: workspace) }
+            + lane.changes.flatMap(\.bookmarks).map { .init(text: $0, tint: bookmark) }
     }
 }
