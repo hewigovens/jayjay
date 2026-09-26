@@ -56,15 +56,15 @@ pub use merge_editor::{MergeEditorHunkExt, MergeScrollMap};
 pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]
 pub use repo::{
-    AiProvider, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, DiffExcerpt, Repo, ReviewNotesReport,
-    ReviewOutputFormat, RevsetPreset, SyncToken, add_review_note, ancestors_revset,
-    branch_name_slug, build_default_revset, check_gh_environment, check_glab_environment,
-    check_jj_environment, check_origin_environment, default_revset_depth, find_existing_binary,
-    home_dir, init_jj_git_repo, is_executable_file, is_valid_bookmark_name,
-    is_valid_workspace_name, login_shell, login_shell_path, mark_review_file, resolve_review_note,
-    review_display_group_map_from_hunk, review_notes_output, review_snapshot_from_hunk,
-    review_status_output, revset_presets, unmark_review_files, workspace_primary_root,
-    workspace_root,
+    AiProvider, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, DiffExcerpt, JjConfigEntry, JjConfigSection,
+    JjUserConfig, Repo, ReviewNotesReport, ReviewOutputFormat, RevsetPreset, SyncToken,
+    add_review_note, ancestors_revset, branch_name_slug, build_default_revset,
+    check_gh_environment, check_glab_environment, check_jj_environment, check_origin_environment,
+    default_revset_depth, find_existing_binary, home_dir, init_jj_git_repo, is_executable_file,
+    is_valid_bookmark_name, is_valid_workspace_name, jj_user_config, login_shell, login_shell_path,
+    mark_review_file, resolve_review_note, review_display_group_map_from_hunk, review_notes_output,
+    review_snapshot_from_hunk, review_status_output, revset_presets, unmark_review_files,
+    workspace_primary_root, workspace_root,
 };
 pub use theme::{DiffThemeColors, ThemeSeed, change_id_prefix_color, diff_theme_colors};
 #[cfg(feature = "repository")]

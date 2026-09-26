@@ -6,6 +6,8 @@ mod ai;
 mod cli;
 mod commit_message;
 mod compare;
+#[cfg(feature = "desktop")]
+mod config;
 mod dag;
 mod diff;
 mod diff_edit;

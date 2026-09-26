@@ -9,21 +9,26 @@ struct JJConfigView: View {
         Group {
             if let snapshot = config.value {
                 switch snapshot {
-                    case .notInstalled:
-                        emptyState("jj is not installed")
                     case .missing:
                         emptyState("Config not found")
+                    case let .failed(path, message):
+                        if !path.isEmpty {
+                            Section {
+                                configPathRow(path: path)
+                            }
+                        }
+                        emptyState(message)
                     case let .found(path, sections):
                         Section {
                             configPathRow(path: path)
                         }
-                        ForEach(sections) { section in
+                        ForEach(sections, id: \.name) { section in
                             Section(section.name) {
-                                ForEach(section.entries) { entry in
+                                ForEach(section.entries, id: \.key) { entry in
                                     configRow(key: entry.key, value: entry.value, icon: entry.icon)
                                 }
                             }
-                            .id(section.id)
+                            .id(section.name)
                         }
                 }
             } else {

@@ -1,154 +1,94 @@
-use std::path::Path;
-use std::process::Command;
-
-use jayjay_core::check_jj_environment;
+use jayjay_core::{JjConfigSection, JjUserConfig, jj_user_config};
 
 #[derive(Clone, Debug, PartialEq, Eq)]
 pub(super) struct JjConfigSnapshot {
     pub(super) path: String,
+    /// Whether `path` is a file the user can open; a missing config keeps its prospective path but offers no Open action.
+    pub(super) exists: bool,
     pub(super) sections: Vec<JjConfigSection>,
     pub(super) error: Option<String>,
 }
 
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct JjConfigSection {
-    pub(super) name: String,
-    pub(super) entries: Vec<JjConfigEntry>,
-}
-
-#[derive(Clone, Debug, PartialEq, Eq)]
-pub(super) struct JjConfigEntry {
-    pub(super) key: String,
-    pub(super) value: String,
-}
-
-/// Re-reads `jj config list` on every call — the caller (`ensure_jj_config_loaded`)
-/// already caches the result per `SettingsView` instance, so this must stay fresh
-/// rather than memoizing for the process lifetime.
+/// Re-reads the config files on every call — the caller (`ensure_jj_config_loaded`) already caches the result per `SettingsView` instance, so this must stay fresh rather than memoizing for the process lifetime.
 pub(super) fn load_jj_config_snapshot() -> JjConfigSnapshot {
-    load_jj_config()
+    match jj_user_config() {
+        Ok(config) => snapshot_from(config),
+        Err(error) => JjConfigSnapshot {
+            path: String::new(),
+            exists: false,
+            sections: Vec::new(),
+            error: Some(error.to_string()),
+        },
+    }
 }
 
-fn load_jj_config() -> JjConfigSnapshot {
-    let status = check_jj_environment();
-    if !status.is_installed || status.path.is_empty() {
+/// Core reports where the user config would live even before it exists, and the listing then holds only environment-derived values, so an absent config is an empty state rather than a listing.
+fn snapshot_from(config: JjUserConfig) -> JjConfigSnapshot {
+    if let Some(error) = config.error {
         return JjConfigSnapshot {
-            path: String::new(),
+            path: config.path,
+            exists: config.exists,
             sections: Vec::new(),
-            error: Some("jj is not installed".to_owned()),
+            error: Some(error),
         };
     }
-    let path = run(&status.path, &["config", "path", "--user"]);
-    let raw = run(&status.path, &["config", "list"]);
-    snapshot_from_cli(path, &raw)
-}
-
-/// `jj config path --user` reports where the file would live even before it exists, and `jj config list` then holds only environment-derived values, so an absent file is an empty state rather than a listing.
-fn snapshot_from_cli(path: String, raw: &str) -> JjConfigSnapshot {
-    if !Path::new(&path).exists() {
+    if !config.exists {
         return JjConfigSnapshot {
-            path,
+            path: config.path,
+            exists: false,
             sections: Vec::new(),
             error: Some("Config not found".to_owned()),
         };
     }
     JjConfigSnapshot {
-        path,
-        sections: parse_config_sections(raw),
+        path: config.path,
+        exists: true,
+        sections: config.sections,
         error: None,
     }
 }
 
-fn run(binary: &str, args: &[&str]) -> String {
-    Command::new(binary)
-        .args(args)
-        .output()
-        .ok()
-        .filter(|output| output.status.success())
-        .map(|output| String::from_utf8_lossy(&output.stdout).trim().to_owned())
-        .unwrap_or_default()
-}
-
-/// Groups by section name across the whole file, not just adjacent lines — `jj
-/// config list` output is not sorted, so the same section commonly reappears
-/// non-contiguously (e.g. `ui.editor` then other sections then `ui.diff`).
-pub(super) fn parse_config_sections(raw: &str) -> Vec<JjConfigSection> {
-    let mut order: Vec<String> = Vec::new();
-    let mut by_name: std::collections::HashMap<String, Vec<JjConfigEntry>> = Default::default();
-
-    for line in raw.lines() {
-        let Some((full_key, value)) = line.split_once('=') else {
-            continue;
-        };
-        let full_key = full_key.trim();
-        let value = value.trim();
-        let (section, key) = full_key.split_once('.').unwrap_or(("general", full_key));
-        let entries = by_name.entry(section.to_owned()).or_insert_with(|| {
-            order.push(section.to_owned());
-            Vec::new()
-        });
-        entries.push(JjConfigEntry {
-            key: key.to_owned(),
-            value: value.to_owned(),
-        });
-    }
-
-    order
-        .into_iter()
-        .map(|name| {
-            let entries = by_name.remove(&name).unwrap_or_default();
-            JjConfigSection { name, entries }
-        })
-        .collect()
-}
-
 #[cfg(test)]
 mod tests {
-    use super::{parse_config_sections, snapshot_from_cli};
+    use jayjay_core::{JjConfigEntry, JjConfigSection, JjUserConfig};
+
+    use super::snapshot_from;
 
     #[test]
-    fn parse_config_sections_groups_by_prefix() {
-        let sections = parse_config_sections(
-            "user.name = Alice\nuser.email = a@example.com\nui.diff = split\n",
-        );
+    fn a_load_failure_keeps_the_path_for_repair() {
+        let failed = snapshot_from(JjUserConfig {
+            path: "/home/dev/.config/jj/config.toml".to_owned(),
+            exists: true,
+            sections: Vec::new(),
+            error: Some("expected `]`".to_owned()),
+        });
 
-        assert_eq!(sections.len(), 2);
-        assert_eq!(sections[0].name, "user");
-        assert_eq!(sections[0].entries[0].key, "name");
-        assert_eq!(sections[0].entries[1].value, "a@example.com");
-        assert_eq!(sections[1].name, "ui");
-        assert_eq!(sections[1].entries[0].value, "split");
-    }
-
-    #[test]
-    fn parse_config_sections_merges_non_contiguous_occurrences() {
-        // `jj config list` output isn't sorted, so the same section can reappear
-        // after other sections — those entries must land in one merged group.
-        let sections = parse_config_sections(
-            "operation.hostname = host\nui.editor = code\nuser.name = Alice\nui.diff = split\n",
-        );
-
-        assert_eq!(sections.len(), 3);
-        assert_eq!(sections[0].name, "operation");
-        assert_eq!(sections[1].name, "ui");
-        assert_eq!(sections[1].entries.len(), 2);
-        assert_eq!(sections[1].entries[0].key, "editor");
-        assert_eq!(sections[1].entries[1].key, "diff");
-        assert_eq!(sections[2].name, "user");
+        assert_eq!(failed.path, "/home/dev/.config/jj/config.toml");
+        assert!(failed.exists, "a broken file can still be opened");
+        assert_eq!(failed.error.as_deref(), Some("expected `]`"));
     }
 
     #[test]
     fn missing_user_config_file_is_an_empty_state_not_a_listing() {
-        let dir = tempfile::tempdir().expect("tempdir");
-        let path = dir.path().join("config.toml");
-        let raw = "operation.hostname = host\n";
+        let config = |exists| JjUserConfig {
+            path: "/nowhere/config.toml".to_owned(),
+            exists,
+            sections: vec![JjConfigSection {
+                name: "operation".to_owned(),
+                entries: vec![JjConfigEntry {
+                    key: "hostname".to_owned(),
+                    value: "host".to_owned(),
+                }],
+            }],
+            error: None,
+        };
 
-        let missing = snapshot_from_cli(path.display().to_string(), raw);
+        let missing = snapshot_from(config(false));
         assert_eq!(missing.error.as_deref(), Some("Config not found"));
+        assert!(!missing.exists, "nothing to open for a missing config");
         assert!(missing.sections.is_empty());
 
-        std::fs::write(&path, "").expect("create config");
-        let found = snapshot_from_cli(path.display().to_string(), raw);
+        let found = snapshot_from(config(true));
         assert_eq!(found.error, None);
         assert_eq!(found.sections.len(), 1);
     }
