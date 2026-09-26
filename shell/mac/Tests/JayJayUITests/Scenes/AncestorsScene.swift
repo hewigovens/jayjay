@@ -16,7 +16,7 @@ final class AncestorsScene: SceneBase {
         XCTAssertTrue(rows.matching(NSPredicate(format: "value CONTAINS %@", "initial")).firstMatch.exists)
         let filter = app.textFields["Revset expression"]
         XCTAssertTrue(filter.exists)
-        XCTAssertTrue((filter.value as? String)?.hasPrefix("::commit_id(") == true)
+        XCTAssertTrue((filter.value as? String)?.hasPrefix("::change_id(") == true)
 
         let screenshot = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
         screenshot.name = "Show ancestors filter"
