@@ -10,6 +10,7 @@ extension NativeDiffView {
     ) {
         configureGutterInteractions(
             containerView.gutterTextView,
+            displayLines: cache.gutterContext.content.lines,
             groupsByIndex: cache.groupsByIndex,
             selectionActions: selectionActions
         )
@@ -23,14 +24,15 @@ extension NativeDiffView {
 
     func configureGutterInteractions(
         _ gutterTextView: DiffGutterTextView,
+        displayLines: [DiffLine],
         groupsByIndex: [UInt32: ChangeGroup],
         selectionActions: (any DiffGutterSelectionActions)?
     ) {
         gutterTextView.menuProvider = { selection in
-            menuProvider(selection: selection, changeGroupsByIndex: groupsByIndex)
+            menuProvider(selection: selection, displayLines: displayLines, changeGroupsByIndex: groupsByIndex)
         }
         gutterTextView.groupRangeProvider = { lineNumber in
-            expandedHunkRange(containing: lineNumber ... lineNumber)
+            DiffGutterGrouping.expandedChangedRange(in: displayLines, containing: lineNumber ... lineNumber)
         }
         gutterTextView.activateGroup = selectionActions.map { actions in
             { actions.selectChangeGroup($0) }

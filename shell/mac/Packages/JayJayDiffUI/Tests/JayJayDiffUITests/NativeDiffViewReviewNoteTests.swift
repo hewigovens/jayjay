@@ -22,6 +22,7 @@ final class NativeDiffViewReviewNoteTests: XCTestCase {
 
         let items = view.menuProvider(
             selection: DiffGutterSelection(lineRange: 2 ... 3, menuLineNumber: 3, changedLineCount: 2),
+            displayLines: displayLines,
             changeGroupsByIndex: groups
         )
         let add = try XCTUnwrap(items.first { $0.title == "Add Review Note" })
@@ -58,6 +59,7 @@ final class NativeDiffViewReviewNoteTests: XCTestCase {
 
         let items = view.menuProvider(
             selection: DiffGutterSelection(lineRange: 2 ... 3, menuLineNumber: 3, changedLineCount: 2),
+            displayLines: displayLines,
             changeGroupsByIndex: groups
         )
         XCTAssertNil(items.first { $0.title == "Add Review Note" })

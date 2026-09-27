@@ -66,6 +66,7 @@ final class DiffGutterGroupingTests: XCTestCase {
 
         let items = view.menuProvider(
             selection: DiffGutterSelection(lineRange: 1 ... 3, menuLineNumber: 1, changedLineCount: 2),
+            displayLines: diffDisplayLines(lines: diff.lines),
             changeGroupsByIndex: [:]
         )
 
@@ -90,6 +91,7 @@ final class DiffGutterGroupingTests: XCTestCase {
 
         let items = view.menuProvider(
             selection: DiffGutterSelection(lineRange: 2 ... 2, menuLineNumber: 2, changedLineCount: 1),
+            displayLines: diffDisplayLines(lines: diff.lines),
             changeGroupsByIndex: [:]
         )
 
@@ -115,6 +117,7 @@ final class DiffGutterGroupingTests: XCTestCase {
 
         let items = view.menuProvider(
             selection: DiffGutterSelection(lineRange: 2 ... 3, menuLineNumber: 2, changedLineCount: 2),
+            displayLines: diffDisplayLines(lines: diff.lines),
             changeGroupsByIndex: [:]
         )
 

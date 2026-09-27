@@ -4,12 +4,13 @@ import JayJayCore
 extension NativeDiffView {
     func menuProvider(
         selection: DiffGutterSelection,
+        displayLines: [DiffLine],
         changeGroupsByIndex: [UInt32: ChangeGroup]
     ) -> [DiffGutterMenuItem] {
         guard let gutterActions else { return [] }
 
         var items: [DiffGutterMenuItem] = []
-        let displayLines = diffDisplayLines(lines: diff.lines)
+        let groupRange = DiffGutterGrouping.expandedChangedRange(in: displayLines, containing: selection.lineRange)
         if let noteActions = gutterActions as? any DiffGutterNoteActions,
            noteActions.reviewNotesEnabled,
            let anchor = noteAnchor(
@@ -48,7 +49,7 @@ extension NativeDiffView {
             }
         }
         if let selectionActions = gutterActions as? any DiffGutterSelectionActions,
-           let hunkRange = expandedHunkRange(containing: selection.lineRange)
+           let groupRange
         {
             if !items.isEmpty {
                 items.append(.separator)
@@ -57,7 +58,7 @@ extension NativeDiffView {
                 DiffGutterMenuItem(
                     title: "Select Change Group",
                     enabled: true,
-                    action: { selectionActions.selectChangeGroup(hunkRange) }
+                    action: { selectionActions.selectChangeGroup(groupRange) }
                 )
             )
         }
@@ -79,7 +80,6 @@ extension NativeDiffView {
             if !items.isEmpty {
                 items.append(.separator)
             }
-            let groupRange = expandedHunkRange(containing: selection.lineRange)
             let isWholeGroup = groupRange == selection.lineRange && selection.changedLineCount > 1
             items.append(
                 DiffGutterMenuItem(
@@ -195,10 +195,6 @@ extension NativeDiffView {
             default:
                 return nil
         }
-    }
-
-    func expandedHunkRange(containing selection: ClosedRange<Int>) -> ClosedRange<Int>? {
-        DiffGutterGrouping.expandedChangedRange(in: diffDisplayLines(lines: diff.lines), containing: selection)
     }
 
     func groupStripeColor(for line: DiffLine, groupRange: ClosedRange<Int>?, theme: DiffColors) -> NSColor {

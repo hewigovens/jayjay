@@ -185,6 +185,7 @@ public extension NativeDiffView {
         layoutManager.findMatchBgColor = .findHighlightColor
         configureGutterInteractions(
             gutterTextView,
+            displayLines: displayLines,
             groupsByIndex: groupsByIndex,
             selectionActions: selectionActions
         )

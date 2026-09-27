@@ -139,7 +139,6 @@ extension NativeDiffView {
             return context.review.reviewActions?.hunkReviewState(groupIndex: groupIdx).stripeColor
                 ?? NSColor.selectedTextBackgroundColor
         }
-        // Reuse updateNSView's display lines; expandedHunkRange would re-run the diffDisplayLines FFI per line (O(n^2)).
         return groupStripeColor(
             for: line,
             groupRange: DiffGutterGrouping.expandedChangedRange(
