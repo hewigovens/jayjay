@@ -1,5 +1,7 @@
 mod owner;
 
+use std::ops::Range;
+
 use gpui::{ClipboardItem, Context, KeyDownEvent, ScrollHandle, point, px};
 
 use super::{CaretBlink, LineEdit, LineEditKeyResult};
@@ -36,6 +38,11 @@ impl LineInput {
 
     pub(crate) fn set_text(&mut self, text: impl Into<String>) {
         self.edit.set_text(text);
+        self.reveal_cursor_edge();
+    }
+
+    pub(crate) fn replace_range(&mut self, range: Range<usize>, text: &str) {
+        self.edit.replace_range(range, text);
         self.reveal_cursor_edge();
     }
 

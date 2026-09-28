@@ -187,3 +187,48 @@ fn ancestors_filter_includes_merge_parents_but_excludes_other_heads() {
     descriptions.sort_unstable();
     assert_eq!(descriptions, ["base", "left", "merge rewritten", "right"]);
 }
+
+#[test]
+fn revset_vocabulary_offers_the_refs_tags_and_aliases_of_the_repository() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+
+    run_jj(&["-R", repo_str, "bookmark", "create", "feature"]);
+    // jj names a bookmark it cannot read as a symbol by its quoted symbol, which is what a completion inserts.
+    run_jj(&["-R", repo_str, "bookmark", "create", r#""fix-a|b""#]);
+    run_jj(&["-R", repo_str, "tag", "set", "v1.0.0", "-r", "@"]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        "revset-aliases.wip",
+        "description(wip)",
+    ]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        r#"revset-aliases."reviewed()""#,
+        "@",
+    ]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let vocabulary = repo.revset_vocabulary(&repo.list_bookmarks().expect("bookmarks"));
+    let symbols = |names: &[jayjay_core::RevsetName]| {
+        names
+            .iter()
+            .map(|name| name.symbol.clone())
+            .collect::<Vec<_>>()
+    };
+
+    assert!(symbols(&vocabulary.bookmarks).contains(&"feature".to_owned()));
+    assert!(symbols(&vocabulary.bookmarks).contains(&"\"fix-a|b\"".to_owned()));
+    assert!(symbols(&vocabulary.tags).contains(&"v1.0.0".to_owned()));
+    assert!(symbols(&vocabulary.aliases).contains(&"wip".to_owned()));
+    assert!(symbols(&vocabulary.aliases).contains(&"reviewed(".to_owned()));
+}

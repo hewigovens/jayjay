@@ -23,7 +23,7 @@ impl Repo {
         user_email: &str,
         expression: &str,
     ) -> Result<Arc<UserRevsetExpression>, RevsetParseError> {
-        let extensions = self.revset_extensions();
+        let extensions = Self::revset_extensions();
         let path_converter = self.path_converter();
         let context = RevsetParseContext {
             aliases_map,
@@ -38,7 +38,7 @@ impl Repo {
         revset::parse(&mut RevsetDiagnostics::new(), expression, &context)
     }
 
-    pub(crate) fn revset_extensions(&self) -> RevsetExtensions {
+    pub(crate) fn revset_extensions() -> RevsetExtensions {
         let mut extensions = RevsetExtensions::new();
         extensions.add_custom_function("trunk", Self::trunk_revset_function);
         extensions.add_custom_function(

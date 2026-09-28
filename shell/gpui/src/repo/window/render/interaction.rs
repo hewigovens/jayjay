@@ -39,6 +39,8 @@ impl RepoWindow {
             self.close_find(cx);
         } else if self.file_column.filter.is_some() {
             self.dismiss_file_filter(window, cx);
+        } else if self.revset_completions.take().is_some() {
+            cx.notify();
         } else if self.revset_editor.is_some() {
             self.close_revset_editor(cx);
         } else if self.diff_edit_active() {

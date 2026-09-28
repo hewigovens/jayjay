@@ -9,23 +9,31 @@ struct RevsetPanelContent: View {
 
     let actions: any RevsetActions
     let bookmarks: [BookmarkInfo]
+    let vocabulary: RevsetVocabulary
     let onDismiss: () -> Void
     private let revset: String
 
     @State private var query: String
     @State private var error: String?
+    /// Counts through the completions first, then `rows`.
     @State private var selectedIndex: Int?
-    @FocusState private var isFieldFocused: Bool
+    @State private var completions: [RevsetCompletion] = []
+    @State private var edit: FilterFieldEdit?
+    @State private var focusRequest = 0
+    @Environment(\.jayjayFontSize) private var fontSize
+    @Environment(\.jayjayFontFamily) private var fontFamily
 
     init(
         actions: any RevsetActions,
         bookmarks: [BookmarkInfo],
+        vocabulary: RevsetVocabulary,
         query: String = "",
         error: String? = nil,
         onDismiss: @escaping () -> Void
     ) {
         self.actions = actions
         self.bookmarks = bookmarks
+        self.vocabulary = vocabulary
         self.onDismiss = onDismiss
         revset = actions.revsetFilter.revset
         _query = State(initialValue: query)
@@ -55,10 +63,14 @@ struct RevsetPanelContent: View {
             ScrollView(.vertical) {
                 VStack(alignment: .leading, spacing: 0) {
                     let rows = rows
+                    if !completions.isEmpty {
+                        sectionTitle("Completions")
+                        RevsetCompletionRows(completions: completions, selected: selectedIndex, onPick: accept)
+                    }
                     section("Current", rows.filter { $0.kind == .current })
                     section("Bookmarks", rows.filter { $0.kind == .bookmark })
                     section("Recent", rows.filter { $0.kind == .recent })
-                    if rows.isEmpty {
+                    if rows.isEmpty, completions.isEmpty {
                         Text("Return applies it as a revset")
                             .jayjayFont(12)
                             .foregroundStyle(.secondary)
@@ -74,8 +86,6 @@ struct RevsetPanelContent: View {
         }
         .glassEffect(in: RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .paletteKeyNavigation(onMove: move, onEscape: onDismiss)
-        .onAppear { isFieldFocused = true }
         .onChange(of: query) {
             error = nil
             selectedIndex = nil
@@ -87,12 +97,19 @@ struct RevsetPanelContent: View {
             Image(systemName: error == nil ? "line.3.horizontal.decrease" : "exclamationmark.triangle")
                 .foregroundStyle(error == nil ? AnyShapeStyle(.secondary) : AnyShapeStyle(.red))
                 .frame(width: 14)
-            TextField("Revset, bookmark or preset", text: $query)
-                .textFieldStyle(.plain)
-                .jayjayFont(13, design: .monospaced)
-                .focused($isFieldFocused)
-                .onSubmit(submit)
-                .accessibilityIdentifier(AID.Toolbar.revsetField)
+            FilterField(
+                text: $query,
+                placeholder: "Revset, bookmark or preset",
+                accessibilityIdentifier: AID.Toolbar.revsetField,
+                focusGeneration: focusRequest,
+                isPlain: true,
+                font: fontFamily.scaledNSFont(13, baseSize: fontSize, monospaced: true),
+                edit: edit,
+                onCaretChange: caretMoved,
+                onMove: move,
+                onSubmit: submit,
+                onCancel: onDismiss
+            )
         }
         .padding(.horizontal, 12)
         .frame(height: Self.fieldHeight)
@@ -117,7 +134,7 @@ struct RevsetPanelContent: View {
                     apply(preset.revset)
                 } label: {
                     Text(preset.label)
-                        .jayjayFont(12, weight: .medium)
+                        .jayjayFont(12)
                         .foregroundStyle(isActive ? Color.accentColor : .primary)
                         .padding(.horizontal, 10)
                         .frame(height: 24)
@@ -134,19 +151,23 @@ struct RevsetPanelContent: View {
     @ViewBuilder
     private func section(_ title: String, _ sectionRows: [RevsetSuggestion]) -> some View {
         if !sectionRows.isEmpty {
-            Text(title)
-                .jayjayFont(11, weight: .semibold)
-                .foregroundStyle(.secondary)
-                .padding(.horizontal, 14)
-                .frame(height: Self.sectionTitleHeight, alignment: .bottomLeading)
+            sectionTitle(title)
             ForEach(sectionRows, id: \.id) { row in
                 rowView(row)
             }
         }
     }
 
+    private func sectionTitle(_ title: String) -> some View {
+        Text(title)
+            .jayjayFont(11, weight: .semibold)
+            .foregroundStyle(.secondary)
+            .padding(.horizontal, 14)
+            .frame(height: Self.sectionTitleHeight, alignment: .bottomLeading)
+    }
+
     private func rowView(_ row: RevsetSuggestion) -> some View {
-        let isSelected = selectedIndex.map { rows.indices.contains($0) && rows[$0].id == row.id } ?? false
+        let isSelected = selectedRow?.id == row.id
         return Button {
             activate(row)
         } label: {
@@ -197,15 +218,40 @@ struct RevsetPanelContent: View {
         .frame(height: 30)
     }
 
-    private func move(_ delta: Int) {
-        guard !rows.isEmpty else { return }
+    private var selectedRow: RevsetSuggestion? {
+        guard let index = selectedIndex.map({ $0 - completions.count }), rows.indices.contains(index) else {
+            return nil
+        }
+        return rows[index]
+    }
+
+    /// A bookmark typed as the whole query is left to the Bookmarks rows, which match on the whole query.
+    private func caretMoved(text: String, caret: Int) {
+        let wholeQuery = UInt32(text.utf16.count)
+        completions = revsetCompletions(text: text, cursor: UInt32(caret), vocabulary: vocabulary)
+            .filter { $0.kind != .bookmark || $0.len != wholeQuery }
+    }
+
+    private func accept(_ completion: RevsetCompletion) {
+        edit = completion.edit(id: (edit?.id ?? 0) + 1)
+        selectedIndex = nil
+    }
+
+    private func move(_ delta: Int) -> Bool {
+        let count = completions.count + rows.count
+        guard count > 0 else { return true }
         let current = selectedIndex ?? (delta > 0 ? -1 : 0)
-        selectedIndex = max(0, min(rows.count - 1, current + delta))
+        selectedIndex = max(0, min(count - 1, current + delta))
+        return true
     }
 
     private func submit() {
-        if let selectedIndex, rows.indices.contains(selectedIndex) {
-            activate(rows[selectedIndex])
+        if let selectedIndex, completions.indices.contains(selectedIndex) {
+            accept(completions[selectedIndex])
+            return
+        }
+        if let selectedRow {
+            activate(selectedRow)
             return
         }
         guard !trimmedQuery.isEmpty else {
@@ -222,7 +268,7 @@ struct RevsetPanelContent: View {
     private func activate(_ row: RevsetSuggestion) {
         if row.kind == .current {
             query = row.revset
-            isFieldFocused = true
+            focusRequest += 1
         } else {
             apply(row.revset)
         }

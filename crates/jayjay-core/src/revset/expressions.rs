@@ -12,6 +12,14 @@ pub fn ancestors_revset(change_id: &str) -> String {
     format!("::change_id({change_id})")
 }
 
+/// The name as a revset symbol: bare while jj reads it as one, quoted and escaped otherwise.
+pub(super) fn symbol_text(name: &str) -> String {
+    match parse_symbol(name) {
+        Ok(symbol) if symbol == name => symbol,
+        _ => format_string(name),
+    }
+}
+
 pub fn bookmark_filter_revset(name: &str, remote: Option<&str>) -> String {
     let head = bookmark_head_revset(name, remote);
     format!("{head}{BOOKMARK_STACK_JOIN}{head}")

@@ -337,3 +337,129 @@ fn an_edit_left_through_the_popup_leaves_no_focus_ring(cx: &mut TestAppContext) 
         assert_eq!(view.focused_control(), None);
     });
 }
+
+#[gpui::test]
+fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+    let retype = |cx: &mut VisualTestContext, text: &str| {
+        click(cx, "revset-summary");
+        cx.simulate_keystrokes("cmd-a");
+        cx.simulate_input(text);
+        settle_visual(cx);
+    };
+
+    retype(cx, "@ | main");
+    assert!(
+        cx.debug_bounds("revset-completion-0").is_some(),
+        "the bookmark itself is offered"
+    );
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(
+            view.view_model().read(cx).revset(),
+            "@ | main",
+            "Return applies the revset while no row is picked"
+        );
+        assert!(view.revset_editor_text().is_none());
+    });
+    assert!(cx.debug_bounds("revset-completions").is_none());
+
+    retype(cx, "min");
+    let bar = cx.debug_bounds("revset-bar").expect("revset bar");
+    let list = cx.debug_bounds("revset-completions").expect("list");
+    assert_eq!(
+        (list.origin.x, list.size.width),
+        (bar.origin.x, bar.size.width),
+        "the list sits under the bar, edge to edge"
+    );
+    cx.simulate_keystrokes("down enter");
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.revset_editor_text()),
+        Some("mine()".to_owned()),
+        "Down picks a row and Return inserts it"
+    );
+    assert!(cx.debug_bounds("revset-completions").is_none());
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).revset(), "mine()");
+    });
+
+    retype(cx, "au");
+    cx.simulate_keystrokes("down down enter");
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.revset_editor_text()),
+        Some("author_date(".to_owned())
+    );
+
+    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_input("au");
+    cx.simulate_keystrokes("escape");
+    settle_visual(cx);
+    assert!(cx.debug_bounds("revset-completions").is_none());
+    assert_eq!(
+        view.read_with(cx, |view, _| view.revset_editor_text()),
+        Some("au".to_owned()),
+        "Escape closes the list before the editor"
+    );
+    cx.simulate_keystrokes("escape");
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, _| view.revset_editor_text().is_none()));
+}
+
+#[gpui::test]
+fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    click(cx, "revset-presets");
+    let bar = cx.debug_bounds("revset-bar").expect("revset bar");
+    let popup = cx.debug_bounds("revset-popup").expect("popup");
+    assert_eq!(
+        (popup.origin.x, popup.size.width),
+        (bar.origin.x, bar.size.width),
+        "the popup sits under the bar, edge to edge"
+    );
+    cx.simulate_input("ma");
+    settle_visual(cx);
+    assert!(
+        cx.debug_bounds("revset-popup-completions").is_none(),
+        "a bookmark typed alone is left to the popup's Bookmarks rows"
+    );
+    assert!(cx.debug_bounds("revset-popup-row-Bookmark-main").is_some());
+
+    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_input("@ | mai");
+    settle_visual(cx);
+    assert!(
+        cx.debug_bounds("revset-completion-0").is_some(),
+        "inside an expression the Bookmarks rows match nothing, so the bookmark completes"
+    );
+
+    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_input("@ | min");
+    settle_visual(cx);
+    assert!(cx.debug_bounds("revset-popup-completions").is_some());
+    cx.simulate_keystrokes("down enter");
+    settle_visual(cx);
+    assert!(
+        view.read_with(cx, |view, _| view.revset_popup_open()),
+        "a completion fills the field instead of applying"
+    );
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).revset(), "@ | mine()");
+        assert!(!view.revset_popup_open());
+    });
+}

@@ -9,7 +9,7 @@ use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
 use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
-use super::super::revset_filter::render_revset_popup;
+use super::super::revset_filter::{render_revset_completions, render_revset_popup};
 use super::super::sidebar::sidebar;
 use super::super::sidebar_visibility::SIDEBAR_SLIDE;
 use super::super::status_bar::status_bar;
@@ -113,12 +113,18 @@ impl Render for RepoWindow {
                 render_revset_popup(
                     state,
                     &self.vm.read(cx).revset_filter,
+                    self.revset_popup_completions(cx),
                     self.revset_suggestions(cx),
                     bar,
                     &t,
                     &cx.entity(),
                 )
             });
+        let revset_completions_overlay = self
+            .revset_completions
+            .as_ref()
+            .zip(self.revset_bar_bounds.get())
+            .map(|(state, bar)| render_revset_completions(state, bar, &t, &cx.entity()));
 
         let mut root = self.render_root(&t, cx);
 
@@ -217,6 +223,9 @@ impl Render for RepoWindow {
         }
         if let Some(menu) = bookmark_picker_overlay {
             root = root.child(menu);
+        }
+        if let Some(list) = revset_completions_overlay {
+            root = root.child(list);
         }
         if let Some(menu) = revset_popup_overlay {
             root = root.child(menu);

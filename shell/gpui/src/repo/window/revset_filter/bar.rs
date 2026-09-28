@@ -35,6 +35,8 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
         t.toolbar_group_bg
     };
 
+    let bordered = editing || focused == Some(FocusStop::RevsetFilter);
+
     let mut bar = div()
         .id("revset-bar")
         .debug_selector(|| "revset-bar".to_owned())
@@ -50,13 +52,14 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
         .pr(px(if narrowed && !editing { 4. } else { 10. }))
         .rounded_full()
         .bg(rgb(background))
-        .when(editing || focused == Some(FocusStop::RevsetFilter), |el| {
+        .when(bordered, |el| {
             el.border_1().border_color(rgb(t.selected_accent))
         })
         .child(
+            // An absolute child starts inside the padding and the border, which would shift what hangs under the bar.
             canvas(move |b, _, _| bounds.set(Some(b)), |_, _, _, _| {})
                 .absolute()
-                .size_full(),
+                .inset(px(if bordered { -1. } else { 0. })),
         );
     if has_previous && !editing {
         bar = bar.child(

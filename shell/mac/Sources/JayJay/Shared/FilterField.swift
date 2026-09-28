@@ -1,6 +1,13 @@
 import AppKit
 import SwiftUI
 
+/// A replacement the owner asks the field to make; a new `id` applies it once.
+struct FilterFieldEdit: Equatable {
+    let id: Int
+    let range: NSRange
+    let text: String
+}
+
 /// SwiftUI's TextField ignores programmatic focus and Escape in the repo window.
 struct FilterField: NSViewRepresentable {
     @Binding var text: String
@@ -11,6 +18,13 @@ struct FilterField: NSViewRepresentable {
     var endsEditingOnOutsideClick = false
     var placesCaretAtEnd = false
     var font: NSFont?
+    var edit: FilterFieldEdit?
+    /// The text and the caret's UTF-16 offset, after typing or moving the caret.
+    var onCaretChange: ((String, Int) -> Void)?
+    /// Up and Down, for owners that navigate a list of their own; false leaves the key to the field.
+    var onMove: ((Int) -> Bool)?
+    /// A click in a window the owner shows for this field, such as a completion list, keeps the edit going.
+    var ownsWindow: ((NSWindow?) -> Bool)?
     let onSubmit: () -> Void
     let onCancel: () -> Void
     var onEndEditing: (() -> Void)?
@@ -54,6 +68,13 @@ struct FilterField: NSViewRepresentable {
         if refocus {
             field.window?.makeFirstResponder(field)
         }
+        if let edit, context.coordinator.appliedEdit != edit.id {
+            context.coordinator.appliedEdit = edit.id
+            // Inserting changes the bound text, which a view update must not do.
+            DispatchQueue.main.async {
+                (field.currentEditor() as? NSTextView)?.insertText(edit.text, replacementRange: edit.range)
+            }
+        }
     }
 
     func makeCoordinator() -> Coordinator {
@@ -81,6 +102,7 @@ struct FilterField: NSViewRepresentable {
 
     final class Coordinator: NSObject, NSTextFieldDelegate {
         var parent: FilterField
+        var appliedEdit: Int?
         private var clickMonitor: Any?
 
         init(parent: FilterField) {
@@ -88,8 +110,9 @@ struct FilterField: NSViewRepresentable {
         }
 
         func watchOutsideClicks(of field: NSTextField) {
-            clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak field] event in
+            clickMonitor = NSEvent.addLocalMonitorForEvents(matching: [.leftMouseDown, .rightMouseDown]) { [weak self, weak field] event in
                 if let field, let window = field.window, field.currentEditor() != nil,
+                   self?.parent.ownsWindow?(event.window) != true,
                    event.window !== window || !field.bounds.contains(field.convert(event.locationInWindow, from: nil))
                 {
                     window.makeFirstResponder(nil)
@@ -108,22 +131,49 @@ struct FilterField: NSViewRepresentable {
         func controlTextDidChange(_ notification: Notification) {
             guard let field = notification.object as? NSTextField else { return }
             parent.text = field.stringValue
+            reportCaret(of: field)
         }
 
-        func controlTextDidEndEditing(_: Notification) {
+        func controlTextDidBeginEditing(_ notification: Notification) {
+            inlinePredictions(in: notification, enabled: false)
+        }
+
+        func controlTextDidEndEditing(_ notification: Notification) {
+            inlinePredictions(in: notification, enabled: true)
             parent.onEndEditing?()
         }
 
-        func control(_: NSControl, textView _: NSTextView, doCommandBy selector: Selector) -> Bool {
+        func control(_ control: NSControl, textView _: NSTextView, doCommandBy selector: Selector) -> Bool {
             switch selector {
                 case #selector(NSResponder.cancelOperation(_:)):
                     parent.onCancel()
                 case #selector(NSResponder.insertNewline(_:)):
                     parent.onSubmit()
+                case #selector(NSResponder.moveUp(_:)), #selector(NSResponder.moveDown(_:)):
+                    return parent.onMove?(selector == #selector(NSResponder.moveUp(_:)) ? -1 : 1) ?? false
                 default:
+                    // The caret has not moved yet when the command arrives.
+                    DispatchQueue.main.async { [weak self, weak control] in
+                        if let field = control as? NSTextField {
+                            self?.reportCaret(of: field)
+                        }
+                    }
                     return false
             }
             return true
+        }
+
+        private func reportCaret(of field: NSTextField) {
+            guard let onCaretChange = parent.onCaretChange, let editor = field.currentEditor() else { return }
+            onCaretChange(field.stringValue, editor.selectedRange.location)
+        }
+
+        /// The field editor is shared with the window's other fields, so predictions end with the session.
+        private func inlinePredictions(in notification: Notification, enabled: Bool) {
+            guard let editor = (notification.object as? NSTextField)?.currentEditor() as? NSTextView else {
+                return
+            }
+            editor.inlinePredictionType = enabled ? .default : .no
         }
     }
 }

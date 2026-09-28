@@ -5,12 +5,19 @@ import SwiftUI
 struct RevsetBar: View {
     let actions: any RevsetActions
     let bookmarks: [BookmarkInfo]
+    let vocabulary: RevsetVocabulary
     let editRequest: Int
 
     @State private var anchor = PickerAnchor()
     @State private var panel = PickerPanel()
     @State private var isEditing = false
     @State private var draft = ""
+    @State private var completionPanel = RevsetCompletionPanel()
+    @State private var completions: [RevsetCompletion] = []
+    @State private var picked: Int?
+    @State private var edit: FilterFieldEdit?
+    /// Inserting a completion moves the caret, which must not reopen the list on what was just inserted.
+    @State private var skipsCaretChange = false
     @Environment(\.jayjayFontSize) private var fontSize
     @Environment(\.jayjayFontFamily) private var fontFamily
 
@@ -48,9 +55,16 @@ struct RevsetBar: View {
                     endsEditingOnOutsideClick: true,
                     placesCaretAtEnd: true,
                     font: fontFamily.scaledNSFont(11, baseSize: fontSize, monospaced: true),
+                    edit: edit,
+                    onCaretChange: caretMoved,
+                    onMove: movePick,
+                    ownsWindow: { [completionPanel] in $0 === completionPanel },
                     onSubmit: submitDraft,
-                    onCancel: { isEditing = false },
-                    onEndEditing: { isEditing = false }
+                    onCancel: cancel,
+                    onEndEditing: {
+                        showCompletions([])
+                        isEditing = false
+                    }
                 )
             } else {
                 summary
@@ -133,10 +147,61 @@ struct RevsetBar: View {
     private func beginEditing() {
         panel.dismiss()
         draft = revset
+        edit = nil
+        skipsCaretChange = false
         isEditing = true
     }
 
+    private func caretMoved(text: String, caret: Int) {
+        if skipsCaretChange {
+            skipsCaretChange = false
+            return
+        }
+        showCompletions(revsetCompletions(text: text, cursor: UInt32(caret), vocabulary: vocabulary))
+    }
+
+    private func showCompletions(_ list: [RevsetCompletion], picked: Int? = nil) {
+        completions = list
+        self.picked = picked
+        guard !list.isEmpty, let anchorView = anchor.view else {
+            completionPanel.dismiss()
+            return
+        }
+        completionPanel.show(
+            under: anchorView,
+            rows: RevsetCompletionRows(completions: list, selected: picked, onPick: accept),
+            fontSize: fontSize,
+            fontFamily: fontFamily
+        )
+    }
+
+    private func movePick(_ delta: Int) -> Bool {
+        guard !completions.isEmpty else { return false }
+        let next = picked.map { min(max($0 + delta, 0), completions.count - 1) } ?? 0
+        showCompletions(completions, picked: next)
+        return true
+    }
+
+    private func accept(_ completion: RevsetCompletion) {
+        skipsCaretChange = true
+        edit = completion.edit(id: (edit?.id ?? 0) + 1)
+        showCompletions([])
+    }
+
+    private func cancel() {
+        if completions.isEmpty {
+            isEditing = false
+        } else {
+            showCompletions([])
+        }
+    }
+
     private func submitDraft() {
+        if let picked, completions.indices.contains(picked) {
+            accept(completions[picked])
+            return
+        }
+        showCompletions([])
         let text = draft.trimmingCharacters(in: .whitespacesAndNewlines)
         isEditing = false
         guard !text.isEmpty, text != revset else { return }
@@ -155,6 +220,7 @@ struct RevsetBar: View {
         let content = RevsetPanelContent(
             actions: actions,
             bookmarks: bookmarks,
+            vocabulary: vocabulary,
             query: query,
             error: error,
             onDismiss: { [weak panel] in panel?.dismiss() }

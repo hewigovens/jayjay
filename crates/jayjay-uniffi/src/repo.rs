@@ -114,6 +114,15 @@ fn revset_presets() -> Vec<RevsetPreset> {
 }
 
 #[uniffi::export]
+fn revset_completions(
+    text: String,
+    cursor: u32,
+    vocabulary: jayjay_core::RevsetVocabulary,
+) -> Vec<jayjay_core::RevsetCompletion> {
+    jayjay_core::revset_completions(&text, cursor, &vocabulary)
+}
+
+#[uniffi::export]
 fn evolog_rows(
     entries: Vec<EvologEntry>,
     hide_snapshots: bool,
@@ -935,6 +944,10 @@ impl JayJayRepo {
 
     fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {
         Ok(self.inner.list_bookmarks()?)
+    }
+
+    fn revset_vocabulary(&self, bookmarks: Vec<BookmarkInfo>) -> jayjay_core::RevsetVocabulary {
+        self.inner.revset_vocabulary(&bookmarks)
     }
 
     fn create_bookmark(&self, name: String, rev: String) -> Result<(), JayJayError> {

@@ -136,6 +136,16 @@ fixture_bookmark_diff() {
   )
 }
 
+# Bookmarks AppKit does not read as one word, and one jj has to name by a quoted symbol.
+fixture_revset_completion() {
+  copy_fixture simple revset-completion
+  (
+    cd "$fixtures/revset-completion"
+    jj bookmark create wip-1-extra -r @
+    jj bookmark create '"fix-a|b"' -r @
+  )
+}
+
 fixture_remote_bookmarks() {
   copy_fixture simple remote-bookmarks
   (
@@ -478,6 +488,7 @@ fixture_description_editing
 fixture_external_tools
 fixture_sync_cancel
 fixture_bookmark_diff
+fixture_revset_completion
 fixture_remote_bookmarks
 fixture_formats
 fixture_image_diff

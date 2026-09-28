@@ -31,6 +31,7 @@ use super::commit_box::CommitBoxState;
 use super::confirmation::Confirmation;
 use super::dag_drag::DagRebaseRequest;
 use super::repo_switcher::RepoSwitcherState;
+use super::revset_filter::RevsetCompletionState;
 use super::stacked_pr::StackedPrState;
 use super::{
     ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState, PrImportState,
@@ -56,6 +57,7 @@ pub struct RepoWindow {
     pub(crate) revset_editor_had_focus: bool,
     pub(crate) revset_popup: Option<super::revset_filter::RevsetPopupState>,
     pub(crate) revset_bar_bounds: PanelBoundsSlot,
+    pub(crate) revset_completions: Option<RevsetCompletionState>,
     pub(crate) pending_reveal: Option<(String, String)>,
     pub(crate) diff: DiffPanelState,
     pub(crate) diff_edit: DiffEditState,
@@ -397,6 +399,7 @@ impl RepoWindow {
             revset_editor_had_focus: false,
             revset_popup: None,
             revset_bar_bounds: PanelBoundsSlot::default(),
+            revset_completions: None,
             pending_reveal: None,
             diff: DiffPanelState::default(),
             diff_edit: DiffEditState::default(),

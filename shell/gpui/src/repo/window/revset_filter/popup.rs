@@ -3,12 +3,13 @@ use gpui::{
     ParentElement, Pixels, SharedString, StatefulInteractiveElement, Styled, div, point, px, rgb,
 };
 use jayjay_core::{
-    RevsetFilterState, RevsetSuggestion, RevsetSuggestionKind, default_revset_preset,
-    revset_presets,
+    RevsetCompletion, RevsetFilterState, RevsetSuggestion, RevsetSuggestionKind,
+    default_revset_preset, revset_presets,
 };
 
 use super::super::RepoWindow;
 use super::super::picker::{self, PickerQuery};
+use super::completions::completion_row;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
@@ -35,6 +36,7 @@ impl RevsetPopupState {
 pub(crate) fn render_revset_popup(
     state: &RevsetPopupState,
     filter: &RevsetFilterState,
+    completions: Vec<RevsetCompletion>,
     suggestions: Vec<RevsetSuggestion>,
     bar: gpui::Bounds<Pixels>,
     t: &Theme,
@@ -47,6 +49,7 @@ pub(crate) fn render_revset_popup(
         panel(
             state,
             filter,
+            completions,
             suggestions,
             f32::from(bar.size.width),
             t,
@@ -61,12 +64,31 @@ pub(crate) fn render_revset_popup(
 fn panel(
     state: &RevsetPopupState,
     filter: &RevsetFilterState,
+    completions: Vec<RevsetCompletion>,
     suggestions: Vec<RevsetSuggestion>,
     width: f32,
     t: &Theme,
     view: &Entity<RepoWindow>,
 ) -> AnyElement {
     let mut rows = Vec::new();
+    if !completions.is_empty() {
+        rows.push(picker::section_header(
+            "revset-popup-completions",
+            "Completions",
+            t,
+        ));
+    }
+    let first_suggestion = completions.len();
+    for (index, completion) in completions.into_iter().enumerate() {
+        let view = view.clone();
+        let selected = state.query.selected == Some(index);
+        let picked = completion.clone();
+        rows.push(completion_row(index, &completion, selected, t, move |cx| {
+            view.update(cx, |view, cx| {
+                view.accept_revset_popup_completion(&picked, cx)
+            });
+        }));
+    }
     for (kind, title, id) in [
         (
             RevsetSuggestionKind::Current,
@@ -96,13 +118,13 @@ fn panel(
         for (index, suggestion) in section {
             rows.push(suggestion_row(
                 suggestion.clone(),
-                state.query.selected == Some(index),
+                state.query.selected == Some(first_suggestion + index),
                 t,
                 view,
             ));
         }
     }
-    if suggestions.is_empty() {
+    if rows.is_empty() {
         rows.push(picker::empty("Return applies it as a revset", t));
     }
 
@@ -209,7 +231,6 @@ fn chips(current: &str, t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
                 .rounded_full()
                 .bg(rgb(background))
                 .text_size(ui_font_size(12.))
-                .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(foreground))
                 .cursor_pointer()
                 .hover(|s| s.bg(rgb(t.row_alt_bg)))

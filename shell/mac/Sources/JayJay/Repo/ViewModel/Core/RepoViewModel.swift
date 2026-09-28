@@ -67,6 +67,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     var compareToId: String?
     var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
+    /// Refs, tags and aliases the revset bar completes from; loaded with the graph, not on each keystroke.
+    var revsetVocabulary = RevsetVocabulary(aliases: [], bookmarks: [], tags: [])
     var workspacesByName: [String: WorkspaceInfo] {
         Dictionary(uniqueKeysWithValues: workspaces.map { ($0.name, $0) })
     }

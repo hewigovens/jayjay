@@ -1,7 +1,12 @@
 use gpui::{Context, KeyDownEvent, Window};
-use jayjay_core::{RevsetSuggestion, RevsetSuggestionKind, typed_revset};
+use jayjay_core::{
+    RevsetCompletion, RevsetCompletionKind, RevsetSuggestion, RevsetSuggestionKind, typed_revset,
+};
 
 use super::super::{FocusStop, RepoWindow};
+use super::completions::{
+    CompletionOutcome, RevsetCompletionState, completions_at_caret, insert_completion,
+};
 use super::popup::RevsetPopupState;
 use crate::app::error_text;
 use crate::ui::input::LineInput;
@@ -132,6 +137,7 @@ impl RepoWindow {
         if self.revset_editor.is_some() {
             LineInput::hide_for_owner(self, cx, Self::revset_editor_input);
             self.revset_editor = None;
+            self.revset_completions = None;
             // A clicked-in edit must not leave a focus ring behind; Tab moved it on already.
             if self.focused_control == Some(FocusStop::RevsetFilter) {
                 self.focused_control = None;
@@ -145,6 +151,26 @@ impl RepoWindow {
     }
 
     pub(super) fn handle_revset_editor_key(
+        &mut self,
+        ev: &KeyDownEvent,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        let outcome = self
+            .revset_completions
+            .as_mut()
+            .and_then(|completions| completions.handle_key(ev));
+        match outcome {
+            Some(CompletionOutcome::Dismiss) => self.revset_completions = None,
+            Some(CompletionOutcome::Accept(index)) => self.accept_revset_completion(index, cx),
+            Some(CompletionOutcome::Consumed) => {}
+            None => return self.handle_revset_editor_text_key(ev, window, cx),
+        }
+        cx.notify();
+        true
+    }
+
+    fn handle_revset_editor_text_key(
         &mut self,
         ev: &KeyDownEvent,
         window: &mut Window,
@@ -174,10 +200,66 @@ impl RepoWindow {
                     return false;
                 }
                 LineInput::show_for_owner(self, cx, Self::revset_editor_input);
+                self.refresh_revset_completions(cx);
                 cx.notify();
             }
         }
         true
+    }
+
+    fn refresh_revset_completions(&mut self, cx: &mut Context<Self>) {
+        let entries = self.revset_editor.as_ref().map_or_else(Vec::new, |input| {
+            completions_at_caret(input, &self.vm.read(cx).vocabulary)
+        });
+        self.revset_completions = RevsetCompletionState::new(entries);
+    }
+
+    pub(crate) fn accept_revset_completion(&mut self, index: usize, cx: &mut Context<Self>) {
+        let Some(entry) = self
+            .revset_completions
+            .take()
+            .and_then(|completions| completions.entry(index).cloned())
+        else {
+            return;
+        };
+        let Some(input) = self.revset_editor.as_mut() else {
+            return;
+        };
+        insert_completion(input, &entry);
+        LineInput::show_for_owner(self, cx, Self::revset_editor_input);
+        cx.notify();
+    }
+
+    /// A bookmark typed as the whole query is left to the popup's own Bookmarks rows, which match on the whole query.
+    pub(in super::super) fn revset_popup_completions(
+        &self,
+        cx: &gpui::App,
+    ) -> Vec<RevsetCompletion> {
+        let Some(popup) = self.revset_popup.as_ref() else {
+            return Vec::new();
+        };
+        let query = popup.query.input.text();
+        let whole_query = query.encode_utf16().count() as u32;
+        let mut completions =
+            completions_at_caret(&popup.query.input, &self.vm.read(cx).vocabulary);
+        completions.retain(|completion| {
+            completion.kind != RevsetCompletionKind::Bookmark || completion.len != whole_query
+        });
+        completions
+    }
+
+    pub(super) fn accept_revset_popup_completion(
+        &mut self,
+        completion: &RevsetCompletion,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(popup) = self.revset_popup.as_mut() {
+            insert_completion(&mut popup.query.input, completion);
+            popup.query.selected = None;
+            popup.error = None;
+            LineInput::show_for_owner(self, cx, Self::revset_popup_input);
+        }
+        cx.notify();
     }
 
     pub(in super::super) fn toggle_revset_popup(
@@ -254,13 +336,15 @@ impl RepoWindow {
         ev: &KeyDownEvent,
         cx: &mut Context<Self>,
     ) -> bool {
+        let completions = self.revset_popup_completions(cx);
         let suggestions = self.revset_suggestions(cx);
         let Some(popup) = self.revset_popup.as_mut() else {
             return false;
         };
+        let rows = completions.len() + suggestions.len();
         if let Some(direction) = list_nav_from_key(ev, ListNavKeys::COMMAND_PALETTE) {
-            if !suggestions.is_empty() {
-                let last = suggestions.len() - 1;
+            if rows > 0 {
+                let last = rows - 1;
                 popup.query.selected = Some(match (popup.query.selected, direction) {
                     (None, _) => 0,
                     (Some(index), ListNav::Previous) => index.saturating_sub(1),
@@ -273,12 +357,14 @@ impl RepoWindow {
         match ev.keystroke.key.as_str() {
             "escape" => self.close_revset_popup(cx),
             "enter" => {
-                if let Some(suggestion) = popup
-                    .query
-                    .selected
-                    .and_then(|index| suggestions.get(index).cloned())
-                {
-                    self.activate_revset_suggestion(suggestion, cx);
+                if let Some(index) = popup.query.selected {
+                    if let Some(completion) = completions.get(index) {
+                        self.accept_revset_popup_completion(completion, cx);
+                    } else if let Some(suggestion) =
+                        suggestions.get(index - completions.len()).cloned()
+                    {
+                        self.activate_revset_suggestion(suggestion, cx);
+                    }
                     return true;
                 }
                 let text = popup.query.input.text().trim().to_owned();

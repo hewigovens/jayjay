@@ -8,8 +8,8 @@ use std::time::Duration;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DiffStats, GraphEntry, Repo, WorkspaceInfo,
-    default_revset_depth,
+    BookmarkInfo, ChangeInfo, CoreResult, DiffStats, GraphEntry, Repo, RevsetVocabulary,
+    WorkspaceInfo, default_revset_depth,
 };
 
 use super::{PendingRefresh, RepoViewModel};
@@ -202,6 +202,7 @@ impl RepoViewModel {
                     .revset_depth()
                     .is_some_and(|depth| entries.len() >= depth as usize);
                 self.graph.bookmarks = Arc::new(data.bookmarks);
+                self.vocabulary = data.vocabulary;
                 if let Some(workspaces) = data.workspaces {
                     self.graph.workspaces = Arc::new(workspaces);
                 }
@@ -327,6 +328,7 @@ impl RepoViewModel {
 struct RefreshData {
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
+    vocabulary: RevsetVocabulary,
     workspaces: Option<Vec<WorkspaceInfo>>,
     pr_host_name: Option<String>,
     working_copy_stats: Option<DiffStats>,
@@ -337,6 +339,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
     repo.refresh_working_copy()?;
     let entries = repo.log_graph(revset)?;
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
+    let vocabulary = repo.revset_vocabulary(&bookmarks);
     let workspaces = repo.workspace_list().ok();
     let pr_host_name = repo.pr_host_name();
     let working_copy_stats = repo.diff_stats("@").ok();
@@ -344,6 +347,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
     Ok(RefreshData {
         entries,
         bookmarks,
+        vocabulary,
         workspaces,
         pr_host_name,
         working_copy_stats,

@@ -3,7 +3,8 @@ use std::ops::Range;
 use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window, point};
 
 use super::super::TextArea;
-use super::utf16::offset_in_str_from_utf16;
+use jayjay_core::utf16::byte_offset;
+
 use crate::ui::input::{TextSelection, sanitize_single_line};
 
 impl EntityInputHandler for TextArea {
@@ -88,8 +89,8 @@ impl EntityInputHandler for TextArea {
         let new_selected_range = new_selected_range_utf16
             .as_ref()
             .map(|sel| {
-                let start = offset_in_str_from_utf16(new_text, sel.start);
-                let end = offset_in_str_from_utf16(new_text, sel.end);
+                let start = byte_offset(new_text, sel.start);
+                let end = byte_offset(new_text, sel.end);
                 range.start + start..range.start + end
             })
             .unwrap_or_else(|| range.start + new_text.len()..range.start + new_text.len());

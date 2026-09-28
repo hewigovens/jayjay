@@ -1,12 +1,17 @@
+mod completions;
 mod default;
 mod expressions;
 mod filter;
+mod functions;
 mod presets;
 mod recent;
 mod state;
 mod suggestions;
 mod typed;
 
+pub use completions::{
+    RevsetCompletion, RevsetCompletionKind, RevsetName, RevsetVocabulary, revset_completions,
+};
 pub use default::{
     DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, build_default_revset, default_revset_depth,
 };

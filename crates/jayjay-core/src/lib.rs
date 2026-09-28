@@ -41,6 +41,7 @@ pub mod theme;
 pub mod tools;
 pub mod trunk;
 mod types;
+pub mod utf16;
 
 #[cfg(feature = "repository")]
 pub use cli::run_app_cli_command;
@@ -69,10 +70,11 @@ pub use repo::{
 };
 #[cfg(feature = "repository")]
 pub use revset::{
-    BookmarkFilterTarget, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetFilter, RevsetFilterKind,
-    RevsetFilterState, RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, ancestors_revset,
+    BookmarkFilterTarget, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetCompletion,
+    RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState, RevsetName,
+    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, ancestors_revset,
     bookmark_filter_revset, build_default_revset, default_revset_depth, default_revset_preset,
-    revset_presets, typed_revset,
+    revset_completions, revset_presets, typed_revset,
 };
 pub use theme::{DiffThemeColors, ThemeSeed, change_id_prefix_color, diff_theme_colors};
 #[cfg(feature = "repository")]

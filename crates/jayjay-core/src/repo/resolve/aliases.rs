@@ -7,6 +7,7 @@ use jj_lib::revset::RevsetAliasesMap;
 use jj_lib::settings::UserSettings;
 
 use super::super::Repo;
+use crate::revset::RevsetName;
 use crate::types::*;
 
 const REVSET_ALIASES: &str = "revset-aliases";
@@ -24,6 +25,16 @@ struct AliasConfig {
 }
 
 impl Repo {
+    /// The aliases this config defines, under the names the revset parser accepts them by.
+    pub(crate) fn revset_aliases(&self) -> Vec<RevsetName> {
+        let Ok(aliases) = self.revset_aliases_map(self.get_repo().settings()) else {
+            return Vec::new();
+        };
+        let functions = aliases.function_names().map(RevsetName::called);
+        let symbols = aliases.symbol_names().map(RevsetName::bare);
+        functions.chain(symbols).collect()
+    }
+
     pub(crate) fn revset_aliases_map(
         &self,
         settings: &UserSettings,

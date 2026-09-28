@@ -27,6 +27,7 @@ mod review_marks;
 mod review_note_output;
 mod review_notes;
 mod review_snapshot;
+mod revset_vocabulary;
 mod stacked_pr;
 mod support;
 mod transaction;

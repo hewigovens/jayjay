@@ -21,8 +21,8 @@ use jayjay_core::dag::{DagLayout, OrderedSelection, SelectionGraph, SelectionSta
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, DiffHunk, DiffProjection,
-    DiffStats, FileDiffStats, GraphEntry, PrInfo, Repo, RevsetFilterState, WorkspaceInfo,
-    build_default_revset, default_revset_depth,
+    DiffStats, FileDiffStats, GraphEntry, PrInfo, Repo, RevsetFilterState, RevsetVocabulary,
+    WorkspaceInfo, build_default_revset, default_revset_depth,
 };
 use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewFileSnapshot, ReviewNoteStatus};
@@ -35,6 +35,7 @@ struct OpenedRepo {
     repo_root_path: String,
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
+    vocabulary: RevsetVocabulary,
     workspaces: Vec<WorkspaceInfo>,
     pr_host_name: Option<String>,
 }
@@ -126,6 +127,8 @@ pub struct RepoViewModel {
     pub(crate) ignore_whitespace: bool,
     pub revset_filter: RevsetFilterState,
     pub can_load_more: bool,
+    /// Refs, tags and aliases the revset field completes from; loaded with the graph, not on each keystroke.
+    pub(crate) vocabulary: RevsetVocabulary,
     pub(crate) detail_mode: DetailMode,
     pub(crate) annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
     avatar_in_flight: HashSet<String>,
@@ -239,6 +242,7 @@ impl RepoViewModel {
         let repo = Repo::open(&path)?;
         let entries = repo.log_graph(revset)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
+        let vocabulary = repo.revset_vocabulary(&bookmarks);
         let workspaces = repo.workspace_list().unwrap_or_default();
         let pr_host_name = repo.pr_host_name();
         Ok(OpenedRepo {
@@ -246,6 +250,7 @@ impl RepoViewModel {
             repo_root_path,
             entries,
             bookmarks,
+            vocabulary,
             workspaces,
             pr_host_name,
         })
@@ -261,6 +266,7 @@ impl RepoViewModel {
             repo_root_path,
             entries,
             bookmarks,
+            vocabulary,
             workspaces,
             pr_host_name,
         } = loaded;
@@ -303,6 +309,7 @@ impl RepoViewModel {
             can_load_more: default_revset_depth(&revset_filter.revset)
                 .is_some_and(|depth| changes.len() >= depth as usize),
             revset_filter,
+            vocabulary,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),
@@ -356,6 +363,7 @@ impl RepoViewModel {
             ignore_whitespace: false,
             revset_filter: RevsetFilterState::new(&build_default_revset(DEFAULT_REVSET_DEPTH)),
             can_load_more: false,
+            vocabulary: RevsetVocabulary::default(),
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
             avatar_in_flight: HashSet::new(),

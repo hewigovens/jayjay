@@ -3,9 +3,9 @@ use jayjay_core::{
     AnnotationLine, BookmarkFilterTarget, BookmarkInfo, ChecksStatus, CliStatus, FetchResult,
     GitSubmoduleStatus, InsertPosition, JjCommandResult, PrInfo, PrState, PullRequestImportPreview,
     PullRequestImportRemote, PullRequestImportSource, PullRequestImportWorkspace,
-    RemoteBookmarkTarget, RemoteSyncStatus, RevsetFilter, RevsetFilterKind, RevsetFilterState,
-    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, ShortId, WorkspaceInfo,
-    WorkspacePresence,
+    RemoteBookmarkTarget, RemoteSyncStatus, RevsetCompletion, RevsetCompletionKind, RevsetFilter,
+    RevsetFilterKind, RevsetFilterState, RevsetName, RevsetPreset, RevsetSuggestion,
+    RevsetSuggestionKind, RevsetVocabulary, ShortId, WorkspaceInfo, WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -27,6 +27,35 @@ pub struct RevsetFilterState {
     pub revset: String,
     pub previous: Option<String>,
     pub recent: Vec<String>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum RevsetCompletionKind {
+    Function,
+    Alias,
+    Bookmark,
+    Tag,
+}
+
+#[uniffi::remote(Record)]
+pub struct RevsetCompletion {
+    pub kind: RevsetCompletionKind,
+    pub text: String,
+    pub start: u32,
+    pub len: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct RevsetName {
+    pub name: String,
+    pub symbol: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct RevsetVocabulary {
+    pub aliases: Vec<RevsetName>,
+    pub bookmarks: Vec<RevsetName>,
+    pub tags: Vec<RevsetName>,
 }
 
 #[uniffi::remote(Enum)]

@@ -41,6 +41,7 @@ extension RepoContentView {
             RevsetBar(
                 actions: viewModel,
                 bookmarks: viewModel.bookmarks,
+                vocabulary: viewModel.revsetVocabulary,
                 editRequest: revsetEditRequest
             )
         }
