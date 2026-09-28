@@ -53,7 +53,6 @@ struct RevsetBar: View {
                 )
             } else {
                 summary
-                    .keyboardFocusStop(.revsetFilter, action: beginEditing)
                     .onTapGesture(perform: beginEditing)
                     .help("Edit the revset (⌘L)")
                     .accessibilityElement(children: .ignore)
@@ -80,6 +79,8 @@ struct RevsetBar: View {
             }
         }
         .background(PickerAnchorView(anchor: anchor))
+        // On the bar, not the summary: the summary leaves while editing, and unregistering it would drop the Tab position.
+        .keyboardFocusStop(.revsetFilter, action: beginEditing)
         .onChange(of: editRequest) {
             beginEditing()
         }

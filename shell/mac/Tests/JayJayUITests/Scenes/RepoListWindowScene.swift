@@ -16,7 +16,7 @@ final class RepoListWindowScene: SceneBase {
         XCTAssertGreaterThanOrEqual(initialFrame.width, 1000, "Repository window did not use its default width")
         XCTAssertGreaterThanOrEqual(initialFrame.height, 650, "Repository window did not use its default height")
         XCTAssertTrue(
-            repoWindow.toolbars.buttons["Filter"].waitForExistence(timeout: 10),
+            repoWindow.toolbars.buttons[AID.Toolbar.sidebarToggle].waitForExistence(timeout: 10),
             "Repository window lost its SwiftUI toolbar"
         )
         XCTAssertEqual(repoWindow.frame, initialFrame, "Repository window resized while installing its toolbar")
