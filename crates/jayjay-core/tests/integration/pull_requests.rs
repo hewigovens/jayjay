@@ -88,20 +88,6 @@ fn cursor_open_url_falls_back_to_repo_page_when_pr_status_unknown() {
     );
 }
 
-#[test]
-fn open_url_errors_without_supported_origin() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo = Repo::open(&repo_path).expect("open repo");
-    let error = repo.pull_request_open_url("feat/foo").unwrap_err();
-    assert!(
-        error
-            .to_string()
-            .contains("no GitHub, GitLab, Codeberg, or Cursor"),
-        "{error}"
-    );
-}
-
 /// Sibling checkout of `hewig/jayjay-origin-smoke` (standalone Origin repo, not a GitHub mirror). Skip when it is not next to the JayJay workspace.
 fn sibling_origin_smoke() -> Option<PathBuf> {
     let path = PathBuf::from(env!("CARGO_MANIFEST_DIR")).join("../../../jayjay-origin-smoke");

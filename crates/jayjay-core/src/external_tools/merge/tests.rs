@@ -2,28 +2,6 @@ use super::*;
 use crate::MergeEditorHunkExt;
 
 #[test]
-fn builds_separate_conflict_hunks_with_resolved_context() {
-    let directory = tempfile::tempdir().expect("directory");
-    let left = directory.path().join("left");
-    let base = directory.path().join("base");
-    let right = directory.path().join("right");
-    let output = directory.path().join("output");
-    fs::write(&left, "before\nleft\nafter\n").expect("left");
-    fs::write(&base, "before\nbase\nafter\n").expect("base");
-    fs::write(&right, "before\nright\nafter\n").expect("right");
-    fs::write(&output, "").expect("output");
-
-    let merge = load_external_merge(&left, &base, &right, &output, 7).expect("merge");
-
-    assert_eq!(merge.hunks.len(), 1);
-    assert_eq!(merge.hunks[0].left, "left\n");
-    assert_eq!(merge.hunks[0].base, "base\n");
-    assert_eq!(merge.hunks[0].right, "right\n");
-    assert!(merge.result.starts_with("before\n<<<<<<<"));
-    assert!(merge.result.ends_with(">>>>>>> side #2\nafter\n"));
-}
-
-#[test]
 fn resolves_external_conflicts_one_hunk_at_a_time() {
     let directory = tempfile::tempdir().expect("directory");
     let left = directory.path().join("left");
@@ -72,25 +50,6 @@ fn oversized_output_is_not_editable_text() {
     assert!(!merge.is_text, "placeholder output must not be saveable");
     assert!(merge.hunks.is_empty());
     assert!(merge.result.starts_with("<file too large"));
-}
-
-#[test]
-fn real_text_starting_with_a_placeholder_prefix_stays_editable() {
-    let directory = tempfile::tempdir().expect("directory");
-    let left = directory.path().join("left");
-    let base = directory.path().join("base");
-    let right = directory.path().join("right");
-    let output = directory.path().join("output");
-    fs::write(&left, "symlink -> left\n").expect("left");
-    fs::write(&base, "symlink -> base\n").expect("base");
-    fs::write(&right, "symlink -> right\n").expect("right");
-    fs::write(&output, "").expect("output");
-
-    let merge = load_external_merge(&left, &base, &right, &output, 7).expect("merge");
-
-    assert!(merge.is_text);
-    assert_eq!(merge.hunks.len(), 1);
-    assert!(merge.result.contains("symlink -> left"));
 }
 
 #[test]

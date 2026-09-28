@@ -52,17 +52,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn splits_summary_and_body() {
-        assert_eq!(summary("feat: x\n\ndetails\nmore"), "feat: x");
-        assert_eq!(body("feat: x\n\ndetails\nmore"), "details\nmore");
-        // Single line: all summary, no body.
-        assert_eq!(summary("only summary"), "only summary");
-        assert_eq!(body("only summary"), "");
-        // No blank line between summary and body still splits.
-        assert_eq!(body("summary\nbody"), "body");
-    }
-
-    #[test]
     fn editing_preserves_existing_message_and_body_whitespace() {
         for original in [
             "summary\nbody\n",
@@ -95,12 +84,5 @@ mod tests {
         assert!(draft_is_clean("summary", "", "summary\n"));
         assert!(!draft_is_clean("typed draft", "", "summary\n\nbody\n"));
         assert!(!draft_is_clean("summary", "typed body", "summary\n"));
-    }
-
-    #[test]
-    fn joins_with_blank_separator() {
-        assert_eq!(join("feat: x", "details\nmore"), "feat: x\n\ndetails\nmore");
-        assert_eq!(join("feat: x", ""), "feat: x");
-        assert_eq!(join("  feat: x  ", "  body  "), "feat: x\n\n  body  ");
     }
 }

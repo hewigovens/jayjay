@@ -239,6 +239,28 @@ mod tests {
     }
 
     #[test]
+    fn added_and_removed_files_exist_on_the_side_that_keeps_any_of_their_lines() {
+        let exists = |hunk_type, old, new, ranges: &[(u32, u32)]| {
+            let selection = partition(hunk_type, old, new, ranges);
+            (selection.selected_exists, selection.remaining_exists)
+        };
+        let two_lines = Some("a\nb\n");
+        assert_eq!(exists(HunkType::Added, None, two_lines, &[]), (false, true));
+        assert_eq!(
+            exists(HunkType::Added, None, two_lines, &[(1, 2)]),
+            (true, false)
+        );
+        assert_eq!(
+            exists(HunkType::Removed, two_lines, None, &[]),
+            (true, false)
+        );
+        assert_eq!(
+            exists(HunkType::Removed, two_lines, None, &[(1, 1)]),
+            (true, true)
+        );
+    }
+
+    #[test]
     fn selecting_part_of_added_file_keeps_partial_file() {
         let selection = partition(HunkType::Added, None, Some("a\nb\n"), &[(1, 1)]);
         assert_eq!(selection.selected_text, "a\n");

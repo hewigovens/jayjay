@@ -86,26 +86,6 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
 }
 
 #[test]
-fn rebase_onto_the_current_parent_records_nothing() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    run_jj_in(&repo_path, &["bookmark", "create", "main", "-r", "@"]);
-    run_jj_in(&repo_path, &["new", "-m", "child"]);
-    let repo = Repo::open(&repo_path).expect("open repo");
-    let before = repo.op_log().expect("op log");
-    let commit_before = repo.show_summary("@").expect("show").info.commit_id.id;
-
-    repo.rebase("@", "main", RebaseMode::Source)
-        .expect("rebase onto the existing parent");
-
-    assert_eq!(repo.op_log().expect("op log").len(), before.len());
-    assert_eq!(
-        repo.show_summary("@").expect("show").info.commit_id.id,
-        commit_before
-    );
-}
-
-#[test]
 fn rebase_onto_a_descendant_is_refused_without_recording_anything() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

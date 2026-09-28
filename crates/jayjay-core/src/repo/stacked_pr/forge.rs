@@ -128,3 +128,21 @@ pub(super) fn edit_pull_request(
         detail,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{number_from_url, url_containing};
+
+    #[test]
+    fn scrapes_the_pull_request_url_and_number_from_cli_output() {
+        let output = "Creating pull request\nhttps://github.com/o/r/pull/42\n";
+        let url = url_containing(output, "/pull/");
+        assert_eq!(url, "https://github.com/o/r/pull/42");
+        assert_eq!(number_from_url(&url), Some(42));
+        assert_eq!(
+            number_from_url("https://gitlab.com/o/r/-/merge_requests/7/"),
+            Some(7)
+        );
+        assert_eq!(url_containing("no link here", "/pull/"), "");
+    }
+}

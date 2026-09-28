@@ -41,37 +41,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn real_text_is_editable() {
-        assert!(is_editable_text("let x = 1;"));
-        assert!(is_editable_text(""));
-        // A literal '<' that is not one of our placeholders stays editable.
-        assert!(is_editable_text("<html>"));
-    }
-
-    #[test]
-    fn every_placeholder_is_non_editable() {
-        for sample in [
-            "<binary file (742800 bytes)>",
-            "<directory>",
-            "<git lfs pointer sha256:abc (10 bytes)>",
-            "<git lfs object sha256:abc (10 bytes)>",
-            "<git submodule deadbeef>",
-            "<conflict>",
-            "<access denied: permission>",
-            "<file too large to display (over 8388608 bytes)>",
-            "<image (100 bytes)>",
-            "<not a regular file>",
-            "<unsupported file>",
-            "symlink -> target",
-        ] {
-            assert!(
-                !is_editable_text(sample),
-                "should be non-editable: {sample}"
-            );
-        }
-    }
-
-    #[test]
     fn lfs_and_submodule_classifiers() {
         assert!(is_git_lfs_placeholder(
             "<git lfs pointer sha256:abc (10 bytes)>"

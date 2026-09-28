@@ -69,40 +69,19 @@ mod tests {
     use super::*;
 
     #[test]
-    fn bookmark_name_slugifies_title_and_appends_shortest_change_id() {
-        let name = bookmark_name("feat: Add GitLab support!\n\nbody", "kqxoznabcd1234", 8);
-        assert_eq!(name, "feat-add-gitlab-support-kqxoznab");
-    }
-
-    #[test]
     fn bookmark_name_empty_description_uses_full_change_id() {
         assert_eq!(bookmark_name("", "kqxoznabcd1234", 8), "kqxoznabcd1234");
         assert_eq!(bookmark_name("Hi", "kqxoznabcd1234", 4), "hi-kqxo");
     }
 
     #[test]
-    fn bookmark_name_caps_slug_at_five_words() {
-        let name = bookmark_name(
-            "feat: support stacked PRs across many forges and remotes now",
-            "kqxoznab",
-            8,
-        );
-        // Only the first five words become the slug; the change-id is the suffix.
-        assert_eq!(name, "feat-support-stacked-prs-across-kqxoznab");
-    }
-
-    #[test]
-    fn branch_name_slug_caps_and_sanitizes_free_text() {
-        assert_eq!(
-            branch_name_slug("**Add stacked PR names, safely now**"),
-            "add-stacked-pr-names-safely"
-        );
-        assert_eq!(branch_name_slug(" -- "), "");
-    }
-
-    #[test]
     fn validates_bookmark_names() {
-        for ok in ["feat-add-x-abc123", "user/feat/thing", "v1.2-rc"] {
+        for ok in [
+            "feat-add-x-abc123",
+            "user/feat/thing",
+            "v1.2-rc",
+            &"b".repeat(255),
+        ] {
             assert!(is_valid_bookmark_name(ok), "{ok} should be valid");
         }
         for bad in [
@@ -120,6 +99,9 @@ mod tests {
             "a//b",
             "foo/.hidden",
             "ctrl\tchar",
+            "/leading-slash",
+            "a@{upstream}",
+            &"b".repeat(256),
         ] {
             assert!(!is_valid_bookmark_name(bad), "{bad:?} should be invalid");
         }

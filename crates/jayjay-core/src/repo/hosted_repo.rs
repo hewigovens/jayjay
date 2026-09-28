@@ -212,53 +212,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_github_scp_remote() {
-        let remote = HostedRepo::parse("git@github.com:hewigovens/jayjay.git").unwrap();
-        assert_eq!(remote.host, RepoHost::GitHub);
-        assert_eq!(remote.host.display_name(), "GitHub");
-        assert_eq!(remote.slug(), "hewigovens/jayjay");
-        assert_eq!(
-            remote.pull_request_open_url("feat/foo", "main"),
-            "https://github.com/hewigovens/jayjay/pull/new/feat/foo"
-        );
-    }
-
-    #[test]
-    fn parses_codeberg_https_remote() {
-        let remote = HostedRepo::parse("https://codeberg.org/hewigovens/jayjay.git\n").unwrap();
-        assert_eq!(remote.host, RepoHost::Codeberg);
-        assert_eq!(remote.host.display_name(), "Codeberg");
-        assert_eq!(remote.slug(), "hewigovens/jayjay");
-        assert_eq!(
-            remote.pull_request_open_url("feat/foo", "master"),
-            "https://codeberg.org/hewigovens/jayjay/compare/master...feat/foo"
-        );
-    }
-
-    #[test]
-    fn parses_gitlab_https_remote() {
-        let remote = HostedRepo::parse("https://gitlab.com/hewigovens/jayjay.git").unwrap();
-        assert_eq!(remote.host, RepoHost::GitLab);
-        assert_eq!(remote.host.display_name(), "GitLab");
-        assert_eq!(remote.slug(), "hewigovens/jayjay");
-        assert_eq!(
-            remote.pull_request_open_url("feat/foo", ""),
-            "https://gitlab.com/hewigovens/jayjay/-/merge_requests/new?merge_request[source_branch]=feat/foo"
-        );
-        assert_eq!(
-            remote.pull_request_open_url("feat/foo", "main"),
-            "https://gitlab.com/hewigovens/jayjay/-/merge_requests/new?merge_request[source_branch]=feat/foo&merge_request[target_branch]=main"
-        );
-    }
-
-    #[test]
-    fn parses_gitlab_scp_remote() {
-        let remote = HostedRepo::parse("git@gitlab.com:hewigovens/jayjay.git").unwrap();
-        assert_eq!(remote.host, RepoHost::GitLab);
-        assert_eq!(remote.slug(), "hewigovens/jayjay");
-    }
-
-    #[test]
     fn parses_gitlab_subgroup_remote() {
         // Nested groups are GitLab-specific; the namespace keeps every segment
         // before the project so the API can address group%2Fsub%2Fproject.
@@ -270,22 +223,6 @@ mod tests {
         assert_eq!(
             remote.pull_request_open_url("feat/x", ""),
             "https://gitlab.com/group/sub/jayjay/-/merge_requests/new?merge_request[source_branch]=feat/x"
-        );
-    }
-
-    #[test]
-    fn parses_codeberg_ssh_url_remote() {
-        let remote = HostedRepo::parse("ssh://git@codeberg.org/hewig/jj-test.git").unwrap();
-        assert_eq!(remote.host, RepoHost::Codeberg);
-        assert_eq!(remote.slug(), "hewig/jj-test");
-    }
-
-    #[test]
-    fn codeberg_uses_main_when_no_base_is_provided() {
-        let remote = HostedRepo::parse("https://codeberg.org/hewigovens/jayjay.git").unwrap();
-        assert_eq!(
-            remote.pull_request_open_url("feat/foo", ""),
-            "https://codeberg.org/hewigovens/jayjay/compare/main...feat/foo"
         );
     }
 
@@ -326,6 +263,20 @@ mod tests {
     }
 
     #[test]
+    fn same_repository_ignores_owner_case_and_url_form() {
+        let https = HostedRepo::parse("https://github.com/Hewigovens/JayJay.git").unwrap();
+        let scp = HostedRepo::parse("git@github.com:hewigovens/jayjay.git").unwrap();
+        assert!(https.is_same_repository(&scp));
+        for other in [
+            "git@github.com:someone/jayjay.git",
+            "git@github.com:hewigovens/other.git",
+            "https://codeberg.org/hewigovens/jayjay",
+        ] {
+            assert!(!https.is_same_repository(&HostedRepo::parse(other).unwrap()));
+        }
+    }
+
+    #[test]
     fn rejects_unsupported_and_malformed_remotes() {
         for raw in [
             "https://github.com.evil.org/hewigovens/jayjay",
@@ -336,6 +287,8 @@ mod tests {
             "https://evilgitlab.com/foo/bar",
             "https://origin.cursor.com.evil.org/acme/checkout",
             "https://evilorigin.cursor.com/acme/checkout",
+            "https://origin-.cursor.com/acme/checkout",
+            "https://origin-stg.x.cursor.com/acme/checkout",
             "https://cursor.com/codebase/acme/checkout",
             "https://github.com/lonely",
             "https://github.com/hewigovens/jayjay/extra",

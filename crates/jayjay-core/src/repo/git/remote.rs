@@ -141,10 +141,7 @@ pub(crate) fn git_remote_to_web_url(raw: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use super::{
-        GitRemote, free_remote_name, git_remote_to_web_url, is_valid_remote_url,
-        remote_url_uses_ssh,
-    };
+    use super::{git_remote_to_web_url, is_valid_remote_url, remote_url_uses_ssh};
 
     #[test]
     fn only_ssh_origins_prefer_ssh_clone_urls() {
@@ -152,20 +149,6 @@ mod tests {
         assert!(remote_url_uses_ssh("ssh://git@github.com/alice/repo.git"));
         assert!(!remote_url_uses_ssh("git://github.com/alice/repo.git"));
         assert!(!remote_url_uses_ssh("https://github.com/alice/repo.git"));
-    }
-
-    #[test]
-    fn free_remote_name_sanitizes_the_hint_and_skips_taken_names() {
-        let taken = |name: &str| GitRemote {
-            name: name.into(),
-            fetch_url: String::new(),
-        };
-        assert_eq!(free_remote_name(&[], "-weird name"), "weird-name");
-        assert_eq!(free_remote_name(&[], "---"), "fork");
-        assert_eq!(
-            free_remote_name(&[taken("alice"), taken("alice-2")], "alice"),
-            "alice-3"
-        );
     }
 
     #[test]

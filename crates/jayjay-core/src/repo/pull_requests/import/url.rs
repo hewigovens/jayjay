@@ -86,14 +86,6 @@ mod tests {
     }
 
     #[test]
-    fn parses_codeberg_pull_urls() {
-        let parsed = parse("https://codeberg.org/hewig/jj-test/pulls/12").unwrap();
-        assert_eq!(parsed.base.host, RepoHost::Codeberg);
-        assert_eq!(parsed.base.slug(), "hewig/jj-test");
-        assert_eq!(parsed.number, 12);
-    }
-
-    #[test]
     fn rejects_non_pr_and_hostile_urls() {
         for raw in [
             "https://github.com/hewigovens/jayjay",

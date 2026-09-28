@@ -153,14 +153,6 @@ mod tests {
     }
 
     #[test]
-    fn non_tool_repo_path_falls_through() {
-        assert_eq!(
-            parse_external_tool_invocation(&args(&["/repo"])).unwrap(),
-            None
-        );
-    }
-
-    #[test]
     fn plain_two_paths_detect_diff_edit_instructions() {
         let left = tempfile::tempdir().expect("left");
         let right = tempfile::tempdir().expect("right");

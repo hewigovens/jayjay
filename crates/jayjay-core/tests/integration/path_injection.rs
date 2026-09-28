@@ -186,10 +186,16 @@ fn ignore_and_untrack_keeps_the_file_on_disk_and_out_of_git() {
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
     fs::write(repo_path.join("secret.env"), "token\n").expect("write secret");
+    fs::write(repo_path.join(".gitignore"), "target").expect("write unterminated .gitignore");
     repo.refresh_working_copy().expect("snapshot");
 
     repo.ignore_and_untrack(&["secret.env".to_owned()])
         .expect("ignore and untrack");
+
+    assert_eq!(
+        fs::read_to_string(repo_path.join(".gitignore")).expect("read .gitignore"),
+        "target\nsecret.env\n"
+    );
 
     assert_eq!(
         fs::read_to_string(repo_path.join("secret.env")).expect("file stays"),

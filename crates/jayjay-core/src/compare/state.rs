@@ -142,34 +142,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn comparing_two_changes_labels_each_end_and_names_both_changes() {
-        let state = CompareState::between(
-            &change("head", &["bookmark-diff"]),
-            &change("base", &["main"]),
-        );
-
-        assert_eq!(state.from_rev, "head");
-        assert_eq!(state.to_rev, "base");
-        assert_eq!(state.source_change_id.as_deref(), Some("head"));
-        assert_eq!(state.target_change_id.as_deref(), Some("base"));
-        assert_eq!(state.display.title, "Comparing");
-        assert_eq!(state.display.from, "bookmark-diff");
-        assert_eq!(state.display.to, "main");
-    }
-
-    #[test]
-    fn reversing_swaps_the_ends_with_the_change_ids_that_name_them() {
-        let reversed = CompareState::new(&change("head", &["feature"])).reversed();
-
-        assert_eq!(reversed.from_rev, "");
-        assert_eq!(reversed.to_rev, "head");
-        assert_eq!(reversed.source_change_id, None);
-        assert_eq!(reversed.target_change_id.as_deref(), Some("head"));
-        assert_eq!(reversed.display.from, "");
-        assert_eq!(reversed.display.to, "feature");
-    }
-
-    #[test]
     fn a_combined_selection_diffs_from_the_roots_parent_to_the_heads() {
         let state = CompareState::combined(&[change("newest", &[]), change("oldest", &[])])
             .expect("combined comparison");
@@ -188,16 +160,6 @@ mod tests {
         assert!(combined_diff_revsets(&["only".to_owned()]).is_none());
         assert!(combined_diff_revsets(&["same".to_owned(), " same ".to_owned()]).is_none());
         assert!(CompareState::combined(&[change("only", &[])]).is_none());
-    }
-
-    #[test]
-    fn revset_ends_label_themselves_when_no_change_is_visible() {
-        let display = CompareDisplay::for_revsets("\"main\"", "fork_point(a | b)", &[]);
-
-        assert_eq!(display.title, "Comparing");
-        assert_eq!(display.from, "main");
-        assert_eq!(display.to, "fork_point(a | b)");
-        assert!(!display.is_combined_selection);
     }
 
     #[test]

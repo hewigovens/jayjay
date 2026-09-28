@@ -192,6 +192,32 @@ fn submit_stack_rejects_bookmark_owned_by_another_change_before_mutation() {
 }
 
 #[test]
+fn submit_stack_accepts_a_bookmark_already_on_its_change() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    run_jj(&["-R", repo_str, "describe", "-m", "base"]);
+    run_jj(&["-R", repo_str, "bookmark", "create", "main", "-r", "@"]);
+    run_jj(&["-R", repo_str, "new", "-m", "feature"]);
+    run_jj(&["-R", repo_str, "bookmark", "create", "feature", "-r", "@"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let feature = repo.show_summary("@").expect("show feature").info;
+
+    let error = repo
+        .submit_stack(vec![submit_layer(
+            feature.change_id.id,
+            "feature",
+            "Feature",
+        )])
+        .expect_err("a repo without a forge remote cannot submit");
+
+    assert!(
+        error.to_string().contains("Stacked PRs support"),
+        "resubmitting onto the change's own bookmark must pass validation: {error}"
+    );
+}
+
+#[test]
 fn submit_stack_rejects_remote_only_bookmark_before_mutation() {
     let (_work_dir, bob_path) = remote_bookmark_fixture();
     let repo = Repo::open(&bob_path).expect("open bob repo");

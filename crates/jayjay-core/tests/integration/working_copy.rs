@@ -76,6 +76,15 @@ fn refresh_working_copy_respects_git_excludes_file() {
         "global git excludes should suppress ignored working-copy events"
     );
     assert!(
+        !repo
+            .has_unignored_working_copy_paths(&[repo_path
+                .join(".jj/repo/op_heads/heads")
+                .display()
+                .to_string()])
+            .expect("check jj metadata path"),
+        "jj's own metadata writes must not look like working-copy edits"
+    );
+    assert!(
         repo.has_unignored_working_copy_paths(&[repo_path
             .join("visible.txt")
             .display()
@@ -99,6 +108,7 @@ fn refresh_working_copy_respects_git_excludes_file() {
         "git excludes file should prevent .claude files from being auto-tracked"
     );
 }
+
 #[test]
 fn working_copy_event_filter_respects_local_gitignore() {
     let temp_dir = init_jj_repo();
@@ -127,6 +137,7 @@ fn working_copy_event_filter_respects_local_gitignore() {
         "a batch with any unignored path should trigger a working-copy event"
     );
 }
+
 #[test]
 fn working_copy_event_filter_preserves_tracked_ignored_paths() {
     let temp_dir = init_jj_repo();
@@ -159,7 +170,6 @@ fn working_copy_event_filter_preserves_tracked_ignored_paths() {
         "untracked ignored paths should not trigger working-copy events"
     );
 }
-
 #[test]
 fn working_copy_is_large_tracks_tree_state_size() {
     let temp_dir = init_jj_repo();

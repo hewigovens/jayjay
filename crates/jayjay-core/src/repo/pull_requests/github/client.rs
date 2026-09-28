@@ -43,6 +43,15 @@ mod tests {
     use super::*;
 
     #[test]
+    fn only_gh_no_pr_messages_confirm_absence() {
+        assert!(is_no_pr_error("no pull requests found for branch \"feat\""));
+        assert!(is_no_pr_error(
+            "no open pull requests found for branch \"feat\""
+        ));
+        assert!(!is_no_pr_error("HTTP 502: Bad Gateway"));
+    }
+
+    #[test]
     fn pr_view_args_put_bookmark_after_separator() {
         assert_eq!(
             pr_view_args("feat-x"),

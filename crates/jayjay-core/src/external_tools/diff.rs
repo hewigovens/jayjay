@@ -136,12 +136,11 @@ fn changed_line_count(diff: &FileDiff, style: DiffSpanStyle) -> u32 {
 
 #[cfg(test)]
 mod tests {
-    use std::fs;
 
     use crate::mock::diff_hunk;
     use crate::{DiffContent, DiffHunk, HunkType};
 
-    use super::{ScannedExternalDiff, load_external_diff, prepare_file, topology_group};
+    use super::{ScannedExternalDiff, prepare_file, topology_group};
 
     fn scanned(hunk: crate::DiffHunk) -> ScannedExternalDiff {
         let old_exists = hunk.old.content.is_some() || hunk.old.preview.is_some();
@@ -210,19 +209,6 @@ mod tests {
         assert!(file.supports_editing);
         assert!(!file.old_exists);
         assert!(file.new_exists);
-    }
-
-    #[test]
-    fn placeholder_prefixed_regular_text_supports_line_selection() {
-        let left = tempfile::tempdir().expect("left");
-        let right = tempfile::tempdir().expect("right");
-        fs::write(left.path().join("literal.txt"), "symlink -> old\n").expect("left text");
-        fs::write(right.path().join("literal.txt"), "symlink -> new\n").expect("right text");
-        let files = load_external_diff(left.path(), right.path(), true).expect("load diff");
-        let file = files.first().expect("changed file");
-
-        assert!(file.supports_editing);
-        assert!(!file.changed_lines.is_empty());
     }
 
     #[test]

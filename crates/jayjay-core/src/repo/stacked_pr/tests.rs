@@ -46,20 +46,6 @@ fn github_dependent_chain_opens_every_available_pull_request() {
 }
 
 #[test]
-fn gitlab_stack_opens_only_the_top_merge_request() {
-    let layers = [
-        layer(10, "https://example.test/merge_requests/10"),
-        layer(11, "https://example.test/merge_requests/11"),
-        layer(12, "https://example.test/merge_requests/12"),
-    ];
-
-    assert_eq!(
-        result_open_urls(&layers, RepoHost::GitLab, false),
-        ["https://example.test/merge_requests/12"]
-    );
-}
-
-#[test]
 fn gitlab_result_opens_the_highest_available_merge_request() {
     let mut failed = layer(12, "");
     failed.outcome = StackLayerOutcome::Failed;

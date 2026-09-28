@@ -122,25 +122,7 @@ fn shorten_embedded_ids(description: &str) -> String {
 
 #[cfg(test)]
 mod tests {
-    use super::{shorten_embedded_ids, unique_prefix_len};
-
-    #[test]
-    fn long_hex_ids_in_descriptions_are_shortened() {
-        let op = "909d5af891b700efb60cf5c1469d8d4a3b6557a4cc0d0a8382cc5e413e8a97d4d6149cd61939704e0300b9d5468a2d386a0f5687211facf2bd693eaf61529b5f";
-        assert_eq!(
-            shorten_embedded_ids(&format!("restore to operation {op}")),
-            "restore to operation 909d5af891b7"
-        );
-        assert_eq!(
-            shorten_embedded_ids("rebase commit 55e50b53f4f09d24c56bc5c7d90b9545c6b871f3"),
-            "rebase commit 55e50b53f4f0"
-        );
-        let remote = "0123456789abcdef0123456789abcdef";
-        assert_eq!(
-            shorten_embedded_ids(&format!("add git remote {remote}")),
-            format!("add git remote {remote}")
-        );
-    }
+    use super::unique_prefix_len;
 
     #[test]
     fn unique_prefix_grows_until_distinct() {

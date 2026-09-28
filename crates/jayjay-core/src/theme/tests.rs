@@ -5,6 +5,7 @@ fn mix_interpolates_per_channel_and_clamps() {
     assert_eq!(mix(0x000000, 0xffffff, 0.5), 0x808080);
     assert_eq!(mix(0xff0000, 0x0000ff, 0.), 0xff0000);
     assert_eq!(mix(0xff0000, 0x0000ff, 2.), 0x0000ff);
+    assert_eq!(mix(0x204060, 0x406080, 0.5), 0x305070);
 }
 
 #[test]
@@ -14,6 +15,7 @@ fn luminance_separates_light_and_dark_backgrounds() {
     assert!(!is_dark(0xffffff));
     assert!(!is_dark(0xfdf6e3));
     assert!((luminance(0xffffff) - 1.).abs() < 1e-5);
+    assert!((luminance(0x0a0a0a) - 10. / 255. / 12.92).abs() < 1e-6);
 }
 
 #[test]

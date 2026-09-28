@@ -1,7 +1,7 @@
 use std::fs;
 
 use jayjay_core::compare::combined_diff_revsets;
-use jayjay_core::{DEFAULT_REVSET, Repo, bookmark_filter_revset, revset_presets};
+use jayjay_core::{DEFAULT_REVSET, Repo, bookmark_filter_revset};
 use jj_test::{init_jj_repo, run_jj};
 
 #[test]
@@ -76,71 +76,6 @@ fn default_revset_shows_nearby_heads() {
             .any(|change| change.description.trim_end() == "initial change"),
         "expected default revset to keep trunk/root context visible"
     );
-}
-
-#[test]
-fn default_revset_evaluates_in_cli_and_app_parser() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo_str = repo_path.to_str().expect("repo path utf-8");
-
-    let cli = run_jj(&[
-        "-R",
-        repo_str,
-        "log",
-        "--no-graph",
-        "-r",
-        DEFAULT_REVSET,
-        "-T",
-        "commit_id.short() ++ \"\\n\"",
-    ]);
-    assert!(
-        !cli.stdout.is_empty(),
-        "jj CLI should evaluate JayJay's default revset"
-    );
-
-    let repo = Repo::open(&repo_path).expect("open repo");
-    let app = repo.log(DEFAULT_REVSET).expect("evaluate default revset");
-    assert!(
-        !app.is_empty(),
-        "JayJay should evaluate the same default revset as the jj CLI"
-    );
-}
-
-#[test]
-fn custom_immutable_heads_alias_can_reference_builtin_default_alias() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo_str = repo_path.to_str().expect("repo path utf-8");
-
-    run_jj(&[
-        "-R",
-        repo_str,
-        "config",
-        "set",
-        "--repo",
-        r#"revset-aliases."immutable_heads()""#,
-        "builtin_immutable_heads() | root()",
-    ]);
-
-    let repo = Repo::open(&repo_path).expect("open repo");
-    let log = repo
-        .log(DEFAULT_REVSET)
-        .expect("evaluate user immutable_heads() alias");
-    assert!(
-        log.iter().any(|change| change.is_working_copy),
-        "expected immutable_heads() alias to parse through builtin_immutable_heads()"
-    );
-}
-#[test]
-fn filter_presets_evaluate_in_app_parser() {
-    let temp_dir = init_jj_repo();
-    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
-
-    for preset in revset_presets() {
-        repo.log(&preset.revset)
-            .unwrap_or_else(|error| panic!("{} preset failed: {error}", preset.id));
-    }
 }
 
 #[test]

@@ -111,6 +111,27 @@ mod tests {
 
     use super::{ConfigEnv, JjConfigEntry, JjConfigSection, effective_sections, user_config_from};
 
+    fn sections(layers: &[(ConfigSource, &str)]) -> Vec<JjConfigSection> {
+        let mut config = StackedConfig::with_defaults();
+        for (source, text) in layers {
+            config.add_layer(ConfigLayer::parse(*source, text).expect("parse layer"));
+        }
+        effective_sections(config)
+    }
+
+    fn section(name: &str, entries: &[(&str, &str)]) -> JjConfigSection {
+        JjConfigSection {
+            name: name.to_owned(),
+            entries: entries
+                .iter()
+                .map(|(key, value)| JjConfigEntry {
+                    key: (*key).to_owned(),
+                    value: (*value).to_owned(),
+                })
+                .collect(),
+        }
+    }
+
     #[test]
     fn a_malformed_user_config_keeps_its_path_and_reports_the_error() {
         let dir = tempfile::tempdir().expect("tempdir");
@@ -154,27 +175,6 @@ mod tests {
         let config = user_config_from(&env).expect("path resolves");
         assert_eq!(config.path, file.display().to_string());
         assert!(config.error.is_some());
-    }
-
-    fn sections(layers: &[(ConfigSource, &str)]) -> Vec<JjConfigSection> {
-        let mut config = StackedConfig::with_defaults();
-        for (source, text) in layers {
-            config.add_layer(ConfigLayer::parse(*source, text).expect("parse layer"));
-        }
-        effective_sections(config)
-    }
-
-    fn section(name: &str, entries: &[(&str, &str)]) -> JjConfigSection {
-        JjConfigSection {
-            name: name.to_owned(),
-            entries: entries
-                .iter()
-                .map(|(key, value)| JjConfigEntry {
-                    key: (*key).to_owned(),
-                    value: (*value).to_owned(),
-                })
-                .collect(),
-        }
     }
 
     #[test]

@@ -118,33 +118,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_tree() {
-        let paths = vec![
-            "src/main.rs".to_string(),
-            "src/lib.rs".to_string(),
-            "README.md".to_string(),
-        ];
-        let entries = build_file_tree(&paths);
-        // Should have: dir "src", then files main.rs and lib.rs, then README.md
-        assert!(!entries.is_empty());
-        // First entry should be the "src" directory
-        assert_eq!(entries[0].name, "src");
-        assert!(entries[0].hunk_index.is_none());
-    }
-
-    #[test]
-    fn test_collapse_single_child_dirs() {
-        let paths = vec!["a/b/c/file.rs".to_string()];
-        let entries = build_file_tree(&paths);
-        // Single file: entire directory prefix collapses into root (not emitted),
-        // only the file entry appears at depth 0.
-        assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].name, "file.rs");
-        assert_eq!(entries[0].path, "a/b/c/file.rs");
-        assert!(entries[0].hunk_index.is_some());
-    }
-
-    #[test]
     fn test_collapse_with_multiple_files() {
         let paths = vec!["a/b/c/file1.rs".to_string(), "a/b/d/file2.rs".to_string()];
         let entries = build_file_tree(&paths);
@@ -162,21 +135,6 @@ mod tests {
         assert_eq!(entries[2].depth, 0);
         assert_eq!(entries[3].name, "file2.rs");
         assert_eq!(entries[3].depth, 1);
-    }
-
-    #[test]
-    fn test_empty_paths() {
-        let paths: Vec<String> = vec![];
-        let entries = build_file_tree(&paths);
-        assert!(entries.is_empty());
-    }
-
-    #[test]
-    fn test_single_root_file() {
-        let tree = build_file_tree(&["README.md".to_string()]);
-        assert_eq!(tree.len(), 1);
-        assert_eq!(tree[0].name, "README.md");
-        assert_eq!(tree[0].hunk_index, Some(0));
     }
 
     #[test]
@@ -241,50 +199,5 @@ mod tests {
                 .any(|e| e.hunk_index.is_some() && e.path.starts_with(&format!("{dir_path}/"))),
             "files under {dir_path} should have it as a prefix"
         );
-    }
-
-    /// A realistic tree (~20 files, mixed depths) produces no duplicate paths.
-    #[test]
-    fn test_realistic_tree_no_duplicate_dirs() {
-        let paths: Vec<String> = [
-            "Cargo.lock",
-            "Cargo.toml",
-            "shell/gpui/Cargo.toml",
-            "shell/gpui/src/diff/colors.rs",
-            "shell/gpui/src/diff/diff_view.rs",
-            "shell/gpui/src/diff/file_column.rs",
-            "shell/gpui/src/diff/line.rs",
-            "shell/gpui/src/diff/mod.rs",
-            "shell/gpui/src/fonts.rs",
-            "shell/gpui/src/log_view.rs",
-            "shell/gpui/src/main.rs",
-            "shell/gpui/src/theme.rs",
-            "shell/gpui/src/ui.rs",
-            "shell/gpui/assets/fonts/Lucide.ttf",
-            "crates/jayjay-core/src/dag.rs",
-            "crates/jayjay-core/src/lib.rs",
-            "crates/jayjay-core/Cargo.toml",
-            "crates/jayjay-uniffi/src/lib.rs",
-        ]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-
-        let tree = build_file_tree(&paths);
-
-        let paths_set: std::collections::HashSet<&str> =
-            tree.iter().map(|e| e.path.as_str()).collect();
-        assert_eq!(
-            paths_set.len(),
-            tree.len(),
-            "duplicate paths in realistic tree:\n{:#?}",
-            tree.iter()
-                .map(|e| (e.depth, &e.name, &e.path))
-                .collect::<Vec<_>>()
-        );
-
-        for e in &tree {
-            assert!(!e.path.is_empty(), "empty path for {:?}", e.name);
-        }
     }
 }

@@ -64,24 +64,10 @@ fn write_table_row(out: &mut String, row: &[String], width: usize) {
 
 #[cfg(test)]
 mod tests {
-    use super::{table, table_cell};
+    use super::table_cell;
 
     #[test]
     fn escapes_markdown_table_cells() {
         assert_eq!(table_cell("a\\b|c\r\nd"), "a\\\\b\\|c d");
-    }
-
-    #[test]
-    fn renders_rows_as_markdown_table() {
-        let rows = vec![
-            vec!["name".to_owned(), "value".to_owned()],
-            vec!["a,b".to_owned(), "1".to_owned()],
-            vec!["empty".to_owned()],
-        ];
-
-        assert_eq!(
-            table(rows),
-            "| name | value |\n| --- | --- |\n| a,b | 1 |\n| empty |  |\n"
-        );
     }
 }

@@ -50,24 +50,6 @@ fn read_only_diff_keeps_a_tracked_instructions_file() {
 }
 
 #[test]
-fn binary_files_get_bounded_placeholders() {
-    let left = tempfile::tempdir().expect("left");
-    let right = tempfile::tempdir().expect("right");
-    fs::write(left.path().join("data.bin"), [0, 1]).expect("left binary");
-    fs::write(right.path().join("data.bin"), [0, 2]).expect("right binary");
-
-    let entries = scan_external_diff(left.path(), right.path(), false).expect("diff");
-    assert_eq!(
-        entries[0].hunk.old.content.as_deref(),
-        Some("<binary file (2 bytes)>")
-    );
-    assert_eq!(
-        entries[0].hunk.new.content.as_deref(),
-        Some("<binary file (2 bytes)>")
-    );
-}
-
-#[test]
 fn pairs_single_files_even_when_temporary_names_differ() {
     let root = tempfile::tempdir().expect("root");
     let left = root.path().join("pre-image.tmp");

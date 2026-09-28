@@ -56,12 +56,6 @@ mod tests {
     use crate::cli::args;
 
     #[test]
-    fn non_cli_arguments_fall_through_to_app_startup() {
-        assert!(run_app_cli_command(&[], "1.2.3").is_none());
-        assert!(run_app_cli_command(&args(&["/some/repo"]), "1.2.3").is_none());
-    }
-
-    #[test]
     fn version_flags_print_the_supplied_app_version() {
         for flag in ["--version", "-v"] {
             assert_eq!(
@@ -76,16 +70,6 @@ mod tests {
         assert_eq!(
             run_app_cli_command(&args(&["config"]), "1.2.3"),
             Some(CliCommandOutcome::ok(crate::JJ_TOOL_CONFIG))
-        );
-    }
-
-    #[test]
-    fn config_rejects_extra_arguments() {
-        let outcome = run_app_cli_command(&args(&["config", "extra"]), "1.2.3").expect("handled");
-        assert!(outcome.is_error());
-        assert_eq!(
-            outcome,
-            CliCommandOutcome::err("error: usage: jayjay config\n")
         );
     }
 

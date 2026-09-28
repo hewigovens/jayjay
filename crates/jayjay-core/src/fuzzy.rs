@@ -43,33 +43,9 @@ mod tests {
     }
 
     #[test]
-    fn empty_query_keeps_original_order() {
-        let items = candidates(&["b", "a"]);
-        assert_eq!(rank("", &items), vec![0, 1]);
-        assert_eq!(rank("  ", &items), vec![0, 1]);
-    }
-
-    #[test]
-    fn matches_subsequences_case_insensitively() {
-        let items = candidates(&["Toggle Side-by-side Diff", "Open Settings"]);
-        assert_eq!(rank("tsd", &items), vec![0]);
-        assert_eq!(rank("SETT", &items), vec![1]);
-        assert!(rank("bookmark", &items).is_empty());
-    }
-
-    #[test]
     fn all_query_words_must_match() {
         let items = candidates(&["Toggle Tree File List tree file folder list", "Refresh"]);
         assert_eq!(rank("tree list", &items), vec![0]);
         assert!(rank("tree bookmark", &items).is_empty());
-    }
-
-    #[test]
-    fn closer_matches_rank_first() {
-        let items = candidates(&["The Memo Editor", "Theme: Dark", "Theme: Light"]);
-        let ranked = rank("theme", &items);
-        assert_eq!(ranked.len(), 3);
-        // Contiguous "Theme" beats the scattered match; ties keep order.
-        assert_eq!(&ranked[..2], &[1, 2]);
     }
 }

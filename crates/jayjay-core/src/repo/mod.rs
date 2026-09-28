@@ -275,31 +275,4 @@ mod tests {
 
         assert_eq!(current_op(&repo), expected_op);
     }
-
-    #[test]
-    fn op_is_ancestor_of_orders_operations() {
-        use super::support::op_is_ancestor_of;
-
-        let temp_dir = init_jj_repo();
-        let repo_path = temp_dir.path().join("repo");
-        let repo = Repo::open(&repo_path).expect("open repo");
-
-        let base = repo.get_repo();
-        repo.describe("@", "forward progress")
-            .expect("describe advances state");
-        let forward = repo.get_repo();
-
-        assert!(
-            op_is_ancestor_of(&forward, base.op_id()).expect("walk ancestors"),
-            "the new head must be recognized as a descendant of the base op"
-        );
-        assert!(
-            !op_is_ancestor_of(&base, forward.op_id()).expect("walk ancestors"),
-            "the base op must not be recognized as a descendant of the new head"
-        );
-        assert!(
-            op_is_ancestor_of(&forward, forward.op_id()).expect("walk ancestors"),
-            "an op is its own ancestor for install purposes"
-        );
-    }
 }

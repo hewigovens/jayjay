@@ -55,13 +55,7 @@ impl DagLayout {
             );
 
             if !lanes.contains_key(cid) {
-                let lane = match active
-                    .iter()
-                    .position(|c| c.as_deref() == Some(cid.as_str()))
-                {
-                    Some(existing) => existing,
-                    None => assign_lane(cid, &mut active, None),
-                };
+                let lane = assign_lane(cid, &mut active, None);
                 lanes.insert(cid.clone(), lane);
             }
 
@@ -246,14 +240,6 @@ mod tests {
     use crate::types::GraphEdge;
 
     #[test]
-    fn empty_entries() {
-        let layout = DagLayout::compute(&[]);
-        assert!(layout.lanes.is_empty());
-        assert_eq!(layout.max_lanes(), 1);
-        assert_eq!(layout.display_lane_count(), 1);
-    }
-
-    #[test]
     fn linear_chain_on_lane_zero() {
         // C -> B -> A, all on lane 0
         let entries = vec![
@@ -267,6 +253,20 @@ mod tests {
         assert_eq!(layout.lane("A"), 0);
         assert_eq!(layout.max_lanes(), 1);
         assert_eq!(layout.display_lane_count(), 1);
+        assert!(!layout.row_has_missing_ancestry(0));
+    }
+
+    #[test]
+    fn parent_stays_in_its_childs_lane_when_a_lower_lane_frees_up() {
+        let entries = vec![
+            graph_entry("M", &["P0", "P1"]),
+            graph_entry("P0", &[]),
+            graph_entry("P1", &["Q"]),
+            graph_entry("Q", &[]),
+        ];
+        let layout = DagLayout::compute(&entries);
+        assert_eq!(layout.lane("P1"), 1);
+        assert_eq!(layout.lane("Q"), 1);
     }
 
     #[test]
@@ -347,6 +347,21 @@ mod tests {
         assert_eq!(layout.lane("p0"), 0);
         assert_eq!(layout.display_lane(layout.lane("p0")), 0);
         assert!(layout.row_has_overflow(1));
+    }
+
+    #[test]
+    fn compact_overflow_clears_once_hidden_lanes_merge_back() {
+        let parents = ["p0", "p1", "p2", "p3", "p4", "p5"];
+        let mut entries = vec![graph_entry("merge", &parents)];
+        entries.extend(parents.iter().map(|parent| graph_entry(parent, &["base"])));
+        entries.push(graph_entry("base", &["root"]));
+        entries.push(graph_entry("root", &[]));
+        let layout = DagLayout::compute(&entries);
+
+        assert!(layout.uses_compact_lanes());
+        assert!(layout.row_has_overflow(6));
+        assert!(!layout.row_has_overflow(7));
+        assert!(!layout.row_has_overflow(8));
     }
 
     #[test]

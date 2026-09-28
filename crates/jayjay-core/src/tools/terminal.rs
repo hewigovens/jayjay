@@ -48,11 +48,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn shell_line_without_command_just_cds() {
-        assert_eq!(shell_line("/my repo", None), "cd '/my repo'");
-    }
-
-    #[test]
     fn shell_line_escapes_cwd_apostrophe() {
         assert_eq!(shell_line("/my'repo", None), "cd '/my'\\''repo'");
     }

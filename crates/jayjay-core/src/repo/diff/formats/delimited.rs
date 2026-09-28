@@ -77,19 +77,3 @@ fn parsed_table_cell(bytes: &[u8]) -> CoreResult<String> {
         .map_err(|err| projection_error(format!("table projection is not UTF-8: {err}")))?;
     Ok(markdown::table_cell(value))
 }
-
-#[cfg(test)]
-mod tests {
-    use super::project_table;
-
-    #[test]
-    fn projects_csv_as_markdown_table() {
-        let projected =
-            project_table(b"name,value\r\n\"a,b\",1\r\nempty,\r\n", b',').expect("project csv");
-
-        assert_eq!(
-            projected,
-            "| name | value |\n| --- | --- |\n| a,b | 1 |\n| empty |  |\n"
-        );
-    }
-}

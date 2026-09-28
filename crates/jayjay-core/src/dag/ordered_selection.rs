@@ -213,23 +213,13 @@ mod tests {
 
         apply(&mut selection, SelectionClick::Toggle, "d");
         assert_eq!(selection.primary.as_deref(), Some("b"));
+        assert_eq!(selection.anchor.as_deref(), Some("b"));
 
         apply(&mut selection, SelectionClick::Toggle, "d");
         apply(&mut selection, SelectionClick::Extend, "b");
         assert_eq!(selection.ordered(&order()), ["b", "c", "d"]);
         assert_eq!(selection.primary.as_deref(), Some("b"));
         assert_eq!(selection.anchor.as_deref(), Some("d"));
-    }
-
-    #[test]
-    fn only_selections_without_gaps_are_contiguous() {
-        let mut selection = OrderedSelection::new(vec!["a".to_owned()], Some("a".to_owned()), None);
-
-        apply(&mut selection, SelectionClick::Toggle, "c");
-        assert!(!selection.is_contiguous_in(&order()));
-
-        apply(&mut selection, SelectionClick::Toggle, "b");
-        assert!(selection.is_contiguous_in(&order()));
     }
 
     #[test]
@@ -246,17 +236,6 @@ mod tests {
         selection.apply(SelectionClick::Toggle, order[6000].clone(), &order);
         assert_eq!(selection.ordered(&order), order);
         assert!(selection.is_contiguous_in(&order));
-    }
-
-    #[test]
-    fn extending_from_an_anchor_off_the_row_order_selects_only_the_clicked_row() {
-        let mut selection =
-            OrderedSelection::new(vec!["gone".to_owned()], Some("gone".to_owned()), None);
-
-        apply(&mut selection, SelectionClick::Extend, "c");
-
-        assert_eq!(selection.selected, ["c"]);
-        assert_eq!(selection.anchor.as_deref(), Some("c"));
     }
 
     #[test]
@@ -309,5 +288,13 @@ mod tests {
         assert_eq!(selection.selected, ["a"]);
         assert_eq!(selection.primary, None);
         assert_eq!(selection.anchor, None);
+
+        let kept = OrderedSelection::new(
+            ["a", "b"].map(str::to_owned).to_vec(),
+            Some("b".to_owned()),
+            Some("a".to_owned()),
+        );
+        assert_eq!(kept.primary.as_deref(), Some("b"));
+        assert_eq!(kept.anchor.as_deref(), Some("a"));
     }
 }

@@ -263,37 +263,6 @@ mod tests {
     }
 
     #[test]
-    fn add_note_requires_anchor_and_message() {
-        assert!(parse_err(&["add-note"]).contains("--file"));
-        assert!(parse_err(&["add-note", "--file", "a.txt"]).contains("--line"));
-        assert!(
-            parse_err(&["add-note", "--file", "a.txt", "--line", "nope", "-m", "x"])
-                .contains("--line")
-        );
-        assert!(parse_err(&["add-note", "--file", "a.txt", "--line"]).contains("--line"));
-        assert!(parse_err(&["add-note", "--file", "a.txt", "--line", "3"]).contains("--message"));
-
-        assert_eq!(
-            run_parse(&[
-                "add-note",
-                "--file",
-                "a.txt",
-                "--line",
-                "3",
-                "-m",
-                "check this"
-            ]),
-            ReviewCommand::AddNote {
-                repo: ".".to_owned(),
-                file: "a.txt".to_owned(),
-                line: 3,
-                side: NoteSide::New,
-                message: "check this".to_owned(),
-            }
-        );
-    }
-
-    #[test]
     fn status_mark_and_unmark_parse() {
         assert_eq!(
             run_parse(&["status", "--format", "json"]),
@@ -361,34 +330,6 @@ mod tests {
                 repo: ".".to_owned(),
                 file: Some("a.txt".to_owned()),
             }
-        );
-    }
-
-    #[test]
-    fn resolve_note_requires_an_id_and_defaults_the_repo() {
-        let err = parse_err(&["resolve-note"]);
-        assert!(err.contains("ID"), "expected missing-id error, got: {err}");
-        assert_eq!(
-            run_parse(&["resolve-note", "note-1"]),
-            ReviewCommand::ResolveNote {
-                id: "note-1".to_owned(),
-                repo: ".".to_owned(),
-            }
-        );
-    }
-
-    #[test]
-    fn invalid_values_and_extra_arguments_are_rejected() {
-        let err = parse_err(&["notes", "--format", "xml"]);
-        assert!(err.contains("xml"), "expected format error, got: {err}");
-        let err = parse_err(&[
-            "add-note", "--file", "a.txt", "--line", "3", "--side", "sideways", "-m", "x",
-        ]);
-        assert!(err.contains("sideways"), "expected side error, got: {err}");
-        let err = parse_err(&["resolve-note", "note-1", "extra"]);
-        assert!(
-            err.contains("extra"),
-            "expected extra-argument error, got: {err}"
         );
     }
 

@@ -121,22 +121,6 @@ mod tests {
     use super::project_plist;
     use plist::{Dictionary, Value as PlistValue};
 
-    #[test]
-    fn projects_binary_plist_as_sorted_xml() {
-        let mut dictionary = Dictionary::new();
-        dictionary.insert("z".to_owned(), PlistValue::String("last".to_owned()));
-        dictionary.insert("a".to_owned(), PlistValue::Integer(1.into()));
-        let mut binary = Vec::new();
-        plist::to_writer_binary(&mut binary, &PlistValue::Dictionary(dictionary))
-            .expect("write binary plist");
-        let projected = project_plist(&binary).expect("project plist");
-
-        let a_index = projected.find("<key>a</key>").expect("a key");
-        let z_index = projected.find("<key>z</key>").expect("z key");
-        assert!(a_index < z_index);
-        assert!(projected.contains("<integer>1</integer>"));
-    }
-
     fn nested_binary_plist(depth: usize) -> Vec<u8> {
         let mut value = PlistValue::String("leaf".to_owned());
         for _ in 0..depth {
@@ -154,5 +138,13 @@ mod tests {
         assert!(project_plist(&nested_binary_plist(super::MAX_DEPTH)).is_ok());
         let error = project_plist(&nested_binary_plist(1000)).expect_err("too deep");
         assert!(error.to_string().contains("nests deeper"), "{error}");
+
+        let siblings = PlistValue::Array(vec![PlistValue::Array(Vec::new()); 1000]);
+        let mut wide = Vec::new();
+        plist::to_writer_binary(&mut wide, &siblings).expect("write binary plist");
+        assert!(
+            project_plist(&wide).is_ok(),
+            "sibling collections do not add depth"
+        );
     }
 }

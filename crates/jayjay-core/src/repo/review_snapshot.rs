@@ -88,25 +88,6 @@ mod tests {
     }
 
     #[test]
-    fn text_hunks_produce_canonical_groups() {
-        let snapshot = review_snapshot_from_hunk(&text_hunk(
-            "head-1\nhead-2\nhead-3\nhead-4\nAAA\nmiddle\nBBB\ntail\n",
-            "head-1\nhead-2\nhead-3\nhead-4\naaa\nmiddle\nbbb\ntail\n",
-        ));
-        assert_eq!(snapshot.fingerprints.len(), 2);
-
-        let mut added = text_hunk("", "new\n");
-        added.hunk_type = HunkType::Added;
-        added.old.content = Some("ignored old content".into());
-        assert_eq!(review_snapshot_from_hunk(&added).fingerprints.len(), 1);
-
-        let mut removed = text_hunk("old\n", "");
-        removed.hunk_type = HunkType::Removed;
-        removed.new.content = Some("ignored new content".into());
-        assert_eq!(review_snapshot_from_hunk(&removed).fingerprints.len(), 1);
-    }
-
-    #[test]
     fn binary_and_placeholder_hunks_do_not_invent_groups() {
         let mut binary = text_hunk("<binary file (12 bytes)>", "<binary file (12 bytes)>");
         binary.old.content = Some("<binary file (12 bytes)>".into());

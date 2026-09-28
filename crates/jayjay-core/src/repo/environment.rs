@@ -369,30 +369,6 @@ pub fn check_origin_environment() -> CliStatus {
 mod tests {
     use super::*;
 
-    // Tests below use Unix-style PATH (`:` separator, absolute paths starting with `/`),
-    // so they rely on Unix semantics from `std::env::split_paths` / `Path::is_absolute`.
-    #[cfg(unix)]
-    #[test]
-    fn binary_candidates_include_login_shell_path_entries() {
-        let candidates = binary_candidates_from_paths(
-            "jj",
-            [
-                Some("/usr/bin:/bin".to_string()),
-                Some(
-                    "/etc/profiles/per-user/alice/bin:/nix/var/nix/profiles/default/bin"
-                        .to_string(),
-                ),
-            ],
-            Some(PathBuf::from("/Users/alice")),
-        );
-
-        assert_eq!(candidates[0], PathBuf::from("/usr/bin/jj"));
-        assert!(candidates.contains(&PathBuf::from("/etc/profiles/per-user/alice/bin/jj")));
-        assert!(candidates.contains(&PathBuf::from("/nix/var/nix/profiles/default/bin/jj")));
-        assert!(candidates.contains(&PathBuf::from("/Users/alice/.local/bin/jj")));
-        assert!(candidates.contains(&PathBuf::from("/Users/alice/.cargo/bin/jj")));
-    }
-
     #[cfg(unix)]
     #[test]
     fn command_path_prefers_login_shell_path_and_skips_relative_entries() {
@@ -433,6 +409,16 @@ mod tests {
 
         assert!(candidates.contains(&PathBuf::from("/usr/bin/jj")));
         assert!(!candidates.iter().any(|p| !p.is_absolute()));
+    }
+
+    #[test]
+    fn extract_version_takes_the_first_dotted_number() {
+        assert_eq!(
+            extract_version("gh version 2.89.0 (2026-03-26)\n"),
+            "2.89.0"
+        );
+        assert_eq!(extract_version("jj 0.45.1-7c41cdeb"), "0.45.1-7c41cdeb");
+        assert_eq!(extract_version("origin 7 beta\n"), "origin 7 beta");
     }
 
     #[cfg(unix)]

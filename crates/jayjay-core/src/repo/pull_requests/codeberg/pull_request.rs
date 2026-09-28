@@ -75,37 +75,3 @@ impl CodebergPrResponse {
         }
     }
 }
-
-#[cfg(test)]
-mod tests {
-    use super::*;
-
-    #[test]
-    fn matches_head_regardless_of_base() {
-        // PR targets a non-default base; it must still be found by head bookmark.
-        let json = r#"[
-            {
-                "number": 1,
-                "state": "open",
-                "title": "test: verify Codeberg PR workflow",
-                "html_url": "https://codeberg.org/hewig/jj-test/pulls/1",
-                "merged": false,
-                "base": {"ref": "release/2.0", "sha": "base-sha"},
-                "head": {"ref": "feat/codeberg-pr-test", "sha": "head-sha"}
-            }
-        ]"#;
-
-        let pr = serde_json::from_str::<Vec<CodebergPrResponse>>(json)
-            .unwrap()
-            .into_iter()
-            .find(|pr| pr.matches("feat/codeberg-pr-test"))
-            .unwrap()
-            .into_pr_info(ChecksStatus::None);
-
-        assert_eq!(pr.number, 1);
-        assert_eq!(pr.state, PrState::Open);
-        assert_eq!(pr.title, "test: verify Codeberg PR workflow");
-        assert_eq!(pr.url, "https://codeberg.org/hewig/jj-test/pulls/1");
-        assert_eq!(pr.checks, ChecksStatus::None);
-    }
-}

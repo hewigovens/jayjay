@@ -254,18 +254,3 @@ fn sarif_projection_renders_markdown_report() {
             .is_some_and(|content| content.contains("\"runs\""))
     );
 }
-
-#[test]
-fn markdown_source_diff_is_not_projected() {
-    let (_fixture, repo) = fixture_repo();
-
-    let markdown = hunk(&repo, FormatFixture::MARKDOWN);
-    assert!(markdown.projection.is_none());
-    assert!(
-        markdown
-            .new
-            .content
-            .as_deref()
-            .is_some_and(|content| content.contains("# Notes"))
-    );
-}

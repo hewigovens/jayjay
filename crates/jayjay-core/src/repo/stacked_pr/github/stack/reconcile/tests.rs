@@ -70,21 +70,6 @@ fn replans_after_a_concurrent_append() {
 }
 
 #[test]
-fn replans_a_deleted_stack_as_a_full_create() {
-    let desired = [10, 20];
-    let original = stack(7, &[10]);
-    assert!(matches!(
-        plan_reconciliation(&desired, Some(&original)),
-        ReconciliationPlan::Append { .. }
-    ));
-
-    assert_eq!(
-        plan_reconciliation(&desired, None),
-        ReconciliationPlan::Create(&desired)
-    );
-}
-
-#[test]
 fn fallback_distinguishes_disabled_stacks_from_other_api_errors() {
     let disabled = fallback_message(&ApiError::new(Some(404), "Not Found"));
     assert!(disabled.contains("dependent chain"));

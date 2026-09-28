@@ -99,16 +99,6 @@ mod tests {
     use crate::mock::diff_projection as projection;
 
     #[test]
-    fn plist_requests_processed_mode_without_user_toggle() {
-        let projection = projection("plist", DiffProjectionMode::Raw);
-
-        assert_eq!(
-            request_mode(Some(&projection), false),
-            Some(DiffProjectionMode::Processed)
-        );
-    }
-
-    #[test]
     fn rich_projection_toggle_requests_processed_mode() {
         let projection = projection("ipynb", DiffProjectionMode::Raw);
 
@@ -119,6 +109,40 @@ mod tests {
         assert_eq!(
             request_mode(Some(&projection), true),
             Some(DiffProjectionMode::Processed)
+        );
+    }
+
+    #[test]
+    fn banner_shows_for_processed_previews_and_diagnostics() {
+        let raw = projection("ipynb", DiffProjectionMode::Raw);
+        let processed = projection("ipynb", DiffProjectionMode::Processed);
+        let plist = projection("plist", DiffProjectionMode::Processed);
+        let mut failed = raw.clone();
+        failed.diagnostics.push("invalid JSON".to_owned());
+
+        assert!(!shows_banner(&raw, true));
+        assert!(!shows_banner(&processed, false));
+        assert!(shows_banner(&processed, true));
+        assert!(shows_banner(&plist, false));
+        assert!(shows_banner(&failed, false));
+
+        assert_eq!(title(&processed), "Notebook preview");
+        assert_eq!(
+            title(&plist),
+            "Binary property list on disk, previewed as XML"
+        );
+        assert_eq!(title(&failed), "Notebook preview unavailable");
+    }
+
+    #[test]
+    fn cache_identity_separates_plugin_version_and_mode() {
+        let processed = projection("ipynb", DiffProjectionMode::Processed);
+
+        assert_eq!(cache_identity(None, None), "raw");
+        assert_eq!(cache_identity(Some(&processed), None), "ipynb:v1:processed");
+        assert_eq!(
+            cache_identity(Some(&processed), Some(DiffProjectionMode::Raw)),
+            "ipynb:v1:raw"
         );
     }
 }

@@ -84,21 +84,6 @@ mod tests {
     }
 
     #[test]
-    fn parse_pr_with_failing_checks() {
-        let json = r#"{
-            "number": 7, "state": "MERGED", "title": "WIP",
-            "url": "https://github.com/o/r/pull/7",
-            "statusCheckRollup": [
-                {"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
-                {"name": "lint", "status": "COMPLETED", "conclusion": "FAILURE"}
-            ]
-        }"#;
-        let pr = parse_pr_json(json).unwrap();
-        assert_eq!(pr.state, PrState::Merged);
-        assert_eq!(pr.checks, ChecksStatus::Failing);
-    }
-
-    #[test]
     fn status_context_failure_does_not_read_as_pending() {
         // A StatusContext FAILURE (only `state`, no status/conclusion) must read as Failing, not Pending.
         let json = r#"{

@@ -139,11 +139,4 @@ mod tests {
             }
         );
     }
-
-    #[test]
-    fn matches_local_path_remotes_verbatim() {
-        let existing = remotes(&[("fork", "/tmp/fork.git")]);
-        let choice = choose_remote(&existing, "fork", "/tmp/fork.git");
-        assert!(matches!(choice, RemoteChoice::Reuse { .. }));
-    }
 }

@@ -26,9 +26,10 @@ pub fn workspace_primary_root(path: &str) -> Option<String> {
 
 /// True when `name` is safe both as a jj workspace name and as the sibling directory both shells create for it: no path separators or traversal, no option shape, no characters that are invalid in directory names on any supported platform.
 pub fn is_valid_workspace_name(name: &str) -> bool {
-    if name.is_empty() || name.len() > 255 || name == "." || name == ".." {
+    if name.is_empty() || name.len() > 255 {
         return false;
     }
+    // A trailing dot also rules out `.` and `..`.
     if name.starts_with('-') || name.ends_with('.') {
         return false;
     }
@@ -48,7 +49,14 @@ mod tests {
 
     #[test]
     fn workspace_names_accept_simple_directory_safe_names() {
-        for ok in ["feature", "feature-2", "a_b", "ws.1", "Über"] {
+        for ok in [
+            "feature",
+            "feature-2",
+            "a_b",
+            "ws.1",
+            "Über",
+            &"w".repeat(255),
+        ] {
             assert!(is_valid_workspace_name(ok), "{ok} should be valid");
         }
     }
@@ -73,6 +81,7 @@ mod tests {
             "a*b",
             "a?b",
             "trailing.",
+            &"w".repeat(256),
         ];
         for name in bad {
             assert!(!is_valid_workspace_name(name), "{name:?} should be invalid");

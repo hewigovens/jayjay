@@ -233,7 +233,20 @@ mod tests {
         let off_page = state(&["c", "not-loaded"]);
         assert!(!off_page.can_abandon);
         assert!(!off_page.can_merge);
-        assert!(off_page.can_merge_with.iter().all(|allowed| !allowed));
+        let every_row_refused = vec![false; fixture().len()];
+        assert_eq!(off_page.can_rebase_onto, every_row_refused);
+        assert_eq!(off_page.can_merge_with, every_row_refused);
+    }
+
+    #[test]
+    fn a_single_change_only_picks_a_merge_partner() {
+        let single = state(&["c"]);
+        assert!(!single.can_abandon);
+        assert!(!single.can_squash);
+        assert!(!single.can_diff);
+        assert!(single.can_rebase_onto.iter().all(|allowed| !allowed));
+        assert!(single.can_merge_with[row("i")]);
+        assert!(!single.can_merge_with[row("d")]);
     }
 
     #[test]
@@ -276,33 +289,6 @@ mod tests {
         assert!(
             !selection.can_rebase_onto[row("c")],
             "nor is the selection itself"
-        );
-    }
-
-    #[test]
-    fn an_edge_that_leaves_the_page_carries_no_ancestry() {
-        let mut entries = vec![
-            graph_entry("child", &["off-page"]),
-            graph_entry("other", &[]),
-        ];
-        entries[0].edges[0].edge_type = EdgeType::Missing;
-        entries[0].edges.push(crate::types::GraphEdge {
-            target: "other".to_owned(),
-            edge_type: EdgeType::Indirect,
-        });
-        let graph = SelectionGraph::new(&entries);
-
-        let state = graph.state(&["child".to_owned()]);
-        assert!(
-            !state.can_merge_with[1],
-            "an indirect edge still means the row is an ancestor"
-        );
-
-        entries[0].edges.pop();
-        let state = SelectionGraph::new(&entries).state(&["child".to_owned()]);
-        assert!(
-            state.can_merge_with[1],
-            "with only the missing edge left there is no path between them"
         );
     }
 

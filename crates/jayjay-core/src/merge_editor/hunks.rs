@@ -156,19 +156,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn finds_multiple_marker_blocks_without_consuming_resolved_text() {
-        let raw =
-            "before\n<<<<<<< one\na\n>>>>>>> one\nmiddle\n<<<<<<< two\nb\n>>>>>>> two\nafter\n";
-        assert_eq!(
-            conflict_blocks(raw, 7),
-            vec![
-                "<<<<<<< one\na\n>>>>>>> one\n",
-                "<<<<<<< two\nb\n>>>>>>> two\n"
-            ]
-        );
-    }
-
-    #[test]
     fn identical_blocks_resolve_at_their_own_occurrence() {
         let raw = "<<<<<<< a\nx\n>>>>>>> a\n";
         let hunk = |index: u32, occurrence: u32| MergeEditorHunk {

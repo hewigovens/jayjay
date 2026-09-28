@@ -129,6 +129,10 @@ mod tests {
         let stderr = "Error: Cannot create a pull request in hewig/jayjay: Origin pull requests are not available for GitHub-mirrored repos; got mirrorStatus=\"inbound\".";
         assert_eq!(create_failure_message(stderr), GITHUB_MIRROR_BLOCK);
         assert_eq!(
+            create_failure_message("Error: mirrorStatus=\"inbound\""),
+            GITHUB_MIRROR_BLOCK
+        );
+        assert_eq!(
             create_failure_message("Error: ref \"does-not-exist\" does not exist in git-forge"),
             "ref \"does-not-exist\" does not exist in git-forge"
         );

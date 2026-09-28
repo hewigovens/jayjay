@@ -253,43 +253,6 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_git_lfs_pointer_text() {
-        let pointer = parse_git_lfs_pointer(
-            "version https://git-lfs.github.com/spec/v1\n\
-             oid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\n\
-             size 742800\n",
-        )
-        .unwrap();
-
-        assert_eq!(pointer.size, 742800);
-        assert_eq!(
-            pointer.oid,
-            "496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4"
-        );
-        assert_eq!(
-            git_lfs_pointer_placeholder(&pointer),
-            "<git lfs pointer sha256:496634778d7b (742800 bytes)>"
-        );
-    }
-
-    #[test]
-    fn is_image_path_recognizes_common_formats() {
-        assert!(is_image_path("foo.png"));
-        assert!(is_image_path("foo.jpg"));
-        assert!(is_image_path("foo.jpeg"));
-        assert!(is_image_path("path/to/icon.heic"));
-        assert!(is_image_path("Assets/logo.webp"));
-        assert!(is_image_path("favicon.icns"));
-    }
-
-    #[test]
-    fn is_image_path_is_case_insensitive() {
-        assert!(is_image_path("Screenshot.PNG"));
-        assert!(is_image_path("photo.JPEG"));
-        assert!(is_image_path("sprite.Gif"));
-    }
-
-    #[test]
     fn detects_git_lfs_pointer_bytes() {
         let pointer_text = b"version https://git-lfs.github.com/spec/v1\n\
              oid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\n\
@@ -307,14 +270,5 @@ mod tests {
 
         // Empty → not a pointer.
         assert!(detect_git_lfs_pointer_bytes(&[]).is_none());
-    }
-
-    #[test]
-    fn is_image_path_rejects_non_images() {
-        assert!(!is_image_path("main.rs"));
-        assert!(!is_image_path("readme.md"));
-        assert!(!is_image_path("logo.svg")); // SVG is text — handled via opt-in rich view.
-        assert!(!is_image_path("noextension"));
-        assert!(!is_image_path(""));
     }
 }

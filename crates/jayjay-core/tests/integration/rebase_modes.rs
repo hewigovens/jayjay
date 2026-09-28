@@ -43,8 +43,16 @@ fn branch_mode_moves_the_whole_stack_and_keeps_the_working_copy() {
     let repo = Repo::open(&repo_path).expect("open repo");
     let op_count = repo.op_log().expect("op log").len();
 
-    repo.rebase("subject(exact:work)", "main", RebaseMode::Branch)
+    let rebased = repo
+        .rebase("subject(exact:work)", "main", RebaseMode::Branch)
         .expect("rebase the branch onto main");
+    assert_eq!(
+        rebased,
+        repo.log("subject(exact:work)").expect("log")[0]
+            .commit_id
+            .id,
+        "rebase returns the moved change's new commit"
+    );
 
     let parents = parents_by_description(&repo);
     assert_eq!(parents["base"], ["trunk-next"]);

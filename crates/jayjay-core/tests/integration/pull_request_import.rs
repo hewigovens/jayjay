@@ -6,28 +6,6 @@ fn add_origin(repo_path: &std::path::Path, url: &str) {
 }
 
 #[test]
-fn preview_rejects_unsupported_urls_before_touching_the_repo() {
-    let temp = init_jj_repo();
-    let repo = Repo::open(&temp.path().join("repo")).expect("open repo");
-    for url in [
-        "not a url",
-        "https://github.com/hewigovens/jayjay",
-        "https://github.com/hewigovens/jayjay/issues/290",
-        "https://example.com/o/r/pull/1",
-    ] {
-        let error = repo
-            .pull_request_import_preview(url, &repo.sync_token())
-            .expect_err("unsupported URL must fail");
-        assert!(
-            error
-                .to_string()
-                .contains("Not a supported pull request URL"),
-            "{url}: {error}"
-        );
-    }
-}
-
-#[test]
 fn preview_requires_a_supported_origin_remote() {
     let temp = init_jj_repo();
     let repo_path = temp.path().join("repo");

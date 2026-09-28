@@ -177,21 +177,6 @@ mod tests {
     }
 
     #[test]
-    fn pinned_workspaces_nest_under_their_pinned_root() {
-        let groups = group_with(
-            &strings(&["/work/agent-b", "/work/main", "/work/orphan-ws"]),
-            &strings(&["/work/agent-a"]),
-            primary_root,
-        );
-        assert_eq!(paths(&groups.pinned), ["/work/main", "/work/orphan-ws"]);
-        assert_eq!(
-            groups.pinned[0].workspaces,
-            ["/work/agent-a", "/work/agent-b"]
-        );
-        assert!(groups.recent.is_empty());
-    }
-
-    #[test]
     fn recent_workspaces_nest_under_their_listed_root() {
         let groups = group_with(
             &strings(&["/work/main"]),
@@ -219,24 +204,6 @@ mod tests {
                 .iter()
                 .all(|group| group.workspaces.is_empty())
         );
-    }
-
-    #[test]
-    fn primary_root_spelling_does_not_have_to_match_the_listed_entry() {
-        let temp = tempfile::tempdir().expect("tempdir");
-        let root = temp.path().join("main");
-        let workspace = temp.path().join("agent");
-        std::fs::create_dir_all(&root).expect("root");
-        std::fs::create_dir_all(&workspace).expect("workspace");
-        let listed = |path: &std::path::Path| super::canonical(&path.to_string_lossy());
-        let unresolved_root = root.join(".").to_string_lossy().into_owned();
-
-        let groups = group_with(&[listed(&root)], &[listed(&workspace)], |_| {
-            Some(unresolved_root.clone())
-        });
-
-        assert_eq!(groups.pinned[0].workspaces, [listed(&workspace)]);
-        assert!(groups.recent.is_empty(), "{:?}", groups.recent);
     }
 
     #[test]

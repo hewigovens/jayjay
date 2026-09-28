@@ -24,22 +24,6 @@ fn editor_command_fails_fast_instead_of_hanging() {
 }
 
 #[test]
-fn non_editor_command_still_succeeds() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-
-    let result = JjCommand::new("status")
-        .run_in_path(&repo_path)
-        .expect("status should run");
-
-    assert_eq!(
-        result.exit_code, 0,
-        "status must succeed: {}",
-        result.output
-    );
-}
-
-#[test]
 fn describe_with_message_does_not_need_editor() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

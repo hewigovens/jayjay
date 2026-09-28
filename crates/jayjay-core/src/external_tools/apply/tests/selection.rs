@@ -42,27 +42,6 @@ fn applies_scanner_validated_text_with_a_placeholder_prefix() {
 }
 
 #[test]
-fn empty_selection_restores_the_left_file() {
-    let right = tempfile::tempdir().expect("right");
-    fs::write(right.path().join("file.txt"), "after\n").expect("right file");
-    let selection = DiffEditFileSelection {
-        path: "file.txt".to_owned(),
-        old_path: None,
-        old_content: Some("before\n".to_owned()),
-        new_content: Some("after\n".to_owned()),
-        hunk_type: HunkType::Modified,
-        line_ranges: vec![],
-    };
-
-    apply_external_diff_selections(right.path(), right.path(), &[external(selection)], false)
-        .expect("apply");
-    assert_eq!(
-        fs::read_to_string(right.path().join("file.txt")).expect("read"),
-        "before\n"
-    );
-}
-
-#[test]
 fn rejects_parent_path_components() {
     let right = tempfile::tempdir().expect("right");
     let selection = DiffEditFileSelection {

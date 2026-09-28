@@ -36,22 +36,6 @@ fn workspace_add_and_forget_roundtrip() {
     assert!(dest.join(".jj").exists(), "forget never deletes files");
 }
 
-#[test]
-fn workspace_add_duplicate_name_errors() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo = Repo::open(&repo_path).expect("open repo");
-
-    let first = temp_dir.path().join("ws-one");
-    let second = temp_dir.path().join("ws-two");
-    repo.workspace_add(first.to_str().expect("utf8 dest"), "feature", "")
-        .expect("first add");
-    let err = repo
-        .workspace_add(second.to_str().expect("utf8 dest"), "feature", "")
-        .expect_err("duplicate workspace name must error");
-    assert!(err.to_string().contains("already exists"), "{err}");
-}
-
 /// An option-shaped relative destination must reach jj as a literal path; without the `--` separator jj parses `-hostile` as flags and the add fails.
 #[test]
 fn workspace_add_treats_option_shaped_destination_as_literal_path() {

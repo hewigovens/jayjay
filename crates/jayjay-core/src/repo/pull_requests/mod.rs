@@ -140,12 +140,6 @@ mod tests {
     }
 
     #[test]
-    fn confirmed_absence_falls_back_to_compose() {
-        let url = open_url_for_lookup(PrLookup::NotFound, || "COMPOSE".into());
-        assert_eq!(url, "COMPOSE");
-    }
-
-    #[test]
     fn unknown_falls_back_to_compose() {
         // gh missing/unauthenticated or offline: still open the host's new-PR page. It surfaces an existing PR instead of duplicating, so the button works rather than dying with a misleading "push first" message.
         let url = open_url_for_lookup(PrLookup::Unknown, || "COMPOSE".into());

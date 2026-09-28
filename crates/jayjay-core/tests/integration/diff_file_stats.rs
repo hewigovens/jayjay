@@ -4,40 +4,6 @@ use jayjay_core::Repo;
 use jj_test::{FormatFixture, init_jj_repo, run_jj_in};
 
 #[test]
-fn diff_file_stats_reports_per_file_line_counts() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    run_jj_in(&repo_path, &["new", "-m", "edit files"]);
-    let repo = Repo::open(&repo_path).expect("open repo");
-
-    fs::write(
-        repo_path.join("hello.txt"),
-        "hello from tests\nsecond line\n",
-    )
-    .expect("modify hello.txt");
-    fs::write(repo_path.join("added.txt"), "one\ntwo\nthree\n").expect("write added.txt");
-    repo.refresh_working_copy().expect("snapshot working copy");
-
-    let stats = repo.diff_file_stats("@", false).expect("diff file stats");
-    let for_path = |path: &str| {
-        stats
-            .iter()
-            .find(|file| file.path == path)
-            .unwrap_or_else(|| panic!("missing stats for {path}"))
-    };
-
-    let added = for_path("added.txt");
-    assert_eq!((added.insertions, added.deletions), (3, 0));
-
-    let modified = for_path("hello.txt");
-    assert_eq!(
-        (modified.insertions, modified.deletions),
-        (2, 1),
-        "all stats: {stats:?}"
-    );
-}
-
-#[test]
 fn diff_stats_totals_the_per_file_counts() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

@@ -134,3 +134,17 @@ pub(crate) fn unique_name(base: &str, mut is_taken: impl FnMut(&str) -> bool) ->
         .find(|candidate| !is_taken(candidate))
         .expect("an unbounded range always yields a free name")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::unique_name;
+
+    #[test]
+    fn unique_name_skips_taken_suffixes() {
+        assert_eq!(unique_name("topic", |_| false), "topic");
+        assert_eq!(
+            unique_name("topic", |name| ["topic", "topic-2"].contains(&name)),
+            "topic-3"
+        );
+    }
+}
