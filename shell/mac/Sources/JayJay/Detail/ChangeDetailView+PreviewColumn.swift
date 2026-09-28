@@ -5,9 +5,8 @@ extension ChangeDetailView {
     // MARK: - Empty state
 
     var emptyState: some View {
-        VStack(alignment: .leading, spacing: 16) {
-            descriptionSection()
-            metadataSection
+        VStack(alignment: .leading, spacing: 0) {
+            detailHeader
             Divider()
             if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(
@@ -26,8 +25,19 @@ extension ChangeDetailView {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .padding(PaneLayout.detailInset)
         .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
+    }
+
+    private var detailHeader: some View {
+        VStack(alignment: .leading, spacing: descriptionExpanded.wrappedValue ? 12 : 0) {
+            descriptionSection()
+            metadataSection
+                .frame(minHeight: descriptionExpanded.wrappedValue ? nil : PaneLayout.fileRowHeight(baseFontSize: baseFontSize))
+                .animation(reduceMotion ? nil : .smooth(duration: 0.35, extraBounce: 0), value: descriptionExpanded.wrappedValue)
+        }
+        .padding(.horizontal, PaneLayout.detailInset)
+        .padding(.bottom, descriptionExpanded.wrappedValue ? 18 : 0)
+        .zIndex(1)
     }
 
     // MARK: - Preview column
@@ -37,15 +47,7 @@ extension ChangeDetailView {
             if isCompareMode {
                 compareBanner
             } else {
-                VStack(alignment: .leading, spacing: descriptionExpanded.wrappedValue ? 12 : 0) {
-                    descriptionSection()
-                    metadataSection
-                        .frame(minHeight: descriptionExpanded.wrappedValue ? nil : PaneLayout.fileRowHeight(baseFontSize: baseFontSize))
-                        .animation(reduceMotion ? nil : .smooth(duration: 0.35, extraBounce: 0), value: descriptionExpanded.wrappedValue)
-                }
-                .padding(.horizontal, PaneLayout.detailInset)
-                .padding(.bottom, descriptionExpanded.wrappedValue ? 18 : 0)
-                .zIndex(1)
+                detailHeader
             }
 
             Divider()

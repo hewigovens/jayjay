@@ -46,7 +46,6 @@ struct DescriptionPreview: View {
                     expandedHeight: expandedHeight, expanded: expanded
                 )
                 .padding(.vertical, 6)
-                .frame(height: expanded ? nil : PaneLayout.fileRowHeight(baseFontSize: baseFontSize), alignment: .top)
             }
         }
         .accessibilityElement(children: .contain)
