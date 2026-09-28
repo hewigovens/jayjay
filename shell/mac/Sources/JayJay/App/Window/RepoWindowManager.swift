@@ -28,6 +28,7 @@ final class RepoWindowManager {
     private var removalCountsByWorkspace: [WorkspaceKey: Int] = [:]
     private var pendingReveals: [String: (headChangeId: String, rev: String)] = [:]
     private var overviewWindows: [String: WeakWindow] = [:]
+    let workspaceDrafts = WorkspaceDraftStore()
 
     init(settings: AppSettings) {
         self.settings = settings
@@ -248,6 +249,10 @@ final class RepoWindowManager {
             return
         }
 
+        if let normalizedPath {
+            workspaceDrafts.discard(for: normalizedPath)
+        }
+
         if !workspace.path.isEmpty {
             settings.removeRecentRepo(workspace.path)
         }
@@ -365,6 +370,24 @@ final class RepoWindowManager {
             return
         }
         openWindowAction?(AppWindows.repo, normalizedPath)
+    }
+
+    /// Switch in place, or activate an already open destination while preserving the source window.
+    func switchRepo(from viewModel: RepoViewModel, to path: String, changePath: (String) -> Void) {
+        let target = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
+        guard !isRemovingRepo(at: target), target != normalizedRepositoryPath(path: viewModel.repoPath) else { return }
+        settings.recordOpenedRepo(target)
+        if activateRepo(target) {
+            return
+        }
+        // Keep the source model alive until the destination opens, so a failed switch can return to it.
+        changePath(target)
+    }
+
+    /// Retire the source only after the destination has registered successfully.
+    func finishSwitch(from viewModel: RepoViewModel) {
+        viewModel.windowWillClose()
+        registeredRepos.removeValue(forKey: ObjectIdentifier(viewModel))
     }
 }
 

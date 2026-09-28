@@ -102,7 +102,11 @@ extension RepoContentView {
             RepoTitlePicker(
                 repoPath: viewModel.repoPath,
                 workspaces: viewModel.workspaces,
-                onOpenWorkspace: { workspace in
+                onSwitchWorkspace: { workspace in
+                    guard workspace.isPathResolved else { return }
+                    windowManager.switchRepo(from: viewModel, to: workspace.path, changePath: onSwitchWorkspace)
+                },
+                onOpenWorkspaceInNewWindow: { workspace in
                     guard workspace.isPathResolved else { return }
                     windowManager.openRepo(workspace.path)
                 },

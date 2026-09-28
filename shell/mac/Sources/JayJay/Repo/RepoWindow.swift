@@ -3,6 +3,8 @@ import SwiftUI
 
 struct RepoWindow: View {
     let repoPath: String
+    let windowNumber: Int?
+    let onSwitchWorkspace: (String) -> Void
     @State private var viewModel: RepoViewModel?
     @State private var initError: String?
     @Environment(AppSettings.self) private var settings
@@ -11,21 +13,30 @@ struct RepoWindow: View {
     var body: some View {
         Group {
             if let model = viewModel {
-                RepoContentView(viewModel: model)
+                // Keep the old content visible during a switch, then reset only repository-scoped view state at handoff.
+                RepoContentView(viewModel: model, onSwitchWorkspace: { path in
+                    if let windowNumber {
+                        windowManager.workspaceDrafts.preserve(from: model, in: windowNumber)
+                    }
+                    onSwitchWorkspace(path)
+                })
+                .id(model.repoPath)
+                .disabled(model.repoPath != repoPath)
             } else if let err = initError {
                 RepoInitErrorView(repoPath: repoPath, error: err, onInitialize: initJJRepo)
             } else {
                 ProgressView("Loading repository...")
             }
         }
-        .task { await openRepo() }
-        .navigationTitle(URL(fileURLWithPath: repoPath).repositoryDisplayName)
+        .task(id: repoPath) { await openRepo() }
+        .navigationTitle(URL(fileURLWithPath: viewModel?.repoPath ?? repoPath).repositoryDisplayName)
         .toolbar(removing: .title)
         .background(WindowConfigurator { $0.representedURL = URL(fileURLWithPath: repoPath) })
     }
 
     private func openRepo() async {
         let path = repoPath
+        guard viewModel?.repoPath != path else { return }
         let includeSubmodules = settings.enableGitSubmoduleSupport
         // Off the main thread so the app stays responsive while loading large checkouts.
         let result = await Task.detached {
@@ -48,10 +59,23 @@ struct RepoWindow: View {
                     configWarning: opened.configWarning,
                     includeSubmoduleStatuses: includeSubmodules
                 )
+                if let windowNumber, let draft = windowManager.workspaceDrafts.draft(for: path, in: windowNumber) {
+                    model.commitSummaryDraft = draft.summary
+                    model.commitDescriptionDraft = draft.body
+                }
                 guard windowManager.register(model) else {
-                    windowManager.closeRepoWindow(at: path)
+                    if let previous = viewModel {
+                        previous.error = "Cannot switch to a workspace while it is being removed."
+                        onSwitchWorkspace(previous.repoPath)
+                    } else {
+                        windowManager.closeRepoWindow(at: path)
+                    }
                     return
                 }
+                if let previous = viewModel {
+                    windowManager.finishSwitch(from: previous)
+                }
+                initError = nil
                 viewModel = model
                 if let reveal = windowManager.takePendingReveal(for: path) {
                     model.revealAncestors(of: reveal.headChangeId, selecting: reveal.rev)
@@ -60,7 +84,12 @@ struct RepoWindow: View {
                 // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
                 model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
             case let .failure(error):
-                initError = error.friendlyDescription
+                if let previous = viewModel {
+                    previous.error = error.friendlyDescription
+                    onSwitchWorkspace(previous.repoPath)
+                } else {
+                    initError = error.friendlyDescription
+                }
         }
     }
 
