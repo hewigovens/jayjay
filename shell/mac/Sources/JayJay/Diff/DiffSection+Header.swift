@@ -4,62 +4,58 @@ import SwiftUI
 
 extension DiffSection {
     var diffHeader: some View {
-        HStack {
-            if let onEditFile, canEditLoadedWorkingCopyFile {
-                Button(action: onEditFile) {
-                    Image(systemName: "pencil")
-                        .jayjayFont(13)
-                        .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .fixedSize()
-                .help("Edit this working-copy file")
-                .accessibilityLabel("Edit File")
-                .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
-            }
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            renamePathLabel
             FilePathLabel(path: hunk.path, size: 13)
                 .textSelection(.enabled)
                 .help(hunk.path)
                 .accessibilityIdentifier(AID.Diff.section)
             CopyIconButton(value: hunk.path, help: "Copy path")
-            richPreviewButtons
-            Spacer()
-            renamePathLabel
-            if canOpenDiffEdit {
-                Button(action: openDiffEdit) {
-                    HStack(spacing: 4) {
-                        Image(systemName: "square.and.pencil")
-                        if !compactHeader {
-                            Text("Edit Diff")
-                        }
-                    }
-                    .jayjayFont(11)
-                    .foregroundStyle(.secondary)
-                }
-                .buttonStyle(.plain)
-                .fixedSize()
-                .keyboardFocusStop(.editDiff, action: openDiffEdit)
-                .help("Open dedicated diff edit mode")
-                .accessibilityLabel("Edit Diff")
-                .accessibilityIdentifier(AID.DiffEdit.open)
-            }
-            if let lineStats, lineStats.hasLineChanges {
-                LineStatsLabel(stats: lineStats, muted: true)
-                    .padding(.horizontal, 8)
-                    .padding(.vertical, 4)
-                    .background(Color.primary.opacity(0.06), in: Capsule())
-                    .fixedSize()
-            }
-            sideBySideButton
-                .fixedSize()
             Text(hunk.hunkType.label)
-                .jayjayFont(11, weight: .semibold)
-                .padding(.horizontal, 8)
-                .padding(.vertical, 4)
+                .jayjayFont(10, weight: .medium)
+                .foregroundStyle(hunk.hunkType.iconColor)
+                .padding(.horizontal, 7)
+                .padding(.vertical, 1)
                 .background(hunk.hunkType.iconColor.opacity(0.12), in: Capsule())
                 .fixedSize()
+            if let lineStats, lineStats.hasLineChanges {
+                LineStatsLabel(stats: lineStats)
+            }
+            Spacer(minLength: 8)
+            HStack(spacing: 2) {
+                richPreviewButtons
+                sideBySideButton
+                if canOpenDiffEdit {
+                    Button(action: openDiffEdit) {
+                        actionLabel("Edit Diff", systemImage: "square.and.pencil")
+                    }
+                    .keyboardFocusStop(.editDiff, action: openDiffEdit)
+                    .help("Open dedicated diff edit mode")
+                    .accessibilityLabel("Edit Diff")
+                    .accessibilityIdentifier(AID.DiffEdit.open)
+                }
+                if let onEditFile, canEditLoadedWorkingCopyFile {
+                    Button(action: onEditFile) {
+                        actionLabel("Edit File", systemImage: "pencil")
+                    }
+                    .help("Edit this working-copy file")
+                    .accessibilityLabel("Edit File")
+                    .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
+                }
+            }
+            .buttonStyle(HeaderActionButtonStyle())
+            .fixedSize()
         }
         .onGeometryChange(for: Bool.self) { $0.size.width < Self.compactHeaderWidth } action: { compactHeader = $0 }
+    }
+
+    private func actionLabel(_ title: String, systemImage: String) -> some View {
+        HStack(spacing: 4) {
+            Image(systemName: systemImage)
+            if !compactHeader {
+                Text(title)
+            }
+        }
     }
 
     /// Below this the labelled controls would squeeze the file name to nothing, so they drop to icons.
@@ -127,10 +123,7 @@ extension DiffSection {
     ) -> some View {
         Button(action: action) {
             Image(systemName: icon)
-                .jayjayFont(11)
-                .foregroundStyle(.secondary)
         }
-        .buttonStyle(.plain)
         .help(help)
     }
 
@@ -141,11 +134,9 @@ extension DiffSection {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            Image(systemName: icon)
-                .jayjayFont(11)
-                .foregroundStyle(active ? Color.accentColor : .secondary)
+            actionLabel("Preview", systemImage: icon)
         }
-        .buttonStyle(.plain)
+        .buttonStyle(HeaderActionButtonStyle(isActive: active))
         .help(active ? "Show source diff" : inactiveHelp)
     }
 
@@ -168,29 +159,11 @@ extension DiffSection {
     private var sideBySideButton: some View {
         let toggle = { settings.sideBySideDiff.toggle() }
         return Button(action: toggle) {
-            HStack(spacing: 5) {
-                Image(
-                    systemName: effectiveSideBySideDiff
-                        ? "rectangle.split.2x1"
-                        : "text.justify"
-                )
-                .jayjayFont(11)
-                if !compactHeader {
-                    Text(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
-                        .jayjayFont(11)
-                }
-            }
-            .foregroundStyle(effectiveSideBySideDiff ? Color.accentColor : .secondary)
-            .padding(.horizontal, 8)
-            .padding(.vertical, 3)
-            .background(
-                effectiveSideBySideDiff
-                    ? AnyShapeStyle(Color.accentColor.opacity(0.14))
-                    : AnyShapeStyle(Color.primary.opacity(0.06)),
-                in: RoundedRectangle(cornerRadius: 4, style: .continuous)
+            actionLabel(
+                effectiveSideBySideDiff ? "Side-by-side" : "Unified",
+                systemImage: effectiveSideBySideDiff ? "rectangle.split.2x1" : "text.justify"
             )
         }
-        .buttonStyle(.plain)
         .keyboardFocusStop(.diffLayout, action: toggle)
         .help(effectiveSideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
         .accessibilityLabel(effectiveSideBySideDiff ? "Side-by-side" : "Unified")

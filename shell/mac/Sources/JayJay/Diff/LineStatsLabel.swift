@@ -5,18 +5,17 @@ import SwiftUI
 struct LineStatsLabel: View {
     let stats: FileDiffStats
     var size: CGFloat = 11
-    var muted = false
 
     var body: some View {
         if stats.hasLineChanges {
             HStack(spacing: 4) {
                 if stats.insertions > 0 {
                     Text("+\(stats.insertions)")
-                        .foregroundStyle(muted ? AnyShapeStyle(.secondary) : AnyShapeStyle(.green))
+                        .foregroundStyle(.green)
                 }
                 if stats.deletions > 0 {
                     Text("-\(stats.deletions)")
-                        .foregroundStyle(muted ? AnyShapeStyle(.secondary) : AnyShapeStyle(.red))
+                        .foregroundStyle(.red)
                 }
             }
             .jayjayFont(size, weight: .semibold, design: .monospaced)
@@ -28,5 +27,7 @@ struct LineStatsLabel: View {
 }
 
 extension FileDiffStats {
-    var hasLineChanges: Bool { insertions > 0 || deletions > 0 }
+    var hasLineChanges: Bool {
+        insertions > 0 || deletions > 0
+    }
 }
