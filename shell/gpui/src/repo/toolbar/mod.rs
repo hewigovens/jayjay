@@ -29,7 +29,6 @@ pub(crate) struct ToolbarRepo {
 
 pub(crate) fn toolbar(
     repo: ToolbarRepo,
-    bookmark_count: usize,
     sidebar_hidden: bool,
     revset_filter_visible: bool,
     activity: ToolbarActivity,
@@ -70,7 +69,6 @@ pub(crate) fn toolbar(
             &t,
             cx,
         ))
-        .child(buttons::bookmarks_button(bookmark_count, &t, cx))
         .child(buttons::sync_cluster(
             revset_filter_visible,
             activity,

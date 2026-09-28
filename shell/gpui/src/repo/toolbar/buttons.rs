@@ -2,16 +2,16 @@ use std::time::Duration;
 
 use gpui::{
     Animation, AnimationExt as _, AnyElement, ClickEvent, Context, InteractiveElement, IntoElement,
-    MouseButton, MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
-    Transformation, Window, div, percentage, point, px, rgb, svg,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, Transformation, Window, div,
+    percentage, point, px, rgb, svg,
 };
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::theme::Theme;
 use crate::repo::toolbar::ToolbarActivity;
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_ICON_SIZE, icon_label};
+use crate::ui::primitives::TOOLBAR_ICON_SIZE;
 use crate::windows::settings::SettingsView;
 
 #[derive(Clone, Copy)]
@@ -109,48 +109,6 @@ pub(super) fn sidebar_toggle_button(
         ],
     )
     .into_any_element()
-}
-
-pub(super) fn bookmarks_button(
-    count: usize,
-    t: &Theme,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
-    let label = if count == 0 {
-        SharedString::from("Bookmarks")
-    } else {
-        SharedString::from(format!("Bookmarks ({count})"))
-    };
-    div()
-        .id(SharedString::from("tb-bookmarks"))
-        .debug_selector(move || format!("toolbar-bookmarks-{count}"))
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(6.))
-        .h(px(TOOLBAR_BUTTON_HEIGHT))
-        .px(px(12.))
-        .rounded_full()
-        .bg(rgb(t.toolbar_group_bg))
-        .text_size(ui_font_size(11.))
-        .text_color(rgb(t.fg_dim))
-        .cursor_pointer()
-        .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .active(|s| s.bg(rgb(t.selected_bg)))
-        .on_mouse_down(
-            MouseButton::Left,
-            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
-                view.focus_handle.focus(window, cx);
-                view.open_bookmark_picker(ev.position, cx);
-            }),
-        )
-        .child(icon_label(
-            glyph::GIT_BRANCH,
-            label,
-            TOOLBAR_ICON_SIZE,
-            t.fg_dim,
-        ))
-        .into_any_element()
 }
 
 fn revset_filter_button(

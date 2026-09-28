@@ -1,13 +1,17 @@
-use gpui::{AnyElement, Context, Entity, KeyDownEvent, MouseDownEvent, Pixels, Point};
-use jayjay_core::BookmarkInfo;
+use gpui::ScrollStrategy;
+use gpui::{
+    AnyElement, Context, Entity, InteractiveElement, IntoElement, KeyDownEvent, MouseButton,
+    MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, div, px, rgb,
+};
+use jayjay_core::{BookmarkFilterTarget, BookmarkInfo};
 
 mod entry;
 mod rows;
 
 use super::RepoWindow;
 use super::picker::{self, PickerOutcome, PickerQuery, picker_actions, render_sections};
-use crate::app::theme::Theme;
-use crate::ui::icons::glyph;
+use crate::app::theme::{Theme, ui_font_size};
+use crate::ui::icons::{self, glyph};
 use crate::ui::input::LineInput;
 use rows::{bookmark_row, bookmark_sections};
 
@@ -53,6 +57,38 @@ impl RepoWindow {
         self.apply_revset(revset, cx);
     }
 
+    /// Selects the bookmark's exact commit where the graph shows it, so a divergent sibling is never picked; otherwise filters to its stack.
+    pub(super) fn reveal_bookmark(
+        &mut self,
+        target: &BookmarkFilterTarget,
+        cx: &mut Context<Self>,
+    ) {
+        self.close_bookmark_picker(cx);
+        let vm = self.vm.read(cx);
+        let commit_id = vm
+            .repo
+            .as_ref()
+            .and_then(|repo| repo.log(&target.head).ok())
+            .and_then(|changes| changes.into_iter().next())
+            .map(|change| change.commit_id.id);
+        let row = commit_id.as_ref().and_then(|commit_id| {
+            vm.graph
+                .changes
+                .iter()
+                .position(|change| &change.commit_id.id == commit_id)
+        });
+        match (row, commit_id) {
+            (Some(ix), _) => {
+                self.show_sidebar(cx);
+                self.scrolls
+                    .changes
+                    .scroll_to_item(ix, ScrollStrategy::Center);
+                self.select_change(ix, cx);
+            }
+            (None, selecting) => self.apply_revset_selecting(&target.revset, selecting, cx),
+        }
+    }
+
     pub(super) fn handle_bookmark_picker_key(
         &mut self,
         event: &KeyDownEvent,
@@ -70,12 +106,12 @@ impl RepoWindow {
         match outcome {
             PickerOutcome::Handled => {}
             PickerOutcome::Dismiss => self.close_bookmark_picker(cx),
-            PickerOutcome::Activate(revset) => self.filter_bookmark_revset(&revset, cx),
+            PickerOutcome::Activate(target) => self.reveal_bookmark(&target, cx),
         }
         true
     }
 
-    fn bookmark_picker_actions(&self, cx: &gpui::App) -> Vec<(String, usize)> {
+    fn bookmark_picker_actions(&self, cx: &gpui::App) -> Vec<(BookmarkFilterTarget, usize)> {
         let Some(state) = self.bookmark_picker.as_ref() else {
             return Vec::new();
         };
@@ -150,4 +186,65 @@ fn menu_panel(
         &state.query.scroll,
         t,
     )
+}
+
+/// Bookmarks the picker lists: live ones, plus deleted ones still on a remote the user does not track.
+pub(crate) fn listed_bookmark_count(bookmarks: &[BookmarkInfo]) -> usize {
+    bookmarks
+        .iter()
+        .filter(|bookmark| {
+            !bookmark.is_deleted
+                || bookmark
+                    .available_remotes
+                    .iter()
+                    .any(|remote| !bookmark.tracked_remotes.contains(remote))
+        })
+        .count()
+}
+
+pub(crate) fn bookmarks_header_button(
+    count: usize,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let mut button = div()
+        .id(SharedString::from("bookmarks-button"))
+        .debug_selector(move || format!("bookmarks-button-{count}"))
+        .flex()
+        .flex_none()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
+        .h(px(t.scaled_control_height(26., 12.)))
+        .px(px(6.))
+        .rounded_md()
+        .text_size(ui_font_size(12.))
+        .font_weight(gpui::FontWeight::MEDIUM)
+        .text_color(rgb(t.fg))
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+                view.focus_handle.focus(window, cx);
+                view.open_bookmark_picker(ev.position, cx);
+            }),
+        )
+        .child(icons::icon(glyph::BOOKMARK, 12., t.fg))
+        .child("Bookmarks");
+    if count > 0 {
+        button = button.child(
+            div()
+                .px(px(5.))
+                .rounded_full()
+                .bg(rgb(t.toggle_inactive_bg))
+                .text_size(ui_font_size(11.))
+                .font_weight(gpui::FontWeight::NORMAL)
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(count.to_string())),
+        );
+    }
+    button
+        .child(icons::icon(glyph::CARET_DOWN, 10., t.fg_dim))
+        .into_any_element()
 }

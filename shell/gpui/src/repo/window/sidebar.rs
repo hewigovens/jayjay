@@ -4,6 +4,7 @@ use gpui::{
     uniform_list,
 };
 
+use super::bookmark_picker::{bookmarks_header_button, listed_bookmark_count};
 use super::dag::{DagRowLanes, dag_column};
 use super::dag_drag::DagDragSelection;
 use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
@@ -194,21 +195,31 @@ pub(super) fn sidebar(
             .flex()
             .flex_row()
             .items_center()
+            .gap(px(8.))
             .w_full()
             .min_h(px(t.scaled_font_size(HEADER_HEIGHT)))
-            .px(px(14.))
-            .py(px(6.))
+            .pl(px(8.))
+            .pr(px(14.))
             .border_b_1()
             .border_color(rgb(t.border))
-            .text_size(ui_font_size(13.))
-            .font_weight(gpui::FontWeight::MEDIUM)
-            .text_color(rgb(t.fg_dim))
-            .debug_selector(move || format!("sidebar-changes-header-{change_count}"))
-            .child(if change_count == 1 {
-                "1 change".to_owned()
-            } else {
-                format!("{change_count} changes")
-            }),
+            .child(bookmarks_header_button(
+                listed_bookmark_count(&bookmarks),
+                t,
+                cx,
+            ))
+            .child(div().flex_1())
+            .child(
+                div()
+                    .flex_none()
+                    .text_size(ui_font_size(12.))
+                    .text_color(rgb(t.fg_dim))
+                    .debug_selector(move || format!("sidebar-changes-header-{change_count}"))
+                    .child(if change_count == 1 {
+                        "1 change".to_owned()
+                    } else {
+                        format!("{change_count} changes")
+                    }),
+            ),
     );
     if let Some(filter) = revset_filter_panel(view, t, cx) {
         col = col.child(filter);

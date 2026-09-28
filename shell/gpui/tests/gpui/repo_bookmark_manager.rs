@@ -78,7 +78,7 @@ fn bookmark_count_and_manager_ignore_deleted_until_requested(cx: &mut TestAppCon
     run_jj_in(&fixture.path, &["bookmark", "delete", "stale"]);
     let (view, repo_cx) = open_fixture(&fixture, cx);
 
-    assert!(repo_cx.debug_bounds("toolbar-bookmarks-1").is_some());
+    assert!(repo_cx.debug_bounds("bookmarks-button-1").is_some());
     let mut manager_cx = open_manager(&view, repo_cx);
 
     assert!(manager_cx.debug_bounds("bookmark-stat-active-1").is_some());

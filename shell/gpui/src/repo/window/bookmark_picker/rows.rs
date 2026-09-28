@@ -79,8 +79,8 @@ pub(super) fn bookmark_row(
     };
     let height = if caption.is_some() { 38. } else { 28. };
     let label = entry.label();
-    let revset = entry.revset();
-    let context_revset = revset.clone();
+    let target = entry.target();
+    let context_target = target.clone();
     let click_view = view.clone();
     let context_view = view.clone();
     let context_bookmark = bookmark.clone();
@@ -89,17 +89,24 @@ pub(super) fn bookmark_row(
         .cursor_pointer()
         .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
             cx.stop_propagation();
-            click_view.update(cx, |view, cx| view.filter_bookmark_revset(&revset, cx));
+            if let Some(target) = &target {
+                click_view.update(cx, |view, cx| view.reveal_bookmark(target, cx));
+            }
         })
         .on_mouse_down(MouseButton::Right, move |event: &MouseDownEvent, _, cx| {
             let anchor = event.position;
             let bookmark = context_bookmark.clone();
             context_view.update(cx, |view, cx| {
-                let mut items = vec![ContextMenuItem::new(
-                    "Filter by this bookmark",
-                    glyph::FILTER,
-                    ContextAction::FilterBookmarkRevset(context_revset.clone().into()),
-                )];
+                let mut items: Vec<_> = context_target
+                    .iter()
+                    .map(|target| {
+                        ContextMenuItem::new(
+                            "Filter by This Bookmark",
+                            glyph::FILTER,
+                            ContextAction::FilterBookmarkRevset(target.revset.clone().into()),
+                        )
+                    })
+                    .collect();
                 if let Some(remote) = &remote {
                     items.push(ContextMenuItem::new(
                         format!("Track {}@{remote}", bookmark.name),
@@ -181,8 +188,16 @@ mod tests {
     use jayjay_core::mock::bookmark_info;
     use jayjay_core::{BookmarkInfo, bookmark_filter_revset};
 
+    use super::super::entry::BookmarkPickerEntry;
     use super::{BookmarkPickerState, bookmark_sections};
-    use crate::repo::window::picker::{PickerQuery, picker_actions};
+    use crate::repo::window::picker::{PickerQuery, PickerSection, picker_actions};
+
+    fn picker_revsets(sections: &[PickerSection<BookmarkPickerEntry>]) -> Vec<(String, usize)> {
+        picker_actions(sections)
+            .into_iter()
+            .map(|(target, index)| (target.revset, index))
+            .collect()
+    }
 
     fn bookmark(name: &str, tracking: bool) -> BookmarkInfo {
         BookmarkInfo {
@@ -210,7 +225,7 @@ mod tests {
         assert_eq!(sections[1].title, Some("Local Only"));
         assert_eq!(sections[1].rows[0].bookmark.name, "local");
         assert_eq!(
-            picker_actions(&sections),
+            picker_revsets(&sections),
             vec![
                 (bookmark_filter_revset("tracked", None), 1),
                 (bookmark_filter_revset("local", None), 3)
@@ -241,7 +256,7 @@ mod tests {
         state.query.input.set_text("upstream".to_owned());
         let sections = bookmark_sections(&state, &bookmarks);
         assert_eq!(
-            picker_actions(&sections),
+            picker_revsets(&sections),
             [(bookmark_filter_revset("odd&name", Some("upstream")), 1)]
         );
     }
@@ -270,16 +285,18 @@ mod tests {
 
     #[test]
     fn remote_row_identity_does_not_depend_on_its_display_label() {
-        let first = super::BookmarkPickerEntry {
-            bookmark: bookmark("a@b", false),
-            remote: Some("c".to_owned()),
+        let remote_only = |name: &str, remote: &str| super::BookmarkPickerEntry {
+            bookmark: BookmarkInfo {
+                has_local_target: false,
+                available_remotes: vec![remote.to_owned()],
+                ..bookmark(name, false)
+            },
+            remote: Some(remote.to_owned()),
         };
-        let second = super::BookmarkPickerEntry {
-            bookmark: bookmark("a", false),
-            remote: Some("b@c".to_owned()),
-        };
+        let first = remote_only("a@b", "c");
+        let second = remote_only("a", "b@c");
         assert_eq!(first.label(), second.label());
         assert_ne!(first.id(), second.id());
-        assert_ne!(first.revset(), second.revset());
+        assert_ne!(first.target(), second.target());
     }
 }

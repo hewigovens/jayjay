@@ -201,7 +201,7 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     repo_cx.focus(&view);
 
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-3")
+        .debug_bounds("bookmarks-button-3")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -229,24 +229,34 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     );
     assert!(repo_cx.debug_bounds("bookmark-picker-row-main").is_none());
 
+    let default_revset = view.read_with(repo_cx, |view, cx| {
+        view.view_model().read(cx).revset.to_string()
+    });
     repo_cx.simulate_keystrokes("enter");
     settle_visual(repo_cx);
     assert!(repo_cx.debug_bounds("bookmark-picker-panel").is_none());
     view.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
         assert_eq!(
-            view.view_model().read(cx).revset.as_ref(),
-            bookmark_filter_revset("tracked-picker", None).as_str()
+            vm.revset.as_ref(),
+            default_revset,
+            "a shown bookmark is selected, not filtered"
+        );
+        assert_eq!(
+            vm.selected_change()
+                .map(|change| change.commit_id.id.clone()),
+            Some(bookmark_commit(&fixture, "tracked-picker"))
         );
     });
 
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-3")
+        .debug_bounds("bookmarks-button-3")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
     repo_cx.simulate_input("odd");
-    repo_cx.simulate_keystrokes("enter");
     settle_visual(repo_cx);
+    filter_by_bookmark_row(repo_cx, "bookmark-picker-row-odd&name");
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
@@ -279,7 +289,7 @@ fn bookmark_picker_browses_remote_history_without_tracking(cx: &mut TestAppConte
     );
 
     let button = repo_cx
-        .debug_bounds("toolbar-bookmarks-2")
+        .debug_bounds("bookmarks-button-2")
         .expect("bookmark picker");
     repo_cx.simulate_click(button.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -296,9 +306,10 @@ fn bookmark_picker_browses_remote_history_without_tracking(cx: &mut TestAppConte
     );
     assert!(repo_cx.debug_bounds("context-menu-Push").is_none());
     assert!(repo_cx.debug_bounds("context-menu-Move to @-").is_none());
-    repo_cx.simulate_keystrokes("escape");
-    repo_cx.simulate_input("remote-picker@origin");
-    repo_cx.simulate_keystrokes("enter");
+    let filter = repo_cx
+        .debug_bounds("context-menu-Filter by This Bookmark")
+        .expect("filter menu item");
+    repo_cx.simulate_click(filter.center(), Modifiers::default());
     settle_visual(repo_cx);
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
@@ -356,7 +367,7 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     let (view, repo_cx) = open_fixture(&fixture, cx);
     repo_cx.focus(&view);
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-2")
+        .debug_bounds("bookmarks-button-2")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -393,7 +404,7 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     );
 
     let filter = repo_cx
-        .debug_bounds("context-menu-Filter by this bookmark")
+        .debug_bounds("context-menu-Filter by This Bookmark")
         .expect("filter menu item");
     repo_cx.simulate_click(filter.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -418,7 +429,7 @@ fn bookmark_picker_new_uses_the_existing_create_flow(cx: &mut TestAppContext) {
     let (view, repo_cx) = open_fixture(&fixture, cx);
     repo_cx.focus(&view);
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-1")
+        .debug_bounds("bookmarks-button-1")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -441,7 +452,7 @@ fn clicks_inside_a_picker_do_not_dismiss_it(cx: &mut TestAppContext) {
     let (view, repo_cx) = open_fixture(&fixture, cx);
     repo_cx.focus(&view);
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-1")
+        .debug_bounds("bookmarks-button-1")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -489,15 +500,11 @@ fn bookmark_picker_updates_an_open_revset_panel(cx: &mut TestAppContext) {
     assert!(repo_cx.debug_bounds("revset-filter-input").is_some());
 
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-1")
+        .debug_bounds("bookmarks-button-1")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
-    let row = repo_cx
-        .debug_bounds("bookmark-picker-row-main")
-        .expect("main bookmark row");
-    repo_cx.simulate_click(row.center(), Modifiers::default());
-    settle_visual(repo_cx);
+    filter_by_bookmark_row(repo_cx, "bookmark-picker-row-main");
 
     view.read_with(repo_cx, |view, cx| {
         assert_eq!(
@@ -573,7 +580,7 @@ fn bookmark_picker_enter_activates_the_best_match_across_sections(cx: &mut TestA
     let (view, repo_cx) = open_fixture(&fixture, cx);
     repo_cx.focus(&view);
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-2")
+        .debug_bounds("bookmarks-button-2")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -586,10 +593,32 @@ fn bookmark_picker_enter_activates_the_best_match_across_sections(cx: &mut TestA
 
     view.read_with(repo_cx, |view, cx| {
         assert_eq!(
-            view.view_model().read(cx).revset.as_ref(),
-            bookmark_filter_revset("main", None).as_str()
+            view.view_model()
+                .read(cx)
+                .selected_change()
+                .map(|change| change.commit_id.id.clone()),
+            Some(bookmark_commit(&fixture, "main"))
         );
     });
+}
+
+fn bookmark_commit(fixture: &LinearFixture, name: &str) -> String {
+    let output = run_jj_in(
+        &fixture.path,
+        &["log", "--no-graph", "-r", name, "-T", "commit_id"],
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_owned()
+}
+
+fn filter_by_bookmark_row(repo_cx: &mut VisualTestContext, row_selector: &'static str) {
+    let row = repo_cx.debug_bounds(row_selector).expect("bookmark row");
+    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    let filter = repo_cx
+        .debug_bounds("context-menu-Filter by This Bookmark")
+        .expect("filter menu item");
+    repo_cx.simulate_click(filter.center(), Modifiers::default());
+    settle_visual(repo_cx);
 }
 
 fn request_workspace_delete(repo_cx: &mut VisualTestContext, row_selector: &'static str) {
@@ -924,7 +953,7 @@ fn bookmark_picker_deletes_a_bookmark_on_a_divergent_change(cx: &mut TestAppCont
     });
 
     let bookmarks = repo_cx
-        .debug_bounds("toolbar-bookmarks-2")
+        .debug_bounds("bookmarks-button-2")
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
@@ -950,4 +979,64 @@ fn bookmark_picker_deletes_a_bookmark_on_a_divergent_change(cx: &mut TestAppCont
         );
         assert_eq!(view.toast().as_deref(), Some("Deleted bookmark doomed"));
     });
+}
+
+#[gpui::test]
+fn bookmark_picker_selects_the_divergent_version_its_bookmark_names(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let base_op = run_jj_in(
+        &fixture.path,
+        &["op", "log", "--no-graph", "--limit", "1", "-T", "id"],
+    );
+    let base_op = String::from_utf8(base_op.stdout).expect("utf-8 op id");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "describe",
+            "-r",
+            "subject(\"add hello\")",
+            "-m",
+            "add hello (alt)",
+        ],
+    );
+    run_jj_in(
+        &fixture.path,
+        &[
+            "--at-op",
+            base_op.trim(),
+            "describe",
+            "-r",
+            "subject(\"add hello\")",
+            "-m",
+            "add hello (orig)",
+        ],
+    );
+    for (name, subject) in [("alt", "add hello (alt)"), ("orig", "add hello (orig)")] {
+        let revset = format!("subject(\"{subject}\")");
+        run_jj_in(&fixture.path, &["bookmark", "create", name, "-r", &revset]);
+    }
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+
+    for name in ["orig", "alt"] {
+        let bookmarks = repo_cx
+            .debug_bounds("bookmarks-button-3")
+            .expect("bookmark picker button");
+        repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        let row = repo_cx
+            .debug_bounds(match name {
+                "orig" => "bookmark-picker-row-orig",
+                _ => "bookmark-picker-row-alt",
+            })
+            .expect("bookmark row");
+        repo_cx.simulate_click(row.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        view.read_with(repo_cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            let selected = vm.selected_change().expect("a selected change");
+            assert!(selected.is_divergent);
+            assert_eq!(selected.commit_id.id, bookmark_commit(&fixture, name));
+        });
+    }
 }

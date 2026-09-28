@@ -1,4 +1,4 @@
-use jayjay_core::{BookmarkInfo, bookmark_filter_revset};
+use jayjay_core::{BookmarkFilterTarget, BookmarkInfo};
 
 use crate::repo::window::picker::PickerRow;
 
@@ -24,15 +24,18 @@ impl BookmarkPickerEntry {
         }
     }
 
-    pub fn revset(&self) -> String {
-        bookmark_filter_revset(&self.bookmark.name, self.remote.as_deref())
+    pub fn target(&self) -> Option<BookmarkFilterTarget> {
+        let label = self.label();
+        BookmarkFilterTarget::for_bookmark(&self.bookmark)
+            .into_iter()
+            .find(|target| target.name == label)
     }
 }
 
 impl PickerRow for BookmarkPickerEntry {
-    type Action = String;
+    type Action = BookmarkFilterTarget;
 
-    fn action(&self) -> Option<String> {
-        Some(self.revset())
+    fn action(&self) -> Option<BookmarkFilterTarget> {
+        self.target()
     }
 }

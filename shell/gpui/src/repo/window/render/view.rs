@@ -40,19 +40,9 @@ impl Render for RepoWindow {
         self.sync_review_notes(cx);
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let (_, file_column_width) = self.layout.fitted(f32::from(window.viewport_size().width));
-        let (toolbar_repo, bookmark_count, bookmarks, workspaces, is_refreshing) = {
+        let (toolbar_repo, bookmarks, workspaces, is_refreshing) = {
             let vm = self.vm.read(cx);
             let bookmarks = vm.graph.bookmarks.clone();
-            let bookmark_count = bookmarks
-                .iter()
-                .filter(|bookmark| {
-                    !bookmark.is_deleted
-                        || bookmark
-                            .available_remotes
-                            .iter()
-                            .any(|remote| !bookmark.tracked_remotes.contains(remote))
-                })
-                .count();
             let workspaces = vm.graph.workspaces.clone();
             let toolbar_repo = ToolbarRepo {
                 path: vm.repo_path.clone(),
@@ -64,7 +54,6 @@ impl Render for RepoWindow {
             };
             (
                 toolbar_repo,
-                bookmark_count,
                 bookmarks,
                 workspaces,
                 vm.loading.refresh_indicator,
@@ -188,7 +177,6 @@ impl Render for RepoWindow {
         root = root
             .child(crate::repo::toolbar::toolbar(
                 toolbar_repo,
-                bookmark_count,
                 self.layout.sidebar_hidden,
                 self.revset_filter_visible(),
                 ToolbarActivity {

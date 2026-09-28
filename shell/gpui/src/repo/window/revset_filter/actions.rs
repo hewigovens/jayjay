@@ -105,12 +105,24 @@ impl RepoWindow {
     }
 
     pub(in super::super) fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+        self.apply_revset_selecting(revset, None, cx);
+    }
+
+    pub(in super::super) fn apply_revset_selecting(
+        &mut self,
+        revset: &str,
+        selecting: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
         self.show_sidebar(cx);
         self.previous_ancestor_filter = None;
         if let Some(input) = self.revset_filter.as_mut() {
             input.set_text(revset);
         }
-        self.vm.update(cx, |vm, cx| vm.apply_revset(revset, cx));
+        self.vm.update(cx, |vm, cx| match selecting {
+            Some(commit_id) => vm.apply_revset_selecting(revset, commit_id, cx),
+            None => vm.apply_revset(revset, cx),
+        });
         LineInput::hide_for_owner(self, cx, Self::revset_input);
         cx.notify();
     }
