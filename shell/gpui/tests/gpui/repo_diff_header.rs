@@ -97,11 +97,11 @@ fn diff_header_opens_working_copy_html_in_default_app(cx: &mut TestAppContext) {
     let button = cx
         .debug_bounds("open-html-external")
         .expect("html external-open button");
-    let copy = cx.debug_bounds("diff-copy-path").expect("copy path button");
-    let gap = button.origin.x - (copy.origin.x + copy.size.width);
+    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
+    let gap = mode.origin.x - (button.origin.x + button.size.width);
     assert!(
-        gap <= px(8.),
-        "html external-open button should sit next to copy, gap was {gap:?}"
+        gap >= px(0.) && gap <= px(8.),
+        "html external-open button should sit with the header actions, just before the mode toggle; gap was {gap:?}"
     );
 
     cx.simulate_click(button.center(), Modifiers::default());
@@ -170,8 +170,8 @@ fn mutable_change_shows_description_pencil_and_header_edit_diff(cx: &mut TestApp
         "Edit Diff lives in the diff header below the description, got {edit_diff:?} vs {pencil:?}"
     );
     assert!(
-        edit_diff.origin.x < mode.origin.x,
-        "Edit Diff should sit left of the view-mode toggle"
+        edit_diff.origin.x > mode.origin.x,
+        "Edit Diff should sit right of the view-mode toggle"
     );
 }
 
@@ -347,11 +347,11 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
     let toggle = cx
         .debug_bounds("toggle-svg-preview")
         .expect("svg preview toggle");
-    let copy = cx.debug_bounds("diff-copy-path").expect("copy path button");
-    let gap = toggle.origin.x - (copy.origin.x + copy.size.width);
+    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
+    let gap = mode.origin.x - (toggle.origin.x + toggle.size.width);
     assert!(
-        gap <= px(8.),
-        "svg preview button should sit next to copy, gap was {gap:?}"
+        gap >= px(0.) && gap <= px(8.),
+        "svg preview button should sit with the header actions, just before the mode toggle; gap was {gap:?}"
     );
 
     view.read_with(cx, |view, cx| {
@@ -474,11 +474,11 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     let toggle = cx
         .debug_bounds("toggle-markdown-preview")
         .expect("markdown preview toggle");
-    let copy = cx.debug_bounds("diff-copy-path").expect("copy path button");
-    let gap = toggle.origin.x - (copy.origin.x + copy.size.width);
+    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
+    let gap = mode.origin.x - (toggle.origin.x + toggle.size.width);
     assert!(
-        gap <= px(8.),
-        "markdown preview button should sit next to copy, gap was {gap:?}"
+        gap >= px(0.) && gap <= px(8.),
+        "markdown preview button should sit with the header actions, just before the mode toggle; gap was {gap:?}"
     );
 
     view.read_with(cx, |view, cx| {

@@ -2,8 +2,8 @@ mod controls;
 mod path;
 
 use gpui::{
-    AnyElement, Context, Div, FontWeight, InteractiveElement, IntoElement, ParentElement,
-    SharedString, Styled, div, px, rgb,
+    AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
+    Styled, div, px, rgb,
 };
 use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats};
 
@@ -17,6 +17,11 @@ use crate::diff::{file_status, line_stats};
 use crate::repo::window::{FocusStop, RepoWindow};
 
 const DIFF_HEADER_STATUS_FONT: f32 = 11.;
+const PILL_FONT_SIZE: f32 = 10.;
+/// Half of (ascent − descent) in ems: how far a centred line's baseline sits below its centre.
+const BASELINE_BELOW_CENTER_EM: f32 = 0.355;
+/// Below this the labelled actions would squeeze the file name to nothing, so they drop to icons.
+pub(super) const COMPACT_HEADER_WIDTH: f32 = 600.;
 pub(crate) const DETAIL_INSET: f32 = 20.;
 
 pub(super) struct ProjectionHeaderState<'a> {
@@ -57,8 +62,10 @@ pub(super) fn file_header(
         .projection
         .projection
         .is_some_and(|projection| !projection::opens_automatically(projection));
-    let reserved = header_reserved_width(&state, show_projection_button, old_path.is_some());
+    let reserved =
+        header_reserved_width(&state, label, show_projection_button, old_path.is_some(), t);
 
+    let compact = state.detail_width < COMPACT_HEADER_WIDTH;
     let mut row = div()
         .flex()
         .flex_row()
@@ -70,9 +77,8 @@ pub(super) fn file_header(
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border));
-
-    if state.can_edit_file {
-        row = row.child(file_editor_button(t, cx));
+    if let Some(old_path) = old_path {
+        row = row.child(rename_origin_label(old_path, t, cx));
     }
 
     let mut path_group = div()
@@ -92,79 +98,96 @@ pub(super) fn file_header(
             state.just_copied,
             t,
             cx,
-        ));
+        ))
+        .child(hunk_status_pill(label, bg, fg, t));
+    if let Some(stats) = state.line_stats.and_then(|stats| {
+        line_stats(
+            stats,
+            DIFF_HEADER_STATUS_FONT,
+            t.diff_gutter_added_fg,
+            t.diff_gutter_removed_fg,
+        )
+    }) {
+        path_group = path_group.child(
+            stats
+                .relative()
+                .top(on_path_baseline(DIFF_HEADER_STATUS_FONT, t))
+                .debug_selector(|| "diff-line-stats".to_owned()),
+        );
+    }
+
+    let mut actions = div()
+        .flex()
+        .flex_none()
+        .flex_row()
+        .items_center()
+        .gap(px(2.));
+    if state.is_annotating {
+        actions = actions.child(exit_annotate_button(t, cx));
+    }
     if let Some(projection) = state.projection.projection
         && !projection::opens_automatically(projection)
     {
-        path_group = path_group.child(projection_button(
+        actions = actions.child(projection_button(
             projection,
             state.projection.active,
+            compact,
             t,
             cx,
         ));
     }
     if let Some(url) = state.html_external_url {
-        path_group = path_group.child(html_external_open_button(url.to_owned(), t));
+        actions = actions.child(html_external_open_button(url.to_owned(), t));
     }
     if state.can_render_markdown_preview {
-        path_group = path_group.child(markdown_preview_button(
+        actions = actions.child(markdown_preview_button(
             state.active_markdown_preview,
+            compact,
             t,
             cx,
         ));
     }
     if state.can_render_svg_preview {
-        path_group = path_group.child(svg_preview_button(state.active_svg_preview, t, cx));
+        actions = actions.child(svg_preview_button(state.active_svg_preview, compact, t, cx));
     }
-    row = row.child(path_group);
-
-    if let Some(old_path) = old_path {
-        row = row.child(rename_origin_label(old_path, t, cx));
-    }
-    if state.is_annotating {
-        row = row.child(exit_annotate_button(t, cx));
-    }
+    actions = actions.child(view_mode_button(
+        state.view_mode,
+        compact,
+        state.focused == Some(FocusStop::DiffLayout),
+        t,
+        cx,
+    ));
     if state.can_edit_diff {
-        row = row.child(edit_diff_button(
+        actions = actions.child(edit_diff_button(
+            compact,
             state.focused == Some(FocusStop::EditDiff),
             t,
             cx,
         ));
     }
-    if let Some(stats) = state
-        .line_stats
-        .and_then(|stats| line_stats(stats, DIFF_HEADER_STATUS_FONT, t.fg_dim, t.fg_dim))
-    {
-        row = row.child(
-            pill(t.toggle_inactive_bg)
-                .child(stats)
-                .debug_selector(|| "diff-line-stats".to_owned()),
-        );
+    if state.can_edit_file {
+        actions = actions.child(file_editor_button(compact, t, cx));
     }
-    row.child(view_mode_button(
-        state.view_mode,
-        state.focused == Some(FocusStop::DiffLayout),
-        t,
-        cx,
-    ))
-    .child(hunk_status_pill(label, bg, fg))
-    .into_any_element()
+    row.child(path_group).child(actions).into_any_element()
 }
 
-fn pill(bg: u32) -> Div {
+/// Row items are centred, so smaller text would sit above the path's baseline.
+fn on_path_baseline(size: f32, t: &Theme) -> gpui::Pixels {
+    px((t.scaled_font_size(PATH_FONT_SIZE) - t.scaled_font_size(size)) * BASELINE_BELOW_CENTER_EM)
+}
+
+fn hunk_status_pill(label: &'static str, bg: u32, fg: u32, t: &Theme) -> impl IntoElement {
     div()
         .flex_none()
-        .px(px(6.))
+        .relative()
+        .top(on_path_baseline(PILL_FONT_SIZE, t))
+        .px(px(7.))
         .py(px(1.))
         .rounded_full()
         .bg(rgb(bg))
-}
-
-fn hunk_status_pill(label: &'static str, bg: u32, fg: u32) -> impl IntoElement {
-    pill(bg)
         .text_color(rgb(fg))
-        .text_size(ui_font_size(DIFF_HEADER_STATUS_FONT))
-        .font_weight(FontWeight::SEMIBOLD)
+        .text_size(ui_font_size(PILL_FONT_SIZE))
+        .font_weight(FontWeight::MEDIUM)
         .child(SharedString::from(label))
 }
 

@@ -3,13 +3,15 @@ use gpui::{
     ParentElement, SharedString, StatefulInteractiveElement, Styled, StyledText, div, px, rgb,
 };
 
-use super::{DETAIL_INSET, FileHeaderState};
+use super::{COMPACT_HEADER_WIDTH, DETAIL_INSET, FileHeaderState};
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_column::head_elide;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::text_tooltip;
+
+pub(super) const PATH_FONT_SIZE: f32 = 13.;
 
 pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl IntoElement {
     let display = SharedString::from(head_elide(path, max_chars));
@@ -20,7 +22,7 @@ pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl I
         .flex_shrink_1()
         .min_w_0()
         .truncate()
-        .text_size(ui_font_size(13.))
+        .text_size(ui_font_size(PATH_FONT_SIZE))
         .line_height(px(t.scaled_font_size(16.)))
         .font_weight(FontWeight::MEDIUM)
         .text_color(rgb(t.fg))
@@ -72,18 +74,28 @@ pub(super) fn rename_origin_label(
 
 pub(super) fn header_reserved_width(
     state: &FileHeaderState<'_>,
+    status: &str,
     show_projection_button: bool,
     has_old_path: bool,
+    t: &Theme,
 ) -> f32 {
-    let mut reserved = 2. * DETAIL_INSET + 60.; // padding + inter-child gaps
-    reserved += 20.; // copy button
-    reserved += 76.; // status pill
-    reserved += 110.; // labeled view-mode toggle
+    let text = |chars: usize, size: f32| chars as f32 * t.scaled_font_size(size) * 0.55;
+    let compact = state.detail_width < COMPACT_HEADER_WIDTH;
+    let action = |label: &str| 28. + if compact { 0. } else { text(label.len(), 11.) };
+    let mut reserved = 2. * DETAIL_INSET + 40.; // padding + inter-child gaps
+    reserved += 20. + 16. + text(status.len(), 10.); // copy button, status pill
+    if let Some(stats) = state.line_stats {
+        reserved += text(
+            format!("+{} -{}", stats.insertions, stats.deletions).len(),
+            11.,
+        );
+    }
+    reserved += action(super::controls::mode_label(state.view_mode));
     if state.can_edit_file {
-        reserved += 26.;
+        reserved += action("Edit File");
     }
     if state.can_edit_diff {
-        reserved += 100.;
+        reserved += action("Edit Diff");
     }
     if state.is_annotating {
         reserved += 100.;
@@ -92,10 +104,10 @@ pub(super) fn header_reserved_width(
         reserved += 170.;
     }
     let preview_buttons = show_projection_button as usize
-        + state.html_external_url.is_some() as usize
         + state.can_render_markdown_preview as usize
         + state.can_render_svg_preview as usize;
-    reserved += 28. * preview_buttons as f32;
+    reserved += action("Preview") * preview_buttons as f32;
+    reserved += 28. * state.html_external_url.is_some() as usize as f32;
     reserved
 }
 

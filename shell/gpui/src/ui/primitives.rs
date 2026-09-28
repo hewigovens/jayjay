@@ -7,7 +7,6 @@ mod tooltip;
 pub(crate) use buttons::{
     TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, TOOLBAR_ICON_SIZE, boolean_toggle_button, button,
     button_container, copy_icon_button, icon_button, inert_icon_button, small_button,
-    toggle_button,
 };
 pub use check::CheckCircleState;
 #[cfg(not(target_os = "macos"))]

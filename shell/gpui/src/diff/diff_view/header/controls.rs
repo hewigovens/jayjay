@@ -1,7 +1,7 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    AnyElement, App, ClickEvent, Context, Div, InteractiveElement, IntoElement, ParentElement,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 use jayjay_core::DiffProjection;
 
@@ -11,22 +11,20 @@ use crate::diff::projection;
 use crate::repo::window::ref_chips::copy_feedback_button;
 use crate::repo::window::{RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{icon_button, text_tooltip, toggle_button};
+use crate::ui::primitives::text_tooltip;
 
-pub(super) fn file_editor_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
-    icon_button(
+pub(super) fn file_editor_button(
+    compact: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    header_action(
         "edit-working-copy-file",
         glyph::PENCIL,
-        12.,
-        t.scaled_control_height(24., 12.),
-        t.scaled_control_height(22., 11.),
-        t.fg_dim,
+        (!compact).then_some("Edit File"),
+        false,
         t,
     )
-    .debug_selector(|| "edit-working-copy-file".to_owned())
-    // Lucide glyphs sit high in their box, so nudge the button down onto the 13pt path's x-height.
-    .relative()
-    .top(px(1.))
     .tooltip(text_tooltip("Edit this working-copy file"))
     .on_click(cx.listener(|view, _, _, cx| {
         view.enter_selected_file_editor(cx);
@@ -35,53 +33,49 @@ pub(super) fn file_editor_button(t: &Theme, cx: &mut Context<RepoWindow>) -> Any
 }
 
 pub(super) fn edit_diff_button(
+    compact: bool,
     focused: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     focus_ring(
-        div()
-            .id("edit-diff")
-            .flex()
-            .flex_none()
-            .flex_row()
-            .items_center()
-            .gap(px(4.))
-            .px(px(4.))
-            .h(px(t.scaled_control_height(22., 11.)))
-            .rounded_md()
-            .text_size(ui_font_size(11.))
-            .text_color(rgb(t.fg_dim))
-            .cursor_pointer()
-            .hover(|s| s.bg(rgb(t.row_alt_bg)))
-            .tooltip(text_tooltip("Open dedicated diff edit mode"))
-            .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx)))
-            .child(icons::icon(glyph::SQUARE_PENCIL, 12., t.fg_dim))
-            .child("Edit Diff"),
+        header_action(
+            "edit-diff",
+            glyph::SQUARE_PENCIL,
+            (!compact).then_some("Edit Diff"),
+            false,
+            t,
+        )
+        .tooltip(text_tooltip("Open dedicated diff edit mode"))
+        .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx))),
         focused,
         t,
     )
-    .debug_selector(|| "edit-diff".to_owned())
     .into_any_element()
 }
 
 pub(super) fn view_mode_button(
     mode: DiffViewMode,
+    compact: bool,
     focused: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     focus_ring(
-        toggle_button(
+        header_action(
+            "toggle-mode",
             mode_glyph(mode),
-            mode_tooltip(mode),
-            "mode",
-            mode == DiffViewMode::SideBySide,
+            (!compact).then_some(mode_label(mode)),
+            false,
             t,
-            cx.listener(|view, _event: &ClickEvent, _window, cx| {
-                view.toggle_view_mode(cx);
-            }),
-        ),
+        )
+        .tooltip(text_tooltip(match mode {
+            DiffViewMode::Unified => "Switch to side-by-side",
+            DiffViewMode::SideBySide => "Switch to unified",
+        }))
+        .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+            view.toggle_view_mode(cx);
+        })),
         focused,
         t,
     )
@@ -91,6 +85,7 @@ pub(super) fn view_mode_button(
 pub(super) fn projection_button(
     projection: &DiffProjection,
     active: bool,
+    compact: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -99,6 +94,7 @@ pub(super) fn projection_button(
         projection::icon(Some(projection)),
         projection::help(Some(projection)),
         active,
+        compact,
         t,
         cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_projection_rich_preview(cx);
@@ -108,6 +104,7 @@ pub(super) fn projection_button(
 
 pub(super) fn svg_preview_button(
     active: bool,
+    compact: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -116,6 +113,7 @@ pub(super) fn svg_preview_button(
         glyph::EYE,
         "Show rendered SVG preview",
         active,
+        compact,
         t,
         cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_svg_rich_preview(cx);
@@ -125,6 +123,7 @@ pub(super) fn svg_preview_button(
 
 pub(super) fn markdown_preview_button(
     active: bool,
+    compact: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -133,6 +132,7 @@ pub(super) fn markdown_preview_button(
         glyph::EYE,
         "Show rendered Markdown",
         active,
+        compact,
         t,
         cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_markdown_rich_preview(cx);
@@ -141,19 +141,10 @@ pub(super) fn markdown_preview_button(
 }
 
 pub(super) fn html_external_open_button(url: String, t: &Theme) -> AnyElement {
-    icon_button(
-        "open-html-external",
-        glyph::EXTERNAL_LINK,
-        12.,
-        20.,
-        20.,
-        t.fg_dim,
-        t,
-    )
-    .debug_selector(|| "open-html-external".to_owned())
-    .tooltip(text_tooltip("Open working-copy HTML in default app"))
-    .on_click(move |_, _, cx| crate::app::links::open_url(cx, &url))
-    .into_any_element()
+    header_action("open-html-external", glyph::EXTERNAL_LINK, None, false, t)
+        .tooltip(text_tooltip("Open working-copy HTML in default app"))
+        .on_click(move |_, _, cx| crate::app::links::open_url(cx, &url))
+        .into_any_element()
 }
 
 pub(super) fn exit_annotate_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -196,30 +187,44 @@ fn preview_button<F>(
     glyph_str: &'static str,
     help: &'static str,
     active: bool,
+    compact: bool,
     t: &Theme,
     on_click: F,
 ) -> AnyElement
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
+    header_action(id, glyph_str, (!compact).then_some("Preview"), active, t)
+        .tooltip(text_tooltip(help))
+        .on_click(on_click)
+        .into_any_element()
+}
+
+fn header_action(
+    id: &'static str,
+    glyph_str: &'static str,
+    label: Option<&'static str>,
+    active: bool,
+    t: &Theme,
+) -> Stateful<Div> {
     let fg = if active { t.toggle_active_fg } else { t.fg_dim };
     div()
         .id(SharedString::from(id))
         .debug_selector(move || id.to_owned())
         .flex()
         .flex_none()
+        .flex_row()
         .items_center()
-        .justify_center()
-        .w(px(24.))
-        .h(px(22.))
+        .gap(px(4.))
+        .px(px(6.))
+        .h(px(t.scaled_control_height(22., 11.)))
         .rounded_md()
-        .when(active, |el| el.bg(rgb(t.toggle_active_bg)))
+        .text_size(ui_font_size(11.))
+        .text_color(rgb(fg))
         .cursor_pointer()
-        .tooltip(text_tooltip(help))
-        .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .on_click(on_click)
+        .hover(|s| s.bg(rgb(t.row_alt_bg)).text_color(rgb(t.fg)))
         .child(icons::icon(glyph_str, 12., fg))
-        .into_any_element()
+        .when_some(label, |el, label| el.child(label))
 }
 
 fn mode_glyph(mode: DiffViewMode) -> &'static str {
@@ -229,7 +234,7 @@ fn mode_glyph(mode: DiffViewMode) -> &'static str {
     }
 }
 
-fn mode_tooltip(mode: DiffViewMode) -> &'static str {
+pub(super) fn mode_label(mode: DiffViewMode) -> &'static str {
     match mode {
         DiffViewMode::Unified => "Unified",
         DiffViewMode::SideBySide => "Side-by-side",

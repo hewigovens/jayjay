@@ -118,42 +118,6 @@ fn copy_action(element: Stateful<Div>, value: String) -> Stateful<Div> {
     })
 }
 
-pub(crate) fn toggle_button<F>(
-    glyph_str: &'static str,
-    tooltip: &'static str,
-    id: &'static str,
-    active: bool,
-    t: &Theme,
-    on_click: F,
-) -> Stateful<Div>
-where
-    F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
-{
-    let (bg, fg) = if active {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
-    div()
-        .id(SharedString::from(format!("toggle-{id}")))
-        .debug_selector(move || format!("toggle-{id}"))
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(5.))
-        .px(px(8.))
-        .py(px(3.))
-        .rounded_md()
-        .bg(rgb(bg))
-        .text_size(ui_font_size(11.))
-        .line_height(px(t.scaled_font_size(14.)))
-        .text_color(rgb(fg))
-        .cursor_pointer()
-        .on_click(on_click)
-        .child(icons::icon(glyph_str, 11., fg))
-        .child(tooltip)
-}
-
 pub(crate) fn boolean_toggle_button<F>(
     id: impl Into<SharedString>,
     active: bool,
