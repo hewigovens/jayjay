@@ -230,7 +230,7 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     assert!(repo_cx.debug_bounds("bookmark-picker-row-main").is_none());
 
     let default_revset = view.read_with(repo_cx, |view, cx| {
-        view.view_model().read(cx).revset.to_string()
+        view.view_model().read(cx).revset().to_owned()
     });
     repo_cx.simulate_keystrokes("enter");
     settle_visual(repo_cx);
@@ -238,7 +238,7 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.revset.as_ref(),
+            vm.revset(),
             default_revset,
             "a shown bookmark is selected, not filtered"
         );
@@ -260,7 +260,7 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.revset.as_ref(),
+            vm.revset(),
             bookmark_filter_revset("odd&name", None).as_str()
         );
         assert!(vm.error.is_none(), "{:?}", vm.error);
@@ -314,7 +314,7 @@ fn bookmark_picker_browses_remote_history_without_tracking(cx: &mut TestAppConte
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.revset.as_ref(),
+            vm.revset(),
             bookmark_filter_revset("remote-picker", Some("origin")).as_str()
         );
         assert!(vm.error.is_none(), "{:?}", vm.error);
@@ -410,10 +410,7 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     settle_visual(repo_cx);
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        assert_eq!(
-            vm.revset.as_ref(),
-            bookmark_filter_revset("clash", None).as_str()
-        );
+        assert_eq!(vm.revset(), bookmark_filter_revset("clash", None).as_str());
         assert!(vm.error.is_none(), "{:?}", vm.error);
         assert_eq!(
             vm.graph.changes.len(),
@@ -485,37 +482,6 @@ fn clicks_inside_a_picker_do_not_dismiss_it(cx: &mut TestAppContext) {
     );
     settle_visual(repo_cx);
     assert!(repo_cx.debug_bounds("bookmark-picker-panel").is_none());
-}
-
-#[gpui::test]
-fn bookmark_picker_updates_an_open_revset_panel(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let (view, repo_cx) = open_fixture(&fixture, cx);
-    repo_cx.focus(&view);
-    let filter = repo_cx
-        .debug_bounds("toolbar-revset-filter")
-        .expect("revset filter toggle");
-    repo_cx.simulate_click(filter.center(), Modifiers::default());
-    settle_visual(repo_cx);
-    assert!(repo_cx.debug_bounds("revset-filter-input").is_some());
-
-    let bookmarks = repo_cx
-        .debug_bounds("bookmarks-button-1")
-        .expect("bookmark picker button");
-    repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
-    settle_visual(repo_cx);
-    filter_by_bookmark_row(repo_cx, "bookmark-picker-row-main");
-
-    view.read_with(repo_cx, |view, cx| {
-        assert_eq!(
-            view.view_model().read(cx).revset.as_ref(),
-            bookmark_filter_revset("main", None).as_str()
-        );
-        assert_eq!(
-            view.revset_filter_text().as_deref(),
-            Some(bookmark_filter_revset("main", None).as_str())
-        );
-    });
 }
 
 #[gpui::test]
@@ -1038,5 +1004,24 @@ fn bookmark_picker_selects_the_divergent_version_its_bookmark_names(cx: &mut Tes
             assert!(selected.is_divergent);
             assert_eq!(selected.commit_id.id, bookmark_commit(&fixture, name));
         });
+    }
+}
+
+#[gpui::test]
+fn picker_buttons_close_their_open_picker(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+    for (button, panel) in [
+        ("bookmarks-button-1", "bookmark-picker-panel"),
+        ("repo-switcher-button", "repo-switcher-panel"),
+    ] {
+        let bounds = repo_cx.debug_bounds(button).expect(button);
+        repo_cx.simulate_click(bounds.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        assert!(repo_cx.debug_bounds(panel).is_some(), "{button} opens");
+        repo_cx.simulate_click(bounds.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        assert!(repo_cx.debug_bounds(panel).is_none(), "{button} closes");
     }
 }

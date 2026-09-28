@@ -73,7 +73,7 @@ fn overview_filters_lanes_and_reveals_the_keyboard_selection_in_the_graph(cx: &m
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.revset.as_ref(),
+            vm.revset(),
             jayjay_core::ancestors_revset(&rank.change_id.id)
         );
         let selected = vm

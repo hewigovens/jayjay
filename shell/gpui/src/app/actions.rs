@@ -20,6 +20,7 @@ actions!(
         OpenBookmarkManager,
         OpenOverview,
         OpenOperationLog,
+        FilterByRevset,
         OpenRepoInEditor,
         OpenRepoInTerminal,
         ShowRepoInFileManager,
@@ -83,6 +84,7 @@ pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
             None,
         ),
         gpui::KeyBinding::new(format!("{mod_key}-shift-o").as_str(), OpenOverview, None),
+        gpui::KeyBinding::new(format!("{mod_key}-l").as_str(), FilterByRevset, None),
         gpui::KeyBinding::new(
             format!("{mod_key}-shift-u").as_str(),
             OpenOperationLog,

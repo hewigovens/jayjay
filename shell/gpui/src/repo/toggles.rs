@@ -83,7 +83,7 @@ impl RepoViewModel {
                         vm.graph.entries = Arc::new(entries);
                         vm.can_load_more = did_grow && vm.graph.changes.len() >= new_depth as usize;
                         if did_grow {
-                            vm.revset = build_default_revset(new_depth).into();
+                            vm.revset_filter.revset = build_default_revset(new_depth);
                         }
                     }
                     Err(error) => vm.present_error(error),

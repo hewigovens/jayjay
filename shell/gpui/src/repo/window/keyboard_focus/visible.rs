@@ -7,7 +7,8 @@ pub(super) struct VisibleStops {
     pub(super) diff_layout: bool,
     pub(super) edit_description: bool,
     pub(super) edit_diff: bool,
-    pub(super) revset_input: bool,
+    pub(super) revset_back: bool,
+    pub(super) revset_reset: bool,
     pub(super) commit_box: bool,
     pub(super) sidebar_hidden: bool,
 }
@@ -22,7 +23,8 @@ impl VisibleStops {
             FocusStop::DiffLayout => self.diff_layout,
             FocusStop::EditDescription => self.edit_description,
             FocusStop::EditDiff => self.edit_diff,
-            FocusStop::RevsetInput => self.revset_input,
+            FocusStop::RevsetBack => self.revset_back,
+            FocusStop::RevsetReset => self.revset_reset,
             FocusStop::CommitSummary | FocusStop::CommitDescription => self.commit_box,
             _ => true,
         }
@@ -49,7 +51,8 @@ mod tests {
         diff_layout: true,
         edit_description: true,
         edit_diff: true,
-        revset_input: true,
+        revset_back: true,
+        revset_reset: true,
         commit_box: true,
         sidebar_hidden: false,
     };
@@ -83,11 +86,11 @@ mod tests {
             ..VisibleStops::default()
         };
         assert_eq!(
-            walk(stops, FocusStop::FilterToggle, 3, false),
+            walk(stops, FocusStop::Push, 3, false),
             [
-                FocusStop::DiffLayout,
-                FocusStop::SidebarToggle,
-                FocusStop::RevsetFilter
+                FocusStop::RevsetPresets,
+                FocusStop::RevsetFilter,
+                FocusStop::Editor
             ]
         );
         assert_eq!(walk(stops, FocusStop::Dag, 1, true), [FocusStop::Settings]);
@@ -105,7 +108,6 @@ mod tests {
     fn hidden_sidebar_drops_its_stops_but_keeps_the_toggle() {
         let stops = VisibleStops {
             diff_layout: true,
-            revset_input: true,
             commit_box: true,
             sidebar_hidden: true,
             ..VisibleStops::default()
@@ -114,8 +116,8 @@ mod tests {
             walk(stops, FocusStop::DiffLayout, 3, false),
             [
                 FocusStop::SidebarToggle,
-                FocusStop::RevsetFilter,
-                FocusStop::Refresh
+                FocusStop::Refresh,
+                FocusStop::Pull
             ]
         );
         assert_eq!(

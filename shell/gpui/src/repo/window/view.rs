@@ -49,10 +49,14 @@ pub struct RepoWindow {
     pub(crate) file_column: FileColumnUiState,
     pub(crate) file_filter_focus: FocusHandle,
     pub(crate) find: FindState,
-    pub(crate) revset_filter: Option<LineInput>,
-    pub(crate) previous_ancestor_filter: Option<String>,
+    pub(crate) revset_editor: Option<LineInput>,
+    pub(crate) revset_editor_focus: FocusHandle,
+    pub(crate) revset_edit_requested: bool,
+    /// Set once the editor has held focus, so losing it afterwards cancels the edit.
+    pub(crate) revset_editor_had_focus: bool,
+    pub(crate) revset_popup: Option<super::revset_filter::RevsetPopupState>,
+    pub(crate) revset_bar_bounds: PanelBoundsSlot,
     pub(crate) pending_reveal: Option<(String, String)>,
-    pub(crate) revset_filter_focus: FocusHandle,
     pub(crate) diff: DiffPanelState,
     pub(crate) diff_edit: DiffEditState,
     pub(crate) conflict_editor: ConflictEditorState,
@@ -387,10 +391,13 @@ impl RepoWindow {
             },
             file_filter_focus: cx.focus_handle(),
             find: FindState::default(),
-            revset_filter: None,
-            previous_ancestor_filter: None,
+            revset_editor: None,
+            revset_editor_focus: cx.focus_handle(),
+            revset_edit_requested: false,
+            revset_editor_had_focus: false,
+            revset_popup: None,
+            revset_bar_bounds: PanelBoundsSlot::default(),
             pending_reveal: None,
-            revset_filter_focus: cx.focus_handle(),
             diff: DiffPanelState::default(),
             diff_edit: DiffEditState::default(),
             conflict_editor: ConflictEditorState::default(),
@@ -483,10 +490,14 @@ impl RepoWindow {
         self.feedback.toast.clone()
     }
 
-    pub fn revset_filter_text(&self) -> Option<String> {
-        self.revset_filter
+    pub fn revset_editor_text(&self) -> Option<String> {
+        self.revset_editor
             .as_ref()
             .map(|input| input.text().to_owned())
+    }
+
+    pub fn revset_popup_open(&self) -> bool {
+        self.revset_popup.is_some()
     }
 
     pub fn pending_push_bookmark(&self) -> Option<SharedString> {
@@ -589,6 +600,7 @@ impl RepoWindow {
             || self.stacked_pr.is_some()
             || self.context_menu.is_some()
             || self.bookmark_picker.is_some()
+            || self.revset_popup.is_some()
             || self.repo_switcher.is_some()
             || self.app_menu_open()
             || self.diff_edit.active

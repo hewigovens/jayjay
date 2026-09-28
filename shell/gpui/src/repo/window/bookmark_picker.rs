@@ -207,7 +207,7 @@ pub(crate) fn bookmarks_header_button(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let mut button = div()
+    let button = div()
         .id(SharedString::from("bookmarks-button"))
         .debug_selector(move || format!("bookmarks-button-{count}"))
         .flex()
@@ -232,6 +232,12 @@ pub(crate) fn bookmarks_header_button(
         )
         .child(icons::icon(glyph::BOOKMARK, 12., t.fg))
         .child("Bookmarks");
+    let mut button = picker::opener(
+        button,
+        |view| view.bookmark_picker.is_some(),
+        RepoWindow::close_bookmark_picker,
+        cx,
+    );
     if count > 0 {
         button = button.child(
             div()

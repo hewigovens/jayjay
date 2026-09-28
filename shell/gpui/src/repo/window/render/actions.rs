@@ -2,11 +2,11 @@ use gpui::{Context, Div, InteractiveElement, Styled, div, rgb};
 
 use super::super::RepoWindow;
 use crate::app::actions::{
-    CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, ForgetStaleBookmarks,
-    GitFetchOrigin, GitPushDefault, NewWorkspace, NewWorkspaceFromPullRequest, OpenAbout,
-    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenOperationLog, OpenOverview,
-    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenSettings, Refresh,
-    SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager, ToggleSidebar,
+    CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, FilterByRevset,
+    ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
+    NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
+    OpenOperationLog, OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
+    OpenSettings, Refresh, SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager, ToggleSidebar,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -39,6 +39,9 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &NewWorkspaceFromPullRequest, _, cx| {
                 view.open_pr_import(cx);
+            }))
+            .on_action(cx.listener(|view, _: &FilterByRevset, window, cx| {
+                view.begin_revset_edit(window, cx);
             }))
             .on_action(cx.listener(|view, _: &OpenOperationLog, _, cx| {
                 view.open_operation_log(cx);
@@ -133,7 +136,8 @@ impl RepoWindow {
                 if view.context_menu.is_some() {
                     return;
                 }
-                if view.handle_bookmark_picker_key(ev, cx)
+                if view.handle_revset_popup_key(ev, cx)
+                    || view.handle_bookmark_picker_key(ev, cx)
                     || view.handle_repo_switcher_key(ev, cx)
                 {
                     return;

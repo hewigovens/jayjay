@@ -52,6 +52,10 @@ pub(super) const SECTIONS: &[ShortcutSection] = &[
                 keys: SIDEBAR_TOGGLE_KEYS,
             },
             ShortcutEntry {
+                label: "Filter by Revset",
+                keys: &["Mod", "L"],
+            },
+            ShortcutEntry {
                 label: "Zoom In",
                 keys: &["Mod", "+"],
             },

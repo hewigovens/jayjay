@@ -1,14 +1,30 @@
 use gpui::{
-    Anchor, AnyElement, App, Div, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, Pixels, Point, ScrollHandle, SharedString, Stateful, StatefulInteractiveElement,
-    Styled, Window, anchored, deferred, div, px, rgb,
+    Anchor, AnyElement, App, Context, Div, InteractiveElement, IntoElement, MouseButton,
+    MouseDownEvent, ParentElement, Pixels, Point, ScrollHandle, SharedString, Stateful,
+    StatefulInteractiveElement, Styled, Window, anchored, deferred, div, px, rgb,
 };
 
+use super::super::RepoWindow;
 use super::query::PickerQuery;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::{button_container, icon_label};
+
+/// While its picker is open, the opener's click closes it before the backdrop can dismiss it and the opener reopen it.
+pub(crate) fn opener<E: InteractiveElement>(
+    element: E,
+    is_open: impl Fn(&RepoWindow) -> bool + 'static,
+    close: impl Fn(&mut RepoWindow, &mut Context<RepoWindow>) + 'static,
+    cx: &mut Context<RepoWindow>,
+) -> E {
+    element.capture_any_mouse_down(cx.listener(move |view, ev: &MouseDownEvent, _, cx| {
+        if ev.button == MouseButton::Left && view.context_menu.is_none() && is_open(view) {
+            cx.stop_propagation();
+            close(view, cx);
+        }
+    }))
+}
 
 pub(crate) fn overlay(
     backdrop_id: &'static str,
@@ -133,7 +149,7 @@ fn search_box(id: &'static str, query: &LineInput, t: &Theme) -> Stateful<Div> {
         ))
 }
 
-pub(super) fn section_header(id: &'static str, label: &'static str, t: &Theme) -> AnyElement {
+pub(crate) fn section_header(id: &'static str, label: &'static str, t: &Theme) -> AnyElement {
     div()
         .id(id)
         .debug_selector(move || id.to_owned())

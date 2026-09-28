@@ -27,6 +27,8 @@ impl RepoWindow {
             return true;
         } else if self.context_menu.is_some() {
             self.close_context_menu(cx);
+        } else if self.revset_popup.is_some() {
+            self.close_revset_popup(cx);
         } else if self.bookmark_picker.is_some() {
             self.close_bookmark_picker(cx);
         } else if self.repo_switcher.is_some() {
@@ -37,8 +39,8 @@ impl RepoWindow {
             self.close_find(cx);
         } else if self.file_column.filter.is_some() {
             self.dismiss_file_filter(window, cx);
-        } else if self.revset_filter.is_some() {
-            self.close_revset_filter(cx);
+        } else if self.revset_editor.is_some() {
+            self.close_revset_editor(cx);
         } else if self.diff_edit_active() {
             self.exit_diff_edit(cx);
         } else if let Some(selected) = {

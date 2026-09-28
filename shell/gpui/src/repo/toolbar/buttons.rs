@@ -72,7 +72,7 @@ impl SyncAction {
     }
 }
 
-pub(super) fn sidebar_toggle_button(
+fn sidebar_toggle_button(
     sidebar_hidden: bool,
     focused: Option<FocusStop>,
     t: &Theme,
@@ -87,57 +87,26 @@ pub(super) fn sidebar_toggle_button(
         "{title} ({})",
         crate::platform::SIDEBAR_TOGGLE_SHORTCUT_LABEL
     );
-    button_group::button_group(
+    focus_ring(
+        group_icon_item(
+            "tb-sidebar-toggle",
+            glyph::PANEL_LEFT,
+            tooltip,
+            GroupEdge::Leading,
+            t,
+        ),
+        focused == Some(FocusStop::SidebarToggle),
         t,
-        vec![
-            focus_ring(
-                group_icon_item(
-                    "tb-sidebar-toggle",
-                    glyph::PANEL_LEFT,
-                    tooltip,
-                    GroupEdge::Inner,
-                    t,
-                ),
-                focused == Some(FocusStop::SidebarToggle),
-                t,
-            )
-            .debug_selector(|| "toolbar-sidebar-toggle".to_owned())
-            .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
-                view.toggle_sidebar(cx);
-            }))
-            .into_any_element(),
-        ],
     )
+    .debug_selector(|| "toolbar-sidebar-toggle".to_owned())
+    .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
+        view.toggle_sidebar(cx);
+    }))
     .into_any_element()
 }
 
-fn revset_filter_button(
-    active: bool,
-    focused: Option<FocusStop>,
-    edge: GroupEdge,
-    t: &Theme,
-    cx: &mut Context<RepoWindow>,
-) -> AnyElement {
-    let foreground = if active { t.toggle_active_fg } else { t.fg_dim };
-    let mut button = focus_ring(
-        group_item("tb-revset-filter", "Filter by revset", edge, t),
-        focused == Some(FocusStop::RevsetFilter),
-        t,
-    )
-    .debug_selector(|| "toolbar-revset-filter".to_owned())
-    .on_click(cx.listener(|view, _ev: &ClickEvent, window, cx| {
-        view.toggle_revset_filter(window, cx);
-    }));
-    if active {
-        button = button.bg(rgb(t.toggle_active_bg));
-    }
-    button
-        .child(icons::icon(glyph::LIST, TOOLBAR_ICON_SIZE, foreground))
-        .into_any_element()
-}
-
 pub(super) fn sync_cluster(
-    revset_filter_active: bool,
+    sidebar_hidden: bool,
     activity: ToolbarActivity,
     focused: Option<FocusStop>,
     t: &Theme,
@@ -146,7 +115,7 @@ pub(super) fn sync_cluster(
     button_group::button_group(
         t,
         vec![
-            revset_filter_button(revset_filter_active, focused, GroupEdge::Leading, t, cx),
+            sidebar_toggle_button(sidebar_hidden, focused, t, cx),
             refresh_button(activity.is_refreshing, focused, GroupEdge::Inner, t, cx),
             sync_button(
                 SyncAction::FetchOrigin,

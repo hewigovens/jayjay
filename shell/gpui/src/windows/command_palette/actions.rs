@@ -206,6 +206,12 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |_, cx| config::update(cx, |c| c.diff.auto_expand_description ^= true),
     },
     PaletteAction {
+        name: "Filter by Revset...",
+        keywords: &["revset", "filter", "query", "graph", "log"],
+        glyph_str: glyph::FILTER,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::request_revset_edit),
+    },
+    PaletteAction {
         name: "Hide / Show Sidebar",
         keywords: &[
             "sidebar", "hide", "show", "panel", "history", "dag", "graph",

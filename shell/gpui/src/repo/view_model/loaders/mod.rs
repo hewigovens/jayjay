@@ -8,8 +8,8 @@ use std::time::Duration;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DEFAULT_REVSET_DEPTH, DiffStats, GraphEntry, Repo,
-    WorkspaceInfo, build_default_revset, default_revset_depth,
+    BookmarkInfo, ChangeInfo, CoreResult, DiffStats, GraphEntry, Repo, WorkspaceInfo,
+    default_revset_depth,
 };
 
 use super::{PendingRefresh, RepoViewModel};
@@ -156,7 +156,7 @@ impl RepoViewModel {
         self.begin_refreshing(cx);
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;
-        let revset = self.revset.to_string();
+        let revset = self.revset().to_owned();
         let previous_selection = selection;
 
         Self::background_update(
@@ -249,9 +249,13 @@ impl RepoViewModel {
         cx.notify();
     }
 
+    pub fn revset(&self) -> &str {
+        &self.revset_filter.revset
+    }
+
     pub fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
-        self.set_revset(revset);
-        self.refresh(false, cx);
+        self.revset_filter.apply(revset);
+        self.reload_revset(None, cx);
     }
 
     pub(crate) fn apply_revset_selecting(
@@ -260,22 +264,37 @@ impl RepoViewModel {
         commit_id: String,
         cx: &mut Context<Self>,
     ) {
-        self.set_revset(revset);
-        self.refresh_preferring(false, Some((commit_id.clone(), commit_id)), cx);
+        self.revset_filter.apply(revset);
+        self.reload_revset(Some(commit_id), cx);
     }
 
-    fn set_revset(&mut self, revset: &str) {
-        let trimmed = revset.trim();
-        self.revset = if trimmed.is_empty() {
-            build_default_revset(DEFAULT_REVSET_DEPTH).into()
-        } else {
-            trimmed.to_owned().into()
-        };
+    pub(crate) fn show_ancestors(
+        &mut self,
+        change_id: &str,
+        commit_id: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
+        self.revset_filter.show_ancestors(change_id);
+        self.reload_revset(commit_id, cx);
+    }
+
+    pub(crate) fn return_to_previous_revset(&mut self, cx: &mut Context<Self>) {
+        self.revset_filter.back();
+        self.reload_revset(None, cx);
+    }
+
+    fn reload_revset(&mut self, selecting: Option<String>, cx: &mut Context<Self>) {
         self.can_load_more = false;
+        match selecting {
+            Some(commit_id) => {
+                self.refresh_preferring(false, Some((commit_id.clone(), commit_id)), cx);
+            }
+            None => self.refresh(false, cx),
+        }
     }
 
     pub(crate) fn revset_depth(&self) -> Option<u32> {
-        default_revset_depth(&self.revset)
+        default_revset_depth(self.revset())
     }
 
     pub(crate) fn ensure_avatar(&mut self, email: String, cx: &mut Context<Self>) {

@@ -48,9 +48,6 @@ impl RepoWindow {
             if self.focused_control.is_some_and(FocusStop::is_in_sidebar) {
                 self.focused_control = None;
             }
-            if self.revset_filter.is_some() {
-                self.close_revset_filter(cx);
-            }
         }
         cx.notify();
     }

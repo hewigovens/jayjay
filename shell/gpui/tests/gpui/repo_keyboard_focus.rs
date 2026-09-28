@@ -178,33 +178,57 @@ fn keyboard_opened_filters_submit_and_release_text_focus(cx: &mut TestAppContext
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
 
-    for stop in [FocusStop::FilterToggle, FocusStop::RevsetFilter] {
-        for _ in 0..18 {
-            if view.read_with(cx, |view, _| view.focused_control()) == Some(stop) {
-                break;
-            }
-            cx.simulate_keystrokes("tab");
-            settle_visual(cx);
+    tab_to(&view, cx, FocusStop::FilterToggle);
+    cx.simulate_keystrokes("space enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, _| {
+        assert_eq!(view.focused_control(), None);
+        assert!(view.file_filter_visible());
+    });
+    cx.simulate_keystrokes("escape");
+    settle_visual(cx);
+    assert!(!view.read_with(cx, |view, _| view.file_filter_visible()));
+
+    tab_to(&view, cx, FocusStop::RevsetFilter);
+    cx.simulate_keystrokes("space");
+    settle_visual(cx);
+    view.read_with(cx, |view, _| {
+        assert_eq!(view.focused_control(), Some(FocusStop::RevsetFilter));
+        assert!(view.revset_editor_text().is_some());
+    });
+    cx.simulate_keystrokes("tab");
+    settle_visual(cx);
+    view.read_with(cx, |view, _| {
+        assert_eq!(view.focused_control(), Some(FocusStop::Editor));
+        assert!(view.revset_editor_text().is_none());
+    });
+}
+
+#[gpui::test]
+fn a_keyboard_opened_revset_popup_applies_on_return(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_focused(&fixture, cx);
+
+    tab_to(&view, cx, FocusStop::RevsetPresets);
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, _| view.revset_popup_open()));
+    cx.simulate_input("all()");
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert!(!view.revset_popup_open());
+        assert_eq!(view.view_model().read(cx).revset(), "all()");
+    });
+}
+
+fn tab_to(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, stop: FocusStop) {
+    for _ in 0..24 {
+        if view.read_with(cx, |view, _| view.focused_control()) == Some(stop) {
+            return;
         }
-        assert_eq!(
-            view.read_with(cx, |view, _| view.focused_control()),
-            Some(stop)
-        );
-        cx.simulate_keystrokes("space enter");
+        cx.simulate_keystrokes("tab");
         settle_visual(cx);
-        view.read_with(cx, |view, _| {
-            assert_eq!(view.focused_control(), None);
-            match stop {
-                FocusStop::FilterToggle => assert!(view.file_filter_visible()),
-                FocusStop::RevsetFilter => assert!(view.revset_filter_text().is_some()),
-                _ => unreachable!(),
-            }
-        });
-        cx.simulate_keystrokes("escape");
-        settle_visual(cx);
-        view.read_with(cx, |view, _| {
-            assert!(!view.file_filter_visible());
-            assert!(view.revset_filter_text().is_none());
-        });
     }
+    panic!("{stop:?} is not in the Tab cycle");
 }

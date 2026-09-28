@@ -1,4 +1,6 @@
 mod actions;
-mod view;
+mod bar;
+mod popup;
 
-pub(super) use view::revset_filter_panel;
+pub(crate) use bar::revset_bar;
+pub(crate) use popup::{RevsetPopupState, render_revset_popup};

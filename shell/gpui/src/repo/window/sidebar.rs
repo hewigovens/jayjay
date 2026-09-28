@@ -8,7 +8,6 @@ use super::bookmark_picker::{bookmarks_header_button, listed_bookmark_count};
 use super::dag::{DagRowLanes, dag_column};
 use super::dag_drag::DagDragSelection;
 use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
-use super::revset_filter::revset_filter_panel;
 use super::{ActivePane, RepoWindow};
 use crate::app::fonts;
 use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
@@ -221,9 +220,6 @@ pub(super) fn sidebar(
                     }),
             ),
     );
-    if let Some(filter) = revset_filter_panel(view, t, cx) {
-        col = col.child(filter);
-    }
     if let Some(banner) = push_follow_up_banner(view, t, cx) {
         col = col.child(banner);
     }

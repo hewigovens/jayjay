@@ -8,7 +8,7 @@ use gpui::{
 use crate::app::theme::{theme, ui_font_size};
 use crate::app::{repositories, tools};
 use crate::platform::TOOLBAR_LEADING_INSET;
-use crate::repo::window::{FocusStop, RepoWindow};
+use crate::repo::window::{FocusStop, RepoWindow, picker_opener};
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
@@ -30,7 +30,7 @@ pub(crate) struct ToolbarRepo {
 pub(crate) fn toolbar(
     repo: ToolbarRepo,
     sidebar_hidden: bool,
-    revset_filter_visible: bool,
+    revset_bar: AnyElement,
     activity: ToolbarActivity,
     focused: Option<FocusStop>,
     cx: &mut Context<RepoWindow>,
@@ -57,26 +57,28 @@ pub(crate) fn toolbar(
         .border_color(rgb(t.border))
         .on_mouse_down(
             MouseButton::Left,
-            cx.listener(|_, ev: &MouseDownEvent, window, _cx| {
+            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
                 if ev.click_count == 2 {
                     window.zoom_window();
                 }
+                // Title-bar clicks take no focus of their own, so an open revset edit would otherwise survive them.
+                let on_bar = view
+                    .revset_bar_bounds
+                    .get()
+                    .is_some_and(|bounds| bounds.contains(&ev.position));
+                if view.revset_editor.is_some() && !on_bar {
+                    view.focus_handle.focus(window, cx);
+                }
             }),
         )
-        .child(buttons::sidebar_toggle_button(
-            sidebar_hidden,
-            focused,
-            &t,
-            cx,
-        ))
         .child(buttons::sync_cluster(
-            revset_filter_visible,
+            sidebar_hidden,
             activity,
             focused,
             &t,
             cx,
         ))
-        .child(
+        .child(picker_opener(
             div()
                 .id("repo-switcher-button")
                 .debug_selector(|| "repo-switcher-button".to_owned())
@@ -121,7 +123,12 @@ pub(crate) fn toolbar(
                         )
                 }))
                 .child(icons::icon(icons::glyph::CARET_DOWN, 10., t.fg_dim)),
-        )
+            |view| view.repo_switcher.is_some(),
+            RepoWindow::close_repo_switcher,
+            cx,
+        ))
+        .child(div().flex_1())
+        .child(revset_bar)
         .child(div().flex_1())
         .child(buttons::tools_cluster(
             open_editor_label,

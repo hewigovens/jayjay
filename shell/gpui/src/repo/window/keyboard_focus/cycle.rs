@@ -1,4 +1,5 @@
 use gpui::{App, Context, Entity, Focusable, KeyDownEvent, Window};
+use jayjay_core::{RevsetFilter, RevsetFilterKind};
 
 use super::stop::FocusStop;
 use super::visible::VisibleStops;
@@ -55,7 +56,9 @@ impl RepoWindow {
         let Some(control) = self.focused_control else {
             return false;
         };
-        if control.is_text_input() || !matches!(ev.keystroke.key.as_str(), "space" | "enter") {
+        if self.typing_in_focused_control()
+            || !matches!(ev.keystroke.key.as_str(), "space" | "enter")
+        {
             return false;
         }
         self.activate_focus_stop(control, window, cx);
@@ -68,9 +71,7 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) -> bool {
         self.sync_keyboard_focus(window, cx);
-        if self.keyboard_focus_suspended(cx)
-            || self.focused_control.is_some_and(FocusStop::is_text_input)
-        {
+        if self.keyboard_focus_suspended(cx) || self.typing_in_focused_control() {
             return false;
         }
         if self.focused_control.take().is_none() {
@@ -78,6 +79,11 @@ impl RepoWindow {
         }
         cx.notify();
         true
+    }
+
+    /// The revset stop is a button until it opens its editor in place.
+    fn typing_in_focused_control(&self) -> bool {
+        self.focused_control.is_some_and(FocusStop::is_text_input) || self.revset_editor.is_some()
     }
 
     /// Overlays, editors and modals own the keys while up; the panes are not rendered before a repo opens.
@@ -124,8 +130,8 @@ impl RepoWindow {
             Some(FocusStop::CommitSummary)
         } else if focused(&self.commit_message.body) {
             Some(FocusStop::CommitDescription)
-        } else if self.revset_filter_focus.is_focused(window) {
-            Some(FocusStop::RevsetInput)
+        } else if self.revset_editor_focus.is_focused(window) {
+            Some(FocusStop::RevsetFilter)
         } else {
             None
         }
@@ -152,14 +158,16 @@ impl RepoWindow {
             FocusStop::EditDescription => self.edit_selected_description(cx),
             FocusStop::EditDiff => self.enter_diff_edit(cx),
             FocusStop::SidebarToggle => self.toggle_sidebar(cx),
-            FocusStop::RevsetFilter => self.toggle_revset_filter(window, cx),
-            FocusStop::RevsetInput => self.activate_revset_filter(window, cx),
             FocusStop::Refresh => {
                 let vm = self.vm.clone();
                 vm.update(cx, |vm, cx| vm.refresh(false, cx));
             }
             FocusStop::Pull => self.git_fetch_origin(cx),
             FocusStop::Push => self.git_push_default(cx),
+            FocusStop::RevsetBack => self.return_to_previous_revset(cx),
+            FocusStop::RevsetPresets => self.toggle_revset_popup(window, cx),
+            FocusStop::RevsetFilter => self.begin_revset_edit(window, cx),
+            FocusStop::RevsetReset => self.apply_revset("", cx),
             FocusStop::Editor => self.open_repo_in_editor(cx),
             FocusStop::Terminal => self.open_repo_in_terminal(cx),
             FocusStop::Settings => crate::windows::settings::SettingsView::open(cx),
@@ -183,9 +191,14 @@ impl RepoWindow {
 
     fn visible_stops(&self, cx: &App) -> VisibleStops {
         let vm = self.vm.read(cx);
+        let editing_revset = self.revset_editor.is_some();
+        let revset_back = !editing_revset && vm.revset_filter.previous.is_some();
+        let revset_reset =
+            !editing_revset && RevsetFilter::of(vm.revset()).kind != RevsetFilterKind::Default;
         if vm.selection_without_diff_count().is_some() {
             return VisibleStops {
-                revset_input: self.revset_filter.is_some(),
+                revset_back,
+                revset_reset,
                 sidebar_hidden: self.layout.sidebar_hidden,
                 ..VisibleStops::default()
             };
@@ -201,7 +214,8 @@ impl RepoWindow {
             edit_diff: detail_change.is_some_and(|change| {
                 !change.has_conflict && !change.is_empty && !change.is_immutable
             }),
-            revset_input: self.revset_filter.is_some(),
+            revset_back,
+            revset_reset,
             commit_box: detail_change.is_some_and(|change| change.is_working_copy),
             sidebar_hidden: self.layout.sidebar_hidden,
         }

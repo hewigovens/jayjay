@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{Focusable, Modifiers, TestAppContext, VisualTestContext};
+use gpui::{Focusable, TestAppContext, VisualTestContext};
 use jayjay_gpui::repo::{ActivePane, FocusStop, RepoWindow};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::LinearFixture;
@@ -131,7 +131,7 @@ fn tab_cycle_skips_sidebar_stops_when_hidden_and_toggle_is_always_present(cx: &m
     assert!(
         stops.iter().all(|(_, control)| !matches!(
             control,
-            Some(FocusStop::RevsetInput | FocusStop::CommitSummary | FocusStop::CommitDescription)
+            Some(FocusStop::CommitSummary | FocusStop::CommitDescription)
         )),
         "sidebar inputs leave the cycle while hidden: {stops:?}"
     );
@@ -149,50 +149,6 @@ fn tab_cycle_skips_sidebar_stops_when_hidden_and_toggle_is_always_present(cx: &m
 }
 
 #[gpui::test]
-fn filter_button_reveals_hidden_sidebar_and_focuses_the_input(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let (view, cx) = open_focused(&fixture, cx);
-
-    let filter = cx
-        .debug_bounds("toolbar-revset-filter")
-        .expect("filter button");
-    cx.simulate_click(filter.center(), Modifiers::default());
-    settle_visual(cx);
-    assert!(cx.debug_bounds("revset-filter").is_some());
-
-    view.update_in(cx, |view, _, cx| view.toggle_sidebar(cx));
-    settle_slide(cx);
-    assert!(!sidebar_visible(cx));
-    assert!(
-        view.read_with(cx, |view, _| view.revset_filter_text().is_none()),
-        "hiding closes the open revset filter"
-    );
-
-    let filter = cx
-        .debug_bounds("toolbar-revset-filter")
-        .expect("filter button while hidden");
-    cx.simulate_click(filter.center(), Modifiers::default());
-    settle_visual(cx);
-    assert!(sidebar_visible(cx), "Filter reveals a hidden sidebar");
-    assert!(cx.debug_bounds("revset-filter").is_some());
-    assert!(
-        cx.debug_bounds("revset-filter-caret").is_some(),
-        "the revealed filter input takes focus"
-    );
-
-    let filter = cx
-        .debug_bounds("toolbar-revset-filter")
-        .expect("filter button while visible");
-    cx.simulate_click(filter.center(), Modifiers::default());
-    settle_visual(cx);
-    assert!(cx.debug_bounds("revset-filter").is_none());
-    assert!(
-        sidebar_visible(cx),
-        "closing the filter leaves the sidebar shown"
-    );
-}
-
-#[gpui::test]
 fn revealing_actions_unhide_the_sidebar(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
@@ -205,7 +161,7 @@ fn revealing_actions_unhide_the_sidebar(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert!(sidebar_visible(cx), "applying a revset reveals the sidebar");
     view.read_with(cx, |view, cx| {
-        assert_eq!(view.view_model().read(cx).revset.as_ref(), "all()");
+        assert_eq!(view.view_model().read(cx).revset(), "all()");
         assert_eq!(view.active_pane(), ActivePane::Sidebar);
     });
 
@@ -229,7 +185,7 @@ fn revealing_actions_unhide_the_sidebar(cx: &mut TestAppContext) {
     assert!(sidebar_visible(cx), "reveal_change_id reveals the sidebar");
     view.read_with(cx, |view, cx| {
         assert_eq!(
-            view.view_model().read(cx).revset.as_ref(),
+            view.view_model().read(cx).revset(),
             "all()",
             "the applied revset survives hide/show cycles"
         );
