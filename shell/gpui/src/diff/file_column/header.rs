@@ -46,11 +46,13 @@ pub(super) fn file_column_header(
         tree_mode,
         focused,
     } = state;
-    // Mirrors SwiftUI's file-column count: filename filtering shows the visible/total pair, while the reviewed/total badge remains separate.
+    let shows_reviewed = show_review && reviewed > 0;
     let label = if loading {
         String::from("Loading…")
     } else if file_filter_has_query {
         format!("{visible_count} of {count} files")
+    } else if shows_reviewed {
+        format!("{reviewed}/{count} reviewed")
     } else if visible_count == 0 {
         String::from("0 files")
     } else {
@@ -70,15 +72,7 @@ pub(super) fn file_column_header(
         .py(px(6.))
         .px(px(14.))
         .bg(rgb(t.header_bg))
-        .debug_selector(|| "file-column-header".to_owned())
-        .child(
-            div()
-                .text_size(ui_font_size(13.))
-                .font_weight(FontWeight::MEDIUM)
-                .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(label)),
-        )
-        .child(div().flex_1());
+        .debug_selector(|| "file-column-header".to_owned());
     if !file_filter_active {
         row = row.border_b_1().border_color(rgb(t.border));
     }
@@ -118,24 +112,7 @@ pub(super) fn file_column_header(
         );
     }
 
-    if show_review && reviewed > 0 {
-        // SwiftUI parity (`FileColumn.swift`): the reviewed/total count and quick-split button target the currently reviewed (checked) files, not the row multi-selection.
-        row = row.child(
-            div()
-                .id("file-reviewed-count")
-                .debug_selector(|| "file-reviewed-count".to_owned())
-                .text_size(ui_font_size(10.))
-                .font_weight(FontWeight::MEDIUM)
-                .text_color(rgb(t.fg_dim))
-                .tooltip(text_tooltip(if agent_marked > 0 {
-                    format!(
-                        "{reviewed} of {count} files reviewed, {agent_marked} include agent marks"
-                    )
-                } else {
-                    format!("{reviewed} of {count} files reviewed")
-                }))
-                .child(SharedString::from(format!("{reviewed}/{count}"))),
-        );
+    if shows_reviewed {
         row = row.child(
             icon_button(
                 "file-split-reviewed",
@@ -212,6 +189,23 @@ pub(super) fn file_column_header(
     } else {
         (t.toggle_inactive_bg, t.toggle_inactive_fg)
     };
+    let count_label = div()
+        .id("file-count")
+        .flex_none()
+        .text_size(ui_font_size(12.))
+        .text_color(rgb(t.fg_dim))
+        .child(SharedString::from(label));
+    let count_label = if shows_reviewed {
+        count_label
+            .debug_selector(|| "file-reviewed-count".to_owned())
+            .tooltip(text_tooltip(if agent_marked > 0 {
+                format!("{reviewed} of {count} files reviewed, {agent_marked} include agent marks")
+            } else {
+                format!("{reviewed} of {count} files reviewed")
+            }))
+    } else {
+        count_label
+    };
     row.child(
         focus_ring(
             icon_button("toggle-file-filter", glyph::SEARCH, 14., 24., 22., fg, t),
@@ -225,6 +219,8 @@ pub(super) fn file_column_header(
             view.toggle_file_filter(window, cx);
         })),
     )
+    .child(div().flex_1().min_w(px(8.)))
+    .child(count_label)
 }
 
 pub(super) fn file_filter_bar(
