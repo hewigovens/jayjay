@@ -4,7 +4,6 @@ import SwiftUI
 /// Tap targets, not Buttons: macOS drops a toolbar item that holds a wide Button.
 struct RevsetBar: View {
     let actions: any RevsetActions
-    let changeCount: Int
     let bookmarks: [BookmarkInfo]
     let editRequest: Int
 
@@ -37,6 +36,7 @@ struct RevsetBar: View {
                 label: "Presets, bookmarks and recent revsets",
                 stop: .revsetPresets,
                 tint: isNarrowed,
+                showsTooltip: false,
                 action: { togglePanel() }
             )
             if isEditing {
@@ -46,6 +46,7 @@ struct RevsetBar: View {
                     accessibilityIdentifier: AID.Toolbar.revsetField,
                     isPlain: true,
                     endsEditingOnOutsideClick: true,
+                    placesCaretAtEnd: true,
                     font: fontFamily.scaledNSFont(11, baseSize: fontSize, monospaced: true),
                     onSubmit: submitDraft,
                     onCancel: { isEditing = false },
@@ -54,7 +55,6 @@ struct RevsetBar: View {
             } else {
                 summary
                     .onTapGesture(perform: beginEditing)
-                    .help("Edit the revset (⌘L)")
                     .accessibilityElement(children: .ignore)
                     .accessibilityAddTraits(.isButton)
                     .accessibilityLabel("Revset")
@@ -62,16 +62,13 @@ struct RevsetBar: View {
                     .accessibilityAction(.default, beginEditing)
                     .accessibilityIdentifier(AID.Toolbar.revsetBar)
             }
-            Text("\(changeCount)")
-                .jayjayFont(11)
-                .foregroundStyle(.secondary)
-                .padding(.trailing, isNarrowed && !isEditing ? 0 : 6)
             if isNarrowed, !isEditing {
                 icon("xmark.circle.fill", label: "Reset to default", stop: .revsetReset) { actions.applyFilter("") }
             }
         }
-        .padding(.horizontal, 4)
-        .frame(minWidth: 280, idealWidth: 480, maxWidth: 480, minHeight: 28, maxHeight: 28)
+        .padding(.leading, 4)
+        .padding(.trailing, isNarrowed && !isEditing ? 4 : 10)
+        .frame(minWidth: 280, idealWidth: 485, maxWidth: 485, minHeight: 28, maxHeight: 28)
         .background(background, in: Capsule())
         .overlay {
             if isEditing {
@@ -108,8 +105,8 @@ struct RevsetBar: View {
                     .lineLimit(1)
                     .truncationMode(.tail)
             }
-            Spacer(minLength: 4)
         }
+        .frame(maxWidth: .infinity, alignment: .leading)
         .contentShape(Rectangle())
     }
 
@@ -118,6 +115,7 @@ struct RevsetBar: View {
         label: String,
         stop: KeyboardFocusStop,
         tint: Bool = false,
+        showsTooltip: Bool = true,
         action: @escaping () -> Void
     ) -> some View {
         Image(systemName: systemName)
@@ -126,7 +124,7 @@ struct RevsetBar: View {
             .contentShape(Rectangle())
             .keyboardFocusStop(stop, action: action)
             .onTapGesture(perform: action)
-            .help(label)
+            .help(showsTooltip ? label : "")
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(label)
             .accessibilityAction(.default, action)
@@ -161,6 +159,6 @@ struct RevsetBar: View {
             error: error,
             onDismiss: { [weak panel] in panel?.dismiss() }
         )
-        panel.show(under: anchorView, size: content.idealSize(width: anchorView.bounds.width), centered: true, content: content)
+        panel.show(under: anchorView, width: anchorView.bounds.width, centered: true, content: content)
     }
 }

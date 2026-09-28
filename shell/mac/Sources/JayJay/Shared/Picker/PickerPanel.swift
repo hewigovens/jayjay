@@ -33,6 +33,20 @@ final class PickerPanel: FloatingPanel {
         makeKeyAndOrderFront(nil)
     }
 
+    /// Sized to the content's own height, keeping the top edge under the anchor as the content grows or shrinks.
+    func show(under anchor: NSView, width: CGFloat, centered: Bool = false, content: some View) {
+        let fitted = HeightFittingContent(content: content, width: width) { [weak self] height in
+            self?.fitHeight(height)
+        }
+        let height = NSHostingView(rootView: fitted).fittingSize.height
+        show(under: anchor, size: NSSize(width: width, height: height), centered: centered, content: fitted)
+    }
+
+    private func fitHeight(_ height: CGFloat) {
+        guard isVisible, abs(frame.height - height) >= 1 else { return }
+        setFrame(NSRect(x: frame.minX, y: frame.maxY - height, width: frame.width, height: height), display: true)
+    }
+
     override func dismiss() {
         super.dismiss()
         detachFromHostWindow()
@@ -63,6 +77,20 @@ final class PickerPanel: FloatingPanel {
         }
         hostWindow?.removeChildWindow(self)
         hostWindow = nil
+    }
+}
+
+private struct HeightFittingContent<Content: View>: View {
+    let content: Content
+    let width: CGFloat
+    let onHeightChange: (CGFloat) -> Void
+
+    var body: some View {
+        content
+            .frame(width: width)
+            .fixedSize(horizontal: false, vertical: true)
+            .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { onHeightChange($0) }
+            .frame(maxHeight: .infinity, alignment: .top)
     }
 }
 

@@ -40,7 +40,6 @@ extension RepoContentView {
         ToolbarItem(placement: .principal) {
             RevsetBar(
                 actions: viewModel,
-                changeCount: viewModel.changes.count,
                 bookmarks: viewModel.bookmarks,
                 editRequest: revsetEditRequest
             )

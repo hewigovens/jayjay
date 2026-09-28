@@ -9,6 +9,7 @@ struct FilterField: NSViewRepresentable {
     var focusGeneration = 0
     var isPlain = false
     var endsEditingOnOutsideClick = false
+    var placesCaretAtEnd = false
     var font: NSFont?
     let onSubmit: () -> Void
     let onCancel: () -> Void
@@ -24,7 +25,13 @@ struct FilterField: NSViewRepresentable {
         field.setAccessibilityIdentifier(accessibilityIdentifier)
         field.setContentHuggingPriority(.defaultLow, for: .horizontal)
         field.setContentCompressionResistancePriority(.defaultLow, for: .horizontal)
-        DispatchQueue.main.async { field.window?.makeFirstResponder(field) }
+        DispatchQueue.main.async { [placesCaretAtEnd] in
+            field.window?.makeFirstResponder(field)
+            if placesCaretAtEnd, let editor = field.currentEditor() {
+                editor.selectedRange = NSRange(location: field.stringValue.utf16.count, length: 0)
+                editor.scrollRangeToVisible(editor.selectedRange)
+            }
+        }
         if endsEditingOnOutsideClick {
             context.coordinator.watchOutsideClicks(of: field)
         }

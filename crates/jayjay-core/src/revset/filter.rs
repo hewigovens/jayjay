@@ -1,6 +1,6 @@
 use super::default::default_revset_depth;
 use super::expressions::bookmark_filter_name;
-use super::presets::{default_revset_preset, revset_presets};
+use super::presets::revset_presets;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RevsetFilterKind {
@@ -19,7 +19,7 @@ pub struct RevsetFilter {
 impl RevsetFilter {
     pub fn of(revset: &str) -> Self {
         if default_revset_depth(revset).is_some() {
-            return Self::named(RevsetFilterKind::Default, &default_revset_preset().label);
+            return Self::named(RevsetFilterKind::Default, "Revset");
         }
         if let Some(preset) = revset_presets()
             .iter()
@@ -52,12 +52,12 @@ mod tests {
             (
                 DEFAULT_REVSET.to_owned(),
                 RevsetFilterKind::Default,
-                "Default",
+                "Revset",
             ),
             (
                 build_default_revset(80),
                 RevsetFilterKind::Default,
-                "Default",
+                "Revset",
             ),
             ("mine()".to_owned(), RevsetFilterKind::Preset, "Mine"),
             (

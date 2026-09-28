@@ -3,7 +3,7 @@ import SwiftUI
 
 struct RevsetPanelContent: View {
     private static let fieldHeight: CGFloat = 40
-    private static let chipsAndFooterHeight: CGFloat = 180
+    private static let maxRowsHeight: CGFloat = 320
     private static let rowHeight: CGFloat = 28
     private static let sectionTitleHeight: CGFloat = 25
 
@@ -30,15 +30,6 @@ struct RevsetPanelContent: View {
         revset = actions.revsetFilter.revset
         _query = State(initialValue: query)
         _error = State(initialValue: error)
-    }
-
-    func idealSize(width: CGFloat) -> NSSize {
-        let rows = CGFloat(max(actions.revsetFilter.recent.count, 4))
-        let currentRow = Self.sectionTitleHeight + 2 * Self.rowHeight
-        return NSSize(
-            width: width,
-            height: Self.fieldHeight + Self.chipsAndFooterHeight + currentRow + Self.sectionTitleHeight + rows * Self.rowHeight
-        )
     }
 
     private var trimmedQuery: String {
@@ -77,6 +68,7 @@ struct RevsetPanelContent: View {
                 }
                 .padding(.bottom, 4)
             }
+            .frame(maxHeight: Self.maxRowsHeight)
             Divider()
             footer
         }
