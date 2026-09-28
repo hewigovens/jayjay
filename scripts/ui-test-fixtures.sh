@@ -377,6 +377,19 @@ fixture_dag_long() {
   )
 }
 
+# A short linear stack whose rows can be parallelized in place, so the mutating scene does not share dag-long.
+fixture_parallelize() {
+  jj git init --colocate "$fixtures/parallelize"
+  (
+    cd "$fixtures/parallelize"
+    for n in 1 2 3 4 5 6; do
+      echo "$n" > "file-$n.txt"
+      jj describe -m "commit $n"
+      jj new
+    done
+  )
+}
+
 fixture_picker() {
   copy_fixture simple picker
   (
@@ -464,6 +477,7 @@ fixture_context_expansion
 fixture_complex
 fixture_conflict
 fixture_dag_long
+fixture_parallelize
 fixture_picker
 fixture_workspace_delete
 fixture_settings_tools

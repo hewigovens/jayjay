@@ -606,7 +606,7 @@ impl Repo {
     }
 
     // Snapshot first, then retarget each selected commit id at its visible successor, as concrete ids and never `@`: a snapshot may have just rewritten the selection, and a late-bound operand would follow a concurrent working-copy move.
-    fn snapshot_and_follow_commits(
+    pub(super) fn snapshot_and_follow_commits(
         &self,
         revs: &[String],
     ) -> CoreResult<(Arc<ReadonlyRepo>, Vec<Commit>)> {
@@ -651,7 +651,7 @@ pub(super) fn combined_description(destination: &str, source: &str) -> String {
     }
 }
 
-fn require_multiple_revisions(revs: &[String], action: &str) -> CoreResult<()> {
+pub(super) fn require_multiple_revisions(revs: &[String], action: &str) -> CoreResult<()> {
     if revs.len() < 2 {
         return Err(CoreError::internal(format!(
             "{action} requires at least two changes"

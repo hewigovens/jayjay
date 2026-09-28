@@ -6,7 +6,8 @@ use jayjay_core::{EdgeType, GraphEdge, GraphEntry};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
-use jj_test::LinearFixture;
+use jayjay_gpui::windows::command_palette::CommandPalette;
+use jj_test::{LinearFixture, change_by_description};
 
 /// `graph.changes` mirrors `graph.entries`, so a forged topology has to be written to both.
 fn set_parents(vm: &mut RepoViewModel, row: usize, parents: Vec<String>) {
@@ -41,6 +42,7 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
         let menu = view.build_change_menu(&selected, cx);
         assert!(!menu_item(&menu, "Merge 3 selected").enabled);
         assert!(menu_item(&menu, "Squash 3 selected…").enabled);
+        assert!(menu_item(&menu, "Parallelize 3 selected").enabled);
         assert!(menu_item(&menu, "Abandon 3 selected…").enabled);
 
         let destination = vm.graph.changes[3].clone();
@@ -233,6 +235,74 @@ fn squash_batch_action_confirms_then_runs_as_one_mutation(cx: &mut TestAppContex
         );
         assert!(!vm.has_multiple_change_selection());
     });
+}
+
+#[gpui::test]
+fn parallelize_batch_action_rewrites_the_selection_into_siblings(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_first_three(&view, cx);
+
+    let action = view.read_with(cx, |view, cx| {
+        let selected = view.view_model().read(cx).graph.changes[1].clone();
+        let menu = view.build_change_menu(&selected, cx);
+        let item = menu_item(&menu, "Parallelize 3 selected");
+        assert!(item.enabled, "a linear selection must offer parallelize");
+        item.action.clone()
+    });
+    view.update_in(cx, |view, _, cx| view.dispatch_context_action(action, cx));
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert_first_three_are_siblings(view.view_model().read(cx))
+    });
+}
+
+#[gpui::test]
+fn parallelize_palette_action_rewrites_the_multi_selection(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_first_three(&view, cx);
+
+    cx.cx.update(|cx| {
+        CommandPalette::open(
+            fixture.path.display().to_string().into(),
+            Some(view.clone()),
+            cx,
+        );
+    });
+    let window = cx.cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, &cx.cx);
+    settle_visual(&mut palette_cx);
+    palette_cx.simulate_input("parallelize");
+    palette_cx.simulate_keystrokes("enter");
+    settle_visual(&mut palette_cx);
+
+    view.read_with(&palette_cx, |view, cx| {
+        assert_first_three_are_siblings(view.view_model().read(cx))
+    });
+}
+
+fn assert_first_three_are_siblings(vm: &RepoViewModel) {
+    assert!(vm.error.is_none(), "parallelize failed: {:?}", vm.error);
+    let initial = &change_by_description(&vm.graph.changes, "initial")
+        .commit_id
+        .id;
+    for subject in ["add hello", "add feature"] {
+        assert_eq!(
+            change_by_description(&vm.graph.changes, subject).parents,
+            std::slice::from_ref(initial),
+            "{subject}"
+        );
+    }
+    let working_copy = vm
+        .graph
+        .changes
+        .iter()
+        .find(|change| change.is_working_copy)
+        .expect("working copy");
+    assert_eq!(working_copy.parents, std::slice::from_ref(initial));
+    assert!(!vm.has_multiple_change_selection());
 }
 
 fn select_first_three(view: &gpui::Entity<RepoWindow>, cx: &mut VisualTestContext) {

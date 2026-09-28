@@ -13,6 +13,7 @@ final class DAGSelectionCapabilities {
             canSquash: false,
             canDiff: false,
             canMerge: false,
+            canParallelize: false,
             canRebaseOnto: [],
             canMergeWith: []
         )
@@ -37,6 +38,10 @@ final class DAGSelectionCapabilities {
 
     var canMerge: Bool {
         state.canMerge
+    }
+
+    var canParallelize: Bool {
+        state.canParallelize
     }
 
     func canRebase(onto change: ChangeInfo) -> Bool {

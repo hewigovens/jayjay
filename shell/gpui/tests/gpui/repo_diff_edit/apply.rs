@@ -2,7 +2,7 @@ use std::fs;
 
 use gpui::TestAppContext;
 use jayjay_core::{DiffEditDestination, Repo};
-use jj_test::run_jj_in;
+use jj_test::{find_change, run_jj_in};
 
 use super::fixtures::*;
 use super::harness::*;
@@ -36,7 +36,7 @@ fn new_parallel_splits_added_and_deleted_files(cx: &mut TestAppContext) {
     );
 
     let repo = Repo::open(&fixture.path).unwrap();
-    let parallel = change_by_description(&repo, "split existence changes");
+    let parallel = find_change(&repo, "split existence changes");
     let source = change_by_id(&repo, &source_change_id);
     assert_eq!(
         repo.file_content(&source.change_id, "added.txt").unwrap(),
@@ -189,7 +189,7 @@ fn new_child_contains_exactly_the_selected_lines(cx: &mut TestAppContext) {
     apply_with_message(&view, cx, DiffEditDestination::NewChild, "selected child");
 
     let repo = Repo::open(&fixture.path).expect("open mutated repo");
-    let child = change_by_description(&repo, "selected child");
+    let child = find_change(&repo, "selected child");
     let source = change_by_id(&repo, &source_change_id);
     assert_eq!(child.parents, vec![source.commit_id.id.clone()]);
     assert_eq!(
@@ -222,7 +222,7 @@ fn new_parallel_creates_a_sibling_with_same_parents(cx: &mut TestAppContext) {
     );
 
     let repo = Repo::open(&fixture.path).expect("open mutated repo");
-    let parallel = change_by_description(&repo, "selected parallel");
+    let parallel = find_change(&repo, "selected parallel");
     let source = change_by_id(&repo, &source_change_id);
     assert_eq!(parallel.parents, source.parents);
     assert_ne!(parallel.parents, vec![source.commit_id.id.clone()]);

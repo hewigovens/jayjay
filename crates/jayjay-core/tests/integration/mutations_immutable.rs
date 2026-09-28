@@ -50,6 +50,13 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
                     .map(drop)
             }),
         ),
+        (
+            "parallelize selected",
+            Box::new(|| {
+                repo.parallelize(&["@".to_owned(), rev.to_owned()])
+                    .map(drop)
+            }),
+        ),
         ("squash into", Box::new(|| repo.squash("@", Some(rev)))),
         ("absorb", Box::new(|| repo.absorb(rev).map(drop))),
         (

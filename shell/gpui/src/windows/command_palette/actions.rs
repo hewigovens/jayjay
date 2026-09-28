@@ -239,6 +239,19 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
+        name: "Parallelize Selected Changes",
+        keywords: &[
+            "parallelize",
+            "parallel",
+            "sibling",
+            "independent",
+            "split",
+            "selection",
+        ],
+        glyph_str: glyph::GIT_BRANCH,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::parallelize_selection),
+    },
+    PaletteAction {
         name: "Git Push",
         keywords: &["git", "push", "sync"],
         glyph_str: glyph::ARROW_UP,

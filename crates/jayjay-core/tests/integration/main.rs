@@ -14,6 +14,7 @@ mod lfs;
 mod mutations_immutable;
 mod overview;
 mod palette_command;
+mod parallelize;
 mod path_injection;
 mod pull_request_import;
 mod pull_request_import_live;

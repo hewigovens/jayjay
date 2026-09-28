@@ -56,14 +56,6 @@ pub(super) fn two_file_working_copy_fixture() -> LinearFixture {
     fixture
 }
 
-pub(super) fn change_by_description(repo: &Repo, description: &str) -> jayjay_core::ChangeInfo {
-    repo.log("all()")
-        .expect("load graph")
-        .into_iter()
-        .find(|change| change.description.trim() == description)
-        .unwrap_or_else(|| panic!("change '{description}' present"))
-}
-
 pub(super) fn change_by_id(repo: &Repo, change_id: &str) -> jayjay_core::ChangeInfo {
     repo.log(change_id)
         .expect("load change")

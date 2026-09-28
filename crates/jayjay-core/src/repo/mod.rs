@@ -18,6 +18,7 @@ mod log;
 mod mutations;
 mod mutations_files;
 mod overview;
+mod parallelize;
 mod path_operands;
 mod platform;
 mod pull_requests;

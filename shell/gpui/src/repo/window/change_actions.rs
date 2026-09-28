@@ -18,6 +18,7 @@ pub enum ChangeAction {
     RebaseMany { revs: Vec<String>, dest: String },
     Merge { parents: Vec<String> },
     SquashMany { revs: Vec<String> },
+    ParallelizeMany { revs: Vec<String> },
     AbandonMany { revs: Vec<String> },
     Duplicate { rev: String },
     Absorb { rev: String },
@@ -85,6 +86,14 @@ impl RepoWindow {
                 }),
             )
             .with_enabled(vm.can_squash_selected_changes()),
+            ContextMenuItem::new(
+                format!("Parallelize {count} selected"),
+                glyph::GIT_BRANCH,
+                change_action(ChangeAction::ParallelizeMany {
+                    revs: revisions.clone(),
+                }),
+            )
+            .with_enabled(vm.can_parallelize_selected_changes()),
             ContextMenuItem::separator(),
             ContextMenuItem::new(
                 format!("Abandon {count} selected…"),
@@ -312,6 +321,24 @@ impl RepoWindow {
         items
     }
 
+    pub(crate) fn parallelize_selection(&mut self, cx: &mut Context<Self>) {
+        let (revs, eligible) = {
+            let vm = self.vm.read(cx);
+            (
+                vm.selected_revisions(),
+                vm.can_parallelize_selected_changes(),
+            )
+        };
+        if !eligible {
+            self.show_toast(
+                "Select two or more mutable changes on one line to parallelize.",
+                cx,
+            );
+            return;
+        }
+        self.run_change_action(Arc::new(ChangeAction::ParallelizeMany { revs }), cx);
+    }
+
     pub(crate) fn run_change_action(&mut self, action: Arc<ChangeAction>, cx: &mut Context<Self>) {
         let task = match action.as_ref() {
             ChangeAction::Edit { rev } => {
@@ -361,6 +388,23 @@ impl RepoWindow {
                     },
                     cx,
                 );
+                return;
+            }
+            ChangeAction::ParallelizeMany { revs } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.parallelize_changes(revs.clone(), cx));
+                cx.spawn(async move |this, cx| {
+                    if let Ok(MutationEffect::Unchanged) = task.await {
+                        let _ = this.update(cx, move |view, cx| {
+                            view.show_toast(
+                                "Nothing to parallelize. The selection would keep its current parents.",
+                                cx,
+                            );
+                        });
+                    }
+                })
+                .detach();
                 return;
             }
             ChangeAction::Duplicate { rev } => self

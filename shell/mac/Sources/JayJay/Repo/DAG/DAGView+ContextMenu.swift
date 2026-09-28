@@ -35,6 +35,16 @@ extension DAGView {
                 : "Squash requires a consecutive linear range of mutable changes"
         )
 
+        Button { actions?.parallelize(revs: revisions) } label: {
+            Label("Parallelize \(revisions.count) selected", systemImage: "arrow.triangle.branch")
+        }
+        .disabled(!viewModel.canParallelizeSelection)
+        .help(
+            viewModel.canParallelizeSelection
+                ? "Make the selected changes independent siblings"
+                : "Parallelize requires two or more mutable changes on one connected line"
+        )
+
         Divider()
         Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
             Label("Abandon \(revisions.count) selected…", systemImage: "trash")

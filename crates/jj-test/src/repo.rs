@@ -54,6 +54,11 @@ pub fn change_by_description<'a>(changes: &'a [ChangeInfo], description: &str) -
         .unwrap_or_else(|| panic!("missing change with description {description:?}"))
 }
 
+/// Reloads the log, for lookups after a mutation.
+pub fn find_change(repo: &Repo, description: &str) -> ChangeInfo {
+    change_by_description(&repo.log("all()").expect("load changes"), description).clone()
+}
+
 fn hunk_for_path(repo: &Repo, rev: &str, path: &str) -> jayjay_core::DiffHunk {
     repo.show(rev)
         .expect("show change")
@@ -121,6 +126,25 @@ pub fn setup_source_change_with_child() -> (TempDir, PathBuf, Repo) {
         .expect("describe source change");
     repo.new_change("@", "working copy child")
         .expect("create working copy child");
+
+    (temp_dir, repo_path, repo)
+}
+
+/// A linear stack on a change described `base`: one change per description, each adding `<description>.txt`, the last one as the working copy.
+pub fn setup_stack(descriptions: &[&str]) -> (TempDir, PathBuf, Repo) {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "base"]);
+    for description in descriptions {
+        run_jj_in(&repo_path, &["new", "-m", description]);
+        fs::write(
+            repo_path.join(format!("{description}.txt")),
+            format!("{description}\n"),
+        )
+        .expect("write stack file");
+    }
+    run_jj_in(&repo_path, &["st"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
 
     (temp_dir, repo_path, repo)
 }

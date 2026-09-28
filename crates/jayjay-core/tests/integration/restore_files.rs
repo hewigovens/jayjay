@@ -1,17 +1,9 @@
 use std::fs;
 use std::path::PathBuf;
 
-use jayjay_core::{ChangeInfo, Repo};
-use jj_test::{init_jj_repo, run_git, run_jj_in};
+use jayjay_core::Repo;
+use jj_test::{find_change, init_jj_repo, run_git, run_jj_in};
 use tempfile::TempDir;
-
-fn change_by_description(repo: &Repo, description: &str) -> ChangeInfo {
-    repo.log(&format!("description(\"{description}\")"))
-        .expect("log by description")
-        .into_iter()
-        .find(|change| change.description.trim() == description)
-        .unwrap_or_else(|| panic!("change '{description}' present"))
-}
 
 /// Merge topology for from-parent restores: base holds a.txt = "a base"; parent one edits it to "a from p1"; parent two (also on base) adds b.txt only; @ is their merge with a.txt edited to "a from merge".
 fn merge_fixture() -> (TempDir, PathBuf, Repo) {
@@ -67,7 +59,7 @@ fn restore_files_reverts_only_selected_path_in_historical_commit() {
     fs::write(repo_path.join("c.txt"), "c from child\n").expect("write c in child");
     repo.refresh_working_copy().expect("snapshot child");
 
-    let x = change_by_description(&repo, "target X");
+    let x = find_change(&repo, "target X");
 
     repo.restore_files(&x.change_id, None, &["a.txt".to_owned()])
         .expect("restore a.txt in historical commit X");
@@ -129,7 +121,7 @@ fn restore_files_from_a_parent_rewrites_the_merge_not_the_parent() {
     // A child on top makes the merge take the non-working-copy rewrite branch.
     repo.new_change("@", "child").expect("create child");
 
-    let merge = change_by_description(&repo, "merge");
+    let merge = find_change(&repo, "merge");
     assert_eq!(merge.parents.len(), 2, "fixture merge has two parents");
     let (p1_commit, p2_commit) = (merge.parents[0].clone(), merge.parents[1].clone());
 
@@ -145,12 +137,12 @@ fn restore_files_from_a_parent_rewrites_the_merge_not_the_parent() {
         "the merge's file must hold parent two's content"
     );
     assert_eq!(
-        change_by_description(&repo, "parent one").commit_id.id,
+        find_change(&repo, "parent one").commit_id.id,
         p1_commit,
         "parent one must not be rewritten"
     );
     assert_eq!(
-        change_by_description(&repo, "parent two").commit_id.id,
+        find_change(&repo, "parent two").commit_id.id,
         p2_commit,
         "parent two must not be rewritten"
     );
@@ -174,10 +166,10 @@ fn restore_files_from_a_parent_rewrites_the_merge_not_the_parent() {
 fn restore_files_from_a_rewritten_parent_uses_the_parent_current_content() {
     let (_tmp, _repo_path, repo) = merge_fixture();
     repo.new_change("@", "child").expect("create child");
-    let merge = change_by_description(&repo, "merge");
+    let merge = find_change(&repo, "merge");
     let (p1_commit, stale_p2_commit) = (merge.parents[0].clone(), merge.parents[1].clone());
 
-    let p2 = change_by_description(&repo, "parent two");
+    let p2 = find_change(&repo, "parent two");
     repo.restore_files(&p2.change_id.id, Some(&p1_commit), &["a.txt".to_owned()])
         .expect("rewrite parent two after the menu captured it");
     repo.restore_files(
@@ -223,7 +215,7 @@ fn restore_files_from_the_third_parent_of_an_octopus_merge_uses_that_parent() {
     repo.refresh_working_copy().expect("snapshot merge");
     repo.new_change("@", "child").expect("create child");
 
-    let merge = change_by_description(&repo, "merge");
+    let merge = find_change(&repo, "merge");
     assert_eq!(merge.parents.len(), 3, "fixture merge has three parents");
     let parents = merge.parents.clone();
 
@@ -239,7 +231,7 @@ fn restore_files_from_the_third_parent_of_an_octopus_merge_uses_that_parent() {
     );
     for (ix, parent) in parents.iter().enumerate() {
         assert_eq!(
-            change_by_description(&repo, &format!("parent {}", ix + 1))
+            find_change(&repo, &format!("parent {}", ix + 1))
                 .commit_id
                 .id,
             *parent,
@@ -311,7 +303,7 @@ fn restore_files_refuses_to_rewrite_an_immutable_commit() {
 fn restore_files_from_a_parent_on_a_working_copy_merge_updates_the_disk_file() {
     let (_tmp, repo_path, repo) = merge_fixture();
 
-    let merge = change_by_description(&repo, "merge");
+    let merge = find_change(&repo, "merge");
     let (p1_commit, p2_commit) = (merge.parents[0].clone(), merge.parents[1].clone());
 
     repo.restore_files("@", Some(&p2_commit), &["a.txt".to_owned()])
@@ -323,12 +315,12 @@ fn restore_files_from_a_parent_on_a_working_copy_merge_updates_the_disk_file() {
         "the working-copy file must materialize parent two's content"
     );
     assert_eq!(
-        change_by_description(&repo, "parent one").commit_id.id,
+        find_change(&repo, "parent one").commit_id.id,
         p1_commit,
         "parent one must not be rewritten"
     );
     assert_eq!(
-        change_by_description(&repo, "parent two").commit_id.id,
+        find_change(&repo, "parent two").commit_id.id,
         p2_commit,
         "parent two must not be rewritten"
     );
@@ -401,7 +393,7 @@ fn restore_version_in_a_historical_change_keeps_its_change_id() {
     fs::write(repo_path.join("c.txt"), "c from child\n").expect("write c in child");
     repo.refresh_working_copy().expect("snapshot child");
 
-    let x = change_by_description(&repo, "target X");
+    let x = find_change(&repo, "target X");
     let (change_id, commit_id) = (x.change_id.id.clone(), x.commit_id.id.clone());
     let empty_version = repo
         .evolog(&change_id)
@@ -416,7 +408,7 @@ fn restore_version_in_a_historical_change_keeps_its_change_id() {
     repo.restore_version(&change_id, &empty_version.commit_id.id)
         .expect("whole-tree restore X to its first version");
 
-    let after = change_by_description(&repo, "target X");
+    let after = find_change(&repo, "target X");
     assert_eq!(after.change_id.id, change_id);
     assert_ne!(after.commit_id.id, commit_id);
     assert_eq!(

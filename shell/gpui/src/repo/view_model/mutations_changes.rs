@@ -84,6 +84,19 @@ impl RepoViewModel {
         cx.spawn(async move |_, _| task.await.map(drop))
     }
 
+    pub(crate) fn parallelize_changes(
+        &mut self,
+        revs: Vec<String>,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<MutationEffect>> {
+        let selection = revs.first().cloned();
+        self.repo_result_task(
+            cx,
+            move |repo| repo.parallelize(&revs),
+            move |vm, _, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
+        )
+    }
+
     pub(crate) fn abandon_changes(
         &mut self,
         revs: Vec<String>,

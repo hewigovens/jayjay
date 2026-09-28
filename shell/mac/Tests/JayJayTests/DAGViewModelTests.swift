@@ -40,6 +40,7 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertTrue(heads.canMergeSelection)
         XCTAssertTrue(heads.canAbandonSelection)
         XCTAssertFalse(heads.canSquashSelection)
+        XCTAssertFalse(heads.canParallelizeSelection)
         XCTAssertTrue(heads.canRebaseSelection(onto: base.change))
         XCTAssertFalse(heads.canRebaseSelection(onto: child.change))
     }

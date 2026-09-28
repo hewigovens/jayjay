@@ -9,6 +9,7 @@ pub struct SelectionState {
     /// The combined diff bases on `roots(selection)-`, so the oldest change needs exactly one parent.
     pub can_diff: bool,
     pub can_merge: bool,
+    pub can_parallelize: bool,
     /// Indexed by graph row, as is `can_merge_with`.
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
@@ -96,12 +97,18 @@ impl SelectionGraph {
             .is_some_and(|&ix| self.rows[ix].parent_commit_ids.len() == 1);
         // Merge parents must be independent heads: no selected change may be an ancestor of another.
         let can_merge = ordered.len() > 1 && !ordered.iter().any(|ix| ancestors.contains(ix));
+        // Parallelize needs one connected run: each selected change descended from the next, possibly through unselected changes.
+        let can_parallelize = mutable
+            && ordered
+                .windows(2)
+                .all(|pair| self.reaches(pair[0], pair[1]));
 
         SelectionState {
             can_abandon: mutable,
             can_squash: mutable && contiguous,
             can_diff: contiguous && oldest_has_one_parent,
             can_merge,
+            can_parallelize,
             can_rebase_onto: (0..self.rows.len())
                 .map(|ix| mutable && !selected.contains(&ix) && !descendants.contains(&ix))
                 .collect(),
@@ -114,6 +121,11 @@ impl SelectionGraph {
                 })
                 .collect(),
         }
+    }
+
+    fn reaches(&self, child: usize, ancestor: usize) -> bool {
+        self.reachable(&[child], &|ix| &self.rows[ix].parents)
+            .contains(&ancestor)
     }
 
     fn is_only_parent(&self, child: usize, parent: usize) -> bool {
@@ -222,6 +234,27 @@ mod tests {
         assert!(!off_page.can_abandon);
         assert!(!off_page.can_merge);
         assert!(off_page.can_merge_with.iter().all(|allowed| !allowed));
+    }
+
+    #[test]
+    fn a_chain_of_changes_can_be_parallelized_but_a_fork_cannot() {
+        let range = state(&["c", "b"]);
+        assert!(range.can_parallelize, "a parent-linked range is connected");
+
+        let gap = state(&["d", "b"]);
+        assert!(
+            gap.can_parallelize,
+            "a run connected through an unselected change stays eligible"
+        );
+
+        let heads = state(&["d", "x"]);
+        assert!(!heads.can_parallelize, "sibling heads are already parallel");
+
+        let single = state(&["c"]);
+        assert!(!single.can_parallelize, "one change is not a run");
+
+        let immutable = state(&["c", "i"]);
+        assert!(!immutable.can_parallelize);
     }
 
     #[test]

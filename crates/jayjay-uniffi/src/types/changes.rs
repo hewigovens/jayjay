@@ -72,6 +72,7 @@ pub struct SelectionState {
     pub can_squash: bool,
     pub can_diff: bool,
     pub can_merge: bool,
+    pub can_parallelize: bool,
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
 }

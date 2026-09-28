@@ -124,6 +124,21 @@ extension RepoViewModel {
         perform(selecting: destination) { try $0.squash(rev: rev, intoRev: destination) }
     }
 
+    func parallelize(revs: [String]) {
+        performResult(
+            selecting: revs.first,
+            onSuccess: { viewModel, outcome in
+                switch outcome {
+                    case .changed:
+                        break
+                    case .unchanged:
+                        viewModel.info = "Nothing to parallelize. The selection would keep its current parents."
+                }
+            },
+            { try $0.parallelize(revs: revs) }
+        )
+    }
+
     func squash(revs: [String]) {
         performResult(
             selectingResult: { $0 },

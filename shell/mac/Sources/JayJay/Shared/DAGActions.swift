@@ -11,6 +11,7 @@ protocol DAGActions: AnyObject {
     func merge(parents: [String])
     func squash(rev: String)
     func squash(rev: String, into: String)
+    func parallelize(revs: [String])
     func absorb(rev: String)
     func revertChange(rev: String)
     func rebase(rev: String, dest: String, mode: RebaseMode)

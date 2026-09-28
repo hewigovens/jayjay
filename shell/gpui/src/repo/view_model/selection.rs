@@ -409,6 +409,10 @@ impl RepoViewModel {
         self.selection_state().can_squash
     }
 
+    pub fn can_parallelize_selected_changes(&self) -> bool {
+        self.selection_state().can_parallelize
+    }
+
     fn has_diffable_linear_selection(&self) -> bool {
         self.selection_state().can_diff
     }

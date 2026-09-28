@@ -892,6 +892,10 @@ impl JayJayRepo {
         Ok(self.inner.squash_many(&revs)?)
     }
 
+    fn parallelize(&self, revs: Vec<String>) -> Result<MutationEffect, JayJayError> {
+        Ok(self.inner.parallelize(&revs)?)
+    }
+
     fn edit(&self, rev: String) -> Result<(), JayJayError> {
         Ok(self.inner.edit(&rev)?)
     }

@@ -6,6 +6,7 @@ extension RepoContentView {
         if let selection = viewModel.selectedChangeId {
             items += changePaletteItems(selection: selection)
         }
+        items += multiSelectionPaletteItems
         items += workspacePaletteItems + zoomPaletteItems + toolsPaletteItems + appPaletteItems
         items += helpPaletteItems + keybindPaletteItems
         commandPanel.show(
@@ -191,6 +192,21 @@ extension RepoContentView {
             presentBookmarkCreate(rev: selection)
         })
         return items
+    }
+
+    private var multiSelectionPaletteItems: [CommandPaletteItem] {
+        let revisions = viewModel.selectedChangeIds
+        guard revisions.count > 1, viewModel.selectionCapabilities.canParallelize else {
+            return []
+        }
+        return [CommandPaletteItem(
+            title: "Parallelize \(revisions.count) selected",
+            icon: "arrow.triangle.branch",
+            category: "Change",
+            keywords: ["parallel", "independent", "sibling", "split", "stack"]
+        ) {
+            viewModel.parallelize(revs: revisions)
+        }]
     }
 
     private var workspacePaletteItems: [CommandPaletteItem] {

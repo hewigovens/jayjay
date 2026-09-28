@@ -1,15 +1,7 @@
 use std::fs;
 
-use jayjay_core::{ChangeInfo, Repo};
-use jj_test::{current_op_id, init_jj_repo, run_jj, run_jj_in};
-
-fn change_by_description(repo: &Repo, description: &str) -> ChangeInfo {
-    repo.log("all()")
-        .expect("load changes")
-        .into_iter()
-        .find(|change| change.description.trim() == description)
-        .unwrap_or_else(|| panic!("missing change {description:?}"))
-}
+use jayjay_core::Repo;
+use jj_test::{current_op_id, find_change, init_jj_repo, run_jj, run_jj_in};
 
 #[test]
 fn abandon_many_removes_selection_and_reparents_descendants() {
@@ -22,8 +14,8 @@ fn abandon_many_removes_selection_and_reparents_descendants() {
     let repo = Repo::open(&repo_path).expect("open repo");
 
     repo.abandon_many(&[
-        change_by_description(&repo, "first").change_id.id,
-        change_by_description(&repo, "second").change_id.id,
+        find_change(&repo, "first").change_id.id,
+        find_change(&repo, "second").change_id.id,
     ])
     .expect("abandon selected changes");
 
@@ -157,7 +149,7 @@ fn duplicate_copies_a_change_onto_the_same_parents() {
     run_jj_in(&repo_path, &["new", "-m", "original"]);
     fs::write(repo_path.join("a.txt"), "original\n").expect("write a.txt");
     let repo = Repo::open(&repo_path).expect("open repo");
-    let original = change_by_description(&repo, "original");
+    let original = find_change(&repo, "original");
 
     repo.duplicate(&original.change_id.id).expect("duplicate");
 
@@ -206,16 +198,16 @@ fn rebase_many_preserves_dependencies_within_the_selection() {
 
     repo.rebase_many(
         &[
-            change_by_description(&repo, "selected tip").change_id.id,
-            change_by_description(&repo, "selected root").change_id.id,
+            find_change(&repo, "selected tip").change_id.id,
+            find_change(&repo, "selected root").change_id.id,
         ],
-        &change_by_description(&repo, "destination").change_id.id,
+        &find_change(&repo, "destination").change_id.id,
     )
     .expect("rebase selected changes");
 
-    let destination = change_by_description(&repo, "destination");
-    let selected_root = change_by_description(&repo, "selected root");
-    let selected_tip = change_by_description(&repo, "selected tip");
+    let destination = find_change(&repo, "destination");
+    let selected_root = find_change(&repo, "selected root");
+    let selected_tip = find_change(&repo, "selected tip");
     assert_eq!(selected_root.parents, vec![destination.commit_id.id]);
     assert_eq!(selected_tip.parents, vec![selected_root.commit_id.id]);
 
@@ -246,10 +238,10 @@ fn rebase_many_refuses_a_destination_below_the_selection() {
     let error = repo
         .rebase_many(
             &[
-                change_by_description(&repo, "selected").change_id.id,
-                change_by_description(&repo, "also selected").change_id.id,
+                find_change(&repo, "selected").change_id.id,
+                find_change(&repo, "also selected").change_id.id,
             ],
-            &change_by_description(&repo, "below").change_id.id,
+            &find_change(&repo, "below").change_id.id,
         )
         .expect_err("a destination descending from the selection must be refused");
 
@@ -269,9 +261,9 @@ fn squash_many_combines_a_consecutive_linear_range_into_its_oldest_change() {
     fs::write(repo_path.join("newest.txt"), "newest\n").expect("write newest");
     run_jj_in(&repo_path, &["st"]);
     let repo = Repo::open(&repo_path).expect("open repo");
-    let oldest = change_by_description(&repo, "oldest");
-    let middle = change_by_description(&repo, "middle");
-    let newest = change_by_description(&repo, "newest");
+    let oldest = find_change(&repo, "oldest");
+    let middle = find_change(&repo, "middle");
+    let newest = find_change(&repo, "newest");
 
     let err = repo
         .squash_many(&[newest.change_id.id.clone(), oldest.change_id.id.clone()])
