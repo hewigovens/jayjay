@@ -69,11 +69,7 @@ pub(super) fn description_block(
                 .debug_selector(|| "description-text".to_owned())
                 .child(SharedString::from(body)),
         );
-    let body_section = div()
-        .flex_shrink_0()
-        .py(px(6.))
-        .when(!expanded, |el| el.h(px(file_row_height(t))))
-        .child(scroll);
+    let body_section = div().flex_shrink_0().py(px(6.)).child(scroll);
 
     let toggle = focus_ring(
         div().id("description-expansion"),
