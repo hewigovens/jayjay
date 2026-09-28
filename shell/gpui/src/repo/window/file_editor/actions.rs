@@ -33,7 +33,7 @@ impl RepoWindow {
             .map_or(gpui::px(0.), |editor| editor.read(cx).scroll_offset_y())
     }
 
-    pub(crate) fn can_edit_selected_working_copy_file(&self, cx: &Context<Self>) -> bool {
+    pub(crate) fn can_edit_selected_working_copy_file(&self, cx: &gpui::App) -> bool {
         let vm = self.vm.read(cx);
         vm.selected_change()
             .is_some_and(|change| change.is_working_copy)

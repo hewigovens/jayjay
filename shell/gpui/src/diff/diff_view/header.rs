@@ -166,7 +166,12 @@ pub(super) fn file_header(
         ));
     }
     if state.can_edit_file {
-        actions = actions.child(file_editor_button(compact, t, cx));
+        actions = actions.child(file_editor_button(
+            compact,
+            state.focused == Some(FocusStop::EditFile),
+            t,
+            cx,
+        ));
     }
     row.child(path_group).child(actions).into_any_element()
 }

@@ -157,6 +157,7 @@ impl RepoWindow {
             FocusStop::DiffLayout => self.toggle_view_mode(cx),
             FocusStop::EditDescription => self.edit_selected_description(cx),
             FocusStop::EditDiff => self.enter_diff_edit(cx),
+            FocusStop::EditFile => self.enter_selected_file_editor(cx),
             FocusStop::SidebarToggle => self.toggle_sidebar(cx),
             FocusStop::Refresh => {
                 let vm = self.vm.clone();
@@ -214,6 +215,7 @@ impl RepoWindow {
             edit_diff: detail_change.is_some_and(|change| {
                 !change.has_conflict && !change.is_empty && !change.is_immutable
             }),
+            edit_file: self.can_edit_selected_working_copy_file(cx),
             revset_back,
             revset_reset,
             commit_box: detail_change.is_some_and(|change| change.is_working_copy),

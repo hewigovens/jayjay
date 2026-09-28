@@ -7,8 +7,9 @@ pub enum FocusStop {
     FilterToggle,
     ExpandDescription,
     EditDescription,
-    EditDiff,
     DiffLayout,
+    EditDiff,
+    EditFile,
     SidebarToggle,
     Refresh,
     Pull,
@@ -25,15 +26,16 @@ pub enum FocusStop {
 }
 
 impl FocusStop {
-    pub(super) const CYCLE: [Self; 21] = [
+    pub(super) const CYCLE: [Self; 22] = [
         Self::Dag,
         Self::FileList,
         Self::TreeToggle,
         Self::FilterToggle,
         Self::ExpandDescription,
         Self::EditDescription,
-        Self::EditDiff,
         Self::DiffLayout,
+        Self::EditDiff,
+        Self::EditFile,
         Self::SidebarToggle,
         Self::Refresh,
         Self::Pull,

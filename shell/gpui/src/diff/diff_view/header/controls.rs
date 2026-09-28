@@ -15,20 +15,25 @@ use crate::ui::primitives::text_tooltip;
 
 pub(super) fn file_editor_button(
     compact: bool,
+    focused: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    header_action(
-        "edit-working-copy-file",
-        glyph::PENCIL,
-        (!compact).then_some("Edit File"),
-        false,
+    focus_ring(
+        header_action(
+            "edit-working-copy-file",
+            glyph::PENCIL,
+            (!compact).then_some("Edit File"),
+            false,
+            t,
+        )
+        .tooltip(text_tooltip("Edit this working-copy file"))
+        .on_click(cx.listener(|view, _, _, cx| {
+            view.enter_selected_file_editor(cx);
+        })),
+        focused,
         t,
     )
-    .tooltip(text_tooltip("Edit this working-copy file"))
-    .on_click(cx.listener(|view, _, _, cx| {
-        view.enter_selected_file_editor(cx);
-    }))
     .into_any_element()
 }
 

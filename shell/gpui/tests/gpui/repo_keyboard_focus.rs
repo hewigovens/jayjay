@@ -222,6 +222,25 @@ fn a_keyboard_opened_revset_popup_applies_on_return(cx: &mut TestAppContext) {
     });
 }
 
+#[gpui::test]
+fn edit_file_follows_edit_diff_in_the_tab_cycle(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    std::fs::write(fixture.path.join("notes.md"), "notes\n").expect("write working-copy file");
+    let (view, cx) = open_focused(&fixture, cx);
+    select_file(&view, "notes.md", cx);
+
+    tab_to(&view, cx, FocusStop::EditDiff);
+    cx.simulate_keystrokes("tab");
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.focused_control()),
+        Some(FocusStop::EditFile)
+    );
+    cx.simulate_keystrokes("space");
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, _| view.file_editor_active()));
+}
+
 fn tab_to(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, stop: FocusStop) {
     for _ in 0..24 {
         if view.read_with(cx, |view, _| view.focused_control()) == Some(stop) {

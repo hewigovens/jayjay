@@ -38,6 +38,7 @@ extension DiffSection {
                     Button(action: onEditFile) {
                         actionLabel("Edit File", systemImage: "pencil")
                     }
+                    .keyboardFocusStop(.editFile, action: onEditFile)
                     .help("Edit this working-copy file")
                     .accessibilityLabel("Edit File")
                     .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
