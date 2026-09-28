@@ -7,12 +7,10 @@ use gpui::{
 
 use crate::app::theme::{theme, ui_font_size};
 use crate::app::{repositories, tools};
-use crate::platform::TOOLBAR_LEADING_INSET;
+use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::window::{FocusStop, RepoWindow, picker_opener};
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
-
-const TOOLBAR_HEIGHT: f32 = 44.;
 
 pub(crate) struct ToolbarActivity {
     pub(crate) is_refreshing: bool,

@@ -12,7 +12,12 @@ pub const MOD_KEY: &str = "cmd";
 pub const SIDEBAR_TOGGLE_KEY: &str = "ctrl-cmd-s";
 pub const SIDEBAR_TOGGLE_SHORTCUT_LABEL: &str = "⌃⌘S";
 pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in Finder";
-pub const TOOLBAR_LEADING_INSET: f32 = 78.;
+/// Matches the SwiftUI shell's unified toolbar on macOS 26.
+pub const TOOLBAR_HEIGHT: f32 = 52.;
+pub const TOOLBAR_LEADING_INSET: f32 = 96.;
+pub const TOOLBAR_BUTTON_HEIGHT: f32 = 36.;
+pub const TOOLBAR_ICON_SIZE: f32 = 22.;
+pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (20., 19.);
 pub const CUSTOM_TERMINAL_LABEL: &str = "App name";
 pub const CUSTOM_TERMINAL_HINT: &str = "e.g. Terminal";
 

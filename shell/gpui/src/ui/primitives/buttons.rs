@@ -181,8 +181,6 @@ where
         .into_any_element()
 }
 
-pub(crate) const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
+pub(crate) use crate::platform::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_ICON_SIZE};
 
 pub(crate) const TOOLBAR_BUTTON_WIDTH: f32 = 38.;
-
-pub(crate) const TOOLBAR_ICON_SIZE: f32 = 16.;

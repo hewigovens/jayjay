@@ -240,7 +240,8 @@ fn sync_icon(
     direction: f32,
     t: &Theme,
 ) -> AnyElement {
-    let arrow_size = TOOLBAR_ICON_SIZE / 2.;
+    // Even, so the arrow's inset lands on whole pixels and it stays centred in the circle.
+    let arrow_size = (TOOLBAR_ICON_SIZE / 4.).round() * 2.;
     let arrow_inset = (TOOLBAR_ICON_SIZE - arrow_size) / 2.;
     let circle = svg()
         .path(icons::CIRCLE_SVG)

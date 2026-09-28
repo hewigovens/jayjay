@@ -15,7 +15,11 @@ pub const MOD_KEY: &str = "ctrl";
 pub const SIDEBAR_TOGGLE_KEY: &str = "alt-ctrl-s";
 pub const SIDEBAR_TOGGLE_SHORTCUT_LABEL: &str = "Ctrl+Alt+S";
 pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in File Manager";
+pub const TOOLBAR_HEIGHT: f32 = 44.;
 pub const TOOLBAR_LEADING_INSET: f32 = 12.;
+pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
+pub const TOOLBAR_ICON_SIZE: f32 = 16.;
+pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (12., 14.);
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
 pub const CUSTOM_TERMINAL_HINT: &str = "e.g. alacritty";
 

@@ -49,8 +49,8 @@ impl RepoWindow {
                     title: Some(title.into()),
                     appears_transparent: true,
                     traffic_light_position: Some(Point {
-                        x: px(12.),
-                        y: px(14.),
+                        x: px(crate::platform::REPO_TRAFFIC_LIGHTS.0),
+                        y: px(crate::platform::REPO_TRAFFIC_LIGHTS.1),
                     }),
                 }),
                 ..crate::app::window_options()
