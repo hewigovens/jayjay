@@ -102,10 +102,10 @@ final class KeyboardFocusTests: XCTestCase {
     func testTabFocusesInputsWithoutConsumingTheirTextCommands() {
         let focus = KeyboardFocus()
         var focused: [KeyboardFocusStop] = []
-        for stop in [KeyboardFocusStop.revsetInput, .commitSummary, .commitDescription] {
+        for stop in [KeyboardFocusStop.commitSummary, .commitDescription] {
             focus.register(stop, token: UUID()) { focused.append(stop) }
         }
-        for stop in [KeyboardFocusStop.revsetInput, .commitSummary, .commitDescription] {
+        for stop in [KeyboardFocusStop.commitSummary, .commitDescription] {
             XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
             XCTAssertEqual(focus.control, stop)
             XCTAssertEqual(focused.last, stop)

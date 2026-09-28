@@ -2,7 +2,7 @@ import Foundation
 import JayJayCore
 
 @Observable
-final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
+final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetActions {
     static let defaultRevsetPageSize = 20
 
     let repoPath: String
@@ -96,7 +96,12 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     let reviewStore = ReviewStore()
     let diffStore = DiffStore()
 
-    var revset: String = defaultRevset()
+    var revsetFilter = RevsetFilterState(revset: defaultRevset(), previous: nil, recent: [])
+    var dagRevealRequest: DAGRevealRequest?
+
+    var revset: String {
+        revsetFilter.revset
+    }
 
     let repo: JayJayRepo
 
@@ -113,7 +118,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     var isShuttingDown = false
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
-    @ObservationIgnored var onRevealAncestors: ((_ headChangeId: String, _ revision: String) -> Void)?
     /// FS-triggered refreshes wait while a sheet or editor owns transient user input.
     var isBackgroundRefreshSuspended = false
     var pendingBackgroundRefresh: BackgroundRefreshRequest?
@@ -182,7 +186,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions {
     @MainActor
     func windowWillClose() {
         beginShutdown()
-        onRevealAncestors = nil
     }
 
     @MainActor

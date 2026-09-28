@@ -13,6 +13,8 @@ enum AID {
         static let sidebarToggle = "toolbar.sidebarToggle"
         static let pull = "toolbar.pull"
         static let push = "toolbar.push"
+        static let revsetBar = "toolbar.revsetBar"
+        static let revsetField = "toolbar.revsetField"
     }
 
     enum Sidebar {

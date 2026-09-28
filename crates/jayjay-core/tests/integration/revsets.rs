@@ -1,7 +1,7 @@
 use std::fs;
 
 use jayjay_core::compare::combined_diff_revsets;
-use jayjay_core::{DEFAULT_REVSET, Repo, revset_presets};
+use jayjay_core::{DEFAULT_REVSET, Repo, bookmark_filter_revset, revset_presets};
 use jj_test::{init_jj_repo, run_jj};
 
 #[test]
@@ -172,6 +172,28 @@ fn filter_presets_evaluate_in_app_parser() {
     for preset in revset_presets() {
         repo.log(&preset.revset)
             .unwrap_or_else(|error| panic!("{} preset failed: {error}", preset.id));
+    }
+}
+
+#[test]
+fn bookmark_filter_shows_the_stack_and_check_rejects_what_the_graph_cannot_load() {
+    let temp = init_jj_repo();
+    let path = temp.path().join("repo");
+    let repo_str = path.to_str().unwrap();
+    run_jj(&["-R", repo_str, "describe", "-m", "one"]);
+    run_jj(&["-R", repo_str, "new", "-m", "two"]);
+    run_jj(&["-R", repo_str, "bookmark", "create", "feature"]);
+    run_jj(&["-R", repo_str, "new", "-m", "after"]);
+    let repo = Repo::open(&path).unwrap();
+
+    let revset = bookmark_filter_revset("feature", None);
+    let changes = repo.log(&revset).unwrap();
+    let descriptions: Vec<_> = changes.iter().map(|c| c.description.trim()).collect();
+    assert_eq!(descriptions, ["two", "one"]);
+
+    repo.check_revset(&revset).unwrap();
+    for invalid in ["mine() & ::@)", "no-such-bookmark"] {
+        assert!(repo.check_revset(invalid).is_err(), "{invalid}");
     }
 }
 

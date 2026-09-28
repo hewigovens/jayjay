@@ -7,6 +7,7 @@ final class ActiveRepoTrackerTests: XCTestCase {
     private final class Handler: RepositoryMenuHandler {
         func showCommandPalette() {}
         func showUndo() {}
+        func showRevsetFilter() {}
         func showBookmarkManager() {}
         func showOverview() {}
         func showNewWorkspace() {}

@@ -43,17 +43,19 @@ final class KeyboardPaneFocusScene: SceneBase {
         let featureFile = app.descendants(matching: .any)[AID.FileList.row("feature.txt")]
         XCTAssertTrue(featureFile.waitForExistence(timeout: 10), "Shift-Tab did not hand navigation back to the DAG")
 
-        // File list, tree, filter, expand description, diff layout, edit description, edit diff, sidebar toggle, then the toolbar filter.
-        for _ in 0 ..< 9 {
+        // File list, tree, filter, expand description, diff layout, edit description, edit diff, then sidebar toggle, refresh, pull, push, revset presets, and the revset.
+        for _ in 0 ..< 13 {
             keyStroke(.tab)
         }
         keyStroke(.space)
-        let revset = app.textFields["Revset expression"]
-        XCTAssertTrue(revset.waitForExistence(timeout: 5), "Space on the toolbar filter did not open the revset filter")
+        let revset = app.textFields[AID.Toolbar.revsetField]
+        XCTAssertTrue(revset.waitForExistence(timeout: 5), "Space on the revset bar did not start editing it")
         keyStroke("a", modifiers: [.command])
         paste("all()")
-        XCTAssertEqual(revset.value as? String, "all()", "The keyboard-opened revset filter did not take typing")
-        for _ in 0 ..< 7 {
+        XCTAssertEqual(revset.value as? String, "all()", "The keyboard-opened revset editor did not take typing")
+        keyStroke(.escape)
+        XCTAssertTrue(revset.waitForNonExistence(timeout: 5), "Escape did not end editing the revset")
+        for _ in 0 ..< 4 {
             keyStroke(.tab)
         }
         keyStroke(.downArrow)
@@ -75,7 +77,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         keyStroke(.downArrow)
         keyStroke(.return)
         XCTAssertEqual(first.value as? String, "collapsed")
-        XCTAssertFalse(app.textFields["Revset expression"].exists)
+        XCTAssertFalse(app.textFields[AID.Toolbar.revsetField].exists)
         app.buttons[AID.DiffEdit.cancel].click()
         XCTAssertTrue(open.waitForExistence(timeout: 5))
         keyStroke(.tab)

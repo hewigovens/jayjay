@@ -3,7 +3,7 @@ import SwiftUI
 extension RepoContentView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
+        ToolbarItemGroup(placement: .navigation) {
             let title = settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar"
             toolbarButton(
                 .sidebarToggle,
@@ -12,33 +12,6 @@ extension RepoContentView {
                 label: { Label(title, systemImage: "sidebar.leading") }
             )
             .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
-        }
-
-        ToolbarSpacer(.fixed)
-
-        ToolbarItemGroup(placement: .navigation) {
-            BookmarkPicker(
-                bookmarks: viewModel.bookmarks,
-                actions: viewModel,
-                onSelect: {
-                    revsetDraft = $0
-                    applyRevset()
-                }
-            )
-            toolbarButton(
-                .revsetFilter,
-                help: "Filter by revset",
-                action: {
-                    if showRevsetFilter, !settings.sidebarHidden {
-                        showRevsetFilter = false
-                    } else {
-                        showSidebar()
-                        showRevsetFilter = true
-                        keyboardFocus.focusInput(.revsetInput)
-                    }
-                },
-                label: { Label("Filter", systemImage: "line.3.horizontal.decrease.circle") }
-            )
             toolbarButton(
                 .refresh,
                 help: "Refresh (⌘R)",
@@ -63,6 +36,16 @@ extension RepoContentView {
         }
 
         repositoryTitle
+
+        ToolbarItem(placement: .principal) {
+            RevsetBar(
+                actions: viewModel,
+                changeCount: viewModel.changes.count,
+                bookmarks: viewModel.bookmarks,
+                editRequest: revsetEditRequest
+            )
+        }
+        .sharedBackgroundVisibility(.hidden)
 
         ToolbarSpacer(.flexible)
 

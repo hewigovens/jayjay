@@ -87,7 +87,12 @@ extension RepoContentView {
     }
 
     private var filterPaletteItems: [CommandPaletteItem] {
-        var items: [CommandPaletteItem] = []
+        var items = [CommandPaletteItem(
+            title: "Filter by Revset…",
+            icon: "line.3.horizontal.decrease",
+            category: "Filter",
+            keywords: ["revset", "filter", "query"]
+        ) { revsetEditRequest += 1 }]
         let presetFilters = RevsetFilterPresets.all.map { ("Show \($0.label)", $0.revset) }
         for (label, revset) in presetFilters + [
             ("Show Mutable", "mutable()"),
@@ -98,8 +103,7 @@ extension RepoContentView {
                 icon: "line.3.horizontal.decrease.circle",
                 category: "Filter"
             ) {
-                revsetDraft = revset
-                applyRevset()
+                viewModel.applyFilter(revset)
             })
         }
         return items

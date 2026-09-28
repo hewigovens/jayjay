@@ -1,9 +1,10 @@
 use jayjay_core as core;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChecksStatus, CliStatus, FetchResult, GitSubmoduleStatus,
-    InsertPosition, JjCommandResult, PrInfo, PrState, PullRequestImportPreview,
+    AnnotationLine, BookmarkFilterTarget, BookmarkInfo, ChecksStatus, CliStatus, FetchResult,
+    GitSubmoduleStatus, InsertPosition, JjCommandResult, PrInfo, PrState, PullRequestImportPreview,
     PullRequestImportRemote, PullRequestImportSource, PullRequestImportWorkspace,
-    RemoteBookmarkTarget, RemoteSyncStatus, RevsetPreset, ShortId, WorkspaceInfo,
+    RemoteBookmarkTarget, RemoteSyncStatus, RevsetFilter, RevsetFilterKind, RevsetFilterState,
+    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, ShortId, WorkspaceInfo,
     WorkspacePresence,
 };
 
@@ -12,6 +13,48 @@ pub struct RevsetPreset {
     pub id: String,
     pub label: String,
     pub revset: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct BookmarkFilterTarget {
+    pub name: String,
+    pub head: String,
+    pub revset: String,
+}
+
+#[uniffi::remote(Record)]
+pub struct RevsetFilterState {
+    pub revset: String,
+    pub previous: Option<String>,
+    pub recent: Vec<String>,
+}
+
+#[uniffi::remote(Enum)]
+pub enum RevsetSuggestionKind {
+    Current,
+    Bookmark,
+    Recent,
+}
+
+#[uniffi::remote(Record)]
+pub struct RevsetSuggestion {
+    pub kind: RevsetSuggestionKind,
+    pub title: String,
+    pub revset: String,
+}
+
+#[uniffi::remote(Enum)]
+pub enum RevsetFilterKind {
+    Default,
+    Preset,
+    Bookmark,
+    Custom,
+}
+
+#[uniffi::remote(Record)]
+pub struct RevsetFilter {
+    pub kind: RevsetFilterKind,
+    pub label: String,
 }
 
 #[uniffi::remote(Record)]

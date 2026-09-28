@@ -288,6 +288,34 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(try runJj(["log", "--no-graph", "-r", "divergent()", "-T", "change_id"], in: repoPath), "")
     }
 
+    func testBookmarkRevealPicksTheDivergentVersionTheBookmarkNames() throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        _ = try runJj(["describe", "-m", "base"], in: repoPath)
+        _ = try runJj(["new", "-m", "target"], in: repoPath)
+        let target = try runJj(["log", "--no-graph", "-r", "@", "-T", "change_id"], in: repoPath)
+        _ = try runJj(["new"], in: repoPath)
+        let operation = try runJj(["op", "log", "--no-graph", "-n", "1", "-T", "id"], in: repoPath)
+        _ = try runJj(["describe", "-r", target, "-m", "version a"], in: repoPath)
+        _ = try runJj(["--at-op", operation, "describe", "-r", target, "-m", "version b"], in: repoPath)
+        _ = try runJj(["bookmark", "create", "a", "-r", "subject(exact:\"version a\")"], in: repoPath)
+        _ = try runJj(["bookmark", "create", "b", "-r", "subject(exact:\"version b\")"], in: repoPath)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        let versionB = try XCTUnwrap(viewModel.repo.logGraph(revset: "all()").map(\.change).first {
+            $0.description.trimmingCharacters(in: .whitespacesAndNewlines) == "version b"
+        })
+        XCTAssertTrue(versionB.isDivergent)
+        let headB = try XCTUnwrap(bookmarkFilterTargets(bookmarks: viewModel.repo.listBookmarks()).first { $0.name == "b" }).head
+
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
+        XCTAssertEqual(viewModel.visibleRevision(of: headB), versionB.commitId.id)
+
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "subject(exact:\"version a\")"))
+        XCTAssertNil(viewModel.visibleRevision(of: headB), "the other divergent version is not the bookmark's change")
+    }
+
     func testSelectionDropRebasesEverySelectedChange() async throws {
         let repoPath = try XCTUnwrap(viewModel?.repoPath)
         viewModel = nil

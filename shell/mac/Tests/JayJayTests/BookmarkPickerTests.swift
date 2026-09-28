@@ -6,8 +6,8 @@ import XCTest
 final class BookmarkPickerTests: XCTestCase {
     func testRemoteRowsBrowseEachRemote() throws {
         let remote = remoteBookmark("odd&name", remotes: ["upstream", "origin"])
-        var selected: [String] = []
-        let picker = BookmarkPicker(bookmarks: [remote], actions: nil, onSelect: { selected.append($0) })
+        let actions = RevealRecorder()
+        let picker = BookmarkPicker(bookmarks: [remote], actions: actions)
         let section = try XCTUnwrap(picker.sections.first)
         XCTAssertEqual(picker.sections.count, 1)
         XCTAssertEqual(section.title, "Remote Only")
@@ -15,31 +15,28 @@ final class BookmarkPickerTests: XCTestCase {
         for row in section.rows {
             try XCTUnwrap(row.action)()
         }
-        XCTAssertEqual(selected, [
-            "ancestors(remote_bookmarks(exact:\"odd&name\", exact:\"origin\"), 20)",
-            "ancestors(remote_bookmarks(exact:\"odd&name\", exact:\"upstream\"), 20)"
-        ])
+        XCTAssertEqual(actions.revealed.map { revsetFilter(revset: $0.revset).label }, ["odd&name@origin", "odd&name@upstream"])
     }
 
     func testDeletedBookmarkKeepsItsUntrackedRemote() {
         let bookmark = remoteBookmark("feature", remotes: ["origin", "upstream"], tracked: ["origin"], deleted: true)
-        let picker = BookmarkPicker(bookmarks: [bookmark], actions: nil, onSelect: { _ in })
+        let picker = BookmarkPicker(bookmarks: [bookmark], actions: nil)
         XCTAssertEqual(picker.sections.flatMap(\.rows).map(\.searchText), ["feature@upstream"])
 
         let fullyDeleted = remoteBookmark("feature", remotes: ["origin", "upstream"], tracked: ["origin", "upstream"], deleted: true)
-        let deleted = BookmarkPicker(bookmarks: [fullyDeleted], actions: nil, onSelect: { _ in })
+        let deleted = BookmarkPicker(bookmarks: [fullyDeleted], actions: nil)
         XCTAssertTrue(deleted.sections.isEmpty)
     }
 
     func testRemoteRowIdentityDoesNotDependOnItsDisplayLabel() {
         let bookmarks = [remoteBookmark("a@b", remotes: ["c"]), remoteBookmark("a", remotes: ["b@c"])]
-        var selected: [String] = []
-        let picker = BookmarkPicker(bookmarks: bookmarks, actions: nil, onSelect: { selected.append($0) })
+        let actions = RevealRecorder()
+        let picker = BookmarkPicker(bookmarks: bookmarks, actions: actions)
         let rows = picker.sections.flatMap(\.rows)
         XCTAssertEqual(rows.map(\.searchText), ["a@b@c", "a@b@c"])
         XCTAssertEqual(Set(rows.map(\.id)).count, 2)
         rows.forEach { $0.action?() }
-        XCTAssertEqual(Set(selected).count, 2)
+        XCTAssertEqual(Set(actions.revealed.map(\.revset)).count, 2)
     }
 
     private func remoteBookmark(_ name: String, remotes: [String], tracked: [String] = [], deleted: Bool = false) -> BookmarkInfo {
@@ -49,4 +46,26 @@ final class BookmarkPickerTests: XCTestCase {
             trackedRemotes: tracked, availableRemotes: remotes, hasLocalTarget: false, remoteTargets: []
         )
     }
+}
+
+private final class RevealRecorder: BookmarkActions {
+    var revealed: [BookmarkFilterTarget] = []
+
+    func revealBookmark(_ target: BookmarkFilterTarget) {
+        revealed.append(target)
+    }
+
+    func filterByBookmark(_: BookmarkFilterTarget) {}
+    func createBookmark(name _: String, rev _: String) {}
+    func deleteBookmark(name _: String) {}
+    func removeBookmark(name _: String, fromRev _: String) {}
+    func forgetBookmark(name _: String) {}
+    func moveBookmarkForward(name _: String) {}
+    func moveBookmark(name _: String, toRev _: String) {}
+    func renameBookmark(oldName _: String, newName _: String) {}
+    func trackBookmark(name _: String, remote _: String) {}
+    func gitPush(bookmark _: String) {}
+    func gitFetch() {}
+    func gitPullBookmark(name _: String) {}
+    func openPR(bookmark _: String) {}
 }

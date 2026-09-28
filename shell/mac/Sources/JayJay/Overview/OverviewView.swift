@@ -90,7 +90,7 @@ struct OverviewView: View {
     }
 
     private var filterField: some View {
-        FileFilterField(
+        FilterField(
             text: $viewModel.filter,
             placeholder: "Filter lanes",
             accessibilityIdentifier: AID.Overview.filterField,

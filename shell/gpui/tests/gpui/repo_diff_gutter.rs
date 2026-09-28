@@ -3,9 +3,8 @@ use std::fs;
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{Entity, Modifiers, Point, TestAppContext, VisualTestContext, point, px};
 use jayjay_core::compare;
-use jayjay_core::{
-    DiffContent, DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType,
-};
+use jayjay_core::mock::{diff_hunk, diff_projection};
+use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, HunkType};
 use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextAction;
@@ -178,15 +177,7 @@ fn review_notes_context_blocks_projected_hunk(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo_with_files(cx);
 
     view.update_in(cx, |view, _, cx| {
-        let projection = DiffProjection {
-            plugin_id: "notebook".to_owned(),
-            plugin_label: "Notebook".to_owned(),
-            plugin_version: 1,
-            mode: DiffProjectionMode::Raw,
-            render_kind: DiffRenderKind::Markdown,
-            virtual_path: "a.ipynb.md".to_owned(),
-            diagnostics: Vec::new(),
-        };
+        let projection = diff_projection("notebook", DiffProjectionMode::Raw);
         assert_eq!(
             view.review_notes_context(&hunk("abc123", Some(projection)), cx),
             None
@@ -263,15 +254,7 @@ fn abandon_selected_lines_absent_for_renamed_hunk(cx: &mut TestAppContext) {
 fn abandon_selected_lines_absent_for_projected_hunk(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo_with_files(cx);
 
-    let projection = DiffProjection {
-        plugin_id: "notebook".to_owned(),
-        plugin_label: "Notebook".to_owned(),
-        plugin_version: 1,
-        mode: DiffProjectionMode::Raw,
-        render_kind: DiffRenderKind::Markdown,
-        virtual_path: "a.ipynb.md".to_owned(),
-        diagnostics: Vec::new(),
-    };
+    let projection = diff_projection("notebook", DiffProjectionMode::Raw);
     let items = view.update_in(cx, |view, _, cx| {
         view.start_gutter_selection("a.txt".to_owned(), 0, cx);
         view.build_diff_gutter_menu(&hunk("abc123", Some(projection)), 0, cx)
@@ -813,15 +796,9 @@ fn anchor() -> Point<gpui::Pixels> {
 
 fn hunk(review_identity: &str, projection: Option<DiffProjection>) -> DiffHunk {
     DiffHunk {
-        path: "a.txt".to_owned(),
-        old_path: None,
-        old: DiffContent::default(),
-        new: DiffContent::default(),
-        hunk_type: HunkType::Modified,
-        supports_conflict_editor: false,
-        supports_file_editor: false,
         review_identity: review_identity.to_owned(),
         projection,
+        ..diff_hunk("a.txt")
     }
 }
 

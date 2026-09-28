@@ -46,6 +46,69 @@ fn ancestors_revset(change_id: String) -> String {
 }
 
 #[uniffi::export]
+fn bookmark_filter_revset(name: String, remote: Option<String>) -> String {
+    jayjay_core::bookmark_filter_revset(&name, remote.as_deref())
+}
+
+#[uniffi::export]
+fn revset_filter(revset: String) -> jayjay_core::RevsetFilter {
+    jayjay_core::RevsetFilter::of(&revset)
+}
+
+#[uniffi::export]
+fn bookmark_filter_targets(
+    bookmarks: Vec<jayjay_core::BookmarkInfo>,
+) -> Vec<jayjay_core::BookmarkFilterTarget> {
+    bookmarks
+        .iter()
+        .flat_map(jayjay_core::BookmarkFilterTarget::for_bookmark)
+        .collect()
+}
+
+#[uniffi::export]
+fn default_revset_preset() -> RevsetPreset {
+    jayjay_core::default_revset_preset()
+}
+
+#[uniffi::export]
+fn typed_revset(text: String, bookmarks: Vec<jayjay_core::BookmarkInfo>) -> String {
+    jayjay_core::typed_revset(&text, &bookmarks)
+}
+
+#[uniffi::export]
+fn revset_filter_apply(
+    mut state: jayjay_core::RevsetFilterState,
+    revset: String,
+) -> jayjay_core::RevsetFilterState {
+    state.apply(&revset);
+    state
+}
+
+#[uniffi::export]
+fn revset_filter_show_ancestors(
+    mut state: jayjay_core::RevsetFilterState,
+    change_id: String,
+) -> jayjay_core::RevsetFilterState {
+    state.show_ancestors(&change_id);
+    state
+}
+
+#[uniffi::export]
+fn revset_filter_back(mut state: jayjay_core::RevsetFilterState) -> jayjay_core::RevsetFilterState {
+    state.back();
+    state
+}
+
+#[uniffi::export]
+fn revset_suggestions(
+    query: String,
+    state: jayjay_core::RevsetFilterState,
+    bookmarks: Vec<jayjay_core::BookmarkInfo>,
+) -> Vec<jayjay_core::RevsetSuggestion> {
+    state.suggestions(&query, &bookmarks)
+}
+
+#[uniffi::export]
 fn revset_presets() -> Vec<RevsetPreset> {
     jayjay_core::revset_presets().to_vec()
 }
@@ -500,6 +563,10 @@ impl JayJayRepo {
 
     fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayJayError> {
         Ok(self.inner.log(&revset)?)
+    }
+
+    fn check_revset(&self, revset: String) -> Result<(), JayJayError> {
+        Ok(self.inner.check_revset(&revset)?)
     }
 
     fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayJayError> {

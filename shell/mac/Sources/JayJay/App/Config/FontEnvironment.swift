@@ -37,9 +37,10 @@ extension AppSettings.MonoFont {
         return .system(size: size * (baseSize / fontScaleReferenceSize), weight: weight, design: design)
     }
 
-    func scaledNSFont(_ size: CGFloat, baseSize: Double) -> NSFont {
+    func scaledNSFont(_ size: CGFloat, baseSize: Double, monospaced: Bool = false) -> NSFont {
         let scaled = size * (baseSize / fontScaleReferenceSize)
-        return self == .system ? .systemFont(ofSize: scaled) : nsFont(size: scaled)
+        guard self == .system else { return nsFont(size: scaled) }
+        return monospaced ? .monospacedSystemFont(ofSize: scaled, weight: .regular) : .systemFont(ofSize: scaled)
     }
 
     /// Short ids share one nominal size wherever they appear.

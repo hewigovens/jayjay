@@ -1,5 +1,6 @@
 use crate::harness::*;
 use gpui::{Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext};
+use jayjay_core::bookmark_filter_revset;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
 use jj_test::{LinearFixture, run_git, run_jj_in};
@@ -234,7 +235,7 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     view.read_with(repo_cx, |view, cx| {
         assert_eq!(
             view.view_model().read(cx).revset.as_ref(),
-            "\"tracked-picker\""
+            bookmark_filter_revset("tracked-picker", None).as_str()
         );
     });
 
@@ -248,9 +249,16 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     settle_visual(repo_cx);
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        assert_eq!(vm.revset.as_ref(), "\"odd&name\"");
+        assert_eq!(
+            vm.revset.as_ref(),
+            bookmark_filter_revset("odd&name", None).as_str()
+        );
         assert!(vm.error.is_none(), "{:?}", vm.error);
-        assert_eq!(vm.graph.changes.len(), 1, "the literal selects one change");
+        assert_eq!(
+            vm.graph.changes.len(),
+            3,
+            "the filter shows the bookmark's stack"
+        );
     });
 }
 
@@ -296,7 +304,7 @@ fn bookmark_picker_browses_remote_history_without_tracking(cx: &mut TestAppConte
         let vm = view.view_model().read(cx);
         assert_eq!(
             vm.revset.as_ref(),
-            "ancestors(remote_bookmarks(exact:\"remote-picker\", exact:\"origin\"), 20)"
+            bookmark_filter_revset("remote-picker", Some("origin")).as_str()
         );
         assert!(vm.error.is_none(), "{:?}", vm.error);
         assert_eq!(vm.graph.changes.len(), 3);
@@ -391,12 +399,15 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     settle_visual(repo_cx);
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        assert_eq!(vm.revset.as_ref(), "bookmarks(exact:\"clash\")");
+        assert_eq!(
+            vm.revset.as_ref(),
+            bookmark_filter_revset("clash", None).as_str()
+        );
         assert!(vm.error.is_none(), "{:?}", vm.error);
         assert_eq!(
             vm.graph.changes.len(),
-            2,
-            "both conflicted targets are listed"
+            4,
+            "both conflicted targets are listed with their stacks"
         );
     });
 }
@@ -489,8 +500,14 @@ fn bookmark_picker_updates_an_open_revset_panel(cx: &mut TestAppContext) {
     settle_visual(repo_cx);
 
     view.read_with(repo_cx, |view, cx| {
-        assert_eq!(view.view_model().read(cx).revset.as_ref(), "\"main\"");
-        assert_eq!(view.revset_filter_text().as_deref(), Some("\"main\""));
+        assert_eq!(
+            view.view_model().read(cx).revset.as_ref(),
+            bookmark_filter_revset("main", None).as_str()
+        );
+        assert_eq!(
+            view.revset_filter_text().as_deref(),
+            Some(bookmark_filter_revset("main", None).as_str())
+        );
     });
 }
 
@@ -568,7 +585,10 @@ fn bookmark_picker_enter_activates_the_best_match_across_sections(cx: &mut TestA
     settle_visual(repo_cx);
 
     view.read_with(repo_cx, |view, cx| {
-        assert_eq!(view.view_model().read(cx).revset.as_ref(), "\"main\"");
+        assert_eq!(
+            view.view_model().read(cx).revset.as_ref(),
+            bookmark_filter_revset("main", None).as_str()
+        );
     });
 }
 

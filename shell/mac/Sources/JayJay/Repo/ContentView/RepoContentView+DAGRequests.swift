@@ -16,7 +16,7 @@ extension RepoContentView {
             case let .createStackedPRs(rev):
                 modal = .stackedPr(rev: rev)
             case let .showAncestors(changeId, commitId):
-                filterToAncestors(of: changeId, selecting: commitId)
+                viewModel.revealAncestors(of: changeId, selecting: commitId)
             case let .openWorkspace(workspace):
                 windowManager.openRepo(workspace.path)
         }
@@ -36,13 +36,5 @@ extension RepoContentView {
         } else {
             modal = .confirmChange(.abandon(rev: rev))
         }
-    }
-
-    func filterToAncestors(of changeId: String, selecting revision: String) {
-        if previousAncestorFilter == nil {
-            previousAncestorFilter = viewModel.revset
-        }
-        showRevsetFilter = true
-        viewModel.applyRevset(ancestorsRevset(changeId: changeId), selecting: revision)
     }
 }

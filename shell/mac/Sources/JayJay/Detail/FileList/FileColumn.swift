@@ -10,10 +10,6 @@ extension ChangeDetailView {
     var fileColumn: some View {
         VStack(spacing: 0) {
             HStack(spacing: 6) {
-                Text(fileFilter.isEmpty ? fileCountLabel : filteredFileCountLabel)
-                    .jayjayFont(13, weight: .medium)
-                    .foregroundStyle(.secondary)
-                Spacer()
                 if showsReviewControls, activeReviewNoteCount > 0 {
                     Button {
                         showNotedFilesOnly.toggle()
@@ -42,11 +38,7 @@ extension ChangeDetailView {
                     )
                     .accessibilityIdentifier(AID.ReviewNote.activeCount(activeReviewNoteCount))
                 }
-                if showsReviewControls, !reviewableDiff.isEmpty, !reviewedPaths.isEmpty {
-                    Text("\(reviewedPaths.count)/\(reviewableDiff.count)")
-                        .jayjayFont(10, weight: .medium)
-                        .foregroundStyle(.secondary)
-                        .help(reviewedCountHelp)
+                if showsReviewedCount {
                     Button {
                         splitRequest = SplitSheetRequest(paths: Array(reviewedPaths))
                     } label: {
@@ -89,6 +81,12 @@ extension ChangeDetailView {
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
                 .help("Filter files")
+                Spacer(minLength: 8)
+                Text(fileCountLabel)
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .help(showsReviewedCount ? reviewedCountHelp : "")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -96,7 +94,7 @@ extension ChangeDetailView {
 
             if showFileFilter {
                 HStack(spacing: 4) {
-                    FileFilterField(text: $fileFilter, onSubmit: focusFileList, onCancel: dismissFileFilter)
+                    FilterField(text: $fileFilter, onSubmit: focusFileList, onCancel: dismissFileFilter)
                     Button {
                         dismissFileFilter()
                     } label: {
@@ -186,19 +184,18 @@ extension ChangeDetailView {
         applyReviewMarks(paths: [path], reviewed: fileRollups[path] != .reviewed)
     }
 
-    private var fileCountLabel: String {
-        var parts = ["\(filteredDiff.count) files"]
-        if hiddenGitLfsCount > 0 {
-            parts.append("\(hiddenGitLfsCount) LFS hidden")
-        }
-        if hiddenSubmoduleCount > 0 {
-            parts.append("\(hiddenSubmoduleCount) submodule hidden")
-        }
-        return parts.joined(separator: ", ")
+    private var showsReviewedCount: Bool {
+        showsReviewControls && !reviewableDiff.isEmpty && !reviewedPaths.isEmpty
     }
 
-    private var filteredFileCountLabel: String {
-        var parts = ["\(filteredDiff.count) of \(visibleDiff.count) files"]
+    private var fileCountLabel: String {
+        var parts = if !fileFilter.isEmpty {
+            ["\(filteredDiff.count) of \(visibleDiff.count) files"]
+        } else if showsReviewedCount {
+            ["\(reviewedPaths.count)/\(reviewableDiff.count) reviewed"]
+        } else {
+            ["\(filteredDiff.count) files"]
+        }
         if hiddenGitLfsCount > 0 {
             parts.append("\(hiddenGitLfsCount) LFS hidden")
         }

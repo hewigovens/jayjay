@@ -178,23 +178,17 @@ fn bookmark_caption(bookmark: &BookmarkInfo) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use jayjay_core::{BookmarkInfo, ShortId};
+    use jayjay_core::mock::bookmark_info;
+    use jayjay_core::{BookmarkInfo, bookmark_filter_revset};
 
     use super::{BookmarkPickerState, bookmark_sections};
     use crate::repo::window::picker::{PickerQuery, picker_actions};
 
     fn bookmark(name: &str, tracking: bool) -> BookmarkInfo {
         BookmarkInfo {
-            name: name.to_owned(),
-            change_id: ShortId::new("abcdefghijkl".to_owned(), 3),
-            description: String::new(),
             is_tracking_remote: tracking,
-            is_deleted: false,
-            is_conflicted: false,
             tracked_remotes: tracking.then(|| "origin".to_owned()).into_iter().collect(),
-            available_remotes: Vec::new(),
-            has_local_target: true,
-            remote_targets: Vec::new(),
+            ..bookmark_info(name)
         }
     }
 
@@ -217,7 +211,10 @@ mod tests {
         assert_eq!(sections[1].rows[0].bookmark.name, "local");
         assert_eq!(
             picker_actions(&sections),
-            vec![("\"tracked\"".to_owned(), 1), ("\"local\"".to_owned(), 3)]
+            vec![
+                (bookmark_filter_revset("tracked", None), 1),
+                (bookmark_filter_revset("local", None), 3)
+            ]
         );
     }
 
@@ -245,11 +242,7 @@ mod tests {
         let sections = bookmark_sections(&state, &bookmarks);
         assert_eq!(
             picker_actions(&sections),
-            [(
-                "ancestors(remote_bookmarks(exact:\"odd&name\", exact:\"upstream\"), 20)"
-                    .to_owned(),
-                1
-            )]
+            [(bookmark_filter_revset("odd&name", Some("upstream")), 1)]
         );
     }
 

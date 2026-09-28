@@ -1,4 +1,4 @@
-import Foundation
+import JayJayCore
 
 protocol BookmarkActions: AnyObject {
     func createBookmark(name: String, rev: String)
@@ -13,4 +13,6 @@ protocol BookmarkActions: AnyObject {
     func gitFetch()
     func gitPullBookmark(name: String)
     func openPR(bookmark: String)
+    func revealBookmark(_ target: BookmarkFilterTarget)
+    func filterByBookmark(_ target: BookmarkFilterTarget)
 }

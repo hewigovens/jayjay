@@ -4,17 +4,15 @@ import SwiftUI
 struct BookmarkPicker: View {
     let bookmarks: [BookmarkInfo]
     let actions: (any BookmarkActions)?
-    let onSelect: (String) -> Void
 
     private var localBookmarks: [BookmarkInfo] {
         bookmarks.filter { $0.hasLocalTarget && !$0.isDeleted }
     }
 
-    private var bookmarkLabel: String {
-        let total = bookmarks.filter { bookmark in
+    private var bookmarkCount: Int {
+        bookmarks.filter { bookmark in
             !bookmark.isDeleted || bookmark.availableRemotes.contains { !bookmark.trackedRemotes.contains($0) }
         }.count
-        return total == 0 ? "Bookmarks" : "Bookmarks (\(total))"
     }
 
     private var trackedBookmarks: [BookmarkInfo] {
@@ -61,20 +59,32 @@ struct BookmarkPicker: View {
 
     var body: some View {
         Button(action: togglePanel) {
-            HStack(alignment: .firstTextBaseline, spacing: 4) {
-                Image(systemName: "arrow.triangle.branch")
+            HStack(spacing: 6) {
+                Image(systemName: "bookmark")
                     .imageScale(.small)
-                Text(bookmarkLabel)
+                Text("Bookmarks")
                     .jayjayFont(12, weight: .medium)
                     .lineLimit(1)
+                if bookmarkCount > 0 {
+                    Text("\(bookmarkCount)")
+                        .jayjayFont(11)
+                        .foregroundStyle(.secondary)
+                        .padding(.horizontal, 5)
+                        .background(Color.primary.opacity(0.07), in: Capsule())
+                }
+                Image(systemName: "chevron.down")
+                    .imageScale(.small)
+                    .foregroundStyle(.secondary)
             }
-            .padding(.horizontal, 8)
+            .padding(.horizontal, 6)
+            .frame(height: 26)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
         .fixedSize()
         .background(PickerAnchorView(anchor: anchor))
-        .help("Filter the graph by a bookmark, or manage bookmarks")
+        .accessibilityLabel(bookmarkCount == 0 ? "Bookmarks" : "Bookmarks (\(bookmarkCount))")
+        .help("Show a bookmark's change, or manage bookmarks")
         .popover(isPresented: $showingCreate) {
             createPopover
         }
@@ -117,7 +127,7 @@ struct BookmarkPicker: View {
             id: "bookmark-\(bookmark.name)",
             searchText: ([bookmark.name] + bookmark.trackedRemotes + bookmark.availableRemotes).joined(separator: " "),
             height: caption == nil ? 28 : 38,
-            action: { onSelect(bookmark.name) },
+            action: target(bookmark, remote: nil).map { target in { actions?.revealBookmark(target) } },
             content: { _ in BookmarkRowView(bookmark: bookmark, caption: caption) }
         )
         .withContextMenu { bookmarkContextMenu(bookmark) }
@@ -126,18 +136,20 @@ struct BookmarkPicker: View {
     private func remoteRow(_ bookmark: BookmarkInfo, remote: String) -> PickerRow {
         let name = bookmark.name
         let symbol = "\(name)@\(remote)"
-        let revset = "ancestors(remote_bookmarks(exact:\(quotedSymbol(symbol: name)), exact:\(quotedSymbol(symbol: remote))), \(RepoViewModel.defaultRevsetPageSize))"
+        let target = target(bookmark, remote: remote)
         return PickerRow(
             id: "remote-bookmark-\(name.utf8.count):\(name)\(remote)",
             searchText: symbol,
             height: 28,
-            action: { onSelect(revset) },
+            action: target.map { target in { actions?.revealBookmark(target) } },
             content: { _ in BookmarkRowView(bookmark: bookmark, caption: nil, remote: remote) }
         )
         .withContextMenu {
-            Button("Filter by this bookmark") {
-                panel.dismiss()
-                onSelect(revset)
+            if let target {
+                Button("Filter by This Bookmark") {
+                    panel.dismiss()
+                    actions?.filterByBookmark(target)
+                }
             }
             Button("Track \(symbol)") {
                 panel.dismiss()
@@ -146,12 +158,19 @@ struct BookmarkPicker: View {
         }
     }
 
+    private func target(_ bookmark: BookmarkInfo, remote: String?) -> BookmarkFilterTarget? {
+        let name = remote.map { "\(bookmark.name)@\($0)" } ?? bookmark.name
+        return bookmarkFilterTargets(bookmarks: [bookmark]).first { $0.name == name }
+    }
+
     @ViewBuilder
     private func bookmarkContextMenu(_ bookmark: BookmarkInfo) -> some View {
         let untrackedRemotes = bookmark.availableRemotes.filter { !bookmark.trackedRemotes.contains($0) }
-        Button("Filter by this bookmark") {
-            panel.dismiss()
-            onSelect(bookmark.name)
+        if let target = target(bookmark, remote: nil) {
+            Button("Filter by This Bookmark") {
+                panel.dismiss()
+                actions?.filterByBookmark(target)
+            }
         }
         if bookmark.isTrackingRemote {
             Button {

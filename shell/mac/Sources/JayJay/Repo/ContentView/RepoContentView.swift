@@ -3,10 +3,8 @@ import SwiftUI
 
 struct RepoContentView: View {
     @Bindable var viewModel: RepoViewModel
-    @State var revsetDraft = ""
-    @State var showRevsetFilter = false
-    @State var previousAncestorFilter: String?
     @State var sidebarWidth: CGFloat = 360
+    @State var revsetEditRequest = 0
     @State var bookmarkCreateName = ""
     @State var modal: RepoModalState?
     @State var detailInteractionActive = false
@@ -16,7 +14,6 @@ struct RepoContentView: View {
     @State var keyboardFocus = KeyboardFocus()
     @State var hasResetInitialFocus = false
     @State var diffCommands = DiffCommands()
-    @State var dagRevealRequest: DAGRevealRequest?
     // @State for one stable panel per window: a plain `let` is re-evaluated on every
     // re-init (font/appearance changes), orphaning the visible panel and spawning a second.
     @State var commandPanel = CommandPalettePanel()
@@ -33,16 +30,13 @@ struct RepoContentView: View {
             .frame(minWidth: 800, minHeight: 500)
             .environment(diffCommands)
             .onAppear {
-                revsetDraft = viewModel.revset
                 sidebarWidth = settings.sidebarWidth
-                viewModel.onRevealAncestors = { headChangeId, revision in
-                    filterToAncestors(of: headChangeId, selecting: revision)
-                }
                 menuCoordinator.onAction = { action in
                     switch action {
                         case .commandPalette: showCommandPalette()
                         case .undo: showUndo()
                         case .bookmarkManager: modal = .bookmarkManager
+                        case .revsetFilter: revsetEditRequest += 1
                         case .overview: windowManager.openOverview(for: viewModel.repoPath)
                         case .newWorkspace: modal = .workspaceCreate
                         case .pullRequestImport: modal = .pullRequestImport
@@ -61,7 +55,11 @@ struct RepoContentView: View {
                 }
             }
             .onChange(of: viewModel.revset) {
-                revsetDraft = viewModel.revset
+                showSidebar()
+            }
+            .onChange(of: viewModel.dagRevealRequest?.id) {
+                showSidebar()
+                keyboardFocus.activePane = .dag
             }
             .onChange(of: settings.sidebarHidden, initial: true) { _, hidden in
                 handleSidebarVisibilityChange(hidden: hidden)
@@ -136,7 +134,7 @@ struct RepoContentView: View {
                         onClearCompare: { viewModel.clearCompare() },
                         onReverseCompare: viewModel.canReverseCompare
                             ? { viewModel.reverseCompare() } : nil,
-                        onRevealChangeInDag: revealChangeInDAG,
+                        onRevealChangeInDag: { viewModel.revealInGraph($0) },
                         activePane: Bindable(keyboardFocus).activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,
@@ -165,12 +163,5 @@ struct RepoContentView: View {
     /// Alerts deliberately don't suspend: pausing on an error would make dismissal re-run the failing refresh.
     private var backgroundRefreshSuspended: Bool {
         modal != nil || detailInteractionActive
-    }
-
-    private func revealChangeInDAG(_ changeId: String) {
-        showSidebar()
-        keyboardFocus.activePane = .dag
-        dagRevealRequest = DAGRevealRequest(changeId: changeId)
-        viewModel.select(changeId: changeId)
     }
 }

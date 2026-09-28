@@ -4,55 +4,18 @@ import SwiftUI
 extension RepoContentView {
     var sidebar: some View {
         VStack(spacing: 0) {
-            Text("\(viewModel.changes.count) \(viewModel.changes.count == 1 ? "change" : "changes")")
-                .jayjayFont(13, weight: .medium)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
-                .padding(.horizontal, 14)
-                .padding(.vertical, 6)
-                .frame(minHeight: PaneLayout.headerHeight)
-            Divider()
-            if showRevsetFilter {
-                VStack(spacing: 6) {
-                    HStack(spacing: 6) {
-                        if let previousAncestorFilter {
-                            Button {
-                                revsetDraft = previousAncestorFilter
-                                applyRevset()
-                            } label: {
-                                Image(systemName: "arrow.left")
-                            }
-                            .buttonStyle(.plain)
-                            .help("Back to previous filter")
-                            .accessibilityLabel("Back to previous filter")
-                        }
-                        TextField("Revset expression", text: $revsetDraft)
-                            .textFieldStyle(.roundedBorder).jayjayFont(12, design: .monospaced)
-                            .onSubmit { applyRevset() }
-                            .keyboardFocusInput(.revsetInput)
-                        Button { applyRevset() } label: {
-                            Image(systemName: "arrow.right.circle.fill").foregroundStyle(.secondary)
-                        }
-                        .buttonStyle(.plain).disabled(revsetDraft == viewModel.revset)
-                        Button {
-                            revsetDraft = ""
-                            applyRevset()
-                        } label: {
-                            Image(systemName: "xmark.circle.fill").foregroundStyle(.tertiary)
-                        }
-                        .buttonStyle(.plain)
-                        .help("Reset to default")
-                    }
-                    FlowLayout {
-                        ForEach(RevsetFilterPresets.all, id: \.id) { preset in
-                            revsetChip(preset.label, revset: preset.revset)
-                        }
-                    }
-                    .frame(maxWidth: .infinity, alignment: .leading)
-                }
-                .padding(.horizontal, 12).padding(.vertical, 8)
-                Divider()
+            HStack(spacing: 8) {
+                BookmarkPicker(bookmarks: viewModel.bookmarks, actions: viewModel)
+                Spacer(minLength: 8)
+                Text("\(viewModel.changes.count) \(viewModel.changes.count == 1 ? "change" : "changes")")
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
             }
+            .padding(.leading, 8)
+            .padding(.trailing, 14)
+            .frame(minHeight: PaneLayout.headerHeight)
+            Divider()
             if let name = viewModel.pendingPushBookmark {
                 pushFollowUpBanner(name)
                 Divider()
@@ -68,7 +31,7 @@ extension RepoContentView {
                 actions: viewModel,
                 onRequest: { handleDAGRequest($0) },
                 activePane: Bindable(keyboardFocus).activePane,
-                revealRequest: dagRevealRequest,
+                revealRequest: viewModel.dagRevealRequest,
                 prHostName: viewModel.prHostName,
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                 workspacesByName: viewModel.workspacesByName
@@ -117,33 +80,6 @@ extension RepoContentView {
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
         .glassEffect(in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    func revsetChip(_ label: String, revset: String) -> some View {
-        Button {
-            revsetDraft = revset
-            applyRevset()
-        } label: {
-            Text(label)
-                .jayjayFont(11, weight: .medium)
-                .padding(.horizontal, 10)
-                .padding(.vertical, 4)
-                .background(
-                    viewModel.revset == revset
-                        ? AnyShapeStyle(Color.accentColor.opacity(0.2))
-                        : AnyShapeStyle(Color.primary.opacity(0.06)),
-                    in: Capsule()
-                )
-        }
-        .buttonStyle(.plain)
-    }
-
-    func applyRevset() {
-        showSidebar()
-        previousAncestorFilter = nil
-        let t = revsetDraft.trimmingCharacters(in: .whitespacesAndNewlines)
-        revsetDraft = t.isEmpty ? RepoViewModel.buildDefaultRevset() : t
-        viewModel.applyRevset(revsetDraft)
     }
 
     private var shouldShowCommitBox: Bool {

@@ -71,7 +71,8 @@ fn is_html_path(path: &str) -> bool {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use jayjay_core::{DiffContent, DiffProjection, DiffProjectionMode, DiffRenderKind, HunkType};
+    use jayjay_core::DiffProjectionMode;
+    use jayjay_core::mock::{diff_hunk, diff_projection as projection};
 
     #[test]
     fn html_external_url_requires_html_without_projection() {
@@ -132,27 +133,8 @@ mod tests {
 
     fn hunk(path: &str) -> DiffHunk {
         DiffHunk {
-            path: path.to_owned(),
-            old_path: None,
-            old: DiffContent::default(),
-            new: DiffContent::default(),
-            hunk_type: HunkType::Modified,
-            supports_conflict_editor: false,
-            supports_file_editor: false,
             review_identity: path.to_owned(),
-            projection: None,
-        }
-    }
-
-    fn projection(plugin_id: &str, mode: DiffProjectionMode) -> DiffProjection {
-        DiffProjection {
-            plugin_id: plugin_id.to_owned(),
-            plugin_label: "Notebook".to_owned(),
-            plugin_version: 1,
-            mode,
-            render_kind: DiffRenderKind::Markdown,
-            virtual_path: "analysis.ipynb.md".to_owned(),
-            diagnostics: Vec::new(),
+            ..diff_hunk(path)
         }
     }
 }

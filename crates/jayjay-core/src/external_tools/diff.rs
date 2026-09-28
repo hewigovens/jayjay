@@ -138,7 +138,8 @@ fn changed_line_count(diff: &FileDiff, style: DiffSpanStyle) -> u32 {
 mod tests {
     use std::fs;
 
-    use crate::{DiffContent, HunkType};
+    use crate::mock::diff_hunk;
+    use crate::{DiffContent, DiffHunk, HunkType};
 
     use super::{ScannedExternalDiff, load_external_diff, prepare_file, topology_group};
 
@@ -182,16 +183,11 @@ mod tests {
         let old = unchanged.join("\n") + "\n";
         let mut new = unchanged;
         new[4] = "changed".to_owned();
-        let file = prepare_file(scanned(crate::DiffHunk {
-            path: "file.txt".to_owned(),
-            old_path: None,
+        let file = prepare_file(scanned(DiffHunk {
             old: DiffContent::new(Some(old), None),
             new: DiffContent::new(Some(new.join("\n") + "\n"), None),
-            hunk_type: HunkType::Modified,
-            supports_conflict_editor: false,
             supports_file_editor: true,
-            review_identity: String::new(),
-            projection: None,
+            ..diff_hunk("file.txt")
         }));
 
         assert_eq!(file.display_to_full.len(), file.changed_lines.len());
@@ -204,16 +200,11 @@ mod tests {
 
     #[test]
     fn empty_file_existence_changes_support_file_selection() {
-        let file = prepare_file(scanned(crate::DiffHunk {
-            path: "empty.txt".to_owned(),
-            old_path: None,
-            old: DiffContent::default(),
+        let file = prepare_file(scanned(DiffHunk {
             new: DiffContent::new(Some(String::new()), None),
             hunk_type: HunkType::Added,
-            supports_conflict_editor: false,
             supports_file_editor: true,
-            review_identity: String::new(),
-            projection: None,
+            ..diff_hunk("empty.txt")
         }));
 
         assert!(file.supports_editing);

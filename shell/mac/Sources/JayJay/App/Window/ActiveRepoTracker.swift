@@ -6,6 +6,7 @@ import SwiftUI
 protocol RepositoryMenuHandler: AnyObject {
     func showCommandPalette()
     func showUndo()
+    func showRevsetFilter()
     func showBookmarkManager()
     func showOverview()
     func showNewWorkspace()

@@ -6,7 +6,8 @@ use gpui::{
     VisualTestContext,
 };
 use jayjay_core::compare;
-use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
+use jayjay_core::mock::diff_projection;
+use jayjay_core::{DiffHunk, DiffProjectionMode};
 use jayjay_gpui::app::actions::SaveNoteComposer;
 use jayjay_gpui::app::fs_watcher::FsEvent;
 use jayjay_gpui::diff::{DiffRenderRow, DiffViewMode, NoteDotKind};
@@ -371,15 +372,7 @@ fn add_review_note_absent_in_compare_mode(cx: &mut TestAppContext) {
 fn add_review_note_absent_on_projected_hunk(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     let projected = DiffHunk {
-        projection: Some(DiffProjection {
-            plugin_id: "notebook".to_owned(),
-            plugin_label: "Notebook".to_owned(),
-            plugin_version: 1,
-            mode: DiffProjectionMode::Raw,
-            render_kind: DiffRenderKind::Markdown,
-            virtual_path: "README.md.ipynb.md".to_owned(),
-            diagnostics: Vec::new(),
-        }),
+        projection: Some(diff_projection("notebook", DiffProjectionMode::Raw)),
         ..hunk
     };
 

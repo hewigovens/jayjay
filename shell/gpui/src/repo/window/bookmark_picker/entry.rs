@@ -1,5 +1,4 @@
-use jayjay_core::compare::quoted_symbol;
-use jayjay_core::{BookmarkInfo, DEFAULT_REVSET_DEPTH};
+use jayjay_core::{BookmarkInfo, bookmark_filter_revset};
 
 use crate::repo::window::picker::PickerRow;
 
@@ -26,15 +25,7 @@ impl BookmarkPickerEntry {
     }
 
     pub fn revset(&self) -> String {
-        let name = quoted_symbol(&self.bookmark.name);
-        match &self.remote {
-            Some(remote) => format!(
-                "ancestors(remote_bookmarks(exact:{name}, exact:{}), {DEFAULT_REVSET_DEPTH})",
-                quoted_symbol(remote)
-            ),
-            None if self.bookmark.is_conflicted => format!("bookmarks(exact:{name})"),
-            None => name,
-        }
+        bookmark_filter_revset(&self.bookmark.name, self.remote.as_deref())
     }
 }
 

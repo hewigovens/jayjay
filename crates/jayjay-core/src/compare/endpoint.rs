@@ -41,6 +41,7 @@ pub fn quoted_symbol(symbol: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::*;
+    use crate::mock::{bookmark_info, strings};
 
     #[test]
     fn quotes_and_escapes_bookmark_symbols() {
@@ -55,16 +56,10 @@ mod tests {
     #[test]
     fn a_remote_only_bookmark_is_selected_by_its_remote_qualified_name() {
         let mut bookmark = BookmarkInfo {
-            name: "feature".to_owned(),
-            change_id: crate::ShortId::new("change".to_owned(), 1),
-            description: String::new(),
             is_tracking_remote: true,
-            is_deleted: false,
-            is_conflicted: false,
-            tracked_remotes: Vec::new(),
-            available_remotes: vec!["origin".to_owned()],
+            available_remotes: strings(&["origin"]),
             has_local_target: false,
-            remote_targets: Vec::new(),
+            ..bookmark_info("feature")
         };
 
         assert_eq!(

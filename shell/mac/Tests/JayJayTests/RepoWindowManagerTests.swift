@@ -193,7 +193,6 @@ final class RepoWindowManagerTests: XCTestCase {
         var viewModel: RepoViewModel? = try makeViewModel(at: directory, repo: repo)
         let releasedViewModel = { [weak viewModel] in viewModel }
         XCTAssertTrue(try manager.register(XCTUnwrap(viewModel)))
-        viewModel?.onRevealAncestors = { [viewModel] _, _ in _ = viewModel }
         let completed = LockedFlag()
         viewModel?.runRepoTask { _ in
             completed.setAfterBlocking(seconds: 0.2)
@@ -202,7 +201,7 @@ final class RepoWindowManagerTests: XCTestCase {
         manager.repoWindowWillClose(at: directory.path)
         viewModel = nil
 
-        XCTAssertNil(releasedViewModel(), "background repo work or the reveal hook retained a closed window's model")
+        XCTAssertNil(releasedViewModel(), "background repo work retained a closed window's model")
         try await Task.sleep(for: .milliseconds(300))
         XCTAssertTrue(completed.isSet)
     }

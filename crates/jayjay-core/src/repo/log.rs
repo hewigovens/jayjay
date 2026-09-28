@@ -68,6 +68,11 @@ impl Repo {
         })
     }
 
+    pub fn check_revset(&self, revset_str: &str) -> CoreResult<()> {
+        self.resolve_revset(&self.get_repo(), revset_str)
+            .map(|_| ())
+    }
+
     pub fn log_graph(&self, revset_str: &str) -> CoreResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
         on_worker_stack(|| {

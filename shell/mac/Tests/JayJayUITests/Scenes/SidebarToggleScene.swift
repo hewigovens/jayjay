@@ -38,17 +38,20 @@ final class SidebarToggleScene: SceneBase {
 
         keyStroke("s", modifiers: [.control, .command])
         XCTAssertTrue(divider.waitForNonExistence(timeout: 5), "⌃⌘S did not hide the sidebar")
-        app.buttons["Filter"].click()
-        let revset = app.textFields["Revset expression"]
-        XCTAssertTrue(revset.waitForExistence(timeout: 5), "The revset filter did not reveal the sidebar")
+        let bar = app.buttons[AID.Toolbar.revsetBar]
+        bar.click()
+        let revset = app.textFields[AID.Toolbar.revsetField]
+        XCTAssertTrue(revset.waitForExistence(timeout: 5), "Clicking the revset bar did not start editing it")
         keyStroke("a", modifiers: [.command])
         paste("all()")
-        XCTAssertEqual(revset.value as? String, "all()", "The revealed revset field did not take typing")
+        keyStroke(.return)
+        XCTAssertTrue(divider.waitForExistence(timeout: 5), "Applying a revset did not reveal the sidebar")
+        XCTAssertEqual(bar.value as? String, "all()")
 
         keyStroke("s", modifiers: [.control, .command])
-        XCTAssertTrue(divider.waitForNonExistence(timeout: 5), "⌃⌘S did not hide the sidebar from the revset field")
+        XCTAssertTrue(divider.waitForNonExistence(timeout: 5), "⌃⌘S did not hide the sidebar after filtering")
         keyStroke(.upArrow)
-        XCTAssertTrue(firstFile.wait(for: \.isSelected, toEqual: true, timeout: 5), "The hidden revset field kept the keyboard")
+        XCTAssertTrue(firstFile.wait(for: \.isSelected, toEqual: true, timeout: 5), "The hidden graph kept the keyboard")
 
         // The flag is a real user default, so leave it shown.
         keyStroke("s", modifiers: [.control, .command])

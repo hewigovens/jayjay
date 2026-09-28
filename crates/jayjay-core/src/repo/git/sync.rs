@@ -1,6 +1,7 @@
 use std::collections::HashSet;
 
-use crate::repo::{DEFAULT_REVSET_DEPTH, Repo, SyncToken};
+use crate::repo::{Repo, SyncToken};
+use crate::revset::DEFAULT_REVSET_DEPTH;
 use crate::types::*;
 
 impl Repo {

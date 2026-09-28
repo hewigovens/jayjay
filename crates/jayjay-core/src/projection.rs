@@ -96,19 +96,7 @@ pub fn cache_identity(
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::DiffRenderKind;
-
-    fn projection(plugin_id: &str, mode: DiffProjectionMode) -> DiffProjection {
-        DiffProjection {
-            plugin_id: plugin_id.to_owned(),
-            plugin_label: "Notebook".to_owned(),
-            plugin_version: 1,
-            mode,
-            render_kind: DiffRenderKind::Markdown,
-            virtual_path: "analysis.ipynb.md".to_owned(),
-            diagnostics: Vec::new(),
-        }
-    }
+    use crate::mock::diff_projection as projection;
 
     #[test]
     fn plist_requests_processed_mode_without_user_toggle() {

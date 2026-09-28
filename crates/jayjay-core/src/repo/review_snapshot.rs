@@ -75,18 +75,15 @@ mod tests {
     use jayjay_primitives::{DiffContent, DiffHunk, DiffPreview, HunkType};
 
     use super::{review_display_group_map_from_hunk, review_snapshot_from_hunk, review_text_pair};
+    use crate::mock::diff_hunk;
 
     fn text_hunk(old: &str, new: &str) -> DiffHunk {
         DiffHunk {
-            path: "a.txt".into(),
-            old_path: None,
             old: DiffContent::new(Some(old.into()), None),
             new: DiffContent::new(Some(new.into()), None),
-            hunk_type: HunkType::Modified,
-            supports_conflict_editor: false,
             supports_file_editor: true,
             review_identity: "id".into(),
-            projection: None,
+            ..diff_hunk("a.txt")
         }
     }
 
@@ -124,15 +121,10 @@ mod tests {
         assert!(review_snapshot_from_hunk(&image).fingerprints.is_empty());
 
         let rename = DiffHunk {
-            path: "b.txt".into(),
             old_path: Some("a.txt".into()),
-            old: DiffContent::default(),
-            new: DiffContent::default(),
             hunk_type: HunkType::Renamed,
-            supports_conflict_editor: false,
-            supports_file_editor: false,
             review_identity: "id".into(),
-            projection: None,
+            ..diff_hunk("b.txt")
         };
         assert!(rename.is_content_free_rename());
         assert!(review_snapshot_from_hunk(&rename).fingerprints.is_empty());

@@ -61,17 +61,52 @@ extension RepoViewModel {
     }
 
     func revealAncestors(of headChangeId: String, selecting revision: String) {
-        if let onRevealAncestors {
-            onRevealAncestors(headChangeId, revision)
+        reloadFilter(revsetFilterShowAncestors(state: revsetFilter, changeId: headChangeId), selecting: revision)
+    }
+
+    func applyFilter(_ newRevset: String, selecting revision: String) {
+        reloadFilter(revsetFilterApply(state: revsetFilter, revset: newRevset), selecting: revision)
+    }
+
+    func returnToPreviousRevset() {
+        reloadFilter(revsetFilterBack(state: revsetFilter), selecting: "@")
+    }
+
+    private func reloadFilter(_ filter: RevsetFilterState, selecting revision: String) {
+        revsetFilter = filter
+        canLoadMore = Self.canLoadMore(revset: filter.revset, loadedCount: graphEntries.count)
+        refresh(selecting: revision)
+    }
+
+    func visibleRevision(of rev: String) -> String? {
+        guard let commitId = (try? repo.log(revset: rev))?.first?.commitId.id else { return nil }
+        return changes.first { $0.commitId.id == commitId }?.selectionRevision
+    }
+
+    func revealInGraph(_ revision: String) {
+        dagRevealRequest = DAGRevealRequest(changeId: revision)
+        select(changeId: revision)
+    }
+
+    func revealBookmark(_ target: BookmarkFilterTarget) {
+        if let revision = visibleRevision(of: target.head) {
+            revealInGraph(revision)
         } else {
-            applyRevset(ancestorsRevset(changeId: headChangeId), selecting: revision)
+            applyFilter(target.revset, selecting: target.head)
         }
     }
 
-    func applyRevset(_ newRevset: String, selecting revision: String = "@") {
-        revset = newRevset
-        canLoadMore = Self.canLoadMore(revset: newRevset, loadedCount: graphEntries.count)
-        refresh(selecting: revision)
+    func filterByBookmark(_ target: BookmarkFilterTarget) {
+        applyFilter(target.revset)
+    }
+
+    func revsetError(_ revset: String) -> String? {
+        do {
+            try repo.checkRevset(revset: revset)
+            return nil
+        } catch {
+            return error.friendlyDescription
+        }
     }
 
     func refresh(
@@ -256,7 +291,7 @@ extension RepoViewModel {
         isRefreshingInFlight = false
         self.canLoadMore = canLoadMore
         if didGrow {
-            self.revset = revset
+            revsetFilter = RevsetFilterState(revset: revset, previous: revsetFilter.previous, recent: revsetFilter.recent)
         }
         resumePendingBackgroundRefresh()
     }

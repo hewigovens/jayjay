@@ -14,7 +14,7 @@ struct HelpCommands: Commands {
                 Label("JayJay User Guide", systemImage: "book")
             }
             Divider()
-            Link(destination: URL(string: "https://jj-vcs.github.io/jj/latest/")!) {
+            Link(destination: AppMetadata.jjDocsURL) {
                 Label("Jujutsu Documentation", systemImage: "book.closed")
             }
             Divider()

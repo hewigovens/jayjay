@@ -30,6 +30,12 @@ struct RepositoryCommands: Commands {
 
             Divider()
 
+            Button { tracker.handler?.showRevsetFilter() } label: {
+                Label("Filter by Revset…", systemImage: "line.3.horizontal.decrease")
+            }
+            .keyboardShortcut("l")
+            .disabled(tracker.handler == nil)
+
             Button { tracker.handler?.showBookmarkManager() } label: {
                 Label("Bookmark Manager", systemImage: "bookmark")
             }

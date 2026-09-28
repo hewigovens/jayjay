@@ -14,7 +14,7 @@ final class AncestorsScene: SceneBase {
         XCTAssertTrue(newer.waitForNonExistence(timeout: 10))
         XCTAssertTrue(target.isSelected)
         XCTAssertTrue(rows.matching(NSPredicate(format: "value CONTAINS %@", "initial")).firstMatch.exists)
-        let filter = app.textFields["Revset expression"]
+        let filter = app.buttons[AID.Toolbar.revsetBar]
         XCTAssertTrue(filter.exists)
         XCTAssertTrue((filter.value as? String)?.hasPrefix("::change_id(") == true)
 

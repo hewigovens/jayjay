@@ -50,8 +50,7 @@ extension RepoContentView {
                 icon: "exclamationmark.triangle.fill",
                 text: "\(conflictedCount) conflicted"
             ) {
-                revsetDraft = conflicts.revset
-                applyRevset()
+                viewModel.applyFilter(conflicts.revset)
             })
         }
         return items
@@ -72,8 +71,7 @@ extension RepoContentView {
         let ids = Set(viewModel.changes.filter(\.isDivergent).map(\.changeId.id))
         guard !ids.isEmpty else { return nil }
         return .action(id: "divergent", icon: "arrow.triangle.branch", text: "\(ids.count) divergent") {
-            revsetDraft = "divergent()"
-            applyRevset()
+            viewModel.applyFilter("divergent()")
         }
     }
 

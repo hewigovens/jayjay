@@ -118,23 +118,18 @@ pub(super) fn render_context_menu(
 
 #[cfg(test)]
 mod tests {
-    use jayjay_core::{BookmarkInfo, ShortId};
+    use jayjay_core::BookmarkInfo;
+    use jayjay_core::mock::{bookmark_info, strings};
 
     use super::bookmark_menu_items;
     use crate::ui::popup_menu::PopupMenuEntry;
 
     fn bookmark(name: &str) -> BookmarkInfo {
         BookmarkInfo {
-            name: name.to_owned(),
-            change_id: ShortId::new("abcdefghijkl".to_owned(), 3),
-            description: String::new(),
             is_tracking_remote: true,
-            is_deleted: false,
-            is_conflicted: false,
-            tracked_remotes: vec!["origin".to_owned()],
-            available_remotes: vec!["origin".to_owned()],
-            has_local_target: true,
-            remote_targets: Vec::new(),
+            tracked_remotes: strings(&["origin"]),
+            available_remotes: strings(&["origin"]),
+            ..bookmark_info(name)
         }
     }
 

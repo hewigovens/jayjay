@@ -37,8 +37,7 @@ extension RepoContentView {
                     prHostName: viewModel.prHostName,
                     onFilter: { bookmarkName in
                         self.modal = nil
-                        revsetDraft = "ancestors(\(bookmarkName), 20) | trunk()"
-                        applyRevset()
+                        viewModel.applyFilter(bookmarkFilterRevset(name: bookmarkName, remote: nil))
                     },
                     onDiffBookmark: { request in
                         self.modal = nil
