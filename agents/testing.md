@@ -31,7 +31,7 @@ A test that would break under a behavior-preserving refactor asserts implementat
 
 ### Low-value patterns
 
-Reject these when authoring and remove them when found, unless the test independently guards a public API, persistence format, migration, security, platform, or generated cross-language contract:
+Reject these when authoring. Remove an existing one only when implementation or an audit was requested; a review or investigation that finds one reports it. Keep a test that independently guards a public API, persistence format, migration, security, platform, external tool protocol, or generated cross-language contract:
 
 - assertion-free tests that only exercise code;
 - self-comparisons, or expected values produced by the helper or renderer under test;

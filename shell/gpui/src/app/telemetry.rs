@@ -146,7 +146,7 @@ mod tests {
 
     use super::{
         Periods, is_release_version, last_sent_day, load_or_create_secret_at, period_id,
-        write_stamp,
+        release_telemetry_enabled, write_stamp,
     };
 
     #[test]
@@ -182,6 +182,12 @@ mod tests {
 
         write_stamp(&stamp, "2026-07-15").unwrap();
         assert_eq!(last_sent_day(&stamp).as_deref(), Some("2026-07-15"));
+    }
+
+    #[cfg(debug_assertions)]
+    #[test]
+    fn debug_builds_do_not_send_telemetry() {
+        assert!(!release_telemetry_enabled());
     }
 
     #[test]
