@@ -49,7 +49,7 @@ jobs:
     name: Build AppImage (${{ matrix.arch }}-linux)
     if: (github.event_name != 'push' || github.ref != 'refs/heads/main') && (github.event_name != 'release' || startsWith(github.event.release.tag_name, 'v'))
     runs-on: ${{ matrix.runner }}
-    # Ubuntu 20.04 (glibc 2.31) keeps the binary loadable on Debian 11 and Raspberry Pi OS bullseye; Vulkan, Wayland, and X11 still come from the host.
+    # Ubuntu 20.04 (glibc 2.31) keeps the binary loadable on Debian 11 and Raspberry Pi OS bullseye; the GPU and display stack and the AppImage excludelist's libraries still come from the host.
     container: ubuntu:20.04
     env:
       DEBIAN_FRONTEND: noninteractive
@@ -70,7 +70,7 @@ jobs:
           apt-get install -y --no-install-recommends \
             ca-certificates curl build-essential clang pkg-config \
             libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev \
-            squashfs-tools librsvg2-bin
+            squashfs-tools librsvg2-bin patchelf
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -89,6 +89,8 @@ jobs:
         run: |
           rm -rf squashfs-root
           ./out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage --appimage-extract >/tmp/jayjay-appimage-extract.log
+          dist/appimage/libraries.sh check squashfs-root
+          ./out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage --version
           test -f squashfs-root/dev.hewig.JayJay.desktop
           test -f squashfs-root/.DirIcon
           test -f squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
@@ -124,7 +126,7 @@ jobs:
       - name: Install runtime dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers xvfb x11-utils libxkbcommon-x11-0 appstream desktop-file-utils
+          sudo apt-get install -y --no-install-recommends mesa-vulkan-drivers xvfb x11-utils appstream desktop-file-utils
 
       - name: Validate desktop entry and metainfo
         run: |
