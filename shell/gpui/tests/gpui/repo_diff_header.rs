@@ -224,11 +224,11 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.current_projection.as_ref().map(|p| p.mode),
+            vm.shown.projection.as_ref().map(|p| p.mode),
             Some(DiffProjectionMode::Raw)
         );
         assert_eq!(
-            vm.current_diff.as_ref().map(|diff| diff.path.as_str()),
+            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
             Some(FormatFixture::NOTEBOOK)
         );
     });
@@ -258,14 +258,14 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.current_projection.as_ref().map(|p| p.mode),
+            vm.shown.projection.as_ref().map(|p| p.mode),
             Some(DiffProjectionMode::Processed)
         );
         assert_eq!(
-            vm.current_diff.as_ref().map(|diff| diff.path.as_str()),
+            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
             Some("analysis.ipynb.md")
         );
-        assert!(vm.current_markdown_preview.is_some());
+        assert!(vm.shown.markdown_preview.is_some());
     });
     assert!(cx.debug_bounds("markdown-preview-pane").is_some());
     let rich_gutter_width = cx
@@ -357,7 +357,7 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.current_svg_preview.as_ref().map(|p| p.new.as_deref()),
+            vm.shown.svg_preview.as_ref().map(|p| p.new.as_deref()),
             Some(Some(svg))
         );
     });
@@ -484,7 +484,8 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.current_markdown_preview
+            vm.shown
+                .markdown_preview
                 .as_ref()
                 .map(|document| document.source()),
             Some(markdown)
@@ -535,7 +536,8 @@ fn diff_header_shows_line_counts_in_the_whitespace_mode(cx: &mut TestAppContext)
     let counts = |view: &gpui::Entity<RepoWindow>, cx: &mut VisualTestContext| {
         view.read_with(cx, |view, cx| {
             let vm = view.view_model().read(cx);
-            vm.file_stats
+            vm.stats
+                .per_file
                 .get("ws.txt")
                 .map(|stats| (stats.insertions, stats.deletions))
         })

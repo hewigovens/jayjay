@@ -88,7 +88,8 @@ fn context_controls_expand_in_unified_and_side_by_side_and_clear_selections(
         let region = view
             .view_model()
             .read(cx)
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .expect("expanded diff")
             .lines
@@ -125,7 +126,8 @@ fn context_controls_expand_in_unified_and_side_by_side_and_clear_selections(
         assert!(
             view.view_model()
                 .read(cx)
-                .current_diff
+                .shown
+                .diff
                 .as_ref()
                 .expect("fully expanded diff")
                 .lines
@@ -174,7 +176,8 @@ fn buttons_stay_stable_when_reveals_shrink_a_large_region(cx: &mut TestAppContex
     let remaining = view.read_with(cx, |view, cx| {
         view.view_model()
             .read(cx)
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .expect("diff loaded")
             .lines

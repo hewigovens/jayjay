@@ -40,15 +40,15 @@ impl RepoViewModel {
             projection_mode,
             self.ignore_whitespace,
         );
-        self.diff_load_failures.remove(&cache_key);
-        if let Some(cached) = self.diff_cache.get(&cache_key).cloned() {
-            self.current_diff = Some(cached.diff);
-            self.current_projection = cached.projection;
-            self.current_svg_preview = cached.svg_preview;
-            self.current_markdown_preview = cached.markdown_preview;
-            self.current_diff_old_content = cached.old_content;
-            self.current_diff_new_content = cached.new_content;
-            self.current_diff_supports_file_editor = cached.supports_file_editor;
+        self.diff_cache.load_failures.remove(&cache_key);
+        if let Some(cached) = self.diff_cache.loaded.get(&cache_key).cloned() {
+            self.shown.diff = Some(cached.diff);
+            self.shown.projection = cached.projection;
+            self.shown.svg_preview = cached.svg_preview;
+            self.shown.markdown_preview = cached.markdown_preview;
+            self.shown.old_content = cached.old_content;
+            self.shown.new_content = cached.new_content;
+            self.shown.supports_file_editor = cached.supports_file_editor;
             self.loading.diff = false;
             if matches!(self.detail_mode, DetailMode::Annotate) {
                 self.load_annotate(cx);
@@ -57,13 +57,13 @@ impl RepoViewModel {
             return;
         }
 
-        self.current_diff = None;
-        self.current_projection = None;
-        self.current_svg_preview = None;
-        self.current_markdown_preview = None;
-        self.current_diff_old_content = None;
-        self.current_diff_new_content = None;
-        self.current_diff_supports_file_editor = false;
+        self.shown.diff = None;
+        self.shown.projection = None;
+        self.shown.svg_preview = None;
+        self.shown.markdown_preview = None;
+        self.shown.old_content = None;
+        self.shown.new_content = None;
+        self.shown.supports_file_editor = false;
         self.loading.diff = true;
 
         let Some(repo) = self.repo.clone() else {
@@ -97,7 +97,7 @@ impl RepoViewModel {
                 match file_diff {
                     Ok(loaded) => {
                         let file_diff = Arc::new(loaded.file_diff);
-                        vm.diff_cache.insert(
+                        vm.diff_cache.loaded.insert(
                             cache_key,
                             LoadedDiff {
                                 diff: file_diff.clone(),
@@ -110,13 +110,13 @@ impl RepoViewModel {
                                 review: loaded.review,
                             },
                         );
-                        vm.current_diff = Some(file_diff);
-                        vm.current_projection = loaded.projection;
-                        vm.current_svg_preview = loaded.svg_preview.map(Arc::new);
-                        vm.current_markdown_preview = loaded.markdown_preview.map(Arc::new);
-                        vm.current_diff_old_content = Some(loaded.old_content);
-                        vm.current_diff_new_content = Some(loaded.new_content);
-                        vm.current_diff_supports_file_editor = loaded.supports_file_editor;
+                        vm.shown.diff = Some(file_diff);
+                        vm.shown.projection = loaded.projection;
+                        vm.shown.svg_preview = loaded.svg_preview.map(Arc::new);
+                        vm.shown.markdown_preview = loaded.markdown_preview.map(Arc::new);
+                        vm.shown.old_content = Some(loaded.old_content);
+                        vm.shown.new_content = Some(loaded.new_content);
+                        vm.shown.supports_file_editor = loaded.supports_file_editor;
                         vm.apply_hunk_previews(
                             &fallback_path,
                             loaded.old_preview,
@@ -124,19 +124,19 @@ impl RepoViewModel {
                         );
                     }
                     Err(error) => {
-                        vm.diff_load_failures.insert(cache_key);
-                        vm.current_diff = Some(Arc::new(FileDiff {
+                        vm.diff_cache.load_failures.insert(cache_key);
+                        vm.shown.diff = Some(Arc::new(FileDiff {
                             path: fallback_path,
                             language: String::new(),
                             lines: Vec::new(),
                             whitespace_only_hidden: false,
                         }));
-                        vm.current_projection = None;
-                        vm.current_svg_preview = None;
-                        vm.current_markdown_preview = None;
-                        vm.current_diff_old_content = None;
-                        vm.current_diff_new_content = None;
-                        vm.current_diff_supports_file_editor = false;
+                        vm.shown.projection = None;
+                        vm.shown.svg_preview = None;
+                        vm.shown.markdown_preview = None;
+                        vm.shown.old_content = None;
+                        vm.shown.new_content = None;
+                        vm.shown.supports_file_editor = false;
                         vm.present_error(error);
                     }
                 }
@@ -192,9 +192,9 @@ impl RepoViewModel {
                 )
             })
             .filter(|(key, _, _)| {
-                !self.diff_cache.contains_key(key)
-                    && !self.diff_preloads_in_flight.contains(key)
-                    && !self.diff_load_failures.contains(key)
+                !self.diff_cache.loaded.contains_key(key)
+                    && !self.diff_cache.preloads_in_flight.contains(key)
+                    && !self.diff_cache.load_failures.contains(key)
             })
             .collect();
 
@@ -203,7 +203,7 @@ impl RepoViewModel {
         }
 
         for (cache_key, hunk, projection_mode) in pending {
-            self.diff_preloads_in_flight.insert(cache_key.clone());
+            self.diff_cache.preloads_in_flight.insert(cache_key.clone());
             let repo = repo.clone();
             let rev = rev.clone();
             let hunk_path = hunk.path.clone();
@@ -224,11 +224,11 @@ impl RepoViewModel {
                     if vm.loading.change_gen != generation {
                         return;
                     }
-                    vm.diff_preloads_in_flight.remove(&cache_key);
+                    vm.diff_cache.preloads_in_flight.remove(&cache_key);
                     match result {
                         Ok(loaded) => {
-                            vm.diff_load_failures.remove(&cache_key);
-                            vm.diff_cache.entry(cache_key).or_insert(LoadedDiff {
+                            vm.diff_cache.load_failures.remove(&cache_key);
+                            vm.diff_cache.loaded.entry(cache_key).or_insert(LoadedDiff {
                                 diff: Arc::new(loaded.file_diff),
                                 projection: loaded.projection,
                                 svg_preview: loaded.svg_preview.map(Arc::new),
@@ -246,7 +246,7 @@ impl RepoViewModel {
                             );
                         }
                         Err(_) => {
-                            vm.diff_load_failures.insert(cache_key);
+                            vm.diff_cache.load_failures.insert(cache_key);
                         }
                     }
                     cx.notify();
@@ -261,9 +261,9 @@ impl RepoViewModel {
         };
         let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
         let key = diff_cache_key(None, &rev, hunk, projection_mode, self.ignore_whitespace);
-        if let Some(loaded) = self.diff_cache.get(&key) {
+        if let Some(loaded) = self.diff_cache.loaded.get(&key) {
             DiffLoadState::Loaded(loaded.clone())
-        } else if self.diff_load_failures.contains(&key) {
+        } else if self.diff_cache.load_failures.contains(&key) {
             DiffLoadState::Failed
         } else {
             DiffLoadState::Missing

@@ -43,20 +43,20 @@ pub(in crate::repo::window) fn detail_pane(
             .into_any_element();
     };
 
-    let stats = vm.change_stats.clone();
+    let stats = vm.stats.change.clone();
     let view_mode = vm.view_mode;
     let detail_mode = vm.detail_mode;
     let annotate_lines = vm.annotate_lines.clone();
     let loading_annotate = vm.loading.annotate;
-    let current_diff = vm.current_diff.clone();
-    let current_projection = vm.current_projection.clone();
-    let current_svg_preview = vm.current_svg_preview.clone();
-    let current_markdown_preview = vm.current_markdown_preview.clone();
+    let current_diff = vm.shown.diff.clone();
+    let current_projection = vm.shown.projection.clone();
+    let current_svg_preview = vm.shown.svg_preview.clone();
+    let current_markdown_preview = vm.shown.markdown_preview.clone();
     let repo_path = vm.repo_path.clone();
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
-    let file_stats = vm.file_stats.clone();
+    let file_stats = vm.stats.per_file.clone();
     let selected_file_has_conflict = vm.selected_file_has_conflict();
     let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
         view.diff.rich_preview.as_ref().is_some_and(|selection| {

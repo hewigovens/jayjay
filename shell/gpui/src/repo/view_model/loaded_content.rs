@@ -10,7 +10,7 @@ pub struct LoadedDiff {
     pub projection: Option<DiffProjection>,
     pub svg_preview: Option<Arc<SvgPreviewContent>>,
     pub markdown_preview: Option<Arc<MarkdownDocument>>,
-    /// The exact (old, new) strings `diff` was computed from; must be retained rather than re-read, since file content may have changed by the time an abandon-selected-lines action runs.
+    /// Must be retained rather than re-read: a fresh working-copy snapshot could silently mis-target an abandon-selected-lines range.
     pub old_content: Option<Arc<str>>,
     pub new_content: Option<Arc<str>>,
     pub supports_file_editor: bool,

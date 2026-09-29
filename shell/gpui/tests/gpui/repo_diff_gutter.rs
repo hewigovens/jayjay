@@ -322,7 +322,7 @@ fn abandon_selected_lines_rejects_stale_selection_and_refreshes(cx: &mut TestApp
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.current_diff_new_content.as_deref(),
+            vm.shown.new_content.as_deref(),
             Some(changed),
             "the guard's refresh must show the file's current content, not the stale render"
         );

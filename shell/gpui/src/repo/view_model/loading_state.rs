@@ -29,7 +29,7 @@ pub struct LoadingState {
     pub operations: u32,
     /// Bumped each time `refresh()` starts; the completion discards data from a superseded run.
     pub(crate) refresh_gen: u64,
-    /// An owed auto-refresh: set when an FS event arrives mid-refresh or while refreshes are suspended; run by the completion or when the gate clears.
+    /// An owed auto-refresh: set when an FS event arrives mid-refresh or while refreshes are suspended.
     pub pending_auto_refresh: Option<PendingRefresh>,
     pub(super) refresh_indicator_gen: u64,
     pub(super) refresh_minimum_elapsed: bool,

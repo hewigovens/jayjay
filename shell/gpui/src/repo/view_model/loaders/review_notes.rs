@@ -9,11 +9,12 @@ use super::super::RepoViewModel;
 impl RepoViewModel {
     /// Cached: recomputed only in `set_review_notes`, not on every render that reads it.
     pub fn active_note_counts(&self) -> Arc<HashMap<String, usize>> {
-        self.active_note_counts_cache.clone()
+        self.notes.active_counts.clone()
     }
 
     pub fn stale_or_orphaned_notes(&self) -> Vec<ReviewNoteStatus> {
-        self.review_notes
+        self.notes
+            .all
             .iter()
             .filter(|s| matches!(s.status, NoteStatus::Stale | NoteStatus::Orphaned))
             .cloned()
@@ -65,7 +66,7 @@ impl RepoViewModel {
                 *counts.entry(status.note.path.clone()).or_insert(0) += 1;
             }
         }
-        self.review_notes = notes;
-        self.active_note_counts_cache = Arc::new(counts);
+        self.notes.all = notes;
+        self.notes.active_counts = Arc::new(counts);
     }
 }

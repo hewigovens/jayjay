@@ -54,7 +54,10 @@ impl RepoWindow {
     pub(super) fn diff_edit_row_model(&mut self, cx: &Context<Self>) -> Arc<DiffEditRowModel> {
         let (hunks, diff_cache_count) = {
             let vm = self.vm.read(cx);
-            (vm.files.clone().unwrap_or_default(), vm.diff_cache.len())
+            (
+                vm.files.clone().unwrap_or_default(),
+                vm.diff_cache.loaded.len(),
+            )
         };
         if let Some(model) = self.diff_edit.rows.as_ref()
             && Arc::ptr_eq(&model.hunks, &hunks)

@@ -38,9 +38,9 @@ impl RepoWindow {
         let (diff, old_content, new_content) = {
             let vm = self.vm.read(cx);
             let (Some(diff), Some(old_content), Some(new_content)) = (
-                vm.current_diff.clone(),
-                vm.current_diff_old_content.clone(),
-                vm.current_diff_new_content.clone(),
+                vm.shown.diff.clone(),
+                vm.shown.old_content.clone(),
+                vm.shown.new_content.clone(),
             ) else {
                 return;
             };
@@ -84,7 +84,7 @@ impl RepoWindow {
                 self.diff.gutter_selection = None;
                 self.diff.context_expansion.error = None;
                 self.vm.update(cx, |vm, cx| {
-                    vm.current_diff = Some(Arc::new(diff));
+                    vm.shown.diff = Some(Arc::new(diff));
                     cx.notify();
                 });
                 // Stored matches are display-row indices into the replaced diff.

@@ -18,7 +18,8 @@ impl RepoWindow {
         };
         let paths: Vec<String> = files.iter().map(|hunk| hunk.path.clone()).collect();
         let total = vm
-            .change_stats
+            .stats
+            .change
             .as_ref()
             .map(|stats| u64::from(stats.insertions) + u64::from(stats.deletions));
         self.diff_edit.session.seed_collapse(&paths, total);

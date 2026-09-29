@@ -33,7 +33,7 @@ fn ignore_whitespace_setting_applies_on_open_and_updates_all_windows(cx: &mut Te
 
     for view in [&first, &second] {
         view.read_with(cx, |view, cx| {
-            let diff = view.view_model().read(cx).current_diff.as_ref().unwrap();
+            let diff = view.view_model().read(cx).shown.diff.as_ref().unwrap();
             assert!(diff.whitespace_only_hidden);
         });
     }
@@ -43,7 +43,7 @@ fn ignore_whitespace_setting_applies_on_open_and_updates_all_windows(cx: &mut Te
     settle_visual(cx);
     for view in [&first, &second] {
         view.read_with(cx, |view, cx| {
-            let diff = view.view_model().read(cx).current_diff.as_ref().unwrap();
+            let diff = view.view_model().read(cx).shown.diff.as_ref().unwrap();
             assert!(!diff.whitespace_only_hidden);
             assert!(diff.lines.iter().any(|line| line.is_changed()));
         });
@@ -111,7 +111,7 @@ fn selecting_preloaded_file_invalidates_an_older_diff_request(cx: &mut TestAppCo
         let vm = view.view_model().read(cx);
         let files = vm.files.as_ref().expect("files loaded");
         assert_eq!(
-            vm.diff_cache.len(),
+            vm.diff_cache.loaded.len(),
             files.len(),
             "the fixture should preload every file so this exercises the cache-hit path"
         );
@@ -145,7 +145,7 @@ fn selecting_preloaded_file_invalidates_an_older_diff_request(cx: &mut TestAppCo
             "the preloaded diff should apply synchronously"
         );
         assert_eq!(
-            vm.current_diff.as_ref().map(|diff| diff.path.as_str()),
+            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
             Some(target_path.as_str())
         );
     });
@@ -177,12 +177,15 @@ fn historical_diff_loading_skips_review_snapshots(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.diff_cache.len(),
+            vm.diff_cache.loaded.len(),
             vm.files.as_ref().expect("historical files loaded").len(),
             "the selected and preloaded historical diffs should finish"
         );
         assert!(
-            vm.diff_cache.values().all(|loaded| loaded.review.is_none()),
+            vm.diff_cache
+                .loaded
+                .values()
+                .all(|loaded| loaded.review.is_none()),
             "historical diffs must not compute review snapshots"
         );
     });
@@ -242,14 +245,14 @@ fn a_bookmark_diff_reverses_and_keeps_file_navigation(cx: &mut TestAppContext) {
             );
             assert_eq!(compare.display.title, "PR Diff");
             assert!(vm.error.is_none(), "reverse errored: {:?}", vm.error);
-            assert_eq!(vm.current_diff.as_ref().unwrap().path, "wip2.txt");
+            assert_eq!(vm.shown.diff.as_ref().unwrap().path, "wip2.txt");
             let (old, new) = if reversed {
                 ("wip 2\n", "")
             } else {
                 ("", "wip 2\n")
             };
-            assert_eq!(vm.current_diff_old_content.as_deref(), Some(old));
-            assert_eq!(vm.current_diff_new_content.as_deref(), Some(new));
+            assert_eq!(vm.shown.old_content.as_deref(), Some(old));
+            assert_eq!(vm.shown.new_content.as_deref(), Some(new));
         });
     }
 }
@@ -288,7 +291,7 @@ fn clear_compare_selects_fallback_when_target_is_missing(cx: &mut TestAppContext
         assert_eq!(vm.selected, Some(fallback));
         assert!(vm.files.is_none());
         assert_eq!(vm.selected_file_ix, None);
-        assert!(vm.current_diff.is_none());
+        assert!(vm.shown.diff.is_none());
     });
 }
 

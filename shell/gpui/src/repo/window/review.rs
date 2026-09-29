@@ -179,7 +179,7 @@ impl RepoWindow {
 
     pub fn selected_review_group_states(&self, cx: &App) -> Vec<ReviewGroupState> {
         let vm = self.vm.read(cx);
-        self.review_display_state(vm.selected_hunk(), vm.current_diff.as_ref(), cx)
+        self.review_display_state(vm.selected_hunk(), vm.shown.diff.as_ref(), cx)
             .map(|state| state.group_states.clone())
             .unwrap_or_default()
     }
@@ -269,7 +269,7 @@ impl RepoWindow {
         store.list_notes(change_id, true)
     }
 
-    /// Callers must call this after mutating through `mutate()` so the reconciled `vm.review_notes` (and cached row list) reflects the write; always re-snapshots, unlike `sync_review_notes` below, which only does so when the sync key changed.
+    /// Callers must call this after mutating through `mutate()` so the reconciled `vm.notes.all` (and cached row list) reflects the write; always re-snapshots, unlike `sync_review_notes` below, which only does so when the sync key changed.
     pub fn refresh_review_notes(&mut self, cx: &mut Context<Self>) {
         let notes = match self.review_notes_change_id(cx) {
             Some(change_id) => {
@@ -289,7 +289,7 @@ impl RepoWindow {
     /// Detects both note writes this process didn't make and diff refreshes that change file identities, since reconciliation depends on both; also how the first load for a newly-selected working-copy change happens, via `None != Some(key)`.
     pub fn sync_review_notes(&mut self, cx: &mut Context<Self>) {
         let Some(change_id) = self.review_notes_change_id(cx) else {
-            // Gate just turned off: drop the last session's key too, or `vm.review_notes` (which `active_note_counts`/`stale_or_orphaned_notes` assume is already empty outside the notes session) would keep serving badges/banners for a change no longer shown.
+            // Gate just turned off: drop the last session's key too, or `vm.notes.all` (which `active_note_counts`/`stale_or_orphaned_notes` assume is already empty outside the notes session) would keep serving badges/banners for a change no longer shown.
             if self.diff.review_notes_sync_key.take().is_some() {
                 self.vm
                     .update(cx, |vm, cx| vm.load_review_notes(Vec::new(), cx));

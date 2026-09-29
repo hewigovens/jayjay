@@ -39,7 +39,7 @@ impl RepoWindow {
             .is_some_and(|change| change.is_working_copy)
             && vm.compare.is_none()
             && vm.selected_hunk().is_some_and(hunk_supports_file_editor)
-            && vm.current_diff_supports_file_editor
+            && vm.shown.supports_file_editor
             && !vm.selected_file_has_conflict()
     }
 

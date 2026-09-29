@@ -11,7 +11,7 @@ fn line_group_file_and_select_all_update_full_diff_selection(cx: &mut TestAppCon
     let (_fixture, view, cx) = open_changed_repo(cx);
     let (path, changed) = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        let diff = vm.current_diff.as_ref().unwrap();
+        let diff = vm.shown.diff.as_ref().unwrap();
         let changed = diff
             .lines
             .iter()
@@ -58,15 +58,16 @@ fn collapsed_display_line_maps_to_full_diff_index(cx: &mut TestAppContext) {
         view.view_model().update(cx, |vm, _| {
             let cache_key = vm
                 .diff_cache
+                .loaded
                 .iter()
                 .find(|(_, loaded)| loaded.diff.path == "README.md")
                 .map(|(key, _)| key.clone())
                 .expect("selected diff cache key");
-            vm.current_diff = Some(display.clone());
-            vm.current_diff_old_content = Some(old.clone().into());
-            vm.current_diff_new_content = Some(new.clone().into());
-            vm.diff_cache.clear();
-            vm.diff_cache.insert(
+            vm.shown.diff = Some(display.clone());
+            vm.shown.old_content = Some(old.clone().into());
+            vm.shown.new_content = Some(new.clone().into());
+            vm.diff_cache.loaded.clear();
+            vm.diff_cache.loaded.insert(
                 cache_key,
                 LoadedDiff {
                     diff: display,
@@ -99,7 +100,8 @@ fn group_selection_is_idempotent(cx: &mut TestAppContext) {
     let display_line = view.read_with(cx, |view, cx| {
         view.view_model()
             .read(cx)
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .unwrap()
             .lines

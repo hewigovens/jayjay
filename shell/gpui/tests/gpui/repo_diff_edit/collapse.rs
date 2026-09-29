@@ -322,7 +322,7 @@ fn stats_pending_entry_collapses_provisionally_then_refines(cx: &mut TestAppCont
     settle_visual(cx);
 
     view.update_in(cx, |view, _, cx| {
-        view.view_model().update(cx, |vm, _| vm.change_stats = None);
+        view.view_model().update(cx, |vm, _| vm.stats.change = None);
         view.enter_diff_edit(cx);
         assert!(
             view.diff_edit_collapsed("big.txt") && view.diff_edit_collapsed("small0.txt"),
@@ -376,7 +376,7 @@ fn refined_stats_reopen_folds_seeded_by_an_inflated_aggregate(cx: &mut TestAppCo
     view.update_in(cx, |view, _, cx| {
         // Models a >32 MiB text file: jj's aggregate counts its real lines while the displayed placeholder counts zero.
         view.view_model().update(cx, |vm, _| {
-            vm.change_stats = Some(jayjay_core::DiffStats {
+            vm.stats.change = Some(jayjay_core::DiffStats {
                 files_changed: 31,
                 insertions: 5000,
                 deletions: 5000,

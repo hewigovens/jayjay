@@ -39,7 +39,8 @@ fn switching_files_discards_an_in_flight_expansion_and_restarts_collapsed(cx: &m
         assert_eq!(
             view.view_model()
                 .read(cx)
-                .current_diff
+                .shown
+                .diff
                 .as_ref()
                 .map(|diff| diff.path.as_str()),
             Some("other.txt"),
@@ -85,7 +86,8 @@ fn rapid_show_more_then_show_all_applies_the_latest_request(cx: &mut TestAppCont
         assert!(
             view.view_model()
                 .read(cx)
-                .current_diff
+                .shown
+                .diff
                 .as_ref()
                 .expect("fully expanded diff")
                 .lines

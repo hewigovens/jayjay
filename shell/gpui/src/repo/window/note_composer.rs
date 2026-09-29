@@ -172,11 +172,12 @@ impl RepoWindow {
         cx.notify();
     }
 
-    /// Looks up by id in `vm.review_notes` (already includes resolved notes) rather than re-reading the store.
+    /// Looks up by id in `vm.notes.all` (already includes resolved notes) rather than re-reading the store.
     fn find_review_note(&self, note_id: &str, cx: &App) -> Option<NoteEntry> {
         self.vm
             .read(cx)
-            .review_notes
+            .notes
+            .all
             .iter()
             .find(|s| s.note.id == note_id)
             .map(|s| s.note.clone())
@@ -184,7 +185,7 @@ impl RepoWindow {
 
     fn note_context_lines_at(&self, line: u32, side: NoteSide, cx: &App) -> Vec<NoteContextLine> {
         let vm = self.vm.read(cx);
-        let Some(fd) = vm.current_diff.as_ref() else {
+        let Some(fd) = vm.shown.diff.as_ref() else {
             return Vec::new();
         };
         let display_lines = build_diff_display_lines(&fd.lines);

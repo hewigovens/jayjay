@@ -85,12 +85,12 @@ impl RepoWindow {
         }
 
         let vm = self.vm.read(cx);
-        let old_content = vm.current_diff_old_content.as_deref()?;
-        let new_content = vm.current_diff_new_content.as_deref()?;
+        let old_content = vm.shown.old_content.as_deref()?;
+        let new_content = vm.shown.new_content.as_deref()?;
         if !is_editable_text(old_content) || !is_editable_text(new_content) {
             return None;
         }
-        let raw_lines = &vm.current_diff.as_ref()?.lines;
+        let raw_lines = &vm.shown.diff.as_ref()?.lines;
         if raw_lines
             .iter()
             .any(|line| line.conflict_kind != ConflictLineKind::None)

@@ -1,3 +1,4 @@
+mod diff_cache;
 mod graph_data;
 mod loaded_content;
 mod loaders;
@@ -7,14 +8,21 @@ mod mutations_changes;
 mod mutations_conflict_editor;
 mod mutations_file_editor;
 mod mutations_files;
+mod notes_state;
 mod opening;
 mod refresh_indicator;
 mod repo_view_model;
 mod selection;
+mod shown_diff;
+mod stats_state;
 mod tasks;
 
+pub use diff_cache::DiffCache;
 pub use graph_data::GraphData;
 pub(in crate::repo) use loaded_content::DiffLoadState;
 pub use loaded_content::{LoadedDiff, LoadedReviewSnapshot, SvgPreviewContent};
 pub use loading_state::{LoadingState, PendingRefresh};
+pub use notes_state::NotesState;
 pub use repo_view_model::RepoViewModel;
+pub use shown_diff::ShownDiff;
+pub use stats_state::StatsState;

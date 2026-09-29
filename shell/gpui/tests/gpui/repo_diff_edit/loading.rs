@@ -26,6 +26,7 @@ fn uncached_file_is_hidden_until_entry_preload_finishes(cx: &mut TestAppContext)
             .clone();
         view.view_model().update(cx, |vm, _| {
             vm.diff_cache
+                .loaded
                 .retain(|_, loaded| loaded.diff.path == selected_path);
         });
         view.enter_diff_edit(cx);
@@ -72,8 +73,9 @@ fn same_path_cache_entry_from_another_revision_is_ignored(cx: &mut TestAppContex
             .clone();
         view.view_model().update(cx, |vm, _| {
             vm.diff_cache
+                .loaded
                 .retain(|_, loaded| loaded.diff.path == selected_path);
-            vm.diff_cache.insert(
+            vm.diff_cache.loaded.insert(
                 "another-revision".into(),
                 LoadedDiff {
                     diff: std::sync::Arc::new(compute_file_diff(
@@ -130,7 +132,8 @@ fn unsupported_preview_replaces_cached_placeholder_when_cache_grows(cx: &mut Tes
     let (view, cx) = open_fixture(&fixture, cx);
     select_file(&view, "plain.txt", cx);
     view.update_in(cx, |view, _, cx| {
-        view.view_model().update(cx, |vm, _| vm.diff_cache.clear());
+        view.view_model()
+            .update(cx, |vm, _| vm.diff_cache.loaded.clear());
         view.enter_diff_edit(cx);
         assert_eq!(
             view.diff_edit_preview_line_count("analysis.ipynb", cx),

@@ -87,7 +87,7 @@ impl RepoViewModel {
                     return;
                 }
                 vm.loading.files = false;
-                vm.change_stats = stats;
+                vm.stats.change = stats;
                 vm.conflicted_paths = Arc::new(conflicted_paths);
                 match detail {
                     Ok(detail) => {
@@ -119,7 +119,7 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        self.file_stats = Arc::default();
+        self.stats.per_file = Arc::default();
         let generation = self.loading.change_gen;
         let ignore_whitespace = self.ignore_whitespace;
         Self::background_update(
@@ -130,7 +130,7 @@ impl RepoViewModel {
                 {
                     return;
                 }
-                vm.file_stats = Arc::new(
+                vm.stats.per_file = Arc::new(
                     stats
                         .unwrap_or_default()
                         .into_iter()
@@ -487,16 +487,16 @@ impl RepoViewModel {
         self.selected_file_ix = None;
         self.files = None;
         self.conflicted_paths = Arc::default();
-        self.current_diff = None;
-        self.current_projection = None;
-        self.current_svg_preview = None;
-        self.current_markdown_preview = None;
-        self.current_diff_old_content = None;
-        self.current_diff_new_content = None;
-        self.current_diff_supports_file_editor = false;
+        self.shown.diff = None;
+        self.shown.projection = None;
+        self.shown.svg_preview = None;
+        self.shown.markdown_preview = None;
+        self.shown.old_content = None;
+        self.shown.new_content = None;
+        self.shown.supports_file_editor = false;
         self.clear_diff_cache_state();
-        self.change_stats = None;
-        self.file_stats = Arc::default();
+        self.stats.change = None;
+        self.stats.per_file = Arc::default();
         self.loading.files = false;
         self.loading.diff = false;
     }

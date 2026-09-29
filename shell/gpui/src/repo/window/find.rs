@@ -44,7 +44,7 @@ impl RepoWindow {
             return;
         }
         let vm = self.vm.read(cx);
-        let Some(diff) = vm.current_diff.as_ref() else {
+        let Some(diff) = vm.shown.diff.as_ref() else {
             return;
         };
         let q = query.to_lowercase();
@@ -64,7 +64,8 @@ impl RepoWindow {
             // Shared wrap helpers operate in u32; scroll_to_item takes usize.
             let line_ix_u32 = line_ix as u32;
             let item_ix = vm
-                .current_diff
+                .shown
+                .diff
                 .as_ref()
                 .map(|diff| {
                     let display_lines = build_diff_display_lines(&diff.lines);

@@ -38,7 +38,7 @@ impl RepoWindow {
         };
         let anchor = {
             let vm = self.vm.read(cx);
-            let Some(fd) = vm.current_diff.as_ref() else {
+            let Some(fd) = vm.shown.diff.as_ref() else {
                 return Vec::new();
             };
             let display_lines = build_diff_display_lines(&fd.lines);

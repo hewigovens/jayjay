@@ -16,7 +16,8 @@ pub(super) fn enter_and_select_line(
     let (path, line) = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         let line = vm
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .expect("diff loaded")
             .lines
@@ -43,7 +44,8 @@ pub(super) fn enter_and_select_group(
     let (path, line) = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         let line = vm
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .expect("diff loaded")
             .lines
@@ -127,7 +129,8 @@ pub(super) fn select_first_changed_line(view: &Entity<RepoWindow>, cx: &mut Visu
     let (path, line) = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         let line = vm
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .unwrap()
             .lines

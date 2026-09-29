@@ -13,7 +13,8 @@ pub(super) fn largest_region(
     view.read_with(cx, |view, cx| {
         view.view_model()
             .read(cx)
-            .current_diff
+            .shown
+            .diff
             .as_ref()
             .expect("diff loaded")
             .lines

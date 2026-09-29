@@ -308,9 +308,7 @@ fn delete_review_note_via_menu_clears_row_dot_and_note(cx: &mut TestAppContext) 
             .iter()
             .any(|row| matches!(row, DiffRenderRow::NoteText { .. }))
     );
-    let notes = view.read_with(cx, |view, cx| {
-        view.view_model().read(cx).review_notes.clone()
-    });
+    let notes = view.read_with(cx, |view, cx| view.view_model().read(cx).notes.all.clone());
     assert!(
         notes.is_empty(),
         "a deleted note must not linger in any status"
@@ -417,7 +415,7 @@ fn notes_only_filter_auto_clears_when_the_last_active_note_resolves(cx: &mut Tes
     );
 }
 
-/// Regression: `sync_review_notes` must clear `vm.review_notes`, not just leave it stale, once the notes gate turns off, or `active_note_counts` would keep serving the working-copy change's notes for a different change.
+/// Regression: `sync_review_notes` must clear `vm.notes.all`, not just leave it stale, once the notes gate turns off, or `active_note_counts` would keep serving the working-copy change's notes for a different change.
 #[gpui::test]
 fn active_note_counts_clear_after_switching_away_from_the_noted_change(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);

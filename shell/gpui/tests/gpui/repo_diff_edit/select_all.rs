@@ -24,6 +24,7 @@ fn select_all_waits_for_uncached_files_and_selects_every_file(cx: &mut TestAppCo
             .collect::<Vec<_>>();
         view.view_model().update(cx, |vm, _| {
             vm.diff_cache
+                .loaded
                 .retain(|_, loaded| loaded.diff.path == selected_path);
         });
         view.enter_diff_edit(cx);
@@ -73,6 +74,7 @@ fn divergent_change_preloads_uncached_files_for_select_all(cx: &mut TestAppConte
             .clone();
         view.view_model().update(cx, |vm, _| {
             vm.diff_cache
+                .loaded
                 .retain(|_, loaded| loaded.diff.path == selected_path);
         });
         view.enter_diff_edit(cx);
@@ -123,6 +125,7 @@ fn select_all_finishes_when_an_uncached_preload_fails(cx: &mut TestAppContext) {
                 .path
                 .clone();
             vm.diff_cache
+                .loaded
                 .retain(|_, loaded| loaded.diff.path == selected_path);
             let files = std::sync::Arc::make_mut(vm.files.as_mut().expect("files loaded"));
             let failing = files

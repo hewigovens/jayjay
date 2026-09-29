@@ -107,7 +107,7 @@ impl RepoWindow {
     }
 
     fn diff_line_text(&self, line_ix: usize, side: SbsSide, cx: &Context<Self>) -> Option<String> {
-        let fd = self.vm.read(cx).current_diff.as_ref()?;
+        let fd = self.vm.read(cx).shown.diff.as_ref()?;
         match side {
             SbsSide::Unified => {
                 let display_lines = build_diff_display_lines(&fd.lines);
@@ -128,7 +128,7 @@ impl RepoWindow {
     }
 
     fn diff_selection_text(&self, sel: &DiffSelection, cx: &Context<Self>) -> Option<String> {
-        let fd = self.vm.read(cx).current_diff.as_ref()?;
+        let fd = self.vm.read(cx).shown.diff.as_ref()?;
         let mut out: Vec<String> = Vec::new();
         match sel.side {
             SbsSide::Unified => {

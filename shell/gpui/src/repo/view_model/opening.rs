@@ -1,4 +1,4 @@
-use super::{GraphData, LoadingState, RepoViewModel};
+use super::{DiffCache, GraphData, LoadingState, NotesState, RepoViewModel, ShownDiff, StatsState};
 use crate::app::config;
 use crate::diff::{DetailMode, DiffViewMode};
 use gpui::{AppContext, Context, SharedString};
@@ -8,7 +8,7 @@ use jayjay_core::{
     RevsetVocabulary, WorkspaceInfo, build_default_revset, default_revset_depth,
 };
 use std::cell::RefCell;
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
@@ -135,18 +135,9 @@ impl RepoViewModel {
             files: None,
             conflicted_paths: Arc::default(),
             selected_file_ix: None,
-            current_diff: None,
-            current_projection: None,
-            current_svg_preview: None,
-            current_markdown_preview: None,
-            current_diff_old_content: None,
-            current_diff_new_content: None,
-            current_diff_supports_file_editor: false,
-            diff_cache: HashMap::new(),
-            diff_preloads_in_flight: HashSet::new(),
-            diff_load_failures: HashSet::new(),
-            change_stats: None,
-            file_stats: Arc::default(),
+            shown: ShownDiff::default(),
+            diff_cache: DiffCache::default(),
+            stats: StatsState::default(),
             working_copy_stats: None,
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
@@ -171,8 +162,7 @@ impl RepoViewModel {
             loading: LoadingState::default(),
             last_internal_mutation_at: None,
             refresh_suspended: false,
-            review_notes: Vec::new(),
-            active_note_counts_cache: Arc::new(HashMap::new()),
+            notes: NotesState::default(),
             pending_file_selection: None,
             selection_cache: RefCell::new(None),
         }
@@ -190,18 +180,9 @@ impl RepoViewModel {
             files: None,
             conflicted_paths: Arc::default(),
             selected_file_ix: None,
-            current_diff: None,
-            current_projection: None,
-            current_svg_preview: None,
-            current_markdown_preview: None,
-            current_diff_old_content: None,
-            current_diff_new_content: None,
-            current_diff_supports_file_editor: false,
-            diff_cache: HashMap::new(),
-            diff_preloads_in_flight: HashSet::new(),
-            diff_load_failures: HashSet::new(),
-            change_stats: None,
-            file_stats: Arc::default(),
+            shown: ShownDiff::default(),
+            diff_cache: DiffCache::default(),
+            stats: StatsState::default(),
             working_copy_stats: None,
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
@@ -219,8 +200,7 @@ impl RepoViewModel {
             loading: LoadingState::default(),
             last_internal_mutation_at: None,
             refresh_suspended: false,
-            review_notes: Vec::new(),
-            active_note_counts_cache: Arc::new(HashMap::new()),
+            notes: NotesState::default(),
             pending_file_selection: None,
             selection_cache: RefCell::new(None),
         }
