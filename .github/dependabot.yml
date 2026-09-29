@@ -14,9 +14,6 @@ updates:
       jj:
         patterns:
           - "jj-*"
-      gpui:
-        patterns:
-          - "gpui*"
     ignore:
       - dependency-name: "*"
         update-types:
@@ -24,6 +21,8 @@ updates:
       # Pinned to the versions jj-lib uses; bumped by hand with jj-lib
       - dependency-name: "gix"
       - dependency-name: "gix-url"
+      # Dependabot cannot rewrite the zed tag, only Cargo.lock; bumped by hand
+      - dependency-name: "gpui*"
     commit-message:
       prefix: "deps(rust)"
     open-pull-requests-limit: 10
