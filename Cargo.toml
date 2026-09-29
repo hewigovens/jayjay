@@ -47,6 +47,10 @@ gethostname = "1"
 rand = "0.10"
 shell-words = "1.1.1"
 
+# One tag for both so a bump moves every gpui reference together
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.20.2" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.20.2" }
+
 tree-sitter = "0.27"
 tree-sitter-highlight = "0.27"
 tree-sitter-rust = "0.24"
