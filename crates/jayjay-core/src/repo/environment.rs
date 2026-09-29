@@ -435,6 +435,16 @@ mod tests {
         assert!(!candidates.iter().any(|p| !p.is_absolute()));
     }
 
+    #[test]
+    fn extract_version_takes_the_first_dotted_number() {
+        assert_eq!(
+            extract_version("gh version 2.89.0 (2026-03-26)\n"),
+            "2.89.0"
+        );
+        assert_eq!(extract_version("jj 0.45.1-7c41cdeb"), "0.45.1-7c41cdeb");
+        assert_eq!(extract_version("origin 7 beta\n"), "origin 7 beta");
+    }
+
     #[cfg(unix)]
     #[test]
     fn find_existing_candidate_requires_executable_bit() {

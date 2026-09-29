@@ -2,7 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
-use jayjay_core::{ChangeInfo, Repo};
+use jayjay_core::{ChangeInfo, RemoteSyncStatus, Repo};
 use jj_test::{
     LinearFixture, configure_test_user, init_colocated, init_jj_repo, run_command, run_git, run_jj,
     run_jj_in,
@@ -197,6 +197,87 @@ fn deleted_bookmark_preserves_tracking_per_remote() {
         repo.track_bookmark("feature", "nowhere").is_err(),
         "an absent remote bookmark cannot be tracked"
     );
+}
+
+#[test]
+fn tracked_bookmarks_report_their_sync_direction_and_counts() {
+    let fixture = LinearFixture::build();
+    run_git(
+        &fixture.path,
+        &[
+            "remote",
+            "add",
+            "origin",
+            "https://example.invalid/origin.git",
+        ],
+    );
+    let remote_targets = [
+        ("synced", "HEAD~1"),
+        ("ahead", "HEAD~1"),
+        ("behind", "HEAD"),
+        ("diverged", "HEAD~1"),
+    ];
+    for (name, target) in remote_targets {
+        run_git(
+            &fixture.path,
+            &["update-ref", &format!("refs/remotes/origin/{name}"), target],
+        );
+    }
+    run_jj_in(&fixture.path, &["status"]);
+    let repo = Repo::open(&fixture.path).expect("open repo");
+    for (name, _) in remote_targets {
+        repo.track_bookmark(name, "origin").expect("track bookmark");
+    }
+    run_jj_in(
+        &fixture.path,
+        &[
+            "bookmark",
+            "set",
+            "ahead",
+            "-r",
+            "subject(exact:\"add feature\")",
+        ],
+    );
+    run_jj_in(
+        &fixture.path,
+        &[
+            "bookmark",
+            "set",
+            "behind",
+            "-B",
+            "-r",
+            "subject(exact:\"add hello\")",
+        ],
+    );
+    run_jj_in(
+        &fixture.path,
+        &["new", "subject(exact:initial)", "-m", "sibling"],
+    );
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "set", "diverged", "-B", "-r", "@"],
+    );
+
+    let bookmarks = Repo::open(&fixture.path)
+        .expect("reopen repo")
+        .list_bookmarks()
+        .expect("list bookmarks");
+    let sync = |name: &str| {
+        let bookmark = bookmarks
+            .iter()
+            .find(|bookmark| bookmark.name == name)
+            .expect("listed bookmark");
+        let origin = bookmark
+            .remote_targets
+            .iter()
+            .find(|target| target.remote == "origin")
+            .expect("origin target");
+        (origin.status, origin.ahead, origin.behind)
+    };
+    assert_eq!(sync("synced"), (RemoteSyncStatus::Synced, 0, 0));
+    assert_eq!(sync("ahead"), (RemoteSyncStatus::Ahead, 1, 0));
+    assert_eq!(sync("behind"), (RemoteSyncStatus::Behind, 0, 1));
+    assert_eq!(sync("diverged"), (RemoteSyncStatus::Diverged, 1, 1));
 }
 
 struct ConflictedFeatureFixture {

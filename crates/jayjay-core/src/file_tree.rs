@@ -40,11 +40,11 @@ impl TreeNode {
             && self.children.len() == 1
             && self.children[0].1.hunk_index.is_none()
         {
-            let (key, child) = self.children.remove(0);
+            let (_, child) = self.children.remove(0);
             self.name = if self.name.is_empty() {
-                key
+                child.name
             } else {
-                format!("{}/{}", self.name, key)
+                format!("{}/{}", self.name, child.name)
             };
             self.children = child.children;
         }
@@ -118,83 +118,60 @@ mod tests {
     use super::*;
 
     #[test]
-    fn test_basic_tree() {
-        let paths = vec![
-            "src/main.rs".to_string(),
-            "src/lib.rs".to_string(),
-            "README.md".to_string(),
-        ];
-        let entries = build_file_tree(&paths);
-        // Should have: dir "src", then files main.rs and lib.rs, then README.md
-        assert!(!entries.is_empty());
-        // First entry should be the "src" directory
-        assert_eq!(entries[0].name, "src");
-        assert!(entries[0].hunk_index.is_none());
-    }
-
-    #[test]
-    fn test_collapse_single_child_dirs() {
-        let paths = vec!["a/b/c/file.rs".to_string()];
-        let entries = build_file_tree(&paths);
-        // Single file: entire directory prefix collapses into root (not emitted),
-        // only the file entry appears at depth 0.
-        assert_eq!(entries.len(), 1);
-        assert_eq!(entries[0].name, "file.rs");
-        assert_eq!(entries[0].path, "a/b/c/file.rs");
-        assert!(entries[0].hunk_index.is_some());
-    }
-
-    #[test]
-    fn test_collapse_with_multiple_files() {
-        let paths = vec!["a/b/c/file1.rs".to_string(), "a/b/d/file2.rs".to_string()];
-        let entries = build_file_tree(&paths);
-        // a/b is collapsed into one dir, then c and d are separate dirs
-        // Expected: dir "c" (depth 0), file1.rs (depth 1), dir "d" (depth 0), file2.rs (depth 1)
-        // But root collapses a/b, then children are c and d.
-        assert_eq!(entries.len(), 4);
-        assert_eq!(entries[0].name, "c");
-        assert!(entries[0].hunk_index.is_none());
-        assert_eq!(entries[0].depth, 0);
-        assert_eq!(entries[1].name, "file1.rs");
-        assert_eq!(entries[1].depth, 1);
-        assert_eq!(entries[2].name, "d");
-        assert!(entries[2].hunk_index.is_none());
-        assert_eq!(entries[2].depth, 0);
-        assert_eq!(entries[3].name, "file2.rs");
-        assert_eq!(entries[3].depth, 1);
-    }
-
-    #[test]
-    fn test_empty_paths() {
-        let paths: Vec<String> = vec![];
-        let entries = build_file_tree(&paths);
-        assert!(entries.is_empty());
-    }
-
-    #[test]
-    fn test_single_root_file() {
-        let tree = build_file_tree(&["README.md".to_string()]);
-        assert_eq!(tree.len(), 1);
-        assert_eq!(tree[0].name, "README.md");
-        assert_eq!(tree[0].hunk_index, Some(0));
-    }
-
-    #[test]
-    fn test_mixed_depth_files() {
-        // Files at different depths should build correctly
-        let tree = build_file_tree(&[
-            "Cargo.toml".to_string(),
-            "src/main.rs".to_string(),
-            "src/lib.rs".to_string(),
-        ]);
-        // Should have: dir "src", two files inside it, and "Cargo.toml" at root
-        // Directories sort before files at the same depth
-        assert!(!tree.is_empty());
-        // The root-level directory "src" should come before root-level file "Cargo.toml"
-        let dir_entries: Vec<_> = tree.iter().filter(|e| e.hunk_index.is_none()).collect();
-        let file_entries: Vec<_> = tree.iter().filter(|e| e.hunk_index.is_some()).collect();
-        assert_eq!(dir_entries.len(), 1, "should have 1 directory");
-        assert_eq!(file_entries.len(), 3, "should have 3 files");
+    fn tree_rows_preserve_paths_depths_and_input_indices() {
+        for (paths, expected) in [
+            (vec![], vec![]),
+            (
+                vec!["README.md"],
+                vec![("README.md", "README.md", 0, Some(0))],
+            ),
+            (
+                vec!["a/b/c/file.rs"],
+                vec![("file.rs", "a/b/c/file.rs", 0, Some(0))],
+            ),
+            (
+                vec!["Cargo.toml", "src/main.rs", "src/lib.rs"],
+                vec![
+                    ("src", "src", 0, None),
+                    ("main.rs", "src/main.rs", 1, Some(1)),
+                    ("lib.rs", "src/lib.rs", 1, Some(2)),
+                    ("Cargo.toml", "Cargo.toml", 0, Some(0)),
+                ],
+            ),
+            (
+                vec!["a/b/c/file1.rs", "a/b/d/file2.rs"],
+                vec![
+                    ("c", "a/b/c", 0, None),
+                    ("file1.rs", "a/b/c/file1.rs", 1, Some(0)),
+                    ("d", "a/b/d", 0, None),
+                    ("file2.rs", "a/b/d/file2.rs", 1, Some(1)),
+                ],
+            ),
+            (
+                vec!["x.rs", "a/b/c/1", "a/b/c/2"],
+                vec![
+                    ("a/b/c", "a/b/c", 0, None),
+                    ("1", "a/b/c/1", 1, Some(1)),
+                    ("2", "a/b/c/2", 1, Some(2)),
+                    ("x.rs", "x.rs", 0, Some(0)),
+                ],
+            ),
+        ] {
+            let paths: Vec<String> = paths.into_iter().map(str::to_owned).collect();
+            let entries = build_file_tree(&paths);
+            let rows: Vec<_> = entries
+                .iter()
+                .map(|entry| {
+                    (
+                        entry.name.as_str(),
+                        entry.path.as_str(),
+                        entry.depth,
+                        entry.hunk_index,
+                    )
+                })
+                .collect();
+            assert_eq!(rows, expected, "{paths:?}");
+        }
     }
 
     /// Every entry — including directories — has a non-empty, unique `path`.
@@ -241,50 +218,5 @@ mod tests {
                 .any(|e| e.hunk_index.is_some() && e.path.starts_with(&format!("{dir_path}/"))),
             "files under {dir_path} should have it as a prefix"
         );
-    }
-
-    /// A realistic tree (~20 files, mixed depths) produces no duplicate paths.
-    #[test]
-    fn test_realistic_tree_no_duplicate_dirs() {
-        let paths: Vec<String> = [
-            "Cargo.lock",
-            "Cargo.toml",
-            "shell/gpui/Cargo.toml",
-            "shell/gpui/src/diff/colors.rs",
-            "shell/gpui/src/diff/diff_view.rs",
-            "shell/gpui/src/diff/file_column.rs",
-            "shell/gpui/src/diff/line.rs",
-            "shell/gpui/src/diff/mod.rs",
-            "shell/gpui/src/fonts.rs",
-            "shell/gpui/src/log_view.rs",
-            "shell/gpui/src/main.rs",
-            "shell/gpui/src/theme.rs",
-            "shell/gpui/src/ui.rs",
-            "shell/gpui/assets/fonts/Lucide.ttf",
-            "crates/jayjay-core/src/dag.rs",
-            "crates/jayjay-core/src/lib.rs",
-            "crates/jayjay-core/Cargo.toml",
-            "crates/jayjay-uniffi/src/lib.rs",
-        ]
-        .iter()
-        .map(|s| s.to_string())
-        .collect();
-
-        let tree = build_file_tree(&paths);
-
-        let paths_set: std::collections::HashSet<&str> =
-            tree.iter().map(|e| e.path.as_str()).collect();
-        assert_eq!(
-            paths_set.len(),
-            tree.len(),
-            "duplicate paths in realistic tree:\n{:#?}",
-            tree.iter()
-                .map(|e| (e.depth, &e.name, &e.path))
-                .collect::<Vec<_>>()
-        );
-
-        for e in &tree {
-            assert!(!e.path.is_empty(), "empty path for {:?}", e.name);
-        }
     }
 }

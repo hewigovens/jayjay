@@ -54,11 +54,12 @@ fn agent_marks_groups_and_files_the_app_recognizes() {
 
     let marked = mark_review_file(&repo_path, path, Some(7), NoteSide::Old, &commit).unwrap();
     assert_eq!(marked, "Marked review.txt:7 reviewed (2/2 groups)\n");
+    let text = review_status_output(&repo_path, ReviewOutputFormat::Text).unwrap();
     assert!(
-        review_status_output(&repo_path, ReviewOutputFormat::Text)
-            .unwrap()
-            .contains("1 of 1 files reviewed (1 by agent), 0 partial")
+        text.contains(&format!("{:<26}review.txt  (agent)\n", "reviewed")),
+        "group counts show only while partial: {text}"
     );
+    assert!(text.contains("1 of 1 files reviewed (1 by agent), 0 partial"));
 
     let repo = Repo::open(&repo_path).expect("open repo");
     let detail = repo.show("@").expect("show working copy");

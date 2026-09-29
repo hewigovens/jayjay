@@ -239,6 +239,14 @@ mod tests {
         .unwrap()
         .unwrap();
         assert_eq!(failing.checks, ChecksStatus::Failing);
+
+        let passing = parse_pick(
+            r#"[{"number":7,"status":"closed","title":"feat","url":"https://cursor.com/codebase/o/r/pull/7","ciState":{"checkRunGroups":[{"checkRuns":[{"name":"ci","status":"completed","conclusion":"success"},{"name":"lint","status":3,"conclusion":1}]}]}}]"#,
+        )
+        .unwrap()
+        .unwrap();
+        assert_eq!(passing.checks, ChecksStatus::Passing);
+        assert_eq!(passing.state, PrState::Closed);
     }
 
     #[test]

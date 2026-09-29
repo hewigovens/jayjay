@@ -266,6 +266,38 @@ fn workspace_forget_with_root_rejects_a_checkout_that_is_not_that_workspace() {
 }
 
 #[test]
+fn workspace_delete_refuses_another_repositorys_workspace_of_the_same_name() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let dest = temp_dir.path().join("feature-ws");
+    repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "")
+        .expect("add workspace");
+
+    let other_dir = init_jj_repo();
+    let other = Repo::open(&other_dir.path().join("repo")).expect("open other repo");
+    let impostor = other_dir.path().join("feature-ws");
+    other
+        .workspace_add(impostor.to_str().expect("utf8 dest"), "feature", "")
+        .expect("add other workspace");
+    // Workspaces record their repo relatively; pin it so the moved checkout still belongs to the other repository.
+    let other_store = canonical(&other_dir.path().join("repo/.jj/repo"));
+    std::fs::write(
+        impostor.join(".jj/repo"),
+        other_store.to_str().expect("utf8 store"),
+    )
+    .expect("pin the other repo");
+    std::fs::rename(&dest, temp_dir.path().join("feature-aside")).expect("move ours aside");
+    std::fs::rename(&impostor, &dest).expect("put theirs in its place");
+
+    let error = repo
+        .workspace_forget_and_delete("feature", dest.to_str().expect("utf8 dest"))
+        .expect_err("another repository's checkout is not ours to delete");
+    assert!(error.to_string().contains("no longer belongs"), "{error}");
+    assert!(dest.exists());
+}
+
+#[test]
 fn workspace_forget_and_delete_removes_the_verified_checkout() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

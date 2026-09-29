@@ -84,56 +84,39 @@ mod tests {
     }
 
     #[test]
-    fn parse_pr_with_failing_checks() {
-        let json = r#"{
-            "number": 7, "state": "MERGED", "title": "WIP",
-            "url": "https://github.com/o/r/pull/7",
-            "statusCheckRollup": [
-                {"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
-                {"name": "lint", "status": "COMPLETED", "conclusion": "FAILURE"}
-            ]
-        }"#;
-        let pr = parse_pr_json(json).unwrap();
-        assert_eq!(pr.state, PrState::Merged);
-        assert_eq!(pr.checks, ChecksStatus::Failing);
-    }
-
-    #[test]
-    fn status_context_failure_does_not_read_as_pending() {
-        // A StatusContext FAILURE (only `state`, no status/conclusion) must read as Failing, not Pending.
-        let json = r#"{
-            "number": 9, "state": "OPEN", "title": "External CI",
-            "url": "https://github.com/o/r/pull/9",
-            "statusCheckRollup": [
-                {"__typename": "CheckRun", "name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
-                {"__typename": "StatusContext", "context": "jenkins", "state": "FAILURE"}
-            ]
-        }"#;
-        assert_eq!(parse_pr_json(json).unwrap().checks, ChecksStatus::Failing);
-    }
-
-    #[test]
-    fn status_context_success_reads_as_passing() {
-        let json = r#"{
-            "number": 10, "state": "OPEN", "title": "External CI green",
-            "url": "https://github.com/o/r/pull/10",
-            "statusCheckRollup": [
-                {"__typename": "StatusContext", "context": "jenkins", "state": "SUCCESS"}
-            ]
-        }"#;
-        assert_eq!(parse_pr_json(json).unwrap().checks, ChecksStatus::Passing);
-    }
-
-    #[test]
-    fn parse_pr_with_pending_checks() {
-        let json = r#"{
-            "number": 3, "state": "OPEN", "title": "In progress",
-            "url": "https://github.com/o/r/pull/3",
-            "statusCheckRollup": [
-                {"name": "ci", "status": "COMPLETED", "conclusion": "SUCCESS"},
-                {"name": "deploy", "status": "IN_PROGRESS"}
-            ]
-        }"#;
-        assert_eq!(parse_pr_json(json).unwrap().checks, ChecksStatus::Pending);
+    fn parses_check_run_and_status_context_outcomes() {
+        for (state, expected_state, rollup, expected) in [
+            (
+                "MERGED",
+                PrState::Merged,
+                r#"[{"status":"COMPLETED","conclusion":"SUCCESS"},{"status":"COMPLETED","conclusion":"FAILURE"}]"#,
+                ChecksStatus::Failing,
+            ),
+            (
+                "OPEN",
+                PrState::Open,
+                r#"[{"status":"COMPLETED","conclusion":"SUCCESS"},{"status":"IN_PROGRESS"}]"#,
+                ChecksStatus::Pending,
+            ),
+            (
+                "OPEN",
+                PrState::Open,
+                r#"[{"__typename":"CheckRun","status":"COMPLETED","conclusion":"SUCCESS"},{"__typename":"StatusContext","state":"FAILURE"}]"#,
+                ChecksStatus::Failing,
+            ),
+            (
+                "OPEN",
+                PrState::Open,
+                r#"[{"__typename":"StatusContext","state":"SUCCESS"}]"#,
+                ChecksStatus::Passing,
+            ),
+        ] {
+            let json = format!(
+                r#"{{"number":42,"state":"{state}","title":"CI","url":"https://github.com/o/r/pull/42","statusCheckRollup":{rollup}}}"#
+            );
+            let pr = parse_pr_json(&json).unwrap();
+            assert_eq!(pr.state, expected_state, "{state}");
+            assert_eq!(pr.checks, expected, "{rollup}");
+        }
     }
 }

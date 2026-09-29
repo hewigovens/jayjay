@@ -93,3 +93,47 @@ fn restoring_a_deleted_file_restores_its_executable_bit() {
         0
     );
 }
+
+#[cfg(unix)]
+#[test]
+fn restores_into_an_existing_directory_but_never_through_a_symlinked_one() {
+    let restore_removed = |path: &str, content: &str| ExternalDiffSelection {
+        file: DiffEditFileSelection {
+            path: path.to_owned(),
+            old_path: None,
+            old_content: Some(content.to_owned()),
+            new_content: None,
+            hunk_type: HunkType::Removed,
+            line_ranges: vec![],
+        },
+        selected_exists: true,
+        selected_executable: None,
+        whole_file_side: None,
+    };
+    let right = tempfile::tempdir().expect("right");
+    let outside = tempfile::tempdir().expect("outside");
+    fs::create_dir(right.path().join("dir")).expect("real directory");
+    std::os::unix::fs::symlink(outside.path(), right.path().join("link")).expect("symlink");
+
+    apply_external_diff_selections(
+        right.path(),
+        right.path(),
+        &[restore_removed("dir/file.txt", "restored\n")],
+        false,
+    )
+    .expect("restore into a real directory");
+    assert_eq!(
+        fs::read_to_string(right.path().join("dir/file.txt")).expect("restored"),
+        "restored\n"
+    );
+
+    let error = apply_external_diff_selections(
+        right.path(),
+        right.path(),
+        &[restore_removed("link/file.txt", "escaped\n")],
+        false,
+    )
+    .expect_err("a symlinked parent is refused");
+    assert!(error.to_string().contains("unsafe path"), "{error}");
+    assert!(!outside.path().join("file.txt").exists());
+}

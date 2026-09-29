@@ -233,7 +233,9 @@ mod tests {
         let off_page = state(&["c", "not-loaded"]);
         assert!(!off_page.can_abandon);
         assert!(!off_page.can_merge);
-        assert!(off_page.can_merge_with.iter().all(|allowed| !allowed));
+        let every_row_refused = vec![false; fixture().len()];
+        assert_eq!(off_page.can_rebase_onto, every_row_refused);
+        assert_eq!(off_page.can_merge_with, every_row_refused);
     }
 
     #[test]
@@ -309,6 +311,10 @@ mod tests {
     #[test]
     fn merge_refuses_a_row_on_either_side_of_the_selection() {
         let selection = state(&["c"]);
+        assert!(!selection.can_abandon);
+        assert!(!selection.can_squash);
+        assert!(!selection.can_diff);
+        assert!(selection.can_rebase_onto.iter().all(|allowed| !allowed));
         assert!(!selection.can_merge, "one change cannot merge with itself");
         assert!(selection.can_merge_with[row("i")], "an unrelated head can");
         assert!(!selection.can_merge_with[row("a")], "an ancestor cannot");

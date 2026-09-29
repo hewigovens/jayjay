@@ -120,6 +120,22 @@ fn add_note_anchors_a_changed_line_and_rejects_unchanged_lines() {
     );
     assert!(text.contains("  added from the CLI"), "body: {text}");
 
+    fs::write(repo_path.join("other.txt"), "other\n").expect("write other file");
+    assert_success(add_review_note(
+        &repo_path,
+        "other.txt",
+        1,
+        NoteSide::New,
+        "second note",
+    ));
+    let text = text_notes(&repo_path);
+    assert!(!text.starts_with('\n'), "{text}");
+    assert_eq!(
+        text.matches("\n\n").count(),
+        1,
+        "one blank line between notes: {text}"
+    );
+
     for (line, side) in [(99, NoteSide::New), (1, NoteSide::Old)] {
         let rejected = add_review_note(&repo_path, HELLO_PATH, line, side, "should not exist");
         assert!(

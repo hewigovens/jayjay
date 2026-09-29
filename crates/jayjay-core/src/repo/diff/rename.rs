@@ -159,31 +159,14 @@ mod tests {
     }
 
     #[test]
-    fn content_similarity_both_empty_is_identical() {
-        assert_eq!(content_similarity("", ""), 1.0);
-    }
-
-    #[test]
     fn content_similarity_identical() {
         assert_eq!(content_similarity("a\nb\n", "a\nb\n"), 1.0);
+        assert_eq!(content_similarity("", ""), 1.0);
     }
 
     #[test]
     fn content_similarity_disjoint() {
         assert_eq!(content_similarity("a\n", "z\n"), 0.0);
-    }
-
-    #[test]
-    fn rename_detected_with_content() {
-        let mut hunks = vec![
-            hunk("old.rs", HunkType::Removed, Some("fn main() {}"), None),
-            hunk("new.rs", HunkType::Added, None, Some("fn main() {}")),
-        ];
-        detect_renames(&mut hunks);
-        assert_eq!(hunks.len(), 1);
-        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
-        assert_eq!(hunks[0].path, "new.rs");
-        assert_eq!(hunks[0].old_path.as_deref(), Some("old.rs"));
     }
 
     #[test]
@@ -222,25 +205,16 @@ mod tests {
     }
 
     #[test]
-    fn byte_equal_rename_clears_content() {
-        let mut hunks = vec![
-            hunk("a/z.rs", HunkType::Removed, Some("same\n"), None),
-            hunk("b/z.rs", HunkType::Added, None, Some("same\n")),
-        ];
-        detect_renames(&mut hunks);
-        assert_eq!(hunks.len(), 1);
-        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
-        assert!(hunks[0].old.content.is_none());
-        assert!(hunks[0].new.content.is_none());
-    }
-
-    #[test]
     fn rename_review_identity_combines_both_sides() {
         let mut hunks = vec![
             hunk_with_identity("old.rs", HunkType::Removed, Some("body"), None, "id-old-v1"),
             hunk_with_identity("new.rs", HunkType::Added, None, Some("body"), "id-new"),
         ];
         detect_renames(&mut hunks);
+        assert_eq!(hunks.len(), 1);
+        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert_eq!(hunks[0].path, "new.rs");
+        assert_eq!(hunks[0].old_path.as_deref(), Some("old.rs"));
         let renamed_v1 = hunks[0].review_identity.clone();
 
         let mut hunks_v2 = vec![
@@ -308,24 +282,62 @@ mod tests {
     }
 
     #[test]
-    fn rename_same_filename_different_dir_no_content() {
-        let mut hunks = vec![
-            hunk("src/lib.rs", HunkType::Removed, None, None),
-            hunk("core/lib.rs", HunkType::Added, None, None),
-        ];
-        detect_renames(&mut hunks);
-        assert_eq!(hunks.len(), 1);
-        assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+    fn no_rename_across_different_extensions() {
+        for (old, new) in [
+            (None, None),
+            (Some("a\nb\nc\nd\ne\n"), Some("a\nb\nc\nd\ne\nf\n")),
+        ] {
+            let mut hunks = vec![
+                hunk("old.rs", HunkType::Removed, old, None),
+                hunk("new.py", HunkType::Added, None, new),
+            ];
+            detect_renames(&mut hunks);
+            assert_eq!(hunks.len(), 2, "different extensions should not match");
+        }
     }
 
     #[test]
-    fn no_rename_across_different_extensions() {
+    fn extension_match_pairs_the_most_similar_file_above_the_threshold() {
+        // `shared` common lines plus one line only the removed side has, and `extra` lines only the added side has.
+        let pair = |shared: usize, extra: &[&str]| {
+            let common: Vec<String> = (1..=shared).map(|n| format!("line {n}")).collect();
+            let old = [common.as_slice(), &["removed only".to_owned()]]
+                .concat()
+                .join("\n");
+            let new = common
+                .iter()
+                .map(String::as_str)
+                .chain(extra.iter().copied())
+                .collect::<Vec<_>>()
+                .join("\n");
+            (old, new)
+        };
+        let (old, far) = pair(14, &["x", "y"]);
+        let (_, near) = pair(14, &["x"]);
         let mut hunks = vec![
-            hunk("old.rs", HunkType::Removed, None, None),
-            hunk("new.py", HunkType::Added, None, None),
+            hunk("old.txt", HunkType::Removed, Some(&old), None),
+            hunk("far.txt", HunkType::Added, None, Some(&far)),
+            hunk("near.txt", HunkType::Added, None, Some(&near)),
         ];
         detect_renames(&mut hunks);
-        assert_eq!(hunks.len(), 2, "different extensions should not match");
+        let renamed: Vec<_> = hunks
+            .iter()
+            .filter(|hunk| hunk.hunk_type == HunkType::Renamed)
+            .map(|hunk| hunk.path.as_str())
+            .collect();
+        assert_eq!(renamed, ["near.txt"]);
+
+        let (old, new) = pair(7, &["x", "y"]);
+        let mut at_threshold = vec![
+            hunk("old.txt", HunkType::Removed, Some(&old), None),
+            hunk("new.txt", HunkType::Added, None, Some(&new)),
+        ];
+        detect_renames(&mut at_threshold);
+        assert_eq!(
+            at_threshold.len(),
+            2,
+            "7 of 10 distinct lines shared is not a rename"
+        );
     }
 
     #[test]
@@ -353,6 +365,8 @@ mod tests {
         assert_eq!(hunks.len(), 1);
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
         assert_eq!(hunks[0].old_path.as_deref(), Some("old/icon.png"));
+        assert!(hunks[0].old.content.is_none());
+        assert!(hunks[0].new.content.is_none());
 
         let Some(DiffPreview::Image { path }) = hunks[0].old.preview.as_ref() else {
             panic!(

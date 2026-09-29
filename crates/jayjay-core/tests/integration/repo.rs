@@ -59,6 +59,64 @@ fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
 }
 
 #[test]
+fn annotate_attributes_each_line_to_the_change_that_last_touched_it() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["new", "-m", "edit greeting"]);
+    fs::write(
+        repo_path.join("hello.txt"),
+        "hello from jayjay\nsecond line\n",
+    )
+    .expect("append line");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.refresh_working_copy().expect("snapshot");
+    let changes = repo.log("all()").expect("log");
+    let initial = change_by_description(&changes, "initial change");
+    let edit = change_by_description(&changes, "edit greeting");
+
+    let lines = repo.annotate_file("@", "hello.txt").expect("annotate");
+
+    let attributed: Vec<_> = lines
+        .iter()
+        .map(|line| {
+            (
+                line.line_number,
+                line.text.as_str(),
+                line.change_id.id.as_str(),
+            )
+        })
+        .collect();
+    assert_eq!(
+        attributed,
+        [
+            (1, "hello from jayjay", initial.change_id.id.as_str()),
+            (2, "second line", edit.change_id.id.as_str()),
+        ]
+    );
+    assert_eq!(lines[1].author, "test@example.com");
+}
+
+#[test]
+fn acting_on_an_abandoned_commit_asks_to_reselect() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["new", "-m", "doomed"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let doomed = repo.log("@").expect("log")[0].commit_id.id.clone();
+    run_jj_in(&repo_path, &["abandon", "@"]);
+
+    let error = Repo::open(&repo_path)
+        .expect("reopen repo")
+        .rebase(&doomed, "root()", jayjay_core::RebaseMode::Source)
+        .expect_err("an abandoned commit has no successor to act on");
+
+    assert!(
+        error.to_string().contains("no visible successor"),
+        "{error}"
+    );
+}
+
+#[test]
 fn show_summary_reports_immutable_change() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
@@ -85,6 +143,7 @@ fn show_summary_reports_immutable_change() {
         detail.info.is_immutable,
         "detail metadata must preserve the graph's immutability policy"
     );
+    assert!(!detail.info.is_divergent);
 }
 
 #[test]
@@ -106,6 +165,7 @@ fn mutation_rejects_revset_matching_multiple_commits() {
         "unexpected error: {err}"
     );
 }
+
 #[test]
 fn show_file_materializes_conflicted_file_content() {
     let temp_dir = init_jj_repo();
@@ -217,6 +277,7 @@ fn repo_operations_work_against_jj_fixture() {
         bookmark.name == "test-bookmark" && bookmark.change_id == child.info.change_id.id
     }));
 }
+
 #[test]
 fn change_info_surfaces_git_tags() {
     let temp_dir = init_jj_repo();
@@ -325,8 +386,8 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
 
     assert_eq!(icon.hunk_type, jayjay_core::HunkType::Added);
     assert!(
-        icon.old.preview.is_none(),
-        "added file has no old side preview"
+        icon.old.preview.is_none() && icon.old.content.is_none(),
+        "added file has no old side"
     );
 
     let Some(jayjay_core::DiffPreview::Image { path: cache_path }) = &icon.new.preview else {
@@ -348,6 +409,17 @@ fn image_file_is_cached_and_surfaced_as_diff_preview() {
         new_content.starts_with("<image "),
         "new_content should be the image placeholder, got {new_content:?}"
     );
+
+    repo.new_change("@", "").expect("new change");
+    fs::remove_file(repo_path.join("icon.png")).expect("remove png");
+    repo.refresh_working_copy().expect("snapshot png removal");
+    let removed = repo.show("@").expect("show removal");
+    let icon = removed
+        .diff
+        .iter()
+        .find(|hunk| hunk.path == "icon.png")
+        .expect("icon.png removal in diff");
+    assert!(icon.new.preview.is_none() && icon.new.content.is_none());
 }
 #[test]
 fn revert_change_uses_jj_revert_and_creates_reverse_change() {
@@ -480,6 +552,7 @@ fn split_without_legacy_bookmark_behavior_keeps_bookmarks_on_the_split_out_part(
         .expect("split");
 
     let changes = repo.log("all()").expect("log");
+    assert!(change_by_description(&changes, "both files").is_working_copy);
     assert_eq!(
         change_by_description(&changes, "just other").bookmarks,
         ["topic"]
@@ -927,6 +1000,7 @@ fn op_log_matches_the_cli_listing() {
     assert!(entries[0].is_current);
     assert!(entries[1..].iter().all(|entry| !entry.is_current));
     assert_eq!(entries[0].description, "describe");
+    assert_eq!(repo.current_operation_description(), "describe");
     let fixture_describe = cli[1][1]
         .strip_prefix("describe commit ")
         .expect("the fixture's CLI describe carries a full commit id");

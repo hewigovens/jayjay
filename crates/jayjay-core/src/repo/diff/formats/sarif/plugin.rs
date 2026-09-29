@@ -229,6 +229,15 @@ mod tests {
                       "region": {"startLine": 42, "startColumn": 7}
                     }
                   }]
+                }, {
+                  "ruleId": "JJ001",
+                  "message": {"text": "Line only."},
+                  "locations": [{
+                    "physicalLocation": {
+                      "artifactLocation": {"uri": "Sources/App.swift"},
+                      "region": {"startLine": 9}
+                    }
+                  }]
                 }]
               }]
             }"##,
@@ -240,6 +249,7 @@ mod tests {
         assert!(projected.contains("### JJ001: Unsafe call"));
         assert!(projected.contains("- Level: `error`"));
         assert!(projected.contains("- Location: `Sources/App.swift:42:7`"));
+        assert!(projected.contains("- Location: `Sources/App.swift:9`"));
         assert!(projected.contains("- Message: Potential issue."));
     }
 }

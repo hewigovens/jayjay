@@ -102,7 +102,12 @@ mod tests {
 
     #[test]
     fn validates_bookmark_names() {
-        for ok in ["feat-add-x-abc123", "user/feat/thing", "v1.2-rc"] {
+        for ok in [
+            "feat-add-x-abc123",
+            "user/feat/thing",
+            "v1.2-rc",
+            &"b".repeat(255),
+        ] {
             assert!(is_valid_bookmark_name(ok), "{ok} should be valid");
         }
         for bad in [
@@ -120,6 +125,9 @@ mod tests {
             "a//b",
             "foo/.hidden",
             "ctrl\tchar",
+            "/leading-slash",
+            "a@{upstream}",
+            &"b".repeat(256),
         ] {
             assert!(!is_valid_bookmark_name(bad), "{bad:?} should be invalid");
         }

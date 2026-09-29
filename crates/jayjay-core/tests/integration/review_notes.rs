@@ -71,18 +71,6 @@ fn wc_change_id(repo: &Repo) -> String {
 }
 
 #[test]
-fn reconcile_current_note_maps_to_group() {
-    let (_temp_dir, repo, store, _note_id) = setup_note();
-
-    let report = repo
-        .review_notes_report(&store, "@", false)
-        .expect("reconcile");
-
-    assert_eq!(report.notes[0].status, NoteStatus::Current);
-    assert_eq!(report.notes[0].group_index, Some(0));
-}
-
-#[test]
 fn reconcile_review_notes_matches_review_notes_report_for_an_owned_snapshot() {
     // GPUI shell path: notes come from an owned Vec<NoteEntry> snapshot since its Rc<RefCell<ReviewStore>> can't cross into a background task.
     let (_temp_dir, repo, store, note_id) = setup_note();
@@ -93,9 +81,15 @@ fn reconcile_review_notes_matches_review_notes_report_for_an_owned_snapshot() {
         .reconcile_review_notes(notes, "@")
         .expect("reconcile from an owned snapshot");
 
-    assert_eq!(report.notes[0].note.id, note_id);
-    assert_eq!(report.notes[0].status, NoteStatus::Current);
-    assert_eq!(report.notes[0].group_index, Some(0));
+    let store_report = repo
+        .review_notes_report(&store, "@", false)
+        .expect("report");
+    for report in [report, store_report] {
+        assert_eq!(report.notes.len(), 1);
+        assert_eq!(report.notes[0].note.id, note_id);
+        assert_eq!(report.notes[0].status, NoteStatus::Current);
+        assert_eq!(report.notes[0].group_index, Some(0));
+    }
 }
 
 #[test]
@@ -161,6 +155,17 @@ fn reconcile_note_on_renamed_file_with_edit_stays_current() {
     let mut content_hunk = repo
         .show_file_rename("@", "src/x.txt", "lib/x.txt")
         .expect("rename content");
+    let snapshot = jayjay_core::review_snapshot_from_hunk(&content_hunk);
+    assert_eq!(
+        snapshot.fingerprints.len(),
+        1,
+        "only the added line is a change group"
+    );
+    assert_eq!(
+        repo.review_file_snapshot("@", "lib/x.txt", Some("src/x.txt"))
+            .expect("rename snapshot"),
+        snapshot
+    );
     content_hunk.review_identity = summary_hunk.review_identity.clone();
 
     let mut store = ReviewStore::in_memory();

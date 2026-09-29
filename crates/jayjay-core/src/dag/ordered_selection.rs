@@ -213,6 +213,7 @@ mod tests {
 
         apply(&mut selection, SelectionClick::Toggle, "d");
         assert_eq!(selection.primary.as_deref(), Some("b"));
+        assert_eq!(selection.anchor.as_deref(), Some("b"));
 
         apply(&mut selection, SelectionClick::Toggle, "d");
         apply(&mut selection, SelectionClick::Extend, "b");
@@ -309,5 +310,13 @@ mod tests {
         assert_eq!(selection.selected, ["a"]);
         assert_eq!(selection.primary, None);
         assert_eq!(selection.anchor, None);
+
+        let kept = OrderedSelection::new(
+            ["a", "b"].map(str::to_owned).to_vec(),
+            Some("b".to_owned()),
+            Some("a".to_owned()),
+        );
+        assert_eq!(kept.primary.as_deref(), Some("b"));
+        assert_eq!(kept.anchor.as_deref(), Some("a"));
     }
 }

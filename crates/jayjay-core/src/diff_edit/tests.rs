@@ -12,6 +12,7 @@ fn line_hunk_and_file_toggles_only_move_changed_rows() {
     session.toggle_line("a", 2);
     session.toggle_line("a", 4);
     assert_eq!(session.selected_lines("a"), [2], "row 4 never changed");
+    assert!(session.is_selected("a", 2) && !session.is_selected("a", 3));
     assert_eq!(session.checkbox("a"), DiffEditCheckbox::Some);
 
     session.select_lines("a", &[3, 4, 5]);
@@ -31,6 +32,10 @@ fn line_hunk_and_file_toggles_only_move_changed_rows() {
     session.toggle_file("a");
     assert!(session.selected_lines("a").is_empty());
     assert_eq!(session.checkbox("a"), DiffEditCheckbox::None);
+
+    assert!(session.is_loaded("a"));
+    session.unload();
+    assert!(!session.is_loaded("a"));
 }
 
 #[test]
@@ -171,22 +176,28 @@ fn collapse_seeds_from_the_aggregate_then_the_per_file_pass_replaces_it() {
 }
 
 #[test]
-fn the_per_file_pass_counts_cards_the_tree_diff_never_reported() {
-    let cards = strings(&["a", "b", "c"]);
-    let mut session = DiffEditSession::default();
+fn synthetic_cards_count_toward_collapse_without_overriding_manual_choices() {
+    for (count, collapsed) in [(3, false), (31, true)] {
+        let mut cards = strings(&["a"]);
+        cards.extend((1..count).map(|ix| format!("submodule-{ix}")));
+        let stats = [FileDiffStats {
+            deletions: 1000,
+            ..file_diff_stats("a", 1)
+        }];
+        let mut session = DiffEditSession::default();
 
-    session.apply_stats(&cards, &[file_diff_stats("a", 2000)]);
-    assert!(
-        !session.is_collapsed("a"),
-        "three cards stay open however large one of them is"
-    );
+        session.apply_stats(&cards, &stats);
+        assert!(
+            cards
+                .iter()
+                .all(|path| session.is_collapsed(path) == collapsed)
+        );
 
-    session.toggle_collapse("b");
-    session.apply_stats(&cards, &[file_diff_stats("a", 2000)]);
-    assert!(
-        session.is_collapsed("b") && !session.is_collapsed("a"),
-        "a hand-folded card freezes the automatic policy"
-    );
+        session.toggle_collapse("submodule-1");
+        session.apply_stats(&cards, &stats);
+        assert_eq!(session.is_collapsed("submodule-1"), !collapsed);
+        assert_eq!(session.is_collapsed("a"), collapsed);
+    }
 }
 
 #[test]

@@ -124,16 +124,13 @@ mod tests {
             br##"{
               "metadata": {"language_info": {"name": "python"}},
               "cells": [
-                {"cell_type": "markdown", "source": ["# Title\n"], "metadata": {}},
-                {"cell_type": "code", "execution_count": 12, "source": ["print(1)\n"], "outputs": [{"text": "volatile"}]}
+                {"cell_type": "markdown", "source": ["# Title"], "metadata": {}},
+                {"cell_type": "code", "execution_count": 12, "source": ["print(1)"], "outputs": [{"text": "volatile"}]}
               ]
             }"##,
         )
         .expect("project notebook");
 
-        assert!(projected.contains("# Title"));
-        assert!(projected.contains("```python\nprint(1)\n```"));
-        assert!(!projected.contains("execution_count"));
-        assert!(!projected.contains("volatile"));
+        assert_eq!(projected, "# Title\n\n```python\nprint(1)\n```\n");
     }
 }

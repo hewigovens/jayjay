@@ -43,8 +43,16 @@ fn branch_mode_moves_the_whole_stack_and_keeps_the_working_copy() {
     let repo = Repo::open(&repo_path).expect("open repo");
     let op_count = repo.op_log().expect("op log").len();
 
-    repo.rebase("subject(exact:work)", "main", RebaseMode::Branch)
+    let rebased = repo
+        .rebase("subject(exact:work)", "main", RebaseMode::Branch)
         .expect("rebase the branch onto main");
+    assert_eq!(
+        rebased,
+        repo.log("subject(exact:work)").expect("log")[0]
+            .commit_id
+            .id,
+        "rebase returns the moved change's new commit"
+    );
 
     let parents = parents_by_description(&repo);
     assert_eq!(parents["base"], ["trunk-next"]);
@@ -62,5 +70,16 @@ fn branch_mode_moves_the_whole_stack_and_keeps_the_working_copy() {
 
     repo.rebase("@", "main", RebaseMode::Branch)
         .expect("a branch already on main is a no-op");
+    assert_eq!(repo.op_log().expect("op log").len(), op_count + 1);
+
+    let commit_before = repo.show_summary("@").expect("show").info.commit_id.id;
+    let unchanged = repo
+        .rebase("@", "@-", RebaseMode::Source)
+        .expect("a source already on its parent is a no-op");
+    assert_eq!(unchanged, commit_before);
+    assert_eq!(
+        repo.show_summary("@").expect("show").info.commit_id.id,
+        commit_before
+    );
     assert_eq!(repo.op_log().expect("op log").len(), op_count + 1);
 }

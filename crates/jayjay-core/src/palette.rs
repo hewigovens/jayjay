@@ -90,6 +90,10 @@ mod tests {
         let second = recall(&history, first.index, true).expect("second recall");
         assert_eq!(second.query, "jj log -r @");
         assert_eq!(second.index, Some(1));
+        assert_eq!(
+            recall(&history, second.index, true).expect("oldest").index,
+            Some(1)
+        );
 
         let newer = recall(&history, second.index, false).expect("newer recall");
         assert_eq!(newer.query, "jj status");

@@ -253,14 +253,11 @@ mod tests {
     use super::*;
 
     #[test]
-    fn parses_git_lfs_pointer_text() {
-        let pointer = parse_git_lfs_pointer(
-            "version https://git-lfs.github.com/spec/v1\n\
+    fn detects_git_lfs_pointer_bytes() {
+        let pointer_text = b"version https://git-lfs.github.com/spec/v1\n\
              oid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\n\
-             size 742800\n",
-        )
-        .unwrap();
-
+             size 742800\n";
+        let pointer = detect_git_lfs_pointer_bytes(pointer_text).expect("should detect pointer");
         assert_eq!(pointer.size, 742800);
         assert_eq!(
             pointer.oid,
@@ -270,32 +267,6 @@ mod tests {
             git_lfs_pointer_placeholder(&pointer),
             "<git lfs pointer sha256:496634778d7b (742800 bytes)>"
         );
-    }
-
-    #[test]
-    fn is_image_path_recognizes_common_formats() {
-        assert!(is_image_path("foo.png"));
-        assert!(is_image_path("foo.jpg"));
-        assert!(is_image_path("foo.jpeg"));
-        assert!(is_image_path("path/to/icon.heic"));
-        assert!(is_image_path("Assets/logo.webp"));
-        assert!(is_image_path("favicon.icns"));
-    }
-
-    #[test]
-    fn is_image_path_is_case_insensitive() {
-        assert!(is_image_path("Screenshot.PNG"));
-        assert!(is_image_path("photo.JPEG"));
-        assert!(is_image_path("sprite.Gif"));
-    }
-
-    #[test]
-    fn detects_git_lfs_pointer_bytes() {
-        let pointer_text = b"version https://git-lfs.github.com/spec/v1\n\
-             oid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\n\
-             size 742800\n";
-        let pointer = detect_git_lfs_pointer_bytes(pointer_text).expect("should detect pointer");
-        assert_eq!(pointer.size, 742800);
 
         // PNG magic bytes → not a pointer.
         let png_magic = [0x89, 0x50, 0x4E, 0x47, 0x0D, 0x0A, 0x1A, 0x0A];
@@ -310,11 +281,22 @@ mod tests {
     }
 
     #[test]
-    fn is_image_path_rejects_non_images() {
-        assert!(!is_image_path("main.rs"));
-        assert!(!is_image_path("readme.md"));
-        assert!(!is_image_path("logo.svg")); // SVG is text — handled via opt-in rich view.
-        assert!(!is_image_path("noextension"));
-        assert!(!is_image_path(""));
+    fn image_paths_accept_supported_extensions_case_insensitively() {
+        for path in [
+            "foo.png",
+            "foo.jpg",
+            "foo.jpeg",
+            "path/to/icon.heic",
+            "Assets/logo.webp",
+            "favicon.icns",
+            "Screenshot.PNG",
+            "photo.JPEG",
+            "sprite.Gif",
+        ] {
+            assert!(is_image_path(path), "{path}");
+        }
+        for path in ["main.rs", "readme.md", "logo.svg", "noextension", ""] {
+            assert!(!is_image_path(path), "{path}");
+        }
     }
 }
