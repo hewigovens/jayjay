@@ -103,6 +103,7 @@ final class WorkspaceSwitchScene: SceneBase {
         XCTAssertTrue(source.exists)
         XCTAssertEqual(app.windows.count, 2)
 
+        try activateWindow(named: Self.fixtureName, in: app)
         source.buttons[XCUIIdentifierCloseWindow].click()
         XCTAssertTrue(source.waitForNonExistence(timeout: 10))
         openRepositoryTitlePicker(in: app.windows["workspace-switch-first"])

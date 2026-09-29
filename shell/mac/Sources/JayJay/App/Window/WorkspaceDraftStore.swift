@@ -1,6 +1,5 @@
 import JayJayCore
 
-/// Keeps unsaved commit messages for workspaces visited by a window during its lifetime.
 @MainActor
 final class WorkspaceDraftStore {
     struct Draft {

@@ -412,7 +412,7 @@ fixture_workspace_switch() {
     jj workspace add --name first "$fixtures/workspace-switch-first"
     jj workspace add --name broken "$fixtures/workspace-switch-broken"
   )
-  # Keep the recorded workspace root but remove its metadata to exercise a failed switch.
+  # Preserve the recorded root so the broken checkout remains selectable.
   rm -rf "$fixtures/workspace-switch-broken/.jj"
 }
 

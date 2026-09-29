@@ -372,7 +372,6 @@ final class RepoWindowManager {
         openWindowAction?(AppWindows.repo, normalizedPath)
     }
 
-    /// Switch in place, or activate an already open destination while preserving the source window.
     func switchRepo(from viewModel: RepoViewModel, to path: String, changePath: (String) -> Void) {
         let target = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
         guard !isRemovingRepo(at: target), target != normalizedRepositoryPath(path: viewModel.repoPath) else { return }
