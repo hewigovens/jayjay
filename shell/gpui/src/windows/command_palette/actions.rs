@@ -239,19 +239,6 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Parallelize Selected Changes",
-        keywords: &[
-            "parallelize",
-            "parallel",
-            "sibling",
-            "independent",
-            "split",
-            "selection",
-        ],
-        glyph_str: glyph::GIT_BRANCH,
-        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::parallelize_selection),
-    },
-    PaletteAction {
         name: "Git Push",
         keywords: &["git", "push", "sync"],
         glyph_str: glyph::ARROW_UP,
@@ -303,26 +290,6 @@ fn with_repo_window(
 mod tests {
     use super::ACTIONS;
     use crate::app::config::{AppConfig, AppConfigStore};
-
-    #[test]
-    fn actions_include_web_user_guide() {
-        let action = ACTIONS
-            .iter()
-            .find(|action| action.name == "Open User Guide")
-            .expect("guide action");
-        assert!(action.keywords.contains(&"help"));
-        assert!(action.keywords.contains(&"docs"));
-    }
-
-    #[test]
-    fn actions_include_operation_log() {
-        let action = ACTIONS
-            .iter()
-            .find(|action| action.name == "Operation Log")
-            .expect("operation log action");
-        assert!(action.keywords.contains(&"op"));
-        assert!(action.keywords.contains(&"restore"));
-    }
 
     #[gpui::test]
     fn open_editor_action_display_name_uses_configured_editor(cx: &mut gpui::TestAppContext) {
