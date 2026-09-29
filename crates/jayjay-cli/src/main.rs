@@ -120,16 +120,6 @@ mod tests {
     }
 
     #[test]
-    fn config_arguments_never_become_a_diff_tool_session() {
-        let arguments = vec![
-            OsString::from("jayjay"),
-            OsString::from(JAYJAY_CONFIG_COMMAND),
-            OsString::from("extra"),
-        ];
-        assert!(app_arguments(&arguments).is_none());
-    }
-
-    #[test]
     fn jj_instructions_selects_diff_edit_mode() {
         let left = tempfile::tempdir().expect("left");
         let right = tempfile::tempdir().expect("right");

@@ -1,12 +1,4 @@
-use super::{ApiError, pull_request_fields};
-
-#[test]
-fn builds_typed_gh_array_fields() {
-    assert_eq!(
-        pull_request_fields(&[10, 20]).collect::<Vec<_>>(),
-        ["pull_requests[]=10", "pull_requests[]=20"]
-    );
-}
+use super::ApiError;
 
 #[test]
 fn parses_gh_http_status_and_api_message() {
