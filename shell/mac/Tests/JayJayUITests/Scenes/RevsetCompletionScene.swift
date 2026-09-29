@@ -54,7 +54,7 @@ final class RevsetCompletionScene: SceneBase {
 
     func testRevsetPanelCompletesAboveItsRowsAndStillAppliesThem() throws {
         let app = try XCTUnwrap(app)
-        let presets = app.buttons["Presets, bookmarks and recent revsets"]
+        let presets = app.buttons["Presets, bookmarks and recent revsets"].firstMatch
         XCTAssertTrue(presets.waitForExistence(timeout: 10))
         presets.click()
         let field = app.descendants(matching: .any)[AID.Toolbar.revsetField].firstMatch
