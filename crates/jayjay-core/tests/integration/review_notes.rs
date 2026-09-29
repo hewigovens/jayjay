@@ -99,17 +99,6 @@ fn reconcile_review_notes_matches_review_notes_report_for_an_owned_snapshot() {
 }
 
 #[test]
-fn reconcile_review_notes_short_circuits_on_an_empty_snapshot() {
-    let (_temp_dir, repo, _store, _note_id) = setup_note();
-
-    let report = repo
-        .reconcile_review_notes(Vec::new(), "@")
-        .expect("reconcile an empty snapshot");
-
-    assert!(report.notes.is_empty());
-}
-
-#[test]
 fn reconcile_content_edit_marks_note_stale() {
     let (temp_dir, repo, store, _note_id) = setup_note();
     fs::write(

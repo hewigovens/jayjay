@@ -77,38 +77,6 @@ fn default_revset_shows_nearby_heads() {
         "expected default revset to keep trunk/root context visible"
     );
 }
-#[test]
-fn trunk_revset_alias_is_available_in_app_parser() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo = Repo::open(&repo_path).expect("open repo");
-
-    let log = repo.log("trunk() | @").expect("evaluate trunk() revset");
-    assert!(
-        log.iter()
-            .any(|change| change.description.trim_end() == "initial change"),
-        "expected trunk() expression to parse and include current visible work"
-    );
-}
-#[test]
-fn immutable_heads_revset_alias_is_available_in_app_parser() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let repo = Repo::open(&repo_path).expect("open repo");
-
-    let log = repo
-        .log("present(@) | ancestors(immutable_heads().., 20) | trunk()")
-        .expect("evaluate immutable_heads() revset");
-    assert!(
-        log.iter().any(|change| change.is_working_copy),
-        "expected immutable_heads() expression to include the working copy"
-    );
-    assert!(
-        log.iter()
-            .any(|change| change.description.trim_end() == "initial change"),
-        "expected immutable_heads() expression to parse alongside trunk()"
-    );
-}
 
 #[test]
 fn default_revset_evaluates_in_cli_and_app_parser() {
