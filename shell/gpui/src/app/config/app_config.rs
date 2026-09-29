@@ -1,0 +1,213 @@
+use std::path::{Path, PathBuf};
+
+use jayjay_core::{AppDirs, UpdateChannel};
+use serde::{Deserialize, Serialize};
+
+use super::{
+    AppearanceMode, DiffConfig, FeaturesConfig, LayoutConfig, OnboardingConfig, TelemetryConfig,
+    ToolsConfig, WindowState,
+};
+
+#[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
+#[serde(default)]
+pub struct AppConfig {
+    pub appearance: AppearanceMode,
+    pub font_family: String,
+    pub(crate) font_size: f32,
+    pub diff: DiffConfig,
+    pub layout: LayoutConfig,
+    pub(crate) tools: ToolsConfig,
+    pub(crate) features: FeaturesConfig,
+    pub onboarding: OnboardingConfig,
+    pub telemetry: TelemetryConfig,
+    pub update_channel: UpdateChannel,
+    pub window: WindowState,
+    pub recent_repos: Vec<String>,
+}
+
+impl Default for AppConfig {
+    fn default() -> Self {
+        Self {
+            appearance: AppearanceMode::System,
+            font_family: String::new(),
+            font_size: AppConfig::DEFAULT_FONT_SIZE,
+            diff: DiffConfig::default(),
+            layout: LayoutConfig::default(),
+            tools: ToolsConfig::default(),
+            features: FeaturesConfig::default(),
+            onboarding: OnboardingConfig::default(),
+            telemetry: TelemetryConfig::default(),
+            update_channel: UpdateChannel::Stable,
+            window: WindowState::default(),
+            recent_repos: Vec::new(),
+        }
+    }
+}
+
+impl AppConfig {
+    const MAX_RECENT_REPOS: usize = 12;
+    pub(crate) const MIN_FONT_SIZE: f32 = 9.;
+    pub(crate) const MAX_FONT_SIZE: f32 = 24.;
+    pub(crate) const DEFAULT_FONT_SIZE: f32 = 12.;
+
+    pub fn font_size(&self) -> f32 {
+        self.font_size
+    }
+
+    pub(crate) fn adjust_font_size(&mut self, delta: f32) {
+        self.font_size = (self.font_size + delta).clamp(Self::MIN_FONT_SIZE, Self::MAX_FONT_SIZE);
+    }
+
+    pub(crate) fn reset_font_size(&mut self) {
+        self.font_size = Self::DEFAULT_FONT_SIZE;
+    }
+
+    /// Resolve the config file path so each platform gets
+    /// its native location:
+    /// - macOS:   `~/Library/Application Support/dev.hewig.jayjay/config.toml`
+    /// - Linux:   `~/.config/jayjay/config.toml`
+    /// - Windows: `%APPDATA%\hewig\jayjay\config\config.toml`
+    fn config_path() -> Option<PathBuf> {
+        AppDirs::new().map(|dirs| dirs.config.join("config.toml"))
+    }
+
+    /// Read from disk; falls back to defaults on missing/malformed files.
+    pub fn load() -> Self {
+        let Some(path) = Self::config_path() else {
+            return Self::default();
+        };
+        match std::fs::read_to_string(&path) {
+            Ok(contents) => toml::from_str(&contents).unwrap_or_default(),
+            Err(_) => Self::default(),
+        }
+    }
+
+    /// Write to disk, creating parent directories as needed.
+    pub(super) fn save(&self) -> std::io::Result<()> {
+        let Some(path) = Self::config_path() else {
+            return Ok(());
+        };
+        if let Some(dir) = path.parent() {
+            std::fs::create_dir_all(dir)?;
+        }
+        let contents = toml::to_string_pretty(self)
+            .map_err(|e| std::io::Error::other(format!("toml serialize: {e}")))?;
+        std::fs::write(path, contents)
+    }
+
+    pub fn record_opened_repo(&mut self, path: &Path) {
+        let normalized = normalize_repo_path(path);
+        self.recent_repos.retain(|entry| entry != &normalized);
+        self.recent_repos.insert(0, normalized);
+        self.recent_repos.truncate(Self::MAX_RECENT_REPOS);
+    }
+
+    /// Lists the path again without claiming recency, since the first entry doubles as the startup repository.
+    pub fn restore_recent_repo(&mut self, path: &Path) {
+        let normalized = normalize_repo_path(path);
+        if self.recent_repos.contains(&normalized) {
+            return;
+        }
+        self.recent_repos.truncate(Self::MAX_RECENT_REPOS - 1);
+        self.recent_repos.push(normalized);
+    }
+
+    pub(crate) fn clear_recent_repos(&mut self) {
+        self.recent_repos.clear();
+    }
+
+    pub(crate) fn remove_recent_repo(&mut self, path: &str) {
+        self.recent_repos.retain(|entry| entry != path);
+    }
+}
+
+fn normalize_repo_path(path: &Path) -> String {
+    path.canonicalize()
+        .unwrap_or_else(|_| path.to_path_buf())
+        .to_string_lossy()
+        .to_string()
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn round_trip_defaults() {
+        let cfg = AppConfig::default();
+        let s = toml::to_string_pretty(&cfg).unwrap();
+        let back: AppConfig = toml::from_str(&s).unwrap();
+        assert_eq!(cfg, back);
+    }
+
+    #[test]
+    fn empty_config_file_uses_defaults() {
+        let cfg: AppConfig = toml::from_str("").unwrap();
+        assert_eq!(cfg, AppConfig::default());
+    }
+
+    #[test]
+    fn explicit_telemetry_opt_out_is_preserved() {
+        let cfg: AppConfig = toml::from_str("[telemetry]\nenabled = false\n").unwrap();
+        assert!(!cfg.telemetry.enabled);
+    }
+
+    #[test]
+    fn legacy_file_column_width_seeds_secondary_pane_width() {
+        let cfg: AppConfig = toml::from_str("[layout]\nfile_column_width = 300.0\n").unwrap();
+        assert_eq!(cfg.layout.secondary_pane_width, 300.);
+    }
+
+    #[test]
+    fn unknown_keys_are_ignored() {
+        let s = "appearance = \"dark\"\nunknown_root_key = 42\n";
+        let cfg: AppConfig = toml::from_str(s).unwrap();
+        assert_eq!(cfg.appearance, AppearanceMode::Dark);
+    }
+
+    #[test]
+    fn restoring_a_recent_repo_keeps_the_startup_entry_first() {
+        let mut cfg = AppConfig::default();
+        for ix in 0..AppConfig::MAX_RECENT_REPOS {
+            cfg.record_opened_repo(Path::new(&format!("/tmp/repo-{ix}")));
+        }
+        cfg.restore_recent_repo(Path::new("/tmp/repo-3"));
+        assert_eq!(
+            cfg.recent_repos.iter().position(|p| p == "/tmp/repo-3"),
+            Some(8)
+        );
+
+        cfg.restore_recent_repo(Path::new("/tmp/unpinned"));
+        assert_eq!(
+            cfg.recent_repos.first().map(String::as_str),
+            Some("/tmp/repo-11")
+        );
+        assert_eq!(
+            cfg.recent_repos.last().map(String::as_str),
+            Some("/tmp/unpinned")
+        );
+        assert_eq!(cfg.recent_repos.len(), AppConfig::MAX_RECENT_REPOS);
+    }
+
+    #[test]
+    fn recent_repos_are_deduped_and_capped() {
+        let mut cfg = AppConfig::default();
+        for ix in 0..14 {
+            cfg.record_opened_repo(Path::new(&format!("/tmp/repo-{ix}")));
+        }
+        cfg.record_opened_repo(Path::new("/tmp/repo-4"));
+
+        assert_eq!(
+            cfg.recent_repos.first().map(String::as_str),
+            Some("/tmp/repo-4")
+        );
+        assert_eq!(cfg.recent_repos.len(), AppConfig::MAX_RECENT_REPOS);
+        assert_eq!(
+            cfg.recent_repos
+                .iter()
+                .filter(|path| path.as_str() == "/tmp/repo-4")
+                .count(),
+            1
+        );
+    }
+}

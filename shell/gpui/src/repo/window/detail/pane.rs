@@ -1,0 +1,216 @@
+use gpui::{
+    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, Window, div, px,
+    rgb,
+};
+
+use super::super::{DiffRichPreviewKind, RepoWindow};
+use super::description;
+use super::header::{DetailHeaderState, detail_header};
+use crate::app::theme::{Theme, ui_font_size};
+use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
+use crate::ui::icons::{self, glyph};
+
+pub(in crate::repo::window) fn detail_pane(
+    view: &RepoWindow,
+    t: &Theme,
+    window: &mut Window,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let can_edit_file = view.can_edit_selected_working_copy_file(cx);
+    let can_edit_diff = view.can_enter_diff_edit(cx);
+    let viewport_width = f32::from(window.viewport_size().width);
+    let (sidebar_width, file_column_width) = view.layout.fitted(viewport_width);
+    let handles = if view.layout.sidebar_hidden { 1. } else { 2. };
+    let detail_width = (viewport_width
+        - sidebar_width
+        - file_column_width
+        - handles * crate::ui::resize_handle::RESIZE_HANDLE_WIDTH)
+        .max(0.);
+    let vm = view.vm.read(cx);
+    if let Some(count) = vm.selection_without_diff_count() {
+        return multi_selection_no_diff(count, t);
+    }
+    let Some(change) = vm.selected_change().cloned() else {
+        return div()
+            .debug_selector(|| "detail-pane".to_owned())
+            .flex()
+            .flex_1()
+            .size_full()
+            .items_center()
+            .justify_center()
+            .text_color(rgb(t.fg_dim))
+            .child("Select a change")
+            .into_any_element();
+    };
+
+    let stats = vm.change_stats.clone();
+    let view_mode = vm.view_mode;
+    let detail_mode = vm.detail_mode;
+    let annotate_lines = vm.annotate_lines.clone();
+    let loading_annotate = vm.loading.annotate;
+    let current_diff = vm.current_diff.clone();
+    let current_projection = vm.current_projection.clone();
+    let current_svg_preview = vm.current_svg_preview.clone();
+    let current_markdown_preview = vm.current_markdown_preview.clone();
+    let repo_path = vm.repo_path.clone();
+    let compare = vm.compare.clone();
+    let file_count = vm.files.as_ref().map(|files| files.len());
+    let selected_hunk = vm.selected_hunk().cloned();
+    let file_stats = vm.file_stats.clone();
+    let selected_file_has_conflict = vm.selected_file_has_conflict();
+    let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
+        view.diff.rich_preview.as_ref().is_some_and(|selection| {
+            selection.is_active(DiffRichPreviewKind::Projection, hunk.path.as_str())
+        })
+    });
+    let active_svg_preview = selected_hunk.as_ref().is_some_and(|hunk| {
+        view.diff.rich_preview.as_ref().is_some_and(|selection| {
+            selection.is_active(DiffRichPreviewKind::Svg, hunk.path.as_str())
+        })
+    });
+    let active_markdown_preview = selected_hunk.as_ref().is_some_and(|hunk| {
+        view.diff.rich_preview.as_ref().is_some_and(|selection| {
+            selection.is_active(DiffRichPreviewKind::Markdown, hunk.path.as_str())
+        })
+    });
+    let html_external_url = selected_hunk
+        .as_ref()
+        .and_then(|hunk| crate::diff::projection::html_external_url(&vm.repo_path, hunk));
+    let path_just_copied =
+        view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
+    let notes = view.notes_for_selected_hunk(cx);
+    let stale_or_orphaned_notes = vm.stale_or_orphaned_notes();
+    let bookmarks = vm.graph.bookmarks.clone();
+    let review = view.review_display_state(selected_hunk.as_ref(), current_diff.as_ref(), cx);
+
+    let diff_state = DiffViewState {
+        hunk: selected_hunk.as_ref(),
+        line_stats: selected_hunk
+            .as_ref()
+            .and_then(|hunk| file_stats.get(&hunk.path)),
+        no_changes: file_count == Some(0),
+        file_diff: current_diff.as_ref(),
+        loaded_projection: current_projection.as_ref(),
+        active_projection_preview,
+        active_markdown_preview,
+        active_svg_preview,
+        markdown_preview: current_markdown_preview.as_ref(),
+        markdown_images: view.diff.markdown_images.clone(),
+        markdown_scroll: view.diff.markdown_scroll.clone(),
+        markdown_bounds: view.diff.markdown_bounds.clone(),
+        repo_path: &repo_path,
+        svg_preview: current_svg_preview
+            .as_ref()
+            .map(|preview| SvgPreviewContent {
+                old: preview.old.as_deref(),
+                new: preview.new.as_deref(),
+            }),
+        html_external_url: html_external_url.as_deref(),
+        view_mode,
+        detail_mode,
+        annotate_lines,
+        loading_annotate,
+        path_just_copied,
+        can_resolve_conflict: compare.is_none(),
+        can_edit_file,
+        can_edit_diff,
+        detail_width,
+        selected_file_has_conflict,
+        supports_conflict_editor: selected_hunk
+            .as_ref()
+            .is_some_and(|hunk| hunk.supports_conflict_editor)
+            && !change.is_immutable,
+        unified_bounds: view.diff.unified_bounds.clone(),
+        sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
+        sbs_new_bounds: view.diff.sbs_new_bounds.clone(),
+        wrap_cache: view.diff.wrap_cache.clone(),
+        shows_review: vm.shows_review_controls(),
+        review,
+        notes: &notes,
+        stale_or_orphaned_notes: &stale_or_orphaned_notes,
+        context_expansion_error: view.context_expansion_error(),
+        focused: view.focused_control(),
+    };
+    let find = FindState {
+        query: view.find.query.as_ref(),
+        match_count: view.find.matches.len(),
+        match_current: view.find.current,
+    };
+
+    div()
+        .debug_selector(|| "detail-pane".to_owned())
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_w_0()
+        .min_h_0()
+        .child(detail_header(
+            DetailHeaderState {
+                change: &change,
+                description: &view.description,
+                stats: stats.as_ref(),
+                compare: compare.as_ref(),
+                file_count,
+                recently_copied: view.feedback.recently_copied.as_ref(),
+                bookmarks: bookmarks.as_ref(),
+                focused: view.focused_control(),
+                expanded_description_height: description::expanded_height(
+                    window.viewport_size().height,
+                ),
+                detail_width,
+            },
+            t,
+            cx,
+        ))
+        .child(diff_view(
+            diff_state,
+            find,
+            view.scrolls.diff.clone(),
+            window,
+            cx,
+        ))
+        .into_any_element()
+}
+
+fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
+    div()
+        .debug_selector(|| "detail-multi-selection-no-diff".to_owned())
+        .flex()
+        .flex_1()
+        .size_full()
+        .items_center()
+        .justify_center()
+        .px(px(24.))
+        .bg(rgb(t.detail_bg))
+        .child(
+            div()
+                .debug_selector(|| "detail-multi-selection-content".to_owned())
+                .flex()
+                .flex_col()
+                .items_center()
+                .w_full()
+                .max_w(px(460.))
+                .gap(px(10.))
+                .text_align(gpui::TextAlign::Center)
+                .child(icons::icon(glyph::ARROWS_LEFT_RIGHT, 28., t.compare_accent))
+                .child(
+                    div()
+                        .text_size(ui_font_size(15.))
+                        .font_weight(gpui::FontWeight::SEMIBOLD)
+                        .text_color(rgb(t.fg))
+                        .child(format!("{count} Changes Selected")),
+                )
+                .child(
+                    div()
+                        .flex()
+                        .flex_col()
+                        .gap(px(3.))
+                        .text_size(ui_font_size(11.))
+                        .line_height(ui_font_size(16.))
+                        .text_color(rgb(t.fg_faint))
+                        .child("These changes don't form a single linear range, so they can't be shown as one combined diff.")
+                        .child("Right-click any selected change for batch actions."),
+                ),
+        )
+        .into_any_element()
+}

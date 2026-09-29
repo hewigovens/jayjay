@@ -1,4 +1,4 @@
-use super::result_open_urls;
+use super::submit::result_open_urls;
 use crate::repo::hosted_repo::RepoHost;
 use crate::types::{StackLayerOutcome, SubmittedLayer};
 

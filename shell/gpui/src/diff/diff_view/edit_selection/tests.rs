@@ -1,5 +1,7 @@
+use jayjay_core::DiffEditRange;
+use jayjay_core::diff::{DiffLine, DiffSpanStyle, compute_file_diff, compute_file_diff_full};
+
 use super::*;
-use jayjay_core::diff::compute_file_diff;
 
 fn range(ranges: &[DiffEditRange], ix: usize) -> (u32, u32) {
     (ranges[ix].start_line, ranges[ix].end_line)

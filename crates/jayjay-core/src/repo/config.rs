@@ -10,7 +10,10 @@ use jj_lib::workspace::WorkingCopyFactories;
 pub(crate) use env::ConfigEnv;
 pub use listing::{JjConfigEntry, JjConfigSection, JjUserConfig, jj_user_config};
 
-use super::{JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME, Repo};
+use super::Repo;
+
+pub const JJ_CONFIG_USER_NAME: &str = "user.name";
+pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
 
 impl Repo {
     /// Warning message when `user.name`/`user.email` are missing from jj config, else `None`.

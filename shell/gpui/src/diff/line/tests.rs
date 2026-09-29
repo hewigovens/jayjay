@@ -1,6 +1,7 @@
 use jayjay_core::diff::{ConflictLineKind, DiffLine, DiffSpan, DiffSpanStyle};
 use jayjay_core::syntax::SyntaxToken;
 
+use super::content_row::conflict_label;
 use super::*;
 use crate::app::theme::Theme;
 

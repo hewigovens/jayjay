@@ -1,20 +1,32 @@
 //! Layout for the diff gutter: line-number cells, note-dot column, and selection highlight.
 
 use gpui::{
-    AnyElement, Div, ElementId, InteractiveElement, ParentElement, Stateful,
+    AnyElement, Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful,
     StatefulInteractiveElement, Styled, div, px, rgb, rgba,
 };
 use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 use jayjay_review::ReviewGroupState;
 
-use super::{GUTTER_NUMBER_WIDTH, gutter_cell, line_bg_color};
+use super::colors::line_bg_color;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::ui::primitives::text_tooltip;
 
 pub const NOTE_DOT_WIDTH: f32 = 14.;
+pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
 const INTERACTIVE_GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2. + NOTE_DOT_WIDTH;
 pub const REVIEW_STRIPE_WIDTH: f32 = 6.;
+
+/// Width must stay pixel-matched to `interactive_gutter_column` so swapping between a placeholder and the real diff never shifts the layout.
+pub fn gutter_column(theme: &Theme, shows_review: bool) -> Div {
+    div()
+        .flex_none()
+        .w(px(interactive_gutter_width(shows_review)))
+        .h_full()
+        .bg(rgb(theme.diff_gutter_bg))
+        .border_r_1()
+        .border_color(rgb(theme.border))
+}
 
 pub fn interactive_gutter_column(theme: &Theme, shows_review: bool) -> Div {
     div()
@@ -24,6 +36,23 @@ pub fn interactive_gutter_column(theme: &Theme, shows_review: bool) -> Div {
         .bg(rgb(theme.diff_gutter_bg))
         .border_r_1()
         .border_color(rgb(theme.border))
+}
+
+// `bg` must exactly match the caller's computed line background — a mismatch paints an opaque fill over the added/removed tint.
+pub fn gutter_cell(text: String, theme: &Theme, bg: u32) -> Div {
+    div()
+        .flex()
+        .items_center()
+        .justify_end()
+        .flex_none()
+        .w(px(GUTTER_NUMBER_WIDTH))
+        .h(px(theme.code_line_height()))
+        .pl(px(2.))
+        .pr(px(5.))
+        .text_color(rgb(theme.diff_gutter_fg))
+        .bg(rgb(bg))
+        .line_height(px(theme.code_line_height()))
+        .child(SharedString::from(text))
 }
 
 /// `dot_cell` must be a blank `note_dot_cell(None, theme)` for continuation fragments and separators — only the fragment carrying the line numbers actually renders a dot.

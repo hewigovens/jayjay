@@ -1,10 +1,15 @@
 use std::cell::Cell;
 use std::path::PathBuf;
+use std::sync::{Arc, Mutex};
+use std::time::{Duration, Instant};
 
 use notify::event::{CreateKind, MetadataKind, ModifyKind};
 use notify::{Event, EventKind};
 
-use super::*;
+use super::debounce::{Debounce, OP_DEBOUNCE, WC_DEBOUNCE, next_event};
+use super::fs_event::{FsEvent, IsRelevantWcChange};
+use super::path_classifier::{EventClass, PathClassifier};
+use super::watcher::RepoFsWatcher;
 
 fn classifier() -> PathClassifier {
     PathClassifier {
@@ -171,9 +176,6 @@ fn irrelevant_working_copy_paths_do_not_emit_or_stamp() {
 
 #[test]
 fn cli_operations_reach_primary_and_secondary_workspace_watchers() {
-    use std::sync::Arc;
-    use std::time::{Duration, Instant};
-
     let fixture = jj_test::LinearFixture::build();
     let parent = fixture.path.parent().expect("fixture parent").to_path_buf();
     let secondary = parent.join("watched-secondary");

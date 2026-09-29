@@ -1,7 +1,7 @@
 mod client;
 mod reconcile;
 
-use crate::repo::stacked_pr::NativeStackOutcome;
+use crate::repo::stacked_pr::native_stack_outcome::NativeStackOutcome;
 use crate::repo::{Repo, hosted_repo::HostedRepo};
 use crate::types::SubmittedLayer;
 

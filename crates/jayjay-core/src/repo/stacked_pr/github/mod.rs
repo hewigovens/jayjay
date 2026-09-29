@@ -1,8 +1,8 @@
 mod pull_request;
 mod stack;
 
-use super::NativeStackOutcome;
 use super::forge::ForgeTarget;
+use crate::repo::stacked_pr::native_stack_outcome::NativeStackOutcome;
 use crate::repo::{Repo, hosted_repo::HostedRepo};
 use crate::types::{CoreResult, SubmittedLayer};
 
