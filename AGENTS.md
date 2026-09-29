@@ -109,6 +109,8 @@ During the loop — especially after concurrent agent or workspace work, snapsho
 
 For code changes, finish cleanup, run `jj fix`, validate the resulting code with relevant tests, and run `just lint` once. Documentation-only changes need documentation checks; build the app only when verifying runtime presentation or bundled content. Load [Pull Requests](agents/pull-requests.md) only when publishing.
 
+Before pushing a non-trivial behavior change to `main` or a pull request, get an independent review per [Code Review](agents/code-review.md): a fresh session or agent that did not implement the change, given the diff, the task, and that guide. Fix its findings across every site sharing the same assumption, then push. This replaces the first hosted review round; it is not part of the inner loop.
+
 ## User-Facing Docs
 
 Feature work does **not** update the user guide, Help Book, website, or parity matrix. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md). An explicit documentation request authorizes edits to the requested docs outside that release pass; verify claims against the relevant source or release.
