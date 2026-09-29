@@ -18,6 +18,9 @@ updates:
       - dependency-name: "*"
         update-types:
           - "version-update:semver-patch"
+      # Pinned to the versions jj-lib uses; bumped by hand with jj-lib
+      - dependency-name: "gix"
+      - dependency-name: "gix-url"
     commit-message:
       prefix: "deps(rust)"
     open-pull-requests-limit: 10
