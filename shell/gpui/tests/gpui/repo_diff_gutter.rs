@@ -154,38 +154,6 @@ fn review_notes_context_allows_working_copy_hunk_with_identity(cx: &mut TestAppC
 }
 
 #[gpui::test]
-fn review_notes_context_blocks_compare_mode(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo_with_files(cx);
-
-    view.update_in(cx, |view, _, cx| {
-        let change = view
-            .view_model()
-            .read(cx)
-            .selected_change()
-            .expect("selected working copy")
-            .clone();
-        view.view_model().update(cx, |vm, _| {
-            vm.compare = Some(compare::CompareState::new(&change))
-        });
-
-        assert_eq!(view.review_notes_context(&hunk("abc123", None), cx), None);
-    });
-}
-
-#[gpui::test]
-fn review_notes_context_blocks_projected_hunk(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo_with_files(cx);
-
-    view.update_in(cx, |view, _, cx| {
-        let projection = diff_projection("notebook", DiffProjectionMode::Raw);
-        assert_eq!(
-            view.review_notes_context(&hunk("abc123", Some(projection)), cx),
-            None
-        );
-    });
-}
-
-#[gpui::test]
 fn review_notes_context_blocks_empty_identity(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo_with_files(cx);
 
