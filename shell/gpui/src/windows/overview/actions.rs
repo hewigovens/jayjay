@@ -95,10 +95,11 @@ impl OverviewView {
                 crate::app::tools::show_in_file_manager(&path, None);
             }
             OverviewAction::RebaseOntoTrunk(root) => {
-                let task = self.vm.update(cx, |vm, cx| {
+                if let Ok(task) = self.vm.update(cx, |vm, cx| {
                     vm.rebase_change(root, "trunk()".to_owned(), RebaseMode::Source, cx)
-                });
-                self.track(task, cx);
+                }) {
+                    self.track(task, cx);
+                }
             }
             OverviewAction::Abandon(request) => {
                 self.confirmation = Some(Confirmation::Abandon(request));
@@ -124,13 +125,15 @@ impl OverviewView {
     pub(super) fn confirm(&mut self, cx: &mut Context<Self>) {
         match self.confirmation.take() {
             Some(Confirmation::Abandon(request)) => {
-                let task = self
+                if let Ok(task) = self
                     .vm
                     .update(cx, |vm, cx| match request.commit_ids.as_slice() {
                         [commit_id] => vm.abandon_change(commit_id.clone(), cx),
                         _ => vm.abandon_changes(request.commit_ids, cx),
-                    });
-                self.track(task, cx);
+                    })
+                {
+                    self.track(task, cx);
+                }
             }
             Some(Confirmation::DeleteWorkspace { name, path }) => {
                 self.with_parent(cx, |parent, cx| parent.delete_workspace(name, path, cx));

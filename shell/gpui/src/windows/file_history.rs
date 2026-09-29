@@ -3,8 +3,8 @@ use std::sync::Arc;
 use gpui::{
     AnyElement, App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable,
     InteractiveElement, IntoElement, ParentElement, Render, SharedString, Size,
-    StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
-    px, rgb, uniform_list,
+    StatefulInteractiveElement, Styled, TitlebarOptions, WeakEntity, Window, WindowBounds,
+    WindowOptions, div, px, rgb, uniform_list,
 };
 use jayjay_core::{ChangeInfo, Repo};
 
@@ -12,13 +12,14 @@ use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::fonts;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
+use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{RepoWindow, compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{no_scrollbar_gutter, placeholder, placeholder_err};
 
 pub struct FileHistoryView {
     repo: Arc<Repo>,
-    parent: Entity<RepoWindow>,
+    parent: WeakEntity<RepoWindow>,
     path: SharedString,
     history: Option<Arc<Vec<ChangeInfo>>>,
     error: Option<SharedString>,
@@ -27,7 +28,13 @@ pub struct FileHistoryView {
 }
 
 impl FileHistoryView {
-    pub(crate) fn open(repo: Arc<Repo>, path: String, parent: Entity<RepoWindow>, cx: &mut App) {
+    pub(crate) fn open(
+        repo: Arc<Repo>,
+        path: String,
+        parent: Entity<RepoWindow>,
+        vm: Entity<RepoViewModel>,
+        cx: &mut App,
+    ) {
         let bounds = Bounds::centered(
             None,
             Size {
@@ -48,14 +55,18 @@ impl FileHistoryView {
                     }),
                     ..crate::app::window_options()
                 },
-                |_, cx| {
+                |window, cx| {
                     cx.new(|cx| {
+                        cx.observe_release_in(&vm, window, |_, _, window, _| {
+                            window.remove_window()
+                        })
+                        .detach();
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                         let mut view = Self {
                             repo,
-                            parent,
+                            parent: parent.downgrade(),
                             path: path_for_view,
                             history: None,
                             error: None,
@@ -174,7 +185,7 @@ fn header(path: &SharedString, count: usize, t: &Theme) -> AnyElement {
 fn history_body(
     history: Arc<Vec<ChangeInfo>>,
     theme: Theme,
-    parent: Entity<RepoWindow>,
+    parent: WeakEntity<RepoWindow>,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
     let count = history.len();
@@ -199,7 +210,7 @@ fn history_body(
 fn history_row(
     entry: ChangeInfo,
     t: Arc<Theme>,
-    parent: Entity<RepoWindow>,
+    parent: WeakEntity<RepoWindow>,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
     let short_id = compact_id(&entry.change_id);
@@ -232,7 +243,7 @@ fn history_row(
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_click(cx.listener(move |_, _, window, cx| {
             let id = change_id_for_click.clone();
-            parent.update(cx, |view, cx| view.reveal_change_id(&id, cx));
+            let _ = parent.update(cx, |view, cx| view.reveal_change_id(&id, cx));
             window.remove_window();
         }))
         .child(

@@ -15,7 +15,7 @@ impl Render for CommandPalette {
 
         let body = match (&self.output, self.parse_command()) {
             (CommandOutput::Idle, None) => {
-                action_list(&visible, selected, &t, cx).into_any_element()
+                action_list(self, &visible, selected, &t, cx).into_any_element()
             }
             (CommandOutput::Idle, Some(body)) => {
                 let cmd = format!("jj {body}");

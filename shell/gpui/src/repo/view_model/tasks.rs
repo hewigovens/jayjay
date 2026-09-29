@@ -86,6 +86,7 @@ impl RepoViewModel {
         self.clear_error();
         // Stamp before the write so the FS echo from our own jj mutation is ignored.
         self.last_internal_mutation_at = Some(std::time::Instant::now());
+        self.loading.operations += 1;
         if show_refresh_indicator {
             self.begin_refreshing(cx);
         } else {
@@ -97,6 +98,7 @@ impl RepoViewModel {
                 .background_spawn(async move { read_or_write(repo) })
                 .await;
             this.update(cx, move |vm, cx| {
+                vm.loading.operations = vm.loading.operations.saturating_sub(1);
                 vm.finish_repo_task(cx);
                 match result {
                     Ok(value) => {

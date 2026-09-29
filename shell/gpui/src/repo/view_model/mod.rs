@@ -15,7 +15,7 @@ use std::collections::{HashMap, HashSet};
 use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
-use gpui::{Context, SharedString};
+use gpui::{AppContext, Context, SharedString};
 use jayjay_core::compare::CompareState;
 use jayjay_core::dag::{DagLayout, OrderedSelection, SelectionGraph, SelectionState};
 use jayjay_core::diff::{ConflictLineKind, FileDiff};
@@ -89,6 +89,7 @@ pub struct LoadingState {
     pub refreshing: bool,
     /// Count of in-flight refresh/mutation tasks. `refreshing == (in_flight > 0)` keeps the gate set until all finish.
     pub in_flight: u32,
+    pub operations: u32,
     /// Bumped each time `refresh()` starts; the completion discards data from a superseded run.
     pub(crate) refresh_gen: u64,
     /// An owed auto-refresh: set when an FS event arrives mid-refresh or while refreshes are suspended; run by the completion or when the gate clears.
@@ -224,16 +225,34 @@ impl RepoViewModel {
                 match opened {
                     Ok(loaded) => {
                         *vm = Self::ready(vm.repo_path.clone(), ready_revset, loaded);
-                        config::update(cx, |config| {
-                            config.record_opened_repo(Path::new(vm.repo_path.as_ref()));
-                        });
-                        vm.boot(cx);
+                        vm.finish_open(cx);
                     }
                     Err(e) => vm.present_error(e),
                 }
                 cx.notify();
             },
         );
+    }
+
+    pub(crate) async fn open_detached(
+        path: PathBuf,
+        cx: &mut gpui::AsyncApp,
+    ) -> jayjay_core::CoreResult<gpui::Entity<Self>> {
+        let repo_path: SharedString = path.display().to_string().into();
+        let revset = build_default_revset(DEFAULT_REVSET_DEPTH);
+        let loaded = {
+            let revset = revset.clone();
+            cx.background_spawn(async move { Self::open_blocking(path, &revset) })
+                .await?
+        };
+        Ok(cx.new(|_| Self::ready(repo_path, RevsetFilterState::new(&revset), loaded)))
+    }
+
+    pub(crate) fn finish_open(&mut self, cx: &mut Context<Self>) {
+        config::update(cx, |config| {
+            config.record_opened_repo(Path::new(self.repo_path.as_ref()));
+        });
+        self.boot(cx);
     }
 
     fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::CoreResult<OpenedRepo> {

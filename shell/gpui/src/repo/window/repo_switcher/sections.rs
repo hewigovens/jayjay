@@ -62,8 +62,9 @@ pub(super) fn switcher_sections(
                     }
                 ),
                 height: 46.,
-                action: (!workspace.is_current && workspace.is_path_resolved)
-                    .then(|| RepoSwitcherAction::Open(workspace.path.clone())),
+                action: workspace
+                    .is_switch_target()
+                    .then(|| RepoSwitcherAction::SwitchWorkspace(workspace.path.clone())),
                 content: RowContent::Workspace(workspace),
             })
             .collect();

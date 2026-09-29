@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
 
 use gpui::{
-    AnyWindowHandle, App, AppContext, Bounds, Point, TitlebarOptions, WindowBounds, WindowHandle,
-    WindowOptions, px, size,
+    AnyWindowHandle, App, AppContext, Bounds, Entity, Point, TitlebarOptions, WindowBounds,
+    WindowHandle, WindowOptions, px, size,
 };
 use jayjay_core::repositories::normalize_repository_path;
 
@@ -38,15 +38,11 @@ impl RepoWindow {
         show_onboarding: bool,
         cx: &mut App,
     ) -> gpui::Result<WindowHandle<Self>> {
-        let title = match path.file_name().and_then(|s| s.to_str()) {
-            Some(name) if !name.is_empty() => format!("JayJay — {name}"),
-            _ => "JayJay".to_string(),
-        };
         let handle = cx.open_window(
             WindowOptions {
                 window_bounds: Some(bounds),
                 titlebar: Some(TitlebarOptions {
-                    title: Some(title.into()),
+                    title: Some(window_title(&path).into()),
                     appears_transparent: true,
                     traffic_light_position: Some(Point {
                         x: px(crate::platform::REPO_TRAFFIC_LIGHTS.0),
@@ -74,6 +70,27 @@ impl RepoWindow {
         )?;
         handle.update(cx, |view, window, cx| view.attach_to_window(window, cx))?;
         Ok(handle)
+    }
+}
+
+pub(super) fn window_title(path: &Path) -> String {
+    match path.file_name().and_then(|s| s.to_str()) {
+        Some(name) if !name.is_empty() => format!("JayJay — {name}"),
+        _ => "JayJay".to_string(),
+    }
+}
+
+pub(super) fn retitle_and_focus(view: &Entity<RepoWindow>, path: &Path, cx: &mut App) {
+    let window = cx
+        .windows()
+        .into_iter()
+        .filter_map(|handle| handle.downcast::<RepoWindow>())
+        .find(|handle| handle.entity(cx).is_ok_and(|root| &root == view));
+    if let Some(window) = window {
+        let _ = window.update(cx, |view, window, cx| {
+            window.set_window_title(&window_title(path));
+            window.focus(&view.focus_handle, cx);
+        });
     }
 }
 

@@ -196,3 +196,70 @@ fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
         assert_eq!(view.find_query_text(), Some(""));
     });
 }
+
+fn open_palette_for(view: &gpui::Entity<RepoWindow>, cx: &mut TestAppContext) -> VisualTestContext {
+    let view = view.clone();
+    cx.update(|cx| CommandPalette::open("".into(), Some(view), cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+    palette_cx
+}
+
+#[gpui::test]
+fn palette_lists_switchable_workspaces_and_filters_by_name(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_workspace(&fixture, "first");
+    add_workspace(&fixture, "second");
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
+
+    palette_cx.simulate_input("switch");
+    settle_visual(&mut palette_cx);
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-workspace-first")
+            .is_some()
+    );
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-workspace-second")
+            .is_some()
+    );
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-workspace-default")
+            .is_none(),
+        "the current workspace is not a switch target"
+    );
+
+    palette_cx.simulate_input(" sec");
+    settle_visual(&mut palette_cx);
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-workspace-second")
+            .is_some()
+    );
+    assert!(
+        palette_cx
+            .debug_bounds("command-palette-workspace-first")
+            .is_none()
+    );
+}
+
+#[gpui::test]
+fn palette_workspace_entry_switches_the_current_window(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_workspace(&fixture, "first");
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    {
+        let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
+        palette_cx.simulate_input("switch first");
+        palette_cx.simulate_keystrokes("enter");
+        settle_visual(&mut palette_cx);
+    }
+    settle_visual(repo_cx);
+
+    assert_eq!(current_workspace(&view, repo_cx), "first");
+    assert_eq!(repo_window_count(repo_cx), 1);
+}

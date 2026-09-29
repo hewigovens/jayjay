@@ -8,6 +8,7 @@ use std::path::Path;
 
 use super::RepoWindow;
 use super::confirmation::{Confirmation, ConfirmedAction, DontAskAgain};
+use super::workspace_drafts::WorkspaceDrafts;
 use crate::app::config;
 
 impl RepoWindow {
@@ -84,6 +85,7 @@ impl RepoWindow {
         });
         Self::spawn_ok(cx, task, move |view, _, cx| {
             if let Some(path) = path {
+                WorkspaceDrafts::discard(Path::new(&path), cx);
                 cx.defer(move |cx| super::open::close_repo_window_at(Path::new(&path), cx));
             }
             view.show_toast(format!("Forgot workspace {name}"), cx);
@@ -133,6 +135,7 @@ impl RepoWindow {
         Self::spawn_ok(cx, task, move |view, warning, cx| {
             crate::app::config::update(cx, |config| config.remove_recent_repo(&recent_entry));
             crate::app::repositories::set_pinned(cx, Path::new(&recent_entry), false);
+            WorkspaceDrafts::discard(Path::new(&recent_entry), cx);
             match warning {
                 Some(warning) => view.vm.update(cx, |vm, _| vm.present_error(warning)),
                 None => view.show_toast(format!("Deleted workspace {name}"), cx),

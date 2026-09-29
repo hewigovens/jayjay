@@ -37,7 +37,7 @@ use selection::Selection;
 /// Reads through its own repo handle so loading at head never moves the repo window's; mutations go through the repo window's view model.
 pub struct OverviewView {
     parent: WeakEntity<RepoWindow>,
-    vm: Entity<RepoViewModel>,
+    vm: WeakEntity<RepoViewModel>,
     repo_path: SharedString,
     load: LoadState,
     snapshot: Option<Arc<OverviewSnapshot>>,
@@ -105,7 +105,7 @@ impl OverviewView {
                         }
                     })
                     .detach();
-                    cx.observe_release_in(&parent, window, |_, _, window, _| {
+                    cx.observe_release_in(&vm, window, |_, _, window, _| {
                         window.remove_window();
                     })
                     .detach();
@@ -117,7 +117,7 @@ impl OverviewView {
                             graph_seen: graph_identity(vm.read(cx)),
                             error: None,
                         },
-                        vm: vm.clone(),
+                        vm: vm.downgrade(),
                         repo_path,
                         snapshot: None,
                         lane_ids: Vec::new(),

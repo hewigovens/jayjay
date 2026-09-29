@@ -1,4 +1,4 @@
-use gpui::Context;
+use gpui::{App, Context};
 use jayjay_core::commit_message;
 
 use super::RepoWindow;
@@ -9,7 +9,17 @@ pub(crate) struct CommitBoxState {
     working_copy_description: String,
 }
 
+pub(super) struct CommitDraft {
+    summary: String,
+    body: String,
+}
+
 impl CommitBoxState {
+    fn track(&mut self, change_id: String, description: &str) {
+        self.working_copy_description = description.to_owned();
+        self.working_copy_change_id = Some(change_id);
+    }
+
     fn should_replace(
         &mut self,
         change_id: String,
@@ -24,14 +34,41 @@ impl CommitBoxState {
             draft_body,
             &self.working_copy_description,
         );
-        self.working_copy_description = description.to_owned();
-        self.working_copy_change_id = Some(change_id);
+        self.track(change_id, description);
 
         (identity_changed || description_changed) && box_is_clean
     }
 }
 
 impl RepoWindow {
+    pub(super) fn unsaved_commit_draft(&self, cx: &App) -> Option<CommitDraft> {
+        let summary = self.commit_message.summary.read(cx).text();
+        let body = self.commit_message.body.read(cx).text();
+        let clean = commit_message::draft_is_clean(
+            &summary,
+            &body,
+            &self.commit_box.working_copy_description,
+        );
+        (!clean).then_some(CommitDraft { summary, body })
+    }
+
+    pub(super) fn restore_commit_draft(&mut self, draft: CommitDraft, cx: &mut Context<Self>) {
+        if let Some((change_id, description)) = self
+            .vm
+            .read(cx)
+            .working_copy_change()
+            .map(|change| (change.change_id.id.clone(), change.description.clone()))
+        {
+            self.commit_box.track(change_id, &description);
+        }
+        self.commit_message
+            .summary
+            .update(cx, |input, cx| input.set_text(draft.summary, cx));
+        self.commit_message
+            .body
+            .update(cx, |input, cx| input.set_text(draft.body, cx));
+    }
+
     /// A clean box follows the working copy; a typed draft is never replaced, even when @ moves to a described change.
     pub(crate) fn sync_commit_box_from_working_copy(&mut self, cx: &mut Context<Self>) {
         let Some((change_id, description)) = self

@@ -7,6 +7,7 @@ use std::path::Path;
 use jayjay_core::WorkspaceInfo;
 use jayjay_core::repositories::normalize_repository_path;
 
+use super::model::RepoSwitcherAction;
 use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
@@ -28,9 +29,14 @@ pub(super) fn switcher_row(
         let view = view.clone();
         element = element.cursor_pointer().on_mouse_down(
             MouseButton::Left,
-            move |_: &MouseDownEvent, _, cx| {
+            move |event: &MouseDownEvent, _, cx| {
                 cx.stop_propagation();
-                let action = action.clone();
+                let action = match action.clone() {
+                    RepoSwitcherAction::SwitchWorkspace(path) if event.modifiers.alt => {
+                        RepoSwitcherAction::Open(path)
+                    }
+                    action => action,
+                };
                 view.update(cx, |view, cx| view.dispatch_repo_switcher(action, cx));
             },
         );

@@ -78,16 +78,8 @@ fn repository_title_picker_combines_workspaces_repositories_and_actions(cx: &mut
     repo_cx.simulate_keystrokes("enter");
     settle_visual(repo_cx);
     assert!(repo_cx.debug_bounds("repo-switcher-panel").is_none());
-    assert_eq!(
-        repo_cx
-            .cx
-            .windows()
-            .iter()
-            .filter(|window| window.downcast::<RepoWindow>().is_some())
-            .count(),
-        2,
-        "the selected workspace should open in its own repository window"
-    );
+    assert_eq!(repo_window_count(repo_cx), 1);
+    assert_eq!(current_workspace(&view, repo_cx), "default");
 }
 
 #[gpui::test]

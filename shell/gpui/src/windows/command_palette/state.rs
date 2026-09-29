@@ -1,5 +1,8 @@
+use std::borrow::Cow;
+
 use gpui::{App, Entity, FocusHandle, Focusable, SharedString, Subscription};
 
+use super::rows::WorkspaceTarget;
 use crate::repo::window::RepoWindow;
 use crate::ui::input::LineInput;
 
@@ -9,6 +12,8 @@ pub struct CommandPalette {
     pub(super) focus_handle: FocusHandle,
     pub(super) repo_path: SharedString,
     pub(super) repo_window: Option<Entity<RepoWindow>>,
+    pub(super) workspaces: Vec<WorkspaceTarget>,
+    pub(super) candidates: Cow<'static, [String]>,
     pub(super) output: CommandOutput,
     pub(super) history: Vec<String>,
     pub(super) history_index: Option<usize>,

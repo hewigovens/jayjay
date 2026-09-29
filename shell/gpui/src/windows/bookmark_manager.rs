@@ -7,7 +7,7 @@ mod rows;
 use gpui::{
     App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, InteractiveElement,
     IntoElement, ParentElement, Pixels, Point, Render, SharedString, Size, Styled, TitlebarOptions,
-    Window, WindowBounds, WindowOptions, div, px, rgb,
+    WeakEntity, Window, WindowBounds, WindowOptions, div, px, rgb,
 };
 use jayjay_core::compare;
 use jayjay_core::{BookmarkInfo, CoreResult, Repo};
@@ -28,8 +28,8 @@ use rows::bookmark_list;
 
 pub struct BookmarkManagerView {
     repo: Arc<Repo>,
-    parent: Entity<RepoWindow>,
-    vm: Entity<RepoViewModel>,
+    parent: WeakEntity<RepoWindow>,
+    vm: WeakEntity<RepoViewModel>,
     bookmarks: Arc<Vec<BookmarkInfo>>,
     pr_host_name: Option<SharedString>,
     filter: Entity<TextArea>,
@@ -66,8 +66,12 @@ impl BookmarkManagerView {
                     }),
                     ..crate::app::window_options()
                 },
-                |_, cx| {
+                |window, cx| {
                     cx.new(|cx| {
+                        cx.observe_release_in(&vm, window, |_, _, window, _| {
+                            window.remove_window()
+                        })
+                        .detach();
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
@@ -81,8 +85,8 @@ impl BookmarkManagerView {
                         TextArea::subscribe_updates(&filter, cx);
                         Self {
                             repo,
-                            parent,
-                            vm,
+                            parent: parent.downgrade(),
+                            vm: vm.downgrade(),
                             bookmarks,
                             pr_host_name,
                             filter,
@@ -112,7 +116,9 @@ impl BookmarkManagerView {
         on_success: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
         cx: &mut Context<Self>,
     ) {
-        let task = self.vm.update(cx, |vm, cx| vm.bookmark_write(write, cx));
+        let Ok(task) = self.vm.update(cx, |vm, cx| vm.bookmark_write(write, cx)) else {
+            return;
+        };
         self.loading = true;
         self.error = None;
         cx.notify();
@@ -148,7 +154,8 @@ impl BookmarkManagerView {
     }
 
     fn reveal(&self, change_id: String, cx: &mut Context<Self>) {
-        self.parent
+        let _ = self
+            .parent
             .update(cx, |view, cx| view.reveal_change_id(&change_id, cx));
     }
 
@@ -161,7 +168,7 @@ impl BookmarkManagerView {
             head: compare::RevsetEndpoint::for_bookmark(&bookmark),
             head_change_id: bookmark.change_id.id.clone(),
         };
-        self.parent.update(cx, |view, cx| {
+        let _ = self.parent.update(cx, |view, cx| {
             view.vm
                 .update(cx, |vm, cx| vm.compare_bookmark_diff(request.clone(), cx));
         });
@@ -261,13 +268,15 @@ impl BookmarkManagerView {
                 cx,
             ),
             BookmarkContextAction::Push(name) => {
-                self.parent.update(cx, |view, cx| {
+                let _ = self.parent.update(cx, |view, cx| {
                     view.git_push_bookmark(name, cx);
                 });
             }
             BookmarkContextAction::Resolve(name) => self.run_bookmark_action(
                 move |repo| repo.move_bookmark(&name, "@"),
-                |view, cx| view.parent.update(cx, |view, cx| view.git_fetch_origin(cx)),
+                |view, cx| {
+                    let _ = view.parent.update(cx, |view, cx| view.git_fetch_origin(cx));
+                },
                 cx,
             ),
             BookmarkContextAction::OpenPullRequest(name) => self.open_pull_request(name, cx),

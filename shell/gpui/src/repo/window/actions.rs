@@ -101,7 +101,7 @@ impl RepoWindow {
             self.show_toast("Repository is not open", cx);
             return;
         };
-        OperationLogView::open(repo, cx.entity(), cx);
+        OperationLogView::open(repo, cx.entity(), self.vm.clone(), cx);
     }
 
     fn open_edit_description(&mut self, rev: String, description: String, cx: &mut Context<Self>) {

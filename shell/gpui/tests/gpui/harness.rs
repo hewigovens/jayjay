@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use gpui::{
@@ -288,4 +289,41 @@ pub(crate) fn select_file(
 
 pub(crate) fn selector(value: String) -> &'static str {
     Box::leak(value.into_boxed_str())
+}
+
+pub(crate) fn add_workspace(fixture: &LinearFixture, name: &str) -> PathBuf {
+    let dest = fixture.path.parent().expect("fixture parent").join(name);
+    run_jj_in(
+        &fixture.path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            name,
+            dest.to_str().expect("workspace path UTF-8"),
+        ],
+    );
+    dest
+}
+
+pub(crate) fn current_workspace(view: &Entity<RepoWindow>, cx: &VisualTestContext) -> String {
+    view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .workspaces
+            .iter()
+            .find(|workspace| workspace.is_current)
+            .expect("current workspace")
+            .name
+            .clone()
+    })
+}
+
+pub(crate) fn repo_window_count(cx: &VisualTestContext) -> usize {
+    cx.cx
+        .windows()
+        .iter()
+        .filter(|window| window.downcast::<RepoWindow>().is_some())
+        .count()
 }

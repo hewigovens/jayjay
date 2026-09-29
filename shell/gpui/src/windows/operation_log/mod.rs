@@ -5,14 +5,15 @@ mod rows;
 
 use gpui::{
     App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, InteractiveElement,
-    IntoElement, ParentElement, Render, SharedString, Size, Styled, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, px, rgb,
+    IntoElement, ParentElement, Render, SharedString, Size, Styled, TitlebarOptions, WeakEntity,
+    Window, WindowBounds, WindowOptions, div, px, rgb,
 };
 use jayjay_core::{OpLogEntry, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
+use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::{placeholder, placeholder_err};
 use chrome::{footer, header};
@@ -20,7 +21,7 @@ use rows::operation_list;
 
 pub struct OperationLogView {
     repo: Arc<Repo>,
-    parent: Entity<RepoWindow>,
+    parent: WeakEntity<RepoWindow>,
     entries: Option<Arc<Vec<OpLogEntry>>>,
     selected_id: Option<String>,
     error: Option<SharedString>,
@@ -30,7 +31,12 @@ pub struct OperationLogView {
 }
 
 impl OperationLogView {
-    pub(crate) fn open(repo: Arc<Repo>, parent: Entity<RepoWindow>, cx: &mut App) {
+    pub(crate) fn open(
+        repo: Arc<Repo>,
+        parent: Entity<RepoWindow>,
+        vm: Entity<RepoViewModel>,
+        cx: &mut App,
+    ) {
         let bounds = Bounds::centered(
             None,
             Size {
@@ -49,14 +55,18 @@ impl OperationLogView {
                     }),
                     ..crate::app::window_options()
                 },
-                |_, cx| {
+                |window, cx| {
                     cx.new(|cx| {
+                        cx.observe_release_in(&vm, window, |_, _, window, _| {
+                            window.remove_window()
+                        })
+                        .detach();
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                         let mut view = Self {
                             repo,
-                            parent,
+                            parent: parent.downgrade(),
                             entries: None,
                             selected_id: None,
                             error: None,
@@ -145,8 +155,7 @@ impl OperationLogView {
     }
 
     fn refresh_parent(&self, cx: &mut Context<Self>) {
-        let parent = self.parent.clone();
-        parent.update(cx, |view, cx| {
+        let _ = self.parent.update(cx, |view, cx| {
             let vm = view.view_model();
             vm.update(cx, |vm, cx| vm.refresh(false, cx));
             view.show_toast("Restored operation", cx);

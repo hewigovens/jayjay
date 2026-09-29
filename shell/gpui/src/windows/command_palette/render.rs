@@ -33,6 +33,7 @@ pub(super) fn divider(t: &Theme) -> impl IntoElement {
 }
 
 pub(super) fn action_list(
+    palette: &CommandPalette,
     visible: &[usize],
     selected: usize,
     t: &Theme,
@@ -50,7 +51,7 @@ pub(super) fn action_list(
     }
     let mut col = div().flex().flex_col().flex_1().min_h_0().py(px(4.));
     for (vis_ix, action_ix) in visible.iter().enumerate() {
-        let Some(row) = rows::row(*action_ix) else {
+        let Some(row) = rows::row(*action_ix, &palette.workspaces) else {
             continue;
         };
         col = col.child(action_row(*action_ix, row, vis_ix == selected, t, cx));
@@ -60,7 +61,7 @@ pub(super) fn action_list(
 
 fn action_row(
     action_ix: usize,
-    row: PaletteRow,
+    row: PaletteRow<'_>,
     is_selected: bool,
     t: &Theme,
     cx: &mut Context<CommandPalette>,
@@ -70,6 +71,11 @@ fn action_row(
             action_selector(action.name),
             action.display_name(cx),
             action.glyph_str,
+        ),
+        PaletteRow::Workspace(target) => (
+            format!("command-palette-workspace-{}", target.name),
+            target.label.clone(),
+            glyph::ARROW_CIRCLE_RIGHT,
         ),
         PaletteRow::Help(topic) => (
             format!("command-palette-help-{}", topic.id),

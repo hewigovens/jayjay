@@ -43,6 +43,7 @@ mod repo_revset_filter;
 mod repo_sidebar_visibility;
 mod repo_stacked_pr;
 mod repo_window_lifecycle;
+mod repo_workspace_switch;
 mod repo_workspaces;
 mod settings;
 mod text_area;

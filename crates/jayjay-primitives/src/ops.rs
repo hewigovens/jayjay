@@ -25,6 +25,12 @@ pub struct WorkspaceInfo {
     pub files_changed: u32,
 }
 
+impl WorkspaceInfo {
+    pub fn is_switch_target(&self) -> bool {
+        !self.is_current && self.is_path_resolved
+    }
+}
+
 /// Not a bool: a repo that momentarily fails to load is undecided, not forgotten.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum WorkspacePresence {

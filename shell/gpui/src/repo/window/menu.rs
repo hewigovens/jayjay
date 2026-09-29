@@ -160,9 +160,10 @@ impl RepoWindow {
                 };
                 let path_string = path.to_string();
                 let parent = cx.entity();
+                let vm = self.vm.clone();
                 cx.spawn(async move |_, cx| {
                     cx.update(|cx| {
-                        FileHistoryView::open(repo, path_string, parent, cx);
+                        FileHistoryView::open(repo, path_string, parent, vm, cx);
                     });
                 })
                 .detach();

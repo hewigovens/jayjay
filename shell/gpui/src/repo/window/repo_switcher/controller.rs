@@ -68,6 +68,9 @@ impl RepoWindow {
                     crate::repo::window::open::activate_repo_window(Path::new(&path), cx);
                 });
             }
+            RepoSwitcherAction::SwitchWorkspace(path) => {
+                self.switch_workspace(PathBuf::from(path), cx)
+            }
             RepoSwitcherAction::Open(path) => {
                 cx.defer(move |cx| {
                     crate::repo::window::open::open_repo_window(PathBuf::from(path), cx);

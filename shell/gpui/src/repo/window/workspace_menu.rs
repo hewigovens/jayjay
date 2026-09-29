@@ -7,7 +7,7 @@ use crate::ui::icons::glyph;
 
 pub(super) fn workspace_open_copy_items(workspace: &WorkspaceInfo) -> Vec<ContextMenuItem> {
     let mut items = Vec::new();
-    if !workspace.is_current && workspace.is_path_resolved {
+    if workspace.is_switch_target() {
         items.push(ContextMenuItem::new(
             "Open in New Window",
             glyph::COLUMNS,

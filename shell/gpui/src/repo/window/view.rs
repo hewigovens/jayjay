@@ -33,6 +33,7 @@ use super::dag_drag::DagRebaseRequest;
 use super::repo_switcher::RepoSwitcherState;
 use super::revset_filter::RevsetCompletionState;
 use super::stacked_pr::StackedPrState;
+use super::workspace_drafts::WorkspaceDrafts;
 use super::{
     ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState, PrImportState,
 };
@@ -78,6 +79,7 @@ pub struct RepoWindow {
     pub(crate) commit_message: CommitMessageEditor,
     pub(crate) description: super::detail::DescriptionState,
     pub(crate) commit_box: CommitBoxState,
+    pub(super) switching: Option<gpui::Task<()>>,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
     pub(crate) pr_import: Option<PrImportState>,
@@ -308,7 +310,6 @@ impl RepoWindow {
     }
 
     fn new_internal(path: PathBuf, open_now: bool, cx: &mut Context<Self>) -> Self {
-        let review_store = super::review::shared(cx);
         // Open off the main thread (`Repo::open` + initial revset eval are slow on large repos); render a loading pane until it lands.
         let vm_path = path.clone();
         let vm = cx.new(|cx| {
@@ -318,6 +319,32 @@ impl RepoWindow {
             }
             vm
         });
+        let mut view = Self::for_vm(vm, cx);
+        // Real AI-CLI detection may spawn a login shell to resolve PATH; keep it out of the deterministic test scheduler (tests inject a mock provider explicitly), same reason the fs watcher is suppressed.
+        if !crate::app::fs_watcher::is_watcher_suppressed(cx) {
+            view.redetect_commit_ai_provider(cx);
+        }
+        let window = cx.entity_id();
+        cx.on_release(move |_, cx| WorkspaceDrafts::clear(window, cx))
+            .detach();
+        cx.observe_global::<crate::app::config::AppConfigStore>(|this, cx| {
+            let cfg = crate::app::config::current(cx);
+            this.description
+                .apply_preference(cfg.diff.auto_expand_description);
+            let hide_reviewed = cfg.diff.hide_reviewed_files;
+            if this.file_column.hide_reviewed != hide_reviewed {
+                this.file_column.hide_reviewed = hide_reviewed;
+                this.reconcile_file_selection(cx);
+            }
+            this.apply_sidebar_hidden(cfg.layout.sidebar_hidden, cx);
+            cx.notify();
+        })
+        .detach();
+        view
+    }
+
+    pub(super) fn for_vm(vm: Entity<RepoViewModel>, cx: &mut Context<Self>) -> Self {
+        let review_store = super::review::shared(cx);
         let commit_message = CommitMessageEditor::new("", 60., cx);
         cx.observe(&vm, |this, _vm, cx| {
             // A repo that opened after `new` (e.g. in-app `jj git init`) has no watcher yet.
@@ -352,25 +379,12 @@ impl RepoWindow {
             cx.notify();
         })
         .detach();
-        cx.observe_global::<crate::app::config::AppConfigStore>(|this, cx| {
-            let cfg = crate::app::config::current(cx);
-            this.description
-                .apply_preference(cfg.diff.auto_expand_description);
-            let hide_reviewed = cfg.diff.hide_reviewed_files;
-            if this.file_column.hide_reviewed != hide_reviewed {
-                this.file_column.hide_reviewed = hide_reviewed;
-                this.reconcile_file_selection(cx);
-            }
-            this.apply_sidebar_hidden(cfg.layout.sidebar_hidden, cx);
-            cx.notify();
-        })
-        .detach();
         // `current` panics without the store; bare `cx.new(RepoWindow::new)` tests skip `install_test_globals`.
         let cfg = cx
             .has_global::<crate::app::config::AppConfigStore>()
             .then(|| crate::app::config::current(cx));
         let sidebar_hidden = cfg.as_ref().is_some_and(|cfg| cfg.layout.sidebar_hidden);
-        let mut view = Self {
+        Self {
             vm,
             focus_handle: cx.focus_handle(),
             active_pane: if sidebar_hidden {
@@ -420,6 +434,7 @@ impl RepoWindow {
             commit_message,
             description: super::detail::DescriptionState::default(),
             commit_box: CommitBoxState::default(),
+            switching: None,
             commit_ai: CommitAiState::default(),
             text_modal: None,
             pr_import: None,
@@ -429,12 +444,7 @@ impl RepoWindow {
             fs_watcher: None,
             fs_watcher_armed: false,
             review_store,
-        };
-        // Real AI-CLI detection may spawn a login shell to resolve PATH; keep it out of the deterministic test scheduler (tests inject a mock provider explicitly), same reason the fs watcher is suppressed.
-        if !crate::app::fs_watcher::is_watcher_suppressed(cx) {
-            view.redetect_commit_ai_provider(cx);
         }
-        view
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {

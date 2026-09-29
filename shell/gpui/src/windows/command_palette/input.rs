@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::actions::PaletteCtx;
-use super::rows::{self, PaletteRow};
+use super::rows::{self, PaletteRow, WorkspaceTarget};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
@@ -21,12 +21,30 @@ impl CommandPalette {
         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
             .detach();
         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
+        let workspaces = repo_window
+            .as_ref()
+            .map(|window| {
+                window
+                    .read(cx)
+                    .view_model()
+                    .read(cx)
+                    .graph
+                    .workspaces
+                    .iter()
+                    .filter(|workspace| workspace.is_switch_target())
+                    .map(WorkspaceTarget::new)
+                    .collect::<Vec<_>>()
+            })
+            .unwrap_or_default();
+        let candidates = rows::search_candidates(&workspaces);
         Self {
             query: Default::default(),
             selected: 0,
             focus_handle: cx.focus_handle(),
             repo_path,
             repo_window,
+            workspaces,
+            candidates,
             output: CommandOutput::Idle,
             history: Vec::new(),
             history_index: None,
@@ -75,7 +93,7 @@ impl CommandPalette {
     }
 
     pub(super) fn matches(&self) -> Vec<usize> {
-        jayjay_core::fuzzy::rank(self.query.text(), rows::search_candidates())
+        jayjay_core::fuzzy::rank(self.query.text(), &self.candidates)
             .into_iter()
             .map(|ix| ix as usize)
             .collect()
@@ -151,7 +169,7 @@ impl CommandPalette {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        match rows::row(action_ix) {
+        match rows::row(action_ix, &self.workspaces) {
             Some(PaletteRow::Help(topic)) => {
                 window.remove_window();
                 crate::app::links::open_url(cx, &topic.guide_url());
@@ -163,6 +181,13 @@ impl CommandPalette {
                 };
                 window.remove_window();
                 (action.dispatch)(&ctx, cx);
+            }
+            Some(PaletteRow::Workspace(target)) => {
+                let path = std::path::PathBuf::from(&target.path);
+                window.remove_window();
+                if let Some(view) = self.repo_window.clone() {
+                    view.update(cx, |view, cx| view.switch_workspace(path, cx));
+                }
             }
             None => {}
         }

@@ -13,6 +13,7 @@ pub(crate) struct RepoSwitcherState {
 #[derive(Clone)]
 pub(super) enum RepoSwitcherAction {
     Activate(String),
+    SwitchWorkspace(String),
     Open(String),
     ShowRepositoryList,
     OpenRepository,

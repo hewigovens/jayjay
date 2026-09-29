@@ -4,8 +4,8 @@ use std::sync::Arc;
 use gpui::{
     AnyElement, App, AppContext, Bounds, ClickEvent, Context, Entity, FocusHandle, Focusable,
     InteractiveElement, IntoElement, MouseButton, MouseDownEvent, ParentElement, Pixels, Point,
-    Render, SharedString, Size, StatefulInteractiveElement, Styled, TitlebarOptions, Window,
-    WindowBounds, WindowOptions, div, px, rgb, uniform_list,
+    Render, SharedString, Size, StatefulInteractiveElement, Styled, TitlebarOptions, WeakEntity,
+    Window, WindowBounds, WindowOptions, div, px, rgb, uniform_list,
 };
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::FileDiff;
@@ -34,7 +34,7 @@ pub struct EvologView {
     repo: Arc<Repo>,
     rev: String,
     change_id: ShortId,
-    repo_vm: Entity<RepoViewModel>,
+    repo_vm: WeakEntity<RepoViewModel>,
     target: Option<ChangeInfo>,
     entries: Option<Arc<Vec<EvologEntry>>>,
     error: Option<SharedString>,
@@ -88,8 +88,12 @@ impl EvologView {
                     }),
                     ..crate::app::window_options()
                 },
-                |_, cx| {
+                |window, cx| {
                     cx.new(|cx| {
+                        cx.observe_release_in(&repo_vm, window, |_, _, window, _| {
+                            window.remove_window()
+                        })
+                        .detach();
                         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
@@ -97,7 +101,7 @@ impl EvologView {
                             repo,
                             rev,
                             change_id,
-                            repo_vm,
+                            repo_vm: repo_vm.downgrade(),
                             target,
                             entries: None,
                             error: None,
@@ -180,9 +184,12 @@ impl EvologView {
             return;
         }
         let rev = self.rev.clone();
-        let task = self
+        let Ok(task) = self
             .repo_vm
-            .update(cx, |vm, cx| vm.restore_version(rev, commit_id, cx));
+            .update(cx, |vm, cx| vm.restore_version(rev, commit_id, cx))
+        else {
+            return;
+        };
         self.restoring = true;
         cx.spawn(async move |this, cx| {
             let result = task.await;
