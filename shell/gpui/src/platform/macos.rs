@@ -16,7 +16,8 @@ pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in Finder";
 pub const TOOLBAR_HEIGHT: f32 = 52.;
 pub const TOOLBAR_LEADING_INSET: f32 = 96.;
 pub const TOOLBAR_BUTTON_HEIGHT: f32 = 36.;
-pub const TOOLBAR_ICON_SIZE: f32 = 22.;
+/// 18 puts the icons' 2-unit stroke on whole device pixels at 2x; SF Symbols in the SwiftUI toolbar measure about the same.
+pub const TOOLBAR_ICON_SIZE: f32 = 18.;
 pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (20., 19.);
 pub const CUSTOM_TERMINAL_LABEL: &str = "App name";
 pub const CUSTOM_TERMINAL_HINT: &str = "e.g. Terminal";
