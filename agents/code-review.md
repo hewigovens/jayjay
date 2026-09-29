@@ -46,7 +46,8 @@ Use adversarial review when the patch changes a trust boundary, destructive repo
 ## Tests and Verification
 
 - Use the smallest test layer that proves behavior: Rust unit/integration, Swift unit, XCUITest scene, or GPUI component test.
-- Bug fixes should include the regression test that would have caught the bug.
+- Bug fixes should include the regression test that would have caught the bug, shown to fail on the pre-fix code.
+- Check new or changed tests against the authoring gate and low-value patterns in [Testing](testing.md#before-adding-a-test).
 - UI tests that mutate repo state need isolated fixtures; GPUI tests should use hermetic `jj-test` fixtures and assert behavior, not pixels.
 - Report the checks that actually ran, per the evidence rule in [Task Authority](../AGENTS.md#task-authority); do not imply `just build` or workspace-wide `just test` ran unless they did.
 - For crucial changes — security fixes, destructive or mutating repo operations, review-state invariants, release/update integrity — include a mini test matrix: a compact table mapping the key scenarios (normal, boundary, and hostile/adversarial input) to expected behavior and the test that covers each. Flag any uncovered row as missing coverage.
