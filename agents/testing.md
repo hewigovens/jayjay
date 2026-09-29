@@ -24,8 +24,8 @@ Answer four questions; a missing answer means do not add it yet.
 
 1. Which observable behavior, invariant, or contract does it protect?
 2. Which credible regression makes it fail?
-3. Why does existing coverage not catch that failure? Each contract has one owning test at the strongest boundary. Another layer earns its own test only for a risk the owner cannot reach, such as UniFFI marshalling, an interaction, or a lifecycle failure. Extend a table-driven case or shared fixture before writing a near-duplicate.
-4. Does it need a production seam (a `pub` item, flag, wrapper, or injection hook) that no production caller needs? If so, test at the real boundary instead. The GPUI exit hook below is the deliberate exception.
+3. Why does existing coverage not catch that failure? Each contract has one owning test at the lowest layer that directly proves it. A higher layer earns its own test only for a risk the owner cannot reach, such as UniFFI marshalling, an interaction, or a lifecycle failure. Extend a table-driven case or shared fixture before writing a near-duplicate.
+4. Does it need a production seam (a `pub` item, flag, wrapper, or injection hook) that no production caller needs? If so, test at the real boundary instead. The sanctioned seams are the `test-util` and `mock` features below, the working-copy lock hook, and the GPUI exit hook.
 
 A test that would break under a behavior-preserving refactor asserts implementation, not behavior; rewrite it at the owning boundary.
 
@@ -46,7 +46,7 @@ A source or asset grep is junk when it mirrors an identifier, and the cheapest i
 
 ### Auditing existing tests
 
-Discovery is read-only; report evidence before editing, and prefer a few high-confidence candidates over a large inventory. Static or slow is not a deletion reason. Before removing a test, record its name and location, the failure it can detect, the non-test callers of any seam it keeps alive, the stronger remaining proof or why none is needed, why it was added, what its removal unlocks deleting, and the focused validation command. A retained test that fails on the baseline is a possible product bug: reproduce it and repair the owner rather than deleting the test. Delete the test-only seams a removed test kept alive instead of preserving aliases, and move retained regressions to their owning layer.
+Discovery is read-only; report evidence before editing, and prefer a few high-confidence candidates over a large inventory. Static or slow is not a deletion reason. Before removing a test, record its name and location, the failure it can detect, the non-test callers of any seam it keeps alive, the stronger remaining proof or why none is needed, why it was added, what its removal unlocks deleting, and the focused validation command. A retained test that fails on the baseline is a possible product bug: reproduce and report it rather than deleting the test, and repair the owner only when implementation was requested. Delete the test-only seams a removed test kept alive instead of preserving aliases, and move retained regressions to their owning layer.
 
 ## Rust Test Organization
 
