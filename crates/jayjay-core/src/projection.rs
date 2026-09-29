@@ -121,27 +121,4 @@ mod tests {
             Some(DiffProjectionMode::Processed)
         );
     }
-
-    #[test]
-    fn plugin_ids_map_to_reusable_projection_plugin_kinds() {
-        assert_eq!(
-            DiffProjectionPlugin::from_projection(&projection(
-                "delimited",
-                DiffProjectionMode::Raw
-            )),
-            DiffProjectionPlugin::Delimited
-        );
-        assert_eq!(
-            DiffProjectionPlugin::from_projection(&projection("ipynb", DiffProjectionMode::Raw)),
-            DiffProjectionPlugin::Ipynb
-        );
-        assert_eq!(
-            DiffProjectionPlugin::from_projection(&projection("plist", DiffProjectionMode::Raw)),
-            DiffProjectionPlugin::Plist
-        );
-        assert_eq!(
-            DiffProjectionPlugin::from_projection(&projection("sarif", DiffProjectionMode::Raw)),
-            DiffProjectionPlugin::Sarif
-        );
-    }
 }

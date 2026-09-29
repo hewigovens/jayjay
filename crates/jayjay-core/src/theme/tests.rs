@@ -51,9 +51,3 @@ fn diff_palette_derives_from_a_seed_with_readable_contrast() {
         }
     }
 }
-
-#[test]
-fn builtin_diff_palettes_are_hand_tuned_not_derived() {
-    assert_eq!(DiffThemeColors::light().added_bg, 0xdafbe1);
-    assert_eq!(DiffThemeColors::dark().gutter_bg, 0x0c0f14);
-}

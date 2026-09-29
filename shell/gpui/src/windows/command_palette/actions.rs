@@ -304,26 +304,6 @@ mod tests {
     use super::ACTIONS;
     use crate::app::config::{AppConfig, AppConfigStore};
 
-    #[test]
-    fn actions_include_web_user_guide() {
-        let action = ACTIONS
-            .iter()
-            .find(|action| action.name == "Open User Guide")
-            .expect("guide action");
-        assert!(action.keywords.contains(&"help"));
-        assert!(action.keywords.contains(&"docs"));
-    }
-
-    #[test]
-    fn actions_include_operation_log() {
-        let action = ACTIONS
-            .iter()
-            .find(|action| action.name == "Operation Log")
-            .expect("operation log action");
-        assert!(action.keywords.contains(&"op"));
-        assert!(action.keywords.contains(&"restore"));
-    }
-
     #[gpui::test]
     fn open_editor_action_display_name_uses_configured_editor(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {

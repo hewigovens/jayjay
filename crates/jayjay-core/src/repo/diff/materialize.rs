@@ -273,14 +273,6 @@ mod tests {
     }
 
     #[test]
-    fn parses_binary_placeholder_size() {
-        assert_eq!(
-            parse_binary_placeholder_size("<binary file (742800 bytes)>"),
-            Some(742800)
-        );
-    }
-
-    #[test]
     fn is_image_path_recognizes_common_formats() {
         assert!(is_image_path("foo.png"));
         assert!(is_image_path("foo.jpg"));

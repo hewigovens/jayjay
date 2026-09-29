@@ -15,9 +15,38 @@ Choose the exact test target when a name filter could hit the wrong unit or inte
 - Cover behavior at the lowest layer that proves it. Shell tests should catch independent integration or interaction failures rather than repeat Rust assertions. Combine equivalent input variants; keep distinct failure modes independently diagnosable.
 - Unit tests cover core logic, view-model behavior, parsers, serialization boundaries, and regressions.
 - UI tests cover user-visible workflows and accessibility identifiers: one scene per workflow.
-- Avoid tests that only restate constants, static palette values, simple default field choices, or direct field-by-field wiring.
-- Bug fixes include the regression test that would have caught the issue.
+- Bug fixes include the regression test that would have caught the issue. Confirm it fails on the pre-fix code for the intended reason and passes after the fix; a regression test that never failed proves the fixture, not the fix. One regression at the owning layer covers the bug; do not replay the scenario at every layer it crosses.
 - Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/integration/pull_requests.rs` uses it when present and skips when it is not. Keep deterministic fixtures as the required gate; report live coverage separately as run, skipped, or blocked.
+
+### Before adding a test
+
+Answer four questions; a missing answer means do not add it yet.
+
+1. Which observable behavior, invariant, or contract does it protect?
+2. Which credible regression makes it fail?
+3. Why does existing coverage not catch that failure? Each contract has one owning test at the lowest layer that directly proves it. A higher layer earns its own test only for a risk the owner cannot reach, such as UniFFI marshalling, an interaction, or a lifecycle failure. Extend a table-driven case or shared fixture before writing a near-duplicate.
+4. Does it need a production seam (a `pub` item, flag, wrapper, or injection hook) that no production caller needs? If so, test at the real boundary instead. The sanctioned seams are the `test-util` and `mock` features below, the working-copy lock hook, and the GPUI exit hook.
+
+A test that would break under a behavior-preserving refactor asserts implementation, not behavior; rewrite it at the owning boundary.
+
+### Low-value patterns
+
+Reject these when authoring. Remove an existing one only when implementation or an audit was requested; a review or investigation that finds one reports it. Keep a test that independently guards a public API, persistence format, migration, security, platform, external tool protocol, or generated cross-language contract:
+
+- assertion-free tests that only exercise code;
+- self-comparisons, or expected values produced by the helper or renderer under test;
+- tests that restate constants, static palette values, default field choices, shortcut tables, or field-by-field wiring;
+- the same contract asserted again with trivially different inputs, or at a second layer with no distinct risk;
+- fixtures or fakes that implement the asserted behavior, so the test proves the fake;
+- production code, `pub` items, or `#[cfg(test)]` seams whose only callers are tests;
+- negative controls that pass for an unrelated reason, such as a rejection from a different guard;
+- names or fixtures that promise more than the input exercises.
+
+A source or asset grep is junk when it mirrors an identifier, and the cheapest independent guard when it fails on a user-facing key, byte, or path and survives a rename.
+
+### Auditing existing tests
+
+Discovery is read-only; report evidence before editing, and prefer a few high-confidence candidates over a large inventory. Static or slow is not a deletion reason. Before removing a test, record its name and location, the failure it can detect, the non-test callers of any seam it keeps alive, the stronger remaining proof or why none is needed, why it was added, what its removal unlocks deleting, and the focused validation command. A retained test that fails on the baseline is a possible product bug: reproduce and report it rather than deleting the test, and repair the owner only when implementation was requested. Delete the test-only seams a removed test kept alive instead of preserving aliases, and move retained regressions to their owning layer.
 
 ## Rust Test Organization
 

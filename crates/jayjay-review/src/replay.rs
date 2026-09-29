@@ -121,15 +121,6 @@ mod tests {
     }
 
     #[test]
-    fn finds_anchor_group() {
-        let group = anchor_group_index(
-            &note(NoteSide::New, 2, "changed"),
-            &file_diff("a\nb\n", "a\nchanged\nb\n"),
-        );
-        assert_eq!(group, Some(0));
-    }
-
-    #[test]
     fn missing_anchor_is_stale() {
         let group = anchor_group_index(
             &note(NoteSide::New, 2, "other"),

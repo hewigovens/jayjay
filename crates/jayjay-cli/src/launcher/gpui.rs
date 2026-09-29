@@ -28,12 +28,7 @@ fn find_in_dirs(name: &str, dirs: impl Iterator<Item = PathBuf>) -> Option<PathB
 }
 
 fn gpui_executable_name() -> String {
-    executable_name_with_suffix(env::consts::EXE_SUFFIX)
-}
-
-// Takes the suffix directly, rather than reading env::consts, so the Windows `.exe` naming is unit-testable without a Windows target.
-fn executable_name_with_suffix(suffix: &str) -> String {
-    format!("jayjay-gpui{suffix}")
+    format!("jayjay-gpui{}", env::consts::EXE_SUFFIX)
 }
 
 #[cfg(test)]
@@ -80,28 +75,5 @@ mod tests {
         let temp_dir = tempfile::tempdir().expect("temp dir");
         let found = find_in_dirs("jayjay-gpui", [temp_dir.path().to_path_buf()].into_iter());
         assert_eq!(found, None);
-    }
-
-    #[test]
-    fn test_find_in_dirs_matches_exe_suffixed_name() {
-        let temp_dir = tempfile::tempdir().expect("temp dir");
-        let target = temp_dir.path().join("jayjay-gpui.exe");
-        fs::write(&target, "").expect("write target");
-
-        let found = find_in_dirs(
-            "jayjay-gpui.exe",
-            [temp_dir.path().to_path_buf()].into_iter(),
-        );
-        assert_eq!(found, Some(target));
-    }
-
-    #[test]
-    fn test_executable_name_has_no_suffix_on_unix() {
-        assert_eq!(executable_name_with_suffix(""), "jayjay-gpui");
-    }
-
-    #[test]
-    fn test_executable_name_appends_exe_suffix_on_windows() {
-        assert_eq!(executable_name_with_suffix(".exe"), "jayjay-gpui.exe");
     }
 }

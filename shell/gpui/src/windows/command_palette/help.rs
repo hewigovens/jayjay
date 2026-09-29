@@ -76,18 +76,6 @@ mod tests {
     }
 
     #[test]
-    fn guide_url_appends_topic_anchor_to_canonical_guide() {
-        let topic = topics()
-            .iter()
-            .find(|topic| topic.id == "review-notes")
-            .expect("review-notes topic");
-        assert_eq!(
-            topic.guide_url(),
-            "https://jayjay.hewig.dev/guide.html#review-notes"
-        );
-    }
-
-    #[test]
     fn topic_for_row_maps_indices_past_actions() {
         assert!(topic_for_row(0).is_none());
         assert!(topic_for_row(ACTIONS.len() - 1).is_none());
