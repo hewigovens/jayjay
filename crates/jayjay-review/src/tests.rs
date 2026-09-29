@@ -28,13 +28,6 @@ fn anchor() -> NoteAnchor {
 }
 
 #[test]
-fn file_mark_roundtrip() {
-    let mut s = make_store();
-    s.mark_reviewed("c1", "a.txt", "id-v1");
-    assert!(s.is_reviewed("c1", "a.txt", "id-v1"));
-}
-
-#[test]
 fn in_memory_snapshot_round_trips_review_state() {
     let mut store = note_store();
     store.mark_reviewed("c1", "a.txt", "id-v1");
@@ -54,14 +47,6 @@ fn identity_change_invalidates_marks() {
     s.mark_hunk_reviewed("c1", "a.txt", "id-v1", 0);
     assert!(!s.is_reviewed("c1", "a.txt", "id-v2"));
     assert!(!s.is_hunk_reviewed("c1", "a.txt", "id-v2", 0));
-}
-
-#[test]
-fn matching_identity_keeps_marks() {
-    // The store treats identity as opaque; rebase-invariance of the identity itself is proven against a real repo in tests/review_identity.rs.
-    let mut s = make_store();
-    s.mark_reviewed("c1", "a.txt", "id-v1");
-    assert!(s.is_reviewed("c1", "a.txt", "id-v1"));
 }
 
 #[test]
