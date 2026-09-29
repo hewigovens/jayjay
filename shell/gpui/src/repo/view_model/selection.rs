@@ -2,11 +2,17 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::Context;
-use jayjay_core::ChangeInfo;
 use jayjay_core::compare::{self, BookmarkDiffRequest, CompareState};
 use jayjay_core::dag::{SelectionClick, SelectionGraph, SelectionState};
+use jayjay_core::{ChangeInfo, GraphEntry};
 
-use super::{RepoViewModel, SelectionCache};
+use super::RepoViewModel;
+
+pub(super) struct SelectionCache {
+    pub(super) entries: Arc<Vec<GraphEntry>>,
+    pub(super) graph: SelectionGraph,
+    pub(super) state: Option<(Vec<usize>, Arc<SelectionState>)>,
+}
 
 impl RepoViewModel {
     /// Preserve `revision` through the next refresh by resolving it in the current graph; `None` deliberately lets refresh fall back to the working copy.
