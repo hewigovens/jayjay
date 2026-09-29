@@ -2,18 +2,13 @@ use std::path::{Path, PathBuf};
 
 use notify::event::{EventKind, ModifyKind};
 
-/// What an FS event means before debounce, derived purely from its kind and paths.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum EventClass {
-    /// Metadata-only / uninteresting, or a `.jj/` internal we already cover via op_heads.
     Ignore,
-    /// A jj operation landed (op_heads changed) — refresh the graph.
     OpHeads,
-    /// A working-copy path changed; relevance + debounce still gate the send.
     WorkingCopy,
 }
 
-/// Static per-watcher config used to classify each raw event.
 pub(super) struct PathClassifier {
     pub(super) op_heads_dir: PathBuf,
     pub(super) repo_root: PathBuf,

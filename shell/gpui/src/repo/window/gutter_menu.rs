@@ -1,5 +1,3 @@
-//! Right-click menu for unified-diff gutter rows.
-
 use std::sync::Arc;
 
 use gpui::{Context, Pixels, Point};
@@ -14,12 +12,12 @@ use crate::diff::{
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
-/// Fully resolved when the menu was built (line-range mapping run, content retained), so dispatch never re-derives anything or risks racing a selection/file change made after the click.
+/// Fully resolved when the menu was built, so dispatch can't race a selection or file change made after the click.
 pub struct AbandonSelectedLinesRequest {
     rev: String,
     selection: DiffEditFileSelection,
     ignore_whitespace: bool,
-    /// Completion only clears `diff.gutter_selection` if it still matches this, so a selection started elsewhere during the async gap between dispatch and completion survives.
+    /// Completion clears `diff.gutter_selection` only if it still matches this, so a selection started during the async gap survives.
     source_selection: GutterLineSelection,
 }
 
@@ -67,7 +65,7 @@ impl RepoWindow {
         items
     }
 
-    /// jj materializes an unresolved conflict's content with literal marker text, which passes `is_editable_text`, so conflicts need their own explicit rejection check here.
+    /// A conflict's materialized marker text passes `is_editable_text`, so conflicts need their own rejection.
     fn abandon_selected_lines_menu_item(
         &self,
         hunk: &DiffHunk,
@@ -97,7 +95,7 @@ impl RepoWindow {
         {
             return None;
         }
-        // Indexes the display basis (post conflict-block collapse) used by `WrappedDiffLine::line_ix`/`GutterLineSelection`, never raw `FileDiff.lines`.
+        // Indexes the display basis (post conflict-block collapse), never raw `FileDiff.lines`.
         let display_lines = build_diff_display_lines(raw_lines);
         let rev = vm.selected_revision()?;
         let line_range = selection.line_range();
@@ -120,7 +118,7 @@ impl RepoWindow {
             selection: DiffEditFileSelection {
                 path: hunk.path.clone(),
                 old_path: None,
-                // Absent side must be None (not Some("")), mirroring SwiftUI: an Added file has no old side, a Removed file has no new side, so the staleness guard's materialized-vs-selection comparison matches for deleted/added files.
+                // An absent side must be None, not Some(""), so the staleness guard matches for added and deleted files.
                 old_content: (hunk.hunk_type != HunkType::Added).then(|| old_content.to_owned()),
                 new_content: (hunk.hunk_type != HunkType::Removed).then(|| new_content.to_owned()),
                 hunk_type: hunk.hunk_type,
@@ -141,7 +139,7 @@ impl RepoWindow {
         ))
     }
 
-    /// Success is silent (no toast) — the diff refreshing with the same file re-selected is confirmation enough; `repo_write_task` still surfaces failures via `vm.present_error`.
+    /// Success is silent: the refreshed diff is confirmation enough.
     pub(super) fn abandon_selected_diff_lines(
         &mut self,
         request: Arc<AbandonSelectedLinesRequest>,

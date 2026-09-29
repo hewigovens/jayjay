@@ -12,7 +12,6 @@ fn empty_selection_yields_no_ranges() {
     let old = "a\nb\n";
     let new = "a\nx\n";
     let collapsed = compute_file_diff("f.txt", old, new, false);
-    // Line 0 is unchanged context — selecting only it should select nothing.
     let ranges =
         display_range_to_diff_edit_range("f.txt", &collapsed.lines, old, new, false, 0..=0);
     assert!(ranges.is_empty());
@@ -55,7 +54,6 @@ fn contiguous_added_and_removed_pair_collapses_to_one_range() {
     assert_eq!(range(&ranges, 0), (expected_lo, expected_hi));
 }
 
-// Regression test: once a separator collapses hidden context, display index no longer equals `full_line - 1`, so the mapping must go through line identity, not arithmetic.
 #[test]
 fn maps_collapsed_display_index_to_full_diff_line_when_context_is_hidden() {
     let mut old_lines: Vec<String> = (1..=30).map(|n| format!("line{n}")).collect();
@@ -153,7 +151,6 @@ fn selection_covers_whole_change_group_true_for_exact_group_bounds() {
         &collapsed.lines,
         lo..=hi
     ));
-    // A range that includes an extra context line no longer matches the group exactly.
     assert!(!selection_covers_whole_change_group(
         &collapsed.lines,
         0..=hi

@@ -1,4 +1,4 @@
-//! Review-note composer: an overlay extension of `TextModalState`, not a `uniform_list` row — a row would clip and lose focus mid-edit once note rows scroll out of the fixed-height list.
+//! An overlay, not a `uniform_list` row: a row would clip and lose focus once note rows scroll out of the list.
 
 use gpui::{App, AppContext, Context};
 use jayjay_core::diff::{DiffSpanStyle, build_diff_display_lines};
@@ -87,7 +87,6 @@ impl RepoWindow {
         );
     }
 
-    /// `pub` (not `pub(super)`, unlike its Delete sibling): `diff::diff_view::note_banner` calls this directly too.
     pub(crate) fn resolve_review_note(&mut self, note_id: String, cx: &mut Context<Self>) {
         super::review::mutate(&self.review_store, |store| {
             store.resolve_note(&note_id);
@@ -172,7 +171,6 @@ impl RepoWindow {
         cx.notify();
     }
 
-    /// Looks up by id in `vm.notes.all` (already includes resolved notes) rather than re-reading the store.
     fn find_review_note(&self, note_id: &str, cx: &App) -> Option<NoteEntry> {
         self.vm
             .read(cx)

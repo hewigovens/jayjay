@@ -74,7 +74,7 @@ impl RepoWindow {
                         let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
                         let wrapped = self.diff.wrap_cache.borrow_mut().unified(diff, cols);
                         let w_ix = visual_index_for_line(&wrapped, line_ix_u32) as usize;
-                        // Route through the same interleaved row list `unified_body` renders, not a private `wrap_diff_lines` call, so a note above the match can't shift the scroll target off by its own row count.
+                        // Route through the row list `unified_body` renders, or a note above the match shifts the scroll target.
                         self.diff_render_rows(cx)
                             .map(|rendered| row_index_for_line(&rendered.rows, w_ix))
                             .unwrap_or(w_ix)

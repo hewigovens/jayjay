@@ -1,5 +1,3 @@
-//! Interleaves review-note rows into the unified diff's shared row list.
-
 mod build_rows;
 mod diff_render_rows;
 mod fingerprint;

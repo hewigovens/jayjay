@@ -1,4 +1,4 @@
-//! One process-wide `ReviewStore` shared by every `RepoWindow` via a GPUI global; per-window copies would each rewrite `review_store.json` from their own snapshot, clobbering marks made in other windows.
+//! One process-wide `ReviewStore`: per-window copies would each rewrite `review_store.json` from their own snapshot, clobbering other windows' marks.
 
 use std::cell::RefCell;
 use std::collections::{HashMap, HashSet};
@@ -30,7 +30,7 @@ pub fn shared(cx: &mut App) -> SharedReviewStore {
     cx.default_global::<ReviewStoreHandle>().0.clone()
 }
 
-/// Mutate against fresh disk state: the store lives for the whole process, so saving its startup snapshot would clobber marks and notes the CLI or the SwiftUI shell persisted since load.
+/// Mutate against fresh disk state, or saving the startup snapshot would clobber marks the CLI or SwiftUI shell persisted since load.
 pub fn mutate<R>(
     store: &SharedReviewStore,
     f: impl FnOnce(&mut jayjay_review::ReviewStore) -> R,
@@ -40,7 +40,6 @@ pub fn mutate<R>(
     f(&mut store)
 }
 
-/// Install a non-persisting in-memory store so tests never touch the real `review_store.json`.
 pub fn install_in_memory(cx: &mut App) {
     cx.set_global(ReviewStoreHandle(Rc::new(RefCell::new(
         jayjay_review::ReviewStore::in_memory(),
@@ -154,7 +153,7 @@ impl RepoWindow {
         let change_id = vm.selected_change()?.change_id.id.clone();
         let review = loaded_review_snapshot(vm, hunk)?;
         let rows = self.diff.wrap_cache.borrow_mut().review_rows(file_diff);
-        // The map was built from the loaded text pair; if the rendered diff has since regrouped (context expansion, whitespace mode), stripes would label the wrong hunks, so hide them instead of guessing.
+        // The map came from the loaded text pair; if the diff has since regrouped, hide stripes instead of labelling the wrong hunks.
         if review.display_groups.len() != rows.group_count {
             return None;
         }
@@ -237,7 +236,6 @@ impl RepoWindow {
         cx.notify();
     }
 
-    /// `cx: &App` (not `&Context<Self>`) so this stays callable from contexts that only hold an `&App`; `&Context<Self>` still coerces in at existing call sites.
     pub(super) fn review_file_context(&self, cx: &App) -> (bool, Option<String>) {
         let vm = self.vm.read(cx);
         let show_review = vm.shows_review_controls();
@@ -245,7 +243,7 @@ impl RepoWindow {
         (show_review, change_id)
     }
 
-    /// Every note surface (gutter dot, menu items, note rows, composer, badges) must gate through this: working-copy diff, outside compare mode, a real non-projected hunk with a review identity.
+    /// Every note surface must gate through this.
     pub fn review_notes_context(&self, hunk: &DiffHunk, cx: &App) -> Option<String> {
         let (show_review, change_id) = self.review_file_context(cx);
         if !show_review || hunk.projection.is_some() || hunk.review_identity.is_empty() {
@@ -254,7 +252,7 @@ impl RepoWindow {
         change_id
     }
 
-    /// Working-copy change id when notes should be shown; `None` in compare mode or on a non-working-copy change, which triggers clearing rather than reconciling elsewhere.
+    /// `None` in compare mode or on a non-working-copy change, which triggers clearing.
     fn review_notes_change_id(&self, cx: &App) -> Option<String> {
         let vm = self.vm.read(cx);
         vm.shows_review_controls()
@@ -262,14 +260,14 @@ impl RepoWindow {
             .flatten()
     }
 
-    /// Always `refresh_if_stale()` before reading the shared store, never a raw read on the long-lived global; returns raw notes with `include_resolved: true` so a resolved note still surfaces its dimmed dot.
+    /// Always `refresh_if_stale()` before reading the shared store; resolved notes are included so they keep their dimmed dot.
     fn snapshot_review_notes(&self, change_id: &str) -> Vec<jayjay_review::NoteEntry> {
         let mut store = self.review_store.borrow_mut();
         store.refresh_if_stale();
         store.list_notes(change_id, true)
     }
 
-    /// Callers must call this after mutating through `mutate()` so the reconciled `vm.notes.all` (and cached row list) reflects the write; always re-snapshots, unlike `sync_review_notes` below, which only does so when the sync key changed.
+    /// Call after mutating through `mutate()` so `vm.notes.all` and the cached row list reflect the write.
     pub fn refresh_review_notes(&mut self, cx: &mut Context<Self>) {
         let notes = match self.review_notes_change_id(cx) {
             Some(change_id) => {
@@ -286,10 +284,10 @@ impl RepoWindow {
         self.vm.update(cx, |vm, cx| vm.load_review_notes(notes, cx));
     }
 
-    /// Detects both note writes this process didn't make and diff refreshes that change file identities, since reconciliation depends on both; also how the first load for a newly-selected working-copy change happens, via `None != Some(key)`.
+    /// Detects note writes this process didn't make and diff refreshes that change file identities; reconciliation depends on both.
     pub fn sync_review_notes(&mut self, cx: &mut Context<Self>) {
         let Some(change_id) = self.review_notes_change_id(cx) else {
-            // Gate just turned off: drop the last session's key too, or `vm.notes.all` (which `active_note_counts`/`stale_or_orphaned_notes` assume is already empty outside the notes session) would keep serving badges/banners for a change no longer shown.
+            // Gate just turned off: drop the last key too, or `vm.notes.all` keeps serving badges for a change no longer shown.
             if self.diff.review_notes_sync_key.take().is_some() {
                 self.vm
                     .update(cx, |vm, cx| vm.load_review_notes(Vec::new(), cx));
@@ -307,7 +305,7 @@ impl RepoWindow {
         }
     }
 
-    /// Hash of every hunk's (path, review_identity): identities change exactly when file bytes change, which reconciliation output depends on besides the notes themselves.
+    /// Identities change exactly when file bytes change, which reconciliation depends on.
     fn review_files_fingerprint(&self, cx: &App) -> u64 {
         use std::hash::{Hash, Hasher};
         let mut hasher = std::collections::hash_map::DefaultHasher::new();

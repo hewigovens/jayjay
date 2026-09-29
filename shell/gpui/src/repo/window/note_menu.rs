@@ -1,4 +1,4 @@
-//! Review-note gutter menu items + shell-side anchor construction. Anchor building never calls `Repo::review_note_anchor`/`jayjay_review::build_note_anchor` (the CLI add-note path): those hardcode `ignore_whitespace = false`, which can record a wrong-mode anchor that reconciles Stale in the very diff it was added from once the ignore-whitespace toggle is on.
+//! Anchors are built shell-side: the CLI add-note path hardcodes `ignore_whitespace = false`, which can record a wrong-mode anchor.
 
 use std::sync::Arc;
 
@@ -13,7 +13,7 @@ use super::RepoWindow;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
-/// Fully resolved at menu-build time (side/line/excerpt/context, change id, whitespace mode), so dispatch never re-derives anything from a possibly-stale selection or file switch made between build and click.
+/// Fully resolved at menu-build time, so dispatch can't race a selection or file switch made after.
 pub struct AddNoteRequest {
     pub(crate) change_id: String,
     pub(crate) path: String,
@@ -107,7 +107,7 @@ impl RepoWindow {
             glyph::PLUS_CIRCLE,
             ContextAction::OpenAddReviewNote(request),
         )];
-        // A resolved note keeps only its dimmed dot; Delete here is the sole way to remove it (SwiftUI's popover offers the same).
+        // Delete is the sole way to remove a resolved note.
         for resolved in notes_at_line
             .iter()
             .filter(|s| s.status == NoteStatus::Resolved)
@@ -122,7 +122,7 @@ impl RepoWindow {
     }
 }
 
-/// Side/line/excerpt for the line at `line_ix`, or `None` on a context/separator line — those can't anchor a note.
+/// `None` on a context or separator line, which can't anchor a note.
 fn line_anchor(display_lines: &[DiffLine], line_ix: usize) -> Option<(NoteSide, u32, String)> {
     let line = display_lines.get(line_ix)?;
     let (side, line_no) = anchor_side_and_number(line)?;
@@ -133,7 +133,6 @@ fn line_anchor(display_lines: &[DiffLine], line_ix: usize) -> Option<(NoteSide, 
     Some((side, line_no, line.text()))
 }
 
-/// Finds the display-line index matching an existing note's (side, line) anchor — used by the edit composer, which only has the note's recorded side/line, not the display index originally clicked.
 pub(super) fn display_line_index_for(
     display_lines: &[DiffLine],
     side: NoteSide,

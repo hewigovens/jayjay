@@ -4,7 +4,7 @@ use std::ops::RangeInclusive;
 use jayjay_core::DiffEditRange;
 use jayjay_core::diff::{DiffLine, DiffSpanStyle, compute_file_diff_full};
 
-/// Maps 0-based display-line indices in the collapsed diff to 1-based `DiffEditRange`s in the full diff by matching (style, old_line_no, new_line_no) — a stable key because collapsing only elides unchanged context and never renumbers changed lines.
+/// Matches by (style, old_line_no, new_line_no): collapsing only elides unchanged context and never renumbers changed lines.
 pub(crate) fn display_range_to_diff_edit_range(
     path: &str,
     collapsed_lines: &[DiffLine],

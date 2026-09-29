@@ -111,7 +111,7 @@ impl RepoWindow {
             }
             let loaded = self.diff_edit.loaded_files.get(&hunk.path);
             let supported = hunk_supports_diff_edit(hunk) && loaded.is_some();
-            // The keyed lookup pins the default projection mode; a path scan can surface the wrong entry and can never match processed rows stored under the projection's virtual path.
+            // The keyed lookup pins the default projection mode; a path scan can surface the wrong entry.
             let preview = loaded.map(|file| file.display_diff.clone()).or_else(|| {
                 match self.vm.read(cx).diff_load_state(hunk) {
                     DiffLoadState::Loaded(cached) => Some(cached.diff.clone()),

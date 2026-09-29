@@ -20,7 +20,6 @@ pub(in crate::repo::window) fn lane_column_width(display_lane_count: usize) -> f
     lanes as f32 * LANE_WIDTH + LEADING_PAD + TRAILING_PAD
 }
 
-/// Lane geometry for a single DAG row — used to decide what lines to draw.
 pub(in crate::repo::window) struct DagRowLanes {
     pub row_lane: usize,
     pub pass_through_lanes: Vec<usize>,
@@ -94,7 +93,6 @@ pub(in crate::repo::window) fn dag_column(
             let row_bottom = oy + h;
 
             window.with_content_mask(Some(ContentMask { bounds }), |window| {
-                // 1. Lanes that pass through this row: full top → bottom.
                 for &display_lane in &pass_through_display_lanes {
                     stroke_line_pattern(
                         window,
@@ -120,7 +118,6 @@ pub(in crate::repo::window) fn dag_column(
                     );
                 }
 
-                // 3. Edges to parents — straight for same lane, cubic curve otherwise.
                 let start_y = node_y + radius_px;
                 for &(target_display_lane, edge_type) in &edge_targets {
                     let target_x = display_lane_center_x(target_display_lane);
@@ -188,7 +185,6 @@ pub(in crate::repo::window) fn dag_column(
                     );
                 }
 
-                // 4. Node on top.
                 paint_node(window, my_x, node_y, style);
             });
         },

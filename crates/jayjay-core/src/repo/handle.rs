@@ -28,7 +28,7 @@ pub struct Repo {
     pub(super) running_jj_processes: RunningJjProcesses,
     pub(super) immutable_ids_cache: RepoCache<log::ImmutableIds>,
     pub(super) commit_tags_cache: RepoCache<HashMap<CommitId, Vec<String>>>,
-    /// A workspace's changed-file count costs a full parent-tree diff, so keep the last count per workspace and re-diff only the ones whose working-copy commit moved.
+    /// A changed-file count costs a full parent-tree diff; re-diff only workspaces whose working-copy commit moved.
     pub(super) workspace_files_changed_cache: RwLock<HashMap<String, (CommitId, u32)>>,
     pub(super) lfs_cache: Mutex<LfsCache>,
     pub(super) write_lock: Arc<parking_lot::ReentrantMutex<()>>,
@@ -92,7 +92,7 @@ impl Repo {
         *self.repo.write().unwrap() = repo;
     }
 
-    /// Concurrent mutations/refreshes each `load -> work -> set_repo`, so a slow loser can arrive with a stale or divergent op; keep the newer state and reconcile from disk (which merges concurrent op heads) instead of clobbering it.
+    /// A slow concurrent writer can arrive with a stale or divergent op; keep the newer state and reconcile from disk.
     pub(super) fn set_repo(&self, repo: Arc<ReadonlyRepo>) {
         let mut current = self.repo.write().unwrap();
         let candidate_is_current_or_newer =
@@ -171,7 +171,6 @@ mod tests {
         let repo_path = temp_dir.path().join("repo");
         let repo = Repo::open(&repo_path).expect("open repo");
 
-        // Stand-in for a repo a concurrent refresh loaded before the mutation.
         let stale = repo.get_repo();
         let stale_op = current_op(&repo);
 

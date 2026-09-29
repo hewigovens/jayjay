@@ -15,7 +15,7 @@ pub(super) struct SelectionCache {
 }
 
 impl RepoViewModel {
-    /// Preserve `revision` through the next refresh by resolving it in the current graph; `None` deliberately lets refresh fall back to the working copy.
+    /// `None` deliberately lets refresh fall back to the working copy.
     pub(super) fn refresh_selecting_revision(
         &mut self,
         revision: Option<&str>,
@@ -30,7 +30,7 @@ impl RepoViewModel {
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
-        // Consumed synchronously, not lazily in the async completion below, so a superseded `select_change` can't leave this set for an unrelated later selection to pick up.
+        // Consumed synchronously so a superseded `select_change` can't leave it for an unrelated later selection.
         let restore_path = self.pending_file_selection.take();
         self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
         let generation = self.loading.change_gen;
@@ -45,7 +45,7 @@ impl RepoViewModel {
         }
         self.clear_detail_state();
         self.loading.files = true;
-        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset, even when the new change has no bookmark to trigger refresh_pr_info.
+        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset.
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         self.pr_info = None;
 
@@ -82,7 +82,6 @@ impl RepoViewModel {
                 }
             },
             move |vm, (detail, stats, conflicted_paths), cx| {
-                // Drop stale results from a superseded select_change.
                 if vm.loading.change_gen != generation {
                     return;
                 }

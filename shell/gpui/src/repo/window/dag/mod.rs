@@ -1,5 +1,3 @@
-//! DAG lane and node renderer for the repo sidebar.
-
 mod column;
 mod paint;
 mod style;

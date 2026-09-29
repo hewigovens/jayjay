@@ -62,7 +62,7 @@ impl RepoWindow {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             return;
         };
-        // The immutable commit id is the query revision: a change-id query could read an amended replacement that the completion guard still attributes to the on-screen commit.
+        // Query by the immutable commit id: a change-id query could read an amended replacement.
         let Some(commit) = self.selected_commit_id(cx) else {
             return;
         };

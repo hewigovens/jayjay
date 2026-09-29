@@ -7,19 +7,13 @@ use super::{codeberg, cursor, github, gitlab};
 const PREFERRED_PULL_REQUEST_BASES: &[&str] = &["main", "master", "trunk"];
 const NO_SUPPORTED_REMOTE: &str = "Couldn't determine a pull request URL — no GitHub, GitLab, Codeberg, or Cursor \"origin\" remote found.";
 
-/// Outcome of a host PR lookup. A failed call must stay distinct from a confirmed
-/// "no PR" so it never triggers a compose-URL fallback.
 pub(in crate::repo) enum PrLookup {
-    /// The host returned a PR for this bookmark.
     Found(PrInfo),
-    /// The host confirmed there is no PR (empty list / "no pull requests found").
     NotFound,
-    /// The lookup could not complete (offline, rate limited, auth, 5xx).
     Unknown,
 }
 
 impl Repo {
-    /// Query host-specific PR metadata for a bookmark.
     pub fn pull_request_info(&self, bookmark: &str) -> Option<PrInfo> {
         match self.pull_request_lookup(bookmark) {
             PrLookup::Found(pr) => Some(pr),
@@ -27,10 +21,6 @@ impl Repo {
         }
     }
 
-    /// Existing PR URL for `bookmark`, else the code host's new-PR (compose) URL.
-    /// Cursor Origin has no compose URL: a confirmed miss creates via `origin pr create`.
-    /// Create failures (GitHub inbound mirrors, missing remote bookmark) are errors.
-    /// Lookup failures open the codebase page. No supported `origin` remote is an error.
     pub fn pull_request_open_url(&self, bookmark: &str) -> CoreResult<String> {
         if bookmark.is_empty() {
             return Err(CoreError::internal("No bookmark selected"));
@@ -103,9 +93,7 @@ impl Repo {
     }
 }
 
-/// Existing PR URL when found, otherwise the host's new-PR (compose) URL.
-///
-/// We compose even when the lookup could not complete (`gh` missing or unauthenticated, offline, rate limited). The new-PR pages on GitHub, GitLab, and Codeberg surface an existing PR for the branch rather than silently creating a duplicate, so a working "Pull Request" action beats a dead one. Cursor Origin has no compose URL: a confirmed miss creates via `origin pr create`, an unconfirmed lookup opens the repository page, and a failed create is an error (GitHub inbound mirrors cannot host Origin PRs). The PR *badge* (`pull_request_info`) still treats `Unknown` as "no PR" so it never shows status it could not confirm.
+/// A failed lookup still composes: the host's new-PR page surfaces an existing PR instead of duplicating it.
 fn open_url_for_lookup(lookup: PrLookup, compose_url: impl FnOnce() -> String) -> String {
     match lookup {
         PrLookup::Found(pr) => pr.url,
@@ -142,7 +130,6 @@ mod tests {
 
     #[test]
     fn unknown_falls_back_to_compose() {
-        // gh missing/unauthenticated or offline: still open the host's new-PR page. It surfaces an existing PR instead of duplicating, so the button works rather than dying with a misleading "push first" message.
         let url = open_url_for_lookup(PrLookup::Unknown, || "COMPOSE".into());
         assert_eq!(url, "COMPOSE");
     }

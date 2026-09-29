@@ -8,7 +8,6 @@ use super::path_classifier::{EventClass, PathClassifier};
 pub(super) const OP_DEBOUNCE: Duration = Duration::from_millis(1000);
 pub(super) const WC_DEBOUNCE: Duration = Duration::from_millis(2000);
 
-/// Leading-edge debounce timestamps for the two event streams.
 pub(super) struct Debounce {
     last_op: Instant,
     last_wc: Instant,
@@ -22,20 +21,16 @@ impl Debounce {
         }
     }
 
-    /// Whether enough time has elapsed to emit another op-heads refresh.
     fn op_ready(&self, now: Instant) -> bool {
         now.duration_since(self.last_op) >= OP_DEBOUNCE
     }
 
-    /// Whether enough time has elapsed to emit another working-copy refresh.
     fn wc_ready(&self, now: Instant) -> bool {
         now.duration_since(self.last_wc) >= WC_DEBOUNCE
     }
 }
 
-/// Decide whether a raw event should emit, stamping the debounce on a send. The window is
-/// checked before the relevance filter so a build storm is dropped without running the
-/// gitignore matcher more than once per `WC_DEBOUNCE`.
+/// The window is checked before the relevance filter so a build storm never runs the gitignore matcher.
 pub(super) fn next_event(
     classifier: &PathClassifier,
     debounce: &Mutex<Debounce>,
@@ -53,7 +48,6 @@ pub(super) fn next_event(
             })
         }
         EventClass::WorkingCopy => {
-            // Read-only window check first; bail before touching the gitignore matcher.
             {
                 let guard = debounce.lock().expect("wc debounce lock");
                 if !guard.wc_ready(now) {

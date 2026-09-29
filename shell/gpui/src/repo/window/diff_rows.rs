@@ -1,4 +1,4 @@
-//! Single source RepoWindow/RepoViewModel state feeds into the pure `diff::rows` builder, so unified_body, find.rs's scroll targeting, and tests all see the same interleaved row list.
+//! One row list feeds unified_body, find.rs's scroll targeting, and tests, so they can never disagree.
 
 use std::sync::Arc;
 
@@ -12,7 +12,7 @@ use crate::diff::DiffRenderRows;
 use crate::diff::wrap::wrap_cols_from_bounds;
 
 impl RepoWindow {
-    /// Filters `vm.notes.all` (which covers every file in the change) down to the selected hunk, or a file's diff would show another file's notes as its own rows/dots.
+    /// Notes cover every file in the change; filter to the selected hunk or a file would show another file's notes.
     pub(crate) fn notes_for_selected_hunk(&self, cx: &App) -> Vec<ReviewNoteStatus> {
         let vm = self.vm.read(cx);
         let Some(hunk) = vm.selected_hunk() else {
@@ -31,7 +31,7 @@ impl RepoWindow {
             .collect()
     }
 
-    /// The single row list unified_body's rendering and find.rs's scroll targeting both read, so a note above a match can never desync the two; `None` while no diff is loaded yet.
+    /// `None` while no diff is loaded yet.
     pub fn diff_render_rows(&self, cx: &App) -> Option<Arc<DiffRenderRows>> {
         let notes = self.notes_for_selected_hunk(cx);
         let fd = self.vm.read(cx).shown.diff.clone()?;

@@ -77,12 +77,10 @@ fn op_heads_events_are_debounced() {
         next_event(&c, &d, &e, t0, &relevant),
         Some(FsEvent::OpHeads)
     );
-    // A second event inside the window is suppressed.
     assert_eq!(
         next_event(&c, &d, &e, t0 + OP_DEBOUNCE / 2, &relevant),
         None
     );
-    // Once the window elapses, it emits again.
     assert_eq!(
         next_event(&c, &d, &e, t0 + OP_DEBOUNCE, &relevant),
         Some(FsEvent::OpHeads)
@@ -129,14 +127,12 @@ fn relevance_filter_is_skipped_during_debounce_window() {
     };
 
     let t0 = Instant::now();
-    // First event runs the filter once and emits.
     assert_eq!(
         next_event(&c, &d, &e, t0, &relevant),
         Some(FsEvent::WorkingCopy)
     );
     assert_eq!(calls.get(), 1, "first event runs the filter");
 
-    // A build storm: many events inside the window must not touch the expensive matcher.
     for i in 1..200 {
         let _ = next_event(
             &c,
@@ -165,9 +161,7 @@ fn irrelevant_working_copy_paths_do_not_emit_or_stamp() {
     let tracked = |_: &[PathBuf]| true;
 
     let t0 = Instant::now();
-    // A gitignored path passes the window but the filter rejects it: no emit, no stamp.
     assert_eq!(next_event(&c, &d, &e, t0, &ignored), None);
-    // Because the window was never stamped, a relevant edit right after still emits.
     assert_eq!(
         next_event(&c, &d, &e, t0 + Duration::from_millis(1), &tracked),
         Some(FsEvent::WorkingCopy)

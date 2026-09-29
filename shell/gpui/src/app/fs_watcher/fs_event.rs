@@ -7,5 +7,4 @@ pub enum FsEvent {
     WorkingCopy,
 }
 
-/// Returns `true` if any path is unignored. Mirrors `hasUnignoredWorkingCopyPaths` in SwiftUI.
 pub(crate) type IsRelevantWcChange = Arc<dyn Fn(&[PathBuf]) -> bool + Send + Sync>;

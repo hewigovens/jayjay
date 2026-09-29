@@ -16,7 +16,6 @@ pub const JJ_CONFIG_USER_NAME: &str = "user.name";
 pub const JJ_CONFIG_USER_EMAIL: &str = "user.email";
 
 impl Repo {
-    /// Warning message when `user.name`/`user.email` are missing from jj config, else `None`.
     pub fn check_user_config(&self) -> Option<String> {
         missing_user_config(self.get_repo().settings())
     }

@@ -26,6 +26,6 @@ pub struct DiffRenderRows {
     pub rows: Vec<DiffRenderRow>,
     /// Keyed by wrapped-fragment index.
     pub dots: HashMap<usize, NoteDotKind>,
-    /// Anchor-line indent per `NoteText` row, keyed by the row's own index in `rows` (unlike `dots`).
+    /// Keyed by the row's own index in `rows`, unlike `dots`.
     pub(crate) note_indents: HashMap<usize, u32>,
 }

@@ -2,7 +2,7 @@ use std::hash::{Hash, Hasher};
 
 use jayjay_review::ReviewNoteStatus;
 
-/// Cache key for `DiffWrapCache::rows`; changes on any mutation and on external reloads that flip a reconciled status.
+/// Changes on any mutation and on external reloads that flip a reconciled status.
 pub(crate) fn notes_fingerprint(notes: &[ReviewNoteStatus]) -> u64 {
     let mut hasher = std::collections::hash_map::DefaultHasher::new();
     notes.len().hash(&mut hasher);

@@ -5,9 +5,6 @@ use super::naming;
 use super::validation::validate_stack_changes;
 
 impl Repo {
-    /// Detect and validate the linear stack `base..tip` (base is usually
-    /// `trunk()`), computing each layer's bookmark and dependent base. No side
-    /// effects — drives the preview.
     pub fn detect_stack(&self, base_rev: &str, tip_rev: &str) -> CoreResult<Stack> {
         let mut changes = self.log(&format!("{base_rev}..{tip_rev}"))?;
         if changes.is_empty() {

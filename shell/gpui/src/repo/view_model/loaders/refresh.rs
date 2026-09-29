@@ -10,7 +10,6 @@ use jayjay_core::{
 
 use super::super::{PendingRefresh, RepoViewModel};
 
-/// Window during which FS echoes from our own mutations are ignored.
 const MUTATION_ECHO_WINDOW: Duration = Duration::from_secs(5);
 
 impl RepoViewModel {
@@ -100,7 +99,6 @@ impl RepoViewModel {
             async move { refresh_graph_blocking(&repo, &revset) },
             move |vm, result, cx| {
                 vm.finish_repo_task(cx);
-                // A later refresh superseded this one; drop this stale result.
                 if vm.loading.refresh_gen != generation {
                     return;
                 }
@@ -163,7 +161,7 @@ impl RepoViewModel {
                 self.graph.entries = Arc::new(entries);
                 // Re-select even if the index is unchanged — file contents may have.
                 if let Some(ix) = new_selected {
-                    // Keep the user's place in the file column across a background reload; mutation paths may have staked a restore target already.
+                    // Keep the user's place in the file column across a background reload.
                     if self.pending_file_selection.is_none() {
                         self.pending_file_selection = self
                             .selected_file_ix

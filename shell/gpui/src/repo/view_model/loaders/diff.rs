@@ -26,7 +26,7 @@ impl RepoViewModel {
         projection_mode: Option<DiffProjectionMode>,
         cx: &mut Context<Self>,
     ) {
-        // Every selected-file request supersedes the previous one, including a cache hit; otherwise an older in-flight miss can finish after the cached selection and overwrite it.
+        // Every request supersedes the previous one, even a cache hit, or an older in-flight miss can overwrite the cached selection.
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         let generation = self.loading.diff_gen;
         let compare_from_rev = self
@@ -233,7 +233,7 @@ impl RepoViewModel {
                                 projection: loaded.projection,
                                 svg_preview: loaded.svg_preview.map(Arc::new),
                                 markdown_preview: loaded.markdown_preview.map(Arc::new),
-                                // `or_insert` never overwrites, so planting `None` here would permanently starve "Abandon Selected Lines" for any file later selected via this cache entry.
+                                // `or_insert` never overwrites, so planting `None` here would permanently starve Abandon Selected Lines for this entry.
                                 old_content: Some(loaded.old_content),
                                 new_content: Some(loaded.new_content),
                                 supports_file_editor: loaded.supports_file_editor,

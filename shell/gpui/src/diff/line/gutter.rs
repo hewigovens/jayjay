@@ -1,5 +1,3 @@
-//! Layout for the diff gutter: line-number cells, note-dot column, and selection highlight.
-
 use gpui::{
     AnyElement, Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful,
     StatefulInteractiveElement, Styled, div, px, rgb, rgba,
@@ -55,7 +53,7 @@ pub fn gutter_cell(text: String, theme: &Theme, bg: u32) -> Div {
         .child(SharedString::from(text))
 }
 
-/// `dot_cell` must be a blank `note_dot_cell(None, theme)` for continuation fragments and separators — only the fragment carrying the line numbers actually renders a dot.
+/// Continuation fragments and separators take a blank dot cell; only the fragment carrying the line numbers renders a dot.
 pub fn interactive_gutter_row(
     line: &DiffLine,
     theme: &Theme,

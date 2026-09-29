@@ -1,6 +1,4 @@
-//! TOML config at `$HOME/.config/jayjay/config.toml`. Owned by the GPUI shell;
-//! the SwiftUI shell uses its own UserDefaults-backed `AppSettings` and does
-//! not consume this schema.
+//! TOML config at `$HOME/.config/jayjay/config.toml`, owned by the GPUI shell; the SwiftUI shell uses its own `AppSettings`.
 
 mod app_config;
 pub mod appearance;

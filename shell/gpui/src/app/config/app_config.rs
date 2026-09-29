@@ -62,16 +62,10 @@ impl AppConfig {
         self.font_size = Self::DEFAULT_FONT_SIZE;
     }
 
-    /// Resolve the config file path so each platform gets
-    /// its native location:
-    /// - macOS:   `~/Library/Application Support/dev.hewig.jayjay/config.toml`
-    /// - Linux:   `~/.config/jayjay/config.toml`
-    /// - Windows: `%APPDATA%\hewig\jayjay\config\config.toml`
     fn config_path() -> Option<PathBuf> {
         AppDirs::new().map(|dirs| dirs.config.join("config.toml"))
     }
 
-    /// Read from disk; falls back to defaults on missing/malformed files.
     pub fn load() -> Self {
         let Some(path) = Self::config_path() else {
             return Self::default();
@@ -82,7 +76,6 @@ impl AppConfig {
         }
     }
 
-    /// Write to disk, creating parent directories as needed.
     pub(super) fn save(&self) -> std::io::Result<()> {
         let Some(path) = Self::config_path() else {
             return Ok(());

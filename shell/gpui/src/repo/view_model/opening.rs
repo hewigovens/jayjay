@@ -32,7 +32,6 @@ impl RepoViewModel {
         }
     }
 
-    /// Pair with [`RepoViewModel::open_async`], which does the heavy open + graph load off the main thread.
     pub fn opening(path: PathBuf) -> Self {
         Self::empty(path.display().to_string().into())
     }
@@ -168,7 +167,6 @@ impl RepoViewModel {
         }
     }
 
-    /// A repo-less view model — base for the error and still-opening states.
     fn empty(repo_path: SharedString) -> Self {
         Self {
             repo: None,

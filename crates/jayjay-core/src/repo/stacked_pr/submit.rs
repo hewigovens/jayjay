@@ -10,26 +10,19 @@ use super::naming::is_valid_bookmark_name;
 use super::validation::validate_stack_changes;
 
 impl Repo {
-    /// Assign + push the per-change bookmarks chosen by the UI (possibly edited or
-    /// AI-generated), then create/update PRs bottom→top with dependent bases.
-    /// Idempotent: bookmarks anchor on change-id, and re-running updates the PRs.
     pub fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> CoreResult<StackedPrResult> {
         if layers.is_empty() {
             return Err(CoreError::Internal {
                 message: "No changes to submit.".to_owned(),
             });
         }
-        // Reject bad branch names up front so we never half-assign local bookmarks
-        // and then fail at push time.
         if let Some(bad) = layers.iter().find(|l| !is_valid_bookmark_name(&l.bookmark)) {
             return Err(CoreError::Internal {
                 message: format!("\"{}\" is not a valid branch name.", bad.bookmark),
             });
         }
 
-        // Two layers sharing a bookmark would move it twice and compute the upper
-        // layer's base from the duplicate name, leaving one bookmark at the top and
-        // mis-heading the PRs. Reject before any `move_bookmark` side effects.
+        // Two layers sharing a bookmark would move it twice and mis-head the PRs.
         let mut seen = std::collections::HashSet::new();
         if let Some(dup) = layers.iter().find(|l| !seen.insert(l.bookmark.as_str())) {
             return Err(CoreError::Internal {
@@ -40,11 +33,10 @@ impl Repo {
             });
         }
 
-        // The panel is only a preview. Reload and resolve every change again before the first bookmark move so an external abandon, divergence, or reparent cannot leave a partially submitted stack.
+        // The panel is only a preview; re-resolve every change before the first bookmark move.
         self.reload()?;
         self.validate_stack(&layers)?;
 
-        // Dependent bases work the same on GitHub (`gh`), GitLab (`glab`), and Cursor Origin (`origin`).
         let remote = self
             .git_remote_url()
             .ok()
@@ -66,9 +58,7 @@ impl Repo {
         };
         let host = remote.host;
 
-        // Prove the forge CLI is installed and authenticated before any local
-        // bookmark move or push, so a missing/misconfigured CLI fails up front
-        // instead of leaving dangling remote branches and moved bookmarks.
+        // Preflight the forge CLI first, or a failure leaves dangling remote branches and moved bookmarks.
         let base_bookmark = match host {
             RepoHost::GitLab => {
                 gitlab::preflight(self)?;
@@ -81,8 +71,6 @@ impl Repo {
             }
         };
 
-        // Point each bookmark at its change (create-or-move) and compute the
-        // dependent base from the submitted order: bottom → trunk, others → below.
         let mut targets: Vec<ForgeTarget> = Vec::with_capacity(layers.len());
         let write = self.write_guard()?;
         // Forge authentication can take a while; validate again against the head the lock just reloaded.
@@ -104,7 +92,7 @@ impl Repo {
 
         drop(write);
 
-        // Push the whole set first so every PR base/head exists, then create.
+        // Push the whole set first so every PR base and head exists.
         let names: Vec<&str> = targets.iter().map(|t| t.bookmark.as_str()).collect();
         let mut message = self.git_push_bookmarks(&names)?;
 
@@ -141,7 +129,7 @@ impl Repo {
         self.ensure_bookmarks_unclaimed(layers)
     }
 
-    // An edited name may already belong to another local or origin change (worst case: trunk), so reject the plan before preflight or any bookmark move instead of silently retargeting it.
+    // An edited name may already belong to another change (worst case: trunk); reject instead of silently retargeting it.
     fn ensure_bookmarks_unclaimed(&self, layers: &[SubmitStackLayer]) -> CoreResult<()> {
         let bookmarks = self.list_bookmarks()?;
         if let Some((layer, existing)) = layers.iter().find_map(|layer| {

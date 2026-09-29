@@ -1,5 +1,3 @@
-//! Maps a display-line selection in the collapsed diff to full-diff `DiffEditRange`s.
-
 mod group_coverage;
 mod range_mapping;
 

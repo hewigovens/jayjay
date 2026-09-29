@@ -32,7 +32,7 @@ pub struct RepoViewModel {
     pub(crate) ignore_whitespace: bool,
     pub revset_filter: RevsetFilterState,
     pub can_load_more: bool,
-    /// Refs, tags and aliases the revset field completes from; loaded with the graph, not on each keystroke.
+    /// Loaded with the graph, not on each keystroke.
     pub(crate) vocabulary: RevsetVocabulary,
     pub(crate) detail_mode: DetailMode,
     pub(crate) annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
@@ -65,7 +65,7 @@ impl RepoViewModel {
         self.selected.and_then(|ix| self.graph.changes.get(ix))
     }
 
-    /// The shared gate for change-scoped file operations (multi-select, batch menu): `None` in compare mode, where the displayed interdiff's files are not the selected change's files.
+    /// `None` in compare mode, where the displayed interdiff's files are not the selected change's files.
     pub(crate) fn selected_change_for_file_ops(&self) -> Option<&ChangeInfo> {
         if self.compare.is_some() || self.has_multiple_change_selection() {
             return None;
@@ -104,7 +104,7 @@ impl RepoViewModel {
         self.diff_cache.load_failures.clear();
     }
 
-    /// The shared gate every review surface (marks, notes) uses: a bare `is_working_copy` check would wrongly pass in compare mode, where the displayed diff is an interdiff and review state doesn't apply.
+    /// A bare `is_working_copy` check would wrongly pass in compare mode, where review state doesn't apply.
     pub(crate) fn shows_review_controls(&self) -> bool {
         self.selected_change().is_some_and(|c| c.is_working_copy)
             && self.compare.is_none()

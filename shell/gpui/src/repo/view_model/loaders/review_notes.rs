@@ -7,7 +7,6 @@ use jayjay_review::{NoteEntry, NoteStatus, ReviewNoteStatus};
 use super::super::RepoViewModel;
 
 impl RepoViewModel {
-    /// Cached: recomputed only in `set_review_notes`, not on every render that reads it.
     pub fn active_note_counts(&self) -> Arc<HashMap<String, usize>> {
         self.notes.active_counts.clone()
     }
@@ -21,7 +20,7 @@ impl RepoViewModel {
             .collect()
     }
 
-    /// Takes notes as an owned parameter rather than reading the shared store: `SharedReviewStore` is `Rc<RefCell<_>>` (not `Send`), so only this diff-walk half can run off the main thread.
+    /// Takes notes by value: `SharedReviewStore` is not `Send`, so only this diff-walk half can run off the main thread.
     pub(in crate::repo) fn load_review_notes(
         &mut self,
         notes: Vec<NoteEntry>,
@@ -44,7 +43,7 @@ impl RepoViewModel {
                 if vm.loading.review_notes_gen != generation {
                     return;
                 }
-                // Keep last known statuses on a transient read error — clearing would silently hide the stale-notes banner and every gutter dot.
+                // Keep last known statuses on a transient read error; clearing would hide the stale-notes banner and every gutter dot.
                 if let Ok(report) = result {
                     vm.set_review_notes(report.notes);
                 }
@@ -58,7 +57,7 @@ impl RepoViewModel {
         cx.notify();
     }
 
-    /// The only place `review_notes` is written, keeping it and `active_note_counts_cache` in lockstep — writing either separately would desync readers from the cache.
+    /// The only place `notes.all` is written, which keeps it and `notes.active_counts` in lockstep.
     fn set_review_notes(&mut self, notes: Vec<ReviewNoteStatus>) {
         let mut counts = HashMap::new();
         for status in &notes {
