@@ -13,7 +13,7 @@ struct RepoWindowGroup: Scene {
                 // SwiftUI can present this group without a path on a launch routed elsewhere; registering lets the manager route.
                 RepoListWindowBridge(windowManager: windowManager, scene: AppWindows.repo, onRegistered: windowManager.emptyRepoWindowDidAppear)
             } else {
-                RepoWindowScene(repoPath: repoPath, windowManager: windowManager)
+                RepoWindowScene(repoPath: $repoPath, windowManager: windowManager)
                     .task(id: repoPath) { settings.recordOpenedRepo(repoPath) }
                     .environment(repositoryStore)
                     .environment(windowManager)

@@ -405,6 +405,17 @@ fixture_workspace_delete() {
   done
 }
 
+fixture_workspace_switch() {
+  copy_fixture simple workspace-switch
+  (
+    cd "$fixtures/workspace-switch"
+    jj workspace add --name first "$fixtures/workspace-switch-first"
+    jj workspace add --name broken "$fixtures/workspace-switch-broken"
+  )
+  # Preserve the recorded root so the broken checkout remains selectable.
+  rm -rf "$fixtures/workspace-switch-broken/.jj"
+}
+
 fixture_settings_tools() {
   local bin="$fixtures/settings-tools"
   mkdir -p "$bin"
@@ -480,5 +491,6 @@ fixture_dag_long
 fixture_parallelize
 fixture_picker
 fixture_workspace_delete
+fixture_workspace_switch
 fixture_settings_tools
 fixture_repository_stores

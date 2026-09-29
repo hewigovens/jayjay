@@ -228,7 +228,9 @@ extension RepoContentView {
                     title: "Switch to \(workspace.name)",
                     icon: "arrow.right.square",
                     category: "Workspace"
-                ) { windowManager.openRepo(workspace.path) })
+                ) {
+                    windowManager.switchRepo(from: viewModel, to: workspace.path, changePath: onSwitchWorkspace)
+                })
             }
             items.append(CommandPaletteItem(
                 title: "Forget Workspace \(workspace.name)",

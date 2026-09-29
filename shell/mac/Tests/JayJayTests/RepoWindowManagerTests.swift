@@ -187,6 +187,26 @@ final class RepoWindowManagerTests: XCTestCase {
         XCTAssertFalse(overview.isVisible, "the checkout's overview has nothing left to load")
     }
 
+    func testWorkspaceRemovalDiscardsDraftOnlyAfterSuccess() async throws {
+        let fixture = try makeWorkspaceRemovalFixture()
+        defer { fixture.window.close() }
+        let workspace = try XCTUnwrap(fixture.source.repo.workspaceList().first { $0.name == "feature" })
+        let windowNumber = fixture.window.windowNumber
+        fixture.target.commitSummaryDraft = "Draft from removed workspace"
+        fixture.manager.workspaceDrafts.preserve(from: fixture.target, in: windowNumber)
+        XCTAssertNotNil(fixture.manager.workspaceDrafts.draft(for: fixture.checkout.path, in: windowNumber))
+
+        await fixture.manager.withWorkspaceRemoval(workspace, repositoryStorePath: fixture.source.repo.repositoryStorePath()) {
+            false
+        }
+        XCTAssertNotNil(fixture.manager.workspaceDrafts.draft(for: fixture.checkout.path, in: windowNumber))
+
+        await fixture.manager.withWorkspaceRemoval(workspace, repositoryStorePath: fixture.source.repo.repositoryStorePath()) {
+            true
+        }
+        XCTAssertNil(fixture.manager.workspaceDrafts.draft(for: fixture.checkout.path, in: windowNumber))
+    }
+
     func testNormalWindowCloseDoesNotRetainTheViewModelForRepoWork() async throws {
         let manager = try makeManager()
         let (directory, repo) = try makeRepository(named: "normal-window-close")

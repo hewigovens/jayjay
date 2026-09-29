@@ -5,7 +5,8 @@ import SwiftUI
 struct RepoTitlePicker: View {
     let repoPath: String
     let workspaces: [WorkspaceInfo]
-    let onOpenWorkspace: (WorkspaceInfo) -> Void
+    let onSwitchWorkspace: (WorkspaceInfo) -> Void
+    let onOpenWorkspaceInNewWindow: (WorkspaceInfo) -> Void
     let onForget: (WorkspaceInfo) -> Void
     let onForgetDelete: (WorkspaceInfo) -> Void
     let onCreateWorkspace: () -> Void
@@ -127,7 +128,14 @@ struct RepoTitlePicker: View {
                 searchText: "\(workspace.name) \(workspace.description) \(workspace.isPathResolved ? "" : "path unavailable")",
                 height: 46,
                 action: workspace.isCurrent || !workspace.isPathResolved ? nil : {
-                    deferred { onOpenWorkspace(workspace) }
+                    let openInNewWindow = NSApp.currentEvent?.modifierFlags.contains(.option) == true
+                    deferred {
+                        if openInNewWindow {
+                            onOpenWorkspaceInNewWindow(workspace)
+                        } else {
+                            onSwitchWorkspace(workspace)
+                        }
+                    }
                 }
             ) { _ in
                 WorkspaceRowView(workspace: workspace)
@@ -145,7 +153,7 @@ struct RepoTitlePicker: View {
         }
         WorkspaceMenuItems(workspace: workspace) {
             panel.dismiss()
-            deferred { onOpenWorkspace(workspace) }
+            deferred { onOpenWorkspaceInNewWindow(workspace) }
         }
         if !workspace.isCurrent {
             Divider()
