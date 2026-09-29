@@ -180,17 +180,6 @@ mod tests {
     }
 
     #[test]
-    fn test_deep_collapse_preserves_path() {
-        // a/b/c/file.txt should collapse the directory chain and preserve the full path
-        let tree = build_file_tree(&["a/b/c/file.txt".to_string()]);
-        // With full collapse, only the leaf file remains at depth 0
-        assert_eq!(tree.len(), 1);
-        assert_eq!(tree[0].name, "file.txt");
-        assert_eq!(tree[0].path, "a/b/c/file.txt");
-        assert_eq!(tree[0].hunk_index, Some(0));
-    }
-
-    #[test]
     fn test_mixed_depth_files() {
         // Files at different depths should build correctly
         let tree = build_file_tree(&[

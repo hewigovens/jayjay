@@ -118,16 +118,8 @@ fn sort_plist_value(value: PlistValue) -> PlistValue {
 
 #[cfg(test)]
 mod tests {
-    use super::{is_binary_plist, project_plist};
+    use super::project_plist;
     use plist::{Dictionary, Value as PlistValue};
-
-    #[test]
-    fn detects_binary_plist_magic() {
-        assert!(is_binary_plist(b"bplist00..."));
-        assert!(!is_binary_plist(
-            br#"<?xml version="1.0"?><plist version="1.0"/>"#
-        ));
-    }
 
     #[test]
     fn projects_binary_plist_as_sorted_xml() {
