@@ -128,19 +128,6 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_pr_import),
     },
     PaletteAction {
-        name: "Parallelize Selected Changes",
-        keywords: &[
-            "parallelize",
-            "parallel",
-            "sibling",
-            "independent",
-            "split",
-            "selection",
-        ],
-        glyph_str: glyph::GIT_BRANCH,
-        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::parallelize_selection),
-    },
-    PaletteAction {
         name: "Operation Log",
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
         glyph_str: glyph::ARROW_CLOCKWISE,
@@ -250,6 +237,19 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
                 view.run_change_action(Arc::new(action), cx);
             })
         },
+    },
+    PaletteAction {
+        name: "Parallelize Selected Changes",
+        keywords: &[
+            "parallelize",
+            "parallel",
+            "sibling",
+            "independent",
+            "split",
+            "selection",
+        ],
+        glyph_str: glyph::GIT_BRANCH,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::parallelize_selection),
     },
     PaletteAction {
         name: "Git Push",
