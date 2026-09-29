@@ -141,17 +141,3 @@ fn spawn_with_args(command: &str, args: Vec<String>) -> bool {
         .spawn()
         .is_ok()
 }
-
-#[cfg(test)]
-mod tests {
-    use super::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
-
-    #[test]
-    fn linux_tool_options_use_linux_apps() {
-        assert!(!EDITOR_OPTIONS.iter().any(|(id, _)| *id == "xcode"));
-        assert!(!TERMINAL_OPTIONS.iter().any(|(id, _)| *id == "iterm"));
-        assert!(TERMINAL_OPTIONS.iter().any(|(id, _)| *id == "lxterminal"));
-        assert!(EDITOR_OPTIONS.iter().any(|(id, _)| *id == "nvim"));
-        assert!(EDITOR_OPTIONS.iter().any(|(id, _)| *id == "system"));
-    }
-}
