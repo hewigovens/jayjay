@@ -17,6 +17,7 @@ class RepoViewModelTestCase: XCTestCase {
         viewModel = RepoViewModel(
             path: directory.path,
             repo: repo,
+            primaryRoot: directory.path,
             workingCopyIsLarge: false,
             configWarning: nil
         )

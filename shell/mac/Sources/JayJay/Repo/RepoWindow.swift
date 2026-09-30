@@ -2,6 +2,8 @@ import JayJayCore
 import SwiftUI
 
 struct RepoWindow: View {
+    private static let removingWorkspace = "Cannot switch to a workspace while it is being removed."
+
     let repoPath: String
     let windowNumber: Int?
     let onSwitchWorkspace: (String) -> Void
@@ -13,15 +15,17 @@ struct RepoWindow: View {
     var body: some View {
         Group {
             if let model = viewModel {
+                let isSwitching = model.repoPath != repoPath
                 // Keep the old content visible during a switch, then reset only repository-scoped view state at handoff.
-                RepoContentView(viewModel: model, onSwitchWorkspace: { path in
+                RepoContentView(viewModel: model, isSwitchingWorkspace: isSwitching, onSwitchWorkspace: { path in
                     if let windowNumber {
                         windowManager.workspaceDrafts.preserve(from: model, in: windowNumber)
                     }
                     onSwitchWorkspace(path)
                 })
                 .id(model.repoPath)
-                .disabled(model.repoPath != repoPath)
+                .disabled(isSwitching)
+                .allowsHitTesting(!isSwitching)
             } else if let err = initError {
                 RepoInitErrorView(repoPath: repoPath, error: err, onInitialize: initJJRepo)
             } else {
@@ -44,6 +48,7 @@ struct RepoWindow: View {
                 let repo = try JayJayRepo.open(path: path)
                 return (
                     repo: repo,
+                    primaryRoot: workspacePrimaryRoot(path: path) ?? path,
                     workingCopyIsLarge: repo.workingCopyIsLarge(),
                     configWarning: repo.checkUserConfig()
                 )
@@ -55,6 +60,7 @@ struct RepoWindow: View {
                 let model = RepoViewModel(
                     path: path,
                     repo: opened.repo,
+                    primaryRoot: opened.primaryRoot,
                     workingCopyIsLarge: opened.workingCopyIsLarge,
                     configWarning: opened.configWarning,
                     includeSubmoduleStatuses: includeSubmodules
@@ -64,32 +70,61 @@ struct RepoWindow: View {
                     model.commitDescriptionDraft = draft.body
                 }
                 guard windowManager.register(model) else {
-                    if let previous = viewModel {
-                        previous.error = "Cannot switch to a workspace while it is being removed."
-                        onSwitchWorkspace(previous.repoPath)
-                    } else {
-                        windowManager.closeRepoWindow(at: path)
-                    }
+                    leaveSwitch(error: Self.removingWorkspace, closingWindow: true)
                     return
                 }
-                if let previous = viewModel {
-                    windowManager.finishSwitch(from: previous)
-                }
-                initError = nil
-                viewModel = model
-                if let reveal = windowManager.takePendingReveal(for: path) {
-                    model.revealAncestors(of: reveal.headChangeId, selecting: reveal.rev)
-                    return
-                }
-                // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
-                model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
+                await show(model)
             case let .failure(error):
-                if let previous = viewModel {
-                    previous.error = error.friendlyDescription
-                    onSwitchWorkspace(previous.repoPath)
-                } else {
-                    initError = error.friendlyDescription
-                }
+                leaveSwitch(error: error.friendlyDescription, closingWindow: false)
+        }
+    }
+
+    /// The source stays on screen until the destination's first refresh lands, so a switch paints once.
+    private func show(_ model: RepoViewModel) async {
+        if let reveal = windowManager.takePendingReveal(for: model.repoPath) {
+            model.revealAncestors(of: reveal.headChangeId, selecting: reveal.rev)
+        } else {
+            // Huge checkouts skip the snapshot on open (it's the slow part); small repos refresh eagerly.
+            model.refresh(selecting: "@", snapshotWorkingCopy: !model.workingCopyIsLarge)
+        }
+        if let previous = viewModel {
+            await model.waitForFirstLoad()
+            guard !Task.isCancelled else {
+                windowManager.retire(model)
+                return
+            }
+            let abandoned: String? = if model.isShuttingDown {
+                Self.removingWorkspace
+            } else if model.workspaceVanished {
+                "The workspace no longer exists."
+            } else {
+                nil
+            }
+            if let abandoned {
+                windowManager.retire(model)
+                leaveSwitch(error: abandoned, closingWindow: true)
+                return
+            }
+            windowManager.retire(previous)
+        }
+        initError = nil
+        viewModel = model
+    }
+
+    /// Returns to the source while it can still be shown; otherwise fails the way a window without a source would.
+    private func leaveSwitch(error: String, closingWindow: Bool) {
+        if let previous = viewModel {
+            if windowManager.endSwitch(returningTo: previous) {
+                previous.error = error
+                onSwitchWorkspace(previous.repoPath)
+                return
+            }
+            viewModel = nil
+        }
+        if closingWindow {
+            windowManager.closeRepoWindow(at: repoPath)
+        } else {
+            initError = error
         }
     }
 

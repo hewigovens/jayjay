@@ -1,8 +1,8 @@
 import AppKit
 import SwiftUI
 
-/// Scoped `NSEvent` keydown monitor — fires only for the containing key window, when `isActive` returns true, and the
-/// focused text view, if any, does not keep the event.
+/// Scoped `NSEvent` keydown monitor — fires only for the containing key window, while the view is enabled, when `isActive`
+/// returns true, and the focused text view, if any, does not keep the event.
 struct KeyDownMonitor: NSViewRepresentable {
     var isActive: () -> Bool = { true }
     /// Diff views hold selectable read-only NSTextViews; clicking one must not disable list navigation, while editable inputs keep swallowing keys.
@@ -11,11 +11,13 @@ struct KeyDownMonitor: NSViewRepresentable {
 
     func makeNSView(context: Context) -> NSView {
         let view = NSView()
+        context.coordinator.isEnabled = context.environment.isEnabled
         context.coordinator.install(on: view)
         return view
     }
 
     func updateNSView(_: NSView, context: Context) {
+        context.coordinator.isEnabled = context.environment.isEnabled
         context.coordinator.onKeyDown = onKeyDown
         context.coordinator.isActive = isActive
         context.coordinator.yieldsToText = yieldsToText
@@ -29,6 +31,7 @@ struct KeyDownMonitor: NSViewRepresentable {
         var isActive: () -> Bool
         var yieldsToText: (NSText) -> Bool
         var onKeyDown: (NSEvent) -> Bool
+        var isEnabled = true
         private weak var view: NSView?
         private var monitor: Any?
 
@@ -49,6 +52,7 @@ struct KeyDownMonitor: NSViewRepresentable {
                       let view = self.view,
                       let window = view.window,
                       NSApp.keyWindow === window,
+                      isEnabled,
                       isActive()
                 else {
                     return event

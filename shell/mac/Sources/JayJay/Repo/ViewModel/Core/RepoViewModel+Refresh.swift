@@ -204,6 +204,7 @@ extension RepoViewModel {
         let baseline = selectsLoadedChange ? selectedChangeIds : selectionBaseline
         guard isRefreshComplete else { return baseline }
         isRefreshingInFlight = false
+        hasFinishedFirstLoad = true
         fetchPrInfo(bookmarks: selectedChange?.info.bookmarks ?? [])
         resumePendingBackgroundRefresh()
         return baseline
@@ -295,6 +296,15 @@ extension RepoViewModel {
             revsetFilter = RevsetFilterState(revset: revset, previous: revsetFilter.previous, recent: revsetFilter.recent)
         }
         resumePendingBackgroundRefresh()
+    }
+
+    /// Follows refreshes that supersede the awaited one; returns early only when one ends without a successor.
+    @MainActor
+    func waitForFirstLoad() async {
+        while !hasFinishedFirstLoad, let task = refreshTask {
+            await task.value
+            guard refreshTask != task else { return }
+        }
     }
 
     func resumePendingBackgroundRefresh(afterFailure: Bool = false) {

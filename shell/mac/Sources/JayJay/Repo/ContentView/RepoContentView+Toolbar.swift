@@ -16,7 +16,7 @@ extension RepoContentView {
                 .refresh,
                 help: "Refresh (⌘R)",
                 action: { viewModel.refresh() },
-                label: { RefreshSpinner(animating: viewModel.isRefreshingInFlight) }
+                label: { RefreshSpinner(animating: viewModel.isRefreshingInFlight || isSwitchingWorkspace) }
             )
             .keyboardShortcut("r")
             syncButton(.pull, inFlight: viewModel.isPullingInFlight) {
@@ -102,6 +102,7 @@ extension RepoContentView {
         ToolbarItem(placement: .navigation) {
             RepoTitlePicker(
                 repoPath: viewModel.repoPath,
+                repositoryName: viewModel.repositoryName,
                 workspaces: viewModel.workspaces,
                 onSwitchWorkspace: { workspace in
                     guard workspace.isPathResolved else { return }

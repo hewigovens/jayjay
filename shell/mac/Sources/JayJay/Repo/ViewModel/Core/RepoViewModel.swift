@@ -6,6 +6,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     static let defaultRevsetPageSize = 20
 
     let repoPath: String
+    /// Secondary workspaces are named after their checkout; the title shows the primary repo instead.
+    let repositoryName: String
     private(set) var graphEntries: [GraphEntry] = []
     private(set) var dagLayout = DAGLayout(entries: [])
     /// Views key derived work on this so the entries are compared once per refresh, not per body pass.
@@ -118,6 +120,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     /// A superseded refresh stays registered: cancellation cannot interrupt synchronous FFI.
     var repoTasks: [UUID: Task<Void, Never>] = [:]
     var isShuttingDown = false
+    /// The workspace this model's window is switching to; the model is kept only so a failed switch can fall back to it.
+    @ObservationIgnored var switchTarget: String?
     /// Stamp set by `perform()` so handleWorkingCopyChange can suppress its own FS echo.
     var lastInternalMutationAt: Date?
     /// FS-triggered refreshes wait while a sheet or editor owns transient user input.
@@ -125,6 +129,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     var pendingBackgroundRefresh: BackgroundRefreshRequest?
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
+    @ObservationIgnored var hasFinishedFirstLoad = false
     var isPullingInFlight = false
     var isPushingInFlight = false
     var pullSync: JayJaySyncToken?
@@ -146,6 +151,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
         self.init(
             path: path,
             repo: repo,
+            primaryRoot: workspacePrimaryRoot(path: path) ?? path,
             workingCopyIsLarge: repo.workingCopyIsLarge(),
             configWarning: repo.checkUserConfig(),
             includeSubmoduleStatuses: includeSubmoduleStatuses
@@ -157,17 +163,20 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     init(
         path: String,
         repo: JayJayRepo,
+        primaryRoot: String,
         workingCopyIsLarge: Bool,
         configWarning: String?,
         includeSubmoduleStatuses: Bool = false
     ) {
         repoPath = path
+        repositoryName = URL(fileURLWithPath: primaryRoot).repositoryDisplayName
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
         self.workingCopyIsLarge = workingCopyIsLarge
         self.configWarning = configWarning
         fsWatcher = RepoFSWatcher(
             repoPath: path,
+            primaryRoot: primaryRoot,
             onChange: { [weak self] in self?.handleOperationChange() },
             onWorkingCopyChange: { [weak self] in self?.handleWorkingCopyChange() },
             isRelevantWorkingCopyChange: { [repo] paths in

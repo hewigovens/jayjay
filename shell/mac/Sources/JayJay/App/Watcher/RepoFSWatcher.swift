@@ -15,6 +15,7 @@ final class RepoFSWatcher {
 
     init(
         repoPath: String,
+        primaryRoot: String? = nil,
         onChange: @escaping @Sendable () -> Void,
         onWorkingCopyChange: @escaping @Sendable () -> Void = {},
         isRelevantWorkingCopyChange: @escaping @Sendable ([String]) -> Bool = { _ in true }
@@ -25,7 +26,7 @@ final class RepoFSWatcher {
         self.isRelevantWorkingCopyChange = isRelevantWorkingCopyChange
 
         // Operations land in the primary repo; a secondary workspace's .jj/repo is only a pointer to it.
-        let primaryRoot = workspacePrimaryRoot(path: repoPath) ?? repoPath
+        let primaryRoot = primaryRoot ?? workspacePrimaryRoot(path: repoPath) ?? repoPath
         let opHeads = (primaryRoot as NSString).appendingPathComponent(".jj/repo/op_heads/heads")
         let fileDescriptor = open(opHeads, O_EVTONLY)
         if fileDescriptor >= 0 {
