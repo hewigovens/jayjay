@@ -13,6 +13,8 @@ No IP, repository, file, or command data is stored. Each client keeps a random i
 
 Anonymous build and OS statistics are enabled by default and can be disabled in Settings. Explicit opt-outs persist. Older clients that do not send rotating identifiers fall back to salted network-period hashes and are reported separately as estimates; the raw IP never leaves the request handler.
 
+GPUI skips pings whenever the `CI` environment variable is set. AppImage smoke tests also use a temporary configuration with telemetry disabled, including when launching older releases.
+
 ## Build & deploy
 
 Requires Go 1.24+ and wrangler. The Go assets/shim and wasm are produced by the `[build]` command in `wrangler.toml` (no npm app code):

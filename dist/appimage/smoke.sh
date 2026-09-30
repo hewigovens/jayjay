@@ -13,10 +13,14 @@ sleep 1
 kill -0 "$xvfb" 2>/dev/null || { cat "$xvfb_log"; echo "error: Xvfb exited" >&2; exit 1; }
 
 log=$(mktemp)
-cd "$(mktemp -d)"
-"$appimage" --foreground >"$log" 2>&1 &
+workdir=$(mktemp -d)
+# Reruns may launch an older release asset that predates the CI telemetry guard.
+mkdir -p "$workdir/config/jayjay"
+printf '[telemetry]\nenabled = false\n' >"$workdir/config/jayjay/config.toml"
+cd "$workdir"
+XDG_CONFIG_HOME="$workdir/config" "$appimage" --foreground >"$log" 2>&1 &
 app=$!
-trap 'kill "$app" "$xvfb" 2>/dev/null || true' EXIT
+trap 'kill "$app" "$xvfb" 2>/dev/null || true; rm -rf "$workdir"' EXIT
 sleep 10
 
 cat "$log"
