@@ -23,7 +23,11 @@ impl TreeNode {
             let mut leaf = TreeNode::new(first);
             leaf.hunk_index = Some(hunk_index);
             self.children.push((first.to_string(), leaf));
-        } else if let Some(pos) = self.children.iter().position(|(k, _)| k == first) {
+        } else if let Some(pos) = self
+            .children
+            .iter()
+            .position(|(k, n)| k == first && n.hunk_index.is_none())
+        {
             self.children[pos].1.insert(&components[1..], hunk_index);
         } else {
             let mut child = TreeNode::new(first);
@@ -154,6 +158,22 @@ mod tests {
                     ("1", "a/b/c/1", 1, Some(1)),
                     ("2", "a/b/c/2", 1, Some(2)),
                     ("x.rs", "x.rs", 0, Some(0)),
+                ],
+            ),
+            (
+                vec!["a/b", "a/b/c"],
+                vec![
+                    ("b", "a/b", 0, None),
+                    ("c", "a/b/c", 1, Some(1)),
+                    ("b", "a/b", 0, Some(0)),
+                ],
+            ),
+            (
+                vec!["x/y", "x/y/z/w"],
+                vec![
+                    ("y/z", "x/y/z", 0, None),
+                    ("w", "x/y/z/w", 1, Some(1)),
+                    ("y", "x/y", 0, Some(0)),
                 ],
             ),
         ] {
