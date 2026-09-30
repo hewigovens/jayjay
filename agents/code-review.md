@@ -21,13 +21,15 @@ Use the agent's native review workflow and output format. [Task Authority](../AG
 
 ## Correctness Review
 
-Review as an independent maintainer: the pass runs in a fresh context that did not implement the change and starts from the diff, the task, and this guide, because an author reviewing its own patch shares its assumptions. For non-trivial behavior changes, actively try to falsify the implementation:
+Review as an independent maintainer: the pass runs in a fresh context that did not implement the change and starts from the diff, the task, and this guide, because an author reviewing its own patch shares its assumptions. Fresh means no harness memory, notes, or artifacts from the implementing session; a reviewer that finds them ignores them. For non-trivial behavior changes, actively try to falsify the implementation:
 
-- Infer the contract from the issue or task, public APIs, surrounding callers, and invariants. Existing tests are evidence, not proof of correctness; their fixtures and assertions may share the implementation's wrong assumption.
+- Infer the contract from the issue or task, public APIs, surrounding callers, and invariants, and from the platform's published rules where one exists (for an AppImage, the upstream `excludelist` and `appdir-lint.sh` that the catalog runs). Existing tests are evidence, not proof of correctness; their fixtures and assertions may share the implementation's wrong assumption.
+- The author's own validation is the surface to attack, not a checklist to repeat: re-running it proves nothing the description did not already claim. Look for the scenario it did not run.
 - Identify the assumptions each changed path relies on and construct a reachable counterexample. Probe relevant input boundaries (empty, duplicate, malformed, numeric limits) and combinations of states: repeated operations, stale data, cancellation, partial failure, and persistence round trips.
 - Probe the classes that recur in this codebase: an async completion landing on state that was replaced or superseded meanwhile (see the async conventions under [MVVM](architecture.md#mvvm)); a check made before an `await` that is stale by the time of the write; state kept per window or per view model that must be shared or discarded across windows; repository-controlled paths and names on Windows; and a regression test that still passes with the fix removed.
 - Trace candidates through actual callers and guards. Check panic, unwrap, and overflow paths, and duplicated implementations of the same contract for differing behavior. Compare with the base revision to distinguish patch defects from pre-existing bugs.
 - Run a focused test or minimal reproducer when useful. A code trace can establish a failure, but state whether it was reproduced.
+- An unexpected warning or error during a reproduction is a finding candidate: trace it to a cause before filing it as a gap. A bundled library reading newer host configuration, a deprecation on a changed path, or a fallback message on the happy path are symptoms, not noise.
 
 ## Core Checks
 
