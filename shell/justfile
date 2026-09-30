@@ -195,11 +195,14 @@ ui-test-prebuilt *test_ids: ui-test-setup
   done
   xcodebuild "${args[@]}" test-without-building | xcbeautify
 
+# The flightdeck screenshot fixture lives outside /tmp so it survives reboots and can be opened between runs; each run rebuilds it.
+screenshot_root := env("JAYJAY_SCREENSHOT_ROOT", env("HOME") + "/workspace/h/flightdeck-root")
+
 # Rebuild the public screenshots in docs/imgs from the demo repository, light then dark; test ids narrow the run like ui-test.
 screenshots *test_ids: ffi sync-icon help
   #!/usr/bin/env bash
   set -euo pipefail
-  bash "{{root}}/scripts/screenshot-fixture.sh"
+  bash "{{root}}/scripts/screenshot-fixture.sh" "{{screenshot_root}}"
   xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
   out="{{root}}/build/screenshots"
   rm -rf "$out"
@@ -226,8 +229,8 @@ screenshots *test_ids: ffi sync-icon help
   status=0
   for appearance in light dark; do
     # The runner cannot always delete the previous pass's review marks and notes, so each appearance starts clean here.
-    rm -f /tmp/jayjay-screenshots/*-review-store.json
-    TEST_RUNNER_JAYJAY_SCREENSHOT_APPEARANCE="$appearance" xcodebuild "${args[@]}" \
+    rm -f "{{screenshot_root}}"/*-review-store.json
+    TEST_RUNNER_JAYJAY_SCREENSHOT_ROOT="{{screenshot_root}}" TEST_RUNNER_JAYJAY_SCREENSHOT_APPEARANCE="$appearance" xcodebuild "${args[@]}" \
       -resultBundlePath "$out/$appearance.xcresult" test-without-building | xcbeautify || status=1
     xcrun xcresulttool export attachments --path "$out/$appearance.xcresult" --output-path "$out/$appearance"
   done

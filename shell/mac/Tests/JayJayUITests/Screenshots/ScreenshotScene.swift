@@ -12,6 +12,10 @@ class ScreenshotScene: SceneBase {
         "flightdeck"
     }
 
+    override class var fixtureRoot: URL {
+        URL(fileURLWithPath: environment["JAYJAY_SCREENSHOT_ROOT"] ?? "/tmp/jayjay-screenshots", isDirectory: true)
+    }
+
     override class var repositoryStoreFixtureName: String {
         "repositories.json"
     }
