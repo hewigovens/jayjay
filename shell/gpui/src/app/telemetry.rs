@@ -50,7 +50,7 @@ pub fn maybe_ping(enabled: bool) {
 }
 
 fn release_telemetry_enabled() -> bool {
-    !cfg!(debug_assertions)
+    !cfg!(debug_assertions) && std::env::var_os("CI").is_none()
 }
 
 fn is_release_version(version: &str) -> bool {
