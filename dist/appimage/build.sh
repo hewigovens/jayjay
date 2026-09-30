@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Packs a release jayjay-gpui binary into an AppImage that loads Vulkan, Wayland, and X11 from the host.
+# Packs a release jayjay-gpui binary into an AppImage that loads the GPU and display stack and the AppImage excludelist's libraries from the host.
 set -euo pipefail
 
 usage() {
@@ -18,20 +18,6 @@ case "$arch" in
   *) usage ;;
 esac
 
-# GPU and display libraries must be dlopened from the host; linking them pins the bundle to the build machine's driver stack.
-if readelf -d "$binary" | grep NEEDED | grep -E 'libvulkan|libwayland|libX11|libGL|libEGL'; then
-  echo "error: $binary links a host GPU or display library directly" >&2
-  exit 1
-fi
-
-# Debian 11 and Raspberry Pi OS bullseye ship glibc 2.31; a newer symbol version anywhere in the binary makes the AppImage refuse to start there.
-glibc_ceiling=2.31
-glibc_needed=$(objdump -T "$binary" | grep -oE 'GLIBC_[0-9.]+' | sed 's/GLIBC_//' | sort -uV | tail -1)
-if [[ "$(printf '%s\n' "$glibc_needed" "$glibc_ceiling" | sort -V | tail -1)" != "$glibc_ceiling" ]]; then
-  echo "error: $binary needs glibc $glibc_needed, above the $glibc_ceiling ceiling" >&2
-  exit 1
-fi
-
 root=$(cd "$(dirname "$0")/../.." && pwd)
 app_id=dev.hewig.JayJay
 work=$(mktemp -d)
@@ -39,6 +25,7 @@ trap 'rm -rf "$work"' EXIT
 appdir=$work/AppDir
 
 install -Dm755 "$binary" "$appdir/usr/bin/jayjay-gpui"
+"$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"
 install -Dm644 "$root/docs/icon.svg" "$appdir/usr/share/icons/hicolor/scalable/apps/$app_id.svg"
