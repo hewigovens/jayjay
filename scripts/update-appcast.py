@@ -4,10 +4,13 @@
 SwiftUI release notes (HTML body inside <description><![CDATA[...]]>) are read
 from releases/<version>.html. Missing or empty notes abort appcast generation.
 """
-import sys
+import base64
 import os
 import re
+import sys
 from datetime import datetime, timezone
+from html import escape
+from string import Template
 
 if len(sys.argv) < 6:
     print("Usage: update-appcast.py <version> <build_number> <app_name> <zip_path> <appcast_path> [signature] [channel]")
@@ -38,7 +41,8 @@ def normalize_item_indentation(content: str) -> str:
     return re.sub(r"^[ \t]*<item>[ \t]*$", "        <item>", content, flags=re.MULTILINE)
 
 file_size = os.path.getsize(zip_path)
-pub_date = datetime.now(timezone.utc).strftime("%a, %d %b %Y %H:%M:%S %z")
+published_at = datetime.now(timezone.utc)
+pub_date = published_at.strftime("%a, %d %b %Y %H:%M:%S %z")
 
 repo_root = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 notes_path = os.path.join(repo_root, "releases", f"{version}.html")
@@ -56,8 +60,23 @@ if "]]>" in notes_html:
     sys.exit(1)
 
 # The update prompt shows the base version, so the notes must say a beta is a beta.
+beta_notice = ""
 if channel == "beta":
-    notes_html = f"<p><strong>This is a beta build ({version}, build {build_number}). Switch the update channel to Stable in Settings &gt; About to stay on production releases.</strong></p>\n" + notes_html
+    beta_notice = f'<p class="beta-notice"><strong>Beta build · {escape(build_number)}</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>'
+
+with open(os.path.join(repo_root, "scripts", "release-notes-template.html")) as f:
+    template = Template(f.read())
+with open(os.path.join(repo_root, "docs", "icon.svg"), "rb") as f:
+    icon = base64.b64encode(f.read()).decode("ascii")
+notes_html = template.substitute(
+    app_name=escape(app_name),
+    version=escape(version),
+    date_iso=published_at.date().isoformat(),
+    date_label=f"{published_at:%B} {published_at.day}, {published_at.year}",
+    icon=icon,
+    beta_notice=beta_notice,
+    notes=notes_html,
+)
 
 indented = "\n".join("                " + line for line in notes_html.splitlines())
 description_block = f"""            <description><![CDATA[

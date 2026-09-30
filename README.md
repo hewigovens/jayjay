@@ -10,9 +10,12 @@
 
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
+[![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
 ![macOS](https://img.shields.io/badge/macOS-26-blue)
+[![Linux](https://img.shields.io/badge/Linux-GPUI-93c5fd?style=flat-square&logo=linux&logoColor=white&labelColor=1e1e2e)](#gpui-shell)
 ![Rust](https://img.shields.io/badge/rust-1.96%2B-orange)
 ![License](https://img.shields.io/badge/license-BSL--1.1-green)
+[![Discord](https://img.shields.io/badge/Discord-join-5865f2?style=flat-square&logo=discord&logoColor=white&labelColor=1e1e2e)](https://discord.gg/ekknRNkVrT)
 [![Ask DeepWiki](https://deepwiki.com/badge.svg)](https://deepwiki.com/hewigovens/jayjay)
 
 ## JayJay macOS App

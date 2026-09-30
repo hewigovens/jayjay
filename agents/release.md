@@ -67,3 +67,5 @@ Do not edit `docs/appcast.xml` in this pass; step 4 owns it.
 ## Release Notes
 
 `releases/<version>.html` is mandatory, covers only the SwiftUI macOS app, and remains the sole source for the Sparkle update prompt. When the release range has user-visible GPUI changes, write `releases/<version>-gpui.md`; publication adds a Linux GPUI section to the GitHub release body without exposing those notes to Sparkle. Missing or empty SwiftUI notes abort publication. Missing GPUI notes do not block publication while AppImage artifacts remain asynchronous.
+
+Author SwiftUI notes as an HTML body without wrapper tags or per-release CSS. `scripts/update-appcast.py` wraps that body in `scripts/release-notes-template.html` with the shared icon, release version, publication date, and optional beta notice; GitHub publication still uses the original body.
