@@ -12,7 +12,7 @@
   {
     "id": "navigate",
     "title": "Navigate history",
-    "summary": "Move through the DAG, use revset chips, and drag changes or bookmarks when you need to rewrite.",
+    "summary": "Move through the DAG, filter it from the revset bar, and drag changes or bookmarks when you need to rewrite.",
     "category": "History",
     "keywords": ["help", "history", "dag", "graph", "revset", "mine", "trunk", "conflicts", "heads", "drag", "rebase", "rebase onto trunk", "trunk()", "move", "working copy", "edit"],
     "shortcut": "J / K",

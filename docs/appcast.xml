@@ -6,6 +6,126 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.20-beta.3</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>65</sparkle:version>
+            <sparkle:shortVersionString>0.3.20</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Wed, 30 Sep 2026 22:05:30 +0000</pubDate>
+            <description><![CDATA[
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="color-scheme" content="light dark">
+                  <title>JayJay 0.3.20-beta.3 — Release notes</title>
+                  <style>
+                    :root {
+                      color-scheme: light dark;
+                      --background: #f7f8fa;
+                      --surface: #ffffff;
+                      --text: #20242c;
+                      --muted: #626b78;
+                      --border: #dfe4ec;
+                      --accent: #1d4ed8;
+                      --tint: #eaf1ff;
+                      --notice: #fff5de;
+                      --notice-text: #79520b;
+                    }
+                    @media (prefers-color-scheme: dark) {
+                      :root {
+                        --background: #181b21;
+                        --surface: #22262e;
+                        --text: #edf0f6;
+                        --muted: #adb6c5;
+                        --border: #3b424f;
+                        --accent: #93baff;
+                        --tint: #283b5d;
+                        --notice: #3a301d;
+                        --notice-text: #f4cc7d;
+                      }
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                      margin: 0;
+                      padding: 24px;
+                      background: var(--background);
+                      color: var(--text);
+                      font: 13px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                      overflow-wrap: anywhere;
+                    }
+                    .release { max-width: 720px; margin: 0 auto; }
+                    header { padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+                    .brand { display: flex; align-items: center; gap: 10px; font-weight: 650; }
+                    .brand img { width: 36px; height: 36px; border-radius: 10px; background: var(--surface); }
+                    h1 { margin: 16px 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -0.035em; }
+                    .metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; color: var(--muted); }
+                    .version { padding: 3px 10px; border-radius: 7px; background: var(--tint); color: var(--accent); font-weight: 650; }
+                    .beta-notice { margin: 20px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--notice); color: var(--notice-text); }
+                    main h2 { margin: 24px 0 10px; font-size: 16px; line-height: 1.35; }
+                    main ul, main ol { margin: 0; padding: 16px 18px 16px 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+                    main li + li { margin-top: 10px; }
+                    main li::marker { color: var(--accent); }
+                    main li ul, main li ol { margin-top: 10px; padding: 0 0 0 18px; border: 0; }
+                    code { padding: 1px 4px; border-radius: 4px; background: var(--tint); font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: var(--surface); }
+                    pre code { padding: 0; background: transparent; }
+                    a { color: var(--accent); text-underline-offset: 3px; }
+                    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+                    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); }
+                    @media (max-width: 420px) { body { padding: 16px; } h1 { font-size: 24px; } }
+                    @media (prefers-contrast: more) { :root { --muted: var(--text); --border: var(--text); } }
+                  </style>
+                </head>
+                <body>
+                  <div class="release">
+                    <header>
+                      <div class="brand"><img src="data:image/svg+xml;base64,PHN2ZyB4bWxucz0iaHR0cDovL3d3dy53My5vcmcvMjAwMC9zdmciIHdpZHRoPSIxMDI0IiBoZWlnaHQ9IjEwMjQiIHZpZXdCb3g9IjAgMCAxMDI0IDEwMjQiPgogIDxkZWZzPgogICAgPGxpbmVhckdyYWRpZW50IGlkPSJoZWFkIiB4MT0iMjAwIiB5MT0iMjAwIiB4Mj0iOTAwIiB5Mj0iOTAwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzNCODJGNiIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMxRTNBOEEiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgICA8bGluZWFyR3JhZGllbnQgaWQ9ImNyZXN0IiB4MT0iMzgwIiB5MT0iMTAwIiB4Mj0iNTAwIiB5Mj0iMzYwIiBncmFkaWVudFVuaXRzPSJ1c2VyU3BhY2VPblVzZSI+CiAgICAgIDxzdG9wIG9mZnNldD0iMCIgc3RvcC1jb2xvcj0iIzkzQzVGRCIvPgogICAgICA8c3RvcCBvZmZzZXQ9IjEiIHN0b3AtY29sb3I9IiMzQjgyRjYiLz4KICAgIDwvbGluZWFyR3JhZGllbnQ+CiAgPC9kZWZzPgoKICA8IS0tIEJvZHkg4oCUIGVtZXJnaW5nIGZyb20gYm90dG9tLXJpZ2h0LCBtb3N0bHkgb2ZmLWNhbnZhcyAtLT4KICA8ZWxsaXBzZSBjeD0iNzYwIiBjeT0iODIwIiByeD0iMzgwIiByeT0iMzQwIiBmaWxsPSJ1cmwoI2hlYWQpIi8+CgogIDwhLS0gSGVhZCDigJQgY2VudGVyZWQgLS0+CiAgPGNpcmNsZSBjeD0iNDgwIiBjeT0iNDgwIiByPSIyNDAiIGZpbGw9InVybCgjaGVhZCkiLz4KCiAgPCEtLSBDcmVzdCDigJQgc3Bpa2VzIHBvaW50aW5nIHVwLWxlZnQgLS0+CiAgPHBvbHlnb24gcG9pbnRzPSI0MjAsNDgwIDM0MCwyMDAgNDQwLDM2MCIgZmlsbD0idXJsKCNjcmVzdCkiLz4KICA8cG9seWdvbiBwb2ludHM9IjQ2MCw0NTAgNDAwLDE3MCA0ODAsMzQwIiBmaWxsPSIjNjBBNUZBIiBvcGFjaXR5PSIwLjc1Ii8+CgogIDwhLS0gV2luZyBzd2VlcCBvbiBib2R5IC0tPgogIDxwYXRoIGQ9Ik02MjAgNTYwIFE1NjAgNzAwIDcyMCA4ODAgUTg0MCA4MDAgODAwIDYyMCBaIiBmaWxsPSIjMUQ0RUQ4IiBvcGFjaXR5PSIwLjQiLz4KCiAgPCEtLSBDaGVzdCBoaWdobGlnaHQgLS0+CiAgPGVsbGlwc2UgY3g9IjU2MCIgY3k9IjYyMCIgcng9IjExMCIgcnk9IjEzMCIgZmlsbD0id2hpdGUiIG9wYWNpdHk9IjAuMDciLz4KCiAgPCEtLSBFeWUg4oCUIGZhY2luZyBsZWZ0IC0tPgogIDxjaXJjbGUgY3g9IjM5MCIgY3k9IjQ1MCIgcj0iNDgiIGZpbGw9IiNFRkY2RkYiLz4KICA8Y2lyY2xlIGN4PSIzNzgiIGN5PSI0NDIiIHI9IjI4IiBmaWxsPSIjMEYxNzJBIi8+CiAgPGNpcmNsZSBjeD0iMzY4IiBjeT0iNDMyIiByPSIxMCIgZmlsbD0id2hpdGUiLz4KCiAgPCEtLSBCZWFrIOKAlCBwb2ludGluZyBsZWZ0IC0tPgogIDxwb2x5Z29uIHBvaW50cz0iMjQwLDQ4MCAxNjAsNTEyIDI0MCw1NDQiIGZpbGw9IiNGNTlFMEIiLz4KPC9zdmc+Cg==" alt="" width="36" height="36"><span>JayJay</span></div>
+                      <h1>What’s new</h1>
+                      <div class="metadata"><span class="version">v0.3.20-beta.3</span><time datetime="2026-09-30">September 30, 2026</time></div>
+                    </header>
+                    <p class="beta-notice"><strong>Beta build · 65</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>
+                    <main>
+                <h2>Revset bar in the title bar</h2>
+                <ul>
+                  <li>The revset filter now lives in the center of the title bar, quiet on the default <strong>Revset</strong> and tinted once the graph is narrowed. Click it, choose Repository &gt; <strong>Filter by Revset…</strong> (<code>Cmd+L</code>), or use the command palette to edit it in place; the filter icon opens presets, the current revset, matching bookmarks, and this window's recent revsets. Typing a preset or bookmark name picks that filter, and jj's parse error shows before the graph reloads.</li>
+                  <li>As you type, the bar completes revset functions, your aliases, and bookmark, remote, and tag names at the caret. Down picks a suggestion, Return inserts it, and Return with nothing picked applies the revset as typed.</li>
+                  <li>The <strong>Bookmarks</strong> picker moves to the graph header beside the change count. Clicking a bookmark selects its change when the graph shows it, or narrows the graph to the bookmark and its changes over trunk; <strong>Filter by This Bookmark</strong> narrows the same way.</li>
+                </ul>
+                
+                <h2>Workspaces</h2>
+                <ul>
+                  <li>Choosing a workspace in the title picker or the palette's <strong>Switch to</strong> action opens it in the current window, or brings its window forward if it is already open. The window keeps showing the source workspace, with the refresh indicator spinning, until the destination has loaded, then hands off in one update. Unsaved commit-message drafts survive switching away and back, and a workspace that fails to open leaves the source usable with an error. Option-click a workspace or use <strong>Open in New Window</strong> for a separate window.</li>
+                  <li>Select a connected run of changes and choose <strong>Parallelize</strong> from the context menu or the palette to turn the stack into siblings that keep their outside parents and descendants. A selection whose changes are connected only through unselected ones reports that there is nothing to parallelize.</li>
+                </ul>
+                
+                <h2>Diff and detail</h2>
+                <ul>
+                  <li>The diff header shows the file's status pill and line counts next to its name, and Preview, the Unified/Side-by-side toggle, Edit Diff, and Edit File share one borderless style on the right. Tab reaches Edit File after Edit Diff.</li>
+                  <li>The file column header puts its controls first and one count last: filter matches while filtering, review progress once a file is reviewed, otherwise the file total.</li>
+                  <li>Right in the graph moves to the file list and Left moves back, and keys that nothing in the graph or file list handles no longer beep.</li>
+                  <li>A short description body fits its text instead of leaving an empty two-line slot, and the empty-change state shares the diff view's header.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>After a fetch or pull, a bookmark whose remote branch was deleted once its pull request merged is cleaned up: the emptied changes and the bookmark go in one undoable operation, unmerged work is kept, conflicted changes are kept and suggested for abandoning, and the bookmark list shows the deleted remote explicitly.</li>
+                  <li>The file tree shows both entries when a change replaces a file with a directory of the same path, or the reverse; one of them used to disappear.</li>
+                  <li>Gutter clicks and context menus in large diffs no longer recompute the whole diff's display lines.</li>
+                </ul>
+                    </main>
+                    <footer><a href="https://github.com/hewigovens/jayjay/releases">All releases</a> · <a href="https://jayjay.hewig.dev/guide.html">User guide</a></footer>
+                  </div>
+                </body>
+                </html>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.20-beta.3/JayJay-0.3.20-beta.3.zip"
+                       sparkle:edSignature="4BpBpiQO3a/XQM54yOuEySQrMOvji+w4vPeRTdmMlSOtjeJ/ClY+SJ/2eUOxzkESKo7Gt3klQAdMiQprqcKWCQ=="
+                       length="24937117"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.20-beta.2</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>64</sparkle:version>

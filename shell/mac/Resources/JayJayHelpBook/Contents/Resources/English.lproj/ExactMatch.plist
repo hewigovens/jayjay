@@ -46,5 +46,11 @@
 	<string>stacked-prs</string>
 	<key>undo</key>
 	<string>operations</string>
+	<key>parallelize</key>
+	<string>navigate</string>
+	<key>revset</key>
+	<string>navigate</string>
+	<key>workspace</key>
+	<string>open</string>
 </dict>
 </plist>

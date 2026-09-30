@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="description" content="Navigate jj history in the JayJay DAG." />
-  <meta name="keywords" content="jayjay, dag, graph, history, revset, rebase, bookmark drag" />
+  <meta name="keywords" content="jayjay, dag, graph, history, revset, revset filter, completion, parallelize, rebase, bookmark drag" />
   <title>Navigate history</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
@@ -33,14 +33,16 @@
     <h1>Navigate history</h1>
     <p>The graph shows jj changes as a DAG. Click a change to inspect it, or use <code>j</code>/<code>k</code>, arrow keys, and <code>Ctrl+N</code>/<code>Ctrl+P</code> to move through rows.</p>
     <ul>
-      <li>Use revset chips to narrow the graph to mine, bookmarks, conflicts, trunk, or all changes.</li>
-      <li>Type a custom revset when the presets are too broad.</li>
+      <li>The revset bar in the center of the title bar reads <strong>Revset</strong> on the default view and is tinted once the graph is narrowed. Click it, choose <strong>Repository &gt; Filter by Revset…</strong> (<code>Cmd+L</code>), or use the command palette to edit it in place. Typing a preset or bookmark name picks that filter, jj's parse error shows before the graph reloads, <code>Esc</code> cancels, and the clear button returns to the default view.</li>
+      <li>As you type, the bar completes revset functions, your jj aliases, and bookmark, remote, and tag names at the caret. <code>Down</code> picks a suggestion, <code>Return</code> inserts it, and <code>Return</code> with nothing picked applies the revset as typed.</li>
+      <li>The filter icon at the start of the bar opens the presets (all changes, mine, bookmarks, trunk, conflicts, and heads), the current revset, matching bookmarks, and this window's recent revsets.</li>
       <li>Shift-click changes to select more than one. A consecutive direct-parent chain shows one combined diff. From a selected row's menu, merge independent heads, squash a linear range, or abandon mutable selections; use another row as the destination to rebase the selection while preserving its dependencies.</li>
+      <li><strong>Parallelize</strong>, from the context menu or the command palette, turns two or more mutable changes on one connected line into siblings: each keeps the parents it had outside the selection, and changes that sat on top of the run move onto every new sibling.</li>
       <li>Drag a change row to preview and confirm a rebase. Dragging one change of a multi-selection rebases the whole selection. <strong>Rebase onto trunk</strong> in a change's menu moves its whole line of work onto trunk.</li>
       <li>Drag a bookmark chip to move the bookmark, or drag the working-copy <code>@</code> chip to edit another change. Dropping a resolved bookmark on the same change does nothing; dropping a conflicted chip on one of its rows resolves it to that commit.</li>
-      <li>The detail header shows a long description's first 80 points and scrolls; Expand shows up to 320 points while the file list and diff stay visible, and the summary with its Edit button stays put while the body scrolls.</li>
+      <li>A short description body takes only the lines it needs. The detail header shows a long description's first 80 points and scrolls; Expand shows up to 320 points while the file list and diff stay visible, and the summary with its Edit button stays put while the body scrolls.</li>
       <li>Rows show <code>name@</code> chips for other workspaces' working copies, so sibling checkouts are identifiable in the graph. Right-click a chip to open that workspace in a new window or copy its name or path.</li>
-      <li>Choose <strong>Show ancestors…</strong> from a change's menu to filter the graph to everything that leads to it; the revset filter keeps a Back control to restore the previous filter.</li>
+      <li>Choose <strong>Show ancestors…</strong> from a change's menu to filter the graph to everything that leads to it; the revset bar keeps a Back control to restore the previous filter.</li>
       <li>Press <code>Tab</code> to move keyboard focus through the graph, file list, description, diff, toolbar, and commit fields; <code>Shift+Tab</code> reverses, <code>Space</code> or <code>Return</code> activates the focused control, and <code>Esc</code> returns to the pane.</li>
     </ul>
     <div class="shot">

@@ -1,0 +1,27 @@
+<h2>Revset bar in the title bar</h2>
+<ul>
+  <li>The revset filter now lives in the center of the title bar, quiet on the default <strong>Revset</strong> and tinted once the graph is narrowed. Click it, choose Repository &gt; <strong>Filter by Revset…</strong> (<code>Cmd+L</code>), or use the command palette to edit it in place; the filter icon opens presets, the current revset, matching bookmarks, and this window's recent revsets. Typing a preset or bookmark name picks that filter, and jj's parse error shows before the graph reloads.</li>
+  <li>As you type, the bar completes revset functions, your aliases, and bookmark, remote, and tag names at the caret. Down picks a suggestion, Return inserts it, and Return with nothing picked applies the revset as typed.</li>
+  <li>The <strong>Bookmarks</strong> picker moves to the graph header beside the change count. Clicking a bookmark selects its change when the graph shows it, or narrows the graph to the bookmark and its changes over trunk; <strong>Filter by This Bookmark</strong> narrows the same way.</li>
+</ul>
+
+<h2>Workspaces</h2>
+<ul>
+  <li>Choosing a workspace in the title picker or the palette's <strong>Switch to</strong> action opens it in the current window, or brings its window forward if it is already open. The window keeps showing the source workspace, with the refresh indicator spinning, until the destination has loaded, then hands off in one update. Unsaved commit-message drafts survive switching away and back, and a workspace that fails to open leaves the source usable with an error. Option-click a workspace or use <strong>Open in New Window</strong> for a separate window.</li>
+  <li>Select a connected run of changes and choose <strong>Parallelize</strong> from the context menu or the palette to turn the stack into siblings that keep their outside parents and descendants. A selection whose changes are connected only through unselected ones reports that there is nothing to parallelize.</li>
+</ul>
+
+<h2>Diff and detail</h2>
+<ul>
+  <li>The diff header shows the file's status pill and line counts next to its name, and Preview, the Unified/Side-by-side toggle, Edit Diff, and Edit File share one borderless style on the right. Tab reaches Edit File after Edit Diff.</li>
+  <li>The file column header puts its controls first and one count last: filter matches while filtering, review progress once a file is reviewed, otherwise the file total.</li>
+  <li>Right in the graph moves to the file list and Left moves back, and keys that nothing in the graph or file list handles no longer beep.</li>
+  <li>A short description body fits its text instead of leaving an empty two-line slot, and the empty-change state shares the diff view's header.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>After a fetch or pull, a bookmark whose remote branch was deleted once its pull request merged is cleaned up: the emptied changes and the bookmark go in one undoable operation, unmerged work is kept, conflicted changes are kept and suggested for abandoning, and the bookmark list shows the deleted remote explicitly.</li>
+  <li>The file tree shows both entries when a change replaces a file with a directory of the same path, or the reverse; one of them used to disappear.</li>
+  <li>Gutter clicks and context menus in large diffs no longer recompute the whole diff's display lines.</li>
+</ul>
