@@ -10,7 +10,7 @@ struct TreeFileList<RowContent: View>: View {
 
     var body: some View {
         List {
-            ForEach(visibleEntries, id: \.path) { entry in
+            ForEach(visibleEntries, id: \.rowId) { entry in
                 Group {
                     if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
                         let hunk = filteredDiff[Int(hunkIdx)]
@@ -69,4 +69,9 @@ struct TreeFileList<RowContent: View>: View {
         let validDirs = Set(treeEntries.compactMap { $0.hunkIndex == nil ? $0.path : nil })
         collapsedDirs.formIntersection(validDirs)
     }
+}
+
+private extension FileTreeEntry {
+    // A directory and a file can share a path; the trailing slash keeps their row ids distinct.
+    var rowId: String { hunkIndex == nil ? "\(path)/" : path }
 }
