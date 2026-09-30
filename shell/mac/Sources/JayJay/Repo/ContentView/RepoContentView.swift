@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RepoContentView: View {
     @Bindable var viewModel: RepoViewModel
+    let isSwitchingWorkspace: Bool
     let onSwitchWorkspace: (String) -> Void
     @State var sidebarWidth: CGFloat = 360
     @State var revsetEditRequest = 0

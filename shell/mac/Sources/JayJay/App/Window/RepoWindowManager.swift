@@ -17,7 +17,7 @@ final class RepoWindowManager {
     }
 
     private(set) var openRepoPaths: [String] = []
-    private let settings: AppSettings
+    let settings: AppSettings
     private var openWindowAction: ((_ id: String, _ value: String?) -> Void)?
     private var dismissWindowAction: ((_ id: String) -> Void)?
     var pendingRepoAfterOnboarding: String?
@@ -123,11 +123,13 @@ final class RepoWindowManager {
     func repoWindowWillClose(at path: String) {
         let normalizedPath = normalizedRepositoryPath(path: path)
         compactRegistrations()
-        let closing = registeredRepos.filter { $0.value.path == normalizedPath }
+        let closing = registeredRepos.filter {
+            $0.value.path == normalizedPath || $0.value.viewModel?.switchTarget == normalizedPath
+        }
         for registration in closing.values {
             registration.viewModel?.windowWillClose()
         }
-        registeredRepos = registeredRepos.filter { $0.value.path != normalizedPath }
+        registeredRepos = registeredRepos.filter { !closing.keys.contains($0.key) }
         DispatchQueue.main.async { [weak self] in
             guard let self else { return }
             refreshOpenRepoPaths()
@@ -342,11 +344,11 @@ final class RepoWindowManager {
     func showInGraph(repoPath: String, headChangeId: String, selecting revision: String) {
         let normalizedPath = normalizedRepositoryPath(path: repoPath)
         compactRegistrations()
-        if let registered = registeredRepos.values.first(where: { $0.path == normalizedPath }),
-           let viewModel = registered.viewModel
+        if let registered = registeredRepos.values.first(where: { $0.path == normalizedPath && $0.viewModel?.switchTarget == nil }),
+           let viewModel = registered.viewModel,
+           activateRepo(repoPath)
         {
             viewModel.revealAncestors(of: headChangeId, selecting: revision)
-            _ = activateRepo(repoPath)
             return
         }
         pendingReveals[normalizedPath] = (headChangeId, revision)
@@ -372,19 +374,8 @@ final class RepoWindowManager {
         openWindowAction?(AppWindows.repo, normalizedPath)
     }
 
-    func switchRepo(from viewModel: RepoViewModel, to path: String, changePath: (String) -> Void) {
-        let target = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
-        guard !isRemovingRepo(at: target), target != normalizedRepositoryPath(path: viewModel.repoPath) else { return }
-        settings.recordOpenedRepo(target)
-        if activateRepo(target) {
-            return
-        }
-        // Keep the source model alive until the destination opens, so a failed switch can return to it.
-        changePath(target)
-    }
-
-    /// Retire the source only after the destination has registered successfully.
-    func finishSwitch(from viewModel: RepoViewModel) {
+    /// Shut down a model the window no longer shows: the source after a switch lands, or a destination the switch abandoned.
+    func retire(_ viewModel: RepoViewModel) {
         viewModel.windowWillClose()
         registeredRepos.removeValue(forKey: ObjectIdentifier(viewModel))
     }

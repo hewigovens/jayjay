@@ -49,6 +49,7 @@ extension RepoViewModel {
         }
         isLoading = false
         isRefreshingInFlight = false
+        hasFinishedFirstLoad = true
         if presence == .gone {
             workspaceVanished = true
         } else {

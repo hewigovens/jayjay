@@ -4,6 +4,7 @@ import SwiftUI
 
 struct RepoTitlePicker: View {
     let repoPath: String
+    let repositoryName: String
     let workspaces: [WorkspaceInfo]
     let onSwitchWorkspace: (WorkspaceInfo) -> Void
     let onOpenWorkspaceInNewWindow: (WorkspaceInfo) -> Void
@@ -17,8 +18,6 @@ struct RepoTitlePicker: View {
     @Environment(RepoWindowManager.self) private var windowManager
     @State private var anchor = PickerAnchor()
     @State private var panel = PickerPanel()
-    @State private var rootRepoName: String?
-    @State private var isResolvingRootName = false
 
     private var standardizedRepoPath: String {
         URL(fileURLWithPath: repoPath).standardizedFileURL.path
@@ -31,7 +30,7 @@ struct RepoTitlePicker: View {
     var body: some View {
         Button(action: togglePanel) {
             HStack(spacing: 4) {
-                Text(rootRepoName ?? URL(fileURLWithPath: repoPath).repositoryDisplayName)
+                Text(repositoryName)
                     .fontWeight(.semibold)
                 if let currentWorkspaceName {
                     Text("/")
@@ -66,20 +65,6 @@ struct RepoTitlePicker: View {
     private func refresh() {
         repositoryStore.reload()
         windowManager.refreshOpenRepoPaths()
-        resolveRootRepoName()
-    }
-
-    /// Secondary workspaces are named after their checkout; show the primary repo instead.
-    private func resolveRootRepoName() {
-        guard rootRepoName == nil, !isResolvingRootName else { return }
-        isResolvingRootName = true
-        let repoPath = repoPath
-        Task { @MainActor in
-            let root = await Task.detached { workspacePrimaryRoot(path: repoPath) }.value
-            isResolvingRootName = false
-            guard let root else { return }
-            rootRepoName = URL(fileURLWithPath: root).repositoryDisplayName
-        }
     }
 
     private func togglePanel() {

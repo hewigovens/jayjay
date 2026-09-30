@@ -265,6 +265,27 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
         XCTAssertFalse(viewModel.workspaceVanished)
         XCTAssertEqual(viewModel.error, "newer refresh")
     }
+
+    func testFirstLoadWaitFollowsASupersedingRefresh() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.refreshTask = Task { @MainActor in viewModel.refresh(selecting: "@") }
+
+        await viewModel.waitForFirstLoad()
+
+        XCTAssertTrue(viewModel.hasFinishedFirstLoad)
+        XCTAssertFalse(viewModel.graphEntries.isEmpty)
+        XCTAssertFalse(viewModel.workspaces.isEmpty)
+    }
+
+    func testFirstLoadWaitEndsWhenShutdownCancelsTheRefresh() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.refresh(selecting: "@")
+        viewModel.beginShutdown()
+
+        await viewModel.waitForFirstLoad()
+
+        XCTAssertFalse(viewModel.hasFinishedFirstLoad)
+    }
 }
 
 private enum TestRefreshError: Error {

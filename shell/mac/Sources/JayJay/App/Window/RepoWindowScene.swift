@@ -17,6 +17,8 @@ struct RepoWindowScene: View {
             })
             .onChange(of: repoPath) { _, path in
                 guard let windowNumber, let window = NSApp.windows.first(where: { $0.windowNumber == windowNumber }) else { return }
+                // A text field in the outgoing content would otherwise keep taking keys while the switch is pending.
+                window.makeFirstResponder(nil)
                 window.representedURL = URL(fileURLWithPath: path)
                 windowManager.refreshOpenRepoPaths()
                 ActiveRepoTracker.shared.repoPath = path

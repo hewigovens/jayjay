@@ -58,6 +58,7 @@ final class RepoWindowManagerTests: XCTestCase {
         return RepoViewModel(
             path: directory.path,
             repo: resolvedRepo,
+            primaryRoot: workspacePrimaryRoot(path: directory.path) ?? directory.path,
             workingCopyIsLarge: false,
             configWarning: nil,
             includeSubmoduleStatuses: false
@@ -205,6 +206,61 @@ final class RepoWindowManagerTests: XCTestCase {
             true
         }
         XCTAssertNil(fixture.manager.workspaceDrafts.draft(for: fixture.checkout.path, in: windowNumber))
+    }
+
+    func testShowInGraphDuringASwitchOpensTheSourceInsteadOfRevealingInTheOutgoingModel() throws {
+        var openedPaths: [String] = []
+        let manager = try makeManager { openedPaths.append($0) }
+        let (directory, repo) = try makeRepository(named: "switch-source-reveal")
+        let source = try makeViewModel(at: directory, repo: repo)
+        XCTAssertTrue(manager.register(source))
+        let window = makeWindow(representing: directory)
+        defer { window.close() }
+        let revset = source.revset
+
+        let destination = try makeTemporaryDirectory(named: "switch-destination")
+        manager.switchRepo(from: source, to: destination.path) { window.representedURL = URL(fileURLWithPath: $0) }
+        manager.showInGraph(repoPath: directory.path, headChangeId: "head", selecting: "head")
+
+        XCTAssertEqual(source.revset, revset)
+        XCTAssertEqual(manager.takePendingReveal(for: directory.path)?.rev, "head")
+        XCTAssertEqual(openedPaths.count, 1)
+    }
+
+    func testFailedSwitchReturnsOnlyToASourceThatCanStillBeShown() async throws {
+        let manager = try makeManager()
+        let (directory, repo) = try makeRepository(named: "switch-source-removed")
+        let source = try makeViewModel(at: directory, repo: repo)
+        XCTAssertTrue(manager.register(source))
+        let window = makeWindow(representing: directory)
+        defer { window.close() }
+        let destination = try makeTemporaryDirectory(named: "switch-destination")
+        let changePath = { (path: String) in window.representedURL = URL(fileURLWithPath: path) }
+
+        manager.switchRepo(from: source, to: destination.path, changePath: changePath)
+        XCTAssertTrue(manager.endSwitch(returningTo: source))
+
+        changePath(directory.path)
+        manager.switchRepo(from: source, to: destination.path, changePath: changePath)
+        await manager.withWorkspaceRemoval(at: directory.path) {}
+
+        XCTAssertTrue(window.isVisible, "the window already represents the destination, so the removal leaves it open")
+        XCTAssertFalse(manager.endSwitch(returningTo: source))
+    }
+
+    func testClosingAWindowDuringASwitchShutsDownItsSource() throws {
+        let manager = try makeManager()
+        let (directory, repo) = try makeRepository(named: "switch-source-close")
+        let source = try makeViewModel(at: directory, repo: repo)
+        XCTAssertTrue(manager.register(source))
+        let window = makeWindow(representing: directory)
+        defer { window.close() }
+        let destination = try makeTemporaryDirectory(named: "switch-destination")
+        manager.switchRepo(from: source, to: destination.path) { window.representedURL = URL(fileURLWithPath: $0) }
+
+        manager.repoWindowWillClose(at: destination.path)
+
+        XCTAssertTrue(source.isShuttingDown)
     }
 
     func testNormalWindowCloseDoesNotRetainTheViewModelForRepoWork() async throws {
