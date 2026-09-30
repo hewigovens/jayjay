@@ -4,7 +4,6 @@
 SwiftUI release notes (HTML body inside <description><![CDATA[...]]>) are read
 from releases/<version>.html. Missing or empty notes abort appcast generation.
 """
-import base64
 import os
 import re
 import sys
@@ -66,14 +65,11 @@ if channel == "beta":
 
 with open(os.path.join(repo_root, "scripts", "release-notes-template.html")) as f:
     template = Template(f.read())
-with open(os.path.join(repo_root, "docs", "icon.svg"), "rb") as f:
-    icon = base64.b64encode(f.read()).decode("ascii")
 notes_html = template.substitute(
     app_name=escape(app_name),
     version=escape(version),
     date_iso=published_at.date().isoformat(),
     date_label=f"{published_at:%B} {published_at.day}, {published_at.year}",
-    icon=icon,
     beta_notice=beta_notice,
     notes=notes_html,
 )
