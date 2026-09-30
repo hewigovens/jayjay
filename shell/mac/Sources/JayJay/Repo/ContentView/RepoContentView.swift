@@ -78,6 +78,7 @@ struct RepoContentView: View {
             .background(
                 KeyDownMonitor(
                     yieldsToText: { _ in keyboardFocus.control?.isTextInput != true },
+                    swallowsUnhandledKeys: keyboardFocus.control.map { !$0.isTextInput } ?? false,
                     onKeyDown: { event in keyboardFocus.handleKey(event) }
                 )
                 .frame(width: 0, height: 0)

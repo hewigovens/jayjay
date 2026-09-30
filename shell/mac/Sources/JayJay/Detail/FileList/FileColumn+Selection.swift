@@ -4,22 +4,21 @@ import SwiftUI
 
 extension ChangeDetailView {
     func handleFileColumnKey(_ event: NSEvent) -> Bool {
-        if event.keyCode == KeyCode.space {
-            return toggleReviewOnSelection()
-        }
         switch event.keyCode {
-            case KeyCode.downArrow: return moveFileSelection(by: 1)
-            case KeyCode.upArrow: return moveFileSelection(by: -1)
+            case KeyCode.space: return toggleReviewOnSelection()
+            case KeyCode.leftArrow:
+                keyboardFocus?.focusPane(.dag)
+                return true
+            case KeyCode.rightArrow: return true
             default: break
         }
         let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
-        switch event.charactersIgnoringModifiers {
-            case "j": return moveFileSelection(by: 1)
-            case "k": return moveFileSelection(by: -1)
-            case "n" where isCtrl: return moveFileSelection(by: 1)
-            case "p" where isCtrl: return moveFileSelection(by: -1)
-            default: return false
-        }
+        guard let delta = DAGViewModel.selectionDelta(
+            keyCode: event.keyCode,
+            charactersIgnoringModifiers: event.charactersIgnoringModifiers,
+            controlPressed: isCtrl
+        ) else { return false }
+        return moveFileSelection(by: delta)
     }
 
     private func toggleReviewOnSelection() -> Bool {

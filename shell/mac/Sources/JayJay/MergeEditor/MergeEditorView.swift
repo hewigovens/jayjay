@@ -26,6 +26,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
             KeyDownMonitor(
                 isActive: { session.resultMode == .hunks },
                 yieldsToText: \.isEditable,
+                swallowsUnhandledKeys: true,
                 onKeyDown: handleMergeKey
             )
             .frame(width: 0, height: 0)

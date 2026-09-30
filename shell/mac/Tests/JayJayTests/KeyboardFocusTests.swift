@@ -29,6 +29,27 @@ final class KeyboardFocusTests: XCTestCase {
         XCTAssertEqual(focus.control, .refresh)
     }
 
+    func testFocusPaneActivatesTheFileListAndReturnsToTheGraph() {
+        let focus = KeyboardFocus()
+        var activated = 0
+        focus.register(.fileList, token: UUID()) {
+            activated += 1
+            focus.activePane = .fileColumn
+        }
+        focus.register(.refresh, token: UUID()) {}
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        focus.activePane = .fileColumn
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertEqual(focus.control, .refresh)
+
+        focus.focusPane(.dag)
+        XCTAssertEqual(focus.activePane, .dag)
+        XCTAssertNil(focus.control)
+        focus.focusPane(.fileColumn)
+        XCTAssertEqual(activated, 2)
+        XCTAssertEqual(focus.activePane, .fileColumn)
+    }
+
     func testHiddenSidebarLeavesTheTabCycleAndGivesUpFocus() {
         let focus = KeyboardFocus()
         var activated: [KeyboardFocusStop] = []

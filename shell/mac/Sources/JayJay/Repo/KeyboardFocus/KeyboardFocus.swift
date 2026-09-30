@@ -57,6 +57,16 @@ final class KeyboardFocus {
         }
     }
 
+    func focusPane(_ pane: ActivePane) {
+        NSApp.keyWindow?.makeFirstResponder(nil)
+        switch pane {
+            case .dag:
+                activePane = .dag
+            case .fileColumn:
+                registrations[.fileList]?.action()
+        }
+    }
+
     /// A field already on screen needs its registered action; one about to appear takes focus in `onAppear`.
     func focusInput(_ stop: KeyboardFocusStop) {
         updateInputFocus(stop, isFocused: true)
@@ -95,9 +105,9 @@ final class KeyboardFocus {
         NSApp.keyWindow?.makeFirstResponder(nil)
         switch next {
             case .dag:
-                activePane = .dag
+                focusPane(.dag)
             case .fileList:
-                registrations[.fileList]?.action()
+                focusPane(.fileColumn)
             default:
                 control = next
                 if next.isTextInput {

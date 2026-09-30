@@ -120,6 +120,7 @@ extension ChangeDetailView {
         .background(
             KeyDownMonitor(
                 isActive: { activePane == .fileColumn && keyboardFocus?.control == nil },
+                swallowsUnhandledKeys: true,
                 onKeyDown: { event in handleFileColumnKey(event) }
             )
             .frame(width: 0, height: 0)

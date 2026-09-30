@@ -72,7 +72,7 @@ struct DiffEditView: View {
         }
         .background(session.settings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
         .background(
-            KeyDownMonitor(yieldsToText: \.isEditable, onKeyDown: { session.handleKey($0) })
+            KeyDownMonitor(yieldsToText: \.isEditable, swallowsUnhandledKeys: true, onKeyDown: { session.handleKey($0) })
                 .frame(width: 0, height: 0)
                 .allowsHitTesting(false)
         )

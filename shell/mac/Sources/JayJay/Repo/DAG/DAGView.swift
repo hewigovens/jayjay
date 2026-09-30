@@ -175,6 +175,7 @@ struct DAGView: View {
         .background(
             KeyDownMonitor(
                 isActive: { activePane == .dag && keyboardFocus?.control == nil },
+                swallowsUnhandledKeys: true,
                 onKeyDown: { event in handleKeyDown(event) }
             )
             .frame(width: 0, height: 0)
@@ -251,6 +252,15 @@ struct DAGView: View {
         if event.keyCode == KeyCode.escape, selectedIds.count > 1 {
             actions?.select(changeId: selectedId)
             return true
+        }
+        switch event.keyCode {
+            case KeyCode.rightArrow:
+                keyboardFocus?.focusPane(.fileColumn)
+                return true
+            case KeyCode.leftArrow:
+                return true
+            default:
+                break
         }
         let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
         guard let delta = DAGViewModel.selectionDelta(
