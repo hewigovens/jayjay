@@ -45,4 +45,5 @@ pub enum RemoteSyncStatus {
     /// Remote has commits the local bookmark lacks — fetch to catch up.
     Behind,
     Diverged,
+    Deleted,
 }

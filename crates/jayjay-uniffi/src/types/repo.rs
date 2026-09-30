@@ -122,6 +122,7 @@ pub enum RemoteSyncStatus {
     Ahead,
     Behind,
     Diverged,
+    Deleted,
 }
 
 #[uniffi::remote(Record)]

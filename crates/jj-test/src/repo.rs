@@ -3,7 +3,7 @@ use std::path::{Path, PathBuf};
 use std::sync::OnceLock;
 
 use jayjay_core::diff::compute_file_diff_full;
-use jayjay_core::{ChangeInfo, DiffEditFileSelection, DiffEditRange, Repo};
+use jayjay_core::{BookmarkInfo, ChangeInfo, DiffEditFileSelection, DiffEditRange, Repo};
 use tempfile::TempDir;
 
 use crate::template::copy_of;
@@ -52,6 +52,22 @@ pub fn change_by_description<'a>(changes: &'a [ChangeInfo], description: &str) -
         .iter()
         .find(|change| change.description.trim() == description)
         .unwrap_or_else(|| panic!("missing change with description {description:?}"))
+}
+
+pub fn first_change(repo: &Repo, revset: &str) -> ChangeInfo {
+    repo.log(revset)
+        .expect("load changes")
+        .into_iter()
+        .next()
+        .unwrap_or_else(|| panic!("no change matches {revset:?}"))
+}
+
+pub fn find_bookmark(repo: &Repo, name: &str) -> BookmarkInfo {
+    repo.list_bookmarks()
+        .expect("list bookmarks")
+        .into_iter()
+        .find(|bookmark| bookmark.name == name)
+        .unwrap_or_else(|| panic!("missing bookmark {name:?}"))
 }
 
 /// Reloads the log, for lookups after a mutation.

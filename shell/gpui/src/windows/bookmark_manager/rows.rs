@@ -159,6 +159,7 @@ fn status_chips(bookmark: &BookmarkInfo, t: &Theme) -> Vec<AnyElement> {
 
 fn remote_badge(target: &RemoteBookmarkTarget, t: &Theme) -> AnyElement {
     let (label, bg, fg) = match target.status {
+        RemoteSyncStatus::Deleted => (format!("deleted on {}", target.remote), t.tag_bg, t.tag_fg),
         RemoteSyncStatus::Synced => (
             format!("{} ✓", target.remote),
             t.tag_bookmark_bg,

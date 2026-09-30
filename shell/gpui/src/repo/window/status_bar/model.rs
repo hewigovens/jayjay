@@ -47,6 +47,7 @@ fn primary_remote_target(bookmark: &BookmarkInfo) -> Option<&RemoteBookmarkTarge
 
 fn sync_badge(target: &RemoteBookmarkTarget) -> String {
     match target.status {
+        RemoteSyncStatus::Deleted => format!("deleted on {}", target.remote),
         RemoteSyncStatus::Synced => "✓".to_owned(),
         RemoteSyncStatus::Ahead => format!("↑{}", target.ahead),
         RemoteSyncStatus::Behind => format!("↓{}", target.behind),

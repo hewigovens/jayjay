@@ -48,11 +48,8 @@ impl Repo {
                 .filter(|(_, remote_ref)| remote_ref.is_tracked())
                 .map(|(sym, remote_ref)| {
                     let (change_id, description) = self.summary_at_target(&remote_ref.target);
-                    let (status, ahead, behind) = self.remote_sync_status(
-                        &repo,
-                        local_target_commit,
-                        remote_ref.target.as_normal(),
-                    );
+                    let (status, ahead, behind) =
+                        self.remote_sync_status(&repo, local_target_commit, &remote_ref.target);
                     RemoteBookmarkTarget {
                         remote: sym.remote.as_str().to_owned(),
                         change_id: change_id.id,
@@ -350,14 +347,17 @@ impl Repo {
 }
 
 impl Repo {
-    /// Classify a tracked remote ref against its local bookmark, with ahead/behind counts. Counts are computed only when the two point at different commits; a missing side (conflicted/absent target) can't be compared, so it reads as diverged with zero counts.
+    /// Classify a tracked remote ref against its local bookmark, with ahead/behind counts.
     fn remote_sync_status(
         &self,
         repo: &Arc<ReadonlyRepo>,
         local: Option<&CommitId>,
-        remote: Option<&CommitId>,
+        remote: &RefTarget,
     ) -> (RemoteSyncStatus, u32, u32) {
-        match (local, remote) {
+        if remote.is_absent() {
+            return (RemoteSyncStatus::Deleted, 0, 0);
+        }
+        match (local, remote.as_normal()) {
             (Some(l), Some(r)) if l == r => (RemoteSyncStatus::Synced, 0, 0),
             (Some(l), Some(r)) => {
                 let ahead = self.count_revset(repo, &format!("{}..{}", r.hex(), l.hex()));
@@ -376,7 +376,10 @@ impl Repo {
 }
 
 /// Drop `commit_id` from a bookmark target. `None` if that commit is not one of the added ids.
-fn bookmark_target_without_commit(target: &RefTarget, commit_id: &CommitId) -> Option<RefTarget> {
+pub(super) fn bookmark_target_without_commit(
+    target: &RefTarget,
+    commit_id: &CommitId,
+) -> Option<RefTarget> {
     let mut remaining: Vec<CommitId> = target.added_ids().cloned().collect();
     let before = remaining.len();
     remaining.retain(|id| id != commit_id);

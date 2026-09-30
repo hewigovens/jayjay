@@ -167,6 +167,9 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
     @ViewBuilder
     private func remoteBadge(_ target: RemoteBookmarkTarget) -> some View {
         switch target.status {
+            case .deleted:
+                badge("deleted on \(target.remote)", color: .secondary)
+                    .help("\(bookmark.name) was deleted on \(target.remote).")
             case .synced:
                 badge("\(target.remote) ✓", color: .green)
                     .help("In sync with \(target.remote).")

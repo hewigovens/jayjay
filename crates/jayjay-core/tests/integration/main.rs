@@ -8,6 +8,7 @@ mod diff_file_stats;
 mod diffedit;
 mod diffedit_guard;
 mod diffedit_immutable;
+mod fetch_cleanup;
 mod format_projections;
 mod insert_change;
 mod lfs;

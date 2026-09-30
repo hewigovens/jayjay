@@ -4,8 +4,8 @@ use std::process::Command;
 
 use jayjay_core::{ChangeInfo, RemoteSyncStatus, Repo};
 use jj_test::{
-    LinearFixture, configure_test_user, init_colocated, init_jj_repo, run_command, run_git, run_jj,
-    run_jj_in,
+    LinearFixture, configure_test_user, find_bookmark, init_colocated, init_jj_repo, run_command,
+    run_git, run_jj, run_jj_in,
 };
 
 #[test]
@@ -179,13 +179,13 @@ fn deleted_bookmark_preserves_tracking_per_remote() {
     );
     repo.delete_bookmark("feature")
         .expect("delete local bookmark");
-    let deleted = listed_feature(&repo);
+    let deleted = find_bookmark(&repo, "feature");
     assert!(deleted.is_deleted && !deleted.has_local_target);
     assert_eq!(deleted.available_remotes, ["origin", "upstream"]);
     assert_eq!(deleted.tracked_remotes, ["origin"]);
 
     repo.forget_bookmark("feature").expect("forget bookmark");
-    let forgotten = listed_feature(&repo);
+    let forgotten = find_bookmark(&repo, "feature");
     assert!(!forgotten.is_deleted && !forgotten.has_local_target);
     assert_eq!(forgotten.available_remotes, ["origin", "upstream"]);
     assert!(
@@ -341,20 +341,12 @@ fn feature_targets(repo: &Repo) -> Vec<ChangeInfo> {
         .collect()
 }
 
-fn listed_feature(repo: &Repo) -> jayjay_core::BookmarkInfo {
-    repo.list_bookmarks()
-        .expect("list bookmarks")
-        .into_iter()
-        .find(|bookmark| bookmark.name == "feature")
-        .expect("feature bookmark")
-}
-
 #[test]
 fn remove_bookmark_from_rev_keeps_the_other_conflicted_target() {
     let fixture = conflicted_feature_fixture();
     let repo = Repo::open(&fixture.alice).expect("open alice");
     assert!(
-        listed_feature(&repo).is_conflicted,
+        find_bookmark(&repo, "feature").is_conflicted,
         "fetched remote move should conflict with alice's local move"
     );
     let feature_changes = feature_targets(&repo);
@@ -381,7 +373,7 @@ fn remove_bookmark_from_rev_keeps_the_other_conflicted_target() {
         "removing the chip from alice-move should leave feature only on bob-move"
     );
     assert!(
-        !listed_feature(&repo).is_conflicted,
+        !find_bookmark(&repo, "feature").is_conflicted,
         "a single remaining target should resolve the conflict"
     );
 }
