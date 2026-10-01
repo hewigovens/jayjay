@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use gpui::{App, Context};
 use jayjay_core::compare;
+use jayjay_core::dag::MergeParentChoice;
 use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect, RebaseMode};
 
 use super::RepoWindow;
@@ -69,15 +70,33 @@ impl RepoWindow {
         let vm = self.vm.read(cx);
         let revisions = vm.selected_revisions();
         let count = revisions.len();
-        vec![
-            ContextMenuItem::new(
-                format!("Merge {count} selected"),
-                glyph::GIT_MERGE,
-                change_action(ChangeAction::Merge {
-                    parents: revisions.clone(),
+        let can_merge = vm.can_merge_selected_changes();
+        let changes: Vec<_> = if can_merge {
+            vm.selected_change_indices()
+                .into_iter()
+                .map(|index| vm.graph.changes[index].clone())
+                .collect()
+        } else {
+            Vec::new()
+        };
+        let mut choices =
+            vec![ContextMenuItem::new("First parent", "", ContextAction::Noop).with_enabled(false)];
+        choices.extend(
+            MergeParentChoice::for_selection(&changes)
+                .into_iter()
+                .map(|choice| {
+                    ContextMenuItem::new(
+                        choice.label,
+                        glyph::GIT_MERGE,
+                        change_action(ChangeAction::Merge {
+                            parents: choice.parents,
+                        }),
+                    )
                 }),
-            )
-            .with_enabled(vm.can_merge_selected_changes()),
+        );
+        vec![
+            ContextMenuItem::submenu(format!("Merge {count} selected"), glyph::GIT_MERGE, choices)
+                .with_enabled(can_merge),
             ContextMenuItem::new(
                 format!("Squash {count} selected…"),
                 glyph::ARROW_DOWN,

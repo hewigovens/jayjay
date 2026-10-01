@@ -1,11 +1,11 @@
 import XCTest
 
-final class ParallelizeSelectionScene: SceneBase {
+final class SelectionTransformScene: SceneBase {
     override class var fixtureName: String {
         "parallelize"
     }
 
-    func testParallelizeMenuReportsNothingToDoAndRewritesAConnectedRun() throws {
+    func testParallelizeThenMergeWithChosenFirstParent() throws {
         let app = try XCTUnwrap(app)
         let rows = dagRows(of: app)
         XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
@@ -13,8 +13,7 @@ final class ParallelizeSelectionScene: SceneBase {
         select([0, 2], rows: rows, step: "no-op selection")
         rightClickCenter(rows.element(boundBy: 0))
         let noOpItem = app.menuItems["Parallelize 2 selected"]
-        let menuLabels = app.menuItems.allElementsBoundByIndex.map(\.label)
-        XCTAssertTrue(noOpItem.waitForExistence(timeout: 5), "parallelize menu item missing; menu=\(menuLabels)")
+        XCTAssertTrue(noOpItem.waitForExistence(timeout: 5), "Parallelize menu item missing")
         XCTAssertTrue(noOpItem.isEnabled)
         noOpItem.click()
         XCTAssertTrue(
@@ -53,6 +52,31 @@ final class ParallelizeSelectionScene: SceneBase {
         let stillChained = app.menuItems["Parallelize 2 selected"]
         XCTAssertTrue(stillChained.waitForExistence(timeout: 5))
         XCTAssertFalse(stillChained.isEnabled, "siblings must not stay parallelizable")
+        app.typeKey(.escape, modifierFlags: [])
+
+        select([0, 1, 2], rows: rows, step: "merge selection")
+        let beforeMerge = rows.allElementsBoundByIndex.map(\.identifier)
+        let firstParentPrefix = String(rows.element(boundBy: 2).identifier.dropFirst("dag.row.".count).prefix(8))
+        rightClickCenter(rows.element(boundBy: 0))
+        let mergeThree = app.menuItems["Merge 3 selected"]
+        XCTAssertTrue(mergeThree.waitForExistence(timeout: 5))
+        mergeThree.hover()
+        let choice = app.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", firstParentPrefix)).firstMatch
+        XCTAssertTrue(choice.waitForExistence(timeout: 5), "First-parent submenu missing")
+        let screenshot = XCTAttachment(screenshot: app.screenshot())
+        screenshot.name = "Merge first-parent submenu"
+        screenshot.lifetime = .keepAlways
+        add(screenshot)
+        choice.click()
+        let merged = NSPredicate { _, _ in
+            let selected = rows.allElementsBoundByIndex.filter(\.isSelected)
+            return selected.count == 1 && !beforeMerge.contains(selected[0].identifier)
+        }
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: merged, object: nil)], timeout: 10),
+            .completed,
+            "Choosing a first parent did not create and select a new merge change"
+        )
     }
 
     /// Clicks go through each row's center because a rewrite can leave its own hit point clipped.
@@ -76,10 +100,6 @@ final class ParallelizeSelectionScene: SceneBase {
         }
         let expectation = XCTNSPredicateExpectation(predicate: settled, object: nil)
         let result = XCTWaiter().wait(for: [expectation], timeout: 5)
-        let observed = indices.map { index in
-            let row = rows.element(boundBy: index)
-            return "\(index):\(row.identifier) selected=\(row.isSelected)"
-        }
-        XCTAssertEqual(result, .completed, "\(step) did not settle: \(observed)")
+        XCTAssertEqual(result, .completed, "\(step) did not settle")
     }
 }

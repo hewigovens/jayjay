@@ -4,12 +4,14 @@
 //! the SwiftUI shell (via uniffi) and the GPUI shell can render against the
 //! same lane assignments.
 
+mod merge_parent_choice;
 mod ordered_selection;
 mod rebase;
 mod selection;
 
 use std::collections::HashMap;
 
+pub use merge_parent_choice::MergeParentChoice;
 pub use ordered_selection::{OrderedSelection, SelectionClick};
 pub use rebase::{can_rebase_onto, descendant_commit_ids};
 pub use selection::{SelectionGraph, SelectionState};

@@ -42,6 +42,10 @@ struct DAGViewModel {
         capabilities.canRebase(onto: target)
     }
 
+    var mergeParentChoices: [MergeParentChoice] {
+        canMergeSelection ? JayJayCore.mergeParentChoices(changes: selectedChanges) : []
+    }
+
     var canMergeSelection: Bool {
         capabilities.canMerge
     }
