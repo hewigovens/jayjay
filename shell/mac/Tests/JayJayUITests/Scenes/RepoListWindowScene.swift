@@ -9,31 +9,6 @@ final class RepoListWindowScene: SceneBase {
         "repositories-simple.json"
     }
 
-    func testOpeningRepositoryKeepsToolbar() throws {
-        let app = try XCTUnwrap(app)
-        let repoWindow = openRepo(named: "formats", in: app)
-        let initialFrame = repoWindow.frame
-        XCTAssertGreaterThanOrEqual(initialFrame.width, 1000, "Repository window did not use its default width")
-        XCTAssertGreaterThanOrEqual(initialFrame.height, 650, "Repository window did not use its default height")
-        XCTAssertTrue(
-            repoWindow.toolbars.buttons[AID.Toolbar.sidebarToggle].waitForExistence(timeout: 10),
-            "Repository window lost its SwiftUI toolbar"
-        )
-        XCTAssertEqual(repoWindow.frame, initialFrame, "Repository window resized while installing its toolbar")
-        XCTAssertFalse(app.staticTexts["Recent Repositories"].exists, "Repository list remained visible")
-    }
-
-    func testClosingLastRepositoryReturnsToRepoList() throws {
-        let app = try XCTUnwrap(app)
-        let repoWindow = openRepo(named: "formats", in: app)
-        repoWindow.buttons[XCUIIdentifierCloseWindow].click()
-
-        XCTAssertTrue(
-            app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5),
-            "Repository list did not return after closing the last repository"
-        )
-    }
-
     func testClosingAllRepositoriesShowsRepoListOnce() throws {
         let app = try XCTUnwrap(app)
         let pinned = openRepo(named: "simple", in: app)
@@ -66,22 +41,12 @@ final class RepoListWindowScene: SceneBase {
 
         let repoList = app.windows["JayJay"]
         XCTAssertTrue(repoList.waitForExistence(timeout: 5), "Repository title menu did not open the repository list")
+        XCTAssertTrue(app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5), "Repository title menu did not show the list contents")
         repoList.buttons[XCUIIdentifierCloseWindow].click()
 
         XCTAssertTrue(repoList.waitForNonExistence(timeout: 5), "The repository list did not close")
         XCTAssertTrue(repoWindow.exists, "Closing the repository list closed the repository window")
         XCTAssertEqual(app.state, .runningForeground, "Closing the repository list quit JayJay")
-    }
-
-    func testRepositoryTitleMenuReturnsToRepoList() throws {
-        let app = try XCTUnwrap(app)
-        let repoWindow = openRepo(named: "formats", in: app)
-        chooseRepositoryList(in: app, from: repoWindow)
-
-        XCTAssertTrue(
-            app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5),
-            "Repository title menu did not return to the repository list"
-        )
     }
 
     func testDockClickDoesNotDuplicateRepoListWindow() throws {
@@ -111,9 +76,17 @@ final class RepoListWindowScene: SceneBase {
     func testRepositoryReopenedAfterClosingTheLastOneLoadsItsDetail() throws {
         let app = try XCTUnwrap(app)
         let first = openRepo(named: "formats", in: app)
+        let initialFrame = first.frame
+        XCTAssertGreaterThanOrEqual(initialFrame.width, 1000, "Repository window did not use its default width")
+        XCTAssertGreaterThanOrEqual(initialFrame.height, 650, "Repository window did not use its default height")
+        XCTAssertTrue(
+            first.toolbars.buttons[AID.Toolbar.sidebarToggle].waitForExistence(timeout: 10),
+            "Repository window lost its SwiftUI toolbar"
+        )
+        XCTAssertEqual(first.frame, initialFrame, "Repository window resized while installing its toolbar")
+        XCTAssertFalse(app.staticTexts["Recent Repositories"].exists, "Repository list remained visible")
         XCTAssertTrue(dagRows(of: app).firstMatch.waitForExistence(timeout: 10), "First repository never loaded")
-        try activateWindow(named: "formats", in: app)
-        app.typeKey("w", modifierFlags: .command)
+        first.buttons[XCUIIdentifierCloseWindow].click()
         XCTAssertTrue(first.waitForNonExistence(timeout: 5), "First repository window did not close")
         XCTAssertTrue(app.staticTexts["Recent Repositories"].waitForExistence(timeout: 5), "Repository list did not return")
 

@@ -5,11 +5,6 @@ final class RepoListInitialRepositoryScene: SceneBase {
         "repositories-pinned.json"
     }
 
-    func testPinnedRepositoryOpensInNewWindow() throws {
-        let app = try XCTUnwrap(app)
-        _ = openPinnedRepository(in: app)
-    }
-
     func testClosingSoleInitialRepositoryWindowShowsRepoList() throws {
         let app = try XCTUnwrap(app)
         XCTAssertEqual(app.windows.count, 1, "JayJay did not start with one repository window")
