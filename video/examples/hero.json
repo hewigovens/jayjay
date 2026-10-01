@@ -1,0 +1,47 @@
+{
+  "setup": ["bash", "scripts/screenshot-fixture.sh", "/Users/Shared/jayjay-example"],
+  "repo": "/Users/Shared/jayjay-example/flightdeck",
+  "rows": "/Users/Shared/jayjay-example/rows.tsv",
+  "window": [80, 80, 1280, 650],
+  "env": {
+    "JJ_CONFIG": "/Users/Shared/jayjay-example/jj-config.toml",
+    "JAYJAY_REPOSITORIES_PATH": "/Users/Shared/jayjay-example/repositories.json",
+    "JAYJAY_REVIEW_STORE_PATH": "/Users/Shared/jayjay-example/review-store.json"
+  },
+  "defaults": {
+    "ApplePersistenceIgnoreState": true,
+    "jayjay.appearanceMode": "light",
+    "jayjay.tintWindowWithWallpaper": false,
+    "jayjay.fontFamily": "system",
+    "jayjay.fontSize": 12,
+    "jayjay.treeFileList": false,
+    "jayjay.sideBySideDiff": false,
+    "jayjay.hideReviewedFiles": false,
+    "jayjay.sidebarHidden": false,
+    "jayjay.sidebarWidth": "",
+    "jayjay.secondaryPaneWidth": "",
+    "jayjay.fileColumnWidth": "",
+    "jayjay.hasCompletedOnboarding": true,
+    "jayjay.sponsorDismissed": true,
+    "jayjay.windowFrame.repo-window": "${window}"
+  },
+  "prelude": [
+    { "wait": { "idPrefix": "dag.row." }, "timeout": 30 },
+    { "click": { "row": "include transfer time" } },
+    { "beat": 1.5 }
+  ],
+  "steps": [
+    { "click": { "row": "prefer the fastest available route" }, "label": "loop" },
+    { "beat": 1 },
+    { "click": { "file": "src/routes.rs" } },
+    { "beat": 2 },
+    { "click": { "idPrefix": "dag.row.", "index": 0 } },
+    { "beat": 1 },
+    { "click": { "file": "src/stations.rs" } },
+    { "beat": 1.5 },
+    { "click": "file.review.src/stations.rs" },
+    { "beat": 1.5 },
+    { "click": { "row": "include transfer time" } },
+    { "beat": 2.5 }
+  ]
+}

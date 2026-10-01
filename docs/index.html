@@ -74,7 +74,7 @@
   <link
     href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
     rel="stylesheet">
-  <link rel="preload" as="image" href="imgs/home-dark.webp">
+  <link rel="preload" as="image" href="imgs/tour-dark.webp">
   <script src="js/theme.js"></script>
 
   <style>
@@ -165,8 +165,31 @@
     .btn-p:hover { filter: brightness(1.06); }
     .btn-o { border: 1px solid var(--line); color: var(--ink); }
     .btn-o:hover { border-color: var(--accent); }
-    .hero-shot { border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--glow); }
-    .hero-shot img { display: block; width: 100%; }
+    .hero-shot { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--glow); }
+    .hero-shot img { display: block; width: 100%; cursor: pointer; }
+    .play-btn { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; transform: translate(-50%, -50%); display: inline-flex; align-items: center; justify-content: center;
+      border-radius: 50%; border: 0; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 4px rgba(255, 255, 255, .55), 0 10px 26px -8px rgba(11, 16, 32, .55); transition: transform .15s, filter .15s; }
+    [data-theme="dark"] .play-btn { box-shadow: 0 0 0 4px rgba(8, 11, 20, .55), 0 10px 26px -8px rgba(0, 0, 0, .7); }
+    .play-btn:hover { transform: translate(-50%, -50%) scale(1.06); filter: brightness(1.06); }
+    .play-btn svg { margin-left: 3px; }
+
+    /* ── Tour ── */
+    .tour { margin: auto; border: 0; padding: 0; background: transparent; width: min(1200px, 94vw, (100dvh - 7rem) * 2560 / 1300); max-width: none; overflow: visible; }
+    .tour::backdrop { background: rgba(5, 8, 16, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
+    .tour-frame { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); aspect-ratio: 2560 / 1300; box-shadow: 0 40px 120px -40px rgba(0, 0, 0, .6); }
+    .tour-stage { position: absolute; inset: 0; transition: transform .9s cubic-bezier(.4, 0, .2, 1), transform-origin .9s cubic-bezier(.4, 0, .2, 1); }
+    .tour-stage video { display: block; width: 100%; height: 100%; }
+    .tour-cursor { position: absolute; left: 0; top: 0; width: 1.6%; min-width: 12px; pointer-events: none; transform: translate(-12%, -6%); filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
+    .tour-ripple { position: absolute; width: 3.2%; aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; opacity: 0; }
+    .tour-ripple.on { animation: tour-ripple .45s ease-out; }
+    @media (prefers-reduced-motion: reduce) { .tour-stage { transition: none; } }
+    @keyframes tour-ripple { from { opacity: .9; transform: translate(-50%, -50%) scale(.3); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.4); } }
+    .tour-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: #eaf0fb; font-size: 14px; }
+    .tour-cap { flex: 1; min-height: 1.5em; }
+    .tour-cap .n { font-family: 'JetBrains Mono', monospace; font-size: 12px; opacity: .55; margin-right: 8px; }
+    .tour-bar button { font: 500 13px 'DM Sans', -apple-system, sans-serif; color: #eaf0fb; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
+    .tour-bar button:hover { background: rgba(255, 255, 255, .16); }
+    .tour-bar button[aria-pressed="true"] { border-color: var(--blue-bright); color: #fff; }
     @media (max-width: 880px) {
       .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 60px; }
       h1 { font-size: 48px; }
@@ -333,9 +356,27 @@
       </div>
     </div>
     <div class="hero-shot">
-      <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="3840" height="1950" loading="eager">
-      <img class="light-only" src="imgs/home.webp" alt="JayJay — DAG graph and diff (light)" width="3840" height="1950" loading="eager">
+      <img class="dark-only" src="imgs/tour-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1300" loading="eager">
+      <img class="light-only" src="imgs/tour.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1300" loading="eager">
+      <button class="play-btn" type="button" aria-haspopup="dialog" aria-label="Play a 12-second tour">
+        <svg width="14" height="16" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+      </button>
     </div>
+    <dialog class="tour" aria-label="JayJay in action">
+      <div class="tour-frame">
+        <div class="tour-stage">
+          <video muted playsinline preload="none"></video>
+          <span class="tour-ripple"></span>
+          <svg class="tour-cursor" viewBox="0 0 14 22" aria-hidden="true"><path d="M1 1v17.5l4.4-4.2 2.9 6.6 2.7-1.2-2.9-6.5H14z" fill="#000" stroke="#fff" stroke-width="1.3" stroke-linejoin="round"/></svg>
+        </div>
+      </div>
+      <div class="tour-bar">
+        <span class="tour-cap" aria-live="polite"></span>
+        <button type="button" data-zoom>Zoom</button>
+        <button type="button" data-replay>Replay</button>
+        <button type="button" data-close>Close</button>
+      </div>
+    </dialog>
   </header>
 
   <!-- Features -->
@@ -624,6 +665,7 @@
 
   <!-- Click any screenshot to zoom -->
   <script src="js/lightbox.js" defer></script>
+  <script src="js/tour.js" defer></script>
 </body>
 
 </html>
