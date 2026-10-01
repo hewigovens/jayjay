@@ -11,7 +11,8 @@ struct TreeFileList<RowContent: View>: View {
     var body: some View {
         List {
             ForEach(visibleEntries, id: \.rowId) { entry in
-                Group {
+                // A Group of if/else makes every update re-diff the rows, which drops cached row heights and jumps the scroll position.
+                ZStack(alignment: .leading) {
                     if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
                         let hunk = filteredDiff[Int(hunkIdx)]
                         fileRowView(hunk)
@@ -72,6 +73,8 @@ struct TreeFileList<RowContent: View>: View {
 }
 
 private extension FileTreeEntry {
-    // A directory and a file can share a path; the trailing slash keeps their row ids distinct.
-    var rowId: String { hunkIndex == nil ? "\(path)/" : path }
+    /// A directory and a file can share a path; the trailing slash keeps their row ids distinct.
+    var rowId: String {
+        hunkIndex == nil ? "\(path)/" : path
+    }
 }
