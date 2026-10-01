@@ -82,6 +82,10 @@ The sandboxed XCUITest runner cannot create repositories where the launched app 
 
 Pass a test id to run one scene: `just test-ui JayJayUITests/CommandPaletteScene/testOpenAndSearch`.
 
+Each test method launches and terminates the app. Extend a related workflow when it already reaches the required state; combining files alone saves no launches. Preserve separate tests for different startup conditions or failure modes. Keep expensive accessibility diagnostics inside assertion message autoclosures so successful runs do not enumerate the UI for a discarded message.
+
+CI uses `just test-ui-shard <index> <count>` to balance whole scenes across runners by test-method count, since every test pays an app launch. It reads each scene's class name from its file name, so keep one scene class per file in `Scenes/`, named after the file.
+
 Scenes run on the active desktop. Never `typeText`: an active CJK input method composes through it and the failure looks like an app regression. Click the field, then `paste(...)` from `SceneBase`. Query patterns that cost CI rounds: scope alert buttons to `app.sheets` (an app-wide `buttons["Clear"]` matches the Touch Bar); find the Settings window by `AID.Settings.sidebar` and navigate with `selectSettingsPage`, since its title follows the selected page; DAG rows combine their children, so the row text is in `value`, not `label`, and child identifiers disappear — find rows by value, never by child identifier or index.
 
 ## External Tool Integration

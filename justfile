@@ -15,7 +15,7 @@ list:
   @echo "just test-rust crate   Package-scoped cargo test (inner loop)"
   @echo "just test-wasm         Link the portable UniFFI WASM surface with LLVM clang"
   @echo "just test-ui [test-ids] UI tests; pass test ids to run some scenes"
-  @echo "just test-ui-shard i n UI tests for every n-th scene class from i; CI shards"
+  @echo "just test-ui-shard i n UI tests for shard i of n, balanced by test count; CI shards"
   @echo "just test              All workspace Rust tests (publish)"
   @echo "just test-app          Run macOS app tests"
   @echo "just test-gpui         Run GPUI shell tests (via shell::gpui-test, needs jj on PATH)"
@@ -53,12 +53,13 @@ test-app:
 test-ui *test_ids:
   just shell::ui-test {{test_ids}}
 
-# Run every count-th UI scene class starting at index (1-based), so CI can split the serial XCUITest bundle across runners; `recipe` selects the shell runner (ui-test builds, ui-test-prebuilt reuses a ui-test-build output).
+# Balance whole UI scene classes across count shards by test-method count (every test relaunches the app), so CI can split the serial XCUITest bundle across runners; index is 1-based and `recipe` selects the shell runner (ui-test builds, ui-test-prebuilt reuses a ui-test-build output).
 test-ui-shard index count recipe="shell::ui-test":
   #!/usr/bin/env bash
   set -euo pipefail
-  scenes=$(grep -hoE '^final class [A-Za-z0-9_]+' "{{justfile_directory()}}/shell/mac/Tests/JayJayUITests/Scenes/"*.swift \
-    | awk '{print "JayJayUITests/" $3}' | sort | awk -v i="{{index}}" -v n="{{count}}" 'NR % n == i % n')
+  scenes=$(cd "{{root}}/shell/mac/Tests/JayJayUITests/Scenes" && grep -c '^ *func test' *.swift | LC_ALL=C sort -t: -k2,2nr -k1,1 \
+    | awk -F: -v i="{{index}}" -v n="{{count}}" '{ m = 1; for (s = 2; s <= n; s++) if (load[s] < load[m]) m = s; load[m] += $2; if (m == i) { sub(/\.swift$/, "", $1); print "JayJayUITests/" $1 } }')
+  [[ -n "$scenes" ]] || { echo "UI shard {{index}}/{{count}} has no scenes" >&2; exit 1; }
   just {{recipe}} $scenes
 
 test-gpui:

@@ -16,5 +16,10 @@ final class AnnotateScene: SceneBase {
         let annotate = app.menuItems["Annotate (Blame)"]
         XCTAssertTrue(annotate.waitForExistence(timeout: 3), "Annotate menu item missing")
         annotate.click()
+        let header = app.staticTexts["Annotate: feature.txt"]
+        XCTAssertTrue(header.waitForExistence(timeout: 5), "Annotate did not open for the selected file")
+        XCTAssertTrue(app.staticTexts["1 lines"].waitForExistence(timeout: 5), "Annotation content did not load")
+        app.buttons["Exit Annotate"].click()
+        XCTAssertTrue(header.waitForNonExistence(timeout: 5), "Exit Annotate did not restore the diff")
     }
 }

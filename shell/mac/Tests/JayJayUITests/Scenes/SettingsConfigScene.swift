@@ -6,7 +6,7 @@ final class SettingsConfigScene: SceneBase {
         ["JJ_CONFIG": fixtureRoot.appendingPathComponent("missing-jj-config.toml").path]
     }
 
-    func testCopyJjToolConfiguration() throws {
+    func testCopyToolConfigurationAndShowMissingUserConfig() throws {
         let app = try XCTUnwrap(app)
         NSPasteboard.general.clearContents()
 
@@ -22,12 +22,7 @@ final class SettingsConfigScene: SceneBase {
         XCTAssertTrue(config.contains("diff-args ="))
         XCTAssertTrue(config.contains("edit-args ="))
         XCTAssertTrue(config.contains("merge-args ="))
-    }
 
-    func testMissingUserConfigShowsEmptyState() throws {
-        let app = try XCTUnwrap(app)
-
-        app.typeKey(",", modifierFlags: .command)
         selectSettingsPage("jujutsu", in: app)
 
         let missing = app.staticTexts[AID.Settings.jjConfigMissing]

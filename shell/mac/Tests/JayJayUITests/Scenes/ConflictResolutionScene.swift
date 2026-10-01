@@ -5,7 +5,7 @@ final class ConflictResolutionScene: SceneBase {
         "conflict"
     }
 
-    func testConflictFileShowsDiff() throws {
+    func testConflictCanBeEditedWithoutOpeningAnotherTool() throws {
         let app = try XCTUnwrap(app)
         let file = fileRows(of: app)
             .matching(NSPredicate(format: "identifier == %@", AID.FileList.row("conflict.swift")))
@@ -15,10 +15,7 @@ final class ConflictResolutionScene: SceneBase {
 
         let diff = app.descendants(matching: .any)[AID.Diff.section]
         XCTAssertTrue(diff.waitForExistence(timeout: 5), "Diff section did not appear")
-    }
 
-    func testConflictCanBeEditedWithoutOpeningAnotherTool() throws {
-        let app = try XCTUnwrap(app)
         let edit = app.buttons[AID.Conflict.resolveInJayJay("conflict.swift")]
         clickCenter(edit, timeout: 10, message: "Expected Edit in JayJay action")
 
