@@ -54,6 +54,12 @@ extension DAGView {
                 : "Parallelize requires two or more mutable changes on one connected line"
         )
 
+        Button { actions?.fix(revs: revisions) } label: {
+            Label("Run formatters on \(revisions.count) selected (jj fix)", systemImage: "wand.and.stars")
+        }
+        .disabled(!viewModel.canFixSelection || actions?.fixUnavailableReason != nil)
+        .help(fixHelp(selectionCanFix: viewModel.canFixSelection))
+
         Divider()
         Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
             Label("Abandon \(revisions.count) selected…", systemImage: "trash")
@@ -87,27 +93,7 @@ extension DAGView {
             }
         }
         Divider()
-        if !entry.change.isImmutable {
-            Button { actions?.edit(rev: rev) } label: {
-                Label("Edit (modify this change)", systemImage: "pencil.circle")
-            }
-            if viewModel.canSquashIntoParent(entry.change) {
-                Button { actions?.squash(rev: rev) } label: {
-                    Label("Squash into parent", systemImage: "arrow.down.left.circle")
-                }
-            }
-            if !entry.change.isWorkingCopy {
-                Button { actions?.squash(rev: rev, into: "@") } label: {
-                    Label(
-                        "Move changes to working copy",
-                        systemImage: "tray.and.arrow.down"
-                    )
-                }
-            }
-            Button { actions?.rebase(rev: rev, dest: "trunk()", mode: .branch) } label: {
-                Label("Rebase onto trunk", systemImage: "arrow.uturn.up")
-            }
-        }
+        rewriteActionsSection(entry: entry, rev: rev, viewModel: viewModel)
 
         divergentCompareSection(entry: entry, rev: rev, viewModel: viewModel)
         selectionActionsSection(entry: entry, rev: rev, viewModel: viewModel)
@@ -131,6 +117,32 @@ extension DAGView {
         if !entry.change.isImmutable {
             Divider()
             abandonButton(entry: entry, rev: rev)
+        }
+    }
+
+    @ViewBuilder
+    private func rewriteActionsSection(entry: GraphEntry, rev: String, viewModel: DAGViewModel) -> some View {
+        if !entry.change.isImmutable {
+            Button { actions?.edit(rev: rev) } label: {
+                Label("Edit (modify this change)", systemImage: "pencil.circle")
+            }
+            if viewModel.canSquashIntoParent(entry.change) {
+                Button { actions?.squash(rev: rev) } label: {
+                    Label("Squash into parent", systemImage: "arrow.down.left.circle")
+                }
+            }
+            if !entry.change.isWorkingCopy {
+                Button { actions?.squash(rev: rev, into: "@") } label: {
+                    Label(
+                        "Move changes to working copy",
+                        systemImage: "tray.and.arrow.down"
+                    )
+                }
+            }
+            Button { actions?.rebase(rev: rev, dest: "trunk()", mode: .branch) } label: {
+                Label("Rebase onto trunk", systemImage: "arrow.uturn.up")
+            }
+            fixButton(rev: rev)
         }
     }
 
@@ -172,6 +184,14 @@ extension DAGView {
             Label("Copy Commit ID", systemImage: "doc.on.doc")
         }
         Divider()
+    }
+
+    private func fixButton(rev: String) -> some View {
+        Button { actions?.fix(revs: [rev]) } label: {
+            Label("Run formatters (jj fix)", systemImage: "wand.and.stars")
+        }
+        .disabled(actions?.fixUnavailableReason != nil)
+        .help(fixHelp(selectionCanFix: true))
     }
 
     private func abandonButton(entry: GraphEntry, rev: String) -> some View {
@@ -280,5 +300,14 @@ extension DAGView {
                     : "Merge requires independent heads"
             )
         }
+    }
+
+    private func fixHelp(selectionCanFix: Bool) -> String {
+        if let reason = actions?.fixUnavailableReason {
+            return reason
+        }
+        return selectionCanFix
+            ? "Rewrite these changes and their descendants with your [fix.tools] formatters, as jj fix does"
+            : "Immutable changes cannot be rewritten"
     }
 }

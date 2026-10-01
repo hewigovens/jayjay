@@ -453,6 +453,37 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.compareDisplay?.to, "newest")
     }
 
+    func testFixAvailabilityFollowsTheJjConfigOnRefresh() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let repoPath = viewModel.repoPath
+        _ = try runJj(["config", "set", "--repo", "fix.tools.fixer.command", #"["cat"]"#], in: repoPath)
+        _ = try runJj(["config", "set", "--repo", "fix.tools.fixer.patterns", #"["glob:'**/*"]"#], in: repoPath)
+        viewModel.refresh()
+        try await waitUntil("a refresh reads the broken tool") { viewModel.fixUnavailableReason != nil }
+
+        _ = try runJj(["config", "set", "--repo", "fix.tools.fixer.patterns", #"["glob:'**/*.txt'"]"#], in: repoPath)
+        viewModel.refresh()
+        try await waitUntil("a refresh reads the repaired tool") { viewModel.fixUnavailableReason == nil }
+    }
+
+    func testFixToolFailuresOutliveTheRefresh() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let root = URL(fileURLWithPath: viewModel.repoPath)
+        let tool = root.appending(path: "fix-tool.sh")
+        try "#!/bin/sh\necho 'fixer exploded' >&2\nexit 3\n".write(to: tool, atomically: true, encoding: .utf8)
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: tool.path)
+        try "b\na\n".write(to: root.appending(path: "unsorted.txt"), atomically: true, encoding: .utf8)
+        _ = try runJj(["config", "set", "--repo", "fix.tools.fixer.command", #"["$root/fix-tool.sh"]"#], in: root.path)
+        _ = try runJj(["config", "set", "--repo", "fix.tools.fixer.patterns", #"["glob:'**/*.txt'"]"#], in: root.path)
+
+        viewModel.fix(revs: ["@"])
+
+        try await waitUntil("the fix and its refresh finish") {
+            viewModel.successActionSignal != 0 && !viewModel.isRefreshingInFlight
+        }
+        XCTAssertEqual(viewModel.error, "Formatters rewrote 0 of 1 change\nfixer failed on unsorted.txt: fixer exploded")
+    }
+
     private func runJj(_ arguments: [String], in repoPath: String) throws -> String {
         let process = Process()
         process.executableURL = try URL(fileURLWithPath: XCTUnwrap(findBinary(name: "jj")))

@@ -59,6 +59,7 @@ impl RepoViewModel {
         self.loading.more = true;
         self.can_load_more = false;
         self.clear_error();
+        self.pending_error = None;
         self.begin_refreshing(cx);
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;

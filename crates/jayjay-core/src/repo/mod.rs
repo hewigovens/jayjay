@@ -11,6 +11,7 @@ mod diffedit;
 mod environment;
 mod evolog;
 mod file_editor;
+mod fix;
 mod git;
 mod handle;
 mod hosted_repo;

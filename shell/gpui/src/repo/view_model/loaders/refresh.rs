@@ -129,9 +129,11 @@ impl RepoViewModel {
         previous_selection: Option<(String, String)>,
         cx: &mut Context<Self>,
     ) {
+        let pending_error = self.pending_error.take();
         match result {
             Ok(data) => {
                 let entries = data.entries;
+                self.fix_unavailable_reason = data.fix_unavailable_reason.map(SharedString::from);
                 self.can_load_more = self
                     .revset_depth()
                     .is_some_and(|depth| entries.len() >= depth as usize);
@@ -178,6 +180,9 @@ impl RepoViewModel {
                     self.compare = None;
                     self.pr_info = None;
                 }
+                if pending_error.is_some() {
+                    self.error = pending_error;
+                }
             }
             Err(error) => self.present_error(error),
         }
@@ -193,6 +198,7 @@ struct RefreshData {
     pr_host_name: Option<String>,
     working_copy_stats: Option<DiffStats>,
     current_operation_description: String,
+    fix_unavailable_reason: Option<String>,
 }
 
 fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> {
@@ -204,6 +210,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
     let pr_host_name = repo.pr_host_name();
     let working_copy_stats = repo.diff_stats("@").ok();
     let current_operation_description = repo.current_operation_description();
+    let fix_unavailable_reason = repo.fix_unavailable_reason();
     Ok(RefreshData {
         entries,
         bookmarks,
@@ -212,5 +219,6 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
         pr_host_name,
         working_copy_stats,
         current_operation_description,
+        fix_unavailable_reason,
     })
 }

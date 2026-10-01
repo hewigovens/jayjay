@@ -158,57 +158,6 @@ extension RepoContentView {
         return items
     }
 
-    private func changePaletteItems(selection: String) -> [CommandPaletteItem] {
-        var items: [CommandPaletteItem] = []
-        let short = String(selection.prefix(8))
-        // Safe actions — show selected change ID so user knows the target
-        items.append(CommandPaletteItem(
-            title: "New Child Change (\(short))",
-            icon: "plus.circle",
-            category: "Change"
-        ) { viewModel.newChange(parent: selection) })
-        if viewModel.change(for: selection)?.isImmutable != true {
-            items.append(CommandPaletteItem(
-                title: "Edit / Switch To (\(short))",
-                icon: "pencil.circle",
-                category: "Change"
-            ) { viewModel.edit(rev: selection) })
-        }
-        items.append(CommandPaletteItem(
-            title: "Duplicate (\(short))",
-            icon: "doc.on.doc",
-            category: "Change"
-        ) { viewModel.duplicate(rev: selection) })
-        items.append(CommandPaletteItem(
-            title: "Revert Change (\(short))",
-            icon: "arrow.uturn.backward",
-            category: "Change"
-        ) { viewModel.revertChange(rev: selection) })
-        items.append(CommandPaletteItem(
-            title: "Create Bookmark on \(short)",
-            icon: "bookmark",
-            category: "Change"
-        ) {
-            presentBookmarkCreate(rev: selection)
-        })
-        return items
-    }
-
-    private var multiSelectionPaletteItems: [CommandPaletteItem] {
-        let revisions = viewModel.selectedChangeIds
-        guard revisions.count > 1, viewModel.selectionCapabilities.canParallelize else {
-            return []
-        }
-        return [CommandPaletteItem(
-            title: "Parallelize \(revisions.count) selected",
-            icon: "arrow.triangle.branch",
-            category: "Change",
-            keywords: ["parallel", "independent", "sibling", "split", "stack"]
-        ) {
-            viewModel.parallelize(revs: revisions)
-        }]
-    }
-
     private var workspacePaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(

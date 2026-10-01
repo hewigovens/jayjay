@@ -84,6 +84,7 @@ impl RepoViewModel {
         };
 
         self.clear_error();
+        self.pending_error = None;
         // Stamp before the write so the FS echo from our own jj mutation is ignored.
         self.last_internal_mutation_at = Some(std::time::Instant::now());
         self.loading.operations += 1;

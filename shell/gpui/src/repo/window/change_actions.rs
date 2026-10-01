@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{App, Context};
+use gpui::{App, Context, SharedString};
 use jayjay_core::compare;
 use jayjay_core::dag::MergeParentChoice;
 use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect, RebaseMode};
@@ -24,6 +24,7 @@ pub enum ChangeAction {
     Duplicate { rev: String },
     Absorb { rev: String },
     Revert { rev: String },
+    Fix { revs: Vec<String> },
 }
 
 impl RepoWindow {
@@ -113,6 +114,14 @@ impl RepoWindow {
                 }),
             )
             .with_enabled(vm.can_parallelize_selected_changes()),
+            fix_menu_item(
+                format!("Run formatters on {count} selected (jj fix)"),
+                ChangeAction::Fix {
+                    revs: revisions.clone(),
+                },
+                vm.selection_state().can_fix,
+                vm.fix_unavailable_reason.clone(),
+            ),
             ContextMenuItem::separator(),
             ContextMenuItem::new(
                 format!("Abandon {count} selected…"),
@@ -135,6 +144,7 @@ impl RepoWindow {
                     .is_none_or(|parent| !parent.is_immutable)
             })
         };
+        let fix_unavailable_reason = self.vm.read(cx).fix_unavailable_reason.clone();
         let (bookmark_diff, selected_rev) = {
             let vm = self.vm.read(cx);
             let selected = if vm.has_multiple_change_selection() {
@@ -325,6 +335,14 @@ impl RepoWindow {
         ));
 
         if !change.is_immutable {
+            items.push(fix_menu_item(
+                "Run formatters (jj fix)",
+                ChangeAction::Fix {
+                    revs: vec![rev.clone()],
+                },
+                true,
+                fix_unavailable_reason,
+            ));
             items.push(ContextMenuItem::separator());
             let label = if change.is_divergent {
                 "Abandon (resolve divergence)"
@@ -356,6 +374,21 @@ impl RepoWindow {
             return;
         }
         self.run_change_action(Arc::new(ChangeAction::ParallelizeMany { revs }), cx);
+    }
+
+    pub(crate) fn fix_selection(&mut self, cx: &mut Context<Self>) {
+        let (revs, eligible) = {
+            let vm = self.vm.read(cx);
+            (vm.selected_revisions(), vm.selection_state().can_fix)
+        };
+        if !eligible {
+            self.show_toast(
+                "Select one or more mutable changes to run formatters on.",
+                cx,
+            );
+            return;
+        }
+        self.run_change_action(Arc::new(ChangeAction::Fix { revs }), cx);
     }
 
     pub(crate) fn run_change_action(&mut self, action: Arc<ChangeAction>, cx: &mut Context<Self>) {
@@ -449,8 +482,38 @@ impl RepoWindow {
             ChangeAction::Revert { rev } => self
                 .vm
                 .update(cx, |vm, cx| vm.revert_change(rev.clone(), cx)),
+            ChangeAction::Fix { revs } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.fix_changes(revs.clone(), cx));
+                cx.spawn(async move |this, cx| {
+                    if let Ok(summary) = task.await
+                        && summary.failures.is_empty()
+                    {
+                        let _ = this.update(cx, move |view, cx| {
+                            view.show_toast(summary.message(), cx);
+                        });
+                    }
+                })
+                .detach();
+                return;
+            }
         };
         task.detach();
+    }
+}
+
+fn fix_menu_item(
+    label: impl Into<SharedString>,
+    action: ChangeAction,
+    selection_can_fix: bool,
+    unavailable_reason: Option<SharedString>,
+) -> ContextMenuItem {
+    let item = ContextMenuItem::new(label, glyph::BRACES, change_action(action))
+        .with_enabled(selection_can_fix && unavailable_reason.is_none());
+    match unavailable_reason {
+        Some(reason) => item.with_tooltip(reason),
+        None => item,
     }
 }
 

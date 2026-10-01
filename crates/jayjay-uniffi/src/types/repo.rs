@@ -1,12 +1,27 @@
 use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkFilterTarget, BookmarkInfo, ChecksStatus, CliStatus, FetchResult,
-    GitSubmoduleStatus, InsertPosition, JjCommandResult, PrInfo, PrState, PullRequestImportPreview,
-    PullRequestImportRemote, PullRequestImportSource, PullRequestImportWorkspace,
-    RemoteBookmarkTarget, RemoteSyncStatus, RevsetCompletion, RevsetCompletionKind, RevsetFilter,
-    RevsetFilterKind, RevsetFilterState, RevsetName, RevsetPreset, RevsetSuggestion,
-    RevsetSuggestionKind, RevsetVocabulary, ShortId, WorkspaceInfo, WorkspacePresence,
+    FixSummary, FixToolFailure, GitSubmoduleStatus, InsertPosition, JjCommandResult, PrInfo,
+    PrState, PullRequestImportPreview, PullRequestImportRemote, PullRequestImportSource,
+    PullRequestImportWorkspace, RemoteBookmarkTarget, RemoteSyncStatus, RevsetCompletion,
+    RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState, RevsetName,
+    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, ShortId, WorkspaceInfo,
+    WorkspacePresence,
 };
+
+#[uniffi::remote(Record)]
+pub struct FixSummary {
+    pub checked_changes: u32,
+    pub fixed_changes: u32,
+    pub failures: Vec<FixToolFailure>,
+}
+
+#[uniffi::remote(Record)]
+pub struct FixToolFailure {
+    pub tool: String,
+    pub path: String,
+    pub message: String,
+}
 
 #[uniffi::remote(Record)]
 pub struct RevsetPreset {

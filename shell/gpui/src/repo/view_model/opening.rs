@@ -20,6 +20,7 @@ struct OpenedRepo {
     vocabulary: RevsetVocabulary,
     workspaces: Vec<WorkspaceInfo>,
     pr_host_name: Option<String>,
+    fix_unavailable_reason: Option<String>,
 }
 
 impl RepoViewModel {
@@ -89,6 +90,7 @@ impl RepoViewModel {
         let vocabulary = repo.revset_vocabulary(&bookmarks);
         let workspaces = repo.workspace_list().unwrap_or_default();
         let pr_host_name = repo.pr_host_name();
+        let fix_unavailable_reason = repo.fix_unavailable_reason();
         Ok(OpenedRepo {
             repo: Arc::new(repo),
             repo_root_path,
@@ -97,6 +99,7 @@ impl RepoViewModel {
             vocabulary,
             workspaces,
             pr_host_name,
+            fix_unavailable_reason,
         })
     }
 
@@ -113,6 +116,7 @@ impl RepoViewModel {
             vocabulary,
             workspaces,
             pr_host_name,
+            fix_unavailable_reason,
         } = loaded;
         let selected = entries
             .iter()
@@ -126,6 +130,7 @@ impl RepoViewModel {
         }
         Self {
             repo: Some(repo),
+            fix_unavailable_reason: fix_unavailable_reason.map(SharedString::from),
             repo_path,
             repo_root_path: repo_root_path.into(),
             error: None,
@@ -163,6 +168,7 @@ impl RepoViewModel {
             refresh_suspended: false,
             notes: NotesState::default(),
             pending_file_selection: None,
+            pending_error: None,
             selection_cache: RefCell::new(None),
         }
     }
@@ -170,6 +176,7 @@ impl RepoViewModel {
     fn empty(repo_path: SharedString) -> Self {
         Self {
             repo: None,
+            fix_unavailable_reason: None,
             repo_root_path: repo_path.clone(),
             repo_path,
             error: None,
@@ -200,6 +207,7 @@ impl RepoViewModel {
             refresh_suspended: false,
             notes: NotesState::default(),
             pending_file_selection: None,
+            pending_error: None,
             selection_cache: RefCell::new(None),
         }
     }

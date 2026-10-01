@@ -5,8 +5,8 @@ use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
     DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
-    EvologRow, FetchResult, FileDiffStats, FileEditorData, GitSubmoduleStatus, GraphEntry,
-    InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
+    EvologRow, FetchResult, FileDiffStats, FileEditorData, FixSummary, GitSubmoduleStatus,
+    GraphEntry, InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
     PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack, StackedPrResult,
     SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
@@ -33,6 +33,11 @@ fn default_revset_with_depth(depth: u32) -> String {
 #[uniffi::export]
 fn default_revset_depth(revset: String) -> Option<u32> {
     jayjay_core::default_revset_depth(&revset)
+}
+
+#[uniffi::export]
+fn fix_summary_message(summary: FixSummary) -> String {
+    summary.message()
 }
 
 #[uniffi::export]
@@ -903,6 +908,14 @@ impl JayJayRepo {
 
     fn parallelize(&self, revs: Vec<String>) -> Result<MutationEffect, JayJayError> {
         Ok(self.inner.parallelize(&revs)?)
+    }
+
+    fn fix_unavailable_reason(&self) -> Option<String> {
+        self.inner.fix_unavailable_reason()
+    }
+
+    fn fix(&self, revs: Vec<String>) -> Result<FixSummary, JayJayError> {
+        Ok(self.inner.fix(&revs)?)
     }
 
     fn edit(&self, rev: String) -> Result<(), JayJayError> {

@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{CoreResult, MutationEffect, RebaseMode};
+use jayjay_core::{CoreResult, FixSummary, MutationEffect, RebaseMode};
 
 use super::RepoViewModel;
 
@@ -154,6 +154,24 @@ impl RepoViewModel {
             cx,
             move |repo| repo.revert_change(&rev),
             |vm, cx| vm.refresh_selecting_revision(None, cx),
+        )
+    }
+
+    pub(crate) fn fix_changes(
+        &mut self,
+        revs: Vec<String>,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<FixSummary>> {
+        let selection = revs.first().cloned();
+        self.repo_result_task(
+            cx,
+            move |repo| repo.fix(&revs),
+            move |vm, summary, cx| {
+                if !summary.failures.is_empty() {
+                    vm.pending_error = Some(summary.message().into());
+                }
+                vm.refresh_selecting_revision(selection.as_deref(), cx)
+            },
         )
     }
 }

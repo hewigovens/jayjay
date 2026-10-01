@@ -12,6 +12,7 @@ protocol DAGActions: AnyObject {
     func squash(rev: String)
     func squash(rev: String, into: String)
     func parallelize(revs: [String])
+    func fix(revs: [String])
     func absorb(rev: String)
     func revertChange(rev: String)
     func rebase(rev: String, dest: String, mode: RebaseMode)
@@ -21,6 +22,7 @@ protocol DAGActions: AnyObject {
     func diffBookmark(_ request: BookmarkDiffRequest)
     func showEvolog(rev: String)
     var canLoadMore: Bool { get }
+    var fixUnavailableReason: String? { get }
     func loadMore()
 }
 

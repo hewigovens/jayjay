@@ -234,6 +234,7 @@ extension RepoViewModel {
             self.workspaces = workspaces
         }
         prHostName = context.prHostName
+        fixUnavailableReason = context.fixUnavailableReason
         apply(context.statusBar)
     }
 

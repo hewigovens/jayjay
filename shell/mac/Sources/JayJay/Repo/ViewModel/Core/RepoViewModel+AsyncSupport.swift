@@ -89,7 +89,9 @@ extension RepoViewModel {
         selectingResult: ((Result) -> String)? = nil,
         gatedBy gate: RepoActionGate? = nil,
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
-        onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
+        onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void = { _, _ in },
+        // A manual refresh clears `error`, so anything that sets it belongs here rather than in `onSuccess`.
+        afterRefresh: @escaping @MainActor (RepoViewModel, Result) -> Void = { _, _ in },
         onFailure: @escaping @MainActor (RepoViewModel, any Error) -> Void = { viewModel, error in
             viewModel.present(error: error)
         },
@@ -111,6 +113,7 @@ extension RepoViewModel {
             beforeRefresh(viewModel)
             onSuccess(viewModel, result)
             viewModel.refresh(selecting: selectingResult.map { $0(result) } ?? rev)
+            afterRefresh(viewModel, result)
         } onFailure: { viewModel, error in
             if let gate {
                 viewModel[keyPath: gate.state] = false

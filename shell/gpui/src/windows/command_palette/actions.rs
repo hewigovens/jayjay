@@ -252,6 +252,12 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::parallelize_selection),
     },
     PaletteAction {
+        name: "Run Formatters on Selected Changes (jj fix)",
+        keywords: &["fix", "format", "formatter", "selection"],
+        glyph_str: glyph::BRACES,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::fix_selection),
+    },
+    PaletteAction {
         name: "Git Push",
         keywords: &["git", "push", "sync"],
         glyph_str: glyph::ARROW_UP,

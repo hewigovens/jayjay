@@ -14,6 +14,7 @@ use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
 };
 use crate::ui::icons::{self, glyph};
+use crate::ui::primitives::text_tooltip;
 
 const MENU_MIN_WIDTH: f32 = 260.;
 const MENU_MAX_WIDTH: f32 = 420.;
@@ -83,6 +84,7 @@ pub struct ContextMenuItem {
     pub action: ContextAction,
     is_separator: bool,
     pub enabled: bool,
+    tooltip: Option<SharedString>,
     submenu: Option<Vec<ContextMenuItem>>,
 }
 
@@ -98,6 +100,7 @@ impl ContextMenuItem {
             action,
             is_separator: false,
             enabled: true,
+            tooltip: None,
             submenu: None,
         }
     }
@@ -113,6 +116,7 @@ impl ContextMenuItem {
             action: ContextAction::Noop,
             is_separator: false,
             enabled: true,
+            tooltip: None,
             submenu: Some(items),
         }
     }
@@ -124,12 +128,18 @@ impl ContextMenuItem {
             action: ContextAction::Noop,
             is_separator: true,
             enabled: true,
+            tooltip: None,
             submenu: None,
         }
     }
 
     pub(crate) fn with_enabled(mut self, enabled: bool) -> Self {
         self.enabled = enabled;
+        self
+    }
+
+    pub(crate) fn with_tooltip(mut self, tooltip: impl Into<SharedString>) -> Self {
+        self.tooltip = Some(tooltip.into());
         self
     }
 
@@ -316,6 +326,11 @@ fn menu_row(
             })
     } else {
         row.opacity(0.45)
+    };
+    let row = if let Some(tooltip) = item.tooltip.clone() {
+        row.tooltip(text_tooltip(tooltip))
+    } else {
+        row
     };
     let mut row = row.child(icons::icon(item.glyph, 13., t.fg_dim)).child(
         div()

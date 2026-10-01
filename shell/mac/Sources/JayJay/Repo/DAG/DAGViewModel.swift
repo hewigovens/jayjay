@@ -54,6 +54,10 @@ struct DAGViewModel {
         capabilities.canParallelize
     }
 
+    var canFixSelection: Bool {
+        capabilities.canFix
+    }
+
     func canMergeSelectedChange(with target: ChangeInfo) -> Bool {
         capabilities.canMerge(with: target)
     }

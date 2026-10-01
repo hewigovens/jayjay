@@ -400,6 +400,22 @@ fixture_parallelize() {
   )
 }
 
+# Fix: two changes with unsorted files and a sorting [fix.tools] entry.
+fixture_fix() {
+  printf '#!/bin/sh\nsort\n' > "$fixtures/fix-tool.sh"
+  chmod +x "$fixtures/fix-tool.sh"
+  jj git init --colocate "$fixtures/fix"
+  (
+    cd "$fixtures/fix"
+    jj config set --repo fix.tools.sorter.command "[\"$fixtures/fix-tool.sh\"]"
+    jj config set --repo fix.tools.sorter.patterns "[\"glob:'**/*.txt'\"]"
+    printf 'b\na\n' > unsorted.txt
+    jj describe -m "unsorted change"
+    jj new -m "child change"
+    printf 'd\nc\n' > child.txt
+  )
+}
+
 fixture_picker() {
   copy_fixture simple picker
   (
@@ -500,6 +516,7 @@ fixture_complex
 fixture_conflict
 fixture_dag_long
 fixture_parallelize
+fixture_fix
 fixture_picker
 fixture_workspace_delete
 fixture_workspace_switch

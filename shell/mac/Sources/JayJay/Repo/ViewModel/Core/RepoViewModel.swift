@@ -142,6 +142,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
     var prHostName: String?
+    var fixUnavailableReason: String?
     var evologEntries: [EvologEntry]?
     var evologRev: String?
     var isRestoringEvologVersion = false

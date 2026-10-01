@@ -139,6 +139,21 @@ extension RepoViewModel {
         )
     }
 
+    func fix(revs: [String]) {
+        performResult(
+            selecting: revs.first,
+            afterRefresh: { viewModel, summary in
+                let message = fixSummaryMessage(summary: summary)
+                if summary.failures.isEmpty {
+                    viewModel.info = message
+                } else {
+                    viewModel.error = message
+                }
+            },
+            { try $0.fix(revs: revs) }
+        )
+    }
+
     func squash(revs: [String]) {
         performResult(
             selectingResult: { $0 },

@@ -10,6 +10,8 @@ pub struct SelectionState {
     pub can_diff: bool,
     pub can_merge: bool,
     pub can_parallelize: bool,
+    /// Unlike the multi-change actions, one mutable change is enough.
+    pub can_fix: bool,
     /// Indexed by graph row, as is `can_merge_with`.
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
@@ -86,7 +88,8 @@ impl SelectionGraph {
         let ancestors = self.reachable(&ordered, &|ix| &self.rows[ix].parents);
         let descendants = self.reachable(&ordered, &|ix| &self.children[ix]);
 
-        let mutable = ordered.len() > 1 && ordered.iter().all(|&ix| !self.rows[ix].is_immutable);
+        let all_mutable = ordered.iter().all(|&ix| !self.rows[ix].is_immutable);
+        let mutable = ordered.len() > 1 && all_mutable;
         let contiguous = ordered.len() > 1
             && ordered[ordered.len() - 1] - ordered[0] + 1 == ordered.len()
             && ordered
@@ -109,6 +112,7 @@ impl SelectionGraph {
             can_diff: contiguous && oldest_has_one_parent,
             can_merge,
             can_parallelize,
+            can_fix: all_mutable,
             can_rebase_onto: (0..self.rows.len())
                 .map(|ix| mutable && !selected.contains(&ix) && !descendants.contains(&ix))
                 .collect(),
@@ -189,6 +193,7 @@ mod tests {
         assert!(range.can_abandon);
         assert!(range.can_squash);
         assert!(range.can_diff);
+        assert!(range.can_fix && state(&["c"]).can_fix);
         assert!(
             !range.can_merge,
             "one selected change is the other's ancestor"
@@ -225,6 +230,7 @@ mod tests {
         let immutable = state(&["c", "i"]);
         assert!(!immutable.can_abandon);
         assert!(!immutable.can_squash);
+        assert!(!immutable.can_fix && !state(&["i"]).can_fix);
         assert!(
             !immutable.can_rebase_onto[row("a")],
             "an immutable selection has nowhere to rebase"
@@ -233,6 +239,7 @@ mod tests {
         let off_page = state(&["c", "not-loaded"]);
         assert!(!off_page.can_abandon);
         assert!(!off_page.can_merge);
+        assert!(!off_page.can_fix);
         let every_row_refused = vec![false; fixture().len()];
         assert_eq!(off_page.can_rebase_onto, every_row_refused);
         assert_eq!(off_page.can_merge_with, every_row_refused);
