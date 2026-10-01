@@ -14,7 +14,6 @@ use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
 };
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::icon_label;
 
 const MENU_MIN_WIDTH: f32 = 260.;
 const MENU_MAX_WIDTH: f32 = 420.;
@@ -270,6 +269,7 @@ fn menu_row(
     let action_view = view.clone();
     let selector = format!("context-menu-{}", item.label);
     let has_submenu = item.submenu.is_some();
+    let enabled = item.enabled;
 
     let row = div()
         .id((
@@ -284,7 +284,7 @@ fn menu_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(10.))
+        .gap(px(6.))
         .px(px(12.))
         .py(px(6.))
         .text_size(ui_font_size(13.))
@@ -294,14 +294,14 @@ fn menu_row(
         row.on_hover(move |hovered, _, cx| {
             if *hovered {
                 hover_view.update(cx, |this, cx| {
-                    this.set_context_submenu(has_submenu.then_some(ix), cx);
+                    this.set_context_submenu((has_submenu && enabled).then_some(ix), cx);
                 });
             }
         })
     } else {
         row
     };
-    let row = if item.enabled {
+    let row = if enabled {
         row.cursor_pointer()
             .hover(|s| s.bg(rgb(t.selected_bg)))
             .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
@@ -317,11 +317,15 @@ fn menu_row(
     } else {
         row.opacity(0.45)
     };
-    let mut row = row.child(icon_label(item.glyph, item.label.clone(), 13., t.fg_dim));
+    let mut row = row.child(icons::icon(item.glyph, 13., t.fg_dim)).child(
+        div()
+            .flex_1()
+            .min_w_0()
+            .truncate()
+            .child(item.label.clone()),
+    );
     if has_submenu {
-        row = row
-            .child(div().flex_1())
-            .child(icons::icon(glyph::CARET_RIGHT, 10., t.fg_dim));
+        row = row.child(icons::icon(glyph::CARET_RIGHT, 10., t.fg_dim));
     }
     row.into_any_element()
 }

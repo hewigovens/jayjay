@@ -138,3 +138,8 @@ fn can_rebase_onto(
 ) -> bool {
     dag::can_rebase_onto(&entries, source_commit_id, target_commit_id)
 }
+
+#[uniffi::export]
+fn merge_parent_choices(changes: Vec<jayjay_core::ChangeInfo>) -> Vec<dag::MergeParentChoice> {
+    dag::MergeParentChoice::for_selection(&changes)
+}

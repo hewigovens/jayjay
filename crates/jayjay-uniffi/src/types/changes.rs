@@ -1,5 +1,5 @@
 use jayjay_core as core;
-use jayjay_core::dag::{OrderedSelection, SelectionClick, SelectionState};
+use jayjay_core::dag::{MergeParentChoice, OrderedSelection, SelectionClick, SelectionState};
 use jayjay_core::{
     ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, EvologRow, GraphEdge,
     GraphEntry, OpLogEntry, ShortId,
@@ -116,4 +116,10 @@ pub struct OpLogEntry {
     pub description: String,
     pub timestamp_millis: i64,
     pub is_current: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct MergeParentChoice {
+    pub label: String,
+    pub parents: Vec<String>,
 }

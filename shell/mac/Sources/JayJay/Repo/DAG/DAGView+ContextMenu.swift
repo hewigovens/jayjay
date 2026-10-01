@@ -15,15 +15,24 @@ extension DAGView {
     @ViewBuilder
     private func multiSelectionContextMenu(viewModel: DAGViewModel) -> some View {
         let revisions = viewModel.selectedRevisions
-        Button { actions?.merge(parents: revisions) } label: {
-            Label("Merge \(revisions.count) selected", systemImage: "arrow.triangle.merge")
+        if viewModel.canMergeSelection {
+            Menu {
+                Section("First parent") {
+                    ForEach(viewModel.mergeParentChoices, id: \.parents) { choice in
+                        Button(choice.label) { actions?.merge(parents: choice.parents) }
+                    }
+                }
+            } label: {
+                Label("Merge \(revisions.count) selected", systemImage: "arrow.triangle.merge")
+            }
+            .help("Choose the first parent for the new merge change")
+        } else {
+            Button {} label: {
+                Label("Merge \(revisions.count) selected", systemImage: "arrow.triangle.merge")
+            }
+            .disabled(true)
+            .help("Merge requires independent heads")
         }
-        .disabled(!viewModel.canMergeSelection)
-        .help(
-            viewModel.canMergeSelection
-                ? "Create a new change with the selected changes as parents"
-                : "Merge requires independent heads"
-        )
 
         Button { onRequest?(.squashSelection(revisions: revisions)) } label: {
             Label("Squash \(revisions.count) selected…", systemImage: "arrow.down.left.circle")

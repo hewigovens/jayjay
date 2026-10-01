@@ -1,13 +1,13 @@
 use std::sync::Arc;
 
 use crate::harness::*;
-use gpui::{Focusable, Modifiers, TestAppContext, VisualTestContext};
+use gpui::{Focusable, Modifiers, MouseButton, TestAppContext, VisualTestContext};
 use jayjay_core::{EdgeType, GraphEdge, GraphEntry};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
 use jayjay_gpui::windows::command_palette::CommandPalette;
-use jj_test::{LinearFixture, change_by_description};
+use jj_test::{LinearFixture, change_by_description, run_jj_in};
 
 /// `graph.changes` mirrors `graph.entries`, so a forged topology has to be written to both.
 fn set_parents(vm: &mut RepoViewModel, row: usize, parents: Vec<String>) {
@@ -281,6 +281,83 @@ fn parallelize_palette_action_rewrites_the_multi_selection(cx: &mut TestAppConte
     view.read_with(&palette_cx, |view, cx| {
         assert_first_three_are_siblings(view.view_model().read(cx))
     });
+}
+
+#[gpui::test]
+fn merge_submenu_chooses_first_parent_and_creates_the_ordered_merge(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["parallelize", "@ | @- | @--"]);
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_first_three(&view, cx);
+
+    let (label, row_id, expected) = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let selected = vm.selected_change_indices();
+        let changes: Vec<_> = selected
+            .iter()
+            .map(|&index| &vm.graph.changes[index])
+            .collect();
+        let menu = view.build_change_menu(changes[0], cx);
+        let merge = menu_item(&menu, "Merge 3 selected");
+        assert!(merge.enabled);
+        let choices = merge.submenu_items().expect("first-parent submenu");
+        let choice = choices
+            .iter()
+            .find(|item| item.label.starts_with(&changes[2].change_id.prefix(8)))
+            .expect("third selected change offered as first parent");
+        assert!(choice.enabled);
+        let expected =
+            [changes[2], changes[0], changes[1]].map(|change| change.commit_id.id.clone());
+        (
+            choice.label.to_string(),
+            changes[0].commit_id.id.clone(),
+            expected,
+        )
+    });
+    hover_merge_item(&row_id, cx);
+    let choice = cx
+        .debug_bounds(selector(format!("context-menu-{label}")))
+        .expect("first-parent choice");
+    cx.simulate_mouse_down(choice.center(), MouseButton::Left, Modifiers::default());
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "merge failed: {:?}", vm.error);
+        let merged = vm
+            .graph
+            .changes
+            .iter()
+            .find(|change| change.is_working_copy)
+            .expect("merge working copy");
+        assert_eq!(merged.parents, expected);
+    });
+}
+
+#[gpui::test]
+fn hovering_a_disabled_merge_item_keeps_its_submenu_closed(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_first_three(&view, cx);
+
+    let row_id = view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        vm.graph.changes[0].commit_id.id.clone()
+    });
+    hover_merge_item(&row_id, cx);
+    assert!(cx.debug_bounds("context-menu-First parent").is_none());
+}
+
+fn hover_merge_item(row_id: &str, cx: &mut VisualTestContext) {
+    let row = cx
+        .debug_bounds(selector(format!("dag-change-{row_id}")))
+        .expect("selected row");
+    cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    let merge = cx
+        .debug_bounds("context-menu-Merge 3 selected")
+        .expect("merge menu");
+    cx.simulate_mouse_move(merge.center(), MouseButton::Left, Modifiers::default());
+    settle_visual(cx);
 }
 
 fn assert_first_three_are_siblings(vm: &RepoViewModel) {
