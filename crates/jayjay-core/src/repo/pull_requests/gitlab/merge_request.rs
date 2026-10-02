@@ -3,7 +3,7 @@ use serde::Deserialize;
 use crate::types::{ChecksStatus, PrInfo, PrState};
 
 #[derive(Deserialize)]
-pub(super) struct GitLabMrResponse {
+pub(crate) struct GitLabMrResponse {
     /// Per-project number shown in the UI and used in MR URLs (not the global `id`).
     iid: u32,
     state: GitLabMrState,
@@ -15,6 +15,8 @@ pub(super) struct GitLabMrResponse {
     /// Diff head sha; used to look up the pipeline status.
     #[serde(default)]
     sha: String,
+    source_project_id: Option<u64>,
+    target_project_id: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -36,6 +38,12 @@ impl From<GitLabMrState> for PrState {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
+pub(crate) enum MrHeadProject {
+    Same,
+    Fork(u64),
+}
+
 impl GitLabMrResponse {
     pub(super) fn matches(&self, source_branch: &str) -> bool {
         self.source_branch == source_branch
@@ -45,11 +53,26 @@ impl GitLabMrResponse {
         matches!(self.state, GitLabMrState::Opened)
     }
 
-    pub(super) fn head_sha(&self) -> Option<&str> {
+    pub(crate) fn head_sha(&self) -> Option<&str> {
         (!self.sha.is_empty()).then_some(self.sha.as_str())
     }
 
-    pub(super) fn into_pr_info(self, checks: ChecksStatus) -> PrInfo {
+    pub(crate) fn head_branch(&self) -> &str {
+        &self.source_branch
+    }
+
+    pub(crate) fn head_project(&self) -> Option<MrHeadProject> {
+        match (self.source_project_id, self.target_project_id) {
+            (Some(source), Some(target)) => Some(if source == target {
+                MrHeadProject::Same
+            } else {
+                MrHeadProject::Fork(source)
+            }),
+            _ => None,
+        }
+    }
+
+    pub(crate) fn into_pr_info(self, checks: ChecksStatus) -> PrInfo {
         PrInfo {
             number: self.iid,
             state: self.state.into(),
@@ -106,5 +129,23 @@ mod tests {
         assert!(!mr.is_open());
         assert_eq!(mr.head_sha(), None);
         assert_eq!(mr.into_pr_info(ChecksStatus::None).state, PrState::Merged);
+    }
+
+    #[test]
+    fn head_project_distinguishes_same_project_from_fork_and_missing_ids() {
+        let mr = |source: &str, target: &str| {
+            let json = format!(
+                r#"{{"iid":1,"state":"opened","title":"t","web_url":"u",
+                   "source_branch":"b","sha":"","source_project_id":{source},"target_project_id":{target}}}"#
+            );
+            serde_json::from_str::<GitLabMrResponse>(&json).unwrap()
+        };
+        assert_eq!(mr("7765", "7765").head_project(), Some(MrHeadProject::Same));
+        assert_eq!(
+            mr("83542242", "7765").head_project(),
+            Some(MrHeadProject::Fork(83542242))
+        );
+        assert_eq!(mr("null", "7765").head_project(), None);
+        assert_eq!(mr("null", "null").head_project(), None);
     }
 }

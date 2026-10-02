@@ -1,4 +1,4 @@
-use jayjay_network::{Auth, HttpClient};
+use jayjay_network::{Auth, HttpClient, NetError};
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
 use super::super::PrLookup;
@@ -15,11 +15,8 @@ const URL_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
     .remove(b'~');
 
 pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
-    let client = HttpClient::default();
-    let auth = gitlab_auth();
     // GitLab filters by source branch server-side, so a single request suffices.
-    let url = merge_requests_url(remote, bookmark);
-    let body = match client.get_text_with_auth(&url, &auth) {
+    let body = match fetch_text(&merge_requests_path(remote, bookmark)) {
         Ok(body) => body,
         // A private project 404s and rate limits 429; neither is a confirmed "no MR".
         Err(_) => return PrLookup::Unknown,
@@ -32,9 +29,13 @@ pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
     };
     let checks = mr
         .head_sha()
-        .and_then(|sha| commit_status(&client, remote, sha, &auth))
+        .and_then(|sha| commit_status(remote, sha))
         .unwrap_or(ChecksStatus::None);
     PrLookup::Found(mr.into_pr_info(checks))
+}
+
+pub(super) fn fetch_text(path: &str) -> Result<String, NetError> {
+    HttpClient::default().get_text_with_auth(&format!("{GITLAB_API_URL}/{path}"), &gitlab_auth())
 }
 
 /// Token from `GITLAB_TOKEN`; without it private projects 404 and rate limits apply.
@@ -55,28 +56,29 @@ fn pick_mr(mrs: Vec<GitLabMrResponse>, source_branch: &str) -> Option<GitLabMrRe
     fallback
 }
 
-fn merge_requests_url(remote: &HostedRepo, source_branch: &str) -> String {
+fn merge_requests_path(remote: &HostedRepo, source_branch: &str) -> String {
     format!(
-        "{}/projects/{}/merge_requests?source_branch={}&state=all&order_by=created_at&sort=desc",
-        GITLAB_API_URL,
+        "projects/{}/merge_requests?source_branch={}&state=all&order_by=created_at&sort=desc",
         project_id(remote),
         encode(source_branch),
     )
 }
 
-fn commit_status(
-    client: &HttpClient,
-    remote: &HostedRepo,
-    sha: &str,
-    auth: &Auth,
-) -> Option<ChecksStatus> {
-    let url = format!(
-        "{}/projects/{}/repository/commits/{}",
-        GITLAB_API_URL,
+pub(crate) fn merge_request_path(remote: &HostedRepo, iid: u32) -> String {
+    format!("projects/{}/merge_requests/{iid}", project_id(remote))
+}
+
+pub(crate) fn project_path(id: u64) -> String {
+    format!("projects/{id}")
+}
+
+fn commit_status(remote: &HostedRepo, sha: &str) -> Option<ChecksStatus> {
+    let path = format!(
+        "projects/{}/repository/commits/{}",
         project_id(remote),
         encode(sha),
     );
-    let body = client.get_text_with_auth(&url, auth).ok()?;
+    let body = fetch_text(&path).ok()?;
     let commit: GitLabCommitStatus = serde_json::from_str(&body).ok()?;
     Some(commit.checks())
 }
@@ -108,11 +110,25 @@ mod tests {
     }
 
     #[test]
-    fn merge_requests_url_escapes_project_path_and_branch() {
-        let url = merge_requests_url(&remote(), "feat/foo");
-        assert!(url.starts_with("https://gitlab.com/api/v4/projects/owner%2Frepo/merge_requests?"));
-        assert!(url.contains("source_branch=feat%2Ffoo"));
-        assert!(url.contains("state=all"));
+    fn merge_requests_path_escapes_project_path_and_branch() {
+        let path = merge_requests_path(&remote(), "feat/foo");
+        assert!(path.starts_with("projects/owner%2Frepo/merge_requests?"));
+        assert!(path.contains("source_branch=feat%2Ffoo"));
+        assert!(path.contains("state=all"));
+    }
+
+    #[test]
+    fn detail_paths_address_the_target_project_and_numeric_source_project() {
+        let nested = HostedRepo {
+            host: RepoHost::GitLab,
+            owner: "group/sub".into(),
+            repo: "base".into(),
+        };
+        assert_eq!(
+            merge_request_path(&nested, 45),
+            "projects/group%2Fsub%2Fbase/merge_requests/45"
+        );
+        assert_eq!(project_path(83542242), "projects/83542242");
     }
 
     #[test]

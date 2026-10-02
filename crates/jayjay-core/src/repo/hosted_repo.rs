@@ -148,6 +148,10 @@ impl RepoHost {
         }
     }
 
+    pub(crate) fn hosts(self, url: &str) -> bool {
+        HostedRepo::parse(url).is_some_and(|repo| repo.host == self)
+    }
+
     pub(crate) fn display_name(self) -> &'static str {
         match self {
             Self::GitHub => "GitHub",

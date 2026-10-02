@@ -4,7 +4,7 @@ use std::path::PathBuf;
 use jj_test::{init_jj_repo, run_git, run_jj_in};
 use tempfile::TempDir;
 
-use super::plan::{PrHeadRepo, PullRequestImportPlan, RemoteChoice, ResolvedPullRequest};
+use super::plan::{ForkRepo, PrHeadRepo, PullRequestImportPlan, RemoteChoice, ResolvedPullRequest};
 use crate::repo::Repo;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 use crate::types::{CoreError, CoreResult, PrState};
@@ -68,7 +68,7 @@ impl Fixture {
     }
 
     fn plan(&self, head_commit_id: &str, remote_exists: bool) -> PullRequestImportPlan {
-        let (name, url) = ("alice".to_owned(), self.fork.to_string_lossy().into_owned());
+        let fork_url = self.fork.to_string_lossy().into_owned();
         PullRequestImportPlan {
             base: HostedRepo {
                 host: RepoHost::GitHub,
@@ -82,16 +82,21 @@ impl Fixture {
                 url: "https://github.com/owner/base/pull/1".into(),
                 head_branch: "feat/x".into(),
                 head_commit_id: head_commit_id.to_owned(),
-                head: PrHeadRepo::Fork(HostedRepo {
-                    host: RepoHost::GitHub,
-                    owner: name.clone(),
-                    repo: "base".into(),
+                head: PrHeadRepo::Fork(ForkRepo {
+                    name_hint: "alice".into(),
+                    clone_url: fork_url.clone(),
                 }),
             },
             remote: if remote_exists {
-                RemoteChoice::Reuse { name, url }
+                RemoteChoice::Reuse {
+                    name: "alice".into(),
+                    url: fork_url,
+                }
             } else {
-                RemoteChoice::Add { name, url }
+                RemoteChoice::Add {
+                    name: "alice".into(),
+                    url: fork_url,
+                }
             },
         }
     }

@@ -1,5 +1,5 @@
 use super::super::github::GhPrResponse;
-use super::plan::{PrHeadRepo, ResolvedPullRequest};
+use super::plan::{ForkRepo, PrHeadRepo, ResolvedPullRequest};
 use super::url::ParsedPullRequestUrl;
 use crate::repo::Repo;
 use crate::repo::environment::gh_binary;
@@ -12,6 +12,7 @@ const UNUSABLE_HEAD: &str =
 pub(super) fn resolve(
     repo: &Repo,
     parsed: &ParsedPullRequestUrl,
+    ssh: bool,
 ) -> CoreResult<ResolvedPullRequest> {
     let canonical_url = format!("{}/pull/{}", parsed.base.web_url(), parsed.number);
     let args = [
@@ -31,18 +32,22 @@ pub(super) fn resolve(
     }
     serde_json::from_str::<GhPrResponse>(&Repo::stdout_text(&output))
         .ok()
-        .and_then(ResolvedPullRequest::from_gh)
+        .and_then(|pr| ResolvedPullRequest::from_gh(pr, ssh))
         .ok_or_else(|| CoreError::internal(UNUSABLE_HEAD))
 }
 
 impl ResolvedPullRequest {
     /// None when a fork PR lost its head repository, which is how GitHub reports a deleted fork.
-    fn from_gh(pr: GhPrResponse) -> Option<Self> {
+    fn from_gh(pr: GhPrResponse, ssh: bool) -> Option<Self> {
         let head = if pr.is_cross_repository {
-            PrHeadRepo::Fork(HostedRepo {
+            let fork = HostedRepo {
                 host: RepoHost::GitHub,
                 owner: pr.head_repository_owner?.login,
                 repo: pr.head_repository?.name,
+            };
+            PrHeadRepo::Fork(ForkRepo {
+                clone_url: fork.clone_url(ssh),
+                name_hint: fork.owner,
             })
         } else {
             PrHeadRepo::SameRepository
@@ -71,20 +76,27 @@ mod tests {
             "isCrossRepository": true,
             "headRepositoryOwner": {"login": "alice"}, "headRepository": {"name": "r"}
         }"#;
-        let from_json = |json: &str| {
-            ResolvedPullRequest::from_gh(serde_json::from_str::<GhPrResponse>(json).unwrap())
+        let from_json = |json: &str, ssh: bool| {
+            ResolvedPullRequest::from_gh(serde_json::from_str::<GhPrResponse>(json).unwrap(), ssh)
         };
-        let resolved = from_json(json).expect("a fork head");
+        let resolved = from_json(json, false).expect("a fork head");
         assert_eq!(resolved.head_branch, "feat/x");
         let PrHeadRepo::Fork(fork) = resolved.head else {
             panic!("expected a fork head");
         };
-        assert_eq!(fork.clone_url(false), "https://github.com/alice/r.git");
-        assert_eq!(fork.clone_url(true), "git@github.com:alice/r.git");
+        assert_eq!(fork.name_hint, "alice");
+        assert_eq!(fork.clone_url, "https://github.com/alice/r.git");
+        assert_eq!(
+            from_json(json, true).expect("ssh head").head,
+            PrHeadRepo::Fork(ForkRepo {
+                name_hint: "alice".into(),
+                clone_url: "git@github.com:alice/r.git".into(),
+            })
+        );
 
         let deleted = json
             .replace(r#"{"login": "alice"}"#, "null")
             .replace(r#"{"name": "r"}"#, "null");
-        assert!(from_json(&deleted).is_none());
+        assert!(from_json(&deleted, false).is_none());
     }
 }

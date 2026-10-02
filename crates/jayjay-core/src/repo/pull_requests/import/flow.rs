@@ -2,7 +2,7 @@ use jj_lib::object_id::ObjectId;
 use jj_lib::ref_name::{RefName, RemoteName, RemoteRefSymbol, WorkspaceName};
 
 use super::plan::{PrHeadRepo, PullRequestImportPlan};
-use super::{github, plan, url};
+use super::{github, gitlab, plan, url};
 use crate::repo::Repo;
 use crate::repo::command_process::SyncToken;
 use crate::repo::git::remote_url_uses_ssh;
@@ -11,7 +11,7 @@ use crate::repo::support::{canonicalize, unique_name};
 use crate::repo::workspace_path::is_valid_workspace_name;
 use crate::types::*;
 
-const UNSUPPORTED_URL: &str = "Not a supported pull request URL. Paste a GitHub /pull/ URL; GitLab and Codeberg are coming soon.";
+const UNSUPPORTED_URL: &str = "Not a supported pull request URL. Paste a GitHub /pull/ or GitLab /-/merge_requests/ URL; Codeberg is coming soon.";
 
 impl Repo {
     pub fn pull_request_import_preview(
@@ -124,14 +124,21 @@ impl Repo {
                 origin.slug(),
             )));
         }
+        let ssh = remote_url_uses_ssh(&origin_url);
         let resolved = match parsed.base.host {
-            RepoHost::GitHub => github::resolve(self, &parsed)?.checked(parsed.number),
-            RepoHost::GitLab | RepoHost::Codeberg | RepoHost::Cursor => None,
-        }
+            RepoHost::GitHub => github::resolve(self, &parsed, ssh),
+            RepoHost::GitLab => gitlab::resolve(self, &parsed, ssh),
+            RepoHost::Codeberg | RepoHost::Cursor => Err(CoreError::internal(format!(
+                "Resolving pull requests from {} is coming soon.",
+                parsed.base.host.display_name(),
+            ))),
+        }?
+        .checked(parsed.number)
         .ok_or_else(|| {
             CoreError::internal(format!(
-                "Couldn't resolve this pull request on {}; only GitHub is supported so far.",
+                "{} did not answer with pull request {} and a complete head commit and branch.",
                 parsed.base.host.display_name(),
+                parsed.number,
             ))
         })?;
 
@@ -141,11 +148,9 @@ impl Repo {
                 name: String::from("origin"),
                 url: origin_url.clone(),
             },
-            PrHeadRepo::Fork(fork) => plan::choose_remote(
-                &remotes,
-                &fork.owner,
-                &fork.clone_url(remote_url_uses_ssh(&origin_url)),
-            ),
+            PrHeadRepo::Fork(fork) => {
+                plan::choose_remote(&remotes, &fork.name_hint, &fork.clone_url)
+            }
         };
 
         Ok(PullRequestImportPlan {

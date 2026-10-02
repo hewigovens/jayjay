@@ -63,3 +63,35 @@ fn preview_rejects_pull_requests_for_a_different_base_repo() {
     assert!(message.contains("hewigovens/jayjay"), "{message}");
     assert!(message.contains("owner/other"), "{message}");
 }
+
+#[test]
+fn preview_rejects_a_gitlab_merge_request_for_a_different_base_repo() {
+    let temp = init_jj_repo();
+    let repo_path = temp.path().join("repo");
+    add_origin(&repo_path, "https://gitlab.com/group/sub/other.git");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    for (url, target) in [
+        (
+            "https://gitlab.com/group/sub/base/-/merge_requests/45",
+            "group/sub/base",
+        ),
+        (
+            "https://gitlab.com/group/base/-/merge_requests/45",
+            "group/base",
+        ),
+    ] {
+        let error = repo
+            .pull_request_import_preview(url, &repo.sync_token())
+            .expect_err("mismatched base repo must fail");
+        let message = error.to_string();
+        assert!(
+            message.contains(&format!("targets {target}")),
+            "{url}: {message}"
+        );
+        assert!(
+            message.contains("origin is group/sub/other"),
+            "{url}: {message}"
+        );
+    }
+}

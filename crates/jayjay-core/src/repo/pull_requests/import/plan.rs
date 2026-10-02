@@ -2,6 +2,7 @@ use crate::repo::git::{GitRemote, free_remote_name};
 use crate::repo::hosted_repo::HostedRepo;
 use crate::types::PrState;
 
+#[derive(Debug)]
 pub(super) struct ResolvedPullRequest {
     pub(super) number: u32,
     pub(super) title: String,
@@ -29,9 +30,16 @@ impl ResolvedPullRequest {
     }
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub(super) enum PrHeadRepo {
     SameRepository,
-    Fork(HostedRepo),
+    Fork(ForkRepo),
+}
+
+#[derive(Debug, PartialEq, Eq)]
+pub(super) struct ForkRepo {
+    pub(super) name_hint: String,
+    pub(super) clone_url: String,
 }
 
 pub(super) struct PullRequestImportPlan {

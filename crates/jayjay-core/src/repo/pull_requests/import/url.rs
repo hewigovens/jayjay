@@ -86,6 +86,18 @@ mod tests {
     }
 
     #[test]
+    fn a_nested_group_origin_matches_its_merge_request_url() {
+        let parsed = parse("https://gitlab.com/group/sub/base/-/merge_requests/45").unwrap();
+        for raw in [
+            "https://gitlab.com/group/sub/base.git",
+            "git@gitlab.com:group/sub/base.git",
+        ] {
+            let origin = HostedRepo::parse(raw).expect(raw);
+            assert!(origin.is_same_repository(&parsed.base), "{raw}");
+        }
+    }
+
+    #[test]
     fn parses_codeberg_pull_urls() {
         let parsed = parse("https://codeberg.org/hewig/jj-test/pulls/12").unwrap();
         assert_eq!(parsed.base.host, RepoHost::Codeberg);

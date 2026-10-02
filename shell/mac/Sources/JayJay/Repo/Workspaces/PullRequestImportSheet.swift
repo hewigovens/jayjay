@@ -18,7 +18,8 @@ struct PullRequestImportSheet: View {
     var body: some View {
         SheetContainer(
             title: Self.title,
-            subtitle: "Create a workspace from a GitHub pull request",
+            subtitle: viewModel.prHostName.map { "Create a workspace from a pull request on \($0)" }
+                ?? "Create a workspace from a pull request",
             cancelLabel: "Cancel",
             confirmLabel: confirmLabel,
             confirmDisabled: confirmDisabled,
