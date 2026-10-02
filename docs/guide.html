@@ -460,26 +460,64 @@ fi</code></pre>
     <section class="g" id="shortcuts">
       <h2>Keyboard Shortcuts <a href="#shortcuts">#</a></h2>
       <table class="kbd-table">
-        <tr><td><kbd>Cmd+Shift+P</kbd></td><td>Command palette</td></tr>
-        <tr><td><kbd>Cmd+F</kbd></td><td>Find in diff</td></tr>
-        <tr><td><kbd>Cmd+R</kbd></td><td>Refresh</td></tr>
+        <tr><th colspan="2">General</th></tr>
         <tr><td><kbd>Cmd+O</kbd></td><td>Open repository</td></tr>
+        <tr><td><kbd>Cmd+Shift+P</kbd></td><td>Command palette</td></tr>
+        <tr><td><kbd>Cmd+R</kbd></td><td>Refresh</td></tr>
+        <tr><td><kbd>Cmd+,</kbd></td><td>Settings</td></tr>
         <tr><td><kbd>Cmd+/</kbd></td><td>Keyboard Shortcuts reference</td></tr>
+        <tr><td><kbd>Cmd+Option+F</kbd></td><td>Show the repository in Finder</td></tr>
+        <tr><td><kbd>Return</kbd> / <kbd>Esc</kbd></td><td>Confirm or cancel the open dialog</td></tr>
+        <tr><th colspan="2">View</th></tr>
+        <tr><td><kbd>Ctrl+Cmd+S</kbd></td><td>Hide or show the history sidebar</td></tr>
         <tr><td><kbd>Cmd++</kbd> / <kbd>Cmd+-</kbd> / <kbd>Cmd+0</kbd></td><td>Zoom in, zoom out, reset zoom</td></tr>
+        <tr><th colspan="2">Repository</th></tr>
         <tr><td><kbd>Cmd+L</kbd></td><td>Edit the revset filter</td></tr>
         <tr><td><kbd>Cmd+Shift+B</kbd></td><td>Bookmark Manager</td></tr>
         <tr><td><kbd>Cmd+Shift+O</kbd></td><td>Repo Overview</td></tr>
-        <tr><td><kbd>Cmd+Shift+U</kbd></td><td>Undo from jj operation log</td></tr>
-        <tr><td><kbd>Cmd+S</kbd></td><td>Save the current description or working-copy file edit</td></tr>
-        <tr><td><kbd>Space</kbd></td><td>Toggle selected file reviewed</td></tr>
+        <tr><td><kbd>Cmd+Shift+U</kbd></td><td>Undo from the jj operation log</td></tr>
+        <tr><th colspan="2">Graph & File List</th></tr>
+        <tr><td><kbd>j</kbd> / <kbd>k</kbd>, <kbd>↓</kbd> / <kbd>↑</kbd>, <kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd></td><td>Next or previous change or file</td></tr>
+        <tr><td><kbd>→</kbd> / <kbd>←</kbd></td><td>Move from the graph to the file list and back (macOS)</td></tr>
+        <tr><td><kbd>Shift+Click</kbd></td><td>Extend the selection of changes or files; a direct-parent chain shows one combined diff</td></tr>
+        <tr><td><kbd>Cmd+Click</kbd></td><td>Add or remove one change or file; changes that are not adjacent compare oldest to newest</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Reduce a multi-selection to the primary change (macOS)</td></tr>
         <tr><td><kbd>Tab</kbd> / <kbd>Shift+Tab</kbd></td><td>Move focus through panes and controls; <kbd>Space</kbd> or <kbd>Return</kbd> activates, <kbd>Esc</kbd> returns to the pane</td></tr>
-        <tr><td><kbd>Cmd+Option+E</kbd> / <kbd>Cmd+Option+C</kbd></td><td>Diff edit: expand or collapse all files</td></tr>
-        <tr><td><kbd>j</kbd>/<kbd>k</kbd> or <kbd>↑</kbd>/<kbd>↓</kbd>, <kbd>←</kbd>/<kbd>→</kbd>, <kbd>Return</kbd></td><td>Diff edit: move between file cards; collapse, expand, or toggle the focused card; <kbd>Space</kbd> selects it</td></tr>
-        <tr><td><kbd>Shift+Click</kbd></td><td>Compare two revisions</td></tr>
-        <tr><td><kbd>j</kbd> / <kbd>k</kbd></td><td>Move through graph rows</td></tr>
-        <tr><td><kbd>Ctrl+N</kbd> / <kbd>Ctrl+P</kbd></td><td>Move to next or previous item</td></tr>
+        <tr><td><kbd>Option+Click</kbd></td><td>Open a workspace from the repository title picker in a new window</td></tr>
+        <tr><th colspan="2">Revset Bar</th></tr>
+        <tr><td><kbd>↓</kbd> then <kbd>Return</kbd></td><td>Pick and insert a completion</td></tr>
+        <tr><td><kbd>Return</kbd></td><td>Apply the revset as typed</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Cancel the edit</td></tr>
+        <tr><th colspan="2">Review & Diffs</th></tr>
+        <tr><td><kbd>Space</kbd></td><td>Toggle the selected files reviewed</td></tr>
+        <tr><td><kbd>Cmd+F</kbd></td><td>Find in diff</td></tr>
+        <tr><td><kbd>Return</kbd> / <kbd>Esc</kbd></td><td>File filter: keep the query and return to the list, or clear and close it</td></tr>
+        <tr><td><kbd>Cmd+Return</kbd></td><td>Save a review note</td></tr>
+        <tr><td><kbd>Cmd+S</kbd> / <kbd>Esc</kbd></td><td>Save or cancel an Edit File edit</td></tr>
+        <tr><th colspan="2">Diff Edit</th></tr>
+        <tr><td><kbd>Cmd+Option+E</kbd> / <kbd>Cmd+Option+C</kbd></td><td>Expand or collapse all files</td></tr>
+        <tr><td><kbd>j</kbd> / <kbd>k</kbd> or <kbd>↓</kbd> / <kbd>↑</kbd></td><td>Next or previous file card</td></tr>
+        <tr><td><kbd>←</kbd> / <kbd>→</kbd></td><td>Collapse or expand the focused card</td></tr>
+        <tr><td><kbd>Return</kbd></td><td>Toggle the focused card</td></tr>
+        <tr><td><kbd>Space</kbd></td><td>Select the focused card's changed lines</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Leave diff edit</td></tr>
+        <tr><th colspan="2">Conflict Editor</th></tr>
+        <tr><td><kbd>Option+←</kbd> / <kbd>Option+→</kbd></td><td>Hunk mode: Accept Left or Accept Right for the selected conflict</td></tr>
+        <tr><td><kbd>Option+↑</kbd> / <kbd>Option+↓</kbd></td><td>Hunk mode: previous or next conflict</td></tr>
+        <tr><th colspan="2">Drag & Drop</th></tr>
+        <tr><td><kbd>Return</kbd></td><td>Confirm a rebase or bookmark drop</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Cancel the drag</td></tr>
+        <tr><th colspan="2">Repo Overview</th></tr>
+        <tr><td><kbd>Cmd+F</kbd></td><td>Filter lanes</td></tr>
+        <tr><td><kbd>←</kbd> / <kbd>→</kbd> / <kbd>↑</kbd> / <kbd>↓</kbd></td><td>Move between lanes and their changes</td></tr>
+        <tr><td><kbd>Return</kbd></td><td>Show the selection in its workspace window</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Step back out of a lane panel</td></tr>
+        <tr><th colspan="2">Command Palette & Pickers</th></tr>
+        <tr><td><kbd>↑</kbd> / <kbd>↓</kbd> or <kbd>Ctrl+P</kbd> / <kbd>Ctrl+N</kbd></td><td>Move through results</td></tr>
+        <tr><td><kbd>Return</kbd></td><td>Run or choose the selected item</td></tr>
+        <tr><td><kbd>Esc</kbd></td><td>Close</td></tr>
       </table>
-      <p>On the GPUI Linux shell, use <kbd>Ctrl</kbd> instead of <kbd>Cmd</kbd> as the primary modifier (for example, <kbd>Ctrl+/</kbd>).</p>
+      <p>On Linux, the GPUI shell uses <kbd>Ctrl</kbd> for <kbd>Cmd</kbd> and <kbd>Alt</kbd> for <kbd>Option</kbd> (for example, <kbd>Ctrl+/</kbd> and <kbd>Ctrl+Alt+E</kbd>); the sidebar toggles with <kbd>Ctrl+Alt+S</kbd>, and <kbd>Ctrl+Alt+F</kbd> shows the repository in the file manager.</p>
       <a class="backtop" href="#">↑ Back to top</a>
     </section>
     </div>
