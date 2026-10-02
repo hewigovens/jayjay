@@ -10,44 +10,33 @@ use jj_lib::settings::UserSettings;
 use crate::repo::subprocess_command;
 use crate::types::*;
 
-/// An enabled `[fix.tools.<name>]` entry, read with the keys and semantics of jj's `fix` command.
 pub(super) struct FixTool {
     pub(super) name: String,
     pub(super) matcher: Box<dyn Matcher>,
     command: FixCommand,
-    line_range_arg: Option<String>,
+    pub(super) line_range_arg: Option<String>,
     run_tool_if_zero_line_ranges: bool,
 }
 
 impl FixTool {
-    pub(super) fn formats_line_ranges(&self) -> bool {
-        self.line_range_arg.is_some()
-    }
-
-    /// The process that fixes `content`, or `None` when `line-range-arg` finds no changed line and the tool is skipped.
     pub(super) fn command_for(
         &self,
         variables: &[(&str, &str)],
         base_content: Option<&[u8]>,
         content: &[u8],
     ) -> Option<Command> {
-        let mut range_args = Vec::new();
+        let mut command = self.command.to_command(variables);
         if let Some(template) = &self.line_range_arg {
             let ranges = changed_lines(base_content, content);
             if ranges.is_empty() && !self.run_tool_if_zero_line_ranges {
                 return None;
             }
-            range_args = ranges
-                .iter()
-                .map(|range| {
-                    template
-                        .replace("$first", &range.first.to_string())
-                        .replace("$last", &range.last.to_string())
-                })
-                .collect();
+            command.args(ranges.iter().map(|range| {
+                template
+                    .replace("$first", &range.first.to_string())
+                    .replace("$last", &range.last.to_string())
+            }));
         }
-        let mut command = self.command.to_command(variables);
-        command.args(range_args);
         Some(command)
     }
 }
@@ -73,7 +62,6 @@ pub(super) fn parse_fix_tools(
     names.sort_unstable();
     let mut tools = Vec::new();
     for name in names {
-        // The array form addresses each config path component; a dotted name would be one literal key.
         let raw: RawFixTool = settings
             .get(["fix", "tools", name])
             .map_err(|error| tool_error(name, error))?;
@@ -124,7 +112,6 @@ fn enabled_by_default() -> bool {
     true
 }
 
-/// A tool's `command` in any of jj's forms, before `$path`/`$root` interpolation.
 struct FixCommand {
     program: String,
     args: Vec<String>,
@@ -183,27 +170,21 @@ fn split_command_line(line: &str) -> Vec<String> {
 /// jj's `\$([a-z0-9_]+)\b` interpolation: a known name is replaced, anything else stays as written.
 fn interpolate_variables(arg: &str, variables: &[(&str, &str)]) -> String {
     let is_name = |c: char| c.is_ascii_lowercase() || c.is_ascii_digit() || c == '_';
-    let mut result = String::with_capacity(arg.len());
-    let mut rest = arg;
-    while let Some(dollar) = rest.find('$') {
-        result.push_str(&rest[..dollar]);
-        let after = &rest[dollar + 1..];
-        let name_len = after.find(|c| !is_name(c)).unwrap_or(after.len());
-        let (name, tail) = after.split_at(name_len);
-        let at_boundary = tail
-            .chars()
-            .next()
-            .is_none_or(|c| !c.is_alphanumeric() && c != '_');
+    let mut pieces = arg.split('$');
+    let mut result = pieces.next().unwrap_or_default().to_owned();
+    for piece in pieces {
+        let (name, tail) = piece.split_at(piece.find(|c| !is_name(c)).unwrap_or(piece.len()));
         match variables.iter().find(|(key, _)| *key == name) {
-            Some((_, value)) if at_boundary => result.push_str(value),
+            Some((_, value)) if !tail.starts_with(char::is_alphanumeric) => {
+                result.push_str(value);
+                result.push_str(tail);
+            }
             _ => {
                 result.push('$');
-                result.push_str(name);
+                result.push_str(piece);
             }
         }
-        rest = tail;
     }
-    result.push_str(rest);
     result
 }
 

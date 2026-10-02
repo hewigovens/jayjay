@@ -10,18 +10,14 @@ use crate::repo::Repo;
 use crate::repo::support::block_on_result;
 use crate::types::*;
 
-const NO_ENABLED_TOOL: &str =
-    "No [fix.tools] formatter is enabled. Add one to your jj config to run formatters.";
-
 impl Repo {
-    /// Why the configured `[fix.tools]` cannot run, so the action can be disabled with that hint instead of failing.
     pub fn fix_unavailable_reason(&self) -> Option<String> {
         self.fix_tools(self.get_repo().settings())
             .err()
             .map(|error| error.to_string())
     }
 
-    /// `jj fix -s`: rewrite each change in `revs` and its descendants through the configured `[fix.tools]`.
+    /// `jj fix -s`: each change in `revs` and its descendants.
     pub fn fix(&self, revs: &[String]) -> CoreResult<FixSummary> {
         if revs.is_empty() {
             return Err(CoreError::internal("fix requires at least one change"));
@@ -62,7 +58,9 @@ impl Repo {
         };
         let tools = parse_fix_tools(settings, &context)?;
         if tools.is_empty() {
-            return Err(CoreError::internal(NO_ENABLED_TOOL));
+            return Err(CoreError::internal(
+                "No [fix.tools] formatter is enabled. Add one to your jj config to run formatters.",
+            ));
         }
         Ok(tools)
     }

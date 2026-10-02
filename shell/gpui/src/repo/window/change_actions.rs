@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::{App, Context, SharedString};
+use gpui::{App, Context};
 use jayjay_core::compare;
 use jayjay_core::dag::MergeParentChoice;
 use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect, RebaseMode};
@@ -114,14 +114,15 @@ impl RepoWindow {
                 }),
             )
             .with_enabled(vm.can_parallelize_selected_changes()),
-            fix_menu_item(
+            ContextMenuItem::new(
                 format!("Run formatters on {count} selected (jj fix)"),
-                ChangeAction::Fix {
+                glyph::BRACES,
+                change_action(ChangeAction::Fix {
                     revs: revisions.clone(),
-                },
-                vm.selection_state().can_fix,
-                vm.fix_unavailable_reason.clone(),
-            ),
+                }),
+            )
+            .with_enabled(vm.selection_state().can_fix)
+            .with_disabled_reason(vm.fix_unavailable_reason.clone()),
             ContextMenuItem::separator(),
             ContextMenuItem::new(
                 format!("Abandon {count} selected…"),
@@ -144,7 +145,6 @@ impl RepoWindow {
                     .is_none_or(|parent| !parent.is_immutable)
             })
         };
-        let fix_unavailable_reason = self.vm.read(cx).fix_unavailable_reason.clone();
         let (bookmark_diff, selected_rev) = {
             let vm = self.vm.read(cx);
             let selected = if vm.has_multiple_change_selection() {
@@ -335,14 +335,16 @@ impl RepoWindow {
         ));
 
         if !change.is_immutable {
-            items.push(fix_menu_item(
-                "Run formatters (jj fix)",
-                ChangeAction::Fix {
-                    revs: vec![rev.clone()],
-                },
-                true,
-                fix_unavailable_reason,
-            ));
+            items.push(
+                ContextMenuItem::new(
+                    "Run formatters (jj fix)",
+                    glyph::BRACES,
+                    change_action(ChangeAction::Fix {
+                        revs: vec![rev.clone()],
+                    }),
+                )
+                .with_disabled_reason(self.vm.read(cx).fix_unavailable_reason.clone()),
+            );
             items.push(ContextMenuItem::separator());
             let label = if change.is_divergent {
                 "Abandon (resolve divergence)"
@@ -500,20 +502,6 @@ impl RepoWindow {
             }
         };
         task.detach();
-    }
-}
-
-fn fix_menu_item(
-    label: impl Into<SharedString>,
-    action: ChangeAction,
-    selection_can_fix: bool,
-    unavailable_reason: Option<SharedString>,
-) -> ContextMenuItem {
-    let item = ContextMenuItem::new(label, glyph::BRACES, change_action(action))
-        .with_enabled(selection_can_fix && unavailable_reason.is_none());
-    match unavailable_reason {
-        Some(reason) => item.with_tooltip(reason),
-        None => item,
     }
 }
 

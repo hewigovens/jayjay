@@ -59,7 +59,7 @@ pub fn init_colocated(path: &Path) {
     run_command("jj", &display_args, &mut command);
 }
 
-/// Configures `[fix.tools.fixer]` to pipe the files `patterns` (a TOML array) selects through `script`, saved as `fix-tool.sh` in the repo root.
+/// Adds `[fix.tools.fixer]`, which pipes files matching `patterns` (a TOML array) through `script`.
 pub fn configure_fix_tool(repo: &Path, script: &str, patterns: &str) {
     let tool = repo.join("fix-tool.sh");
     std::fs::write(&tool, script).expect("write fix tool");
@@ -69,26 +69,12 @@ pub fn configure_fix_tool(repo: &Path, script: &str, patterns: &str) {
         std::fs::set_permissions(&tool, std::fs::Permissions::from_mode(0o755))
             .expect("make fix tool executable");
     }
-    run_jj_in(
-        repo,
-        &[
-            "config",
-            "set",
-            "--repo",
-            "fix.tools.fixer.command",
-            r#"["$root/fix-tool.sh"]"#,
-        ],
-    );
-    run_jj_in(
-        repo,
-        &[
-            "config",
-            "set",
-            "--repo",
-            "fix.tools.fixer.patterns",
-            patterns,
-        ],
-    );
+    for (key, value) in [
+        ("fix.tools.fixer.command", r#"["$root/fix-tool.sh"]"#),
+        ("fix.tools.fixer.patterns", patterns),
+    ] {
+        run_jj_in(repo, &["config", "set", "--repo", key, value]);
+    }
 }
 
 /// Set a deterministic test identity so commit hashes are reproducible.

@@ -3,7 +3,6 @@ use std::collections::{BTreeMap, BTreeSet};
 const SHOWN_STDERR_LINES: usize = 3;
 const SHOWN_LINE_CHARS: usize = 200;
 
-/// What rewriting changes through the configured `[fix.tools]` did.
 #[derive(Debug, Clone, Default)]
 pub struct FixSummary {
     pub checked_changes: u32,
@@ -12,7 +11,6 @@ pub struct FixSummary {
 }
 
 impl FixSummary {
-    /// The counts, then one line per failed tool: the first file it failed on and the start of that stderr.
     pub fn message(&self) -> String {
         let mut by_tool: BTreeMap<&str, Vec<&FixToolFailure>> = BTreeMap::new();
         for failure in &self.failures {
@@ -63,12 +61,10 @@ fn clip(line: &str) -> String {
     }
 }
 
-/// A `[fix.tools.<name>]` run that could not transform one file, which keeps its old content.
 #[derive(Debug, Clone)]
 pub struct FixToolFailure {
     pub tool: String,
     pub path: String,
-    /// The tool's stderr, or how it failed when it wrote none.
     pub message: String,
 }
 

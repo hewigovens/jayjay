@@ -13,7 +13,6 @@ use super::tools::FixTool;
 use crate::repo::support::block_on;
 use crate::types::FixToolFailure;
 
-/// Pipes each file through its matching tools in order; a tool that fails is recorded and its input kept.
 pub(super) struct FixRunner {
     tools: Vec<FixTool>,
     workspace_root: PathBuf,
@@ -25,7 +24,7 @@ impl FixRunner {
         Self {
             tools,
             workspace_root,
-            failures: Mutex::new(Vec::new()),
+            failures: Mutex::default(),
         }
     }
 
@@ -62,7 +61,7 @@ impl FixRunner {
             return Ok(None);
         }
         let base_content = match &file.base_file_id {
-            Some(base_id) if tools.iter().any(|tool| tool.formats_line_ranges()) => {
+            Some(base_id) if tools.iter().any(|tool| tool.line_range_arg.is_some()) => {
                 Some(read_file(store, &file.repo_path, base_id).await?)
             }
             _ => None,
@@ -89,7 +88,6 @@ impl FixRunner {
         ))
     }
 
-    /// The tool's stdout, `None` when it has no changed line to format, or why it failed.
     fn run_tool(
         &self,
         tool: &FixTool,

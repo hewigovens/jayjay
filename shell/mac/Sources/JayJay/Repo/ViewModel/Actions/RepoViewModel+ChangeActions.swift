@@ -155,11 +155,7 @@ extension RepoViewModel {
     }
 
     func squash(revs: [String]) {
-        performResult(
-            selectingResult: { $0 },
-            onSuccess: { _, _ in },
-            { try $0.squashMany(revs: revs) }
-        )
+        performResult(selectingResult: { $0 }, { try $0.squashMany(revs: revs) })
     }
 
     func edit(rev: String) {

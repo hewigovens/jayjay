@@ -10,7 +10,6 @@ use tempfile::TempDir;
 const SORT_TOOL: &str = "#!/bin/sh\nsort\n";
 const TXT_FILES: &str = r#"["glob:'**/*.txt'"]"#;
 
-/// One change per description on top of the tool's change, each adding an unsorted `<description>.txt`.
 fn stack(descriptions: &[&str], patterns: &str, tool: &str) -> (TempDir, PathBuf, Repo) {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

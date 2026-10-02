@@ -2,6 +2,7 @@
 
 use std::sync::Arc;
 
+use gpui::prelude::FluentBuilder;
 use gpui::{
     Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
     ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled, anchored,
@@ -138,8 +139,9 @@ impl ContextMenuItem {
         self
     }
 
-    pub(crate) fn with_tooltip(mut self, tooltip: impl Into<SharedString>) -> Self {
-        self.tooltip = Some(tooltip.into());
+    pub(crate) fn with_disabled_reason(mut self, reason: Option<SharedString>) -> Self {
+        self.enabled &= reason.is_none();
+        self.tooltip = reason;
         self
     }
 
@@ -327,18 +329,18 @@ fn menu_row(
     } else {
         row.opacity(0.45)
     };
-    let row = if let Some(tooltip) = item.tooltip.clone() {
-        row.tooltip(text_tooltip(tooltip))
-    } else {
-        row
-    };
-    let mut row = row.child(icons::icon(item.glyph, 13., t.fg_dim)).child(
-        div()
-            .flex_1()
-            .min_w_0()
-            .truncate()
-            .child(item.label.clone()),
-    );
+    let mut row = row
+        .when_some(item.tooltip.clone(), |row, tooltip| {
+            row.tooltip(text_tooltip(tooltip))
+        })
+        .child(icons::icon(item.glyph, 13., t.fg_dim))
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .truncate()
+                .child(item.label.clone()),
+        );
     if has_submenu {
         row = row.child(icons::icon(glyph::CARET_RIGHT, 10., t.fg_dim));
     }

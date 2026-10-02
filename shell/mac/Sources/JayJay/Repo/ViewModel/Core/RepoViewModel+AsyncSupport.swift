@@ -64,12 +64,7 @@ extension RepoViewModel {
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         _ action: @escaping RepoOperation<Void>
     ) {
-        performResult(
-            selecting: rev,
-            beforeRefresh: beforeRefresh,
-            onSuccess: { _, _ in },
-            action
-        )
+        performResult(selecting: rev, beforeRefresh: beforeRefresh, action)
     }
 
     func performMessaging(

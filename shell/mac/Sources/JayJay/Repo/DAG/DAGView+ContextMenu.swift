@@ -54,11 +54,11 @@ extension DAGView {
                 : "Parallelize requires two or more mutable changes on one connected line"
         )
 
-        Button { actions?.fix(revs: revisions) } label: {
-            Label("Run formatters on \(revisions.count) selected (jj fix)", systemImage: "wand.and.stars")
-        }
-        .disabled(!viewModel.canFixSelection || actions?.fixUnavailableReason != nil)
-        .help(fixHelp(selectionCanFix: viewModel.canFixSelection))
+        fixButton(
+            "Run formatters on \(revisions.count) selected (jj fix)",
+            revs: revisions,
+            selectionCanFix: viewModel.canFixSelection
+        )
 
         Divider()
         Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
@@ -142,7 +142,7 @@ extension DAGView {
             Button { actions?.rebase(rev: rev, dest: "trunk()", mode: .branch) } label: {
                 Label("Rebase onto trunk", systemImage: "arrow.uturn.up")
             }
-            fixButton(rev: rev)
+            fixButton("Run formatters (jj fix)", revs: [rev])
         }
     }
 
@@ -186,12 +186,18 @@ extension DAGView {
         Divider()
     }
 
-    private func fixButton(rev: String) -> some View {
-        Button { actions?.fix(revs: [rev]) } label: {
-            Label("Run formatters (jj fix)", systemImage: "wand.and.stars")
+    private func fixButton(_ title: String, revs: [String], selectionCanFix: Bool = true) -> some View {
+        Button { actions?.fix(revs: revs) } label: {
+            Label(title, systemImage: "wand.and.stars")
         }
-        .disabled(actions?.fixUnavailableReason != nil)
-        .help(fixHelp(selectionCanFix: true))
+        .disabled(!selectionCanFix || actions?.fixUnavailableReason != nil)
+        .help(
+            actions?.fixUnavailableReason ?? (
+                selectionCanFix
+                    ? "Rewrite these changes and their descendants with your [fix.tools] formatters, as jj fix does"
+                    : "Immutable changes cannot be rewritten"
+            )
+        )
     }
 
     private func abandonButton(entry: GraphEntry, rev: String) -> some View {
@@ -300,14 +306,5 @@ extension DAGView {
                     : "Merge requires independent heads"
             )
         }
-    }
-
-    private func fixHelp(selectionCanFix: Bool) -> String {
-        if let reason = actions?.fixUnavailableReason {
-            return reason
-        }
-        return selectionCanFix
-            ? "Rewrite these changes and their descendants with your [fix.tools] formatters, as jj fix does"
-            : "Immutable changes cannot be rewritten"
     }
 }

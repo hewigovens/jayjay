@@ -10,7 +10,6 @@ pub struct SelectionState {
     pub can_diff: bool,
     pub can_merge: bool,
     pub can_parallelize: bool,
-    /// Unlike the multi-change actions, one mutable change is enough.
     pub can_fix: bool,
     /// Indexed by graph row, as is `can_merge_with`.
     pub can_rebase_onto: Vec<bool>,
