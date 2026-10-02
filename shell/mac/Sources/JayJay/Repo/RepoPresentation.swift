@@ -12,7 +12,7 @@ enum RepoModalState: Identifiable {
     case workspaceCreate
     case pullRequestImport
     case confirmWorkspaceDelete(workspace: WorkspaceInfo)
-    case sponsorPrompt
+    case ratingPrompt
 
     var id: String {
         switch self {
@@ -26,7 +26,7 @@ enum RepoModalState: Identifiable {
             case .workspaceCreate: "workspace-create"
             case .pullRequestImport: "pull-request-import"
             case let .confirmWorkspaceDelete(workspace): "workspace-delete-\(workspace.name)"
-            case .sponsorPrompt: "sponsor-prompt"
+            case .ratingPrompt: "rating-prompt"
         }
     }
 }

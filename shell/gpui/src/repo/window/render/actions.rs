@@ -133,7 +133,7 @@ impl RepoWindow {
             }))
             .on_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
                 // An open context menu is modal, as a native menu would be.
-                if view.context_menu.is_some() {
+                if view.context_menu.is_some() || view.handle_rating_prompt_key(ev, cx) {
                     return;
                 }
                 if view.handle_revset_popup_key(ev, cx)

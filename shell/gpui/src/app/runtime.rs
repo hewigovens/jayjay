@@ -25,6 +25,7 @@ pub(crate) fn run(launch: GuiLaunch) {
         cx.bind_keys(super::actions::app_key_bindings());
 
         cx.set_global(AppConfigStore::new(cfg));
+        cx.set_global(super::rating_prompt::RatingPromptStore::load());
         match launch {
             GuiLaunch::ExternalTool(invocation) => {
                 if let Err(error) = crate::external_tool::open_external_tool(invocation, cx) {

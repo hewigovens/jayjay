@@ -31,6 +31,7 @@ mod note_menu;
 mod open;
 mod picker;
 mod pr_import;
+mod rating_prompt;
 mod rebase_confirmation;
 pub(crate) mod ref_chips;
 mod render;

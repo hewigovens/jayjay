@@ -21,7 +21,7 @@ class SceneBase: XCTestCase {
         true
     }
 
-    class var suppressesSponsorPrompts: Bool {
+    class var suppressesRatingPrompts: Bool {
         true
     }
 
@@ -69,7 +69,7 @@ class SceneBase: XCTestCase {
         } else if Self.additionalLaunchArguments.isEmpty {
             app.launchArguments += ["-jayjay.lastOpenedRepo", ""]
         }
-        if Self.suppressesSponsorPrompts {
+        if Self.suppressesRatingPrompts {
             app.launchArguments += ["-jayjay.sponsorDismissed", "YES"]
         }
         if Self.startsWithDefaultSettings {

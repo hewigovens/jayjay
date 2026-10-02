@@ -10,6 +10,7 @@ use gpui::{
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::actions::ZoomIn;
 use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
+use jayjay_gpui::app::rating_prompt::{RatingPromptState, RatingPromptStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_git, run_jj_in};
@@ -183,6 +184,10 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
         let mut config = AppConfig::default();
         config.onboarding.completed = true;
         cx.set_global(AppConfigStore::new_ephemeral(config));
+        cx.set_global(RatingPromptStore::in_memory(RatingPromptState {
+            dismissed: true,
+            ..RatingPromptState::default()
+        }));
         cx.set_global(Theme::light());
         jayjay_gpui::app::motion::reduce_for_tests(cx);
         let opened = Arc::new(Mutex::new(None));

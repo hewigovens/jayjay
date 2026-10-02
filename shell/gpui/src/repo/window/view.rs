@@ -16,7 +16,7 @@ use crate::diff::{
     DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection, MarkdownImageCache,
     MarkdownImageCacheSlot,
 };
-use crate::repo::view_model::RepoViewModel;
+use crate::repo::view_model::{ActionSucceeded, RepoViewModel};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
@@ -74,6 +74,7 @@ pub struct RepoWindow {
     pub(crate) context_menu: Option<ContextMenuState>,
     pub(crate) bookmark_picker: Option<BookmarkPickerState>,
     pub(crate) confirmation: Option<Confirmation>,
+    pub(crate) rating_prompt: bool,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
     pub(crate) onboarding: Option<Entity<OnboardingView>>,
     pub(crate) commit_message: CommitMessageEditor,
@@ -379,6 +380,10 @@ impl RepoWindow {
             cx.notify();
         })
         .detach();
+        cx.subscribe(&vm, |this, _, _: &ActionSucceeded, cx| {
+            this.record_successful_action(cx)
+        })
+        .detach();
         // `current` panics without the store; bare `cx.new(RepoWindow::new)` tests skip `install_test_globals`.
         let cfg = cx
             .has_global::<crate::app::config::AppConfigStore>()
@@ -429,6 +434,7 @@ impl RepoWindow {
             context_menu: None,
             bookmark_picker: None,
             confirmation: None,
+            rating_prompt: false,
             repo_switcher: None,
             onboarding: None,
             commit_message,

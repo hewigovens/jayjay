@@ -145,7 +145,13 @@ impl Store {
         let Some(path) = self.save_path.as_ref() else {
             return true;
         };
-        match write_atomically(path, state) {
+        let written = serde_json::to_vec(state)
+            .map_err(std::io::Error::from)
+            .and_then(|contents| {
+                crate::write_atomically(path, &contents)?;
+                Ok(ContentsFingerprint::from_contents(&contents))
+            });
+        match written {
             Ok(fingerprint) => {
                 self.loaded_fingerprint = Some(fingerprint);
                 true
@@ -176,30 +182,6 @@ fn stored_repository_path(path: &Path) -> Option<String> {
             None
         }
     }
-}
-
-fn write_atomically(path: &Path, state: &RepositoryStore) -> std::io::Result<ContentsFingerprint> {
-    use std::sync::atomic::{AtomicU64, Ordering};
-    static WRITE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
-
-    if let Some(parent) = path.parent() {
-        fs::create_dir_all(parent)?;
-    }
-    let temporary = path.with_extension(format!(
-        "json.tmp.{}.{}",
-        std::process::id(),
-        WRITE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
-    ));
-    let contents = serde_json::to_vec(state)?;
-    let fingerprint = ContentsFingerprint::from_contents(&contents);
-    if let Err(error) = fs::write(&temporary, contents) {
-        let _ = fs::remove_file(&temporary);
-        return Err(error);
-    }
-    fs::rename(&temporary, path).inspect_err(|_| {
-        let _ = fs::remove_file(&temporary);
-    })?;
-    Ok(fingerprint)
 }
 
 #[cfg(test)]

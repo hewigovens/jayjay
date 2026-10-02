@@ -1,9 +1,32 @@
 use std::fs;
 use std::path::{Component, Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 
 use futures::AsyncReadExt as _;
 
 use crate::{CoreError, CoreResult};
+
+pub fn write_atomically(path: &Path, contents: &[u8]) -> std::io::Result<()> {
+    static WRITE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
+
+    if let Some(parent) = path.parent() {
+        fs::create_dir_all(parent)?;
+    }
+    let mut temporary = path.as_os_str().to_owned();
+    temporary.push(format!(
+        ".tmp.{}.{}",
+        std::process::id(),
+        WRITE_SEQUENCE.fetch_add(1, Ordering::Relaxed)
+    ));
+    let temporary = PathBuf::from(temporary);
+    if let Err(error) = fs::write(&temporary, contents) {
+        let _ = fs::remove_file(&temporary);
+        return Err(error);
+    }
+    fs::rename(&temporary, path).inspect_err(|_| {
+        let _ = fs::remove_file(&temporary);
+    })
+}
 
 pub(crate) async fn read_to_limit(
     reader: impl futures::AsyncRead + Unpin,

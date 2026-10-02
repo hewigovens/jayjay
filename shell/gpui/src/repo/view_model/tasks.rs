@@ -2,10 +2,23 @@ use std::future::Future;
 use std::sync::Arc;
 use std::time::Duration;
 
-use gpui::{AppContext, Context, Task};
+use gpui::{AppContext, Context, EventEmitter, Task};
 use jayjay_core::{CoreResult, Error, Repo};
 
 use super::RepoViewModel;
+
+pub(crate) struct ActionSucceeded;
+
+impl EventEmitter<ActionSucceeded> for RepoViewModel {}
+
+#[derive(Clone, Copy, PartialEq, Eq)]
+enum RepoTaskKind {
+    Action,
+    /// Fetch and push report their own progress instead of the refresh indicator.
+    QuietAction,
+    /// Reads that open an editor; not an action of their own.
+    Load,
+}
 
 impl RepoViewModel {
     pub(in crate::repo) fn background_update<T>(
@@ -52,7 +65,7 @@ impl RepoViewModel {
     where
         T: Send + 'static,
     {
-        self.repo_result_task_with_indicator(cx, true, read_or_write, on_success)
+        self.run_repo_task(cx, RepoTaskKind::Action, read_or_write, on_success)
     }
 
     pub(in crate::repo) fn repo_result_task_without_indicator<T>(
@@ -64,13 +77,25 @@ impl RepoViewModel {
     where
         T: Send + 'static,
     {
-        self.repo_result_task_with_indicator(cx, false, read_or_write, on_success)
+        self.run_repo_task(cx, RepoTaskKind::QuietAction, read_or_write, on_success)
     }
 
-    fn repo_result_task_with_indicator<T>(
+    pub(in crate::repo) fn repo_load_task<T>(
         &mut self,
         cx: &mut Context<Self>,
-        show_refresh_indicator: bool,
+        read: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
+    ) -> Task<CoreResult<T>>
+    where
+        T: Send + 'static,
+    {
+        self.run_repo_task(cx, RepoTaskKind::Load, read, on_success)
+    }
+
+    fn run_repo_task<T>(
+        &mut self,
+        cx: &mut Context<Self>,
+        kind: RepoTaskKind,
         read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
     ) -> Task<CoreResult<T>>
@@ -88,7 +113,7 @@ impl RepoViewModel {
         // Stamp before the write so the FS echo from our own jj mutation is ignored.
         self.last_internal_mutation_at = Some(std::time::Instant::now());
         self.loading.operations += 1;
-        if show_refresh_indicator {
+        if kind == RepoTaskKind::Action {
             self.begin_refreshing(cx);
         } else {
             self.begin_repo_task(cx);
@@ -104,6 +129,9 @@ impl RepoViewModel {
                 match result {
                     Ok(value) => {
                         on_success(vm, &value, cx);
+                        if kind != RepoTaskKind::Load {
+                            cx.emit(ActionSucceeded);
+                        }
                         Ok(value)
                     }
                     Err(error) => {

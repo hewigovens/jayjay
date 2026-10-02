@@ -26,3 +26,4 @@ pub use notes_state::NotesState;
 pub use repo_view_model::RepoViewModel;
 pub use shown_diff::ShownDiff;
 pub use stats_state::StatsState;
+pub(crate) use tasks::ActionSucceeded;

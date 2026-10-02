@@ -1,3 +1,4 @@
+use crate::app::links::{REPOSITORY_URL, SPONSOR_URL};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
@@ -8,8 +9,6 @@ use gpui::{
 
 const APP_NAME: &str = "JayJay";
 const TAGLINE: &str = "A native GUI for Jujutsu";
-const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
-const GITHUB_URL: &str = "https://github.com/hewigovens/jayjay";
 
 pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
     let version = format!("Version {} (GPUI)", env!("CARGO_PKG_VERSION"));
@@ -21,7 +20,7 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
         .items_center()
         .gap(px(12.))
         .pt(px(8.))
-        .child(logo.image(72.))
+        .child(logo.app_icon(72., t))
         .child(
             div()
                 .text_size(ui_font_size(20.))
@@ -57,7 +56,7 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
                     "tb-github",
                     glyph::ARROW_CIRCLE_RIGHT,
                     "Star on GitHub",
-                    GITHUB_URL,
+                    REPOSITORY_URL,
                     t,
                 )),
         )

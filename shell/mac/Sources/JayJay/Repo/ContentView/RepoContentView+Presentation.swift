@@ -1,7 +1,7 @@
 import JayJayCore
 import SwiftUI
 
-private let sponsorPromptInterval = 20
+private let ratingPromptInterval = 20
 
 extension RepoContentView {
     var overlayState: RepoOverlayState? {
@@ -87,13 +87,13 @@ extension RepoContentView {
     }
 
     func handleSuccessActionSignalChange() {
-        settings.sponsorActionCount += 1
-        if settings.sponsorActionCount >= settings.sponsorNextPromptCount,
-           !settings.sponsorDismissed,
+        settings.ratingPromptActionCount += 1
+        if settings.ratingPromptActionCount >= settings.ratingPromptNextCount,
+           !settings.ratingPromptDismissed,
            modal == nil
         {
-            settings.sponsorNextPromptCount = settings.sponsorActionCount + sponsorPromptInterval
-            modal = .sponsorPrompt
+            settings.ratingPromptNextCount = settings.ratingPromptActionCount + ratingPromptInterval
+            modal = .ratingPrompt
         }
     }
 

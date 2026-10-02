@@ -47,11 +47,11 @@ extension RepoContentView {
                 )
             case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete:
                 workspaceSheet(for: modal)
-            case .sponsorPrompt:
-                SponsorPromptView(
+            case .ratingPrompt:
+                RatingPromptView(
                     onDismiss: { self.modal = nil },
                     onDontShowAgain: {
-                        settings.sponsorDismissed = true
+                        settings.ratingPromptDismissed = true
                         self.modal = nil
                     }
                 )
@@ -71,7 +71,7 @@ extension RepoContentView {
                 )
             case let .confirmWorkspaceDelete(workspace):
                 workspaceDeleteSheet(workspace: workspace)
-            case .editDescription, .createBookmark, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .sponsorPrompt:
+            case .editDescription, .createBookmark, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .ratingPrompt:
                 EmptyView()
         }
     }

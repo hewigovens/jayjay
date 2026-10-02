@@ -13,6 +13,8 @@ impl RepoWindow {
                 vm.clear_error();
                 cx.notify();
             });
+        } else if self.rating_prompt {
+            self.close_rating_prompt(cx);
         } else if self.stacked_pr.is_some() {
             self.close_stacked_pr(cx);
         } else if self.pending_rebase.is_some() {

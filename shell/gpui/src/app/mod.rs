@@ -9,6 +9,7 @@ mod gpui_assets;
 pub mod links;
 pub mod menus;
 pub mod motion;
+pub mod rating_prompt;
 pub mod repositories;
 pub(crate) mod runtime;
 mod startup_window;

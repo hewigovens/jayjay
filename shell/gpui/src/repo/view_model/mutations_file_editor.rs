@@ -9,7 +9,7 @@ impl RepoViewModel {
         path: String,
         cx: &mut Context<Self>,
     ) -> gpui::Task<CoreResult<FileEditorData>> {
-        self.repo_result_task_without_indicator(
+        self.repo_load_task(
             cx,
             move |repo| repo.working_copy_file_editor(&path),
             |_, _, _| {},

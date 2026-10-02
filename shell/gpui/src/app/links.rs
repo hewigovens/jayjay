@@ -3,6 +3,8 @@ use std::sync::Arc;
 use gpui::{App, AppContext, Global};
 
 pub const GUIDE_URL: &str = "https://jayjay.hewig.dev/guide.html";
+pub const REPOSITORY_URL: &str = "https://github.com/hewigovens/jayjay";
+pub const SPONSOR_URL: &str = "https://github.com/sponsors/hewigovens";
 pub(crate) const FEEDBACK_ADDRESS: &str = "hi@hewig.dev";
 pub const FEEDBACK_URL: &str = "mailto:hi@hewig.dev?subject=JayJay%20Feedback";
 

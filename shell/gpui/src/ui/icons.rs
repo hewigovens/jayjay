@@ -14,6 +14,8 @@ pub const COLLAPSE_VERTICAL_SVG: &str = "icons/collapse-vertical.svg";
 pub const CIRCLE_SVG: &str = "icons/circle.svg";
 pub const CHECK_SVG: &str = "icons/check.svg";
 pub const CIRCLE_HALF_SVG: &str = "icons/circle-half.svg";
+/// Full color, drawn with `img` rather than tinted with `svg`.
+pub const HEART_CIRCLE_SVG: &str = "icons/heart-circle.svg";
 
 /// Every SVG the shell renders, paired with its bytes, so registering an icon is one entry here rather than a constant plus a match arm in the asset source.
 pub const SVG_ASSETS: &[(&str, &[u8])] = &[
@@ -38,6 +40,10 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
     (
         CIRCLE_HALF_SVG,
         include_bytes!("../../assets/icons/circle-half.svg"),
+    ),
+    (
+        HEART_CIRCLE_SVG,
+        include_bytes!("../../assets/icons/heart-circle.svg"),
     ),
     (
         REFRESH_CW_SVG,

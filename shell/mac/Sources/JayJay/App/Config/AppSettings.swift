@@ -36,9 +36,10 @@ final class AppSettings {
         static let terminal = "jayjay.terminal"
         static let customTerminalCommand = "jayjay.customTerminalCommand"
         static let aiProviderOrder = "jayjay.aiProviderOrder"
-        static let sponsorActionCount = "jayjay.sponsorActionCount"
-        static let sponsorDismissed = "jayjay.sponsorDismissed"
-        static let sponsorNextPromptCount = "jayjay.sponsorNextPromptCount"
+        // Old names: new keys would re-show the prompt to people who turned it off.
+        static let ratingPromptActionCount = "jayjay.sponsorActionCount"
+        static let ratingPromptDismissed = "jayjay.sponsorDismissed"
+        static let ratingPromptNextCount = "jayjay.sponsorNextPromptCount"
     }
 
     // MARK: - Font
@@ -182,18 +183,18 @@ final class AppSettings {
         }
     }
 
-    // MARK: - Sponsorship
+    // MARK: - Rating Prompt
 
-    var sponsorActionCount: Int {
-        didSet { defaults.set(sponsorActionCount, forKey: StorageKeys.sponsorActionCount) }
+    var ratingPromptActionCount: Int {
+        didSet { defaults.set(ratingPromptActionCount, forKey: StorageKeys.ratingPromptActionCount) }
     }
 
-    var sponsorDismissed: Bool {
-        didSet { defaults.set(sponsorDismissed, forKey: StorageKeys.sponsorDismissed) }
+    var ratingPromptDismissed: Bool {
+        didSet { defaults.set(ratingPromptDismissed, forKey: StorageKeys.ratingPromptDismissed) }
     }
 
-    var sponsorNextPromptCount: Int {
-        didSet { defaults.set(sponsorNextPromptCount, forKey: StorageKeys.sponsorNextPromptCount) }
+    var ratingPromptNextCount: Int {
+        didSet { defaults.set(ratingPromptNextCount, forKey: StorageKeys.ratingPromptNextCount) }
     }
 
     // MARK: - Privacy
@@ -249,9 +250,9 @@ final class AppSettings {
         terminal = Terminal(rawValue: defaults.string(forKey: StorageKeys.terminal) ?? "") ?? .terminal
         customTerminalCommand = defaults.string(forKey: StorageKeys.customTerminalCommand) ?? ""
         aiProviderOrder = aiProviders(ids: defaults.stringArray(forKey: StorageKeys.aiProviderOrder) ?? [])
-        sponsorActionCount = defaults.integer(forKey: StorageKeys.sponsorActionCount)
-        sponsorDismissed = defaults.bool(forKey: StorageKeys.sponsorDismissed)
-        sponsorNextPromptCount = max(defaults.integer(forKey: StorageKeys.sponsorNextPromptCount), 5)
+        ratingPromptActionCount = defaults.integer(forKey: StorageKeys.ratingPromptActionCount)
+        ratingPromptDismissed = defaults.bool(forKey: StorageKeys.ratingPromptDismissed)
+        ratingPromptNextCount = max(defaults.integer(forKey: StorageKeys.ratingPromptNextCount), 5)
         sendsAnonymousStats = defaults.object(forKey: Self.sendsAnonymousStatsKey) as? Bool ?? true
         updateChannel = parseUpdateChannel(value: defaults.string(forKey: Self.updateChannelKey) ?? "")
     }

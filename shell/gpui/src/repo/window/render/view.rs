@@ -7,6 +7,7 @@ use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
+use super::super::rating_prompt::rating_prompt_overlay;
 use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
 use super::super::revset_filter::{render_revset_completions, render_revset_popup};
@@ -252,6 +253,11 @@ impl Render for RepoWindow {
             root = root.child(super::super::stacked_pr_render::stacked_pr_overlay(
                 stacked_pr, &t, cx,
             ));
+        }
+        if self.rating_prompt {
+            // Typing must not reach a text field under the prompt.
+            window.focus(&self.focus_handle, cx);
+            root = root.child(rating_prompt_overlay(&t, cx));
         }
         if let Some(message) = self.feedback.toast.clone() {
             root = root.child(toast_overlay(message, &t));

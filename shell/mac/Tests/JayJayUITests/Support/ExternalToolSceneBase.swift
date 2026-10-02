@@ -14,7 +14,7 @@ class ExternalToolSceneBase: SceneBase {
         false
     }
 
-    override class var suppressesSponsorPrompts: Bool {
+    override class var suppressesRatingPrompts: Bool {
         false
     }
 

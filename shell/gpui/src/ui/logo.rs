@@ -1,6 +1,10 @@
 use std::sync::Arc;
 
-use gpui::{AnyElement, App, Global, IntoElement, RenderImage, Styled, div, img, px};
+use gpui::{
+    AnyElement, App, Global, IntoElement, ParentElement, RenderImage, Styled, div, img, px, rgb,
+};
+
+use crate::app::theme::Theme;
 
 const LOGO_SVG: &[u8] = include_bytes!("../../assets/icons/logo.svg");
 // GPUI rasterizes at 2x, keeping the largest 88pt logo sharp on high-density displays.
@@ -39,6 +43,25 @@ impl Logo {
                 .into_any_element(),
             None => div().w(px(size)).h(px(size)).into_any_element(),
         }
+    }
+
+    pub(crate) fn app_icon(&self, size: f32, t: &Theme) -> AnyElement {
+        let radius = size * 0.225;
+        // The macOS `app.icon` fill.
+        let mut tile = div()
+            .size(px(size))
+            .rounded(px(radius))
+            .border_1()
+            .border_color(rgb(t.border))
+            .bg(rgb(0xffffff));
+        if let Some(image) = &self.image {
+            tile = tile.child(
+                img(image.clone())
+                    .size(px(size - 2.))
+                    .rounded(px(radius - 1.)),
+            );
+        }
+        tile.into_any_element()
     }
 }
 

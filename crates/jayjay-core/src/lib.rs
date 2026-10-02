@@ -47,6 +47,8 @@ pub mod utf16;
 pub use cli::run_app_cli_command;
 #[cfg(feature = "repository")]
 pub use file_display::MAX_IMAGE_BYTES;
+#[cfg(feature = "repository")]
+pub use filesystem::write_atomically;
 pub use fonts::{
     MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID,
     mono_font_option,

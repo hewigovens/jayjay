@@ -37,6 +37,7 @@ mod repo_overview;
 mod repo_pickers;
 mod repo_pinning;
 mod repo_pr_import;
+mod repo_rating_prompt;
 mod repo_rebase_drag;
 mod repo_ref_drag;
 mod repo_review_notes;
