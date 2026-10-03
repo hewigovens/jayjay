@@ -1,0 +1,22 @@
+<h2>Workspaces from merge requests</h2>
+<ul>
+  <li><strong>New Workspace from Pull Request…</strong> now takes a GitLab merge request URL too. JayJay resolves the merge request and its source project through the GitLab API, adds a fork as a remote when needed, fetches the head, and creates the sibling workspace. Sign-in goes through <code>glab</code> when it is installed; otherwise a <code>GITLAB_TOKEN</code> or a public merge request works without it.</li>
+</ul>
+
+<h2>Fix with jj's tools</h2>
+<ul>
+  <li>Choose <strong>Run formatters (jj fix)</strong> on a change, on a multi-selection, or from the command palette to run the tools in your <code>[fix.tools]</code> config over the selected changes and their descendants, with jj's semantics for <code>enabled</code>, <code>line-range-arg</code>, and <code>run-tool-if-zero-line-ranges</code>. A failing tool leaves its file unchanged and is reported, an immutable change is refused before anything runs, and a run that changes nothing records no operation. An unusable config disables the menu items with the reason.</li>
+</ul>
+
+<h2>Merging</h2>
+<ul>
+  <li><strong>Merge N selected</strong> opens a <strong>First parent</strong> submenu so you choose which selected change leads the merge; the remaining parents keep their graph order.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>The commit box's Summary field keeps the caret where you put it: fast typing no longer scrambles characters, and typing after clicking into the middle of a long summary no longer jumps to the end.</li>
+  <li>In tree mode, selecting a file after a fast trackpad scroll no longer makes the file list jump away from the clicked row.</li>
+  <li>The sponsor prompt is now a rating prompt that offers <strong>Star on GitHub</strong> first, with Sponsor beside it. People who turned the old prompt off stay opted out.</li>
+  <li>Release builds are signed with the renewed Developer ID certificate; nothing changes for updates, but tell us if Gatekeeper complains on first launch.</li>
+</ul>
