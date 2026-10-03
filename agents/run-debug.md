@@ -14,7 +14,7 @@ Load this file to launch or drive a JayJay build, or to debug a CI, test-runner,
 
 - Run `just test-app` and `just test-ui` in the foreground to completion, one at a time: one test session owns DerivedData and `testmanagerd`, and a backgrounded or concurrent run wedges both.
 - "The test runner hung before establishing connection" after a killed run: check `pgrep -fl xcodebuild` for orphans, `kill -9` `testmanagerd` (launchd respawns it), and rerun.
-- "Timed out while enabling automation mode" or "Failed to activate application (current state: Running Background)": the desktop is in use or automation permission is missing. Do not retry in a loop; report the scene as unverified and use the CI result.
+- "Timed out while enabling automation mode": macOS Automation Mode wants a password from someone at the Mac, and `testmanagerd` caches that approval only for a while; the runner's code signature plays no part. `sudo automationmodetool enable-automationmode-without-authentication` removes the prompt on a development machine. "Failed to activate application (current state: Running Background)": the desktop is in use. In both cases do not retry in a loop; report the scene as unverified and use the CI result.
 
 ## Debugging From CI
 
