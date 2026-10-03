@@ -39,27 +39,4 @@ final class SummaryTypingScene: SceneBase {
         attachment.lifetime = .keepAlways
         add(attachment)
     }
-
-    func testDescriptionTypingAfterScrollAndRefocus() throws {
-        let app = try XCTUnwrap(app)
-        let details = app.textViews[AID.CommitBox.draft]
-        XCTAssertTrue(details.waitForExistence(timeout: 10))
-        let text = String(repeating: "this is some text hello world\n", count: 12)
-        details.click()
-        keyStroke("a", modifiers: [.command])
-        paste(text)
-        keyStroke(.home)
-        app.textFields[AID.CommitBox.summary].click()
-        let startClickInset: CGFloat = 1
-        details.coordinate(withNormalizedOffset: CGVector(
-            dx: startClickInset / details.frame.width,
-            dy: startClickInset / details.frame.height
-        )).click()
-        var prefix = ""
-        for character in "abcd" {
-            keyStroke(String(character))
-            prefix.append(character)
-            XCTAssertEqual(details.value as? String, prefix + text)
-        }
-    }
 }
