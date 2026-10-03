@@ -42,6 +42,15 @@ final class DescriptionEditingScene: SceneBase {
         add(screenshot)
         paste(" appended")
         XCTAssertEqual(summary.value as? String, initialSummary + " appended")
+        body.click()
+        let startClickInset: CGFloat = 1
+        summary.coordinate(withNormalizedOffset: CGVector(dx: startClickInset / summary.frame.width, dy: 0.5)).click()
+        var prefix = ""
+        for character in "abcd" {
+            keyStroke(String(character))
+            prefix.append(character)
+            XCTAssertEqual(summary.value as? String, prefix + initialSummary + " appended")
+        }
         replace(summary, with: "Cancelled summary")
         replace(body, with: "Cancelled body")
         sheet.buttons["Cancel"].click()

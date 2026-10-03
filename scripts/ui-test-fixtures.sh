@@ -107,6 +107,9 @@ copy_fixture() {
 
 fixture_mutating_scenes() {
   copy_fixture simple commit
+  copy_fixture simple summary-typing
+  jj -R "$fixtures/summary-typing" new
+  cp "$project_root/CONTRIBUTING.md" "$fixtures/summary-typing/xx.md"
   copy_fixture simple edit-description
   copy_fixture simple save-description
   copy_fixture simple diff-stats
