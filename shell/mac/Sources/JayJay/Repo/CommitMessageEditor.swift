@@ -7,12 +7,12 @@ struct CommitMessageEditor: View {
     var bodyHeight: CGFloat?
     var focusSummaryAtEnd = false
     var participatesInPaneNavigation = false
-    @State private var summarySelection: TextSelection?
+    @FocusState private var isSummaryFocused: Bool
     @State private var didSetInitialSelection = false
 
     var body: some View {
         VStack(alignment: .leading, spacing: 8) {
-            TextField("Summary", text: $summary, selection: $summarySelection)
+            summaryField
                 .textFieldStyle(.plain)
                 .jayjayFont(13, design: .monospaced)
                 .padding(.horizontal, 11)
@@ -51,8 +51,8 @@ struct CommitMessageEditor: View {
                 )
                 .frame(minHeight: bodyHeight ?? 50, maxHeight: bodyHeight ?? 100)
         }
-        .onChange(of: summarySelection) { _, selection in
-            guard focusSummaryAtEnd, !didSetInitialSelection, selection != nil else { return }
+        .onChange(of: isSummaryFocused) { _, isFocused in
+            guard focusSummaryAtEnd, !didSetInitialSelection, isFocused else { return }
             didSetInitialSelection = true
             // Set on the field editor once focus settles: SwiftUI follows its select-all with a hit-test caret, which beat a binding-set caret.
             DispatchQueue.main.async {
@@ -63,6 +63,16 @@ struct CommitMessageEditor: View {
                 editor.setSelectedRange(end)
                 editor.scrollRangeToVisible(end)
             }
+        }
+    }
+
+    @ViewBuilder
+    private var summaryField: some View {
+        if focusSummaryAtEnd {
+            TextField("Summary", text: $summary)
+                .focused($isSummaryFocused)
+        } else {
+            TextField("Summary", text: $summary)
         }
     }
 }
