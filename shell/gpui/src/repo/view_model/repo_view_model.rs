@@ -19,6 +19,7 @@ pub struct RepoViewModel {
     pub(crate) repo_path: SharedString,
     pub(crate) repo_root_path: SharedString,
     pub error: Option<SharedString>,
+    pub working_copy_stale: bool,
     pub selected: Option<usize>,
     pub(super) selected_changes: OrderedSelection,
     pub files: Option<Arc<Vec<DiffHunk>>>,

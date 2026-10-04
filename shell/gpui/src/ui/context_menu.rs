@@ -44,6 +44,7 @@ pub enum ContextAction {
     AbandonChange(SharedString),
     OpenEvologFor(SharedString),
     ShowAncestors(SharedString),
+    UpdateWorkspace,
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
     ShowBookmarkDiff(BookmarkDiffRequest),

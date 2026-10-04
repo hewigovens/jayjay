@@ -36,6 +36,14 @@ pub fn run_jj_in(repo: &Path, args: &[&str]) -> Output {
     run_command("jj", &display_args, &mut command)
 }
 
+/// `run_git` output as trimmed text, for ids and paths that tests compare.
+pub fn git_stdout(repo_path: &Path, args: &[&str]) -> String {
+    String::from_utf8(run_git(repo_path, args).stdout)
+        .expect("utf8 git output")
+        .trim()
+        .to_owned()
+}
+
 pub fn run_git(repo_path: &Path, args: &[&str]) -> Output {
     let mut command = Command::new("git");
     command.arg("-C").arg(repo_path).args(args);

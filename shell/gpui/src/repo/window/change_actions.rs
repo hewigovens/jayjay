@@ -167,6 +167,14 @@ impl RepoWindow {
         };
 
         let mut items = Vec::new();
+        if change.is_working_copy && self.vm.read(cx).working_copy_stale {
+            items.push(ContextMenuItem::new(
+                "Update Workspace",
+                glyph::WARNING,
+                ContextAction::UpdateWorkspace,
+            ));
+            items.push(ContextMenuItem::separator());
+        }
         if change.new_change.on_top {
             items.push(ContextMenuItem::new(
                 "New change on top",

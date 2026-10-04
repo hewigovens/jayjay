@@ -160,10 +160,7 @@ impl RepoWindow {
             FocusStop::EditDiff => self.enter_diff_edit(cx),
             FocusStop::EditFile => self.enter_selected_file_editor(cx),
             FocusStop::SidebarToggle => self.toggle_sidebar(cx),
-            FocusStop::Refresh => {
-                let vm = self.vm.clone();
-                vm.update(cx, |vm, cx| vm.refresh(false, cx));
-            }
+            FocusStop::Refresh => self.vm.update(cx, |vm, cx| vm.run_refresh(cx)),
             FocusStop::Pull => self.git_fetch_origin(cx),
             FocusStop::Push => self.git_push_default(cx),
             FocusStop::RevsetBack => self.return_to_previous_revset(cx),

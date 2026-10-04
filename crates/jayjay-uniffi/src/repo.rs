@@ -712,6 +712,10 @@ impl JayJayRepo {
         self.inner.cancel_running_jj_processes();
     }
 
+    fn update_stale_workspace(&self) -> Result<(), JayJayError> {
+        Ok(self.inner.update_stale_workspace()?)
+    }
+
     fn workspace_forget(
         &self,
         name: String,

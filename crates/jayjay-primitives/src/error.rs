@@ -14,6 +14,10 @@ pub enum JayJayError {
     ConflictEditorStale { path: String },
     #[error("{path}: file changed since the editor opened — refresh and retry")]
     FileEditorStale { path: String },
+    #[error(
+        "working copy is stale: its change was rewritten outside this workspace — update the workspace and retry"
+    )]
+    WorkingCopyStale,
     #[error("{message}")]
     Internal { message: String },
     #[error("canceled")]

@@ -4,7 +4,7 @@ use std::time::Duration;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreResult, DiffStats, GraphEntry, Repo, RevsetVocabulary,
+    BookmarkInfo, ChangeInfo, CoreError, CoreResult, DiffStats, GraphEntry, Repo, RevsetVocabulary,
     WorkspaceInfo,
 };
 
@@ -132,6 +132,7 @@ impl RepoViewModel {
         let pending_error = self.pending_error.take();
         match result {
             Ok(data) => {
+                self.working_copy_stale = data.working_copy_stale;
                 let entries = data.entries;
                 self.fix_unavailable_reason = data.fix_unavailable_reason.map(SharedString::from);
                 self.can_load_more = self
@@ -191,6 +192,7 @@ impl RepoViewModel {
 }
 
 struct RefreshData {
+    working_copy_stale: bool,
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
     vocabulary: RevsetVocabulary,
@@ -202,7 +204,11 @@ struct RefreshData {
 }
 
 fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> {
-    repo.refresh_working_copy()?;
+    let working_copy_stale = match repo.refresh_working_copy() {
+        Ok(()) => false,
+        Err(CoreError::WorkingCopyStale) => true,
+        Err(error) => return Err(error),
+    };
     let entries = repo.log_graph(revset)?;
     let bookmarks = repo.list_bookmarks().unwrap_or_default();
     let vocabulary = repo.revset_vocabulary(&bookmarks);
@@ -212,6 +218,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> 
     let current_operation_description = repo.current_operation_description();
     let fix_unavailable_reason = repo.fix_unavailable_reason();
     Ok(RefreshData {
+        working_copy_stale,
         entries,
         bookmarks,
         vocabulary,

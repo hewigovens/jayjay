@@ -43,6 +43,7 @@ fn describe_error(error: &CoreError) -> String {
         CoreError::FileEditorStale { path } => {
             format!("{path}: file changed since the editor opened — refresh and retry")
         }
+        CoreError::WorkingCopyStale => "working copy is stale: its change was rewritten outside this workspace — run `jj workspace update-stale` and retry".to_owned(),
         CoreError::Review { message }
         | CoreError::Diff { message }
         | CoreError::Internal { message } => message.clone(),

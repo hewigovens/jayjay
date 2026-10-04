@@ -4,18 +4,20 @@ use gpui::{
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo};
 
-use super::row::ChipRightClick;
+use super::row::{ChipMenus, ChipRightClick};
 use super::text::{compact_id, id_cell};
 use crate::app::theme::{FONT_ID, FONT_TAG, Theme};
+use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost};
 use crate::repo::window::ref_chips;
+use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{capsule, text_tooltip};
 
 const CHIP_GAP: f32 = 5.;
 const CHAR_WIDTH_FACTOR: f32 = 0.6;
 
 enum DagChip {
-    WorkingCopy,
+    WorkingCopy { stale: bool },
     Conflict,
     Divergent,
     Bookmark(usize),
@@ -26,7 +28,7 @@ enum DagChip {
 impl DagChip {
     fn label(&self, change: &ChangeInfo) -> String {
         match self {
-            DagChip::WorkingCopy => "@".to_owned(),
+            DagChip::WorkingCopy { .. } => "@".to_owned(),
             DagChip::Conflict => "conflict".to_owned(),
             DagChip::Divergent => "divergent".to_owned(),
             DagChip::Bookmark(ix) => change.bookmarks[*ix].clone(),
@@ -36,14 +38,19 @@ impl DagChip {
     }
 
     fn has_icon(&self) -> bool {
-        matches!(self, DagChip::Bookmark(_) | DagChip::GitTag(_))
+        matches!(
+            self,
+            DagChip::WorkingCopy { stale: true } | DagChip::Bookmark(_) | DagChip::GitTag(_)
+        )
     }
 }
 
-fn dag_chips(change: &ChangeInfo) -> Vec<DagChip> {
+fn dag_chips(change: &ChangeInfo, refresh: RefreshMode) -> Vec<DagChip> {
     let mut chips = Vec::new();
     if change.is_working_copy {
-        chips.push(DagChip::WorkingCopy);
+        chips.push(DagChip::WorkingCopy {
+            stale: refresh == RefreshMode::UpdateWorkspace,
+        });
     }
     if change.has_conflict {
         chips.push(DagChip::Conflict);
@@ -97,14 +104,14 @@ pub(super) fn tags_row(
     t: &Theme,
     bookmarks: &[BookmarkInfo],
     refs_budget: f32,
-    on_bookmark_right_click: ChipRightClick,
-    on_workspace_right_click: ChipRightClick,
+    refresh: RefreshMode,
+    menus: &ChipMenus,
 ) -> impl IntoElement {
     let short_id = compact_id(&change.change_id);
     let change_id_width =
         short_id.chars().count() as f32 * t.scaled_font_size(FONT_ID) * CHAR_WIDTH_FACTOR;
     let chips_budget = (refs_budget - change_id_width - CHIP_GAP).max(0.);
-    let chips = dag_chips(change);
+    let chips = dag_chips(change, refresh);
     let widths: Vec<f32> = chips
         .iter()
         .map(|chip| chip_width(&chip.label(change), chip.has_icon(), t))
@@ -137,15 +144,7 @@ pub(super) fn tags_row(
         ));
 
     for (c_ix, chip) in chips.iter().take(visible).enumerate() {
-        let element = chip_element(
-            chip,
-            change,
-            row_ix,
-            t,
-            bookmarks,
-            &on_bookmark_right_click,
-            &on_workspace_right_click,
-        );
+        let element = chip_element(chip, change, row_ix, t, bookmarks, menus);
         if c_ix == 0 && squeeze_first {
             row = row.child(
                 div()
@@ -179,11 +178,10 @@ fn chip_element(
     row_ix: usize,
     t: &Theme,
     bookmarks: &[BookmarkInfo],
-    on_bookmark_right_click: &ChipRightClick,
-    on_workspace_right_click: &ChipRightClick,
+    menus: &ChipMenus,
 ) -> AnyElement {
     match *chip {
-        DagChip::WorkingCopy => working_copy_chip(row_ix, t).into_any_element(),
+        DagChip::WorkingCopy { stale } => working_copy_chip(row_ix, stale, t).into_any_element(),
         DagChip::Conflict => {
             capsule("conflict", t.tag_conflict_bg, t.tag_conflict_fg, FONT_TAG).into_any_element()
         }
@@ -202,7 +200,7 @@ fn chip_element(
                 name.clone(),
                 BookmarkInfo::is_conflicted_name(bookmarks, &name),
                 t,
-                on_bookmark_right_click.clone(),
+                menus.bookmark.clone(),
             )
             .into_any_element()
         }
@@ -212,7 +210,7 @@ fn chip_element(
             ix,
             change.workspaces[ix].clone(),
             t,
-            on_workspace_right_click.clone(),
+            menus.workspace.clone(),
         )
         .into_any_element(),
     }
@@ -245,8 +243,8 @@ fn bookmark_chip(
         })
 }
 
-fn working_copy_chip(row_ix: usize, t: &Theme) -> impl IntoElement {
-    div()
+fn working_copy_chip(row_ix: usize, stale: bool, t: &Theme) -> impl IntoElement {
+    let chip = div()
         .id(("wc", row_ix))
         .debug_selector(|| "dag-working-copy".to_owned())
         .cursor_move()
@@ -254,7 +252,24 @@ fn working_copy_chip(row_ix: usize, t: &Theme) -> impl IntoElement {
             DagDrag::WorkingCopy,
             move |drag: &DagDrag, _offset, _w, cx| cx.new(|_| DagDragGhost::new(drag.clone())),
         )
-        .child(capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG))
+        .child(capsule("@", t.tag_wc_bg, t.tag_wc_fg, FONT_TAG));
+    let row = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(3.))
+        .child(chip);
+    if !stale {
+        return row;
+    }
+    row.child(
+        icon(glyph::WARNING, t.scaled_font_size(FONT_TAG) + 2., t.warning_fg)
+            .id(("stale", row_ix))
+            .debug_selector(|| "dag-stale-working-copy".to_owned())
+            .tooltip(text_tooltip(
+                "Working copy is stale: another workspace rewrote this change. Update Workspace from the context menu or the Refresh button.",
+            )),
+    )
 }
 
 fn workspace_chip(

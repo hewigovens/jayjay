@@ -24,6 +24,10 @@ extension RepoViewModel {
         )
     }
 
+    func updateStaleWorkspace() {
+        perform(selecting: nil) { try $0.updateStaleWorkspace() }
+    }
+
     @MainActor
     func forgetWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) async -> Bool {
         lastInternalMutationAt = Date()
@@ -51,5 +55,35 @@ extension RepoViewModel {
         successActionSignal += 1
         refresh()
         return true
+    }
+}
+
+/// What the Refresh button and ⌘R do: a stale working copy cannot be snapshotted, so they update it instead.
+enum RefreshMode {
+    case refresh
+    case updateWorkspace
+
+    var help: String {
+        switch self {
+            case .refresh: "Refresh (⌘R)"
+            case .updateWorkspace: "Update Workspace — the working copy is stale (⌘R)"
+        }
+    }
+
+    var showsBadge: Bool {
+        self == .updateWorkspace
+    }
+}
+
+extension RepoViewModel {
+    var refreshMode: RefreshMode {
+        isWorkingCopyStale ? .updateWorkspace : .refresh
+    }
+
+    func runRefresh() {
+        switch refreshMode {
+            case .refresh: refresh()
+            case .updateWorkspace: updateStaleWorkspace()
+        }
     }
 }

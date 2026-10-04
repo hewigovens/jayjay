@@ -7,14 +7,15 @@ use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
 use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
+use jj_lib::op_store::OpStoreError;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::transaction::Transaction;
-use jj_lib::working_copy::SnapshotOptions;
-use jj_lib::workspace::LockedWorkspace;
+use jj_lib::working_copy::{SnapshotOptions, WorkingCopyFreshness};
+use jj_lib::workspace::{LockedWorkspace, Workspace};
 
 use super::Repo;
-use super::support::{block_on_result, load_workspace_internal};
+use super::support::{block_on, block_on_result, load_workspace_internal};
 use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
@@ -48,6 +49,7 @@ impl Repo {
         let repo_loader = workspace.repo_loader().clone();
         // Hold the working-copy lock across publication and checkout so a snapshot cannot restore the pre-mutation files.
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        self.ensure_working_copy_fresh(&mut locked_ws, tx.base_repo().clone())?;
         self.keep_working_copy_mutable(&mut tx)?;
         self.sync_colocated_git(&mut tx)?;
         let new_repo = block_on_result("commit tx", tx.commit(description))?;
@@ -112,16 +114,52 @@ impl Repo {
 
     fn refresh_working_copy_inner(&self) -> CoreResult<()> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
-        let repo_loader = workspace.repo_loader().clone();
         #[cfg(test)]
         if let Some(hook) = BEFORE_WORKING_COPY_LOCK.lock().unwrap().as_ref() {
             hook(&self.path);
         }
-        // Lock before loading the head: a snapshot that lands while we wait would otherwise be rewritten from a stale head, forking `@`.
-        let locked_ws =
-            block_on_result("lock working copy", workspace.start_working_copy_mutation())?;
-        let repo = block_on_result("load repo for snapshot", repo_loader.load_at_head())?;
+        let (locked_ws, repo) =
+            self.lock_fresh_working_copy(&mut workspace, "snapshot working copy")?;
         self.snapshot_locked_working_copy(locked_ws, repo)
+    }
+
+    /// Locks before loading the head: a snapshot that lands while we wait would otherwise be rewritten from a stale head, forking `@`.
+    pub(super) fn lock_fresh_working_copy<'w>(
+        &self,
+        workspace: &'w mut Workspace,
+        context: &str,
+    ) -> CoreResult<(LockedWorkspace<'w>, Arc<ReadonlyRepo>)> {
+        let repo_loader = workspace.repo_loader().clone();
+        let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        let head = block_on_result(context, repo_loader.load_at_head())?;
+        let repo = self.ensure_working_copy_fresh(&mut locked_ws, head)?;
+        Ok((locked_ws, repo))
+    }
+
+    /// jj's staleness check: a working copy whose change another operation rewrote still holds the old files, and snapshotting them would revert that rewrite.
+    fn ensure_working_copy_fresh(
+        &self,
+        locked_ws: &mut LockedWorkspace<'_>,
+        repo: Arc<ReadonlyRepo>,
+    ) -> CoreResult<Arc<ReadonlyRepo>> {
+        let wc_commit = self.working_copy_commit(&repo)?;
+        let freshness = block_on(WorkingCopyFreshness::check_stale(
+            locked_ws.locked_wc(),
+            &wc_commit,
+            &repo,
+        ));
+        match freshness {
+            Ok(WorkingCopyFreshness::Fresh) => Ok(repo),
+            Ok(WorkingCopyFreshness::Updated(operation)) => block_on_result(
+                "load the working copy's operation",
+                repo.reload_at(&operation),
+            ),
+            Ok(WorkingCopyFreshness::WorkingCopyStale | WorkingCopyFreshness::SiblingOperation)
+            | Err(OpStoreError::ObjectNotFound { .. }) => Err(CoreError::WorkingCopyStale),
+            Err(error) => Err(CoreError::internal(format!(
+                "check working-copy freshness: {error}"
+            ))),
+        }
     }
 
     fn snapshot_locked_working_copy(
@@ -129,50 +167,54 @@ impl Repo {
         mut locked_ws: LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
     ) -> CoreResult<()> {
-        let wc_commit = self.working_copy_commit(&repo)?;
-        let new_tree = self.snapshot_tree(&repo, &mut locked_ws, "snapshot working copy")?;
-
-        if new_tree.tree_ids_and_labels() != wc_commit.tree().tree_ids_and_labels() {
-            self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
-            let mut tx = repo.start_transaction();
-            tx.set_is_snapshot(true);
-            // An immutable `@` (a bookmark it carries became protected) keeps its tree; the edits become a new change on top, as the CLI snapshots them.
-            if self.is_commit_immutable_in(&tx, &wc_commit)? {
-                let new_commit = block_on_result(
-                    "snapshot onto a new change",
-                    tx.repo_mut()
-                        .new_commit(vec![wc_commit.id().clone()], new_tree)
-                        .write(),
-                )?;
-                tx.repo_mut()
-                    .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
-                    .map_err(|error| CoreError::internal(format!("move working copy: {error}")))?;
-                self.sync_colocated_git(&mut tx)?;
-            } else {
-                self.rewrite_commit_tree(
-                    tx.repo_mut(),
-                    &wc_commit,
-                    new_tree,
-                    "rewrite working-copy commit",
-                )?;
-            }
-            let rebase = tx.repo_mut().rebase_descendants();
-            block_on_result("rebase descendants after snapshot", rebase)?;
-            let commit = tx.commit("snapshot working copy");
-            let new_repo = block_on_result("commit snapshot operation", commit)?;
-            block_on_result(
-                "finish working-copy snapshot",
-                locked_ws.finish(new_repo.op_id().clone()),
-            )?;
-            self.set_repo(new_repo);
-        } else {
-            block_on_result(
-                "finish clean working-copy snapshot",
-                locked_ws.finish(repo.op_id().clone()),
-            )?;
-            self.set_repo(repo);
-        }
+        let repo = self.record_working_copy(&mut locked_ws, repo)?;
+        block_on_result(
+            "finish working-copy snapshot",
+            locked_ws.finish(repo.op_id().clone()),
+        )?;
+        self.set_repo(repo);
         Ok(())
+    }
+
+    pub(super) fn record_working_copy(
+        &self,
+        locked_ws: &mut LockedWorkspace<'_>,
+        repo: Arc<ReadonlyRepo>,
+    ) -> CoreResult<Arc<ReadonlyRepo>> {
+        let wc_commit = self.working_copy_commit(&repo)?;
+        let new_tree = self.snapshot_tree(&repo, locked_ws, "snapshot working copy")?;
+        if new_tree.tree_ids_and_labels() == wc_commit.tree().tree_ids_and_labels() {
+            return Ok(repo);
+        }
+        self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
+        let mut tx = repo.start_transaction();
+        tx.set_is_snapshot(true);
+        // An immutable `@` (a bookmark it carries became protected) keeps its tree; the edits become a new change on top, as the CLI snapshots them.
+        if self.is_commit_immutable_in(&tx, &wc_commit)? {
+            let new_commit = block_on_result(
+                "snapshot onto a new change",
+                tx.repo_mut()
+                    .new_commit(vec![wc_commit.id().clone()], new_tree)
+                    .write(),
+            )?;
+            tx.repo_mut()
+                .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
+                .map_err(|error| CoreError::internal(format!("move working copy: {error}")))?;
+            self.sync_colocated_git(&mut tx)?;
+        } else {
+            self.rewrite_commit_tree(
+                tx.repo_mut(),
+                &wc_commit,
+                new_tree,
+                "rewrite working-copy commit",
+            )?;
+        }
+        let rebase = tx.repo_mut().rebase_descendants();
+        block_on_result("rebase descendants after snapshot", rebase)?;
+        block_on_result(
+            "commit snapshot operation",
+            tx.commit("snapshot working copy"),
+        )
     }
 
     /// Snapshots with jj's defaults: every unignored new file starts tracked.
@@ -198,9 +240,7 @@ impl Repo {
         self.debug_assert_write_guarded();
         let context = "untrack paths";
         let mut workspace = load_workspace_internal(&self.path, context)?;
-        let repo_loader = workspace.repo_loader().clone();
-        let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
-        let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let (mut locked_ws, repo) = self.lock_fresh_working_copy(&mut workspace, context)?;
         let wc_commit = self.working_copy_commit(&repo)?;
         self.ensure_commit_mutable(&repo, &wc_commit, "@")?;
         let wc_tree = wc_commit.tree();

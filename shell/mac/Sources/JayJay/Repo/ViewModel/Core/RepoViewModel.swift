@@ -91,6 +91,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     var pendingCommitMessage: String?
     var error: String?
     var workspaceVanished = false
+    var isWorkingCopyStale = false
     var info: String?
     /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
     var pendingPushBookmark: String?

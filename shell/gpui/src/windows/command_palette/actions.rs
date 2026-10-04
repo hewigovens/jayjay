@@ -43,7 +43,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| {
             with_repo_window(ctx, cx, |view, cx| {
                 let vm = view.view_model();
-                vm.update(cx, |vm, cx| vm.refresh(false, cx));
+                vm.update(cx, |vm, cx| vm.run_refresh(cx));
             });
         },
     },

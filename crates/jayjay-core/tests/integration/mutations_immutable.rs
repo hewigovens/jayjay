@@ -1,7 +1,7 @@
 use std::fs;
 
 use jayjay_core::{InsertPosition, MutationEffect, RebaseMode, Repo};
-use jj_test::{LinearFixture, init_jj_repo, run_git, run_jj_in};
+use jj_test::{LinearFixture, git_stdout, init_jj_repo, run_git, run_jj_in};
 
 /// Defense in depth behind the shells' menu gating: these mutations rewrite through jj-lib directly, so core must refuse immutable targets itself.
 #[test]
@@ -196,8 +196,8 @@ fn snapshot_never_rewrites_an_immutable_working_copy() {
         "the protected commit must not be rewritten"
     );
     assert_eq!(
-        run_git(&repo_path, &["rev-parse", "HEAD"]).stdout,
-        format!("{}\n", protected.commit_id.id).into_bytes(),
+        git_stdout(&repo_path, &["rev-parse", "HEAD"]),
+        protected.commit_id.id,
         "the colocated HEAD follows the new working copy's parent"
     );
 }

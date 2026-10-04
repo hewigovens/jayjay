@@ -20,6 +20,7 @@ struct DAGRow: View {
     var prHostName: String?
     var conflictedBookmarkNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
+    var refreshMode: RefreshMode = .refresh
     var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?
     var onBookmarkDragEnded: ((String, DragGesture.Value) -> Void)?
     @State private var isContextTarget = false

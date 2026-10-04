@@ -1,5 +1,7 @@
 use crate::harness::*;
-use gpui::{AppContext, Entity, Modifiers, MouseButton, TestAppContext, VisualContext};
+use gpui::{
+    AppContext, Entity, Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext,
+};
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -267,4 +269,38 @@ fn workspace_chip_menu_acts_on_that_workspace(cx: &mut TestAppContext) {
             .is_none()
     );
     assert!(repo_cx.debug_bounds("context-menu-Copy Path").is_none());
+}
+
+#[gpui::test]
+fn a_stale_workspace_marks_the_working_copy_and_updates_from_the_refresh_button(
+    cx: &mut TestAppContext,
+) {
+    let fixture = LinearFixture::build();
+    let second = add_workspace(&fixture, "second");
+    run_jj_in(
+        &fixture.path,
+        &["squash", "--from", "@", "--into", "second@"],
+    );
+    let (view, cx) = open_repo(second.clone(), cx);
+
+    let stale = |view: &Entity<RepoWindow>, cx: &VisualTestContext| {
+        view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            assert!(vm.error.is_none(), "refresh errored: {:?}", vm.error);
+            assert!(!vm.graph.changes.is_empty(), "the graph still loads");
+            vm.working_copy_stale
+        })
+    };
+    assert!(stale(&view, cx));
+    assert!(cx.debug_bounds("dag-stale-working-copy").is_some());
+    assert!(cx.debug_bounds("toolbar-refresh-stale-badge").is_some());
+
+    let refresh = cx.debug_bounds("toolbar-refresh").expect("refresh button");
+    cx.simulate_click(refresh.center(), Modifiers::default());
+    settle_visual(cx);
+
+    assert!(!stale(&view, cx));
+    assert!(cx.debug_bounds("dag-stale-working-copy").is_none());
+    assert!(cx.debug_bounds("toolbar-refresh-stale-badge").is_none());
+    assert!(second.join("wip1.txt").exists());
 }

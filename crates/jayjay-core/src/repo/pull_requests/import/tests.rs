@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use jj_test::{init_jj_repo, run_git, run_jj_in};
+use jj_test::{git_stdout, init_jj_repo, run_git, run_jj_in};
 use tempfile::TempDir;
 
 use super::plan::{ForkRepo, PrHeadRepo, PullRequestImportPlan, RemoteChoice, ResolvedPullRequest};
@@ -50,10 +50,7 @@ impl Fixture {
             ],
         );
         run_git(&fork, &["branch", "feat/x"]);
-        let head = String::from_utf8(run_git(&fork, &["rev-parse", "HEAD"]).stdout)
-            .expect("utf8 sha")
-            .trim()
-            .to_owned();
+        let head = git_stdout(&fork, &["rev-parse", "HEAD"]);
         let repo = Repo::open(&repo_path).expect("open repo");
         Self {
             temp,

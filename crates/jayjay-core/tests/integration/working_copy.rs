@@ -1,7 +1,9 @@
 use std::fs;
+use std::path::PathBuf;
 
-use jayjay_core::Repo;
-use jj_test::{init_jj_repo, run_git, run_jj_in};
+use jayjay_core::{CoreError, Repo};
+use jj_test::{changed_paths, git_stdout, init_jj_repo, run_git, run_jj_in};
+use tempfile::TempDir;
 
 #[test]
 fn refresh_working_copy_rebases_a_conflicting_descendant_from_a_small_stack() {
@@ -205,4 +207,146 @@ fn snapshot_adds_new_files_to_the_colocated_git_index() {
         listed, b"added.txt\n",
         "git must see the file jj started tracking"
     );
+}
+
+/// The stale side edits `top` while the other workspace rebases `top` onto `fix`, which rewrites hello.txt.
+fn stale_workspace(stale_default: bool) -> (TempDir, PathBuf, PathBuf) {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["new", "-m", "top"]);
+    fs::write(repo_path.join("top.txt"), "top\n").expect("write top.txt");
+    run_jj_in(&repo_path, &["new", "@-", "-m", "fix"]);
+    fs::write(repo_path.join("hello.txt"), "fixed\n").expect("write fix");
+    let second = temp_dir.path().join("second");
+    run_jj_in(
+        &repo_path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "second",
+            "-r",
+            "root()",
+            second.to_str().expect("utf8 path"),
+        ],
+    );
+    let (stale, other) = if stale_default {
+        (&repo_path, &second)
+    } else {
+        (&second, &repo_path)
+    };
+    run_jj_in(stale, &["edit", "subject(top)"]);
+    run_jj_in(
+        other,
+        &["rebase", "-r", "subject(top)", "-d", "subject(fix)"],
+    );
+    (temp_dir, repo_path, second)
+}
+
+#[test]
+fn a_stale_working_copy_is_refused_instead_of_reverting_the_rewrite() {
+    let (_temp_dir, _repo_path, second) = stale_workspace(false);
+    let repo = Repo::open(&second).expect("open second workspace");
+
+    for (action, result) in [
+        ("describe", repo.describe("@", "edited")),
+        ("create bookmark", repo.create_bookmark("marker", "@")),
+        ("refresh", repo.refresh_working_copy()),
+    ] {
+        assert!(
+            matches!(result, Err(CoreError::WorkingCopyStale)),
+            "{action} on a stale working copy: {result:?}"
+        );
+    }
+    assert_eq!(
+        changed_paths(&repo, "subject(top)"),
+        ["top.txt"],
+        "the stale files must not be recorded over the rebased change"
+    );
+}
+
+#[test]
+fn updating_a_stale_workspace_checks_out_the_rewrite_and_keeps_edits_made_meanwhile() {
+    let (_temp_dir, _repo_path, second) = stale_workspace(false);
+    let repo = Repo::open(&second).expect("open second workspace");
+    fs::write(second.join("hello.txt"), "edited while stale\n").expect("edit hello.txt");
+
+    repo.update_stale_workspace()
+        .expect("update stale workspace");
+    repo.refresh_working_copy()
+        .expect("snapshot the updated working copy");
+
+    assert_eq!(
+        fs::read_to_string(second.join("hello.txt")).expect("read hello.txt"),
+        "fixed\n"
+    );
+    assert_eq!(changed_paths(&repo, "@"), ["top.txt"]);
+    let edited = repo
+        .log("subject(top) ~ @")
+        .expect("log the other version of top");
+    assert_eq!(
+        edited.len(),
+        1,
+        "the edit is kept as its own version of top"
+    );
+    assert_eq!(
+        changed_paths(&repo, &edited[0].commit_id.id),
+        ["hello.txt", "top.txt"]
+    );
+}
+
+#[test]
+fn updating_a_workspace_whose_operation_is_gone_checks_out_a_recovery_commit() {
+    let (_temp_dir, repo_path, second) = stale_workspace(false);
+    run_jj_in(&repo_path, &["op", "abandon", "..@-"]);
+    run_jj_in(&repo_path, &["util", "gc", "--expire=now"]);
+    let repo = Repo::open(&second).expect("open second workspace");
+    assert!(matches!(
+        repo.refresh_working_copy(),
+        Err(CoreError::WorkingCopyStale)
+    ));
+
+    repo.update_stale_workspace().expect("recover workspace");
+    repo.refresh_working_copy()
+        .expect("snapshot the recovered working copy");
+
+    assert_eq!(changed_paths(&repo, "subject(top)"), ["top.txt"]);
+    let top = &repo.log("subject(top)").expect("log top")[0];
+    assert_eq!(
+        repo.log("@").expect("log @")[0].parents,
+        std::slice::from_ref(&top.commit_id.id)
+    );
+    assert_eq!(
+        changed_paths(&repo, "@"),
+        ["hello.txt"],
+        "the stale file stays as an edit on the recovery commit"
+    );
+}
+
+#[test]
+fn updating_a_stale_colocated_workspace_moves_git_head_to_the_new_parent() {
+    for operation_gone in [false, true] {
+        let (_temp_dir, repo_path, second) = stale_workspace(true);
+        if operation_gone {
+            run_jj_in(&second, &["op", "abandon", "..@-"]);
+            run_jj_in(&second, &["util", "gc", "--expire=now"]);
+        }
+        let repo = Repo::open(&repo_path).expect("open default workspace");
+
+        repo.update_stale_workspace()
+            .expect("update stale workspace");
+
+        let parent = &repo.log("@-").expect("log parent")[0].commit_id.id;
+        assert_eq!(
+            git_stdout(&repo_path, &["rev-parse", "HEAD"]),
+            *parent,
+            "operation gone: {operation_gone}"
+        );
+        if !operation_gone {
+            assert!(
+                !git_stdout(&repo_path, &["status", "--short"]).contains("hello.txt"),
+                "the inherited fix must not look like an uncommitted edit"
+            );
+        }
+    }
 }

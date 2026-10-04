@@ -21,6 +21,10 @@ pub enum JayJayError {
     ConflictEditorStale { path: String },
     #[error("{path}: file changed since the editor opened — refresh and retry")]
     FileEditorStale { path: String },
+    #[error(
+        "working copy is stale: its change was rewritten outside this workspace — update the workspace and retry"
+    )]
+    WorkingCopyStale,
     #[error("internal error: {message}")]
     Internal { message: String },
     #[error("canceled")]
@@ -37,6 +41,7 @@ impl From<CoreError> for JayJayError {
             CoreError::DiffSelectionStale { path } => Self::DiffSelectionStale { path },
             CoreError::ConflictEditorStale { path } => Self::ConflictEditorStale { path },
             CoreError::FileEditorStale { path } => Self::FileEditorStale { path },
+            CoreError::WorkingCopyStale => Self::WorkingCopyStale,
             CoreError::Internal { message } => Self::Internal { message },
             CoreError::Canceled => Self::Canceled,
         }

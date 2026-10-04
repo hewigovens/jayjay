@@ -8,12 +8,14 @@ use gpui::{
 use crate::app::theme::{theme, ui_font_size};
 use crate::app::{repositories, tools};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
+use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{FocusStop, RepoWindow, picker_opener};
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
 pub(crate) struct ToolbarActivity {
     pub(crate) is_refreshing: bool,
+    pub(crate) refresh: RefreshMode,
     pub(crate) is_fetching: bool,
     pub(crate) is_pushing: bool,
 }

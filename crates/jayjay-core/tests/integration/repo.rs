@@ -2,7 +2,10 @@ use std::fs;
 
 use jayjay_core::Repo;
 use jayjay_core::diff::{ConflictLineKind, compute_file_diff_full};
-use jj_test::{change_by_description, current_op_id, init_jj_repo, run_git, run_jj, run_jj_in};
+use jj_test::{
+    change_by_description, changed_paths, current_op_id, git_stdout, init_jj_repo, run_git, run_jj,
+    run_jj_in,
+};
 
 #[test]
 fn show_summary_marks_divergent_revision_loaded_by_commit_id() {
@@ -496,22 +499,8 @@ fn split_parallel_makes_a_sibling_and_moves_the_working_copy_to_the_remainder() 
         ["topic"],
         "bookmarks follow the remainder"
     );
-    let first_paths: Vec<_> = repo
-        .show(&first.commit_id.id)
-        .expect("show")
-        .diff
-        .into_iter()
-        .map(|h| h.path)
-        .collect();
-    let remainder_paths: Vec<_> = repo
-        .show("@")
-        .expect("show")
-        .diff
-        .into_iter()
-        .map(|h| h.path)
-        .collect();
-    assert_eq!(first_paths, ["other.txt"]);
-    assert_eq!(remainder_paths, ["hello.txt"]);
+    assert_eq!(changed_paths(&repo, &first.commit_id.id), ["other.txt"]);
+    assert_eq!(changed_paths(&repo, "@"), ["hello.txt"]);
 }
 
 #[test]
@@ -930,8 +919,8 @@ fn jj_commit_describes_the_working_copy_and_starts_an_empty_child() {
         "the committed edit must stay on disk"
     );
     assert_eq!(
-        run_git(&repo_path, &["rev-parse", "HEAD"]).stdout,
-        format!("{}\n", committed.commit_id.id).into_bytes(),
+        git_stdout(&repo_path, &["rev-parse", "HEAD"]),
+        committed.commit_id.id,
         "the colocated Git HEAD must follow @'s parent"
     );
 }
@@ -945,8 +934,8 @@ fn native_bookmark_moves_reach_the_colocated_git_refs() {
     repo.create_bookmark("topic", "@").expect("create bookmark");
 
     assert_eq!(
-        run_git(&repo_path, &["rev-parse", "refs/heads/topic"]).stdout,
-        format!("{}\n", repo.log("@").expect("log")[0].commit_id.id).into_bytes()
+        git_stdout(&repo_path, &["rev-parse", "refs/heads/topic"]),
+        repo.log("@").expect("log")[0].commit_id.id
     );
 }
 

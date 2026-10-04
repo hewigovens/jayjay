@@ -14,9 +14,17 @@ extension RepoContentView {
             .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
             toolbarButton(
                 .refresh,
-                help: "Refresh (⌘R)",
-                action: { viewModel.refresh() },
-                label: { RefreshSpinner(animating: viewModel.isRefreshingInFlight || isSwitchingWorkspace) }
+                help: viewModel.refreshMode.help,
+                action: { viewModel.runRefresh() },
+                label: {
+                    RefreshSpinner(animating: viewModel.isRefreshingInFlight || isSwitchingWorkspace)
+                        .overlay(alignment: .topTrailing) {
+                            if viewModel.refreshMode.showsBadge {
+                                Circle().fill(.orange).frame(width: 7, height: 7).offset(x: 3, y: -3)
+                                    .accessibilityIdentifier(AID.Toolbar.staleBadge)
+                            }
+                        }
+                }
             )
             .keyboardShortcut("r")
             syncButton(.pull, inFlight: viewModel.isPullingInFlight) {

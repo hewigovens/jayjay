@@ -76,6 +76,12 @@ extension DAGView {
     private func singleChangeContextMenu(entry: GraphEntry, viewModel: DAGViewModel) -> some View {
         let rev = entry.change.isDivergent
             ? entry.change.commitId.id : entry.change.changeId.id
+        if entry.change.isWorkingCopy, refreshMode == .updateWorkspace {
+            Button { actions?.updateStaleWorkspace() } label: {
+                Label("Update Workspace", systemImage: "exclamationmark.triangle")
+            }
+            Divider()
+        }
         // Navigation
         if entry.change.newChange.onTop {
             Button { actions?.newChange(parent: rev, message: "") } label: {

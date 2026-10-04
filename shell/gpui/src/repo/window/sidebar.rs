@@ -7,7 +7,7 @@ use gpui::{
 use super::bookmark_picker::{bookmarks_header_button, listed_bookmark_count};
 use super::dag::{DagRowLanes, dag_column};
 use super::dag_drag::DagDragSelection;
-use super::dag_row::{ChipRightClick, DagDrop, DagRow, dag_row};
+use super::dag_row::{ChipMenus, ChipRightClick, DagDrop, DagRow, dag_row};
 use super::{ActivePane, RepoWindow};
 use crate::app::fonts;
 use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
@@ -67,7 +67,13 @@ pub(super) fn sidebar(
             cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
                 let t = t_clone.clone();
                 let is_pane_active = this.active_pane() == ActivePane::Sidebar;
-                let (selected, selected_changes, compare_source_change_id, drag_selection) = {
+                let (
+                    selected,
+                    selected_changes,
+                    compare_source_change_id,
+                    drag_selection,
+                    refresh_mode,
+                ) = {
                     let vm = this.vm.read(cx);
                     (
                         vm.selected,
@@ -76,6 +82,7 @@ pub(super) fn sidebar(
                             .as_ref()
                             .and_then(|compare| compare.source_change_id.clone()),
                         DagDragSelection::of(vm),
+                        vm.refresh_mode(),
                     )
                 };
                 let view_handle = view_handle.clone();
@@ -156,6 +163,7 @@ pub(super) fn sidebar(
                                 theme: &t,
                                 dag_col,
                                 refs_budget,
+                                refresh: refresh_mode,
                                 bookmarks: bookmarks_for_processor.as_ref(),
                                 entries: &entries,
                                 drag_selection: drag_selection
@@ -164,8 +172,10 @@ pub(super) fn sidebar(
                             },
                             on_click,
                             on_right_click,
-                            on_bookmark,
-                            on_workspace,
+                            ChipMenus {
+                                bookmark: on_bookmark,
+                                workspace: on_workspace,
+                            },
                             on_drop,
                         )
                     })

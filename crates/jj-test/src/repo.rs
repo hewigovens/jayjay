@@ -71,6 +71,11 @@ pub fn find_bookmark(repo: &Repo, name: &str) -> BookmarkInfo {
 }
 
 /// Reloads the log, for lookups after a mutation.
+pub fn changed_paths(repo: &Repo, rev: &str) -> Vec<String> {
+    let detail = repo.show_summary(rev).expect("show summary");
+    detail.diff.into_iter().map(|hunk| hunk.path).collect()
+}
+
 pub fn find_change(repo: &Repo, description: &str) -> ChangeInfo {
     change_by_description(&repo.log("all()").expect("load changes"), description).clone()
 }

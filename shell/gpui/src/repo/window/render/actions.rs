@@ -89,8 +89,7 @@ impl RepoWindow {
                 }),
             )
             .on_action(cx.listener(|view, _: &Refresh, _, cx| {
-                let vm = view.vm.clone();
-                vm.update(cx, |vm, cx| vm.refresh(false, cx));
+                view.vm.update(cx, |vm, cx| vm.run_refresh(cx));
             }))
             // Scoped to the note composer's own "NoteComposer" key context (see `render/overlays.rs`), so this is a no-op whenever it can't actually fire.
             .on_action(cx.listener(|view, _: &SaveNoteComposer, _, cx| {

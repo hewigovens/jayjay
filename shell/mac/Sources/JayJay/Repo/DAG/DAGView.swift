@@ -17,6 +17,7 @@ struct DAGView: View {
     var prHostName: String?
     var conflictedBookmarkNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
+    var refreshMode: RefreshMode = .refresh
 
     @State var rowFrameCache = DAGRowFrameCache()
     @State var rebaseDrag: DAGRebaseDragState?
@@ -45,7 +46,8 @@ struct DAGView: View {
         revealRequest: DAGRevealRequest? = nil,
         prHostName: String? = nil,
         conflictedBookmarkNames: Set<String> = [],
-        workspacesByName: [String: WorkspaceInfo] = [:]
+        workspacesByName: [String: WorkspaceInfo] = [:],
+        refreshMode: RefreshMode = .refresh
     ) {
         self.entries = entries
         self.layout = layout
@@ -61,6 +63,7 @@ struct DAGView: View {
         self.prHostName = prHostName
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.workspacesByName = workspacesByName
+        self.refreshMode = refreshMode
     }
 
     var body: some View {
@@ -103,6 +106,7 @@ struct DAGView: View {
                                     prHostName: prHostName,
                                     conflictedBookmarkNames: conflictedBookmarkNames,
                                     workspacesByName: workspacesByName,
+                                    refreshMode: refreshMode,
                                     onBookmarkDragChanged: { name, sourceCommitId, value in
                                         handleBookmarkDragChanged(
                                             name: name,

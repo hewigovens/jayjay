@@ -8,6 +8,7 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::repo::toolbar::ToolbarActivity;
+use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
 use crate::ui::icons::{self, glyph};
@@ -116,7 +117,14 @@ pub(super) fn sync_cluster(
         t,
         vec![
             sidebar_toggle_button(sidebar_hidden, focused, t, cx),
-            refresh_button(activity.is_refreshing, focused, GroupEdge::Inner, t, cx),
+            refresh_button(
+                activity.is_refreshing,
+                activity.refresh,
+                focused,
+                GroupEdge::Inner,
+                t,
+                cx,
+            ),
             sync_button(
                 SyncAction::FetchOrigin,
                 activity.is_fetching,
@@ -174,12 +182,13 @@ pub(super) fn tools_cluster(
 
 fn refresh_button(
     is_refreshing: bool,
+    mode: RefreshMode,
     focused: Option<FocusStop>,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let content = div()
+    let mut content = div()
         .relative()
         .flex()
         .items_center()
@@ -187,15 +196,26 @@ fn refresh_button(
         .w_full()
         .h_full()
         .child(refresh_icon(is_refreshing, t));
+    if mode.shows_badge() {
+        content = content.child(
+            div()
+                .absolute()
+                .top(px(4.))
+                .right(px(5.))
+                .size(px(7.))
+                .rounded_full()
+                .bg(rgb(t.warning_fg))
+                .debug_selector(|| "toolbar-refresh-stale-badge".to_owned()),
+        );
+    }
     focus_ring(
-        group_item("tb-refresh", "Refresh", edge, t),
+        group_item("tb-refresh", mode.tooltip(), edge, t),
         focused == Some(FocusStop::Refresh),
         t,
     )
     .debug_selector(|| "toolbar-refresh".to_owned())
     .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
-        let vm = view.vm.clone();
-        vm.update(cx, |vm, cx| vm.refresh(false, cx));
+        view.vm.update(cx, |vm, cx| vm.run_refresh(cx));
     }))
     .child(content)
     .into_any_element()

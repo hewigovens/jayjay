@@ -21,6 +21,7 @@ protocol DAGActions: AnyObject {
     func compareWith(from: String, to: String)
     func diffBookmark(_ request: BookmarkDiffRequest)
     func showEvolog(rev: String)
+    func updateStaleWorkspace()
     var canLoadMore: Bool { get }
     var fixUnavailableReason: String? { get }
     func loadMore()

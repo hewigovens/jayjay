@@ -64,14 +64,23 @@ extension DAGRow {
     }
 
     private func workingCopyTag() -> some View {
-        tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
-            .foregroundStyle(AppColors.workspace(colorScheme))
-            .help("Working copy — drag onto a change to move it here")
-            .gesture(
-                DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
-                    .onChanged { onBookmarkDragChanged?(workingCopyDragLabel, change.commitId.id, $0) }
-                    .onEnded { onBookmarkDragEnded?(workingCopyDragLabel, $0) }
-            )
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
+            tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
+                .foregroundStyle(AppColors.workspace(colorScheme))
+                .help("Working copy — drag onto a change to move it here")
+                .gesture(
+                    DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
+                        .onChanged { onBookmarkDragChanged?(workingCopyDragLabel, change.commitId.id, $0) }
+                        .onEnded { onBookmarkDragEnded?(workingCopyDragLabel, $0) }
+                )
+            if refreshMode == .updateWorkspace {
+                Image(systemName: "exclamationmark.triangle.fill")
+                    .jayjayFont(9, weight: .semibold)
+                    .foregroundStyle(.orange)
+                    .help("Working copy is stale: another workspace rewrote this change. Update Workspace from the context menu or the Refresh button.")
+                    .accessibilityIdentifier(AID.DAG.staleWorkingCopy)
+            }
+        }
     }
 
     private func bookmarkTag(_ name: String) -> some View {

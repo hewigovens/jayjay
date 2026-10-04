@@ -4,8 +4,8 @@ use std::process::Command;
 
 use jayjay_core::{ChangeInfo, RemoteSyncStatus, Repo};
 use jj_test::{
-    LinearFixture, configure_test_user, find_bookmark, init_colocated, init_jj_repo, run_command,
-    run_git, run_jj, run_jj_in,
+    LinearFixture, configure_test_user, find_bookmark, git_stdout, init_colocated, init_jj_repo,
+    run_command, run_git, run_jj, run_jj_in,
 };
 
 #[test]
@@ -97,8 +97,8 @@ fn sync_only_tracks_explicitly_requested_bookmarks() {
     repo.git_push("", &repo.sync_token())
         .expect("ordinary push");
     assert_eq!(
-        run_git(&bare_path, &["rev-parse", "refs/heads/main"]).stdout,
-        format!("{}\n", repo.log("main").unwrap()[0].commit_id.id).into_bytes()
+        git_stdout(&bare_path, &["rev-parse", "refs/heads/main"]),
+        repo.log("main").unwrap()[0].commit_id.id
     );
     assert!(
         repo.list_bookmarks()

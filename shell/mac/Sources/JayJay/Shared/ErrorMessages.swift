@@ -19,6 +19,8 @@ extension Error {
                     return "\(path): conflict changed since the editor opened — refresh and retry"
                 case let .FileEditorStale(path):
                     return "\(path): file changed since the editor opened — refresh and retry"
+                case .WorkingCopyStale:
+                    return "Working copy is stale: its change was rewritten outside this workspace — update the workspace and retry"
                 case let .Internal(message):
                     return unwrapCommandError(message: message)
                 case .Canceled:

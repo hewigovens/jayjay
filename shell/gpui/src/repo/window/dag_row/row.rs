@@ -10,6 +10,7 @@ use jayjay_core::{BookmarkInfo, ChangeInfo, GraphEntry};
 use super::chips::tags_row;
 use super::text::{compact_id, first_line, format_relative, id_cell};
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_font_size};
+use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost, DagDragSelection};
 use crate::ui::primitives::text_tooltip;
 
@@ -18,6 +19,12 @@ const TEXT_LINE_HEIGHT: f32 = 1.618;
 
 pub(crate) type ChipRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
+
+/// Right-click handlers for the chips that open a menu, keyed by the chip's name.
+pub(crate) struct ChipMenus {
+    pub bookmark: ChipRightClick,
+    pub workspace: ChipRightClick,
+}
 
 /// Invoked when a dragged DAG reference or change is dropped onto this row.
 pub(crate) type DagDrop = Arc<dyn Fn(&DagDrag, &mut Window, &mut App) + 'static>;
@@ -32,6 +39,7 @@ pub(crate) struct DagRow<'a> {
     pub theme: &'a Theme,
     pub dag_col: Option<AnyElement>,
     pub refs_budget: f32,
+    pub refresh: RefreshMode,
     pub bookmarks: &'a [BookmarkInfo],
     pub entries: &'a Arc<Vec<GraphEntry>>,
     pub drag_selection: Option<Arc<DagDragSelection>>,
@@ -41,8 +49,7 @@ pub(crate) fn dag_row<F, FR>(
     row: DagRow<'_>,
     on_click: F,
     on_right_click: FR,
-    on_bookmark_right_click: ChipRightClick,
-    on_workspace_right_click: ChipRightClick,
+    chip_menus: ChipMenus,
     on_drop: DagDrop,
 ) -> AnyElement
 where
@@ -58,6 +65,7 @@ where
         theme: t,
         dag_col,
         refs_budget,
+        refresh,
         bookmarks,
         entries,
         drag_selection,
@@ -134,8 +142,8 @@ where
                     t,
                     bookmarks,
                     refs_budget,
-                    on_bookmark_right_click,
-                    on_workspace_right_click,
+                    refresh,
+                    &chip_menus,
                 ))
                 .child(summary_line(change, &summary, ix, t))
                 .child(meta_row(change, t)),

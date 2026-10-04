@@ -157,8 +157,9 @@ extension RepoViewModel {
                 }
 
                 if snapshotWorkingCopy {
-                    try repo.refreshWorkingCopy()
+                    let isStale = try Self.snapshotIsStale(repo)
                     guard !Task.isCancelled else { return }
+                    await self?.applyWorkingCopyStale(isStale)
                 }
 
                 let content = try load(true)
@@ -208,6 +209,12 @@ extension RepoViewModel {
         fetchPrInfo(bookmarks: selectedChange?.info.bookmarks ?? [])
         resumePendingBackgroundRefresh()
         return baseline
+    }
+
+    @MainActor
+    private func applyWorkingCopyStale(_ isStale: Bool) {
+        guard !isShuttingDown else { return }
+        isWorkingCopyStale = isStale
     }
 
     @MainActor
@@ -320,6 +327,15 @@ extension RepoViewModel {
             return
         }
         refresh(isAutoTriggered: true)
+    }
+
+    private static func snapshotIsStale(_ repo: JayJayRepo) throws -> Bool {
+        do {
+            try repo.refreshWorkingCopy()
+            return false
+        } catch JayJayError.WorkingCopyStale {
+            return true
+        }
     }
 
     private static func loadRefreshContent(

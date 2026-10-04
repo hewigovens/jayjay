@@ -15,6 +15,7 @@ enum AID {
         static let push = "toolbar.push"
         static let revsetBar = "toolbar.revsetBar"
         static let revsetField = "toolbar.revsetField"
+        static let staleBadge = "toolbar.staleBadge"
     }
 
     enum Sidebar {
@@ -30,6 +31,8 @@ enum AID {
     }
 
     enum DAG {
+        static let staleWorkingCopy = "dag.staleWorkingCopy"
+
         static func row(_ changeIdPrefix: String) -> String {
             "dag.row.\(changeIdPrefix)"
         }

@@ -29,10 +29,7 @@ impl Repo {
     fn import_git_head(&self) -> CoreResult<()> {
         let context = "import git head";
         let mut workspace = load_workspace_internal(&self.path, context)?;
-        let repo_loader = workspace.repo_loader().clone();
-        // Lock before loading the head, as a snapshot does, so no operation lands between the load and the working-copy reset.
-        let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
-        let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let (mut locked_ws, repo) = self.lock_fresh_working_copy(&mut workspace, context)?;
         let mut tx = repo.start_transaction();
         if self.is_colocated(repo.store()) {
             block_on_result(
@@ -97,7 +94,7 @@ fn git_import_options(settings: &UserSettings) -> CoreResult<GitImportOptions> {
 
 #[cfg(test)]
 mod tests {
-    use jj_test::{init_jj_repo, run_git, run_jj_in};
+    use jj_test::{git_stdout, init_jj_repo, run_git, run_jj_in};
 
     use crate::repo::Repo;
 
@@ -140,7 +137,7 @@ mod tests {
                 "from git",
             ],
         );
-        let git_head = run_git(&repo_path, &["rev-parse", "HEAD"]).stdout;
+        let git_head = git_stdout(&repo_path, &["rev-parse", "HEAD"]);
 
         repo.git_import().expect("import");
 
@@ -150,8 +147,7 @@ mod tests {
             "the file git committed must not count as pending edits"
         );
         assert_eq!(
-            format!("{}\n", working_copy.parents[0]).into_bytes(),
-            git_head,
+            working_copy.parents[0], git_head,
             "@ must sit on the commit git created"
         );
         assert_eq!(
@@ -160,7 +156,7 @@ mod tests {
             "the old working copy must not survive as a parallel head"
         );
         assert_eq!(
-            run_git(&repo_path, &["rev-parse", "HEAD"]).stdout,
+            git_stdout(&repo_path, &["rev-parse", "HEAD"]),
             git_head,
             "importing must not move git HEAD back"
         );

@@ -34,7 +34,8 @@ extension RepoContentView {
                 revealRequest: viewModel.dagRevealRequest,
                 prHostName: viewModel.prHostName,
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
-                workspacesByName: viewModel.workspacesByName
+                workspacesByName: viewModel.workspacesByName,
+                refreshMode: viewModel.refreshMode
             )
             if shouldShowCommitBox {
                 Divider()

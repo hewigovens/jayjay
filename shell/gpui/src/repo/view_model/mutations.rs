@@ -284,6 +284,17 @@ impl RepoViewModel {
         )
     }
 
+    pub(crate) fn update_stale_workspace(
+        &mut self,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            |repo| repo.update_stale_workspace(),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub(crate) fn workspace_add(
         &mut self,
         dest: String,
