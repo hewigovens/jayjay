@@ -2,7 +2,7 @@ import AppKit
 import JayJayCore
 
 /// Shared diff color theme used by unified and side-by-side renderers.
-public struct DiffColors {
+public struct DiffColors: Equatable {
     private let palette: DiffThemeColors
     private let isDark: Bool
 

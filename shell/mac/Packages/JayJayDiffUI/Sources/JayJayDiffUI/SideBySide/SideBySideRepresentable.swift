@@ -68,6 +68,6 @@ public struct SideBySideRepresentable: NSViewRepresentable {
         context.coordinator.revealFeedback = revealFeedback
         context.coordinator.reduceMotion = reduceMotion
         context.coordinator.applySelectionResetGeneration(resetSelectionGeneration)
-        context.coordinator.renderIfNeeded(force: true)
+        context.coordinator.renderIfNeeded()
     }
 }

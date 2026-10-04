@@ -11,6 +11,7 @@ pub(super) enum LineOp {
 }
 
 /// Line-level diff. Algorithm chosen in [`crate::DIFF_ALGORITHM`].
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub(super) fn line_diff(old: &str, new: &str, ignore_whitespace: bool) -> Vec<LineOp> {
     let old = line_tokens(old, ignore_whitespace);
     let new = line_tokens(new, ignore_whitespace);

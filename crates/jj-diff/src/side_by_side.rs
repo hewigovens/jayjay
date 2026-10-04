@@ -39,6 +39,7 @@ pub struct SideBySideRow {
 
 /// Build side-by-side rows from a unified diff's lines.
 /// Pairs consecutive removed+added lines together.
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn build_side_by_side_rows(lines: &[DiffLine]) -> Vec<SideBySideRow> {
     let mut rows = Vec::new();
     let display_lines = build_diff_display_lines(lines);

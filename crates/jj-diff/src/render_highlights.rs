@@ -112,6 +112,7 @@ pub(crate) struct SideHighlights {
 
 impl SideHighlights {
     /// Offsets cover every source line, so lines revealed after construction still resolve.
+    #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "SideHighlights"))]
     pub(crate) fn full(source: &str, line_index: &LineIndex, language: &str) -> Arc<Self> {
         if language == "plaintext" || source.is_empty() {
             return Arc::new(Self::default());

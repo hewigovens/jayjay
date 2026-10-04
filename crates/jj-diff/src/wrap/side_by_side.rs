@@ -7,6 +7,7 @@ use crate::side_by_side::{RowSide, SideBySideRow};
 use crate::types::{DiffDisplayItem, DiffLine, DiffSpan, DiffSpanStyle};
 
 /// Wrap SBS rows, padding the shorter side so both panes advance in lock-step.
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn wrap_sbs_rows(rows: &[SideBySideRow], old_cols: u32, new_cols: u32) -> Vec<WrappedSbsRow> {
     let old_cols = (old_cols.max(1)) as usize;
     let new_cols = (new_cols.max(1)) as usize;

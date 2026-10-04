@@ -5,6 +5,7 @@ use crate::types::{DiffLine, DiffSpanStyle};
 /// Wrap unified lines into visual rows. Continuation rows share `line_ix`, set
 /// `col_start > 0`, and carry no line numbers. `cols` counts display cells, so
 /// wide glyphs wrap at the pane edge.
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub fn wrap_diff_lines(lines: &[DiffLine], cols: u32) -> Vec<WrappedDiffLine> {
     let cols = (cols.max(1)) as usize;
     let mut wrapped = Vec::new();

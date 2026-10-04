@@ -88,6 +88,7 @@ pub(crate) struct HighlightSpan {
     pub(crate) token: SyntaxToken,
 }
 
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
     let Some(config) = config_for_language(language) else {
         return vec![];

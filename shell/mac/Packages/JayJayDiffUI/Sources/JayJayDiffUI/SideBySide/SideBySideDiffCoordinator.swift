@@ -14,8 +14,16 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
     var onExpandContext: ((ContextExpansionRequest) -> Void)?
     var revealFeedback: ContextExpansionReveal?
     var reduceMotion = false
-    private var lastOldCols: UInt32 = 0
-    private var lastNewCols: UInt32 = 0
+    private var lastRenderInputs: RenderInputs?
+
+    private struct RenderInputs: Equatable {
+        let lines: [DiffLine]
+        let font: NSFont
+        let theme: DiffColors
+        let enablesContextExpansion: Bool
+        let oldCols: UInt32
+        let newCols: UInt32
+    }
 
     public func textView(
         _ textView: NSTextView,
@@ -74,14 +82,14 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
         // When either side's content size changes (window resize or splitter drag),
         // the wrap column count may need to change too.
         leftContainer?.onContentLayoutChanged = { [weak self] in
-            self?.renderIfNeeded(force: false)
+            self?.renderIfNeeded()
         }
         rightContainer?.onContentLayoutChanged = { [weak self] in
-            self?.renderIfNeeded(force: false)
+            self?.renderIfNeeded()
         }
     }
 
-    func renderIfNeeded(force: Bool) {
+    func renderIfNeeded() {
         guard let diff,
               let font,
               let theme,
@@ -99,11 +107,20 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
             width: Float(max(0, right.container.scrollView.contentSize.width)),
             advance: advance
         )
-        if !force, oldCols == lastOldCols, newCols == lastNewCols {
-            return
+        defer {
+            left.container.scheduleRevealFeedback(revealFeedback, reduceMotion: reduceMotion)
+            right.container.scheduleRevealFeedback(revealFeedback, reduceMotion: reduceMotion)
         }
-        lastOldCols = oldCols
-        lastNewCols = newCols
+        let inputs = RenderInputs(
+            lines: diff.lines,
+            font: font,
+            theme: theme,
+            enablesContextExpansion: onExpandContext != nil,
+            oldCols: oldCols,
+            newCols: newCols
+        )
+        guard inputs != lastRenderInputs else { return }
+        lastRenderInputs = inputs
 
         // Pre-wrap into visual rows so both panes (and gutters) advance in lock-step.
         let rows = buildSideBySideRows(lines: diff.lines)
@@ -173,16 +190,8 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
             rightAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
         }
 
-        leftAcc.commit(
-            restoring: leftAnchor,
-            revealFeedback: revealFeedback,
-            reduceMotion: reduceMotion
-        )
-        rightAcc.commit(
-            restoring: rightAnchor,
-            revealFeedback: revealFeedback,
-            reduceMotion: reduceMotion
-        )
+        leftAcc.commit(restoring: leftAnchor)
+        rightAcc.commit(restoring: rightAnchor)
     }
 
     @objc private func leftScrolled(_ notification: Notification) {

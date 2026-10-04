@@ -29,6 +29,7 @@ pub fn compute_file_diff_full_plain(
 }
 
 #[allow(clippy::too_many_lines)]
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 fn compute_file_diff_impl(
     path: &str,
     old: &str,

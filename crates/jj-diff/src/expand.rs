@@ -38,6 +38,7 @@ impl ExpandableDiff {
         &self.diff
     }
 
+    #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "ExpandableDiff"))]
     pub fn expand(
         &mut self,
         region_id: u32,

@@ -55,11 +55,7 @@ struct PaneAccumulator {
         )
     }
 
-    func commit(
-        restoring anchor: DiffViewportAnchor?,
-        revealFeedback: ContextExpansionReveal?,
-        reduceMotion: Bool
-    ) {
+    func commit(restoring anchor: DiffViewportAnchor?) {
         pane.textLayout.lineBgColors = colors
         pane.textLayout.lineStripeColors = stripes
         pane.textLayout.lineStripeX = 0
@@ -75,10 +71,6 @@ struct PaneAccumulator {
         pane.container.setViewportLineLocations(
             viewportLineLocations,
             restoring: anchor
-        )
-        pane.container.scheduleRevealFeedback(
-            revealFeedback,
-            reduceMotion: reduceMotion
         )
     }
 }
