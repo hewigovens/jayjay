@@ -7,14 +7,16 @@ use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
 use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
+use jj_lib::object_id::ObjectId as _;
+use jj_lib::op_store::OpStoreError;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::transaction::Transaction;
-use jj_lib::working_copy::SnapshotOptions;
+use jj_lib::working_copy::{SnapshotOptions, WorkingCopyFreshness};
 use jj_lib::workspace::LockedWorkspace;
 
 use super::Repo;
-use super::support::{block_on_result, load_workspace_internal};
+use super::support::{block_on, block_on_result, load_workspace_internal};
 use super::working_copy_ignore::{WorkingCopyIgnoreMatcher, base_git_ignores};
 use crate::types::*;
 
@@ -48,6 +50,8 @@ impl Repo {
         let repo_loader = workspace.repo_loader().clone();
         // Hold the working-copy lock across publication and checkout so a snapshot cannot restore the pre-mutation files.
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
+        // Finishing a stale working copy at the new operation would make its old files pass for current at the next snapshot.
+        self.fresh_working_copy_repo(&mut locked_ws, tx.base_repo().clone())?;
         self.keep_working_copy_mutable(&mut tx)?;
         self.sync_colocated_git(&mut tx)?;
         let new_repo = block_on_result("commit tx", tx.commit(description))?;
@@ -129,6 +133,7 @@ impl Repo {
         mut locked_ws: LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
     ) -> CoreResult<()> {
+        let repo = self.fresh_working_copy_repo(&mut locked_ws, repo)?;
         let wc_commit = self.working_copy_commit(&repo)?;
         let new_tree = self.snapshot_tree(&repo, &mut locked_ws, "snapshot working copy")?;
 
@@ -175,6 +180,40 @@ impl Repo {
         Ok(())
     }
 
+    /// jj-cli's stale-working-copy check: when `@` was rewritten from another workspace, the files on disk still match the old commit, and recording them would revert that rewrite.
+    pub(super) fn fresh_working_copy_repo(
+        &self,
+        locked_ws: &mut LockedWorkspace<'_>,
+        repo: Arc<ReadonlyRepo>,
+    ) -> CoreResult<Arc<ReadonlyRepo>> {
+        let locked_wc = locked_ws.locked_wc();
+        let wc_op = locked_wc.old_operation_id().hex();
+        let wc_commit = self.working_copy_commit(&repo)?;
+        match block_on(WorkingCopyFreshness::check_stale(
+            &*locked_wc,
+            &wc_commit,
+            &repo,
+        )) {
+            Ok(WorkingCopyFreshness::Fresh) => Ok(repo),
+            Ok(WorkingCopyFreshness::Updated(operation)) => block_on_result(
+                "load repo at the working-copy operation",
+                repo.reload_at(&operation),
+            ),
+            Ok(WorkingCopyFreshness::WorkingCopyStale | WorkingCopyFreshness::SiblingOperation) => {
+                Err(CoreError::internal(format!(
+                    "The working copy is stale (not updated since operation {}). Run `jj workspace update-stale` to update it.",
+                    &wc_op[..12]
+                )))
+            }
+            Err(OpStoreError::ObjectNotFound { .. }) => Err(CoreError::internal(
+                "Could not read working copy's operation. Run `jj workspace update-stale` to recover.",
+            )),
+            Err(error) => Err(CoreError::internal(format!(
+                "check working-copy freshness: {error}"
+            ))),
+        }
+    }
+
     /// Snapshots with jj's defaults: every unignored new file starts tracked.
     fn snapshot_tree(
         &self,
@@ -201,6 +240,7 @@ impl Repo {
         let repo_loader = workspace.repo_loader().clone();
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
         let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let repo = self.fresh_working_copy_repo(&mut locked_ws, repo)?;
         let wc_commit = self.working_copy_commit(&repo)?;
         self.ensure_commit_mutable(&repo, &wc_commit, "@")?;
         let wc_tree = wc_commit.tree();

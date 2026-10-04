@@ -1,7 +1,9 @@
 use std::fs;
+use std::path::{Path, PathBuf};
 
 use jayjay_core::Repo;
 use jj_test::{init_jj_repo, run_git, run_jj_in};
+use tempfile::TempDir;
 
 #[test]
 fn refresh_working_copy_rebases_a_conflicting_descendant_from_a_small_stack() {
@@ -205,4 +207,115 @@ fn snapshot_adds_new_files_to_the_colocated_git_index() {
         listed, b"added.txt\n",
         "git must see the file jj started tracking"
     );
+}
+
+/// `ws2` sits on `top` and `viewer` on `root()` while the default workspace inserts `fix` below `top`, which leaves only `ws2` stale.
+fn rebase_under_sibling_workspaces() -> (TempDir, PathBuf, PathBuf) {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let ws2 = temp_dir.path().join("repo-ws2");
+    let viewer = temp_dir.path().join("repo-viewer");
+    run_jj_in(&repo_path, &["describe", "-m", "base"]);
+    run_jj_in(&repo_path, &["new", "-m", "top"]);
+    fs::write(repo_path.join("top.txt"), "top\n").expect("write top");
+    run_jj_in(&repo_path, &["new"]);
+    let ws2_root = ws2.to_str().expect("utf8 ws2");
+    run_jj_in(
+        &repo_path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "ws2",
+            "-r",
+            "subject(top)",
+            ws2_root,
+        ],
+    );
+    run_jj_in(&ws2, &["edit", "subject(top)"]);
+    let viewer_root = viewer.to_str().expect("utf8 viewer");
+    run_jj_in(
+        &repo_path,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "viewer",
+            "-r",
+            "root()",
+            viewer_root,
+        ],
+    );
+    run_jj_in(&repo_path, &["new", "subject(base)", "-m", "fix"]);
+    fs::write(repo_path.join("fix.txt"), "fix\n").expect("write fix");
+    run_jj_in(&repo_path, &["new"]);
+    run_jj_in(
+        &repo_path,
+        &["rebase", "-s", "subject(top)", "-d", "subject(fix)"],
+    );
+    (temp_dir, ws2, viewer)
+}
+
+fn files_in_top(repo_path: &Path) -> String {
+    let output = run_jj_in(
+        repo_path,
+        &[
+            "--ignore-working-copy",
+            "file",
+            "list",
+            "-r",
+            "subject(top)",
+        ],
+    );
+    String::from_utf8(output.stdout).expect("utf8 file list")
+}
+
+#[test]
+fn refresh_refuses_a_stale_working_copy_instead_of_reverting_the_rewrite() {
+    let (temp_dir, ws2, _viewer) = rebase_under_sibling_workspaces();
+    let repo = Repo::open(&ws2).expect("open stale workspace");
+
+    let error = repo
+        .refresh_working_copy()
+        .expect_err("a stale working copy must not be snapshotted");
+
+    assert!(error.to_string().contains("update-stale"), "{error}");
+    assert!(
+        files_in_top(&temp_dir.path().join("repo")).contains("fix.txt"),
+        "the snapshot reverted the rebased-in fix"
+    );
+}
+
+#[test]
+fn mutation_without_a_refresh_leaves_a_stale_working_copy_stale() {
+    let (temp_dir, ws2, _viewer) = rebase_under_sibling_workspaces();
+    let repo = Repo::open(&ws2).expect("open stale workspace");
+
+    let error = repo
+        .create_bookmark("probe", "@")
+        .expect_err("a mutation must not finish a stale working copy");
+
+    assert!(error.to_string().contains("update-stale"), "{error}");
+    repo.refresh_working_copy()
+        .expect_err("the working copy must still be stale");
+    assert!(files_in_top(&temp_dir.path().join("repo")).contains("fix.txt"));
+}
+
+#[test]
+fn refresh_snapshots_a_workspace_left_current_by_a_rewrite_elsewhere() {
+    let (temp_dir, _ws2, viewer) = rebase_under_sibling_workspaces();
+    let repo = Repo::open(&viewer).expect("open viewer workspace");
+    fs::write(viewer.join("viewer.txt"), "edit\n").expect("write viewer edit");
+
+    repo.refresh_working_copy()
+        .expect("snapshot a workspace the rebase did not touch");
+
+    assert!(
+        repo.show_summary("@")
+            .expect("summary")
+            .diff
+            .iter()
+            .any(|hunk| hunk.path == "viewer.txt")
+    );
+    assert!(files_in_top(&temp_dir.path().join("repo")).contains("fix.txt"));
 }

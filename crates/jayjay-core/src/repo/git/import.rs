@@ -33,6 +33,7 @@ impl Repo {
         // Lock before loading the head, as a snapshot does, so no operation lands between the load and the working-copy reset.
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
         let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let repo = self.fresh_working_copy_repo(&mut locked_ws, repo)?;
         let mut tx = repo.start_transaction();
         if self.is_colocated(repo.store()) {
             block_on_result(
