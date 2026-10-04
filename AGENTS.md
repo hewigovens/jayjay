@@ -6,7 +6,7 @@ Native macOS GUI for Jujutsu version control. Rust core with SwiftUI and GPUI sh
 
 This file defines repository constraints for any coding agent. Use the active harness for tools, planning, context management, and supported delegation. Load only the focused docs needed for the task; do not load the whole table by default.
 
-Within the authorized scope, choose the approach from the code and evidence. Resolve routine implementation choices yourself; ask when missing information changes the intended behavior, scope, or permission. Repository safety rules below are constraints; command examples and design preferences are defaults to adapt to the task.
+Within the authorized scope, choose the approach from the code and evidence. Resolve routine implementation choices yourself; ask when missing information changes the intended behavior, scope, or permission. Decisions already made earlier in the conversation, in a focused guide, or in a review note are settled; do not reopen or re-derive them unless new evidence contradicts them. Repository safety rules below are constraints; command examples and design preferences are defaults to adapt to the task.
 
 | Task | Load |
 | --- | --- |
