@@ -190,6 +190,11 @@ fn config_for_language(language: &str) -> Option<&'static HighlightConfiguration
         "css" => cached_config!("css", tree_sitter_css, HIGHLIGHTS_QUERY),
         "html" => cached_config!("html", tree_sitter_html, HIGHLIGHTS_QUERY),
         "shell" | "bash" => cached_config!("shell", tree_sitter_bash, HIGHLIGHT_QUERY),
+        "fish" => cached_config!(
+            "fish",
+            tree_sitter_fish::language(),
+            tree_sitter_fish::HIGHLIGHTS_QUERY,
+        ),
         "yaml" => cached_config!("yaml", tree_sitter_yaml, HIGHLIGHTS_QUERY),
         "swift" => cached_config!("swift", tree_sitter_swift, HIGHLIGHTS_QUERY),
         "solidity" => cached_config!(
@@ -231,6 +236,7 @@ pub(crate) fn language_for_path(path: &str) -> &'static str {
         "cpp" | "cc" | "cxx" | "hpp" => "cpp",
         "rb" => "ruby",
         "sh" | "bash" | "zsh" => "shell",
+        "fish" => "fish",
         "html" | "htm" => "html",
         "css" | "scss" => "css",
         "json" => "json",

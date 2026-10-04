@@ -1,6 +1,31 @@
 use super::*;
 
 #[test]
+fn fish_source_is_detected_and_highlighted() {
+    let source =
+        "# Greeting\nfunction greet\n    set name (whoami)\n    echo \"Hello\" $name\nend\n";
+    let diff = compute_file_diff_full("conf.d/greet.fish", "", source, false);
+    let spans: Vec<_> = diff.lines.iter().flat_map(|line| &line.spans).collect();
+
+    for (text, token) in [
+        ("# Greeting", SyntaxToken::Comment),
+        ("function", SyntaxToken::Keyword),
+        ("greet", SyntaxToken::Function),
+        ("whoami", SyntaxToken::Function),
+        ("\"Hello\"", SyntaxToken::StringLit),
+        ("end", SyntaxToken::Keyword),
+    ] {
+        assert!(
+            spans
+                .iter()
+                .any(|span| span.text == text && span.token == token),
+            "Fish should highlight {text:?} as {token:?}: {spans:?}"
+        );
+    }
+    assert_eq!(diff.language, "fish");
+}
+
+#[test]
 fn solidity_source_is_detected_and_highlighted() {
     let source = r#"// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;

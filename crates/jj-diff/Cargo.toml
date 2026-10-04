@@ -28,6 +28,7 @@ tree-sitter-c = { workspace = true }
 tree-sitter-c-sharp = { workspace = true }
 tree-sitter-cpp = { workspace = true }
 tree-sitter-bash = { workspace = true }
+tree-sitter-fish = { workspace = true }
 tree-sitter-ruby = { workspace = true }
 tree-sitter-java = { workspace = true }
 tree-sitter-kotlin-sg = { workspace = true }
