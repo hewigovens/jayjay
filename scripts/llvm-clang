@@ -22,8 +22,25 @@ flags=(
   "-I$repo_root/wasm/sysroot/include"
   -Wno-incompatible-pointer-types
 )
-if [[ -n "${DEP_TREE_SITTER_LANGUAGE_WASM_HEADERS:-}" ]]; then
-  flags+=("-I$DEP_TREE_SITTER_LANGUAGE_WASM_HEADERS")
+wasm_headers="${DEP_TREE_SITTER_LANGUAGE_WASM_HEADERS:-${JAYJAY_WASM_HEADERS:-}}"
+if [[ -n "$wasm_headers" ]]; then
+  flags+=("-I$wasm_headers")
 fi
 
-exec "$clang" "${flags[@]}" "$@"
+args=("$@")
+case "${CARGO_PKG_NAME:-}" in
+  tree-sitter-c|tree-sitter-c-sharp|tree-sitter-css|tree-sitter-md)
+    # These grammar releases still compile the old per-grammar libc; Tree-sitter 0.27 now supplies it once in the runtime.
+    if [[ "${DEP_TREE_SITTER_LANGUAGE_WASM_SRC:-}" == */wasm/unsupported/tree-sitter-0.26 ]]; then
+      for i in "${!args[@]}"; do
+        case "${args[$i]}" in
+          "$DEP_TREE_SITTER_LANGUAGE_WASM_SRC/stdio.c"|"$DEP_TREE_SITTER_LANGUAGE_WASM_SRC/stdlib.c"|"$DEP_TREE_SITTER_LANGUAGE_WASM_SRC/string.c")
+            args[$i]="$repo_root/wasm/grammar-stdlib.c"
+            ;;
+        esac
+      done
+    fi
+    ;;
+esac
+
+exec "$clang" "${flags[@]}" "${args[@]}"

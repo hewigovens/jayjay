@@ -5,8 +5,7 @@ use jayjay_core::{
     PrState, PullRequestImportPreview, PullRequestImportRemote, PullRequestImportSource,
     PullRequestImportWorkspace, RemoteBookmarkTarget, RemoteSyncStatus, RevsetCompletion,
     RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState, RevsetName,
-    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, ShortId, WorkspaceInfo,
-    WorkspacePresence,
+    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -145,20 +144,6 @@ pub struct CliStatus {
     pub is_installed: bool,
     pub version: String,
     pub path: String,
-}
-
-#[uniffi::remote(Record)]
-pub struct WorkspaceInfo {
-    pub name: String,
-    pub path: String,
-    pub is_path_resolved: bool,
-    pub pinnable_path: Option<String>,
-    pub is_current: bool,
-    pub change_id: ShortId,
-    pub description: String,
-    pub timestamp: i64,
-    pub has_conflict: bool,
-    pub files_changed: u32,
 }
 
 #[uniffi::remote(Enum)]

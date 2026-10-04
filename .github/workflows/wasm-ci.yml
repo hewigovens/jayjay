@@ -1,0 +1,54 @@
+name: WASM CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "rust-toolchain*"
+      - ".github/workflows/wasm-ci.yml"
+      - "justfile"
+      - "shell/justfile"
+      - "**/*.just"
+      - "scripts/llvm-clang"
+      - "wasm/**"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: wasm-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  wasm:
+    name: Link WASM
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+          components: llvm-tools
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang python3
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: wasm
+
+      - name: Install just
+        run: cargo install --locked just
+
+      - name: Link portable WASM library
+        run: just test-wasm

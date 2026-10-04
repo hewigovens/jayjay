@@ -19,6 +19,7 @@ mod settings;
 #[cfg(feature = "desktop")]
 mod stacked_pr;
 mod theme;
+mod workspace_info;
 
 pub use changes::*;
 pub use compare::*;

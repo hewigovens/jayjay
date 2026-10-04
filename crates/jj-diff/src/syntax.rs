@@ -1,5 +1,7 @@
 use std::sync::LazyLock;
 
+#[cfg_attr(target_family = "wasm", path = "syntax/wasm.rs")]
+mod cache;
 mod markdown;
 
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
@@ -90,10 +92,11 @@ pub(crate) struct HighlightSpan {
 
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
-    let Some(config) = config_for_language(language) else {
+    let Some(spans) =
+        with_config_for_language(language, |config| highlight_with_config(source, config))
+    else {
         return vec![];
     };
-    let spans = highlight_with_config(source, config);
     if language != "markdown" {
         return spans;
     }
@@ -136,19 +139,22 @@ static SOLIDITY_HIGHLIGHT_QUERY: LazyLock<String> = LazyLock::new(|| {
     )
 });
 
-fn config_for_language(language: &str) -> Option<&'static HighlightConfiguration> {
+fn with_config_for_language<R>(
+    language: &str,
+    use_config: impl FnOnce(&HighlightConfiguration) -> R,
+) -> Option<R> {
     macro_rules! cached_config {
         ($name:literal, $grammar:ident, $query:ident) => {
             cached_config!($name, $grammar::LANGUAGE, $grammar::$query)
         };
         ($name:literal, $grammar:expr, $query:expr $(,)?) => {{
-            static CONFIG: LazyLock<Option<HighlightConfiguration>> = LazyLock::new(|| {
+            fn build_config() -> Option<HighlightConfiguration> {
                 let mut config =
                     HighlightConfiguration::new($grammar.into(), $name, $query, "", "").ok()?;
                 config.configure(&HIGHLIGHT_NAMES);
                 Some(config)
-            });
-            CONFIG.as_ref()
+            }
+            cache::with_config!(build_config, use_config)
         }};
     }
 
@@ -273,7 +279,10 @@ mod tests {
                 let barrier = &barrier;
                 scope.spawn(move || {
                     barrier.wait();
-                    let config = config_for_language("swift").unwrap();
+                    let config = with_config_for_language("swift", |config| {
+                        std::ptr::from_ref(config) as usize
+                    })
+                    .unwrap();
                     let spans = highlight(source, "swift");
                     assert!(spans.iter().any(|span| span.token == token));
                     config
@@ -281,6 +290,6 @@ mod tests {
             });
             workers.map(|worker| worker.join().unwrap())
         });
-        assert!(std::ptr::eq(configs[0], configs[1]));
+        assert_eq!(configs[0], configs[1]);
     }
 }
