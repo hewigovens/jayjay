@@ -60,7 +60,7 @@ impl RepoWindow {
     fn jump_to_current_match(&self, cx: &App) {
         if let Some(&line_ix) = self.find.matches.get(self.find.current) {
             let vm = self.vm.read(cx);
-            let advance = fonts::mono_advance(cx, px(theme(cx).font_size));
+            let advance = fonts::mono_advance(cx, px(theme(cx).code_font_size()));
             // Shared wrap helpers operate in u32; scroll_to_item takes usize.
             let line_ix_u32 = line_ix as u32;
             let item_ix = vm

@@ -1,6 +1,6 @@
 use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, StackedPrState};
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::input::line_input_content;
@@ -47,8 +47,7 @@ fn layer_card(
         .flex()
         .items_center()
         .gap(px(5.))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(10.))
+        .code_text(10.)
         .text_color(rgb(t.fg_faint))
         .child(icon(glyph::ARROW_RIGHT, 8., t.fg_faint))
         .child(SharedString::from(base.to_owned()));
@@ -146,8 +145,7 @@ fn bookmark_field(
                     } else {
                         t.border
                     }))
-                    .font_family(fonts::mono())
-                    .text_size(ui_font_size(11.))
+                    .code_text(11.)
                     .cursor_text()
                     .child(input),
             )
@@ -169,8 +167,7 @@ fn bookmark_field(
         .flex()
         .items_center()
         .gap(px(5.))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(11.))
+        .code_text(11.)
         .text_color(rgb(t.fg_dim))
         .child(
             div()

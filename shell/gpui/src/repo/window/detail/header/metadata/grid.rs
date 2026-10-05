@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
 use super::cells::{author, bookmark_chip, diff_stats, tag_chip};
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
 use crate::repo::RepoWindow;
@@ -73,8 +73,7 @@ pub(super) fn grid(
             div()
                 .min_w_0()
                 .truncate()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(FONT_ID))
+                .code_text(FONT_ID)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(parents))
                 .into_any_element(),

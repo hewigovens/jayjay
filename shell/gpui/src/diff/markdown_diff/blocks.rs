@@ -6,7 +6,7 @@ use std::sync::Arc;
 
 use jayjay_markdown::{MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem};
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 
 use super::images::{MarkdownImages, ResolvedImage};
@@ -179,8 +179,7 @@ fn image_placeholder(source: &str, alt: &str, t: &Theme) -> gpui::Div {
         )
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(10.))
+                .code_text(10.)
                 .line_height(ui_font_size(14.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(source.to_owned())),
@@ -260,8 +259,7 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
                 .py(px(5.))
                 .border_b_1()
                 .border_color(rgb(t.border))
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(10.))
+                .code_text(10.)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(language.to_owned())),
         );
@@ -272,8 +270,7 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
             div()
                 .px(px(10.))
                 .py(px(8.))
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(12.))
+                .code_text(12.)
                 .line_height(ui_font_size(18.))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(text.to_owned())),
@@ -305,8 +302,7 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
         .child(
             div()
                 .w(px(28.))
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(12.))
+                .code_text(12.)
                 .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(marker)),

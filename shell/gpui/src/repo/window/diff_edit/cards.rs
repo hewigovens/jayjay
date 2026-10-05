@@ -24,7 +24,7 @@ pub(super) fn diff_edit_body(
     let model = view.diff_edit_row_model(cx);
     let count = model.rows.len();
     let theme = Arc::new(t.clone());
-    let advance = fonts::mono_advance(cx, px(t.font_size));
+    let advance = fonts::mono_advance(cx, px(t.code_font_size()));
     let scroll = view.diff_edit.scroll.clone();
     let bounds = view.diff_edit.bounds.clone();
     let list = uniform_list(

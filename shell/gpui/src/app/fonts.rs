@@ -1,10 +1,11 @@
 use std::sync::{OnceLock, RwLock};
 
 use font_kit::source::SystemSource;
-use gpui::{App, Pixels, font, px};
+use gpui::{App, Pixels, Styled, font, px};
 use jayjay_core::{MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID, mono_font_option};
 
 use crate::app::config::AppConfig;
+use crate::app::theme::ui_font_size;
 
 mod platform;
 
@@ -29,6 +30,14 @@ pub(crate) fn mono() -> String {
         })
         .unwrap_or_else(|_| default_mono().to_owned())
 }
+
+pub(crate) trait CodeText: Styled + Sized {
+    fn code_text(self, base: f32) -> Self {
+        self.font_family(mono()).text_size(ui_font_size(base))
+    }
+}
+
+impl<E: Styled> CodeText for E {}
 
 fn default_mono() -> &'static str {
     DEFAULT_MONO.get_or_init(platform::platform_default_mono)

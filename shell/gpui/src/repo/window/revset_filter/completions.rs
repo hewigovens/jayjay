@@ -7,7 +7,7 @@ use jayjay_core::utf16::{byte_offset, utf16_offset};
 use jayjay_core::{RevsetCompletion, RevsetCompletionKind, RevsetVocabulary, revset_completions};
 
 use super::super::{RepoWindow, picker};
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::input::LineInput;
 use crate::ui::navigation::{ListNavKeys, list_nav_from_key, move_index};
@@ -126,8 +126,7 @@ pub(super) fn completion_row(
         })
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(12.))
+                .code_text(12.)
                 .text_color(rgb(t.fg))
                 .child(entry.text.clone()),
         )

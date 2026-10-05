@@ -3,7 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
@@ -54,8 +54,7 @@ fn search_input(query: &LineInput, t: &Theme) -> AnyElement {
         .gap(px(2.))
         .flex_1()
         .min_w_0()
-        .text_size(ui_font_size(12.))
-        .font_family(fonts::mono());
+        .code_text(12.);
 
     input = input.child(line_input_content(query, "Type to find...", t, None));
 
@@ -92,9 +91,8 @@ fn nav_button(
         .w(px(t.scaled_control_height(20., 11.)))
         .h(px(t.scaled_control_height(20., 11.)))
         .rounded_md()
-        .text_size(ui_font_size(11.))
+        .code_text(11.)
         .text_color(rgb(fg))
-        .font_family(fonts::mono())
         .child(symbol);
 
     if enabled {

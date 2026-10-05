@@ -3,6 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb, rgba,
 };
 
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::{PrImportState, RepoWindow};
 use crate::ui::icons::glyph;
@@ -218,8 +219,7 @@ fn summary_row(
             div()
                 .min_w_0()
                 .truncate()
-                .font_family(crate::app::fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .child(SharedString::from(value)),
         );
     if let Some(note) = note {

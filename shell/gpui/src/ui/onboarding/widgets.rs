@@ -1,6 +1,6 @@
 use gpui::{InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 use crate::ui::primitives::copy_icon_button;
@@ -8,8 +8,7 @@ use crate::ui::primitives::copy_icon_button;
 pub(super) fn mono_line(text: String, size: f32, color: u32) -> impl IntoElement {
     div()
         .max_w(px(360.))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(size))
+        .code_text(size)
         .text_color(rgb(color))
         .child(text)
 }
@@ -28,12 +27,7 @@ pub(super) fn command_row(command: &'static str, t: &Theme) -> impl IntoElement 
         .rounded_sm()
         .bg(rgb(t.row_alt_bg))
         .text_color(rgb(t.fg))
-        .child(
-            div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(13.))
-                .child(command),
-        )
+        .child(div().code_text(13.).child(command))
         .child(
             copy_icon_button(
                 SharedString::from(format!("onboarding-copy-{command}")),

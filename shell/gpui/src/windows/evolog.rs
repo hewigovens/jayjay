@@ -13,7 +13,7 @@ use jayjay_core::{ChangeInfo, DiffHunk, EvologEntry, EvologRow, Repo, ShortId};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{compact_id, format_when, id_cell};
@@ -299,8 +299,7 @@ fn header(
                 .debug_selector(|| "evolog-title".to_owned())
                 .flex()
                 .flex_row()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(13.))
+                .code_text(13.)
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child("Evolution: ")

@@ -6,6 +6,7 @@ use jayjay_core::{FileDiffStats, OverviewChange};
 
 use super::OverviewView;
 use super::canvas::description_color;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::{compact_id, format_relative};
 use crate::ui::icons::glyph;
@@ -77,8 +78,7 @@ impl OverviewView {
             .text_color(rgb(description_color(&change.description, t)))
             .child(text.title.clone());
         let ids = div()
-            .font_family(crate::app::fonts::mono())
-            .text_size(ui_font_size(11.))
+            .code_text(11.)
             .text_color(rgb(t.fg_dim))
             .child(text.ids.clone())
             .into_any_element();
@@ -306,8 +306,7 @@ pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElemen
 fn stat(text: String, color: u32) -> impl IntoElement {
     div()
         .flex_none()
-        .font_family(crate::app::fonts::mono())
-        .text_size(ui_font_size(10.))
+        .code_text(10.)
         .text_color(rgb(color))
         .child(SharedString::from(text))
 }

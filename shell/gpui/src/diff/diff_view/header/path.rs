@@ -5,6 +5,7 @@ use gpui::{
 
 use super::{COMPACT_HEADER_WIDTH, DETAIL_INSET, FileHeaderState};
 use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_column::head_elide;
 use crate::repo::window::RepoWindow;
@@ -61,8 +62,7 @@ pub(super) fn rename_origin_label(
                 .flex_shrink_1()
                 .min_w_0()
                 .truncate()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.fg_dim))
                 .line_through()
                 .tooltip(text_tooltip(old_path.to_owned()))

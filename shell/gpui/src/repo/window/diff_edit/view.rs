@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::DiffEditDestination;
 
 use super::cards::diff_edit_body;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
@@ -77,13 +77,7 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child("Diff Edit"),
         )
-        .child(
-            div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(12.))
-                .text_color(rgb(t.fg_dim))
-                .child(rev),
-        )
+        .child(div().code_text(12.).text_color(rgb(t.fg_dim)).child(rev))
         .child(div().flex_1())
         .child(
             div()

@@ -4,6 +4,7 @@ use gpui::{
 };
 use jayjay_core::compare::CompareState;
 
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
 use crate::repo::RepoWindow;
@@ -107,9 +108,8 @@ fn compare_label(label: &str, t: &Theme) -> AnyElement {
     div()
         .max_w(px(180.))
         .overflow_hidden()
-        .font_family(crate::app::fonts::mono())
+        .code_text(12.)
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .child(SharedString::from(label.to_owned()))
         .into_any_element()

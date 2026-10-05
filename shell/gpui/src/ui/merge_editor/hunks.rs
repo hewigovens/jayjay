@@ -6,6 +6,7 @@ use jayjay_core::diff::{DiffLine, DiffSpanStyle, FileDiff};
 use jayjay_core::{MergeEditorHunk, MergeHunkSource};
 
 use crate::app::actions::{MergeUseLeftHunk, MergeUseRightHunk};
+use crate::app::fonts::CodeText as _;
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, line_bg_color};
@@ -174,8 +175,7 @@ pub(crate) fn merge_hunk_card(
                         .flex()
                         .items_center()
                         .gap(px(8.))
-                        .font_family(crate::app::fonts::mono())
-                        .text_size(ui_font_size(10.))
+                        .code_text(10.)
                         .text_color(rgb(t.fg_faint))
                         .child("− Left")
                         .child("+ Right"),
@@ -218,8 +218,7 @@ fn merge_hunk_diff_line(line: &DiffLine, t: &Theme) -> AnyElement {
                 .bg(rgb(bg))
                 .border_r_1()
                 .border_color(rgb(t.border))
-                .font_family(crate::app::fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(match line.style {
                     DiffSpanStyle::Added => t.diff_text_added,
                     DiffSpanStyle::Removed => t.diff_text_removed,

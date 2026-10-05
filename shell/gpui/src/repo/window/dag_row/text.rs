@@ -1,7 +1,8 @@
 use chrono::{DateTime, Local, TimeZone};
 use gpui::{IntoElement, ParentElement, SharedString, Styled, div, rgb};
 
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::Theme;
 
 pub(crate) fn id_cell(
     id: &str,
@@ -15,8 +16,7 @@ pub(crate) fn id_cell(
         .flex()
         .flex_row()
         .flex_none()
-        .font_family(crate::app::fonts::mono())
-        .text_size(ui_font_size(font_size))
+        .code_text(font_size)
         .child(
             div()
                 .font_weight(gpui::FontWeight::BOLD)

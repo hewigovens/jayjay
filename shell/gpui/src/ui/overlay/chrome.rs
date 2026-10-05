@@ -3,6 +3,7 @@ use gpui::{
     SharedString, Styled, div, px, rgb, rgba,
 };
 
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::primitives::icon_label;
 
@@ -82,8 +83,7 @@ pub(crate) fn overlay_header(
                 .debug_selector(|| "overlay-header-subtitle".to_owned())
                 .min_w_0()
                 .truncate()
-                .font_family(crate::app::fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.fg_dim))
                 .child(subtitle),
         );

@@ -5,6 +5,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
@@ -62,8 +63,7 @@ pub(super) fn repo_init_error_pane(
                 )
                 .child(
                     div()
-                        .font_family(crate::app::fonts::mono())
-                        .text_size(ui_font_size(11.))
+                        .code_text(11.)
                         .text_color(rgb(t.fg_faint))
                         .child(repo_path),
                 )

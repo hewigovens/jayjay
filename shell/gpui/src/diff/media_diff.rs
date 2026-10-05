@@ -5,8 +5,8 @@ use gpui::{
 use jayjay_core::HunkType;
 use jayjay_core::diff::DiffSide;
 
-use crate::app::fonts;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::Theme;
 use crate::diff::line::gutter_column;
 
 pub(crate) fn media_diff_layout<F>(hunk_type: HunkType, t: &Theme, pane: F) -> AnyElement
@@ -180,8 +180,7 @@ pub(crate) fn media_frame(t: &Theme) -> Div {
 pub(crate) fn metadata_line(label: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
         .debug_selector(|| "rich-preview-metadata".to_owned())
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(10.))
+        .code_text(10.)
         .text_color(rgb(t.fg_dim))
         .child(label.into())
         .into_any_element()

@@ -6,8 +6,8 @@ use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 use jayjay_review::ReviewGroupState;
 
 use super::colors::line_bg_color;
-use crate::app::fonts;
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::{Theme, with_alpha};
 use crate::ui::primitives::text_tooltip;
 
 pub const NOTE_DOT_WIDTH: f32 = 14.;
@@ -90,8 +90,7 @@ pub fn interactive_gutter_row(
         .w(px(width))
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(12.))
+        .code_text(12.)
         .line_height(px(theme.code_line_height()));
     if let Some(cell) = review_cell {
         row = row.child(cell);

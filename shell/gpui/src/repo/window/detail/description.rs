@@ -6,7 +6,7 @@ use gpui::{
 };
 use jayjay_core::ChangeInfo;
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
 use crate::diff::file_row_height;
@@ -63,8 +63,7 @@ pub(super) fn description_block(
         .overflow_y_scroll()
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(BODY_FONT))
+                .code_text(BODY_FONT)
                 .text_color(rgb(t.fg))
                 .debug_selector(|| "description-text".to_owned())
                 .child(SharedString::from(body)),

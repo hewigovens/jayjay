@@ -10,6 +10,7 @@ use jayjay_core::{JjConfigEntry, JjConfigSection};
 
 use super::SettingsView;
 use super::shared::{detail_row, feedback_copy_icon_button, row_container, section_title};
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 
@@ -97,8 +98,7 @@ fn config_path_row(
                 .flex_1()
                 .min_w_0()
                 .truncate()
-                .font_family(crate::app::fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(path.to_owned())),
         )

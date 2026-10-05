@@ -6,7 +6,7 @@ use gpui::{
 };
 use jayjay_review::{NoteStatus, ReviewNoteStatus};
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::button;
@@ -61,8 +61,7 @@ fn stale_note_row(
         )
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(format!(
                     "{}:{}",

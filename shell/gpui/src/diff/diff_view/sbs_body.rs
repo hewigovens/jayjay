@@ -52,7 +52,7 @@ pub(super) fn side_by_side_body(
     } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
-    let advance = fonts::mono_advance(cx, px(theme.font_size));
+    let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
     let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
     let rows = wrap_cache

@@ -2,7 +2,7 @@
 
 use gpui::{Div, ParentElement, Pixels, SharedString, Styled, div, px, rgb, rgba};
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::NoteDotKind;
 
@@ -59,8 +59,7 @@ pub fn note_content_row(
         .border_l_1()
         .border_r_1()
         .border_color(rgba(with_alpha(accent, 0x59)))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(12.))
+        .code_text(12.)
         .text_color(rgb(theme.fg))
         .line_height(px(theme.code_line_height()))
         .child(text);

@@ -10,7 +10,7 @@ use jayjay_core::{ChangeInfo, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{RepoWindow, compact_id, format_when, id_cell};
@@ -167,8 +167,7 @@ fn header(path: &SharedString, count: usize, t: &Theme) -> AnyElement {
         .child(icons::icon(glyph::FILE_CODE, 14., t.fg_dim))
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(12.))
+                .code_text(12.)
                 .text_color(rgb(t.fg))
                 .child(path.clone()),
         )

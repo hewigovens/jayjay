@@ -6,8 +6,9 @@ use jayjay_core::ShortId;
 
 use super::RepoWindow;
 use super::dag_drag::DagRebaseRequest;
+use crate::app::config;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::app::{config, fonts};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_header, overlay_layer};
 use crate::ui::primitives::{button, checkbox_row, icon_label};
@@ -111,8 +112,7 @@ fn summary_row(title: &str, value: &str, detail: &ShortId, t: &Theme) -> AnyElem
                 )
                 .child(
                     div()
-                        .font_family(fonts::mono())
-                        .text_size(ui_font_size(11.))
+                        .code_text(11.)
                         .text_color(rgb(t.fg_dim))
                         .child(detail.prefix(12)),
                 ),

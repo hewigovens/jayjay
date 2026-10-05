@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::StackLayerOutcome;
 
 use super::RepoWindow;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::primitives::button;
 
@@ -74,8 +74,7 @@ pub(super) fn results_body(
                 .child(title)
                 .child(
                     div()
-                        .font_family(fonts::mono())
-                        .text_size(ui_font_size(10.))
+                        .code_text(10.)
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(layer.detail.clone())),
                 ),

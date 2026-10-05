@@ -6,7 +6,7 @@ use gpui::{
 use jayjay_core::{RevsetFilter, RevsetFilterKind};
 
 use super::super::{FocusStop, RepoWindow, focus_ring, picker};
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::line_input_content;
@@ -111,8 +111,7 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
                 .items_center()
                 .flex_1()
                 .min_w_0()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .cursor_text()
                 .track_focus(&view.revset_editor_focus)
                 .on_key_down(cx.listener(|view, ev, window, cx| {
@@ -186,8 +185,7 @@ fn summary(
             div()
                 .min_w_0()
                 .truncate()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(if filter.kind == RevsetFilterKind::Custom {
                     t.fg
                 } else {

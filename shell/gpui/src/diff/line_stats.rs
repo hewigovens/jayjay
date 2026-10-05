@@ -1,8 +1,7 @@
 use gpui::{Div, ParentElement, Styled, div, px, rgb};
 use jayjay_core::FileDiffStats;
 
-use crate::app::fonts;
-use crate::app::theme::ui_font_size;
+use crate::app::fonts::CodeText as _;
 
 /// `+N -M`, omitting a zero side; `None` when the file has no line changes.
 pub(crate) fn line_stats(
@@ -20,9 +19,8 @@ pub(crate) fn line_stats(
         .flex_row()
         .items_baseline()
         .gap(px(4.))
-        .font_family(fonts::mono())
-        .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(ui_font_size(size));
+        .code_text(size)
+        .font_weight(gpui::FontWeight::SEMIBOLD);
     if stats.insertions > 0 {
         label = label.child(
             div()

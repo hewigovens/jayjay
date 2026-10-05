@@ -7,7 +7,7 @@ use gpui::{
 use jayjay_core::{BookmarkInfo, RemoteBookmarkTarget, RemoteSyncStatus};
 
 use super::BookmarkManagerView;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::repo::window::{compact_id, id_cell};
 use crate::ui::icons::{self, glyph};
@@ -86,8 +86,7 @@ fn bookmark_row(
                         .gap(px(6.))
                         .child(
                             div()
-                                .font_family(fonts::mono())
-                                .text_size(ui_font_size(13.))
+                                .code_text(13.)
                                 .text_color(rgb(t.fg))
                                 .child(SharedString::from(name)),
                         )

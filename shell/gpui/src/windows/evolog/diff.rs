@@ -12,6 +12,7 @@ use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 use super::EvologView;
 use super::layout::EvologPane;
 use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::diff::{hunk_is_image, image_diff_view};
@@ -349,9 +350,8 @@ fn version_label(commit_id: &str, theme: &Theme) -> AnyElement {
     div()
         .max_w(px(180.))
         .overflow_hidden()
-        .font_family(fonts::mono())
+        .code_text(12.)
         .font_weight(gpui::FontWeight::SEMIBOLD)
-        .text_size(ui_font_size(12.))
         .text_color(rgb(theme.fg))
         .child(commit_id.chars().take(12).collect::<String>())
         .into_any_element()
@@ -362,7 +362,7 @@ fn read_only_diff(diff: Arc<FileDiff>, theme: &Theme, cx: &mut Context<EvologVie
     let lines = Arc::new(wrap_diff_lines(&display_lines, DEFAULT_WRAP_COLS));
     let count = lines.len();
     let theme = Arc::new(theme.clone());
-    let advance = fonts::mono_advance(cx, px(theme.font_size));
+    let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let list = uniform_list(
         "evolog-diff",
         count,

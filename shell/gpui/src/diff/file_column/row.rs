@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::{DiffHunk, HunkType};
 use jayjay_review::ReviewFileRollup;
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
 use crate::ui::icons::{self, glyph};
@@ -121,8 +121,7 @@ pub(super) fn file_text_content(
         )
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(10.))
+                .code_text(10.)
                 .line_height(px(t.scaled_font_size(13.)))
                 .text_color(rgb(t.fg_dim))
                 .truncate()

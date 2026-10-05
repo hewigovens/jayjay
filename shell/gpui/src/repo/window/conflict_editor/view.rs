@@ -5,7 +5,7 @@ use gpui::{
 use jayjay_core::MergeHunkSource;
 use jayjay_core::external_tools::conflict_marker_count;
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::merge_editor::{merge_base_toggle, merge_source_panel, merge_source_row};
@@ -99,8 +99,7 @@ pub(in crate::repo::window) fn conflict_editor_overlay(
                         .child(
                             div()
                                 .truncate()
-                                .font_family(fonts::mono())
-                                .text_size(ui_font_size(11.))
+                                .code_text(11.)
                                 .text_color(rgb(t.fg_dim))
                                 .child(data.path.clone()),
                         ),

@@ -10,7 +10,7 @@ use jayjay_core::{
 use super::super::RepoWindow;
 use super::super::picker::{self, PickerQuery};
 use super::completions::completion_row;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::line_input_content;
@@ -147,8 +147,7 @@ fn panel(
                 .px(px(12.))
                 .py(px(8.))
                 .bg(rgb(t.tag_removed_bg))
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.tag_removed_fg))
                 .child(SharedString::from(error))
         }))
@@ -179,8 +178,7 @@ fn field(state: &RevsetPopupState, t: &Theme) -> AnyElement {
         .px(px(12.))
         .border_b_1()
         .border_color(rgb(t.border))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(13.))
+        .code_text(13.)
         .child(icons::icon(
             if state.error.is_some() {
                 glyph::WARNING
@@ -278,8 +276,7 @@ fn suggestion_row(
     }
     let text = div()
         .min_w_0()
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(if wraps { 11. } else { 12. }))
+        .code_text(if wraps { 11. } else { 12. })
         .text_color(rgb(t.fg))
         .child(title);
     row.child(if wraps { text } else { text.truncate() })

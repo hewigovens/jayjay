@@ -8,6 +8,7 @@ use jayjay_core::OpLogEntry;
 
 use super::OperationLogView;
 use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
@@ -130,8 +131,7 @@ fn operation_text(
         )
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(timestamp)),
         )

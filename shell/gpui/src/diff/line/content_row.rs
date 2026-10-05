@@ -4,7 +4,8 @@ use gpui::{Div, FontWeight, ParentElement, Pixels, SharedString, Styled, div, px
 use jayjay_core::diff::{ConflictLineKind, DiffLine, DiffSpanStyle, conflict_display_text};
 
 use crate::app::fonts;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::Theme;
 
 use super::super::spans::span_element;
 use super::colors::{line_bg_color, line_text_color};
@@ -30,8 +31,7 @@ pub fn content_row(
             .w_full()
             .h(px(theme.code_line_height()))
             .bg(rgb(bg))
-            .font_family(fonts::mono())
-            .text_size(ui_font_size(12.))
+            .code_text(12.)
             .line_height(px(theme.code_line_height()))
             .text_color(rgb(base_text_fg))
             .font_weight(FontWeight::MEDIUM)
@@ -70,8 +70,7 @@ pub fn content_row(
         .w_full()
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(12.))
+        .code_text(12.)
         .line_height(px(theme.code_line_height()))
         .child(conflict_stripe_overlay(line.conflict_kind, theme))
         .child(text_row);

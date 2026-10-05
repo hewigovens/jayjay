@@ -4,7 +4,8 @@ use gpui::{
 };
 use jayjay_core::diff::DiffSpanStyle;
 
-use crate::app::theme::{Theme, ui_font_size, with_alpha};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::{Theme, with_alpha};
 use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalState};
 use crate::ui::overlay::{PromptSlots, PromptStyle};
@@ -83,8 +84,7 @@ fn note_context_preview(
                 .h(px(ROW_HEIGHT))
                 .px(px(8.))
                 .bg(bg)
-                .font_family(crate::app::fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .child(
                     div()
                         .flex_none()
@@ -126,8 +126,7 @@ fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
         .flex_col()
         .w_full()
         .gap(px(2.))
-        .font_family(crate::app::fonts::mono())
-        .text_size(ui_font_size(11.))
+        .code_text(11.)
         .text_color(rgb(t.fg_dim));
     for path in paths {
         // Truncation needs the flex_1/min_w_0 inner cell, or scrolled rows collapse to bare ellipses.

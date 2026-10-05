@@ -3,7 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::overlay::overlay_layer;
 use crate::ui::primitives::button;
@@ -78,8 +78,7 @@ pub(in crate::repo::window) fn file_editor_overlay(
                         .child(
                             div()
                                 .truncate()
-                                .font_family(fonts::mono())
-                                .text_size(ui_font_size(11.))
+                                .code_text(11.)
                                 .text_color(rgb(t.fg_dim))
                                 .child(data.path.clone()),
                         ),

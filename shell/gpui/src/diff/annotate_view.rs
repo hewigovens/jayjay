@@ -7,8 +7,8 @@ use gpui::{
 use jayjay_core::AnnotationLine;
 use jayjay_core::diff::{DiffSpan, highlight_file};
 
-use crate::app::fonts;
-use crate::app::theme::{ANNOTATE_PALETTE, Theme, ui_font_size};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::{ANNOTATE_PALETTE, Theme};
 use crate::ui::primitives::no_scrollbar_gutter;
 
 fn change_color(change_id: &str) -> u32 {
@@ -73,8 +73,7 @@ fn annotate_row(line: &AnnotationLine, spans: Option<&[DiffSpan]>, t: &Theme) ->
         .flex_row()
         .w_full()
         .h(px(t.code_line_height()))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(12.))
+        .code_text(12.)
         .line_height(px(t.code_line_height()))
         .child(stripe(stripe_color, t))
         .child(line_no_cell(line.line_number, t))

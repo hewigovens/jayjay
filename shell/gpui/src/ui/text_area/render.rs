@@ -72,7 +72,7 @@ impl Render for TextArea {
             let font_size = if self.is_selectable_code() {
                 t.compact_code_font_size()
             } else {
-                t.font_size
+                t.code_font_size()
             };
             root = root
                 .font_family(crate::app::fonts::mono())

@@ -4,6 +4,7 @@ use gpui::{
 };
 
 use crate::app::config;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{boolean_toggle_button, icon_button};
@@ -68,8 +69,7 @@ pub(super) fn detail_row(
                 .max_w(px(360.))
                 .min_w_0()
                 .truncate()
-                .font_family(crate::app::fonts::mono())
-                .text_size(ui_font_size(detail_font_size))
+                .code_text(detail_font_size)
                 .text_color(rgb(detail_color))
                 .child(detail.into()),
         )

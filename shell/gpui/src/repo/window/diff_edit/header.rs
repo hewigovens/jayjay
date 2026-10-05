@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::rows::DiffEditCardFile;
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::{file_status, line_stats};
 use crate::repo::window::RepoWindow;
@@ -75,9 +75,8 @@ pub(super) fn header_row(
                 .on_click(cx.listener(move |view, _, _, cx| {
                     view.focus_and_toggle_diff_edit_collapse(&path_toggle, cx)
                 }))
-                .font_family(fonts::mono())
+                .code_text(12.)
                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                .text_size(ui_font_size(12.))
                 .child(card.path.to_string()),
         );
     if let Some(badge) = stats_badge(view, card, t) {

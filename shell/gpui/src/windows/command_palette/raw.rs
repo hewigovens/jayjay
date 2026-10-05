@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::state::{CommandOutput, CommandPalette};
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
@@ -89,8 +89,7 @@ fn command_header(
         .child(
             div()
                 .flex_1()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(13.))
+                .code_text(13.)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(cmd.to_owned())),
         )
@@ -161,8 +160,7 @@ fn history_row(command: &str, t: &Theme, cx: &mut Context<CommandPalette>) -> im
         .child(icons::icon(glyph::ARROW_CLOCKWISE, 13., t.fg_dim))
         .child(
             div()
-                .font_family(fonts::mono())
-                .text_size(ui_font_size(11.))
+                .code_text(11.)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(format!("jj {command}"))),
         )
@@ -209,8 +207,7 @@ fn output_pane(text: &str, t: &Theme) -> impl IntoElement {
         .border_1()
         .border_color(rgb(t.border))
         .rounded_sm()
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(11.))
+        .code_text(11.)
         .text_color(rgb(t.fg))
         .child(SharedString::from(text.to_owned()))
 }

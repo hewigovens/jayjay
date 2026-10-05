@@ -4,8 +4,8 @@ use gpui::{
 };
 use jayjay_core::diff::DiffLine;
 
-use crate::app::fonts;
-use crate::app::theme::{Theme, ui_font_size};
+use crate::app::fonts::CodeText as _;
+use crate::app::theme::Theme;
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::repo::window::RepoWindow;
 
@@ -51,8 +51,7 @@ pub(super) fn diff_edit_line_row(
         .w_full()
         .h(px(t.code_line_height()))
         .px(px(18.))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(12.))
+        .code_text(12.)
         .line_height(px(t.code_line_height()))
         .child(
             div()

@@ -127,12 +127,16 @@ impl Theme {
         height + (self.scaled_font_size(base_font_size) - base_font_size).max(0.)
     }
 
+    pub(crate) fn code_font_size(&self) -> f32 {
+        self.font_size
+    }
+
     pub(crate) fn code_line_height(&self) -> f32 {
-        (self.font_size + 5.).max(18.)
+        (self.code_font_size() + 5.).max(18.)
     }
 
     pub(crate) fn compact_code_font_size(&self) -> f32 {
-        (self.font_size - 1.).max(9.)
+        (self.code_font_size() - 1.).max(9.)
     }
 
     pub(crate) fn syntax_token_color(&self, token: SyntaxToken) -> Option<u32> {

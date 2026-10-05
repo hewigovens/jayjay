@@ -55,7 +55,7 @@ pub(super) fn unified_body(
     } = state;
     let theme = Arc::new(theme);
     let query = Arc::new(query);
-    let advance = fonts::mono_advance(cx, px(theme.font_size));
+    let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let wrap_cols = wrap_cols_from_bounds(bounds.get(), advance);
     let lines = wrap_cache.borrow_mut().unified(file_diff, wrap_cols);
     // Both lists size off this shared, interleaved row list — never off lines.len() — so a NoteText row shifts gutter and content lists in lockstep.

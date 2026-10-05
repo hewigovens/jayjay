@@ -4,7 +4,7 @@ use gpui::{
 };
 use jayjay_core::{ChangeInfo, DiffStats};
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::repo::RepoWindow;
 use crate::repo::window::ref_chips::{self, copy_feedback_button};
@@ -78,9 +78,8 @@ pub(super) fn diff_stat(
 ) -> AnyElement {
     let mut row = div().flex().flex_row().items_baseline().gap(px(3.)).child(
         div()
-            .font_family(fonts::mono())
+            .code_text(FONT_ID)
             .font_weight(gpui::FontWeight::SEMIBOLD)
-            .text_size(ui_font_size(FONT_ID))
             .text_color(rgb(color))
             .child(SharedString::from(value)),
     );

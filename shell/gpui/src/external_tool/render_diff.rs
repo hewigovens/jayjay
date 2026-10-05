@@ -5,7 +5,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px, rgb, uniform_list,
 };
 
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::ui::primitives::button;
@@ -258,8 +258,7 @@ fn external_diff_row(
         .flex()
         .flex_row()
         .h(px(t.code_line_height()))
-        .font_family(fonts::mono())
-        .text_size(ui_font_size(12.))
+        .code_text(12.)
         .child(
             div()
                 .flex()
