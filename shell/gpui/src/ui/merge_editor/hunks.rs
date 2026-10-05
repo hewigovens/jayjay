@@ -1,10 +1,12 @@
 use gpui::{
-    AnyElement, Div, InteractiveElement, IntoElement, ParentElement, Role, ScrollHandle,
+    AnyElement, App, Div, InteractiveElement, IntoElement, ParentElement, Role, ScrollHandle,
     SharedString, Stateful, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::diff::{DiffLine, DiffSpanStyle, FileDiff};
 use jayjay_core::{MergeEditorHunk, MergeHunkSource};
 
+use crate::app::actions::{MergeUseLeftHunk, MergeUseRightHunk};
+use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, line_bg_color};
 use crate::ui::primitives::text_tooltip;
@@ -50,24 +52,26 @@ pub(crate) fn merge_hunk_action_links(
     index: usize,
     enabled: bool,
     t: &Theme,
+    cx: &App,
 ) -> [(MergeHunkSource, Stateful<Div>); 3] {
+    let shortcut = |action: &dyn gpui::Action| format!("  {}", KeyCaps::label(action, cx));
     [
         (
             MergeHunkSource::Base,
             "Accept Base",
-            "",
+            String::new(),
             "Use Base for this conflict",
         ),
         (
             MergeHunkSource::Left,
             "Accept Left",
-            "  ⌥←",
+            shortcut(&MergeUseLeftHunk),
             "Use Left for this conflict",
         ),
         (
             MergeHunkSource::Right,
             "Accept Right",
-            "  ⌥→",
+            shortcut(&MergeUseRightHunk),
             "Use Right for this conflict",
         ),
     ]

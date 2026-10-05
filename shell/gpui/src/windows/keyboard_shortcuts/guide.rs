@@ -1,13 +1,48 @@
-pub(super) struct ShortcutEntry {
-    pub(super) label: &'static str,
-    pub(super) keys: &'static [&'static str],
+use gpui::{Action, App};
+
+use crate::app::actions::{
+    CloseWindow, CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, FilterByRevset,
+    MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk, OpenBookmarkManager,
+    OpenCommandPalette, OpenFind, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
+    OpenRepository, OpenSettings, Refresh, ResetZoom, SaveFileEditor, SaveNoteComposer,
+    ShowRepoInFileManager, ToggleSidebar, ZoomIn, ZoomOut,
+};
+use crate::app::key_caps::KeyCaps;
+
+enum Keys {
+    Bound(&'static dyn Action),
+    Fixed(&'static [&'static str]),
 }
 
-/// Must mirror `platform::SIDEBAR_TOGGLE_KEY`.
-#[cfg(target_os = "macos")]
-const SIDEBAR_TOGGLE_KEYS: &[&str] = &["Ctrl", "Mod", "S"];
-#[cfg(not(target_os = "macos"))]
-const SIDEBAR_TOGGLE_KEYS: &[&str] = &["Ctrl", "Alt", "S"];
+pub(super) struct ShortcutEntry {
+    pub(super) label: &'static str,
+    keys: Keys,
+}
+
+impl ShortcutEntry {
+    const fn bound(label: &'static str, action: &'static dyn Action) -> Self {
+        Self {
+            label,
+            keys: Keys::Bound(action),
+        }
+    }
+
+    const fn fixed(label: &'static str, keys: &'static [&'static str]) -> Self {
+        Self {
+            label,
+            keys: Keys::Fixed(keys),
+        }
+    }
+
+    pub(super) fn key_caps(&self, cx: &App) -> Vec<String> {
+        match self.keys {
+            Keys::Bound(action) => KeyCaps::for_action(action, cx)
+                .map(|caps| caps.caps().to_vec())
+                .unwrap_or_default(),
+            Keys::Fixed(keys) => keys.iter().map(|key| (*key).to_owned()).collect(),
+        }
+    }
+}
 
 pub(super) struct ShortcutSection {
     pub(super) title: &'static str,
@@ -18,134 +53,63 @@ pub(super) const SECTIONS: &[ShortcutSection] = &[
     ShortcutSection {
         title: "General",
         entries: &[
-            ShortcutEntry {
-                label: "Open Repository",
-                keys: &["Mod", "O"],
-            },
-            ShortcutEntry {
-                label: "Command Palette",
-                keys: &["Shift", "Mod", "P"],
-            },
-            ShortcutEntry {
-                label: "Refresh",
-                keys: &["Mod", "R"],
-            },
-            ShortcutEntry {
-                label: "Keyboard Shortcuts",
-                keys: &["Mod", "/"],
-            },
-            ShortcutEntry {
-                label: "Settings",
-                keys: &["Mod", ","],
-            },
-            ShortcutEntry {
-                label: "Close Window",
-                keys: &["Mod", "W"],
-            },
+            ShortcutEntry::bound("Open Repository", &OpenRepository),
+            ShortcutEntry::bound("Command Palette", &OpenCommandPalette),
+            ShortcutEntry::bound("Refresh", &Refresh),
+            ShortcutEntry::bound("Keyboard Shortcuts", &OpenKeyboardShortcuts),
+            ShortcutEntry::bound("Settings", &OpenSettings),
+            ShortcutEntry::bound("Close Window", &CloseWindow),
         ],
     },
     ShortcutSection {
         title: "View",
         entries: &[
-            ShortcutEntry {
-                label: "Hide / Show Sidebar",
-                keys: SIDEBAR_TOGGLE_KEYS,
-            },
-            ShortcutEntry {
-                label: "Filter by Revset",
-                keys: &["Mod", "L"],
-            },
-            ShortcutEntry {
-                label: "Zoom In",
-                keys: &["Mod", "+"],
-            },
-            ShortcutEntry {
-                label: "Zoom Out",
-                keys: &["Mod", "−"],
-            },
-            ShortcutEntry {
-                label: "Reset Zoom",
-                keys: &["Mod", "0"],
-            },
+            ShortcutEntry::bound("Hide / Show Sidebar", &ToggleSidebar),
+            ShortcutEntry::bound("Filter by Revset", &FilterByRevset),
+            ShortcutEntry::bound("Zoom In", &ZoomIn),
+            ShortcutEntry::bound("Zoom Out", &ZoomOut),
+            ShortcutEntry::bound("Reset Zoom", &ResetZoom),
         ],
     },
     ShortcutSection {
         title: "Navigation",
         entries: &[
-            ShortcutEntry {
-                label: "Next / Previous Item",
-                keys: &["J", "K"],
-            },
-            ShortcutEntry {
-                label: "Move Up / Down",
-                keys: &["↑", "↓"],
-            },
-            ShortcutEntry {
-                label: "Alternate Up / Down",
-                keys: &["Ctrl", "P", "/", "N"],
-            },
-            ShortcutEntry {
-                label: "Switch Pane",
-                keys: &["Tab"],
-            },
+            ShortcutEntry::fixed("Next / Previous Item", &["J", "K"]),
+            ShortcutEntry::fixed("Move Up / Down", &["↑", "↓"]),
+            ShortcutEntry::fixed("Alternate Up / Down", &["Ctrl", "P", "/", "N"]),
+            ShortcutEntry::fixed("Switch Pane", &["Tab"]),
         ],
     },
     ShortcutSection {
         title: "Repository",
         entries: &[
-            ShortcutEntry {
-                label: "Bookmark Manager",
-                keys: &["Shift", "Mod", "B"],
-            },
-            ShortcutEntry {
-                label: "Undo Last Operation",
-                keys: &["Shift", "Mod", "U"],
-            },
-            ShortcutEntry {
-                label: "Show in File Manager",
-                keys: &["Alt", "Mod", "F"],
-            },
+            ShortcutEntry::bound("Bookmark Manager", &OpenBookmarkManager),
+            ShortcutEntry::bound("Repo Overview", &OpenOverview),
+            ShortcutEntry::bound("Undo Last Operation", &OpenOperationLog),
+            ShortcutEntry::bound("Show in File Manager", &ShowRepoInFileManager),
         ],
     },
     ShortcutSection {
         title: "Diff & Review",
         entries: &[
-            ShortcutEntry {
-                label: "Find in Diff",
-                keys: &["Mod", "F"],
-            },
-            ShortcutEntry {
-                label: "Copy Diff Selection",
-                keys: &["Mod", "C"],
-            },
-            ShortcutEntry {
-                label: "Mark File Reviewed",
-                keys: &["Space"],
-            },
-            ShortcutEntry {
-                label: "Save Review Note",
-                keys: &["Mod", "Return"],
-            },
-            ShortcutEntry {
-                label: "Save Edited File",
-                keys: &["Mod", "S"],
-            },
-            ShortcutEntry {
-                label: "Expand All Files",
-                keys: &["Alt", "Mod", "E"],
-            },
-            ShortcutEntry {
-                label: "Collapse All Files",
-                keys: &["Alt", "Mod", "C"],
-            },
-            ShortcutEntry {
-                label: "Collapse / Expand File",
-                keys: &["←", "→"],
-            },
-            ShortcutEntry {
-                label: "Toggle File",
-                keys: &["Return"],
-            },
+            ShortcutEntry::bound("Find in Diff", &OpenFind),
+            ShortcutEntry::bound("Copy Diff Selection", &CopyDiffSelection),
+            ShortcutEntry::fixed("Mark File Reviewed", &["Space"]),
+            ShortcutEntry::bound("Save Review Note", &SaveNoteComposer),
+            ShortcutEntry::bound("Save Edited File", &SaveFileEditor),
+            ShortcutEntry::bound("Expand All Files", &DiffEditExpandAll),
+            ShortcutEntry::bound("Collapse All Files", &DiffEditCollapseAll),
+            ShortcutEntry::fixed("Collapse / Expand File", &["←", "→"]),
+            ShortcutEntry::fixed("Toggle File", &["Enter"]),
+        ],
+    },
+    ShortcutSection {
+        title: "Conflicts",
+        entries: &[
+            ShortcutEntry::bound("Accept Left", &MergeUseLeftHunk),
+            ShortcutEntry::bound("Accept Right", &MergeUseRightHunk),
+            ShortcutEntry::bound("Previous Conflict", &MergePreviousHunk),
+            ShortcutEntry::bound("Next Conflict", &MergeNextHunk),
         ],
     },
 ];
@@ -172,12 +136,32 @@ pub(super) fn columns() -> [&'static [ShortcutSection]; 2] {
     [left, right]
 }
 
-pub(super) fn display_key(key: &'static str) -> &'static str {
-    match (key, cfg!(target_os = "macos")) {
-        ("Mod", true) => "⌘",
-        ("Mod", false) => "Ctrl",
-        ("Shift", true) => "⇧",
-        ("Alt", true) => "⌥",
-        _ => key,
+#[cfg(test)]
+mod tests {
+    use super::{Keys, SECTIONS};
+    use crate::app::actions::{Dismiss, Quit, SubmitStackedPr, app_key_bindings};
+
+    #[test]
+    fn guide_documents_every_app_binding() {
+        let documented: Vec<_> = SECTIONS
+            .iter()
+            .flat_map(|section| section.entries)
+            .filter_map(|entry| match entry.keys {
+                Keys::Bound(action) => Some(action),
+                Keys::Fixed(_) => None,
+            })
+            .chain([&Quit as &dyn gpui::Action, &Dismiss, &SubmitStackedPr])
+            .collect();
+        let missing: Vec<_> = app_key_bindings()
+            .iter()
+            .map(|binding| binding.action())
+            .filter(|action| !action.name().starts_with("text_area::"))
+            .filter(|action| !documented.iter().any(|known| known.partial_eq(*action)))
+            .map(|action| action.name())
+            .collect();
+        assert!(
+            missing.is_empty(),
+            "bound but missing from the guide: {missing:?}"
+        );
     }
 }

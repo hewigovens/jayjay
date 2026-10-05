@@ -5,6 +5,7 @@ use gpui::{
 use jayjay_core::MergeHunkSource;
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
+use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::merge_editor::{
     merge_base_toggle, merge_hunk_action_links, merge_hunk_card, merge_result_mode_button,
@@ -150,9 +151,13 @@ impl ExternalToolWindow {
                             .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
                             .child(if raw {
-                                result_label
+                                result_label.to_owned()
                             } else {
-                                "Select a hunk; ⌥← uses Left and ⌥→ uses Right"
+                                format!(
+                                    "Select a hunk; {} uses Left and {} uses Right",
+                                    KeyCaps::label(&MergeUseLeftHunk, cx),
+                                    KeyCaps::label(&MergeUseRightHunk, cx)
+                                )
                             }),
                     ),
             )
@@ -182,32 +187,31 @@ impl ExternalToolWindow {
             return div().into_any_element();
         };
         let result_text = result.read(cx).text();
-        let cards = session
-            .hunks
-            .iter()
-            .zip(&session.hunk_diffs)
-            .enumerate()
-            .map(|(index, (hunk, unified))| {
-                let unresolved = hunk.is_unresolved(&result_text);
-                let actions = merge_hunk_action_links("external", index, unresolved, t).map(
-                    |(source, mut action)| {
-                        if unresolved {
-                            action = action.on_click(cx.listener(move |view, _, window, cx| {
-                                // The card selects on click; without this the parent would undo the advance.
-                                cx.stop_propagation();
-                                view.use_merge_hunk(index, source, window, cx);
-                            }));
-                        }
-                        action.into_any_element()
-                    },
-                );
-                merge_hunk_card(hunk, unified, unresolved, actions, t).on_click(
-                    cx.listener(move |view, _, window, cx| {
-                        view.select_merge_hunk(index, window, cx)
-                    }),
-                )
-            })
-            .collect::<Vec<_>>();
+        let cards =
+            session
+                .hunks
+                .iter()
+                .zip(&session.hunk_diffs)
+                .enumerate()
+                .map(|(index, (hunk, unified))| {
+                    let unresolved = hunk.is_unresolved(&result_text);
+                    let actions = merge_hunk_action_links("external", index, unresolved, t, cx)
+                        .map(|(source, mut action)| {
+                            if unresolved {
+                                action =
+                                    action.on_click(cx.listener(move |view, _, window, cx| {
+                                        // The card selects on click; without this the parent would undo the advance.
+                                        cx.stop_propagation();
+                                        view.use_merge_hunk(index, source, window, cx);
+                                    }));
+                            }
+                            action.into_any_element()
+                        });
+                    merge_hunk_card(hunk, unified, unresolved, actions, t).on_click(cx.listener(
+                        move |view, _, window, cx| view.select_merge_hunk(index, window, cx),
+                    ))
+                })
+                .collect::<Vec<_>>();
         self.merge_hunk_list("external-hunks-scroll", cards, cx)
             .on_action(cx.listener(|view, _: &MergeUseLeftHunk, window, cx| {
                 view.use_selected_merge_hunk(MergeHunkSource::Left, window, cx);

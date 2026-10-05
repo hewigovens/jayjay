@@ -6,6 +6,8 @@ use gpui::{
     percentage, point, px, rgb, svg,
 };
 
+use crate::app::actions::ToggleSidebar;
+use crate::app::key_caps::KeyCaps;
 use crate::app::theme::Theme;
 use crate::repo::toolbar::ToolbarActivity;
 use crate::repo::view_model::RefreshMode;
@@ -84,10 +86,7 @@ fn sidebar_toggle_button(
     } else {
         "Hide Sidebar"
     };
-    let tooltip = format!(
-        "{title} ({})",
-        crate::platform::SIDEBAR_TOGGLE_SHORTCUT_LABEL
-    );
+    let tooltip = format!("{title} ({})", KeyCaps::label(&ToggleSidebar, cx));
     focus_ring(
         group_icon_item(
             "tb-sidebar-toggle",

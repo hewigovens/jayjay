@@ -6,6 +6,7 @@ pub mod feedback;
 pub mod fonts;
 pub mod fs_watcher;
 mod gpui_assets;
+pub mod key_caps;
 pub mod links;
 pub mod menus;
 pub mod motion;

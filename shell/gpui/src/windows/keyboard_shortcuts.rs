@@ -13,7 +13,7 @@ use crate::ui::primitives::divider_h;
 
 mod guide;
 
-use guide::{ShortcutEntry, ShortcutSection, display_key};
+use guide::{ShortcutEntry, ShortcutSection};
 
 pub struct KeyboardShortcutsView {
     focus_handle: FocusHandle,
@@ -89,8 +89,8 @@ impl Render for KeyboardShortcutsView {
                     .overflow_y_scroll()
                     .scrollbar_width(px(0.))
                     .p(px(20.))
-                    .child(column(left, &t))
-                    .child(column(right, &t)),
+                    .child(column(left, &t, cx))
+                    .child(column(right, &t, cx)),
             )
             .child(divider_h(&t))
             .child(
@@ -138,15 +138,15 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
         .into_any_element()
 }
 
-fn column(sections: &[ShortcutSection], t: &Theme) -> AnyElement {
+fn column(sections: &[ShortcutSection], t: &Theme, cx: &App) -> AnyElement {
     let mut column = div().flex().flex_col().gap(px(20.)).flex_1().min_w_0();
     for section in sections {
-        column = column.child(section_block(section, t));
+        column = column.child(section_block(section, t, cx));
     }
     column.into_any_element()
 }
 
-fn section_block(section: &ShortcutSection, t: &Theme) -> AnyElement {
+fn section_block(section: &ShortcutSection, t: &Theme, cx: &App) -> AnyElement {
     let title = section.title;
     let mut block = div()
         .id(SharedString::from(format!("shortcut-section-{title}")))
@@ -162,16 +162,16 @@ fn section_block(section: &ShortcutSection, t: &Theme) -> AnyElement {
                 .child(title.to_uppercase()),
         );
     for entry in section.entries {
-        block = block.child(shortcut_row(entry, t));
+        block = block.child(shortcut_row(entry, t, cx));
     }
     block.into_any_element()
 }
 
-fn shortcut_row(entry: &ShortcutEntry, t: &Theme) -> AnyElement {
+fn shortcut_row(entry: &ShortcutEntry, t: &Theme, cx: &App) -> AnyElement {
     let label = entry.label;
     let mut caps = div().flex().items_center().gap(px(4.));
-    for (ix, key) in entry.keys.iter().enumerate() {
-        caps = caps.child(key_cap(label, ix, display_key(key), t));
+    for (ix, key) in entry.key_caps(cx).into_iter().enumerate() {
+        caps = caps.child(key_cap(label, ix, key, t));
     }
     div()
         .id(SharedString::from(format!("shortcut-entry-{label}")))
@@ -186,7 +186,7 @@ fn shortcut_row(entry: &ShortcutEntry, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn key_cap(label: &'static str, ix: usize, key: &'static str, t: &Theme) -> AnyElement {
+fn key_cap(label: &'static str, ix: usize, key: String, t: &Theme) -> AnyElement {
     div()
         .id(SharedString::from(format!("shortcut-key-{label}-{ix}")))
         .debug_selector(move || format!("shortcut-key-{label}-{ix}"))

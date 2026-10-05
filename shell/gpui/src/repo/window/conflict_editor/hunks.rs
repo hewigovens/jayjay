@@ -5,6 +5,7 @@ use gpui::{
 use jayjay_core::{ConflictEditorData, MergeHunkSource};
 
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
+use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::merge_editor::{merge_hunk_action_links, merge_hunk_card, merge_result_mode_button};
 use crate::ui::merge_scroll::MergeSynchronized as _;
@@ -52,8 +53,13 @@ pub(super) fn conflict_result_section(
                 .text_color(rgb(t.fg_dim))
                 .child(if raw {
                     "Edit markers directly; unresolved markers save as a partial resolution"
+                        .to_owned()
                 } else {
-                    "Select a hunk, then use ⌥← for Left or ⌥→ for Right"
+                    format!(
+                        "Select a hunk, then use {} for Left or {} for Right",
+                        KeyCaps::label(&MergeUseLeftHunk, cx),
+                        KeyCaps::label(&MergeUseRightHunk, cx)
+                    )
                 }),
         );
 
@@ -96,7 +102,7 @@ fn hunk_list(
             .enumerate()
             .map(|(index, (hunk, unified))| {
                 let unresolved = hunk.is_unresolved(result_text);
-                let actions = merge_hunk_action_links("conflict", index, unresolved, t).map(
+                let actions = merge_hunk_action_links("conflict", index, unresolved, t, cx).map(
                     |(source, mut action)| {
                         if unresolved {
                             action = action.on_click(cx.listener(move |view, _, window, cx| {
