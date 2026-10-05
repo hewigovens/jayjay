@@ -6,7 +6,10 @@ import JayJayCore
 final class OverviewViewModel {
     let repoPath: String
     private var repo: JayJayRepo?
-    private(set) var snapshot: OverviewSnapshot?
+    private(set) var snapshot: OverviewSnapshot? {
+        didSet { rebuildLayout() }
+    }
+
     private(set) var error: String?
     private(set) var actionError: String?
     var selectedLaneId: String?
@@ -14,8 +17,17 @@ final class OverviewViewModel {
     var isLanePanelShown = false
     private(set) var selectedChangeFiles: [FileDiffStats]?
     var filter = "" {
-        didSet { keepSelectionVisible() }
+        didSet {
+            rebuildLayout()
+            keepSelectionVisible()
+        }
     }
+
+    /// Cached because the canvas reads them on every update.
+    private(set) var laneIds: [String] = []
+    private(set) var visibleGroups: [OverviewGroup] = []
+    private(set) var placement = OverviewPlacement(lanes: [], groups: [])
+    @ObservationIgnored private var laneIndexById: [String: Int] = [:]
 
     var pendingAbandon: OverviewAbandonRequest?
     var pendingWorkspaceDelete: WorkspaceInfo?
@@ -35,10 +47,6 @@ final class OverviewViewModel {
     }
 
     /// Divergent heads share a change id, so those lanes carry the commit id too.
-    var laneIds: [String] {
-        Self.laneIds(for: lanes)
-    }
-
     private static func laneIds(for lanes: [OverviewLane]) -> [String] {
         var seen: [String: Int] = [:]
         for lane in lanes {
@@ -50,12 +58,16 @@ final class OverviewViewModel {
         }
     }
 
-    var visibleGroups: [OverviewGroup] {
-        guard let snapshot else { return [] }
-        return snapshot.groups.compactMap { group in
-            let lanes = group.lanes.filter { snapshot.overview.lanes[Int($0)].matches(filter: filter) }
-            return lanes.isEmpty ? nil : OverviewGroup(base: group.base, lanes: lanes)
-        }
+    private func rebuildLayout() {
+        laneIds = Self.laneIds(for: lanes)
+        laneIndexById = Dictionary(uniqueKeysWithValues: laneIds.enumerated().map { ($1, $0) })
+        visibleGroups = snapshot.map { snapshot in
+            snapshot.groups.compactMap { group in
+                let lanes = group.lanes.filter { snapshot.overview.lanes[Int($0)].matches(filter: filter) }
+                return lanes.isEmpty ? nil : OverviewGroup(base: group.base, lanes: lanes)
+            }
+        } ?? []
+        placement = OverviewPlacement(lanes: lanes, groups: visibleGroups)
     }
 
     var trunkName: String {
@@ -64,7 +76,7 @@ final class OverviewViewModel {
     }
 
     var selectedLane: OverviewLane? {
-        guard let selectedLaneId, let index = laneIds.firstIndex(of: selectedLaneId) else { return nil }
+        guard let selectedLaneId, let index = laneIndexById[selectedLaneId] else { return nil }
         return lanes[index]
     }
 
@@ -143,13 +155,11 @@ final class OverviewViewModel {
     }
 
     private func reconcileSelection(with loaded: OverviewSnapshot) {
-        let lanes = loaded.overview.lanes
-        let ids = Self.laneIds(for: lanes)
-        if !ids.contains(where: { $0 == selectedLaneId }) {
-            selectedLaneId = loaded.groups.first?.lanes.first.map { ids[Int($0)] }
+        if selectedLaneId.flatMap({ laneIndexById[$0] }) == nil {
+            selectedLaneId = loaded.groups.first?.lanes.first.map { laneIds[Int($0)] }
             selectedChangeId = nil
         }
-        if let pendingAbandon, !pendingAbandon.isCurrent(in: lanes, ids: ids) {
+        if let pendingAbandon, !pendingAbandon.isCurrent(in: lanes, ids: laneIds) {
             self.pendingAbandon = nil
         }
         if let pendingWorkspaceDelete, !loaded.workspaces.contains(where: { $0.name == pendingWorkspaceDelete.name }) {

@@ -123,7 +123,7 @@ struct OverviewView: View {
                         OverviewCanvas(
                             lanes: snapshot.overview.lanes,
                             laneIds: viewModel.laneIds,
-                            groups: viewModel.visibleGroups,
+                            placement: viewModel.placement,
                             trunkName: viewModel.trunkName,
                             selectedLaneId: $viewModel.selectedLaneId,
                             selectedChangeId: $viewModel.selectedChangeId,

@@ -5,7 +5,7 @@ import SwiftUI
 struct OverviewCanvas: View {
     let lanes: [OverviewLane]
     let laneIds: [String]
-    let groups: [OverviewGroup]
+    let placement: OverviewPlacement
     let trunkName: String
     @Binding var selectedLaneId: String?
     @Binding var selectedChangeId: String?
@@ -14,19 +14,24 @@ struct OverviewCanvas: View {
     let actions: OverviewLaneActions
 
     @Environment(\.colorScheme) private var colorScheme
+    /// Only views inside this region are built.
+    @State private var viewport = CGRect(x: 0, y: 0, width: 2048, height: 2048)
 
     private typealias Geo = OverviewGeometry
 
     var body: some View {
-        let placement = OverviewPlacement(lanes: lanes, groups: groups)
+        let content = CGRect(origin: .zero, size: placement.size)
+        let visible = viewport.intersects(content) ? viewport.intersection(content) : .zero
         ZStack(alignment: .topLeading) {
             Canvas { context, _ in
-                drawLines(in: &context, placement: placement)
+                context.translateBy(x: -visible.minX, y: -visible.minY)
+                drawLines(in: &context, visible: visible)
             }
-            .frame(width: placement.size.width, height: placement.size.height)
+            .frame(width: visible.width, height: visible.height)
+            .offset(x: visible.minX, y: visible.minY)
             .allowsHitTesting(false)
 
-            ForEach(Array(placement.bands.enumerated()), id: \.offset) { _, band in
+            ForEach(placement.bands(in: visible), id: \.y) { band in
                 OverviewTrunkLabel(base: band.base, trunkName: trunkName)
                     .frame(width: Geo.trunkLabelWidth, height: Geo.rowHeight, alignment: .leading)
                     .position(x: Geo.spineX + 12 + Geo.trunkLabelWidth / 2, y: band.y - Geo.rowHeight / 2 - 2)
@@ -35,7 +40,7 @@ struct OverviewCanvas: View {
                     .position(x: Geo.spineX + 12 + Geo.trunkLabelWidth / 2, y: band.y + Geo.rowHeight / 2 + 2)
             }
 
-            ForEach(placement.lanes) { placed in
+            ForEach(placement.lanes(in: visible)) { placed in
                 let lane = lanes[placed.laneIndex]
                 let laneId = laneIds[placed.laneIndex]
                 Button {
@@ -52,7 +57,8 @@ struct OverviewCanvas: View {
                 .position(x: placed.x + Geo.columnWidth / 2, y: placed.cardCenterY)
                 .accessibilityIdentifier(AID.Overview.lane(lane.head.changeId.prefix))
 
-                ForEach(Array(lane.changes.enumerated()), id: \.element.commitId.id) { offset, change in
+                ForEach(placed.rowOffsets(in: visible), id: \.self) { offset in
+                    let change = lane.changes[offset]
                     Button {
                         selectedLaneId = laneId
                         selectedChangeId = change.commitId.id
@@ -68,10 +74,13 @@ struct OverviewCanvas: View {
             }
         }
         .frame(width: placement.size.width, height: placement.size.height, alignment: .topLeading)
-        .background(OverviewScrollRevealer(rect: selectionRect(in: placement)))
+        .onGeometryChange(for: CGRect.self) { proxy in
+            OverviewPlacement.tiled(proxy.bounds(of: .scrollView) ?? CGRect(origin: .zero, size: proxy.size))
+        } action: { viewport = $0 }
+        .background(OverviewScrollRevealer(rect: selectionRect))
     }
 
-    private func selectionRect(in placement: OverviewPlacement) -> CGRect? {
+    private var selectionRect: CGRect? {
         guard let placed = placement.lanes.first(where: { laneIds[$0.laneIndex] == selectedLaneId }) else { return nil }
         let changes = lanes[placed.laneIndex].changes
         let rect = if let offset = changes.firstIndex(where: { $0.commitId.id == selectedChangeId }) {
@@ -125,11 +134,11 @@ struct OverviewCanvas: View {
         NSPasteboard.general.setString(text, forType: .string)
     }
 
-    private func drawLines(in context: inout GraphicsContext, placement: OverviewPlacement) {
+    private func drawLines(in context: inout GraphicsContext, visible: CGRect) {
         let line = AppColors.graphLine(colorScheme)
         let muted = line.opacity(0.55)
 
-        for placed in placement.lanes {
+        for placed in placement.lanes(in: visible) {
             let x = placed.x + Geo.nodeInset
             var stem = Path()
             stem.move(to: CGPoint(x: x, y: placed.cardCenterY + Geo.cardHeight / 2))
@@ -137,7 +146,7 @@ struct OverviewCanvas: View {
             context.stroke(stem, with: .color(muted), style: StrokeStyle(lineWidth: 1.2))
         }
 
-        for band in placement.bands {
+        for band in placement.bands(in: visible) {
             var path = Path()
             path.move(to: CGPoint(x: Geo.spineX + 6, y: band.y))
             path.addLine(to: CGPoint(x: band.lastX, y: band.y))
@@ -154,10 +163,17 @@ struct OverviewCanvas: View {
         }
 
         if let first = placement.bands.first, let last = placement.bands.last, first.y != last.y {
-            var spine = Path()
-            spine.move(to: CGPoint(x: Geo.spineX, y: first.y + 6))
-            spine.addLine(to: CGPoint(x: Geo.spineX, y: last.y - 6))
-            context.stroke(spine, with: .color(muted), style: StrokeStyle(lineWidth: 1.2, dash: [3, 4]))
+            let dashPeriod: CGFloat = 7
+            let top = first.y + 6
+            // Align to the dash period so the pattern doesn't crawl while scrolling.
+            let start = top + max(0, ((visible.minY - top) / dashPeriod).rounded(.down) * dashPeriod)
+            let end = min(last.y - 6, visible.maxY)
+            if start < end {
+                var spine = Path()
+                spine.move(to: CGPoint(x: Geo.spineX, y: start))
+                spine.addLine(to: CGPoint(x: Geo.spineX, y: end))
+                context.stroke(spine, with: .color(muted), style: StrokeStyle(lineWidth: 1.2, dash: [3, 4]))
+            }
         }
     }
 }
@@ -182,65 +198,6 @@ enum OverviewGeometry {
     static let nodeInset: CGFloat = 12
     static let topPadding: CGFloat = 14
     static let bandSpacing: CGFloat = 40
-}
-
-struct OverviewPlacement {
-    struct Band {
-        let base: OverviewBase
-        let y: CGFloat
-        let lastX: CGFloat
-    }
-
-    struct Lane: Identifiable {
-        let laneIndex: Int
-        let x: CGFloat
-        let bandY: CGFloat
-        let count: Int
-
-        var id: Int {
-            laneIndex
-        }
-
-        func nodeY(_ offset: Int) -> CGFloat {
-            bandY - CGFloat(count - offset) * OverviewGeometry.rowHeight
-        }
-
-        var cardCenterY: CGFloat {
-            nodeY(0) - OverviewGeometry.rowHeight / 2 - OverviewGeometry.cardGap - OverviewGeometry.cardHeight / 2
-        }
-    }
-
-    let bands: [Band]
-    let lanes: [Lane]
-    let size: CGSize
-
-    init(lanes allLanes: [OverviewLane], groups: [OverviewGroup]) {
-        typealias Geo = OverviewGeometry
-        var bands: [Band] = []
-        var lanes: [Lane] = []
-        var widestGroup = 0
-        var previousBandY: CGFloat?
-        for group in groups {
-            let counts = group.lanes.map { allLanes[Int($0)].changes.count }
-            let top = previousBandY.map { $0 + Geo.bandSpacing } ?? Geo.topPadding
-            let bandY = top + Geo.cardHeight + Geo.cardGap + Geo.rowHeight * (CGFloat(counts.max() ?? 0) + 0.5)
-            previousBandY = bandY
-            var lastX = Geo.spineX
-            for (column, laneIndex) in group.lanes.enumerated() {
-                let x = Geo.gutterWidth + CGFloat(column) * (Geo.columnWidth + Geo.columnGap)
-                lanes.append(Lane(laneIndex: Int(laneIndex), x: x, bandY: bandY, count: counts[column]))
-                lastX = x + Geo.nodeInset
-            }
-            widestGroup = max(widestGroup, group.lanes.count)
-            bands.append(Band(base: group.base, y: bandY, lastX: lastX))
-        }
-        self.bands = bands
-        self.lanes = lanes
-        size = CGSize(
-            width: Geo.gutterWidth + CGFloat(widestGroup) * (Geo.columnWidth + Geo.columnGap) + 40,
-            height: (bands.last?.y ?? 0) + 40
-        )
-    }
 }
 
 /// `ScrollViewReader` cannot target positioned views, so AppKit scrolls the enclosing clip view instead.

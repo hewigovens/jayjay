@@ -21,10 +21,15 @@ fn main() {
         .collect();
     let (path, scenario) = match args.as_slice() {
         [path] => (Path::new(path), "refresh"),
-        [path, scenario] if matches!(scenario.as_str(), "refresh" | "graph" | "bookmarks") => {
+        [path, scenario]
+            if matches!(
+                scenario.as_str(),
+                "refresh" | "graph" | "bookmarks" | "overview"
+            ) =>
+        {
             (Path::new(path), scenario.as_str())
         }
-        _ => panic!("usage: profile_refresh <repo-path> [refresh|graph|bookmarks]"),
+        _ => panic!("usage: profile_refresh <repo-path> [refresh|graph|bookmarks|overview]"),
     };
     assert_single_op_head(path);
 
@@ -65,6 +70,16 @@ fn main() {
                     repo.diff_stats("@").expect("diff stats"),
                 ))
             });
+        }
+        if scenario == "overview" {
+            let snapshot = timed("overview_snapshot", || {
+                repo.overview_snapshot().expect("overview")
+            });
+            eprintln!(
+                "lanes: {}, groups: {}",
+                snapshot.overview.lanes.len(),
+                snapshot.groups.len()
+            );
         }
         eprintln!("---");
     }
