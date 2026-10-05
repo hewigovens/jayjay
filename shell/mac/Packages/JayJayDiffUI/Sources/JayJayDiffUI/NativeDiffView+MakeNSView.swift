@@ -13,19 +13,15 @@ public extension NativeDiffView {
         gutterContainer.widthTracksTextView = true
         gutterContainer.lineFragmentPadding = 0
 
-        let gutterLayoutManager = DiffLayoutManager()
-        gutterLayoutManager.addTextContainer(gutterContainer)
-
-        let gutterStorage = NSTextStorage()
-        gutterStorage.addLayoutManager(gutterLayoutManager)
-
         let gutterScrollView = DiffScrollView()
         gutterScrollView.hasVerticalScroller = false
         gutterScrollView.hasHorizontalScroller = false
         gutterScrollView.autohidesScrollers = true
         gutterScrollView.drawsBackground = false
 
-        let gutterTextView = DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
+        let gutterTextView = gutterContainer.makeTextKit1View(DiffLayoutManager()) {
+            DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: $0)
+        }
         gutterTextView.isEditable = false
         gutterTextView.isSelectable = true
         // The layout manager draws its own inset highlight; the system styling would also recolor the ✓/● marker glyphs to selectedTextColor.
@@ -55,14 +51,9 @@ public extension NativeDiffView {
         textContainer.lineFragmentPadding = 4
         textContainer.lineBreakMode = .byWordWrapping
 
-        let layoutManager = DiffLayoutManager()
-        layoutManager.addTextContainer(textContainer)
-
-        let storage = NSTextStorage()
-        storage.delegate = TextPresentationFallback.shared
-        storage.addLayoutManager(layoutManager)
-
-        let textView = DiffTextView(frame: scrollView.bounds, textContainer: textContainer)
+        let textView = textContainer.makeTextKit1View(DiffLayoutManager()) {
+            DiffTextView(frame: scrollView.bounds, textContainer: $0)
+        }
         textView.isEditable = false
         textView.isSelectable = true
         textView.autoresizingMask = [.width]

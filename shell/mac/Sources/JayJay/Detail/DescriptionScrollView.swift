@@ -6,12 +6,15 @@ final class DescriptionScrollView: NSScrollView {
     private var expanded = false
     private var needsScrollReset = false
     // An animated resize asks for the height at its final width, so sizing must not re-wrap the visible text.
-    private let measuringStorage = NSTextStorage()
     private let measuringLayout = NSLayoutManager()
     private let measuringContainer = NSTextContainer()
+    private let measuringStorage: NSTextStorage
 
     init() {
+        measuringContainer.lineFragmentPadding = 0
+        measuringStorage = measuringContainer.makeTextKit1Storage(measuringLayout)
         super.init(frame: .zero)
+        textView.adoptTextKit1()
         drawsBackground = false
         hasVerticalScroller = true
         autohidesScrollers = true
@@ -28,11 +31,6 @@ final class DescriptionScrollView: NSScrollView {
         textView.autoresizingMask = [.width]
         textView.maxSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
-        textView.textStorage?.delegate = TextPresentationFallback.shared
-        measuringStorage.delegate = TextPresentationFallback.shared
-        measuringContainer.lineFragmentPadding = 0
-        measuringLayout.addTextContainer(measuringContainer)
-        measuringStorage.addLayoutManager(measuringLayout)
         documentView = textView
         setAccessibilityIdentifier(AID.Detail.descriptionBody)
     }

@@ -9,19 +9,15 @@ extension SideBySideRepresentable {
         gutterContainer.widthTracksTextView = true
         gutterContainer.lineFragmentPadding = 0
 
-        let gutterLayout = DiffLayoutManager()
-        gutterLayout.addTextContainer(gutterContainer)
-
-        let gutterStorage = NSTextStorage()
-        gutterStorage.addLayoutManager(gutterLayout)
-
         let gutterScrollView = NSScrollView()
         gutterScrollView.hasVerticalScroller = false
         gutterScrollView.hasHorizontalScroller = false
         gutterScrollView.autohidesScrollers = true
         gutterScrollView.drawsBackground = false
 
-        let gutterTextView = DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: gutterContainer)
+        let gutterTextView = gutterContainer.makeTextKit1View(DiffLayoutManager()) {
+            DiffGutterTextView(frame: gutterScrollView.bounds, textContainer: $0)
+        }
         gutterTextView.isEditable = false
         gutterTextView.isSelectable = false
         gutterTextView.isVerticallyResizable = true
@@ -45,14 +41,9 @@ extension SideBySideRepresentable {
         textContainer.widthTracksTextView = true
         textContainer.lineFragmentPadding = 0
 
-        let layoutManager = DiffLayoutManager()
-        layoutManager.addTextContainer(textContainer)
-
-        let storage = NSTextStorage()
-        storage.delegate = TextPresentationFallback.shared
-        storage.addLayoutManager(layoutManager)
-
-        let textView = DiffTextView(frame: scrollView.bounds, textContainer: textContainer)
+        let textView = textContainer.makeTextKit1View(DiffLayoutManager()) {
+            DiffTextView(frame: scrollView.bounds, textContainer: $0)
+        }
         textView.isEditable = false
         textView.isSelectable = true
         textView.isVerticallyResizable = true

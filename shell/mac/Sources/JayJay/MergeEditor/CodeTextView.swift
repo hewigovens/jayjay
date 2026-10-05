@@ -80,13 +80,7 @@ struct CodeTextView: NSViewRepresentable {
         ))
         textContainer.lineFragmentPadding = 0
 
-        let layoutManager = NSLayoutManager()
-        layoutManager.addTextContainer(textContainer)
-        let storage = NSTextStorage()
-        storage.delegate = TextPresentationFallback.shared
-        storage.addLayoutManager(layoutManager)
-
-        let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)
+        let textView = textContainer.makeTextKit1View { NSTextView(frame: scrollView.bounds, textContainer: $0) }
         textView.font = editorFont
         textView.delegate = context.coordinator
         textView.isEditable = isEditable
