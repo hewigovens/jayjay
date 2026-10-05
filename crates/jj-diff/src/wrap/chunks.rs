@@ -4,7 +4,7 @@ use unicode_width::UnicodeWidthStr;
 use crate::types::{DiffLine, DiffSpan};
 
 /// One bucket of a wrapped line: its display-cell range and the spans in it.
-#[derive(Clone, Default)]
+#[derive(Default)]
 pub(super) struct SpanChunk {
     pub(super) start: usize,
     pub(super) end: usize,
@@ -19,7 +19,15 @@ pub(super) fn grapheme_cells(g: &str) -> usize {
 
 /// Display-cell width of a string, counting CJK/emoji as two cells.
 fn text_cells(text: &str) -> usize {
+    if is_single_cell_ascii(text) {
+        return text.len();
+    }
     text.graphemes(true).map(grapheme_cells).sum()
+}
+
+/// ASCII graphemes are single bytes of one cell each, except CRLF, which is one cluster.
+fn is_single_cell_ascii(text: &str) -> bool {
+    text.is_ascii() && !text.contains("\r\n")
 }
 
 pub(super) fn line_char_len(line: &DiffLine) -> usize {
@@ -33,73 +41,96 @@ pub(super) fn spans_char_len(spans: &[DiffSpan]) -> usize {
 /// Bucket `spans` into `cols`-wide (display-cell) chunks in one pass.
 /// Never splits inside a grapheme cluster; a wide glyph that would straddle a
 /// chunk edge moves wholly into the next chunk.
-pub(super) fn split_spans_into_chunks(
-    spans: &[DiffSpan],
-    cols: usize,
-    len: usize,
-) -> Vec<Vec<DiffSpan>> {
-    if len == 0 {
-        return vec![Vec::new()];
-    }
-    let cols = cols.max(1);
-    let mut chunks: Vec<Vec<DiffSpan>> = vec![Vec::new()];
-    // Cell position within the current (last) chunk.
-    let mut chunk_cells = 0usize;
-
+pub(super) fn side_chunks(spans: &[DiffSpan], cols: usize) -> Vec<SpanChunk> {
+    let mut writer = ChunkWriter::new(cols.max(1));
     for span in spans {
-        if span.text.is_empty() {
-            continue;
-        }
-        let mut buf = String::new();
-        for g in span.text.graphemes(true) {
-            let w = grapheme_cells(g);
-            // `chunk_cells > 0` lets a glyph wider than a whole chunk still occupy its own row.
-            if chunk_cells + w > cols && chunk_cells > 0 {
-                flush(&mut chunks, &mut buf, span);
-                chunks.push(Vec::new());
-                chunk_cells = 0;
+        if is_single_cell_ascii(&span.text) {
+            let mut rest = span.text.as_str();
+            while !rest.is_empty() {
+                let room = writer.room();
+                if room == 0 {
+                    writer.break_chunk(span);
+                    continue;
+                }
+                let (head, tail) = rest.split_at(room.min(rest.len()));
+                writer.push(head, head.len());
+                rest = tail;
             }
-            buf.push_str(g);
-            chunk_cells += w;
+        } else {
+            for g in span.text.graphemes(true) {
+                let w = grapheme_cells(g);
+                if !writer.fits(w) {
+                    writer.break_chunk(span);
+                }
+                writer.push(g, w);
+            }
         }
-        flush(&mut chunks, &mut buf, span);
+        writer.flush(span);
     }
-
-    chunks
+    writer.finish()
 }
 
-/// Append `buf` (if non-empty) as a span carrying `source`'s style to the last chunk.
-fn flush(chunks: &mut [Vec<DiffSpan>], buf: &mut String, source: &DiffSpan) {
-    if buf.is_empty() {
-        return;
+/// Fills `current` until it reaches `cols`; `buf` holds the current span's text not yet flushed.
+struct ChunkWriter {
+    cols: usize,
+    chunks: Vec<SpanChunk>,
+    current: SpanChunk,
+    buf: String,
+}
+
+impl ChunkWriter {
+    fn new(cols: usize) -> Self {
+        Self {
+            cols,
+            chunks: Vec::new(),
+            current: SpanChunk::default(),
+            buf: String::new(),
+        }
     }
-    if let Some(chunk) = chunks.last_mut() {
-        chunk.push(DiffSpan {
-            text: std::mem::take(buf),
+
+    fn used(&self) -> usize {
+        self.current.end - self.current.start
+    }
+
+    fn room(&self) -> usize {
+        self.cols.saturating_sub(self.used())
+    }
+
+    /// An empty chunk takes any glyph, so one wider than `cols` still gets its own row.
+    fn fits(&self, cells: usize) -> bool {
+        self.used() == 0 || cells <= self.room()
+    }
+
+    fn push(&mut self, text: &str, cells: usize) {
+        self.buf.push_str(text);
+        self.current.end += cells;
+    }
+
+    fn break_chunk(&mut self, source: &DiffSpan) {
+        self.flush(source);
+        let start = self.current.end;
+        let next = SpanChunk {
+            start,
+            end: start,
+            spans: Vec::new(),
+        };
+        self.chunks.push(std::mem::replace(&mut self.current, next));
+    }
+
+    /// Append `buf` (if non-empty) as a span carrying `source`'s style to the current chunk.
+    fn flush(&mut self, source: &DiffSpan) {
+        if self.buf.is_empty() {
+            return;
+        }
+        self.current.spans.push(DiffSpan {
+            text: std::mem::take(&mut self.buf),
             style: source.style,
             token: source.token,
         });
     }
-}
 
-/// Like `split_spans_into_chunks` but packages each chunk with its `[start, end)` cell range.
-pub(super) fn side_chunks(spans: &[DiffSpan], cols: usize) -> Vec<SpanChunk> {
-    let len = spans_char_len(spans);
-    if len == 0 {
-        return vec![SpanChunk::default()];
+    fn finish(mut self) -> Vec<SpanChunk> {
+        self.chunks.push(self.current);
+        self.chunks
     }
-    let mut start = 0usize;
-    split_spans_into_chunks(spans, cols, len)
-        .into_iter()
-        .map(|spans| {
-            let width = spans.iter().map(|s| text_cells(&s.text)).sum::<usize>();
-            let chunk = SpanChunk {
-                start,
-                end: start + width,
-                spans,
-            };
-            start += width;
-            chunk
-        })
-        .collect()
 }

@@ -14,13 +14,11 @@ pub fn wrap_sbs_rows(rows: &[SideBySideRow], old_cols: u32, new_cols: u32) -> Ve
     let mut wrapped = Vec::new();
 
     for (row_ix, row) in rows.iter().enumerate() {
-        let old_len = spans_char_len(&row.old.spans);
-        let new_len = spans_char_len(&row.new.spans);
         if row.old.style == DiffSpanStyle::Separator {
             wrapped.push(WrappedSbsRow {
                 row_ix: row_ix as u32,
-                old: whole_side(old_len),
-                new: whole_side(new_len),
+                old: whole_side(spans_char_len(&row.old.spans)),
+                new: whole_side(spans_char_len(&row.new.spans)),
                 row: row.clone(),
             });
             continue;
@@ -33,10 +31,14 @@ pub fn wrap_sbs_rows(rows: &[SideBySideRow], old_cols: u32, new_cols: u32) -> Ve
 
         let old_chunks = side_chunks(&row.old.spans, old_cols);
         let new_chunks = side_chunks(&row.new.spans, new_cols);
-        let visual_count = old_chunks.len().max(new_chunks.len()).max(1);
+        let old_len = old_chunks.last().map_or(0, |chunk| chunk.end);
+        let new_len = new_chunks.last().map_or(0, |chunk| chunk.end);
+        let visual_count = old_chunks.len().max(new_chunks.len());
+        let mut old_chunks = old_chunks.into_iter();
+        let mut new_chunks = new_chunks.into_iter();
         for visual_ix in 0..visual_count {
-            let old = old_chunks.get(visual_ix).cloned().unwrap_or_default();
-            let new = new_chunks.get(visual_ix).cloned().unwrap_or_default();
+            let old = old_chunks.next().unwrap_or_default();
+            let new = new_chunks.next().unwrap_or_default();
             wrapped.push(WrappedSbsRow {
                 row_ix: row_ix as u32,
                 old: chunk_side(old_len, &old),
