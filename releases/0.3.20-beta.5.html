@@ -1,0 +1,17 @@
+<h2>Stale workspaces</h2>
+<ul>
+  <li>When another workspace rewrites this workspace's working-copy change, for example by rebasing it, JayJay no longer snapshots the old files over the rewrite. The graph stays visible, the <code>@</code> row shows a warning glyph, and the Refresh button gets a badge; Refresh, or <strong>Update Workspace</strong> in the row's context menu, updates the working copy the way <code>jj workspace update-stale</code> does.</li>
+</ul>
+
+<h2>Faster on large repositories</h2>
+<ul>
+  <li>Large diffs open and switch much faster: replacing a 6,000-line diff's text drops from over a second to a couple of milliseconds, side-by-side layout no longer rebuilds when nothing it shows changed, and line wrapping is roughly ten times faster.</li>
+  <li>Refreshing the graph after a snapshot is about four times faster in repositories with thousands of changes and hundreds of bookmarks.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Symbols such as ↩ and ❤ in diffs, the code editor, and change descriptions draw as text, matching your code font, instead of as color emoji. Characters written as emoji still show as emoji.</li>
+  <li>The Keyboard Shortcuts window (<code>Cmd+/</code>) lists Filter by Revset, Repo Overview, Filter Overview Lanes, Save Review Note, and the conflict editor's Option-arrow keys, and no longer shows a Save Description shortcut that did nothing.</li>
+  <li>Fish scripts (<code>.fish</code>) get syntax highlighting.</li>
+</ul>
