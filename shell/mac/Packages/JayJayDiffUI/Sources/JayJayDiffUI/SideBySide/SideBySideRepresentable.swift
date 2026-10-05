@@ -11,6 +11,7 @@ public struct SideBySideRepresentable: NSViewRepresentable {
     public var revealFeedback: ContextExpansionReveal?
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.diffPalettes) private var diffPalettes
     @Environment(\.diffTypography) private var typography
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
@@ -59,7 +60,7 @@ public struct SideBySideRepresentable: NSViewRepresentable {
 
     public func updateNSView(_ split: NSSplitView, context: Context) {
         let font = typography.font
-        let theme = DiffColors(isDark: colorScheme == .dark)
+        let theme = diffPalettes.colors(for: colorScheme)
         context.coordinator.diff = diff
         context.coordinator.font = font
         context.coordinator.theme = theme

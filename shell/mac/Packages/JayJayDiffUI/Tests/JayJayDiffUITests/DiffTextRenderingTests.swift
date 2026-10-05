@@ -1,11 +1,12 @@
 import AppKit
 import JayJayCore
 @testable import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class DiffTextRenderingTests: XCTestCase {
-    func test_changedLineUsesSpanLevelForegroundAndBackground() throws {
-        let theme = DiffColors(isDark: false)
+    func test_changedLineUsesSpanLevelForegroundAndBackground() {
+        let theme = DiffPalettes.standard.colors(for: .light)
         let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
         let rendered = NSMutableAttributedString()
         var bgColors: [NSColor] = []
@@ -36,7 +37,7 @@ final class DiffTextRenderingTests: XCTestCase {
     }
 
     func test_changedSpanForegroundWinsOverSyntaxTokenColor() {
-        let theme = DiffColors(isDark: false)
+        let theme = DiffPalettes.standard.colors(for: .light)
         let changedString = DiffSpan(text: "6", style: .added, token: .stringLit)
         let unchangedString = DiffSpan(text: "\"0.3.\"", style: .unchanged, token: .stringLit)
 

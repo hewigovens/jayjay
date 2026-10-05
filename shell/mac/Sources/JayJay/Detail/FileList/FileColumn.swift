@@ -115,7 +115,7 @@ extension ChangeDetailView {
             }
         }
         .scrollContentBackground(.hidden)
-        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
+        .background(appSettings.readingBackground(colorScheme))
         .keyboardFocusStop(.fileList, action: focusFileList)
         .background(
             KeyDownMonitor(

@@ -27,6 +27,7 @@ public struct NativeDiffView: NSViewRepresentable {
     public var onContentHeightChanged: ((CGFloat) -> Void)?
 
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.diffPalettes) var diffPalettes
     @Environment(\.diffTypography) var typography
     @Environment(\.accessibilityReduceMotion) var reduceMotion
 

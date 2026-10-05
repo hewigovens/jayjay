@@ -6,8 +6,8 @@ public struct DiffColors: Equatable {
     private let palette: DiffThemeColors
     private let isDark: Bool
 
-    public init(isDark: Bool) {
-        palette = diffThemeColors(isDark: isDark)
+    init(palette: DiffThemeColors, isDark: Bool) {
+        self.palette = palette
         self.isDark = isDark
     }
 

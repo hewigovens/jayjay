@@ -25,7 +25,7 @@ extension ChangeDetailView {
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
+        .background(appSettings.readingBackground(colorScheme))
     }
 
     private var detailHeader: some View {
@@ -129,7 +129,7 @@ extension ChangeDetailView {
             }
         }
         .frame(maxHeight: .infinity)
-        .background(appSettings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
+        .background(appSettings.readingBackground(colorScheme))
         .overlay {
             if conflictEditorPreparation != nil {
                 LoadingHUD(accessibilityIdentifier: AID.Conflict.editorPreparing)

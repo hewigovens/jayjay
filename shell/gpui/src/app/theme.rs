@@ -48,6 +48,7 @@ pub struct Theme {
     pub(crate) diff_removed_bg: u32,
     pub(crate) diff_context_bg: u32,
     pub(crate) diff_separator_bg: u32,
+    pub(crate) media_frame_bg: u32,
     pub(crate) diff_conflict_header_bg: u32,
     pub(crate) diff_conflict_section_bg: u32,
     pub(crate) diff_conflict_content_bg: u32,

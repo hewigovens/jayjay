@@ -11,7 +11,7 @@ public extension NativeDiffView {
         else { return }
 
         let font = typography.font
-        let isDark = colorScheme == .dark
+        let theme = diffPalettes.colors(for: colorScheme)
         context.coordinator.onExpandContext = onExpandContext
         containerView.applySelectionResetGeneration(resetSelectionGeneration)
         let selectionActions = gutterActions as? any DiffGutterSelectionActions
@@ -25,7 +25,7 @@ public extension NativeDiffView {
                 enablesContextExpansion: onExpandContext != nil,
                 resetSelectionGeneration: resetSelectionGeneration,
                 revealFeedback: revealFeedback,
-                isDark: isDark,
+                theme: theme,
                 typography: typography,
                 reduceMotion: reduceMotion,
                 fitsContent: onContentHeightChanged != nil,
@@ -50,7 +50,6 @@ public extension NativeDiffView {
         }
         context.coordinator.selectionRenderCache = nil
 
-        let theme = DiffColors(isDark: isDark)
         textView.applyFindSelectionColors(theme)
         let viewportAnchor = containerView.captureViewportAnchor()
         let displayLines = displayLines ?? diffDisplayLines(lines: diff.lines)

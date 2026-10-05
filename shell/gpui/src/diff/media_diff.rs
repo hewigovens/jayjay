@@ -174,7 +174,7 @@ pub(crate) fn media_frame(t: &Theme) -> Div {
         .overflow_hidden()
         .border_1()
         .border_color(rgb(t.border))
-        .bg(rgb(if t.is_dark { 0x14171c } else { 0xeef0f3 }))
+        .bg(rgb(t.media_frame_bg))
 }
 
 pub(crate) fn metadata_line(label: impl Into<SharedString>, t: &Theme) -> AnyElement {

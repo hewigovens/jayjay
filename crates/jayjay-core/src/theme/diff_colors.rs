@@ -164,8 +164,3 @@ pub fn diff_theme_colors(is_dark: bool) -> DiffThemeColors {
         DiffThemeColors::light()
     }
 }
-
-/// Change/commit-id shortest-unique-prefix highlight (`0xRRGGBB`). Shared so both shells highlight identically.
-pub fn change_id_prefix_color(is_dark: bool) -> u32 {
-    if is_dark { 0xc099f5 } else { 0x7c4fc2 }
-}

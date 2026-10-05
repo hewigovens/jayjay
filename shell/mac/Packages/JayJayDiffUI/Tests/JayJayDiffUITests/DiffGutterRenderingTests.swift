@@ -1,6 +1,7 @@
 import AppKit
 import JayJayCore
 @testable import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class DiffGutterRenderingTests: XCTestCase {
@@ -21,7 +22,7 @@ final class DiffGutterRenderingTests: XCTestCase {
             contextRegion: nil
         )
 
-        let stripe = view.groupStripeColor(for: changedLine, groupRange: 2 ... 3, theme: DiffColors(isDark: false))
+        let stripe = view.groupStripeColor(for: changedLine, groupRange: 2 ... 3, theme: DiffPalettes.standard.colors(for: .light))
 
         XCTAssertGreaterThan(stripe.alphaComponent, 0)
         XCTAssertLessThanOrEqual(stripe.alphaComponent, 0.45)
@@ -65,7 +66,7 @@ final class DiffGutterRenderingTests: XCTestCase {
                 ),
                 style: .init(
                     font: font,
-                    theme: DiffColors(isDark: false),
+                    theme: DiffPalettes.standard.colors(for: .light),
                     gutterAttrs: [.font: font],
                     gutterParagraphStyle: NSMutableParagraphStyle(),
                     maxLineDigits: 2
@@ -136,7 +137,7 @@ final class DiffGutterRenderingTests: XCTestCase {
                 ),
                 style: .init(
                     font: font,
-                    theme: DiffColors(isDark: false),
+                    theme: DiffPalettes.standard.colors(for: .light),
                     gutterAttrs: [.font: font],
                     gutterParagraphStyle: NSMutableParagraphStyle(),
                     maxLineDigits: 2
@@ -179,7 +180,7 @@ final class DiffGutterRenderingTests: XCTestCase {
             contextRegion: nil
         )
 
-        let stripe = view.groupStripeColor(for: changedLine, groupRange: 2 ... 2, theme: DiffColors(isDark: false))
+        let stripe = view.groupStripeColor(for: changedLine, groupRange: 2 ... 2, theme: DiffPalettes.standard.colors(for: .light))
 
         XCTAssertEqual(stripe.alphaComponent, 0)
     }

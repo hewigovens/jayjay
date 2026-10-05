@@ -6,9 +6,9 @@ public struct CodeHighlighting {
 
     private let colors: DiffColors
 
-    public init(font: NSFont, isDark: Bool) {
+    public init(font: NSFont, colors: DiffColors) {
         self.font = font
-        colors = DiffColors(isDark: isDark)
+        self.colors = colors
     }
 
     public var baseAttributes: [NSAttributedString.Key: Any] {

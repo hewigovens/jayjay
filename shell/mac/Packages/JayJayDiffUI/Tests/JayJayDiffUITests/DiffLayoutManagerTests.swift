@@ -1,5 +1,6 @@
 import AppKit
 @testable import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class DiffLayoutManagerTests: XCTestCase {
@@ -210,7 +211,7 @@ final class DiffLayoutManagerTests: XCTestCase {
             string: "let stdout = trim_output(&output.stdout);\nlet other = no_match();\n",
             attributes: [.font: NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)]
         ))
-        let theme = DiffColors(isDark: false)
+        let theme = DiffPalettes.standard.colors(for: .light)
         textView.configureFindSelectionColors(theme)
 
         NSPasteboard(name: .find).clearContents()

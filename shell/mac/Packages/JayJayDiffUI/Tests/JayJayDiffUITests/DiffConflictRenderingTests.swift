@@ -1,6 +1,7 @@
 import AppKit
 import JayJayCore
 @testable import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class DiffConflictRenderingTests: XCTestCase {
@@ -17,7 +18,7 @@ final class DiffConflictRenderingTests: XCTestCase {
     }
 
     func test_conflictHeaderUsesConflictPalette() {
-        let theme = DiffColors(isDark: false)
+        let theme = DiffPalettes.standard.colors(for: .light)
         let header = line("<<<<<<< conflict 1 of 1", kind: .start)
 
         assertSameColor(theme.lineBg(header), theme.conflictHeaderBg)

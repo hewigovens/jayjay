@@ -160,7 +160,7 @@ struct RepoContentView: View {
     }
 
     private var paneBackground: Color {
-        settings.tintWindowWithWallpaper ? .clear : AppColors.navigationBackground(colorScheme)
+        settings.navigationBackground(colorScheme)
     }
 
     /// Alerts deliberately don't suspend: pausing on an error would make dismissal re-run the failing refresh.

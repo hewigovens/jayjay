@@ -78,7 +78,7 @@ pub use revset::{
     bookmark_filter_revset, build_default_revset, default_revset_depth, default_revset_preset,
     revset_completions, revset_presets, typed_revset,
 };
-pub use theme::{DiffThemeColors, ThemeSeed, change_id_prefix_color, diff_theme_colors};
+pub use theme::{DiffThemeColors, RepoColors, ThemeSeed, diff_theme_colors, repo_colors};
 #[cfg(feature = "repository")]
 pub use tools::{
     EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, open_in_editor, open_in_terminal,

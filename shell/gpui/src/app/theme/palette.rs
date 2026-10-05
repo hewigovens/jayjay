@@ -1,20 +1,24 @@
 use gpui::WindowAppearance;
-use jayjay_core::{DiffThemeColors, ThemeSeed};
+use jayjay_core::{DiffThemeColors, RepoColors, ThemeSeed};
 
 use super::Theme;
 use crate::app::config::AppearanceMode;
 
 impl Theme {
     pub fn light() -> Self {
-        let mut theme = Self::from_seed(&ThemeSeed::light(), DiffThemeColors::light());
-        theme.change_id_prefix = jayjay_core::change_id_prefix_color(false);
-        theme
+        Self::from_seed(
+            &ThemeSeed::light(),
+            DiffThemeColors::light(),
+            RepoColors::light(),
+        )
     }
 
     fn dark() -> Self {
-        let mut theme = Self::from_seed(&ThemeSeed::dark(), DiffThemeColors::dark());
-        theme.change_id_prefix = jayjay_core::change_id_prefix_color(true);
-        theme
+        Self::from_seed(
+            &ThemeSeed::dark(),
+            DiffThemeColors::dark(),
+            RepoColors::dark(),
+        )
     }
 
     pub fn for_appearance(mode: AppearanceMode, system: WindowAppearance) -> Self {

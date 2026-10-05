@@ -13,7 +13,7 @@ public final class NativeDiffContextCoordinator: NSObject, NSTextViewDelegate {
             let enablesContextExpansion: Bool
             let resetSelectionGeneration: UInt64
             let revealFeedback: ContextExpansionReveal?
-            let isDark: Bool
+            let theme: DiffColors
             let typography: DiffTypography
             let reduceMotion: Bool
             let fitsContent: Bool

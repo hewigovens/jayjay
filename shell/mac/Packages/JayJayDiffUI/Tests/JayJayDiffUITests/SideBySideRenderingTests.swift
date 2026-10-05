@@ -1,6 +1,7 @@
 import AppKit
 import JayJayCore
 @testable import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class SideBySideRenderingTests: XCTestCase {
@@ -20,7 +21,7 @@ final class SideBySideRenderingTests: XCTestCase {
 
         coordinator.diff = diff
         coordinator.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
-        coordinator.theme = DiffColors(isDark: false)
+        coordinator.theme = DiffPalettes.standard.colors(for: .light)
         coordinator.revealFeedback = ContextExpansionReveal(generation: 1, newLines: LineSpan(start: 1, count: 1))
         coordinator.renderIfNeeded()
 
@@ -41,7 +42,7 @@ final class SideBySideRenderingTests: XCTestCase {
         let storage = try XCTUnwrap(left.textView.textStorage)
         let original = NSAttributedString(attributedString: storage)
 
-        coordinator.theme = DiffColors(isDark: true)
+        coordinator.theme = DiffPalettes.standard.colors(for: .dark)
         coordinator.renderIfNeeded()
         XCTAssertEqual(storage.string, original.string)
         XCTAssertNotEqual(
@@ -110,7 +111,7 @@ final class SideBySideRenderingTests: XCTestCase {
         coordinator.rightContainer = right
         coordinator.diff = diff
         coordinator.font = .monospacedSystemFont(ofSize: 12, weight: .regular)
-        coordinator.theme = DiffColors(isDark: false)
+        coordinator.theme = DiffPalettes.standard.colors(for: .light)
         for pane in [left, right] {
             pane.wrapsText = false
             pane.scrollView.frame.size = NSSize(width: 600, height: 400)

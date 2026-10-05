@@ -1,6 +1,7 @@
 import AppKit
 import JayJayCore
 @testable import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class NativeDiffViewPerformanceTests: XCTestCase {
@@ -76,7 +77,7 @@ final class NativeDiffViewPerformanceTests: XCTestCase {
             ),
             style: .init(
                 font: font,
-                theme: DiffColors(isDark: false),
+                theme: DiffPalettes.standard.colors(for: .light),
                 gutterAttrs: [.font: font],
                 gutterParagraphStyle: paragraph,
                 maxLineDigits: 4

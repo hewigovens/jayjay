@@ -13,24 +13,30 @@ enum AppColors {
     }
 
     static func graphLine(_ scheme: ColorScheme) -> Color {
-        Color(rgb: scheme == .dark ? 0x3478F6 : 0x5982B8)
+        Color(rgb: repo(scheme).graphLine)
     }
 
     static func workspace(_ scheme: ColorScheme) -> Color {
-        Color(rgb: scheme == .dark ? 0x42D96B : 0x128A3E)
+        Color(rgb: repo(scheme).workspace)
     }
 
     static func bookmark(_ scheme: ColorScheme) -> Color {
-        Color(rgb: scheme == .dark ? 0xD86BF2 : 0x9635C9)
+        Color(rgb: repo(scheme).bookmark)
     }
 
     static func commitIdPrefix(_ scheme: ColorScheme) -> Color {
-        Color(rgb: scheme == .dark ? 0x78B7FF : 0x175CD3)
+        Color(rgb: repo(scheme).commitIdPrefix)
     }
 
-    /// The shortest-unique change-id prefix highlight is shared with the GPUI shell.
     static func changeIdPrefix(_ scheme: ColorScheme) -> Color {
-        Color(rgb: changeIdPrefixColor(isDark: scheme == .dark))
+        Color(rgb: repo(scheme).changeIdPrefix)
+    }
+
+    private static let darkRepoColors = repoColors(isDark: true)
+    private static let lightRepoColors = repoColors(isDark: false)
+
+    private static func repo(_ scheme: ColorScheme) -> RepoColors {
+        scheme == .dark ? darkRepoColors : lightRepoColors
     }
 }
 

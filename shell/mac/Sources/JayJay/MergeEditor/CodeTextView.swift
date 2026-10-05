@@ -1,5 +1,6 @@
 import AppKit
 import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 struct CodeTextView: NSViewRepresentable {
@@ -22,12 +23,17 @@ struct CodeTextView: NSViewRepresentable {
     let mergePane: MergePane?
 
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.diffPalettes) var diffPalettes
 
     @Environment(\.jayjayFontSize) var fontSize
     @Environment(\.jayjayFontFamily) var fontFamily
 
     var editorFont: NSFont {
         fontFamily.nsFont(size: fontSize)
+    }
+
+    var highlightColors: DiffColors {
+        diffPalettes.colors(for: colorScheme)
     }
 
     init(

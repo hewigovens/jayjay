@@ -1,4 +1,4 @@
-use jayjay_core::DiffThemeColors;
+use jayjay_core::{DiffThemeColors, RepoColors};
 
 #[uniffi::remote(Record)]
 pub struct DiffThemeColors {
@@ -32,4 +32,13 @@ pub struct DiffThemeColors {
     pub group_stripe_alpha: f64,
     pub find_match_bg: u32,
     pub find_match_fg: u32,
+}
+
+#[uniffi::remote(Record)]
+pub struct RepoColors {
+    pub graph_line: u32,
+    pub workspace: u32,
+    pub bookmark: u32,
+    pub change_id_prefix: u32,
+    pub commit_id_prefix: u32,
 }

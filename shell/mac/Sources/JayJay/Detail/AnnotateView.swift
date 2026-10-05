@@ -12,6 +12,7 @@ struct AnnotateView: View {
     @State private var highlightedSpans: [[DiffSpan]]?
     @Environment(AppSettings.self) private var settings
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.diffPalettes) private var diffPalettes
 
     var body: some View {
         VStack(spacing: 0) {
@@ -101,7 +102,7 @@ struct AnnotateView: View {
     @ViewBuilder
     private func highlightedText(index: Int, fallback: String) -> some View {
         if let spans = highlightedSpans, index < spans.count {
-            let colors = DiffColors(isDark: colorScheme == .dark)
+            let colors = diffPalettes.colors(for: colorScheme)
             let line = spans[index].reduce(into: AttributedString()) { result, span in
                 let color = Color(nsColor: colors.tokenColor(span.token, fallback: colors.contextText))
                 var s = AttributedString(span.text)

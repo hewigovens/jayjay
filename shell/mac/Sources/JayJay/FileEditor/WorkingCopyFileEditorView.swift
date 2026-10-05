@@ -85,7 +85,7 @@ struct WorkingCopyFileEditorView: View {
                     preparedText: session.data?.content,
                     preparedHighlightedLines: session.highlightedLines
                 )
-                .background(settings.tintWindowWithWallpaper ? .clear : AppColors.readingBackground(colorScheme))
+                .background(settings.readingBackground(colorScheme))
             }
         }
     }
