@@ -1,7 +1,6 @@
-use std::collections::{HashMap, HashSet};
+use std::collections::HashSet;
 use std::sync::Arc;
 
-use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit as JjCommit;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
@@ -9,10 +8,12 @@ use jj_lib::repo::ReadonlyRepo;
 
 use super::super::Repo;
 use super::super::log::ImmutableIds;
-use super::super::support::{block_on, short_change_id, short_commit_id};
+use super::super::support::{short_change_id, short_commit_id};
+use super::CommitRefNames;
 use crate::types::*;
 
 impl Repo {
+    #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
     pub(crate) fn commit_to_change_info(
         &self,
         repo: &Arc<ReadonlyRepo>,
@@ -23,28 +24,11 @@ impl Repo {
         let change_id = short_change_id(&**repo, commit);
         let commit_id = commit.id().hex();
         let author = commit.author();
-        let bookmarks: Vec<String> = repo
-            .view()
-            .local_bookmarks_for_commit(commit.id())
-            .map(|(name, _)| name.as_str().to_owned())
-            .collect();
+        let bookmarks = self.commit_bookmarks(repo).names(commit.id());
         let tags = self
             .commit_tags_cache
-            .get_or_init(repo, || {
-                let mut tags: HashMap<CommitId, Vec<String>> = HashMap::new();
-                for (name, target) in repo.view().local_tags() {
-                    // A conflicted tag can repeat a commit across sides; keep its name once per commit.
-                    for id in target.added_ids().collect::<HashSet<_>>() {
-                        tags.entry(id.clone())
-                            .or_default()
-                            .push(name.as_str().to_owned());
-                    }
-                }
-                tags
-            })
-            .get(commit.id())
-            .cloned()
-            .unwrap_or_default();
+            .get_or_init(repo, || CommitRefNames::from_refs(repo.view().local_tags()))
+            .names(commit.id());
         let working_copy_commit_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         let is_working_copy = working_copy_commit_id.is_some_and(|id| id == commit.id());
         let workspaces: Vec<String> = repo
@@ -55,7 +39,7 @@ impl Repo {
             .map(|name| name.as_str().to_owned())
             .collect();
         let has_conflict = commit.has_conflict();
-        let is_empty = block_on(commit.is_empty(repo.as_ref())).unwrap_or(false);
+        let is_empty = self.commit_emptiness.is_empty(repo, commit);
         // Keep display loading resilient to an invalid immutable() revset; mutation paths still enforce immutability.
         let (is_immutable, has_immutable_child) = match immutable_ids {
             Some(ids) => (
@@ -120,14 +104,11 @@ impl Repo {
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
         let commit_id = commit.id().hex();
         let description = commit.description().trim();
-        let bookmarks: Vec<_> = repo
-            .view()
-            .local_bookmarks_for_commit(commit.id())
-            .collect();
+        let has_bookmarks = self.commit_bookmarks(repo).contains(commit.id());
         let working_copy_commit_id = repo.view().get_wc_commit_id(self.workspace_name.as_ref());
         let is_working_copy = working_copy_commit_id.is_some_and(|id| id == commit.id());
 
-        if !is_working_copy && description.is_empty() && bookmarks.is_empty() {
+        if !is_working_copy && description.is_empty() && !has_bookmarks {
             let all_zero_commit = commit_id.chars().all(|c| c == '0');
             let all_z_change = change_id.chars().all(|c| c == 'z');
             let no_parents = commit.parent_ids().is_empty();
@@ -137,5 +118,11 @@ impl Repo {
         }
 
         true
+    }
+
+    pub(crate) fn commit_bookmarks(&self, repo: &Arc<ReadonlyRepo>) -> Arc<CommitRefNames> {
+        self.commit_bookmarks_cache.get_or_init(repo, || {
+            CommitRefNames::from_refs(repo.view().local_bookmarks())
+        })
     }
 }

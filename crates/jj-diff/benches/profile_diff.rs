@@ -18,13 +18,16 @@ fn main() {
         .collect();
     let scenario = match args.as_slice() {
         [] => "cold",
-        [scenario] => scenario.as_str(),
+        [scenario]
+            if matches!(
+                scenario.as_str(),
+                "cold" | "warm" | "expand" | "wrap" | "sbs"
+            ) =>
+        {
+            scenario.as_str()
+        }
         _ => panic!("usage: profile_diff [cold|warm|expand|wrap|sbs]"),
     };
-    assert!(
-        matches!(scenario, "cold" | "warm" | "expand" | "wrap" | "sbs"),
-        "usage: profile_diff [cold|warm|expand|wrap|sbs]"
-    );
 
     let mut lines: Vec<_> = (0..6000)
         .map(|i| {

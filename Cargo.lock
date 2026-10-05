@@ -4178,6 +4178,7 @@ dependencies = [
  "gethostname",
  "gix",
  "gix-url",
+ "hotpath",
  "jayjay-network",
  "jayjay-primitives",
  "jayjay-review",

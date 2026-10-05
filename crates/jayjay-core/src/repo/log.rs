@@ -73,6 +73,7 @@ impl Repo {
             .map(|_| ())
     }
 
+    #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
     pub fn log_graph(&self, revset_str: &str) -> CoreResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
         on_worker_stack(|| {
@@ -180,6 +181,7 @@ impl Repo {
         })
     }
 
+    #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
     fn immutable_ids(&self, repo: &Arc<ReadonlyRepo>) -> Arc<ImmutableIds> {
         self.immutable_ids_cache.get_or_init(repo, || ImmutableIds {
             commits: self.revset_commit_ids(repo, "immutable()"),

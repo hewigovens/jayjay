@@ -895,6 +895,27 @@ fn log_reloads_immutability_config_without_a_new_operation() {
 }
 
 #[test]
+fn log_emptiness_and_bookmarks_follow_new_operations_on_one_repo() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.new_change("@", "").expect("new change");
+    let head = &repo.log_graph("@").expect("log")[0].change;
+    assert!(head.is_empty && head.bookmarks.is_empty());
+
+    repo.create_bookmark("zeta", "@").expect("create zeta");
+    repo.create_bookmark("alpha", "@").expect("create alpha");
+    let head = &repo.log_graph("@").expect("log")[0].change;
+    assert_eq!(head.bookmarks, ["alpha", "zeta"]);
+
+    fs::write(repo_path.join("hello.txt"), "edited\n").expect("edit hello");
+    repo.refresh_working_copy().expect("snapshot");
+    let head = &repo.log_graph("@").expect("log")[0].change;
+    assert!(!head.is_empty);
+    assert_eq!(head.bookmarks, ["alpha", "zeta"]);
+}
+
+#[test]
 fn jj_commit_describes_the_working_copy_and_starts_an_empty_child() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

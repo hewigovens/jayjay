@@ -38,8 +38,11 @@ repository = [
     "jj-lib/git",
 ]
 watchman = ["repository", "jj-lib/watchman"]
+hotpath = ["dep:hotpath", "hotpath/hotpath", "jj-diff/hotpath"]
+hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
 
 [dependencies]
+hotpath = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }
 jj-lib = { workspace = true, optional = true }
 gix = { workspace = true, optional = true }
@@ -66,6 +69,11 @@ gethostname = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 shell-words = { workspace = true, optional = true }
+
+[[bench]]
+name = "profile_refresh"
+harness = false
+required-features = ["repository"]
 
 [dev-dependencies]
 jj-test = { path = "../jj-test" }

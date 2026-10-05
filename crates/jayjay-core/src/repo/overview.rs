@@ -126,11 +126,7 @@ impl Repo {
                     .to_owned(),
                 timestamp_millis: base_commit.committer().timestamp.timestamp.0,
                 kind,
-                bookmarks: repo
-                    .view()
-                    .local_bookmarks_for_commit(base_commit.id())
-                    .map(|(name, _)| name.as_str().to_owned())
-                    .collect(),
+                bookmarks: self.commit_bookmarks(repo).names(base_commit.id()),
                 behind_trunk,
             };
             let workspaces = changes
@@ -165,13 +161,9 @@ impl Repo {
             description: commit.description().lines().next().unwrap_or("").to_owned(),
             full_description: commit.description().trim_end().to_owned(),
             timestamp_millis: commit.committer().timestamp.timestamp.0,
-            is_empty: block_on(commit.is_empty(repo.as_ref())).unwrap_or(false),
+            is_empty: self.commit_emptiness.is_empty(repo, commit),
             has_conflict: commit.has_conflict(),
-            bookmarks: repo
-                .view()
-                .local_bookmarks_for_commit(commit.id())
-                .map(|(name, _)| name.as_str().to_owned())
-                .collect(),
+            bookmarks: self.commit_bookmarks(repo).names(commit.id()),
             workspaces: workspaces_by_commit
                 .get(commit.id())
                 .cloned()

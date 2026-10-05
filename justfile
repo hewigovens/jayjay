@@ -23,6 +23,7 @@ list:
   @echo "just ffi               Rebuild UniFFI Swift bindings"
   @echo "just format            Format Rust and Swift sources (publish)"
   @echo "just lint              Lint Rust (clippy) and Swift (swiftlint) (publish)"
+  @echo "just profile diff|refresh [--alloc] args  Hotpath profile of jj-diff or a repo refresh"
   @echo "just clean             Remove generated build artifacts"
   @echo "just build             Build the macOS app"
   @echo "just run               Build and launch the app"
@@ -56,6 +57,24 @@ test-wasm:
 
 test:
   cargo test --workspace
+
+# Example: just profile diff sbs; just profile refresh ~/src/repo graph; just profile refresh --alloc ~/src/repo
+# Scenarios and caveats: crates/jj-diff/benches/profile_diff.md, crates/jayjay-core/benches/profile_refresh.md
+profile kind *args:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  shift
+  features=hotpath
+  if [[ "${1:-}" == --alloc ]]; then
+    features=hotpath-alloc
+    shift
+  fi
+  case "{{kind}}" in
+    diff) crate=jj-diff bench=profile_diff ;;
+    refresh) crate=jayjay-core bench=profile_refresh ;;
+    *) echo "usage: just profile diff|refresh [--alloc] [args...]" >&2; exit 1 ;;
+  esac
+  HOTPATH_METRICS_SERVER_OFF=1 cargo bench --locked -p "$crate" --bench "$bench" --features "$features" -- "$@"
 
 test-app:
   just shell::test

@@ -13,6 +13,7 @@ use super::support::{block_on_result, short_change_id};
 use crate::types::*;
 
 impl Repo {
+    #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
     pub fn list_bookmarks(&self) -> CoreResult<Vec<BookmarkInfo>> {
         let repo = self.get_repo();
         let mut bookmarks = Vec::new();

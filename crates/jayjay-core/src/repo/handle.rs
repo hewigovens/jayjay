@@ -12,6 +12,7 @@ use super::cache::RepoCache;
 use super::command_process::RunningJjProcesses;
 use super::git::lfs::LfsCache;
 use super::log;
+use super::resolve::{CommitEmptiness, CommitRefNames};
 use super::support::{
     block_on_result, canonicalize, load_repo_at_head, load_workspace, load_workspace_internal,
     op_is_ancestor_of,
@@ -27,7 +28,9 @@ pub struct Repo {
     repo: RwLock<Arc<ReadonlyRepo>>,
     pub(super) running_jj_processes: RunningJjProcesses,
     pub(super) immutable_ids_cache: RepoCache<log::ImmutableIds>,
-    pub(super) commit_tags_cache: RepoCache<HashMap<CommitId, Vec<String>>>,
+    pub(super) commit_tags_cache: RepoCache<CommitRefNames>,
+    pub(super) commit_bookmarks_cache: RepoCache<CommitRefNames>,
+    pub(super) commit_emptiness: CommitEmptiness,
     /// A changed-file count costs a full parent-tree diff; re-diff only workspaces whose working-copy commit moved.
     pub(super) workspace_files_changed_cache: RwLock<HashMap<String, (CommitId, u32)>>,
     pub(super) lfs_cache: Mutex<LfsCache>,
@@ -60,6 +63,8 @@ impl Repo {
             running_jj_processes: RunningJjProcesses::default(),
             immutable_ids_cache: RepoCache::default(),
             commit_tags_cache: RepoCache::default(),
+            commit_bookmarks_cache: RepoCache::default(),
+            commit_emptiness: CommitEmptiness::default(),
             workspace_files_changed_cache: RwLock::new(HashMap::new()),
             lfs_cache: Mutex::new(LfsCache::default()),
         })
