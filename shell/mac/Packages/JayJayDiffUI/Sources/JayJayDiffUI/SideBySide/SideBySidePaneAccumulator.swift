@@ -64,7 +64,7 @@ struct PaneAccumulator {
         pane.gutterLayout.lineStripeColors = stripes
         pane.gutterLayout.lineStripeX = 0
         pane.gutterLayout.lineStripeWidth = 3
-        pane.textView.textStorage?.setAttributedString(text)
+        pane.textView.textStorage?.replaceContents(with: text)
         pane.gutterTextView.textStorage?.setAttributedString(gutter)
         pane.gutterTextView.entries = entries
         pane.container.updateGutterWidth(max(DiffGutterMetrics.minimumUnifiedWidth, width))

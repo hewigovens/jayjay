@@ -213,7 +213,7 @@ public extension NativeDiffView {
         }
         gutterLayoutManager.selectionHighlightLeadingInset = groupWidth + noteColumnWidth
             + (showsCheckboxColumn ? checkboxWidth : 0)
-        textView.textStorage?.setAttributedString(result)
+        textView.textStorage?.replaceContents(with: result)
         containerView.setViewportLineLocations(
             viewportLineLocations,
             restoring: viewportAnchor
