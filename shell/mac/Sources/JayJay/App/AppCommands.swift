@@ -33,17 +33,17 @@ struct AppCommands: Commands {
         }
 
         CommandGroup(after: .textFormatting) {
-            Button { settings.fontSize = min(24, settings.fontSize + 1) } label: {
+            Button { settings.zoomIn() } label: {
                 Label("Zoom In", systemImage: "plus.magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.zoomIn)
 
-            Button { settings.fontSize = max(9, settings.fontSize - 1) } label: {
+            Button { settings.zoomOut() } label: {
                 Label("Zoom Out", systemImage: "minus.magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.zoomOut)
 
-            Button { settings.fontSize = AppSettings.defaultFontSize } label: {
+            Button { settings.resetZoom() } label: {
                 Label("Reset Zoom", systemImage: "1.magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.resetZoom)

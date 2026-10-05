@@ -10,8 +10,7 @@ public extension NativeDiffView {
               let layoutManager = textView.layoutManager as? DiffLayoutManager
         else { return }
 
-        let fontSize = fontSize
-        let font = NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let font = typography.font
         let isDark = colorScheme == .dark
         context.coordinator.onExpandContext = onExpandContext
         containerView.applySelectionResetGeneration(resetSelectionGeneration)
@@ -27,8 +26,7 @@ public extension NativeDiffView {
                 resetSelectionGeneration: resetSelectionGeneration,
                 revealFeedback: revealFeedback,
                 isDark: isDark,
-                fontSize: fontSize,
-                fontFamily: fontFamily,
+                typography: typography,
                 reduceMotion: reduceMotion,
                 fitsContent: onContentHeightChanged != nil,
                 currentSelectedLineRange: actions.currentSelectedLineRange

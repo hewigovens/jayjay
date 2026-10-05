@@ -11,8 +11,7 @@ public struct SideBySideRepresentable: NSViewRepresentable {
     public var revealFeedback: ContextExpansionReveal?
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.diffFontSize) private var fontSize
-    @Environment(\.diffFontFamily) private var fontFamily
+    @Environment(\.diffTypography) private var typography
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
 
     public init(
@@ -59,7 +58,7 @@ public struct SideBySideRepresentable: NSViewRepresentable {
     }
 
     public func updateNSView(_ split: NSSplitView, context: Context) {
-        let font = NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+        let font = typography.font
         let theme = DiffColors(isDark: colorScheme == .dark)
         context.coordinator.diff = diff
         context.coordinator.font = font

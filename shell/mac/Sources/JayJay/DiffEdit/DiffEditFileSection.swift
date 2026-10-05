@@ -56,8 +56,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         .task(id: loadKey) {
             await loadDiff()
         }
-        .environment(\.diffFontSize, jayjayFontSize)
-        .environment(\.diffFontFamily, jayjayFontFamily.nsFontName)
+        .environment(\.diffTypography, DiffTypography(fontFamily: jayjayFontFamily.nsFontName, fontSize: jayjayFontSize))
     }
 
     private var header: some View {
@@ -143,7 +142,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                     }
                 }
             )
-            .frame(height: measuredHeight ?? estimatedHeight(for: displayDiff))
+            .frame(height: measuredHeight ?? displayDiff.estimatedCardHeight(fontSize: settings.fontSize))
         } else {
             Text("No textual preview available for this file.")
                 .jayjayFont(12)
@@ -216,11 +215,5 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         isLoading = false
         loadedKey = key
         onLoaded(loaded)
-    }
-
-    /// Placeholder until the first real layout reports; full content height, never an inner-scroll cap.
-    private func estimatedHeight(for diff: FileDiff) -> CGFloat {
-        let lineHeight = max(18, CGFloat(settings.fontSize) + 5)
-        return max(CGFloat(max(diff.lines.count, 1)) * lineHeight + 24, 44)
     }
 }

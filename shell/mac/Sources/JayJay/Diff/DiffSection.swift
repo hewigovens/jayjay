@@ -58,8 +58,7 @@ struct DiffSection: View {
         .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(projectionModeKey)") {
             await computeDiffAsync()
         }
-        .environment(\.diffFontSize, jayjayFontSize)
-        .environment(\.diffFontFamily, jayjayFontFamily.nsFontName)
+        .environment(\.diffTypography, DiffTypography(fontFamily: jayjayFontFamily.nsFontName, fontSize: jayjayFontSize))
     }
 
     private func expansionErrorBanner(_ message: String) -> some View {

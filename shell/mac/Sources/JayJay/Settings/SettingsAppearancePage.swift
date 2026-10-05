@@ -47,7 +47,7 @@ struct SettingsAppearancePage: View {
                     Stepper("", value: Binding(
                         get: { settings.fontSize },
                         set: { settings.fontSize = $0 }
-                    ), in: 9 ... 24, step: 1)
+                    ), in: AppSettings.fontSizeRange, step: 1)
                         .labelsHidden()
                         .controlSize(.small)
                 }

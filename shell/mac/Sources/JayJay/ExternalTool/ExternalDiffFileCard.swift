@@ -23,8 +23,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(selectionColor, lineWidth: 1)
         )
-        .environment(\.diffFontSize, fontSize)
-        .environment(\.diffFontFamily, fontFamily.nsFontName)
+        .environment(\.diffTypography, DiffTypography(fontFamily: fontFamily.nsFontName, fontSize: fontSize))
     }
 
     private var header: some View {
@@ -84,7 +83,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                     }
                 }
             )
-            .frame(height: file.measuredHeight ?? estimatedHeight)
+            .frame(height: file.measuredHeight ?? file.displayDiff.estimatedCardHeight(fontSize: fontSize))
         } else {
             Text("The file contents differ, but no inline textual preview is available.")
                 .jayjayFont(12)
@@ -120,10 +119,6 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
 
     private var selectionColor: Color {
         editable && file.keepsAnyChanges ? Color.accentColor.opacity(0.35) : Color.primary.opacity(0.08)
-    }
-
-    private var estimatedHeight: CGFloat {
-        max(CGFloat(max(file.displayDiff.lines.count, 1)) * max(18, fontSize + 5) + 24, 44)
     }
 
     var currentSelectedLineRange: ClosedRange<Int>? {

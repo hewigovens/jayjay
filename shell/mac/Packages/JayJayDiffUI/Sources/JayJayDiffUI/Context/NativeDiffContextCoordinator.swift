@@ -14,8 +14,7 @@ public final class NativeDiffContextCoordinator: NSObject, NSTextViewDelegate {
             let resetSelectionGeneration: UInt64
             let revealFeedback: ContextExpansionReveal?
             let isDark: Bool
-            let fontSize: Double
-            let fontFamily: String
+            let typography: DiffTypography
             let reduceMotion: Bool
             let fitsContent: Bool
             let currentSelectedLineRange: ClosedRange<Int>?

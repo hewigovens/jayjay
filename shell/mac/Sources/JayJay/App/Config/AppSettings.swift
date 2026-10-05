@@ -45,6 +45,7 @@ final class AppSettings {
     // MARK: - Font
 
     static let defaultFontSize: Double = 12
+    static let fontSizeRange: ClosedRange<Double> = 9 ... 24
 
     var fontFamily: MonoFont {
         didSet { defaults.set(fontFamily.rawValue, forKey: StorageKeys.fontFamily) }
@@ -52,6 +53,18 @@ final class AppSettings {
 
     var fontSize: Double {
         didSet { defaults.set(fontSize, forKey: StorageKeys.fontSize) }
+    }
+
+    func zoomIn() {
+        fontSize = min(fontSize + 1, Self.fontSizeRange.upperBound)
+    }
+
+    func zoomOut() {
+        fontSize = max(fontSize - 1, Self.fontSizeRange.lowerBound)
+    }
+
+    func resetZoom() {
+        fontSize = Self.defaultFontSize
     }
 
     // MARK: - Appearance
@@ -218,7 +231,8 @@ final class AppSettings {
         self.defaults = defaults
 
         fontFamily = MonoFont(rawValue: defaults.string(forKey: StorageKeys.fontFamily) ?? "") ?? .system
-        fontSize = min(max(defaults.object(forKey: StorageKeys.fontSize) as? Double ?? Self.defaultFontSize, 9), 24)
+        let savedFontSize = defaults.object(forKey: StorageKeys.fontSize) as? Double ?? Self.defaultFontSize
+        fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)

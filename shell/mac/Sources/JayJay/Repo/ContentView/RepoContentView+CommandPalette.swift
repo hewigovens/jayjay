@@ -204,19 +204,19 @@ extension RepoContentView {
             icon: "plus.magnifyingglass",
             category: "View",
             shortcut: AppShortcut.zoomIn.symbol
-        ) { settings.fontSize = min(24, settings.fontSize + 1) })
+        ) { settings.zoomIn() })
         items.append(CommandPaletteItem(
             title: "Zoom Out",
             icon: "minus.magnifyingglass",
             category: "View",
             shortcut: AppShortcut.zoomOut.symbol
-        ) { settings.fontSize = max(9, settings.fontSize - 1) })
+        ) { settings.zoomOut() })
         items.append(CommandPaletteItem(
             title: "Reset Zoom",
             icon: "1.magnifyingglass",
             category: "View",
             shortcut: AppShortcut.resetZoom.symbol
-        ) { settings.fontSize = AppSettings.defaultFontSize })
+        ) { settings.resetZoom() })
         return items
     }
 

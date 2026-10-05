@@ -167,7 +167,7 @@ private struct MergeHunkCard: View {
                     }
                 }
             )
-            .frame(height: measuredDiffHeight ?? estimatedDiffHeight)
+            .frame(height: measuredDiffHeight ?? highlights.unified.estimatedCardHeight(fontSize: fontSize))
         }
         .background(Color(nsColor: .textBackgroundColor))
         .overlay(
@@ -178,10 +178,6 @@ private struct MergeHunkCard: View {
         .contentShape(Rectangle())
         .onTapGesture(perform: onSelect)
         .accessibilityElement(children: .contain)
-    }
-
-    private var estimatedDiffHeight: CGFloat {
-        max(CGFloat(max(highlights.unified.lines.count, 1)) * max(18, fontSize + 5) + 24, 44)
     }
 
     private func actionButton(
