@@ -25,7 +25,7 @@ extension RepoContentView {
     private var viewPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View", shortcut: "⌘R"
+            title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View", shortcut: AppShortcut.refresh.symbol
         ) {
             viewModel.refresh()
         })
@@ -34,7 +34,7 @@ extension RepoContentView {
             icon: "sidebar.left",
             category: "View",
             keywords: ["toggle", "sidebar", "dag", "history", "panel"],
-            shortcut: "⌃⌘S"
+            shortcut: AppShortcut.toggleSidebar.symbol
         ) { settings.sidebarHidden.toggle() })
         items.append(CommandPaletteItem(
             title: "Toggle Side-by-Side Diff",
@@ -137,13 +137,13 @@ extension RepoContentView {
             title: "Bookmark Manager",
             icon: "bookmark",
             category: "Repository",
-            shortcut: "⇧⌘B"
+            shortcut: AppShortcut.bookmarkManager.symbol
         ) { modal = .bookmarkManager })
         items.append(CommandPaletteItem(
             title: "Repo Overview",
             icon: "rectangle.split.3x1",
             category: "Repository",
-            shortcut: "⇧⌘O"
+            shortcut: AppShortcut.repoOverview.symbol
         ) { windowManager.openOverview(for: viewModel.repoPath) })
         items.append(CommandPaletteItem(
             title: "Clean Up Stale Bookmarks",
@@ -203,19 +203,19 @@ extension RepoContentView {
             title: "Zoom In",
             icon: "plus.magnifyingglass",
             category: "View",
-            shortcut: "⌘+"
+            shortcut: AppShortcut.zoomIn.symbol
         ) { settings.fontSize = min(24, settings.fontSize + 1) })
         items.append(CommandPaletteItem(
             title: "Zoom Out",
             icon: "minus.magnifyingglass",
             category: "View",
-            shortcut: "⌘−"
+            shortcut: AppShortcut.zoomOut.symbol
         ) { settings.fontSize = max(9, settings.fontSize - 1) })
         items.append(CommandPaletteItem(
             title: "Reset Zoom",
             icon: "1.magnifyingglass",
             category: "View",
-            shortcut: "⌘0"
+            shortcut: AppShortcut.resetZoom.symbol
         ) { settings.fontSize = AppSettings.defaultFontSize })
         return items
     }
@@ -223,7 +223,7 @@ extension RepoContentView {
     private var toolsPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Show in Finder", icon: "folder", category: "Tools", shortcut: "⌥⌘F"
+            title: "Show in Finder", icon: "folder", category: "Tools", shortcut: AppShortcut.showInFinder.symbol
         ) {
             RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
         })
@@ -253,10 +253,10 @@ extension RepoContentView {
             title: "Undo Last Operation",
             icon: "arrow.uturn.backward.circle",
             category: "Repository",
-            shortcut: "⇧⌘U"
+            shortcut: AppShortcut.undoLastOperation.symbol
         ) { showUndo() })
         items.append(CommandPaletteItem(
-            title: "Settings", icon: "gearshape", category: "App", shortcut: "⌘,"
+            title: "Settings", icon: "gearshape", category: "App", shortcut: AppShortcut.settings.symbol
         ) {
             openSettings()
         })
@@ -301,7 +301,7 @@ extension RepoContentView {
         var items: [CommandPaletteItem] = []
         // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
         items.append(.keybind(
-            title: "Command Palette", icon: "command", shortcut: "⇧⌘P",
+            title: "Command Palette", icon: "command", shortcut: AppShortcut.commandPalette.symbol,
             keywords: ["palette", "command", "search"]
         ))
         items.append(.keybind(
@@ -313,15 +313,15 @@ extension RepoContentView {
             keywords: ["review", "reviewed", "check", "diff"]
         ))
         items.append(.keybind(
-            title: "Find in Diff", icon: "magnifyingglass", shortcut: "⌘F",
+            title: "Find in Diff", icon: "magnifyingglass", shortcut: AppShortcut.findInDiff.symbol,
             keywords: ["find", "search", "diff"]
         ))
         items.append(.keybind(
-            title: "Open Repository", icon: "folder.badge.plus", shortcut: "⌘O",
+            title: "Open Repository", icon: "folder.badge.plus", shortcut: AppShortcut.openRepository.symbol,
             keywords: ["open", "repository", "repo"]
         ))
         items.append(.keybind(
-            title: "Keyboard Shortcuts", icon: "keyboard", shortcut: "⌘/",
+            title: "Keyboard Shortcuts", icon: "keyboard", shortcut: AppShortcut.keyboardShortcuts.symbol,
             keywords: ["shortcut", "shortcuts", "keys", "cheatsheet", "keybind", "help"]
         ))
         return items

@@ -159,7 +159,7 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 tip(icon: "folder", text: "Open any jj repository to get started")
-                tip(icon: "keyboard", text: "⌘⇧P finds actions; type help split for feature help")
+                tip(icon: "keyboard", text: "\(AppShortcut.commandPalette.symbol) finds actions; type help split for feature help")
                 tip(icon: "checkmark.circle", text: "Press Space to mark the selected file reviewed")
                 tip(icon: "arrow.triangle.branch", text: "Shift-click selects a range; ⌘-click toggles changes")
                 tip(icon: "sparkles", text: "AI commit messages via Codex, Claude, or Apple Intelligence")

@@ -12,7 +12,7 @@ struct AppCommands: Commands {
             Button { settings.sidebarHidden.toggle() } label: {
                 Label(settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.leading")
             }
-            .keyboardShortcut("s", modifiers: [.control, .command])
+            .keyboardShortcut(AppShortcut.toggleSidebar)
             .disabled(ActiveRepoTracker.shared.handler == nil)
         }
 
@@ -29,24 +29,24 @@ struct AppCommands: Commands {
             } label: {
                 Label("Find...", systemImage: "magnifyingglass")
             }
-            .keyboardShortcut("f")
+            .keyboardShortcut(AppShortcut.findInDiff)
         }
 
         CommandGroup(after: .textFormatting) {
             Button { settings.fontSize = min(24, settings.fontSize + 1) } label: {
                 Label("Zoom In", systemImage: "plus.magnifyingglass")
             }
-            .keyboardShortcut("+", modifiers: .command)
+            .keyboardShortcut(AppShortcut.zoomIn)
 
             Button { settings.fontSize = max(9, settings.fontSize - 1) } label: {
                 Label("Zoom Out", systemImage: "minus.magnifyingglass")
             }
-            .keyboardShortcut("-", modifiers: .command)
+            .keyboardShortcut(AppShortcut.zoomOut)
 
             Button { settings.fontSize = AppSettings.defaultFontSize } label: {
                 Label("Reset Zoom", systemImage: "1.magnifyingglass")
             }
-            .keyboardShortcut("0", modifiers: .command)
+            .keyboardShortcut(AppShortcut.resetZoom)
         }
 
         CommandGroup(replacing: .newItem) {
@@ -55,7 +55,7 @@ struct AppCommands: Commands {
             } label: {
                 Label("Open Repository...", systemImage: "folder")
             }
-            .keyboardShortcut("o")
+            .keyboardShortcut(AppShortcut.openRepository)
 
             Menu {
                 if settings.recentRepos.isEmpty {

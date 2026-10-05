@@ -19,14 +19,14 @@ struct DiffEditHeader: View {
             } label: {
                 Label("Expand All", systemImage: "rectangle.expand.vertical")
             }
-            .keyboardShortcut("e", modifiers: [.command, .option])
+            .keyboardShortcut(AppShortcut.expandAllFiles)
             .accessibilityIdentifier(AID.DiffEdit.expandAll)
             Button {
                 session.collapseAllFiles()
             } label: {
                 Label("Collapse All", systemImage: "rectangle.compress.vertical")
             }
-            .keyboardShortcut("c", modifiers: [.command, .option])
+            .keyboardShortcut(AppShortcut.collapseAllFiles)
             .accessibilityIdentifier(AID.DiffEdit.collapseAll)
             Button {
                 session.toggleBulkSelection()

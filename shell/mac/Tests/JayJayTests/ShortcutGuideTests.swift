@@ -23,4 +23,10 @@ final class ShortcutGuideTests: XCTestCase {
         let largestSection = ShortcutGuide.sections.map(\.entries.count).max() ?? 0
         XCTAssertLessThanOrEqual(abs(counts[0] - counts[1]), largestSection)
     }
+
+    func testGuideDocumentsEveryAppShortcut() {
+        let documented = Set(ShortcutGuide.sections.flatMap(\.entries).compactMap(\.shortcut))
+        let missing = AppShortcut.allCases.filter { !documented.contains($0) }
+        XCTAssertTrue(missing.isEmpty, "bound but missing from the guide: \(missing)")
+    }
 }

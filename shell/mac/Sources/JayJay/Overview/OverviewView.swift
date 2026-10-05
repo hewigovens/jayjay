@@ -45,7 +45,7 @@ struct OverviewView: View {
                     filterField
                         .background(
                             Button("Filter Lanes") { filterFocusGeneration += 1 }
-                                .keyboardShortcut("f")
+                                .keyboardShortcut(AppShortcut.filterOverviewLanes)
                                 .hidden()
                         )
                 } else {
@@ -54,8 +54,8 @@ struct OverviewView: View {
                     } label: {
                         Label("Filter Lanes", systemImage: "magnifyingglass")
                     }
-                    .keyboardShortcut("f")
-                    .help("Filter lanes (⌘F)")
+                    .keyboardShortcut(AppShortcut.filterOverviewLanes)
+                    .help("Filter lanes (\(AppShortcut.filterOverviewLanes.symbol))")
                 }
             }
         }

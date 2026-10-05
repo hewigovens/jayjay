@@ -68,14 +68,14 @@ struct ReviewNoteSheet: View {
                     .accessibilityIdentifier(AID.ReviewNote.body)
                 HStack {
                     Spacer()
-                    Text("⌘↩ to save")
+                    Text("\(AppShortcut.saveReviewNote.symbol) to save")
                         .jayjayFont(10)
                         .foregroundStyle(.tertiary)
                 }
                 // The editor consumes plain Return for newlines, so the container's default-action shortcut never fires while typing; ⌘↩ still travels the key-equivalent chain.
                 .background(
                     Button("") { save() }
-                        .keyboardShortcut(.return, modifiers: .command)
+                        .keyboardShortcut(AppShortcut.saveReviewNote)
                         .hidden()
                 )
             }

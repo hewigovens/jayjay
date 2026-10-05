@@ -30,7 +30,7 @@ struct HelpCommands: Commands {
             Button { openWindow(id: AppWindows.shortcuts) } label: {
                 Label("Keyboard Shortcuts", systemImage: "keyboard")
             }
-            .keyboardShortcut("/", modifiers: .command)
+            .keyboardShortcut(AppShortcut.keyboardShortcuts)
         }
     }
 }

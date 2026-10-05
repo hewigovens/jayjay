@@ -106,12 +106,12 @@ extension MergeEditorView {
     }
 
     func handleMergeKey(_ event: NSEvent) -> Bool {
-        guard event.modifierFlags.intersection([.command, .control, .option, .shift]) == .option else { return false }
-        switch event.keyCode {
-            case KeyCode.leftArrow: useSelectedHunk(.left)
-            case KeyCode.rightArrow: useSelectedHunk(.right)
-            case KeyCode.upArrow: moveHunkSelection(-1)
-            case KeyCode.downArrow: moveHunkSelection(1)
+        let hunkKeys: [AppShortcut] = [.acceptLeftHunk, .acceptRightHunk, .previousHunk, .nextHunk]
+        switch hunkKeys.first(where: { $0.matches(event) }) {
+            case .acceptLeftHunk: useSelectedHunk(.left)
+            case .acceptRightHunk: useSelectedHunk(.right)
+            case .previousHunk: moveHunkSelection(-1)
+            case .nextHunk: moveHunkSelection(1)
             default: return false
         }
         return true

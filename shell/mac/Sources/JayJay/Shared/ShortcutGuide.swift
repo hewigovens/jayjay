@@ -4,8 +4,21 @@ import Foundation
 struct ShortcutEntry: Identifiable {
     let label: String
     let keys: [String]
+    let shortcut: AppShortcut?
     var id: String {
         label + keys.joined()
+    }
+
+    init(label: String, keys: [String]) {
+        self.label = label
+        self.keys = keys
+        shortcut = nil
+    }
+
+    init(_ label: String, _ shortcut: AppShortcut) {
+        self.label = label
+        keys = shortcut.keyCaps
+        self.shortcut = shortcut
     }
 }
 
@@ -18,21 +31,20 @@ struct ShortcutSection: Identifiable {
     }
 }
 
-/// The canonical, complete keyboard-shortcut reference surfaced on ⌘/. Keep in sync with the real bindings (menus, palette, and view key handlers).
 enum ShortcutGuide {
     static let sections: [ShortcutSection] = [
         ShortcutSection(title: "General", entries: [
-            ShortcutEntry(label: "Open Repository", keys: ["⌘", "O"]),
-            ShortcutEntry(label: "Command Palette", keys: ["⇧", "⌘", "P"]),
-            ShortcutEntry(label: "Refresh", keys: ["⌘", "R"]),
-            ShortcutEntry(label: "Keyboard Shortcuts", keys: ["⌘", "/"]),
-            ShortcutEntry(label: "Settings", keys: ["⌘", ","])
+            ShortcutEntry("Open Repository", .openRepository),
+            ShortcutEntry("Command Palette", .commandPalette),
+            ShortcutEntry("Refresh", .refresh),
+            ShortcutEntry("Keyboard Shortcuts", .keyboardShortcuts),
+            ShortcutEntry("Settings", .settings)
         ]),
         ShortcutSection(title: "View", entries: [
-            ShortcutEntry(label: "Hide / Show Sidebar", keys: ["⌃", "⌘", "S"]),
-            ShortcutEntry(label: "Zoom In", keys: ["⌘", "+"]),
-            ShortcutEntry(label: "Zoom Out", keys: ["⌘", "−"]),
-            ShortcutEntry(label: "Reset Zoom", keys: ["⌘", "0"])
+            ShortcutEntry("Hide / Show Sidebar", .toggleSidebar),
+            ShortcutEntry("Zoom In", .zoomIn),
+            ShortcutEntry("Zoom Out", .zoomOut),
+            ShortcutEntry("Reset Zoom", .resetZoom)
         ]),
         ShortcutSection(title: "Navigation", entries: [
             ShortcutEntry(label: "Next / Previous Change", keys: ["J", "K"]),
@@ -40,21 +52,30 @@ enum ShortcutGuide {
             ShortcutEntry(label: "Move Up / Down", keys: ["↑", "↓"])
         ]),
         ShortcutSection(title: "Repository", entries: [
-            ShortcutEntry(label: "Bookmark Manager", keys: ["⇧", "⌘", "B"]),
-            ShortcutEntry(label: "Undo Last Operation", keys: ["⇧", "⌘", "U"]),
-            ShortcutEntry(label: "Show in Finder", keys: ["⌥", "⌘", "F"])
+            ShortcutEntry("Filter by Revset", .revsetFilter),
+            ShortcutEntry("Bookmark Manager", .bookmarkManager),
+            ShortcutEntry("Repo Overview", .repoOverview),
+            ShortcutEntry("Filter Overview Lanes", .filterOverviewLanes),
+            ShortcutEntry("Undo Last Operation", .undoLastOperation),
+            ShortcutEntry("Show in Finder", .showInFinder)
         ]),
         ShortcutSection(title: "Diff & Review", entries: [
-            ShortcutEntry(label: "Find in Diff", keys: ["⌘", "F"]),
+            ShortcutEntry("Find in Diff", .findInDiff),
             ShortcutEntry(label: "Mark File Reviewed", keys: ["Space"]),
-            ShortcutEntry(label: "Save Description", keys: ["⌘", "S"]),
-            ShortcutEntry(label: "Save Edited File", keys: ["⌘", "S"]),
-            ShortcutEntry(label: "Expand All Files", keys: ["⌥", "⌘", "E"]),
-            ShortcutEntry(label: "Collapse All Files", keys: ["⌥", "⌘", "C"]),
+            ShortcutEntry("Save Review Note", .saveReviewNote),
+            ShortcutEntry("Save Edited File", .saveEditedFile),
+            ShortcutEntry("Expand All Files", .expandAllFiles),
+            ShortcutEntry("Collapse All Files", .collapseAllFiles),
             ShortcutEntry(label: "Next / Previous File Card", keys: ["J", "K"]),
             ShortcutEntry(label: "Collapse / Expand File Card", keys: ["←", "→"]),
             ShortcutEntry(label: "Select File Card", keys: ["Space"]),
             ShortcutEntry(label: "Toggle File Card", keys: ["Return"])
+        ]),
+        ShortcutSection(title: "Conflicts", entries: [
+            ShortcutEntry("Accept Left", .acceptLeftHunk),
+            ShortcutEntry("Accept Right", .acceptRightHunk),
+            ShortcutEntry("Previous Conflict", .previousHunk),
+            ShortcutEntry("Next Conflict", .nextHunk)
         ]),
         ShortcutSection(title: "Drag & Drop", entries: [
             ShortcutEntry(label: "Confirm Drop", keys: ["Return"]),

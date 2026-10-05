@@ -7,7 +7,7 @@ extension RepoContentView {
             let title = settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar"
             toolbarButton(
                 .sidebarToggle,
-                help: "\(title) (⌃⌘S)",
+                help: "\(title) (\(AppShortcut.toggleSidebar.symbol))",
                 action: { settings.sidebarHidden.toggle() },
                 label: { Label(title, systemImage: "sidebar.leading") }
             )
@@ -26,7 +26,7 @@ extension RepoContentView {
                         }
                 }
             )
-            .keyboardShortcut("r")
+            .keyboardShortcut(AppShortcut.refresh)
             syncButton(.pull, inFlight: viewModel.isPullingInFlight) {
                 if viewModel.isPullingInFlight {
                     viewModel.cancelPull()

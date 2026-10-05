@@ -19,13 +19,13 @@ struct RepositoryCommands: Commands {
             Button { tracker.handler?.showCommandPalette() } label: {
                 Label("Command Palette", systemImage: "command")
             }
-            .keyboardShortcut("p", modifiers: [.command, .shift])
+            .keyboardShortcut(AppShortcut.commandPalette)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showUndo() } label: {
                 Label("Undo Last Operation", systemImage: "arrow.uturn.backward.circle")
             }
-            .keyboardShortcut("u", modifiers: [.command, .shift])
+            .keyboardShortcut(AppShortcut.undoLastOperation)
             .disabled(tracker.handler == nil)
 
             Divider()
@@ -33,19 +33,19 @@ struct RepositoryCommands: Commands {
             Button { tracker.handler?.showRevsetFilter() } label: {
                 Label("Filter by Revset…", systemImage: "line.3.horizontal.decrease")
             }
-            .keyboardShortcut("l")
+            .keyboardShortcut(AppShortcut.revsetFilter)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showBookmarkManager() } label: {
                 Label("Bookmark Manager", systemImage: "bookmark")
             }
-            .keyboardShortcut("b", modifiers: [.command, .shift])
+            .keyboardShortcut(AppShortcut.bookmarkManager)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showOverview() } label: {
                 Label("Repo Overview", systemImage: "rectangle.split.3x1")
             }
-            .keyboardShortcut("o", modifiers: [.command, .shift])
+            .keyboardShortcut(AppShortcut.repoOverview)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showNewWorkspace() } label: {
@@ -74,7 +74,7 @@ struct RepositoryCommands: Commands {
             } label: {
                 Label("Show in Finder", systemImage: "folder")
             }
-            .keyboardShortcut("f", modifiers: [.command, .option])
+            .keyboardShortcut(AppShortcut.showInFinder)
             .disabled(repoPath == nil)
 
             if let settings {

@@ -48,7 +48,7 @@ struct WorkingCopyFileEditorView: View {
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier(AID.FileEditor.cancel)
             Button(session.isSaving ? "Saving…" : "Save", action: save)
-                .keyboardShortcut("s")
+                .keyboardShortcut(AppShortcut.saveEditedFile)
                 .buttonStyle(.borderedProminent)
                 .disabled(session.isSaving || !session.hasChanges)
                 .accessibilityIdentifier(AID.FileEditor.save)

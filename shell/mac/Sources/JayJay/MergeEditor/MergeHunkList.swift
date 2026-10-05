@@ -141,9 +141,9 @@ private struct MergeHunkCard: View {
             .padding(.vertical, 7)
             Divider()
             HStack(spacing: 12) {
-                actionButton("Accept Left", shortcut: "⌥←", source: .left)
+                actionButton("Accept Left", shortcut: .acceptLeftHunk, source: .left)
                     .accessibilityIdentifier(AID.Conflict.hunkUse(highlights.hunk.index, "left"))
-                actionButton("Accept Right", shortcut: "⌥→", source: .right)
+                actionButton("Accept Right", shortcut: .acceptRightHunk, source: .right)
                     .accessibilityIdentifier(AID.Conflict.hunkUse(highlights.hunk.index, "right"))
                 actionButton("Accept Base", source: .base)
                     .accessibilityIdentifier(AID.Conflict.hunkUse(highlights.hunk.index, "base"))
@@ -186,14 +186,14 @@ private struct MergeHunkCard: View {
 
     private func actionButton(
         _ title: String,
-        shortcut: String? = nil,
+        shortcut: AppShortcut? = nil,
         source: MergeHunkSource
     ) -> some View {
         Button { onUseSource(source) } label: {
             HStack(spacing: 4) {
                 Text(title)
                 if let shortcut {
-                    Text(shortcut)
+                    Text(shortcut.symbol)
                         .foregroundStyle(.tertiary)
                 }
             }
