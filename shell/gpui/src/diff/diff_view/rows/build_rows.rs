@@ -5,6 +5,8 @@ use jayjay_core::diff::{
     DiffLine, DiffSide, WrappedDiffLine, anchor_side_and_number, change_groups,
 };
 use jayjay_review::{NoteSide, NoteStatus, ReviewNoteStatus};
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use super::diff_render_rows::{DiffRenderRow, DiffRenderRows, NoteDotKind};
 
@@ -121,25 +123,38 @@ fn notes_by_display_line<'a>(
     result
 }
 
-/// Pre-wraps at the diff's `cols`: `uniform_list` rows are fixed-height and cannot reflow.
+/// Pre-wraps at the diff's `cols` in display cells: `uniform_list` rows are fixed-height and cannot reflow.
 fn wrap_note_body(body: &str, cols: u32) -> Vec<String> {
     let cols = cols.max(1) as usize;
     let mut out = Vec::new();
     for paragraph in body.split('\n') {
-        if paragraph.is_empty() {
-            out.push(String::new());
-            continue;
-        }
         let mut line = String::new();
+        let mut width = 0;
         for word in paragraph.split_whitespace() {
-            let extra = if line.is_empty() { 0 } else { 1 };
-            if !line.is_empty() && line.chars().count() + extra + word.chars().count() > cols {
+            let word_width = word.width();
+            let gap = usize::from(width > 0);
+            if width + gap + word_width <= cols {
+                if gap == 1 {
+                    line.push(' ');
+                }
+                line.push_str(word);
+                width += gap + word_width;
+                continue;
+            }
+            if width > 0 {
                 out.push(std::mem::take(&mut line));
+                width = 0;
             }
-            if !line.is_empty() {
-                line.push(' ');
+            // A word wider than the note, such as a CJK sentence without spaces, breaks between graphemes.
+            for grapheme in word.graphemes(true) {
+                let grapheme_width = grapheme.width();
+                if width > 0 && width + grapheme_width > cols {
+                    out.push(std::mem::take(&mut line));
+                    width = 0;
+                }
+                line.push_str(grapheme);
+                width += grapheme_width;
             }
-            line.push_str(word);
         }
         out.push(line);
     }

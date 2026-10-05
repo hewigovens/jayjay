@@ -93,3 +93,26 @@ fn note_wrap_narrows_by_the_anchor_lines_indent() {
         "the indent should narrow the wrap width by 4 cols"
     );
 }
+
+#[test]
+fn note_wrap_measures_wide_glyphs_in_display_cells() {
+    let display = display_lines();
+    let wrapped = wrapped(&display);
+    let notes = vec![note(
+        "n1",
+        NoteSide::New,
+        2,
+        "看这里 中文评论没有空格",
+        NoteStatus::Current,
+        false,
+    )];
+    let rendered = build_diff_render_rows(&wrapped, &display, &notes, 11);
+    let texts: Vec<&str> = rendered.rows[2..]
+        .iter()
+        .filter_map(|row| match row {
+            DiffRenderRow::NoteText { text, .. } => Some(text.as_ref()),
+            _ => None,
+        })
+        .collect();
+    assert_eq!(texts, ["看这里", "中文评论没", "有空格"]);
+}

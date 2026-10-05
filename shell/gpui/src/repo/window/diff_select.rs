@@ -138,10 +138,7 @@ impl RepoWindow {
                         continue;
                     };
                     let text: String = line.spans.iter().map(|s| s.text.as_str()).collect();
-                    let n = text.chars().count();
-                    if let Some(cols) = sel.col_range_for(ix, n) {
-                        out.push(slice_chars(&text, cols));
-                    }
+                    out.extend(sel.selected_text(ix, &text));
                 }
             }
             SbsSide::Old | SbsSide::New => {
@@ -154,20 +151,10 @@ impl RepoWindow {
                         &row.new.spans
                     };
                     let text: String = spans.iter().map(|s| s.text.as_str()).collect();
-                    let n = text.chars().count();
-                    if let Some(cols) = sel.col_range_for(ix, n) {
-                        out.push(slice_chars(&text, cols));
-                    }
+                    out.extend(sel.selected_text(ix, &text));
                 }
             }
         }
         Some(out.join("\n"))
     }
-}
-
-fn slice_chars(text: &str, cols: std::ops::Range<usize>) -> String {
-    text.chars()
-        .skip(cols.start)
-        .take(cols.end.saturating_sub(cols.start))
-        .collect()
 }

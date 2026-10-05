@@ -2,6 +2,7 @@ use gpui::{
     AnyElement, Context, FontWeight, HighlightStyle, InteractiveElement, IntoElement,
     ParentElement, SharedString, StatefulInteractiveElement, Styled, StyledText, div, px, rgb,
 };
+use unicode_width::UnicodeWidthStr;
 
 use super::{COMPACT_HEADER_WIDTH, DETAIL_INSET, FileHeaderState};
 use crate::app::fonts;
@@ -121,5 +122,5 @@ fn mono_text_width(
     cx: &mut Context<RepoWindow>,
 ) -> gpui::Pixels {
     let advance = fonts::mono_advance(cx, font_size);
-    px((f32::from(advance) * text.chars().count() as f32).ceil() + 2.)
+    px((f32::from(advance) * text.width() as f32).ceil() + 2.)
 }

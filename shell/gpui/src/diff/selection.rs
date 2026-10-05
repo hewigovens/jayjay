@@ -83,6 +83,23 @@ impl DiffSelection {
             Some(start..end)
         }
     }
+
+    // Slices by display cells, the unit of the highlight and mouse geometry; a wide glyph the range only partly covers is included.
+    pub(crate) fn selected_text(&self, line_ix: usize, text: &str) -> Option<String> {
+        let cells = grapheme_cells(text);
+        let line_len = cells.last().map_or(0, |cell| cell.cell_end);
+        let cols = self.col_range_for(line_ix, line_len)?;
+        if cols.is_empty() {
+            return Some(String::new());
+        }
+        Some(
+            cells
+                .iter()
+                .filter(|cell| cell.cell_start < cols.end && cols.start < cell.cell_end)
+                .map(|cell| cell.text)
+                .collect(),
+        )
+    }
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -202,6 +219,20 @@ mod tests {
         let mut sel = DiffSelection::start(2, 100, SbsSide::Unified);
         sel.extend(2, 200);
         assert_eq!(sel.col_range_for(2, 10), Some(10..10));
+    }
+
+    #[test]
+    fn selected_text_slices_wide_glyphs_by_display_cells() {
+        let mut sel = DiffSelection::start(0, 4, SbsSide::Unified);
+        sel.extend(0, 7);
+        assert_eq!(sel.selected_text(0, "中文abc").as_deref(), Some("abc"));
+        sel.extend(0, 1);
+        assert_eq!(sel.selected_text(0, "中文abc").as_deref(), Some("中文"));
+        let mut multi = DiffSelection::start(0, 2, SbsSide::Unified);
+        multi.extend(1, 2);
+        assert_eq!(multi.selected_text(0, "中文abc").as_deref(), Some("文abc"));
+        assert_eq!(multi.selected_text(1, "日本語").as_deref(), Some("日"));
+        assert_eq!(multi.selected_text(2, "日本語"), None);
     }
 
     #[test]
