@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AnyElement, ClickEvent, Context, ElementId, FontWeight, InteractiveElement, IntoElement,
@@ -26,6 +28,7 @@ impl OverviewView {
         snapshot: &OverviewSnapshot,
         groups: &[OverviewGroup],
         placement: &Placement,
+        span: &Range<f32>,
         t: &Theme,
         cx: &mut Context<Self>,
     ) -> AnyElement {
@@ -35,9 +38,9 @@ impl OverviewView {
             .relative()
             .w(px(placement.width))
             .h(px(placement.height))
-            .child(lines(placement, groups, t));
+            .child(lines(placement, groups, span, t));
         let g = &placement.geometry;
-        for band in &placement.bands {
+        for band in placement.bands_in(span) {
             let base = &groups[band.group].base;
             tree = tree
                 .child(
@@ -56,7 +59,7 @@ impl OverviewView {
                         .w(px(g.trunk_label_width)),
                 );
         }
-        for placed in &placement.lanes {
+        for placed in placement.lanes_in(span) {
             let lane_ix = placed.lane;
             let lane = &lanes[lane_ix];
             let lane_id = &self.lane_ids[lane_ix];
@@ -69,7 +72,8 @@ impl OverviewView {
                     .w(px(g.column_width))
                     .h(px(g.card_height)),
             );
-            for (offset, change) in lane.changes.iter().enumerate() {
+            for offset in placed.row_offsets_in(g, span) {
+                let change = &lane.changes[offset];
                 let chosen = self.selection.change.as_deref() == Some(&change.commit_id.id);
                 tree = tree.child(
                     self.change_row(lane_ix, change, chosen, g, t, cx)
@@ -243,15 +247,19 @@ impl OverviewView {
     }
 }
 
-fn lines(placement: &Placement, groups: &[OverviewGroup], t: &Theme) -> AnyElement {
+fn lines(
+    placement: &Placement,
+    groups: &[OverviewGroup],
+    span: &Range<f32>,
+    t: &Theme,
+) -> AnyElement {
     let g = placement.geometry;
     let line = t.dag_line;
     let muted = mix(t.dag_line, t.sidebar_bg, 0.45);
     let background = t.sidebar_bg;
     let warning = t.warning_fg;
     let stems: Vec<(f32, f32, f32)> = placement
-        .lanes
-        .iter()
+        .lanes_in(span)
         .map(|placed| {
             (
                 placed.x + g.node_inset,
@@ -261,13 +269,23 @@ fn lines(placement: &Placement, groups: &[OverviewGroup], t: &Theme) -> AnyEleme
         })
         .collect();
     let bands: Vec<(f32, f32, bool)> = placement
-        .bands
-        .iter()
+        .bands_in(span)
         .map(|band| {
             let older = groups[band.group].base.kind == OverviewBaseKind::OlderTrunk;
             (band.y, band.last_x, older)
         })
         .collect();
+    let spine = match (placement.bands.first(), placement.bands.last()) {
+        (Some(first), Some(last)) if first.y != last.y => {
+            const DASH_PERIOD: f32 = 7.;
+            let top = first.y + 6.;
+            // Align to the dash period so the pattern doesn't crawl while scrolling.
+            let start = top + ((span.start - top) / DASH_PERIOD).floor().max(0.) * DASH_PERIOD;
+            let end = (last.y - 6.).min(span.end);
+            (start < end).then_some((start, end))
+        }
+        _ => None,
+    };
     canvas(
         |_, _, _| (),
         move |bounds, _, window, _| {
@@ -279,11 +297,9 @@ fn lines(placement: &Placement, groups: &[OverviewGroup], t: &Theme) -> AnyEleme
                 let (x1, y1) = at(x, bottom);
                 stroke_line_pattern(window, x0, y0, x1, y1, muted, LinePattern::Solid);
             }
-            if let (Some(first), Some(last)) = (bands.first(), bands.last())
-                && first.0 != last.0
-            {
-                let (x0, y0) = at(g.spine_x, first.0 + 6.);
-                let (x1, y1) = at(g.spine_x, last.0 - 6.);
+            if let Some((start, end)) = spine {
+                let (x0, y0) = at(g.spine_x, start);
+                let (x1, y1) = at(g.spine_x, end);
                 stroke_line_pattern(
                     window,
                     x0,

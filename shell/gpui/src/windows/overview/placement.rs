@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use gpui::{Bounds, Pixels, point, px, size};
 use jayjay_core::OverviewLane;
 use jayjay_core::overview::OverviewGroup;
@@ -56,6 +58,16 @@ impl PlacedLane {
     pub(super) fn card_top(&self, g: &Geometry) -> f32 {
         self.node_y(g, 0) - g.row_height / 2. - g.card_gap - g.card_height
     }
+
+    pub(super) fn row_offsets_in(&self, g: &Geometry, span: &Range<f32>) -> Vec<usize> {
+        let half = g.row_height / 2.;
+        (0..self.count)
+            .filter(|&offset| {
+                let y = self.node_y(g, offset);
+                y + half > span.start && y - half < span.end
+            })
+            .collect()
+    }
 }
 
 pub(super) struct Placement {
@@ -112,6 +124,21 @@ impl Placement {
             bands,
             lanes: placed,
         }
+    }
+
+    /// Groups stack vertically, so culling by y alone suffices.
+    pub(super) fn lanes_in(&self, span: &Range<f32>) -> impl Iterator<Item = &PlacedLane> {
+        let g = self.geometry;
+        self.lanes
+            .iter()
+            .filter(move |placed| placed.card_top(&g) < span.end && placed.band_y > span.start)
+    }
+
+    pub(super) fn bands_in(&self, span: &Range<f32>) -> impl Iterator<Item = &Band> {
+        let reach = self.geometry.row_height + 8.;
+        self.bands
+            .iter()
+            .filter(move |band| band.y + reach > span.start && band.y - reach < span.end)
     }
 
     pub(super) fn lane(&self, lane: usize) -> Option<&PlacedLane> {

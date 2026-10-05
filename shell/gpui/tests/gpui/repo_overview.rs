@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{TestAppContext, VisualContext, VisualTestContext};
+use gpui::{TestAppContext, VisualContext, VisualTestContext, px};
 use jayjay_gpui::app::actions::{OpenFind, OpenOverview};
 use jayjay_gpui::windows::overview::OverviewView;
 use jj_test::{LinearFixture, run_jj_in};
@@ -150,4 +150,102 @@ fn clicking_a_lane_card_opens_its_panel_and_escape_closes_it(cx: &mut TestAppCon
     overview_cx.simulate_keystrokes("escape");
     settle_visual(&mut overview_cx);
     assert!(overview_cx.debug_bounds("overview-lane-panel").is_none());
+}
+
+fn tall_overview_lanes(
+    cx: &mut TestAppContext,
+) -> (
+    LinearFixture,
+    gpui::Entity<jayjay_gpui::repo::RepoWindow>,
+    &mut VisualTestContext,
+    Vec<&'static str>,
+) {
+    const FORKS: usize = 15;
+    let fixture = LinearFixture::build();
+    for (key, value) in [
+        ("revset-aliases.'trunk()'", "main"),
+        ("revset-aliases.'immutable_heads()'", "main"),
+    ] {
+        run_jj_in(&fixture.path, &["config", "set", "--repo", key, value]);
+    }
+    run_jj_in(&fixture.path, &["new", "main", "-m", "spine 0"]);
+    for i in 1..=FORKS {
+        let parent = format!("subject(\"spine {}\")", i - 1);
+        run_jj_in(&fixture.path, &["new", &parent, "-m", &format!("side {i}")]);
+        run_jj_in(
+            &fixture.path,
+            &["new", &parent, "-m", &format!("spine {i}")],
+        );
+    }
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let lanes: Vec<&'static str> = (1..=FORKS)
+        .flat_map(|i| [format!("side {i}"), format!("spine {i}")])
+        .map(|subject| {
+            lane_selector(
+                change_with_subject(&view, repo_cx, &subject)
+                    .change_id
+                    .unique_prefix(),
+            )
+        })
+        .collect();
+    (fixture, view, repo_cx, lanes)
+}
+
+fn built_lanes(lanes: &[&'static str], cx: &mut VisualTestContext) -> Vec<&'static str> {
+    lanes
+        .iter()
+        .copied()
+        .filter(|lane| cx.debug_bounds(lane).is_some())
+        .collect()
+}
+
+#[gpui::test]
+fn tall_overviews_build_only_the_visible_lanes_and_keyboard_selection_reveals_the_rest(
+    cx: &mut TestAppContext,
+) {
+    let (_fixture, view, repo_cx, lanes) = tall_overview_lanes(cx);
+    let mut overview_cx = open_overview(&view, repo_cx);
+    let initially = built_lanes(&lanes, &mut overview_cx);
+    assert!(
+        !initially.is_empty() && initially.len() < lanes.len(),
+        "{} of {} lanes built",
+        initially.len(),
+        lanes.len()
+    );
+    let hidden: Vec<_> = lanes
+        .iter()
+        .filter(|lane| !initially.contains(lane))
+        .collect();
+
+    for _ in 0..lanes.len() {
+        overview_cx.simulate_keystrokes("right");
+        settle_visual(&mut overview_cx);
+    }
+    assert!(
+        hidden
+            .iter()
+            .any(|lane| overview_cx.debug_bounds(lane).is_some()),
+        "moving the selection down the overview builds the lanes it scrolls to"
+    );
+}
+
+#[gpui::test]
+fn overscrolling_a_tall_overview_builds_the_lanes_it_settles_on(cx: &mut TestAppContext) {
+    let (_fixture, view, repo_cx, lanes) = tall_overview_lanes(cx);
+    let mut overview_cx = open_overview(&view, repo_cx);
+    overview_cx.update(|window, _| window.refresh());
+    settle_visual(&mut overview_cx);
+    let top = built_lanes(&lanes, &mut overview_cx);
+    let anchor = gpui::point(px(60.), px(400.));
+    overview_cx.simulate_mouse_move(anchor, None, gpui::Modifiers::default());
+
+    scroll_wheel(&mut overview_cx, anchor, px(-100_000.));
+    let bottom = built_lanes(&lanes, &mut overview_cx);
+    assert!(
+        bottom.iter().any(|lane| !top.contains(lane)),
+        "scrolling past the end builds the last lanes, got {bottom:?}"
+    );
+
+    scroll_wheel(&mut overview_cx, anchor, px(100_000.));
+    assert_eq!(built_lanes(&lanes, &mut overview_cx), top);
 }

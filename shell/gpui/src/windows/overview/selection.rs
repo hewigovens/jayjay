@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use gpui::{App, AppContext, Bounds, Context, KeyDownEvent, Pixels, Window, point, px};
 use jayjay_core::overview::OverviewGroup;
 use jayjay_core::{FileDiffStats, OverviewLane};
@@ -164,6 +166,15 @@ impl OverviewView {
             _ => return,
         }
         cx.stop_propagation();
+    }
+
+    /// Wheel deltas reach the offset before layout clamps it, so clamp here too; before the first layout, assume one screen.
+    pub(super) fn visible_span(&self, content_height: f32) -> Range<f32> {
+        const MARGIN: f32 = 512.;
+        let height = f32::from(self.scroll.bounds().size.height);
+        let height = if height > 0. { height } else { 2048. };
+        let top = (-f32::from(self.scroll.offset().y)).clamp(0., (content_height - height).max(0.));
+        top - MARGIN..top + height + MARGIN
     }
 
     pub(super) fn scroll_into_view(&self, target: Bounds<Pixels>) {

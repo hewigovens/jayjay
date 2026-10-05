@@ -221,7 +221,8 @@ impl Render for OverviewView {
                 {
                     self.scroll_into_view(bounds);
                 }
-                let tree = self.render_tree(snapshot, &groups, &placement, &t, cx);
+                let span = self.visible_span(placement.height);
+                let tree = self.render_tree(snapshot, &groups, &placement, &span, &t, cx);
                 let panel = match (self.selected_lane_ix(), self.selected_change_offset()) {
                     (Some(lane_ix), Some(offset)) => {
                         let change = snapshot.overview.lanes[lane_ix].changes[offset].clone();
