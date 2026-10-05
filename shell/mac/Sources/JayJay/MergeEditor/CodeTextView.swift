@@ -83,6 +83,7 @@ struct CodeTextView: NSViewRepresentable {
         let layoutManager = NSLayoutManager()
         layoutManager.addTextContainer(textContainer)
         let storage = NSTextStorage()
+        storage.delegate = TextPresentationFallback.shared
         storage.addLayoutManager(layoutManager)
 
         let textView = NSTextView(frame: scrollView.bounds, textContainer: textContainer)

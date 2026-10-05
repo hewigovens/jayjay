@@ -59,6 +59,7 @@ public extension NativeDiffView {
         layoutManager.addTextContainer(textContainer)
 
         let storage = NSTextStorage()
+        storage.delegate = TextPresentationFallback.shared
         storage.addLayoutManager(layoutManager)
 
         let textView = DiffTextView(frame: scrollView.bounds, textContainer: textContainer)

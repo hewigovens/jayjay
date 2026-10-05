@@ -1,4 +1,5 @@
 import AppKit
+import JayJayDiffUI
 
 final class DescriptionScrollView: NSScrollView {
     let textView = NSTextView()
@@ -27,6 +28,8 @@ final class DescriptionScrollView: NSScrollView {
         textView.autoresizingMask = [.width]
         textView.maxSize = CGSize(width: CGFloat.greatestFiniteMagnitude, height: .greatestFiniteMagnitude)
         textView.textContainer?.widthTracksTextView = true
+        textView.textStorage?.delegate = TextPresentationFallback.shared
+        measuringStorage.delegate = TextPresentationFallback.shared
         measuringContainer.lineFragmentPadding = 0
         measuringLayout.addTextContainer(measuringContainer)
         measuringStorage.addLayoutManager(measuringLayout)
