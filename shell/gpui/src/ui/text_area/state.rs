@@ -20,6 +20,8 @@ pub struct TextArea {
     pub(super) selection: TextSelection,
     pub(super) marked_range: Option<Range<usize>>,
     pub(super) last_layout: Option<TextLayout>,
+    /// Outlives `last_layout` so the IME can get caret bounds between an edit and the next paint.
+    pub(super) last_key: Option<TextLayoutKey>,
     pub(super) last_bounds: Option<Bounds<Pixels>>,
     pub(super) is_selecting: bool,
     pub(super) multiline: bool,
@@ -108,6 +110,7 @@ impl TextArea {
             selection: TextSelection::at(end),
             marked_range: None,
             last_layout: None,
+            last_key: None,
             last_bounds: None,
             is_selecting: false,
             multiline,

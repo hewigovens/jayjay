@@ -8,7 +8,7 @@ use gpui::{
 
 use super::super::{LineLayout, TextArea, TextAreaScrolled, TextLayout, TextLayoutKey};
 use super::gutter::{gutter_quads, gutter_width, number_origin};
-use super::layout::{Typeset, build_lines};
+use super::layout::{layout_key, layout_text};
 use super::paint::{cursor_quad, line_background_quads, selection_quads};
 use crate::app::theme::theme;
 
@@ -60,7 +60,7 @@ impl Element for TextAreaElement {
         style.size.width = relative(1.).into();
         if self.input.read(cx).is_label() {
             let input = self.input.clone();
-            let typeset = Typeset::current(window);
+            let key = layout_key(px(0.), window, theme(cx));
             let layout =
                 window.request_measured_layout(style, move |known, available, window, cx| {
                     let width = known.width.unwrap_or(match available.width {
@@ -68,9 +68,12 @@ impl Element for TextAreaElement {
                         _ => px(f32::MAX),
                     });
                     let bounds = Bounds::new(point(px(0.), px(0.)), size(width, px(0.)));
-                    let (lines, line_height) =
-                        build_lines(input.read(cx), bounds, &typeset, window, theme(cx));
-                    size(width, line_height * lines.len() as f32)
+                    let key = TextLayoutKey {
+                        width,
+                        ..key.clone()
+                    };
+                    let layout = layout_text(input.read(cx), key, bounds, window, theme(cx));
+                    size(width, layout.line_height * layout.lines.len() as f32)
                 });
             return (layout, ());
         }
@@ -92,20 +95,18 @@ impl Element for TextAreaElement {
         let input = self.input.read(cx);
         let gutter_width = gutter_width(input, window);
         let bounds = text_bounds(bounds, gutter_width);
-        let key = layout_key(bounds, window, theme(cx));
-        let (lines, line_height) = input
+        let key = layout_key(bounds.size.width, window, theme(cx));
+        let (lines, line_height) = match input
             .last_layout
             .as_ref()
             .filter(|layout| layout.key == key)
-            .map_or_else(
-                || {
-                    let typeset = Typeset::current(window);
-                    let (lines, line_height) =
-                        build_lines(input, bounds, &typeset, window, theme(cx));
-                    (Arc::from(lines), line_height)
-                },
-                |layout| (layout.lines.clone(), layout.line_height),
-            );
+        {
+            Some(layout) => (layout.lines.clone(), layout.line_height),
+            None => {
+                let layout = layout_text(input, key.clone(), bounds, window, theme(cx));
+                (layout.lines, layout.line_height)
+            }
+        };
         let selected_range = input.selection.range().clone();
         let cursor_offset = input.cursor_offset();
         let caret_visible = input.caret_visible();
@@ -217,6 +218,7 @@ impl Element for TextAreaElement {
             line_height: prepaint.line_height,
         };
         self.input.update(cx, |input, _| {
+            input.last_key = Some(layout.key.clone());
             input.last_layout = Some(layout);
             input.last_bounds = Some(text);
         });
@@ -263,34 +265,6 @@ fn text_bounds(bounds: Bounds<Pixels>, gutter_width: Pixels) -> Bounds<Pixels> {
         point(bounds.left() + gutter_width, bounds.top()),
         size(bounds.size.width - gutter_width, bounds.size.height),
     )
-}
-
-fn layout_key(
-    bounds: Bounds<Pixels>,
-    window: &Window,
-    theme: &crate::app::theme::Theme,
-) -> TextLayoutKey {
-    let style = window.text_style();
-    TextLayoutKey {
-        width: bounds.size.width,
-        font: style.font(),
-        font_size: style.font_size.to_pixels(window.rem_size()),
-        line_height: window.line_height(),
-        text_color: style.color,
-        theme_colors: [
-            theme.diff_added_bg,
-            theme.diff_removed_bg,
-            theme.diff_added_word_bg,
-            theme.diff_removed_word_bg,
-            theme.tok_keyword,
-            theme.tok_string,
-            theme.tok_comment,
-            theme.tok_number,
-            theme.tok_type,
-            theme.change_id_prefix,
-            theme.commit_id_prefix,
-        ],
-    }
 }
 
 fn visible_line_range(

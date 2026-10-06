@@ -8,7 +8,8 @@ pub type LineInputSelector<T> = for<'a> fn(&'a mut T) -> Option<&'a mut LineInpu
 
 #[derive(Debug, Default)]
 pub struct LineInput {
-    edit: LineEdit,
+    pub(super) edit: LineEdit,
+    pub(super) marked: Option<Range<usize>>,
     caret: CaretBlink,
     scroll: ScrollHandle,
 }
@@ -17,6 +18,7 @@ impl LineInput {
     pub(crate) fn new(text: impl Into<String>) -> Self {
         Self {
             edit: LineEdit::new(text),
+            marked: None,
             caret: CaretBlink::default(),
             scroll: ScrollHandle::new(),
         }
@@ -36,11 +38,13 @@ impl LineInput {
 
     pub(crate) fn set_text(&mut self, text: impl Into<String>) {
         self.edit.set_text(text);
+        self.marked = None;
         self.reveal_cursor_edge();
     }
 
     pub(crate) fn replace_range(&mut self, range: Range<usize>, text: &str) {
         self.edit.replace_range(range, text);
+        self.marked = None;
         self.reveal_cursor_edge();
     }
 
@@ -59,7 +63,10 @@ impl LineInput {
             cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
         }
         if result.handled {
+            self.marked = None;
             self.reveal_cursor_edge();
+            // A handled key must not also reach the platform input handler, or typed text lands twice.
+            cx.stop_propagation();
         }
         result
     }

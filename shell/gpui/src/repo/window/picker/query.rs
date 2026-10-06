@@ -43,6 +43,23 @@ impl RepoWindow {
         }
         Some(outcome)
     }
+
+    /// Re-anchors the selection after an edit that bypassed `drive_picker`, such as an IME commit.
+    pub(in crate::repo::window) fn picker_query_edited<A>(
+        &mut self,
+        query: fn(&mut Self) -> Option<&mut PickerQuery>,
+        actions: impl Fn(&Self, &App) -> Vec<(A, usize)>,
+        cx: &mut Context<Self>,
+    ) {
+        let count = actions(self, cx).len();
+        if let Some(query) = query(self) {
+            query.reset_selection_after_edit(count);
+        }
+        let current = actions(self, cx);
+        if let Some(query) = query(self) {
+            query.reveal_selected(&current);
+        }
+    }
 }
 
 enum PickerKeyAction {

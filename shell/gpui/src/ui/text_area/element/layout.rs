@@ -1,32 +1,32 @@
-use std::ops::Range;
+use std::{ops::Range, sync::Arc};
 
 use gpui::{Bounds, Font, Hsla, Pixels, ShapedLine, SharedString, TextRun, Window, hsla, px, rgb};
 use jayjay_core::diff::DiffSpanStyle;
 
-use super::super::{LineLayout, TextArea, Tint};
-use super::gutter;
+use super::super::{LineLayout, TextArea, TextLayout, TextLayoutKey, Tint};
 use crate::app::theme::Theme;
 use crate::ui::input::{next_boundary, previous_boundary};
 
-/// Captured so a measured layout can shape lines outside the element's own style scope.
-pub(super) struct Typeset {
+/// Shapes from a captured `TextLayoutKey`, so a layout can be built outside the element's own style scope.
+struct Typeset {
     font: Font,
     font_size: Pixels,
     color: Hsla,
     line_height: Pixels,
 }
 
-impl Typeset {
-    pub(super) fn current(window: &Window) -> Self {
-        let style = window.text_style();
+impl From<&TextLayoutKey> for Typeset {
+    fn from(key: &TextLayoutKey) -> Self {
         Self {
-            font: style.font(),
-            font_size: style.font_size.to_pixels(window.rem_size()),
-            color: style.color,
-            line_height: window.line_height(),
+            font: key.font.clone(),
+            font_size: key.font_size,
+            color: key.text_color,
+            line_height: key.line_height,
         }
     }
+}
 
+impl Typeset {
     fn shape(
         &self,
         text: SharedString,
@@ -50,7 +50,50 @@ impl Typeset {
     }
 }
 
-pub(super) fn build_lines(
+pub(in crate::ui::text_area) fn layout_key(
+    width: Pixels,
+    window: &Window,
+    theme: &Theme,
+) -> TextLayoutKey {
+    let style = window.text_style();
+    TextLayoutKey {
+        width,
+        font: style.font(),
+        font_size: style.font_size.to_pixels(window.rem_size()),
+        line_height: window.line_height(),
+        text_color: style.color,
+        theme_colors: [
+            theme.diff_added_bg,
+            theme.diff_removed_bg,
+            theme.diff_added_word_bg,
+            theme.diff_removed_word_bg,
+            theme.tok_keyword,
+            theme.tok_string,
+            theme.tok_comment,
+            theme.tok_number,
+            theme.tok_type,
+            theme.change_id_prefix,
+            theme.commit_id_prefix,
+        ],
+    }
+}
+
+pub(in crate::ui::text_area) fn layout_text(
+    input: &TextArea,
+    key: TextLayoutKey,
+    bounds: Bounds<Pixels>,
+    window: &mut Window,
+    theme: &Theme,
+) -> TextLayout {
+    let (lines, line_height) = build_lines(input, bounds, &Typeset::from(&key), window, theme);
+    TextLayout {
+        key,
+        lines: Arc::from(lines),
+        line_height,
+    }
+}
+
+fn build_lines(
     input: &TextArea,
     bounds: Bounds<Pixels>,
     typeset: &Typeset,
@@ -162,12 +205,17 @@ pub(super) fn build_lines(
         }
     }
     if input.line_numbers {
-        number_first_rows(&mut lines, window, theme);
+        number_first_rows(&mut lines, typeset, window, theme);
     }
     (lines, line_height)
 }
 
-fn number_first_rows(lines: &mut [LineLayout], window: &mut Window, theme: &Theme) {
+fn number_first_rows(
+    lines: &mut [LineLayout],
+    typeset: &Typeset,
+    window: &mut Window,
+    theme: &Theme,
+) {
     let color = rgb(theme.diff_gutter_fg).into();
     let mut numbered = None;
     for line in lines {
@@ -176,7 +224,8 @@ fn number_first_rows(lines: &mut [LineLayout], window: &mut Window, theme: &Them
         }
         numbered = Some(line.logical_line);
         let label = (line.logical_line + 1).to_string();
-        line.number = Some(gutter::shape_number(label.into(), color, window));
+        let len = label.len();
+        line.number = Some(typeset.shape(label.into(), vec![(len, color, None)], window));
     }
 }
 

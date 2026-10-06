@@ -9,6 +9,7 @@ use gpui::{
     deferred, div, point, px, rgb,
 };
 use jayjay_core::compare::BookmarkDiffRequest;
+use unicode_width::UnicodeWidthStr;
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::{
@@ -239,7 +240,7 @@ fn submenu_position(state: &ContextMenuState, index: usize) -> Point<Pixels> {
 fn menu_width(items: &[ContextMenuItem]) -> Pixels {
     let longest_label = items
         .iter()
-        .map(|item| item.label.chars().count())
+        .map(|item| item.label.width())
         .max()
         .unwrap_or_default() as f32;
     px((54. + longest_label * 7.).clamp(MENU_MIN_WIDTH, MENU_MAX_WIDTH))

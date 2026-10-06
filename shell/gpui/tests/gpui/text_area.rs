@@ -312,3 +312,29 @@ fn read_only_text_area_rejects_typing_until_unlocked(cx: &mut TestAppContext) {
     cx.simulate_input("-x");
     input.read_with(cx, |input, _| assert_eq!(input.text(), "name-x"));
 }
+
+#[gpui::test]
+fn text_area_reports_caret_bounds_while_composing(cx: &mut TestAppContext) {
+    use gpui::{Bounds, point, px, size};
+
+    install_text_area_test_bindings(cx);
+    let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("", "Message", true, 80., cx));
+    let cx: &mut VisualTestContext = cx;
+
+    cx.focus(&input);
+    cx.simulate_input("a");
+    cx.run_until_parked();
+
+    let field = Bounds::new(point(px(10.), px(20.)), size(px(300.), px(68.)));
+    input.update_in(cx, |input, window, cx| {
+        input.replace_and_mark_text_in_range(None, "ni", Some(0..2), window, cx);
+        let caret = input
+            .bounds_for_range(1..3, field, window, cx)
+            .expect("the IME asks for the marked text's rect before the next paint");
+        assert!(
+            caret.left() > field.left(),
+            "the rect starts after the typed glyph"
+        );
+        assert_eq!(caret.top(), field.top());
+    });
+}

@@ -15,7 +15,7 @@ use crate::diff::wrap::{
 use crate::ui::input::LineInput;
 
 impl RepoWindow {
-    fn find_input(view: &mut Self) -> Option<&mut LineInput> {
+    pub(crate) fn find_input(view: &mut Self) -> Option<&mut LineInput> {
         view.find.query.as_mut()
     }
 
@@ -141,11 +141,15 @@ impl RepoWindow {
             return;
         }
         if result.changed {
-            self.recompute_find_matches(cx);
-            self.jump_to_current_match(cx);
+            self.find_query_edited(cx);
         }
         LineInput::show_for_owner(self, cx, Self::find_input);
         cx.notify();
+    }
+
+    pub(crate) fn find_query_edited(&mut self, cx: &mut Context<Self>) {
+        self.recompute_find_matches(cx);
+        self.jump_to_current_match(cx);
     }
 
     pub fn find_match_count(&self) -> usize {

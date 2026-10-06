@@ -1,6 +1,6 @@
 use gpui::{
-    Bounds, Hsla, PaintQuad, Pixels, Point, ShapedLine, SharedString, TextRun, Window, fill, point,
-    px, rgb, size,
+    Bounds, PaintQuad, Pixels, Point, ShapedLine, SharedString, TextRun, Window, fill, point, px,
+    rgb, size,
 };
 
 use super::super::TextArea;
@@ -12,24 +12,24 @@ pub(super) fn gutter_width(input: &TextArea, window: &mut Window) -> Pixels {
     if !input.line_numbers {
         return px(0.);
     }
-    let digits = "0".repeat(input.logical_line_count().to_string().len());
-    shape_number(digits.into(), gpui::black(), window).width() + NUMBER_PADDING * 2.
-}
-
-pub(super) fn shape_number(text: SharedString, color: Hsla, window: &mut Window) -> ShapedLine {
+    let digits: SharedString = "0"
+        .repeat(input.logical_line_count().to_string().len())
+        .into();
     let style = window.text_style();
     let font_size = style.font_size.to_pixels(window.rem_size());
     let run = TextRun {
-        len: text.len(),
+        len: digits.len(),
         font: style.font(),
-        color,
+        color: gpui::black(),
         background_color: None,
         underline: None,
         strikethrough: None,
     };
     window
         .text_system()
-        .shape_line(text, font_size, &[run], None)
+        .shape_line(digits, font_size, &[run], None)
+        .width()
+        + NUMBER_PADDING * 2.
 }
 
 pub(super) fn gutter_quads(gutter: Bounds<Pixels>, theme: &Theme) -> [PaintQuad; 2] {

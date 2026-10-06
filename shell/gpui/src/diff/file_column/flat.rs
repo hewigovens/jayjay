@@ -8,6 +8,8 @@ use gpui::{
 };
 use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use super::row::{
     FileRowHandlers, FileRowState, agent_badge, display_path, file_name_opacity, file_row_height,
@@ -18,34 +20,46 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
-pub(super) fn middle_elide(s: &str, max_chars: usize) -> String {
-    let chars: Vec<char> = s.chars().collect();
-    if chars.len() <= max_chars {
+pub(super) fn middle_elide(s: &str, max_cells: usize) -> String {
+    if s.width() <= max_cells {
         return s.to_owned();
     }
-    let keep = max_chars.saturating_sub(1);
+    let keep = max_cells.saturating_sub(1);
     if keep == 0 {
         return "…".to_owned();
     }
-    let head_len = keep / 2;
-    let tail_len = keep - head_len;
-    let head: String = chars[..head_len].iter().collect();
-    let tail: String = chars[chars.len() - tail_len..].iter().collect();
+    let head: String = fit_cells(s.graphemes(true), keep / 2).concat();
+    let tail: String = fit_cells(s.graphemes(true).rev(), keep - keep / 2)
+        .into_iter()
+        .rev()
+        .collect();
     format!("{head}…{tail}")
 }
 
 /// GPUI text only tail-truncates, so elide the leading run manually where the tail matters.
-pub(crate) fn head_elide(s: &str, max_chars: usize) -> String {
-    let chars: Vec<char> = s.chars().collect();
-    if chars.len() <= max_chars {
+pub(crate) fn head_elide(s: &str, max_cells: usize) -> String {
+    if s.width() <= max_cells {
         return s.to_owned();
     }
-    let keep = max_chars.saturating_sub(1);
+    let keep = max_cells.saturating_sub(1);
     if keep == 0 {
         return "…".to_owned();
     }
-    let tail: String = chars[chars.len() - keep..].iter().collect();
+    let tail: String = fit_cells(s.graphemes(true).rev(), keep)
+        .into_iter()
+        .rev()
+        .collect();
     format!("…{tail}")
+}
+
+fn fit_cells<'a>(graphemes: impl Iterator<Item = &'a str>, budget: usize) -> Vec<&'a str> {
+    let mut used = 0;
+    graphemes
+        .take_while(|grapheme| {
+            used += grapheme.width();
+            used <= budget
+        })
+        .collect()
 }
 
 pub(super) struct FlatBodyState {
@@ -245,5 +259,11 @@ mod tests {
         assert_eq!(super::head_elide("src/main.rs", 20), "src/main.rs");
         assert_eq!(super::head_elide("very/deep/path/file.rs", 9), "…/file.rs");
         assert_eq!(super::head_elide("abcdef", 1), "…");
+    }
+
+    #[test]
+    fn elide_budgets_wide_glyphs_as_two_cells() {
+        assert_eq!(super::head_elide("文档/设计说明.md", 12), "…设计说明.md");
+        assert_eq!(super::middle_elide("设计说明书.md", 9), "设计….md");
     }
 }

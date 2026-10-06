@@ -41,7 +41,7 @@ impl RepoWindow {
         view.repo_switcher.as_mut().map(|state| &mut state.query)
     }
 
-    fn repo_switcher_input(view: &mut Self) -> Option<&mut LineInput> {
+    pub(super) fn repo_switcher_input(view: &mut Self) -> Option<&mut LineInput> {
         Self::repo_switcher_query(view).map(|query| &mut query.input)
     }
 
@@ -103,6 +103,14 @@ impl RepoWindow {
             PickerOutcome::Activate(action) => self.dispatch_repo_switcher(action, cx),
         }
         true
+    }
+
+    pub(super) fn repo_switcher_query_edited(&mut self, cx: &mut Context<Self>) {
+        self.picker_query_edited(
+            Self::repo_switcher_query,
+            |view, cx| view.repo_switcher_actions(cx),
+            cx,
+        );
     }
 
     fn repo_switcher_actions(&self, cx: &gpui::App) -> Vec<(RepoSwitcherAction, usize)> {

@@ -133,6 +133,7 @@ pub(in crate::repo::window) fn detail_pane(
     };
     let find = FindState {
         query: view.find.query.as_ref(),
+        ime_focus: view.find_ime_focus(window, cx),
         match_count: view.find.matches.len(),
         match_current: view.find.current,
     };

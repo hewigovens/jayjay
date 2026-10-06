@@ -266,6 +266,13 @@ pub(super) fn file_filter_bar(
                         cx.stop_propagation();
                     }
                 }))
+                .relative()
+                .child(LineInput::ime_layer(
+                    cx.entity(),
+                    Some(focus.clone()),
+                    RepoWindow::file_filter_input,
+                    RepoWindow::reconcile_file_selection,
+                ))
                 .child(line_input_content(
                     input,
                     "Filter files",

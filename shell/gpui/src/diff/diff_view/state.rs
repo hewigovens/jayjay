@@ -1,6 +1,6 @@
 use std::sync::Arc;
 
-use gpui::ScrollHandle;
+use gpui::{FocusHandle, ScrollHandle};
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
 use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats};
 use jayjay_markdown::MarkdownDocument;
@@ -144,6 +144,7 @@ impl<'a> DiffViewState<'a> {
 
 pub struct FindState<'a> {
     pub(crate) query: Option<&'a LineInput>,
+    pub(crate) ime_focus: Option<FocusHandle>,
     pub(crate) match_count: usize,
     pub(crate) match_current: usize,
 }

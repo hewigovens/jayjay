@@ -3,8 +3,10 @@ use std::ops::Range;
 use gpui::{Bounds, Context, EntityInputHandler, Pixels, Point, UTF16Selection, Window, point};
 
 use super::super::TextArea;
+use super::super::element::layout_text;
 use jayjay_core::utf16::byte_offset;
 
+use crate::app::theme::theme;
 use crate::ui::input::{TextSelection, sanitize_single_line};
 
 impl EntityInputHandler for TextArea {
@@ -103,9 +105,13 @@ impl EntityInputHandler for TextArea {
         &mut self,
         range_utf16: Range<usize>,
         bounds: Bounds<Pixels>,
-        _: &mut Window,
-        _: &mut Context<Self>,
+        window: &mut Window,
+        cx: &mut Context<Self>,
     ) -> Option<Bounds<Pixels>> {
+        if self.last_layout.is_none() {
+            let key = self.last_key.clone()?;
+            self.last_layout = Some(layout_text(self, key, bounds, window, theme(cx)));
+        }
         let layout = self.last_layout.as_ref()?;
         let range = self.range_from_utf16(&range_utf16);
         let line = layout

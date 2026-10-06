@@ -3,6 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, px,
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo};
+use unicode_width::UnicodeWidthStr;
 
 use super::row::{ChipMenus, ChipRightClick};
 use super::text::{compact_id, id_cell};
@@ -65,7 +66,7 @@ fn dag_chips(change: &ChangeInfo, refresh: RefreshMode) -> Vec<DagChip> {
 }
 
 pub(crate) fn chip_width(label: &str, has_icon: bool, t: &Theme) -> f32 {
-    let text = label.chars().count() as f32 * t.scaled_font_size(FONT_TAG) * CHAR_WIDTH_FACTOR;
+    let text = label.width() as f32 * t.scaled_font_size(FONT_TAG) * CHAR_WIDTH_FACTOR;
     text + 12.
         + if has_icon {
             t.scaled_font_size(FONT_TAG) + 3.

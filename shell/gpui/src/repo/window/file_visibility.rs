@@ -102,7 +102,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    fn file_filter_input(view: &mut Self) -> Option<&mut LineInput> {
+    pub(crate) fn file_filter_input(view: &mut Self) -> Option<&mut LineInput> {
         view.file_column.filter.as_mut()
     }
 
