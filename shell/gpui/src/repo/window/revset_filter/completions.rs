@@ -57,8 +57,8 @@ impl RevsetCompletionState {
     pub(super) fn handle_key(&mut self, event: &KeyDownEvent) -> Option<CompletionOutcome> {
         match event.keystroke.key.as_str() {
             "escape" => Some(CompletionOutcome::Dismiss),
-            // Tab belongs to the window's focus cycle, so a picked row is what Return takes.
             "enter" => self.selected.map(CompletionOutcome::Accept),
+            "tab" => Some(CompletionOutcome::Accept(self.selected.unwrap_or(0))),
             _ => {
                 let direction = list_nav_from_key(event, ListNavKeys::COMMAND_PALETTE)?;
                 let selected = self.selected.map_or(0, |current| {

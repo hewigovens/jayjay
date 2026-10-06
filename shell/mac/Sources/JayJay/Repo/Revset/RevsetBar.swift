@@ -58,6 +58,7 @@ struct RevsetBar: View {
                     edit: edit,
                     onCaretChange: caretMoved,
                     onMove: movePick,
+                    onComplete: completePick,
                     ownsWindow: { [completionPanel] in $0 === completionPanel },
                     onSubmit: submitDraft,
                     onCancel: cancel,
@@ -179,6 +180,12 @@ struct RevsetBar: View {
         guard !completions.isEmpty else { return false }
         let next = picked.map { min(max($0 + delta, 0), completions.count - 1) } ?? 0
         showCompletions(completions, picked: next)
+        return true
+    }
+
+    private func completePick() -> Bool {
+        guard !completions.isEmpty else { return false }
+        accept(completions[picked ?? 0])
         return true
     }
 

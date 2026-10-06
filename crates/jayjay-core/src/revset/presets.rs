@@ -9,7 +9,7 @@ pub struct RevsetPreset {
     pub revset: String,
 }
 
-static REVSET_PRESETS: LazyLock<[RevsetPreset; 6]> = LazyLock::new(|| {
+static REVSET_PRESETS: LazyLock<[RevsetPreset; 7]> = LazyLock::new(|| {
     [
         RevsetPreset {
             id: "all".to_owned(),
@@ -25,6 +25,11 @@ static REVSET_PRESETS: LazyLock<[RevsetPreset; 6]> = LazyLock::new(|| {
             id: "bookmarks".to_owned(),
             label: "Bookmarks".to_owned(),
             revset: "bookmarks()".to_owned(),
+        },
+        RevsetPreset {
+            id: "tags".to_owned(),
+            label: "Tags".to_owned(),
+            revset: "tags()".to_owned(),
         },
         RevsetPreset {
             id: "trunk".to_owned(),

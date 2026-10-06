@@ -31,6 +31,12 @@ final class RevsetCompletionScene: SceneBase {
         }
 
         keyStroke("a", modifiers: [.command])
+        paste("anc")
+        XCTAssertTrue(app.buttons[AID.Picker.row("completion-ancestors(")].waitForExistence(timeout: 5))
+        keyStroke(.tab)
+        XCTAssertEqual(field.value as? String, "ancestors(", "Tab finishes the first row without leaving the field")
+
+        keyStroke("a", modifiers: [.command])
         paste("main")
         keyStroke(.leftArrow)
         keyStroke(.leftArrow)

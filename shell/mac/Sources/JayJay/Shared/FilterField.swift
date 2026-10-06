@@ -23,6 +23,8 @@ struct FilterField: NSViewRepresentable {
     var onCaretChange: ((String, Int) -> Void)?
     /// Up and Down, for owners that navigate a list of their own; false leaves the key to the field.
     var onMove: ((Int) -> Bool)?
+    /// Tab, for owners with a completion to finish; false leaves it to the focus cycle.
+    var onComplete: (() -> Bool)?
     /// A click in a window the owner shows for this field, such as a completion list, keeps the edit going.
     var ownsWindow: ((NSWindow?) -> Bool)?
     let onSubmit: () -> Void
@@ -151,6 +153,8 @@ struct FilterField: NSViewRepresentable {
                     parent.onSubmit()
                 case #selector(NSResponder.moveUp(_:)), #selector(NSResponder.moveDown(_:)):
                     return parent.onMove?(selector == #selector(NSResponder.moveUp(_:)) ? -1 : 1) ?? false
+                case #selector(NSResponder.insertTab(_:)):
+                    return parent.onComplete?() ?? false
                 default:
                     // The caret has not moved yet when the command arrives.
                     DispatchQueue.main.async { [weak self, weak control] in

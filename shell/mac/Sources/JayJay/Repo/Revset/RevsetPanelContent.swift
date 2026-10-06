@@ -107,6 +107,7 @@ struct RevsetPanelContent: View {
                 edit: edit,
                 onCaretChange: caretMoved,
                 onMove: move,
+                onComplete: complete,
                 onSubmit: submit,
                 onCancel: onDismiss
             )
@@ -242,6 +243,19 @@ struct RevsetPanelContent: View {
         guard count > 0 else { return true }
         let current = selectedIndex ?? (delta > 0 ? -1 : 0)
         selectedIndex = max(0, min(count - 1, current + delta))
+        return true
+    }
+
+    private func complete() -> Bool {
+        if let selectedIndex, completions.indices.contains(selectedIndex) {
+            accept(completions[selectedIndex])
+        } else if let selectedRow {
+            activate(selectedRow)
+        } else if let first = completions.first {
+            accept(first)
+        } else {
+            return false
+        }
         return true
     }
 

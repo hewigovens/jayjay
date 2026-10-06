@@ -230,6 +230,11 @@ impl RepoWindow {
         cx.notify();
     }
 
+    /// Tab finishes a revset completion before it can move focus.
+    pub(in super::super) fn revset_tab_completes(&self, cx: &gpui::App) -> bool {
+        self.revset_completions.is_some() || !self.revset_popup_completions(cx).is_empty()
+    }
+
     /// A bookmark typed as the whole query is left to the popup's own Bookmarks rows, which match on the whole query.
     pub(in super::super) fn revset_popup_completions(
         &self,
@@ -354,10 +359,15 @@ impl RepoWindow {
             cx.notify();
             return true;
         }
-        match ev.keystroke.key.as_str() {
+        let key = ev.keystroke.key.as_str();
+        match key {
             "escape" => self.close_revset_popup(cx),
-            "enter" => {
-                if let Some(index) = popup.query.selected {
+            "enter" | "tab" => {
+                let picked = popup
+                    .query
+                    .selected
+                    .or((key == "tab" && !completions.is_empty()).then_some(0));
+                if let Some(index) = picked {
                     if let Some(completion) = completions.get(index) {
                         self.accept_revset_popup_completion(completion, cx);
                     } else if let Some(suggestion) =

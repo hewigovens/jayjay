@@ -50,6 +50,9 @@ impl RepoWindow {
             return false;
         }
         if ev.keystroke.key == "tab" {
+            if !modifiers.shift && self.revset_tab_completes(cx) {
+                return false;
+            }
             self.move_keyboard_focus(modifiers.shift, window, cx);
             return true;
         }

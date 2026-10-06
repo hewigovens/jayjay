@@ -391,6 +391,21 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
         assert_eq!(view.view_model().read(cx).revset(), "mine()");
     });
 
+    retype(cx, "tag");
+    cx.simulate_keystrokes("tab");
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.revset_editor_text()),
+        Some("tags()".to_owned()),
+        "Tab finishes the first row without leaving the field"
+    );
+    assert!(cx.debug_bounds("revset-completions").is_none());
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).revset(), "tags()");
+    });
+
     retype(cx, "au");
     cx.simulate_keystrokes("down down enter");
     settle_visual(cx);
@@ -461,5 +476,21 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
     view.read_with(cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).revset(), "@ | mine()");
         assert!(!view.revset_popup_open());
+    });
+
+    click(cx, "revset-presets");
+    cx.simulate_input("@ | tag");
+    settle_visual(cx);
+    cx.simulate_keystrokes("tab");
+    settle_visual(cx);
+    assert!(
+        view.read_with(cx, |view, _| view.revset_popup_open()),
+        "Tab fills the field instead of moving focus"
+    );
+    assert!(cx.debug_bounds("revset-popup-completions").is_none());
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).revset(), "@ | tags()");
     });
 }
