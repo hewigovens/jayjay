@@ -255,6 +255,9 @@ pub(crate) enum TextModalAction {
     CreateBookmark {
         rev: String,
     },
+    CreateTag {
+        rev: String,
+    },
     ReviewNote(super::note_composer::NoteComposerTarget),
     /// Carries the already-validated parent directory the workspace will be created under.
     CreateWorkspace(std::path::PathBuf),
@@ -266,6 +269,7 @@ impl TextModalAction {
         matches!(
             self,
             Self::CreateBookmark { .. }
+                | Self::CreateTag { .. }
                 | Self::CreateWorkspace(_)
                 | Self::SplitFiles(_)
                 | Self::EditDescription { .. }

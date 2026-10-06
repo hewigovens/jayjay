@@ -1,5 +1,5 @@
 use jayjay_core::dag::DagLayout;
-use jayjay_core::{BookmarkInfo, ChangeInfo, GraphEntry, WorkspaceInfo};
+use jayjay_core::{BookmarkInfo, ChangeInfo, GraphEntry, TagInfo, WorkspaceInfo};
 use std::sync::Arc;
 
 /// All graph-level data refreshed together by `refresh()` / `load_more()`.
@@ -8,6 +8,7 @@ pub struct GraphData {
     pub entries: Arc<Vec<GraphEntry>>,
     pub(crate) dag_layout: Arc<DagLayout>,
     pub(crate) bookmarks: Arc<Vec<BookmarkInfo>>,
+    pub(crate) tags: Arc<Vec<TagInfo>>,
     pub workspaces: Arc<Vec<WorkspaceInfo>>,
 }
 
@@ -18,6 +19,7 @@ impl Default for GraphData {
             entries: Arc::new(Vec::new()),
             dag_layout: Arc::new(DagLayout::default()),
             bookmarks: Arc::new(Vec::new()),
+            tags: Arc::new(Vec::new()),
             workspaces: Arc::new(Vec::new()),
         }
     }

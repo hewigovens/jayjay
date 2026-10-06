@@ -7,6 +7,8 @@ enum DAGRequest {
     case abandonSelection(revisions: [String])
     case squashSelection(revisions: [String])
     case createBookmark(rev: String)
+    case createTag(rev: String)
+    case deleteTagOnRemote(name: String)
     case createStackedPRs(rev: String)
     case showAncestors(changeId: String, commitId: String)
     case openWorkspace(WorkspaceInfo)

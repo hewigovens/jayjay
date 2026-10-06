@@ -15,10 +15,11 @@ struct DAGRow: View {
     @Environment(\.jayjayFontSize) var baseFontSize
     @Environment(\.jayjayFontFamily) var fontFamily
     let viewModel: DAGRowViewModel
-    var actions: (any DAGActions & BookmarkActions)?
+    var actions: (any DAGActions & BookmarkActions & TagActions)?
     var onRequest: ((DAGRequest) -> Void)?
     var prHostName: String?
     var conflictedBookmarkNames: Set<String> = []
+    var remoteTagNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
     var refreshMode: RefreshMode = .refresh
     var onBookmarkDragChanged: ((String, String, DragGesture.Value) -> Void)?

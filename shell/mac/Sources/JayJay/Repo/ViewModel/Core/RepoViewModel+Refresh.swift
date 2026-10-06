@@ -236,6 +236,7 @@ extension RepoViewModel {
     @MainActor
     func apply(_ context: RepoRefreshContext) {
         bookmarks = context.bookmarks
+        tags = context.tags
         revsetVocabulary = context.revsetVocabulary
         if let workspaces = context.workspaces {
             self.workspaces = workspaces

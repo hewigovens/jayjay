@@ -23,6 +23,7 @@ pub(crate) type ChipRightClick =
 /// Right-click handlers for the chips that open a menu, keyed by the chip's name.
 pub(crate) struct ChipMenus {
     pub bookmark: ChipRightClick,
+    pub tag: ChipRightClick,
     pub workspace: ChipRightClick,
 }
 

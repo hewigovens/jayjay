@@ -32,6 +32,7 @@ mod review_snapshot;
 mod revset_vocabulary;
 mod stacked_pr;
 mod support;
+mod tags;
 mod transaction;
 mod undo;
 mod working_copy;

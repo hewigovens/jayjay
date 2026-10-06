@@ -1,8 +1,8 @@
 use std::future::Future;
 
-use gpui::{AppContext, AsyncApp, Context};
-use jayjay_core::FetchResult;
+use gpui::{AppContext, AsyncApp, Context, Task};
 use jayjay_core::repositories::normalize_repository_path;
+use jayjay_core::{CoreResult, FetchResult};
 
 use std::path::Path;
 
@@ -10,6 +10,7 @@ use super::RepoWindow;
 use super::confirmation::{Confirmation, ConfirmedAction, DontAskAgain};
 use super::workspace_drafts::WorkspaceDrafts;
 use crate::app::config;
+use crate::repo::view_model::RepoViewModel;
 
 impl RepoWindow {
     pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
@@ -183,15 +184,27 @@ impl RepoWindow {
     }
 
     pub(crate) fn git_push_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) -> bool {
+        self.git_push(bookmark, RepoViewModel::push_bookmark, cx)
+    }
+
+    /// `name` is the bookmark or tag to push; an empty name pushes every tracked bookmark.
+    pub(super) fn git_push(
+        &mut self,
+        name: String,
+        push: fn(
+            &mut RepoViewModel,
+            String,
+            &mut Context<RepoViewModel>,
+        ) -> Task<CoreResult<String>>,
+        cx: &mut Context<Self>,
+    ) -> bool {
         if self.sync_activity.pushing {
             self.show_toast("Push already in progress", cx);
             return false;
         }
         self.sync_activity.pushing = true;
         cx.notify();
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.push_bookmark(bookmark.clone(), cx));
+        let task = self.vm.update(cx, |vm, cx| push(vm, name.clone(), cx));
         Self::spawn_update(
             cx,
             |_| task,
@@ -199,7 +212,7 @@ impl RepoWindow {
                 view.sync_activity.pushing = false;
                 let outcome = match result {
                     Ok(message) => {
-                        let message = push_status_message(&bookmark, &message);
+                        let message = push_status_message(&name, &message);
                         view.show_toast(message.clone(), cx);
                         Ok(message)
                     }

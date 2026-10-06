@@ -117,6 +117,9 @@ pub(super) fn sidebar(
                         let on_bookmark = chip_menu(view_handle.clone(), move |view, name, cx| {
                             view.build_bookmark_menu(name, Some(&bookmark_rev), cx)
                         });
+                        let on_tag = chip_menu(view_handle.clone(), |view, name, cx| {
+                            view.build_tag_menu(name, cx)
+                        });
                         let on_workspace = chip_menu(view_handle.clone(), |view, name, cx| {
                             view.build_workspace_chip_menu(name, cx)
                         });
@@ -174,6 +177,7 @@ pub(super) fn sidebar(
                             on_right_click,
                             ChipMenus {
                                 bookmark: on_bookmark,
+                                tag: on_tag,
                                 workspace: on_workspace,
                             },
                             on_drop,

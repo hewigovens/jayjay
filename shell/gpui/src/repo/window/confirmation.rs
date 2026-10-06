@@ -6,6 +6,7 @@ use gpui::{
 use super::RepoWindow;
 use crate::app::config::{self, AppConfig};
 use crate::app::theme::Theme;
+use crate::repo::view_model::RepoViewModel;
 use crate::ui::overlay::{confirmation_card, overlay_actions, overlay_layer};
 use crate::ui::primitives::{button, checkbox_row};
 
@@ -28,6 +29,7 @@ pub(crate) enum ConfirmedAction {
     DeleteWorkspace { name: String, path: String },
     SquashChanges { revs: Vec<String> },
     AbandonChanges { revs: Vec<String> },
+    DeleteRemoteTag { name: String },
 }
 
 impl RepoWindow {
@@ -64,6 +66,9 @@ impl RepoWindow {
             ConfirmedAction::AbandonChanges { revs } => {
                 let task = self.vm.update(cx, |vm, cx| vm.abandon_changes(revs, cx));
                 task.detach();
+            }
+            ConfirmedAction::DeleteRemoteTag { name } => {
+                self.git_push(name, RepoViewModel::delete_tag_and_push, cx);
             }
         }
     }

@@ -1,6 +1,7 @@
 use std::collections::{BTreeMap, BTreeSet, HashMap, HashSet};
 
 use jj_lib::backend::CommitId;
+use jj_lib::dsl_util::format_string;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId as _;
 use jj_lib::ref_name::RefName;
@@ -8,6 +9,7 @@ use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use crate::repo::bookmarks::bookmark_target_without_commit;
 use crate::repo::support::block_on_result;
+use crate::repo::tags::tag_remotes;
 use crate::repo::{Repo, SyncToken};
 use crate::types::*;
 
@@ -24,7 +26,27 @@ impl Repo {
         if !bookmark.is_empty() {
             args.extend(["--bookmark", bookmark]);
         }
-        let output = self.run_jj_output(&args)?;
+        self.run_git_push(&args, sync)
+    }
+
+    /// `--tag` tracks a new remote tag on its own; a tag deleted locally but still tracked deletes the remote tag. jj pushes to one remote per invocation and never derives it from tracking, so each tracked remote gets its own push.
+    pub fn git_push_tag(&self, tag: &str, sync: &SyncToken) -> CoreResult<String> {
+        let _enter = sync.enter();
+        let pattern = format!("exact:{}", format_string(tag));
+        let remotes = tag_remotes(self.get_repo().view(), RefName::new(tag));
+        if remotes.is_empty() {
+            return self.run_git_push(&["git", "push", "--tag", &pattern], sync);
+        }
+        let mut messages = Vec::new();
+        for remote in &remotes {
+            let remote = format!("--remote={remote}");
+            messages.push(self.run_git_push(&["git", "push", &remote, "--tag", &pattern], sync)?);
+        }
+        Ok(messages.join("\n"))
+    }
+
+    fn run_git_push(&self, args: &[&str], sync: &SyncToken) -> CoreResult<String> {
+        let output = self.run_jj_output(args)?;
         self.ensure_success(&output, "git push failed")?;
         self.reload()?;
         sync.check()?;

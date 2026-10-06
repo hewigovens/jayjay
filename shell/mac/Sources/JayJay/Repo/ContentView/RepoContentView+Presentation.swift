@@ -113,8 +113,13 @@ extension RepoContentView {
     }
 
     func presentBookmarkCreate(rev: String) {
-        bookmarkCreateName = ""
+        refCreateName = ""
         modal = .createBookmark(rev: rev)
+    }
+
+    func presentTagCreate(rev: String) {
+        refCreateName = ""
+        modal = .createTag(rev: rev)
     }
 
     func showToast(_ message: String) {

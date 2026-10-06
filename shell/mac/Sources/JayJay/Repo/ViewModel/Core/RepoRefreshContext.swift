@@ -2,6 +2,7 @@ import JayJayCore
 
 struct RepoRefreshContext {
     let bookmarks: [BookmarkInfo]
+    let tags: [TagInfo]
     let revsetVocabulary: RevsetVocabulary
     let workspaces: [WorkspaceInfo]?
     let prHostName: String?
@@ -10,6 +11,7 @@ struct RepoRefreshContext {
 
     init(repo: JayJayRepo) throws {
         bookmarks = try repo.listBookmarks()
+        tags = try repo.listTags()
         revsetVocabulary = repo.revsetVocabulary(bookmarks: bookmarks)
         workspaces = try? repo.workspaceList()
         prHostName = repo.prHostName()

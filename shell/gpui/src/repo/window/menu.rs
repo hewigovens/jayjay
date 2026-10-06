@@ -1,4 +1,5 @@
 use super::RepoWindow;
+use crate::repo::view_model::RepoViewModel;
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
@@ -103,6 +104,18 @@ impl RepoWindow {
             }
             ContextAction::CreateBookmark(rev) => {
                 self.open_create_bookmark(rev.to_string(), cx);
+            }
+            ContextAction::CreateTag(rev) => {
+                self.open_create_tag(rev.to_string(), cx);
+            }
+            ContextAction::PushTag(name) => {
+                self.git_push(name.to_string(), RepoViewModel::push_tag, cx);
+            }
+            ContextAction::DeleteTag(name) => {
+                self.delete_tag(name.to_string(), cx);
+            }
+            ContextAction::DeleteRemoteTag(name) => {
+                self.request_remote_tag_delete(name.to_string(), cx);
             }
             ContextAction::OpenStackedPr(rev) => {
                 self.open_stacked_pr(rev.to_string(), cx);

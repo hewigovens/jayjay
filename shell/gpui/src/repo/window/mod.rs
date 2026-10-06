@@ -49,6 +49,7 @@ mod stacked_pr_snapshot;
 mod stacked_pr_submit;
 mod status_bar;
 mod sync;
+mod tag_menu;
 mod view;
 mod workspace;
 mod workspace_drafts;

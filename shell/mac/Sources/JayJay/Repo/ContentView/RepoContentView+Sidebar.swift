@@ -34,6 +34,7 @@ extension RepoContentView {
                 revealRequest: viewModel.dagRevealRequest,
                 prHostName: viewModel.prHostName,
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
+                remoteTagNames: viewModel.remoteTagNames,
                 workspacesByName: viewModel.workspacesByName,
                 refreshMode: viewModel.refreshMode
             )

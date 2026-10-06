@@ -108,12 +108,20 @@ extension DAGView {
         Button { onRequest?(.createBookmark(rev: rev)) } label: {
             Label("Create bookmark here...", systemImage: "bookmark")
         }
+        Button { onRequest?(.createTag(rev: entry.change.commitId.id)) } label: {
+            Label("Create tag here...", systemImage: "tag")
+        }
         if !entry.change.isImmutable {
             Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
                 Label(
                     "Create / Update Stacked PRs…",
                     systemImage: "square.stack.3d.up.fill"
                 )
+            }
+        }
+        ForEach(entry.change.tags, id: \.self) { name in
+            Menu("Tag: \(name)") {
+                TagMenuItems(name: name, isOnRemote: remoteTagNames.contains(name), actions: actions, onRequest: onRequest)
             }
         }
         historySection(entry: entry, rev: rev)
