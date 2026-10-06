@@ -9,7 +9,7 @@ mod entry;
 mod rows;
 
 use super::RepoWindow;
-use super::picker::{self, PickerOutcome, PickerQuery, picker_actions, render_sections};
+use super::picker::{self, PickerOutcome, PickerQuery, picker_actions, picker_items};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::LineInput;
@@ -162,29 +162,24 @@ fn menu_panel(
         t,
     );
 
-    let sections = bookmark_sections(state, bookmarks);
     let has_any_bookmarks = bookmarks.iter().any(|bookmark| !bookmark.is_deleted);
-    let rows = if sections.is_empty() {
-        vec![picker::empty(
+    let row_view = view.clone();
+    picker::panel(
+        "bookmark-picker-panel",
+        280.,
+        header,
+        picker_items(
+            bookmark_sections(state, bookmarks),
+            state.query.selected,
             if has_any_bookmarks {
                 "No matches"
             } else {
                 "No bookmarks yet"
             },
-            t,
-        )]
-    } else {
-        render_sections(sections, state.query.selected, t, |bookmark, selected| {
-            bookmark_row(bookmark, selected, t, view)
-        })
-    };
-    picker::panel(
-        "bookmark-picker-panel",
-        280.,
-        header,
-        rows,
-        &state.query.scroll,
+        ),
+        &state.query,
         t,
+        move |entry, selected, t| bookmark_row(entry, selected, t, &row_view),
     )
 }
 

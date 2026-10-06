@@ -1017,3 +1017,42 @@ fn picker_buttons_close_their_open_picker(cx: &mut TestAppContext) {
         assert!(repo_cx.debug_bounds(panel).is_none(), "{button} closes");
     }
 }
+
+#[gpui::test]
+fn bookmark_picker_builds_only_visible_rows_and_reveals_the_keyboard_selection(
+    cx: &mut TestAppContext,
+) {
+    const COUNT: usize = 60;
+    let fixture = LinearFixture::build();
+    let names: Vec<String> = (0..COUNT).map(|i| format!("bulk-{i:02}")).collect();
+    let mut args = vec!["bookmark", "create", "-r", "@-"];
+    args.extend(names.iter().map(String::as_str));
+    run_jj_in(&fixture.path, &args);
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+
+    let button = repo_cx
+        .debug_bounds(selector(format!("bookmarks-button-{}", COUNT + 1)))
+        .expect("bookmark picker button");
+    repo_cx.simulate_click(button.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    let rows: Vec<&'static str> = names
+        .iter()
+        .map(|name| selector(format!("bookmark-picker-row-{name}")))
+        .collect();
+    let built = rows
+        .iter()
+        .filter(|row| repo_cx.debug_bounds(row).is_some())
+        .count();
+    assert!(built > 0 && built < COUNT, "{built} of {COUNT} rows built");
+    assert!(repo_cx.debug_bounds(rows[COUNT - 1]).is_none());
+
+    for _ in 0..=COUNT {
+        repo_cx.simulate_keystrokes("down");
+    }
+    settle_visual(repo_cx);
+    assert!(
+        repo_cx.debug_bounds(rows[COUNT - 1]).is_some(),
+        "moving the selection to the end scrolls the last rows into view"
+    );
+}

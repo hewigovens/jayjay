@@ -5,6 +5,7 @@ use crate::app::repositories;
 use crate::repo::window::picker::{PickerRow, PickerSection, sections_by_best_match};
 use crate::ui::icons::glyph;
 
+#[derive(Clone)]
 pub(super) enum RowContent {
     Workspace(WorkspaceInfo),
     Repository {
@@ -18,6 +19,7 @@ pub(super) enum RowContent {
     },
 }
 
+#[derive(Clone)]
 pub(super) struct SwitcherRow {
     pub(super) id: String,
     search_text: String,

@@ -6,7 +6,7 @@ use super::rows::switcher_row;
 use super::sections::switcher_sections;
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
-use crate::repo::window::picker::{self, render_sections};
+use crate::repo::window::picker::{self, picker_items};
 use crate::ui::icons::glyph;
 
 pub(crate) fn render_repo_switcher(
@@ -66,20 +66,18 @@ fn menu_panel(
         t,
     );
 
-    let sections = switcher_sections(state, workspaces);
-    let rows = if sections.is_empty() {
-        vec![picker::empty("No matches", t)]
-    } else {
-        render_sections(sections, state.query.selected, t, |row, selected| {
-            switcher_row(row, selected, t, view)
-        })
-    };
+    let row_view = view.clone();
     picker::panel(
         "repo-switcher-panel",
         440.,
         header,
-        rows,
-        &state.query.scroll,
+        picker_items(
+            switcher_sections(state, workspaces),
+            state.query.selected,
+            "No matches",
+        ),
+        &state.query,
         t,
+        move |row, selected, t| switcher_row(row, selected, t, &row_view),
     )
 }

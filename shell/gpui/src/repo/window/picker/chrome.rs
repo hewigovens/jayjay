@@ -1,11 +1,12 @@
 use gpui::{
-    Anchor, AnyElement, App, Context, Div, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, Pixels, Point, ScrollHandle, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, Window, anchored, deferred, div, px, rgb,
+    Anchor, AnyElement, App, Context, Div, InteractiveElement, IntoElement, ListSizingBehavior,
+    MouseButton, MouseDownEvent, ParentElement, Pixels, Point, SharedString, Stateful, Styled,
+    Window, anchored, deferred, div, list, px, rgb,
 };
 
 use super::super::RepoWindow;
 use super::query::PickerQuery;
+use super::sections::PickerItem;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
@@ -57,14 +58,27 @@ pub(crate) fn overlay(
     .into_any_element()
 }
 
-pub(crate) fn panel(
+pub(crate) fn panel<R: Clone + 'static>(
     id: &'static str,
     width: f32,
     header: impl IntoElement,
-    rows: Vec<AnyElement>,
-    scroll: &ScrollHandle,
+    items: Vec<PickerItem<R>>,
+    query: &PickerQuery,
     t: &Theme,
+    render_row: impl Fn(R, bool, &Theme) -> AnyElement + 'static,
 ) -> AnyElement {
+    if query.list.item_count() != items.len() {
+        query.list.reset(items.len());
+    }
+    let theme = t.clone();
+    let body = list(query.list.clone(), move |ix, _, _| match &items[ix] {
+        PickerItem::Header { id, title } => section_header(id, title, &theme),
+        PickerItem::Row { row, selected } => render_row(row.clone(), *selected, &theme),
+        PickerItem::Empty(label) => empty(*label, &theme),
+    })
+    .with_sizing_behavior(ListSizingBehavior::Infer)
+    .min_h_0()
+    .py(px(4.));
     div()
         .debug_selector(move || id.to_owned())
         .flex()
@@ -79,17 +93,7 @@ pub(crate) fn panel(
         .overflow_hidden()
         .occlude()
         .child(header)
-        .child(
-            div()
-                .id("picker-scroll")
-                .flex()
-                .flex_col()
-                .min_h_0()
-                .overflow_y_scroll()
-                .track_scroll(scroll)
-                .py(px(4.))
-                .children(rows),
-        )
+        .child(body)
         .into_any_element()
 }
 

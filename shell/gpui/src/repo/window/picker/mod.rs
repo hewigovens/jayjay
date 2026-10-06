@@ -7,5 +7,5 @@ pub(crate) use chrome::{
 };
 pub(crate) use query::{PickerOutcome, PickerQuery};
 pub(crate) use sections::{
-    PickerRow, PickerSection, picker_actions, render_sections, sections_by_best_match,
+    PickerRow, PickerSection, picker_actions, picker_items, sections_by_best_match,
 };

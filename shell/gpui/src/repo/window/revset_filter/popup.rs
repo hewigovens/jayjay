@@ -159,7 +159,6 @@ fn panel(
                 .flex_col()
                 .min_h_0()
                 .overflow_y_scroll()
-                .track_scroll(&state.query.scroll)
                 .pb(px(4.))
                 .children(rows),
         )

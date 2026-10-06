@@ -1,4 +1,4 @@
-use gpui::{App, Context, KeyDownEvent, ScrollHandle, point, px};
+use gpui::{App, Context, KeyDownEvent, ListAlignment, ListOffset, ListState, px};
 
 use crate::repo::window::RepoWindow;
 use crate::ui::input::LineInput;
@@ -54,7 +54,7 @@ enum PickerKeyAction {
 
 pub(crate) struct PickerQuery {
     pub(crate) input: LineInput,
-    pub(crate) scroll: ScrollHandle,
+    pub(crate) list: ListState,
     pub(crate) selected: Option<usize>,
 }
 
@@ -62,7 +62,7 @@ impl PickerQuery {
     pub(crate) fn new() -> Self {
         Self {
             input: LineInput::new(""),
-            scroll: ScrollHandle::new(),
+            list: ListState::new(0, ListAlignment::Top, px(240.)),
             selected: None,
         }
     }
@@ -71,15 +71,15 @@ impl PickerQuery {
         let item_index = self
             .selected
             .and_then(|index| actions.get(index).map(|(_, item_index)| *item_index));
-        if let Some(item_index) = item_index {
-            self.scroll.scroll_to_item(item_index);
-        } else {
-            let offset = self.scroll.offset();
-            self.scroll.set_offset(point(offset.x, px(0.)));
+        match item_index {
+            Some(item_index) => self.list.scroll_to_reveal_item(item_index),
+            None => self.list.scroll_to(ListOffset::default()),
         }
     }
 
     pub(crate) fn reset_selection_after_edit(&mut self, action_count: usize) {
+        // Rows can change at the same count, so drop cached heights.
+        self.list.reset(0);
         self.selected = if self.input.text().trim().is_empty() || action_count == 0 {
             None
         } else {

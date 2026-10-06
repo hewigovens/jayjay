@@ -1,8 +1,3 @@
-use gpui::AnyElement;
-
-use super::chrome::section_header;
-use crate::app::theme::Theme;
-
 pub(crate) trait PickerRow {
     type Action: Clone;
 
@@ -68,26 +63,44 @@ pub(crate) fn picker_actions<R: PickerRow>(
     actions
 }
 
-pub(crate) fn render_sections<R: PickerRow>(
+/// Indexes match the item indexes `picker_actions` reports.
+pub(crate) enum PickerItem<R> {
+    Header {
+        id: &'static str,
+        title: &'static str,
+    },
+    Row {
+        row: R,
+        selected: bool,
+    },
+    Empty(&'static str),
+}
+
+pub(crate) fn picker_items<R: PickerRow>(
     sections: Vec<PickerSection<R>>,
     selected: Option<usize>,
-    t: &Theme,
-    mut render_row: impl FnMut(R, bool) -> AnyElement,
-) -> Vec<AnyElement> {
+    empty_label: &'static str,
+) -> Vec<PickerItem<R>> {
     let mut action_index = 0;
-    let mut elements = Vec::new();
+    let mut items = Vec::new();
     for section in sections {
         if let Some(title) = section.title {
-            elements.push(section_header(section.id, title, t));
+            items.push(PickerItem::Header {
+                id: section.id,
+                title,
+            });
         }
         for row in section.rows {
             let actionable = row.action().is_some();
-            let is_selected = actionable && selected == Some(action_index);
+            let selected = actionable && selected == Some(action_index);
             action_index += usize::from(actionable);
-            elements.push(render_row(row, is_selected));
+            items.push(PickerItem::Row { row, selected });
         }
     }
-    elements
+    if items.is_empty() {
+        items.push(PickerItem::Empty(empty_label));
+    }
+    items
 }
 
 #[cfg(test)]
