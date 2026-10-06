@@ -6,7 +6,7 @@ struct BookmarkManagerView: View {
     let actions: (any BookmarkActions)?
     let repo: JayJayRepo?
     let prHostName: String?
-    let onFilter: (String) -> Void
+    let onFilter: (BookmarkFilterTarget) -> Void
     let onDiffBookmark: (BookmarkDiffRequest) -> Void
     let onDismiss: () -> Void
 
@@ -138,7 +138,8 @@ struct BookmarkManagerView: View {
 
 extension BookmarkManagerView: BookmarkManagerRowActions {
     func filterBookmark(_ bookmark: BookmarkInfo) {
-        onFilter(bookmarkEndpointForInfo(bookmark: bookmark).rev)
+        guard let target = bookmarkFilterTargets(bookmarks: [bookmark]).first else { return }
+        onFilter(target)
     }
 
     func diffBookmark(_ bookmark: BookmarkInfo) {

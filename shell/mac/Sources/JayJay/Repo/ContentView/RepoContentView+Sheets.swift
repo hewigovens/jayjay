@@ -35,9 +35,9 @@ extension RepoContentView {
                     actions: viewModel,
                     repo: viewModel.repo,
                     prHostName: viewModel.prHostName,
-                    onFilter: { bookmarkName in
+                    onFilter: { target in
                         self.modal = nil
-                        viewModel.applyFilter(bookmarkFilterRevset(name: bookmarkName, remote: nil))
+                        viewModel.filterByBookmark(target)
                     },
                     onDiffBookmark: { request in
                         self.modal = nil
