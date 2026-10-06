@@ -3,6 +3,7 @@ import SwiftUI
 
 struct BookmarkPicker: View {
     let bookmarks: [BookmarkInfo]
+    let isLoaded: Bool
     let actions: (any BookmarkActions)?
 
     private var localBookmarks: [BookmarkInfo] {
@@ -98,6 +99,9 @@ struct BookmarkPicker: View {
         )) {
             renamePopover
         }
+        // A panel opened while loading shows the bookmarks once they arrive.
+        .onChange(of: isLoaded) { refreshVisiblePanel() }
+        .onChange(of: bookmarks) { refreshVisiblePanel() }
     }
 
     private func togglePanel() {
@@ -105,6 +109,16 @@ struct BookmarkPicker: View {
             panel.dismiss()
             return
         }
+        showPanel()
+    }
+
+    private func refreshVisiblePanel() {
+        if panel.isVisible {
+            showPanel()
+        }
+    }
+
+    private func showPanel() {
         guard let anchorView = anchor.view else { return }
         let sections = sections
         let root = PickerPanelRoot(
@@ -115,7 +129,7 @@ struct BookmarkPicker: View {
                 showingCreate = true
             },
             sections: sections,
-            emptyText: "No bookmarks yet",
+            emptyText: isLoaded ? "No bookmarks yet" : "Loading bookmarks…",
             onDismiss: { [weak panel] in panel?.dismiss() }
         )
         panel.show(under: anchorView, size: PickerPanelRoot.idealSize(sections: sections, width: 280), content: root)

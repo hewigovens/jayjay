@@ -130,7 +130,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     var pendingBackgroundRefresh: BackgroundRefreshRequest?
     /// True while a refresh task is running — gates FS-triggered re-entry.
     var isRefreshingInFlight: Bool = false
-    @ObservationIgnored var hasFinishedFirstLoad = false
+    /// Refresh context such as bookmarks lands after the first graph paint.
+    var hasFinishedFirstLoad = false
     var isPullingInFlight = false
     var isPushingInFlight = false
     var pullSync: JayJaySyncToken?

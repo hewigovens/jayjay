@@ -7,7 +7,7 @@ final class BookmarkPickerTests: XCTestCase {
     func testRemoteRowsBrowseEachRemote() throws {
         let remote = remoteBookmark("odd&name", remotes: ["upstream", "origin"])
         let actions = RevealRecorder()
-        let picker = BookmarkPicker(bookmarks: [remote], actions: actions)
+        let picker = BookmarkPicker(bookmarks: [remote], isLoaded: true, actions: actions)
         let section = try XCTUnwrap(picker.sections.first)
         XCTAssertEqual(picker.sections.count, 1)
         XCTAssertEqual(section.title, "Remote Only")
@@ -20,18 +20,18 @@ final class BookmarkPickerTests: XCTestCase {
 
     func testDeletedBookmarkKeepsItsUntrackedRemote() {
         let bookmark = remoteBookmark("feature", remotes: ["origin", "upstream"], tracked: ["origin"], deleted: true)
-        let picker = BookmarkPicker(bookmarks: [bookmark], actions: nil)
+        let picker = BookmarkPicker(bookmarks: [bookmark], isLoaded: true, actions: nil)
         XCTAssertEqual(picker.sections.flatMap(\.rows).map(\.searchText), ["feature@upstream"])
 
         let fullyDeleted = remoteBookmark("feature", remotes: ["origin", "upstream"], tracked: ["origin", "upstream"], deleted: true)
-        let deleted = BookmarkPicker(bookmarks: [fullyDeleted], actions: nil)
+        let deleted = BookmarkPicker(bookmarks: [fullyDeleted], isLoaded: true, actions: nil)
         XCTAssertTrue(deleted.sections.isEmpty)
     }
 
     func testRemoteRowIdentityDoesNotDependOnItsDisplayLabel() {
         let bookmarks = [remoteBookmark("a@b", remotes: ["c"]), remoteBookmark("a", remotes: ["b@c"])]
         let actions = RevealRecorder()
-        let picker = BookmarkPicker(bookmarks: bookmarks, actions: actions)
+        let picker = BookmarkPicker(bookmarks: bookmarks, isLoaded: true, actions: actions)
         let rows = picker.sections.flatMap(\.rows)
         XCTAssertEqual(rows.map(\.searchText), ["a@b@c", "a@b@c"])
         XCTAssertEqual(Set(rows.map(\.id)).count, 2)

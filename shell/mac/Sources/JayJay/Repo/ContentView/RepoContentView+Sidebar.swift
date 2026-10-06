@@ -5,7 +5,7 @@ extension RepoContentView {
     var sidebar: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                BookmarkPicker(bookmarks: viewModel.bookmarks, actions: viewModel)
+                BookmarkPicker(bookmarks: viewModel.bookmarks, isLoaded: viewModel.hasFinishedFirstLoad, actions: viewModel)
                 Spacer(minLength: 8)
                 Text("\(viewModel.changes.count) \(viewModel.changes.count == 1 ? "change" : "changes")")
                     .jayjayFont(12)
