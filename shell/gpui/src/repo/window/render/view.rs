@@ -104,24 +104,34 @@ impl Render for RepoWindow {
         } else {
             window.focused(cx)
         };
-        let repo_switcher_overlay = self.repo_switcher.as_ref().map(|state| {
-            render_repo_switcher(
-                state,
-                &workspaces,
-                &t,
-                &cx.entity(),
-                picker_ime_focus.clone(),
-            )
-        });
-        let bookmark_picker_overlay = self.bookmark_picker.as_ref().map(|state| {
-            render_bookmark_picker(
-                state,
-                &bookmarks,
-                &t,
-                &cx.entity(),
-                picker_ime_focus.clone(),
-            )
-        });
+        let repo_switcher_overlay = self
+            .repo_switcher
+            .as_ref()
+            .zip(self.repo_switcher_button_bounds.get())
+            .map(|(state, button)| {
+                render_repo_switcher(
+                    state,
+                    button,
+                    &workspaces,
+                    &t,
+                    &cx.entity(),
+                    picker_ime_focus.clone(),
+                )
+            });
+        let bookmark_picker_overlay = self
+            .bookmark_picker
+            .as_ref()
+            .zip(self.bookmarks_button_bounds.get())
+            .map(|(state, button)| {
+                render_bookmark_picker(
+                    state,
+                    button,
+                    &bookmarks,
+                    &t,
+                    &cx.entity(),
+                    picker_ime_focus.clone(),
+                )
+            });
         let revset_popup_overlay = self
             .revset_popup
             .as_ref()
@@ -216,6 +226,7 @@ impl Render for RepoWindow {
         root = root
             .child(crate::repo::toolbar::toolbar(
                 toolbar_repo,
+                self.repo_switcher_button_bounds.clone(),
                 self.layout.sidebar_hidden,
                 super::super::revset_filter::revset_bar(self, &t, cx),
                 ToolbarActivity {

@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 
-use gpui::{AnyWindowHandle, Context, KeyDownEvent, Pixels, Point};
+use gpui::{AnyWindowHandle, Context, KeyDownEvent};
 
 use super::model::{RepoSwitcherAction, RepoSwitcherState};
 use super::sections::switcher_sections;
@@ -14,7 +14,6 @@ use crate::windows::repo_list::RepoListWindow;
 impl RepoWindow {
     pub(crate) fn open_repo_switcher(
         &mut self,
-        anchor: Point<Pixels>,
         current_window: AnyWindowHandle,
         cx: &mut Context<Self>,
     ) {
@@ -27,7 +26,6 @@ impl RepoWindow {
         self.context_menu = None;
         self.close_bookmark_picker(cx);
         self.repo_switcher = Some(RepoSwitcherState {
-            anchor,
             current,
             open,
             pinned,

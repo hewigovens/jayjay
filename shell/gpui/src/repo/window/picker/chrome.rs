@@ -1,10 +1,10 @@
 use gpui::{
-    Anchor, AnyElement, App, Context, Div, InteractiveElement, IntoElement, ListSizingBehavior,
-    MouseButton, MouseDownEvent, ParentElement, Pixels, Point, SharedString, Stateful, Styled,
-    Window, anchored, deferred, div, list, px, rgb,
+    Anchor, AnyElement, App, Bounds, Context, Div, InteractiveElement, IntoElement,
+    ListSizingBehavior, MouseButton, MouseDownEvent, ParentElement, Pixels, Point, SharedString,
+    Stateful, Styled, Window, anchored, canvas, deferred, div, list, point, px, rgb,
 };
 
-use super::super::RepoWindow;
+use super::super::{PanelBoundsSlot, RepoWindow};
 use super::query::PickerQuery;
 use super::sections::PickerItem;
 use crate::app::theme::{Theme, ui_font_size};
@@ -27,9 +27,28 @@ pub(crate) fn opener<E: InteractiveElement>(
     }))
 }
 
+/// Like `bounds_capture`, but pinned to the padding box so the popup aligns with the button's edge rather than its content.
+pub(crate) fn opener_bounds(slot: PanelBoundsSlot) -> impl IntoElement {
+    canvas(
+        move |bounds, window, _| {
+            if slot.get() != Some(bounds) {
+                slot.set(Some(bounds));
+                window.request_animation_frame();
+            }
+        },
+        |_, _, _, _| {},
+    )
+    .absolute()
+    .inset_0()
+}
+
+pub(crate) fn below(trigger: Bounds<Pixels>) -> Point<Pixels> {
+    point(trigger.origin.x, trigger.bottom() + px(4.))
+}
+
 pub(crate) fn overlay(
     backdrop_id: &'static str,
-    anchor: Point<Pixels>,
+    trigger: Bounds<Pixels>,
     content: impl IntoElement,
     on_dismiss: impl Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
 ) -> AnyElement {
@@ -42,7 +61,7 @@ pub(crate) fn overlay(
         .on_mouse_down(MouseButton::Left, on_dismiss);
     let menu = anchored()
         .anchor(Anchor::TopLeft)
-        .position(anchor)
+        .position(below(trigger))
         .snap_to_window_with_margin(px(6.))
         .child(content);
     deferred(

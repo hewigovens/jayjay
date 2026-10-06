@@ -213,6 +213,7 @@ pub(super) fn sidebar(
             .border_color(rgb(t.border))
             .child(bookmarks_header_button(
                 listed_bookmark_count(&bookmarks),
+                view.bookmarks_button_bounds.clone(),
                 t,
                 cx,
             ))

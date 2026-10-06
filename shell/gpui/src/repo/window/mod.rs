@@ -80,7 +80,7 @@ pub(crate) use dag_row::{
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;
-pub(crate) use picker::opener as picker_opener;
+pub(crate) use picker::{opener as picker_opener, opener_bounds as picker_opener_bounds};
 pub(crate) use pr_import::PrImportState;
 pub(crate) use view::{
     DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,

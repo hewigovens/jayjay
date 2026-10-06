@@ -1,27 +1,27 @@
 use gpui::ScrollStrategy;
 use gpui::{
-    AnyElement, Context, Entity, FocusHandle, InteractiveElement, IntoElement, KeyDownEvent,
-    MouseButton, MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, div, px, rgb,
+    AnyElement, Bounds, Context, Entity, FocusHandle, InteractiveElement, IntoElement,
+    KeyDownEvent, MouseButton, MouseDownEvent, ParentElement, Pixels, SharedString, Styled, div,
+    px, rgb,
 };
 use jayjay_core::{BookmarkFilterTarget, BookmarkInfo};
 
 mod entry;
 mod rows;
 
-use super::RepoWindow;
 use super::picker::{self, PickerOutcome, PickerQuery, picker_actions, picker_items};
+use super::{PanelBoundsSlot, RepoWindow};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::LineInput;
 use rows::{bookmark_row, bookmark_sections};
 
 pub(crate) struct BookmarkPickerState {
-    pub(super) anchor: Point<Pixels>,
     pub(super) query: PickerQuery,
 }
 
 impl RepoWindow {
-    pub(crate) fn open_bookmark_picker(&mut self, anchor: Point<Pixels>, cx: &mut Context<Self>) {
+    pub(crate) fn open_bookmark_picker(&mut self, cx: &mut Context<Self>) {
         #[cfg(not(target_os = "macos"))]
         {
             self.app_menu = None;
@@ -29,7 +29,6 @@ impl RepoWindow {
         self.context_menu = None;
         self.close_repo_switcher(cx);
         self.bookmark_picker = Some(BookmarkPickerState {
-            anchor,
             query: PickerQuery::new(),
         });
         LineInput::show_for_owner(self, cx, Self::bookmark_picker_input);
@@ -130,6 +129,7 @@ impl RepoWindow {
 
 pub(crate) fn render_bookmark_picker(
     state: &BookmarkPickerState,
+    button: Bounds<Pixels>,
     bookmarks: &[BookmarkInfo],
     t: &Theme,
     view: &Entity<RepoWindow>,
@@ -138,7 +138,7 @@ pub(crate) fn render_bookmark_picker(
     let close_view = view.clone();
     picker::overlay(
         "bookmark-picker-backdrop",
-        state.anchor,
+        button,
         menu_panel(state, bookmarks, t, view, ime_focus),
         move |_: &MouseDownEvent, _, cx| {
             close_view.update(cx, |view, cx| view.close_bookmark_picker(cx));
@@ -215,6 +215,7 @@ pub(crate) fn listed_bookmark_count(bookmarks: &[BookmarkInfo]) -> usize {
 
 pub(crate) fn bookmarks_header_button(
     count: usize,
+    bounds: PanelBoundsSlot,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -236,11 +237,12 @@ pub(crate) fn bookmarks_header_button(
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_mouse_down(
             MouseButton::Left,
-            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+            cx.listener(|view, _: &MouseDownEvent, window, cx| {
                 view.focus_handle.focus(window, cx);
-                view.open_bookmark_picker(ev.position, cx);
+                view.open_bookmark_picker(cx);
             }),
         )
+        .child(picker::opener_bounds(bounds))
         .child(icons::icon(glyph::BOOKMARK, 12., t.fg))
         .child("Bookmarks");
     let mut button = picker::opener(

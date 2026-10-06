@@ -3,7 +3,7 @@ mod query;
 mod sections;
 
 pub(crate) use chrome::{
-    empty, header, header_button, opener, overlay, panel, row, section_header,
+    below, empty, header, header_button, opener, opener_bounds, overlay, panel, row, section_header,
 };
 pub(crate) use query::{PickerOutcome, PickerQuery};
 pub(crate) use sections::{

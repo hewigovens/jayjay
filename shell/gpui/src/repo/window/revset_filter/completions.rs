@@ -1,7 +1,7 @@
 use gpui::{
     AnyElement, App, Bounds, Entity, InteractiveElement, IntoElement, KeyDownEvent, MouseButton,
     MouseDownEvent, ParentElement, Pixels, ScrollHandle, StatefulInteractiveElement, Styled,
-    anchored, deferred, div, point, px, rgb,
+    anchored, deferred, div, px, rgb,
 };
 use jayjay_core::utf16::{byte_offset, utf16_offset};
 use jayjay_core::{RevsetCompletion, RevsetCompletionKind, RevsetVocabulary, revset_completions};
@@ -102,7 +102,7 @@ pub(crate) fn render_revset_completions(
         }));
     deferred(
         anchored()
-            .position(point(bar.origin.x, bar.bottom() + px(4.)))
+            .position(picker::below(bar))
             .snap_to_window_with_margin(px(6.))
             .child(list),
     )

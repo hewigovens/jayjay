@@ -1,4 +1,4 @@
-use gpui::{AnyElement, Entity, FocusHandle, MouseDownEvent};
+use gpui::{AnyElement, Bounds, Entity, FocusHandle, MouseDownEvent, Pixels};
 use jayjay_core::WorkspaceInfo;
 
 use super::model::RepoSwitcherState;
@@ -12,6 +12,7 @@ use crate::ui::input::LineInput;
 
 pub(crate) fn render_repo_switcher(
     state: &RepoSwitcherState,
+    button: Bounds<Pixels>,
     workspaces: &[WorkspaceInfo],
     t: &Theme,
     view: &Entity<RepoWindow>,
@@ -20,7 +21,7 @@ pub(crate) fn render_repo_switcher(
     let close_view = view.clone();
     picker::overlay(
         "repo-switcher-backdrop",
-        state.anchor,
+        button,
         menu_panel(state, workspaces, t, view, ime_focus),
         move |_: &MouseDownEvent, _, cx| {
             close_view.update(cx, |view, cx| view.close_repo_switcher(cx));

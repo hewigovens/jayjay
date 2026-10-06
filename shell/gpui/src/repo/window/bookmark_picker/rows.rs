@@ -210,7 +210,6 @@ mod tests {
     #[test]
     fn sections_keep_tracked_and_local_only_bookmarks_separate() {
         let state = BookmarkPickerState {
-            anchor: gpui::point(gpui::px(0.), gpui::px(0.)),
             query: PickerQuery::new(),
         };
 
@@ -236,7 +235,6 @@ mod tests {
     #[test]
     fn remote_rows_browse_each_remote_and_filter_by_qualified_name() {
         let mut state = BookmarkPickerState {
-            anchor: gpui::point(gpui::px(0.), gpui::px(0.)),
             query: PickerQuery::new(),
         };
         let mut remote = bookmark("odd&name", false);
@@ -264,7 +262,6 @@ mod tests {
     #[test]
     fn deleted_bookmark_keeps_its_untracked_remote() {
         let state = BookmarkPickerState {
-            anchor: gpui::point(gpui::px(0.), gpui::px(0.)),
             query: PickerQuery::new(),
         };
         let mut remote = bookmark("feature", true);

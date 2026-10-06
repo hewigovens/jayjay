@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, Pixels, SharedString, StatefulInteractiveElement, Styled, div, point, px, rgb,
+    ParentElement, Pixels, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{
     RevsetCompletion, RevsetFilterState, RevsetSuggestion, RevsetSuggestionKind,
@@ -45,7 +45,7 @@ pub(crate) fn render_revset_popup(
     let close_view = view.clone();
     picker::overlay(
         "revset-popup-backdrop",
-        point(bar.origin.x, bar.bottom() + px(4.)),
+        bar,
         panel(
             state,
             filter,

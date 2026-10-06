@@ -9,7 +9,9 @@ use crate::app::theme::{theme, ui_font_size};
 use crate::app::{repositories, tools};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::view_model::RefreshMode;
-use crate::repo::window::{FocusStop, RepoWindow, picker_opener};
+use crate::repo::window::{
+    FocusStop, PanelBoundsSlot, RepoWindow, picker_opener, picker_opener_bounds,
+};
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
 
@@ -29,6 +31,7 @@ pub(crate) struct ToolbarRepo {
 
 pub(crate) fn toolbar(
     repo: ToolbarRepo,
+    repo_switcher_bounds: PanelBoundsSlot,
     sidebar_hidden: bool,
     revset_bar: AnyElement,
     activity: ToolbarActivity,
@@ -94,12 +97,13 @@ pub(crate) fn toolbar(
                 .hover(|style| style.bg(rgb(t.row_alt_bg)))
                 .on_mouse_down(
                     MouseButton::Left,
-                    cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+                    cx.listener(|view, _: &MouseDownEvent, window, cx| {
                         cx.stop_propagation();
                         view.focus_handle.focus(window, cx);
-                        view.open_repo_switcher(ev.position, window.window_handle(), cx);
+                        view.open_repo_switcher(window.window_handle(), cx);
                     }),
                 )
+                .child(picker_opener_bounds(repo_switcher_bounds))
                 .child(
                     div()
                         .id("repo-switcher-repository-name")

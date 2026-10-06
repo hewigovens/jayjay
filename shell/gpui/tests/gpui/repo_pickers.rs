@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext};
+use gpui::{Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext, point, px};
 use jayjay_core::bookmark_filter_revset;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
@@ -42,6 +42,13 @@ fn repository_title_picker_combines_workspaces_repositories_and_actions(cx: &mut
         .expect("repository title picker button");
     repo_cx.simulate_click(title.center(), Modifiers::default());
     settle_visual(repo_cx);
+    let panel = repo_cx
+        .debug_bounds("repo-switcher-panel")
+        .expect("repository picker panel");
+    assert_eq!(
+        panel.origin,
+        point(title.left(), (title.bottom() + px(4.)).round())
+    );
 
     for selector in [
         "repo-switcher-panel",
@@ -197,6 +204,13 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
         .expect("bookmark picker button");
     repo_cx.simulate_click(bookmarks.center(), Modifiers::default());
     settle_visual(repo_cx);
+    let panel = repo_cx
+        .debug_bounds("bookmark-picker-panel")
+        .expect("bookmark picker panel");
+    assert_eq!(
+        panel.origin,
+        point(bookmarks.left(), (bookmarks.bottom() + px(4.)).round())
+    );
 
     for selector in [
         "bookmark-picker-panel",
