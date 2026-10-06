@@ -1,5 +1,7 @@
 //! Author email → avatar image URL.
 
+use jayjay_core::github_alias;
+
 use super::cache::email_hash;
 
 const PIXEL_SIZE: u32 = 96; // 2x for ~24pt slot
@@ -19,6 +21,9 @@ pub(super) fn avatar_source(email: &str) -> Option<AvatarSource> {
     let trimmed = email.trim();
     if trimmed.is_empty() {
         return None;
+    }
+    if let Some(noreply) = github_alias::noreply_email(trimmed) {
+        return avatar_source(&noreply);
     }
     if let Some(local) = trimmed.strip_suffix("@users.noreply.github.com") {
         if let Some((id, user)) = local.split_once('+')
@@ -115,6 +120,20 @@ mod tests {
             Some(AvatarSource::Url(
                 "https://avatars.githubusercontent.com/u/12345?size=96".to_owned()
             ))
+        );
+    }
+
+    #[test]
+    fn alias_email_resolves_to_its_github_account() {
+        assert_eq!(
+            avatar_source("noreply@anthropic.com"),
+            Some(AvatarSource::Url(
+                "https://avatars.githubusercontent.com/u/81847?size=96".to_owned()
+            ))
+        );
+        assert_eq!(
+            avatar_source("198982749+Copilot@users.noreply.github.com"),
+            Some(AvatarSource::GitHubBot("198982749".to_owned()))
         );
     }
 

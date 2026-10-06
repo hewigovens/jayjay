@@ -1,5 +1,6 @@
 import AppKit
 import CryptoKit
+import JayJayCore
 
 /// Process-wide decoded-image cache (thread-safe) so scrolling never re-decodes or flashes.
 private let avatarMemoryCache: NSCache<NSString, NSImage> = {
@@ -16,6 +17,7 @@ actor AvatarStore {
 
     /// sha256(trimmed lowercased email) — shared with GPUI and the Gravatar hash, so both shells share the disk file.
     static func key(_ email: String) -> String {
+        let email = githubAliasNoreplyEmail(email: email) ?? email
         let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
         return SHA256.hash(data: Data(normalized.utf8))
             .map { String(format: "%02x", $0) }
@@ -47,6 +49,7 @@ actor AvatarStore {
 
     private static func fetch(email: String, key: String, pixelSize: Int) async -> NSImage? {
         guard let fileURL = diskURL(key) else { return nil }
+        let email = githubAliasNoreplyEmail(email: email) ?? email
         if let data = try? Data(contentsOf: fileURL), let image = NSImage(data: data) {
             avatarMemoryCache.setObject(image, forKey: key as NSString)
             return image

@@ -20,6 +20,7 @@ pub mod file_tree;
 mod filesystem;
 pub mod fonts;
 pub mod fuzzy;
+pub mod github_alias;
 #[cfg(feature = "repository")]
 mod jj_command;
 #[cfg(feature = "repository")]

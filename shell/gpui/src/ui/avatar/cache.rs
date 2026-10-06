@@ -2,7 +2,7 @@
 
 use std::path::PathBuf;
 
-use jayjay_core::AppDirs;
+use jayjay_core::{AppDirs, github_alias};
 use sha2::{Digest, Sha256};
 
 use super::resolve::{AvatarSource, avatar_source, bot_avatar_url, gitlab_avatar_url};
@@ -16,6 +16,8 @@ pub(super) fn email_hash(email: &str) -> String {
 }
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
+    let alias = github_alias::noreply_email(email);
+    let email = alias.as_deref().unwrap_or(email);
     AppDirs::new().map(|dirs| {
         dirs.cache
             .join("avatars")

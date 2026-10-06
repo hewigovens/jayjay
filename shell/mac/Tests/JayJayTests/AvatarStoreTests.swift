@@ -16,4 +16,8 @@ final class AvatarStoreTests: XCTestCase {
                 .appendingPathComponent("\(key).png")
         )
     }
+
+    func testAliasEmailIsCachedUnderItsGitHubNoreplyAddress() {
+        XCTAssertEqual(AvatarStore.key("noreply@anthropic.com"), AvatarStore.key("81847+claude@users.noreply.github.com"))
+    }
 }

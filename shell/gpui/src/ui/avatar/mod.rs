@@ -1,6 +1,7 @@
 //! Author avatar fetcher / cache (GPUI shell only).
 //!
 //! Strategy (mirrors the macOS shell's `AvatarStore`):
+//!   0. Well-known emails (`jayjay_core::github_alias`) → a GitHub noreply address, then the rules below.
 //!   1. `<id>+<user>@users.noreply.github.com`:
 //!      - bots (`<user>` ends in `[bot]`) → API `user/<id>` → its `in/<app-id>` avatar.
 //!      - otherwise → `https://avatars.githubusercontent.com/u/<id>`.
