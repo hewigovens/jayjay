@@ -9,6 +9,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{glyph, icon};
+use crate::ui::loading::loading_status;
 use crate::ui::primitives::button;
 
 pub(super) fn repo_init_error_pane(
@@ -82,19 +83,7 @@ pub(super) fn repo_init_error_pane(
 
 /// Shown while the repo is opening off the main thread (see `RepoViewModel::open_async`).
 pub(super) fn repo_loading_pane(t: &Theme) -> AnyElement {
-    div()
-        .flex()
-        .flex_1()
-        .size_full()
-        .items_center()
-        .justify_center()
-        .child(
-            div()
-                .text_size(ui_font_size(13.))
-                .text_color(rgb(t.fg_dim))
-                .child("Opening repository…"),
-        )
-        .into_any_element()
+    loading_status("Opening repository…", t)
 }
 
 fn repo_init_error_message(message: &str, repo_path: &str) -> gpui::SharedString {

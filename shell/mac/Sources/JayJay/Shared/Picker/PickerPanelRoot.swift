@@ -12,6 +12,7 @@ struct PickerPanelRoot: View {
     var onOverview: (() -> Void)?
     let sections: [PickerSection]
     var emptyText = "No matches"
+    var loadingText: String?
     let onDismiss: () -> Void
 
     @State private var query = ""
@@ -113,7 +114,11 @@ struct PickerPanelRoot: View {
                             rowView(row)
                         }
                     }
-                    if filteredSections.isEmpty {
+                    if sections.isEmpty, let loadingText {
+                        LoadingStatus(label: loadingText)
+                            .frame(maxWidth: .infinity)
+                            .padding(.vertical, 18)
+                    } else if filteredSections.isEmpty {
                         Text(sections.isEmpty ? emptyText : "No matches")
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)

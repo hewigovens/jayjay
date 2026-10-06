@@ -13,6 +13,7 @@ use super::shared::{detail_row, feedback_copy_icon_button, row_container, sectio
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
+use crate::ui::loading::loading_label;
 
 const CONFIG_PATH_COPY_ID: &str = "jj-config-copy-path";
 
@@ -54,7 +55,11 @@ pub(super) fn jujutsu_section(
 
     if loading {
         return root
-            .child(status_message("Loading jj config...", t))
+            .child(
+                loading_label("Loading jj config…", t)
+                    .debug_selector(|| "jj-config-status".to_owned())
+                    .py(px(8.)),
+            )
             .into_any_element();
     }
     let Some(snapshot) = snapshot else {

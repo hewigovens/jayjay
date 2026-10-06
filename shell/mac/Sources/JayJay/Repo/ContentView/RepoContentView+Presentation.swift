@@ -18,9 +18,9 @@ extension RepoContentView {
         Group {
             switch overlayState {
                 case .loading:
-                    ProgressView()
+                    LoadingStatus(label: "Opening repository…")
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
-                        .background(.ultraThinMaterial)
+                        .background(.background)
                 case let .toast(toast):
                     RepoToastView(
                         toast: toast,

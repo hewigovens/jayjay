@@ -17,6 +17,7 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 use crate::diff::{hunk_is_image, image_diff_view};
 use crate::ui::icons::{glyph, icon};
+use crate::ui::loading::loading_status;
 use crate::ui::primitives::{no_scrollbar_gutter, placeholder, placeholder_err};
 use crate::ui::resize_handle::resize_handle;
 
@@ -147,7 +148,7 @@ pub(super) fn comparison(
     let content = if let Some(error) = view.diff_error.as_ref() {
         placeholder_err(error, theme)
     } else if view.diff_loading && view.files.is_none() {
-        placeholder("Loading diff…", theme)
+        loading_status("Loading diff…", theme)
     } else if let Some(files) = view.files.clone() {
         if files.is_empty() {
             placeholder("No changes between the selected versions", theme)
@@ -234,7 +235,7 @@ fn comparison_content(
     } else if let Some(diff) = view.current_diff.clone() {
         read_only_diff(diff, theme, cx)
     } else if view.diff_loading {
-        placeholder("Loading file…", theme)
+        loading_status("Loading file…", theme)
     } else {
         placeholder("Select a file", theme)
     };

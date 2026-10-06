@@ -22,6 +22,7 @@ use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
 use crate::diff::{hunk_is_image, image_diff_view};
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
+use crate::ui::loading::loading_status;
 use crate::ui::primitives::button;
 
 pub fn diff_view(
@@ -93,7 +94,7 @@ pub fn diff_view(
 
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
-            placeholder_inner("Loading annotations…", &t).into_any_element()
+            loading_status("Loading annotations…", &t)
         } else if let Some(lines) = state.annotate_lines.as_ref() {
             if lines.is_empty() {
                 placeholder_inner("No annotations available", &t).into_any_element()
@@ -164,12 +165,12 @@ pub fn diff_view(
     } else {
         match (state.file_diff, view_mode) {
             (None, _) if hunk.projection.is_some() => diff_body_with_gutter(
-                placeholder_inner("Loading diff…", &t).into_any_element(),
+                loading_status("Loading diff…", &t),
                 &t,
                 "diff-loading-gutter",
                 state.shows_review,
             ),
-            (None, _) => placeholder_inner("Loading diff…", &t).into_any_element(),
+            (None, _) => loading_status("Loading diff…", &t),
             (Some(fd), _) if fd.lines.is_empty() => {
                 placeholder_inner("No textual diff (binary, identical, or empty)", &t)
                     .into_any_element()

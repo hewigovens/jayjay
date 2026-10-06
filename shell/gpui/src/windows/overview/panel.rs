@@ -10,6 +10,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::{compact_id, format_relative};
 use crate::ui::icons::glyph;
+use crate::ui::loading::loading_label;
 use crate::ui::primitives::{capsule, icon_button, small_button};
 use crate::ui::text_area::{TextArea, Tint};
 
@@ -260,7 +261,7 @@ pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElemen
             .into_any_element()
     };
     let Some(files) = files else {
-        return note("Loading files…");
+        return loading_label("Loading files…", t).into_any_element();
     };
     if files.is_empty() {
         return note("No file changes");

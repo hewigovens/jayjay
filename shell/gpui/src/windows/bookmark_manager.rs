@@ -17,6 +17,7 @@ use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
+use crate::ui::loading::loading_status;
 use crate::ui::overlay::{PromptSlots, PromptStyle, TextPrompt};
 use crate::ui::popup_menu::PopupMenu;
 use crate::ui::primitives::{placeholder, placeholder_err};
@@ -349,7 +350,7 @@ impl Render for BookmarkManagerView {
         }
         let count = bookmarks.len();
         let body = if self.rename.is_none() && self.loading {
-            placeholder("Loading bookmarks...", &t)
+            loading_status("Loading bookmarks…", &t)
         } else if self.rename.is_none()
             && let Some(error) = self.error.clone()
         {

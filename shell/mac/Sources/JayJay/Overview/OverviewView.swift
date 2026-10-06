@@ -186,7 +186,8 @@ struct OverviewView: View {
         } else if let error = viewModel.error {
             emptyState(error)
         } else {
-            emptyState("Loading…")
+            LoadingStatus(label: "Loading overview…")
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
 

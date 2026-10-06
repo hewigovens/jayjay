@@ -94,9 +94,7 @@ struct OverviewChangePanel: View {
                 }
             }
         } else {
-            Text("Loading files…")
-                .jayjayFont(11)
-                .foregroundStyle(.tertiary)
+            LoadingStatus(label: "Loading files…")
         }
     }
 }

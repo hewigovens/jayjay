@@ -9,6 +9,7 @@ use gpui::{
 
 use crate::app::theme::{theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
+use crate::ui::loading::loading_status;
 use crate::ui::merge_scroll::MergeSync;
 use crate::ui::primitives::button;
 use crate::ui::text_area::TextArea;
@@ -93,7 +94,7 @@ impl ExternalToolWindow {
         let t = theme(cx);
         let status = {
             match &self.state {
-                ExternalToolState::Loading => "Loading...".to_owned(),
+                ExternalToolState::Loading => "Loading…".to_owned(),
                 ExternalToolState::Diff(session) => {
                     format!("{} changed files", session.files.len())
                 }
@@ -228,14 +229,13 @@ impl Render for ExternalToolWindow {
             );
         }
         root.child(match &self.state {
-            ExternalToolState::Loading => div()
-                .flex()
-                .flex_1()
-                .items_center()
-                .justify_center()
-                .text_color(rgb(t.fg_dim))
-                .child("Loading...")
-                .into_any_element(),
+            ExternalToolState::Loading => loading_status(
+                match self.invocation {
+                    ExternalToolInvocation::Diff { .. } => "Loading comparison…",
+                    ExternalToolInvocation::Merge { .. } => "Loading conflict sides…",
+                },
+                &t,
+            ),
             ExternalToolState::Diff(_) => self.render_diff(&t, cx),
             ExternalToolState::Merge { .. } => self.render_merge(&t, cx),
             ExternalToolState::Error => div().flex_1().into_any_element(),

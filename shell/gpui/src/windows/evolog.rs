@@ -18,6 +18,7 @@ use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
+use crate::ui::loading::loading_status;
 use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter, placeholder, placeholder_err};
 use crate::ui::resize_handle::resize_handle;
@@ -224,7 +225,7 @@ impl Render for EvologView {
             .map(|state| render_context_menu(state, &t, &cx.entity()));
         let hide_snapshots = self.hide_snapshots;
         let body = if self.loading {
-            placeholder("Loading evolution…", &t)
+            loading_status("Loading evolution…", &t)
         } else if let Some(err) = self.error.clone() {
             placeholder_err(&err, &t)
         } else if let Some(entries) = self.entries.clone() {

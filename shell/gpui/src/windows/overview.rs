@@ -15,6 +15,7 @@ use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance, theme_for_window};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
+use crate::ui::loading::loading_status;
 use crate::ui::popup_menu::{PopupMenu, render_popup_menu};
 use crate::ui::primitives::{placeholder, placeholder_err};
 use crate::ui::text_area::Newline;
@@ -203,7 +204,7 @@ impl Render for OverviewView {
         let body = match snapshot.as_deref() {
             None => match &self.load.error {
                 Some(error) => placeholder_err(error, &t),
-                None => placeholder("Loading…", &t),
+                None => loading_status("Loading overview…", &t),
             },
             Some(snapshot) if snapshot.overview.lanes.is_empty() => placeholder(
                 "No mutable changes. Every change is on trunk or immutable.",

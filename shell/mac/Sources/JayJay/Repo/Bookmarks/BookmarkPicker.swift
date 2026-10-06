@@ -129,7 +129,8 @@ struct BookmarkPicker: View {
                 showingCreate = true
             },
             sections: sections,
-            emptyText: isLoaded ? "No bookmarks yet" : "Loading bookmarks…",
+            emptyText: "No bookmarks yet",
+            loadingText: isLoaded ? nil : "Loading bookmarks…",
             onDismiss: { [weak panel] in panel?.dismiss() }
         )
         panel.show(under: anchorView, size: PickerPanelRoot.idealSize(sections: sections, width: 280), content: root)

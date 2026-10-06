@@ -121,7 +121,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
     @ViewBuilder
     private var content: some View {
         if session.isLoading {
-            ProgressView("Loading conflict sides…")
+            LoadingStatus(label: "Loading conflict sides…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let errorMessage = session.errorMessage {
             ContentUnavailableView(

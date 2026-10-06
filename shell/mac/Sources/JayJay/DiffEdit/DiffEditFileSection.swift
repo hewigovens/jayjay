@@ -122,7 +122,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @ViewBuilder
     private var content: some View {
         if isLoading {
-            ProgressView()
+            LoadingStatus(label: "Loading file diff…")
                 .frame(maxWidth: .infinity, minHeight: 120)
         } else if let loadError {
             Text(loadError)

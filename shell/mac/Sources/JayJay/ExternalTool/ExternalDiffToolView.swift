@@ -58,7 +58,7 @@ struct ExternalDiffToolView: View {
     @ViewBuilder
     private var content: some View {
         if session.isLoading {
-            ProgressView("Loading comparison…")
+            LoadingStatus(label: "Loading comparison…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = session.errorMessage {
             ContentUnavailableView(

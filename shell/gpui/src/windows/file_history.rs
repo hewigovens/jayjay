@@ -15,6 +15,7 @@ use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::{RepoWindow, compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
+use crate::ui::loading::loading_status;
 use crate::ui::primitives::{no_scrollbar_gutter, placeholder, placeholder_err};
 
 pub struct FileHistoryView {
@@ -120,7 +121,7 @@ impl Render for FileHistoryView {
         let count = self.history.as_ref().map(|h| h.len()).unwrap_or(0);
 
         let body = if self.loading {
-            placeholder("Loading history…", &t)
+            loading_status("Loading history…", &t)
         } else if let Some(err) = self.error.clone() {
             placeholder_err(&err, &t)
         } else if let Some(history) = self.history.clone() {

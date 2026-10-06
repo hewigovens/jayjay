@@ -6,7 +6,7 @@ pub(crate) mod commit_message_editor;
 pub mod context_menu;
 pub mod icons;
 pub mod input;
-pub(crate) mod loading_hud;
+pub(crate) mod loading;
 pub(crate) mod logo;
 pub(crate) mod merge_editor;
 pub(crate) mod merge_nav;

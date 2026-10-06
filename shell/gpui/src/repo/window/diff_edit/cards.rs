@@ -13,6 +13,7 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::bounds_capture;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
+use crate::ui::loading::loading_label;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) fn diff_edit_body(
@@ -97,9 +98,9 @@ fn row_at(
         }
         DiffEditRow::Placeholder { loading, .. } => placeholder_row(
             if *loading {
-                "Loading file diff…"
+                loading_label("Loading file diff…", t).into_any_element()
             } else {
-                "No textual preview available for this file."
+                "No textual preview available for this file.".into_any_element()
             },
             t,
         ),
@@ -136,7 +137,7 @@ fn header_pad_row(top: bool, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn placeholder_row(text: &'static str, t: &Theme) -> AnyElement {
+fn placeholder_row(content: AnyElement, t: &Theme) -> AnyElement {
     div()
         .flex()
         .w_full()
@@ -145,6 +146,6 @@ fn placeholder_row(text: &'static str, t: &Theme) -> AnyElement {
         .px(px(36.))
         .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
-        .child(text)
+        .child(content)
         .into_any_element()
 }

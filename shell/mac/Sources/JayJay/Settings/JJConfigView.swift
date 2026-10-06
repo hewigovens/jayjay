@@ -32,8 +32,7 @@ struct JJConfigView: View {
                         }
                 }
             } else {
-                ProgressView()
-                    .controlSize(.small)
+                LoadingStatus(label: "Loading jj config…")
                     .frame(maxWidth: .infinity, minHeight: 80)
             }
         }

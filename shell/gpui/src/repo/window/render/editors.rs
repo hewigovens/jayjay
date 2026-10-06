@@ -4,7 +4,7 @@ use super::super::RepoWindow;
 use super::super::conflict_editor::conflict_editor_overlay;
 use super::super::file_editor::file_editor_overlay;
 use crate::app::theme::Theme;
-use crate::ui::loading_hud::loading_hud;
+use crate::ui::loading::loading_hud;
 
 impl RepoWindow {
     pub(super) fn sync_editors(&mut self, cx: &mut Context<Self>) {

@@ -14,6 +14,7 @@ use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
+use crate::ui::loading::loading_status;
 use crate::ui::primitives::{placeholder, placeholder_err};
 
 pub struct OperationLogView {
@@ -180,7 +181,7 @@ impl Render for OperationLogView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let body = if self.loading {
-            placeholder("Loading operations...", &t)
+            loading_status("Loading operations…", &t)
         } else if let Some(error) = self.error.clone() {
             placeholder_err(&error, &t)
         } else if let Some(entries) = self.entries.clone() {

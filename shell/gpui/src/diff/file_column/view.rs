@@ -15,6 +15,8 @@ use crate::app::config;
 use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, FocusStop, RepoWindow};
 use crate::ui::input::LineInput;
+use crate::ui::loading::loading_status;
+use crate::ui::primitives::placeholder;
 
 pub(crate) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
     div()
@@ -90,11 +92,6 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     let hunks = match hunks {
         Some(h) if !h.is_empty() => h,
         _ => {
-            let label = if loading {
-                "Loading files…"
-            } else {
-                "No files"
-            };
             let mut column = div()
                 .flex()
                 .flex_col()
@@ -122,17 +119,12 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             if let Some(input) = file_filter {
                 column = column.child(file_filter_bar(input, &file_filter_focus, cx, &t));
             }
-            return column
-                .child(
-                    div()
-                        .flex()
-                        .flex_1()
-                        .items_center()
-                        .justify_center()
-                        .text_color(rgb(t.fg_dim))
-                        .child(label),
-                )
-                .into_any_element();
+            let body = if loading {
+                loading_status("Loading files…", &t)
+            } else {
+                placeholder("No files", &t)
+            };
+            return column.child(body).into_any_element();
         }
     };
 

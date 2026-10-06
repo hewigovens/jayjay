@@ -52,7 +52,7 @@ extension DiffSection {
                 description: "This file was renamed; its contents are identical."
             )
         } else if shouldShowBlockingProgress {
-            ProgressView()
+            LoadingStatus(label: "Loading diff…")
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if canRenderMarkdownPreview {
             richPreviewWithGutter {
