@@ -5,7 +5,7 @@ use gpui::{AppContext, Context, SharedString};
 use jayjay_core::dag::{DagLayout, OrderedSelection};
 use jayjay_core::{
     BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, GraphEntry, Repo, RevsetFilterState,
-    RevsetVocabulary, WorkspaceInfo, build_default_revset, default_revset_depth,
+    RevsetVocabulary, TagInfo, WorkspaceInfo, build_default_revset, default_revset_depth,
 };
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -17,6 +17,7 @@ struct OpenedRepo {
     repo_root_path: String,
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
+    tags: Vec<TagInfo>,
     vocabulary: RevsetVocabulary,
     workspaces: Vec<WorkspaceInfo>,
     pr_host_name: Option<String>,
@@ -87,6 +88,7 @@ impl RepoViewModel {
         let repo = Repo::open(&path)?;
         let entries = repo.log_graph(revset)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
+        let tags = repo.list_tags().unwrap_or_default();
         let vocabulary = repo.revset_vocabulary(&bookmarks);
         let workspaces = repo.workspace_list().unwrap_or_default();
         let pr_host_name = repo.pr_host_name();
@@ -96,6 +98,7 @@ impl RepoViewModel {
             repo_root_path,
             entries,
             bookmarks,
+            tags,
             vocabulary,
             workspaces,
             pr_host_name,
@@ -113,6 +116,7 @@ impl RepoViewModel {
             repo_root_path,
             entries,
             bookmarks,
+            tags,
             vocabulary,
             workspaces,
             pr_host_name,
@@ -162,6 +166,7 @@ impl RepoViewModel {
                 entries: Arc::new(entries),
                 dag_layout,
                 bookmarks: Arc::new(bookmarks),
+                tags: Arc::new(tags),
                 workspaces: Arc::new(workspaces),
             },
             loading: LoadingState::default(),

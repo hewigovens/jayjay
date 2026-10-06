@@ -4,7 +4,7 @@ use std::sync::OnceLock;
 
 use tempfile::TempDir;
 
-use crate::cmd::{configure_test_user, init_colocated, run_jj_in};
+use crate::cmd::{configure_test_user, init_colocated, run_git, run_jj_in};
 use crate::template::copy_of;
 
 static TEMPLATE: OnceLock<TempDir> = OnceLock::new();
@@ -59,6 +59,25 @@ impl LinearFixture {
     pub fn remove_tracked_working_copy_file(&self, path: &str) {
         fs::remove_file(self.path.join(path)).expect("remove tracked file");
         run_jj_in(&self.path, &["st"]);
+    }
+
+    pub fn add_bare_origin(&self) -> TempDir {
+        self.add_bare_remote("origin")
+    }
+
+    pub fn add_bare_remote(&self, name: &str) -> TempDir {
+        let remote = tempfile::tempdir().expect("create remote directory");
+        run_git(remote.path(), &["init", "--bare"]);
+        run_git(
+            &self.path,
+            &[
+                "remote",
+                "add",
+                name,
+                remote.path().to_str().expect("remote path utf-8"),
+            ],
+        );
+        remote
     }
 }
 

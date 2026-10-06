@@ -32,6 +32,7 @@ mod review_notes;
 mod revsets;
 mod small_stack;
 mod stacked_pr;
+mod tags;
 mod working_copy;
 mod workspace_add;
 mod workspace_presence;

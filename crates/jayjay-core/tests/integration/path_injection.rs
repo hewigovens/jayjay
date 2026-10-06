@@ -5,7 +5,7 @@
 use std::fs;
 
 use jayjay_core::Repo;
-use jj_test::{init_jj_repo, run_git, run_jj_in};
+use jj_test::{LinearFixture, git_stdout, init_jj_repo, run_git, run_jj_in};
 
 /// Paths in a change's diff, for asserting exactly which files an action touched.
 fn diff_paths(repo: &Repo, rev: &str) -> Vec<String> {
@@ -238,4 +238,30 @@ fn ignore_and_untrack_reports_a_path_a_nested_ignore_file_takes_back() {
         tracked.contains("sub/secret.env"),
         "the file stays tracked: {tracked}"
     );
+}
+
+#[test]
+fn tag_push_treats_pattern_operators_as_literal_name_characters() {
+    let fixture = LinearFixture::build();
+    let remote = fixture.add_bare_origin();
+    let repo = Repo::open(&fixture.path).unwrap();
+    for name in ["release", "staging", "release&staging"] {
+        repo.create_tag(name, "@-").unwrap();
+    }
+    repo.git_push_tag("release&staging", &repo.sync_token())
+        .unwrap();
+    assert_eq!(
+        git_stdout(remote.path(), &["tag", "--list"]),
+        "release&staging"
+    );
+    #[cfg(unix)]
+    {
+        repo.create_tag("release|staging", "@-").unwrap();
+        repo.git_push_tag("release|staging", &repo.sync_token())
+            .unwrap();
+        assert_eq!(
+            git_stdout(remote.path(), &["tag", "--list"]),
+            "release&staging\nrelease|staging"
+        );
+    }
 }

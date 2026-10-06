@@ -21,26 +21,21 @@ extension RepoViewModel {
 
     @discardableResult
     func gitPushIfIdle(bookmark: String) -> Bool {
-        let sync = repo.syncToken()
-        let started = performResult(
-            gatedBy: RepoActionGate(
-                state: \.isPushingInFlight,
-                busyMessage: "Push already in progress"
-            ),
-            onSuccess: { viewModel, message in
-                viewModel.pushSync = nil
-                viewModel.info = message
-            },
-            onFailure: { viewModel, error in
-                viewModel.pushSync = nil
-                viewModel.presentSyncFailure(error, canceledMessage: "Push canceled")
-            },
-            { try $0.gitPush(bookmark: bookmark, sync: sync) }
-        )
-        if started {
-            pushSync = sync
+        performPush { repo, sync in
+            try repo.gitPush(bookmark: bookmark, sync: sync)
         }
-        return started
+    }
+
+    func deleteTagAndPush(name: String) {
+        performPush { repo, sync in
+            try repo.deleteTagAndPush(name: name, sync: sync)
+        }
+    }
+
+    func gitPushTag(name: String) {
+        performPush { repo, sync in
+            try repo.gitPushTag(tag: name, sync: sync)
+        }
     }
 
     func cancelPull() {
@@ -104,6 +99,31 @@ extension RepoViewModel {
         if started {
             pullSync = sync
         }
+    }
+
+    @discardableResult
+    private func performPush(_ operation: @escaping @Sendable (JayJayRepo, JayJaySyncToken) throws -> String) -> Bool {
+        let sync = repo.syncToken()
+        let started = performResult(
+            selecting: nil,
+            gatedBy: RepoActionGate(
+                state: \.isPushingInFlight,
+                busyMessage: "Push already in progress"
+            ),
+            onSuccess: { viewModel, message in
+                viewModel.pushSync = nil
+                viewModel.info = message
+            },
+            onFailure: { viewModel, error in
+                viewModel.pushSync = nil
+                viewModel.presentSyncFailure(error, canceledMessage: "Push canceled")
+            },
+            { repo in try operation(repo, sync) }
+        )
+        if started {
+            pushSync = sync
+        }
+        return started
     }
 
     @MainActor

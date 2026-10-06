@@ -5,7 +5,8 @@ use jayjay_core::{
     PrState, PullRequestImportPreview, PullRequestImportRemote, PullRequestImportSource,
     PullRequestImportWorkspace, RemoteBookmarkTarget, RemoteSyncStatus, RevsetCompletion,
     RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState, RevsetName,
-    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, WorkspacePresence,
+    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, TagInfo,
+    WorkspacePresence,
 };
 
 #[uniffi::remote(Record)]
@@ -118,6 +119,12 @@ pub struct BookmarkInfo {
     pub available_remotes: Vec<String>,
     pub has_local_target: bool,
     pub remote_targets: Vec<RemoteBookmarkTarget>,
+}
+
+#[uniffi::remote(Record)]
+pub struct TagInfo {
+    pub name: String,
+    pub tracked_remotes: Vec<String>,
 }
 
 #[uniffi::remote(Record)]

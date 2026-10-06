@@ -16,7 +16,18 @@ extension RepoContentView {
                     }
                 )
             case let .createBookmark(rev):
-                bookmarkCreateSheet(rev: rev)
+                refCreateSheet(title: "Create Bookmark", placeholder: "Bookmark name", rev: rev) { name in
+                    viewModel.createBookmark(name: name, rev: rev)
+                }
+            case let .createTag(rev):
+                refCreateSheet(
+                    title: "Create Tag",
+                    placeholder: "Tag name",
+                    note: "A tagged change becomes immutable.",
+                    rev: rev
+                ) { name in
+                    viewModel.createTag(name: name, rev: rev)
+                }
             case let .stackedPr(rev):
                 StackedPrPanel(viewModel: viewModel, tipRev: rev, onDismiss: { self.modal = nil })
             case let .confirmChange(confirmation):
@@ -30,23 +41,9 @@ extension RepoContentView {
                     onDismiss: { self.modal = nil }
                 )
             case .bookmarkManager:
-                BookmarkManagerView(
-                    bookmarks: viewModel.bookmarks,
-                    actions: viewModel,
-                    repo: viewModel.repo,
-                    prHostName: viewModel.prHostName,
-                    onFilter: { target in
-                        self.modal = nil
-                        viewModel.filterByBookmark(target)
-                    },
-                    onDiffBookmark: { request in
-                        self.modal = nil
-                        viewModel.diffBookmark(request)
-                    },
-                    onDismiss: { self.modal = nil }
-                )
-            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete:
-                workspaceSheet(for: modal)
+                bookmarkManagerSheet
+            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote:
+                secondarySheet(for: modal)
             case .ratingPrompt:
                 RatingPromptView(
                     onDismiss: { self.modal = nil },
@@ -58,8 +55,27 @@ extension RepoContentView {
         }
     }
 
+    private var bookmarkManagerSheet: some View {
+        BookmarkManagerView(
+            bookmarks: viewModel.bookmarks,
+            actions: viewModel,
+            repo: viewModel.repo,
+            prHostName: viewModel.prHostName,
+            onFilter: { target in
+                self.modal = nil
+                viewModel.filterByBookmark(target)
+            },
+            onDiffBookmark: { request in
+                self.modal = nil
+                viewModel.diffBookmark(request)
+            },
+            onDismiss: { self.modal = nil }
+        )
+    }
+
     @ViewBuilder
-    private func workspaceSheet(for modal: RepoModalState) -> some View {
+    /// Split from the main switch to keep it under swiftlint's complexity limit.
+    private func secondarySheet(for modal: RepoModalState) -> some View {
         switch modal {
             case .workspaceCreate:
                 workspaceCreateSheet
@@ -71,7 +87,9 @@ extension RepoContentView {
                 )
             case let .confirmWorkspaceDelete(workspace):
                 workspaceDeleteSheet(workspace: workspace)
-            case .editDescription, .createBookmark, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .ratingPrompt:
+            case let .confirmTagDeleteOnRemote(name):
+                tagDeleteOnRemoteSheet(name: name)
+            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .ratingPrompt:
                 EmptyView()
         }
     }
@@ -90,20 +108,47 @@ extension RepoContentView {
         }
     }
 
-    private func bookmarkCreateSheet(rev: String) -> some View {
-        SheetContainer(
-            title: "Create Bookmark",
+    private func refCreateSheet(
+        title: String,
+        placeholder: String,
+        note: String? = nil,
+        rev: String,
+        onCreate: @escaping (String) -> Void
+    ) -> some View {
+        let submit = { submitRefCreate(onCreate) }
+        return SheetContainer(
+            title: title,
             subtitle: "On change: \(String(rev.prefix(12)))",
             cancelLabel: "Cancel",
             confirmLabel: "Create",
-            confirmDisabled: bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            confirmDisabled: refCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
             onCancel: { modal = nil },
-            onConfirm: { submitBookmarkCreate(rev: rev) },
+            onConfirm: submit,
             content: {
-                TextField("Bookmark name", text: $bookmarkCreateName)
+                TextField(placeholder, text: $refCreateName)
                     .textFieldStyle(.roundedBorder)
                     .jayjayFont(13, design: .monospaced)
-                    .onSubmit { submitBookmarkCreate(rev: rev) }
+                    .onSubmit(submit)
+                if let note {
+                    Text(note)
+                        .jayjayFont(11)
+                        .foregroundStyle(.secondary)
+                }
+            }
+        )
+    }
+
+    private func tagDeleteOnRemoteSheet(name: String) -> some View {
+        let remotes = viewModel.tags.first { $0.name == name }?.trackedRemotes.joined(separator: ", ") ?? "the remote"
+        return DestructiveConfirmSheet(
+            title: "Delete Tag \(name) on \(remotes)?",
+            message: "This removes the tag locally and pushes the deletion to \(remotes). A GitHub release on this tag turns into a draft and its downloads stop working until the tag exists again.",
+            confirmLabel: "Delete on Remote",
+            width: 400,
+            onCancel: { modal = nil },
+            onConfirm: {
+                modal = nil
+                viewModel.deleteTagAndPush(name: name)
             }
         )
     }
@@ -303,10 +348,10 @@ extension RepoContentView {
         )
     }
 
-    private func submitBookmarkCreate(rev: String) {
-        let name = bookmarkCreateName.trimmingCharacters(in: .whitespacesAndNewlines)
+    private func submitRefCreate(_ onCreate: (String) -> Void) {
+        let name = refCreateName.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !name.isEmpty else { return }
-        viewModel.createBookmark(name: name, rev: rev)
+        onCreate(name)
         modal = nil
     }
 

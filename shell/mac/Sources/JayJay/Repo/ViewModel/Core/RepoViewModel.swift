@@ -2,7 +2,7 @@ import Foundation
 import JayJayCore
 
 @Observable
-final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetActions {
+final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagActions, RevsetActions {
     static let defaultRevsetPageSize = 20
 
     let repoPath: String
@@ -69,6 +69,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
     var compareToId: String?
     var compareDisplay: CompareDisplay?
     var bookmarks: [BookmarkInfo] = []
+    var tags: [TagInfo] = []
     /// Refs, tags and aliases the revset bar completes from; loaded with the graph, not on each keystroke.
     var revsetVocabulary = RevsetVocabulary(aliases: [], bookmarks: [], tags: [])
     var workspacesByName: [String: WorkspaceInfo] {
@@ -77,6 +78,10 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, RevsetAct
 
     var conflictedBookmarkNames: Set<String> {
         Set(bookmarks.filter(\.isConflicted).map(\.name))
+    }
+
+    var remoteTagNames: Set<String> {
+        Set(tags.filter { !$0.trackedRemotes.isEmpty }.map(\.name))
     }
 
     var workingCopyDescription: String = ""

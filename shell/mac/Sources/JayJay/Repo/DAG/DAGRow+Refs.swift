@@ -155,10 +155,7 @@ extension DAGRow {
         .help("Tag: \(name)")
         .accessibilityLabel("Tag \(name)")
         .contextMenu {
-            Button("Copy Tag Name") {
-                NSPasteboard.general.clearContents()
-                NSPasteboard.general.setString(name, forType: .string)
-            }
+            TagMenuItems(name: name, isOnRemote: remoteTagNames.contains(name), actions: actions, onRequest: onRequest)
         }
     }
 

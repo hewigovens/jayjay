@@ -8,7 +8,7 @@ use jayjay_core::{
     EvologRow, FetchResult, FileDiffStats, FileEditorData, FixSummary, GitSubmoduleStatus,
     GraphEntry, InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
     PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack, StackedPrResult,
-    SubmitStackLayer, SyncToken, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    SubmitStackLayer, SyncToken, TagInfo, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -963,6 +963,10 @@ impl JayJayRepo {
         Ok(self.inner.list_bookmarks()?)
     }
 
+    fn list_tags(&self) -> Result<Vec<TagInfo>, JayJayError> {
+        Ok(self.inner.list_tags()?)
+    }
+
     fn revset_vocabulary(&self, bookmarks: Vec<BookmarkInfo>) -> jayjay_core::RevsetVocabulary {
         self.inner.revset_vocabulary(&bookmarks)
     }
@@ -1013,6 +1017,26 @@ impl JayJayRepo {
         sync: Arc<JayJaySyncToken>,
     ) -> Result<String, JayJayError> {
         Ok(self.inner.git_push(&bookmark, &sync.inner)?)
+    }
+
+    fn create_tag(&self, name: String, rev: String) -> Result<(), JayJayError> {
+        Ok(self.inner.create_tag(&name, &rev)?)
+    }
+
+    fn delete_tag(&self, name: String) -> Result<(), JayJayError> {
+        Ok(self.inner.delete_tag(&name)?)
+    }
+
+    fn delete_tag_and_push(
+        &self,
+        name: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<String, JayJayError> {
+        Ok(self.inner.delete_tag_and_push(&name, &sync.inner)?)
+    }
+
+    fn git_push_tag(&self, tag: String, sync: Arc<JayJaySyncToken>) -> Result<String, JayJayError> {
+        Ok(self.inner.git_push_tag(&tag, &sync.inner)?)
     }
 
     fn remote_web_url(&self) -> Option<String> {

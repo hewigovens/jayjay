@@ -10,12 +10,13 @@ struct DAGView: View {
     let selectedId: String?
     let selectedIds: [String]
     let compareFromId: String?
-    let actions: (any DAGActions & BookmarkActions)?
+    let actions: (any DAGActions & BookmarkActions & TagActions)?
     var onRequest: ((DAGRequest) -> Void)?
     @Binding var activePane: ActivePane
     var revealRequest: DAGRevealRequest?
     var prHostName: String?
     var conflictedBookmarkNames: Set<String> = []
+    var remoteTagNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
     var refreshMode: RefreshMode = .refresh
 
@@ -40,12 +41,13 @@ struct DAGView: View {
         selectedId: String?,
         selectedIds: [String],
         compareFromId: String?,
-        actions: (any DAGActions & BookmarkActions)?,
+        actions: (any DAGActions & BookmarkActions & TagActions)?,
         onRequest: ((DAGRequest) -> Void)? = nil,
         activePane: Binding<ActivePane>,
         revealRequest: DAGRevealRequest? = nil,
         prHostName: String? = nil,
         conflictedBookmarkNames: Set<String> = [],
+        remoteTagNames: Set<String> = [],
         workspacesByName: [String: WorkspaceInfo] = [:],
         refreshMode: RefreshMode = .refresh
     ) {
@@ -62,6 +64,7 @@ struct DAGView: View {
         self.revealRequest = revealRequest
         self.prHostName = prHostName
         self.conflictedBookmarkNames = conflictedBookmarkNames
+        self.remoteTagNames = remoteTagNames
         self.workspacesByName = workspacesByName
         self.refreshMode = refreshMode
     }
@@ -105,6 +108,7 @@ struct DAGView: View {
                                     onRequest: onRequest,
                                     prHostName: prHostName,
                                     conflictedBookmarkNames: conflictedBookmarkNames,
+                                    remoteTagNames: remoteTagNames,
                                     workspacesByName: workspacesByName,
                                     refreshMode: refreshMode,
                                     onBookmarkDragChanged: { name, sourceCommitId, value in

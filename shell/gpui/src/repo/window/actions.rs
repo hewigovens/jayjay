@@ -1,4 +1,5 @@
-use gpui::{Context, Modifiers, ScrollStrategy, SharedString, point, px};
+use gpui::{Context, Modifiers, ScrollStrategy, SharedString, Task, point, px};
+use jayjay_core::CoreResult;
 use jayjay_core::dag::SelectionClick;
 
 use super::{
@@ -6,6 +7,7 @@ use super::{
     TextModalState,
 };
 use crate::diff::projection;
+use crate::repo::view_model::RepoViewModel;
 use crate::ui::overlay::TextPrompt;
 use crate::ui::selection::click_from_modifiers;
 use crate::windows::bookmark_manager::BookmarkManagerView;
@@ -140,18 +142,80 @@ impl RepoWindow {
     }
 
     pub(crate) fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
-        self.text_modal = Some(TextModalState::new(
-            TextPrompt::single_line(
-                "Create Bookmark",
-                rev.chars().take(12).collect::<String>(),
-                "",
-                "Bookmark name",
-                "Create",
-                cx,
-            ),
+        let subtitle = rev.chars().take(12).collect::<String>();
+        self.open_create_ref(
+            "Create Bookmark",
+            subtitle,
+            "Bookmark name",
             TextModalAction::CreateBookmark { rev },
+            cx,
+        );
+    }
+
+    pub(crate) fn open_create_tag(&mut self, rev: String, cx: &mut Context<Self>) {
+        let subtitle = format!(
+            "{} · a tagged change becomes immutable",
+            rev.chars().take(12).collect::<String>()
+        );
+        self.open_create_ref(
+            "Create Tag",
+            subtitle,
+            "Tag name",
+            TextModalAction::CreateTag { rev },
+            cx,
+        );
+    }
+
+    fn open_create_ref(
+        &mut self,
+        title: &str,
+        subtitle: String,
+        placeholder: &str,
+        action: TextModalAction,
+        cx: &mut Context<Self>,
+    ) {
+        self.text_modal = Some(TextModalState::new(
+            TextPrompt::single_line(title, subtitle, "", placeholder, "Create", cx),
+            action,
         ));
         cx.notify();
+    }
+
+    fn submit_create_ref(
+        &mut self,
+        noun: &'static str,
+        text: &str,
+        rev: String,
+        create: impl FnOnce(
+            &mut RepoViewModel,
+            String,
+            String,
+            &mut Context<RepoViewModel>,
+        ) -> Task<CoreResult<()>>,
+        cx: &mut Context<Self>,
+    ) {
+        let name = text.trim().to_string();
+        if name.is_empty() {
+            self.show_toast(format!("{noun} name required"), cx);
+            return;
+        }
+        let noun = noun.to_lowercase();
+        if !jayjay_core::is_valid_bookmark_name(&name) {
+            self.show_toast(format!("Invalid {noun} name: {name}"), cx);
+            return;
+        }
+        self.text_modal = None;
+        let task = self
+            .vm
+            .update(cx, |vm, cx| create(vm, name.clone(), rev, cx));
+        cx.spawn(async move |this, cx| {
+            if task.await.is_ok() {
+                let _ = this.update(cx, move |view, cx| {
+                    view.show_toast(format!("Created {noun} {name}"), cx);
+                });
+            }
+        })
+        .detach();
     }
 
     pub(crate) fn close_text_modal(&mut self, cx: &mut Context<Self>) {
@@ -186,27 +250,10 @@ impl RepoWindow {
                 self.apply_diff_edit_description(session, text);
             }
             TextModalAction::CreateBookmark { rev } => {
-                let name = text.trim().to_string();
-                if name.is_empty() {
-                    self.show_toast("Bookmark name required", cx);
-                    return;
-                }
-                if !jayjay_core::is_valid_bookmark_name(&name) {
-                    self.show_toast(format!("Invalid bookmark name: {name}"), cx);
-                    return;
-                }
-                self.text_modal = None;
-                let task = self
-                    .vm
-                    .update(cx, |vm, cx| vm.create_bookmark(name.clone(), rev, cx));
-                cx.spawn(async move |this, cx| {
-                    if task.await.is_ok() {
-                        let _ = this.update(cx, move |view, cx| {
-                            view.show_toast(format!("Created bookmark {name}"), cx);
-                        });
-                    }
-                })
-                .detach();
+                self.submit_create_ref("Bookmark", &text, rev, RepoViewModel::create_bookmark, cx);
+            }
+            TextModalAction::CreateTag { rev } => {
+                self.submit_create_ref("Tag", &text, rev, RepoViewModel::create_tag, cx);
             }
             TextModalAction::ReviewNote(target) => {
                 if text.trim().is_empty() {

@@ -7,7 +7,7 @@ use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::window::ChangeAction;
 use jayjay_gpui::ui::context_menu::ContextAction;
-use jj_test::{LinearFixture, run_jj_in};
+use jj_test::{LinearFixture, git_stdout, run_git, run_jj_in};
 
 #[gpui::test]
 fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestAppContext) {
@@ -274,6 +274,7 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
             "Squash selected into this",
             "Merge with selected",
             "Create bookmark here...",
+            "Create tag here...",
             "Create / Update Stacked PRs…",
             "Show evolution…",
             "Copy Change ID",
@@ -567,6 +568,142 @@ fn enter_submits_create_bookmark_modal(cx: &mut TestAppContext) {
                 .any(|bookmark| bookmark == "feature-enter")
         }));
     });
+}
+
+#[gpui::test]
+fn tag_is_created_from_its_modal_and_deleted_from_its_chip_menu(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let rev = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .expect("selected change")
+            .selection_revision()
+            .to_owned()
+    });
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(ContextAction::CreateTag(rev.into()), cx);
+    });
+    settle_visual(cx);
+    let input = view
+        .read_with(cx, |view, _| view.text_modal_input())
+        .expect("create tag input");
+    cx.focus(&input);
+    cx.simulate_input("v1.0");
+    cx.simulate_keystrokes("enter");
+    settle_visual(cx);
+    let has_tag = |view: &RepoWindow, cx: &gpui::App| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "tag action errored: {:?}", vm.error);
+        graph_has_tag(vm, "v1.0")
+    };
+    assert!(view.read_with(cx, |view, cx| has_tag(view, cx)));
+
+    let chip = cx
+        .debug_bounds("dag-tag-v1.0")
+        .expect("tag chip in the DAG");
+    cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("context-menu-Push").is_some());
+    assert!(
+        cx.debug_bounds("context-menu-Delete Tag on Remote")
+            .is_none(),
+        "a local-only tag has nothing to delete on the remote"
+    );
+    let delete = cx
+        .debug_bounds("context-menu-Delete Tag")
+        .expect("delete tag menu item");
+    cx.simulate_click(delete.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(!view.read_with(cx, |view, cx| has_tag(view, cx)));
+}
+
+#[gpui::test]
+fn hidden_tag_can_be_deleted_and_pushed_from_the_change_menu(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let remote = fixture.add_bare_origin();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", &"long-bookmark".repeat(12), "-r", "@"],
+    );
+    let repo = jayjay_core::Repo::open(&fixture.path).unwrap();
+    repo.create_tag("v1.0", "@").unwrap();
+    repo.git_push_tag("v1.0", &repo.sync_token()).unwrap();
+    assert_eq!(git_stdout(remote.path(), &["tag", "--list"]), "v1.0");
+    let commit_id = repo.log("tags()").unwrap()[0].commit_id.id.clone();
+    let (view, cx) = open_fixture(&fixture, cx);
+    assert!(
+        cx.debug_bounds("dag-tag-v1.0").is_none(),
+        "tag must overflow"
+    );
+    let row = cx
+        .debug_bounds(selector(format!("dag-change-{commit_id}")))
+        .unwrap();
+    cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    let tag_menu = cx
+        .debug_bounds("context-menu-Tag: v1.0")
+        .expect("overflow tag menu");
+    cx.simulate_mouse_move(tag_menu.center(), MouseButton::Left, Modifiers::default());
+    settle_visual(cx);
+    assert!(
+        cx.debug_bounds("context-menu-Push").is_none(),
+        "a pushed tag is already on the remote"
+    );
+    let delete = cx
+        .debug_bounds("context-menu-Delete Tag on Remote")
+        .expect("delete on remote action");
+    let unavailable = remote.path().join("missing.git");
+    run_git(
+        &fixture.path,
+        &["remote", "set-url", "origin", unavailable.to_str().unwrap()],
+    );
+    cx.simulate_click(delete.center(), Modifiers::default());
+    settle_visual(cx);
+    let submit = cx
+        .debug_bounds("confirmation-submit")
+        .expect("remote deletion asks first");
+    cx.simulate_click(submit.center(), Modifiers::default());
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_some());
+        assert!(graph_has_tag(vm, "v1.0"));
+    });
+    run_git(
+        &fixture.path,
+        &[
+            "remote",
+            "set-url",
+            "origin",
+            remote.path().to_str().unwrap(),
+        ],
+    );
+    cx.simulate_keystrokes("escape");
+    settle_visual(cx);
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(ContextAction::DeleteRemoteTag("v1.0".into()), cx);
+    });
+    settle_visual(cx);
+    let submit = cx
+        .debug_bounds("confirmation-submit")
+        .expect("confirmation");
+    cx.simulate_click(submit.center(), Modifiers::default());
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none());
+        assert!(!graph_has_tag(vm, "v1.0"));
+    });
+    assert!(git_stdout(remote.path(), &["tag", "--list"]).is_empty());
+}
+
+fn graph_has_tag(vm: &RepoViewModel, name: &str) -> bool {
+    vm.graph
+        .changes
+        .iter()
+        .any(|change| change.tags.iter().any(|tag| tag == name))
 }
 
 #[gpui::test]

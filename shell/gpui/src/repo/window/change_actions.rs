@@ -286,11 +286,23 @@ impl RepoWindow {
             glyph::BOOKMARK,
             ContextAction::CreateBookmark(rev.clone().into()),
         ));
+        items.push(ContextMenuItem::new(
+            "Create tag here...",
+            glyph::TAG,
+            ContextAction::CreateTag(change.commit_id.id.clone().into()),
+        ));
         if !change.is_immutable {
             items.push(ContextMenuItem::new(
                 "Create / Update Stacked PRs…",
                 glyph::GIT_BRANCH,
                 ContextAction::OpenStackedPr(rev.clone().into()),
+            ));
+        }
+        for name in &change.tags {
+            items.push(ContextMenuItem::submenu(
+                format!("Tag: {name}"),
+                glyph::TAG,
+                self.build_tag_menu(name, cx),
             ));
         }
         items.push(ContextMenuItem::new(

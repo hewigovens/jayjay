@@ -13,6 +13,10 @@ extension RepoContentView {
                 modal = .confirmChange(.squashSelection(revisions: revisions))
             case let .createBookmark(rev):
                 presentBookmarkCreate(rev: rev)
+            case let .createTag(rev):
+                presentTagCreate(rev: rev)
+            case let .deleteTagOnRemote(name):
+                modal = .confirmTagDeleteOnRemote(name: name)
             case let .createStackedPRs(rev):
                 modal = .stackedPr(rev: rev)
             case let .showAncestors(changeId, commitId):

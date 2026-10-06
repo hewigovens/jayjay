@@ -205,7 +205,9 @@ fn chip_element(
             )
             .into_any_element()
         }
-        DagChip::GitTag(ix) => tag_chip(change.tags[ix].clone(), t).into_any_element(),
+        DagChip::GitTag(ix) => {
+            tag_chip(row_ix, ix, change.tags[ix].clone(), t, menus.tag.clone()).into_any_element()
+        }
         DagChip::Workspace(ix) => workspace_chip(
             row_ix,
             ix,
@@ -296,8 +298,21 @@ fn workspace_chip(
         })
 }
 
-fn tag_chip(name: String, t: &Theme) -> impl IntoElement {
-    ref_chips::tag_chip(name.into(), FONT_TAG, t)
+fn tag_chip(
+    row_ix: usize,
+    t_ix: usize,
+    name: String,
+    t: &Theme,
+    on_right_click: ChipRightClick,
+) -> impl IntoElement {
+    let debug_name = name.clone();
+    ref_chips::tag_chip(name.clone().into(), FONT_TAG, t)
+        .id(("tag", row_ix * 16 + t_ix))
+        .debug_selector(move || format!("dag-tag-{debug_name}"))
+        .on_mouse_down(MouseButton::Right, move |ev, w, cx| {
+            cx.stop_propagation();
+            on_right_click(&name, ev, w, cx);
+        })
 }
 
 #[cfg(test)]

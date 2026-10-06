@@ -222,6 +222,55 @@ impl RepoViewModel {
         )
     }
 
+    pub(crate) fn create_tag(
+        &mut self,
+        name: String,
+        rev: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.create_tag(&name, &rev),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub(crate) fn delete_tag(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.delete_tag(&name),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub(crate) fn delete_tag_and_push(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<String>> {
+        self.repo_result_task_without_indicator(
+            cx,
+            move |repo| repo.delete_tag_and_push(&name, &repo.sync_token()),
+            |vm, _message, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub(crate) fn push_tag(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<CoreResult<String>> {
+        self.repo_result_task_without_indicator(
+            cx,
+            move |repo| repo.git_push_tag(&name, &repo.sync_token()),
+            |vm, _message, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub(crate) fn push_bookmark(
         &mut self,
         name: String,

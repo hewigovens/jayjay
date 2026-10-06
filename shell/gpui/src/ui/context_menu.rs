@@ -29,6 +29,10 @@ pub enum ContextAction {
     CopyText(SharedString),
     OpenUrl(SharedString),
     CreateBookmark(SharedString),
+    CreateTag(SharedString),
+    PushTag(SharedString),
+    DeleteTag(SharedString),
+    DeleteRemoteTag(SharedString),
     OpenStackedPr(SharedString),
     MoveBookmark {
         name: SharedString,
