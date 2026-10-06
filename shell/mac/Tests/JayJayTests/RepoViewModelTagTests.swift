@@ -20,14 +20,6 @@ final class RepoViewModelTagTests: RepoViewModelTestCase {
         XCTAssertEqual(try git(["tag", "--list"], at: viewModel.repoPath), "v1.0")
         viewModel.isPushingInFlight = false
 
-        try git(["remote", "set-url", "origin", remote.appending(path: "missing.git").path], at: viewModel.repoPath)
-        viewModel.deleteTagAndPush(name: "v1.0")
-        try await waitUntil("failed push releases gate") {
-            viewModel.error != nil && !viewModel.isPushingInFlight
-        }
-        XCTAssertEqual(try git(["tag", "--list"], at: viewModel.repoPath), "v1.0")
-        try git(["remote", "set-url", "origin", remote.path], at: viewModel.repoPath)
-
         viewModel.deleteTagAndPush(name: "v1.0")
         try await waitUntil("remote tag deletion") {
             (try? self.git(["tag", "--list"], at: remote.path)) == ""

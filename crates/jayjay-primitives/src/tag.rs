@@ -1,7 +1,6 @@
 #[derive(Debug, Clone)]
 pub struct TagInfo {
     pub name: String,
-    /// Tracked remotes that hold the tag; empty while it exists only locally.
     pub tracked_remotes: Vec<String>,
 }
 

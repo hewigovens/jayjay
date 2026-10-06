@@ -29,7 +29,7 @@ impl Repo {
         self.run_git_push(&args, sync)
     }
 
-    /// `--tag` tracks a new remote tag on its own; a tag deleted locally but still tracked deletes the remote tag. jj pushes to one remote per invocation and never derives it from tracking, so each tracked remote gets its own push.
+    /// A locally deleted tag that a remote still tracks pushes as a deletion; jj targets one remote per call, so each tracked remote gets its own push.
     pub fn git_push_tag(&self, tag: &str, sync: &SyncToken) -> CoreResult<String> {
         let _enter = sync.enter();
         let pattern = format!("exact:{}", format_string(tag));

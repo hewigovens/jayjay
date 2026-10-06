@@ -125,7 +125,6 @@ fn remote_holds_tag(view: &View, name: &RefName) -> bool {
     !tag_remotes(view, name).is_empty()
 }
 
-/// Tracked remotes that hold `name`, whether or not the local tag still exists.
 pub(super) fn tag_remotes(view: &View, name: &RefName) -> Vec<String> {
     view.all_remote_tags()
         .filter(|(symbol, remote_ref)| symbol.name == name && holds_tag(symbol.remote, remote_ref))

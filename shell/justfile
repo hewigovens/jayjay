@@ -451,7 +451,7 @@ sync-icon:
     "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
 
 lint:
-  swiftlint lint --config "{{root}}/.swiftlint.yml" --quiet
+  swiftlint lint --config "{{root}}/.swiftlint.yml" --strict --quiet
 
 clean:
   rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift"

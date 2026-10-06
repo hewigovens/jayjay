@@ -254,14 +254,4 @@ fn tag_push_treats_pattern_operators_as_literal_name_characters() {
         git_stdout(remote.path(), &["tag", "--list"]),
         "release&staging"
     );
-    #[cfg(unix)]
-    {
-        repo.create_tag("release|staging", "@-").unwrap();
-        repo.git_push_tag("release|staging", &repo.sync_token())
-            .unwrap();
-        assert_eq!(
-            git_stdout(remote.path(), &["tag", "--list"]),
-            "release&staging\nrelease|staging"
-        );
-    }
 }

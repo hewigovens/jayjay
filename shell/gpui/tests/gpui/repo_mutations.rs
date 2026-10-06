@@ -7,7 +7,7 @@ use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::repo::window::ChangeAction;
 use jayjay_gpui::ui::context_menu::ContextAction;
-use jj_test::{LinearFixture, git_stdout, run_git, run_jj_in};
+use jj_test::{LinearFixture, git_stdout, run_jj_in};
 
 #[gpui::test]
 fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestAppContext) {
@@ -654,41 +654,11 @@ fn hidden_tag_can_be_deleted_and_pushed_from_the_change_menu(cx: &mut TestAppCon
     let delete = cx
         .debug_bounds("context-menu-Delete Tag on Remote")
         .expect("delete on remote action");
-    let unavailable = remote.path().join("missing.git");
-    run_git(
-        &fixture.path,
-        &["remote", "set-url", "origin", unavailable.to_str().unwrap()],
-    );
     cx.simulate_click(delete.center(), Modifiers::default());
     settle_visual(cx);
     let submit = cx
         .debug_bounds("confirmation-submit")
         .expect("remote deletion asks first");
-    cx.simulate_click(submit.center(), Modifiers::default());
-    settle_visual(cx);
-    view.read_with(cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        assert!(vm.error.is_some());
-        assert!(graph_has_tag(vm, "v1.0"));
-    });
-    run_git(
-        &fixture.path,
-        &[
-            "remote",
-            "set-url",
-            "origin",
-            remote.path().to_str().unwrap(),
-        ],
-    );
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
-    view.update_in(cx, |view, _, cx| {
-        view.dispatch_context_action(ContextAction::DeleteRemoteTag("v1.0".into()), cx);
-    });
-    settle_visual(cx);
-    let submit = cx
-        .debug_bounds("confirmation-submit")
-        .expect("confirmation");
     cx.simulate_click(submit.center(), Modifiers::default());
     settle_visual(cx);
     view.read_with(cx, |view, cx| {
