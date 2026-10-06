@@ -127,7 +127,9 @@ impl<T: 'static> InputHandler for LineInputHandler<T> {
         _: &mut Window,
         cx: &mut App,
     ) {
-        let text = field_text(text);
+        let Some(text) = field_text(text) else {
+            return;
+        };
         self.edit(cx, |input| {
             let range = input.ime_target(range_utf16.as_ref());
             input.edit.replace_range(range, &text);
@@ -143,7 +145,9 @@ impl<T: 'static> InputHandler for LineInputHandler<T> {
         _: &mut Window,
         cx: &mut App,
     ) {
-        let new_text = field_text(new_text);
+        let Some(new_text) = field_text(new_text) else {
+            return;
+        };
         self.edit(cx, |input| {
             let range = input.ime_target(range_utf16.as_ref());
             input.edit.replace_range(range.clone(), &new_text);
@@ -193,12 +197,13 @@ impl<T: 'static> InputHandler for LineInputHandler<T> {
     }
 }
 
-/// Keys the field leaves unhandled, such as Tab, also arrive here as text, and a filter has no use for control characters.
-fn field_text(text: &str) -> String {
-    sanitize_single_line(text)
+/// Keys the field leaves unhandled, such as Tab, also arrive here as text; input that was only control characters is no edit at all, while an empty string still clears a composition.
+fn field_text(text: &str) -> Option<String> {
+    let kept: String = sanitize_single_line(text)
         .chars()
         .filter(|ch| !ch.is_control())
-        .collect()
+        .collect();
+    (kept.is_empty() == text.is_empty()).then_some(kept)
 }
 
 #[cfg(test)]
@@ -228,7 +233,7 @@ mod tests {
     }
 
     #[gpui::test]
-    fn composition_replaces_the_marked_run_and_reports_each_edit(cx: &mut TestAppContext) {
+    fn composition_replaces_the_marked_run_and_control_text_is_ignored(cx: &mut TestAppContext) {
         let (owner, cx) = cx.add_window_view(|_, _| Owner {
             input: LineInput::new("é "),
             edits: 0,
@@ -246,9 +251,14 @@ mod tests {
             assert_eq!(handler.marked_text_range(window, cx), None);
         });
 
+        cx.update(|window, cx| {
+            owner.update(cx, |owner, _| owner.input.edit.select_range(0..usize::MAX));
+            handler.replace_text_in_range(None, "\t", window, cx);
+        });
+
         owner.read_with(cx, |owner, _| {
             assert_eq!(owner.input.text(), "é 你");
-            assert_eq!(owner.input.edit.cursor_offset(), "é 你".len());
+            assert_eq!(owner.input.edit.selection_range(), 0.."é 你".len());
             assert_eq!(owner.edits, 2);
         });
     }
