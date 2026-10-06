@@ -99,14 +99,12 @@ impl Render for RepoWindow {
             .map(|state| render_app_menu(state, &t, &cx.entity(), cx));
         #[cfg(target_os = "macos")]
         let app_menu_overlay: Option<gpui::AnyElement> = None;
-        let repo_switcher_overlay = self
-            .repo_switcher
-            .as_ref()
-            .map(|state| render_repo_switcher(state, &workspaces, &t, &cx.entity()));
-        let bookmark_picker_overlay = self
-            .bookmark_picker
-            .as_ref()
-            .map(|state| render_bookmark_picker(state, &bookmarks, &t, &cx.entity()));
+        let repo_switcher_overlay = self.repo_switcher.as_ref().map(|state| {
+            render_repo_switcher(state, &workspaces, &t, &cx.entity(), window.focused(cx))
+        });
+        let bookmark_picker_overlay = self.bookmark_picker.as_ref().map(|state| {
+            render_bookmark_picker(state, &bookmarks, &t, &cx.entity(), window.focused(cx))
+        });
         let revset_popup_overlay = self
             .revset_popup
             .as_ref()

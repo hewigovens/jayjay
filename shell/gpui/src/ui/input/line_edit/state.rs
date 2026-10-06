@@ -159,6 +159,10 @@ impl LineEdit {
         self.replace_range(range, replacement);
     }
 
+    pub(crate) fn select_range(&mut self, range: Range<usize>) {
+        self.selection = TextSelection::from_range(range, false, self.text.len());
+    }
+
     pub(crate) fn replace_range(&mut self, range: Range<usize>, replacement: &str) {
         self.text.replace_range(range.clone(), replacement);
         self.move_to(range.start + replacement.len());

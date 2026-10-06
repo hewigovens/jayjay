@@ -1,7 +1,7 @@
 use gpui::ScrollStrategy;
 use gpui::{
-    AnyElement, Context, Entity, InteractiveElement, IntoElement, KeyDownEvent, MouseButton,
-    MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, div, px, rgb,
+    AnyElement, Context, Entity, FocusHandle, InteractiveElement, IntoElement, KeyDownEvent,
+    MouseButton, MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, div, px, rgb,
 };
 use jayjay_core::{BookmarkFilterTarget, BookmarkInfo};
 
@@ -111,6 +111,14 @@ impl RepoWindow {
         true
     }
 
+    fn bookmark_picker_query_edited(&mut self, cx: &mut Context<Self>) {
+        self.picker_query_edited(
+            Self::bookmark_picker_query,
+            |view, cx| view.bookmark_picker_actions(cx),
+            cx,
+        );
+    }
+
     fn bookmark_picker_actions(&self, cx: &gpui::App) -> Vec<(BookmarkFilterTarget, usize)> {
         let Some(state) = self.bookmark_picker.as_ref() else {
             return Vec::new();
@@ -125,12 +133,13 @@ pub(crate) fn render_bookmark_picker(
     bookmarks: &[BookmarkInfo],
     t: &Theme,
     view: &Entity<RepoWindow>,
+    ime_focus: Option<FocusHandle>,
 ) -> AnyElement {
     let close_view = view.clone();
     picker::overlay(
         "bookmark-picker-backdrop",
         state.anchor,
-        menu_panel(state, bookmarks, t, view),
+        menu_panel(state, bookmarks, t, view, ime_focus),
         move |_: &MouseDownEvent, _, cx| {
             close_view.update(cx, |view, cx| view.close_bookmark_picker(cx));
         },
@@ -142,11 +151,18 @@ fn menu_panel(
     bookmarks: &[BookmarkInfo],
     t: &Theme,
     view: &Entity<RepoWindow>,
+    ime_focus: Option<FocusHandle>,
 ) -> AnyElement {
     let new_view = view.clone();
     let header = picker::header(
         "bookmark-picker-filter",
         &state.query,
+        LineInput::ime_layer(
+            view.clone(),
+            ime_focus,
+            RepoWindow::bookmark_picker_input,
+            RepoWindow::bookmark_picker_query_edited,
+        ),
         [picker::header_button(
             "bookmark-picker-new",
             glyph::PLUS_CIRCLE,

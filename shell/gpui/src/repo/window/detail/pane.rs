@@ -133,6 +133,11 @@ pub(in crate::repo::window) fn detail_pane(
     };
     let find = FindState {
         query: view.find.query.as_ref(),
+        ime_focus: if view.is_text_input_focused(window, cx) {
+            None
+        } else {
+            window.focused(cx)
+        },
         match_count: view.find.matches.len(),
         match_current: view.find.current,
     };

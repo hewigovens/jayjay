@@ -1,4 +1,4 @@
-use gpui::{AnyElement, Entity, MouseDownEvent};
+use gpui::{AnyElement, Entity, FocusHandle, MouseDownEvent};
 use jayjay_core::WorkspaceInfo;
 
 use super::model::RepoSwitcherState;
@@ -8,18 +8,20 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::repo::window::picker::{self, render_sections};
 use crate::ui::icons::glyph;
+use crate::ui::input::LineInput;
 
 pub(crate) fn render_repo_switcher(
     state: &RepoSwitcherState,
     workspaces: &[WorkspaceInfo],
     t: &Theme,
     view: &Entity<RepoWindow>,
+    ime_focus: Option<FocusHandle>,
 ) -> AnyElement {
     let close_view = view.clone();
     picker::overlay(
         "repo-switcher-backdrop",
         state.anchor,
-        menu_panel(state, workspaces, t, view),
+        menu_panel(state, workspaces, t, view, ime_focus),
         move |_: &MouseDownEvent, _, cx| {
             close_view.update(cx, |view, cx| view.close_repo_switcher(cx));
         },
@@ -31,12 +33,19 @@ fn menu_panel(
     workspaces: &[WorkspaceInfo],
     t: &Theme,
     view: &Entity<RepoWindow>,
+    ime_focus: Option<FocusHandle>,
 ) -> AnyElement {
     let overview_view = view.clone();
     let new_view = view.clone();
     let header = picker::header(
         "repo-switcher-filter",
         &state.query,
+        LineInput::ime_layer(
+            view.clone(),
+            ime_focus,
+            RepoWindow::repo_switcher_input,
+            RepoWindow::repo_switcher_query_edited,
+        ),
         [
             picker::header_button(
                 "repo-switcher-overview",

@@ -96,6 +96,7 @@ pub(crate) fn panel(
 pub(crate) fn header(
     filter_id: &'static str,
     query: &PickerQuery,
+    ime_layer: impl IntoElement,
     buttons: impl IntoIterator<Item = AnyElement>,
     t: &Theme,
 ) -> Div {
@@ -108,7 +109,7 @@ pub(crate) fn header(
         .px(px(12.))
         .border_b_1()
         .border_color(rgb(t.border))
-        .child(search_box(filter_id, &query.input, t))
+        .child(search_box(filter_id, &query.input, ime_layer, t))
         .children(buttons)
 }
 
@@ -129,9 +130,15 @@ pub(crate) fn header_button(
         .into_any_element()
 }
 
-fn search_box(id: &'static str, query: &LineInput, t: &Theme) -> Stateful<Div> {
+fn search_box(
+    id: &'static str,
+    query: &LineInput,
+    ime_layer: impl IntoElement,
+    t: &Theme,
+) -> Stateful<Div> {
     div()
         .id(id)
+        .relative()
         .debug_selector(move || id.to_owned())
         .flex()
         .items_center()
@@ -141,6 +148,7 @@ fn search_box(id: &'static str, query: &LineInput, t: &Theme) -> Stateful<Div> {
         .text_size(ui_font_size(13.))
         .cursor_text()
         .child(icons::icon(glyph::SEARCH, 13., t.fg_dim))
+        .child(ime_layer)
         .child(line_input_content(
             query,
             "Filter",

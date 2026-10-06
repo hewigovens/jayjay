@@ -3,6 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 
+use super::FindState;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
@@ -11,11 +12,11 @@ use crate::ui::input::{LineInput, line_input_content};
 
 pub(super) fn render_find_bar(
     query: &LineInput,
-    match_count: usize,
-    match_current: usize,
+    find: &FindState<'_>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let (match_count, match_current) = (find.match_count, find.match_current);
     let count_label = if query.is_empty() {
         String::new()
     } else if match_count == 0 {
@@ -34,7 +35,7 @@ pub(super) fn render_find_bar(
         .border_b_1()
         .border_color(rgb(t.border))
         .child(icons::icon(glyph::SEARCH, 12., t.fg_dim))
-        .child(search_input(query, t))
+        .child(search_input(query, find.ime_focus.clone(), t, cx))
         .child(
             div()
                 .flex_none()
@@ -46,8 +47,14 @@ pub(super) fn render_find_bar(
         .into_any_element()
 }
 
-fn search_input(query: &LineInput, t: &Theme) -> AnyElement {
+fn search_input(
+    query: &LineInput,
+    ime_focus: Option<gpui::FocusHandle>,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
     let mut input = div()
+        .relative()
         .flex()
         .flex_row()
         .items_center()
@@ -56,7 +63,14 @@ fn search_input(query: &LineInput, t: &Theme) -> AnyElement {
         .min_w_0()
         .code_text(12.);
 
-    input = input.child(line_input_content(query, "Type to find...", t, None));
+    input = input
+        .child(LineInput::ime_layer(
+            cx.entity(),
+            ime_focus,
+            RepoWindow::find_input,
+            RepoWindow::find_query_edited,
+        ))
+        .child(line_input_content(query, "Type to find...", t, None));
 
     input.into_any_element()
 }

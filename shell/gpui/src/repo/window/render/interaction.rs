@@ -58,7 +58,11 @@ impl RepoWindow {
         true
     }
 
-    pub(super) fn is_text_input_focused(&self, window: &Window, cx: &gpui::App) -> bool {
+    pub(in crate::repo::window) fn is_text_input_focused(
+        &self,
+        window: &Window,
+        cx: &gpui::App,
+    ) -> bool {
         self.focused_text_input(window, cx).is_some()
             || self.file_filter_focus.is_focused(window)
             || self.editor_input_focused(window, cx)

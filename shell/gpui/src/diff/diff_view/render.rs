@@ -208,9 +208,7 @@ pub fn diff_view(
         }
     };
 
-    let find_bar = find
-        .query
-        .map(|q| render_find_bar(q, find.match_count, find.match_current, &t, cx));
+    let find_bar = find.query.map(|q| render_find_bar(q, &find, &t, cx));
     let show_conflict_bar = state.can_resolve_conflict && state.selected_file_has_conflict;
     let projection_banner = state.effective_projection().and_then(|projection| {
         projection::shows_banner(projection, state.active_projection_preview)
