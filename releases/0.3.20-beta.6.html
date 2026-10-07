@@ -1,0 +1,19 @@
+<h2>Tags</h2>
+<ul>
+  <li>Create a lightweight tag from a change's context menu. The tag chip offers <strong>Push</strong> while the tag exists only locally, and <strong>Delete Tag on Remote</strong> once a tracked remote has it; that action asks for confirmation, removes the tag locally, pushes the deletion to every remote that tracks it, and restores the local tag if the push fails. Tags collapsed into the <code>+N</code> overflow chip keep their actions in the change menu.</li>
+  <li>The revset bar gains a <strong>Tags</strong> preset for <code>tags()</code>, next to Bookmarks.</li>
+  <li>Tab in the revset bar and the revset panel finishes the highlighted completion, or the first one, instead of moving focus; typing <code>tag</code> and pressing Tab gives <code>tags()</code>.</li>
+</ul>
+
+<h2>Faster on large repositories</h2>
+<ul>
+  <li>The Repo Overview builds only the part of the canvas that is on screen. On an overview with about 520 groups and 6,200 change rows, the first render drops from 1.6 s to under 20 ms and a selection change from 1.6 s to under 10 ms.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>On a large repository the bookmark picker no longer opens empty and says there are no bookmarks; it shows <em>Loading bookmarks…</em> until they arrive, and an open panel fills in when they do.</li>
+  <li>Opening a repository no longer blurs the window while it loads. Panes, pickers and diffs that wait for their first content share one loading indicator that names what is loading.</li>
+  <li>Filtering from the Bookmark Manager no longer double-escapes the bookmark name, and keeps local-only and remote-only bookmarks distinct.</li>
+  <li>Commits by coding agents such as Claude Code and GitHub Copilot show the account's GitHub avatar instead of a generated identicon.</li>
+</ul>

@@ -26,8 +26,8 @@ macos_min_flag := "-mmacosx-version-min=" + deployment_target
 # App identity + signing
 app_name := "JayJay"
 bundle_id := "dev.hewig.jayjay"
-version := "0.3.20-beta.5"
-build_number := "67"
+version := "0.3.20-beta.6"
+build_number := "68"
 # Developer ID Application: Tao Xu (V28VJH6B6S) from the G2 Sub-CA, valid until 2031-09-17. Pinned by SHA-1 because certificates from the old Sub-CA share the name.
 signing_identity := "74EF325EE815489581C2392FFACB1D35E677A5AA"
 

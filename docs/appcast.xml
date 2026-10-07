@@ -6,6 +6,115 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.20-beta.6</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>68</sparkle:version>
+            <sparkle:shortVersionString>0.3.20</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Wed, 07 Oct 2026 08:28:17 +0000</pubDate>
+            <description><![CDATA[
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="color-scheme" content="light dark">
+                  <title>JayJay 0.3.20-beta.6 — Release notes</title>
+                  <style>
+                    :root {
+                      color-scheme: light dark;
+                      --background: #f7f8fa;
+                      --surface: #ffffff;
+                      --text: #20242c;
+                      --muted: #626b78;
+                      --border: #dfe4ec;
+                      --accent: #1d4ed8;
+                      --tint: #eaf1ff;
+                      --notice: #fff5de;
+                      --notice-text: #79520b;
+                    }
+                    @media (prefers-color-scheme: dark) {
+                      :root {
+                        --background: #181b21;
+                        --surface: #22262e;
+                        --text: #edf0f6;
+                        --muted: #adb6c5;
+                        --border: #3b424f;
+                        --accent: #93baff;
+                        --tint: #283b5d;
+                        --notice: #3a301d;
+                        --notice-text: #f4cc7d;
+                      }
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                      margin: 0;
+                      padding: 24px;
+                      background: var(--background);
+                      color: var(--text);
+                      font: 13px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                      overflow-wrap: anywhere;
+                    }
+                    .release { max-width: 720px; margin: 0 auto; }
+                    header { padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+                    h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -0.035em; }
+                    .metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; color: var(--muted); }
+                    .version { padding: 3px 10px; border-radius: 7px; background: var(--tint); color: var(--accent); font-weight: 650; }
+                    .beta-notice { margin: 20px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--notice); color: var(--notice-text); }
+                    main h2 { margin: 24px 0 10px; font-size: 16px; line-height: 1.35; }
+                    main ul, main ol { margin: 0; padding: 16px 18px 16px 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+                    main li + li { margin-top: 10px; }
+                    main li::marker { color: var(--accent); }
+                    main li ul, main li ol { margin-top: 10px; padding: 0 0 0 18px; border: 0; }
+                    code { padding: 1px 4px; border-radius: 4px; background: var(--tint); font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: var(--surface); }
+                    pre code { padding: 0; background: transparent; }
+                    a { color: var(--accent); text-underline-offset: 3px; }
+                    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+                    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); }
+                    @media (max-width: 420px) { body { padding: 16px; } h1 { font-size: 24px; } }
+                    @media (prefers-contrast: more) { :root { --muted: var(--text); --border: var(--text); } }
+                  </style>
+                </head>
+                <body>
+                  <div class="release">
+                    <header>
+                      <h1>What’s new</h1>
+                      <div class="metadata"><span class="version">v0.3.20-beta.6</span><time datetime="2026-10-07">October 7, 2026</time></div>
+                    </header>
+                    <p class="beta-notice"><strong>Beta build · 68</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>
+                    <main>
+                <h2>Tags</h2>
+                <ul>
+                  <li>Create a lightweight tag from a change's context menu. The tag chip offers <strong>Push</strong> while the tag exists only locally, and <strong>Delete Tag on Remote</strong> once a tracked remote has it; that action asks for confirmation, removes the tag locally, pushes the deletion to every remote that tracks it, and restores the local tag if the push fails. Tags collapsed into the <code>+N</code> overflow chip keep their actions in the change menu.</li>
+                  <li>The revset bar gains a <strong>Tags</strong> preset for <code>tags()</code>, next to Bookmarks.</li>
+                  <li>Tab in the revset bar and the revset panel finishes the highlighted completion, or the first one, instead of moving focus; typing <code>tag</code> and pressing Tab gives <code>tags()</code>.</li>
+                </ul>
+                
+                <h2>Faster on large repositories</h2>
+                <ul>
+                  <li>The Repo Overview builds only the part of the canvas that is on screen. On an overview with about 520 groups and 6,200 change rows, the first render drops from 1.6 s to under 20 ms and a selection change from 1.6 s to under 10 ms.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>On a large repository the bookmark picker no longer opens empty and says there are no bookmarks; it shows <em>Loading bookmarks…</em> until they arrive, and an open panel fills in when they do.</li>
+                  <li>Opening a repository no longer blurs the window while it loads. Panes, pickers and diffs that wait for their first content share one loading indicator that names what is loading.</li>
+                  <li>Filtering from the Bookmark Manager no longer double-escapes the bookmark name, and keeps local-only and remote-only bookmarks distinct.</li>
+                  <li>Commits by coding agents such as Claude Code and GitHub Copilot show the account's GitHub avatar instead of a generated identicon.</li>
+                </ul>
+                    </main>
+                    <footer><a href="https://github.com/hewigovens/jayjay/releases">All releases</a> · <a href="https://jayjay.hewig.dev/guide.html">User guide</a></footer>
+                  </div>
+                </body>
+                </html>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.20-beta.6/JayJay-0.3.20-beta.6.zip"
+                       sparkle:edSignature="tM8/yerDR9Jf0aZU9d8LEhy9ZhlBaxjiCZQW0+QUZqCVThz27wDr6CIvO5bMKD0dx4hwhidKEIuQpUbttLVuBQ=="
+                       length="25132235"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.20-beta.5</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>67</sparkle:version>
