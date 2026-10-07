@@ -5,7 +5,9 @@ use futures::StreamExt as _;
 use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
-use jj_lib::revset::{self, ResolvedRevsetExpression, SymbolResolver, UserRevsetExpression};
+use jj_lib::revset::{
+    self, ResolvedRevset, ResolvedRevsetExpression, SymbolResolver, UserRevsetExpression,
+};
 use jj_lib::settings::UserSettings;
 use jj_lib::transaction::Transaction;
 
@@ -281,17 +283,17 @@ impl Repo {
         expression: Arc<UserRevsetExpression>,
     ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         self.resolve_typed_revset(repo, expression)?
-            .evaluate(repo)
+            .evaluate()
             .map_err(|e| CoreError::Internal {
                 message: format!("eval revset: {e}"),
             })
     }
 
-    fn resolve_typed_revset(
+    fn resolve_typed_revset<'a>(
         &self,
-        repo: &dyn JjRepo,
+        repo: &'a dyn JjRepo,
         expression: Arc<UserRevsetExpression>,
-    ) -> CoreResult<Arc<ResolvedRevsetExpression>> {
+    ) -> CoreResult<ResolvedRevset<'a>> {
         #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo, empty_extensions);
@@ -309,7 +311,10 @@ impl Repo {
         revset_str: &str,
     ) -> CoreResult<Arc<ResolvedRevsetExpression>> {
         let expression = self.parse_revset_str(repo.settings(), revset_str)?;
-        self.resolve_typed_revset(repo.as_ref(), expression)
+        let (resolved, _) = self
+            .resolve_typed_revset(repo.as_ref(), expression)?
+            .into_inner();
+        Ok(resolved)
     }
 
     pub(crate) fn evaluate_revset<'a>(

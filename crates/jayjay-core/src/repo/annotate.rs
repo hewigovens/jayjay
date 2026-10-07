@@ -39,7 +39,9 @@ impl Repo {
             .resolve_user_expression(repo.as_ref(), &resolver)
             .map_err(|e| CoreError::Internal {
                 message: format!("resolve annotate domain: {e}"),
-            })?;
+            })?
+            .into_inner()
+            .0;
 
         block_on(annotator.compute(repo.as_ref(), &domain)).map_err(|e| CoreError::Internal {
             message: format!("compute annotate: {e}"),

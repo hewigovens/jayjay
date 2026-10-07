@@ -1,6 +1,7 @@
 use jayjay_core::{Repo, WorkspaceInfo};
 use jj_lib::ref_name::WorkspaceName;
-use jj_lib::workspace_store::{SimpleWorkspaceStore, WorkspaceStore as _};
+use jj_lib::simple_workspace_store::SimpleWorkspaceStore;
+use jj_lib::workspace_store::WorkspaceStore as _;
 use jj_test::{init_jj_repo, run_jj_in};
 
 fn workspace_names(repo: &Repo) -> Vec<String> {
@@ -75,7 +76,7 @@ fn workspace_forget_supports_legacy_repositories_without_saved_roots() {
     let dest = temp_dir.path().join("repo-feature");
     repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "")
         .expect("workspace add");
-    SimpleWorkspaceStore::load(&repo_path.join(".jj").join("repo"))
+    SimpleWorkspaceStore::load(&repo_path.join(".jj/repo/workspace_store"))
         .expect("workspace store")
         .forget(&[WorkspaceName::new("feature")])
         .expect("remove saved root to simulate a legacy repository");
@@ -185,7 +186,7 @@ fn workspace_list_does_not_offer_lossy_paths_for_pinning() {
         .path()
         .join(OsString::from_vec(b"feature-\xff".to_vec()));
     std::fs::rename(&dest, &invalid).expect("move to non-UTF-8 root");
-    let store = SimpleWorkspaceStore::load(&repo_path.join(".jj/repo")).unwrap();
+    let store = SimpleWorkspaceStore::load(&repo_path.join(".jj/repo/workspace_store")).unwrap();
     store.add(WorkspaceName::new("feature"), &invalid).unwrap();
 
     let row = workspace_row(&repo, "feature");

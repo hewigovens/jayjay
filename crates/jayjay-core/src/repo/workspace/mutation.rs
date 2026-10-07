@@ -4,7 +4,6 @@ use jj_lib::local_working_copy::LocalWorkingCopyFactory;
 use jj_lib::ref_name::{WorkspaceName, WorkspaceNameBuf};
 use jj_lib::rewrite::merge_commit_trees;
 use jj_lib::workspace::Workspace;
-use jj_lib::workspace_store::{SimpleWorkspaceStore, WorkspaceStore as _};
 
 use super::super::Repo;
 use super::super::support::{block_on_result, load_workspace_internal};
@@ -137,8 +136,10 @@ impl Repo {
             return Err(CoreError::internal(format!("no such workspace: {name}")));
         }
         // The saved root goes first, as in the CLI: a workspace left in the view without a root is a state the app already handles, the reverse is not.
-        SimpleWorkspaceStore::load(&self.repo_path)
-            .and_then(|store| store.forget(&[workspace_name]))
+        self.get_repo()
+            .loader()
+            .workspace_store()
+            .forget(&[workspace_name])
             .map_err(|error| CoreError::internal(format!("forget workspace root: {error}")))?;
         self.with_repo_transaction(
             &format!("forget workspace {}", workspace_name.as_symbol()),

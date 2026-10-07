@@ -13,7 +13,7 @@ use super::support::block_on_result;
 use crate::types::*;
 
 impl Repo {
-    /// Replicates jj 0.45.1's `cli/src/commands/parallelize.rs`; jj-lib has no parallelize of its own.
+    /// Replicates jj 0.46.0's `cli/src/commands/parallelize.rs`; jj-lib has no parallelize of its own.
     pub fn parallelize(&self, revs: &[String]) -> CoreResult<MutationEffect> {
         let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Parallelize selected")?;

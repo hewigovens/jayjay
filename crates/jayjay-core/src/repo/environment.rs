@@ -28,7 +28,7 @@ pub(crate) fn git_excludes_file_path(
     if let Some(value) = excludes_file {
         let path = std::str::from_utf8(value.as_ref())
             .ok()
-            .map(jj_lib::file_util::expand_home_path)?;
+            .map(|path| jj_lib::file_util::expand_home_path(path, home_dir().as_deref()))?;
         return Some(if path.is_absolute() {
             path
         } else {

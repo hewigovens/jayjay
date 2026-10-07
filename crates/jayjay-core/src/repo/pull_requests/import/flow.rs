@@ -168,7 +168,7 @@ impl Repo {
         });
         let tips = fetched
             .target
-            .added_ids()
+            .present_adds()
             .map(|id| id.hex())
             .collect::<Vec<_>>()
             .join(" | ");
@@ -190,7 +190,7 @@ impl Repo {
             remote: RemoteName::new(plan.remote.name()),
         });
         let heads = std::iter::once(plan.resolved.head_commit_id.clone())
-            .chain(fetched.target.added_ids().map(|id| id.hex()))
+            .chain(fetched.target.present_adds().map(|id| id.hex()))
             .map(|id| format!("present({id})"))
             .collect::<Vec<_>>()
             .join(" | ");

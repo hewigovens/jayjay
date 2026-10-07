@@ -70,7 +70,7 @@ impl Repo {
                 description,
                 is_tracking_remote: !tracked_remotes.is_empty(),
                 is_deleted: target.is_absent(),
-                is_conflicted: target.has_conflict(),
+                is_conflicted: !target.is_resolved(),
                 tracked_remotes,
                 available_remotes,
                 has_local_target: true,
@@ -115,7 +115,7 @@ impl Repo {
                 description,
                 is_tracking_remote: false,
                 is_deleted: !tracked_remotes.is_empty(),
-                is_conflicted: first_target.has_conflict(),
+                is_conflicted: !first_target.is_resolved(),
                 tracked_remotes,
                 available_remotes: remotes,
                 has_local_target: false,
@@ -205,7 +205,7 @@ impl Repo {
         };
         let description = if new_target.is_absent() {
             "delete bookmark"
-        } else if new_target.has_conflict() {
+        } else if !new_target.is_resolved() {
             "remove bookmark from revision"
         } else {
             "resolve bookmark"
@@ -381,7 +381,7 @@ pub(super) fn bookmark_target_without_commit(
     target: &RefTarget,
     commit_id: &CommitId,
 ) -> Option<RefTarget> {
-    let mut remaining: Vec<CommitId> = target.added_ids().cloned().collect();
+    let mut remaining: Vec<CommitId> = target.present_adds().cloned().collect();
     let before = remaining.len();
     remaining.retain(|id| id != commit_id);
     if remaining.len() == before {
@@ -390,6 +390,6 @@ pub(super) fn bookmark_target_without_commit(
     Some(match remaining.as_slice() {
         [] => RefTarget::absent(),
         [only] => RefTarget::normal(only.clone()),
-        _ => RefTarget::from_legacy_form(target.removed_ids().cloned(), remaining),
+        _ => RefTarget::from_legacy_form(target.present_removes().cloned(), remaining),
     })
 }

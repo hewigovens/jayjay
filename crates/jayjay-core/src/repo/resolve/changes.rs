@@ -61,10 +61,9 @@ impl Repo {
             && tags.is_empty()
             && workspaces.is_empty()
             && !has_children
-            && !repo
-                .view()
-                .all_remote_bookmarks()
-                .any(|(_, remote_ref)| remote_ref.target.added_ids().any(|id| id == commit.id()));
+            && !repo.view().all_remote_bookmarks().any(|(_, remote_ref)| {
+                remote_ref.target.present_adds().any(|id| id == commit.id())
+            });
         let new_change = NewChangeEligibility {
             on_top: !discardable_working_copy,
             before: !is_immutable,

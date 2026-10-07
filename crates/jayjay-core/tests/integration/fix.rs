@@ -88,7 +88,7 @@ fn pattern_matching_nothing_records_no_operation() {
 }
 
 #[test]
-fn line_range_arg_formats_only_changed_lines() {
+fn line_range_args_format_only_changed_lines() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     configure_fix_tool(
@@ -102,8 +102,8 @@ fn line_range_arg_formats_only_changed_lines() {
             "config",
             "set",
             "--repo",
-            "fix.tools.fixer.line-range-arg",
-            r#""--lines=$first:$last""#,
+            "fix.tools.fixer.line-range-args",
+            r#"["--first=$first", "--last=$last"]"#,
         ],
     );
     fs::write(repo_path.join("edited.txt"), "one\ntwo\nthree\n").expect("write base file");
@@ -117,7 +117,7 @@ fn line_range_arg_formats_only_changed_lines() {
 
     assert_eq!(
         file(&repo_path, "edited.txt"),
-        "args:--lines=2:2\none\nTWO\nthree\n"
+        "args:--first=2 --last=2\none\nTWO\nthree\n"
     );
     assert_eq!(
         file(&repo_path, "trimmed.txt"),

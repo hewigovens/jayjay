@@ -9,7 +9,7 @@ JayJay uses [Jujutsu](https://github.com/jj-vcs/jj) for version control, not git
 
 ## Setup
 
-Building the macOS app requires macOS 26+, Rust 1.96+, and Xcode 16+. Bootstrap the remaining tools and configure `jj fix` with:
+Building the macOS app requires macOS 26+, Rust 1.97.1+, and Xcode 16+. Bootstrap the remaining tools and configure `jj fix` with:
 
 ```bash
 ./scripts/setup.sh

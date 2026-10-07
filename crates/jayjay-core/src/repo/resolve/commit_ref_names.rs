@@ -11,7 +11,7 @@ impl CommitRefNames {
     pub(crate) fn from_refs<'a>(refs: impl Iterator<Item = (&'a RefName, &'a RefTarget)>) -> Self {
         let mut names: HashMap<CommitId, Vec<String>> = HashMap::new();
         for (name, target) in refs {
-            for id in target.added_ids().collect::<HashSet<_>>() {
+            for id in target.present_adds().collect::<HashSet<_>>() {
                 names
                     .entry(id.clone())
                     .or_default()

@@ -197,7 +197,7 @@ mod tests {
     fn settings_with_config(text: &str) -> UserSettings {
         let mut config = StackedConfig::with_defaults();
         config.add_layer(ConfigLayer::parse(ConfigSource::User, text).expect("parse config"));
-        UserSettings::from_config(config).expect("build user settings")
+        UserSettings::from_config_and_home_dir(config, None).expect("build user settings")
     }
 
     #[test]

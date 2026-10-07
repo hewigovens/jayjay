@@ -14,7 +14,7 @@ pub(super) struct FixTool {
     pub(super) name: String,
     pub(super) matcher: Box<dyn Matcher>,
     command: FixCommand,
-    pub(super) line_range_arg: Option<String>,
+    pub(super) line_range_args: Vec<String>,
     run_tool_if_zero_line_ranges: bool,
 }
 
@@ -26,16 +26,18 @@ impl FixTool {
         content: &[u8],
     ) -> Option<Command> {
         let mut command = self.command.to_command(variables);
-        if let Some(template) = &self.line_range_arg {
+        if !self.line_range_args.is_empty() {
             let ranges = changed_lines(base_content, content);
             if ranges.is_empty() && !self.run_tool_if_zero_line_ranges {
                 return None;
             }
-            command.args(ranges.iter().map(|range| {
-                template
-                    .replace("$first", &range.first.to_string())
-                    .replace("$last", &range.last.to_string())
-            }));
+            for range in &ranges {
+                command.args(self.line_range_args.iter().map(|template| {
+                    template
+                        .replace("$first", &range.first.to_string())
+                        .replace("$last", &range.last.to_string())
+                }));
+            }
         }
         Some(command)
     }
@@ -65,10 +67,15 @@ pub(super) fn parse_fix_tools(
         let raw: RawFixTool = settings
             .get(["fix", "tools", name])
             .map_err(|error| tool_error(name, error))?;
-        if raw.line_range_arg.is_none() && raw.run_tool_if_zero_line_ranges {
+        // jj 0.46 renamed `line-range-arg` to `line-range-args`; the CLI migrates the old key the same way.
+        let line_range_args = raw
+            .line_range_args
+            .or_else(|| raw.line_range_arg.map(|arg| vec![arg]))
+            .unwrap_or_default();
+        if line_range_args.is_empty() && raw.run_tool_if_zero_line_ranges {
             return Err(tool_error(
                 name,
-                "run-tool-if-zero-line-ranges can only be set when line-range-arg is set",
+                "run-tool-if-zero-line-ranges can only be set when line-range-args is set",
             ));
         }
         if !raw.enabled {
@@ -84,7 +91,7 @@ pub(super) fn parse_fix_tools(
             name: name.to_owned(),
             matcher: FilesetExpression::union_all(patterns).to_matcher(),
             command: raw.command,
-            line_range_arg: raw.line_range_arg,
+            line_range_args,
             run_tool_if_zero_line_ranges: raw.run_tool_if_zero_line_ranges,
         });
     }
@@ -102,6 +109,8 @@ struct RawFixTool {
     patterns: Vec<String>,
     #[serde(default = "enabled_by_default")]
     enabled: bool,
+    #[serde(default)]
+    line_range_args: Option<Vec<String>>,
     #[serde(default)]
     line_range_arg: Option<String>,
     #[serde(default)]
@@ -204,7 +213,8 @@ mod tests {
         config.add_layer(
             ConfigLayer::parse(ConfigSource::User, config_text).expect("parse test config"),
         );
-        let settings = UserSettings::from_config(config).expect("build user settings");
+        let settings =
+            UserSettings::from_config_and_home_dir(config, None).expect("build user settings");
         let path_converter = RepoPathUiConverter::Fs {
             cwd: PathBuf::from("/repo"),
             base: PathBuf::from("/repo"),
@@ -276,6 +286,25 @@ mod tests {
                 .expect("an invalid tool must not parse");
             assert!(error.to_string().contains("fix.tools.broken"), "{error}");
         }
+    }
+
+    #[test]
+    fn legacy_line_range_arg_is_read_unless_line_range_args_is_set() {
+        let tool = |keys: &str| {
+            tools(&format!(
+                "[fix.tools.t]\ncommand = [\"cat\"]\npatterns = []\n{keys}"
+            ))
+            .remove(0)
+            .line_range_args
+        };
+        assert_eq!(
+            tool(r#"line-range-arg = "--lines=$first:$last""#),
+            ["--lines=$first:$last"]
+        );
+        assert_eq!(
+            tool("line-range-arg = \"old\"\nline-range-args = [\"new\", \"args\"]"),
+            ["new", "args"]
+        );
     }
 
     #[test]

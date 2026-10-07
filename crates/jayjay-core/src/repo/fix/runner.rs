@@ -61,7 +61,7 @@ impl FixRunner {
             return Ok(None);
         }
         let base_content = match &file.base_file_id {
-            Some(base_id) if tools.iter().any(|tool| tool.line_range_arg.is_some()) => {
+            Some(base_id) if tools.iter().any(|tool| !tool.line_range_args.is_empty()) => {
                 Some(read_file(store, &file.repo_path, base_id).await?)
             }
             _ => None,

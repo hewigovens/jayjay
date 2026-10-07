@@ -746,7 +746,7 @@ fn squash_into_explicit_grandparent_target() {
 }
 
 #[test]
-fn open_reports_conflict_markers_in_global_gitconfig() {
+fn open_fails_on_conflict_markers_in_global_gitconfig() {
     if let Ok(repo_path) = std::env::var("JAYJAY_BROKEN_GITCONFIG_REPO") {
         let error = match Repo::open(std::path::Path::new(&repo_path)) {
             Ok(_) => panic!("conflicted global gitconfig should fail to open"),
@@ -754,8 +754,8 @@ fn open_reports_conflict_markers_in_global_gitconfig() {
         };
         let message = error.to_string();
         assert!(
-            message.contains("unexpected token") && message.contains("<<<<<<<"),
-            "open should surface the gix parse error, got: {message}"
+            message.contains("failed to load repo") && message.contains("configuration"),
+            "open should report the unreadable git configuration, got: {message}"
         );
         return;
     }
@@ -771,7 +771,7 @@ fn open_reports_conflict_markers_in_global_gitconfig() {
 
     // Keep GIT_CONFIG_GLOBAL out of this process so parallel jj fixtures stay valid.
     let output = std::process::Command::new(std::env::current_exe().expect("test executable"))
-        .arg("repo::open_reports_conflict_markers_in_global_gitconfig")
+        .arg("repo::open_fails_on_conflict_markers_in_global_gitconfig")
         .arg("--exact")
         .env("JAYJAY_BROKEN_GITCONFIG_REPO", &repo_path)
         .env("GIT_CONFIG_GLOBAL", &broken)

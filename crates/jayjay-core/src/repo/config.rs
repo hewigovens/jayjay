@@ -64,7 +64,7 @@ mod tests {
     fn settings(user_toml: &str) -> UserSettings {
         let mut config = StackedConfig::with_defaults();
         config.add_layer(ConfigLayer::parse(ConfigSource::User, user_toml).expect("parse config"));
-        UserSettings::from_config(config).expect("settings")
+        UserSettings::from_config_and_home_dir(config, None).expect("settings")
     }
 
     #[test]

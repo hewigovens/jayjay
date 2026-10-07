@@ -2,7 +2,7 @@
 
 ![macOS](https://img.shields.io/badge/macOS-26-blue)
 [![Linux](https://img.shields.io/badge/Linux-GPUI-93c5fd?style=flat-square&logo=linux&logoColor=white&labelColor=1e1e2e)](#linux)
-![Rust](https://img.shields.io/badge/rust-1.96%2B-orange)
+![Rust](https://img.shields.io/badge/rust-1.97.1%2B-orange)
 ![License](https://img.shields.io/badge/license-BSL--1.1-green)
 [![Discord](https://img.shields.io/badge/Discord-join-5865f2?style=flat-square&logo=discord&logoColor=white&labelColor=1e1e2e)](https://discord.gg/ekknRNkVrT)
 [![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-ask-5b6ee1?style=flat-square&labelColor=1e1e2e)](https://deepwiki.com/hewigovens/jayjay)

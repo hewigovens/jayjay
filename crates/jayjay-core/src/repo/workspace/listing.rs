@@ -7,7 +7,6 @@ use jj_lib::matchers::EverythingMatcher;
 use jj_lib::ref_name::WorkspaceName;
 use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as _;
-use jj_lib::workspace_store::{SimpleWorkspaceStore, WorkspaceStore as _};
 use pollster::FutureExt as _;
 
 use super::super::Repo;
@@ -88,8 +87,12 @@ impl Repo {
     }
 
     pub(super) fn recorded_workspace_root(&self, name: &WorkspaceName) -> Option<PathBuf> {
-        let store = SimpleWorkspaceStore::load(&self.repo_path).ok()?;
-        let relative = store.get_workspace_path(name).ok()??;
+        let relative = self
+            .get_repo()
+            .loader()
+            .workspace_store()
+            .get_workspace_path(name)
+            .ok()??;
         Some(lexically_normalized(&self.repo_path.join(relative)))
     }
 

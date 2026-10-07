@@ -125,7 +125,8 @@ impl ConfigEnv {
             environment: &self.environment,
         };
         let config = jj_lib::config::resolve(&config, &context).map_err(Error::internal)?;
-        UserSettings::from_config(config).map_err(Error::internal)
+        UserSettings::from_config_and_home_dir(config, self.home_dir.clone())
+            .map_err(Error::internal)
     }
 
     /// The config `jj config list` sees outside any repository: system and user files under the environment layers, with `[[--scope]]` tables resolved for that command.

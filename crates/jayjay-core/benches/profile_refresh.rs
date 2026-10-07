@@ -90,7 +90,8 @@ fn assert_single_op_head(path: &Path) {
     let workspace = DefaultWorkspaceLoaderFactory
         .create(path)
         .expect("load workspace");
-    let settings = UserSettings::from_config(StackedConfig::with_defaults()).expect("settings");
+    let settings = UserSettings::from_config_and_home_dir(StackedConfig::with_defaults(), None)
+        .expect("settings");
     let loader = RepoLoader::init_from_file_system(
         &settings,
         workspace.repo_path(),

@@ -49,11 +49,9 @@ impl Repo {
                 rev: format!("{rev}: {e}"),
             })?;
 
-        let revset = resolved
-            .evaluate(repo.as_ref())
-            .map_err(|e| CoreError::Internal {
-                message: format!("revset eval: {e}"),
-            })?;
+        let revset = resolved.evaluate().map_err(|e| CoreError::Internal {
+            message: format!("revset eval: {e}"),
+        })?;
 
         let mut stream = revset.stream();
         let commit_id = block_on(stream.next())

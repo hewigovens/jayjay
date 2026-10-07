@@ -168,7 +168,7 @@ impl Repo {
                 deleted
                     .entry(symbol.name.as_str().to_owned())
                     .or_default()
-                    .extend(remote.target.added_ids().cloned());
+                    .extend(remote.target.present_adds().cloned());
                 deleted
             })
     }
@@ -187,7 +187,7 @@ impl Repo {
             for id in repo
                 .view()
                 .get_local_bookmark(RefName::new(name))
-                .added_ids()
+                .present_adds()
             {
                 candidates
                     .entry(id.clone())
