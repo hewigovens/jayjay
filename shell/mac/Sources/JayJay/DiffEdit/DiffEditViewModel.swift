@@ -149,7 +149,7 @@ final class DiffEditViewModel {
         // Keypad Enter and arrows always carry numericPad/function flags, so only reject real modifiers.
         let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
         guard modifiers.subtracting([.numericPad, .function]).isEmpty else { return false }
-        switch event.keyCode {
+        switch event.horizontalNavigationKeyCode {
             case KeyCode.returnKey, KeyCode.keypadEnter:
                 return withFocusedCard { toggleCollapse(path: $0) }
             case KeyCode.space:

@@ -261,7 +261,7 @@ struct DAGView: View {
             actions?.select(changeId: selectedId)
             return true
         }
-        switch event.keyCode {
+        switch event.horizontalNavigationKeyCode {
             case KeyCode.rightArrow:
                 keyboardFocus?.focusPane(.fileColumn)
                 return true

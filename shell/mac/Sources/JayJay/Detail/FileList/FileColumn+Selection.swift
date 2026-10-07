@@ -4,7 +4,7 @@ import SwiftUI
 
 extension ChangeDetailView {
     func handleFileColumnKey(_ event: NSEvent) -> Bool {
-        switch event.keyCode {
+        switch event.horizontalNavigationKeyCode {
             case KeyCode.space: return toggleReviewOnSelection()
             case KeyCode.leftArrow:
                 keyboardFocus?.focusPane(.dag)

@@ -10,6 +10,18 @@ final class KeyboardPaneFocusScene: SceneBase {
         let secondFile = app.descendants(matching: .any)[AID.FileList.row("wip2.txt")]
         XCTAssertTrue(firstFile.waitForExistence(timeout: 10), "Detail never loaded the working copy")
 
+        keyStroke("l")
+        keyStroke("j")
+        XCTAssertTrue(secondFile.wait(for: \.isSelected, toEqual: true, timeout: 5), "l did not hand navigation to the file list")
+        keyStroke("k")
+        XCTAssertTrue(firstFile.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        keyStroke("h")
+        keyStroke("j")
+        let navigatedFile = app.descendants(matching: .any)[AID.FileList.row("feature.txt")]
+        XCTAssertTrue(navigatedFile.waitForExistence(timeout: 10), "h did not hand navigation back to the DAG")
+        keyStroke("k")
+        XCTAssertTrue(firstFile.waitForExistence(timeout: 10))
+
         keyStroke(.tab)
         keyStroke(.downArrow)
         XCTAssertTrue(secondFile.wait(for: \.isSelected, toEqual: true, timeout: 5), "Tab did not hand navigation to the file list")
@@ -76,6 +88,10 @@ final class KeyboardPaneFocusScene: SceneBase {
         keyStroke(.tab)
         keyStroke(.downArrow)
         keyStroke(.return)
+        XCTAssertEqual(first.value as? String, "collapsed")
+        keyStroke("l")
+        XCTAssertEqual(first.value as? String, "expanded")
+        keyStroke("h")
         XCTAssertEqual(first.value as? String, "collapsed")
         XCTAssertFalse(app.textFields[AID.Toolbar.revsetField].exists)
         app.buttons[AID.DiffEdit.cancel].click()
