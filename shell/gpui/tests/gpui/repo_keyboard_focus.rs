@@ -21,6 +21,45 @@ fn open_focused<'a>(
 }
 
 #[gpui::test]
+fn horizontal_keys_switch_panes_without_changing_selection(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_focused(&fixture, cx);
+    let selected = view.read_with(cx, |view, cx| view.view_model().read(cx).selected);
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, _| vm.selected_file_ix = None);
+    });
+
+    for (left, right) in [("h", "l"), ("left", "right")] {
+        cx.simulate_keystrokes(right);
+        settle_visual(cx);
+        view.read_with(cx, |view, cx| {
+            assert_eq!(view.active_pane(), ActivePane::FileColumn);
+            assert_eq!(view.view_model().read(cx).selected_file_ix, Some(0));
+            assert_eq!(view.view_model().read(cx).selected, selected);
+        });
+        cx.simulate_keystrokes(left);
+        settle_visual(cx);
+        view.read_with(cx, |view, _| {
+            assert_eq!(view.active_pane(), ActivePane::Sidebar)
+        });
+    }
+
+    cx.simulate_keystrokes("shift-l alt-l ctrl-l");
+    assert_eq!(
+        view.read_with(cx, |view, _| view.active_pane()),
+        ActivePane::Sidebar
+    );
+    view.update(cx, |view, cx| view.toggle_sidebar(cx));
+    settle_slide(cx);
+    cx.simulate_keystrokes("h left");
+    assert_eq!(
+        view.read_with(cx, |view, _| view.active_pane()),
+        ActivePane::FileColumn
+    );
+}
+
+#[gpui::test]
 fn tab_enters_the_file_list_then_lands_on_its_toggles(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
@@ -75,6 +114,7 @@ fn commit_box_stops_take_text_focus_and_tab_still_leaves_them(cx: &mut TestAppCo
         assert_eq!(view.focused_control(), Some(FocusStop::CommitDescription));
     });
     cx.simulate_input("body");
+    cx.simulate_keystrokes("h l");
     cx.simulate_keystrokes("shift-tab");
     settle_visual(cx);
     view.read_with(cx, |view, _| {
@@ -84,7 +124,7 @@ fn commit_box_stops_take_text_focus_and_tab_still_leaves_them(cx: &mut TestAppCo
     settle_visual(cx);
     view.read_with(cx, |view, cx| {
         assert_eq!(view.summary_input().read(cx).text(), "summary");
-        assert_eq!(view.description_input().read(cx).text(), "body");
+        assert_eq!(view.description_input().read(cx).text(), "bodyhl");
     });
 
     cx.simulate_keystrokes("tab tab");

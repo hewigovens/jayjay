@@ -108,17 +108,19 @@ fn arrows_move_focus_and_left_right_collapse_and_expand(cx: &mut TestAppContext)
     cx.simulate_keystrokes("down");
     assert_eq!(focused(&view, cx), Some(first.clone()));
 
-    cx.simulate_keystrokes("left");
-    assert!(view.read_with(cx, |view, _| view.diff_edit_collapsed(&first)));
-
-    cx.simulate_keystrokes("left");
-    assert!(
-        view.read_with(cx, |view, _| view.diff_edit_collapsed(&first)),
-        "left on an already-collapsed card stays collapsed"
-    );
-
-    cx.simulate_keystrokes("right");
-    assert!(!view.read_with(cx, |view, _| view.diff_edit_collapsed(&first)));
+    for (left, right) in [("left", "right"), ("h", "l")] {
+        let pane = view.read_with(cx, |view, _| view.active_pane());
+        for _ in 0..2 {
+            cx.simulate_keystrokes(left);
+            assert!(view.read_with(cx, |view, _| view.diff_edit_collapsed(&first)));
+            assert_eq!(view.read_with(cx, |view, _| view.active_pane()), pane);
+        }
+        for _ in 0..2 {
+            cx.simulate_keystrokes(right);
+            assert!(!view.read_with(cx, |view, _| view.diff_edit_collapsed(&first)));
+            assert_eq!(view.read_with(cx, |view, _| view.active_pane()), pane);
+        }
+    }
 
     cx.simulate_keystrokes("up");
     assert_eq!(

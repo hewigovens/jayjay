@@ -36,8 +36,8 @@ impl RepoWindow {
         }
         if !ev.keystroke.modifiers.modified() {
             match ev.keystroke.key.as_str() {
-                "left" => return self.set_focused_diff_edit_collapsed(true, cx),
-                "right" => return self.set_focused_diff_edit_collapsed(false, cx),
+                "left" | "h" => return self.set_focused_diff_edit_collapsed(true, cx),
+                "right" | "l" => return self.set_focused_diff_edit_collapsed(false, cx),
                 "space" => {
                     // Consumed even unfocused; falling through would toggle the hidden file column's review mark.
                     if let Some(path) = self.diff_edit_focused() {

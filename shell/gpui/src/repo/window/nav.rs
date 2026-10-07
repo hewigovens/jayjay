@@ -12,8 +12,8 @@ impl RepoWindow {
         if self.find.query.is_some() || self.focused_control.is_some() {
             return false;
         }
-        if self.diff_edit_active() && self.handle_diff_edit_nav_key(ev, cx) {
-            return true;
+        if self.diff_edit_active() {
+            return self.handle_diff_edit_nav_key(ev, cx);
         }
         if let Some(direction) = navigation::list_nav_from_key(ev, ListNavKeys::CONTENT_LIST) {
             self.move_selection(direction, cx);
@@ -23,6 +23,22 @@ impl RepoWindow {
         let m = &ev.keystroke.modifiers;
         if m.platform || m.alt || m.control {
             return false;
+        }
+        if !m.modified() {
+            match ev.keystroke.key.as_str() {
+                "h" | "left" => {
+                    if !self.layout.sidebar_hidden {
+                        self.active_pane = ActivePane::Sidebar;
+                        cx.notify();
+                    }
+                    return true;
+                }
+                "l" | "right" => {
+                    self.focus_file_list(cx);
+                    return true;
+                }
+                _ => {}
+            }
         }
         if ev.keystroke.key == "space" && matches!(self.active_pane, ActivePane::FileColumn) {
             self.toggle_reviewed_for_selected_files(cx);
