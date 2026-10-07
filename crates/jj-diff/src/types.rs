@@ -95,7 +95,41 @@ pub struct ContextExpansionResult {
     pub inserted: LineSpan,
 }
 
-pub use jayjay_primitives::{ContextExpansionError, LineSpan};
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub enum ContextExpansionError {
+    UnknownRegion { region_id: u32 },
+    InvalidLineCount,
+    InvalidRegion { region_id: u32 },
+    MissingSourceLine { line_no: u32 },
+    // Constructed only by the FFI bridge when the expansion session lock is unusable.
+    SessionUnavailable,
+}
+
+impl std::fmt::Display for ContextExpansionError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Self::UnknownRegion { region_id } => {
+                write!(f, "context region {region_id} is no longer available")
+            }
+            Self::InvalidLineCount => f.write_str("context expansion line count must be positive"),
+            Self::InvalidRegion { region_id } => {
+                write!(f, "context region {region_id} has invalid source bounds")
+            }
+            Self::MissingSourceLine { line_no } => {
+                write!(f, "context source line {line_no} is unavailable")
+            }
+            Self::SessionUnavailable => f.write_str("context expansion session is unavailable"),
+        }
+    }
+}
+
+impl std::error::Error for ContextExpansionError {}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LineSpan {
+    pub start: u32,
+    pub count: u32,
+}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct ConflictBlockSection {

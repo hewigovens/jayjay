@@ -148,27 +148,6 @@ pub fn diff_edit_auto_collapsed_paths(stats: &[FileDiffStats]) -> Vec<String> {
         .collect()
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, thiserror::Error)]
-pub enum ContextExpansionError {
-    #[error("context region {region_id} is no longer available")]
-    UnknownRegion { region_id: u32 },
-    #[error("context expansion line count must be positive")]
-    InvalidLineCount,
-    #[error("context region {region_id} has invalid source bounds")]
-    InvalidRegion { region_id: u32 },
-    #[error("context source line {line_no} is unavailable")]
-    MissingSourceLine { line_no: u32 },
-    // Constructed only by the FFI bridge when the expansion session lock is unusable.
-    #[error("context expansion session is unavailable")]
-    SessionUnavailable,
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct LineSpan {
-    pub start: u32,
-    pub count: u32,
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;

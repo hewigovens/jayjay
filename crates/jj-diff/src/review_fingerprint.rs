@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use jayjay_primitives::hex_sha256;
+use crate::hex_sha256;
 
 use super::change_groups::change_group_ranges;
 use super::compute::{compute_file_diff, compute_file_diff_full_plain};

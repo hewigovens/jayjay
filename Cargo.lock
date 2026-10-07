@@ -4412,8 +4412,9 @@ dependencies = [
 name = "jj-diff"
 version = "0.1.0"
 dependencies = [
+ "hex",
  "hotpath",
- "jayjay-primitives",
+ "sha2 0.11.0",
  "similar",
  "tree-sitter",
  "tree-sitter-bash",

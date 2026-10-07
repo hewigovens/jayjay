@@ -1,7 +1,7 @@
 use std::collections::VecDeque;
 use std::sync::{Arc, Mutex};
 
-use jayjay_primitives::hex_sha256;
+use crate::hex_sha256;
 
 use super::SideHighlights;
 

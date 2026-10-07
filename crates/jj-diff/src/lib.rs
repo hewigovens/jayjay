@@ -1,3 +1,6 @@
+#![doc = include_str!("../README.md")]
+
+use sha2::{Digest, Sha256};
 use similar::{Algorithm, TextDiff, TextDiffConfig};
 
 mod change_groups;
@@ -26,6 +29,10 @@ pub(crate) fn text_diff_config() -> TextDiffConfig {
     let mut config = TextDiff::configure();
     config.algorithm(DIFF_ALGORITHM);
     config
+}
+
+pub(crate) fn hex_sha256(bytes: &[u8]) -> String {
+    hex::encode(Sha256::digest(bytes))
 }
 
 pub use change_groups::{anchor_side_and_number, change_group_for_anchor, change_groups};

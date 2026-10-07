@@ -14,44 +14,102 @@ name = "profile_diff"
 harness = false
 
 [features]
+default = ["all-languages"]
+all-languages = [
+    "lang-bash",
+    "lang-c",
+    "lang-cpp",
+    "lang-csharp",
+    "lang-css",
+    "lang-fish",
+    "lang-go",
+    "lang-html",
+    "lang-java",
+    "lang-javascript",
+    "lang-json",
+    "lang-kotlin",
+    "lang-make",
+    "lang-markdown",
+    "lang-nix",
+    "lang-php",
+    "lang-python",
+    "lang-ruby",
+    "lang-rust",
+    "lang-solidity",
+    "lang-sql",
+    "lang-swift",
+    "lang-toml",
+    "lang-typescript",
+    "lang-xml",
+    "lang-yaml",
+    "lang-zig",
+]
+lang-bash = ["dep:tree-sitter-bash"]
+lang-c = ["dep:tree-sitter-c"]
+lang-cpp = ["dep:tree-sitter-cpp"]
+lang-csharp = ["dep:tree-sitter-c-sharp"]
+lang-css = ["dep:tree-sitter-css"]
+lang-fish = ["dep:tree-sitter-fish"]
+lang-go = ["dep:tree-sitter-go"]
+lang-html = ["dep:tree-sitter-html"]
+lang-java = ["dep:tree-sitter-java"]
+lang-javascript = ["dep:tree-sitter-javascript"]
+lang-json = ["dep:tree-sitter-json"]
+lang-kotlin = ["dep:tree-sitter-kotlin-sg"]
+lang-make = ["dep:tree-sitter-make"]
+lang-markdown = ["dep:tree-sitter", "dep:tree-sitter-md"]
+lang-nix = ["dep:tree-sitter-nix"]
+lang-php = ["dep:tree-sitter-php"]
+lang-python = ["dep:tree-sitter-python"]
+lang-ruby = ["dep:tree-sitter-ruby"]
+lang-rust = ["dep:tree-sitter-rust"]
+lang-solidity = ["dep:tree-sitter-solidity"]
+lang-sql = ["dep:tree-sitter-sequel"]
+lang-swift = ["dep:tree-sitter-swift"]
+lang-toml = ["dep:tree-sitter-toml-ng"]
+lang-typescript = ["dep:tree-sitter-typescript"]
+lang-xml = ["dep:tree-sitter-xml"]
+lang-yaml = ["dep:tree-sitter-yaml"]
+lang-zig = ["dep:tree-sitter-zig"]
 hotpath = ["dep:hotpath", "hotpath/hotpath"]
 hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
 
 [dependencies]
 hotpath = { workspace = true, optional = true }
-jayjay-primitives = { path = "../jayjay-primitives" }
+hex = { workspace = true }
+sha2 = { workspace = true }
 similar = { workspace = true }
 unicode-width = { workspace = true }
 unicode-segmentation = { workspace = true }
 tree-sitter-highlight = { workspace = true }
-tree-sitter = { workspace = true }
-tree-sitter-rust = { workspace = true }
-tree-sitter-javascript = { workspace = true }
-tree-sitter-typescript = { workspace = true }
-tree-sitter-python = { workspace = true }
-tree-sitter-json = { workspace = true }
-tree-sitter-css = { workspace = true }
-tree-sitter-html = { workspace = true }
-tree-sitter-go = { workspace = true }
-tree-sitter-c = { workspace = true }
-tree-sitter-c-sharp = { workspace = true }
-tree-sitter-cpp = { workspace = true }
-tree-sitter-bash = { workspace = true }
-tree-sitter-fish = { workspace = true }
-tree-sitter-ruby = { workspace = true }
-tree-sitter-java = { workspace = true }
-tree-sitter-kotlin-sg = { workspace = true }
-tree-sitter-php = { workspace = true }
-tree-sitter-toml-ng = { workspace = true }
-tree-sitter-md = { workspace = true }
-tree-sitter-yaml = { workspace = true }
-tree-sitter-swift = { workspace = true }
-tree-sitter-solidity = { workspace = true }
-tree-sitter-sequel = { workspace = true }
-tree-sitter-xml = { workspace = true }
-tree-sitter-zig = { workspace = true }
-tree-sitter-nix = { workspace = true }
-tree-sitter-make = { workspace = true }
+tree-sitter = { workspace = true, optional = true }
+tree-sitter-rust = { workspace = true, optional = true }
+tree-sitter-javascript = { workspace = true, optional = true }
+tree-sitter-typescript = { workspace = true, optional = true }
+tree-sitter-python = { workspace = true, optional = true }
+tree-sitter-json = { workspace = true, optional = true }
+tree-sitter-css = { workspace = true, optional = true }
+tree-sitter-html = { workspace = true, optional = true }
+tree-sitter-go = { workspace = true, optional = true }
+tree-sitter-c = { workspace = true, optional = true }
+tree-sitter-c-sharp = { workspace = true, optional = true }
+tree-sitter-cpp = { workspace = true, optional = true }
+tree-sitter-bash = { workspace = true, optional = true }
+tree-sitter-fish = { workspace = true, optional = true }
+tree-sitter-ruby = { workspace = true, optional = true }
+tree-sitter-java = { workspace = true, optional = true }
+tree-sitter-kotlin-sg = { workspace = true, optional = true }
+tree-sitter-php = { workspace = true, optional = true }
+tree-sitter-toml-ng = { workspace = true, optional = true }
+tree-sitter-md = { workspace = true, optional = true }
+tree-sitter-yaml = { workspace = true, optional = true }
+tree-sitter-swift = { workspace = true, optional = true }
+tree-sitter-solidity = { workspace = true, optional = true }
+tree-sitter-sequel = { workspace = true, optional = true }
+tree-sitter-xml = { workspace = true, optional = true }
+tree-sitter-zig = { workspace = true, optional = true }
+tree-sitter-nix = { workspace = true, optional = true }
+tree-sitter-make = { workspace = true, optional = true }
 
 [lints]
 workspace = true
