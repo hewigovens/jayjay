@@ -16,7 +16,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
         context: &str,
-    ) -> CoreResult<MergedTree> {
+    ) -> JayResult<MergedTree> {
         block_on_result(context, commit.parent_tree(repo.as_ref()))
     }
 
@@ -25,9 +25,9 @@ impl Repo {
         description: &str,
         rebase_descendants: bool,
         update: F,
-    ) -> CoreResult<()>
+    ) -> JayResult<()>
     where
-        F: FnOnce(&Arc<ReadonlyRepo>, &mut MutableRepo) -> CoreResult<()>,
+        F: FnOnce(&Arc<ReadonlyRepo>, &mut MutableRepo) -> JayResult<()>,
     {
         let repo = self.get_repo();
         let mut tx = repo.start_transaction();
@@ -46,9 +46,9 @@ impl Repo {
         description: &str,
         rebase_descendants: bool,
         update: F,
-    ) -> CoreResult<()>
+    ) -> JayResult<()>
     where
-        F: FnOnce(&Arc<ReadonlyRepo>, &Commit, &mut MutableRepo) -> CoreResult<()>,
+        F: FnOnce(&Arc<ReadonlyRepo>, &Commit, &mut MutableRepo) -> JayResult<()>,
     {
         let mut tx = repo.start_transaction();
         update(&repo, &commit, tx.repo_mut())?;
@@ -65,9 +65,9 @@ impl Repo {
         description: &str,
         rebase_descendants: bool,
         update: F,
-    ) -> CoreResult<()>
+    ) -> JayResult<()>
     where
-        F: FnOnce(&Arc<ReadonlyRepo>, &Commit, &mut MutableRepo) -> CoreResult<()>,
+        F: FnOnce(&Arc<ReadonlyRepo>, &Commit, &mut MutableRepo) -> JayResult<()>,
     {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
@@ -81,7 +81,7 @@ impl Repo {
         commit: &Commit,
         message: &str,
         context: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let write = repo_mut
             .rewrite_commit(commit)
             .set_description(message)
@@ -96,7 +96,7 @@ impl Repo {
         commit: &Commit,
         tree: MergedTree,
         context: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let write = repo_mut.rewrite_commit(commit).set_tree(tree).write();
         block_on_result(context, write)?;
         Ok(())
@@ -110,9 +110,9 @@ impl Repo {
         rebase_descendants: bool,
         rewrite_context: &str,
         build_tree: F,
-    ) -> CoreResult<()>
+    ) -> JayResult<()>
     where
-        F: FnOnce(&Arc<ReadonlyRepo>, &Commit) -> CoreResult<MergedTree>,
+        F: FnOnce(&Arc<ReadonlyRepo>, &Commit) -> JayResult<MergedTree>,
     {
         let tree = build_tree(&repo, &commit)?;
         self.with_existing_commit_transaction(
@@ -131,7 +131,7 @@ impl Repo {
         repo_mut: &mut MutableRepo,
         commit: &Commit,
         context: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let edit = repo_mut.edit(self.workspace_name.clone(), commit);
         block_on_result(context, edit)?;
         Ok(())
@@ -151,7 +151,7 @@ impl Repo {
         name: &str,
         target: RefTarget,
         description: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         self.with_repo_transaction(description, false, move |_, repo_mut| {
             self.set_bookmark_target(repo_mut, name, target);
             Ok(())

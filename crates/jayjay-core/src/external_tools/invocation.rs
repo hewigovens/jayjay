@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::filesystem::normalized_absolute_path;
-use crate::{CoreError, CoreResult};
+use crate::{JayError, JayResult};
 
 use super::JJ_INSTRUCTIONS;
 
@@ -41,7 +41,7 @@ impl ExternalToolInvocation {
 
 pub fn parse_external_tool_invocation(
     arguments: &[String],
-) -> CoreResult<Option<ExternalToolInvocation>> {
+) -> JayResult<Option<ExternalToolInvocation>> {
     if arguments.len() == 2 {
         let left = normalized_absolute_path(&arguments[0]);
         let right = normalized_absolute_path(&arguments[1]);
@@ -88,16 +88,16 @@ pub fn parse_external_tool_invocation(
                     .unwrap_or(7),
             }))
         }
-        Some("diff" | "edit") => Err(CoreError::internal(
+        Some("diff" | "edit") => Err(JayError::internal(
             "usage: jayjay tool diff|edit <left> <right>",
         )),
-        Some("merge") => Err(CoreError::internal(
+        Some("merge") => Err(JayError::internal(
             "usage: jayjay tool merge <left> <base> <right> <output> [<path> <marker-length>]",
         )),
-        Some(mode) => Err(CoreError::Internal {
+        Some(mode) => Err(JayError::Internal {
             message: format!("unknown tool mode: {mode}"),
         }),
-        None => Err(CoreError::Internal {
+        None => Err(JayError::Internal {
             message: "missing tool mode".to_owned(),
         }),
     }

@@ -3,7 +3,7 @@ use super::super::gitlab::{self, GitLabMrResponse, GitLabProjectResponse, MrHead
 use super::plan::{ForkRepo, PrHeadRepo, ResolvedPullRequest};
 use super::url::ParsedPullRequestUrl;
 use crate::repo::Repo;
-use crate::types::{ChecksStatus, CoreError, CoreResult};
+use crate::types::{ChecksStatus, JayError, JayResult};
 
 const NOT_FOUND: &str = "GitLab returned not found for this merge request. A private merge request needs a login: run `glab auth login`, or set GITLAB_TOKEN when glab is not installed.";
 const UNUSABLE_HEAD: &str =
@@ -13,7 +13,7 @@ pub(super) fn resolve(
     repo: &Repo,
     parsed: &ParsedPullRequestUrl,
     ssh: bool,
-) -> CoreResult<ResolvedPullRequest> {
+) -> JayResult<ResolvedPullRequest> {
     resolve_with(parsed, ssh, Transport::for_repo(repo))
 }
 
@@ -21,7 +21,7 @@ fn resolve_with(
     parsed: &ParsedPullRequestUrl,
     ssh: bool,
     mut api: impl GitLabApi,
-) -> CoreResult<ResolvedPullRequest> {
+) -> JayResult<ResolvedPullRequest> {
     let mr: GitLabMrResponse = api
         .get_json(&gitlab::merge_request_path(&parsed.base, parsed.number))
         .map_err(|error| error.into_core_error("the merge request", NOT_FOUND))?;
@@ -36,7 +36,7 @@ fn resolve_with(
                 })?;
             PrHeadRepo::Fork(ForkRepo::from_gitlab(&project, ssh)?)
         }
-        None => return Err(CoreError::internal(UNUSABLE_HEAD)),
+        None => return Err(JayError::internal(UNUSABLE_HEAD)),
     };
     Ok(ResolvedPullRequest::from_gitlab(mr, head))
 }
@@ -59,14 +59,14 @@ impl ResolvedPullRequest {
 }
 
 impl ForkRepo {
-    fn from_gitlab(project: &GitLabProjectResponse, ssh: bool) -> CoreResult<Self> {
+    fn from_gitlab(project: &GitLabProjectResponse, ssh: bool) -> JayResult<Self> {
         let Some(clone_url) = project.pinned_clone_url(ssh) else {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "The merge request's fork did not answer with a clone URL on gitlab.com, so it was not added as a remote.",
             ));
         };
         let Some(name_hint) = project.namespace() else {
-            return Err(CoreError::internal(UNUSABLE_HEAD));
+            return Err(JayError::internal(UNUSABLE_HEAD));
         };
         Ok(Self {
             name_hint: name_hint.to_owned(),
@@ -116,7 +116,7 @@ mod tests {
         mr: &str,
         project: Option<&str>,
         ssh: bool,
-    ) -> (CoreResult<ResolvedPullRequest>, Vec<String>) {
+    ) -> (JayResult<ResolvedPullRequest>, Vec<String>) {
         let project = project.map(str::to_owned);
         let mut paths = Vec::new();
         let result = resolve_with(&parsed(), ssh, |path: &str| {
@@ -126,7 +126,7 @@ mod tests {
             } else if path == "projects/7765" {
                 project.clone().ok_or(ApiError::NotFound)
             } else {
-                Err(ApiError::Propagate(CoreError::internal("unexpected path")))
+                Err(ApiError::Propagate(JayError::internal("unexpected path")))
             }
         });
         (result, paths)
@@ -207,9 +207,9 @@ mod tests {
     #[test]
     fn a_canceled_api_request_surfaces_as_canceled() {
         let error = resolve_with(&parsed(), false, |_: &str| {
-            Err(ApiError::Propagate(CoreError::Canceled))
+            Err(ApiError::Propagate(JayError::Canceled))
         })
         .expect_err("canceled must propagate");
-        assert!(matches!(error, CoreError::Canceled), "{error}");
+        assert!(matches!(error, JayError::Canceled), "{error}");
     }
 }

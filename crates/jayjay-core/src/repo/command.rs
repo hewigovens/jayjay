@@ -7,13 +7,13 @@ use super::environment;
 use crate::types::*;
 
 impl Repo {
-    pub(crate) fn run_jj(&self, args: &[&str]) -> CoreResult<String> {
+    pub(crate) fn run_jj(&self, args: &[&str]) -> JayResult<String> {
         let output = self.run_jj_output(args)?;
         self.checked_stdout(output)
     }
 
     /// Every jj subprocess except fetch and push runs under the write lock: even a read like `jj diff` snapshots the working copy and publishes an operation.
-    pub(crate) fn run_jj_output(&self, args: &[&str]) -> CoreResult<Output> {
+    pub(crate) fn run_jj_output(&self, args: &[&str]) -> JayResult<Output> {
         let _write = if is_git_fetch_or_push(args) {
             None
         } else {
@@ -23,13 +23,13 @@ impl Repo {
     }
 
     /// A read that cannot snapshot, run outside the write lock. The snapshot worker thread evaluates revsets while the calling thread holds the lock, and the lock is not reentrant across threads, so a read it needs must not take it.
-    pub(crate) fn run_jj_unlocked_read(&self, args: &[&str]) -> CoreResult<String> {
+    pub(crate) fn run_jj_unlocked_read(&self, args: &[&str]) -> JayResult<String> {
         debug_assert!(args.contains(&"--ignore-working-copy"));
         let output = self.spawn_jj(args)?;
         self.checked_stdout(output)
     }
 
-    fn spawn_jj(&self, args: &[&str]) -> CoreResult<Output> {
+    fn spawn_jj(&self, args: &[&str]) -> JayResult<Output> {
         let binary = environment::jj_binary();
         let context = format!("run jj {}", args.first().unwrap_or(&""));
         let mut command = environment::command(&binary);
@@ -43,7 +43,7 @@ impl Repo {
         binary: &str,
         args: &[&str],
         context: &str,
-    ) -> CoreResult<Output> {
+    ) -> JayResult<Output> {
         let mut command = environment::command(binary);
         command.current_dir(&self.path).args(args);
         self.running_jj_processes.output(&mut command, context)
@@ -58,7 +58,7 @@ impl Repo {
         self.running_jj_processes.close();
     }
 
-    pub(crate) fn run_jj_reload(&self, args: &[&str]) -> CoreResult<()> {
+    pub(crate) fn run_jj_reload(&self, args: &[&str]) -> JayResult<()> {
         self.debug_assert_write_guarded();
         self.run_jj(args)?;
         self.reload()
@@ -69,7 +69,7 @@ impl Repo {
         binary: &str,
         args: &[&str],
         context: &str,
-    ) -> CoreResult<Output> {
+    ) -> JayResult<Output> {
         self.command_output_in(&self.path, binary, args, context)
     }
 
@@ -79,17 +79,17 @@ impl Repo {
         binary: &str,
         args: &[&str],
         context: &str,
-    ) -> CoreResult<Output> {
+    ) -> JayResult<Output> {
         environment::command(binary)
             .current_dir(cwd)
             .args(args)
             .output()
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("{context}: {e}"),
             })
     }
 
-    pub(crate) fn ensure_success(&self, output: &Output, context: &str) -> CoreResult<()> {
+    pub(crate) fn ensure_success(&self, output: &Output, context: &str) -> JayResult<()> {
         if output.status.success() {
             return Ok(());
         }
@@ -99,10 +99,10 @@ impl Repo {
         } else {
             format!("{context}: {output_text}")
         };
-        Err(CoreError::Internal { message })
+        Err(JayError::Internal { message })
     }
 
-    fn checked_stdout(&self, output: Output) -> CoreResult<String> {
+    fn checked_stdout(&self, output: Output) -> JayResult<String> {
         self.ensure_success(&output, "command failed")?;
         Ok(Self::stdout_text(&output))
     }

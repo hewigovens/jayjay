@@ -334,7 +334,7 @@ extension RepoViewModel {
         do {
             try repo.refreshWorkingCopy()
             return false
-        } catch JayJayError.WorkingCopyStale {
+        } catch JayError.WorkingCopyStale {
             return true
         }
     }

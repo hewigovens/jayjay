@@ -7,13 +7,13 @@ use jj_lib::tree_merge::MergeOptions;
 
 use crate::file_display::{MAX_DIFF_BYTES, optional_bytes_to_display, text_content};
 use crate::repo::support::block_on_result;
-use crate::{CoreResult, filesystem};
+use crate::{JayResult, filesystem};
 
 pub(super) fn conflict_supports_editor(
     store: &jj_lib::store::Store,
     path: &jj_lib::repo_path::RepoPath,
     value: &MergedTreeValue,
-) -> CoreResult<bool> {
+) -> JayResult<bool> {
     if value.is_resolved() {
         return Ok(false);
     }

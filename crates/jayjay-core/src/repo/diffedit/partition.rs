@@ -22,14 +22,14 @@ pub(crate) struct PartitionedSelection {
 pub(crate) fn partition_file_selection(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
-) -> CoreResult<PartitionedSelection> {
+) -> JayResult<PartitionedSelection> {
     partition_file_selection_impl(selection, ignore_whitespace, false)
 }
 
 pub(crate) fn partition_validated_text_selection(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
-) -> CoreResult<PartitionedSelection> {
+) -> JayResult<PartitionedSelection> {
     partition_file_selection_impl(selection, ignore_whitespace, true)
 }
 
@@ -37,9 +37,9 @@ fn partition_file_selection_impl(
     selection: &DiffEditFileSelection,
     ignore_whitespace: bool,
     text_validated: bool,
-) -> CoreResult<PartitionedSelection> {
+) -> JayResult<PartitionedSelection> {
     if selection.hunk_type == HunkType::Renamed || selection.old_path.is_some() {
-        return Err(CoreError::Internal {
+        return Err(JayError::Internal {
             message: format!("diff edit does not support renamed path {}", selection.path),
         });
     }
@@ -50,7 +50,7 @@ fn partition_file_selection_impl(
         && (!crate::placeholder::is_editable_text(old_text)
             || !crate::placeholder::is_editable_text(new_text))
     {
-        return Err(CoreError::Internal {
+        return Err(JayError::Internal {
             message: format!("diff edit only supports textual files: {}", selection.path),
         });
     }
@@ -152,11 +152,11 @@ fn join_raw_lines(lines: &[RawLine]) -> String {
     result
 }
 
-fn clone_line(lines: &[RawLine], line_no: u32) -> CoreResult<RawLine> {
+fn clone_line(lines: &[RawLine], line_no: u32) -> JayResult<RawLine> {
     lines
         .get((line_no.saturating_sub(1)) as usize)
         .cloned()
-        .ok_or_else(|| CoreError::Internal {
+        .ok_or_else(|| JayError::Internal {
             message: format!("missing line {line_no} in diff selection"),
         })
 }

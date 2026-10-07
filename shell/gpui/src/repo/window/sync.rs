@@ -2,7 +2,7 @@ use std::future::Future;
 
 use gpui::{AppContext, AsyncApp, Context, Task};
 use jayjay_core::repositories::normalize_repository_path;
-use jayjay_core::{CoreResult, FetchResult};
+use jayjay_core::{FetchResult, JayResult};
 
 use std::path::Path;
 
@@ -195,7 +195,7 @@ impl RepoWindow {
             &mut RepoViewModel,
             String,
             &mut Context<RepoViewModel>,
-        ) -> Task<CoreResult<String>>,
+        ) -> Task<JayResult<String>>,
         cx: &mut Context<Self>,
     ) -> bool {
         if self.sync_activity.pushing {

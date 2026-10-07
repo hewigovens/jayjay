@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::filesystem::safe_relative_path;
 use crate::repo::partition_validated_text_selection;
-use crate::{CoreError, CoreResult};
+use crate::{JayError, JayResult};
 
 use super::output::{copy_entry, output_matches_selection, remove_output_path, write_text};
 use super::{ExternalDiffSelection, ExternalDiffSide};
@@ -12,10 +12,10 @@ pub fn apply_external_diff_selections(
     right_root: &Path,
     selections: &[ExternalDiffSelection],
     ignore_whitespace: bool,
-) -> CoreResult<()> {
+) -> JayResult<()> {
     let directory_output = right_root.is_dir();
     if !directory_output && selections.len() > 1 {
-        return Err(CoreError::Internal {
+        return Err(JayError::Internal {
             message: format!(
                 "cannot apply multiple external diff files to {}",
                 right_root.display()
@@ -111,7 +111,7 @@ pub fn apply_external_diff_selections(
     Ok(())
 }
 
-fn validate_selected_topology(selections: &[PreparedSelection]) -> CoreResult<()> {
+fn validate_selected_topology(selections: &[PreparedSelection]) -> JayResult<()> {
     for (index, left) in selections.iter().enumerate() {
         if !left.selected_exists {
             continue;
@@ -121,7 +121,7 @@ fn validate_selected_topology(selections: &[PreparedSelection]) -> CoreResult<()
                 && (left.relative.starts_with(&right.relative)
                     || right.relative.starts_with(&left.relative))
             {
-                return Err(CoreError::internal(format!(
+                return Err(JayError::internal(format!(
                     "external diff selection cannot keep both {} and {}",
                     left.relative.display(),
                     right.relative.display()

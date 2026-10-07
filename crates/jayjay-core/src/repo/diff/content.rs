@@ -12,9 +12,9 @@ use crate::types::*;
 
 impl Repo {
     /// Walk tree diff and return file list WITHOUT content (fast).
-    pub(super) fn diff_file_list(&self, trees: &TreePair) -> CoreResult<Vec<DiffHunk>> {
+    pub(super) fn diff_file_list(&self, trees: &TreePair) -> JayResult<Vec<DiffHunk>> {
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
-        let mut files = on_worker_stack(|| -> CoreResult<Vec<DiffHunk>> {
+        let mut files = on_worker_stack(|| -> JayResult<Vec<DiffHunk>> {
             let mut files = Vec::new();
             while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
                 let values = resolve_diff_values(&path, values)?;
@@ -54,9 +54,9 @@ impl Repo {
     }
 
     /// Walk tree diff and return all hunks WITH content.
-    pub(super) fn diff_all_files(&self, trees: &TreePair) -> CoreResult<Vec<DiffHunk>> {
+    pub(super) fn diff_all_files(&self, trees: &TreePair) -> JayResult<Vec<DiffHunk>> {
         let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
-        let mut diff = on_worker_stack(|| -> CoreResult<Vec<DiffHunk>> {
+        let mut diff = on_worker_stack(|| -> JayResult<Vec<DiffHunk>> {
             let mut diff = Vec::new();
             while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
                 let values = resolve_diff_values(&path, values)?;
@@ -90,7 +90,7 @@ impl Repo {
         &self,
         trees: &TreePair,
         ignore_whitespace: bool,
-    ) -> CoreResult<Vec<FileDiffStats>> {
+    ) -> JayResult<Vec<FileDiffStats>> {
         let files = self.diff_file_list(trees)?;
         let mut stats = Vec::with_capacity(files.len());
         for file in files {
@@ -106,7 +106,7 @@ impl Repo {
     }
 
     /// Materialize a single file between two trees.
-    pub(super) fn diff_single_file(&self, trees: &TreePair, path: &str) -> CoreResult<DiffHunk> {
+    pub(super) fn diff_single_file(&self, trees: &TreePair, path: &str) -> JayResult<DiffHunk> {
         self.diff_single_file_with_mode(trees, path, DiffProjectionMode::Processed)
     }
 
@@ -115,13 +115,13 @@ impl Repo {
         trees: &TreePair,
         path: &str,
         projection_mode: DiffProjectionMode,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         let repo_path = self.parse_repo_path(path)?;
         let matcher = FilesMatcher::new(std::iter::once(repo_path.as_ref()));
         let Some((entry_path, content, review_identity)) =
             first_diff_content(trees, &matcher, projection_mode)?
         else {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("file not found in diff: {path}"),
             });
         };

@@ -2,15 +2,15 @@ use super::super::Repo;
 use super::super::environment::origin_binary;
 use super::forge::{ForgeTarget, auth_preflight, created, edit_pull_request, failed, non_empty_or};
 use crate::repo::pull_requests::cursor;
-use crate::types::{CoreError, CoreResult, SubmittedLayer};
+use crate::types::{JayError, JayResult, SubmittedLayer};
 
-pub(super) fn default_branch(repo: &Repo) -> CoreResult<String> {
+pub(super) fn default_branch(repo: &Repo) -> JayResult<String> {
     cursor::pr_creation_info(repo)
         .and_then(|info| info.default_branch().map(str::to_owned))
-        .map_err(CoreError::internal)
+        .map_err(JayError::internal)
 }
 
-pub(super) fn preflight(repo: &Repo) -> CoreResult<String> {
+pub(super) fn preflight(repo: &Repo) -> JayResult<String> {
     auth_preflight(repo, &origin_binary(), "origin", "Cursor Origin CLI")?;
     default_branch(repo)
 }

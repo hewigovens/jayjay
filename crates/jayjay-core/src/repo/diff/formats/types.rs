@@ -16,7 +16,7 @@ pub(super) trait DiffFormatPlugin: Sync {
         false
     }
     fn virtual_path(&self, path: &str) -> String;
-    fn project(&self, input: FormatInput<'_>) -> CoreResult<ProjectionPair>;
+    fn project(&self, input: FormatInput<'_>) -> JayResult<ProjectionPair>;
 
     fn projection(&self, path: &str, mode: DiffProjectionMode) -> DiffProjection {
         DiffProjection {
@@ -45,8 +45,8 @@ pub(super) fn has_extension(path: &str, extensions: &[&str]) -> bool {
 pub(super) fn project_text_pair(
     input: FormatInput<'_>,
     projection: DiffProjection,
-    mut project: impl FnMut(&[u8]) -> CoreResult<String>,
-) -> CoreResult<ProjectionPair> {
+    mut project: impl FnMut(&[u8]) -> JayResult<String>,
+) -> JayResult<ProjectionPair> {
     Ok(ProjectionPair {
         old_content: input.old.map(&mut project).transpose()?,
         new_content: input.new.map(project).transpose()?,
@@ -54,8 +54,8 @@ pub(super) fn project_text_pair(
     })
 }
 
-pub(super) fn projection_error(message: impl Into<String>) -> CoreError {
-    CoreError::Internal {
+pub(super) fn projection_error(message: impl Into<String>) -> JayError {
+    JayError::Internal {
         message: message.into(),
     }
 }

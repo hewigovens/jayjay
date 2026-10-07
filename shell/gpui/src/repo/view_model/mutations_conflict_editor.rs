@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{ConflictEditorData, CoreResult};
+use jayjay_core::{ConflictEditorData, JayResult};
 
 use super::RepoViewModel;
 
@@ -10,7 +10,7 @@ impl RepoViewModel {
         path: String,
         tool: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.resolve_with_tool(&rev, &path, &tool),
@@ -23,7 +23,7 @@ impl RepoViewModel {
         rev: String,
         path: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<ConflictEditorData>> {
+    ) -> gpui::Task<JayResult<ConflictEditorData>> {
         self.repo_load_task(
             cx,
             move |repo| repo.conflict_editor(&rev, &path),
@@ -37,7 +37,7 @@ impl RepoViewModel {
         data: ConflictEditorData,
         content: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let restore_path = data.path.clone();
         self.repo_write_task(
             cx,

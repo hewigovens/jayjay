@@ -92,19 +92,19 @@ impl ConfigEnv {
     pub(crate) fn settings_for_workspace(
         &self,
         loader: &dyn WorkspaceLoader,
-    ) -> CoreResult<UserSettings> {
+    ) -> JayResult<UserSettings> {
         let repo_path = canonicalize(loader.repo_path());
         let workspace_path = canonicalize(loader.workspace_root());
 
         let mut config = self
             .file_config()
-            .map_err(|failure| Error::internal(failure.message))?;
+            .map_err(|failure| JayError::internal(failure.message))?;
         if let Some(path) =
             self.secure_config_path(SecureConfig::new_repo(repo_path.clone()), "repos")?
         {
             config
                 .load_file(ConfigSource::Repo, path)
-                .map_err(Error::internal)?;
+                .map_err(JayError::internal)?;
         }
         if let Some(path) = self.secure_config_path(
             SecureConfig::new_workspace(workspace_path.join(".jj")),
@@ -112,7 +112,7 @@ impl ConfigEnv {
         )? {
             config
                 .load_file(ConfigSource::Workspace, path)
-                .map_err(Error::internal)?;
+                .map_err(JayError::internal)?;
         }
         config.add_layer(self.env_overrides_layer());
 
@@ -124,9 +124,9 @@ impl ConfigEnv {
             hostname: &self.hostname,
             environment: &self.environment,
         };
-        let config = jj_lib::config::resolve(&config, &context).map_err(Error::internal)?;
+        let config = jj_lib::config::resolve(&config, &context).map_err(JayError::internal)?;
         UserSettings::from_config_and_home_dir(config, self.home_dir.clone())
-            .map_err(Error::internal)
+            .map_err(JayError::internal)
     }
 
     /// The config `jj config list` sees outside any repository: system and user files under the environment layers, with `[[--scope]]` tables resolved for that command.
@@ -183,13 +183,13 @@ impl ConfigEnv {
     }
 
     /// Per-repo and per-workspace config live under the user config dir, keyed by the id file jj keeps next to the repo.
-    fn secure_config_path(&self, config: SecureConfig, kind: &str) -> CoreResult<Option<PathBuf>> {
+    fn secure_config_path(&self, config: SecureConfig, kind: &str) -> JayResult<Option<PathBuf>> {
         let Some(root) = &self.root_config_dir else {
             return Ok(None);
         };
         let loaded = config
             .maybe_load_config(&mut rand::make_rng(), &root.join(kind))
-            .map_err(Error::internal)?;
+            .map_err(JayError::internal)?;
         Ok(loaded.config_file.filter(|path| path.is_file()))
     }
 
@@ -229,7 +229,7 @@ impl ConfigLoadFailure {
         };
         Self {
             path: path.or_else(|| Some(requested.to_path_buf())),
-            message: Error::internal(error).to_string(),
+            message: JayError::internal(error).to_string(),
         }
     }
 }

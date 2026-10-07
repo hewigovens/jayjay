@@ -21,7 +21,7 @@ pub(crate) struct ImmutableIds {
 }
 
 impl Repo {
-    pub fn log(&self, revset_str: &str) -> CoreResult<Vec<ChangeInfo>> {
+    pub fn log(&self, revset_str: &str) -> JayResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
         let revset = self.evaluate_revset(&repo, revset_str)?;
         self.collect_changes(&repo, revset)
@@ -31,7 +31,7 @@ impl Repo {
     pub(crate) fn log_typed(
         &self,
         expression: Arc<UserRevsetExpression>,
-    ) -> CoreResult<Vec<ChangeInfo>> {
+    ) -> JayResult<Vec<ChangeInfo>> {
         let repo = self.get_repo();
         let revset = self.evaluate_typed_revset(repo.as_ref(), expression)?;
         self.collect_changes(&repo, revset)
@@ -41,19 +41,19 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         revset: Box<dyn jj_lib::revset::Revset + 'a>,
-    ) -> CoreResult<Vec<ChangeInfo>> {
+    ) -> JayResult<Vec<ChangeInfo>> {
         on_worker_stack(|| {
             let immutable_ids = self.immutable_ids(repo);
             let mut changes = Vec::new();
             let mut stream = revset.stream();
             while let Some(result) = block_on(stream.next()) {
-                let commit_id = result.map_err(|e| CoreError::Internal {
+                let commit_id = result.map_err(|e| JayError::Internal {
                     message: format!("revset stream: {e}"),
                 })?;
                 let commit =
                     repo.store()
                         .get_commit(&commit_id)
-                        .map_err(|e| CoreError::Internal {
+                        .map_err(|e| JayError::Internal {
                             message: format!("get commit: {e}"),
                         })?;
                 if self.should_include_in_log(repo, &commit) {
@@ -70,13 +70,13 @@ impl Repo {
         })
     }
 
-    pub fn check_revset(&self, revset_str: &str) -> CoreResult<()> {
+    pub fn check_revset(&self, revset_str: &str) -> JayResult<()> {
         self.resolve_revset(&self.get_repo(), revset_str)
             .map(|_| ())
     }
 
     #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
-    pub fn log_graph(&self, revset_str: &str) -> CoreResult<Vec<GraphEntry>> {
+    pub fn log_graph(&self, revset_str: &str) -> JayResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
         on_worker_stack(|| {
             let immutable_ids = self.immutable_ids(&repo);
@@ -85,13 +85,13 @@ impl Repo {
             let mut entries = Vec::new();
             let mut stream = revset_result.stream_graph();
             while let Some(result) = block_on(stream.next()) {
-                let (commit_id, edge_list) = result.map_err(|e| CoreError::Internal {
+                let (commit_id, edge_list) = result.map_err(|e| JayError::Internal {
                     message: format!("graph stream: {e}"),
                 })?;
                 let commit =
                     repo.store()
                         .get_commit(&commit_id)
-                        .map_err(|e| CoreError::Internal {
+                        .map_err(|e| JayError::Internal {
                             message: format!("get commit: {e}"),
                         })?;
                 if !self.should_include_in_log(&repo, &commit) {
@@ -134,9 +134,9 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &jj_lib::commit::Commit,
         rev: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         if self.is_commit_immutable(repo, commit)? {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("{rev} is immutable and cannot be rewritten"),
             });
         }
@@ -147,7 +147,7 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
-    ) -> CoreResult<bool> {
+    ) -> JayResult<bool> {
         self.revset_contains(repo, "immutable()", commit)
     }
 
@@ -156,18 +156,18 @@ impl Repo {
         &self,
         tx: &Transaction,
         commit: &Commit,
-    ) -> CoreResult<bool> {
+    ) -> JayResult<bool> {
         let revset =
             self.evaluate_revset_in(tx.repo(), tx.base_repo().settings(), "immutable()")?;
         block_on(revset.containing_fn()(commit.id()))
-            .map_err(|e| CoreError::internal(format!("immutable() check: {e}")))
+            .map_err(|e| JayError::internal(format!("immutable() check: {e}")))
     }
 
     pub(crate) fn has_immutable_child(
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
-    ) -> CoreResult<bool> {
+    ) -> JayResult<bool> {
         self.revset_contains(repo, "parents(immutable())", commit)
     }
 
@@ -176,9 +176,9 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         revset_str: &str,
         commit: &Commit,
-    ) -> CoreResult<bool> {
+    ) -> JayResult<bool> {
         let revset = self.evaluate_revset(repo, revset_str)?;
-        block_on(revset.containing_fn()(commit.id())).map_err(|e| CoreError::Internal {
+        block_on(revset.containing_fn()(commit.id())).map_err(|e| JayError::Internal {
             message: format!("{revset_str} check: {e}"),
         })
     }
@@ -241,13 +241,13 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         change_id: &str,
-    ) -> CoreResult<bool> {
+    ) -> JayResult<bool> {
         let revset = self.evaluate_revset(repo, &format!("change_id({change_id})"))?;
         on_worker_stack(|| {
             let mut count = 0;
             let mut stream = revset.stream();
             while let Some(result) = block_on(stream.next()) {
-                result.map_err(|e| CoreError::Internal {
+                result.map_err(|e| JayError::Internal {
                     message: format!("revset stream: {e}"),
                 })?;
                 count += 1;
@@ -281,10 +281,10 @@ impl Repo {
         &self,
         repo: &'a dyn JjRepo,
         expression: Arc<UserRevsetExpression>,
-    ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
+    ) -> JayResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         self.resolve_typed_revset(repo, expression)?
             .evaluate()
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("eval revset: {e}"),
             })
     }
@@ -293,13 +293,13 @@ impl Repo {
         &self,
         repo: &'a dyn JjRepo,
         expression: Arc<UserRevsetExpression>,
-    ) -> CoreResult<ResolvedRevset<'a>> {
+    ) -> JayResult<ResolvedRevset<'a>> {
         #[allow(clippy::borrowed_box)]
         let empty_extensions: &[&Box<dyn revset::SymbolResolverExtension>] = &[];
         let symbol_resolver = SymbolResolver::new(repo, empty_extensions);
         expression
             .resolve_user_expression(repo, &symbol_resolver)
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("resolve revset: {e}"),
             })
     }
@@ -309,7 +309,7 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         revset_str: &str,
-    ) -> CoreResult<Arc<ResolvedRevsetExpression>> {
+    ) -> JayResult<Arc<ResolvedRevsetExpression>> {
         let expression = self.parse_revset_str(repo.settings(), revset_str)?;
         let (resolved, _) = self
             .resolve_typed_revset(repo.as_ref(), expression)?
@@ -321,7 +321,7 @@ impl Repo {
         &self,
         repo: &'a Arc<ReadonlyRepo>,
         revset_str: &str,
-    ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
+    ) -> JayResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         self.evaluate_revset_in(repo.as_ref(), repo.settings(), revset_str)
     }
 
@@ -330,7 +330,7 @@ impl Repo {
         repo: &'a dyn JjRepo,
         settings: &UserSettings,
         revset_str: &str,
-    ) -> CoreResult<Box<dyn jj_lib::revset::Revset + 'a>> {
+    ) -> JayResult<Box<dyn jj_lib::revset::Revset + 'a>> {
         let expression = self.parse_revset_str(settings, revset_str)?;
         self.evaluate_typed_revset(repo, expression)
     }
@@ -339,7 +339,7 @@ impl Repo {
         &self,
         settings: &UserSettings,
         revset_str: &str,
-    ) -> CoreResult<Arc<UserRevsetExpression>> {
+    ) -> JayResult<Arc<UserRevsetExpression>> {
         let aliases_map = self.revset_aliases_map(settings)?;
         let fileset_aliases_map = self.fileset_aliases_map(settings)?;
         self.parse_revset(
@@ -348,7 +348,7 @@ impl Repo {
             settings.user_email(),
             revset_str,
         )
-        .map_err(|e| CoreError::Internal {
+        .map_err(|e| JayError::Internal {
             message: format!("parse revset: {e}"),
         })
     }

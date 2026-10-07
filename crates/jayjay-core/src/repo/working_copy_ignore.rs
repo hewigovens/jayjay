@@ -27,11 +27,11 @@ impl WorkingCopyIgnoreMatcher {
         repo: &ReadonlyRepo,
         workspace_name: &WorkspaceName,
         workspace_root: &Path,
-    ) -> CoreResult<Self> {
+    ) -> JayResult<Self> {
         let wc_commit_id = repo
             .view()
             .get_wc_commit_id(workspace_name)
-            .ok_or_else(|| CoreError::Internal {
+            .ok_or_else(|| JayError::Internal {
                 message: format!(
                     "workspace {} has no working-copy commit",
                     workspace_name.as_symbol()
@@ -40,7 +40,7 @@ impl WorkingCopyIgnoreMatcher {
         let wc_commit = repo
             .store()
             .get_commit(wc_commit_id)
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("load working-copy commit: {e}"),
             })?;
         Ok(Self {
@@ -52,7 +52,7 @@ impl WorkingCopyIgnoreMatcher {
         })
     }
 
-    pub(crate) fn has_unignored_paths(&self, paths: &[String]) -> CoreResult<bool> {
+    pub(crate) fn has_unignored_paths(&self, paths: &[String]) -> JayResult<bool> {
         let mut cache: HashMap<String, Arc<GitIgnoreFile>> = HashMap::new();
         for path in paths {
             if !self.path_is_ignored(Path::new(path), &mut cache)? {
@@ -66,7 +66,7 @@ impl WorkingCopyIgnoreMatcher {
         &self,
         event_path: &Path,
         cache: &mut HashMap<String, Arc<GitIgnoreFile>>,
-    ) -> CoreResult<bool> {
+    ) -> JayResult<bool> {
         let Some(relative) = self.relative_event_path(event_path) else {
             return Ok(false);
         };
@@ -118,7 +118,7 @@ impl WorkingCopyIgnoreMatcher {
         &self,
         components: &[&str],
         cache: &mut HashMap<String, Arc<GitIgnoreFile>>,
-    ) -> CoreResult<(Arc<GitIgnoreFile>, bool)> {
+    ) -> JayResult<(Arc<GitIgnoreFile>, bool)> {
         let mut prefix_key = String::new();
         let mut ignores = match cache.get(&prefix_key) {
             Some(cached) => cached.clone(),
@@ -159,7 +159,7 @@ impl WorkingCopyIgnoreMatcher {
         Ok((ignores, false))
     }
 
-    fn path_is_tracked(&self, relative: &Path) -> CoreResult<bool> {
+    fn path_is_tracked(&self, relative: &Path) -> JayResult<bool> {
         let Ok(repo_path) = RepoPathBuf::from_relative_path(relative) else {
             return Ok(false);
         };
@@ -172,7 +172,7 @@ impl WorkingCopyIgnoreMatcher {
 pub(crate) fn base_git_ignores(
     repo: &ReadonlyRepo,
     workspace_root: &Path,
-) -> CoreResult<Arc<GitIgnoreFile>> {
+) -> JayResult<Arc<GitIgnoreFile>> {
     let mut ignores = GitIgnoreFile::empty();
 
     if let Ok(git_backend) = jj_lib::git::get_git_backend(repo.store()) {
@@ -216,7 +216,7 @@ fn path_component_is_internal(component: &str) -> bool {
 fn chain_ignore_file(
     ignores: Arc<GitIgnoreFile>,
     path: impl Into<PathBuf>,
-) -> CoreResult<Arc<GitIgnoreFile>> {
+) -> JayResult<Arc<GitIgnoreFile>> {
     chain_ignore_file_at(ignores, RepoPath::root(), path)
 }
 
@@ -224,16 +224,16 @@ fn chain_ignore_file_at(
     ignores: Arc<GitIgnoreFile>,
     prefix: &RepoPath,
     path: impl Into<PathBuf>,
-) -> CoreResult<Arc<GitIgnoreFile>> {
+) -> JayResult<Arc<GitIgnoreFile>> {
     ignores
         .chain_with_file(prefix, path.into())
-        .map_err(|e| CoreError::Internal {
+        .map_err(|e| JayError::Internal {
             message: format!("process git ignore file: {e}"),
         })
 }
 
-fn repo_path_from_internal(path: &str) -> CoreResult<RepoPathBuf> {
-    RepoPathBuf::from_internal_string(path).map_err(|e| CoreError::Internal {
+fn repo_path_from_internal(path: &str) -> JayResult<RepoPathBuf> {
+    RepoPathBuf::from_internal_string(path).map_err(|e| JayError::Internal {
         message: format!("parse repo path {path}: {e}"),
     })
 }

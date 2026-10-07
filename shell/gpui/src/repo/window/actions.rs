@@ -1,5 +1,5 @@
 use gpui::{Context, Modifiers, ScrollStrategy, SharedString, Task, point, px};
-use jayjay_core::CoreResult;
+use jayjay_core::JayResult;
 use jayjay_core::dag::SelectionClick;
 
 use super::{
@@ -191,7 +191,7 @@ impl RepoWindow {
             String,
             String,
             &mut Context<RepoViewModel>,
-        ) -> Task<CoreResult<()>>,
+        ) -> Task<JayResult<()>>,
         cx: &mut Context<Self>,
     ) {
         let name = text.trim().to_string();

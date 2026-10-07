@@ -3,10 +3,10 @@ use std::path::Path;
 use super::environment;
 use crate::types::*;
 
-pub fn init_jj_git_repo(path: &Path) -> CoreResult<()> {
+pub fn init_jj_git_repo(path: &Path) -> JayResult<()> {
     let status = environment::check_jj_environment();
     if !status.is_installed || status.path.is_empty() {
-        return Err(CoreError::Internal {
+        return Err(JayError::Internal {
             message: "jj is not installed. Install Jujutsu and try again.".to_owned(),
         });
     }
@@ -15,14 +15,14 @@ pub fn init_jj_git_repo(path: &Path) -> CoreResult<()> {
         .current_dir(path)
         .args(["git", "init"])
         .output()
-        .map_err(|e| CoreError::Internal {
+        .map_err(|e| JayError::Internal {
             message: format!("jj git init: {e}"),
         })?;
     if output.status.success() {
         return Ok(());
     }
     let stderr = String::from_utf8_lossy(&output.stderr).trim().to_string();
-    Err(CoreError::Internal {
+    Err(JayError::Internal {
         message: if stderr.is_empty() {
             "jj git init failed".to_owned()
         } else {
@@ -72,7 +72,7 @@ mod tests {
         );
 
         let err = init_jj_git_repo(&worktree).expect_err("init worktree should fail");
-        let CoreError::Internal { message } = err else {
+        let JayError::Internal { message } = err else {
             panic!("unexpected error kind");
         };
         assert!(message.contains("Cannot create a colocated jj repo inside a Git worktree"));

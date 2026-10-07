@@ -49,7 +49,7 @@ impl DiffFormatPlugin for PlistPlugin {
         format!("{path}.xml")
     }
 
-    fn project(&self, input: FormatInput<'_>) -> CoreResult<ProjectionPair> {
+    fn project(&self, input: FormatInput<'_>) -> JayResult<ProjectionPair> {
         project_text_pair(
             input,
             self.projection(input.path, DiffProjectionMode::Processed),
@@ -65,7 +65,7 @@ fn is_binary_plist(bytes: &[u8]) -> bool {
 /// Real property lists nest a handful of levels; the recursive parse and sort below overflow a shell worker thread somewhere past a thousand, so depth is bounded on the iterative event stream first.
 const MAX_DEPTH: usize = 64;
 
-fn check_depth(bytes: &[u8]) -> CoreResult<()> {
+fn check_depth(bytes: &[u8]) -> JayResult<()> {
     let mut depth = 0usize;
     for event in Reader::new(Cursor::new(bytes)) {
         match event.map_err(|err| projection_error(format!("parse plist: {err}")))? {
@@ -84,7 +84,7 @@ fn check_depth(bytes: &[u8]) -> CoreResult<()> {
     Ok(())
 }
 
-fn project_plist(bytes: &[u8]) -> CoreResult<String> {
+fn project_plist(bytes: &[u8]) -> JayResult<String> {
     check_depth(bytes)?;
     let value = PlistValue::from_reader(Cursor::new(bytes))
         .map_err(|err| projection_error(format!("parse plist: {err}")))?;

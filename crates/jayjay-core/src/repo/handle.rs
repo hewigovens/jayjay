@@ -38,14 +38,14 @@ pub struct Repo {
 }
 
 impl Repo {
-    pub fn open(path: &Path) -> CoreResult<Self> {
+    pub fn open(path: &Path) -> JayResult<Self> {
         let workspace = load_workspace(path).map_err(|error| {
             if path.join(".jj").is_dir() {
-                CoreError::Internal {
+                JayError::Internal {
                     message: format!("failed to load repo: {error}"),
                 }
             } else {
-                CoreError::RepoNotFound {
+                JayError::RepoNotFound {
                     path: path.display().to_string(),
                 }
             }
@@ -114,26 +114,26 @@ impl Repo {
         }
     }
 
-    pub(super) fn parse_repo_path(&self, path: &str) -> CoreResult<RepoPathBuf> {
+    pub(super) fn parse_repo_path(&self, path: &str) -> JayResult<RepoPathBuf> {
         jj_lib::ui_path::parse_fs_path(&self.path, &self.path, path).map_err(|e| {
-            CoreError::Internal {
+            JayError::Internal {
                 message: format!("invalid path {path}: {e}"),
             }
         })
     }
 
-    pub(super) fn parse_repo_paths(&self, paths: &[String]) -> CoreResult<Vec<RepoPathBuf>> {
+    pub(super) fn parse_repo_paths(&self, paths: &[String]) -> JayResult<Vec<RepoPathBuf>> {
         paths
             .iter()
             .map(|path| self.parse_repo_path(path))
             .collect()
     }
 
-    pub(super) fn reload(&self) -> CoreResult<()> {
+    pub(super) fn reload(&self) -> JayResult<()> {
         self.replace_with_loaded_head()
     }
 
-    fn replace_with_loaded_head(&self) -> CoreResult<()> {
+    fn replace_with_loaded_head(&self) -> JayResult<()> {
         let workspace = load_workspace_internal(&self.path, "reload workspace")?;
         let repo = load_repo_at_head(&workspace, "reload repo")?;
         self.replace_repo(repo);
@@ -144,7 +144,7 @@ impl Repo {
         &self,
         mut tx: Transaction,
         description: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
         self.commit_transaction(tx, description)
     }

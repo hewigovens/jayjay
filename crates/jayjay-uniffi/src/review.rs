@@ -3,7 +3,7 @@ use std::sync::{Arc, Mutex};
 use jayjay_primitives::{NoteAnchor, NoteEntry};
 use jayjay_review::{ReviewFileMarks, ReviewStore};
 
-use crate::JayJayError;
+use jayjay_core::JayError;
 
 #[derive(uniffi::Object)]
 pub struct ReviewSession {
@@ -11,7 +11,7 @@ pub struct ReviewSession {
 }
 
 impl ReviewSession {
-    fn store(&self) -> Result<std::sync::MutexGuard<'_, ReviewStore>, JayJayError> {
+    fn store(&self) -> Result<std::sync::MutexGuard<'_, ReviewStore>, JayError> {
         self.store.lock().map_err(lock_error)
     }
 }
@@ -19,7 +19,7 @@ impl ReviewSession {
 #[uniffi::export]
 impl ReviewSession {
     #[uniffi::constructor]
-    fn new(snapshot: Option<String>) -> Result<Arc<Self>, JayJayError> {
+    fn new(snapshot: Option<String>) -> Result<Arc<Self>, JayError> {
         let store = match snapshot {
             Some(snapshot) => ReviewStore::in_memory_from_json(&snapshot).map_err(review_error)?,
             None => ReviewStore::in_memory(),
@@ -29,7 +29,7 @@ impl ReviewSession {
         }))
     }
 
-    fn snapshot(&self) -> Result<String, JayJayError> {
+    fn snapshot(&self) -> Result<String, JayError> {
         self.store()?.snapshot_json().map_err(review_error)
     }
 
@@ -38,7 +38,7 @@ impl ReviewSession {
         change_id: String,
         path: String,
         identity: String,
-    ) -> Result<bool, JayJayError> {
+    ) -> Result<bool, JayError> {
         Ok(self.store()?.is_reviewed(&change_id, &path, &identity))
     }
 
@@ -47,7 +47,7 @@ impl ReviewSession {
         change_id: String,
         path: String,
         identity: String,
-    ) -> Result<ReviewFileMarks, JayJayError> {
+    ) -> Result<ReviewFileMarks, JayError> {
         Ok(self.store()?.file_marks(&change_id, &path, &identity, None))
     }
 
@@ -56,12 +56,12 @@ impl ReviewSession {
         change_id: String,
         path: String,
         identity: String,
-    ) -> Result<(), JayJayError> {
+    ) -> Result<(), JayError> {
         self.store()?.mark_reviewed(&change_id, &path, &identity);
         Ok(())
     }
 
-    fn mark_unreviewed(&self, change_id: String, path: String) -> Result<(), JayJayError> {
+    fn mark_unreviewed(&self, change_id: String, path: String) -> Result<(), JayError> {
         self.store()?.mark_unreviewed(&change_id, &path);
         Ok(())
     }
@@ -71,7 +71,7 @@ impl ReviewSession {
         change_id: String,
         path: String,
         identity: String,
-    ) -> Result<(), JayJayError> {
+    ) -> Result<(), JayError> {
         self.store()?.toggle(&change_id, &path, &identity);
         Ok(())
     }
@@ -81,7 +81,7 @@ impl ReviewSession {
         change_id: String,
         paths: Vec<String>,
         identities: Vec<String>,
-    ) -> Result<Vec<String>, JayJayError> {
+    ) -> Result<Vec<String>, JayError> {
         let store = self.store()?;
         Ok(paths
             .into_iter()
@@ -100,7 +100,7 @@ impl ReviewSession {
         path: String,
         identity: String,
         hunk_index: u32,
-    ) -> Result<bool, JayJayError> {
+    ) -> Result<bool, JayError> {
         Ok(self
             .store()?
             .is_hunk_reviewed(&change_id, &path, &identity, hunk_index))
@@ -112,7 +112,7 @@ impl ReviewSession {
         path: String,
         identity: String,
         hunk_index: u32,
-    ) -> Result<(), JayJayError> {
+    ) -> Result<(), JayError> {
         self.store()?
             .mark_hunk_reviewed(&change_id, &path, &identity, hunk_index);
         Ok(())
@@ -123,7 +123,7 @@ impl ReviewSession {
         change_id: String,
         path: String,
         hunk_index: u32,
-    ) -> Result<(), JayJayError> {
+    ) -> Result<(), JayError> {
         self.store()?
             .mark_hunk_unreviewed(&change_id, &path, hunk_index);
         Ok(())
@@ -135,7 +135,7 @@ impl ReviewSession {
         path: String,
         identity: String,
         hunk_index: u32,
-    ) -> Result<(), JayJayError> {
+    ) -> Result<(), JayError> {
         self.store()?
             .toggle_hunk(&change_id, &path, &identity, hunk_index);
         Ok(())
@@ -147,13 +147,13 @@ impl ReviewSession {
         path: String,
         identity: String,
         hunk_indices: Vec<u32>,
-    ) -> Result<(), JayJayError> {
+    ) -> Result<(), JayError> {
         self.store()?
             .set_reviewed_hunks(&change_id, &path, &identity, hunk_indices);
         Ok(())
     }
 
-    fn clear_change(&self, change_id: String) -> Result<(), JayJayError> {
+    fn clear_change(&self, change_id: String) -> Result<(), JayError> {
         self.store()?.clear_change(&change_id);
         Ok(())
     }
@@ -162,35 +162,35 @@ impl ReviewSession {
         &self,
         change_id: String,
         include_resolved: bool,
-    ) -> Result<Vec<NoteEntry>, JayJayError> {
+    ) -> Result<Vec<NoteEntry>, JayError> {
         Ok(self.store()?.list_notes(&change_id, include_resolved))
     }
 
-    fn add_note(&self, anchor: NoteAnchor, body: String) -> Result<NoteEntry, JayJayError> {
+    fn add_note(&self, anchor: NoteAnchor, body: String) -> Result<NoteEntry, JayError> {
         Ok(self.store()?.add_note(anchor, &body))
     }
 
-    fn update_note(&self, id: String, body: String) -> Result<Option<NoteEntry>, JayJayError> {
+    fn update_note(&self, id: String, body: String) -> Result<Option<NoteEntry>, JayError> {
         Ok(self.store()?.update_note(&id, &body))
     }
 
-    fn delete_note(&self, id: String) -> Result<bool, JayJayError> {
+    fn delete_note(&self, id: String) -> Result<bool, JayError> {
         Ok(self.store()?.delete_note(&id))
     }
 
-    fn resolve_note(&self, id: String) -> Result<Option<NoteEntry>, JayJayError> {
+    fn resolve_note(&self, id: String) -> Result<Option<NoteEntry>, JayError> {
         Ok(self.store()?.resolve_note(&id))
     }
 }
 
-fn lock_error<T>(_: std::sync::PoisonError<T>) -> JayJayError {
-    JayJayError::Review {
+fn lock_error<T>(_: std::sync::PoisonError<T>) -> JayError {
+    JayError::Review {
         message: "review session is unavailable".to_owned(),
     }
 }
 
-fn review_error(error: impl std::fmt::Display) -> JayJayError {
-    JayJayError::Review {
+fn review_error(error: impl std::fmt::Display) -> JayError {
+    JayError::Review {
         message: error.to_string(),
     }
 }

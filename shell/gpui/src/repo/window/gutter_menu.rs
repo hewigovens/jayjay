@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gpui::{Context, Pixels, Point};
 use jayjay_core::diff::{ConflictLineKind, build_diff_display_lines};
 use jayjay_core::placeholder::is_editable_text;
-use jayjay_core::{CoreError, DiffEditFileSelection, DiffHunk, HunkType};
+use jayjay_core::{DiffEditFileSelection, DiffHunk, HunkType, JayError};
 
 use super::RepoWindow;
 use crate::diff::{
@@ -162,7 +162,7 @@ impl RepoWindow {
                     });
                 }
                 // This refresh also clears `present_error`'s banner, but the refreshed diff itself shows why the action didn't apply.
-                Err(CoreError::DiffSelectionStale { .. }) => {
+                Err(JayError::DiffSelectionStale { .. }) => {
                     let _ = this.update(cx, |view, cx| {
                         view.vm.update(cx, |vm, cx| vm.refresh(false, cx));
                     });

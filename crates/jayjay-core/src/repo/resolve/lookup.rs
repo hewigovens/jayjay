@@ -25,7 +25,7 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         rev: &str,
-    ) -> CoreResult<JjCommit> {
+    ) -> JayResult<JjCommit> {
         let settings = repo.settings();
         let aliases_map = self.revset_aliases_map(settings)?;
         let fileset_aliases_map = self.fileset_aliases_map(settings)?;
@@ -36,7 +36,7 @@ impl Repo {
                 settings.user_email(),
                 rev,
             )
-            .map_err(|e| CoreError::RevNotFound {
+            .map_err(|e| JayError::RevNotFound {
                 rev: format!("{rev}: {e}"),
             })?;
 
@@ -45,33 +45,33 @@ impl Repo {
         let symbol_resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
         let resolved = expression
             .resolve_user_expression(repo.as_ref(), &symbol_resolver)
-            .map_err(|e| CoreError::RevNotFound {
+            .map_err(|e| JayError::RevNotFound {
                 rev: format!("{rev}: {e}"),
             })?;
 
-        let revset = resolved.evaluate().map_err(|e| CoreError::Internal {
+        let revset = resolved.evaluate().map_err(|e| JayError::Internal {
             message: format!("revset eval: {e}"),
         })?;
 
         let mut stream = revset.stream();
         let commit_id = block_on(stream.next())
-            .ok_or_else(|| CoreError::RevNotFound {
+            .ok_or_else(|| JayError::RevNotFound {
                 rev: rev.to_owned(),
             })?
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("revset stream: {e}"),
             })?;
 
         // Match jj CLI: refuse to silently pick one of several matches (e.g. a divergent change id).
         if block_on(stream.next()).is_some() {
-            return Err(CoreError::RevNotFound {
+            return Err(JayError::RevNotFound {
                 rev: format!("{rev}: resolved to more than one revision"),
             });
         }
 
         repo.store()
             .get_commit(&commit_id)
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("get commit: {e}"),
             })
     }

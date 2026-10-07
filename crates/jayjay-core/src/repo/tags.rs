@@ -8,7 +8,7 @@ use super::{Repo, SyncToken, is_valid_bookmark_name};
 use crate::types::*;
 
 impl Repo {
-    pub fn list_tags(&self) -> CoreResult<Vec<TagInfo>> {
+    pub fn list_tags(&self) -> JayResult<Vec<TagInfo>> {
         let repo = self.get_repo();
         Ok(repo
             .view()
@@ -27,15 +27,15 @@ impl Repo {
     }
 
     /// `jj tag set` without `--allow-move`: a tag names a release, so an existing tag is never silently moved.
-    pub fn create_tag(&self, name: &str, rev: &str) -> CoreResult<()> {
+    pub fn create_tag(&self, name: &str, rev: &str) -> JayResult<()> {
         if !is_valid_bookmark_name(name) {
-            return Err(CoreError::internal(format!("Invalid tag name: {name}")));
+            return Err(JayError::internal(format!("Invalid tag name: {name}")));
         }
         let _write = self.write_guard()?;
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         if self.follow_rewrites(&repo, commit.clone(), rev)?.id() != commit.id() {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "Change was rewritten; reselect the tag target",
             ));
         }
@@ -49,7 +49,7 @@ impl Repo {
                 if repo_mut.view().get_local_tag(name).is_present()
                     || remote_holds_tag(repo_mut.view(), name)
                 {
-                    return Err(CoreError::internal(format!(
+                    return Err(JayError::internal(format!(
                         "Tag already exists: {}",
                         name.as_str()
                     )));
@@ -60,12 +60,12 @@ impl Repo {
         )
     }
 
-    pub fn delete_tag(&self, name: &str) -> CoreResult<()> {
+    pub fn delete_tag(&self, name: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.with_repo_transaction("delete tag", false, move |_, repo_mut| {
             let name = RefName::new(name);
             if repo_mut.view().get_local_tag(name).is_absent() {
-                return Err(CoreError::internal(format!(
+                return Err(JayError::internal(format!(
                     "tag '{}' not found",
                     name.as_str()
                 )));
@@ -75,7 +75,7 @@ impl Repo {
         })
     }
 
-    pub fn delete_tag_and_push(&self, name: &str, sync: &SyncToken) -> CoreResult<String> {
+    pub fn delete_tag_and_push(&self, name: &str, sync: &SyncToken) -> JayResult<String> {
         sync.check()?;
         let target = {
             let _write = self.write_guard()?;
@@ -106,7 +106,7 @@ impl Repo {
                 })
             })
             .map_err(|restore_error| {
-                CoreError::internal(format!(
+                JayError::internal(format!(
                     "{push_error}; could not restore tag '{name}' for retry: {restore_error}"
                 ))
             })?;

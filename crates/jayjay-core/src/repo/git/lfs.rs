@@ -35,7 +35,7 @@ impl LfsCache {
 
 impl Repo {
     /// List files currently tracked by Git LFS in the checked-out tree.
-    fn tracked_git_lfs_files(&self) -> CoreResult<Vec<String>> {
+    fn tracked_git_lfs_files(&self) -> JayResult<Vec<String>> {
         let output = self.command_output(
             "git",
             &["lfs", "ls-files", "--name-only"],
@@ -55,7 +55,7 @@ impl Repo {
     /// Filter repo-relative paths to those actually stored as Git LFS objects. A
     /// `.gitattributes filter=lfs` line is repo-controlled (a source file could fake it
     /// to hide its diff), so trust only what `git lfs ls-files` reports, not the attribute.
-    pub fn git_lfs_paths(&self, paths: &[String]) -> CoreResult<Vec<String>> {
+    pub fn git_lfs_paths(&self, paths: &[String]) -> JayResult<Vec<String>> {
         if paths.is_empty() {
             return Ok(vec![]);
         }
@@ -97,7 +97,7 @@ impl Repo {
 
     /// Paths whose `.gitattributes` set `filter=lfs`. Repository-controlled, so
     /// callers must confirm real LFS registration before acting on the result.
-    fn check_attr_lfs_paths(&self, paths: &[String]) -> CoreResult<Vec<String>> {
+    fn check_attr_lfs_paths(&self, paths: &[String]) -> JayResult<Vec<String>> {
         let mut child = subprocess_command("git")
             .current_dir(&self.path)
             .args(["check-attr", "--stdin", "filter"])
@@ -105,12 +105,12 @@ impl Repo {
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())
             .spawn()
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("git check-attr: {e}"),
             })?;
 
         // Feed stdin on a side thread so we can drain stdout concurrently and avoid a pipe deadlock.
-        let stdin = child.stdin.take().ok_or_else(|| CoreError::Internal {
+        let stdin = child.stdin.take().ok_or_else(|| JayError::Internal {
             message: "git check-attr: failed to open stdin".to_owned(),
         })?;
         let paths_to_send: Vec<String> = paths.to_vec();
@@ -122,15 +122,15 @@ impl Repo {
             Ok(())
         });
 
-        let output = child.wait_with_output().map_err(|e| CoreError::Internal {
+        let output = child.wait_with_output().map_err(|e| JayError::Internal {
             message: format!("git check-attr: {e}"),
         })?;
         writer
             .join()
-            .map_err(|_| CoreError::Internal {
+            .map_err(|_| JayError::Internal {
                 message: "git check-attr: stdin writer thread panicked".to_owned(),
             })?
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("git check-attr stdin: {e}"),
             })?;
         self.ensure_success(&output, "git check-attr")?;

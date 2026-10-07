@@ -3,14 +3,14 @@ use std::io::ErrorKind;
 use std::path::Path;
 
 use crate::filesystem::{io_error, is_executable, set_executable};
-use crate::{CoreError, CoreResult};
+use crate::{JayError, JayResult};
 
 pub(super) fn output_matches_selection(
     path: &Path,
     selected_text: &str,
     selected_exists: bool,
     selected_executable: Option<bool>,
-) -> CoreResult<bool> {
+) -> JayResult<bool> {
     let metadata = match fs::symlink_metadata(path) {
         Ok(metadata) => metadata,
         Err(error) if matches!(error.kind(), ErrorKind::NotFound | ErrorKind::NotADirectory) => {
@@ -38,11 +38,11 @@ pub(super) fn copy_entry(
     relative: &Path,
     output: &Path,
     directory_output: bool,
-) -> CoreResult<()> {
+) -> JayResult<()> {
     let metadata =
         fs::symlink_metadata(source).map_err(|error| io_error("inspect", source, error))?;
     if !metadata.file_type().is_symlink() && !metadata.is_file() {
-        return Err(CoreError::internal(format!(
+        return Err(JayError::internal(format!(
             "cannot restore unsupported external diff entry: {}",
             source.display()
         )));
@@ -70,11 +70,11 @@ pub(super) fn write_text(
     directory_output: bool,
     text: &str,
     executable: Option<bool>,
-) -> CoreResult<()> {
+) -> JayResult<()> {
     if directory_output {
         prepare_write_path(right_root, relative)?;
     } else if fs::symlink_metadata(output).is_ok_and(|metadata| metadata.file_type().is_symlink()) {
-        return Err(CoreError::internal(format!(
+        return Err(JayError::internal(format!(
             "refusing to write external diff through unsafe path: {}",
             output.display()
         )));
@@ -86,7 +86,7 @@ pub(super) fn write_text(
     Ok(())
 }
 
-pub(super) fn remove_output_path(path: &Path) -> CoreResult<()> {
+pub(super) fn remove_output_path(path: &Path) -> JayResult<()> {
     let metadata = match fs::symlink_metadata(path) {
         Ok(metadata) => metadata,
         Err(error) if matches!(error.kind(), ErrorKind::NotFound | ErrorKind::NotADirectory) => {
@@ -102,12 +102,12 @@ pub(super) fn remove_output_path(path: &Path) -> CoreResult<()> {
     result.map_err(|error| io_error("remove", path, error))
 }
 
-fn prepare_write_path(root: &Path, relative: &Path) -> CoreResult<()> {
+fn prepare_write_path(root: &Path, relative: &Path) -> JayResult<()> {
     prepare_parent_directories(root, relative)?;
     let output = root.join(relative);
     match fs::symlink_metadata(&output) {
         Ok(metadata) if metadata.file_type().is_symlink() => {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "refusing to write external diff through unsafe path: {}",
                 output.display()
             )));
@@ -123,7 +123,7 @@ fn prepare_write_path(root: &Path, relative: &Path) -> CoreResult<()> {
     Ok(())
 }
 
-fn prepare_parent_directories(root: &Path, relative: &Path) -> CoreResult<()> {
+fn prepare_parent_directories(root: &Path, relative: &Path) -> JayResult<()> {
     let mut directory = root.to_owned();
     if let Some(parent) = relative.parent() {
         for component in parent.components() {
@@ -131,7 +131,7 @@ fn prepare_parent_directories(root: &Path, relative: &Path) -> CoreResult<()> {
             match fs::symlink_metadata(&directory) {
                 Ok(metadata) if metadata.is_dir() && !metadata.file_type().is_symlink() => {}
                 Ok(_) => {
-                    return Err(CoreError::internal(format!(
+                    return Err(JayError::internal(format!(
                         "refusing to write external diff through unsafe path: {}",
                         directory.display()
                     )));
@@ -148,13 +148,13 @@ fn prepare_parent_directories(root: &Path, relative: &Path) -> CoreResult<()> {
 }
 
 #[cfg(unix)]
-fn create_symlink(_source: &Path, target: &Path, output: &Path) -> CoreResult<()> {
+fn create_symlink(_source: &Path, target: &Path, output: &Path) -> JayResult<()> {
     std::os::unix::fs::symlink(target, output)
         .map_err(|error| io_error("create symlink", output, error))
 }
 
 #[cfg(windows)]
-fn create_symlink(source: &Path, target: &Path, output: &Path) -> CoreResult<()> {
+fn create_symlink(source: &Path, target: &Path, output: &Path) -> JayResult<()> {
     let result = if source.is_dir() {
         std::os::windows::fs::symlink_dir(target, output)
     } else {
@@ -164,8 +164,8 @@ fn create_symlink(source: &Path, target: &Path, output: &Path) -> CoreResult<()>
 }
 
 #[cfg(not(any(unix, windows)))]
-fn create_symlink(_source: &Path, _target: &Path, output: &Path) -> CoreResult<()> {
-    Err(CoreError::internal(format!(
+fn create_symlink(_source: &Path, _target: &Path, output: &Path) -> JayResult<()> {
+    Err(JayError::internal(format!(
         "cannot create external diff symlink on this platform: {}",
         output.display()
     )))

@@ -5,7 +5,7 @@ use std::path::{Path, PathBuf};
 
 use crate::file_display::{MAX_DIFF_BYTES, MAX_IMAGE_BYTES, is_image_path};
 use crate::filesystem::{io_error, is_executable, safe_relative_path};
-use crate::{CoreResult, DiffContent, DiffHunk, DiffPreview, HunkType};
+use crate::{DiffContent, DiffHunk, DiffPreview, HunkType, JayResult};
 
 use super::JJ_INSTRUCTIONS;
 use super::content::external_content;
@@ -33,7 +33,7 @@ pub(super) fn scan_external_diff(
     left: &Path,
     right: &Path,
     exclude_instructions: bool,
-) -> CoreResult<Vec<ScannedExternalDiff>> {
+) -> JayResult<Vec<ScannedExternalDiff>> {
     let single_name = (!left.is_dir() && !right.is_dir()).then(|| {
         right
             .file_name()
@@ -90,7 +90,7 @@ pub(super) fn scan_external_diff(
     Ok(hunks)
 }
 
-fn collect_entries(root: &Path, single_name: Option<&str>) -> CoreResult<BTreeMap<String, Entry>> {
+fn collect_entries(root: &Path, single_name: Option<&str>) -> JayResult<BTreeMap<String, Entry>> {
     let metadata = fs::symlink_metadata(root).map_err(|error| io_error("read", root, error))?;
     if !metadata.is_dir() {
         let name = single_name
@@ -109,7 +109,7 @@ fn collect_directory(
     root: &Path,
     directory: &Path,
     entries: &mut BTreeMap<String, Entry>,
-) -> CoreResult<()> {
+) -> JayResult<()> {
     let children =
         fs::read_dir(directory).map_err(|error| io_error("read directory", directory, error))?;
     for child in children {
@@ -123,7 +123,7 @@ fn collect_directory(
         }
         let relative = path
             .strip_prefix(root)
-            .map_err(|error| crate::CoreError::Internal {
+            .map_err(|error| crate::JayError::Internal {
                 message: format!(
                     "make {} relative to {}: {error}",
                     path.display(),
@@ -167,7 +167,7 @@ impl Entry {
     }
 }
 
-fn entries_equal(left: Option<&Entry>, right: Option<&Entry>) -> CoreResult<bool> {
+fn entries_equal(left: Option<&Entry>, right: Option<&Entry>) -> JayResult<bool> {
     match (left, right) {
         (None, None) => Ok(true),
         (
@@ -197,7 +197,7 @@ fn entries_equal(left: Option<&Entry>, right: Option<&Entry>) -> CoreResult<bool
     }
 }
 
-fn files_equal(left: &Path, right: &Path) -> CoreResult<bool> {
+fn files_equal(left: &Path, right: &Path) -> JayResult<bool> {
     let left_metadata = fs::metadata(left).map_err(|error| io_error("read", left, error))?;
     let right_metadata = fs::metadata(right).map_err(|error| io_error("read", right, error))?;
     if left_metadata.len() != right_metadata.len() {
@@ -223,7 +223,7 @@ fn files_equal(left: &Path, right: &Path) -> CoreResult<bool> {
     }
 }
 
-fn display_content(path: &str, entry: Option<&Entry>) -> CoreResult<(DiffContent, bool)> {
+fn display_content(path: &str, entry: Option<&Entry>) -> JayResult<(DiffContent, bool)> {
     let Some(entry) = entry else {
         return Ok((DiffContent::default(), true));
     };

@@ -47,7 +47,7 @@ extension RepoViewModel {
             },
             onFailure: { viewModel, error in
                 viewModel.pullRequestImportSync = nil
-                if let jjError = error as? JayJayError, case .Canceled = jjError {
+                if let jjError = error as? JayError, case .Canceled = jjError {
                     // The remote add or the fetch may have landed before the cancel took effect.
                     viewModel.refresh()
                 }

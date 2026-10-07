@@ -4,7 +4,7 @@ use std::time::Duration;
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, CoreError, CoreResult, DiffStats, GraphEntry, Repo, RevsetVocabulary,
+    BookmarkInfo, ChangeInfo, DiffStats, GraphEntry, JayError, JayResult, Repo, RevsetVocabulary,
     TagInfo, WorkspaceInfo,
 };
 
@@ -125,7 +125,7 @@ impl RepoViewModel {
 
     fn apply_refresh_result(
         &mut self,
-        result: CoreResult<RefreshData>,
+        result: JayResult<RefreshData>,
         previous_selection: Option<(String, String)>,
         cx: &mut Context<Self>,
     ) {
@@ -205,10 +205,10 @@ struct RefreshData {
     fix_unavailable_reason: Option<String>,
 }
 
-fn refresh_graph_blocking(repo: &Repo, revset: &str) -> CoreResult<RefreshData> {
+fn refresh_graph_blocking(repo: &Repo, revset: &str) -> JayResult<RefreshData> {
     let working_copy_stale = match repo.refresh_working_copy() {
         Ok(()) => false,
-        Err(CoreError::WorkingCopyStale) => true,
+        Err(JayError::WorkingCopyStale) => true,
         Err(error) => return Err(error),
     };
     let entries = repo.log_graph(revset)?;

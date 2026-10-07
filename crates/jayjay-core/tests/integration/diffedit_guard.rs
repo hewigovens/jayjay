@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use jayjay_core::{CoreError, DiffEditDestination, Repo};
+use jayjay_core::{DiffEditDestination, JayError, Repo};
 use jj_test::{
     init_colocated, init_jj_repo, run_jj_in, selection_for_lines, setup_source_change_with_child,
     whole_file_selection,
@@ -57,7 +57,7 @@ fn diffedit_rejects_selection_when_source_changed_since_render() {
         )
         .expect_err("stale selection must be rejected");
     assert!(
-        matches!(err, CoreError::DiffSelectionStale { .. }),
+        matches!(err, JayError::DiffSelectionStale { .. }),
         "expected DiffSelectionStale, got {err:?}"
     );
 
@@ -92,7 +92,7 @@ fn diffedit_rejects_selection_when_parent_content_changed_since_render() {
         )
         .expect_err("stale parent side must be rejected");
     assert!(
-        matches!(err, CoreError::DiffSelectionStale { .. }),
+        matches!(err, JayError::DiffSelectionStale { .. }),
         "expected DiffSelectionStale, got {err:?}"
     );
 
@@ -124,7 +124,7 @@ fn diffedit_rejects_stale_parent_side_for_every_destination() {
             .apply_diff_selection("@-", destination, &[selection], "selected", false)
             .expect_err("stale parent side must be rejected");
         assert!(
-            matches!(err, CoreError::DiffSelectionStale { .. }),
+            matches!(err, JayError::DiffSelectionStale { .. }),
             "expected DiffSelectionStale for {destination:?}, got {err:?}"
         );
 
@@ -220,7 +220,7 @@ fn diffedit_rejects_selection_whose_parent_side_is_a_conflict() {
         )
         .expect_err("conflicted parent side must be rejected");
     assert!(
-        matches!(&err, CoreError::Internal { message } if message.contains("conflicted")),
+        matches!(&err, JayError::Internal { message } if message.contains("conflicted")),
         "expected conflicted-file rejection, got {err:?}"
     );
 
@@ -247,7 +247,7 @@ fn diffedit_rejects_selection_on_a_conflicted_source_commit() {
         )
         .expect_err("conflicted source side must be rejected");
     assert!(
-        matches!(&err, CoreError::Internal { message } if message.contains("conflicted")),
+        matches!(&err, JayError::Internal { message } if message.contains("conflicted")),
         "expected conflicted-file rejection, got {err:?}"
     );
 }

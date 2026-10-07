@@ -1,12 +1,12 @@
 use super::super::Repo;
 use super::super::environment::glab_binary;
 use super::forge::{ForgeTarget, auth_preflight, created, failed, non_empty_or, url_containing};
-use crate::types::{CoreResult, StackLayerOutcome, SubmittedLayer};
+use crate::types::{JayResult, StackLayerOutcome, SubmittedLayer};
 
 /// Prove `glab` is installed and authenticated before any bookmark move or push,
 /// so a missing/misconfigured CLI fails up front instead of leaving dangling
 /// remote branches and moved local bookmarks with no MRs.
-pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
+pub(super) fn preflight(repo: &Repo) -> JayResult<()> {
     auth_preflight(repo, &glab_binary(), "glab", "GitLab CLI (glab)")
 }
 

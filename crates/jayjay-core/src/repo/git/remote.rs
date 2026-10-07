@@ -24,12 +24,12 @@ impl GitRemote {
 
 impl Repo {
     /// Read from the git config of the store jj uses; `git remote get-url` spawns a subprocess and resolves against the working directory instead.
-    pub(crate) fn git_remote_url(&self) -> CoreResult<String> {
-        let missing = || CoreError::Internal {
+    pub(crate) fn git_remote_url(&self) -> JayResult<String> {
+        let missing = || JayError::Internal {
             message: "No remote 'origin' configured".to_owned(),
         };
         let git_repo =
-            get_git_repo(self.get_repo().store()).map_err(|error| CoreError::Internal {
+            get_git_repo(self.get_repo().store()).map_err(|error| JayError::Internal {
                 message: format!("read git remote: {error}"),
             })?;
         let remote = git_repo.find_remote("origin").map_err(|_| missing())?;
@@ -41,9 +41,9 @@ impl Repo {
         git_remote_to_web_url(&self.git_remote_url().ok()?)
     }
 
-    pub(crate) fn git_remotes(&self) -> CoreResult<Vec<GitRemote>> {
+    pub(crate) fn git_remotes(&self) -> JayResult<Vec<GitRemote>> {
         let git_repo =
-            get_git_repo(self.get_repo().store()).map_err(|error| CoreError::Internal {
+            get_git_repo(self.get_repo().store()).map_err(|error| JayError::Internal {
                 message: format!("read git remotes: {error}"),
             })?;
         Ok(git_repo
@@ -64,16 +64,16 @@ impl Repo {
             .collect())
     }
 
-    pub(crate) fn git_remote_add(&self, name: &str, url: &str) -> CoreResult<()> {
+    pub(crate) fn git_remote_add(&self, name: &str, url: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         if !is_valid_remote_url(url) {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("invalid remote URL: {url}"),
             });
         }
         self.with_repo_transaction(&format!("add git remote {name}"), false, |_, mut_repo| {
             git::add_remote(mut_repo, RemoteName::new(name), url, None)
-                .map_err(|error| CoreError::internal(format!("add remote {name}: {error}")))
+                .map_err(|error| JayError::internal(format!("add remote {name}: {error}")))
         })
     }
 }

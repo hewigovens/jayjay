@@ -34,6 +34,6 @@ pub(super) fn projection_for_input(
     registry::projection_for_input(input, mode)
 }
 
-pub(super) fn project_pair(input: FormatInput<'_>) -> Option<CoreResult<ProjectionPair>> {
+pub(super) fn project_pair(input: FormatInput<'_>) -> Option<JayResult<ProjectionPair>> {
     registry::project_pair(input)
 }

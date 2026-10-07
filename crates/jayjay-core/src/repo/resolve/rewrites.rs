@@ -21,15 +21,15 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: Commit,
         rev: &str,
-    ) -> CoreResult<Commit> {
+    ) -> JayResult<Commit> {
         let revset = ResolvedRevsetExpression::all()
             .evaluate(repo.as_ref())
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("visibility revset: {e}"),
             })?;
         let contains = revset.containing_fn();
         let is_visible = |id: &CommitId| {
-            block_on(contains(id)).map_err(|e| CoreError::Internal {
+            block_on(contains(id)).map_err(|e| JayError::Internal {
                 message: format!("visibility check: {e}"),
             })
         };
@@ -43,7 +43,7 @@ impl Repo {
                 [] => break,
                 [next] => next.clone(),
                 _ => {
-                    return Err(CoreError::Internal {
+                    return Err(JayError::Internal {
                         message: format!(
                             "{rev} was rewritten into multiple commits; reselect the target"
                         ),
@@ -54,12 +54,12 @@ impl Repo {
                 return repo
                     .store()
                     .get_commit(&current)
-                    .map_err(|e| CoreError::Internal {
+                    .map_err(|e| JayError::Internal {
                         message: format!("get successor: {e}"),
                     });
             }
         }
-        Err(CoreError::Internal {
+        Err(JayError::Internal {
             message: format!("{rev} is hidden and has no visible successor; reselect the target"),
         })
     }
@@ -68,14 +68,14 @@ impl Repo {
         &self,
         repo: &Arc<ReadonlyRepo>,
         id: &CommitId,
-    ) -> CoreResult<Vec<CommitId>> {
+    ) -> JayResult<Vec<CommitId>> {
         // Merged operation heads can each record a rewrite of the same commit, so scan the whole capped ancestry and let the fork surface instead of taking the first branch's answer.
         let ops = op_walk::walk_ancestors(std::slice::from_ref(repo.operation())).take(MAX_OP_SCAN);
         on_worker_stack(|| {
             futures::pin_mut!(ops);
             let mut successors: Vec<CommitId> = Vec::new();
             while let Some(op) = block_on(ops.next()) {
-                let op = op.map_err(|e| CoreError::Internal {
+                let op = op.map_err(|e| JayError::Internal {
                     message: format!("walk operations: {e}"),
                 })?;
                 let Some(map) = &op.store_operation().commit_predecessors else {

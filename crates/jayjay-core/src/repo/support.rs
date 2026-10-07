@@ -30,12 +30,12 @@ pub(crate) fn block_on<F: Future>(future: F) -> F::Output {
     on_worker_stack(|| pollster::block_on(future))
 }
 
-pub(crate) fn block_on_result<T, E, F>(context: &str, future: F) -> CoreResult<T>
+pub(crate) fn block_on_result<T, E, F>(context: &str, future: F) -> JayResult<T>
 where
     E: Display,
     F: Future<Output = Result<T, E>>,
 {
-    block_on(future).map_err(|e| CoreError::Internal {
+    block_on(future).map_err(|e| JayError::Internal {
         message: format!("{context}: {e}"),
     })
 }
@@ -44,8 +44,8 @@ pub(crate) fn canonicalize(path: &Path) -> PathBuf {
     dunce::canonicalize(path).unwrap_or_else(|_| path.to_owned())
 }
 
-pub(crate) fn load_workspace_internal(path: &Path, context: &str) -> CoreResult<Workspace> {
-    load_workspace(path).map_err(|error| CoreError::Internal {
+pub(crate) fn load_workspace_internal(path: &Path, context: &str) -> JayResult<Workspace> {
+    load_workspace(path).map_err(|error| JayError::Internal {
         message: format!("{context}: {error}"),
     })
 }
@@ -78,7 +78,7 @@ fn error_chain(error: WorkspaceLoadError) -> String {
 pub(crate) fn load_repo_at_head(
     workspace: &Workspace,
     context: &str,
-) -> CoreResult<Arc<ReadonlyRepo>> {
+) -> JayResult<Arc<ReadonlyRepo>> {
     block_on_result(context, workspace.repo_loader().load_at_head())
 }
 
@@ -87,7 +87,7 @@ pub(crate) fn load_repo_at_head(
 pub(crate) fn op_is_ancestor_of(
     descendant: &Arc<ReadonlyRepo>,
     ancestor: &OperationId,
-) -> CoreResult<bool> {
+) -> JayResult<bool> {
     if descendant.op_id() == ancestor {
         return Ok(true);
     }
@@ -96,7 +96,7 @@ pub(crate) fn op_is_ancestor_of(
     futures::pin_mut!(ancestors);
     block_on(async {
         while let Some(op) = ancestors.next().await {
-            let op = op.map_err(|e| CoreError::Internal {
+            let op = op.map_err(|e| JayError::Internal {
                 message: format!("walk operation ancestors: {e}"),
             })?;
             if op.id() == ancestor {

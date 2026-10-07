@@ -24,7 +24,7 @@ struct WorkingCopyFileTarget {
 
 impl Repo {
     /// Load an existing regular UTF-8 file from the current working-copy change.
-    pub fn working_copy_file_editor(&self, path: &str) -> CoreResult<FileEditorData> {
+    pub fn working_copy_file_editor(&self, path: &str) -> JayResult<FileEditorData> {
         self.refresh_working_copy()?;
         let target = self.working_copy_file_target(path)?;
         let value = block_on_result(
@@ -32,12 +32,12 @@ impl Repo {
             target.tree.path_value(target.path.as_ref()),
         )?;
         let resolved = value.clone().into_resolved().map_err(|_| {
-            CoreError::internal(format!(
+            JayError::internal(format!(
                 "{path}: conflicted files use the conflict resolver"
             ))
         })?;
         let Some(TreeValue::File { id, .. }) = resolved else {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "{path}: only existing regular files can be edited"
             )));
         };
@@ -51,7 +51,7 @@ impl Repo {
             ),
         )?;
         let MaterializedTreeValue::File(file) = materialized else {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "{path}: only existing regular files can be edited"
             )));
         };
@@ -63,17 +63,17 @@ impl Repo {
                 .read_to_end(&mut bytes),
         )?;
         if bytes.len() > MAX_DIFF_BYTES {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "{path}: file is too large to edit"
             )));
         }
         if bytes.contains(&0) {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "{path}: binary files cannot be edited"
             )));
         }
         let content = String::from_utf8(bytes)
-            .map_err(|_| CoreError::internal(format!("{path}: file is not valid UTF-8 text")))?;
+            .map_err(|_| JayError::internal(format!("{path}: file is not valid UTF-8 text")))?;
 
         Ok(FileEditorData {
             path: path.to_owned(),
@@ -88,12 +88,12 @@ impl Repo {
         &self,
         data: &FileEditorData,
         content: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let target = self.working_copy_file_target(&data.path)?;
         if encode_reverse_hex(target.commit.change_id().as_bytes()) != data.change_id {
-            return Err(CoreError::FileEditorStale {
+            return Err(JayError::FileEditorStale {
                 path: data.path.clone(),
             });
         }
@@ -105,7 +105,7 @@ impl Repo {
         )?;
         let current = value
             .into_resolved()
-            .map_err(|_| CoreError::FileEditorStale {
+            .map_err(|_| JayError::FileEditorStale {
                 path: data.path.clone(),
             })?;
         let Some(TreeValue::File {
@@ -114,12 +114,12 @@ impl Repo {
             copy_id,
         }) = current
         else {
-            return Err(CoreError::FileEditorStale {
+            return Err(JayError::FileEditorStale {
                 path: data.path.clone(),
             });
         };
         if id.hex() != data.file_id {
-            return Err(CoreError::FileEditorStale {
+            return Err(JayError::FileEditorStale {
                 path: data.path.clone(),
             });
         }
@@ -154,7 +154,7 @@ impl Repo {
         )
     }
 
-    fn working_copy_file_target(&self, path: &str) -> CoreResult<WorkingCopyFileTarget> {
+    fn working_copy_file_target(&self, path: &str) -> JayResult<WorkingCopyFileTarget> {
         let repo = self.get_repo();
         let commit = self.working_copy_commit(&repo)?;
         let path = self.parse_repo_path(path)?;

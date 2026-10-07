@@ -34,7 +34,7 @@ impl DiffFormatPlugin for SarifPlugin {
         format!("{path}.md")
     }
 
-    fn project(&self, input: FormatInput<'_>) -> CoreResult<ProjectionPair> {
+    fn project(&self, input: FormatInput<'_>) -> JayResult<ProjectionPair> {
         project_text_pair(
             input,
             self.projection(input.path, DiffProjectionMode::Processed),
@@ -43,7 +43,7 @@ impl DiffFormatPlugin for SarifPlugin {
     }
 }
 
-fn project_sarif(bytes: &[u8]) -> CoreResult<String> {
+fn project_sarif(bytes: &[u8]) -> JayResult<String> {
     let report: SarifReport = serde_json::from_slice(bytes)
         .map_err(|err| projection_error(format!("parse SARIF JSON: {err}")))?;
     let runs = report

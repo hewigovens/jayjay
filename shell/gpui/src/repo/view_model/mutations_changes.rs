@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{CoreResult, FixSummary, MutationEffect, RebaseMode};
+use jayjay_core::{FixSummary, JayResult, MutationEffect, RebaseMode};
 
 use super::RepoViewModel;
 
@@ -8,7 +8,7 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let selection = rev.clone();
         self.repo_write_task(
             cx,
@@ -22,7 +22,7 @@ impl RepoViewModel {
         rev: String,
         into: Option<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let selection = into.clone();
         self.repo_write_task(
             cx,
@@ -37,7 +37,7 @@ impl RepoViewModel {
         dest: String,
         mode: RebaseMode,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let change_id = self
             .graph
             .changes
@@ -60,7 +60,7 @@ impl RepoViewModel {
         revs: Vec<String>,
         dest: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let selection = revs.first().cloned();
         self.repo_write_task(
             cx,
@@ -73,7 +73,7 @@ impl RepoViewModel {
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let task = self.repo_result_task(
             cx,
             move |repo| repo.squash_many(&revs),
@@ -88,7 +88,7 @@ impl RepoViewModel {
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<MutationEffect>> {
+    ) -> gpui::Task<JayResult<MutationEffect>> {
         let selection = revs.first().cloned();
         self.repo_result_task(
             cx,
@@ -101,7 +101,7 @@ impl RepoViewModel {
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.abandon_many(&revs),
@@ -113,7 +113,7 @@ impl RepoViewModel {
         &mut self,
         parents: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.merge(&parents),
@@ -125,7 +125,7 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.duplicate(&rev),
@@ -137,7 +137,7 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<MutationEffect>> {
+    ) -> gpui::Task<JayResult<MutationEffect>> {
         self.repo_result_task(
             cx,
             move |repo| repo.absorb(&rev),
@@ -149,7 +149,7 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.revert_change(&rev),
@@ -161,7 +161,7 @@ impl RepoViewModel {
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<FixSummary>> {
+    ) -> gpui::Task<JayResult<FixSummary>> {
         let selection = revs.first().cloned();
         self.repo_result_task(
             cx,

@@ -23,7 +23,7 @@ impl Repo {
         selections: &[DiffEditFileSelection],
         message: &str,
         ignore_whitespace: bool,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let _write = self.write_guard()?;
         // Snapshot disk edits first so the post-rewrite checkout can't clobber un-snapshotted edits.
         self.refresh_working_copy()?;
@@ -51,7 +51,7 @@ impl Repo {
         rev: &str,
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         self.ensure_commit_mutable(&repo, &commit, rev)?;
@@ -86,14 +86,14 @@ impl Repo {
         rev: &str,
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let repo = self.get_repo();
         let source = self.resolve_commit(&repo, rev)?;
         self.ensure_commit_mutable(&repo, &source, rev)?;
         let destination = self.resolve_commit(&repo, "@")?;
         self.ensure_commit_mutable(&repo, &destination, "@")?;
         if source.id() == destination.id() {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: "cannot move selected changes from @ to @".to_owned(),
             });
         }
@@ -113,7 +113,7 @@ impl Repo {
             squash_commits(tx.repo_mut(), &[source_selection], &destination, true),
         )?;
         let Some(squashed) = squashed else {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: "no changes selected".to_owned(),
             });
         };
@@ -131,7 +131,7 @@ impl Repo {
         selections: &[DiffEditFileSelection],
         message: &str,
         ignore_whitespace: bool,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         self.with_resolved_commit_transaction(
             rev,
             "extract selected changes as child",
@@ -183,7 +183,7 @@ impl Repo {
         selections: &[DiffEditFileSelection],
         message: &str,
         ignore_whitespace: bool,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         self.with_resolved_commit_transaction(
             rev,
             "extract selected changes as parallel",
@@ -233,7 +233,7 @@ impl Repo {
         parent_tree: MergedTree,
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
-    ) -> CoreResult<CommitWithSelection> {
+    ) -> JayResult<CommitWithSelection> {
         let selected_tree =
             self.build_selected_tree(repo, commit, &parent_tree, selections, ignore_whitespace)?;
         Ok(CommitWithSelection {
@@ -250,7 +250,7 @@ impl Repo {
         parent_tree: &MergedTree,
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
-    ) -> CoreResult<MergedTree> {
+    ) -> JayResult<MergedTree> {
         let source_tree = commit.tree();
         let mut builder = MergedTreeBuilder::new(parent_tree.clone());
         let mut selected_any = false;
@@ -278,7 +278,7 @@ impl Repo {
         }
 
         if !selected_any {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: "no changes selected".to_owned(),
             });
         }
@@ -293,7 +293,7 @@ impl Repo {
         parent_tree: &MergedTree,
         selections: &[DiffEditFileSelection],
         ignore_whitespace: bool,
-    ) -> CoreResult<MergedTree> {
+    ) -> JayResult<MergedTree> {
         let source_tree = commit.tree();
         let mut builder = MergedTreeBuilder::new(source_tree.clone());
         let mut selected_any = false;
@@ -321,7 +321,7 @@ impl Repo {
         }
 
         if !selected_any {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: "no changes selected".to_owned(),
             });
         }
@@ -336,7 +336,7 @@ impl Repo {
         parent_tree: &MergedTree,
         path: &RepoPath,
         text: &str,
-    ) -> CoreResult<MergedTreeValue> {
+    ) -> JayResult<MergedTreeValue> {
         let metadata = self
             .resolved_file_value(source_tree, path, "load selected file metadata")?
             .or_else(|| {
@@ -344,7 +344,7 @@ impl Repo {
                     .ok()
                     .flatten()
             })
-            .ok_or_else(|| CoreError::Internal {
+            .ok_or_else(|| JayError::Internal {
                 message: format!(
                     "selected file metadata missing for {}",
                     path.as_internal_file_string()
@@ -357,7 +357,7 @@ impl Repo {
             ..
         } = metadata
         else {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!(
                     "diff edit only supports regular files: {}",
                     path.as_internal_file_string()
@@ -381,9 +381,9 @@ impl Repo {
         tree: &MergedTree,
         path: &RepoPath,
         context: &str,
-    ) -> CoreResult<Option<TreeValue>> {
+    ) -> JayResult<Option<TreeValue>> {
         let value = block_on_result(context, tree.path_value(path))?;
-        value.into_resolved().map_err(|_| CoreError::Internal {
+        value.into_resolved().map_err(|_| JayError::Internal {
             message: format!(
                 "conflicted file values are not supported: {}",
                 path.as_internal_file_string()
@@ -396,7 +396,7 @@ impl Repo {
         selection: &CommitWithSelection,
         base_tree: MergedTree,
         context: &str,
-    ) -> CoreResult<MergedTree> {
+    ) -> JayResult<MergedTree> {
         let selected_diff = block_on_result(
             "build selected diff",
             selection.diff_with_labels("source parent", "selected changes", "selected changes"),

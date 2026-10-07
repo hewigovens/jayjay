@@ -51,7 +51,7 @@ impl super::Repo {
         rev: &str,
         path: &str,
         old_path: Option<&str>,
-    ) -> crate::types::CoreResult<ReviewFileSnapshot> {
+    ) -> crate::types::JayResult<ReviewFileSnapshot> {
         Ok(review_snapshot_from_hunk(
             &self.load_review_hunk(rev, path, old_path)?,
         ))
@@ -62,7 +62,7 @@ impl super::Repo {
         rev: &str,
         path: &str,
         old_path: Option<&str>,
-    ) -> crate::types::CoreResult<DiffHunk> {
+    ) -> crate::types::JayResult<DiffHunk> {
         match old_path {
             Some(old) if old != path => self.show_file_rename(rev, old, path),
             _ => self.show_file(rev, path),

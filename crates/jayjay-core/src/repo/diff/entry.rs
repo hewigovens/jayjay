@@ -77,11 +77,11 @@ fn side_repr(merge: &MergedTreeValue) -> String {
 pub(super) fn resolve_diff_values<E>(
     path: &RepoPath,
     values: Result<Diff<MergedTreeValue>, E>,
-) -> CoreResult<Diff<MergedTreeValue>>
+) -> JayResult<Diff<MergedTreeValue>>
 where
     E: Display,
 {
-    values.map_err(|e| CoreError::Internal {
+    values.map_err(|e| JayError::Internal {
         message: format!("tree diff {}: {e}", path.as_internal_file_string()),
     })
 }
@@ -90,7 +90,7 @@ fn materialize_sides(
     trees: &TreePair,
     path: &RepoPath,
     values: Diff<MergedTreeValue>,
-) -> CoreResult<(MaterializedTreeValue, MaterializedTreeValue)> {
+) -> JayResult<(MaterializedTreeValue, MaterializedTreeValue)> {
     let old_value = materialize_tree_value(
         trees.repo.store(),
         path,
@@ -115,7 +115,7 @@ pub(super) fn materialize_diff_content(
     path: &RepoPath,
     values: Diff<MergedTreeValue>,
     projection_mode: DiffProjectionMode,
-) -> CoreResult<MaterializedDiffContent> {
+) -> JayResult<MaterializedDiffContent> {
     let hunk_type = diff_hunk_type(&values);
     let (old_value, new_value) = materialize_sides(trees, path, values)?;
     let supports_conflict_editor =
@@ -180,7 +180,7 @@ fn project_materialized(
     path: &str,
     old_materialized: &super::materialize::MaterializedContent,
     new_materialized: &super::materialize::MaterializedContent,
-) -> CoreResult<Option<formats::ProjectionPair>> {
+) -> JayResult<Option<formats::ProjectionPair>> {
     let old_bytes = old_materialized.file_bytes();
     let new_bytes = new_materialized.file_bytes();
     if old_bytes.is_none() && new_bytes.is_none() {
@@ -243,7 +243,7 @@ pub(super) fn materialize_file_bytes(
     trees: &TreePair,
     path: &RepoPath,
     values: Diff<MergedTreeValue>,
-) -> CoreResult<SideBytes> {
+) -> JayResult<SideBytes> {
     let (old_value, new_value) = materialize_sides(trees, path, values)?;
     let old = materialized_to_content(path, old_value)?;
     let new = materialized_to_content(path, new_value)?;
@@ -257,7 +257,7 @@ pub(super) fn first_diff_content(
     trees: &TreePair,
     matcher: &dyn Matcher,
     projection_mode: DiffProjectionMode,
-) -> CoreResult<Option<(RepoPathBuf, MaterializedDiffContent, String)>> {
+) -> JayResult<Option<(RepoPathBuf, MaterializedDiffContent, String)>> {
     let mut diff_stream = trees.before.diff_stream(&trees.after, matcher);
     let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) else {
         return Ok(None);

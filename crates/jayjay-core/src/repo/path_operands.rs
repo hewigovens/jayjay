@@ -4,10 +4,10 @@ use crate::types::*;
 
 /// Reject paths with control characters: a newline in a filename would otherwise
 /// inject extra `.gitignore` patterns.
-pub(crate) fn reject_control_chars(paths: &[String]) -> CoreResult<()> {
+pub(crate) fn reject_control_chars(paths: &[String]) -> JayResult<()> {
     for path in paths {
         if path.chars().any(char::is_control) {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("path contains control characters: {path:?}"),
             });
         }

@@ -4,7 +4,7 @@ use jj_lib::merge::Merge;
 
 use crate::diff::{FileDiff, compute_file_diff};
 use crate::file_display::optional_bytes_to_display;
-use crate::{CoreError, CoreResult, MergeEditorHunk, MergeHunkSource};
+use crate::{JayError, JayResult, MergeEditorHunk, MergeHunkSource};
 
 const HUNK_CONTEXT_LINES: usize = 3;
 
@@ -50,19 +50,19 @@ pub(crate) fn merge_editor_hunks<T: AsRef<[u8]>>(
 }
 
 pub trait MergeEditorHunkExt {
-    fn use_source(&self, result: &str, source: MergeHunkSource) -> CoreResult<String>;
+    fn use_source(&self, result: &str, source: MergeHunkSource) -> JayResult<String>;
     fn display_diff(&self, path: &str, result: &str) -> FileDiff;
 }
 
 impl MergeEditorHunkExt for MergeEditorHunk {
-    fn use_source(&self, result: &str, source: MergeHunkSource) -> CoreResult<String> {
+    fn use_source(&self, result: &str, source: MergeHunkSource) -> JayResult<String> {
         let replacement = match source {
             MergeHunkSource::Left => &self.left,
             MergeHunkSource::Base => &self.base,
             MergeHunkSource::Right => &self.right,
         };
         let Some(start) = self.occurrence_start(result) else {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!(
                     "conflict hunk {} changed in Raw view; switch back after restoring its markers",
                     self.index + 1

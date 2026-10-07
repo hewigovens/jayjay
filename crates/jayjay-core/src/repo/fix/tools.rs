@@ -59,7 +59,7 @@ fn changed_lines(base_content: Option<&[u8]>, content: &[u8]) -> Vec<LineRange> 
 pub(super) fn parse_fix_tools(
     settings: &UserSettings,
     context: &FilesetParseContext,
-) -> CoreResult<Vec<FixTool>> {
+) -> JayResult<Vec<FixTool>> {
     let mut names: Vec<&str> = settings.table_keys("fix.tools").collect();
     names.sort_unstable();
     let mut tools = Vec::new();
@@ -98,8 +98,8 @@ pub(super) fn parse_fix_tools(
     Ok(tools)
 }
 
-fn tool_error(name: &str, error: impl Display) -> CoreError {
-    CoreError::internal(format!("fix.tools.{name}: {error}"))
+fn tool_error(name: &str, error: impl Display) -> JayError {
+    JayError::internal(format!("fix.tools.{name}: {error}"))
 }
 
 #[derive(serde::Deserialize)]
@@ -208,7 +208,7 @@ mod tests {
 
     use super::*;
 
-    fn parse(config_text: &str) -> CoreResult<Vec<FixTool>> {
+    fn parse(config_text: &str) -> JayResult<Vec<FixTool>> {
         let mut config = StackedConfig::with_defaults();
         config.add_layer(
             ConfigLayer::parse(ConfigSource::User, config_text).expect("parse test config"),

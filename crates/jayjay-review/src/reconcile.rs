@@ -1,7 +1,7 @@
 use std::collections::HashMap;
 
 use jayjay_primitives::{
-    NoteEntry, NoteStatus, ReviewDiffProvider, ReviewHunk, ReviewNoteStatus, ReviewResult,
+    JayResult, NoteEntry, NoteStatus, ReviewDiffProvider, ReviewHunk, ReviewNoteStatus,
 };
 use jj_diff::change_group_for_anchor;
 
@@ -14,7 +14,7 @@ impl ReviewStore {
         provider: &impl ReviewDiffProvider,
         change_id: &str,
         include_resolved: bool,
-    ) -> ReviewResult<Vec<ReviewNoteStatus>> {
+    ) -> JayResult<Vec<ReviewNoteStatus>> {
         reconcile_notes(self.list_notes(change_id, include_resolved), provider)
     }
 }
@@ -23,7 +23,7 @@ impl ReviewStore {
 pub fn reconcile_notes(
     notes: Vec<NoteEntry>,
     provider: &impl ReviewDiffProvider,
-) -> ReviewResult<Vec<ReviewNoteStatus>> {
+) -> JayResult<Vec<ReviewNoteStatus>> {
     if notes.is_empty() {
         return Ok(vec![]);
     }

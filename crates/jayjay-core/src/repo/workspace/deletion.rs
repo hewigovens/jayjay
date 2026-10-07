@@ -11,7 +11,7 @@ impl Repo {
         &self,
         name: &str,
         expected_root: &str,
-    ) -> CoreResult<Option<String>> {
+    ) -> JayResult<Option<String>> {
         let staged = {
             let _write = self.write_guard()?;
             self.ensure_workspace_is_not_current(name)?;
@@ -34,10 +34,10 @@ impl Repo {
         &self,
         name: &str,
         expected_root: &str,
-    ) -> CoreResult<StagedWorkspace> {
+    ) -> JayResult<StagedWorkspace> {
         let original_root = self.verify_workspace_root(name, expected_root)?;
         let parent = original_root.parent().ok_or_else(|| {
-            CoreError::internal(format!(
+            JayError::internal(format!(
                 "workspace {name} at {} has no parent directory",
                 original_root.display()
             ))
@@ -73,19 +73,19 @@ struct StagedWorkspace {
 }
 
 impl StagedWorkspace {
-    fn restore_or_recovery_error(&self, error: CoreError) -> CoreError {
+    fn restore_or_recovery_error(&self, error: JayError) -> JayError {
         match self.restore() {
             Ok(()) => error,
-            Err(restore_error) => CoreError::internal(format!(
+            Err(restore_error) => JayError::internal(format!(
                 "{error}; restoring the checkout also failed: {restore_error}. The checkout remains at {}",
                 self.root.display()
             )),
         }
     }
 
-    fn restore(&self) -> CoreResult<()> {
+    fn restore(&self) -> JayResult<()> {
         if self.original_root.exists() {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "the original path is occupied: {}",
                 self.original_root.display()
             )));
@@ -94,7 +94,7 @@ impl StagedWorkspace {
             .map_err(|error| io_error("restore workspace to", &self.original_root, error))
     }
 
-    fn delete(&self, repo: &Repo, name: &str) -> CoreResult<()> {
+    fn delete(&self, repo: &Repo, name: &str) -> JayResult<()> {
         repo.verify_workspace_checkout(name, &self.root)?;
         fs::remove_dir_all(&self.root)
             .map_err(|error| io_error("delete workspace", &self.root, error))

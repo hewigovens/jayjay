@@ -2,7 +2,7 @@ use std::fs::{self, File};
 use std::io::Read as _;
 use std::path::Path;
 
-use crate::CoreResult;
+use crate::JayResult;
 use crate::file_display::{bytes_to_display, text_content};
 use crate::filesystem::io_error;
 
@@ -11,7 +11,7 @@ pub(super) struct ExternalContent {
     pub is_text: bool,
 }
 
-pub(super) fn external_content(path: &Path, limit: usize) -> CoreResult<ExternalContent> {
+pub(super) fn external_content(path: &Path, limit: usize) -> JayResult<ExternalContent> {
     let metadata = fs::symlink_metadata(path).map_err(|error| io_error("read", path, error))?;
     if metadata.file_type().is_symlink() {
         return fs::read_link(path)

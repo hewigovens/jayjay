@@ -79,9 +79,9 @@ impl SyncToken {
         self.processes.escalate(targets, false);
     }
 
-    pub(crate) fn check(&self) -> CoreResult<()> {
+    pub(crate) fn check(&self) -> JayResult<()> {
         if self.is_canceled() {
-            return Err(CoreError::Canceled);
+            return Err(JayError::Canceled);
         }
         Ok(())
     }
@@ -119,8 +119,8 @@ impl RunningJjProcesses {
         }
     }
 
-    pub(super) fn output(&self, command: &mut Command, context: &str) -> CoreResult<Output> {
-        let internal = |error: std::io::Error| CoreError::Internal {
+    pub(super) fn output(&self, command: &mut Command, context: &str) -> JayResult<Output> {
+        let internal = |error: std::io::Error| JayError::Internal {
             message: format!("{context}: {error}"),
         };
         let sync = CURRENT_SYNC.with(|current| current.borrow().clone());
@@ -133,12 +133,12 @@ impl RunningJjProcesses {
         let (pid, stdout, stderr) = {
             let mut state = self.state();
             if state.closed {
-                return Err(CoreError::Internal {
+                return Err(JayError::Internal {
                     message: format!("{context}: canceled because JayJay is quitting"),
                 });
             }
             if sync.as_ref().is_some_and(SyncToken::is_canceled) {
-                return Err(CoreError::Canceled);
+                return Err(JayError::Canceled);
             }
             let mut child = command.spawn().map_err(internal)?;
             let pid = child.id();
@@ -156,7 +156,7 @@ impl RunningJjProcesses {
         let (status, signaled) = self.reap(pid).map_err(internal)?;
         let (stdout, stderr) = pipes.map_err(internal)?;
         if signaled && !status.success() {
-            return Err(CoreError::Canceled);
+            return Err(JayError::Canceled);
         }
         Ok(Output {
             status,

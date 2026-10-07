@@ -1,7 +1,7 @@
 //! Batch file mutations dispatched from the file-column context menu: restore to parent, delete from disk, ignore & untrack.
 
 use gpui::Context;
-use jayjay_core::CoreResult;
+use jayjay_core::JayResult;
 
 use super::RepoViewModel;
 
@@ -13,7 +13,7 @@ impl RepoViewModel {
         from: Option<String>,
         paths: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.restore_files(&rev, from.as_deref(), &paths),
@@ -26,7 +26,7 @@ impl RepoViewModel {
         rev: String,
         version: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.restore_version(&rev, &version),
@@ -39,7 +39,7 @@ impl RepoViewModel {
         &mut self,
         paths: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.delete_files(&paths),
@@ -52,7 +52,7 @@ impl RepoViewModel {
         &mut self,
         paths: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.ignore_and_untrack(&paths),
@@ -65,7 +65,7 @@ impl RepoViewModel {
         rev: String,
         paths: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.move_to_working_copy(&rev, &paths),

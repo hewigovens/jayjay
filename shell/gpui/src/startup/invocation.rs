@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use jayjay_core::external_tools::{ExternalToolInvocation, parse_external_tool_invocation};
-use jayjay_core::{CoreResult, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND};
+use jayjay_core::{JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND, JayResult};
 
 use super::arguments::{Arguments, Command};
 
@@ -21,9 +21,9 @@ pub(super) enum Invocation {
 }
 
 impl TryFrom<Arguments> for Invocation {
-    type Error = jayjay_core::CoreError;
+    type Error = jayjay_core::JayError;
 
-    fn try_from(arguments: Arguments) -> CoreResult<Self> {
+    fn try_from(arguments: Arguments) -> JayResult<Self> {
         let forwarded = if let Some(command) = arguments.command {
             let (name, mut forwarded) = match command {
                 Command::Config(args) => (JAYJAY_CONFIG_COMMAND, args.arguments),

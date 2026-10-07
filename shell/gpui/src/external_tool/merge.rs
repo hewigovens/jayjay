@@ -5,7 +5,7 @@ use jayjay_core::external_tools::{
     ExternalMergeResolution, conflict_marker_count, load_external_merge, save_external_merge,
 };
 use jayjay_core::{
-    CoreResult, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource, MergeScrollMap,
+    JayResult, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource, MergeScrollMap,
 };
 
 pub(super) struct ExternalMergeSession {
@@ -39,7 +39,7 @@ impl ExternalMergeSession {
         output_path: PathBuf,
         repo_path: String,
         marker_length: usize,
-    ) -> CoreResult<Self> {
+    ) -> JayResult<Self> {
         let merge = load_external_merge(
             &left_path,
             &base_path,
@@ -125,7 +125,7 @@ impl ExternalMergeSession {
 }
 
 impl ExternalMergeSave {
-    pub fn run(self) -> CoreResult<()> {
+    pub fn run(self) -> JayResult<()> {
         match self {
             Self::Content { output, content } => {
                 save_external_merge(&output, ExternalMergeResolution::Content(content.as_str()))

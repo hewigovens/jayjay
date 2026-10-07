@@ -57,7 +57,7 @@ pub(crate) fn diff_side(side: NoteSide) -> DiffSide {
 
 #[cfg(test)]
 mod tests {
-    use jayjay_primitives::{HunkType, ReviewResult};
+    use jayjay_primitives::{HunkType, JayResult};
     use jj_diff::change_group_for_anchor;
 
     use super::*;
@@ -65,11 +65,11 @@ mod tests {
     struct FixedDiff(ReviewFileDiff);
 
     impl ReviewDiffProvider for FixedDiff {
-        fn review_hunks(&self) -> ReviewResult<Vec<ReviewHunk>> {
+        fn review_hunks(&self) -> JayResult<Vec<ReviewHunk>> {
             Ok(vec![])
         }
 
-        fn review_file_diff(&self, _hunk: &ReviewHunk) -> ReviewResult<ReviewFileDiff> {
+        fn review_file_diff(&self, _hunk: &ReviewHunk) -> JayResult<ReviewFileDiff> {
             Ok(ReviewFileDiff {
                 old_content: self.0.old_content.clone(),
                 new_content: self.0.new_content.clone(),

@@ -10,14 +10,14 @@ use super::naming::is_valid_bookmark_name;
 use super::validation::validate_stack_changes;
 
 impl Repo {
-    pub fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> CoreResult<StackedPrResult> {
+    pub fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> JayResult<StackedPrResult> {
         if layers.is_empty() {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: "No changes to submit.".to_owned(),
             });
         }
         if let Some(bad) = layers.iter().find(|l| !is_valid_bookmark_name(&l.bookmark)) {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("\"{}\" is not a valid branch name.", bad.bookmark),
             });
         }
@@ -25,7 +25,7 @@ impl Repo {
         // Two layers sharing a bookmark would move it twice and mis-head the PRs.
         let mut seen = std::collections::HashSet::new();
         if let Some(dup) = layers.iter().find(|l| !seen.insert(l.bookmark.as_str())) {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!(
                     "Bookmark \"{}\" is used by more than one change.",
                     dup.bookmark
@@ -51,7 +51,7 @@ impl Repo {
                 remote
             }
             _ => {
-                return Err(CoreError::Internal {
+                return Err(JayError::Internal {
                     message: "Stacked PRs support GitHub, GitLab, and Cursor remotes.".to_owned(),
                 });
             }
@@ -124,13 +124,13 @@ impl Repo {
         })
     }
 
-    fn validate_stack(&self, layers: &[SubmitStackLayer]) -> CoreResult<()> {
+    fn validate_stack(&self, layers: &[SubmitStackLayer]) -> JayResult<()> {
         validate_stack_changes(&self.resolve_stack_changes(layers)?)?;
         self.ensure_bookmarks_unclaimed(layers)
     }
 
     // An edited name may already belong to another change (worst case: trunk); reject instead of silently retargeting it.
-    fn ensure_bookmarks_unclaimed(&self, layers: &[SubmitStackLayer]) -> CoreResult<()> {
+    fn ensure_bookmarks_unclaimed(&self, layers: &[SubmitStackLayer]) -> JayResult<()> {
         let bookmarks = self.list_bookmarks()?;
         if let Some((layer, existing)) = layers.iter().find_map(|layer| {
             bookmarks
@@ -156,7 +156,7 @@ impl Repo {
                     |change| format!("change {change}"),
                 )
             };
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!(
                     "Bookmark \"{}\" already belongs to {owner}; choose a different bookmark for change {}.",
                     layer.bookmark, layer.change_id
@@ -166,13 +166,13 @@ impl Repo {
         Ok(())
     }
 
-    fn resolve_stack_changes(&self, layers: &[SubmitStackLayer]) -> CoreResult<Vec<ChangeInfo>> {
+    fn resolve_stack_changes(&self, layers: &[SubmitStackLayer]) -> JayResult<Vec<ChangeInfo>> {
         layers
             .iter()
             .map(|layer| {
                 let mut matches = self.log(&layer.change_id)?;
                 if matches.len() != 1 || matches[0].change_id.id != layer.change_id {
-                    return Err(CoreError::Internal {
+                    return Err(JayError::Internal {
                         message: "The stack changed since preview. Refresh it before submitting."
                             .to_owned(),
                     });

@@ -18,7 +18,7 @@ use crate::types::*;
 
 impl Repo {
     /// Reads the current operation so workspaces added elsewhere show up without a full refresh; never snapshots a working copy.
-    pub fn workspace_list(&self) -> CoreResult<Vec<WorkspaceInfo>> {
+    pub fn workspace_list(&self) -> JayResult<Vec<WorkspaceInfo>> {
         let repo = block_on_result("load workspaces", self.get_repo().loader().load_at_head())?;
         let mut workspaces = Vec::new();
         for (name, commit_id) in repo.view().wc_commit_ids() {
@@ -64,7 +64,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         name: &WorkspaceName,
         commit: &Commit,
-    ) -> CoreResult<u32> {
+    ) -> JayResult<u32> {
         if let Some((cached, files_changed)) = self
             .workspace_files_changed_cache
             .read()

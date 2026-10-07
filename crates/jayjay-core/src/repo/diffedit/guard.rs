@@ -16,11 +16,11 @@ impl Repo {
         tree: &MergedTree,
         parent_tree: &MergedTree,
         selections: &[DiffEditFileSelection],
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         for selection in selections {
             // Renames keep their old content under old_path; reject them up front so the old-side compare below can't misreport them as stale.
             if selection.hunk_type == HunkType::Renamed || selection.old_path.is_some() {
-                return Err(CoreError::Internal {
+                return Err(JayError::Internal {
                     message: format!("diff edit does not support renamed path {}", selection.path),
                 });
             }
@@ -30,14 +30,14 @@ impl Repo {
             self.ensure_path_unconflicted(parent_tree, path.as_ref(), &selection.path)?;
             let current = self.materialize_path_text(repo, tree, path.as_ref())?;
             if current != selection.new_content {
-                return Err(CoreError::DiffSelectionStale {
+                return Err(JayError::DiffSelectionStale {
                     path: selection.path.clone(),
                 });
             }
             // partition_file_selection rebuilds unselected lines from old_content, so a parent rewritten after render is just as stale as a new-side edit.
             let parent = self.materialize_path_text(repo, parent_tree, path.as_ref())?;
             if parent != selection.old_content {
-                return Err(CoreError::DiffSelectionStale {
+                return Err(JayError::DiffSelectionStale {
                     path: selection.path.clone(),
                 });
             }
@@ -50,12 +50,12 @@ impl Repo {
         tree: &MergedTree,
         path: &RepoPath,
         display_path: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let value = block_on_result(&format!("read {display_path}"), tree.path_value(path))?;
         if value.is_resolved() {
             Ok(())
         } else {
-            Err(CoreError::Internal {
+            Err(JayError::Internal {
                 message: format!("diff edit does not support conflicted file {display_path}"),
             })
         }

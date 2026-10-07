@@ -10,10 +10,10 @@ use crate::types::*;
 
 impl Repo {
     /// `jj workspace update-stale`: edits made while stale are recorded at the operation the working copy last saw, so the checkout cannot overwrite them.
-    pub fn update_stale_workspace(&self) -> CoreResult<()> {
+    pub fn update_stale_workspace(&self) -> JayResult<()> {
         let _write = self.write_guard()?;
         match self.refresh_working_copy() {
-            Err(CoreError::WorkingCopyStale) => {}
+            Err(JayError::WorkingCopyStale) => {}
             result => return result,
         }
         let context = "update stale workspace";
@@ -40,7 +40,7 @@ impl Repo {
                 );
                 block_on_result(context, recovery)?.0
             }
-            Err(error) => return Err(CoreError::internal(format!("{context}: {error}"))),
+            Err(error) => return Err(JayError::internal(format!("{context}: {error}"))),
         };
         let repo = self.reset_colocated_git_head(repo)?;
         block_on_result(context, locked_ws.finish(repo.op_id().clone()))?;
@@ -49,7 +49,7 @@ impl Repo {
     }
 
     /// The checkout moved `@` under a new parent without a transaction, so Git HEAD still names the old one; the CLI records this same operation.
-    fn reset_colocated_git_head(&self, repo: Arc<ReadonlyRepo>) -> CoreResult<Arc<ReadonlyRepo>> {
+    fn reset_colocated_git_head(&self, repo: Arc<ReadonlyRepo>) -> JayResult<Arc<ReadonlyRepo>> {
         if !self.is_colocated(repo.store()) {
             return Ok(repo);
         }

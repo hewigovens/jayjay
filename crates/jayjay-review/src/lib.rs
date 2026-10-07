@@ -11,9 +11,9 @@ pub mod test_util;
 pub use anchor::{build_note_anchor, change_group_index};
 pub use file_state::display_group_states;
 pub use jayjay_primitives::{
-    HunkType, JayJayError, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
-    ReviewError, ReviewFileDiff, ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewHunk,
-    ReviewMarkSource, ReviewNoteStatus, ReviewResult, ReviewStoreSummary,
+    HunkType, JayError, JayResult, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
+    ReviewFileDiff, ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewHunk,
+    ReviewMarkSource, ReviewNoteStatus, ReviewStoreSummary,
 };
 pub use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 pub use marks::ReviewFileMarks;

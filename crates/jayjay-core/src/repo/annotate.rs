@@ -19,13 +19,13 @@ use crate::types::*;
 
 impl Repo {
     /// Annotate a file: shows which revision last modified each line.
-    pub fn annotate_file(&self, rev: &str, path: &str) -> CoreResult<Vec<AnnotationLine>> {
+    pub fn annotate_file(&self, rev: &str, path: &str) -> JayResult<Vec<AnnotationLine>> {
         let repo = self.get_repo();
         let starting = self.resolve_commit(&repo, rev)?;
         let repo_path = self.parse_repo_path(path)?;
 
         let mut annotator = block_on(FileAnnotator::from_commit(&starting, repo_path.as_ref()))
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("init annotate: {e}"),
             })?;
 
@@ -37,13 +37,13 @@ impl Repo {
         let resolver = SymbolResolver::new(repo.as_ref(), empty_extensions);
         let domain = user_domain
             .resolve_user_expression(repo.as_ref(), &resolver)
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("resolve annotate domain: {e}"),
             })?
             .into_inner()
             .0;
 
-        block_on(annotator.compute(repo.as_ref(), &domain)).map_err(|e| CoreError::Internal {
+        block_on(annotator.compute(repo.as_ref(), &domain)).map_err(|e| JayError::Internal {
             message: format!("compute annotate: {e}"),
         })?;
 
@@ -79,7 +79,7 @@ impl Repo {
     }
 
     /// File history: list revisions that modified a given file path.
-    pub fn file_history(&self, path: &str) -> CoreResult<Vec<ChangeInfo>> {
+    pub fn file_history(&self, path: &str) -> JayResult<Vec<ChangeInfo>> {
         let repo_path = self.parse_repo_path(path)?;
         let expression = RevsetExpression::filter(RevsetFilterPredicate::File(
             FilesetExpression::file_path(repo_path),

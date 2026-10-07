@@ -2,7 +2,7 @@ use std::path::{Path, PathBuf};
 
 use gpui::{ClipboardItem, Context, Pixels, Point, Task};
 use jayjay_core::overview::OverviewSnapshot;
-use jayjay_core::{CoreResult, OverviewChange, OverviewLane, RebaseMode};
+use jayjay_core::{JayResult, OverviewChange, OverviewLane, RebaseMode};
 
 use super::OverviewView;
 use super::menu::{AbandonRequest, OverviewAction, change_menu, lane_menu};
@@ -153,7 +153,7 @@ impl OverviewView {
         }
     }
 
-    pub(super) fn track(&mut self, task: Task<CoreResult<()>>, cx: &mut Context<Self>) {
+    pub(super) fn track(&mut self, task: Task<JayResult<()>>, cx: &mut Context<Self>) {
         self.action_error = None;
         cx.spawn(async move |this, cx| {
             if let Err(error) = task.await {

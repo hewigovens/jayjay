@@ -16,7 +16,7 @@ use crate::overview::{OverviewSnapshot, overview_groups};
 use crate::types::*;
 
 impl Repo {
-    pub fn overview_snapshot(&self) -> CoreResult<OverviewSnapshot> {
+    pub fn overview_snapshot(&self) -> JayResult<OverviewSnapshot> {
         let overview = self.overview()?;
         Ok(OverviewSnapshot {
             groups: overview_groups(&overview),
@@ -25,13 +25,13 @@ impl Repo {
         })
     }
 
-    pub fn overview(&self) -> CoreResult<Overview> {
+    pub fn overview(&self) -> JayResult<Overview> {
         let repo = block_on_result("load overview", self.get_repo().loader().load_at_head())?;
         self.set_repo(repo.clone());
         on_worker_stack(|| self.overview_of(&repo))
     }
 
-    fn overview_of(&self, repo: &Arc<ReadonlyRepo>) -> CoreResult<Overview> {
+    fn overview_of(&self, repo: &Arc<ReadonlyRepo>) -> JayResult<Overview> {
         let ordered = self.revset_commits(repo, "mutable()")?;
         let mutable: HashSet<CommitId> = ordered.iter().cloned().collect();
         let mut mutable_children: HashMap<CommitId, u32> = HashMap::new();
@@ -91,7 +91,7 @@ impl Repo {
                 .parent_ids()
                 .first()
                 .cloned()
-                .ok_or_else(|| CoreError::Internal {
+                .ok_or_else(|| JayError::Internal {
                     message: "mutable change without a parent".to_owned(),
                 })?;
             let base_commit = match commits.get(&base_id) {
@@ -171,24 +171,22 @@ impl Repo {
         }
     }
 
-    fn commit(&self, repo: &Arc<ReadonlyRepo>, id: &CommitId) -> CoreResult<Commit> {
-        repo.store()
-            .get_commit(id)
-            .map_err(|e| CoreError::Internal {
-                message: format!("get commit: {e}"),
-            })
+    fn commit(&self, repo: &Arc<ReadonlyRepo>, id: &CommitId) -> JayResult<Commit> {
+        repo.store().get_commit(id).map_err(|e| JayError::Internal {
+            message: format!("get commit: {e}"),
+        })
     }
 
     fn revset_commits(
         &self,
         repo: &Arc<ReadonlyRepo>,
         revset_str: &str,
-    ) -> CoreResult<Vec<CommitId>> {
+    ) -> JayResult<Vec<CommitId>> {
         let revset = self.evaluate_revset(repo, revset_str)?;
         let mut stream = revset.stream();
         let mut ids = Vec::new();
         while let Some(result) = block_on(stream.next()) {
-            ids.push(result.map_err(|e| CoreError::Internal {
+            ids.push(result.map_err(|e| JayError::Internal {
                 message: format!("revset stream: {e}"),
             })?);
         }

@@ -128,7 +128,7 @@ extension RepoViewModel {
 
     @MainActor
     private func presentSyncFailure(_ error: any Error, canceledMessage: String) {
-        if let jjError = error as? JayJayError, case .Canceled = jjError {
+        if let jjError = error as? JayError, case .Canceled = jjError {
             info = canceledMessage
             // The remote phase may have landed before the cancel took effect.
             refresh()

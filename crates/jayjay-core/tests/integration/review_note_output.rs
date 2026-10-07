@@ -11,7 +11,7 @@ use serde_json::json;
 const HELLO_PATH: &str = "hello.txt";
 const HELLO_CONTENT: &str = "hello from jayjay\nplease check this\n";
 
-fn assert_success(result: jayjay_core::CoreResult<String>) -> String {
+fn assert_success(result: jayjay_core::JayResult<String>) -> String {
     result.unwrap_or_else(|error| panic!("expected success: {error}"))
 }
 

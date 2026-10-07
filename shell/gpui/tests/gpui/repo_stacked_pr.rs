@@ -6,7 +6,7 @@ use std::sync::{Arc, Mutex};
 use crate::harness::*;
 use gpui::{TestAppContext, VisualTestContext};
 use jayjay_core::{
-    CoreResult, Repo, Stack, StackLayerOutcome, StackedPrResult, SubmitStackLayer, SubmittedLayer,
+    JayResult, Repo, Stack, StackLayerOutcome, StackedPrResult, SubmitStackLayer, SubmittedLayer,
 };
 use jayjay_gpui::repo::window::StackedPrSnapshot;
 use jayjay_gpui::repo::{RepoWindow, StackedPrProvider};
@@ -19,7 +19,7 @@ struct MockProvider {
 }
 
 impl StackedPrProvider for MockProvider {
-    fn detect(&self, repo: &Repo, base_rev: &str, tip_rev: &str) -> CoreResult<Stack> {
+    fn detect(&self, repo: &Repo, base_rev: &str, tip_rev: &str) -> JayResult<Stack> {
         assert_eq!(base_rev, "trunk()");
         let mut stack = repo.detect_stack("main", tip_rev)?;
         if self.existing_first {
@@ -28,7 +28,7 @@ impl StackedPrProvider for MockProvider {
         Ok(stack)
     }
 
-    fn submit(&self, _repo: &Repo, layers: Vec<SubmitStackLayer>) -> CoreResult<StackedPrResult> {
+    fn submit(&self, _repo: &Repo, layers: Vec<SubmitStackLayer>) -> JayResult<StackedPrResult> {
         self.submitted.lock().unwrap().push(layers.clone());
         let mut results: Vec<_> = layers
             .iter()

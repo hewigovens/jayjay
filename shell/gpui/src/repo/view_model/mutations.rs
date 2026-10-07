@@ -1,6 +1,6 @@
 use gpui::Context;
 use jayjay_core::{
-    CoreResult, DiffEditDestination, DiffEditFileSelection, FetchResult, InsertPosition, Repo,
+    DiffEditDestination, DiffEditFileSelection, FetchResult, InsertPosition, JayResult, Repo,
     StackedPrResult, SubmitStackLayer, init_jj_git_repo,
 };
 
@@ -23,7 +23,7 @@ impl RepoViewModel {
         provider: Arc<dyn crate::repo::StackedPrProvider>,
         layers: Vec<SubmitStackLayer>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<StackedPrResult>> {
+    ) -> gpui::Task<JayResult<StackedPrResult>> {
         self.repo_result_task(
             cx,
             move |repo| provider.submit(&repo, layers),
@@ -36,7 +36,7 @@ impl RepoViewModel {
         rev: String,
         message: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.describe(&rev, &message),
@@ -48,7 +48,7 @@ impl RepoViewModel {
         &mut self,
         message: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.jj_commit(&message),
@@ -64,7 +64,7 @@ impl RepoViewModel {
         message: String,
         parallel: bool,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.split(&rev, &paths, &message, parallel),
@@ -77,7 +77,7 @@ impl RepoViewModel {
         &mut self,
         parent: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.new_change(&parent, ""),
@@ -90,7 +90,7 @@ impl RepoViewModel {
         rev: String,
         position: InsertPosition,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.new_change_inserted(&rev, position, ""),
@@ -102,7 +102,7 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.abandon(&rev),
@@ -117,7 +117,7 @@ impl RepoViewModel {
         selection: DiffEditFileSelection,
         ignore_whitespace: bool,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         // The refresh below reloads the file list from scratch; without this, `select_change` would default back to index 0 instead of the file the user was just working in.
         let path = selection.path.clone();
         self.repo_write_task(
@@ -142,7 +142,7 @@ impl RepoViewModel {
         &mut self,
         request: DiffEditApplyRequest,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let restore_path = request.restore_path;
         self.repo_write_task(
             cx,
@@ -167,7 +167,7 @@ impl RepoViewModel {
         name: String,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.create_bookmark(&name, &rev),
@@ -177,9 +177,9 @@ impl RepoViewModel {
 
     pub(crate) fn bookmark_write(
         &mut self,
-        write: impl FnOnce(Arc<Repo>) -> CoreResult<()> + Send + 'static,
+        write: impl FnOnce(Arc<Repo>) -> JayResult<()> + Send + 'static,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(cx, write, |vm, cx| vm.refresh(false, cx))
     }
 
@@ -187,7 +187,7 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.delete_bookmark(&name),
@@ -201,7 +201,7 @@ impl RepoViewModel {
         name: String,
         to_rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.move_bookmark(&name, &to_rev),
@@ -214,7 +214,7 @@ impl RepoViewModel {
         name: String,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.remove_bookmark_from_rev(&name, &rev),
@@ -227,7 +227,7 @@ impl RepoViewModel {
         name: String,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.create_tag(&name, &rev),
@@ -239,7 +239,7 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.delete_tag(&name),
@@ -251,7 +251,7 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<String>> {
+    ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.delete_tag_and_push(&name, &repo.sync_token()),
@@ -263,7 +263,7 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<String>> {
+    ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.git_push_tag(&name, &repo.sync_token()),
@@ -275,7 +275,7 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<String>> {
+    ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.git_push(&name, &repo.sync_token()),
@@ -286,7 +286,7 @@ impl RepoViewModel {
     pub(crate) fn git_fetch_origin(
         &mut self,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<FetchResult>> {
+    ) -> gpui::Task<JayResult<FetchResult>> {
         self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.git_fetch("origin", &repo.sync_token()),
@@ -297,7 +297,7 @@ impl RepoViewModel {
     pub(crate) fn forget_stale_bookmarks(
         &mut self,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<u32>> {
+    ) -> gpui::Task<JayResult<u32>> {
         self.repo_result_task(
             cx,
             move |repo| repo.forget_stale_bookmarks(),
@@ -311,7 +311,7 @@ impl RepoViewModel {
         name: String,
         expected_root: Option<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             move |repo| repo.workspace_forget(&name, expected_root.as_deref()),
@@ -325,7 +325,7 @@ impl RepoViewModel {
         name: String,
         path: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<Option<String>>> {
+    ) -> gpui::Task<JayResult<Option<String>>> {
         self.repo_result_task(
             cx,
             move |repo| repo.workspace_forget_and_delete(&name, &path),
@@ -336,7 +336,7 @@ impl RepoViewModel {
     pub(crate) fn update_stale_workspace(
         &mut self,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         self.repo_write_task(
             cx,
             |repo| repo.update_stale_workspace(),
@@ -349,7 +349,7 @@ impl RepoViewModel {
         dest: String,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<String>> {
+    ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task(
             cx,
             move |repo| repo.workspace_add(&dest, &name, ""),
@@ -357,7 +357,7 @@ impl RepoViewModel {
         )
     }
 
-    pub fn initialize_repo(&mut self, cx: &mut Context<Self>) -> gpui::Task<CoreResult<()>> {
+    pub fn initialize_repo(&mut self, cx: &mut Context<Self>) -> gpui::Task<JayResult<()>> {
         let path = std::path::PathBuf::from(self.repo_path.as_ref());
         self.clear_error();
         self.begin_refreshing(cx);

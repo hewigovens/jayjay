@@ -27,21 +27,21 @@ type LockHook = Box<dyn Fn(&std::path::Path) + Send + Sync>;
 static BEFORE_WORKING_COPY_LOCK: Mutex<Option<LockHook>> = Mutex::new(None);
 
 impl Repo {
-    pub(crate) fn working_copy_commit(&self, repo: &ReadonlyRepo) -> CoreResult<Commit> {
+    pub(crate) fn working_copy_commit(&self, repo: &ReadonlyRepo) -> JayResult<Commit> {
         let commit_id = repo
             .view()
             .get_wc_commit_id(self.workspace_name.as_ref())
-            .ok_or_else(|| CoreError::internal("workspace has no working-copy commit"))?;
+            .ok_or_else(|| JayError::internal("workspace has no working-copy commit"))?;
         repo.store()
             .get_commit(commit_id)
-            .map_err(|error| CoreError::internal(format!("load working-copy commit: {error}")))
+            .map_err(|error| JayError::internal(format!("load working-copy commit: {error}")))
     }
 
     pub(super) fn commit_transaction(
         &self,
         mut tx: Transaction,
         description: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         self.debug_assert_write_guarded();
         let context = "sync working copy after transaction";
         let old_commit = self.working_copy_commit(&self.get_repo())?;
@@ -65,7 +65,7 @@ impl Repo {
     }
 
     /// The CLI's finalization step: when a mutation leaves `@` immutable (tracking a protected bookmark onto it, restoring an old view), start a fresh change on top so the next snapshot cannot rewrite the protected commit.
-    fn keep_working_copy_mutable(&self, tx: &mut Transaction) -> CoreResult<()> {
+    fn keep_working_copy_mutable(&self, tx: &mut Transaction) -> JayResult<()> {
         let Some(wc_commit_id) = tx
             .repo()
             .view()
@@ -78,7 +78,7 @@ impl Repo {
             .repo()
             .store()
             .get_commit(&wc_commit_id)
-            .map_err(|error| CoreError::internal(format!("load working-copy commit: {error}")))?;
+            .map_err(|error| JayError::internal(format!("load working-copy commit: {error}")))?;
         if !self.is_commit_immutable_in(tx, &wc_commit)? {
             return Ok(());
         }
@@ -90,11 +90,11 @@ impl Repo {
         )?;
         tx.repo_mut()
             .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
-            .map_err(|error| CoreError::internal(format!("move working copy: {error}")))?;
+            .map_err(|error| JayError::internal(format!("move working copy: {error}")))?;
         Ok(())
     }
 
-    pub fn refresh_working_copy(&self) -> CoreResult<()> {
+    pub fn refresh_working_copy(&self) -> JayResult<()> {
         let _write = self.write_guard()?;
         // Swift cooperative executor threads have small stacks; jj descendant rebases can need substantially more while polling tree merges.
         std::thread::scope(|scope| {
@@ -102,7 +102,7 @@ impl Repo {
                 .name("jayjay-wc-refresh".to_owned())
                 .stack_size(WORKING_COPY_REFRESH_STACK_SIZE)
                 .spawn_scoped(scope, || self.refresh_working_copy_inner())
-                .map_err(|error| CoreError::Internal {
+                .map_err(|error| JayError::Internal {
                     message: format!("start working-copy refresh: {error}"),
                 })?;
             match worker.join() {
@@ -112,7 +112,7 @@ impl Repo {
         })
     }
 
-    fn refresh_working_copy_inner(&self) -> CoreResult<()> {
+    fn refresh_working_copy_inner(&self) -> JayResult<()> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
         #[cfg(test)]
         if let Some(hook) = BEFORE_WORKING_COPY_LOCK.lock().unwrap().as_ref() {
@@ -128,7 +128,7 @@ impl Repo {
         &self,
         workspace: &'w mut Workspace,
         context: &str,
-    ) -> CoreResult<(LockedWorkspace<'w>, Arc<ReadonlyRepo>)> {
+    ) -> JayResult<(LockedWorkspace<'w>, Arc<ReadonlyRepo>)> {
         let repo_loader = workspace.repo_loader().clone();
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
         let head = block_on_result(context, repo_loader.load_at_head())?;
@@ -141,7 +141,7 @@ impl Repo {
         &self,
         locked_ws: &mut LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
-    ) -> CoreResult<Arc<ReadonlyRepo>> {
+    ) -> JayResult<Arc<ReadonlyRepo>> {
         let wc_commit = self.working_copy_commit(&repo)?;
         let freshness = block_on(WorkingCopyFreshness::check_stale(
             locked_ws.locked_wc(),
@@ -155,8 +155,8 @@ impl Repo {
                 repo.reload_at(&operation),
             ),
             Ok(WorkingCopyFreshness::WorkingCopyStale | WorkingCopyFreshness::SiblingOperation)
-            | Err(OpStoreError::ObjectNotFound { .. }) => Err(CoreError::WorkingCopyStale),
-            Err(error) => Err(CoreError::internal(format!(
+            | Err(OpStoreError::ObjectNotFound { .. }) => Err(JayError::WorkingCopyStale),
+            Err(error) => Err(JayError::internal(format!(
                 "check working-copy freshness: {error}"
             ))),
         }
@@ -166,7 +166,7 @@ impl Repo {
         &self,
         mut locked_ws: LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let repo = self.record_working_copy(&mut locked_ws, repo)?;
         block_on_result(
             "finish working-copy snapshot",
@@ -180,7 +180,7 @@ impl Repo {
         &self,
         locked_ws: &mut LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
-    ) -> CoreResult<Arc<ReadonlyRepo>> {
+    ) -> JayResult<Arc<ReadonlyRepo>> {
         let wc_commit = self.working_copy_commit(&repo)?;
         let new_tree = self.snapshot_tree(&repo, locked_ws, "snapshot working copy")?;
         if new_tree.tree_ids_and_labels() == wc_commit.tree().tree_ids_and_labels() {
@@ -199,7 +199,7 @@ impl Repo {
             )?;
             tx.repo_mut()
                 .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
-                .map_err(|error| CoreError::internal(format!("move working copy: {error}")))?;
+                .map_err(|error| JayError::internal(format!("move working copy: {error}")))?;
             self.sync_colocated_git(&mut tx)?;
         } else {
             self.rewrite_commit_tree(
@@ -223,7 +223,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         locked_ws: &mut LockedWorkspace<'_>,
         context: &str,
-    ) -> CoreResult<MergedTree> {
+    ) -> JayResult<MergedTree> {
         let options = SnapshotOptions {
             base_ignores: base_git_ignores(repo, &self.path)?,
             progress: None,
@@ -236,7 +236,7 @@ impl Repo {
     }
 
     /// `jj file untrack`: drop `paths` from the working-copy change and its on-disk state, leaving the files in place; a path that is not ignored would only be tracked again by the next snapshot, so it is refused.
-    pub(crate) fn untrack_paths(&self, paths: &[RepoPathBuf]) -> CoreResult<()> {
+    pub(crate) fn untrack_paths(&self, paths: &[RepoPathBuf]) -> JayResult<()> {
         self.debug_assert_write_guarded();
         let context = "untrack paths";
         let mut workspace = load_workspace_internal(&self.path, context)?;
@@ -263,7 +263,7 @@ impl Repo {
         let snapshot_tree = self.snapshot_tree(&repo, &mut locked_ws, context)?;
         if snapshot_tree.tree_ids() != new_commit.tree_ids() {
             if let Some((path, _)) = snapshot_tree.entries_matching(&matcher).next() {
-                return Err(CoreError::internal(format!(
+                return Err(JayError::internal(format!(
                     "{} is not ignored, so the next snapshot would track it again",
                     path.as_internal_file_string()
                 )));
@@ -286,7 +286,7 @@ impl Repo {
         Ok(())
     }
 
-    pub fn has_unignored_working_copy_paths(&self, paths: &[String]) -> CoreResult<bool> {
+    pub fn has_unignored_working_copy_paths(&self, paths: &[String]) -> JayResult<bool> {
         let repo = self.get_repo();
         WorkingCopyIgnoreMatcher::new(&repo, self.workspace_name.as_ref(), &self.path)?
             .has_unignored_paths(paths)

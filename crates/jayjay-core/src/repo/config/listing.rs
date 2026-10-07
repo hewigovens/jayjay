@@ -29,14 +29,14 @@ pub struct JjUserConfig {
 }
 
 /// What `jj config list` reports outside a repository, from the same layers core loads, with jj's own defaults left out.
-pub fn jj_user_config() -> CoreResult<JjUserConfig> {
+pub fn jj_user_config() -> JayResult<JjUserConfig> {
     user_config_from(&ConfigEnv::from_environment())
 }
 
-fn user_config_from(env: &ConfigEnv) -> CoreResult<JjUserConfig> {
+fn user_config_from(env: &ConfigEnv) -> JayResult<JjUserConfig> {
     let mut path = env
         .user_config_path()
-        .ok_or_else(|| CoreError::internal("no home directory for the jj user config"))?;
+        .ok_or_else(|| JayError::internal("no home directory for the jj user config"))?;
     let (sections, error) = match env.user_level_config() {
         Ok(config) => (effective_sections(config), None),
         Err(failure) => {

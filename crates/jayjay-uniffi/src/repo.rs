@@ -18,7 +18,7 @@ use jayjay_primitives::{
 use jayjay_review::ReviewStore;
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
-use crate::error::JayJayError;
+use jayjay_core::JayError;
 
 #[uniffi::export]
 fn default_revset() -> String {
@@ -147,8 +147,8 @@ fn check_jj_environment() -> CliStatus {
 }
 
 #[uniffi::export]
-fn init_jj_git_repo(path: String) -> Result<(), JayJayError> {
-    jayjay_core::init_jj_git_repo(&PathBuf::from(path)).map_err(JayJayError::from)
+fn init_jj_git_repo(path: String) -> Result<(), JayError> {
+    jayjay_core::init_jj_git_repo(&PathBuf::from(path))
 }
 
 #[uniffi::export]
@@ -550,7 +550,7 @@ impl JayJaySyncToken {
 #[uniffi::export]
 impl JayJayRepo {
     #[uniffi::constructor]
-    fn open(path: String) -> Result<Arc<Self>, JayJayError> {
+    fn open(path: String) -> Result<Arc<Self>, JayError> {
         let repo = Repo::open(&PathBuf::from(&path))?;
         Ok(Arc::new(Self { inner: repo }))
     }
@@ -559,36 +559,36 @@ impl JayJayRepo {
         self.inner.path().display().to_string()
     }
 
-    fn run_jj_command(&self, command: String) -> Result<JjCommandResult, JayJayError> {
-        Ok(JjCommand::new(command).run_in_repo(&self.inner)?)
+    fn run_jj_command(&self, command: String) -> Result<JjCommandResult, JayError> {
+        JjCommand::new(command).run_in_repo(&self.inner)
     }
 
-    fn refresh_working_copy(&self) -> Result<(), JayJayError> {
-        Ok(self.inner.refresh_working_copy()?)
+    fn refresh_working_copy(&self) -> Result<(), JayError> {
+        self.inner.refresh_working_copy()
     }
 
     fn working_copy_is_large(&self) -> bool {
         self.inner.working_copy_is_large()
     }
 
-    fn has_unignored_working_copy_paths(&self, paths: Vec<String>) -> Result<bool, JayJayError> {
-        Ok(self.inner.has_unignored_working_copy_paths(&paths)?)
+    fn has_unignored_working_copy_paths(&self, paths: Vec<String>) -> Result<bool, JayError> {
+        self.inner.has_unignored_working_copy_paths(&paths)
     }
 
-    fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayJayError> {
-        Ok(self.inner.log(&revset)?)
+    fn log(&self, revset: String) -> Result<Vec<ChangeInfo>, JayError> {
+        self.inner.log(&revset)
     }
 
-    fn check_revset(&self, revset: String) -> Result<(), JayJayError> {
-        Ok(self.inner.check_revset(&revset)?)
+    fn check_revset(&self, revset: String) -> Result<(), JayError> {
+        self.inner.check_revset(&revset)
     }
 
-    fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayJayError> {
-        Ok(self.inner.log_graph(&revset)?)
+    fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayError> {
+        self.inner.log_graph(&revset)
     }
 
     /// One crossing for the graph and its layout, so the shell never sends the entries back.
-    fn log_graph_with_layout(&self, revset: String) -> Result<GraphWithLayout, JayJayError> {
+    fn log_graph_with_layout(&self, revset: String) -> Result<GraphWithLayout, JayError> {
         let entries = self.inner.log_graph(&revset)?;
         let layout = layout_data(&entries);
         let selection = Arc::new(DagSelectionGraph::from_entries(&entries));
@@ -599,21 +599,21 @@ impl JayJayRepo {
         })
     }
 
-    fn show(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
-        Ok(self.inner.show(&rev)?)
+    fn show(&self, rev: String) -> Result<ChangeDetail, JayError> {
+        self.inner.show(&rev)
     }
 
     /// Fast: file list without content.
-    fn show_summary(&self, rev: String) -> Result<ChangeDetail, JayJayError> {
-        Ok(self.inner.show_summary(&rev)?)
+    fn show_summary(&self, rev: String) -> Result<ChangeDetail, JayError> {
+        self.inner.show_summary(&rev)
     }
 
-    fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
-        Ok(self.inner.show_file(&rev, &path)?)
+    fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayError> {
+        self.inner.show_file(&rev, &path)
     }
 
-    fn show_file_raw(&self, rev: String, path: String) -> Result<DiffHunk, JayJayError> {
-        Ok(self.inner.show_file_raw(&rev, &path)?)
+    fn show_file_raw(&self, rev: String, path: String) -> Result<DiffHunk, JayError> {
+        self.inner.show_file_raw(&rev, &path)
     }
 
     fn show_file_rename(
@@ -621,8 +621,8 @@ impl JayJayRepo {
         rev: String,
         old_path: String,
         new_path: String,
-    ) -> Result<DiffHunk, JayJayError> {
-        Ok(self.inner.show_file_rename(&rev, &old_path, &new_path)?)
+    ) -> Result<DiffHunk, JayError> {
+        self.inner.show_file_rename(&rev, &old_path, &new_path)
     }
 
     fn show_file_rename_raw(
@@ -630,10 +630,8 @@ impl JayJayRepo {
         rev: String,
         old_path: String,
         new_path: String,
-    ) -> Result<DiffHunk, JayJayError> {
-        Ok(self
-            .inner
-            .show_file_rename_raw(&rev, &old_path, &new_path)?)
+    ) -> Result<DiffHunk, JayError> {
+        self.inner.show_file_rename_raw(&rev, &old_path, &new_path)
     }
 
     fn review_file_snapshot(
@@ -641,10 +639,9 @@ impl JayJayRepo {
         rev: String,
         path: String,
         old_path: Option<String>,
-    ) -> Result<ReviewFileSnapshot, JayJayError> {
-        Ok(self
-            .inner
-            .review_file_snapshot(&rev, &path, old_path.as_deref())?)
+    ) -> Result<ReviewFileSnapshot, JayError> {
+        self.inner
+            .review_file_snapshot(&rev, &path, old_path.as_deref())
     }
 
     /// Fast: file list between two arbitrary revisions (no content).
@@ -652,8 +649,8 @@ impl JayJayRepo {
         &self,
         from_rev: String,
         to_rev: String,
-    ) -> Result<ChangeDetail, JayJayError> {
-        Ok(self.inner.interdiff_summary(&from_rev, &to_rev)?)
+    ) -> Result<ChangeDetail, JayError> {
+        self.inner.interdiff_summary(&from_rev, &to_rev)
     }
 
     fn interdiff_file(
@@ -661,8 +658,8 @@ impl JayJayRepo {
         from_rev: String,
         to_rev: String,
         path: String,
-    ) -> Result<DiffHunk, JayJayError> {
-        Ok(self.inner.interdiff_file(&from_rev, &to_rev, &path)?)
+    ) -> Result<DiffHunk, JayError> {
+        self.inner.interdiff_file(&from_rev, &to_rev, &path)
     }
 
     fn interdiff_file_raw(
@@ -670,25 +667,20 @@ impl JayJayRepo {
         from_rev: String,
         to_rev: String,
         path: String,
-    ) -> Result<DiffHunk, JayJayError> {
-        Ok(self.inner.interdiff_file_raw(&from_rev, &to_rev, &path)?)
+    ) -> Result<DiffHunk, JayError> {
+        self.inner.interdiff_file_raw(&from_rev, &to_rev, &path)
     }
 
-    fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayJayError> {
-        Ok(self.inner.workspace_list()?)
+    fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayError> {
+        self.inner.workspace_list()
     }
 
-    fn overview_snapshot(&self) -> Result<OverviewSnapshot, JayJayError> {
-        Ok(self.inner.overview_snapshot()?)
+    fn overview_snapshot(&self) -> Result<OverviewSnapshot, JayError> {
+        self.inner.overview_snapshot()
     }
 
-    fn workspace_add(
-        &self,
-        dest: String,
-        name: String,
-        rev: String,
-    ) -> Result<String, JayJayError> {
-        Ok(self.inner.workspace_add(&dest, &name, &rev)?)
+    fn workspace_add(&self, dest: String, name: String, rev: String) -> Result<String, JayError> {
+        self.inner.workspace_add(&dest, &name, &rev)
     }
 
     fn repository_store_path(&self) -> String {
@@ -712,28 +704,25 @@ impl JayJayRepo {
         self.inner.cancel_running_jj_processes();
     }
 
-    fn update_stale_workspace(&self) -> Result<(), JayJayError> {
-        Ok(self.inner.update_stale_workspace()?)
+    fn update_stale_workspace(&self) -> Result<(), JayError> {
+        self.inner.update_stale_workspace()
     }
 
     fn workspace_forget(
         &self,
         name: String,
         expected_root: Option<String>,
-    ) -> Result<(), JayJayError> {
-        Ok(self
-            .inner
-            .workspace_forget(&name, expected_root.as_deref())?)
+    ) -> Result<(), JayError> {
+        self.inner.workspace_forget(&name, expected_root.as_deref())
     }
 
     fn workspace_forget_and_delete(
         &self,
         name: String,
         expected_root: String,
-    ) -> Result<Option<String>, JayJayError> {
-        Ok(self
-            .inner
-            .workspace_forget_and_delete(&name, &expected_root)?)
+    ) -> Result<Option<String>, JayError> {
+        self.inner
+            .workspace_forget_and_delete(&name, &expected_root)
     }
 
     fn workspace_presence(&self) -> WorkspacePresence {
@@ -744,16 +733,16 @@ impl JayJayRepo {
         self.inner.pull_request_info(&bookmark)
     }
 
-    fn pull_request_open_url(&self, bookmark: String) -> Result<String, JayJayError> {
-        Ok(self.inner.pull_request_open_url(&bookmark)?)
+    fn pull_request_open_url(&self, bookmark: String) -> Result<String, JayError> {
+        self.inner.pull_request_open_url(&bookmark)
     }
 
     fn pull_request_import_preview(
         &self,
         url: String,
         sync: Arc<JayJaySyncToken>,
-    ) -> Result<PullRequestImportPreview, JayJayError> {
-        Ok(self.inner.pull_request_import_preview(&url, &sync.inner)?)
+    ) -> Result<PullRequestImportPreview, JayError> {
+        self.inner.pull_request_import_preview(&url, &sync.inner)
     }
 
     fn pull_request_import(
@@ -763,71 +752,62 @@ impl JayJayRepo {
         workspace_name: String,
         workspace_dest: String,
         sync: Arc<JayJaySyncToken>,
-    ) -> Result<String, JayJayError> {
-        Ok(self.inner.pull_request_import(
+    ) -> Result<String, JayError> {
+        self.inner.pull_request_import(
             &url,
             &previewed_head_commit_id,
             &workspace_name,
             &workspace_dest,
             &sync.inner,
-        )?)
+        )
     }
 
     fn pr_host_name(&self) -> Option<String> {
         self.inner.pr_host_name()
     }
 
-    fn diff_stats(&self, rev: String) -> Result<DiffStats, JayJayError> {
-        Ok(self.inner.diff_stats(&rev)?)
+    fn diff_stats(&self, rev: String) -> Result<DiffStats, JayError> {
+        self.inner.diff_stats(&rev)
     }
 
     fn diff_file_stats(
         &self,
         rev: String,
         ignore_whitespace: bool,
-    ) -> Result<Vec<FileDiffStats>, JayJayError> {
-        Ok(self.inner.diff_file_stats(&rev, ignore_whitespace)?)
+    ) -> Result<Vec<FileDiffStats>, JayError> {
+        self.inner.diff_file_stats(&rev, ignore_whitespace)
     }
 
-    fn annotate_file(&self, rev: String, path: String) -> Result<Vec<AnnotationLine>, JayJayError> {
-        Ok(self.inner.annotate_file(&rev, &path)?)
+    fn annotate_file(&self, rev: String, path: String) -> Result<Vec<AnnotationLine>, JayError> {
+        self.inner.annotate_file(&rev, &path)
     }
 
-    fn file_history(&self, path: String) -> Result<Vec<ChangeInfo>, JayJayError> {
-        Ok(self.inner.file_history(&path)?)
+    fn file_history(&self, path: String) -> Result<Vec<ChangeInfo>, JayError> {
+        self.inner.file_history(&path)
     }
 
-    fn evolog(&self, rev: String) -> Result<Vec<EvologEntry>, JayJayError> {
-        Ok(self.inner.evolog(&rev)?)
+    fn evolog(&self, rev: String) -> Result<Vec<EvologEntry>, JayError> {
+        self.inner.evolog(&rev)
     }
 
-    fn resolve_list(&self, rev: String) -> Result<Vec<String>, JayJayError> {
-        Ok(self.inner.resolve_list(&rev)?)
+    fn resolve_list(&self, rev: String) -> Result<Vec<String>, JayError> {
+        self.inner.resolve_list(&rev)
     }
 
-    fn resolve_use_ours(&self, rev: String, path: String) -> Result<(), JayJayError> {
-        Ok(self.inner.resolve_use_ours(&rev, &path)?)
+    fn resolve_use_ours(&self, rev: String, path: String) -> Result<(), JayError> {
+        self.inner.resolve_use_ours(&rev, &path)
     }
 
-    fn resolve_use_theirs(&self, rev: String, path: String) -> Result<(), JayJayError> {
-        Ok(self.inner.resolve_use_theirs(&rev, &path)?)
+    fn resolve_use_theirs(&self, rev: String, path: String) -> Result<(), JayError> {
+        self.inner.resolve_use_theirs(&rev, &path)
     }
 
-    fn resolve_with_tool(
-        &self,
-        rev: String,
-        path: String,
-        tool: String,
-    ) -> Result<(), JayJayError> {
-        Ok(self.inner.resolve_with_tool(&rev, &path, &tool)?)
+    fn resolve_with_tool(&self, rev: String, path: String, tool: String) -> Result<(), JayError> {
+        self.inner.resolve_with_tool(&rev, &path, &tool)
     }
 
-    fn conflict_editor(
-        &self,
-        rev: String,
-        path: String,
-    ) -> Result<ConflictEditorData, JayJayError> {
-        Ok(self.inner.conflict_editor(&rev, &path)?)
+    fn conflict_editor(&self, rev: String, path: String) -> Result<ConflictEditorData, JayError> {
+        self.inner.conflict_editor(&rev, &path)
     }
 
     fn apply_conflict_editor(
@@ -835,44 +815,44 @@ impl JayJayRepo {
         rev: String,
         data: ConflictEditorData,
         content: String,
-    ) -> Result<(), JayJayError> {
-        Ok(self.inner.apply_conflict_editor(&rev, &data, &content)?)
+    ) -> Result<(), JayError> {
+        self.inner.apply_conflict_editor(&rev, &data, &content)
     }
 
-    fn file_content(&self, rev: String, path: String) -> Result<String, JayJayError> {
-        Ok(self.inner.file_content(&rev, &path)?)
+    fn file_content(&self, rev: String, path: String) -> Result<String, JayError> {
+        self.inner.file_content(&rev, &path)
     }
 
-    fn working_copy_file_editor(&self, path: String) -> Result<FileEditorData, JayJayError> {
-        Ok(self.inner.working_copy_file_editor(&path)?)
+    fn working_copy_file_editor(&self, path: String) -> Result<FileEditorData, JayError> {
+        self.inner.working_copy_file_editor(&path)
     }
 
     fn apply_working_copy_file_editor(
         &self,
         data: FileEditorData,
         content: String,
-    ) -> Result<(), JayJayError> {
-        Ok(self.inner.apply_working_copy_file_editor(&data, &content)?)
+    ) -> Result<(), JayError> {
+        self.inner.apply_working_copy_file_editor(&data, &content)
     }
 
-    fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.restore_files(&rev, None, &paths)?)
+    fn restore_files(&self, rev: String, paths: Vec<String>) -> Result<(), JayError> {
+        self.inner.restore_files(&rev, None, &paths)
     }
 
-    fn restore_version(&self, rev: String, version: String) -> Result<(), JayJayError> {
-        Ok(self.inner.restore_version(&rev, &version)?)
+    fn restore_version(&self, rev: String, version: String) -> Result<(), JayError> {
+        self.inner.restore_version(&rev, &version)
     }
 
-    fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.move_to_working_copy(&rev, &paths)?)
+    fn move_to_working_copy(&self, rev: String, paths: Vec<String>) -> Result<(), JayError> {
+        self.inner.move_to_working_copy(&rev, &paths)
     }
 
-    fn delete_files(&self, paths: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.delete_files(&paths)?)
+    fn delete_files(&self, paths: Vec<String>) -> Result<(), JayError> {
+        self.inner.delete_files(&paths)
     }
 
-    fn ignore_and_untrack(&self, paths: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.ignore_and_untrack(&paths)?)
+    fn ignore_and_untrack(&self, paths: Vec<String>) -> Result<(), JayError> {
+        self.inner.ignore_and_untrack(&paths)
     }
 
     fn split(
@@ -881,16 +861,16 @@ impl JayJayRepo {
         paths: Vec<String>,
         message: String,
         parallel: bool,
-    ) -> Result<(), JayJayError> {
-        Ok(self.inner.split(&rev, &paths, &message, parallel)?)
+    ) -> Result<(), JayError> {
+        self.inner.split(&rev, &paths, &message, parallel)
     }
 
-    fn describe(&self, rev: String, message: String) -> Result<(), JayJayError> {
-        Ok(self.inner.describe(&rev, &message)?)
+    fn describe(&self, rev: String, message: String) -> Result<(), JayError> {
+        self.inner.describe(&rev, &message)
     }
 
-    fn new_change(&self, parent: String, message: String) -> Result<(), JayJayError> {
-        Ok(self.inner.new_change(&parent, &message)?)
+    fn new_change(&self, parent: String, message: String) -> Result<(), JayError> {
+        self.inner.new_change(&parent, &message)
     }
 
     fn new_change_inserted(
@@ -898,145 +878,141 @@ impl JayJayRepo {
         rev: String,
         position: InsertPosition,
         message: String,
-    ) -> Result<(), JayJayError> {
-        Ok(self.inner.new_change_inserted(&rev, position, &message)?)
+    ) -> Result<(), JayError> {
+        self.inner.new_change_inserted(&rev, position, &message)
     }
 
-    fn squash(&self, rev: String, into_rev: Option<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.squash(&rev, into_rev.as_deref())?)
+    fn squash(&self, rev: String, into_rev: Option<String>) -> Result<(), JayError> {
+        self.inner.squash(&rev, into_rev.as_deref())
     }
 
-    fn squash_many(&self, revs: Vec<String>) -> Result<String, JayJayError> {
-        Ok(self.inner.squash_many(&revs)?)
+    fn squash_many(&self, revs: Vec<String>) -> Result<String, JayError> {
+        self.inner.squash_many(&revs)
     }
 
-    fn parallelize(&self, revs: Vec<String>) -> Result<MutationEffect, JayJayError> {
-        Ok(self.inner.parallelize(&revs)?)
+    fn parallelize(&self, revs: Vec<String>) -> Result<MutationEffect, JayError> {
+        self.inner.parallelize(&revs)
     }
 
     fn fix_unavailable_reason(&self) -> Option<String> {
         self.inner.fix_unavailable_reason()
     }
 
-    fn fix(&self, revs: Vec<String>) -> Result<FixSummary, JayJayError> {
-        Ok(self.inner.fix(&revs)?)
+    fn fix(&self, revs: Vec<String>) -> Result<FixSummary, JayError> {
+        self.inner.fix(&revs)
     }
 
-    fn edit(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.edit(&rev)?)
+    fn edit(&self, rev: String) -> Result<(), JayError> {
+        self.inner.edit(&rev)
     }
 
-    fn absorb(&self, rev: String) -> Result<MutationEffect, JayJayError> {
-        Ok(self.inner.absorb(&rev)?)
+    fn absorb(&self, rev: String) -> Result<MutationEffect, JayError> {
+        self.inner.absorb(&rev)
     }
 
-    fn revert_change(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.revert_change(&rev)?)
+    fn revert_change(&self, rev: String) -> Result<(), JayError> {
+        self.inner.revert_change(&rev)
     }
 
-    fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.merge(&parent_revs)?)
+    fn merge(&self, parent_revs: Vec<String>) -> Result<(), JayError> {
+        self.inner.merge(&parent_revs)
     }
 
-    fn duplicate(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.duplicate(&rev)?)
+    fn duplicate(&self, rev: String) -> Result<(), JayError> {
+        self.inner.duplicate(&rev)
     }
 
-    fn abandon(&self, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.abandon(&rev)?)
+    fn abandon(&self, rev: String) -> Result<(), JayError> {
+        self.inner.abandon(&rev)
     }
 
-    fn abandon_many(&self, revs: Vec<String>) -> Result<(), JayJayError> {
-        Ok(self.inner.abandon_many(&revs)?)
+    fn abandon_many(&self, revs: Vec<String>) -> Result<(), JayError> {
+        self.inner.abandon_many(&revs)
     }
 
-    fn rebase(&self, rev: String, dest: String, mode: RebaseMode) -> Result<(), JayJayError> {
+    fn rebase(&self, rev: String, dest: String, mode: RebaseMode) -> Result<(), JayError> {
         self.inner.rebase(&rev, &dest, mode)?;
         Ok(())
     }
 
-    fn rebase_many(&self, revs: Vec<String>, dest: String) -> Result<(), JayJayError> {
-        Ok(self.inner.rebase_many(&revs, &dest)?)
+    fn rebase_many(&self, revs: Vec<String>, dest: String) -> Result<(), JayError> {
+        self.inner.rebase_many(&revs, &dest)
     }
 
-    fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayJayError> {
-        Ok(self.inner.list_bookmarks()?)
+    fn list_bookmarks(&self) -> Result<Vec<BookmarkInfo>, JayError> {
+        self.inner.list_bookmarks()
     }
 
-    fn list_tags(&self) -> Result<Vec<TagInfo>, JayJayError> {
-        Ok(self.inner.list_tags()?)
+    fn list_tags(&self) -> Result<Vec<TagInfo>, JayError> {
+        self.inner.list_tags()
     }
 
     fn revset_vocabulary(&self, bookmarks: Vec<BookmarkInfo>) -> jayjay_core::RevsetVocabulary {
         self.inner.revset_vocabulary(&bookmarks)
     }
 
-    fn create_bookmark(&self, name: String, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.create_bookmark(&name, &rev)?)
+    fn create_bookmark(&self, name: String, rev: String) -> Result<(), JayError> {
+        self.inner.create_bookmark(&name, &rev)
     }
 
-    fn move_bookmark(&self, name: String, to_rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.move_bookmark(&name, &to_rev)?)
+    fn move_bookmark(&self, name: String, to_rev: String) -> Result<(), JayError> {
+        self.inner.move_bookmark(&name, &to_rev)
     }
 
-    fn delete_bookmark(&self, name: String) -> Result<(), JayJayError> {
-        Ok(self.inner.delete_bookmark(&name)?)
+    fn delete_bookmark(&self, name: String) -> Result<(), JayError> {
+        self.inner.delete_bookmark(&name)
     }
 
-    fn remove_bookmark_from_rev(&self, name: String, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.remove_bookmark_from_rev(&name, &rev)?)
+    fn remove_bookmark_from_rev(&self, name: String, rev: String) -> Result<(), JayError> {
+        self.inner.remove_bookmark_from_rev(&name, &rev)
     }
 
-    fn forget_bookmark(&self, name: String) -> Result<(), JayJayError> {
-        Ok(self.inner.forget_bookmark(&name)?)
+    fn forget_bookmark(&self, name: String) -> Result<(), JayError> {
+        self.inner.forget_bookmark(&name)
     }
 
-    fn detect_stack(&self, base_rev: String, tip_rev: String) -> Result<Stack, JayJayError> {
-        Ok(self.inner.detect_stack(&base_rev, &tip_rev)?)
+    fn detect_stack(&self, base_rev: String, tip_rev: String) -> Result<Stack, JayError> {
+        self.inner.detect_stack(&base_rev, &tip_rev)
     }
 
-    fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> Result<StackedPrResult, JayJayError> {
-        Ok(self.inner.submit_stack(layers)?)
+    fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> Result<StackedPrResult, JayError> {
+        self.inner.submit_stack(layers)
     }
 
-    fn rename_bookmark(&self, old_name: String, new_name: String) -> Result<(), JayJayError> {
-        Ok(self.inner.rename_bookmark(&old_name, &new_name)?)
+    fn rename_bookmark(&self, old_name: String, new_name: String) -> Result<(), JayError> {
+        self.inner.rename_bookmark(&old_name, &new_name)
     }
 
-    fn track_bookmark(&self, name: String, remote: String) -> Result<(), JayJayError> {
-        Ok(self.inner.track_bookmark(&name, &remote)?)
+    fn track_bookmark(&self, name: String, remote: String) -> Result<(), JayError> {
+        self.inner.track_bookmark(&name, &remote)
     }
 
-    fn forget_stale_bookmarks(&self) -> Result<u32, JayJayError> {
-        Ok(self.inner.forget_stale_bookmarks()?)
+    fn forget_stale_bookmarks(&self) -> Result<u32, JayError> {
+        self.inner.forget_stale_bookmarks()
     }
 
-    fn git_push(
-        &self,
-        bookmark: String,
-        sync: Arc<JayJaySyncToken>,
-    ) -> Result<String, JayJayError> {
-        Ok(self.inner.git_push(&bookmark, &sync.inner)?)
+    fn git_push(&self, bookmark: String, sync: Arc<JayJaySyncToken>) -> Result<String, JayError> {
+        self.inner.git_push(&bookmark, &sync.inner)
     }
 
-    fn create_tag(&self, name: String, rev: String) -> Result<(), JayJayError> {
-        Ok(self.inner.create_tag(&name, &rev)?)
+    fn create_tag(&self, name: String, rev: String) -> Result<(), JayError> {
+        self.inner.create_tag(&name, &rev)
     }
 
-    fn delete_tag(&self, name: String) -> Result<(), JayJayError> {
-        Ok(self.inner.delete_tag(&name)?)
+    fn delete_tag(&self, name: String) -> Result<(), JayError> {
+        self.inner.delete_tag(&name)
     }
 
     fn delete_tag_and_push(
         &self,
         name: String,
         sync: Arc<JayJaySyncToken>,
-    ) -> Result<String, JayJayError> {
-        Ok(self.inner.delete_tag_and_push(&name, &sync.inner)?)
+    ) -> Result<String, JayError> {
+        self.inner.delete_tag_and_push(&name, &sync.inner)
     }
 
-    fn git_push_tag(&self, tag: String, sync: Arc<JayJaySyncToken>) -> Result<String, JayJayError> {
-        Ok(self.inner.git_push_tag(&tag, &sync.inner)?)
+    fn git_push_tag(&self, tag: String, sync: Arc<JayJaySyncToken>) -> Result<String, JayError> {
+        self.inner.git_push_tag(&tag, &sync.inner)
     }
 
     fn remote_web_url(&self) -> Option<String> {
@@ -1047,64 +1023,64 @@ impl JayJayRepo {
         &self,
         remote: String,
         sync: Arc<JayJaySyncToken>,
-    ) -> Result<FetchResult, JayJayError> {
-        Ok(self.inner.git_fetch(&remote, &sync.inner)?)
+    ) -> Result<FetchResult, JayError> {
+        self.inner.git_fetch(&remote, &sync.inner)
     }
 
     fn git_pull_bookmark(
         &self,
         bookmark: String,
         sync: Arc<JayJaySyncToken>,
-    ) -> Result<FetchResult, JayJayError> {
-        Ok(self.inner.git_pull_bookmark(&bookmark, &sync.inner)?)
+    ) -> Result<FetchResult, JayError> {
+        self.inner.git_pull_bookmark(&bookmark, &sync.inner)
     }
 
-    fn jj_commit(&self, message: String) -> Result<(), JayJayError> {
-        Ok(self.inner.jj_commit(&message)?)
+    fn jj_commit(&self, message: String) -> Result<(), JayError> {
+        self.inner.jj_commit(&message)
     }
 
-    fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayJayError> {
-        Ok(self.inner.submodule_statuses()?)
+    fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayError> {
+        self.inner.submodule_statuses()
     }
 
     fn commit_safe_submodule_updates(
         &self,
         message: String,
         paths: Vec<String>,
-    ) -> Result<String, JayJayError> {
-        Ok(self.inner.commit_safe_submodule_updates(&message, &paths)?)
+    ) -> Result<String, JayError> {
+        self.inner.commit_safe_submodule_updates(&message, &paths)
     }
 
-    fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayJayError> {
-        Ok(self.inner.git_lfs_paths(&paths)?)
+    fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayError> {
+        self.inner.git_lfs_paths(&paths)
     }
 
-    fn diff_excerpt(&self) -> Result<Option<DiffExcerpt>, JayJayError> {
-        Ok(self.inner.diff_excerpt()?)
+    fn diff_excerpt(&self) -> Result<Option<DiffExcerpt>, JayError> {
+        self.inner.diff_excerpt()
     }
 
     fn check_user_config(&self) -> Option<String> {
         self.inner.check_user_config()
     }
 
-    fn op_log(&self) -> Result<Vec<OpLogEntry>, JayJayError> {
-        Ok(self.inner.op_log()?)
+    fn op_log(&self) -> Result<Vec<OpLogEntry>, JayError> {
+        self.inner.op_log()
     }
 
-    fn op_restore(&self, op_id: String) -> Result<(), JayJayError> {
-        Ok(self.inner.op_restore(&op_id)?)
+    fn op_restore(&self, op_id: String) -> Result<(), JayError> {
+        self.inner.op_restore(&op_id)
     }
 
     fn review_notes(
         &self,
         rev: String,
         include_resolved: bool,
-    ) -> Result<Vec<ReviewNoteStatus>, JayJayError> {
-        Ok(self.inner.review_notes(&rev, include_resolved)?)
+    ) -> Result<Vec<ReviewNoteStatus>, JayError> {
+        self.inner.review_notes(&rev, include_resolved)
     }
 
-    fn is_at_operation_head(&self) -> Result<bool, JayJayError> {
-        Ok(self.inner.is_at_operation_head()?)
+    fn is_at_operation_head(&self) -> Result<bool, JayError> {
+        self.inner.is_at_operation_head()
     }
 
     fn current_operation_description(&self) -> String {
@@ -1152,13 +1128,8 @@ impl JayJayRepo {
         selections: Vec<DiffEditFileSelection>,
         message: String,
         ignore_whitespace: bool,
-    ) -> Result<(), JayJayError> {
-        Ok(self.inner.apply_diff_selection(
-            &rev,
-            destination,
-            &selections,
-            &message,
-            ignore_whitespace,
-        )?)
+    ) -> Result<(), JayError> {
+        self.inner
+            .apply_diff_selection(&rev, destination, &selections, &message, ignore_whitespace)
     }
 }

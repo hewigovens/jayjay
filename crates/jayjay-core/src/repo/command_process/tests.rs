@@ -56,7 +56,7 @@ fn cancel_targets_only_the_processes_of_its_action() {
         .join()
         .expect("pull thread")
         .expect_err("the pull process should be canceled");
-    assert!(matches!(error, CoreError::Canceled), "{error}");
+    assert!(matches!(error, JayError::Canceled), "{error}");
     assert_eq!(processes.running_count(), 2);
     assert!(push.check().is_ok());
 
@@ -79,9 +79,9 @@ fn a_canceled_action_spawns_nothing_more() {
 
     {
         let _enter = sync.enter();
-        assert!(matches!(sync.check(), Err(CoreError::Canceled)));
+        assert!(matches!(sync.check(), Err(JayError::Canceled)));
         let refused = run_true(&processes).expect_err("the action's later processes are refused");
-        assert!(matches!(refused, CoreError::Canceled), "{refused}");
+        assert!(matches!(refused, JayError::Canceled), "{refused}");
     }
     run_true(&processes).expect("processes outside the action are unaffected");
 
@@ -120,7 +120,7 @@ fn a_live_process_is_canceled_even_after_it_printed_to_stderr() {
         .join()
         .expect("command thread")
         .expect_err("a live process reached by the cancel is canceled");
-    assert!(matches!(error, CoreError::Canceled), "{error}");
+    assert!(matches!(error, JayError::Canceled), "{error}");
 }
 
 #[test]
@@ -152,14 +152,14 @@ fn cancel_frees_an_action_whose_leader_exited_but_left_a_descendant_on_the_pipes
     );
 }
 
-fn run_true(processes: &RunningJjProcesses) -> CoreResult<std::process::Output> {
+fn run_true(processes: &RunningJjProcesses) -> JayResult<std::process::Output> {
     processes.output(&mut Command::new("/usr/bin/true"), "true")
 }
 
 fn spawn_sleeper(
     processes: &RunningJjProcesses,
     sync: Option<&SyncToken>,
-) -> thread::JoinHandle<CoreResult<std::process::Output>> {
+) -> thread::JoinHandle<JayResult<std::process::Output>> {
     let processes = processes.clone();
     let sync = sync.cloned();
     thread::spawn(move || {

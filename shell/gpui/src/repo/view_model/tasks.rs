@@ -3,7 +3,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use gpui::{AppContext, Context, EventEmitter, Task};
-use jayjay_core::{CoreResult, Error, Repo};
+use jayjay_core::{JayError, JayResult, Repo};
 
 use super::RepoViewModel;
 
@@ -50,18 +50,18 @@ impl RepoViewModel {
     pub(in crate::repo) fn repo_write_task(
         &mut self,
         cx: &mut Context<Self>,
-        write: impl FnOnce(Arc<Repo>) -> CoreResult<()> + Send + 'static,
+        write: impl FnOnce(Arc<Repo>) -> JayResult<()> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
-    ) -> Task<CoreResult<()>> {
+    ) -> Task<JayResult<()>> {
         self.repo_result_task(cx, write, move |vm, _, cx| on_success(vm, cx))
     }
 
     pub(in crate::repo) fn repo_result_task<T>(
         &mut self,
         cx: &mut Context<Self>,
-        read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        read_or_write: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
-    ) -> Task<CoreResult<T>>
+    ) -> Task<JayResult<T>>
     where
         T: Send + 'static,
     {
@@ -71,9 +71,9 @@ impl RepoViewModel {
     pub(in crate::repo) fn repo_result_task_without_indicator<T>(
         &mut self,
         cx: &mut Context<Self>,
-        read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        read_or_write: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
-    ) -> Task<CoreResult<T>>
+    ) -> Task<JayResult<T>>
     where
         T: Send + 'static,
     {
@@ -83,9 +83,9 @@ impl RepoViewModel {
     pub(in crate::repo) fn repo_load_task<T>(
         &mut self,
         cx: &mut Context<Self>,
-        read: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        read: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
-    ) -> Task<CoreResult<T>>
+    ) -> Task<JayResult<T>>
     where
         T: Send + 'static,
     {
@@ -96,16 +96,16 @@ impl RepoViewModel {
         &mut self,
         cx: &mut Context<Self>,
         kind: RepoTaskKind,
-        read_or_write: impl FnOnce(Arc<Repo>) -> CoreResult<T> + Send + 'static,
+        read_or_write: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &T, &mut Context<Self>) + 'static,
-    ) -> Task<CoreResult<T>>
+    ) -> Task<JayResult<T>>
     where
         T: Send + 'static,
     {
         let Some(repo) = self.repo.clone() else {
             self.present_error("repository is not open");
             cx.notify();
-            return cx.spawn(async move |_, _| Err(Error::internal("repository is not open")));
+            return cx.spawn(async move |_, _| Err(JayError::internal("repository is not open")));
         };
 
         self.clear_error();
@@ -141,19 +141,19 @@ impl RepoViewModel {
                     }
                 }
             })
-            .unwrap_or_else(|error| Err(Error::internal(error)))
+            .unwrap_or_else(|error| Err(JayError::internal(error)))
         })
     }
 
     pub(in crate::repo) fn core_result_task(
         cx: &mut Context<Self>,
-        future: impl Future<Output = CoreResult<()>> + Send + 'static,
-        update: impl FnOnce(&mut Self, CoreResult<()>, &mut Context<Self>) -> CoreResult<()> + 'static,
-    ) -> Task<CoreResult<()>> {
+        future: impl Future<Output = JayResult<()>> + Send + 'static,
+        update: impl FnOnce(&mut Self, JayResult<()>, &mut Context<Self>) -> JayResult<()> + 'static,
+    ) -> Task<JayResult<()>> {
         cx.spawn(async move |this, cx| {
             let result = cx.background_spawn(future).await;
             this.update(cx, move |vm, cx| update(vm, result, cx))
-                .unwrap_or_else(|error| Err(Error::internal(error)))
+                .unwrap_or_else(|error| Err(JayError::internal(error)))
         })
     }
 }

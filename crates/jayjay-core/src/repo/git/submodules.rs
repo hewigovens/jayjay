@@ -2,7 +2,7 @@ use crate::repo::Repo;
 use crate::types::*;
 
 impl Repo {
-    pub fn submodule_statuses(&self) -> CoreResult<Vec<GitSubmoduleStatus>> {
+    pub fn submodule_statuses(&self) -> JayResult<Vec<GitSubmoduleStatus>> {
         let output = self.command_output(
             "git",
             &[
@@ -24,7 +24,7 @@ impl Repo {
         &self,
         message: &str,
         paths: &[String],
-    ) -> CoreResult<String> {
+    ) -> JayResult<String> {
         let _write = self.write_guard()?;
         if paths.is_empty() {
             return Ok("No safe submodule updates to commit.".to_owned());
@@ -50,7 +50,7 @@ impl Repo {
         }
     }
 
-    fn has_jj_working_copy_changes(&self) -> CoreResult<bool> {
+    fn has_jj_working_copy_changes(&self) -> JayResult<bool> {
         self.refresh_working_copy()?;
         let detail = self.show_summary("@")?;
         if !detail.diff.is_empty() {

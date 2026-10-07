@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::{
-    CoreResult, NoteSide, ReviewOutputFormat, add_review_note, mark_review_file,
+    JayResult, NoteSide, ReviewOutputFormat, add_review_note, mark_review_file,
     resolve_review_note, review_notes_output, review_status_output, unmark_review_files,
 };
 
@@ -41,7 +41,7 @@ pub(super) enum ReviewCommand {
 }
 
 impl ReviewCommand {
-    pub(super) fn run(&self) -> CoreResult<String> {
+    pub(super) fn run(&self) -> JayResult<String> {
         match self {
             Self::Notes {
                 repo,

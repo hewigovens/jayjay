@@ -38,12 +38,12 @@ pub fn mark_review_file(
     line: Option<u32>,
     side: NoteSide,
     expected_commit: &str,
-) -> CoreResult<String> {
+) -> JayResult<String> {
     let repo = open_repo(&canonicalize(repo))?;
     let detail = repo.show_summary("@")?;
     let commit_id = detail.info.commit_id.id;
     if commit_id != expected_commit {
-        return Err(CoreError::review(format!(
+        return Err(JayError::review(format!(
             "Working copy changed since inspection (expected {expected_commit}, current {commit_id}); inspect the current commit before marking"
         )));
     }
@@ -52,10 +52,10 @@ pub fn mark_review_file(
         .diff
         .iter()
         .find(|hunk| hunk.path == file)
-        .ok_or_else(|| CoreError::review(format!("{file} is not part of this change's diff")))?;
+        .ok_or_else(|| JayError::review(format!("{file} is not part of this change's diff")))?;
     let hunk = repo.load_review_hunk(&commit_id, &listed.path, listed.old_path.as_deref())?;
     if hunk.review_identity.is_empty() {
-        return Err(CoreError::review(format!(
+        return Err(JayError::review(format!(
             "{file} cannot carry review marks"
         )));
     }
@@ -70,17 +70,17 @@ pub fn mark_review_file(
                 Some(&snapshot),
                 ReviewMarkSource::Agent,
             )
-            .map_err(|error| CoreError::review(format!("Could not save review marks: {error}")))?;
+            .map_err(|error| JayError::review(format!("Could not save review marks: {error}")))?;
         return Ok(format!("Marked {file} reviewed\n"));
     };
     if snapshot.fingerprints.is_empty() {
-        return Err(CoreError::review(format!(
+        return Err(JayError::review(format!(
             "{file} has no stable change groups; mark the whole file instead"
         )));
     }
     let display_index = change_group_index(file, &ReviewFileDiff::from(&hunk), side, line)
         .ok_or_else(|| {
-            CoreError::review(format!(
+            JayError::review(format!(
                 "{file}:{line} ({} side) is not a changed line in this change's diff",
                 side.as_str()
             ))
@@ -90,7 +90,7 @@ pub fn mark_review_file(
         .get(display_index as usize)
         .filter(|indices| !indices.is_empty())
         .ok_or_else(|| {
-            CoreError::review(format!(
+            JayError::review(format!(
                 "{file}:{line} has no stable change group; mark the whole file instead"
             ))
         })?;
@@ -103,7 +103,7 @@ pub fn mark_review_file(
             indices,
             ReviewMarkSource::Agent,
         )
-        .map_err(|error| CoreError::review(format!("Could not save review marks: {error}")))?;
+        .map_err(|error| JayError::review(format!("Could not save review marks: {error}")))?;
     let state = store.file_review_state(&change_id, file, &hunk.review_identity, Some(&snapshot));
     Ok(format!(
         "Marked {file}:{line} reviewed ({}/{} groups)\n",
@@ -112,15 +112,15 @@ pub fn mark_review_file(
     ))
 }
 
-pub fn unmark_review_files(repo: &Path, file: Option<&str>) -> CoreResult<String> {
+pub fn unmark_review_files(repo: &Path, file: Option<&str>) -> JayResult<String> {
     let repo = open_repo(&canonicalize(repo))?;
     let change_id = repo.show_summary("@")?.info.change_id.id;
     let cleared = ReviewStore::load()
         .unmark_owned_by(&change_id, file, ReviewMarkSource::Agent)
-        .map_err(|error| CoreError::review(format!("Could not save review marks: {error}")))?;
+        .map_err(|error| JayError::review(format!("Could not save review marks: {error}")))?;
     if let Some(file) = file {
         return if cleared.is_empty() {
-            Err(CoreError::review(format!(
+            Err(JayError::review(format!(
                 "{file} has no agent review mark on this change"
             )))
         } else {
@@ -134,7 +134,7 @@ pub fn unmark_review_files(repo: &Path, file: Option<&str>) -> CoreResult<String
     Ok(output)
 }
 
-pub fn review_status_output(repo: &Path, format: ReviewOutputFormat) -> CoreResult<String> {
+pub fn review_status_output(repo: &Path, format: ReviewOutputFormat) -> JayResult<String> {
     let repo = open_repo(&canonicalize(repo))?;
     let detail = repo.show_summary("@")?;
     let change_id = detail.info.change_id.id;
@@ -187,7 +187,7 @@ pub fn review_status_output(repo: &Path, format: ReviewOutputFormat) -> CoreResu
         ReviewOutputFormat::Text => Ok(output.text()),
         ReviewOutputFormat::Json => {
             let mut text = serde_json::to_string_pretty(&output)
-                .map_err(|error| CoreError::internal(error.to_string()))?;
+                .map_err(|error| JayError::internal(error.to_string()))?;
             text.push('\n');
             Ok(text)
         }

@@ -38,7 +38,7 @@ impl Repo {
     pub(crate) fn revset_aliases_map(
         &self,
         settings: &UserSettings,
-    ) -> CoreResult<RevsetAliasesMap> {
+    ) -> JayResult<RevsetAliasesMap> {
         let mut aliases_map = RevsetAliasesMap::new();
         let mut loaded = HashSet::new();
         for name in settings.table_keys(REVSET_ALIASES) {
@@ -99,7 +99,7 @@ impl Repo {
     pub(crate) fn fileset_aliases_map(
         &self,
         settings: &UserSettings,
-    ) -> CoreResult<FilesetAliasesMap> {
+    ) -> JayResult<FilesetAliasesMap> {
         let mut aliases_map = FilesetAliasesMap::new();
         for name in settings.table_keys(FILESET_ALIASES) {
             let alias = Self::load_alias_config(settings, FILESET_ALIASES, name)?;
@@ -112,7 +112,7 @@ impl Repo {
         settings: &UserSettings,
         table: &str,
         name: &str,
-    ) -> CoreResult<AliasConfig> {
+    ) -> JayResult<AliasConfig> {
         match settings.get_string([table, name]) {
             Ok(definition) => Ok(AliasConfig {
                 definition,
@@ -120,14 +120,16 @@ impl Repo {
             }),
             Err(value_error) => {
                 let definition = settings.get_string([table, name, "definition"]).map_err(|e| {
-                    Error::internal(format_args!(
+                    JayError::internal(format_args!(
                         "load {table} {name}: {value_error}; load {table} {name}.definition: {e}"
                     ))
                 })?;
                 let doc = settings
                     .get_string([table, name, "doc"])
                     .optional()
-                    .map_err(|e| Error::internal(format_args!("load {table} {name}.doc: {e}")))?;
+                    .map_err(|e| {
+                        JayError::internal(format_args!("load {table} {name}.doc: {e}"))
+                    })?;
                 Ok(AliasConfig { definition, doc })
             }
         }
@@ -138,10 +140,10 @@ impl Repo {
         name: &str,
         definition: String,
         doc: Option<String>,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         aliases_map
             .insert(name, definition, doc)
-            .map_err(|e| Error::internal(format_args!("parse revset alias {name}: {e}")))
+            .map_err(|e| JayError::internal(format_args!("parse revset alias {name}: {e}")))
     }
 
     fn insert_fileset_alias(
@@ -149,10 +151,10 @@ impl Repo {
         name: &str,
         definition: String,
         doc: Option<String>,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         aliases_map
             .insert(name, definition, doc)
-            .map_err(|e| Error::internal(format_args!("parse fileset alias {name}: {e}")))
+            .map_err(|e| JayError::internal(format_args!("parse fileset alias {name}: {e}")))
     }
 
     fn parse_cli_revset_aliases(output: &str) -> Vec<(String, String)> {

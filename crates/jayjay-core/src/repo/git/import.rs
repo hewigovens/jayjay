@@ -11,7 +11,7 @@ use crate::types::*;
 
 impl Repo {
     /// `jj git import`: pick up refs Git moved behind jj's back, such as branches a raw `git` command created or deleted. HEAD comes first, before the snapshot, so a commit Git just made is not also recorded as pending edits of the old `@`.
-    pub(crate) fn git_import(&self) -> CoreResult<()> {
+    pub(crate) fn git_import(&self) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.import_git_head()?;
         self.refresh_working_copy()?;
@@ -26,7 +26,7 @@ impl Repo {
     }
 
     /// A Git command that moved HEAD (a raw `git commit`, say) already left the files on the new commit, so start a fresh working-copy change there without touching disk, as the CLI does at the start of every command.
-    fn import_git_head(&self) -> CoreResult<()> {
+    fn import_git_head(&self) -> JayResult<()> {
         let context = "import git head";
         let mut workspace = load_workspace_internal(&self.path, context)?;
         let (mut locked_ws, repo) = self.lock_fresh_working_copy(&mut workspace, context)?;
@@ -52,7 +52,7 @@ impl Repo {
             let head = repo
                 .store()
                 .get_commit(&head_id)
-                .map_err(|error| CoreError::internal(format!("load git head: {error}")))?;
+                .map_err(|error| JayError::internal(format!("load git head: {error}")))?;
             let wc_commit = block_on_result(
                 "check out git head",
                 tx.repo_mut().check_out(self.workspace_name.clone(), &head),
@@ -69,16 +69,16 @@ impl Repo {
 }
 
 /// The CLI's import options: `git.*` settings plus each remote's `auto-track-bookmarks` matcher.
-fn git_import_options(settings: &UserSettings) -> CoreResult<GitImportOptions> {
-    let git_settings = GitSettings::from_settings(settings).map_err(CoreError::internal)?;
+fn git_import_options(settings: &UserSettings) -> JayResult<GitImportOptions> {
+    let git_settings = GitSettings::from_settings(settings).map_err(JayError::internal)?;
     let mut remote_auto_track_bookmarks = HashMap::new();
-    for (name, remote) in settings.remote_settings().map_err(CoreError::internal)? {
+    for (name, remote) in settings.remote_settings().map_err(JayError::internal)? {
         let Some(text) = remote.auto_track_bookmarks else {
             continue;
         };
         let expression = revset::parse_string_expression(&mut RevsetDiagnostics::new(), &text)
             .map_err(|error| {
-                CoreError::internal(format!(
+                JayError::internal(format!(
                     "invalid remotes.{}.auto-track-bookmarks: {error}",
                     name.as_symbol()
                 ))

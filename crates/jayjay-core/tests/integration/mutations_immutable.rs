@@ -25,7 +25,7 @@ fn mutations_refuse_to_rewrite_an_immutable_commit() {
     assert!(target.is_immutable, "fixture change must be immutable");
     let rev = target.change_id.id.as_str();
 
-    type Attempt<'a> = Box<dyn Fn() -> jayjay_core::CoreResult<()> + 'a>;
+    type Attempt<'a> = Box<dyn Fn() -> jayjay_core::JayResult<()> + 'a>;
     let attempts: Vec<(&str, Attempt)> = vec![
         ("describe", Box::new(|| repo.describe(rev, "rewritten"))),
         ("edit", Box::new(|| repo.edit(rev))),

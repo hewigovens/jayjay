@@ -1,6 +1,6 @@
 use jayjay_primitives::{
-    JayJayError, NoteAnchor, NoteEntry, NoteSide, ReviewDiffProvider, ReviewFileDiff, ReviewHunk,
-    ReviewNoteStatus, ReviewResult,
+    JayError, JayResult, NoteAnchor, NoteEntry, NoteSide, ReviewDiffProvider, ReviewFileDiff,
+    ReviewHunk, ReviewNoteStatus,
 };
 use jayjay_review::ReviewStore;
 use jj_lib::hex_util::encode_reverse_hex;
@@ -26,7 +26,7 @@ impl Repo {
         &self,
         rev: &str,
         include_resolved: bool,
-    ) -> CoreResult<Vec<ReviewNoteStatus>> {
+    ) -> JayResult<Vec<ReviewNoteStatus>> {
         Ok(self
             .review_notes_report(&ReviewStore::load(), rev, include_resolved)?
             .notes)
@@ -37,7 +37,7 @@ impl Repo {
         store: &ReviewStore,
         rev: &str,
         include_resolved: bool,
-    ) -> CoreResult<ReviewNotesReport> {
+    ) -> JayResult<ReviewNotesReport> {
         let change_id = self.resolve_change_id(rev)?;
         // Every review-state change triggers a refresh; skip the summary walk (materialize + hash all changed files) when the change has no notes.
         if store.list_notes(&change_id, include_resolved).is_empty() {
@@ -57,7 +57,7 @@ impl Repo {
         &self,
         notes: Vec<NoteEntry>,
         rev: &str,
-    ) -> CoreResult<ReviewNotesReport> {
+    ) -> JayResult<ReviewNotesReport> {
         let change_id = self.resolve_change_id(rev)?;
         if notes.is_empty() {
             return Ok(ReviewNotesReport {
@@ -77,12 +77,12 @@ impl Repo {
         path: &str,
         side: NoteSide,
         line: u32,
-    ) -> CoreResult<NoteAnchor> {
+    ) -> JayResult<NoteAnchor> {
         let change_id = self.resolve_change_id(rev)?;
         let provider = self.review_diff_provider(rev)?;
         jayjay_review::build_note_anchor(&provider, &change_id, path, side, line)?.ok_or_else(
             || {
-                JayJayError::review(format!(
+                JayError::review(format!(
                     "{path}:{line} ({} side) is not a changed line in this change's diff",
                     side.as_str()
                 ))
@@ -90,14 +90,14 @@ impl Repo {
         )
     }
 
-    fn resolve_change_id(&self, rev: &str) -> CoreResult<String> {
+    fn resolve_change_id(&self, rev: &str) -> JayResult<String> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         Ok(encode_reverse_hex(commit.change_id().as_bytes()))
     }
 
     // self and rev share lifetime 'a because CoreReviewDiffProvider borrows both into the same field lifetime.
-    fn review_diff_provider<'a>(&'a self, rev: &'a str) -> CoreResult<CoreReviewDiffProvider<'a>> {
+    fn review_diff_provider<'a>(&'a self, rev: &'a str) -> JayResult<CoreReviewDiffProvider<'a>> {
         let summary = self.show_summary(rev)?;
         Ok(CoreReviewDiffProvider {
             repo: self,
@@ -108,11 +108,11 @@ impl Repo {
 }
 
 impl ReviewDiffProvider for CoreReviewDiffProvider<'_> {
-    fn review_hunks(&self) -> ReviewResult<Vec<ReviewHunk>> {
+    fn review_hunks(&self) -> JayResult<Vec<ReviewHunk>> {
         Ok(self.hunks.clone())
     }
 
-    fn review_file_diff(&self, hunk: &ReviewHunk) -> ReviewResult<ReviewFileDiff> {
+    fn review_file_diff(&self, hunk: &ReviewHunk) -> JayResult<ReviewFileDiff> {
         let renamed_from = hunk
             .old_path
             .as_deref()

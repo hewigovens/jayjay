@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{CoreResult, FileEditorData};
+use jayjay_core::{FileEditorData, JayResult};
 
 use super::RepoViewModel;
 
@@ -8,7 +8,7 @@ impl RepoViewModel {
         &mut self,
         path: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<FileEditorData>> {
+    ) -> gpui::Task<JayResult<FileEditorData>> {
         self.repo_load_task(
             cx,
             move |repo| repo.working_copy_file_editor(&path),
@@ -21,7 +21,7 @@ impl RepoViewModel {
         data: FileEditorData,
         content: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<CoreResult<()>> {
+    ) -> gpui::Task<JayResult<()>> {
         let restore_path = data.path.clone();
         self.repo_write_task(
             cx,

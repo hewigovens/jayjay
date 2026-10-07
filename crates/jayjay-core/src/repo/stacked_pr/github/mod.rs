@@ -4,9 +4,9 @@ mod stack;
 use super::forge::ForgeTarget;
 use crate::repo::stacked_pr::native_stack_outcome::NativeStackOutcome;
 use crate::repo::{Repo, hosted_repo::HostedRepo};
-use crate::types::{CoreResult, SubmittedLayer};
+use crate::types::{JayResult, SubmittedLayer};
 
-pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
+pub(super) fn preflight(repo: &Repo) -> JayResult<()> {
     pull_request::preflight(repo)
 }
 

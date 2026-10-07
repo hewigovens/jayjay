@@ -7,7 +7,7 @@ use tempfile::TempDir;
 use super::plan::{ForkRepo, PrHeadRepo, PullRequestImportPlan, RemoteChoice, ResolvedPullRequest};
 use crate::repo::Repo;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
-use crate::types::{CoreError, CoreResult, PrState};
+use crate::types::{JayError, JayResult, PrState};
 
 const MISSING_HEAD: &str = "1111111111111111111111111111111111111111";
 
@@ -98,7 +98,7 @@ impl Fixture {
         }
     }
 
-    fn import(&self, plan: &PullRequestImportPlan, workspace: &str) -> CoreResult<String> {
+    fn import(&self, plan: &PullRequestImportPlan, workspace: &str) -> JayResult<String> {
         self.repo.import_resolved(
             plan,
             workspace,
@@ -213,7 +213,7 @@ fn canceling_a_hung_fetch_reports_canceled_even_after_adding_the_remote() {
     });
 
     let error = outcome.expect_err("import should be canceled");
-    assert!(matches!(error, CoreError::Canceled), "{error}");
+    assert!(matches!(error, JayError::Canceled), "{error}");
 }
 
 #[test]

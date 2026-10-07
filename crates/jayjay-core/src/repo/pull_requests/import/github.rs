@@ -4,7 +4,7 @@ use super::url::ParsedPullRequestUrl;
 use crate::repo::Repo;
 use crate::repo::environment::gh_binary;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
-use crate::types::{CoreError, CoreResult};
+use crate::types::{JayError, JayResult};
 
 const UNUSABLE_HEAD: &str =
     "GitHub did not return a head to fetch for this pull request; the fork may have been deleted.";
@@ -13,7 +13,7 @@ pub(super) fn resolve(
     repo: &Repo,
     parsed: &ParsedPullRequestUrl,
     ssh: bool,
-) -> CoreResult<ResolvedPullRequest> {
+) -> JayResult<ResolvedPullRequest> {
     let canonical_url = format!("{}/pull/{}", parsed.base.web_url(), parsed.number);
     let args = [
         "pr",
@@ -26,14 +26,14 @@ pub(super) fn resolve(
     let output = repo.cancellable_output(&gh_binary(), &args, "gh pr view")?;
     if !output.status.success() {
         let detail = Repo::stderr_text(&output);
-        return Err(CoreError::internal(format!(
+        return Err(JayError::internal(format!(
             "Couldn't load the pull request with gh: {detail}"
         )));
     }
     serde_json::from_str::<GhPrResponse>(&Repo::stdout_text(&output))
         .ok()
         .and_then(|pr| ResolvedPullRequest::from_gh(pr, ssh))
-        .ok_or_else(|| CoreError::internal(UNUSABLE_HEAD))
+        .ok_or_else(|| JayError::internal(UNUSABLE_HEAD))
 }
 
 impl ResolvedPullRequest {

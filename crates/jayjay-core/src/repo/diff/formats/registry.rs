@@ -47,6 +47,6 @@ pub(super) fn projection_for_input(
     plugin_for_input(input).map(|plugin| plugin.projection(input.path, mode))
 }
 
-pub(super) fn project_pair(input: FormatInput<'_>) -> Option<CoreResult<ProjectionPair>> {
+pub(super) fn project_pair(input: FormatInput<'_>) -> Option<JayResult<ProjectionPair>> {
     plugin_for_input(input).map(|plugin| plugin.project(input))
 }

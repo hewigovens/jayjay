@@ -64,7 +64,7 @@ impl RepoViewModel {
     pub(crate) async fn open_detached(
         path: PathBuf,
         cx: &mut gpui::AsyncApp,
-    ) -> jayjay_core::CoreResult<gpui::Entity<Self>> {
+    ) -> jayjay_core::JayResult<gpui::Entity<Self>> {
         let repo_path: SharedString = path.display().to_string().into();
         let revset = build_default_revset(DEFAULT_REVSET_DEPTH);
         let loaded = {
@@ -82,7 +82,7 @@ impl RepoViewModel {
         self.boot(cx);
     }
 
-    fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::CoreResult<OpenedRepo> {
+    fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::JayResult<OpenedRepo> {
         let repo_root_path = jayjay_core::workspace_primary_root(&path.to_string_lossy())
             .unwrap_or_else(|| path.to_string_lossy().into_owned());
         let repo = Repo::open(&path)?;

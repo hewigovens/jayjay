@@ -168,7 +168,7 @@ impl RepoWindow {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             self.finish_stacked_pr_detection(
                 state.generation,
-                Err(jayjay_core::Error::internal("repository is not open")),
+                Err(jayjay_core::JayError::internal("repository is not open")),
                 cx,
             );
             return;
@@ -191,7 +191,7 @@ impl RepoWindow {
     fn finish_stacked_pr_detection(
         &mut self,
         generation: u64,
-        result: jayjay_core::CoreResult<Stack>,
+        result: jayjay_core::JayResult<Stack>,
         cx: &mut Context<Self>,
     ) {
         let Some(state) = self.stacked_pr.as_mut() else {

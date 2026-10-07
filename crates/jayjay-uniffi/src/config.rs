@@ -1,6 +1,6 @@
 use jayjay_core::{JjConfigEntry, JjConfigSection, JjUserConfig};
 
-use crate::error::JayJayError;
+use jayjay_core::JayError;
 
 #[uniffi::remote(Record)]
 pub struct JjConfigEntry {
@@ -23,6 +23,6 @@ pub struct JjUserConfig {
 }
 
 #[uniffi::export]
-fn jj_user_config() -> Result<JjUserConfig, JayJayError> {
-    Ok(jayjay_core::jj_user_config()?)
+fn jj_user_config() -> Result<JjUserConfig, JayError> {
+    jayjay_core::jj_user_config()
 }

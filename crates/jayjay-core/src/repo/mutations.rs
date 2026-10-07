@@ -23,7 +23,7 @@ use super::support::block_on_result;
 use crate::types::*;
 
 impl Repo {
-    pub fn describe(&self, rev: &str, message: &str) -> CoreResult<()> {
+    pub fn describe(&self, rev: &str, message: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         // Snapshot disk edits first so rewriting @'s ancestry does not clobber them on checkout.
         self.refresh_working_copy()?;
@@ -39,7 +39,7 @@ impl Repo {
     /// 2. Create new commit with parent's tree
     /// 3. Edit working copy to point at new commit
     /// 4. Rebase descendants + sync working copy on disk
-    pub fn new_change(&self, parent_rev: &str, message: &str) -> CoreResult<()> {
+    pub fn new_change(&self, parent_rev: &str, message: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         // Step 1: snapshot working copy (same as jj CLI's workspace_helper)
         self.refresh_working_copy()?;
@@ -65,7 +65,7 @@ impl Repo {
         rev: &str,
         position: InsertPosition,
         message: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "new change", true, |repo, target, repo_mut| {
@@ -113,19 +113,19 @@ impl Repo {
         })
     }
 
-    fn children(&self, repo: &Arc<ReadonlyRepo>, commit: &Commit) -> CoreResult<Vec<Commit>> {
+    fn children(&self, repo: &Arc<ReadonlyRepo>, commit: &Commit) -> JayResult<Vec<Commit>> {
         let expression = UserRevsetExpression::commit(commit.id().clone()).children();
         let revset = self.evaluate_typed_revset(repo.as_ref(), expression)?;
         let ids: Vec<CommitId> = block_on_result("children revset", revset.stream().try_collect())?;
         ids.iter()
             .map(|id| repo.store().get_commit(id))
             .collect::<Result<_, _>>()
-            .map_err(|e| CoreError::Internal {
+            .map_err(|e| JayError::Internal {
                 message: format!("get child: {e}"),
             })
     }
 
-    pub fn squash(&self, rev: &str, into: Option<&str>) -> CoreResult<()> {
+    pub fn squash(&self, rev: &str, into: Option<&str>) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
@@ -138,12 +138,12 @@ impl Repo {
                     commit
                         .parent_ids()
                         .first()
-                        .ok_or_else(|| CoreError::Internal {
+                        .ok_or_else(|| JayError::Internal {
                             message: "cannot squash root commit".to_owned(),
                         })?;
                 repo.store()
                     .get_commit(first_parent)
-                    .map_err(|e| CoreError::Internal {
+                    .map_err(|e| JayError::Internal {
                         message: format!("get parent: {e}"),
                     })?
             };
@@ -172,7 +172,7 @@ impl Repo {
 
     /// Switch the working copy to point at an existing revision (`jj edit`).
     /// Replicates the full `jj edit` lifecycle: snapshot → edit → rebase → checkout.
-    pub fn edit(&self, rev: &str) -> CoreResult<()> {
+    pub fn edit(&self, rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "edit", true, |repo, commit, repo_mut| {
@@ -182,7 +182,7 @@ impl Repo {
         })
     }
 
-    pub fn abandon(&self, rev: &str) -> CoreResult<()> {
+    pub fn abandon(&self, rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction(rev, "abandon", true, |repo, commit, repo_mut| {
@@ -192,7 +192,7 @@ impl Repo {
         })
     }
 
-    pub fn abandon_many(&self, revs: &[String]) -> CoreResult<()> {
+    pub fn abandon_many(&self, revs: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Abandon selected")?;
         let (repo, commits) = self.snapshot_and_follow_commits(revs)?;
@@ -207,7 +207,7 @@ impl Repo {
     }
 
     /// Returns the commit id of `rev` after the rebase.
-    pub fn rebase(&self, rev: &str, dest: &str, mode: RebaseMode) -> CoreResult<String> {
+    pub fn rebase(&self, rev: &str, dest: &str, mode: RebaseMode) -> JayResult<String> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
@@ -240,7 +240,7 @@ impl Repo {
                 repo.index().is_ancestor(commit.id(), dest_commit.id()),
             )?
         {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!(
                     "Cannot rebase {rev} onto {dest}: it is the same change or one of its descendants"
                 ),
@@ -260,7 +260,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         target: MoveCommitsTarget,
         dest: &Commit,
-    ) -> CoreResult<MoveCommitsStats> {
+    ) -> JayResult<MoveCommitsStats> {
         let location = MoveCommitsLocation {
             new_parent_ids: vec![dest.id().clone()],
             new_child_ids: Vec::new(),
@@ -284,21 +284,21 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
         dest: &Commit,
-    ) -> CoreResult<Vec<Commit>> {
+    ) -> JayResult<Vec<Commit>> {
         let roots = ResolvedRevsetExpression::commits(vec![dest.id().clone()])
             .range(&ResolvedRevsetExpression::commits(vec![
                 commit.id().clone(),
             ]))
             .roots()
             .evaluate(repo.as_ref())
-            .map_err(|e| CoreError::internal(format!("branch roots: {e}")))?;
+            .map_err(|e| JayError::internal(format!("branch roots: {e}")))?;
         block_on_result(
             "branch roots",
             roots.stream().commits(repo.store()).try_collect(),
         )
     }
 
-    pub fn rebase_many(&self, revs: &[String], dest: &str) -> CoreResult<()> {
+    pub fn rebase_many(&self, revs: &[String], dest: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Rebase selected")?;
         let mut targets = revs.to_vec();
@@ -311,7 +311,7 @@ impl Repo {
                 "rebase",
                 repo.index().is_ancestor(commit.id(), dest_commit.id()),
             )? {
-                return Err(CoreError::internal(
+                return Err(JayError::internal(
                     "Cannot rebase the selection onto one of its own changes or their descendants",
                 ));
             }
@@ -324,7 +324,7 @@ impl Repo {
             commits.iter().map(|commit| commit.id().clone()).collect(),
         )
         .evaluate(repo.as_ref())
-        .map_err(|e| CoreError::internal(format!("order selection: {e}")))?;
+        .map_err(|e| JayError::internal(format!("order selection: {e}")))?;
         let ids = block_on_result("order selection", ordered.stream().try_collect())?;
         self.move_onto(&repo, MoveCommitsTarget::Commits(ids), &dest_commit)
             .map(drop)
@@ -332,7 +332,7 @@ impl Repo {
 
     /// Squash a newest-first, consecutive linear selection into its oldest change.
     /// Returns the destination's commit id after the squash.
-    pub fn squash_many(&self, revs: &[String]) -> CoreResult<String> {
+    pub fn squash_many(&self, revs: &[String]) -> JayResult<String> {
         let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Squash selected")?;
         let (repo, commits) = self.snapshot_and_follow_commits(revs)?;
@@ -340,7 +340,7 @@ impl Repo {
             .windows(2)
             .any(|pair| pair[0].parent_ids() != std::slice::from_ref(pair[1].id()))
         {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "Squash selected requires a consecutive linear range",
             ));
         }
@@ -365,7 +365,7 @@ impl Repo {
                     commit: commit.clone(),
                 })
             })
-            .collect::<CoreResult<Vec<_>>>()?;
+            .collect::<JayResult<Vec<_>>>()?;
 
         let mut tx = repo.start_transaction();
         let squashed = block_on_result(
@@ -385,7 +385,7 @@ impl Repo {
     }
 
     /// Create a merge commit with multiple parents (`jj new A B`).
-    pub fn merge(&self, parent_revs: &[String]) -> CoreResult<()> {
+    pub fn merge(&self, parent_revs: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         require_multiple_revisions(parent_revs, "Merge")?;
         let (repo, parents) = self.snapshot_and_follow_commits(parent_revs)?;
@@ -395,7 +395,7 @@ impl Repo {
                     || block_on_result("merge", repo.index().is_ancestor(parent.id(), other.id()))?
                     || block_on_result("merge", repo.index().is_ancestor(other.id(), parent.id()))?;
                 if related {
-                    return Err(CoreError::Internal {
+                    return Err(JayError::Internal {
                         message: "Merge requires independent heads; one selected change is an ancestor of another"
                             .to_owned(),
                     });
@@ -416,11 +416,11 @@ impl Repo {
     }
 
     /// Duplicate a revision (`jj duplicate`).
-    pub fn duplicate(&self, rev: &str) -> CoreResult<()> {
+    pub fn duplicate(&self, rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
         if commits[0].parent_ids().is_empty() {
-            return Err(CoreError::internal("The root change cannot be duplicated"));
+            return Err(JayError::internal("The root change cannot be duplicated"));
         }
         let mut tx = repo.start_transaction();
         let targets = [commits[0].id().clone()];
@@ -432,7 +432,7 @@ impl Repo {
     }
 
     /// `jj absorb --from rev`: each hunk moves into the mutable ancestor that last touched those lines; hunks without an unambiguous home stay in the source.
-    pub fn absorb(&self, rev: &str) -> CoreResult<MutationEffect> {
+    pub fn absorb(&self, rev: &str) -> JayResult<MutationEffect> {
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
         // Destinations come from mutable(), so the source is the only rewritten commit left to check.
@@ -465,7 +465,7 @@ impl Repo {
     }
 
     /// `jj revert -r rev --onto @`: a new child of `@` whose tree takes back `rev`'s changes.
-    pub fn revert_change(&self, rev: &str) -> CoreResult<()> {
+    pub fn revert_change(&self, rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
         let target = &commits[0];
@@ -514,7 +514,7 @@ impl Repo {
         paths: &[String],
         message: &str,
         parallel: bool,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
         let target = &commits[0];
@@ -534,7 +534,7 @@ impl Repo {
             ),
         )?;
         if selected_tree.tree_ids() == parent_tree.tree_ids() {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "none of the selected files differ from the parent",
             ));
         }
@@ -609,17 +609,17 @@ impl Repo {
     pub(super) fn snapshot_and_follow_commits(
         &self,
         revs: &[String],
-    ) -> CoreResult<(Arc<ReadonlyRepo>, Vec<Commit>)> {
+    ) -> JayResult<(Arc<ReadonlyRepo>, Vec<Commit>)> {
         self.refresh_working_copy()?;
         let repo = self.get_repo();
         let commits = revs
             .iter()
             .map(|rev| self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev))
-            .collect::<CoreResult<_>>()?;
+            .collect::<JayResult<_>>()?;
         Ok((repo, commits))
     }
 
-    pub(crate) fn snapshot_and_follow(&self, revs: &[String]) -> CoreResult<Vec<String>> {
+    pub(crate) fn snapshot_and_follow(&self, revs: &[String]) -> JayResult<Vec<String>> {
         Ok(self
             .snapshot_and_follow_commits(revs)?
             .1
@@ -628,17 +628,17 @@ impl Repo {
             .collect())
     }
 
-    pub(crate) fn snapshot_and_follow_one(&self, rev: &str) -> CoreResult<String> {
+    pub(crate) fn snapshot_and_follow_one(&self, rev: &str) -> JayResult<String> {
         Ok(self.snapshot_and_follow(&[rev.to_owned()])?.remove(0))
     }
 }
 
 /// `split.legacy-bookmark-behavior` is defined by the CLI's config, not jj-lib's, so an unset key means the CLI default.
-fn legacy_split_bookmark_behavior(settings: &UserSettings) -> CoreResult<bool> {
+fn legacy_split_bookmark_behavior(settings: &UserSettings) -> JayResult<bool> {
     match settings.get_bool("split.legacy-bookmark-behavior") {
         Ok(value) => Ok(value),
         Err(ConfigGetError::NotFound { .. }) => Ok(true),
-        Err(error) => Err(CoreError::internal(error)),
+        Err(error) => Err(JayError::internal(error)),
     }
 }
 
@@ -651,9 +651,9 @@ pub(super) fn combined_description(destination: &str, source: &str) -> String {
     }
 }
 
-pub(super) fn require_multiple_revisions(revs: &[String], action: &str) -> CoreResult<()> {
+pub(super) fn require_multiple_revisions(revs: &[String], action: &str) -> JayResult<()> {
     if revs.len() < 2 {
-        return Err(CoreError::internal(format!(
+        return Err(JayError::internal(format!(
             "{action} requires at least two changes"
         )));
     }

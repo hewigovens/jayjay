@@ -262,10 +262,7 @@ fn rejects_a_conflict_edit_after_the_sides_changed_underneath() {
         .apply_conflict_editor("@", &editor, "combined\n")
         .expect_err("a conflict rewritten underneath the editor must be stale");
 
-    assert!(matches!(
-        error,
-        crate::CoreError::ConflictEditorStale { .. }
-    ));
+    assert!(matches!(error, crate::JayError::ConflictEditorStale { .. }));
 }
 
 #[test]
@@ -279,8 +276,5 @@ fn rejects_a_conflict_edit_after_the_working_copy_moved_to_another_change() {
         .apply_conflict_editor("@", &editor, "combined\n")
         .expect_err("stale edit should fail");
 
-    assert!(matches!(
-        error,
-        crate::CoreError::ConflictEditorStale { .. }
-    ));
+    assert!(matches!(error, crate::JayError::ConflictEditorStale { .. }));
 }

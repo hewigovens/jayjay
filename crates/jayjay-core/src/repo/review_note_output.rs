@@ -6,7 +6,7 @@ use jayjay_primitives::{NoteSide, ReviewNoteStatus};
 use jayjay_review::ReviewStore;
 use serde::Serialize;
 
-use crate::types::{CoreError, CoreResult};
+use crate::types::{JayError, JayResult};
 
 use super::Repo;
 
@@ -30,10 +30,10 @@ pub fn add_review_note(
     line: u32,
     side: NoteSide,
     message: &str,
-) -> CoreResult<String> {
+) -> JayResult<String> {
     let body = message.trim();
     if body.is_empty() {
-        return Err(CoreError::internal("note body is empty"));
+        return Err(JayError::internal("note body is empty"));
     }
     let repo = open_repo(&canonicalize(repo))?;
     // The same anchor the GUI would record, so the note shows a marker and bubble there and reconciles Current here.
@@ -50,7 +50,7 @@ pub fn review_notes_output(
     repo: &Path,
     format: ReviewOutputFormat,
     include_resolved: bool,
-) -> CoreResult<String> {
+) -> JayResult<String> {
     let repo = open_repo(&canonicalize(repo))?;
     // The same provider the GUI reconciles through, so rename detection, LFS normalization, and change-group indices agree across surfaces.
     let report = repo.review_notes_report(&ReviewStore::load(), "@", include_resolved)?;
@@ -64,14 +64,14 @@ pub fn review_notes_output(
                 notes: report.notes,
             };
             let mut text = serde_json::to_string_pretty(&output)
-                .map_err(|error| CoreError::internal(error.to_string()))?;
+                .map_err(|error| JayError::internal(error.to_string()))?;
             text.push('\n');
             Ok(text)
         }
     }
 }
 
-pub fn resolve_review_note(repo: &Path, id: &str) -> CoreResult<String> {
+pub fn resolve_review_note(repo: &Path, id: &str) -> JayResult<String> {
     validate_note_id(id)?;
     let repo = open_repo(&canonicalize(repo))?;
     // The store is shared across repos; only resolve notes that belong to this repo's working-copy change so a copy-pasted id can't silently resolve someone else's note.
@@ -82,7 +82,7 @@ pub fn resolve_review_note(repo: &Path, id: &str) -> CoreResult<String> {
         .iter()
         .all(|note| note.id != id)
     {
-        return Err(CoreError::internal(format!(
+        return Err(JayError::internal(format!(
             "review note not found on the working-copy change: {id}"
         )));
     }
@@ -90,7 +90,7 @@ pub fn resolve_review_note(repo: &Path, id: &str) -> CoreResult<String> {
     Ok(format!("Resolved review note {id}\n"))
 }
 
-pub(super) fn open_repo(path: &Path) -> CoreResult<Repo> {
+pub(super) fn open_repo(path: &Path) -> JayResult<Repo> {
     let repo = Repo::open(path)?;
     repo.refresh_working_copy()?;
     Ok(repo)
@@ -144,7 +144,7 @@ fn notes_text(notes: &[ReviewNoteStatus]) -> String {
     output
 }
 
-fn validate_note_id(id: &str) -> CoreResult<()> {
+fn validate_note_id(id: &str) -> JayResult<()> {
     let valid = !id.is_empty()
         && id.len() <= 80
         && id
@@ -153,7 +153,7 @@ fn validate_note_id(id: &str) -> CoreResult<()> {
     if valid {
         Ok(())
     } else {
-        Err(CoreError::internal("malformed review note id"))
+        Err(JayError::internal("malformed review note id"))
     }
 }
 

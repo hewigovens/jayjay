@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
-    CoreResult, DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, Repo,
+    DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, JayResult, Repo,
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
 use jayjay_markdown::MarkdownDocument;
@@ -49,7 +49,7 @@ pub(super) fn compute_diff_blocking(
     projection_mode: Option<DiffProjectionMode>,
     ignore_whitespace: bool,
     reviewable: bool,
-) -> CoreResult<ComputedDiff> {
+) -> JayResult<ComputedDiff> {
     let path = hunk.path.clone();
     if hunk.is_content_free_rename() {
         return Ok(ComputedDiff {
@@ -158,7 +158,7 @@ fn load_hunk(
     hunk: &DiffHunk,
     compare_from_rev: Option<&str>,
     raw: bool,
-) -> CoreResult<DiffHunk> {
+) -> JayResult<DiffHunk> {
     let path = hunk.path.as_str();
     if let Some(from_rev) = compare_from_rev {
         if raw {

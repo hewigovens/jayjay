@@ -40,7 +40,7 @@ impl DiffExcerpt {
 
 impl Repo {
     /// The working copy's changes as a stat plus a unified diff for a commit-message model.
-    pub fn diff_excerpt(&self) -> CoreResult<Option<DiffExcerpt>> {
+    pub fn diff_excerpt(&self) -> JayResult<Option<DiffExcerpt>> {
         self.refresh_working_copy()?;
         let hunks = self.show("@")?.diff;
         if hunks.is_empty() {

@@ -2,9 +2,9 @@ use super::super::forge::{
     ForgeTarget, auth_preflight, created, edit_pull_request, failed, non_empty_or,
 };
 use crate::repo::{Repo, environment::gh_binary};
-use crate::types::{CoreResult, SubmittedLayer};
+use crate::types::{JayResult, SubmittedLayer};
 
-pub(super) fn preflight(repo: &Repo) -> CoreResult<()> {
+pub(super) fn preflight(repo: &Repo) -> JayResult<()> {
     auth_preflight(repo, &gh_binary(), "gh", "GitHub CLI (gh)")
 }
 

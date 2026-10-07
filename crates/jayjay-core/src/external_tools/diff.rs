@@ -2,7 +2,7 @@ use std::path::Path;
 
 use crate::diff::{DiffSpanStyle, FileDiff, collapse_context_with_mapping, compute_file_diff_full};
 use crate::{
-    CoreResult, DiffEditFileSelection, DiffHunk, FileDiffStats, HunkType, diff::DisplayLineMapping,
+    DiffEditFileSelection, DiffHunk, FileDiffStats, HunkType, JayResult, diff::DisplayLineMapping,
 };
 
 use super::scan::{ScannedExternalDiff, scan_external_diff};
@@ -40,7 +40,7 @@ pub fn load_external_diff(
     left: &Path,
     right: &Path,
     editable: bool,
-) -> CoreResult<Vec<ExternalDiffFile>> {
+) -> JayResult<Vec<ExternalDiffFile>> {
     let mut files: Vec<_> = scan_external_diff(left, right, editable)?
         .into_iter()
         .map(prepare_file)

@@ -1,5 +1,5 @@
 use jayjay_primitives::ReviewFileDiff;
-use jayjay_primitives::{NoteAnchor, NoteSide, ReviewDiffProvider, ReviewResult};
+use jayjay_primitives::{JayResult, NoteAnchor, NoteSide, ReviewDiffProvider};
 use jj_diff::{ChangeGroup, DiffLine, DiffSide, DiffSpanStyle, change_group_for_anchor};
 
 use crate::replay::{diff_side, render_display_lines};
@@ -11,7 +11,7 @@ pub fn build_note_anchor(
     path: &str,
     side: NoteSide,
     line: u32,
-) -> ReviewResult<Option<NoteAnchor>> {
+) -> JayResult<Option<NoteAnchor>> {
     let Some(hunk) = provider
         .review_hunks()?
         .into_iter()
@@ -79,7 +79,7 @@ mod tests {
     struct OneFile;
 
     impl ReviewDiffProvider for OneFile {
-        fn review_hunks(&self) -> ReviewResult<Vec<ReviewHunk>> {
+        fn review_hunks(&self) -> JayResult<Vec<ReviewHunk>> {
             Ok(vec![ReviewHunk {
                 path: "a.txt".to_owned(),
                 old_path: None,
@@ -88,7 +88,7 @@ mod tests {
             }])
         }
 
-        fn review_file_diff(&self, _hunk: &ReviewHunk) -> ReviewResult<ReviewFileDiff> {
+        fn review_file_diff(&self, _hunk: &ReviewHunk) -> JayResult<ReviewFileDiff> {
             Ok(ReviewFileDiff {
                 old_content: Some("a\nb\n".to_owned()),
                 new_content: Some("a\nchanged\nb\n".to_owned()),

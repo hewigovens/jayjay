@@ -5,10 +5,10 @@ use super::naming;
 use super::validation::validate_stack_changes;
 
 impl Repo {
-    pub fn detect_stack(&self, base_rev: &str, tip_rev: &str) -> CoreResult<Stack> {
+    pub fn detect_stack(&self, base_rev: &str, tip_rev: &str) -> JayResult<Stack> {
         let mut changes = self.log(&format!("{base_rev}..{tip_rev}"))?;
         if changes.is_empty() {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: "No mutable changes above trunk to stack.".to_owned(),
             });
         }

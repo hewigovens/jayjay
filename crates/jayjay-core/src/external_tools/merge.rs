@@ -9,7 +9,7 @@ use jj_lib::files::FileMergeHunkLevel;
 use jj_lib::merge::{Merge, SameChange};
 use jj_lib::tree_merge::MergeOptions;
 
-use crate::CoreResult;
+use crate::JayResult;
 use crate::MergeEditorHunk;
 use crate::file_display::{MAX_DIFF_BYTES, bytes_to_display};
 use crate::filesystem::io_error;
@@ -38,7 +38,7 @@ pub fn load_external_merge(
     right_path: &Path,
     output_path: &Path,
     marker_length: usize,
-) -> CoreResult<ExternalMerge> {
+) -> JayResult<ExternalMerge> {
     let left = external_content(left_path, MAX_DIFF_BYTES)?;
     let base = if base_path.as_os_str().is_empty() {
         ExternalContent {
@@ -92,7 +92,7 @@ pub fn conflict_marker_count(content: &str, marker_length: usize) -> usize {
 pub fn save_external_merge(
     output: &Path,
     resolution: ExternalMergeResolution<'_>,
-) -> CoreResult<()> {
+) -> JayResult<()> {
     match resolution {
         ExternalMergeResolution::Content(content) => {
             fs::write(output, content.as_bytes()).map_err(|error| io_error("write", output, error))

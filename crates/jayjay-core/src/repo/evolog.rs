@@ -9,7 +9,7 @@ use crate::types::*;
 
 impl Repo {
     /// Evolution history of a single change. Most recent rewrite first.
-    pub fn evolog(&self, rev: &str) -> CoreResult<Vec<EvologEntry>> {
+    pub fn evolog(&self, rev: &str) -> JayResult<Vec<EvologEntry>> {
         let repo = self.get_repo();
         // A divergent change is shown by commit id, which a restore hides; start from its successor so the reload includes the new version.
         let head = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
@@ -18,7 +18,7 @@ impl Repo {
             let stream = walk_predecessors(repo.as_ref(), &[head.id().clone()]);
             futures::pin_mut!(stream);
             while let Some(result) = block_on(stream.as_mut().next()) {
-                let entry = result.map_err(|e| CoreError::Internal {
+                let entry = result.map_err(|e| JayError::Internal {
                     message: format!("walk evolog: {e}"),
                 })?;
                 entries.push(to_dto(repo.as_ref(), &entry));

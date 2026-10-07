@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 
 use futures::AsyncReadExt as _;
 
-use crate::{CoreError, CoreResult};
+use crate::{JayError, JayResult};
 
 pub fn write_atomically(path: &Path, contents: &[u8]) -> std::io::Result<()> {
     static WRITE_SEQUENCE: AtomicU64 = AtomicU64::new(0);
@@ -64,14 +64,14 @@ pub(crate) fn normalized_absolute_path(path: &str) -> String {
     normalized.to_string_lossy().into_owned()
 }
 
-pub(crate) fn safe_relative_path(path: &Path, kind: &str) -> CoreResult<PathBuf> {
+pub(crate) fn safe_relative_path(path: &Path, kind: &str) -> JayResult<PathBuf> {
     if path.as_os_str().is_empty()
         || path.is_absolute()
         || path
             .components()
             .any(|component| !matches!(component, Component::Normal(_)))
     {
-        return Err(CoreError::internal(format!(
+        return Err(JayError::internal(format!(
             "invalid {kind} path: {}",
             path.display()
         )));
@@ -79,8 +79,8 @@ pub(crate) fn safe_relative_path(path: &Path, kind: &str) -> CoreResult<PathBuf>
     Ok(path.to_owned())
 }
 
-pub(crate) fn io_error(action: &str, path: &Path, error: std::io::Error) -> CoreError {
-    CoreError::internal(format!("{action} {}: {error}", path.display()))
+pub(crate) fn io_error(action: &str, path: &Path, error: std::io::Error) -> JayError {
+    JayError::internal(format!("{action} {}: {error}", path.display()))
 }
 
 #[cfg(unix)]
@@ -96,7 +96,7 @@ pub(crate) fn is_executable(_: &fs::Metadata) -> bool {
 }
 
 #[cfg(unix)]
-pub(crate) fn set_executable(path: &Path, executable: bool) -> CoreResult<()> {
+pub(crate) fn set_executable(path: &Path, executable: bool) -> JayResult<()> {
     use std::os::unix::fs::PermissionsExt as _;
 
     let mut permissions = fs::metadata(path)
@@ -117,7 +117,7 @@ pub(crate) fn set_executable(path: &Path, executable: bool) -> CoreResult<()> {
 }
 
 #[cfg(not(unix))]
-pub(crate) fn set_executable(_: &Path, _: bool) -> CoreResult<()> {
+pub(crate) fn set_executable(_: &Path, _: bool) -> JayResult<()> {
     Ok(())
 }
 

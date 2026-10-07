@@ -48,7 +48,7 @@ fn hunk_line_stats(hunk: &DiffHunk, ignore_whitespace: bool) -> FileDiffStats {
 }
 
 impl Repo {
-    fn commit_tree_pair(&self, rev: &str) -> CoreResult<TreePair> {
+    fn commit_tree_pair(&self, rev: &str) -> JayResult<TreePair> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
@@ -60,7 +60,7 @@ impl Repo {
         })
     }
 
-    fn commit_trees(&self, rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
+    fn commit_trees(&self, rev: &str) -> JayResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let change_id = encode_reverse_hex(commit.change_id().as_bytes());
@@ -82,7 +82,7 @@ impl Repo {
         ))
     }
 
-    fn interdiff_tree_pair(&self, from_rev: &str, to_rev: &str) -> CoreResult<TreePair> {
+    fn interdiff_tree_pair(&self, from_rev: &str, to_rev: &str) -> JayResult<TreePair> {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
         let to_commit = self.resolve_commit(&repo, to_rev)?;
@@ -95,7 +95,7 @@ impl Repo {
         })
     }
 
-    fn interdiff_trees(&self, from_rev: &str, to_rev: &str) -> CoreResult<(TreePair, ChangeInfo)> {
+    fn interdiff_trees(&self, from_rev: &str, to_rev: &str) -> JayResult<(TreePair, ChangeInfo)> {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
         let to_commit = self.resolve_commit(&repo, to_rev)?;
@@ -123,9 +123,9 @@ impl Repo {
         &self,
         role: &str,
         path: &str,
-    ) -> CoreResult<jj_lib::repo_path::RepoPathBuf> {
+    ) -> JayResult<jj_lib::repo_path::RepoPathBuf> {
         self.parse_repo_path(path).map_err(|error| match error {
-            CoreError::Internal { message } => CoreError::Internal {
+            JayError::Internal { message } => JayError::Internal {
                 message: message.replacen("invalid path", &format!("invalid {role} path"), 1),
             },
             other => other,
@@ -133,7 +133,7 @@ impl Repo {
     }
 
     /// Fast: returns change info + file list WITHOUT content.
-    pub fn show_summary(&self, rev: &str) -> CoreResult<ChangeDetail> {
+    pub fn show_summary(&self, rev: &str) -> JayResult<ChangeDetail> {
         let (trees, info) = self.commit_trees(rev)?;
         let mut diff = self.diff_file_list(&trees)?;
         if info.has_conflict {
@@ -149,14 +149,14 @@ impl Repo {
     }
 
     /// Full: returns change info + file list WITH content (slow for large changesets).
-    pub fn show(&self, rev: &str) -> CoreResult<ChangeDetail> {
+    pub fn show(&self, rev: &str) -> JayResult<ChangeDetail> {
         let (trees, info) = self.commit_trees(rev)?;
         let diff = self.diff_all_files(&trees)?;
         Ok(ChangeDetail { info, diff })
     }
 
     /// A file's text at `rev` with conflict markers materialized; empty when the path is absent. Binary, oversized and non-file paths yield the diff view's placeholder text rather than raw bytes.
-    pub fn file_content(&self, rev: &str, path: &str) -> CoreResult<String> {
+    pub fn file_content(&self, rev: &str, path: &str) -> JayResult<String> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let repo_path = self.parse_repo_path(path)?;
@@ -166,7 +166,7 @@ impl Repo {
     }
 
     /// Show a single file's diff content — only materializes that one file.
-    pub fn show_file(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
+    pub fn show_file(&self, rev: &str, path: &str) -> JayResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
         self.diff_single_file(&trees, path)
     }
@@ -176,7 +176,7 @@ impl Repo {
         rev: &str,
         old_path: &str,
         new_path: &str,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         self.show_file_rename_with_mode(rev, old_path, new_path, DiffProjectionMode::Processed)
     }
 
@@ -186,7 +186,7 @@ impl Repo {
         old_path: &str,
         new_path: &str,
         projection_mode: DiffProjectionMode,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
         self.diff_file_rename_with_mode(&trees, old_path, new_path, projection_mode)
     }
@@ -197,7 +197,7 @@ impl Repo {
         old_path: &str,
         new_path: &str,
         projection_mode: DiffProjectionMode,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         let old_repo_path = self.parse_named_diff_path("old", old_path)?;
         let new_repo_path = self.parse_named_diff_path("new", new_path)?;
 
@@ -233,7 +233,7 @@ impl Repo {
         })
     }
 
-    pub fn show_file_raw(&self, rev: &str, path: &str) -> CoreResult<DiffHunk> {
+    pub fn show_file_raw(&self, rev: &str, path: &str) -> JayResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
         self.diff_single_file_with_mode(&trees, path, DiffProjectionMode::Raw)
     }
@@ -243,12 +243,12 @@ impl Repo {
         rev: &str,
         old_path: &str,
         new_path: &str,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         self.show_file_rename_with_mode(rev, old_path, new_path, DiffProjectionMode::Raw)
     }
 
     /// Totals of the per-file counts the detail header shows, so the two agree and neither spawns `jj diff --stat`.
-    pub fn diff_stats(&self, rev: &str) -> CoreResult<DiffStats> {
+    pub fn diff_stats(&self, rev: &str) -> JayResult<DiffStats> {
         let files = self.diff_file_stats(rev, false)?;
         Ok(DiffStats {
             files_changed: files.len() as u32,
@@ -262,19 +262,19 @@ impl Repo {
         &self,
         rev: &str,
         ignore_whitespace: bool,
-    ) -> CoreResult<Vec<FileDiffStats>> {
+    ) -> JayResult<Vec<FileDiffStats>> {
         let trees = self.commit_tree_pair(rev)?;
         self.diff_file_stats_walk(&trees, ignore_whitespace)
     }
 
     /// Fast: file list between two arbitrary revisions WITHOUT content.
-    pub fn interdiff_summary(&self, from_rev: &str, to_rev: &str) -> CoreResult<ChangeDetail> {
+    pub fn interdiff_summary(&self, from_rev: &str, to_rev: &str) -> JayResult<ChangeDetail> {
         let (trees, info) = self.interdiff_trees(from_rev, to_rev)?;
         let diff = self.diff_file_list(&trees)?;
         Ok(ChangeDetail { info, diff })
     }
 
-    pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> CoreResult<DiffHunk> {
+    pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> JayResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file(&trees, path)
     }
@@ -284,7 +284,7 @@ impl Repo {
         from_rev: &str,
         to_rev: &str,
         path: &str,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file_with_mode(&trees, path, DiffProjectionMode::Raw)
     }
@@ -295,7 +295,7 @@ impl Repo {
         to_rev: &str,
         path: &str,
         projection_mode: DiffProjectionMode,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_single_file_with_mode(&trees, path, projection_mode)
     }
@@ -307,7 +307,7 @@ impl Repo {
         old_path: &str,
         new_path: &str,
         projection_mode: DiffProjectionMode,
-    ) -> CoreResult<DiffHunk> {
+    ) -> JayResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
         self.diff_file_rename_with_mode(&trees, old_path, new_path, projection_mode)
     }

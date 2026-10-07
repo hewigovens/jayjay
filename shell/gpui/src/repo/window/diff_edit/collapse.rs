@@ -1,5 +1,5 @@
 use gpui::{AppContext, Context};
-use jayjay_core::{CoreResult, FileDiffStats};
+use jayjay_core::{FileDiffStats, JayResult};
 
 use crate::repo::window::RepoWindow;
 
@@ -86,7 +86,7 @@ impl RepoWindow {
         epoch: u64,
         commit: String,
         ignore_whitespace: bool,
-        stats: CoreResult<Vec<FileDiffStats>>,
+        stats: JayResult<Vec<FileDiffStats>>,
         cx: &mut Context<Self>,
     ) {
         if !self.diff_edit.active || self.diff_edit.epoch != epoch {

@@ -1,9 +1,6 @@
 use serde::{Deserialize, Serialize};
 
-use crate::{DiffHunk, HunkType, JayJayError};
-
-pub type ReviewError = JayJayError;
-pub type ReviewResult<T> = Result<T, ReviewError>;
+use crate::{DiffHunk, HunkType, JayResult};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
@@ -340,6 +337,6 @@ impl From<&DiffHunk> for ReviewFileDiff {
 }
 
 pub trait ReviewDiffProvider {
-    fn review_hunks(&self) -> ReviewResult<Vec<ReviewHunk>>;
-    fn review_file_diff(&self, hunk: &ReviewHunk) -> ReviewResult<ReviewFileDiff>;
+    fn review_hunks(&self) -> JayResult<Vec<ReviewHunk>>;
+    fn review_file_diff(&self, hunk: &ReviewHunk) -> JayResult<ReviewFileDiff>;
 }

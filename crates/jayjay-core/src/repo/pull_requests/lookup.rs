@@ -1,6 +1,6 @@
 use crate::repo::Repo;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
-use crate::types::{CoreError, CoreResult, PrInfo};
+use crate::types::{JayError, JayResult, PrInfo};
 
 use super::{codeberg, cursor, github, gitlab};
 
@@ -21,22 +21,22 @@ impl Repo {
         }
     }
 
-    pub fn pull_request_open_url(&self, bookmark: &str) -> CoreResult<String> {
+    pub fn pull_request_open_url(&self, bookmark: &str) -> JayResult<String> {
         if bookmark.is_empty() {
-            return Err(CoreError::internal("No bookmark selected"));
+            return Err(JayError::internal("No bookmark selected"));
         }
         let Some(remote) = self
             .git_remote_url()
             .ok()
             .and_then(|url| HostedRepo::parse(&url))
         else {
-            return Err(CoreError::internal(NO_SUPPORTED_REMOTE));
+            return Err(JayError::internal(NO_SUPPORTED_REMOTE));
         };
         let lookup = self.pull_request_info_for_remote(&remote, bookmark);
         match remote.host {
             RepoHost::Cursor => {
                 cursor::open_or_create_url(self, bookmark, lookup, remote.web_url())
-                    .map_err(CoreError::internal)
+                    .map_err(JayError::internal)
             }
             _ => Ok(open_url_for_lookup(lookup, || {
                 let base = if remote.host == RepoHost::Codeberg {

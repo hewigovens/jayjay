@@ -1,4 +1,4 @@
-use crate::{CliCommandOutcome, CoreError};
+use crate::{CliCommandOutcome, JayError};
 
 use super::parser::{ReviewOutcome, parse_review};
 
@@ -29,25 +29,25 @@ pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCom
     })
 }
 
-// Stable CLI output, deliberately diverging from CoreError's Display in places (no "diff error:" prefix, capitalized "Canceled"); pinned by errors_use_shell_independent_text.
-fn describe_error(error: &CoreError) -> String {
+// Stable CLI output, deliberately diverging from JayError's Display in places (no "diff error:" prefix, capitalized "Canceled"); pinned by errors_use_shell_independent_text.
+fn describe_error(error: &JayError) -> String {
     match error {
-        CoreError::RepoNotFound { path } => format!("repository not found: {path}"),
-        CoreError::RevNotFound { rev } => format!("revision not found: {rev}"),
-        CoreError::DiffSelectionStale { path } => {
+        JayError::RepoNotFound { path } => format!("repository not found: {path}"),
+        JayError::RevNotFound { rev } => format!("revision not found: {rev}"),
+        JayError::DiffSelectionStale { path } => {
             format!("{path}: file changed since the diff was rendered — refresh and retry")
         }
-        CoreError::ConflictEditorStale { path } => {
+        JayError::ConflictEditorStale { path } => {
             format!("{path}: conflict changed since the editor opened — refresh and retry")
         }
-        CoreError::FileEditorStale { path } => {
+        JayError::FileEditorStale { path } => {
             format!("{path}: file changed since the editor opened — refresh and retry")
         }
-        CoreError::WorkingCopyStale => "working copy is stale: its change was rewritten outside this workspace — run `jj workspace update-stale` and retry".to_owned(),
-        CoreError::Review { message }
-        | CoreError::Diff { message }
-        | CoreError::Internal { message } => message.clone(),
-        CoreError::Canceled => "Canceled".to_owned(),
+        JayError::WorkingCopyStale => "working copy is stale: its change was rewritten outside this workspace — run `jj workspace update-stale` and retry".to_owned(),
+        JayError::Review { message }
+        | JayError::Diff { message }
+        | JayError::Internal { message } => message.clone(),
+        JayError::Canceled => "Canceled".to_owned(),
     }
 }
 
@@ -107,29 +107,29 @@ mod tests {
     #[test]
     fn errors_use_shell_independent_text() {
         assert_eq!(
-            describe_error(&CoreError::RepoNotFound {
+            describe_error(&JayError::RepoNotFound {
                 path: "/tmp/x".to_string()
             }),
             "repository not found: /tmp/x"
         );
         assert_eq!(
-            describe_error(&CoreError::RevNotFound {
+            describe_error(&JayError::RevNotFound {
                 rev: "abc".to_string()
             }),
             "revision not found: abc"
         );
         assert_eq!(
-            describe_error(&CoreError::Review {
+            describe_error(&JayError::Review {
                 message: "not a changed line".to_string()
             }),
             "not a changed line"
         );
         assert_eq!(
-            describe_error(&CoreError::Diff {
+            describe_error(&JayError::Diff {
                 message: "left side vanished".to_string()
             }),
             "left side vanished"
         );
-        assert_eq!(describe_error(&CoreError::Canceled), "Canceled");
+        assert_eq!(describe_error(&JayError::Canceled), "Canceled");
     }
 }

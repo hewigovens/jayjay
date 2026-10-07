@@ -16,7 +16,7 @@ use crate::types::*;
 impl Repo {
     /// Returns a message describing what happened (warnings, errors, or success).
     /// Tracks only an explicitly requested bookmark before pushing.
-    pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<String> {
+    pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> JayResult<String> {
         let _enter = sync.enter();
         if !bookmark.is_empty() {
             let _ = self.track_bookmark(bookmark, "origin");
@@ -30,7 +30,7 @@ impl Repo {
     }
 
     /// A locally deleted tag that a remote still tracks pushes as a deletion; jj targets one remote per call, so each tracked remote gets its own push.
-    pub fn git_push_tag(&self, tag: &str, sync: &SyncToken) -> CoreResult<String> {
+    pub fn git_push_tag(&self, tag: &str, sync: &SyncToken) -> JayResult<String> {
         let _enter = sync.enter();
         let pattern = format!("exact:{}", format_string(tag));
         let remotes = tag_remotes(self.get_repo().view(), RefName::new(tag));
@@ -45,7 +45,7 @@ impl Repo {
         Ok(messages.join("\n"))
     }
 
-    fn run_git_push(&self, args: &[&str], sync: &SyncToken) -> CoreResult<String> {
+    fn run_git_push(&self, args: &[&str], sync: &SyncToken) -> JayResult<String> {
         let output = self.run_jj_output(args)?;
         self.ensure_success(&output, "git push failed")?;
         self.reload()?;
@@ -58,7 +58,7 @@ impl Repo {
 
     /// Track and push several bookmarks in one `jj git push`, with a single
     /// reload. Used by the stacked-PR submit so each PR head/base exists at once.
-    pub(crate) fn git_push_bookmarks(&self, bookmarks: &[&str]) -> CoreResult<String> {
+    pub(crate) fn git_push_bookmarks(&self, bookmarks: &[&str]) -> JayResult<String> {
         if bookmarks.is_empty() {
             return Ok("Nothing to push.".to_owned());
         }
@@ -81,12 +81,12 @@ impl Repo {
     }
 
     /// Fetch without changing bookmark tracking, rebase, and clean up merged bookmarks.
-    pub fn git_fetch(&self, remote: &str, sync: &SyncToken) -> CoreResult<FetchResult> {
+    pub fn git_fetch(&self, remote: &str, sync: &SyncToken) -> JayResult<FetchResult> {
         self.pull(sync, |repo| repo.git_fetch_raw(remote, ""), None)
     }
 
     /// Fetch a specific bookmark, auto-track it, rebase, and clean up.
-    pub fn git_pull_bookmark(&self, bookmark: &str, sync: &SyncToken) -> CoreResult<FetchResult> {
+    pub fn git_pull_bookmark(&self, bookmark: &str, sync: &SyncToken) -> JayResult<FetchResult> {
         self.pull(
             sync,
             |repo| repo.git_fetch_raw("", bookmark),
@@ -97,9 +97,9 @@ impl Repo {
     fn pull(
         &self,
         sync: &SyncToken,
-        fetch: impl FnOnce(&Self) -> CoreResult<String>,
+        fetch: impl FnOnce(&Self) -> JayResult<String>,
         track: Option<&str>,
-    ) -> CoreResult<FetchResult> {
+    ) -> JayResult<FetchResult> {
         let _enter = sync.enter();
         let before = self.get_repo();
         let msg = fetch(self)?;
@@ -115,7 +115,7 @@ impl Repo {
         fetch_result(msg, cleanup)
     }
 
-    pub(crate) fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> CoreResult<String> {
+    pub(crate) fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> JayResult<String> {
         let mut args = vec!["git", "fetch"];
         if !remote.is_empty() {
             args.extend(["--remote", remote]);
@@ -177,7 +177,7 @@ impl Repo {
         &self,
         before: &ReadonlyRepo,
         sync: &SyncToken,
-    ) -> CoreResult<(Vec<String>, Vec<String>)> {
+    ) -> JayResult<(Vec<String>, Vec<String>)> {
         sync.check()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
@@ -196,7 +196,7 @@ impl Repo {
             }
             for id in old_targets {
                 let commit = repo.store().get_commit(id).map_err(|error| {
-                    CoreError::internal(format!("load deleted remote target: {error}"))
+                    JayError::internal(format!("load deleted remote target: {error}"))
                 })?;
                 let targets = block_on_result(
                     "resolve deleted remote target",
@@ -221,7 +221,7 @@ impl Repo {
             let commit = repo
                 .store()
                 .get_commit(&id)
-                .map_err(|error| CoreError::internal(format!("load cleanup candidate: {error}")))?;
+                .map_err(|error| JayError::internal(format!("load cleanup candidate: {error}")))?;
             if repo.view().wc_commit_ids().values().any(|wc| *wc == id)
                 || self.is_commit_immutable(&repo, &commit)?
             {
@@ -256,8 +256,8 @@ impl Repo {
 /// A cleanup failure is reported inside the successful fetch; only a cancel is still an error, since nothing was applied.
 fn fetch_result(
     message: String,
-    cleanup: CoreResult<(Vec<String>, Vec<String>)>,
-) -> CoreResult<FetchResult> {
+    cleanup: JayResult<(Vec<String>, Vec<String>)>,
+) -> JayResult<FetchResult> {
     let mut result = FetchResult {
         message,
         abandoned_bookmarks: Vec::new(),
@@ -268,7 +268,7 @@ fn fetch_result(
             result.abandoned_bookmarks = abandoned;
             result.suggest_abandon_bookmarks = suggested;
         }
-        Err(CoreError::Canceled) => return Err(CoreError::Canceled),
+        Err(JayError::Canceled) => return Err(JayError::Canceled),
         Err(error) => result
             .message
             .push_str(&format!("\nPost-fetch cleanup failed: {error}")),
@@ -298,7 +298,7 @@ mod tests {
     use jj_test::{init_jj_repo, run_git, run_jj_in};
 
     use crate::repo::Repo;
-    use crate::types::CoreError;
+    use crate::types::JayError;
 
     #[test]
     fn a_cleanup_failure_keeps_the_successful_fetch_result() {
@@ -382,7 +382,7 @@ mod tests {
             None,
         );
 
-        assert!(matches!(result, Err(CoreError::Canceled)));
+        assert!(matches!(result, Err(JayError::Canceled)));
         assert_eq!(repo.op_log().expect("op log").len(), before);
     }
 }

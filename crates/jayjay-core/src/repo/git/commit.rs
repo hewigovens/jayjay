@@ -4,7 +4,7 @@ use crate::types::*;
 
 impl Repo {
     /// `jj commit -m <message>`: describe `@`, then start a new empty change on top of it.
-    pub fn jj_commit(&self, message: &str) -> CoreResult<()> {
+    pub fn jj_commit(&self, message: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         self.with_resolved_commit_transaction("@", "commit", true, |repo, commit, repo_mut| {

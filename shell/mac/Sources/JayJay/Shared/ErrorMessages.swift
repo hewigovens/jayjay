@@ -3,7 +3,7 @@ import JayJayCore
 
 extension Error {
     var friendlyDescription: String {
-        if let jjError = self as? JayJayError {
+        if let jjError = self as? JayError {
             switch jjError {
                 case let .RepoNotFound(path):
                     return "No Jujutsu repository found at \(URL(fileURLWithPath: path).lastPathComponent)"

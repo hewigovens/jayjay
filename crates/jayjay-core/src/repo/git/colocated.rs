@@ -14,7 +14,7 @@ impl Repo {
     }
 
     /// A colocated checkout expects Git HEAD at @'s parent and Git refs at the bookmarks; the CLI does this after every command, jj-lib leaves it to the caller.
-    pub(crate) fn sync_colocated_git(&self, tx: &mut Transaction) -> CoreResult<()> {
+    pub(crate) fn sync_colocated_git(&self, tx: &mut Transaction) -> JayResult<()> {
         let repo_mut = tx.repo_mut();
         if !self.is_colocated(repo_mut.store()) {
             return Ok(());
@@ -25,7 +25,7 @@ impl Repo {
             .cloned()
         {
             let wc_commit = repo_mut.store().get_commit(&commit_id).map_err(|error| {
-                CoreError::internal(format!("load working-copy commit: {error}"))
+                JayError::internal(format!("load working-copy commit: {error}"))
             })?;
             block_on_result(
                 "reset git head",
@@ -33,7 +33,7 @@ impl Repo {
             )?;
         }
         jj_lib::git::export_refs(repo_mut)
-            .map_err(|error| CoreError::internal(format!("export git refs: {error}")))?;
+            .map_err(|error| JayError::internal(format!("export git refs: {error}")))?;
         Ok(())
     }
 
@@ -43,7 +43,7 @@ impl Repo {
         repo: &ReadonlyRepo,
         old_tree: &MergedTree,
         new_tree: &MergedTree,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         if !self.is_colocated(repo.store()) {
             return Ok(());
         }

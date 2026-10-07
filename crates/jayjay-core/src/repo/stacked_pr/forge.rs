@@ -1,5 +1,5 @@
 use crate::repo::Repo;
-use crate::types::{CoreError, CoreResult, StackLayerOutcome, SubmittedLayer};
+use crate::types::{JayError, JayResult, StackLayerOutcome, SubmittedLayer};
 
 /// One PR/MR target — the subset of a stack layer the forge clients use.
 pub(super) struct ForgeTarget {
@@ -57,22 +57,17 @@ pub(super) fn url_containing(text: &str, needle: &str) -> String {
 }
 
 /// Prove `cli auth status` succeeds before any bookmark move or push.
-pub(super) fn auth_preflight(
-    repo: &Repo,
-    binary: &str,
-    cli: &str,
-    display: &str,
-) -> CoreResult<()> {
+pub(super) fn auth_preflight(repo: &Repo, binary: &str, cli: &str, display: &str) -> JayResult<()> {
     let label = format!("{cli} auth status");
     match repo.command_output(binary, &["auth", "status"], &label) {
         Ok(out) if out.status.success() => Ok(()),
-        Ok(out) => Err(CoreError::Internal {
+        Ok(out) => Err(JayError::Internal {
             message: format!(
                 "{display} is not ready: {}. Run `{cli} auth login` and retry.",
                 Repo::stderr_text(&out).trim()
             ),
         }),
-        Err(error) => Err(CoreError::Internal {
+        Err(error) => Err(JayError::Internal {
             message: format!(
                 "{display} is unavailable: {error}. Install {cli} and run `{cli} auth login`."
             ),

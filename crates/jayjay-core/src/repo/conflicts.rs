@@ -26,14 +26,14 @@ mod content;
 
 impl Repo {
     /// List conflicted files for a revision.
-    pub fn resolve_list(&self, rev: &str) -> CoreResult<Vec<String>> {
+    pub fn resolve_list(&self, rev: &str) -> JayResult<Vec<String>> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         commit
             .tree()
             .conflicts()
             .map(|(path, value)| {
-                value.map_err(|error| CoreError::Internal {
+                value.map_err(|error| JayError::Internal {
                     message: format!("read conflict {}: {error}", path.as_internal_file_string()),
                 })?;
                 Ok(path.as_internal_file_string().to_owned())
@@ -41,13 +41,13 @@ impl Repo {
             .collect()
     }
 
-    pub(super) fn conflict_summaries(&self, rev: &str) -> CoreResult<Vec<(String, bool)>> {
+    pub(super) fn conflict_summaries(&self, rev: &str) -> JayResult<Vec<(String, bool)>> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let tree = commit.tree();
         tree.conflicts()
             .map(|(path, value)| {
-                let value = value.map_err(|error| CoreError::Internal {
+                let value = value.map_err(|error| JayError::Internal {
                     message: format!("read conflict {}: {error}", path.as_internal_file_string()),
                 })?;
                 let path_string = path.as_internal_file_string().to_owned();
@@ -58,14 +58,14 @@ impl Repo {
     }
 
     /// Resolve a conflicted file using a named tool (e.g. ":ours", ":theirs", or an editor).
-    pub fn resolve_with_tool(&self, rev: &str, path: &str, tool: &str) -> CoreResult<()> {
+    pub fn resolve_with_tool(&self, rev: &str, path: &str, tool: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         let rev = self.snapshot_and_follow_one(rev)?;
         self.run_jj_reload(&["resolve", "-r", &rev, "--tool", tool, path])
     }
 
     /// Load a file conflict for editing inside the current repository window.
-    pub fn conflict_editor(&self, rev: &str, path: &str) -> CoreResult<ConflictEditorData> {
+    pub fn conflict_editor(&self, rev: &str, path: &str) -> JayResult<ConflictEditorData> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let is_working_copy = self.is_working_copy_commit(&repo, &commit);
@@ -90,7 +90,7 @@ impl Repo {
         )?;
         let is_text = materialized_conflict_supports_editor(&materialized);
         let MaterializedTreeValue::FileConflict(file) = materialized else {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("{path} is not an editable file conflict"),
             });
         };
@@ -135,11 +135,11 @@ impl Repo {
         rev: &str,
         data: &ConflictEditorData,
         content: &str,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let _write = self.write_guard()?;
         let path = data.path.as_str();
         if !data.is_text {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "{path} is not an editable text conflict"
             )));
         }
@@ -151,7 +151,7 @@ impl Repo {
             self.resolve_commit(&repo, rev)?
         };
         if encode_reverse_hex(commit.change_id().as_bytes()) != data.change_id {
-            return Err(CoreError::ConflictEditorStale {
+            return Err(JayError::ConflictEditorStale {
                 path: path.to_owned(),
             });
         }
@@ -173,13 +173,13 @@ impl Repo {
             ),
         )?;
         let MaterializedTreeValue::FileConflict(file) = materialized else {
-            return Err(CoreError::ConflictEditorStale {
+            return Err(JayError::ConflictEditorStale {
                 path: path.to_owned(),
             });
         };
         // If the sides changed since load, applying the stale marker text would silently discard the incoming side.
         if conflict_fingerprint(&file.unsimplified_ids) != data.conflict_id {
-            return Err(CoreError::ConflictEditorStale {
+            return Err(JayError::ConflictEditorStale {
                 path: path.to_owned(),
             });
         }
@@ -229,13 +229,13 @@ impl Repo {
     }
 
     /// Resolve a file by accepting "ours" (side #1).
-    pub fn resolve_use_ours(&self, rev: &str, path: &str) -> CoreResult<()> {
+    pub fn resolve_use_ours(&self, rev: &str, path: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":ours")
     }
 
     /// Resolve a file by accepting "theirs" (side #2).
-    pub fn resolve_use_theirs(&self, rev: &str, path: &str) -> CoreResult<()> {
+    pub fn resolve_use_theirs(&self, rev: &str, path: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":theirs")
     }

@@ -14,7 +14,7 @@ use crate::types::*;
 
 impl Repo {
     #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
-    pub fn list_bookmarks(&self) -> CoreResult<Vec<BookmarkInfo>> {
+    pub fn list_bookmarks(&self) -> JayResult<Vec<BookmarkInfo>> {
         let repo = self.get_repo();
         let mut bookmarks = Vec::new();
         let mut local_names: HashSet<String> = HashSet::new();
@@ -153,7 +153,7 @@ impl Repo {
             .map(|(_, remote_ref)| self.summary_at_target(&remote_ref.target).0.id)
     }
 
-    pub fn create_bookmark(&self, name: &str, rev: &str) -> CoreResult<()> {
+    pub fn create_bookmark(&self, name: &str, rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.with_resolved_commit_transaction(
             rev,
@@ -170,7 +170,7 @@ impl Repo {
         )
     }
 
-    pub fn move_bookmark(&self, name: &str, to_rev: &str) -> CoreResult<()> {
+    pub fn move_bookmark(&self, name: &str, to_rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.with_resolved_commit_transaction(
             to_rev,
@@ -187,19 +187,19 @@ impl Repo {
         )
     }
 
-    pub fn delete_bookmark(&self, name: &str) -> CoreResult<()> {
+    pub fn delete_bookmark(&self, name: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.update_local_bookmark(name, RefTarget::absent(), "delete bookmark")
     }
 
     /// Drop this bookmark from the commit `rev` resolves to. Pass the DAG chip's commit id so a working-copy snapshot cannot miss the target. Remaining targets stay; one remaining target resolves the conflict; none deletes the bookmark.
-    pub fn remove_bookmark_from_rev(&self, name: &str, rev: &str) -> CoreResult<()> {
+    pub fn remove_bookmark_from_rev(&self, name: &str, rev: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let current = repo.view().get_local_bookmark(RefName::new(name)).clone();
         let Some(new_target) = bookmark_target_without_commit(&current, commit.id()) else {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("bookmark '{name}' does not point at this change"),
             });
         };
@@ -223,7 +223,7 @@ impl Repo {
     }
 
     /// `jj bookmark forget`: drop the local bookmark and stop tracking its remote counterparts, so nothing is staged for a push. The `git` remote is left to the export, which drops a colocated branch along with its bookmark, as the CLI does.
-    pub fn forget_bookmark(&self, name: &str) -> CoreResult<()> {
+    pub fn forget_bookmark(&self, name: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.with_repo_transaction("forget bookmark", false, move |_, repo_mut| {
             let bookmark = RefName::new(name);
@@ -236,7 +236,7 @@ impl Repo {
                 .map(|(symbol, _)| symbol.remote.to_owned())
                 .collect();
             if remotes.is_empty() && repo_mut.view().get_local_bookmark(bookmark).is_absent() {
-                return Err(CoreError::Internal {
+                return Err(JayError::Internal {
                     message: format!("bookmark '{name}' not found"),
                 });
             }
@@ -248,7 +248,7 @@ impl Repo {
         })
     }
 
-    pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> CoreResult<()> {
+    pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         if old_name == new_name {
             return Ok(());
@@ -260,7 +260,7 @@ impl Repo {
                 .get_local_bookmark(RefName::new(old_name))
                 .clone();
             if target.is_absent() {
-                return Err(CoreError::Internal {
+                return Err(JayError::Internal {
                     message: format!("bookmark '{old_name}' not found"),
                 });
             }
@@ -269,7 +269,7 @@ impl Repo {
                 .get_local_bookmark(RefName::new(new_name))
                 .is_absent()
             {
-                return Err(CoreError::Internal {
+                return Err(JayError::Internal {
                     message: format!("Bookmark already exists: {new_name}"),
                 });
             }
@@ -280,12 +280,12 @@ impl Repo {
     }
 
     /// `jj bookmark track name@remote`: merge the remote bookmark into the local one and follow it from now on. Already-tracked is not an error.
-    pub fn track_bookmark(&self, name: &str, remote: &str) -> CoreResult<()> {
+    pub fn track_bookmark(&self, name: &str, remote: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         let symbol = RefName::new(name).to_remote_symbol(RemoteName::new(remote));
         let remote_ref = self.get_repo().view().get_remote_bookmark(symbol).clone();
         if remote_ref.is_absent() {
-            return Err(CoreError::Internal {
+            return Err(JayError::Internal {
                 message: format!("no such remote bookmark: {name}@{remote}"),
             });
         }
@@ -304,7 +304,7 @@ impl Repo {
     /// or have no remote counterpart.
     /// Uses `jj bookmark forget` so it won't propagate deletions to remotes.
     /// Returns the number of bookmarks forgotten.
-    pub fn forget_stale_bookmarks(&self) -> CoreResult<u32> {
+    pub fn forget_stale_bookmarks(&self) -> JayResult<u32> {
         // Step 1: Prune remote tracking refs via git fetch
         let _ = self.run_jj(&["git", "fetch", "--remote", "origin"]);
         let _write = self.write_guard()?;

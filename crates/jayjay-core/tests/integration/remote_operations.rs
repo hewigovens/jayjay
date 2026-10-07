@@ -5,7 +5,7 @@ use std::os::unix::fs::PermissionsExt;
 use std::thread;
 use std::time::{Duration, Instant};
 
-use jayjay_core::{CoreError, Repo};
+use jayjay_core::{JayError, Repo};
 use jj_test::{init_jj_repo, run_jj_in};
 
 #[test]
@@ -55,5 +55,5 @@ fn canceling_the_sync_token_interrupts_a_fetch() {
     });
 
     let error = outcome.expect_err("fetch should be canceled");
-    assert!(matches!(error, CoreError::Canceled), "{error}");
+    assert!(matches!(error, JayError::Canceled), "{error}");
 }

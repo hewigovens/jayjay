@@ -2,7 +2,7 @@ use std::fs;
 
 use jj_test::{init_jj_repo, run_jj_in};
 
-use crate::{CoreError, Repo};
+use crate::{JayError, Repo};
 
 #[test]
 fn diff_marks_placeholder_prefixed_regular_text_as_editable() {
@@ -54,7 +54,7 @@ fn rejects_an_edit_when_the_same_file_changed_externally() {
         .apply_working_copy_file_editor(&editor, "JayJay edit\n")
         .expect_err("stale edit should fail");
 
-    assert!(matches!(error, CoreError::FileEditorStale { .. }));
+    assert!(matches!(error, JayError::FileEditorStale { .. }));
     assert_eq!(
         fs::read_to_string(repo_path.join("hello.txt")).expect("read external edit"),
         "external edit\n"
@@ -75,7 +75,7 @@ fn rejects_an_edit_after_switching_the_working_copy_change() {
         .apply_working_copy_file_editor(&editor, "wrong change\n")
         .expect_err("different working copy should fail");
 
-    assert!(matches!(error, CoreError::FileEditorStale { .. }));
+    assert!(matches!(error, JayError::FileEditorStale { .. }));
 }
 
 #[test]

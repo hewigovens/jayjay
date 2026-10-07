@@ -4,7 +4,7 @@ use serde::de::DeserializeOwned;
 use super::client::fetch_text;
 use crate::repo::Repo;
 use crate::repo::environment::{find_existing_binary, glab_binary};
-use crate::types::CoreError;
+use crate::types::JayError;
 
 /// Read access to the GitLab API; tests answer with fixture responses through the closure impl.
 pub(crate) trait GitLabApi {
@@ -77,16 +77,16 @@ fn via_plain_request(path: &str) -> Result<String, ApiError> {
 pub(crate) enum ApiError {
     NotFound,
     Load(String),
-    Propagate(CoreError),
+    Propagate(JayError),
 }
 
 impl ApiError {
     /// `not_found` is what a 404 means for `subject`.
-    pub(crate) fn into_core_error(self, subject: &str, not_found: &str) -> CoreError {
+    pub(crate) fn into_core_error(self, subject: &str, not_found: &str) -> JayError {
         match self {
-            Self::NotFound => CoreError::internal(not_found),
+            Self::NotFound => JayError::internal(not_found),
             Self::Load(detail) => {
-                CoreError::internal(format!("Couldn't load {subject} from GitLab: {detail}"))
+                JayError::internal(format!("Couldn't load {subject} from GitLab: {detail}"))
             }
             Self::Propagate(error) => error,
         }

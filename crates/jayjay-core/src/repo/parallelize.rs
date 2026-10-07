@@ -14,7 +14,7 @@ use crate::types::*;
 
 impl Repo {
     /// Replicates jj 0.46.0's `cli/src/commands/parallelize.rs`; jj-lib has no parallelize of its own.
-    pub fn parallelize(&self, revs: &[String]) -> CoreResult<MutationEffect> {
+    pub fn parallelize(&self, revs: &[String]) -> JayResult<MutationEffect> {
         let _write = self.write_guard()?;
         require_multiple_revisions(revs, "Parallelize selected")?;
         let (repo, commits) = self.snapshot_and_follow_commits(revs)?;
@@ -22,7 +22,7 @@ impl Repo {
             commits.iter().map(|commit| commit.id().clone()).collect(),
         )
         .evaluate(repo.as_ref())
-        .map_err(|e| CoreError::internal(format!("order selection: {e}")))?;
+        .map_err(|e| JayError::internal(format!("order selection: {e}")))?;
         let targets: Vec<Commit> = block_on_result(
             "order selection",
             ordered.stream().commits(repo.store()).try_collect(),

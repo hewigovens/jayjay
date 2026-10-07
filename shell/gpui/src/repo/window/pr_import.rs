@@ -2,7 +2,7 @@ use std::path::PathBuf;
 
 use gpui::{App, AppContext, Context, Entity, Focusable, KeyDownEvent, Window};
 
-use jayjay_core::{Error, PullRequestImportPreview, PullRequestImportWorkspace, SyncToken};
+use jayjay_core::{JayError, PullRequestImportPreview, PullRequestImportWorkspace, SyncToken};
 
 use super::RepoWindow;
 use crate::ui::text_area::TextArea;
@@ -296,7 +296,7 @@ impl RepoWindow {
             let result = task.await;
             let _ = this.update(cx, |view, cx| {
                 // A canceled import may already have added the remote.
-                if matches!(result, Ok(_) | Err(Error::Canceled)) {
+                if matches!(result, Ok(_) | Err(JayError::Canceled)) {
                     view.vm.update(cx, |vm, cx| vm.refresh(false, cx));
                 }
                 match result {
@@ -306,7 +306,7 @@ impl RepoWindow {
                         // Opening reads every repo window, including this one while it is still being updated.
                         cx.defer(move |cx| super::open_repo_window(PathBuf::from(created), cx));
                     }
-                    Err(Error::Canceled) => {
+                    Err(JayError::Canceled) => {
                         view.pr_import = None;
                         cx.notify();
                     }

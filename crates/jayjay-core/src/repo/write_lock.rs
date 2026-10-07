@@ -5,7 +5,7 @@ use std::sync::{Arc, LazyLock, Mutex};
 use parking_lot::{ReentrantMutex, ReentrantMutexGuard};
 
 use super::Repo;
-use crate::types::CoreResult;
+use crate::types::JayResult;
 
 /// One lock per repository store, shared by every `Repo` opened on it; reentrant because mutations call other mutations.
 static LOCKS: LazyLock<Mutex<HashMap<PathBuf, Arc<ReentrantMutex<()>>>>> =
@@ -22,7 +22,7 @@ pub(super) fn for_store(store: &Path) -> Arc<ReentrantMutex<()>> {
 
 impl Repo {
     /// Never take it on a thread that a holder waits for. The outermost acquisition reloads, so a mutation queued behind another `Repo` builds on its result.
-    pub(crate) fn write_guard(&self) -> CoreResult<ReentrantMutexGuard<'_, ()>> {
+    pub(crate) fn write_guard(&self) -> JayResult<ReentrantMutexGuard<'_, ()>> {
         let reentered = self.write_lock.is_owned_by_current_thread();
         let guard = self.write_lock.lock();
         if !reentered {

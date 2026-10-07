@@ -13,7 +13,7 @@ use crate::types::*;
 
 impl Repo {
     /// Restore `paths` in `rev` from `from`'s tree when given (`jj restore --from` semantics, used to pick one parent of a merge), else from the auto-merged parent tree. `rev` is always the change being rewritten; `from` is only ever a content source.
-    pub fn restore_files(&self, rev: &str, from: Option<&str>, paths: &[String]) -> CoreResult<()> {
+    pub fn restore_files(&self, rev: &str, from: Option<&str>, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.restore(rev, paths, |repo| {
             from.map(|f| {
@@ -25,7 +25,7 @@ impl Repo {
     }
 
     /// Replace `rev`'s whole tree with `version`'s. Evolog versions are hidden predecessors, so `version` is taken exactly as named instead of following its rewrites to the current version.
-    pub fn restore_version(&self, rev: &str, version: &str) -> CoreResult<()> {
+    pub fn restore_version(&self, rev: &str, version: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.restore(rev, &[], |repo| {
             self.resolve_commit(repo, version).map(Some)
@@ -36,8 +36,8 @@ impl Repo {
         &self,
         rev: &str,
         paths: &[String],
-        resolve_source: impl FnOnce(&Arc<ReadonlyRepo>) -> CoreResult<Option<Commit>>,
-    ) -> CoreResult<()> {
+        resolve_source: impl FnOnce(&Arc<ReadonlyRepo>) -> JayResult<Option<Commit>>,
+    ) -> JayResult<()> {
         self.refresh_working_copy()?;
 
         let repo = self.get_repo();
@@ -74,14 +74,14 @@ impl Repo {
     }
 
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
-    pub fn delete_files(&self, paths: &[String]) -> CoreResult<()> {
+    pub fn delete_files(&self, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         for path in paths {
             let abs_path = self.path.join(path);
             if abs_path.exists() {
                 std::fs::remove_file(&abs_path)
                     .or_else(|_| std::fs::remove_dir_all(&abs_path))
-                    .map_err(|e| CoreError::Internal {
+                    .map_err(|e| JayError::Internal {
                         message: format!("delete {path}: {e}"),
                     })?;
             }
@@ -90,7 +90,7 @@ impl Repo {
     }
 
     /// Add paths to .gitignore, then stop tracking them (`jj file untrack`).
-    pub fn ignore_and_untrack(&self, paths: &[String]) -> CoreResult<()> {
+    pub fn ignore_and_untrack(&self, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         // Reject control chars first: a newline would inject extra .gitignore patterns.
         reject_control_chars(paths)?;
@@ -110,14 +110,14 @@ impl Repo {
                 .create(true)
                 .append(true)
                 .open(&gitignore_path)
-                .map_err(|e| CoreError::Internal {
+                .map_err(|e| JayError::Internal {
                     message: format!("open .gitignore: {e}"),
                 })?;
             if !existing.is_empty() && !existing.ends_with('\n') {
                 writeln!(file).ok();
             }
             for line in &lines_to_add {
-                writeln!(file, "{line}").map_err(|e| CoreError::Internal {
+                writeln!(file, "{line}").map_err(|e| JayError::Internal {
                     message: format!("write .gitignore: {e}"),
                 })?;
             }
@@ -128,7 +128,7 @@ impl Repo {
     }
 
     /// `jj squash --from rev --into @ -- paths`: the named files' changes move to the working copy; a source left empty is abandoned and its description joins `@`'s.
-    pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> CoreResult<()> {
+    pub fn move_to_working_copy(&self, rev: &str, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
@@ -137,7 +137,7 @@ impl Repo {
         let destination = self.working_copy_commit(&repo)?;
         self.ensure_commit_mutable(&repo, &destination, "@")?;
         if source.id() == destination.id() {
-            return Err(CoreError::internal("cannot move files from @ to @"));
+            return Err(JayError::internal("cannot move files from @ to @"));
         }
         let repo_paths = self.parse_repo_paths(paths)?;
         let matcher = FilesMatcher::new(repo_paths.iter().map(|path| path.as_ref()));
@@ -154,7 +154,7 @@ impl Repo {
         )?;
         // jj-lib reads an empty selection of an empty source as "everything" and abandons the source, so refuse it here like split does.
         if selected_tree.tree_ids() == parent_tree.tree_ids() {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "none of the selected files differ from the parent",
             ));
         }
@@ -169,7 +169,7 @@ impl Repo {
             squash_commits(tx.repo_mut(), &[selection], &destination, false),
         )?;
         let Some(squashed) = squashed else {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "none of the selected files differ from the parent",
             ));
         };

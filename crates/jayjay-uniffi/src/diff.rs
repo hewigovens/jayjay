@@ -16,15 +16,14 @@ use jayjay_core::{
 };
 
 #[cfg(feature = "desktop")]
-use crate::error::JayJayError;
+use jayjay_core::JayError;
 
 #[cfg(feature = "desktop")]
 #[uniffi::export]
 fn parse_external_tool_invocation(
     arguments: Vec<String>,
-) -> Result<Option<ExternalToolInvocation>, JayJayError> {
+) -> Result<Option<ExternalToolInvocation>, JayError> {
     jayjay_core::external_tools::parse_external_tool_invocation(&arguments)
-        .map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
@@ -39,13 +38,12 @@ fn load_external_diff(
     left: String,
     right: String,
     editable: bool,
-) -> Result<Vec<ExternalDiffFile>, JayJayError> {
+) -> Result<Vec<ExternalDiffFile>, JayError> {
     jayjay_core::external_tools::load_external_diff(
         &PathBuf::from(left),
         &PathBuf::from(right),
         editable,
     )
-    .map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
@@ -56,7 +54,7 @@ fn load_external_merge(
     right: String,
     output: String,
     marker_length: u32,
-) -> Result<ExternalMerge, JayJayError> {
+) -> Result<ExternalMerge, JayError> {
     jayjay_core::external_tools::load_external_merge(
         &PathBuf::from(left),
         &PathBuf::from(base),
@@ -64,7 +62,6 @@ fn load_external_merge(
         &PathBuf::from(output),
         marker_length as usize,
     )
-    .map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
@@ -80,34 +77,31 @@ fn apply_external_diff(
     right: String,
     selections: Vec<ExternalDiffSelection>,
     ignore_whitespace: bool,
-) -> Result<(), JayJayError> {
+) -> Result<(), JayError> {
     jayjay_core::external_tools::apply_external_diff_selections(
         &PathBuf::from(left),
         &PathBuf::from(right),
         &selections,
         ignore_whitespace,
     )
-    .map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
 #[uniffi::export]
-fn write_external_merge(output: String, content: String) -> Result<(), JayJayError> {
+fn write_external_merge(output: String, content: String) -> Result<(), JayError> {
     jayjay_core::external_tools::save_external_merge(
         &PathBuf::from(output),
         jayjay_core::external_tools::ExternalMergeResolution::Content(&content),
     )
-    .map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
 #[uniffi::export]
-fn use_external_merge_side(source: String, output: String) -> Result<(), JayJayError> {
+fn use_external_merge_side(source: String, output: String) -> Result<(), JayError> {
     jayjay_core::external_tools::save_external_merge(
         &PathBuf::from(output),
         jayjay_core::external_tools::ExternalMergeResolution::Source(&PathBuf::from(source)),
     )
-    .map_err(JayJayError::from)
 }
 
 #[cfg(feature = "desktop")]
@@ -122,8 +116,8 @@ fn merge_result_use_source(
     result: String,
     hunk: MergeEditorHunk,
     source: MergeHunkSource,
-) -> Result<String, JayJayError> {
-    hunk.use_source(&result, source).map_err(JayJayError::from)
+) -> Result<String, JayError> {
+    hunk.use_source(&result, source)
 }
 
 #[cfg(feature = "desktop")]

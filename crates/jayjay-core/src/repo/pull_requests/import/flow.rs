@@ -18,7 +18,7 @@ impl Repo {
         &self,
         url: &str,
         sync: &SyncToken,
-    ) -> CoreResult<PullRequestImportPreview> {
+    ) -> JayResult<PullRequestImportPreview> {
         let _enter = sync.enter();
         let plan = self.resolve_pull_request_import(url)?;
         let (name, dest) = self.suggest_workspace_destination(plan.resolved.number)?;
@@ -33,13 +33,13 @@ impl Repo {
         workspace_name: &str,
         workspace_dest: &str,
         sync: &SyncToken,
-    ) -> CoreResult<String> {
+    ) -> JayResult<String> {
         let plan = {
             let _enter = sync.enter();
             self.resolve_pull_request_import(url)?
         };
         if !plan.resolved.has_head(previewed_head_commit_id) {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "The pull request head moved to {} since the preview; the preview now shows the new head.",
                 plan.resolved.short_head(),
             )));
@@ -53,12 +53,12 @@ impl Repo {
         workspace_name: &str,
         workspace_dest: &str,
         sync: &SyncToken,
-    ) -> CoreResult<String> {
+    ) -> JayResult<String> {
         // Relative locations resolve against the repository's parent, where the preview suggests them.
         let workspace_dest = self.workspace_parent().join(workspace_dest);
         let workspace_dest = workspace_dest.to_string_lossy();
         if let Some(conflict) = self.workspace_conflict(workspace_name, &workspace_dest) {
-            return Err(CoreError::internal(conflict));
+            return Err(JayError::internal(conflict));
         }
         self.fetch_pull_request_head(plan, sync)?;
         // Outside the token: cancelling a half-created workspace would leave a registered name with a partial directory.
@@ -74,7 +74,7 @@ impl Repo {
         &self,
         plan: &PullRequestImportPlan,
         sync: &SyncToken,
-    ) -> CoreResult<()> {
+    ) -> JayResult<()> {
         let _enter = sync.enter();
         sync.check()?;
 
@@ -87,8 +87,8 @@ impl Repo {
 
         self.git_fetch_raw(remote, branch)
             .map_err(|error| match error {
-                CoreError::Canceled => error,
-                _ if added_remote => CoreError::internal(format!(
+                JayError::Canceled => error,
+                _ if added_remote => JayError::internal(format!(
                     "Remote '{remote}' was added, but fetching the PR head failed: {error}"
                 )),
                 _ => error,
@@ -97,7 +97,7 @@ impl Repo {
 
         // Fetching a deleted or force-pushed branch still succeeds, and the head may already be local from an earlier import, so check the fetched bookmark itself.
         if !self.fetched_branch_has_head(plan) {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "'{branch}' on remote '{remote}' no longer contains the pull request head {}; the branch was deleted or force-pushed.",
                 plan.resolved.short_head(),
             )));
@@ -110,15 +110,15 @@ impl Repo {
         path.parent().unwrap_or(&path).to_path_buf()
     }
 
-    fn resolve_pull_request_import(&self, url: &str) -> CoreResult<PullRequestImportPlan> {
+    fn resolve_pull_request_import(&self, url: &str) -> JayResult<PullRequestImportPlan> {
         let parsed =
-            url::parse_pull_request_url(url).ok_or_else(|| CoreError::internal(UNSUPPORTED_URL))?;
+            url::parse_pull_request_url(url).ok_or_else(|| JayError::internal(UNSUPPORTED_URL))?;
         let origin_url = self.git_remote_url()?;
         let origin = HostedRepo::parse(&origin_url).ok_or_else(|| {
-            CoreError::internal("This repository's origin is not on a supported host.")
+            JayError::internal("This repository's origin is not on a supported host.")
         })?;
         if !origin.is_same_repository(&parsed.base) {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "This pull request targets {}, but this repository's origin is {}.",
                 parsed.base.slug(),
                 origin.slug(),
@@ -128,14 +128,14 @@ impl Repo {
         let resolved = match parsed.base.host {
             RepoHost::GitHub => github::resolve(self, &parsed, ssh),
             RepoHost::GitLab => gitlab::resolve(self, &parsed, ssh),
-            RepoHost::Codeberg | RepoHost::Cursor => Err(CoreError::internal(format!(
+            RepoHost::Codeberg | RepoHost::Cursor => Err(JayError::internal(format!(
                 "Resolving pull requests from {} is coming soon.",
                 parsed.base.host.display_name(),
             ))),
         }?
         .checked(parsed.number)
         .ok_or_else(|| {
-            CoreError::internal(format!(
+            JayError::internal(format!(
                 "{} did not answer with pull request {} and a complete head commit and branch.",
                 parsed.base.host.display_name(),
                 parsed.number,
@@ -183,7 +183,7 @@ impl Repo {
     pub(super) fn existing_pull_request_workspace(
         &self,
         plan: &PullRequestImportPlan,
-    ) -> CoreResult<Option<PullRequestImportWorkspace>> {
+    ) -> JayResult<Option<PullRequestImportWorkspace>> {
         let repo = self.get_repo();
         let fetched = repo.view().get_remote_bookmark(RemoteRefSymbol {
             name: RefName::new(&plan.resolved.head_branch),
@@ -242,7 +242,7 @@ impl Repo {
     pub(super) fn suggest_workspace_destination(
         &self,
         pr_number: u32,
-    ) -> CoreResult<(String, String)> {
+    ) -> JayResult<(String, String)> {
         let base = format!("pr-{pr_number}");
         let taken_names: Vec<String> = self
             .workspace_list()?

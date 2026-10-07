@@ -18,9 +18,9 @@ impl Repo {
     }
 
     /// `jj fix -s`: each change in `revs` and its descendants.
-    pub fn fix(&self, revs: &[String]) -> CoreResult<FixSummary> {
+    pub fn fix(&self, revs: &[String]) -> JayResult<FixSummary> {
         if revs.is_empty() {
-            return Err(CoreError::internal("fix requires at least one change"));
+            return Err(JayError::internal("fix requires at least one change"));
         }
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(revs)?;
@@ -49,7 +49,7 @@ impl Repo {
         })
     }
 
-    fn fix_tools(&self, settings: &UserSettings) -> CoreResult<Vec<FixTool>> {
+    fn fix_tools(&self, settings: &UserSettings) -> JayResult<Vec<FixTool>> {
         let aliases_map = self.fileset_aliases_map(settings)?;
         let path_converter = self.path_converter();
         let context = FilesetParseContext {
@@ -58,7 +58,7 @@ impl Repo {
         };
         let tools = parse_fix_tools(settings, &context)?;
         if tools.is_empty() {
-            return Err(CoreError::internal(
+            return Err(JayError::internal(
                 "No [fix.tools] formatter is enabled. Add one to your jj config to run formatters.",
             ));
         }

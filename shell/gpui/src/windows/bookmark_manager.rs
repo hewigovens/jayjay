@@ -10,7 +10,7 @@ use gpui::{
     WeakEntity, Window, WindowBounds, WindowOptions, div, px, rgb,
 };
 use jayjay_core::compare;
-use jayjay_core::{BookmarkInfo, CoreResult, Repo};
+use jayjay_core::{BookmarkInfo, JayResult, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::config::AppConfigStore;
@@ -113,7 +113,7 @@ impl BookmarkManagerView {
 
     fn run_bookmark_action(
         &mut self,
-        write: impl FnOnce(Arc<Repo>) -> CoreResult<()> + Send + 'static,
+        write: impl FnOnce(Arc<Repo>) -> JayResult<()> + Send + 'static,
         on_success: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
         cx: &mut Context<Self>,
     ) {

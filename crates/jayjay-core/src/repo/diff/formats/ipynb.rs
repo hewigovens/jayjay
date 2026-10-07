@@ -34,7 +34,7 @@ impl DiffFormatPlugin for IpynbPlugin {
         format!("{path}.md")
     }
 
-    fn project(&self, input: FormatInput<'_>) -> CoreResult<ProjectionPair> {
+    fn project(&self, input: FormatInput<'_>) -> JayResult<ProjectionPair> {
         project_text_pair(
             input,
             self.projection(input.path, DiffProjectionMode::Processed),
@@ -43,7 +43,7 @@ impl DiffFormatPlugin for IpynbPlugin {
     }
 }
 
-fn project_notebook(bytes: &[u8]) -> CoreResult<String> {
+fn project_notebook(bytes: &[u8]) -> JayResult<String> {
     let notebook: Value = serde_json::from_slice(bytes)
         .map_err(|err| projection_error(format!("parse notebook JSON: {err}")))?;
     let cells = notebook

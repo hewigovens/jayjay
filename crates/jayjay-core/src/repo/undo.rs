@@ -11,7 +11,7 @@ const OP_LOG_LIMIT: usize = 20;
 
 impl Repo {
     /// The 20 most recent operations, newest first. Snapshots first so the current entry already holds pending edits and restoring to it later cannot drop them.
-    pub fn op_log(&self) -> CoreResult<Vec<OpLogEntry>> {
+    pub fn op_log(&self) -> JayResult<Vec<OpLogEntry>> {
         self.refresh_working_copy()?;
         let repo = self.get_repo();
         let ops: Vec<Operation> = block_on_result(
@@ -38,7 +38,7 @@ impl Repo {
     }
 
     /// `jj op restore`: put the repo view back as it was at `op_id`. Git refs and heads stay current, as the CLI keeps them, because they mirror the Git repo rather than jj history.
-    pub fn op_restore(&self, op_id: &str) -> CoreResult<()> {
+    pub fn op_restore(&self, op_id: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
@@ -51,7 +51,7 @@ impl Repo {
             .get_wc_commit_id(self.workspace_name.as_ref())
             .is_none()
         {
-            return Err(CoreError::internal(format!(
+            return Err(JayError::internal(format!(
                 "operation {} predates workspace '{}'",
                 &target.id().hex()[..12],
                 self.workspace_name.as_symbol()
@@ -69,7 +69,7 @@ impl Repo {
     }
 
     /// Whether the loaded repo matches the sole on-disk operation head.
-    pub fn is_at_operation_head(&self) -> CoreResult<bool> {
+    pub fn is_at_operation_head(&self) -> JayResult<bool> {
         let repo = self.get_repo();
         let heads = block_on_result("read operation heads", repo.op_heads_store().get_op_heads())?;
         Ok(heads.len() == 1 && heads[0] == *repo.op_id())

@@ -34,7 +34,7 @@ pub(super) enum ImagePreviewResult {
 pub(super) fn extract_image_preview(
     path: &jj_lib::repo_path::RepoPath,
     value: MaterializedTreeValue,
-) -> CoreResult<(ImagePreviewResult, bool)> {
+) -> JayResult<(ImagePreviewResult, bool)> {
     let MaterializedTreeValue::File(mut file) = value else {
         return Ok((ImagePreviewResult::None, false));
     };
@@ -70,7 +70,7 @@ pub(super) fn extract_image_preview(
 
     let cache_dir = std::env::temp_dir().join("jayjay-images");
     if let Err(err) = std::fs::create_dir_all(&cache_dir) {
-        return Err(CoreError::Internal {
+        return Err(JayError::Internal {
             message: format!("create image cache dir: {err}"),
         });
     }
@@ -79,7 +79,7 @@ pub(super) fn extract_image_preview(
     if !cache_path.exists()
         && let Err(err) = std::fs::write(&cache_path, &bytes)
     {
-        return Err(CoreError::Internal {
+        return Err(JayError::Internal {
             message: format!("write image cache {}: {err}", cache_path.display()),
         });
     }
@@ -143,7 +143,7 @@ impl MaterializedContent {
 pub(super) fn materialized_to_content(
     path: &jj_lib::repo_path::RepoPath,
     value: MaterializedTreeValue,
-) -> CoreResult<MaterializedContent> {
+) -> JayResult<MaterializedContent> {
     match value {
         MaterializedTreeValue::Absent => Ok(MaterializedContent::Absent),
         MaterializedTreeValue::AccessDenied(err) => Ok(MaterializedContent::Display(format!(

@@ -34,7 +34,7 @@ impl DiffFormatPlugin for DelimitedPlugin {
         format!("{path}.md")
     }
 
-    fn project(&self, input: FormatInput<'_>) -> CoreResult<ProjectionPair> {
+    fn project(&self, input: FormatInput<'_>) -> JayResult<ProjectionPair> {
         let delimiter = delimiter_for_path(input.path);
         project_text_pair(
             input,
@@ -52,7 +52,7 @@ fn delimiter_for_path(path: &str) -> u8 {
     }
 }
 
-fn project_table(bytes: &[u8], delimiter: u8) -> CoreResult<String> {
+fn project_table(bytes: &[u8], delimiter: u8) -> JayResult<String> {
     let mut reader = ReaderBuilder::new()
         .has_headers(false)
         .flexible(true)
@@ -65,14 +65,14 @@ fn project_table(bytes: &[u8], delimiter: u8) -> CoreResult<String> {
         let row = record
             .iter()
             .map(parsed_table_cell)
-            .collect::<CoreResult<Vec<_>>>()?;
+            .collect::<JayResult<Vec<_>>>()?;
         rows.push(row);
     }
 
     Ok(markdown::table(rows))
 }
 
-fn parsed_table_cell(bytes: &[u8]) -> CoreResult<String> {
+fn parsed_table_cell(bytes: &[u8]) -> JayResult<String> {
     let value = std::str::from_utf8(bytes)
         .map_err(|err| projection_error(format!("table projection is not UTF-8: {err}")))?;
     Ok(markdown::table_cell(value))

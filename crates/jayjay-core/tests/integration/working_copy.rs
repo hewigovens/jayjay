@@ -1,7 +1,7 @@
 use std::fs;
 use std::path::PathBuf;
 
-use jayjay_core::{CoreError, Repo};
+use jayjay_core::{JayError, Repo};
 use jj_test::{changed_paths, git_stdout, init_jj_repo, run_git, run_jj_in};
 use tempfile::TempDir;
 
@@ -254,7 +254,7 @@ fn a_stale_working_copy_is_refused_instead_of_reverting_the_rewrite() {
         ("refresh", repo.refresh_working_copy()),
     ] {
         assert!(
-            matches!(result, Err(CoreError::WorkingCopyStale)),
+            matches!(result, Err(JayError::WorkingCopyStale)),
             "{action} on a stale working copy: {result:?}"
         );
     }
@@ -303,7 +303,7 @@ fn updating_a_workspace_whose_operation_is_gone_checks_out_a_recovery_commit() {
     let repo = Repo::open(&second).expect("open second workspace");
     assert!(matches!(
         repo.refresh_working_copy(),
-        Err(CoreError::WorkingCopyStale)
+        Err(JayError::WorkingCopyStale)
     ));
 
     repo.update_stale_workspace().expect("recover workspace");

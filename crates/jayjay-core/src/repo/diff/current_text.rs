@@ -16,7 +16,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         tree: &MergedTree,
         path: &RepoPath,
-    ) -> CoreResult<Option<String>> {
+    ) -> JayResult<Option<String>> {
         let value = block_on_result(
             &format!("read {}", path.as_internal_file_string()),
             tree.path_value(path),

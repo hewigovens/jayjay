@@ -8,7 +8,7 @@ use gpui::{
     WindowOptions, div, px, rgb, size,
 };
 use jayjay_core::overview::OverviewSnapshot;
-use jayjay_core::{CoreResult, Repo};
+use jayjay_core::{JayResult, Repo};
 
 use crate::app::actions::{CloseWindow, Dismiss, OpenFind};
 use crate::app::config::AppConfigStore;
@@ -156,7 +156,7 @@ impl OverviewView {
                         None => Arc::new(Repo::open(&path)?),
                     };
                     let snapshot = repo.overview_snapshot()?;
-                    CoreResult::Ok((repo, snapshot))
+                    JayResult::Ok((repo, snapshot))
                 })
                 .await;
             let _ = this.update(cx, |view, cx| {
