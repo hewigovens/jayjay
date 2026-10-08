@@ -3,7 +3,7 @@ import JayJayCore
 
 final class RepoFSWatcher {
     private var opSource: DispatchSourceFileSystemObject?
-    private var wcStream: FSEventStreamRef?
+    private var wcSubscription: FSEventSubscription?
     private let debounceInterval: TimeInterval = 1.0
     private var lastOpFired: Date = .distantPast
     private var trailingOp: DispatchWorkItem?
@@ -43,7 +43,9 @@ final class RepoFSWatcher {
             opSource = src
         }
 
-        startWCWatch()
+        wcSubscription = FSEventSubscription(path: repoPath, latency: 2.0) { [weak self] paths in
+            self?.handleWorkingCopyEvents(paths)
+        }
     }
 
     private func fireOpChange() {
@@ -59,54 +61,16 @@ final class RepoFSWatcher {
         DispatchQueue.main.asyncAfter(deadline: .now() + delay, execute: item)
     }
 
-    private func startWCWatch() {
-        var context = FSEventStreamContext()
-        context.info = Unmanaged.passUnretained(self).toOpaque()
-
-        let paths = [repoPath] as CFArray
-        let flags: FSEventStreamCreateFlags =
-            UInt32(kFSEventStreamCreateFlagUseCFTypes) |
-            UInt32(kFSEventStreamCreateFlagFileEvents) |
-            UInt32(kFSEventStreamCreateFlagNoDefer)
-
-        guard let stream = FSEventStreamCreate(
-            nil,
-            RepoFSWatcher.fsEventCallback,
-            &context,
-            paths,
-            FSEventStreamEventId(kFSEventStreamEventIdSinceNow),
-            2.0,
-            flags
-        ) else { return }
-
-        FSEventStreamSetDispatchQueue(stream, DispatchQueue.global(qos: .utility))
-        FSEventStreamStart(stream)
-        wcStream = stream
-    }
-
-    private static let fsEventCallback: FSEventStreamCallback = { _, info, _, eventPaths, _, _ in
-        guard let info else { return }
-        let watcher = Unmanaged<RepoFSWatcher>.fromOpaque(info).takeUnretainedValue()
-        guard let paths = unsafeBitCast(eventPaths, to: NSArray.self) as? [String] else { return }
-
-        watcher.handleWorkingCopyEvents(paths)
-    }
-
     func handleWorkingCopyEvents(_ paths: [String]) {
         guard isRelevantWorkingCopyChange(paths) else { return }
 
         // FSEvents already batches at the stream latency; another time gate can discard a delivered batch.
-        DispatchQueue.main.async {
-            self.onWorkingCopyChange()
+        DispatchQueue.main.async { [weak self] in
+            self?.onWorkingCopyChange()
         }
     }
 
     deinit {
         opSource?.cancel()
-        if let stream = wcStream {
-            FSEventStreamStop(stream)
-            FSEventStreamInvalidate(stream)
-            FSEventStreamRelease(stream)
-        }
     }
 }
