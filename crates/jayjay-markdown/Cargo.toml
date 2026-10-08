@@ -1,6 +1,7 @@
 [package]
 name = "jayjay-markdown"
 version = "0.1.0"
+publish = false
 description = "Small Markdown-to-HTML renderer for JayJay rich previews"
 edition.workspace = true
 rust-version.workspace = true

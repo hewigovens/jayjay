@@ -1,6 +1,7 @@
 [package]
 name = "jayjay-uniffi"
 version = "0.1.0"
+publish = false
 description = "UniFFI bindings for JayJay core"
 edition.workspace = true
 rust-version.workspace = true

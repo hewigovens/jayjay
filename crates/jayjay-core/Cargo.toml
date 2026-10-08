@@ -1,6 +1,7 @@
 [package]
 name = "jayjay-core"
 version = "0.1.0"
+publish = false
 description = "Core repository operations for JayJay"
 edition.workspace = true
 rust-version.workspace = true

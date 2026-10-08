@@ -1,6 +1,7 @@
 [package]
 name = "jayjay-review"
 version = "0.1.0"
+publish = false
 description = "Local review state and note reconciliation for JayJay"
 edition.workspace = true
 rust-version.workspace = true

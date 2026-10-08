@@ -1,6 +1,7 @@
 [package]
 name = "jayjay-primitives"
 version = "0.1.0"
+publish = false
 description = "Shared jj-lib-free JayJay domain types"
 edition.workspace = true
 rust-version.workspace = true
