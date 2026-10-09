@@ -2,21 +2,12 @@ use std::sync::{Arc, OnceLock, RwLock};
 
 use font_kit::source::SystemSource;
 use gpui::{App, FontFeatures, Pixels, Styled, TextRun, Window, black, font, px};
-use jayjay_core::{
-    MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID, mono_font_option,
-    mono_font_option_named, my_mono_font_families,
-};
+use jayjay_core::{CodeFontChoices, font_family_choices, mono_font_family};
 
 use crate::app::config::AppConfig;
 use crate::app::theme::Theme;
 
 mod platform;
-
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct MonoFontChoice {
-    pub(crate) id: String,
-    pub(crate) title: String,
-}
 
 /// GPUI has no app-wide default font, so window roots and code elements read the configured fonts from here.
 struct ActiveFonts {
@@ -39,6 +30,7 @@ static ACTIVE: OnceLock<RwLock<ActiveFonts>> = OnceLock::new();
 static DEFAULT_MONO: OnceLock<String> = OnceLock::new();
 
 const SYSTEM_UI_FONT: &str = ".SystemUIFont";
+pub(crate) const SYSTEM_PREFERENCE: &str = "system";
 
 fn with_active<R>(read: impl FnOnce(&ActiveFonts) -> R) -> R {
     match ACTIVE.get_or_init(Default::default).read() {
@@ -135,10 +127,7 @@ pub(crate) fn code_font_has_ligatures(window: &Window) -> bool {
 }
 
 pub(crate) fn interface_font_choices() -> Vec<String> {
-    let mut families = platform::user_families();
-    families.sort_by_key(|family| family.to_lowercase());
-    families.dedup();
-    families
+    font_family_choices(platform::user_families())
 }
 
 pub(crate) fn interface_preference_label(preference: &str) -> String {
@@ -154,84 +143,37 @@ pub(crate) fn interface_font_is_installed(preference: &str) -> bool {
 }
 
 pub(crate) fn code_font_is_installed(preference: &str) -> bool {
-    match matched_option(preference) {
-        Some(option) => option_is_available(option, &SystemSource::new()),
-        None => pick(&[preference.trim()]).is_some(),
-    }
+    let family = mono_font_family(preference);
+    family.is_empty() || pick(&[&family]).is_some()
 }
 
-pub(crate) fn mono_font_choices() -> Vec<MonoFontChoice> {
-    let source = SystemSource::new();
-    MONO_FONT_OPTIONS
-        .iter()
-        .filter(|option| option_is_available(option, &source))
-        .map(|option| MonoFontChoice {
-            id: option.id.to_owned(),
-            title: mono_option_title(option).to_owned(),
-        })
-        .collect()
-}
-
-pub(crate) fn my_mono_fonts() -> Vec<String> {
-    my_mono_font_families(platform::user_mono_families())
+pub(crate) fn code_font_choices() -> CodeFontChoices {
+    CodeFontChoices::new(platform::monospaced_families())
 }
 
 pub(crate) fn mono_preference_id(preference: &str) -> String {
-    matched_option(preference)
-        .map(|option| option.id.to_owned())
-        .unwrap_or_else(|| {
-            if preference.is_empty() {
-                SYSTEM_MONO_FONT_ID.to_owned()
-            } else {
-                preference.to_owned()
-            }
-        })
+    family_or(preference, SYSTEM_PREFERENCE)
 }
 
 pub(crate) fn mono_preference_label(preference: &str) -> String {
-    matched_option(preference)
-        .map(|option| mono_option_title(option).to_owned())
-        .unwrap_or_else(|| {
-            if preference.is_empty() {
-                "System default".to_owned()
-            } else {
-                preference.to_owned()
-            }
-        })
+    family_or(preference, "System default")
+}
+
+fn family_or(preference: &str, system: &str) -> String {
+    let family = mono_font_family(preference);
+    if family.is_empty() {
+        system.to_owned()
+    } else {
+        family
+    }
 }
 
 fn resolve_preference(preference: &str) -> String {
-    let Some(option) = matched_option(preference) else {
-        return pick(&[preference]).unwrap_or_else(|| default_mono().to_owned());
-    };
-    if option.id == SYSTEM_MONO_FONT_ID {
+    let family = mono_font_family(preference);
+    if family.is_empty() {
         return default_mono().to_owned();
     }
-    pick(option.font_names).unwrap_or_else(|| default_mono().to_owned())
-}
-
-fn matched_option(preference: &str) -> Option<&'static MonoFontOption> {
-    let preference = preference.trim();
-    if preference.is_empty() {
-        return mono_font_option(SYSTEM_MONO_FONT_ID);
-    }
-    mono_font_option_named(preference)
-}
-
-fn mono_option_title(option: &MonoFontOption) -> &str {
-    if option.id == SYSTEM_MONO_FONT_ID {
-        "System default"
-    } else {
-        option.title
-    }
-}
-
-fn option_is_available(option: &MonoFontOption, source: &SystemSource) -> bool {
-    option.id == SYSTEM_MONO_FONT_ID
-        || option
-            .font_names
-            .iter()
-            .any(|name| source.select_family_by_name(name).is_ok())
+    pick(&[&family]).unwrap_or_else(|| default_mono().to_owned())
 }
 
 fn pick(candidates: &[&str]) -> Option<String> {
@@ -247,27 +189,16 @@ mod tests {
     use super::*;
 
     #[test]
-    fn empty_preference_uses_system_option() {
-        assert_eq!(mono_preference_id(""), SYSTEM_MONO_FONT_ID);
-        assert_eq!(mono_preference_label(""), "System default");
+    fn empty_and_system_preferences_use_the_system_font() {
+        for preference in ["", "system"] {
+            assert_eq!(mono_preference_id(preference), SYSTEM_PREFERENCE);
+            assert_eq!(mono_preference_label(preference), "System default");
+        }
     }
 
     #[cfg(target_os = "macos")]
     #[test]
     fn system_default_uses_appkit_monospace_token_on_macos() {
         assert_eq!(resolve_preference(""), ".AppleSystemUIFontMonospaced");
-    }
-
-    #[test]
-    fn literal_family_names_match_core_options() {
-        assert_eq!(mono_preference_id("JetBrains Mono"), "jetbrains-mono");
-        assert_eq!(
-            mono_preference_id("JetBrainsMono-Regular"),
-            "jetbrains-mono"
-        );
-        assert_eq!(
-            mono_preference_label("JetBrainsMono-Regular"),
-            "JetBrains Mono"
-        );
     }
 }

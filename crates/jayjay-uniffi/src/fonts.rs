@@ -1,26 +1,8 @@
-use jayjay_core::FontSpecimen;
-
-#[derive(uniffi::Record)]
-pub struct MonoFontOption {
-    id: String,
-    title: String,
-    font_names: Vec<String>,
-}
+use jayjay_core::{CodeFontChoices, FontSpecimen};
 
 #[uniffi::export]
-fn mono_font_options() -> Vec<MonoFontOption> {
-    jayjay_core::MONO_FONT_OPTIONS
-        .iter()
-        .map(|option| MonoFontOption {
-            id: option.id.to_owned(),
-            title: option.title.to_owned(),
-            font_names: option
-                .font_names
-                .iter()
-                .map(|name| (*name).to_owned())
-                .collect(),
-        })
-        .collect()
+fn mono_font_family(preference: String) -> String {
+    jayjay_core::mono_font_family(&preference)
 }
 
 #[uniffi::export]
@@ -29,8 +11,19 @@ fn is_user_font_path(path: String) -> bool {
 }
 
 #[uniffi::export]
-fn my_mono_font_families(families: Vec<String>) -> Vec<String> {
-    jayjay_core::my_mono_font_families(families)
+fn font_family_choices(families: Vec<String>) -> Vec<String> {
+    jayjay_core::font_family_choices(families)
+}
+
+#[uniffi::remote(Record)]
+pub struct CodeFontChoices {
+    pub coding: Vec<String>,
+    pub other: Vec<String>,
+}
+
+#[uniffi::export]
+fn code_font_choices(monospaced_families: Vec<String>) -> CodeFontChoices {
+    CodeFontChoices::new(monospaced_families)
 }
 
 #[uniffi::remote(Record)]

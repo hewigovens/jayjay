@@ -2,12 +2,13 @@ import AppKit
 import JayJayCore
 
 extension AppSettings {
-    struct FontFamily: RawRepresentable, CaseIterable, Hashable, Identifiable {
+    struct FontFamily: RawRepresentable, Hashable, Identifiable {
         let rawValue: String
 
         init?(rawValue: String) {
             guard !rawValue.isEmpty else { return nil }
-            self.rawValue = Self.canonicalId(rawValue)
+            let family = monoFontFamily(preference: rawValue)
+            self.rawValue = family.isEmpty ? Self.system.rawValue : family
         }
 
         private init(validatedRawValue: String) {
@@ -19,14 +20,6 @@ extension AppSettings {
         }
 
         static let system = FontFamily(validatedRawValue: "system")
-
-        static var allCases: [FontFamily] {
-            options.map { FontFamily(validatedRawValue: $0.id) }
-        }
-
-        var title: String {
-            option?.title ?? rawValue
-        }
 
         func nsFont(size: CGFloat, monospaced: Bool = true, ligatures: Bool = true) -> NSFont {
             let systemFont = monospaced
@@ -46,22 +39,8 @@ extension AppSettings {
             self == .system || resolvedFont(size: 12) != nil
         }
 
-        private var option: MonoFontOption? {
-            Self.option(for: rawValue)
-        }
-
-        private var fontNames: [String] {
-            option?.fontNames ?? [rawValue]
-        }
-
         private func resolvedFont(size: CGFloat) -> NSFont? {
-            for name in fontNames {
-                if let font = NSFont(name: name, size: size) {
-                    return font
-                }
-            }
-            guard let familyName = fontNames.first else { return nil }
-            return Self.regularFont(inFamily: familyName, size: size)
+            NSFont(name: rawValue, size: size) ?? Self.regularFont(inFamily: rawValue, size: size)
         }
 
         private static func regularFont(inFamily familyName: String, size: CGFloat) -> NSFont? {
@@ -76,23 +55,6 @@ extension AppSettings {
                 return nil
             }
             return NSFont(name: fontName, size: size)
-        }
-
-        private static let options: [MonoFontOption] = monoFontOptions()
-
-        private static let optionsById: [String: MonoFontOption] = Dictionary(
-            uniqueKeysWithValues: options.map { ($0.id, $0) }
-        )
-
-        private static func option(for id: String) -> MonoFontOption? {
-            optionsById[id]
-        }
-
-        private static func canonicalId(_ rawValue: String) -> String {
-            switch rawValue {
-                case "ioskeleymono-nl-nerd-font": "ioskeley-mono-nl-nerd-font"
-                default: rawValue
-            }
         }
     }
 }

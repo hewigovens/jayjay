@@ -31,9 +31,8 @@ struct SettingsAppearancePage: View {
             Section {
                 FontFamilyPicker(
                     selection: $settings.interfaceFontFamily,
-                    choices: [.system],
-                    myFonts: userFamilies,
-                    systemTitle: "System"
+                    systemTitle: "System",
+                    groups: [FontFamilyGroup(title: "My Fonts", families: userFamilies)]
                 )
                 FontSizeStepper(value: $settings.interfaceFontSize, id: AID.Settings.interfaceFontSize)
             } header: {

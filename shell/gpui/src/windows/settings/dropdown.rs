@@ -134,8 +134,6 @@ pub(super) fn dropdown_button(
         .into_any_element()
 }
 
-const INTERFACE_SYSTEM_ID: &str = "system";
-
 #[derive(Debug, Clone)]
 struct DropdownOption {
     id: String,
@@ -147,40 +145,41 @@ fn dropdown_options(field_id: &str) -> Vec<DropdownOption> {
     match field_id {
         "editor" => static_options(EDITOR_OPTIONS),
         "terminal" => static_options(TERMINAL_OPTIONS),
-        "interface-font-family" => {
-            let system = DropdownOption {
-                id: INTERFACE_SYSTEM_ID.to_owned(),
-                label: fonts::interface_preference_label(""),
-                group: None,
-            };
-            let user = fonts::interface_font_choices()
-                .into_iter()
-                .map(|family| DropdownOption {
-                    id: family.clone(),
-                    label: family,
-                    group: Some("My Fonts"),
-                });
-            std::iter::once(system).chain(user).collect()
-        }
+        "interface-font-family" => font_options(
+            fonts::interface_preference_label(""),
+            [("My Fonts", fonts::interface_font_choices())],
+        ),
         "code-font-family" => {
-            let curated = fonts::mono_font_choices()
-                .into_iter()
-                .map(|choice| DropdownOption {
-                    id: choice.id,
-                    label: choice.title,
-                    group: None,
-                });
-            let my_fonts = fonts::my_mono_fonts()
-                .into_iter()
-                .map(|family| DropdownOption {
-                    id: family.clone(),
-                    label: family,
-                    group: Some("My Fonts"),
-                });
-            curated.chain(my_fonts).collect()
+            let choices = fonts::code_font_choices();
+            font_options(
+                fonts::mono_preference_label(""),
+                [
+                    ("Coding Fonts", choices.coding),
+                    ("Other Monospaced", choices.other),
+                ],
+            )
         }
         _ => Vec::new(),
     }
+}
+
+fn font_options<const N: usize>(
+    system_label: String,
+    groups: [(&'static str, Vec<String>); N],
+) -> Vec<DropdownOption> {
+    let system = DropdownOption {
+        id: fonts::SYSTEM_PREFERENCE.to_owned(),
+        label: system_label,
+        group: None,
+    };
+    let grouped = groups.into_iter().flat_map(|(group, families)| {
+        families.into_iter().map(move |family| DropdownOption {
+            id: family.clone(),
+            label: family,
+            group: Some(group),
+        })
+    });
+    std::iter::once(system).chain(grouped).collect()
 }
 
 fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Option<String> {
@@ -188,7 +187,7 @@ fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Opti
         "editor" => Some(cfg.tools.external_editor.clone()),
         "terminal" => Some(cfg.tools.terminal.clone()),
         "interface-font-family" => Some(if cfg.interface_font_family.is_empty() {
-            INTERFACE_SYSTEM_ID.to_owned()
+            fonts::SYSTEM_PREFERENCE.to_owned()
         } else {
             cfg.interface_font_family.clone()
         }),
@@ -255,7 +254,7 @@ fn dropdown_row(
                     "editor" => c.tools.external_editor = value.clone(),
                     "terminal" => c.tools.terminal = value.clone(),
                     "interface-font-family" => {
-                        c.interface_font_family = if value == INTERFACE_SYSTEM_ID {
+                        c.interface_font_family = if value == fonts::SYSTEM_PREFERENCE {
                             String::new()
                         } else {
                             value.clone()

@@ -2,26 +2,31 @@ import AppKit
 import JayJayCore
 
 extension AppSettings.FontFamily {
-    static func installedMyFonts() -> [AppSettings.FontFamily] {
-        let families = userFamilyNames { CTFontCreateWithFontDescriptor($0, 12, nil).hasFixedAdvances }
-        return myMonoFontFamilies(families: families).compactMap(Self.init(rawValue:))
+    static func installedCodeFontGroups() -> [FontFamilyGroup] {
+        let choices = codeFontChoices(monospacedFamilies: installedFamilyNames {
+            CTFontCreateWithFontDescriptor($0, 12, nil).hasFixedAdvances
+        })
+        return [
+            FontFamilyGroup(title: "Coding Fonts", families: choices.coding.compactMap(Self.init(rawValue:))),
+            FontFamilyGroup(title: "Other Monospaced", families: choices.other.compactMap(Self.init(rawValue:)))
+        ]
     }
 
     static func installedUserFamilies() -> [AppSettings.FontFamily] {
-        userFamilyNames { _ in true }
-            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
-            .compactMap(Self.init(rawValue:))
+        let families = installedFamilyNames { descriptor in
+            (CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute) as? URL)
+                .map { isUserFontPath(path: $0.path) } ?? false
+        }
+        return fontFamilyChoices(families: families).compactMap(Self.init(rawValue:))
     }
 
-    private static func userFamilyNames(where include: (CTFontDescriptor) -> Bool) -> [String] {
+    private static func installedFamilyNames(where include: (CTFontDescriptor) -> Bool) -> [String] {
         let collection = CTFontCollectionCreateFromAvailableFonts(nil)
         let descriptors = CTFontCollectionCreateMatchingFontDescriptors(collection) as? [CTFontDescriptor] ?? []
         var checked = Set<String>()
         var families: [String] = []
         for descriptor in descriptors {
-            guard let url = CTFontDescriptorCopyAttribute(descriptor, kCTFontURLAttribute) as? URL,
-                  isUserFontPath(path: url.path),
-                  let family = CTFontDescriptorCopyAttribute(descriptor, kCTFontFamilyNameAttribute) as? String,
+            guard let family = CTFontDescriptorCopyAttribute(descriptor, kCTFontFamilyNameAttribute) as? String,
                   checked.insert(family).inserted,
                   include(descriptor)
             else { continue }

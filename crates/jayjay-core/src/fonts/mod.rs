@@ -4,28 +4,123 @@ use std::path::Path;
 mod platform;
 mod specimen;
 
-pub use platform::{MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS};
 pub use specimen::FontSpecimen;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub struct MonoFontOption {
-    pub id: &'static str,
-    pub title: &'static str,
-    pub font_names: &'static [&'static str],
+struct CodingFont {
+    family: &'static str,
+    /// Ids older versions saved for this family.
+    legacy_ids: &'static [&'static str],
 }
 
-pub const SYSTEM_MONO_FONT_ID: &str = "system";
+/// Fonts made for code, in default-preference order; the code-font picker lists the installed ones first.
+const CODING_FONTS: &[CodingFont] = &[
+    CodingFont {
+        family: "JetBrains Mono",
+        legacy_ids: &["jetbrains-mono"],
+    },
+    CodingFont {
+        family: "Fira Code",
+        legacy_ids: &["fira-code"],
+    },
+    CodingFont {
+        family: "Cascadia Code",
+        legacy_ids: &["cascadia-code"],
+    },
+    CodingFont {
+        family: "Source Code Pro",
+        legacy_ids: &["source-code-pro"],
+    },
+    CodingFont {
+        family: "Google Sans Mono",
+        legacy_ids: &["google-sans-mono"],
+    },
+    CodingFont {
+        family: "Hack",
+        legacy_ids: &["hack"],
+    },
+    CodingFont {
+        family: "Ioskeley Mono",
+        legacy_ids: &["ioskeley-mono"],
+    },
+    CodingFont {
+        family: "IoskeleyMonoNL Nerd Font",
+        legacy_ids: &["ioskeley-mono-nl-nerd-font", "ioskeleymono-nl-nerd-font"],
+    },
+    CodingFont {
+        family: "Roboto Mono",
+        legacy_ids: &["roboto-mono"],
+    },
+    CodingFont {
+        family: "Inconsolata",
+        legacy_ids: &["inconsolata"],
+    },
+    CodingFont {
+        family: "Ubuntu Mono",
+        legacy_ids: &["ubuntu-mono"],
+    },
+    CodingFont {
+        family: "Menlo",
+        legacy_ids: &["menlo"],
+    },
+    CodingFont {
+        family: "SF Mono",
+        legacy_ids: &["sf-mono"],
+    },
+    CodingFont {
+        family: "Monaco",
+        legacy_ids: &["monaco"],
+    },
+    CodingFont {
+        family: "Berkeley Mono",
+        legacy_ids: &["berkeley-mono"],
+    },
+    CodingFont {
+        family: "Geist Mono",
+        legacy_ids: &[],
+    },
+    CodingFont {
+        family: "Paper Mono",
+        legacy_ids: &[],
+    },
+];
 
-pub fn mono_font_option(id: &str) -> Option<&'static MonoFontOption> {
-    MONO_FONT_OPTIONS.iter().find(|option| option.id == id)
+pub fn coding_font_families() -> impl Iterator<Item = &'static str> {
+    CODING_FONTS.iter().map(|font| font.family)
 }
 
-pub fn mono_font_option_named(name: &str) -> Option<&'static MonoFontOption> {
-    mono_font_option(name).or_else(|| {
-        MONO_FONT_OPTIONS
-            .iter()
-            .find(|option| option.title == name || option.font_names.contains(&name))
-    })
+/// The family a saved code-font preference names; empty means the system monospace font.
+pub fn mono_font_family(preference: &str) -> String {
+    let preference = preference.trim();
+    if preference == "system" {
+        return String::new();
+    }
+    CODING_FONTS
+        .iter()
+        .find(|font| font.legacy_ids.contains(&preference))
+        .map_or(preference, |font| font.family)
+        .to_owned()
+}
+
+/// Installed monospaced families split into fonts made for code and the rest, each in picker order.
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct CodeFontChoices {
+    pub coding: Vec<String>,
+    pub other: Vec<String>,
+}
+
+impl CodeFontChoices {
+    pub fn new(monospaced_families: impl IntoIterator<Item = String>) -> Self {
+        let (coding, other) = font_family_choices(monospaced_families)
+            .into_iter()
+            .partition(|family| is_coding_font(family));
+        Self { coding, other }
+    }
+}
+
+/// Nerd Fonts only patch programming fonts, and rename them (JetBrains Mono becomes "JetBrainsMono Nerd Font").
+fn is_coding_font(family: &str) -> bool {
+    family.contains("Nerd Font")
+        || coding_font_families().any(|coding| coding.eq_ignore_ascii_case(family))
 }
 
 pub fn is_user_font_path(path: &Path) -> bool {
@@ -34,136 +129,64 @@ pub fn is_user_font_path(path: &Path) -> bool {
         .any(|dir| path.starts_with(dir))
 }
 
-pub fn my_mono_font_families(families: impl IntoIterator<Item = String>) -> Vec<String> {
+/// Picker order for installed families: deduped, case-insensitively sorted, without hidden system families.
+pub fn font_family_choices(families: impl IntoIterator<Item = String>) -> Vec<String> {
     families
         .into_iter()
-        .filter(|family| mono_font_option_named(family).is_none())
+        .filter(|family| !family.trim().is_empty() && !family.starts_with('.'))
         .map(|family| (family.to_lowercase(), family))
         .collect::<BTreeMap<_, _>>()
         .into_values()
         .collect()
 }
 
-pub(crate) const SYSTEM_MONO: MonoFontOption = MonoFontOption {
-    id: SYSTEM_MONO_FONT_ID,
-    title: "System Mono",
-    font_names: &[],
-};
-
-pub(crate) const JETBRAINS_MONO: MonoFontOption = MonoFontOption {
-    id: "jetbrains-mono",
-    title: "JetBrains Mono",
-    font_names: &["JetBrains Mono", "JetBrainsMono-Regular"],
-};
-
-pub(crate) const FIRA_CODE: MonoFontOption = MonoFontOption {
-    id: "fira-code",
-    title: "Fira Code",
-    font_names: &["Fira Code", "FiraCode-Regular"],
-};
-
-pub(crate) const CASCADIA_CODE: MonoFontOption = MonoFontOption {
-    id: "cascadia-code",
-    title: "Cascadia Code",
-    font_names: &["Cascadia Code", "CascadiaCode-Regular"],
-};
-
-pub(crate) const SOURCE_CODE_PRO: MonoFontOption = MonoFontOption {
-    id: "source-code-pro",
-    title: "Source Code Pro",
-    font_names: &["Source Code Pro", "SourceCodePro-Regular"],
-};
-
-pub(crate) const GOOGLE_SANS_MONO: MonoFontOption = MonoFontOption {
-    id: "google-sans-mono",
-    title: "Google Sans Mono",
-    font_names: &[
-        "Google Sans Mono",
-        "Google-Sans-Mono",
-        "GoogleSansMono-Regular",
-    ],
-};
-
-pub(crate) const HACK: MonoFontOption = MonoFontOption {
-    id: "hack",
-    title: "Hack",
-    font_names: &["Hack", "Hack-Regular"],
-};
-
-pub(crate) const IOSKELEY_MONO: MonoFontOption = MonoFontOption {
-    id: "ioskeley-mono",
-    title: "Ioskeley Mono",
-    font_names: &["Ioskeley Mono", "Ioskeley-Mono"],
-};
-
-pub(crate) const IOSKELEY_MONO_NL_NERD_FONT: MonoFontOption = MonoFontOption {
-    id: "ioskeley-mono-nl-nerd-font",
-    title: "IoskeleyMonoNL Nerd Font",
-    font_names: &["IoskeleyMonoNL Nerd Font", "IoskeleyMonoNLNF"],
-};
-
-pub(crate) const ROBOTO_MONO: MonoFontOption = MonoFontOption {
-    id: "roboto-mono",
-    title: "Roboto Mono",
-    font_names: &["Roboto Mono", "RobotoMono-Regular"],
-};
-
-pub(crate) const INCONSOLATA: MonoFontOption = MonoFontOption {
-    id: "inconsolata",
-    title: "Inconsolata",
-    font_names: &["Inconsolata"],
-};
-
-#[cfg(not(target_os = "macos"))]
-pub(crate) const UBUNTU_MONO: MonoFontOption = MonoFontOption {
-    id: "ubuntu-mono",
-    title: "Ubuntu Mono",
-    font_names: &["Ubuntu Mono", "UbuntuMono-Regular"],
-};
-
 #[cfg(test)]
 mod tests {
-    use std::collections::HashSet;
-
     use super::*;
 
     #[test]
-    fn mono_font_options_have_unique_ids_and_titles() {
-        let mut ids = HashSet::new();
-        let mut titles = HashSet::new();
-        for option in MONO_FONT_OPTIONS {
-            assert!(!option.id.is_empty());
-            assert!(!option.title.is_empty());
-            assert!(ids.insert(option.id), "duplicate font id {}", option.id);
-            assert!(
-                titles.insert(option.title),
-                "duplicate font title {}",
-                option.title
-            );
-        }
-    }
-
-    #[test]
-    fn system_font_option_is_first() {
+    fn saved_ids_map_to_their_family_and_names_pass_through() {
+        assert_eq!(mono_font_family("system"), "");
+        assert_eq!(mono_font_family(""), "");
+        assert_eq!(mono_font_family("jetbrains-mono"), "JetBrains Mono");
         assert_eq!(
-            MONO_FONT_OPTIONS.first().map(|option| option.id),
-            Some(SYSTEM_MONO_FONT_ID)
+            mono_font_family("ioskeleymono-nl-nerd-font"),
+            "IoskeleyMonoNL Nerd Font"
         );
+        assert_eq!(mono_font_family(" Paper Mono "), "Paper Mono");
     }
 
     #[test]
-    fn my_fonts_drop_curated_families_and_sort_case_insensitively() {
-        let families = my_mono_font_families(
+    fn code_font_choices_put_coding_fonts_first() {
+        let choices = CodeFontChoices::new(
             [
-                "paper Mono",
-                "Fira Code",
-                "JetBrainsMono-Regular",
-                "Ab Mono",
-                "Ab Mono",
+                "SimSong",
+                "Menlo",
+                "BIZ UDGothic",
+                "fira code",
+                "Paper Mono",
+                "JetBrainsMono Nerd Font Mono",
             ]
             .map(str::to_owned),
         );
-        assert_eq!(families, ["Ab Mono", "paper Mono"]);
+        assert_eq!(
+            choices.coding,
+            [
+                "fira code",
+                "JetBrainsMono Nerd Font Mono",
+                "Menlo",
+                "Paper Mono"
+            ]
+        );
+        assert_eq!(choices.other, ["BIZ UDGothic", "SimSong"]);
+    }
+
+    #[test]
+    fn family_choices_are_sorted_deduped_and_skip_hidden_families() {
+        let families = font_family_choices(
+            ["paper Mono", "Menlo", ".SF NS Mono", "Ab Mono", "Ab Mono"].map(str::to_owned),
+        );
+        assert_eq!(families, ["Ab Mono", "Menlo", "paper Mono"]);
     }
 
     #[test]
@@ -179,17 +202,5 @@ mod tests {
         assert!(!is_user_font_path(Path::new(
             "/usr/share/fonts/TTF/DejaVuSansMono.ttf"
         )));
-    }
-
-    #[test]
-    fn fallback_names_are_declared_by_options() {
-        for fallback_name in MONO_FONT_FALLBACK_NAMES {
-            assert!(
-                MONO_FONT_OPTIONS
-                    .iter()
-                    .any(|option| option.font_names.contains(fallback_name)),
-                "fallback font {fallback_name} is missing from MONO_FONT_OPTIONS"
-            );
-        }
     }
 }

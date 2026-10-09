@@ -3,10 +3,11 @@ use font_kit::font::Font;
 use font_kit::handle::Handle;
 use font_kit::properties::Properties;
 use font_kit::source::SystemSource;
-use jayjay_core::{MONO_FONT_FALLBACK_NAMES, is_user_font_path};
+use jayjay_core::is_user_font_path;
 
+/// With no code font saved, the first installed coding font wins over fontconfig's pick.
 pub(super) fn platform_default_mono() -> String {
-    default_mono_from(MONO_FONT_FALLBACK_NAMES)
+    default_mono_from(&jayjay_core::coding_font_families().collect::<Vec<_>>())
 }
 
 fn default_mono_from(candidates: &[&str]) -> String {
@@ -25,32 +26,26 @@ fn system_monospace() -> Option<String> {
         .map(|font| font.family_name())
 }
 
-pub(crate) fn user_mono_families() -> Vec<String> {
-    user_families_where(has_fixed_advances)
+pub(crate) fn monospaced_families() -> Vec<String> {
+    families_where(|handle| handle.load().is_ok_and(|font| has_fixed_advances(&font)))
 }
 
 pub(crate) fn user_families() -> Vec<String> {
-    user_families_where(|_| true)
+    families_where(|handle| matches!(handle, Handle::Path { path, .. } if is_user_font_path(path)))
 }
 
-fn user_families_where(include: impl Fn(&Font) -> bool) -> Vec<String> {
+fn families_where(include: impl Fn(&Handle) -> bool) -> Vec<String> {
     let source = SystemSource::new();
     source
         .all_families()
         .unwrap_or_default()
         .into_iter()
-        .filter(|family| is_user_family(&source, family, &include))
+        .filter(|family| {
+            source
+                .select_family_by_name(family)
+                .is_ok_and(|handles| handles.fonts().first().is_some_and(&include))
+        })
         .collect()
-}
-
-fn is_user_family(source: &SystemSource, family: &str, include: impl Fn(&Font) -> bool) -> bool {
-    let Ok(handles) = source.select_family_by_name(family) else {
-        return false;
-    };
-    let Some(handle @ Handle::Path { path, .. }) = handles.fonts().first() else {
-        return false;
-    };
-    is_user_font_path(path) && handle.load().is_ok_and(|font| include(&font))
 }
 
 /// The fixed-pitch flag misses some mono fonts (Nerd Font patches), so compare advances.

@@ -2,7 +2,7 @@ import SwiftUI
 
 struct SettingsFontsPage: View {
     @Environment(AppSettings.self) private var settings
-    @State private var myFonts: [AppSettings.FontFamily] = []
+    @State private var fontGroups: [FontFamilyGroup] = []
 
     var body: some View {
         @Bindable var settings = settings
@@ -10,9 +10,8 @@ struct SettingsFontsPage: View {
             Section {
                 FontFamilyPicker(
                     selection: $settings.codeFontFamily,
-                    choices: AppSettings.FontFamily.allCases.filter(\.isInstalled),
-                    myFonts: myFonts,
-                    systemTitle: AppSettings.FontFamily.system.title
+                    systemTitle: "System Mono",
+                    groups: fontGroups
                 )
                 FontSizeStepper(value: $settings.codeFontSize, id: AID.Settings.codeFontSize)
                 HStack {
@@ -43,7 +42,9 @@ struct SettingsFontsPage: View {
             }
         }
         .formStyle(.grouped)
-        .task { myFonts = AppSettings.FontFamily.installedMyFonts() }
+        .task {
+            fontGroups = await Task.detached { AppSettings.FontFamily.installedCodeFontGroups() }.value
+        }
     }
 
     private func ligaturesToggle(isOn: Binding<Bool>) -> some View {
@@ -53,7 +54,7 @@ struct SettingsFontsPage: View {
             SettingsLabel("Ligatures", icon: "character")
         }
         .disabled(!available)
-        .help(available ? "" : "\(family == .system ? "The system font" : family.title) has no ligatures.")
+        .help(available ? "" : "\(family == .system ? "The system font" : family.rawValue) has no ligatures.")
         .accessibilityIdentifier(AID.Settings.codeLigatures)
     }
 }

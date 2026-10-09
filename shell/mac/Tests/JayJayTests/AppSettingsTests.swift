@@ -99,32 +99,12 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertTrue(AppSettings(defaults: defaults).showsRecentRepositoriesPanel)
     }
 
-    func testMonoFontChoicesComeFromCoreOptions() {
-        let coreOptions = monoFontOptions()
-
-        XCTAssertEqual(AppSettings.FontFamily.allCases.map(\.rawValue), coreOptions.map(\.id))
-        XCTAssertEqual(AppSettings.FontFamily.allCases.map(\.title), coreOptions.map(\.title))
-    }
-
-    func testInstalledFamilyNamePersistsAsPreference() throws {
-        let suite = "AppSettingsTests.\(UUID().uuidString)"
-        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
-        defer { defaults.removePersistentDomain(forName: suite) }
-
-        let settings = AppSettings(defaults: defaults)
-        settings.codeFontFamily = try XCTUnwrap(AppSettings.FontFamily(rawValue: "Courier New"))
-        let restored = AppSettings(defaults: defaults)
-        XCTAssertEqual(restored.codeFontFamily.rawValue, "Courier New")
-        XCTAssertEqual(restored.codeFontFamily.title, "Courier New")
-        XCTAssertEqual(restored.codeFontFamily.nsFont(size: 12).familyName, "Courier New")
+    func testPreferencesBecomeFamilyNamesThatResolveToInstalledFonts() {
+        XCTAssertEqual(AppSettings.FontFamily(rawValue: "ioskeleymono-nl-nerd-font")?.rawValue, "IoskeleyMonoNL Nerd Font")
+        XCTAssertEqual(AppSettings.FontFamily(rawValue: "jetbrains-mono")?.rawValue, "JetBrains Mono")
+        XCTAssertEqual(AppSettings.FontFamily(rawValue: "system"), .system)
         XCTAssertNil(AppSettings.FontFamily(rawValue: ""))
-    }
-
-    func testLegacyIoskeleyNerdFontIdCanonicalizes() {
-        XCTAssertEqual(
-            AppSettings.FontFamily(rawValue: "ioskeleymono-nl-nerd-font")?.rawValue,
-            "ioskeley-mono-nl-nerd-font"
-        )
+        XCTAssertEqual(AppSettings.FontFamily(rawValue: "Courier New")?.nsFont(size: 12).familyName, "Courier New")
     }
 
     func testRepositoryHistoryUsesLexicalStandardization() throws {
