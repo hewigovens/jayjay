@@ -2,7 +2,6 @@ use gpui::{Div, FontWeight, ParentElement, SharedString, Styled, div, px, rgb};
 use jayjay_core::diff::side_by_side::{RowSide, SideBySideRow};
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, conflict_display_text};
 
-use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
 
@@ -76,7 +75,7 @@ fn side_gutter(
         .flex_row()
         .w(px(SBS_GUTTER_WIDTH))
         .h(px(theme.code_line_height()))
-        .code_text(12.)
+        .code_text(12., theme)
         .line_height(px(theme.code_line_height()))
         .child(gutter_cell(line_no, theme, bg))
 }
@@ -94,7 +93,7 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
             .min_w_0()
             .h(px(theme.code_line_height()))
             .bg(rgb(bg))
-            .code_text(12.)
+            .code_text(12., theme)
             .line_height(px(theme.code_line_height()))
             .text_color(rgb(base_text_fg))
             .font_weight(FontWeight::MEDIUM)
@@ -129,7 +128,7 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
         .min_w_0()
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .code_text(12.)
+        .code_text(12., theme)
         .line_height(px(theme.code_line_height()))
         .relative()
         .child(conflict_stripe_overlay(side.conflict_kind, theme))
@@ -172,7 +171,7 @@ fn separator_content(label: String, theme: &Theme) -> Div {
         .min_w_0()
         .h(px(theme.code_line_height()))
         .bg(rgb(theme.diff_separator_bg))
-        .font_family(fonts::mono())
+        .code_font()
         .text_size(px(theme.compact_code_font_size()))
         .line_height(px(theme.code_line_height()))
         .text_color(rgb(theme.diff_text_dim))

@@ -7,7 +7,7 @@ use crate::app::config::{AppConfig, AppConfigStore};
 fn app_menus_reflect_zoom_state(cx: &mut gpui::TestAppContext) {
     cx.update(|cx| {
         let cfg = AppConfig {
-            font_size: 12.,
+            code_font_size: 12.,
             ..Default::default()
         };
         cx.set_global(AppConfigStore::new(cfg));

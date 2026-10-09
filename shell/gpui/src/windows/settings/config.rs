@@ -103,7 +103,7 @@ fn config_path_row(
                 .flex_1()
                 .min_w_0()
                 .truncate()
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(path.to_owned())),
         )

@@ -111,7 +111,7 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
                 .items_center()
                 .flex_1()
                 .min_w_0()
-                .code_text(11.)
+                .code_text(11., t)
                 .cursor_text()
                 .track_focus(&view.revset_editor_focus)
                 .on_key_down(cx.listener(|view, ev, window, cx| {
@@ -188,7 +188,7 @@ fn summary(
             div()
                 .min_w_0()
                 .truncate()
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(if filter.kind == RevsetFilterKind::Custom {
                     t.fg
                 } else {

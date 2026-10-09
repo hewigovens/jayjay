@@ -3,7 +3,6 @@ use std::ops::Range;
 use gpui::{Div, FontWeight, ParentElement, Pixels, SharedString, Styled, div, px, rgb, rgba};
 use jayjay_core::diff::{ConflictLineKind, DiffLine, DiffSpanStyle, conflict_display_text};
 
-use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
 
@@ -31,7 +30,7 @@ pub fn content_row(
             .w_full()
             .h(px(theme.code_line_height()))
             .bg(rgb(bg))
-            .code_text(12.)
+            .code_text(12., theme)
             .line_height(px(theme.code_line_height()))
             .text_color(rgb(base_text_fg))
             .font_weight(FontWeight::MEDIUM)
@@ -70,7 +69,7 @@ pub fn content_row(
         .w_full()
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .code_text(12.)
+        .code_text(12., theme)
         .line_height(px(theme.code_line_height()))
         .child(conflict_stripe_overlay(line.conflict_kind, theme))
         .child(text_row);
@@ -149,7 +148,7 @@ fn separator_content(line: &DiffLine, theme: &Theme, is_selected: bool) -> Div {
         .w_full()
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .font_family(fonts::mono())
+        .code_font()
         .text_size(px(theme.compact_code_font_size()))
         .line_height(px(theme.code_line_height()))
         .text_color(rgb(theme.diff_text_dim))

@@ -45,11 +45,13 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
                 ToggleSidebar,
             ),
             MenuItem::separator(),
-            MenuItem::action("Zoom In", ZoomIn).disabled(cfg.font_size >= AppConfig::MAX_FONT_SIZE),
-            MenuItem::action("Zoom Out", ZoomOut)
-                .disabled(cfg.font_size <= AppConfig::MIN_FONT_SIZE),
-            MenuItem::action("Reset Zoom", ResetZoom)
-                .checked((cfg.font_size - AppConfig::DEFAULT_FONT_SIZE).abs() < 0.01),
+            MenuItem::action("Zoom In", ZoomIn).disabled(
+                cfg.interface_font_size().min(cfg.code_font_size()) >= AppConfig::MAX_FONT_SIZE,
+            ),
+            MenuItem::action("Zoom Out", ZoomOut).disabled(
+                cfg.interface_font_size().max(cfg.code_font_size()) <= AppConfig::MIN_FONT_SIZE,
+            ),
+            MenuItem::action("Reset Zoom", ResetZoom).checked(cfg.is_default_zoom()),
         ]),
         Menu::new("Repository").items([
             MenuItem::action("Command Palette", OpenCommandPalette),
@@ -152,9 +154,9 @@ fn register_global_actions(cx: &mut App) {
     });
     cx.on_action(|_: &ReportIssue, cx| crate::app::links::open_url(cx, REPORT_ISSUE_URL));
     cx.on_action(|_: &SendFeedback, cx| crate::app::feedback::open(cx));
-    cx.on_action(|_: &ZoomIn, cx| toggle(cx, |c| c.adjust_font_size(1.)));
-    cx.on_action(|_: &ZoomOut, cx| toggle(cx, |c| c.adjust_font_size(-1.)));
-    cx.on_action(|_: &ResetZoom, cx| toggle(cx, AppConfig::reset_font_size));
+    cx.on_action(|_: &ZoomIn, cx| toggle(cx, |c| c.zoom(1.)));
+    cx.on_action(|_: &ZoomOut, cx| toggle(cx, |c| c.zoom(-1.)));
+    cx.on_action(|_: &ResetZoom, cx| toggle(cx, AppConfig::reset_zoom));
     cx.on_action(|_: &ToggleSideBySideDiff, cx| {
         toggle(cx, |c| {
             c.diff.side_by_side ^= true;

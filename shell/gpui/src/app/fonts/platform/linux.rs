@@ -26,23 +26,31 @@ fn system_monospace() -> Option<String> {
 }
 
 pub(crate) fn user_mono_families() -> Vec<String> {
+    user_families_where(has_fixed_advances)
+}
+
+pub(crate) fn user_families() -> Vec<String> {
+    user_families_where(|_| true)
+}
+
+fn user_families_where(include: impl Fn(&Font) -> bool) -> Vec<String> {
     let source = SystemSource::new();
     source
         .all_families()
         .unwrap_or_default()
         .into_iter()
-        .filter(|family| is_user_mono_family(&source, family))
+        .filter(|family| is_user_family(&source, family, &include))
         .collect()
 }
 
-fn is_user_mono_family(source: &SystemSource, family: &str) -> bool {
+fn is_user_family(source: &SystemSource, family: &str, include: impl Fn(&Font) -> bool) -> bool {
     let Ok(handles) = source.select_family_by_name(family) else {
         return false;
     };
     let Some(handle @ Handle::Path { path, .. }) = handles.fonts().first() else {
         return false;
     };
-    is_user_font_path(path) && handle.load().is_ok_and(|font| has_fixed_advances(&font))
+    is_user_font_path(path) && handle.load().is_ok_and(|font| include(&font))
 }
 
 /// The fixed-pitch flag misses some mono fonts (Nerd Font patches), so compare advances.

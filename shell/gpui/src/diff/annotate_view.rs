@@ -73,7 +73,7 @@ fn annotate_row(line: &AnnotationLine, spans: Option<&[DiffSpan]>, t: &Theme) ->
         .flex_row()
         .w_full()
         .h(px(t.code_line_height()))
-        .code_text(12.)
+        .code_text(12., t)
         .line_height(px(t.code_line_height()))
         .child(stripe(stripe_color, t))
         .child(line_no_cell(line.line_number, t))

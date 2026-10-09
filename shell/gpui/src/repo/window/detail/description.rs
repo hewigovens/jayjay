@@ -63,7 +63,7 @@ pub(super) fn description_block(
         .overflow_y_scroll()
         .child(
             div()
-                .code_text(BODY_FONT)
+                .code_text(BODY_FONT, t)
                 .text_color(rgb(t.fg))
                 .debug_selector(|| "description-text".to_owned())
                 .child(SharedString::from(body)),

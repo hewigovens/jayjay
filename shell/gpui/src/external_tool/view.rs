@@ -210,6 +210,7 @@ impl Render for ExternalToolWindow {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let mut root = div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .flex()
             .flex_col()

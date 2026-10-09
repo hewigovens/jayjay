@@ -75,7 +75,7 @@ pub(super) fn header_row(
                 .on_click(cx.listener(move |view, _, _, cx| {
                     view.focus_and_toggle_diff_edit_collapse(&path_toggle, cx)
                 }))
-                .code_text(12.)
+                .code_text(12., t)
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(card.path.to_string()),
         );
@@ -139,6 +139,12 @@ fn collapse_chevron(
 
 fn stats_badge(view: &RepoWindow, card: &DiffEditCardFile, t: &Theme) -> Option<AnyElement> {
     let stats = view.diff_edit.stats.as_ref()?.get(card.path.as_ref())?;
-    line_stats(stats, 10., t.diff_gutter_added_fg, t.diff_gutter_removed_fg)
-        .map(IntoElement::into_any_element)
+    line_stats(
+        stats,
+        10.,
+        t.diff_gutter_added_fg,
+        t.diff_gutter_removed_fg,
+        t,
+    )
+    .map(IntoElement::into_any_element)
 }

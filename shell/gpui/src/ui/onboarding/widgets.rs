@@ -16,10 +16,10 @@ pub(super) fn success_badge(t: &Theme) -> impl IntoElement {
         .child(icons::icon(icons::glyph::CHECK, 26., 0xffffff))
 }
 
-pub(super) fn mono_line(text: String, size: f32, color: u32) -> impl IntoElement {
+pub(super) fn mono_line(text: String, size: f32, color: u32, t: &Theme) -> impl IntoElement {
     div()
         .max_w(px(360.))
-        .code_text(size)
+        .code_text(size, t)
         .text_color(rgb(color))
         .child(text)
 }
@@ -38,7 +38,7 @@ pub(super) fn command_row(command: &'static str, t: &Theme) -> impl IntoElement 
         .rounded_sm()
         .bg(rgb(t.row_alt_bg))
         .text_color(rgb(t.fg))
-        .child(div().code_text(13.).child(command))
+        .child(div().code_text(13., t).child(command))
         .child(
             copy_icon_button(
                 SharedString::from(format!("onboarding-copy-{command}")),

@@ -64,7 +64,7 @@ pub(super) fn repo_init_error_pane(
                 )
                 .child(
                     div()
-                        .code_text(11.)
+                        .code_text(11., t)
                         .text_color(rgb(t.fg_faint))
                         .child(repo_path),
                 )

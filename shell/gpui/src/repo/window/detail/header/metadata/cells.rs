@@ -55,6 +55,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
             stats.insertions,
             spelled_out,
             t.diff_gutter_added_fg,
+            t,
         ));
     }
     if stats.deletions > 0 {
@@ -64,6 +65,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
             stats.deletions,
             spelled_out,
             t.diff_gutter_removed_fg,
+            t,
         ));
     }
     Some(row.into_any_element())
@@ -75,10 +77,11 @@ pub(super) fn diff_stat(
     count: u32,
     spelled_out: bool,
     color: u32,
+    t: &Theme,
 ) -> AnyElement {
     let mut row = div().flex().flex_row().items_baseline().gap(px(3.)).child(
         div()
-            .code_text(FONT_ID)
+            .code_text(FONT_ID, t)
             .font_weight(gpui::FontWeight::SEMIBOLD)
             .text_color(rgb(color))
             .child(SharedString::from(value)),

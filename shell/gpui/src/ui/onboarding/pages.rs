@@ -106,10 +106,10 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
                     .child("Jujutsu is installed"),
             );
             if !status.version.is_empty() {
-                root = root.child(mono_line(status.version.clone(), 13., t.fg_dim));
+                root = root.child(mono_line(status.version.clone(), 13., t.fg_dim, t));
             }
             if !status.path.is_empty() {
-                root = root.child(mono_line(status.path.clone(), 11., t.fg_faint));
+                root = root.child(mono_line(status.path.clone(), 11., t.fg_faint, t));
             }
         }
         JjCheckState::Loaded(_) => {

@@ -188,7 +188,7 @@ pub(crate) fn media_frame(t: &Theme) -> Div {
 pub(crate) fn metadata_line(label: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
         .debug_selector(|| "rich-preview-metadata".to_owned())
-        .code_text(10.)
+        .code_text(10., t)
         .text_color(rgb(t.fg_dim))
         .child(label.into())
         .into_any_element()

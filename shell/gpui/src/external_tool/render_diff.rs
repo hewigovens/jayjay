@@ -258,7 +258,7 @@ fn external_diff_row(
         .flex()
         .flex_row()
         .h(px(t.code_line_height()))
-        .code_text(12.)
+        .code_text(12., t)
         .child(
             div()
                 .flex()

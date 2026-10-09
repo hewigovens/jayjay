@@ -71,6 +71,7 @@ impl Render for OpenRepositoryPathView {
         let error = self.error.clone();
         let focus_handle = self.input.read(cx).focus_handle(cx);
         div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&focus_handle)
             .key_context("OpenRepositoryPathView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| window.remove_window()))

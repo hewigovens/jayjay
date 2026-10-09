@@ -126,7 +126,7 @@ pub(super) fn completion_row(
         })
         .child(
             div()
-                .code_text(12.)
+                .code_text(12., t)
                 .text_color(rgb(t.fg))
                 .child(entry.text.clone()),
         )

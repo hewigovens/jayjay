@@ -59,7 +59,7 @@ pub fn note_content_row(
         .border_l_1()
         .border_r_1()
         .border_color(rgba(with_alpha(accent, 0x59)))
-        .code_text(12.)
+        .code_text(12., theme)
         .text_color(rgb(theme.fg))
         .line_height(px(theme.code_line_height()))
         .child(text);

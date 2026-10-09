@@ -84,7 +84,7 @@ fn note_context_preview(
                 .h(px(ROW_HEIGHT))
                 .px(px(8.))
                 .bg(bg)
-                .code_text(11.)
+                .code_text(11., t)
                 .child(
                     div()
                         .flex_none()
@@ -126,7 +126,7 @@ fn file_list_preview(paths: &[SharedString], t: &Theme) -> AnyElement {
         .flex_col()
         .w_full()
         .gap(px(2.))
-        .code_text(11.)
+        .code_text(11., t)
         .text_color(rgb(t.fg_dim));
     for path in paths {
         // Truncation needs the flex_1/min_w_0 inner cell, or scrolled rows collapse to bare ellipses.

@@ -111,6 +111,7 @@ pub(super) fn file_header(
             DIFF_HEADER_STATUS_FONT,
             t.diff_gutter_added_fg,
             t.diff_gutter_removed_fg,
+            t,
         )
     }) {
         path_group = path_group.child(

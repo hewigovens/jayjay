@@ -121,8 +121,8 @@ pub(super) fn file_text_content(
         )
         .child(
             div()
-                .code_text(10.)
-                .line_height(px(t.scaled_font_size(13.)))
+                .code_text(10., t)
+                .line_height(px(t.scaled_code_font_size(PATH_LINE_HEIGHT)))
                 .text_color(rgb(t.fg_dim))
                 .truncate()
                 .child(path.into()),
@@ -133,8 +133,11 @@ fn file_text_block_height(t: &Theme) -> f32 {
     t.scaled_font_size(16.) + 2. + t.scaled_font_size(13.)
 }
 
+const PATH_LINE_HEIGHT: f32 = 13.;
+
+/// The path line is code text, so its share of the row follows the code size.
 pub(crate) fn file_row_height(t: &Theme) -> f32 {
-    t.scaled_font_size(46.)
+    t.scaled_font_size(46. - PATH_LINE_HEIGHT) + t.scaled_code_font_size(PATH_LINE_HEIGHT)
 }
 
 pub(super) fn display_path(hunk: &DiffHunk) -> String {

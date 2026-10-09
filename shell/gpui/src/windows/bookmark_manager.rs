@@ -362,6 +362,7 @@ impl Render for BookmarkManagerView {
         };
 
         let mut root = div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("BookmarkManagerView")
             .on_action(cx.listener(|view, _: &CloseWindow, window, cx| {

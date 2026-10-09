@@ -61,7 +61,7 @@ fn search_input(
         .gap(px(2.))
         .flex_1()
         .min_w_0()
-        .code_text(12.)
+        .code_text(12., t)
         .child(LineInput::ime_layer(
             cx.entity(),
             ime_focus,
@@ -102,7 +102,7 @@ fn nav_button(
         .w(px(t.scaled_control_height(20., 11.)))
         .h(px(t.scaled_control_height(20., 11.)))
         .rounded_md()
-        .code_text(11.)
+        .code_text(11., t)
         .text_color(rgb(fg))
         .child(symbol);
 

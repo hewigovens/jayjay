@@ -69,7 +69,7 @@ pub(super) fn detail_row(
                 .max_w(px(360.))
                 .min_w_0()
                 .truncate()
-                .code_text(detail_font_size)
+                .code_text(detail_font_size, t)
                 .text_color(rgb(detail_color))
                 .child(detail.into()),
         )
@@ -78,7 +78,7 @@ pub(super) fn detail_row(
 pub(super) fn field_row(
     label: &'static str,
     value: AnyElement,
-    hint: &'static str,
+    hint: impl Into<SharedString>,
     t: &Theme,
 ) -> AnyElement {
     div()
@@ -102,11 +102,71 @@ pub(super) fn field_row(
                 )
                 .child(value),
         )
+        .children(
+            Some(hint.into())
+                .filter(|hint| !hint.is_empty())
+                .map(|hint| {
+                    div()
+                        .text_size(ui_font_size(11.))
+                        .text_color(rgb(t.fg_faint))
+                        .child(hint)
+                }),
+        )
+        .into_any_element()
+}
+
+pub(super) fn stepper(
+    id: &'static str,
+    label: String,
+    value: f32,
+    bounds: std::ops::RangeInclusive<f32>,
+    adjust: fn(&mut crate::app::config::AppConfig, f32),
+    t: &Theme,
+) -> AnyElement {
+    let step_button = |suffix: &'static str, label: &'static str, sign: f32, enabled: bool| {
+        let id = format!("setting-{id}-{suffix}");
+        let button = div()
+            .id(SharedString::from(id.clone()))
+            .debug_selector(move || id.clone())
+            .flex()
+            .flex_none()
+            .items_center()
+            .justify_center()
+            .w(px(t.scaled_control_height(28., 14.)))
+            .h(px(t.scaled_control_height(28., 14.)))
+            .bg(rgb(t.toggle_inactive_bg))
+            .text_size(ui_font_size(14.))
+            .text_color(rgb(t.fg))
+            .child(label);
+        if enabled {
+            button
+                .cursor_pointer()
+                .hover(|style| style.bg(rgb(t.row_alt_bg)))
+                .on_click(move |_: &gpui::ClickEvent, _, cx| {
+                    config::update(cx, move |cfg| adjust(cfg, sign));
+                })
+                .into_any_element()
+        } else {
+            button.opacity(0.45).into_any_element()
+        }
+    };
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(8.))
+        .child(current_value(&label, t))
         .child(
             div()
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(t.fg_faint))
-                .child(hint),
+                .flex()
+                .flex_row()
+                .gap(px(1.))
+                .p(px(1.))
+                .rounded_md()
+                .overflow_hidden()
+                .bg(rgb(t.border))
+                .child(step_button("decrease", "−", -1., value > *bounds.start()))
+                .child(step_button("increase", "+", 1., value < *bounds.end())),
         )
         .into_any_element()
 }

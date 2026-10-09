@@ -25,6 +25,7 @@ impl Render for CommandPalette {
         };
 
         div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("CommandPalette")
             .on_key_down(cx.listener(Self::on_key))

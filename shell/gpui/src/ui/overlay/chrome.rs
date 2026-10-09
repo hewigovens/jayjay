@@ -83,7 +83,7 @@ pub(crate) fn overlay_header(
                 .debug_selector(|| "overlay-header-subtitle".to_owned())
                 .min_w_0()
                 .truncate()
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(t.fg_dim))
                 .child(subtitle),
         );

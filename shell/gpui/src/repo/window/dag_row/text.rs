@@ -16,7 +16,7 @@ pub(crate) fn id_cell(
         .flex()
         .flex_row()
         .flex_none()
-        .code_text(font_size)
+        .code_text(font_size, t)
         .child(
             div()
                 .font_weight(gpui::FontWeight::BOLD)

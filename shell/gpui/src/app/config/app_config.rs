@@ -12,8 +12,16 @@ use super::{
 #[serde(default)]
 pub struct AppConfig {
     pub appearance: AppearanceMode,
-    pub font_family: String,
-    pub(crate) font_size: f32,
+    pub interface_font_family: String,
+    /// Missing only in configs saved before the split, where one size drove interface text too; `parse` seeds it from the code size.
+    #[serde(default)]
+    pub(crate) interface_font_size: Option<f32>,
+    #[serde(alias = "font_family")]
+    pub code_font_family: String,
+    #[serde(alias = "font_size")]
+    pub(crate) code_font_size: f32,
+    pub code_line_spacing: f32,
+    pub code_ligatures: bool,
     pub diff: DiffConfig,
     pub layout: LayoutConfig,
     pub(crate) tools: ToolsConfig,
@@ -29,8 +37,12 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             appearance: AppearanceMode::System,
-            font_family: String::new(),
-            font_size: AppConfig::DEFAULT_FONT_SIZE,
+            interface_font_family: String::new(),
+            interface_font_size: Some(AppConfig::DEFAULT_FONT_SIZE),
+            code_font_family: String::new(),
+            code_font_size: AppConfig::DEFAULT_FONT_SIZE,
+            code_line_spacing: AppConfig::MIN_LINE_SPACING,
+            code_ligatures: true,
             diff: DiffConfig::default(),
             layout: LayoutConfig::default(),
             tools: ToolsConfig::default(),
@@ -49,17 +61,56 @@ impl AppConfig {
     pub(crate) const MIN_FONT_SIZE: f32 = 9.;
     pub(crate) const MAX_FONT_SIZE: f32 = 24.;
     pub(crate) const DEFAULT_FONT_SIZE: f32 = 12.;
+    pub(crate) const MIN_LINE_SPACING: f32 = 1.;
+    pub(crate) const MAX_LINE_SPACING: f32 = 2.;
 
-    pub fn font_size(&self) -> f32 {
-        self.font_size
+    pub fn interface_font_size(&self) -> f32 {
+        self.interface_font_size.unwrap_or(self.code_font_size)
     }
 
-    pub(crate) fn adjust_font_size(&mut self, delta: f32) {
-        self.font_size = (self.font_size + delta).clamp(Self::MIN_FONT_SIZE, Self::MAX_FONT_SIZE);
+    pub fn code_font_size(&self) -> f32 {
+        self.code_font_size
     }
 
-    pub(crate) fn reset_font_size(&mut self) {
-        self.font_size = Self::DEFAULT_FONT_SIZE;
+    pub(crate) fn adjust_interface_font_size(&mut self, delta: f32) {
+        self.interface_font_size =
+            Some(Self::clamped_font_size(self.interface_font_size() + delta));
+    }
+
+    pub(crate) fn adjust_code_font_size(&mut self, delta: f32) {
+        self.code_font_size = Self::clamped_font_size(self.code_font_size + delta);
+    }
+
+    pub(crate) fn adjust_line_spacing(&mut self, delta: f32) {
+        let spacing = ((self.code_line_spacing + delta) * 10.).round() / 10.;
+        self.code_line_spacing = spacing.clamp(Self::MIN_LINE_SPACING, Self::MAX_LINE_SPACING);
+    }
+
+    pub(crate) fn zoom(&mut self, delta: f32) {
+        self.adjust_interface_font_size(delta);
+        self.adjust_code_font_size(delta);
+    }
+
+    pub(crate) fn reset_zoom(&mut self) {
+        self.interface_font_size = Some(Self::DEFAULT_FONT_SIZE);
+        self.code_font_size = Self::DEFAULT_FONT_SIZE;
+    }
+
+    pub(crate) fn is_default_zoom(&self) -> bool {
+        self.interface_font_size() == Self::DEFAULT_FONT_SIZE
+            && self.code_font_size == Self::DEFAULT_FONT_SIZE
+    }
+
+    pub(crate) fn reset_code_font(&mut self) {
+        let defaults = Self::default();
+        self.code_font_family = defaults.code_font_family;
+        self.code_font_size = defaults.code_font_size;
+        self.code_line_spacing = defaults.code_line_spacing;
+        self.code_ligatures = defaults.code_ligatures;
+    }
+
+    fn clamped_font_size(size: f32) -> f32 {
+        size.clamp(Self::MIN_FONT_SIZE, Self::MAX_FONT_SIZE)
     }
 
     fn config_path() -> Option<PathBuf> {
@@ -71,9 +122,17 @@ impl AppConfig {
             return Self::default();
         };
         match std::fs::read_to_string(&path) {
-            Ok(contents) => toml::from_str(&contents).unwrap_or_default(),
+            Ok(contents) => Self::parse(&contents),
             Err(_) => Self::default(),
         }
+    }
+
+    pub(crate) fn parse(contents: &str) -> Self {
+        let mut config: Self = toml::from_str(contents).unwrap_or_default();
+        config
+            .interface_font_size
+            .get_or_insert(config.code_font_size);
+        config
     }
 
     pub(super) fn save(&self) -> std::io::Result<()> {
@@ -135,8 +194,7 @@ mod tests {
 
     #[test]
     fn empty_config_file_uses_defaults() {
-        let cfg: AppConfig = toml::from_str("").unwrap();
-        assert_eq!(cfg, AppConfig::default());
+        assert_eq!(AppConfig::parse(""), AppConfig::default());
     }
 
     #[test]
@@ -202,5 +260,42 @@ mod tests {
                 .count(),
             1
         );
+    }
+
+    #[test]
+    fn pre_split_config_keeps_the_code_font_and_seeds_the_interface_size() {
+        let config = AppConfig::parse("font_family = \"menlo\"\nfont_size = 15.0\n");
+        assert_eq!(config.code_font_family, "menlo");
+        assert_eq!(config.code_font_size(), 15.);
+        assert_eq!(config.interface_font_family, "");
+        assert_eq!(config.interface_font_size(), 15.);
+        assert!(
+            toml::to_string(&config)
+                .unwrap()
+                .contains("code_font_family = \"menlo\"")
+        );
+    }
+
+    #[test]
+    fn zoom_moves_both_sizes_within_bounds_and_reset_code_font_keeps_the_interface() {
+        let mut config = AppConfig {
+            interface_font_size: Some(AppConfig::MAX_FONT_SIZE - 1.),
+            ..Default::default()
+        };
+        config.zoom(1.);
+        config.zoom(1.);
+        assert_eq!(
+            (config.interface_font_size(), config.code_font_size()),
+            (AppConfig::MAX_FONT_SIZE, 14.)
+        );
+        config.adjust_line_spacing(0.1);
+        config.reset_code_font();
+        assert_eq!(
+            (config.interface_font_size(), config.code_font_size()),
+            (AppConfig::MAX_FONT_SIZE, 12.)
+        );
+        assert_eq!(config.code_line_spacing, 1.);
+        config.reset_zoom();
+        assert!(config.is_default_zoom());
     }
 }

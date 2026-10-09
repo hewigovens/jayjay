@@ -1,7 +1,7 @@
 use crate::harness::{install_test_globals, settle_visual};
 use gpui::{
     Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point,
-    px,
+    px, size,
 };
 use jayjay_gpui::app::actions::OpenAbout;
 use jayjay_gpui::app::config::current as current_config;
@@ -19,17 +19,17 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
 
     assert!(settings_cx.debug_bounds("settings-scroll").is_some());
     let font_button = settings_cx
-        .debug_bounds("dd-btn-font-family")
-        .expect("font family dropdown");
+        .debug_bounds("dd-btn-interface-font-family")
+        .expect("interface font dropdown");
     settings_cx.simulate_click(font_button.center(), Modifiers::default());
     settle_visual(&mut settings_cx);
     let system_font = settings_cx
-        .debug_bounds("dd-font-family-system")
+        .debug_bounds("dd-interface-font-family-system")
         .expect("system font option");
     settings_cx.simulate_click(system_font.center(), Modifiers::default());
     settle_visual(&mut settings_cx);
     settings_cx.cx.update(|cx| {
-        assert_eq!(current_config(cx).font_family, "system");
+        assert_eq!(current_config(cx).interface_font_family, "");
     });
 
     let tools_nav = settings_cx
@@ -92,7 +92,7 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
 }
 
 #[gpui::test]
-fn font_size_stepper_updates_config(cx: &mut TestAppContext) {
+fn interface_font_size_stepper_updates_config(cx: &mut TestAppContext) {
     install_test_globals(cx);
     cx.update(|cx| SettingsView::open_section(SettingsSection::Appearance, cx));
     let window = cx.windows().last().copied().expect("settings window");
@@ -100,17 +100,18 @@ fn font_size_stepper_updates_config(cx: &mut TestAppContext) {
     settle_visual(&mut settings_cx);
 
     let increase = settings_cx
-        .debug_bounds("setting-font-size-increase")
+        .debug_bounds("setting-interface-font-size-increase")
         .expect("font size increase button");
     let before = increase.size.height;
     settings_cx.simulate_click(increase.center(), Modifiers::default());
     settle_visual(&mut settings_cx);
 
     settings_cx.cx.update(|cx| {
-        assert_eq!(current_config(cx).font_size(), 13.);
+        assert_eq!(current_config(cx).interface_font_size(), 13.);
+        assert_eq!(current_config(cx).code_font_size(), 12.);
     });
     let after = settings_cx
-        .debug_bounds("setting-font-size-increase")
+        .debug_bounds("setting-interface-font-size-increase")
         .expect("resized font size increase button")
         .size
         .height;
@@ -118,6 +119,45 @@ fn font_size_stepper_updates_config(cx: &mut TestAppContext) {
         after > before,
         "font size control should resize with the global setting"
     );
+}
+
+#[gpui::test]
+fn code_font_controls_update_the_code_font_and_reset(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::CodeFont, cx));
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut settings_cx);
+    assert!(settings_cx.debug_bounds("settings-font-preview").is_some());
+
+    for id in [
+        "setting-code-font-size-increase",
+        "setting-code-line-spacing-increase",
+    ] {
+        let button = settings_cx.debug_bounds(id).expect(id);
+        settings_cx.simulate_click(button.center(), Modifiers::default());
+        settle_visual(&mut settings_cx);
+    }
+    settings_cx.cx.update(|cx| {
+        let config = current_config(cx);
+        assert_eq!(
+            (config.interface_font_size(), config.code_font_size()),
+            (12., 13.)
+        );
+        assert_eq!(config.code_line_spacing, 1.1);
+    });
+
+    scroll_settings(&mut settings_cx, -500.);
+    let reset = settings_cx
+        .debug_bounds("setting-reset-code-font")
+        .expect("reset code font button");
+    settings_cx.simulate_click(reset.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
+    settings_cx.cx.update(|cx| {
+        let config = current_config(cx);
+        assert_eq!(config.code_font_size(), 12.);
+        assert_eq!(config.code_line_spacing, 1.);
+    });
 }
 
 #[gpui::test]
@@ -264,6 +304,41 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
         click_setting(&mut settings_cx, "settings-nav-Integrations");
         assert!(settings_cx.debug_bounds("dd-btn-editor").is_some());
     }
+}
+
+#[gpui::test]
+fn long_dropdowns_stay_inside_the_window_and_scroll_to_every_option(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Integrations, cx));
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    let window_height = px(260.);
+    settings_cx.simulate_resize(size(px(760.), window_height));
+    settle_visual(&mut settings_cx);
+
+    click_setting(&mut settings_cx, "dd-btn-editor");
+    let panel = settings_cx
+        .debug_bounds("dropdown-panel")
+        .expect("dropdown panel");
+    assert!(
+        panel.bottom() <= window_height,
+        "{panel:?} overflows the window"
+    );
+
+    settings_cx.simulate_event(ScrollWheelEvent {
+        position: panel.center(),
+        delta: ScrollDelta::Pixels(point(px(0.), px(-2000.))),
+        modifiers: Modifiers::default(),
+        touch_phase: TouchPhase::Moved,
+    });
+    settle_visual(&mut settings_cx);
+    let last = settings_cx
+        .debug_bounds("dd-editor-custom")
+        .expect("last editor option");
+    assert!(
+        last.bottom() <= panel.bottom(),
+        "{last:?} is still below {panel:?}"
+    );
 }
 
 #[gpui::test]

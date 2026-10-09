@@ -108,7 +108,7 @@ fn compare_label(label: &str, t: &Theme) -> AnyElement {
     div()
         .max_w(px(180.))
         .overflow_hidden()
-        .code_text(12.)
+        .code_text(12., t)
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg))
         .child(SharedString::from(label.to_owned()))

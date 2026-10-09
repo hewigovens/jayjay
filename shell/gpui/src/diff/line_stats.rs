@@ -2,6 +2,7 @@ use gpui::{Div, ParentElement, Styled, div, px, rgb};
 use jayjay_core::FileDiffStats;
 
 use crate::app::fonts::CodeText as _;
+use crate::app::theme::Theme;
 
 /// `+N -M`, omitting a zero side; `None` when the file has no line changes.
 pub(crate) fn line_stats(
@@ -9,6 +10,7 @@ pub(crate) fn line_stats(
     size: f32,
     added: u32,
     removed: u32,
+    theme: &Theme,
 ) -> Option<Div> {
     if stats.insertions == 0 && stats.deletions == 0 {
         return None;
@@ -19,7 +21,7 @@ pub(crate) fn line_stats(
         .flex_row()
         .items_baseline()
         .gap(px(4.))
-        .code_text(size)
+        .code_text(size, theme)
         .font_weight(gpui::FontWeight::SEMIBOLD);
     if stats.insertions > 0 {
         label = label.child(

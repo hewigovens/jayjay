@@ -278,6 +278,7 @@ impl Render for OverviewView {
         });
         let confirmation = self.confirmation_overlay(&t, cx);
         div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("OverviewView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| window.remove_window()))

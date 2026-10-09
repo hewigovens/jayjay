@@ -77,7 +77,7 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child("Diff Edit"),
         )
-        .child(div().code_text(12.).text_color(rgb(t.fg_dim)).child(rev))
+        .child(div().code_text(12., t).text_color(rgb(t.fg_dim)).child(rev))
         .child(div().flex_1())
         .child(
             div()

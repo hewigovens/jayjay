@@ -135,6 +135,7 @@ impl Render for FileHistoryView {
         };
 
         div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("FileHistoryView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _cx| {
@@ -168,7 +169,7 @@ fn header(path: &SharedString, count: usize, t: &Theme) -> AnyElement {
         .child(icons::icon(glyph::FILE_CODE, 14., t.fg_dim))
         .child(
             div()
-                .code_text(12.)
+                .code_text(12., t)
                 .text_color(rgb(t.fg))
                 .child(path.clone()),
         )

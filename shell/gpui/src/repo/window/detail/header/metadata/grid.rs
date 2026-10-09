@@ -73,7 +73,7 @@ pub(super) fn grid(
             div()
                 .min_w_0()
                 .truncate()
-                .code_text(FONT_ID)
+                .code_text(FONT_ID, t)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(parents))
                 .into_any_element(),

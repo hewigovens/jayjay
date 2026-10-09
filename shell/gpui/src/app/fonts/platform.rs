@@ -14,10 +14,15 @@ pub(super) fn platform_default_mono() -> String {
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(super) use linux::user_mono_families;
+pub(super) use linux::{user_families, user_mono_families};
 
 /// font-kit's CoreText source has no file paths to tell user fonts apart; GPUI ships on Linux and Windows only.
 #[cfg(target_os = "macos")]
 pub(super) fn user_mono_families() -> Vec<String> {
+    Vec::new()
+}
+
+#[cfg(target_os = "macos")]
+pub(super) fn user_families() -> Vec<String> {
     Vec::new()
 }

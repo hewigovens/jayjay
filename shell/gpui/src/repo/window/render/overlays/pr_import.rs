@@ -219,7 +219,7 @@ fn summary_row(
             div()
                 .min_w_0()
                 .truncate()
-                .code_text(11.)
+                .code_text(11., t)
                 .child(SharedString::from(value)),
         );
     if let Some(note) = note {

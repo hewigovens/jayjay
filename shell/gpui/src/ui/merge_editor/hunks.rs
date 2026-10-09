@@ -175,7 +175,7 @@ pub(crate) fn merge_hunk_card(
                         .flex()
                         .items_center()
                         .gap(px(8.))
-                        .code_text(10.)
+                        .code_text(10., t)
                         .text_color(rgb(t.fg_faint))
                         .child("− Left")
                         .child("+ Right"),
@@ -218,7 +218,7 @@ fn merge_hunk_diff_line(line: &DiffLine, t: &Theme) -> AnyElement {
                 .bg(rgb(bg))
                 .border_r_1()
                 .border_color(rgb(t.border))
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(match line.style {
                     DiffSpanStyle::Added => t.diff_text_added,
                     DiffSpanStyle::Removed => t.diff_text_removed,

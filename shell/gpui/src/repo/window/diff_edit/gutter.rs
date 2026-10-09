@@ -51,7 +51,7 @@ pub(super) fn diff_edit_line_row(
         .w_full()
         .h(px(t.code_line_height()))
         .px(px(18.))
-        .code_text(12.)
+        .code_text(12., t)
         .line_height(px(t.code_line_height()))
         .child(
             div()

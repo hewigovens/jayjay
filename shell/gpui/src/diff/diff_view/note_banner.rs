@@ -61,7 +61,7 @@ fn stale_note_row(
         )
         .child(
             div()
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(format!(
                     "{}:{}",

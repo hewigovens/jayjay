@@ -1,7 +1,7 @@
 use super::sidebar::sidebar;
 use super::{
-    SettingsSection, about, appearance, cli_diagnostics, config, data_privacy, diff, integrations,
-    tools, workflow,
+    SettingsSection, about, appearance, cli_diagnostics, code_font, config, data_privacy, diff,
+    integrations, tools, workflow,
 };
 
 use gpui::{
@@ -128,6 +128,7 @@ impl Render for SettingsView {
         let dropdown = self.open_dropdown.clone();
 
         let mut root = div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("SettingsView")
             .on_action(
@@ -162,10 +163,10 @@ impl Render for SettingsView {
                     .scrollbar_width(px(0.))
                     .px(px(28.))
                     .py(px(20.))
-                    .child(self.section_body(&cfg, &t, cx)),
+                    .child(self.section_body(&cfg, &t, window, cx)),
             );
         if let Some(d) = dropdown {
-            root = root.child(dropdown_overlay(d, &t, cx));
+            root = root.child(dropdown_overlay(d, &t, window, cx));
         }
         root
     }
@@ -176,10 +177,12 @@ impl SettingsView {
         &self,
         cfg: &crate::app::config::AppConfig,
         t: &Theme,
+        window: &Window,
         cx: &mut Context<Self>,
     ) -> AnyElement {
         match self.section {
             SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
+            SettingsSection::CodeFont => code_font::code_font_section(cfg, t, window, cx),
             SettingsSection::Diff => diff::diff_section(cfg, t),
             SettingsSection::Workflow => workflow::workflow_section(cfg, t),
             SettingsSection::Integrations => integrations::integrations_section(self, cfg, t, cx),

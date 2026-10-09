@@ -9,7 +9,7 @@ use super::dag::{DagRowLanes, dag_column};
 use super::dag_drag::DagDragSelection;
 use super::dag_row::{ChipMenus, ChipRightClick, DagDrop, DagRow, dag_row};
 use super::{ActivePane, RepoWindow};
-use crate::app::fonts;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
 use crate::ui::context_menu::ContextMenuItem;
 use crate::ui::icons::glyph;
@@ -286,7 +286,7 @@ fn push_follow_up_banner(
                     .min_w_0()
                     .overflow_hidden()
                     .text_ellipsis()
-                    .font_family(fonts::mono())
+                    .code_font()
                     .text_color(rgb(t.fg))
                     .child(bookmark),
             )

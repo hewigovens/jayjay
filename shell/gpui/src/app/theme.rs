@@ -9,6 +9,8 @@ pub struct Theme {
     pub(crate) is_dark: bool,
 
     pub(crate) font_size: f32,
+    pub(crate) code_font_size: f32,
+    pub(crate) code_line_spacing: f32,
 
     pub(crate) sidebar_bg: u32,
     pub(crate) detail_bg: u32,
@@ -106,8 +108,10 @@ impl Global for Theme {}
 const DEFAULT_REM_SIZE: f32 = 16.;
 
 impl Theme {
-    pub fn with_font_size(mut self, font_size: f32) -> Self {
-        self.font_size = font_size;
+    pub fn with_typography(mut self, config: &crate::app::config::AppConfig) -> Self {
+        self.font_size = config.interface_font_size();
+        self.code_font_size = config.code_font_size();
+        self.code_line_spacing = config.code_line_spacing;
         self
     }
 
@@ -128,12 +132,16 @@ impl Theme {
         height + (self.scaled_font_size(base_font_size) - base_font_size).max(0.)
     }
 
+    pub(crate) fn scaled_code_font_size(&self, base: f32) -> f32 {
+        base * (self.code_font_size / crate::app::config::AppConfig::DEFAULT_FONT_SIZE)
+    }
+
     pub(crate) fn code_font_size(&self) -> f32 {
-        self.font_size
+        self.code_font_size
     }
 
     pub(crate) fn code_line_height(&self) -> f32 {
-        (self.code_font_size() + 5.).max(18.)
+        ((self.code_font_size() + 5.).max(18.) * self.code_line_spacing).round()
     }
 
     pub(crate) fn compact_code_font_size(&self) -> f32 {
@@ -174,9 +182,7 @@ pub(crate) fn with_alpha(color: u32, alpha: u8) -> u32 {
 
 fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
     let config = crate::app::config::current(cx);
-    cx.set_global(
-        Theme::for_appearance(config.appearance, system).with_font_size(config.font_size),
-    );
+    cx.set_global(Theme::for_appearance(config.appearance, system).with_typography(&config));
     cx.refresh_windows();
 }
 

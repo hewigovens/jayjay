@@ -66,6 +66,7 @@ impl Render for KeyboardShortcutsView {
         div()
             .id("keyboard-shortcuts-window")
             .debug_selector(|| "keyboard-shortcuts-window".to_owned())
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("KeyboardShortcutsView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| window.remove_window()))

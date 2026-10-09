@@ -179,8 +179,8 @@ fn image_placeholder(source: &str, alt: &str, t: &Theme) -> gpui::Div {
         )
         .child(
             div()
-                .code_text(10.)
-                .line_height(ui_font_size(14.))
+                .code_text(10., t)
+                .line_height(px(t.scaled_code_font_size(14.)))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(source.to_owned())),
         )
@@ -259,7 +259,7 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
                 .py(px(5.))
                 .border_b_1()
                 .border_color(rgb(t.border))
-                .code_text(10.)
+                .code_text(10., t)
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(language.to_owned())),
         );
@@ -270,8 +270,8 @@ fn code_block(language: Option<&str>, text: &str, t: &Theme) -> AnyElement {
             div()
                 .px(px(10.))
                 .py(px(8.))
-                .code_text(12.)
-                .line_height(ui_font_size(18.))
+                .code_text(12., t)
+                .line_height(px(t.scaled_code_font_size(18.)))
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(text.to_owned())),
         )
@@ -302,7 +302,7 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
         .child(
             div()
                 .w(px(28.))
-                .code_text(12.)
+                .code_text(12., t)
                 .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg_dim))
                 .child(SharedString::from(marker)),
@@ -317,4 +317,52 @@ fn list_item(start: Option<u64>, index: usize, item: &MarkdownListItem, t: &Them
                 .child(SharedString::from(item.text.clone())),
         )
         .into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use gpui::{
+        Context, InteractiveElement, IntoElement, ParentElement, Render, Styled, VisualTestContext,
+        Window, div, px, size,
+    };
+
+    use super::code_block;
+    use crate::app::config::AppConfig;
+    use crate::app::theme::Theme;
+
+    struct CodeBlockHost(Theme);
+
+    impl Render for CodeBlockHost {
+        fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
+            div().flex().flex_col().items_start().child(
+                div()
+                    .id("code-block")
+                    .debug_selector(|| "code-block".to_owned())
+                    .child(code_block(None, "one\ntwo\nthree", &self.0)),
+            )
+        }
+    }
+
+    #[gpui::test]
+    fn code_block_lines_fit_the_code_size_when_interface_text_is_smaller(
+        cx: &mut gpui::TestAppContext,
+    ) {
+        let theme = Theme::light().with_typography(&AppConfig {
+            interface_font_size: Some(AppConfig::MIN_FONT_SIZE),
+            code_font_size: AppConfig::MAX_FONT_SIZE,
+            ..Default::default()
+        });
+        let (_, cx) = cx.add_window_view(|_, _| CodeBlockHost(theme));
+        let cx: &mut VisualTestContext = cx;
+        cx.simulate_resize(size(px(600.), px(400.)));
+        cx.run_until_parked();
+        let block = cx.debug_bounds("code-block").expect("code block bounds");
+        let min_line_height = AppConfig::MAX_FONT_SIZE * 1.25;
+        assert!(
+            block.size.height >= px(3. * min_line_height),
+            "three {}px lines need more than {:?}",
+            AppConfig::MAX_FONT_SIZE,
+            block.size.height
+        );
+    }
 }

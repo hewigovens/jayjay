@@ -47,7 +47,7 @@ fn layer_card(
         .flex()
         .items_center()
         .gap(px(5.))
-        .code_text(10.)
+        .code_text(10., t)
         .text_color(rgb(t.fg_faint))
         .child(icon(glyph::ARROW_RIGHT, 8., t.fg_faint))
         .child(SharedString::from(base.to_owned()));
@@ -145,7 +145,7 @@ fn bookmark_field(
                     } else {
                         t.border
                     }))
-                    .code_text(11.)
+                    .code_text(11., t)
                     .cursor_text()
                     .child(input),
             )
@@ -167,7 +167,7 @@ fn bookmark_field(
         .flex()
         .items_center()
         .gap(px(5.))
-        .code_text(11.)
+        .code_text(11., t)
         .text_color(rgb(t.fg_dim))
         .child(
             div()

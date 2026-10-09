@@ -94,7 +94,10 @@ fn byline_width(
     cx: &App,
 ) -> f32 {
     let meta = t.scaled_font_size(FONT_ID);
-    let mono_char = f32::from(fonts::mono_advance(cx, px(meta)));
+    let mono_char = f32::from(fonts::mono_advance(
+        cx,
+        px(t.scaled_code_font_size(FONT_ID)),
+    ));
     let ui_text = |s: &str| f32::from(fonts::ui_text_width(cx, s, px(meta)));
 
     let mut children = 7usize;

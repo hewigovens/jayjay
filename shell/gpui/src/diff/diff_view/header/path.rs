@@ -50,7 +50,7 @@ pub(super) fn source_path_label(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let width = mono_text_width(old_path, px(t.scaled_font_size(11.)), cx);
+    let width = mono_text_width(old_path, px(t.scaled_code_font_size(11.)), cx);
     let path = div()
         .id("diff-file-old-path")
         .debug_selector(|| "diff-file-old-path".to_owned())
@@ -58,7 +58,7 @@ pub(super) fn source_path_label(
         .flex_shrink_1()
         .min_w_0()
         .truncate()
-        .code_text(11.)
+        .code_text(11., t)
         .text_color(rgb(t.fg_dim))
         .tooltip(text_tooltip(old_path.to_owned()))
         .child(SharedString::from(old_path.to_owned()));

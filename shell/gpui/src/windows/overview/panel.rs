@@ -79,7 +79,7 @@ impl OverviewView {
             .text_color(rgb(description_color(&change.description, t)))
             .child(text.title.clone());
         let ids = div()
-            .code_text(11.)
+            .code_text(11., t)
             .text_color(rgb(t.fg_dim))
             .child(text.ids.clone())
             .into_any_element();
@@ -294,20 +294,20 @@ pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElemen
                 )
                 .children(
                     (file.insertions > 0)
-                        .then(|| stat(format!("+{}", file.insertions), t.file_added_color)),
+                        .then(|| stat(format!("+{}", file.insertions), t.file_added_color, t)),
                 )
                 .children(
                     (file.deletions > 0)
-                        .then(|| stat(format!("−{}", file.deletions), t.file_removed_color)),
+                        .then(|| stat(format!("−{}", file.deletions), t.file_removed_color, t)),
                 )
         }))
         .into_any_element()
 }
 
-fn stat(text: String, color: u32) -> impl IntoElement {
+fn stat(text: String, color: u32, t: &Theme) -> impl IntoElement {
     div()
         .flex_none()
-        .code_text(10.)
+        .code_text(10., t)
         .text_color(rgb(color))
         .child(SharedString::from(text))
 }

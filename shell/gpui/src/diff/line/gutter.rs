@@ -90,7 +90,7 @@ pub fn interactive_gutter_row(
         .w(px(width))
         .h(px(theme.code_line_height()))
         .bg(rgb(bg))
-        .code_text(12.)
+        .code_text(12., theme)
         .line_height(px(theme.code_line_height()));
     if let Some(cell) = review_cell {
         row = row.child(cell);

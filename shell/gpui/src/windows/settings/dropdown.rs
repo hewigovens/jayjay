@@ -1,7 +1,7 @@
 use gpui::{
     Anchor, AnyElement, BoxShadow, Context, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, anchored, deferred, div,
-    hsla, px, rgb,
+    MouseDownEvent, ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled,
+    Window, anchored, deferred, div, hsla, px, rgb,
 };
 
 use super::SettingsView;
@@ -18,9 +18,12 @@ pub(super) struct OpenDropdown {
     options: Vec<DropdownOption>,
 }
 
+const MENU_MARGIN: f32 = 6.;
+
 pub(super) fn dropdown_overlay(
     state: OpenDropdown,
     t: &Theme,
+    window: &Window,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     let cfg = current_cfg(cx);
@@ -41,8 +44,12 @@ pub(super) fn dropdown_overlay(
         );
 
     let mut panel = div()
+        .id("dropdown-panel")
+        .debug_selector(|| "dropdown-panel".to_owned())
         .flex()
         .flex_col()
+        .max_h(window.viewport_size().height - px(2. * MENU_MARGIN))
+        .overflow_y_scroll()
         .gap(px(1.))
         .p(px(8.))
         .bg(rgb(t.detail_bg))
@@ -71,7 +78,7 @@ pub(super) fn dropdown_overlay(
     let menu = anchored()
         .anchor(Anchor::TopLeft)
         .position(state.anchor)
-        .snap_to_window_with_margin(px(6.))
+        .snap_to_window_with_margin(px(MENU_MARGIN))
         .child(panel);
 
     deferred(
@@ -127,6 +134,8 @@ pub(super) fn dropdown_button(
         .into_any_element()
 }
 
+const INTERFACE_SYSTEM_ID: &str = "system";
+
 #[derive(Debug, Clone)]
 struct DropdownOption {
     id: String,
@@ -138,7 +147,22 @@ fn dropdown_options(field_id: &str) -> Vec<DropdownOption> {
     match field_id {
         "editor" => static_options(EDITOR_OPTIONS),
         "terminal" => static_options(TERMINAL_OPTIONS),
-        "font-family" => {
+        "interface-font-family" => {
+            let system = DropdownOption {
+                id: INTERFACE_SYSTEM_ID.to_owned(),
+                label: fonts::interface_preference_label(""),
+                group: None,
+            };
+            let user = fonts::interface_font_choices()
+                .into_iter()
+                .map(|family| DropdownOption {
+                    id: family.clone(),
+                    label: family,
+                    group: Some("My Fonts"),
+                });
+            std::iter::once(system).chain(user).collect()
+        }
+        "code-font-family" => {
             let curated = fonts::mono_font_choices()
                 .into_iter()
                 .map(|choice| DropdownOption {
@@ -163,7 +187,12 @@ fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Opti
     match field_id {
         "editor" => Some(cfg.tools.external_editor.clone()),
         "terminal" => Some(cfg.tools.terminal.clone()),
-        "font-family" => Some(fonts::mono_preference_id(&cfg.font_family)),
+        "interface-font-family" => Some(if cfg.interface_font_family.is_empty() {
+            INTERFACE_SYSTEM_ID.to_owned()
+        } else {
+            cfg.interface_font_family.clone()
+        }),
+        "code-font-family" => Some(fonts::mono_preference_id(&cfg.code_font_family)),
         _ => None,
     }
 }
@@ -203,6 +232,7 @@ fn dropdown_row(
     div()
         .id(SharedString::from(row_id.clone()))
         .debug_selector(move || row_id)
+        .flex_none()
         .flex()
         .flex_row()
         .items_center()
@@ -224,7 +254,14 @@ fn dropdown_row(
                 update_cfg(cx, move |c| match field.as_ref() {
                     "editor" => c.tools.external_editor = value.clone(),
                     "terminal" => c.tools.terminal = value.clone(),
-                    "font-family" => c.font_family = value.clone(),
+                    "interface-font-family" => {
+                        c.interface_font_family = if value == INTERFACE_SYSTEM_ID {
+                            String::new()
+                        } else {
+                            value.clone()
+                        };
+                    }
+                    "code-font-family" => c.code_font_family = value.clone(),
                     _ => {}
                 });
                 view.close_dropdown(cx);
@@ -242,6 +279,7 @@ fn dropdown_row(
 
 fn dropdown_group_header(title: &'static str, t: &Theme) -> AnyElement {
     div()
+        .flex_none()
         .px(px(10.))
         .pt(px(8.))
         .pb(px(2.))

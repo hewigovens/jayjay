@@ -17,7 +17,7 @@ pub(super) fn sidebar(
         .flex()
         .flex_col()
         .flex_none()
-        .w(px(230.))
+        .w(px(200.))
         .h_full()
         .overflow_y_scroll()
         .bg(rgb(t.sidebar_bg))

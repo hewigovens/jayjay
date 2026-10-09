@@ -31,3 +31,15 @@ fn builtin_themes_keep_readable_secondary_text() {
         assert_eq!(theme.diff_context_bg, theme.detail_bg);
     }
 }
+
+#[test]
+fn code_line_height_scales_with_code_size_and_line_spacing() {
+    let config = crate::app::config::AppConfig {
+        code_font_size: 13.,
+        code_line_spacing: 1.5,
+        ..Default::default()
+    };
+    let theme = Theme::light().with_typography(&config);
+    assert_eq!(theme.code_line_height(), 27.);
+    assert_eq!(theme.scaled_font_size(12.), 12.);
+}

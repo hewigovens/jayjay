@@ -14,6 +14,8 @@ impl Theme {
         Self {
             is_dark: dark,
             font_size: AppConfig::DEFAULT_FONT_SIZE,
+            code_font_size: AppConfig::DEFAULT_FONT_SIZE,
+            code_line_spacing: AppConfig::MIN_LINE_SPACING,
 
             sidebar_bg: bg,
             detail_bg: bg,

@@ -247,6 +247,7 @@ impl Render for EvologView {
         };
 
         let mut root = div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("EvologView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _cx| {
@@ -300,7 +301,7 @@ fn header(
                 .debug_selector(|| "evolog-title".to_owned())
                 .flex()
                 .flex_row()
-                .code_text(13.)
+                .code_text(13., t)
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
                 .child("Evolution: ")

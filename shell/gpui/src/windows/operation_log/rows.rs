@@ -131,7 +131,7 @@ fn operation_text(
         )
         .child(
             div()
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(timestamp)),
         )

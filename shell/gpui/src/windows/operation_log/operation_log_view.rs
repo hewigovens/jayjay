@@ -195,6 +195,7 @@ impl Render for OperationLogView {
         };
 
         div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("OperationLogView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _cx| {

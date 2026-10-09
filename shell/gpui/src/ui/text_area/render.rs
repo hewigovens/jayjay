@@ -5,6 +5,7 @@ use gpui::{
 
 use super::TextArea;
 use super::element::TextAreaElement;
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_BODY, theme, ui_font_size, with_alpha};
 
 impl Render for TextArea {
@@ -74,9 +75,7 @@ impl Render for TextArea {
             } else {
                 t.code_font_size()
             };
-            root = root
-                .font_family(crate::app::fonts::mono())
-                .text_size(px(font_size));
+            root = root.code_font().text_size(px(font_size));
         } else {
             root = root.text_size(ui_font_size(FONT_BODY));
         }

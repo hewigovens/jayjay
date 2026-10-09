@@ -41,6 +41,7 @@ impl Render for RepoListWindow {
         div()
             .id("repo-list-window")
             .debug_selector(|| "repo-list-window".to_owned())
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("RepoListWindow")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| {

@@ -86,7 +86,7 @@ fn bookmark_row(
                         .gap(px(6.))
                         .child(
                             div()
-                                .code_text(13.)
+                                .code_text(13., &t)
                                 .text_color(rgb(t.fg))
                                 .child(SharedString::from(name)),
                         )

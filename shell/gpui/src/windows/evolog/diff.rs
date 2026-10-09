@@ -351,7 +351,7 @@ fn version_label(commit_id: &str, theme: &Theme) -> AnyElement {
     div()
         .max_w(px(180.))
         .overflow_hidden()
-        .code_text(12.)
+        .code_text(12., theme)
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(theme.fg))
         .child(commit_id.chars().take(12).collect::<String>())

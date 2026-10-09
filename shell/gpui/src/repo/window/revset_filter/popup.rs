@@ -152,7 +152,7 @@ fn panel(
                 .px(px(12.))
                 .py(px(8.))
                 .bg(rgb(t.tag_removed_bg))
-                .code_text(11.)
+                .code_text(11., t)
                 .text_color(rgb(t.tag_removed_fg))
                 .child(SharedString::from(error))
         }))
@@ -182,7 +182,7 @@ fn field(state: &RevsetPopupState, t: &Theme) -> AnyElement {
         .px(px(12.))
         .border_b_1()
         .border_color(rgb(t.border))
-        .code_text(13.)
+        .code_text(13., t)
         .child(icons::icon(
             if state.error.is_some() {
                 glyph::WARNING
@@ -283,7 +283,7 @@ fn suggestion_row(
     }
     let text = div()
         .min_w_0()
-        .code_text(if wraps { 11. } else { 12. })
+        .code_text(if wraps { 11. } else { 12. }, t)
         .text_color(rgb(t.fg))
         .flex_1()
         .child(title);

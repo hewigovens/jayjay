@@ -74,7 +74,7 @@ pub(super) fn results_body(
                 .child(title)
                 .child(
                     div()
-                        .code_text(10.)
+                        .code_text(10., t)
                         .text_color(rgb(t.fg_dim))
                         .child(SharedString::from(layer.detail.clone())),
                 ),

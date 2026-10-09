@@ -78,7 +78,7 @@ pub(in crate::repo::window) fn file_editor_overlay(
                         .child(
                             div()
                                 .truncate()
-                                .code_text(11.)
+                                .code_text(11., t)
                                 .text_color(rgb(t.fg_dim))
                                 .child(data.path.clone()),
                         ),

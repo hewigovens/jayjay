@@ -19,6 +19,7 @@ use crate::windows::settings::{SettingsSection, SettingsView};
 impl RepoWindow {
     pub(super) fn render_root(&self, t: &Theme, cx: &mut Context<Self>) -> Div {
         let mut root = div()
+            .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("RepoWindow")
             .on_action(cx.listener(|_, _: &OpenSettings, _, cx| SettingsView::open(cx)))

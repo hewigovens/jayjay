@@ -112,7 +112,7 @@ fn summary_row(title: &str, value: &str, detail: &ShortId, t: &Theme) -> AnyElem
                 )
                 .child(
                     div()
-                        .code_text(11.)
+                        .code_text(11., t)
                         .text_color(rgb(t.fg_dim))
                         .child(detail.prefix(12)),
                 ),
