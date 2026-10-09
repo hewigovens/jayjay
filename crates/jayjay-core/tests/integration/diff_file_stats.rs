@@ -1,6 +1,6 @@
 use std::fs;
 
-use jayjay_core::Repo;
+use jayjay_core::{HunkType, Repo};
 use jj_test::{FormatFixture, init_jj_repo, run_jj_in};
 
 #[test]
@@ -52,29 +52,43 @@ fn diff_file_stats_pairs_same_basename_moves_like_the_card_list() {
 }
 
 #[test]
-fn diff_file_stats_keeps_cross_basename_renames_as_two_entries() {
-    // diff_file_list pairs renames without content, so the cards show a deletion and an addition; stats must describe those cards, not a content-aware merge.
+fn renames_pair_by_content_not_basename() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
-    run_jj_in(&repo_path, &["new", "-m", "rename hello"]);
+    fs::create_dir(repo_path.join("rules")).expect("create dir");
+    let rules: String = (1..=30).map(|n| format!("rule {n}\n")).collect();
+    fs::write(repo_path.join("rules/AGENTS.md"), rules).expect("write rules");
+    run_jj_in(&repo_path, &["new", "-m", "replace agents"]);
     let repo = Repo::open(&repo_path).expect("open repo");
 
+    fs::remove_file(repo_path.join("rules/AGENTS.md")).expect("remove rules");
+    fs::write(repo_path.join("AGENTS.md"), "unrelated\n").expect("write agents");
     fs::rename(repo_path.join("hello.txt"), repo_path.join("greeting.txt"))
         .expect("rename hello.txt");
     repo.refresh_working_copy().expect("snapshot working copy");
 
+    let mut cards: Vec<_> = repo
+        .show_summary("@")
+        .expect("summary")
+        .diff
+        .into_iter()
+        .map(|hunk| (hunk.path, hunk.old_path, hunk.hunk_type))
+        .collect();
+    cards.sort_by(|a, b| a.0.cmp(&b.0));
+    assert_eq!(
+        cards,
+        [
+            ("AGENTS.md".to_owned(), None, HunkType::Added),
+            (
+                "greeting.txt".to_owned(),
+                Some("hello.txt".to_owned()),
+                HunkType::Renamed
+            ),
+            ("rules/AGENTS.md".to_owned(), None, HunkType::Removed),
+        ]
+    );
     let stats = repo.diff_file_stats("@", false).expect("diff file stats");
-    assert_eq!(stats.len(), 2, "cards stay split: {stats:?}");
-    let removed = stats
-        .iter()
-        .find(|s| s.path == "hello.txt")
-        .expect("removed entry");
-    let added = stats
-        .iter()
-        .find(|s| s.path == "greeting.txt")
-        .expect("added entry");
-    assert_eq!((removed.insertions, removed.deletions), (0, 1));
-    assert_eq!((added.insertions, added.deletions), (1, 0));
+    assert_eq!(stats.len(), 3, "stats follow the cards: {stats:?}");
 }
 
 #[cfg(unix)]

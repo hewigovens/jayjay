@@ -7,7 +7,7 @@ use super::entry::{
     compute_review_identity, diff_hunk_type, first_diff_content, materialize_diff_content,
     materialize_file_bytes, resolve_diff_values,
 };
-use super::{Repo, TreePair, formats, rename::detect_renames};
+use super::{Repo, TreePair, formats, rename::pair_renames};
 use crate::types::*;
 
 impl Repo {
@@ -49,7 +49,7 @@ impl Repo {
             }
             Ok(files)
         })?;
-        detect_renames(&mut files);
+        pair_renames(&mut files, &trees.copy_records()?);
         Ok(files)
     }
 
@@ -81,7 +81,7 @@ impl Repo {
             }
             Ok(diff)
         })?;
-        detect_renames(&mut diff);
+        pair_renames(&mut diff, &trees.copy_records()?);
         Ok(diff)
     }
 

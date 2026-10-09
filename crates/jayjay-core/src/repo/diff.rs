@@ -8,22 +8,55 @@ mod rename;
 use std::collections::HashSet;
 use std::sync::Arc;
 
+use futures::TryStreamExt as _;
 use jayjay_primitives::hex_sha256;
+use jj_lib::backend::CommitId;
+use jj_lib::commit::Commit;
+use jj_lib::copies::CopyRecords;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::matchers::FilesMatcher;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId;
-use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use crate::types::*;
 
 use self::entry::first_diff_content;
 use super::Repo;
+use super::support::block_on_result;
 
 pub(super) struct TreePair {
     repo: Arc<ReadonlyRepo>,
     before: MergedTree,
     after: MergedTree,
+    /// (root, head) commit pairs whose backend copy records pair renames, one per parent like `jj diff`.
+    copy_endpoints: Vec<(CommitId, CommitId)>,
+}
+
+impl TreePair {
+    fn between(repo: Arc<ReadonlyRepo>, from: &Commit, to: &Commit) -> Self {
+        TreePair {
+            repo,
+            before: from.tree(),
+            after: to.tree(),
+            copy_endpoints: vec![(from.id().clone(), to.id().clone())],
+        }
+    }
+
+    fn copy_records(&self) -> JayResult<CopyRecords> {
+        let store = self.repo.store();
+        let mut copies = CopyRecords::default();
+        for (root, head) in &self.copy_endpoints {
+            let records = block_on_result("load copy records", async {
+                store
+                    .get_copy_records(None, root, head)?
+                    .try_collect::<Vec<_>>()
+                    .await
+            })?;
+            copies.add_records(records);
+        }
+        Ok(copies)
+    }
 }
 
 fn hunk_line_stats(hunk: &DiffHunk, ignore_whitespace: bool) -> FileDiffStats {
@@ -51,12 +84,21 @@ impl Repo {
     fn commit_tree_pair(&self, rev: &str) -> JayResult<TreePair> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
-        let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
-        let after = commit.tree();
+        self.parent_tree_pair(repo, &commit)
+    }
+
+    fn parent_tree_pair(&self, repo: Arc<ReadonlyRepo>, commit: &Commit) -> JayResult<TreePair> {
+        let before = self.load_parent_tree(&repo, commit, "load parent tree")?;
+        let copy_endpoints = commit
+            .parent_ids()
+            .iter()
+            .map(|parent| (parent.clone(), commit.id().clone()))
+            .collect();
         Ok(TreePair {
             repo,
             before,
-            after,
+            after: commit.tree(),
+            copy_endpoints,
         })
     }
 
@@ -70,29 +112,14 @@ impl Repo {
             HashSet::new()
         };
         let info = self.commit_to_change_info(&repo, &commit, None, Some(&divergent_change_ids));
-        let before = self.load_parent_tree(&repo, &commit, "load parent tree")?;
-        let after = commit.tree();
-        Ok((
-            TreePair {
-                repo,
-                before,
-                after,
-            },
-            info,
-        ))
+        Ok((self.parent_tree_pair(repo, &commit)?, info))
     }
 
     fn interdiff_tree_pair(&self, from_rev: &str, to_rev: &str) -> JayResult<TreePair> {
         let repo = self.get_repo();
         let from_commit = self.resolve_commit(&repo, from_rev)?;
         let to_commit = self.resolve_commit(&repo, to_rev)?;
-        let before = from_commit.tree();
-        let after = to_commit.tree();
-        Ok(TreePair {
-            repo,
-            before,
-            after,
-        })
+        Ok(TreePair::between(repo, &from_commit, &to_commit))
     }
 
     fn interdiff_trees(&self, from_rev: &str, to_rev: &str) -> JayResult<(TreePair, ChangeInfo)> {
@@ -107,16 +134,7 @@ impl Repo {
         {
             info.is_divergent = true;
         }
-        let before = from_commit.tree();
-        let after = to_commit.tree();
-        Ok((
-            TreePair {
-                repo,
-                before,
-                after,
-            },
-            info,
-        ))
+        Ok((TreePair::between(repo, &from_commit, &to_commit), info))
     }
 
     fn parse_named_diff_path(
