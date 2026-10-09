@@ -8,8 +8,13 @@ final class AppSettings {
     static let updateChannelKey = "jayjay.updateChannel"
 
     private enum StorageKeys {
-        static let fontFamily = "jayjay.fontFamily"
-        static let fontSize = "jayjay.fontSize"
+        static let interfaceFontFamily = "jayjay.interfaceFontFamily"
+        static let interfaceFontSize = "jayjay.interfaceFontSize"
+        // Pre-split names: the single font setting always drove code text.
+        static let codeFontFamily = "jayjay.fontFamily"
+        static let codeFontSize = "jayjay.fontSize"
+        static let codeLineSpacing = "jayjay.codeLineSpacing"
+        static let codeLigatures = "jayjay.codeLigatures"
         static let appearanceMode = "jayjay.appearanceMode"
 
         static let sideBySideDiff = "jayjay.sideBySideDiff"
@@ -46,25 +51,66 @@ final class AppSettings {
 
     static let defaultFontSize: Double = 12
     static let fontSizeRange: ClosedRange<Double> = 9 ... 24
+    static let lineSpacingRange: ClosedRange<Double> = 1 ... 2
 
-    var fontFamily: MonoFont {
-        didSet { defaults.set(fontFamily.rawValue, forKey: StorageKeys.fontFamily) }
+    var interfaceFontFamily: FontFamily {
+        didSet { defaults.set(interfaceFontFamily.rawValue, forKey: StorageKeys.interfaceFontFamily) }
     }
 
-    var fontSize: Double {
-        didSet { defaults.set(fontSize, forKey: StorageKeys.fontSize) }
+    var interfaceFontSize: Double {
+        didSet { defaults.set(interfaceFontSize, forKey: StorageKeys.interfaceFontSize) }
+    }
+
+    var codeFontFamily: FontFamily {
+        didSet { defaults.set(codeFontFamily.rawValue, forKey: StorageKeys.codeFontFamily) }
+    }
+
+    var codeFontSize: Double {
+        didSet { defaults.set(codeFontSize, forKey: StorageKeys.codeFontSize) }
+    }
+
+    var codeLineSpacing: Double {
+        didSet { defaults.set(codeLineSpacing, forKey: StorageKeys.codeLineSpacing) }
+    }
+
+    var codeLigatures: Bool {
+        didSet { defaults.set(codeLigatures, forKey: StorageKeys.codeLigatures) }
+    }
+
+    var typography: Typography {
+        Typography(
+            interfaceFamily: interfaceFontFamily,
+            interfaceSize: interfaceFontSize,
+            codeFamily: codeFontFamily,
+            codeSize: codeFontSize,
+            codeLineSpacing: codeLineSpacing,
+            codeLigatures: codeLigatures
+        )
     }
 
     func zoomIn() {
-        fontSize = min(fontSize + 1, Self.fontSizeRange.upperBound)
+        zoom(by: 1)
     }
 
     func zoomOut() {
-        fontSize = max(fontSize - 1, Self.fontSizeRange.lowerBound)
+        zoom(by: -1)
+    }
+
+    private func zoom(by step: Double) {
+        interfaceFontSize = (interfaceFontSize + step).clamped(to: Self.fontSizeRange)
+        codeFontSize = (codeFontSize + step).clamped(to: Self.fontSizeRange)
     }
 
     func resetZoom() {
-        fontSize = Self.defaultFontSize
+        interfaceFontSize = Self.defaultFontSize
+        codeFontSize = Self.defaultFontSize
+    }
+
+    func resetCodeFont() {
+        codeFontSize = Self.defaultFontSize
+        codeFontFamily = .system
+        codeLineSpacing = Self.lineSpacingRange.lowerBound
+        codeLigatures = true
     }
 
     // MARK: - Appearance
@@ -230,9 +276,20 @@ final class AppSettings {
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
 
-        fontFamily = MonoFont(rawValue: defaults.string(forKey: StorageKeys.fontFamily) ?? "") ?? .system
-        let savedFontSize = defaults.object(forKey: StorageKeys.fontSize) as? Double ?? Self.defaultFontSize
-        fontSize = min(max(savedFontSize, Self.fontSizeRange.lowerBound), Self.fontSizeRange.upperBound)
+        codeFontFamily = FontFamily(rawValue: defaults.string(forKey: StorageKeys.codeFontFamily) ?? "") ?? .system
+        let savedCodeFontSize = (defaults.number(forKey: StorageKeys.codeFontSize) ?? Self.defaultFontSize).clamped(to: Self.fontSizeRange)
+        codeFontSize = savedCodeFontSize
+        interfaceFontFamily = FontFamily(rawValue: defaults.string(forKey: StorageKeys.interfaceFontFamily) ?? "") ?? .system
+        // Before the split one size drove interface text too, so seed it once to keep the interface from changing size.
+        if let savedInterfaceFontSize = defaults.number(forKey: StorageKeys.interfaceFontSize) {
+            interfaceFontSize = savedInterfaceFontSize.clamped(to: Self.fontSizeRange)
+        } else {
+            interfaceFontSize = savedCodeFontSize
+            defaults.set(savedCodeFontSize, forKey: StorageKeys.interfaceFontSize)
+        }
+        codeLineSpacing = (defaults.number(forKey: StorageKeys.codeLineSpacing) ?? Self.lineSpacingRange.lowerBound)
+            .clamped(to: Self.lineSpacingRange)
+        codeLigatures = defaults.object(forKey: StorageKeys.codeLigatures) as? Bool ?? true
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
@@ -245,9 +302,9 @@ final class AppSettings {
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         skipWorkspaceDeleteConfirmation = defaults.bool(forKey: StorageKeys.skipWorkspaceDeleteConfirmation)
         confirmDragRebase = defaults.object(forKey: StorageKeys.confirmDragRebase) as? Bool ?? true
-        sidebarWidth = min(max(defaults.object(forKey: StorageKeys.sidebarWidth) as? Double ?? 360, PaneLayout.sidebar.lowerBound), PaneLayout.sidebar.upperBound)
-        let storedPaneWidth = defaults.object(forKey: StorageKeys.secondaryPaneWidth) as? Double
-            ?? defaults.object(forKey: StorageKeys.legacyFileColumnWidth) as? Double
+        sidebarWidth = min(max(defaults.number(forKey: StorageKeys.sidebarWidth) ?? 360, PaneLayout.sidebar.lowerBound), PaneLayout.sidebar.upperBound)
+        let storedPaneWidth = defaults.number(forKey: StorageKeys.secondaryPaneWidth)
+            ?? defaults.number(forKey: StorageKeys.legacyFileColumnWidth)
         secondaryPaneWidth = min(max(storedPaneWidth ?? PaneLayout.secondaryPaneDefault, PaneLayout.secondaryPane.lowerBound), PaneLayout.secondaryPane.upperBound)
         sidebarHidden = defaults.bool(forKey: StorageKeys.sidebarHidden)
         var seenRecentRepos = Set<String>()
@@ -295,5 +352,22 @@ final class AppSettings {
 
     private static func standardizedRepositoryPath(_ path: String) -> String {
         URL(fileURLWithPath: path).standardizedFileURL.path
+    }
+}
+
+private extension UserDefaults {
+    /// Launch arguments store numbers as strings, which `as? Double` would drop.
+    func number(forKey key: String) -> Double? {
+        switch object(forKey: key) {
+            case let number as NSNumber: number.doubleValue
+            case let string as String: Double(string)
+            default: nil
+        }
+    }
+}
+
+private extension Double {
+    func clamped(to range: ClosedRange<Double>) -> Double {
+        min(max(self, range.lowerBound), range.upperBound)
     }
 }

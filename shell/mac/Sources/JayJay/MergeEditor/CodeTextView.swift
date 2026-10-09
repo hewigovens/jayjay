@@ -25,12 +25,7 @@ struct CodeTextView: NSViewRepresentable {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.diffPalettes) var diffPalettes
 
-    @Environment(\.jayjayFontSize) var fontSize
-    @Environment(\.jayjayFontFamily) var fontFamily
-
-    var editorFont: NSFont {
-        fontFamily.nsFont(size: fontSize)
-    }
+    @Environment(\.jayjayTypography) var typography
 
     var highlightColors: DiffColors {
         diffPalettes.colors(for: colorScheme)
@@ -80,8 +75,10 @@ struct CodeTextView: NSViewRepresentable {
         ))
         textContainer.lineFragmentPadding = 0
 
-        let textView = textContainer.makeTextKit1View { NSTextView(frame: scrollView.bounds, textContainer: $0) }
-        textView.font = editorFont
+        let textView = textContainer.makeTextKit1View(LineSpacingLayoutManager()) {
+            NSTextView(frame: scrollView.bounds, textContainer: $0)
+        }
+        applyTypography(to: textView)
         textView.delegate = context.coordinator
         textView.isEditable = isEditable
         textView.isSelectable = true
@@ -114,6 +111,11 @@ struct CodeTextView: NSViewRepresentable {
         }
         Self.configureLineWrapping(wrapsLines, textView: textView, scrollView: scrollView)
         return scrollView
+    }
+
+    func applyTypography(to textView: NSTextView) {
+        textView.font = typography.editorFont
+        (textView.layoutManager as? LineSpacingLayoutManager)?.setLineSpacing(typography.codeLineSpacing, for: typography.editorFont)
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {

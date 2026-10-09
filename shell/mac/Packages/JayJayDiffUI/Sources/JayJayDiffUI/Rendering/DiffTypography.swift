@@ -2,16 +2,13 @@ import AppKit
 import SwiftUI
 
 public struct DiffTypography: Equatable {
-    public var fontFamily: String
-    public var fontSize: Double
+    public var font: NSFont
+    /// Line height multiple; 1 keeps the font's natural line height.
+    public var lineSpacing: Double
 
-    public init(fontFamily: String = "", fontSize: Double = 12) {
-        self.fontFamily = fontFamily
-        self.fontSize = fontSize
-    }
-
-    var font: NSFont {
-        NSFont(name: fontFamily, size: fontSize) ?? .monospacedSystemFont(ofSize: fontSize, weight: .regular)
+    public init(font: NSFont = .monospacedSystemFont(ofSize: 12, weight: .regular), lineSpacing: Double = 1) {
+        self.font = font
+        self.lineSpacing = lineSpacing
     }
 }
 

@@ -21,8 +21,7 @@ struct RevsetPanelContent: View {
     @State private var completions: [RevsetCompletion] = []
     @State private var edit: FilterFieldEdit?
     @State private var focusRequest = 0
-    @Environment(\.jayjayFontSize) private var fontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     init(
         actions: any RevsetActions,
@@ -107,7 +106,7 @@ struct RevsetPanelContent: View {
                 accessibilityIdentifier: AID.Toolbar.revsetField,
                 focusGeneration: focusRequest,
                 isPlain: true,
-                font: fontFamily.scaledNSFont(13, baseSize: fontSize, monospaced: true),
+                font: typography.nsFont(13, monospaced: true),
                 edit: edit,
                 onCaretChange: caretMoved,
                 onMove: move,

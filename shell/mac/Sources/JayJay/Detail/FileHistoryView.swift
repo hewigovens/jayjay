@@ -3,8 +3,7 @@ import SwiftUI
 
 struct FileHistoryView: View {
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
     let history: [ChangeInfo]
     let path: String
     let onSelectChange: (String) -> Void
@@ -30,7 +29,7 @@ struct FileHistoryView: View {
                             HStack(spacing: 6) {
                                 Text(change.changeId.highlighted(
                                     scheme: colorScheme,
-                                    font: fontFamily.identifierFont(baseSize: baseFontSize)
+                                    font: typography.identifierFont
                                 ))
                                 Text(change.author.name)
                                     .jayjayFont(11)

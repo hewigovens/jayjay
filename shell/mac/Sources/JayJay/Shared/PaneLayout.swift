@@ -11,8 +11,8 @@ enum PaneLayout {
     /// Shared by the detail column's metadata block and the diff header so the two line up over the full-bleed diff.
     static let detailInset: CGFloat = 20
 
-    static func fileRowHeight(baseFontSize: Double) -> CGFloat {
-        46 * (baseFontSize / 12)
+    static func fileRowHeight(scale: CGFloat) -> CGFloat {
+        46 * scale
     }
 
     static func sidebarRange(windowWidth: CGFloat) -> ClosedRange<CGFloat> {

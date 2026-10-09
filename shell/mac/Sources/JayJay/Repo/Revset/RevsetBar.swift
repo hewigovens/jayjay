@@ -19,8 +19,7 @@ struct RevsetBar: View {
     @State private var edit: FilterFieldEdit?
     /// Inserting a completion moves the caret, which must not reopen the list on what was just inserted.
     @State private var skipsCaretChange = false
-    @Environment(\.jayjayFontSize) private var fontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     private var revset: String {
         actions.revsetFilter.revset
@@ -63,7 +62,7 @@ struct RevsetBar: View {
                     isPlain: true,
                     endsEditingOnOutsideClick: true,
                     placesCaretAtEnd: true,
-                    font: fontFamily.scaledNSFont(11, baseSize: fontSize, monospaced: true),
+                    font: typography.nsFont(11, monospaced: true),
                     edit: edit,
                     onCaretChange: caretMoved,
                     onMove: movePick,
@@ -180,8 +179,7 @@ struct RevsetBar: View {
         completionPanel.show(
             under: anchorView,
             rows: RevsetCompletionRows(completions: list, selected: picked, onPick: accept),
-            fontSize: fontSize,
-            fontFamily: fontFamily
+            typography: typography
         )
     }
 

@@ -2,8 +2,10 @@ use std::collections::BTreeMap;
 use std::path::Path;
 
 mod platform;
+mod specimen;
 
 pub use platform::{MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS};
+pub use specimen::FontSpecimen;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub struct MonoFontOption {

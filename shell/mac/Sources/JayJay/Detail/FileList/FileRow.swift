@@ -2,7 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct FileRow: View {
-    @Environment(\.jayjayFontSize) private var baseFontSize
+    @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     /// macOS List adds 8 pt of its own on each side; this nets out to a 4 pt inset so the selection covers the row.
@@ -65,7 +65,7 @@ struct FileRow: View {
                         } else {
                             Circle()
                                 .frame(width: 6, height: 6)
-                                .padding(.top, 4 * (baseFontSize / 12))
+                                .padding(.top, 4 * typography.interfaceScale)
                         }
                     }
                     .foregroundStyle(color)
@@ -136,7 +136,7 @@ struct FileRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .frame(minHeight: PaneLayout.fileRowHeight(baseFontSize: baseFontSize))
+        .frame(minHeight: PaneLayout.fileRowHeight(scale: typography.interfaceScale))
         .help(hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)

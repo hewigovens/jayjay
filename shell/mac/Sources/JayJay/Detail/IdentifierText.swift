@@ -11,8 +11,7 @@ struct IdentifierText: View {
     let value: String
     var prefixLength: Int = 0
     var prefixStyle: PrefixStyle = .plain
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) private var colorScheme
 
     var body: some View {
@@ -22,7 +21,7 @@ struct IdentifierText: View {
     }
 
     private var text: Text {
-        let regular = fontFamily.identifierFont(baseSize: baseFontSize)
+        let regular = typography.identifierFont
         let emphasized = min(prefixLength, value.count)
         guard emphasized > 0 else { return Text(value).font(regular) }
         let split = value.index(value.startIndex, offsetBy: emphasized)

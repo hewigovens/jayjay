@@ -200,6 +200,12 @@ enum AID {
         static let confirmAbandon = "settings.confirmAbandon"
         static let jjConfigMissing = "settings.jjConfigMissing"
         static let jjConfigPath = "settings.jjConfigPath"
+        static let interfaceFontSize = "settings.interfaceFontSize"
+        static let codeFontSize = "settings.codeFontSize"
+        static let codeLineSpacing = "settings.codeLineSpacing"
+        static let codeLigatures = "settings.codeLigatures"
+        static let fontPreview = "settings.fontPreview"
+        static let resetCodeFont = "settings.resetCodeFont"
 
         static func page(_ id: String) -> String {
             "settings.page.\(id)"

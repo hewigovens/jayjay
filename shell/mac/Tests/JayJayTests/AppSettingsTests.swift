@@ -4,19 +4,55 @@ import JayJayCore
 import XCTest
 
 final class AppSettingsTests: XCTestCase {
-    func testSavedFontSizeAndFamilySurviveReload() throws {
+    func testFontSettingsSurviveReload() throws {
         let suite = "AppSettingsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
 
-        for size in [12.0, 20.0] {
-            let settings = AppSettings(defaults: defaults)
-            settings.fontSize = size
-            settings.fontFamily = try XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))
-            let restored = AppSettings(defaults: defaults)
-            XCTAssertEqual(restored.fontSize, size)
-            XCTAssertEqual(restored.fontFamily, settings.fontFamily)
-        }
+        let settings = AppSettings(defaults: defaults)
+        settings.interfaceFontFamily = try XCTUnwrap(AppSettings.FontFamily(rawValue: "Courier New"))
+        settings.interfaceFontSize = 15
+        settings.codeFontFamily = try XCTUnwrap(AppSettings.FontFamily(rawValue: "menlo"))
+        settings.codeFontSize = 20
+        settings.codeLineSpacing = 1.4
+        settings.codeLigatures = false
+        XCTAssertEqual(AppSettings(defaults: defaults).typography, settings.typography)
+    }
+
+    func testPreSplitSettingsKeepCodeFontAndResetInterfaceFamily() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        defaults.set("menlo", forKey: "jayjay.fontFamily")
+        defaults.set("15", forKey: "jayjay.fontSize")
+
+        let migrated = AppSettings(defaults: defaults)
+        XCTAssertEqual(migrated.typography, try Typography(
+            interfaceFamily: .system,
+            interfaceSize: 15,
+            codeFamily: XCTUnwrap(AppSettings.FontFamily(rawValue: "menlo")),
+            codeSize: 15
+        ))
+        migrated.codeFontSize = 18
+        XCTAssertEqual(AppSettings(defaults: defaults).interfaceFontSize, 15, "the seeded interface size must not follow later code-size changes")
+    }
+
+    func testZoomMovesBothSizesWithinBoundsAndResetRestoresDefaults() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        settings.interfaceFontSize = AppSettings.fontSizeRange.upperBound - 1
+        settings.codeFontSize = 12
+        settings.zoomIn()
+        settings.zoomIn()
+        XCTAssertEqual([settings.interfaceFontSize, settings.codeFontSize], [AppSettings.fontSizeRange.upperBound, 14])
+        settings.resetZoom()
+        XCTAssertEqual([settings.interfaceFontSize, settings.codeFontSize], [12, 12])
+        settings.codeFontSize = AppSettings.fontSizeRange.lowerBound
+        settings.zoomOut()
+        XCTAssertEqual([settings.interfaceFontSize, settings.codeFontSize], [11, AppSettings.fontSizeRange.lowerBound])
     }
 
     func testAnonymousStatsDefaultOnAndPreserveExplicitOptOut() throws {
@@ -66,8 +102,8 @@ final class AppSettingsTests: XCTestCase {
     func testMonoFontChoicesComeFromCoreOptions() {
         let coreOptions = monoFontOptions()
 
-        XCTAssertEqual(AppSettings.MonoFont.allCases.map(\.rawValue), coreOptions.map(\.id))
-        XCTAssertEqual(AppSettings.MonoFont.allCases.map(\.title), coreOptions.map(\.title))
+        XCTAssertEqual(AppSettings.FontFamily.allCases.map(\.rawValue), coreOptions.map(\.id))
+        XCTAssertEqual(AppSettings.FontFamily.allCases.map(\.title), coreOptions.map(\.title))
     }
 
     func testInstalledFamilyNamePersistsAsPreference() throws {
@@ -76,17 +112,17 @@ final class AppSettingsTests: XCTestCase {
         defer { defaults.removePersistentDomain(forName: suite) }
 
         let settings = AppSettings(defaults: defaults)
-        settings.fontFamily = try XCTUnwrap(AppSettings.MonoFont(rawValue: "Courier New"))
+        settings.codeFontFamily = try XCTUnwrap(AppSettings.FontFamily(rawValue: "Courier New"))
         let restored = AppSettings(defaults: defaults)
-        XCTAssertEqual(restored.fontFamily.rawValue, "Courier New")
-        XCTAssertEqual(restored.fontFamily.title, "Courier New")
-        XCTAssertEqual(restored.fontFamily.nsFont(size: 12).familyName, "Courier New")
-        XCTAssertNil(AppSettings.MonoFont(rawValue: ""))
+        XCTAssertEqual(restored.codeFontFamily.rawValue, "Courier New")
+        XCTAssertEqual(restored.codeFontFamily.title, "Courier New")
+        XCTAssertEqual(restored.codeFontFamily.nsFont(size: 12).familyName, "Courier New")
+        XCTAssertNil(AppSettings.FontFamily(rawValue: ""))
     }
 
     func testLegacyIoskeleyNerdFontIdCanonicalizes() {
         XCTAssertEqual(
-            AppSettings.MonoFont(rawValue: "ioskeleymono-nl-nerd-font")?.rawValue,
+            AppSettings.FontFamily(rawValue: "ioskeleymono-nl-nerd-font")?.rawValue,
             "ioskeley-mono-nl-nerd-font"
         )
     }

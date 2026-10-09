@@ -12,8 +12,7 @@ private struct DAGRefsRowBoundsPreferenceKey: PreferenceKey {
 
 struct DAGRow: View {
     @Environment(\.colorScheme) var colorScheme
-    @Environment(\.jayjayFontSize) var baseFontSize
-    @Environment(\.jayjayFontFamily) var fontFamily
+    @Environment(\.jayjayTypography) var typography
     let viewModel: DAGRowViewModel
     var actions: (any DAGActions & BookmarkActions & TagActions)?
     var onRequest: ((DAGRequest) -> Void)?
@@ -56,7 +55,7 @@ struct DAGRow: View {
             HStack(spacing: 6) {
                 Text(change.commitId.highlighted(
                     scheme: colorScheme,
-                    font: fontFamily.identifierFont(baseSize: baseFontSize),
+                    font: typography.identifierFont,
                     prefixColor: AppColors.commitIdPrefix(colorScheme)
                 ))
                 .fixedSize(horizontal: true, vertical: false)

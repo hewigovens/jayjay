@@ -3,7 +3,7 @@ import JayJayCore
 import SwiftUI
 
 struct ChangeDetailView: View {
-    @Environment(\.jayjayFontSize) var baseFontSize
+    @Environment(\.jayjayTypography) var typography
     @Environment(\.accessibilityReduceMotion) var reduceMotion
     let repoPath: String
     let repo: JayJayRepo?

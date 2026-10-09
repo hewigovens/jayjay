@@ -32,13 +32,13 @@ extension CodeTextView {
                 detachScroll()
             }
             let pathChanged = self.parent.path != parent.path
-            let fontChanged = self.parent.fontSize != parent.fontSize || self.parent.fontFamily != parent.fontFamily
+            let fontChanged = self.parent.typography != parent.typography
             let appearanceChanged = self.parent.highlightColors != parent.highlightColors
             let preparedHighlightsChanged = self.parent.preparedHighlightedLines != parent.preparedHighlightedLines
                 || self.parent.preparedLineStyles != parent.preparedLineStyles
             self.parent = parent
             if fontChanged {
-                textView.font = parent.editorFont
+                parent.applyTypography(to: textView)
                 (textView.enclosingScrollView?.verticalRulerView as? CodeLineNumberRuler)?.updateText()
             }
             textView.isEditable = parent.isEditable
@@ -68,7 +68,7 @@ extension CodeTextView {
             {
                 highlightTask?.cancel()
                 storage.beginEditing()
-                CodeHighlighting(font: parent.editorFont, colors: parent.highlightColors).apply(
+                CodeHighlighting(font: parent.typography.editorFont, colors: parent.highlightColors).apply(
                     to: storage,
                     text: parent.text,
                     highlightedLines: highlightedLines,
@@ -126,7 +126,7 @@ extension CodeTextView {
                     let storage = textView.textStorage
                 else { return }
                 storage.beginEditing()
-                CodeHighlighting(font: parent.editorFont, colors: colors).apply(
+                CodeHighlighting(font: parent.typography.editorFont, colors: colors).apply(
                     to: storage,
                     text: text,
                     highlightedLines: lines
@@ -137,7 +137,7 @@ extension CodeTextView {
         }
 
         private func updateTypingAttributes(of textView: NSTextView, colors: DiffColors) {
-            textView.typingAttributes = CodeHighlighting(font: parent.editorFont, colors: colors).baseAttributes
+            textView.typingAttributes = CodeHighlighting(font: parent.typography.editorFont, colors: colors).baseAttributes
         }
     }
 }

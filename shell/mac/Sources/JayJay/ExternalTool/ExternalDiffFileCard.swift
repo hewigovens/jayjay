@@ -7,8 +7,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
     let editable: Bool
     let onToggleFile: () -> Void
 
-    @Environment(\.jayjayFontSize) private var fontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -23,7 +22,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(selectionColor, lineWidth: 1)
         )
-        .environment(\.diffTypography, DiffTypography(fontFamily: fontFamily.nsFontName, fontSize: fontSize))
+        .environment(\.diffTypography, typography.diffTypography)
     }
 
     private var header: some View {
@@ -83,7 +82,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                     }
                 }
             )
-            .frame(height: file.measuredHeight ?? file.displayDiff.estimatedCardHeight(fontSize: fontSize))
+            .frame(height: file.measuredHeight ?? file.displayDiff.estimatedCardHeight(typography: typography))
         } else {
             Text("The file contents differ, but no inline textual preview is available.")
                 .jayjayFont(12)

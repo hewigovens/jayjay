@@ -34,8 +34,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     }
 
     @Environment(AppSettings.self) private var settings
-    @Environment(\.jayjayFontSize) private var jayjayFontSize
-    @Environment(\.jayjayFontFamily) private var jayjayFontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     var selectedChangedLines: Set<Int> {
         selection.selectedChangedLines
@@ -56,7 +55,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         .task(id: loadKey) {
             await loadDiff()
         }
-        .environment(\.diffTypography, DiffTypography(fontFamily: jayjayFontFamily.nsFontName, fontSize: jayjayFontSize))
+        .environment(\.diffTypography, typography.diffTypography)
     }
 
     private var header: some View {
@@ -142,7 +141,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                     }
                 }
             )
-            .frame(height: measuredHeight ?? displayDiff.estimatedCardHeight(fontSize: settings.fontSize))
+            .frame(height: measuredHeight ?? displayDiff.estimatedCardHeight(typography: typography))
         } else {
             Text("No textual preview available for this file.")
                 .jayjayFont(12)

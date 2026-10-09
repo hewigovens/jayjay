@@ -6,7 +6,7 @@ import XCTest
 @MainActor
 final class DescriptionPreviewTests: XCTestCase {
     func testConfiguredFontReachesNativeDescriptionBody() throws {
-        let family = try XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))
+        let family = try XCTUnwrap(AppSettings.FontFamily(rawValue: "menlo"))
         let window = NSWindow(
             contentRect: CGRect(x: 0, y: 0, width: 400, height: 200),
             styleMask: [.borderless], backing: .buffered, defer: false
@@ -18,14 +18,13 @@ final class DescriptionPreviewTests: XCTestCase {
                 text: "Readable description body",
                 collapsedHeight: 80, expandedHeight: 180, expanded: false
             )
-            .environment(\.jayjayFontSize, size)
-            .environment(\.jayjayFontFamily, family)
+            .environment(\.jayjayTypography, Typography(interfaceFamily: family, interfaceSize: size))
             let host = NSHostingView(rootView: body)
             window.contentView = host
             window.layoutIfNeeded()
             runUntilMainRunLoopWaits()
             let scroll = try XCTUnwrap(descriptionScrollView(in: host))
-            XCTAssertEqual(scroll.textView.font?.fontName, family.nsFont(size: size).fontName)
+            XCTAssertEqual(scroll.textView.font?.fontName, family.nsFont(size: size, monospaced: false).fontName)
             XCTAssertEqual(scroll.textView.font?.pointSize, CGFloat(size))
         }
     }

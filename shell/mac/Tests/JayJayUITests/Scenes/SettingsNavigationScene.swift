@@ -10,6 +10,7 @@ final class SettingsNavigationScene: SceneBase {
 
         let pages: [(String, [String])] = [
             ("Appearance", ["Theme"]),
+            ("Code Font", [AID.Settings.fontPreview]),
             ("Diff & Files", ["Side-by-side diff"]),
             ("Workflow", ["Confirm before abandoning changes"]),
             ("Integrations", ["Editor"]),

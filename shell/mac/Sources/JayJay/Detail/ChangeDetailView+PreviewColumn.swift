@@ -32,7 +32,7 @@ extension ChangeDetailView {
         VStack(alignment: .leading, spacing: descriptionExpanded.wrappedValue ? 12 : 0) {
             descriptionSection()
             metadataSection
-                .frame(minHeight: descriptionExpanded.wrappedValue ? nil : PaneLayout.fileRowHeight(baseFontSize: baseFontSize))
+                .frame(minHeight: descriptionExpanded.wrappedValue ? nil : PaneLayout.fileRowHeight(scale: typography.interfaceScale))
                 .animation(reduceMotion ? nil : .smooth(duration: 0.35, extraBounce: 0), value: descriptionExpanded.wrappedValue)
         }
         .padding(.horizontal, PaneLayout.detailInset)

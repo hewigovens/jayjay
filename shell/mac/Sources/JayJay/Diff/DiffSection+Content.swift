@@ -130,9 +130,8 @@ extension DiffSection {
     }
 
     private var richPreviewGutterWidth: CGFloat {
-        let font = settings.fontFamily.nsFont(size: CGFloat(settings.fontSize))
-        return Self.richPreviewGutterWidth(
-            font: font,
+        Self.richPreviewGutterWidth(
+            font: settings.typography.editorFont,
             showsNoteColumn: reservesReviewNoteGutterColumn,
             hasVisibleNoteMarker: !loadedReviewNoteSummaries().isEmpty
         )

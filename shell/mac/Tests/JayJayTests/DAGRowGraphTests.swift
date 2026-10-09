@@ -108,7 +108,7 @@ final class DAGRowGraphTests: XCTestCase {
 
     private func rendered(_ view: some View, fontSize: Double = 12, scale: CGFloat = 1) throws -> NSBitmapImageRep {
         let renderer = ImageRenderer(content: view
-            .environment(\.jayjayFontSize, fontSize)
+            .environment(\.jayjayTypography, Typography(interfaceSize: fontSize, codeSize: fontSize))
             .environment(\.colorScheme, .light))
         renderer.scale = scale
         return try NSBitmapImageRep(cgImage: XCTUnwrap(renderer.cgImage))

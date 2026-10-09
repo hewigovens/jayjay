@@ -6,7 +6,7 @@ final class DescriptionHeightScene: SceneBase {
     }
 
     override class var additionalLaunchArguments: [String] {
-        ["-jayjay.fontSize", "13", "-jayjay.fontFamily", "system"]
+        ["fontSize", "interfaceFontSize", "fontFamily", "interfaceFontFamily"].flatMap { ["-jayjay.\($0)", ""] }
     }
 
     func testResetZoomRestoresFirstLaunchSizeFromShortcutAndPalette() throws {

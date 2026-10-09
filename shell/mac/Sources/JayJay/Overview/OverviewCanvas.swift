@@ -234,14 +234,13 @@ private struct OverviewChangeRow: View {
     let isChosen: Bool
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     var body: some View {
         HStack(spacing: 6) {
             node
                 .frame(width: OverviewGeometry.nodeInset * 2, height: OverviewGeometry.rowHeight)
-            Text(change.changeId.highlighted(scheme: colorScheme, font: fontFamily.scaledFont(10, baseSize: baseFontSize, design: .monospaced)))
+            Text(change.changeId.highlighted(scheme: colorScheme, font: typography.font(10, design: .monospaced)))
                 .lineLimit(1)
                 .layoutPriority(1)
             if change.hasConflict {
@@ -326,14 +325,13 @@ private struct OverviewBaseDetail: View {
     let base: OverviewBase
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     var body: some View {
         HStack(spacing: 6) {
             Text(base.commitId.highlighted(
                 scheme: colorScheme,
-                font: fontFamily.scaledFont(10, baseSize: baseFontSize, design: .monospaced),
+                font: typography.font(10, design: .monospaced),
                 prefixColor: AppColors.commitIdPrefix(colorScheme)
             ))
             Text(Date.relativeLabel(millis: base.timestampMillis))

@@ -19,7 +19,7 @@ final class RevsetCompletionPanel: NSPanel {
         false
     }
 
-    func show(under anchor: NSView, rows: RevsetCompletionRows, fontSize: Double, fontFamily: AppSettings.MonoFont) {
+    func show(under anchor: NSView, rows: RevsetCompletionRows, typography: Typography) {
         guard let window = anchor.window else { return }
         let content = ScrollViewReader { proxy in
             ScrollView(.vertical) {
@@ -34,8 +34,7 @@ final class RevsetCompletionPanel: NSPanel {
         }
         .glassEffect(in: RoundedRectangle(cornerRadius: 12))
         .clipShape(RoundedRectangle(cornerRadius: 12))
-        .environment(\.jayjayFontSize, fontSize)
-        .environment(\.jayjayFontFamily, fontFamily)
+        .environment(\.jayjayTypography, typography)
         if let host = contentView as? NSHostingView<AnyView> {
             host.rootView = AnyView(content)
         } else {

@@ -162,7 +162,7 @@ extension DAGRow {
     private var changeIdText: Text {
         Text(change.changeId.highlighted(
             scheme: colorScheme,
-            font: fontFamily.identifierFont(baseSize: baseFontSize)
+            font: typography.identifierFont
         ))
     }
 

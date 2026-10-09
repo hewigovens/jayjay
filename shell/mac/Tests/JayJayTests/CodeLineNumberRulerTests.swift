@@ -39,13 +39,12 @@ final class CodeLineNumberRulerTests: XCTestCase {
 
     func testHostedPaneKeepsRulerBelowHeader() throws {
         let text = (1 ... 100).map { "line \($0)" }.joined(separator: "\n")
-        let family = try XCTUnwrap(AppSettings.MonoFont(rawValue: "menlo"))
+        let family = try XCTUnwrap(AppSettings.FontFamily(rawValue: "menlo"))
         let host = NSHostingView(rootView: VStack(spacing: 0) {
             Text("Right").frame(height: 30)
             CodeTextView(path: "file.txt", text: .constant(text), isEditable: false, wrapsLines: true, mergePane: .right)
         }.frame(width: 400, height: 200)
-            .environment(\.jayjayFontSize, 20)
-            .environment(\.jayjayFontFamily, family))
+            .environment(\.jayjayTypography, Typography(codeFamily: family, codeSize: 20)))
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         host.layoutSubtreeIfNeeded()
@@ -64,5 +63,33 @@ final class CodeLineNumberRulerTests: XCTestCase {
         XCTAssertGreaterThanOrEqual(visible.minY, 30)
         XCTAssertLessThanOrEqual(visible.maxY, host.bounds.maxY)
         XCTAssertLessThanOrEqual(visible.width, ruler.ruleThickness)
+    }
+
+    func testLineSpacingKeepsNumbersOnTheirTextLines() throws {
+        func measure(lineSpacing: Double) throws -> (labelToBaseline: CGFloat, pitch: CGFloat) {
+            let host = NSHostingView(rootView: CodeTextView(
+                path: "file.txt", text: .constant("one\ntwo\nthree"), isEditable: false, mergePane: .right
+            )
+            .frame(width: 300, height: 200)
+            .environment(\.jayjayTypography, Typography(codeLineSpacing: lineSpacing)))
+            let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
+            window.contentView = host
+            host.layoutSubtreeIfNeeded()
+            func descendants(_ view: NSView) -> [NSView] {
+                view.subviews.flatMap { [$0] + descendants($0) }
+            }
+            let ruler = try XCTUnwrap(descendants(host).compactMap { $0 as? CodeLineNumberRuler }.first)
+            let editor = try XCTUnwrap(ruler.clientView as? NSTextView)
+            let layout = try XCTUnwrap(editor.layoutManager)
+            let labels = ruler.lineLabels(in: editor.bounds)
+            XCTAssertEqual(labels.map(\.number), [1, 2, 3])
+            let fragment = layout.lineFragmentRect(forGlyphAt: 0, effectiveRange: nil)
+            let baseline = editor.textContainerOrigin.y + fragment.minY + layout.location(forGlyphAt: 0).y
+            return (baseline - labels[0].origin.y, labels[1].origin.y - labels[0].origin.y)
+        }
+        let natural = try measure(lineSpacing: 1)
+        let spaced = try measure(lineSpacing: 1.6)
+        XCTAssertEqual(spaced.labelToBaseline, natural.labelToBaseline, accuracy: 0.5)
+        XCTAssertGreaterThan(spaced.pitch, natural.pitch * 1.4)
     }
 }

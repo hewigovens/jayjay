@@ -123,7 +123,7 @@ private struct MergeHunkCard: View {
     let onUseSource: (MergeHunkSource) -> Void
 
     @State private var measuredDiffHeight: CGFloat?
-    @Environment(\.jayjayFontSize) private var fontSize
+    @Environment(\.jayjayTypography) private var typography
 
     var body: some View {
         VStack(spacing: 0) {
@@ -167,7 +167,7 @@ private struct MergeHunkCard: View {
                     }
                 }
             )
-            .frame(height: measuredDiffHeight ?? highlights.unified.estimatedCardHeight(fontSize: fontSize))
+            .frame(height: measuredDiffHeight ?? highlights.unified.estimatedCardHeight(typography: typography))
         }
         .background(Color(nsColor: .textBackgroundColor))
         .overlay(

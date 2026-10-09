@@ -18,8 +18,7 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
     let actions: Actions
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     private var canOpenPR: Bool {
         bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(name: bookmark.name)
@@ -80,7 +79,7 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
             if !bookmark.changeId.id.isEmpty {
                 Text(bookmark.changeId.highlighted(
                     scheme: colorScheme,
-                    font: fontFamily.identifierFont(baseSize: baseFontSize)
+                    font: typography.identifierFont
                 ))
             }
         }

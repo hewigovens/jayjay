@@ -8,8 +8,7 @@ struct OverviewChangePanel: View {
     let onShowInGraph: () -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     private var descriptionBody: String {
         let lines = change.fullDescription.split(separator: "\n", omittingEmptySubsequences: false).dropFirst()
@@ -59,7 +58,7 @@ struct OverviewChangePanel: View {
     }
 
     private var idFont: Font {
-        fontFamily.scaledFont(11, baseSize: baseFontSize, design: .monospaced)
+        typography.font(11, design: .monospaced)
     }
 
     @ViewBuilder

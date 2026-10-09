@@ -12,8 +12,7 @@ struct OverviewLanePanel: View {
     let onSelectChange: (OverviewChange) -> Void
 
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     var body: some View {
         OverviewPanel(accessibilityIdentifier: AID.Overview.lanePanel) {
@@ -89,7 +88,7 @@ struct OverviewLanePanel: View {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(change.changeId.highlighted(
                     scheme: colorScheme,
-                    font: fontFamily.scaledFont(11, baseSize: baseFontSize, design: .monospaced)
+                    font: typography.font(11, design: .monospaced)
                 ))
                 Text(change.title)
                     .jayjayFont(12)

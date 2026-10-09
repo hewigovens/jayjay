@@ -16,7 +16,7 @@ private struct DiffStripeRun {
     }
 }
 
-final class DiffLayoutManager: NSLayoutManager {
+final class DiffLayoutManager: LineSpacingLayoutManager {
     var lineBgColors: [NSColor] = []
     var lineStripeColors: [NSColor] = []
     var lineStripeX: CGFloat = 0

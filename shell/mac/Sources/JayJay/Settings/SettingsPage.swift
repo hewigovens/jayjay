@@ -2,6 +2,7 @@ import SwiftUI
 
 enum SettingsPage: String, CaseIterable, Identifiable {
     case appearance
+    case fonts
     case diff
     case workflow
     case integrations
@@ -16,6 +17,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
             case .appearance: "Appearance"
+            case .fonts: "Code Font"
             case .diff: "Diff & Files"
             case .workflow: "Workflow"
             case .integrations: "Integrations"
@@ -28,6 +30,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
             case .appearance: "paintbrush"
+            case .fonts: "chevron.left.forwardslash.chevron.right"
             case .diff: "doc.text.magnifyingglass"
             case .workflow: "checklist"
             case .integrations: "wrench.and.screwdriver"
@@ -40,6 +43,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
             case .appearance: .purple
+            case .fonts: .blue
             case .diff: .blue
             case .workflow: .orange
             case .integrations: .teal

@@ -5,8 +5,7 @@ import SwiftUI
 struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
     @Environment(AppSettings.self) private var appSettings
     @State private var entryListWidth = PaneLayout.secondaryPaneDefault
     @State private var fileListWidth = PaneLayout.secondaryPaneDefault
@@ -75,7 +74,7 @@ struct EvologView: View {
         if let first = viewModel.entries.first {
             label.append(first.changeId.highlighted(
                 scheme: colorScheme,
-                font: fontFamily.scaledFont(13, baseSize: baseFontSize, weight: .semibold, design: .monospaced)
+                font: typography.font(13, weight: .semibold, design: .monospaced)
             ))
         } else {
             label.append(AttributedString(String(viewModel.changeId.prefix(8))))
@@ -189,7 +188,7 @@ struct EvologView: View {
                 .lineLimit(1)
             Text(entry.commitId.highlighted(
                 scheme: colorScheme,
-                font: fontFamily.scaledFont(10, baseSize: baseFontSize, design: .monospaced)
+                font: typography.font(10, design: .monospaced)
             ))
             .lineLimit(1)
         }

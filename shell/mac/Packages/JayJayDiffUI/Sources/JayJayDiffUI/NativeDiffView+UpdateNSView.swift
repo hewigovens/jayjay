@@ -210,6 +210,9 @@ public extension NativeDiffView {
         }
         gutterLayoutManager.selectionHighlightLeadingInset = groupWidth + noteColumnWidth
             + (showsCheckboxColumn ? checkboxWidth : 0)
+        for manager in [layoutManager, gutterLayoutManager] {
+            manager.setLineSpacing(typography.lineSpacing, for: font)
+        }
         textView.textStorage?.replaceContents(with: result)
         containerView.setViewportLineLocations(
             viewportLineLocations,

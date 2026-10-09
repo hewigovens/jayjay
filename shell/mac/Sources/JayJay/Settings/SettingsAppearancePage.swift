@@ -2,9 +2,10 @@ import SwiftUI
 
 struct SettingsAppearancePage: View {
     @Environment(AppSettings.self) private var settings
-    @State private var myFonts: [AppSettings.MonoFont] = []
+    @State private var userFamilies: [AppSettings.FontFamily] = []
 
     var body: some View {
+        @Bindable var settings = settings
         Form {
             Section {
                 Picker(selection: Binding(
@@ -28,48 +29,20 @@ struct SettingsAppearancePage: View {
             }
 
             Section {
-                Picker(selection: Binding(
-                    get: { settings.fontFamily },
-                    set: { settings.fontFamily = $0 }
-                )) {
-                    let curated = AppSettings.MonoFont.allCases.filter(\.isInstalled)
-                    ForEach(curated) { font in
-                        Text(font.title).tag(font)
-                    }
-                    if !myFonts.isEmpty {
-                        Section("My Fonts") {
-                            ForEach(myFonts) { font in
-                                Text(font.title).tag(font)
-                            }
-                        }
-                    }
-                    if !curated.contains(settings.fontFamily), !myFonts.contains(settings.fontFamily) {
-                        Text(settings.fontFamily.title).tag(settings.fontFamily)
-                    }
-                } label: {
-                    SettingsLabel("Family", icon: "textformat")
-                }
-                .task { myFonts = AppSettings.MonoFont.installedMyFonts() }
-
-                HStack {
-                    SettingsLabel("Size", icon: "textformat.size")
-                    Spacer()
-                    Text("\(Int(settings.fontSize))pt")
-                        .foregroundStyle(.secondary)
-                        .monospacedDigit()
-                    Stepper("", value: Binding(
-                        get: { settings.fontSize },
-                        set: { settings.fontSize = $0 }
-                    ), in: AppSettings.fontSizeRange, step: 1)
-                        .labelsHidden()
-                        .controlSize(.small)
-                }
+                FontFamilyPicker(
+                    selection: $settings.interfaceFontFamily,
+                    choices: [.system],
+                    myFonts: userFamilies,
+                    systemTitle: "System"
+                )
+                FontSizeStepper(value: $settings.interfaceFontSize, id: AID.Settings.interfaceFontSize)
             } header: {
-                Text("Font")
+                Text("Interface Font")
             } footer: {
-                Text("Press \(AppShortcut.zoomIn.symbol) or \(AppShortcut.zoomOut.symbol) to change the font size, \(AppShortcut.resetZoom.symbol) to reset it.")
+                Text("Press \(AppShortcut.zoomIn.symbol) or \(AppShortcut.zoomOut.symbol) to change the interface and code font sizes, \(AppShortcut.resetZoom.symbol) to reset them.")
             }
         }
         .formStyle(.grouped)
+        .task { userFamilies = AppSettings.FontFamily.installedUserFamilies() }
     }
 }

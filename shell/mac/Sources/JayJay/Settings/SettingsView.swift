@@ -44,6 +44,8 @@ struct SettingsView: View {
         switch selection {
             case .appearance:
                 SettingsAppearancePage()
+            case .fonts:
+                SettingsFontsPage()
             case .diff:
                 SettingsDiffPage()
             case .workflow:

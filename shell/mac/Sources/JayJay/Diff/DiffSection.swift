@@ -35,14 +35,13 @@ struct DiffSection: View {
     @State var compactHeader = false
     @Environment(AppSettings.self) var settings
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
-    @Environment(\.jayjayFontSize) private var jayjayFontSize
-    @Environment(\.jayjayFontFamily) private var jayjayFontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
             diffHeader
                 .padding(.horizontal, PaneLayout.detailInset)
-                .frame(minHeight: PaneLayout.fileRowHeight(baseFontSize: jayjayFontSize))
+                .frame(minHeight: PaneLayout.fileRowHeight(scale: typography.interfaceScale))
             if let message = contextExpansionDisplay.errorMessage {
                 expansionErrorBanner(message)
                     .padding(.bottom, 8)
@@ -58,7 +57,7 @@ struct DiffSection: View {
         .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(projectionModeKey)") {
             await computeDiffAsync()
         }
-        .environment(\.diffTypography, DiffTypography(fontFamily: jayjayFontFamily.nsFontName, fontSize: jayjayFontSize))
+        .environment(\.diffTypography, typography.diffTypography)
     }
 
     private func expansionErrorBanner(_ message: String) -> some View {

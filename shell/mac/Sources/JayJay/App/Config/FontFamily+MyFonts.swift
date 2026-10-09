@@ -1,8 +1,19 @@
 import AppKit
 import JayJayCore
 
-extension AppSettings.MonoFont {
-    static func installedMyFonts() -> [AppSettings.MonoFont] {
+extension AppSettings.FontFamily {
+    static func installedMyFonts() -> [AppSettings.FontFamily] {
+        let families = userFamilyNames { CTFontCreateWithFontDescriptor($0, 12, nil).hasFixedAdvances }
+        return myMonoFontFamilies(families: families).compactMap(Self.init(rawValue:))
+    }
+
+    static func installedUserFamilies() -> [AppSettings.FontFamily] {
+        userFamilyNames { _ in true }
+            .sorted { $0.localizedCaseInsensitiveCompare($1) == .orderedAscending }
+            .compactMap(Self.init(rawValue:))
+    }
+
+    private static func userFamilyNames(where include: (CTFontDescriptor) -> Bool) -> [String] {
         let collection = CTFontCollectionCreateFromAvailableFonts(nil)
         let descriptors = CTFontCollectionCreateMatchingFontDescriptors(collection) as? [CTFontDescriptor] ?? []
         var checked = Set<String>()
@@ -12,11 +23,11 @@ extension AppSettings.MonoFont {
                   isUserFontPath(path: url.path),
                   let family = CTFontDescriptorCopyAttribute(descriptor, kCTFontFamilyNameAttribute) as? String,
                   checked.insert(family).inserted,
-                  CTFontCreateWithFontDescriptor(descriptor, 12, nil).hasFixedAdvances
+                  include(descriptor)
             else { continue }
             families.append(family)
         }
-        return myMonoFontFamilies(families: families).compactMap(Self.init(rawValue:))
+        return families
     }
 }
 

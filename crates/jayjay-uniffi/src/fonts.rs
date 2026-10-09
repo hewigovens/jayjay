@@ -1,3 +1,5 @@
+use jayjay_core::FontSpecimen;
+
 #[derive(uniffi::Record)]
 pub struct MonoFontOption {
     id: String,
@@ -29,4 +31,17 @@ fn is_user_font_path(path: String) -> bool {
 #[uniffi::export]
 fn my_mono_font_families(families: Vec<String>) -> Vec<String> {
     jayjay_core::my_mono_font_families(families)
+}
+
+#[uniffi::remote(Record)]
+pub struct FontSpecimen {
+    pub summary: String,
+    pub change_id: String,
+    pub path: String,
+    pub diff: jayjay_core::diff::FileDiff,
+}
+
+#[uniffi::export]
+fn font_specimen() -> FontSpecimen {
+    FontSpecimen::default()
 }

@@ -3,8 +3,7 @@ import SwiftUI
 extension View {
     func appEnvironment(_ settings: AppSettings) -> some View {
         environment(settings)
-            .environment(\.jayjayFontSize, settings.fontSize)
-            .environment(\.jayjayFontFamily, settings.fontFamily)
+            .environment(\.jayjayTypography, settings.typography)
             .preferredColorScheme(settings.appearanceMode.colorScheme)
     }
 }

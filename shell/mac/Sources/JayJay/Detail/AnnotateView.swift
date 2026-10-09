@@ -74,7 +74,7 @@ struct AnnotateView: View {
                 .foregroundStyle(.tertiary)
                 .frame(width: 80, alignment: .trailing)
         }
-        .jayjayFont(settings.fontSize, design: .monospaced)
+        .jayjayFont(Typography.referenceSize, design: .monospaced)
         .padding(.trailing, 12)
     }
 
@@ -96,7 +96,7 @@ struct AnnotateView: View {
     // MARK: - Syntax highlighting
 
     private var monoFont: Font {
-        .system(size: settings.fontSize, design: .monospaced)
+        settings.typography.font(Typography.referenceSize, design: .monospaced)
     }
 
     @ViewBuilder

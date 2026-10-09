@@ -10,6 +10,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
     // whenever the pane width changes enough to change the wrap-column count.
     var diff: FileDiff?
     var font: NSFont?
+    var lineSpacing: Double = 1
     var theme: DiffColors?
     var onExpandContext: ((ContextExpansionRequest) -> Void)?
     var revealFeedback: ContextExpansionReveal?
@@ -19,6 +20,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
     private struct RenderInputs: Equatable {
         let lines: [DiffLine]
         let font: NSFont
+        let lineSpacing: Double
         let theme: DiffColors
         let enablesContextExpansion: Bool
         let oldCols: UInt32
@@ -114,6 +116,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
         let inputs = RenderInputs(
             lines: diff.lines,
             font: font,
+            lineSpacing: lineSpacing,
             theme: theme,
             enablesContextExpansion: onExpandContext != nil,
             oldCols: oldCols,
@@ -135,6 +138,9 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
         left: PaneViews,
         right: PaneViews
     ) {
+        for manager in [left.textLayout, left.gutterLayout, right.textLayout, right.gutterLayout] {
+            manager.setLineSpacing(lineSpacing, for: font)
+        }
         let leftAnchor = left.container.captureViewportAnchor()
         let rightAnchor = right.container.captureViewportAnchor()
         let gutterParagraphStyle = NSMutableParagraphStyle()

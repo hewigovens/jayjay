@@ -2,7 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct DescriptionPreview: View {
-    @Environment(\.jayjayFontSize) private var baseFontSize
+    @Environment(\.jayjayTypography) private var typography
     let description: String
     let collapsedHeight: CGFloat
     let expandedHeight: CGFloat
@@ -42,7 +42,7 @@ struct DescriptionPreview: View {
             if !details.isEmpty {
                 DescriptionBodyPreview(
                     text: details,
-                    collapsedHeight: min(collapsedHeight, PaneLayout.fileRowHeight(baseFontSize: baseFontSize) - 12),
+                    collapsedHeight: min(collapsedHeight, PaneLayout.fileRowHeight(scale: typography.interfaceScale) - 12),
                     expandedHeight: expandedHeight, expanded: expanded
                 )
                 .padding(.vertical, 6)

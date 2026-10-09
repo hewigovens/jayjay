@@ -5,15 +5,14 @@ struct DescriptionBodyPreview: NSViewRepresentable {
     let collapsedHeight: CGFloat
     let expandedHeight: CGFloat
     let expanded: Bool
-    @Environment(\.jayjayFontSize) private var baseFontSize
-    @Environment(\.jayjayFontFamily) private var fontFamily
+    @Environment(\.jayjayTypography) private var typography
 
     func makeNSView(context _: Context) -> DescriptionScrollView {
         DescriptionScrollView()
     }
 
     func updateNSView(_ view: DescriptionScrollView, context _: Context) {
-        view.setDescription(text, font: fontFamily.scaledNSFont(12, baseSize: baseFontSize))
+        view.setDescription(text, font: typography.nsFont(12))
         view.setExpanded(expanded)
     }
 

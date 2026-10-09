@@ -1,4 +1,5 @@
 import AppKit
+import JayJayDiffUI
 
 final class CodeLineNumberRuler: NSRulerView {
     private var numbersByCharacter = [0: 1]
@@ -47,8 +48,13 @@ final class CodeLineNumberRuler: NSRulerView {
     func lineLabels(in rect: NSRect) -> [(number: Int, origin: NSPoint)] {
         guard let textView = clientView as? NSTextView,
               let layout = textView.layoutManager, let container = textView.textContainer else { return [] }
-        let origin = textView.textContainerOrigin
-        let containerRect = rect.offsetBy(dx: -origin.x, dy: -origin.y)
+        let containerOrigin = textView.textContainerOrigin
+        let containerRect = rect.offsetBy(dx: -containerOrigin.x, dy: -containerOrigin.y)
+        // Line spacing centers text in a taller fragment; shift labels by the same amount.
+        let origin = NSPoint(
+            x: containerOrigin.x,
+            y: containerOrigin.y + ((layout as? LineSpacingLayoutManager)?.extraLineHeight ?? 0) / 2
+        )
         layout.ensureLayout(forBoundingRect: containerRect, in: container)
         let glyphs = layout.glyphRange(forBoundingRect: containerRect, in: container)
         var labels: [(number: Int, origin: NSPoint)] = []
