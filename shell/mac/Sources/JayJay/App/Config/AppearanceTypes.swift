@@ -31,9 +31,8 @@ extension AppSettings {
         let rawValue: String
 
         init?(rawValue: String) {
-            let id = Self.canonicalId(rawValue)
-            guard Self.option(for: id) != nil else { return nil }
-            self.rawValue = id
+            guard !rawValue.isEmpty else { return nil }
+            self.rawValue = Self.canonicalId(rawValue)
         }
 
         private init(validatedRawValue: String) {
@@ -81,7 +80,7 @@ extension AppSettings {
         }
 
         private var fontNames: [String] {
-            option?.fontNames ?? []
+            option?.fontNames ?? [rawValue]
         }
 
         private func resolvedFont(size: CGFloat) -> NSFont? {

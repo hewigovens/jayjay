@@ -1,7 +1,9 @@
 use font_kit::family_name::FamilyName;
+use font_kit::font::Font;
+use font_kit::handle::Handle;
 use font_kit::properties::Properties;
 use font_kit::source::SystemSource;
-use jayjay_core::MONO_FONT_FALLBACK_NAMES;
+use jayjay_core::{MONO_FONT_FALLBACK_NAMES, is_user_font_path};
 
 pub(super) fn platform_default_mono() -> String {
     default_mono_from(MONO_FONT_FALLBACK_NAMES)
@@ -23,11 +25,45 @@ fn system_monospace() -> Option<String> {
         .map(|font| font.family_name())
 }
 
+pub(crate) fn user_mono_families() -> Vec<String> {
+    let source = SystemSource::new();
+    source
+        .all_families()
+        .unwrap_or_default()
+        .into_iter()
+        .filter(|family| is_user_mono_family(&source, family))
+        .collect()
+}
+
+fn is_user_mono_family(source: &SystemSource, family: &str) -> bool {
+    let Ok(handles) = source.select_family_by_name(family) else {
+        return false;
+    };
+    let Some(handle @ Handle::Path { path, .. }) = handles.fonts().first() else {
+        return false;
+    };
+    is_user_font_path(path) && handle.load().is_ok_and(|font| has_fixed_advances(&font))
+}
+
+/// The fixed-pitch flag misses some mono fonts (Nerd Font patches), so compare advances.
+fn has_fixed_advances(font: &Font) -> bool {
+    let mut advances = "iMW.0".chars().map(|ch| {
+        let glyph = font.glyph_for_char(ch)?;
+        font.advance(glyph).ok().map(|advance| advance.x())
+    });
+    let Some(Some(first)) = advances.next() else {
+        return false;
+    };
+    advances.all(|advance| advance.is_some_and(|width| (width - first).abs() < 0.01))
+}
+
 #[cfg(test)]
 mod tests {
+    use font_kit::family_name::FamilyName;
+    use font_kit::properties::Properties;
     use font_kit::source::SystemSource;
 
-    use super::default_mono_from;
+    use super::{default_mono_from, has_fixed_advances};
 
     #[test]
     fn missing_candidates_resolve_to_an_installed_family() {
@@ -37,5 +73,18 @@ mod tests {
             SystemSource::new().select_family_by_name(&family).is_ok(),
             "{family} is not an installed family"
         );
+    }
+
+    #[test]
+    fn fixed_advances_separate_monospace_from_sans_serif() {
+        let load = |family| {
+            SystemSource::new()
+                .select_best_match(&[family], &Properties::new())
+                .expect("generic family resolves")
+                .load()
+                .expect("generic family loads")
+        };
+        assert!(has_fixed_advances(&load(FamilyName::Monospace)));
+        assert!(!has_fixed_advances(&load(FamilyName::SansSerif)));
     }
 }

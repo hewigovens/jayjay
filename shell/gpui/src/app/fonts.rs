@@ -2,7 +2,10 @@ use std::sync::{OnceLock, RwLock};
 
 use font_kit::source::SystemSource;
 use gpui::{App, Pixels, Styled, font, px};
-use jayjay_core::{MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID, mono_font_option};
+use jayjay_core::{
+    MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID, mono_font_option,
+    mono_font_option_named, my_mono_font_families,
+};
 
 use crate::app::config::AppConfig;
 use crate::app::theme::ui_font_size;
@@ -77,6 +80,10 @@ pub(crate) fn mono_font_choices() -> Vec<MonoFontChoice> {
         .collect()
 }
 
+pub(crate) fn my_mono_fonts() -> Vec<String> {
+    my_mono_font_families(platform::user_mono_families())
+}
+
 pub(crate) fn mono_preference_id(preference: &str) -> String {
     matched_option(preference)
         .map(|option| option.id.to_owned())
@@ -116,11 +123,7 @@ fn matched_option(preference: &str) -> Option<&'static MonoFontOption> {
     if preference.is_empty() {
         return mono_font_option(SYSTEM_MONO_FONT_ID);
     }
-    mono_font_option(preference).or_else(|| {
-        MONO_FONT_OPTIONS
-            .iter()
-            .find(|option| option.title == preference || option.font_names.contains(&preference))
-    })
+    mono_font_option_named(preference)
 }
 
 fn mono_option_title(option: &MonoFontOption) -> &str {

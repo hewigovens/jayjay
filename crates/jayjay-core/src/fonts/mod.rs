@@ -1,3 +1,6 @@
+use std::collections::BTreeMap;
+use std::path::Path;
+
 mod platform;
 
 pub use platform::{MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS};
@@ -13,6 +16,30 @@ pub const SYSTEM_MONO_FONT_ID: &str = "system";
 
 pub fn mono_font_option(id: &str) -> Option<&'static MonoFontOption> {
     MONO_FONT_OPTIONS.iter().find(|option| option.id == id)
+}
+
+pub fn mono_font_option_named(name: &str) -> Option<&'static MonoFontOption> {
+    mono_font_option(name).or_else(|| {
+        MONO_FONT_OPTIONS
+            .iter()
+            .find(|option| option.title == name || option.font_names.contains(&name))
+    })
+}
+
+pub fn is_user_font_path(path: &Path) -> bool {
+    platform::user_font_dirs()
+        .iter()
+        .any(|dir| path.starts_with(dir))
+}
+
+pub fn my_mono_font_families(families: impl IntoIterator<Item = String>) -> Vec<String> {
+    families
+        .into_iter()
+        .filter(|family| mono_font_option_named(family).is_none())
+        .map(|family| (family.to_lowercase(), family))
+        .collect::<BTreeMap<_, _>>()
+        .into_values()
+        .collect()
 }
 
 pub(crate) const SYSTEM_MONO: MonoFontOption = MonoFontOption {
@@ -120,6 +147,36 @@ mod tests {
             MONO_FONT_OPTIONS.first().map(|option| option.id),
             Some(SYSTEM_MONO_FONT_ID)
         );
+    }
+
+    #[test]
+    fn my_fonts_drop_curated_families_and_sort_case_insensitively() {
+        let families = my_mono_font_families(
+            [
+                "paper Mono",
+                "Fira Code",
+                "JetBrainsMono-Regular",
+                "Ab Mono",
+                "Ab Mono",
+            ]
+            .map(str::to_owned),
+        );
+        assert_eq!(families, ["Ab Mono", "paper Mono"]);
+    }
+
+    #[test]
+    fn user_font_dirs_are_user_fonts() {
+        for dir in platform::user_font_dirs() {
+            assert!(is_user_font_path(&dir.join("Paper Mono.otf")));
+        }
+        #[cfg(target_os = "macos")]
+        assert!(!is_user_font_path(Path::new(
+            "/System/Library/Fonts/Menlo.ttc"
+        )));
+        #[cfg(target_os = "linux")]
+        assert!(!is_user_font_path(Path::new(
+            "/usr/share/fonts/TTF/DejaVuSansMono.ttf"
+        )));
     }
 
     #[test]

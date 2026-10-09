@@ -20,3 +20,13 @@ fn mono_font_options() -> Vec<MonoFontOption> {
         })
         .collect()
 }
+
+#[uniffi::export]
+fn is_user_font_path(path: String) -> bool {
+    jayjay_core::is_user_font_path(std::path::Path::new(&path))
+}
+
+#[uniffi::export]
+fn my_mono_font_families(families: Vec<String>) -> Vec<String> {
+    jayjay_core::my_mono_font_families(families)
+}

@@ -2,6 +2,7 @@ import SwiftUI
 
 struct SettingsAppearancePage: View {
     @Environment(AppSettings.self) private var settings
+    @State private var myFonts: [AppSettings.MonoFont] = []
 
     var body: some View {
         Form {
@@ -31,12 +32,24 @@ struct SettingsAppearancePage: View {
                     get: { settings.fontFamily },
                     set: { settings.fontFamily = $0 }
                 )) {
-                    ForEach(AppSettings.MonoFont.allCases.filter(\.isInstalled)) { font in
+                    let curated = AppSettings.MonoFont.allCases.filter(\.isInstalled)
+                    ForEach(curated) { font in
                         Text(font.title).tag(font)
+                    }
+                    if !myFonts.isEmpty {
+                        Section("My Fonts") {
+                            ForEach(myFonts) { font in
+                                Text(font.title).tag(font)
+                            }
+                        }
+                    }
+                    if !curated.contains(settings.fontFamily), !myFonts.contains(settings.fontFamily) {
+                        Text(settings.fontFamily.title).tag(settings.fontFamily)
                     }
                 } label: {
                     SettingsLabel("Family", icon: "textformat")
                 }
+                .task { myFonts = AppSettings.MonoFont.installedMyFonts() }
 
                 HStack {
                     SettingsLabel("Size", icon: "textformat.size")

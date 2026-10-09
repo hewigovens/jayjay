@@ -1,3 +1,5 @@
+use std::path::PathBuf;
+
 use super::super::{
     CASCADIA_CODE, FIRA_CODE, GOOGLE_SANS_MONO, HACK, INCONSOLATA, IOSKELEY_MONO,
     IOSKELEY_MONO_NL_NERD_FONT, JETBRAINS_MONO, MonoFontOption, ROBOTO_MONO, SOURCE_CODE_PRO,
@@ -62,3 +64,9 @@ pub const MONO_FONT_FALLBACK_NAMES: &[&str] = &[
     "Menlo",
     "Monaco",
 ];
+
+pub fn user_font_dirs() -> Vec<PathBuf> {
+    let mut dirs = vec![PathBuf::from("/Library/Fonts")];
+    dirs.extend(std::env::home_dir().map(|home| home.join("Library/Fonts")));
+    dirs
+}

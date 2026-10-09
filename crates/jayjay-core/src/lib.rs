@@ -52,7 +52,7 @@ pub use file_display::MAX_IMAGE_BYTES;
 pub use filesystem::write_atomically;
 pub use fonts::{
     MONO_FONT_FALLBACK_NAMES, MONO_FONT_OPTIONS, MonoFontOption, SYSTEM_MONO_FONT_ID,
-    mono_font_option,
+    is_user_font_path, mono_font_option, mono_font_option_named, my_mono_font_families,
 };
 #[cfg(feature = "repository")]
 pub use jj_command::{JjCommand, JjCommandResult};

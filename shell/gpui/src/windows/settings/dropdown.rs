@@ -15,6 +15,7 @@ use crate::ui::icons::{self, glyph};
 pub(super) struct OpenDropdown {
     pub field_id: SharedString,
     pub anchor: Point<Pixels>,
+    options: Vec<DropdownOption>,
 }
 
 pub(super) fn dropdown_overlay(
@@ -23,7 +24,7 @@ pub(super) fn dropdown_overlay(
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
     let cfg = current_cfg(cx);
-    let Some((options, current)) = dropdown_options(state.field_id.as_ref(), &cfg) else {
+    let Some(current) = dropdown_current(state.field_id.as_ref(), &cfg) else {
         return div().into_any_element();
     };
     let field_id = state.field_id.clone();
@@ -50,7 +51,12 @@ pub(super) fn dropdown_overlay(
         .rounded(px(14.))
         .shadow(popup_shadow(t));
 
-    for option in options {
+    let mut group = None;
+    for option in state.options {
+        if option.group != group {
+            group = option.group;
+            panel = panel.children(group.map(|title| dropdown_group_header(title, t)));
+        }
         let is_selected = current == option.id;
         panel = panel.child(dropdown_row(
             &field_id,
@@ -125,28 +131,39 @@ pub(super) fn dropdown_button(
 struct DropdownOption {
     id: String,
     label: String,
+    group: Option<&'static str>,
 }
 
-fn dropdown_options(
-    field_id: &str,
-    cfg: &crate::app::config::AppConfig,
-) -> Option<(Vec<DropdownOption>, String)> {
+fn dropdown_options(field_id: &str) -> Vec<DropdownOption> {
     match field_id {
-        "editor" => Some((
-            static_options(EDITOR_OPTIONS),
-            cfg.tools.external_editor.clone(),
-        )),
-        "terminal" => Some((static_options(TERMINAL_OPTIONS), cfg.tools.terminal.clone())),
-        "font-family" => Some((
-            fonts::mono_font_choices()
+        "editor" => static_options(EDITOR_OPTIONS),
+        "terminal" => static_options(TERMINAL_OPTIONS),
+        "font-family" => {
+            let curated = fonts::mono_font_choices()
                 .into_iter()
                 .map(|choice| DropdownOption {
                     id: choice.id,
                     label: choice.title,
-                })
-                .collect(),
-            fonts::mono_preference_id(&cfg.font_family),
-        )),
+                    group: None,
+                });
+            let my_fonts = fonts::my_mono_fonts()
+                .into_iter()
+                .map(|family| DropdownOption {
+                    id: family.clone(),
+                    label: family,
+                    group: Some("My Fonts"),
+                });
+            curated.chain(my_fonts).collect()
+        }
+        _ => Vec::new(),
+    }
+}
+
+fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Option<String> {
+    match field_id {
+        "editor" => Some(cfg.tools.external_editor.clone()),
+        "terminal" => Some(cfg.tools.terminal.clone()),
+        "font-family" => Some(fonts::mono_preference_id(&cfg.font_family)),
         _ => None,
     }
 }
@@ -157,6 +174,7 @@ fn static_options(options: &[(&str, &str)]) -> Vec<DropdownOption> {
         .map(|(id, label)| DropdownOption {
             id: (*id).to_owned(),
             label: (*label).to_owned(),
+            group: None,
         })
         .collect()
 }
@@ -222,6 +240,17 @@ fn dropdown_row(
         .into_any_element()
 }
 
+fn dropdown_group_header(title: &'static str, t: &Theme) -> AnyElement {
+    div()
+        .px(px(10.))
+        .pt(px(8.))
+        .pb(px(2.))
+        .text_size(ui_font_size(11.))
+        .text_color(rgb(t.fg_dim))
+        .child(title)
+        .into_any_element()
+}
+
 fn selection_checkmark(is_selected: bool) -> AnyElement {
     let checkmark = if is_selected {
         icons::icon(glyph::CHECK, 15., 0xffffff).into_any_element()
@@ -274,7 +303,12 @@ impl SettingsView {
         anchor: Point<Pixels>,
         cx: &mut Context<Self>,
     ) {
-        self.open_dropdown = Some(OpenDropdown { field_id, anchor });
+        let options = dropdown_options(field_id.as_ref());
+        self.open_dropdown = Some(OpenDropdown {
+            field_id,
+            anchor,
+            options,
+        });
         cx.notify();
     }
 

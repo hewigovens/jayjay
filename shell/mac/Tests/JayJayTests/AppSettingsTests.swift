@@ -70,6 +70,20 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(AppSettings.MonoFont.allCases.map(\.title), coreOptions.map(\.title))
     }
 
+    func testInstalledFamilyNamePersistsAsPreference() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        settings.fontFamily = try XCTUnwrap(AppSettings.MonoFont(rawValue: "Courier New"))
+        let restored = AppSettings(defaults: defaults)
+        XCTAssertEqual(restored.fontFamily.rawValue, "Courier New")
+        XCTAssertEqual(restored.fontFamily.title, "Courier New")
+        XCTAssertEqual(restored.fontFamily.nsFont(size: 12).familyName, "Courier New")
+        XCTAssertNil(AppSettings.MonoFont(rawValue: ""))
+    }
+
     func testLegacyIoskeleyNerdFontIdCanonicalizes() {
         XCTAssertEqual(
             AppSettings.MonoFont(rawValue: "ioskeleymono-nl-nerd-font")?.rawValue,
