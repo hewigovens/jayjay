@@ -142,6 +142,17 @@ fn revset_bar_edits_in_place_and_resets(cx: &mut TestAppContext) {
         assert_eq!(view.view_model().read(cx).revset(), default_revset);
     });
     assert!(cx.debug_bounds("revset-reset").is_none());
+
+    click(cx, "revset-presets");
+    click(cx, "revset-popup-forget-@ | trunk()");
+    assert!(view.read_with(cx, |view, _| view.revset_popup_open()));
+    assert!(
+        cx.debug_bounds("revset-popup-row-Recent-@ | trunk()")
+            .is_none()
+    );
+    view.read_with(cx, |view, cx| {
+        assert!(view.view_model().read(cx).revset_filter.recent.is_empty());
+    });
 }
 
 #[gpui::test]
@@ -311,7 +322,7 @@ fn show_ancestors_preserves_target_and_returns_to_custom_filter(cx: &mut TestApp
     settle_visual(cx);
     assert!(cx.debug_bounds("revset-back").is_some());
     view.update(cx, |view, cx| {
-        view.dispatch_context_action(ContextAction::FilterBookmarkRevset("trunk()".into()), cx);
+        view.dispatch_context_action(ContextAction::FilterRevset("trunk()".into()), cx);
     });
     settle_visual(cx);
     assert!(cx.debug_bounds("revset-back").is_none());

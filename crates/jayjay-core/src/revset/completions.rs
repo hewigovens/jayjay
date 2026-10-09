@@ -1,6 +1,6 @@
 use std::collections::HashSet;
 
-use super::expressions::symbol_text;
+use super::expressions::{symbol_text, workspace_head_revset};
 use super::functions::FUNCTIONS;
 use crate::utf16::{byte_offset, utf16_offset};
 
@@ -12,6 +12,7 @@ pub enum RevsetCompletionKind {
     Alias,
     Bookmark,
     Tag,
+    Workspace,
 }
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -59,6 +60,14 @@ impl RevsetName {
             None => Self::bare(name),
         }
     }
+
+    /// A workspace, offered as its working-copy symbol.
+    pub(crate) fn workspace(name: &str) -> Self {
+        Self {
+            name: format!("{name}@"),
+            symbol: workspace_head_revset(name),
+        }
+    }
 }
 
 /// What a position can offer besides jj's built-in functions; both shells load it with the repository.
@@ -67,6 +76,7 @@ pub struct RevsetVocabulary {
     pub aliases: Vec<RevsetName>,
     pub bookmarks: Vec<RevsetName>,
     pub tags: Vec<RevsetName>,
+    pub workspaces: Vec<RevsetName>,
 }
 
 /// Candidates that fit the symbol the cursor sits in, matched on the part before the cursor, each replacing the whole symbol.
@@ -86,6 +96,7 @@ pub fn revset_completions(
         (RevsetCompletionKind::Alias, &vocabulary.aliases),
         (RevsetCompletionKind::Bookmark, &vocabulary.bookmarks),
         (RevsetCompletionKind::Tag, &vocabulary.tags),
+        (RevsetCompletionKind::Workspace, &vocabulary.workspaces),
     ]
     .into_iter()
     .flat_map(|(kind, names)| {
@@ -203,6 +214,10 @@ mod tests {
                 RevsetName::bookmark("main", None),
             ],
             tags: vec![RevsetName::bare("v1.0.0")],
+            workspaces: vec![
+                RevsetName::workspace("my-font"),
+                RevsetName::workspace("my font"),
+            ],
         }
     }
 
@@ -237,6 +252,18 @@ mod tests {
             completions("mine() | fix@or", 15),
             [(RevsetCompletionKind::Bookmark, "fix@origin".to_owned())],
             "a remote bookmark is one token"
+        );
+        assert_eq!(
+            completions("trunk()..my-f", 13),
+            [(RevsetCompletionKind::Workspace, "my-font@".to_owned())]
+        );
+        assert_eq!(
+            completions("my", 2),
+            [
+                (RevsetCompletionKind::Workspace, "\"my font\"@".to_owned()),
+                (RevsetCompletionKind::Workspace, "my-font@".to_owned()),
+            ],
+            "a workspace that needs quotes matches on its name"
         );
     }
 

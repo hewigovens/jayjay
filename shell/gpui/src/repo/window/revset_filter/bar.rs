@@ -78,10 +78,10 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
     }
     let presets = bar_icon(
         "revset-presets",
-        if filter.kind == RevsetFilterKind::Bookmark {
-            glyph::BOOKMARK
-        } else {
-            glyph::FILTER
+        match filter.kind {
+            RevsetFilterKind::Bookmark => glyph::BOOKMARK,
+            RevsetFilterKind::Workspace => glyph::COLUMNS,
+            _ => glyph::FILTER,
         },
         None,
         if narrowed {
@@ -180,7 +180,10 @@ fn summary(
                 .child(SharedString::from(filter.label.clone())),
         );
     }
-    if filter.kind != RevsetFilterKind::Bookmark {
+    if !matches!(
+        filter.kind,
+        RevsetFilterKind::Bookmark | RevsetFilterKind::Workspace
+    ) {
         summary = summary.child(
             div()
                 .min_w_0()

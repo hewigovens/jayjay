@@ -156,7 +156,7 @@ fn revealing_actions_unhide_the_sidebar(cx: &mut TestAppContext) {
     view.update_in(cx, |view, _, cx| view.toggle_sidebar(cx));
     settle_slide(cx);
     view.update_in(cx, |view, _, cx| {
-        view.dispatch_context_action(ContextAction::FilterBookmarkRevset("all()".into()), cx);
+        view.dispatch_context_action(ContextAction::FilterRevset("all()".into()), cx);
     });
     settle_visual(cx);
     assert!(sidebar_visible(cx), "applying a revset reveals the sidebar");

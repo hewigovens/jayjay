@@ -50,6 +50,7 @@ pub enum RevsetCompletionKind {
     Alias,
     Bookmark,
     Tag,
+    Workspace,
 }
 
 #[uniffi::remote(Record)]
@@ -71,12 +72,14 @@ pub struct RevsetVocabulary {
     pub aliases: Vec<RevsetName>,
     pub bookmarks: Vec<RevsetName>,
     pub tags: Vec<RevsetName>,
+    pub workspaces: Vec<RevsetName>,
 }
 
 #[uniffi::remote(Enum)]
 pub enum RevsetSuggestionKind {
     Current,
     Bookmark,
+    Workspace,
     Recent,
 }
 
@@ -92,6 +95,7 @@ pub enum RevsetFilterKind {
     Default,
     Preset,
     Bookmark,
+    Workspace,
     Custom,
 }
 

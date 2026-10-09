@@ -136,12 +136,12 @@ extension DAGRow {
             .foregroundStyle(AppColors.workspace(colorScheme))
             .help("Working copy of the \(name) workspace")
             .accessibilityLabel("Workspace \(name)")
-        if let workspace = workspacesByName[name] {
-            chip.contextMenu {
+        chip.contextMenu {
+            Button("Filter by This Workspace") { actions?.filterByWorkspace(name: name) }
+            if let workspace = workspacesByName[name] {
+                Divider()
                 WorkspaceMenuItems(workspace: workspace) { onRequest?(.openWorkspace(workspace)) }
             }
-        } else {
-            chip
         }
     }
 

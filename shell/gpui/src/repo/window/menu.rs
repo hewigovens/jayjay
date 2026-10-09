@@ -200,7 +200,7 @@ impl RepoWindow {
                 self.vm
                     .update(cx, |vm, cx| vm.compare_bookmark_diff(request, cx));
             }
-            ContextAction::FilterBookmarkRevset(revset) => self.filter_bookmark_revset(&revset, cx),
+            ContextAction::FilterRevset(revset) => self.filter_revset(&revset, cx),
             ContextAction::TrackBookmark { name, remote } => {
                 self.close_bookmark_picker(cx);
                 let task = self.vm.update(cx, |vm, cx| {

@@ -2,6 +2,7 @@ use crate::harness::*;
 use gpui::{
     AppContext, Entity, Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext,
 };
+use jayjay_core::workspace_filter_revset;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -242,6 +243,31 @@ fn workspace_chip_menu_acts_on_that_workspace(cx: &mut TestAppContext) {
             .and_then(|item| item.text()),
         Some(listed_path)
     );
+
+    let chip = repo_cx
+        .debug_bounds("dag-workspace-feature-chip")
+        .expect("workspace chip");
+    repo_cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(repo_cx);
+    let filter = repo_cx
+        .debug_bounds("context-menu-Filter by This Workspace")
+        .expect("filter menu item");
+    repo_cx.simulate_click(filter.center(), Modifiers::default());
+    settle_visual(repo_cx);
+    view.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.revset(),
+            workspace_filter_revset("feature-chip").as_str()
+        );
+        assert!(vm.error.is_none(), "{:?}", vm.error);
+        assert!(
+            vm.graph
+                .changes
+                .iter()
+                .any(|change| change.workspaces == ["feature-chip"])
+        );
+    });
 
     view.update_in(repo_cx, |view, _, cx| {
         view.view_model().update(cx, |vm, _| {

@@ -51,7 +51,7 @@ impl RepoWindow {
         }
     }
 
-    pub(super) fn filter_bookmark_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+    pub(super) fn filter_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         self.close_bookmark_picker(cx);
         self.apply_revset(revset, cx);
     }

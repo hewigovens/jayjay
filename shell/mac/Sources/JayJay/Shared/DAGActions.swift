@@ -22,6 +22,7 @@ protocol DAGActions: AnyObject {
     func diffBookmark(_ request: BookmarkDiffRequest)
     func showEvolog(rev: String)
     func updateStaleWorkspace()
+    func filterByWorkspace(name: String)
     var canLoadMore: Bool { get }
     var fixUnavailableReason: String? { get }
     func loadMore()

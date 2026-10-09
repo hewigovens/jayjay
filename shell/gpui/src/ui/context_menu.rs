@@ -53,7 +53,7 @@ pub enum ContextAction {
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
     ShowBookmarkDiff(BookmarkDiffRequest),
-    FilterBookmarkRevset(SharedString),
+    FilterRevset(SharedString),
     TrackBookmark {
         name: String,
         remote: String,

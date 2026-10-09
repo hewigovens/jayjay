@@ -103,7 +103,7 @@ pub(super) fn bookmark_row(
                         ContextMenuItem::new(
                             "Filter by This Bookmark",
                             glyph::FILTER,
-                            ContextAction::FilterBookmarkRevset(target.revset.clone().into()),
+                            ContextAction::FilterRevset(target.revset.clone().into()),
                         )
                     })
                     .collect();

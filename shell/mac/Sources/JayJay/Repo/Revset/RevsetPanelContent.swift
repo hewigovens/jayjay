@@ -9,6 +9,7 @@ struct RevsetPanelContent: View {
 
     let actions: any RevsetActions
     let bookmarks: [BookmarkInfo]
+    let workspaces: [String]
     let vocabulary: RevsetVocabulary
     let onDismiss: () -> Void
     private let revset: String
@@ -26,6 +27,7 @@ struct RevsetPanelContent: View {
     init(
         actions: any RevsetActions,
         bookmarks: [BookmarkInfo],
+        workspaces: [String],
         vocabulary: RevsetVocabulary,
         query: String = "",
         error: String? = nil,
@@ -33,6 +35,7 @@ struct RevsetPanelContent: View {
     ) {
         self.actions = actions
         self.bookmarks = bookmarks
+        self.workspaces = workspaces
         self.vocabulary = vocabulary
         self.onDismiss = onDismiss
         revset = actions.revsetFilter.revset
@@ -49,7 +52,7 @@ struct RevsetPanelContent: View {
     }
 
     private var rows: [RevsetSuggestion] {
-        revsetSuggestions(query: query, state: actions.revsetFilter, bookmarks: bookmarks)
+        revsetSuggestions(query: query, state: actions.revsetFilter, bookmarks: bookmarks, workspaces: workspaces)
     }
 
     var body: some View {
@@ -69,6 +72,7 @@ struct RevsetPanelContent: View {
                     }
                     section("Current", rows.filter { $0.kind == .current })
                     section("Bookmarks", rows.filter { $0.kind == .bookmark })
+                    section("Workspaces", rows.filter { $0.kind == .workspace })
                     section("Recent", rows.filter { $0.kind == .recent })
                     if rows.isEmpty, completions.isEmpty {
                         Text("Return applies it as a revset")
@@ -192,18 +196,36 @@ struct RevsetPanelContent: View {
                 }
                 Spacer(minLength: 0)
             }
-            .padding(.horizontal, 14)
+            .padding(.leading, 14)
+            .padding(.trailing, row.kind == .recent ? 34 : 14)
             .padding(.vertical, 6)
             .frame(minHeight: Self.rowHeight)
             .contentShape(Rectangle())
         }
         .buttonStyle(.plain)
+        .accessibilityIdentifier(AID.Picker.row(row.id))
+        .overlay(alignment: .trailing) {
+            if row.kind == .recent {
+                Button {
+                    forget(row)
+                } label: {
+                    Image(systemName: "xmark")
+                        .imageScale(.small)
+                        .foregroundStyle(.tertiary)
+                        .frame(width: 22, height: 22)
+                        .contentShape(Rectangle())
+                }
+                .buttonStyle(.plain)
+                .padding(.trailing, 10)
+                .help("Remove from Recent")
+                .accessibilityLabel("Remove \(row.title) from Recent")
+            }
+        }
         .background(
             RoundedRectangle(cornerRadius: 6)
                 .fill(isSelected ? Color.accentColor.opacity(0.15) : .clear)
                 .padding(.horizontal, 6)
         )
-        .accessibilityIdentifier(AID.Picker.row(row.id))
     }
 
     private var footer: some View {
@@ -226,11 +248,11 @@ struct RevsetPanelContent: View {
         return rows[index]
     }
 
-    /// A bookmark typed as the whole query is left to the Bookmarks rows, which match on the whole query.
+    /// A bookmark or workspace typed as the whole query is left to the panel's own rows, which match on the whole query.
     private func caretMoved(text: String, caret: Int) {
         let wholeQuery = UInt32(text.utf16.count)
         completions = revsetCompletions(text: text, cursor: UInt32(caret), vocabulary: vocabulary)
-            .filter { $0.kind != .bookmark || $0.len != wholeQuery }
+            .filter { ($0.kind != .bookmark && $0.kind != .workspace) || $0.len != wholeQuery }
     }
 
     private func accept(_ completion: RevsetCompletion) {
@@ -288,6 +310,11 @@ struct RevsetPanelContent: View {
         }
     }
 
+    private func forget(_ row: RevsetSuggestion) {
+        selectedIndex = nil
+        actions.forgetRecentRevset(row.revset)
+    }
+
     private func apply(_ revset: String) {
         onDismiss()
         actions.applyFilter(revset)
@@ -303,6 +330,7 @@ private extension RevsetSuggestion {
         switch kind {
             case .current: nil
             case .bookmark: "bookmark"
+            case .workspace: "folder"
             case .recent: "clock"
         }
     }

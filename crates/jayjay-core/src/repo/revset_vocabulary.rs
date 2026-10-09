@@ -9,7 +9,17 @@ impl Repo {
             aliases: self.revset_aliases(),
             bookmarks: bookmark_names(bookmarks),
             tags: self.tag_names(),
+            workspaces: self.workspace_names(),
         }
+    }
+
+    fn workspace_names(&self) -> Vec<RevsetName> {
+        self.get_repo()
+            .view()
+            .wc_commit_ids()
+            .keys()
+            .map(|name| RevsetName::workspace(name.as_str()))
+            .collect()
     }
 
     fn tag_names(&self) -> Vec<RevsetName> {

@@ -71,7 +71,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var bookmarks: [BookmarkInfo] = []
     var tags: [TagInfo] = []
     /// Refs, tags and aliases the revset bar completes from; loaded with the graph, not on each keystroke.
-    var revsetVocabulary = RevsetVocabulary(aliases: [], bookmarks: [], tags: [])
+    var revsetVocabulary = RevsetVocabulary(aliases: [], bookmarks: [], tags: [], workspaces: [])
     var workspacesByName: [String: WorkspaceInfo] {
         Dictionary(uniqueKeysWithValues: workspaces.map { ($0.name, $0) })
     }

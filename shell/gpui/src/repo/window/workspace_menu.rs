@@ -1,5 +1,5 @@
 use gpui::App;
-use jayjay_core::WorkspaceInfo;
+use jayjay_core::{WorkspaceInfo, workspace_filter_revset};
 
 use super::RepoWindow;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
@@ -30,15 +30,24 @@ pub(super) fn workspace_open_copy_items(workspace: &WorkspaceInfo) -> Vec<Contex
 }
 
 impl RepoWindow {
-    /// No menu when the listing has no workspace of that name; a chip carries only the name.
+    /// Open and copy need the listing's workspace of that name; a chip carries only the name.
     pub(super) fn build_workspace_chip_menu(&self, name: &str, cx: &App) -> Vec<ContextMenuItem> {
-        self.vm
+        let mut items = vec![ContextMenuItem::new(
+            "Filter by This Workspace",
+            glyph::FILTER,
+            ContextAction::FilterRevset(workspace_filter_revset(name).into()),
+        )];
+        if let Some(workspace) = self
+            .vm
             .read(cx)
             .graph
             .workspaces
             .iter()
             .find(|workspace| workspace.name == name)
-            .map(workspace_open_copy_items)
-            .unwrap_or_default()
+        {
+            items.push(ContextMenuItem::separator());
+            items.extend(workspace_open_copy_items(workspace));
+        }
+        items
     }
 }

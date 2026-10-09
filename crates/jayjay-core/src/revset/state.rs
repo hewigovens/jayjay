@@ -35,6 +35,10 @@ impl RevsetFilterState {
         self.previous = Some(previous);
     }
 
+    pub fn forget_recent(&mut self, revset: &str) {
+        self.recent.retain(|entry| entry != revset);
+    }
+
     pub fn back(&mut self) {
         if let Some(previous) = self.previous.take() {
             self.apply(&previous);

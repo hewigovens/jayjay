@@ -166,6 +166,53 @@ fn bookmark_filter_shows_the_stack_and_check_rejects_what_the_graph_cannot_load(
 }
 
 #[test]
+fn workspace_filter_shows_that_workspace_history_below_trunk_and_completes_its_symbol() {
+    let temp = init_jj_repo();
+    let path = temp.path().join("repo");
+    let repo_str = path.to_str().unwrap();
+    let other = temp.path().join("other");
+    run_jj(&["-R", repo_str, "describe", "-m", "one"]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        r#"revset-aliases."trunk()""#,
+        r#"subject(exact:"one")"#,
+    ]);
+    run_jj(&["-R", repo_str, "new", "-m", "two"]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "workspace",
+        "add",
+        "--name",
+        "my font",
+        "-r",
+        "@",
+        other.to_str().unwrap(),
+    ]);
+    run_jj(&["-R", other.to_str().unwrap(), "describe", "-m", "font work"]);
+    run_jj(&["-R", repo_str, "new", "-m", "after"]);
+    let repo = Repo::open(&path).unwrap();
+
+    let changes = repo
+        .log(&jayjay_core::workspace_filter_revset("my font"))
+        .unwrap();
+    let descriptions: Vec<_> = changes.iter().map(|c| c.description.trim()).collect();
+    assert_eq!(descriptions, ["font work", "two", "one"]);
+
+    let vocabulary = repo.revset_vocabulary(&[]);
+    let symbols: Vec<_> = vocabulary
+        .workspaces
+        .iter()
+        .map(|name| name.symbol.as_str())
+        .collect();
+    assert!(symbols.contains(&"\"my font\"@"), "{symbols:?}");
+}
+
+#[test]
 fn ancestors_filter_includes_merge_parents_but_excludes_other_heads() {
     let temp = init_jj_repo();
     let path = temp.path().join("repo");

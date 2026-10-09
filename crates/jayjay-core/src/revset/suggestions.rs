@@ -1,14 +1,15 @@
-use super::expressions::BookmarkFilterTarget;
+use super::expressions::{BookmarkFilterTarget, workspace_filter_revset};
 use super::state::RevsetFilterState;
 use crate::BookmarkInfo;
 use crate::fuzzy::rank;
 
-const BOOKMARK_MATCH_LIMIT: usize = 5;
+const MATCH_LIMIT: usize = 5;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
 pub enum RevsetSuggestionKind {
     Current,
     Bookmark,
+    Workspace,
     Recent,
 }
 
@@ -30,7 +31,12 @@ impl RevsetSuggestion {
 }
 
 impl RevsetFilterState {
-    pub fn suggestions(&self, query: &str, bookmarks: &[BookmarkInfo]) -> Vec<RevsetSuggestion> {
+    pub fn suggestions(
+        &self,
+        query: &str,
+        bookmarks: &[BookmarkInfo],
+        workspaces: &[String],
+    ) -> Vec<RevsetSuggestion> {
         let query = query.trim();
         let typing = !query.is_empty() && query != self.revset;
         let mut suggestions = Vec::new();
@@ -43,13 +49,27 @@ impl RevsetFilterState {
             suggestions.extend(
                 rank(query, &names)
                     .into_iter()
-                    .take(BOOKMARK_MATCH_LIMIT)
+                    .take(MATCH_LIMIT)
                     .map(|index| &targets[index as usize])
                     .map(|target| {
                         RevsetSuggestion::new(
                             RevsetSuggestionKind::Bookmark,
                             &target.name,
                             &target.revset,
+                        )
+                    }),
+            );
+            let titles: Vec<String> = workspaces.iter().map(|name| format!("{name}@")).collect();
+            suggestions.extend(
+                rank(query, &titles)
+                    .into_iter()
+                    .take(MATCH_LIMIT)
+                    .map(|index| index as usize)
+                    .map(|index| {
+                        RevsetSuggestion::new(
+                            RevsetSuggestionKind::Workspace,
+                            &titles[index],
+                            &workspace_filter_revset(&workspaces[index]),
                         )
                     }),
             );
@@ -83,9 +103,10 @@ mod tests {
         let mut state = RevsetFilterState::new("a()");
         state.apply("::feat");
         state.apply("b()");
+        let workspaces = ["default".to_owned(), "feat-ui".to_owned()];
         let kinds = |query: &str| {
             state
-                .suggestions(query, std::slice::from_ref(&bookmark))
+                .suggestions(query, std::slice::from_ref(&bookmark), &workspaces)
                 .into_iter()
                 .map(|suggestion| (suggestion.kind, suggestion.title))
                 .collect::<Vec<_>>()
@@ -100,9 +121,15 @@ mod tests {
         );
         assert_eq!(kinds("b()"), kinds(""));
         assert_eq!(
+            kinds("feat-ui@"),
+            [(RevsetSuggestionKind::Workspace, "feat-ui@".to_owned())],
+            "the chip's own text finds its workspace"
+        );
+        assert_eq!(
             kinds("feat"),
             [
                 (RevsetSuggestionKind::Bookmark, "feature".to_owned()),
+                (RevsetSuggestionKind::Workspace, "feat-ui@".to_owned()),
                 (RevsetSuggestionKind::Recent, "::feat".to_owned()),
             ]
         );

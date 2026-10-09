@@ -139,6 +139,7 @@ pub(super) fn completion_row(
                     RevsetCompletionKind::Alias => "alias",
                     RevsetCompletionKind::Bookmark => "bookmark",
                     RevsetCompletionKind::Tag => "tag",
+                    RevsetCompletionKind::Workspace => "workspace",
                 }),
         )
         .into_any_element()

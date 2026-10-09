@@ -72,6 +72,10 @@ extension RepoViewModel {
         reloadFilter(revsetFilterBack(state: revsetFilter), selecting: "@")
     }
 
+    func forgetRecentRevset(_ revset: String) {
+        revsetFilter = revsetFilterForgetRecent(state: revsetFilter, revset: revset)
+    }
+
     private func reloadFilter(_ filter: RevsetFilterState, selecting revision: String) {
         revsetFilter = filter
         canLoadMore = Self.canLoadMore(revset: filter.revset, loadedCount: graphEntries.count)
@@ -98,6 +102,10 @@ extension RepoViewModel {
 
     func filterByBookmark(_ target: BookmarkFilterTarget) {
         applyFilter(target.revset)
+    }
+
+    func filterByWorkspace(name: String) {
+        applyFilter(workspaceFilterRevset(name: name))
     }
 
     func revsetError(_ revset: String) -> String? {

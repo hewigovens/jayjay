@@ -4,12 +4,13 @@ use jj_lib::revset::parse_symbol;
 use crate::BookmarkInfo;
 
 const BOOKMARK_STACK_JOIN: &str = " | trunk()..";
+const ANCESTORS_PREFIX: &str = "::";
 const LOCAL_BOOKMARK_PREFIX: &str = "bookmarks(exact:";
 const REMOTE_BOOKMARK_PREFIX: &str = "remote_bookmarks(exact:";
 const REMOTE_BOOKMARK_SEPARATOR: &str = ", exact:";
 
 pub fn ancestors_revset(change_id: &str) -> String {
-    format!("::change_id({change_id})")
+    format!("{ANCESTORS_PREFIX}change_id({change_id})")
 }
 
 /// The name as a revset symbol: bare while jj reads it as one, quoted and escaped otherwise.
@@ -23,6 +24,15 @@ pub(super) fn symbol_text(name: &str) -> String {
 pub fn bookmark_filter_revset(name: &str, remote: Option<&str>) -> String {
     let head = bookmark_head_revset(name, remote);
     format!("{head}{BOOKMARK_STACK_JOIN}{head}")
+}
+
+/// The workspace's working-copy change and all of its history, so the lane keeps trunk below it.
+pub fn workspace_filter_revset(name: &str) -> String {
+    format!("{ANCESTORS_PREFIX}{}", workspace_head_revset(name))
+}
+
+pub(super) fn workspace_head_revset(name: &str) -> String {
+    format!("{}@", symbol_text(name))
 }
 
 /// A bare name fails to resolve while the bookmark is conflicted.
@@ -72,6 +82,13 @@ impl BookmarkFilterTarget {
     }
 }
 
+pub(super) fn workspace_filter_name(revset: &str) -> Option<String> {
+    let symbol = revset.strip_prefix(ANCESTORS_PREFIX)?.strip_suffix('@')?;
+    parse_symbol(symbol)
+        .ok()
+        .filter(|name| symbol_text(name) == symbol)
+}
+
 pub(super) fn bookmark_filter_name(revset: &str) -> Option<String> {
     let (symbol, repeated) = revset.split_once(BOOKMARK_STACK_JOIN)?;
     if symbol != repeated {
@@ -114,6 +131,21 @@ mod tests {
         }
         for other in ["\"a\" | trunk()..\"a\"", "a | trunk()..a", "::main"] {
             assert_eq!(bookmark_filter_name(other), None, "{other}");
+        }
+    }
+
+    #[test]
+    fn workspace_filters_quote_names_and_parse_back_to_them() {
+        assert_eq!(workspace_filter_revset("my-font"), "::my-font@");
+        assert_eq!(workspace_filter_revset("my font"), "::\"my font\"@");
+        for name in ["my-font", "my font"] {
+            assert_eq!(
+                workspace_filter_name(&workspace_filter_revset(name)).as_deref(),
+                Some(name)
+            );
+        }
+        for other in ["::a@origin@", "::change_id(a)", "a@ | trunk()..a@"] {
+            assert_eq!(workspace_filter_name(other), None, "{other}");
         }
     }
 }

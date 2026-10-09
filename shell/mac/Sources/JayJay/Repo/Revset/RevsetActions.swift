@@ -5,6 +5,7 @@ protocol RevsetActions: AnyObject {
     func revsetError(_ revset: String) -> String?
     func applyFilter(_ revset: String, selecting revision: String)
     func returnToPreviousRevset()
+    func forgetRecentRevset(_ revset: String)
 }
 
 extension RevsetActions {

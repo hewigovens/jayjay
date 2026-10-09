@@ -71,6 +71,15 @@ impl RepoWindow {
         cx.notify();
     }
 
+    pub(super) fn forget_recent_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+        self.vm
+            .update(cx, |vm, _| vm.revset_filter.forget_recent(revset));
+        if let Some(popup) = self.revset_popup.as_mut() {
+            popup.query.selected = None;
+        }
+        cx.notify();
+    }
+
     pub(in super::super) fn return_to_previous_revset(&mut self, cx: &mut Context<Self>) {
         self.show_sidebar(cx);
         self.vm
@@ -235,7 +244,7 @@ impl RepoWindow {
         self.revset_completions.is_some() || !self.revset_popup_completions(cx).is_empty()
     }
 
-    /// A bookmark typed as the whole query is left to the popup's own Bookmarks rows, which match on the whole query.
+    /// A bookmark or workspace typed as the whole query is left to the popup's own rows, which match on the whole query.
     pub(in super::super) fn revset_popup_completions(
         &self,
         cx: &gpui::App,
@@ -248,7 +257,10 @@ impl RepoWindow {
         let mut completions =
             completions_at_caret(&popup.query.input, &self.vm.read(cx).vocabulary);
         completions.retain(|completion| {
-            completion.kind != RevsetCompletionKind::Bookmark || completion.len != whole_query
+            !matches!(
+                completion.kind,
+                RevsetCompletionKind::Bookmark | RevsetCompletionKind::Workspace
+            ) || completion.len != whole_query
         });
         completions
     }
@@ -314,8 +326,14 @@ impl RepoWindow {
             return Vec::new();
         };
         let vm = self.vm.read(cx);
+        let workspaces: Vec<String> = vm
+            .graph
+            .workspaces
+            .iter()
+            .map(|workspace| workspace.name.clone())
+            .collect();
         vm.revset_filter
-            .suggestions(popup.query.input.text(), &vm.graph.bookmarks)
+            .suggestions(popup.query.input.text(), &vm.graph.bookmarks, &workspaces)
     }
 
     /// The current revset loads into the field for editing; every other row applies.

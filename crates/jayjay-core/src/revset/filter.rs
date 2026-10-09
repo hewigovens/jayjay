@@ -1,5 +1,5 @@
 use super::default::default_revset_depth;
-use super::expressions::bookmark_filter_name;
+use super::expressions::{bookmark_filter_name, workspace_filter_name};
 use super::presets::revset_presets;
 
 #[derive(Clone, Copy, Debug, Eq, PartialEq)]
@@ -7,6 +7,7 @@ pub enum RevsetFilterKind {
     Default,
     Preset,
     Bookmark,
+    Workspace,
     Custom,
 }
 
@@ -30,6 +31,9 @@ impl RevsetFilter {
         if let Some(name) = bookmark_filter_name(revset) {
             return Self::named(RevsetFilterKind::Bookmark, &name);
         }
+        if let Some(name) = workspace_filter_name(revset) {
+            return Self::named(RevsetFilterKind::Workspace, &format!("{name}@"));
+        }
         Self::named(RevsetFilterKind::Custom, "")
     }
 
@@ -44,10 +48,12 @@ impl RevsetFilter {
 #[cfg(test)]
 mod tests {
     use super::*;
-    use crate::revset::{DEFAULT_REVSET, bookmark_filter_revset, build_default_revset};
+    use crate::revset::{
+        DEFAULT_REVSET, bookmark_filter_revset, build_default_revset, workspace_filter_revset,
+    };
 
     #[test]
-    fn filters_name_the_default_presets_and_bookmarks_they_came_from() {
+    fn filters_name_the_default_presets_bookmarks_and_workspaces_they_came_from() {
         for (revset, kind, label) in [
             (
                 DEFAULT_REVSET.to_owned(),
@@ -64,6 +70,11 @@ mod tests {
                 bookmark_filter_revset("work", Some("upstream")),
                 RevsetFilterKind::Bookmark,
                 "work@upstream",
+            ),
+            (
+                workspace_filter_revset("my-font"),
+                RevsetFilterKind::Workspace,
+                "my-font@",
             ),
             ("::main".to_owned(), RevsetFilterKind::Custom, ""),
         ] {

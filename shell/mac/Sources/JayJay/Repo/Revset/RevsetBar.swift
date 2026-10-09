@@ -5,6 +5,7 @@ import SwiftUI
 struct RevsetBar: View {
     let actions: any RevsetActions
     let bookmarks: [BookmarkInfo]
+    let workspaces: [String]
     let vocabulary: RevsetVocabulary
     let editRequest: Int
 
@@ -33,13 +34,21 @@ struct RevsetBar: View {
         filter.kind != .default
     }
 
+    private var filterIcon: String {
+        switch filter.kind {
+            case .bookmark: "bookmark"
+            case .workspace: "folder"
+            default: "line.3.horizontal.decrease"
+        }
+    }
+
     var body: some View {
         HStack(spacing: 2) {
             if actions.revsetFilter.previous != nil, !isEditing {
                 icon("chevron.backward", label: "Back to previous filter", stop: .revsetBack, action: actions.returnToPreviousRevset)
             }
             icon(
-                filter.kind == .bookmark ? "bookmark" : "line.3.horizontal.decrease",
+                filterIcon,
                 label: "Presets, bookmarks and recent revsets",
                 stop: .revsetPresets,
                 tint: isNarrowed,
@@ -113,7 +122,7 @@ struct RevsetBar: View {
                     .foregroundStyle(isNarrowed ? Color.accentColor : .secondary)
                     .lineLimit(1)
             }
-            if filter.kind != .bookmark {
+            if filter.kind != .bookmark, filter.kind != .workspace {
                 Text(revset)
                     .jayjayFont(11, design: .monospaced)
                     .foregroundStyle(filter.kind == .custom ? .primary : .tertiary)
@@ -227,6 +236,7 @@ struct RevsetBar: View {
         let content = RevsetPanelContent(
             actions: actions,
             bookmarks: bookmarks,
+            workspaces: workspaces,
             vocabulary: vocabulary,
             query: query,
             error: error,

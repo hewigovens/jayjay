@@ -52,6 +52,7 @@ private extension RevsetCompletionKind {
             case .alias: "alias"
             case .bookmark: "bookmark"
             case .tag: "tag"
+            case .workspace: "workspace"
         }
     }
 }

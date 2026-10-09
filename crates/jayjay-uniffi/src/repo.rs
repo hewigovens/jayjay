@@ -76,6 +76,11 @@ fn default_revset_preset() -> RevsetPreset {
 }
 
 #[uniffi::export]
+fn workspace_filter_revset(name: String) -> String {
+    jayjay_core::workspace_filter_revset(&name)
+}
+
+#[uniffi::export]
 fn typed_revset(text: String, bookmarks: Vec<jayjay_core::BookmarkInfo>) -> String {
     jayjay_core::typed_revset(&text, &bookmarks)
 }
@@ -99,6 +104,15 @@ fn revset_filter_show_ancestors(
 }
 
 #[uniffi::export]
+fn revset_filter_forget_recent(
+    mut state: jayjay_core::RevsetFilterState,
+    revset: String,
+) -> jayjay_core::RevsetFilterState {
+    state.forget_recent(&revset);
+    state
+}
+
+#[uniffi::export]
 fn revset_filter_back(mut state: jayjay_core::RevsetFilterState) -> jayjay_core::RevsetFilterState {
     state.back();
     state
@@ -109,8 +123,9 @@ fn revset_suggestions(
     query: String,
     state: jayjay_core::RevsetFilterState,
     bookmarks: Vec<jayjay_core::BookmarkInfo>,
+    workspaces: Vec<String>,
 ) -> Vec<jayjay_core::RevsetSuggestion> {
-    state.suggestions(&query, &bookmarks)
+    state.suggestions(&query, &bookmarks, &workspaces)
 }
 
 #[uniffi::export]

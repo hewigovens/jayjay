@@ -101,6 +101,11 @@ fn panel(
             "revset-popup-bookmarks",
         ),
         (
+            RevsetSuggestionKind::Workspace,
+            "Workspaces",
+            "revset-popup-workspaces",
+        ),
+        (
             RevsetSuggestionKind::Recent,
             "Recent",
             "revset-popup-recent",
@@ -253,9 +258,12 @@ fn suggestion_row(
     let icon = match suggestion.kind {
         RevsetSuggestionKind::Current => None,
         RevsetSuggestionKind::Bookmark => Some(glyph::BOOKMARK),
+        RevsetSuggestionKind::Workspace => Some(glyph::COLUMNS),
         RevsetSuggestionKind::Recent => Some(glyph::ARROW_UTURN_BACK),
     };
     let wraps = suggestion.kind == RevsetSuggestionKind::Current;
+    let forget = (suggestion.kind == RevsetSuggestionKind::Recent)
+        .then(|| forget_recent_button(suggestion.revset.clone(), t, view));
     let click_view = view.clone();
     let title = SharedString::from(suggestion.title.clone());
     let mut row = picker::row(id, selected, 28., t)
@@ -277,8 +285,25 @@ fn suggestion_row(
         .min_w_0()
         .code_text(if wraps { 11. } else { 12. })
         .text_color(rgb(t.fg))
+        .flex_1()
         .child(title);
     row.child(if wraps { text } else { text.truncate() })
+        .children(forget)
+        .into_any_element()
+}
+
+fn forget_recent_button(revset: String, t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
+    let view = view.clone();
+    let id = format!("revset-popup-forget-{revset}");
+    div()
+        .id(SharedString::from(id.clone()))
+        .debug_selector(move || id.clone())
+        .cursor_pointer()
+        .child(icons::icon(glyph::X, 10., t.fg_dim))
+        .on_mouse_down(MouseButton::Left, move |_: &MouseDownEvent, _, cx| {
+            cx.stop_propagation();
+            view.update(cx, |view, cx| view.forget_recent_revset(&revset, cx));
+        })
         .into_any_element()
 }
 
