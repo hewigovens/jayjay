@@ -78,7 +78,7 @@ impl RepoWindow {
         if !self.review_file_context(cx).0 {
             return None;
         }
-        if hunk.projection.is_some() || hunk.hunk_type == HunkType::Renamed {
+        if hunk.projection.is_some() || hunk.hunk_type.has_source() {
             return None;
         }
 

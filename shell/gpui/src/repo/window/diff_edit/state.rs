@@ -79,7 +79,7 @@ impl Default for DiffEditState {
 }
 
 pub(super) fn hunk_supports_diff_edit(hunk: &DiffHunk) -> bool {
-    hunk.projection.is_none() && hunk.hunk_type != HunkType::Renamed
+    hunk.projection.is_none() && !hunk.hunk_type.has_source()
 }
 
 impl RepoWindow {

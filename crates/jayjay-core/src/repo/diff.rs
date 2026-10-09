@@ -1,16 +1,16 @@
 mod content;
+mod copies;
 mod current_text;
 mod entry;
 mod formats;
 mod materialize;
-mod rename;
 
 use std::collections::HashSet;
 use std::sync::Arc;
 
 use futures::TryStreamExt as _;
 use jayjay_primitives::hex_sha256;
-use jj_lib::backend::CommitId;
+use jj_lib::backend::{CommitId, MergedTreeValueExt as _};
 use jj_lib::commit::Commit;
 use jj_lib::copies::CopyRecords;
 use jj_lib::hex_util::encode_reverse_hex;
@@ -18,10 +18,14 @@ use jj_lib::matchers::FilesMatcher;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::repo_path::RepoPath;
 
 use crate::types::*;
 
-use self::entry::first_diff_content;
+use self::copies::{SourceLookup, apply_copy_records};
+use self::entry::{
+    compute_review_identity, first_diff_content, materialize_diff_content, source_values,
+};
 use super::Repo;
 use super::support::block_on_result;
 
@@ -29,7 +33,6 @@ pub(super) struct TreePair {
     repo: Arc<ReadonlyRepo>,
     before: MergedTree,
     after: MergedTree,
-    /// (root, head) commit pairs whose backend copy records pair renames, one per parent like `jj diff`.
     copy_endpoints: Vec<(CommitId, CommitId)>,
 }
 
@@ -43,7 +46,7 @@ impl TreePair {
         }
     }
 
-    fn copy_records(&self) -> JayResult<CopyRecords> {
+    fn apply_copies(&self, hunks: &mut Vec<DiffHunk>) -> JayResult<()> {
         let store = self.repo.store();
         let mut copies = CopyRecords::default();
         for (root, head) in &self.copy_endpoints {
@@ -55,7 +58,20 @@ impl TreePair {
             })?;
             copies.add_records(records);
         }
-        Ok(copies)
+        apply_copy_records(hunks, &copies, self)
+    }
+}
+
+impl SourceLookup for TreePair {
+    fn source_exists(&self, source: &RepoPath) -> JayResult<bool> {
+        let source = block_on_result("load source", self.before.path_value(source))?;
+        Ok(!source.is_absent() && !source.is_tree())
+    }
+
+    fn matches_source(&self, source: &RepoPath, target: &RepoPath) -> JayResult<bool> {
+        let source = block_on_result("load source", self.before.path_value(source))?;
+        let target = block_on_result("load target", self.after.path_value(target))?;
+        Ok(source == target)
     }
 }
 
@@ -206,10 +222,10 @@ impl Repo {
         projection_mode: DiffProjectionMode,
     ) -> JayResult<DiffHunk> {
         let trees = self.commit_tree_pair(rev)?;
-        self.diff_file_rename_with_mode(&trees, old_path, new_path, projection_mode)
+        self.diff_sourced_file_with_mode(&trees, old_path, new_path, projection_mode)
     }
 
-    fn diff_file_rename_with_mode(
+    fn diff_sourced_file_with_mode(
         &self,
         trees: &TreePair,
         old_path: &str,
@@ -219,11 +235,12 @@ impl Repo {
         let old_repo_path = self.parse_named_diff_path("old", old_path)?;
         let new_repo_path = self.parse_named_diff_path("new", new_path)?;
 
-        let old_matcher = FilesMatcher::new(std::iter::once(old_repo_path.as_ref()));
-        let old_diff = first_diff_content(trees, &old_matcher, projection_mode)?;
-        let (old, old_identity) = old_diff
-            .map(|(_, content, identity)| (content.old, identity))
-            .unwrap_or_default();
+        let source = source_values(trees, &old_repo_path)?;
+        let old_content =
+            materialize_diff_content(trees, &old_repo_path, source.clone(), projection_mode)?;
+        let old_identity = compute_review_identity(&source, old_content.projection.as_ref());
+        let source_after =
+            block_on_result("load source after", trees.after.path_value(&old_repo_path))?;
 
         let new_matcher = FilesMatcher::new(std::iter::once(new_repo_path.as_ref()));
         let new_diff = first_diff_content(trees, &new_matcher, projection_mode)?;
@@ -238,16 +255,24 @@ impl Repo {
             })
             .unwrap_or_default();
 
+        // Same rename rule as `jj diff`.
+        let (hunk_type, review_identity) = if source_after.is_absent() || source_after.is_tree() {
+            let identity = hex_sha256(format!("rename|{old_identity}|{new_identity}").as_bytes());
+            (HunkType::Renamed, identity)
+        } else {
+            (HunkType::Copied, new_identity)
+        };
         Ok(DiffHunk {
             path: new_repo_path.as_internal_file_string().to_owned(),
             old_path: Some(old_repo_path.as_internal_file_string().to_owned()),
-            old,
+            old: old_content.old,
             new,
-            hunk_type: HunkType::Renamed,
+            hunk_type,
             supports_conflict_editor: false,
             supports_file_editor,
-            review_identity: hex_sha256(format!("rename|{old_identity}|{new_identity}").as_bytes()),
+            review_identity,
             projection,
+            matches_source: trees.matches_source(&old_repo_path, &new_repo_path)?,
         })
     }
 
@@ -327,7 +352,7 @@ impl Repo {
         projection_mode: DiffProjectionMode,
     ) -> JayResult<DiffHunk> {
         let trees = self.interdiff_tree_pair(from_rev, to_rev)?;
-        self.diff_file_rename_with_mode(&trees, old_path, new_path, projection_mode)
+        self.diff_sourced_file_with_mode(&trees, old_path, new_path, projection_mode)
     }
 }
 
@@ -342,5 +367,6 @@ fn conflict_summary_hunk(path: String, supports_conflict_editor: bool) -> DiffHu
         supports_file_editor: false,
         review_identity: String::new(),
         projection: None,
+        matches_source: false,
     }
 }

@@ -38,7 +38,7 @@ struct DiffEditLoadedFile: Sendable {
                 changedLines: computed.changedLines
             ),
             supportsDiffEdit: hunk.projection == nil
-                && hunk.hunkType != .renamed
+                && !hunk.hunkType.hasSource
                 && DiffPlaceholder.isEditableText(oldContent)
                 && DiffPlaceholder.isEditableText(newContent),
             display: computed.display,

@@ -117,7 +117,7 @@ extension DiffSection {
         if hunk.isSubmodulePlaceholder {
             return DiffLoadedContent(oldContent: hunk.oldContent, newContent: hunk.newContent)
         }
-        if hunk.isContentFreeRename {
+        if hunk.isContentFreeRenameOrCopy {
             return DiffLoadedContent()
         }
         return nil

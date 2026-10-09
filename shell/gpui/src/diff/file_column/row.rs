@@ -2,7 +2,7 @@ use gpui::{
     AnyElement, App, ClickEvent, Div, InteractiveElement, IntoElement, ParentElement, Rgba,
     SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
-use jayjay_core::{DiffHunk, HunkType};
+use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
 
 use crate::app::fonts::CodeText as _;
@@ -138,7 +138,7 @@ pub(crate) fn file_row_height(t: &Theme) -> f32 {
 }
 
 pub(super) fn display_path(hunk: &DiffHunk) -> String {
-    match (&hunk.old_path, hunk.hunk_type == HunkType::Renamed) {
+    match (&hunk.old_path, hunk.hunk_type.has_source()) {
         (Some(old), true) if *old != hunk.path => format!("{old} → {}", hunk.path),
         _ => hunk.path.clone(),
     }

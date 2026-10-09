@@ -1,12 +1,22 @@
 use std::collections::HashMap;
 
 use jj_lib::copies::CopyRecords;
+use jj_lib::repo_path::RepoPath;
 
 use crate::types::*;
 use jayjay_primitives::hex_sha256;
 
-/// Folds each removed/added pair that the backend's copy records describe as a rename into one renamed hunk; copies (source still present) stay additions.
-pub(super) fn pair_renames(hunks: &mut Vec<DiffHunk>, copies: &CopyRecords) {
+pub(super) trait SourceLookup {
+    fn source_exists(&self, source: &RepoPath) -> JayResult<bool>;
+    fn matches_source(&self, source: &RepoPath, target: &RepoPath) -> JayResult<bool>;
+}
+
+/// Folds recorded renames into one hunk and marks targets whose source still exists as copies.
+pub(super) fn apply_copy_records(
+    hunks: &mut Vec<DiffHunk>,
+    copies: &CopyRecords,
+    lookup: &impl SourceLookup,
+) -> JayResult<()> {
     let index_by_path = |hunk_type: HunkType| -> HashMap<String, usize> {
         hunks
             .iter()
@@ -20,18 +30,30 @@ pub(super) fn pair_renames(hunks: &mut Vec<DiffHunk>, copies: &CopyRecords) {
 
     let mut matched_removed = Vec::new();
     for record in copies.iter() {
-        // Ambiguous sources or targets resolve to no record, matching how `jj diff` drops them.
-        if copies.for_source(&record.source).is_none()
-            || copies.for_target(&record.target).is_none()
-        {
+        // `jj diff` drops ambiguous targets too.
+        if copies.for_target(&record.target).is_none() {
             continue;
         }
-        let (Some(&removed_index), Some(&added_index)) = (
-            removed_by_path.get(record.source.as_internal_file_string()),
-            added_by_path.get(record.target.as_internal_file_string()),
-        ) else {
+        let Some(&added_index) = added_by_path.get(record.target.as_internal_file_string()) else {
             continue;
         };
+        let source = record.source.as_internal_file_string();
+        let Some(&removed_index) = removed_by_path.get(source) else {
+            // A merge's record can name a source its auto-merged parent tree lacks; there is nothing to diff against.
+            if !lookup.source_exists(&record.source)? {
+                continue;
+            }
+            // The identity stays the target's own, so editing the source elsewhere in the change never invalidates the copy's mark.
+            let added = &mut hunks[added_index];
+            added.matches_source = lookup.matches_source(&record.source, &record.target)?;
+            added.old_path = Some(source.to_owned());
+            added.hunk_type = HunkType::Copied;
+            continue;
+        };
+        // A removed source claimed by several targets has no single rename.
+        if copies.for_source(&record.source).is_none() {
+            continue;
+        }
 
         let old_path = hunks[removed_index].path.clone();
         let removed_preview = hunks[removed_index].old.preview.clone();
@@ -43,7 +65,7 @@ pub(super) fn pair_renames(hunks: &mut Vec<DiffHunk>, copies: &CopyRecords) {
             )
             .as_bytes(),
         );
-        let byte_equal = hunks[removed_index].old.content == hunks[added_index].new.content;
+        let matches_source = lookup.matches_source(&record.source, &record.target)?;
         let removed_content = hunks[removed_index].old.content.clone();
 
         let added = &mut hunks[added_index];
@@ -51,7 +73,8 @@ pub(super) fn pair_renames(hunks: &mut Vec<DiffHunk>, copies: &CopyRecords) {
         added.hunk_type = HunkType::Renamed;
         added.old.preview = removed_preview;
         added.review_identity = combined_identity;
-        if byte_equal {
+        added.matches_source = matches_source;
+        if matches_source {
             added.old.content = None;
             added.new.content = None;
         } else {
@@ -64,6 +87,7 @@ pub(super) fn pair_renames(hunks: &mut Vec<DiffHunk>, copies: &CopyRecords) {
     for &index in matched_removed.iter().rev() {
         hunks.remove(index);
     }
+    Ok(())
 }
 
 #[cfg(test)]
@@ -94,6 +118,27 @@ mod tests {
             supports_file_editor: false,
             review_identity: review_identity.to_owned(),
             projection: None,
+            matches_source: false,
+        }
+    }
+
+    #[derive(Default)]
+    struct Lookup {
+        matching_targets: &'static [&'static str],
+        missing_sources: &'static [&'static str],
+    }
+
+    impl SourceLookup for Lookup {
+        fn source_exists(&self, source: &RepoPath) -> JayResult<bool> {
+            Ok(!self
+                .missing_sources
+                .contains(&source.as_internal_file_string()))
+        }
+
+        fn matches_source(&self, _source: &RepoPath, target: &RepoPath) -> JayResult<bool> {
+            Ok(self
+                .matching_targets
+                .contains(&target.as_internal_file_string()))
         }
     }
 
@@ -109,15 +154,24 @@ mod tests {
         records
     }
 
+    fn apply(hunks: &mut Vec<DiffHunk>, copies: &CopyRecords, lookup: Lookup) {
+        apply_copy_records(hunks, copies, &lookup).unwrap();
+    }
+
     #[test]
     fn rename_with_changed_content_keeps_both_sides() {
         let mut hunks = vec![
             hunk("a/x.rs", HunkType::Removed, Some("a\nb\nc\n"), None),
             hunk("b/x.rs", HunkType::Added, None, Some("c\nb\na\n")),
         ];
-        pair_renames(&mut hunks, &copies(&[("a/x.rs", "b/x.rs")]));
+        apply(
+            &mut hunks,
+            &copies(&[("a/x.rs", "b/x.rs")]),
+            Lookup::default(),
+        );
         assert_eq!(hunks.len(), 1);
         assert_eq!(hunks[0].hunk_type, HunkType::Renamed);
+        assert!(!hunks[0].is_content_free_rename_or_copy());
         assert_eq!(hunks[0].old_path.as_deref(), Some("a/x.rs"));
         assert_eq!(hunks[0].old.content.as_deref(), Some("a\nb\nc\n"));
         assert_eq!(hunks[0].new.content.as_deref(), Some("c\nb\na\n"));
@@ -136,7 +190,11 @@ mod tests {
                 ),
                 hunk_with_identity("new.rs", HunkType::Added, None, Some("body"), "id-new"),
             ];
-            pair_renames(&mut hunks, &copies(&[("old.rs", "new.rs")]));
+            apply(
+                &mut hunks,
+                &copies(&[("old.rs", "new.rs")]),
+                Lookup::default(),
+            );
             assert_eq!(hunks.len(), 1);
             hunks.remove(0).review_identity
         };
@@ -146,23 +204,40 @@ mod tests {
     }
 
     #[test]
-    fn copies_and_unrecorded_pairs_stay_separate() {
+    fn copies_keep_their_identity_and_unusable_records_change_nothing() {
         let mut hunks = vec![
             hunk("kept.rs", HunkType::Modified, Some("a"), Some("b")),
-            hunk("copy.rs", HunkType::Added, None, Some("a")),
+            hunk_with_identity("copy.rs", HunkType::Added, None, Some("a"), "id-copy"),
             hunk("dir/AGENTS.md", HunkType::Removed, Some("old"), None),
             hunk("AGENTS.md", HunkType::Added, None, Some("new")),
+            hunk("orphan.rs", HunkType::Added, None, Some("a")),
         ];
-        pair_renames(&mut hunks, &copies(&[("kept.rs", "copy.rs")]));
-        let types: Vec<_> = hunks.iter().map(|hunk| hunk.hunk_type).collect();
+        let lookup = Lookup {
+            missing_sources: &["gone.rs"],
+            ..Lookup::default()
+        };
+        apply(
+            &mut hunks,
+            &copies(&[("kept.rs", "copy.rs"), ("gone.rs", "orphan.rs")]),
+            lookup,
+        );
+        let cards: Vec<_> = hunks
+            .iter()
+            .map(|hunk| (hunk.path.as_str(), hunk.old_path.as_deref(), hunk.hunk_type))
+            .collect();
         assert_eq!(
-            types,
+            cards,
             [
-                HunkType::Modified,
-                HunkType::Added,
-                HunkType::Removed,
-                HunkType::Added
+                ("kept.rs", None, HunkType::Modified),
+                ("copy.rs", Some("kept.rs"), HunkType::Copied),
+                ("dir/AGENTS.md", None, HunkType::Removed),
+                ("AGENTS.md", None, HunkType::Added),
+                ("orphan.rs", None, HunkType::Added),
             ]
+        );
+        assert_eq!(
+            hunks[1].review_identity, "id-copy",
+            "a copy keeps its own identity"
         );
     }
 
@@ -185,9 +260,17 @@ mod tests {
         );
 
         let mut hunks = vec![removed, added];
-        pair_renames(&mut hunks, &copies(&[("old/icon.png", "new/icon.png")]));
+        apply(
+            &mut hunks,
+            &copies(&[("old/icon.png", "new/icon.png")]),
+            Lookup {
+                matching_targets: &["new/icon.png"],
+                ..Lookup::default()
+            },
+        );
 
         assert_eq!(hunks.len(), 1);
+        assert!(hunks[0].is_content_free_rename_or_copy());
         assert!(hunks[0].old.content.is_none());
         assert!(hunks[0].new.content.is_none());
         let Some(DiffPreview::Image { path }) = hunks[0].old.preview.as_ref() else {

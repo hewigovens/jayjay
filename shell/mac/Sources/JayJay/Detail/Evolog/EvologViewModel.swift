@@ -170,11 +170,18 @@ final class EvologViewModel {
         guard let path, let repo,
               let from = selectedFromCommitId, let to = selectedToCommitId
         else { return }
+        let source = interdiffDetail?.diff.first { $0.path == path }
+            .flatMap { $0.hunkType.hasSource ? $0.oldPath : nil }
         fileLoading = true
         Task.detached { [weak self] in
             let result: (hunk: DiffHunk?, error: String?)
             do {
-                result = try (repo.interdiffFile(fromRev: from, toRev: to, path: path), nil)
+                let hunk = try source.map {
+                    try repo.interdiffFileRenameWithMode(
+                        fromRev: from, toRev: to, oldPath: $0, newPath: path, projectionMode: .processed
+                    )
+                } ?? repo.interdiffFile(fromRev: from, toRev: to, path: path)
+                result = (hunk, nil)
             } catch {
                 result = (nil, error.friendlyDescription)
             }

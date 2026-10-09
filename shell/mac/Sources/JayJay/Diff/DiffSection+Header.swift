@@ -143,10 +143,10 @@ extension DiffSection {
 
     @ViewBuilder
     private var renamePathLabel: some View {
-        if hunk.hunkType == .renamed, let oldPath = hunk.oldPath {
+        if hunk.hunkType.hasSource, let oldPath = hunk.oldPath {
             Text(oldPath)
                 .jayjayFont(11, design: .monospaced)
-                .strikethrough()
+                .strikethrough(hunk.hunkType == .renamed)
                 .lineLimit(1)
                 .truncationMode(.middle)
                 .help(oldPath)

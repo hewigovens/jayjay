@@ -83,6 +83,7 @@ pub(super) fn scan_external_diff(
                 supports_file_editor: new_is_regular_file && new_is_text,
                 review_identity: String::new(),
                 projection: None,
+                matches_source: false,
             },
         });
     }

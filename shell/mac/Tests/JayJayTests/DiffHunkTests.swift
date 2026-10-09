@@ -3,40 +3,20 @@ import JayJayCore
 import XCTest
 
 final class DiffHunkTests: XCTestCase {
-    private func hunk(
-        type: HunkType = .renamed,
-        old: String? = nil,
-        new: String? = nil,
-        oldPreview: DiffPreview? = nil,
-        newPreview: DiffPreview? = nil
-    ) -> DiffHunk {
-        testHunk(
-            path: "new/path",
-            oldPath: "old/path",
-            oldContent: old,
-            newContent: new,
-            oldPreview: oldPreview,
-            newPreview: newPreview,
-            hunkType: type,
-            reviewIdentity: ""
-        )
+    private func hunk(type: HunkType, matchesSource: Bool) -> DiffHunk {
+        testHunk(path: "new/path", oldPath: "old/path", hunkType: type, reviewIdentity: "", matchesSource: matchesSource)
     }
 
-    func testByteIdenticalRenameIsContentFree() {
-        // The core clears both sides for a pure rename; this is what lets the UI hide the diff.
-        XCTAssertTrue(hunk().isContentFreeRename)
+    func testOnlyVerifiedMatchesAreContentFree() {
+        // Summary hunks carry no content, so an edited copy or rename must still load its diff.
+        XCTAssertFalse(hunk(type: .copied, matchesSource: false).isContentFreeRenameOrCopy)
+        XCTAssertFalse(hunk(type: .renamed, matchesSource: false).isContentFreeRenameOrCopy)
+        XCTAssertTrue(hunk(type: .copied, matchesSource: true).isContentFreeRenameOrCopy)
+        XCTAssertTrue(hunk(type: .renamed, matchesSource: true).isContentFreeRenameOrCopy)
     }
 
-    func testRenameWithContentChangesShowsDiff() {
-        XCTAssertFalse(hunk(old: "a\n", new: "b\n").isContentFreeRename)
-    }
-
-    func testImageRenameKeepsItsPreview() {
-        // Regression guard: image renames carry previews and must still render, not be hidden.
-        XCTAssertFalse(hunk(oldPreview: .image(path: "/tmp/x.png")).isContentFreeRename)
-    }
-
-    func testAddedFileIsNotARename() {
-        XCTAssertFalse(hunk(type: .added, new: "a\n").isContentFreeRename)
+    func testFileActionsCarryARenameSourceButNotACopySource() {
+        XCTAssertEqual(hunk(type: .renamed, matchesSource: false).changedPaths, ["new/path", "old/path"])
+        XCTAssertEqual(hunk(type: .copied, matchesSource: false).changedPaths, ["new/path"])
     }
 }

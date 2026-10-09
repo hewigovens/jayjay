@@ -6,8 +6,6 @@ use jayjay_review::ReviewStore;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 
-use crate::types::*;
-
 use super::Repo;
 
 pub struct ReviewNotesReport {
@@ -113,11 +111,11 @@ impl ReviewDiffProvider for CoreReviewDiffProvider<'_> {
     }
 
     fn review_file_diff(&self, hunk: &ReviewHunk) -> JayResult<ReviewFileDiff> {
-        let renamed_from = hunk
+        let source = hunk
             .old_path
             .as_deref()
-            .filter(|_| hunk.hunk_type == HunkType::Renamed);
-        let diff = match renamed_from {
+            .filter(|_| hunk.hunk_type.has_source());
+        let diff = match source {
             Some(old_path) => self.repo.show_file_rename(self.rev, old_path, &hunk.path)?,
             None => self.repo.show_file(self.rev, &hunk.path)?,
         };

@@ -19,6 +19,7 @@ pub enum HunkType {
     Removed,
     Modified,
     Renamed,
+    Copied,
 }
 
 #[uniffi::remote(Enum)]
@@ -73,6 +74,8 @@ pub struct DiffHunk {
     pub supports_file_editor: bool,
     pub review_identity: String,
     pub projection: Option<core::DiffProjection>,
+    #[uniffi(default = false)]
+    pub matches_source: bool,
 }
 
 #[uniffi::remote(Record)]

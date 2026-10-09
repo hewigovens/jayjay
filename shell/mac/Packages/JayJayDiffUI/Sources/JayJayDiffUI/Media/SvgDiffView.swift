@@ -29,6 +29,9 @@ public struct SvgDiffView: View {
             case .renamed:
                 pane(svg: newContent, label: "Renamed", tint: .blue, showsLabel: false)
                     .padding(16)
+            case .copied:
+                pane(svg: newContent, label: "Copied", tint: .green, showsLabel: false)
+                    .padding(16)
             case .modified:
                 HStack(spacing: 12) {
                     pane(svg: oldContent, label: "Before", tint: .red)

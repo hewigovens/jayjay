@@ -11,12 +11,23 @@ pub struct DiffHunk {
     /// Stable per-(path, content) key used by review state — computed from blob IDs.
     pub review_identity: String,
     pub projection: Option<DiffProjection>,
+    /// The rename or copy's tree value equals its source's; summary hunks carry no content to compare.
+    pub matches_source: bool,
 }
 
 impl DiffHunk {
-    /// A byte-identical rename: `detect_renames` cleared both sides because the content is unchanged, so there is nothing to diff and loading by the new path alone would render every line as added.
-    pub fn is_content_free_rename(&self) -> bool {
-        self.hunk_type == HunkType::Renamed && self.old.is_empty() && self.new.is_empty()
+    /// A rename or copy identical to its source: there is nothing to diff, and loading by the new path alone would show every line as added.
+    pub fn is_content_free_rename_or_copy(&self) -> bool {
+        self.hunk_type.has_source() && self.matches_source
+    }
+
+    /// Paths a file action on this card must touch: a rename's removed source travels with it, a copy's source is a separate card.
+    pub fn changed_paths(&self) -> impl Iterator<Item = &str> {
+        let renamed_from = self
+            .old_path
+            .as_deref()
+            .filter(|_| self.hunk_type == HunkType::Renamed);
+        std::iter::once(self.path.as_str()).chain(renamed_from)
     }
 
     /// A conflicted path can equal its parents' auto-merge and therefore have no ordinary tree-diff entry; summary loading inserts this card so shells can still open the resolver.
@@ -36,10 +47,6 @@ pub struct DiffContent {
 impl DiffContent {
     pub fn new(content: Option<String>, preview: Option<DiffPreview>) -> Self {
         Self { content, preview }
-    }
-
-    fn is_empty(&self) -> bool {
-        self.content.is_none() && self.preview.is_none()
     }
 }
 
@@ -98,6 +105,14 @@ pub enum HunkType {
     Removed,
     Modified,
     Renamed,
+    Copied,
+}
+
+impl HunkType {
+    /// Renames and copies carry their source path in `DiffHunk::old_path`.
+    pub fn has_source(self) -> bool {
+        matches!(self, HunkType::Renamed | HunkType::Copied)
+    }
 }
 
 #[derive(Debug, Clone)]
@@ -164,6 +179,7 @@ mod tests {
             supports_file_editor: false,
             review_identity: String::new(),
             projection: None,
+            matches_source: false,
         };
         assert!(placeholder.is_conflict_only_placeholder());
 

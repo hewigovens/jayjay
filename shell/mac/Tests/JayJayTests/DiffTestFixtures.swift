@@ -29,7 +29,8 @@ func testHunk(
     hunkType: HunkType = .added,
     supportsConflictEditor: Bool = false,
     reviewIdentity: String = "identity",
-    projection: DiffProjection? = nil
+    projection: DiffProjection? = nil,
+    matchesSource: Bool = false
 ) -> DiffHunk {
     DiffHunk(
         path: path,
@@ -41,6 +42,7 @@ func testHunk(
         hunkType: hunkType,
         supportsConflictEditor: supportsConflictEditor,
         reviewIdentity: reviewIdentity,
-        projection: projection
+        projection: projection,
+        matchesSource: matchesSource
     )
 }

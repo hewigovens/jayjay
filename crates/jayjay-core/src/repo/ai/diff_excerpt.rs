@@ -99,8 +99,13 @@ fn unified_hunk(hunk: &DiffHunk) -> String {
             hunk.old_path.as_deref().unwrap_or(""),
             hunk.path
         ),
+        HunkType::Copied => format!(
+            "Copied {} => {}:\n",
+            hunk.old_path.as_deref().unwrap_or(""),
+            hunk.path
+        ),
     };
-    if hunk.is_content_free_rename() {
+    if hunk.is_content_free_rename_or_copy() {
         return header;
     }
     if hunk.old.content.is_none() && hunk.new.content.is_none() {

@@ -25,12 +25,71 @@ fi
 JJ_TIMESTAMP="$(ago 3d)" bash "$(dirname "$0")/screenshot-fixture.sh" "$root"
 cd "$repo"
 
-# Trunk moves on without the feature stack, leaving it 3 behind main; the README paragraph conflicts with the working copy's once the stack is rebased.
+# Trunk moves on without the feature stack, leaving it 4 behind main; the README paragraph conflicts with the working copy's once the stack is rebased.
 wc=$(jj log --no-graph -r @ -T change_id)
 (
-  export JJ_TIMESTAMP="$(ago 2d)"
-  jj new main -m "chore: pin the Rust toolchain"
+  export JJ_TIMESTAMP="$(ago 3d)"
+  jj new main -m "chore: add contributor tooling"
   printf '[toolchain]\nchannel = "1.96"\n' > rust-toolchain.toml
+  mkdir -p agents deploy docs scripts
+  cat > agents/AGENTS.md <<'MD'
+# Agent guide
+
+- Run `scripts/check.sh` before describing a change.
+- Keep timetable parsing in `src/timetable.rs`; routes only consume parsed legs.
+- Never commit feed credentials; read them from `FLIGHTDECK_FEED_TOKEN`.
+- Prefer small changes: one feed, one fix, one test.
+- Tests that hit the network belong behind the `live-feeds` feature.
+- Fares are integer cents; never use floats for money.
+- Station names are matched case-insensitively but displayed as the feed spells them.
+- Document new CLI flags in README.md in the same change.
+MD
+  cat > docs/contributing.md <<'MD'
+# Contributing
+
+1. Fork and clone the repository.
+2. Install the toolchain pinned in rust-toolchain.toml.
+3. Run `scripts/check.sh`; it must pass before review.
+4. Open a pull request against main with one logical change.
+
+Feed fixtures live in `tests/fixtures`; regenerate them with `cargo run -- record`.
+MD
+  cat > scripts/check.sh <<'SH'
+#!/usr/bin/env bash
+set -euo pipefail
+cargo fmt --check
+cargo clippy --all-targets -- -D warnings
+cargo test --locked
+echo "flightdeck checks passed"
+SH
+  cat > deploy/base.toml <<'TOML'
+[service]
+name = "flightdeck"
+port = 8080
+workers = 4
+
+[feeds]
+refresh_minutes = 15
+timeout_seconds = 10
+retries = 3
+
+[logging]
+level = "info"
+format = "json"
+TOML
+  jj st >/dev/null
+
+  # Rename and copy cases: an unrelated AGENTS.md (add + delete, not a move), an identical and an edited rename, and a copy of a config edited in the same change, since jj only finds copies of modified files.
+  export JJ_TIMESTAMP="$(ago 2d)"
+  jj new -m "refactor: reorganize contributor docs and deploy config"
+  rm agents/AGENTS.md
+  printf '# AGENTS.md\n\nSee CONTRIBUTING.md; agents follow the same checks as people.\n' > AGENTS.md
+  mv docs/contributing.md CONTRIBUTING.md
+  mkdir -p scripts/ci
+  mv scripts/check.sh scripts/ci/check.sh
+  sed -i '' 's/^cargo test --locked$/cargo test --locked --all-features/' scripts/ci/check.sh
+  sed -i '' 's/^retries = 3$/retries = 5/' deploy/base.toml
+  sed 's/^level = "info"$/level = "debug"/' deploy/base.toml > deploy/staging.toml
   jj st >/dev/null
 
   export JJ_TIMESTAMP="$(ago 1d)"

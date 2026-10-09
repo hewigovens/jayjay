@@ -87,8 +87,120 @@ fn renames_pair_by_content_not_basename() {
             ("rules/AGENTS.md".to_owned(), None, HunkType::Removed),
         ]
     );
+    let renamed = repo.show_summary("@").expect("summary").diff;
+    let renamed = renamed
+        .iter()
+        .find(|hunk| hunk.path == "greeting.txt")
+        .expect("rename");
+    assert!(
+        renamed.is_content_free_rename_or_copy(),
+        "identical rename has nothing to diff"
+    );
     let stats = repo.diff_file_stats("@", false).expect("diff file stats");
     assert_eq!(stats.len(), 3, "stats follow the cards: {stats:?}");
+}
+
+#[test]
+fn copies_diff_against_their_source() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let source: String = (1..=30).map(|n| format!("line {n}\n")).collect();
+    fs::write(repo_path.join("source.txt"), &source).expect("write source");
+    run_jj_in(&repo_path, &["new", "-m", "copy source"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    fs::write(repo_path.join("copy.txt"), format!("{source}copied tail\n")).expect("write copy");
+    repo.refresh_working_copy().expect("snapshot copy");
+    let before_source_edit = repo.show_summary("@").expect("summary").diff;
+    let added = before_source_edit
+        .iter()
+        .find(|hunk| hunk.path == "copy.txt")
+        .expect("copy card");
+    assert_eq!(
+        added.hunk_type,
+        HunkType::Added,
+        "git only finds copies of modified files"
+    );
+    let added_identity = added.review_identity.clone();
+    fs::write(
+        repo_path.join("source.txt"),
+        format!("{source}source tail\n"),
+    )
+    .expect("edit source");
+    repo.refresh_working_copy().expect("snapshot working copy");
+
+    let summary = repo.show_summary("@").expect("summary").diff;
+    let copy = summary
+        .iter()
+        .find(|hunk| hunk.path == "copy.txt")
+        .expect("copy card");
+    assert_eq!(copy.hunk_type, HunkType::Copied);
+    assert_eq!(copy.old_path.as_deref(), Some("source.txt"));
+    assert!(
+        !copy.is_content_free_rename_or_copy(),
+        "edited copy has a diff"
+    );
+    assert_eq!(
+        copy.review_identity, added_identity,
+        "editing the source keeps the copy's mark"
+    );
+    assert!(summary.iter().any(|hunk| hunk.path == "source.txt"));
+
+    let loaded = repo
+        .show_file_rename("@", "source.txt", "copy.txt")
+        .expect("copy content");
+    assert_eq!(loaded.hunk_type, HunkType::Copied);
+    assert_eq!(loaded.old.content.as_deref(), Some(source.as_str()));
+    let full = repo.show("@").expect("show").diff;
+    let full_copy = full
+        .iter()
+        .find(|hunk| hunk.path == "copy.txt")
+        .expect("full copy");
+    assert_eq!(full_copy.old.content, loaded.old.content);
+    assert_eq!(full_copy.review_identity, copy.review_identity);
+
+    let stats = repo.diff_file_stats("@", false).expect("diff file stats");
+    let copy_stats = stats
+        .iter()
+        .find(|s| s.path == "copy.txt")
+        .expect("copy stats");
+    assert_eq!((copy_stats.insertions, copy_stats.deletions), (1, 0));
+}
+
+#[test]
+fn merge_copy_records_need_a_file_source_in_the_merged_parent() {
+    for replace_source_with_directory in [false, true] {
+        let temp_dir = init_jj_repo();
+        let repo_path = temp_dir.path().join("repo");
+        let source: String = (1..=30).map(|n| format!("line {n}\n")).collect();
+        fs::write(repo_path.join("x.txt"), &source).expect("write x");
+        run_jj_in(&repo_path, &["bookmark", "create", "base", "-r", "@"]);
+        run_jj_in(&repo_path, &["new", "base", "-m", "drop x"]);
+        fs::remove_file(repo_path.join("x.txt")).expect("remove x");
+        if replace_source_with_directory {
+            fs::create_dir(repo_path.join("x.txt")).expect("create dir");
+            fs::write(repo_path.join("x.txt/inner.txt"), "inner\n").expect("write inner");
+        }
+        run_jj_in(&repo_path, &["bookmark", "create", "p1", "-r", "@"]);
+        run_jj_in(&repo_path, &["new", "base", "-m", "unrelated"]);
+        fs::write(repo_path.join("other.txt"), "other\n").expect("write other");
+        run_jj_in(&repo_path, &["new", "p1", "@", "-m", "merge"]);
+        fs::write(repo_path.join("y.txt"), &source).expect("write y");
+        let repo = Repo::open(&repo_path).expect("open repo");
+        repo.refresh_working_copy().expect("snapshot working copy");
+
+        let summary = repo.show_summary("@").expect("summary").diff;
+        let y = summary
+            .iter()
+            .find(|hunk| hunk.path == "y.txt")
+            .expect("y card");
+        assert_eq!(
+            (y.hunk_type, y.old_path.as_deref()),
+            (HunkType::Added, None)
+        );
+        let loaded = repo.show_file("@", "y.txt").expect("load y");
+        assert_eq!(loaded.review_identity, y.review_identity);
+    }
 }
 
 #[cfg(unix)]

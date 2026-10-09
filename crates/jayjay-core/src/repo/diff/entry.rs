@@ -6,7 +6,7 @@ use jj_lib::backend::MergedTreeValue;
 use jj_lib::backend::TreeValue;
 use jj_lib::conflicts::{MaterializedTreeValue, materialize_tree_value};
 use jj_lib::matchers::Matcher;
-use jj_lib::merge::Diff;
+use jj_lib::merge::{Diff, Merge};
 use jj_lib::merged_tree::TreeDiffEntry;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::Repo as _;
@@ -56,6 +56,15 @@ pub(super) fn compute_review_identity(
         let _ = write!(&mut buf, "|projection:{}", projection.identity_part());
     }
     hex_sha256(buf.as_bytes())
+}
+
+/// A rename or copy source diffed like a deletion of that path.
+pub(super) fn source_values(trees: &TreePair, path: &RepoPath) -> JayResult<Diff<MergedTreeValue>> {
+    let before = block_on_result(
+        &format!("load source {}", path.as_internal_file_string()),
+        trees.before.path_value(path),
+    )?;
+    Ok(Diff::new(before, Merge::absent()))
 }
 
 fn side_repr(merge: &MergedTreeValue) -> String {

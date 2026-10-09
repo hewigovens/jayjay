@@ -84,6 +84,7 @@ pub fn diff_hunk(path: &str) -> DiffHunk {
         supports_file_editor: false,
         review_identity: String::new(),
         projection: None,
+        matches_source: false,
     }
 }
 

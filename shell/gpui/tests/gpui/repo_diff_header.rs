@@ -1,8 +1,8 @@
 use std::fs;
 
 use crate::harness::{
-    install_test_globals, load_selected_change_files, rendered_height, select_file, selector,
-    settle_visual, zoom_to_max,
+    install_test_globals, load_selected_change_files, open_repo, rendered_height, select_file,
+    selector, settle_visual, zoom_to_max,
 };
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_core::DiffProjectionMode;
@@ -551,6 +551,90 @@ fn diff_header_shows_line_counts_in_the_whitespace_mode(cx: &mut TestAppContext)
     assert_eq!(counts(&view, cx), None);
     settle_visual(cx);
     assert_eq!(counts(&view, cx), Some((1, 0)));
+}
+
+#[gpui::test]
+fn edited_copies_load_their_diff_and_identical_renames_do_not(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let source: String = (1..=30).map(|n| format!("line {n}\n")).collect();
+    fs::write(fixture.path.join("source.txt"), &source).expect("write source");
+    fs::write(fixture.path.join("notes.txt"), &source).expect("write notes");
+    run_jj_in(&fixture.path, &["new", "-m", "copy and move"]);
+    fs::write(
+        fixture.path.join("source.txt"),
+        format!("{source}source tail\n"),
+    )
+    .expect("edit source");
+    fs::write(
+        fixture.path.join("copy.txt"),
+        format!("{source}copied tail\n"),
+    )
+    .expect("write copy");
+    fs::rename(
+        fixture.path.join("notes.txt"),
+        fixture.path.join("moved.txt"),
+    )
+    .expect("move notes");
+    run_jj_in(&fixture.path, &["st"]);
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+
+    select_file(&view, "copy.txt", cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.shown.old_content.as_deref(), Some(source.as_str()));
+        assert!(
+            vm.shown
+                .new_content
+                .as_deref()
+                .is_some_and(|new| new.ends_with("copied tail\n"))
+        );
+    });
+
+    select_file(&view, "moved.txt", cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.shown.old_content.as_deref(), Some(""));
+        assert_eq!(vm.shown.new_content.as_deref(), Some(""));
+    });
+}
+
+#[gpui::test]
+fn compare_view_diffs_copies_against_their_source(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let source: String = (1..=30).map(|n| format!("line {n}\n")).collect();
+    fs::write(fixture.path.join("source.txt"), &source).expect("write source");
+    run_jj_in(&fixture.path, &["new", "-m", "unrelated"]);
+    fs::write(fixture.path.join("other.txt"), "other\n").expect("write other");
+    run_jj_in(&fixture.path, &["new", "-m", "copy source"]);
+    fs::write(
+        fixture.path.join("source.txt"),
+        format!("{source}source tail\n"),
+    )
+    .expect("edit source");
+    fs::write(
+        fixture.path.join("copy.txt"),
+        format!("{source}copied tail\n"),
+    )
+    .expect("write copy");
+    run_jj_in(&fixture.path, &["st"]);
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+
+    let shift = Modifiers {
+        shift: true,
+        ..Default::default()
+    };
+    view.update_in(cx, |view, _, cx| view.handle_change_row_click(1, shift, cx));
+    settle_visual(cx);
+    select_file(&view, "copy.txt", cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(
+            vm.compare.is_some(),
+            "two changes selected compare their range"
+        );
+        assert_eq!(vm.shown.old_content.as_deref(), Some(source.as_str()));
+    });
 }
 
 fn select_change_by_description(

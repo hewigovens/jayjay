@@ -142,7 +142,7 @@ struct DiffEditView: View {
     private var hasUnsupportedFiles: Bool {
         session.detail.diff.contains { hunk in
             hunk.projection != nil
-                || hunk.hunkType == .renamed
+                || hunk.hunkType.hasSource
                 || !DiffPlaceholder.isEditableText(hunk.oldContent)
                 || !DiffPlaceholder.isEditableText(hunk.newContent)
         }

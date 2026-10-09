@@ -38,9 +38,12 @@ fn partition_file_selection_impl(
     ignore_whitespace: bool,
     text_validated: bool,
 ) -> JayResult<PartitionedSelection> {
-    if selection.hunk_type == HunkType::Renamed || selection.old_path.is_some() {
+    if selection.hunk_type.has_source() || selection.old_path.is_some() {
         return Err(JayError::Internal {
-            message: format!("diff edit does not support renamed path {}", selection.path),
+            message: format!(
+                "diff edit does not support renamed or copied path {}",
+                selection.path
+            ),
         });
     }
 
@@ -105,13 +108,13 @@ fn partition_file_selection_impl(
         HunkType::Added => selected_changed_lines > 0,
         HunkType::Removed => selected_changed_lines < total_changed_lines,
         HunkType::Modified => selection.old_content.is_some(),
-        HunkType::Renamed => false,
+        HunkType::Renamed | HunkType::Copied => false,
     };
     let remaining_exists = match selection.hunk_type {
         HunkType::Added => selected_changed_lines < total_changed_lines,
         HunkType::Removed => selected_changed_lines > 0,
         HunkType::Modified => selection.old_content.is_some(),
-        HunkType::Renamed => false,
+        HunkType::Renamed | HunkType::Copied => false,
     };
 
     Ok(PartitionedSelection {

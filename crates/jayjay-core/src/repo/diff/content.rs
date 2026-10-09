@@ -7,7 +7,7 @@ use super::entry::{
     compute_review_identity, diff_hunk_type, first_diff_content, materialize_diff_content,
     materialize_file_bytes, resolve_diff_values,
 };
-use super::{Repo, TreePair, formats, rename::pair_renames};
+use super::{Repo, TreePair, formats};
 use crate::types::*;
 
 impl Repo {
@@ -45,11 +45,12 @@ impl Repo {
                     supports_file_editor: false,
                     review_identity,
                     projection,
+                    matches_source: false,
                 });
             }
             Ok(files)
         })?;
-        pair_renames(&mut files, &trees.copy_records()?);
+        trees.apply_copies(&mut files)?;
         Ok(files)
     }
 
@@ -77,11 +78,31 @@ impl Repo {
                     supports_file_editor: content.supports_file_editor,
                     review_identity,
                     projection: content.projection,
+                    matches_source: false,
                 });
             }
             Ok(diff)
         })?;
-        pair_renames(&mut diff, &trees.copy_records()?);
+        trees.apply_copies(&mut diff)?;
+        // The walk materialized copies as additions; diff them against their source instead.
+        for hunk in diff
+            .iter_mut()
+            .filter(|hunk| hunk.hunk_type == HunkType::Copied)
+        {
+            let source = hunk.old_path.clone().unwrap_or_default();
+            let mut copy = self.diff_sourced_file_with_mode(
+                trees,
+                &source,
+                &hunk.path,
+                DiffProjectionMode::Processed,
+            )?;
+            if copy.matches_source {
+                copy.old.content = None;
+                copy.new.content = None;
+            }
+            copy.review_identity = std::mem::take(&mut hunk.review_identity);
+            *hunk = copy;
+        }
         Ok(diff)
     }
 
@@ -96,10 +117,12 @@ impl Repo {
         for file in files {
             let mode = crate::projection::request_mode(file.projection.as_ref(), false)
                 .unwrap_or(DiffProjectionMode::Raw);
-            let mut hunk = self.diff_single_file_with_mode(trees, &file.path, mode)?;
-            if let Some(old_path) = file.old_path.as_deref() {
-                hunk.old = self.diff_single_file_with_mode(trees, old_path, mode)?.old;
-            }
+            let hunk = match file.old_path.as_deref() {
+                Some(old_path) => {
+                    self.diff_sourced_file_with_mode(trees, old_path, &file.path, mode)?
+                }
+                None => self.diff_single_file_with_mode(trees, &file.path, mode)?,
+            };
             stats.push(super::hunk_line_stats(&hunk, ignore_whitespace));
         }
         Ok(stats)
@@ -136,6 +159,7 @@ impl Repo {
             supports_file_editor: content.supports_file_editor,
             review_identity,
             projection: content.projection,
+            matches_source: false,
         })
     }
 }

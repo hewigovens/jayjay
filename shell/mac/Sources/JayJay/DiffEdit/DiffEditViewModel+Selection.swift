@@ -135,7 +135,7 @@ extension DiffEditViewModel {
         diffStore: DiffStore
     ) async -> DiffEditFile? {
         guard hunk.projection == nil,
-              hunk.hunkType != .renamed,
+              !hunk.hunkType.hasSource,
               let cached = await diffStore.loadDiff(
                   hunk: hunk,
                   rev: rev,

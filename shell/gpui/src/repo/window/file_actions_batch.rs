@@ -49,6 +49,13 @@ impl RepoWindow {
         if hunks.iter().any(|hunk| file_status::is_submodule(hunk)) {
             return Vec::new();
         }
+        let changed_paths: Vec<String> = paths
+            .iter()
+            .flat_map(|path| match hunks.iter().find(|hunk| &hunk.path == path) {
+                Some(hunk) => hunk.changed_paths().map(str::to_owned).collect(),
+                None => vec![path.clone()],
+            })
+            .collect();
         let mut items = Vec::new();
         if vm.shows_review_controls()
             && hunks.len() == paths.len()
@@ -59,7 +66,7 @@ impl RepoWindow {
         if !change.is_immutable {
             let request = Arc::new(SelectedFilesRequest {
                 rev: change.selection_revision().to_owned(),
-                paths: paths.to_vec(),
+                paths: changed_paths.clone(),
             });
             items.push(ContextMenuItem::new(
                 plural_label(paths, "Split to New Change", |n| {
@@ -86,7 +93,7 @@ impl RepoWindow {
         }
         // Restore rewrites the selected change, so immutable changes must not offer it (same gate as the change menu's Abandon); the remaining actions touch only the disk, .gitignore/@, or the review layer.
         if !change.is_immutable {
-            items.extend(restore_items(change, paths));
+            items.extend(restore_items(change, paths, &changed_paths));
         }
         if change.is_working_copy {
             items.push(ContextMenuItem::new(
@@ -253,7 +260,12 @@ impl RepoWindow {
 }
 
 /// A merge change cannot restore from the ambiguous auto-merged parents; SwiftUI's parent submenu is flattened into one item per parent, with the parent as the restore SOURCE and the selected change staying the rewrite target (SwiftUI passes the parent as the rev, which wrongly rewrites the parent — a bug we deliberately do not mirror).
-fn restore_items(change: &ChangeInfo, paths: &[String]) -> Vec<ContextMenuItem> {
+/// `paths` are the selected cards for the label; `changed_paths` adds each rename's source so the restore undoes the whole move.
+fn restore_items(
+    change: &ChangeInfo,
+    paths: &[String],
+    changed_paths: &[String],
+) -> Vec<ContextMenuItem> {
     let label = plural_label(paths, "Restore to Parent", |n| {
         format!("Restore {n} Files to Parent")
     });
@@ -271,7 +283,7 @@ fn restore_items(change: &ChangeInfo, paths: &[String]) -> Vec<ContextMenuItem> 
                     batch(FileBatchAction::Restore {
                         rev: rev.clone(),
                         from: Some(parent.clone()),
-                        paths: paths.to_vec(),
+                        paths: changed_paths.to_vec(),
                     }),
                 )
             })
@@ -283,7 +295,7 @@ fn restore_items(change: &ChangeInfo, paths: &[String]) -> Vec<ContextMenuItem> 
         batch(FileBatchAction::Restore {
             rev,
             from: None,
-            paths: paths.to_vec(),
+            paths: changed_paths.to_vec(),
         }),
     )]
 }

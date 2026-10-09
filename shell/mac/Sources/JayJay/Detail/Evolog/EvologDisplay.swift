@@ -47,13 +47,14 @@ enum EvologDisplay {
             case .added: "plus.circle"
             case .removed: "minus.circle"
             case .renamed: "arrow.right.circle"
+            case .copied: "equal.circle"
             case .modified: "pencil.circle"
         }
     }
 
     static func hunkColor(_ type: HunkType) -> Color {
         switch type {
-            case .added: .green
+            case .added, .copied: .green
             case .removed: .red
             case .renamed: .blue
             case .modified: FileStatusColors.modified

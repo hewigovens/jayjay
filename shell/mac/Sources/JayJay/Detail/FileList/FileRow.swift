@@ -119,15 +119,15 @@ struct FileRow: View {
                             .help(noteCount.reviewNoteCountLabel)
                         }
                     }
-                    Text(hunk.hunkType == .renamed
+                    Text(hunk.hunkType.hasSource
                         ? hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path
                         : hunk.path)
                         .jayjayFont(10, design: .monospaced)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                         .truncationMode(.middle)
-                        .accessibilityLabel(hunk.hunkType == .renamed
-                            ? hunk.oldPath.map { "Renamed from \($0) to \(hunk.path)" } ?? hunk.path
+                        .accessibilityLabel(hunk.hunkType.hasSource
+                            ? hunk.oldPath.map { "\(hunk.hunkType.label) from \($0) to \(hunk.path)" } ?? hunk.path
                             : hunk.path)
                 }
 
@@ -152,7 +152,7 @@ struct FileRow: View {
             return Color.purple
         }
         switch hunk.hunkType {
-            case .added: return Color.green
+            case .added, .copied: return Color.green
             case .removed: return Color.red
             case .modified: return FileStatusColors.modified
             case .renamed: return Color.blue

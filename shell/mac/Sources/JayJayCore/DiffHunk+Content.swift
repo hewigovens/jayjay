@@ -26,7 +26,8 @@ public extension DiffHunk {
         supportsConflictEditor: Bool = false,
         supportsFileEditor: Bool = false,
         reviewIdentity: String,
-        projection: DiffProjection?
+        projection: DiffProjection?,
+        matchesSource: Bool = false
     ) {
         self.init(
             path: path,
@@ -37,14 +38,19 @@ public extension DiffHunk {
             supportsConflictEditor: supportsConflictEditor,
             supportsFileEditor: supportsFileEditor,
             reviewIdentity: reviewIdentity,
-            projection: projection
+            projection: projection,
+            matchesSource: matchesSource
         )
     }
 
-    /// A byte-identical rename: the core cleared both sides because the content is unchanged, so there is nothing to diff and callers must not re-load it as a fresh add.
-    var isContentFreeRename: Bool {
-        hunkType == .renamed
-            && oldContent == nil && newContent == nil
-            && oldPreview == nil && newPreview == nil
+    /// A rename or copy identical to its source: there is nothing to diff, and callers must not re-load it as a fresh add.
+    var isContentFreeRenameOrCopy: Bool {
+        hunkType.hasSource && matchesSource
+    }
+
+    /// Paths a file action on this card must touch: a rename's removed source travels with it, a copy's source is a separate card.
+    var changedPaths: [String] {
+        guard hunkType == .renamed, let oldPath else { return [path] }
+        return [path, oldPath]
     }
 }

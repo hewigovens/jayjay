@@ -16,6 +16,7 @@ extension HunkType {
                     }
                     .compositingGroup()
             case .renamed: Image(systemName: "arrow.right.circle.fill")
+            case .copied: Image(systemName: "equal.circle.fill")
         }
     }
 
@@ -32,7 +33,7 @@ extension HunkType {
 
     private var lightBadgeColor: Color {
         switch self {
-            case .added: Color(red: 28 / 255, green: 124 / 255, blue: 58 / 255)
+            case .added, .copied: Color(red: 28 / 255, green: 124 / 255, blue: 58 / 255)
             case .removed: Color(red: 180 / 255, green: 35 / 255, blue: 24 / 255)
             case .modified, .renamed: Color(red: 23 / 255, green: 92 / 255, blue: 211 / 255)
         }
@@ -44,12 +45,13 @@ extension HunkType {
             case .removed: "−"
             case .modified: "~"
             case .renamed: "→"
+            case .copied: "="
         }
     }
 
     var iconColor: Color {
         switch self {
-            case .added: .green
+            case .added, .copied: .green
             case .removed: .red
             case .modified: FileStatusColors.modified
             case .renamed: .blue
@@ -62,6 +64,7 @@ extension HunkType {
             case .removed: "Removed"
             case .modified: "Modified"
             case .renamed: "Renamed"
+            case .copied: "Copied"
         }
     }
 }

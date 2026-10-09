@@ -287,6 +287,46 @@ fn restore_returns_files_to_parent_content_and_clears_the_selection(cx: &mut Tes
     );
 }
 
+#[gpui::test]
+fn restoring_a_rename_card_restores_both_sides_of_the_move(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::rename(
+        fixture.path.join("README.md"),
+        fixture.path.join("GUIDE.md"),
+    )
+    .expect("move readme");
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    let paths = loaded_file_paths(&view, cx);
+    assert!(
+        paths.iter().any(|path| path == "GUIDE.md")
+            && !paths.iter().any(|path| path == "README.md"),
+        "the move is one rename card: {paths:?}"
+    );
+
+    dispatch_menu_item(&view, cx, "GUIDE.md", "Restore to Parent");
+
+    assert_no_vm_error(&view, cx);
+    assert!(
+        fixture.path.join("README.md").exists(),
+        "the source comes back"
+    );
+    assert!(
+        !fixture.path.join("GUIDE.md").exists(),
+        "the target goes away"
+    );
+    let paths = loaded_file_paths(&view, cx);
+    assert!(
+        !paths
+            .iter()
+            .any(|path| path == "GUIDE.md" || path == "README.md"),
+        "{paths:?}"
+    );
+}
+
 /// A merge working copy offers one restore item per parent; the chosen parent is the content SOURCE, so the merge's file reverts to that parent's version and the parent itself is never rewritten.
 #[gpui::test]
 fn merge_restore_uses_the_chosen_parent_as_source_without_rewriting_it(cx: &mut TestAppContext) {

@@ -4,11 +4,12 @@ use std::sync::Arc;
 use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{
     AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
-    DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffStats, EvologEntry,
-    EvologRow, FetchResult, FileDiffStats, FileEditorData, FixSummary, GitSubmoduleStatus,
-    GraphEntry, InsertPosition, JjCommand, JjCommandResult, MutationEffect, OpLogEntry, PrInfo,
-    PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack, StackedPrResult,
-    SubmitStackLayer, SyncToken, TagInfo, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffProjectionMode,
+    DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats, FileEditorData, FixSummary,
+    GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand, JjCommandResult, MutationEffect,
+    OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack,
+    StackedPrResult, SubmitStackLayer, SyncToken, TagInfo, ToolsConfig, WorkspaceInfo,
+    WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -684,6 +685,23 @@ impl JayJayRepo {
         path: String,
     ) -> Result<DiffHunk, JayError> {
         self.inner.interdiff_file_raw(&from_rev, &to_rev, &path)
+    }
+
+    fn interdiff_file_rename_with_mode(
+        &self,
+        from_rev: String,
+        to_rev: String,
+        old_path: String,
+        new_path: String,
+        projection_mode: DiffProjectionMode,
+    ) -> Result<DiffHunk, JayError> {
+        self.inner.interdiff_file_rename_with_mode(
+            &from_rev,
+            &to_rev,
+            &old_path,
+            &new_path,
+            projection_mode,
+        )
     }
 
     fn workspace_list(&self) -> Result<Vec<WorkspaceInfo>, JayError> {

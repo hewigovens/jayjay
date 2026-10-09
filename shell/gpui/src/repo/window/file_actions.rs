@@ -85,7 +85,7 @@ impl RepoWindow {
         let paths: Vec<String> = files
             .iter()
             .filter(|h| rollups.get(&h.path) == Some(&jayjay_review::ReviewFileRollup::Reviewed))
-            .map(|h| h.path.clone())
+            .flat_map(|h| h.changed_paths().map(str::to_owned))
             .collect();
         (!paths.is_empty()).then_some((rev, paths))
     }

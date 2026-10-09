@@ -18,10 +18,13 @@ impl Repo {
         selections: &[DiffEditFileSelection],
     ) -> JayResult<()> {
         for selection in selections {
-            // Renames keep their old content under old_path; reject them up front so the old-side compare below can't misreport them as stale.
-            if selection.hunk_type == HunkType::Renamed || selection.old_path.is_some() {
+            // Renames and copies keep their old content under old_path; reject them up front so the old-side compare below can't misreport them as stale.
+            if selection.hunk_type.has_source() || selection.old_path.is_some() {
                 return Err(JayError::Internal {
-                    message: format!("diff edit does not support renamed path {}", selection.path),
+                    message: format!(
+                        "diff edit does not support renamed or copied path {}",
+                        selection.path
+                    ),
                 });
             }
             let path = self.parse_repo_path(&selection.path)?;

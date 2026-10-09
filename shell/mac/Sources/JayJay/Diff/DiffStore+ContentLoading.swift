@@ -36,13 +36,21 @@ extension DiffStore {
         let oldPath = hunk.oldPath
         let raw = effectiveProjectionMode(hunk: hunk, mode: projectionMode) == .raw
         if let fromRev, let rev {
+            if hunkType.hasSource, let oldPath {
+                return try await loadedContent {
+                    try repo.interdiffFileRenameWithMode(
+                        fromRev: fromRev, toRev: rev, oldPath: oldPath, newPath: path,
+                        projectionMode: raw ? .raw : .processed
+                    )
+                }
+            }
             return try await loadedContent {
                 raw
                     ? try repo.interdiffFileRaw(fromRev: fromRev, toRev: rev, path: path)
                     : try repo.interdiffFile(fromRev: fromRev, toRev: rev, path: path)
             }
         }
-        if let rev, hunkType == .renamed, let oldPath {
+        if let rev, hunkType.hasSource, let oldPath {
             return try await loadedContent {
                 raw
                     ? try repo.showFileRenameRaw(rev: rev, oldPath: oldPath, newPath: path)

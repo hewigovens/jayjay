@@ -21,6 +21,7 @@ pub(crate) fn color_for_hunk_type(hunk_type: HunkType, theme: &Theme) -> u32 {
         HunkType::Removed => theme.file_removed_color,
         HunkType::Modified => theme.file_modified_color,
         HunkType::Renamed => theme.file_renamed_color,
+        HunkType::Copied => theme.file_added_color,
     }
 }
 
@@ -30,18 +31,23 @@ pub(crate) fn label(hunk_type: HunkType) -> &'static str {
         HunkType::Removed => "Removed",
         HunkType::Modified => "Modified",
         HunkType::Renamed => "Renamed",
+        HunkType::Copied => "Copied",
     }
 }
 
-pub(crate) fn badge(hunk_type: HunkType, theme: &Theme) -> Div {
-    let symbol = match hunk_type {
+fn symbol(hunk_type: HunkType) -> &'static str {
+    match hunk_type {
         HunkType::Added => "+",
         HunkType::Removed => "\u{2212}",
         HunkType::Modified => "~",
         HunkType::Renamed => "\u{2192}",
-    };
+        HunkType::Copied => "=",
+    }
+}
+
+pub(crate) fn badge(hunk_type: HunkType, theme: &Theme) -> Div {
     let fg = match hunk_type {
-        HunkType::Added => theme.file_badge_added_fg,
+        HunkType::Added | HunkType::Copied => theme.file_badge_added_fg,
         HunkType::Removed => theme.file_badge_removed_fg,
         HunkType::Modified | HunkType::Renamed => theme.file_badge_modified_fg,
     };
@@ -60,7 +66,7 @@ pub(crate) fn badge(hunk_type: HunkType, theme: &Theme) -> Div {
         .text_size(ui_font_size(13.))
         .font_weight(FontWeight::SEMIBOLD)
         .text_color(rgb(fg))
-        .child(symbol)
+        .child(symbol(hunk_type))
 }
 
 /// Matches SwiftUI's `*.circle.fill` file-status symbols.
@@ -76,7 +82,7 @@ pub(crate) fn disc(hunk_type: HunkType, color: u32, size: f32) -> Div {
     let glyph_str = match hunk_type {
         HunkType::Added => Some(glyph::PLUS),
         HunkType::Removed => Some(glyph::MINUS),
-        HunkType::Modified => None,
+        HunkType::Modified | HunkType::Copied => None,
         HunkType::Renamed => Some(glyph::ARROW_RIGHT),
     };
     match glyph_str {
@@ -86,7 +92,7 @@ pub(crate) fn disc(hunk_type: HunkType, color: u32, size: f32) -> Div {
                 .text_size(px(size * 0.7))
                 .font_weight(FontWeight::BOLD)
                 .text_color(rgb(0xffffff))
-                .child("~"),
+                .child(symbol(hunk_type)),
         ),
     }
 }

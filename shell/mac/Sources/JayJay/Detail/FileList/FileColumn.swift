@@ -40,7 +40,11 @@ extension ChangeDetailView {
                 }
                 if showsReviewedCount {
                     Button {
-                        splitRequest = SplitSheetRequest(paths: Array(reviewedPaths))
+                        splitRequest = SplitSheetRequest(
+                            paths: reviewedPaths.flatMap { path in
+                                detail.diff.first(where: { $0.path == path })?.changedPaths ?? [path]
+                            }
+                        )
                     } label: {
                         Image(systemName: "arrow.branch")
                             .foregroundStyle(.secondary)

@@ -24,7 +24,7 @@ pub fn review_display_group_map_from_hunk(
 
 fn review_text_pair(hunk: &DiffHunk) -> Option<(&str, &str)> {
     if hunk.projection.is_some()
-        || hunk.is_content_free_rename()
+        || hunk.is_content_free_rename_or_copy()
         || hunk.is_conflict_only_placeholder()
         || hunk.old.preview.is_some()
         || hunk.new.preview.is_some()
@@ -34,7 +34,7 @@ fn review_text_pair(hunk: &DiffHunk) -> Option<(&str, &str)> {
     let pair = match hunk.hunk_type {
         HunkType::Added => ("", hunk.new.content.as_deref()?),
         HunkType::Removed => (hunk.old.content.as_deref()?, ""),
-        HunkType::Modified | HunkType::Renamed => {
+        HunkType::Modified | HunkType::Renamed | HunkType::Copied => {
             (hunk.old.content.as_deref()?, hunk.new.content.as_deref()?)
         }
     };
@@ -124,9 +124,10 @@ mod tests {
             old_path: Some("a.txt".into()),
             hunk_type: HunkType::Renamed,
             review_identity: "id".into(),
+            matches_source: true,
             ..diff_hunk("b.txt")
         };
-        assert!(rename.is_content_free_rename());
+        assert!(rename.is_content_free_rename_or_copy());
         assert!(review_snapshot_from_hunk(&rename).fingerprints.is_empty());
     }
 }

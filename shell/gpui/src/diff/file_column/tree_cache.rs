@@ -86,6 +86,7 @@ mod tests {
                     supports_file_editor: false,
                     review_identity: (*p).to_owned(),
                     projection: None,
+                    matches_source: false,
                 })
                 .collect(),
         )

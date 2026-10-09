@@ -43,32 +43,32 @@ pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl I
     }
 }
 
-pub(super) fn rename_origin_label(
+/// Only a rename's source is struck through; a copy's source still exists.
+pub(super) fn source_path_label(
     old_path: &str,
+    renamed: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let width = mono_text_width(old_path, px(t.scaled_font_size(11.)), cx);
+    let path = div()
+        .id("diff-file-old-path")
+        .debug_selector(|| "diff-file-old-path".to_owned())
+        .w(width)
+        .flex_shrink_1()
+        .min_w_0()
+        .truncate()
+        .code_text(11.)
+        .text_color(rgb(t.fg_dim))
+        .tooltip(text_tooltip(old_path.to_owned()))
+        .child(SharedString::from(old_path.to_owned()));
     div()
         .flex()
         .flex_row()
         .items_center()
         .gap(px(4.))
         .min_w_0()
-        .child(
-            div()
-                .id("diff-file-old-path")
-                .debug_selector(|| "diff-file-old-path".to_owned())
-                .w(width)
-                .flex_shrink_1()
-                .min_w_0()
-                .truncate()
-                .code_text(11.)
-                .text_color(rgb(t.fg_dim))
-                .line_through()
-                .tooltip(text_tooltip(old_path.to_owned()))
-                .child(SharedString::from(old_path.to_owned())),
-        )
+        .child(if renamed { path.line_through() } else { path })
         .child(icons::icon(glyph::ARROW_RIGHT, 10., t.fg_dim))
         .into_any_element()
 }

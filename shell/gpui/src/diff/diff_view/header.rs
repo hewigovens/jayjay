@@ -5,7 +5,7 @@ use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
     Styled, div, px, rgb,
 };
-use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats};
+use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats, HunkType};
 
 use self::controls::*;
 use self::path::*;
@@ -78,7 +78,12 @@ pub(super) fn file_header(
         .border_b_1()
         .border_color(rgb(t.border));
     if let Some(old_path) = old_path {
-        row = row.child(rename_origin_label(old_path, t, cx));
+        row = row.child(source_path_label(
+            old_path,
+            hunk.hunk_type == HunkType::Renamed,
+            t,
+            cx,
+        ));
     }
 
     let mut path_group = div()

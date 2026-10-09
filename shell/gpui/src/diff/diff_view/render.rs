@@ -2,7 +2,7 @@ use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
     StatefulInteractiveElement, Styled, UniformListScrollHandle, Window, div, px, rgb, rgba,
 };
-use jayjay_core::DiffProjection;
+use jayjay_core::{DiffProjection, HunkType};
 
 use super::find_bar::render_find_bar;
 use super::header::{
@@ -154,11 +154,15 @@ pub fn diff_view(
             &t,
         )
         .into_any_element()
-    } else if hunk.is_content_free_rename() {
+    } else if hunk.is_content_free_rename_or_copy() {
         placeholder_card(
             glyph::ARROW_CIRCLE_RIGHT,
             "No content changes",
-            "This file was renamed; its contents are identical.",
+            if hunk.hunk_type == HunkType::Copied {
+                "This file was copied; its contents match the source."
+            } else {
+                "This file was renamed; its contents are identical."
+            },
             &t,
         )
         .into_any_element()

@@ -9,6 +9,9 @@ extension ChangeDetailView {
         let contextHunks = contextPaths.compactMap { contextPath in
             detail.diff.first(where: { $0.path == contextPath })
         }
+        let changedPaths = contextPaths.flatMap { contextPath in
+            detail.diff.first(where: { $0.path == contextPath })?.changedPaths ?? [contextPath]
+        }
         let includesSubmodulePlaceholder = contextHunks.contains { $0.isSubmodulePlaceholder }
         let includesUnreviewableFile = contextHunks.contains { $0.reviewIdentity.isEmpty }
         let isBatch = contextPaths.count > 1
@@ -30,14 +33,14 @@ extension ChangeDetailView {
             }
 
             Button(splitActionLabel(for: contextPaths)) {
-                splitRequest = SplitSheetRequest(paths: contextPaths)
+                splitRequest = SplitSheetRequest(paths: changedPaths)
             }
             if !detail.info.isWorkingCopy {
                 Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
-                    actions?.moveToWorkingCopy(rev: detailRevision, paths: contextPaths)
+                    actions?.moveToWorkingCopy(rev: detailRevision, paths: changedPaths)
                 }
             }
-            restoreActions(paths: contextPaths)
+            restoreActions(cardPaths: contextPaths, paths: changedPaths)
             if detail.info.isWorkingCopy {
                 Button(deleteActionLabel(for: contextPaths), role: .destructive) {
                     actions?.deleteFiles(paths: contextPaths)
@@ -70,9 +73,9 @@ extension ChangeDetailView {
     }
 
     @ViewBuilder
-    private func restoreActions(paths: [String]) -> some View {
+    private func restoreActions(cardPaths: [String], paths: [String]) -> some View {
         if detail.info.parents.count > 1 {
-            Menu(restoreActionLabel(for: paths)) {
+            Menu(restoreActionLabel(for: cardPaths)) {
                 ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { index, parentId in
                     Button("Parent \(index + 1): \(String(parentId.prefix(8)))") {
                         actions?.restoreFiles(rev: parentId, paths: paths)
@@ -80,7 +83,7 @@ extension ChangeDetailView {
                 }
             }
         } else {
-            Button(restoreActionLabel(for: paths)) {
+            Button(restoreActionLabel(for: cardPaths)) {
                 actions?.restoreFiles(rev: detailRevision, paths: paths)
             }
         }

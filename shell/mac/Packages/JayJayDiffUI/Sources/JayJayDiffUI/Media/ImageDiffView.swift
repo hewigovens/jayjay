@@ -63,6 +63,15 @@ public struct ImageDiffView: View {
                     showsLabel: false
                 )
                 .padding(16)
+            case .copied:
+                imagePane(
+                    image: newImage,
+                    path: newPath,
+                    label: "Copied",
+                    tint: .green,
+                    showsLabel: false
+                )
+                .padding(16)
             case .modified:
                 GeometryReader { geometry in
                     let width = max(0, geometry.size.width - ImageDiffDivider.width)

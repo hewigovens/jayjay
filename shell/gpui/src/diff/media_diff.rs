@@ -38,6 +38,14 @@ where
             t.tag_renamed_fg,
             t,
         ),
+        HunkType::Copied => single_pane_for(
+            &pane,
+            DiffSide::New,
+            "Copied",
+            t.tag_added_bg,
+            t.tag_added_fg,
+            t,
+        ),
         HunkType::Modified => div()
             .flex()
             .flex_row()

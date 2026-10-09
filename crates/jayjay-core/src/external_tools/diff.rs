@@ -1,9 +1,7 @@
 use std::path::Path;
 
 use crate::diff::{DiffSpanStyle, FileDiff, collapse_context_with_mapping, compute_file_diff_full};
-use crate::{
-    DiffEditFileSelection, DiffHunk, FileDiffStats, HunkType, JayResult, diff::DisplayLineMapping,
-};
+use crate::{DiffEditFileSelection, DiffHunk, FileDiffStats, JayResult, diff::DisplayLineMapping};
 
 use super::scan::{ScannedExternalDiff, scan_external_diff};
 
@@ -92,7 +90,7 @@ fn prepare_file(scanned: ScannedExternalDiff) -> ExternalDiffFile {
         && old_is_regular_file
         && new_is_regular_file
         && (!changed_lines.is_empty() || executable_changed || existence_changed)
-        && hunk.hunk_type != HunkType::Renamed
+        && !hunk.hunk_type.has_source()
         && old_is_text
         && new_is_text;
     let stats = FileDiffStats {
@@ -238,6 +236,7 @@ mod tests {
                 supports_file_editor: true,
                 review_identity: String::new(),
                 projection: None,
+                matches_source: false,
             },
             old_exists: true,
             new_exists: true,

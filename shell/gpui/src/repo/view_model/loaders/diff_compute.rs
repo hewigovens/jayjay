@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{
-    DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, HunkType, JayResult, Repo,
+    DiffHunk, DiffPreview, DiffProjection, DiffProjectionMode, JayResult, Repo,
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
 use jayjay_markdown::MarkdownDocument;
@@ -51,7 +51,7 @@ pub(super) fn compute_diff_blocking(
     reviewable: bool,
 ) -> JayResult<ComputedDiff> {
     let path = hunk.path.clone();
-    if hunk.is_content_free_rename() {
+    if hunk.is_content_free_rename_or_copy() {
         return Ok(ComputedDiff {
             file_diff: compute_file_diff(&path, "", "", ignore_whitespace),
             ..Default::default()
@@ -160,23 +160,24 @@ fn load_hunk(
     raw: bool,
 ) -> JayResult<DiffHunk> {
     let path = hunk.path.as_str();
-    if let Some(from_rev) = compare_from_rev {
-        if raw {
-            return repo.interdiff_file_raw(from_rev, rev, path);
+    let source = hunk
+        .old_path
+        .as_deref()
+        .filter(|_| hunk.hunk_type.has_source());
+    match (compare_from_rev, source, raw) {
+        (Some(from_rev), Some(old_path), _) => {
+            let mode = if raw {
+                DiffProjectionMode::Raw
+            } else {
+                DiffProjectionMode::Processed
+            };
+            repo.interdiff_file_rename_with_mode(from_rev, rev, old_path, path, mode)
         }
-        return repo.interdiff_file(from_rev, rev, path);
-    }
-    if hunk.hunk_type == HunkType::Renamed
-        && let Some(old_path) = hunk.old_path.as_deref()
-    {
-        if raw {
-            return repo.show_file_rename_raw(rev, old_path, path);
-        }
-        return repo.show_file_rename(rev, old_path, path);
-    }
-    if raw {
-        repo.show_file_raw(rev, path)
-    } else {
-        repo.show_file(rev, path)
+        (Some(from_rev), None, true) => repo.interdiff_file_raw(from_rev, rev, path),
+        (Some(from_rev), None, false) => repo.interdiff_file(from_rev, rev, path),
+        (None, Some(old_path), true) => repo.show_file_rename_raw(rev, old_path, path),
+        (None, Some(old_path), false) => repo.show_file_rename(rev, old_path, path),
+        (None, None, true) => repo.show_file_raw(rev, path),
+        (None, None, false) => repo.show_file(rev, path),
     }
 }

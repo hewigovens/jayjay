@@ -269,7 +269,8 @@ extension RepoViewModel {
                         hunkType: hunk.hunkType,
                         supportsConflictEditor: hunk.supportsConflictEditor,
                         reviewIdentity: hunk.reviewIdentity,
-                        projection: hunk.projection
+                        projection: hunk.projection,
+                        matchesSource: hunk.matchesSource
                     )
                 }
             }

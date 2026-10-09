@@ -45,11 +45,13 @@ extension DiffSection {
                 title: "Git LFS-backed file",
                 description: "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object."
             )
-        } else if hunk.isContentFreeRename {
+        } else if hunk.isContentFreeRenameOrCopy {
             placeholderMessage(
-                systemImage: "arrow.right.circle",
+                systemImage: hunk.hunkType == .copied ? "equal.circle" : "arrow.right.circle",
                 title: "No content changes",
-                description: "This file was renamed; its contents are identical."
+                description: hunk.hunkType == .copied
+                    ? "This file was copied; its contents match the source."
+                    : "This file was renamed; its contents are identical."
             )
         } else if shouldShowBlockingProgress {
             LoadingStatus(label: "Loading diff…")

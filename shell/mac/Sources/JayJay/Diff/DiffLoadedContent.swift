@@ -69,7 +69,8 @@ struct DiffLoadedContent {
             supportsConflictEditor: hunk.supportsConflictEditor,
             supportsFileEditor: hunk.supportsFileEditor,
             reviewIdentity: hunk.reviewIdentity,
-            projection: projection
+            projection: projection,
+            matchesSource: hunk.matchesSource
         )
     }
 }

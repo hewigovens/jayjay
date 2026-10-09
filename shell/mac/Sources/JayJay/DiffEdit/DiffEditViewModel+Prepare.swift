@@ -95,7 +95,7 @@ extension DiffEditViewModel {
         repo: JayJayRepo
     ) async throws -> DiffEditFile? {
         // Submodule placeholders are synthesized shell-side and absent from the jj tree diff; reloading one would fail and abort the whole apply.
-        guard hunk.projection == nil, hunk.hunkType != .renamed, !hunk.isSubmodulePlaceholder
+        guard hunk.projection == nil, !hunk.hunkType.hasSource, !hunk.isSubmodulePlaceholder
         else { return nil }
         let content = try await diffStore.loadContentStrict(hunk: hunk, rev: rev, repo: repo)
         let loaded = await DiffEditLoadedFile.make(
