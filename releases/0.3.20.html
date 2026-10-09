@@ -1,0 +1,62 @@
+<h2>Repo Overview</h2>
+<ul>
+  <li>Choose <strong>Repo Overview</strong> from the Repository menu, <code>Cmd+Shift+O</code>, the command palette, or the Overview button in the workspace picker to see every lane of mutable work as a tree growing from trunk. Lane cards show their workspaces and bookmarks, the change count and age, and what needs attention: conflicts, undescribed changes, or an empty checkout above finished work.</li>
+  <li>Click a lane to open its panel with the base, a <strong>Rebase onto trunk</strong> button when it is behind, its workspaces with an Open button, its bookmarks, and every change with its full title. Filter lanes with <code>Cmd+F</code>, move with the arrow keys, and press Return to show the selection in its workspace window; the context menu rebases or abandons a lane, copies ids, and opens, reveals, or forgets a workspace.</li>
+  <li>Only the visible part of the canvas is built, so an overview with thousands of changes opens and changes selection in milliseconds.</li>
+</ul>
+
+<h2>Revset bar</h2>
+<ul>
+  <li>The revset filter lives in the center of the title bar, quiet on the default <strong>Revset</strong> and tinted once the graph is narrowed. Click it, choose Repository &gt; <strong>Filter by Revset…</strong> (<code>Cmd+L</code>), or use the command palette; the filter icon opens presets such as Bookmarks and <strong>Tags</strong>, the current revset, matching bookmarks, and this window's recent revsets.</li>
+  <li>As you type, the bar completes revset functions, your aliases, and bookmark, remote, and tag names at the caret. Tab or Return finishes the highlighted completion, and jj's parse error shows before the graph reloads.</li>
+  <li>The <strong>Bookmarks</strong> picker sits in the graph header beside the change count. Clicking a bookmark selects its change, or narrows the graph to the bookmark and its changes over trunk when it is not shown.</li>
+</ul>
+
+<h2>Workspaces</h2>
+<ul>
+  <li>Choosing a workspace in the title picker or the palette's <strong>Switch to</strong> action opens it in the current window, or brings its window forward. The source stays visible until the destination has loaded, unsaved commit-message drafts survive switching away and back, and a workspace that fails to open leaves the source usable. Option-click or <strong>Open in New Window</strong> opens a separate window.</li>
+  <li><strong>New Workspace from Pull Request…</strong> also takes a GitLab merge request URL, signing in through <code>glab</code> when it is installed, or a <code>GITLAB_TOKEN</code> otherwise.</li>
+  <li>When another workspace rewrites this workspace's working-copy change, JayJay no longer snapshots the old files over the rewrite. The <code>@</code> row shows a warning glyph and the Refresh button a badge; Refresh, or <strong>Update Workspace</strong> in the row's menu, updates the working copy like <code>jj workspace update-stale</code>.</li>
+</ul>
+
+<h2>Changes</h2>
+<ul>
+  <li><strong>Rebase onto trunk</strong> in a change's menu, or <strong>Rebase Working Copy onto Trunk</strong> in the palette, moves a whole line of work onto trunk. Dragging one change of a multi-selection rebases the whole selection.</li>
+  <li>Select a connected run of changes and choose <strong>Parallelize</strong> to turn the stack into siblings. <strong>Merge N selected</strong> has a <strong>First parent</strong> submenu to choose which change leads the merge.</li>
+  <li><strong>Run formatters (jj fix)</strong> on a change, a multi-selection, or from the palette runs the tools in your <code>[fix.tools]</code> config over the selected changes and their descendants with jj's semantics, including the newer <code>line-range-args</code> list. A failing tool leaves its file unchanged and is reported.</li>
+  <li>Create a lightweight tag from a change's menu. The tag chip offers <strong>Push</strong> while the tag is local only, and <strong>Delete Tag on Remote</strong> once a tracked remote has it, restoring the local tag if the push fails.</li>
+  <li><strong>Restore this version</strong> in Change Evolution puts that version's content back into the working copy or the change you opened, in one undoable operation.</li>
+</ul>
+
+<h2>Diff and detail</h2>
+<ul>
+  <li>The diff header shows the file's status pill and line counts next to its name, with Preview, the layout toggle, Edit Diff, and Edit File in one style on the right. The file column header puts its controls first and one count last.</li>
+  <li>Large diffs open and switch much faster: replacing a 6,000-line diff drops from over a second to a few milliseconds, and line wrapping is about ten times faster.</li>
+  <li>Fish scripts get syntax highlighting, and symbols such as ↩ draw as text in your code font instead of as color emoji.</li>
+</ul>
+
+<h2>Keyboard</h2>
+<ul>
+  <li><code>h</code> and <code>l</code> work like Left and Right, alongside <code>j</code> and <code>k</code>: Right in the graph moves to the file list and Left moves back. Keys nothing handles no longer beep.</li>
+  <li>The Keyboard Shortcuts window (<code>Cmd+/</code>) lists every shortcut, including Filter by Revset, Repo Overview, and the conflict editor's Option-arrow keys.</li>
+</ul>
+
+<h2>Faster and steadier</h2>
+<ul>
+  <li>Almost every repository action runs in-process through jj-lib, now 0.46, instead of spawning <code>jj</code>; only fetch, push, external merge tools, and raw palette commands still run the binary. Actions from different windows of one repository run one at a time, so overlapping operations no longer leave a change divergent.</li>
+  <li>Undo records pending working-copy edits before it lists operations, and colocated Git repositories see the updated HEAD and branches right after each action.</li>
+  <li>Refreshing the graph after a snapshot is about four times faster in repositories with thousands of changes and hundreds of bookmarks.</li>
+  <li>Settings &gt; Jujutsu reads your config files directly, so it works without <code>jj</code> on the PATH, and names the file that failed to load.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Fixed a crash that could happen when a repository window closed while files in it were changing.</li>
+  <li>After a fetch or pull, a bookmark whose remote branch was deleted once its pull request merged is cleaned up in one undoable operation; unmerged and conflicted work is kept.</li>
+  <li><strong>Show in Graph</strong> and <strong>Show ancestors…</strong> keep following a change after it is rewritten.</li>
+  <li>The commit box's Summary field keeps the caret where you put it, and the tree file list no longer jumps after a fast scroll.</li>
+  <li>The bookmark picker shows <em>Loading bookmarks…</em> on large repositories instead of opening empty, and panes waiting for content share one loading indicator.</li>
+  <li>Commits by coding agents such as Claude Code and GitHub Copilot show the account's GitHub avatar.</li>
+  <li>The missing <code>user.name</code> or <code>user.email</code> alert now appears when jj has no identity configured, and the file tree shows both entries when a file is replaced by a directory of the same path.</li>
+  <li>The sponsor prompt is now a rating prompt that offers <strong>Star on GitHub</strong> first; people who turned the old prompt off stay opted out.</li>
+</ul>
