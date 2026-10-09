@@ -9,6 +9,7 @@ use jj_lib::ref_name::{RefName, RemoteName, RemoteNameBuf};
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use super::Repo;
+use super::ref_name::ensure_valid_ref_name;
 use super::support::{block_on_result, short_change_id};
 use crate::types::*;
 
@@ -154,6 +155,7 @@ impl Repo {
     }
 
     pub fn create_bookmark(&self, name: &str, rev: &str) -> JayResult<()> {
+        ensure_valid_ref_name("bookmark", name)?;
         let _write = self.write_guard()?;
         self.with_resolved_commit_transaction(
             rev,
@@ -253,6 +255,7 @@ impl Repo {
         if old_name == new_name {
             return Ok(());
         }
+        ensure_valid_ref_name("bookmark", new_name)?;
         // Destination uniqueness is checked inside the transaction so a concurrent create cannot be overwritten.
         self.with_repo_transaction("rename bookmark", false, move |_, repo_mut| {
             let target = repo_mut

@@ -4,7 +4,8 @@ use jj_lib::ref_name::{RefName, RemoteName};
 use jj_lib::repo::Repo as _;
 use jj_lib::view::View;
 
-use super::{Repo, SyncToken, is_valid_bookmark_name};
+use super::ref_name::ensure_valid_ref_name;
+use super::{Repo, SyncToken};
 use crate::types::*;
 
 impl Repo {
@@ -28,9 +29,7 @@ impl Repo {
 
     /// `jj tag set` without `--allow-move`: a tag names a release, so an existing tag is never silently moved.
     pub fn create_tag(&self, name: &str, rev: &str) -> JayResult<()> {
-        if !is_valid_bookmark_name(name) {
-            return Err(JayError::internal(format!("Invalid tag name: {name}")));
-        }
+        ensure_valid_ref_name("tag", name)?;
         let _write = self.write_guard()?;
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;

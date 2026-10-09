@@ -36,34 +36,6 @@ pub fn branch_name_slug(text: &str) -> String {
     words.join("-")
 }
 
-/// Whether `name` is usable as a git branch / jj bookmark — a conservative subset
-/// of `git check-ref-format`. Rejects empties, whitespace, the reserved ref
-/// characters, `..`, and ill-formed path components, so a bad edit can't reach
-/// `jj git push` after bookmarks were already moved locally.
-pub fn is_valid_bookmark_name(name: &str) -> bool {
-    if name.is_empty() || name.len() > 255 || name == "@" {
-        return false;
-    }
-    if name.starts_with('-') || name.starts_with('/') || name.ends_with('/') || name.ends_with('.')
-    {
-        return false;
-    }
-    if name.contains("..") || name.contains("//") || name.contains("@{") {
-        return false;
-    }
-    if name.chars().any(|ch| {
-        ch.is_control()
-            || ch.is_whitespace()
-            || matches!(ch, '~' | '^' | ':' | '?' | '*' | '[' | '\\')
-    }) {
-        return false;
-    }
-    // git ref-format rules are per slash-separated component: none may be empty,
-    // dot-leading (`foo/.bar`), or end in `.lock` (`foo.lock/bar`, not just `foo.lock`).
-    name.split('/')
-        .all(|c| !c.is_empty() && !c.starts_with('.') && !c.ends_with(".lock"))
-}
-
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -98,38 +70,5 @@ mod tests {
             "add-stacked-pr-names-safely"
         );
         assert_eq!(branch_name_slug(" -- "), "");
-    }
-
-    #[test]
-    fn validates_bookmark_names() {
-        for ok in [
-            "feat-add-x-abc123",
-            "user/feat/thing",
-            "v1.2-rc",
-            &"b".repeat(255),
-        ] {
-            assert!(is_valid_bookmark_name(ok), "{ok} should be valid");
-        }
-        for bad in [
-            "",
-            "@",
-            "has space",
-            "bad..dots",
-            "-leading-dash",
-            "trailing/",
-            "ends.",
-            "name.lock",
-            "foo.lock/bar",
-            "ti~lde",
-            "co:lon",
-            "a//b",
-            "foo/.hidden",
-            "ctrl\tchar",
-            "/leading-slash",
-            "a@{upstream}",
-            &"b".repeat(256),
-        ] {
-            assert!(!is_valid_bookmark_name(bad), "{bad:?} should be invalid");
-        }
     }
 }

@@ -56,7 +56,7 @@ impl StackedPrState {
 
     pub(crate) fn warning(&self, index: usize) -> Option<&'static str> {
         let name = self.inputs.get(index)?.text();
-        if name.is_empty() || !is_valid_bookmark_name(name) {
+        if !is_valid_bookmark_name(name) {
             return Some("Not a valid bookmark name");
         }
         if self

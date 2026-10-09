@@ -73,8 +73,8 @@ extension RepoContentView {
         )
     }
 
-    @ViewBuilder
     /// Split from the main switch to keep it under swiftlint's complexity limit.
+    @ViewBuilder
     private func secondarySheet(for modal: RepoModalState) -> some View {
         switch modal {
             case .workspaceCreate:
@@ -121,7 +121,7 @@ extension RepoContentView {
             subtitle: "On change: \(String(rev.prefix(12)))",
             cancelLabel: "Cancel",
             confirmLabel: "Create",
-            confirmDisabled: refCreateName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            confirmDisabled: !isValidBookmarkName(name: refCreateName.trimmingCharacters(in: .whitespacesAndNewlines)),
             onCancel: { modal = nil },
             onConfirm: submit,
             content: {
@@ -350,7 +350,7 @@ extension RepoContentView {
 
     private func submitRefCreate(_ onCreate: (String) -> Void) {
         let name = refCreateName.trimmingCharacters(in: .whitespacesAndNewlines)
-        guard !name.isEmpty else { return }
+        guard isValidBookmarkName(name: name) else { return }
         onCreate(name)
         modal = nil
     }

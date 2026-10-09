@@ -24,6 +24,7 @@ mod parallelize;
 mod path_operands;
 mod platform;
 mod pull_requests;
+mod ref_name;
 mod resolve;
 mod review_marks;
 mod review_note_output;
@@ -58,11 +59,12 @@ pub use environment::login_shell;
 pub use environment::login_shell_path;
 pub use handle::Repo;
 pub use init::init_jj_git_repo;
+pub use ref_name::is_valid_bookmark_name;
 pub use review_marks::{mark_review_file, review_status_output, unmark_review_files};
 pub use review_note_output::{
     ReviewOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 pub use review_notes::ReviewNotesReport;
 pub use review_snapshot::{review_display_group_map_from_hunk, review_snapshot_from_hunk};
-pub use stacked_pr::{branch_name_slug, is_valid_bookmark_name};
+pub use stacked_pr::branch_name_slug;
 pub use workspace_path::{is_valid_workspace_name, workspace_primary_root, workspace_root};

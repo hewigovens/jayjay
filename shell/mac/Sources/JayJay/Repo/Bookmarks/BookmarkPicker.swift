@@ -258,7 +258,7 @@ struct BookmarkPicker: View {
                     .keyboardShortcut(.cancelAction)
                 Button("Create") { submitCreate() }
                     .keyboardShortcut(.defaultAction)
-                    .disabled(trimmedNewBookmarkName.isEmpty)
+                    .disabled(!canSubmitCreate)
             }
         }
         .padding(14)
@@ -296,12 +296,16 @@ struct BookmarkPicker: View {
         renameNewName.trimmingCharacters(in: .whitespacesAndNewlines)
     }
 
+    private var canSubmitCreate: Bool {
+        isValidBookmarkName(name: trimmedNewBookmarkName)
+    }
+
     private var canSubmitRename: Bool {
-        !trimmedRenameName.isEmpty && trimmedRenameName != renamingBookmark
+        isValidBookmarkName(name: trimmedRenameName) && trimmedRenameName != renamingBookmark
     }
 
     private func submitCreate() {
-        guard !trimmedNewBookmarkName.isEmpty else { return }
+        guard canSubmitCreate else { return }
         actions?.createBookmark(name: trimmedNewBookmarkName, rev: "@")
         showingCreate = false
     }

@@ -6,8 +6,8 @@ use super::cursor;
 use super::forge::ForgeTarget;
 use super::github;
 use super::gitlab;
-use super::naming::is_valid_bookmark_name;
 use super::validation::validate_stack_changes;
+use crate::repo::ref_name::ensure_valid_ref_name;
 
 impl Repo {
     pub fn submit_stack(&self, layers: Vec<SubmitStackLayer>) -> JayResult<StackedPrResult> {
@@ -16,10 +16,8 @@ impl Repo {
                 message: "No changes to submit.".to_owned(),
             });
         }
-        if let Some(bad) = layers.iter().find(|l| !is_valid_bookmark_name(&l.bookmark)) {
-            return Err(JayError::Internal {
-                message: format!("\"{}\" is not a valid branch name.", bad.bookmark),
-            });
+        for layer in &layers {
+            ensure_valid_ref_name("bookmark", &layer.bookmark)?;
         }
 
         // Two layers sharing a bookmark would move it twice and mis-head the PRs.

@@ -460,3 +460,36 @@ fn a_bookmark_known_only_to_the_backing_git_repo_is_local_only() {
         bookmark.available_remotes
     );
 }
+
+#[test]
+fn bookmark_names_git_cannot_store_are_rejected() {
+    let fixture = LinearFixture::build();
+    let repo = Repo::open(&fixture.path).expect("open repo");
+
+    repo.create_bookmark("feat/x-y_z", "@").expect("valid name");
+    let rejected = ["a b", "foo..bar", "foo.lock", "ti~lde"]
+        .map(|bad| repo.create_bookmark(bad, "@").expect_err(bad))
+        .into_iter()
+        .chain([repo
+            .rename_bookmark("feat/x-y_z", "a b")
+            .expect_err("rename")]);
+    for err in rejected {
+        assert!(
+            err.to_string().contains("not a valid bookmark name"),
+            "{err}"
+        );
+    }
+
+    let names: Vec<_> = repo
+        .list_bookmarks()
+        .expect("list bookmarks")
+        .into_iter()
+        .map(|bookmark| bookmark.name)
+        .collect();
+    assert!(names.contains(&"feat/x-y_z".to_owned()), "{names:?}");
+    assert!(
+        !names
+            .iter()
+            .any(|name| name.contains(' ') || name.contains(".."))
+    );
+}
