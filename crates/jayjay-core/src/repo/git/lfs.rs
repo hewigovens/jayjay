@@ -1,11 +1,13 @@
 use std::collections::{HashMap, HashSet};
-use std::io::Write;
-use std::process::Stdio;
 use std::sync::Arc;
 
-use jj_lib::repo::ReadonlyRepo;
+use gix::attrs::StateRef;
+use gix::glob::pattern::Case;
+use gix::worktree::stack::state::attributes::Source;
+use jj_lib::git::get_git_repo;
+use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
-use crate::repo::{Repo, subprocess_command};
+use crate::repo::Repo;
 use crate::types::*;
 
 /// Keyed on the loaded repo handle: a refresh replaces it even when Git attributes or the index changed without a new jj operation.
@@ -60,7 +62,7 @@ impl Repo {
             return Ok(vec![]);
         }
         let repo = self.get_repo();
-        // Held across the subprocesses on purpose: a second caller for the same loaded repo waits for the answer instead of spawning git again.
+        // Held across the lookups on purpose: a second caller for the same loaded repo waits for the answer instead of repeating them.
         let mut cache = self.lfs_cache.lock().unwrap();
         cache.reset_if_stale(&repo);
 
@@ -70,7 +72,7 @@ impl Repo {
             .cloned()
             .collect();
         if !unknown.is_empty() {
-            let lfs: HashSet<String> = self.check_attr_lfs_paths(&unknown)?.into_iter().collect();
+            let lfs = self.attribute_lfs_paths(&repo, &unknown)?;
             for path in unknown {
                 let is_lfs = lfs.contains(&path);
                 cache.attribute_says_lfs.insert(path, is_lfs);
@@ -95,71 +97,48 @@ impl Repo {
             .collect())
     }
 
-    /// Paths whose `.gitattributes` set `filter=lfs`. Repository-controlled, so
-    /// callers must confirm real LFS registration before acting on the result.
-    fn check_attr_lfs_paths(&self, paths: &[String]) -> JayResult<Vec<String>> {
-        let mut child = subprocess_command("git")
-            .current_dir(&self.path)
-            .args(["check-attr", "--stdin", "filter"])
-            .stdin(Stdio::piped())
-            .stdout(Stdio::piped())
-            .stderr(Stdio::piped())
-            .spawn()
-            .map_err(|e| JayError::Internal {
-                message: format!("git check-attr: {e}"),
-            })?;
-
-        // Feed stdin on a side thread so we can drain stdout concurrently and avoid a pipe deadlock.
-        let stdin = child.stdin.take().ok_or_else(|| JayError::Internal {
-            message: "git check-attr: failed to open stdin".to_owned(),
-        })?;
-        let paths_to_send: Vec<String> = paths.to_vec();
-        let writer = std::thread::spawn(move || -> std::io::Result<()> {
-            let mut stdin = stdin;
-            for path in &paths_to_send {
-                writeln!(stdin, "{path}")?;
+    /// Paths whose `.gitattributes` set `filter=lfs`. Repository-controlled, so callers must confirm real LFS registration before acting on the result.
+    fn attribute_lfs_paths(
+        &self,
+        repo: &ReadonlyRepo,
+        paths: &[String],
+    ) -> JayResult<HashSet<String>> {
+        let error = |error: &dyn std::fmt::Display| {
+            JayError::internal(format!("read git attributes: {error}"))
+        };
+        let git_repo = get_git_repo(repo.store()).map_err(|e| error(&e))?;
+        let index = git_repo.index_or_empty().map_err(|e| error(&e))?;
+        let globals = git_repo
+            .attributes_only(
+                &gix::index::State::new(git_repo.object_hash()),
+                Source::WorktreeThenIdMapping,
+            )
+            .map_err(|e| error(&e))?
+            .detach();
+        let case = if git_repo.config_snapshot().boolean("core.ignoreCase") == Some(true) {
+            Case::Fold
+        } else {
+            Case::Sensitive
+        };
+        let state = globals.state().clone();
+        let index_attributes = state.id_mappings_from_index(&index, index.path_backing(), case);
+        // Rooted at the workspace so non-colocated workspaces, whose git store is bare, read their checked-out `.gitattributes` too.
+        let mut attributes =
+            gix::worktree::Stack::new(&self.path, state, case, Vec::new(), index_attributes);
+        let mut outcome = attributes.selected_attribute_matches(["filter"]);
+        let mut lfs = HashSet::new();
+        for path in paths {
+            attributes
+                .at_entry(path.as_str(), None, &git_repo.objects)
+                .map_err(|e| error(&e))?
+                .matching_attributes(&mut outcome);
+            if outcome
+                .iter_selected()
+                .any(|m| m.assignment.state == StateRef::from_bytes(b"lfs"))
+            {
+                lfs.insert(path.clone());
             }
-            Ok(())
-        });
-
-        let output = child.wait_with_output().map_err(|e| JayError::Internal {
-            message: format!("git check-attr: {e}"),
-        })?;
-        writer
-            .join()
-            .map_err(|_| JayError::Internal {
-                message: "git check-attr: stdin writer thread panicked".to_owned(),
-            })?
-            .map_err(|e| JayError::Internal {
-                message: format!("git check-attr stdin: {e}"),
-            })?;
-        self.ensure_success(&output, "git check-attr")?;
-
-        Ok(parse_git_check_attr_lfs_paths(&Self::stdout_text(&output)))
-    }
-}
-
-fn parse_git_check_attr_lfs_paths(stdout: &str) -> Vec<String> {
-    stdout
-        .lines()
-        .filter_map(|line| line.strip_suffix(": filter: lfs"))
-        .map(str::to_owned)
-        .collect()
-}
-
-#[cfg(test)]
-mod tests {
-    use super::parse_git_check_attr_lfs_paths;
-
-    #[test]
-    fn parses_git_check_attr_lfs_paths() {
-        let paths = parse_git_check_attr_lfs_paths(
-            "packages/foo.bin: filter: lfs\nREADME.md: filter: unspecified\npackages/bar.bin: filter: lfs\n",
-        );
-
-        assert_eq!(
-            paths,
-            vec!["packages/foo.bin".to_owned(), "packages/bar.bin".to_owned()]
-        );
+        }
+        Ok(lfs)
     }
 }

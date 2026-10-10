@@ -69,16 +69,19 @@ fn genuine_lfs_object_follows_attributes_across_refreshes() {
     run_git(&repo_path, &["config", "user.name", "Test User"]);
     run_git(&repo_path, &["lfs", "install", "--local"]);
     run_git(&repo_path, &["lfs", "track", "*.bin"]);
-    fs::write(repo_path.join("asset.bin"), vec![0u8, 1, 2, 3, 4, 5, 6, 7]).expect("write asset");
-    run_git(&repo_path, &["add", ".gitattributes", "asset.bin"]);
-    run_git(&repo_path, &["commit", "-m", "add lfs asset"]);
+    let assets = ["asset.bin", "dir/my file.bin", "ü.bin"].map(str::to_owned);
+    fs::create_dir(repo_path.join("dir")).expect("create dir");
+    for asset in &assets {
+        fs::write(repo_path.join(asset), vec![0u8, 1, 2, 3, 4, 5, 6, 7]).expect("write asset");
+    }
+    run_git(&repo_path, &["add", "."]);
+    run_git(&repo_path, &["commit", "-m", "add lfs assets"]);
     repo.refresh_working_copy().expect("snapshot working copy");
 
     assert_eq!(
-        repo.git_lfs_paths(&["asset.bin".to_owned()])
-            .expect("git_lfs_paths"),
-        vec!["asset.bin".to_owned()],
-        "a real LFS object must still be reported"
+        repo.git_lfs_paths(&assets).expect("git_lfs_paths"),
+        assets,
+        "real LFS objects must still be reported"
     );
 
     let operation = || {
@@ -113,4 +116,17 @@ fn genuine_lfs_object_follows_attributes_across_refreshes() {
             expected,
         );
     }
+
+    fs::remove_file(&info_attributes).expect("remove local attributes");
+    fs::remove_file(repo_path.join(".gitattributes")).expect("remove attributes");
+    let attr = run_git(&repo_path, &["check-attr", "filter", "--", "asset.bin"]).stdout;
+    assert!(String::from_utf8_lossy(&attr).contains("filter: lfs"));
+    assert_eq!(
+        Repo::open(&repo_path)
+            .expect("reopen repo")
+            .git_lfs_paths(&["asset.bin".to_owned()])
+            .expect("git_lfs_paths"),
+        vec!["asset.bin".to_owned()],
+        "git falls back to the index when the checked-out .gitattributes is gone"
+    );
 }

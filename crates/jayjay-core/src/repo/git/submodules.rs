@@ -8,6 +8,7 @@ impl Repo {
             &[
                 "status",
                 "--porcelain=v2",
+                "-z",
                 "--ignore-submodules=none",
                 "--untracked-files=no",
             ],
@@ -15,9 +16,9 @@ impl Repo {
         )?;
         self.ensure_success(&output, "git status")?;
 
-        Ok(parse_git_status_submodule_statuses(&Self::stdout_text(
-            &output,
-        )))
+        Ok(parse_git_status_submodule_statuses(
+            &String::from_utf8_lossy(&output.stdout),
+        ))
     }
 
     pub fn commit_safe_submodule_updates(
@@ -62,30 +63,34 @@ impl Repo {
 }
 
 fn parse_git_status_submodule_statuses(stdout: &str) -> Vec<GitSubmoduleStatus> {
-    stdout
-        .lines()
-        .filter_map(|line| {
-            let mut parts = line.split_whitespace();
-            if parts.next()? != "1" {
-                return None;
+    let mut records = stdout.split('\0');
+    let mut statuses = Vec::new();
+    while let Some(record) = records.next() {
+        let field_count = match record.split_once(' ') {
+            Some(("1", _)) => 9,
+            Some(("2", _)) => {
+                // A rename's original path follows as its own NUL-terminated record.
+                records.next();
+                10
             }
-
-            let _xy = parts.next()?;
-            let submodule_state = parts.next()?;
-            if !submodule_state.starts_with('S') {
-                return None;
-            }
-
-            let path = parts.last()?.to_owned();
-            let state: Vec<char> = submodule_state.chars().collect();
-            Some(GitSubmoduleStatus {
-                path,
-                has_new_commits: state.get(1) == Some(&'C'),
-                has_modified_content: state.get(2) == Some(&'M'),
-                has_untracked_content: state.get(3) == Some(&'U'),
-            })
-        })
-        .collect()
+            _ => continue,
+        };
+        let fields: Vec<&str> = record.splitn(field_count, ' ').collect();
+        if fields.len() != field_count {
+            continue;
+        }
+        let state = fields[2].as_bytes();
+        if state.first() != Some(&b'S') {
+            continue;
+        }
+        statuses.push(GitSubmoduleStatus {
+            path: fields[field_count - 1].to_owned(),
+            has_new_commits: state.get(1) == Some(&b'C'),
+            has_modified_content: state.get(2) == Some(&b'M'),
+            has_untracked_content: state.get(3) == Some(&b'U'),
+        });
+    }
+    statuses
 }
 
 #[cfg(test)]
@@ -95,18 +100,29 @@ mod tests {
     #[test]
     fn parses_git_status_submodule_statuses() {
         let statuses = parse_git_status_submodule_statuses(
-            "1 .M SC.. 160000 160000 160000 2196000605e45d91097147c9c71f26b72af58003 2196000605e45d91097147c9c71f26b72af58003 crypto/tests/wycheproof\n\
-             1 .M S..U 160000 160000 160000 a660a4976efe880bae7982ee410b9e0dc59ac983 a660a4976efe880bae7982ee410b9e0dc59ac983 vendor/secp256k1-zkp\n",
+            "1 .M SC.. 160000 160000 160000 2196000605e45d91097147c9c71f26b72af58003 2196000605e45d91097147c9c71f26b72af58003 crypto/tests/wycheproof\0\
+             1 .M N... 100644 100644 100644 a660a4976efe880bae7982ee410b9e0dc59ac983 a660a4976efe880bae7982ee410b9e0dc59ac983 README.md\0\
+             2 R. S..U 160000 160000 160000 a660a4976efe880bae7982ee410b9e0dc59ac983 a660a4976efe880bae7982ee410b9e0dc59ac983 R100 vendor/my lib\0\
+             1 .M SCM. 160000 160000 160000 a660a4976efe880bae7982ee410b9e0dc59ac983 a660a4976efe880bae7982ee410b9e0dc59ac983 old\0",
         );
 
-        assert_eq!(statuses.len(), 2);
-        assert_eq!(statuses[0].path, "crypto/tests/wycheproof");
-        assert!(statuses[0].has_new_commits);
-        assert!(!statuses[0].has_modified_content);
-        assert!(!statuses[0].has_untracked_content);
-        assert_eq!(statuses[1].path, "vendor/secp256k1-zkp");
-        assert!(!statuses[1].has_new_commits);
-        assert!(!statuses[1].has_modified_content);
-        assert!(statuses[1].has_untracked_content);
+        let summary: Vec<_> = statuses
+            .iter()
+            .map(|status| {
+                (
+                    status.path.as_str(),
+                    status.has_new_commits,
+                    status.has_modified_content,
+                    status.has_untracked_content,
+                )
+            })
+            .collect();
+        assert_eq!(
+            summary,
+            [
+                ("crypto/tests/wycheproof", true, false, false),
+                ("vendor/my lib", false, false, true),
+            ]
+        );
     }
 }
