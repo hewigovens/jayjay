@@ -3,10 +3,18 @@ use gix::validate::reference::name_partial;
 
 use crate::types::{JayError, JayResult};
 
-/// Git's own short-ref rules, plus no leading `-` so a name never reads as a flag.
+/// Loose refs are files, and most filesystems cap a file name at 255 bytes.
+const MAX_REF_NAME_BYTES: usize = 255;
+
+/// Git's own short-ref rules, plus what gix leaves to the caller: no leading `-` so a name never reads as a flag, and a length git can store.
 fn ref_name_problem(name: &str) -> Option<String> {
     if name.starts_with('-') {
         return Some("Reference name cannot start with '-'".to_owned());
+    }
+    if name.len() > MAX_REF_NAME_BYTES {
+        return Some(format!(
+            "Reference name cannot be longer than {MAX_REF_NAME_BYTES} bytes"
+        ));
     }
     name_partial(BStr::new(name))
         .err()
@@ -57,6 +65,7 @@ mod tests {
             "ctrl\tchar",
             "/leading-slash",
             "a@{upstream}",
+            &"b".repeat(256),
         ] {
             assert!(!is_valid_bookmark_name(bad), "{bad:?} should be invalid");
         }
