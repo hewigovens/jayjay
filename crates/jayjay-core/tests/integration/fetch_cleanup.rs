@@ -223,6 +223,30 @@ fn fetch_cleanup_keeps_other_workspaces_working_copies() {
     }
 }
 
+#[test]
+fn forget_stale_bookmarks_works_from_a_workspace_without_git_dir() {
+    let fixture = DeletedFeatureFixture::merged();
+    let sibling = fixture.dir.path().join("sibling");
+    run_jj_in(
+        &fixture.bob,
+        &[
+            "workspace",
+            "add",
+            "--name",
+            "sibling",
+            sibling.to_str().unwrap(),
+        ],
+    );
+    run_jj_in(&sibling, &["git", "fetch"]);
+    run_jj_in(&sibling, &["bookmark", "delete", "main"]);
+    let repo = Repo::open(&sibling).unwrap();
+
+    assert_eq!(repo.forget_stale_bookmarks().unwrap(), 1);
+
+    assert!(find_bookmark(&repo, "feature").is_conflicted);
+    assert!(!find_bookmark(&repo, "main").is_tracking_remote);
+}
+
 fn fetch(repo: &Repo) -> FetchResult {
     repo.git_fetch("origin", &repo.sync_token()).unwrap()
 }
