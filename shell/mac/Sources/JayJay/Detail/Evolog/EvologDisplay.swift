@@ -47,8 +47,8 @@ enum EvologDisplay {
             case .added: "plus.circle"
             case .removed: "minus.circle"
             case .renamed: "arrow.right.circle"
-            case .copied: "equal.circle"
-            case .modified: "pencil.circle"
+            case .copied: "square.on.square"
+            case .modified: "plusminus.circle"
         }
     }
 

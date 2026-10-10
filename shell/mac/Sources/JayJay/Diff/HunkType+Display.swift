@@ -6,17 +6,18 @@ extension HunkType {
         switch self {
             case .added: Image(systemName: "plus.circle.fill")
             case .removed: Image(systemName: "minus.circle.fill")
-            case .modified:
+            case .modified: Image(systemName: "plusminus.circle.fill")
+            case .renamed: Image(systemName: "arrow.right.circle.fill")
+            case .copied:
+                // SF Symbols has no circled copy glyph.
                 Image(systemName: "circle.fill")
                     .overlay {
-                        Text("~")
+                        Image(systemName: "square.on.square")
                             .fontWeight(.bold)
-                            .scaleEffect(0.8)
+                            .scaleEffect(0.55)
                             .blendMode(.destinationOut)
                     }
                     .compositingGroup()
-            case .renamed: Image(systemName: "arrow.right.circle.fill")
-            case .copied: Image(systemName: "equal.circle.fill")
         }
     }
 
@@ -24,9 +25,9 @@ extension HunkType {
         Image(systemName: "square.fill")
             .foregroundStyle(iconColor.opacity(colorScheme == .light ? 0.15 : 0.14))
             .overlay {
-                Text(statusSymbol)
+                Image(systemName: badgeSymbol)
                     .fontWeight(.semibold)
-                    .scaleEffect(0.75)
+                    .scaleEffect(0.6)
                     .foregroundStyle(colorScheme == .light ? lightBadgeColor : iconColor)
             }
     }
@@ -39,13 +40,13 @@ extension HunkType {
         }
     }
 
-    private var statusSymbol: String {
+    private var badgeSymbol: String {
         switch self {
-            case .added: "+"
-            case .removed: "−"
-            case .modified: "~"
-            case .renamed: "→"
-            case .copied: "="
+            case .added: "plus"
+            case .removed: "minus"
+            case .modified: "plusminus"
+            case .renamed: "arrow.right"
+            case .copied: "square.on.square"
         }
     }
 

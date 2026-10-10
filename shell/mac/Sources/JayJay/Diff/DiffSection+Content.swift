@@ -47,7 +47,7 @@ extension DiffSection {
             )
         } else if hunk.isContentFreeRenameOrCopy {
             placeholderMessage(
-                systemImage: hunk.hunkType == .copied ? "equal.circle" : "arrow.right.circle",
+                systemImage: hunk.hunkType == .copied ? "square.on.square" : "arrow.right.circle",
                 title: "No content changes",
                 description: hunk.hunkType == .copied
                     ? "This file was copied; its contents match the source."

@@ -155,17 +155,18 @@ pub fn diff_view(
         )
         .into_any_element()
     } else if hunk.is_content_free_rename_or_copy() {
-        placeholder_card(
-            glyph::ARROW_CIRCLE_RIGHT,
-            "No content changes",
-            if hunk.hunk_type == HunkType::Copied {
-                "This file was copied; its contents match the source."
-            } else {
-                "This file was renamed; its contents are identical."
-            },
-            &t,
-        )
-        .into_any_element()
+        let (icon, message) = if hunk.hunk_type == HunkType::Copied {
+            (
+                glyph::COPY,
+                "This file was copied; its contents match the source.",
+            )
+        } else {
+            (
+                glyph::ARROW_CIRCLE_RIGHT,
+                "This file was renamed; its contents are identical.",
+            )
+        };
+        placeholder_card(icon, "No content changes", message, &t).into_any_element()
     } else {
         match (state.file_diff, view_mode) {
             (None, _) if hunk.projection.is_some() => diff_body_with_gutter(
