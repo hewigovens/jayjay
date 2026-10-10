@@ -295,7 +295,7 @@ fn submit_stack_rejects_diverged_untracked_origin_bookmark() {
     assert_eq!(local_after.change_id.id, feature.change_id.id);
 }
 
-fn remote_bookmark_fixture() -> (tempfile::TempDir, PathBuf) {
+pub(crate) fn remote_bookmark_fixture() -> (tempfile::TempDir, PathBuf) {
     let work_dir = tempfile::tempdir().expect("create work dir");
     let bare_path = work_dir.path().join("origin.git");
     let alice_path = work_dir.path().join("alice");

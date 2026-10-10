@@ -2,6 +2,7 @@ use std::fs;
 use std::path::PathBuf;
 use std::process::Command;
 
+use jayjay_core::compare::RevsetEndpoint;
 use jayjay_core::{ChangeInfo, RemoteSyncStatus, Repo};
 use jj_test::{
     LinearFixture, configure_test_user, find_bookmark, git_stdout, init_colocated, init_jj_repo,
@@ -492,4 +493,18 @@ fn bookmark_names_git_cannot_store_are_rejected() {
             .iter()
             .any(|name| name.contains(' ') || name.contains(".."))
     );
+}
+
+#[test]
+fn remote_only_bookmark_endpoint_resolves() {
+    let (_work_dir, bob_path) = crate::stacked_pr::remote_bookmark_fixture();
+    let repo = Repo::open(&bob_path).expect("open bob repo");
+    let reserved = find_bookmark(&repo, "reserved");
+    assert!(!reserved.has_local_target);
+
+    let endpoint = RevsetEndpoint::for_bookmark(&reserved);
+    let changes = repo
+        .log(&endpoint.rev)
+        .expect("resolve remote-only endpoint");
+    assert_eq!(changes.len(), 1, "{}", endpoint.rev);
 }

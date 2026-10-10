@@ -1,6 +1,8 @@
 use std::collections::HashSet;
 
-use super::expressions::{symbol_text, workspace_head_revset};
+use jj_lib::revset::{format_remote_symbol, format_symbol};
+
+use super::expressions::workspace_head_revset;
 use super::functions::FUNCTIONS;
 use crate::utf16::{byte_offset, utf16_offset};
 
@@ -38,7 +40,7 @@ impl RevsetName {
     pub(crate) fn bare(name: &str) -> Self {
         Self {
             name: name.to_owned(),
-            symbol: symbol_text(name),
+            symbol: format_symbol(name),
         }
     }
 
@@ -46,7 +48,7 @@ impl RevsetName {
     pub(crate) fn called(name: &str) -> Self {
         Self {
             name: name.to_owned(),
-            symbol: format!("{}(", symbol_text(name)),
+            symbol: format!("{}(", format_symbol(name)),
         }
     }
 
@@ -55,7 +57,7 @@ impl RevsetName {
         match remote {
             Some(remote) => Self {
                 name: format!("{name}@{remote}"),
-                symbol: format!("{}@{}", symbol_text(name), symbol_text(remote)),
+                symbol: format_remote_symbol(name, remote),
             },
             None => Self::bare(name),
         }

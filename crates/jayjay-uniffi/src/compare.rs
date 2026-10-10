@@ -1,12 +1,5 @@
 use jayjay_core::ChangeInfo;
-use jayjay_core::compare::{
-    self, BookmarkDiffRequest, CompareDisplay, CompareState, RevsetEndpoint,
-};
-
-#[uniffi::export]
-fn quoted_symbol(symbol: String) -> String {
-    compare::quoted_symbol(&symbol)
-}
+use jayjay_core::compare::{BookmarkDiffRequest, CompareDisplay, CompareState, RevsetEndpoint};
 
 /// `BookmarkInfo` only crosses the boundary in the desktop profile.
 #[cfg(feature = "desktop")]

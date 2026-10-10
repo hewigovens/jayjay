@@ -1,5 +1,5 @@
 use jj_lib::dsl_util::format_string;
-use jj_lib::revset::parse_symbol;
+use jj_lib::revset::{format_symbol, parse_symbol};
 
 use crate::BookmarkInfo;
 
@@ -13,14 +13,6 @@ pub fn ancestors_revset(change_id: &str) -> String {
     format!("{ANCESTORS_PREFIX}change_id({change_id})")
 }
 
-/// The name as a revset symbol: bare while jj reads it as one, quoted and escaped otherwise.
-pub(super) fn symbol_text(name: &str) -> String {
-    match parse_symbol(name) {
-        Ok(symbol) if symbol == name => symbol,
-        _ => format_string(name),
-    }
-}
-
 pub fn bookmark_filter_revset(name: &str, remote: Option<&str>) -> String {
     let head = bookmark_head_revset(name, remote);
     format!("{head}{BOOKMARK_STACK_JOIN}{head}")
@@ -32,7 +24,7 @@ pub fn workspace_filter_revset(name: &str) -> String {
 }
 
 pub(super) fn workspace_head_revset(name: &str) -> String {
-    format!("{}@", symbol_text(name))
+    format!("{}@", format_symbol(name))
 }
 
 /// A bare name fails to resolve while the bookmark is conflicted.
@@ -86,7 +78,7 @@ pub(super) fn workspace_filter_name(revset: &str) -> Option<String> {
     let symbol = revset.strip_prefix(ANCESTORS_PREFIX)?.strip_suffix('@')?;
     parse_symbol(symbol)
         .ok()
-        .filter(|name| symbol_text(name) == symbol)
+        .filter(|name| format_symbol(name) == symbol)
 }
 
 pub(super) fn bookmark_filter_name(revset: &str) -> Option<String> {

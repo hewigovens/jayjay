@@ -19,7 +19,14 @@ impl RevsetEndpoint {
         if !bookmark.has_local_target
             && let Some(remote) = bookmark.available_remotes.first()
         {
-            return Self::bookmark(&format!("{}@{remote}", bookmark.name));
+            return Self {
+                rev: format!(
+                    "{}@{}",
+                    quoted_symbol(&bookmark.name),
+                    quoted_symbol(remote)
+                ),
+                label: format!("{}@{remote}", bookmark.name),
+            };
         }
         Self::bookmark(&bookmark.name)
     }
@@ -33,7 +40,7 @@ impl RevsetEndpoint {
 }
 
 /// Bookmark names reach jj as revset symbols, where an unquoted name can parse as an operator.
-pub fn quoted_symbol(symbol: &str) -> String {
+fn quoted_symbol(symbol: &str) -> String {
     let escaped = symbol.replace('\\', "\\\\").replace('"', "\\\"");
     format!("\"{escaped}\"")
 }
@@ -64,7 +71,7 @@ mod tests {
 
         assert_eq!(
             RevsetEndpoint::for_bookmark(&bookmark).rev,
-            "\"feature@origin\""
+            "\"feature\"@\"origin\""
         );
 
         bookmark.has_local_target = true;

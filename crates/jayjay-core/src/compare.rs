@@ -2,7 +2,7 @@ mod endpoint;
 mod request;
 mod state;
 
-pub use endpoint::{RevsetEndpoint, quoted_symbol};
+pub use endpoint::RevsetEndpoint;
 pub use request::BookmarkDiffRequest;
 pub use state::{CompareDisplay, CompareState, combined_diff_revsets};
 
