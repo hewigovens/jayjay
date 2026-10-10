@@ -39,7 +39,7 @@ The sibling-workspace rule and the `jj workspace add` recipe are in `AGENTS.md` 
 - Do not create a workspace merely to keep two edits separate inside one session — that is `jj new` / `jj split`.
 - Pin the new workspace to a specific change with `-r <rev>` when continuing existing work.
 - Sibling workspaces are not colocated (no `.git`), so `gh` cannot infer the repository there. Set `GH_REPO=hewigovens/jayjay` for `gh` commands and `just shell::publish` outside the main checkout.
-- Keep changes awaiting review in the default workspace or a registered sibling workspace. Run `jj workspace forget <topic>` only after its changes have been moved or landed, or the user explicitly requests cleanup. Forgetting workspace metadata does not delete the sibling directory; remove files only when authorized.
+- Keep changes awaiting review in the default workspace or a registered sibling workspace. When the task's own sibling has nothing pending (empty `@`, changes in `main@origin`), run `jj workspace forget <topic>` and remove its directory without asking; otherwise forget it only when the user explicitly requests cleanup. Forgetting workspace metadata does not delete the directory, so remove it in the same step.
 
 ## Workspace Build Isolation
 
@@ -49,7 +49,7 @@ Preserve the configured compiler wrapper for Rust-backed commands. Kache is pref
 
 Keep each workspace's default target when builds run concurrently. Let the Kache configuration manage incremental artifacts; do not force a shared target or override incremental settings.
 
-Compiler caches do not replace workspace cleanup. When authorized to remove a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate. If a sandbox cannot use the configured wrapper or daemon, use `RUSTC_WRAPPER=""` for that command rather than changing the developer's global Cargo or cache configuration.
+Compiler caches do not replace workspace cleanup. When removing a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate. If a sandbox cannot use the configured wrapper or daemon, use `RUSTC_WRAPPER=""` for that command rather than changing the developer's global Cargo or cache configuration.
 
 ## Common Commands
 

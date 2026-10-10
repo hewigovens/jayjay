@@ -57,7 +57,7 @@ Then make `../<topic>` the session's working root before editing. The destinatio
 
 At task completion, describe the workspace's current change with `jj describe` when it has a meaningful diff. Do not use `jj commit` just to mark the task done; it creates a new empty working-copy change.
 
-Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Forget it only after its changes have been moved or landed, or the user explicitly requests cleanup; remove the sibling directory only when authorized.
+Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
 
 ### Do not snapshot unless you mean to
 
