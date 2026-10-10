@@ -51,11 +51,11 @@ extension DAGRow {
             if let systemImage {
                 // An SF Symbol's box is taller than the label's line box, by a different amount per symbol; the small scale keeps every chip one height.
                 Image(systemName: systemImage)
-                    .jayjayFont(9, weight: .semibold)
+                    .jayjayFont(10, weight: .semibold)
                     .imageScale(.small)
                     .foregroundStyle(iconColor ?? .secondary)
             }
-            Text(title).jayjayFont(9, weight: .semibold)
+            Text(title).jayjayFont(10, weight: .semibold)
                 .lineLimit(1)
                 .truncationMode(.middle)
         }
@@ -75,7 +75,7 @@ extension DAGRow {
                 )
             if refreshMode == .updateWorkspace {
                 Image(systemName: "exclamationmark.triangle.fill")
-                    .jayjayFont(9, weight: .semibold)
+                    .jayjayFont(10, weight: .semibold)
                     .foregroundStyle(.orange)
                     .help("Working copy is stale: another workspace rewrote this change. Update Workspace from the context menu or the Refresh button.")
                     .accessibilityIdentifier(AID.DAG.staleWorkingCopy)
