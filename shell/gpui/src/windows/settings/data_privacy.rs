@@ -1,7 +1,7 @@
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px};
 
 use super::shared::{field_row, section_title, subsection_title};
-use crate::app::config::{self, AppConfig};
+use crate::app::config::{self, AppConfig, TelemetryConfig};
 use crate::app::theme::Theme;
 use crate::ui::primitives::boolean_toggle_button;
 
@@ -26,9 +26,9 @@ pub(super) fn data_privacy_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         .child(section_title("Data & Privacy", t))
         .child(subsection_title("Privacy", t))
         .child(field_row(
-            "Share anonymous build and OS stats",
+            TelemetryConfig::LABEL,
             toggle,
-            "No repository, file, or command data is sent.",
+            TelemetryConfig::HINT,
             t,
         ))
         .into_any_element()

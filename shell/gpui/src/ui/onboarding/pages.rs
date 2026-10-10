@@ -5,11 +5,12 @@ use gpui::{
 
 use super::OnboardingView;
 use super::state::{JjCheckState, OnboardingPage};
-use super::widgets::{command_row, mono_line, tip};
+use super::widgets::{command_row, mono_line, success_badge, tip};
+use crate::app::config::{self, TelemetryConfig};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
-use crate::ui::primitives::button;
+use crate::ui::primitives::{button, checkbox_glyph, text_tooltip};
 
 pub(super) fn onboarding_pane(
     state: &OnboardingView,
@@ -44,7 +45,7 @@ fn page_content(state: &OnboardingView, t: &Theme, cx: &mut Context<OnboardingVi
     match state.page {
         OnboardingPage::Welcome => welcome_page(&state.logo, t),
         OnboardingPage::JjCheck => jj_check_page(&state.jj, t, cx),
-        OnboardingPage::Ready => ready_page(t),
+        OnboardingPage::Ready => ready_page(t, cx),
     }
 }
 
@@ -97,15 +98,13 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
                 );
         }
         JjCheckState::Loaded(status) if status.is_installed => {
-            root = root
-                .child(icons::icon(glyph::CHECK, 48., t.success_fg))
-                .child(
-                    div()
-                        .text_size(ui_font_size(22.))
-                        .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .text_color(rgb(t.fg))
-                        .child("Jujutsu is installed"),
-                );
+            root = root.child(success_badge(t)).child(
+                div()
+                    .text_size(ui_font_size(22.))
+                    .font_weight(gpui::FontWeight::SEMIBOLD)
+                    .text_color(rgb(t.fg))
+                    .child("Jujutsu is installed"),
+            );
             if !status.version.is_empty() {
                 root = root.child(mono_line(status.version.clone(), 13., t.fg_dim));
             }
@@ -144,7 +143,7 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
     root.into_any_element()
 }
 
-fn ready_page(t: &Theme) -> AnyElement {
+fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
     let multi_select_tip = if cfg!(target_os = "macos") {
         "Shift-click selects a range; ⌘-click toggles changes"
     } else {
@@ -154,10 +153,10 @@ fn ready_page(t: &Theme) -> AnyElement {
         .flex()
         .flex_col()
         .items_center()
-        .gap(px(14.))
+        .gap(px(12.))
         .max_w(px(420.))
         .px(px(24.))
-        .child(icons::icon(glyph::CHECK, 48., t.success_fg))
+        .child(success_badge(t))
         .child(
             div()
                 .text_size(ui_font_size(22.))
@@ -170,8 +169,8 @@ fn ready_page(t: &Theme) -> AnyElement {
                 .flex()
                 .flex_col()
                 .items_start()
-                .gap(px(10.))
-                .pt(px(6.))
+                .gap(px(6.))
+                .pt(px(4.))
                 .child(tip(
                     glyph::FOLDER,
                     "Open any jj repository to get started",
@@ -192,9 +191,38 @@ fn ready_page(t: &Theme) -> AnyElement {
                     glyph::WARNING,
                     "Close GitHub Desktop when working in jj repos",
                     t,
-                )),
+                ))
+                .child(stats_toggle(t, cx)),
         )
         .into_any_element()
+}
+
+fn stats_toggle(t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement {
+    let enabled = config::current(cx).telemetry.enabled;
+    div()
+        .id("onboarding-stats-toggle")
+        .debug_selector(|| "onboarding-stats-toggle".to_owned())
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(10.))
+        .pt(px(6.))
+        .text_size(ui_font_size(13.))
+        .text_color(rgb(t.fg_dim))
+        .cursor_pointer()
+        .child(
+            div()
+                .flex()
+                .justify_center()
+                .w(px(16.))
+                .child(checkbox_glyph(enabled, t)),
+        )
+        .child(TelemetryConfig::LABEL)
+        .tooltip(text_tooltip(TelemetryConfig::HINT))
+        .on_click(cx.listener(move |_, _, _, cx| {
+            config::update(cx, |cfg| cfg.telemetry.enabled = !enabled);
+            cx.notify();
+        }))
 }
 
 fn page_indicator(

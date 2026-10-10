@@ -24,23 +24,19 @@ impl Render for RepoListWindow {
         let pinned = repositories::current(cx);
         let cfg = config::current(cx);
         self.show(pinned.clone(), cfg.recent_repos.clone(), cx);
-        let content = if let Some(onboarding) = self.onboarding.as_ref() {
-            div().flex().flex_1().min_h_0().child(onboarding.clone())
-        } else {
-            let panel_shown = cfg.layout.recent_repos_panel;
-            let panel = self
-                .panel_frame(panel_shown, window, cx)
-                .map(|frame| self.recent_panel(&pinned, frame, &t, cx));
-            div()
-                .relative()
-                .flex()
-                .flex_1()
-                .flex_row()
-                .min_h_0()
-                .children(panel.into_iter().flatten())
-                .child(self.detail(&pinned, &t))
-                .child(panel_toggle(panel_shown, &t))
-        };
+        let panel_shown = cfg.layout.recent_repos_panel;
+        let panel = self
+            .panel_frame(panel_shown, window, cx)
+            .map(|frame| self.recent_panel(&pinned, frame, &t, cx));
+        let content = div()
+            .relative()
+            .flex()
+            .flex_1()
+            .flex_row()
+            .min_h_0()
+            .children(panel.into_iter().flatten())
+            .child(self.detail(&pinned, &t))
+            .child(panel_toggle(panel_shown, &t));
 
         div()
             .id("repo-list-window")

@@ -20,7 +20,7 @@ struct JayJayApp: App {
         let tool = ExternalToolInvocation.parse(arguments: CommandLine.arguments)
         let initialSettings = AppSettings()
         updater = SparkleUpdater(includesBetaUpdates: { initialSettings.updateChannel == .beta })
-        if tool == nil {
+        if tool == nil, initialSettings.hasCompletedOnboarding {
             AppTelemetry.maybePing(enabled: initialSettings.sendsAnonymousStats)
         }
         let cliPath = LaunchArguments.repoPath(from: CommandLine.arguments)

@@ -4,6 +4,7 @@ use gpui::{App, Bounds, Point, Size, WindowBounds, px, size};
 
 use super::config;
 use crate::repo::RepoWindow;
+use crate::ui::onboarding::OnboardingView;
 use crate::windows::repo_list::RepoListWindow;
 
 pub(super) fn resolve_repo_path(
@@ -22,14 +23,28 @@ pub(super) fn resolve_repo_path(
         })
 }
 
-pub(super) fn open_startup_window(path: Option<PathBuf>, cx: &mut App) {
+pub fn open_startup_window(path: Option<PathBuf>, cx: &mut App) {
+    let cfg = config::current(cx);
+    if !cfg.onboarding.completed {
+        OnboardingView::open_window(
+            move |cx| {
+                let repo_opened_meanwhile = cx
+                    .windows()
+                    .iter()
+                    .any(|handle| handle.downcast::<RepoWindow>().is_some());
+                if !repo_opened_meanwhile {
+                    open_startup_window(path, cx);
+                }
+            },
+            cx,
+        );
+        return;
+    }
     let Some(path) = path else {
         RepoListWindow::open(cx);
         cx.activate(true);
         return;
     };
-    let cfg = config::current(cx);
-    let show_onboarding = !cfg.onboarding.completed;
     let initial_bounds = if cfg.window.is_set() {
         Bounds {
             origin: Point {
@@ -50,7 +65,7 @@ pub(super) fn open_startup_window(path: Option<PathBuf>, cx: &mut App) {
         WindowBounds::Windowed(initial_bounds)
     };
 
-    let window_handle = match RepoWindow::open(path, initial_window_bounds, show_onboarding, cx) {
+    let window_handle = match RepoWindow::open(path, initial_window_bounds, cx) {
         Ok(handle) => handle,
         Err(error) => {
             eprintln!("[jayjay-gpui] failed to open window: {error}");

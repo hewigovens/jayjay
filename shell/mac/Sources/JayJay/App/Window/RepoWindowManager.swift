@@ -86,6 +86,7 @@ final class RepoWindowManager {
 
     func finishOnboarding() {
         settings.hasCompletedOnboarding = true
+        AppTelemetry.maybePing(enabled: settings.sendsAnonymousStats)
         if let path = pendingRepoAfterOnboarding {
             pendingRepoAfterOnboarding = nil
             openRepo(path)

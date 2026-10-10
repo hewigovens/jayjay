@@ -155,14 +155,6 @@ impl Render for RepoWindow {
 
         let mut root = self.render_root(&t, cx);
 
-        if let Some(onboarding) = self.onboarding.as_ref() {
-            root = root.child(onboarding.clone());
-            if let Some(menu) = app_menu_overlay {
-                root = root.child(menu);
-            }
-            return root.into_any_element();
-        }
-
         if let Some(message) = init_error {
             root = root.child(repo_init_error_pane(
                 toolbar_repo.path,

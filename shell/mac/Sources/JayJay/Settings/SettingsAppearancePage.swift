@@ -26,7 +26,7 @@ struct SettingsAppearancePage: View {
                 }
             }
 
-            Section("Font") {
+            Section {
                 Picker(selection: Binding(
                     get: { settings.fontFamily },
                     set: { settings.fontFamily = $0 }
@@ -51,6 +51,10 @@ struct SettingsAppearancePage: View {
                         .labelsHidden()
                         .controlSize(.small)
                 }
+            } header: {
+                Text("Font")
+            } footer: {
+                Text("Press \(AppShortcut.zoomIn.symbol) or \(AppShortcut.zoomOut.symbol) to change the font size, \(AppShortcut.resetZoom.symbol) to reset it.")
             }
         }
         .formStyle(.grouped)

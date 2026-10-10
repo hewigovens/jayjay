@@ -21,7 +21,6 @@ use crate::repo::view_model::{ActionSucceeded, RepoViewModel};
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
-use crate::ui::onboarding::{OnboardingCompleted, OnboardingView};
 use crate::ui::overlay::TextPrompt;
 use crate::ui::text_area::TextArea;
 
@@ -78,7 +77,6 @@ pub struct RepoWindow {
     pub(crate) confirmation: Option<Confirmation>,
     pub(crate) rating_prompt: bool,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
-    pub(crate) onboarding: Option<Entity<OnboardingView>>,
     pub(crate) commit_message: CommitMessageEditor,
     pub(crate) description: super::detail::DescriptionState,
     pub(crate) commit_box: CommitBoxState,
@@ -300,30 +298,11 @@ pub(crate) const PREVIEW_MIN: f32 = 420.;
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
-        Self::new_internal(path, true, cx)
-    }
-
-    pub fn new_with_onboarding(path: PathBuf, cx: &mut Context<Self>) -> Self {
-        let mut view = Self::new_internal(path, false, cx);
-        let onboarding = cx.new(OnboardingView::new);
-        cx.subscribe(&onboarding, |view, _, _: &OnboardingCompleted, cx| {
-            view.onboarding = None;
-            view.vm.update(cx, |vm, cx| vm.open_async(cx));
-            cx.notify();
-        })
-        .detach();
-        view.onboarding = Some(onboarding);
-        view
-    }
-
-    fn new_internal(path: PathBuf, open_now: bool, cx: &mut Context<Self>) -> Self {
         // Open off the main thread (`Repo::open` + initial revset eval are slow on large repos); render a loading pane until it lands.
         let vm_path = path.clone();
         let vm = cx.new(|cx| {
             let mut vm = RepoViewModel::opening(vm_path);
-            if open_now {
-                vm.open_async(cx);
-            }
+            vm.open_async(cx);
             vm
         });
         let mut view = Self::for_vm(vm, cx);
@@ -444,7 +423,6 @@ impl RepoWindow {
             confirmation: None,
             rating_prompt: false,
             repo_switcher: None,
-            onboarding: None,
             commit_message,
             description: super::detail::DescriptionState::default(),
             commit_box: CommitBoxState::default(),

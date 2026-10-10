@@ -36,7 +36,9 @@ pub(crate) fn run(launch: GuiLaunch) {
             }
             GuiLaunch::Repository { path, .. } => {
                 let cfg = config::current(cx);
-                super::telemetry::maybe_ping(cfg.telemetry.enabled);
+                if cfg.onboarding.completed {
+                    super::telemetry::maybe_ping(cfg.telemetry.enabled);
+                }
                 super::repositories::install(cx);
                 super::menus::install(cx);
                 cx.spawn(async move |cx| {

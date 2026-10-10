@@ -1,6 +1,6 @@
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, TitlebarOptions,
-    WindowBounds, WindowOptions, px, size,
+    App, AppContext, Bounds, Context, FocusHandle, Focusable, TitlebarOptions, WindowBounds,
+    WindowOptions, px, size,
 };
 use jayjay_core::repositories::RepoListGroups;
 
@@ -10,14 +10,12 @@ use crate::app::repositories::{self, StoreHandle};
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::repo::RepoWindow;
 use crate::ui::logo::Logo;
-use crate::ui::onboarding::{OnboardingCompleted, OnboardingView};
 
 const WINDOW_WIDTH: f32 = 780.;
 const WINDOW_HEIGHT: f32 = 600.;
 pub(super) const DETAIL_WIDTH: f32 = 480.;
 
 pub struct RepoListWindow {
-    pub(super) onboarding: Option<Entity<OnboardingView>>,
     pub(super) focus_handle: FocusHandle,
     pub(super) logo: Logo,
     pub(super) pinned: Vec<String>,
@@ -68,19 +66,7 @@ impl RepoListWindow {
                         cx.observe_global::<StoreHandle>(|_, cx| cx.notify())
                             .detach();
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
-                        let onboarding = if config::current(cx).onboarding.completed {
-                            None
-                        } else {
-                            let onboarding = cx.new(OnboardingView::new);
-                            cx.subscribe(&onboarding, |view, _, _: &OnboardingCompleted, cx| {
-                                view.onboarding = None;
-                                cx.notify();
-                            })
-                            .detach();
-                            Some(onboarding)
-                        };
                         Self {
-                            onboarding,
                             focus_handle: cx.focus_handle(),
                             logo: Logo::load(cx),
                             pinned: Vec::new(),

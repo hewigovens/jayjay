@@ -17,12 +17,12 @@ struct SettingsDataPrivacyPage: View {
                         AppTelemetry.maybePing(enabled: $0)
                     }
                 )) {
-                    SettingsLabel("Share anonymous build and OS stats", icon: "chart.bar")
+                    SettingsLabel(AppTelemetry.optInTitle, icon: "chart.bar")
                 }
             } header: {
                 Text("Privacy")
             } footer: {
-                Text("No repository, file, or command data is sent.")
+                Text(AppTelemetry.optInDetail)
             }
 
             reviewSection

@@ -5,6 +5,7 @@ struct OnboardingView: View {
     static let preferredSize = NSSize(width: 480, height: 460)
 
     let onContinue: () -> Void
+    @Environment(AppSettings.self) private var settings
     @State private var jjStatus: JJEnvironment.Status?
     @State private var currentPage = OnboardingPage.welcome
 
@@ -162,13 +163,29 @@ struct OnboardingView: View {
                 tip(icon: "keyboard", text: "\(AppShortcut.commandPalette.symbol) finds actions; type help split for feature help")
                 tip(icon: "checkmark.circle", text: "Press Space to mark the selected file reviewed")
                 tip(icon: "arrow.triangle.branch", text: "Shift-click selects a range; ⌘-click toggles changes")
-                tip(icon: "sparkles", text: "AI commit messages via Codex, Claude, or Apple Intelligence")
                 tip(icon: "exclamationmark.triangle", text: "Close GitHub Desktop — it may conflict with jj")
+                statsToggle
+                    .padding(.top, 8)
             }
             .padding(.top, 8)
             Spacer()
         }
         .padding(24)
+    }
+
+    private var statsToggle: some View {
+        HStack(spacing: 10) {
+            Toggle(AppTelemetry.optInTitle, isOn: Binding(
+                get: { settings.sendsAnonymousStats },
+                set: { settings.sendsAnonymousStats = $0 }
+            ))
+            .labelsHidden()
+            .frame(width: 20)
+            Text(AppTelemetry.optInTitle)
+                .jayjayFont(13)
+                .onTapGesture { settings.sendsAnonymousStats.toggle() }
+        }
+        .help(AppTelemetry.optInDetail)
     }
 
     // MARK: - Helpers

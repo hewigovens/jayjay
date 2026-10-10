@@ -15,9 +15,7 @@ const MESSAGE: &str = "If JayJay is useful to you, a star on GitHub helps others
 
 impl RepoWindow {
     pub(super) fn record_successful_action(&mut self, cx: &mut Context<Self>) {
-        let can_show = !self.rating_prompt
-            && self.onboarding.is_none()
-            && !self.has_refresh_sensitive_interaction();
+        let can_show = !self.rating_prompt && !self.has_refresh_sensitive_interaction();
         if RatingPromptStore::record_action(cx, can_show) {
             self.rating_prompt = true;
             cx.notify();

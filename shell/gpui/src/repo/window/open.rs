@@ -20,7 +20,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
         return;
     }
     let bounds = Bounds::centered(None, size(px(1080.), px(720.)), cx);
-    if let Ok(handle) = RepoWindow::open(path, WindowBounds::Windowed(bounds), false, cx) {
+    if let Ok(handle) = RepoWindow::open(path, WindowBounds::Windowed(bounds), cx) {
         let _ = handle.update(cx, |_, window, cx| {
             window.on_window_should_close(cx, |_, cx| {
                 RepoListWindow::open_if_last_repo_window(cx);
@@ -35,7 +35,6 @@ impl RepoWindow {
     pub(crate) fn open(
         path: PathBuf,
         bounds: WindowBounds,
-        show_onboarding: bool,
         cx: &mut App,
     ) -> gpui::Result<WindowHandle<Self>> {
         let handle = cx.open_window(
@@ -58,11 +57,7 @@ impl RepoWindow {
                         .detach();
                     cx.observe_global::<StoreHandle>(|_, cx| cx.notify())
                         .detach();
-                    let mut view = if show_onboarding {
-                        Self::new_with_onboarding(path, cx)
-                    } else {
-                        Self::new(path, cx)
-                    };
+                    let mut view = Self::new(path, cx);
                     view.boot(cx);
                     view
                 })

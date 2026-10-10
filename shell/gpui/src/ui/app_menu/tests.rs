@@ -34,8 +34,7 @@ fn menu_item_click_dispatches_its_action(cx: &mut gpui::TestAppContext) {
         crate::app::menus::install(cx);
     });
     let dir = tempfile::tempdir().unwrap();
-    let (repo, _) =
-        cx.add_window_view(|_, cx| RepoWindow::new_with_onboarding(dir.path().to_path_buf(), cx));
+    let (repo, _) = cx.add_window_view(|_, cx| RepoWindow::new(dir.path().to_path_buf(), cx));
     let (_, cx) = cx.add_window_view(|_, _| MenuRowHost { repo });
     let cx: &mut VisualTestContext = cx;
     cx.update(|window, _| window.activate_window());

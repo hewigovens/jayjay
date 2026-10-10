@@ -3,6 +3,9 @@ import Foundation
 
 /// Sends anonymous activity without transmitting a stable installation identifier.
 enum AppTelemetry {
+    static let optInTitle = "Share anonymous build and OS stats"
+    static let optInDetail = "No repository, file, or command data is sent."
+
     private static let endpoint = URL(string: "https://jayjay.hewigovens.workers.dev/ping")!
     private static let installSecretKey = "jayjay.telemetryInstallSecret"
     private static let lastSentDayKey = "jayjay.telemetryLastSentDay"

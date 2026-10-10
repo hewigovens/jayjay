@@ -11,6 +11,12 @@ use crate::app::config;
 use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 
+const FONT_SIZE_HINT: &str = if cfg!(target_os = "macos") {
+    "Used throughout the interface. Press ⌘+ or ⌘- to change it, ⌘0 to reset."
+} else {
+    "Used throughout the interface. Press Ctrl++ or Ctrl+- to change it, Ctrl+0 to reset."
+};
+
 pub(super) fn appearance_section(
     cfg: &AppConfig,
     t: &Theme,
@@ -43,7 +49,7 @@ pub(super) fn appearance_section(
         .child(field_row(
             "Size",
             font_size_stepper(cfg.font_size, t),
-            "Used throughout the interface.",
+            FONT_SIZE_HINT,
             t,
         ))
         .into_any_element()

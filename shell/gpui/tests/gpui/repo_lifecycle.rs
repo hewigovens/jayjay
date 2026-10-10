@@ -4,9 +4,9 @@ use std::time::Instant;
 use crate::harness::*;
 use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
+use jayjay_gpui::app::startup_window::open_startup_window;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::{PendingRefresh, RepoViewModel};
-use jayjay_gpui::windows::repo_list::RepoListWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
@@ -53,37 +53,60 @@ fn startup_onboarding_delays_repo_open_until_finished(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
 
     install_test_globals(cx);
-    cx.update(|cx| config::update(cx, |cfg| cfg.onboarding.completed = false));
-    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new_with_onboarding(fixture.path, cx));
-    let cx: &mut VisualTestContext = cx;
-    settle_visual(cx);
-
-    assert!(cx.debug_bounds("onboarding-next").is_some());
-    view.read_with(cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        assert!(vm.repo.is_none(), "onboarding should delay repo open");
-        assert!(vm.error.is_none());
+    cx.update(|cx| {
+        config::update(cx, |cfg| cfg.onboarding.completed = false);
+        open_startup_window(Some(fixture.path), cx);
     });
+    let mut onboarding = VisualTestContext::from_window(cx.windows()[0], cx);
+    settle_visual(&mut onboarding);
+    assert!(onboarding.debug_bounds("onboarding-next").is_some());
+    assert!(
+        repo_window(&onboarding.cx).is_none(),
+        "onboarding should delay the repo window"
+    );
 
-    let next = cx.debug_bounds("onboarding-next").expect("Next button");
-    cx.simulate_click(next.center(), Modifiers::default());
-    settle_visual(cx);
-    let next = cx.debug_bounds("onboarding-next").expect("Next button");
-    cx.simulate_click(next.center(), Modifiers::default());
-    settle_visual(cx);
+    finish_onboarding(&mut onboarding);
+
+    let repo = repo_window(&onboarding.cx).expect("repo window after onboarding");
+    assert_eq!(
+        onboarding.cx.windows().len(),
+        1,
+        "onboarding window stayed open"
+    );
+    let mut visual = VisualTestContext::from_window(repo.into(), &onboarding.cx);
+    settle_visual(&mut visual);
+    repo.read_with(&visual.cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.repo.is_some(), "repo should open after onboarding");
+        assert!(vm.error.is_none(), "open errored: {:?}", vm.error);
+    })
+    .unwrap();
+    let completed = visual
+        .cx
+        .update(|cx| config::current(cx).onboarding.completed);
+    assert!(completed);
+}
+
+fn repo_window(cx: &TestAppContext) -> Option<gpui::WindowHandle<RepoWindow>> {
+    cx.windows()
+        .into_iter()
+        .find_map(|handle| handle.downcast::<RepoWindow>())
+}
+
+fn go_to_ready_page(cx: &mut VisualTestContext) {
+    while let Some(next) = cx.debug_bounds("onboarding-next") {
+        cx.simulate_click(next.center(), Modifiers::default());
+        settle_visual(cx);
+    }
+}
+
+fn finish_onboarding(cx: &mut VisualTestContext) {
+    go_to_ready_page(cx);
     let finish = cx
         .debug_bounds("onboarding-finish")
         .expect("Get Started button");
     cx.simulate_click(finish.center(), Modifiers::default());
     settle_visual(cx);
-
-    view.read_with(cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        assert!(vm.repo.is_some(), "repo should open after onboarding");
-        assert!(vm.error.is_none(), "open errored: {:?}", vm.error);
-    });
-    let completed = cx.cx.update(|cx| config::current(cx).onboarding.completed);
-    assert!(completed);
 }
 
 #[gpui::test]
@@ -596,23 +619,30 @@ fn pathless_first_launch_finishes_onboarding_in_repo_list(cx: &mut TestAppContex
     install_test_globals(cx);
     cx.update(|cx| {
         config::update(cx, |cfg| cfg.onboarding.completed = false);
-        RepoListWindow::open(cx);
+        open_startup_window(None, cx);
     });
-    let window = cx.windows()[0];
-    let mut visual = VisualTestContext::from_window(window, cx);
+    let mut onboarding = VisualTestContext::from_window(cx.windows()[0], cx);
+    settle_visual(&mut onboarding);
+    go_to_ready_page(&mut onboarding);
+    let stats = onboarding
+        .debug_bounds("onboarding-stats-toggle")
+        .expect("stats toggle");
+    onboarding.simulate_click(stats.center(), Modifiers::default());
+    settle_visual(&mut onboarding);
+    assert!(
+        !onboarding
+            .cx
+            .update(|cx| config::current(cx).telemetry.enabled)
+    );
+    finish_onboarding(&mut onboarding);
+    let window = onboarding.cx.windows()[0];
+    let mut visual = VisualTestContext::from_window(window, &onboarding.cx);
     settle_visual(&mut visual);
-    assert!(visual.debug_bounds("onboarding-pane").is_some());
-    for _ in 0..2 {
-        let next = visual.debug_bounds("onboarding-next").expect("Next button");
-        visual.simulate_click(next.center(), Modifiers::default());
-        settle_visual(&mut visual);
-    }
-    let finish = visual
-        .debug_bounds("onboarding-finish")
-        .expect("Get Started button");
-    visual.simulate_click(finish.center(), Modifiers::default());
-    settle_visual(&mut visual);
-    assert!(visual.debug_bounds("onboarding-pane").is_none());
+    assert_eq!(
+        visual.cx.windows().len(),
+        1,
+        "onboarding window stayed open"
+    );
     assert!(visual.debug_bounds("repo-list-window").is_some());
     visual.cx.update(|cx| {
         assert!(config::current(cx).onboarding.completed);
@@ -623,15 +653,4 @@ fn pathless_first_launch_finishes_onboarding_in_repo_list(cx: &mut TestAppContex
                 .all(|handle| handle.downcast::<RepoWindow>().is_none())
         );
     });
-    window
-        .downcast::<RepoListWindow>()
-        .unwrap()
-        .update(&mut visual, |_, window, _| window.remove_window())
-        .unwrap();
-    visual.cx.update(RepoListWindow::open);
-    let window = visual.cx.windows()[0];
-    let mut reopened = VisualTestContext::from_window(window, &visual.cx);
-    settle_visual(&mut reopened);
-    assert!(reopened.debug_bounds("onboarding-pane").is_none());
-    assert!(reopened.debug_bounds("repo-list-window").is_some());
 }

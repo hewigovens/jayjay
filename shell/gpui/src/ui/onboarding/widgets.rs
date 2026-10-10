@@ -5,6 +5,17 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 use crate::ui::primitives::copy_icon_button;
 
+pub(super) fn success_badge(t: &Theme) -> impl IntoElement {
+    div()
+        .flex()
+        .items_center()
+        .justify_center()
+        .size(px(48.))
+        .rounded_full()
+        .bg(rgb(t.file_added_color))
+        .child(icons::icon(icons::glyph::CHECK, 26., 0xffffff))
+}
+
 pub(super) fn mono_line(text: String, size: f32, color: u32) -> impl IntoElement {
     div()
         .max_w(px(360.))

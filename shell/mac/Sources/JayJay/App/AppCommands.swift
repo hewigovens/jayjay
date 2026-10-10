@@ -14,6 +14,23 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut(AppShortcut.toggleSidebar)
             .disabled(ActiveRepoTracker.shared.handler == nil)
+
+            Divider()
+
+            Button { settings.zoomIn() } label: {
+                Label("Zoom In", systemImage: "plus.magnifyingglass")
+            }
+            .keyboardShortcut(AppShortcut.zoomIn)
+
+            Button { settings.zoomOut() } label: {
+                Label("Zoom Out", systemImage: "minus.magnifyingglass")
+            }
+            .keyboardShortcut(AppShortcut.zoomOut)
+
+            Button { settings.resetZoom() } label: {
+                Label("Reset Zoom", systemImage: "1.magnifyingglass")
+            }
+            .keyboardShortcut(AppShortcut.resetZoom)
         }
 
         CommandGroup(after: .pasteboard) {
@@ -30,23 +47,6 @@ struct AppCommands: Commands {
                 Label("Find...", systemImage: "magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.findInDiff)
-        }
-
-        CommandGroup(after: .textFormatting) {
-            Button { settings.zoomIn() } label: {
-                Label("Zoom In", systemImage: "plus.magnifyingglass")
-            }
-            .keyboardShortcut(AppShortcut.zoomIn)
-
-            Button { settings.zoomOut() } label: {
-                Label("Zoom Out", systemImage: "minus.magnifyingglass")
-            }
-            .keyboardShortcut(AppShortcut.zoomOut)
-
-            Button { settings.resetZoom() } label: {
-                Label("Reset Zoom", systemImage: "1.magnifyingglass")
-            }
-            .keyboardShortcut(AppShortcut.resetZoom)
         }
 
         CommandGroup(replacing: .newItem) {

@@ -165,10 +165,9 @@ fn invalid_workspace_name_keeps_modal_and_skips_mutation(cx: &mut TestAppContext
 
 #[gpui::test]
 fn create_workspace_without_open_repo_shows_toast(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
+    let dir = tempfile::tempdir().unwrap();
     install_test_globals(cx);
-    // Onboarding path: the window exists but no repo has been opened yet.
-    let view = cx.new(|cx| RepoWindow::new_with_onboarding(fixture.path.clone(), cx));
+    let view = cx.new(|cx| RepoWindow::new(dir.path().to_path_buf(), cx));
     settle(cx);
 
     view.update(cx, |view, cx| view.open_create_workspace(cx));

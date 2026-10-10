@@ -80,15 +80,8 @@ fn check_mark(color: u32) -> gpui::Svg {
         .text_color(rgb(color))
 }
 
-pub(crate) fn checkbox_row(
-    id: impl Into<SharedString>,
-    label: impl Into<SharedString>,
-    checked: bool,
-    theme: &Theme,
-) -> Stateful<Div> {
-    let id = id.into();
-    let debug_id = id.clone();
-    let mut box_glyph = div()
+pub(crate) fn checkbox_glyph(checked: bool, theme: &Theme) -> Div {
+    let glyph = div()
         .flex_none()
         .w(px(14.))
         .h(px(14.))
@@ -99,12 +92,24 @@ pub(crate) fn checkbox_row(
         .items_center()
         .justify_center();
     if checked {
-        box_glyph = box_glyph.bg(rgb(theme.toggle_active_bg)).child(icons::icon(
+        glyph.bg(rgb(theme.toggle_active_bg)).child(icons::icon(
             icons::glyph::CHECK,
             10.,
             theme.toggle_active_fg,
-        ));
+        ))
+    } else {
+        glyph
     }
+}
+
+pub(crate) fn checkbox_row(
+    id: impl Into<SharedString>,
+    label: impl Into<SharedString>,
+    checked: bool,
+    theme: &Theme,
+) -> Stateful<Div> {
+    let id = id.into();
+    let debug_id = id.clone();
     div()
         .id(id)
         .debug_selector(move || debug_id.to_string())
@@ -113,7 +118,7 @@ pub(crate) fn checkbox_row(
         .items_center()
         .gap(px(6.))
         .cursor_pointer()
-        .child(box_glyph)
+        .child(checkbox_glyph(checked, theme))
         .child(
             div()
                 .text_size(ui_font_size(12.))

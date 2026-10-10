@@ -25,6 +25,7 @@ impl OnboardingView {
 
     pub(super) fn finish(&mut self, cx: &mut Context<Self>) {
         config::update(cx, |cfg| cfg.onboarding.completed = true);
+        crate::app::telemetry::maybe_ping(config::current(cx).telemetry.enabled);
         cx.emit(OnboardingCompleted);
     }
 }

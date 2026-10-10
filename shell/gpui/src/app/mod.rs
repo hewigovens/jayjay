@@ -13,7 +13,7 @@ pub mod motion;
 pub mod rating_prompt;
 pub mod repositories;
 pub(crate) mod runtime;
-mod startup_window;
+pub mod startup_window;
 pub mod telemetry;
 pub mod theme;
 pub mod tools;
