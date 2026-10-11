@@ -31,13 +31,14 @@ extension ChangeDetailView {
             paths: selectedReviewablePaths,
             reviewed: !selectedReviewablePaths.allSatisfy { fileRollups[$0] == .reviewed }
         )
-        if let primaryPath = selectedPath,
-           reviewedPaths.contains(primaryPath),
-           let next = filteredDiff.first(where: { !reviewedPaths.contains($0.path) })
-        {
-            selectedPath = next.path
-            selectedPaths = [next.path]
-            fileSelectionAnchorPath = next.path
+        if let primaryPath = selectedPath, reviewedPaths.contains(primaryPath) {
+            let unreviewed = displayOrderedPaths.filter { !reviewedPaths.contains($0) }
+            if let next = unreviewed.first(where: { !isInCollapsedDir($0) }) ?? unreviewed.first {
+                if isInCollapsedDir(next) {
+                    collapsedDirs = collapsedDirs.filter { !next.hasPrefix("\($0)/") }
+                }
+                selectSingleFile(next)
+            }
         }
         return true
     }
@@ -47,7 +48,8 @@ extension ChangeDetailView {
         let available = Set(paths)
         selectedPaths.formIntersection(available)
         if selectedPath.map({ available.contains($0) }) != true {
-            selectedPath = paths.first(where: selectedPaths.contains) ?? paths.first
+            let order = visibleSelectablePaths
+            selectedPath = order.first(where: selectedPaths.contains) ?? order.first ?? paths.first
         }
         if let selectedPath {
             selectedPaths.insert(selectedPath)
@@ -59,31 +61,32 @@ extension ChangeDetailView {
 
     @discardableResult
     func moveFileSelection(by delta: Int) -> Bool {
-        guard !filteredDiff.isEmpty else { return false }
-        let currentIdx: Int = if let cur = selectedPath, let idx = filteredDiff.firstIndex(where: { $0.path == cur }) {
+        let paths = visibleSelectablePaths
+        guard !paths.isEmpty else { return false }
+        let currentIdx: Int = if let cur = selectedPath, let idx = paths.firstIndex(of: cur) {
             idx
         } else {
-            delta > 0 ? -1 : filteredDiff.count
+            delta > 0 ? -1 : paths.count
         }
-        let newIdx = max(0, min(filteredDiff.count - 1, currentIdx + delta))
+        let newIdx = max(0, min(paths.count - 1, currentIdx + delta))
         guard newIdx != currentIdx else { return false }
-        let nextPath = filteredDiff[newIdx].path
-        selectedPath = nextPath
-        selectedPaths = [nextPath]
-        fileSelectionAnchorPath = nextPath
+        selectSingleFile(paths[newIdx])
         return true
     }
 
-    private var visibleSelectablePaths: [String] {
-        if appSettings.treeFileList {
-            let visibleHunks = filteredDiff
-            let entries = buildFileTree(paths: visibleHunks.map(\.path))
-            return entries.compactMap { entry in
-                guard let hunkIndex = entry.hunkIndex, Int(hunkIndex) < visibleHunks.count else { return nil }
-                return visibleHunks[Int(hunkIndex)].path
-            }
-        }
-        return filteredDiff.map(\.path)
+    /// Tree mode includes files under collapsed folders.
+    private var displayOrderedPaths: [String] {
+        let paths = filteredDiff.map(\.path)
+        guard appSettings.treeFileList else { return paths }
+        return fileTreeCache.entries(for: paths).compactMap { $0.hunkIndex == nil ? nil : $0.path }
+    }
+
+    private func isInCollapsedDir(_ path: String) -> Bool {
+        appSettings.treeFileList && collapsedDirs.contains { path.hasPrefix("\($0)/") }
+    }
+
+    var visibleSelectablePaths: [String] {
+        displayOrderedPaths.filter { !isInCollapsedDir($0) }
     }
 
     func contextSelectionPaths(for clickedPath: String) -> [String] {

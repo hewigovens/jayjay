@@ -85,6 +85,7 @@ extension ChangeDetailView {
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
                 .help("Filter files")
+                .accessibilityIdentifier(AID.FileList.filterToggle)
                 Spacer(minLength: 8)
                 Text(fileCountLabel)
                     .jayjayFont(12)
@@ -133,19 +134,25 @@ extension ChangeDetailView {
     }
 
     private var flatFileList: some View {
-        List(filteredDiff, id: \.path) { hunk in
-            fileRowView(hunk: hunk)
-                .listRowInsets(FileRow.listInsets)
+        ScrollViewReader { proxy in
+            List(filteredDiff, id: \.path) { hunk in
+                fileRowView(hunk: hunk)
+                    .listRowInsets(FileRow.listInsets)
+            }
+            .listStyle(.plain)
+            .scrollIndicators(.never)
+            .revealing(selectedPath, with: proxy)
+            .id(detail.info.commitId)
         }
-        .listStyle(.plain)
-        .scrollIndicators(.never)
-        .id(detail.info.commitId)
     }
 
     private var treeFileList: some View {
         TreeFileList(
             filteredDiff: filteredDiff,
+            treeEntries: fileTreeCache.entries(for: filteredDiff.map(\.path)),
             commitId: detail.info.commitId.id,
+            selectedPath: selectedPath,
+            collapsedDirs: $collapsedDirs,
             fileRowView: fileRowView
         )
     }

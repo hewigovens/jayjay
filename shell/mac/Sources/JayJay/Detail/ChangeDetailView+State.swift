@@ -60,8 +60,6 @@ extension ChangeDetailView {
         previousAnchorPath: String?
     ) {
         let availablePaths = Set(detail.diff.map(\.path))
-        let fallbackPath = detail.diff.first?.path
-
         if preserving,
            let previousSelectedPath,
            availablePaths.contains(previousSelectedPath)
@@ -79,9 +77,9 @@ extension ChangeDetailView {
             return
         }
 
-        selectedPath = fallbackPath
-        selectedPaths = fallbackPath.map { [$0] } ?? []
-        fileSelectionAnchorPath = fallbackPath
+        selectedPath = nil
+        selectedPaths = []
+        fileSelectionAnchorPath = nil
     }
 
     func loadDiffStats() {
@@ -133,10 +131,7 @@ extension ChangeDetailView {
                    let selectedPath,
                    trackedGitLfsPaths.contains(selectedPath)
                 {
-                    let nextVisible = detail.diff.first { !trackedGitLfsPaths.contains($0.path) }
-                    self.selectedPath = nextVisible?.path
-                    self.selectedPaths = nextVisible.map { [$0.path] } ?? []
-                    self.fileSelectionAnchorPath = nextVisible?.path
+                    reconcileFileSelection()
                 }
             }
         }

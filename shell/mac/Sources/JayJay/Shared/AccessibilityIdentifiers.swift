@@ -47,6 +47,7 @@ enum AID {
         static let column = "file.column"
         static let columnDivider = "file.columnDivider"
         static let filterField = "file.filterField"
+        static let filterToggle = "file.filterToggle"
 
         static func row(_ path: String) -> String {
             "file.row.\(path)"
@@ -86,6 +87,7 @@ enum AID {
         static let descriptionTitle = "detail.descriptionTitle"
         static let descriptionBody = "detail.descriptionBody"
         static let descriptionExpansion = "detail.descriptionExpansion"
+        static let commitId = "detail.commitId"
         static let selectionWithoutDiff = "detail.selectionWithoutDiff"
 
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.

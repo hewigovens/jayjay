@@ -516,6 +516,8 @@ fixture_evolog_hide_snapshots
 fixture_evolog_restore
 fixture_context_expansion
 fixture_complex
+copy_fixture complex file-selection-scroll
+printf 'Root file\n' > "$fixtures/file-selection-scroll/a-root.txt"
 fixture_conflict
 fixture_dag_long
 fixture_parallelize

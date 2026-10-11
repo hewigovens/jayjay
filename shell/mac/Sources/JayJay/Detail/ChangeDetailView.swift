@@ -44,6 +44,8 @@ struct ChangeDetailView: View {
     @State var selectedPath: String?
     @State var selectedPaths: Set<String> = []
     @State var fileSelectionAnchorPath: String?
+    @State var collapsedDirs: Set<String> = []
+    @State var fileTreeCache = FileTreeCache()
     @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false
     @State var fileFilter = ""

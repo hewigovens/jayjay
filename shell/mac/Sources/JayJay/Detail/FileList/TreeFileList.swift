@@ -3,33 +3,36 @@ import SwiftUI
 
 struct TreeFileList<RowContent: View>: View {
     let filteredDiff: [DiffHunk]
+    let treeEntries: [FileTreeEntry]
     let commitId: String
+    let selectedPath: String?
+    @Binding var collapsedDirs: Set<String>
     let fileRowView: (DiffHunk) -> RowContent
-    @State private var treeEntries: [FileTreeEntry] = []
-    @State private var collapsedDirs: Set<String> = []
 
     var body: some View {
-        List {
-            ForEach(visibleEntries, id: \.rowId) { entry in
-                // A Group of if/else makes every update re-diff the rows, which drops cached row heights and jumps the scroll position.
-                ZStack(alignment: .leading) {
-                    if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
-                        let hunk = filteredDiff[Int(hunkIdx)]
-                        fileRowView(hunk)
-                            .padding(.leading, CGFloat(entry.depth) * 12)
-                            .tag(hunk.path)
-                    } else {
-                        folderRow(entry)
+        ScrollViewReader { proxy in
+            List {
+                ForEach(visibleEntries, id: \.rowId) { entry in
+                    // A Group of if/else makes every update re-diff the rows, which drops cached row heights and jumps the scroll position.
+                    ZStack(alignment: .leading) {
+                        if let hunkIdx = entry.hunkIndex, Int(hunkIdx) < filteredDiff.count {
+                            let hunk = filteredDiff[Int(hunkIdx)]
+                            fileRowView(hunk)
+                                .padding(.leading, CGFloat(entry.depth) * 12)
+                                .tag(hunk.path)
+                        } else {
+                            folderRow(entry)
+                        }
                     }
+                    .listRowInsets(FileRow.listInsets)
                 }
-                .listRowInsets(FileRow.listInsets)
             }
+            .listStyle(.plain)
+            .scrollIndicators(.never)
+            .onChange(of: filteredDiff.map(\.path), initial: true) { pruneCollapsedDirs() }
+            .revealing(selectedPath, with: proxy)
+            .id(commitId)
         }
-        .listStyle(.plain)
-        .scrollIndicators(.never)
-        .id(commitId)
-        .onAppear { rebuildTree() }
-        .onChange(of: filteredDiff.map(\.path)) { rebuildTree() }
     }
 
     private var visibleEntries: [FileTreeEntry] {
@@ -64,8 +67,7 @@ struct TreeFileList<RowContent: View>: View {
         .buttonStyle(.plain)
     }
 
-    private func rebuildTree() {
-        treeEntries = buildFileTree(paths: filteredDiff.map(\.path))
+    private func pruneCollapsedDirs() {
         // Drop collapsed dirs that no longer exist in the new tree, otherwise a leftover prefix from a previous change can hide files in this one.
         let validDirs = Set(treeEntries.compactMap { $0.hunkIndex == nil ? $0.path : nil })
         collapsedDirs.formIntersection(validDirs)

@@ -42,6 +42,8 @@ extension ChangeDetailView {
                     prefixLength: Int(detail.info.commitId.shortLen),
                     prefixStyle: .commitId
                 )
+                .accessibilityIdentifier(AID.Detail.commitId)
+                .accessibilityValue(detail.info.commitId.id)
                 CopyIconButton(value: detail.info.commitId.id, help: "Copy commit")
             }
             if !detail.info.parents.isEmpty {
