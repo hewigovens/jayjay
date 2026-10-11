@@ -5,6 +5,7 @@ mod filter;
 mod functions;
 mod presets;
 mod recent;
+mod recent_store;
 mod state;
 mod suggestions;
 mod typed;
@@ -20,6 +21,7 @@ pub use expressions::{
 };
 pub use filter::{RevsetFilter, RevsetFilterKind};
 pub use presets::{RevsetPreset, default_revset_preset, revset_presets};
+pub use recent_store::RecentRevsetStore;
 pub use state::RevsetFilterState;
 pub use suggestions::{RevsetSuggestion, RevsetSuggestionKind};
 pub use typed::typed_revset;

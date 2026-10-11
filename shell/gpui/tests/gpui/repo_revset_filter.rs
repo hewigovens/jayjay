@@ -156,6 +156,30 @@ fn revset_bar_edits_in_place_and_resets(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn recent_revsets_reach_a_new_window_of_the_repository(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    {
+        let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+        settle_visual(cx);
+        view.update(cx, |view, cx| {
+            view.view_model()
+                .update(cx, |vm, cx| vm.apply_revset("@ | trunk()", cx));
+        });
+        settle(cx);
+    }
+
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(
+            view.view_model().read(cx).revset_filter.recent,
+            ["@ | trunk()"]
+        );
+    });
+}
+
+#[gpui::test]
 fn revset_edit_cancels_on_escape_or_a_title_bar_click(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);

@@ -197,6 +197,7 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
             true
         });
         jayjay_gpui::app::repositories::install_in_memory(cx);
+        jayjay_gpui::app::recent_revsets::install_in_memory(cx);
         // Hermetic review store: no reads or writes of the real review_store.json.
         jayjay_gpui::repo::window::install_in_memory_review_store(cx);
     });

@@ -19,6 +19,24 @@ impl RevsetFilterState {
     }
 
     pub fn apply(&mut self, revset: &str) {
+        self.show(revset);
+        self.recent = remember_revset(&self.recent, &self.revset);
+    }
+
+    pub fn show_ancestors(&mut self, change_id: &str) {
+        let previous = self.previous.take().unwrap_or_else(|| self.revset.clone());
+        self.show(&ancestors_revset(change_id));
+        self.previous = Some(previous);
+    }
+
+    pub fn back(&mut self) {
+        if let Some(previous) = self.previous.take() {
+            self.show(&previous);
+        }
+    }
+
+    /// Only an explicitly applied revset is remembered; navigation such as revealing ancestors is not.
+    fn show(&mut self, revset: &str) {
         let revset = revset.trim();
         self.revset = if revset.is_empty() {
             DEFAULT_REVSET.to_owned()
@@ -26,23 +44,6 @@ impl RevsetFilterState {
             revset.to_owned()
         };
         self.previous = None;
-        self.recent = remember_revset(&self.recent, &self.revset);
-    }
-
-    pub fn show_ancestors(&mut self, change_id: &str) {
-        let previous = self.previous.take().unwrap_or_else(|| self.revset.clone());
-        self.apply(&ancestors_revset(change_id));
-        self.previous = Some(previous);
-    }
-
-    pub fn forget_recent(&mut self, revset: &str) {
-        self.recent.retain(|entry| entry != revset);
-    }
-
-    pub fn back(&mut self) {
-        if let Some(previous) = self.previous.take() {
-            self.apply(&previous);
-        }
     }
 }
 
@@ -62,6 +63,10 @@ mod tests {
         state.back();
         assert_eq!(state.revset, "mine()");
         assert_eq!(state.previous, None);
+        assert!(
+            state.recent.is_empty(),
+            "revealing ancestors is not a recent revset"
+        );
 
         state.show_ancestors("aaa");
         state.apply("  ");

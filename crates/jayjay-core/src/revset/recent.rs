@@ -1,6 +1,6 @@
 use super::filter::{RevsetFilter, RevsetFilterKind};
 
-const RECENT_REVSET_LIMIT: usize = 5;
+pub(super) const RECENT_REVSET_LIMIT: usize = 15;
 
 pub(super) fn remember_revset(recent: &[String], revset: &str) -> Vec<String> {
     let revset = revset.trim();
@@ -26,10 +26,10 @@ mod tests {
         }
         assert_eq!(recent, ["a()", "b()"]);
 
-        for n in 0..10 {
+        for n in 0..RECENT_REVSET_LIMIT {
             recent = remember_revset(&recent, &format!("r{n}()"));
         }
         assert_eq!(recent.len(), RECENT_REVSET_LIMIT);
-        assert_eq!(recent[0], "r9()");
+        assert_eq!(recent[0], format!("r{}()", RECENT_REVSET_LIMIT - 1));
     }
 }

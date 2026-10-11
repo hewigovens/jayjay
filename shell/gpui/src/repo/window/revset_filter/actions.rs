@@ -73,7 +73,7 @@ impl RepoWindow {
 
     pub(super) fn forget_recent_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         self.vm
-            .update(cx, |vm, _| vm.revset_filter.forget_recent(revset));
+            .update(cx, |vm, cx| vm.forget_recent_revset(revset, cx));
         if let Some(popup) = self.revset_popup.as_mut() {
             popup.query.selected = None;
         }

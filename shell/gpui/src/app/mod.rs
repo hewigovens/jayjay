@@ -11,6 +11,7 @@ pub mod links;
 pub mod menus;
 pub mod motion;
 pub mod rating_prompt;
+pub mod recent_revsets;
 pub mod repositories;
 pub(crate) mod runtime;
 pub mod startup_window;

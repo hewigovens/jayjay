@@ -8,6 +8,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     let repoPath: String
     /// Secondary workspaces are named after their checkout; the title shows the primary repo instead.
     let repositoryName: String
+    /// Recent revsets belong to the repository, so every workspace of it shares them.
+    let primaryRoot: String
     private(set) var graphEntries: [GraphEntry] = []
     private(set) var dagLayout = DAGLayout(entries: [])
     /// Views key derived work on this so the entries are compared once per refresh, not per body pass.
@@ -178,6 +180,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     ) {
         repoPath = path
         repositoryName = URL(fileURLWithPath: primaryRoot).repositoryDisplayName
+        self.primaryRoot = primaryRoot
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
         self.workingCopyIsLarge = workingCopyIsLarge
@@ -191,6 +194,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
                 (try? repo.hasUnignoredWorkingCopyPaths(paths: paths)) ?? true
             }
         )
+        revsetFilter = RevsetFilterState(revset: revsetFilter.revset, previous: nil, recent: recentRevsets(repositoryPath: primaryRoot))
     }
 
     @MainActor

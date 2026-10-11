@@ -259,6 +259,7 @@ demo appearance="system" demo_root="/tmp/jayjay-demo": build
     --env JJ_CONFIG="{{demo_root}}/jj-config.toml" \
     --env JAYJAY_REVIEW_STORE_PATH="{{demo_root}}/review-store.json" \
     --env JAYJAY_REPOSITORIES_PATH="{{demo_root}}/repositories.json" \
+    --env JAYJAY_RECENT_REVSETS_PATH="{{demo_root}}/recent-revsets.json" \
     --args --repo "{{demo_root}}/flightdeck" \
     -jayjay.appearanceMode "{{appearance}}" \
     -jayjay.tintWindowWithWallpaper NO \

@@ -1,5 +1,5 @@
 use super::{DiffCache, GraphData, LoadingState, NotesState, RepoViewModel, ShownDiff, StatsState};
-use crate::app::config;
+use crate::app::{config, recent_revsets};
 use crate::diff::{DetailMode, DiffViewMode};
 use gpui::{AppContext, Context, SharedString};
 use jayjay_core::dag::{DagLayout, OrderedSelection};
@@ -79,6 +79,8 @@ impl RepoViewModel {
         config::update(cx, |config| {
             config.record_opened_repo(Path::new(self.repo_path.as_ref()));
         });
+        self.revset_filter.recent =
+            recent_revsets::recent(cx, Path::new(self.repo_root_path.as_ref()));
         self.boot(cx);
     }
 
