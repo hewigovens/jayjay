@@ -20,7 +20,7 @@ impl RepoWindow {
             return;
         };
         let repo_path = self.vm.read(cx).repo_path.to_string();
-        if !crate::app::tools::open_in_editor(&repo_path, &path, cx) {
+        if !crate::app::tools::open_in_editor(&repo_path, &path, None, cx) {
             self.show_toast("Editor could not be opened", cx);
         }
     }

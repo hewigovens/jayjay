@@ -24,7 +24,7 @@ pub struct AppConfig {
     pub code_ligatures: bool,
     pub diff: DiffConfig,
     pub layout: LayoutConfig,
-    pub(crate) tools: ToolsConfig,
+    pub tools: ToolsConfig,
     pub(crate) features: FeaturesConfig,
     pub onboarding: OnboardingConfig,
     pub telemetry: TelemetryConfig,

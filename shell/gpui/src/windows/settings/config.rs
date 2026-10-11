@@ -176,7 +176,7 @@ fn open_button(path: String, t: &Theme) -> AnyElement {
                 .parent()
                 .and_then(Path::to_str)
                 .unwrap_or(".");
-            if !crate::app::tools::open_in_editor(cwd, &path, cx) {
+            if !crate::app::tools::open_in_editor(cwd, &path, None, cx) {
                 crate::app::links::open_url(cx, &format!("file://{path}"));
             }
         })

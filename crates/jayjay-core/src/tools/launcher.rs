@@ -8,27 +8,39 @@ use super::editor::Editor;
 use super::platform;
 use super::terminal::Terminal;
 
-/// Open `file_path` (relative to `repo_path`, or absolute) in the user's editor.
+/// Open `file_path` (relative to `repo_path`, or absolute) in the user's editor, at the 1-based `line` when the editor supports it.
 /// Returns false when the binary is missing or spawn fails.
-pub fn open_in_editor(repo_path: &str, file_path: &str, cfg: &ToolsConfig) -> bool {
-    let editor = Editor::from_id(&cfg.external_editor);
+pub fn open_in_editor(
+    repo_path: &str,
+    file_path: &str,
+    line: Option<u32>,
+    cfg: &ToolsConfig,
+) -> bool {
+    let editor = Editor::from_id(&cfg.external_editor).unwrap_or(Editor::Custom);
     let absolute = absolutize(repo_path, file_path);
 
     let launch = match editor {
-        Some(Editor::SystemDefault) => {
+        Editor::SystemDefault => {
             system_editor_launch(env_command(&["VISUAL", "EDITOR"]), &absolute)
         }
-        other => {
-            let cmd = match other {
-                Some(e) if e != Editor::Custom => e.command().to_owned(),
-                _ => cfg.custom_editor_command.clone(),
-            };
-            let launch_args = other.map(Editor::launch_args).unwrap_or_default();
-            let in_terminal = classify_editor(&cmd) == EditorKind::Terminal;
-            EditorLaunch::from_command(&cmd, launch_args, &absolute, in_terminal)
-        }
+        Editor::Custom => EditorLaunch::from_command(
+            &cfg.custom_editor_command,
+            &[],
+            vec![absolute],
+            classify_editor(&cfg.custom_editor_command) == EditorKind::Terminal,
+        ),
+        named => EditorLaunch::from_command(
+            named.command(),
+            named.launch_args(),
+            named.target_args(&absolute, line),
+            classify_editor(named.command()) == EditorKind::Terminal,
+        ),
     };
     launch.is_some_and(|launch| launch.spawn(repo_path, cfg))
+}
+
+pub fn editor_opens_at_line(external_editor: &str) -> bool {
+    Editor::from_id(external_editor).is_some_and(Editor::opens_at_line)
 }
 
 /// `argv[0]` is the resolved executable and the target path is already included.
@@ -41,14 +53,14 @@ impl EditorLaunch {
     fn from_command(
         cmd: &str,
         launch_args: &[&str],
-        path: &str,
+        target: Vec<String>,
         in_terminal: bool,
     ) -> Option<Self> {
         let (binary, args) = resolved_command(cmd)?;
         let mut argv = vec![binary];
         argv.extend(launch_args.iter().map(|arg| (*arg).to_owned()));
         argv.extend(args);
-        argv.push(path.to_owned());
+        argv.extend(target);
         Some(Self { argv, in_terminal })
     }
 
@@ -69,9 +81,14 @@ impl EditorLaunch {
 /// `$VISUAL`/`$EDITOR` are terminal-context commands (git runs them inside a terminal), so on Linux only a known GUI editor launches directly.
 fn system_editor_launch(env_editor: Option<String>, path: &str) -> Option<EditorLaunch> {
     match env_editor {
-        Some(cmd) => EditorLaunch::from_command(&cmd, &[], path, env_editor_needs_terminal(&cmd)),
+        Some(cmd) => EditorLaunch::from_command(
+            &cmd,
+            &[],
+            vec![path.to_owned()],
+            env_editor_needs_terminal(&cmd),
+        ),
         None => default_text_editor(path)
-            .or_else(|| EditorLaunch::from_command("xdg-open", &[], path, false)),
+            .or_else(|| EditorLaunch::from_command("xdg-open", &[], vec![path.to_owned()], false)),
     }
 }
 

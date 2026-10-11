@@ -218,9 +218,9 @@ impl RepoWindow {
             ContextAction::RevealChange(change_id) => {
                 self.reveal_change_id(change_id.as_ref(), cx);
             }
-            ContextAction::OpenInEditor(path) => {
+            ContextAction::OpenInEditor { path, line } => {
                 let repo_path = self.vm.read(cx).repo_path.to_string();
-                crate::app::tools::open_in_editor(&repo_path, path.as_ref(), cx);
+                crate::app::tools::open_in_editor(&repo_path, path.as_ref(), line, cx);
             }
             ContextAction::ShowInFileManager(path) => {
                 let repo_path = self.vm.read(cx).repo_path.to_string();
@@ -283,7 +283,10 @@ impl RepoWindow {
             ContextMenuItem::new(
                 crate::app::tools::open_in_editor_label(cx),
                 glyph::PENCIL,
-                ContextAction::OpenInEditor(path.to_owned().into()),
+                ContextAction::OpenInEditor {
+                    path: path.to_owned().into(),
+                    line: None,
+                },
             ),
             ContextMenuItem::new(
                 "Show in File Manager",

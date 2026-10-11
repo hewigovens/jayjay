@@ -146,7 +146,7 @@ impl RepoWindow {
 
     pub(crate) fn open_repo_in_editor(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
-        if !crate::app::tools::open_in_editor(&repo_path, ".", cx) {
+        if !crate::app::tools::open_in_editor(&repo_path, ".", None, cx) {
             self.show_toast("Editor could not be opened", cx);
         }
     }

@@ -6,6 +6,7 @@ use jayjay_core::placeholder::is_editable_text;
 use jayjay_core::{DiffEditFileSelection, DiffHunk, HunkType, JayError};
 
 use super::RepoWindow;
+use crate::app::tools;
 use crate::diff::{
     GutterLineSelection, display_range_to_diff_edit_range, selection_covers_whole_change_group,
 };
@@ -58,6 +59,16 @@ impl RepoWindow {
                 glyph::PENCIL,
                 ContextAction::EditFileAtLine(line),
             ));
+            if tools::editor_opens_at_line(cx) {
+                items.push(ContextMenuItem::new(
+                    format!("{} at Line {line}", tools::open_in_editor_label(cx)),
+                    glyph::EXTERNAL_LINK,
+                    ContextAction::OpenInEditor {
+                        path: hunk.path.clone().into(),
+                        line: Some(line),
+                    },
+                ));
+            }
         }
         if self.can_enter_diff_edit(cx) {
             items.push(ContextMenuItem::new(

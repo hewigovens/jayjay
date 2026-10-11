@@ -19,6 +19,7 @@ struct DiffSection: View {
     @Binding var noteEditor: ReviewNoteEditorState?
     var onOpenDiffEdit: (() -> Void)?
     var onEditFile: ((UInt32?) -> Void)?
+    var onOpenInExternalEditor: ((UInt32) -> Void)?
     var onReviewStateChanged: (() -> Void)?
     var onReviewSnapshotLoaded: ((DiffHunk, ReviewFileSnapshot?) -> Void)?
     var compareFromRev: String?

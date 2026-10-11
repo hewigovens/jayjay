@@ -93,7 +93,8 @@ final class DiffGutterGroupingTests: XCTestCase {
         }
 
         XCTAssertTrue(titles(1).contains("Edit File at Line 7"))
-        XCTAssertFalse(titles(2).contains { $0.hasPrefix("Edit File") })
+        XCTAssertTrue(titles(1).contains("Open in Zed at Line 7"))
+        XCTAssertFalse(titles(2).contains { $0.hasPrefix("Edit File") || $0.hasPrefix("Open in") })
     }
 
     func test_menuLabelsSingleLineChangeAsSelectedLines() {
@@ -181,8 +182,13 @@ private struct TestLineAbandoningActions: DiffGutterEditActions {
         true
     }
 
+    var externalEditorName: String? {
+        "Zed"
+    }
+
     func didSelectLines(_ lineRange: ClosedRange<Int>) {}
     func openDiffEdit() {}
     func abandonSelectedLines(in lineRange: ClosedRange<Int>) {}
     func editFile(atLine line: UInt32) {}
+    func openInExternalEditor(atLine line: UInt32) {}
 }

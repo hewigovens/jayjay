@@ -21,8 +21,16 @@ extension DiffSection: DiffGutterEditActions {
         onEditFile != nil && hasCurrentRenderableDiff && loadedDiff?.content.supportsFileEditor == true
     }
 
+    var externalEditorName: String? {
+        onOpenInExternalEditor != nil && settings.externalEditorOpensAtLine ? settings.externalEditor.title : nil
+    }
+
     func editFile(atLine line: UInt32) {
         onEditFile?(line)
+    }
+
+    func openInExternalEditor(atLine line: UInt32) {
+        onOpenInExternalEditor?(line)
     }
 
     func didSelectLines(_ lineRange: ClosedRange<Int>) {

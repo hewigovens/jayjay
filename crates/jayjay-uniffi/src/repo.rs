@@ -517,6 +517,7 @@ fn login_shell() -> String {
 fn open_in_editor(
     repo_path: String,
     file_path: String,
+    line: Option<u32>,
     external_editor: String,
     custom_editor_command: String,
     terminal: String,
@@ -525,6 +526,7 @@ fn open_in_editor(
     jayjay_core::open_in_editor(
         &repo_path,
         &file_path,
+        line,
         &ToolsConfig {
             external_editor,
             custom_editor_command,
@@ -532,6 +534,11 @@ fn open_in_editor(
             custom_terminal_command,
         },
     )
+}
+
+#[uniffi::export]
+fn editor_opens_at_line(external_editor: String) -> bool {
+    jayjay_core::editor_opens_at_line(&external_editor)
 }
 
 #[uniffi::export]

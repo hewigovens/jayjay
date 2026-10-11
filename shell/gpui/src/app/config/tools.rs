@@ -3,7 +3,7 @@ use serde::{Deserialize, Serialize};
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct ToolsConfig {
-    pub(crate) external_editor: String,
+    pub external_editor: String,
     pub(crate) custom_editor_command: String,
     pub(crate) terminal: String,
     pub(crate) custom_terminal_command: String,

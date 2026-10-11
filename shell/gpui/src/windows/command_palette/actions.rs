@@ -153,7 +153,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
             if let Some(view) = ctx.repo_window.clone() {
                 view.update(cx, |view, cx| view.open_repo_in_editor(cx));
             } else {
-                tools::open_in_editor(ctx.repo_path, ".", cx);
+                tools::open_in_editor(ctx.repo_path, ".", None, cx);
             }
         },
     },

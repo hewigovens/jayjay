@@ -59,7 +59,10 @@ pub enum ContextAction {
         remote: String,
     },
     RevealChange(SharedString),
-    OpenInEditor(SharedString),
+    OpenInEditor {
+        path: SharedString,
+        line: Option<u32>,
+    },
     ShowInFileManager(SharedString),
     OpenWorkspaceAt(SharedString),
     SetRepositoryPinned {

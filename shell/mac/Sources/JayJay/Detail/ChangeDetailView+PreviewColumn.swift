@@ -106,6 +106,9 @@ extension ChangeDetailView {
                         onEditFile: canEditWorkingCopyFile(hunk)
                             ? { prepareFileEditor(path: hunk.path, line: $0) }
                             : nil,
+                        onOpenInExternalEditor: canEditWorkingCopyFile(hunk)
+                            ? { appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath, line: $0) }
+                            : nil,
                         onReviewStateChanged: { refreshReviewState() },
                         onReviewSnapshotLoaded: { loadedHunk, snapshot in
                             rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)

@@ -261,13 +261,24 @@ fn abandon_change_group_title_when_selection_covers_whole_group(cx: &mut TestApp
 #[gpui::test]
 fn gutter_menu_offers_editing_the_file_at_the_clicked_line(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_with_multiline_feature_edit(cx);
+    let menu = |editor: &str, cx: &mut VisualTestContext| {
+        cx.update(|_, cx| {
+            jayjay_gpui::app::config::update(cx, |c| c.tools.external_editor = editor.to_owned())
+        });
+        view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx))
+    };
 
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
-    let item = items
-        .iter()
-        .find(|item| matches!(item.action, ContextAction::EditFileAtLine(3)))
-        .expect("edit item for a working-copy line");
-    assert_eq!(item.label.as_ref(), "Edit File at Line 3");
+    let items = menu("zed", cx);
+    let labels: Vec<_> = items.iter().map(|item| item.label.as_ref()).collect();
+    assert!(labels.contains(&"Edit File at Line 3"));
+    assert!(labels.contains(&"Open in Zed at Line 3"));
+    assert!(items.iter().any(|item| matches!(
+        &item.action,
+        ContextAction::OpenInEditor { path, line: Some(3) } if path.as_ref() == "feature.txt"
+    )));
+
+    let items = menu("custom", cx);
+    assert!(!items.iter().any(|item| item.label.starts_with("Open in")));
 }
 
 #[gpui::test]

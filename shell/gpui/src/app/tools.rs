@@ -34,8 +34,17 @@ pub(crate) fn open_in_terminal_label(cx: &App) -> String {
     format!("Open in {}", terminal_title(cx))
 }
 
-pub(crate) fn open_in_editor(repo_path: &str, file_path: &str, cx: &App) -> bool {
-    jayjay_core::open_in_editor(repo_path, file_path, &cfg(cx))
+pub(crate) fn open_in_editor(
+    repo_path: &str,
+    file_path: &str,
+    line: Option<u32>,
+    cx: &App,
+) -> bool {
+    jayjay_core::open_in_editor(repo_path, file_path, line, &cfg(cx))
+}
+
+pub(crate) fn editor_opens_at_line(cx: &App) -> bool {
+    jayjay_core::editor_opens_at_line(&config::current(cx).tools.external_editor)
 }
 
 pub(crate) fn open_in_terminal(repo_path: &str, cx: &App) -> bool {
