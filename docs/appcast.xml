@@ -6,6 +6,126 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.21-beta.1</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>70</sparkle:version>
+            <sparkle:shortVersionString>0.3.21</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sun, 11 Oct 2026 23:19:23 +0000</pubDate>
+            <description><![CDATA[
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="color-scheme" content="light dark">
+                  <title>JayJay 0.3.21-beta.1 — Release notes</title>
+                  <style>
+                    :root {
+                      color-scheme: light dark;
+                      --background: #f7f8fa;
+                      --surface: #ffffff;
+                      --text: #20242c;
+                      --muted: #626b78;
+                      --border: #dfe4ec;
+                      --accent: #1d4ed8;
+                      --tint: #eaf1ff;
+                      --notice: #fff5de;
+                      --notice-text: #79520b;
+                    }
+                    @media (prefers-color-scheme: dark) {
+                      :root {
+                        --background: #181b21;
+                        --surface: #22262e;
+                        --text: #edf0f6;
+                        --muted: #adb6c5;
+                        --border: #3b424f;
+                        --accent: #93baff;
+                        --tint: #283b5d;
+                        --notice: #3a301d;
+                        --notice-text: #f4cc7d;
+                      }
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                      margin: 0;
+                      padding: 24px;
+                      background: var(--background);
+                      color: var(--text);
+                      font: 13px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                      overflow-wrap: anywhere;
+                    }
+                    .release { max-width: 720px; margin: 0 auto; }
+                    header { padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+                    h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -0.035em; }
+                    .metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; color: var(--muted); }
+                    .version { padding: 3px 10px; border-radius: 7px; background: var(--tint); color: var(--accent); font-weight: 650; }
+                    .beta-notice { margin: 20px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--notice); color: var(--notice-text); }
+                    main h2 { margin: 24px 0 10px; font-size: 16px; line-height: 1.35; }
+                    main ul, main ol { margin: 0; padding: 16px 18px 16px 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+                    main li + li { margin-top: 10px; }
+                    main li::marker { color: var(--accent); }
+                    main li ul, main li ol { margin-top: 10px; padding: 0 0 0 18px; border: 0; }
+                    code { padding: 1px 4px; border-radius: 4px; background: var(--tint); font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: var(--surface); }
+                    pre code { padding: 0; background: transparent; }
+                    a { color: var(--accent); text-underline-offset: 3px; }
+                    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+                    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); }
+                    @media (max-width: 420px) { body { padding: 16px; } h1 { font-size: 24px; } }
+                    @media (prefers-contrast: more) { :root { --muted: var(--text); --border: var(--text); } }
+                  </style>
+                </head>
+                <body>
+                  <div class="release">
+                    <header>
+                      <h1>What’s new</h1>
+                      <div class="metadata"><span class="version">v0.3.21-beta.1</span><time datetime="2026-10-11">October 11, 2026</time></div>
+                    </header>
+                    <p class="beta-notice"><strong>Beta build · 70</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>
+                    <main>
+                <h2>Fonts</h2>
+                <ul>
+                  <li>Interface and code fonts are now separate. <strong>Appearance</strong> sets the interface font family and size; a new <strong>Code Font</strong> page sets the code font, size, line spacing and ligatures, with a live preview drawn by the real diff view and a reset that leaves the interface font alone. Existing settings carry over as the code font.</li>
+                  <li>The code font picker lists System, then installed <strong>Coding Fonts</strong>, then <strong>Other Monospaced</strong> families, including Nerd Font patches and fonts installed by a package manager. The ligatures switch is disabled for fonts that have none.</li>
+                  <li>Changing the code font, size or line spacing keeps the editor on the same line instead of jumping.</li>
+                  <li>Zoom In, Zoom Out and Reset Zoom move to the <strong>View</strong> menu and change both font sizes; Appearance names their shortcuts.</li>
+                </ul>
+                
+                <h2>Diffs and review</h2>
+                <ul>
+                  <li>Right-click a line number in the unified diff and choose <strong>Edit File at Line N</strong> to open the working-copy file in the built-in editor with the caret on that line.</li>
+                  <li>Renames come from jj's copy records, so a new file is no longer shown as a move of an unrelated file with the same name. Copies show as <strong>Copied</strong> and diff against their source, and split, move and restore on a rename act on the whole move.</li>
+                  <li>File status badges use icons: ± for modified and a copy icon for copied.</li>
+                  <li>The file list keeps the selected file in view when you move with j/k, the arrow keys or Space, and after a refresh. In tree view, keyboard navigation follows the order on screen and skips collapsed folders.</li>
+                </ul>
+                
+                <h2>Revsets and workspaces</h2>
+                <ul>
+                  <li>Recent revsets are saved per repository, shared by all its workspaces, and kept after the window closes, up to 15. Each entry in the revset panel's Recent section has a button that removes it.</li>
+                  <li>Show one workspace's history: workspace names complete as <code>name@</code> in the revset bar, and a workspace chip's menu offers <strong>Filter by This Workspace</strong>.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Creating a bookmark or tag with a name git can't store is refused up front instead of failing later.</li>
+                  <li>Comparing against a bookmark that exists only on a remote works again.</li>
+                  <li>Git LFS files with spaces or non-ASCII characters in their names are recognized, so <strong>Hide Git LFS-backed files</strong> applies to them.</li>
+                  <li>Graph bookmark and tag chips are slightly larger.</li>
+                  <li>Onboarding's last page includes the anonymous usage statistics checkbox, and no statistics are sent before onboarding finishes.</li>
+                </ul>
+                    </main>
+                    <footer><a href="https://github.com/hewigovens/jayjay/releases">All releases</a> · <a href="https://jayjay.hewig.dev/guide.html">User guide</a></footer>
+                  </div>
+                </body>
+                </html>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.21-beta.1/JayJay-0.3.21-beta.1.zip"
+                       sparkle:edSignature="QFqQdzlpQLd2yaP5ycGwsbHA0RnWPeoEGEqUoOS0fpZmhcYihfpJxr7mG1GRIehAJTVCLMz30LpeYksa0WhPCQ=="
+                       length="25200961"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.20</title>
             <sparkle:version>69</sparkle:version>
             <sparkle:shortVersionString>0.3.20</sparkle:shortVersionString>

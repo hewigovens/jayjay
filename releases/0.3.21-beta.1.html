@@ -1,0 +1,30 @@
+<h2>Fonts</h2>
+<ul>
+  <li>Interface and code fonts are now separate. <strong>Appearance</strong> sets the interface font family and size; a new <strong>Code Font</strong> page sets the code font, size, line spacing and ligatures, with a live preview drawn by the real diff view and a reset that leaves the interface font alone. Existing settings carry over as the code font.</li>
+  <li>The code font picker lists System, then installed <strong>Coding Fonts</strong>, then <strong>Other Monospaced</strong> families, including Nerd Font patches and fonts installed by a package manager. The ligatures switch is disabled for fonts that have none.</li>
+  <li>Changing the code font, size or line spacing keeps the editor on the same line instead of jumping.</li>
+  <li>Zoom In, Zoom Out and Reset Zoom move to the <strong>View</strong> menu and change both font sizes; Appearance names their shortcuts.</li>
+</ul>
+
+<h2>Diffs and review</h2>
+<ul>
+  <li>Right-click a line number in the unified diff and choose <strong>Edit File at Line N</strong> to open the working-copy file in the built-in editor with the caret on that line.</li>
+  <li>Renames come from jj's copy records, so a new file is no longer shown as a move of an unrelated file with the same name. Copies show as <strong>Copied</strong> and diff against their source, and split, move and restore on a rename act on the whole move.</li>
+  <li>File status badges use icons: ± for modified and a copy icon for copied.</li>
+  <li>The file list keeps the selected file in view when you move with j/k, the arrow keys or Space, and after a refresh. In tree view, keyboard navigation follows the order on screen and skips collapsed folders.</li>
+</ul>
+
+<h2>Revsets and workspaces</h2>
+<ul>
+  <li>Recent revsets are saved per repository, shared by all its workspaces, and kept after the window closes, up to 15. Each entry in the revset panel's Recent section has a button that removes it.</li>
+  <li>Show one workspace's history: workspace names complete as <code>name@</code> in the revset bar, and a workspace chip's menu offers <strong>Filter by This Workspace</strong>.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Creating a bookmark or tag with a name git can't store is refused up front instead of failing later.</li>
+  <li>Comparing against a bookmark that exists only on a remote works again.</li>
+  <li>Git LFS files with spaces or non-ASCII characters in their names are recognized, so <strong>Hide Git LFS-backed files</strong> applies to them.</li>
+  <li>Graph bookmark and tag chips are slightly larger.</li>
+  <li>Onboarding's last page includes the anonymous usage statistics checkbox, and no statistics are sent before onboarding finishes.</li>
+</ul>
