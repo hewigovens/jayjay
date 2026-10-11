@@ -100,9 +100,8 @@ mod tests {
     #[test]
     fn suggestions_offer_the_current_revset_until_the_user_types_something_else() {
         let bookmark = bookmark_info("feature");
-        let mut state = RevsetFilterState::new("a()");
-        state.apply("::feat");
-        state.apply("b()");
+        let mut state = RevsetFilterState::new("b()");
+        state.recent = vec!["::feat".to_owned()];
         let workspaces = ["default".to_owned(), "feat-ui".to_owned()];
         let kinds = |query: &str| {
             state

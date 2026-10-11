@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 use std::sync::Arc;
 
 use jayjay_core::overview::OverviewSnapshot;
@@ -7,9 +7,9 @@ use jayjay_core::{
     DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffProjectionMode,
     DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats, FileEditorData, FixSummary,
     GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand, JjCommandResult, MutationEffect,
-    OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode, Repo, RevsetPreset, Stack,
-    StackedPrResult, SubmitStackLayer, SyncToken, TagInfo, ToolsConfig, WorkspaceInfo,
-    WorkspacePresence,
+    OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode, RecentRevsetStore, Repo,
+    RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken, TagInfo, ToolsConfig,
+    WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -105,12 +105,18 @@ fn revset_filter_show_ancestors(
 }
 
 #[uniffi::export]
-fn revset_filter_forget_recent(
-    mut state: jayjay_core::RevsetFilterState,
-    revset: String,
-) -> jayjay_core::RevsetFilterState {
-    state.forget_recent(&revset);
-    state
+fn recent_revsets(repository_path: String) -> Vec<String> {
+    RecentRevsetStore::load().recent(Path::new(&repository_path))
+}
+
+#[uniffi::export]
+fn recent_revsets_remember(repository_path: String, revset: String) -> Vec<String> {
+    RecentRevsetStore::load().remember(Path::new(&repository_path), &revset)
+}
+
+#[uniffi::export]
+fn recent_revsets_forget(repository_path: String, revset: String) -> Vec<String> {
+    RecentRevsetStore::load().forget(Path::new(&repository_path), &revset)
 }
 
 #[uniffi::export]

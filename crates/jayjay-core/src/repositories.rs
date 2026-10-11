@@ -1,166 +1,82 @@
 use std::collections::HashSet;
-use std::fs;
-use std::hash::{DefaultHasher, Hash, Hasher};
 use std::path::{Path, PathBuf};
 
-use jayjay_primitives::AppDirs;
 use serde::{Deserialize, Serialize};
+
+use crate::json_store::JsonStore;
 
 mod grouping;
 pub use grouping::{RepoGroup, RepoListGroups, group_repositories};
-
-#[derive(Clone, Copy, PartialEq, Eq)]
-struct ContentsFingerprint(u64);
-
-impl ContentsFingerprint {
-    fn from_contents(contents: &[u8]) -> Self {
-        let mut hasher = DefaultHasher::new();
-        contents.hash(&mut hasher);
-        Self(hasher.finish())
-    }
-}
 
 #[derive(Clone, Default, Deserialize, Serialize)]
 struct RepositoryStore {
     repositories: Vec<String>,
 }
 
-/// Canonical file-backed pin store shared by every JayJay shell.
-pub struct Store {
-    state: RepositoryStore,
-    save_path: Option<PathBuf>,
-    loaded_fingerprint: Option<ContentsFingerprint>,
+impl RepositoryStore {
+    fn normalize(&mut self) {
+        let mut seen = HashSet::with_capacity(self.repositories.len());
+        self.repositories
+            .retain(|path| !path.is_empty() && seen.insert(path.clone()));
+    }
 }
+
+const LABEL: &str = "repositories";
+
+/// Canonical file-backed pin store shared by every JayJay shell.
+pub struct Store(JsonStore<RepositoryStore>);
 
 impl Store {
     pub fn load() -> Self {
-        match Self::store_path() {
-            Some(path) => Self::load_from(path),
-            None => Self::in_memory(),
-        }
+        Self(JsonStore::load(
+            LABEL,
+            "JAYJAY_REPOSITORIES_PATH",
+            "repositories.json",
+            RepositoryStore::normalize,
+        ))
     }
 
     pub fn load_from(path: PathBuf) -> Self {
-        Self {
-            state: RepositoryStore::default(),
-            save_path: Some(path),
-            loaded_fingerprint: None,
-        }
+        Self(JsonStore::new(
+            LABEL,
+            Some(path),
+            RepositoryStore::normalize,
+        ))
     }
 
     pub fn in_memory() -> Self {
-        Self {
-            state: RepositoryStore::default(),
-            save_path: None,
-            loaded_fingerprint: None,
-        }
+        Self(JsonStore::new(LABEL, None, RepositoryStore::normalize))
     }
 
     pub fn repositories(&mut self) -> Vec<String> {
-        self.refresh(false);
-        self.state.repositories.clone()
+        self.0.read().repositories.clone()
     }
 
     pub fn set_pinned(&mut self, path: &Path, pinned: bool) -> Vec<String> {
-        self.refresh(true);
         let Some(path) = stored_repository_path(path) else {
-            return self.state.repositories.clone();
+            return self.repositories();
         };
-        let mut next = self.state.clone();
-        // Stored entries may predate normalization, so match by canonical form too.
-        let is_target = |entry: &String| {
-            entry == &path
-                || stored_repository_path(Path::new(entry)).as_deref() == Some(path.as_str())
-        };
-        if pinned && next.repositories.contains(&path)
-            || !pinned && !next.repositories.iter().any(is_target)
-        {
-            return self.state.repositories.clone();
-        }
-        next.repositories.retain(|entry| !is_target(entry));
-        if pinned {
-            next.repositories.insert(0, path);
-        }
-        if self.save(&next) {
-            self.state = next;
-        }
-        self.state.repositories.clone()
-    }
-
-    fn store_path() -> Option<PathBuf> {
-        if let Ok(path) = std::env::var("JAYJAY_REPOSITORIES_PATH")
-            && !path.is_empty()
-        {
-            return Some(PathBuf::from(path));
-        }
-        AppDirs::new().map(|dirs| dirs.config.join("repositories.json"))
-    }
-
-    fn load_contents(path: &Path, contents: &[u8]) -> RepositoryStore {
-        match serde_json::from_slice::<RepositoryStore>(contents) {
-            Ok(mut state) => {
-                let mut seen = HashSet::with_capacity(state.repositories.len());
-                state
-                    .repositories
-                    .retain(|path| !path.is_empty() && seen.insert(path.clone()));
-                state
-            }
-            Err(error) => {
-                let corrupt = path.with_extension("json.corrupt");
-                eprintln!(
-                    "[repositories] {} failed to parse ({error}); preserving as {}",
-                    path.display(),
-                    corrupt.display()
-                );
-                let _ = fs::rename(path, corrupt);
-                RepositoryStore::default()
-            }
-        }
-    }
-
-    fn refresh(&mut self, force: bool) {
-        let Some(path) = self.save_path.as_ref() else {
-            return;
-        };
-        let contents = match fs::read(path) {
-            Ok(contents) => Some(contents),
-            Err(error) if error.kind() == std::io::ErrorKind::NotFound => None,
-            Err(error) => {
-                eprintln!("[repositories] read {}: {error}", path.display());
-                return;
-            }
-        };
-        let fingerprint = contents.as_deref().map(ContentsFingerprint::from_contents);
-        if !force && fingerprint == self.loaded_fingerprint {
-            return;
-        }
-        self.state = contents
-            .as_deref()
-            .map(|contents| Self::load_contents(path, contents))
-            .unwrap_or_default();
-        self.loaded_fingerprint = fingerprint;
-    }
-
-    fn save(&mut self, state: &RepositoryStore) -> bool {
-        let Some(path) = self.save_path.as_ref() else {
-            return true;
-        };
-        let written = serde_json::to_vec(state)
-            .map_err(std::io::Error::from)
-            .and_then(|contents| {
-                crate::write_atomically(path, &contents)?;
-                Ok(ContentsFingerprint::from_contents(&contents))
-            });
-        match written {
-            Ok(fingerprint) => {
-                self.loaded_fingerprint = Some(fingerprint);
+        self.0
+            .update(|next| {
+                // Stored entries may predate normalization, so match by canonical form too.
+                let is_target = |entry: &String| {
+                    entry == &path
+                        || stored_repository_path(Path::new(entry)).as_deref()
+                            == Some(path.as_str())
+                };
+                if pinned && next.repositories.contains(&path)
+                    || !pinned && !next.repositories.iter().any(is_target)
+                {
+                    return false;
+                }
+                next.repositories.retain(|entry| !is_target(entry));
+                if pinned {
+                    next.repositories.insert(0, path);
+                }
                 true
-            }
-            Err(error) => {
-                eprintln!("[repositories] save {}: {error}", path.display());
-                false
-            }
-        }
+            })
+            .repositories
+            .clone()
     }
 }
 

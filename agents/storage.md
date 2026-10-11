@@ -16,6 +16,7 @@ Rust stores resolve platform-native directories through `jayjay_primitives::AppD
 | Data | Owner and consumers | Storage | Contents |
 | --- | --- | --- | --- |
 | Pinned repositories | `jayjay-core`; SwiftUI via UniFFI; GPUI directly | `repositories.json` in the shared config directory | An ordered `repositories` array of canonical absolute UTF-8 repository paths. New pins are inserted first; empty paths and exact duplicates are removed on load. |
+| Recent revsets | `jayjay-core`; SwiftUI via UniFFI; GPUI directly | `recent_revsets.json` in the shared config directory | Up to 15 typed revsets per repository, newest first, keyed by the repository's primary workspace root so its workspaces share them. Presets and the default filter are not recorded. |
 | Review marks and notes | `jayjay-review`; SwiftUI via UniFFI; GPUI and CLI directly | `review_store.json` in the shared config directory | File/hunk review marks keyed by `change_id|path`, content identities, hunk-baseline fingerprints and group states, and local review notes including path, side, line, anchor context, body, timestamps, and resolution state. |
 | SwiftUI settings and history | SwiftUI-only `AppSettings` | `UserDefaults` for bundle `dev.hewig.jayjay` | Appearance and font, diff options, layout, confirmations, onboarding, editor/terminal choices, update channel, rating prompt state, up to 12 recent repositories, and the last opened repository. |
 | SwiftUI auxiliary state | SwiftUI components | The same `UserDefaults` domain | Command-palette position; window frames per scene (`jayjay.windowFrame.<scene id>`, applied to the first window of that scene); pane widths (`jayjay.sidebarWidth` and `jayjay.secondaryPaneWidth`, which falls back to the legacy `jayjay.fileColumnWidth` when unset; both fitted to the window when shown). UI tests mask the frame and pane keys through launch arguments; `scripts/ui-test-fixtures.sh` deletes them per run. |
@@ -39,6 +40,18 @@ The canonical implementation is `crates/jayjay-core/src/repositories.rs`.
 - Deleting the file empties long-lived readers; the next mutation starts from empty instead of restoring old pins.
 - Malformed JSON is renamed to `repositories.json.corrupt`; the store starts empty without overwriting that file.
 - `JAYJAY_REPOSITORIES_PATH` overrides the path for tests.
+
+### Recent revsets
+
+The canonical implementation is `crates/jayjay-core/src/revset/recent_store.rs`, built on the same `json_store` helper as the pin store.
+
+```json
+{"repositories":{"/Users/example/work/project-a":["mine() & ~empty()","trunk()..@"]}}
+```
+
+- Same refresh-before-mutate, atomic-write, and `.json.corrupt` rules as the pin store. Empty entries, duplicates, entries past the cap, and repositories left with no entries are dropped on load.
+- Keys are normalized primary workspace roots; a non-UTF-8 path is keyed lossily, since the list is history rather than identity.
+- `JAYJAY_RECENT_REVSETS_PATH` overrides the path for tests; GPUI component tests install an in-memory store.
 
 ### Review marks and notes
 
@@ -98,7 +111,7 @@ These files are content-derived or process-scoped. Callers must tolerate their a
 
 ## Privacy and Deletion
 
-- `repositories.json`, both recent lists, and last-opened state reveal local absolute repository paths.
+- `repositories.json`, `recent_revsets.json`, both recent lists, and last-opened state reveal local absolute repository paths.
 - `review_store.json` may contain repository-relative file paths, line excerpts, surrounding context, and user-authored note bodies. Treat it as private source-review data.
 - Deleting pins or recent history does not delete repositories. Deleting review storage does not change jj history; it only removes JayJay's local review state. Settings › Diff › Review › Clear does the same in-app through `ReviewStore::clear_all`, keeping unknown top-level fields.
 - Do not log full storage documents or transmit them in telemetry.

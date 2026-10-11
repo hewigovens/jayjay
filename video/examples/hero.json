@@ -6,6 +6,7 @@
   "env": {
     "JJ_CONFIG": "/Users/Shared/jayjay-example/jj-config.toml",
     "JAYJAY_REPOSITORIES_PATH": "/Users/Shared/jayjay-example/repositories.json",
+    "JAYJAY_RECENT_REVSETS_PATH": "/Users/Shared/jayjay-example/recent-revsets.json",
     "JAYJAY_REVIEW_STORE_PATH": "/Users/Shared/jayjay-example/review-store.json"
   },
   "defaults": {

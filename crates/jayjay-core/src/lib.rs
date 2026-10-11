@@ -24,6 +24,8 @@ pub mod github_alias;
 #[cfg(feature = "repository")]
 mod jj_command;
 #[cfg(feature = "repository")]
+mod json_store;
+#[cfg(feature = "repository")]
 mod merge_editor;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
@@ -73,11 +75,12 @@ pub use repo::{
 };
 #[cfg(feature = "repository")]
 pub use revset::{
-    BookmarkFilterTarget, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RevsetCompletion,
-    RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState, RevsetName,
-    RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, ancestors_revset,
-    bookmark_filter_revset, build_default_revset, default_revset_depth, default_revset_preset,
-    revset_completions, revset_presets, typed_revset, workspace_filter_revset,
+    BookmarkFilterTarget, DEFAULT_REVSET, DEFAULT_REVSET_DEPTH, RecentRevsetStore,
+    RevsetCompletion, RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState,
+    RevsetName, RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary,
+    ancestors_revset, bookmark_filter_revset, build_default_revset, default_revset_depth,
+    default_revset_preset, revset_completions, revset_presets, typed_revset,
+    workspace_filter_revset,
 };
 pub use theme::{DiffThemeColors, RepoColors, ThemeSeed, diff_theme_colors, repo_colors};
 #[cfg(feature = "repository")]

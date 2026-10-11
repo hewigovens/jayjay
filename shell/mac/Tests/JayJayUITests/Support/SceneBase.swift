@@ -56,6 +56,8 @@ class SceneBase: XCTestCase {
         // Scenes on the same fixture can run in parallel runner clones, so each class gets its own store instead of sharing one per fixture.
         let reviewStorePath = root.appendingPathComponent("\(Self.fixtureName)-\(Self.self)-review-store.json").path
         try? FileManager.default.removeItem(atPath: reviewStorePath)
+        let recentRevsetsPath = root.appendingPathComponent("\(Self.fixtureName)-\(Self.self)-recent-revsets.json").path
+        try? FileManager.default.removeItem(atPath: recentRevsetsPath)
 
         let app = XCUIApplication()
         // Ignore restored windows so each test controls its initial app state.
@@ -90,6 +92,7 @@ class SceneBase: XCTestCase {
         app.launchEnvironment["JAYJAY_REPOSITORIES_PATH"] = root
             .appendingPathComponent(Self.repositoryStoreFixtureName)
             .path
+        app.launchEnvironment["JAYJAY_RECENT_REVSETS_PATH"] = recentRevsetsPath
         for (key, value) in Self.launchEnvironment {
             app.launchEnvironment[key] = value
         }

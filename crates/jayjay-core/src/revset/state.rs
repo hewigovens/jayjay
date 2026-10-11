@@ -1,6 +1,5 @@
 use super::default::DEFAULT_REVSET;
 use super::expressions::ancestors_revset;
-use super::recent::remember_revset;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
 pub struct RevsetFilterState {
@@ -26,17 +25,12 @@ impl RevsetFilterState {
             revset.to_owned()
         };
         self.previous = None;
-        self.recent = remember_revset(&self.recent, &self.revset);
     }
 
     pub fn show_ancestors(&mut self, change_id: &str) {
         let previous = self.previous.take().unwrap_or_else(|| self.revset.clone());
         self.apply(&ancestors_revset(change_id));
         self.previous = Some(previous);
-    }
-
-    pub fn forget_recent(&mut self, revset: &str) {
-        self.recent.retain(|entry| entry != revset);
     }
 
     pub fn back(&mut self) {

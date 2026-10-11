@@ -65,7 +65,9 @@ extension RepoViewModel {
     }
 
     func applyFilter(_ newRevset: String, selecting revision: String) {
-        reloadFilter(revsetFilterApply(state: revsetFilter, revset: newRevset), selecting: revision)
+        let filter = revsetFilterApply(state: revsetFilter, revset: newRevset)
+        let recent = recentRevsetsRemember(repositoryPath: primaryRoot, revset: filter.revset)
+        reloadFilter(RevsetFilterState(revset: filter.revset, previous: filter.previous, recent: recent), selecting: revision)
     }
 
     func returnToPreviousRevset() {
@@ -73,7 +75,8 @@ extension RepoViewModel {
     }
 
     func forgetRecentRevset(_ revset: String) {
-        revsetFilter = revsetFilterForgetRecent(state: revsetFilter, revset: revset)
+        let recent = recentRevsetsForget(repositoryPath: primaryRoot, revset: revset)
+        revsetFilter = RevsetFilterState(revset: revsetFilter.revset, previous: revsetFilter.previous, recent: recent)
     }
 
     private func reloadFilter(_ filter: RevsetFilterState, selecting revision: String) {

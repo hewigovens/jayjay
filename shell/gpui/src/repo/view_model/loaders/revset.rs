@@ -1,7 +1,10 @@
+use std::path::Path;
+
 use gpui::Context;
 use jayjay_core::default_revset_depth;
 
 use super::super::RepoViewModel;
+use crate::app::recent_revsets;
 
 impl RepoViewModel {
     pub fn revset(&self) -> &str {
@@ -9,7 +12,7 @@ impl RepoViewModel {
     }
 
     pub fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
-        self.revset_filter.apply(revset);
+        self.apply_and_remember(revset, cx);
         self.reload_revset(None, cx);
     }
 
@@ -19,7 +22,7 @@ impl RepoViewModel {
         commit_id: String,
         cx: &mut Context<Self>,
     ) {
-        self.revset_filter.apply(revset);
+        self.apply_and_remember(revset, cx);
         self.reload_revset(Some(commit_id), cx);
     }
 
@@ -36,6 +39,19 @@ impl RepoViewModel {
     pub(crate) fn return_to_previous_revset(&mut self, cx: &mut Context<Self>) {
         self.revset_filter.back();
         self.reload_revset(None, cx);
+    }
+
+    pub(crate) fn forget_recent_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+        let root = Path::new(self.repo_root_path.as_ref());
+        self.revset_filter.recent = recent_revsets::update(cx, |store| store.forget(root, revset));
+    }
+
+    fn apply_and_remember(&mut self, revset: &str, cx: &mut Context<Self>) {
+        self.revset_filter.apply(revset);
+        let root = Path::new(self.repo_root_path.as_ref());
+        let revset = &self.revset_filter.revset;
+        self.revset_filter.recent =
+            recent_revsets::update(cx, |store| store.remember(root, revset));
     }
 
     fn reload_revset(&mut self, selecting: Option<String>, cx: &mut Context<Self>) {
