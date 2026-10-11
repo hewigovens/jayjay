@@ -254,6 +254,7 @@ impl RepoWindow {
                 self.open_create_workspace(cx);
             }
             ContextAction::OpenDiffEdit => self.enter_diff_edit(cx),
+            ContextAction::EditFileAtLine(line) => self.enter_selected_file_editor(Some(line), cx),
             ContextAction::AbandonSelectedLines(request) => {
                 self.abandon_selected_diff_lines(request, cx);
             }

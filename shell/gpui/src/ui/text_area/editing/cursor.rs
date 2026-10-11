@@ -19,7 +19,7 @@ impl TextArea {
         self.show_caret(cx);
     }
 
-    pub(in crate::ui::text_area) fn cursor_offset(&self) -> usize {
+    pub(crate) fn cursor_offset(&self) -> usize {
         self.selection.cursor_offset()
     }
 

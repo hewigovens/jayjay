@@ -7,7 +7,7 @@ use gpui::{
 use jayjay_core::diff::DiffSpanStyle;
 
 use crate::app::theme::Theme;
-use crate::ui::input::{CaretBlink, TextSelection};
+use crate::ui::input::{CaretBlink, TextSelection, line_ranges};
 
 mod highlighting;
 
@@ -34,6 +34,8 @@ pub struct TextArea {
     /// Clamped in prepaint, where geometry is known.
     pub(super) scroll_y: Pixels,
     pub(super) scroll_caret_into_view: bool,
+    /// Set when opening at a line, so the next layout centers it rather than leaving it at the viewport edge.
+    pub(super) center_caret: bool,
     pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
     syntax: Option<SyntaxHighlightState>,
@@ -122,6 +124,7 @@ impl TextArea {
             line_height: 18.,
             scroll_y: px(0.),
             scroll_caret_into_view: false,
+            center_caret: false,
             caret: CaretBlink::default(),
             focus_subscriptions: Vec::new(),
             syntax: None,
@@ -134,6 +137,19 @@ impl TextArea {
         self.scroll_y = px(0.);
         self.scroll_caret_into_view = false;
         self
+    }
+
+    /// `line` is 1-based; past the end it lands on the last line.
+    pub(crate) fn starting_at_line(self, line: Option<u32>) -> Self {
+        let mut view = self.starting_at_top();
+        let Some(line) = line else {
+            return view;
+        };
+        let lines = line_ranges(&view.content);
+        let ix = (line.saturating_sub(1) as usize).min(lines.len() - 1);
+        view.selection = TextSelection::at(lines[ix].start);
+        view.center_caret = true;
+        view
     }
 
     pub(crate) fn label(content: impl Into<SharedString>, cx: &mut Context<Self>) -> Self {

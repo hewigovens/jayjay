@@ -21,6 +21,8 @@ struct CodeTextView: NSViewRepresentable {
     let preparedLineStyles: [DiffSpanStyle]?
     let mergeScroll: MergeScrollCoordinator?
     let mergePane: MergePane?
+    /// 1-based line the caret starts on, centered once the text first loads.
+    let initialLine: UInt32?
 
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.diffPalettes) var diffPalettes
@@ -43,7 +45,8 @@ struct CodeTextView: NSViewRepresentable {
         preparedHighlightedLines: [[DiffSpan]]? = nil,
         preparedLineStyles: [DiffSpanStyle]? = nil,
         mergeScroll: MergeScrollCoordinator? = nil,
-        mergePane: MergePane? = nil
+        mergePane: MergePane? = nil,
+        initialLine: UInt32? = nil
     ) {
         self.path = path
         _text = text
@@ -57,6 +60,7 @@ struct CodeTextView: NSViewRepresentable {
         self.preparedLineStyles = preparedLineStyles
         self.mergeScroll = mergeScroll
         self.mergePane = mergePane
+        self.initialLine = initialLine
     }
 
     func makeCoordinator() -> Coordinator {

@@ -33,6 +33,11 @@ impl RepoWindow {
             .map_or(gpui::px(0.), |editor| editor.read(cx).scroll_offset_y())
     }
 
+    pub fn file_editor_cursor_offset(&self, cx: &gpui::App) -> Option<usize> {
+        let editor = self.file_editor.editor.as_ref()?;
+        Some(editor.read(cx).cursor_offset())
+    }
+
     pub(crate) fn can_edit_selected_working_copy_file(&self, cx: &gpui::App) -> bool {
         let vm = self.vm.read(cx);
         vm.selected_change()
@@ -43,7 +48,7 @@ impl RepoWindow {
             && !vm.selected_file_has_conflict()
     }
 
-    pub(crate) fn enter_selected_file_editor(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn enter_selected_file_editor(&mut self, line: Option<u32>, cx: &mut Context<Self>) {
         if self.file_editor.preparing || self.conflict_editor.preparing {
             return;
         }
@@ -58,10 +63,10 @@ impl RepoWindow {
             );
             return;
         };
-        self.enter_file_editor(path, cx);
+        self.enter_file_editor(path, line, cx);
     }
 
-    fn enter_file_editor(&mut self, path: String, cx: &mut Context<Self>) {
+    fn enter_file_editor(&mut self, path: String, line: Option<u32>, cx: &mut Context<Self>) {
         self.file_editor.session = self.file_editor.session.wrapping_add(1);
         let session = self.file_editor.session;
         self.file_editor.active = false;
@@ -95,7 +100,7 @@ impl RepoWindow {
                             cx,
                         )
                         .full_bleed_pane()
-                        .starting_at_top()
+                        .starting_at_line(line)
                     });
                     TextArea::subscribe_updates(&editor, cx);
                     view.file_editor.active = true;

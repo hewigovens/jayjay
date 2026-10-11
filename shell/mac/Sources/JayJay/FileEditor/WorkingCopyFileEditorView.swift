@@ -83,7 +83,8 @@ struct WorkingCopyFileEditorView: View {
                     wrapsLines: true,
                     accessibilityIdentifier: AID.FileEditor.content,
                     preparedText: session.data?.content,
-                    preparedHighlightedLines: session.highlightedLines
+                    preparedHighlightedLines: session.highlightedLines,
+                    initialLine: session.line
                 )
                 .background(settings.readingBackground(colorScheme))
             }

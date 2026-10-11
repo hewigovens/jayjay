@@ -11,6 +11,7 @@ extension CodeTextView {
         private var revision: UInt64 = 0
         private var isApplyingExternalText = false
         private var didApplyPreparedHighlighting = false
+        private var didRevealInitialLine = false
 
         init(parent: CodeTextView) {
             self.parent = parent
@@ -81,12 +82,35 @@ extension CodeTextView {
                 didApplyPreparedHighlighting = false
                 scheduleHighlight(for: textView, debounce: false)
             }
+            revealInitialLine(in: textView)
             if scrollAnchor == nil, let pane = parent.mergePane, let scroll = parent.mergeScroll {
                 let anchor = MergeTextScrollAnchor(textView: textView) { [weak scroll] in
                     scroll?.didScroll(pane)
                 }
                 scrollAnchor = anchor
                 scroll.register(pane, anchor: anchor)
+            }
+        }
+
+        private func revealInitialLine(in textView: NSTextView) {
+            guard !didRevealInitialLine, let line = parent.initialLine, !textView.string.isEmpty else { return }
+            didRevealInitialLine = true
+            let location = (textView.string as NSString).location(ofLine: Int(line))
+            textView.setSelectedRange(NSRange(location: location, length: 0))
+            // The scroll view has no size until the sheet lays out.
+            DispatchQueue.main.async { [weak textView] in
+                guard let textView,
+                      let layoutManager = textView.layoutManager,
+                      let container = textView.textContainer,
+                      let clipView = textView.enclosingScrollView?.contentView
+                else { return }
+                let glyphs = layoutManager.glyphRange(forCharacterRange: NSRange(location: location, length: 0), actualCharacterRange: nil)
+                let lineRect = layoutManager.boundingRect(forGlyphRange: glyphs, in: container)
+                let y = lineRect.midY + textView.textContainerOrigin.y - clipView.bounds.height / 2
+                let maxY = max(textView.frame.height - clipView.bounds.height, 0)
+                clipView.scroll(to: NSPoint(x: 0, y: min(max(y, 0), maxY)))
+                textView.enclosingScrollView?.reflectScrolledClipView(clipView)
+                textView.window?.makeFirstResponder(textView)
             }
         }
 

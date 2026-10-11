@@ -3,6 +3,7 @@ use std::fs;
 use crate::harness::{open_fixture, select_file, settle_visual};
 use gpui::{Modifiers, TestAppContext, px};
 use jayjay_gpui::app::fs_watcher::FsEvent;
+use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::LinearFixture;
 
 #[gpui::test]
@@ -67,6 +68,26 @@ fn working_copy_file_edits_and_saves_inside_the_repository_window(cx: &mut TestA
             .as_ref()
             .is_some_and(|files| files.iter().any(|file| file.path == "while-editing.txt"))
     }));
+}
+
+#[gpui::test]
+fn file_editor_opened_at_a_line_scrolls_to_it_with_the_caret_there(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let content: String = (1..=200).map(|line| format!("line {line}\n")).collect();
+    fs::write(fixture.path.join("long.txt"), &content).expect("write long file");
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_file(&view, "long.txt", cx);
+
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(ContextAction::EditFileAtLine(150), cx);
+    });
+    settle_visual(cx);
+
+    assert_eq!(
+        view.read_with(cx, |view, cx| view.file_editor_cursor_offset(cx)),
+        content.find("line 150\n")
+    );
+    assert!(view.read_with(cx, |view, cx| view.file_editor_scroll_offset_y(cx)) > px(0.));
 }
 
 #[gpui::test]

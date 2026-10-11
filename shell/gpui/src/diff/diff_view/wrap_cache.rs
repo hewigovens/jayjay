@@ -5,7 +5,7 @@ use std::sync::Arc;
 
 use jayjay_core::diff::{
     DiffLine, FileDiff, WrappedDiffLine, WrappedSbsRow, build_diff_display_lines,
-    build_side_by_side_rows, wrap_diff_lines, wrap_sbs_rows,
+    build_side_by_side_rows, sbs_line_to_row, wrap_diff_lines, wrap_sbs_rows,
 };
 use jayjay_review::ReviewNoteStatus;
 
@@ -45,6 +45,15 @@ struct SbsEntry {
 
 pub(crate) struct CachedSbsRows {
     rows: Vec<WrappedSbsRow>,
+    /// Per source row, the display line shown on the new side.
+    new_display_lines: Vec<Option<usize>>,
+}
+
+impl CachedSbsRows {
+    pub(crate) fn new_display_line(&self, ix: usize) -> Option<usize> {
+        let row_ix = self.rows.get(ix)?.row_ix as usize;
+        self.new_display_lines.get(row_ix).copied().flatten()
+    }
 }
 
 impl Deref for CachedSbsRows {
@@ -162,8 +171,16 @@ impl DiffWrapCache {
             return entry.rows.clone();
         }
         let rows = build_side_by_side_rows(&fd.lines);
+        let mut new_display_lines = vec![None; rows.len()];
+        let display_lines = build_diff_display_lines(&fd.lines);
+        for (line_ix, row_ix) in sbs_line_to_row(&fd.lines).into_iter().enumerate() {
+            if display_lines[line_ix].new_line_no.is_some() {
+                new_display_lines[row_ix as usize] = Some(line_ix);
+            }
+        }
         let rows = Arc::new(CachedSbsRows {
             rows: wrap_sbs_rows(&rows, old_cols, new_cols),
+            new_display_lines,
         });
         self.sbs = Some(SbsEntry {
             diff: fd.clone(),

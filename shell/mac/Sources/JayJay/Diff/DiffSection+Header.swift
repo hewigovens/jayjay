@@ -34,11 +34,11 @@ extension DiffSection {
                     .accessibilityLabel("Edit Diff")
                     .accessibilityIdentifier(AID.DiffEdit.open)
                 }
-                if let onEditFile, canEditLoadedWorkingCopyFile {
-                    Button(action: onEditFile) {
+                if canEditFile {
+                    Button(action: editFile) {
                         actionLabel("Edit File", systemImage: "pencil")
                     }
-                    .keyboardFocusStop(.editFile, action: onEditFile)
+                    .keyboardFocusStop(.editFile, action: editFile)
                     .help("Edit this working-copy file")
                     .accessibilityLabel("Edit File")
                     .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
@@ -62,11 +62,8 @@ extension DiffSection {
     /// Below this the labelled controls would squeeze the file name to nothing, so they drop to icons.
     private static let compactHeaderWidth: CGFloat = 600
 
-    private var canEditLoadedWorkingCopyFile: Bool {
-        guard hasCurrentRenderableDiff,
-              loadedDiff?.content.supportsFileEditor == true
-        else { return false }
-        return true
+    private func editFile() {
+        onEditFile?(nil)
     }
 
     @ViewBuilder

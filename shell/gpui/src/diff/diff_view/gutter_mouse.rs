@@ -43,7 +43,7 @@ where
     }))
 }
 
-fn with_right_click_menu<E>(
+pub(super) fn with_right_click_menu<E>(
     elem: E,
     path: String,
     line_ix: usize,

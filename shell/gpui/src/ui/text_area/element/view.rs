@@ -111,6 +111,7 @@ impl Element for TextAreaElement {
         let cursor_offset = input.cursor_offset();
         let caret_visible = input.caret_visible();
         let pending_into_view = input.scroll_caret_into_view;
+        let center_caret = input.center_caret;
         let current_scroll = input.scroll_y;
         let anchored_scroll = input
             .last_layout
@@ -127,24 +128,29 @@ impl Element for TextAreaElement {
         let content_height = px(f32::from(line_height) * lines.len() as f32);
         let max_scroll = (content_height - bounds.size.height).max(px(0.));
         let mut scroll_y = anchored_scroll.min(max_scroll).max(px(0.));
-        if pending_into_view
+        if (pending_into_view || center_caret)
             && let Some(line) = lines
                 .iter()
                 .find(|line| line.range.start <= cursor_offset && cursor_offset <= line.range.end)
                 .or_else(|| lines.last())
         {
             let bottom = line.top + line_height;
-            if line.top < scroll_y {
+            if center_caret {
+                scroll_y = (line.top + line_height / 2. - bounds.size.height / 2.)
+                    .min(max_scroll)
+                    .max(px(0.));
+            } else if line.top < scroll_y {
                 scroll_y = line.top;
             } else if bottom > scroll_y + bounds.size.height {
                 scroll_y = bottom - bounds.size.height;
             }
         }
-        if scroll_y != current_scroll || pending_into_view {
+        if scroll_y != current_scroll || pending_into_view || center_caret {
             let caret_driven = pending_into_view && scroll_y != current_scroll;
             self.input.update(cx, |input, cx| {
                 input.scroll_y = scroll_y;
                 input.scroll_caret_into_view = false;
+                input.center_caret = false;
                 if caret_driven {
                     cx.emit(TextAreaScrolled);
                 }

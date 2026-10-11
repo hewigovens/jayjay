@@ -7,6 +7,7 @@ use gpui::{
 use jayjay_core::diff::FileDiff;
 
 use super::context_controls::context_controls;
+use super::gutter_mouse::with_right_click_menu;
 use super::mouse::attach_selection_handlers;
 use super::review_stripe::review_stripe_cell;
 use super::row_anchor::{VisibleRows, scroll_to_row};
@@ -112,14 +113,24 @@ pub(super) fn side_by_side_body(
     let new_gutter = {
         let rows = rows.clone();
         let theme = theme.clone();
+        let path = file_diff.path.clone();
         uniform_list(
             "sbs-new-gutter",
             count,
-            move |range: std::ops::Range<usize>, _window, _cx| {
+            cx.processor(move |_view, range: std::ops::Range<usize>, _window, cx| {
                 range
-                    .map(|ix| sbs_new_gutter(&rows[ix].row, &theme))
+                    .map(|ix| {
+                        let gutter = sbs_new_gutter(&rows[ix].row, &theme)
+                            .debug_selector(move || format!("sbs-new-gutter-row-{ix}"));
+                        match rows.new_display_line(ix) {
+                            Some(line_ix) => {
+                                with_right_click_menu(gutter, path.clone(), line_ix, cx)
+                            }
+                            None => gutter,
+                        }
+                    })
                     .collect()
-            },
+            }),
         )
         .track_scroll(&scroll)
     };

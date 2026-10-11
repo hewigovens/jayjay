@@ -41,4 +41,35 @@ final class FileEditorScene: SceneBase {
         let saved = try String(contentsOf: fixtureURL.appendingPathComponent("wip1.txt"), encoding: .utf8)
         XCTAssertEqual(saved, "edited inside JayJay\n")
     }
+
+    func testDiffLineOpensTheEditorWithTheCaretOnThatLine() throws {
+        let app = try XCTUnwrap(app)
+        let file = fileRows(of: app)
+            .matching(NSPredicate(format: "identifier == %@", AID.FileList.row("lines.txt")))
+            .firstMatch
+        XCTAssertTrue(file.waitForExistence(timeout: 10), "Expected lines.txt row")
+        file.click()
+
+        let gutter = app.textViews[AID.Diff.gutter]
+        XCTAssertTrue(gutter.waitForExistence(timeout: 5), "Diff gutter did not appear")
+        gutter.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 12, dy: 40)).rightClick()
+        let item = app.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", "Edit File at Line ")).firstMatch
+        XCTAssertTrue(item.waitForExistence(timeout: 5), "Expected an Edit File at Line item")
+        let line = try XCTUnwrap(Int(item.title.dropFirst("Edit File at Line ".count)))
+        XCTAssertGreaterThan(line, 1, "Expected a row below the first line")
+        item.click()
+
+        let editor = app.textViews[AID.FileEditor.content]
+        XCTAssertTrue(editor.waitForExistence(timeout: 60), "File editor did not appear")
+        paste(">")
+        let save = app.buttons[AID.FileEditor.save]
+        XCTAssertTrue(save.waitForExistence(timeout: 5), "Save action did not appear")
+        save.click()
+        XCTAssertTrue(editor.waitForNonExistence(timeout: 10), "Editor did not close after saving")
+
+        let fixtureURL = try XCTUnwrap(fixtureURL)
+        let saved = try String(contentsOf: fixtureURL.appendingPathComponent("lines.txt"), encoding: .utf8)
+        let lines = ["one", "two", "three", "four", "five", "SIX"]
+        XCTAssertEqual(saved.split(separator: "\n").map(String.init), lines.enumerated().map { $0.offset == line - 1 ? ">" + $0.element : $0.element })
+    }
 }

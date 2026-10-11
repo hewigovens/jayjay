@@ -52,6 +52,13 @@ impl RepoWindow {
         cx: &Context<Self>,
     ) -> Vec<ContextMenuItem> {
         let mut items = self.note_menu_items(hunk, line_ix, cx);
+        if let Some(line) = self.editable_new_line(line_ix, cx) {
+            items.push(ContextMenuItem::new(
+                format!("Edit File at Line {line}"),
+                glyph::PENCIL,
+                ContextAction::EditFileAtLine(line),
+            ));
+        }
         if self.can_enter_diff_edit(cx) {
             items.push(ContextMenuItem::new(
                 "Open Diff Edit Mode",
@@ -63,6 +70,16 @@ impl RepoWindow {
             items.push(item);
         }
         items
+    }
+
+    fn editable_new_line(&self, line_ix: usize, cx: &Context<Self>) -> Option<u32> {
+        if !self.can_edit_selected_working_copy_file(cx) {
+            return None;
+        }
+        let raw_lines = &self.vm.read(cx).shown.diff.as_ref()?.lines;
+        build_diff_display_lines(raw_lines)
+            .get(line_ix)?
+            .new_line_no
     }
 
     /// A conflict's materialized marker text passes `is_editable_text`, so conflicts need their own rejection.

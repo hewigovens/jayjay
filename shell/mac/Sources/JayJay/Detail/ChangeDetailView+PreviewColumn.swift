@@ -104,7 +104,7 @@ extension ChangeDetailView {
                         noteEditor: $noteEditor,
                         onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
                         onEditFile: canEditWorkingCopyFile(hunk)
-                            ? { prepareFileEditor(path: hunk.path) }
+                            ? { prepareFileEditor(path: hunk.path, line: $0) }
                             : nil,
                         onReviewStateChanged: { refreshReviewState() },
                         onReviewSnapshotLoaded: { loadedHunk, snapshot in
@@ -139,11 +139,11 @@ extension ChangeDetailView {
         }
     }
 
-    func prepareFileEditor(path: String) {
+    func prepareFileEditor(path: String, line: UInt32?) {
         guard fileEditorPreparation == nil, conflictEditorPreparation == nil, let repo else { return }
         let request = EditorPreparationRequest(revision: detailRevision)
         fileEditorPreparation = request
-        let session = WorkingCopyFileEditorSession(repo: repo, path: path)
+        let session = WorkingCopyFileEditorSession(repo: repo, path: path, line: line)
         Task {
             await session.load()
             guard fileEditorPreparation == request else { return }

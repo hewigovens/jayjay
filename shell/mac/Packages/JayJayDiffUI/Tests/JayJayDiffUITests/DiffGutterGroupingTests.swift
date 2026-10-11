@@ -73,6 +73,29 @@ final class DiffGutterGroupingTests: XCTestCase {
         XCTAssertEqual(items.last?.title, "Abandon Selected Lines")
     }
 
+    func test_menuOffersEditingTheFileAtTheClickedNewLineOnly() {
+        let diff = FileDiff(
+            path: "file.swift",
+            language: "swift",
+            lines: [
+                line(.context, old: 7, new: 7),
+                line(.removed, old: 8, new: nil)
+            ],
+            whitespaceOnlyHidden: false
+        )
+        let view = NativeDiffView(diff: diff, gutterActions: TestLineAbandoningActions())
+        let titles = { (lineNumber: Int) in
+            view.menuProvider(
+                selection: DiffGutterSelection(lineRange: lineNumber ... lineNumber, menuLineNumber: lineNumber, changedLineCount: 0),
+                displayLines: diffDisplayLines(lines: diff.lines),
+                changeGroupsByIndex: [:]
+            ).map(\.title)
+        }
+
+        XCTAssertTrue(titles(1).contains("Edit File at Line 7"))
+        XCTAssertFalse(titles(2).contains { $0.hasPrefix("Edit File") })
+    }
+
     func test_menuLabelsSingleLineChangeAsSelectedLines() {
         let diff = FileDiff(
             path: "file.swift",
@@ -128,10 +151,10 @@ final class DiffGutterGroupingTests: XCTestCase {
         XCTAssertNil(DiffGutterGrouping.expandedChangedRange(in: [], containing: 1 ... 1))
     }
 
-    private func line(_ style: DiffSpanStyle) -> DiffLine {
+    private func line(_ style: DiffSpanStyle, old: UInt32? = nil, new: UInt32? = nil) -> DiffLine {
         DiffLine(
-            oldLineNo: nil,
-            newLineNo: nil,
+            oldLineNo: old,
+            newLineNo: new,
             style: style,
             spans: [],
             conflictKind: .none,
@@ -154,7 +177,12 @@ private struct TestLineAbandoningActions: DiffGutterEditActions {
         true
     }
 
+    var canEditFile: Bool {
+        true
+    }
+
     func didSelectLines(_ lineRange: ClosedRange<Int>) {}
     func openDiffEdit() {}
     func abandonSelectedLines(in lineRange: ClosedRange<Int>) {}
+    func editFile(atLine line: UInt32) {}
 }

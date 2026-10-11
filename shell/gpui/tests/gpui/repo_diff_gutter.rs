@@ -1,7 +1,9 @@
 use std::fs;
 
-use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
-use gpui::{Entity, Modifiers, Point, TestAppContext, VisualTestContext, point, px};
+use crate::harness::{
+    install_test_globals, load_selected_change_files, open_fixture, select_file, settle_visual,
+};
+use gpui::{Entity, Modifiers, MouseButton, Point, TestAppContext, VisualTestContext, point, px};
 use jayjay_core::compare;
 use jayjay_core::mock::{diff_hunk, diff_projection};
 use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, HunkType};
@@ -254,6 +256,39 @@ fn abandon_change_group_title_when_selection_covers_whole_group(cx: &mut TestApp
     });
     let item = abandon_item(&items).expect("abandon item present for the whole change group");
     assert_eq!(item.label.as_ref(), "Abandon Change Group");
+}
+
+#[gpui::test]
+fn gutter_menu_offers_editing_the_file_at_the_clicked_line(cx: &mut TestAppContext) {
+    let (_fixture, view, cx, hunk) = open_repo_with_multiline_feature_edit(cx);
+
+    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 2, cx));
+    let item = items
+        .iter()
+        .find(|item| matches!(item.action, ContextAction::EditFileAtLine(3)))
+        .expect("edit item for a working-copy line");
+    assert_eq!(item.label.as_ref(), "Edit File at Line 3");
+}
+
+#[gpui::test]
+fn side_by_side_new_gutter_offers_editing_the_file_at_its_line(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::write(fixture.path.join("feature.txt"), "intro\nedited\n").expect("write feature.txt");
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_file(&view, "feature.txt", cx);
+    view.update_in(cx, |view, _, cx| view.toggle_view_mode(cx));
+    settle_visual(cx);
+
+    let row = cx
+        .debug_bounds("sbs-new-gutter-row-1")
+        .expect("side-by-side new gutter row");
+    cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+
+    assert!(
+        cx.debug_bounds("context-menu-Edit File at Line 2")
+            .is_some()
+    );
 }
 
 #[gpui::test]

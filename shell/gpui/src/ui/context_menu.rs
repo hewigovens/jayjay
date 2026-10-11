@@ -76,6 +76,7 @@ pub enum ContextAction {
     },
     CreateWorkspace,
     OpenDiffEdit,
+    EditFileAtLine(u32),
     AbandonSelectedLines(Arc<AbandonSelectedLinesRequest>),
     FileBatch(Arc<FileBatchAction>),
     OpenAddReviewNote(Arc<AddNoteRequest>),

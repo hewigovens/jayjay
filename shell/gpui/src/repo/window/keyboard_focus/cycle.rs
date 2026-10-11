@@ -160,7 +160,7 @@ impl RepoWindow {
             FocusStop::DiffLayout => self.toggle_view_mode(cx),
             FocusStop::EditDescription => self.edit_selected_description(cx),
             FocusStop::EditDiff => self.enter_diff_edit(cx),
-            FocusStop::EditFile => self.enter_selected_file_editor(cx),
+            FocusStop::EditFile => self.enter_selected_file_editor(None, cx),
             FocusStop::SidebarToggle => self.toggle_sidebar(cx),
             FocusStop::Refresh => self.vm.update(cx, |vm, cx| vm.run_refresh(cx)),
             FocusStop::Pull => self.git_fetch_origin(cx),

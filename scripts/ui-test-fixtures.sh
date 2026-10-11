@@ -116,6 +116,13 @@ fixture_mutating_scenes() {
   copy_fixture simple new-change
   copy_fixture simple insert-change
   copy_fixture simple file-editor
+  (
+    cd "$fixtures/file-editor"
+    printf '%s\n' one two three four five six > lines.txt
+    jj squash --into @- --use-destination-message lines.txt
+    printf '%s\n' one two three four five SIX > lines.txt
+    jj st
+  )
 }
 
 # Pull stays in flight until canceled: jj's git subprocess is a script that never returns.

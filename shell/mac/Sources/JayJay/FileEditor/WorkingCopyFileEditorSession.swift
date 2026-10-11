@@ -8,6 +8,7 @@ final class WorkingCopyFileEditorSession: Identifiable {
     let id = UUID()
     let repo: JayJayRepo
     let path: String
+    let line: UInt32?
 
     var data: FileEditorData?
     var content = ""
@@ -16,9 +17,10 @@ final class WorkingCopyFileEditorSession: Identifiable {
     var isSaving = false
     var errorMessage: String?
 
-    init(repo: JayJayRepo, path: String) {
+    init(repo: JayJayRepo, path: String, line: UInt32? = nil) {
         self.repo = repo
         self.path = path
+        self.line = line
     }
 
     var hasChanges: Bool {

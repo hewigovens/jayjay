@@ -29,7 +29,7 @@ pub(super) fn file_editor_button(
         )
         .tooltip(text_tooltip("Edit this working-copy file"))
         .on_click(cx.listener(|view, _, _, cx| {
-            view.enter_selected_file_editor(cx);
+            view.enter_selected_file_editor(None, cx);
         })),
         focused,
         t,

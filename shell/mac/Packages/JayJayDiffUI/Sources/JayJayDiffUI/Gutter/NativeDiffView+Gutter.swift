@@ -68,6 +68,14 @@ extension NativeDiffView {
             )
         }
         if let editActions = gutterActions as? any DiffGutterEditActions,
+           editActions.canEditFile,
+           let line = displayLines[safe: selection.menuLineNumber - 1]?.newLineNo
+        {
+            items.append(
+                DiffGutterMenuItem(title: "Edit File at Line \(line)", enabled: true, action: { editActions.editFile(atLine: line) })
+            )
+        }
+        if let editActions = gutterActions as? any DiffGutterEditActions,
            editActions.canOpenDiffEdit
         {
             items.append(

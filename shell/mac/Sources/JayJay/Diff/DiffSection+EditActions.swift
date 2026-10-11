@@ -17,6 +17,14 @@ extension DiffSection: DiffGutterEditActions {
         return !fileDiff.lines.contains { $0.conflictKind != .none }
     }
 
+    var canEditFile: Bool {
+        onEditFile != nil && hasCurrentRenderableDiff && loadedDiff?.content.supportsFileEditor == true
+    }
+
+    func editFile(atLine line: UInt32) {
+        onEditFile?(line)
+    }
+
     func didSelectLines(_ lineRange: ClosedRange<Int>) {
         selectedLineRange = lineRange
     }
