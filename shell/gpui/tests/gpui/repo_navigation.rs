@@ -493,3 +493,114 @@ fn zooming_keeps_the_same_source_line_at_the_top_of_a_wrapped_diff(cx: &mut Test
         "source line 10 stays at the top"
     );
 }
+
+#[gpui::test]
+fn space_reveals_the_next_unreviewed_file_in_a_collapsed_offscreen_directory(
+    cx: &mut TestAppContext,
+) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["new"]);
+    for index in 0..40 {
+        let dir = fixture.path.join(format!("dir-{index:02}"));
+        fs::create_dir_all(&dir).unwrap();
+        fs::write(dir.join("file.txt"), "new file\n").unwrap();
+    }
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.tree_file_list = true));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let target = "dir-39/file.txt";
+    let (target_ix, target_row) = view.update_in(cx, |view, window, cx| {
+        let vm = view.view_model().read(cx);
+        let change_id = vm.selected_change().unwrap().change_id.id.clone();
+        let files = vm.files.clone().unwrap();
+        let first = files
+            .iter()
+            .position(|h| h.path == "dir-00/file.txt")
+            .unwrap();
+        let target_ix = files.iter().position(|h| h.path == target).unwrap();
+        let paths = files.iter().map(|h| h.path.clone()).collect::<Vec<_>>();
+        let tree = jayjay_core::file_tree::build_file_tree(&paths);
+        let target_row = tree.iter().position(|entry| entry.path == target).unwrap();
+        for (ix, hunk) in files.iter().enumerate() {
+            if ix != first && ix != target_ix {
+                view.toggle_reviewed(
+                    change_id.clone(),
+                    hunk.path.clone(),
+                    hunk.review_identity.clone(),
+                    cx,
+                );
+            }
+        }
+        view.select_file(first, cx);
+        view.focus_handle(cx).focus(window, cx);
+        (target_ix, target_row)
+    });
+    settle_visual(cx);
+    let selector: &'static str = Box::leak(format!("tree-file-{target_row}").into_boxed_str());
+    let viewport = cx.debug_bounds("files-tree").unwrap();
+    let before = cx.debug_bounds(selector).unwrap();
+    assert!(
+        before.top() >= viewport.bottom(),
+        "target starts below the viewport"
+    );
+    view.update_in(cx, |view, _, cx| view.toggle_dir("dir-39".to_owned(), cx));
+    settle_visual(cx);
+    assert!(
+        cx.debug_bounds(selector).is_none(),
+        "target directory is collapsed"
+    );
+
+    cx.simulate_keystrokes("space");
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).selected_file_ix, Some(target_ix));
+    });
+    let after = cx
+        .debug_bounds(selector)
+        .expect("selected file is expanded");
+    let viewport = cx.debug_bounds("files-tree").unwrap();
+    assert!(
+        after.top() >= viewport.top() && after.bottom() <= viewport.bottom(),
+        "selected file must be fully visible: {after:?} in {viewport:?}"
+    );
+}
+
+#[gpui::test]
+fn space_picks_the_next_unreviewed_file_in_tree_order(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["new"]);
+    fs::write(fixture.path.join("a.txt"), "root\n").unwrap();
+    fs::create_dir_all(fixture.path.join("b")).unwrap();
+    fs::write(fixture.path.join("b/x.txt"), "x\n").unwrap();
+    fs::write(fixture.path.join("b/y.txt"), "y\n").unwrap();
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.tree_file_list = true));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let ix = |view: &RepoWindow, cx: &gpui::App, path: &str| {
+        let files = view.view_model().read(cx).files.clone().unwrap();
+        files.iter().position(|h| h.path == path).unwrap()
+    };
+    view.update_in(cx, |view, window, cx| {
+        let first = ix(view, cx, "b/x.txt");
+        view.select_file(first, cx);
+        view.focus_handle(cx).focus(window, cx);
+    });
+    cx.simulate_keystrokes("space");
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        assert_eq!(
+            view.view_model().read(cx).selected_file_ix,
+            Some(ix(view, cx, "b/y.txt"))
+        );
+    });
+}

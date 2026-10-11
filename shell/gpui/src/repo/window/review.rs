@@ -8,6 +8,7 @@ use std::sync::Arc;
 
 use gpui::{App, Context, Global, ScrollStrategy};
 use jayjay_core::DiffHunk;
+use jayjay_core::file_tree::build_file_tree;
 use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState, ReviewMarkSource};
 
 use super::RepoWindow;
@@ -343,23 +344,61 @@ impl RepoWindow {
         self.toggle_reviewed(change_id.clone(), path.clone(), identity, cx);
         let rollups = self.review_rollups_with_vm(&change_id, files.iter(), self.vm.read(cx));
         let reviewed = |path: &str| rollups.get(path) == Some(&ReviewFileRollup::Reviewed);
-        let next_ix = reviewed(&path)
-            .then(|| files.iter().position(|hunk| !reviewed(&hunk.path)))
-            .flatten();
-        if let Some(next_ix) = next_ix {
-            self.select_file(next_ix, cx);
-            let (show_review, change_id) = self.review_file_context(cx);
-            let files = self.vm.read(cx).files.clone();
-            let row = files
-                .map(|files| self.visible_indices(&files, change_id.as_deref(), show_review, cx))
-                .and_then(|visible| visible.iter().position(|ix| *ix == next_ix))
-                .unwrap_or(next_ix);
+        if !reviewed(&path) {
+            cx.notify();
+            return;
+        }
+        let (show_review, change_id) = self.review_file_context(cx);
+        let visible = Arc::new(self.visible_indices(&files, change_id.as_deref(), show_review, cx));
+        let tree_mode = crate::app::config::current(cx).diff.tree_file_list;
+        let order: Vec<usize> = if tree_mode {
+            let paths: Vec<String> = visible.iter().map(|&ix| files[ix].path.clone()).collect();
+            build_file_tree(&paths)
+                .iter()
+                .filter_map(|entry| entry.hunk_index.map(|row| visible[row as usize]))
+                .collect()
+        } else {
+            visible.to_vec()
+        };
+        let in_collapsed_dir = |ix: usize| {
+            tree_mode
+                && self
+                    .collapsed_dirs
+                    .iter()
+                    .any(|dir| files[ix].path.starts_with(&format!("{dir}/")))
+        };
+        let mut unreviewed = order.into_iter().filter(|&ix| !reviewed(&files[ix].path));
+        let Some(next_ix) = unreviewed
+            .clone()
+            .find(|&ix| !in_collapsed_dir(ix))
+            .or_else(|| unreviewed.next())
+        else {
+            cx.notify();
+            return;
+        };
+        self.select_file(next_ix, cx);
+        let Some(row) = visible.iter().position(|ix| *ix == next_ix) else {
+            return;
+        };
+        if tree_mode {
+            let path = &files[next_ix].path;
+            self.collapsed_dirs
+                .retain(|dir| !path.starts_with(&format!("{dir}/")));
+            let tree =
+                self.file_tree_cache
+                    .borrow_mut()
+                    .visible(&files, &visible, &self.collapsed_dirs);
+            if let Some(tree_row) = tree
+                .iter()
+                .position(|entry| entry.hunk_index == Some(row as u32))
+            {
+                self.scrolls.tree_files.scroll_to_item(tree_row);
+            }
+        } else {
             self.scrolls
                 .files
                 .scroll_to_item(row, ScrollStrategy::Center);
-            return;
         }
-        cx.notify();
     }
 }
 
