@@ -114,8 +114,10 @@ struct CodeTextView: NSViewRepresentable {
     }
 
     func applyTypography(to textView: NSTextView) {
-        textView.font = typography.editorFont
-        (textView.layoutManager as? LineSpacingLayoutManager)?.setLineSpacing(typography.codeLineSpacing, for: typography.editorFont)
+        textView.keepingTopLine {
+            textView.font = typography.editorFont
+            (textView.layoutManager as? LineSpacingLayoutManager)?.setLineSpacing(typography.codeLineSpacing, for: typography.editorFont)
+        }
     }
 
     func updateNSView(_ scrollView: NSScrollView, context: Context) {

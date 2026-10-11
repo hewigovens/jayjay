@@ -12,6 +12,7 @@ use super::context_controls::context_controls;
 use super::gutter_mouse::attach_gutter_selection_handlers;
 use super::mouse::attach_selection_handlers;
 use super::review_stripe::review_stripe_cell;
+use super::row_anchor::{VisibleRows, scroll_to_row};
 use super::rows::{DiffRenderRow, DiffRenderRows};
 use super::state::ReviewDisplayState;
 use crate::app::fonts;
@@ -61,6 +62,13 @@ pub(super) fn unified_body(
     // Both lists size off this shared, interleaved row list — never off lines.len() — so a NoteText row shifts gutter and content lists in lockstep.
     let rendered = wrap_cache.borrow_mut().rows(file_diff, wrap_cols, notes);
     let count = rendered.rows.len();
+    if let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::Unified {
+        diff: file_diff.clone(),
+        lines: lines.clone(),
+        rendered: rendered.clone(),
+    }) {
+        scroll_to_row(&scroll, row, theme.code_line_height());
+    }
 
     let gutter_lines = lines.clone();
     let gutter_rendered = rendered.clone();

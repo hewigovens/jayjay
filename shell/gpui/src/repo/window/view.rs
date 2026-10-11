@@ -12,6 +12,7 @@ use gpui::{
 use jayjay_review::NoteEntry;
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
+use crate::app::theme::{Theme, theme};
 use crate::diff::{
     DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection, MarkdownImageCache,
     MarkdownImageCacheSlot,
@@ -324,6 +325,23 @@ impl RepoWindow {
             }
             this.apply_sidebar_hidden(cfg.layout.sidebar_hidden, cx);
             cx.notify();
+        })
+        .detach();
+        // Code typography rescales and rewraps diff rows, so a kept pixel offset would land on a different source line.
+        let mut line_height = cx.try_global::<Theme>().map(Theme::code_line_height);
+        cx.observe_global::<Theme>(move |this, cx| {
+            let next = theme(cx).code_line_height();
+            let Some(previous) = line_height.replace(next) else {
+                return;
+            };
+            let y = this.diff_scroll_offset_y();
+            this.diff
+                .wrap_cache
+                .borrow_mut()
+                .pin_row((-f32::from(y) / previous).max(0.));
+            if previous != next {
+                this.set_diff_scroll_offset_y(y * (next / previous));
+            }
         })
         .detach();
         view

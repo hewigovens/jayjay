@@ -10,6 +10,7 @@ use jayjay_core::diff::{
 use jayjay_review::ReviewNoteStatus;
 
 use super::review_row_map::ReviewRowMap;
+use super::row_anchor::{RowAnchor, VisibleRows};
 use super::rows::{DiffRenderRows, build_diff_render_rows, notes_fingerprint};
 
 #[derive(Default)]
@@ -18,6 +19,8 @@ pub(crate) struct DiffWrapCache {
     sbs: Option<SbsEntry>,
     rows: Option<RowsEntry>,
     review: Option<ReviewEntry>,
+    visible: Option<VisibleRows>,
+    pinned: Option<RowAnchor>,
 }
 
 struct ReviewEntry {
@@ -61,6 +64,21 @@ struct RowsEntry {
 }
 
 impl DiffWrapCache {
+    /// Records the rows a diff body is showing; returns the row to scroll to when a pinned source line was waiting for this reflow.
+    pub(crate) fn show(&mut self, rows: VisibleRows) -> Option<f32> {
+        let row = self.pinned.take().and_then(|anchor| rows.row(&anchor));
+        self.visible = Some(rows);
+        row
+    }
+
+    pub(crate) fn hide(&mut self) {
+        self.visible = None;
+    }
+
+    pub(crate) fn pin_row(&mut self, row: f32) {
+        self.pinned = self.visible.as_ref().and_then(|rows| rows.anchor(row));
+    }
+
     pub(crate) fn review_rows(&mut self, fd: &Arc<FileDiff>) -> Arc<ReviewRowMap> {
         if let Some(entry) = &self.review
             && Arc::ptr_eq(&entry.diff, fd)

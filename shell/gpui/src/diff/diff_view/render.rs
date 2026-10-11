@@ -33,6 +33,7 @@ pub fn diff_view(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let t = theme(cx).clone();
+    state.wrap_cache.borrow_mut().hide();
 
     let Some(hunk) = state.hunk else {
         let (title, body) = if state.no_changes {

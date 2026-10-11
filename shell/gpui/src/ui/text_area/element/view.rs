@@ -112,10 +112,21 @@ impl Element for TextAreaElement {
         let caret_visible = input.caret_visible();
         let pending_into_view = input.scroll_caret_into_view;
         let current_scroll = input.scroll_y;
+        let anchored_scroll = input
+            .last_layout
+            .as_ref()
+            .filter(|layout| layout.key != key)
+            .and_then(|old| old.lines.iter().rfind(|line| line.top <= input.scroll_y))
+            .and_then(|top| {
+                lines
+                    .iter()
+                    .rfind(|line| line.range.start <= top.range.start)
+            })
+            .map_or(current_scroll, |line| line.top);
 
         let content_height = px(f32::from(line_height) * lines.len() as f32);
         let max_scroll = (content_height - bounds.size.height).max(px(0.));
-        let mut scroll_y = current_scroll.min(max_scroll).max(px(0.));
+        let mut scroll_y = anchored_scroll.min(max_scroll).max(px(0.));
         if pending_into_view
             && let Some(line) = lines
                 .iter()

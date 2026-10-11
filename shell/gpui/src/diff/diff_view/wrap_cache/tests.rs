@@ -238,3 +238,57 @@ fn rows_rebuilds_when_cols_change() {
     let second = cache.rows(&fd, 40, &notes);
     assert!(!Arc::ptr_eq(&first, &second), "new cols should rebuild");
 }
+
+#[test]
+fn pinned_source_line_survives_reflow_in_both_layouts() {
+    use super::super::row_anchor::VisibleRows;
+
+    let long = "wrapped ".repeat(12);
+    let mut fd = file_diff();
+    Arc::make_mut(&mut fd).lines = vec![line(&long), line("short"), line(&long), line(&long)];
+    let mut cache = DiffWrapCache::default();
+    let unified = |cache: &mut DiffWrapCache, cols| VisibleRows::Unified {
+        diff: fd.clone(),
+        lines: cache.unified(&fd, cols),
+        rendered: cache.rows(&fd, cols, &[]),
+    };
+    let first_row_of = |cache: &mut DiffWrapCache, cols, source| {
+        cache
+            .unified(&fd, cols)
+            .iter()
+            .position(|line| line.line_ix == source)
+            .unwrap()
+    };
+
+    let wide = unified(&mut cache, 40);
+    assert_eq!(cache.show(wide), None);
+    let pinned = first_row_of(&mut cache, 40, 3) + 1;
+    cache.pin_row(pinned as f32);
+    let narrow = unified(&mut cache, 20);
+    let expected = first_row_of(&mut cache, 20, 3) + 1;
+    assert_eq!(
+        cache.show(narrow).map(|row| row as usize),
+        Some(expected),
+        "a third into the line stays a third into it"
+    );
+
+    let sbs = |cache: &mut DiffWrapCache, cols| VisibleRows::SideBySide {
+        diff: fd.clone(),
+        rows: cache.side_by_side(&fd, cols, cols),
+    };
+    let wide = sbs(&mut cache, 40);
+    cache.show(wide);
+    let row_ix = cache
+        .side_by_side(&fd, 40, 40)
+        .iter()
+        .position(|row| row.row_ix == 2)
+        .unwrap();
+    cache.pin_row(row_ix as f32 + 0.5);
+    let narrow = sbs(&mut cache, 20);
+    let start = cache
+        .side_by_side(&fd, 20, 20)
+        .iter()
+        .position(|row| row.row_ix == 2)
+        .unwrap();
+    assert_eq!(cache.show(narrow), Some(start as f32 + 0.5 * 5. / 3.));
+}

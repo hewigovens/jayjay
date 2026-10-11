@@ -420,3 +420,76 @@ fn tree_mode_nav_skips_files_hidden_under_collapsed_dirs(cx: &mut TestAppContext
         });
     }
 }
+
+#[gpui::test]
+fn code_line_spacing_change_keeps_the_diff_scrolled_to_the_same_line(cx: &mut TestAppContext) {
+    use jayjay_gpui::app::config::AppConfig;
+    use jayjay_gpui::app::theme::Theme;
+
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    suppress_fs_watcher(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    view.update(cx, |view, _| view.set_diff_scroll_offset_y(px(-180.)));
+
+    cx.update(|cx| {
+        let mut config = AppConfig::default();
+        config.code_line_spacing = 2.;
+        let spaced = cx.global::<Theme>().clone().with_typography(&config);
+        cx.set_global(spaced);
+    });
+    view.read_with(cx, |view, _| {
+        assert_eq!(
+            view.diff_scroll_offset_y(),
+            px(-360.),
+            "18 px rows become 36 px"
+        );
+    });
+}
+
+#[gpui::test]
+fn zooming_keeps_the_same_source_line_at_the_top_of_a_wrapped_diff(cx: &mut TestAppContext) {
+    use gpui::size;
+    use jayjay_gpui::app::actions::ZoomIn;
+
+    let fixture = LinearFixture::build();
+    let lines = 40;
+    let content = format!("{}\n", "word ".repeat(40)).repeat(lines);
+    fs::write(fixture.path.join("wide.txt"), content).unwrap();
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    cx.update(menus::install);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    cx.simulate_resize(size(px(1000.), px(700.)));
+    settle_visual(cx);
+    select_file(&view, "wide.txt", cx);
+    let rows_per_line =
+        |view: &RepoWindow, cx: &gpui::App| view.diff_render_rows(cx).unwrap().rows.len() / lines;
+
+    let before = view.read_with(cx, rows_per_line);
+    assert!(before > 1, "lines must wrap");
+    view.update(cx, |view, _| {
+        view.set_diff_scroll_offset_y(px(-18. * (10 * before + 1) as f32))
+    });
+    cx.cx.update(|cx| {
+        for _ in 0..6 {
+            cx.dispatch_action(&ZoomIn);
+        }
+    });
+    settle_visual(cx);
+
+    let after = view.read_with(cx, rows_per_line);
+    assert!(after > before, "a larger font wraps into more rows");
+    let line_height = cx
+        .cx
+        .update(|cx| jayjay_gpui::app::config::current(cx).code_font_size())
+        + 5.;
+    let top_row = view.read_with(cx, |view, _| {
+        -f32::from(view.diff_scroll_offset_y()) / line_height
+    });
+    assert_eq!(
+        top_row as usize / after,
+        10,
+        "source line 10 stays at the top"
+    );
+}

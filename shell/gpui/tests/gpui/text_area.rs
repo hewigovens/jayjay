@@ -338,3 +338,57 @@ fn text_area_reports_caret_bounds_while_composing(cx: &mut TestAppContext) {
         assert_eq!(caret.top(), field.top());
     });
 }
+
+#[gpui::test]
+fn code_spacing_change_keeps_text_and_top_line_and_clicks_land_on_spaced_lines(
+    cx: &mut TestAppContext,
+) {
+    use gpui::{
+        Modifiers, MouseButton, ScrollDelta, ScrollWheelEvent, TouchPhase, point, px, size,
+    };
+    use jayjay_gpui::app::config::AppConfig;
+
+    install_text_area_test_bindings(cx);
+    let content = (0..60).map(|n| format!("l{n:02}\n")).collect::<String>();
+    let (input, cx) = cx.add_window_view(|_, cx| {
+        TextArea::code_editor(content.clone(), "notes.txt", "Code", 200., cx)
+    });
+    let cx: &mut VisualTestContext = cx;
+    cx.simulate_resize(size(px(300.), px(220.)));
+    cx.run_until_parked();
+    cx.simulate_event(ScrollWheelEvent {
+        position: point(px(50.), px(40.)),
+        delta: ScrollDelta::Pixels(point(px(0.), px(-180.))),
+        modifiers: Default::default(),
+        touch_phase: TouchPhase::Moved,
+    });
+    cx.run_until_parked();
+    input.read_with(cx, |input, _| assert_eq!(input.scroll_offset_y(), px(180.)));
+
+    cx.update(|_, cx| {
+        let mut config = AppConfig::default();
+        config.code_line_spacing = 2.;
+        cx.set_global(Theme::light().with_typography(&config));
+    });
+    input.update(cx, |_, cx| cx.notify());
+    cx.run_until_parked();
+    input.read_with(cx, |input, _| {
+        assert_eq!(input.text(), content);
+        assert_eq!(
+            input.scroll_offset_y(),
+            px(360.),
+            "line 10 stays at the top"
+        );
+    });
+
+    // Line 11 occupies 36 px; its lower half is the added spacing below the glyphs.
+    let y = px(7. + 36. + 30.);
+    cx.simulate_mouse_down(point(px(8.), y), MouseButton::Left, Modifiers::none());
+    cx.simulate_mouse_up(point(px(8.), y), MouseButton::Left, Modifiers::none());
+    let caret = input.update_in(cx, |input, window, cx| {
+        input
+            .selected_text_range(false, window, cx)
+            .map(|selection| selection.range.start)
+    });
+    assert_eq!(caret, Some(11 * 4));
+}

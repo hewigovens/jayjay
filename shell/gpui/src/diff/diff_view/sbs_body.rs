@@ -9,6 +9,7 @@ use jayjay_core::diff::FileDiff;
 use super::context_controls::context_controls;
 use super::mouse::attach_selection_handlers;
 use super::review_stripe::review_stripe_cell;
+use super::row_anchor::{VisibleRows, scroll_to_row};
 use super::state::ReviewDisplayState;
 use super::wrap_cache::CachedSbsRows;
 use crate::app::fonts;
@@ -59,6 +60,12 @@ pub(super) fn side_by_side_body(
         .borrow_mut()
         .side_by_side(file_diff, old_cols, new_cols);
     let count = rows.len();
+    if let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::SideBySide {
+        diff: file_diff.clone(),
+        rows: rows.clone(),
+    }) {
+        scroll_to_row(&scroll, row, theme.code_line_height());
+    }
 
     let old_gutter_width = SBS_GUTTER_WIDTH
         + if shows_review {

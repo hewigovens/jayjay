@@ -9,6 +9,7 @@ mod placeholders;
 mod render;
 mod review_row_map;
 mod review_stripe;
+mod row_anchor;
 mod rows;
 mod sbs_body;
 mod sbs_note_banner;
