@@ -38,6 +38,7 @@ struct JayJayApp: App {
         appDelegate.openRepositoryPicker = { manager.openRepositoryPicker() }
         appDelegate.openHandler = { manager.openRepo($0) }
         appDelegate.showRepoSelector = { manager.showRepoList() }
+        appDelegate.reopenWindows = { manager.reopen() }
         appDelegate.recentReposProvider = { initialSettings.recentRepos }
         appDelegate.prepareForTermination = { manager.prepareForTermination() }
     }

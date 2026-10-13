@@ -134,6 +134,21 @@ final class RepoListWindowScene: SceneBase {
         XCTAssertEqual(app.windows.count, 1, "Deminiaturizing opened a second repository list")
     }
 
+    func testDockClickDeminiaturizesRepoWindow() throws {
+        let app = try XCTUnwrap(app)
+        let repoWindow = openRepo(named: "formats", in: app)
+        let sidebarToggle = repoWindow.toolbars.buttons[AID.Toolbar.sidebarToggle]
+        XCTAssertTrue(sidebarToggle.waitForExistence(timeout: 10), "Repository window did not load")
+        repoWindow.buttons[XCUIIdentifierMinimizeWindow].click()
+        XCTAssertTrue(waitForHittable(sidebarToggle, isHittable: false), "The repository window did not miniaturize")
+
+        clickDockItem()
+
+        XCTAssertTrue(waitForHittable(sidebarToggle, isHittable: true), "The repository window stayed miniaturized in the Dock")
+        XCTAssertFalse(app.staticTexts["Recent Repositories"].exists, "Dock click showed the repository list instead of the repository")
+        XCTAssertEqual(app.windows.count, 1, "Deminiaturizing opened another window")
+    }
+
     private func openRepo(named name: String, in app: XCUIApplication) -> XCUIElement {
         let row = app.buttons
             .matching(NSPredicate(format: "label BEGINSWITH %@", "\(name),"))

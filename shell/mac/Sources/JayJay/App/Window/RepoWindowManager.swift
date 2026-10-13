@@ -84,6 +84,16 @@ final class RepoWindowManager {
         activateWindow(identified: AppWindows.repoList)
     }
 
+    func reopen() {
+        let windows = liveWindows
+        guard !windows.contains(where: \.isVisible) else { return }
+        if let window = windows.first(where: \.isMiniaturized) {
+            activate(window)
+        } else {
+            showRepoList()
+        }
+    }
+
     func finishOnboarding() {
         settings.hasCompletedOnboarding = true
         AppTelemetry.maybePing(enabled: settings.sendsAnonymousStats)

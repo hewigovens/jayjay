@@ -5,6 +5,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var openRepositoryPicker: (() -> Void)?
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?
+    var reopenWindows: (() -> Void)?
     var recentReposProvider: (() -> [String])?
     var prepareForTermination: (() -> Void)?
     var terminateAfterLastWindowClosed = false
@@ -78,10 +79,9 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         }
     }
 
-    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows flag: Bool) -> Bool {
-        if !flag {
-            showRepoSelector?()
-        }
+    /// The reopen flag includes miniaturized windows, so inspect each window's state.
+    func applicationShouldHandleReopen(_ sender: NSApplication, hasVisibleWindows _: Bool) -> Bool {
+        reopenWindows?()
         return false
     }
 
