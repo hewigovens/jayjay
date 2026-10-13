@@ -70,6 +70,7 @@ extension EvologEntry {
             commitId: commitId,
             description: description,
             author: .empty(timestampMillis: timestampMillis),
+            coAuthors: [],
             parents: [],
             bookmarks: [],
             tags: [],

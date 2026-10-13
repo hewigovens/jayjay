@@ -50,7 +50,9 @@ impl RepoViewModel {
         self.pr_info = None;
 
         if let Some(change) = self.graph.changes.get(ix).cloned() {
-            self.ensure_avatar(change.author.email.clone(), cx);
+            for person in std::iter::once(&change.author).chain(&change.co_authors) {
+                self.ensure_avatar(person.email.clone(), cx);
+            }
             self.refresh_pr_info(&change, cx);
         }
 

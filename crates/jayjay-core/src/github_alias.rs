@@ -1,5 +1,8 @@
 //! Well-known commit emails mapped to the GitHub account whose avatar represents them.
 
+/// GitHub's web-flow identity commits squash merges; GitHub itself never credits it.
+const WEB_FLOW_EMAIL: &str = "noreply@github.com";
+
 const ALIASES: &[(&str, u64, &str)] = &[
     ("noreply@anthropic.com", 81847, "claude"),
     ("codex@openai.com", 267193182, "codex"),
@@ -21,6 +24,10 @@ pub fn noreply_email(email: &str) -> Option<String> {
         .iter()
         .find(|(alias, _, _)| alias.eq_ignore_ascii_case(email))
         .map(|(_, id, login)| format!("{id}+{login}@users.noreply.github.com"))
+}
+
+pub fn is_web_flow(email: &str) -> bool {
+    email.trim().eq_ignore_ascii_case(WEB_FLOW_EMAIL)
 }
 
 #[cfg(test)]

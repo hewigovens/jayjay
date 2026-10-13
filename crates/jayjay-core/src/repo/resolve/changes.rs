@@ -10,6 +10,7 @@ use super::super::Repo;
 use super::super::log::ImmutableIds;
 use super::super::support::{short_change_id, short_commit_id};
 use super::CommitRefNames;
+use super::co_authors::{co_authors, commit_author};
 use crate::types::*;
 
 impl Repo {
@@ -23,7 +24,6 @@ impl Repo {
     ) -> ChangeInfo {
         let change_id = short_change_id(&**repo, commit);
         let commit_id = commit.id().hex();
-        let author = commit.author();
         let bookmarks = self.commit_bookmarks(repo).names(commit.id());
         let tags = self
             .commit_tags_cache
@@ -77,11 +77,8 @@ impl Repo {
             change_id,
             commit_id: short_commit_id(&**repo, commit),
             description: commit.description().to_owned(),
-            author: CommitAuthor::new(
-                author.name.clone(),
-                author.email.clone(),
-                author.timestamp.timestamp.0,
-            ),
+            author: commit_author(commit.author()),
+            co_authors: co_authors(commit),
             parents: commit.parent_ids().iter().map(|id| id.hex()).collect(),
             bookmarks,
             tags,

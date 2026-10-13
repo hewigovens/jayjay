@@ -1,8 +1,9 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
-    AnyElement, Context, Div, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, Context, Div, ElementId, InteractiveElement, IntoElement, ParentElement,
+    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
-use jayjay_core::{ChangeInfo, DiffStats};
+use jayjay_core::{ChangeInfo, CommitAuthor, DiffStats};
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
@@ -11,26 +12,69 @@ use crate::repo::window::ref_chips::{self, copy_feedback_button};
 use crate::ui::primitives::dot_separator;
 use crate::ui::primitives::text_tooltip;
 
-pub(super) fn author(change: &ChangeInfo, shows_email: bool, t: &Theme) -> AnyElement {
-    let mut row =
-        crate::ui::avatar::with_name(&change.author.email, &change.author.name, FONT_ID, t.fg)
-            .id("detail-author")
-            .flex_none()
-            .tooltip(text_tooltip(format!(
-                "{} <{}>",
-                change.author.name, change.author.email
-            )));
-    if shows_email {
-        row = row.child(
+pub(super) fn person(person: &CommitAuthor, id: impl Into<ElementId>, t: &Theme) -> AnyElement {
+    crate::ui::avatar::with_name(&person.email, &person.name, FONT_ID, t.fg)
+        .id(id)
+        .flex_none()
+        .tooltip(text_tooltip(identity(person)))
+        .child(
             div()
                 .min_w_0()
                 .truncate()
                 .text_size(ui_font_size(FONT_ID))
                 .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(format!("<{}>", change.author.email))),
-        );
-    }
-    row.into_any_element()
+                .child(SharedString::from(format!("<{}>", person.email))),
+        )
+        .into_any_element()
+}
+
+pub(super) const BYLINE_AVATARS: usize = 3;
+pub(super) const AVATAR_OVERLAP: f32 = 4.;
+
+pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
+    let people: Vec<&CommitAuthor> = std::iter::once(&change.author)
+        .chain(&change.co_authors)
+        .collect();
+    let avatars = people
+        .iter()
+        .take(BYLINE_AVATARS)
+        .enumerate()
+        .map(|(index, person)| {
+            div()
+                .flex_none()
+                .rounded_full()
+                .border_1()
+                .border_color(rgb(t.detail_bg))
+                .when(index > 0, |avatar| avatar.ml(px(-AVATAR_OVERLAP)))
+                .child(crate::ui::avatar::element(&person.email, &person.name, 14.))
+        });
+    div()
+        .id("detail-author")
+        .flex()
+        .flex_row()
+        .flex_none()
+        .items_center()
+        .gap(px(5.))
+        .child(div().flex().flex_row().flex_none().children(avatars))
+        .child(
+            div()
+                .flex_none()
+                .text_size(ui_font_size(FONT_ID))
+                .text_color(rgb(t.fg))
+                .child(SharedString::from(change.credit_line())),
+        )
+        .tooltip(text_tooltip(
+            people
+                .into_iter()
+                .map(identity)
+                .collect::<Vec<_>>()
+                .join("\n"),
+        ))
+        .into_any_element()
+}
+
+fn identity(person: &CommitAuthor) -> String {
+    format!("{} <{}>", person.name, person.email)
 }
 
 pub(super) fn separator(t: &Theme) -> AnyElement {

@@ -4,7 +4,9 @@ use gpui::{
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
-use super::cells::{author, bookmark_chip, diff_stats, separator, tag_chip};
+use super::cells::{
+    AVATAR_OVERLAP, BYLINE_AVATARS, bookmark_chip, byline_authors, diff_stats, separator, tag_chip,
+};
 use crate::app::fonts;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
@@ -38,7 +40,7 @@ pub(super) fn byline(
         .border_color(rgb(t.border))
         .min_w_0()
         .overflow_hidden()
-        .child(author(change, false, t))
+        .child(byline_authors(change, t))
         .child(separator(t))
         .child(id_cell(
             &compact,
@@ -101,9 +103,11 @@ fn byline_width(
     let ui_text = |s: &str| f32::from(fonts::ui_text_width(cx, s, px(meta)));
 
     let mut children = 7usize;
-    let mut width = 14.
+    let avatars = (1 + change.co_authors.len()).min(BYLINE_AVATARS) as f32;
+    let mut width = avatars * (16. - AVATAR_OVERLAP)
+        + AVATAR_OVERLAP
         + 5.
-        + ui_text(&change.author.name)
+        + ui_text(&change.credit_line())
         + 2. * ui_text("·")
         + compact_id_len(change.change_id.short_len) as f32 * mono_char
         + 20.

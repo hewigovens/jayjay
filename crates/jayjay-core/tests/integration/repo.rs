@@ -1075,3 +1075,41 @@ fn op_restore_refuses_an_operation_that_predates_this_workspace() {
             .any(|ws| ws.name == "feature")
     );
 }
+
+#[test]
+fn co_authors_credit_trailers_and_a_distinct_committer_but_not_github_web_flow() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    let description = "fix\n\nbody\n\nCo-authored-by: Bob <bob@example.com>\nCo-authored-by: alice <ALICE@example.com>\nCo-authored-by: bob <BOB@example.com>\n";
+    run_jj(&["-R", repo_str, "describe", "-m", description]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "metaedit",
+        "--author",
+        "Alice <alice@example.com>",
+    ]);
+    run_jj(&["-R", repo_str, "new", "-m", "merged"]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "--config=user.email=noreply@github.com",
+        "metaedit",
+        "--author",
+        "Alice <alice@example.com>",
+    ]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let co_authors = |rev: &str| {
+        let detail = repo.show_summary(rev).expect("show summary");
+        detail
+            .info
+            .co_authors
+            .into_iter()
+            .map(|p| p.email)
+            .collect::<Vec<_>>()
+    };
+    assert_eq!(co_authors("@-"), ["bob@example.com", "test@example.com"]);
+    assert!(co_authors("@").is_empty());
+}

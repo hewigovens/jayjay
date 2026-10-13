@@ -13,6 +13,7 @@ pub fn change_info(change_id: &str, commit_id: &str) -> ChangeInfo {
         commit_id: ShortId::new(commit_id.to_owned(), 1),
         description: String::new(),
         author: CommitAuthor::empty(0),
+        co_authors: Vec::new(),
         parents: Vec::new(),
         bookmarks: Vec::new(),
         tags: Vec::new(),

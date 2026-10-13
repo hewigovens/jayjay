@@ -21,7 +21,14 @@ extension ChangeDetailView {
     private var metadataGrid: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 8, verticalSpacing: 5) {
             IdentifierRow(label: "Author:") {
-                author(showsEmail: true)
+                person(detail.info.author)
+            }
+            if !detail.info.coAuthors.isEmpty {
+                IdentifierRow(label: "Co-authors:") {
+                    VStack(alignment: .leading, spacing: 5) {
+                        ForEach(Array(detail.info.coAuthors.enumerated()), id: \.offset) { person($0.element) }
+                    }
+                }
             }
             IdentifierRow(label: "Date:") {
                 Text(formatTimestamp(detail.info.author.timestampMillis))
@@ -76,7 +83,7 @@ extension ChangeDetailView {
 
     private func byline(showsDate: Bool) -> some View {
         HStack(spacing: 6) {
-            author(showsEmail: false)
+            bylineAuthors
             bylineSeparator
             IdentifierText(
                 value: detail.info.changeId.compact,
@@ -100,21 +107,36 @@ extension ChangeDetailView {
         .lineLimit(1)
     }
 
-    private func author(showsEmail: Bool) -> some View {
+    private func person(_ person: CommitAuthor) -> some View {
         HStack(spacing: 5) {
-            CommitAvatar(email: detail.info.author.email, size: 14)
-            Text(detail.info.author.name)
+            CommitAvatar(email: person.email, size: 14)
+            Text(person.name)
                 .jayjayFont(11)
-            if showsEmail {
-                Text("<\(detail.info.author.email)>")
-                    .jayjayFont(11)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .truncationMode(.middle)
-            }
+            Text("<\(person.email)>")
+                .jayjayFont(11)
+                .foregroundStyle(.secondary)
+                .lineLimit(1)
+                .truncationMode(.middle)
         }
         .textSelection(.enabled)
-        .help("\(detail.info.author.name) <\(detail.info.author.email)>")
+        .help(person.identity)
+    }
+
+    private var bylineAuthors: some View {
+        let people = [detail.info.author] + detail.info.coAuthors
+        return HStack(spacing: 5) {
+            HStack(spacing: -4) {
+                ForEach(Array(people.prefix(3).enumerated()), id: \.offset) { index, person in
+                    CommitAvatar(email: person.email, size: 14)
+                        .background(Circle().fill(.background).padding(-1.5))
+                        .zIndex(Double(-index))
+                }
+            }
+            Text(changeCreditLine(change: detail.info))
+                .jayjayFont(11)
+        }
+        .textSelection(.enabled)
+        .help(people.map(\.identity).joined(separator: "\n"))
     }
 
     private var visibleDiffStats: DiffStats? {
@@ -293,5 +315,11 @@ extension ChangeDetailView {
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(.red.opacity(0.08))
+    }
+}
+
+private extension CommitAuthor {
+    var identity: String {
+        "\(name) <\(email)>"
     }
 }

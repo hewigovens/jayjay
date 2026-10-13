@@ -19,6 +19,7 @@ func mockChangeInfo(
         commitId: ShortId(id: commitId, shortLen: 1),
         description: description,
         author: .tester,
+        coAuthors: [],
         parents: parents,
         bookmarks: bookmarks,
         tags: tags,

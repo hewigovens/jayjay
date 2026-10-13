@@ -1,10 +1,11 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div,
     px, rgb,
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
-use super::cells::{author, bookmark_chip, diff_stats, tag_chip};
+use super::cells::{bookmark_chip, diff_stats, person, tag_chip};
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
@@ -28,10 +29,31 @@ pub(super) fn grid(
         .gap(px(5.))
         .child(grid_row(
             "Author:",
-            author(change, true, t),
+            person(&change.author, "detail-author", t),
             GridAlign::Center,
             t,
         ))
+        .when(!change.co_authors.is_empty(), |col| {
+            col.child(grid_row(
+                "Co-authors:",
+                div()
+                    .flex()
+                    .flex_col()
+                    .gap(px(5.))
+                    .children(
+                        change
+                            .co_authors
+                            .iter()
+                            .enumerate()
+                            .map(|(index, co_author)| {
+                                person(co_author, ("detail-co-author", index), t)
+                            }),
+                    )
+                    .into_any_element(),
+                GridAlign::Center,
+                t,
+            ))
+        })
         .child(grid_row(
             "Date:",
             div()

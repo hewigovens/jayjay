@@ -17,6 +17,22 @@ impl CommitAuthor {
     pub fn empty(timestamp_millis: i64) -> Self {
         Self::new("", "", timestamp_millis)
     }
+
+    pub fn display_name(&self) -> &str {
+        if self.name.is_empty() {
+            &self.email
+        } else {
+            &self.name
+        }
+    }
+
+    pub fn is_same_person(&self, other: &Self) -> bool {
+        if self.email.is_empty() || other.email.is_empty() {
+            !self.name.is_empty() && self.name == other.name
+        } else {
+            self.email.eq_ignore_ascii_case(&other.email)
+        }
+    }
 }
 
 /// An id (change-id or commit-id) paired with the length of its shortest unique prefix among visible commits; shells highlight that prefix and dim the rest.
@@ -71,6 +87,8 @@ pub struct ChangeInfo {
     pub commit_id: ShortId,
     pub description: String,
     pub author: CommitAuthor,
+    /// A committer other than the author, then each `Co-authored-by` trailer, as GitHub credits them.
+    pub co_authors: Vec<CommitAuthor>,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub tags: Vec<String>,
@@ -91,6 +109,16 @@ impl ChangeInfo {
             &self.commit_id.id
         } else {
             &self.change_id.id
+        }
+    }
+
+    /// "Alice", "Alice and Bob", or "Alice and 2 others", as GitHub credits a commit.
+    pub fn credit_line(&self) -> String {
+        let author = self.author.display_name();
+        match self.co_authors.as_slice() {
+            [] => author.to_owned(),
+            [other] => format!("{author} and {}", other.display_name()),
+            others => format!("{author} and {} others", others.len()),
         }
     }
 
@@ -179,6 +207,7 @@ mod change_info_tests {
             commit_id: ShortId::new(format!("{change_id}-commit"), 1),
             description: String::new(),
             author: CommitAuthor::empty(0),
+            co_authors: Vec::new(),
             parents: Vec::new(),
             bookmarks: Vec::new(),
             tags: Vec::new(),
@@ -203,6 +232,23 @@ mod change_info_tests {
 
         change.is_divergent = true;
         assert_eq!(change.selection_revision(), "change-id-commit");
+    }
+
+    #[test]
+    fn credit_line_names_one_co_author_and_counts_more() {
+        let mut change = change("change-id");
+        change.author = CommitAuthor::new("Alice", "alice@example.com", 0);
+        assert_eq!(change.credit_line(), "Alice");
+
+        change
+            .co_authors
+            .push(CommitAuthor::new("", "bob@example.com", 0));
+        assert_eq!(change.credit_line(), "Alice and bob@example.com");
+
+        change
+            .co_authors
+            .push(CommitAuthor::new("Carol", "carol@example.com", 0));
+        assert_eq!(change.credit_line(), "Alice and 2 others");
     }
 
     #[test]

@@ -39,6 +39,7 @@ pub struct ChangeInfo {
     pub commit_id: core::ShortId,
     pub description: String,
     pub author: core::CommitAuthor,
+    pub co_authors: Vec<core::CommitAuthor>,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub tags: Vec<String>,
@@ -49,6 +50,11 @@ pub struct ChangeInfo {
     pub is_immutable: bool,
     pub is_divergent: bool,
     pub new_change: core::NewChangeEligibility,
+}
+
+#[uniffi::export]
+fn change_credit_line(change: ChangeInfo) -> String {
+    change.credit_line()
 }
 
 use jayjay_core::NewChangeEligibility;

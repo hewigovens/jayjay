@@ -1,5 +1,6 @@
 mod aliases;
 mod changes;
+mod co_authors;
 mod commit_emptiness;
 mod commit_ref_names;
 mod expressions;
