@@ -37,6 +37,7 @@ pub(super) fn is_entry_visible(
 }
 
 pub(super) struct TreeBodyState {
+    pub(super) menu_anchor: crate::repo::window::PanelBoundsSlot,
     pub(super) hunks: Arc<Vec<DiffHunk>>,
     pub(super) visible_indices: Arc<Vec<usize>>,
     pub(super) tree: Arc<Vec<FileTreeEntry>>,
@@ -57,6 +58,7 @@ pub(super) struct TreeBodyState {
 
 pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> AnyElement {
     let TreeBodyState {
+        menu_anchor,
         hunks,
         visible_indices,
         tree,
@@ -126,6 +128,8 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                             },
                             row_width,
                             FileRowHandlers {
+                                menu_anchor: (selected_ix == Some(hunk_ix))
+                                    .then(|| menu_anchor.clone()),
                                 on_click: cx.listener(
                                     move |view, event: &ClickEvent, _window, cx| {
                                         view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
@@ -198,6 +202,7 @@ where
         ..
     } = state;
     let FileRowHandlers {
+        menu_anchor,
         on_click,
         on_right_click,
         on_review_click,
@@ -233,6 +238,7 @@ where
         .rounded_md()
         .bg(bg_row)
         .relative()
+        .children(menu_anchor.map(crate::ui::context_menu::row_bounds))
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)

@@ -1,12 +1,14 @@
 //! Right-click context menu, overlaid via `gpui::deferred` + `gpui::anchored` with a transparent backdrop that dismisses it on outside clicks.
 
+mod keyboard;
+
 use std::sync::Arc;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
     Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
     ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled, anchored,
-    deferred, div, point, px, rgb,
+    canvas, deferred, div, point, px, rgb,
 };
 use jayjay_core::compare::BookmarkDiffRequest;
 use unicode_width::UnicodeWidthStr;
@@ -47,6 +49,10 @@ pub enum ContextAction {
     NewChangeOnTop(SharedString),
     Change(Arc<ChangeAction>),
     AbandonChange(SharedString),
+    EditDescription {
+        rev: SharedString,
+        description: SharedString,
+    },
     OpenEvologFor(SharedString),
     ShowAncestors(SharedString),
     UpdateWorkspace,
@@ -97,6 +103,7 @@ pub struct ContextMenuItem {
     pub enabled: bool,
     tooltip: Option<SharedString>,
     submenu: Option<Vec<ContextMenuItem>>,
+    shortcut: Option<char>,
 }
 
 impl ContextMenuItem {
@@ -108,6 +115,7 @@ impl ContextMenuItem {
         Self {
             label: label.into(),
             glyph,
+            shortcut: action.shortcut(),
             action,
             is_separator: false,
             enabled: true,
@@ -124,6 +132,7 @@ impl ContextMenuItem {
         Self {
             label: label.into(),
             glyph,
+            shortcut: None,
             action: ContextAction::Noop,
             is_separator: false,
             enabled: true,
@@ -136,12 +145,18 @@ impl ContextMenuItem {
         Self {
             label: SharedString::default(),
             glyph: "",
+            shortcut: None,
             action: ContextAction::Noop,
             is_separator: true,
             enabled: true,
             tooltip: None,
             submenu: None,
         }
+    }
+
+    pub(crate) fn with_shortcut(mut self, shortcut: char) -> Self {
+        self.shortcut = Some(shortcut);
+        self
     }
 
     pub(crate) fn with_enabled(mut self, enabled: bool) -> Self {
@@ -165,10 +180,12 @@ pub struct ContextMenuState {
     pub(crate) anchor: Point<Pixels>,
     pub(crate) items: Vec<ContextMenuItem>,
     pub(crate) submenu_index: Option<usize>,
+    pub(crate) selected_index: Option<usize>,
+    pub(crate) submenu_selected_index: Option<usize>,
 }
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum MenuLevel {
+pub(crate) enum MenuLevel {
     Main,
     Submenu,
 }
@@ -204,7 +221,13 @@ pub(crate) fn render_context_menu(
         .anchor(Anchor::TopLeft)
         .position(state.anchor)
         .snap_to_window_with_margin(px(6.))
-        .child(menu_panel(&state.items, MenuLevel::Main, t, view));
+        .child(menu_panel(
+            &state.items,
+            MenuLevel::Main,
+            state.selected_index,
+            t,
+            view,
+        ));
 
     let submenu = state.submenu_index.and_then(|index| {
         let items = state.items.get(index)?.submenu_items()?;
@@ -213,7 +236,13 @@ pub(crate) fn render_context_menu(
                 .anchor(Anchor::TopLeft)
                 .position(submenu_position(state, index))
                 .snap_to_window_with_margin(px(6.))
-                .child(menu_panel(items, MenuLevel::Submenu, t, view)),
+                .child(menu_panel(
+                    items,
+                    MenuLevel::Submenu,
+                    state.submenu_selected_index,
+                    t,
+                    view,
+                )),
         )
     });
 
@@ -257,6 +286,7 @@ fn menu_width(items: &[ContextMenuItem]) -> Pixels {
 fn menu_panel(
     items: &[ContextMenuItem],
     level: MenuLevel,
+    selected: Option<usize>,
     t: &Theme,
     view: &Entity<RepoWindow>,
 ) -> AnyElement {
@@ -274,7 +304,7 @@ fn menu_panel(
         if item.is_separator {
             col = col.child(div().h(px(1.)).my(px(4.)).bg(rgb(t.border)));
         } else {
-            col = col.child(menu_row(ix, item, level, t, view));
+            col = col.child(menu_row(ix, item, level, selected == Some(ix), t, view));
         }
     }
     col.into_any_element()
@@ -284,6 +314,7 @@ fn menu_row(
     ix: usize,
     item: &ContextMenuItem,
     level: MenuLevel,
+    selected: bool,
     t: &Theme,
     view: &Entity<RepoWindow>,
 ) -> AnyElement {
@@ -310,19 +341,16 @@ fn menu_row(
         .px(px(12.))
         .py(px(6.))
         .text_size(ui_font_size(13.))
-        .text_color(rgb(t.fg));
-    let row = if level == MenuLevel::Main {
-        let hover_view = view.clone();
-        row.on_hover(move |hovered, _, cx| {
-            if *hovered {
-                hover_view.update(cx, |this, cx| {
-                    this.set_context_submenu((has_submenu && enabled).then_some(ix), cx);
-                });
-            }
-        })
-    } else {
-        row
-    };
+        .text_color(rgb(t.fg))
+        .when(selected && enabled, |row| row.bg(rgb(t.selected_bg)));
+    let hover_view = view.clone();
+    let row = row.on_hover(move |hovered, _, cx| {
+        if *hovered {
+            hover_view.update(cx, |this, cx| {
+                this.hover_context_item(level, ix, cx);
+            });
+        }
+    });
     let row = if enabled {
         row.cursor_pointer()
             .hover(|s| s.bg(rgb(t.selected_bg)))
@@ -330,7 +358,7 @@ fn menu_row(
                 cx.stop_propagation();
                 action_view.update(cx, |this, cx| {
                     if has_submenu && level == MenuLevel::Main {
-                        this.set_context_submenu(Some(ix), cx);
+                        this.hover_context_item(level, ix, cx);
                     } else {
                         this.dispatch_context_action(action.clone(), cx);
                     }
@@ -351,8 +379,22 @@ fn menu_row(
                 .truncate()
                 .child(item.label.clone()),
         );
+    if let Some(shortcut) = item.shortcut {
+        row = row.child(
+            div()
+                .text_color(rgb(t.fg_dim))
+                .child(shortcut.to_ascii_uppercase().to_string()),
+        );
+    }
     if has_submenu {
         row = row.child(icons::icon(glyph::CARET_RIGHT, 10., t.fg_dim));
     }
     row.into_any_element()
+}
+
+// Menu placement is read on key down, so capturing a row never needs another frame.
+pub(crate) fn row_bounds(slot: crate::repo::window::PanelBoundsSlot) -> impl IntoElement {
+    canvas(move |bounds, _, _| slot.set(Some(bounds)), |_, _, _, _| {})
+        .absolute()
+        .inset_0()
 }

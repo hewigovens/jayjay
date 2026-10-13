@@ -28,6 +28,7 @@ pub(crate) struct DontAskAgain {
 pub(crate) enum ConfirmedAction {
     DeleteWorkspace { name: String, path: String },
     SquashChanges { revs: Vec<String> },
+    AbandonChange { rev: String },
     AbandonChanges { revs: Vec<String> },
     DeleteRemoteTag { name: String },
 }
@@ -42,6 +43,27 @@ impl RepoWindow {
         self.close_repo_switcher(cx);
         self.confirmation = Some(confirmation);
         cx.notify();
+    }
+
+    pub(super) fn request_abandon(&mut self, rev: String, cx: &mut Context<Self>) {
+        if config::current(cx).features.skip_abandon_confirmation {
+            let task = self.vm.update(cx, |vm, cx| vm.abandon_change(rev, cx));
+            task.detach();
+            return;
+        }
+        self.request_confirmation(
+            Confirmation {
+                title: "Abandon Change?".into(),
+                message: "This removes the change and reparents its children. You can undo it with jj op restore.".into(),
+                confirm_label: "Abandon".into(),
+                action: ConfirmedAction::AbandonChange { rev },
+                dont_ask_again: Some(DontAskAgain {
+                    is_set: |config| config.features.skip_abandon_confirmation,
+                    toggle: |config| config.features.skip_abandon_confirmation ^= true,
+                }),
+            },
+            cx,
+        );
     }
 
     pub(crate) fn cancel_confirmation(&mut self, cx: &mut Context<Self>) {
@@ -61,6 +83,10 @@ impl RepoWindow {
             }
             ConfirmedAction::SquashChanges { revs } => {
                 let task = self.vm.update(cx, |vm, cx| vm.squash_changes(revs, cx));
+                task.detach();
+            }
+            ConfirmedAction::AbandonChange { rev } => {
+                let task = self.vm.update(cx, |vm, cx| vm.abandon_change(rev, cx));
                 task.detach();
             }
             ConfirmedAction::AbandonChanges { revs } => {

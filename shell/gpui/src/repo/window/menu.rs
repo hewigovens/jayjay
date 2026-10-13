@@ -2,7 +2,7 @@ use super::RepoWindow;
 use crate::repo::view_model::RepoViewModel;
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
-use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState};
+use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState, MenuLevel};
 use crate::ui::icons::glyph;
 use crate::windows::evolog::EvologView;
 use crate::windows::file_history::FileHistoryView;
@@ -63,22 +63,40 @@ impl RepoWindow {
             anchor,
             items,
             submenu_index: None,
+            selected_index: None,
+            submenu_selected_index: None,
         });
         cx.notify();
     }
 
-    pub(crate) fn set_context_submenu(
+    pub(crate) fn hover_context_item(
         &mut self,
-        submenu_index: Option<usize>,
+        level: MenuLevel,
+        index: usize,
         cx: &mut Context<Self>,
     ) {
         let Some(menu) = self.context_menu.as_mut() else {
             return;
         };
-        if menu.submenu_index != submenu_index {
-            menu.submenu_index = submenu_index;
-            cx.notify();
+        match level {
+            MenuLevel::Main => {
+                let item = &menu.items[index];
+                let submenu = (item.enabled && item.submenu_items().is_some()).then_some(index);
+                if menu.selected_index == Some(index) && menu.submenu_index == submenu {
+                    return;
+                }
+                menu.selected_index = Some(index);
+                menu.submenu_index = submenu;
+                menu.submenu_selected_index = None;
+            }
+            MenuLevel::Submenu => {
+                if menu.submenu_selected_index == Some(index) {
+                    return;
+                }
+                menu.submenu_selected_index = Some(index);
+            }
         }
+        cx.notify();
     }
 
     pub(crate) fn close_context_menu(&mut self, cx: &mut Context<Self>) {
@@ -139,11 +157,9 @@ impl RepoWindow {
                 task.detach();
             }
             ContextAction::Change(action) => self.run_change_action(action, cx),
-            ContextAction::AbandonChange(rev) => {
-                let task = self
-                    .vm
-                    .update(cx, |vm, cx| vm.abandon_change(rev.to_string(), cx));
-                task.detach();
+            ContextAction::AbandonChange(rev) => self.request_abandon(rev.to_string(), cx),
+            ContextAction::EditDescription { rev, description } => {
+                self.open_edit_description(rev.to_string(), description.to_string(), cx)
             }
             ContextAction::ShowAncestors(commit_id) => self.show_ancestors(&commit_id, cx),
             ContextAction::UpdateWorkspace => {
@@ -307,7 +323,8 @@ impl RepoWindow {
                 "Copy Path",
                 glyph::COPY,
                 ContextAction::CopyText(path.to_owned().into()),
-            ),
+            )
+            .with_shortcut('c'),
             ContextMenuItem::new(
                 "Copy Filename",
                 glyph::COPY,

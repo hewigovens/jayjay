@@ -32,6 +32,7 @@ pub(crate) type DagDrop = Arc<dyn Fn(&DagDrag, &mut Window, &mut App) + 'static>
 
 /// Pure-data inputs for one DAG row in the sidebar.
 pub(crate) struct DagRow<'a> {
+    pub menu_anchor: Option<crate::repo::window::PanelBoundsSlot>,
     pub change: &'a ChangeInfo,
     pub is_selected: bool,
     pub is_compare_source: bool,
@@ -58,6 +59,7 @@ where
     FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
 {
     let DagRow {
+        menu_anchor,
         change,
         is_selected,
         is_compare_source,
@@ -99,6 +101,8 @@ where
         .flex()
         .flex_row()
         .w_full()
+        .relative()
+        .children(menu_anchor.map(crate::ui::context_menu::row_bounds))
         .h(px(dag_row_height(t)))
         .bg(row_bg)
         .hover(|s| s.bg(hover_bg))

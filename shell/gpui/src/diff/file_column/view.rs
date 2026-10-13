@@ -30,6 +30,7 @@ pub(crate) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
 }
 
 pub struct FileColumnState<'a> {
+    pub(crate) menu_anchor: crate::repo::window::PanelBoundsSlot,
     pub(crate) hunks: Option<Arc<Vec<DiffHunk>>>,
     pub(crate) selected_ix: Option<usize>,
     /// Hunk indices in the multi-selection; highlighted like the primary row and targeted by batch context-menu actions.
@@ -60,6 +61,7 @@ pub struct FileColumnState<'a> {
 
 pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
     let FileColumnState {
+        menu_anchor,
         hunks,
         selected_ix,
         multi_selected,
@@ -138,6 +140,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             .visible(&hunks, &visible_indices, collapsed_dirs);
         tree_body(
             TreeBodyState {
+                menu_anchor,
                 hunks: hunks.clone(),
                 visible_indices: visible_indices.clone(),
                 tree,

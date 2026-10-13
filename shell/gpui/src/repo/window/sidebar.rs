@@ -158,6 +158,8 @@ pub(super) fn sidebar(
                         });
                         dag_row(
                             DagRow {
+                                menu_anchor: (selected == Some(ix))
+                                    .then(|| this.selected_change_bounds.clone()),
                                 change: &changes_for_processor[ix],
                                 is_selected,
                                 is_compare_source,

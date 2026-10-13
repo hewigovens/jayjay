@@ -209,6 +209,16 @@ impl RepoWindow {
                 glyph::PENCIL,
                 change_action(ChangeAction::Edit { rev: rev.clone() }),
             ));
+            if !change.is_working_copy {
+                items.push(ContextMenuItem::new(
+                    "Describe…",
+                    glyph::SQUARE_PENCIL,
+                    ContextAction::EditDescription {
+                        rev: rev.clone().into(),
+                        description: change.description.clone().into(),
+                    },
+                ));
+            }
             if can_squash_into_parent {
                 items.push(ContextMenuItem::new(
                     "Squash into parent",
@@ -220,14 +230,17 @@ impl RepoWindow {
                 ));
             }
             if !change.is_working_copy {
-                items.push(ContextMenuItem::new(
-                    "Move changes to working copy",
-                    glyph::ARROW_DOWN,
-                    change_action(ChangeAction::Squash {
-                        rev: rev.clone(),
-                        into: Some("@".to_owned()),
-                    }),
-                ));
+                items.push(
+                    ContextMenuItem::new(
+                        "Move changes to working copy",
+                        glyph::ARROW_DOWN,
+                        change_action(ChangeAction::Squash {
+                            rev: rev.clone(),
+                            into: Some("@".to_owned()),
+                        }),
+                    )
+                    .with_shortcut('m'),
+                );
             }
             items.push(ContextMenuItem::new(
                 "Rebase onto trunk",
@@ -322,7 +335,8 @@ impl RepoWindow {
                 "Copy Change ID",
                 glyph::COPY,
                 ContextAction::CopyText(change.change_id.id.clone().into()),
-            ),
+            )
+            .with_shortcut('c'),
             ContextMenuItem::new(
                 "Copy Commit ID",
                 glyph::COPY,

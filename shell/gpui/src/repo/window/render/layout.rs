@@ -69,6 +69,7 @@ pub(super) fn file_column_wrapper(
         .h_full()
         .child(file_column(
             FileColumnState {
+                menu_anchor: view.selected_file_bounds.clone(),
                 hunks: files,
                 selected_ix: selected_file_ix,
                 multi_selected,

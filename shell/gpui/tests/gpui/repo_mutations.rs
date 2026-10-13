@@ -195,12 +195,9 @@ fn change_context_action_inserts_change_before_target(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn change_context_action_abandons_change(cx: &mut TestAppContext) {
+fn change_context_action_confirms_then_abandons_change(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    install_test_globals(cx);
-    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
-    settle(cx); // repo opens async now
-
+    let (view, cx) = open_fixture(&fixture, cx);
     let target_commit_id = view.read_with(cx, |view, cx| {
         view.view_model()
             .read(cx)
@@ -217,17 +214,29 @@ fn change_context_action_abandons_change(cx: &mut TestAppContext) {
     view.update(cx, |view, cx| {
         view.dispatch_context_action(ContextAction::AbandonChange(target_rev.into()), cx);
     });
-    settle(cx);
+    settle_visual(cx);
+    let has_target = |view: &RepoWindow, cx: &gpui::App| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .any(|change| change.commit_id == target_commit_id)
+    };
+    assert!(
+        view.read_with(cx, has_target),
+        "abandon must wait for confirmation"
+    );
+    let submit = cx
+        .debug_bounds("confirmation-submit")
+        .expect("abandon asks first");
+    cx.simulate_click(submit.center(), Modifiers::default());
+    settle_visual(cx);
 
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert!(vm.error.is_none(), "abandon errored: {:?}", vm.error);
-        assert!(
-            vm.graph
-                .changes
-                .iter()
-                .all(|change| change.commit_id != target_commit_id)
-        );
+        assert!(!has_target(view, cx));
         assert!(
             vm.selected_change()
                 .is_some_and(|change| change.is_working_copy)

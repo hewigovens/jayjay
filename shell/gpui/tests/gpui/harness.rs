@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use gpui::{
-    Entity, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta, ScrollWheelEvent,
-    TestAppContext, TouchPhase, VisualTestContext, point, px,
+    Entity, Focusable, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta,
+    ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point, px,
 };
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::actions::ZoomIn;
@@ -295,6 +295,38 @@ pub(crate) fn select_file(
 
 pub(crate) fn selector(value: String) -> &'static str {
     Box::leak(value.into_boxed_str())
+}
+
+pub(crate) fn focus_view(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
+    view.update_in(cx, |view, window, cx| {
+        view.focus_handle(cx).focus(window, cx)
+    });
+}
+
+pub(crate) fn keys(cx: &mut VisualTestContext, keystrokes: &str) {
+    cx.simulate_keystrokes(keystrokes);
+    settle_visual(cx);
+}
+
+pub(crate) fn menu_shows(cx: &mut VisualTestContext, label: &str) -> bool {
+    cx.debug_bounds(selector(format!("context-menu-{label}")))
+        .is_some()
+}
+
+pub(crate) fn selected_commit_id(view: &Entity<RepoWindow>, cx: &VisualTestContext) -> String {
+    view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .selected_change()
+            .unwrap()
+            .commit_id
+            .id
+            .clone()
+    })
+}
+
+pub(crate) fn clipboard_text(cx: &mut VisualTestContext) -> Option<String> {
+    cx.cx.read_from_clipboard().and_then(|item| item.text())
 }
 
 pub(crate) fn add_workspace(fixture: &LinearFixture, name: &str) -> PathBuf {

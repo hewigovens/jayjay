@@ -103,7 +103,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
     let list = uniform_list(
         "files-flat",
         count,
-        cx.processor(move |_this, range: std::ops::Range<usize>, _window, cx| {
+        cx.processor(move |this, range: std::ops::Range<usize>, _window, cx| {
             let theme = theme.clone();
             let change_id = change_id.clone();
             let visible_indices = visible_indices.clone();
@@ -147,6 +147,8 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                         basename_chars,
                         path_chars,
                         FileRowHandlers {
+                            menu_anchor: (selected_ix == Some(hunk_ix))
+                                .then(|| this.selected_file_bounds.clone()),
                             on_click: cx.listener(move |view, event: &ClickEvent, _window, cx| {
                                 view.handle_file_row_click(hunk_ix, event.modifiers(), cx);
                             }),
@@ -200,6 +202,7 @@ where
         ..
     } = state;
     let FileRowHandlers {
+        menu_anchor,
         on_click,
         on_right_click,
         on_review_click,
@@ -236,6 +239,7 @@ where
         .rounded_md()
         .bg(bg_row)
         .relative()
+        .children(menu_anchor.map(crate::ui::context_menu::row_bounds))
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)

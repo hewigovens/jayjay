@@ -34,6 +34,9 @@ impl Render for RepoWindow {
         {
             self.focus_handle.focus(window, cx);
         }
+        self.open_revealed_context_menu(window, cx);
+        self.selected_change_bounds.set(None);
+        self.selected_file_bounds.set(None);
         self.sync_revset_editor(window, cx);
         self.sync_keyboard_focus(window, cx);
         self.sync_refresh_gate(cx);

@@ -106,7 +106,12 @@ impl RepoWindow {
         OperationLogView::open(repo, cx.entity(), self.vm.clone(), cx);
     }
 
-    fn open_edit_description(&mut self, rev: String, description: String, cx: &mut Context<Self>) {
+    pub(super) fn open_edit_description(
+        &mut self,
+        rev: String,
+        description: String,
+        cx: &mut Context<Self>,
+    ) {
         self.open_description_modal(
             rev.clone(),
             description,

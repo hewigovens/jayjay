@@ -377,17 +377,27 @@ impl RepoWindow {
             return;
         };
         self.select_file(next_ix, cx);
-        let Some(row) = visible.iter().position(|ix| *ix == next_ix) else {
+        self.reveal_file(next_ix, &files, &visible, tree_mode);
+    }
+
+    pub(super) fn reveal_file(
+        &mut self,
+        file_ix: usize,
+        files: &Arc<Vec<DiffHunk>>,
+        visible: &Arc<Vec<usize>>,
+        tree_mode: bool,
+    ) {
+        let Some(row) = visible.iter().position(|ix| *ix == file_ix) else {
             return;
         };
         if tree_mode {
-            let path = &files[next_ix].path;
+            let path = &files[file_ix].path;
             self.collapsed_dirs
                 .retain(|dir| !path.starts_with(&format!("{dir}/")));
             let tree =
                 self.file_tree_cache
                     .borrow_mut()
-                    .visible(&files, &visible, &self.collapsed_dirs);
+                    .visible(files, visible, &self.collapsed_dirs);
             if let Some(tree_row) = tree
                 .iter()
                 .position(|entry| entry.hunk_index == Some(row as u32))

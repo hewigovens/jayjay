@@ -6,7 +6,7 @@ use std::rc::Rc;
 
 use gpui::{
     App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, Pixels, ScrollHandle,
-    ScrollStrategy, SharedString, UniformListScrollHandle, Window, point,
+    ScrollStrategy, SharedString, Subscription, UniformListScrollHandle, Window, point,
 };
 
 use jayjay_review::NoteEntry;
@@ -57,6 +57,10 @@ pub struct RepoWindow {
     /// Set once the editor has held focus, so losing it afterwards cancels the edit.
     pub(crate) revset_editor_had_focus: bool,
     pub(crate) revset_popup: Option<super::revset_filter::RevsetPopupState>,
+    _context_menu_keys: Subscription,
+    pub(crate) context_menu_reveal_frames: u8,
+    pub(crate) selected_change_bounds: PanelBoundsSlot,
+    pub(crate) selected_file_bounds: PanelBoundsSlot,
     pub(crate) revset_bar_bounds: PanelBoundsSlot,
     pub(crate) repo_switcher_button_bounds: PanelBoundsSlot,
     pub(crate) bookmarks_button_bounds: PanelBoundsSlot,
@@ -348,6 +352,15 @@ impl RepoWindow {
     }
 
     pub(super) fn for_vm(vm: Entity<RepoViewModel>, cx: &mut Context<Self>) -> Self {
+        // Bound actions run before element key handlers, so menus intercept keys at the window boundary.
+        let context_menu_keys = cx.listener(|view, event: &gpui::KeystrokeEvent, window, cx| {
+            if view.focus_handle.contains_focused(window, cx)
+                && view.handle_context_menu_key(&event.keystroke, cx)
+            {
+                cx.stop_propagation();
+            }
+        });
+        let context_menu_keys = cx.intercept_keystrokes(context_menu_keys);
         let review_store = super::review::shared(cx);
         let commit_message = CommitMessageEditor::new("", 60., cx);
         cx.observe(&vm, |this, _vm, cx| {
@@ -420,6 +433,10 @@ impl RepoWindow {
             revset_edit_requested: false,
             revset_editor_had_focus: false,
             revset_popup: None,
+            _context_menu_keys: context_menu_keys,
+            context_menu_reveal_frames: 0,
+            selected_change_bounds: PanelBoundsSlot::default(),
+            selected_file_bounds: PanelBoundsSlot::default(),
             revset_bar_bounds: PanelBoundsSlot::default(),
             repo_switcher_button_bounds: PanelBoundsSlot::default(),
             bookmarks_button_bounds: PanelBoundsSlot::default(),

@@ -26,6 +26,7 @@ pub(super) struct FileRowState<'a> {
 }
 
 pub(super) struct FileRowHandlers<F, FR, FRev> {
+    pub(super) menu_anchor: Option<crate::repo::window::PanelBoundsSlot>,
     pub(super) on_click: F,
     pub(super) on_right_click: FR,
     pub(super) on_review_click: FRev,

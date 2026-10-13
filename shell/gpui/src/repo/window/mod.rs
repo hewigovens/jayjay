@@ -8,6 +8,7 @@ mod confirmation;
 mod conflict_editor;
 mod conflicts;
 mod context_expansion;
+mod context_menu_keyboard;
 mod dag;
 mod dag_drag;
 mod dag_row;
