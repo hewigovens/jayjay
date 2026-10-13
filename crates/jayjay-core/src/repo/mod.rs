@@ -1,5 +1,6 @@
 mod ai;
 mod annotate;
+mod bisect;
 mod bookmarks;
 mod cache;
 mod clone;
@@ -44,6 +45,7 @@ mod workspace_path;
 mod write_lock;
 
 pub use ai::{AiProvider, DiffExcerpt};
+pub use bisect::compose_bisect_range;
 pub use clone::CloneRequest;
 pub use command_process::SyncToken;
 pub use config::{JjConfigEntry, JjConfigSection, JjUserConfig, UserIdentity, jj_user_config};

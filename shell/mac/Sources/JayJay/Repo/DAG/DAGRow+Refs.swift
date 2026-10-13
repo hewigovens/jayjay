@@ -67,6 +67,7 @@ extension DAGRow {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
                 .foregroundStyle(AppColors.workspace(colorScheme))
+                .accessibilityLabel("working copy")
                 .help("Working copy — drag onto a change to move it here")
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))

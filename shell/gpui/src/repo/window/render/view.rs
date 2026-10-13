@@ -3,6 +3,7 @@ use gpui::{
     ease_in_out, px,
 };
 
+use super::super::bisect::{bisect_bar, bisect_sheet_overlay};
 use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
 use super::super::detail::detail_pane;
@@ -233,8 +234,11 @@ impl Render for RepoWindow {
                 self.focused_control,
                 cx,
             ))
-            .child(content)
-            .child(status_bar(self, &t, cx));
+            .child(content);
+        if let Some(bar) = bisect_bar(self, &t, cx) {
+            root = root.child(bar);
+        }
+        root = root.child(status_bar(self, &t, cx));
 
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
@@ -256,6 +260,9 @@ impl Render for RepoWindow {
         }
         if self.diff_edit_take_pending_focus() {
             window.focus(&self.focus_handle, cx);
+        }
+        if let Some(sheet) = self.bisect_sheet.as_mut() {
+            root = root.child(bisect_sheet_overlay(sheet, &t, window, cx));
         }
         if let Some(modal) = self.text_modal.as_mut() {
             modal.prompt.take_focus(window, cx);

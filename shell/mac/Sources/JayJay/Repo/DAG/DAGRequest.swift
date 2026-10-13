@@ -13,6 +13,8 @@ enum DAGRequest {
     case createStackedPRs(rev: String)
     case showAncestors(changeId: String, commitId: String)
     case openWorkspace(WorkspaceInfo)
+    case bisectFrom(commitId: String)
+    case bisectBetween(first: String, second: String)
 }
 
 extension DAGRequest {
@@ -23,7 +25,8 @@ extension DAGRequest {
             case let .squashSelection(revisions): .confirmChange(.squashSelection(revisions: revisions))
             case let .deleteTagOnRemote(name): .confirmTagDeleteOnRemote(name: name)
             case let .createStackedPRs(rev): .stackedPr(rev: rev)
-            case .rebase, .abandon, .createBookmark, .createTag, .showAncestors, .openWorkspace: nil
+            case let .bisectFrom(commitId): .bisect(good: "trunk()", bad: commitId)
+            case .rebase, .abandon, .createBookmark, .createTag, .showAncestors, .openWorkspace, .bisectBetween: nil
         }
     }
 }

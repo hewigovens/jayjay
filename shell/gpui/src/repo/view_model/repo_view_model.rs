@@ -9,6 +9,8 @@ use jayjay_core::{
     AnnotationLine, ChangeInfo, DiffHunk, DiffStats, PrInfo, Repo, RevsetFilterState,
     RevsetVocabulary,
 };
+
+use super::BisectModel;
 use std::cell::RefCell;
 use std::collections::HashSet;
 use std::sync::Arc;
@@ -54,6 +56,7 @@ pub struct RepoViewModel {
     pub(super) pending_file_selection: Option<String>,
     /// Shown once the next refresh lands, since re-selecting the refreshed change clears `error`; a new action drops it.
     pub(crate) pending_error: Option<SharedString>,
+    pub bisect: BisectModel,
     pub(super) selection_cache: RefCell<Option<SelectionCache>>,
 }
 
@@ -114,5 +117,11 @@ impl RepoViewModel {
         self.selected_change().is_some_and(|c| c.is_working_copy)
             && self.compare.is_none()
             && !self.has_multiple_change_selection()
+    }
+}
+
+impl Drop for RepoViewModel {
+    fn drop(&mut self) {
+        self.stop_bisect_for_shutdown();
     }
 }

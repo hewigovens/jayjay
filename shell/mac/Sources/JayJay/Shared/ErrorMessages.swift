@@ -21,6 +21,8 @@ extension Error {
                     return "\(path): file changed since the editor opened — refresh and retry"
                 case .WorkingCopyStale:
                     return "Working copy is stale: its change was rewritten outside this workspace — update the workspace and retry"
+                case let .Refused(message):
+                    return message
                 case let .Internal(message):
                     return unwrapCommandError(message: message)
                 case .Canceled:

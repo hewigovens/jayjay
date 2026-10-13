@@ -48,6 +48,14 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
+        name: "Bisect…",
+        keywords: &["bisect", "binary", "search", "bug", "regression"],
+        glyph_str: glyph::ARROWS_LEFT_RIGHT,
+        dispatch: |ctx, cx| {
+            with_repo_window(ctx, cx, |view, cx| view.open_bisect_sheet(None, cx));
+        },
+    },
+    PaletteAction {
         name: "Open Settings",
         keywords: &["settings", "preferences", "config"],
         glyph_str: glyph::GEAR,

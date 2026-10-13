@@ -25,6 +25,8 @@ pub enum ChangeAction {
     Absorb { rev: String },
     Revert { rev: String },
     Fix { revs: Vec<String> },
+    BisectFrom { commit_id: String },
+    BisectBetween { first: String, second: String },
 }
 
 impl RepoWindow {
@@ -80,6 +82,19 @@ impl RepoWindow {
         } else {
             Vec::new()
         };
+        let bisect_ends: Vec<String> = if count == 2 {
+            vm.selected_change_indices()
+                .into_iter()
+                .filter_map(|index| {
+                    vm.graph
+                        .changes
+                        .get(index)
+                        .map(|change| change.commit_id.id.clone())
+                })
+                .collect()
+        } else {
+            Vec::new()
+        };
         let mut choices =
             vec![ContextMenuItem::new("First parent", "", ContextAction::Noop).with_enabled(false)];
         choices.extend(
@@ -95,7 +110,7 @@ impl RepoWindow {
                     )
                 }),
         );
-        vec![
+        let mut items = vec![
             ContextMenuItem::submenu(format!("Merge {count} selected"), glyph::GIT_MERGE, choices)
                 .with_enabled(can_merge),
             ContextMenuItem::new(
@@ -130,7 +145,21 @@ impl RepoWindow {
                 change_action(ChangeAction::AbandonMany { revs: revisions }),
             )
             .with_enabled(vm.can_abandon_selected_changes()),
-        ]
+        ];
+        if let [first, second] = bisect_ends.as_slice() {
+            items.insert(
+                items.len().saturating_sub(1),
+                ContextMenuItem::new(
+                    "Bisect between",
+                    glyph::ARROWS_LEFT_RIGHT,
+                    change_action(ChangeAction::BisectBetween {
+                        first: first.clone(),
+                        second: second.clone(),
+                    }),
+                ),
+            );
+        }
+        items
     }
 
     fn build_single_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
@@ -398,6 +427,14 @@ impl RepoWindow {
             glyph::DOT,
             more_actions,
         ));
+        items.push(ContextMenuItem::separator());
+        items.push(ContextMenuItem::new(
+            "Bisect from here…",
+            glyph::ARROWS_LEFT_RIGHT,
+            change_action(ChangeAction::BisectFrom {
+                commit_id: change.commit_id.id.clone(),
+            }),
+        ));
 
         if !change.is_immutable {
             items.push(
@@ -549,6 +586,16 @@ impl RepoWindow {
             ChangeAction::Revert { rev } => self
                 .vm
                 .update(cx, |vm, cx| vm.revert_change(rev.clone(), cx)),
+            ChangeAction::BisectFrom { commit_id } => {
+                self.open_bisect_sheet(Some(commit_id.clone()), cx);
+                return;
+            }
+            ChangeAction::BisectBetween { first, second } => {
+                self.vm.update(cx, |vm, cx| {
+                    vm.start_bisect_between(first.clone(), second.clone(), cx)
+                });
+                return;
+            }
             ChangeAction::Fix { revs } => {
                 let task = self
                     .vm

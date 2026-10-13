@@ -16,6 +16,7 @@ struct DAGViewModel {
     let layout: DAGLayout
     let capabilities: DAGSelectionCapabilities
     var isActivePane = true
+    var bisect: BisectDAGState?
     private let cache = Cache()
 
     var isEmpty: Bool {
@@ -89,7 +90,8 @@ struct DAGViewModel {
             bookmarkDrag: bookmarkDrag,
             bookmarkPreviewText: bookmarkPreviewText,
             colorScheme: colorScheme,
-            isActivePane: isActivePane
+            isActivePane: isActivePane,
+            bisect: bisect
         )
     }
 

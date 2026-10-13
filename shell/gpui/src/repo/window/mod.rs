@@ -1,4 +1,6 @@
 mod actions;
+mod bisect;
+mod bisect_row_styles;
 mod bookmark_menu;
 mod bookmark_picker;
 mod change_actions;

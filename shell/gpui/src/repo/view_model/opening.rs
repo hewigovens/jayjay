@@ -1,4 +1,7 @@
-use super::{DiffCache, GraphData, LoadingState, NotesState, RepoViewModel, ShownDiff, StatsState};
+use super::{
+    BisectModel, DiffCache, GraphData, LoadingState, NotesState, RepoViewModel, ShownDiff,
+    StatsState,
+};
 use crate::app::{config, recent_revsets};
 use crate::diff::{DetailMode, DiffViewMode};
 use gpui::{AppContext, Context, SharedString};
@@ -178,6 +181,7 @@ impl RepoViewModel {
             notes: NotesState::default(),
             pending_file_selection: None,
             pending_error: None,
+            bisect: BisectModel::default(),
             selection_cache: RefCell::new(None),
         }
     }
@@ -219,6 +223,7 @@ impl RepoViewModel {
             notes: NotesState::default(),
             pending_file_selection: None,
             pending_error: None,
+            bisect: BisectModel::default(),
             selection_cache: RefCell::new(None),
         }
     }
@@ -234,6 +239,7 @@ impl RepoViewModel {
         cx.observe_global::<config::AppConfigStore>(|vm, cx| vm.sync_ignore_whitespace(cx))
             .detach();
         cx.on_app_quit(|vm, _| {
+            vm.stop_bisect_for_shutdown();
             if let Some(repo) = &vm.repo {
                 repo.cancel_running_jj_processes();
             }

@@ -7,6 +7,7 @@ mod keyboard_shortcuts;
 #[cfg(target_os = "linux")]
 mod launch;
 mod open_repository;
+mod repo_bisect;
 mod repo_bookmark_manager;
 mod repo_change_multi_select;
 mod repo_command_palette;

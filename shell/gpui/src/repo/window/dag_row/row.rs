@@ -5,7 +5,7 @@ use gpui::{
     MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
     px, relative, rgb,
 };
-use jayjay_core::{BookmarkInfo, ChangeInfo, GraphEntry};
+use jayjay_core::{BisectVerdict, BookmarkInfo, ChangeInfo, GraphEntry};
 
 use super::chips::tags_row;
 use super::text::{compact_id, first_line, format_relative, id_cell};
@@ -46,6 +46,9 @@ pub(crate) struct DagRow<'a> {
     pub bookmarks: &'a [BookmarkInfo],
     pub entries: &'a Arc<Vec<GraphEntry>>,
     pub drag_selection: Option<Arc<DagDragSelection>>,
+    pub bisect_dimmed: bool,
+    pub bisect_candidate: bool,
+    pub bisect_badge: Option<BisectVerdict>,
 }
 
 pub(crate) fn dag_row<F, FR>(
@@ -73,6 +76,9 @@ where
         bookmarks,
         entries,
         drag_selection,
+        bisect_dimmed,
+        bisect_candidate,
+        bisect_badge,
     } = row;
     let summary = first_line(&change.description);
 
@@ -133,28 +139,69 @@ where
     if let Some(col) = dag_col {
         row_div = row_div.child(col);
     }
-    row_div
+    row_div = row_div.child(
+        div()
+            .flex()
+            .flex_col()
+            .gap(px(DAG_ROW_GAP))
+            .pr_3()
+            .py_2()
+            .flex_1()
+            .min_w_0()
+            .child(tags_row(
+                change,
+                ix,
+                t,
+                bookmarks,
+                refs_budget,
+                refresh,
+                &chip_menus,
+            ))
+            .child(summary_with_badge(change, &summary, ix, t, bisect_badge))
+            .child(meta_row(change, ix, t)),
+    );
+    if bisect_dimmed {
+        row_div = row_div.opacity(0.4);
+    }
+    if bisect_candidate {
+        row_div = row_div
+            .border_l(px(3.))
+            .border_color(rgb(t.toggle_active_bg));
+    }
+    row_div.into_any_element()
+}
+
+fn summary_with_badge(
+    change: &ChangeInfo,
+    summary: &str,
+    row_ix: usize,
+    t: &Theme,
+    badge: Option<BisectVerdict>,
+) -> AnyElement {
+    let line = summary_line(change, summary, row_ix, t).into_any_element();
+    let Some(badge) = badge else {
+        return line;
+    };
+    let (label, bg, fg) = match badge {
+        BisectVerdict::Good => ("good", t.tag_added_bg, t.tag_added_fg),
+        BisectVerdict::Bad => ("bad", t.tag_removed_bg, t.tag_removed_fg),
+        BisectVerdict::Skip => ("skip", t.tag_divergent_bg, t.tag_divergent_fg),
+    };
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(6.))
         .child(
             div()
-                .flex()
-                .flex_col()
-                .gap(px(DAG_ROW_GAP))
-                .pr_3()
-                .py_2()
-                .flex_1()
-                .min_w_0()
-                .child(tags_row(
-                    change,
-                    ix,
-                    t,
-                    bookmarks,
-                    refs_budget,
-                    refresh,
-                    &chip_menus,
-                ))
-                .child(summary_line(change, &summary, ix, t))
-                .child(meta_row(change, ix, t)),
+                .px(px(5.))
+                .rounded_sm()
+                .bg(rgb(bg))
+                .text_size(ui_font_size(FONT_TAG))
+                .text_color(rgb(fg))
+                .child(label.to_owned()),
         )
+        .child(line)
         .into_any_element()
 }
 

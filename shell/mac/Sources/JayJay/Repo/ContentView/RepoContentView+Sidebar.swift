@@ -36,7 +36,8 @@ extension RepoContentView {
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                 remoteTagNames: viewModel.remoteTagNames,
                 workspacesByName: viewModel.workspacesByName,
-                refreshMode: viewModel.refreshMode
+                refreshMode: viewModel.refreshMode,
+                bisect: viewModel.bisect.state
             )
             if shouldShowCommitBox {
                 Divider()

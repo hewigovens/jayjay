@@ -3,9 +3,9 @@ use std::sync::Arc;
 
 use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, CloneRequest,
-    ConflictEditorData, DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk,
-    DiffProjectionMode, DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats,
+    AnnotationLine, BisectState, BisectVerdict, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus,
+    CloneRequest, ConflictEditorData, DiffEditDestination, DiffEditFileSelection, DiffExcerpt,
+    DiffHunk, DiffProjectionMode, DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats,
     FileEditorData, FixSummary, GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand,
     JjCommandResult, MutationEffect, OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode,
     RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken,
@@ -20,6 +20,11 @@ use jayjay_review::ReviewStore;
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use jayjay_core::JayError;
+
+#[uniffi::export]
+fn compose_bisect_range(good: String, bad: String, range: String) -> Result<String, JayError> {
+    jayjay_core::compose_bisect_range(&good, &bad, &range)
+}
 
 #[uniffi::export]
 fn default_revset() -> String {
@@ -1001,6 +1006,58 @@ impl JayJayRepo {
 
     fn edit(&self, rev: String) -> Result<(), JayError> {
         self.inner.edit(&rev)
+    }
+
+    fn bisect_state(&self) -> Option<BisectState> {
+        self.inner.bisect_state()
+    }
+
+    fn start_bisect(&self, range: String) -> Result<BisectState, JayError> {
+        self.inner.start_bisect(&range)
+    }
+
+    fn start_bisect_between(&self, first: String, second: String) -> Result<BisectState, JayError> {
+        self.inner.start_bisect_between(&first, &second)
+    }
+
+    fn bisect_mark(
+        &self,
+        commit_id: String,
+        verdict: BisectVerdict,
+    ) -> Result<BisectState, JayError> {
+        self.inner.bisect_mark(&commit_id, verdict)
+    }
+
+    fn bisect_stop(&self) -> Result<(), JayError> {
+        self.inner.bisect_stop()
+    }
+
+    fn shutdown_bisect(&self) -> Result<(), JayError> {
+        self.inner.shutdown_bisect()
+    }
+
+    fn bisect_restart(&self) -> Result<BisectState, JayError> {
+        self.inner.bisect_restart()
+    }
+
+    fn bisect_dismiss(&self) -> Result<(), JayError> {
+        self.inner.bisect_dismiss()
+    }
+
+    fn bisect_run_step(
+        &self,
+        command: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<Option<BisectState>, JayError> {
+        self.inner.bisect_run_step(&command, &sync.inner)
+    }
+
+    fn bisect_run_to_end(
+        &self,
+        command: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<Option<BisectState>, JayError> {
+        self.inner.bisect_run_to_end(&command, &sync.inner)
     }
 
     fn absorb(&self, rev: String) -> Result<MutationEffect, JayError> {

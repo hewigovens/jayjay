@@ -30,6 +30,14 @@ extension RepoContentView {
             viewModel.refresh()
         })
         items.append(CommandPaletteItem(
+            title: "Bisect…",
+            icon: "arrow.left.and.right",
+            category: "View",
+            keywords: ["bisect", "binary", "search", "bug", "regression"]
+        ) {
+            modal = .bisect(good: "trunk()", bad: "")
+        })
+        items.append(CommandPaletteItem(
             title: settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar",
             icon: "sidebar.left",
             category: "View",

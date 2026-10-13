@@ -1,5 +1,6 @@
 use std::collections::HashMap;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::AtomicBool;
 use std::sync::{Arc, Mutex, RwLock};
 
 use jj_lib::backend::CommitId;
@@ -35,6 +36,9 @@ pub struct Repo {
     pub(super) workspace_files_changed_cache: RwLock<HashMap<String, (CommitId, u32)>>,
     pub(super) lfs_cache: Mutex<LfsCache>,
     pub(super) write_lock: Arc<parking_lot::ReentrantMutex<()>>,
+    pub(super) bisect: Mutex<Option<super::bisect::Session>>,
+    pub(super) bisect_execution: Mutex<()>,
+    pub(super) bisect_closed: AtomicBool,
 }
 
 impl Repo {
@@ -67,6 +71,9 @@ impl Repo {
             commit_emptiness: CommitEmptiness::default(),
             workspace_files_changed_cache: RwLock::new(HashMap::new()),
             lfs_cache: Mutex::new(LfsCache::default()),
+            bisect: Mutex::new(None),
+            bisect_execution: Mutex::new(()),
+            bisect_closed: AtomicBool::new(false),
         })
     }
 

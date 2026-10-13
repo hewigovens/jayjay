@@ -1,4 +1,6 @@
+import Foundation
 @testable import JayJay
+import JayJayCore
 import XCTest
 
 @MainActor
@@ -49,5 +51,32 @@ final class RepoViewModelShutdownTests: RepoViewModelTestCase {
         XCTAssertNil(viewModel.refreshTask)
         XCTAssertNil(viewModel.prFetchTask)
         XCTAssertTrue(viewModel.repoTasks.isEmpty)
+    }
+
+    func testClosingTheWindowCancelsADispatchedBisectStart() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let repo = viewModel.repo
+        try repo.describe(rev: "@", message: "good")
+        let good = try XCTUnwrap(repo.log(revset: "@").first).changeId.id
+        try repo.newChange(parent: "@", message: "candidate")
+        try repo.newChange(parent: "@", message: "bad")
+        let original = try XCTUnwrap(repo.log(revset: "@").first).changeId.id
+        let dispatched = LockedFlag()
+        let resume = DispatchSemaphore(value: 0)
+        defer { resume.signal() }
+        viewModel.runRepoTask { repo in
+            dispatched.set()
+            resume.wait()
+            return try repo.startBisectBetween(first: good, second: original)
+        } onSuccess: { _, _ in }
+        try await waitUntil("bisect start is dispatched") { dispatched.isSet }
+        XCTAssertNil(repo.bisectState())
+
+        viewModel.windowWillClose()
+        resume.signal()
+        try await waitUntil("pending start finishes") { viewModel.repoTasks.isEmpty }
+
+        XCTAssertNil(repo.bisectState())
+        XCTAssertEqual(try XCTUnwrap(repo.log(revset: "@").first).changeId.id, original)
     }
 }

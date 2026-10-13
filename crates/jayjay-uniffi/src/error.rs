@@ -15,6 +15,7 @@ pub enum JayError {
     ConflictEditorStale { path: String },
     FileEditorStale { path: String },
     WorkingCopyStale,
+    Refused { message: String },
     Internal { message: String },
     Canceled,
 }

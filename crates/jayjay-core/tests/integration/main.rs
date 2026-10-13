@@ -1,5 +1,6 @@
 mod absorb;
 mod batch_mutations;
+mod bisect;
 mod bookmarks;
 mod cli_dispatch;
 mod clone;

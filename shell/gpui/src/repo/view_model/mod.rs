@@ -1,9 +1,11 @@
+mod bisect_model;
 mod diff_cache;
 mod graph_data;
 mod loaded_content;
 mod loaders;
 mod loading_state;
 pub(crate) mod mutations;
+mod mutations_bisect;
 mod mutations_changes;
 mod mutations_conflict_editor;
 mod mutations_file_editor;
@@ -18,6 +20,7 @@ mod shown_diff;
 mod stats_state;
 mod tasks;
 
+pub use bisect_model::BisectModel;
 pub use diff_cache::DiffCache;
 pub use graph_data::GraphData;
 pub(crate) use loaded_content::DiffLoadState;

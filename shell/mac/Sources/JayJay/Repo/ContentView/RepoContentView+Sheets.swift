@@ -42,7 +42,7 @@ extension RepoContentView {
                 )
             case .bookmarkManager:
                 bookmarkManagerSheet
-            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote:
+            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect:
                 secondarySheet(for: modal)
             case .ratingPrompt:
                 RatingPromptView(
@@ -89,6 +89,17 @@ extension RepoContentView {
                 workspaceDeleteSheet(workspace: workspace)
             case let .confirmTagDeleteOnRemote(name):
                 tagDeleteOnRemoteSheet(name: name)
+            case let .bisect(good, bad):
+                BisectSheet(
+                    good: good,
+                    bad: bad,
+                    onCancel: { self.modal = nil },
+                    onStart: { good, bad, range in
+                        if viewModel.startBisect(good: good, bad: bad, range: range) {
+                            self.modal = nil
+                        }
+                    }
+                )
             case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .ratingPrompt:
                 EmptyView()
         }

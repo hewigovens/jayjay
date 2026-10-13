@@ -4,6 +4,7 @@ use gpui::{
     uniform_list,
 };
 
+use super::bisect_row_styles::BisectRowStyles;
 use super::bookmark_picker::{bookmarks_header_button, listed_bookmark_count};
 use super::dag::{DagRowLanes, dag_column};
 use super::dag_drag::DagDragSelection;
@@ -73,6 +74,7 @@ pub(super) fn sidebar(
                     compare_source_change_id,
                     drag_selection,
                     refresh_mode,
+                    bisect,
                 ) = {
                     let vm = this.vm.read(cx);
                     (
@@ -83,8 +85,10 @@ pub(super) fn sidebar(
                             .and_then(|compare| compare.source_change_id.clone()),
                         DagDragSelection::of(vm),
                         vm.refresh_mode(),
+                        vm.bisect.state.clone(),
                     )
                 };
+                let bisect_rows = BisectRowStyles::new(bisect.as_ref());
                 let view_handle = view_handle.clone();
                 let dag_layout = dag_layout.clone();
                 let entries = entries.clone();
@@ -156,6 +160,8 @@ pub(super) fn sidebar(
                                 &t,
                             )
                         });
+                        let row_style =
+                            bisect_rows.for_commit(&changes_for_processor[ix].commit_id.id);
                         dag_row(
                             DagRow {
                                 menu_anchor: (selected == Some(ix))
@@ -174,6 +180,9 @@ pub(super) fn sidebar(
                                 drag_selection: drag_selection
                                     .clone()
                                     .filter(|_| is_selected_change),
+                                bisect_dimmed: row_style.dimmed,
+                                bisect_candidate: row_style.candidate,
+                                bisect_badge: row_style.badge,
                             },
                             on_click,
                             on_right_click,

@@ -19,7 +19,9 @@ extension RepoContentView {
                 viewModel.revealAncestors(of: changeId, selecting: commitId)
             case let .openWorkspace(workspace):
                 windowManager.openRepo(workspace.path)
-            case .editDescription, .abandonSelection, .squashSelection, .deleteTagOnRemote, .createStackedPRs:
+            case let .bisectBetween(first, second):
+                viewModel.startBisectBetween(first: first, second: second)
+            case .editDescription, .abandonSelection, .squashSelection, .deleteTagOnRemote, .createStackedPRs, .bisectFrom:
                 break
         }
     }

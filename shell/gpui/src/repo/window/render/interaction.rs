@@ -23,6 +23,8 @@ impl RepoWindow {
             self.cancel_confirmation(cx);
         } else if self.pr_import.is_some() {
             self.cancel_pr_import(cx);
+        } else if self.bisect_sheet.is_some() {
+            self.close_bisect_sheet(cx);
         } else if self.text_modal.is_some() {
             self.close_text_modal(cx);
         } else if self.dismiss_editor_overlay(cx) {

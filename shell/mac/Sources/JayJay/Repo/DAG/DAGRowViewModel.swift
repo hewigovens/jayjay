@@ -46,6 +46,9 @@ struct DAGRowViewModel {
     private(set) var selectionAccent: DAGRowSelectionAccent?
     let rebaseState: DAGRowRebaseState
     let bookmarkDropState: DAGRowBookmarkDropState
+    let bisectDimmed: Bool
+    let bisectCandidate: Bool
+    let bisectBadge: BisectVerdict?
 
     init(
         entry: GraphEntry,
@@ -59,13 +62,18 @@ struct DAGRowViewModel {
         bookmarkDrag: BookmarkDragState?,
         bookmarkPreviewText: String?,
         colorScheme: ColorScheme,
-        isActivePane: Bool = true
+        isActivePane: Bool = true,
+        bisect: BisectDAGState? = nil
     ) {
         self.entry = entry
         self.layout = layout
         self.index = index
         self.colorScheme = colorScheme
         self.isActivePane = isActivePane
+        let commitId = entry.change.commitId.id
+        bisectDimmed = bisect.map { $0.isEvaluating && !$0.focusedCommitIds.contains(commitId) } ?? false
+        bisectCandidate = bisect?.candidateCommitId == commitId
+        bisectBadge = bisect?.marks[commitId]
 
         let rowId = entry.change.selectionRevision
         let isSelected = selectedIds.contains(rowId) || (selectedIds.isEmpty && selectedId == rowId)
@@ -166,7 +174,7 @@ struct DAGRowViewModel {
     }
 
     var leadingAccentColor: Color? {
-        if isHoverDropTarget {
+        if isHoverDropTarget || bisectCandidate {
             return .accentColor
         }
         return selectionAccent?.color
@@ -262,6 +270,9 @@ struct DAGRowViewModel {
     }
 
     var opacity: Double {
-        isRebaseDragging ? 0.56 : 1
+        if isRebaseDragging {
+            return 0.56
+        }
+        return bisectDimmed ? 0.4 : 1
     }
 }

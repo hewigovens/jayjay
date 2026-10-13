@@ -60,6 +60,8 @@ extension DAGView {
             selectionCanFix: viewModel.canFixSelection
         )
 
+        bisectBetweenButton(viewModel)
+
         Divider()
         Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
             Label("Abandon \(revisions.count) selected…", systemImage: "trash")
@@ -71,6 +73,24 @@ extension DAGView {
                 ? "Abandon the selected changes"
                 : "Immutable changes cannot be abandoned"
         )
+    }
+
+    @ViewBuilder
+    private func bisectBetweenButton(_ viewModel: DAGViewModel) -> some View {
+        let selected = viewModel.entries.filter { viewModel.isSelected($0.change) }
+        if selected.count == 2 {
+            let first = selected[0].change.commitId.id
+            let second = selected[1].change.commitId.id
+            Button { onRequest?(.bisectBetween(first: first, second: second)) } label: {
+                Label("Bisect between", systemImage: "arrow.left.and.right")
+            }
+        }
+    }
+
+    private func bisectFromButton(_ entry: GraphEntry) -> some View {
+        Button { onRequest?(.bisectFrom(commitId: entry.change.commitId.id)) } label: {
+            Label("Bisect from here…", systemImage: "arrow.left.and.right")
+        }
     }
 
     @ViewBuilder
@@ -123,6 +143,8 @@ extension DAGView {
                 )
             }
         }
+        Divider()
+        bisectFromButton(entry)
         ForEach(entry.change.tags, id: \.self) { name in
             Menu("Tag: \(name)") {
                 TagMenuItems(name: name, isOnRemote: remoteTagNames.contains(name), actions: actions, onRequest: onRequest)

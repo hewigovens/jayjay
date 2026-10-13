@@ -262,6 +262,25 @@ enum AID {
         static let error = "pullRequestImport.error"
     }
 
+    enum Bisect {
+        static let status = "bisect.status"
+        static let good = "bisect.good"
+        static let bad = "bisect.bad"
+        static let skip = "bisect.skip"
+        static let stop = "bisect.stop"
+        static let restart = "bisect.restart"
+        static let dismiss = "bisect.dismiss"
+        static let command = "bisect.command"
+        static let runStep = "bisect.runStep"
+        static let runToEnd = "bisect.runToEnd"
+        static let output = "bisect.output"
+        static let commandError = "bisect.commandError"
+        static let sheetGood = "bisect.sheet.good"
+        static let sheetBad = "bisect.sheet.bad"
+        static let sheetRange = "bisect.sheet.range"
+        static let sheetStart = "bisect.sheet.start"
+    }
+
     enum DiffEdit {
         static let open = "diffEdit.open"
         static let expandAll = "diffEdit.expandAll"

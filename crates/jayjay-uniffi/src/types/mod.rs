@@ -1,3 +1,4 @@
+mod bisect;
 mod changes;
 #[cfg(feature = "desktop")]
 mod cli;
@@ -21,6 +22,7 @@ mod stacked_pr;
 mod theme;
 mod workspace_info;
 
+pub use bisect::*;
 pub use changes::*;
 pub use compare::*;
 pub use diff::*;

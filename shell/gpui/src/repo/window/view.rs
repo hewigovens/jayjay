@@ -88,6 +88,8 @@ pub struct RepoWindow {
     pub(super) switching: Option<gpui::Task<()>>,
     pub(crate) commit_ai: CommitAiState,
     pub(crate) text_modal: Option<TextModalState>,
+    pub(crate) bisect_sheet: Option<super::bisect::BisectSheet>,
+    pub(crate) bisect_command: Entity<TextArea>,
     pub(crate) pr_import: Option<PrImportState>,
     pub(crate) pending_rebase: Option<DagRebaseRequest>,
     pub(crate) stacked_pr: Option<StackedPrState>,
@@ -397,6 +399,7 @@ impl RepoWindow {
         let context_menu_keys = cx.intercept_keystrokes(context_menu_keys);
         let review_store = super::review::shared(cx);
         let commit_message = CommitMessageEditor::new("", 60., cx);
+        let bisect_command = cx.new(|cx| TextArea::new("", "Test command", false, 28., cx));
         cx.observe(&vm, |this, _vm, cx| {
             // A repo that opened after `new` (e.g. in-app `jj git init`) has no watcher yet.
             if !this.fs_watcher_armed {
@@ -502,6 +505,8 @@ impl RepoWindow {
             switching: None,
             commit_ai: CommitAiState::default(),
             text_modal: None,
+            bisect_sheet: None,
+            bisect_command,
             pr_import: None,
             pending_rebase: None,
             stacked_pr: None,
@@ -676,7 +681,8 @@ impl RepoWindow {
     }
 
     pub(super) fn has_refresh_sensitive_interaction(&self) -> bool {
-        self.text_modal.is_some()
+        self.bisect_sheet.is_some()
+            || self.text_modal.is_some()
             || self.pr_import.is_some()
             || self.confirmation.is_some()
             || self.pending_rebase.is_some()

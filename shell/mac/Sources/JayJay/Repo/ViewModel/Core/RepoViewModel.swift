@@ -145,6 +145,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var isResolvingPullRequest = false
     var isImportingPullRequest = false
     var pullRequestImportSync: JayJaySyncToken?
+    var bisect = BisectModel()
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
@@ -203,13 +204,24 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
 
     @MainActor
     func windowWillClose() {
+        stopBisectForShutdown()
         beginShutdown()
     }
 
     @MainActor
     func prepareForTermination() {
+        stopBisectForShutdown()
         beginShutdown()
         repo.cancelRunningJjProcesses()
+    }
+
+    func stopBisectForShutdown() {
+        if let sync = bisect.beginStop() {
+            sync.cancel()
+        }
+        try? repo.shutdownBisect()
+        bisect.state = nil
+        bisect.finishActivity()
     }
 
     @MainActor

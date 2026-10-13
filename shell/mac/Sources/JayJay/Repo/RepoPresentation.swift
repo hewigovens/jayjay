@@ -15,6 +15,7 @@ enum RepoModalState: Identifiable {
     case pullRequestImport
     case confirmWorkspaceDelete(workspace: WorkspaceInfo)
     case ratingPrompt
+    case bisect(good: String, bad: String)
 
     var id: String {
         switch self {
@@ -31,6 +32,7 @@ enum RepoModalState: Identifiable {
             case .pullRequestImport: "pull-request-import"
             case let .confirmWorkspaceDelete(workspace): "workspace-delete-\(workspace.name)"
             case .ratingPrompt: "rating-prompt"
+            case .bisect: "bisect"
         }
     }
 }

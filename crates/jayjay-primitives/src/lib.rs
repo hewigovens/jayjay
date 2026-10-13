@@ -1,4 +1,5 @@
 mod app_dirs;
+mod bisect;
 mod bookmark;
 mod change;
 mod cli;
@@ -24,6 +25,7 @@ mod tool_config;
 mod update_channel;
 
 pub use app_dirs::*;
+pub use bisect::*;
 pub use bookmark::*;
 pub use change::*;
 pub use cli::*;

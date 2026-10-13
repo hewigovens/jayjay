@@ -10,6 +10,7 @@ pub enum JayError {
     ConflictEditorStale { path: String },
     FileEditorStale { path: String },
     WorkingCopyStale,
+    Refused { message: String },
     Internal { message: String },
     Canceled,
 }
@@ -25,7 +26,7 @@ impl std::fmt::Display for JayError {
             Self::ConflictEditorStale { path } => write!(f, "{path}: conflict changed since the editor opened — refresh and retry"),
             Self::FileEditorStale { path } => write!(f, "{path}: file changed since the editor opened — refresh and retry"),
             Self::WorkingCopyStale => f.write_str("working copy is stale: its change was rewritten outside this workspace — update the workspace and retry"),
-            Self::Internal { message } => f.write_str(message),
+            Self::Refused { message } | Self::Internal { message } => f.write_str(message),
             Self::Canceled => f.write_str("canceled"),
         }
     }
@@ -36,6 +37,12 @@ impl std::error::Error for JayError {}
 impl JayError {
     pub fn review(message: impl std::fmt::Display) -> Self {
         Self::Review {
+            message: message.to_string(),
+        }
+    }
+
+    pub fn refused(message: impl std::fmt::Display) -> Self {
+        Self::Refused {
             message: message.to_string(),
         }
     }

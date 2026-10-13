@@ -241,6 +241,7 @@ extension RepoViewModel {
             changeId: content.workingCopyChangeId,
             description: content.workingCopyDescription
         )
+        bisect.state = repo.bisectState()
         isLoading = false
     }
 

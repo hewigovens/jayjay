@@ -46,6 +46,7 @@ fn describe_error(error: &JayError) -> String {
         JayError::WorkingCopyStale => "working copy is stale: its change was rewritten outside this workspace — run `jj workspace update-stale` and retry".to_owned(),
         JayError::Review { message }
         | JayError::Diff { message }
+        | JayError::Refused { message }
         | JayError::Internal { message } => message.clone(),
         JayError::Canceled => "Canceled".to_owned(),
     }

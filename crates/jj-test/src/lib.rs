@@ -1,5 +1,6 @@
 // Shared jj test helpers for integration and component tests.
 
+pub mod bisect;
 pub mod cmd;
 pub mod env;
 pub mod formats;
@@ -7,6 +8,7 @@ pub mod linear;
 pub mod repo;
 mod template;
 
+pub use bisect::BisectStack;
 pub use cmd::{
     configure_fix_tool, configure_test_user, git_stdout, init_colocated, run_command, run_git,
     run_jj, run_jj_in,

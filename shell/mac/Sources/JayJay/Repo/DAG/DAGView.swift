@@ -19,6 +19,7 @@ struct DAGView: View {
     var remoteTagNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
     var refreshMode: RefreshMode = .refresh
+    var bisect: BisectState?
 
     @State var rowFrameCache = DAGRowFrameCache()
     @State var rebaseDrag: DAGRebaseDragState?
@@ -50,7 +51,8 @@ struct DAGView: View {
         conflictedBookmarkNames: Set<String> = [],
         remoteTagNames: Set<String> = [],
         workspacesByName: [String: WorkspaceInfo] = [:],
-        refreshMode: RefreshMode = .refresh
+        refreshMode: RefreshMode = .refresh,
+        bisect: BisectState? = nil
     ) {
         self.entries = entries
         self.layout = layout
@@ -68,6 +70,7 @@ struct DAGView: View {
         self.remoteTagNames = remoteTagNames
         self.workspacesByName = workspacesByName
         self.refreshMode = refreshMode
+        self.bisect = bisect
     }
 
     var body: some View {
@@ -81,7 +84,8 @@ struct DAGView: View {
             colorScheme: colorScheme,
             layout: layout,
             capabilities: capabilities,
-            isActivePane: activePane == .dag
+            isActivePane: activePane == .dag,
+            bisect: bisect.map(BisectDAGState.init)
         )
         Group {
             if viewModel.isEmpty {

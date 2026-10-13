@@ -185,6 +185,7 @@ impl RepoViewModel {
                 if pending_error.is_some() {
                     self.error = pending_error;
                 }
+                self.bisect.state = self.repo.as_ref().and_then(|repo| repo.bisect_state());
             }
             Err(error) => self.present_error(error),
         }

@@ -2,6 +2,24 @@ import AppKit
 import JayJayCore
 import SwiftUI
 
+extension BisectVerdict {
+    var label: String {
+        switch self {
+            case .good: "good"
+            case .bad: "bad"
+            case .skip: "skip"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+            case .good: Color.green.opacity(0.2)
+            case .bad: Color.red.opacity(0.2)
+            case .skip: Color.orange.opacity(0.2)
+        }
+    }
+}
+
 private struct DAGRefsRowBoundsPreferenceKey: PreferenceKey {
     static let defaultValue: Anchor<CGRect>? = nil
 
@@ -44,12 +62,21 @@ struct DAGRow: View {
                 .lineLimit(1)
                 .anchorPreference(key: DAGRefsRowBoundsPreferenceKey.self, value: .bounds) { $0 }
 
-            if let descriptionLine = viewModel.descriptionLine {
-                Text(descriptionLine)
-                    .jayjayFont(13, weight: .medium).lineLimit(2)
-                    .help(change.description)
-            } else {
-                Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
+            HStack(spacing: 6) {
+                if let badge = viewModel.bisectBadge {
+                    Text(badge.label)
+                        .jayjayFont(10, weight: .semibold)
+                        .padding(.horizontal, 5)
+                        .padding(.vertical, 1)
+                        .background(badge.tint, in: Capsule())
+                }
+                if let descriptionLine = viewModel.descriptionLine {
+                    Text(descriptionLine)
+                        .jayjayFont(13, weight: .medium).lineLimit(2)
+                        .help(change.description)
+                } else {
+                    Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
+                }
             }
 
             HStack(spacing: 6) {
