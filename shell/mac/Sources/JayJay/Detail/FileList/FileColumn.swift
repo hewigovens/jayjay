@@ -141,7 +141,7 @@ extension ChangeDetailView {
             }
             .listStyle(.plain)
             .scrollIndicators(.never)
-            .revealing(selectedPath, with: proxy)
+            .revealing(selectedPath, again: contextMenuRequest?.id, with: proxy)
             .id(detail.info.commitId)
         }
     }
@@ -152,6 +152,7 @@ extension ChangeDetailView {
             treeEntries: fileTreeCache.entries(for: filteredDiff.map(\.path)),
             commitId: detail.info.commitId.id,
             selectedPath: selectedPath,
+            revealTrigger: contextMenuRequest?.id,
             collapsedDirs: $collapsedDirs,
             fileRowView: fileRowView
         )
@@ -179,7 +180,7 @@ extension ChangeDetailView {
             NSApp.keyWindow?.makeFirstResponder(nil)
             handleFileSelection(hunk.path)
         }
-        .contextMenu {
+        .selectionContextMenu(for: hunk.path, request: $contextMenuRequest) {
             fileContextMenu(for: hunk.path)
         }
     }

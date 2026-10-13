@@ -21,4 +21,19 @@ final class DAGKeyboardNavigationScene: SceneBase {
         XCTAssertTrue(selectedRow.exists, "Selected row is not rendered")
         XCTAssertTrue(selectedRow.isHittable, "Selected row scrolled out of view")
     }
+
+    func testControlReturnOpensTheMenuForASelectionScrolledOutOfView() throws {
+        let app = try XCTUnwrap(app)
+        let rows = dagRows(of: app)
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
+        let selected = app.descendants(matching: .any)[rows.firstMatch.identifier]
+        selected.click()
+        app.scrollViews.firstMatch.scroll(byDeltaX: 0, deltaY: -5000)
+        XCTAssertTrue(waitForHittable(selected, isHittable: false), "Scrolling did not move the selection out of view")
+
+        keyStroke(.return, modifiers: [.control])
+        XCTAssertTrue(app.menuItems["Show evolution…"].waitForExistence(timeout: 3), "Control-Return did not open the menu for the scrolled-out selection")
+        XCTAssertTrue(selected.isHittable, "The menu opened without revealing the selected change")
+        keyStroke(.escape)
+    }
 }

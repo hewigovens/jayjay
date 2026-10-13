@@ -29,12 +29,14 @@ extension ChangeDetailView {
                         reviewed: !contextPaths.allSatisfy(reviewedPaths.contains)
                     )
                 }
+                .keyboardShortcut("r", modifiers: [])
                 Divider()
             }
 
             Button(splitActionLabel(for: contextPaths)) {
                 splitRequest = SplitSheetRequest(paths: changedPaths)
             }
+            .keyboardShortcut("s", modifiers: [])
             if !detail.info.isWorkingCopy {
                 Button(moveToWorkingCopyActionLabel(for: contextPaths)) {
                     actions?.moveToWorkingCopy(rev: detailRevision, paths: changedPaths)
@@ -58,16 +60,20 @@ extension ChangeDetailView {
         Button("Open in \(appSettings.externalEditor.title)") {
             appSettings.openInEditor(filePath: path, repoPath: repoPath)
         }
+        .keyboardShortcut("o", modifiers: [])
         Button("Show in Finder") { showInFinder(path) }
-            .accessibilityIdentifier(AID.FileList.showInFinder)
+            .keyboardShortcut("f", modifiers: [])
         Button("Copy Path") {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(path, forType: .string)
         }
+        .keyboardShortcut("c", modifiers: [])
         if !isSubmodulePlaceholder {
             Divider()
             Button("Annotate (Blame)") { loadAnnotate(rev: detailRevision, path: path) }
+                .keyboardShortcut("b", modifiers: [])
             Button("File History") { loadFileHistory(path: path) }
+                .keyboardShortcut("h", modifiers: [])
             Divider()
         }
     }

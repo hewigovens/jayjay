@@ -44,6 +44,7 @@ struct ChangeDetailView: View {
     @State var selectedPath: String?
     @State var selectedPaths: Set<String> = []
     @State var fileSelectionAnchorPath: String?
+    @State var contextMenuRequest: SelectionContextMenuRequest?
     @State var collapsedDirs: Set<String> = []
     @State var fileTreeCache = FileTreeCache()
     @State var splitRequest: SplitSheetRequest?
@@ -205,6 +206,7 @@ struct ChangeDetailView: View {
             refreshReviewState()
         }
         .onChange(of: filteredDiff.map(\.path)) { _, _ in
+            contextMenuRequest = nil
             reconcileFileSelection()
         }
         .onChange(of: hasRefreshSensitiveInteraction, initial: true) { _, active in

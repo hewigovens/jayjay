@@ -20,11 +20,23 @@ final class FileContextMenuScene: SceneBase {
             .firstMatch
         rightClickCenter(fileRow, timeout: 10, message: "wip1.txt row missing")
 
-        let showInFinder = app.menuItems[AID.FileList.showInFinder]
-        XCTAssertTrue(showInFinder.waitForExistence(timeout: 3), "\"Show in Finder\" menu item missing")
+        let finderItems = app.menuItems.matching(identifier: "Show in Finder")
+        XCTAssertTrue(finderItems.firstMatch.waitForExistence(timeout: 3), "\"Show in Finder\" menu item missing")
+        let showInFinder = try XCTUnwrap(finderItems.allElementsBoundByIndex.first(where: \.isHittable))
         XCTAssertTrue(showInFinder.isEnabled, "\"Show in Finder\" menu item disabled")
-        showInFinder.click()
+        keyStroke("f")
+        let revealed = NSPredicate { _, _ in NSPasteboard.general.string(forType: .string) == expectedPath }
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: revealed, object: nil)], timeout: 3),
+            .completed
+        )
 
-        XCTAssertEqual(NSPasteboard.general.string(forType: .string), expectedPath)
+        NSPasteboard.general.clearContents()
+        keyStroke("f")
+        XCTAssertEqual(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: revealed, object: nil)], timeout: 1),
+            .timedOut,
+            "F ran a context-menu action after the menu closed"
+        )
     }
 }

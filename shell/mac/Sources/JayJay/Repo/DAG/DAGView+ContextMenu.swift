@@ -64,6 +64,7 @@ extension DAGView {
         Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
             Label("Abandon \(revisions.count) selected…", systemImage: "trash")
         }
+        .keyboardShortcut("a", modifiers: [])
         .disabled(!viewModel.canAbandonSelection)
         .help(
             viewModel.canAbandonSelection
@@ -87,6 +88,7 @@ extension DAGView {
             Button { actions?.newChange(parent: rev, message: "") } label: {
                 Label("New change on top", systemImage: "plus.circle")
             }
+            .keyboardShortcut("n", modifiers: [])
         }
         if entry.change.newChange.before {
             Button { actions?.insertChange(rev: rev, position: .before) } label: {
@@ -108,9 +110,11 @@ extension DAGView {
         Button { onRequest?(.createBookmark(rev: rev)) } label: {
             Label("Create bookmark here...", systemImage: "bookmark")
         }
+        .keyboardShortcut("b", modifiers: [])
         Button { onRequest?(.createTag(rev: entry.change.commitId.id)) } label: {
             Label("Create tag here...", systemImage: "tag")
         }
+        .keyboardShortcut("t", modifiers: [])
         if !entry.change.isImmutable {
             Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
                 Label(
@@ -140,10 +144,18 @@ extension DAGView {
             Button { actions?.edit(rev: rev) } label: {
                 Label("Edit (modify this change)", systemImage: "pencil.circle")
             }
+            .keyboardShortcut("e", modifiers: [])
+            if !entry.change.isWorkingCopy {
+                Button { onRequest?(.editDescription(rev: rev, description: entry.change.description)) } label: {
+                    Label("Describe…", systemImage: "square.and.pencil")
+                }
+                .keyboardShortcut("d", modifiers: [])
+            }
             if viewModel.canSquashIntoParent(entry.change) {
                 Button { actions?.squash(rev: rev) } label: {
                     Label("Squash into parent", systemImage: "arrow.down.left.circle")
                 }
+                .keyboardShortcut("s", modifiers: [])
             }
             if !entry.change.isWorkingCopy {
                 Button { actions?.squash(rev: rev, into: "@") } label: {
@@ -152,10 +164,12 @@ extension DAGView {
                         systemImage: "tray.and.arrow.down"
                     )
                 }
+                .keyboardShortcut("m", modifiers: [])
             }
             Button { actions?.rebase(rev: rev, dest: "trunk()", mode: .branch) } label: {
                 Label("Rebase onto trunk", systemImage: "arrow.uturn.up")
             }
+            .keyboardShortcut("r", modifiers: [])
             fixButton("Run formatters (jj fix)", revs: [rev])
         }
     }
@@ -168,6 +182,7 @@ extension DAGView {
         Button { actions?.showEvolog(rev: rev) } label: {
             Label("Show evolution…", systemImage: "clock.arrow.circlepath")
         }
+        .keyboardShortcut("v", modifiers: [])
     }
 
     private func moreActionsMenu(entry: GraphEntry, rev: String) -> some View {
@@ -194,6 +209,7 @@ extension DAGView {
         Button { copyToPasteboard(change.changeId.id) } label: {
             Label("Copy Change ID", systemImage: "doc.on.doc")
         }
+        .keyboardShortcut("c", modifiers: [])
         Button { copyToPasteboard(change.commitId.id) } label: {
             Label("Copy Commit ID", systemImage: "doc.on.doc")
         }
@@ -222,6 +238,7 @@ extension DAGView {
                 Label("Abandon", systemImage: "trash")
             }
         }
+        .keyboardShortcut("a", modifiers: [])
     }
 
     private func copyToPasteboard(_ value: String) {

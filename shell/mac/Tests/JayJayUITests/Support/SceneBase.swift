@@ -112,6 +112,12 @@ class SceneBase: XCTestCase {
         app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'dag.row.'"))
     }
 
+    func waitForDAGRows() throws -> XCUIElementQuery {
+        let rows = try dagRows(of: XCTUnwrap(app))
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
+        return rows
+    }
+
     func fileRows(of app: XCUIApplication) -> XCUIElementQuery {
         app.descendants(matching: .any).matching(NSPredicate(format: "identifier BEGINSWITH 'file.row.'"))
     }

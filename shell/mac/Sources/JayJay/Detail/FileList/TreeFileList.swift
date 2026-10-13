@@ -6,6 +6,7 @@ struct TreeFileList<RowContent: View>: View {
     let treeEntries: [FileTreeEntry]
     let commitId: String
     let selectedPath: String?
+    let revealTrigger: UUID?
     @Binding var collapsedDirs: Set<String>
     let fileRowView: (DiffHunk) -> RowContent
 
@@ -30,7 +31,7 @@ struct TreeFileList<RowContent: View>: View {
             .listStyle(.plain)
             .scrollIndicators(.never)
             .onChange(of: filteredDiff.map(\.path), initial: true) { pruneCollapsedDirs() }
-            .revealing(selectedPath, with: proxy)
+            .revealing(selectedPath, again: revealTrigger, with: proxy)
             .id(commitId)
         }
     }

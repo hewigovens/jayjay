@@ -12,6 +12,13 @@ extension ChangeDetailView {
             case KeyCode.rightArrow: return true
             default: break
         }
+        if event.opensSelectionContextMenu, let selectedPath, keyboardFocus?.isSuspended != true,
+           filteredDiff.contains(where: { $0.path == selectedPath })
+        {
+            collapsedDirs = collapsedDirs.filter { !selectedPath.hasPrefix("\($0)/") }
+            contextMenuRequest = SelectionContextMenuRequest(target: selectedPath)
+            return true
+        }
         let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
         guard let delta = DAGViewModel.selectionDelta(
             keyCode: event.keyCode,

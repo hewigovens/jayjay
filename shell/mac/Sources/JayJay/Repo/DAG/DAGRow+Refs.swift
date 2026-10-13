@@ -99,6 +99,7 @@ extension DAGRow {
         )
         .accessibilityLabel(conflicted ? "Conflicted bookmark \(name)" : "Bookmark \(name)")
         .accessibilityIdentifier(AID.DAG.bookmark(name))
+        .selectionContextMenuExclusion()
         .contextMenu {
             Button(conflicted ? "Resolve conflict (set to @)" : "Move to @-") {
                 actions?.moveBookmark(name: name, toRev: conflicted ? "@" : "@-")
@@ -136,7 +137,7 @@ extension DAGRow {
             .foregroundStyle(AppColors.workspace(colorScheme))
             .help("Working copy of the \(name) workspace")
             .accessibilityLabel("Workspace \(name)")
-        chip.contextMenu {
+        chip.selectionContextMenuExclusion().contextMenu {
             Button("Filter by This Workspace") { actions?.filterByWorkspace(name: name) }
             if let workspace = workspacesByName[name] {
                 Divider()
@@ -154,6 +155,7 @@ extension DAGRow {
         )
         .help("Tag: \(name)")
         .accessibilityLabel("Tag \(name)")
+        .selectionContextMenuExclusion()
         .contextMenu {
             TagMenuItems(name: name, isOnRemote: remoteTagNames.contains(name), actions: actions, onRequest: onRequest)
         }

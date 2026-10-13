@@ -30,6 +30,7 @@ struct DAGView: View {
     @State var bookmarkPreviewTargetId: String?
     @State var bookmarkPreviewTask: Task<Void, Never>?
     @State private var keyboardReveal: DAGRevealRequest?
+    @State private var contextMenuRequest: SelectionContextMenuRequest?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(KeyboardFocus.self) private var keyboardFocus: KeyboardFocus?
 
@@ -130,7 +131,7 @@ struct DAGView: View {
                                     rowViewModel.isSelectionHighlighted ? .isSelected : []
                                 )
                                 .contentShape(Rectangle())
-                                .contextMenu {
+                                .selectionContextMenu(for: rowId, request: $contextMenuRequest) {
                                     rowContextMenu(entry: entry, viewModel: viewModel)
                                 }
                                 .simultaneousGesture(rebaseGesture(for: entry, layout: viewModel.layout))
@@ -190,6 +191,7 @@ struct DAGView: View {
             .allowsHitTesting(false)
         )
         .onChange(of: graphGeneration) { _, _ in
+            contextMenuRequest = nil
             if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
                 cancelRebaseDrag()
             }
@@ -208,7 +210,8 @@ struct DAGView: View {
     }
 
     private func handleKeyDown(_ event: NSEvent) -> Bool {
-        handleBookmarkKeyDown(event) || handleRebaseKeyDown(event) || handleSelectionKeyDown(event)
+        handleBookmarkKeyDown(event) || handleRebaseKeyDown(event) || handleContextMenuKeyDown(event)
+            || handleSelectionKeyDown(event)
     }
 
     private func handleBookmarkKeyDown(_ event: NSEvent) -> Bool {
@@ -240,6 +243,16 @@ struct DAGView: View {
         guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
         actions?.select(changeId: changeId, coalescing: true)
         keyboardReveal = DAGRevealRequest(changeId: changeId)
+    }
+
+    private func handleContextMenuKeyDown(_ event: NSEvent) -> Bool {
+        guard event.opensSelectionContextMenu, let selectedId, keyboardFocus?.isSuspended != true,
+              rebaseDrag == nil, bookmarkDrag == nil,
+              entries.contains(where: { $0.change.selectionRevision == selectedId })
+        else { return false }
+        contextMenuRequest = SelectionContextMenuRequest(target: selectedId)
+        keyboardReveal = DAGRevealRequest(changeId: selectedId)
+        return true
     }
 
     private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {
