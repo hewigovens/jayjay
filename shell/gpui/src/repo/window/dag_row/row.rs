@@ -3,7 +3,7 @@ use std::sync::Arc;
 use gpui::{
     AnyElement, App, AppContext, ClickEvent, InteractiveElement, IntoElement, MouseButton,
     MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
-    px, rgb,
+    px, relative, rgb,
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo, GraphEntry};
 
@@ -14,7 +14,8 @@ use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost, DagDragSelection};
 use crate::ui::primitives::text_tooltip;
 
-const DAG_ROW_GAP: f32 = 3.;
+const DAG_ROW_GAP: f32 = 5.;
+const DAG_LINE_HEIGHT: f32 = 1.3;
 const TEXT_LINE_HEIGHT: f32 = 1.618;
 
 pub(crate) type ChipRightClick =
@@ -104,6 +105,7 @@ where
         .relative()
         .children(menu_anchor.map(crate::ui::context_menu::row_bounds))
         .h(px(dag_row_height(t)))
+        .line_height(relative(DAG_LINE_HEIGHT))
         .bg(row_bg)
         .hover(|s| s.bg(hover_bg))
         .cursor_pointer()
@@ -151,7 +153,7 @@ where
                     &chip_menus,
                 ))
                 .child(summary_line(change, &summary, ix, t))
-                .child(meta_row(change, t)),
+                .child(meta_row(change, ix, t)),
         )
         .into_any_element()
 }
@@ -167,6 +169,7 @@ fn summary_line(change: &ChangeInfo, summary: &str, row_ix: usize, t: &Theme) ->
     } else {
         div()
             .id(("summary", row_ix))
+            .debug_selector(move || format!("dag-summary-{row_ix}"))
             .text_size(ui_font_size(FONT_BODY))
             .font_weight(gpui::FontWeight::MEDIUM)
             .text_color(rgb(t.fg))
@@ -177,9 +180,10 @@ fn summary_line(change: &ChangeInfo, summary: &str, row_ix: usize, t: &Theme) ->
     }
 }
 
-fn meta_row(change: &ChangeInfo, t: &Theme) -> impl IntoElement {
+fn meta_row(change: &ChangeInfo, row_ix: usize, t: &Theme) -> impl IntoElement {
     let commit_id = compact_id(&change.commit_id);
     div()
+        .debug_selector(move || format!("dag-meta-{row_ix}"))
         .flex()
         .flex_row()
         .items_center()
@@ -213,7 +217,8 @@ pub(crate) fn text_line_height(t: &Theme, base: f32) -> f32 {
 }
 
 pub(crate) fn refs_row_height(t: &Theme) -> f32 {
-    text_line_height(t, FONT_ID).max(text_line_height(t, FONT_TAG) + 2.)
+    (t.scaled_code_font_size(FONT_ID) * DAG_LINE_HEIGHT)
+        .max(t.scaled_font_size(FONT_TAG) * DAG_LINE_HEIGHT + 2.)
 }
 
 /// Must match the `py_2` on the row's text column.
@@ -227,10 +232,15 @@ pub(crate) fn node_center_offset(t: &Theme) -> f32 {
 
 /// Rows share one height (the sidebar uses a uniform list), so every row reserves two summary lines.
 fn dag_row_height(t: &Theme) -> f32 {
+    let meta_height = (t
+        .scaled_font_size(FONT_ID)
+        .max(t.scaled_code_font_size(FONT_ID))
+        * DAG_LINE_HEIGHT)
+        .max(14.);
     2. * row_vertical_padding(t)
         + refs_row_height(t)
         + DAG_ROW_GAP
-        + 2. * text_line_height(t, FONT_BODY)
+        + 2. * t.scaled_font_size(FONT_BODY) * DAG_LINE_HEIGHT
         + DAG_ROW_GAP
-        + text_line_height(t, FONT_ID)
+        + meta_height
 }
