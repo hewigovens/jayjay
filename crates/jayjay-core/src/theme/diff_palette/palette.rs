@@ -1,4 +1,4 @@
-use super::diff_palettes;
+use super::catalog::CATALOG;
 use crate::theme::{DiffThemeColors, ThemeSeed};
 
 const DEFAULT_LIGHT_DIFF_PALETTE_ID: &str = "jayjay-light";
@@ -54,8 +54,7 @@ impl DiffPalette {
 
     /// An unknown id, or one from the other side, falls back to that side's default.
     pub fn resolve(id: &str, is_dark: bool) -> Self {
-        let palettes = diff_palettes();
-        let find = |id: &str| palettes.iter().find(|p| p.is_dark == is_dark && p.id == id);
+        let find = |id: &str| CATALOG.iter().find(|p| p.is_dark == is_dark && p.id == id);
         find(id)
             .or_else(|| find(Self::default_id(is_dark)))
             .expect("the catalog holds both defaults")

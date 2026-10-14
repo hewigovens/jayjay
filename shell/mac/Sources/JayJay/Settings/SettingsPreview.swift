@@ -2,7 +2,6 @@ import JayJayCore
 import JayJayDiffUI
 import SwiftUI
 
-/// The one settings preview: fonts and the selected diff palette on the code-font sample. `scheme` pins the diff to the light or dark side being edited.
 struct SettingsPreview: View {
     var scheme: ColorScheme?
     @Environment(AppSettings.self) private var settings

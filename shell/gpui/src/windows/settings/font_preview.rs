@@ -33,7 +33,6 @@ fn specimen_diff_rows<'a>(
     })
 }
 
-/// `diff_theme` paints the sample diff, so Appearance can preview the light or dark side being edited.
 pub(super) fn font_preview(t: &Theme, diff_theme: &Theme, cx: &App) -> AnyElement {
     let specimen = &*SPECIMEN;
     let (directory, file_name) = specimen

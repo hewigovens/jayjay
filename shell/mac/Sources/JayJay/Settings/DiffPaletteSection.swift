@@ -3,7 +3,6 @@ import SwiftUI
 
 struct DiffPaletteSection: View {
     @Environment(AppSettings.self) private var settings
-    @Environment(\.colorScheme) private var colorScheme
     @State private var previewScheme: ColorScheme?
 
     private static let lightPalettes = diffPalettes().filter { !$0.isDark }
@@ -33,7 +32,6 @@ struct DiffPaletteSection: View {
         .accessibilityIdentifier(isDark ? AID.Settings.diffDarkPalette : AID.Settings.diffLightPalette)
     }
 
-    @ViewBuilder
     var body: some View {
         Section("Colors") {
             palettePicker(for: .light)
@@ -53,7 +51,7 @@ struct DiffPaletteSection: View {
         }
 
         Section("Preview") {
-            SettingsPreview(scheme: previewScheme ?? colorScheme)
+            SettingsPreview(scheme: previewScheme)
         }
     }
 }

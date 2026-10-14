@@ -7,6 +7,7 @@ use jayjay_core::diff::{
 
 use super::{TextArea, TextAreaUpdated};
 
+#[derive(Default)]
 pub(super) struct SyntaxHighlightState {
     path: String,
     base: Option<SharedString>,
@@ -17,20 +18,10 @@ pub(super) struct SyntaxHighlightState {
 }
 
 impl SyntaxHighlightState {
-    fn new(
-        path: impl Into<String>,
-        base: Option<SharedString>,
-        highlighted_content: Option<SharedString>,
-        lines: Vec<Vec<DiffSpan>>,
-        line_styles: Vec<DiffSpanStyle>,
-    ) -> Self {
+    fn new(path: impl Into<String>) -> Self {
         Self {
             path: path.into(),
-            base,
-            generation: 0,
-            highlighted_content,
-            lines,
-            line_styles,
+            ..Self::default()
         }
     }
 }
@@ -44,13 +35,7 @@ impl TextArea {
         cx: &mut Context<Self>,
     ) -> Self {
         let mut view = Self::new(content, placeholder, true, height, cx);
-        view.syntax = Some(SyntaxHighlightState::new(
-            path,
-            None,
-            None,
-            Vec::new(),
-            Vec::new(),
-        ));
+        view.syntax = Some(SyntaxHighlightState::new(path));
         view.schedule_syntax_highlight(false, cx);
         view
     }
@@ -65,13 +50,11 @@ impl TextArea {
     ) -> Self {
         let content = content.into();
         let mut view = Self::new(content.clone(), placeholder, true, height, cx);
-        view.syntax = Some(SyntaxHighlightState::new(
-            path,
-            None,
-            Some(content),
-            highlighted_lines,
-            Vec::new(),
-        ));
+        view.syntax = Some(SyntaxHighlightState {
+            highlighted_content: Some(content),
+            lines: highlighted_lines,
+            ..SyntaxHighlightState::new(path)
+        });
         view
     }
 
@@ -80,8 +63,7 @@ impl TextArea {
         path: impl Into<String>,
         cx: &mut Context<Self>,
     ) -> Self {
-        let mut view =
-            Self::syntax_code_block(content, path, None, None, Vec::new(), Vec::new(), cx);
+        let mut view = Self::syntax_code_block(content, SyntaxHighlightState::new(path), cx);
         view.schedule_syntax_highlight(false, cx);
         view
     }
@@ -95,11 +77,11 @@ impl TextArea {
         let content = content.into();
         Self::syntax_code_block(
             content.clone(),
-            path,
-            None,
-            Some(content),
-            highlighted_lines,
-            Vec::new(),
+            SyntaxHighlightState {
+                highlighted_content: Some(content),
+                lines: highlighted_lines,
+                ..SyntaxHighlightState::new(path)
+            },
             cx,
         )
     }
@@ -112,14 +94,13 @@ impl TextArea {
     ) -> Self {
         let mut view = Self::syntax_code_block(
             content,
-            path,
-            Some(base.into()),
-            None,
-            Vec::new(),
-            Vec::new(),
+            SyntaxHighlightState {
+                base: Some(base.into()),
+                ..SyntaxHighlightState::new(path)
+            },
             cx,
         );
-        view.diff_colors = true;
+        view.uses_diff_palette = true;
         view.schedule_syntax_highlight(false, cx);
         view
     }
@@ -137,36 +118,27 @@ impl TextArea {
             .unzip();
         let mut view = Self::syntax_code_block(
             content.clone(),
-            path,
-            None,
-            Some(content),
-            lines,
-            line_styles,
+            SyntaxHighlightState {
+                highlighted_content: Some(content),
+                lines,
+                line_styles,
+                ..SyntaxHighlightState::new(path)
+            },
             cx,
         );
-        view.diff_colors = true;
+        view.uses_diff_palette = true;
         view
     }
 
     fn syntax_code_block(
         content: impl Into<SharedString>,
-        path: impl Into<String>,
-        base: Option<SharedString>,
-        highlighted_content: Option<SharedString>,
-        lines: Vec<Vec<DiffSpan>>,
-        line_styles: Vec<DiffSpanStyle>,
+        syntax: SyntaxHighlightState,
         cx: &mut Context<Self>,
     ) -> Self {
         let content = content.into();
         let line_count = content.matches('\n').count() + 1;
         let mut view = Self::selectable_code_block(content, line_count, None, cx);
-        view.syntax = Some(SyntaxHighlightState::new(
-            path,
-            base,
-            highlighted_content,
-            lines,
-            line_styles,
-        ));
+        view.syntax = Some(syntax);
         view
     }
 

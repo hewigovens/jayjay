@@ -288,12 +288,10 @@ fn highlighted_runs(
     theme: &Theme,
     syntax: &SyntaxColors,
 ) -> Vec<(usize, Hsla, Option<Hsla>)> {
+    let background = line_background(line_style, DiffSpanStyle::Unchanged, theme);
+    let fallback_run = |len| (len, fallback, background);
     let Some(spans) = spans else {
-        return vec![(
-            segment.len(),
-            fallback,
-            line_background(line_style, DiffSpanStyle::Unchanged, theme),
-        )];
+        return vec![fallback_run(segment.len())];
     };
     let mut runs = Vec::new();
     let mut span_start = 0;
@@ -304,11 +302,7 @@ fn highlighted_runs(
         let end = span_end.min(segment.end);
         if start < end {
             if covered < start {
-                runs.push((
-                    start - covered,
-                    fallback,
-                    line_background(line_style, DiffSpanStyle::Unchanged, theme),
-                ));
+                runs.push(fallback_run(start - covered));
             }
             let color = syntax
                 .color(span.token)
@@ -327,18 +321,10 @@ fn highlighted_runs(
         }
     }
     if covered < segment.end {
-        runs.push((
-            segment.end - covered,
-            fallback,
-            line_background(line_style, DiffSpanStyle::Unchanged, theme),
-        ));
+        runs.push(fallback_run(segment.end - covered));
     }
     if runs.is_empty() {
-        runs.push((
-            segment.len(),
-            fallback,
-            line_background(line_style, DiffSpanStyle::Unchanged, theme),
-        ));
+        runs.push(fallback_run(segment.len()));
     }
     runs
 }

@@ -39,8 +39,7 @@ pub struct TextArea {
     pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
     syntax: Option<SyntaxHighlightState>,
-    /// Diff-highlighted blocks paint palette line backgrounds, so their tokens use the palette too.
-    diff_colors: bool,
+    uses_diff_palette: bool,
     pub(super) tints: Vec<Tint>,
 }
 
@@ -99,7 +98,7 @@ pub(in crate::ui::text_area) struct LineLayout {
 
 impl TextArea {
     pub(super) fn syntax_colors<'t>(&self, theme: &'t Theme) -> &'t SyntaxColors {
-        if self.diff_colors {
+        if self.uses_diff_palette {
             &theme.diff_syntax
         } else {
             &theme.syntax
@@ -107,7 +106,7 @@ impl TextArea {
     }
 
     pub(super) fn diff_text_color(&self, line_style: DiffSpanStyle, theme: &Theme) -> Option<u32> {
-        self.diff_colors.then_some(match line_style {
+        self.uses_diff_palette.then_some(match line_style {
             DiffSpanStyle::Added => theme.diff_text_added,
             DiffSpanStyle::Removed => theme.diff_text_removed,
             _ => theme.diff_text_context,
@@ -146,7 +145,7 @@ impl TextArea {
             caret: CaretBlink::default(),
             focus_subscriptions: Vec::new(),
             syntax: None,
-            diff_colors: false,
+            uses_diff_palette: false,
             tints: Vec::new(),
         }
     }

@@ -105,10 +105,8 @@ impl DiffThemeColors {
             find_match_fg: 0x451a03,
         }
     }
-}
 
-impl DiffThemeColors {
-    /// The built-in `light` and `dark` palettes stay hand-tuned so the macOS diff view does not move.
+    /// Custom palettes are derived; the built-in defaults retain their hand-tuned colors.
     pub fn from_seed(seed: &ThemeSeed) -> Self {
         let dark = seed.is_dark();
         let bg = seed.background;
@@ -127,6 +125,7 @@ impl DiffThemeColors {
                 (removed_word_bg, word),
             ]
         };
+        let token_color = |color| readable_on(color, fg, &token_floors(4.5, 2.8));
         let conflict_header_bg = seed.tint(seed.yellow, pick(0.16, 0.22));
         let conflict_section_bg = seed.tint(seed.yellow, pick(0.10, 0.12));
         let find_match_bg = seed.tint(seed.yellow, pick(0.45, 0.55));
@@ -173,31 +172,15 @@ impl DiffThemeColors {
                 &[(removed_bg, 4.5), (removed_word_bg, 2.8)],
             ),
             text_dim: readable_on(seed.muted, fg, &[(bg, 4.5)]),
-            tok_keyword: readable_on(
-                mix(seed.red, fg, pick(0.30, 0.20)),
-                fg,
-                &token_floors(4.5, 2.8),
-            ),
-            tok_string: readable_on(
-                if dark {
-                    mix(seed.cyan, fg, 0.45)
-                } else {
-                    mix(seed.blue, fg, 0.60)
-                },
-                fg,
-                &token_floors(4.5, 2.8),
-            ),
+            tok_keyword: token_color(mix(seed.red, fg, pick(0.30, 0.20))),
+            tok_string: token_color(if dark {
+                mix(seed.cyan, fg, 0.45)
+            } else {
+                mix(seed.blue, fg, 0.60)
+            }),
             tok_comment: readable_on(seed.muted, fg, &token_floors(3.5, 2.3)),
-            tok_number: readable_on(
-                mix(seed.blue, fg, pick(0.40, 0.35)),
-                fg,
-                &token_floors(4.5, 2.8),
-            ),
-            tok_type: readable_on(
-                mix(seed.magenta, fg, pick(0.30, 0.25)),
-                fg,
-                &token_floors(4.5, 2.8),
-            ),
+            tok_number: token_color(mix(seed.blue, fg, pick(0.40, 0.35))),
+            tok_type: token_color(mix(seed.magenta, fg, pick(0.30, 0.25))),
             group_stripe: seed.blue,
             group_stripe_alpha: if dark { 0.55 } else { 0.42 },
             find_match_bg,
