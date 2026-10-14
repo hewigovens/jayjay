@@ -1,4 +1,4 @@
-use crate::harness::{install_test_globals, settle, settle_visual};
+use crate::harness::{focus_view, install_test_globals, keys, settle, settle_visual};
 use gpui::{Focusable, KeyBinding, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::actions::{CloseWindow, Dismiss};
 use jayjay_gpui::app::config;
@@ -19,9 +19,7 @@ fn cmd_w_replaces_last_repo_window_with_repo_list(cx: &mut TestAppContext) {
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
     settle_visual(cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx);
-    });
+    focus_view(&view, cx);
 
     view.update_in(cx, |view, _, cx| view.open_find(cx));
     cx.simulate_keystrokes("escape");
@@ -29,8 +27,7 @@ fn cmd_w_replaces_last_repo_window_with_repo_list(cx: &mut TestAppContext) {
         assert!(view.find_query_text().is_none(), "escape should close find");
     });
 
-    cx.simulate_keystrokes("tab tab");
-    settle_visual(cx);
+    keys(cx, "tab tab");
     assert!(view.read_with(cx, |view, _| view.focused_control().is_some()));
     view.update(cx, |view, cx| {
         view.view_model().update(cx, |vm, cx| {
@@ -38,8 +35,7 @@ fn cmd_w_replaces_last_repo_window_with_repo_list(cx: &mut TestAppContext) {
             cx.notify();
         });
     });
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, cx| {
         assert!(view.view_model().read(cx).error.is_none());
         assert!(view.focused_control().is_some());

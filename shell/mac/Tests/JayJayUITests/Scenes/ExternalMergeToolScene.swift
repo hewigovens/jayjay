@@ -14,7 +14,7 @@ final class ExternalMergeToolScene: ExternalToolSceneBase {
 
     func testJjMergeToolWritesTheChosenSide() throws {
         let app = try XCTUnwrap(app)
-        let resolver = app.descendants(matching: .any)[AID.ExternalTool.merge]
+        let resolver = app.element(AID.ExternalTool.merge)
         XCTAssertTrue(resolver.waitForExistence(timeout: 10), "External merge tool did not appear")
         XCTAssertTrue(app.staticTexts["merge-output.txt"].exists, "External merge tool did not name the merged file")
 

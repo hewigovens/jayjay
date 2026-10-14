@@ -10,7 +10,7 @@ final class RevsetCompletionScene: SceneBase {
         let bar = app.buttons[AID.Toolbar.revsetBar]
         XCTAssertTrue(bar.waitForExistence(timeout: 10))
         bar.click()
-        let field = app.descendants(matching: .any)[AID.Toolbar.revsetField].firstMatch
+        let field = app.element(AID.Toolbar.revsetField).firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
 
         for (typed, completed) in [
@@ -63,7 +63,7 @@ final class RevsetCompletionScene: SceneBase {
         let presets = app.buttons["Presets, bookmarks and recent revsets"].firstMatch
         XCTAssertTrue(presets.waitForExistence(timeout: 10))
         presets.click()
-        let field = app.descendants(matching: .any)[AID.Toolbar.revsetField].firstMatch
+        let field = app.element(AID.Toolbar.revsetField).firstMatch
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.click()
 

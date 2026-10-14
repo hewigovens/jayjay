@@ -7,8 +7,7 @@ final class BookmarkManagerScene: SceneBase {
 
     func testFilterInDAG() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
+        let rows = try waitForDAGRows()
 
         for (name, head, description, count) in [
             ("main", "bookmarks(exact:\"main\")", "add feature", 3),

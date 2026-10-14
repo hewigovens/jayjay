@@ -13,7 +13,7 @@ final class SummaryTypingScene: SceneBase {
         let app = try XCTUnwrap(app)
         let summary = app.textFields[AID.CommitBox.summary]
         XCTAssertTrue(summary.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any)[AID.FileList.row("xx.md")].waitForExistence(timeout: 5), "@ must contain xx.md")
+        XCTAssertTrue(app.element(AID.FileList.row("xx.md")).waitForExistence(timeout: 5), "@ must contain xx.md")
         summary.click()
         keyStroke("a", modifiers: [.command])
         keyStroke(.delete)

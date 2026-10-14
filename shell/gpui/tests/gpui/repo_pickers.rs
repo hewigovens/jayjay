@@ -82,8 +82,7 @@ fn repository_title_picker_combines_workspaces_repositories_and_actions(cx: &mut
             .is_some()
     );
 
-    repo_cx.simulate_keystrokes("enter");
-    settle_visual(repo_cx);
+    keys(repo_cx, "enter");
     assert!(repo_cx.debug_bounds("repo-switcher-panel").is_none());
     assert_eq!(repo_window_count(repo_cx), 1);
     assert_eq!(current_workspace(&view, repo_cx), "default");
@@ -181,13 +180,9 @@ fn repository_picker_pins_rows_without_opening_them(cx: &mut TestAppContext) {
         .unwrap();
     repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
-    assert!(repo_cx.debug_bounds("context-menu-Pin").is_none());
-    assert!(repo_cx.debug_bounds("context-menu-Unpin").is_none());
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-Copy Workspace Name")
-            .is_some()
-    );
+    assert!(!menu_shows(repo_cx, "Pin"));
+    assert!(!menu_shows(repo_cx, "Unpin"));
+    assert!(menu_shows(repo_cx, "Copy Workspace Name"));
 }
 
 #[gpui::test]
@@ -238,8 +233,7 @@ fn bookmark_picker_groups_filters_and_applies_bookmark_revsets(cx: &mut TestAppC
     let default_revset = view.read_with(repo_cx, |view, cx| {
         view.view_model().read(cx).revset().to_owned()
     });
-    repo_cx.simulate_keystrokes("enter");
-    settle_visual(repo_cx);
+    keys(repo_cx, "enter");
     assert!(repo_cx.debug_bounds("bookmark-picker-panel").is_none());
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
@@ -305,13 +299,9 @@ fn bookmark_picker_browses_remote_history_without_tracking(cx: &mut TestAppConte
         .expect("remote row");
     repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-Track remote-picker@origin")
-            .is_some()
-    );
-    assert!(repo_cx.debug_bounds("context-menu-Push").is_none());
-    assert!(repo_cx.debug_bounds("context-menu-Move to @-").is_none());
+    assert!(menu_shows(repo_cx, "Track remote-picker@origin"));
+    assert!(!menu_shows(repo_cx, "Push"));
+    assert!(!menu_shows(repo_cx, "Move to @-"));
     let filter = repo_cx
         .debug_bounds("context-menu-Filter by This Bookmark")
         .expect("filter menu item");
@@ -384,28 +374,19 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
 
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-Resolve conflict (set to @)")
-            .is_some()
-    );
+    assert!(menu_shows(repo_cx, "Resolve conflict (set to @)"));
     assert!(
         repo_cx.debug_bounds("bookmark-picker-panel").is_some(),
         "a right-click menu opens over the picker, not instead of it"
     );
-    repo_cx.simulate_keystrokes("enter");
-    settle_visual(repo_cx);
+    keys(repo_cx, "enter");
     assert!(
         repo_cx.debug_bounds("bookmark-picker-panel").is_some()
-            && repo_cx
-                .debug_bounds("context-menu-Resolve conflict (set to @)")
-                .is_some(),
+            && menu_shows(repo_cx, "Resolve conflict (set to @)"),
         "keys are not routed to the picker while its menu is open"
     );
     assert!(
-        repo_cx
-            .debug_bounds("context-menu-Remove from This Change")
-            .is_none(),
+        !menu_shows(repo_cx, "Remove from This Change"),
         "the picker has no change to remove the bookmark from"
     );
 
@@ -521,7 +502,7 @@ fn workspace_rows_keep_the_switcher_open_for_their_menu(cx: &mut TestAppContext)
         .expect("workspace row");
     repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
-    assert!(repo_cx.debug_bounds("context-menu-Forget").is_some());
+    assert!(menu_shows(repo_cx, "Forget"));
     assert!(repo_cx.debug_bounds("repo-switcher-panel").is_some());
 
     let outside = repo_cx
@@ -536,7 +517,7 @@ fn workspace_rows_keep_the_switcher_open_for_their_menu(cx: &mut TestAppContext)
     );
     settle_visual(repo_cx);
     assert!(
-        repo_cx.debug_bounds("context-menu-Forget").is_none(),
+        !menu_shows(repo_cx, "Forget"),
         "clicking outside dismisses the menu"
     );
     assert!(
@@ -560,8 +541,7 @@ fn bookmark_picker_enter_activates_the_best_match_across_sections(cx: &mut TestA
     assert!(repo_cx.debug_bounds("bookmark-picker-local").is_some());
 
     repo_cx.simulate_input("main");
-    repo_cx.simulate_keystrokes("enter");
-    settle_visual(repo_cx);
+    keys(repo_cx, "enter");
 
     view.read_with(repo_cx, |view, cx| {
         assert_eq!(
@@ -646,8 +626,7 @@ fn forget_and_delete_confirms_then_removes_the_workspace_directory(cx: &mut Test
     };
 
     request_confirmation(repo_cx);
-    repo_cx.simulate_keystrokes("escape");
-    settle_visual(repo_cx);
+    keys(repo_cx, "escape");
     assert!(repo_cx.debug_bounds("confirmation").is_none());
     assert!(
         workspace_path.exists(),
@@ -745,8 +724,7 @@ fn workspace_delete_confirmation_can_be_skipped_and_restored_in_settings(cx: &mu
 
     request_workspace_delete(repo_cx, "repo-switcher-workspace-third");
     assert!(repo_cx.debug_bounds("confirmation").is_some());
-    repo_cx.simulate_keystrokes("escape");
-    settle_visual(repo_cx);
+    keys(repo_cx, "escape");
     assert!(
         parent.join("third").exists(),
         "cancelling preserves the workspace"
@@ -784,11 +762,9 @@ fn the_primary_root_cannot_be_deleted_from_a_secondary_workspace(cx: &mut TestAp
     repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
 
-    assert!(repo_cx.debug_bounds("context-menu-Forget").is_some());
+    assert!(menu_shows(repo_cx, "Forget"));
     assert!(
-        repo_cx
-            .debug_bounds("context-menu-Forget & Delete from Disk")
-            .is_none(),
+        !menu_shows(repo_cx, "Forget & Delete from Disk"),
         "deleting the directory that owns .jj/repo is never offered"
     );
 }

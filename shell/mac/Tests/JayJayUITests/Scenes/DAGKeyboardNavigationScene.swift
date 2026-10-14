@@ -7,15 +7,14 @@ final class DAGKeyboardNavigationScene: SceneBase {
 
     func testArrowKeysKeepTheSelectionVisibleAndLoadTheSettledChange() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
+        let rows = try waitForDAGRows()
         rows.firstMatch.click()
 
         for _ in 0 ..< 15 {
             keyStroke(.downArrow)
         }
 
-        let settledFile = app.descendants(matching: .any)[AID.FileList.row("file-10.txt")]
+        let settledFile = app.element(AID.FileList.row("file-10.txt"))
         XCTAssertTrue(settledFile.waitForExistence(timeout: 10), "Detail did not load the change the keys settled on")
         let selectedRow = rows.matching(NSPredicate(format: "isSelected == YES")).firstMatch
         XCTAssertTrue(selectedRow.exists, "Selected row is not rendered")
@@ -24,9 +23,8 @@ final class DAGKeyboardNavigationScene: SceneBase {
 
     func testControlReturnOpensTheMenuForASelectionScrolledOutOfView() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
-        let selected = app.descendants(matching: .any)[rows.firstMatch.identifier]
+        let rows = try waitForDAGRows()
+        let selected = app.element(rows.firstMatch.identifier)
         selected.click()
         app.scrollViews.firstMatch.scroll(byDeltaX: 0, deltaY: -5000)
         XCTAssertTrue(waitForHittable(selected, isHittable: false), "Scrolling did not move the selection out of view")

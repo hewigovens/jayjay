@@ -205,20 +205,10 @@ fn workspace_chip_menu_acts_on_that_workspace(cx: &mut TestAppContext) {
         .expect("workspace chip");
     repo_cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
+    assert!(menu_shows(repo_cx, "Open in New Window"));
+    assert!(menu_shows(repo_cx, "Copy Workspace Name"));
     assert!(
-        repo_cx
-            .debug_bounds("context-menu-Open in New Window")
-            .is_some()
-    );
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-Copy Workspace Name")
-            .is_some()
-    );
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-New change on top")
-            .is_none(),
+        !menu_shows(repo_cx, "New change on top"),
         "chip menu must not open the change menu"
     );
     let copy_path = repo_cx
@@ -283,17 +273,9 @@ fn workspace_chip_menu_acts_on_that_workspace(cx: &mut TestAppContext) {
         .expect("workspace chip");
     repo_cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-Copy Workspace Name")
-            .is_some()
-    );
-    assert!(
-        repo_cx
-            .debug_bounds("context-menu-Open in New Window")
-            .is_none()
-    );
-    assert!(repo_cx.debug_bounds("context-menu-Copy Path").is_none());
+    assert!(menu_shows(repo_cx, "Copy Workspace Name"));
+    assert!(!menu_shows(repo_cx, "Open in New Window"));
+    assert!(!menu_shows(repo_cx, "Copy Path"));
 }
 
 #[gpui::test]

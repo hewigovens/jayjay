@@ -21,9 +21,9 @@ final class FileEditorScene: SceneBase {
         XCTAssertTrue(open.waitForExistence(timeout: 5), "Expected Edit File action")
         open.click()
 
-        let preparing = app.descendants(matching: .any)[AID.FileEditor.preparing]
+        let preparing = app.element(AID.FileEditor.preparing)
         XCTAssertTrue(preparing.waitForNonExistence(timeout: 60), "File editor preparation did not finish")
-        let modal = app.descendants(matching: .any)[AID.FileEditor.modal]
+        let modal = app.element(AID.FileEditor.modal)
         XCTAssertTrue(modal.waitForExistence(timeout: 10), "File editor modal did not appear")
         let editor = app.textViews[AID.FileEditor.content]
         XCTAssertTrue(editor.waitForExistence(timeout: 5), "File editor did not appear")

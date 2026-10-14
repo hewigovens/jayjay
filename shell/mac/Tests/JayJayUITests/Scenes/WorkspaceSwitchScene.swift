@@ -57,7 +57,7 @@ final class WorkspaceSwitchScene: SceneBase {
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.click()
         paste("Switch to first")
-        let command = app.descendants(matching: .any)[AID.Palette.item("Switch to first")]
+        let command = app.element(AID.Palette.item("Switch to first"))
         XCTAssertTrue(command.waitForExistence(timeout: 5))
         command.click()
         XCTAssertTrue(app.windows["workspace-switch-first"].waitForExistence(timeout: 10))

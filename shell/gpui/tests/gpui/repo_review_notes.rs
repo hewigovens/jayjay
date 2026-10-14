@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
+use crate::harness::{install_test_globals, keys, load_selected_change_files, settle_visual};
 use gpui::{
     Entity, EntityInputHandler, KeyBinding, Modifiers, TestAppContext, VisualContext,
     VisualTestContext,
@@ -179,8 +179,7 @@ fn save_review_note_via_mod_enter_keybinding(cx: &mut TestAppContext) {
         .expect("composer input present");
     cx.focus(&input);
     cx.simulate_input("saved via keybinding");
-    cx.simulate_keystrokes("cmd-enter");
-    settle_visual(cx);
+    keys(cx, "cmd-enter");
 
     assert!(
         !view.read_with(cx, |view, _| view.has_text_modal()),

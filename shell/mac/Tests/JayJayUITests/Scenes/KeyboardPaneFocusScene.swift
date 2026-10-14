@@ -3,11 +3,10 @@ import XCTest
 final class KeyboardPaneFocusScene: SceneBase {
     func testTabCyclesPanesAndEscapeLeavesTheFilterField() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
+        let rows = try waitForDAGRows()
         rows.firstMatch.click()
-        let firstFile = app.descendants(matching: .any)[AID.FileList.row("wip1.txt")]
-        let secondFile = app.descendants(matching: .any)[AID.FileList.row("wip2.txt")]
+        let firstFile = app.element(AID.FileList.row("wip1.txt"))
+        let secondFile = app.element(AID.FileList.row("wip2.txt"))
         XCTAssertTrue(firstFile.waitForExistence(timeout: 10), "Detail never loaded the working copy")
 
         keyStroke("l")
@@ -17,7 +16,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         XCTAssertTrue(firstFile.wait(for: \.isSelected, toEqual: true, timeout: 5))
         keyStroke("h")
         keyStroke("j")
-        let navigatedFile = app.descendants(matching: .any)[AID.FileList.row("feature.txt")]
+        let navigatedFile = app.element(AID.FileList.row("feature.txt"))
         XCTAssertTrue(navigatedFile.waitForExistence(timeout: 10), "h did not hand navigation back to the DAG")
         keyStroke("k")
         XCTAssertTrue(firstFile.waitForExistence(timeout: 10))
@@ -30,7 +29,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         keyStroke(.tab)
         keyStroke(.tab)
         keyStroke(.space)
-        let filterField = app.descendants(matching: .any)[AID.FileList.filterField]
+        let filterField = app.element(AID.FileList.filterField)
         XCTAssertTrue(filterField.waitForExistence(timeout: 5), "Space on the filter toggle did not open the filter")
         paste("wip2")
         XCTAssertTrue(firstFile.waitForNonExistence(timeout: 5), "The opened filter did not take typing")
@@ -52,7 +51,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         keyStroke(.tab)
         keyStroke(.tab)
         keyStroke(.downArrow)
-        let featureFile = app.descendants(matching: .any)[AID.FileList.row("feature.txt")]
+        let featureFile = app.element(AID.FileList.row("feature.txt"))
         XCTAssertTrue(featureFile.waitForExistence(timeout: 10), "Shift-Tab did not hand navigation back to the DAG")
 
         // The selected change is not the working copy, so Edit File is absent: file list, tree, filter, expand description, edit description, diff layout, edit diff, then sidebar toggle, refresh, pull, push, revset presets, and the revset.
@@ -71,14 +70,13 @@ final class KeyboardPaneFocusScene: SceneBase {
             keyStroke(.tab)
         }
         keyStroke(.downArrow)
-        let helloFile = app.descendants(matching: .any)[AID.FileList.row("hello.txt")]
+        let helloFile = app.element(AID.FileList.row("hello.txt"))
         XCTAssertTrue(helloFile.waitForExistence(timeout: 10), "Tab past the toolbar did not wrap around to the DAG")
     }
 
     func testDiffEditKeepsNavigationUntilItCloses() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
+        let rows = try waitForDAGRows()
         rows.firstMatch.click()
         let open = app.buttons[AID.DiffEdit.open]
         XCTAssertTrue(open.waitForExistence(timeout: 10))
@@ -98,7 +96,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         XCTAssertTrue(open.waitForExistence(timeout: 5))
         keyStroke(.tab)
         keyStroke(.downArrow)
-        let second = app.descendants(matching: .any)[AID.FileList.row("wip2.txt")]
+        let second = app.element(AID.FileList.row("wip2.txt"))
         XCTAssertTrue(second.wait(for: \.isSelected, toEqual: true, timeout: 5))
     }
 }

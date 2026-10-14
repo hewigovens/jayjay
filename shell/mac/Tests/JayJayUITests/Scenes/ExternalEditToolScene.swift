@@ -12,7 +12,7 @@ final class ExternalEditToolScene: ExternalToolSceneBase {
 
     func testJjEditToolAppliesTheSelectedResult() throws {
         let app = try XCTUnwrap(app)
-        let editor = app.descendants(matching: .any)[AID.ExternalTool.diff]
+        let editor = app.element(AID.ExternalTool.diff)
         XCTAssertTrue(editor.waitForExistence(timeout: 10), "External edit tool did not appear")
         XCTAssertTrue(app.staticTexts["Edit Diff"].exists)
 

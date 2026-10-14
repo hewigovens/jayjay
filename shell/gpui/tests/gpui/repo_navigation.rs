@@ -554,8 +554,7 @@ fn space_reveals_the_next_unreviewed_file_in_a_collapsed_offscreen_directory(
         "target directory is collapsed"
     );
 
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
 
     view.read_with(cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).selected_file_ix, Some(target_ix));
@@ -594,8 +593,7 @@ fn space_picks_the_next_unreviewed_file_in_tree_order(cx: &mut TestAppContext) {
         view.select_file(first, cx);
         view.focus_handle(cx).focus(window, cx);
     });
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
 
     view.read_with(cx, |view, cx| {
         assert_eq!(

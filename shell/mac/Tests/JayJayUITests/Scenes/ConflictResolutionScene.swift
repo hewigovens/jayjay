@@ -13,14 +13,14 @@ final class ConflictResolutionScene: SceneBase {
         XCTAssertTrue(file.waitForExistence(timeout: 10), "Expected conflicted file row")
         file.click()
 
-        let diff = app.descendants(matching: .any)[AID.Diff.section]
+        let diff = app.element(AID.Diff.section)
         XCTAssertTrue(diff.waitForExistence(timeout: 5), "Diff section did not appear")
 
         let edit = app.buttons[AID.Conflict.resolveInJayJay("conflict.swift")]
         clickCenter(edit, timeout: 10, message: "Expected Edit in JayJay action")
 
         // Preparation highlights five texts before the sheet opens; on a slow CI runner that outlasts a short fixed wait, so wait for the app's own loading state to clear.
-        let preparing = app.descendants(matching: .any)[AID.Conflict.editorPreparing]
+        let preparing = app.element(AID.Conflict.editorPreparing)
         XCTAssertTrue(preparing.waitForNonExistence(timeout: 60), "Conflict editor preparation did not finish")
         let modal = app.staticTexts[AID.Conflict.editorModal]
         XCTAssertTrue(modal.waitForExistence(timeout: 10), "Conflict editor modal did not appear")
@@ -41,10 +41,10 @@ final class ConflictResolutionScene: SceneBase {
         XCTAssertTrue(useRight.waitForExistence(timeout: 5), "Right source did not return")
         XCTAssertFalse(useBase.exists, "Base source should hide after returning")
 
-        let rawMode = app.descendants(matching: .any)[AID.Conflict.editorRaw]
+        let rawMode = app.element(AID.Conflict.editorRaw)
         XCTAssertTrue(rawMode.waitForExistence(timeout: 5), "Raw result mode did not appear")
         rawMode.click()
-        let result = app.descendants(matching: .any)[AID.Conflict.editorResult]
+        let result = app.element(AID.Conflict.editorResult)
         XCTAssertTrue(result.waitForExistence(timeout: 5), "Conflict result editor did not appear")
         let left = app.textViews[AID.Conflict.editorSource("left")]
         let right = app.textViews[AID.Conflict.editorSource("right")]
@@ -58,7 +58,7 @@ final class ConflictResolutionScene: SceneBase {
         let initialLeft = String(describing: leftBar.value)
         right.scroll(byDeltaX: 0, deltaY: 600)
         XCTAssertTrue(waitForScroll(leftBar, from: initialLeft))
-        let hunkMode = app.descendants(matching: .any)[AID.Conflict.editorHunks]
+        let hunkMode = app.element(AID.Conflict.editorHunks)
         hunkMode.click()
         XCTAssertTrue(result.waitForNonExistence(timeout: 5), "Raw editor did not switch back to hunks")
         let useRightHunk = app.buttons[AID.Conflict.hunkUse(0, "right")]

@@ -33,7 +33,7 @@ final class WorkspaceDeleteScene: SceneBase {
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.click()
         paste("Forget & Delete Workspace second")
-        let command = app.descendants(matching: .any)[AID.Palette.item("Forget & Delete Workspace second")]
+        let command = app.element(AID.Palette.item("Forget & Delete Workspace second"))
         XCTAssertTrue(command.waitForExistence(timeout: 5))
         command.click()
         XCTAssertTrue(field.waitForNonExistence(timeout: 5))
@@ -56,13 +56,13 @@ final class WorkspaceDeleteScene: SceneBase {
         sheet.buttons["Cancel"].click()
         XCTAssertTrue(sheet.waitForNonExistence(timeout: 5))
         openRepositoryTitlePicker(in: repoWindow)
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Picker.row("ws-third")].firstMatch.waitForExistence(timeout: 5))
+        XCTAssertTrue(app.element(AID.Picker.row("ws-third")).firstMatch.waitForExistence(timeout: 5))
         keyStroke(.escape)
     }
 
     private func requestDelete(_ name: String, in window: XCUIElement, app: XCUIApplication) {
         openRepositoryTitlePicker(in: window)
-        let row = app.descendants(matching: .any)[AID.Picker.row("ws-\(name)")].firstMatch
+        let row = app.element(AID.Picker.row("ws-\(name)")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5))
         row.rightClick()
         let delete = app.menuItems["Forget & Delete from Disk"]
@@ -72,8 +72,8 @@ final class WorkspaceDeleteScene: SceneBase {
 
     private func assertWorkspaceRemoved(_ name: String, in window: XCUIElement, app: XCUIApplication) {
         openRepositoryTitlePicker(in: window)
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Picker.row("ws-default")].firstMatch.waitForExistence(timeout: 5))
-        let row = app.descendants(matching: .any)[AID.Picker.row("ws-\(name)")].firstMatch
+        XCTAssertTrue(app.element(AID.Picker.row("ws-default")).firstMatch.waitForExistence(timeout: 5))
+        let row = app.element(AID.Picker.row("ws-\(name)")).firstMatch
         XCTAssertTrue(row.waitForNonExistence(timeout: 10), "Deleted workspace \(name) remains in the picker")
         keyStroke(.escape)
     }

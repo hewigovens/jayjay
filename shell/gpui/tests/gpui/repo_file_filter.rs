@@ -1,4 +1,4 @@
-use crate::harness::{open_fixture, settle_visual};
+use crate::harness::{keys, open_fixture, settle_visual};
 use gpui::{Modifiers, TestAppContext};
 use jayjay_gpui::repo::ActivePane;
 use jj_test::LinearFixture;
@@ -58,16 +58,14 @@ fn return_keeps_the_filter_and_escape_closes_it_back_to_the_file_list(cx: &mut T
     cx.simulate_input("READme");
     settle_visual(cx);
 
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.file_filter_query(), Some("READme"));
         assert_eq!(view.visible_file_paths(cx), ["README.md"]);
         assert_eq!(view.active_pane(), ActivePane::FileColumn);
     });
 
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, cx| {
         assert!(!view.file_filter_visible());
         assert!(view.visible_file_paths(cx).len() > 1);

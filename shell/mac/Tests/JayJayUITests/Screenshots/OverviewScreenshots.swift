@@ -25,7 +25,7 @@ final class OverviewScreenshots: ScreenshotScene {
         )
         fares.click()
         keyStroke(.downArrow)
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Overview.changePanel].waitForExistence(timeout: 5), "Change panel missing")
+        XCTAssertTrue(app.element(AID.Overview.changePanel).waitForExistence(timeout: 5), "Change panel missing")
         capture("overview", frame: app.windows.containing(anyLane).firstMatch.frame)
     }
 }

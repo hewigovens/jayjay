@@ -37,12 +37,12 @@ final class CommandPaletteScene: SceneBase {
             "Command palette did not receive search text; value=\(field.value as? String ?? "<nil>")"
         )
 
-        let treeCommand = app.descendants(matching: .any)[AID.Palette.item("Toggle Tree File List")]
+        let treeCommand = app.element(AID.Palette.item("Toggle Tree File List"))
         XCTAssertTrue(
             treeCommand.waitForExistence(timeout: 2),
             "Tree command should be visible for 'toggle tr'"
         )
-        let refreshCommand = app.descendants(matching: .any)[AID.Palette.item("Refresh")]
+        let refreshCommand = app.element(AID.Palette.item("Refresh"))
         let refreshRemoved = NSPredicate { _, _ in !refreshCommand.exists }
         XCTAssertEqual(
             XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: refreshRemoved, object: nil)], timeout: 2),

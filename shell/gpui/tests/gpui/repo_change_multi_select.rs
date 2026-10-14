@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use crate::harness::*;
-use gpui::{Focusable, Modifiers, MouseButton, TestAppContext, VisualTestContext};
+use gpui::{Modifiers, MouseButton, TestAppContext, VisualTestContext};
 use jayjay_core::{EdgeType, GraphEdge, GraphEntry};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
@@ -52,11 +52,8 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
     assert!(cx.debug_bounds("compare-combined-selection").is_some());
     assert!(cx.debug_bounds("compare-reverse").is_none());
 
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx);
-    });
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    focus_view(&view, cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(vm.selected_change_indices(), vec![2]);
@@ -190,11 +187,8 @@ fn nonconsecutive_selection_compares_outermost_changes(cx: &mut TestAppContext) 
     assert!(cx.debug_bounds("compare-combined-selection").is_none());
     assert!(cx.debug_bounds("compare-reverse").is_some());
 
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx);
-    });
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    focus_view(&view, cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, cx| {
         assert_eq!(
             view.view_model().read(cx).selected_change_indices(),
@@ -344,7 +338,7 @@ fn hovering_a_disabled_merge_item_keeps_its_submenu_closed(cx: &mut TestAppConte
         vm.graph.changes[0].commit_id.id.clone()
     });
     hover_merge_item(&row_id, cx);
-    assert!(cx.debug_bounds("context-menu-First parent").is_none());
+    assert!(!menu_shows(cx, "First parent"));
 }
 
 fn hover_merge_item(row_id: &str, cx: &mut VisualTestContext) {
