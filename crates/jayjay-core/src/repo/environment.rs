@@ -45,11 +45,12 @@ fn find_binary(name: &str) -> String {
 }
 
 /// Build a subprocess with the same CLI environment JayJay uses to resolve tools.
-pub(crate) fn command(binary: &str) -> Command {
+pub(crate) fn command(binary: impl AsRef<std::ffi::OsStr>) -> Command {
+    let binary = binary.as_ref();
     let program = if Path::new(binary).components().count() == 1 {
-        find_binary(binary)
+        find_binary(&binary.to_string_lossy()).into()
     } else {
-        binary.to_string()
+        binary.to_os_string()
     };
     let mut command = Command::new(program);
     apply_command_environment(&mut command);

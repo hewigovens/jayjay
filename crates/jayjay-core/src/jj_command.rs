@@ -47,7 +47,7 @@ impl JjCommand {
     pub fn run_in_path(&self, path: &Path) -> JayResult<JjCommandResult> {
         let args = self.validated_args()?;
 
-        let output = subprocess_command(&jj_binary())
+        let output = subprocess_command(jj_binary())
             .args(NON_INTERACTIVE_ARGS)
             .args(&args)
             .current_dir(path)

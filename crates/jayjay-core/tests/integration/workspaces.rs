@@ -2,7 +2,7 @@ use jayjay_core::{Repo, WorkspaceInfo};
 use jj_lib::ref_name::WorkspaceName;
 use jj_lib::simple_workspace_store::SimpleWorkspaceStore;
 use jj_lib::workspace_store::WorkspaceStore as _;
-use jj_test::{init_jj_repo, run_jj_in};
+use jj_test::{git_stdout, init_jj_repo, run_git, run_jj_in};
 
 fn workspace_names(repo: &Repo) -> Vec<String> {
     repo.workspace_list()
@@ -362,4 +362,133 @@ fn workspace_list_recounts_files_when_a_working_copy_moves() {
     repo.refresh_working_copy().expect("snapshot working copy");
 
     assert_eq!(workspace_row(&repo, "default").files_changed, before + 1);
+}
+
+fn add_git_backed_workspace(repo_path: &std::path::Path, dest: &std::path::Path) {
+    let dest_str = dest.to_str().expect("utf8 destination");
+    run_jj_in(
+        repo_path,
+        &["workspace", "add", "--name", "feature", dest_str],
+    );
+    // jj before 0.46 leaves new workspaces uncolocated; attach the same Git bookkeeping explicitly.
+    if !dest.join(".git").exists() {
+        let staging = tempfile::tempdir_in(dest).expect("worktree staging directory");
+        let output = run_jj_in(
+            repo_path,
+            &["log", "--no-graph", "-r", "@", "-T", "commit_id"],
+        );
+        let commit = String::from_utf8(output.stdout).expect("commit id");
+        run_git(
+            repo_path,
+            &[
+                "worktree",
+                "add",
+                "--detach",
+                "--no-checkout",
+                "--",
+                staging.path().to_str().expect("utf8 staging path"),
+                commit.trim(),
+            ],
+        );
+        std::fs::rename(staging.path().join(".git"), dest.join(".git"))
+            .expect("move Git link into checkout");
+        run_git(repo_path, &["worktree", "repair", "--", dest_str]);
+    }
+}
+
+#[test]
+fn forgetting_git_backed_workspaces_releases_registration_and_preserves_requested_files() {
+    const CHILD_REPO: &str = "JAYJAY_FORGET_TEST_REPO";
+    const CHILD_DEST: &str = "JAYJAY_FORGET_TEST_DEST";
+    const CHILD_DELETE: &str = "JAYJAY_FORGET_TEST_DELETE";
+    if let Some(repo_path) = std::env::var_os(CHILD_REPO) {
+        let repo = Repo::open(std::path::Path::new(&repo_path)).expect("open repo");
+        let dest = std::env::var(CHILD_DEST).expect("workspace destination");
+        if std::env::var_os(CHILD_DELETE).is_some() {
+            let warning = repo
+                .workspace_forget_and_delete("feature", &dest)
+                .expect("forget and delete");
+            assert!(warning.is_none(), "unexpected warning: {warning:?}");
+        } else {
+            repo.workspace_forget("feature", None)
+                .expect("forget workspace");
+        }
+        return;
+    }
+    for delete in [false, true] {
+        let temp_dir = init_jj_repo();
+        let repo_path = temp_dir.path().join("repo");
+        let dest = temp_dir.path().join("feature-ws");
+        add_git_backed_workspace(&repo_path, &dest);
+        assert!(dest.join(".git").is_file(), "fixture should be Git-backed");
+        let marker = dest.join("untracked.txt");
+        std::fs::write(&marker, "keep me").expect("write untracked file");
+        // Run with a Dock-like PATH in a child process so parallel tests keep their environment.
+        let mut child = std::process::Command::new(std::env::current_exe().expect("test binary"));
+        child
+            .args([
+                "--exact",
+                "workspaces::forgetting_git_backed_workspaces_releases_registration_and_preserves_requested_files",
+                "--nocapture",
+            ])
+            .env(CHILD_REPO, &repo_path)
+            .env(CHILD_DEST, &dest)
+            .env_remove(CHILD_DELETE);
+        #[cfg(unix)]
+        child.env("PATH", temp_dir.path().join("empty-path"));
+        if delete {
+            child.env(CHILD_DELETE, "1");
+        }
+        let output = child.output().expect("run isolated forget");
+        assert!(
+            output.status.success(),
+            "isolated forget failed: {}{}",
+            String::from_utf8_lossy(&output.stdout),
+            String::from_utf8_lossy(&output.stderr),
+        );
+
+        assert_eq!(
+            git_stdout(&repo_path, &["worktree", "list", "--porcelain"])
+                .lines()
+                .filter(|line| line.starts_with("worktree "))
+                .count(),
+            1,
+            "forget releases the sibling Git registration",
+        );
+        if delete {
+            assert!(!dest.exists());
+        } else {
+            assert_eq!(std::fs::read_to_string(&marker).unwrap(), "keep me");
+            assert!(dest.join(".jj").exists(), "forget preserves the checkout");
+            assert!(
+                !dest.join(".git").exists(),
+                "forget disconnects the Git worktree"
+            );
+            std::fs::remove_dir_all(&dest).expect("remove forgotten checkout");
+        }
+        add_git_backed_workspace(&repo_path, &dest);
+        assert!(
+            dest.join(".git").is_file(),
+            "the path can host a new Git-backed workspace"
+        );
+    }
+}
+
+#[test]
+fn forgetting_a_workspace_preserves_an_unrelated_gitlink() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let dest = temp_dir.path().join("feature-ws");
+    add_git_backed_workspace(&repo_path, &dest);
+    let other_dir = init_jj_repo();
+    let other_git = other_dir.path().join("repo/.git");
+    let gitlink = format!("gitdir: {}\n", other_git.display());
+    std::fs::write(dest.join(".git"), &gitlink).expect("replace Git link");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.workspace_forget("feature", None)
+        .expect("forget workspace");
+
+    assert_eq!(std::fs::read_to_string(dest.join(".git")).unwrap(), gitlink);
+    assert!(other_git.is_dir());
 }

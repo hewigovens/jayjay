@@ -130,7 +130,7 @@ struct FixCommand {
 impl FixCommand {
     fn to_command(&self, variables: &[(&str, &str)]) -> Command {
         let interpolate = |arg: &str| interpolate_variables(arg, variables);
-        let mut command = subprocess_command(&interpolate(&self.program));
+        let mut command = subprocess_command(interpolate(&self.program));
         command.args(self.args.iter().map(|arg| interpolate(arg)));
         command.envs(&self.env);
         command

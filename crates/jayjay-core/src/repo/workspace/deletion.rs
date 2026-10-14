@@ -19,6 +19,7 @@ impl Repo {
             if let Err(error) = self.forget_workspace_name(name) {
                 return Err(staged.restore_or_recovery_error(error));
             }
+            self.unlink_workspace_git_worktree(name, &staged.root);
             staged
         };
 

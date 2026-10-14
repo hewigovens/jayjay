@@ -1,7 +1,9 @@
 use std::path::{Path, PathBuf};
 
+use jj_lib::git::{GitSubprocessOptions, get_git_backend, unlink_worktree};
 use jj_lib::local_working_copy::LocalWorkingCopyFactory;
 use jj_lib::ref_name::{WorkspaceName, WorkspaceNameBuf};
+use jj_lib::repo::Repo as _;
 use jj_lib::rewrite::merge_commit_trees;
 use jj_lib::workspace::Workspace;
 
@@ -108,10 +110,16 @@ impl Repo {
     pub fn workspace_forget(&self, name: &str, expected_root: Option<&str>) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.ensure_workspace_is_not_current(name)?;
-        if let Some(expected_root) = expected_root {
-            self.verify_workspace_root(name, expected_root)?;
+        let root = if let Some(expected_root) = expected_root {
+            Some(self.verify_workspace_root(name, expected_root)?)
+        } else {
+            self.recorded_workspace_root(WorkspaceName::new(name))
+        };
+        self.forget_workspace_name(name)?;
+        if let Some(root) = root {
+            self.unlink_workspace_git_worktree(name, &root);
         }
-        self.forget_workspace_name(name)
+        Ok(())
     }
 
     pub(super) fn ensure_workspace_is_not_current(&self, name: &str) -> JayResult<()> {
@@ -151,6 +159,35 @@ impl Repo {
                 )
             },
         )
+    }
+
+    pub(super) fn unlink_workspace_git_worktree(&self, name: &str, root: &Path) {
+        if self.verify_workspace_checkout(name, root).is_err() {
+            return;
+        }
+        let repo = self.get_repo();
+        if !get_git_backend(repo.store())
+            .is_ok_and(|backend| backend.open_git_repo_at_workdir(root).is_ok())
+        {
+            return;
+        }
+        let result = GitSubprocessOptions::from_settings(repo.settings())
+            .map_err(JayError::internal)
+            .and_then(|mut options| {
+                let command = super::super::environment::command(&options.executable_path);
+                options.executable_path = command.get_program().into();
+                options
+                    .environment
+                    .extend(command.get_envs().filter_map(|(key, value)| {
+                        value.map(|value| (key.to_owned(), value.to_owned()))
+                    }));
+                unlink_worktree(repo.store(), options, root).map_err(JayError::internal)
+            });
+        if let Err(error) = result {
+            eprintln!(
+                "[jayjay] Workspace {name} was forgotten, but Git worktree cleanup failed: {error}"
+            );
+        }
     }
 
     pub(super) fn verify_workspace_root(
