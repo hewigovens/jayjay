@@ -19,7 +19,8 @@ pub(crate) fn run(launch: GuiLaunch) {
             eprintln!("[jayjay-gpui] failed to register Lucide: {error}");
         }
         cx.set_global(
-            Theme::for_appearance(cfg.appearance, cx.window_appearance()).with_typography(&cfg),
+            Theme::for_appearance(cfg.appearance, cx.window_appearance(), &cfg.diff.palette)
+                .with_typography(&cfg),
         );
         cx.bind_keys(super::actions::app_key_bindings());
 

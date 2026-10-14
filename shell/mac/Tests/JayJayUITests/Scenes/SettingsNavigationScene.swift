@@ -9,8 +9,8 @@ final class SettingsNavigationScene: SceneBase {
         XCTAssertTrue(window.waitForExistence(timeout: 5))
 
         let pages: [(String, [String])] = [
-            ("Appearance", ["Theme"]),
-            ("Code Font", [AID.Settings.fontPreview]),
+            ("Appearance", [AID.Settings.diffDarkPalette]),
+            ("Fonts", [AID.Settings.preview]),
             ("Diff & Files", ["Side-by-side diff"]),
             ("Workflow", ["Confirm before abandoning changes"]),
             ("Integrations", ["Editor"]),

@@ -18,6 +18,11 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
     settle_visual(&mut settings_cx);
 
     assert!(settings_cx.debug_bounds("settings-scroll").is_some());
+    let fonts_nav = settings_cx
+        .debug_bounds("settings-nav-Fonts")
+        .expect("Fonts nav row");
+    settings_cx.simulate_click(fonts_nav.center(), Modifiers::default());
+    settle_visual(&mut settings_cx);
     let font_button = settings_cx
         .debug_bounds("dd-btn-interface-font-family")
         .expect("interface font dropdown");
@@ -94,7 +99,7 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
 #[gpui::test]
 fn interface_font_size_stepper_updates_config(cx: &mut TestAppContext) {
     install_test_globals(cx);
-    cx.update(|cx| SettingsView::open_section(SettingsSection::Appearance, cx));
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Fonts, cx));
     let window = cx.windows().last().copied().expect("settings window");
     let mut settings_cx = VisualTestContext::from_window(window, cx);
     settle_visual(&mut settings_cx);
@@ -124,7 +129,7 @@ fn interface_font_size_stepper_updates_config(cx: &mut TestAppContext) {
 #[gpui::test]
 fn code_font_controls_update_the_code_font_and_reset(cx: &mut TestAppContext) {
     install_test_globals(cx);
-    cx.update(|cx| SettingsView::open_section(SettingsSection::CodeFont, cx));
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Fonts, cx));
     let window = cx.windows().last().copied().expect("settings window");
     let mut settings_cx = VisualTestContext::from_window(window, cx);
     settle_visual(&mut settings_cx);
@@ -149,8 +154,8 @@ fn code_font_controls_update_the_code_font_and_reset(cx: &mut TestAppContext) {
 
     scroll_settings(&mut settings_cx, -500.);
     let reset = settings_cx
-        .debug_bounds("setting-reset-code-font")
-        .expect("reset code font button");
+        .debug_bounds("setting-reset-fonts")
+        .expect("reset fonts button");
     settings_cx.simulate_click(reset.center(), Modifiers::default());
     settle_visual(&mut settings_cx);
     settings_cx.cx.update(|cx| {
@@ -471,6 +476,92 @@ fn open_about_action_opens_about_settings_section(cx: &mut TestAppContext) {
             .is_none()
     );
     assert!(settings_cx.debug_bounds("about-config-copy-path").is_none());
+}
+
+#[gpui::test]
+fn changing_dark_diff_palette_recolors_open_diff_without_losing_selection_or_scroll_or_recoloring_chrome(
+    cx: &mut TestAppContext,
+) {
+    use jayjay_gpui::app::config::{AppearanceMode, update as update_config};
+    use jayjay_gpui::app::theme::Theme;
+    use jj_test::{LinearFixture, run_jj_in};
+
+    let fixture = LinearFixture::build();
+    let content: String = (1..=120).map(|n| format!("line {n}\n")).collect();
+    std::fs::write(fixture.path.join("wip1.txt"), content).expect("write wip1");
+    run_jj_in(&fixture.path, &["st"]);
+
+    let (view, repo_cx) = crate::harness::open_repo(fixture.path.clone(), cx);
+    repo_cx.simulate_resize(size(px(1000.), px(500.)));
+    settle_visual(repo_cx);
+    crate::harness::select_file(&view, "wip1.txt", repo_cx);
+    repo_cx.cx.update(|cx| {
+        update_config(cx, |c| c.appearance = AppearanceMode::Dark);
+    });
+    settle_visual(repo_cx);
+    view.update_in(repo_cx, |view, _, _| {
+        view.set_diff_scroll_offset_y(px(-72.));
+    });
+
+    let (before_context_bg, before_success_fg) = repo_cx.cx.update(|cx| {
+        let t = cx.global::<Theme>();
+        (t.diff_context_bg, t.success_fg)
+    });
+    let before_selected_file = view.read_with(repo_cx, |view, cx| {
+        view.view_model().read(cx).selected_file_ix
+    });
+
+    repo_cx.cx.update(|cx| {
+        update_config(cx, |c| c.diff.palette.dark = "nord".to_owned());
+    });
+    settle_visual(repo_cx);
+
+    let (after_context_bg, after_success_fg) = repo_cx.cx.update(|cx| {
+        let t = cx.global::<Theme>();
+        (t.diff_context_bg, t.success_fg)
+    });
+    assert_ne!(after_context_bg, before_context_bg);
+    assert_eq!(
+        after_context_bg,
+        jayjay_core::DiffPalette::resolve("nord", true)
+            .colors
+            .context_bg
+    );
+    assert_eq!(after_success_fg, before_success_fg);
+    view.read_with(repo_cx, |view, cx| {
+        assert_eq!(
+            view.view_model().read(cx).selected_file_ix,
+            before_selected_file
+        );
+        assert_eq!(view.diff_scroll_offset_y(), px(-72.));
+    });
+}
+
+#[gpui::test]
+fn unknown_stored_diff_palette_loads_as_default_and_survives_unrelated_config_updates(
+    cx: &mut TestAppContext,
+) {
+    use jayjay_gpui::app::config::{AppConfig, AppConfigStore, update as update_config};
+    use jayjay_gpui::app::theme::Theme;
+
+    install_test_globals(cx);
+    cx.update(|cx| {
+        let mut cfg: AppConfig = toml::from_str(
+            "appearance = \"dark\"\n[diff.palette]\ndark = \"future-dark-palette\"\n",
+        )
+        .expect("parse config");
+        cfg.onboarding.completed = true;
+        cx.set_global(AppConfigStore::new_ephemeral(cfg));
+        update_config(cx, |c| c.diff.tree_file_list = true);
+
+        let saved = current_config(cx);
+        assert!(saved.diff.tree_file_list);
+        assert_eq!(saved.diff.palette.dark, "future-dark-palette");
+        assert_eq!(
+            cx.global::<Theme>().diff_context_bg,
+            jayjay_core::DiffThemeColors::dark().context_bg
+        );
+    });
 }
 
 fn select_dropdown_option(

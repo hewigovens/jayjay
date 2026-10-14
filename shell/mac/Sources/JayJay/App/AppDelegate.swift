@@ -10,6 +10,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     var prepareForTermination: (() -> Void)?
     var terminateAfterLastWindowClosed = false
     var externalToolInvocation: ExternalToolInvocation?
+    var settings: AppSettings?
     private var dockMenuActions: [DockMenuAction] = []
     private var externalToolWindowController: ExternalToolWindowController?
 
@@ -18,7 +19,10 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         Task.detached { CLIInstaller.refreshLinkIfInstalled() }
         if let invocation = externalToolInvocation {
             terminateAfterLastWindowClosed = true
-            let controller = ExternalToolWindowController(invocation: invocation)
+            let controller = ExternalToolWindowController(
+                invocation: invocation,
+                settings: settings ?? AppSettings()
+            )
             externalToolWindowController = controller
             controller.present()
         }

@@ -1,6 +1,6 @@
 use jayjay_core::theme::{DiffThemeColors, RepoColors, ThemeSeed, mix};
 
-use super::Theme;
+use super::{SyntaxColors, Theme};
 use crate::app::config::AppConfig;
 
 impl Theme {
@@ -11,6 +11,11 @@ impl Theme {
         let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
         let tag_bg = mix(bg, fg, pick(0.09, 0.075));
         let tag_fg = mix(fg, bg, pick(0.15, 0.25));
+        let chrome_diff = if dark {
+            DiffThemeColors::dark()
+        } else {
+            DiffThemeColors::light()
+        };
         Self {
             is_dark: dark,
             font_size: AppConfig::DEFAULT_FONT_SIZE,
@@ -31,7 +36,9 @@ impl Theme {
             row_border: mix(bg, fg, pick(0.08, 0.065)),
 
             selected_accent: seed.accent,
-            success_fg: diff.text_added,
+            success_fg: chrome_diff.text_added,
+            added_fg: chrome_diff.gutter_added_fg,
+            removed_fg: chrome_diff.gutter_removed_fg,
             wc_accent: if dark {
                 seed.orange
             } else {
@@ -82,11 +89,8 @@ impl Theme {
             diff_text_removed: diff.text_removed,
             diff_text_dim: diff.text_dim,
 
-            tok_keyword: diff.tok_keyword,
-            tok_string: diff.tok_string,
-            tok_comment: diff.tok_comment,
-            tok_number: diff.tok_number,
-            tok_type: diff.tok_type,
+            syntax: SyntaxColors::of(&chrome_diff),
+            diff_syntax: SyntaxColors::of(&diff),
 
             tag_added_bg: seed.tint(seed.green, pick(0.35, 0.16)),
             tag_added_fg: seed.ink(seed.green),

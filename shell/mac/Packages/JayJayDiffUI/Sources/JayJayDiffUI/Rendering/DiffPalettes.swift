@@ -5,7 +5,10 @@ public struct DiffPalettes: Equatable {
     public var light: DiffThemeColors
     public var dark: DiffThemeColors
 
-    public static let standard = DiffPalettes(light: diffThemeColors(isDark: false), dark: diffThemeColors(isDark: true))
+    public static let standard = DiffPalettes(
+        light: diffPalette(id: defaultDiffPaletteId(isDark: false), isDark: false).colors,
+        dark: diffPalette(id: defaultDiffPaletteId(isDark: true), isDark: true).colors
+    )
 
     public init(light: DiffThemeColors, dark: DiffThemeColors) {
         self.light = light

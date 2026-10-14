@@ -4,7 +4,7 @@ use gpui::{Bounds, Font, Hsla, Pixels, ShapedLine, SharedString, TextRun, Window
 use jayjay_core::diff::DiffSpanStyle;
 
 use super::super::{LineLayout, TextArea, TextLayout, TextLayoutKey, Tint};
-use crate::app::theme::Theme;
+use crate::app::theme::{SyntaxColors, Theme};
 use crate::ui::input::{next_boundary, previous_boundary};
 
 /// Shapes from a captured `TextLayoutKey`, so a layout can be built outside the element's own style scope.
@@ -54,6 +54,7 @@ pub(in crate::ui::text_area) fn layout_key(
     width: Pixels,
     window: &Window,
     theme: &Theme,
+    syntax: &SyntaxColors,
 ) -> TextLayoutKey {
     let style = window.text_style();
     TextLayoutKey {
@@ -67,11 +68,14 @@ pub(in crate::ui::text_area) fn layout_key(
             theme.diff_removed_bg,
             theme.diff_added_word_bg,
             theme.diff_removed_word_bg,
-            theme.tok_keyword,
-            theme.tok_string,
-            theme.tok_comment,
-            theme.tok_number,
-            theme.tok_type,
+            theme.diff_text_context,
+            theme.diff_text_added,
+            theme.diff_text_removed,
+            syntax.keyword,
+            syntax.string,
+            syntax.comment,
+            syntax.number,
+            syntax.ty,
             theme.change_id_prefix,
             theme.commit_id_prefix,
         ],
@@ -111,13 +115,16 @@ fn build_lines(
     let mut lines = Vec::new();
     for (logical_line_ix, range) in ranges.into_iter().enumerate() {
         let line_style = input.line_style(logical_line_ix);
+        let base_color = input
+            .diff_text_color(line_style, theme)
+            .map_or(typeset.color, |color| rgb(color).into());
         let content_color = if input
             .emphasized_line()
             .is_some_and(|line| line != logical_line_ix)
         {
-            typeset.color.opacity(0.6)
+            base_color.opacity(0.6)
         } else {
-            typeset.color
+            base_color
         };
         if content.is_empty() {
             let placeholder_len = input.placeholder.len();
@@ -160,6 +167,7 @@ fn build_lines(
                 content_color,
                 line_style,
                 theme,
+                input.syntax_colors(theme),
             );
             let text = SharedString::from(content[range.clone()].to_string());
             lines.push(line_layout(
@@ -190,6 +198,7 @@ fn build_lines(
                     content_color,
                     line_style,
                     theme,
+                    input.syntax_colors(theme),
                 )
             } else {
                 tinted_runs(&input.tints, start..end, content_color, theme)
@@ -277,6 +286,7 @@ fn highlighted_runs(
     fallback: Hsla,
     line_style: DiffSpanStyle,
     theme: &Theme,
+    syntax: &SyntaxColors,
 ) -> Vec<(usize, Hsla, Option<Hsla>)> {
     let Some(spans) = spans else {
         return vec![(
@@ -300,8 +310,8 @@ fn highlighted_runs(
                     line_background(line_style, DiffSpanStyle::Unchanged, theme),
                 ));
             }
-            let color = theme
-                .syntax_token_color(span.token)
+            let color = syntax
+                .color(span.token)
                 .map(|color| rgb(color).into())
                 .unwrap_or(fallback);
             runs.push((

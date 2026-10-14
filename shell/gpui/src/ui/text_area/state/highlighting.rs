@@ -119,6 +119,7 @@ impl TextArea {
             Vec::new(),
             cx,
         );
+        view.diff_colors = true;
         view.schedule_syntax_highlight(false, cx);
         view
     }
@@ -134,7 +135,7 @@ impl TextArea {
             .into_iter()
             .map(|line| (line.style, line.spans))
             .unzip();
-        Self::syntax_code_block(
+        let mut view = Self::syntax_code_block(
             content.clone(),
             path,
             None,
@@ -142,7 +143,9 @@ impl TextArea {
             lines,
             line_styles,
             cx,
-        )
+        );
+        view.diff_colors = true;
+        view
     }
 
     fn syntax_code_block(

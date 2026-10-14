@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseUpEvent, ParentElement, Pixels, Styled, UniformListScrollHandle, div, px, rgba,
+    MouseUpEvent, ParentElement, Pixels, Styled, UniformListScrollHandle, div, px, rgb, rgba,
     uniform_list,
 };
 use jayjay_core::diff::{FileDiff, WrappedDiffLine};
@@ -152,6 +152,7 @@ pub(super) fn unified_body(
                 .flex_1()
                 .min_w_0()
                 .h_full()
+                .bg(rgb(theme.diff_context_bg))
                 .child(bounds_capture(bounds.clone()))
                 .on_mouse_up(
                     MouseButton::Left,

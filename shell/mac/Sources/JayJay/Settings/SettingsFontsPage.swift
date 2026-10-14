@@ -3,10 +3,24 @@ import SwiftUI
 struct SettingsFontsPage: View {
     @Environment(AppSettings.self) private var settings
     @State private var fontGroups: [FontFamilyGroup] = []
+    @State private var userFamilies: [AppSettings.FontFamily] = []
 
     var body: some View {
         @Bindable var settings = settings
         Form {
+            Section {
+                FontFamilyPicker(
+                    selection: $settings.interfaceFontFamily,
+                    systemTitle: "System",
+                    groups: [FontFamilyGroup(title: "My Fonts", families: userFamilies)]
+                )
+                FontSizeStepper(value: $settings.interfaceFontSize, id: AID.Settings.interfaceFontSize)
+            } header: {
+                Text("Interface Font")
+            } footer: {
+                Text("Press \(AppShortcut.zoomIn.symbol) or \(AppShortcut.zoomOut.symbol) to change the interface and code font sizes, \(AppShortcut.resetZoom.symbol) to reset them.")
+            }
+
             Section {
                 FontFamilyPicker(
                     selection: $settings.codeFontFamily,
@@ -26,6 +40,8 @@ struct SettingsFontsPage: View {
                         .controlSize(.small)
                 }
                 ligaturesToggle(isOn: $settings.codeLigatures)
+            } header: {
+                Text("Code Font")
             } footer: {
                 Text("Used for diffs, editors, revsets, and identifiers.")
                     .font(.caption)
@@ -33,16 +49,17 @@ struct SettingsFontsPage: View {
             }
 
             Section("Preview") {
-                FontSpecimenView()
+                SettingsPreview()
             }
 
             Section {
-                Button("Reset Code Font") { settings.resetCodeFont() }
-                    .accessibilityIdentifier(AID.Settings.resetCodeFont)
+                Button("Reset Fonts") { settings.resetFonts() }
+                    .accessibilityIdentifier(AID.Settings.resetFonts)
             }
         }
         .formStyle(.grouped)
         .task {
+            userFamilies = AppSettings.FontFamily.installedUserFamilies()
             fontGroups = await Task.detached { AppSettings.FontFamily.installedCodeFontGroups() }.value
         }
     }

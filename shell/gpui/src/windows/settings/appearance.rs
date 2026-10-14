@@ -5,19 +5,13 @@ use gpui::{
 };
 
 use super::SettingsView;
-use super::dropdown::dropdown_button;
-use super::shared::{field_row, section_title, stepper, subsection_title};
+use super::diff_palette::diff_palette_section;
+use super::shared::{field_row, section_title};
 use crate::app::config;
-use crate::app::fonts;
 use crate::app::theme::{Theme, ui_font_size};
 
-const FONT_SIZE_HINT: &str = if cfg!(target_os = "macos") {
-    "Press ⌘+ or ⌘- to change the interface and code sizes together, ⌘0 to reset."
-} else {
-    "Press Ctrl++ or Ctrl+- to change the interface and code sizes together, Ctrl+0 to reset."
-};
-
 pub(super) fn appearance_section(
+    view: &SettingsView,
     cfg: &AppConfig,
     t: &Theme,
     cx: &mut gpui::Context<SettingsView>,
@@ -29,43 +23,12 @@ pub(super) fn appearance_section(
         .gap(px(16.))
         .child(section_title("Appearance", t))
         .child(field_row(
-            "Theme",
+            "Appearance",
             appearance_segmented(cfg.appearance, t),
             "Light, Dark, or System.",
             t,
         ))
-        .child(subsection_title("Interface Font", t))
-        .child(field_row(
-            "Family",
-            dropdown_button(
-                "interface-font-family",
-                fonts::interface_preference_label(&cfg.interface_font_family),
-                t,
-                cx,
-            ),
-            if fonts::interface_font_is_installed(&cfg.interface_font_family) {
-                "Used for interface text.".to_owned()
-            } else {
-                format!(
-                    "{} is not installed; using System.",
-                    cfg.interface_font_family
-                )
-            },
-            t,
-        ))
-        .child(field_row(
-            "Size",
-            stepper(
-                "interface-font-size",
-                format!("{:.0}pt", cfg.interface_font_size()),
-                cfg.interface_font_size(),
-                AppConfig::MIN_FONT_SIZE..=AppConfig::MAX_FONT_SIZE,
-                AppConfig::adjust_interface_font_size,
-                t,
-            ),
-            FONT_SIZE_HINT,
-            t,
-        ))
+        .child(diff_palette_section(view, cfg, t, cx))
         .into_any_element()
 }
 

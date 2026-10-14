@@ -169,6 +169,7 @@ pub(super) fn side_by_side_body(
             .flex_none()
             .w(px(width))
             .h_full()
+            .bg(rgb(theme.diff_gutter_bg))
             .border_r_1()
             .border_color(rgb(theme.border))
             .child(no_scrollbar_gutter(list).h_full())
@@ -183,6 +184,7 @@ pub(super) fn side_by_side_body(
             .flex_1()
             .min_w_0()
             .h_full()
+            .bg(rgb(theme.diff_context_bg))
             .child(bounds_capture(bounds.clone()))
             .on_mouse_up(
                 MouseButton::Left,

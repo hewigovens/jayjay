@@ -2,7 +2,7 @@ use gpui::WindowAppearance;
 use jayjay_core::{DiffThemeColors, RepoColors, ThemeSeed};
 
 use super::Theme;
-use crate::app::config::AppearanceMode;
+use crate::app::config::{AppearanceMode, DiffPaletteSelection};
 
 impl Theme {
     pub fn light() -> Self {
@@ -13,22 +13,24 @@ impl Theme {
         )
     }
 
-    fn dark() -> Self {
-        Self::from_seed(
-            &ThemeSeed::dark(),
-            DiffThemeColors::dark(),
-            RepoColors::dark(),
-        )
-    }
-
-    pub fn for_appearance(mode: AppearanceMode, system: WindowAppearance) -> Self {
-        match mode {
-            AppearanceMode::Light => Self::light(),
-            AppearanceMode::Dark => Self::dark(),
-            AppearanceMode::System => match system {
-                WindowAppearance::Light | WindowAppearance::VibrantLight => Self::light(),
-                WindowAppearance::Dark | WindowAppearance::VibrantDark => Self::dark(),
-            },
-        }
+    pub fn for_appearance(
+        mode: AppearanceMode,
+        system: WindowAppearance,
+        palette: &DiffPaletteSelection,
+    ) -> Self {
+        let is_dark = match mode {
+            AppearanceMode::Light => false,
+            AppearanceMode::Dark => true,
+            AppearanceMode::System => matches!(
+                system,
+                WindowAppearance::Dark | WindowAppearance::VibrantDark
+            ),
+        };
+        let (seed, repo) = if is_dark {
+            (ThemeSeed::dark(), RepoColors::dark())
+        } else {
+            (ThemeSeed::light(), RepoColors::light())
+        };
+        Self::from_seed(&seed, palette.resolve(is_dark).colors, repo)
     }
 }

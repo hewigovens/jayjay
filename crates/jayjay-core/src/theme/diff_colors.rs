@@ -1,5 +1,5 @@
 use super::ThemeSeed;
-use super::color::mix;
+use super::color::{mix, readable_on};
 
 #[derive(Debug, Clone, Copy, PartialEq)]
 pub struct DiffThemeColors {
@@ -114,53 +114,98 @@ impl DiffThemeColors {
         let bg = seed.background;
         let fg = seed.foreground;
         let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
+        let added_bg = seed.tint(seed.green, pick(0.16, 0.18));
+        let removed_bg = seed.tint(seed.red, pick(0.16, 0.11));
+        let added_word_bg = seed.tint(seed.green, pick(0.45, 0.40));
+        let removed_word_bg = seed.tint(seed.red, pick(0.45, 0.28));
+        let token_floors = |line: f32, word: f32| {
+            [
+                (bg, line),
+                (added_bg, line),
+                (removed_bg, line),
+                (added_word_bg, word),
+                (removed_word_bg, word),
+            ]
+        };
+        let conflict_header_bg = seed.tint(seed.yellow, pick(0.16, 0.22));
+        let conflict_section_bg = seed.tint(seed.yellow, pick(0.10, 0.12));
+        let find_match_bg = seed.tint(seed.yellow, pick(0.45, 0.55));
+        let gutter_bg = if dark {
+            mix(bg, 0x000000, 0.2)
+        } else {
+            seed.surface
+        };
         Self {
-            added_bg: seed.tint(seed.green, pick(0.16, 0.18)),
-            removed_bg: seed.tint(seed.red, pick(0.16, 0.11)),
+            added_bg,
+            removed_bg,
             context_bg: bg,
             separator_bg: mix(bg, fg, pick(0.10, 0.06)),
-            conflict_header_bg: seed.tint(seed.yellow, pick(0.16, 0.22)),
-            conflict_section_bg: seed.tint(seed.yellow, pick(0.10, 0.12)),
+            conflict_header_bg,
+            conflict_section_bg,
             conflict_content_bg: seed.tint(seed.yellow, pick(0.05, 0.06)),
-            conflict_header_fg: mix(seed.yellow, fg, pick(0.15, 0.55)),
-            conflict_section_fg: mix(seed.yellow, fg, pick(0.30, 0.60)),
+            conflict_header_fg: readable_on(
+                mix(seed.yellow, fg, pick(0.15, 0.55)),
+                fg,
+                &[(conflict_header_bg, 4.5)],
+            ),
+            conflict_section_fg: readable_on(
+                mix(seed.yellow, fg, pick(0.30, 0.60)),
+                fg,
+                &[(conflict_section_bg, 4.5)],
+            ),
             conflict_stripe: seed.orange,
             conflict_stripe_alpha: if dark { 0.78 } else { 0.62 },
-            added_word_bg: seed.tint(seed.green, pick(0.45, 0.40)),
-            removed_word_bg: seed.tint(seed.red, pick(0.45, 0.28)),
-            gutter_bg: if dark {
-                mix(bg, 0x000000, 0.2)
-            } else {
-                seed.surface
-            },
-            gutter_fg: seed.muted,
+            added_word_bg,
+            removed_word_bg,
+            gutter_bg,
+            gutter_fg: readable_on(seed.muted, fg, &[(gutter_bg, 3.0)]),
             gutter_added_fg: seed.green,
             gutter_removed_fg: seed.red,
             text_context: fg,
-            text_added: mix(seed.green, fg, pick(0.35, 0.55)),
-            text_removed: mix(seed.red, fg, pick(0.30, 0.50)),
-            text_dim: seed.muted,
-            tok_keyword: mix(seed.red, fg, pick(0.30, 0.20)),
-            tok_string: if dark {
-                mix(seed.cyan, fg, 0.45)
-            } else {
-                mix(seed.blue, fg, 0.60)
-            },
-            tok_comment: seed.muted,
-            tok_number: mix(seed.blue, fg, pick(0.40, 0.35)),
-            tok_type: mix(seed.magenta, fg, pick(0.30, 0.25)),
+            text_added: readable_on(
+                mix(seed.green, fg, pick(0.35, 0.55)),
+                fg,
+                &[(added_bg, 4.5), (added_word_bg, 2.8)],
+            ),
+            text_removed: readable_on(
+                mix(seed.red, fg, pick(0.30, 0.50)),
+                fg,
+                &[(removed_bg, 4.5), (removed_word_bg, 2.8)],
+            ),
+            text_dim: readable_on(seed.muted, fg, &[(bg, 4.5)]),
+            tok_keyword: readable_on(
+                mix(seed.red, fg, pick(0.30, 0.20)),
+                fg,
+                &token_floors(4.5, 2.8),
+            ),
+            tok_string: readable_on(
+                if dark {
+                    mix(seed.cyan, fg, 0.45)
+                } else {
+                    mix(seed.blue, fg, 0.60)
+                },
+                fg,
+                &token_floors(4.5, 2.8),
+            ),
+            tok_comment: readable_on(seed.muted, fg, &token_floors(3.5, 2.3)),
+            tok_number: readable_on(
+                mix(seed.blue, fg, pick(0.40, 0.35)),
+                fg,
+                &token_floors(4.5, 2.8),
+            ),
+            tok_type: readable_on(
+                mix(seed.magenta, fg, pick(0.30, 0.25)),
+                fg,
+                &token_floors(4.5, 2.8),
+            ),
             group_stripe: seed.blue,
             group_stripe_alpha: if dark { 0.55 } else { 0.42 },
-            find_match_bg: seed.tint(seed.yellow, pick(0.45, 0.55)),
-            find_match_fg: mix(seed.yellow, fg, pick(0.35, 0.80)),
+            find_match_bg,
+            find_match_fg: readable_on(
+                mix(seed.yellow, fg, pick(0.35, 0.80)),
+                fg,
+                &[(find_match_bg, 4.5)],
+            ),
         }
-    }
-}
-
-pub fn diff_theme_colors(is_dark: bool) -> DiffThemeColors {
-    if is_dark {
-        DiffThemeColors::dark()
-    } else {
-        DiffThemeColors::light()
     }
 }
