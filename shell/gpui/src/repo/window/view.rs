@@ -492,6 +492,11 @@ impl RepoWindow {
     pub fn attach_to_window(&self, window: &mut Window, cx: &mut Context<Self>) {
         crate::app::theme::observe_window_appearance(window, cx);
         window.focus(&self.focus_handle, cx);
+        // Closing a modal or editor drops its focused input; without this the window's key handlers stay deaf until a click.
+        cx.on_focus_lost(window, |view, window, cx| {
+            view.focus_handle.focus(window, cx)
+        })
+        .detach();
     }
 
     pub fn view_model(&self) -> Entity<RepoViewModel> {

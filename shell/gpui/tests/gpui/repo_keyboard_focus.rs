@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{Entity, Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use gpui::{Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext, px, size};
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::{ActivePane, FocusStop, RepoWindow};
 use jj_test::LinearFixture;
@@ -8,15 +8,13 @@ fn tree_mode(cx: &mut VisualTestContext) -> bool {
     cx.cx.read(|cx| config::current(cx).diff.tree_file_list)
 }
 
-/// `attach_to_window` does this when the app opens a repo window; `add_window_view` does not.
+/// The app attaches every repo window it opens; `add_window_view` does not.
 fn open_focused<'a>(
     fixture: &LinearFixture,
     cx: &'a mut TestAppContext,
 ) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
     let (view, cx) = open_fixture(fixture, cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx)
-    });
+    view.update_in(cx, |view, window, cx| view.attach_to_window(window, cx));
     (view, cx)
 }
 
@@ -290,4 +288,38 @@ fn tab_to(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, stop: FocusStop
         settle_visual(cx);
     }
     panic!("{stop:?} is not in the Tab cycle");
+}
+
+#[gpui::test]
+fn closing_a_modal_returns_keys_to_the_window(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_focused(&fixture, cx);
+    cx.simulate_resize(size(px(1600.), px(1000.)));
+    for dismiss in ["text-modal-cancel", "text-modal-primary", "pr-import"] {
+        cx.simulate_keystrokes("j");
+        settle_visual(cx);
+        let parent = view.read_with(cx, |view, cx| view.view_model().read(cx).selected);
+        if dismiss == "pr-import" {
+            view.update(cx, |view, cx| view.open_pr_import(cx));
+            settle_visual(cx);
+            cx.simulate_keystrokes("escape");
+        } else {
+            let pencil = cx.debug_bounds("edit-description").unwrap();
+            cx.simulate_click(pencil.center(), Modifiers::default());
+            settle_visual(cx);
+            let button = cx.debug_bounds(dismiss).unwrap();
+            cx.simulate_click(button.center(), Modifiers::default());
+        }
+        settle_visual(cx);
+        assert!(!view.read_with(cx, |view, _| view.has_text_modal()
+            || view.has_pr_import_modal()));
+
+        cx.simulate_keystrokes("k");
+        settle_visual(cx);
+        assert_ne!(
+            view.read_with(cx, |view, cx| view.view_model().read(cx).selected),
+            parent,
+            "{dismiss}"
+        );
+    }
 }
