@@ -4,8 +4,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use gpui::{
-    Entity, Focusable, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta,
-    ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point, px,
+    Entity, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta, ScrollWheelEvent,
+    TestAppContext, TouchPhase, VisualTestContext, point, px,
 };
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::actions::ZoomIn;
@@ -297,10 +297,14 @@ pub(crate) fn selector(value: String) -> &'static str {
     Box::leak(value.into_boxed_str())
 }
 
-pub(crate) fn focus_view(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx)
-    });
+/// The app attaches every repo window it opens; `add_window_view` does not.
+pub(crate) fn open_focused<'a>(
+    fixture: &LinearFixture,
+    cx: &'a mut TestAppContext,
+) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
+    let (view, cx) = open_fixture(fixture, cx);
+    view.update_in(cx, |view, window, cx| view.attach_to_window(window, cx));
+    (view, cx)
 }
 
 pub(crate) fn keys(cx: &mut VisualTestContext, keystrokes: &str) {

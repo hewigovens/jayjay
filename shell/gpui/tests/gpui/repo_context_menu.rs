@@ -39,7 +39,6 @@ fn keyboard_change_menu_targets_the_navigated_change(cx: &mut TestAppContext) {
     );
     let cancel = cx.debug_bounds("text-modal-cancel").unwrap();
     cx.simulate_click(cancel.center(), Modifiers::default());
-    focus_view(&view, cx);
     keys(cx, "ctrl-enter n");
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
@@ -154,15 +153,6 @@ fn keyboard_menu_reveals_a_selected_change_scrolled_out_of_view(cx: &mut TestApp
         .debug_bounds("context-menu-New change on top")
         .expect("menu opened");
     assert!(menu.top() >= row.top(), "menu anchors to the revealed row");
-}
-
-fn open_focused<'a>(
-    fixture: &LinearFixture,
-    cx: &'a mut TestAppContext,
-) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
-    let (view, cx) = open_fixture(fixture, cx);
-    focus_view(&view, cx);
-    (view, cx)
 }
 
 fn focus_summary(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {

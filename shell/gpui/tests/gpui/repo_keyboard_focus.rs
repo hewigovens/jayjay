@@ -8,16 +8,6 @@ fn tree_mode(cx: &mut VisualTestContext) -> bool {
     cx.cx.read(|cx| config::current(cx).diff.tree_file_list)
 }
 
-/// The app attaches every repo window it opens; `add_window_view` does not.
-fn open_focused<'a>(
-    fixture: &LinearFixture,
-    cx: &'a mut TestAppContext,
-) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
-    let (view, cx) = open_fixture(fixture, cx);
-    view.update_in(cx, |view, window, cx| view.attach_to_window(window, cx));
-    (view, cx)
-}
-
 #[gpui::test]
 fn horizontal_keys_switch_panes_without_changing_selection(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();

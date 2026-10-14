@@ -1,22 +1,11 @@
 use crate::harness::*;
-use gpui::{Focusable, TestAppContext, VisualTestContext};
+use gpui::{TestAppContext, VisualTestContext};
 use jayjay_gpui::repo::{ActivePane, FocusStop, RepoWindow};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::LinearFixture;
 
 fn sidebar_visible(cx: &mut VisualTestContext) -> bool {
     cx.debug_bounds("sidebar-resize-handle").is_some()
-}
-
-fn open_focused<'a>(
-    fixture: &LinearFixture,
-    cx: &'a mut TestAppContext,
-) -> (gpui::Entity<RepoWindow>, &'a mut VisualTestContext) {
-    let (view, cx) = open_fixture(fixture, cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx)
-    });
-    (view, cx)
 }
 
 fn open_booted<'a>(
