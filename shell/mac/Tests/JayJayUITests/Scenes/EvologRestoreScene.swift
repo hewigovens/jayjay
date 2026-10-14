@@ -15,7 +15,7 @@ final class EvologRestoreScene: SceneBase {
         XCTAssertTrue(showEvolution.waitForExistence(timeout: 5), "Show evolution menu item did not appear")
         showEvolution.click()
 
-        let older = app.descendants(matching: .any)[AID.Evolog.version(1)].firstMatch
+        let older = app.element(AID.Evolog.version(1)).firstMatch
         XCTAssertTrue(older.waitForExistence(timeout: 5), "Older evolution version did not appear")
         older.rightClick()
 

@@ -1,6 +1,6 @@
 use crate::harness::{
-    install_test_globals, load_selected_change_files, open_repo, rendered_height, settle_visual,
-    zoom_to_max,
+    focus_view, install_test_globals, keys, load_selected_change_files, open_repo, rendered_height,
+    settle_visual, zoom_to_max,
 };
 use gpui::{
     Entity, Focusable, Modifiers, Pixels, ScrollDelta, ScrollWheelEvent, TestAppContext,
@@ -280,8 +280,7 @@ fn description_dialog_keeps_working_copy_draft_and_saves_summary_and_body(cx: &m
     settle_visual(cx);
     let summary = view.read_with(cx, |view, _| view.text_modal_input().unwrap());
     cx.focus(&summary);
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert_eq!(
         view.read_with(cx, |view, cx| view
             .view_model()
@@ -339,8 +338,7 @@ fn description_dialog_keeps_working_copy_draft_and_saves_summary_and_body(cx: &m
     cx.simulate_input("Second body line");
     assert!(view.read_with(cx, |view, _| view.has_text_modal()));
     cx.focus(&summary);
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert!(!view.has_text_modal());
         let vm = view.view_model().read(cx);
@@ -468,9 +466,7 @@ fn expansion_toggle_switches_metadata_between_byline_and_grid(cx: &mut TestAppCo
 fn expand_description_is_a_tab_stop_for_an_empty_description(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_repo(fixture.path.clone(), cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx)
-    });
+    focus_view(&view, cx);
     view.read_with(cx, |view, cx| {
         let change = view
             .view_model()
@@ -486,15 +482,13 @@ fn expand_description_is_a_tab_stop_for_an_empty_description(cx: &mut TestAppCon
         {
             break;
         }
-        cx.simulate_keystrokes("tab");
-        settle_visual(cx);
+        keys(cx, "tab");
     }
     assert_eq!(
         view.read_with(cx, |view, _| view.focused_control()),
         Some(FocusStop::ExpandDescription)
     );
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
     assert!(
         cx.debug_bounds("detail-metadata-grid").is_some(),
         "activating the stop expands the metadata grid"

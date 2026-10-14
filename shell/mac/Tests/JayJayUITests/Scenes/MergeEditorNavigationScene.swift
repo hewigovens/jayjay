@@ -10,7 +10,7 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
 
     func testSynchronizedScrollingAndHunkNavigation() throws {
         let app = try XCTUnwrap(app)
-        let first = app.descendants(matching: .any)[AID.Conflict.hunkCard(0)]
+        let first = app.element(AID.Conflict.hunkCard(0))
         XCTAssertTrue(first.waitForExistence(timeout: 20))
         XCTAssertEqual(first.value as? String, "Selected")
         let window = app.windows.firstMatch
@@ -22,8 +22,8 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
                     .withOffset(CGVector(dx: 1022, dy: 672))
             )
         let left = app.textViews[AID.Conflict.editorSource("left")]
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Conflict.editorSource("left") + ".lineNumbers"].exists)
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Conflict.editorSource("right") + ".lineNumbers"].exists)
+        XCTAssertTrue(app.element(AID.Conflict.editorSource("left") + ".lineNumbers").exists)
+        XCTAssertTrue(app.element(AID.Conflict.editorSource("right") + ".lineNumbers").exists)
         let rightScroll = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorSource("right")).firstMatch
         let rightBar = rightScroll.scrollBars.firstMatch
         let hunks = app.scrollViews[AID.Conflict.editorHunkList]
@@ -39,19 +39,19 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         XCTAssertNotEqual(String(describing: rightBar.value), beforeHunkScroll)
         XCTAssertEqual(first.value as? String, "Selected")
         clickCenter(app.buttons[AID.Conflict.hunkUse(0, "left")])
-        let second = app.descendants(matching: .any)[AID.Conflict.hunkCard(1)]
+        let second = app.element(AID.Conflict.hunkCard(1))
         XCTAssertTrue(waitForSelection(second))
         XCTAssertTrue(waitForVisibleActions(for: second, in: hunks, app: app))
         app.staticTexts["Conflict 2"].click()
         app.typeKey(.downArrow, modifierFlags: .option)
-        XCTAssertTrue(waitForSelection(app.descendants(matching: .any)[AID.Conflict.hunkCard(2)]))
+        XCTAssertTrue(waitForSelection(app.element(AID.Conflict.hunkCard(2))))
         app.typeKey(.upArrow, modifierFlags: .option)
         XCTAssertTrue(waitForSelection(second))
 
-        clickCenter(app.descendants(matching: .any)[AID.Conflict.editorRaw])
+        clickCenter(app.element(AID.Conflict.editorRaw))
         let result = app.textViews[AID.Conflict.editorResult]
         XCTAssertTrue(result.waitForExistence(timeout: 10))
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Conflict.editorResult + ".lineNumbers"].exists)
+        XCTAssertTrue(app.element(AID.Conflict.editorResult + ".lineNumbers").exists)
         let beforeScroll = String(describing: rightBar.value)
         left.scroll(byDeltaX: 0, deltaY: -400)
         XCTAssertNotEqual(String(describing: rightBar.value), beforeScroll)
@@ -64,14 +64,14 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         XCTAssertTrue((result.value as? String)?.hasPrefix("// manually edited result\n") == true)
         clickCenter(app.buttons[AID.ExternalTool.baseVisibility])
         XCTAssertTrue(app.textViews[AID.Conflict.editorSource("base")].waitForExistence(timeout: 5))
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Conflict.editorSource("base") + ".lineNumbers"].exists)
+        XCTAssertTrue(app.element(AID.Conflict.editorSource("base") + ".lineNumbers").exists)
 
-        clickCenter(app.descendants(matching: .any)[AID.Conflict.editorHunks])
+        clickCenter(app.element(AID.Conflict.editorHunks))
         XCTAssertTrue(second.waitForExistence(timeout: 5))
         XCTAssertEqual(second.value as? String, "Selected")
         XCTAssertTrue(waitForVisibleActions(for: second, in: hunks, app: app))
         clickCenter(app.buttons[AID.Conflict.hunkUse(1, "right")])
-        let third = app.descendants(matching: .any)[AID.Conflict.hunkCard(2)]
+        let third = app.element(AID.Conflict.hunkCard(2))
         XCTAssertTrue(waitForSelection(third))
         clickCenter(app.buttons[AID.Conflict.editorCancel])
     }

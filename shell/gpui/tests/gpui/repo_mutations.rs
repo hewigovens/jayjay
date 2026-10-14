@@ -38,12 +38,9 @@ fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestA
         Modifiers::default(),
     );
     settle_visual(cx);
-    assert!(cx.debug_bounds("context-menu-Duplicate").is_some());
-    assert!(
-        cx.debug_bounds("context-menu-Absorb into ancestors")
-            .is_some()
-    );
-    assert!(cx.debug_bounds("context-menu-Revert change").is_some());
+    assert!(menu_shows(cx, "Duplicate"));
+    assert!(menu_shows(cx, "Absorb into ancestors"));
+    assert!(menu_shows(cx, "Revert change"));
 }
 
 #[gpui::test]
@@ -559,8 +556,7 @@ fn enter_submits_create_bookmark_modal(cx: &mut TestAppContext) {
         .expect("create bookmark input");
     cx.focus(&input);
     cx.simulate_input("feature-enter");
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
 
     view.read_with(cx, |view, cx| {
         assert!(!view.has_text_modal());
@@ -600,8 +596,7 @@ fn tag_is_created_from_its_modal_and_deleted_from_its_chip_menu(cx: &mut TestApp
         .expect("create tag input");
     cx.focus(&input);
     cx.simulate_input("v1.0");
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     let has_tag = |view: &RepoWindow, cx: &gpui::App| {
         let vm = view.view_model().read(cx);
         assert!(vm.error.is_none(), "tag action errored: {:?}", vm.error);
@@ -614,10 +609,9 @@ fn tag_is_created_from_its_modal_and_deleted_from_its_chip_menu(cx: &mut TestApp
         .expect("tag chip in the DAG");
     cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
     settle_visual(cx);
-    assert!(cx.debug_bounds("context-menu-Push").is_some());
+    assert!(menu_shows(cx, "Push"));
     assert!(
-        cx.debug_bounds("context-menu-Delete Tag on Remote")
-            .is_none(),
+        !menu_shows(cx, "Delete Tag on Remote"),
         "a local-only tag has nothing to delete on the remote"
     );
     let delete = cx
@@ -657,7 +651,7 @@ fn hidden_tag_can_be_deleted_and_pushed_from_the_change_menu(cx: &mut TestAppCon
     cx.simulate_mouse_move(tag_menu.center(), MouseButton::Left, Modifiers::default());
     settle_visual(cx);
     assert!(
-        cx.debug_bounds("context-menu-Push").is_none(),
+        !menu_shows(cx, "Push"),
         "a pushed tag is already on the remote"
     );
     let delete = cx

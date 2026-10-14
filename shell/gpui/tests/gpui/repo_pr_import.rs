@@ -1,7 +1,7 @@
 use std::cell::Cell;
 use std::rc::Rc;
 
-use crate::harness::{open_repo, settle_visual};
+use crate::harness::{keys, open_repo, settle_visual};
 use gpui::{Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_core::{
     PrState, PullRequestImportPreview, PullRequestImportRemote, PullRequestImportSource,
@@ -119,8 +119,7 @@ fn pr_import_escape_cancels_url_stage(cx: &mut TestAppContext) {
     let (view, cx) = open_pr_import(&fixture, cx);
     assert!(cx.debug_bounds("pr-import-url").is_some());
 
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
 
     view.read_with(cx, |view, _| assert!(!view.has_pr_import_modal()));
 }

@@ -23,8 +23,8 @@ final class InterdiffScene: SceneBase {
         XCTAssertTrue(second.isSelected)
         XCTAssertTrue(third.isSelected)
         XCTAssertFalse(combinedDiffParent.isSelected)
-        XCTAssertFalse(app.descendants(matching: .any)[AID.Compare.reverseDirection].exists)
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Compare.combinedSelection].exists)
+        XCTAssertFalse(app.element(AID.Compare.reverseDirection).exists)
+        XCTAssertTrue(app.element(AID.Compare.combinedSelection).exists)
 
         rightClickCenter(second)
         let merge = app.menuItems["Merge 3 selected"]
@@ -60,7 +60,7 @@ final class InterdiffScene: SceneBase {
             third.click()
         }
 
-        let compareBanner = app.descendants(matching: .any)[AID.Compare.banner]
+        let compareBanner = app.element(AID.Compare.banner)
         XCTAssertTrue(
             compareBanner.waitForExistence(timeout: 5),
             "Non-consecutive selection did not load its outermost comparison"
@@ -68,8 +68,8 @@ final class InterdiffScene: SceneBase {
         XCTAssertTrue(first.isSelected)
         XCTAssertFalse(skipped.isSelected)
         XCTAssertTrue(third.isSelected)
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Compare.reverseDirection].isEnabled)
-        XCTAssertFalse(app.descendants(matching: .any)[AID.Detail.selectionWithoutDiff].exists)
+        XCTAssertTrue(app.element(AID.Compare.reverseDirection).isEnabled)
+        XCTAssertFalse(app.element(AID.Detail.selectionWithoutDiff).exists)
 
         app.typeKey(.escape, modifierFlags: [])
         XCTAssertTrue(

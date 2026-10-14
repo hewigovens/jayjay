@@ -3,15 +3,14 @@ import XCTest
 final class SidebarToggleScene: SceneBase {
     func testHidingTheSidebarKeepsItsStateAndRevealsItOnDemand() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
+        let rows = try waitForDAGRows()
         rows.firstMatch.click()
-        let firstFile = app.descendants(matching: .any)[AID.FileList.row("wip1.txt")]
-        let secondFile = app.descendants(matching: .any)[AID.FileList.row("wip2.txt")]
+        let firstFile = app.element(AID.FileList.row("wip1.txt"))
+        let secondFile = app.element(AID.FileList.row("wip2.txt"))
         XCTAssertTrue(firstFile.waitForExistence(timeout: 10), "Detail never loaded the working copy")
-        let column = app.descendants(matching: .any)[AID.FileList.column]
+        let column = app.element(AID.FileList.column)
         let columnWidth = column.frame.width
-        let divider = app.descendants(matching: .any)[AID.Sidebar.divider]
+        let divider = app.element(AID.Sidebar.divider)
         XCTAssertTrue(divider.waitForExistence(timeout: 5), "Sidebar divider missing")
         let sidebarWidth = divider.frame.minX
 

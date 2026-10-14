@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{Entity, Focusable, Modifiers, TestAppContext, VisualTestContext};
+use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::links::REPOSITORY_URL;
 use jayjay_gpui::app::rating_prompt::{RatingPromptState, RatingPromptStore};
 use jayjay_gpui::repo::RepoWindow;
@@ -32,22 +32,17 @@ fn raise_prompt(view: &Entity<RepoWindow>, message: &str, cx: &mut VisualTestCon
 fn the_prompt_is_modal_and_return_escape_or_dont_show_again_close_it(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx)
-    });
+    focus_view(&view, cx);
 
     raise_prompt(&view, "first", cx);
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert_eq!(opened_url(cx).as_deref(), Some(REPOSITORY_URL));
     assert!(cx.debug_bounds("rating-prompt").is_none());
 
-    cx.simulate_keystrokes("tab tab");
-    settle_visual(cx);
+    keys(cx, "tab tab");
     assert!(view.read_with(cx, |view, _| view.focused_control().is_some()));
     raise_prompt(&view, "second", cx);
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     assert!(cx.debug_bounds("rating-prompt").is_none());
 
     raise_prompt(&view, "third", cx);

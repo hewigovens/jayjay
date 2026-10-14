@@ -19,9 +19,9 @@ final class SettingsFontsScene: SceneBase {
         let codeSize = window.staticTexts[AID.Settings.codeFontSize]
         let lineSpacing = window.staticTexts[AID.Settings.codeLineSpacing]
         XCTAssertTrue(codeSize.waitForExistence(timeout: 5), "Code size missing")
-        XCTAssertTrue(window.descendants(matching: .any)[AID.Settings.fontPreview].exists, "Preview missing")
+        XCTAssertTrue(window.element(AID.Settings.fontPreview).exists, "Preview missing")
         XCTAssertEqual(codeSize.value as? String, "14 pt")
-        XCTAssertFalse(window.descendants(matching: .any)[AID.Settings.codeLigatures].isEnabled, "Menlo has no ligatures")
+        XCTAssertFalse(window.element(AID.Settings.codeLigatures).isEnabled, "Menlo has no ligatures")
         attachScreenshot(of: window, named: "Code Font - migrated")
 
         let steppers = window.steppers

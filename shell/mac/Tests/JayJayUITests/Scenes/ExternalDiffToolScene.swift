@@ -12,7 +12,7 @@ final class ExternalDiffToolScene: ExternalToolSceneBase {
 
     func testJjDiffToolOpensReadOnlyComparison() throws {
         let app = try XCTUnwrap(app)
-        let comparison = app.descendants(matching: .any)[AID.ExternalTool.diff]
+        let comparison = app.element(AID.ExternalTool.diff)
         XCTAssertTrue(comparison.waitForExistence(timeout: 10), "External diff tool did not appear")
         XCTAssertTrue(app.staticTexts["Folder Comparison"].exists)
         XCTAssertTrue(app.staticTexts["file.txt"].waitForExistence(timeout: 5))

@@ -15,7 +15,7 @@ final class ReviewNotesScene: SceneBase {
             .firstMatch
         clickCenter(file, timeout: 5, message: "scoring.swift row missing")
 
-        let diff = app.descendants(matching: .any)[AID.Diff.section]
+        let diff = app.element(AID.Diff.section)
         XCTAssertTrue(diff.waitForExistence(timeout: 5), "Diff section did not appear")
 
         let add = openFirstChangeGroupMenu(app, expecting: "Add Review Note")
@@ -51,9 +51,9 @@ final class ReviewNotesScene: SceneBase {
         addNote.click()
 
         // The count badge is a filter button, so match by identifier across element types.
-        let activeCount = app.descendants(matching: .any)[AID.ReviewNote.activeCount(1)]
+        let activeCount = app.element(AID.ReviewNote.activeCount(1))
         XCTAssertTrue(activeCount.waitForExistence(timeout: 5), "Active note count did not update")
-        let fileBadge = app.descendants(matching: .any)[AID.ReviewNote.fileCount(path: "scoring.swift", count: 1)]
+        let fileBadge = app.element(AID.ReviewNote.fileCount(path: "scoring.swift", count: 1))
         XCTAssertTrue(fileBadge.waitForExistence(timeout: 5), "File row did not show its review-note count")
 
         // Both body lines render as rows embedded in the diff text, expanding the view below the anchored line.
@@ -80,7 +80,7 @@ final class ReviewNotesScene: SceneBase {
         resolve.click()
 
         let countCleared = NSPredicate { _, _ in
-            !app.descendants(matching: .any)[AID.ReviewNote.activeCount(1)].exists
+            !app.element(AID.ReviewNote.activeCount(1)).exists
                 && !fileBadge.exists
                 && !(diffText.value as? String ?? "").contains("Check this added line")
         }
@@ -108,7 +108,7 @@ final class ReviewNotesScene: SceneBase {
         XCTAssertTrue(app.textViews[AID.ReviewNote.body].waitForExistence(timeout: 5), "Review note editor did not appear")
         paste("Keep the old title")
         clickCenter(app.buttons["Add Note"], timeout: 3, message: "\"Add Note\" button missing")
-        let activeCount = app.descendants(matching: .any)[AID.ReviewNote.activeCount(1)]
+        let activeCount = app.element(AID.ReviewNote.activeCount(1))
         XCTAssertTrue(activeCount.waitForExistence(timeout: 5), "Active note count did not update")
 
         clickCenter(app.buttons["Unified"], timeout: 5, message: "Diff layout toggle missing")

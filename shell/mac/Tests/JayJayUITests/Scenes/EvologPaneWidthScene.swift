@@ -9,7 +9,7 @@ final class EvologPaneWidthScene: SceneBase {
         false
     }
 
-    // CI runs on a small display; pinning the sidebar at its minimum leaves the three-way evolog split room to drag.
+    /// CI runs on a small display; pinning the sidebar at its minimum leaves the three-way evolog split room to drag.
     override class var additionalLaunchArguments: [String] {
         ["-jayjay.sidebarWidth", "<real>240</real>"]
     }
@@ -18,15 +18,15 @@ final class EvologPaneWidthScene: SceneBase {
         let app = try XCTUnwrap(app)
         showEvolutionWithSnapshots(in: app)
 
-        let entryList = app.descendants(matching: .any)[AID.Evolog.entryList]
+        let entryList = app.element(AID.Evolog.entryList)
         XCTAssertTrue(entryList.waitForExistence(timeout: 10), "Evolog entry list missing")
-        let entryListResized = narrow(entryList, divider: app.descendants(matching: .any)[AID.Evolog.entryListDivider])
+        let entryListResized = narrow(entryList, divider: app.element(AID.Evolog.entryListDivider))
 
         clickCenter(version(2, in: app), message: "Second version row missing")
-        let fileList = app.descendants(matching: .any)[AID.Evolog.fileList]
+        let fileList = app.element(AID.Evolog.fileList)
         XCTAssertTrue(fileList.waitForExistence(timeout: 10), "Evolog file list missing after selecting a version")
         XCTAssertEqual(entryList.frame.width, entryListResized, accuracy: 2, "Selecting a version altered the entry list width")
-        let fileListResized = narrow(fileList, divider: app.descendants(matching: .any)[AID.Evolog.fileListDivider])
+        let fileListResized = narrow(fileList, divider: app.element(AID.Evolog.fileListDivider))
 
         clickCenter(version(3, in: app), message: "Third version row missing")
         XCTAssertTrue(fileList.waitForExistence(timeout: 10), "Evolog file list missing after switching versions")
@@ -36,25 +36,25 @@ final class EvologPaneWidthScene: SceneBase {
         app.terminate()
         app.launch()
         showEvolutionWithSnapshots(in: app)
-        let relaunchedEntryList = app.descendants(matching: .any)[AID.Evolog.entryList]
+        let relaunchedEntryList = app.element(AID.Evolog.entryList)
         XCTAssertTrue(relaunchedEntryList.waitForExistence(timeout: 10), "Evolog entry list missing after relaunch")
         XCTAssertEqual(relaunchedEntryList.frame.width, entryListResized, accuracy: 2, "Entry list width did not persist")
         clickCenter(version(2, in: app), message: "Second version row missing after relaunch")
-        let relaunchedFileList = app.descendants(matching: .any)[AID.Evolog.fileList]
+        let relaunchedFileList = app.element(AID.Evolog.fileList)
         XCTAssertTrue(relaunchedFileList.waitForExistence(timeout: 10), "Evolog file list missing after relaunch")
         XCTAssertEqual(relaunchedFileList.frame.width, entryListResized, accuracy: 2, "File list did not start from the shared pane width")
     }
 
     private func showEvolutionWithSnapshots(in app: XCUIApplication) {
         let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
+        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
         rightClickCenter(rows.element(boundBy: 0))
         clickCenter(app.menuItems["Show evolution…"].firstMatch, message: "Show evolution menu item did not appear")
-        clickCenter(app.descendants(matching: .any)[AID.Evolog.hideSnapshots].firstMatch, message: "Hide snapshots checkbox missing")
+        clickCenter(app.element(AID.Evolog.hideSnapshots).firstMatch, message: "Hide snapshots checkbox missing")
     }
 
     private func version(_ index: Int, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)[AID.Evolog.version(index)].firstMatch
+        app.element(AID.Evolog.version(index)).firstMatch
     }
 
     private func narrow(_ pane: XCUIElement, divider: XCUIElement) -> CGFloat {

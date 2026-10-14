@@ -1,7 +1,8 @@
 use std::fs;
 
 use crate::harness::{
-    install_test_globals, load_selected_change_files, open_fixture, select_file, settle_visual,
+    install_test_globals, load_selected_change_files, menu_shows, open_fixture, select_file,
+    settle_visual,
 };
 use gpui::{Entity, Modifiers, MouseButton, Point, TestAppContext, VisualTestContext, point, px};
 use jayjay_core::compare;
@@ -296,10 +297,7 @@ fn side_by_side_new_gutter_offers_editing_the_file_at_its_line(cx: &mut TestAppC
     cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(cx);
 
-    assert!(
-        cx.debug_bounds("context-menu-Edit File at Line 2")
-            .is_some()
-    );
+    assert!(menu_shows(cx, "Edit File at Line 2"));
 }
 
 #[gpui::test]

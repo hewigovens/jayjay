@@ -18,7 +18,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let gutter = app.textViews[AID.Diff.gutter]
         XCTAssertTrue(gutter.waitForExistence(timeout: 5), "Diff gutter did not appear")
         let addNote = app.menuItems["Add Review Note"]
-        for _ in 0..<3 where !addNote.exists {
+        for _ in 0 ..< 3 where !addNote.exists {
             gutter.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 12, dy: 12)).rightClick()
             if !addNote.waitForExistence(timeout: 3) {
                 keyStroke(.escape)
@@ -54,7 +54,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         XCUIElement.perform(withKeyModifiers: .command) {
             self.row("include transfer time", in: app).click()
         }
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Compare.banner].waitForExistence(timeout: 5), "Compare banner missing")
+        XCTAssertTrue(app.element(AID.Compare.banner).waitForExistence(timeout: 5), "Compare banner missing")
         selectFile("src/routes.rs", in: app)
         capture("interdiff", frame: mainFrame)
     }
@@ -78,7 +78,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectChange("merge rail and ferry", in: app)
         clickCenter(app.buttons[AID.Conflict.resolveInJayJay("src/timetable.rs")], timeout: 10, message: "Edit in JayJay missing")
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Conflict.editorPreparing].waitForNonExistence(timeout: 60))
+        XCTAssertTrue(app.element(AID.Conflict.editorPreparing).waitForNonExistence(timeout: 60))
         XCTAssertTrue(app.staticTexts[AID.Conflict.editorModal].waitForExistence(timeout: 10), "Conflict editor missing")
         capture("conflict-resolver", frame: mainFrame)
     }
@@ -87,9 +87,9 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         rightClickCenter(row("include transfer time", in: app))
         clickCenter(app.menuItems["Show evolution…"].firstMatch, message: "Show evolution missing")
-        let toggle = app.descendants(matching: .any)[AID.Evolog.hideSnapshots].firstMatch
+        let toggle = app.element(AID.Evolog.hideSnapshots).firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "Evolution did not open")
-        let versions = (0..<8).map { app.descendants(matching: .any)[AID.Evolog.version($0)].firstMatch }
+        let versions = (0 ..< 8).map { app.element(AID.Evolog.version($0)).firstMatch }
         let oldest = try XCTUnwrap(versions.last { $0.exists }, "No evolution versions")
         oldest.click()
         capture("evolog", frame: mainFrame)
@@ -183,7 +183,7 @@ final class ReleaseScreenshots: ScreenshotScene {
     }
 
     private func row(_ subject: String, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)[AID.DAG.row(Self.fixtureRowId(for: subject))].firstMatch
+        app.element(AID.DAG.row(Self.fixtureRowId(for: subject))).firstMatch
     }
 
     private func selectChange(_ subject: String, in app: XCUIApplication) {
@@ -200,7 +200,7 @@ final class ReleaseScreenshots: ScreenshotScene {
     private func selectFile(_ path: String, in app: XCUIApplication) {
         let file = app.descendants(matching: .any).matching(NSPredicate(format: "identifier == %@", AID.FileList.row(path))).firstMatch
         clickCenter(file, timeout: 10, message: "\(path) row missing")
-        XCTAssertTrue(app.descendants(matching: .any)[AID.Diff.section].waitForExistence(timeout: 5), "Diff did not load")
+        XCTAssertTrue(app.element(AID.Diff.section).waitForExistence(timeout: 5), "Diff did not load")
         settle()
     }
 

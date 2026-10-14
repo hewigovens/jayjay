@@ -50,14 +50,14 @@ final class EvologHideSnapshotsScene: SceneBase {
         XCTAssertFalse(middle.isSelected)
         XCTAssertTrue(third.isSelected)
         XCTAssertTrue(app.staticTexts["wip1.txt"].waitForExistence(timeout: 5), "Selected versions were not diffed")
-        let comparisonBanner = app.descendants(matching: .any)[AID.Evolog.comparisonBanner].firstMatch
+        let comparisonBanner = app.element(AID.Evolog.comparisonBanner).firstMatch
         XCTAssertTrue(comparisonBanner.waitForExistence(timeout: 5), "Comparison header did not appear")
         XCTAssertLessThan(
             comparisonBanner.frame.minY - toggle.frame.maxY,
             40,
             "Comparison header should stay at the top of the diff pane"
         )
-        let reverse = app.descendants(matching: .any)[AID.Evolog.reverseComparison].firstMatch
+        let reverse = app.element(AID.Evolog.reverseComparison).firstMatch
         XCTAssertTrue(reverse.waitForExistence(timeout: 5), "Reverse comparison button did not appear")
         XCTAssertTrue(reverse.isEnabled)
         reverse.click()
@@ -94,13 +94,13 @@ final class EvologHideSnapshotsScene: SceneBase {
         XCTAssertLessThan(copyChangeId.frame.minY, copyCommitId.frame.minY)
         showEvolution.click()
 
-        let toggle = app.descendants(matching: .any)[AID.Evolog.hideSnapshots].firstMatch
+        let toggle = app.element(AID.Evolog.hideSnapshots).firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "Hide snapshots checkbox did not appear")
         return toggle
     }
 
     private func version(_ index: Int, in app: XCUIApplication) -> XCUIElement {
-        app.descendants(matching: .any)[AID.Evolog.version(index)].firstMatch
+        app.element(AID.Evolog.version(index)).firstMatch
     }
 
     private func collapsedSnapshotRun(in app: XCUIApplication) -> XCUIElement {

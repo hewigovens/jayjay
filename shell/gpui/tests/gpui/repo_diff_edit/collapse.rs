@@ -6,6 +6,7 @@ use jj_test::{FormatFixture, LinearFixture, run_jj_in};
 
 use super::fixtures::*;
 use super::harness::*;
+use crate::harness::keys;
 
 fn big_file_contents(lines: usize) -> String {
     (0..lines).map(|i| format!("line {i}\n")).collect()
@@ -115,12 +116,10 @@ fn collapse_all_keystroke_collapses_every_file(cx: &mut TestAppContext) {
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
 
-    cx.simulate_keystrokes(&format!("{}-alt-c", jayjay_gpui::platform::MOD_KEY));
-    settle_visual(cx);
+    keys(cx, &format!("{}-alt-c", jayjay_gpui::platform::MOD_KEY));
     assert!(view.read_with(cx, |view, _| view.diff_edit_collapsed("edit.txt")));
 
-    cx.simulate_keystrokes(&format!("{}-alt-e", jayjay_gpui::platform::MOD_KEY));
-    settle_visual(cx);
+    keys(cx, &format!("{}-alt-e", jayjay_gpui::platform::MOD_KEY));
     assert!(view.read_with(cx, |view, _| !view.diff_edit_collapsed("edit.txt")));
 }
 

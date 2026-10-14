@@ -101,8 +101,7 @@ fn tab_cycle_skips_sidebar_stops_when_hidden_and_toggle_is_always_present(cx: &m
 
     let mut stops = Vec::new();
     for _ in 0..14 {
-        cx.simulate_keystrokes("tab");
-        settle_visual(cx);
+        keys(cx, "tab");
         stops.push(view.read_with(cx, |view, _| (view.active_pane(), view.focused_control())));
     }
     assert!(
@@ -129,11 +128,9 @@ fn tab_cycle_skips_sidebar_stops_when_hidden_and_toggle_is_always_present(cx: &m
         if view.read_with(cx, |view, _| view.focused_control()) == Some(FocusStop::SidebarToggle) {
             break;
         }
-        cx.simulate_keystrokes("tab");
-        settle_visual(cx);
+        keys(cx, "tab");
     }
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
     assert!(sidebar_visible(cx), "Space on the toggle shows the sidebar");
 }
 

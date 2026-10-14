@@ -1,4 +1,4 @@
-use crate::harness::{install_test_globals, settle, settle_visual};
+use crate::harness::{install_test_globals, keys, settle, settle_visual};
 use gpui::{AppContext, Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
@@ -89,8 +89,7 @@ fn revset_bar_edits_in_place_and_resets(cx: &mut TestAppContext) {
 
     cx.simulate_keystrokes("cmd-a");
     cx.simulate_input("@ | trunk()");
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         let expected: Vec<_> = vm
@@ -190,11 +189,9 @@ fn revset_edit_cancels_on_escape_or_a_title_bar_click(cx: &mut TestAppContext) {
         view.view_model().read(cx).revset().to_owned()
     });
 
-    cx.simulate_keystrokes(&format!("{}-l", jayjay_gpui::platform::MOD_KEY));
-    settle_visual(cx);
+    keys(cx, &format!("{}-l", jayjay_gpui::platform::MOD_KEY));
     cx.simulate_input("all()");
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, cx| {
         assert!(view.revset_editor_text().is_none());
         assert_eq!(view.view_model().read(cx).revset(), before);
@@ -223,8 +220,7 @@ fn the_popup_takes_typing_from_a_focused_text_field(cx: &mut TestAppContext) {
 
     click(cx, "revset-presets");
     cx.simulate_input("all()");
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.summary_input().read(cx).text(), "");
         assert_eq!(view.view_model().read(cx).revset(), "all()");
@@ -243,14 +239,12 @@ fn invalid_typed_revset_opens_the_popup_with_its_error(cx: &mut TestAppContext) 
     click(cx, "revset-summary");
     cx.simulate_keystrokes("cmd-a");
     cx.simulate_input("invalid(");
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert!(cx.debug_bounds("revset-popup-error").is_some());
     assert!(view.read_with(cx, |view, _| view.revset_popup_open()));
     assert_eq!(graph_commit_ids(&view, cx), before);
 
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     assert!(!view.read_with(cx, |view, _| view.revset_popup_open()));
 }
 
@@ -392,8 +386,7 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
         cx.debug_bounds("revset-completion-0").is_some(),
         "the bookmark itself is offered"
     );
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(
             view.view_model().read(cx).revset(),
@@ -412,38 +405,33 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
         (bar.origin.x, bar.size.width),
         "the list sits under the bar, edge to edge"
     );
-    cx.simulate_keystrokes("down enter");
-    settle_visual(cx);
+    keys(cx, "down enter");
     assert_eq!(
         view.read_with(cx, |view, _| view.revset_editor_text()),
         Some("mine()".to_owned()),
         "Down picks a row and Return inserts it"
     );
     assert!(cx.debug_bounds("revset-completions").is_none());
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).revset(), "mine()");
     });
 
     retype(cx, "tag");
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     assert_eq!(
         view.read_with(cx, |view, _| view.revset_editor_text()),
         Some("tags()".to_owned()),
         "Tab finishes the first row without leaving the field"
     );
     assert!(cx.debug_bounds("revset-completions").is_none());
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).revset(), "tags()");
     });
 
     retype(cx, "au");
-    cx.simulate_keystrokes("down down enter");
-    settle_visual(cx);
+    keys(cx, "down down enter");
     assert_eq!(
         view.read_with(cx, |view, _| view.revset_editor_text()),
         Some("author_date(".to_owned())
@@ -451,16 +439,14 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
 
     cx.simulate_keystrokes("cmd-a");
     cx.simulate_input("au");
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     assert!(cx.debug_bounds("revset-completions").is_none());
     assert_eq!(
         view.read_with(cx, |view, _| view.revset_editor_text()),
         Some("au".to_owned()),
         "Escape closes the list before the editor"
     );
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     assert!(view.read_with(cx, |view, _| view.revset_editor_text().is_none()));
 }
 
@@ -500,14 +486,12 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
     cx.simulate_input("@ | min");
     settle_visual(cx);
     assert!(cx.debug_bounds("revset-popup-completions").is_some());
-    cx.simulate_keystrokes("down enter");
-    settle_visual(cx);
+    keys(cx, "down enter");
     assert!(
         view.read_with(cx, |view, _| view.revset_popup_open()),
         "a completion fills the field instead of applying"
     );
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).revset(), "@ | mine()");
         assert!(!view.revset_popup_open());
@@ -516,15 +500,13 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
     click(cx, "revset-presets");
     cx.simulate_input("@ | tag");
     settle_visual(cx);
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     assert!(
         view.read_with(cx, |view, _| view.revset_popup_open()),
         "Tab fills the field instead of moving focus"
     );
     assert!(cx.debug_bounds("revset-popup-completions").is_none());
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).revset(), "@ | tags()");
     });

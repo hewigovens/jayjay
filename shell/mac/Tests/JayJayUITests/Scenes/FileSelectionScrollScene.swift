@@ -24,7 +24,7 @@ final class FileSelectionScrollScene: SceneBase {
         let last = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-08.swift")).firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         app.buttons[AID.Detail.descriptionExpansion].click()
-        let commit = app.descendants(matching: .any)[AID.Detail.commitId].firstMatch
+        let commit = app.element(AID.Detail.commitId).firstMatch
         XCTAssertTrue(commit.waitForExistence(timeout: 5))
         let originalCommit = try XCTUnwrap(commit.value as? String)
         first.click()
@@ -93,7 +93,7 @@ final class FileSelectionScrollScene: SceneBase {
         let feature = fileRows(of: app).matching(identifier: AID.FileList.row("src/features/area-01/component.swift")).firstMatch
         XCTAssertTrue(development.waitForExistence(timeout: 10))
         app.buttons[AID.FileList.filterToggle].click()
-        XCTAssertTrue(app.descendants(matching: .any)[AID.FileList.filterField].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.element(AID.FileList.filterField).waitForExistence(timeout: 5))
         paste("ent")
         keyStroke(.return)
         XCTAssertTrue(development.wait(for: \.isSelected, toEqual: true, timeout: 5))

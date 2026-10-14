@@ -7,8 +7,7 @@ final class RemoteBookmarkPickerScene: SceneBase {
 
     func testBrowseRemoteHistoryWithoutTracking() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
+        let rows = try waitForDAGRows()
         let bar = app.buttons[AID.Toolbar.revsetBar]
         let defaultRevset = try XCTUnwrap(bar.value as? String)
         let picker = app.buttons.matching(NSPredicate(format: "label BEGINSWITH 'Bookmarks'")).firstMatch

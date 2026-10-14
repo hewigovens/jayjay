@@ -7,13 +7,12 @@ final class FileColumnWidthScene: SceneBase {
 
     func testFileColumnWidthSurvivesChangeSwitchAndRelaunch() throws {
         let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10), "DAG never populated")
-        let column = app.descendants(matching: .any)[AID.FileList.column]
+        let rows = try waitForDAGRows()
+        let column = app.element(AID.FileList.column)
         XCTAssertTrue(column.waitForExistence(timeout: 10), "File column missing")
         let initial = column.frame.width
 
-        let divider = app.descendants(matching: .any)[AID.FileList.columnDivider]
+        let divider = app.element(AID.FileList.columnDivider)
         XCTAssertTrue(divider.waitForExistence(timeout: 5), "File column divider missing")
         let grip = divider.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
         grip.press(forDuration: 0.2, thenDragTo: grip.withOffset(CGVector(dx: -30, dy: 0)))
@@ -26,7 +25,7 @@ final class FileColumnWidthScene: SceneBase {
 
         app.terminate()
         app.launch()
-        let relaunched = app.descendants(matching: .any)[AID.FileList.column]
+        let relaunched = app.element(AID.FileList.column)
         XCTAssertTrue(relaunched.waitForExistence(timeout: 10), "File column missing after relaunch")
         XCTAssertEqual(relaunched.frame.width, resized, accuracy: 2, "File column width did not persist")
     }

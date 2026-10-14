@@ -10,7 +10,7 @@ final class PullRequestImportScene: SceneBase {
         XCTAssertTrue(paletteField.waitForExistence(timeout: 5))
         paletteField.click()
         paste("from Pull Request")
-        let command = app.descendants(matching: .any)[AID.Palette.item("New Workspace from Pull Request…")]
+        let command = app.element(AID.Palette.item("New Workspace from Pull Request…"))
         XCTAssertTrue(command.waitForExistence(timeout: 5), "Palette item missing")
         command.click()
 
@@ -25,7 +25,7 @@ final class PullRequestImportScene: SceneBase {
         urlField.click()
         paste("not a url")
         keyStroke(.return)
-        let error = sheet.descendants(matching: .any)[AID.PullRequestImport.error]
+        let error = sheet.element(AID.PullRequestImport.error)
         XCTAssertTrue(error.waitForExistence(timeout: 10), "Inline error did not appear")
         XCTAssertEqual(urlField.value as? String, "not a url", "Failed resolve must keep the entered URL")
 

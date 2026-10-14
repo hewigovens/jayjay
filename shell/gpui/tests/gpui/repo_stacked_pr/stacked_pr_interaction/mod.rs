@@ -2,7 +2,7 @@ use gpui::{KeyBinding, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::app::actions::SubmitStackedPr;
 use jayjay_gpui::repo::window::StackedPrSnapshot;
 
-use super::{open_stack, settle_visual};
+use super::{keys, open_stack, settle_visual};
 
 fn bind_submit_key(cx: &mut VisualTestContext) {
     cx.update(|_window, cx| {
@@ -19,8 +19,7 @@ fn enter_submits_when_names_are_valid(cx: &mut TestAppContext) {
     let (_fixture, view, provider, cx) = open_stack(cx);
     bind_submit_key(cx);
     cx.focus(&view);
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert_eq!(provider.submitted.lock().unwrap().len(), 1);
     assert!(matches!(
         view.read_with(cx, |view, _| view.stacked_pr_snapshot()),
@@ -37,12 +36,10 @@ fn enter_finishes_bookmark_edit_before_submitting(cx: &mut TestAppContext) {
     });
     cx.focus(&view);
 
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert!(provider.submitted.lock().unwrap().is_empty());
 
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert_eq!(provider.submitted.lock().unwrap().len(), 1);
     assert!(matches!(
         view.read_with(cx, |view, _| view.stacked_pr_snapshot()),

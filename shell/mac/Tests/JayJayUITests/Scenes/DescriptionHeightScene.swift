@@ -30,7 +30,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertTrue(field.waitForExistence(timeout: 5))
         field.click()
         paste("Reset Zoom")
-        let reset = app.descendants(matching: .any)[AID.Palette.item("Reset Zoom")].firstMatch
+        let reset = app.element(AID.Palette.item("Reset Zoom")).firstMatch
         XCTAssertTrue(reset.waitForExistence(timeout: 3))
         reset.click()
         XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)], timeout: 3), .completed)
@@ -39,7 +39,7 @@ final class DescriptionHeightScene: SceneBase {
     func testDescriptionFitsContentAndScrollsAboveCap() throws {
         let app = try XCTUnwrap(app)
         select("Short description", in: app)
-        let description = app.descendants(matching: .any)[AID.Detail.description].firstMatch
+        let description = app.element(AID.Detail.description).firstMatch
         let short = description.frame.height
         let toggle = app.buttons[AID.Detail.descriptionExpansion]
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "The toggle also expands the metadata, so it is always offered")
@@ -52,7 +52,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertGreaterThan(description.frame.height, short)
 
         select("Long description", in: app)
-        let file = app.descendants(matching: .any)[AID.FileList.row("wip1.txt")].firstMatch
+        let file = app.element(AID.FileList.row("wip1.txt")).firstMatch
         XCTAssertTrue(file.waitForExistence(timeout: 5))
         file.click()
         let diff = app.textViews[AID.Diff.text].firstMatch
@@ -78,7 +78,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.click()
         let expandedHeight = scroll.frame.height
-        let pane = app.descendants(matching: .any)[AID.Detail.pane].firstMatch
+        let pane = app.element(AID.Detail.pane).firstMatch
         XCTAssertTrue(pane.exists)
         XCTAssertGreaterThan(expandedHeight, compactHeight)
         XCTAssertLessThan(expandedHeight, pane.frame.height)

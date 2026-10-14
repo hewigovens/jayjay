@@ -1,13 +1,12 @@
-use gpui::{Entity, Focusable, TestAppContext, VisualTestContext};
+use gpui::{Entity, TestAppContext, VisualTestContext};
 use jayjay_gpui::repo::window::RepoWindow;
 
 use super::fixtures::*;
 use super::harness::*;
+use crate::harness::focus_view;
 
 fn focus_window(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
-    view.update_in(cx, |view, window, cx| {
-        view.focus_handle(cx).focus(window, cx);
-    });
+    focus_view(view, cx);
 }
 
 fn ordered_paths(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> Vec<String> {

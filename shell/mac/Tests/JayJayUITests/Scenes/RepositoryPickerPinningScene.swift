@@ -18,7 +18,7 @@ final class RepositoryPickerPinningScene: SceneBase {
 
         for action in ["Pin", "Unpin"] {
             openRepositoryTitlePicker(in: repoWindow)
-            let row = app.descendants(matching: .any)[AID.Picker.row("repo-\(currentPath)")].firstMatch
+            let row = app.element(AID.Picker.row("repo-\(currentPath)")).firstMatch
             XCTAssertTrue(row.waitForExistence(timeout: 5))
             row.rightClick()
             let item = app.menuItems[action]
@@ -56,7 +56,7 @@ final class RepositoryPickerPinningScene: SceneBase {
         XCTAssertTrue(repoWindow.waitForExistence(timeout: 5))
 
         openRepositoryTitlePicker(in: repoWindow)
-        let row = app.descendants(matching: .any)[AID.Picker.row("ws-feature")].firstMatch
+        let row = app.element(AID.Picker.row("ws-feature")).firstMatch
         XCTAssertTrue(row.waitForExistence(timeout: 5), "feature workspace row missing")
         row.rightClick()
         XCTAssertTrue(app.menuItems["Open in New Window"].waitForExistence(timeout: 3), "\"Open in New Window\" menu item missing")

@@ -19,15 +19,13 @@ fn horizontal_keys_switch_panes_without_changing_selection(cx: &mut TestAppConte
     });
 
     for (left, right) in [("h", "l"), ("left", "right")] {
-        cx.simulate_keystrokes(right);
-        settle_visual(cx);
+        keys(cx, right);
         view.read_with(cx, |view, cx| {
             assert_eq!(view.active_pane(), ActivePane::FileColumn);
             assert_eq!(view.view_model().read(cx).selected_file_ix, Some(0));
             assert_eq!(view.view_model().read(cx).selected, selected);
         });
-        cx.simulate_keystrokes(left);
-        settle_visual(cx);
+        keys(cx, left);
         view.read_with(cx, |view, _| {
             assert_eq!(view.active_pane(), ActivePane::Sidebar)
         });
@@ -57,34 +55,29 @@ fn tab_enters_the_file_list_then_lands_on_its_toggles(cx: &mut TestAppContext) {
         });
     });
 
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.active_pane(), ActivePane::FileColumn);
         assert_eq!(view.focused_control(), None);
         assert_eq!(view.view_model().read(cx).selected_file_ix, Some(0));
     });
 
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::TreeToggle));
     });
 
     let was_tree_mode = tree_mode(cx);
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
     assert_ne!(tree_mode(cx), was_tree_mode);
 
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), None);
         assert_eq!(view.active_pane(), ActivePane::FileColumn);
     });
 
-    cx.simulate_keystrokes("shift-tab");
-    settle_visual(cx);
+    keys(cx, "shift-tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.active_pane(), ActivePane::Sidebar);
         assert_eq!(view.focused_control(), None);
@@ -96,15 +89,13 @@ fn commit_box_stops_take_text_focus_and_tab_still_leaves_them(cx: &mut TestAppCo
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
 
-    cx.simulate_keystrokes("shift-tab");
-    settle_visual(cx);
+    keys(cx, "shift-tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::CommitDescription));
     });
     cx.simulate_input("body");
     cx.simulate_keystrokes("h l");
-    cx.simulate_keystrokes("shift-tab");
-    settle_visual(cx);
+    keys(cx, "shift-tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::CommitSummary));
     });
@@ -115,8 +106,7 @@ fn commit_box_stops_take_text_focus_and_tab_still_leaves_them(cx: &mut TestAppCo
         assert_eq!(view.description_input().read(cx).text(), "bodyhl");
     });
 
-    cx.simulate_keystrokes("tab tab");
-    settle_visual(cx);
+    keys(cx, "tab tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), None);
         assert_eq!(view.active_pane(), ActivePane::Sidebar);
@@ -127,19 +117,16 @@ fn commit_box_stops_take_text_focus_and_tab_still_leaves_them(cx: &mut TestAppCo
 fn find_keeps_its_keys_after_a_control_had_focus(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
-    cx.simulate_keystrokes("tab tab");
-    settle_visual(cx);
+    keys(cx, "tab tab");
     let was_tree_mode = tree_mode(cx);
     view.update(cx, |view, cx| view.open_find(cx));
-    cx.simulate_keystrokes("tab space");
-    settle_visual(cx);
+    keys(cx, "tab space");
     assert_eq!(tree_mode(cx), was_tree_mode);
     view.read_with(cx, |view, _| {
         assert_eq!(view.find_query_text(), Some(" "));
         assert_eq!(view.focused_control(), None);
     });
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     view.read_with(cx, |view, _| assert!(view.find_query_text().is_none()));
 }
 
@@ -148,8 +135,7 @@ fn row_clicks_and_diff_edit_release_the_focused_control(cx: &mut TestAppContext)
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
 
-    cx.simulate_keystrokes("tab tab");
-    settle_visual(cx);
+    keys(cx, "tab tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::TreeToggle));
     });
@@ -162,14 +148,12 @@ fn row_clicks_and_diff_edit_release_the_focused_control(cx: &mut TestAppContext)
         assert_eq!(view.active_pane(), ActivePane::FileColumn);
     });
 
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
     view.read_with(cx, |view, _| assert_eq!(view.focused_control(), None));
 
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.read_with(cx, |view, _| assert_eq!(view.focused_control(), None));
 }
 
@@ -178,24 +162,20 @@ fn text_focus_overrides_the_previous_tab_stop(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
 
-    cx.simulate_keystrokes("tab tab");
-    settle_visual(cx);
+    keys(cx, "tab tab");
     let was_tree_mode = tree_mode(cx);
     let summary = view.read_with(cx, |view, _| view.summary_input().clone());
     cx.focus(&summary);
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
     assert_eq!(tree_mode(cx), was_tree_mode);
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.read_with(cx, |view, cx| {
         assert_eq!(view.focused_control(), Some(FocusStop::CommitDescription));
         assert_eq!(view.summary_input().read(cx).text(), " ");
     });
 
     cx.focus(&summary);
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::CommitDescription));
     });
@@ -207,25 +187,21 @@ fn keyboard_opened_filters_submit_and_release_text_focus(cx: &mut TestAppContext
     let (view, cx) = open_focused(&fixture, cx);
 
     tab_to(&view, cx, FocusStop::FilterToggle);
-    cx.simulate_keystrokes("space enter");
-    settle_visual(cx);
+    keys(cx, "space enter");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), None);
         assert!(view.file_filter_visible());
     });
-    cx.simulate_keystrokes("escape");
-    settle_visual(cx);
+    keys(cx, "escape");
     assert!(!view.read_with(cx, |view, _| view.file_filter_visible()));
 
     tab_to(&view, cx, FocusStop::RevsetFilter);
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::RevsetFilter));
         assert!(view.revset_editor_text().is_some());
     });
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     view.read_with(cx, |view, _| {
         assert_eq!(view.focused_control(), Some(FocusStop::Editor));
         assert!(view.revset_editor_text().is_none());
@@ -238,12 +214,10 @@ fn a_keyboard_opened_revset_popup_applies_on_return(cx: &mut TestAppContext) {
     let (view, cx) = open_focused(&fixture, cx);
 
     tab_to(&view, cx, FocusStop::RevsetPresets);
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     assert!(view.read_with(cx, |view, _| view.revset_popup_open()));
     cx.simulate_input("all()");
-    cx.simulate_keystrokes("enter");
-    settle_visual(cx);
+    keys(cx, "enter");
     view.read_with(cx, |view, cx| {
         assert!(!view.revset_popup_open());
         assert_eq!(view.view_model().read(cx).revset(), "all()");
@@ -258,14 +232,12 @@ fn edit_file_follows_edit_diff_in_the_tab_cycle(cx: &mut TestAppContext) {
     select_file(&view, "notes.md", cx);
 
     tab_to(&view, cx, FocusStop::EditDiff);
-    cx.simulate_keystrokes("tab");
-    settle_visual(cx);
+    keys(cx, "tab");
     assert_eq!(
         view.read_with(cx, |view, _| view.focused_control()),
         Some(FocusStop::EditFile)
     );
-    cx.simulate_keystrokes("space");
-    settle_visual(cx);
+    keys(cx, "space");
     assert!(view.read_with(cx, |view, _| view.file_editor_active()));
 }
 
@@ -274,8 +246,7 @@ fn tab_to(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, stop: FocusStop
         if view.read_with(cx, |view, _| view.focused_control()) == Some(stop) {
             return;
         }
-        cx.simulate_keystrokes("tab");
-        settle_visual(cx);
+        keys(cx, "tab");
     }
     panic!("{stop:?} is not in the Tab cycle");
 }

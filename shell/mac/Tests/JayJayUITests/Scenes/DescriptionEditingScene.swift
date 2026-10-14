@@ -16,7 +16,7 @@ final class DescriptionEditingScene: SceneBase {
         paste("Keep WIP body")
 
         selectEditable(in: app)
-        let preview = app.descendants(matching: .any)[AID.Detail.description].firstMatch
+        let preview = app.element(AID.Detail.description).firstMatch
         let previewHeight = preview.frame.height
         let previewTitle = preview.staticTexts[AID.Detail.descriptionTitle]
         let previewBody = preview.scrollViews[AID.Detail.descriptionBody].textViews.firstMatch

@@ -16,7 +16,7 @@ final class BookmarkDiffScene: SceneBase {
         XCTAssertTrue(baseBookmarkRow.waitForExistence(timeout: 5), "Base bookmark row did not appear")
         baseBookmarkRow.click()
         XCTAssertTrue(
-            app.descendants(matching: .any)[AID.FileList.row("feature.txt")].waitForExistence(timeout: 5),
+            app.element(AID.FileList.row("feature.txt")).waitForExistence(timeout: 5),
             "Base bookmark row did not load"
         )
 
@@ -25,13 +25,13 @@ final class BookmarkDiffScene: SceneBase {
         XCTAssertTrue(diffBookmark.waitForExistence(timeout: 5), "Diff Bookmark menu item did not appear")
         diffBookmark.click()
 
-        let banner = app.descendants(matching: .any)[AID.Compare.banner]
+        let banner = app.element(AID.Compare.banner)
         XCTAssertTrue(banner.waitForExistence(timeout: 5), "Compare banner did not appear")
         XCTAssertTrue(app.staticTexts["PR Diff"].exists)
         XCTAssertTrue(app.staticTexts["main"].exists)
         XCTAssertTrue(app.staticTexts["bookmark-diff"].exists)
 
-        let diff = app.descendants(matching: .any)[AID.Diff.section]
+        let diff = app.element(AID.Diff.section)
         XCTAssertTrue(diff.waitForExistence(timeout: 5), "Bookmark diff did not render")
     }
 }
