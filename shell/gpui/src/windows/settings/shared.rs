@@ -104,7 +104,6 @@ pub(super) fn field_row(
     t: &Theme,
 ) -> AnyElement {
     row_container()
-        .min_h(px(40.))
         .py(px(6.))
         .gap(px(6.))
         .child(
