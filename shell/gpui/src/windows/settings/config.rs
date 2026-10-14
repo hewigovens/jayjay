@@ -9,7 +9,9 @@ use gpui::{
 use jayjay_core::{JjConfigEntry, JjConfigSection};
 
 use super::SettingsView;
-use super::shared::{detail_row, feedback_copy_icon_button, row_container, section_title};
+use super::shared::{
+    detail_row, feedback_copy_icon_button, form_group, form_section, row_container,
+};
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
@@ -50,8 +52,7 @@ pub(super) fn jujutsu_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(16.))
-        .child(section_title("Jujutsu", t));
+        .gap(px(24.));
 
     if loading {
         return root
@@ -71,11 +72,14 @@ pub(super) fn jujutsu_section(
 
     // The path row stays above a load error, so a config that fails to parse can still be opened for repair; a missing config has nothing to open.
     if snapshot.exists && !snapshot.path.is_empty() {
-        root = root.child(config_path_row(
-            &snapshot.path,
-            recently_copied.is_some_and(|id| id.as_ref() == CONFIG_PATH_COPY_ID),
+        root = root.child(form_group(
+            [config_path_row(
+                &snapshot.path,
+                recently_copied.is_some_and(|id| id.as_ref() == CONFIG_PATH_COPY_ID),
+                t,
+                cx,
+            )],
             t,
-            cx,
         ));
     }
     if let Some(error) = snapshot.error.as_ref() {
@@ -95,7 +99,7 @@ fn config_path_row(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
-    row_container(t)
+    row_container()
         .debug_selector(|| "jj-config-path-row".to_owned())
         .py(px(6.))
         .child(
@@ -119,18 +123,12 @@ fn config_path_row(
 }
 
 fn config_section(section: &JjConfigSection, t: &Theme) -> AnyElement {
-    let mut group = div().flex().flex_col().w_full().gap(px(4.)).child(
-        div()
-            .w_full()
-            .pt(px(4.))
-            .text_size(ui_font_size(11.))
-            .text_color(rgb(t.fg_faint))
-            .child(SharedString::from(section.name.clone())),
-    );
-    for entry in &section.entries {
-        group = group.child(config_row(entry, t));
-    }
-    group.into_any_element()
+    form_section(
+        SharedString::from(section.name.clone()),
+        section.entries.iter().map(|entry| config_row(entry, t)),
+        t,
+    )
+    .into_any_element()
 }
 
 fn config_row(entry: &JjConfigEntry, t: &Theme) -> AnyElement {

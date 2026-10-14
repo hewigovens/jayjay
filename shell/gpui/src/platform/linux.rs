@@ -20,7 +20,6 @@ pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
 pub const TOOLBAR_ICON_SIZE: f32 = 16.;
 pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (12., 14.);
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
-pub const CUSTOM_TERMINAL_HINT: &str = "e.g. alacritty";
 
 pub fn append_menu_bar(root: gpui::Div, t: &Theme, cx: &mut Context<RepoWindow>) -> gpui::Div {
     root.child(crate::ui::app_menu::menu_bar(t, cx))

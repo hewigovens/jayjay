@@ -7,9 +7,9 @@ use gpui::{
 
 use super::SettingsView;
 use super::dropdown::dropdown_button;
-use super::shared::{detail_row, field_row, subsection_title};
+use super::shared::{detail_row, field_row, form_section};
 use crate::app::theme::Theme;
-use crate::platform::{CUSTOM_TERMINAL_HINT, CUSTOM_TERMINAL_LABEL};
+use crate::platform::CUSTOM_TERMINAL_LABEL;
 use crate::ui::icons::{self, glyph};
 use crate::ui::text_area::{TextArea, TextAreaUpdated};
 
@@ -44,35 +44,30 @@ pub(super) fn tool_sections(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
-    let mut section = div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(16.))
-        .child(subsection_title("Applications", t))
-        .child(field_row(
-            "Editor",
-            dropdown_button(
-                "editor",
-                dropdown_label(EDITOR_OPTIONS, &cfg.tools.external_editor),
-                t,
-                cx,
-            ),
-            "Used by 'Open in Editor' actions.",
+    let mut rows = vec![field_row(
+        glyph::BRACES,
+        "Editor",
+        dropdown_button(
+            "editor",
+            dropdown_label(EDITOR_OPTIONS, &cfg.tools.external_editor),
             t,
-        ));
+            cx,
+        ),
+        t,
+    )];
     if cfg.tools.external_editor == "custom" {
-        section = section.child(field_row(
+        rows.push(field_row(
+            glyph::TERMINAL,
             "Command",
             command_input(
                 "setting-custom-editor-command",
                 custom_editor_command.clone(),
             ),
-            "The executable and optional arguments used to open a path.",
             t,
         ));
     }
-    section = section.child(field_row(
+    rows.push(field_row(
+        glyph::TERMINAL,
         "Terminal",
         dropdown_button(
             "terminal",
@@ -80,21 +75,27 @@ pub(super) fn tool_sections(
             t,
             cx,
         ),
-        "Used by 'Open in Terminal'.",
         t,
     ));
     if cfg.tools.terminal == "custom" {
-        section = section.child(field_row(
+        rows.push(field_row(
+            glyph::TERMINAL,
             CUSTOM_TERMINAL_LABEL,
             command_input(
                 "setting-custom-terminal-command",
                 custom_terminal_command.clone(),
             ),
-            CUSTOM_TERMINAL_HINT,
             t,
         ));
     }
-    section.child(ai_tool_rows(ai_tools, t)).into_any_element()
+    div()
+        .flex()
+        .flex_col()
+        .w_full()
+        .gap(px(24.))
+        .child(form_section("Applications", rows, t))
+        .child(ai_tool_rows(ai_tools, t))
+        .into_any_element()
 }
 
 fn command_input(id: &'static str, input: Entity<TextArea>) -> AnyElement {
@@ -102,7 +103,8 @@ fn command_input(id: &'static str, input: Entity<TextArea>) -> AnyElement {
         .id(id)
         .debug_selector(move || id.to_owned())
         .w(px(360.))
-        .max_w(px(360.))
+        .max_w_full()
+        .min_w_0()
         .child(input)
         .into_any_element()
 }
@@ -116,26 +118,28 @@ fn dropdown_label(options: &[(&str, &str)], current: &str) -> String {
 }
 
 fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
-    div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(2.))
-        .child(subsection_title("AI Commit Message", t))
-        .child(binary_row(
-            "Codex CLI",
-            glyph::FILE_CODE,
-            ai_tools.map(|s| s.codex.as_deref()),
-            "Not found",
-            t,
-        ))
-        .child(binary_row(
-            "Claude CLI",
-            glyph::SPARKLE,
-            ai_tools.map(|s| s.claude.as_deref()),
-            "Not found",
-            t,
-        ))
+    form_section(
+        "AI Commit Message",
+        [
+            binary_row(
+                "Codex CLI",
+                glyph::FILE_CODE,
+                ai_tools.map(|s| s.codex.as_deref()),
+                "Not found",
+                t,
+            )
+            .into_any_element(),
+            binary_row(
+                "Claude CLI",
+                glyph::SPARKLE,
+                ai_tools.map(|s| s.claude.as_deref()),
+                "Not found",
+                t,
+            )
+            .into_any_element(),
+        ],
+        t,
+    )
 }
 
 /// `None` while detection runs; found rows show the resolved binary path like the CLI rows below.

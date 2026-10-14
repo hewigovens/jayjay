@@ -97,6 +97,40 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
 }
 
 #[gpui::test]
+fn page_heading_stays_visible_while_settings_scroll(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Fonts, cx));
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settings_cx.simulate_resize(size(px(760.), px(500.)));
+    settle_visual(&mut settings_cx);
+
+    let heading = settings_cx
+        .debug_bounds("settings-page-title")
+        .expect("page heading");
+    let first_control = settings_cx
+        .debug_bounds("dd-btn-interface-font-family")
+        .expect("interface font");
+    scroll_settings(&mut settings_cx, -2000.);
+    let reset = settings_cx
+        .debug_bounds("setting-reset-fonts")
+        .expect("reset fonts");
+    let scroll = settings_cx
+        .debug_bounds("settings-scroll")
+        .expect("settings viewport");
+    assert!(reset.top() >= scroll.top() && reset.bottom() <= scroll.bottom());
+    assert!(
+        settings_cx
+            .debug_bounds("dd-btn-interface-font-family")
+            .is_none_or(|bounds| bounds.top() < first_control.top())
+    );
+    assert_eq!(
+        settings_cx.debug_bounds("settings-page-title"),
+        Some(heading)
+    );
+}
+
+#[gpui::test]
 fn interface_font_size_stepper_updates_config(cx: &mut TestAppContext) {
     install_test_globals(cx);
     cx.update(|cx| SettingsView::open_section(SettingsSection::Fonts, cx));
@@ -314,12 +348,24 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
 #[gpui::test]
 fn long_dropdowns_stay_inside_the_window_and_scroll_to_every_option(cx: &mut TestAppContext) {
     install_test_globals(cx);
+    cx.update(|cx| {
+        jayjay_gpui::app::config::update(cx, |cfg| {
+            cfg.tools.external_editor = "An editor with a very long saved name".to_owned();
+        });
+    });
     cx.update(|cx| SettingsView::open_section(SettingsSection::Integrations, cx));
     let window = cx.windows().last().copied().expect("settings window");
     let mut settings_cx = VisualTestContext::from_window(window, cx);
     let window_height = px(260.);
     settings_cx.simulate_resize(size(px(760.), window_height));
-    settle_visual(&mut settings_cx);
+    crate::harness::zoom_to_max(&mut settings_cx);
+    let editor = settings_cx
+        .debug_bounds("dd-btn-editor")
+        .expect("editor picker");
+    assert!(
+        editor.right() <= px(760.),
+        "{editor:?} overflows the window"
+    );
 
     click_setting(&mut settings_cx, "dd-btn-editor");
     let panel = settings_cx
@@ -358,6 +404,13 @@ fn custom_tool_commands_are_editable_and_persisted(cx: &mut TestAppContext) {
     let editor = settings_cx
         .debug_bounds("setting-custom-editor-command")
         .expect("custom editor command input");
+    let picker = settings_cx
+        .debug_bounds("dd-btn-editor")
+        .expect("editor picker");
+    assert!(
+        editor.size.width >= picker.size.width,
+        "command input should remain wide enough to edit: {editor:?}"
+    );
     settings_cx.simulate_click(editor.center(), Modifiers::default());
     settings_cx.simulate_input("code --reuse-window");
     settle_visual(&mut settings_cx);

@@ -5,7 +5,7 @@ use super::{
 };
 
 use gpui::{
-    AnyElement, App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable,
+    AnyElement, App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, FontWeight,
     InteractiveElement, IntoElement, ParentElement, Render, ScrollHandle, SharedString,
     StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
     px, rgb, size,
@@ -153,19 +153,42 @@ impl Render for SettingsView {
             .child(crate::ui::primitives::divider_v(&t))
             .child(
                 div()
-                    .id("settings-scroll")
-                    .debug_selector(|| "settings-scroll".to_owned())
                     .flex()
                     .flex_col()
                     .flex_1()
                     .min_w_0()
                     .min_h_0()
-                    .overflow_y_scroll()
-                    .track_scroll(&self.scroll)
-                    .scrollbar_width(px(0.))
-                    .px(px(28.))
-                    .py(px(20.))
-                    .child(self.section_body(&cfg, &t, window, cx)),
+                    .child(
+                        div()
+                            .debug_selector(|| "settings-page-title".to_owned())
+                            .flex()
+                            .flex_none()
+                            .items_center()
+                            .min_h(px(t.scaled_control_height(44., 14.)))
+                            .px(px(20.))
+                            .text_size(crate::app::theme::ui_font_size(14.))
+                            .font_weight(FontWeight::SEMIBOLD)
+                            .child(active.label()),
+                    )
+                    .child(
+                        div()
+                            .id("settings-scroll")
+                            .debug_selector(|| "settings-scroll".to_owned())
+                            .flex_1()
+                            .min_w_0()
+                            .min_h_0()
+                            .overflow_y_scroll()
+                            .track_scroll(&self.scroll)
+                            .scrollbar_width(px(0.))
+                            .child(
+                                div()
+                                    .w_full()
+                                    .px(px(20.))
+                                    .pt(px(8.))
+                                    .pb(px(24.))
+                                    .child(self.section_body(&cfg, &t, window, cx)),
+                            ),
+                    ),
             );
         if let Some(d) = dropdown {
             root = root.child(dropdown_overlay(d, &t, window, cx));

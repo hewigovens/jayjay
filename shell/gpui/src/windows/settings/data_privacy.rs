@@ -1,8 +1,9 @@
-use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px};
+use gpui::{AnyElement, IntoElement, SharedString};
 
-use super::shared::{field_row, section_title, subsection_title};
+use super::shared::{field_row, form_section};
 use crate::app::config::{self, AppConfig, TelemetryConfig};
 use crate::app::theme::Theme;
+use crate::ui::icons::glyph;
 use crate::ui::primitives::boolean_toggle_button;
 
 pub(super) fn data_privacy_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
@@ -18,18 +19,15 @@ pub(super) fn data_privacy_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         },
     );
 
-    div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(16.))
-        .child(section_title("Data & Privacy", t))
-        .child(subsection_title("Privacy", t))
-        .child(field_row(
+    form_section(
+        "Privacy",
+        [field_row(
+            glyph::CHART_BAR,
             TelemetryConfig::LABEL,
             toggle,
-            TelemetryConfig::HINT,
             t,
-        ))
-        .into_any_element()
+        )],
+        t,
+    )
+    .into_any_element()
 }

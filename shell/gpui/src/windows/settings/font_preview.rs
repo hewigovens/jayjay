@@ -49,7 +49,6 @@ pub(super) fn font_preview(t: &Theme, diff_theme: &Theme, cx: &App) -> AnyElemen
         .gap(px(10.))
         .p(px(16.))
         .rounded_lg()
-        .bg(rgb(t.row_alt_bg))
         .child(
             div()
                 .text_size(ui_font_size(FONT_BODY))

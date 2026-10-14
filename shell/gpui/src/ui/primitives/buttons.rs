@@ -127,10 +127,10 @@ pub(crate) fn boolean_toggle_button<F>(
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    let (track_bg, border_color, thumb_color) = if active {
-        (theme.toggle_active_bg, theme.toggle_active_fg, theme.fg)
+    let track_bg = if active {
+        theme.switch_active_bg
     } else {
-        (theme.toggle_inactive_bg, theme.border, theme.fg_dim)
+        theme.switch_inactive_bg
     };
     let toggled = if active {
         Toggled::True
@@ -144,7 +144,7 @@ where
         .w(px(18.))
         .h(px(18.))
         .rounded_full()
-        .bg(rgb(thumb_color));
+        .bg(rgb(theme.switch_thumb));
 
     let mut track = div()
         .flex()
@@ -156,7 +156,7 @@ where
         .rounded_full()
         .bg(rgb(track_bg))
         .border_1()
-        .border_color(rgb(border_color));
+        .border_color(rgb(track_bg));
     track = (if active {
         track.justify_end()
     } else {

@@ -138,15 +138,6 @@ pub(crate) fn interface_preference_label(preference: &str) -> String {
     }
 }
 
-pub(crate) fn interface_font_is_installed(preference: &str) -> bool {
-    preference.trim().is_empty() || pick(&[preference.trim()]).is_some()
-}
-
-pub(crate) fn code_font_is_installed(preference: &str) -> bool {
-    let family = mono_font_family(preference);
-    family.is_empty() || pick(&[&family]).is_some()
-}
-
 pub(crate) fn code_font_choices() -> CodeFontChoices {
     CodeFontChoices::new(platform::monospaced_families())
 }

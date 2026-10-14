@@ -6,9 +6,10 @@ use gpui::{
 
 use super::SettingsView;
 use super::diff_palette::diff_palette_section;
-use super::shared::{field_row, section_title};
+use super::shared::{field_row, form_group};
 use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
+use crate::ui::icons::glyph;
 
 pub(super) fn appearance_section(
     view: &SettingsView,
@@ -20,12 +21,14 @@ pub(super) fn appearance_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(16.))
-        .child(section_title("Appearance", t))
-        .child(field_row(
-            "Appearance",
-            appearance_segmented(cfg.appearance, t),
-            "Light, Dark, or System.",
+        .gap(px(24.))
+        .child(form_group(
+            [field_row(
+                glyph::CONTRAST,
+                "Appearance",
+                appearance_segmented(cfg.appearance, t),
+                t,
+            )],
             t,
         ))
         .child(diff_palette_section(view, cfg, t, cx))
@@ -36,7 +39,10 @@ fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_row()
-        .gap(px(4.))
+        .gap(px(1.))
+        .p(px(2.))
+        .rounded_md()
+        .bg(rgb(t.toggle_inactive_bg))
         .child(appearance_option(
             AppearanceMode::System,
             "System",

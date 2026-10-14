@@ -17,10 +17,10 @@ pub(super) fn sidebar(
         .flex()
         .flex_col()
         .flex_none()
-        .w(px(200.))
+        .w(px(230.))
         .h_full()
         .overflow_y_scroll()
-        .bg(rgb(t.sidebar_bg))
+        .bg(rgb(t.row_alt_bg))
         .px(px(8.))
         .py(px(12.))
         .children(SettingsSection::ALL.into_iter().map(|section| {
@@ -38,7 +38,7 @@ pub(super) fn sidebar(
                 .bg(rgb(if section == active {
                     t.selected_bg
                 } else {
-                    t.sidebar_bg
+                    t.row_alt_bg
                 }))
                 .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
@@ -47,7 +47,7 @@ pub(super) fn sidebar(
                     s.bg(rgb(if section == active {
                         t.selected_bg
                     } else {
-                        t.row_alt_bg
+                        t.toggle_inactive_bg
                     }))
                 })
                 .on_click(cx.listener(move |this, _: &ClickEvent, _, cx| {
@@ -75,7 +75,7 @@ pub(super) fn sidebar(
                         .bg(rgb(section.color(t)))
                         .child(icons::icon(section.glyph(), 12., t.detail_bg)),
                 )
-                .child(label)
+                .child(div().min_w_0().truncate().child(label))
         }))
         .into_any_element()
 }

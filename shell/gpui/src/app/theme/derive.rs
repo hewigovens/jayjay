@@ -123,6 +123,9 @@ impl Theme {
             find_match_bg: diff.find_match_bg,
             find_match_fg: diff.find_match_fg,
 
+            switch_active_bg: seed.accent,
+            switch_inactive_bg: mix(bg, fg, 0.16),
+            switch_thumb: ThemeSeed::light().background,
             toggle_active_bg: seed.tint(seed.blue, pick(0.28, 0.14)),
             toggle_active_fg: seed.ink(seed.blue),
             toggle_inactive_bg: tag_bg,

@@ -40,21 +40,21 @@ impl SettingsSection {
 
     pub(super) fn glyph(self) -> &'static str {
         match self {
-            Self::Appearance => glyph::EYE,
+            Self::Appearance => glyph::PAINTBRUSH,
             Self::Fonts => glyph::BRACES,
-            Self::Diff => glyph::COLUMNS,
+            Self::Diff => glyph::FILE_SEARCH,
             Self::Workflow => glyph::LIST_CHECKS,
-            Self::Integrations => glyph::GEAR,
+            Self::Integrations => glyph::WRENCH,
             Self::Jujutsu => glyph::GIT_BRANCH,
-            Self::DataPrivacy => glyph::HARD_DRIVE,
+            Self::DataPrivacy => glyph::HAND,
             Self::About => glyph::INFO,
         }
     }
 
     pub(super) fn color(self, t: &Theme) -> u32 {
         match self {
-            Self::Appearance => t.syntax.keyword,
-            Self::Fonts => t.syntax.string,
+            Self::Appearance => t.change_id_prefix,
+            Self::Fonts => t.selected_accent,
             Self::Diff | Self::About => t.selected_accent,
             Self::Workflow => t.compare_accent,
             Self::Integrations => t.syntax.ty,

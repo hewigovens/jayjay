@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, ClipboardItem, Context, Div, InteractiveElement, IntoElement, ParentElement,
-    SharedString, Stateful, StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, ClipboardItem, Context, Div, FontWeight, InteractiveElement, IntoElement,
+    ParentElement, SharedString, Stateful, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use crate::app::config;
@@ -11,36 +11,55 @@ use crate::ui::primitives::{boolean_toggle_button, icon_button};
 
 use super::SettingsView;
 
-pub(super) fn section_title(text: &'static str, t: &Theme) -> impl IntoElement {
+pub(super) fn form_section(
+    title: impl Into<SharedString>,
+    rows: impl IntoIterator<Item = AnyElement>,
+    t: &Theme,
+) -> Div {
     div()
+        .flex()
+        .flex_col()
         .w_full()
-        .text_size(ui_font_size(18.))
-        .text_color(rgb(t.fg))
-        .pb(px(4.))
-        .border_b_1()
-        .border_color(rgb(t.border))
-        .child(text)
+        .min_w_0()
+        .gap(px(8.))
+        .child(
+            div()
+                .px(px(12.))
+                .text_size(ui_font_size(12.))
+                .font_weight(FontWeight::SEMIBOLD)
+                .text_color(rgb(t.fg_dim))
+                .child(title.into()),
+        )
+        .child(form_group(rows, t))
 }
 
-pub(super) fn subsection_title(text: &'static str, t: &Theme) -> impl IntoElement {
-    div()
+pub(super) fn form_group(rows: impl IntoIterator<Item = AnyElement>, t: &Theme) -> Div {
+    let mut group = div()
+        .flex()
+        .flex_col()
         .w_full()
-        .pt(px(4.))
-        .text_size(ui_font_size(11.))
-        .text_color(rgb(t.fg_faint))
-        .child(text)
+        .min_w_0()
+        .px(px(12.))
+        .rounded(px(10.))
+        .bg(rgb(t.row_alt_bg));
+    for (index, row) in rows.into_iter().enumerate() {
+        if index > 0 {
+            group = group.child(div().flex_none().h(px(1.)).bg(rgb(t.row_border)));
+        }
+        group = group.child(div().flex_none().w_full().min_w_0().child(row));
+    }
+    group
 }
 
-pub(super) fn row_container(t: &Theme) -> Div {
+pub(super) fn row_container() -> Div {
     div()
         .flex()
         .flex_row()
         .items_center()
         .w_full()
+        .min_w_0()
+        .min_h(px(40.))
         .gap(px(8.))
-        .px(px(8.))
-        .rounded_sm()
-        .bg(rgb(t.row_alt_bg))
 }
 
 pub(super) fn detail_row(
@@ -51,9 +70,12 @@ pub(super) fn detail_row(
     detail_color: u32,
     t: &Theme,
 ) -> Div {
-    row_container(t)
+    row_container()
         .py(px(5.))
-        .child(icons::icon(glyph_str, 14., t.fg_dim))
+        .child(
+            icons::icon(glyph_str, t.scaled_font_size(14.), t.fg_dim)
+                .w(px(t.scaled_font_size(16.))),
+        )
         .child(
             div()
                 .flex_1()
@@ -65,8 +87,8 @@ pub(super) fn detail_row(
         )
         .child(
             div()
-                .flex_none()
-                .max_w(px(360.))
+                .flex_shrink_1()
+                .max_w(gpui::relative(0.55))
                 .min_w_0()
                 .truncate()
                 .code_text(detail_font_size, t)
@@ -76,41 +98,33 @@ pub(super) fn detail_row(
 }
 
 pub(super) fn field_row(
+    glyph_str: &'static str,
     label: &'static str,
     value: AnyElement,
-    hint: impl Into<SharedString>,
     t: &Theme,
 ) -> AnyElement {
-    div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(4.))
+    row_container()
+        .min_h(px(40.))
+        .py(px(6.))
+        .gap(px(6.))
+        .child(
+            icons::icon(glyph_str, t.scaled_font_size(14.), t.fg_dim)
+                .w(px(t.scaled_font_size(16.))),
+        )
         .child(
             div()
-                .flex()
-                .flex_row()
-                .items_center()
-                .justify_between()
-                .w_full()
-                .gap(px(12.))
-                .child(
-                    div()
-                        .text_size(ui_font_size(12.))
-                        .text_color(rgb(t.fg))
-                        .child(label),
-                )
-                .child(value),
+                .flex_1()
+                .min_w_0()
+                .text_size(ui_font_size(13.))
+                .text_color(rgb(t.fg))
+                .child(label),
         )
-        .children(
-            Some(hint.into())
-                .filter(|hint| !hint.is_empty())
-                .map(|hint| {
-                    div()
-                        .text_size(ui_font_size(11.))
-                        .text_color(rgb(t.fg_faint))
-                        .child(hint)
-                }),
+        .child(
+            div()
+                .max_w(gpui::relative(0.6))
+                .min_w_0()
+                .ml(px(6.))
+                .child(value),
         )
         .into_any_element()
 }
@@ -228,9 +242,9 @@ fn copy_feedback_selector(id: &str, copied: bool) -> String {
 }
 
 pub(super) fn toggle_field(
+    glyph_str: &'static str,
     label: &'static str,
     active: bool,
-    hint: &'static str,
     mutate: fn(&mut crate::app::config::AppConfig),
     id: &'static str,
     t: &Theme,
@@ -244,5 +258,5 @@ pub(super) fn toggle_field(
         },
     );
 
-    field_row(label, value, hint, t)
+    field_row(glyph_str, label, value, t)
 }

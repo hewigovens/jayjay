@@ -117,14 +117,12 @@ fn hint_lines(state: &CliInstallState, t: &Theme) -> Vec<(String, u32)> {
             t.fg_faint,
         ));
     }
-    match (&state.status, &state.path_hint) {
-        (EntryStatus::NotInstalled, _) => lines.push((
-            "Adds a 'jayjay' command that opens repositories in JayJay.".to_owned(),
-            t.fg_faint,
-        )),
-        (_, Some(hint)) => lines.push((hint.clone(), t.fg_faint)),
-        _ => {}
+    if !matches!(state.status, EntryStatus::NotInstalled)
+        && let Some(hint) = &state.path_hint
+    {
+        lines.push((hint.clone(), t.fg_faint));
     }
+
     lines
 }
 

@@ -53,13 +53,18 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
 pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
 
 pub mod glyph {
+    pub const APP_WINDOW: &str = "\u{e426}";
     pub const ARROW_CLOCKWISE: &str = "\u{e145}";
     pub const ARROW_DOWN: &str = "\u{e042}";
     pub const ARROW_RIGHT: &str = "\u{e049}";
+    pub const ARROW_UP_DOWN: &str = "\u{e37d}";
     pub const ARROW_UTURN_BACK: &str = "\u{e2a1}";
     pub const ARROW_UP: &str = "\u{e04a}";
     pub const ARROWS_LEFT_RIGHT: &str = "\u{e24a}";
+    pub const A_LARGE_SMALL: &str = "\u{e587}";
     pub const BOOKMARK: &str = "\u{e060}";
+    pub const CASE_SENSITIVE: &str = "\u{e3d9}";
+    pub const CHART_BAR: &str = "\u{e06a}";
     pub const CLOUD: &str = "\u{e088}";
     pub const CLOUD_OFF: &str = "\u{e08d}";
     pub const BRACES: &str = "\u{e36a}";
@@ -68,6 +73,7 @@ pub mod glyph {
     pub const CARET_RIGHT: &str = "\u{e06f}";
     pub const CHECK: &str = "\u{e06c}";
     pub const COLUMNS: &str = "\u{e098}";
+    pub const CONTRAST: &str = "\u{e09d}";
     pub const COPY: &str = "\u{e09e}";
     pub const DIFF: &str = "\u{e30c}";
     pub const DOT: &str = "\u{e44f}";
@@ -75,10 +81,16 @@ pub mod glyph {
     pub const EYE: &str = "\u{e0ba}";
     pub const EYE_OFF: &str = "\u{e0bb}";
     pub const FILE_CODE: &str = "\u{e0c3}";
+    pub const FILE_SEARCH: &str = "\u{e0cb}";
     pub const FILTER: &str = "\u{e0dc}";
     pub const FOLDER: &str = "\u{e0d7}";
+    pub const FOLDER_MINUS: &str = "\u{e0d8}";
     pub const FOLDER_SIMPLE: &str = "\u{e0d7}";
+    pub const HAND: &str = "\u{e1d7}";
+    pub const LIGATURE: &str = "\u{e43a}";
+    pub const MOON: &str = "\u{e11e}";
     pub const PACKAGE: &str = "\u{e129}";
+    pub const PAINTBRUSH: &str = "\u{e2e7}";
     pub const PIN: &str = "\u{e259}";
     pub const PIN_OFF: &str = "\u{e2b6}";
     pub const HARD_DRIVE: &str = "\u{e0ed}";
@@ -101,11 +113,16 @@ pub mod glyph {
     pub const ROWS: &str = "\u{e58a}";
     pub const SLIDERS_HORIZONTAL: &str = "\u{e29a}";
     pub const SPARKLE: &str = "\u{e47e}";
+    pub const SQUARE_STACK: &str = "\u{e4a2}";
+    pub const SUN: &str = "\u{e178}";
     pub const TAG: &str = "\u{e17f}";
     pub const TERMINAL: &str = "\u{e181}";
     pub const SQUARE_TERMINAL: &str = "\u{e20a}";
+    pub const TRASH: &str = "\u{e18d}";
+    pub const UNFOLD_VERTICAL: &str = "\u{e43e}";
     pub const WHITESPACE: &str = "\u{e3a3}";
     pub const WARNING: &str = "\u{e193}";
+    pub const WRENCH: &str = "\u{e1b1}";
     pub const X: &str = "\u{e1b2}";
     pub const X_CIRCLE: &str = "\u{e084}";
 }

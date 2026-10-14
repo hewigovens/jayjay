@@ -6,7 +6,7 @@ use gpui::{
 use super::SettingsView;
 use super::cli_diagnostics::CliDiagnostics;
 use super::cli_row;
-use super::shared::{detail_row, feedback_copy_icon_button, subsection_title};
+use super::shared::{detail_row, feedback_copy_icon_button, form_section};
 use super::tools::{AiToolStatuses, binary_row, detected_cli_row};
 use crate::app::cli_install;
 use crate::app::theme::Theme;
@@ -27,7 +27,7 @@ pub(super) fn cli_sections(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(16.))
+        .gap(px(24.))
         .child(version_control_rows(
             ai_tools,
             diagnostics,
@@ -48,26 +48,24 @@ fn version_control_rows(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
-    let mut col = div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(2.))
-        .child(subsection_title("Version Control", t));
+    let mut rows = Vec::new();
     if cli_install::supported() {
-        if let Some(rows) = cli_row::command_line_rows(cli_install, t, cx) {
-            col = col.child(rows);
+        if let Some(row) = cli_row::command_line_rows(cli_install, t, cx) {
+            rows.push(row);
         }
     } else {
-        col = col.child(binary_row(
-            "jayjay",
-            glyph::INFO,
-            ai_tools.map(|s| s.jayjay.as_deref()),
-            "Not installed",
-            t,
-        ));
+        rows.push(
+            binary_row(
+                "jayjay",
+                glyph::INFO,
+                ai_tools.map(|s| s.jayjay.as_deref()),
+                "Not installed",
+                t,
+            )
+            .into_any_element(),
+        );
     }
-    col.child(
+    rows.push(
         detail_row(
             glyph::FILE_CODE,
             "jj tool configuration",
@@ -83,40 +81,31 @@ fn version_control_rows(
             recently_copied.is_some_and(|id| id.as_ref() == JJ_TOOL_CONFIG_COPY_ID),
             t,
             cx,
-        )),
-    )
-    .child(detected_cli_row(
-        "jj",
-        glyph::GIT_BRANCH,
-        diagnostics.map(|d| &d.jj),
-        t,
-    ))
-    .into_any_element()
+        ))
+        .into_any_element(),
+    );
+    rows.push(
+        detected_cli_row("jj", glyph::GIT_BRANCH, diagnostics.map(|d| &d.jj), t).into_any_element(),
+    );
+    form_section("Version Control", rows, t).into_any_element()
 }
 
 fn forge_rows(diagnostics: Option<&CliDiagnostics>, t: &Theme) -> impl IntoElement {
-    div()
-        .flex()
-        .flex_col()
-        .w_full()
-        .gap(px(2.))
-        .child(subsection_title("Forges", t))
-        .child(detected_cli_row(
-            "gh",
-            glyph::GIT_MERGE,
-            diagnostics.map(|d| &d.gh),
-            t,
-        ))
-        .child(detected_cli_row(
-            "glab",
-            glyph::GIT_MERGE,
-            diagnostics.map(|d| &d.glab),
-            t,
-        ))
-        .child(detected_cli_row(
-            "origin",
-            glyph::GIT_MERGE,
-            diagnostics.map(|d| &d.origin),
-            t,
-        ))
+    form_section(
+        "Forges",
+        [
+            detected_cli_row("gh", glyph::GIT_MERGE, diagnostics.map(|d| &d.gh), t)
+                .into_any_element(),
+            detected_cli_row("glab", glyph::GIT_MERGE, diagnostics.map(|d| &d.glab), t)
+                .into_any_element(),
+            detected_cli_row(
+                "origin",
+                glyph::GIT_MERGE,
+                diagnostics.map(|d| &d.origin),
+                t,
+            )
+            .into_any_element(),
+        ],
+        t,
+    )
 }

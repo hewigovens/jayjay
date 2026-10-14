@@ -3,9 +3,10 @@ use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, WindowAppear
 use super::SettingsView;
 use super::dropdown::dropdown_button;
 use super::font_preview::font_preview;
-use super::shared::{field_row, subsection_title};
+use super::shared::{field_row, form_section};
 use crate::app::config::{AppConfig, AppearanceMode};
 use crate::app::theme::Theme;
+use crate::ui::icons::glyph;
 
 pub(super) fn diff_palette_section(
     view: &SettingsView,
@@ -13,11 +14,11 @@ pub(super) fn diff_palette_section(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
-    let palette_row = |label, field_id, is_dark, cx: &mut Context<SettingsView>| {
+    let palette_row = |icon, label, field_id, is_dark, cx: &mut Context<SettingsView>| {
         field_row(
+            icon,
             label,
             dropdown_button(field_id, cfg.diff.palette.resolve(is_dark).name, t, cx),
-            "",
             t,
         )
     };
@@ -25,15 +26,23 @@ pub(super) fn diff_palette_section(
         .flex()
         .flex_col()
         .w_full()
-        .gap(px(16.))
-        .child(subsection_title("Colors", t))
-        .child(palette_row("Light theme", "diff-light-palette", false, cx))
-        .child(palette_row("Dark theme", "diff-dark-palette", true, cx))
-        .child(subsection_title("Preview", t))
-        .child(font_preview(
+        .gap(px(24.))
+        .child(form_section(
+            "Colors",
+            [
+                palette_row(glyph::SUN, "Light theme", "diff-light-palette", false, cx),
+                palette_row(glyph::MOON, "Dark theme", "diff-dark-palette", true, cx),
+            ],
             t,
-            &preview_theme(cfg, view.diff_preview_dark.unwrap_or(t.is_dark)),
-            cx,
+        ))
+        .child(form_section(
+            "Preview",
+            [font_preview(
+                t,
+                &preview_theme(cfg, view.diff_preview_dark.unwrap_or(t.is_dark)),
+                cx,
+            )],
+            t,
         ))
         .into_any_element()
 }
