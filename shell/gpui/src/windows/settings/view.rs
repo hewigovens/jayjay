@@ -1,6 +1,6 @@
 use super::sidebar::sidebar;
 use super::{
-    SettingsSection, about, appearance, cli_diagnostics, code_font, config, data_privacy, diff,
+    SettingsSection, about, appearance, cli_diagnostics, config, data_privacy, diff, fonts,
     integrations, tools, workflow,
 };
 
@@ -38,6 +38,7 @@ pub struct SettingsView {
     pub(super) recently_copied: Option<SharedString>,
     pub(super) custom_editor_command: Entity<TextArea>,
     pub(super) custom_terminal_command: Entity<TextArea>,
+    pub(super) diff_preview_dark: Option<bool>,
     logo: Logo,
 }
 
@@ -91,6 +92,7 @@ impl SettingsView {
                             recently_copied: None,
                             custom_editor_command,
                             custom_terminal_command,
+                            diff_preview_dark: None,
                             logo: Logo::load(cx),
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
@@ -181,8 +183,8 @@ impl SettingsView {
         cx: &mut Context<Self>,
     ) -> AnyElement {
         match self.section {
-            SettingsSection::Appearance => appearance::appearance_section(cfg, t, cx),
-            SettingsSection::CodeFont => code_font::code_font_section(cfg, t, window, cx),
+            SettingsSection::Appearance => appearance::appearance_section(self, cfg, t, cx),
+            SettingsSection::Fonts => fonts::fonts_section(cfg, t, window, cx),
             SettingsSection::Diff => diff::diff_section(cfg, t),
             SettingsSection::Workflow => workflow::workflow_section(cfg, t),
             SettingsSection::Integrations => integrations::integrations_section(self, cfg, t, cx),

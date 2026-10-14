@@ -16,6 +16,8 @@ final class AppSettings {
         static let codeLineSpacing = "jayjay.codeLineSpacing"
         static let codeLigatures = "jayjay.codeLigatures"
         static let appearanceMode = "jayjay.appearanceMode"
+        static let diffPaletteLight = "jayjay.diffPaletteLight"
+        static let diffPaletteDark = "jayjay.diffPaletteDark"
 
         static let sideBySideDiff = "jayjay.sideBySideDiff"
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
@@ -106,8 +108,9 @@ final class AppSettings {
         codeFontSize = Self.defaultFontSize
     }
 
-    func resetCodeFont() {
-        codeFontSize = Self.defaultFontSize
+    func resetFonts() {
+        resetZoom()
+        interfaceFontFamily = .system
         codeFontFamily = .system
         codeLineSpacing = Self.lineSpacingRange.lowerBound
         codeLigatures = true
@@ -123,6 +126,23 @@ final class AppSettings {
     }
 
     // MARK: - Diff
+
+    var diffPaletteLight: String {
+        didSet {
+            defaults.set(diffPaletteLight, forKey: StorageKeys.diffPaletteLight)
+            lightDiffPalette = diffPalette(id: diffPaletteLight, isDark: false)
+        }
+    }
+
+    var diffPaletteDark: String {
+        didSet {
+            defaults.set(diffPaletteDark, forKey: StorageKeys.diffPaletteDark)
+            darkDiffPalette = diffPalette(id: diffPaletteDark, isDark: true)
+        }
+    }
+
+    private(set) var lightDiffPalette: DiffPalette
+    private(set) var darkDiffPalette: DiffPalette
 
     var sideBySideDiff: Bool {
         didSet { defaults.set(sideBySideDiff, forKey: StorageKeys.sideBySideDiff) }
@@ -291,6 +311,12 @@ final class AppSettings {
             .clamped(to: Self.lineSpacingRange)
         codeLigatures = defaults.object(forKey: StorageKeys.codeLigatures) as? Bool ?? true
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
+        let lightPaletteId = defaults.string(forKey: StorageKeys.diffPaletteLight) ?? Self.defaultLightDiffPaletteId
+        let darkPaletteId = defaults.string(forKey: StorageKeys.diffPaletteDark) ?? Self.defaultDarkDiffPaletteId
+        diffPaletteLight = lightPaletteId
+        diffPaletteDark = darkPaletteId
+        lightDiffPalette = diffPalette(id: lightPaletteId, isDark: false)
+        darkDiffPalette = diffPalette(id: darkPaletteId, isDark: true)
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true

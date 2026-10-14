@@ -1,10 +1,11 @@
 use std::sync::LazyLock;
 
 use gpui::{
-    AnyElement, App, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
+    AnyElement, App, Div, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
     Styled, div, px, rgb,
 };
 use jayjay_core::FontSpecimen;
+use jayjay_core::diff::DiffLine;
 
 use crate::app::fonts::{self, CodeText as _};
 use crate::app::theme::{FONT_BODY, FONT_ID, Theme, ui_font_size};
@@ -12,13 +13,13 @@ use crate::diff::line::{content_row, gutter_cell, line_bg_color};
 
 static SPECIMEN: LazyLock<FontSpecimen> = LazyLock::new(FontSpecimen::default);
 
-pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
-    let specimen = &*SPECIMEN;
-    let (directory, file_name) = specimen
-        .path
-        .split_at(specimen.path.rfind('/').map_or(0, |slash| slash + 1));
+fn specimen_diff_rows<'a>(
+    lines: &'a [DiffLine],
+    t: &'a Theme,
+    cx: &App,
+) -> impl Iterator<Item = Div> + 'a {
     let advance = fonts::mono_advance(cx, px(t.code_font_size()));
-    let rows = specimen.diff.lines.iter().map(|line| {
+    lines.iter().map(move |line| {
         let bg = line_bg_color(line.style, line.conflict_kind, t);
         let number = |n: Option<u32>| n.map(|n| n.to_string()).unwrap_or_default();
         div()
@@ -29,7 +30,16 @@ pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
             .child(gutter_cell(number(line.old_line_no), t, bg))
             .child(gutter_cell(number(line.new_line_no), t, bg))
             .child(content_row(line, t, None, None, advance).flex_1())
-    });
+    })
+}
+
+/// `diff_theme` paints the sample diff, so Appearance can preview the light or dark side being edited.
+pub(super) fn font_preview(t: &Theme, diff_theme: &Theme, cx: &App) -> AnyElement {
+    let specimen = &*SPECIMEN;
+    let (directory, file_name) = specimen
+        .path
+        .split_at(specimen.path.rfind('/').map_or(0, |slash| slash + 1));
+    let rows = specimen_diff_rows(&specimen.diff.lines, diff_theme, cx);
     div()
         .id("settings-font-preview")
         .debug_selector(|| "settings-font-preview".to_owned())
@@ -79,14 +89,11 @@ pub(super) fn font_preview(t: &Theme, cx: &App) -> AnyElement {
                 .flex()
                 .flex_col()
                 .w_full()
+                .py(px(6.))
+                .rounded_md()
+                .bg(rgb(diff_theme.diff_context_bg))
                 .overflow_hidden()
                 .children(rows),
-        )
-        .child(
-            div()
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(t.fg_faint))
-                .child("Font choices stay the same when you change themes."),
         )
         .into_any_element()
 }

@@ -1,11 +1,12 @@
 import JayJayCore
+import JayJayDiffUI
 import SwiftUI
 
 /// App-specific brand colors. Values that both shells share live in core's `theme`
 /// module so the SwiftUI and GPUI shells stay in sync.
 enum AppColors {
-    static func readingBackground(_ scheme: ColorScheme) -> Color {
-        Color(rgb: diffThemeColors(isDark: scheme == .dark).contextBg)
+    static func readingBackground(_ scheme: ColorScheme, palettes: DiffPalettes) -> Color {
+        Color(rgb: (scheme == .dark ? palettes.dark : palettes.light).contextBg)
     }
 
     static func navigationBackground(_ scheme: ColorScheme) -> Color {

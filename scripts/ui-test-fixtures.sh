@@ -25,7 +25,7 @@ setup_defaults() {
   defaults write "$bundle_id" jayjay.showsRecentRepositoriesPanel -bool YES
   defaults delete "$bundle_id" jayjay.lastOpenedRepo 2>/dev/null || true
   defaults delete "$bundle_id" commandPalette.frameOrigin 2>/dev/null || true
-  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.secondaryPaneWidth jayjay.fileColumnWidth; do
+  for key in jayjay.windowFrame.repo-window jayjay.windowFrame.repo-list-window jayjay.secondaryPaneWidth jayjay.fileColumnWidth jayjay.diffPaletteLight jayjay.diffPaletteDark; do
     defaults delete "$bundle_id" "$key" 2>/dev/null || true
   done
 }

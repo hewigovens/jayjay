@@ -6,7 +6,7 @@ use gpui::{
 };
 use jayjay_core::diff::DiffSpanStyle;
 
-use crate::app::theme::Theme;
+use crate::app::theme::{SyntaxColors, Theme};
 use crate::ui::input::{CaretBlink, TextSelection, line_ranges};
 
 mod highlighting;
@@ -39,6 +39,8 @@ pub struct TextArea {
     pub(super) caret: CaretBlink,
     pub(super) focus_subscriptions: Vec<Subscription>,
     syntax: Option<SyntaxHighlightState>,
+    /// Diff-highlighted blocks paint palette line backgrounds, so their tokens use the palette too.
+    diff_colors: bool,
     pub(super) tints: Vec<Tint>,
 }
 
@@ -83,7 +85,7 @@ pub(in crate::ui::text_area) struct TextLayoutKey {
     pub(super) font_size: Pixels,
     pub(super) line_height: Pixels,
     pub(super) text_color: Hsla,
-    pub(super) theme_colors: [u32; 11],
+    pub(super) theme_colors: [u32; 14],
 }
 
 pub(in crate::ui::text_area) struct LineLayout {
@@ -96,6 +98,22 @@ pub(in crate::ui::text_area) struct LineLayout {
 }
 
 impl TextArea {
+    pub(super) fn syntax_colors<'t>(&self, theme: &'t Theme) -> &'t SyntaxColors {
+        if self.diff_colors {
+            &theme.diff_syntax
+        } else {
+            &theme.syntax
+        }
+    }
+
+    pub(super) fn diff_text_color(&self, line_style: DiffSpanStyle, theme: &Theme) -> Option<u32> {
+        self.diff_colors.then_some(match line_style {
+            DiffSpanStyle::Added => theme.diff_text_added,
+            DiffSpanStyle::Removed => theme.diff_text_removed,
+            _ => theme.diff_text_context,
+        })
+    }
+
     pub fn new(
         content: impl Into<SharedString>,
         placeholder: impl Into<SharedString>,
@@ -128,6 +146,7 @@ impl TextArea {
             caret: CaretBlink::default(),
             focus_subscriptions: Vec::new(),
             syntax: None,
+            diff_colors: false,
             tints: Vec::new(),
         }
     }

@@ -159,7 +159,7 @@ fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
     match spans {
         // Syntax-highlighted: one child div per token run, colored by token.
         Some(spans) if !spans.is_empty() => spans.iter().fold(cell, |cell, span| {
-            let color = t.syntax_token_color(span.token).unwrap_or(t.fg);
+            let color = t.diff_syntax.color(span.token).unwrap_or(t.fg);
             cell.child(
                 div()
                     .text_color(rgb(color))

@@ -1,8 +1,10 @@
 use gpui::{App, Context, Global, Rems, Rgba, Window, WindowAppearance, px, rems, rgb, rgba};
-use jayjay_core::diff::syntax::SyntaxToken;
 
 mod derive;
 mod palette;
+mod syntax;
+
+pub(crate) use syntax::SyntaxColors;
 
 #[derive(Clone, Debug)]
 pub struct Theme {
@@ -23,7 +25,7 @@ pub struct Theme {
     pub(crate) border: u32,
     pub(crate) row_border: u32,
     pub(crate) selected_accent: u32,
-    pub(crate) success_fg: u32,
+    pub success_fg: u32,
     pub(crate) wc_accent: u32,
     pub(crate) compare_bg: u32,
     pub(crate) compare_accent: u32,
@@ -48,7 +50,7 @@ pub struct Theme {
     pub(crate) tag_tag_icon: u32,
     pub(crate) diff_added_bg: u32,
     pub(crate) diff_removed_bg: u32,
-    pub(crate) diff_context_bg: u32,
+    pub diff_context_bg: u32,
     pub(crate) diff_separator_bg: u32,
     pub(crate) media_frame_bg: u32,
     pub(crate) diff_conflict_header_bg: u32,
@@ -67,11 +69,9 @@ pub struct Theme {
     pub(crate) diff_text_added: u32,
     pub(crate) diff_text_removed: u32,
     pub(crate) diff_text_dim: u32,
-    pub(crate) tok_keyword: u32,
-    pub(crate) tok_string: u32,
-    pub(crate) tok_comment: u32,
-    pub(crate) tok_number: u32,
-    pub(crate) tok_type: u32,
+    /// Default-palette token colors for chrome and text inputs; diff surfaces use `diff_syntax`.
+    pub(crate) syntax: SyntaxColors,
+    pub(crate) diff_syntax: SyntaxColors,
     pub(crate) tag_added_bg: u32,
     pub(crate) tag_added_fg: u32,
     pub(crate) tag_removed_bg: u32,
@@ -91,6 +91,9 @@ pub struct Theme {
     pub(crate) file_badge_modified_fg: u32,
     pub(crate) note_accent: u32,
     pub(crate) error_fg: u32,
+    /// Default-palette add/remove hues for chrome such as change stats; diff surfaces use `diff_gutter_*`.
+    pub(crate) added_fg: u32,
+    pub(crate) removed_fg: u32,
     pub(crate) warning_fg: u32,
     pub(crate) find_match_bg: u32,
     pub(crate) find_match_fg: u32,
@@ -147,19 +150,6 @@ impl Theme {
     pub(crate) fn compact_code_font_size(&self) -> f32 {
         (self.code_font_size() - 1.).max(9.)
     }
-
-    pub(crate) fn syntax_token_color(&self, token: SyntaxToken) -> Option<u32> {
-        match token {
-            SyntaxToken::Keyword | SyntaxToken::Operator => Some(self.tok_keyword),
-            SyntaxToken::StringLit => Some(self.tok_string),
-            SyntaxToken::Comment => Some(self.tok_comment),
-            SyntaxToken::Number => Some(self.tok_number),
-            SyntaxToken::Type | SyntaxToken::Function | SyntaxToken::Attribute => {
-                Some(self.tok_type)
-            }
-            SyntaxToken::Plain | SyntaxToken::Variable | SyntaxToken::Punctuation => None,
-        }
-    }
 }
 
 pub(crate) const fn ui_font_size(base: f32) -> Rems {
@@ -182,7 +172,10 @@ pub(crate) fn with_alpha(color: u32, alpha: u8) -> u32 {
 
 fn refresh_for_appearance(cx: &mut App, system: WindowAppearance) {
     let config = crate::app::config::current(cx);
-    cx.set_global(Theme::for_appearance(config.appearance, system).with_typography(&config));
+    cx.set_global(
+        Theme::for_appearance(config.appearance, system, &config.diff.palette)
+            .with_typography(&config),
+    );
     cx.refresh_windows();
 }
 

@@ -4,7 +4,7 @@ use crate::ui::icons::glyph;
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SettingsSection {
     Appearance,
-    CodeFont,
+    Fonts,
     Diff,
     Workflow,
     Integrations,
@@ -16,7 +16,7 @@ pub enum SettingsSection {
 impl SettingsSection {
     pub const ALL: [Self; 8] = [
         Self::Appearance,
-        Self::CodeFont,
+        Self::Fonts,
         Self::Diff,
         Self::Workflow,
         Self::Integrations,
@@ -28,7 +28,7 @@ impl SettingsSection {
     pub fn label(self) -> &'static str {
         match self {
             Self::Appearance => "Appearance",
-            Self::CodeFont => "Code Font",
+            Self::Fonts => "Fonts",
             Self::Diff => "Diff & Files",
             Self::Workflow => "Workflow",
             Self::Integrations => "Integrations",
@@ -41,7 +41,7 @@ impl SettingsSection {
     pub(super) fn glyph(self) -> &'static str {
         match self {
             Self::Appearance => glyph::EYE,
-            Self::CodeFont => glyph::BRACES,
+            Self::Fonts => glyph::BRACES,
             Self::Diff => glyph::COLUMNS,
             Self::Workflow => glyph::LIST_CHECKS,
             Self::Integrations => glyph::GEAR,
@@ -53,11 +53,11 @@ impl SettingsSection {
 
     pub(super) fn color(self, t: &Theme) -> u32 {
         match self {
-            Self::Appearance => t.tok_keyword,
-            Self::CodeFont => t.tok_string,
+            Self::Appearance => t.syntax.keyword,
+            Self::Fonts => t.syntax.string,
             Self::Diff | Self::About => t.selected_accent,
             Self::Workflow => t.compare_accent,
-            Self::Integrations => t.tok_type,
+            Self::Integrations => t.syntax.ty,
             Self::Jujutsu => t.success_fg,
             Self::DataPrivacy => t.change_id_prefix,
         }

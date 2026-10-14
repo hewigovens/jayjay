@@ -159,8 +159,22 @@ fn dropdown_options(field_id: &str) -> Vec<DropdownOption> {
                 ],
             )
         }
+        "diff-light-palette" => diff_palette_options(false),
+        "diff-dark-palette" => diff_palette_options(true),
         _ => Vec::new(),
     }
+}
+
+fn diff_palette_options(is_dark: bool) -> Vec<DropdownOption> {
+    jayjay_core::diff_palettes()
+        .into_iter()
+        .filter(|p| p.is_dark == is_dark)
+        .map(|p| DropdownOption {
+            id: p.id,
+            label: p.name,
+            group: None,
+        })
+        .collect()
 }
 
 fn font_options<const N: usize>(
@@ -192,6 +206,8 @@ fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Opti
             cfg.interface_font_family.clone()
         }),
         "code-font-family" => Some(fonts::mono_preference_id(&cfg.code_font_family)),
+        "diff-light-palette" => Some(cfg.diff.palette.resolve(false).id),
+        "diff-dark-palette" => Some(cfg.diff.palette.resolve(true).id),
         _ => None,
     }
 }
@@ -261,8 +277,15 @@ fn dropdown_row(
                         };
                     }
                     "code-font-family" => c.code_font_family = value.clone(),
+                    "diff-light-palette" => c.diff.palette.light = value.clone(),
+                    "diff-dark-palette" => c.diff.palette.dark = value.clone(),
                     _ => {}
                 });
+                match field_for_click.as_ref() {
+                    "diff-light-palette" => view.diff_preview_dark = Some(false),
+                    "diff-dark-palette" => view.diff_preview_dark = Some(true),
+                    _ => {}
+                }
                 view.close_dropdown(cx);
             }),
         )

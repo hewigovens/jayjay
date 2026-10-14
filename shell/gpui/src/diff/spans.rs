@@ -12,7 +12,7 @@ pub fn span_element(
     theme: &Theme,
     find_query: Option<&str>,
 ) -> AnyElement {
-    let color = theme.syntax_token_color(span.token).unwrap_or(base_fg);
+    let color = theme.diff_syntax.color(span.token).unwrap_or(base_fg);
     let bg = word_bg(line_style, span.style, theme);
 
     let parts = match find_query.filter(|q| !q.is_empty()) {

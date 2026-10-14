@@ -6,13 +6,19 @@ use gpui::{
 use super::SettingsView;
 use super::dropdown::dropdown_button;
 use super::font_preview::font_preview;
-use super::shared::{field_row, section_title, stepper};
+use super::shared::{field_row, section_title, stepper, subsection_title};
 use crate::app::config::{self, AppConfig};
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::ui::primitives::{boolean_toggle_button, button};
 
-pub(super) fn code_font_section(
+const FONT_SIZE_HINT: &str = if cfg!(target_os = "macos") {
+    "Press ⌘+ or ⌘- to change the interface and code sizes together, ⌘0 to reset."
+} else {
+    "Press Ctrl++ or Ctrl+- to change the interface and code sizes together, Ctrl+0 to reset."
+};
+
+pub(super) fn fonts_section(
     cfg: &AppConfig,
     t: &Theme,
     window: &Window,
@@ -42,7 +48,40 @@ pub(super) fn code_font_section(
         .flex_col()
         .w_full()
         .gap(px(16.))
-        .child(section_title("Code Font", t))
+        .child(section_title("Fonts", t))
+        .child(subsection_title("Interface Font", t))
+        .child(field_row(
+            "Family",
+            dropdown_button(
+                "interface-font-family",
+                fonts::interface_preference_label(&cfg.interface_font_family),
+                t,
+                cx,
+            ),
+            if fonts::interface_font_is_installed(&cfg.interface_font_family) {
+                "Used for interface text.".to_owned()
+            } else {
+                format!(
+                    "{} is not installed; using System.",
+                    cfg.interface_font_family
+                )
+            },
+            t,
+        ))
+        .child(field_row(
+            "Size",
+            stepper(
+                "interface-font-size",
+                format!("{:.0}pt", cfg.interface_font_size()),
+                cfg.interface_font_size(),
+                AppConfig::MIN_FONT_SIZE..=AppConfig::MAX_FONT_SIZE,
+                AppConfig::adjust_interface_font_size,
+                t,
+            ),
+            FONT_SIZE_HINT,
+            t,
+        ))
+        .child(subsection_title("Code Font", t))
         .child(field_row(
             "Family",
             dropdown_button(
@@ -88,12 +127,13 @@ pub(super) fn code_font_section(
             t,
         ))
         .child(field_row("Ligatures", ligatures, ligatures_hint, t))
-        .child(font_preview(t, cx))
+        .child(subsection_title("Preview", t))
+        .child(font_preview(t, t, cx))
         .child(
             div().flex().child(
-                button("setting-reset-code-font", "Reset Code Font", t, false)
-                    .debug_selector(|| "setting-reset-code-font".to_owned())
-                    .on_click(|_, _, cx| config::update(cx, AppConfig::reset_code_font)),
+                button("setting-reset-fonts", "Reset Fonts", t, false)
+                    .debug_selector(|| "setting-reset-fonts".to_owned())
+                    .on_click(|_, _, cx| config::update(cx, AppConfig::reset_fonts)),
             ),
         )
         .into_any_element()

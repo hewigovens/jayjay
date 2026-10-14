@@ -21,14 +21,14 @@ final class ExternalToolWindowController: NSWindowController, NSWindowDelegate {
     private let invocation: ExternalToolInvocation
     private let exitState: ExternalToolExitState
 
-    init(invocation: ExternalToolInvocation) {
+    init(invocation: ExternalToolInvocation, settings: AppSettings) {
         let exitState = ExternalToolExitState()
         self.invocation = invocation
         self.exitState = exitState
         let hostingController = NSHostingController(rootView: ExternalToolRootView(
             invocation: invocation,
             onLoadFailure: exitState.markLoadFailure
-        ))
+        ).appEnvironment(settings))
         let window = NSWindow(contentViewController: hostingController)
         window.title = invocation.windowTitle
         window.identifier = NSUserInterfaceItemIdentifier("external-tool")

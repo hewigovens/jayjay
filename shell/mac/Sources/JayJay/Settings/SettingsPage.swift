@@ -17,7 +17,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
             case .appearance: "Appearance"
-            case .fonts: "Code Font"
+            case .fonts: "Fonts"
             case .diff: "Diff & Files"
             case .workflow: "Workflow"
             case .integrations: "Integrations"

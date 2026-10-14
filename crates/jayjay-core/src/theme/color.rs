@@ -39,3 +39,30 @@ pub fn luminance(color: u32) -> f32 {
 pub fn is_dark(background: u32) -> bool {
     luminance(background) < 0.4
 }
+
+pub fn contrast_ratio(a: u32, b: u32) -> f32 {
+    let la = luminance(a);
+    let lb = luminance(b);
+    let (light, dark) = if la >= lb { (la, lb) } else { (lb, la) };
+    (light + 0.05) / (dark + 0.05)
+}
+
+/// Moves `color` toward `toward`, then on to whichever of black or white scores better, in small steps until it meets every `(background, min_ratio)` floor.
+pub fn readable_on(color: u32, toward: u32, floors: &[(u32, f32)]) -> u32 {
+    let score = |candidate: u32| {
+        floors
+            .iter()
+            .map(|(background, min_ratio)| contrast_ratio(candidate, *background) / min_ratio)
+            .fold(f32::INFINITY, f32::min)
+    };
+    let extreme = if score(0xffffff) >= score(0x000000) {
+        0xffffff
+    } else {
+        0x000000
+    };
+    (0..=20)
+        .map(|step| mix(color, toward, step as f32 / 20.))
+        .chain((1..=20).map(|step| mix(toward, extreme, step as f32 / 20.)))
+        .find(|candidate| score(*candidate) >= 1.)
+        .unwrap_or(extreme)
+}

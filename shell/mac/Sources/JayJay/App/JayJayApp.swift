@@ -34,6 +34,7 @@ struct JayJayApp: App {
         )
         manager.pendingRepoAfterOnboarding = launchScene.onboardingNextRepo
         manager.launchScene = launchScene
+        appDelegate.settings = initialSettings
         appDelegate.externalToolInvocation = tool
         appDelegate.openRepositoryPicker = { manager.openRepositoryPicker() }
         appDelegate.openHandler = { manager.openRepo($0) }

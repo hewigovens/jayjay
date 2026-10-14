@@ -82,7 +82,7 @@ pub use revset::{
     default_revset_preset, revset_completions, revset_presets, typed_revset,
     workspace_filter_revset,
 };
-pub use theme::{DiffThemeColors, RepoColors, ThemeSeed, diff_theme_colors, repo_colors};
+pub use theme::{DiffPalette, DiffThemeColors, RepoColors, ThemeSeed, diff_palettes, repo_colors};
 #[cfg(feature = "repository")]
 pub use tools::{
     EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, editor_opens_at_line, open_in_editor,

@@ -1,6 +1,8 @@
 import Foundation
 @testable import JayJay
 import JayJayCore
+import JayJayDiffUI
+import SwiftUI
 import XCTest
 
 final class AppSettingsTests: XCTestCase {
@@ -53,6 +55,13 @@ final class AppSettingsTests: XCTestCase {
         settings.codeFontSize = AppSettings.fontSizeRange.lowerBound
         settings.zoomOut()
         XCTAssertEqual([settings.interfaceFontSize, settings.codeFontSize], [11, AppSettings.fontSizeRange.lowerBound])
+
+        settings.interfaceFontFamily = try XCTUnwrap(AppSettings.FontFamily(rawValue: "Courier New"))
+        settings.codeLigatures = false
+        settings.resetFonts()
+        XCTAssertEqual([settings.interfaceFontSize, settings.codeFontSize], [12, 12])
+        XCTAssertEqual([settings.interfaceFontFamily, settings.codeFontFamily], [.system, .system])
+        XCTAssertTrue(settings.codeLigatures)
     }
 
     func testAnonymousStatsDefaultOnAndPreserveExplicitOptOut() throws {
@@ -118,5 +127,43 @@ final class AppSettingsTests: XCTestCase {
 
         XCTAssertEqual(settings.recentRepos, ["/tmp/example"])
         XCTAssertEqual(settings.lastOpenedRepo, "/tmp/example")
+    }
+
+    func testDiffPaletteResolutionAndWallpaperTintingRule() throws {
+        let suite = "AppSettingsTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+
+        let settings = AppSettings(defaults: defaults)
+        XCTAssertEqual(settings.diffPalettes, .standard)
+        XCTAssertTrue(settings.usesDefaultDarkDiffPalette)
+        XCTAssertFalse(settings.effectiveTintWindowWithWallpaper)
+
+        settings.tintWindowWithWallpaper = true
+        XCTAssertTrue(settings.effectiveTintWindowWithWallpaper)
+        XCTAssertEqual(settings.readingBackground(.dark), .clear)
+
+        settings.diffPaletteDark = "nord"
+        XCTAssertNotEqual(settings.diffPalettes.dark, DiffPalettes.standard.dark)
+        XCTAssertFalse(settings.usesDefaultDarkDiffPalette)
+        XCTAssertFalse(settings.effectiveTintWindowWithWallpaper)
+        XCTAssertNotEqual(settings.readingBackground(.dark), .clear)
+        XCTAssertTrue(settings.tintWindowWithWallpaper)
+        XCTAssertEqual(defaults.object(forKey: "jayjay.tintWindowWithWallpaper") as? Bool, true)
+
+        settings.diffPaletteDark = AppSettings.defaultDarkDiffPaletteId
+        XCTAssertTrue(settings.usesDefaultDarkDiffPalette)
+        XCTAssertTrue(settings.effectiveTintWindowWithWallpaper)
+        XCTAssertEqual(settings.readingBackground(.dark), .clear)
+
+        XCTAssertNotEqual(settings.readingBackground(.light), .clear, "tinting is dark-mode only")
+
+        defaults.set("future-dark-palette", forKey: "jayjay.diffPaletteDark")
+        let downgraded = AppSettings(defaults: defaults)
+        XCTAssertEqual(downgraded.diffPaletteDark, "future-dark-palette")
+        XCTAssertEqual(defaults.string(forKey: "jayjay.diffPaletteDark"), "future-dark-palette")
+        XCTAssertEqual(downgraded.diffPalettes.dark, DiffPalettes.standard.dark)
+        XCTAssertTrue(downgraded.usesDefaultDarkDiffPalette)
+        XCTAssertTrue(downgraded.effectiveTintWindowWithWallpaper)
     }
 }

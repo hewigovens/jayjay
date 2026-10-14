@@ -1,4 +1,12 @@
-use jayjay_core::{DiffThemeColors, RepoColors};
+use jayjay_core::{DiffPalette, DiffThemeColors, RepoColors};
+
+#[uniffi::remote(Record)]
+pub struct DiffPalette {
+    pub id: String,
+    pub name: String,
+    pub is_dark: bool,
+    pub colors: DiffThemeColors,
+}
 
 #[uniffi::remote(Record)]
 pub struct DiffThemeColors {

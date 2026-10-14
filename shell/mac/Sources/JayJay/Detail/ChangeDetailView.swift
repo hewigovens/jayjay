@@ -248,6 +248,7 @@ struct ChangeDetailView: View {
                 },
                 onDone: { fileEditor = nil }
             )
+            .appEnvironment(appSettings)
             .frame(minWidth: 900, idealWidth: 1040, minHeight: 600, idealHeight: 720)
         }
         .sheet(item: $conflictEditor) { editor in
@@ -263,6 +264,7 @@ struct ChangeDetailView: View {
                 },
                 onDone: { conflictEditor = nil }
             )
+            .appEnvironment(appSettings)
             .frame(minWidth: 1040, idealWidth: 1180, minHeight: 720, idealHeight: 820)
         }
     }

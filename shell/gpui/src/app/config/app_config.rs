@@ -101,8 +101,10 @@ impl AppConfig {
             && self.code_font_size == Self::DEFAULT_FONT_SIZE
     }
 
-    pub(crate) fn reset_code_font(&mut self) {
+    pub(crate) fn reset_fonts(&mut self) {
         let defaults = Self::default();
+        self.interface_font_family = defaults.interface_font_family;
+        self.interface_font_size = defaults.interface_font_size;
         self.code_font_family = defaults.code_font_family;
         self.code_font_size = defaults.code_font_size;
         self.code_line_spacing = defaults.code_line_spacing;
@@ -277,7 +279,7 @@ mod tests {
     }
 
     #[test]
-    fn zoom_moves_both_sizes_within_bounds_and_reset_code_font_keeps_the_interface() {
+    fn zoom_moves_both_sizes_within_bounds_and_reset_fonts_restores_both() {
         let mut config = AppConfig {
             interface_font_size: Some(AppConfig::MAX_FONT_SIZE - 1.),
             ..Default::default()
@@ -289,11 +291,13 @@ mod tests {
             (AppConfig::MAX_FONT_SIZE, 14.)
         );
         config.adjust_line_spacing(0.1);
-        config.reset_code_font();
+        config.interface_font_family = "Courier New".to_owned();
+        config.reset_fonts();
         assert_eq!(
             (config.interface_font_size(), config.code_font_size()),
-            (AppConfig::MAX_FONT_SIZE, 12.)
+            (12., 12.)
         );
+        assert_eq!(config.interface_font_family, "");
         assert_eq!(config.code_line_spacing, 1.);
         config.reset_zoom();
         assert!(config.is_default_zoom());

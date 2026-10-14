@@ -36,9 +36,9 @@ pub(super) fn command_view(
                 SharedString::from(format!("exit {exit_code}"))
             };
             let color = if *exit_code == 0 {
-                t.diff_gutter_added_fg
+                t.added_fg
             } else {
-                t.diff_gutter_removed_fg
+                t.removed_fg
             };
             (display.clone(), hint, color)
         }

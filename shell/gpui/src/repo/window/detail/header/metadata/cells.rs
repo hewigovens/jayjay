@@ -98,7 +98,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
             "added",
             stats.insertions,
             spelled_out,
-            t.diff_gutter_added_fg,
+            t.added_fg,
             t,
         ));
     }
@@ -108,7 +108,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
             "removed",
             stats.deletions,
             spelled_out,
-            t.diff_gutter_removed_fg,
+            t.removed_fg,
             t,
         ));
     }
