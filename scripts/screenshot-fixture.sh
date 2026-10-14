@@ -174,7 +174,7 @@ jj new -m "feat: prefer the fastest available route"
 write_routes '|route| route.duration_minutes + route.transfer_minutes' '    format!("{} → {}", route.origin, route.destination)'
 jj bookmark create faster-routes -r @
 
-jj new -m "feat: include transfer time in route estimates"
+jj new -m "feat: include transfer time in route estimates" -m "Co-authored-by: Avery Chen <avery@example.com>"
 write_routes '|route| estimated_minutes(route)' '    format!(
         "{} → {} · {} min",
         route.origin,

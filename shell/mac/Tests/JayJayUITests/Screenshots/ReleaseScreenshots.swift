@@ -8,7 +8,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectChange("include transfer time", in: app)
         selectFile("src/routes.rs", in: app)
-        clickCenter(app.buttons["Unified"], message: "Diff layout toggle missing")
+        XCTAssertTrue(app.buttons["Unified"].waitForExistence(timeout: 5), "Unified diff missing")
         capture("home", frame: mainFrame)
     }
 
@@ -38,7 +38,9 @@ final class ReleaseScreenshots: ScreenshotScene {
     func testSideBySide() throws {
         let app = try XCTUnwrap(app)
         selectChange("include transfer time", in: app)
-        selectFile("src/cache.rs", in: app)
+        selectFile("src/routes.rs", in: app)
+        clickCenter(app.buttons["Unified"], message: "Diff layout toggle missing")
+        XCTAssertTrue(app.buttons["Side-by-side"].waitForExistence(timeout: 5), "Side-by-side diff missing")
         capture("side-by-side", frame: mainFrame)
     }
 
@@ -155,7 +157,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
         let pages = [
-            ("appearance", "appearance"), ("diff", "diff"), ("workflow", "workflow"), ("integrations", "integrations"),
+            ("appearance", "appearance"), ("fonts", "fonts"), ("diff", "diff"), ("workflow", "workflow"), ("integrations", "integrations"),
             ("jujutsu", "jj"), ("dataPrivacy", "data-privacy"), ("about", "about")
         ]
         for (page, name) in pages {
