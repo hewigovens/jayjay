@@ -28,8 +28,14 @@ pub(super) fn person(person: &CommitAuthor, id: impl Into<ElementId>, t: &Theme)
         .into_any_element()
 }
 
-pub(super) const BYLINE_AVATARS: usize = 3;
-pub(super) const AVATAR_OVERLAP: f32 = 4.;
+const BYLINE_AVATARS: usize = 3;
+const AVATAR_SIZE: f32 = 14.;
+const AVATAR_OVERLAP: f32 = 4.;
+
+pub(super) fn byline_avatars_width(change: &ChangeInfo) -> f32 {
+    let count = (1 + change.co_authors.len()).min(BYLINE_AVATARS) as f32;
+    count * (AVATAR_SIZE + 2.) - (count - 1.) * AVATAR_OVERLAP
+}
 
 pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
     let people: Vec<&CommitAuthor> = std::iter::once(&change.author)
@@ -46,7 +52,11 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
                 .border_1()
                 .border_color(rgb(t.detail_bg))
                 .when(index > 0, |avatar| avatar.ml(px(-AVATAR_OVERLAP)))
-                .child(crate::ui::avatar::element(&person.email, &person.name, 14.))
+                .child(crate::ui::avatar::element(
+                    &person.email,
+                    &person.name,
+                    AVATAR_SIZE,
+                ))
         });
     div()
         .id("detail-author")
@@ -55,7 +65,15 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
         .flex_none()
         .items_center()
         .gap(px(5.))
-        .child(div().flex().flex_row().flex_none().children(avatars))
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .flex_none()
+                // Overlapping children do not contribute a reliable intrinsic width to the credit row.
+                .w(px(byline_avatars_width(change)))
+                .children(avatars),
+        )
         .child(
             div()
                 .flex_none()
