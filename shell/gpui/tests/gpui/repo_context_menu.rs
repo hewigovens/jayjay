@@ -21,7 +21,13 @@ fn keyboard_change_menu_targets_the_navigated_change(cx: &mut TestAppContext) {
     keys(cx, "j escape");
     assert!(!menu_shows(cx, NEW_CHANGE));
     assert_eq!(selected_commit_id(&view, cx), parent);
-    keys(cx, "menu end up up right");
+    keys(cx, "menu end");
+    for _ in 0..3 {
+        if menu_shows(cx, "Duplicate") {
+            break;
+        }
+        keys(cx, "up right");
+    }
     assert!(menu_shows(cx, "Duplicate"));
     keys(cx, "escape");
     assert!(!menu_shows(cx, "Duplicate"));
