@@ -31,6 +31,7 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 
 A visual change that breaks one of these is a bug, whatever the design.
 
+- Equivalent UI roles share typography, spacing, alignment, and icon treatment through shared components. Check labels and control values together; fix the shared style instead of adding per-row overrides.
 - Text honors the configured font family and size; each shell has shared helpers for it ([SwiftUI](swiftui.md#conventions), [GPUI](gpui.md#conventions)). Changing a default never overwrites a saved preference.
 - Light and dark follow the system preference and are designed together. Judge contrast on the rendered backgrounds, including selection and tinted surfaces, and with the platform's increased-contrast setting where it has one.
 - Color never carries alone a distinction the user must make. Pair it with text, shape, or a symbol, and supply an accessibility label where the shell supports one.

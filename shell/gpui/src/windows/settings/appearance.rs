@@ -6,7 +6,7 @@ use gpui::{
 
 use super::SettingsView;
 use super::diff_palette::diff_palette_section;
-use super::shared::{field_row, form_group};
+use super::shared::{ROW_FONT_SIZE, field_row, form_group};
 use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
@@ -86,7 +86,7 @@ fn appearance_option(
         .py(px(3.))
         .rounded_md()
         .bg(rgb(bg))
-        .text_size(ui_font_size(11.))
+        .text_size(ui_font_size(ROW_FONT_SIZE))
         .text_color(rgb(fg))
         .cursor_pointer()
         .on_click(move |_ev: &ClickEvent, _w, cx| {

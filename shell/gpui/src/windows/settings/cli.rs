@@ -70,7 +70,6 @@ fn version_control_rows(
             glyph::FILE_CODE,
             "jj tool configuration",
             "diff, edit & merge",
-            11.,
             t.fg_dim,
             t,
         )

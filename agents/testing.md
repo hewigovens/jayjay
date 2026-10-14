@@ -15,7 +15,8 @@ Choose the exact test target when a name filter could hit the wrong unit or inte
 - Cover behavior at the lowest layer that proves it. Shell tests should catch independent integration or interaction failures rather than repeat Rust assertions. Combine equivalent input variants; keep distinct failure modes independently diagnosable.
 - Unit tests cover core logic, view-model behavior, parsers, serialization boundaries, and regressions.
 - UI tests cover user-visible workflows and accessibility identifiers: one scene per workflow.
-- Bug fixes include the regression test that would have caught the issue. Confirm it fails on the pre-fix code for the intended reason and passes after the fix; a regression test that never failed proves the fixture, not the fix. One regression at the owning layer covers the bug; do not replay the scenario at every layer it crosses.
+- Appearance-only corrections follow the [Visual Change Workflow](design.md#visual-change-workflow); do not add tests that freeze font sizes, colors, spacing, or matching element bounds. Keep tests where layout affects interaction, reachability, or state.
+- Behavioral bug fixes include the regression test that would have caught the issue. Confirm it fails on the pre-fix code for the intended reason and passes after the fix; a regression test that never failed proves the fixture, not the fix. One regression at the owning layer covers the bug; do not replay the scenario at every layer it crosses.
 - Optional live Origin fixture: a sibling `jayjay-origin-smoke` checkout (standalone Cursor Origin repo, not a GitHub mirror). `crates/jayjay-core/tests/integration/pull_requests.rs` uses it when present and skips when it is not. Keep deterministic fixtures as the required gate; report live coverage separately as run, skipped, or blocked.
 
 ### Before adding a test

@@ -36,7 +36,7 @@ pub(super) fn command_line_rows(
                 "Unavailable: no home directory"
             };
             col = col.child(
-                detail_row(glyph::TERMINAL, "jayjay", detail, 11., t.fg_faint, t)
+                detail_row(glyph::TERMINAL, "jayjay", detail, t.fg_faint, t)
                     .debug_selector(|| "settings-cli-install-row".to_owned()),
             );
         }
@@ -46,7 +46,7 @@ pub(super) fn command_line_rows(
 
 fn install_row(state: &CliInstallState, t: &Theme, cx: &mut Context<SettingsView>) -> AnyElement {
     let install_path = state.install_path().display().to_string();
-    let mut row = detail_row(glyph::TERMINAL, "jayjay", install_path, 11., t.fg_dim, t)
+    let mut row = detail_row(glyph::TERMINAL, "jayjay", install_path, t.fg_dim, t)
         .debug_selector(|| "settings-cli-install-row".to_owned())
         .py(px(4.));
     match &state.status {

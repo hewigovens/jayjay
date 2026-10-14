@@ -39,7 +39,7 @@ Run `just list` for the full command list. See [AGENTS.md](AGENTS.md) for the fe
 
 ## Testing
 
-New features need focused unit coverage and UI flow coverage when behavior reaches the UI. Bug fixes should include the regression test that would have caught them. See the [testing guide](agents/testing.md) for test placement, fixtures, and UI-test conventions.
+New features need focused unit coverage and UI flow coverage when behavior reaches the UI. Behavioral bug fixes should include the regression test that would have caught them; appearance-only corrections follow the [visual change workflow](agents/design.md#visual-change-workflow). See the [testing guide](agents/testing.md) for test placement, fixtures, and UI-test conventions.
 
 ## Pull requests
 

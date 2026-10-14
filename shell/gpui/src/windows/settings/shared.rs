@@ -11,6 +11,9 @@ use crate::ui::primitives::{boolean_toggle_button, icon_button};
 
 use super::SettingsView;
 
+pub(super) const ROW_FONT_SIZE: f32 = 13.;
+pub(super) const DETAIL_FONT_SIZE: f32 = 11.;
+
 pub(super) fn form_section(
     title: impl Into<SharedString>,
     rows: impl IntoIterator<Item = AnyElement>,
@@ -59,6 +62,7 @@ pub(super) fn row_container() -> Div {
         .w_full()
         .min_w_0()
         .min_h(px(40.))
+        .text_size(ui_font_size(ROW_FONT_SIZE))
         .gap(px(8.))
 }
 
@@ -66,7 +70,6 @@ pub(super) fn detail_row(
     glyph_str: &'static str,
     label: impl Into<SharedString>,
     detail: impl Into<SharedString>,
-    detail_font_size: f32,
     detail_color: u32,
     t: &Theme,
 ) -> Div {
@@ -81,7 +84,6 @@ pub(super) fn detail_row(
                 .flex_1()
                 .min_w_0()
                 .truncate()
-                .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg))
                 .child(label.into()),
         )
@@ -91,7 +93,9 @@ pub(super) fn detail_row(
                 .max_w(gpui::relative(0.55))
                 .min_w_0()
                 .truncate()
-                .code_text(detail_font_size, t)
+                // Monospaced diagnostics belong to the interface and must not resize with the code font.
+                .code_font()
+                .text_size(ui_font_size(DETAIL_FONT_SIZE))
                 .text_color(rgb(detail_color))
                 .child(detail.into()),
         )
@@ -110,14 +114,7 @@ pub(super) fn field_row(
             icons::icon(glyph_str, t.scaled_font_size(14.), t.fg_dim)
                 .w(px(t.scaled_font_size(16.))),
         )
-        .child(
-            div()
-                .flex_1()
-                .min_w_0()
-                .text_size(ui_font_size(13.))
-                .text_color(rgb(t.fg))
-                .child(label),
-        )
+        .child(div().flex_1().min_w_0().text_color(rgb(t.fg)).child(label))
         .child(
             div()
                 .max_w(gpui::relative(0.6))
@@ -189,7 +186,7 @@ pub(super) fn current_value(value: &str, t: &Theme) -> AnyElement {
         .max_w(px(360.))
         .min_w_0()
         .truncate()
-        .text_size(ui_font_size(12.))
+        .text_size(ui_font_size(ROW_FONT_SIZE))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(value.to_owned()))
         .into_any_element()

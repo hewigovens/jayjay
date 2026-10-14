@@ -197,7 +197,7 @@ fn status_row(
         ToolState::Found => (glyph::CHECK, t.tag_added_fg, t.fg_dim, "found"),
         ToolState::Missing => (glyph::X_CIRCLE, t.fg_faint, t.fg_faint, "missing"),
     };
-    detail_row(glyph_str, name, detail, 11., detail_color, t)
+    detail_row(glyph_str, name, detail, detail_color, t)
         .debug_selector(move || format!("settings-tool-row-{name}"))
         .child(
             icons::icon(icon_glyph, 13., icon_color)

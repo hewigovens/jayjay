@@ -53,7 +53,7 @@ Use adversarial review when the patch changes a trust boundary, destructive repo
 ## Tests and Verification
 
 - Use the smallest test layer that proves behavior: Rust unit/integration, Swift unit, XCUITest scene, or GPUI component test.
-- Bug fixes should include the regression test that would have caught the bug, shown to fail on the pre-fix code.
+- Apply the [coverage policy](testing.md#coverage): behavioral bug fixes need a regression test shown to fail on the pre-fix code; appearance-only corrections use visual validation.
 - Check new or changed tests against [Testing](testing.md#before-adding-a-test). Verify fixtures reach the claimed behavior and assertions would fail if its invariant broke.
 - UI tests that mutate repo state need isolated fixtures; GPUI tests should use hermetic `jj-test` fixtures and assert behavior, not pixels.
 - Report the checks that actually ran, per the evidence rule in [Task Authority](../AGENTS.md#task-authority); do not imply `just build` or workspace-wide `just test` ran unless they did.
@@ -63,7 +63,7 @@ Use adversarial review when the patch changes a trust boundary, destructive repo
 
 Report concrete defects first, ordered by severity, with file and line references. Each finding needs a specific failing scenario or minimal test case, expected versus actual behavior, impact, and the smallest reasonable fix. Do not report style nits, speculative concerns, missing tests, or duplicated logic without a supported behavioral failure. Cleanup (trivial helpers, restating comments, unused parameters) belongs to the author's cleanup rounds, not to findings.
 
-After the findings, two separate non-blocking lists: verification gaps (a bug fix without its regression test, scenarios no test covers, checks not run) and pre-existing bugs found near the change, which are reported against the base revision, not the patch.
+After the findings, two separate non-blocking lists: verification gaps (a behavioral bug fix without its regression test, scenarios no test covers, checks not run) and pre-existing bugs found near the change, which are reported against the base revision, not the patch.
 
 If no issues are found, say that clearly and still list the two lists above.
 
