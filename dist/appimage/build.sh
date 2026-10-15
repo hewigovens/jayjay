@@ -28,16 +28,19 @@ install -Dm755 "$binary" "$appdir/usr/bin/jayjay-gpui"
 "$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"
+# AppImageHub still searches for the legacy AppStream filename.
+install -d "$appdir/usr/share/appdata"
+ln -s "../metainfo/$app_id.metainfo.xml" "$appdir/usr/share/appdata/$app_id.appdata.xml"
 install -Dm644 "$root/docs/icon.svg" "$appdir/usr/share/icons/hicolor/scalable/apps/$app_id.svg"
 for size in 64 128 256; do
   install -d "$appdir/usr/share/icons/hicolor/${size}x${size}/apps"
   rsvg-convert --width "$size" --height "$size" \
     --output "$appdir/usr/share/icons/hicolor/${size}x${size}/apps/$app_id.png" "$root/docs/icon.svg"
 done
-ln -s usr/bin/jayjay-gpui "$appdir/AppRun"
+install -m755 "$root/dist/appimage/AppRun" "$appdir/AppRun"
 ln -s "usr/share/applications/$app_id.desktop" "$appdir/$app_id.desktop"
 ln -s "usr/share/icons/hicolor/scalable/apps/$app_id.svg" "$appdir/$app_id.svg"
-ln -s "$app_id.svg" "$appdir/.DirIcon"
+ln -s "usr/share/icons/hicolor/256x256/apps/$app_id.png" "$appdir/.DirIcon"
 
 runtime=$work/runtime
 curl -fsSL --retry 3 -o "$runtime" \

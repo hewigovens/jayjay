@@ -1,0 +1,4 @@
+#!/bin/sh
+# Firejail tears down its sandbox once this process exits, so a detached launch would leave no window.
+[ "${container:-}" = firejail ] && set -- --foreground "$@"
+exec "$(dirname "$(readlink -f "$0")")/usr/bin/jayjay-gpui" "$@"
