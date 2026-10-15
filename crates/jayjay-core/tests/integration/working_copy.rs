@@ -1,5 +1,8 @@
 use std::fs;
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
+use std::sync::mpsc;
+use std::thread;
+use std::time::Duration;
 
 use jayjay_core::{JayError, Repo};
 use jj_test::{changed_paths, git_stdout, init_jj_repo, run_git, run_jj_in};
@@ -207,6 +210,102 @@ fn snapshot_adds_new_files_to_the_colocated_git_index() {
         listed, b"added.txt\n",
         "git must see the file jj started tracking"
     );
+}
+
+/// Another Git writer holds `index.lock` with `locked_index` while `action` runs, then commits it.
+fn with_busy_git_index(
+    repo_path: &Path,
+    locked_index: &[u8],
+    action: impl FnOnce() -> Result<(), JayError> + Send,
+) {
+    let index_path = repo_path.join(".git/index");
+    let lock_path = repo_path.join(".git/index.lock");
+    fs::write(&lock_path, locked_index).expect("hold Git index lock");
+
+    thread::scope(|scope| {
+        let (tx, rx) = mpsc::channel();
+        scope.spawn(move || tx.send(action()).expect("send operation result"));
+        let while_locked = rx.recv_timeout(Duration::from_millis(200));
+        fs::rename(&lock_path, &index_path).expect("release Git index lock");
+        assert!(
+            matches!(while_locked, Err(mpsc::RecvTimeoutError::Timeout)),
+            "operation must wait for the busy index: {while_locked:?}"
+        );
+        rx.recv_timeout(Duration::from_secs(10))
+            .expect("operation finishes after lock release")
+            .expect("operation succeeds after lock release");
+    });
+}
+
+#[test]
+fn snapshot_retries_a_busy_git_index_and_preserves_the_other_writers_update() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let index_path = repo_path.join(".git/index");
+    let original_index = fs::read(&index_path).expect("read original index");
+    fs::write(repo_path.join("staged.txt"), "staged by another writer\n")
+        .expect("write staged file");
+    run_git(&repo_path, &["add", "--", "staged.txt"]);
+    let updated_index = fs::read(&index_path).expect("read updated index");
+    fs::write(&index_path, original_index).expect("restore original index");
+    fs::write(repo_path.join("added.txt"), "new\n").expect("write added file");
+
+    with_busy_git_index(&repo_path, &updated_index, || repo.refresh_working_copy());
+
+    assert_eq!(
+        git_stdout(&repo_path, &["show", ":staged.txt"]),
+        "staged by another writer"
+    );
+    assert_eq!(
+        git_stdout(&repo_path, &["ls-files", "--", "added.txt"]),
+        "added.txt"
+    );
+    assert!(changed_paths(&repo, "@").contains(&"added.txt".to_owned()));
+}
+
+#[test]
+fn checkout_retries_a_busy_git_index() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let index = fs::read(repo_path.join(".git/index")).expect("read index");
+
+    with_busy_git_index(&repo_path, &index, || repo.new_change("@", "child"));
+
+    assert_eq!(
+        repo.log("@").expect("working copy")[0].description.trim(),
+        "child"
+    );
+    assert_eq!(
+        git_stdout(&repo_path, &["rev-parse", "HEAD"]),
+        repo.log("@-").expect("parent")[0].commit_id.id
+    );
+}
+
+#[test]
+fn snapshot_reports_a_persistent_git_index_lock_without_losing_edits() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::write(repo_path.join("added.txt"), "new\n").expect("write added file");
+    let lock_path = repo_path.join(".git/index.lock");
+    fs::write(&lock_path, "another writer").expect("hold Git index lock");
+    let before = repo.log("@").expect("working copy")[0].commit_id.id.clone();
+
+    let error = repo
+        .refresh_working_copy()
+        .expect_err("persistent lock must fail");
+
+    assert!(error.to_string().contains("update git index"), "{error}");
+    assert_eq!(
+        fs::read_to_string(&lock_path).expect("read lock"),
+        "another writer"
+    );
+    assert_eq!(repo.log("@").expect("working copy")[0].commit_id.id, before);
+    fs::remove_file(&lock_path).expect("release Git index lock");
+    repo.refresh_working_copy().expect("retry snapshot");
+    assert!(changed_paths(&repo, "@").contains(&"added.txt".to_owned()));
 }
 
 /// The stale side edits `top` while the other workspace rebases `top` onto `fix`, which rewrites hello.txt.
