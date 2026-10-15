@@ -1,4 +1,3 @@
-# Maintainer: Hewig Ovens <hewigovens@gmail.com>
 # Update this release package after both AppImage assets are published, then regenerate .SRCINFO.
 
 pkgname=jayjay-appimage
