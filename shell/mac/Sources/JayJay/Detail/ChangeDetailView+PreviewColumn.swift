@@ -2,32 +2,6 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
-    // MARK: - Empty state
-
-    var emptyState: some View {
-        VStack(alignment: .leading, spacing: 0) {
-            detailHeader
-            Divider()
-            if visibleDiff.isEmpty, hiddenDiffCount > 0 {
-                ContentUnavailableView(
-                    hiddenOnlyStateTitle,
-                    systemImage: hiddenOnlyStateIcon,
-                    description: Text(hiddenOnlyStateDescription)
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else {
-                ContentUnavailableView(
-                    "No Files Changed",
-                    systemImage: "doc.badge.minus",
-                    description: Text("This revision does not modify any tracked files.")
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-            }
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-        .background(appSettings.readingBackground(colorScheme))
-    }
-
     private var detailHeader: some View {
         VStack(alignment: .leading, spacing: descriptionExpanded.wrappedValue ? 12 : 0) {
             descriptionSection()
@@ -120,6 +94,20 @@ extension ChangeDetailView {
                     .id("\(detail.info.commitId)|\(hunk.path)")
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
+            } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
+                ContentUnavailableView(
+                    hiddenOnlyStateTitle,
+                    systemImage: hiddenOnlyStateIcon,
+                    description: Text(hiddenOnlyStateDescription)
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else if visibleDiff.isEmpty {
+                ContentUnavailableView(
+                    "No Files Changed",
+                    systemImage: "doc.badge.minus",
+                    description: Text("This revision does not modify any tracked files.")
+                )
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Spacer()
                 ContentUnavailableView(

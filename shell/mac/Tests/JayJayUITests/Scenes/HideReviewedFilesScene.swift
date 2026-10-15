@@ -31,6 +31,7 @@ final class HideReviewedFilesScene: SceneBase {
         second.click()
         keyStroke(.space)
         XCTAssertTrue(second.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.staticTexts[AID.FileList.empty].waitForExistence(timeout: 5))
 
         keyStroke(",", modifiers: .command)
         selectSettingsPage("diff", in: app)

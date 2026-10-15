@@ -113,7 +113,13 @@ extension ChangeDetailView {
 
             Divider()
 
-            if appSettings.treeFileList {
+            if filteredDiff.isEmpty {
+                Text(emptyFileListLabel)
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                    .accessibilityIdentifier(AID.FileList.empty)
+            } else if appSettings.treeFileList {
                 treeFileList
             } else {
                 flatFileList
@@ -199,6 +205,16 @@ extension ChangeDetailView {
 
     private var showsReviewedCount: Bool {
         showsReviewControls && !reviewableDiff.isEmpty && !reviewedPaths.isEmpty
+    }
+
+    private var emptyFileListLabel: String {
+        if detail.diff.isEmpty {
+            return "No files"
+        }
+        if !fileFilter.isEmpty {
+            return "No matching files"
+        }
+        return "All files hidden"
     }
 
     private var fileCountLabel: String {

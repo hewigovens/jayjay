@@ -134,7 +134,17 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     let visible_indices = visible_indices.unwrap_or_else(|| Arc::new((0..count).collect()));
     let visible_count = visible_indices.len();
 
-    let body = if tree_mode {
+    let file_filter_has_query = file_filter.is_some_and(|input| !input.is_empty());
+    let body = if visible_count == 0 {
+        placeholder(
+            if file_filter_has_query {
+                "No matching files"
+            } else {
+                "All files hidden"
+            },
+            &t,
+        )
+    } else if tree_mode {
         let tree = tree_cache
             .borrow_mut()
             .visible(&hunks, &visible_indices, collapsed_dirs);
@@ -206,7 +216,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 active_note_count,
                 notes_only,
                 file_filter_active: file_filter.is_some(),
-                file_filter_has_query: file_filter.is_some_and(|input| !input.is_empty()),
+                file_filter_has_query,
                 tree_mode,
                 focused,
             },

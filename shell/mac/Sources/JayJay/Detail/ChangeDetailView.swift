@@ -139,9 +139,7 @@ struct ChangeDetailView: View {
 
     var body: some View {
         Group {
-            if detail.diff.isEmpty || (visibleDiff.isEmpty && hiddenDiffCount > 0) {
-                emptyState
-            } else if paneMode.isDiffEdit {
+            if paneMode.isDiffEdit, !visibleDiff.isEmpty {
                 DiffEditView(
                     detail: detail,
                     repo: repo,

@@ -47,6 +47,7 @@ enum AID {
         static let columnDivider = "file.columnDivider"
         static let filterField = "file.filterField"
         static let filterToggle = "file.filterToggle"
+        static let empty = "file.empty"
 
         static func row(_ path: String) -> String {
             "file.row.\(path)"
