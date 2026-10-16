@@ -17,6 +17,7 @@ mod render_highlights;
 mod review_fingerprint;
 pub mod side_by_side;
 mod stats;
+mod structural;
 pub mod syntax;
 mod types;
 mod word_diff;
@@ -58,7 +59,7 @@ pub use types::{
     ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,
     ContextExpansion, ContextExpansionError, ContextExpansionResult, ContextRegion,
     DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle, DisplayLineMapping, FileDiff,
-    LineSpan,
+    LineSpan, MovedRow,
 };
 pub use wrap::{
     DEFAULT_WRAP_COLS, WrappedDiffLine, WrappedSbsRow, WrappedSide, sbs_line_to_row,

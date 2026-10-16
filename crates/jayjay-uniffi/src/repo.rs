@@ -1234,7 +1234,10 @@ impl JayJayRepo {
         new_content: String,
         ignore_whitespace: bool,
     ) -> FileDiff {
-        diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
+        let mut diff =
+            diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace);
+        diff.detect_moves(&old_content, &new_content);
+        diff
     }
 
     fn compute_native_diff_full(

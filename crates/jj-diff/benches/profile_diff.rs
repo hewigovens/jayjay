@@ -89,7 +89,7 @@ fn main() {
             let diff = prepared.unwrap();
             assert_eq!(diff.lines.len(), 6001);
             for _ in 0..100 {
-                let wrapped = wrap_diff_lines(&diff.lines, 80);
+                let wrapped = wrap_diff_lines(&diff.lines, 80, 0);
                 assert!(wrapped.len() > diff.lines.len());
                 black_box(wrapped);
             }
@@ -100,7 +100,7 @@ fn main() {
             for cols in (40..=89).chain((40..=89).rev()) {
                 let rows = build_side_by_side_rows(&diff.lines);
                 assert_eq!(rows.len(), 6000);
-                let wrapped = wrap_sbs_rows(&rows, cols, cols);
+                let wrapped = wrap_sbs_rows(&rows, cols, cols, 0);
                 assert!(wrapped.len() > rows.len());
                 black_box(wrapped);
             }

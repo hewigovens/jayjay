@@ -57,7 +57,7 @@ lang-javascript = ["dep:tree-sitter-javascript"]
 lang-json = ["dep:tree-sitter-json"]
 lang-kotlin = ["dep:tree-sitter-kotlin-sg"]
 lang-make = ["dep:tree-sitter-make"]
-lang-markdown = ["dep:tree-sitter", "dep:tree-sitter-md"]
+lang-markdown = ["dep:tree-sitter-md"]
 lang-nix = ["dep:tree-sitter-nix"]
 lang-php = ["dep:tree-sitter-php"]
 lang-python = ["dep:tree-sitter-python"]
@@ -82,7 +82,7 @@ similar = { workspace = true }
 unicode-width = { workspace = true }
 unicode-segmentation = { workspace = true }
 tree-sitter-highlight = { workspace = true }
-tree-sitter = { workspace = true, optional = true }
+tree-sitter = { workspace = true }
 tree-sitter-rust = { workspace = true, optional = true }
 tree-sitter-javascript = { workspace = true, optional = true }
 tree-sitter-typescript = { workspace = true, optional = true }

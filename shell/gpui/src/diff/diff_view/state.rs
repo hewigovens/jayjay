@@ -229,6 +229,7 @@ mod tests {
             conflict_kind,
             no_eof_newline: false,
             context_region: None,
+            moved: None,
         }
     }
 }

@@ -1,5 +1,5 @@
 use crate::side_by_side::{RowSide, SideBySideRow, build_side_by_side_rows};
-use crate::types::{ConflictLineKind, DiffSpanStyle};
+use crate::types::{ConflictLineKind, DiffSpanStyle, MovedRow};
 
 use super::super::{
     WrappedSide, sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_diff_lines,
@@ -21,7 +21,7 @@ fn wrap_sbs_rows_pads_to_tallest_side_and_blanks_continuation_line_no() {
         full_width: false,
         context_region: None,
     };
-    let wrapped = wrap_sbs_rows(&[row, separator], 3, 3);
+    let wrapped = wrap_sbs_rows(&[row, separator], 3, 3, 0);
 
     assert_eq!(wrapped.len(), 4);
     let old_texts: Vec<String> = wrapped.iter().map(|w| w.row.old.text()).collect();
@@ -56,7 +56,7 @@ fn visual_index_finds_first_wrapped_position_for_unified_and_sbs() {
         diff_line("abcdefgh", Some(2), Some(2), DiffSpanStyle::Added),
         diff_line("bar", Some(3), Some(3), DiffSpanStyle::Context),
     ];
-    let unified = wrap_diff_lines(&lines, 3);
+    let unified = wrap_diff_lines(&lines, 3, 0);
     assert_eq!(visual_index_for_line(&unified, 0), 0);
     assert_eq!(visual_index_for_line(&unified, 1), 1);
     assert_eq!(visual_index_for_line(&unified, 2), 4);
@@ -76,7 +76,7 @@ fn visual_index_finds_first_wrapped_position_for_unified_and_sbs() {
             context_region: None,
         },
     ];
-    let sbs = wrap_sbs_rows(&rows, 3, 3);
+    let sbs = wrap_sbs_rows(&rows, 3, 3, 0);
     assert_eq!(visual_index_for_sbs_row(&sbs, 0), 0);
     assert_eq!(visual_index_for_sbs_row(&sbs, 1), 3);
     // Out-of-range falls back to the requested ix.
@@ -92,12 +92,13 @@ fn wrap_sbs_rows_splits_full_width_conflicts_across_both_panes() {
             spans: vec![span("abcdefghijkl", DiffSpanStyle::Added)],
             style: DiffSpanStyle::Added,
             conflict_kind: ConflictLineKind::Content,
+            moved: None,
         },
         full_width: true,
         context_region: None,
     };
 
-    let wrapped = wrap_sbs_rows(&[row], 4, 4);
+    let wrapped = wrap_sbs_rows(&[row], 4, 4, 0);
 
     assert_eq!(wrapped.len(), 2);
     assert_eq!(wrapped[0].row.old.text(), "abcd");
@@ -162,4 +163,40 @@ fn sbs_line_to_row_keeps_conflict_blocks_unpaired() {
         ]
     );
     assert_eq!(map, vec![0, 1, 2, 3]);
+}
+
+#[test]
+fn moved_sides_restore_their_own_width_and_keep_visual_mapping() {
+    let mut old = row_side("1", &"a".repeat(45), DiffSpanStyle::Removed);
+    let mut new = row_side("9", &"b".repeat(70), DiffSpanStyle::Added);
+    old.moved = Some(MovedRow {
+        counterpart_line: 9,
+        starts_block: true,
+    });
+    new.moved = Some(MovedRow {
+        counterpart_line: 1,
+        starts_block: true,
+    });
+    let rows = [SideBySideRow {
+        old,
+        new,
+        full_width: false,
+        context_region: None,
+    }];
+    let wrapped = wrap_sbs_rows(&rows, 30, 40, 10);
+    assert_eq!(wrapped.len(), 2);
+    assert_eq!(
+        wrapped
+            .iter()
+            .map(|w| side_cols(&w.old))
+            .collect::<Vec<_>>(),
+        [(45, 0, 20), (45, 20, 45)]
+    );
+    assert_eq!(
+        wrapped
+            .iter()
+            .map(|w| side_cols(&w.new))
+            .collect::<Vec<_>>(),
+        [(70, 0, 30), (70, 30, 70)]
+    );
 }

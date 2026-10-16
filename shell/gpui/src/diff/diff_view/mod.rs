@@ -4,6 +4,7 @@ mod find_bar;
 mod gutter_mouse;
 mod header;
 mod mouse;
+mod moved_label;
 mod note_banner;
 mod placeholders;
 mod render;

@@ -15,6 +15,8 @@ final class TypographyTests: XCTestCase {
         XCTAssertEqual([interface.familyName, code.familyName], ["Courier New", "Menlo"])
         XCTAssertEqual([interface.pointSize, code.pointSize], [18, 15])
         XCTAssertEqual(typography.editorFont.pointSize, 15)
+        XCTAssertEqual(typography.diffTypography.interfaceFont.familyName, interface.familyName)
+        XCTAssertEqual(typography.diffTypography.interfaceFont.pointSize, 16.5)
     }
 
     func testLigaturesAreDetectedAndCanBeTurnedOff() throws {

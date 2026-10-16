@@ -1,14 +1,22 @@
 use unicode_segmentation::UnicodeSegmentation;
 
-use super::chunks::{SpanChunk, grapheme_cells, side_chunks, spans_char_len};
+use super::chunks::{
+    SpanChunk, grapheme_cells, side_chunks, side_chunks_after_first, spans_char_len,
+};
+use super::cols::cols_for;
 use super::types::{WrappedSbsRow, WrappedSide};
 use crate::conflicts::{build_diff_display_items, build_diff_display_lines};
 use crate::side_by_side::{RowSide, SideBySideRow};
 use crate::types::{DiffDisplayItem, DiffLine, DiffSpan, DiffSpanStyle};
 
-/// Wrap SBS rows, padding the shorter side so both panes advance in lock-step.
+/// Wrap SBS rows, padding the shorter side so both panes advance in lock-step. `moved_label_cols` reserves the shell-measured jump-label width; pass zero when no labels are rendered.
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
-pub fn wrap_sbs_rows(rows: &[SideBySideRow], old_cols: u32, new_cols: u32) -> Vec<WrappedSbsRow> {
+pub fn wrap_sbs_rows(
+    rows: &[SideBySideRow],
+    old_cols: u32,
+    new_cols: u32,
+    moved_label_cols: u32,
+) -> Vec<WrappedSbsRow> {
     let old_cols = (old_cols.max(1)) as usize;
     let new_cols = (new_cols.max(1)) as usize;
     let mut wrapped = Vec::new();
@@ -29,8 +37,17 @@ pub fn wrap_sbs_rows(rows: &[SideBySideRow], old_cols: u32, new_cols: u32) -> Ve
             continue;
         }
 
-        let old_chunks = side_chunks(&row.old.spans, old_cols);
-        let new_chunks = side_chunks(&row.new.spans, new_cols);
+        let label_cols = moved_label_cols as usize;
+        let old_chunks = side_chunks_after_first(
+            &row.old.spans,
+            cols_for(row.old.moved, old_cols, label_cols),
+            old_cols,
+        );
+        let new_chunks = side_chunks_after_first(
+            &row.new.spans,
+            cols_for(row.new.moved, new_cols, label_cols),
+            new_cols,
+        );
         let old_len = old_chunks.last().map_or(0, |chunk| chunk.end);
         let new_len = new_chunks.last().map_or(0, |chunk| chunk.end);
         let visual_count = old_chunks.len().max(new_chunks.len());
@@ -168,6 +185,7 @@ fn continuation_side(
         spans,
         style: source.style,
         conflict_kind: source.conflict_kind,
+        moved: source.moved,
     }
 }
 
@@ -214,6 +232,7 @@ fn full_width_side(source: &RowSide, spans: Vec<DiffSpan>) -> RowSide {
         spans,
         style: source.style,
         conflict_kind: source.conflict_kind,
+        moved: source.moved,
     }
 }
 

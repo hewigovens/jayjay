@@ -140,116 +140,68 @@ static SOLIDITY_HIGHLIGHT_QUERY: std::sync::LazyLock<String> = std::sync::LazyLo
     )
 });
 
-fn with_config_for_language<R>(
-    language: &str,
-    use_config: impl FnOnce(&HighlightConfiguration) -> R,
-) -> Option<R> {
-    macro_rules! cached_config {
-        ($name:literal, $grammar:ident, $query:ident) => {
-            cached_config!($name, $grammar::LANGUAGE, $grammar::$query)
-        };
-        ($name:literal, $grammar:expr, $query:expr $(,)?) => {{
-            fn build_config() -> Option<HighlightConfiguration> {
-                let mut config =
-                    HighlightConfiguration::new($grammar.into(), $name, $query, "", "").ok()?;
-                config.configure(&HIGHLIGHT_NAMES);
-                Some(config)
+/// One table drives both highlighting and the syntax matcher, so a language supported by one is supported by the other.
+macro_rules! languages {
+    ($($feature:literal: $name:literal $(| $alias:literal)* => $grammar:expr, $query:expr;)*) => {
+        pub(crate) fn grammar(language: &str) -> Option<tree_sitter::Language> {
+            match language {
+                $(#[cfg(feature = $feature)]
+                $name $(| $alias)* => Some($grammar.into()),)*
+                _ => None,
             }
-            cache::with_config!(build_config, use_config)
-        }};
-    }
-
-    match language {
-        #[cfg(feature = "lang-rust")]
-        "rust" => cached_config!("rust", tree_sitter_rust, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-javascript")]
-        "javascript" | "jsx" => {
-            cached_config!("javascript", tree_sitter_javascript, HIGHLIGHT_QUERY)
         }
-        #[cfg(feature = "lang-typescript")]
-        "typescript" => cached_config!(
-            "typescript",
-            tree_sitter_typescript::LANGUAGE_TYPESCRIPT,
-            tree_sitter_typescript::HIGHLIGHTS_QUERY,
-        ),
-        #[cfg(feature = "lang-typescript")]
-        "tsx" => cached_config!(
-            "tsx",
-            tree_sitter_typescript::LANGUAGE_TSX,
-            tree_sitter_typescript::HIGHLIGHTS_QUERY,
-        ),
-        #[cfg(feature = "lang-python")]
-        "python" => cached_config!("python", tree_sitter_python, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-go")]
-        "go" => cached_config!("go", tree_sitter_go, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-c")]
-        "c" => cached_config!("c", tree_sitter_c, HIGHLIGHT_QUERY),
-        #[cfg(feature = "lang-csharp")]
-        "csharp" => cached_config!("csharp", tree_sitter_c_sharp, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-cpp")]
-        "cpp" => cached_config!("cpp", tree_sitter_cpp, HIGHLIGHT_QUERY),
-        #[cfg(feature = "lang-json")]
-        "json" => cached_config!("json", tree_sitter_json, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-toml")]
-        "toml" => cached_config!("toml", tree_sitter_toml_ng, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-ruby")]
-        "ruby" => cached_config!("ruby", tree_sitter_ruby, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-java")]
-        "java" => cached_config!("java", tree_sitter_java, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-kotlin")]
-        "kotlin" => cached_config!("kotlin", tree_sitter_kotlin_sg, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-php")]
-        "php" => cached_config!(
-            "php",
-            tree_sitter_php::LANGUAGE_PHP,
-            tree_sitter_php::HIGHLIGHTS_QUERY,
-        ),
-        #[cfg(feature = "lang-markdown")]
-        "markdown" => cached_config!("markdown", tree_sitter_md, HIGHLIGHT_QUERY_BLOCK),
-        #[cfg(feature = "lang-markdown")]
-        "markdown_inline" => cached_config!(
-            "markdown_inline",
-            tree_sitter_md::INLINE_LANGUAGE,
-            tree_sitter_md::HIGHLIGHT_QUERY_INLINE,
-        ),
-        #[cfg(feature = "lang-css")]
-        "css" => cached_config!("css", tree_sitter_css, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-html")]
-        "html" => cached_config!("html", tree_sitter_html, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-bash")]
-        "shell" | "bash" => cached_config!("shell", tree_sitter_bash, HIGHLIGHT_QUERY),
-        #[cfg(feature = "lang-fish")]
-        "fish" => cached_config!(
-            "fish",
-            tree_sitter_fish::language(),
-            tree_sitter_fish::HIGHLIGHTS_QUERY,
-        ),
-        #[cfg(feature = "lang-yaml")]
-        "yaml" => cached_config!("yaml", tree_sitter_yaml, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-swift")]
-        "swift" => cached_config!("swift", tree_sitter_swift, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-solidity")]
-        "solidity" => cached_config!(
-            "solidity",
-            tree_sitter_solidity::LANGUAGE,
-            SOLIDITY_HIGHLIGHT_QUERY.as_str(),
-        ),
-        #[cfg(feature = "lang-sql")]
-        "sql" => cached_config!("sql", tree_sitter_sequel, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-xml")]
-        "xml" => cached_config!(
-            "xml",
-            tree_sitter_xml::LANGUAGE_XML,
-            tree_sitter_xml::XML_HIGHLIGHT_QUERY,
-        ),
-        #[cfg(feature = "lang-zig")]
-        "zig" => cached_config!("zig", tree_sitter_zig, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-nix")]
-        "nix" => cached_config!("nix", tree_sitter_nix, HIGHLIGHTS_QUERY),
-        #[cfg(feature = "lang-make")]
-        "make" => cached_config!("make", tree_sitter_make, HIGHLIGHTS_QUERY),
-        _ => None,
-    }
+
+        fn with_config_for_language<R>(
+            language: &str,
+            use_config: impl FnOnce(&HighlightConfiguration) -> R,
+        ) -> Option<R> {
+            match language {
+                $(#[cfg(feature = $feature)]
+                $name $(| $alias)* => {
+                    fn build_config() -> Option<HighlightConfiguration> {
+                        let mut config =
+                            HighlightConfiguration::new($grammar.into(), $name, $query, "", "").ok()?;
+                        config.configure(&HIGHLIGHT_NAMES);
+                        Some(config)
+                    }
+                    cache::with_config!(build_config, use_config)
+                })*
+                _ => None,
+            }
+        }
+    };
+}
+
+languages! {
+    "lang-rust": "rust" => tree_sitter_rust::LANGUAGE, tree_sitter_rust::HIGHLIGHTS_QUERY;
+    "lang-javascript": "javascript" | "jsx" => tree_sitter_javascript::LANGUAGE, tree_sitter_javascript::HIGHLIGHT_QUERY;
+    "lang-typescript": "typescript" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT, tree_sitter_typescript::HIGHLIGHTS_QUERY;
+    "lang-typescript": "tsx" => tree_sitter_typescript::LANGUAGE_TSX, tree_sitter_typescript::HIGHLIGHTS_QUERY;
+    "lang-python": "python" => tree_sitter_python::LANGUAGE, tree_sitter_python::HIGHLIGHTS_QUERY;
+    "lang-go": "go" => tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY;
+    "lang-c": "c" => tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY;
+    "lang-csharp": "csharp" => tree_sitter_c_sharp::LANGUAGE, tree_sitter_c_sharp::HIGHLIGHTS_QUERY;
+    "lang-cpp": "cpp" => tree_sitter_cpp::LANGUAGE, tree_sitter_cpp::HIGHLIGHT_QUERY;
+    "lang-json": "json" => tree_sitter_json::LANGUAGE, tree_sitter_json::HIGHLIGHTS_QUERY;
+    "lang-toml": "toml" => tree_sitter_toml_ng::LANGUAGE, tree_sitter_toml_ng::HIGHLIGHTS_QUERY;
+    "lang-ruby": "ruby" => tree_sitter_ruby::LANGUAGE, tree_sitter_ruby::HIGHLIGHTS_QUERY;
+    "lang-java": "java" => tree_sitter_java::LANGUAGE, tree_sitter_java::HIGHLIGHTS_QUERY;
+    "lang-kotlin": "kotlin" => tree_sitter_kotlin_sg::LANGUAGE, tree_sitter_kotlin_sg::HIGHLIGHTS_QUERY;
+    "lang-php": "php" => tree_sitter_php::LANGUAGE_PHP, tree_sitter_php::HIGHLIGHTS_QUERY;
+    "lang-markdown": "markdown" => tree_sitter_md::LANGUAGE, tree_sitter_md::HIGHLIGHT_QUERY_BLOCK;
+    "lang-markdown": "markdown_inline" => tree_sitter_md::INLINE_LANGUAGE, tree_sitter_md::HIGHLIGHT_QUERY_INLINE;
+    "lang-css": "css" => tree_sitter_css::LANGUAGE, tree_sitter_css::HIGHLIGHTS_QUERY;
+    "lang-html": "html" => tree_sitter_html::LANGUAGE, tree_sitter_html::HIGHLIGHTS_QUERY;
+    "lang-bash": "shell" | "bash" => tree_sitter_bash::LANGUAGE, tree_sitter_bash::HIGHLIGHT_QUERY;
+    "lang-fish": "fish" => tree_sitter_fish::language(), tree_sitter_fish::HIGHLIGHTS_QUERY;
+    "lang-yaml": "yaml" => tree_sitter_yaml::LANGUAGE, tree_sitter_yaml::HIGHLIGHTS_QUERY;
+    "lang-swift": "swift" => tree_sitter_swift::LANGUAGE, tree_sitter_swift::HIGHLIGHTS_QUERY;
+    "lang-solidity": "solidity" => tree_sitter_solidity::LANGUAGE, SOLIDITY_HIGHLIGHT_QUERY.as_str();
+    "lang-sql": "sql" => tree_sitter_sequel::LANGUAGE, tree_sitter_sequel::HIGHLIGHTS_QUERY;
+    "lang-xml": "xml" => tree_sitter_xml::LANGUAGE_XML, tree_sitter_xml::XML_HIGHLIGHT_QUERY;
+    "lang-zig": "zig" => tree_sitter_zig::LANGUAGE, tree_sitter_zig::HIGHLIGHTS_QUERY;
+    "lang-nix": "nix" => tree_sitter_nix::LANGUAGE, tree_sitter_nix::HIGHLIGHTS_QUERY;
+    "lang-make": "make" => tree_sitter_make::LANGUAGE, tree_sitter_make::HIGHLIGHTS_QUERY;
 }
 
 pub(crate) fn language_for_path(path: &str) -> &'static str {

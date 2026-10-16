@@ -167,5 +167,6 @@ pub(super) fn separator_line(region: ContextRegion) -> DiffLine {
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
         context_region: Some(region),
+        moved: None,
     }
 }

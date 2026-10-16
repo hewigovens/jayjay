@@ -40,7 +40,7 @@ final class DiffConflictRenderingTests: XCTestCase {
         XCTAssertEqual(displayLines[0].rawText, "Conflict 1 of 1 · ◆ Side #1")
         XCTAssertEqual(displayLines[1].rawText, "base")
         XCTAssertEqual(displayLines[2].rawText, "◆ │ ours")
-        XCTAssertEqual(wrapDiffLines(lines: displayLines, cols: 80).count, displayLines.count)
+        XCTAssertEqual(wrapDiffLines(lines: displayLines, cols: 80, movedLabelCols: 0).count, displayLines.count)
         XCTAssertEqual(buildSideBySideRows(lines: lines).count, displayLines.count)
     }
 

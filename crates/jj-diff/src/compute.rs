@@ -71,6 +71,7 @@ fn compute_file_diff_impl(
                         conflict_kind: ConflictLineKind::None,
                         no_eof_newline: false,
                         context_region: None,
+                        moved: None,
                     });
                 }
                 old_idx += 1;
@@ -108,6 +109,7 @@ fn compute_file_diff_impl(
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                             context_region: None,
+                            moved: None,
                         });
                         result_lines.push(DiffLine {
                             old_line_no: None,
@@ -117,6 +119,7 @@ fn compute_file_diff_impl(
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                             context_region: None,
+                            moved: None,
                         });
                     }
                 }
@@ -131,6 +134,7 @@ fn compute_file_diff_impl(
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                             context_region: None,
+                            moved: None,
                         });
                     }
                 }
@@ -145,6 +149,7 @@ fn compute_file_diff_impl(
                             conflict_kind: ConflictLineKind::None,
                             no_eof_newline: false,
                             context_region: None,
+                            moved: None,
                         });
                     }
                 }
@@ -159,6 +164,7 @@ fn compute_file_diff_impl(
                         conflict_kind: ConflictLineKind::None,
                         no_eof_newline: false,
                         context_region: None,
+                        moved: None,
                     });
                 }
                 new_idx += 1;

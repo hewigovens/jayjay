@@ -17,6 +17,7 @@ mod dag_row;
 mod detail;
 mod diff_edit;
 mod diff_rows;
+mod diff_scroll;
 mod diff_select;
 mod drag;
 mod file_actions;

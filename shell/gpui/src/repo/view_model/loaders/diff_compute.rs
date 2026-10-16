@@ -120,8 +120,10 @@ pub(super) fn compute_diff_blocking(
     } else {
         None
     };
+    let mut file_diff = compute_file_diff(diff_path, &old, &new, ignore_whitespace);
+    file_diff.detect_moves(&old, &new);
     Ok(ComputedDiff {
-        file_diff: compute_file_diff(diff_path, &old, &new, ignore_whitespace),
+        file_diff,
         old_content: old,
         new_content: new,
         old_preview,

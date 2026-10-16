@@ -1,3 +1,5 @@
+use std::ops::Range;
+
 use crate::syntax::SyntaxToken;
 
 pub const CONTEXT_LINES: usize = 3;
@@ -60,6 +62,15 @@ pub struct DiffLine {
     pub no_eof_newline: bool,
     /// Present only for collapsed-context separator lines.
     pub context_region: Option<ContextRegion>,
+    /// Set by move detection on a changed row whose code moved unchanged to another hunk.
+    pub moved: Option<MovedRow>,
+}
+
+/// The other copy of a moved block starts at `counterpart_line` on the opposite side.
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MovedRow {
+    pub counterpart_line: u32,
+    pub starts_block: bool,
 }
 
 impl DiffLine {
@@ -196,6 +207,33 @@ impl LineIndex {
             ranges.pop();
         }
         Self { ranges }
+    }
+
+    /// Zero-based line containing byte `offset`.
+    pub(super) fn line_at(&self, offset: usize) -> usize {
+        self.ranges
+            .partition_point(|&(start, _)| start <= offset)
+            .saturating_sub(1)
+    }
+
+    /// Lines whose non-blank content, less a trailing `,` or `;` separator, lies inside `span`, when at least one does.
+    pub(super) fn lines_within(&self, text: &str, span: Range<usize>) -> Option<LineSpan> {
+        let first = self.ranges.partition_point(|&(_, end)| end <= span.start);
+        let mut covered = (first..self.ranges.len())
+            .take_while(|&line| self.ranges[line].0 < span.end)
+            .filter(|&line| {
+                let (start, end) = self.ranges[line];
+                let content = text[start..end].trim_start();
+                let item = content.trim_end_matches([',', ';', ' ', '\t']);
+                let item_start = end - content.len();
+                !item.is_empty() && item_start >= span.start && item_start + item.len() <= span.end
+            });
+        let first = covered.next()?;
+        let last = covered.last().unwrap_or(first);
+        Some(LineSpan {
+            start: first as u32 + 1,
+            count: (last - first) as u32 + 1,
+        })
     }
 
     pub(super) fn get<'a>(&self, text: &'a str, line_no_1based: u32) -> Option<(usize, &'a str)> {

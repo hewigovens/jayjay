@@ -274,13 +274,18 @@ fn wrap_cols_for_width(width: f32, advance: f32) -> u32 {
 }
 
 #[uniffi::export]
-fn wrap_diff_lines(lines: Vec<DiffLine>, cols: u32) -> Vec<WrappedDiffLine> {
-    diff::wrap_diff_lines(&lines, cols)
+fn wrap_diff_lines(lines: Vec<DiffLine>, cols: u32, moved_label_cols: u32) -> Vec<WrappedDiffLine> {
+    diff::wrap_diff_lines(&lines, cols, moved_label_cols)
 }
 
 #[uniffi::export]
-fn wrap_sbs_rows(rows: Vec<SideBySideRow>, old_cols: u32, new_cols: u32) -> Vec<WrappedSbsRow> {
-    diff::wrap_sbs_rows(&rows, old_cols, new_cols)
+fn wrap_sbs_rows(
+    rows: Vec<SideBySideRow>,
+    old_cols: u32,
+    new_cols: u32,
+    moved_label_cols: u32,
+) -> Vec<WrappedSbsRow> {
+    diff::wrap_sbs_rows(&rows, old_cols, new_cols, moved_label_cols)
 }
 
 #[uniffi::export]

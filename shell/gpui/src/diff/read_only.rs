@@ -15,7 +15,7 @@ pub(crate) fn read_only_diff<V: 'static>(
     cx: &mut Context<V>,
 ) -> AnyElement {
     let display_lines = build_diff_display_lines(&diff.lines);
-    let lines = Arc::new(wrap_diff_lines(&display_lines, DEFAULT_WRAP_COLS));
+    let lines = Arc::new(wrap_diff_lines(&display_lines, DEFAULT_WRAP_COLS, 0));
     let count = lines.len();
     let theme = Arc::new(theme.clone());
     let advance = fonts::mono_advance(cx, px(theme.code_font_size()));

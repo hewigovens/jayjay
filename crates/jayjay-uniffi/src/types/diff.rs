@@ -3,8 +3,8 @@ use jayjay_core::diff::{
     ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,
     ContextExpansion, ContextExpansionFinish, ContextExpansionRequest, ContextExpansionReveal,
     ContextRegion, DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle,
-    DisplayLineMapping, FileDiff, LineSpan, RowSide, SideBySideRow, WrappedDiffLine, WrappedSbsRow,
-    WrappedSide,
+    DisplayLineMapping, FileDiff, LineSpan, MovedRow, RowSide, SideBySideRow, WrappedDiffLine,
+    WrappedSbsRow, WrappedSide,
 };
 use jayjay_core::diff_edit::{DiffEditFile, DiffEditFileDiff};
 use jayjay_core::syntax::SyntaxToken;
@@ -221,6 +221,14 @@ pub struct DiffLine {
     pub conflict_kind: core::diff::ConflictLineKind,
     pub no_eof_newline: bool,
     pub context_region: Option<core::diff::ContextRegion>,
+    #[uniffi(default = None)]
+    pub moved: Option<core::diff::MovedRow>,
+}
+
+#[uniffi::remote(Record)]
+pub struct MovedRow {
+    pub counterpart_line: u32,
+    pub starts_block: bool,
 }
 
 #[uniffi::remote(Record)]
@@ -284,6 +292,8 @@ pub struct RowSide {
     pub spans: Vec<core::diff::DiffSpan>,
     pub style: core::diff::DiffSpanStyle,
     pub conflict_kind: core::diff::ConflictLineKind,
+    #[uniffi(default = None)]
+    pub moved: Option<core::diff::MovedRow>,
 }
 
 #[uniffi::remote(Record)]
