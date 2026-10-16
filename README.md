@@ -113,11 +113,11 @@ Rule of thumb: `jj-lib` belongs in `jayjay-core`. Diff rendering, review state, 
 
 ### `jj-diff`
 
-`jj-diff` is the most reusable standalone library in the repo. It has **zero dependency on `jj-lib`**.
+[`jj-diff`](https://crates.io/crates/jj-diff) is the standalone diff engine behind JayJay, available on crates.io. It has **zero dependency on `jj-lib`**.
 
 ```toml
 [dependencies]
-jj-diff = { git = "https://github.com/hewigovens/jayjay" }
+jj-diff = "0.1.1"
 ```
 
 ```rust
