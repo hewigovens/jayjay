@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use super::actions::PaletteCtx;
-use super::rows::{self, PaletteRow, WorkspaceTarget};
+use super::rows::{self, DynamicKind, PaletteRow};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
@@ -21,29 +21,21 @@ impl CommandPalette {
         cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
             .detach();
         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
-        let workspaces = repo_window
+        let dynamic_rows = repo_window
             .as_ref()
             .map(|window| {
-                window
-                    .read(cx)
-                    .view_model()
-                    .read(cx)
-                    .graph
-                    .workspaces
-                    .iter()
-                    .filter(|workspace| workspace.is_switch_target())
-                    .map(WorkspaceTarget::new)
-                    .collect::<Vec<_>>()
+                let vm = window.read(cx).view_model().read(cx);
+                rows::dynamic_rows(vm.graph.workspaces.as_ref(), vm.selected_change())
             })
             .unwrap_or_default();
-        let candidates = rows::search_candidates(&workspaces);
+        let candidates = rows::search_candidates(&dynamic_rows);
         Self {
             query: Default::default(),
             selected: 0,
             focus_handle: cx.focus_handle(),
             repo_path,
             repo_window,
-            workspaces,
+            dynamic_rows,
             candidates,
             output: CommandOutput::Idle,
             history: Vec::new(),
@@ -169,7 +161,7 @@ impl CommandPalette {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {
-        match rows::row(action_ix, &self.workspaces) {
+        match rows::row(action_ix, &self.dynamic_rows) {
             Some(PaletteRow::Help(topic)) => {
                 window.remove_window();
                 crate::app::links::open_url(cx, &topic.guide_url());
@@ -182,13 +174,22 @@ impl CommandPalette {
                 window.remove_window();
                 (action.dispatch)(&ctx, cx);
             }
-            Some(PaletteRow::Workspace(target)) => {
-                let path = std::path::PathBuf::from(&target.path);
-                window.remove_window();
-                if let Some(view) = self.repo_window.clone() {
-                    view.update(cx, |view, cx| view.switch_workspace(path, cx));
+            Some(PaletteRow::Dynamic(row)) => match &row.kind {
+                DynamicKind::SwitchWorkspace { path } => {
+                    let path = std::path::PathBuf::from(path);
+                    window.remove_window();
+                    if let Some(view) = self.repo_window.clone() {
+                        view.update(cx, |view, cx| view.switch_workspace(path, cx));
+                    }
                 }
-            }
+                DynamicKind::Context(action) => {
+                    let action = action.clone();
+                    window.remove_window();
+                    if let Some(view) = self.repo_window.clone() {
+                        view.update(cx, |view, cx| view.dispatch_context_action(action, cx));
+                    }
+                }
+            },
             None => {}
         }
     }

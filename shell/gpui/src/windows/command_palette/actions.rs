@@ -289,6 +289,37 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         glyph_str: glyph::ARROW_CIRCLE_RIGHT,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_remote_repository),
     },
+    PaletteAction {
+        name: "Zoom In",
+        keywords: &["zoom", "font", "size", "larger"],
+        glyph_str: glyph::PLUS,
+        dispatch: |_, cx| config::update(cx, |c| c.zoom(1.)),
+    },
+    PaletteAction {
+        name: "Zoom Out",
+        keywords: &["zoom", "font", "size", "smaller"],
+        glyph_str: glyph::MINUS,
+        dispatch: |_, cx| config::update(cx, |c| c.zoom(-1.)),
+    },
+    PaletteAction {
+        name: "Reset Zoom",
+        keywords: &["zoom", "font", "size", "reset", "default"],
+        glyph_str: glyph::A_LARGE_SMALL,
+        dispatch: |_, cx| config::update(cx, |c| c.reset_zoom()),
+    },
+    PaletteAction {
+        name: "Expand All Unmodified Lines",
+        keywords: &[
+            "context",
+            "expand",
+            "unmodified",
+            "collapsed",
+            "show",
+            "diff",
+        ],
+        glyph_str: glyph::UNFOLD_VERTICAL,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::expand_all_context),
+    },
 ];
 
 fn set_appearance(cx: &mut App, mode: AppearanceMode) {

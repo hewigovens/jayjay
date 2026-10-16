@@ -1,65 +1,212 @@
-//! The single mapping from a palette row index to its source — `ACTIONS` first, then help topics, then workspace switches; search, dispatch, and rendering all consume this one ordering.
+//! The single mapping from a palette row index to its source — `ACTIONS` first, then help topics, then dynamic rows; search, dispatch, and rendering all consume this one ordering.
 
 use std::borrow::Cow;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
-use jayjay_core::WorkspaceInfo;
+use jayjay_core::{ChangeInfo, ShortId, WorkspaceInfo, default_revset_preset, revset_presets};
 
 use super::actions::{ACTIONS, PaletteAction};
 use super::help::{self, HelpTopic};
+use crate::repo::window::ChangeAction;
+use crate::ui::context_menu::ContextAction;
+use crate::ui::icons::glyph;
 
-pub(super) struct WorkspaceTarget {
-    pub name: String,
-    pub path: String,
+pub(super) struct DynamicRow {
     pub label: String,
+    pub search: String,
+    pub glyph: &'static str,
+    pub selector: String,
+    pub kind: DynamicKind,
 }
 
-impl WorkspaceTarget {
-    pub(super) fn new(workspace: &WorkspaceInfo) -> Self {
-        Self {
-            name: workspace.name.clone(),
-            path: workspace.path.clone(),
-            label: format!("Switch to {}", workspace.name),
-        }
-    }
+pub(super) enum DynamicKind {
+    SwitchWorkspace { path: String },
+    Context(ContextAction),
 }
 
 pub(super) enum PaletteRow<'a> {
     Action(&'static PaletteAction),
     Help(&'static HelpTopic),
-    Workspace(&'a WorkspaceTarget),
+    Dynamic(&'a DynamicRow),
 }
 
-pub(super) fn row(ix: usize, workspaces: &[WorkspaceTarget]) -> Option<PaletteRow<'_>> {
+pub(super) fn dynamic_rows(
+    workspaces: &[WorkspaceInfo],
+    selected: Option<&ChangeInfo>,
+) -> Vec<DynamicRow> {
+    let mut rows = Vec::new();
+    for workspace in workspaces.iter().filter(|workspace| !workspace.is_current) {
+        if workspace.is_switch_target() {
+            rows.push(switch_row(workspace));
+        }
+        rows.push(forget_row(workspace));
+        if workspace.is_path_resolved {
+            rows.push(delete_row(workspace));
+        }
+    }
+    rows.extend(revset_rows());
+    if let Some(change) = selected {
+        rows.extend(change_rows(change));
+    }
+    rows
+}
+
+pub(super) fn row(ix: usize, dynamic: &[DynamicRow]) -> Option<PaletteRow<'_>> {
     if let Some(action) = ACTIONS.get(ix) {
         return Some(PaletteRow::Action(action));
     }
     if let Some(topic) = help::topic_for_row(ix) {
         return Some(PaletteRow::Help(topic));
     }
-    let workspace_ix = ix.checked_sub(ACTIONS.len() + help::topics().len())?;
-    workspaces.get(workspace_ix).map(PaletteRow::Workspace)
+    let dynamic_ix = ix.checked_sub(ACTIONS.len() + help::topics().len())?;
+    dynamic.get(dynamic_ix).map(PaletteRow::Dynamic)
 }
 
 /// Fuzzy-search haystacks, one per row in row order; the static sources are built once per process.
-pub(super) fn search_candidates(workspaces: &[WorkspaceTarget]) -> Cow<'static, [String]> {
+pub(super) fn search_candidates(dynamic: &[DynamicRow]) -> Cow<'static, [String]> {
     static CANDIDATES: OnceLock<Vec<String>> = OnceLock::new();
     let base = CANDIDATES.get_or_init(|| {
         let mut candidates: Vec<String> = ACTIONS
             .iter()
-            .map(|a| format!("{} {}", a.name, a.keywords.join(" ")))
+            .map(|action| format!("{} {}", action.name, action.keywords.join(" ")))
             .collect();
         candidates.extend(help::topics().iter().map(HelpTopic::search_text));
         candidates
     });
-    if workspaces.is_empty() {
+    if dynamic.is_empty() {
         return Cow::Borrowed(base);
     }
     let mut candidates = base.clone();
-    candidates.extend(
-        workspaces
-            .iter()
-            .map(|workspace| format!("{} switch workspace", workspace.label)),
-    );
+    candidates.extend(dynamic.iter().map(|row| row.search.clone()));
     Cow::Owned(candidates)
+}
+
+fn switch_row(workspace: &WorkspaceInfo) -> DynamicRow {
+    let label = format!("Switch to {}", workspace.name);
+    DynamicRow {
+        search: format!("{label} switch workspace"),
+        selector: format!("command-palette-workspace-{}", workspace.name),
+        glyph: glyph::ARROW_CIRCLE_RIGHT,
+        kind: DynamicKind::SwitchWorkspace {
+            path: workspace.path.clone(),
+        },
+        label,
+    }
+}
+
+fn forget_row(workspace: &WorkspaceInfo) -> DynamicRow {
+    let label = format!("Forget Workspace {}", workspace.name);
+    DynamicRow {
+        search: label.clone(),
+        selector: format!("command-palette-forget-{}", workspace.name),
+        glyph: glyph::FOLDER_MINUS,
+        kind: DynamicKind::Context(ContextAction::ForgetWorkspace {
+            name: workspace.name.clone().into(),
+            path: workspace
+                .is_path_resolved
+                .then(|| workspace.path.clone().into()),
+        }),
+        label,
+    }
+}
+
+fn delete_row(workspace: &WorkspaceInfo) -> DynamicRow {
+    let label = format!("Forget & Delete Workspace {}", workspace.name);
+    DynamicRow {
+        search: label.clone(),
+        selector: format!("command-palette-delete-{}", workspace.name),
+        glyph: glyph::TRASH,
+        kind: DynamicKind::Context(ContextAction::DeleteWorkspace {
+            name: workspace.name.clone().into(),
+            path: workspace.path.clone().into(),
+        }),
+        label,
+    }
+}
+
+fn revset_rows() -> Vec<DynamicRow> {
+    let mut rows = revset_presets()
+        .iter()
+        .map(|preset| {
+            revset_row(
+                &preset.id,
+                format!("Show {}", preset.label),
+                preset.revset.clone(),
+            )
+        })
+        .collect::<Vec<_>>();
+    rows.push(revset_row(
+        "mutable",
+        "Show Mutable".to_owned(),
+        "mutable()".to_owned(),
+    ));
+    rows.push(revset_row(
+        "reset",
+        "Reset Filter".to_owned(),
+        default_revset_preset().revset,
+    ));
+    rows
+}
+
+fn revset_row(id: &str, label: String, revset: String) -> DynamicRow {
+    DynamicRow {
+        search: format!("{label} revset filter preset"),
+        selector: format!("command-palette-revset-{id}"),
+        glyph: glyph::FILTER,
+        kind: DynamicKind::Context(ContextAction::FilterRevset(revset.into())),
+        label,
+    }
+}
+
+fn change_rows(change: &ChangeInfo) -> Vec<DynamicRow> {
+    let rev = change.selection_revision().to_owned();
+    let short = change.change_id.prefix(ShortId::LABEL_CHARS);
+    let mut rows = vec![change_row(
+        format!("New Child Change ({short})"),
+        "command-palette-new-child",
+        glyph::PLUS_CIRCLE,
+        ContextAction::NewChangeOnTop(rev.clone().into()),
+    )];
+    if !change.is_immutable {
+        rows.push(change_row(
+            format!("Edit / Switch To ({short})"),
+            "command-palette-edit-change",
+            glyph::PENCIL,
+            ContextAction::Change(Arc::new(ChangeAction::Edit { rev: rev.clone() })),
+        ));
+    }
+    rows.push(change_row(
+        format!("Duplicate ({short})"),
+        "command-palette-duplicate-change",
+        glyph::COPY,
+        ContextAction::Change(Arc::new(ChangeAction::Duplicate { rev: rev.clone() })),
+    ));
+    rows.push(change_row(
+        format!("Revert Change ({short})"),
+        "command-palette-revert-change",
+        glyph::ARROW_UTURN_BACK,
+        ContextAction::Change(Arc::new(ChangeAction::Revert { rev: rev.clone() })),
+    ));
+    rows.push(change_row(
+        format!("Create Bookmark on {short}"),
+        "command-palette-create-bookmark",
+        glyph::BOOKMARK,
+        ContextAction::CreateBookmark(rev.into()),
+    ));
+    rows
+}
+
+fn change_row(
+    label: String,
+    selector: &str,
+    glyph_str: &'static str,
+    action: ContextAction,
+) -> DynamicRow {
+    DynamicRow {
+        search: format!("{label} change"),
+        selector: selector.to_owned(),
+        glyph: glyph_str,
+        kind: DynamicKind::Context(action),
+        label,
+    }
 }

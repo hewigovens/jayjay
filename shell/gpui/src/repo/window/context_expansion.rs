@@ -30,6 +30,10 @@ impl RepoWindow {
         );
     }
 
+    pub(crate) fn expand_all_context(&mut self, cx: &mut Context<Self>) {
+        self.request_context_expansion(ContextExpansionRequest::AllRegions, cx);
+    }
+
     fn request_context_expansion(
         &mut self,
         request: ContextExpansionRequest,

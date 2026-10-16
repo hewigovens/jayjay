@@ -51,7 +51,7 @@ pub(super) fn action_list(
     }
     let mut col = div().flex().flex_col().flex_1().min_h_0().py(px(4.));
     for (vis_ix, action_ix) in visible.iter().enumerate() {
-        let Some(row) = rows::row(*action_ix, &palette.workspaces) else {
+        let Some(row) = rows::row(*action_ix, &palette.dynamic_rows) else {
             continue;
         };
         col = col.child(action_row(*action_ix, row, vis_ix == selected, t, cx));
@@ -72,11 +72,7 @@ fn action_row(
             action.display_name(cx),
             action.glyph_str,
         ),
-        PaletteRow::Workspace(target) => (
-            format!("command-palette-workspace-{}", target.name),
-            target.label.clone(),
-            glyph::ARROW_CIRCLE_RIGHT,
-        ),
+        PaletteRow::Dynamic(row) => (row.selector.clone(), row.label.clone(), row.glyph),
         PaletteRow::Help(topic) => (
             format!("command-palette-help-{}", topic.id),
             topic.palette_title(),
