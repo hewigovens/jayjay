@@ -169,9 +169,9 @@ impl BookmarkManagerView {
             head: compare::RevsetEndpoint::for_bookmark(&bookmark),
             head_change_id: bookmark.change_id.id.clone(),
         };
+        let compare = request.compare_state();
         let _ = self.parent.update(cx, |view, cx| {
-            view.vm
-                .update(cx, |vm, cx| vm.compare_bookmark_diff(request.clone(), cx));
+            view.vm.update(cx, |vm, cx| vm.compare_changes(compare, cx));
         });
     }
 

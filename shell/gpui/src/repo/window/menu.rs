@@ -214,7 +214,10 @@ impl RepoWindow {
             }
             ContextAction::ShowBookmarkDiff(request) => {
                 self.vm
-                    .update(cx, |vm, cx| vm.compare_bookmark_diff(request, cx));
+                    .update(cx, |vm, cx| vm.compare_changes(request.compare_state(), cx));
+            }
+            ContextAction::ShowCompare(compare) => {
+                self.vm.update(cx, |vm, cx| vm.compare_changes(compare, cx));
             }
             ContextAction::FilterRevset(revset) => self.filter_revset(&revset, cx),
             ContextAction::TrackBookmark { name, remote } => {

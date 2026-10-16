@@ -2,7 +2,7 @@ use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::Context;
-use jayjay_core::compare::{self, BookmarkDiffRequest, CompareState};
+use jayjay_core::compare::{self, CompareState};
 use jayjay_core::dag::{SelectionClick, SelectionGraph, SelectionState};
 use jayjay_core::{ChangeInfo, GraphEntry};
 
@@ -164,13 +164,9 @@ impl RepoViewModel {
         }
     }
 
-    pub(crate) fn compare_bookmark_diff(
-        &mut self,
-        request: BookmarkDiffRequest,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn compare_changes(&mut self, compare: CompareState, cx: &mut Context<Self>) {
         self.selected_changes.clear();
-        self.compare_summary(request.compare_state(), cx);
+        self.compare_summary(compare, cx);
     }
 
     pub(crate) fn update_change_selection(

@@ -10,7 +10,7 @@ use gpui::{
     ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled, anchored,
     canvas, deferred, div, point, px, rgb,
 };
-use jayjay_core::compare::BookmarkDiffRequest;
+use jayjay_core::compare::{BookmarkDiffRequest, CompareState};
 use unicode_width::UnicodeWidthStr;
 
 use crate::app::theme::{Theme, ui_font_size};
@@ -59,6 +59,7 @@ pub enum ContextAction {
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
     ShowBookmarkDiff(BookmarkDiffRequest),
+    ShowCompare(CompareState),
     FilterRevset(SharedString),
     TrackBookmark {
         name: String,

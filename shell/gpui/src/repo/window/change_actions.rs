@@ -145,24 +145,26 @@ impl RepoWindow {
                     .is_none_or(|parent| !parent.is_immutable)
             })
         };
-        let (bookmark_diff, selected_rev) = {
+        let (bookmark_diff, selected_rev, compare_with_selected, divergent_compares) = {
             let vm = self.vm.read(cx);
             let selected = if vm.has_multiple_change_selection() {
                 None
             } else {
                 vm.selected_change()
             };
+            let selected_other =
+                selected.filter(|selected| selected.change_id.id != change.change_id.id);
             (
                 selected.and_then(|base| compare::BookmarkDiffRequest::between(base, change)),
-                selected
-                    .filter(|selected| selected.change_id.id != change.change_id.id)
-                    .map(|selected| {
-                        (
-                            selected.selection_revision().to_owned(),
-                            selected.is_immutable,
-                            vm.can_merge_selected_change_with(change),
-                        )
-                    }),
+                selected_other.map(|selected| {
+                    (
+                        selected.selection_revision().to_owned(),
+                        selected.is_immutable,
+                        vm.can_merge_selected_change_with(change),
+                    )
+                }),
+                selected_other.map(|selected| compare::CompareState::between(selected, change)),
+                divergent_compares(&vm.graph.changes, change),
             )
         };
 
@@ -249,8 +251,37 @@ impl RepoWindow {
             ));
         }
 
-        if bookmark_diff.is_some() || selected_rev.is_some() {
+        if !divergent_compares.is_empty() || bookmark_diff.is_some() || selected_rev.is_some() {
             items.push(ContextMenuItem::separator());
+        }
+        if divergent_compares.len() == 1 {
+            items.push(ContextMenuItem::new(
+                "Compare Divergent Version",
+                glyph::ARROWS_LEFT_RIGHT,
+                ContextAction::ShowCompare(divergent_compares[0].1.clone()),
+            ));
+        } else if !divergent_compares.is_empty() {
+            items.push(ContextMenuItem::submenu(
+                "Compare Divergent Versions",
+                glyph::ARROWS_LEFT_RIGHT,
+                divergent_compares
+                    .into_iter()
+                    .map(|(label, compare)| {
+                        ContextMenuItem::new(
+                            label,
+                            glyph::ARROWS_LEFT_RIGHT,
+                            ContextAction::ShowCompare(compare),
+                        )
+                    })
+                    .collect(),
+            ));
+        }
+        if let Some(compare) = compare_with_selected {
+            items.push(ContextMenuItem::new(
+                "Compare with selected",
+                glyph::ARROWS_LEFT_RIGHT,
+                ContextAction::ShowCompare(compare),
+            ));
         }
         if let Some(request) = bookmark_diff {
             items.push(ContextMenuItem::new(
@@ -541,4 +572,37 @@ impl RepoWindow {
 
 pub(super) fn change_action(action: ChangeAction) -> ContextAction {
     ContextAction::Change(Arc::new(action))
+}
+
+fn divergent_compares(
+    changes: &[ChangeInfo],
+    change: &ChangeInfo,
+) -> Vec<(String, compare::CompareState)> {
+    if !change.is_divergent {
+        return Vec::new();
+    }
+    changes
+        .iter()
+        .filter(|sibling| {
+            sibling.change_id.id == change.change_id.id
+                && sibling.commit_id.id != change.commit_id.id
+        })
+        .map(|sibling| {
+            (
+                divergent_sibling_label(sibling),
+                compare::CompareState::between(sibling, change),
+            )
+        })
+        .collect()
+}
+
+/// Siblings share a change id, so the commit prefix and first description line tell them apart.
+fn divergent_sibling_label(change: &ChangeInfo) -> String {
+    let short_commit: String = change.commit_id.id.chars().take(8).collect();
+    let first_line = change.description.split('\n').next().unwrap_or("").trim();
+    if first_line.is_empty() {
+        short_commit
+    } else {
+        format!("{short_commit} — {first_line}")
+    }
 }
