@@ -45,20 +45,6 @@ extension ChangeDetailView {
                     onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if case let .fileHistory(history, path) = paneMode {
-                FileHistoryView(
-                    history: history, path: path,
-                    onSelectChange: { changeId in
-                        paneMode = .files
-                        if let onRevealChangeInDag {
-                            onRevealChangeInDag(changeId)
-                        } else {
-                            actions?.select(changeId: changeId)
-                        }
-                    },
-                    onDismiss: { paneMode = .files }
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if let hunk = selectedHunk {
                 VStack(spacing: 0) {
                     if conflictedPaths.contains(hunk.path) {

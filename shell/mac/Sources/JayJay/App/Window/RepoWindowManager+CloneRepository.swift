@@ -8,4 +8,15 @@ extension RepoWindowManager {
         }
         presentWindow(AppWindows.cloneRepository)
     }
+
+    func openRepositoryPicker() {
+        let panel = NSOpenPanel()
+        panel.canChooseFiles = false
+        panel.canChooseDirectories = true
+        panel.allowsMultipleSelection = false
+        panel.message = "Choose a Jujutsu repository"
+        if panel.runModal() == .OK, let url = panel.url {
+            openRepo(url.path)
+        }
+    }
 }

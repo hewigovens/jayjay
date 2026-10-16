@@ -79,6 +79,7 @@ struct ChangeDetailView: View {
     @Environment(AppSettings.self) var appSettings
     @Environment(\.colorScheme) var colorScheme
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
+    @Environment(RepoWindowManager.self) var windowManager: RepoWindowManager?
 
     var descriptionExpanded: Binding<Bool> {
         Binding(

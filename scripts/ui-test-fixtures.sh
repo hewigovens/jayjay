@@ -126,6 +126,18 @@ fixture_mutating_scenes() {
 }
 
 # Pull stays in flight until canceled: jj's git subprocess is a script that never returns.
+fixture_file_history() {
+  copy_fixture simple file-history
+  (
+    cd "$fixtures/file-history"
+    jj new main -m "edit feature"
+    echo "feature v2" > feature.txt
+    jj new -m "edit feature again"
+    echo "feature v3" > feature.txt
+    jj st
+  )
+}
+
 fixture_sync_cancel() {
   copy_fixture simple sync-cancel
   local fake_git="$fixtures/sync-cancel-git"
@@ -522,6 +534,7 @@ fixture_description_editing
 fixture_external_tools
 fixture_sync_cancel
 fixture_clone_hang
+fixture_file_history
 fixture_bookmark_diff
 fixture_revset_completion
 fixture_remote_bookmarks

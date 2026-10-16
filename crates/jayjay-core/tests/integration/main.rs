@@ -10,6 +10,7 @@ mod diffedit;
 mod diffedit_guard;
 mod diffedit_immutable;
 mod fetch_cleanup;
+mod file_history;
 mod fix;
 mod format_projections;
 mod insert_change;

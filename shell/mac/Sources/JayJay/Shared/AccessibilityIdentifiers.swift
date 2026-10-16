@@ -112,6 +112,17 @@ enum AID {
         static let reverseDirection = "compare.reverseDirection"
     }
 
+    enum FileHistory {
+        static let base = "fileHistory.base"
+        static let target = "fileHistory.target"
+        static let swap = "fileHistory.swap"
+        static let divider = "fileHistory.divider"
+
+        static func row(_ index: Int) -> String {
+            "fileHistory.row.\(index)"
+        }
+    }
+
     enum Evolog {
         static let entryList = "evolog.entryList"
         static let entryListDivider = "evolog.entryListDivider"

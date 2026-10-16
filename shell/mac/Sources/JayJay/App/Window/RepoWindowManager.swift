@@ -19,7 +19,7 @@ final class RepoWindowManager {
     private(set) var openRepoPaths: [String] = []
     var cloneRepositoryGeneration = 0
     let settings: AppSettings
-    private var openWindowAction: ((_ id: String, _ value: String?) -> Void)?
+    private(set) var openWindowAction: ((_ id: String, _ value: String?) -> Void)?
     private var dismissWindowAction: ((_ id: String) -> Void)?
     var pendingRepoAfterOnboarding: String?
     /// SwiftUI's launch presentation is only a hint; applied once the first scene registers its window actions.
@@ -175,17 +175,6 @@ final class RepoWindowManager {
                   seen.insert(path).inserted
             else { return nil }
             return path
-        }
-    }
-
-    func openRepositoryPicker() {
-        let panel = NSOpenPanel()
-        panel.canChooseFiles = false
-        panel.canChooseDirectories = true
-        panel.allowsMultipleSelection = false
-        panel.message = "Choose a Jujutsu repository"
-        if panel.runModal() == .OK, let url = panel.url {
-            openRepo(url.path)
         }
     }
 
@@ -357,16 +346,18 @@ final class RepoWindowManager {
 
     func showInGraph(repoPath: String, headChangeId: String, selecting revision: String) {
         let normalizedPath = normalizedRepositoryPath(path: repoPath)
-        compactRegistrations()
-        if let registered = registeredRepos.values.first(where: { $0.path == normalizedPath && $0.viewModel?.switchTarget == nil }),
-           let viewModel = registered.viewModel,
-           activateRepo(repoPath)
-        {
+        if let viewModel = registeredViewModel(at: repoPath), activateRepo(repoPath) {
             viewModel.revealAncestors(of: headChangeId, selecting: revision)
             return
         }
         pendingReveals[normalizedPath] = (headChangeId, revision)
         openRepo(repoPath)
+    }
+
+    func registeredViewModel(at repoPath: String) -> RepoViewModel? {
+        compactRegistrations()
+        let path = normalizedRepositoryPath(path: repoPath)
+        return registeredRepos.values.first { $0.path == path && $0.viewModel?.switchTarget == nil }?.viewModel
     }
 
     func takePendingReveal(for path: String) -> (headChangeId: String, rev: String)? {

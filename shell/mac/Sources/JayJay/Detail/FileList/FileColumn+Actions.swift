@@ -72,8 +72,10 @@ extension ChangeDetailView {
             Divider()
             Button("Annotate (Blame)") { loadAnnotate(rev: detailRevision, path: path) }
                 .keyboardShortcut("b", modifiers: [])
-            Button("File History") { loadFileHistory(path: path) }
-                .keyboardShortcut("h", modifiers: [])
+            Button("File History") {
+                windowManager?.openFileHistory(FileHistoryRequest(repoPath: repoPath, path: path))
+            }
+            .keyboardShortcut("h", modifiers: [])
             Divider()
         }
     }
@@ -182,18 +184,6 @@ extension ChangeDetailView {
             await MainActor.run {
                 guard case let .annotate(_, currentPath) = paneMode, currentPath == path else { return }
                 paneMode = .annotate(lines: lines ?? [], path: path)
-            }
-        }
-    }
-
-    func loadFileHistory(path: String) {
-        guard let repo else { return }
-        paneMode = .fileHistory(history: [], path: path)
-        Task.detached {
-            let history = try? repo.fileHistory(path: path)
-            await MainActor.run {
-                guard case let .fileHistory(_, currentPath) = paneMode, currentPath == path else { return }
-                paneMode = .fileHistory(history: history ?? [], path: path)
             }
         }
     }
