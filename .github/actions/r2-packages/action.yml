@@ -1,0 +1,49 @@
+name: R2 package bucket
+description: Configure rclone's r2 remote for the jayjay-packages bucket and copy files into it without overwriting.
+inputs:
+  account-id:
+    required: true
+  access-key-id:
+    required: true
+  secret-access-key:
+    required: true
+  destination:
+    description: Folder in the bucket, such as windows
+    default: ""
+  files:
+    description: Space-separated local paths or globs to copy into destination
+    default: ""
+runs:
+  using: composite
+  steps:
+    - name: Configure rclone
+      shell: bash
+      env:
+        ACCOUNT_ID: ${{ inputs.account-id }}
+        ACCESS_KEY_ID: ${{ inputs.access-key-id }}
+        SECRET_ACCESS_KEY: ${{ inputs.secret-access-key }}
+      run: |
+        command -v rclone >/dev/null || sudo apt-get install -y --no-install-recommends rclone
+        {
+          echo "RCLONE_CONFIG_R2_TYPE=s3"
+          echo "RCLONE_CONFIG_R2_PROVIDER=Cloudflare"
+          echo "RCLONE_CONFIG_R2_ENDPOINT=https://$ACCOUNT_ID.r2.cloudflarestorage.com"
+          echo "RCLONE_CONFIG_R2_ACCESS_KEY_ID=$ACCESS_KEY_ID"
+          echo "RCLONE_CONFIG_R2_SECRET_ACCESS_KEY=$SECRET_ACCESS_KEY"
+          echo "RCLONE_CONFIG_R2_NO_CHECK_BUCKET=true"
+        } >>"$GITHUB_ENV"
+
+    - name: Copy files without overwriting
+      if: inputs.files != ''
+      shell: bash
+      env:
+        FILES: ${{ inputs.files }}
+        DESTINATION: ${{ inputs.destination }}
+      run: |
+        shopt -s nullglob
+        # shellcheck disable=SC2206
+        files=($FILES)
+        [ ${#files[@]} -gt 0 ] || { echo "no files match: $FILES" >&2; exit 1; }
+        for file in "${files[@]}"; do
+          rclone copyto --ignore-existing "$file" "r2:jayjay-packages/$DESTINATION/${file##*/}"
+        done

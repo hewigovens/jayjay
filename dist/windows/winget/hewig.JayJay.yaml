@@ -1,0 +1,5 @@
+PackageIdentifier: hewig.JayJay
+PackageVersion: "${VERSION}"
+DefaultPackageLocale: en-US
+ManifestType: version
+ManifestVersion: 1.10.0

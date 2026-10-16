@@ -14,6 +14,7 @@ Releases are not complete after `just release`. The full release flow is:
 8. Push `main` only after `just shell::publish` succeeds, so `docs/appcast.xml` never points at a missing or draft-only asset.
 9. Commit and push the Homebrew tap change in `../tap`.
 10. After the AppImage workflow has attached both architectures, update the checked-in `dist/arch/PKGBUILD` version and source checksums, regenerate `dist/arch/.SRCINFO` with `makepkg --printsrcinfo`, run the workflow's Arch package lifecycle check, and submit both files to AUR. `PKGBUILD` is the maintained package source; `.SRCINFO` is generated from it, not edited independently.
+11. For a stable release, after the Windows portable workflow's `publish` job attaches the ZIP and copies it to `https://pkgs.hewig.dev/windows/`, download its `winget-manifests` artifact and open a pull request adding `manifests/h/hewig/JayJay/<version>` to microsoft/winget-pkgs (the job runs from `main` with the `R2_*` secrets, like the Arch publisher, and needs the release commit on `main`). Pre-releases only get the ZIP attached to the release page.
 
 ## Beta Releases
 

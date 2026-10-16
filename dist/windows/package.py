@@ -92,12 +92,13 @@ def package(payload, version, output):
     (payload / "SHA256SUMS").write_bytes(sums.encode("utf-8"))
     output.mkdir(parents=True, exist_ok=True)
     archive = output / f"JayJay-{version}-windows-x64-alpha.zip"
-    with zipfile.ZipFile(archive, "w", compression=zipfile.ZIP_STORED) as zip_file:
+    with zipfile.ZipFile(archive, "w") as zip_file:
         for path in sorted([*files, payload / "SHA256SUMS"], key=lambda path: path.relative_to(payload).as_posix()):
             info = zipfile.ZipInfo(path.relative_to(payload).as_posix(), (1980, 1, 1, 0, 0, 0))
             info.create_system = 3
             info.external_attr = 0o100644 << 16
-            zip_file.writestr(info, path.read_bytes())
+            # ZipInfo entries default to stored.
+            zip_file.writestr(info, path.read_bytes(), compress_type=zipfile.ZIP_DEFLATED, compresslevel=9)
     checksum = hashlib.sha256(archive.read_bytes()).hexdigest()
     archive.with_suffix(".zip.sha256").write_bytes(f"{checksum}  {archive.name}\n".encode("ascii"))
     print(archive)

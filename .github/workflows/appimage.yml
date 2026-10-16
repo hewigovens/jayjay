@@ -331,13 +331,6 @@ jobs:
       fail-fast: false
       matrix:
         arch: [x86_64, aarch64]
-    env:
-      RCLONE_CONFIG_R2_TYPE: s3
-      RCLONE_CONFIG_R2_PROVIDER: Cloudflare
-      RCLONE_CONFIG_R2_ENDPOINT: https://${{ secrets.R2_ACCOUNT_ID }}.r2.cloudflarestorage.com
-      RCLONE_CONFIG_R2_ACCESS_KEY_ID: ${{ secrets.R2_ACCESS_KEY_ID }}
-      RCLONE_CONFIG_R2_SECRET_ACCESS_KEY: ${{ secrets.R2_SECRET_ACCESS_KEY }}
-      RCLONE_CONFIG_R2_NO_CHECK_BUCKET: "true"
     steps:
       - name: Install job dependencies
         run: pacman --disable-sandbox -Syu --needed --noconfirm git github-cli rclone
@@ -353,6 +346,13 @@ jobs:
         run: |
           git config --global --add safe.directory "$GITHUB_WORKSPACE"
           git merge-base --is-ancestor "$GITHUB_SHA" HEAD || { echo "release commit is not on main yet; push main and rerun this job" >&2; exit 1; }
+
+      - name: Configure the R2 package bucket
+        uses: ./.github/actions/r2-packages
+        with:
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
 
       - name: Download package artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1

@@ -2,11 +2,6 @@ name: Windows portable alpha
 
 on:
   workflow_dispatch:
-    inputs:
-      candidate_run_id:
-        description: "Recheck an existing portable candidate from this repository (blank builds a new ZIP)"
-        type: string
-        required: false
   push:
     branches: [main]
     paths: &paths
@@ -19,10 +14,11 @@ on:
       - ".github/workflows/windows-portable.yml"
   pull_request:
     paths: *paths
+  release:
+    types: [published]
 
 permissions:
   contents: read
-  actions: read
 
 concurrency:
   group: windows-portable-${{ github.ref }}
@@ -49,7 +45,6 @@ jobs:
           Add-Content $env:GITHUB_PATH "$env:RUNNER_TEMP/jj-bin"
 
       - name: Cache Rust dependencies
-        if: ${{ !inputs.candidate_run_id }}
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: windows-portable
@@ -57,51 +52,98 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cache-on-failure: true
 
-      - name: Test Windows platform regressions
-        if: ${{ !inputs.candidate_run_id }}
-        run: |
-          cargo test --locked -p jayjay-core --lib tools::
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cargo test --locked -p jayjay-core --lib repo::environment
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-          cargo test --locked -p jayjay-cli
-          if ($LASTEXITCODE) { exit $LASTEXITCODE }
-
       - name: Install pinned license generator
-        if: ${{ !inputs.candidate_run_id }}
         run: cargo install cargo-about --version 0.9.2 --features cli --locked
 
       - name: Build portable ZIP
-        if: ${{ !inputs.candidate_run_id }}
-        run: ./dist/windows/build.ps1
-
-      - name: Download existing portable candidate
-        if: ${{ inputs.candidate_run_id }}
-        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
-        with:
-          pattern: JayJay-*-windows-x64-alpha.zip*
-          merge-multiple: true
-          path: build/windows
-          run-id: ${{ inputs.candidate_run_id }}
-          github-token: ${{ github.token }}
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '')
 
       - name: Verify extracted ZIP
         run: ./dist/windows/smoke.ps1 -Archive (Get-ChildItem build/windows/*.zip | Select-Object -ExpandProperty FullName)
 
-      - name: Upload portable alpha candidate
-        if: ${{ !cancelled() && hashFiles('build/windows/*.zip') != '' }}
+      - name: Hand the ZIP to the publish job
+        if: github.event_name == 'release'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          path: build/windows/*.zip
-          archive: false
+          name: windows-portable
+          path: build/windows/*.zip*
           if-no-files-found: error
-          retention-days: 14
+          retention-days: 1
 
-      - name: Upload portable alpha checksum
-        if: ${{ !cancelled() && hashFiles('build/windows/*.zip.sha256') != '' }}
+  publish:
+    # The only job with write credentials.
+    name: Publish Windows package
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v')
+    needs: portable
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    env:
+      GH_TOKEN: ${{ github.token }}
+      TAG_NAME: ${{ github.event.release.tag_name }}
+    steps:
+      # The publishing code comes from main, not from the released tag.
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: main
+          fetch-depth: 0
+          persist-credentials: false
+
+      - name: Verify the release commit is on main
+        run: git merge-base --is-ancestor "$GITHUB_SHA" HEAD || { echo "release commit is not on main yet; push main and rerun this job" >&2; exit 1; }
+
+      - name: Download portable ZIP
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: windows-portable
+          path: packages
+
+      - name: Attach the ZIP to the release
+        # On a rerun the attached ZIP and checksum are canonical.
+        run: |
+          attached=$(gh release view "$TAG_NAME" --json assets --jq '.assets[].name')
+          for asset in packages/*.zip packages/*.zip.sha256; do
+            name=$(basename "$asset")
+            if grep -qx "$name" <<<"$attached"; then
+              gh release download "$TAG_NAME" -p "$name" -D packages --clobber
+            else
+              gh release upload "$TAG_NAME" "$asset"
+            fi
+          done
+
+      - name: Copy the ZIP to pkgs.hewig.dev
+        if: ${{ !github.event.release.prerelease }}
+        uses: ./.github/actions/r2-packages
+        with:
+          account-id: ${{ secrets.R2_ACCOUNT_ID }}
+          access-key-id: ${{ secrets.R2_ACCESS_KEY_ID }}
+          secret-access-key: ${{ secrets.R2_SECRET_ACCESS_KEY }}
+          destination: windows
+          files: packages/*.zip packages/*.zip.sha256
+
+      # winget pins the hash of the bytes pkgs.hewig.dev serves.
+      - name: Write winget manifests
+        if: ${{ !github.event.release.prerelease }}
+        run: |
+          version=${TAG_NAME#v}
+          [[ $version =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || { echo "winget needs a numeric version, got $version" >&2; exit 1; }
+          zip=$(find packages -name '*.zip' -print -quit)
+          export VERSION="$version" URL="https://pkgs.hewig.dev/windows/${zip##*/}"
+          SHA256=$(curl -fsSL "$URL" | sha256sum | cut -d' ' -f1 | tr a-f A-F)
+          export SHA256
+          dir="winget/manifests/h/hewig/JayJay/$version"
+          mkdir -p "$dir"
+          for template in dist/windows/winget/*.yaml; do
+            manifest="$dir/${template##*/}"
+            envsubst <"$template" >"$manifest"
+          done
+
+      - name: Upload winget manifests
+        if: ${{ !github.event.release.prerelease }}
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          path: build/windows/*.zip.sha256
-          archive: false
+          name: winget-manifests
+          path: winget
           if-no-files-found: error
-          retention-days: 14
