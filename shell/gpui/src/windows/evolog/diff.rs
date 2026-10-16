@@ -4,18 +4,14 @@ use gpui::{
     AnyElement, AppContext, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
     SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb, uniform_list,
 };
-use jayjay_core::diff::{
-    DEFAULT_WRAP_COLS, FileDiff, build_diff_display_lines, compute_file_diff, wrap_diff_lines,
-};
+use jayjay_core::diff::compute_file_diff;
 use jayjay_core::{DiffHunk, DiffProjectionMode, projection};
 
 use super::EvologView;
 use super::layout::EvologPane;
-use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::diff::line::{content_row, gutter_cell, line_bg_color};
-use crate::diff::{hunk_is_image, image_diff_view};
+use crate::diff::{hunk_is_image, image_diff_view, read_only_diff};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::loading::loading_status;
 use crate::ui::primitives::{no_scrollbar_gutter, placeholder, placeholder_err};
@@ -233,7 +229,7 @@ fn comparison_content(
     {
         image_diff_view(hunk, theme, window, cx)
     } else if let Some(diff) = view.current_diff.clone() {
-        read_only_diff(diff, theme, cx)
+        read_only_diff("evolog-diff", diff, theme, cx)
     } else if view.diff_loading {
         loading_status("Loading file…", theme)
     } else {
@@ -355,49 +351,5 @@ fn version_label(commit_id: &str, theme: &Theme) -> AnyElement {
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(theme.fg))
         .child(commit_id.chars().take(12).collect::<String>())
-        .into_any_element()
-}
-
-fn read_only_diff(diff: Arc<FileDiff>, theme: &Theme, cx: &mut Context<EvologView>) -> AnyElement {
-    let display_lines = build_diff_display_lines(&diff.lines);
-    let lines = Arc::new(wrap_diff_lines(&display_lines, DEFAULT_WRAP_COLS));
-    let count = lines.len();
-    let theme = Arc::new(theme.clone());
-    let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
-    let list = uniform_list(
-        "evolog-diff",
-        count,
-        cx.processor(move |_view, range: std::ops::Range<usize>, _window, _cx| {
-            range
-                .map(|ix| {
-                    let line = &lines[ix].line;
-                    let bg = line_bg_color(line.style, line.conflict_kind, &theme);
-                    div()
-                        .flex()
-                        .flex_row()
-                        .w_full()
-                        .child(gutter_cell(
-                            line.old_line_no
-                                .map(|line| line.to_string())
-                                .unwrap_or_default(),
-                            &theme,
-                            bg,
-                        ))
-                        .child(gutter_cell(
-                            line.new_line_no
-                                .map(|line| line.to_string())
-                                .unwrap_or_default(),
-                            &theme,
-                            bg,
-                        ))
-                        .child(content_row(line, &theme, None, None, advance).flex_1())
-                })
-                .collect()
-        }),
-    );
-    no_scrollbar_gutter(list)
-        .flex_1()
-        .min_w_0()
-        .h_full()
         .into_any_element()
 }

@@ -24,6 +24,7 @@ mod repo_evolog;
 mod repo_file_actions;
 mod repo_file_editor;
 mod repo_file_filter;
+mod repo_file_history;
 mod repo_file_multi_select;
 mod repo_file_split;
 mod repo_fix;

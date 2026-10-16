@@ -73,10 +73,10 @@ impl RepoWindow {
         self.show_sidebar(cx);
         let ix = {
             let vm = self.vm.read(cx);
-            vm.graph
-                .changes
-                .iter()
-                .position(|c| c.change_id.starts_with(change_id))
+            vm.graph.changes.iter().position(|change| {
+                // A divergent revision is addressed by commit id; other callers pass a change id or its prefix.
+                change.commit_id.id == change_id || change.change_id.starts_with(change_id)
+            })
         };
         if let Some(ix) = ix {
             self.scrolls
