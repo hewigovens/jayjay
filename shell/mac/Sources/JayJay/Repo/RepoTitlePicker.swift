@@ -221,6 +221,9 @@ struct RepoTitlePicker: View {
             },
             actionRow(id: "open-repo", title: "Open Repository…", icon: "folder") {
                 deferred { windowManager.openRepositoryPicker() }
+            },
+            actionRow(id: "clone-repo", title: "Clone Repository…", icon: "square.and.arrow.down") {
+                deferred { windowManager.showCloneRepository() }
             }
         ])
     }

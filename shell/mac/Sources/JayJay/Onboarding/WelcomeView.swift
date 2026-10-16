@@ -6,6 +6,7 @@ struct WelcomeView: View {
     static let defaultSize = NSSize(width: 760, height: 600)
 
     let onOpen: (String) -> Void
+    let onClone: () -> Void
 
     @Environment(AppSettings.self) private var settings
     @Environment(RepositoryStore.self) private var repositoryStore
@@ -106,16 +107,20 @@ struct WelcomeView: View {
             Text("A native GUI for Jujutsu")
                 .jayjayFont(14)
                 .foregroundStyle(.secondary)
-            Button("Open Repository...") {
-                let panel = NSOpenPanel()
-                panel.canChooseFiles = false
-                panel.canChooseDirectories = true
-                panel.allowsMultipleSelection = false
-                if panel.runModal() == .OK, let url = panel.url {
-                    onOpen(url.path)
+            HStack(spacing: 8) {
+                Button("Open...") {
+                    let panel = NSOpenPanel()
+                    panel.canChooseFiles = false
+                    panel.canChooseDirectories = true
+                    panel.allowsMultipleSelection = false
+                    if panel.runModal() == .OK, let url = panel.url {
+                        onOpen(url.path)
+                    }
                 }
+                .keyboardShortcut(.defaultAction)
+                Button("Clone...", action: onClone)
+                    .accessibilityIdentifier(AID.CloneRepository.open)
             }
-            .keyboardShortcut(.defaultAction)
         }
         .frame(maxWidth: .infinity)
     }

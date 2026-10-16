@@ -57,6 +57,12 @@ struct AppCommands: Commands {
             }
             .keyboardShortcut(AppShortcut.openRepository)
 
+            Button {
+                windowManager.showCloneRepository()
+            } label: {
+                Label("Clone Repository...", systemImage: "square.and.arrow.down")
+            }
+
             Menu {
                 if settings.recentRepos.isEmpty {
                     Text("No Recent Repositories")

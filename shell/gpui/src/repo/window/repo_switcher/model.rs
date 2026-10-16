@@ -14,4 +14,5 @@ pub(super) enum RepoSwitcherAction {
     Open(String),
     ShowRepositoryList,
     OpenRepository,
+    CloneRepository,
 }

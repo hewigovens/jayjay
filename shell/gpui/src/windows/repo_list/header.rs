@@ -29,8 +29,19 @@ pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
                 .child("A native GUI for Jujutsu"),
         )
         .child(
-            button("repo-list-open", "Open Repository...", t, true)
-                .debug_selector(|| "repo-list-open".to_owned())
-                .on_click(|_, _, cx| crate::app::menus::prompt_open_repository(cx)),
+            div()
+                .flex()
+                .flex_row()
+                .gap(px(8.))
+                .child(
+                    button("repo-list-open", "Open...", t, true)
+                        .debug_selector(|| "repo-list-open".to_owned())
+                        .on_click(|_, _, cx| crate::app::menus::prompt_open_repository(cx)),
+                )
+                .child(
+                    button("repo-list-clone", "Clone...", t, false).on_click(|_, _, cx| {
+                        crate::windows::clone_repository::CloneRepositoryView::open(cx)
+                    }),
+                ),
         )
 }

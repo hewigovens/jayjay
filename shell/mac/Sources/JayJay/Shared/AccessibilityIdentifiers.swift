@@ -235,6 +235,15 @@ enum AID {
         }
     }
 
+    enum CloneRepository {
+        static let open = "cloneRepository.open"
+        static let sourceField = "cloneRepository.sourceField"
+        static let nameField = "cloneRepository.nameField"
+        static let locationField = "cloneRepository.locationField"
+        static let cloneButton = "cloneRepository.cloneButton"
+        static let error = "cloneRepository.error"
+    }
+
     enum PullRequestImport {
         static let urlField = "pullRequestImport.urlField"
         static let resolveButton = "pullRequestImport.resolveButton"

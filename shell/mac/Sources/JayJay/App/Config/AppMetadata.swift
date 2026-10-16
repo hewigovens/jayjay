@@ -8,6 +8,7 @@ enum AppWindows {
     static let about = "about-window"
     static let shortcuts = "shortcuts-window"
     static let overview = "overview-window"
+    static let cloneRepository = "clone-repository-window"
 }
 
 enum URLScheme {

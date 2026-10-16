@@ -1,4 +1,5 @@
 mod cli_review;
+mod clone_repository;
 mod external_tool;
 mod harness;
 mod identity;

@@ -3,13 +3,13 @@ use std::sync::Arc;
 
 use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{
-    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, ConflictEditorData,
-    DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk, DiffProjectionMode,
-    DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats, FileEditorData, FixSummary,
-    GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand, JjCommandResult, MutationEffect,
-    OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode, RecentRevsetStore, Repo,
-    RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken, TagInfo, ToolsConfig,
-    WorkspaceInfo, WorkspacePresence,
+    AnnotationLine, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus, CloneRequest,
+    ConflictEditorData, DiffEditDestination, DiffEditFileSelection, DiffExcerpt, DiffHunk,
+    DiffProjectionMode, DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats,
+    FileEditorData, FixSummary, GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand,
+    JjCommandResult, MutationEffect, OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode,
+    RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken,
+    TagInfo, ToolsConfig, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -171,6 +171,50 @@ fn check_jj_environment() -> CliStatus {
 #[uniffi::export]
 fn init_jj_git_repo(path: String) -> Result<(), JayError> {
     jayjay_core::init_jj_git_repo(&PathBuf::from(path))
+}
+
+#[uniffi::export]
+fn clone_directory_name(source: String) -> String {
+    CloneRequest::directory_name(&source)
+}
+
+#[uniffi::export]
+fn default_clone_location(recent_repositories: Vec<String>) -> String {
+    CloneRequest::default_location(&recent_repositories)
+        .display()
+        .to_string()
+}
+
+#[uniffi::export]
+fn clone_location(folder: String, name: String) -> String {
+    CloneRequest::location(&folder, &name)
+}
+
+#[derive(uniffi::Record)]
+pub struct CloneLocationParts {
+    pub folder: String,
+    pub name: String,
+}
+
+#[uniffi::export]
+fn split_clone_location(location: String) -> CloneLocationParts {
+    let (folder, name) = CloneRequest::split_location(&location);
+    CloneLocationParts {
+        folder: folder.to_owned(),
+        name: name.to_owned(),
+    }
+}
+
+/// Returns the new repository's path.
+#[uniffi::export]
+fn clone_git_repo(
+    source: String,
+    location: String,
+    sync: Arc<JayJaySyncToken>,
+) -> Result<String, JayError> {
+    let request = CloneRequest::new(&source, &location)?;
+    request.run(&sync.inner)?;
+    Ok(request.destination.display().to_string())
 }
 
 #[uniffi::export]
@@ -571,6 +615,13 @@ pub struct JayJaySyncToken {
 
 #[uniffi::export]
 impl JayJaySyncToken {
+    #[uniffi::constructor]
+    fn standalone() -> Arc<Self> {
+        Arc::new(Self {
+            inner: SyncToken::standalone(),
+        })
+    }
+
     fn cancel(&self) {
         self.inner.cancel();
     }

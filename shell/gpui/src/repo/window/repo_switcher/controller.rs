@@ -78,6 +78,9 @@ impl RepoWindow {
             RepoSwitcherAction::OpenRepository => {
                 cx.defer(crate::app::menus::prompt_open_repository);
             }
+            RepoSwitcherAction::CloneRepository => {
+                cx.defer(crate::windows::clone_repository::CloneRepositoryView::open);
+            }
         }
     }
 

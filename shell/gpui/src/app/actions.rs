@@ -9,6 +9,7 @@ actions!(
         Dismiss,
         Refresh,
         OpenRepository,
+        CloneRepository,
         OpenCommandPalette,
         OpenKeyboardShortcuts,
         OpenFind,

@@ -55,6 +55,16 @@ pub struct SyncToken {
 }
 
 impl SyncToken {
+    /// A token for a jj process that runs before any repository is open, such as a clone.
+    pub fn standalone() -> Self {
+        RunningJjProcesses::default().sync_token()
+    }
+
+    pub(super) fn output(&self, command: &mut Command, context: &str) -> JayResult<Output> {
+        let _enter = self.enter();
+        self.processes.output(command, context)
+    }
+
     /// Returns as soon as the cancel is latched and SIGTERM is sent; the SIGKILL escalation runs in the background.
     pub fn cancel(&self) {
         self.canceled.store(true, Ordering::SeqCst);

@@ -64,6 +64,7 @@ fn repository_title_picker_combines_workspaces_repositories_and_actions(cx: &mut
         "repo-switcher-open-0",
         "repo-switcher-list",
         "repo-switcher-open-repository",
+        "repo-switcher-clone-repository",
     ] {
         assert!(
             repo_cx.debug_bounds(selector).is_some(),

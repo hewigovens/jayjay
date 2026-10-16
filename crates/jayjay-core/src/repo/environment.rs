@@ -265,6 +265,17 @@ pub fn jj_binary() -> String {
     find_binary("jj")
 }
 
+/// The detected jj binary, or the error to show when Jujutsu is missing.
+pub(crate) fn require_jj() -> JayResult<String> {
+    let status = check_jj_environment();
+    if !status.is_installed || status.path.is_empty() {
+        return Err(JayError::internal(
+            "jj is not installed. Install Jujutsu and try again.",
+        ));
+    }
+    Ok(status.path)
+}
+
 pub(crate) fn gh_binary() -> String {
     find_binary("gh")
 }

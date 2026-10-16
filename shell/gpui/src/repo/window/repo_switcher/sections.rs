@@ -138,6 +138,16 @@ pub(super) fn switcher_sections(
             },
             action: Some(RepoSwitcherAction::OpenRepository),
         },
+        SwitcherRow {
+            id: "repo-switcher-clone-repository".to_owned(),
+            search_text: "Clone Repository".to_owned(),
+            height: 28.,
+            content: RowContent::Action {
+                label: "Clone Repository…",
+                glyph: glyph::ARROW_DOWN,
+            },
+            action: Some(RepoSwitcherAction::CloneRepository),
+        },
     ];
     sections.extend(filtered_section(
         "repo-switcher-global",

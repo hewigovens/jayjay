@@ -255,3 +255,33 @@ fn tag_push_treats_pattern_operators_as_literal_name_characters() {
         "release&staging"
     );
 }
+
+/// A clone source shaped like a jj option must reach jj as the source, never configure the clone.
+#[cfg(unix)]
+#[test]
+fn clone_treats_option_shaped_source_as_literal() {
+    use std::os::unix::fs::PermissionsExt;
+
+    let location = tempfile::tempdir().expect("tempdir");
+    let marker = location.path().join("git-ran");
+    let fake_git = location.path().join("git");
+    fs::write(
+        &fake_git,
+        format!("#!/bin/sh\ntouch '{}'\n", marker.display()),
+    )
+    .expect("write fake git");
+    fs::set_permissions(&fake_git, fs::Permissions::from_mode(0o755)).expect("chmod fake git");
+    let hostile = format!("--config=git.executable-path={}", fake_git.display());
+    let destination = location.path().join("dest");
+    let clone = jayjay_core::CloneRequest::new(&hostile, destination.to_str().expect("utf-8 path"))
+        .expect("valid request");
+
+    clone
+        .run(&jayjay_core::SyncToken::standalone())
+        .expect_err("no repository has that name");
+
+    assert!(
+        !marker.exists(),
+        "the source configured jj's git executable"
+    );
+}

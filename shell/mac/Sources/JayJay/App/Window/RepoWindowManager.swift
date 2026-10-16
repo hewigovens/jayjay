@@ -17,6 +17,7 @@ final class RepoWindowManager {
     }
 
     private(set) var openRepoPaths: [String] = []
+    var cloneRepositoryGeneration = 0
     let settings: AppSettings
     private var openWindowAction: ((_ id: String, _ value: String?) -> Void)?
     private var dismissWindowAction: ((_ id: String) -> Void)?
@@ -79,9 +80,12 @@ final class RepoWindowManager {
             showOnboarding()
             return
         }
-        openWindowAction?(AppWindows.repoList, nil)
-        // openWindow alone leaves a miniaturized window in the Dock; reopen must bring it back.
-        activateWindow(identified: AppWindows.repoList)
+        presentWindow(AppWindows.repoList)
+    }
+
+    func presentWindow(_ id: String) {
+        openWindowAction?(id, nil)
+        activateWindow(identified: id) // openWindow alone leaves a miniaturized window in the Dock.
     }
 
     func reopen() {
@@ -107,8 +111,7 @@ final class RepoWindowManager {
     }
 
     private func showOnboarding() {
-        openWindowAction?(AppWindows.onboarding, nil)
-        activateWindow(identified: AppWindows.onboarding)
+        presentWindow(AppWindows.onboarding)
     }
 
     private func hideRepoList() {
@@ -122,7 +125,7 @@ final class RepoWindowManager {
     }
 
     /// A closed window can linger in NSApp.windows until SwiftUI releases it; activating one would resurrect a shut-down repository.
-    private var liveWindows: [NSWindow] {
+    var liveWindows: [NSWindow] {
         NSApp.windows.filter { $0.isVisible || $0.isMiniaturized }
     }
 

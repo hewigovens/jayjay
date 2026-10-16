@@ -2,6 +2,7 @@ mod ai;
 mod annotate;
 mod bookmarks;
 mod cache;
+mod clone;
 mod command;
 mod command_process;
 mod config;
@@ -43,6 +44,7 @@ mod workspace_path;
 mod write_lock;
 
 pub use ai::{AiProvider, DiffExcerpt};
+pub use clone::CloneRequest;
 pub use command_process::SyncToken;
 pub use config::{JjConfigEntry, JjConfigSection, JjUserConfig, UserIdentity, jj_user_config};
 pub(crate) use diffedit::partition_validated_text_selection;

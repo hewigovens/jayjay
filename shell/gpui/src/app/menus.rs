@@ -3,13 +3,13 @@ use std::path::{Path, PathBuf};
 use gpui::{App, Menu, MenuItem, PathPromptOptions};
 
 use super::actions::{
-    ClearRecentRepositories, FilterByRevset, NewWorkspace, NewWorkspaceFromPullRequest, OpenAbout,
-    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenJujutsuDocumentation,
-    OpenKeyboardShortcuts, OpenOperationLog, OpenOverview, OpenRecentRepository,
-    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings,
-    OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback, ShowRepoInFileManager,
-    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar,
-    ToggleTreeFileList, ZoomIn, ZoomOut,
+    ClearRecentRepositories, CloneRepository, FilterByRevset, NewWorkspace,
+    NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
+    OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
+    OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
+    OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback,
+    ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff,
+    ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::tools;
@@ -96,6 +96,7 @@ fn app_menu() -> Menu {
 fn file_menu(recent_repos: &[String]) -> Menu {
     Menu::new("File").items([
         MenuItem::action("Open Repository...", OpenRepository),
+        MenuItem::action("Clone Repository...", CloneRepository),
         MenuItem::submenu(open_recent_menu(recent_repos)),
     ])
 }
@@ -139,6 +140,9 @@ fn register_global_actions(cx: &mut App) {
     });
     cx.on_action(|_: &Quit, cx| cx.quit());
     cx.on_action(|_: &OpenRepository, cx| prompt_open_repository(cx));
+    cx.on_action(|_: &CloneRepository, cx| {
+        crate::windows::clone_repository::CloneRepositoryView::open(cx);
+    });
     cx.on_action(|action: &OpenRecentRepository, cx| {
         crate::repo::open_repo_window(PathBuf::from(&action.path), cx);
     });

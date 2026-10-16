@@ -60,6 +60,7 @@ struct JayJayApp: App {
             updater: updater
         )
         OverviewWindowScene(settings: settings, windowManager: windowManager)
+        CloneRepositoryWindowScene(settings: settings, windowManager: windowManager)
         AppInfoScenes(settings: settings, updater: updater, windowManager: windowManager)
     }
 }

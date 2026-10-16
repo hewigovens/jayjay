@@ -138,6 +138,14 @@ fixture_sync_cancel() {
   )
 }
 
+# A jj config whose Git never answers, so a clone keeps running until it is stopped.
+fixture_clone_hang() {
+  local fake_git="$fixtures/clone-hang-git"
+  printf '#!/bin/sh\nsleep 600\n' > "$fake_git"
+  chmod +x "$fake_git"
+  printf 'git.executable-path = "%s"\n' "$fake_git" > "$fixtures/clone-hang-jj-config.toml"
+}
+
 fixture_bookmark_diff() {
   copy_fixture simple bookmark-diff
   (
@@ -513,6 +521,7 @@ fixture_description_height
 fixture_description_editing
 fixture_external_tools
 fixture_sync_cancel
+fixture_clone_hang
 fixture_bookmark_diff
 fixture_revset_completion
 fixture_remote_bookmarks

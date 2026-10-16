@@ -8,7 +8,7 @@ struct RepoListScene: Scene {
 
     var body: some Scene {
         Window("JayJay", id: AppWindows.repoList) {
-            WelcomeView(onOpen: { windowManager.openRepo($0) })
+            WelcomeView(onOpen: { windowManager.openRepo($0) }, onClone: { windowManager.showCloneRepository() })
                 .environment(repositoryStore)
                 .appEnvironment(settings)
                 .background(RepoListWindowBridge(windowManager: windowManager, scene: AppWindows.repoList))
