@@ -1,9 +1,9 @@
-pub(super) enum NativeStackOutcome {
+pub(super) enum StackLinkOutcome {
     Linked(String),
     Fallback(String),
 }
 
-impl NativeStackOutcome {
+impl StackLinkOutcome {
     pub(super) fn is_linked(&self) -> bool {
         matches!(self, Self::Linked(_))
     }

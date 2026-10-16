@@ -1,8 +1,6 @@
 pub(super) use crate::commit_message::{body, summary as first_line};
 
-/// Auto bookmark name for a change: `<slug>-<shortest-changeid>`, or the full
-/// change-id when the description has no usable slug. The change-id tail keeps the
-/// name unique and stable across amend/rebase, so re-running maps to the same one.
+// The change-id tail keeps the name stable across amend and rebase, so a re-run maps to the same bookmark.
 pub(super) fn bookmark_name(description: &str, change_id: &str, short_len: u32) -> String {
     let slug = branch_name_slug(&first_line(description));
     if slug.is_empty() {
@@ -12,11 +10,8 @@ pub(super) fn bookmark_name(description: &str, change_id: &str, short_len: u32) 
     format!("{slug}-{}", &change_id[..n])
 }
 
-/// At most this many words in an auto/generated branch slug — short, readable
-/// names. The change-id suffix is appended on top of this.
 const MAX_SLUG_WORDS: usize = 5;
 
-/// Lowercase, hyphen-joined slug of the first `MAX_SLUG_WORDS` alphanumeric words; empty when there are none.
 pub fn branch_name_slug(text: &str) -> String {
     let mut words: Vec<String> = Vec::new();
     let mut word = String::new();
@@ -59,7 +54,6 @@ mod tests {
             "kqxoznab",
             8,
         );
-        // Only the first five words become the slug; the change-id is the suffix.
         assert_eq!(name, "feat-support-stacked-prs-across-kqxoznab");
     }
 

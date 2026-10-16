@@ -3,15 +3,10 @@ use super::super::environment::glab_binary;
 use super::forge::{ForgeTarget, auth_preflight, created, failed, non_empty_or, url_containing};
 use crate::types::{JayResult, StackLayerOutcome, SubmittedLayer};
 
-/// Prove `glab` is installed and authenticated before any bookmark move or push,
-/// so a missing/misconfigured CLI fails up front instead of leaving dangling
-/// remote branches and moved local bookmarks with no MRs.
 pub(super) fn preflight(repo: &Repo) -> JayResult<()> {
     auth_preflight(repo, &glab_binary(), "glab", "GitLab CLI (glab)")
 }
 
-/// Create an MR for `target` (source = its bookmark, target = the layer below), or
-/// retarget an existing MR. Mirrors the GitHub path but via the `glab` CLI.
 pub(super) fn create_or_update_mr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
     match existing_mr(repo, &target.bookmark) {
         Some((iid, url)) => update_target(repo, target, iid, url),
@@ -19,13 +14,11 @@ pub(super) fn create_or_update_mr(repo: &Repo, target: &ForgeTarget) -> Submitte
     }
 }
 
-/// `glab mr view` argv with `head` after `--`, so an option-shaped bookmark name
-/// can't be parsed as a flag.
+// The bookmark goes after `--` so an option-shaped name can't be parsed as a flag.
 fn mr_view_args(head: &str) -> [&str; 6] {
     ["mr", "view", "-F", "json", "--", head]
 }
 
-/// `glab mr update` argv with the bookmark after `--` and all options before it.
 fn mr_update_args<'a>(
     base: &'a str,
     title: &'a str,
@@ -67,8 +60,7 @@ fn existing_mr(repo: &Repo, head: &str) -> Option<(u32, String)> {
 }
 
 fn update_target(repo: &Repo, target: &ForgeTarget, iid: u32, url: String) -> SubmittedLayer {
-    // Refresh title/description too so editing a commit and re-running keeps the MR
-    // in sync, not just its target branch.
+    // Title and description are refreshed too, so an edited commit re-syncs the MR.
     let title = non_empty_or(&target.title, &target.bookmark);
     let description = non_empty_or(&target.body, &title);
     let result = repo.command_output(
@@ -119,9 +111,7 @@ fn create_mr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
             title.as_str(),
             "--description",
             description.as_str(),
-            // Keep the source branch on merge: GitLab only auto-retargets the MR
-            // above to `main` when the merged branch survives. Deleting it would
-            // orphan the rest of the stack. Branches are cleaned up after landing.
+            // GitLab retargets the MR above only while the merged branch survives; deleting it would orphan the stack.
             "--remove-source-branch=false",
             "--yes",
         ],

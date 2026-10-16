@@ -1,5 +1,5 @@
-use super::submit::result_open_urls;
-use crate::repo::hosted_repo::RepoHost;
+use super::stack_forge::StackForge;
+use crate::repo::hosted_repo::HostedRepo;
 use crate::types::{StackLayerOutcome, SubmittedLayer};
 
 fn layer(number: u32, url: &str) -> SubmittedLayer {
@@ -7,81 +7,36 @@ fn layer(number: u32, url: &str) -> SubmittedLayer {
         bookmark: format!("layer-{number}"),
         base: "main".to_owned(),
         title: format!("Layer {number}"),
-        outcome: StackLayerOutcome::Created,
-        pr_number: number,
+        outcome: if url.is_empty() {
+            StackLayerOutcome::Failed
+        } else {
+            StackLayerOutcome::Created
+        },
+        pr_number: if url.is_empty() { 0 } else { number },
         pr_url: url.to_owned(),
-        detail: "ready".to_owned(),
+        detail: String::new(),
     }
 }
 
-#[test]
-fn linked_native_stack_opens_only_the_top_pull_request() {
-    let layers = [
-        layer(10, "https://example.test/pull/10"),
-        layer(11, "https://example.test/pull/11"),
-        layer(12, "https://example.test/pull/12"),
-    ];
-
-    assert_eq!(
-        result_open_urls(&layers, RepoHost::GitHub, true),
-        ["https://example.test/pull/12"]
-    );
+fn open_urls(remote: &str, layers: &[SubmittedLayer], linked: bool) -> Vec<String> {
+    StackForge::for_remote(HostedRepo::parse(remote))
+        .unwrap()
+        .open_urls(layers, linked)
 }
 
 #[test]
-fn github_dependent_chain_opens_every_available_pull_request() {
-    let layers = [
-        layer(10, "https://example.test/pull/10"),
-        layer(11, ""),
-        layer(12, "https://example.test/pull/12"),
-    ];
+fn done_opens_the_top_pull_request_only_when_it_reaches_the_whole_stack() {
+    let all = [layer(10, "u10"), layer(11, "u11"), layer(12, "u12")];
+    let failed_top = [layer(10, "u10"), layer(11, "u11"), layer(12, "")];
+    let github = "https://github.com/o/r";
+    let gitlab = "https://gitlab.com/o/r";
+    let codeberg = "https://codeberg.org/o/r";
 
-    assert_eq!(
-        result_open_urls(&layers, RepoHost::GitHub, false),
-        [
-            "https://example.test/pull/10",
-            "https://example.test/pull/12"
-        ]
-    );
-}
-
-#[test]
-fn gitlab_stack_opens_only_the_top_merge_request() {
-    let layers = [
-        layer(10, "https://example.test/merge_requests/10"),
-        layer(11, "https://example.test/merge_requests/11"),
-        layer(12, "https://example.test/merge_requests/12"),
-    ];
-
-    assert_eq!(
-        result_open_urls(&layers, RepoHost::GitLab, false),
-        ["https://example.test/merge_requests/12"]
-    );
-}
-
-#[test]
-fn gitlab_result_opens_the_highest_available_merge_request() {
-    let mut failed = layer(12, "");
-    failed.outcome = StackLayerOutcome::Failed;
-    failed.pr_number = 0;
-    let layers = [
-        layer(10, "https://example.test/merge_requests/10"),
-        layer(11, "https://example.test/merge_requests/11"),
-        failed,
-    ];
-
-    assert_eq!(
-        result_open_urls(&layers, RepoHost::GitLab, false),
-        ["https://example.test/merge_requests/11"]
-    );
-}
-
-#[test]
-fn linked_stack_without_a_top_url_preserves_dependent_chain_fallback() {
-    let layers = [layer(10, "https://example.test/pull/10"), layer(11, "")];
-
-    assert_eq!(
-        result_open_urls(&layers, RepoHost::GitHub, true),
-        ["https://example.test/pull/10"]
-    );
+    assert_eq!(open_urls(github, &all, true), ["u12"]);
+    assert_eq!(open_urls(github, &all, false), ["u10", "u11", "u12"]);
+    assert_eq!(open_urls(github, &failed_top, true), ["u10", "u11"]);
+    assert_eq!(open_urls(gitlab, &all, false), ["u12"]);
+    assert_eq!(open_urls(gitlab, &failed_top, false), ["u11"]);
+    assert_eq!(open_urls(codeberg, &all, true), ["u12"]);
+    assert_eq!(open_urls(codeberg, &failed_top, false), ["u10", "u11"]);
 }

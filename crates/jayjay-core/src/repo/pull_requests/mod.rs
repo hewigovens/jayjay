@@ -1,5 +1,5 @@
 mod checks;
-mod codeberg;
+pub(crate) mod codeberg;
 pub(super) mod cursor;
 mod github;
 mod gitlab;

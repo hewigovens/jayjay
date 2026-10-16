@@ -1,11 +1,9 @@
 use crate::repo::Repo;
-use crate::repo::hosted_repo::{HostedRepo, RepoHost};
+use crate::repo::hosted_repo::HostedRepo;
 use crate::types::*;
 
-use super::cursor;
 use super::forge::ForgeTarget;
-use super::github;
-use super::gitlab;
+use super::stack_forge::StackForge;
 use super::validation::validate_stack_changes;
 use crate::repo::ref_name::ensure_valid_ref_name;
 
@@ -39,35 +37,10 @@ impl Repo {
             .git_remote_url()
             .ok()
             .and_then(|url| HostedRepo::parse(&url));
-        let remote = match remote {
-            Some(remote)
-                if matches!(
-                    remote.host,
-                    RepoHost::GitHub | RepoHost::GitLab | RepoHost::Cursor
-                ) =>
-            {
-                remote
-            }
-            _ => {
-                return Err(JayError::Internal {
-                    message: "Stacked PRs support GitHub, GitLab, and Cursor remotes.".to_owned(),
-                });
-            }
-        };
-        let host = remote.host;
+        let forge = StackForge::for_remote(remote)?;
 
-        // Preflight the forge CLI first, or a failure leaves dangling remote branches and moved bookmarks.
-        let base_bookmark = match host {
-            RepoHost::GitLab => {
-                gitlab::preflight(self)?;
-                self.default_pull_request_base()
-            }
-            RepoHost::Cursor => cursor::preflight(self)?,
-            _ => {
-                github::preflight(self)?;
-                self.default_pull_request_base()
-            }
-        };
+        // Preflight the forge first, or a failure leaves dangling remote branches and moved bookmarks.
+        let base_bookmark = forge.preflight(self)?;
 
         let mut targets: Vec<ForgeTarget> = Vec::with_capacity(layers.len());
         let write = self.write_guard()?;
@@ -96,25 +69,16 @@ impl Repo {
 
         let layers: Vec<_> = targets
             .iter()
-            .map(|target| match host {
-                RepoHost::GitLab => gitlab::create_or_update_mr(self, target),
-                RepoHost::Cursor => cursor::create_or_update_pr(self, target),
-                _ => github::create_or_update_pr(self, target),
-            })
+            .map(|target| forge.submit_layer(self, target))
             .collect();
 
-        let mut native_stack_linked = false;
-        if host == RepoHost::GitHub
-            && let Some(native_outcome) = github::reconcile_stack(self, &remote, &layers)
-        {
-            native_stack_linked = native_outcome.is_linked();
-            if !message.is_empty() {
-                message.push('\n');
-            }
-            message.push_str(&native_outcome.into_message());
+        let mut linked = false;
+        if let Some(outcome) = forge.link(self, &targets, &layers) {
+            linked = outcome.is_linked();
+            append_message(&mut message, &outcome.into_message());
         }
 
-        let open_urls = result_open_urls(&layers, host, native_stack_linked);
+        let open_urls = forge.open_urls(&layers, linked);
         Ok(StackedPrResult {
             layers,
             message,
@@ -199,32 +163,12 @@ impl Repo {
     }
 }
 
-pub(super) fn result_open_urls(
-    layers: &[SubmittedLayer],
-    host: RepoHost,
-    native_stack_linked: bool,
-) -> Vec<String> {
-    if host == RepoHost::GitLab {
-        return layers
-            .iter()
-            .rev()
-            .map(|layer| layer.pr_url.as_str())
-            .find(|url| !url.is_empty())
-            .map(|url| vec![url.to_owned()])
-            .unwrap_or_default();
+fn append_message(message: &mut String, extra: &str) {
+    if extra.is_empty() {
+        return;
     }
-    if native_stack_linked
-        && let Some(top_url) = layers
-            .last()
-            .map(|layer| layer.pr_url.as_str())
-            .filter(|url| !url.is_empty())
-    {
-        return vec![top_url.to_owned()];
+    if !message.is_empty() {
+        message.push('\n');
     }
-    layers
-        .iter()
-        .map(|layer| layer.pr_url.as_str())
-        .filter(|url| !url.is_empty())
-        .map(ToOwned::to_owned)
-        .collect()
+    message.push_str(extra);
 }

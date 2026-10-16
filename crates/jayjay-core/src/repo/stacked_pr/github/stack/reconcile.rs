@@ -1,5 +1,5 @@
 use super::client::{ApiError, Client, Stack};
-use crate::repo::stacked_pr::native_stack_outcome::NativeStackOutcome;
+use crate::repo::stacked_pr::stack_link_outcome::StackLinkOutcome;
 use crate::repo::{Repo, hosted_repo::HostedRepo};
 use crate::types::{StackLayerOutcome, SubmittedLayer};
 
@@ -9,12 +9,12 @@ pub(super) fn reconcile(
     repo: &Repo,
     remote: &HostedRepo,
     layers: &[SubmittedLayer],
-) -> Option<NativeStackOutcome> {
+) -> Option<StackLinkOutcome> {
     if layers.len() < 2 {
         return None;
     }
     if layers.len() > MAX_STACK_SIZE {
-        return Some(NativeStackOutcome::Fallback(
+        return Some(StackLinkOutcome::Fallback(
             "Submitted the PRs as a dependent chain; GitHub native stacks support at most 100 PRs."
                 .to_owned(),
         ));
@@ -23,7 +23,7 @@ pub(super) fn reconcile(
         .iter()
         .any(|layer| layer.outcome == StackLayerOutcome::Failed || layer.pr_number == 0)
     {
-        return Some(NativeStackOutcome::Fallback(
+        return Some(StackLinkOutcome::Fallback(
             "Submitted the available PRs as a dependent chain; native GitHub stack linking was skipped because one or more PR operations failed."
                 .to_owned(),
         ));
@@ -36,27 +36,27 @@ pub(super) fn reconcile(
     Some(reconcile_remote(&Client::new(repo, remote), &pr_numbers))
 }
 
-fn reconcile_remote(client: &Client<'_>, desired: &[u32]) -> NativeStackOutcome {
+fn reconcile_remote(client: &Client<'_>, desired: &[u32]) -> StackLinkOutcome {
     let mut retry_available = true;
     loop {
         let existing = match client.find_for_pr(desired[0]) {
             Ok(stack) => stack,
-            Err(error) => return NativeStackOutcome::Fallback(fallback_message(&error)),
+            Err(error) => return StackLinkOutcome::Fallback(fallback_message(&error)),
         };
 
         match plan_reconciliation(desired, existing.as_ref()) {
             ReconciliationPlan::Create(pull_requests) => {
                 return match client.create(pull_requests) {
-                    Ok(stack) => NativeStackOutcome::Linked(format!(
+                    Ok(stack) => StackLinkOutcome::Linked(format!(
                         "Created native GitHub stack{} with {} PRs.",
                         stack_label(stack.number()),
                         pull_requests.len()
                     )),
-                    Err(error) => NativeStackOutcome::Fallback(fallback_message(&error)),
+                    Err(error) => StackLinkOutcome::Fallback(fallback_message(&error)),
                 };
             }
             ReconciliationPlan::Current(stack_number) => {
-                return NativeStackOutcome::Linked(format!(
+                return StackLinkOutcome::Linked(format!(
                     "Native GitHub stack{} is already up to date.",
                     stack_label(stack_number)
                 ));
@@ -66,7 +66,7 @@ fn reconcile_remote(client: &Client<'_>, desired: &[u32]) -> NativeStackOutcome 
                 pull_requests,
             } => match client.add(stack_number, pull_requests) {
                 Ok(stack) => {
-                    return NativeStackOutcome::Linked(format!(
+                    return StackLinkOutcome::Linked(format!(
                         "Updated native GitHub stack{} to {} PRs.",
                         stack_label(stack.number()),
                         desired.len()
@@ -77,11 +77,11 @@ fn reconcile_remote(client: &Client<'_>, desired: &[u32]) -> NativeStackOutcome 
                         retry_available = false;
                         continue;
                     }
-                    return NativeStackOutcome::Fallback(fallback_message(&error));
+                    return StackLinkOutcome::Fallback(fallback_message(&error));
                 }
             },
             ReconciliationPlan::Diverged(stack_number) => {
-                return NativeStackOutcome::Fallback(format!(
+                return StackLinkOutcome::Fallback(format!(
                     "Submitted the PRs, but native GitHub stack{} differs and cannot be updated automatically.",
                     stack_label(stack_number)
                 ));

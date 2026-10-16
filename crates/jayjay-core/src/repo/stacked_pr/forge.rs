@@ -1,15 +1,11 @@
 use crate::repo::Repo;
 use crate::types::{JayError, JayResult, StackLayerOutcome, SubmittedLayer};
-
-/// One PR/MR target — the subset of a stack layer the forge clients use.
 pub(super) struct ForgeTarget {
     pub bookmark: String,
     pub base: String,
     pub title: String,
     pub body: String,
 }
-
-/// `value` if non-empty, else `fallback` — for title/description fallbacks.
 pub(super) fn non_empty_or(value: &str, fallback: &str) -> String {
     if value.is_empty() {
         fallback.to_owned()
@@ -17,8 +13,6 @@ pub(super) fn non_empty_or(value: &str, fallback: &str) -> String {
         value.to_owned()
     }
 }
-
-/// The numeric PR/MR id from a `.../<n>` URL.
 fn number_from_url(url: &str) -> Option<u32> {
     url.trim_end_matches('/').rsplit('/').next()?.parse().ok()
 }
@@ -36,18 +30,25 @@ pub(super) fn failed(target: &ForgeTarget, detail: String) -> SubmittedLayer {
 }
 
 pub(super) fn created(target: &ForgeTarget, title: String, url: String) -> SubmittedLayer {
+    created_with_number(target, title, number_from_url(&url).unwrap_or(0), url)
+}
+
+pub(super) fn created_with_number(
+    target: &ForgeTarget,
+    title: String,
+    number: u32,
+    url: String,
+) -> SubmittedLayer {
     SubmittedLayer {
         bookmark: target.bookmark.clone(),
         base: target.base.clone(),
         title,
         outcome: StackLayerOutcome::Created,
-        pr_number: number_from_url(&url).unwrap_or(0),
+        pr_number: number,
         pr_url: url,
         detail: format!("Created onto {}", target.base),
     }
 }
-
-/// First whitespace token containing `needle`, used to scrape a PR/MR URL from CLI output.
 pub(super) fn url_containing(text: &str, needle: &str) -> String {
     text.split_whitespace()
         .find(|token| token.contains(needle))
@@ -55,8 +56,6 @@ pub(super) fn url_containing(text: &str, needle: &str) -> String {
         .trim()
         .to_owned()
 }
-
-/// Prove `cli auth status` succeeds before any bookmark move or push.
 pub(super) fn auth_preflight(repo: &Repo, binary: &str, cli: &str, display: &str) -> JayResult<()> {
     let label = format!("{cli} auth status");
     match repo.command_output(binary, &["auth", "status"], &label) {
@@ -74,8 +73,6 @@ pub(super) fn auth_preflight(repo: &Repo, binary: &str, cli: &str, display: &str
         }),
     }
 }
-
-/// Shared `pr edit --base/--title/--body` used by GitHub (`gh`) and Cursor Origin (`origin`).
 pub(super) fn edit_pull_request(
     repo: &Repo,
     binary: &str,

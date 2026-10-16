@@ -3,7 +3,6 @@ use serde::Deserialize;
 use super::super::checks::{self, CheckState};
 use crate::types::ChecksStatus;
 
-/// Forgejo combined status: pre-rolled-up `state` across the latest per context.
 #[derive(Deserialize)]
 pub(super) struct CodebergCombinedStatus {
     #[serde(default)]
@@ -49,7 +48,6 @@ mod tests {
 
     #[test]
     fn combined_status_rolls_up_latest_state() {
-        // Historical "pending" entries don't stick; the combined state rolls up.
         fn status_checks(json: &str) -> ChecksStatus {
             serde_json::from_str::<CodebergCombinedStatus>(json)
                 .unwrap()

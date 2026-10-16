@@ -1,10 +1,12 @@
+mod codeberg;
 mod cursor;
 mod detect;
 mod forge;
 mod github;
 mod gitlab;
 mod naming;
-mod native_stack_outcome;
+mod stack_forge;
+mod stack_link_outcome;
 mod submit;
 mod validation;
 

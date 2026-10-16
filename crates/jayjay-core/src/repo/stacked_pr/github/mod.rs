@@ -2,7 +2,7 @@ mod pull_request;
 mod stack;
 
 use super::forge::ForgeTarget;
-use crate::repo::stacked_pr::native_stack_outcome::NativeStackOutcome;
+use crate::repo::stacked_pr::stack_link_outcome::StackLinkOutcome;
 use crate::repo::{Repo, hosted_repo::HostedRepo};
 use crate::types::{JayResult, SubmittedLayer};
 
@@ -18,6 +18,6 @@ pub(super) fn reconcile_stack(
     repo: &Repo,
     remote: &HostedRepo,
     layers: &[SubmittedLayer],
-) -> Option<NativeStackOutcome> {
+) -> Option<StackLinkOutcome> {
     stack::reconcile(repo, remote, layers)
 }
