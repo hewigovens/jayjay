@@ -66,8 +66,8 @@ impl Render for RepoWindow {
                 vm.refresh_mode(),
             )
         };
-        let is_fetching = self.sync_activity.fetching;
-        let is_pushing = self.sync_activity.pushing;
+        let is_fetching = self.sync_activity.is_fetching();
+        let is_pushing = self.sync_activity.is_pushing();
         let init_error = {
             let vm = self.vm.read(cx);
             if vm.repo.is_none() {

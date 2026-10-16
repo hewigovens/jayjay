@@ -7,7 +7,7 @@ use jayjay_core::{ChangeInfo, ShortId, WorkspaceInfo, default_revset_preset, rev
 
 use super::actions::{ACTIONS, PaletteAction};
 use super::help::{self, HelpTopic};
-use crate::repo::window::ChangeAction;
+use crate::repo::window::{ChangeAction, RepoWindow, SyncActivity};
 use crate::ui::context_menu::ContextAction;
 use crate::ui::icons::glyph;
 
@@ -22,6 +22,7 @@ pub(super) struct DynamicRow {
 pub(super) enum DynamicKind {
     SwitchWorkspace { path: String },
     Context(ContextAction),
+    Window(fn(&mut RepoWindow, &mut gpui::Context<RepoWindow>)),
 }
 
 pub(super) enum PaletteRow<'a> {
@@ -33,8 +34,9 @@ pub(super) enum PaletteRow<'a> {
 pub(super) fn dynamic_rows(
     workspaces: &[WorkspaceInfo],
     selected: Option<&ChangeInfo>,
+    sync: &SyncActivity,
 ) -> Vec<DynamicRow> {
-    let mut rows = Vec::new();
+    let mut rows = cancel_sync_rows(sync);
     for workspace in workspaces.iter().filter(|workspace| !workspace.is_current) {
         if workspace.is_switch_target() {
             rows.push(switch_row(workspace));
@@ -79,6 +81,32 @@ pub(super) fn search_candidates(dynamic: &[DynamicRow]) -> Cow<'static, [String]
     let mut candidates = base.clone();
     candidates.extend(dynamic.iter().map(|row| row.search.clone()));
     Cow::Owned(candidates)
+}
+
+fn cancel_sync_rows(sync: &SyncActivity) -> Vec<DynamicRow> {
+    let row = |label: &str, selector: &str, cancel| DynamicRow {
+        label: label.to_owned(),
+        search: format!("{label} git sync stop"),
+        glyph: glyph::X_CIRCLE,
+        selector: selector.to_owned(),
+        kind: DynamicKind::Window(cancel),
+    };
+    let mut rows = Vec::new();
+    if sync.is_fetching() {
+        rows.push(row(
+            "Cancel Pull",
+            "command-palette-cancel-pull",
+            RepoWindow::cancel_pull,
+        ));
+    }
+    if sync.is_pushing() {
+        rows.push(row(
+            "Cancel Push",
+            "command-palette-cancel-push",
+            RepoWindow::cancel_push,
+        ));
+    }
+    rows
 }
 
 fn switch_row(workspace: &WorkspaceInfo) -> DynamicRow {

@@ -135,7 +135,9 @@ impl RepoViewModel {
                         Ok(value)
                     }
                     Err(error) => {
-                        vm.present_error(&error);
+                        if !matches!(error, JayError::Canceled) {
+                            vm.present_error(&error);
+                        }
                         cx.notify();
                         Err(error)
                     }

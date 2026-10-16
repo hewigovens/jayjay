@@ -923,6 +923,66 @@ fn repeated_pull_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
+fn clicking_pull_or_push_again_cancels_it_quietly(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &[
+            "git",
+            "remote",
+            "add",
+            "origin",
+            "https://example.invalid/repo.git",
+        ],
+    );
+    run_jj_in(
+        &fixture.path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "git.executable-path",
+            "/usr/bin/false",
+        ],
+    );
+    install_test_globals(cx);
+    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle(cx);
+
+    type Action = fn(&mut RepoWindow, &mut gpui::Context<RepoWindow>);
+    let runs: [(Action, Action, &str); 2] = [
+        (
+            RepoWindow::pull_or_cancel,
+            RepoWindow::git_fetch_origin,
+            "Pull canceled",
+        ),
+        (
+            RepoWindow::push_or_cancel,
+            RepoWindow::git_push_default,
+            "Push canceled",
+        ),
+    ];
+    for (toggle, start, canceled) in runs {
+        view.update(cx, |view, cx| {
+            toggle(view, cx);
+            toggle(view, cx);
+        });
+        settle(cx);
+        view.update(cx, |view, cx| {
+            assert_eq!(view.toast().as_deref(), Some(canceled));
+            assert!(view.view_model().read(cx).error.is_none());
+            start(view, cx);
+            assert_eq!(
+                view.toast().as_deref(),
+                Some(canceled),
+                "a canceled run must free the slot"
+            );
+        });
+        settle(cx);
+    }
+}
+
+#[gpui::test]
 fn failed_bookmark_track_toasts_the_unwrapped_error(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);

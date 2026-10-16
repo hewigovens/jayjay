@@ -1,7 +1,7 @@
 use gpui::Context;
 use jayjay_core::{
     DiffEditDestination, DiffEditFileSelection, FetchResult, InsertPosition, JayResult, Repo,
-    StackedPrResult, SubmitStackLayer, init_jj_git_repo,
+    StackedPrResult, SubmitStackLayer, SyncToken, init_jj_git_repo,
 };
 
 use std::sync::Arc;
@@ -263,11 +263,12 @@ impl RepoViewModel {
     pub(crate) fn delete_tag_and_push(
         &mut self,
         name: String,
+        sync: SyncToken,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.delete_tag_and_push(&name, &repo.sync_token()),
+            move |repo| repo.delete_tag_and_push(&name, &sync),
             |vm, _message, cx| vm.refresh(false, cx),
         )
     }
@@ -275,11 +276,12 @@ impl RepoViewModel {
     pub(crate) fn push_tag(
         &mut self,
         name: String,
+        sync: SyncToken,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_push_tag(&name, &repo.sync_token()),
+            move |repo| repo.git_push_tag(&name, &sync),
             |vm, _message, cx| vm.refresh(false, cx),
         )
     }
@@ -287,22 +289,24 @@ impl RepoViewModel {
     pub(crate) fn push_bookmark(
         &mut self,
         name: String,
+        sync: SyncToken,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<String>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_push(&name, &repo.sync_token()),
+            move |repo| repo.git_push(&name, &sync),
             |vm, _message, cx| vm.refresh(false, cx),
         )
     }
 
     pub(crate) fn git_fetch_origin(
         &mut self,
+        sync: SyncToken,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<FetchResult>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_fetch("origin", &repo.sync_token()),
+            move |repo| repo.git_fetch("origin", &sync),
             |vm, _result, cx| vm.refresh(false, cx),
         )
     }
@@ -310,11 +314,12 @@ impl RepoViewModel {
     pub(crate) fn git_pull_bookmark(
         &mut self,
         name: String,
+        sync: SyncToken,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<FetchResult>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_pull_bookmark(&name, &repo.sync_token()),
+            move |repo| repo.git_pull_bookmark(&name, &sync),
             |vm, _result, cx| vm.refresh(false, cx),
         )
     }

@@ -237,8 +237,8 @@ fn sync_button(
     )
     .on_click(
         cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
-            SyncAction::FetchOrigin => view.git_fetch_origin(cx),
-            SyncAction::PushDefault => view.git_push_default(cx),
+            SyncAction::FetchOrigin => view.pull_or_cancel(cx),
+            SyncAction::PushDefault => view.push_or_cancel(cx),
         }),
     )
     .debug_selector(move || format!("toolbar-{label}"))

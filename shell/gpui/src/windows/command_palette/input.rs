@@ -24,8 +24,13 @@ impl CommandPalette {
         let dynamic_rows = repo_window
             .as_ref()
             .map(|window| {
-                let vm = window.read(cx).view_model().read(cx);
-                rows::dynamic_rows(vm.graph.workspaces.as_ref(), vm.selected_change())
+                let window = window.read(cx);
+                let vm = window.view_model().read(cx);
+                rows::dynamic_rows(
+                    vm.graph.workspaces.as_ref(),
+                    vm.selected_change(),
+                    &window.sync_activity,
+                )
             })
             .unwrap_or_default();
         let candidates = rows::search_candidates(&dynamic_rows);
@@ -187,6 +192,13 @@ impl CommandPalette {
                     window.remove_window();
                     if let Some(view) = self.repo_window.clone() {
                         view.update(cx, |view, cx| view.dispatch_context_action(action, cx));
+                    }
+                }
+                DynamicKind::Window(dispatch) => {
+                    let dispatch = *dispatch;
+                    window.remove_window();
+                    if let Some(view) = self.repo_window.clone() {
+                        view.update(cx, dispatch);
                     }
                 }
             },

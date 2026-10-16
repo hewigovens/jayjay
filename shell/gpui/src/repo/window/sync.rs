@@ -2,7 +2,7 @@ use std::future::Future;
 
 use gpui::{AppContext, AsyncApp, Context, Task};
 use jayjay_core::repositories::normalize_repository_path;
-use jayjay_core::{FetchResult, JayResult};
+use jayjay_core::{FetchResult, JayError, JayResult, SyncToken};
 
 use std::path::Path;
 
@@ -12,42 +12,57 @@ use super::workspace_drafts::WorkspaceDrafts;
 use crate::app::config;
 use crate::repo::view_model::RepoViewModel;
 
+type PushTask = fn(
+    &mut RepoViewModel,
+    String,
+    SyncToken,
+    &mut Context<RepoViewModel>,
+) -> Task<JayResult<String>>;
+
 impl RepoWindow {
     pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
-        if self.sync_activity.fetching {
-            self.show_toast("Pull already in progress", cx);
-            return;
-        }
-        self.sync_activity.fetching = true;
-        cx.notify();
-        let task = self.vm.update(cx, |vm, cx| vm.git_fetch_origin(cx));
-        Self::spawn_fetch(cx, task);
+        self.start_fetch(cx, |vm, sync, cx| vm.git_fetch_origin(sync, cx));
     }
 
     pub fn git_pull_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) {
-        if self.sync_activity.fetching {
+        self.start_fetch(cx, move |vm, sync, cx| {
+            vm.git_pull_bookmark(bookmark, sync, cx)
+        });
+    }
+
+    fn start_fetch(
+        &mut self,
+        cx: &mut Context<Self>,
+        fetch: impl FnOnce(
+            &mut RepoViewModel,
+            SyncToken,
+            &mut Context<RepoViewModel>,
+        ) -> Task<JayResult<FetchResult>>,
+    ) {
+        if self.sync_activity.is_fetching() {
             self.show_toast("Pull already in progress", cx);
             return;
         }
-        self.sync_activity.fetching = true;
+        let Some(sync) = self.new_sync_token(cx) else {
+            return;
+        };
+        self.sync_activity.fetch = Some(sync.clone());
         cx.notify();
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.git_pull_bookmark(bookmark, cx));
-        Self::spawn_fetch(cx, task);
-    }
-
-    fn spawn_fetch(cx: &mut Context<Self>, task: Task<JayResult<FetchResult>>) {
+        let task = self.vm.update(cx, |vm, cx| fetch(vm, sync, cx));
         Self::spawn_update(
             cx,
             |_| task,
             |view, result, cx| {
-                view.sync_activity.fetching = false;
+                view.sync_activity.fetch = None;
                 let outcome = match result {
                     Ok(result) => {
                         let message = fetch_status_message(&result);
                         view.show_toast(message.clone(), cx);
                         Ok(message)
+                    }
+                    Err(JayError::Canceled) => {
+                        view.finish_canceled_sync("Pull canceled", cx);
+                        return;
                     }
                     Err(error) => Err(crate::app::error_text(error).to_string()),
                 };
@@ -55,6 +70,49 @@ impl RepoWindow {
                 cx.notify();
             },
         );
+    }
+
+    pub fn pull_or_cancel(&mut self, cx: &mut Context<Self>) {
+        if self.sync_activity.is_fetching() {
+            self.cancel_pull(cx);
+        } else {
+            self.git_fetch_origin(cx);
+        }
+    }
+
+    pub fn push_or_cancel(&mut self, cx: &mut Context<Self>) {
+        if self.sync_activity.is_pushing() {
+            self.cancel_push(cx);
+        } else {
+            self.git_push_default(cx);
+        }
+    }
+
+    pub(crate) fn cancel_pull(&mut self, _cx: &mut Context<Self>) {
+        if let Some(sync) = &self.sync_activity.fetch {
+            sync.cancel();
+        }
+    }
+
+    pub(crate) fn cancel_push(&mut self, _cx: &mut Context<Self>) {
+        if let Some(sync) = &self.sync_activity.push {
+            sync.cancel();
+        }
+    }
+
+    fn new_sync_token(&mut self, cx: &mut Context<Self>) -> Option<SyncToken> {
+        let sync = self.vm.read(cx).repo.as_ref().map(|repo| repo.sync_token());
+        if sync.is_none() {
+            self.show_toast("Repository is not open", cx);
+        }
+        sync
+    }
+
+    fn finish_canceled_sync(&mut self, message: &'static str, cx: &mut Context<Self>) {
+        self.show_toast(message, cx);
+        // The remote side may have landed before the cancel took effect.
+        self.vm.update(cx, |vm, cx| vm.refresh(false, cx));
+        cx.notify();
     }
 
     pub fn git_push_default(&mut self, cx: &mut Context<Self>) {
@@ -208,30 +266,35 @@ impl RepoWindow {
     pub(super) fn git_push(
         &mut self,
         name: String,
-        push: fn(
-            &mut RepoViewModel,
-            String,
-            &mut Context<RepoViewModel>,
-        ) -> Task<JayResult<String>>,
+        push: PushTask,
         cx: &mut Context<Self>,
     ) -> bool {
-        if self.sync_activity.pushing {
+        if self.sync_activity.is_pushing() {
             self.show_toast("Push already in progress", cx);
             return false;
         }
-        self.sync_activity.pushing = true;
+        let Some(sync) = self.new_sync_token(cx) else {
+            return false;
+        };
+        self.sync_activity.push = Some(sync.clone());
         cx.notify();
-        let task = self.vm.update(cx, |vm, cx| push(vm, name.clone(), cx));
+        let task = self
+            .vm
+            .update(cx, |vm, cx| push(vm, name.clone(), sync, cx));
         Self::spawn_update(
             cx,
             |_| task,
             move |view, result, cx| {
-                view.sync_activity.pushing = false;
+                view.sync_activity.push = None;
                 let outcome = match result {
                     Ok(message) => {
                         let message = push_status_message(&name, &message);
                         view.show_toast(message.clone(), cx);
                         Ok(message)
+                    }
+                    Err(JayError::Canceled) => {
+                        view.finish_canceled_sync("Push canceled", cx);
+                        return;
                     }
                     Err(error) => Err(crate::app::error_text(error).to_string()),
                 };

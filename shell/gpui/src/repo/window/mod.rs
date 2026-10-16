@@ -72,6 +72,7 @@ pub use review::install_in_memory as install_in_memory_review_store;
 pub(crate) use review::mutate as mutate_review_store;
 pub use review::shared as shared_review_store;
 pub use stacked_pr_snapshot::StackedPrSnapshot;
+pub(crate) use view::SyncActivity;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use context_expansion::ContextExpansionState;

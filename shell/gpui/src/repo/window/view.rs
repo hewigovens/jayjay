@@ -100,8 +100,27 @@ pub struct RepoWindow {
 
 #[derive(Default)]
 pub(crate) struct SyncActivity {
-    pub(crate) fetching: bool,
-    pub(crate) pushing: bool,
+    pub(crate) fetch: Option<jayjay_core::SyncToken>,
+    pub(crate) push: Option<jayjay_core::SyncToken>,
+}
+
+impl SyncActivity {
+    pub(crate) fn is_fetching(&self) -> bool {
+        self.fetch.is_some()
+    }
+
+    pub(crate) fn is_pushing(&self) -> bool {
+        self.push.is_some()
+    }
+}
+
+// Closing the window must not leave its jj process running unseen, where a reopened window could start a second push.
+impl Drop for SyncActivity {
+    fn drop(&mut self) {
+        for sync in [&self.fetch, &self.push].into_iter().flatten() {
+            sync.cancel();
+        }
+    }
 }
 
 #[derive(Default)]

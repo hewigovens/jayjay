@@ -255,7 +255,7 @@ fn push_follow_up_banner(
     let bookmark = view.feedback.pending_push_bookmark.clone()?;
     let mut push = button("pending-push-confirm", "Push", t, true)
         .debug_selector(|| "pending-push-confirm".to_owned());
-    if view.sync_activity.pushing {
+    if view.sync_activity.is_pushing() {
         push = push.opacity(0.45);
     } else {
         push = push.on_click(cx.listener(|view, _: &ClickEvent, _window, cx| {
