@@ -1,4 +1,4 @@
-use jayjay_network::NetError;
+use jayjay_network::{Fetch, HttpClient, NetError};
 use serde::de::DeserializeOwned;
 
 use super::client::fetch_text;
@@ -6,48 +6,37 @@ use crate::repo::Repo;
 use crate::repo::environment::{find_existing_binary, glab_binary};
 use crate::types::JayError;
 
-/// Read access to the GitLab API; tests answer with fixture responses through the closure impl.
-pub(crate) trait GitLabApi {
-    fn get(&mut self, path: &str) -> Result<String, ApiError>;
-
-    fn get_json<T: DeserializeOwned>(&mut self, path: &str) -> Result<T, ApiError> {
-        serde_json::from_str(&self.get(path)?)
-            .map_err(|_| ApiError::Load("the answer was not valid JSON".into()))
-    }
-}
-
-impl<F: FnMut(&str) -> Result<String, ApiError>> GitLabApi for F {
-    fn get(&mut self, path: &str) -> Result<String, ApiError> {
-        self(path)
-    }
-}
-
-/// glab when installed: it refreshes OAuth tokens and reads the keyring, which a plain request from a Finder launch cannot.
-pub(crate) enum Transport<'a> {
-    Glab(&'a Repo),
-    Plain,
+// glab when installed: it refreshes OAuth tokens and reads the keyring, which a plain request from a Finder launch cannot.
+pub(crate) enum Transport<'a, F: Fetch = HttpClient> {
+    Glab(&'a Repo, F),
+    Plain(F),
 }
 
 impl<'a> Transport<'a> {
     pub(crate) fn for_repo(repo: &'a Repo) -> Self {
         if find_existing_binary("glab").is_some() {
-            Self::Glab(repo)
+            Self::Glab(repo, HttpClient::default())
         } else {
-            Self::Plain
+            Self::Plain(HttpClient::default())
         }
     }
 }
 
-impl GitLabApi for Transport<'_> {
-    fn get(&mut self, path: &str) -> Result<String, ApiError> {
+impl<F: Fetch> Transport<'_, F> {
+    pub(crate) fn get_json<T: DeserializeOwned>(&self, path: &str) -> Result<T, ApiError> {
+        serde_json::from_str(&self.get(path)?)
+            .map_err(|_| ApiError::Load("the answer was not valid JSON".into()))
+    }
+
+    fn get(&self, path: &str) -> Result<String, ApiError> {
         match self {
-            Self::Glab(repo) => via_glab(repo, path),
-            Self::Plain => via_plain_request(path),
+            Self::Glab(repo, fetch) => via_glab(repo, fetch, path),
+            Self::Plain(fetch) => via_plain_request(fetch, path),
         }
     }
 }
 
-fn via_glab(repo: &Repo, path: &str) -> Result<String, ApiError> {
+fn via_glab(repo: &Repo, fetch: &impl Fetch, path: &str) -> Result<String, ApiError> {
     let output = repo
         .cancellable_output(
             &glab_binary(),
@@ -62,13 +51,13 @@ fn via_glab(repo: &Repo, path: &str) -> Result<String, ApiError> {
     match GlabFailure::from_stderr(&detail) {
         Some(GlabFailure::NotFound) => Err(ApiError::NotFound),
         // A rejected glab login 401s even public projects.
-        Some(GlabFailure::Unauthorized) => via_plain_request(path),
+        Some(GlabFailure::Unauthorized) => via_plain_request(fetch, path),
         None => Err(ApiError::Load(detail)),
     }
 }
 
-fn via_plain_request(path: &str) -> Result<String, ApiError> {
-    fetch_text(path).map_err(|error| match error {
+fn via_plain_request(fetch: &impl Fetch, path: &str) -> Result<String, ApiError> {
+    fetch_text(fetch, path).map_err(|error| match error {
         NetError::NotFound => ApiError::NotFound,
         error => ApiError::Load(error.to_string()),
     })
@@ -81,7 +70,6 @@ pub(crate) enum ApiError {
 }
 
 impl ApiError {
-    /// `not_found` is what a 404 means for `subject`.
     pub(crate) fn into_core_error(self, subject: &str, not_found: &str) -> JayError {
         match self {
             Self::NotFound => JayError::internal(not_found),

@@ -73,8 +73,29 @@ pub struct Response {
 }
 
 impl Response {
+    pub fn new(status: u16, body: impl Into<Vec<u8>>) -> Self {
+        Self {
+            status,
+            headers: Vec::new(),
+            body: body.into(),
+        }
+    }
+
+    pub fn is_success(&self) -> bool {
+        (200..300).contains(&self.status)
+    }
+
+    /// The failed response is returned whole, so a client can read the server's error body.
+    pub fn error_for_status(self) -> Result<Self, Self> {
+        if self.is_success() {
+            Ok(self)
+        } else {
+            Err(self)
+        }
+    }
+
     pub fn into_bytes(mut self, max_bytes: u32) -> Result<Vec<u8>, NetError> {
-        if !(200..300).contains(&self.status) {
+        if !self.is_success() {
             return Err(match self.status {
                 404 => NetError::NotFound,
                 other => NetError::Http(other),
@@ -119,7 +140,7 @@ impl Auth {
         )
     }
 
-    fn header(&self) -> Option<Header> {
+    pub(crate) fn header(&self) -> Option<Header> {
         self.0
             .as_ref()
             .map(|value| Header::new("Authorization", value))

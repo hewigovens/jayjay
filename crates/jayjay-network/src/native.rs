@@ -2,7 +2,7 @@ use std::io::Read;
 use std::sync::LazyLock;
 use std::time::Duration;
 
-use crate::{Auth, DEFAULT_TEXT_CAP, Header, Method, NetError, Request, Response};
+use crate::{Auth, DEFAULT_TEXT_CAP, Fetch, Header, Method, NetError, Request, Response};
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
@@ -25,6 +25,12 @@ impl Default for HttpClient {
         Self {
             agent: AGENT.clone(),
         }
+    }
+}
+
+impl Fetch for HttpClient {
+    fn fetch(&self, request: &Request) -> Result<Response, NetError> {
+        HttpClient::fetch(self, request)
     }
 }
 

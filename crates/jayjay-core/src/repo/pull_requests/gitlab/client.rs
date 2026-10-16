@@ -1,5 +1,6 @@
-use jayjay_network::{Auth, HttpClient, NetError};
-use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
+use jayjay_network::{
+    Auth, DEFAULT_TEXT_CAP, Fetch, HttpClient, NetError, Request, encode_path_segment,
+};
 
 use super::super::PrLookup;
 use super::merge_request::GitLabMrResponse;
@@ -8,15 +9,11 @@ use crate::repo::hosted_repo::HostedRepo;
 use crate::types::ChecksStatus;
 
 const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
-const URL_COMPONENT_ENCODE_SET: &AsciiSet = &NON_ALPHANUMERIC
-    .remove(b'-')
-    .remove(b'_')
-    .remove(b'.')
-    .remove(b'~');
 
 pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
     // GitLab filters by source branch server-side, so a single request suffices.
-    let body = match fetch_text(&merge_requests_path(remote, bookmark)) {
+    let fetch = HttpClient::default();
+    let body = match fetch_text(&fetch, &merge_requests_path(remote, bookmark)) {
         Ok(body) => body,
         // A private project 404s and rate limits 429; neither is a confirmed "no MR".
         Err(_) => return PrLookup::Unknown,
@@ -29,22 +26,26 @@ pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
     };
     let checks = mr
         .head_sha()
-        .and_then(|sha| commit_status(remote, sha))
+        .and_then(|sha| commit_status(&fetch, remote, sha))
         .unwrap_or(ChecksStatus::None);
     PrLookup::Found(mr.into_pr_info(checks))
 }
 
-pub(super) fn fetch_text(path: &str) -> Result<String, NetError> {
-    HttpClient::default().get_text_with_auth(&format!("{GITLAB_API_URL}/{path}"), &gitlab_auth())
+pub(super) fn fetch_text(fetch: &impl Fetch, path: &str) -> Result<String, NetError> {
+    let request = Request::get(
+        format!("{GITLAB_API_URL}/{path}"),
+        DEFAULT_TEXT_CAP,
+        &gitlab_auth(),
+    );
+    fetch.fetch(&request)?.into_text(DEFAULT_TEXT_CAP)
 }
 
-/// Token from `GITLAB_TOKEN`; without it private projects 404 and rate limits apply.
+// Without GITLAB_TOKEN private projects 404 and rate limits apply.
 fn gitlab_auth() -> Auth {
     Auth::bearer(std::env::var("GITLAB_TOKEN").ok())
 }
 
-/// Prefer an open MR for the branch; fall back to the most recent other state.
-/// The listing is ordered newest-first, so the first match is the freshest.
+// The listing is newest-first, so the first match is the freshest when no MR is open.
 fn pick_mr(mrs: Vec<GitLabMrResponse>, source_branch: &str) -> Option<GitLabMrResponse> {
     let mut fallback = None;
     for mr in mrs.into_iter().filter(|mr| mr.matches(source_branch)) {
@@ -60,7 +61,7 @@ fn merge_requests_path(remote: &HostedRepo, source_branch: &str) -> String {
     format!(
         "projects/{}/merge_requests?source_branch={}&state=all&order_by=created_at&sort=desc",
         project_id(remote),
-        encode(source_branch),
+        encode_path_segment(source_branch),
     )
 }
 
@@ -72,24 +73,19 @@ pub(crate) fn project_path(id: u64) -> String {
     format!("projects/{id}")
 }
 
-fn commit_status(remote: &HostedRepo, sha: &str) -> Option<ChecksStatus> {
+fn commit_status(fetch: &impl Fetch, remote: &HostedRepo, sha: &str) -> Option<ChecksStatus> {
     let path = format!(
         "projects/{}/repository/commits/{}",
         project_id(remote),
-        encode(sha),
+        encode_path_segment(sha),
     );
-    let body = fetch_text(&path).ok()?;
+    let body = fetch_text(fetch, &path).ok()?;
     let commit: GitLabCommitStatus = serde_json::from_str(&body).ok()?;
     Some(commit.checks())
 }
 
-/// GitLab identifies a project by URL-encoded `namespace/project` (slash escaped).
 fn project_id(remote: &HostedRepo) -> String {
-    encode(&format!("{}/{}", remote.owner, remote.repo))
-}
-
-fn encode(s: &str) -> String {
-    utf8_percent_encode(s, URL_COMPONENT_ENCODE_SET).to_string()
+    encode_path_segment(&format!("{}/{}", remote.owner, remote.repo))
 }
 
 #[cfg(test)]

@@ -22,6 +22,7 @@ repository = [
     "dep:gix-url",
     "dep:gethostname",
     "jayjay-network/blocking",
+    "jayjay-network/json",
     "dep:jayjay-review",
     "dep:jj-lib",
     "dep:libc",
@@ -82,6 +83,7 @@ harness = false
 required-features = ["repository"]
 
 [dev-dependencies]
+jayjay-network = { path = "../jayjay-network", features = ["mock"] }
 jj-test = { path = "../jj-test" }
 
 [lints]

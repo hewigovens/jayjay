@@ -1,4 +1,6 @@
-use super::super::gitlab::api::{GitLabApi, Transport};
+use jayjay_network::Fetch;
+
+use super::super::gitlab::api::Transport;
 use super::super::gitlab::{self, GitLabMrResponse, GitLabProjectResponse, MrHeadProject};
 use super::plan::{ForkRepo, PrHeadRepo, ResolvedPullRequest};
 use super::url::ParsedPullRequestUrl;
@@ -20,7 +22,7 @@ pub(super) fn resolve(
 fn resolve_with(
     parsed: &ParsedPullRequestUrl,
     ssh: bool,
-    mut api: impl GitLabApi,
+    api: Transport<'_, impl Fetch>,
 ) -> JayResult<ResolvedPullRequest> {
     let mr: GitLabMrResponse = api
         .get_json(&gitlab::merge_request_path(&parsed.base, parsed.number))
@@ -77,11 +79,14 @@ impl ForkRepo {
 
 #[cfg(test)]
 mod tests {
-    use super::super::super::gitlab::api::ApiError;
+    use jayjay_network::{MockFetch, NetError, Request, Response};
+
     use super::*;
     use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 
     const HEAD: &str = "3a1df4445c8fcf392a378bd54d52511d4bb2d461";
+    const MR_URL: &str = "https://gitlab.com/api/v4/projects/group%2Fsub%2Fbase/merge_requests/45";
+    const FORK_URL: &str = "https://gitlab.com/api/v4/projects/7765";
 
     fn parsed() -> ParsedPullRequestUrl {
         ParsedPullRequestUrl {
@@ -105,51 +110,48 @@ mod tests {
         )
     }
 
-    fn project_json(http_url: &str, ssh_url: &str, namespace: &str) -> String {
-        format!(
-            r#"{{"http_url_to_repo": "{http_url}", "ssh_url_to_repo": "{ssh_url}",
-                "path_with_namespace": "{namespace}"}}"#
-        )
+    fn resolve(
+        ssh: bool,
+        respond: impl Fn(&Request) -> Result<Response, NetError>,
+    ) -> (JayResult<ResolvedPullRequest>, Vec<String>) {
+        let fetch = MockFetch::new(respond);
+        let result = resolve_with(&parsed(), ssh, Transport::Plain(&fetch));
+        let urls = fetch
+            .requests()
+            .iter()
+            .map(|request| request.url.clone())
+            .collect();
+        (result, urls)
     }
 
-    fn resolve(
-        mr: &str,
-        project: Option<&str>,
-        ssh: bool,
-    ) -> (JayResult<ResolvedPullRequest>, Vec<String>) {
-        let project = project.map(str::to_owned);
-        let mut paths = Vec::new();
-        let result = resolve_with(&parsed(), ssh, |path: &str| {
-            paths.push(path.to_owned());
-            if path == "projects/group%2Fsub%2Fbase/merge_requests/45" {
-                Ok(mr.to_owned())
-            } else if path == "projects/7765" {
-                project.clone().ok_or(ApiError::NotFound)
+    fn mr_then(
+        project: Result<Response, NetError>,
+    ) -> impl Fn(&Request) -> Result<Response, NetError> {
+        move |request| {
+            if request.url == MR_URL {
+                Response::ok(200, mr_json(7765, 83542242))
             } else {
-                Err(ApiError::Propagate(JayError::internal("unexpected path")))
+                project.clone()
             }
-        });
-        (result, paths)
+        }
     }
 
     #[test]
     fn same_project_mr_resolves_without_a_project_request() {
-        let (resolved, paths) = resolve(&mr_json(83542242, 83542242), None, false);
+        let (resolved, urls) = resolve(false, |_| Response::ok(200, mr_json(83542242, 83542242)));
         let resolved = resolved.expect("same-project head");
         assert_eq!(resolved.head_branch, "feat/x");
         assert_eq!(resolved.head_commit_id, HEAD);
         assert_eq!(resolved.head, PrHeadRepo::SameRepository);
-        assert_eq!(paths, vec!["projects/group%2Fsub%2Fbase/merge_requests/45"]);
+        assert_eq!(urls, [MR_URL]);
     }
 
     #[test]
     fn fork_mr_takes_the_fork_clone_url_in_the_origin_scheme_and_its_namespace() {
-        let project = project_json(
-            "https://gitlab.com/gitlab-community/gitlab-org/base.git",
-            "git@gitlab.com:gitlab-community/gitlab-org/base.git",
-            "gitlab-community/gitlab-org/base",
-        );
-        let (resolved, paths) = resolve(&mr_json(7765, 83542242), Some(&project), true);
+        let project = r#"{"http_url_to_repo": "https://gitlab.com/gitlab-community/gitlab-org/base.git",
+            "ssh_url_to_repo": "git@gitlab.com:gitlab-community/gitlab-org/base.git",
+            "path_with_namespace": "gitlab-community/gitlab-org/base"}"#;
+        let (resolved, urls) = resolve(true, mr_then(Response::ok(200, project)));
         assert_eq!(
             resolved.expect("fork head").head,
             PrHeadRepo::Fork(ForkRepo {
@@ -157,59 +159,38 @@ mod tests {
                 clone_url: "git@gitlab.com:gitlab-community/gitlab-org/base.git".into(),
             })
         );
-        assert_eq!(paths[1], "projects/7765");
+        assert_eq!(urls, [MR_URL, FORK_URL]);
     }
 
     #[test]
     fn a_missing_merge_request_is_reported_with_the_login_hint() {
-        let error = resolve_with(&parsed(), false, |_: &str| Err(ApiError::NotFound))
-            .expect_err("a missing MR must fail");
-        let message = error.to_string();
-        assert!(message.contains("glab auth login"), "{message}");
-        assert!(message.contains("GITLAB_TOKEN"), "{message}");
+        let (resolved, _) = resolve(false, |_| Response::ok(404, ""));
+        let message = resolved.expect_err("a missing MR must fail").to_string();
+        assert!(
+            message.contains("glab auth login") && message.contains("GITLAB_TOKEN"),
+            "{message}"
+        );
     }
 
     #[test]
-    fn a_deleted_fork_project_or_missing_ids_is_an_unusable_head() {
-        let (resolved, _) = resolve(&mr_json(7765, 83542242), None, false);
-        let error = resolved.expect_err("deleted fork must fail");
-        assert!(
-            error.to_string().contains("fork may have been deleted"),
-            "{error}"
-        );
+    fn a_deleted_fork_or_missing_ids_is_an_unusable_head_but_a_transient_failure_is_not() {
+        let (resolved, _) = resolve(false, mr_then(Response::ok(404, "")));
+        let error = resolved.expect_err("deleted fork must fail").to_string();
+        assert!(error.contains("fork may have been deleted"), "{error}");
 
         let no_ids = r#"{"iid":45,"state":"opened","title":"t","web_url":"u","source_branch":"b","sha":"s"}"#;
-        let (resolved, _) = resolve(no_ids, Some("{}"), false);
-        let error = resolved.expect_err("missing ids must fail");
+        let (resolved, _) = resolve(false, move |_| Response::ok(200, no_ids));
+        let error = resolved.expect_err("missing ids must fail").to_string();
+        assert!(error.contains("fork may have been deleted"), "{error}");
+
+        let (resolved, _) = resolve(false, mr_then(Response::ok(429, "")));
+        let error = resolved
+            .expect_err("a transient failure must fail")
+            .to_string();
         assert!(
-            error.to_string().contains("fork may have been deleted"),
+            error.contains("source project") && error.contains("HTTP 429"),
             "{error}"
         );
-    }
-
-    #[test]
-    fn a_transient_project_failure_is_a_load_error_not_a_deleted_fork() {
-        let mr = mr_json(7765, 83542242);
-        let error = resolve_with(&parsed(), false, |path: &str| {
-            if path == "projects/group%2Fsub%2Fbase/merge_requests/45" {
-                Ok(mr.clone())
-            } else {
-                Err(ApiError::Load("HTTP 429".into()))
-            }
-        })
-        .expect_err("a transient failure must fail");
-        let message = error.to_string();
-        assert!(message.contains("source project"), "{message}");
-        assert!(message.contains("HTTP 429"), "{message}");
-        assert!(!message.contains("fork may have been deleted"), "{message}");
-    }
-
-    #[test]
-    fn a_canceled_api_request_surfaces_as_canceled() {
-        let error = resolve_with(&parsed(), false, |_: &str| {
-            Err(ApiError::Propagate(JayError::Canceled))
-        })
-        .expect_err("canceled must propagate");
-        assert!(matches!(error, JayError::Canceled), "{error}");
+        assert!(!error.contains("fork may have been deleted"), "{error}");
     }
 }

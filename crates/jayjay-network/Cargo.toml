@@ -11,8 +11,13 @@ repository = "https://github.com/hewigovens/jayjay"
 [features]
 default = []
 blocking = ["dep:ureq"]
+json = ["dep:serde", "dep:serde_json"]
+mock = []
 
 [dependencies]
+percent-encoding = { workspace = true }
+serde = { workspace = true, optional = true }
+serde_json = { workspace = true, optional = true }
 ureq = { workspace = true, optional = true }
 
 [lints]
