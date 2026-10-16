@@ -2,6 +2,7 @@ use std::sync::{Arc, Mutex};
 
 use crate::harness::*;
 use gpui::{Focusable, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use jayjay_gpui::app::actions::OpenCommandPalette;
 use jayjay_gpui::app::config::{self, AppearanceMode};
 use jayjay_gpui::app::links;
 use jayjay_gpui::repo::RepoWindow;
@@ -195,6 +196,22 @@ fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
     view.read_with(cx, |view, _| {
         assert_eq!(view.find_query_text(), Some(""));
     });
+}
+
+#[gpui::test]
+fn open_command_palette_action_opens_the_palette_from_the_repo_window(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+    repo_cx.dispatch_action(OpenCommandPalette);
+    settle_visual(repo_cx);
+    assert!(
+        repo_cx
+            .cx
+            .windows()
+            .iter()
+            .any(|window| window.downcast::<CommandPalette>().is_some())
+    );
 }
 
 fn open_palette_for(view: &gpui::Entity<RepoWindow>, cx: &mut TestAppContext) -> VisualTestContext {

@@ -28,7 +28,9 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &OpenCommandPalette, _, cx| {
                 let repo_path = view.vm.read(cx).repo_path.clone();
-                CommandPalette::open(repo_path, Some(cx.entity()), cx);
+                let repo_window = cx.entity();
+                // The palette reads this window's workspaces, which panics while this listener still holds it.
+                cx.defer(move |cx| CommandPalette::open(repo_path, Some(repo_window), cx));
             }))
             .on_action(cx.listener(|view, _: &OpenFind, _, cx| view.open_find(cx)))
             .on_action(cx.listener(|view, _: &OpenBookmarkManager, _, cx| {
