@@ -213,7 +213,25 @@ public extension NativeDiffView {
         for manager in [layoutManager, gutterLayoutManager] {
             manager.setLineSpacing(typography.lineSpacing, for: font)
         }
+        let movedRows = renderRows.map { row in
+            if case let .line(line, _) = row {
+                DiffMovedRowInfo(line)
+            } else {
+                DiffMovedRowInfo.none
+            }
+        }
+        let movedBadges = DiffMovedBadge.badges(rows: movedRows, counterparts: movedRows)
+        let badgeFont = DiffMovedBadgeButton.fittedFont(
+            typography.interfaceFont,
+            maxHeight: layoutManager.rowHeight(for: font)
+        )
+        (textView.textContainer as? DiffTextContainer)?.reserveMovedBadgeSpace(
+            for: movedBadges, in: result.string as NSString, font: badgeFont
+        )
         textView.textStorage?.replaceContents(with: result)
+        containerView.setMovedBadges(movedBadges, font: badgeFont) { [weak containerView] line in
+            containerView?.revealLine(line)
+        }
         containerView.setViewportLineLocations(
             viewportLineLocations,
             restoring: viewportAnchor

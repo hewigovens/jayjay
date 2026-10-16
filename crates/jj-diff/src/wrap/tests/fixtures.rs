@@ -16,6 +16,7 @@ pub(super) fn diff_line(
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
         context_region: None,
+        moved: None,
     }
 }
 
@@ -32,6 +33,7 @@ pub(super) fn conflict_line(
         conflict_kind,
         no_eof_newline: false,
         context_region: None,
+        moved: None,
     }
 }
 
@@ -41,6 +43,7 @@ pub(super) fn row_side(line_no: &str, text: &str, style: DiffSpanStyle) -> RowSi
         spans: vec![span(text, style)],
         style,
         conflict_kind: ConflictLineKind::None,
+        moved: None,
     }
 }
 

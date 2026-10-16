@@ -19,6 +19,10 @@ public final class DiffTextContainerView: NSView {
     var pendingRevealFeedback: PendingDiffRevealFeedback?
     var lastSelectionResetGeneration: UInt64?
     var lastRevealFeedbackGeneration: UInt64?
+    var movedBadgeFont = DiffTypography().interfaceFont
+    var movedBadges: [DiffMovedBadge] = []
+    var movedBadgeButtons: [DiffMovedBadgeButton] = []
+    var onMovedBadge: ((Int) -> Void)?
     /// SBS rows are pre-wrapped by `wrap_sbs_rows`, so SBS callers set this `false`
     /// to stop the text container from re-wrapping on top.
     var wrapsText: Bool = true
@@ -131,6 +135,7 @@ public final class DiffTextContainerView: NSView {
             )
         }
         onContentLayoutChanged?()
+        layoutMovedBadges()
         reportContentHeightIfNeeded()
     }
 

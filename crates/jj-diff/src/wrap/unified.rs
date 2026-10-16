@@ -1,17 +1,23 @@
-use super::chunks::{line_char_len, side_chunks};
+use super::chunks::{line_char_len, side_chunks_after_first};
+use super::cols::cols_for;
 use super::types::WrappedDiffLine;
 use crate::types::{DiffLine, DiffSpanStyle};
 
 /// Wrap unified lines into visual rows. Continuation rows share `line_ix`, set
 /// `col_start > 0`, and carry no line numbers. `cols` counts display cells, so
-/// wide glyphs wrap at the pane edge.
+/// wide glyphs wrap at the pane edge. `moved_label_cols` reserves the shell-measured jump-label width on a moved block's first row; pass zero when no labels are rendered.
 #[cfg_attr(feature = "hotpath", hotpath::measure)]
-pub fn wrap_diff_lines(lines: &[DiffLine], cols: u32) -> Vec<WrappedDiffLine> {
+pub fn wrap_diff_lines(
+    lines: &[DiffLine],
+    cols: u32,
+    moved_label_cols: u32,
+) -> Vec<WrappedDiffLine> {
     let cols = (cols.max(1)) as usize;
     let mut wrapped = Vec::new();
     for (line_ix, line) in lines.iter().enumerate() {
         let line_len = line_char_len(line);
-        if line.style == DiffSpanStyle::Separator || line_len <= cols {
+        let first_cols = cols_for(line.moved, cols, moved_label_cols as usize);
+        if line.style == DiffSpanStyle::Separator || line_len <= first_cols {
             wrapped.push(WrappedDiffLine {
                 line_ix: line_ix as u32,
                 line_len: line_len as u32,
@@ -22,7 +28,7 @@ pub fn wrap_diff_lines(lines: &[DiffLine], cols: u32) -> Vec<WrappedDiffLine> {
             continue;
         }
 
-        let chunks = side_chunks(&line.spans, cols);
+        let chunks = side_chunks_after_first(&line.spans, first_cols, cols);
         for (visual_ix, chunk) in chunks.into_iter().enumerate() {
             let end = chunk.end;
             wrapped.push(WrappedDiffLine {
@@ -38,6 +44,7 @@ pub fn wrap_diff_lines(lines: &[DiffLine], cols: u32) -> Vec<WrappedDiffLine> {
                     conflict_kind: line.conflict_kind,
                     no_eof_newline: line.no_eof_newline && end == line_len,
                     context_region: None,
+                    moved: line.moved,
                 },
             });
         }

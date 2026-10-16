@@ -16,6 +16,7 @@ fn line(text: &str) -> DiffLine {
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
         context_region: None,
+        moved: None,
     }
 }
 
@@ -47,9 +48,9 @@ fn review_rows_reuse_mappings_until_the_diff_changes() {
     );
     assert_eq!(first.side_by_side_row_groups, vec![Some(0), None, Some(1)]);
 
-    cache.unified(&fd, 80);
-    cache.unified(&fd, 40);
-    cache.side_by_side(&fd, 40, 40);
+    cache.unified(&fd, 80, 0);
+    cache.unified(&fd, 40, 0);
+    cache.side_by_side(&fd, 40, 40, 0);
     assert!(Arc::ptr_eq(&first, &cache.review_rows(&fd)));
 
     Arc::make_mut(&mut fd)
@@ -72,8 +73,8 @@ fn review_rows_reuse_mappings_until_the_diff_changes() {
 fn unified_reuses_same_allocation_on_hit() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();
-    let first = cache.unified(&fd, 80);
-    let second = cache.unified(&fd, 80);
+    let first = cache.unified(&fd, 80, 0);
+    let second = cache.unified(&fd, 80, 0);
     assert!(
         Arc::ptr_eq(&first, &second),
         "same key should reuse the Arc"
@@ -84,8 +85,8 @@ fn unified_reuses_same_allocation_on_hit() {
 fn unified_rewraps_when_cols_change() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();
-    let first = cache.unified(&fd, 80);
-    let second = cache.unified(&fd, 40);
+    let first = cache.unified(&fd, 80, 0);
+    let second = cache.unified(&fd, 40, 0);
     assert!(!Arc::ptr_eq(&first, &second), "new cols should rewrap");
 }
 
@@ -93,9 +94,9 @@ fn unified_rewraps_when_cols_change() {
 fn unified_rewraps_when_diff_identity_changes() {
     let mut cache = DiffWrapCache::default();
     let fd_a = file_diff();
-    let first = cache.unified(&fd_a, 80);
+    let first = cache.unified(&fd_a, 80, 0);
     let fd_b = file_diff();
-    let second = cache.unified(&fd_b, 80);
+    let second = cache.unified(&fd_b, 80, 0);
     assert!(
         !Arc::ptr_eq(&first, &second),
         "different diff should rewrap"
@@ -106,10 +107,10 @@ fn unified_rewraps_when_diff_identity_changes() {
 fn unified_rewraps_after_arc_make_mut_changes_the_diff() {
     let mut fd = file_diff();
     let mut cache = DiffWrapCache::default();
-    let first = cache.unified(&fd, 80);
+    let first = cache.unified(&fd, 80, 0);
 
     Arc::make_mut(&mut fd).lines[0].spans[0].text = "changed".to_owned();
-    let second = cache.unified(&fd, 80);
+    let second = cache.unified(&fd, 80, 0);
 
     assert!(
         !Arc::ptr_eq(&first, &second),
@@ -122,8 +123,8 @@ fn unified_rewraps_after_arc_make_mut_changes_the_diff() {
 fn side_by_side_reuses_same_allocation_on_hit() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();
-    let first = cache.side_by_side(&fd, 80, 80);
-    let second = cache.side_by_side(&fd, 80, 80);
+    let first = cache.side_by_side(&fd, 80, 80, 0);
+    let second = cache.side_by_side(&fd, 80, 80, 0);
     assert!(
         Arc::ptr_eq(&first, &second),
         "same key should reuse the Arc"
@@ -134,8 +135,8 @@ fn side_by_side_reuses_same_allocation_on_hit() {
 fn side_by_side_rewraps_when_a_side_changes() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();
-    let first = cache.side_by_side(&fd, 80, 80);
-    let second = cache.side_by_side(&fd, 80, 40);
+    let first = cache.side_by_side(&fd, 80, 80, 0);
+    let second = cache.side_by_side(&fd, 80, 40, 0);
     assert!(!Arc::ptr_eq(&first, &second), "new cols should rewrap");
 }
 
@@ -170,7 +171,7 @@ fn side_by_side_context_region_uses_raw_line_mapping_after_conflict_block() {
         .position(|row| row.old.style == DiffSpanStyle::Separator)
         .expect("separator row") as u32;
 
-    let rows = DiffWrapCache::default().side_by_side(&fd, 80, 80);
+    let rows = DiffWrapCache::default().side_by_side(&fd, 80, 80, 0);
 
     assert_eq!(rows[expected_row as usize].row.context_region, Some(region));
 }
@@ -208,8 +209,8 @@ fn rows_reuses_same_allocation_when_notes_are_unchanged() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();
     let notes = vec![note("n1", false)];
-    let first = cache.rows(&fd, 80, &notes);
-    let second = cache.rows(&fd, 80, &notes);
+    let first = cache.rows(&fd, 80, &notes, 0);
+    let second = cache.rows(&fd, 80, &notes, 0);
     assert!(
         Arc::ptr_eq(&first, &second),
         "identical notes should reuse the Arc"
@@ -222,8 +223,8 @@ fn rows_rebuilds_when_a_note_changes_status() {
     let mut cache = DiffWrapCache::default();
     let unresolved = vec![note("n1", false)];
     let resolved = vec![note("n1", true)];
-    let first = cache.rows(&fd, 80, &unresolved);
-    let second = cache.rows(&fd, 80, &resolved);
+    let first = cache.rows(&fd, 80, &unresolved, 0);
+    let second = cache.rows(&fd, 80, &resolved, 0);
     assert!(
         !Arc::ptr_eq(&first, &second),
         "a status flip (e.g. an external resolve-note write) must rebuild the row list"
@@ -235,8 +236,8 @@ fn rows_rebuilds_when_cols_change() {
     let fd = file_diff();
     let mut cache = DiffWrapCache::default();
     let notes = vec![note("n1", false)];
-    let first = cache.rows(&fd, 80, &notes);
-    let second = cache.rows(&fd, 40, &notes);
+    let first = cache.rows(&fd, 80, &notes, 0);
+    let second = cache.rows(&fd, 40, &notes, 0);
     assert!(!Arc::ptr_eq(&first, &second), "new cols should rebuild");
 }
 
@@ -250,12 +251,12 @@ fn pinned_source_line_survives_reflow_in_both_layouts() {
     let mut cache = DiffWrapCache::default();
     let unified = |cache: &mut DiffWrapCache, cols| VisibleRows::Unified {
         diff: fd.clone(),
-        lines: cache.unified(&fd, cols),
-        rendered: cache.rows(&fd, cols, &[]),
+        lines: cache.unified(&fd, cols, 0),
+        rendered: cache.rows(&fd, cols, &[], 0),
     };
     let first_row_of = |cache: &mut DiffWrapCache, cols, source| {
         cache
-            .unified(&fd, cols)
+            .unified(&fd, cols, 0)
             .iter()
             .position(|line| line.line_ix == source)
             .unwrap()
@@ -275,19 +276,19 @@ fn pinned_source_line_survives_reflow_in_both_layouts() {
 
     let sbs = |cache: &mut DiffWrapCache, cols| VisibleRows::SideBySide {
         diff: fd.clone(),
-        rows: cache.side_by_side(&fd, cols, cols),
+        rows: cache.side_by_side(&fd, cols, cols, 0),
     };
     let wide = sbs(&mut cache, 40);
     cache.show(wide);
     let row_ix = cache
-        .side_by_side(&fd, 40, 40)
+        .side_by_side(&fd, 40, 40, 0)
         .iter()
         .position(|row| row.row_ix == 2)
         .unwrap();
     cache.pin_row(row_ix as f32 + 0.5);
     let narrow = sbs(&mut cache, 20);
     let start = cache
-        .side_by_side(&fd, 20, 20)
+        .side_by_side(&fd, 20, 20, 0)
         .iter()
         .position(|row| row.row_ix == 2)
         .unwrap();
@@ -303,7 +304,7 @@ fn binary_size_tooltips_reach_both_cached_layouts() {
         false,
     ));
     let mut cache = DiffWrapCache::default();
-    let unified = cache.unified(&fd, 80);
+    let unified = cache.unified(&fd, 80, 0);
     assert_eq!(unified.len(), 2);
     assert_eq!(unified[0].line.text(), unified[1].line.text());
     assert!(unified[0].line.text().contains("KB"));
@@ -316,9 +317,29 @@ fn binary_size_tooltips_reach_both_cached_layouts() {
         .as_ref()
         .expect("new size tooltip");
     assert_ne!(old_tooltip, new_tooltip);
-    let sbs = cache.side_by_side(&fd, 80, 80);
+    let sbs = cache.side_by_side(&fd, 80, 80, 0);
     assert_eq!(sbs.len(), 1);
     assert_eq!(sbs[0].row.old.spans[0].tooltip.as_ref(), Some(old_tooltip));
     assert_eq!(sbs[0].row.new.spans[0].tooltip.as_ref(), Some(new_tooltip));
     assert_eq!(fd.lines[0].text(), "<binary file (141080 bytes)>");
+}
+
+#[test]
+fn label_width_changes_reflow_both_layouts_and_their_render_rows() {
+    let mut moved = line(&"a".repeat(25));
+    moved.style = DiffSpanStyle::Removed;
+    moved.new_line_no = None;
+    moved.moved = Some(jayjay_core::diff::MovedRow {
+        counterpart_line: 9,
+        starts_block: true,
+    });
+    let mut fd = file_diff();
+    Arc::make_mut(&mut fd).lines = vec![moved];
+    let mut cache = DiffWrapCache::default();
+    assert_eq!(cache.unified(&fd, 30, 0).len(), 1);
+    assert_eq!(cache.rows(&fd, 30, &[], 0).rows.len(), 1);
+    assert_eq!(cache.side_by_side(&fd, 30, 30, 0).len(), 1);
+    assert_eq!(cache.unified(&fd, 30, 14).len(), 2);
+    assert_eq!(cache.rows(&fd, 30, &[], 14).rows.len(), 2);
+    assert_eq!(cache.side_by_side(&fd, 30, 30, 14).len(), 2);
 }

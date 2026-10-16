@@ -21,6 +21,10 @@ open class LineSpacingLayoutManager: NSLayoutManager, NSLayoutManagerDelegate {
         invalidateLayout(forCharacterRange: NSRange(location: 0, length: textStorage?.length ?? 0), actualCharacterRange: nil)
     }
 
+    public func rowHeight(for font: NSFont) -> CGFloat {
+        defaultLineHeight(for: font) + extraLineHeight
+    }
+
     /// The empty line after a trailing newline skips the delegate below.
     override open func setExtraLineFragmentRect(_ fragmentRect: NSRect, usedRect: NSRect, textContainer container: NSTextContainer) {
         var fragment = fragmentRect

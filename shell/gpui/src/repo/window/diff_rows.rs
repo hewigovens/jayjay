@@ -37,6 +37,8 @@ impl RepoWindow {
         let fd = self.vm.read(cx).shown.diff.clone()?;
         let advance = fonts::mono_advance(cx, px(theme(cx).code_font_size()));
         let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
-        Some(self.diff.wrap_cache.borrow_mut().rows(&fd, cols, &notes))
+        let mut cache = self.diff.wrap_cache.borrow_mut();
+        let label_cols = cache.moved_label_cols(&fd, cx);
+        Some(cache.rows(&fd, cols, &notes, label_cols))
     }
 }

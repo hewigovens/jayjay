@@ -63,6 +63,7 @@ public struct SideBySideRepresentable: NSViewRepresentable {
         let theme = diffPalettes.colors(for: colorScheme)
         context.coordinator.diff = diff
         context.coordinator.font = font
+        context.coordinator.interfaceFont = typography.interfaceFont
         context.coordinator.lineSpacing = typography.lineSpacing
         context.coordinator.theme = theme
         context.coordinator.onExpandContext = onExpandContext

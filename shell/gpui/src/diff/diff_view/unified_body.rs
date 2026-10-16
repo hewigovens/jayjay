@@ -11,6 +11,7 @@ use jayjay_review::ReviewNoteStatus;
 use super::context_controls::context_controls;
 use super::gutter_mouse::attach_gutter_selection_handlers;
 use super::mouse::attach_selection_handlers;
+use super::moved_label::moved_label;
 use super::review_stripe::review_stripe_cell;
 use super::row_anchor::{VisibleRows, scroll_to_row};
 use super::rows::{DiffRenderRow, DiffRenderRows};
@@ -58,9 +59,14 @@ pub(super) fn unified_body(
     let query = Arc::new(query);
     let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let wrap_cols = wrap_cols_from_bounds(bounds.get(), advance);
-    let lines = wrap_cache.borrow_mut().unified(file_diff, wrap_cols);
+    let label_cols = wrap_cache.borrow_mut().moved_label_cols(file_diff, cx);
+    let lines = wrap_cache
+        .borrow_mut()
+        .unified(file_diff, wrap_cols, label_cols);
     // Both lists size off this shared, interleaved row list — never off lines.len() — so a NoteText row shifts gutter and content lists in lockstep.
-    let rendered = wrap_cache.borrow_mut().rows(file_diff, wrap_cols, notes);
+    let rendered = wrap_cache
+        .borrow_mut()
+        .rows(file_diff, wrap_cols, notes, label_cols);
     let count = rendered.rows.len();
     if let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::Unified {
         diff: file_diff.clone(),
@@ -300,6 +306,16 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
                 .debug_selector(move || format!("diff-content-row-{ix}"));
             if gutter_selection.is_some_and(|s| s.covers(path, line_ix)) {
                 row = row.child(content_row_tint(theme));
+            }
+            if let Some(moved) = line.line.moved {
+                row = row.children(moved_label(
+                    ("moved-unified", ix),
+                    moved,
+                    line.line.style,
+                    col_start == 0,
+                    theme,
+                    cx,
+                ));
             }
             attach_selection_handlers(
                 row,

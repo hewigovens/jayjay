@@ -42,7 +42,15 @@ pub(super) fn spans_char_len(spans: &[DiffSpan]) -> usize {
 /// Never splits inside a grapheme cluster; a wide glyph that would straddle a
 /// chunk edge moves wholly into the next chunk.
 pub(super) fn side_chunks(spans: &[DiffSpan], cols: usize) -> Vec<SpanChunk> {
-    let mut writer = ChunkWriter::new(cols.max(1));
+    side_chunks_after_first(spans, cols, cols)
+}
+
+pub(super) fn side_chunks_after_first(
+    spans: &[DiffSpan],
+    first_cols: usize,
+    cols: usize,
+) -> Vec<SpanChunk> {
+    let mut writer = ChunkWriter::new(first_cols.max(1), cols.max(1));
     for span in spans {
         if is_single_cell_ascii(&span.text) {
             let mut rest = span.text.as_str();
@@ -72,6 +80,7 @@ pub(super) fn side_chunks(spans: &[DiffSpan], cols: usize) -> Vec<SpanChunk> {
 
 /// Fills `current` until it reaches `cols`; `buf` holds the current span's text not yet flushed.
 struct ChunkWriter {
+    first_cols: usize,
     cols: usize,
     chunks: Vec<SpanChunk>,
     current: SpanChunk,
@@ -79,8 +88,9 @@ struct ChunkWriter {
 }
 
 impl ChunkWriter {
-    fn new(cols: usize) -> Self {
+    fn new(first_cols: usize, cols: usize) -> Self {
         Self {
+            first_cols,
             cols,
             chunks: Vec::new(),
             current: SpanChunk::default(),
@@ -93,7 +103,12 @@ impl ChunkWriter {
     }
 
     fn room(&self) -> usize {
-        self.cols.saturating_sub(self.used())
+        let cols = if self.chunks.is_empty() {
+            self.first_cols
+        } else {
+            self.cols
+        };
+        cols.saturating_sub(self.used())
     }
 
     /// An empty chunk takes any glyph, so one wider than `cols` still gets its own row.

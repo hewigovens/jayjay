@@ -1,5 +1,5 @@
 use crate::conflicts::build_diff_display_lines;
-use crate::types::{ConflictLineKind, ContextRegion, DiffLine, DiffSpan, DiffSpanStyle};
+use crate::types::{ConflictLineKind, ContextRegion, DiffLine, DiffSpan, DiffSpanStyle, MovedRow};
 
 /// One side (old or new) of a side-by-side row.
 #[derive(Debug, Clone)]
@@ -8,6 +8,7 @@ pub struct RowSide {
     pub spans: Vec<DiffSpan>,
     pub style: DiffSpanStyle,
     pub conflict_kind: ConflictLineKind,
+    pub moved: Option<MovedRow>,
 }
 
 impl Default for RowSide {
@@ -18,6 +19,7 @@ impl Default for RowSide {
             // Empty/padded sides render as context background.
             style: DiffSpanStyle::Context,
             conflict_kind: ConflictLineKind::None,
+            moved: None,
         }
     }
 }
@@ -69,12 +71,14 @@ fn build_regular_rows(lines: &[DiffLine], rows: &mut Vec<SideBySideRow>) {
                         spans: line.spans.clone(),
                         style: DiffSpanStyle::Context,
                         conflict_kind: line.conflict_kind,
+                        moved: line.moved,
                     },
                     RowSide {
                         line_no: stringify_line_no(line.new_line_no),
                         spans: line.spans.clone(),
                         style: DiffSpanStyle::Context,
                         conflict_kind: line.conflict_kind,
+                        moved: line.moved,
                     },
                 ));
                 i += 1;
@@ -85,6 +89,7 @@ fn build_regular_rows(lines: &[DiffLine], rows: &mut Vec<SideBySideRow>) {
                     spans: line.spans.clone(),
                     style: DiffSpanStyle::Separator,
                     conflict_kind: ConflictLineKind::None,
+                    moved: None,
                 };
                 rows.push(SideBySideRow {
                     old: separator.clone(),
@@ -125,6 +130,7 @@ fn build_regular_rows(lines: &[DiffLine], rows: &mut Vec<SideBySideRow>) {
                         spans: line.spans.clone(),
                         style: DiffSpanStyle::Added,
                         conflict_kind: line.conflict_kind,
+                        moved: line.moved,
                     },
                 ));
                 i += 1;
@@ -158,6 +164,7 @@ fn full_width_conflict_row(line: &DiffLine) -> SideBySideRow {
             spans: line.spans.clone(),
             style: line.style,
             conflict_kind: line.conflict_kind,
+            moved: line.moved,
         },
     )
 }
@@ -177,6 +184,7 @@ fn row_side_for(
             spans: l.spans.clone(),
             style,
             conflict_kind: l.conflict_kind,
+            moved: l.moved,
         },
         None => RowSide::default(),
     }

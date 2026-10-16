@@ -10,6 +10,7 @@ struct PaneAccumulator {
     var colors: [NSColor] = []
     var stripes: [NSColor] = []
     var viewportLineLocations: [DiffViewportLineLocation] = []
+    var movedRows: [DiffMovedRowInfo] = []
 
     mutating func append(
         _ side: RowSide,
@@ -43,6 +44,7 @@ struct PaneAccumulator {
             ))
         }
         stripes.append(conflictStripe(conflictKind: side.conflictKind, theme: theme))
+        movedRows.append(DiffMovedRowInfo(side))
         appendGutterLine(
             to: gutter,
             entries: &entries,
@@ -53,6 +55,14 @@ struct PaneAccumulator {
             trailingPadding: trailingPadding,
             width: &width
         )
+    }
+
+    func installMovedBadges(counterparts: PaneAccumulator, font: NSFont) {
+        let target = counterparts.pane.container
+        let badges = DiffMovedBadge.badges(rows: movedRows, counterparts: counterparts.movedRows)
+        pane.container.setMovedBadges(badges, font: font) { [weak target] line in
+            target?.revealLine(line)
+        }
     }
 
     func commit(restoring anchor: DiffViewportAnchor?) {

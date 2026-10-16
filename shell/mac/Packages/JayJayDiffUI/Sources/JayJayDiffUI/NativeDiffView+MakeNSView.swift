@@ -43,7 +43,7 @@ public extension NativeDiffView {
         scrollView.autohidesScrollers = true
         scrollView.drawsBackground = false
 
-        let textContainer = NSTextContainer(containerSize: NSSize(
+        let textContainer = DiffTextContainer(containerSize: NSSize(
             width: 0,
             height: CGFloat.greatestFiniteMagnitude
         ))

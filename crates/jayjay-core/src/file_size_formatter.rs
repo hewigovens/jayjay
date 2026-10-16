@@ -134,7 +134,7 @@ mod tests {
         assert_eq!(original.lines[0].text(), "<binary file (141080 bytes)>");
         assert_eq!(display.lines[0].text(), "<binary file (141,1 KB)>");
         assert_eq!(display.lines[1].text(), "<binary file (141,1 KB)>");
-        let unified = wrap_diff_lines(&display.lines, 8);
+        let unified = wrap_diff_lines(&display.lines, 8, 0);
         for row in &unified {
             let expected = if row.line_ix == 0 {
                 "141.080 bytes"
@@ -148,7 +148,7 @@ mod tests {
                     .all(|span| span.tooltip.as_deref() == Some(expected))
             );
         }
-        let sbs = wrap_sbs_rows(&build_side_by_side_rows(&display.lines), 8, 8);
+        let sbs = wrap_sbs_rows(&build_side_by_side_rows(&display.lines), 8, 8, 0);
         for row in &sbs {
             assert!(
                 row.row

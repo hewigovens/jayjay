@@ -39,7 +39,7 @@ struct Typography: Equatable {
     }
 
     var diffTypography: DiffTypography {
-        DiffTypography(font: editorFont, lineSpacing: codeLineSpacing)
+        DiffTypography(font: editorFont, lineSpacing: codeLineSpacing, interfaceFont: nsFont(11))
     }
 
     var interfaceScale: CGFloat {

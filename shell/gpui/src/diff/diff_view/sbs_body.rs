@@ -9,6 +9,7 @@ use jayjay_core::diff::FileDiff;
 use super::context_controls::context_controls;
 use super::gutter_mouse::with_right_click_menu;
 use super::mouse::attach_selection_handlers;
+use super::moved_label::moved_label;
 use super::review_stripe::review_stripe_cell;
 use super::row_anchor::{VisibleRows, scroll_to_row};
 use super::state::ReviewDisplayState;
@@ -57,9 +58,10 @@ pub(super) fn side_by_side_body(
     let advance = fonts::mono_advance(cx, px(theme.code_font_size()));
     let old_cols = wrap_cols_from_bounds(old_bounds.get(), advance);
     let new_cols = wrap_cols_from_bounds(new_bounds.get(), advance);
+    let label_cols = wrap_cache.borrow_mut().moved_label_cols(file_diff, cx);
     let rows = wrap_cache
         .borrow_mut()
-        .side_by_side(file_diff, old_cols, new_cols);
+        .side_by_side(file_diff, old_cols, new_cols, label_cols);
     let count = rows.len();
     if let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::SideBySide {
         diff: file_diff.clone(),
@@ -300,18 +302,26 @@ fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> Uni
                             .child(context_controls(scope, region, &theme, cx))
                             .into_any_element();
                     }
-                    // Wrap so the absolute selection overlay has a relative parent.
-                    let cell = if let Some(cols) = selection_cols {
-                        div()
-                            .relative()
-                            .flex_1()
-                            .min_w_0()
-                            .h_full()
-                            .child(cell)
-                            .child(crate::diff::line::selection_overlay(cols, advance, &theme))
-                    } else {
-                        div().flex_1().min_w_0().h_full().child(cell)
+                    // Relative so the selection overlay and moved marker can sit on top.
+                    let mut cell = div().relative().flex_1().min_w_0().h_full().child(cell);
+                    if let Some(cols) = selection_cols {
+                        cell =
+                            cell.child(crate::diff::line::selection_overlay(cols, advance, &theme));
+                    }
+                    let (row_side, marker_id) = match side {
+                        SbsSide::Old => (&row.row.old, "moved-sbs-old"),
+                        _ => (&row.row.new, "moved-sbs-new"),
                     };
+                    if let Some(moved) = row_side.moved {
+                        cell = cell.children(moved_label(
+                            (marker_id, ix),
+                            moved,
+                            row_side.style,
+                            !row_side.line_no.is_empty(),
+                            &theme,
+                            cx,
+                        ));
+                    }
                     attach_selection_handlers(
                         cell,
                         row_ix,

@@ -10,6 +10,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
     // whenever the pane width changes enough to change the wrap-column count.
     var diff: FileDiff?
     var font: NSFont?
+    var interfaceFont = DiffTypography().interfaceFont
     var lineSpacing: Double = 1
     var theme: DiffColors?
     var onExpandContext: ((ContextExpansionRequest) -> Void)?
@@ -20,6 +21,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
     private struct RenderInputs: Equatable {
         let lines: [DiffLine]
         let font: NSFont
+        let interfaceFont: NSFont
         let lineSpacing: Double
         let theme: DiffColors
         let enablesContextExpansion: Bool
@@ -116,6 +118,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
         let inputs = RenderInputs(
             lines: diff.lines,
             font: font,
+            interfaceFont: interfaceFont,
             lineSpacing: lineSpacing,
             theme: theme,
             enablesContextExpansion: onExpandContext != nil,
@@ -127,17 +130,31 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
 
         // Pre-wrap into visual rows so both panes (and gutters) advance in lock-step.
         let rows = buildSideBySideRows(lines: diff.lines)
-        let visualRows = wrapSbsRows(rows: rows, oldCols: oldCols, newCols: newCols).map(\.row)
-        renderVisualRows(visualRows, font: font, theme: theme, left: left, right: right)
+        left.textLayout.setLineSpacing(lineSpacing, for: font)
+        let badgeFont = DiffMovedBadgeButton.fittedFont(
+            interfaceFont,
+            maxHeight: left.textLayout.rowHeight(for: font)
+        )
+        let sides = [rows.lazy.map(\.old), rows.lazy.map(\.new)].joined()
+        let reservedWidth = sides.lazy
+            .compactMap { DiffMovedRowInfo($0).badgeTitle }
+            .map { DiffMovedBadgeButton.reservedWidth(for: $0, font: badgeFont) }
+            .max() ?? 0
+        let movedLabelCols = UInt32(ceil(Float(reservedWidth) / advance))
+        let visualRows = wrapSbsRows(
+            rows: rows, oldCols: oldCols, newCols: newCols, movedLabelCols: movedLabelCols
+        ).map(\.row)
+        renderVisualRows(visualRows, fonts: (code: font, badge: badgeFont), theme: theme, left: left, right: right)
     }
 
     private func renderVisualRows(
         _ rows: [SideBySideRow],
-        font: NSFont,
+        fonts: (code: NSFont, badge: NSFont),
         theme: DiffColors,
         left: PaneViews,
         right: PaneViews
     ) {
+        let font = fonts.code
         for manager in [left.textLayout, left.gutterLayout, right.textLayout, right.gutterLayout] {
             manager.setLineSpacing(lineSpacing, for: font)
         }
@@ -198,6 +215,8 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
 
         leftAcc.commit(restoring: leftAnchor)
         rightAcc.commit(restoring: rightAnchor)
+        leftAcc.installMovedBadges(counterparts: rightAcc, font: fonts.badge)
+        rightAcc.installMovedBadges(counterparts: leftAcc, font: fonts.badge)
     }
 
     @objc private func leftScrolled(_ notification: Notification) {
