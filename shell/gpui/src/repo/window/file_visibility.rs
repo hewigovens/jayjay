@@ -1,8 +1,9 @@
 //! File-list visibility filtering: the filename query and the independent hide-reviewed and noted-files-only toggles share one index calculation.
 
 use std::collections::HashMap;
+use std::sync::Arc;
 
-use gpui::{App, Context, ScrollStrategy, Window};
+use gpui::{App, Context, Window};
 use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
 
@@ -167,16 +168,21 @@ impl RepoWindow {
         let vm = self.vm.read(cx);
         let (files, selected) = (vm.files.clone(), vm.selected_file_ix);
         let Some(files) = files else { return };
-        let visible = self.visible_indices(&files, change_id.as_deref(), show_review, cx);
+        let visible = Arc::new(self.visible_indices(&files, change_id.as_deref(), show_review, cx));
         if selected.is_some_and(|ix| visible.contains(&ix)) {
             return;
         }
         let still_selected = self.multi_selected_hunk_indices();
-        if let Some(&next) = visible.iter().find(|ix| still_selected.contains(ix)) {
+        let next = if let Some(&next) = visible.iter().find(|ix| still_selected.contains(ix)) {
             self.focus_file(next, cx);
+            next
         } else if let Some(&next) = visible.first() {
             self.select_file(next, cx);
-        }
-        self.scrolls.files.scroll_to_item(0, ScrollStrategy::Top);
+            next
+        } else {
+            return;
+        };
+        let tree_mode = crate::app::config::current(cx).diff.tree_file_list;
+        self.reveal_file(next, &files, &visible, tree_mode);
     }
 }

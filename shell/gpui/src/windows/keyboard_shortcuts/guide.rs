@@ -1,11 +1,11 @@
 use gpui::{Action, App};
 
 use crate::app::actions::{
-    CloseWindow, CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, FilterByRevset,
-    MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk, OpenBookmarkManager,
-    OpenCommandPalette, OpenFind, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
-    OpenRepository, OpenSettings, Refresh, ResetZoom, SaveFileEditor, SaveNoteComposer,
-    ShowRepoInFileManager, ToggleSidebar, ZoomIn, ZoomOut,
+    CloseWindow, CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, Dismiss,
+    FilterByRevset, MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk,
+    OpenBookmarkManager, OpenCommandPalette, OpenFind, OpenKeyboardShortcuts, OpenOperationLog,
+    OpenOverview, OpenRepository, OpenSettings, Refresh, ResetZoom, SaveFileEditor,
+    SaveNoteComposer, ShowRepoInFileManager, ToggleSidebar, ZoomIn, ZoomOut,
 };
 use crate::app::key_caps::KeyCaps;
 
@@ -85,6 +85,7 @@ pub(super) const SECTIONS: &[ShortcutSection] = &[
         entries: &[
             ShortcutEntry::bound("Bookmark Manager", &OpenBookmarkManager),
             ShortcutEntry::bound("Repo Overview", &OpenOverview),
+            ShortcutEntry::bound("Filter Overview Lanes", &OpenFind),
             ShortcutEntry::bound("Undo Last Operation", &OpenOperationLog),
             ShortcutEntry::bound("Show in File Manager", &ShowRepoInFileManager),
         ],
@@ -111,6 +112,10 @@ pub(super) const SECTIONS: &[ShortcutSection] = &[
             ShortcutEntry::bound("Previous Conflict", &MergePreviousHunk),
             ShortcutEntry::bound("Next Conflict", &MergeNextHunk),
         ],
+    },
+    ShortcutSection {
+        title: "Drag & Drop",
+        entries: &[ShortcutEntry::bound("Cancel Drag", &Dismiss)],
     },
 ];
 

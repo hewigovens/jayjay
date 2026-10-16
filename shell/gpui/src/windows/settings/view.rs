@@ -17,6 +17,7 @@ use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::ui::logo::Logo;
 use crate::ui::text_area::TextArea;
+use jayjay_review::ReviewStoreSummary;
 
 #[cfg(target_os = "macos")]
 const CUSTOM_TERMINAL_PLACEHOLDER: &str = "e.g. Terminal";
@@ -39,6 +40,8 @@ pub struct SettingsView {
     pub(super) custom_editor_command: Entity<TextArea>,
     pub(super) custom_terminal_command: Entity<TextArea>,
     pub(super) diff_preview_dark: Option<bool>,
+    pub(super) review_summary: Option<ReviewStoreSummary>,
+    pub(super) confirm_clear_review: bool,
     logo: Logo,
 }
 
@@ -93,12 +96,15 @@ impl SettingsView {
                             custom_editor_command,
                             custom_terminal_command,
                             diff_preview_dark: None,
+                            review_summary: None,
+                            confirm_clear_review: false,
                             logo: Logo::load(cx),
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
                         match section {
                             SettingsSection::Integrations => view.ensure_tools_loaded(cx),
                             SettingsSection::Jujutsu => view.ensure_jj_config_loaded(cx),
+                            SettingsSection::DataPrivacy => view.refresh_review_summary(cx),
                             _ => {}
                         }
                         view
@@ -139,8 +145,13 @@ impl Render for SettingsView {
                 }),
             )
             .on_action(
-                cx.listener(|_, _: &crate::app::actions::Dismiss, window, _cx| {
-                    window.remove_window();
+                cx.listener(|this, _: &crate::app::actions::Dismiss, window, cx| {
+                    if this.confirm_clear_review {
+                        this.confirm_clear_review = false;
+                        cx.notify();
+                    } else {
+                        window.remove_window();
+                    }
                 }),
             )
             .relative()
@@ -193,6 +204,13 @@ impl Render for SettingsView {
         if let Some(d) = dropdown {
             root = root.child(dropdown_overlay(d, &t, window, cx));
         }
+        if self.confirm_clear_review {
+            root = root.child(data_privacy::clear_review_confirmation(
+                self.review_summary,
+                &t,
+                cx,
+            ));
+        }
         root
     }
 }
@@ -218,7 +236,7 @@ impl SettingsView {
                 t,
                 cx,
             ),
-            SettingsSection::DataPrivacy => data_privacy::data_privacy_section(cfg, t),
+            SettingsSection::DataPrivacy => data_privacy::data_privacy_section(self, cfg, t, cx),
             SettingsSection::About => about::about_section(&self.logo, t).into_any_element(),
         }
     }

@@ -68,6 +68,7 @@ pub use open::open_repo_window;
 pub(crate) use open::reveal_in_repo_window;
 pub use review::install_from_path as install_review_store_from_path;
 pub use review::install_in_memory as install_in_memory_review_store;
+pub(crate) use review::mutate as mutate_review_store;
 pub use review::shared as shared_review_store;
 pub use stacked_pr_snapshot::StackedPrSnapshot;
 pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};

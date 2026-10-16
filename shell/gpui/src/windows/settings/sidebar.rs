@@ -60,6 +60,7 @@ pub(super) fn sidebar(
                     match section {
                         SettingsSection::Integrations => this.ensure_tools_loaded(cx),
                         SettingsSection::Jujutsu => this.ensure_jj_config_loaded(cx),
+                        SettingsSection::DataPrivacy => this.refresh_review_summary(cx),
                         _ => {}
                     }
                     cx.notify();

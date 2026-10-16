@@ -1,4 +1,4 @@
-use crate::harness::{install_test_globals, settle_visual};
+use crate::harness::{install_test_globals, open_fixture, select_file, settle_visual};
 use gpui::{
     Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point,
     px, size,
@@ -8,6 +8,7 @@ use jayjay_gpui::app::config::current as current_config;
 use jayjay_gpui::windows::settings::cli_diagnostics::CliDiagnostics;
 use jayjay_gpui::windows::settings::tools::AiToolStatuses;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
+use jj_test::LinearFixture;
 
 #[gpui::test]
 fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestAppContext) {
@@ -653,4 +654,74 @@ fn click_setting(cx: &mut VisualTestContext, selector: &'static str) {
         .unwrap_or_else(|| panic!("missing {selector}"));
     cx.simulate_click(bounds.center(), Modifiers::default());
     settle_visual(cx);
+}
+
+#[gpui::test]
+fn clearing_review_data_empties_the_store_and_repaints_open_repo_windows(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    let (repo, repo_cx) = open_fixture(&fixture, cx);
+
+    // Review the last row so hiding it changes which rendered row indices exist.
+    let ix = select_file(&repo, "wip2.txt", repo_cx);
+    let (change_id, identity) = repo.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let hunk = &vm.files.as_ref().expect("files loaded")[ix];
+        (
+            vm.selected_change()
+                .expect("selected change")
+                .change_id
+                .id
+                .clone(),
+            hunk.review_identity.clone(),
+        )
+    });
+    repo.update_in(repo_cx, |view, _, cx| {
+        view.toggle_reviewed(change_id, "wip2.txt".to_owned(), identity, cx);
+    });
+    repo_cx.cx.update(|cx| {
+        jayjay_gpui::app::config::update(cx, |config| config.diff.hide_reviewed_files = true);
+    });
+    settle_visual(repo_cx);
+    assert_eq!(
+        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx)),
+        ["README.md", "feature.txt", "wip1.txt"]
+    );
+    assert!(repo_cx.debug_bounds("file-row-3").is_none());
+
+    repo_cx
+        .cx
+        .update(|cx| SettingsView::open_section(SettingsSection::DataPrivacy, cx));
+    let settings_window = repo_cx
+        .cx
+        .windows()
+        .last()
+        .copied()
+        .expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(settings_window, &repo_cx.cx);
+    settle_visual(&mut settings_cx);
+
+    click_setting(&mut settings_cx, "settings-clear-review-data");
+    assert!(
+        settings_cx.debug_bounds("confirmation").is_some(),
+        "clearing review data must ask first"
+    );
+    click_setting(&mut settings_cx, "settings-clear-review-cancel");
+    assert_eq!(
+        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx)),
+        ["README.md", "feature.txt", "wip1.txt"],
+        "cancelling the confirmation keeps every mark"
+    );
+
+    click_setting(&mut settings_cx, "settings-clear-review-data");
+    click_setting(&mut settings_cx, "settings-clear-review-submit");
+    assert_eq!(
+        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx)),
+        ["README.md", "feature.txt", "wip1.txt", "wip2.txt"],
+        "clearing empties the shared store"
+    );
+    assert!(
+        repo_cx.debug_bounds("file-row-3").is_some(),
+        "clearing from settings must repaint open repo windows"
+    );
 }

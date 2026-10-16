@@ -1,5 +1,5 @@
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
-use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
+use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
 use jj_test::LinearFixture;
@@ -257,4 +257,60 @@ fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
             "{path} unmarked with the selection"
         );
     }
+}
+
+/// Filtering out the focused file must scroll to the surviving multi-selected row, not reset the list to the top.
+#[gpui::test]
+fn filtering_to_a_surviving_multi_selected_file_scrolls_it_into_view(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    for n in 0..28 {
+        std::fs::write(
+            fixture.path.join(format!("file{n:02}.txt")),
+            format!("new {n}\n"),
+        )
+        .expect("write wide file");
+    }
+    std::fs::write(fixture.path.join("zzz.txt"), "zzz\n").expect("write zzz.txt");
+    jj_test::run_jj_in(&fixture.path, &["st"]);
+
+    let (view, cx) = crate::harness::open_fixture(&fixture, cx);
+    cx.simulate_resize(size(px(1000.), px(520.)));
+    settle_visual(cx);
+
+    click(&view, cx, "file20.txt", Modifiers::default());
+    click(&view, cx, "zzz.txt", shift());
+    assert_eq!(
+        primary_path(&view, cx).as_deref(),
+        Some("zzz.txt"),
+        "the shift-clicked file becomes the focused row"
+    );
+
+    let toggle = cx
+        .debug_bounds("toggle-file-filter")
+        .expect("file filter button");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    let input = cx
+        .debug_bounds("file-filter-input")
+        .expect("file filter input");
+    cx.simulate_click(input.center(), Modifiers::default());
+    cx.simulate_input("file");
+    settle_visual(cx);
+
+    assert_eq!(
+        primary_path(&view, cx).as_deref(),
+        Some("file20.txt"),
+        "focus moves to the surviving multi-selected row"
+    );
+    let visible = view.read_with(cx, |view, cx| view.visible_file_paths(cx));
+    assert_eq!(
+        visible.iter().position(|path| path == "file20.txt"),
+        Some(20),
+        "filtered list: {visible:?}"
+    );
+    assert!(
+        cx.debug_bounds("file-row-20").is_some(),
+        "the focused row must scroll into view instead of sitting below the reset list"
+    );
 }
