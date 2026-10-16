@@ -176,7 +176,7 @@ impl AppConfig {
 }
 
 fn normalize_repo_path(path: &Path) -> String {
-    path.canonicalize()
+    dunce::canonicalize(path)
         .unwrap_or_else(|_| path.to_path_buf())
         .to_string_lossy()
         .to_string()

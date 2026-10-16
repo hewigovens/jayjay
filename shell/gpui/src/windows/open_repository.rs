@@ -142,8 +142,7 @@ fn resolve_directory(input: &str) -> Result<PathBuf, String> {
             .map_err(|error| format!("Could not resolve the current directory: {error}"))?
             .join(path)
     };
-    let path = path
-        .canonicalize()
+    let path = dunce::canonicalize(&path)
         .map_err(|error| format!("Could not open {}: {error}", path.display()))?;
     if !path.is_dir() {
         return Err(format!("{} is not a directory.", path.display()));
@@ -172,7 +171,7 @@ mod tests {
         let directory = tempfile::tempdir().expect("temp directory");
         assert_eq!(
             resolve_directory(directory.path().to_str().unwrap()).unwrap(),
-            directory.path().canonicalize().unwrap()
+            dunce::canonicalize(directory.path()).unwrap()
         );
         assert!(resolve_directory("").is_err());
         assert!(resolve_directory(directory.path().join("missing").to_str().unwrap()).is_err());

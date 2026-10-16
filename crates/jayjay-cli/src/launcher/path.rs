@@ -19,5 +19,5 @@ pub(crate) fn canonicalize(path: &str) -> PathBuf {
             .map(|cwd| cwd.join(path))
             .unwrap_or_else(|_| path.to_owned())
     };
-    abs.canonicalize().unwrap_or(abs)
+    dunce::canonicalize(&abs).unwrap_or(abs)
 }

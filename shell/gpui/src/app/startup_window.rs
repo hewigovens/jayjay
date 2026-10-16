@@ -13,7 +13,7 @@ pub(super) fn resolve_repo_path(
     recent_repos: &[String],
 ) -> Option<PathBuf> {
     if let Some(path) = explicit {
-        return Some(path.canonicalize().unwrap_or(path));
+        return Some(dunce::canonicalize(&path).unwrap_or(path));
     }
     cwd.into_iter()
         .chain(recent_repos.iter().map(PathBuf::from))
@@ -117,22 +117,22 @@ mod tests {
         let cwd = Some(first.path.clone());
         assert_eq!(
             resolve_repo_path(Some(invalid.path().to_owned()), cwd.clone(), &recent),
-            Some(invalid.path().canonicalize().unwrap()),
+            Some(dunce::canonicalize(invalid.path()).unwrap()),
         );
         assert_eq!(
             resolve_repo_path(None, cwd, &recent),
-            Some(first.path.canonicalize().unwrap())
+            Some(dunce::canonicalize(&first.path).unwrap())
         );
         let nested = first.path.join("src/nested");
         std::fs::create_dir_all(&nested).unwrap();
         assert_eq!(
             resolve_repo_path(None, Some(nested), &recent),
-            Some(first.path.canonicalize().unwrap())
+            Some(dunce::canonicalize(&first.path).unwrap())
         );
         for cwd in [Some(invalid.path().to_owned()), None] {
             assert_eq!(
                 resolve_repo_path(None, cwd.clone(), &recent),
-                Some(second.path.canonicalize().unwrap())
+                Some(dunce::canonicalize(&second.path).unwrap())
             );
             assert_eq!(resolve_repo_path(None, cwd, &recent[..3]), None);
         }

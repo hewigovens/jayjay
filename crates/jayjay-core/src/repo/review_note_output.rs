@@ -104,7 +104,7 @@ pub(super) fn canonicalize(path: &Path) -> PathBuf {
             .map(|cwd| cwd.join(path))
             .unwrap_or_else(|_| path.to_owned())
     };
-    abs.canonicalize().unwrap_or(abs)
+    dunce::canonicalize(&abs).unwrap_or(abs)
 }
 
 /// Complete enough for agents to act on without JSON parsing: full body and anchor line, one indented block per note.

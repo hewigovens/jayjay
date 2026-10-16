@@ -4189,6 +4189,7 @@ name = "jayjay-cli"
 version = "0.3.21"
 dependencies = [
  "clap",
+ "dunce",
  "jayjay-primitives",
  "percent-encoding",
  "tempfile",
@@ -4235,6 +4236,7 @@ dependencies = [
  "base64 0.23.1",
  "chrono",
  "clap",
+ "dunce",
  "flume",
  "font-kit",
  "gpui",

@@ -160,7 +160,7 @@ fn workspace_list_reports_sibling_working_copy_status() {
     assert!(feature.is_path_resolved);
     assert_eq!(
         feature.pinnable_path.as_deref(),
-        std::fs::canonicalize(&dest).unwrap().to_str()
+        dunce::canonicalize(&dest).unwrap().to_str()
     );
     assert_eq!(feature.description, "sibling work");
     assert_eq!(feature.files_changed, 1);

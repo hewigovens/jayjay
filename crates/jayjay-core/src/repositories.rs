@@ -81,7 +81,7 @@ impl Store {
 }
 
 pub fn normalize_repository_path(path: &Path) -> PathBuf {
-    path.canonicalize()
+    dunce::canonicalize(path)
         .or_else(|_| std::path::absolute(path))
         .unwrap_or_else(|_| path.to_path_buf())
 }

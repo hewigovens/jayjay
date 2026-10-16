@@ -48,7 +48,12 @@ fn recent_repos_only_record_successful_opens(cx: &mut TestAppContext) {
     cx.update(|cx| {
         assert_eq!(
             config::current(cx).recent_repos,
-            vec![fixture.path.canonicalize().unwrap().display().to_string()]
+            vec![
+                dunce::canonicalize(&fixture.path)
+                    .unwrap()
+                    .display()
+                    .to_string()
+            ]
         );
     });
 }

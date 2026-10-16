@@ -20,8 +20,7 @@ impl RepoFsWatcher {
         is_relevant_wc_change: IsRelevantWcChange,
     ) -> Option<Self> {
         // Watchers report real paths, so classify against the canonical root or every event under a symlinked checkout looks foreign.
-        let repo_root =
-            std::fs::canonicalize(repo_path).unwrap_or_else(|_| repo_path.to_path_buf());
+        let repo_root = dunce::canonicalize(repo_path).unwrap_or_else(|_| repo_path.to_path_buf());
         let op_heads_dir = op_heads_dir(&repo_root);
         let classifier = PathClassifier {
             op_heads_dir: op_heads_dir.clone(),
@@ -62,9 +61,9 @@ fn op_heads_dir(repo_path: &Path) -> PathBuf {
     let Some(primary) = jayjay_core::workspace_primary_root(&repo_path.to_string_lossy()) else {
         return local;
     };
-    let is_primary = std::fs::canonicalize(&primary)
+    let is_primary = dunce::canonicalize(&primary)
         .ok()
-        .zip(std::fs::canonicalize(repo_path).ok())
+        .zip(dunce::canonicalize(repo_path).ok())
         .is_some_and(|(primary, repo)| primary == repo);
     if is_primary {
         local
