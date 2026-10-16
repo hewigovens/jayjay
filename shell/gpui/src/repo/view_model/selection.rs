@@ -4,7 +4,7 @@ use std::sync::Arc;
 use gpui::Context;
 use jayjay_core::compare::{self, CompareState};
 use jayjay_core::dag::{SelectionClick, SelectionGraph, SelectionState};
-use jayjay_core::{ChangeInfo, GraphEntry};
+use jayjay_core::{ChangeInfo, DiffHunk, GraphEntry};
 
 use super::RepoViewModel;
 
@@ -63,6 +63,7 @@ impl RepoViewModel {
             return;
         };
         let rev = change.selection_revision().to_owned();
+        let is_working_copy = change.is_working_copy;
 
         cx.notify();
         self.load_file_stats(rev.clone(), cx);
@@ -102,7 +103,10 @@ impl RepoViewModel {
                             vm.selected_file_ix = Some(ix);
                             let hunk = files[ix].clone();
                             vm.load_diff_async(rev, hunk, cx);
-                            vm.preload_diffs_async(files, cx);
+                            vm.preload_diffs_async(files.clone(), cx);
+                            if is_working_copy {
+                                vm.load_tracked_lfs_paths(files, cx);
+                            }
                         }
                     }
                     Err(error) => {
@@ -111,6 +115,27 @@ impl RepoViewModel {
                         vm.present_error(error);
                     }
                 }
+                cx.notify();
+            },
+        );
+    }
+
+    /// `git lfs ls-files` only describes the checked-out tree, so non-working-copy changes keep the empty set.
+    fn load_tracked_lfs_paths(&mut self, files: Arc<Vec<DiffHunk>>, cx: &mut Context<Self>) {
+        let Some(repo) = self.repo.clone() else {
+            return;
+        };
+        let generation = self.loading.change_gen;
+        let paths: Vec<String> = files.iter().map(|hunk| hunk.path.clone()).collect();
+        Self::background_update(
+            cx,
+            async move { repo.git_lfs_paths(&paths) },
+            move |vm, lfs_paths, cx| {
+                if vm.loading.change_gen != generation {
+                    return;
+                }
+                vm.tracked_lfs_paths =
+                    Arc::new(lfs_paths.unwrap_or_default().into_iter().collect());
                 cx.notify();
             },
         );
@@ -284,6 +309,10 @@ impl RepoViewModel {
             cx.notify();
             return;
         };
+        let target_is_working_copy = self
+            .selected
+            .and_then(|ix| self.graph.changes.get(ix))
+            .is_some_and(|change| change.is_working_copy);
 
         Self::background_update(
             cx,
@@ -306,6 +335,9 @@ impl RepoViewModel {
                             vm.selected_file_ix = Some(0);
                             let hunk = files[0].clone();
                             vm.load_diff_async(to_rev, hunk, cx);
+                            if target_is_working_copy {
+                                vm.load_tracked_lfs_paths(files, cx);
+                            }
                         }
                     }
                     Err(error) => {
@@ -479,10 +511,28 @@ impl RepoViewModel {
             .clone()
     }
 
+    /// Drops the file selection and its loaded diff when nothing is visible, so the preview cannot show a hidden file.
+    pub(crate) fn clear_file_selection(&mut self, cx: &mut Context<Self>) {
+        if self.selected_file_ix.is_none() && self.shown.diff.is_none() {
+            return;
+        }
+        self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
+        self.selected_file_ix = None;
+        self.shown.diff = None;
+        self.shown.projection = None;
+        self.shown.svg_preview = None;
+        self.shown.markdown_preview = None;
+        self.shown.old_content = None;
+        self.shown.new_content = None;
+        self.shown.supports_file_editor = false;
+        cx.notify();
+    }
+
     pub(super) fn clear_detail_state(&mut self) {
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         self.selected_file_ix = None;
         self.files = None;
+        self.tracked_lfs_paths = Arc::default();
         self.conflicted_paths = Arc::default();
         self.shown.diff = None;
         self.shown.projection = None;

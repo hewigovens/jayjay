@@ -117,6 +117,8 @@ pub(crate) struct LayoutState {
 #[derive(Default)]
 pub(crate) struct FileColumnUiState {
     pub(crate) hide_reviewed: bool,
+    pub(crate) hide_git_lfs: bool,
+    pub(crate) enable_git_submodule_support: bool,
     pub(crate) notes_only: bool,
     pub(crate) filter: Option<LineInput>,
     pub(crate) multi_select: super::file_select::FileMultiSelect,
@@ -322,9 +324,18 @@ impl RepoWindow {
             let cfg = crate::app::config::current(cx);
             this.description
                 .apply_preference(cfg.diff.auto_expand_description);
-            let hide_reviewed = cfg.diff.hide_reviewed_files;
-            if this.file_column.hide_reviewed != hide_reviewed {
-                this.file_column.hide_reviewed = hide_reviewed;
+            let (hide_reviewed, hide_git_lfs, submodule_support) = (
+                cfg.diff.hide_reviewed_files,
+                cfg.diff.hide_git_lfs,
+                cfg.diff.enable_git_submodule_support,
+            );
+            let visibility_changed = this.file_column.hide_reviewed != hide_reviewed
+                || this.file_column.hide_git_lfs != hide_git_lfs
+                || this.file_column.enable_git_submodule_support != submodule_support;
+            this.file_column.hide_reviewed = hide_reviewed;
+            this.file_column.hide_git_lfs = hide_git_lfs;
+            this.file_column.enable_git_submodule_support = submodule_support;
+            if visibility_changed {
                 this.reconcile_file_selection(cx);
             }
             this.apply_sidebar_hidden(cfg.layout.sidebar_hidden, cx);
@@ -424,6 +435,10 @@ impl RepoWindow {
             },
             file_column: FileColumnUiState {
                 hide_reviewed: cfg.as_ref().is_some_and(|cfg| cfg.diff.hide_reviewed_files),
+                hide_git_lfs: cfg.as_ref().is_none_or(|cfg| cfg.diff.hide_git_lfs),
+                enable_git_submodule_support: cfg
+                    .as_ref()
+                    .is_some_and(|cfg| cfg.diff.enable_git_submodule_support),
                 ..FileColumnUiState::default()
             },
             file_filter_focus: cx.focus_handle(),

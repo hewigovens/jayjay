@@ -6,8 +6,8 @@ use serde::{Deserialize, Serialize};
 pub struct DiffConfig {
     pub(crate) side_by_side: bool,
     pub(crate) ignore_whitespace: bool,
-    pub(crate) hide_git_lfs: bool,
-    pub(crate) enable_git_submodule_support: bool,
+    pub hide_git_lfs: bool,
+    pub enable_git_submodule_support: bool,
     pub tree_file_list: bool,
     pub hide_reviewed_files: bool,
     pub auto_expand_description: bool,

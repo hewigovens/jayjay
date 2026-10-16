@@ -1,6 +1,6 @@
-//! File-list visibility filtering: the filename query and the independent hide-reviewed and noted-files-only toggles share one index calculation.
+//! File-list visibility filtering: the Git LFS/submodule settings, the filename query and the independent hide-reviewed and noted-files-only toggles share one index calculation.
 
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::{App, Context, Window};
@@ -8,7 +8,21 @@ use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
 
 use super::RepoWindow;
+use crate::diff::file_status::{is_lfs, is_submodule};
 use crate::ui::input::LineInput;
+
+pub(crate) struct HiddenGitFiles {
+    pub(crate) lfs: usize,
+    pub(crate) submodules: usize,
+}
+
+fn lfs_hidden(hunk: &DiffHunk, hide_lfs: bool, tracked_lfs_paths: &HashSet<String>) -> bool {
+    hide_lfs && (is_lfs(hunk) || tracked_lfs_paths.contains(&hunk.path))
+}
+
+fn submodule_hidden(hunk: &DiffHunk, submodule_support: bool) -> bool {
+    !submodule_support && is_submodule(hunk)
+}
 
 impl RepoWindow {
     /// `active_note_counts` gates the noted-files filter the same way `change_id` gates hide-reviewed; the filename query applies in every file-list mode.
@@ -18,9 +32,12 @@ impl RepoWindow {
         show_review: bool,
         active_note_counts: Option<&HashMap<String, usize>>,
         review_rollups: Option<&HashMap<String, ReviewFileRollup>>,
+        tracked_lfs_paths: &HashSet<String>,
     ) -> Vec<usize> {
         let hide_reviewed = show_review && self.file_column.hide_reviewed;
         let notes_only = show_review && self.file_column.notes_only;
+        let hide_lfs = self.file_column.hide_git_lfs;
+        let submodule_support = self.file_column.enable_git_submodule_support;
         let query = self
             .file_column
             .filter
@@ -28,13 +45,18 @@ impl RepoWindow {
             .map(LineInput::text)
             .unwrap_or_default()
             .to_lowercase();
-        if query.is_empty() && !hide_reviewed && !notes_only {
+        if query.is_empty() && !hide_reviewed && !notes_only && !hide_lfs && submodule_support {
             return (0..files.len()).collect();
         }
         files
             .iter()
             .enumerate()
             .filter(|(_, hunk)| {
+                if lfs_hidden(hunk, hide_lfs, tracked_lfs_paths)
+                    || submodule_hidden(hunk, submodule_support)
+                {
+                    return false;
+                }
                 if !query.is_empty() && !hunk.path.to_lowercase().contains(&query) {
                     return false;
                 }
@@ -71,7 +93,31 @@ impl RepoWindow {
                 self.review_rollups_with_vm(change_id, files.iter(), vm)
             })
             .unwrap_or_default();
-        self.visible_file_indices(files, show_review, Some(&counts), Some(&rollups))
+        let lfs_paths = self.vm.read(cx).tracked_lfs_paths.clone();
+        self.visible_file_indices(
+            files,
+            show_review,
+            Some(&counts),
+            Some(&rollups),
+            &lfs_paths,
+        )
+    }
+
+    pub(crate) fn hidden_only_files(
+        &self,
+        files: &[DiffHunk],
+        tracked_lfs_paths: &HashSet<String>,
+    ) -> Option<HiddenGitFiles> {
+        let (mut lfs, mut submodules, mut visible) = (0, 0, 0);
+        for hunk in files {
+            let lfs_hidden = lfs_hidden(hunk, self.file_column.hide_git_lfs, tracked_lfs_paths);
+            let submodule_hidden =
+                submodule_hidden(hunk, self.file_column.enable_git_submodule_support);
+            lfs += usize::from(lfs_hidden);
+            submodules += usize::from(submodule_hidden);
+            visible += usize::from(!lfs_hidden && !submodule_hidden);
+        }
+        (!files.is_empty() && visible == 0).then_some(HiddenGitFiles { lfs, submodules })
     }
 
     /// `pub` wrapper around `visible_indices` so the separate `tests/` crate can assert the filter's effect without reaching `pub(crate)` state.
@@ -180,6 +226,7 @@ impl RepoWindow {
             self.select_file(next, cx);
             next
         } else {
+            self.vm.update(cx, |vm, cx| vm.clear_file_selection(cx));
             return;
         };
         let tree_mode = crate::app::config::current(cx).diff.tree_file_list;

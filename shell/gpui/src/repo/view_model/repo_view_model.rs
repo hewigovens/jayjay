@@ -23,6 +23,7 @@ pub struct RepoViewModel {
     pub selected: Option<usize>,
     pub(super) selected_changes: OrderedSelection,
     pub files: Option<Arc<Vec<DiffHunk>>>,
+    pub(crate) tracked_lfs_paths: Arc<HashSet<String>>,
     pub(crate) conflicted_paths: Arc<HashSet<String>>,
     pub selected_file_ix: Option<usize>,
     pub shown: ShownDiff,

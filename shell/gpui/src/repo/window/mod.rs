@@ -63,6 +63,7 @@ pub(crate) use conflict_editor::ConflictEditorState;
 pub use diff_edit::{DiffEditSnapshot, DiffEditState};
 pub use file_actions_batch::FileBatchAction;
 pub(crate) use file_editor::FileEditorState;
+pub(crate) use file_visibility::HiddenGitFiles;
 pub use keyboard_focus::FocusStop;
 pub use open::open_repo_window;
 pub(crate) use open::reveal_in_repo_window;

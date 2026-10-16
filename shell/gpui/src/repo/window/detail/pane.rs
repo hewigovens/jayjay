@@ -56,6 +56,11 @@ pub(in crate::repo::window) fn detail_pane(
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
     let selected_hunk = vm.selected_hunk().cloned();
+    let hidden_only_files = vm
+        .files
+        .as_ref()
+        .filter(|_| selected_hunk.is_none())
+        .and_then(|files| view.hidden_only_files(files, &vm.tracked_lfs_paths));
     let file_stats = vm.stats.per_file.clone();
     let selected_file_has_conflict = vm.selected_file_has_conflict();
     let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
@@ -89,6 +94,7 @@ pub(in crate::repo::window) fn detail_pane(
             .as_ref()
             .and_then(|hunk| file_stats.get(&hunk.path)),
         no_changes: file_count == Some(0),
+        hidden_only_files,
         file_diff: current_diff.as_ref(),
         loaded_projection: current_projection.as_ref(),
         active_projection_preview,

@@ -60,6 +60,7 @@ pub(super) fn file_column_wrapper(
             show_review,
             Some(&note_counts),
             Some(&review_rollups),
+            &vm.tracked_lfs_paths,
         ))
     });
     let hide_reviewed = show_review && view.file_column.hide_reviewed;

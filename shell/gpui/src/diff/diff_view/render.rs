@@ -25,6 +25,28 @@ use crate::ui::icons::{self, glyph};
 use crate::ui::loading::loading_status;
 use crate::ui::primitives::button;
 
+fn hidden_only_placeholder(
+    hidden: &crate::repo::window::HiddenGitFiles,
+) -> (&'static str, &'static str, &'static str) {
+    match (hidden.lfs > 0, hidden.submodules > 0) {
+        (true, true) => (
+            glyph::HARD_DRIVE,
+            "Only Git-managed Changes Hidden",
+            "This revision only changes Git LFS-backed files and submodules, and the current diff settings hide them.",
+        ),
+        (true, false) => (
+            glyph::HARD_DRIVE,
+            "Only Git LFS-backed Files Hidden",
+            "This revision only changes Git LFS-backed files, and the current diff setting hides them.",
+        ),
+        (false, _) => (
+            glyph::SQUARE_STACK,
+            "Only Git Submodule Changes Hidden",
+            "This revision only changes Git submodules, and the current settings hide them.",
+        ),
+    }
+}
+
 pub fn diff_view(
     state: DiffViewState<'_>,
     find: FindState<'_>,
@@ -36,6 +58,16 @@ pub fn diff_view(
     state.wrap_cache.borrow_mut().hide();
 
     let Some(hunk) = state.hunk else {
+        if let Some(hidden) = state.hidden_only_files.as_ref() {
+            let (icon, title, body) = hidden_only_placeholder(hidden);
+            return div()
+                .debug_selector(|| "hidden-git-files-placeholder".to_owned())
+                .flex()
+                .flex_1()
+                .size_full()
+                .child(placeholder_card(icon, title, body, &t))
+                .into_any_element();
+        }
         let (title, body) = if state.no_changes {
             (
                 "No Files Changed",

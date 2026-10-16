@@ -1,3 +1,4 @@
+use crate::repo::window::HiddenGitFiles;
 use std::sync::Arc;
 
 use gpui::{FocusHandle, ScrollHandle};
@@ -59,6 +60,7 @@ pub struct DiffViewState<'a> {
     pub(crate) hunk: Option<&'a DiffHunk>,
     pub(crate) line_stats: Option<&'a FileDiffStats>,
     pub(crate) no_changes: bool,
+    pub(crate) hidden_only_files: Option<HiddenGitFiles>,
     pub(crate) file_diff: Option<&'a Arc<FileDiff>>,
     pub(crate) loaded_projection: Option<&'a DiffProjection>,
     pub(crate) active_projection_preview: bool,
