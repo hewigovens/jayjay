@@ -171,6 +171,41 @@ impl RepoWindow {
         );
     }
 
+    pub(crate) fn open_rename_bookmark(&mut self, name: String, cx: &mut Context<Self>) {
+        self.text_modal = Some(TextModalState::new(
+            TextPrompt::single_line(
+                "Rename Bookmark",
+                name.clone(),
+                name.clone(),
+                "New name",
+                "Rename",
+                cx,
+            ),
+            TextModalAction::RenameBookmark { old_name: name },
+        ));
+        cx.notify();
+    }
+
+    fn submit_rename_bookmark(&mut self, old_name: String, text: &str, cx: &mut Context<Self>) {
+        let new_name = text.trim().to_string();
+        if new_name == old_name {
+            return;
+        }
+        if new_name.is_empty() {
+            self.show_toast("Bookmark name required", cx);
+            return;
+        }
+        if !jayjay_core::is_valid_bookmark_name(&new_name) {
+            self.show_toast(format!("Invalid bookmark name: {new_name}"), cx);
+            return;
+        }
+        self.text_modal = None;
+        let task = self
+            .vm
+            .update(cx, |vm, cx| vm.rename_bookmark(old_name, new_name, cx));
+        task.detach();
+    }
+
     fn open_create_ref(
         &mut self,
         title: &str,
@@ -259,6 +294,9 @@ impl RepoWindow {
             }
             TextModalAction::CreateTag { rev } => {
                 self.submit_create_ref("Tag", &text, rev, RepoViewModel::create_tag, cx);
+            }
+            TextModalAction::RenameBookmark { old_name } => {
+                self.submit_rename_bookmark(old_name, &text, cx);
             }
             TextModalAction::ReviewNote(target) => {
                 if text.trim().is_empty() {

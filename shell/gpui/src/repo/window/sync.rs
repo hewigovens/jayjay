@@ -21,6 +21,23 @@ impl RepoWindow {
         self.sync_activity.fetching = true;
         cx.notify();
         let task = self.vm.update(cx, |vm, cx| vm.git_fetch_origin(cx));
+        Self::spawn_fetch(cx, task);
+    }
+
+    pub fn git_pull_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) {
+        if self.sync_activity.fetching {
+            self.show_toast("Pull already in progress", cx);
+            return;
+        }
+        self.sync_activity.fetching = true;
+        cx.notify();
+        let task = self
+            .vm
+            .update(cx, |vm, cx| vm.git_pull_bookmark(bookmark, cx));
+        Self::spawn_fetch(cx, task);
+    }
+
+    fn spawn_fetch(cx: &mut Context<Self>, task: Task<JayResult<FetchResult>>) {
         Self::spawn_update(
             cx,
             |_| task,

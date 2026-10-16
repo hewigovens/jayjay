@@ -41,6 +41,8 @@ pub enum ContextAction {
         to_rev: SharedString,
     },
     PushBookmark(SharedString),
+    PullBookmark(SharedString),
+    RenameBookmark(SharedString),
     DeleteBookmark {
         name: SharedString,
         rev: Option<SharedString>,

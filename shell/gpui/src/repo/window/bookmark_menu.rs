@@ -26,6 +26,30 @@ impl RepoWindow {
         } else {
             "Delete Bookmark"
         };
+        let bookmark = self
+            .vm
+            .read(cx)
+            .graph
+            .bookmarks
+            .iter()
+            .find(|candidate| candidate.name == name)
+            .cloned();
+        let is_tracking = bookmark
+            .as_ref()
+            .is_some_and(|info| info.is_tracking_remote);
+        let has_local = bookmark
+            .as_ref()
+            .is_some_and(|info| info.has_local_target && !info.is_deleted);
+        let untracked: Vec<String> = bookmark
+            .as_ref()
+            .map(|info| {
+                info.available_remotes
+                    .iter()
+                    .filter(|remote| !info.tracked_remotes.contains(remote))
+                    .cloned()
+                    .collect()
+            })
+            .unwrap_or_default();
         let mut items = vec![
             ContextMenuItem::new(
                 move_label,
@@ -41,6 +65,13 @@ impl RepoWindow {
                 ContextAction::PushBookmark(name.to_owned().into()),
             ),
         ];
+        if is_tracking {
+            items.push(ContextMenuItem::new(
+                "Pull",
+                glyph::ARROW_DOWN,
+                ContextAction::PullBookmark(name.to_owned().into()),
+            ));
+        }
 
         if !trunk::is_trunk_bookmark(name) {
             items.push(ContextMenuItem::new(
@@ -61,6 +92,32 @@ impl RepoWindow {
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         ));
+        if has_local {
+            items.push(ContextMenuItem::new(
+                "Rename...",
+                glyph::PENCIL,
+                ContextAction::RenameBookmark(name.to_owned().into()),
+            ));
+        }
+        if has_local && !untracked.is_empty() {
+            items.push(ContextMenuItem::submenu(
+                "Track Remote",
+                glyph::GIT_BRANCH,
+                untracked
+                    .into_iter()
+                    .map(|remote| {
+                        ContextMenuItem::new(
+                            remote.clone(),
+                            glyph::GIT_BRANCH,
+                            ContextAction::TrackBookmark {
+                                name: name.to_owned(),
+                                remote,
+                            },
+                        )
+                    })
+                    .collect(),
+            ));
+        }
         let can_delete = match rev {
             Some(_) => trunk::can_remove_bookmark_from_chip(name, conflicted),
             None => trunk::can_delete_bookmark(name, conflicted),

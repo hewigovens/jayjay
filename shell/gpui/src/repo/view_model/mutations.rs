@@ -195,6 +195,19 @@ impl RepoViewModel {
         )
     }
 
+    pub(crate) fn rename_bookmark(
+        &mut self,
+        old_name: String,
+        new_name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<JayResult<()>> {
+        self.repo_write_task(
+            cx,
+            move |repo| repo.rename_bookmark(&old_name, &new_name),
+            |vm, cx| vm.refresh(false, cx),
+        )
+    }
+
     /// Move an existing bookmark onto an arbitrary revision (drag-and-drop target).
     pub fn move_bookmark(
         &mut self,
@@ -290,6 +303,18 @@ impl RepoViewModel {
         self.repo_result_task_without_indicator(
             cx,
             move |repo| repo.git_fetch("origin", &repo.sync_token()),
+            |vm, _result, cx| vm.refresh(false, cx),
+        )
+    }
+
+    pub(crate) fn git_pull_bookmark(
+        &mut self,
+        name: String,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<JayResult<FetchResult>> {
+        self.repo_result_task_without_indicator(
+            cx,
+            move |repo| repo.git_pull_bookmark(&name, &repo.sync_token()),
             |vm, _result, cx| vm.refresh(false, cx),
         )
     }

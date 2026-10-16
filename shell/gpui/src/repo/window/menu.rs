@@ -144,6 +144,12 @@ impl RepoWindow {
             ContextAction::PushBookmark(name) => {
                 self.push_bookmark(name, cx);
             }
+            ContextAction::PullBookmark(name) => {
+                self.git_pull_bookmark(name.to_string(), cx);
+            }
+            ContextAction::RenameBookmark(name) => {
+                self.open_rename_bookmark(name.to_string(), cx);
+            }
             ContextAction::DeleteBookmark { name, rev } => {
                 self.delete_bookmark(name, rev, cx);
             }
