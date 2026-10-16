@@ -5,7 +5,11 @@ mod desktop_entry;
 pub use desktop_entry::default_text_editor;
 
 use super::super::launcher::{detach_stdio, env_command, resolved_command};
-use super::super::terminal::{Terminal, shell_line};
+use super::super::terminal::Terminal;
+use super::unix::shell_line;
+
+pub const DEFAULT_EDITOR: &str = "system";
+pub const UNKNOWN_EDITOR_NEEDS_TERMINAL: bool = true;
 
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
     ("system", "System Editor"),
@@ -37,7 +41,7 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
     let payload = format!("{line}; exec $SHELL");
 
     match term {
-        Terminal::SystemDefault | Terminal::ITerm => spawn_default(&payload),
+        Terminal::SystemDefault | Terminal::ITerm | Terminal::PowerShell => spawn_default(&payload),
         Terminal::GnomeTerminal => spawn_with_args(
             "gnome-terminal",
             vec![
@@ -109,6 +113,10 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
             }
         }
     }
+}
+
+pub fn open_path(path: &str) -> bool {
+    spawn_with_args("xdg-open", vec![path.to_owned()])
 }
 
 fn spawn_default(payload: &str) -> bool {

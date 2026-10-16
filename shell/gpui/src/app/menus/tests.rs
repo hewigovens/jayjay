@@ -35,11 +35,13 @@ fn app_menus_reflect_configured_editor(cx: &mut gpui::TestAppContext) {
 #[gpui::test]
 fn app_menus_reflect_configured_terminal(cx: &mut gpui::TestAppContext) {
     cx.update(|cx| {
+        let (terminal, title) = jayjay_core::tools::TERMINAL_OPTIONS[1];
+        let label = format!("Open in {title}");
         let mut cfg = AppConfig::default();
-        cfg.tools.terminal = "ghostty".to_owned();
+        cfg.tools.terminal = terminal.to_owned();
         cx.set_global(AppConfigStore::new(cfg));
         let menus = app_menus(cx);
-        assert_action(&menus[4], "Open in Ghostty");
+        assert_action(&menus[4], &label);
     });
 }
 

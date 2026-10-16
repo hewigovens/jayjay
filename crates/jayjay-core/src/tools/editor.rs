@@ -1,5 +1,5 @@
 /// External editors recognized by the "Open in Editor" actions.
-/// Shared IDs mirror SwiftUI's `AppSettings.ExternalEditor`; system default is Linux-specific.
+/// Shared IDs mirror SwiftUI's `AppSettings.ExternalEditor`; system default uses the host platform.
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub(super) enum Editor {
     SystemDefault,

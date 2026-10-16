@@ -3,6 +3,7 @@ use gpui::{
 };
 
 use crate::app::theme::{Theme, observe_window_appearance};
+use crate::platform::TRANSPARENT_TITLEBAR;
 
 use super::ExternalToolInvocation;
 use super::view::ExternalToolWindow;
@@ -23,7 +24,7 @@ pub fn open_external_tool(invocation: ExternalToolInvocation, cx: &mut App) -> R
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
                     title: Some(title.into()),
-                    appears_transparent: true,
+                    appears_transparent: TRANSPARENT_TITLEBAR,
                     traffic_light_position: Some(Point {
                         x: px(12.),
                         y: px(14.),

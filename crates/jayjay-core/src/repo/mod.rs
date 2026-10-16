@@ -22,7 +22,7 @@ mod mutations_files;
 mod overview;
 mod parallelize;
 mod path_operands;
-mod platform;
+pub(crate) mod platform;
 mod pull_requests;
 mod ref_name;
 mod resolve;

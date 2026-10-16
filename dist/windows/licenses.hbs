@@ -1,0 +1,9 @@
+<!doctype html>
+<html lang="en"><meta charset="utf-8"><title>JayJay third-party licenses</title>
+<h1>Third-party licenses</h1>
+{{#each licenses}}
+<h2>{{name}}</h2>
+<ul>{{#each used_by}}<li>{{crate.name}} {{crate.version}} — {{crate.repository}}</li>{{/each}}</ul>
+<pre>{{text}}</pre>
+{{/each}}
+</html>

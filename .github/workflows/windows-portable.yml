@@ -1,0 +1,107 @@
+name: Windows portable alpha
+
+on:
+  workflow_dispatch:
+    inputs:
+      candidate_run_id:
+        description: "Recheck an existing portable candidate from this repository (blank builds a new ZIP)"
+        type: string
+        required: false
+  push:
+    branches: [main]
+    paths: &paths
+      - "crates/**"
+      - "shell/gpui/**"
+      - "dist/windows/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - "LICENSE"
+      - ".github/workflows/windows-portable.yml"
+  pull_request:
+    paths: *paths
+
+permissions:
+  contents: read
+  actions: read
+
+concurrency:
+  group: windows-portable-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  portable:
+    name: Build and smoke Windows x64 ZIP
+    runs-on: windows-2025
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: 1.99.0
+
+      - name: Install jj for the extracted CLI test
+        shell: pwsh
+        env:
+          JJ_VERSION: v0.45.1
+        run: |
+          Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-x86_64-pc-windows-msvc.zip" -OutFile "$env:RUNNER_TEMP/jj.zip"
+          Expand-Archive "$env:RUNNER_TEMP/jj.zip" "$env:RUNNER_TEMP/jj-bin"
+          Add-Content $env:GITHUB_PATH "$env:RUNNER_TEMP/jj-bin"
+
+      - name: Cache Rust dependencies
+        if: ${{ !inputs.candidate_run_id }}
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: windows-portable
+          cache-workspace-crates: true
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+          cache-on-failure: true
+
+      - name: Test Windows platform regressions
+        if: ${{ !inputs.candidate_run_id }}
+        run: |
+          cargo test --locked -p jayjay-core --lib tools::
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo test --locked -p jayjay-core --lib repo::environment
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+          cargo test --locked -p jayjay-cli
+          if ($LASTEXITCODE) { exit $LASTEXITCODE }
+
+      - name: Install pinned license generator
+        if: ${{ !inputs.candidate_run_id }}
+        run: cargo install cargo-about --version 0.9.2 --features cli --locked
+
+      - name: Build portable ZIP
+        if: ${{ !inputs.candidate_run_id }}
+        run: ./dist/windows/build.ps1
+
+      - name: Download existing portable candidate
+        if: ${{ inputs.candidate_run_id }}
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          pattern: JayJay-*-windows-x64-alpha.zip*
+          merge-multiple: true
+          path: build/windows
+          run-id: ${{ inputs.candidate_run_id }}
+          github-token: ${{ github.token }}
+
+      - name: Verify extracted ZIP
+        run: ./dist/windows/smoke.ps1 -Archive (Get-ChildItem build/windows/*.zip | Select-Object -ExpandProperty FullName)
+
+      - name: Upload portable alpha candidate
+        if: ${{ !cancelled() && hashFiles('build/windows/*.zip') != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: build/windows/*.zip
+          archive: false
+          if-no-files-found: error
+          retention-days: 14
+
+      - name: Upload portable alpha checksum
+        if: ${{ !cancelled() && hashFiles('build/windows/*.zip.sha256') != '' }}
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          path: build/windows/*.zip.sha256
+          archive: false
+          if-no-files-found: error
+          retention-days: 14

@@ -6,13 +6,10 @@ use std::process::{Child, Command};
 use std::sync::OnceLock;
 use std::time::{Duration, Instant};
 
+use super::platform;
 use crate::types::*;
 
-pub fn home_dir() -> Option<PathBuf> {
-    std::env::var_os("HOME")
-        .filter(|value| !value.is_empty())
-        .map(PathBuf::from)
-}
+pub use platform::{home_dir, is_executable_file};
 
 fn xdg_config_home() -> Option<PathBuf> {
     std::env::var_os("XDG_CONFIG_HOME")
@@ -52,7 +49,7 @@ pub(crate) fn command(binary: impl AsRef<std::ffi::OsStr>) -> Command {
     } else {
         binary.to_os_string()
     };
-    let mut command = Command::new(program);
+    let mut command = platform::command(program);
     apply_command_environment(&mut command);
     command
 }
@@ -98,30 +95,15 @@ fn find_existing_candidate(candidates: Vec<PathBuf>) -> Option<String> {
     None
 }
 
-/// A regular file with an execute bit on unix; any regular file elsewhere. Shared with the shell CLI installers so their notion of "executable" cannot drift from detection's.
-#[cfg(unix)]
-pub fn is_executable_file(path: &Path) -> bool {
-    use std::os::unix::fs::MetadataExt;
-    std::fs::metadata(path)
-        .map(|meta| meta.is_file() && meta.mode() & 0o111 != 0)
-        .unwrap_or(false)
-}
-
-#[cfg(not(unix))]
-pub fn is_executable_file(path: &Path) -> bool {
-    std::fs::metadata(path)
-        .map(|meta| meta.is_file())
-        .unwrap_or(false)
-}
-
 fn binary_candidates_from_paths(
     name: &str,
     path_values: [Option<String>; 2],
     home: Option<PathBuf>,
 ) -> Vec<PathBuf> {
+    let names = platform::executable_names(name);
     path_entries_from_values(path_values, home)
         .into_iter()
-        .map(|entry| entry.join(name))
+        .flat_map(|entry| names.iter().map(move |name| entry.join(name)))
         .collect()
 }
 
@@ -147,14 +129,7 @@ fn path_entries_from_values(
         push_entry(home.join(".local").join("bin"));
         push_entry(home.join(".cargo").join("bin"));
     }
-    for entry in [
-        PathBuf::from("/opt/homebrew/bin"),
-        PathBuf::from("/usr/local/bin"),
-        PathBuf::from("/usr/bin"),
-        PathBuf::from("/bin"),
-        PathBuf::from("/usr/sbin"),
-        PathBuf::from("/sbin"),
-    ] {
+    for entry in platform::system_path_entries() {
         push_entry(entry);
     }
     entries
@@ -171,7 +146,7 @@ fn ssh_auth_sock() -> Option<String> {
     std::env::var("SSH_AUTH_SOCK")
         .ok()
         .filter(|value| !value.is_empty())
-        .or_else(super::platform::launchctl_ssh_auth_sock)
+        .or_else(platform::launchctl_ssh_auth_sock)
 }
 
 pub fn login_shell_path() -> Option<String> {
@@ -328,7 +303,7 @@ fn check_cli(binary: &str) -> CliStatus {
 
 fn command_version_text(binary: &str) -> Option<String> {
     for arg in ["version", "--version"] {
-        let Ok(output) = std::process::Command::new(binary).arg(arg).output() else {
+        let Ok(output) = command(binary).arg(arg).output() else {
             continue;
         };
         if !output.status.success() {
@@ -444,6 +419,35 @@ mod tests {
         );
         assert_eq!(extract_version("jj 0.45.1-7c41cdeb"), "0.45.1-7c41cdeb");
         assert_eq!(extract_version("origin 7 beta\n"), "origin 7 beta");
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn discovers_and_runs_wrappers_without_relative_path_entries() {
+        let dir = tempfile::tempdir().unwrap();
+        let wrapper = dir.path().join("jj-test.CMD");
+        std::fs::write(&wrapper, "@echo off\r\necho wrapper 1.2.3\r\nexit /b 7\r\n").unwrap();
+        let paths = std::env::join_paths([Path::new("."), Path::new("bin"), dir.path()]).unwrap();
+        let candidates = binary_candidates_from_paths(
+            "jj-test",
+            [Some(paths.to_string_lossy().into_owned()), None],
+            None,
+        );
+        assert!(candidates.iter().all(|path| path.is_absolute()));
+        let found = find_existing_candidate(candidates).unwrap();
+        let result = command(found).output().unwrap();
+        assert_eq!(result.status.code(), Some(7));
+        assert_eq!(
+            String::from_utf8(result.stdout).unwrap().trim(),
+            "wrapper 1.2.3"
+        );
+        assert_eq!(
+            find_existing_binary(wrapper.to_str().unwrap()).as_deref(),
+            wrapper.to_str()
+        );
+        let document = dir.path().join("fake.txt");
+        std::fs::write(&document, "").unwrap();
+        assert!(!is_executable_file(&document));
     }
 
     #[cfg(unix)]

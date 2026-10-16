@@ -1,7 +1,11 @@
 use std::process::Command;
 
-use super::super::launcher::detach_stdio;
-use super::super::terminal::{Terminal, shell_line};
+use super::super::launcher::{EditorLaunch, detach_stdio};
+use super::super::terminal::Terminal;
+use super::unix::shell_line;
+
+pub const DEFAULT_EDITOR: &str = "vscode";
+pub const UNKNOWN_EDITOR_NEEDS_TERMINAL: bool = false;
 
 pub const EDITOR_OPTIONS: &[(&str, &str)] = &[
     ("vscode", "Visual Studio Code"),
@@ -20,6 +24,17 @@ pub const TERMINAL_OPTIONS: &[(&str, &str)] = &[
     ("custom", "Custom"),
 ];
 
+pub fn default_text_editor(_path: &str) -> Option<EditorLaunch> {
+    None
+}
+
+/// The file's own association could run a `.command` or `.app`.
+pub fn open_path(path: &str) -> bool {
+    detach_stdio(Command::new("/usr/bin/open").arg("-t").arg(path))
+        .spawn()
+        .is_ok()
+}
+
 pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: &str) -> bool {
     match term {
         Terminal::SystemDefault | Terminal::Custom => {
@@ -36,7 +51,8 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
         }
         Terminal::ITerm => run_applescript(&iterm_script(&shell_line(cwd, command))),
         Terminal::Ghostty => spawn_ghostty(cwd, command),
-        Terminal::GnomeTerminal
+        Terminal::PowerShell
+        | Terminal::GnomeTerminal
         | Terminal::Konsole
         | Terminal::LxTerminal
         | Terminal::Alacritty

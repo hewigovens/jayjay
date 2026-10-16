@@ -1,27 +1,41 @@
 #[cfg(target_os = "macos")]
 mod macos;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(unix, not(target_os = "macos")))]
 mod linux;
+#[cfg(not(target_os = "macos"))]
+mod non_macos;
+#[cfg(windows)]
+mod windows;
 
-#[cfg(not(target_os = "macos"))]
+#[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) use linux::{
-    CUSTOM_TERMINAL_LABEL, REPO_TRAFFIC_LIGHTS, SHOW_IN_FILE_MANAGER_LABEL, TOOLBAR_BUTTON_HEIGHT,
-    TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET, append_menu_bar, reveal_path,
-    send_notification,
+    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, SHOW_IN_FILE_MANAGER_LABEL, TRANSPARENT_TITLEBAR,
+    reveal_path, send_notification,
 };
-#[cfg(not(target_os = "macos"))]
-pub use linux::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
 #[cfg(target_os = "macos")]
 pub(crate) use macos::{
-    CUSTOM_TERMINAL_LABEL, REPO_TRAFFIC_LIGHTS, SHOW_IN_FILE_MANAGER_LABEL, TOOLBAR_BUTTON_HEIGHT,
-    TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET, append_menu_bar, reveal_path,
-    send_notification,
+    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, REPO_TRAFFIC_LIGHTS, SHOW_IN_FILE_MANAGER_LABEL,
+    TOOLBAR_BUTTON_HEIGHT, TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET,
+    TRANSPARENT_TITLEBAR, append_menu_bar, reveal_path, send_notification,
 };
 #[cfg(target_os = "macos")]
 pub use macos::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
+#[cfg(not(target_os = "macos"))]
+pub use non_macos::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
+#[cfg(not(target_os = "macos"))]
+pub(crate) use non_macos::{
+    REPO_TRAFFIC_LIGHTS, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE,
+    TOOLBAR_LEADING_INSET, append_menu_bar,
+};
+#[cfg(windows)]
+pub(crate) use windows::{
+    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, SHOW_IN_FILE_MANAGER_LABEL, TRANSPARENT_TITLEBAR,
+    open_url, reveal_path, send_notification,
+};
 
-/// Runs the platform's URL handler with stdio detached; `open` knows the right command on Linux, macOS, and Windows.
+/// Runs the platform's URL handler with stdio detached.
+#[cfg(not(windows))]
 pub(crate) fn open_url(target: &str) -> bool {
     open::commands(target).into_iter().any(|mut command| {
         jayjay_core::tools::detach_stdio(&mut command)

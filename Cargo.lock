@@ -4199,6 +4199,7 @@ dependencies = [
 name = "jayjay-core"
 version = "0.1.0"
 dependencies = [
+ "base64 0.23.1",
  "chrono",
  "clap",
  "csv",
@@ -4227,6 +4228,7 @@ dependencies = [
  "shell-words",
  "stacker",
  "tempfile",
+ "windows-sys 0.61.2",
 ]
 
 [[package]]
@@ -4237,6 +4239,7 @@ dependencies = [
  "chrono",
  "clap",
  "dunce",
+ "embed-resource",
  "flume",
  "font-kit",
  "gpui",

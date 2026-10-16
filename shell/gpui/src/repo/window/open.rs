@@ -9,6 +9,7 @@ use jayjay_core::repositories::normalize_repository_path;
 use crate::app::config::{self, AppConfigStore};
 use crate::app::repositories::StoreHandle;
 use crate::app::theme::Theme;
+use crate::platform::TRANSPARENT_TITLEBAR;
 use crate::windows::repo_list::RepoListWindow;
 
 use super::view::RepoWindow;
@@ -42,7 +43,7 @@ impl RepoWindow {
                 window_bounds: Some(bounds),
                 titlebar: Some(TitlebarOptions {
                     title: Some(window_title(&path).into()),
-                    appears_transparent: true,
+                    appears_transparent: TRANSPARENT_TITLEBAR,
                     traffic_light_position: Some(Point {
                         x: px(crate::platform::REPO_TRAFFIC_LIGHTS.0),
                         y: px(crate::platform::REPO_TRAFFIC_LIGHTS.1),

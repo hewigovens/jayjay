@@ -328,15 +328,17 @@ mod tests {
     #[gpui::test]
     fn open_terminal_action_display_name_uses_configured_terminal(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {
+            let (terminal, title) = jayjay_core::tools::TERMINAL_OPTIONS[1];
+            let label = format!("Open in {title}");
             let mut cfg = AppConfig::default();
-            cfg.tools.terminal = "ghostty".to_owned();
+            cfg.tools.terminal = terminal.to_owned();
             cx.set_global(AppConfigStore::new(cfg));
             let action = ACTIONS
                 .iter()
                 .find(|action| action.name == "Open in Terminal")
                 .expect("open terminal action");
 
-            assert_eq!(action.display_name(cx), "Open in Ghostty");
+            assert_eq!(action.display_name(cx), label);
         });
     }
 }

@@ -20,9 +20,16 @@ pub fn open_in_editor(
     let absolute = absolutize(repo_path, file_path);
 
     let launch = match editor {
-        Editor::SystemDefault => {
-            system_editor_launch(env_command(&["VISUAL", "EDITOR"]), &absolute)
-        }
+        Editor::SystemDefault => match env_command(&["VISUAL", "EDITOR"]) {
+            Some(cmd) => {
+                let in_terminal = env_editor_needs_terminal(&cmd);
+                EditorLaunch::from_command(&cmd, &[], vec![absolute], in_terminal)
+            }
+            None => match platform::default_text_editor(&absolute) {
+                Some(launch) => Some(launch),
+                None => return platform::open_path(&absolute),
+            },
+        },
         Editor::Custom => EditorLaunch::from_command(
             &cfg.custom_editor_command,
             &[],
@@ -64,13 +71,10 @@ impl EditorLaunch {
         Some(Self { argv, in_terminal })
     }
 
-    fn terminal_line(&self) -> String {
-        shell_words::join(&self.argv)
-    }
-
     fn spawn(self, repo_path: &str, cfg: &ToolsConfig) -> bool {
         if self.in_terminal {
-            return open_in_terminal(repo_path, Some(&self.terminal_line()), cfg);
+            return platform::terminal_line(&self.argv)
+                .is_some_and(|line| open_in_terminal(repo_path, Some(&line), cfg));
         }
         detach_stdio(subprocess_command(&self.argv[0]).args(&self.argv[1..]))
             .spawn()
@@ -78,35 +82,14 @@ impl EditorLaunch {
     }
 }
 
-/// `$VISUAL`/`$EDITOR` are terminal-context commands (git runs them inside a terminal), so on Linux only a known GUI editor launches directly.
-fn system_editor_launch(env_editor: Option<String>, path: &str) -> Option<EditorLaunch> {
-    match env_editor {
-        Some(cmd) => EditorLaunch::from_command(
-            &cmd,
-            &[],
-            vec![path.to_owned()],
-            env_editor_needs_terminal(&cmd),
-        ),
-        None => default_text_editor(path)
-            .or_else(|| EditorLaunch::from_command("xdg-open", &[], vec![path.to_owned()], false)),
-    }
-}
-
+/// `$VISUAL`/`$EDITOR` are terminal-context commands (git runs them inside a terminal), so outside macOS only a known GUI editor launches directly.
 fn env_editor_needs_terminal(cmd: &str) -> bool {
     match classify_editor(cmd) {
         EditorKind::Terminal => true,
         EditorKind::Gui => false,
-        EditorKind::Unknown => cfg!(target_os = "linux"),
+        EditorKind::Unknown => platform::UNKNOWN_EDITOR_NEEDS_TERMINAL,
     }
 }
-
-#[cfg(target_os = "macos")]
-fn default_text_editor(_path: &str) -> Option<EditorLaunch> {
-    None
-}
-
-#[cfg(not(target_os = "macos"))]
-use platform::default_text_editor;
 
 /// External tools inherit JayJay's stdio otherwise, and their chatter (browsers, terminals) lands in its log.
 pub fn detach_stdio(command: &mut Command) -> &mut Command {
@@ -125,7 +108,7 @@ pub(super) fn env_command(names: &[&str]) -> Option<String> {
 }
 
 pub(super) fn resolved_command(command: &str) -> Option<(String, Vec<String>)> {
-    let mut words = shell_words::split(command).ok()?.into_iter();
+    let mut words = platform::command_words(command)?.into_iter();
     let binary = find_existing_binary(&words.next()?)?;
     Some((binary, words.collect()))
 }
@@ -138,16 +121,17 @@ enum EditorKind {
 }
 
 fn classify_editor(command: &str) -> EditorKind {
-    let Ok(words) = shell_words::split(command) else {
+    let Some(words) = platform::command_words(command) else {
         return EditorKind::Unknown;
     };
     let Some(binary) = words
         .first()
-        .and_then(|binary| Path::new(binary).file_name()?.to_str())
+        .and_then(|binary| Path::new(binary).file_stem()?.to_str())
+        .map(str::to_ascii_lowercase)
     else {
         return EditorKind::Unknown;
     };
-    match binary {
+    match binary.as_str() {
         "vi" | "vim" | "nvim" | "nano" | "micro" | "hx" | "helix" | "kak" => EditorKind::Terminal,
         "emacs" | "emacsclient" => {
             if words
@@ -161,7 +145,7 @@ fn classify_editor(command: &str) -> EditorKind {
         }
         "code" | "code-insiders" | "codium" | "cursor" | "zed" | "subl" | "sublime_text"
         | "gnome-text-editor" | "gedit" | "kate" | "kwrite" | "mousepad" | "xed" | "pluma"
-        | "geany" | "gvim" => EditorKind::Gui,
+        | "geany" | "gvim" | "notepad" | "notepad++" => EditorKind::Gui,
         _ => EditorKind::Unknown,
     }
 }
@@ -189,23 +173,9 @@ mod tests {
     use super::*;
 
     #[test]
-    fn terminal_line_keeps_hostile_paths_as_one_quoted_word() {
-        let launch = EditorLaunch {
-            argv: vec![
-                "vim".to_owned(),
-                "/repo/a'$(touch /tmp/pwned)'.rs".to_owned(),
-            ],
-            in_terminal: true,
-        };
-        let line = launch.terminal_line();
-        assert_eq!(shell_words::split(&line).unwrap(), launch.argv);
-        assert!(line.contains("a'\\''$(touch /tmp/pwned)'\\''.rs"));
-    }
-
-    #[test]
     fn custom_editor_command_keeps_arguments_separate() {
         let exe = std::env::current_exe().unwrap();
-        let command = format!("{} -c 'exit 0'", shell_words::quote(&exe.to_string_lossy()));
+        let command = format!("\"{}\" -c \"exit 0\"", exe.display());
         let (binary, args) = resolved_command(&command).expect("test binary");
         assert_eq!(Path::new(&binary), exe);
         assert_eq!(args, ["-c", "exit 0"]);
@@ -215,6 +185,15 @@ mod tests {
     fn editor_classification_covers_common_editors() {
         assert_eq!(classify_editor("nvim --clean"), EditorKind::Terminal);
         assert_eq!(classify_editor("/usr/bin/vim -f"), EditorKind::Terminal);
+        assert_eq!(
+            classify_editor("/opt/Neovim/NVIM.exe"),
+            EditorKind::Terminal
+        );
+        #[cfg(windows)]
+        assert_eq!(
+            classify_editor(r#""C:\Program Files\Neovim\nvim.exe" --clean"#),
+            EditorKind::Terminal
+        );
         assert_eq!(classify_editor("emacs -nw"), EditorKind::Terminal);
         assert_eq!(classify_editor("emacsclient -t"), EditorKind::Terminal);
         assert_eq!(classify_editor("emacs"), EditorKind::Gui);
@@ -231,7 +210,7 @@ mod tests {
         assert!(env_editor_needs_terminal("nvim"));
         assert_eq!(
             env_editor_needs_terminal("omarchy-launch-editor --inline"),
-            cfg!(target_os = "linux")
+            platform::UNKNOWN_EDITOR_NEEDS_TERMINAL
         );
     }
 }

@@ -3,14 +3,21 @@ mod platform;
 use std::ffi::OsString;
 use std::process::Command;
 
-use super::{app, gpui};
+#[cfg(target_os = "macos")]
+use super::app::find_app_executable;
+use super::gpui;
+
+#[cfg(not(target_os = "macos"))]
+fn find_app_executable() -> Option<std::path::PathBuf> {
+    None
+}
 
 // Falls back to the GPUI binary when no macOS app bundle is found — the only option on Linux, and useful on dev checkouts that only built the GPUI shell.
 pub(crate) fn exec_app<I>(arguments: I) -> !
 where
     I: IntoIterator<Item = OsString>,
 {
-    let (executable, is_macos_app) = if let Some(executable) = app::find_app_executable() {
+    let (executable, is_macos_app) = if let Some(executable) = find_app_executable() {
         (executable, true)
     } else if let Some(executable) = gpui::find_gpui_executable() {
         (executable, false)

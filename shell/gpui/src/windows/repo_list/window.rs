@@ -8,6 +8,7 @@ use super::panel::RecentPanel;
 use crate::app::config::{self, AppConfigStore};
 use crate::app::repositories::{self, StoreHandle};
 use crate::app::theme::{Theme, observe_window_appearance};
+use crate::platform::TRANSPARENT_TITLEBAR;
 use crate::repo::RepoWindow;
 use crate::ui::logo::Logo;
 
@@ -51,7 +52,7 @@ impl RepoListWindow {
                     window_min_size: Some(size(px(DETAIL_WIDTH), px(WINDOW_HEIGHT))),
                     titlebar: Some(TitlebarOptions {
                         title: Some("JayJay".into()),
-                        appears_transparent: true,
+                        appears_transparent: TRANSPARENT_TITLEBAR,
                         traffic_light_position: Some(gpui::Point {
                             x: px(12.),
                             y: px(14.),

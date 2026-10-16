@@ -8,6 +8,7 @@ use super::state::{JjCheckState, OnboardingPage};
 use super::widgets::{command_row, mono_line, success_badge, tip};
 use crate::app::config::{self, TelemetryConfig};
 use crate::app::theme::{Theme, ui_font_size};
+use crate::platform::JJ_PACKAGE_MANAGER;
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::{button, checkbox_glyph, text_tooltip};
@@ -127,15 +128,19 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
                         .text_size(ui_font_size(14.))
                         .line_height(ui_font_size(20.))
                         .text_color(rgb(t.fg_dim))
-                        .child("JayJay requires jj to be installed. Install it with Homebrew or Cargo:"),
+                        .child(format!(
+                            "JayJay requires jj to be installed. Install it with {} or Cargo:",
+                            JJ_PACKAGE_MANAGER.0
+                        )),
                 )
-                .child(command_row("brew install jj", t))
+                .child(command_row(JJ_PACKAGE_MANAGER.1, t))
                 .child(command_row("cargo install --locked jj-cli", t))
                 .child(
-                    button("onboarding-check-again", "Check Again", t, false)
-                        .on_click(cx.listener(|view, _, _, cx| {
+                    button("onboarding-check-again", "Check Again", t, false).on_click(
+                        cx.listener(|view, _, _, cx| {
                             view.check_jj(cx);
-                        })),
+                        }),
+                    ),
                 );
         }
     }

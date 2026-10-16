@@ -4,6 +4,9 @@ use super::arguments::Arguments;
 use super::invocation::Invocation;
 
 pub fn run(arguments: &[String]) -> i32 {
+    if let Some(exit_code) = jayjay_core::tools::run_terminal_tool(arguments) {
+        return exit_code;
+    }
     let arguments = match Arguments::try_parse_from(
         std::iter::once("jayjay").chain(arguments.iter().map(String::as_str)),
     ) {

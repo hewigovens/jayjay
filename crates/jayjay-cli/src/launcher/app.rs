@@ -4,7 +4,29 @@ use std::process::{Command, ExitStatus};
 
 use percent_encoding::{AsciiSet, NON_ALPHANUMERIC, utf8_percent_encode};
 
-pub(super) fn running_app_bundle() -> Option<PathBuf> {
+pub(super) fn launch(repo_path: Option<&Path>) {
+    if let Some(bundle) = running_app_bundle() {
+        open_running(repo_path, &bundle);
+        return;
+    }
+
+    let Some(app_path) = find_app() else {
+        eprintln!("error: JayJay.app not found");
+        eprintln!("Install it to /Applications or build with: just build");
+        std::process::exit(1);
+    };
+
+    match open_app(&app_path, repo_path) {
+        Ok(status) if status.success() => {}
+        Ok(status) => std::process::exit(status.code().unwrap_or(1)),
+        Err(error) => {
+            eprintln!("error: failed to launch JayJay: {error}");
+            std::process::exit(1);
+        }
+    }
+}
+
+fn running_app_bundle() -> Option<PathBuf> {
     let out = Command::new("ps")
         .args(["-A", "-o", "comm="])
         .output()
@@ -17,7 +39,7 @@ pub(super) fn running_app_bundle() -> Option<PathBuf> {
 }
 
 /// Pinned to the running instance's bundle so it receives the open request rather than the LaunchServices default for the jayjay:// scheme.
-pub(super) fn open_running(repo_path: Option<&Path>, bundle: &Path) {
+fn open_running(repo_path: Option<&Path>, bundle: &Path) {
     let mut cmd = Command::new("open");
     cmd.arg("-a").arg(bundle);
     if let Some(path) = repo_path {
@@ -26,7 +48,7 @@ pub(super) fn open_running(repo_path: Option<&Path>, bundle: &Path) {
     let _ = cmd.status();
 }
 
-pub(super) fn open_app(app: &Path, repo_path: Option<&Path>) -> std::io::Result<ExitStatus> {
+fn open_app(app: &Path, repo_path: Option<&Path>) -> std::io::Result<ExitStatus> {
     let mut cmd = Command::new("open");
     cmd.arg("-a").arg(app);
     if let Some(path) = repo_path {
@@ -35,7 +57,7 @@ pub(super) fn open_app(app: &Path, repo_path: Option<&Path>) -> std::io::Result<
     cmd.status()
 }
 
-pub(super) fn find_app() -> Option<PathBuf> {
+fn find_app() -> Option<PathBuf> {
     // Our exe may be a symlink (e.g. ~/.local/bin/jayjay); resolve it, then walk up to the bundle.
     if let Ok(exe) = env::current_exe() {
         let exe = exe.canonicalize().unwrap_or(exe);

@@ -4,6 +4,7 @@ use gpui::{
 
 use super::{OnboardingCompleted, OnboardingView};
 use crate::app::theme::{Theme, observe_window_appearance};
+use crate::platform::TRANSPARENT_TITLEBAR;
 
 const WINDOW_WIDTH: f32 = 480.;
 const WINDOW_HEIGHT: f32 = 460.;
@@ -18,7 +19,7 @@ impl OnboardingView {
                 is_minimizable: false,
                 titlebar: Some(TitlebarOptions {
                     title: Some("Welcome to JayJay".into()),
-                    appears_transparent: true,
+                    appears_transparent: TRANSPARENT_TITLEBAR,
                     traffic_light_position: Some(Point {
                         x: px(crate::platform::REPO_TRAFFIC_LIGHTS.0),
                         y: px(crate::platform::REPO_TRAFFIC_LIGHTS.1),

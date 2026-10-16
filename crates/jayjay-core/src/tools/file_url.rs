@@ -29,11 +29,32 @@ pub fn repo_file_path(repo_path: &str, file_path: &str) -> Option<PathBuf> {
 }
 
 pub(super) fn file_url_from_path(path: &Path) -> String {
-    let mut path = path.to_string_lossy().replace('\\', "/");
-    if cfg!(windows) && path.as_bytes().get(1) == Some(&b':') {
-        path.insert(0, '/');
-    }
+    let path = url_path(path.to_string_lossy().replace('\\', "/"));
     format!("file://{}", utf8_percent_encode(&path, FILE_URL_PATH_SET))
+}
+
+#[cfg(not(windows))]
+fn url_path(path: String) -> String {
+    path
+}
+
+/// Drive paths gain a leading `/`; UNC paths drop their `//` so the server becomes the URL host.
+#[cfg(windows)]
+fn url_path(path: String) -> String {
+    let path = if let Some(rest) = path.strip_prefix("//?/UNC/") {
+        format!("//{rest}")
+    } else if let Some(rest) = path.strip_prefix("//?/") {
+        rest.to_owned()
+    } else {
+        path
+    };
+    if let Some(unc) = path.strip_prefix("//") {
+        unc.to_owned()
+    } else if path.as_bytes().get(1) == Some(&b':') {
+        format!("/{path}")
+    } else {
+        path
+    }
 }
 
 const FILE_URL_PATH_SET: &AsciiSet = &CONTROLS
@@ -55,6 +76,23 @@ const FILE_URL_PATH_SET: &AsciiSet = &CONTROLS
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[cfg(windows)]
+    #[test]
+    fn windows_file_urls_support_verbatim_drive_and_network_paths() {
+        assert_eq!(
+            file_url_from_path(Path::new(r"\\?\C:\名 repo\a#%.html")),
+            "file:///C:/%E5%90%8D%20repo/a%23%25.html"
+        );
+        assert_eq!(
+            file_url_from_path(Path::new(r"\\server\share\page name.html")),
+            "file://server/share/page%20name.html"
+        );
+        assert_eq!(
+            file_url_from_path(Path::new(r"\\?\UNC\server\share\page name.html")),
+            "file://server/share/page%20name.html"
+        );
+    }
 
     #[test]
     fn repo_file_url_opens_existing_repo_file() {

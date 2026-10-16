@@ -1,5 +1,26 @@
 use std::env;
 use std::path::{Path, PathBuf};
+use std::process::{Command, Stdio};
+
+#[cfg_attr(target_os = "macos", allow(dead_code))]
+pub(super) fn launch(repo_path: Option<&Path>) {
+    let Some(executable) = find_gpui_executable() else {
+        eprintln!("error: jayjay-gpui executable not found next to jayjay or on PATH");
+        std::process::exit(127);
+    };
+    let mut command = Command::new(executable);
+    command
+        .stdin(Stdio::null())
+        .stdout(Stdio::null())
+        .stderr(Stdio::null());
+    if let Some(repo) = repo_path {
+        command.arg("--repo").arg(repo);
+    }
+    if let Err(error) = command.spawn() {
+        eprintln!("error: failed to launch JayJay: {error}");
+        std::process::exit(1);
+    }
+}
 
 // Search order matches app::find_app_executable: sibling executable first, then PATH.
 pub(super) fn find_gpui_executable() -> Option<PathBuf> {
@@ -23,7 +44,8 @@ fn find_in_path(name: &str) -> Option<PathBuf> {
 }
 
 fn find_in_dirs(name: &str, dirs: impl Iterator<Item = PathBuf>) -> Option<PathBuf> {
-    dirs.map(|dir| dir.join(name))
+    dirs.filter(|dir| dir.is_absolute())
+        .map(|dir| dir.join(name))
         .find(|candidate| candidate.is_file())
 }
 

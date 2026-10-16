@@ -3,27 +3,13 @@ use std::process::Command;
 
 use jayjay_core::tools::detach_stdio;
 
-use gpui::{Context, ParentElement};
-
 #[cfg(target_os = "linux")]
 use crate::app::APP_ID;
-use crate::app::theme::Theme;
-use crate::repo::window::RepoWindow;
 
-pub const MOD_KEY: &str = "ctrl";
-/// Ctrl is already the platform Mod here, so a plain `ctrl-s` would collide with the file editor's save.
-pub const SIDEBAR_TOGGLE_KEY: &str = "alt-ctrl-s";
 pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in File Manager";
-pub const TOOLBAR_HEIGHT: f32 = 44.;
-pub const TOOLBAR_LEADING_INSET: f32 = 12.;
-pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
-pub const TOOLBAR_ICON_SIZE: f32 = 16.;
-pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (12., 14.);
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
-
-pub fn append_menu_bar(root: gpui::Div, t: &Theme, cx: &mut Context<RepoWindow>) -> gpui::Div {
-    root.child(crate::ui::app_menu::menu_bar(t, cx))
-}
+pub const TRANSPARENT_TITLEBAR: bool = true;
+pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 
 pub fn reveal_path(path: &Path) -> bool {
     let target = if path.is_file() {
