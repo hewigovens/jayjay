@@ -26,7 +26,8 @@ pub(super) fn co_authors(commit: &JjCommit) -> Vec<CommitAuthor> {
         .into_iter()
         .filter(|trailer| trailer.key.eq_ignore_ascii_case(CO_AUTHORED_BY))
         .filter_map(|trailer| parse_identity(&trailer.value, timestamp));
-    let committer = (!github_alias::is_web_flow(&committer.email)).then_some(committer);
+    let committer = (!committer.is_unknown() && !github_alias::is_web_flow(&committer.email))
+        .then_some(committer);
 
     let mut people: Vec<CommitAuthor> = Vec::new();
     for person in trailers.chain(committer) {

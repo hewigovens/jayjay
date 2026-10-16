@@ -23,7 +23,7 @@ pub(super) fn person(person: &CommitAuthor, id: impl Into<ElementId>, t: &Theme)
                 .truncate()
                 .text_size(ui_font_size(FONT_ID))
                 .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(format!("<{}>", person.email))),
+                .child(SharedString::from(email_label(person))),
         )
         .into_any_element()
 }
@@ -92,7 +92,15 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
 }
 
 fn identity(person: &CommitAuthor) -> String {
-    format!("{} <{}>", person.name, person.email)
+    format!("{} {}", person.display_name(), email_label(person))
+}
+
+fn email_label(person: &CommitAuthor) -> String {
+    if person.email.is_empty() {
+        "(no email set)".to_owned()
+    } else {
+        format!("<{}>", person.email)
+    }
 }
 
 pub(super) fn separator(t: &Theme) -> AnyElement {

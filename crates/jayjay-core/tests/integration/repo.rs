@@ -1077,7 +1077,7 @@ fn op_restore_refuses_an_operation_that_predates_this_workspace() {
 }
 
 #[test]
-fn co_authors_credit_trailers_and_a_distinct_committer_but_not_github_web_flow() {
+fn co_authors_credit_trailers_and_a_distinct_committer_but_not_github_web_flow_or_no_identity() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo_str = repo_path.to_str().expect("repo path utf-8");
@@ -1099,6 +1099,13 @@ fn co_authors_credit_trailers_and_a_distinct_committer_but_not_github_web_flow()
         "--author",
         "Alice <alice@example.com>",
     ]);
+    run_jj(&[
+        "-R",
+        repo_str,
+        "--config=user.name=''",
+        "--config=user.email=''",
+        "new",
+    ]);
 
     let repo = Repo::open(&repo_path).expect("open repo");
     let co_authors = |rev: &str| {
@@ -1110,6 +1117,7 @@ fn co_authors_credit_trailers_and_a_distinct_committer_but_not_github_web_flow()
             .map(|p| p.email)
             .collect::<Vec<_>>()
     };
-    assert_eq!(co_authors("@-"), ["bob@example.com", "test@example.com"]);
+    assert_eq!(co_authors("@--"), ["bob@example.com", "test@example.com"]);
+    assert!(co_authors("@-").is_empty());
     assert!(co_authors("@").is_empty());
 }

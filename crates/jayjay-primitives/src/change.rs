@@ -19,11 +19,17 @@ impl CommitAuthor {
     }
 
     pub fn display_name(&self) -> &str {
-        if self.name.is_empty() {
+        if !self.name.is_empty() {
+            &self.name
+        } else if !self.email.is_empty() {
             &self.email
         } else {
-            &self.name
+            "(no name set)"
         }
+    }
+
+    pub fn is_unknown(&self) -> bool {
+        self.name.is_empty() && self.email.is_empty()
     }
 
     pub fn is_same_person(&self, other: &Self) -> bool {
@@ -239,6 +245,7 @@ mod change_info_tests {
         let mut change = change("change-id");
         change.author = CommitAuthor::new("Alice", "alice@example.com", 0);
         assert_eq!(change.credit_line(), "Alice");
+        assert_eq!(CommitAuthor::empty(0).display_name(), "(no name set)");
 
         change
             .co_authors
