@@ -59,16 +59,12 @@ impl RepoWindow {
     }
 
     /// A context menu or the rating prompt takes keys before any text field, so platform text must not land in one behind it.
-    pub(in crate::repo::window) fn modal_overlay_open(&self) -> bool {
+    pub(crate) fn modal_overlay_open(&self) -> bool {
         self.context_menu.is_some() || self.rating_prompt
     }
 
     /// Find takes text only while nothing else does: no overlay that handles keys first and no focused text field.
-    pub(in crate::repo::window) fn find_ime_focus(
-        &self,
-        window: &Window,
-        cx: &App,
-    ) -> Option<FocusHandle> {
+    pub(crate) fn find_ime_focus(&self, window: &Window, cx: &App) -> Option<FocusHandle> {
         let covered = self.modal_overlay_open()
             || self.revset_popup.is_some()
             || self.stacked_pr.is_some()
@@ -78,7 +74,7 @@ impl RepoWindow {
         if covered { None } else { window.focused(cx) }
     }
 
-    pub(in crate::repo::window) fn is_text_input_focused(&self, window: &Window, cx: &App) -> bool {
+    pub(crate) fn is_text_input_focused(&self, window: &Window, cx: &App) -> bool {
         self.focused_text_input(window, cx).is_some()
             || self.file_filter_focus.is_focused(window)
             || self.editor_input_focused(window, cx)

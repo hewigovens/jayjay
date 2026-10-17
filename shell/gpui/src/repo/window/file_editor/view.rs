@@ -10,7 +10,7 @@ use crate::ui::primitives::button;
 
 use super::super::RepoWindow;
 
-pub(in crate::repo::window) fn file_editor_overlay(
+pub(crate) fn file_editor_overlay(
     view: &RepoWindow,
     t: &Theme,
     cx: &mut Context<RepoWindow>,

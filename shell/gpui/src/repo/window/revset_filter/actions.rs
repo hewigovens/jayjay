@@ -13,7 +13,7 @@ use crate::ui::input::LineInput;
 use crate::ui::navigation::{ListNav, ListNavKeys, list_nav_from_key};
 
 impl RepoWindow {
-    pub(in super::super) fn show_ancestors(&mut self, commit_id: &str, cx: &mut Context<Self>) {
+    pub(crate) fn show_ancestors(&mut self, commit_id: &str, cx: &mut Context<Self>) {
         let Some((index, change_id)) = self
             .vm
             .read(cx)
@@ -51,11 +51,11 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub(in super::super) fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
+    pub(crate) fn apply_revset(&mut self, revset: &str, cx: &mut Context<Self>) {
         self.apply_revset_selecting(revset, None, cx);
     }
 
-    pub(in super::super) fn apply_revset_selecting(
+    pub(crate) fn apply_revset_selecting(
         &mut self,
         revset: &str,
         selecting: Option<String>,
@@ -80,7 +80,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub(in super::super) fn return_to_previous_revset(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn return_to_previous_revset(&mut self, cx: &mut Context<Self>) {
         self.show_sidebar(cx);
         self.vm
             .update(cx, |vm, cx| vm.return_to_previous_revset(cx));
@@ -120,11 +120,7 @@ impl RepoWindow {
     }
 
     /// Opens a palette-requested editor, and cancels the edit once focus has moved elsewhere, including a title-bar click.
-    pub(in super::super) fn sync_revset_editor(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn sync_revset_editor(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if std::mem::take(&mut self.revset_edit_requested) {
             self.begin_revset_edit(window, cx);
         }
@@ -142,7 +138,7 @@ impl RepoWindow {
         }
     }
 
-    pub(in super::super) fn close_revset_editor(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn close_revset_editor(&mut self, cx: &mut Context<Self>) {
         if self.revset_editor.is_some() {
             LineInput::hide_for_owner(self, cx, Self::revset_editor_input);
             self.revset_editor = None;
@@ -240,15 +236,12 @@ impl RepoWindow {
     }
 
     /// Tab finishes a revset completion before it can move focus.
-    pub(in super::super) fn revset_tab_completes(&self, cx: &gpui::App) -> bool {
+    pub(crate) fn revset_tab_completes(&self, cx: &gpui::App) -> bool {
         self.revset_completions.is_some() || !self.revset_popup_completions(cx).is_empty()
     }
 
     /// A bookmark or workspace typed as the whole query is left to the popup's own rows, which match on the whole query.
-    pub(in super::super) fn revset_popup_completions(
-        &self,
-        cx: &gpui::App,
-    ) -> Vec<RevsetCompletion> {
+    pub(crate) fn revset_popup_completions(&self, cx: &gpui::App) -> Vec<RevsetCompletion> {
         let Some(popup) = self.revset_popup.as_ref() else {
             return Vec::new();
         };
@@ -279,11 +272,7 @@ impl RepoWindow {
         cx.notify();
     }
 
-    pub(in super::super) fn toggle_revset_popup(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn toggle_revset_popup(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if self.revset_popup.is_some() {
             self.close_revset_popup(cx);
         } else {
@@ -321,7 +310,7 @@ impl RepoWindow {
             .map(|popup| &mut popup.query.input)
     }
 
-    pub(in super::super) fn revset_suggestions(&self, cx: &gpui::App) -> Vec<RevsetSuggestion> {
+    pub(crate) fn revset_suggestions(&self, cx: &gpui::App) -> Vec<RevsetSuggestion> {
         let Some(popup) = self.revset_popup.as_ref() else {
             return Vec::new();
         };
@@ -354,7 +343,7 @@ impl RepoWindow {
         }
     }
 
-    pub(in super::super) fn handle_revset_popup_key(
+    pub(crate) fn handle_revset_popup_key(
         &mut self,
         ev: &KeyDownEvent,
         cx: &mut Context<Self>,

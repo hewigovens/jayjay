@@ -41,9 +41,7 @@ pub(super) fn conflict_supports_editor(
     Ok(true)
 }
 
-pub(in crate::repo) fn materialized_conflict_supports_editor(
-    value: &MaterializedTreeValue,
-) -> bool {
+pub(crate) fn materialized_conflict_supports_editor(value: &MaterializedTreeValue) -> bool {
     let MaterializedTreeValue::FileConflict(file) = value else {
         return false;
     };

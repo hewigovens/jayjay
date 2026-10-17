@@ -9,17 +9,12 @@ use super::diff_compute::{compute_diff_blocking, diff_cache_key};
 use crate::diff::{DetailMode, projection};
 
 impl RepoViewModel {
-    pub(in crate::repo) fn load_diff_async(
-        &mut self,
-        rev: String,
-        hunk: DiffHunk,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn load_diff_async(&mut self, rev: String, hunk: DiffHunk, cx: &mut Context<Self>) {
         let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
         self.load_diff_async_with_projection(rev, hunk, projection_mode, cx);
     }
 
-    pub(in crate::repo) fn load_diff_async_with_projection(
+    pub(crate) fn load_diff_async_with_projection(
         &mut self,
         rev: String,
         hunk: DiffHunk,
@@ -165,7 +160,7 @@ impl RepoViewModel {
         }
     }
 
-    pub(in crate::repo) fn preload_diffs_async(
+    pub(crate) fn preload_diffs_async(
         &mut self,
         hunks: Arc<Vec<DiffHunk>>,
         cx: &mut Context<Self>,
@@ -255,7 +250,7 @@ impl RepoViewModel {
         }
     }
 
-    pub(in crate::repo) fn diff_load_state(&self, hunk: &DiffHunk) -> DiffLoadState {
+    pub(crate) fn diff_load_state(&self, hunk: &DiffHunk) -> DiffLoadState {
         let Some(rev) = self.selected_revision() else {
             return DiffLoadState::Missing;
         };

@@ -7,7 +7,7 @@ use crate::app::config;
 use crate::repo::window::RepoWindow;
 
 impl RepoWindow {
-    pub(in crate::repo::window) fn drop_dag_drag_on_change(
+    pub(crate) fn drop_dag_drag_on_change(
         &mut self,
         drag: DagDrag,
         destination: ChangeInfo,

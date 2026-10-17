@@ -12,12 +12,12 @@ use super::layout::{layout_key, layout_text};
 use super::paint::{cursor_quad, line_background_quads, selection_quads};
 use crate::app::theme::theme;
 
-pub(in crate::ui::text_area) struct TextAreaElement {
-    pub(in crate::ui::text_area) input: Entity<TextArea>,
-    pub(in crate::ui::text_area) height: Option<f32>,
+pub(crate) struct TextAreaElement {
+    pub(crate) input: Entity<TextArea>,
+    pub(crate) height: Option<f32>,
 }
 
-pub(in crate::ui::text_area) struct PrepaintState {
+pub(crate) struct PrepaintState {
     key: TextLayoutKey,
     lines: Arc<[LineLayout]>,
     visible_lines: Range<usize>,

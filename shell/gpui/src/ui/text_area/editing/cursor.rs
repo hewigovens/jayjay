@@ -9,12 +9,12 @@ use crate::ui::input::{
 };
 
 impl TextArea {
-    pub(in crate::ui::text_area) fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
+    pub(crate) fn move_to(&mut self, offset: usize, cx: &mut Context<Self>) {
         self.selection.move_to(offset, self.content.len());
         self.show_caret(cx);
     }
 
-    pub(in crate::ui::text_area) fn select_to(&mut self, offset: usize, cx: &mut Context<Self>) {
+    pub(crate) fn select_to(&mut self, offset: usize, cx: &mut Context<Self>) {
         self.selection.select_to(offset, self.content.len());
         self.show_caret(cx);
     }
@@ -23,10 +23,7 @@ impl TextArea {
         self.selection.cursor_offset()
     }
 
-    pub(in crate::ui::text_area) fn index_for_mouse_position(
-        &self,
-        position: Point<Pixels>,
-    ) -> usize {
+    pub(crate) fn index_for_mouse_position(&self, position: Point<Pixels>) -> usize {
         if self.content.is_empty() {
             return 0;
         }
@@ -44,27 +41,27 @@ impl TextArea {
         (line.range.start + local).min(line.range.end)
     }
 
-    pub(in crate::ui::text_area) fn previous_boundary(&self, offset: usize) -> usize {
+    pub(crate) fn previous_boundary(&self, offset: usize) -> usize {
         previous_boundary(self.content.as_ref(), offset)
     }
 
-    pub(in crate::ui::text_area) fn next_boundary(&self, offset: usize) -> usize {
+    pub(crate) fn next_boundary(&self, offset: usize) -> usize {
         next_boundary(self.content.as_ref(), offset)
     }
 
-    pub(in crate::ui::text_area) fn previous_word_boundary(&self, offset: usize) -> usize {
+    pub(crate) fn previous_word_boundary(&self, offset: usize) -> usize {
         previous_word_boundary(self.content.as_ref(), offset)
     }
 
-    pub(in crate::ui::text_area) fn next_word_boundary(&self, offset: usize) -> usize {
+    pub(crate) fn next_word_boundary(&self, offset: usize) -> usize {
         next_word_boundary(self.content.as_ref(), offset)
     }
 
-    pub(in crate::ui::text_area) fn line_ranges(&self) -> Vec<Range<usize>> {
+    pub(crate) fn line_ranges(&self) -> Vec<Range<usize>> {
         line_ranges(self.content.as_ref())
     }
 
-    pub(in crate::ui::text_area) fn line_range_at(&self, offset: usize) -> Range<usize> {
+    pub(crate) fn line_range_at(&self, offset: usize) -> Range<usize> {
         line_range_at(self.content.as_ref(), offset)
     }
 }

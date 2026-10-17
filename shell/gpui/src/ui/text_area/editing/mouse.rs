@@ -3,7 +3,7 @@ use gpui::{Context, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ScrollWheelEve
 use super::super::{TextArea, TextAreaScrolled};
 
 impl TextArea {
-    pub(in crate::ui::text_area) fn on_mouse_down(
+    pub(crate) fn on_mouse_down(
         &mut self,
         event: &MouseDownEvent,
         window: &mut Window,
@@ -18,16 +18,11 @@ impl TextArea {
         }
     }
 
-    pub(in crate::ui::text_area) fn on_mouse_up(
-        &mut self,
-        _: &MouseUpEvent,
-        _: &mut Window,
-        _: &mut Context<Self>,
-    ) {
+    pub(crate) fn on_mouse_up(&mut self, _: &MouseUpEvent, _: &mut Window, _: &mut Context<Self>) {
         self.is_selecting = false;
     }
 
-    pub(in crate::ui::text_area) fn on_mouse_move(
+    pub(crate) fn on_mouse_move(
         &mut self,
         event: &MouseMoveEvent,
         _: &mut Window,
@@ -38,7 +33,7 @@ impl TextArea {
         }
     }
 
-    pub(in crate::ui::text_area) fn on_scroll_wheel(
+    pub(crate) fn on_scroll_wheel(
         &mut self,
         event: &ScrollWheelEvent,
         window: &mut Window,

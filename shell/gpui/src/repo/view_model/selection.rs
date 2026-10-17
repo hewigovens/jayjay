@@ -141,7 +141,7 @@ impl RepoViewModel {
         );
     }
 
-    pub(in crate::repo) fn load_file_stats(&mut self, rev: String, cx: &mut Context<Self>) {
+    pub(crate) fn load_file_stats(&mut self, rev: String, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
             return;
         };

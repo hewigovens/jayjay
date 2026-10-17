@@ -7,4 +7,4 @@ mod view;
 use super::RepoWindow;
 
 pub(crate) use state::ConflictEditorState;
-pub(in crate::repo::window) use view::conflict_editor_overlay;
+pub(crate) use view::conflict_editor_overlay;

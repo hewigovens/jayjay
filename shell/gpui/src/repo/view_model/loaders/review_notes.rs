@@ -21,11 +21,7 @@ impl RepoViewModel {
     }
 
     /// Takes notes by value: `SharedReviewStore` is not `Send`, so only this diff-walk half can run off the main thread.
-    pub(in crate::repo) fn load_review_notes(
-        &mut self,
-        notes: Vec<NoteEntry>,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn load_review_notes(&mut self, notes: Vec<NoteEntry>, cx: &mut Context<Self>) {
         self.loading.review_notes_gen = self.loading.review_notes_gen.wrapping_add(1);
         let generation = self.loading.review_notes_gen;
 

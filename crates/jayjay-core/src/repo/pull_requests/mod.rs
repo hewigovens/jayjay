@@ -6,4 +6,4 @@ mod gitlab;
 mod import;
 mod lookup;
 
-pub(in crate::repo) use lookup::PrLookup;
+pub(crate) use lookup::PrLookup;

@@ -142,14 +142,14 @@ impl TextArea {
         view
     }
 
-    pub(in crate::ui::text_area) fn syntax_spans(&self, line: usize) -> Option<&[DiffSpan]> {
+    pub(crate) fn syntax_spans(&self, line: usize) -> Option<&[DiffSpan]> {
         self.syntax
             .as_ref()
             .and_then(|syntax| syntax.lines.get(line))
             .map(Vec::as_slice)
     }
 
-    pub(in crate::ui::text_area) fn line_style(&self, line: usize) -> DiffSpanStyle {
+    pub(crate) fn line_style(&self, line: usize) -> DiffSpanStyle {
         self.syntax
             .as_ref()
             .and_then(|syntax| syntax.line_styles.get(line))

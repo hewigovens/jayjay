@@ -12,7 +12,7 @@ use crate::types::*;
 
 /// Keyed on the loaded repo handle: a refresh replaces it even when Git attributes or the index changed without a new jj operation.
 #[derive(Default)]
-pub(in crate::repo) struct LfsCache {
+pub(crate) struct LfsCache {
     repo: Option<Arc<ReadonlyRepo>>,
     attribute_says_lfs: HashMap<String, bool>,
     /// Lazy: a repo whose paths never claim `filter=lfs` never runs `git lfs ls-files`.

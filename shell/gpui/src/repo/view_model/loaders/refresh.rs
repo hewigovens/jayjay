@@ -55,7 +55,7 @@ impl RepoViewModel {
         self.refresh(true, cx);
     }
 
-    pub(in crate::repo) fn is_internal_mutation_echo(&self) -> bool {
+    pub(crate) fn is_internal_mutation_echo(&self) -> bool {
         self.last_internal_mutation_at
             .is_some_and(|at| at.elapsed() < MUTATION_ECHO_WINDOW)
     }
@@ -69,7 +69,7 @@ impl RepoViewModel {
     }
 
     /// `selection` is (change id, commit id): the commit wins, the change id is the fallback once a rewrite retired that commit.
-    pub(in crate::repo::view_model) fn refresh_preferring(
+    pub(crate) fn refresh_preferring(
         &mut self,
         is_auto_triggered: bool,
         selection: Option<(String, String)>,

@@ -1,9 +1,9 @@
 use super::super::persist::ReviewStore;
 
-pub(in crate::store) struct Persistence;
+pub(crate) struct Persistence;
 
 impl Persistence {
-    pub(in crate::store) fn in_memory() -> Self {
+    pub(crate) fn in_memory() -> Self {
         Self
     }
 }

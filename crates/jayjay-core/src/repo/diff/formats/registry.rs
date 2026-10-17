@@ -26,7 +26,7 @@ fn plugin_for_input(input: FormatInput<'_>) -> Option<&'static dyn DiffFormatPlu
         .find(|plugin| plugin.matches_input(input))
 }
 
-pub(in crate::repo::diff) enum PathProjection {
+pub(crate) enum PathProjection {
     None,
     Ready(DiffProjection),
     ContentGated,

@@ -12,7 +12,7 @@ pub(crate) enum PickerOutcome<A> {
 
 impl RepoWindow {
     /// `None` means the picker `query` selects is closed, so the key is not the picker's.
-    pub(in crate::repo::window) fn drive_picker<A: Clone>(
+    pub(crate) fn drive_picker<A: Clone>(
         &mut self,
         event: &KeyDownEvent,
         query: fn(&mut Self) -> Option<&mut PickerQuery>,
@@ -45,7 +45,7 @@ impl RepoWindow {
     }
 
     /// Re-anchors the selection after an edit that bypassed `drive_picker`, such as an IME commit.
-    pub(in crate::repo::window) fn picker_query_edited<A>(
+    pub(crate) fn picker_query_edited<A>(
         &mut self,
         query: fn(&mut Self) -> Option<&mut PickerQuery>,
         actions: impl Fn(&Self, &App) -> Vec<(A, usize)>,

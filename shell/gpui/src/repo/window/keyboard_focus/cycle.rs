@@ -11,11 +11,7 @@ impl RepoWindow {
         self.focused_control
     }
 
-    pub(in crate::repo::window) fn sync_keyboard_focus(
-        &mut self,
-        window: &Window,
-        cx: &App,
-    ) -> bool {
+    pub(crate) fn sync_keyboard_focus(&mut self, window: &Window, cx: &App) -> bool {
         // Mouse focus and field submission can bypass the Tab cycle.
         let focused = self.focused_text_input(window, cx).or_else(|| {
             self.focused_control.filter(|stop| {
@@ -30,7 +26,7 @@ impl RepoWindow {
     }
 
     /// Space and Return act only while a non-text control holds focus, so unfocused keys keep their pane meaning.
-    pub(in crate::repo::window) fn handle_keyboard_focus_key(
+    pub(crate) fn handle_keyboard_focus_key(
         &mut self,
         ev: &KeyDownEvent,
         window: &mut Window,
@@ -68,7 +64,7 @@ impl RepoWindow {
         true
     }
 
-    pub(in crate::repo::window) fn release_focused_control(
+    pub(crate) fn release_focused_control(
         &mut self,
         window: &Window,
         cx: &mut Context<Self>,
@@ -123,11 +119,7 @@ impl RepoWindow {
     }
 
     /// An input the user clicked into owns the cycle position, as if Tab had arrived there.
-    pub(in crate::repo::window) fn focused_text_input(
-        &self,
-        window: &Window,
-        cx: &App,
-    ) -> Option<FocusStop> {
+    pub(crate) fn focused_text_input(&self, window: &Window, cx: &App) -> Option<FocusStop> {
         let focused = |input: &Entity<TextArea>| input.read(cx).focus_handle(cx).is_focused(window);
         if focused(&self.commit_message.summary) {
             Some(FocusStop::CommitSummary)
@@ -183,7 +175,7 @@ impl RepoWindow {
         }
     }
 
-    pub(in crate::repo::window) fn focus_file_list(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn focus_file_list(&mut self, cx: &mut Context<Self>) {
         self.focused_control = None;
         self.active_pane = ActivePane::FileColumn;
         self.reconcile_file_selection(cx);

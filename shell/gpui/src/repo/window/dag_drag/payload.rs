@@ -19,7 +19,7 @@ pub(crate) enum DagDrag {
 }
 
 impl DagDrag {
-    pub(in crate::repo::window) fn for_change(
+    pub(crate) fn for_change(
         ix: usize,
         entries: &Arc<Vec<GraphEntry>>,
         selection: Option<Arc<DagDragSelection>>,
@@ -74,7 +74,7 @@ impl DagDrag {
             .unwrap_or_else(|| change.change_id.prefix(8))
     }
 
-    pub(in crate::repo::window) fn can_drop_on(&self, change: &ChangeInfo) -> bool {
+    pub(crate) fn can_drop_on(&self, change: &ChangeInfo) -> bool {
         match self {
             Self::WorkingCopy => !change.is_working_copy,
             Self::Bookmark { name, conflicted } => {

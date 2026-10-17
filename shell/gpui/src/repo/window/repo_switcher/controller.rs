@@ -81,7 +81,7 @@ impl RepoWindow {
         }
     }
 
-    pub(in crate::repo::window) fn handle_repo_switcher_key(
+    pub(crate) fn handle_repo_switcher_key(
         &mut self,
         event: &KeyDownEvent,
         cx: &mut Context<Self>,

@@ -4,7 +4,7 @@ use jayjay_core::ChangeInfo;
 use super::super::RepoViewModel;
 
 impl RepoViewModel {
-    pub(in crate::repo) fn refresh_pr_info(&mut self, change: &ChangeInfo, cx: &mut Context<Self>) {
+    pub(crate) fn refresh_pr_info(&mut self, change: &ChangeInfo, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
             return;
         };

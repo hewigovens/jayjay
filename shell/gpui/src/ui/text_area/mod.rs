@@ -11,5 +11,5 @@ pub use state::TextArea;
 pub(crate) use state::Tint;
 
 pub(crate) use action::Newline;
-pub(in crate::ui::text_area) use state::{LineLayout, TextLayout, TextLayoutKey};
+pub(crate) use state::{LineLayout, TextLayout, TextLayoutKey};
 pub(crate) use state::{TextAreaScrolled, TextAreaUpdated};

@@ -15,7 +15,7 @@ use crate::ui::primitives::button;
 use super::RepoWindow;
 use super::hunks::conflict_result_section;
 
-pub(in crate::repo::window) fn conflict_editor_overlay(
+pub(crate) fn conflict_editor_overlay(
     view: &RepoWindow,
     t: &Theme,
     cx: &mut Context<RepoWindow>,

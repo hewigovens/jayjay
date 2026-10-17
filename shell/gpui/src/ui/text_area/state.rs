@@ -71,14 +71,14 @@ enum TextAreaPresentation {
     Label,
 }
 
-pub(in crate::ui::text_area) struct TextLayout {
+pub(crate) struct TextLayout {
     pub(super) key: TextLayoutKey,
     pub(super) lines: Arc<[LineLayout]>,
     pub(super) line_height: Pixels,
 }
 
 #[derive(Clone, PartialEq)]
-pub(in crate::ui::text_area) struct TextLayoutKey {
+pub(crate) struct TextLayoutKey {
     pub(super) width: Pixels,
     pub(super) font: Font,
     pub(super) font_size: Pixels,
@@ -87,7 +87,7 @@ pub(in crate::ui::text_area) struct TextLayoutKey {
     pub(super) theme_colors: [u32; 14],
 }
 
-pub(in crate::ui::text_area) struct LineLayout {
+pub(crate) struct LineLayout {
     pub(super) logical_line: usize,
     pub(super) range: Range<usize>,
     pub(super) shaped: ShapedLine,
@@ -273,7 +273,7 @@ impl TextArea {
         self.scroll_y
     }
 
-    pub(in crate::ui::text_area) fn logical_line_count(&self) -> usize {
+    pub(crate) fn logical_line_count(&self) -> usize {
         self.content.matches('\n').count() + 1
     }
 

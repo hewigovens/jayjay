@@ -22,7 +22,7 @@ pub struct LoadedReviewSnapshot {
     pub display_groups: Vec<Vec<u32>>,
 }
 
-pub(in crate::repo) enum DiffLoadState {
+pub(crate) enum DiffLoadState {
     Missing,
     Failed,
     Loaded(LoadedDiff),

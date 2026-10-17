@@ -14,13 +14,13 @@ struct FileStamp {
     len: u64,
 }
 
-pub(in crate::store) struct Persistence {
+pub(crate) struct Persistence {
     save_path: Option<PathBuf>,
     loaded_stamp: Option<FileStamp>,
 }
 
 impl Persistence {
-    pub(in crate::store) fn in_memory() -> Self {
+    pub(crate) fn in_memory() -> Self {
         Self {
             save_path: None,
             loaded_stamp: None,

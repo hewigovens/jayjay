@@ -15,12 +15,12 @@ const OVERFLOW_DASH_PATTERN: &[f32] = &[10.0, 4.0, 10.0, 12.0];
 const INDIRECT_EDGE_DASH_PATTERN: &[f32] = &[3.0, 3.0];
 const MISSING_EDGE_DASH_PATTERN: &[f32] = &[2.0, 2.0];
 
-pub(in crate::repo::window) fn lane_column_width(display_lane_count: usize) -> f32 {
+pub(crate) fn lane_column_width(display_lane_count: usize) -> f32 {
     let lanes = display_lane_count.max(1);
     lanes as f32 * LANE_WIDTH + LEADING_PAD + TRAILING_PAD
 }
 
-pub(in crate::repo::window) struct DagRowLanes {
+pub(crate) struct DagRowLanes {
     pub row_lane: usize,
     pub pass_through_lanes: Vec<usize>,
     pub prev_active_lanes: Vec<usize>,
@@ -28,7 +28,7 @@ pub(in crate::repo::window) struct DagRowLanes {
     pub has_missing_ancestry: bool,
 }
 
-pub(in crate::repo::window) fn dag_column(
+pub(crate) fn dag_column(
     entry: &GraphEntry,
     lanes: DagRowLanes,
     layout: &DagLayout,

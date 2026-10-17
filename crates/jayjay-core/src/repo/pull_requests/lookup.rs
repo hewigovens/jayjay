@@ -7,7 +7,7 @@ use super::{codeberg, cursor, github, gitlab};
 const PREFERRED_PULL_REQUEST_BASES: &[&str] = &["main", "master", "trunk"];
 const NO_SUPPORTED_REMOTE: &str = "Couldn't determine a pull request URL — no GitHub, GitLab, Codeberg, or Cursor \"origin\" remote found.";
 
-pub(in crate::repo) enum PrLookup {
+pub(crate) enum PrLookup {
     Found(PrInfo),
     NotFound,
     Unknown,

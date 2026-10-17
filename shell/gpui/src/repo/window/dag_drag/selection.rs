@@ -9,7 +9,7 @@ pub(crate) struct DagDragSelection {
 }
 
 impl DagDragSelection {
-    pub(in crate::repo::window) fn of(vm: &RepoViewModel) -> Option<Arc<Self>> {
+    pub(crate) fn of(vm: &RepoViewModel) -> Option<Arc<Self>> {
         let selected = vm.selected_change_indices();
         if selected.len() < 2 {
             return None;

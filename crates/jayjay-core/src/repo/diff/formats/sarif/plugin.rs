@@ -6,7 +6,7 @@ use super::super::{
 };
 use super::model::{SarifMessage, SarifReport, SarifResult, SarifRun};
 
-pub(in crate::repo::diff::formats) struct SarifPlugin;
+pub(crate) struct SarifPlugin;
 
 impl DiffFormatPlugin for SarifPlugin {
     fn id(&self) -> &'static str {

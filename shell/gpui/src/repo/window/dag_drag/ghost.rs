@@ -13,7 +13,7 @@ pub(crate) struct DagDragGhost {
 }
 
 impl DagDragGhost {
-    pub(in crate::repo::window) fn new(drag: DagDrag) -> Self {
+    pub(crate) fn new(drag: DagDrag) -> Self {
         Self { drag }
     }
 }

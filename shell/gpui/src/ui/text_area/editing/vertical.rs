@@ -4,34 +4,19 @@ use super::super::TextArea;
 use super::super::action::{Down, SelectDown, SelectUp, Up};
 
 impl TextArea {
-    pub(in crate::ui::text_area) fn up(&mut self, _: &Up, _: &mut Window, cx: &mut Context<Self>) {
+    pub(crate) fn up(&mut self, _: &Up, _: &mut Window, cx: &mut Context<Self>) {
         self.move_to(self.offset_for_vertical_move(-1), cx);
     }
 
-    pub(in crate::ui::text_area) fn down(
-        &mut self,
-        _: &Down,
-        _: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn down(&mut self, _: &Down, _: &mut Window, cx: &mut Context<Self>) {
         self.move_to(self.offset_for_vertical_move(1), cx);
     }
 
-    pub(in crate::ui::text_area) fn select_up(
-        &mut self,
-        _: &SelectUp,
-        _: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn select_up(&mut self, _: &SelectUp, _: &mut Window, cx: &mut Context<Self>) {
         self.select_to(self.offset_for_vertical_move(-1), cx);
     }
 
-    pub(in crate::ui::text_area) fn select_down(
-        &mut self,
-        _: &SelectDown,
-        _: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn select_down(&mut self, _: &SelectDown, _: &mut Window, cx: &mut Context<Self>) {
         self.select_to(self.offset_for_vertical_move(1), cx);
     }
 

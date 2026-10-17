@@ -53,7 +53,7 @@ pub struct RepoViewModel {
     /// One-shot, consumed synchronously by `select_change` so a superseded call can't leak it into an unrelated selection.
     pub(super) pending_file_selection: Option<String>,
     /// Shown once the next refresh lands, since re-selecting the refreshed change clears `error`; a new action drops it.
-    pub(in crate::repo) pending_error: Option<SharedString>,
+    pub(crate) pending_error: Option<SharedString>,
     pub(super) selection_cache: RefCell<Option<SelectionCache>>,
 }
 

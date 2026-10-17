@@ -7,12 +7,7 @@ use super::super::action::{
 };
 
 impl TextArea {
-    pub(in crate::ui::text_area) fn newline(
-        &mut self,
-        _: &Newline,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn newline(&mut self, _: &Newline, window: &mut Window, cx: &mut Context<Self>) {
         if !self.is_editable() {
             return;
         }
@@ -24,12 +19,7 @@ impl TextArea {
         }
     }
 
-    pub(in crate::ui::text_area) fn backspace(
-        &mut self,
-        _: &Backspace,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn backspace(&mut self, _: &Backspace, window: &mut Window, cx: &mut Context<Self>) {
         if !self.is_editable() {
             return;
         }
@@ -40,12 +30,7 @@ impl TextArea {
         self.replace_text_in_range(None, "", window, cx);
     }
 
-    pub(in crate::ui::text_area) fn delete(
-        &mut self,
-        _: &Delete,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn delete(&mut self, _: &Delete, window: &mut Window, cx: &mut Context<Self>) {
         if !self.is_editable() {
             return;
         }
@@ -56,7 +41,7 @@ impl TextArea {
         self.replace_text_in_range(None, "", window, cx);
     }
 
-    pub(in crate::ui::text_area) fn delete_previous_word(
+    pub(crate) fn delete_previous_word(
         &mut self,
         _: &DeletePreviousWord,
         window: &mut Window,
@@ -72,7 +57,7 @@ impl TextArea {
         self.replace_text_in_range(None, "", window, cx);
     }
 
-    pub(in crate::ui::text_area) fn delete_to_line_start(
+    pub(crate) fn delete_to_line_start(
         &mut self,
         _: &DeleteToLineStart,
         window: &mut Window,
@@ -88,7 +73,7 @@ impl TextArea {
         self.replace_text_in_range(None, "", window, cx);
     }
 
-    pub(in crate::ui::text_area) fn delete_to_line_end(
+    pub(crate) fn delete_to_line_end(
         &mut self,
         _: &DeleteToLineEnd,
         window: &mut Window,
@@ -104,12 +89,7 @@ impl TextArea {
         self.replace_text_in_range(None, "", window, cx);
     }
 
-    pub(in crate::ui::text_area) fn paste(
-        &mut self,
-        _: &Paste,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn paste(&mut self, _: &Paste, window: &mut Window, cx: &mut Context<Self>) {
         if !self.is_editable() {
             return;
         }
@@ -123,12 +103,7 @@ impl TextArea {
         }
     }
 
-    pub(in crate::ui::text_area) fn copy(
-        &mut self,
-        _: &Copy,
-        _: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn copy(&mut self, _: &Copy, _: &mut Window, cx: &mut Context<Self>) {
         if !self.selection.is_empty() {
             cx.write_to_clipboard(ClipboardItem::new_string(
                 self.content[self.selection.range().clone()].to_string(),
@@ -136,12 +111,7 @@ impl TextArea {
         }
     }
 
-    pub(in crate::ui::text_area) fn cut(
-        &mut self,
-        _: &Cut,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn cut(&mut self, _: &Cut, window: &mut Window, cx: &mut Context<Self>) {
         if !self.is_editable() {
             return;
         }

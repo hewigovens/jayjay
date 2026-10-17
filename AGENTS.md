@@ -139,6 +139,7 @@ Update `agents/*.md` in the feature change only when the **contributor/agent con
 - Split by single responsibility and module, not by line count. When a type or module grows a second job, extract a type or a sibling module — do not split a cohesive type just because the file got long.
 - Group related files into responsibility folders; don't create folders for singletons.
 - Rust: prefer folder modules over long single-file modules. Keep `mod.rs` and `lib.rs` thin: module declarations and `pub use` re-exports only. Put implementation in sibling modules named for the responsibility they own, such as `wrap/cols.rs`, `wrap/unified.rs`, and `wrap/side_by_side.rs`.
+- Rust visibility: use `pub(crate)` (or `pub(super)` for a direct parent); never path-scoped `pub(in crate::…)` / `pub(in super::super)`, which buries the signature behind a module path.
 - Swift: growing types split into `TypeName+Responsibility.swift` extension files by job, not by length.
 
 ## Version Control

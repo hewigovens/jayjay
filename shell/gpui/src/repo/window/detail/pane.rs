@@ -10,7 +10,7 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
 use crate::ui::icons::{self, glyph};
 
-pub(in crate::repo::window) fn detail_pane(
+pub(crate) fn detail_pane(
     view: &RepoWindow,
     t: &Theme,
     window: &mut Window,

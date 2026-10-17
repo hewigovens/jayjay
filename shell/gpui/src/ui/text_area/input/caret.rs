@@ -3,11 +3,7 @@ use gpui::{Context, Window};
 use super::super::TextArea;
 
 impl TextArea {
-    pub(in crate::ui::text_area) fn ensure_focus_handlers(
-        &mut self,
-        window: &mut Window,
-        cx: &mut Context<Self>,
-    ) {
+    pub(crate) fn ensure_focus_handlers(&mut self, window: &mut Window, cx: &mut Context<Self>) {
         if !self.focus_subscriptions.is_empty() {
             return;
         }
@@ -25,11 +21,11 @@ impl TextArea {
         }
     }
 
-    pub(in crate::ui::text_area) fn caret_visible(&self) -> bool {
+    pub(crate) fn caret_visible(&self) -> bool {
         self.caret.visible()
     }
 
-    pub(in crate::ui::text_area) fn show_caret(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn show_caret(&mut self, cx: &mut Context<Self>) {
         if !self.is_editable() {
             self.caret.hide(cx);
             return;

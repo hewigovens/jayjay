@@ -5,7 +5,7 @@ use gpui::Context;
 use super::super::RepoViewModel;
 
 impl RepoViewModel {
-    pub(in crate::repo) fn load_annotate(&mut self, cx: &mut Context<Self>) {
+    pub(crate) fn load_annotate(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
             return;
         };

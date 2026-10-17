@@ -50,7 +50,7 @@ impl Typeset {
     }
 }
 
-pub(in crate::ui::text_area) fn layout_key(
+pub(crate) fn layout_key(
     width: Pixels,
     window: &Window,
     theme: &Theme,
@@ -82,7 +82,7 @@ pub(in crate::ui::text_area) fn layout_key(
     }
 }
 
-pub(in crate::ui::text_area) fn layout_text(
+pub(crate) fn layout_text(
     input: &TextArea,
     key: TextLayoutKey,
     bounds: Bounds<Pixels>,

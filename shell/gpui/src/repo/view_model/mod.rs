@@ -20,7 +20,7 @@ mod tasks;
 
 pub use diff_cache::DiffCache;
 pub use graph_data::GraphData;
-pub(in crate::repo) use loaded_content::DiffLoadState;
+pub(crate) use loaded_content::DiffLoadState;
 pub use loaded_content::{LoadedDiff, LoadedReviewSnapshot, SvgPreviewContent};
 pub use loading_state::{LoadingState, PendingRefresh};
 pub use notes_state::NotesState;

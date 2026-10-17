@@ -21,7 +21,7 @@ enum RepoTaskKind {
 }
 
 impl RepoViewModel {
-    pub(in crate::repo) fn background_update<T>(
+    pub(crate) fn background_update<T>(
         cx: &mut Context<Self>,
         future: impl Future<Output = T> + Send + 'static,
         update: impl FnOnce(&mut Self, T, &mut Context<Self>) + 'static,
@@ -35,7 +35,7 @@ impl RepoViewModel {
         .detach();
     }
 
-    pub(in crate::repo) fn delayed_update(
+    pub(crate) fn delayed_update(
         cx: &mut Context<Self>,
         delay: Duration,
         update: impl FnOnce(&mut Self, &mut Context<Self>) + 'static,
@@ -47,7 +47,7 @@ impl RepoViewModel {
         .detach();
     }
 
-    pub(in crate::repo) fn repo_write_task(
+    pub(crate) fn repo_write_task(
         &mut self,
         cx: &mut Context<Self>,
         write: impl FnOnce(Arc<Repo>) -> JayResult<()> + Send + 'static,
@@ -56,7 +56,7 @@ impl RepoViewModel {
         self.repo_result_task(cx, write, move |vm, _, cx| on_success(vm, cx))
     }
 
-    pub(in crate::repo) fn repo_result_task<T>(
+    pub(crate) fn repo_result_task<T>(
         &mut self,
         cx: &mut Context<Self>,
         read_or_write: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
@@ -68,7 +68,7 @@ impl RepoViewModel {
         self.run_repo_task(cx, RepoTaskKind::Action, read_or_write, on_success)
     }
 
-    pub(in crate::repo) fn repo_result_task_without_indicator<T>(
+    pub(crate) fn repo_result_task_without_indicator<T>(
         &mut self,
         cx: &mut Context<Self>,
         read_or_write: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
@@ -80,7 +80,7 @@ impl RepoViewModel {
         self.run_repo_task(cx, RepoTaskKind::QuietAction, read_or_write, on_success)
     }
 
-    pub(in crate::repo) fn repo_load_task<T>(
+    pub(crate) fn repo_load_task<T>(
         &mut self,
         cx: &mut Context<Self>,
         read: impl FnOnce(Arc<Repo>) -> JayResult<T> + Send + 'static,
@@ -147,7 +147,7 @@ impl RepoViewModel {
         })
     }
 
-    pub(in crate::repo) fn core_result_task(
+    pub(crate) fn core_result_task(
         cx: &mut Context<Self>,
         future: impl Future<Output = JayResult<()>> + Send + 'static,
         update: impl FnOnce(&mut Self, JayResult<()>, &mut Context<Self>) -> JayResult<()> + 'static,
