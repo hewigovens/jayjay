@@ -259,7 +259,6 @@ fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
     }
 }
 
-/// Filtering out the focused file must scroll to the surviving multi-selected row, not reset the list to the top.
 #[gpui::test]
 fn filtering_to_a_surviving_multi_selected_file_scrolls_it_into_view(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
@@ -280,11 +279,7 @@ fn filtering_to_a_surviving_multi_selected_file_scrolls_it_into_view(cx: &mut Te
 
     click(&view, cx, "file20.txt", Modifiers::default());
     click(&view, cx, "zzz.txt", shift());
-    assert_eq!(
-        primary_path(&view, cx).as_deref(),
-        Some("zzz.txt"),
-        "the shift-clicked file becomes the focused row"
-    );
+    assert_eq!(primary_path(&view, cx).as_deref(), Some("zzz.txt"));
 
     let toggle = cx
         .debug_bounds("toggle-file-filter")
@@ -298,19 +293,12 @@ fn filtering_to_a_surviving_multi_selected_file_scrolls_it_into_view(cx: &mut Te
     cx.simulate_input("file");
     settle_visual(cx);
 
-    assert_eq!(
-        primary_path(&view, cx).as_deref(),
-        Some("file20.txt"),
-        "focus moves to the surviving multi-selected row"
-    );
+    assert_eq!(primary_path(&view, cx).as_deref(), Some("file20.txt"));
     let visible = view.read_with(cx, |view, cx| view.visible_file_paths(cx));
     assert_eq!(
         visible.iter().position(|path| path == "file20.txt"),
         Some(20),
         "filtered list: {visible:?}"
     );
-    assert!(
-        cx.debug_bounds("file-row-20").is_some(),
-        "the focused row must scroll into view instead of sitting below the reset list"
-    );
+    assert!(cx.debug_bounds("file-row-20").is_some());
 }

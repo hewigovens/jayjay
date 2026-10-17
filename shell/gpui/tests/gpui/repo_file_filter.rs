@@ -1,110 +1,71 @@
 use std::sync::Arc;
 
 use crate::harness::{keys, open_fixture, settle_visual};
-use gpui::{Modifiers, TestAppContext};
+use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::mock::diff_hunk;
 use jayjay_core::{DiffContent, DiffHunk};
-use jayjay_gpui::repo::ActivePane;
+use jayjay_gpui::app::config::{self, DiffConfig};
+use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jj_test::{LinearFixture, run_jj_in};
 
 const LFS_POINTER: &str = "version https://git-lfs.github.com/spec/v1\noid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\nsize 742800\n";
 
-fn set_hide_git_lfs(cx: &mut gpui::VisualTestContext, hide: bool) {
-    cx.cx.update(|cx| {
-        jayjay_gpui::app::config::update(cx, |config| config.diff.hide_git_lfs = hide);
-    });
+const LFS_SUMMARY: &str = "<git lfs pointer sha256:496634778d7b (742800 bytes)>";
+
+fn set_diff_config(cx: &mut VisualTestContext, edit: impl FnOnce(&mut DiffConfig)) {
+    cx.cx
+        .update(|cx| config::update(cx, |config| edit(&mut config.diff)));
+    settle_visual(cx);
 }
 
-fn set_submodule_support(cx: &mut gpui::VisualTestContext, enabled: bool) {
-    cx.cx.update(|cx| {
-        jayjay_gpui::app::config::update(cx, |config| {
-            config.diff.enable_git_submodule_support = enabled
-        });
-    });
-}
-
-fn visible_paths(
-    view: &gpui::Entity<jayjay_gpui::repo::RepoWindow>,
-    cx: &mut gpui::VisualTestContext,
-) -> Vec<String> {
+fn visible_paths(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> Vec<String> {
     view.read_with(cx, |view, cx| view.visible_file_paths(cx))
 }
 
-/// Summary hunks carry no content, so the placeholder clauses need the content a loaded hunk would have.
-fn set_hunk_content(
-    view: &gpui::Entity<jayjay_gpui::repo::RepoWindow>,
-    cx: &mut gpui::VisualTestContext,
-    path: &str,
-    content: &str,
-) {
+// Summary hunks carry no content, so a test sets what a loaded hunk would hold.
+fn set_hunk_content(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, hunk: DiffHunk) {
     view.update_in(cx, |view, _, cx| {
         view.view_model().update(cx, |vm, cx| {
-            let files = vm.files.as_mut().expect("files loaded");
-            let hunk = Arc::make_mut(files)
-                .iter_mut()
-                .find(|hunk| hunk.path == path)
-                .expect("hunk present");
-            hunk.new = DiffContent::new(Some(content.to_owned()), None);
+            let files = Arc::make_mut(vm.files.as_mut().expect("files loaded"));
+            match files.iter_mut().find(|file| file.path == hunk.path) {
+                Some(file) => file.new = hunk.new,
+                None => files.push(hunk),
+            }
             cx.notify();
         });
     });
     settle_visual(cx);
 }
 
+fn hunk(path: &str, content: &str) -> DiffHunk {
+    DiffHunk {
+        new: DiffContent::new(Some(content.to_owned()), None),
+        ..diff_hunk(path)
+    }
+}
+
 #[gpui::test]
-fn lfs_pointer_files_hide_by_default_and_reappear_when_the_setting_is_off(cx: &mut TestAppContext) {
+fn lfs_and_submodule_files_follow_their_visibility_settings(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     fixture.add_tracked_working_copy_edits();
     std::fs::write(fixture.path.join("model.bin"), LFS_POINTER).expect("write lfs pointer");
     run_jj_in(&fixture.path, &["st"]);
-
     let (view, cx) = open_fixture(&fixture, cx);
-    set_hunk_content(
-        &view,
-        cx,
-        "model.bin",
-        "<git lfs pointer sha256:496634778d7b (742800 bytes)>",
+    set_hunk_content(&view, cx, hunk("model.bin", LFS_SUMMARY));
+    set_hunk_content(&view, cx, hunk("vendor/sub", "<git submodule deadbeef>"));
+
+    let visible = visible_paths(&view, cx);
+    assert!(
+        !visible
+            .iter()
+            .any(|path| path == "model.bin" || path == "vendor/sub"),
+        "{visible:?}"
     );
 
-    let visible = visible_paths(&view, cx);
-    assert!(!visible.contains(&"model.bin".to_owned()), "{visible:?}");
-
-    set_hide_git_lfs(cx, false);
-    settle_visual(cx);
-
-    let visible = visible_paths(&view, cx);
-    assert!(visible.contains(&"model.bin".to_owned()), "{visible:?}");
-}
-
-#[gpui::test]
-fn submodule_placeholders_hide_until_submodule_support_is_enabled(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    fixture.add_tracked_working_copy_edits();
-    let (view, cx) = open_fixture(&fixture, cx);
-
-    let submodule = DiffHunk {
-        path: "vendor/sub".to_owned(),
-        new: DiffContent::new(Some("<git submodule deadbeef>".to_owned()), None),
-        ..diff_hunk("vendor/sub")
-    };
-    view.update_in(cx, |view, _, cx| {
-        view.view_model().update(cx, |vm, cx| {
-            let mut files = (**vm.files.as_ref().expect("files loaded")).clone();
-            files.push(submodule);
-            vm.files = Some(Arc::new(files));
-            cx.notify();
-        });
-    });
-    settle_visual(cx);
-
-    let visible = visible_paths(&view, cx);
-    assert!(!visible.contains(&"vendor/sub".to_owned()), "{visible:?}");
-
-    set_submodule_support(cx, true);
-    settle_visual(cx);
-
-    let visible = visible_paths(&view, cx);
-    assert!(visible.contains(&"vendor/sub".to_owned()), "{visible:?}");
+    set_diff_config(cx, |diff| diff.hide_git_lfs = false);
+    assert!(visible_paths(&view, cx).contains(&"model.bin".to_owned()));
+    set_diff_config(cx, |diff| diff.enable_git_submodule_support = true);
+    assert!(visible_paths(&view, cx).contains(&"vendor/sub".to_owned()));
 }
 
 #[gpui::test]
@@ -113,29 +74,14 @@ fn hiding_every_file_shows_the_hidden_only_diff_placeholder(cx: &mut TestAppCont
     run_jj_in(&fixture.path, &["new", "-m", "seed"]);
     std::fs::write(fixture.path.join("model.bin"), LFS_POINTER).expect("write lfs pointer");
     run_jj_in(&fixture.path, &["st"]);
-
     let (view, cx) = open_fixture(&fixture, cx);
-    set_hunk_content(
-        &view,
-        cx,
-        "model.bin",
-        "<git lfs pointer sha256:496634778d7b (742800 bytes)>",
-    );
+    set_hunk_content(&view, cx, hunk("model.bin", LFS_SUMMARY));
 
-    let visible = visible_paths(&view, cx);
-    assert!(visible.is_empty(), "{visible:?}");
-    assert!(
-        cx.debug_bounds("hidden-git-files-placeholder").is_some(),
-        "the diff pane must explain that every changed file is hidden"
-    );
+    assert!(visible_paths(&view, cx).is_empty());
+    assert!(cx.debug_bounds("hidden-git-files-placeholder").is_some());
 
-    set_hide_git_lfs(cx, false);
-    settle_visual(cx);
-
-    assert!(
-        cx.debug_bounds("hidden-git-files-placeholder").is_none(),
-        "the placeholder must go away once the file is visible"
-    );
+    set_diff_config(cx, |diff| diff.hide_git_lfs = false);
+    assert!(cx.debug_bounds("hidden-git-files-placeholder").is_none());
     assert_eq!(visible_paths(&view, cx), ["model.bin"]);
 }
 

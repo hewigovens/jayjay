@@ -662,19 +662,12 @@ fn clearing_review_data_empties_the_store_and_repaints_open_repo_windows(cx: &mu
     fixture.add_tracked_working_copy_edits();
     let (repo, repo_cx) = open_fixture(&fixture, cx);
 
-    // Review the last row so hiding it changes which rendered row indices exist.
     let ix = select_file(&repo, "wip2.txt", repo_cx);
     let (change_id, identity) = repo.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
         let hunk = &vm.files.as_ref().expect("files loaded")[ix];
-        (
-            vm.selected_change()
-                .expect("selected change")
-                .change_id
-                .id
-                .clone(),
-            hunk.review_identity.clone(),
-        )
+        let change = vm.selected_change().expect("selected change");
+        (change.change_id.id.clone(), hunk.review_identity.clone())
     });
     repo.update_in(repo_cx, |view, _, cx| {
         view.toggle_reviewed(change_id, "wip2.txt".to_owned(), identity, cx);
@@ -683,45 +676,34 @@ fn clearing_review_data_empties_the_store_and_repaints_open_repo_windows(cx: &mu
         jayjay_gpui::app::config::update(cx, |config| config.diff.hide_reviewed_files = true);
     });
     settle_visual(repo_cx);
-    assert_eq!(
-        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx)),
-        ["README.md", "feature.txt", "wip1.txt"]
-    );
+    let visible = |repo_cx: &mut VisualTestContext| {
+        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx))
+    };
+    assert_eq!(visible(repo_cx), ["README.md", "feature.txt", "wip1.txt"]);
     assert!(repo_cx.debug_bounds("file-row-3").is_none());
 
     repo_cx
         .cx
         .update(|cx| SettingsView::open_section(SettingsSection::DataPrivacy, cx));
-    let settings_window = repo_cx
+    let window = repo_cx
         .cx
         .windows()
         .last()
         .copied()
         .expect("settings window");
-    let mut settings_cx = VisualTestContext::from_window(settings_window, &repo_cx.cx);
+    let mut settings_cx = VisualTestContext::from_window(window, &repo_cx.cx);
     settle_visual(&mut settings_cx);
 
     click_setting(&mut settings_cx, "settings-clear-review-data");
-    assert!(
-        settings_cx.debug_bounds("confirmation").is_some(),
-        "clearing review data must ask first"
-    );
+    assert!(settings_cx.debug_bounds("confirmation").is_some());
     click_setting(&mut settings_cx, "settings-clear-review-cancel");
-    assert_eq!(
-        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx)),
-        ["README.md", "feature.txt", "wip1.txt"],
-        "cancelling the confirmation keeps every mark"
-    );
+    assert_eq!(visible(repo_cx), ["README.md", "feature.txt", "wip1.txt"]);
 
     click_setting(&mut settings_cx, "settings-clear-review-data");
     click_setting(&mut settings_cx, "settings-clear-review-submit");
     assert_eq!(
-        repo.read_with(repo_cx, |view, cx| view.visible_file_paths(cx)),
-        ["README.md", "feature.txt", "wip1.txt", "wip2.txt"],
-        "clearing empties the shared store"
+        visible(repo_cx),
+        ["README.md", "feature.txt", "wip1.txt", "wip2.txt"]
     );
-    assert!(
-        repo_cx.debug_bounds("file-row-3").is_some(),
-        "clearing from settings must repaint open repo windows"
-    );
+    assert!(repo_cx.debug_bounds("file-row-3").is_some());
 }

@@ -1,5 +1,7 @@
 use crate::harness::*;
-use gpui::{Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext, point, px};
+use gpui::{
+    Entity, Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext, point, px,
+};
 use jayjay_core::bookmark_filter_revset;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
@@ -1056,51 +1058,23 @@ fn bookmark_picker_tracks_an_untracked_remote_from_the_local_menu(cx: &mut TestA
         &["bookmark", "untrack", "local-track@origin"],
     );
     let (view, repo_cx) = open_fixture(&fixture, cx);
-    repo_cx.focus(&view);
 
-    let button = repo_cx
-        .debug_bounds("bookmarks-button-2")
-        .expect("bookmark picker button");
-    repo_cx.simulate_click(button.center(), Modifiers::default());
-    settle_visual(repo_cx);
-    let row = repo_cx
-        .debug_bounds("bookmark-picker-row-local-track")
-        .expect("local bookmark row");
-    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
-    settle_visual(repo_cx);
-    assert!(
-        menu_shows(repo_cx, "Track Remote"),
-        "local menu should offer tracking"
-    );
+    open_bookmark_menu(&view, repo_cx, "local-track");
     let header = repo_cx
         .debug_bounds("context-menu-Track Remote")
-        .expect("track submenu header");
+        .expect("track submenu");
     repo_cx.simulate_mouse_move(header.center(), MouseButton::Left, Modifiers::default());
     settle_visual(repo_cx);
-    let choice = repo_cx
-        .debug_bounds("context-menu-origin")
-        .expect("untracked remote choice");
-    repo_cx.simulate_click(choice.center(), Modifiers::default());
-    settle_visual(repo_cx);
+    click_menu_item(repo_cx, "context-menu-origin");
 
     assert!(repo_cx.debug_bounds("bookmark-picker-panel").is_none());
-    let bookmarks = jayjay_core::Repo::open(&fixture.path)
-        .expect("open fixture")
-        .list_bookmarks()
-        .expect("list bookmarks");
-    let bookmark = bookmarks
-        .iter()
+    assert_no_error(&view, repo_cx);
+    let bookmark = bookmarks(&fixture)
+        .into_iter()
         .find(|bookmark| bookmark.name == "local-track")
-        .expect("tracked bookmark");
-    assert!(
-        bookmark.has_local_target && bookmark.is_tracking_remote,
-        "untracked remote should become tracked"
-    );
+        .expect("bookmark");
+    assert!(bookmark.has_local_target && bookmark.is_tracking_remote);
     assert!(bookmark.tracked_remotes.contains(&"origin".to_owned()));
-    view.read_with(repo_cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        assert!(vm.error.is_none(), "{:?}", vm.error);
-    });
 }
 
 #[gpui::test]
@@ -1109,34 +1083,79 @@ fn bookmark_picker_pull_fetches_the_tracked_bookmark(cx: &mut TestAppContext) {
     let remote = create_tracked_bookmark(&fixture, "pull-me");
     let upstream = advance_remote_bookmark(&remote, "pull-me");
     let (view, repo_cx) = open_fixture(&fixture, cx);
-    repo_cx.focus(&view);
 
-    let button = repo_cx
-        .debug_bounds("bookmarks-button-2")
-        .expect("bookmark picker button");
-    repo_cx.simulate_click(button.center(), Modifiers::default());
-    settle_visual(repo_cx);
-    let row = repo_cx
-        .debug_bounds("bookmark-picker-row-pull-me")
-        .expect("tracked bookmark row");
-    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
-    settle_visual(repo_cx);
-    assert!(menu_shows(repo_cx, "Pull"));
-    let pull = repo_cx
-        .debug_bounds("context-menu-Pull")
-        .expect("pull menu item");
-    repo_cx.simulate_click(pull.center(), Modifiers::default());
-    settle_visual(repo_cx);
+    open_bookmark_menu(&view, repo_cx, "pull-me");
+    click_menu_item(repo_cx, "context-menu-Pull");
 
-    view.read_with(repo_cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        assert!(vm.error.is_none(), "{:?}", vm.error);
-    });
+    assert_no_error(&view, repo_cx);
     let local = run_jj_in(
         &fixture.path,
         &["log", "--no-graph", "-r", "pull-me", "-T", "commit_id"],
     );
     assert_eq!(String::from_utf8_lossy(&local.stdout), upstream);
+}
+
+#[gpui::test]
+fn bookmark_picker_rename_rewrites_the_local_name(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "rename-me", "-r", "@"],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+
+    open_bookmark_menu(&view, repo_cx, "rename-me");
+    click_menu_item(repo_cx, "context-menu-Rename...");
+    let input = view
+        .read_with(repo_cx, |view, _| view.text_modal_input())
+        .expect("rename dialog");
+    repo_cx.focus(&input);
+    repo_cx.simulate_keystrokes(&format!("{}-a", jayjay_gpui::platform::MOD_KEY));
+    repo_cx.simulate_input("renamed");
+    view.update_in(repo_cx, |view, _, cx| view.submit_text_modal(cx));
+    settle_visual(repo_cx);
+
+    assert!(!view.read_with(repo_cx, |view, _| view.has_text_modal()));
+    let names: Vec<String> = bookmarks(&fixture)
+        .into_iter()
+        .filter(|bookmark| !bookmark.is_deleted)
+        .map(|bookmark| bookmark.name)
+        .collect();
+    assert!(names.contains(&"renamed".to_owned()) && !names.contains(&"rename-me".to_owned()));
+}
+
+fn open_bookmark_menu(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, name: &str) {
+    cx.focus(view);
+    let button = cx
+        .debug_bounds("bookmarks-button-2")
+        .expect("bookmark picker");
+    cx.simulate_click(button.center(), Modifiers::default());
+    settle_visual(cx);
+    let row = cx
+        .debug_bounds(selector(format!("bookmark-picker-row-{name}")))
+        .expect("bookmark row");
+    cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+}
+
+fn click_menu_item(cx: &mut VisualTestContext, selector: &'static str) {
+    let item = cx.debug_bounds(selector).expect(selector);
+    cx.simulate_click(item.center(), Modifiers::default());
+    settle_visual(cx);
+}
+
+fn assert_no_error(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "{:?}", vm.error);
+    });
+}
+
+fn bookmarks(fixture: &LinearFixture) -> Vec<jayjay_core::BookmarkInfo> {
+    jayjay_core::Repo::open(&fixture.path)
+        .expect("open fixture")
+        .list_bookmarks()
+        .expect("list bookmarks")
 }
 
 fn advance_remote_bookmark(remote: &tempfile::TempDir, name: &str) -> String {
@@ -1162,57 +1181,4 @@ fn advance_remote_bookmark(remote: &tempfile::TempDir, name: &str) -> String {
     run_git(&clone, &["push", "origin", name]);
     let head = run_git(&clone, &["rev-parse", "HEAD"]);
     String::from_utf8_lossy(&head.stdout).trim().to_owned()
-}
-
-#[gpui::test]
-fn bookmark_picker_rename_rewrites_the_local_name(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    run_jj_in(
-        &fixture.path,
-        &["bookmark", "create", "rename-me", "-r", "@"],
-    );
-    let (view, repo_cx) = open_fixture(&fixture, cx);
-    repo_cx.focus(&view);
-
-    let button = repo_cx
-        .debug_bounds("bookmarks-button-2")
-        .expect("bookmark picker button");
-    repo_cx.simulate_click(button.center(), Modifiers::default());
-    settle_visual(repo_cx);
-    let row = repo_cx
-        .debug_bounds("bookmark-picker-row-rename-me")
-        .expect("bookmark row");
-    repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
-    settle_visual(repo_cx);
-    let rename = repo_cx
-        .debug_bounds("context-menu-Rename...")
-        .expect("rename menu item");
-    repo_cx.simulate_click(rename.center(), Modifiers::default());
-    settle_visual(repo_cx);
-
-    assert!(
-        view.read_with(repo_cx, |view, _| view.has_text_modal()),
-        "Rename should open the bookmark dialog"
-    );
-    let input = view
-        .read_with(repo_cx, |view, _| view.text_modal_input())
-        .expect("rename input");
-    repo_cx.focus(&view);
-    repo_cx.focus(&input);
-    repo_cx.simulate_keystrokes(&format!("{}-a", jayjay_gpui::platform::MOD_KEY));
-    repo_cx.simulate_input("renamed");
-    view.update_in(repo_cx, |view, _, cx| view.submit_text_modal(cx));
-    settle_visual(repo_cx);
-
-    assert!(!view.read_with(repo_cx, |view, _| view.has_text_modal()));
-    let names: Vec<String> = jayjay_core::Repo::open(&fixture.path)
-        .expect("open fixture")
-        .list_bookmarks()
-        .expect("list bookmarks")
-        .into_iter()
-        .filter(|bookmark| !bookmark.is_deleted)
-        .map(|bookmark| bookmark.name)
-        .collect();
-    assert!(names.iter().any(|name| name == "renamed"));
-    assert!(!names.iter().any(|name| name == "rename-me"));
 }

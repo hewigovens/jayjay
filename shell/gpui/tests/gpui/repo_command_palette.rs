@@ -285,37 +285,16 @@ fn palette_workspace_entry_switches_the_current_window(cx: &mut TestAppContext) 
 #[gpui::test]
 fn command_palette_zoom_entries_change_the_font_size(cx: &mut TestAppContext) {
     install_test_globals(cx);
-    let baseline = font_sizes(cx);
-
-    {
-        let mut palette_cx = open_bare_palette(cx);
-        click_palette_row(&mut palette_cx, "zoom in", "command-palette-action-zoom-in");
+    let (interface, code) = font_sizes(cx);
+    for (query, selector, delta) in [
+        ("zoom in", "command-palette-action-zoom-in", 1.),
+        ("zoom out", "command-palette-action-zoom-out", 0.),
+        ("zoom in", "command-palette-action-zoom-in", 1.),
+        ("reset zoom", "command-palette-action-reset-zoom", 0.),
+    ] {
+        click_palette_row(&mut open_bare_palette(cx), query, selector);
+        assert_eq!(font_sizes(cx), (interface + delta, code + delta), "{query}");
     }
-    assert_eq!(font_sizes(cx), (baseline.0 + 1., baseline.1 + 1.));
-
-    {
-        let mut palette_cx = open_bare_palette(cx);
-        click_palette_row(
-            &mut palette_cx,
-            "zoom out",
-            "command-palette-action-zoom-out",
-        );
-    }
-    assert_eq!(font_sizes(cx), baseline);
-
-    {
-        let mut palette_cx = open_bare_palette(cx);
-        click_palette_row(&mut palette_cx, "zoom in", "command-palette-action-zoom-in");
-    }
-    {
-        let mut palette_cx = open_bare_palette(cx);
-        click_palette_row(
-            &mut palette_cx,
-            "reset zoom",
-            "command-palette-action-reset-zoom",
-        );
-    }
-    assert_eq!(font_sizes(cx), baseline);
 }
 
 #[gpui::test]
@@ -328,15 +307,11 @@ fn command_palette_new_child_creates_a_change_on_the_selection(cx: &mut TestAppC
         (vm.graph.changes.len(), selected.commit_id.id.clone())
     });
 
-    {
-        let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
-        click_palette_row(&mut palette_cx, "new child", "command-palette-new-child");
-    }
-    settle_visual(repo_cx);
+    run_repo_palette(&view, repo_cx, "new child", "command-palette-new-child");
 
     view.read_with(repo_cx, |view, cx| {
         let vm = view.view_model().read(cx);
-        assert!(vm.error.is_none(), "new child errored: {:?}", vm.error);
+        assert!(vm.error.is_none(), "{:?}", vm.error);
         assert_eq!(vm.graph.changes.len(), before + 1);
         let selected = vm.selected_change().expect("selected change");
         assert!(selected.is_working_copy);
@@ -348,15 +323,13 @@ fn command_palette_new_child_creates_a_change_on_the_selection(cx: &mut TestAppC
 fn command_palette_revset_preset_applies_the_filter(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, repo_cx) = open_fixture(&fixture, cx);
-    {
-        let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
-        click_palette_row(
-            &mut palette_cx,
-            "show conflicts",
-            "command-palette-revset-conflicts",
-        );
-    }
-    settle_visual(repo_cx);
+
+    run_repo_palette(
+        &view,
+        repo_cx,
+        "show conflicts",
+        "command-palette-revset-conflicts",
+    );
 
     view.read_with(repo_cx, |view, cx| {
         assert_eq!(view.view_model().read(cx).revset(), "conflicts()");
@@ -368,21 +341,14 @@ fn command_palette_expands_every_unmodified_region(cx: &mut TestAppContext) {
     let fixture = two_region_fixture();
     let (view, repo_cx) = open_fixture(&fixture, cx);
     select_file(&view, "context.txt", repo_cx);
-    let before = collapsed_region_count(&view, repo_cx);
-    assert!(
-        before >= 2,
-        "fixture has more than one collapsed region, got {before}"
-    );
+    assert!(collapsed_region_count(&view, repo_cx) >= 2);
 
-    {
-        let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
-        click_palette_row(
-            &mut palette_cx,
-            "expand all unmodified",
-            "command-palette-action-expand-all-unmodified-lines",
-        );
-    }
-    settle_visual(repo_cx);
+    run_repo_palette(
+        &view,
+        repo_cx,
+        "expand all unmodified",
+        "command-palette-action-expand-all-unmodified-lines",
+    );
 
     assert_eq!(collapsed_region_count(&view, repo_cx), 0);
 }
@@ -392,23 +358,34 @@ fn command_palette_forget_and_delete_asks_for_confirmation(cx: &mut TestAppConte
     let fixture = LinearFixture::build();
     add_workspace(&fixture, "first");
     let (view, repo_cx) = open_fixture(&fixture, cx);
-    {
-        let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
-        click_palette_row(
-            &mut palette_cx,
-            "delete first",
-            "command-palette-delete-first",
-        );
-    }
-    settle_visual(repo_cx);
+
+    run_repo_palette(
+        &view,
+        repo_cx,
+        "delete first",
+        "command-palette-delete-first",
+    );
 
     assert!(repo_cx.debug_bounds("confirmation").is_some());
     assert!(
         repo_cx
             .debug_bounds("confirmation-dont-ask-again")
-            .is_some(),
-        "workspace delete reuses the confirmation that can be skipped"
+            .is_some()
     );
+}
+
+fn run_repo_palette(
+    view: &gpui::Entity<RepoWindow>,
+    repo_cx: &mut VisualTestContext,
+    query: &str,
+    selector: &'static str,
+) {
+    click_palette_row(
+        &mut open_palette_for(view, &mut repo_cx.cx.clone()),
+        query,
+        selector,
+    );
+    settle_visual(repo_cx);
 }
 
 fn open_bare_palette(cx: &mut TestAppContext) -> VisualTestContext {

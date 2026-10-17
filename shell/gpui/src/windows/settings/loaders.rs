@@ -3,7 +3,7 @@ use gpui::{AppContext, Context};
 use super::{SettingsView, cli_diagnostics, config, tools};
 
 impl SettingsView {
-    /// Re-read on every entry: repo windows write the shared store, so a once-per-window snapshot would go stale.
+    // Re-read on every entry: repo windows write the shared store, so a once-per-window snapshot would go stale.
     pub(super) fn refresh_review_summary(&mut self, cx: &mut Context<Self>) {
         let store = crate::repo::window::shared_review_store(cx);
         let mut store = store.borrow_mut();

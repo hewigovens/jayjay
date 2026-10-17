@@ -120,7 +120,7 @@ impl RepoViewModel {
         );
     }
 
-    /// `git lfs ls-files` only describes the checked-out tree, so non-working-copy changes keep the empty set.
+    // `git lfs ls-files` only describes the checked-out tree, so non-working-copy changes keep the empty set.
     fn load_tracked_lfs_paths(&mut self, files: Arc<Vec<DiffHunk>>, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
             return;
@@ -511,7 +511,6 @@ impl RepoViewModel {
             .clone()
     }
 
-    /// Drops the file selection and its loaded diff when nothing is visible, so the preview cannot show a hidden file.
     pub(crate) fn clear_file_selection(&mut self, cx: &mut Context<Self>) {
         if self.selected_file_ix.is_none() && self.shown.diff.is_none() {
             return;
