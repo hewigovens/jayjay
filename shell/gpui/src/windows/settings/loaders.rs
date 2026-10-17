@@ -1,6 +1,7 @@
 use gpui::{AppContext, Context};
 
 use super::{SettingsView, cli_diagnostics, config, tools};
+use jayjay_core::UserIdentity;
 
 impl SettingsView {
     // Re-read on every entry: repo windows write the shared store, so a once-per-window snapshot would go stale.
@@ -17,12 +18,18 @@ impl SettingsView {
         }
         self.jj_config_loading = true;
         cx.spawn(async move |this, cx| {
-            let snapshot = cx
-                .background_spawn(async { config::load_jj_config_snapshot() })
+            let (snapshot, identity) = cx
+                .background_spawn(async {
+                    (
+                        config::load_jj_config_snapshot(),
+                        UserIdentity::configured().ok().flatten(),
+                    )
+                })
                 .await;
             let _ = this.update(cx, move |view, cx| {
                 if view.jj_config.is_none() {
                     view.jj_config = Some(snapshot);
+                    view.identity = identity;
                 }
                 view.jj_config_loading = false;
                 cx.notify();

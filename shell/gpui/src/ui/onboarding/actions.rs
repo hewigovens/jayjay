@@ -1,5 +1,5 @@
 use gpui::{AppContext, Context};
-use jayjay_core::check_jj_environment;
+use jayjay_core::{UserIdentity, check_jj_environment};
 
 use super::state::{JjCheckState, OnboardingPage};
 use super::{OnboardingCompleted, OnboardingView};
@@ -9,8 +9,16 @@ impl OnboardingView {
     pub(super) fn check_jj(&mut self, cx: &mut Context<Self>) {
         self.jj = JjCheckState::Checking;
         cx.spawn(async move |this, cx| {
-            let status = cx.background_spawn(async { check_jj_environment() }).await;
+            let (status, identity) = cx
+                .background_spawn(async {
+                    (
+                        check_jj_environment(),
+                        UserIdentity::configured().ok().flatten(),
+                    )
+                })
+                .await;
             let _ = this.update(cx, move |view, cx| {
+                view.identity = identity;
                 view.jj = JjCheckState::Loaded(status);
                 cx.notify();
             });

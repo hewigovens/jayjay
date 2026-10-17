@@ -1,4 +1,5 @@
 use gpui::{Context, EventEmitter, IntoElement, Render, Window};
+use jayjay_core::UserIdentity;
 
 use super::pages::onboarding_pane;
 use super::state::{JjCheckState, OnboardingPage};
@@ -9,6 +10,8 @@ pub(crate) struct OnboardingView {
     pub(super) page: OnboardingPage,
     pub(super) jj: JjCheckState,
     pub(super) logo: Logo,
+    pub(crate) identity: Option<UserIdentity>,
+    pub(crate) identity_skipped: bool,
 }
 
 pub(crate) struct OnboardingCompleted;
@@ -21,6 +24,8 @@ impl OnboardingView {
             page: OnboardingPage::Welcome,
             jj: JjCheckState::Checking,
             logo: Logo::load(cx),
+            identity: None,
+            identity_skipped: false,
         };
         view.check_jj(cx);
         view

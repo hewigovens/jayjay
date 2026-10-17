@@ -12,6 +12,7 @@ use crate::platform::JJ_PACKAGE_MANAGER;
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::{button, checkbox_glyph, text_tooltip};
+use crate::windows::identity_dialog::IdentityDialog;
 
 pub(super) fn onboarding_pane(
     state: &OnboardingView,
@@ -45,7 +46,7 @@ pub(super) fn onboarding_pane(
 fn page_content(state: &OnboardingView, t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
     match state.page {
         OnboardingPage::Welcome => welcome_page(&state.logo, t),
-        OnboardingPage::JjCheck => jj_check_page(&state.jj, t, cx),
+        OnboardingPage::JjCheck => jj_check_page(state, t, cx),
         OnboardingPage::Ready => ready_page(t, cx),
     }
 }
@@ -77,7 +78,11 @@ fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
+fn jj_check_page(
+    state: &OnboardingView,
+    t: &Theme,
+    cx: &mut Context<OnboardingView>,
+) -> AnyElement {
     let mut root = div()
         .flex()
         .flex_col()
@@ -87,7 +92,7 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
         .px(px(24.))
         .text_align(gpui::TextAlign::Center);
 
-    match jj {
+    match &state.jj {
         JjCheckState::Checking => {
             root = root
                 .child(icons::icon(glyph::ARROW_CLOCKWISE, 44., t.fg_dim))
@@ -112,6 +117,7 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
             if !status.path.is_empty() {
                 root = root.child(mono_line(status.path.clone(), 11., t.fg_faint, t));
             }
+            root = root.child(identity_line(state, t, cx));
         }
         JjCheckState::Loaded(_) => {
             root = root
@@ -146,6 +152,47 @@ fn jj_check_page(jj: &JjCheckState, t: &Theme, cx: &mut Context<OnboardingView>)
     }
 
     root.into_any_element()
+}
+
+fn identity_line(
+    state: &OnboardingView,
+    t: &Theme,
+    cx: &mut Context<OnboardingView>,
+) -> AnyElement {
+    let line = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .justify_center()
+        .gap(px(8.))
+        .pt(px(12.))
+        .text_size(ui_font_size(13.))
+        .text_color(rgb(t.fg_dim))
+        .whitespace_normal();
+    match (&state.identity, state.identity_skipped) {
+        (Some(identity), _) => line.child(SharedString::from(format!("Identity: {identity}"))),
+        (None, true) => line.child("You can set your jj identity later in Settings › Jujutsu."),
+        (None, false) => line
+            .child("jj author identity is not set")
+            .child(
+                button("onboarding-identity-set-up", "Set Up…", t, false).on_click(cx.listener(
+                    |_, _, _, cx| {
+                        IdentityDialog::open(cx, |view: &mut OnboardingView, identity, _| {
+                            view.identity = Some(identity.clone());
+                        });
+                    },
+                )),
+            )
+            .child(
+                button("onboarding-identity-skip", "Skip", t, false).on_click(cx.listener(
+                    |view, _, _, cx| {
+                        view.identity_skipped = true;
+                        cx.notify();
+                    },
+                )),
+            ),
+    }
+    .into_any_element()
 }
 
 fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {

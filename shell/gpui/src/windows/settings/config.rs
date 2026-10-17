@@ -6,7 +6,7 @@ use gpui::{
     AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
     SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
-use jayjay_core::{JjConfigEntry, JjConfigSection};
+use jayjay_core::{JjConfigEntry, JjConfigSection, UserIdentity};
 
 use super::SettingsView;
 use super::shared::{
@@ -17,6 +17,8 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::loading::loading_label;
+use crate::ui::primitives::button;
+use crate::windows::identity_dialog::IdentityDialog;
 
 const CONFIG_PATH_COPY_ID: &str = "jj-config-copy-path";
 
@@ -42,6 +44,7 @@ impl SettingsView {
 }
 
 pub(super) fn jujutsu_section(
+    identity: Option<&UserIdentity>,
     snapshot: Option<&JjConfigSnapshot>,
     loading: bool,
     recently_copied: Option<&SharedString>,
@@ -70,6 +73,7 @@ pub(super) fn jujutsu_section(
             .into_any_element();
     };
     let snapshot = &snapshot.0;
+    root = root.child(form_section("Identity", [identity_row(identity, t, cx)], t));
 
     // The path row stays above a load error, so a config that fails to parse can still be opened for repair; a missing config has nothing to open.
     if snapshot.exists && !snapshot.path.is_empty() {
@@ -92,6 +96,38 @@ pub(super) fn jujutsu_section(
         root = root.child(config_section(section, t));
     }
     root.into_any_element()
+}
+
+fn identity_row(
+    identity: Option<&UserIdentity>,
+    t: &Theme,
+    cx: &mut Context<SettingsView>,
+) -> AnyElement {
+    let (status, color, action) = match identity {
+        Some(identity) => (identity.to_string(), t.fg, "Edit…"),
+        None => ("Not set up".to_owned(), t.fg_dim, "Set Up…"),
+    };
+    let selector = format!("identity-status-{status}");
+    row_container()
+        .child(
+            div()
+                .debug_selector(move || selector.clone())
+                .flex_1()
+                .truncate()
+                .text_color(rgb(color))
+                .child(SharedString::from(status)),
+        )
+        .child(
+            button("identity-set-up", action, t, false)
+                .debug_selector(|| "identity-set-up".to_owned())
+                .on_click(cx.listener(|_, _: &ClickEvent, _, cx| {
+                    IdentityDialog::open(cx, |view: &mut SettingsView, _, cx| {
+                        view.jj_config = None;
+                        view.ensure_jj_config_loaded(cx);
+                    });
+                })),
+        )
+        .into_any_element()
 }
 
 fn config_path_row(

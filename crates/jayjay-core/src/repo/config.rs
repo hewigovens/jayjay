@@ -1,4 +1,5 @@
 mod env;
+mod identity;
 mod listing;
 
 use std::collections::HashMap;
@@ -8,6 +9,7 @@ use jj_lib::settings::UserSettings;
 use jj_lib::workspace::WorkingCopyFactories;
 
 pub(crate) use env::ConfigEnv;
+pub use identity::UserIdentity;
 pub use listing::{JjConfigEntry, JjConfigSection, JjUserConfig, jj_user_config};
 
 use super::Repo;

@@ -1,6 +1,7 @@
 mod cli_review;
 mod external_tool;
 mod harness;
+mod identity;
 mod keyboard_shortcuts;
 #[cfg(target_os = "linux")]
 mod launch;

@@ -17,6 +17,7 @@ use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::ui::logo::Logo;
 use crate::ui::text_area::TextArea;
+use jayjay_core::UserIdentity;
 use jayjay_review::ReviewStoreSummary;
 
 #[cfg(target_os = "macos")]
@@ -31,6 +32,7 @@ pub struct SettingsView {
     pub(super) open_dropdown: Option<OpenDropdown>,
     pub(super) jj_config: Option<config::JjConfigSnapshot>,
     pub(super) jj_config_loading: bool,
+    pub(crate) identity: Option<UserIdentity>,
     pub(super) ai_tools: Option<tools::AiToolStatuses>,
     pub(super) cli_diagnostics: Option<cli_diagnostics::CliDiagnostics>,
     pub(super) tools_loading: bool,
@@ -88,6 +90,7 @@ impl SettingsView {
                             open_dropdown: None,
                             jj_config: None,
                             jj_config_loading: false,
+                            identity: None,
                             ai_tools: None,
                             cli_diagnostics: None,
                             tools_loading: false,
@@ -230,6 +233,7 @@ impl SettingsView {
             SettingsSection::Workflow => workflow::workflow_section(cfg, t),
             SettingsSection::Integrations => integrations::integrations_section(self, cfg, t, cx),
             SettingsSection::Jujutsu => config::jujutsu_section(
+                self.identity.as_ref(),
                 self.jj_config.as_ref(),
                 self.jj_config_loading,
                 self.recently_copied.as_ref(),

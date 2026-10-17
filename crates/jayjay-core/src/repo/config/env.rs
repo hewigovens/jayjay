@@ -193,6 +193,13 @@ impl ConfigEnv {
         Ok(loaded.config_file.filter(|path| path.is_file()))
     }
 
+    pub(crate) fn override_variable(key: &str) -> Option<&'static str> {
+        ENV_OVERRIDES
+            .iter()
+            .find(|(_, overridden)| *overridden == key)
+            .map(|(variable, _)| *variable)
+    }
+
     fn env_base_layer(&self) -> ConfigLayer {
         let username = self
             .environment

@@ -2,6 +2,7 @@ pub mod bookmark_manager;
 pub mod command_palette;
 pub mod evolog;
 pub mod file_history;
+pub mod identity_dialog;
 pub mod keyboard_shortcuts;
 pub mod open_repository;
 pub mod operation_log;

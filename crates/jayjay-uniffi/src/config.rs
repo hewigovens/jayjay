@@ -1,4 +1,4 @@
-use jayjay_core::{JjConfigEntry, JjConfigSection, JjUserConfig};
+use jayjay_core::{JjConfigEntry, JjConfigSection, JjUserConfig, UserIdentity};
 
 use jayjay_core::JayError;
 
@@ -22,7 +22,33 @@ pub struct JjUserConfig {
     pub error: Option<String>,
 }
 
+#[uniffi::remote(Record)]
+pub struct UserIdentity {
+    pub name: String,
+    pub email: String,
+}
+
 #[uniffi::export]
 fn jj_user_config() -> Result<JjUserConfig, JayError> {
     jayjay_core::jj_user_config()
+}
+
+#[uniffi::export]
+fn configured_user_identity() -> Result<Option<UserIdentity>, JayError> {
+    UserIdentity::configured()
+}
+
+#[uniffi::export]
+fn suggested_user_identity() -> Result<UserIdentity, JayError> {
+    UserIdentity::suggested()
+}
+
+#[uniffi::export]
+fn user_identity_config_path() -> Result<String, JayError> {
+    UserIdentity::config_path()
+}
+
+#[uniffi::export]
+fn save_user_identity(identity: UserIdentity) -> Result<(), JayError> {
+    identity.save()
 }
