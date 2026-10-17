@@ -16,4 +16,10 @@ final class SettingsSnapshot<Value: Sendable> {
         value = result
         task = nil
     }
+
+    func reload(_ read: @escaping @Sendable () -> Value) async {
+        value = nil
+        task = nil
+        await load(read)
+    }
 }

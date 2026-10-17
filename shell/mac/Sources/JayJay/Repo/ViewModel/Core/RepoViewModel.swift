@@ -121,7 +121,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
 
     var aiProvider: String = ""
     var successActionSignal = 0
-    var configWarning: String?
     private var fsWatcher: RepoFSWatcher?
     var refreshTask: Task<Void, Never>?
     /// A superseded refresh stays registered: cancellation cannot interrupt synchronous FFI.
@@ -162,7 +161,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
             repo: repo,
             primaryRoot: workspacePrimaryRoot(path: path) ?? path,
             workingCopyIsLarge: repo.workingCopyIsLarge(),
-            configWarning: repo.checkUserConfig(),
             includeSubmoduleStatuses: includeSubmoduleStatuses
         )
     }
@@ -174,7 +172,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         repo: JayJayRepo,
         primaryRoot: String,
         workingCopyIsLarge: Bool,
-        configWarning: String?,
         includeSubmoduleStatuses: Bool = false
     ) {
         repoPath = path
@@ -183,7 +180,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
         self.workingCopyIsLarge = workingCopyIsLarge
-        self.configWarning = configWarning
         fsWatcher = RepoFSWatcher(
             repoPath: path,
             primaryRoot: primaryRoot,

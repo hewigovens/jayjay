@@ -49,8 +49,7 @@ struct RepoWindow: View {
                 return (
                     repo: repo,
                     primaryRoot: workspacePrimaryRoot(path: path) ?? path,
-                    workingCopyIsLarge: repo.workingCopyIsLarge(),
-                    configWarning: repo.checkUserConfig()
+                    workingCopyIsLarge: repo.workingCopyIsLarge()
                 )
             }
         }.value
@@ -62,7 +61,6 @@ struct RepoWindow: View {
                     repo: opened.repo,
                     primaryRoot: opened.primaryRoot,
                     workingCopyIsLarge: opened.workingCopyIsLarge,
-                    configWarning: opened.configWarning,
                     includeSubmoduleStatuses: includeSubmodules
                 )
                 if let windowNumber, let draft = windowManager.workspaceDrafts.draft(for: path, in: windowNumber) {

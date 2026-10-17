@@ -36,54 +36,14 @@ extension RepoContentView {
         }
     }
 
-    var alertState: RepoAlertState? {
-        if let error = viewModel.error {
-            return .error(error)
-        }
-        if let warning = viewModel.configWarning {
-            return .configWarning(warning)
-        }
-        return nil
-    }
-
-    var isAlertPresented: Binding<Bool> {
+    var isErrorPresented: Binding<Bool> {
         .init(
-            get: { alertState != nil },
+            get: { viewModel.error != nil },
             set: { isPresented in
                 guard !isPresented else { return }
                 viewModel.error = nil
-                viewModel.configWarning = nil
             }
         )
-    }
-
-    var alertTitle: String {
-        switch alertState {
-            case .error:
-                "Error"
-            case .configWarning:
-                "jj Configuration Incomplete"
-            case nil:
-                ""
-        }
-    }
-
-    @ViewBuilder
-    func alertActions(for alert: RepoAlertState) -> some View {
-        switch alert {
-            case .error:
-                Button("OK") { viewModel.error = nil }
-            case .configWarning:
-                Button("Open Settings") { openSettings() }
-                Button("Dismiss", role: .cancel) { viewModel.configWarning = nil }
-        }
-    }
-
-    func alertMessage(for alert: RepoAlertState) -> String {
-        switch alert {
-            case let .error(message), let .configWarning(message):
-                message
-        }
     }
 
     func handleSuccessActionSignalChange() {

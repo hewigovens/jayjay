@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct OnboardingView: View {
@@ -8,6 +9,9 @@ struct OnboardingView: View {
     @Environment(AppSettings.self) private var settings
     @State private var jjStatus: JJEnvironment.Status?
     @State private var currentPage = OnboardingPage.welcome
+    @State private var identity: UserIdentity?
+    @State private var isSettingUpIdentity = false
+    @State private var isIdentitySkipped = false
 
     var body: some View {
         VStack(spacing: 0) {
@@ -34,7 +38,11 @@ struct OnboardingView: View {
             .padding(20)
         }
         .frame(width: Self.preferredSize.width, height: Self.preferredSize.height)
-        .task { jjStatus = JJEnvironment.check() }
+        .task {
+            identity = await UserIdentity.configured()
+            jjStatus = JJEnvironment.check()
+        }
+        .identitySetup($identity, isPresented: $isSettingUpIdentity)
     }
 
     // MARK: - Pages
@@ -121,6 +129,8 @@ struct OnboardingView: View {
                             .jayjayFont(12, design: .monospaced)
                             .foregroundStyle(.tertiary)
                     }
+                    identityLine
+                        .padding(.top, 8)
                 } else {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 48))
@@ -147,6 +157,29 @@ struct OnboardingView: View {
             Spacer()
         }
         .padding(24)
+    }
+
+    @ViewBuilder
+    private var identityLine: some View {
+        if let identity {
+            Text("Identity: \(identity.label)")
+                .jayjayFont(13)
+                .foregroundStyle(.secondary)
+        } else if isIdentitySkipped {
+            Text("You can set your jj identity later in Settings › Jujutsu.")
+                .jayjayFont(13)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .fixedSize(horizontal: false, vertical: true)
+        } else {
+            HStack(spacing: 8) {
+                Text("jj author identity is not set")
+                    .jayjayFont(13)
+                    .foregroundStyle(.secondary)
+                Button("Set Up…") { isSettingUpIdentity = true }
+                Button("Skip") { isIdentitySkipped = true }
+            }
+        }
     }
 
     private var readyPage: some View {

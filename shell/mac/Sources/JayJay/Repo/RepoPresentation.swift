@@ -57,18 +57,6 @@ enum RepoChangeConfirmation {
     }
 }
 
-enum RepoAlertState: Identifiable {
-    case error(String)
-    case configWarning(String)
-
-    var id: String {
-        switch self {
-            case let .error(message): "error-\(message)"
-            case let .configWarning(message): "config-warning-\(message)"
-        }
-    }
-}
-
 enum RepoOverlayState: Identifiable {
     case loading
     case toast(RepoToastState)

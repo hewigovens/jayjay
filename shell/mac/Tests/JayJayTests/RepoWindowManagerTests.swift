@@ -60,7 +60,6 @@ final class RepoWindowManagerTests: XCTestCase {
             repo: resolvedRepo,
             primaryRoot: workspacePrimaryRoot(path: directory.path) ?? directory.path,
             workingCopyIsLarge: false,
-            configWarning: nil,
             includeSubmoduleStatuses: false
         )
     }

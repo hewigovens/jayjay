@@ -86,10 +86,10 @@ struct RepoContentView: View {
             )
             .overlay { presentationOverlay }
             .animation(.easeOut(duration: 0.3), value: toast?.id)
-            .alert(alertTitle, isPresented: isAlertPresented, presenting: alertState) { alert in
-                alertActions(for: alert)
-            } message: { alert in
-                Text(alertMessage(for: alert))
+            .alert("Error", isPresented: isErrorPresented, presenting: viewModel.error) { _ in
+                Button("OK") { viewModel.error = nil }
+            } message: { message in
+                Text(message)
             }
             .onChange(of: viewModel.info) { _, msg in
                 guard let msg, !msg.isEmpty else { return }
@@ -98,6 +98,9 @@ struct RepoContentView: View {
             }
             .sheet(item: $modal) { modal in
                 modalView(for: modal)
+            }
+            .onReceive(NotificationCenter.default.publisher(for: .jjIdentitySaved)) { _ in
+                viewModel.refresh(isAutoTriggered: true)
             }
             .onChange(of: viewModel.successActionSignal) {
                 handleSuccessActionSignalChange()

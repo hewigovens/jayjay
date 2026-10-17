@@ -1105,10 +1105,6 @@ impl JayJayRepo {
         self.inner.diff_excerpt()
     }
 
-    fn check_user_config(&self) -> Option<String> {
-        self.inner.check_user_config()
-    }
-
     fn op_log(&self) -> Result<Vec<OpLogEntry>, JayError> {
         self.inner.op_log()
     }

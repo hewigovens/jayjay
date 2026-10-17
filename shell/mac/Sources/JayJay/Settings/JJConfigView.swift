@@ -1,11 +1,32 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct JJConfigView: View {
     @Environment(AppSettings.self) private var settings
     let config: SettingsSnapshot<JjConfigSnapshot>
+    @State private var identity: UserIdentity?
+    @State private var isEditingIdentity = false
 
     var body: some View {
+        Section("Identity") {
+            HStack {
+                if let identity {
+                    Text(identity.label)
+                        .textSelection(.enabled)
+                } else {
+                    Text("Not set up")
+                        .foregroundStyle(.secondary)
+                }
+                Spacer()
+                Button(identity == nil ? "Set Up…" : "Edit…") { isEditingIdentity = true }
+                    .accessibilityIdentifier(AID.Settings.identitySetUp)
+            }
+        }
+        .task { identity = await UserIdentity.configured() }
+        .identitySetup($identity, isPresented: $isEditingIdentity) {
+            await config.reload { JjConfigSnapshot.load() }
+        }
         Group {
             if let snapshot = config.value {
                 switch snapshot {

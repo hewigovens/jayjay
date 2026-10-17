@@ -79,7 +79,7 @@ Use repo-level presentation types from `RepoPresentation.swift` instead of ad ho
 - **Inline state**: pane-scoped no-data, first-run guidance, and recoverable section errors.
 - **Toast** (`RepoOverlayState.toast` / `RepoToast`): non-blocking action feedback, success messages, conflict follow-up, and lightweight warnings. Keep it short and allow at most one direct action.
 - **HUD** (`RepoOverlayState.loading`): temporary blocking busy states where further interaction would be misleading or unsafe. Prefer quiet refreshes.
-- **Alert** (`RepoAlertState`): short blocking interruptions that need acknowledgement or a simple binary choice. No forms, long copy, or more than two meaningful actions.
+- **Alert** (the repo window's `viewModel.error` alert): short blocking interruptions that need acknowledgement or a simple binary choice. No forms, long copy, or more than two meaningful actions.
 - **Sheet** (`RepoModalState` + `SheetContainer`): forms, previews, richer explanations, multi-step flows, or confirmations needing more context than an alert.
 - **Picker** (`Shared/Picker/PickerPanel.swift` + `PickerPanelRoot`): filterable toolbar pickers such as `RepoTitlePicker` and `BookmarkPicker` — a non-activating anchored `NSPanel` with a filter field, sectioned rows, and palette-style keyboard navigation. SwiftUI `.popover` (slow to open, focus-ring border) and `NSMenu` with attributed multi-line rows (no truncation control) were both rejected; do not reintroduce them. Row actions that open or switch windows must defer via `RunLoop.main.perform(inModes: [.default])`.
 
