@@ -108,7 +108,7 @@ struct WelcomeView: View {
                 .jayjayFont(14)
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                Button("Open...") {
+                Button("Open") {
                     let panel = NSOpenPanel()
                     panel.canChooseFiles = false
                     panel.canChooseDirectories = true
@@ -118,7 +118,7 @@ struct WelcomeView: View {
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                Button("Clone...", action: onClone)
+                Button("Clone", action: onClone)
                     .accessibilityIdentifier(AID.CloneRepository.open)
             }
         }

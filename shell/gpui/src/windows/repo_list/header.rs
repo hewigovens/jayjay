@@ -34,12 +34,12 @@ pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
                 .flex_row()
                 .gap(px(8.))
                 .child(
-                    button("repo-list-open", "Open...", t, true)
+                    button("repo-list-open", "Open", t, true)
                         .debug_selector(|| "repo-list-open".to_owned())
                         .on_click(|_, _, cx| crate::app::menus::prompt_open_repository(cx)),
                 )
                 .child(
-                    button("repo-list-clone", "Clone...", t, false).on_click(|_, _, cx| {
+                    button("repo-list-clone", "Clone", t, false).on_click(|_, _, cx| {
                         crate::windows::clone_repository::CloneRepositoryView::open(cx)
                     }),
                 ),
