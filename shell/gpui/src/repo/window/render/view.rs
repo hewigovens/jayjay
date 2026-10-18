@@ -219,26 +219,24 @@ impl Render for RepoWindow {
                 .child(resize_handle(DragTarget::FileColumn, &t, cx))
                 .child(detail_pane(self, &t, window, cx))
         };
-        root = root
-            .child(crate::repo::toolbar::toolbar(
-                toolbar_repo,
-                self.repo_switcher_button_bounds.clone(),
-                self.layout.sidebar_hidden,
-                super::super::revset_filter::revset_bar(self, &t, cx),
-                ToolbarActivity {
-                    is_refreshing,
-                    refresh: refresh_mode,
-                    is_fetching,
-                    is_pushing,
-                },
-                self.focused_control,
-                cx,
-            ))
-            .child(content);
+        root = root.child(crate::repo::toolbar::toolbar(
+            toolbar_repo,
+            self.repo_switcher_button_bounds.clone(),
+            self.layout.sidebar_hidden,
+            super::super::revset_filter::revset_bar(self, &t, cx),
+            ToolbarActivity {
+                is_refreshing,
+                refresh: refresh_mode,
+                is_fetching,
+                is_pushing,
+            },
+            self.focused_control,
+            cx,
+        ));
         if let Some(bar) = bisect_bar(self, &t, cx) {
             root = root.child(bar);
         }
-        root = root.child(status_bar(self, &t, cx));
+        root = root.child(content).child(status_bar(self, &t, cx));
 
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);

@@ -111,6 +111,8 @@ impl Theme {
             file_badge_removed_fg: seed.deep(seed.red),
             file_badge_modified_fg: seed.deep(seed.blue),
             note_accent: seed.orange,
+            bisect_accent: seed.magenta,
+            bisect_bar_bg: mix(bg, seed.magenta, 0.08),
 
             error_fg: if dark {
                 mix(seed.red, fg, 0.25)

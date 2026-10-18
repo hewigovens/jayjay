@@ -90,6 +90,8 @@ pub struct Theme {
     pub(crate) file_badge_removed_fg: u32,
     pub(crate) file_badge_modified_fg: u32,
     pub(crate) note_accent: u32,
+    pub(crate) bisect_accent: u32,
+    pub(crate) bisect_bar_bg: u32,
     pub(crate) error_fg: u32,
     /// Default-palette add/remove hues for chrome such as change stats; diff surfaces use `diff_gutter_*`.
     pub(crate) added_fg: u32,

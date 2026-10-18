@@ -1,14 +1,16 @@
 use gpui::{
-    AnyElement, AppContext, Context, Entity, Focusable, InteractiveElement, IntoElement,
-    ParentElement, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    Anchor, AnyElement, AppContext, Context, Entity, Focusable, FontWeight, InteractiveElement,
+    IntoElement, ParentElement, StatefulInteractiveElement, Styled, Window, anchored, deferred,
+    div, px, rgb,
 };
 use jayjay_core::{BisectPhase, BisectState, BisectVerdict};
 
 use super::RepoWindow;
-use crate::app::theme::{FONT_META, Theme, ui_font_size};
-use crate::ui::icons::glyph;
+use crate::app::fonts::CodeText;
+use crate::app::theme::{FONT_BODY, FONT_META, Theme, ui_font_size};
+use crate::ui::icons::{self, glyph};
 use crate::ui::overlay::{overlay_card, overlay_header, overlay_layer};
-use crate::ui::primitives::{button, small_button};
+use crate::ui::primitives::{button, icon_button, inert_icon_button, small_button, text_tooltip};
 use crate::ui::text_area::TextArea;
 
 pub(crate) struct BisectSheet {
@@ -80,6 +82,7 @@ impl RepoWindow {
     }
 
     pub(crate) fn run_bisect_command(&mut self, to_end: bool, cx: &mut Context<Self>) {
+        self.bisect_test_runner_open = false;
         let command = self.bisect_command.read(cx).text();
         self.vm
             .update(cx, |vm, cx| vm.run_bisect(command, to_end, cx));
@@ -94,85 +97,118 @@ pub(super) fn bisect_bar(
     let vm = view.vm.read(cx);
     let state = vm.bisect.state.clone()?;
     let refreshing = vm.loading.refreshing;
-    let can_mark = vm.bisect.can_mark() && !refreshing;
-    let can_act = !vm.bisect.is_busy() && !refreshing;
-    let stop_enabled = vm.bisect.can_stop() && (vm.bisect.command_is_running() || !refreshing);
-    let mut column = div()
+    let enabled = BarEnablement {
+        mark: vm.bisect.can_mark() && !refreshing,
+        act: !vm.bisect.is_busy() && !refreshing,
+        stop: vm.bisect.can_stop() && (vm.bisect.command_is_running() || !refreshing),
+    };
+    let header = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(10.))
+        .child(icons::icon(glyph::ARROWS_LEFT_RIGHT, 13., t.bisect_accent))
+        .child(
+            div()
+                .flex_none()
+                .font_weight(FontWeight::SEMIBOLD)
+                .child(state.phase.title()),
+        )
+        .child(
+            div()
+                .debug_selector(|| "bisect-status".to_owned())
+                .flex_1()
+                .min_w_0()
+                .truncate()
+                .text_color(rgb(t.fg_dim))
+                .child(state.status.clone()),
+        )
+        .child(bisect_actions(view, &state, enabled, t, cx));
+    let mut bar = div()
         .debug_selector(|| "bisect-bar".to_owned())
         .flex()
         .flex_col()
         .gap(px(4.))
         .w_full()
         .px(px(12.))
-        .py(px(6.))
-        .bg(rgb(t.header_bg))
-        .border_t_1()
+        .py(px(8.))
+        .bg(rgb(t.bisect_bar_bg))
+        .border_b_1()
         .border_color(rgb(t.border))
-        .text_size(ui_font_size(FONT_META))
+        .text_size(ui_font_size(FONT_BODY))
         .text_color(rgb(t.fg))
-        .child(
-            div()
-                .debug_selector(|| "bisect-status".to_owned())
-                .text_color(rgb(t.fg_dim))
-                .child(state.status.clone()),
-        );
-    column = column.child(bisect_actions(
-        view,
-        &state,
-        can_mark,
-        can_act,
-        stop_enabled,
-        t,
-        cx,
-    ));
+        .child(header);
     if let Some(error) = state.command_error.clone() {
-        column = column.child(
+        bar = bar.child(
             div()
                 .debug_selector(|| "bisect-command-error".to_owned())
+                .text_size(ui_font_size(FONT_META))
                 .text_color(rgb(t.tag_conflict_fg))
                 .child(error),
         );
     }
-    if !state.command_output.is_empty() {
-        column = column.child(
-            div()
-                .debug_selector(|| "bisect-output".to_owned())
-                .text_color(rgb(t.fg_dim))
-                .child(state.command_output.clone()),
-        );
-    }
     if let Some(result) = state.result.as_ref() {
-        if let Some(note) = result.restore_note.clone() {
-            column = column.child(div().text_color(rgb(t.fg_dim)).child(note));
-        }
-        for kept in &result.kept {
-            column = column.child(
+        let kept = result
+            .kept
+            .iter()
+            .map(|change| format!("Kept {}", subject(&change.description)));
+        for note in result.restore_note.clone().into_iter().chain(kept) {
+            bar = bar.child(
                 div()
+                    .text_size(ui_font_size(FONT_META))
                     .text_color(rgb(t.fg_dim))
-                    .child(format!("Kept {}", kept.description)),
+                    .child(note),
             );
         }
     }
-    Some(column.into_any_element())
+    Some(bar.into_any_element())
+}
+
+#[derive(Clone, Copy)]
+struct BarEnablement {
+    mark: bool,
+    act: bool,
+    stop: bool,
+}
+
+trait PhaseTitle {
+    fn title(self) -> &'static str;
+}
+
+impl PhaseTitle for BisectPhase {
+    fn title(self) -> &'static str {
+        match self {
+            BisectPhase::Evaluating => "Bisecting",
+            BisectPhase::PausedRangeChanged => "Bisect paused",
+            BisectPhase::Finished => "Bisect finished",
+        }
+    }
+}
+
+fn subject(description: &str) -> &str {
+    description.lines().next().unwrap_or("a change")
 }
 
 fn bisect_actions(
     view: &RepoWindow,
     state: &BisectState,
-    can_mark: bool,
-    can_act: bool,
-    stop_enabled: bool,
+    enabled: BarEnablement,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let mut row = div().flex().flex_row().items_center().gap(px(6.));
-    if state.phase == BisectPhase::Evaluating {
-        row = row
+    let row = div()
+        .flex()
+        .flex_row()
+        .flex_none()
+        .items_center()
+        .gap(px(6.));
+    let row = match state.phase {
+        BisectPhase::Evaluating => row
             .child(mark_button(
                 "bisect-good",
                 "Good",
                 BisectVerdict::Good,
-                can_mark,
+                enabled.mark,
                 t,
                 cx,
             ))
@@ -180,7 +216,7 @@ fn bisect_actions(
                 "bisect-bad",
                 "Bad",
                 BisectVerdict::Bad,
-                can_mark,
+                enabled.mark,
                 t,
                 cx,
             ))
@@ -188,68 +224,157 @@ fn bisect_actions(
                 "bisect-skip",
                 "Skip",
                 BisectVerdict::Skip,
-                can_mark,
+                enabled.mark,
                 t,
                 cx,
             ))
-            .child(div().w(px(220.)).child(view.bisect_command.clone()))
+            .child(test_runner_button(view, state, enabled.act, t, cx))
+            .child(stop_button(enabled.stop, t, cx)),
+        BisectPhase::PausedRangeChanged => row
             .child(action_button(
-                "bisect-run-step",
-                "Run for this step",
-                can_act,
+                "bisect-restart",
+                "Restart",
+                enabled.act,
                 t,
                 cx,
                 |view, cx| {
-                    view.run_bisect_command(false, cx);
+                    view.vm.update(cx, |vm, cx| vm.restart_bisect(cx));
                 },
             ))
-            .child(action_button(
-                "bisect-run-to-end",
-                "Run to the end",
-                can_act,
-                t,
-                cx,
-                |view, cx| {
-                    view.run_bisect_command(true, cx);
-                },
-            ));
-    }
-    if state.phase == BisectPhase::PausedRangeChanged {
-        row = row.child(action_button(
-            "bisect-restart",
-            "Restart",
-            can_act,
-            t,
-            cx,
-            |view, cx| {
-                view.vm.update(cx, |vm, cx| vm.restart_bisect(cx));
-            },
-        ));
-    }
-    if state.phase == BisectPhase::Finished {
-        row = row.child(action_button(
+            .child(stop_button(enabled.stop, t, cx)),
+        BisectPhase::Finished => row.child(action_button(
             "bisect-dismiss",
             "Dismiss",
-            can_act,
+            enabled.act,
             t,
             cx,
             |view, cx| {
                 view.vm.update(cx, |vm, cx| vm.dismiss_bisect(cx));
             },
-        ));
-    } else {
-        row = row.child(action_button(
-            "bisect-stop",
-            "Stop",
-            stop_enabled,
-            t,
-            cx,
-            |view, cx| {
-                view.vm.update(cx, |vm, cx| vm.stop_bisect(cx));
-            },
-        ));
-    }
+        )),
+    };
     row.into_any_element()
+}
+
+fn test_runner_button(
+    view: &RepoWindow,
+    state: &BisectState,
+    enabled: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let mut button = small_button("bisect-run-test", "Run Test…", t)
+        .debug_selector(|| "bisect-run-test".to_owned());
+    if enabled {
+        button = button.on_click(cx.listener(|view, _, window, cx| {
+            view.bisect_test_runner_open = !view.bisect_test_runner_open;
+            if view.bisect_test_runner_open {
+                window.focus(&view.bisect_command.read(cx).focus_handle(cx), cx);
+            }
+            cx.notify();
+        }));
+    } else {
+        button = button.opacity(0.45);
+    }
+    let mut anchor = div().relative().child(button);
+    if view.bisect_test_runner_open && enabled {
+        anchor = anchor.child(
+            div().absolute().top_full().right_0().child(deferred(
+                anchored()
+                    .anchor(Anchor::TopRight)
+                    .snap_to_window_with_margin(px(6.))
+                    .child(test_runner(view, state, t, cx)),
+            )),
+        );
+    }
+    anchor.into_any_element()
+}
+
+fn test_runner(
+    view: &RepoWindow,
+    state: &BisectState,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let mut panel = div()
+        .id("bisect-test-runner")
+        .debug_selector(|| "bisect-test-runner".to_owned())
+        .occlude()
+        .mt(px(4.))
+        .w(px(340.))
+        .flex()
+        .flex_col()
+        .gap(px(8.))
+        .p(px(12.))
+        .rounded_md()
+        .border_1()
+        .border_color(rgb(t.border))
+        .bg(rgb(t.detail_bg))
+        .shadow_md()
+        .text_size(ui_font_size(FONT_META))
+        .on_mouse_down_out(cx.listener(|view, _, _, cx| {
+            view.bisect_test_runner_open = false;
+            cx.notify();
+        }))
+        .child(
+            div()
+                .text_color(rgb(t.fg_dim))
+                .child("Exit 0 marks the change good, 125 skips it, anything else marks it bad."),
+        )
+        .child(view.bisect_command.clone())
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .gap(px(6.))
+                .child(action_button(
+                    "bisect-run-step",
+                    "Run for This Step",
+                    true,
+                    t,
+                    cx,
+                    |view, cx| {
+                        view.run_bisect_command(false, cx);
+                    },
+                ))
+                .child(action_button(
+                    "bisect-run-to-end",
+                    "Run to the End",
+                    true,
+                    t,
+                    cx,
+                    |view, cx| {
+                        view.run_bisect_command(true, cx);
+                    },
+                )),
+        );
+    if !state.command_output.is_empty() {
+        panel = panel.child(
+            div()
+                .debug_selector(|| "bisect-output".to_owned())
+                .code_text(11., t)
+                .text_color(rgb(t.fg_dim))
+                .child(state.command_output.clone()),
+        );
+    }
+    panel.into_any_element()
+}
+
+fn stop_button(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    let size = t.scaled_control_height(22., 11.);
+    let button = if enabled {
+        icon_button("bisect-stop", glyph::X_CIRCLE, 14., size, size, t.fg_dim, t).on_click(
+            cx.listener(|view, _, _, cx| {
+                view.vm.update(cx, |vm, cx| vm.stop_bisect(cx));
+            }),
+        )
+    } else {
+        inert_icon_button("bisect-stop", glyph::X_CIRCLE, 14., size, size, t.fg_dim).opacity(0.45)
+    };
+    button
+        .debug_selector(|| "bisect-stop".to_owned())
+        .tooltip(text_tooltip("Stop bisecting and restore the working copy"))
+        .into_any_element()
 }
 
 fn mark_button(

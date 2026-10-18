@@ -99,6 +99,34 @@ fn bisect_between_selects_the_result_and_restores_the_working_copy(cx: &mut Test
     });
 }
 
+#[gpui::test]
+fn the_test_runner_opens_from_the_bar_and_closes_on_an_outside_click(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, cx| {
+            let repo = vm.repo.clone().expect("open repo");
+            repo.start_bisect("::@").expect("start bisect");
+            vm.refresh(false, cx);
+        });
+    });
+    settle_visual(cx);
+
+    let open = cx.debug_bounds("bisect-run-test").expect("run test button");
+    cx.simulate_click(open.center(), Modifiers::default());
+    settle_visual(cx);
+    let runner = cx.debug_bounds("bisect-test-runner").expect("test runner");
+    assert!(
+        runner.top() >= open.bottom(),
+        "the runner opens below its button"
+    );
+
+    let status = cx.debug_bounds("bisect-status").expect("status");
+    cx.simulate_click(status.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("bisect-test-runner").is_none());
+}
+
 #[test]
 fn dropping_the_view_model_stops_bisect() {
     use jayjay_gpui::repo::view_model::RepoViewModel;
