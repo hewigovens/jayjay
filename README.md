@@ -110,12 +110,48 @@ The Rust workspace keeps diff rendering, review state, and shared domain types i
 | [`jj-diff`](crates/jj-diff) | Standalone diff engine: histogram line diff, word diff, syntax highlighting, context collapse, side-by-side rows | No |
 | `jayjay-primitives` | Shared jj-lib-free domain and review identity types | No |
 | `jayjay-review` | Local review marks, notes, and reconciliation | No |
-| `jayjay-network` | Shared blocking HTTP helpers | No |
+| `jayjay-markdown` | Safe Markdown-to-HTML renderer for rich previews | No |
+| `jayjay-network` | Platform-neutral HTTP request handling with an optional blocking client | No |
 | `jayjay-core` | App-facing repo operations, jj data access, mutations, and format projections | Yes |
-| `jayjay-uniffi` | Swift bindings for the SwiftUI app | Indirect |
-| `jayjay-cli` | Thin app launcher; command-line subcommands are served by the bundled macOS app executable | No |
+| `jayjay-uniffi` | UniFFI bindings for the SwiftUI app and WASM consumers | Indirect |
+| `jayjay-cli` | Thin app launcher; command-line subcommands are served by the bundled macOS app, or the GPUI app on Linux and Windows | No |
 
 Rule of thumb: `jj-lib` belongs in `jayjay-core`. Diff rendering, review state, and shared domain types stay below that boundary so they can be reused without embedding jj's repo model.
+
+```mermaid
+flowchart LR
+  swiftui["SwiftUI app (macOS)"] --> uniffi[jayjay-uniffi]
+  uniffi --> core["jayjay-core (jj-lib)"]
+  gpui["GPUI app (Linux, Windows)"] --> core
+  cli[jayjay-cli]
+
+  subgraph portable [No jj-lib]
+    review[jayjay-review]
+    diff[jj-diff]
+    primitives[jayjay-primitives]
+    network[jayjay-network]
+    markdown[jayjay-markdown]
+  end
+
+  core --> review
+  core --> network
+  review --> diff
+  review --> primitives
+  cli --> primitives
+  uniffi --> markdown
+  gpui --> markdown
+
+  classDef app fill:#E3F2FD,stroke:#1E88E5,color:#0D47A1;
+  classDef ffi fill:#E8F5E9,stroke:#43A047,color:#1B5E20;
+  classDef core fill:#FFF8E1,stroke:#FB8C00,color:#E65100;
+  classDef lib fill:#ECEFF1,stroke:#546E7A,color:#263238;
+  class swiftui,gpui,cli app;
+  class uniffi ffi;
+  class core core;
+  class review,diff,primitives,network,markdown lib;
+```
+
+Arrows point from a crate to the crates it depends on.
 
 ### `jj-diff`
 

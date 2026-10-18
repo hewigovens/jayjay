@@ -16,7 +16,8 @@ let package = Package(
             dependencies: [
                 .product(name: "JayJayCore", package: "mac")
             ],
-            path: "Sources/JayJayDiffUI"
+            path: "Sources/JayJayDiffUI",
+            resources: [.copy("Resources/Mermaid")]
         ),
         .testTarget(
             name: "JayJayDiffUITests",
