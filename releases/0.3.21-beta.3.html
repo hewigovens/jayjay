@@ -1,0 +1,23 @@
+<h2>Find the first bad change</h2>
+<ul>
+  <li>Use <strong>Bisect…</strong> in the command palette, <strong>Bisect from here…</strong> on a change, or <strong>Bisect between</strong> on two selected changes to narrow down a regression. Set good and bad endpoints or enter a revset range, then mark each candidate Good, Bad, or Skip.</li>
+  <li>The bisect bar follows your progress in the graph. Run a test command for one step or to the end, inspect its output, and stop the search to return to your original working copy.</li>
+</ul>
+
+<h2>Clone and get started</h2>
+<ul>
+  <li>Clone a Git repository from the welcome screen or <strong>File → Clone Repository…</strong>. Paste the URL, choose a name and location, and open the new jj repository when cloning finishes. Cloning can be canceled.</li>
+  <li>Set your jj author name and email during onboarding, or edit them later in <strong>Settings → Jujutsu</strong>. An unset identity now appears as unknown instead of being shown as an extra co-author.</li>
+</ul>
+
+<h2>Compare file history and submit Codeberg stacks</h2>
+<ul>
+  <li>File History now opens in its own window with a diff for the selected revision. Choose <strong>Pin as Base</strong> and another revision to compare the file between them, swap the endpoints, or use <strong>Show in Graph</strong> to reveal a change.</li>
+  <li>Create and update stacked pull requests on Codeberg, with dependent bases and stack links in each description. Set <code>CODEBERG_TOKEN</code> or <code>FORGEJO_TOKEN</code> with repository write access before submitting.</li>
+</ul>
+
+<h2>Fixes</h2>
+<ul>
+  <li>Empty changes keep the file column visible, and a list with every file hidden explains why it is empty.</li>
+  <li>Colocated Git index updates now take the index lock before reading and writing, protecting concurrent Git operations.</li>
+</ul>

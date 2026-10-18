@@ -91,12 +91,19 @@
       <ul>
         <li>Open a repository with <code>Cmd+O</code>, the app menu, the Dock menu (recent repositories and <strong>Repository List…</strong>), or the CLI launcher: <code>jayjay /path/to/repo</code>.</li>
         <li>Open the current terminal directory with <code>jayjay .</code> after installing the bundled CLI launcher.</li>
+        <li>Choose <strong>Clone…</strong> on the welcome screen or <strong>File &gt; Clone Repository…</strong> to clone a Git repository into a new jj checkout. Paste its URL, adjust the suggested name and location, and choose Clone. Cancel stops an in-flight clone; the repository opens when it finishes.</li>
+        <li>Onboarding offers <strong>Set Up…</strong> when your jj author identity is missing. Enter the name and email that jj should record on new changes, or set them later in <strong>Settings &gt; Jujutsu</strong>.</li>
         <li>The Repository List separates persistent <strong>Pinned</strong> repositories from shell-local <strong>Recent Repositories</strong>. Use the pin button to keep a repository in the list; clearing Recent does not remove pins, and unpinning returns a repository to Recent. Recent Repositories sit in a side panel that opens with your first recent repository, closes when the last one is removed, and toggles from the sidebar button in between. Drag the panel's divider to size it; the width and the list's window size persist across launches, and workspace rows show their path under the name. Pins are shared between the SwiftUI and GPUI shells.</li>
         <li>Click the repository title in an open window to switch repositories. The menu activates an already-open repository without duplicating its window, opens a closed pinned repository in a new window, or returns to the full Repository List. Its rows can pin or unpin a repository or workspace from their context menu.</li>
         <li>Onboarding, the Repository List, and each repository open in their own windows. Closing the last repository window returns to the Repository List automatically, and every window kind remembers its position and size across launches.</li>
         <li>If you open a folder that is not a jj repository, JayJay shows an onboarding view with a <code>jj git init</code> path.</li>
         <li>JayJay watches the repository and working tree, then refreshes visible working-copy details after jj operations or file edits. A refresh waits while an editor, review-note composer, or confirmation sheet holds unfinished input.</li>
       </ul>
+      <figure class="shot">
+        <img class="dark-only" src="imgs/clone-repository-dark.webp" alt="Clone a Git repository with a chosen name and location" width="960" height="386" loading="lazy">
+        <img class="light-only" src="imgs/clone-repository.webp" alt="Clone a Git repository with a chosen name and location" width="960" height="386" loading="lazy">
+        <figcaption>Clone a Git repository into a new jj checkout.</figcaption>
+      </figure>
     </section>
 
     <section class="g" id="main-window">
@@ -278,16 +285,17 @@
 
     <section class="g" id="stacked">
       <h2>Stacked Pull Requests <a href="#stacked">#</a></h2>
-      <p>Turn a linear stack of changes into one PR (GitHub or Cursor Origin) or MR (GitLab) per change, each targeting the one below it.</p>
+      <p>Turn a linear stack of changes into one PR (GitHub, Codeberg, or Cursor Origin) or MR (GitLab) per change, each targeting the one below it.</p>
       <ul>
         <li>Right-click the <strong>tip</strong> change in the DAG and choose <strong>Create / Update Stacked PRs</strong>. Whatever change you click becomes the top of the stack; everything from just above <code>trunk()</code> up to it is included.</li>
         <li>The preview shows one row per change — bottom-first targeting your default branch (<code>main</code>), each higher one targeting the bookmark below it. Each row's <strong>branch name is editable</strong> (pencil → edit → Done); when Apple Intelligence is available, <strong>Generate bookmarks</strong> suggests names from the commit messages. Existing bookmarks are reused unchanged.</li>
         <li><strong>Submit</strong> pushes every bookmark at once, then creates or updates the PRs/MRs with their dependent bases. <strong>Done</strong> opens the top PR for a linked GitHub stack, always opens the highest submitted GitLab MR, and opens each submitted PR if GitHub native linking falls back. Re-running is idempotent — bookmarks anchor on the change-id, so it updates the same PRs/MRs and stack instead of duplicating.</li>
         <li><strong>GitHub native stacks:</strong> JayJay uses the standard <code>gh api</code> command; no extension is required. If GitHub Stacked PRs is not enabled for the repository or rejects the chain, the dependent PRs remain usable and the result explains that native linking was skipped.</li>
         <li><strong>GitLab stacks:</strong> GitLab detects the dependent MR chain automatically and shows a stack navigator in each MR; no separate linking request is required.</li>
+        <li><strong>Codeberg stacks:</strong> set <code>CODEBERG_TOKEN</code> or <code>FORGEJO_TOKEN</code> with write access to the repository. JayJay creates or updates dependent PRs and adds links to the stack in each PR description.</li>
         <li><strong>Cursor Origin stacks:</strong> Origin is still early beta. JayJay submits dependent pull requests with the <code>origin</code> CLI the same way it does for GitHub/GitLab.</li>
-        <li><strong>Merging:</strong> for ordinary GitHub PR chains, GitLab MRs, and Cursor Origin PRs, merge <strong>bottom-up</strong> (the one targeting <code>main</code> first). After each merge, run <code>jj git fetch</code> and <strong>Create / Update Stacked PRs</strong> again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.</li>
-        <li>JayJay requires an authenticated <code>gh</code> CLI (GitHub), <code>glab</code> CLI (GitLab), or <code>origin</code> CLI (Cursor Origin). The forge is taken from the repo's <code>origin</code> remote; Codeberg is not yet supported for stacked submission.</li>
+        <li><strong>Merging:</strong> for ordinary GitHub PR chains, GitLab MRs, Codeberg PRs, and Cursor Origin PRs, merge <strong>bottom-up</strong> (the one targeting <code>main</code> first). After each merge, run <code>jj git fetch</code> and <strong>Create / Update Stacked PRs</strong> again to retarget the remaining layers. If GitHub has linked the PRs into a native stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.</li>
+        <li>JayJay requires an authenticated <code>gh</code> CLI (GitHub), <code>glab</code> CLI (GitLab), or <code>origin</code> CLI (Cursor Origin). Codeberg uses the token described above. The forge is taken from the repo's <code>origin</code> remote.</li>
       </ul>
       <figure class="shot">
         <img class="dark-only" src="imgs/stacked-pr-menu-dark.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1300" loading="lazy">
@@ -342,10 +350,22 @@
       <h2>Inspection Tools <a href="#inspection">#</a></h2>
       <ul>
         <li>File Annotate shows blame information with a syntax-highlighted gutter and lets you navigate to the responsible change.</li>
-        <li>File History lists revisions that modified the selected file.</li>
+        <li>File History opens in a separate window and lists revisions that modified the selected file, with the selected revision’s diff alongside it. Choose <strong>Pin as Base</strong>, then select another revision to compare the file between them. Swap reverses the endpoints; Clear or <kbd>Esc</kbd> clears the base. Right-click a revision and choose <strong>Show in Graph</strong>, or double-click it, to reveal it in the repository window.</li>
+        <li>Find a regression with <strong>Bisect…</strong> in the command palette, <strong>Bisect from here…</strong> in a change’s context menu, or <strong>Bisect between</strong> on two selected changes. Set Good and Bad endpoints, or enter a revset Range to use as-is, then choose Start. JayJay checks out candidates and highlights the search in the graph; mark each one <strong>Good</strong>, <strong>Bad</strong>, or <strong>Skip</strong> in the bar under the toolbar.</li>
+        <li>The bisect bar’s <strong>Run Test…</strong> control runs a shell command for this step or to the end. Exit status 0 means Good, 125 means Skip, 127 aborts, and other failures mean Bad. The bar shows command output and the result; its close button stops bisecting and restores the original working copy, reporting any temporary changes it kept.</li>
         <li>Change Evolution shows prior versions of a rewritten change with operation labels such as snapshot, describe, rebase, squash, and split. Consecutive working-copy snapshots collapse into one row, and <strong>Hide snapshots</strong> removes that noise entirely. Select one version for its diff or two versions for an interdiff.</li>
         <li>Right-click an evolution entry to <strong>Restore this version</strong>, which puts that version's content back into the working copy or the change you opened the evolog for in one undoable operation, or to copy its commit id or a <code>jj restore</code> command for that change. Immutable changes cannot be restored.</li>
       </ul>
+      <figure class="shot">
+        <img class="dark-only" src="imgs/file-history-dark.webp" alt="File History comparing a pinned base and target" width="3840" height="1950" loading="lazy">
+        <img class="light-only" src="imgs/file-history.webp" alt="File History comparing a pinned base and target" width="3840" height="1950" loading="lazy">
+        <figcaption>Pin a base and choose another revision to compare the file between them.</figcaption>
+      </figure>
+      <figure class="shot">
+        <img class="dark-only" src="imgs/bisect-dark.webp" alt="Bisect progress and verdict controls above the change graph" width="3840" height="1950" loading="lazy">
+        <img class="light-only" src="imgs/bisect.webp" alt="Bisect progress and verdict controls above the change graph" width="3840" height="1950" loading="lazy">
+        <figcaption>Bisect checks out a candidate and keeps Good, Bad, Skip, and Run Test close to the graph.</figcaption>
+      </figure>
       <figure class="shot">
         <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
         <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
@@ -388,6 +408,7 @@
         <li>Open terminals such as Terminal.app, iTerm2, or Ghostty at the repository path.</li>
         <li>Integrations holds editor, terminal, and AI commit-message providers together with the version-control and forge CLIs (<code>jayjay</code>, <code>jj</code>, <code>gh</code>, <code>glab</code>, <code>origin</code>). Jujutsu reads your jj user config files directly, grouped by section with the value that wins for each key, and needs no <code>jj</code> binary; it shows <em>Config not found</em> for a missing file, or the load error and the file that failed, with an Open action.</li>
         <li>Data &amp; Privacy shows the number of stored review marks and notes, can clear them for every repository after confirmation, and holds the statistics switch.</li>
+        <li>In <strong>Jujutsu &gt; Identity</strong>, choose <strong>Set Up…</strong> or <strong>Edit…</strong> to save the author name and email to your jj user config. The sheet shows the file it will update; saving refreshes identity displays in open windows.</li>
         <li>Commit avatars can come from GitHub or Gravatar. Multi-window mode keeps one window per repository and deduplicates URL-scheme launches.</li>
         <li>Choose <strong>Help &gt; Send Feedback</strong> to email us. The Help menu also opens the bundled JayJay Help Book, the full web user guide, jj documentation, and issue reporting.</li>
       </ul>
@@ -418,9 +439,14 @@
           <figcaption>Integrations picks the editor, terminal, and AI providers and checks the jj and forge CLIs.</figcaption>
         </figure>
         <figure class="shot">
-          <img class="dark-only" src="imgs/settings-jj-dark.webp" alt="JayJay Settings Jujutsu panel" width="480" height="336" loading="lazy">
-          <img class="light-only" src="imgs/settings-jj.webp" alt="JayJay Settings Jujutsu panel" width="480" height="336" loading="lazy">
-          <figcaption>Jujutsu shows the jj user config JayJay resolved.</figcaption>
+          <img class="dark-only" src="imgs/settings-jj-dark.webp" alt="JayJay Settings Jujutsu panel" width="1600" height="1120" loading="lazy">
+          <img class="light-only" src="imgs/settings-jj.webp" alt="JayJay Settings Jujutsu panel" width="1600" height="1120" loading="lazy">
+          <figcaption>Jujutsu shows your author identity and resolved jj user config.</figcaption>
+        </figure>
+        <figure class="shot">
+          <img class="dark-only" src="imgs/identity-setup-dark.webp" alt="Set the jj author name and email" width="1600" height="1120" loading="lazy">
+          <img class="light-only" src="imgs/identity-setup.webp" alt="Set the jj author name and email" width="1600" height="1120" loading="lazy">
+          <figcaption>Set the name and email jj records on your changes.</figcaption>
         </figure>
         <figure class="shot">
           <img class="dark-only" src="imgs/settings-data-privacy-dark.webp" alt="JayJay Settings data and privacy panel" width="480" height="336" loading="lazy">
@@ -438,6 +464,8 @@
     <section class="g" id="gpui">
       <h2>GPUI Shell <a href="#gpui">#</a></h2>
       <p>Download the Linux AppImage for your architecture from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, make it executable, and launch it; beta assets are on the corresponding pre-release page.</p>
+      <p>Debian and Ubuntu users can download the matching <code>.deb</code> (amd64 or arm64) from the same release page and install it with <code>sudo apt install ./jayjay_&lt;version&gt;-1_&lt;architecture&gt;.deb</code>.</p>
+      <p>A Windows x64 portable alpha ZIP is also attached to releases. Extract it and run <code>jayjay-gpui.exe</code>, with <code>jj</code> installed separately on PATH. It requires Windows 10 version 1903 or later, or Windows 11, and has no installer or automatic updater. Windows desktop behavior is still experimental.</p>
       <p>On Arch Linux (x86_64 and aarch64), use the signed pacman repo instead so stable upgrades arrive with the rest of your system. One command trusts the key, adds the repo, and prompts for a full system upgrade and installation:</p>
       <pre><code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code></pre>
       <p>Prefer reviewable steps? Trust the key once, append the repo to <code>/etc/pacman.conf</code> if it is not already present, then install:</p>
@@ -461,7 +489,7 @@ fi</code></pre>
       <ul>
         <li>To build from source, run <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>
-        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history, annotate, evolog with Restore this version, file and per-hunk review with notes, a Bookmark Manager with rename and the SwiftUI row actions, the graph-header Bookmarks picker with its Remote Only section, the title-bar revset bar with its presets popup and symbol completion, creating, pushing, and deleting tags, Run formatters (jj fix), merges with a chosen first parent, drag-and-drop rebase and bookmark moves in the DAG including whole-selection drags, Rebase onto trunk, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible, resizable Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same Settings pages as macOS, including Fonts and separate light and dark diff palettes, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, switching workspaces in the current window (the window's Overview, Bookmark Manager, evolog, file history, and operation log windows close when it switches), New Workspace from Pull Request, a history sidebar that hides and shows from the View menu, diff-header line counts, synchronized and line-numbered conflict panes, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
+        <li>Current GPUI coverage includes graph browsing, multi-change selection and batch actions, diffs, resizable image comparisons, file history with a pinned-base comparison, bisect with manual verdicts or test commands, cloning Git repositories, author identity setup, annotate, evolog with Restore this version, file and per-hunk review with notes, a Bookmark Manager and bookmark menus with rename, pull, and remote selection for tracking, the graph-header Bookmarks picker with its Remote Only section, the title-bar revset bar with its presets popup and symbol completion, creating, pushing, and deleting tags, Run formatters (jj fix), merges with a chosen first parent, drag-and-drop rebase and bookmark moves in the DAG including whole-selection drags, Rebase onto trunk, filterable repository/workspace and bookmark pickers, a grouped repository list with a collapsible, resizable Recent side panel and Forget and Forget &amp; Delete, filesystem refresh, cancelable pull and push, command palette, raw jj commands, searchable help topics that open this guide, a platform-aware keyboard-shortcut reference window, native appearance tracking with light and dark themes tuned to the macOS app, Tab focus cycling with an accent ring on the focused control, readable jj and git errors in every window, the same Settings pages as macOS, including Fonts and separate light and dark diff palettes, the interface font-size setting, SVG previews, rendered Markdown previews with inline images, HTML external open, diff text selection/copy, file multi-select, workspace windows, switching workspaces in the current window (the window's Overview, Bookmark Manager, evolog, file history, and operation log windows close when it switches), New Workspace from Pull Request, a history sidebar that hides and shows from the View menu, diff-header line counts, synchronized and line-numbered conflict panes, a Linux <code>jayjay</code> command-line install in Settings &gt; CLI, system default editor and terminal choices that honor <code>$VISUAL</code>, <code>$EDITOR</code>, and <code>$TERMINAL</code>, editable custom tool commands, a typed-path fallback when no desktop file picker is available, launching into the workspace that contains the current directory or the most recent one as a detached process (<code>--foreground</code> keeps it in the terminal), and desktop notifications when a fetch or push finishes in an inactive window.</li>
         <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, parallelize, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution including Use Ours and Use Theirs for submodule and other non-text conflicts, and the dedicated multi-file Diff Edit destinations.</li>
         <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI checklist</a>.</li>
       </ul>

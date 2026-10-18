@@ -167,6 +167,69 @@ final class ReleaseScreenshots: ScreenshotScene {
         }
     }
 
+    func testBisect() throws {
+        let app = try XCTUnwrap(app)
+        _ = openPalette(app)
+        paste("bisect")
+        keyStroke(.return)
+        let range = app.textFields[AID.Bisect.sheetRange]
+        XCTAssertTrue(range.waitForExistence(timeout: 5), "Bisect setup missing")
+        range.click()
+        paste("main..faster-routes")
+        app.buttons[AID.Bisect.sheetStart].click()
+        XCTAssertTrue(app.buttons[AID.Bisect.good].waitForExistence(timeout: 10), "Bisect did not start")
+        capture("bisect", frame: mainFrame)
+        app.buttons[AID.Bisect.stop].click()
+        XCTAssertTrue(app.buttons[AID.Bisect.good].waitForNonExistence(timeout: 10), "Bisect did not stop")
+    }
+
+    func testCloneRepository() throws {
+        let app = try XCTUnwrap(app)
+        app.menuBars.menuBarItems["File"].click()
+        app.menuItems["Clone Repository..."].click()
+        let window = app.windows["Clone Repository"]
+        XCTAssertTrue(window.waitForExistence(timeout: 5), "Clone window missing")
+        let source = window.textFields[AID.CloneRepository.sourceField]
+        source.click()
+        paste("https://github.com/jayjay-demo/flightdeck.git")
+        let name = window.textFields[AID.CloneRepository.nameField]
+        name.click()
+        keyStroke("a", modifiers: [.command])
+        paste("flightdeck-clone")
+        capture("clone-repository", frame: window.frame)
+    }
+
+    func testIdentitySetup() throws {
+        let app = try XCTUnwrap(app)
+        keyStroke(",", modifiers: [.command])
+        selectSettingsPage("jujutsu", in: app)
+        let edit = app.buttons[AID.Settings.identitySetUp]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5), "Identity control missing")
+        capture("settings-jj", frame: settingsWindow(in: app).frame)
+        edit.click()
+        let name = app.textFields[AID.Settings.identityName]
+        XCTAssertTrue(name.waitForExistence(timeout: 5), "Identity sheet missing")
+        capture("identity-setup", frame: settingsWindow(in: app).frame)
+    }
+
+    func testFileHistory() throws {
+        let app = try XCTUnwrap(app)
+        selectChange("include transfer time", in: app)
+        rightClickCenter(app.element(AID.FileList.row("src/routes.rs")).firstMatch)
+        app.menuItems["File History"].firstMatch.click()
+        let window = app.windows["file-history-window"]
+        XCTAssertTrue(window.waitForExistence(timeout: 5), "File History window missing")
+        let newest = app.element(AID.FileHistory.row(0)).firstMatch
+        XCTAssertTrue(newest.waitForExistence(timeout: 5), "File History revisions missing")
+        newest.click()
+        app.buttons["Pin as Base"].click()
+        let older = app.element(AID.FileHistory.row(2)).firstMatch
+        XCTAssertTrue(older.waitForExistence(timeout: 5), "Older File History revision missing")
+        older.click()
+        app.element(AID.FileHistory.swap).click()
+        capture("file-history", frame: window.frame)
+    }
+
     // MARK: - Helpers
 
     private func mainWindow(_ app: XCUIApplication) -> XCUIElement {

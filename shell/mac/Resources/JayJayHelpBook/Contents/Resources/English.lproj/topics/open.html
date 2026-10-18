@@ -34,6 +34,8 @@
     <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a folder that already contains a jj repository.</p>
     <ul>
       <li>After installing the bundled CLI, run <code>jayjay /path/to/repo</code> or <code>jayjay .</code> from a terminal.</li>
+      <li>Choose <strong>Clone…</strong> on the welcome screen or <strong>File &gt; Clone Repository…</strong> to clone a Git repository into a new jj checkout. Paste its URL, adjust the suggested name and location, and choose Clone. Cancel stops an in-flight clone; the repository opens when it finishes.</li>
+      <li>Onboarding offers <strong>Set Up…</strong> when your jj author identity is missing. Enter the name and email that jj should record on new changes, or set them later in <strong>Settings &gt; Jujutsu</strong>.</li>
       <li>The Repository List separates persistent <strong>Pinned</strong> repositories from <strong>Recent Repositories</strong> and groups recent sibling-workspace checkouts beneath their primary repository. Use the pin button to keep a repository in the list; clearing Recent does not remove pins, and unpinning returns a repository to Recent. Recent Repositories sit in a side panel that opens with your first recent repository, closes when the last one is removed, and toggles from the sidebar button in between. Drag its divider to size the panel; the width persists across launches, and workspace rows show their path under the name.</li>
       <li>Click the repository title to search this repository's workspaces, other open windows, pinned repositories, and recent repositories, or return to the full Repository List. Use Overview in the picker to open the Repo Overview, and a row's context menu to pin or unpin that repository or workspace.</li>
       <li>Choosing a workspace in the title picker, or a command-palette <strong>Switch to</strong> entry, opens it in the current window, or brings its window forward if it is already open. The window keeps showing the source workspace, with the refresh indicator spinning, until the destination has loaded; if it fails to open, the source stays usable and JayJay shows the error. Unsaved commit-message drafts are kept per workspace. Option-click a workspace or choose <strong>Open in New Window</strong> from its context menu for a separate window.</li>
@@ -45,6 +47,10 @@
       <li>Recent repositories and Repository List… also appear in the Dock menu. Pinned repositories are shared with JayJay's GPUI shell, while each shell keeps its own recent history.</li>
       <li>If the folder is not a jj repository, JayJay offers a <code>jj git init</code> path.</li>
     </ul>
+    <div class="shot">
+      <img src="../imgs/clone-repository.jpg" alt="Clone a Git repository with a chosen name and location" width="960" height="386" />
+      <p class="caption">Clone a Git repository into a new jj checkout.</p>
+    </div>
     <div class="shot">
       <img src="../imgs/home.jpg" alt="JayJay main window after opening a repository" width="1920" height="975" />
       <p class="caption">After opening a repository, JayJay shows the DAG, changed files, and selected diff in one window.</p>

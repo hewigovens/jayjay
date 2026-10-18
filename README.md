@@ -77,6 +77,12 @@ curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo
 
 The [guide](https://jayjay.hewig.dev/guide.html#gpui) has the reviewable manual steps.
 
+Debian/Ubuntu packages for amd64 and arm64 are also attached to each release. Download the matching `.deb` and install it with `sudo apt install ./jayjay_<version>-1_<architecture>.deb`.
+
+#### Windows alpha
+
+Download the Windows x64 portable alpha ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. The alpha has no installer or automatic updater; Windows desktop behavior is still experimental.
+
 ### Feedback
 
 Join the [JayJay Discord community](https://discord.gg/ekknRNkVrT) to ask questions, share workflows, and give feedback.
