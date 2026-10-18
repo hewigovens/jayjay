@@ -1,0 +1,12 @@
+ARG RUST_VERSION
+FROM rust:${RUST_VERSION}-slim-trixie
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    ca-certificates curl git build-essential clang pkg-config \
+    libfontconfig-dev fonts-dejavu-core libwayland-dev libxkbcommon-x11-dev \
+    libx11-xcb-dev libssl-dev libzstd-dev libvulkan1 vulkan-validationlayers \
+    && rm -rf /var/lib/apt/lists/*
+
+ARG JJ_VERSION
+RUN curl -fsSL "https://github.com/jj-vcs/jj/releases/download/v${JJ_VERSION}/jj-v${JJ_VERSION}-aarch64-unknown-linux-musl.tar.gz" \
+    | tar -xz -C /usr/local/bin ./jj
