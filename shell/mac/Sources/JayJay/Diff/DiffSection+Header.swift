@@ -5,6 +5,7 @@ import SwiftUI
 extension DiffSection {
     var diffHeader: some View {
         HStack(alignment: .firstTextBaseline, spacing: 8) {
+            FileIcon(path: hunk.path)
             renamePathLabel
             FilePathLabel(path: hunk.path, size: 13)
                 .textSelection(.enabled)

@@ -9,14 +9,16 @@ use super::theme::Theme;
 use crate::startup::GuiLaunch;
 
 const LUCIDE_FONT: &[u8] = include_bytes!("../../assets/fonts/Lucide.ttf");
+const SETI_FONT: &[u8] = include_bytes!("../../../../assets/fonts/Seti.ttf");
 
 pub(crate) fn run(launch: GuiLaunch) {
     super::cli_install::repair_broken_link();
     let cfg = AppConfig::load();
     let app = gpui_platform::application().with_assets(GpuiAssets);
     app.run(move |cx: &mut App| {
-        if let Err(error) = cx.text_system().add_fonts(vec![Cow::Borrowed(LUCIDE_FONT)]) {
-            eprintln!("[jayjay-gpui] failed to register Lucide: {error}");
+        let fonts = vec![Cow::Borrowed(LUCIDE_FONT), Cow::Borrowed(SETI_FONT)];
+        if let Err(error) = cx.text_system().add_fonts(fonts) {
+            eprintln!("[jayjay-gpui] failed to register the icon fonts: {error}");
         }
         cx.set_global(
             Theme::for_appearance(cfg.appearance, cx.window_appearance(), &cfg.diff.palette)

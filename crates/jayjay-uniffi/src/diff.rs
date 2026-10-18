@@ -2,7 +2,6 @@
 use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
-use jayjay_core::FileDiffStats;
 use jayjay_core::diff::{
     self, ChangeGroup, CollapsedDiff, ConflictLineKind, DiffLine, DiffSpan, FileDiff,
     SideBySideRow, WrappedDiffLine, WrappedSbsRow,
@@ -14,9 +13,33 @@ use jayjay_core::{
         ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
     },
 };
+use jayjay_core::{FileDiffStats, FileKind, SetiGlyph};
 
 #[cfg(feature = "desktop")]
 use jayjay_core::JayError;
+
+#[uniffi::export]
+fn file_kind_for_path(path: String) -> FileKind {
+    FileKind::for_path(&path)
+}
+
+#[derive(uniffi::Record)]
+pub struct SetiIcon {
+    pub glyph: String,
+    pub ink_left: f32,
+    pub ink_width: f32,
+}
+
+#[uniffi::export]
+fn seti_icon_for_path(path: String) -> Option<SetiIcon> {
+    let glyph = SetiGlyph::for_path(&path)?;
+    let (ink_left, ink_width) = glyph.ink();
+    Some(SetiIcon {
+        glyph: glyph.0.to_string(),
+        ink_left,
+        ink_width,
+    })
+}
 
 #[cfg(feature = "desktop")]
 #[uniffi::export]

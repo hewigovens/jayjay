@@ -2,6 +2,7 @@ use gpui::{
     AnyElement, Context, FontWeight, HighlightStyle, InteractiveElement, IntoElement,
     ParentElement, SharedString, StatefulInteractiveElement, Styled, StyledText, div, px, rgb,
 };
+use jayjay_core::{FileKind, SetiGlyph};
 use unicode_width::UnicodeWidthStr;
 
 use super::{COMPACT_HEADER_WIDTH, DETAIL_INSET, FileHeaderState};
@@ -10,10 +11,39 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_column::head_elide;
 use crate::repo::window::RepoWindow;
-use crate::ui::icons::{self, glyph};
+use crate::ui::icons::{self, FileKindGlyph as _, glyph};
 use crate::ui::primitives::text_tooltip;
 
 pub(super) const PATH_FONT_SIZE: f32 = 13.;
+const PATH_LINE_HEIGHT: f32 = 16.;
+
+pub(super) fn file_kind_icon(path: &str, t: &Theme) -> impl IntoElement {
+    let base = t.scaled_font_size(PATH_FONT_SIZE);
+    let (glyph, size, (left, width)) = match SetiGlyph::for_path(path) {
+        Some(seti) => {
+            let size = base * 1.5;
+            let glyph = div()
+                .font_family(icons::SETI_FONT)
+                .text_size(px(size))
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(seti.0.to_string()));
+            (glyph, size, seti.ink())
+        }
+        None => {
+            let kind = FileKind::for_path(path);
+            (icons::icon(kind.glyph(), base, t.fg_dim), base, kind.ink())
+        }
+    };
+    // Sized to the ink so the icon takes the row's usual gap; icon fonts sit high, like the copy button's glyph.
+    div()
+        .flex()
+        .flex_none()
+        .w(px(width * size))
+        .line_height(px(t.scaled_font_size(PATH_LINE_HEIGHT)))
+        .relative()
+        .top(px(1.))
+        .child(glyph.flex_none().ml(px(-left * size)))
+}
 
 pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl IntoElement {
     let display = SharedString::from(head_elide(path, max_chars));
@@ -25,7 +55,7 @@ pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl I
         .min_w_0()
         .truncate()
         .text_size(ui_font_size(PATH_FONT_SIZE))
-        .line_height(px(t.scaled_font_size(16.)))
+        .line_height(px(t.scaled_font_size(PATH_LINE_HEIGHT)))
         .font_weight(FontWeight::MEDIUM)
         .text_color(rgb(t.fg))
         .tooltip(text_tooltip(path.to_owned()));
@@ -83,7 +113,7 @@ pub(super) fn header_reserved_width(
     let text = |chars: usize, size: f32| chars as f32 * t.scaled_font_size(size) * 0.55;
     let compact = state.detail_width < COMPACT_HEADER_WIDTH;
     let action = |label: &str| 28. + if compact { 0. } else { text(label.len(), 11.) };
-    let mut reserved = 2. * DETAIL_INSET + 40.; // padding + inter-child gaps
+    let mut reserved = 2. * DETAIL_INSET + 40. + 20.; // padding, inter-child gaps, file icon
     reserved += 20. + 16. + text(status.len(), 10.); // copy button, status pill
     if let Some(stats) = state.line_stats {
         reserved += text(

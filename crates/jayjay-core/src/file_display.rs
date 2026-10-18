@@ -1,6 +1,4 @@
-const IMAGE_EXTENSIONS: &[&str] = &[
-    "png", "jpg", "jpeg", "gif", "webp", "heic", "bmp", "tiff", "tif", "ico", "icns",
-];
+use crate::file_kind::IMAGE_EXTENSIONS;
 
 pub const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
 pub(crate) const MAX_DIFF_BYTES: usize = 32 * 1024 * 1024;

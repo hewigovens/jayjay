@@ -76,7 +76,8 @@ pub(super) fn file_header(
         .debug_selector(|| "diff-header".to_owned())
         .bg(rgb(t.header_bg))
         .border_b_1()
-        .border_color(rgb(t.border));
+        .border_color(rgb(t.border))
+        .child(file_kind_icon(&hunk.path, t));
     if let Some(old_path) = old_path {
         row = row.child(source_path_label(
             old_path,

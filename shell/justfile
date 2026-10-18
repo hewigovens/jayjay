@@ -149,7 +149,6 @@ debug-help:
 
 run repo='': build
   @just --justfile "{{source_file()}}" reset-help-cache || printf '%s\n' "Warning: Help cache reset failed; launching with existing Help caches." "If the error says 'Operation not permitted', enable your terminal app (e.g. Ghostty, Terminal, or iTerm) in System Settings > Privacy & Security > Full Disk Access, then quit and reopen it." >&2
-  @killall JayJay 2>/dev/null || true
   @if [[ -n "{{repo}}" ]]; then \
     repo_path="$(python3 -c 'import os,sys; print(os.path.abspath(sys.argv[1]))' "{{repo}}")"; \
     open -n "{{app}}" --args --repo "$repo_path"; \

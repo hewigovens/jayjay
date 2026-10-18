@@ -252,7 +252,7 @@ fn with_config_for_language<R>(
     }
 }
 
-pub(crate) fn language_for_path(path: &str) -> &'static str {
+pub fn language_for_path(path: &str) -> &'static str {
     let basename = path.rsplit('/').next().unwrap_or(path);
     if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
         return "make";

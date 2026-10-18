@@ -26,6 +26,7 @@ try {
     Copy-Item LICENSE "$payload/LICENSE.txt"
     Copy-Item crates/LICENSE "$payload/CORE-LICENSE.txt"
     Copy-Item shell/gpui/assets/fonts/Lucide.LICENSE "$payload/LUCIDE-LICENSE.txt"
+    Copy-Item assets/fonts/Seti.LICENSE "$payload/SETI-LICENSE.txt"
     Copy-Item dist/windows/README.txt $payload
     foreach ($item in @(@('shell/gpui/Cargo.toml', 'GUI'), @('crates/jayjay-cli/Cargo.toml', 'CLI'))) {
         cargo about generate --offline --locked --fail --manifest-path $item[0] --config dist/windows/about.toml --output-file "$payload/THIRD-PARTY-$($item[1]).html" dist/windows/licenses.hbs

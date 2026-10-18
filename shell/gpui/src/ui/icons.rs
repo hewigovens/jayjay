@@ -7,6 +7,7 @@
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
 const FONT: &str = "lucide";
+pub(crate) const SETI_FONT: &str = "seti";
 pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
 pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
 pub const EXPAND_VERTICAL_SVG: &str = "icons/expand-vertical.svg";
@@ -80,8 +81,17 @@ pub mod glyph {
     pub const EXTERNAL_LINK: &str = "\u{e0b9}";
     pub const EYE: &str = "\u{e0ba}";
     pub const EYE_OFF: &str = "\u{e0bb}";
+    pub const FILE: &str = "\u{e0c0}";
+    pub const FILE_ARCHIVE: &str = "\u{e30d}";
+    pub const FILE_BRACES: &str = "\u{e36b}";
     pub const FILE_CODE: &str = "\u{e0c3}";
+    pub const FILE_COG: &str = "\u{e316}";
+    pub const FILE_IMAGE: &str = "\u{e31c}";
+    pub const FILE_LOCK: &str = "\u{e31e}";
     pub const FILE_SEARCH: &str = "\u{e0cb}";
+    pub const FILE_SPREADSHEET: &str = "\u{e326}";
+    pub const FILE_TERMINAL: &str = "\u{e328}";
+    pub const FILE_TEXT: &str = "\u{e0cc}";
     pub const FILTER: &str = "\u{e0dc}";
     pub const FOLDER: &str = "\u{e0d7}";
     pub const FOLDER_MINUS: &str = "\u{e0d8}";
@@ -89,6 +99,7 @@ pub mod glyph {
     pub const HAND: &str = "\u{e1d7}";
     pub const LIGATURE: &str = "\u{e43a}";
     pub const MOON: &str = "\u{e11e}";
+    pub const NOTEBOOK: &str = "\u{e595}";
     pub const PACKAGE: &str = "\u{e129}";
     pub const PAINTBRUSH: &str = "\u{e2e7}";
     pub const PIN: &str = "\u{e259}";
@@ -135,4 +146,39 @@ pub(crate) fn icon(glyph_str: &'static str, size: f32, color: u32) -> Div {
         .text_size(px(size))
         .text_color(rgb(color))
         .child(SharedString::from(glyph_str))
+}
+
+pub(crate) trait FileKindGlyph {
+    fn glyph(self) -> &'static str;
+    /// Left bearing and width of the glyph's ink as fractions of the font size, measured from Lucide.ttf.
+    fn ink(self) -> (f32, f32);
+}
+
+impl FileKindGlyph for jayjay_core::FileKind {
+    fn glyph(self) -> &'static str {
+        use jayjay_core::FileKind;
+        match self {
+            FileKind::Code => glyph::FILE_CODE,
+            FileKind::Shell => glyph::FILE_TERMINAL,
+            FileKind::Text => glyph::FILE_TEXT,
+            FileKind::Data => glyph::FILE_BRACES,
+            FileKind::Config => glyph::FILE_COG,
+            FileKind::Lockfile => glyph::FILE_LOCK,
+            FileKind::Image => glyph::FILE_IMAGE,
+            FileKind::Table => glyph::FILE_SPREADSHEET,
+            FileKind::Notebook => glyph::NOTEBOOK,
+            FileKind::Archive => glyph::FILE_ARCHIVE,
+            FileKind::Other => glyph::FILE,
+        }
+    }
+
+    fn ink(self) -> (f32, f32) {
+        use jayjay_core::FileKind;
+        match self {
+            FileKind::Config => (0.097, 0.778),
+            FileKind::Lockfile => (0.084, 0.791),
+            FileKind::Notebook => (0.041, 0.834),
+            _ => (0.125, 0.75),
+        }
+    }
 }

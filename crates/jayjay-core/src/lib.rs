@@ -15,6 +15,7 @@ pub mod error_message;
 pub mod external_tools;
 #[cfg(feature = "repository")]
 mod file_display;
+mod file_kind;
 pub mod file_tree;
 #[cfg(feature = "repository")]
 mod filesystem;
@@ -39,6 +40,7 @@ mod repo;
 pub mod repositories;
 #[cfg(feature = "repository")]
 pub mod revset;
+mod seti;
 pub mod theme;
 #[cfg(feature = "repository")]
 pub mod tools;
@@ -50,6 +52,7 @@ pub mod utf16;
 pub use cli::run_app_cli_command;
 #[cfg(feature = "repository")]
 pub use file_display::MAX_IMAGE_BYTES;
+pub use file_kind::FileKind;
 #[cfg(feature = "repository")]
 pub use filesystem::write_atomically;
 pub use fonts::{
@@ -82,6 +85,7 @@ pub use revset::{
     default_revset_preset, revset_completions, revset_presets, typed_revset,
     workspace_filter_revset,
 };
+pub use seti::SetiGlyph;
 pub use theme::{DiffPalette, DiffThemeColors, RepoColors, ThemeSeed, diff_palettes, repo_colors};
 #[cfg(feature = "repository")]
 pub use tools::{
