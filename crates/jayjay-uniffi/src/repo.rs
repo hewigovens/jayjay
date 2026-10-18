@@ -605,7 +605,7 @@ pub struct JayJayRepo {
 
 #[derive(uniffi::Object)]
 pub struct JayJaySyncToken {
-    inner: SyncToken,
+    pub(crate) inner: SyncToken,
 }
 
 #[uniffi::export]

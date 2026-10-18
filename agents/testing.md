@@ -57,6 +57,7 @@ Discovery is read-only; report evidence before editing, and prefer a few high-co
 - **Shared helpers**: put reusable fixtures and command helpers in `crates/jj-test`. Do not use `#[path = "..."]` to stitch helper folders into tests.
 - Helpers that implement a crate's own traits cannot live in jj-test — a helper crate linking the crate under test implements different trait types than the unit tests' `crate::` ones. Put them in the defining crate behind a `test-util` feature (see `jayjay-review/src/test_util.rs`) so other crates' tests can dev-depend on the same impls.
 - Keep helpers local when they construct crate-private types for one module's tests.
+- The core `mock` feature uses an in-memory forge sign-in store. Run `cargo test -p jayjay-core --features mock --lib forge_auth::` to include credential persistence regressions.
 
 ## Hung and Racing jj Operations
 

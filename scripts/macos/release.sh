@@ -11,6 +11,11 @@ case "$mode" in
     build_number="$4"
     signing_identity="${DEVELOPER_ID_APPLICATION:-$5}"
     notary_profile="${NOTARY_PROFILE:-notarytool}"
+    provisioning_profile="$project/JayJay.provisionprofile"
+    if [[ ! -f "$provisioning_profile" ]]; then
+      echo "Missing $provisioning_profile: download the Developer ID profile for dev.hewig.jayjay." >&2
+      exit 1
+    fi
     bash "$root/scripts/version.sh" check "$version" "$build_number"
     ;;
   dry-run) ;;
@@ -22,13 +27,14 @@ zip_path="$release_dir/$app_name-$version.zip"
 bash "$root/scripts/macos/build.sh" Release
 if [[ "$mode" == release ]]; then
   echo "Signing with ${signing_identity}..."
+  cp "$provisioning_profile" "$app_path/Contents/embedded.provisionprofile"
   find "$app_path" -type f \( -name "*.dylib" -o -perm +111 \) -not -name "*.swift*" | while IFS= read -r binary; do
     codesign --force --timestamp --options runtime --sign "${signing_identity}" "$binary" 2>/dev/null || true
   done
   find "$app_path" \( -name "*.xpc" -o -name "*.app" -o -name "*.framework" -o -name "*.plugin" -o -name "*.docktileplugin" \) | sort -r | while IFS= read -r bundle; do
     codesign --force --timestamp --options runtime --sign "${signing_identity}" "$bundle"
   done
-  codesign --force --timestamp --options runtime --sign "${signing_identity}" "$app_path"
+  codesign --force --timestamp --options runtime --entitlements "$project/JayJay.entitlements" --sign "${signing_identity}" "$app_path"
   codesign --verify --deep --strict --verbose=2 "$app_path"
 fi
 mkdir -p "$release_dir"

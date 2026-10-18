@@ -217,6 +217,8 @@ enum AID {
         static let identityEmail = "settings.identityEmail"
         static let identitySave = "settings.identitySave"
         static let identitySetUp = "settings.identitySetUp"
+        static let forgeSignInOpen = "settings.forgeSignInOpen"
+        static let forgeSignInCode = "settings.forgeSignInCode"
         static let interfaceFontSize = "settings.interfaceFontSize"
         static let codeFontSize = "settings.codeFontSize"
         static let codeLineSpacing = "settings.codeLineSpacing"

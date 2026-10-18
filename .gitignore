@@ -19,3 +19,4 @@ shell/mac/Resources/JayJayHelpBook/Contents/Resources/help-icon.png
 !.agents/
 !.claude/
 .claude/settings.local.json
+/shell/mac/JayJay.provisionprofile

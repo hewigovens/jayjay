@@ -7,7 +7,7 @@ use super::SettingsView;
 use super::cli_diagnostics::CliDiagnostics;
 use super::cli_row;
 use super::shared::{detail_row, feedback_copy_icon_button, form_section};
-use super::tools::{AiToolStatuses, binary_row, detected_cli_row, forge_login_row};
+use super::tools::{AiToolStatuses, binary_row, detected_cli_row};
 use crate::app::cli_install;
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
@@ -36,7 +36,6 @@ pub(super) fn cli_sections(
             t,
             cx,
         ))
-        .child(forge_rows(diagnostics, t))
         .into_any_element()
 }
 
@@ -87,29 +86,4 @@ fn version_control_rows(
         detected_cli_row("jj", glyph::GIT_BRANCH, diagnostics.map(|d| &d.jj), t).into_any_element(),
     );
     form_section("Version Control", rows, t).into_any_element()
-}
-
-fn forge_rows(diagnostics: Option<&CliDiagnostics>, t: &Theme) -> impl IntoElement {
-    let mut rows: Vec<AnyElement> = jayjay_core::RepoHost::TOKEN_HOSTS
-        .into_iter()
-        .map(|host| {
-            let source = diagnostics.map(|d| {
-                d.forge_logins
-                    .iter()
-                    .find(|(login, _)| *login == host)
-                    .and_then(|(_, source)| *source)
-            });
-            forge_login_row(host, source, t).into_any_element()
-        })
-        .collect();
-    rows.push(
-        detected_cli_row(
-            "origin",
-            glyph::GIT_MERGE,
-            diagnostics.map(|d| &d.origin),
-            t,
-        )
-        .into_any_element(),
-    );
-    form_section("Forges", rows, t)
 }

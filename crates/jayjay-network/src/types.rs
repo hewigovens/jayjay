@@ -1,5 +1,7 @@
 use std::fmt;
 
+use crate::encode_path_segment;
+
 pub const DEFAULT_TEXT_CAP: u32 = 2 * 1024 * 1024;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -61,6 +63,31 @@ impl Request {
             auth.header().into_iter().collect(),
             None,
             max_response_bytes,
+        )
+    }
+
+    /// A form-encoded POST that asks for a JSON answer, as OAuth token endpoints expect.
+    pub fn form(url: impl Into<String>, fields: &[(&str, &str)]) -> Self {
+        let body = fields
+            .iter()
+            .map(|(name, value)| {
+                format!(
+                    "{}={}",
+                    encode_path_segment(name),
+                    encode_path_segment(value)
+                )
+            })
+            .collect::<Vec<_>>()
+            .join("&");
+        Self::new(
+            url,
+            Method::Post,
+            vec![
+                Header::new("Content-Type", "application/x-www-form-urlencoded"),
+                Header::new("Accept", "application/json"),
+            ],
+            Some(body.into_bytes()),
+            DEFAULT_TEXT_CAP,
         )
     }
 }
@@ -173,6 +200,21 @@ mod tests {
         assert_eq!(
             request.headers,
             vec![Header::new("Authorization", "Bearer abc")]
+        );
+    }
+
+    #[test]
+    fn form_bodies_escape_every_reserved_character() {
+        let request = Request::form(
+            "https://example.test",
+            &[
+                ("grant_type", "urn:ietf:params:oauth:grant-type:device_code"),
+                ("scope", "repo read:org"),
+            ],
+        );
+        assert_eq!(
+            String::from_utf8(request.body.unwrap()).unwrap(),
+            "grant_type=urn%3Aietf%3Aparams%3Aoauth%3Agrant-type%3Adevice_code&scope=repo%20read%3Aorg"
         );
     }
 

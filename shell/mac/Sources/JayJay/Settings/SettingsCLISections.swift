@@ -5,7 +5,9 @@ struct SettingsCLISections: View {
     @State private var cliInstalled = CLIInstaller.isInstalled
     @State private var cliError: String?
     let diagnostics: SettingsSnapshot<[String: CliStatus]>
-    let forgeLogins: SettingsSnapshot<[RepoHost: String]>
+    let forgeLogins: SettingsSnapshot<[RepoHost: HostLogin]>
+    @State private var signingIn: RepoHost?
+    @State private var signOutError: String?
 
     var body: some View {
         Group {
@@ -62,6 +64,11 @@ struct SettingsCLISections: View {
                 ForEach(tokenHosts(), id: \.self) { host in
                     forgeLoginRow(host)
                 }
+                if let signOutError {
+                    Text(signOutError)
+                        .font(.system(size: 11))
+                        .foregroundStyle(.red)
+                }
                 detectedCliRow("origin", icon: "arrow.triangle.pull", status: diagnostics.value?["origin"])
             }
         }
@@ -73,12 +80,30 @@ struct SettingsCLISections: View {
                 ]
             }
         }
-        .task {
-            await forgeLogins.load {
-                Dictionary(uniqueKeysWithValues: tokenHosts().compactMap { host in
-                    hostTokenSource(host: host).map { (host, $0) }
-                })
+        .task { await forgeLogins.load(Self.readLogins) }
+        .sheet(item: $signingIn) { host in
+            ForgeSignInSheet(
+                host: host,
+                onDismiss: { signingIn = nil },
+                onSignedIn: { Task { await forgeLogins.reload(Self.readLogins) } }
+            )
+        }
+    }
+
+    private static func readLogins() -> [RepoHost: HostLogin] {
+        Dictionary(uniqueKeysWithValues: tokenHosts().map { ($0, hostLogin(host: $0)) })
+    }
+
+    private func signOut(_ host: RepoHost) {
+        signOutError = nil
+        Task {
+            let result = await Task.detached(priority: .userInitiated) {
+                Result { try signOutOfHost(host: host) }
+            }.value
+            if case let .failure(error) = result {
+                signOutError = error.friendlyDescription
             }
+            await forgeLogins.reload(Self.readLogins)
         }
     }
 
@@ -86,15 +111,31 @@ struct SettingsCLISections: View {
         HStack {
             SettingsLabel(repoHostName(host: host), icon: "person.crop.circle")
             Spacer()
-            if let source = forgeLogins.value?[host] {
-                Text(source)
-                    .font(.system(size: 11, design: .monospaced))
-                    .foregroundStyle(.secondary)
-                Spacer().frame(width: 8)
-                Image(systemName: "checkmark.circle.fill")
-                    .foregroundStyle(.green)
+            if let login = forgeLogins.value?[host] {
+                if let source = login.source {
+                    Text(source)
+                        .font(.system(size: 11, design: .monospaced))
+                        .foregroundStyle(.secondary)
+                } else {
+                    Text("Not signed in")
+                        .font(.system(size: 11))
+                        .foregroundStyle(.secondary)
+                }
+                if login.signedIn {
+                    Button("Sign Out") { signOut(host) }
+                } else if login.canSignIn {
+                    Button("Sign In…") {
+                        signOutError = nil
+                        signingIn = host
+                    }
+                }
+                if login.source != nil {
+                    Spacer().frame(width: 8)
+                    Image(systemName: "checkmark.circle.fill")
+                        .foregroundStyle(.green)
+                }
             } else {
-                Text(forgeLogins.value == nil ? "Checking…" : "Not signed in")
+                Text("Checking…")
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

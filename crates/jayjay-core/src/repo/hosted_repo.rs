@@ -139,7 +139,7 @@ impl RepoHost {
         }
     }
 
-    fn name(self) -> &'static str {
+    pub(crate) fn name(self) -> &'static str {
         match self {
             Self::GitHub => GITHUB_HOST,
             Self::Codeberg => CODEBERG_HOST,

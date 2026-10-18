@@ -71,7 +71,7 @@ verify_archive() {
 
     local zip_path="$1" mode="${2:-signed}"
     local zip_listing metadata_entry app_path dock_plugin principal_class
-    local appledouble_file macosx_dir
+    local appledouble_file macosx_dir entitlements
     local -a apps=()
 
     case "$mode" in
@@ -137,6 +137,11 @@ verify_archive() {
     codesign --verify --deep --strict --verbose=2 "$app_path"
 
     if [[ "$mode" == "notarized" ]]; then
+        entitlements="$(codesign -d --entitlements - "$app_path" 2>/dev/null)"
+        if [[ "$entitlements" != *com.apple.application-identifier* || ! -f "$app_path/Contents/embedded.provisionprofile" ]]; then
+            echo "Error: app lacks the provisioned application identifier the data protection keychain needs" >&2
+            return 1
+        fi
         xcrun stapler validate "$app_path"
         spctl --assess --type execute --verbose "$app_path"
     fi

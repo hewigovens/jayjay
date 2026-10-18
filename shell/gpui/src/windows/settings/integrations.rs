@@ -1,6 +1,6 @@
 use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
 
-use super::{SettingsView, cli, tools};
+use super::{SettingsView, cli, forges, tools};
 use crate::app::config::AppConfig;
 use crate::app::theme::Theme;
 
@@ -31,5 +31,6 @@ pub(super) fn integrations_section(
             t,
             cx,
         ))
+        .child(forges::forge_section(view, t, cx))
         .into_any_element()
 }

@@ -179,6 +179,7 @@ pub(crate) fn opened_url(cx: &mut TestAppContext) -> Option<String> {
 }
 
 pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
+    jayjay_core::use_system_keychain(false);
     cx.update(|cx| {
         cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings());
         let mut config = AppConfig::default();

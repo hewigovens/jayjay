@@ -1,7 +1,7 @@
 use crate::app::config::AppConfig;
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use gpui::{
-    AnyElement, AppContext, Context, Entity, InteractiveElement, IntoElement, ParentElement,
+    AnyElement, AppContext, Context, Div, Entity, InteractiveElement, IntoElement, ParentElement,
     SharedString, Styled, div, px,
 };
 
@@ -179,36 +179,19 @@ pub(super) fn detected_cli_row(
     status_row(name, glyph_str, detail, state, t)
 }
 
-pub(super) fn forge_login_row(
-    host: jayjay_core::RepoHost,
-    source: Option<Option<jayjay_core::TokenSource>>,
-    t: &Theme,
-) -> impl IntoElement {
-    let (detail, state) = match source {
-        Some(Some(source)) => (source.label(), ToolState::Found),
-        Some(None) => ("Not signed in".to_owned(), ToolState::Missing),
-        None => ("Checking…".to_owned(), ToolState::Checking),
-    };
-    let glyph_str = match host {
-        jayjay_core::RepoHost::GitHub => glyph::MARK_GITHUB,
-        _ => glyph::GIT_MERGE,
-    };
-    status_row(host.display_name(), glyph_str, detail, state, t)
-}
-
-enum ToolState {
+pub(super) enum ToolState {
     Checking,
     Found,
     Missing,
 }
 
-fn status_row(
+pub(super) fn status_row(
     name: &'static str,
     glyph_str: &'static str,
     detail: impl Into<SharedString>,
     state: ToolState,
     t: &Theme,
-) -> impl IntoElement {
+) -> Div {
     let (icon_glyph, icon_color, detail_color, marker) = match state {
         ToolState::Checking => (glyph::SYNC, t.fg_faint, t.fg_faint, "checking"),
         ToolState::Found => (glyph::CHECK, t.tag_added_fg, t.fg_dim, "found"),

@@ -1,5 +1,5 @@
 use gpui::Context;
-use jayjay_core::{CliStatus, RepoHost, TokenSource};
+use jayjay_core::{CliStatus, HostLogin, RepoHost};
 
 use super::SettingsView;
 
@@ -7,7 +7,7 @@ use super::SettingsView;
 pub struct CliDiagnostics {
     pub jj: CliStatus,
     pub origin: CliStatus,
-    pub forge_logins: Vec<(RepoHost, Option<TokenSource>)>,
+    pub forge_logins: Vec<HostLogin>,
 }
 
 impl CliDiagnostics {
@@ -15,10 +15,7 @@ impl CliDiagnostics {
         Self {
             jj: jayjay_core::check_jj_environment(),
             origin: jayjay_core::check_origin_environment(),
-            forge_logins: RepoHost::TOKEN_HOSTS
-                .into_iter()
-                .map(|host| (host, host.token_source()))
-                .collect(),
+            forge_logins: RepoHost::TOKEN_HOSTS.map(RepoHost::login).to_vec(),
         }
     }
 }

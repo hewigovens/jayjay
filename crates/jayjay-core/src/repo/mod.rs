@@ -60,7 +60,7 @@ pub use environment::is_executable_file;
 pub use environment::jj_binary;
 pub use environment::login_shell;
 pub use environment::login_shell_path;
-pub use forge_auth::TokenSource;
+pub use forge_auth::{DeviceSignIn, HostLogin, TokenSource, use_system_keychain};
 pub use handle::Repo;
 pub use hosted_repo::RepoHost;
 pub use init::init_jj_git_repo;

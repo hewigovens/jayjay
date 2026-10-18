@@ -3,7 +3,7 @@ use gpui::{
     Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point,
     px, size,
 };
-use jayjay_core::{RepoHost, TokenSource};
+use jayjay_core::{HostLogin, RepoHost, TokenSource};
 use jayjay_gpui::app::actions::OpenAbout;
 use jayjay_gpui::app::config::current as current_config;
 use jayjay_gpui::windows::settings::cli_diagnostics::CliDiagnostics;
@@ -305,8 +305,24 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
                         path: "/mock/bin/origin".to_owned(),
                     },
                     forge_logins: vec![
-                        (RepoHost::GitHub, Some(TokenSource::Cli("gh"))),
-                        (RepoHost::GitLab, None),
+                        HostLogin {
+                            host: RepoHost::GitHub,
+                            source: Some(TokenSource::Stored),
+                            signed_in: true,
+                            can_sign_in: true,
+                        },
+                        HostLogin {
+                            host: RepoHost::GitLab,
+                            source: None,
+                            signed_in: false,
+                            can_sign_in: true,
+                        },
+                        HostLogin {
+                            host: RepoHost::Codeberg,
+                            source: None,
+                            signed_in: false,
+                            can_sign_in: false,
+                        },
                     ],
                 },
                 cx,
@@ -357,6 +373,17 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
                 .debug_bounds("settings-tool-state-GitLab-missing")
                 .is_some()
         );
+        for (selector, expected) in [
+            ("settings-forge-GitHub-action", true),
+            ("settings-forge-GitLab-action", true),
+            ("settings-forge-Codeberg-action", false),
+        ] {
+            assert_eq!(
+                settings_cx.debug_bounds(selector).is_some(),
+                expected,
+                "{selector}"
+            );
+        }
         click_setting(&mut settings_cx, "settings-nav-Appearance");
         click_setting(&mut settings_cx, "settings-nav-Integrations");
         assert!(settings_cx.debug_bounds("dd-btn-editor").is_some());

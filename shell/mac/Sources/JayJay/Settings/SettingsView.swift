@@ -7,7 +7,7 @@ struct SettingsView: View {
     @State private var selection = SettingsPage.appearance
     @State private var toolAvailability = SettingsSnapshot<[AiProvider: Bool]>()
     @State private var cliDiagnostics = SettingsSnapshot<[String: CliStatus]>()
-    @State private var forgeLogins = SettingsSnapshot<[RepoHost: String]>()
+    @State private var forgeLogins = SettingsSnapshot<[RepoHost: HostLogin]>()
     @State private var jjConfig = SettingsSnapshot<JjConfigSnapshot>()
 
     var body: some View {

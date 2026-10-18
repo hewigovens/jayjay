@@ -138,7 +138,8 @@ impl SyncToken {
         self.canceled.load(Ordering::SeqCst)
     }
 
-    fn is(&self, other: &Self) -> bool {
+    /// Whether `other` is a clone of this token.
+    pub fn is(&self, other: &Self) -> bool {
         Arc::ptr_eq(&self.canceled, &other.canceled)
     }
 }

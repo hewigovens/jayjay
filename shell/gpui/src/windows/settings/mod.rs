@@ -11,6 +11,7 @@ mod dropdown;
 mod feedback;
 mod font_preview;
 mod fonts;
+mod forges;
 mod integrations;
 mod loaders;
 mod section;

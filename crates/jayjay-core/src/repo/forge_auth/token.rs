@@ -3,6 +3,7 @@ use jayjay_network::{Auth, Fetch, Method, NetError, Request, Response};
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum TokenSource {
     Environment(&'static str),
+    Stored,
     Cli(&'static str),
 }
 
@@ -10,6 +11,7 @@ impl TokenSource {
     pub fn label(self) -> String {
         match self {
             Self::Environment(variable) => variable.to_owned(),
+            Self::Stored => "JayJay sign-in".to_owned(),
             Self::Cli(binary) => format!("{binary} login"),
         }
     }

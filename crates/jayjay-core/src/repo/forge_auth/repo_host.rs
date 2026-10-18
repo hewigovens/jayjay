@@ -1,3 +1,4 @@
+use std::io::Write;
 use std::process::Stdio;
 use std::sync::{Mutex, PoisonError};
 use std::time::{Duration, Instant};
@@ -12,14 +13,14 @@ const REFRESH_BACKOFF: Duration = Duration::from_secs(60);
 
 static TOKENS: Mutex<[TokenSlot; 4]> = Mutex::new([TokenSlot::EMPTY; 4]);
 
-struct TokenSlot {
+pub(super) struct TokenSlot {
     /// A missing token is cached too, so an absent login isn't re-probed per request.
     resolved: Option<(Option<ForgeToken>, Instant)>,
     rejected: Option<(ForgeToken, Instant)>,
 }
 
 impl TokenSlot {
-    const EMPTY: Self = Self {
+    pub(super) const EMPTY: Self = Self {
         resolved: None,
         rejected: None,
     };
@@ -68,6 +69,8 @@ struct CliLogin {
     binary: &'static str,
     print_token: &'static [&'static str],
     refresh: Option<&'static [&'static str]>,
+    /// Sent on stdin; the reply is git's credential format.
+    credential_request: Option<&'static str>,
 }
 
 impl RepoHost {
@@ -80,9 +83,15 @@ impl RepoHost {
 
     pub(crate) fn sign_in_hint(self) -> &'static str {
         match self {
-            Self::GitHub => "Run `gh auth login`, or set GH_TOKEN.",
-            Self::GitLab => "Run `glab auth login`, or set GITLAB_TOKEN.",
-            Self::Codeberg => "Set CODEBERG_TOKEN.",
+            Self::GitHub => {
+                "Sign in from Settings → Integrations, run `gh auth login`, or set GH_TOKEN."
+            }
+            Self::GitLab => {
+                "Sign in from Settings → Integrations, run `glab auth login`, or set GITLAB_TOKEN."
+            }
+            Self::Codeberg => {
+                "Run `tea login add --url https://codeberg.org`, or set CODEBERG_TOKEN."
+            }
             Self::Cursor => "Run `origin auth login`.",
         }
     }
@@ -102,20 +111,29 @@ impl RepoHost {
                 binary: "gh",
                 print_token: &["auth", "token", "--hostname", "github.com"],
                 refresh: None,
+                credential_request: None,
             }),
             Self::GitLab => Some(CliLogin {
                 binary: "glab",
                 print_token: &["config", "get", "token", "--host", "gitlab.com"],
                 refresh: Some(&["auth", "status", "--hostname", "gitlab.com"]),
+                credential_request: None,
             }),
-            Self::Codeberg | Self::Cursor => None,
+            Self::Codeberg => Some(CliLogin {
+                binary: "tea",
+                print_token: &["login", "helper", "get"],
+                refresh: None,
+                credential_request: Some("protocol=https\nhost=codeberg.org\n\n"),
+            }),
+            Self::Cursor => None,
         }
     }
 
     fn resolve_with(
         self,
         environment: impl Fn(&str) -> Option<String>,
-        run: impl Fn(&str, &[&str]) -> Option<String>,
+        stored: impl FnOnce() -> Option<String>,
+        run: impl Fn(&CliLogin) -> Option<String>,
     ) -> Option<ForgeToken> {
         let non_empty = |secret: Option<String>| secret.filter(|secret| !secret.trim().is_empty());
         let from_environment = self.environment_variables().iter().find_map(|variable| {
@@ -124,9 +142,23 @@ impl RepoHost {
                 source: TokenSource::Environment(variable),
             })
         });
-        from_environment.or_else(|| {
+        let from_keychain = || {
+            non_empty(stored()).map(|secret| ForgeToken {
+                secret,
+                source: TokenSource::Stored,
+            })
+        };
+        from_environment.or_else(from_keychain).or_else(|| {
             let login = self.cli_login()?;
-            non_empty(run(login.binary, login.print_token)).map(|secret| ForgeToken {
+            let output = run(&login)?;
+            let secret = match login.credential_request {
+                Some(_) => output
+                    .lines()
+                    .find_map(|line| line.strip_prefix("password="))
+                    .map(str::to_owned),
+                None => Some(output),
+            };
+            non_empty(secret).map(|secret| ForgeToken {
                 secret,
                 source: TokenSource::Cli(login.binary),
             })
@@ -134,10 +166,15 @@ impl RepoHost {
     }
 
     fn resolve(self) -> Option<ForgeToken> {
-        self.resolve_with(|variable| std::env::var(variable).ok(), run_cli)
+        self.resolve_with(
+            |variable| std::env::var(variable).ok(),
+            || self.stored_login(false).map(|login| login.access_token),
+            |login| run_cli(login.binary, login.print_token, login.credential_request),
+        )
     }
 
-    fn with_slot<T>(self, body: impl FnOnce(&mut TokenSlot) -> T) -> T {
+    /// Shared with keychain writes, so a sign-out can't race a refresh.
+    pub(super) fn with_slot<T>(self, body: impl FnOnce(&mut TokenSlot) -> T) -> T {
         let mut tokens = TOKENS.lock().unwrap_or_else(PoisonError::into_inner);
         body(&mut tokens[self as usize])
     }
@@ -154,12 +191,16 @@ impl TokenProvider for RepoHost {
                 rejected,
                 Instant::now(),
                 || self.resolve(),
-                || {
-                    if let (TokenSource::Cli(_), Some(login)) = (rejected.source, self.cli_login())
-                        && let Some(refresh) = login.refresh
-                    {
-                        run_cli(login.binary, refresh);
+                || match (rejected.source, self.cli_login()) {
+                    (TokenSource::Stored, _) => {
+                        self.stored_login(true);
                     }
+                    (TokenSource::Cli(_), Some(login)) => {
+                        if let Some(refresh) = login.refresh {
+                            run_cli(login.binary, refresh, None);
+                        }
+                    }
+                    _ => {}
                 },
             )
         })
@@ -170,14 +211,21 @@ impl TokenProvider for RepoHost {
     }
 }
 
-fn run_cli(binary: &str, args: &[&str]) -> Option<String> {
-    let child = command(binary)
+fn run_cli(binary: &str, args: &[&str], input: Option<&str>) -> Option<String> {
+    let mut child = command(binary)
         .args(args)
-        .stdin(Stdio::null())
+        .stdin(if input.is_some() {
+            Stdio::piped()
+        } else {
+            Stdio::null()
+        })
         .stdout(Stdio::piped())
         .stderr(Stdio::null())
         .spawn()
         .ok()?;
+    if let (Some(input), Some(mut stdin)) = (input, child.stdin.take()) {
+        let _ = stdin.write_all(input.as_bytes());
+    }
     wait_for_stdout(child, CLI_TIMEOUT)
 }
 
@@ -188,6 +236,7 @@ mod tests {
     fn resolve(
         host: RepoHost,
         environment: &[(&str, &str)],
+        stored: Option<&str>,
         cli: Option<&str>,
     ) -> Option<ForgeToken> {
         host.resolve_with(
@@ -197,27 +246,72 @@ mod tests {
                     .find(|(name, _)| *name == variable)
                     .map(|(_, value)| (*value).to_owned())
             },
-            |_, _| cli.map(str::to_owned),
+            || stored.map(str::to_owned),
+            |_| cli.map(str::to_owned),
         )
     }
 
     #[test]
-    fn environment_wins_over_the_cli_login_in_declared_order() {
+    fn environment_then_jayjay_sign_in_then_cli_login() {
         let token = resolve(
             RepoHost::GitHub,
             &[("GITHUB_TOKEN", "b"), ("GH_TOKEN", "a")],
+            Some("stored"),
             Some("cli"),
         )
         .unwrap();
         assert_eq!(token.secret, "a");
         assert_eq!(token.source, TokenSource::Environment("GH_TOKEN"));
 
-        let token = resolve(RepoHost::GitLab, &[], Some("cli")).unwrap();
+        let token = resolve(
+            RepoHost::GitHub,
+            &[("GH_TOKEN", "")],
+            Some("stored"),
+            Some("cli"),
+        );
+        assert_eq!(token.unwrap().source, TokenSource::Stored);
+        let token = resolve(RepoHost::GitLab, &[], None, Some("cli")).unwrap();
         assert_eq!(token.source, TokenSource::Cli("glab"));
-        assert_eq!(resolve(RepoHost::Codeberg, &[], Some("cli")), None);
-        assert_eq!(resolve(RepoHost::GitHub, &[], Some("  ")), None);
-        let token = resolve(RepoHost::GitHub, &[("GH_TOKEN", "")], Some("cli")).unwrap();
-        assert_eq!(token.source, TokenSource::Cli("gh"));
+        let credential = "protocol=https\nhost=codeberg.org\nusername=me\npassword=tea";
+        let token = resolve(RepoHost::Codeberg, &[], None, Some(credential)).unwrap();
+        assert_eq!(token.secret, "tea");
+        assert_eq!(token.source, TokenSource::Cli("tea"));
+        assert_eq!(resolve(RepoHost::Codeberg, &[], None, Some("cli")), None);
+        assert_eq!(resolve(RepoHost::GitHub, &[], Some(""), Some("  ")), None);
+    }
+
+    #[cfg(feature = "mock")]
+    #[test]
+    fn an_environment_override_keeps_the_stored_sign_in_removable() {
+        use super::super::stored_login::StoredLogin;
+        use crate::repo::SyncToken;
+
+        for (host, variable) in [
+            (RepoHost::GitHub, "GH_TOKEN"),
+            (RepoHost::GitLab, "GITLAB_TOKEN"),
+        ] {
+            let login: StoredLogin = serde_json::from_str(r#"{"access_token":"stored"}"#).unwrap();
+            host.store_sign_in(&login, &SyncToken::standalone())
+                .unwrap();
+            let cache_override = || {
+                host.with_slot(|slot| {
+                    slot.cached(Instant::now(), || {
+                        Some(ForgeToken {
+                            secret: "environment".into(),
+                            source: TokenSource::Environment(variable),
+                        })
+                    });
+                });
+            };
+            cache_override();
+            let login = host.login();
+            host.sign_out().unwrap();
+            cache_override();
+            assert_eq!(login.source, Some(TokenSource::Environment(variable)));
+            assert!(login.signed_in);
+            assert!(!host.login().signed_in);
+            host.with_slot(|slot| *slot = TokenSlot::EMPTY);
+        }
     }
 
     fn token(secret: &str) -> Option<ForgeToken> {
@@ -277,7 +371,7 @@ mod tests {
 
     #[test]
     fn debug_output_never_shows_the_secret() {
-        let token = resolve(RepoHost::GitHub, &[("GH_TOKEN", "s3cret")], None).unwrap();
+        let token = resolve(RepoHost::GitHub, &[("GH_TOKEN", "s3cret")], None, None).unwrap();
         assert!(!format!("{token:?}").contains("s3cret"));
     }
 }

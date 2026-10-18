@@ -2,7 +2,7 @@ use jayjay_network::Fetch;
 
 use super::super::forge::{ForgeTarget, created_with_number, failed, non_empty_or, updated};
 use super::section::{with_existing_section, with_stack_section};
-use crate::repo::hosted_repo::HostedRepo;
+use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 use crate::repo::pull_requests::ApiError;
 use crate::repo::pull_requests::codeberg::{
     Api, CodebergPrResponse, CreatePull, EditPull, PageScan, PullFilter,
@@ -28,9 +28,10 @@ impl<'a, F: Fetch> CodebergStack<'a, F> {
 
     pub(crate) fn preflight(&self) -> JayResult<String> {
         if !self.has_token {
-            return Err(JayError::internal(
-                "Codeberg stacked pull requests need a token; set the CODEBERG_TOKEN environment variable (or FORGEJO_TOKEN) and retry.",
-            ));
+            return Err(JayError::internal(format!(
+                "Codeberg stacked pull requests need a token. {}",
+                RepoHost::Codeberg.sign_in_hint()
+            )));
         }
         let repository = self
             .api
@@ -153,10 +154,10 @@ impl<'a, F: Fetch> CodebergStack<'a, F> {
     fn preflight_error(&self, error: ApiError) -> JayError {
         let slug = self.remote.slug();
         JayError::internal(match error.status() {
-            Some(401) => {
-                "The Codeberg token was rejected; check that CODEBERG_TOKEN is current and retry."
-                    .to_owned()
-            }
+            Some(401) => format!(
+                "The Codeberg token was rejected. {}",
+                RepoHost::Codeberg.sign_in_hint()
+            ),
             Some(404) => format!(
                 "Codeberg repository {slug} was not found or the token cannot see it; check the remote and the token's access."
             ),

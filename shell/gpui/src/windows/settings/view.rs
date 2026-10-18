@@ -38,6 +38,7 @@ pub struct SettingsView {
     pub(crate) identity: Option<UserIdentity>,
     pub(super) ai_tools: Option<tools::AiToolStatuses>,
     pub(super) cli_diagnostics: Option<cli_diagnostics::CliDiagnostics>,
+    pub(super) forge_sign_in: Option<super::forges::ForgeSignIn>,
     pub(super) tools_loading: bool,
     /// `None` until the Integrations load lands; `Some(None)` when the CLI install surface is unavailable (no home directory).
     pub(super) cli_install: Option<Option<crate::app::cli_install::CliInstallState>>,
@@ -97,6 +98,7 @@ impl SettingsView {
                             identity: None,
                             ai_tools: None,
                             cli_diagnostics: None,
+                            forge_sign_in: None,
                             tools_loading: false,
                             cli_install: None,
                             recently_copied: None,
