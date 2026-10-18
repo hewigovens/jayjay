@@ -46,7 +46,7 @@ pub(super) fn edit_diff_button(
     focus_ring(
         header_action(
             "edit-diff",
-            glyph::SQUARE_PENCIL,
+            glyph::EDIT_CODE,
             (!compact).then_some("Edit Diff"),
             false,
             t,

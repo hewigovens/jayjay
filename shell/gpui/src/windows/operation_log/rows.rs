@@ -201,7 +201,7 @@ fn operation_glyph(description: &str) -> &'static str {
     } else if description.contains("commit") {
         glyph::CHECK
     } else if description.contains("new ") {
-        glyph::PLUS_CIRCLE
+        glyph::PLUS
     } else if description.contains("describe") || description.contains("edit") {
         glyph::PENCIL
     } else {

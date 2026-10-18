@@ -355,7 +355,7 @@ fn dropdown_chevrons(t: &Theme) -> AnyElement {
         .h(px(22.))
         .rounded_full()
         .bg(rgb(t.row_alt_bg))
-        .child(icons::icon(glyph::CARETS_UP_DOWN, 11., t.fg_dim))
+        .child(icons::icon(glyph::CARET_DOWN, 11., t.fg_dim))
         .into_any_element()
 }
 

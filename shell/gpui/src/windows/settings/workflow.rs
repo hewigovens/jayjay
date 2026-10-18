@@ -45,7 +45,7 @@ pub(super) fn workflow_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             form_section(
                 "Repository Behavior",
                 [toggle_field(
-                    glyph::SQUARE_STACK,
+                    glyph::SUBMODULE,
                     "Enable Git submodule support",
                     cfg.diff.enable_git_submodule_support,
                     |c| c.diff.enable_git_submodule_support ^= true,

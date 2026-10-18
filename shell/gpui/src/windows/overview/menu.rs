@@ -136,7 +136,7 @@ pub(super) fn lane_menu(
         entries.push(PopupMenuEntry::Separator);
         entries.push(PopupMenuEntry::item(
             format!("Forget Workspace {}", workspace.name),
-            glyph::MINUS_CIRCLE,
+            glyph::FOLDER_MINUS,
             OverviewAction::ForgetWorkspace {
                 name: workspace.name.clone(),
                 path: info.is_path_resolved.then(|| info.path.clone()),

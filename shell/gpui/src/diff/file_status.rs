@@ -38,9 +38,9 @@ pub(crate) fn label(hunk_type: HunkType) -> &'static str {
 /// Matches SwiftUI's file-status SF Symbols.
 fn status_glyph(hunk_type: HunkType) -> &'static str {
     match hunk_type {
-        HunkType::Added => glyph::PLUS,
-        HunkType::Removed => glyph::MINUS,
-        HunkType::Modified => glyph::DIFF,
+        HunkType::Added => glyph::DIFF_ADDED,
+        HunkType::Removed => glyph::DIFF_REMOVED,
+        HunkType::Modified => glyph::DIFF_MODIFIED,
         HunkType::Renamed => glyph::ARROW_RIGHT,
         HunkType::Copied => glyph::COPY,
     }

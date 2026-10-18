@@ -209,7 +209,7 @@ impl RepoWindow {
         if change.new_change.on_top {
             items.push(ContextMenuItem::new(
                 "New change on top",
-                glyph::PLUS_CIRCLE,
+                glyph::PLUS,
                 ContextAction::NewChangeOnTop(rev.clone().into()),
             ));
         }
@@ -243,7 +243,7 @@ impl RepoWindow {
             if !change.is_working_copy {
                 items.push(ContextMenuItem::new(
                     "Describe…",
-                    glyph::SQUARE_PENCIL,
+                    glyph::EDIT_CODE,
                     ContextAction::EditDescription {
                         rev: rev.clone().into(),
                         description: change.description.clone().into(),

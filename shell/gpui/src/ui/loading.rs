@@ -11,7 +11,7 @@ use crate::ui::overlay::overlay_layer;
 
 pub(crate) fn loading_label(label: impl Into<SharedString>, t: &Theme) -> Div {
     let spinner = svg()
-        .path(icons::REFRESH_CW_SVG)
+        .path(icons::REFRESH_SVG)
         .flex_none()
         .w(px(14.))
         .h(px(14.))

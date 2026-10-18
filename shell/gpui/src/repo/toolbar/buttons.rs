@@ -88,12 +88,11 @@ fn sidebar_toggle_button(
     };
     let tooltip = format!("{title} ({})", KeyCaps::label(&ToggleSidebar, cx));
     focus_ring(
-        group_icon_item(
-            "tb-sidebar-toggle",
-            glyph::PANEL_LEFT,
-            tooltip,
-            GroupEdge::Leading,
-            t,
+        group_item("tb-sidebar-toggle", tooltip, GroupEdge::Leading, t).child(
+            svg()
+                .path(icons::SIDEBAR_LEADING_SVG)
+                .size(px(TOOLBAR_ICON_SIZE))
+                .text_color(rgb(t.fg_dim)),
         ),
         focused == Some(FocusStop::SidebarToggle),
         t,
@@ -330,7 +329,7 @@ fn repo_tool_button(
 fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str) {
     match action {
         RepoToolAction::Editor => ("tb-open-editor", glyph::BRACES),
-        RepoToolAction::Terminal => ("tb-open-terminal", glyph::SQUARE_TERMINAL),
+        RepoToolAction::Terminal => ("tb-open-terminal", glyph::TERMINAL),
     }
 }
 
@@ -346,7 +345,7 @@ fn settings_button(focused: Option<FocusStop>, edge: GroupEdge, t: &Theme) -> An
 
 fn refresh_icon(is_refreshing: bool, t: &Theme) -> AnyElement {
     let icon = svg()
-        .path(icons::REFRESH_CW_SVG)
+        .path(icons::REFRESH_SVG)
         .w(px(TOOLBAR_ICON_SIZE))
         .h(px(TOOLBAR_ICON_SIZE))
         .text_color(rgb(t.fg_dim));

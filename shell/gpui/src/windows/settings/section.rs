@@ -40,13 +40,13 @@ impl SettingsSection {
 
     pub(super) fn glyph(self) -> &'static str {
         match self {
-            Self::Appearance => glyph::PAINTBRUSH,
+            Self::Appearance => glyph::PALETTE,
             Self::Fonts => glyph::BRACES,
-            Self::Diff => glyph::FILE_SEARCH,
+            Self::Diff => glyph::DIFF,
             Self::Workflow => glyph::LIST_CHECKS,
             Self::Integrations => glyph::WRENCH,
             Self::Jujutsu => glyph::GIT_BRANCH,
-            Self::DataPrivacy => glyph::HAND,
+            Self::DataPrivacy => glyph::SHIELD,
             Self::About => glyph::INFO,
         }
     }

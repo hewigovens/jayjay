@@ -30,17 +30,17 @@ fn hidden_only_placeholder(
 ) -> (&'static str, &'static str, &'static str) {
     match (hidden.lfs > 0, hidden.submodules > 0) {
         (true, true) => (
-            glyph::HARD_DRIVE,
+            glyph::DATABASE,
             "Only Git-managed Changes Hidden",
             "This revision only changes Git LFS-backed files and submodules, and the current diff settings hide them.",
         ),
         (true, false) => (
-            glyph::HARD_DRIVE,
+            glyph::DATABASE,
             "Only Git LFS-backed Files Hidden",
             "This revision only changes Git LFS-backed files, and the current diff setting hides them.",
         ),
         (false, _) => (
-            glyph::SQUARE_STACK,
+            glyph::SUBMODULE,
             "Only Git Submodule Changes Hidden",
             "This revision only changes Git submodules, and the current settings hide them.",
         ),
@@ -181,7 +181,7 @@ pub fn diff_view(
         .into_any_element()
     } else if hunk_is_git_lfs(hunk) {
         placeholder_card(
-            glyph::HARD_DRIVE,
+            glyph::DATABASE,
             "Git LFS-backed file",
             "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object.",
             &t,

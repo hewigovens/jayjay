@@ -39,7 +39,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         name: "Refresh",
         keywords: &["reload", "repository", "working", "copy"],
-        glyph_str: glyph::ARROW_CLOCKWISE,
+        glyph_str: glyph::SYNC,
         dispatch: |ctx, cx| {
             with_repo_window(ctx, cx, |view, cx| {
                 let vm = view.view_model();
@@ -112,13 +112,13 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
             "welcome",
             "open",
         ],
-        glyph_str: glyph::HARD_DRIVE,
+        glyph_str: glyph::DATABASE,
         dispatch: |_, cx| RepoListWindow::open(cx),
     },
     PaletteAction {
         name: "New Workspace",
         keywords: &["workspace", "workspaces", "add", "create", "sibling"],
-        glyph_str: glyph::PLUS_CIRCLE,
+        glyph_str: glyph::PLUS,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_create_workspace),
     },
     PaletteAction {
@@ -198,19 +198,19 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         name: "Toggle Hide Git LFS-backed Files",
         keywords: &["lfs", "large", "file", "diff", "hide"],
-        glyph_str: glyph::HARD_DRIVE,
+        glyph_str: glyph::DATABASE,
         dispatch: |_, cx| config::update(cx, |c| c.diff.hide_git_lfs ^= true),
     },
     PaletteAction {
         name: "Toggle Tree File List",
         keywords: &["tree", "file", "folder", "list"],
-        glyph_str: glyph::FOLDER_SIMPLE,
+        glyph_str: glyph::FOLDER,
         dispatch: |_, cx| config::update(cx, |c| c.diff.tree_file_list ^= true),
     },
     PaletteAction {
         name: "Toggle Auto-Expand Descriptions",
         keywords: &["description", "commit", "message", "expand", "auto"],
-        glyph_str: glyph::CARETS_UP_DOWN,
+        glyph_str: glyph::CARET_DOWN,
         dispatch: |_, cx| config::update(cx, |c| c.diff.auto_expand_description ^= true),
     },
     PaletteAction {
@@ -300,13 +300,13 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         name: "Zoom In",
         keywords: &["zoom", "font", "size", "larger"],
-        glyph_str: glyph::PLUS,
+        glyph_str: glyph::ZOOM_IN,
         dispatch: |_, cx| config::update(cx, |c| c.zoom(1.)),
     },
     PaletteAction {
         name: "Zoom Out",
         keywords: &["zoom", "font", "size", "smaller"],
-        glyph_str: glyph::MINUS,
+        glyph_str: glyph::ZOOM_OUT,
         dispatch: |_, cx| config::update(cx, |c| c.zoom(-1.)),
     },
     PaletteAction {

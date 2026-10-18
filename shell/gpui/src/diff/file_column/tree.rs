@@ -291,7 +291,7 @@ where
         .on_click(on_click)
         .child(row_separator(36. + indent, t))
         .child(icons::icon(chevron_glyph, 10., t.fg_faint))
-        .child(icons::icon(glyph::FOLDER_SIMPLE, 12., t.fg_dim))
+        .child(icons::icon(glyph::FOLDER, 12., t.fg_dim))
         .child(super::file_name_container(
             div()
                 .flex_1()

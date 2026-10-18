@@ -192,7 +192,7 @@ fn change_rows(change: &ChangeInfo) -> Vec<DynamicRow> {
     let mut rows = vec![change_row(
         format!("New Child Change ({short})"),
         "command-palette-new-child",
-        glyph::PLUS_CIRCLE,
+        glyph::PLUS,
         ContextAction::NewChangeOnTop(rev.clone().into()),
     )];
     if !change.is_immutable {

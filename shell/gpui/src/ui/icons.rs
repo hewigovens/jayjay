@@ -1,12 +1,12 @@
-//! Lucide icon glyphs. Bundled at build time from
-//! `assets/fonts/Lucide.ttf` — registered with GPUI's text system at startup.
+//! Codicon glyphs from `assets/fonts/Codicons.ttf`, registered with GPUI's text system at startup.
 //!
 //! Use `icon(glyph)` to render an icon span; pass `glyph::COPY` etc.
-//! Codepoints are pulled from `lucide-static`'s `font/codepoints.json`.
 
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
-const FONT: &str = "lucide";
+const FONT: &str = "codicon";
+/// Codicons are drawn on this grid; at multiples of it their strokes land on whole pixels.
+pub(crate) const CODICON_GRID: f32 = 16.;
 pub(crate) const SETI_FONT: &str = "seti";
 pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
 pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
@@ -47,85 +47,89 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
         include_bytes!("../../assets/icons/heart-circle.svg"),
     ),
     (
-        REFRESH_CW_SVG,
-        include_bytes!("../../assets/icons/refresh-cw.svg"),
+        REFRESH_SVG,
+        include_bytes!("../../assets/icons/refresh.svg"),
+    ),
+    (
+        SIDEBAR_LEADING_SVG,
+        include_bytes!("../../assets/icons/sidebar-leading.svg"),
     ),
 ];
-pub const REFRESH_CW_SVG: &str = "icons/refresh-cw.svg";
+pub const REFRESH_SVG: &str = "icons/refresh.svg";
+pub const SIDEBAR_LEADING_SVG: &str = "icons/sidebar-leading.svg";
 
 pub mod glyph {
-    pub const APP_WINDOW: &str = "\u{e426}";
-    pub const ARROW_CLOCKWISE: &str = "\u{e145}";
-    pub const ARROW_DOWN: &str = "\u{e042}";
-    pub const ARROW_RIGHT: &str = "\u{e049}";
+    pub const APP_WINDOW: &str = "\u{eb7f}";
+    pub const ARROW_CIRCLE_RIGHT: &str = "\u{ebfe}";
+    pub const ARROW_CLOCKWISE: &str = "\u{eb37}";
+    pub const ARROW_DOWN: &str = "\u{ea9a}";
+    pub const ARROW_RIGHT: &str = "\u{ea9c}";
+    pub const ARROW_UP: &str = "\u{eaa1}";
     pub const ARROW_UP_DOWN: &str = "\u{e37d}";
-    pub const ARROW_UTURN_BACK: &str = "\u{e2a1}";
-    pub const ARROW_UP: &str = "\u{e04a}";
-    pub const ARROWS_LEFT_RIGHT: &str = "\u{e24a}";
-    pub const A_LARGE_SMALL: &str = "\u{e587}";
-    pub const BOOKMARK: &str = "\u{e060}";
-    pub const CASE_SENSITIVE: &str = "\u{e3d9}";
-    pub const CHART_BAR: &str = "\u{e06a}";
-    pub const CLOUD: &str = "\u{e088}";
+    pub const ARROW_UTURN_BACK: &str = "\u{eae2}";
+    pub const ARROWS_LEFT_RIGHT: &str = "\u{ebcb}";
+    pub const A_LARGE_SMALL: &str = "\u{eb69}";
+    pub const BOOKMARK: &str = "\u{eaa5}";
+    pub const BRACES: &str = "\u{ea8b}";
+    pub const CARET_DOWN: &str = "\u{eab4}";
+    pub const CARET_RIGHT: &str = "\u{eab6}";
+    pub const CASE_SENSITIVE: &str = "\u{eab1}";
+    pub const CHART_BAR: &str = "\u{eb03}";
+    pub const CHECK: &str = "\u{eab2}";
+    pub const CLOUD: &str = "\u{ebaa}";
     pub const CLOUD_OFF: &str = "\u{e08d}";
-    pub const BRACES: &str = "\u{e36a}";
-    pub const CARET_DOWN: &str = "\u{e06d}";
-    pub const CARETS_UP_DOWN: &str = "\u{e211}";
-    pub const CARET_RIGHT: &str = "\u{e06f}";
-    pub const CHECK: &str = "\u{e06c}";
-    pub const COLUMNS: &str = "\u{e098}";
-    pub const CONTRAST: &str = "\u{e09d}";
-    pub const COPY: &str = "\u{e09e}";
-    pub const DIFF: &str = "\u{e30c}";
-    pub const DOT: &str = "\u{e44f}";
-    pub const EXTERNAL_LINK: &str = "\u{e0b9}";
-    pub const EYE: &str = "\u{e0ba}";
-    pub const EYE_OFF: &str = "\u{e0bb}";
-    pub const FILE_CODE: &str = "\u{e0c3}";
-    pub const FILE_SEARCH: &str = "\u{e0cb}";
-    pub const FILTER: &str = "\u{e0dc}";
-    pub const FOLDER: &str = "\u{e0d7}";
+    pub const COLUMNS: &str = "\u{eb56}";
+    pub const CONTRAST: &str = "\u{eac6}";
+    pub const COPY: &str = "\u{ebcc}";
+    pub const DATABASE: &str = "\u{eace}";
+    pub const DIFF: &str = "\u{eae1}";
+    pub const DIFF_ADDED: &str = "\u{eadc}";
+    pub const DIFF_MODIFIED: &str = "\u{eade}";
+    pub const DIFF_REMOVED: &str = "\u{eadf}";
+    pub const DOT: &str = "\u{eb8a}";
+    pub const EDIT_CODE: &str = "\u{ec68}";
+    pub const EXTERNAL_LINK: &str = "\u{eb14}";
+    pub const EYE: &str = "\u{ea70}";
+    pub const EYE_OFF: &str = "\u{eae7}";
+    pub const FILE_CODE: &str = "\u{eae9}";
+    pub const FILTER: &str = "\u{eaf1}";
+    pub const FOLDER: &str = "\u{ea83}";
     pub const FOLDER_MINUS: &str = "\u{e0d8}";
-    pub const FOLDER_SIMPLE: &str = "\u{e0d7}";
-    pub const HAND: &str = "\u{e1d7}";
-    pub const LIGATURE: &str = "\u{e43a}";
+    pub const GEAR: &str = "\u{eaf8}";
+    pub const GIT_BRANCH: &str = "\u{ea68}";
+    pub const GIT_MERGE: &str = "\u{eafe}";
+    pub const INFO: &str = "\u{ea74}";
+    pub const LIGATURE: &str = "\u{eb7e}";
+    pub const LIST: &str = "\u{eb17}";
+    pub const LIST_CHECKS: &str = "\u{eab3}";
+    pub const LIST_TREE: &str = "\u{eb86}";
     pub const MOON: &str = "\u{e11e}";
-    pub const PACKAGE: &str = "\u{e129}";
-    pub const PAINTBRUSH: &str = "\u{e2e7}";
-    pub const PIN: &str = "\u{e259}";
-    pub const PIN_OFF: &str = "\u{e2b6}";
-    pub const HARD_DRIVE: &str = "\u{e0ed}";
-    pub const PLUS: &str = "\u{e13d}";
-    pub const PLUS_CIRCLE: &str = "\u{e081}";
-    pub const MINUS: &str = "\u{e11c}";
-    pub const MINUS_CIRCLE: &str = "\u{e07e}";
-    pub const PENCIL: &str = "\u{e1f9}";
-    pub const SQUARE_PENCIL: &str = "\u{e172}";
-    pub const ARROW_CIRCLE_RIGHT: &str = "\u{e07a}";
-    pub const GEAR: &str = "\u{e154}";
-    pub const GIT_BRANCH: &str = "\u{e0e2}";
-    pub const GIT_MERGE: &str = "\u{e0e4}";
-    pub const INFO: &str = "\u{e0f9}";
-    pub const LIST: &str = "\u{e106}";
-    pub const LIST_CHECKS: &str = "\u{e1d0}";
-    pub const LIST_TREE: &str = "\u{e408}";
-    pub const PANEL_LEFT: &str = "\u{e12a}";
-    pub const SEARCH: &str = "\u{e151}";
-    pub const ROWS: &str = "\u{e58a}";
-    pub const SLIDERS_HORIZONTAL: &str = "\u{e29a}";
-    pub const SPARKLE: &str = "\u{e47e}";
-    pub const SQUARE_STACK: &str = "\u{e4a2}";
+    pub const PACKAGE: &str = "\u{eb29}";
+    pub const PALETTE: &str = "\u{eb5c}";
+    pub const PANEL_LEFT: &str = "\u{ebf3}";
+    pub const PENCIL: &str = "\u{ea73}";
+    pub const PIN: &str = "\u{eb2b}";
+    pub const PIN_OFF: &str = "\u{ec9e}";
+    pub const PLUS: &str = "\u{ea60}";
+    pub const ROWS: &str = "\u{eb57}";
+    pub const SEARCH: &str = "\u{ea6d}";
+    pub const SHIELD: &str = "\u{eb53}";
+    pub const SLIDERS_HORIZONTAL: &str = "\u{eb52}";
+    pub const SPARKLE: &str = "\u{ec10}";
+    pub const SUBMODULE: &str = "\u{eaec}";
+    pub const SYNC: &str = "\u{ea77}";
     pub const SUN: &str = "\u{e178}";
-    pub const TAG: &str = "\u{e17f}";
-    pub const TERMINAL: &str = "\u{e181}";
-    pub const SQUARE_TERMINAL: &str = "\u{e20a}";
-    pub const TRASH: &str = "\u{e18d}";
-    pub const UNFOLD_VERTICAL: &str = "\u{e43e}";
-    pub const WHITESPACE: &str = "\u{e3a3}";
-    pub const WARNING: &str = "\u{e193}";
-    pub const WRENCH: &str = "\u{e1b1}";
-    pub const X: &str = "\u{e1b2}";
-    pub const X_CIRCLE: &str = "\u{e084}";
+    pub const TAG: &str = "\u{ea66}";
+    pub const TERMINAL: &str = "\u{ea85}";
+    pub const TRASH: &str = "\u{ea81}";
+    pub const UNFOLD_VERTICAL: &str = "\u{eb73}";
+    pub const WARNING: &str = "\u{ea6c}";
+    pub const WHITESPACE: &str = "\u{eb7d}";
+    pub const WRENCH: &str = "\u{eb6d}";
+    pub const X: &str = "\u{ea76}";
+    pub const X_CIRCLE: &str = "\u{ea87}";
+    pub const ZOOM_IN: &str = "\u{eb81}";
+    pub const ZOOM_OUT: &str = "\u{eb82}";
 }
 
 /// Render an icon glyph at the given size, using a passed text color.

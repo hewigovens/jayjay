@@ -104,7 +104,7 @@ impl RepoWindow {
         });
         let mut items = vec![ContextMenuItem::new(
             "Add Review Note",
-            glyph::PLUS_CIRCLE,
+            glyph::PLUS,
             ContextAction::OpenAddReviewNote(request),
         )];
         // Delete is the sole way to remove a resolved note.

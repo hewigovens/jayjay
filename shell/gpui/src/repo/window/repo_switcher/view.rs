@@ -60,18 +60,12 @@ fn menu_panel(
                     });
                 },
             ),
-            picker::header_button(
-                "repo-switcher-new",
-                glyph::PLUS_CIRCLE,
-                "New",
-                t,
-                move |_, cx| {
-                    new_view.update(cx, |view, cx| {
-                        view.close_repo_switcher(cx);
-                        view.open_create_workspace(cx);
-                    });
-                },
-            ),
+            picker::header_button("repo-switcher-new", glyph::PLUS, "New", t, move |_, cx| {
+                new_view.update(cx, |view, cx| {
+                    view.close_repo_switcher(cx);
+                    view.open_create_workspace(cx);
+                });
+            }),
         ],
         t,
     );

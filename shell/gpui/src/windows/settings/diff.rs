@@ -61,7 +61,7 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
             form_section(
                 "Large Files",
                 [toggle_field(
-                    glyph::HARD_DRIVE,
+                    glyph::DATABASE,
                     "Hide Git LFS-backed files",
                     cfg.diff.hide_git_lfs,
                     |c| c.diff.hide_git_lfs ^= true,

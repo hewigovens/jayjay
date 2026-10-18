@@ -5,9 +5,7 @@ use gpui::{
 
 use crate::app::theme::Theme;
 use crate::ui::icons;
-use crate::ui::primitives::{
-    TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, TOOLBAR_ICON_SIZE, text_tooltip,
-};
+use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, text_tooltip};
 
 /// Leading/trailing get the capsule's fully rounded outer caps; inner segments stay flat-sided.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -53,7 +51,7 @@ pub(crate) fn group_icon_item(
 ) -> Stateful<Div> {
     group_item(id, tooltip, edge, theme).child(icons::icon(
         glyph_str,
-        TOOLBAR_ICON_SIZE,
+        icons::CODICON_GRID,
         theme.fg_dim,
     ))
 }

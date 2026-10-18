@@ -22,7 +22,7 @@ uiautomationcore urlmon runtimeobject icu icuuc icuin
 
 EXECUTABLE_SUBSYSTEMS = {"jayjay.exe": 3, "jayjay-gpui.exe": 2}  # console CLI, GUI app
 REQUIRED_FILES = [*EXECUTABLE_SUBSYSTEMS, "LICENSE.txt", "CORE-LICENSE.txt", "README.txt",
-                  "THIRD-PARTY-GUI.html", "THIRD-PARTY-CLI.html", "LUCIDE-LICENSE.txt",
+                  "THIRD-PARTY-GUI.html", "THIRD-PARTY-CLI.html", "CODICONS-LICENSE.txt",
                   "SETI-LICENSE.txt"]
 
 

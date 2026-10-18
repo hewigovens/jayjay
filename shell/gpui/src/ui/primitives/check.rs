@@ -70,7 +70,7 @@ pub(crate) fn check_circle(
     circle
 }
 
-// An SVG check centers geometrically; the lucide text glyph sits visibly off-center in a 14px circle.
+// An SVG check centers geometrically; the icon-font glyph sits visibly off-center in a 14px circle.
 
 fn check_mark(color: u32) -> gpui::Svg {
     svg()

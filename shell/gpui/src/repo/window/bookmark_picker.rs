@@ -165,7 +165,7 @@ fn menu_panel(
         ),
         [picker::header_button(
             "bookmark-picker-new",
-            glyph::PLUS_CIRCLE,
+            glyph::PLUS,
             "New",
             t,
             move |_, cx| {
