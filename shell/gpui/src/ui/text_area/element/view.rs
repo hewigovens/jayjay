@@ -348,6 +348,24 @@ mod tests {
     }
 
     #[gpui::test]
+    fn typing_in_a_short_single_line_field_never_scrolls(cx: &mut gpui::TestAppContext) {
+        use gpui::{VisualContext, VisualTestContext};
+
+        cx.update(|cx| cx.set_global(crate::app::theme::Theme::light()));
+        let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("", "", false, 26., cx));
+        let cx: &mut VisualTestContext = cx;
+        cx.focus(&input);
+        for ch in "https://github.com/owner/repo".chars() {
+            cx.simulate_input(&ch.to_string());
+            cx.run_until_parked();
+            assert_eq!(
+                input.read_with(cx, |input, _| input.scroll_offset_y()),
+                px(0.)
+            );
+        }
+    }
+
+    #[gpui::test]
     fn diff_highlighted_blocks_take_the_selected_palette_tokens(cx: &mut gpui::TestAppContext) {
         use gpui::AppContext as _;
         use jayjay_core::diff::DiffSpanStyle;

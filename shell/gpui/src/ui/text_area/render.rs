@@ -92,8 +92,15 @@ impl Render for TextArea {
                 .border_1()
                 .border_color(rgba(border))
                 .bg(rgba(fill))
-                .p(px(6.));
-            Some(self.height - 12.)
+                .px(px(6.));
+            if self.multiline {
+                root = root.py(px(6.));
+                Some(self.height - 12.)
+            } else {
+                // A line taller than its viewport would scroll to the caret on every keystroke.
+                root = root.py(px(((self.height - 2. - line_height) / 2.).max(0.)));
+                Some(line_height)
+            }
         } else {
             let line_count = self.content.matches('\n').count() + 1;
             let height = self.height + (line_height - self.line_height) * line_count as f32;
