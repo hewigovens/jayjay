@@ -223,16 +223,6 @@ fn clone_git_repo(
 }
 
 #[uniffi::export]
-fn check_gh_environment() -> CliStatus {
-    jayjay_core::check_gh_environment()
-}
-
-#[uniffi::export]
-fn check_glab_environment() -> CliStatus {
-    jayjay_core::check_glab_environment()
-}
-
-#[uniffi::export]
 fn check_origin_environment() -> CliStatus {
     jayjay_core::check_origin_environment()
 }

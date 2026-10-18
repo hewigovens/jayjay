@@ -85,7 +85,7 @@ impl Repo {
 
     fn pull_request_info_for_remote(&self, remote: &HostedRepo, bookmark: &str) -> PrLookup {
         match remote.host {
-            RepoHost::GitHub => github::pr_info(self, bookmark),
+            RepoHost::GitHub => github::pr_info(remote, bookmark),
             RepoHost::Codeberg => codeberg::pr_info(remote, bookmark),
             RepoHost::GitLab => gitlab::pr_info(remote, bookmark),
             RepoHost::Cursor => cursor::pr_info(self, bookmark),

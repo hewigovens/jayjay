@@ -9,7 +9,7 @@ pub(super) struct GhCheckRun {
     #[serde(default)]
     status: GhCheckStatus,
     #[serde(default)]
-    conclusion: GhCheckConclusion,
+    conclusion: Option<GhCheckConclusion>,
     /// Present only on StatusContext entries (commit-status API).
     state: Option<GhStatusContextState>,
 }
@@ -35,7 +35,7 @@ enum GhCheckStatus {
     Unknown,
 }
 
-#[derive(Deserialize, Default, PartialEq)]
+#[derive(Deserialize, PartialEq)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 enum GhCheckConclusion {
     Success,
@@ -44,7 +44,6 @@ enum GhCheckConclusion {
     Cancelled,
     TimedOut,
     ActionRequired,
-    #[default]
     #[serde(other)]
     Unknown,
 }
@@ -61,7 +60,7 @@ impl GhCheckRun {
         }
         if self.status != GhCheckStatus::Completed {
             CheckState::Pending
-        } else if self.conclusion == GhCheckConclusion::Success {
+        } else if self.conclusion == Some(GhCheckConclusion::Success) {
             CheckState::Success
         } else {
             CheckState::Failure

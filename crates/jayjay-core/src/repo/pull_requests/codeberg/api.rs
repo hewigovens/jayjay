@@ -2,19 +2,18 @@ use jayjay_network::{Auth, DEFAULT_TEXT_CAP, Fetch, Method, Request, encode_path
 use serde::Serialize;
 use serde::de::{DeserializeOwned, IgnoredAny};
 
-use super::api_error::ApiError;
+use super::super::api_error::ApiError;
 use super::page_scan::{PAGE_SIZE, PageScan, PullFilter, scan_pages};
 use super::pull_request::{CodebergPrResponse, CreatePull, EditPull};
 use super::repo::ForgejoRepo;
 use super::status::CodebergCombinedStatus;
-use crate::repo::hosted_repo::HostedRepo;
+use crate::repo::forge_auth::TokenProvider;
+use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 
 const API_URL: &str = "https://codeberg.org/api/v1";
 
 pub(crate) fn codeberg_token() -> Option<String> {
-    std::env::var("CODEBERG_TOKEN")
-        .or_else(|_| std::env::var("FORGEJO_TOKEN"))
-        .ok()
+    RepoHost::Codeberg.token().map(|token| token.secret)
 }
 
 pub(crate) struct Api<F: Fetch> {
@@ -92,6 +91,8 @@ impl<F: Fetch> Api<F> {
             .fetch(request)?
             .error_for_status()
             .map_err(|response| ApiError::from_response(&response))?;
-        response.json().map_err(|_| ApiError::unexpected(&response))
+        response
+            .json()
+            .map_err(|_| ApiError::unexpected(&response, RepoHost::Codeberg))
     }
 }

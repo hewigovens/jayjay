@@ -6,7 +6,9 @@ use super::stack_link_outcome::StackLinkOutcome;
 use super::{cursor, github, gitlab};
 use crate::repo::Repo;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
+use crate::repo::pull_requests::ForgeClient;
 use crate::repo::pull_requests::codeberg::codeberg_token;
+use crate::repo::pull_requests::github::Api as GitHubApi;
 use crate::types::{JayError, JayResult, SubmittedLayer};
 
 pub(super) struct StackForge {
@@ -23,11 +25,11 @@ impl StackForge {
     pub(super) fn preflight(&self, repo: &Repo) -> JayResult<String> {
         match self.remote.host {
             RepoHost::GitHub => {
-                github::preflight(repo)?;
+                self.github().client().preflight()?;
                 Ok(repo.default_pull_request_base())
             }
             RepoHost::GitLab => {
-                gitlab::preflight(repo)?;
+                self.gitlab().preflight()?;
                 Ok(repo.default_pull_request_base())
             }
             RepoHost::Cursor => cursor::preflight(repo),
@@ -37,8 +39,8 @@ impl StackForge {
 
     pub(super) fn submit_layer(&self, repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
         match self.remote.host {
-            RepoHost::GitHub => github::create_or_update_pr(repo, target),
-            RepoHost::GitLab => gitlab::create_or_update_mr(repo, target),
+            RepoHost::GitHub => github::create_or_update_pr(&self.github(), target),
+            RepoHost::GitLab => gitlab::create_or_update_mr(&self.gitlab(), &self.remote, target),
             RepoHost::Cursor => cursor::create_or_update_pr(repo, target),
             RepoHost::Codeberg => self.codeberg().submit_layer(target),
         }
@@ -46,12 +48,11 @@ impl StackForge {
 
     pub(super) fn link(
         &self,
-        repo: &Repo,
         targets: &[ForgeTarget],
         layers: &[SubmittedLayer],
     ) -> Option<StackLinkOutcome> {
         match self.remote.host {
-            RepoHost::GitHub => github::reconcile_stack(repo, &self.remote, layers),
+            RepoHost::GitHub => github::reconcile_stack(&self.github(), layers),
             RepoHost::Codeberg => Some(match self.codeberg().link(targets, layers) {
                 Ok(()) => StackLinkOutcome::Linked(String::new()),
                 Err(notes) => StackLinkOutcome::Fallback(notes),
@@ -73,6 +74,14 @@ impl StackForge {
         } else {
             urls.map(str::to_owned).collect()
         }
+    }
+
+    fn github(&self) -> GitHubApi {
+        GitHubApi::for_remote(&self.remote)
+    }
+
+    fn gitlab(&self) -> ForgeClient {
+        ForgeClient::gitlab(HttpClient::default(), RepoHost::GitLab)
     }
 
     fn codeberg(&self) -> CodebergStack<'_, HttpClient> {

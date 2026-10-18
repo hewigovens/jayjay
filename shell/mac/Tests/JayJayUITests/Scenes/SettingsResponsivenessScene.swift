@@ -12,7 +12,7 @@ final class SettingsResponsivenessScene: SceneBase {
 
     func testWorkflowTogglesDoNotRunCliProbesAndPagesReuseDetection() throws {
         let app = try XCTUnwrap(app)
-        let binary = Self.fixtureRoot.appendingPathComponent("settings-tools/glab")
+        let binary = Self.fixtureRoot.appendingPathComponent("settings-tools/origin")
         let calls = binary.appendingPathExtension("calls")
         keyStroke(",", modifiers: [.command])
         selectSettingsPage("integrations", in: app)

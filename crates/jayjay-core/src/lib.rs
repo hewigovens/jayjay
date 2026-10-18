@@ -69,13 +69,13 @@ pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]
 pub use repo::{
     AiProvider, CloneRequest, DiffExcerpt, JjConfigEntry, JjConfigSection, JjUserConfig, Repo,
-    ReviewNotesReport, ReviewOutputFormat, SyncToken, UserIdentity, add_review_note,
-    branch_name_slug, check_gh_environment, check_glab_environment, check_jj_environment,
-    check_origin_environment, compose_bisect_range, find_existing_binary, home_dir,
-    init_jj_git_repo, is_executable_file, is_valid_bookmark_name, is_valid_workspace_name,
-    jj_user_config, login_shell, login_shell_path, mark_review_file, resolve_review_note,
-    review_display_group_map_from_hunk, review_notes_output, review_snapshot_from_hunk,
-    review_status_output, unmark_review_files, workspace_primary_root, workspace_root,
+    RepoHost, ReviewNotesReport, ReviewOutputFormat, SyncToken, TokenSource, UserIdentity,
+    add_review_note, branch_name_slug, check_jj_environment, check_origin_environment,
+    compose_bisect_range, find_existing_binary, home_dir, init_jj_git_repo, is_executable_file,
+    is_valid_bookmark_name, is_valid_workspace_name, jj_user_config, login_shell, login_shell_path,
+    mark_review_file, resolve_review_note, review_display_group_map_from_hunk, review_notes_output,
+    review_snapshot_from_hunk, review_status_output, unmark_review_files, workspace_primary_root,
+    workspace_root,
 };
 #[cfg(feature = "repository")]
 pub use revset::{

@@ -177,3 +177,21 @@ fn wait_for_running(processes: &RunningJjProcesses, count: usize) {
         thread::sleep(Duration::from_millis(10));
     }
 }
+
+#[test]
+fn a_canceled_read_returns_while_the_read_still_runs() {
+    let sync = SyncToken::standalone();
+    let canceler = sync.clone();
+    let (_release, blocked) = std::sync::mpsc::channel::<()>();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(20));
+        canceler.cancel();
+    });
+    let started = Instant::now();
+    let result = sync.read(move || {
+        let _ = blocked.recv();
+        Ok(())
+    });
+    assert!(matches!(result, Err(JayError::Canceled)));
+    assert!(started.elapsed() < Duration::from_secs(1));
+}

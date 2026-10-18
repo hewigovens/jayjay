@@ -14,6 +14,8 @@ mod diff_edit;
 mod error;
 mod file_tree;
 mod fonts;
+#[cfg(feature = "desktop")]
+mod forge;
 mod fuzzy;
 mod github_alias;
 mod markdown;

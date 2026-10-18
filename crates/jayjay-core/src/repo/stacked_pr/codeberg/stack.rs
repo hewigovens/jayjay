@@ -1,10 +1,11 @@
 use jayjay_network::Fetch;
 
-use super::super::forge::{ForgeTarget, created_with_number, failed, non_empty_or};
+use super::super::forge::{ForgeTarget, created_with_number, failed, non_empty_or, updated};
 use super::section::{with_existing_section, with_stack_section};
 use crate::repo::hosted_repo::HostedRepo;
+use crate::repo::pull_requests::ApiError;
 use crate::repo::pull_requests::codeberg::{
-    Api, ApiError, CodebergPrResponse, CreatePull, EditPull, PageScan, PullFilter,
+    Api, CodebergPrResponse, CreatePull, EditPull, PageScan, PullFilter,
 };
 use crate::types::{JayError, JayResult, StackLayerOutcome, SubmittedLayer};
 
@@ -138,15 +139,13 @@ impl<'a, F: Fetch> CodebergStack<'a, F> {
             title: title.clone(),
         };
         match self.api.edit_pull(pull.number(), &edit) {
-            Ok(()) => SubmittedLayer {
-                bookmark: target.bookmark.clone(),
-                base: target.base.clone(),
+            Ok(()) => updated(
+                target,
                 title,
-                outcome: StackLayerOutcome::Updated,
-                pr_number: pull.number(),
-                pr_url: pull.web_url(),
-                detail: format!("PR #{} → base {}", pull.number(), target.base),
-            },
+                pull.number(),
+                pull.web_url(),
+                format!("PR #{}", pull.number()),
+            ),
             Err(error) => failed(target, error.to_string()),
         }
     }

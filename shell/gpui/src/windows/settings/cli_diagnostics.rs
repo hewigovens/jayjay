@@ -1,23 +1,24 @@
 use gpui::Context;
-use jayjay_core::CliStatus;
+use jayjay_core::{CliStatus, RepoHost, TokenSource};
 
 use super::SettingsView;
 
 #[derive(Clone, Debug)]
 pub struct CliDiagnostics {
     pub jj: CliStatus,
-    pub gh: CliStatus,
-    pub glab: CliStatus,
     pub origin: CliStatus,
+    pub forge_logins: Vec<(RepoHost, Option<TokenSource>)>,
 }
 
 impl CliDiagnostics {
     pub(super) fn load() -> Self {
         Self {
             jj: jayjay_core::check_jj_environment(),
-            gh: jayjay_core::check_gh_environment(),
-            glab: jayjay_core::check_glab_environment(),
             origin: jayjay_core::check_origin_environment(),
+            forge_logins: RepoHost::TOKEN_HOSTS
+                .into_iter()
+                .map(|host| (host, host.token_source()))
+                .collect(),
         }
     }
 }

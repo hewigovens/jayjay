@@ -73,7 +73,7 @@ impl Repo {
             .collect();
 
         let mut linked = false;
-        if let Some(outcome) = forge.link(self, &targets, &layers) {
+        if let Some(outcome) = forge.link(&targets, &layers) {
             linked = outcome.is_linked();
             append_message(&mut message, &outcome.into_message());
         }

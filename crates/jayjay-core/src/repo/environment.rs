@@ -276,14 +276,6 @@ pub(crate) fn require_jj() -> JayResult<String> {
     Ok(status.path)
 }
 
-pub(crate) fn gh_binary() -> String {
-    find_binary("gh")
-}
-
-pub(crate) fn glab_binary() -> String {
-    find_binary("glab")
-}
-
 pub(crate) fn origin_binary() -> String {
     find_binary("origin")
 }
@@ -338,14 +330,6 @@ fn extract_version(raw: &str) -> String {
 
 pub fn check_jj_environment() -> CliStatus {
     check_cli("jj")
-}
-
-pub fn check_gh_environment() -> CliStatus {
-    check_cli("gh")
-}
-
-pub fn check_glab_environment() -> CliStatus {
-    check_cli("glab")
 }
 
 pub fn check_origin_environment() -> CliStatus {

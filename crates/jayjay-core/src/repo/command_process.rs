@@ -11,7 +11,7 @@ use std::collections::HashMap;
 use std::io::Read;
 use std::process::{Child, ChildStderr, ChildStdout, Command, ExitStatus, Output, Stdio};
 use std::sync::atomic::{AtomicBool, Ordering};
-use std::sync::{Arc, Mutex, MutexGuard};
+use std::sync::{Arc, Mutex, MutexGuard, mpsc};
 use std::thread;
 use std::time::Duration;
 
@@ -94,6 +94,39 @@ impl SyncToken {
             return Err(JayError::Canceled);
         }
         Ok(())
+    }
+
+    /// A canceled read may finish in the background; repository mutations must stay on the caller.
+    pub(crate) fn read<T: Send + 'static>(
+        &self,
+        read: impl FnOnce() -> JayResult<T> + Send + 'static,
+    ) -> JayResult<T> {
+        self.check()?;
+        let (sender, receiver) = mpsc::sync_channel(1);
+        let sync = self.clone();
+        thread::Builder::new()
+            .spawn(move || {
+                let _enter = sync.enter();
+                let _ = sender.send(sync.check().and_then(|()| read()));
+            })
+            .map_err(|error| {
+                JayError::internal(format!("Couldn't start background read: {error}"))
+            })?;
+        loop {
+            self.check()?;
+            match receiver.recv_timeout(REAP_POLL) {
+                Ok(result) => {
+                    self.check()?;
+                    return result;
+                }
+                Err(mpsc::RecvTimeoutError::Timeout) => {}
+                Err(mpsc::RecvTimeoutError::Disconnected) => {
+                    return Err(JayError::internal(
+                        "Background read exited without a result",
+                    ));
+                }
+            }
+        }
     }
 
     pub(crate) fn enter(&self) -> SyncEnter {

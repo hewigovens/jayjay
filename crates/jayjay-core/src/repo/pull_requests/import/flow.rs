@@ -19,8 +19,8 @@ impl Repo {
         url: &str,
         sync: &SyncToken,
     ) -> JayResult<PullRequestImportPreview> {
-        let _enter = sync.enter();
-        let plan = self.resolve_pull_request_import(url)?;
+        let plan = self.resolve_pull_request_import(url, sync)?;
+        sync.check()?;
         let (name, dest) = self.suggest_workspace_destination(plan.resolved.number)?;
         let existing_workspace = self.existing_pull_request_workspace(&plan)?;
         Ok(plan.into_preview(name, dest, existing_workspace))
@@ -34,10 +34,7 @@ impl Repo {
         workspace_dest: &str,
         sync: &SyncToken,
     ) -> JayResult<String> {
-        let plan = {
-            let _enter = sync.enter();
-            self.resolve_pull_request_import(url)?
-        };
+        let plan = self.resolve_pull_request_import(url, sync)?;
         if !plan.resolved.has_head(previewed_head_commit_id) {
             return Err(JayError::internal(format!(
                 "The pull request head moved to {} since the preview; the preview now shows the new head.",
@@ -110,7 +107,11 @@ impl Repo {
         path.parent().unwrap_or(&path).to_path_buf()
     }
 
-    fn resolve_pull_request_import(&self, url: &str) -> JayResult<PullRequestImportPlan> {
+    fn resolve_pull_request_import(
+        &self,
+        url: &str,
+        sync: &SyncToken,
+    ) -> JayResult<PullRequestImportPlan> {
         let parsed =
             url::parse_pull_request_url(url).ok_or_else(|| JayError::internal(UNSUPPORTED_URL))?;
         let origin_url = self.git_remote_url()?;
@@ -125,22 +126,24 @@ impl Repo {
             )));
         }
         let ssh = remote_url_uses_ssh(&origin_url);
-        let resolved = match parsed.base.host {
-            RepoHost::GitHub => github::resolve(self, &parsed, ssh),
-            RepoHost::GitLab => gitlab::resolve(self, &parsed, ssh),
-            RepoHost::Codeberg | RepoHost::Cursor => Err(JayError::internal(format!(
-                "Resolving pull requests from {} is coming soon.",
-                parsed.base.host.display_name(),
-            ))),
-        }?
-        .checked(parsed.number)
-        .ok_or_else(|| {
-            JayError::internal(format!(
-                "{} did not answer with pull request {} and a complete head commit and branch.",
-                parsed.base.host.display_name(),
-                parsed.number,
-            ))
-        })?;
+        let (host, number) = (parsed.base.host, parsed.number);
+        let resolved = sync
+            .read(move || match host {
+                RepoHost::GitHub => github::resolve(&parsed, ssh),
+                RepoHost::GitLab => gitlab::resolve(&parsed, ssh),
+                RepoHost::Codeberg | RepoHost::Cursor => Err(JayError::internal(format!(
+                    "Resolving pull requests from {} is coming soon.",
+                    parsed.base.host.display_name(),
+                ))),
+            })?
+            .checked(number)
+            .ok_or_else(|| {
+                JayError::internal(format!(
+                    "{} did not answer with pull request {} and a complete head commit and branch.",
+                    host.display_name(),
+                    number,
+                ))
+            })?;
 
         let remotes = self.git_remotes()?;
         let remote = match &resolved.head {

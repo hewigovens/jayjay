@@ -476,13 +476,13 @@ fixture_workspace_switch() {
 fixture_settings_tools() {
   local bin="$fixtures/settings-tools"
   mkdir -p "$bin"
-  cat > "$bin/glab" <<'SH'
+  cat > "$bin/origin" <<'SH'
 #!/bin/sh
 printf 'probe\n' >> "$0.calls"
 sleep 2
-printf 'glab version 1.2.3\n'
+printf 'origin version 1.2.3\n'
 SH
-  chmod +x "$bin/glab"
+  chmod +x "$bin/origin"
 }
 
 fixture_repository_stores() {

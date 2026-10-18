@@ -1,13 +1,16 @@
-use super::client::{ApiError, Client, Stack};
+use jayjay_network::Fetch;
+
+use super::client::{Client, Stack};
+use crate::repo::forge_auth::TokenProvider;
+use crate::repo::pull_requests::ApiError;
+use crate::repo::pull_requests::github::Api;
 use crate::repo::stacked_pr::stack_link_outcome::StackLinkOutcome;
-use crate::repo::{Repo, hosted_repo::HostedRepo};
 use crate::types::{StackLayerOutcome, SubmittedLayer};
 
 const MAX_STACK_SIZE: usize = 100;
 
-pub(super) fn reconcile(
-    repo: &Repo,
-    remote: &HostedRepo,
+pub(crate) fn reconcile(
+    api: &Api<impl Fetch, impl TokenProvider>,
     layers: &[SubmittedLayer],
 ) -> Option<StackLinkOutcome> {
     if layers.len() < 2 {
@@ -33,10 +36,13 @@ pub(super) fn reconcile(
         .iter()
         .map(|layer| layer.pr_number)
         .collect::<Vec<_>>();
-    Some(reconcile_remote(&Client::new(repo, remote), &pr_numbers))
+    Some(reconcile_remote(&Client::new(api), &pr_numbers))
 }
 
-fn reconcile_remote(client: &Client<'_>, desired: &[u32]) -> StackLinkOutcome {
+fn reconcile_remote(
+    client: &Client<impl Fetch, impl TokenProvider>,
+    desired: &[u32],
+) -> StackLinkOutcome {
     let mut retry_available = true;
     loop {
         let existing = match client.find_for_pr(desired[0]) {

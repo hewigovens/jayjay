@@ -22,7 +22,7 @@ pub(crate) struct HostedRepo {
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub(crate) enum RepoHost {
+pub enum RepoHost {
     GitHub,
     Codeberg,
     GitLab,
@@ -152,7 +152,7 @@ impl RepoHost {
         HostedRepo::parse(url).is_some_and(|repo| repo.host == self)
     }
 
-    pub(crate) fn display_name(self) -> &'static str {
+    pub fn display_name(self) -> &'static str {
         match self {
             Self::GitHub => "GitHub",
             Self::Codeberg => "Codeberg",

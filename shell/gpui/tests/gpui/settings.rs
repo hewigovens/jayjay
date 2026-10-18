@@ -3,6 +3,7 @@ use gpui::{
     Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point,
     px, size,
 };
+use jayjay_core::{RepoHost, TokenSource};
 use jayjay_gpui::app::actions::OpenAbout;
 use jayjay_gpui::app::config::current as current_config;
 use jayjay_gpui::windows::settings::cli_diagnostics::CliDiagnostics;
@@ -52,7 +53,11 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
     scroll_settings(&mut settings_cx, -500.);
     assert!(settings_cx.debug_bounds("settings-cli-section").is_some());
     assert!(settings_cx.debug_bounds("settings-tool-row-jj").is_some());
-    assert!(settings_cx.debug_bounds("settings-tool-row-gh").is_some());
+    assert!(
+        settings_cx
+            .debug_bounds("settings-tool-row-GitHub")
+            .is_some()
+    );
     assert!(
         settings_cx
             .debug_bounds("settings-tool-row-origin")
@@ -293,14 +298,16 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
             };
             view.set_cli_diagnostics(
                 CliDiagnostics {
-                    jj: missing.clone(),
-                    gh: missing.clone(),
-                    glab: missing,
+                    jj: missing,
                     origin: jayjay_core::CliStatus {
                         is_installed: true,
                         version: "1.2.3".to_owned(),
                         path: "/mock/bin/origin".to_owned(),
                     },
+                    forge_logins: vec![
+                        (RepoHost::GitHub, Some(TokenSource::Cli("gh"))),
+                        (RepoHost::GitLab, None),
+                    ],
                 },
                 cx,
             );
@@ -338,6 +345,16 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
         assert!(
             settings_cx
                 .debug_bounds("settings-tool-state-origin-found")
+                .is_some()
+        );
+        assert!(
+            settings_cx
+                .debug_bounds("settings-tool-state-GitHub-found")
+                .is_some()
+        );
+        assert!(
+            settings_cx
+                .debug_bounds("settings-tool-state-GitLab-missing")
                 .is_some()
         );
         click_setting(&mut settings_cx, "settings-nav-Appearance");

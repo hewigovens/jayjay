@@ -1,24 +1,29 @@
-use jayjay_network::{
-    Auth, DEFAULT_TEXT_CAP, Fetch, HttpClient, NetError, Request, encode_path_segment,
-};
+use jayjay_network::{Fetch, HttpClient, encode_path_segment};
 
-use super::super::PrLookup;
+use super::super::{ForgeClient, PrLookup};
 use super::merge_request::GitLabMrResponse;
 use super::status::GitLabCommitStatus;
-use crate::repo::hosted_repo::HostedRepo;
+use crate::repo::forge_auth::TokenProvider;
+use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 use crate::types::ChecksStatus;
 
-const GITLAB_API_URL: &str = "https://gitlab.com/api/v4";
-
 pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
+    lookup(
+        &ForgeClient::gitlab(HttpClient::default(), RepoHost::GitLab),
+        remote,
+        bookmark,
+    )
+}
+
+fn lookup(
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
+    remote: &HostedRepo,
+    bookmark: &str,
+) -> PrLookup {
     // GitLab filters by source branch server-side, so a single request suffices.
-    let fetch = HttpClient::default();
-    let body = match fetch_text(&fetch, &merge_requests_path(remote, bookmark)) {
-        Ok(body) => body,
+    let Ok(mrs) = api.get::<Vec<GitLabMrResponse>>(&branch_merge_requests_path(remote, bookmark))
+    else {
         // A private project 404s and rate limits 429; neither is a confirmed "no MR".
-        Err(_) => return PrLookup::Unknown,
-    };
-    let Ok(mrs) = serde_json::from_str::<Vec<GitLabMrResponse>>(&body) else {
         return PrLookup::Unknown;
     };
     let Some(mr) = pick_mr(mrs, bookmark) else {
@@ -26,23 +31,9 @@ pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
     };
     let checks = mr
         .head_sha()
-        .and_then(|sha| commit_status(&fetch, remote, sha))
+        .and_then(|sha| commit_status(api, remote, sha))
         .unwrap_or(ChecksStatus::None);
     PrLookup::Found(mr.into_pr_info(checks))
-}
-
-pub(super) fn fetch_text(fetch: &impl Fetch, path: &str) -> Result<String, NetError> {
-    let request = Request::get(
-        format!("{GITLAB_API_URL}/{path}"),
-        DEFAULT_TEXT_CAP,
-        &gitlab_auth(),
-    );
-    fetch.fetch(&request)?.into_text(DEFAULT_TEXT_CAP)
-}
-
-// Without GITLAB_TOKEN private projects 404 and rate limits apply.
-fn gitlab_auth() -> Auth {
-    Auth::bearer(std::env::var("GITLAB_TOKEN").ok())
 }
 
 // The listing is newest-first, so the first match is the freshest when no MR is open.
@@ -57,31 +48,39 @@ fn pick_mr(mrs: Vec<GitLabMrResponse>, source_branch: &str) -> Option<GitLabMrRe
     fallback
 }
 
-fn merge_requests_path(remote: &HostedRepo, source_branch: &str) -> String {
+pub(crate) fn merge_requests_path(remote: &HostedRepo) -> String {
+    format!("projects/{}/merge_requests", project_id(remote))
+}
+
+fn branch_merge_requests_path(remote: &HostedRepo, source_branch: &str) -> String {
     format!(
-        "projects/{}/merge_requests?source_branch={}&state=all&order_by=created_at&sort=desc",
-        project_id(remote),
+        "{}?source_branch={}&state=all&order_by=created_at&sort=desc",
+        merge_requests_path(remote),
         encode_path_segment(source_branch),
     )
 }
 
 pub(crate) fn merge_request_path(remote: &HostedRepo, iid: u32) -> String {
-    format!("projects/{}/merge_requests/{iid}", project_id(remote))
+    format!("{}/{iid}", merge_requests_path(remote))
 }
 
 pub(crate) fn project_path(id: u64) -> String {
     format!("projects/{id}")
 }
 
-fn commit_status(fetch: &impl Fetch, remote: &HostedRepo, sha: &str) -> Option<ChecksStatus> {
+fn commit_status(
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
+    remote: &HostedRepo,
+    sha: &str,
+) -> Option<ChecksStatus> {
     let path = format!(
         "projects/{}/repository/commits/{}",
         project_id(remote),
         encode_path_segment(sha),
     );
-    let body = fetch_text(fetch, &path).ok()?;
-    let commit: GitLabCommitStatus = serde_json::from_str(&body).ok()?;
-    Some(commit.checks())
+    api.get::<GitLabCommitStatus>(&path)
+        .ok()
+        .map(|commit| commit.checks())
 }
 
 fn project_id(remote: &HostedRepo) -> String {
@@ -107,7 +106,7 @@ mod tests {
 
     #[test]
     fn merge_requests_path_escapes_project_path_and_branch() {
-        let path = merge_requests_path(&remote(), "feat/foo");
+        let path = branch_merge_requests_path(&remote(), "feat/foo");
         assert!(path.starts_with("projects/owner%2Frepo/merge_requests?"));
         assert!(path.contains("source_branch=feat%2Ffoo"));
         assert!(path.contains("state=all"));

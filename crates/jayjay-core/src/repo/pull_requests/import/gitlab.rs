@@ -1,46 +1,61 @@
-use jayjay_network::Fetch;
+use jayjay_network::{Fetch, HttpClient};
 
-use super::super::gitlab::api::Transport;
 use super::super::gitlab::{self, GitLabMrResponse, GitLabProjectResponse, MrHeadProject};
+use super::super::{ApiError, ForgeClient};
 use super::plan::{ForkRepo, PrHeadRepo, ResolvedPullRequest};
 use super::url::ParsedPullRequestUrl;
-use crate::repo::Repo;
+use crate::repo::forge_auth::TokenProvider;
+use crate::repo::hosted_repo::RepoHost;
 use crate::types::{ChecksStatus, JayError, JayResult};
 
-const NOT_FOUND: &str = "GitLab returned not found for this merge request. A private merge request needs a login: run `glab auth login`, or set GITLAB_TOKEN when glab is not installed.";
 const UNUSABLE_HEAD: &str =
     "GitLab did not return a usable head for this merge request; the fork may have been deleted.";
 
-pub(super) fn resolve(
-    repo: &Repo,
-    parsed: &ParsedPullRequestUrl,
-    ssh: bool,
-) -> JayResult<ResolvedPullRequest> {
-    resolve_with(parsed, ssh, Transport::for_repo(repo))
+pub(super) fn resolve(parsed: &ParsedPullRequestUrl, ssh: bool) -> JayResult<ResolvedPullRequest> {
+    resolve_with(
+        parsed,
+        ssh,
+        &ForgeClient::gitlab(HttpClient::default(), RepoHost::GitLab),
+    )
 }
 
 fn resolve_with(
     parsed: &ParsedPullRequestUrl,
     ssh: bool,
-    api: Transport<'_, impl Fetch>,
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
 ) -> JayResult<ResolvedPullRequest> {
     let mr: GitLabMrResponse = api
-        .get_json(&gitlab::merge_request_path(&parsed.base, parsed.number))
-        .map_err(|error| error.into_core_error("the merge request", NOT_FOUND))?;
+        .get(&gitlab::merge_request_path(&parsed.base, parsed.number))
+        .map_err(|error| {
+            let hint = RepoHost::GitLab.sign_in_hint();
+            load_error(
+                error,
+                "the merge request",
+                &format!("GitLab returned not found for this merge request. A private merge request needs a login: {hint}"),
+            )
+        })?;
     let head = match mr.head_project() {
         Some(MrHeadProject::Same) => PrHeadRepo::SameRepository,
         Some(MrHeadProject::Fork(project_id)) => {
             let project: GitLabProjectResponse = api
-                .get_json(&gitlab::project_path(project_id))
+                .get(&gitlab::project_path(project_id))
                 // A deleted fork 404s while the merge request that references it lives on.
                 .map_err(|error| {
-                    error.into_core_error("the merge request's source project", UNUSABLE_HEAD)
+                    load_error(error, "the merge request's source project", UNUSABLE_HEAD)
                 })?;
             PrHeadRepo::Fork(ForkRepo::from_gitlab(&project, ssh)?)
         }
         None => return Err(JayError::internal(UNUSABLE_HEAD)),
     };
     Ok(ResolvedPullRequest::from_gitlab(mr, head))
+}
+
+fn load_error(error: ApiError, subject: &str, not_found: &str) -> JayError {
+    if error.status() == Some(404) {
+        JayError::internal(not_found)
+    } else {
+        JayError::internal(format!("Couldn't load {subject} from GitLab: {error}"))
+    }
 }
 
 impl ResolvedPullRequest {
@@ -82,6 +97,7 @@ mod tests {
     use jayjay_network::{MockFetch, NetError, Request, Response};
 
     use super::*;
+    use crate::repo::forge_auth::ForgeToken;
     use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 
     const HEAD: &str = "3a1df4445c8fcf392a378bd54d52511d4bb2d461";
@@ -115,7 +131,8 @@ mod tests {
         respond: impl Fn(&Request) -> Result<Response, NetError>,
     ) -> (JayResult<ResolvedPullRequest>, Vec<String>) {
         let fetch = MockFetch::new(respond);
-        let result = resolve_with(&parsed(), ssh, Transport::Plain(&fetch));
+        let api = ForgeClient::gitlab(&fetch, None::<ForgeToken>);
+        let result = resolve_with(&parsed(), ssh, &api);
         let urls = fetch
             .requests()
             .iter()

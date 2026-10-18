@@ -1,169 +1,181 @@
-use super::super::Repo;
-use super::super::environment::glab_binary;
-use super::forge::{ForgeTarget, auth_preflight, created, failed, non_empty_or, url_containing};
-use crate::types::{JayResult, StackLayerOutcome, SubmittedLayer};
+use jayjay_network::{Fetch, Method, encode_path_segment};
+use serde_json::json;
 
-pub(super) fn preflight(repo: &Repo) -> JayResult<()> {
-    auth_preflight(repo, &glab_binary(), "glab", "GitLab CLI (glab)")
-}
+use super::forge::{ForgeTarget, created_with_number, failed, non_empty_or, updated};
+use crate::repo::forge_auth::TokenProvider;
+use crate::repo::hosted_repo::HostedRepo;
+use crate::repo::pull_requests::gitlab::{
+    GitLabMrResponse, MrHeadProject, merge_request_path, merge_requests_path,
+};
+use crate::repo::pull_requests::{ApiError, ForgeClient};
+use crate::types::{ChecksStatus, SubmittedLayer};
 
-pub(super) fn create_or_update_mr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
-    match existing_mr(repo, &target.bookmark) {
-        Some((iid, url)) => update_target(repo, target, iid, url),
-        None => create_mr(repo, target),
+pub(super) fn create_or_update_mr(
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
+    remote: &HostedRepo,
+    target: &ForgeTarget,
+) -> SubmittedLayer {
+    // A closed MR's target can't be edited, and a fork's branch can share the name.
+    let path = format!(
+        "{}?source_branch={}&state=opened",
+        merge_requests_path(remote),
+        encode_path_segment(&target.bookmark)
+    );
+    match api.get::<Vec<GitLabMrResponse>>(&path) {
+        Ok(open) => match open
+            .into_iter()
+            .find(|mr| matches!(mr.head_project(), Some(MrHeadProject::Same)))
+        {
+            Some(mr) => update_target(api, remote, target, mr),
+            None => create_mr(api, remote, target),
+        },
+        Err(error) => failed(target, error.to_string()),
     }
 }
 
-// The bookmark goes after `--` so an option-shaped name can't be parsed as a flag.
-fn mr_view_args(head: &str) -> [&str; 6] {
-    ["mr", "view", "-F", "json", "--", head]
-}
-
-fn mr_update_args<'a>(
-    base: &'a str,
-    title: &'a str,
-    description: &'a str,
-    bookmark: &'a str,
-) -> [&'a str; 11] {
-    [
-        "mr",
-        "update",
-        "--target-branch",
-        base,
-        "--title",
-        title,
-        "--description",
-        description,
+fn update_target(
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
+    remote: &HostedRepo,
+    target: &ForgeTarget,
+    mr: GitLabMrResponse,
+) -> SubmittedLayer {
+    let mr = mr.into_pr_info(ChecksStatus::None);
+    let title = non_empty_or(&target.title, &target.bookmark);
+    let description = non_empty_or(&target.body, &title);
+    let body = json!({
+        "target_branch": target.base,
+        "title": title,
+        "description": description,
         // Enforce branch retention on re-submit so already-created MRs stay stack-safe.
-        "--remove-source-branch=false",
-        "--",
-        bookmark,
-    ]
-}
-
-fn existing_mr(repo: &Repo, head: &str) -> Option<(u32, String)> {
-    let out = repo
-        .command_output(&glab_binary(), &mr_view_args(head), "glab mr view")
-        .ok()?;
-    if !out.status.success() {
-        return None;
-    }
-    #[derive(serde::Deserialize)]
-    struct View {
-        iid: u32,
-        web_url: String,
-        state: String,
-    }
-    let view: View = serde_json::from_str(&Repo::stdout_text(&out)).ok()?;
-    // A closed or merged MR on the same branch must not be reused (its target can't be edited); create a fresh MR instead.
-    (view.state == "opened").then_some((view.iid, view.web_url))
-}
-
-fn update_target(repo: &Repo, target: &ForgeTarget, iid: u32, url: String) -> SubmittedLayer {
-    // Title and description are refreshed too, so an edited commit re-syncs the MR.
-    let title = non_empty_or(&target.title, &target.bookmark);
-    let description = non_empty_or(&target.body, &title);
-    let result = repo.command_output(
-        &glab_binary(),
-        &mr_update_args(
-            target.base.as_str(),
-            title.as_str(),
-            description.as_str(),
-            target.bookmark.as_str(),
-        ),
-        "glab mr update",
-    );
-    let (outcome, detail) = match result {
-        Ok(out) if out.status.success() => (
-            StackLayerOutcome::Updated,
-            format!("MR !{iid} → base {}", target.base),
-        ),
-        Ok(out) => (
-            StackLayerOutcome::Failed,
-            Repo::stderr_text(&out).trim().to_owned(),
-        ),
-        Err(error) => (StackLayerOutcome::Failed, error.to_string()),
-    };
-    SubmittedLayer {
-        bookmark: target.bookmark.clone(),
-        base: target.base.clone(),
-        title: target.title.clone(),
-        outcome,
-        pr_number: iid,
-        pr_url: url,
-        detail,
-    }
-}
-
-fn create_mr(repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
-    let title = non_empty_or(&target.title, &target.bookmark);
-    let description = non_empty_or(&target.body, &title);
-    let result = repo.command_output(
-        &glab_binary(),
-        &[
-            "mr",
-            "create",
-            "--source-branch",
-            target.bookmark.as_str(),
-            "--target-branch",
-            target.base.as_str(),
-            "--title",
-            title.as_str(),
-            "--description",
-            description.as_str(),
-            // GitLab retargets the MR above only while the merged branch survives; deleting it would orphan the stack.
-            "--remove-source-branch=false",
-            "--yes",
-        ],
-        "glab mr create",
-    );
+        "remove_source_branch": false,
+    });
+    let result: Result<GitLabMrResponse, ApiError> =
+        api.send(Method::Put, &merge_request_path(remote, mr.number), &body);
     match result {
-        Ok(out) if out.status.success() => created(
+        Ok(_) => updated(
             target,
             title,
-            url_containing(&Repo::stdout_text(&out), "/merge_requests/"),
+            mr.number,
+            mr.url,
+            format!("MR !{}", mr.number),
         ),
-        Ok(out) => failed(target, Repo::stderr_text(&out)),
+        Err(error) => failed(target, error.to_string()),
+    }
+}
+
+fn create_mr(
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
+    remote: &HostedRepo,
+    target: &ForgeTarget,
+) -> SubmittedLayer {
+    let title = non_empty_or(&target.title, &target.bookmark);
+    let description = non_empty_or(&target.body, &title);
+    let body = json!({
+        "source_branch": target.bookmark,
+        "target_branch": target.base,
+        "title": title,
+        "description": description,
+        // GitLab retargets the MR above only while the merged branch survives; deleting it would orphan the stack.
+        "remove_source_branch": false,
+    });
+    match api.send::<GitLabMrResponse>(Method::Post, &merge_requests_path(remote), &body) {
+        Ok(mr) => {
+            let mr = mr.into_pr_info(ChecksStatus::None);
+            created_with_number(target, title, mr.number, mr.url)
+        }
         Err(error) => failed(target, error.to_string()),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{mr_update_args, mr_view_args};
+    use jayjay_network::{MockFetch, Request, Response};
 
-    #[test]
-    fn mr_view_args_put_head_after_separator() {
-        assert_eq!(
-            mr_view_args("feat-x"),
-            ["mr", "view", "-F", "json", "--", "feat-x"]
-        );
-        let args = mr_view_args("--repo=evil");
-        assert_eq!(args[args.len() - 2], "--");
-        assert_eq!(args[args.len() - 1], "--repo=evil");
+    use super::*;
+    use crate::repo::forge_auth::{ForgeToken, TokenSource};
+    use crate::repo::hosted_repo::RepoHost;
+    use crate::types::StackLayerOutcome;
+
+    const MR: &str = r#"{"iid":7,"state":"opened","title":"Add x","web_url":"https://gitlab.com/g/r/-/merge_requests/7","source_project_id":1,"target_project_id":1}"#;
+
+    fn submit(
+        respond: impl Fn(&Request) -> Result<Response, jayjay_network::NetError>,
+    ) -> (SubmittedLayer, Vec<Request>) {
+        let fetch = MockFetch::new(respond);
+        let token = Some(ForgeToken {
+            secret: "t".into(),
+            source: TokenSource::Environment("GITLAB_TOKEN"),
+        });
+        let api = ForgeClient::gitlab(&fetch, token);
+        let remote = HostedRepo {
+            host: RepoHost::GitLab,
+            owner: "g".into(),
+            repo: "r".into(),
+        };
+        let target = ForgeTarget {
+            bookmark: "feat/x".into(),
+            base: "main".into(),
+            title: "Add x".into(),
+            body: String::new(),
+        };
+        let layer = create_or_update_mr(&api, &remote, &target);
+        (layer, fetch.writes())
+    }
+
+    fn body(request: &Request) -> serde_json::Value {
+        serde_json::from_str(request.body_text()).unwrap()
     }
 
     #[test]
-    fn mr_update_args_put_bookmark_after_separator() {
+    fn creates_a_merge_request_that_keeps_its_source_branch() {
+        let (layer, writes) = submit(|request| match request.method {
+            Method::Get => Response::ok(200, "[]"),
+            _ => Response::ok(201, MR),
+        });
         assert_eq!(
-            mr_update_args("main", "T", "D", "feat-x"),
-            [
-                "mr",
-                "update",
-                "--target-branch",
-                "main",
-                "--title",
-                "T",
-                "--description",
-                "D",
-                "--remove-source-branch=false",
-                "--",
-                "feat-x",
-            ]
+            (layer.outcome, layer.pr_number),
+            (StackLayerOutcome::Created, 7)
         );
-        // An option-shaped bookmark lands after `--`, never parsed as a flag.
-        let evil = mr_update_args("main", "T", "D", "--yes");
-        assert_eq!(evil[evil.len() - 2], "--");
-        assert_eq!(evil[evil.len() - 1], "--yes");
+        assert_eq!(
+            writes[0].url,
+            "https://gitlab.com/api/v4/projects/g%2Fr/merge_requests"
+        );
+        assert_eq!(
+            body(&writes[0]),
+            json!({
+                "source_branch": "feat/x", "target_branch": "main", "title": "Add x",
+                "description": "Add x", "remove_source_branch": false,
+            })
+        );
+    }
+
+    #[test]
+    fn retargets_an_open_merge_request() {
+        let (layer, writes) = submit(|request| match request.method {
+            Method::Get => {
+                assert!(
+                    request
+                        .url
+                        .ends_with("?source_branch=feat%2Fx&state=opened")
+                );
+                Response::ok(200, format!("[{MR}]"))
+            }
+            _ => Response::ok(200, MR),
+        });
+        assert_eq!(layer.detail, "MR !7 → base main");
+        assert_eq!(writes[0].method, Method::Put);
+        assert!(writes[0].url.ends_with("/merge_requests/7"));
+        assert_eq!(body(&writes[0])["remove_source_branch"], json!(false));
+    }
+
+    #[test]
+    fn a_fork_merge_request_on_the_same_branch_name_is_left_alone() {
+        let fork = MR.replace(r#""source_project_id":1"#, r#""source_project_id":9"#);
+        let (layer, writes) = submit(move |request| match request.method {
+            Method::Get => Response::ok(200, format!("[{fork}]")),
+            _ => Response::ok(201, MR),
+        });
+        assert_eq!(layer.outcome, StackLayerOutcome::Created);
+        assert_eq!(writes[0].method, Method::Post);
     }
 }

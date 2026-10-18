@@ -1,5 +1,5 @@
-use crate::repo::Repo;
-use crate::types::{JayError, JayResult, StackLayerOutcome, SubmittedLayer};
+use crate::types::{StackLayerOutcome, SubmittedLayer};
+
 pub(super) struct ForgeTarget {
     pub bookmark: String,
     pub base: String,
@@ -49,92 +49,39 @@ pub(super) fn created_with_number(
         detail: format!("Created onto {}", target.base),
     }
 }
-pub(super) fn url_containing(text: &str, needle: &str) -> String {
-    text.split_whitespace()
-        .find(|token| token.contains(needle))
-        .unwrap_or("")
-        .trim()
-        .to_owned()
-}
-pub(super) fn auth_preflight(repo: &Repo, binary: &str, cli: &str, display: &str) -> JayResult<()> {
-    let label = format!("{cli} auth status");
-    match repo.command_output(binary, &["auth", "status"], &label) {
-        Ok(out) if out.status.success() => Ok(()),
-        Ok(out) => Err(JayError::Internal {
-            message: format!(
-                "{display} is not ready: {}. Run `{cli} auth login` and retry.",
-                Repo::stderr_text(&out).trim()
-            ),
-        }),
-        Err(error) => Err(JayError::Internal {
-            message: format!(
-                "{display} is unavailable: {error}. Install {cli} and run `{cli} auth login`."
-            ),
-        }),
-    }
-}
-pub(super) fn edit_pull_request(
-    repo: &Repo,
-    binary: &str,
-    cli: &str,
+
+pub(super) fn updated(
     target: &ForgeTarget,
+    title: String,
     number: u32,
     url: String,
+    label: String,
 ) -> SubmittedLayer {
-    let num = number.to_string();
-    let title = non_empty_or(&target.title, &target.bookmark);
-    let label = format!("{cli} pr edit");
-    let result = repo.command_output(
-        binary,
-        &[
-            "pr",
-            "edit",
-            num.as_str(),
-            "--base",
-            target.base.as_str(),
-            "--title",
-            title.as_str(),
-            "--body",
-            target.body.as_str(),
-        ],
-        &label,
-    );
-    let (outcome, detail) = match result {
-        Ok(out) if out.status.success() => (
-            StackLayerOutcome::Updated,
-            format!("PR #{number} → base {}", target.base),
-        ),
-        Ok(out) => (
-            StackLayerOutcome::Failed,
-            Repo::stderr_text(&out).trim().to_owned(),
-        ),
-        Err(error) => (StackLayerOutcome::Failed, error.to_string()),
-    };
     SubmittedLayer {
         bookmark: target.bookmark.clone(),
         base: target.base.clone(),
-        title: target.title.clone(),
-        outcome,
+        title,
+        outcome: StackLayerOutcome::Updated,
         pr_number: number,
         pr_url: url,
-        detail,
+        detail: format!("{label} → base {}", target.base),
     }
 }
 
 #[cfg(test)]
 mod tests {
-    use super::{number_from_url, url_containing};
+    use super::number_from_url;
 
     #[test]
-    fn scrapes_the_pull_request_url_and_number_from_cli_output() {
-        let output = "Creating pull request\nhttps://github.com/o/r/pull/42\n";
-        let url = url_containing(output, "/pull/");
-        assert_eq!(url, "https://github.com/o/r/pull/42");
-        assert_eq!(number_from_url(&url), Some(42));
+    fn reads_the_number_from_a_pull_request_url() {
         assert_eq!(
-            number_from_url("https://gitlab.com/o/r/-/merge_requests/7/"),
-            Some(7)
+            number_from_url("https://origin.cursor.com/o/r/pull/42"),
+            Some(42)
         );
-        assert_eq!(url_containing("no link here", "/pull/"), "");
+        assert_eq!(
+            number_from_url("https://origin.cursor.com/o/r/pull/42/"),
+            Some(42)
+        );
+        assert_eq!(number_from_url("no link here"), None);
     }
 }
