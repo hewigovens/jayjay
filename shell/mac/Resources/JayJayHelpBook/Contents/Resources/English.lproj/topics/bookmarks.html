@@ -31,19 +31,16 @@
     <a name="bookmarks"></a>
     <p class="eyebrow">Bookmarks</p>
     <h1>Manage bookmarks and pull requests</h1>
-    <p>Open Bookmark Manager with <code>Cmd+Shift+B</code> to inspect bookmark state, reveal changes, copy names, diff bookmarks, and clean up stale bookmarks.</p>
+    <p>A bookmark names a change; tracking connects it to a remote branch. With a repository open, choose <strong>Repository &gt; Bookmark Manager</strong> or press <code>Cmd+Shift+B</code> to inspect bookmark state. Right-click a row for its available actions; <strong>Filter in DAG</strong> reveals its history and <strong>Diff Bookmark</strong> compares it against trunk.</p>
     <ul>
-      <li>Use bookmark actions to create, rename, track, move forward, delete, or push bookmarks.</li>
-      <li>The <strong>Bookmarks</strong> picker in the graph header groups bookmarks as Tracked, Local Only, and Remote Only. Click a bookmark to select its change, or, when the graph does not show it, to narrow the graph to its stack and select it; choose a remote-only bookmark to browse that remote's history without creating a local bookmark. <strong>Filter by This Bookmark</strong> in a row's menu narrows the graph to the bookmark and its changes over trunk. Pull and Push leave tracking alone.</li>
+      <li>To create a bookmark at a chosen change, right-click that change in the graph, choose <strong>Create bookmark here...</strong>, enter a name, and confirm. For an existing local bookmark, open the <strong>Bookmarks</strong> picker above the graph and right-click its row for <strong>Rename...</strong>, <strong>Move to @-</strong> (the working copy’s parent), <strong>Push</strong>, or <strong>Delete</strong>.</li>
+      <li>The <strong>Bookmarks</strong> picker in the graph header groups bookmarks as Tracked, Local Only, and Remote Only. Click a bookmark to select its change, or, when the graph does not show it, to narrow the graph to its stack and select it; choose a remote-only bookmark to browse that remote's history without creating a local bookmark. <strong>Filter by This Bookmark</strong> in a row's menu narrows the graph to the bookmark and its changes over trunk. The toolbar’s repository-wide Pull leaves tracking alone; an explicit bookmark Push or Pull can establish tracking for that bookmark.</li>
+      <li>To track a remote-only bookmark, right-click it in Bookmark Manager and choose <strong>Track name@remote</strong>. For a local bookmark, use <strong>Track Remote</strong> in its picker row’s menu when a matching remote bookmark is available. Tracking creates the local relationship used for synchronization; simply viewing a remote bookmark does not.</li>
       <li>After a fetch or pull, a tracked bookmark whose remote branch was deleted, for example once its pull request merged, is cleaned up: its emptied changes and the bookmark go in one undoable operation. Changes with unmerged work, conflicts, or a workspace's working copy are kept, and Bookmark Manager marks the bookmark <em>deleted on</em> that remote.</li>
       <li>Drag a bookmark chip in the DAG to move it to another change. Conflicted bookmarks use an orange warning chip on every target. <strong>Remove from This Change</strong> on that chip drops the bookmark from that change only; Bookmark Manager still deletes the whole bookmark.</li>
-      <li>Right-click a bookmark to open or compose a GitHub PR, GitLab MR, or Codeberg PR. Cursor Origin has no compose page; JayJay creates a PR with the <code>origin</code> CLI when none exists, then opens it. Create failures (GitHub-mirrored Origin repos, or a bookmark that is not on the remote) are shown as errors.</li>
+      <li>For remote actions, configure a Git remote and credentials that allow pushing. Cloning a repository sets up <code>origin</code>; for an existing repository, use the command palette’s <code>jj git remote list</code> to inspect remotes or <code>jj git remote add origin &lt;url&gt;</code> to add one. Push the bookmark, then use its <strong>Pull Request on &lt;forge&gt;</strong> action in Bookmark Manager (available for tracked, non-trunk bookmarks) or its graph chip’s context menu to open or compose a GitHub PR, GitLab MR, or Codeberg PR. Cursor Origin has no compose page; JayJay creates a PR with the <code>origin</code> CLI when none exists, then opens it. Create failures (GitHub-mirrored Origin repos, or a bookmark that is not on the remote) are shown as errors.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/bookmark-manager.jpg" alt="JayJay Bookmark Manager" width="3840" height="1950" />
-      <p class="caption">Bookmark Manager shows sync state, cleanup actions, and pull-request entry points.</p>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#bookmarks">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

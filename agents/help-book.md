@@ -7,7 +7,7 @@ Load this file when changing the embedded macOS Help Book or its build/debug flo
 The Help Book is an embedded macOS help bundle, not the public website. It intentionally shares these sources with the website:
 
 - `docs/guide.html` is the public workflow source of truth; synchronize the corresponding Help Book topic HTML during the release docs pass.
-- `docs/imgs/` contains screenshots reused by the Help Book build.
+- `docs/imgs/` contains screenshots reused by the Help Book build. Keep the offline set small: the main window, diff edit mode, and conflict editor, with light and dark variants. Preserve all task instructions and search metadata offline; link each topic to its matching section in the public guide for the full screenshot walkthrough.
 - `docs/css/help-common.css`, `docs/js/help.js`, and `docs/apple-touch-icon.png` are shared presentation assets.
 
 Do not copy the landing page, FAQ, blog, or site metadata into the Help Book. `UserGuide.md` remains a stub pointing at the public guide rather than another content copy.
@@ -24,6 +24,7 @@ Do not copy the landing page, FAQ, blog, or site metadata into the Help Book. `U
 ## Apple Help Rules
 
 - Keep Help pages conservative: simple HTML, relative paths, one `sty/help.css` stylesheet link, and JPEG screenshots inside the Help Book. Do not use an XHTML public doctype with an external DTD URL; Tips' sandbox can treat the DTD fetch as an out-of-book navigation and leave the page blank.
+- Every task must be usable with images hidden: state its prerequisites, exact entry point, steps, and result or exit action. Link to another bundled topic for shared setup; online links and screenshot captions must not be the only source of required instructions.
 - WebP screenshots are fine as source assets under `docs/imgs`, and `docs/imgs/home.png` is the home source; the Help Book uses JPEG output from `scripts/build-help-book.sh`.
 - Keep `CFBundleHelpBookName`, `HPDBookTitle`, and the Swift `HelpBook.bookTitle` string in sync.
 - Any content or asset change must change the Help Book `CFBundleVersion`; the build script appends a content checksum for this.

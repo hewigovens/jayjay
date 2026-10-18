@@ -31,61 +31,23 @@
     <a name="settings"></a>
     <p class="eyebrow">Settings</p>
     <h1>Configure tools and settings</h1>
-    <p>Settings is organized into Appearance, Fonts, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages.</p>
+    <p>Choose <strong>JayJay &gt; Settings…</strong> or press <code>Cmd+,</code> to open the window. Select a page in the settings sidebar: Appearance, Fonts, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, or About.</p>
     <ul>
       <li>Appearance selects separate light and dark diff palettes and previews their colors. The active palette colors diffs, editors, and syntax highlighting. Wallpaper tinting is available with Default Dark; other dark palettes use their own background.</li>
       <li>Fonts groups interface and code font families and sizes, code line spacing, ligatures, and a live diff preview. The ligatures switch is disabled for fonts that have none. <strong>Reset Fonts</strong> restores both font configurations; <code>Cmd++</code>, <code>Cmd+-</code>, and <code>Cmd+0</code> change both sizes together.</li>
-      <li>Choose external editors such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim.</li>
-      <li>Choose Terminal.app, iTerm2, or Ghostty for repository terminal actions.</li>
+      <li>In <strong>Integrations &gt; Applications</strong>, choose an installed external <strong>Editor</strong>, such as VS Code, VSCodium, Cursor, Zed, Xcode, or Vim. Right-click a file and choose <strong>Open in &lt;editor&gt;</strong> to use it.</li>
+      <li>Choose <strong>Terminal</strong> on the same page, such as Terminal.app, iTerm2, or Ghostty. The repository toolbar’s terminal button opens that app at the repository’s folder.</li>
       <li>Integrations configures editor, terminal, and AI commit-message providers and groups the <code>jayjay</code>/<code>jj</code> and forge CLIs (<code>gh</code>, <code>glab</code>, <code>origin</code>); tools are checked in the background so pages open without waiting.</li>
-      <li>Copy JayJay's jj diff/edit/merge tool definition from Integrations, or print the same text with <code>jayjay config</code>.</li>
+      <li>Under <strong>Integrations &gt; Version control</strong>, click <strong>Install</strong> beside <strong>jayjay</strong> to link the bundled CLI at <code>~/.local/bin/jayjay</code>. Add <code>~/.local/bin</code> to your shell’s PATH, or use that full path directly. <strong>Copy Config</strong> beside <strong>jj tool configuration</strong>, or <code>jayjay config</code>, supplies the jj diff/edit/merge tool definition; follow <a href="conflicts.html">external tool setup</a> to install it in jj.</li>
       <li>Diff &amp; Files holds diff layout and rendering defaults and <strong>Auto-expand descriptions</strong>, which opens an overflowing description at its expanded height as soon as a change is selected. Workflow holds confirmations, including the Forget &amp; Delete prompt after Don't ask again.</li>
       <li>Jujutsu reads your jj user config files directly, grouped by section, and needs no jj binary; it shows Config not found for a missing file, or the load error and the file that failed, with an Open action.</li>
       <li>In <strong>Jujutsu &gt; Identity</strong>, choose <strong>Set Up…</strong> or <strong>Edit…</strong> to save the author name and email to your jj user config. The sheet shows the file it will update; saving refreshes identity displays in open windows.</li>
       <li>The update channel dropdown in About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
-      <li>Data &amp; Privacy shows how many review marks and notes are stored and can clear them for every repository after confirmation.</li>
+      <li><strong>Data &amp; Privacy</strong> shows how many review marks and notes are stored. <strong>Clear…</strong> beside <strong>Review marks and notes</strong> opens a confirmation; choosing Clear there removes them for every repository on this Mac. This cannot be undone through the repository’s operation log.</li>
       <li>Anonymous build and OS statistics are enabled by default and can be disabled here. JayJay sends no repository, file, or command data, and rotating identifiers cannot link an installation across months.</li>
       <li>Choose <strong>Help &gt; Send Feedback</strong> to email us.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/identity-setup.jpg" alt="Set the jj author name and email" width="1600" height="1120" />
-      <p class="caption">Set the name and email jj records on your changes.</p>
-    </div>
-    <div class="shot-grid">
-      <div class="shot">
-        <img src="../imgs/settings-fonts.jpg" alt="JayJay Settings fonts panel" width="480" height="336" />
-        <p class="caption">Fonts groups interface and code fonts, line spacing, ligatures, and a diff preview.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-appearance.jpg" alt="JayJay Settings appearance panel" width="480" height="336" />
-        <p class="caption">Appearance selects light and dark diff palettes, wallpaper tinting, and a live preview.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-diff.jpg" alt="JayJay Settings diff panel" width="480" height="336" />
-        <p class="caption">Diff &amp; Files sets layout, review behavior, rendering defaults, and Auto-expand descriptions.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-workflow.jpg" alt="JayJay Settings workflow panel" width="480" height="336" />
-        <p class="caption">Workflow holds confirmations and repository behavior.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-integrations.jpg" alt="JayJay Settings integrations panel" width="480" height="336" />
-        <p class="caption">Integrations picks the editor, terminal, and AI providers and checks the jj and forge CLIs.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-jj.jpg" alt="JayJay Settings Jujutsu panel" width="1600" height="1120" />
-        <p class="caption">Jujutsu shows your author identity and resolved jj user config.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-data-privacy.jpg" alt="JayJay Settings data and privacy panel" width="480" height="336" />
-        <p class="caption">Data &amp; Privacy holds statistics and stored review data.</p>
-      </div>
-      <div class="shot">
-        <img src="../imgs/settings-about.jpg" alt="JayJay Settings about panel" width="480" height="336" />
-        <p class="caption">About selects the Stable or Beta update channel.</p>
-      </div>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#settings">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

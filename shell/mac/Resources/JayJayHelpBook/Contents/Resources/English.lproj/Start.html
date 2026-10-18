@@ -33,8 +33,18 @@
     <p class="eyebrow">JayJay Help</p>
     <h1>JayJay Manual</h1>
     <p>JayJay is a native macOS app for working with Jujutsu repositories. Use it to navigate the change graph, review diffs, split work, manage bookmarks, create pull requests, and recover from recent operations without leaving the jj model.</p>
-    <p>Jujutsu, or <code>jj</code>, is a Git-compatible version control system built around changes, revsets, an operation log, and flexible history editing. JayJay keeps those concepts visible instead of translating them into branch-first Git workflows.</p>
-    <p>Use the sidebar, Help search, or type <code>help</code> in the command palette to search these local task guides.</p>
+    <p>Jujutsu, or <code>jj</code>, is a Git-compatible version control system. These task guides are available offline and can be followed without their screenshots. Online links provide additional illustrations and upstream documentation.</p>
+    <p>Use the sidebar or Help search to find a topic. With a repository open, press <code>Cmd+Shift+P</code> and type <code>help</code> in the command palette to search local feature help; select a result and press Return to open its topic.</p>
+    <a name="concepts"></a>
+    <h2>Core concepts</h2>
+    <ul>
+      <li>A <strong>change</strong> contains file edits and a description. Its change ID stays the same as it is rewritten; its commit ID identifies one particular version.</li>
+      <li>The <strong>working copy</strong>, marked <code>@</code> in the graph, is the change associated with this checkout. File edits become part of it automatically; there is no staging step. <a href="topics/operations.html">Describe or commit it</a> when you want to name the work or start the next change.</li>
+      <li>A <strong>bookmark</strong> names a change. A tracked bookmark connects a local name with a remote branch for synchronization; see <a href="topics/bookmarks.html">bookmarks and pull requests</a>.</li>
+      <li>A <strong>revset</strong> is an expression that selects changes. <code>@</code> selects the working copy; <code>trunk()</code> selects the main integration change configured for the repository. A change's parents are the changes it builds on.</li>
+      <li><strong>Mutable</strong> changes can be rewritten. <strong>Immutable</strong> changes are protected by your jj configuration, commonly including shared history on trunk.</li>
+      <li>A <strong>workspace</strong> is a separate checkout with its own working copy that shares the repository's history. See <a href="topics/open.html">opening repositories and workspaces</a>.</li>
+    </ul>
 
     <div class="home-links">
       <div class="home-card">
@@ -49,7 +59,7 @@
       </div>
       <div class="home-card">
         <h2>Project links</h2>
-        <p>Find the full web guide, source code, releases, and issue tracker.</p>
+        <p>Find the full screenshot walkthrough in the online guide, along with source code, releases, and the issue tracker.</p>
         <p><a href="https://jayjay.hewig.dev/guide.html">User guide</a> · <a href="https://github.com/hewigovens/jayjay">GitHub</a></p>
       </div>
     </div>

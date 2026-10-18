@@ -31,7 +31,7 @@
     <a name="review-notes"></a>
     <p class="eyebrow">Diffs</p>
     <h1>Leave review notes</h1>
-    <p>Attach feedback to specific changed lines while reviewing the working copy. Right-click a changed line's gutter and choose <code>Add Review Note</code>.</p>
+    <p>Select the working-copy <code>@</code> change and a changed file, then use the diff header’s layout toggle to switch to <strong>Unified</strong>. Right-click a changed line’s gutter and choose <strong>Add Review Note</strong> to attach feedback to that line.</p>
     <ul>
       <li>The note editor shows a short diff excerpt around the anchored line; save with <code>Cmd+Return</code>.</li>
       <li>Saved notes appear in the unified diff as an orange bubble below the annotated line, with an orange dot in the gutter. Click the dot — or right-click the line again — to edit, resolve, or delete the note.</li>
@@ -42,7 +42,7 @@
       <li>Agents can annotate too: <code>jayjay review add-note --repo . --file &lt;path&gt; --line &lt;n&gt; -m "note"</code> anchors a note to a changed line, and it appears in the diff view like any other note.</li>
       <li>Agents can pre-review: <code>jayjay review status --repo .</code> lists every changed file with its state and the inspected commit, <code>jayjay review mark --repo . --file &lt;path&gt; --expected-commit &lt;id&gt;</code> marks a mechanical file (or one change group with <code>--line &lt;n&gt;</code>) reviewed on the agent's behalf, and <code>jayjay review unmark --repo .</code> drops every agent mark. A mark is refused if the working copy changed since that commit, and an agent never takes over a group you reviewed.</li>
     </ul>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#review-notes">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

@@ -31,20 +31,20 @@
     <a name="split"></a>
     <p class="eyebrow">Changes</p>
     <h1>Split work from a change</h1>
-    <p>Open diff edit mode from the working copy or another mutable change, then select files, hunks, or line ranges. Selected edits can become a child change, a parallel change, or move into the working copy.</p>
+    <p>Select a mutable change in the graph and a text file in its file list, then click <strong>Edit Diff</strong> in the diff header. In this editor, use a file’s checkbox to select the whole file, a hunk control to select its changed lines, or click individual changed lines in the gutter. The selection count shows what is checked.</p>
     <ul>
       <li>File cards show +/− line counts and collapse in place; large diffs start collapsed. Expand All and Collapse All (⌥⌘E / ⌥⌘C) toggle every file, while j / k or the arrow keys move focus between cards, ← / → collapse or expand the focused card, Return toggles it, and Space selects its changed lines.</li>
-      <li>Use reviewed files as the selection model for batch split.</li>
-      <li>Use the file list context menu to split selected files directly from any mutable change, or move selected historical files into the working copy.</li>
-      <li>Choose a parallel change when the extracted edits should become a sibling, not a child. To turn existing changes into siblings, select them in the graph and choose <strong>Parallelize</strong>.</li>
-      <li>Working-copy edits can be discarded at selected line granularity.</li>
-      <li>From the command line, <code>jj split --tool jayjay</code> opens the same blocking multi-file, line-selectable editor. Use <code>jj diff --tool jayjay</code> or a configured <code>git difftool --dir-diff</code> for a read-only directory comparison.</li>
+      <li>To split whole files, select them in the file list, right-click, and choose <strong>Split to New Change</strong> (or <strong>Split N Files to New Change</strong>). Enter a description in the sheet, optionally turn on <strong>Parallel split</strong>, and choose <strong>Split</strong>. You can also mark files reviewed with Space and use the split button above the file list to split those checked files.</li>
+      <li>In diff edit mode for a change other than <code>@</code>, enter a new description and choose <strong>Create New Child Change</strong> or <strong>Create Parallel Change</strong> to extract the checked edits. <strong>Move to Working Copy</strong> extracts them into <code>@</code>. The extracted edits leave the source change.</li>
+      <li>A child change builds on the source; a parallel change shares its parents. To turn existing changes into siblings, select them in the graph and choose <strong>Parallelize</strong>.</li>
+      <li><strong>Done</strong> keeps the checked edits in the source and discards its unchecked editable edits, including edits in unopened file cards. This is the apply action available when editing <code>@</code>. Choose <strong>Cancel</strong> or press <code>Esc</code> to close without applying. Projected, renamed, and non-text files are preview-only. To recover a repository edit, use <a href="operations.html">the operation log</a>.</li>
+      <li>From the command line, <code>jj split --tool jayjay</code> opens the same blocking multi-file, line-selectable editor. Use <code>jj diff --tool jayjay</code> or a configured <code>git difftool --dir-diff</code> for a read-only directory comparison. See <a href="conflicts.html">external tool configuration</a> for the required CLI setup.</li>
     </ul>
     <div class="shot">
       <img src="../imgs/diff-edit.jpg" alt="JayJay diff edit mode selecting hunks to split" width="2560" height="1300" />
       <p class="caption">Diff edit mode lets you select files, hunks, or individual lines from the working copy or another mutable change.</p>
     </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#diff-edit">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

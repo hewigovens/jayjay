@@ -32,38 +32,28 @@
     <p class="eyebrow">Getting started</p>
     <h1>Open a repository</h1>
     <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a folder that already contains a jj repository.</p>
+    <p>The history sidebar lists changes. Select a change to populate the file list, then select a file to read its diff. The <code>@</code> row is this workspace's working copy; see the <a href="../Start.html#concepts">core concepts</a> for jj terminology.</p>
     <ul>
-      <li>After installing the bundled CLI, run <code>jayjay /path/to/repo</code> or <code>jayjay .</code> from a terminal.</li>
+      <li>To open repositories from a terminal, choose <strong>JayJay &gt; Settings… &gt; Integrations</strong> and click <strong>Install</strong> beside <strong>jayjay</strong>. This links the bundled CLI at <code>~/.local/bin/jayjay</code>. Add <code>~/.local/bin</code> to your shell’s PATH, then run <code>jayjay /path/to/repo</code> or <code>jayjay .</code>; you can also invoke <code>~/.local/bin/jayjay .</code> directly.</li>
       <li>Choose <strong>Clone…</strong> on the welcome screen or <strong>File &gt; Clone Repository…</strong> to clone a Git repository into a new jj checkout. Paste its URL, adjust the suggested name and location, and choose Clone. Cancel stops an in-flight clone; the repository opens when it finishes.</li>
       <li>Onboarding offers <strong>Set Up…</strong> when your jj author identity is missing. Enter the name and email that jj should record on new changes, or set them later in <strong>Settings &gt; Jujutsu</strong>.</li>
       <li>The Repository List separates persistent <strong>Pinned</strong> repositories from <strong>Recent Repositories</strong> and groups recent sibling-workspace checkouts beneath their primary repository. Use the pin button to keep a repository in the list; clearing Recent does not remove pins, and unpinning returns a repository to Recent. Recent Repositories sit in a side panel that opens with your first recent repository, closes when the last one is removed, and toggles from the sidebar button in between. Drag its divider to size the panel; the width persists across launches, and workspace rows show their path under the name.</li>
       <li>Click the repository title to search this repository's workspaces, other open windows, pinned repositories, and recent repositories, or return to the full Repository List. Use Overview in the picker to open the Repo Overview, and a row's context menu to pin or unpin that repository or workspace.</li>
       <li>Choosing a workspace in the title picker, or a command-palette <strong>Switch to</strong> entry, opens it in the current window, or brings its window forward if it is already open. The window keeps showing the source workspace, with the refresh indicator spinning, until the destination has loaded; if it fails to open, the source stays usable and JayJay shows the error. Unsaved commit-message drafts are kept per workspace. Option-click a workspace or choose <strong>Open in New Window</strong> from its context menu for a separate window.</li>
-      <li>Create a workspace from <strong>Repository &gt; New Workspace…</strong> or the command palette, or check out a GitHub pull request or GitLab merge request with <strong>Repository &gt; New Workspace from Pull Request…</strong>: paste its URL, review the preview, and JayJay fetches the head into a new workspace. GitLab sign-in uses <code>glab</code> when it is installed, otherwise a <code>GITLAB_TOKEN</code>. A workspace row can open or copy the workspace name or checkout path, forget only the jj workspace metadata, or safely forget and delete the checkout after confirmation.</li>
+      <li>To create a workspace, choose <strong>Repository &gt; New Workspace…</strong> or find New Workspace in the command palette. Enter a workspace name and choose <strong>Create</strong>. JayJay creates a sibling directory with that name beside the current checkout and opens the new workspace. Cancel closes the sheet without creating it.</li>
+      <li>To check out a GitHub pull request or GitLab merge request, choose <strong>Repository &gt; New Workspace from Pull Request…</strong>: paste its URL and choose <strong>Resolve</strong>. Review the repository, bookmark, and destination in the preview, adjust the workspace name if needed, then choose <strong>Fetch &amp; Create Workspace</strong>. JayJay fetches the head and opens the new checkout; if it already exists, choose <strong>Open Workspace</strong> instead. GitLab sign-in uses <code>glab</code> when it is installed, otherwise a <code>GITLAB_TOKEN</code>. A workspace row can open or copy the workspace name or checkout path, forget only the jj workspace metadata, or safely forget and delete the checkout after confirmation.</li>
       <li><strong>Repository &gt; Repo Overview</strong> (<code>Cmd+Shift+O</code>) shows every lane of mutable work as a tree growing from trunk. Each lane card shows its workspaces and bookmarks and either its change count or what needs attention. Click a lane for its base, a Rebase onto trunk button when it is behind, its workspaces, bookmarks, and changes; click a change for its description and changed files, which you can select and copy. Filter lanes with <code>Cmd+F</code>, move with the arrow keys, press Return to show the selection in its workspace window, press Esc to step back out of a panel, and use the context menu to rebase a lane onto trunk, abandon it, or forget a workspace.</li>
       <li>When another workspace rewrites this workspace's working-copy change, the working copy is stale: the <code>@</code> row shows a warning glyph and the Refresh button a badge, and Refresh or <strong>Update Workspace</strong> in the row's menu updates it like <code>jj workspace update-stale</code>.</li>
       <li>JayJay watches the repository and working tree and refreshes visible working-copy details after external changes. A refresh waits while an editor, review-note composer, or confirmation sheet holds unfinished input.</li>
       <li>Hide or show the history sidebar with the toolbar button, View menu, or <code>Control-Command-S</code>. Onboarding, the Repository List, and each repository open in their own windows. Closing the last repository window returns to the Repository List automatically, and every window kind remembers its position and size across launches, as do the sidebar and file-column widths.</li>
       <li>Recent repositories and Repository List… also appear in the Dock menu. Pinned repositories are shared with JayJay's GPUI shell, while each shell keeps its own recent history.</li>
-      <li>If the folder is not a jj repository, JayJay offers a <code>jj git init</code> path.</li>
+      <li>If the folder has no jj repository, the open-error screen offers <strong>Initialize with jj git init</strong>. Choose it to initialize that folder, then JayJay loads the repository.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/clone-repository.jpg" alt="Clone a Git repository with a chosen name and location" width="960" height="386" />
-      <p class="caption">Clone a Git repository into a new jj checkout.</p>
-    </div>
     <div class="shot">
       <img src="../imgs/home.jpg" alt="JayJay main window after opening a repository" width="1920" height="975" />
       <p class="caption">After opening a repository, JayJay shows the DAG, changed files, and selected diff in one window.</p>
     </div>
-    <div class="shot">
-      <img src="../imgs/workspaces.jpg" alt="Search workspaces by name" width="360" height="259" />
-      <p class="caption">Search and switch between working copies from the repository title.</p>
-    </div>
-    <div class="shot">
-      <img src="../imgs/overview.jpg" alt="Repo Overview window with lanes of mutable work" width="3840" height="1950" />
-      <p class="caption">Repo Overview shows every lane of mutable work, the workspaces on it, and what needs attention.</p>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#open">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

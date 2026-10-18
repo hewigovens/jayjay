@@ -31,22 +31,19 @@
     <a name="operations"></a>
     <p class="eyebrow">Changes</p>
     <h1>Operate on changes</h1>
-    <p>Use the detail header, context menus, or command palette to describe, commit, squash, abandon, duplicate, merge, absorb, back out, or revert changes.</p>
+    <p>Open a repository and select a change in its history sidebar. Right-click that row for change actions, or press <code>Cmd+Shift+P</code> and search for an action in the command palette. Rewriting requires a mutable change; see the <a href="../Start.html#concepts">core concepts</a> for the working copy, parents, and protected history.</p>
     <ul>
-      <li>The commit box describes and commits the working copy. It starts with the working copy's current description and preserves a typed draft when <code>@</code> moves to an empty change. The description dialog uses the same Summary and Description fields, keeps that draft, and leaves unchanged formatting and indented bodies as they are.</li>
-      <li>Use a change's context menu to edit, squash, rebase, merge, duplicate, absorb, revert, abandon, or create a new change on top, before, or after the revision when its topology permits it. <strong>Rebase onto trunk</strong> moves the whole line of work, including a workspace's working copy; <strong>Rebase Working Copy onto Trunk</strong> in the command palette does the same for <code>@</code>.</li>
+      <li>For the working copy <code>@</code>, enter a Summary and optional Description in the commit box below the graph. <strong>Describe</strong> saves that message to the current change; <strong>Commit</strong> saves it and starts a new empty working-copy change on top. File edits are already part of <code>@</code>, so no staging is needed. The box starts with the current description and preserves a typed draft when <code>@</code> moves to an empty change. The description dialog uses the same Summary and Description fields, keeps that draft, and leaves unchanged formatting and indented bodies as they are.</li>
+      <li>The change’s context menu offers <strong>New change on top</strong>, <strong>New change before</strong>, and <strong>New change after</strong> when its topology permits them. <strong>Rebase onto trunk</strong> moves the whole line of work, including a workspace's working copy; <strong>Rebase Working Copy onto Trunk</strong> in the command palette does the same for <code>@</code>.</li>
+      <li><strong>Edit (modify this change)</strong> moves the working copy to the selected mutable change. <strong>Squash into parent</strong> moves its edits into its parent. Under <strong>More Actions</strong>, <strong>Duplicate</strong> copies a change, <strong>Absorb into ancestors</strong> distributes its edits into ancestors, and <strong>Revert change</strong> creates a new change that reverses its edits. <strong>Abandon</strong> removes the selected change from the visible history.</li>
       <li>Shift-click changes to select a batch, then merge independent heads, squash a consecutive linear range, parallelize a connected run into siblings, abandon mutable selections, or rebase them onto another row while preserving their dependencies.</li>
       <li><strong>Run formatters (jj fix)</strong> on a change, a selection, or from the command palette runs the tools in your <code>[fix.tools]</code> config over those changes and their descendants. A failing tool leaves its file unchanged and is reported, and an unusable config disables the items with the reason.</li>
       <li>Create a lightweight tag from a change's context menu. A tag chip's menu pushes a local-only tag, copies its name, or deletes it; <strong>Delete Tag on Remote</strong> removes the tag locally and from every remote that tracks it, restoring the local tag if the push fails.</li>
-      <li>File actions can split selected files from a mutable change or move historical files into the working copy; commit and delete remain working-copy-only.</li>
-      <li>Commit messages can be generated through Codex CLI, Claude CLI, or Apple Intelligence when available. Drag providers in Settings &gt; Integrations to choose their fallback order.</li>
-      <li>Use <code>Cmd+Shift+U</code> to inspect the jj operation log and undo recent operations.</li>
+      <li>Right-click selected files in the file list for <strong>Split to New Change</strong>, <strong>Move to Working Copy</strong> on historical changes, or <strong>Delete from Disk</strong> on the working copy. See <a href="split.html">Split work</a> for file and line selection steps.</li>
+      <li>The sparkles button beside Describe generates a message through an available Codex CLI, Claude CLI, or Apple Intelligence provider. Review the generated Summary and Description before choosing Describe or Commit. Drag providers in <strong>Settings &gt; Integrations</strong> to choose their fallback order.</li>
+      <li>Choose <strong>Repository &gt; Undo Last Operation</strong> or press <code>Cmd+Shift+U</code> to open the operation log. Select an earlier operation and choose <strong>Restore</strong> to return the local repository to that state; the current operation cannot be restored. <strong>Cancel</strong> closes the log without restoring. This restores repository history and working-copy state, not published remote changes or local review marks and notes.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/undo-operation-log.jpg" alt="JayJay undo operation log" width="3840" height="1950" />
-      <p class="caption">Undo uses jj's operation log so recent repository operations can be inspected before rollback.</p>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#operations">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

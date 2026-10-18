@@ -33,25 +33,13 @@
     <h1>Inspect file history and evolog</h1>
     <p>JayJay includes inspection tools for understanding where code came from and how rewritten changes evolved.</p>
     <ul>
-      <li>File Annotate shows blame information and lets you navigate to the responsible change.</li>
-      <li>File History opens in a separate window and lists revisions that modified the selected file, with the selected revision’s diff alongside it. Choose <strong>Pin as Base</strong>, then select another revision to compare the file between them. Swap reverses the endpoints; Clear or <kbd>Esc</kbd> clears the base. Right-click a revision and choose <strong>Show in Graph</strong>, or double-click it, to reveal it in the repository window.</li>
+      <li>Select a change in the graph, then right-click a file in its file list and choose <strong>Annotate (Blame)</strong>. The annotate gutter shows each line’s author and responsible change ID; click that ID to select the change in the graph. Choose <strong>Exit Annotate</strong> or press <code>Esc</code> to return to the diff.</li>
+      <li>Right-click a file in the selected change’s file list and choose <strong>File History</strong>. A separate window lists revisions that modified the file, with the selected revision’s diff alongside it. Choose <strong>Pin as Base</strong>, then select another revision to compare the file between them. Swap reverses the endpoints; Clear or <kbd>Esc</kbd> clears the base. Right-click a revision and choose <strong>Show in Graph</strong>, or double-click it, to reveal it in the repository window.</li>
       <li>Find a regression with <strong>Bisect…</strong> in the command palette, <strong>Bisect from here…</strong> in a change’s context menu, or <strong>Bisect between</strong> on two selected changes. Set Good and Bad endpoints, or enter a revset Range to use as-is, then choose Start. JayJay checks out candidates and highlights the search in the graph; mark each one <strong>Good</strong>, <strong>Bad</strong>, or <strong>Skip</strong> in the bar under the toolbar.</li>
       <li>The bisect bar’s <strong>Run Test…</strong> control runs a shell command for this step or to the end. Exit status 0 means Good, 125 means Skip, 127 aborts, and other failures mean Bad. The bar shows command output and the result; its close button stops bisecting and restores the original working copy, reporting any temporary changes it kept.</li>
-      <li>Change Evolution shows prior versions of a rewritten change. Consecutive working-copy snapshots collapse into one row, <strong>Hide snapshots</strong> removes them entirely, and selecting two versions compares them directly. Right-click a version to <strong>Restore this version</strong> into the working copy or the change you opened the evolog for, in one undoable operation, or to copy its commit id or a <code>jj restore</code> command; immutable changes cannot be restored.</li>
+      <li>Right-click a change in the graph and choose <strong>Show evolution…</strong> to open Change Evolution, which lists prior versions of that change. Select a version to inspect its diff. Consecutive working-copy snapshots collapse into one row, <strong>Hide snapshots</strong> removes them entirely, and selecting two versions compares them directly. Right-click a version to <strong>Restore this version</strong> into the working copy or the change you opened the evolog for, in one undoable operation, or to copy its commit id or a <code>jj restore</code> command; immutable changes cannot be restored. Choose <strong>Done</strong> or press <code>Esc</code> to return to the change detail.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/file-history.jpg" alt="File History comparing a pinned base and target" width="3840" height="1950" />
-      <p class="caption">Pin a base and choose another revision to compare the file between them.</p>
-    </div>
-    <div class="shot">
-      <img src="../imgs/bisect.jpg" alt="Bisect progress and verdict controls above the change graph" width="3840" height="1950" />
-      <p class="caption">Bisect checks out a candidate and keeps Good, Bad, Skip, and Run Test close to the graph.</p>
-    </div>
-    <div class="shot">
-      <img src="../imgs/evolog.jpg" alt="JayJay change evolution log" width="2560" height="1300" />
-      <p class="caption">Change Evolution makes rewritten snapshots visible without digging through the operation log by hand.</p>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#inspection">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

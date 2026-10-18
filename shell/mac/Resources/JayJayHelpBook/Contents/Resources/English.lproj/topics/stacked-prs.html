@@ -31,9 +31,11 @@
     <a name="stacked-prs"></a>
     <p class="eyebrow">Pull requests</p>
     <h1>Create stacked pull requests</h1>
-    <p>Right-click the tip change in a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay creates one PR or MR per change, each targeting the one below it.</p>
+    <p>Open a repository whose <code>origin</code> remote points to GitHub, GitLab, Codeberg, or Cursor Origin, with credentials that allow Git pushes. The stack must be one linear chain of mutable changes above trunk, without merges or divergent versions. See <a href="bookmarks.html">Bookmarks and PRs</a> for remote setup and <a href="compare.html">Compare changes</a> to inspect divergence.</p>
+    <p>Install the forge CLI and sign in before submitting: run <code>gh auth login</code> for GitHub, <code>glab auth login</code> for GitLab, or <code>origin auth login</code> for Cursor Origin in a terminal. <strong>Settings &gt; Integrations</strong> shows whether the CLI is installed; JayJay checks its authentication when submitting. Codeberg uses the token described below instead of a forge CLI.</p>
+    <p>Right-click the tip change of the stack in the graph and choose <strong>Create / Update Stacked PRs…</strong>. JayJay creates one PR or MR per change, each targeting the one below it.</p>
     <ul>
-      <li>The preview lists changes bottom-first and lets you edit branch names before submit.</li>
+      <li>The preview lists the tip change first, with each layer’s base beneath its bookmark name. Review the proposed names and PR titles; click a bookmark’s pencil to edit its name and press Return to finish, then choose <strong>Submit</strong>. Names must be distinct within the stack. Cancel closes the preview before submitting without publishing it.</li>
       <li>Submit pushes bookmarks and creates or updates the dependent PRs or MRs. Done opens the top PR for a linked GitHub stack, always opens the highest submitted GitLab MR, and opens each submitted PR if GitHub native linking falls back.</li>
       <li>Native linking uses the standard <code>gh api</code> command; no extension is required. If GitHub Stacked PRs is not enabled for the repository or rejects the chain, the dependent PRs remain usable and the result explains that linking was skipped.</li>
       <li>GitLab detects the dependent MR chain automatically and shows a stack navigator in each MR; no separate linking request is required.</li>
@@ -41,15 +43,7 @@
       <li>Cursor Origin is still early beta. JayJay submits dependent pull requests with the <code>origin</code> CLI.</li>
       <li>For ordinary GitHub PR chains, GitLab MRs, Codeberg PRs, and Cursor Origin PRs, merge bottom-up, fetch, then run Create / Update Stacked PRs again to retarget the remaining layers. For a native GitHub stack, use GitHub's stack controls; merging a PR also merges every unmerged layer below it, then GitHub rebases and retargets the remainder.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/stacked-pr-menu.jpg" alt="JayJay change context menu showing Create / Update Stacked PRs" width="2560" height="1300" />
-      <p class="caption">Right-click the tip change and choose Create / Update Stacked PRs.</p>
-    </div>
-    <div class="shot">
-      <img src="../imgs/stacked-pr.jpg" alt="JayJay stacked pull request preview with editable branch names" width="2560" height="1300" />
-      <p class="caption">The stacked PR preview shows each layer, its target, and editable bookmark name before submit.</p>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#stacked">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>

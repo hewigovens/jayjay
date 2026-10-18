@@ -31,22 +31,14 @@
     <a name="compare"></a>
     <p class="eyebrow">Diffs</p>
     <h1>Compare two changes</h1>
-    <p>Shift-click two graph revisions to compare them. JayJay opens an interdiff using the same unified and side-by-side renderers as regular change review.</p>
+    <p>In an open repository, click the first change in the graph, then right-click the second change and choose <strong>Compare with selected</strong>. JayJay shows the differences from the selected change to the second one. Select a file in the resulting file list to read its unified or side-by-side diff.</p>
     <ul>
-      <li>When both revisions have bookmarks, the compare banner uses bookmark names.</li>
-      <li>Use the direction control to flip the comparison.</li>
-      <li>Use bookmark diff when you want PR-style review against a main bookmark or fork point.</li>
-      <li>Use Compare Divergent Versions to inspect two commits that share one change-id before abandoning one.</li>
+      <li>The compare banner above the detail shows the two endpoints, using bookmark names when available. Click its opposing-arrows button (<strong>Reverse compare direction</strong>) to swap them, or its close button (<strong>Exit compare mode</strong>) to return to single-change review.</li>
+      <li>For PR-style review, choose <strong>Repository &gt; Bookmark Manager</strong> (<code>Cmd+Shift+B</code>), right-click a non-trunk, non-conflicted bookmark, and choose <strong>Diff Bookmark</strong>. This compares its changes against trunk. Selecting a base change in the graph and choosing <strong>Diff Bookmark</strong> from a bookmarked target’s context menu uses that base instead.</li>
+      <li>A divergent change has multiple commits with the same change ID. Right-click one and choose <strong>Compare Divergent Version</strong>, or choose an entry from <strong>Compare Divergent Versions</strong> when there are several alternatives. Inspect the differences before deciding which version to abandon.</li>
+      <li>Shift-click selects multiple changes for batch actions. A consecutive direct-parent chain shows its combined changes; a selection that does not form one linear range has no combined diff. Use <strong>Compare with selected</strong> for an explicit comparison between two revisions.</li>
     </ul>
-    <div class="shot">
-      <img src="../imgs/interdiff.jpg" alt="JayJay interdiff between two selected revisions" width="2560" height="1300" />
-      <p class="caption">Bookmark diff compares a feature bookmark against a base change or main bookmark.</p>
-    </div>
-    <div class="shot">
-      <img src="../imgs/divergent-diff.jpg" alt="JayJay divergent version comparison" width="3840" height="1950" />
-      <p class="caption">Divergent compare shows the two commits that share a change-id before you abandon one.</p>
-    </div>
-    <p><a href="../Start.html">Back to JayJay Help</a></p>
+    <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#compare">Online guide with screenshots</a></p>
   </div>
   </div>
   <script type="text/javascript" src="../sty/help.js"></script>
