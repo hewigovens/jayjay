@@ -42,18 +42,7 @@ test-rust crate *args:
   cargo test -p "{{crate}}" {{args}}
 
 test-wasm:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  JAYJAY_WASM_HEADERS="$(cargo metadata --locked --format-version 1 --filter-platform wasm32-unknown-unknown | python3 -c 'import json, pathlib, sys; p = next(p for p in json.load(sys.stdin)["packages"] if p["name"] == "tree-sitter-language"); print(pathlib.Path(p["manifest_path"]).parent / "wasm/include")')"
-  export JAYJAY_WASM_HEADERS
-  # Apple's ar silently discards WASM objects, so use the Rust toolchain's LLVM archiver.
-  llvm_ar="$(rustc --print sysroot)/lib/rustlib/$(rustc -vV | sed -n 's/^host: //p')/bin/llvm-ar"
-  if [[ ! -x "$llvm_ar" ]]; then
-    echo "WASM linking needs LLVM tools; run rustup component add llvm-tools" >&2
-    exit 1
-  fi
-  # Bump the define when the wrapper-injected sysroot changes; grammar build scripts cannot track those headers themselves.
-  AR_wasm32_unknown_unknown="$llvm_ar" CC_wasm32_unknown_unknown="{{root}}/scripts/llvm-clang" CXX_wasm32_unknown_unknown="{{root}}/scripts/llvm-clang" CFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=5" CXXFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=5" cargo build --locked -p jayjay-uniffi --no-default-features --features wasm --target wasm32-unknown-unknown --lib
+  bash "{{root}}/scripts/test-wasm.sh"
 
 test:
   cargo test --workspace
@@ -84,19 +73,14 @@ test-ui *test_ids:
 
 # Balance whole UI scene classes across count shards by test-method count (every test relaunches the app), so CI can split the serial XCUITest bundle across runners; index is 1-based and `recipe` selects the shell runner (ui-test builds, ui-test-prebuilt reuses a ui-test-build output).
 test-ui-shard index count recipe="shell::ui-test":
-  #!/usr/bin/env bash
-  set -euo pipefail
-  scenes=$(cd "{{root}}/shell/mac/Tests/JayJayUITests/Scenes" && grep -c '^ *func test' *.swift | LC_ALL=C sort -t: -k2,2nr -k1,1 \
-    | awk -F: -v i="{{index}}" -v n="{{count}}" '{ m = 1; for (s = 2; s <= n; s++) if (load[s] < load[m]) m = s; load[m] += $2; if (m == i) { sub(/\.swift$/, "", $1); print "JayJayUITests/" $1 } }')
-  [[ -n "$scenes" ]] || { echo "UI shard {{index}}/{{count}} has no scenes" >&2; exit 1; }
-  just {{recipe}} $scenes
+  bash "{{root}}/scripts/test-ui-shard.sh" "$@"
 
 test-gpui:
   just shell::gpui-test
 
 # Linux-only modules never compile on macOS, so run their tests in the OrbStack machine from agents/testing.md. Example: just test-linux -p jayjay-gpui menu_item
 test-linux *args='--workspace':
-  orb run -m gpui-test bash -lc 'cd "{{justfile_directory()}}" && CARGO_TARGET_DIR="$HOME/target-linux" RUSTC_WRAPPER= cargo test {{args}}'
+  orb run -m gpui-test bash -lc 'cd "$1" && CARGO_TARGET_DIR="$HOME/target-linux" RUSTC_WRAPPER= cargo test "${@:2}"' bash "{{root}}" "$@"
 
 build:
   just shell::build
@@ -108,11 +92,7 @@ ffi:
   just shell::ffi
 
 run repo='':
-  @if [[ -n "{{repo}}" ]]; then \
-    just shell::run "{{repo}}"; \
-  else \
-    just shell::run; \
-  fi
+  @just shell::run "$1"
 
 gpui repo='':
   just shell::gpui-run "$1"

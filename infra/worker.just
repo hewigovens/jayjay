@@ -28,73 +28,19 @@ deploy: apply-schema
     cd "{{ worker_dir }}" && wrangler deploy
 
 dau days='30':
-    #!/usr/bin/env bash
-    set -euo pipefail
-    days="{{ days }}"
-    case "$days" in ''|*[!0-9]*) echo "days must be a non-negative integer" >&2; exit 2;; esac
-    cd "{{ worker_dir }}"
-    wrangler d1 execute "{{ database }}" --remote --command "
-      SELECT date, channel, platform, active_installs, pings
-      FROM daily_usage
-      WHERE day >= (unixepoch() / 86400) - $days
-      ORDER BY day DESC, channel, platform
-      LIMIT 200"
+    bash "{{root}}/scripts/worker-query.sh" "{{worker_dir}}" "{{database}}" dau "$1"
 
 mau months='6':
-    #!/usr/bin/env bash
-    set -euo pipefail
-    months="{{ months }}"
-    case "$months" in ''|*[!0-9]*) echo "months must be a non-negative integer" >&2; exit 2;; esac
-    cd "{{ worker_dir }}"
-    wrangler d1 execute "{{ database }}" --remote --command "
-      SELECT month, channel, platform, active_installs, exact_client_installs, network_estimates
-      FROM monthly_usage
-      WHERE month >= strftime('%Y-%m', 'now', '-' || $months || ' months')
-      ORDER BY month DESC, active_installs DESC, channel, platform
-      LIMIT 200"
+    bash "{{root}}/scripts/worker-query.sh" "{{worker_dir}}" "{{database}}" mau "$1"
 
 versions limit='20':
-    #!/usr/bin/env bash
-    set -euo pipefail
-    limit="{{ limit }}"
-    case "$limit" in ''|*[!0-9]*) echo "limit must be a non-negative integer" >&2; exit 2;; esac
-    cd "{{ worker_dir }}"
-    wrangler d1 execute "{{ database }}" --remote --command "
-      SELECT month, version, build, channel, platform, active_installs, exact_client_installs, network_estimates
-      FROM version_adoption
-      WHERE month = strftime('%Y-%m', 'now')
-      ORDER BY active_installs DESC, version, build
-      LIMIT $limit"
+    bash "{{root}}/scripts/worker-query.sh" "{{worker_dir}}" "{{database}}" versions "$1"
 
 platforms:
-    #!/usr/bin/env bash
-    set -euo pipefail
-    cd "{{ worker_dir }}"
-    wrangler d1 execute "{{ database }}" --remote --command "
-      SELECT month, channel, platform, active_installs, exact_client_installs, network_estimates
-      FROM platform_breakdown
-      ORDER BY active_installs DESC, channel, platform"
+    bash "{{root}}/scripts/worker-query.sh" "{{worker_dir}}" "{{database}}" platforms
 
 systems limit='30':
-    #!/usr/bin/env bash
-    set -euo pipefail
-    limit="{{ limit }}"
-    case "$limit" in ''|*[!0-9]*) echo "limit must be a non-negative integer" >&2; exit 2;; esac
-    cd "{{ worker_dir }}"
-    wrangler d1 execute "{{ database }}" --remote --command "
-      SELECT month, channel, os, os_version, arch, active_installs, exact_client_installs, network_estimates
-      FROM os_arch_breakdown
-      ORDER BY active_installs DESC, os, os_version, arch
-      LIMIT $limit"
+    bash "{{root}}/scripts/worker-query.sh" "{{worker_dir}}" "{{database}}" systems "$1"
 
 recent limit='20':
-    #!/usr/bin/env bash
-    set -euo pipefail
-    limit="{{ limit }}"
-    case "$limit" in ''|*[!0-9]*) echo "limit must be a non-negative integer" >&2; exit 2;; esac
-    cd "{{ worker_dir }}"
-    wrangler d1 execute "{{ database }}" --remote --command "
-      SELECT seen_at, channel, platform, os, os_version, arch, version, build, identity_kind
-      FROM recent_pings
-      ORDER BY seen_at DESC
-      LIMIT $limit"
+    bash "{{root}}/scripts/worker-query.sh" "{{worker_dir}}" "{{database}}" recent "$1"

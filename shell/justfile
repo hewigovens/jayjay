@@ -1,40 +1,26 @@
 set shell := ["bash", "-euo", "pipefail", "-c"]
 set positional-arguments
 
-# Layout
 root := absolute_path(source_directory() / "..")
 project := root / "shell" / "mac"
 target_dir := root / "target"
 derived_data := root / "build" / "DerivedData"
-app := derived_data / "Build" / "Products" / "Debug" / "JayJay.app"
+app_name := "JayJay"
+app := derived_data / "Build" / "Products" / "Debug" / (app_name + ".app")
 release_dir := root / "build" / "release"
-
-# UniFFI bindings + XCFramework
-crate_name := "jayjay_uniffi"
-lib_name := "lib" + crate_name + ".a"
-uniffi_config := root / "crates" / "jayjay-uniffi" / "uniffi.toml"
-bindings_dir := root / "build" / "bindings"
-headers_dir := bindings_dir / "Headers"
-swift_out := project / "Sources" / "JayJayCore"
 xcframework := project / "JayJayFFI.xcframework"
+swift_out := project / "Sources" / "JayJayCore"
 
 # Build target
 macos_target := "aarch64-apple-darwin"
 deployment_target := "26.0"
-macos_min_flag := "-mmacosx-version-min=" + deployment_target
 
 # App identity + signing
-app_name := "JayJay"
 bundle_id := "dev.hewig.jayjay"
 version := "0.3.21-beta.3"
 build_number := "72"
 # Developer ID Application: Tao Xu (V28VJH6B6S) from the G2 Sub-CA, valid until 2031-09-17. Pinned by SHA-1 because certificates from the old Sub-CA share the name.
 signing_identity := "74EF325EE815489581C2392FFACB1D35E677A5AA"
-
-# Help book
-help_source := project / "Resources" / "JayJayHelpBook"
-help_bundle := root / "build" / "help.noindex" / "JayJay.help"
-help_lproj := help_bundle / "Contents" / "Resources" / "English.lproj"
 
 default: list
 
@@ -75,79 +61,24 @@ ffi: ffi-debug
 
 # Debug shares target/debug with cargo build and cargo test, and skips the bindings and XCFramework while the staticlib they wrap is unchanged.
 ffi-debug:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  staticlib="{{target_dir}}/debug/{{lib_name}}"
-  cargo build -p jayjay-uniffi
-  test -f "$staticlib"
-  if cmp -s "$staticlib" "{{xcframework}}/macos-arm64/{{lib_name}}" \
-     && [[ "{{swift_out}}/JayJayCore.swift" -nt "$staticlib" \
-     && "{{swift_out}}/JayJayCore.swift" -nt "{{uniffi_config}}" ]]; then
-    echo "Bindings and XCFramework are up to date"
-    exit 0
-  fi
-  just --justfile "{{source_file()}}" _ffi-wrap debug "$staticlib"
+  bash "{{root}}/scripts/macos/ffi.sh" debug
 
 # Release pins the target and deployment flags and always regenerates.
 ffi-release:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  staticlib="{{target_dir}}/{{macos_target}}/release/{{lib_name}}"
-  MACOSX_DEPLOYMENT_TARGET="{{deployment_target}}" \
-  CFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
-  CXXFLAGS_aarch64_apple_darwin="{{macos_min_flag}}" \
-  RUSTFLAGS="-C link-arg={{macos_min_flag}}" \
-  cargo build --release --target "{{macos_target}}" -p jayjay-uniffi
-  test -f "$staticlib"
-  just --justfile "{{source_file()}}" _ffi-wrap release "$staticlib"
+  bash "{{root}}/scripts/macos/ffi.sh" release "{{macos_target}}" "{{deployment_target}}"
 
 # Generate the Swift bindings from the staticlib and wrap it in the XCFramework.
 _ffi-wrap profile staticlib:
-  mkdir -p "{{bindings_dir}}" "{{headers_dir}}" "{{swift_out}}"
-  cargo build {{ if profile == "release" { "--release" } else { "" } }} -p jayjay-uniffi --bin uniffi-bindgen
-  "{{target_dir}}/{{profile}}/uniffi-bindgen" generate \
-    --library "{{staticlib}}" \
-    --language swift \
-    --out-dir "{{bindings_dir}}" \
-    --config "{{uniffi_config}}"
-  cp "{{bindings_dir}}/JayJayFFI.h" "{{headers_dir}}/"
-  cp "{{bindings_dir}}/JayJayFFI.modulemap" "{{headers_dir}}/module.modulemap"
-  cp "{{bindings_dir}}/JayJayCore.swift" "{{swift_out}}/"
-  rm -rf "{{xcframework}}"
-  xcodebuild -create-xcframework \
-    -library "{{staticlib}}" \
-    -headers "{{headers_dir}}" \
-    -output "{{xcframework}}" | xcbeautify
+  bash "{{root}}/scripts/macos/ffi.sh" wrap "$@"
 
 help:
   bash "{{root}}/scripts/build-help-book.sh" "{{root}}"
 
 build: ffi sync-icon help
-  rm -f "{{app}}/Contents/MacOS/jayjay-cli"
-  cargo build -p jayjay-cli
-  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
-  xcodebuild \
-    -project "{{project}}/JayJay.xcodeproj" \
-    -scheme JayJay \
-    -configuration Debug \
-    -sdk macosx \
-    -derivedDataPath "{{derived_data}}" \
-    build | xcbeautify
-  bash "{{root}}/scripts/prepare-app-bundle.sh" "{{app}}" "{{target_dir}}/debug/jayjay"
-  codesign --force --sign - "{{app}}/Contents/MacOS/jayjay-cli"
-  codesign --force --sign - "{{app}}"
-  @echo "Built {{app}}"
+  bash "{{root}}/scripts/macos/build.sh" Debug
 
 test: ffi sync-icon help
-  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
-  xcodebuild \
-    -project "{{project}}/JayJay.xcodeproj" \
-    -scheme JayJay \
-    -configuration Debug \
-    -sdk macosx \
-    -derivedDataPath "{{derived_data}}" \
-    test | xcbeautify
-  cd "{{root}}/shell/mac/Packages/JayJayDiffUI" && swift test
+  bash "{{root}}/scripts/macos/test.sh" test
 
 # Deterministic jj fixtures at /tmp/jayjay-test-fixtures plus the user
 # defaults that skip onboarding; see scripts/ui-test-fixtures.sh.
@@ -157,99 +88,22 @@ ui-test-setup:
 # Run the macOS UI test bundle. Pass test ids to narrow the run, e.g.:
 #   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch
 ui-test *test_ids: ffi sync-icon help ui-test-setup
-  #!/usr/bin/env bash
-  set -euo pipefail
-  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
-  args=(
-    -project "{{project}}/JayJay.xcodeproj"
-    -scheme JayJayUITests
-    -configuration Debug
-    -sdk macosx
-    -derivedDataPath "{{derived_data}}"
-  )
-  for test_id in {{test_ids}}; do
-    args+=(-only-testing:"$test_id")
-  done
-  xcodebuild "${args[@]}" test | xcbeautify
+  bash "{{root}}/scripts/macos/test.sh" ui-test "$@"
 
 # Build the app and the UI test bundle once; CI shards run them with ui-test-prebuilt.
 ui-test-build: build
-  xcodebuild \
-    -project "{{project}}/JayJay.xcodeproj" \
-    -scheme JayJayUITests \
-    -configuration Debug \
-    -sdk macosx \
-    -derivedDataPath "{{derived_data}}" \
-    build-for-testing | xcbeautify
+  bash "{{root}}/scripts/macos/test.sh" ui-test-build
 
 # Run UI tests from a ui-test-build output without compiling; test ids narrow the run like ui-test.
 ui-test-prebuilt *test_ids: ui-test-setup
-  #!/usr/bin/env bash
-  set -euo pipefail
-  xctestrun=$(ls "{{derived_data}}"/Build/Products/JayJayUITests_*.xctestrun | head -1)
-  args=(
-    -xctestrun "$xctestrun"
-    -destination "platform=macOS"
-    -derivedDataPath "{{derived_data}}"
-  )
-  for test_id in {{test_ids}}; do
-    args+=(-only-testing:"$test_id")
-  done
-  xcodebuild "${args[@]}" test-without-building | xcbeautify
+  bash "{{root}}/scripts/macos/test.sh" ui-test-prebuilt "$@"
 
 # The flightdeck screenshot fixture lives outside /tmp so it survives reboots and can be opened between runs, and outside $HOME so no username reaches the captures; each run rebuilds it.
 screenshot_root := env("JAYJAY_SCREENSHOT_ROOT", "/Users/Shared/jayjay-screenshots")
 
 # Rebuild the public screenshots in docs/imgs from the demo repository, light then dark; test ids narrow the run like ui-test.
 screenshots *test_ids: ffi sync-icon help
-  #!/usr/bin/env bash
-  set -euo pipefail
-  bash "{{root}}/scripts/screenshot-fixture.sh" "{{screenshot_root}}"
-  xcodegen --spec "{{project}}/project.yml" --project "{{project}}"
-  out="{{root}}/build/screenshots"
-  rm -rf "$out"
-  mkdir -p "$out"
-  args=(
-    -project "{{project}}/JayJay.xcodeproj"
-    -scheme JayJayUITests
-    -configuration Debug
-    -sdk macosx
-    -derivedDataPath "{{derived_data}}"
-  )
-  if [ -z "{{test_ids}}" ]; then
-    args+=(-only-testing:JayJayUITests/ReleaseScreenshots -only-testing:JayJayUITests/OverviewScreenshots)
-  fi
-  for test_id in {{test_ids}}; do
-    case "$test_id" in
-      */*) args+=(-only-testing:"JayJayUITests/$test_id") ;;
-      *) args+=(-only-testing:"JayJayUITests/ReleaseScreenshots/$test_id") ;;
-    esac
-  done
-  xcodebuild "${args[@]}" build-for-testing | xcbeautify
-  # The demo's review marks come from the app binary, so it waits for the build.
-  JAYJAY_BIN="{{app}}/Contents/MacOS/JayJay" bash "{{root}}/scripts/demo-fixture.sh"
-  status=0
-  for appearance in light dark; do
-    # The runner cannot always delete the previous pass's review marks and notes, so each appearance starts clean here.
-    rm -f "{{screenshot_root}}"/*-review-store.json
-    TEST_RUNNER_JAYJAY_SCREENSHOT_ROOT="{{screenshot_root}}" TEST_RUNNER_JAYJAY_SCREENSHOT_APPEARANCE="$appearance" xcodebuild "${args[@]}" \
-      -resultBundlePath "$out/$appearance.xcresult" test-without-building | xcbeautify || status=1
-    xcrun xcresulttool export attachments --path "$out/$appearance.xcresult" --output-path "$out/$appearance"
-  done
-  python3 - "$out" "{{root}}/docs/imgs" <<'PY'
-  import json, pathlib, subprocess, sys
-  out, imgs = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
-  for manifest in out.glob("*/manifest.json"):
-      for test in json.loads(manifest.read_text()):
-          for attachment in test["attachments"]:
-              name = attachment["suggestedHumanReadableName"].split("_")[0]
-              if " " in name or not attachment["exportedFileName"].endswith(".png"):
-                  continue
-              source = manifest.parent / attachment["exportedFileName"]
-              subprocess.run(["cwebp", "-quiet", "-q", "90", str(source), "-o", str(imgs / f"{name}.webp")], check=True)
-              print(f"docs/imgs/{name}.webp")
-  PY
-  exit "$status"
+  bash "{{root}}/scripts/macos/screenshots.sh" "{{screenshot_root}}" "$@"
 
 # Rebuild the demo repository behind the Overview screenshot and the intro video, and open it in a fresh debug app that reads the demo's jj config and review store; rerun to reset between takes.
 demo appearance="system" demo_root="/tmp/jayjay-demo": build
@@ -269,26 +123,7 @@ demo appearance="system" demo_root="/tmp/jayjay-demo": build
 
 # Record scenes as 60 fps clips in build/recordings by driving the debug app through Accessibility: every scene in video/scenes, or the names and .json paths given. See agents/video.md.
 record *scenes: build
-  #!/usr/bin/env bash
-  set -euo pipefail
-  cd "{{root}}"
-  swift build -c release --package-path video --product director
-  shopt -s nullglob
-  paths=(video/scenes/[!_]*.json)
-  if [ $# -gt 0 ]; then
-    paths=()
-    for scene in "$@"; do
-      case "$scene" in
-        *.json) paths+=("$scene") ;;
-        *) paths+=("video/scenes/$scene.json") ;;
-      esac
-    done
-  fi
-  if [ ${#paths[@]} -eq 0 ]; then
-    echo "No scenes in video/scenes; pass a scene file, such as video/examples/hero.json." >&2
-    exit 1
-  fi
-  video/.build/release/director record --app "{{app}}" --out build/recordings "${paths[@]}"
+  bash "{{root}}/scripts/macos/record.sh" "$@"
 
 # Publish the landing page's hero tour from the hero takes in build/recordings: stills into docs/imgs, clips to the jayjay-media R2 bucket under content-hashed names. Prints each clip's URL and click cues for docs/js/tour.js.
 site-tour:
@@ -307,125 +142,10 @@ site-tour:
   done
 
 reset-help-cache:
-  #!/usr/bin/env bash
-  set -euo pipefail
-  killall Tips "Help Viewer" HelpViewer helpd tipsd 2>/dev/null || true
-
-  cache_roots=(
-    "$HOME/Library/Group Containers/group.com.apple.helpviewer.content/Library/Caches"
-    "$HOME/Library/Caches/com.apple.helpd/Generated"
-    "$HOME/Library/Caches/com.apple.helpd/fsCachedData"
-    "$HOME/Library/Containers/com.apple.helpviewer/Data/Library/Caches/com.apple.helpviewer"
-    "$HOME/Library/Containers/com.apple.helpviewer/Data/Library/HTTPStorages/com.apple.helpviewer"
-    "$HOME/Library/HTTPStorages"
-    "$HOME/Library/HTTPStorages/com.apple.helpd"
-  )
-
-  for cache_root in "${cache_roots[@]}"; do
-    if [[ -d "$cache_root" ]]; then
-      find "$cache_root" -mindepth 1 -maxdepth 2 \( \
-        -iname "*jayjay*" -o \
-        -iname "{{bundle_id}}*" -o \
-        -iname "dev.hewig.jayjay.manual*" -o \
-        -iname "dev.hewig.jayjay.help*" \
-      \) -exec rm -rf {} +
-    fi
-  done
-
-  rm -f \
-    "$HOME/Library/Caches/com.apple.helpd/CSHelpIndex.plist" \
-    "$HOME/Library/Caches/com.apple.helpd/HelpCache.plist" \
-    "$HOME/Library/Caches/com.apple.helpd/HSTS.plist" \
-    "$HOME/Library/Caches/com.apple.helpd/Cache.db" \
-    "$HOME/Library/Caches/com.apple.helpd/Cache.db-shm" \
-    "$HOME/Library/Caches/com.apple.helpd/Cache.db-wal"
-
-  help_pref="$HOME/Library/Preferences/com.apple.help.plist"
-  if [[ -f "$help_pref" ]]; then
-    python3 -c 'import plistlib, sys; from pathlib import Path; path = Path(sys.argv[1]); bundle_id = sys.argv[2]; plist = plistlib.load(path.open("rb")); registered = plist.get("RegisteredBooks"); keys = [key for key in registered if isinstance(key, str) and key.startswith(bundle_id)] if isinstance(registered, dict) else []; [registered.pop(key, None) for key in keys]; order = plist.get("RegistrationOrder"); has_order = isinstance(order, list); filtered = [item for item in order if not (isinstance(item, str) and item.startswith(bundle_id))] if has_order else order; has_order and plist.__setitem__("RegistrationOrder", filtered); changed = bool(keys) or (has_order and filtered != order); changed and path.write_bytes(plistlib.dumps(plist))' "$help_pref" "{{bundle_id}}"
-  fi
-
-  killall Tips "Help Viewer" HelpViewer helpd tipsd 2>/dev/null || true
+  bash "{{root}}/scripts/macos/help-cache.sh" reset "{{bundle_id}}"
 
 debug-help:
-  #!/usr/bin/env bash
-  set -euo pipefail
-
-  source_help="{{help_source}}"
-  generated_help="{{help_bundle}}"
-  embedded_help="{{app}}/Contents/Resources/JayJay.help"
-
-  print_help_bundle() {
-    local label="$1"
-    local bundle="$2"
-    echo
-    echo "== $label =="
-    echo "$bundle"
-    if [[ ! -d "$bundle" ]]; then
-      echo "missing"
-      return
-    fi
-    plutil -p "$bundle/Contents/Info.plist" | grep -E 'CFBundleVersion|CFBundleShortVersionString|HPDBookTitle|HPDBookIndexPath|HPDBookAccessPath' || true
-    du -sh "$bundle" "$bundle/Contents/Resources/English.lproj/imgs" 2>/dev/null || true
-    echo "image counts:"
-    find "$bundle/Contents/Resources/English.lproj/imgs" -maxdepth 1 -type f \( -name '*.jpg' -o -name '*.png' -o -name '*.webp' \) -print 2>/dev/null \
-      | sed 's/.*\.//' \
-      | sort \
-      | uniq -c || true
-    echo "help index:"
-    file "$bundle/Contents/Resources/English.lproj/JayJay.helpindex" 2>/dev/null || true
-  }
-
-  print_help_bundle "source Help Book templates" "$source_help"
-  print_help_bundle "generated Help Book" "$generated_help"
-  print_help_bundle "embedded Debug app Help Book" "$embedded_help"
-
-  echo
-  echo "== JayJay Help caches =="
-  cache_roots=(
-    "$HOME/Library/Group Containers/group.com.apple.helpviewer.content/Library/Caches"
-    "$HOME/Library/Caches/com.apple.helpd"
-    "$HOME/Library/Containers/com.apple.helpviewer"
-    "$HOME/Library/HTTPStorages"
-  )
-  found_cache=0
-  for cache_root in "${cache_roots[@]}"; do
-    if [[ -d "$cache_root" ]]; then
-      while IFS= read -r path; do
-        found_cache=1
-        echo "$path"
-      done < <(find "$cache_root" -maxdepth 4 -iname '*jayjay*' -print 2>/dev/null)
-    fi
-  done
-  if [[ "$found_cache" == "0" ]]; then
-    echo "none"
-  fi
-
-  echo
-  echo "== Spotlight Help Book records =="
-  spotlight_records="$(mdfind 'kMDItemCFBundleIdentifier == "dev.hewig.jayjay.manual"' 2>/dev/null || true)"
-  if [[ -n "$spotlight_records" ]]; then
-    echo "$spotlight_records"
-  else
-    echo "none"
-  fi
-
-  echo
-  echo "== Registered JayJay Help books =="
-  help_pref="$HOME/Library/Preferences/com.apple.help.plist"
-  if [[ -f "$help_pref" ]]; then
-    if ! plutil -p "$help_pref" 2>/dev/null \
-      | grep -E -C 3 'dev\.hewig\.jayjay|JayJay\.help|JayJayHelpBook|build/help\.noindex|Resources/JayJay\.help'; then
-      echo "none"
-    fi
-  else
-    echo "none"
-  fi
-
-  echo
-  echo "== Recent Help logs =="
-  log show --last 10m --style compact --predicate 'process != "log" AND (eventMessage CONTAINS[c] "JayJay.help" OR eventMessage CONTAINS[c] "JayJay Manual" OR eventMessage CONTAINS[c] "outside the sandbox" OR eventMessage CONTAINS[c] "Failed to index")' 2>/dev/null \
-    | tail -50 || true
+  bash "{{root}}/scripts/macos/help-cache.sh" debug
 
 run repo='': build
   @just --justfile "{{source_file()}}" reset-help-cache || printf '%s\n' "Warning: Help cache reset failed; launching with existing Help caches." "If the error says 'Operation not permitted', enable your terminal app (e.g. Ghostty, Terminal, or iTerm) in System Settings > Privacy & Security > Full Disk Access, then quit and reopen it." >&2
@@ -459,7 +179,6 @@ clean:
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
   rm -f "{{project}}/Resources/DockIcon/jayjay-dock-light.png"
   rm -f "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
-  rm -rf "{{help_lproj}}/imgs" "{{help_lproj}}/JayJay.helpindex"
   find "{{root}}" -name ".DS_Store" -delete
 
 import "release.just"
