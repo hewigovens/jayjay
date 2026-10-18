@@ -1,12 +1,14 @@
 import XCTest
 
 final class IdentitySetupScene: SceneBase {
+    private static var configID = UUID()
+
     override static var providesJJIdentity: Bool {
         false
     }
 
     static var userConfigURL: URL {
-        fixtureRoot.appendingPathComponent("IdentitySetupScene-jj-config.toml")
+        fixtureRoot.appendingPathComponent("IdentitySetupScene-\(configID).toml")
     }
 
     override static var launchEnvironment: [String: String] {
@@ -17,7 +19,7 @@ final class IdentitySetupScene: SceneBase {
     }
 
     override func setUpWithError() throws {
-        try? FileManager.default.removeItem(at: Self.userConfigURL)
+        Self.configID = UUID()
         try super.setUpWithError()
     }
 
@@ -30,12 +32,15 @@ final class IdentitySetupScene: SceneBase {
         XCTAssertTrue(setUp.waitForExistence(timeout: 5), "Settings › Jujutsu has no Set Up button")
         setUp.click()
 
-        let name = app.textFields[AID.Settings.identityName]
-        XCTAssertTrue(name.waitForExistence(timeout: 5), "Set Up did not open the identity sheet")
-        wait(for: [expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: name)], timeout: 5)
+        let fields = app.sheets.textFields.matching(NSPredicate(format: "enabled == true"))
+        let name = fields[AID.Settings.identityName]
+        XCTAssertTrue(name.waitForExistence(timeout: 10), "Identity name field did not become editable")
+        XCTAssertEqual(name.value as? String, "", "Identity setup should start without a configured name")
         name.click()
         paste("JayJay Tester")
-        app.textFields[AID.Settings.identityEmail].click()
+        let email = fields[AID.Settings.identityEmail]
+        XCTAssertEqual(email.value as? String, "", "Identity setup should start without a configured email")
+        email.click()
         paste("tester@jayjay.local")
         app.buttons[AID.Settings.identitySave].click()
 

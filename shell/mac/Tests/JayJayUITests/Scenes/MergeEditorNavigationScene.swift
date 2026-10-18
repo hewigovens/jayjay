@@ -12,7 +12,6 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         let app = try XCTUnwrap(app)
         let first = app.element(AID.Conflict.hunkCard(0))
         XCTAssertTrue(first.waitForExistence(timeout: 20))
-        XCTAssertEqual(first.value as? String, "Selected")
         let window = app.windows.firstMatch
         window.coordinate(withNormalizedOffset: CGVector(dx: 1, dy: 1))
             .withOffset(CGVector(dx: -2, dy: -2))
@@ -21,22 +20,15 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
                 thenDragTo: window.coordinate(withNormalizedOffset: .zero)
                     .withOffset(CGVector(dx: 1022, dy: 672))
             )
-        let left = app.textViews[AID.Conflict.editorSource("left")]
+        XCTAssertTrue(waitForSelection(first))
+        let leftScroll = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorSource("left")).firstMatch
         XCTAssertTrue(app.element(AID.Conflict.editorSource("left") + ".lineNumbers").exists)
         XCTAssertTrue(app.element(AID.Conflict.editorSource("right") + ".lineNumbers").exists)
-        let rightScroll = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorSource("right")).firstMatch
-        let rightBar = rightScroll.scrollBars.firstMatch
+        let rightBar = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorSource("right")).firstMatch.scrollBars.firstMatch
         let hunks = app.scrollViews[AID.Conflict.editorHunkList]
         XCTAssertTrue(hunks.exists)
-        let hunkBar = hunks.scrollBars.firstMatch
-        let initialRight = String(describing: rightBar.value)
-        let initialHunks = String(describing: hunkBar.value)
-        left.scroll(byDeltaX: 0, deltaY: -1800)
-        XCTAssertNotEqual(String(describing: rightBar.value), initialRight)
-        XCTAssertNotEqual(String(describing: hunkBar.value), initialHunks)
-        let beforeHunkScroll = String(describing: rightBar.value)
-        hunks.scroll(byDeltaX: 0, deltaY: 1800)
-        XCTAssertNotEqual(String(describing: rightBar.value), beforeHunkScroll)
+        try scroll(leftScroll, by: -1800, following: [rightBar, hunks.scrollBars.firstMatch])
+        try scroll(hunks, by: 1800, following: [rightBar])
         XCTAssertEqual(first.value as? String, "Selected")
         clickCenter(app.buttons[AID.Conflict.hunkUse(0, "left")])
         let second = app.element(AID.Conflict.hunkCard(1))
@@ -52,12 +44,9 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         let result = app.textViews[AID.Conflict.editorResult]
         XCTAssertTrue(result.waitForExistence(timeout: 10))
         XCTAssertTrue(app.element(AID.Conflict.editorResult + ".lineNumbers").exists)
-        let beforeScroll = String(describing: rightBar.value)
-        left.scroll(byDeltaX: 0, deltaY: -400)
-        XCTAssertNotEqual(String(describing: rightBar.value), beforeScroll)
-        let beforeResultScroll = String(describing: rightBar.value)
-        result.scroll(byDeltaX: 0, deltaY: 400)
-        XCTAssertNotEqual(String(describing: rightBar.value), beforeResultScroll)
+        let resultScroll = app.scrollViews.containing(.textView, identifier: AID.Conflict.editorResult).firstMatch
+        try scroll(leftScroll, by: -400, following: [rightBar])
+        try scroll(resultScroll, by: 400, following: [rightBar])
         result.click()
         result.typeKey(.upArrow, modifierFlags: .command)
         paste("// manually edited result\n")
@@ -74,6 +63,31 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         let third = app.element(AID.Conflict.hunkCard(2))
         XCTAssertTrue(waitForSelection(third))
         clickCenter(app.buttons[AID.Conflict.editorCancel])
+    }
+
+    private func scroll(
+        _ viewport: XCUIElement,
+        by deltaY: CGFloat,
+        following followers: [XCUIElement],
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        XCTAssertTrue(viewport.waitForExistence(timeout: 5), "Scroll viewport did not appear", file: file, line: line)
+        let bars = [viewport.scrollBars.firstMatch] + followers
+        let initialValues = try bars.map { try XCTUnwrap($0.value as? Double, "Expected a numeric scroll position", file: file, line: line) }
+        viewport.scroll(byDeltaX: 0, deltaY: deltaY)
+        let moved = NSPredicate { _, _ in
+            zip(bars, initialValues).allSatisfy { bar, initial in
+                guard let current = bar.value as? Double else { return false }
+                return current != initial
+            }
+        }
+        XCTAssertTrue(
+            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 5) == .completed,
+            "Scroll viewport and followers did not move from \(initialValues); current positions: \(bars.map { String(describing: $0.value) })",
+            file: file,
+            line: line
+        )
     }
 
     private func waitForVisibleActions(for card: XCUIElement, in viewport: XCUIElement, app: XCUIApplication) -> Bool {
