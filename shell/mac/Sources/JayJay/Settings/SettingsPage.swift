@@ -30,7 +30,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
             case .appearance: "paintbrush"
-            case .fonts: "chevron.left.forwardslash.chevron.right"
+            case .fonts: "textformat"
             case .diff: "doc.text.magnifyingglass"
             case .workflow: "checklist"
             case .integrations: "wrench.and.screwdriver"

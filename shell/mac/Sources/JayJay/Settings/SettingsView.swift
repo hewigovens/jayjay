@@ -17,7 +17,7 @@ struct SettingsView: View {
                         .fontWeight(.regular)
                 } icon: {
                     Image(systemName: page.symbol)
-                        .font(.system(size: 12, weight: .medium))
+                        .font(.system(size: 10, weight: .medium))
                         .foregroundStyle(.white)
                         .frame(width: 20, height: 20)
                         .background(page.color.gradient, in: RoundedRectangle(cornerRadius: 5))
