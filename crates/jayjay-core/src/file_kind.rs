@@ -45,10 +45,8 @@ const CONFIG_NAMES: &[&str] = &[
 ];
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum FileKind {
-    Code,
+pub(crate) enum FileKind {
     Shell,
-    Text,
     Data,
     Config,
     Lockfile,
@@ -60,7 +58,7 @@ pub enum FileKind {
 }
 
 impl FileKind {
-    pub fn for_path(path: &str) -> Self {
+    pub(crate) fn for_path(path: &str) -> Self {
         let name = path.rsplit('/').next().unwrap_or(path).to_ascii_lowercase();
         let extension = name.rsplit_once('.').map_or("", |(_, extension)| extension);
         // Names win over extensions: `package-lock.json` is a lockfile, not data.
@@ -81,10 +79,8 @@ impl FileKind {
                 Self::Config
             }
             "json" | "yaml" | "yml" | "xml" | "plist" | "sarif" => Self::Data,
-            "md" | "markdown" | "txt" | "rst" | "adoc" => Self::Text,
             "sh" | "bash" | "zsh" | "fish" => Self::Shell,
             _ if name.starts_with('.') => Self::Config,
-            _ if jj_diff::syntax::language_for_path(&name) != "plaintext" => Self::Code,
             _ => Self::Other,
         }
     }
@@ -97,11 +93,8 @@ mod tests {
     #[test]
     fn for_path_sorts_names_before_extensions() {
         for (path, kind) in [
-            ("crates/core/src/lib.rs", FileKind::Code),
-            ("App/View.SWIFT", FileKind::Code),
             ("Makefile", FileKind::Config),
             ("scripts/setup.sh", FileKind::Shell),
-            ("README.md", FileKind::Text),
             ("shell/mac/project.yml", FileKind::Data),
             ("results.sarif", FileKind::Data),
             ("web/package-lock.json", FileKind::Lockfile),
@@ -117,7 +110,6 @@ mod tests {
             ("app/build.gradle", FileKind::Config),
             (".npmrc", FileKind::Config),
             (".env.local", FileKind::Config),
-            ("Package.swift", FileKind::Code),
             ("Cargo.toml", FileKind::Config),
             (".gitignore", FileKind::Config),
             ("assets/AppIcon.icns", FileKind::Image),

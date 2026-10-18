@@ -10,8 +10,7 @@ use jayjay_core::diff_edit::{DiffEditFile, DiffEditFileDiff};
 use jayjay_core::syntax::SyntaxToken;
 use jayjay_core::{
     DiffContent, DiffEditDestination, DiffEditFileSelection, DiffEditRange, DiffHunk, DiffPreview,
-    DiffProjection, DiffProjectionMode, DiffRenderKind, DiffStats, FileDiffStats, FileKind,
-    HunkType,
+    DiffProjection, DiffProjectionMode, DiffRenderKind, DiffStats, FileDiffStats, HunkType,
 };
 
 #[uniffi::remote(Enum)]
@@ -21,21 +20,6 @@ pub enum HunkType {
     Modified,
     Renamed,
     Copied,
-}
-
-#[uniffi::remote(Enum)]
-pub enum FileKind {
-    Code,
-    Shell,
-    Text,
-    Data,
-    Config,
-    Lockfile,
-    Image,
-    Table,
-    Notebook,
-    Archive,
-    Other,
 }
 
 #[uniffi::remote(Enum)]

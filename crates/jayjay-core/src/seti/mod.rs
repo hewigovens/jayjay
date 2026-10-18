@@ -1,4 +1,4 @@
 mod glyph;
 mod table;
 
-pub use glyph::SetiGlyph;
+pub use glyph::{SetiGlyph, SetiMetrics};

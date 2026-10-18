@@ -1,4 +1,8 @@
-use super::table::{FILE_EXTENSIONS, FILE_NAMES, INK_BOUNDS, LANGUAGE_IDS};
+use super::table::{
+    ARCHIVE, CONFIG, DATA, DEFAULT, FILE_EXTENSIONS, FILE_NAMES, GLYPH_METRICS, IMAGE,
+    LANGUAGE_IDS, LOCKFILE, NOTEBOOK, SHELL, TABLE,
+};
+use crate::file_kind::FileKind;
 
 const LANGUAGE_EXTENSIONS: &[(&str, &str)] = &[
     ("ad", "argdown"),
@@ -132,9 +136,9 @@ const LANGUAGE_NAMES: &[(&str, &str)] = &[
 pub struct SetiGlyph(pub char);
 
 impl SetiGlyph {
-    pub fn for_path(path: &str) -> Option<Self> {
+    pub fn for_path(path: &str) -> Self {
         let name = path.rsplit('/').next().unwrap_or(path).to_ascii_lowercase();
-        lookup(FILE_NAMES, &name)
+        let glyph = lookup(FILE_NAMES, &name)
             .or_else(|| {
                 name.match_indices('.')
                     .find_map(|(index, _)| lookup(FILE_EXTENSIONS, &name[index + 1..]))
@@ -148,15 +152,50 @@ impl SetiGlyph {
                     })?;
                 lookup(LANGUAGE_IDS, language)
             })
-            .map(Self)
+            .unwrap_or_else(|| match FileKind::for_path(&name) {
+                FileKind::Shell => SHELL,
+                FileKind::Data => DATA,
+                FileKind::Config => CONFIG,
+                FileKind::Lockfile => LOCKFILE,
+                FileKind::Image => IMAGE,
+                FileKind::Table => TABLE,
+                FileKind::Notebook => NOTEBOOK,
+                FileKind::Archive => ARCHIVE,
+                FileKind::Other => DEFAULT,
+            });
+        Self(glyph)
     }
 
-    /// Left bearing and width of the ink as fractions of the font size; Seti pads each glyph to a full em.
-    pub fn ink(self) -> (f32, f32) {
-        INK_BOUNDS
-            .binary_search_by_key(&self.0, |(glyph, _, _)| *glyph)
-            .map_or((0., 1.), |index| (INK_BOUNDS[index].1, INK_BOUNDS[index].2))
+    pub fn metrics(self) -> SetiMetrics {
+        GLYPH_METRICS
+            .binary_search_by_key(&self.0, |(glyph, ..)| *glyph)
+            .map_or(SetiMetrics::DEFAULT, |index| {
+                let (_, ink_left, ink_width, ink_center, scale) = GLYPH_METRICS[index];
+                SetiMetrics {
+                    scale,
+                    ink_left,
+                    ink_width,
+                    ink_center,
+                }
+            })
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub struct SetiMetrics {
+    pub scale: f32,
+    pub ink_left: f32,
+    pub ink_width: f32,
+    pub ink_center: f32,
+}
+
+impl SetiMetrics {
+    const DEFAULT: Self = Self {
+        scale: 1.,
+        ink_left: 0.,
+        ink_width: 1.,
+        ink_center: 0.5,
+    };
 }
 
 fn dotfile_language(name: &str) -> Option<&'static str> {
@@ -181,11 +220,10 @@ fn lookup<T: Copy>(table: &[(&str, T)], key: &str) -> Option<T> {
 
 #[cfg(test)]
 mod tests {
-    use super::super::table::{FILE_EXTENSIONS, FILE_NAMES, INK_BOUNDS, LANGUAGE_IDS};
     use super::*;
 
-    fn glyph_for_language(language: &str) -> Option<SetiGlyph> {
-        lookup(LANGUAGE_IDS, language).map(SetiGlyph)
+    fn glyph_for_language(language: &str) -> SetiGlyph {
+        SetiGlyph(lookup(LANGUAGE_IDS, language).expect("Seti language"))
     }
 
     #[test]
@@ -212,17 +250,19 @@ mod tests {
         );
         assert_eq!(
             SetiGlyph::for_path("docs/README.md"),
-            lookup(FILE_NAMES, "readme.md").map(SetiGlyph)
+            SetiGlyph(lookup(FILE_NAMES, "readme.md").expect("readme glyph"))
         );
         assert_eq!(
             SetiGlyph::for_path("infra/main.tf.json"),
-            lookup(FILE_EXTENSIONS, "tf.json").map(SetiGlyph)
+            SetiGlyph(lookup(FILE_EXTENSIONS, "tf.json").expect("tf.json glyph"))
         );
         assert_ne!(
             SetiGlyph::for_path("infra/main.tf.json"),
             glyph_for_language("json")
         );
-        assert_eq!(SetiGlyph::for_path("NOTES"), None);
+        assert_eq!(SetiGlyph::for_path("Cargo.lock"), SetiGlyph(LOCKFILE));
+        assert_eq!(SetiGlyph::for_path("hooks/setup.fish"), SetiGlyph(SHELL));
+        assert_eq!(SetiGlyph::for_path("NOTES"), SetiGlyph(DEFAULT));
     }
 
     #[test]
@@ -236,14 +276,18 @@ mod tests {
         ] {
             assert!(keys.windows(2).all(|pair| pair[0] < pair[1]), "{keys:?}");
         }
-        assert!(INK_BOUNDS.windows(2).all(|pair| pair[0].0 < pair[1].0));
+        assert!(GLYPH_METRICS.windows(2).all(|pair| pair[0].0 < pair[1].0));
     }
 
     #[test]
-    fn every_mapped_glyph_has_ink_bounds() {
-        for (_, glyph) in FILE_NAMES.iter().chain(FILE_EXTENSIONS).chain(LANGUAGE_IDS) {
+    fn every_mapped_glyph_has_metrics() {
+        let kinds = [
+            DEFAULT, SHELL, DATA, CONFIG, LOCKFILE, IMAGE, TABLE, NOTEBOOK, ARCHIVE,
+        ];
+        let mapped = FILE_NAMES.iter().chain(FILE_EXTENSIONS).chain(LANGUAGE_IDS);
+        for glyph in mapped.map(|(_, glyph)| glyph).chain(&kinds) {
             assert!(
-                INK_BOUNDS.iter().any(|(bounded, _, _)| bounded == glyph),
+                GLYPH_METRICS.iter().any(|(measured, ..)| measured == glyph),
                 "{glyph:?}"
             );
         }
@@ -253,7 +297,7 @@ mod tests {
     fn every_language_extension_names_a_seti_language() {
         for (extension, language) in LANGUAGE_EXTENSIONS.iter().chain(LANGUAGE_NAMES) {
             assert!(
-                glyph_for_language(language).is_some(),
+                lookup(LANGUAGE_IDS, language).is_some(),
                 "{extension} -> {language}"
             );
         }

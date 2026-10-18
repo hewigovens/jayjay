@@ -52,7 +52,6 @@ pub mod utf16;
 pub use cli::run_app_cli_command;
 #[cfg(feature = "repository")]
 pub use file_display::MAX_IMAGE_BYTES;
-pub use file_kind::FileKind;
 #[cfg(feature = "repository")]
 pub use filesystem::write_atomically;
 pub use fonts::{
@@ -85,7 +84,7 @@ pub use revset::{
     default_revset_preset, revset_completions, revset_presets, typed_revset,
     workspace_filter_revset,
 };
-pub use seti::SetiGlyph;
+pub use seti::{SetiGlyph, SetiMetrics};
 pub use theme::{DiffPalette, DiffThemeColors, RepoColors, ThemeSeed, diff_palettes, repo_colors};
 #[cfg(feature = "repository")]
 pub use tools::{

@@ -2,7 +2,7 @@ use gpui::{
     AnyElement, Context, FontWeight, HighlightStyle, InteractiveElement, IntoElement,
     ParentElement, SharedString, StatefulInteractiveElement, Styled, StyledText, div, px, rgb,
 };
-use jayjay_core::{FileKind, SetiGlyph};
+use jayjay_core::SetiGlyph;
 use unicode_width::UnicodeWidthStr;
 
 use super::{COMPACT_HEADER_WIDTH, DETAIL_INSET, FileHeaderState};
@@ -11,38 +11,35 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_column::head_elide;
 use crate::repo::window::RepoWindow;
-use crate::ui::icons::{self, FileKindGlyph as _, glyph};
+use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::text_tooltip;
 
 pub(super) const PATH_FONT_SIZE: f32 = 13.;
 const PATH_LINE_HEIGHT: f32 = 16.;
 
-pub(super) fn file_kind_icon(path: &str, t: &Theme) -> impl IntoElement {
-    let base = t.scaled_font_size(PATH_FONT_SIZE);
-    let (glyph, size, (left, width)) = match SetiGlyph::for_path(path) {
-        Some(seti) => {
-            let size = base * 1.5;
-            let glyph = div()
-                .font_family(icons::SETI_FONT)
-                .text_size(px(size))
-                .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(seti.0.to_string()));
-            (glyph, size, seti.ink())
-        }
-        None => {
-            let kind = FileKind::for_path(path);
-            (icons::icon(kind.glyph(), base, t.fg_dim), base, kind.ink())
-        }
-    };
+pub(super) fn file_icon(path: &str, t: &Theme) -> impl IntoElement {
+    let glyph = SetiGlyph::for_path(path);
+    let metrics = glyph.metrics();
+    let size = t.scaled_font_size(PATH_FONT_SIZE * 1.5) * metrics.scale;
     // Sized to the ink so the icon takes the row's usual gap; icon fonts sit high, like the copy button's glyph.
     div()
         .flex()
         .flex_none()
-        .w(px(width * size))
+        .w(px(metrics.ink_width * size))
         .line_height(px(t.scaled_font_size(PATH_LINE_HEIGHT)))
         .relative()
         .top(px(1.))
-        .child(glyph.flex_none().ml(px(-left * size)))
+        .child(
+            div()
+                .flex_none()
+                .ml(px(-metrics.ink_left * size))
+                .relative()
+                .top(px((metrics.ink_center - 0.5) * size))
+                .font_family(icons::SETI_FONT)
+                .text_size(px(size))
+                .text_color(rgb(t.fg_dim))
+                .child(SharedString::from(glyph.0.to_string())),
+        )
 }
 
 pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl IntoElement {

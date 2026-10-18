@@ -13,32 +13,31 @@ use jayjay_core::{
         ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
     },
 };
-use jayjay_core::{FileDiffStats, FileKind, SetiGlyph};
+use jayjay_core::{FileDiffStats, SetiGlyph};
 
 #[cfg(feature = "desktop")]
 use jayjay_core::JayError;
 
-#[uniffi::export]
-fn file_kind_for_path(path: String) -> FileKind {
-    FileKind::for_path(&path)
-}
-
 #[derive(uniffi::Record)]
 pub struct SetiIcon {
     pub glyph: String,
+    pub scale: f32,
     pub ink_left: f32,
     pub ink_width: f32,
+    pub ink_center: f32,
 }
 
 #[uniffi::export]
-fn seti_icon_for_path(path: String) -> Option<SetiIcon> {
-    let glyph = SetiGlyph::for_path(&path)?;
-    let (ink_left, ink_width) = glyph.ink();
-    Some(SetiIcon {
+fn seti_icon_for_path(path: String) -> SetiIcon {
+    let glyph = SetiGlyph::for_path(&path);
+    let metrics = glyph.metrics();
+    SetiIcon {
         glyph: glyph.0.to_string(),
-        ink_left,
-        ink_width,
-    })
+        scale: metrics.scale,
+        ink_left: metrics.ink_left,
+        ink_width: metrics.ink_width,
+        ink_center: metrics.ink_center,
+    }
 }
 
 #[cfg(feature = "desktop")]
