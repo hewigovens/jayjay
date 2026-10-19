@@ -43,3 +43,19 @@ pub(crate) fn open_url(target: &str) -> bool {
             .is_ok_and(|status| status.success())
     })
 }
+
+pub(crate) fn numeric_locale() -> String {
+    ["LC_ALL", "LC_NUMERIC", "LANG"]
+        .into_iter()
+        .find_map(|key| std::env::var(key).ok().filter(|value| !value.is_empty()))
+        .unwrap_or_else(|| {
+            #[cfg(windows)]
+            {
+                windows::numeric_locale()
+            }
+            #[cfg(not(windows))]
+            {
+                String::new()
+            }
+        })
+}

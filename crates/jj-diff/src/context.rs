@@ -162,6 +162,7 @@ pub(super) fn separator_line(region: ContextRegion) -> DiffLine {
             text: format!("{} unmodified lines", region.line_count),
             style: DiffSpanStyle::Separator,
             token: SyntaxToken::Plain,
+            tooltip: None,
         }],
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,

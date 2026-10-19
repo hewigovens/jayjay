@@ -15,6 +15,7 @@ fn change_line(text: &str, style: DiffSpanStyle) -> DiffLine {
             text: text.to_owned(),
             style,
             token: SyntaxToken::Plain,
+            tooltip: None,
         }],
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,

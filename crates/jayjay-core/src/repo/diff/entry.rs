@@ -16,10 +16,11 @@ use super::{
     TreePair, formats,
     materialize::{
         ImagePreviewResult, extract_image_preview, git_lfs_object_placeholder,
-        git_lfs_pointer_placeholder, is_image_path, materialized_to_content,
-        parse_binary_placeholder_size, parse_git_lfs_pointer, preview_placeholder,
+        git_lfs_pointer_placeholder, is_image_path, materialized_to_content, parse_git_lfs_pointer,
+        preview_placeholder,
     },
 };
+use crate::placeholder::binary_file_size;
 use crate::repo::support::{block_on, block_on_result};
 use crate::types::*;
 
@@ -286,22 +287,14 @@ fn normalize_git_lfs_content(
 
     if let Some(pointer) = old_pointer.as_ref() {
         old_content = Some(git_lfs_pointer_placeholder(pointer));
-        if new_content
-            .as_deref()
-            .and_then(parse_binary_placeholder_size)
-            == Some(pointer.size)
-        {
+        if new_content.as_deref().and_then(binary_file_size) == Some(pointer.size as u64) {
             new_content = Some(git_lfs_object_placeholder(pointer));
         }
     }
 
     if let Some(pointer) = new_pointer.as_ref() {
         new_content = Some(git_lfs_pointer_placeholder(pointer));
-        if old_content
-            .as_deref()
-            .and_then(parse_binary_placeholder_size)
-            == Some(pointer.size)
-        {
+        if old_content.as_deref().and_then(binary_file_size) == Some(pointer.size as u64) {
             old_content = Some(git_lfs_object_placeholder(pointer));
         }
     }

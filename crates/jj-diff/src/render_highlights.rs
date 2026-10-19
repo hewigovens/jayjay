@@ -30,6 +30,7 @@ pub(super) fn plain_spans(text: &str, style: DiffSpanStyle) -> Vec<DiffSpan> {
         text: text.to_owned(),
         style,
         token: SyntaxToken::Plain,
+        tooltip: None,
     }]
 }
 

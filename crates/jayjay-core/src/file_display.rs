@@ -15,12 +15,10 @@ pub(crate) fn is_image_path(path: &str) -> bool {
 }
 
 pub(crate) fn bytes_to_display(bytes: &[u8]) -> String {
-    if bytes.contains(&0) {
-        return format!("<binary file ({} bytes)>", bytes.len());
+    if let Some(text) = text_content(bytes) {
+        return text.to_owned();
     }
-    std::str::from_utf8(bytes)
-        .map(str::to_owned)
-        .unwrap_or_else(|_| format!("<binary file ({} bytes)>", bytes.len()))
+    format!("<binary file ({} bytes)>", bytes.len())
 }
 
 pub(crate) fn optional_bytes_to_display<T: AsRef<[u8]>>(content: Option<&T>) -> String {

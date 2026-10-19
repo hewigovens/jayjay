@@ -11,6 +11,7 @@ fn line(text: &str) -> DiffLine {
             text: text.to_owned(),
             style: DiffSpanStyle::Context,
             token: SyntaxToken::Plain,
+            tooltip: None,
         }],
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,
@@ -291,4 +292,33 @@ fn pinned_source_line_survives_reflow_in_both_layouts() {
         .position(|row| row.row_ix == 2)
         .unwrap();
     assert_eq!(cache.show(narrow), Some(start as f32 + 0.5 * 5. / 3.));
+}
+
+#[test]
+fn binary_size_tooltips_reach_both_cached_layouts() {
+    let fd = Arc::new(jayjay_core::diff::compute_file_diff(
+        "blob.bin",
+        "<binary file (141080 bytes)>",
+        "<binary file (141081 bytes)>",
+        false,
+    ));
+    let mut cache = DiffWrapCache::default();
+    let unified = cache.unified(&fd, 80);
+    assert_eq!(unified.len(), 2);
+    assert_eq!(unified[0].line.text(), unified[1].line.text());
+    assert!(unified[0].line.text().contains("KB"));
+    let old_tooltip = unified[0].line.spans[0]
+        .tooltip
+        .as_ref()
+        .expect("old size tooltip");
+    let new_tooltip = unified[1].line.spans[0]
+        .tooltip
+        .as_ref()
+        .expect("new size tooltip");
+    assert_ne!(old_tooltip, new_tooltip);
+    let sbs = cache.side_by_side(&fd, 80, 80);
+    assert_eq!(sbs.len(), 1);
+    assert_eq!(sbs[0].row.old.spans[0].tooltip.as_ref(), Some(old_tooltip));
+    assert_eq!(sbs[0].row.new.spans[0].tooltip.as_ref(), Some(new_tooltip));
+    assert_eq!(fd.lines[0].text(), "<binary file (141080 bytes)>");
 }

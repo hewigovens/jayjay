@@ -46,6 +46,7 @@ pub struct DiffSpan {
     pub text: String,
     pub style: DiffSpanStyle,
     pub token: SyntaxToken,
+    pub tooltip: Option<String>,
 }
 
 #[derive(Debug, Clone)]

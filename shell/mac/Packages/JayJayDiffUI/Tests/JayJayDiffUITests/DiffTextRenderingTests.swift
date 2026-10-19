@@ -45,6 +45,47 @@ final class DiffTextRenderingTests: XCTestCase {
         assertSameColor(theme.spanText(unchangedString, lineStyle: .added, conflictKind: .none), theme.string)
     }
 
+    func test_binarySizeTooltipReachesBothNativeRenderers() {
+        let theme = DiffPalettes.standard.colors(for: .light)
+        let font = NSFont.monospacedSystemFont(ofSize: 12, weight: .regular)
+        let spans = [DiffSpan(text: "<binary file (141080 bytes)>", style: .added, token: .plain)]
+        let line = DiffLine(
+            oldLineNo: nil,
+            newLineNo: 1,
+            style: .added,
+            spans: spans,
+            conflictKind: .none,
+            noEofNewline: false,
+            contextRegion: nil
+        )
+        let unified = NSMutableAttributedString()
+        let sideBySide = NSMutableAttributedString()
+        var colors: [NSColor] = []
+        var locations: [DiffViewportLineLocation] = []
+        appendNativeDiffLine(
+            line,
+            to: unified,
+            context: NativeDiffLineRenderContext(font: font, theme: theme, enablesContextExpansion: false),
+            bgColors: &colors,
+            viewportLineLocations: &locations
+        )
+        appendTextLine(
+            to: sideBySide,
+            spans: spans,
+            style: .added,
+            conflictKind: .none,
+            font: font,
+            theme: theme,
+            bgColors: &colors
+        )
+        for rendered in [unified, sideBySide] {
+            XCTAssertTrue(rendered.string.contains("KB"))
+            XCTAssertFalse(rendered.string.contains("bytes"))
+            let expected = "\(141_080.formatted(.number.locale(.current))) bytes"
+            XCTAssertEqual(rendered.attribute(.toolTip, at: 0, effectiveRange: nil) as? String, expected)
+        }
+    }
+
     private func colorAttribute(
         _ key: NSAttributedString.Key,
         at index: Int,

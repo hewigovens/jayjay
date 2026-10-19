@@ -126,6 +126,7 @@ impl ChunkWriter {
             text: std::mem::take(&mut self.buf),
             style: source.style,
             token: source.token,
+            tooltip: source.tooltip.clone(),
         });
     }
 

@@ -45,6 +45,8 @@ hotpath = ["dep:hotpath", "hotpath/hotpath", "jj-diff/hotpath"]
 hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
 
 [dependencies]
+icu_decimal = { version = "2.3", features = ["alloc"] }
+icu_locale_core = "2.3"
 base64 = { workspace = true, optional = true }
 hotpath = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }

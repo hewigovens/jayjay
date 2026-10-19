@@ -39,6 +39,9 @@ toml = { workspace = true }
 unicode-segmentation = { workspace = true }
 unicode-width = { workspace = true }
 
+[target.'cfg(windows)'.dependencies]
+windows-sys = { version = "0.61", features = ["Win32_Globalization"] }
+
 [target.'cfg(target_os = "linux")'.dependencies]
 font-kit = { version = "0.14", features = ["source-fontconfig-default"] }
 libc = { workspace = true }

@@ -161,6 +161,7 @@ mod tests {
                 text: text.to_owned(),
                 style,
                 token: jayjay_core::diff::syntax::SyntaxToken::Plain,
+                tooltip: None,
             }],
             conflict_kind: ConflictLineKind::None,
             no_eof_newline: false,

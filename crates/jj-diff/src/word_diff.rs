@@ -236,6 +236,7 @@ fn apply_highlights_with_word_diff(
                 text: span.text[text_start..text_end].to_owned(),
                 style,
                 token: span.token,
+                tooltip: span.tooltip.clone(),
             });
 
             pos = run_end;

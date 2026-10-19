@@ -17,6 +17,11 @@ func diffSpanAttributes(
         .foregroundColor: theme.spanText(span, lineStyle: lineStyle, conflictKind: conflictKind)
     ]
     let wordBg = theme.spanBackground(span)
-    if wordBg != .clear { attrs[.diffWordHighlightColor] = wordBg }
+    if wordBg != .clear {
+        attrs[.diffWordHighlightColor] = wordBg
+    }
+    if let tooltip = span.tooltip {
+        attrs[.toolTip] = tooltip
+    }
     return attrs
 }

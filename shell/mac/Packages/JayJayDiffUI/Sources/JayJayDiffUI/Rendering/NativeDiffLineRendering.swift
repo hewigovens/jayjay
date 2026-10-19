@@ -46,7 +46,7 @@ func appendNativeDiffLine(
             )
         ))
     } else {
-        for span in line.spans {
+        for span in line.spans.localizingFileSizes(locale: .current) {
             let attrs = diffSpanAttributes(
                 for: span,
                 lineStyle: line.style,

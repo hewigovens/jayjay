@@ -17,3 +17,17 @@ pub fn reveal_path(path: &Path) -> bool {
 pub fn send_notification(_title: &str, _body: &str) -> bool {
     false
 }
+
+pub(super) fn numeric_locale() -> String {
+    let mut name = [0_u16; 85];
+    let length = unsafe {
+        windows_sys::Win32::Globalization::GetUserDefaultLocaleName(
+            name.as_mut_ptr(),
+            name.len() as i32,
+        )
+    };
+    if length <= 1 {
+        return String::new();
+    }
+    String::from_utf16_lossy(&name[..length as usize - 1])
+}

@@ -98,7 +98,7 @@ func appendTextLine(
     } else if spans.isEmpty {
         str.append(NSAttributedString(string: "\n", attributes: [.font: font]))
     } else {
-        for span in spans {
+        for span in spans.localizingFileSizes(locale: .current) {
             let attrs = diffSpanAttributes(
                 for: span,
                 lineStyle: style,

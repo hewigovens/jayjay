@@ -221,13 +221,6 @@ pub(super) fn parse_git_lfs_pointer(text: &str) -> Option<GitLfsPointerInfo> {
     })
 }
 
-pub(super) fn parse_binary_placeholder_size(text: &str) -> Option<usize> {
-    text.strip_prefix("<binary file (")?
-        .strip_suffix(" bytes)>")?
-        .parse::<usize>()
-        .ok()
-}
-
 pub(super) fn git_lfs_pointer_placeholder(pointer: &GitLfsPointerInfo) -> String {
     format!(
         "<git lfs pointer sha256:{} ({} bytes)>",

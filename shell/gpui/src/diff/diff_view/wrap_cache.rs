@@ -1,8 +1,10 @@
 //! Per-window cache for wrapped diff lines, keyed on (`Arc<FileDiff>` identity, wrap cols); retaining the source Arc makes pointer identity stable and avoids re-wrapping (which deep-clones every `DiffLine`) on every mouse-move during a drag.
 
+use std::cell::OnceCell;
 use std::ops::Deref;
 use std::sync::Arc;
 
+use jayjay_core::FileSizeFormatter;
 use jayjay_core::diff::{
     DiffLine, FileDiff, WrappedDiffLine, WrappedSbsRow, build_diff_display_lines,
     build_side_by_side_rows, sbs_line_to_row, wrap_diff_lines, wrap_sbs_rows,
@@ -15,6 +17,7 @@ use super::rows::{DiffRenderRows, build_diff_render_rows, notes_fingerprint};
 
 #[derive(Default)]
 pub(crate) struct DiffWrapCache {
+    file_size_formatter: OnceCell<FileSizeFormatter>,
     unified: Option<UnifiedEntry>,
     sbs: Option<SbsEntry>,
     rows: Option<RowsEntry>,
@@ -73,6 +76,11 @@ struct RowsEntry {
 }
 
 impl DiffWrapCache {
+    fn file_size_formatter(&self) -> &FileSizeFormatter {
+        self.file_size_formatter
+            .get_or_init(|| FileSizeFormatter::new(&crate::platform::numeric_locale()))
+    }
+
     /// Records the rows a diff body is showing; returns the row to scroll to when a pinned source line was waiting for this reflow.
     pub(crate) fn show(&mut self, rows: VisibleRows) -> Option<f32> {
         let row = self.pinned.take().and_then(|anchor| rows.row(&anchor));
@@ -112,7 +120,12 @@ impl DiffWrapCache {
             .as_ref()
             .is_some_and(|entry| Arc::ptr_eq(&entry.diff, fd) && entry.cols == cols);
         if !hit {
-            let display_lines = Arc::new(build_diff_display_lines(&fd.lines));
+            let mut display_lines = build_diff_display_lines(&fd.lines);
+            for line in &mut display_lines {
+                self.file_size_formatter()
+                    .localize_binary_spans(&mut line.spans);
+            }
+            let display_lines = Arc::new(display_lines);
             let lines = Arc::new(wrap_diff_lines(&display_lines, cols));
             self.unified = Some(UnifiedEntry {
                 diff: fd.clone(),
@@ -170,7 +183,13 @@ impl DiffWrapCache {
         {
             return entry.rows.clone();
         }
-        let rows = build_side_by_side_rows(&fd.lines);
+        let mut rows = build_side_by_side_rows(&fd.lines);
+        for row in &mut rows {
+            self.file_size_formatter()
+                .localize_binary_spans(&mut row.old.spans);
+            self.file_size_formatter()
+                .localize_binary_spans(&mut row.new.spans);
+        }
         let mut new_display_lines = vec![None; rows.len()];
         let display_lines = build_diff_display_lines(&fd.lines);
         for (line_ix, row_ix) in sbs_line_to_row(&fd.lines).into_iter().enumerate() {

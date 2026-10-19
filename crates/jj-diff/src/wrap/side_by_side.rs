@@ -240,6 +240,7 @@ fn spans_range(spans: &[DiffSpan], start: usize, end: usize) -> Vec<DiffSpan> {
                 text,
                 style: span.style,
                 token: span.token,
+                tooltip: span.tooltip.clone(),
             });
         }
     }

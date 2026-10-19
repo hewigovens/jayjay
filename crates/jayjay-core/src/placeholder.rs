@@ -19,6 +19,14 @@ const PLACEHOLDER_PREFIXES: &[&str] = &[
     "symlink -> ",
 ];
 
+/// Exact size from the core's locale-independent binary placeholder.
+pub(crate) fn binary_file_size(text: &str) -> Option<u64> {
+    text.strip_prefix("<binary file (")?
+        .strip_suffix(" bytes)>")?
+        .parse()
+        .ok()
+}
+
 /// True when `text` is editable text rather than a placeholder.
 pub fn is_editable_text(text: &str) -> bool {
     !PLACEHOLDER_PREFIXES

@@ -145,6 +145,7 @@ fn conflict_content_line(line: &DiffLine, section_label: &str) -> DiffLine {
             text: prefix.to_owned(),
             style: DiffSpanStyle::Unchanged,
             token: SyntaxToken::Plain,
+            tooltip: None,
         },
     );
     line
@@ -229,6 +230,7 @@ fn conflict_summary_line(lines: &[DiffLine], block: &ConflictBlock) -> DiffLine 
         text: conflict_summary(block),
         style: DiffSpanStyle::Unchanged,
         token: SyntaxToken::Plain,
+        tooltip: None,
     }];
     line
 }

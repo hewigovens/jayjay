@@ -1,7 +1,11 @@
-use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{
+    AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString,
+    StatefulInteractiveElement, Styled, div, px, rgb,
+};
 use jayjay_core::diff::{DiffSpan, DiffSpanStyle};
 
 use crate::app::theme::Theme;
+use crate::ui::primitives::text_tooltip;
 
 /// Render one DiffSpan, optionally splitting on a case-insensitive `query`
 /// match so we can highlight find results inline.
@@ -20,7 +24,7 @@ pub fn span_element(
         None => vec![(span.text.clone(), false)],
     };
 
-    if parts.len() == 1 && !parts[0].1 {
+    let element = if parts.len() == 1 && !parts[0].1 {
         // Common case: no matches in this span, render as a single div.
         let mut el = div()
             .h(px(theme.code_line_height()))
@@ -30,29 +34,41 @@ pub fn span_element(
         if let Some(word_bg) = bg {
             el = el.bg(rgb(word_bg));
         }
-        return el.into_any_element();
-    }
-
-    let mut row = div()
-        .flex()
-        .flex_row()
-        .h(px(theme.code_line_height()))
-        .line_height(px(theme.code_line_height()));
-    if let Some(word_bg) = bg {
-        row = row.bg(rgb(word_bg));
-    }
-    for (chunk, is_match) in parts {
-        let mut child = div()
-            .text_color(rgb(color))
-            .child(SharedString::from(chunk));
-        if is_match {
-            child = child
-                .bg(rgb(theme.find_match_bg))
-                .text_color(rgb(theme.find_match_fg));
+        el.into_any_element()
+    } else {
+        let mut row = div()
+            .flex()
+            .flex_row()
+            .h(px(theme.code_line_height()))
+            .line_height(px(theme.code_line_height()));
+        if let Some(word_bg) = bg {
+            row = row.bg(rgb(word_bg));
         }
-        row = row.child(child);
+        for (chunk, is_match) in parts {
+            let mut child = div()
+                .text_color(rgb(color))
+                .child(SharedString::from(chunk));
+            if is_match {
+                child = child
+                    .bg(rgb(theme.find_match_bg))
+                    .text_color(rgb(theme.find_match_fg));
+            }
+            row = row.child(child);
+        }
+        row.into_any_element()
+    };
+    if let Some(tooltip) = &span.tooltip {
+        div()
+            .id(SharedString::from(format!(
+                "file-size-{line_style:?}-{tooltip}-{}",
+                span.text
+            )))
+            .tooltip(text_tooltip(tooltip.clone()))
+            .child(element)
+            .into_any_element()
+    } else {
+        element
     }
-    row.into_any_element()
 }
 
 /// Splits `text` into runs alternating between non-match and match parts

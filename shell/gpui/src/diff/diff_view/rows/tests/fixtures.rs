@@ -17,6 +17,7 @@ pub(super) fn line(
             text: text.to_owned(),
             style,
             token: SyntaxToken::Plain,
+            tooltip: None,
         }],
         conflict_kind: ConflictLineKind::None,
         no_eof_newline: false,

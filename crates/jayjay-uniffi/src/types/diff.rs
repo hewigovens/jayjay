@@ -208,6 +208,8 @@ pub struct DiffSpan {
     pub text: String,
     pub style: core::diff::DiffSpanStyle,
     pub token: core::syntax::SyntaxToken,
+    #[uniffi(default = None)]
+    pub tooltip: Option<String>,
 }
 
 #[uniffi::remote(Record)]

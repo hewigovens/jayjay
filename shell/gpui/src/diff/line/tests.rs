@@ -37,6 +37,7 @@ fn diff_line(text: &str, conflict_kind: ConflictLineKind) -> DiffLine {
             text: text.to_owned(),
             style: DiffSpanStyle::Added,
             token: SyntaxToken::Plain,
+            tooltip: None,
         }],
         conflict_kind,
         no_eof_newline: false,

@@ -49,5 +49,6 @@ pub(super) fn span(text: &str, style: DiffSpanStyle) -> DiffSpan {
         text: text.to_owned(),
         style,
         token: SyntaxToken::Plain,
+        tooltip: None,
     }
 }

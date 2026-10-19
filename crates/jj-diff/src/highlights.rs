@@ -36,6 +36,7 @@ pub(super) fn apply_highlights(
                 text: line[pos..span_start].to_owned(),
                 style: diff_style,
                 token: SyntaxToken::Plain,
+                tooltip: None,
             });
         }
 
@@ -44,6 +45,7 @@ pub(super) fn apply_highlights(
                 text: line[span_start..span_end].to_owned(),
                 style: diff_style,
                 token: hs.token,
+                tooltip: None,
             });
             pos = span_end;
         }
@@ -54,6 +56,7 @@ pub(super) fn apply_highlights(
             text: line[pos..].to_owned(),
             style: diff_style,
             token: SyntaxToken::Plain,
+            tooltip: None,
         });
     }
 
