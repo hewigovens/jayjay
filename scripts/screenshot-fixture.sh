@@ -201,10 +201,19 @@ RS
 jj st >/dev/null
 sed -i '' 's/const CAPACITY: usize = 64;/const CAPACITY: usize = 128;/' src/cache.rs
 jj st >/dev/null
-feature=$(jj log --no-graph -r @ -T 'change_id.short(12)')
-
+jj new -m "refactor: group route helpers"
+python3 - <<'MOVE'
+from pathlib import Path
+path = Path("src/routes.rs")
+source = path.read_text()
+start = source.index("pub fn estimated_minutes")
+helper = source[start:]
+source = source[:start].rstrip() + "\n"
+insert = source.index("pub fn plan_route")
+path.write_text(source[:insert] + helper + "\n" + source[insert:])
+MOVE
 # The working copy sits on the feature stack with review-ready edits.
-jj new "$feature"
+jj new
 sed -i '' 's/    candidates.retain(|route| route.is_available());/    candidates.retain(|route| route.is_available() \&\& route.origin != route.destination);/' src/routes.rs
 cat >> tests/routes.rs <<'RS'
 
@@ -227,6 +236,23 @@ RS
 cat >> README.md <<'MD'
 
 Estimates include transfer time, and recently planned routes are cached.
+MD
+mkdir -p docs
+cat > docs/routing.md <<'MD'
+# Journey planning
+
+Available routes are ranked by total travel time, including transfers.
+
+```mermaid
+flowchart TD
+    A[Choose journey] --> B[Find routes]
+    B --> C{Available?}
+    C -->|Yes| D[Rank by travel time]
+    C -->|No| E[No route found]
+    D --> F[Return fastest route]
+```
+
+The route cache keeps recent results ready for the next journey.
 MD
 jj st >/dev/null
 

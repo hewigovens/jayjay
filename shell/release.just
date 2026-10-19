@@ -28,12 +28,12 @@ upload-release:
   #!/usr/bin/env bash
   set -euo pipefail
   zip_path="{{release_dir}}/{{app_name}}-{{version}}.zip"
-  if [ ! -f "$zip_path" ]; then
-    echo "Zip file not found at $zip_path. Run 'just shell::release' first." >&2
+  if [ ! -f "$zip_path" ] || [ ! -f "$zip_path.sha256" ]; then
+    echo "Release archive or SHA-256 missing at $zip_path. Run 'just shell::release' first." >&2
     exit 1
   fi
   echo "Uploading $zip_path to release v{{version}}"
-  gh release upload "v{{version}}" "$zip_path" --clobber
+  gh release upload "v{{version}}" "$zip_path" "$zip_path.sha256" --clobber
 
 # Verify the uploaded asset is publicly reachable at the URL Sparkle downloads.
 verify-public-release:

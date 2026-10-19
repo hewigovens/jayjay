@@ -59,6 +59,7 @@ bash "${root}/scripts/package-release-zip.sh" "$app_path" \
   "$zip_path"
 bash "${root}/scripts/verify-release.sh" archive \
   "$zip_path" notarized
+shasum -a 256 "$zip_path" | cut -d' ' -f1 > "$zip_path.sha256"
 
 sparkle_bin=$(find "${derived_data}" -name "sign_update" -type f 2>/dev/null | head -1)
 if [ -z "$sparkle_bin" ] || [ ! -x "$sparkle_bin" ]; then

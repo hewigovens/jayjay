@@ -12,6 +12,21 @@ final class ReleaseScreenshots: ScreenshotScene {
         capture("home", frame: mainFrame)
     }
 
+    func testMovedCode() throws {
+        let app = try XCTUnwrap(app)
+        selectChange("group route helpers", in: app)
+        selectFile("src/routes.rs", in: app)
+        capture("moved-code", frame: mainFrame)
+    }
+
+    func testMermaid() throws {
+        let app = try XCTUnwrap(app)
+        selectFile("docs/routing.md", in: app)
+        clickCenter(app.buttons["Preview"], message: "Markdown preview missing")
+        XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 5), "Rendered Markdown missing")
+        capture("mermaid", frame: mainFrame)
+    }
+
     func testReview() throws {
         let app = try XCTUnwrap(app)
         selectFile("src/stations.rs", in: app)
@@ -153,17 +168,29 @@ final class ReleaseScreenshots: ScreenshotScene {
         capture("workspaces", frame: picker.frame)
     }
 
-    func testSettings() throws {
+    func testSettingsOtherPages() throws {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
         let pages = [
-            ("appearance", "appearance"), ("fonts", "fonts"), ("diff", "diff"), ("workflow", "workflow"), ("integrations", "integrations"),
+            ("fonts", "fonts"), ("diff", "diff"), ("workflow", "workflow"),
             ("jujutsu", "jj"), ("dataPrivacy", "data-privacy"), ("about", "about")
         ]
         for (page, name) in pages {
             selectSettingsPage(page, in: app)
             settle()
             capture("settings-\(name)", frame: settingsWindow(in: app).frame)
+        }
+    }
+
+    func testSettingsAppearanceAndIntegrations() throws {
+        let app = try XCTUnwrap(app)
+        keyStroke(",", modifiers: [.command])
+        for page in ["appearance", "integrations"] {
+            selectSettingsPage(page, in: app)
+            if page == "integrations" {
+                settingsWindow(in: app).staticTexts["Version control"].scroll(byDeltaX: 0, deltaY: -600)
+            }
+            capture("settings-\(page)", frame: settingsWindow(in: app).frame)
         }
     }
 

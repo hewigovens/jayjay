@@ -23,7 +23,7 @@
     "title": "Review changed files",
     "summary": "Review a change file by file, use rich previews for supported formats, mark files reviewed with Space, and hide completed files.",
     "category": "Diffs",
-    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "space", "hide reviewed", "side by side", "unified", "rich preview", "markdown", "md", "html", "htm", "notebook", "ipynb", "csv", "tsv", "sarif", "plist", "property list"],
+    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "space", "hide reviewed", "side by side", "unified", "rich preview", "markdown", "mermaid", "diagram", "moved code", "file icons", "binary size", "md", "html", "htm", "notebook", "ipynb", "csv", "tsv", "sarif", "plist", "property list"],
     "shortcut": "Space",
     "guideAnchor": "diffs"
   },
@@ -77,7 +77,7 @@
     "title": "Create stacked pull requests",
     "summary": "Right-click the tip of a linear stack to create or update one PR or MR per change.",
     "category": "Pull Requests",
-    "keywords": ["help", "stacked", "stacked pr", "stacked pull request", "dependent pr", "dependent base", "stack", "gh", "glab", "origin", "cursor", "branch name", "bookmark name"],
+    "keywords": ["help", "stacked", "stacked pr", "stacked pull request", "dependent pr", "dependent base", "stack", "authentication", "token", "gh_token", "github_token", "gitlab_token", "gh", "glab", "origin", "cursor", "branch name", "bookmark name"],
     "menuPath": "Change Context Menu > Create / Update Stacked PRs",
     "guideAnchor": "stacked"
   },
@@ -111,7 +111,7 @@
     "title": "Configure tools and settings",
     "summary": "Set appearance, diff behavior, external editor, terminal, CLI tools, jj config, fonts, and AI providers.",
     "category": "Settings",
-    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "ai", "codex", "claude", "apple intelligence", "gh", "glab", "origin", "avatar"],
+    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "ai", "codex", "claude", "apple intelligence", "forge", "authentication", "token", "gh", "glab", "origin", "avatar"],
     "shortcut": "Cmd+,",
     "menuPath": "JayJay > Settings...",
     "guideAnchor": "settings"
