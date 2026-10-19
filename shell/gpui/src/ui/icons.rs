@@ -54,9 +54,26 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
         SIDEBAR_LEADING_SVG,
         include_bytes!("../../assets/icons/sidebar-leading.svg"),
     ),
+    (PLUS_SVG, include_bytes!("../../assets/icons/plus.svg")),
+    (MINUS_SVG, include_bytes!("../../assets/icons/minus.svg")),
+    (
+        PLUS_MINUS_SVG,
+        include_bytes!("../../assets/icons/plus-minus.svg"),
+    ),
+    (
+        ARROW_RIGHT_SVG,
+        include_bytes!("../../assets/icons/arrow-right.svg"),
+    ),
+    (COPY_SVG, include_bytes!("../../assets/icons/copy.svg")),
 ];
 pub const REFRESH_SVG: &str = "icons/refresh.svg";
 pub const SIDEBAR_LEADING_SVG: &str = "icons/sidebar-leading.svg";
+/// Codicons outlines as SVGs so file-status icons center in their badges; plus-minus is drawn to match.
+pub const PLUS_SVG: &str = "icons/plus.svg";
+pub const MINUS_SVG: &str = "icons/minus.svg";
+pub const PLUS_MINUS_SVG: &str = "icons/plus-minus.svg";
+pub const ARROW_RIGHT_SVG: &str = "icons/arrow-right.svg";
+pub const COPY_SVG: &str = "icons/copy.svg";
 
 pub mod glyph {
     pub const APP_WINDOW: &str = "\u{eb7f}";
@@ -83,9 +100,6 @@ pub mod glyph {
     pub const COPY: &str = "\u{ebcc}";
     pub const DATABASE: &str = "\u{eace}";
     pub const DIFF: &str = "\u{eae1}";
-    pub const DIFF_ADDED: &str = "\u{eadc}";
-    pub const DIFF_MODIFIED: &str = "\u{eade}";
-    pub const DIFF_REMOVED: &str = "\u{eadf}";
     pub const DOT: &str = "\u{eb8a}";
     pub const EDIT_CODE: &str = "\u{ec68}";
     pub const EXTERNAL_LINK: &str = "\u{eb14}";
