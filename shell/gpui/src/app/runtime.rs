@@ -8,7 +8,7 @@ use super::startup_window::{open_startup_window, resolve_repo_path};
 use super::theme::Theme;
 use crate::startup::GuiLaunch;
 
-const CODICONS_FONT: &[u8] = include_bytes!("../../assets/fonts/Codicons.ttf");
+const OCTICONS_FONT: &[u8] = include_bytes!("../../assets/fonts/Octicons.ttf");
 const SETI_FONT: &[u8] = include_bytes!("../../../../assets/fonts/Seti.ttf");
 
 pub(crate) fn run(launch: GuiLaunch) {
@@ -16,7 +16,7 @@ pub(crate) fn run(launch: GuiLaunch) {
     let cfg = AppConfig::load();
     let app = gpui_platform::application().with_assets(GpuiAssets);
     app.run(move |cx: &mut App| {
-        let fonts = vec![Cow::Borrowed(CODICONS_FONT), Cow::Borrowed(SETI_FONT)];
+        let fonts = vec![Cow::Borrowed(OCTICONS_FONT), Cow::Borrowed(SETI_FONT)];
         if let Err(error) = cx.text_system().add_fonts(fonts) {
             eprintln!("[jayjay-gpui] failed to register the icon fonts: {error}");
         }

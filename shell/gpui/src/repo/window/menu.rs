@@ -325,7 +325,7 @@ impl RepoWindow {
             ),
             ContextMenuItem::new(
                 "Show History",
-                glyph::ARROW_CLOCKWISE,
+                glyph::HISTORY,
                 ContextAction::OpenFileHistoryFor(path.to_owned().into()),
             ),
             ContextMenuItem::new(

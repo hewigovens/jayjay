@@ -295,7 +295,7 @@ fn header(
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
-        .child(icons::icon(glyph::ARROW_CLOCKWISE, 14., t.fg_dim))
+        .child(icons::icon(glyph::HISTORY, 14., t.fg_dim))
         .child(
             div()
                 .debug_selector(|| "evolog-title".to_owned())

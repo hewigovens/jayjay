@@ -83,7 +83,7 @@ pub(super) fn trailing_items(
         items.push(status_action(
             StatusItemSpec::new(
                 "status-last-op",
-                Some(glyph::ARROW_CLOCKWISE),
+                Some(glyph::HISTORY),
                 operation.to_owned(),
                 None,
                 true,

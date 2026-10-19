@@ -157,7 +157,7 @@ fn history_row(command: &str, t: &Theme, cx: &mut Context<CommandPalette>) -> im
         .on_click(cx.listener(move |palette, _: &ClickEvent, _, cx| {
             palette.set_query(query.clone(), cx);
         }))
-        .child(icons::icon(glyph::ARROW_CLOCKWISE, 13., t.fg_dim))
+        .child(icons::icon(glyph::HISTORY, 13., t.fg_dim))
         .child(
             div()
                 .code_text(11., t)

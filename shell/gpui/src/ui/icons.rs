@@ -1,12 +1,11 @@
-//! Codicon glyphs from `assets/fonts/Codicons.ttf`, registered with GPUI's text system at startup.
+//! Octicons glyphs from `assets/fonts/Octicons.ttf`, which `scripts/octicons-font.py` builds from the constants below.
 //!
 //! Use `icon(glyph)` to render an icon span; pass `glyph::COPY` etc.
 
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
-const FONT: &str = "codicon";
-/// Codicons are drawn on this grid; at multiples of it their strokes land on whole pixels.
-pub(crate) const CODICON_GRID: f32 = 16.;
+const FONT: &str = "Octicons";
+pub(crate) const ICON_GRID: f32 = 16.;
 pub(crate) const SETI_FONT: &str = "seti";
 pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
 pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
@@ -68,7 +67,6 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
 ];
 pub const REFRESH_SVG: &str = "icons/refresh.svg";
 pub const SIDEBAR_LEADING_SVG: &str = "icons/sidebar-leading.svg";
-/// Codicons outlines as SVGs so file-status icons center in their badges; plus-minus is drawn to match.
 pub const PLUS_SVG: &str = "icons/plus.svg";
 pub const MINUS_SVG: &str = "icons/minus.svg";
 pub const PLUS_MINUS_SVG: &str = "icons/plus-minus.svg";
@@ -78,7 +76,6 @@ pub const COPY_SVG: &str = "icons/copy.svg";
 pub mod glyph {
     pub const APP_WINDOW: &str = "\u{eb7f}";
     pub const ARROW_CIRCLE_RIGHT: &str = "\u{ebfe}";
-    pub const ARROW_CLOCKWISE: &str = "\u{eb37}";
     pub const ARROW_DOWN: &str = "\u{ea9a}";
     pub const ARROW_RIGHT: &str = "\u{ea9c}";
     pub const ARROW_UP: &str = "\u{eaa1}";
@@ -112,11 +109,13 @@ pub mod glyph {
     pub const GEAR: &str = "\u{eaf8}";
     pub const GIT_BRANCH: &str = "\u{ea68}";
     pub const GIT_MERGE: &str = "\u{eafe}";
+    pub const HISTORY: &str = "\u{eb37}";
     pub const INFO: &str = "\u{ea74}";
     pub const LIGATURE: &str = "\u{eb7e}";
     pub const LIST: &str = "\u{eb17}";
     pub const LIST_CHECKS: &str = "\u{eab3}";
     pub const LIST_TREE: &str = "\u{eb86}";
+    pub const MARK_GITHUB: &str = "\u{ea84}";
     pub const MOON: &str = "\u{e11e}";
     pub const PACKAGE: &str = "\u{eb29}";
     pub const PALETTE: &str = "\u{eb5c}";

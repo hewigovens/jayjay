@@ -385,7 +385,7 @@ impl RepoWindow {
         ));
         items.push(ContextMenuItem::new(
             "Show evolution…",
-            glyph::ARROW_CLOCKWISE,
+            glyph::HISTORY,
             ContextAction::OpenEvologFor(rev.clone().into()),
         ));
 
@@ -419,7 +419,7 @@ impl RepoWindow {
         }
         more_actions.push(ContextMenuItem::new(
             "Revert change",
-            glyph::ARROW_CLOCKWISE,
+            glyph::HISTORY,
             change_action(ChangeAction::Revert { rev: rev.clone() }),
         ));
         items.push(ContextMenuItem::submenu(

@@ -1,4 +1,4 @@
-use gpui::{Div, ParentElement, Styled, Svg, div, px, rgb, rgba, svg};
+use gpui::{Div, ParentElement, Styled, div, px, rgb, rgba, svg};
 use jayjay_core::diff::placeholders::{is_git_lfs, is_git_submodule};
 use jayjay_core::{DiffHunk, HunkType};
 
@@ -35,8 +35,8 @@ pub(crate) fn label(hunk_type: HunkType) -> &'static str {
     }
 }
 
-/// Matches SwiftUI's file-status SF Symbols.
-fn status_icon(hunk_type: HunkType, size: f32, color: u32) -> Svg {
+/// The status SVGs are drawn to fill their badge.
+fn status_tile(hunk_type: HunkType, size: f32, color: u32) -> Div {
     let path = match hunk_type {
         HunkType::Added => icons::PLUS_SVG,
         HunkType::Removed => icons::MINUS_SVG,
@@ -44,11 +44,10 @@ fn status_icon(hunk_type: HunkType, size: f32, color: u32) -> Svg {
         HunkType::Renamed => icons::ARROW_RIGHT_SVG,
         HunkType::Copied => icons::COPY_SVG,
     };
-    svg()
-        .path(path)
+    div()
         .flex_none()
         .size(px(size))
-        .text_color(rgb(color))
+        .child(svg().path(path).size_full().text_color(rgb(color)))
 }
 
 pub(crate) fn badge(hunk_type: HunkType, theme: &Theme) -> Div {
@@ -58,30 +57,18 @@ pub(crate) fn badge(hunk_type: HunkType, theme: &Theme) -> Div {
         HunkType::Modified | HunkType::Renamed => theme.file_badge_modified_fg,
     };
     let bg_alpha = if theme.is_dark { 0x24 } else { 0x26 };
-    div()
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .size(px(theme.scaled_font_size(18.)))
+    status_tile(hunk_type, theme.scaled_font_size(18.), fg)
         .rounded(px(4.))
         .bg(rgba(with_alpha(
             color_for_hunk_type(hunk_type, theme),
             bg_alpha,
         )))
-        .child(status_icon(hunk_type, theme.scaled_font_size(12.), fg))
 }
 
 pub(crate) fn disc(hunk_type: HunkType, color: u32, size: f32) -> Div {
-    div()
-        .flex()
-        .flex_none()
-        .items_center()
-        .justify_center()
-        .size(px(size))
+    status_tile(hunk_type, size, 0xffffff)
         .rounded_full()
         .bg(rgb(color))
-        .child(status_icon(hunk_type, size * 0.6, 0xffffff))
 }
 
 pub(crate) fn is_submodule(hunk: &DiffHunk) -> bool {

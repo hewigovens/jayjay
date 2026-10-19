@@ -138,7 +138,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         name: "Operation Log",
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
-        glyph_str: glyph::ARROW_CLOCKWISE,
+        glyph_str: glyph::HISTORY,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_operation_log),
     },
     PaletteAction {

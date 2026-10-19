@@ -41,7 +41,7 @@ impl SettingsSection {
     pub(super) fn glyph(self) -> &'static str {
         match self {
             Self::Appearance => glyph::PALETTE,
-            Self::Fonts => glyph::BRACES,
+            Self::Fonts => glyph::CASE_SENSITIVE,
             Self::Diff => glyph::DIFF,
             Self::Workflow => glyph::LIST_CHECKS,
             Self::Integrations => glyph::WRENCH,

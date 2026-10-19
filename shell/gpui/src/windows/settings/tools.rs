@@ -189,7 +189,11 @@ pub(super) fn forge_login_row(
         Some(None) => ("Not signed in".to_owned(), ToolState::Missing),
         None => ("Checking…".to_owned(), ToolState::Checking),
     };
-    status_row(host.display_name(), glyph::GIT_MERGE, detail, state, t)
+    let glyph_str = match host {
+        jayjay_core::RepoHost::GitHub => glyph::MARK_GITHUB,
+        _ => glyph::GIT_MERGE,
+    };
+    status_row(host.display_name(), glyph_str, detail, state, t)
 }
 
 enum ToolState {
@@ -206,7 +210,7 @@ fn status_row(
     t: &Theme,
 ) -> impl IntoElement {
     let (icon_glyph, icon_color, detail_color, marker) = match state {
-        ToolState::Checking => (glyph::ARROW_CLOCKWISE, t.fg_faint, t.fg_faint, "checking"),
+        ToolState::Checking => (glyph::SYNC, t.fg_faint, t.fg_faint, "checking"),
         ToolState::Found => (glyph::CHECK, t.tag_added_fg, t.fg_dim, "found"),
         ToolState::Missing => (glyph::X_CIRCLE, t.fg_faint, t.fg_faint, "missing"),
     };

@@ -19,7 +19,7 @@ pub(super) fn header(t: &Theme) -> AnyElement {
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border))
-        .child(icons::icon(glyph::ARROW_CLOCKWISE, 14., t.fg_dim))
+        .child(icons::icon(glyph::HISTORY, 14., t.fg_dim))
         .child(
             div()
                 .text_size(ui_font_size(13.))

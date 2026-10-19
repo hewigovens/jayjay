@@ -279,7 +279,7 @@ fn restore_items(
                 let short: String = parent.chars().take(8).collect();
                 ContextMenuItem::new(
                     format!("{label} {}: {short}", ix + 1),
-                    glyph::ARROW_CLOCKWISE,
+                    glyph::HISTORY,
                     batch(FileBatchAction::Restore {
                         rev: rev.clone(),
                         from: Some(parent.clone()),
@@ -291,7 +291,7 @@ fn restore_items(
     }
     vec![ContextMenuItem::new(
         label,
-        glyph::ARROW_CLOCKWISE,
+        glyph::HISTORY,
         batch(FileBatchAction::Restore {
             rev,
             from: None,

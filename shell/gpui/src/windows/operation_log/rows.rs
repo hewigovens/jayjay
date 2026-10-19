@@ -205,6 +205,6 @@ fn operation_glyph(description: &str) -> &'static str {
     } else if description.contains("describe") || description.contains("edit") {
         glyph::PENCIL
     } else {
-        glyph::ARROW_CLOCKWISE
+        glyph::HISTORY
     }
 }

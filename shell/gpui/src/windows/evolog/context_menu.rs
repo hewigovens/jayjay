@@ -88,7 +88,7 @@ fn menu_panel(
         EvologMenuItem {
             selector: "evolog-context-restore",
             label: "Restore this version",
-            icon: glyph::ARROW_CLOCKWISE,
+            icon: glyph::HISTORY,
             action: EvologMenuAction::Restore(state.commit_id.clone()),
             tooltip: Some(restore_help),
             enabled: !state.is_immutable,

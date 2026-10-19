@@ -6,28 +6,27 @@ extension HunkType {
         switch self {
             case .added: Image(systemName: "plus.circle.fill")
             case .removed: Image(systemName: "minus.circle.fill")
-            case .modified: Image(systemName: "plusminus.circle.fill")
+            case .modified: Self.circled(.plusMinus)
             case .renamed: Image(systemName: "arrow.right.circle.fill")
-            case .copied:
-                // SF Symbols has no circled copy glyph.
-                Image(systemName: "circle.fill")
-                    .overlay {
-                        Image(systemName: "square.on.square")
-                            .fontWeight(.bold)
-                            .scaleEffect(0.55)
-                            .blendMode(.destinationOut)
-                    }
-                    .compositingGroup()
+            case .copied: Self.circled(.copy)
         }
+    }
+
+    /// Matches the plus in plus.circle.fill.
+    private static func circled(_ glyph: StatusGlyphShape.Glyph) -> some View {
+        Image(systemName: "circle.fill")
+            .overlay {
+                StatusGlyphShape(glyph: glyph, gridFraction: 0.727)
+                    .blendMode(.destinationOut)
+            }
+            .compositingGroup()
     }
 
     func badge(_ colorScheme: ColorScheme) -> some View {
         Image(systemName: "square.fill")
             .foregroundStyle(iconColor.opacity(colorScheme == .light ? 0.15 : 0.14))
             .overlay {
-                Image(systemName: badgeSymbol)
-                    .fontWeight(.semibold)
-                    .scaleEffect(0.6)
+                badgeGlyph
                     .foregroundStyle(colorScheme == .light ? lightBadgeColor : iconColor)
             }
     }
@@ -40,14 +39,23 @@ extension HunkType {
         }
     }
 
-    private var badgeSymbol: String {
+    @ViewBuilder private var badgeGlyph: some View {
         switch self {
-            case .added: "plus"
-            case .removed: "minus"
-            case .modified: "plusminus"
-            case .renamed: "arrow.right"
-            case .copied: "square.on.square"
+            case .added: badgeSymbol("plus")
+            case .removed: badgeSymbol("minus")
+            case .modified: StatusGlyphShape(glyph: .plusMinus, gridFraction: Self.badgeGridFraction)
+            case .renamed: badgeSymbol("arrow.right")
+            case .copied: StatusGlyphShape(glyph: .copy, gridFraction: Self.badgeGridFraction)
         }
+    }
+
+    /// square.fill's ink is 84% of its frame.
+    private static let badgeGridFraction: CGFloat = 0.837
+
+    private func badgeSymbol(_ name: String) -> some View {
+        Image(systemName: name)
+            .fontWeight(.semibold)
+            .scaleEffect(0.6)
     }
 
     var iconColor: Color {

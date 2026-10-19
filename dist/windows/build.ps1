@@ -25,7 +25,7 @@ try {
     Get-ChildItem $binaries -Filter *.dll | Copy-Item -Destination $payload
     Copy-Item LICENSE "$payload/LICENSE.txt"
     Copy-Item crates/LICENSE "$payload/CORE-LICENSE.txt"
-    Copy-Item shell/gpui/assets/fonts/Codicons.LICENSE "$payload/CODICONS-LICENSE.txt"
+    Copy-Item shell/gpui/assets/fonts/Octicons.LICENSE "$payload/OCTICONS-LICENSE.txt"
     Copy-Item assets/fonts/Seti.LICENSE "$payload/SETI-LICENSE.txt"
     Copy-Item dist/windows/README.txt $payload
     foreach ($item in @(@('shell/gpui/Cargo.toml', 'GUI'), @('crates/jayjay-cli/Cargo.toml', 'CLI'))) {

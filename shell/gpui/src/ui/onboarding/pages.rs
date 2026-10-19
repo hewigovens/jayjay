@@ -94,14 +94,12 @@ fn jj_check_page(
 
     match &state.jj {
         JjCheckState::Checking => {
-            root = root
-                .child(icons::icon(glyph::ARROW_CLOCKWISE, 44., t.fg_dim))
-                .child(
-                    div()
-                        .text_size(ui_font_size(18.))
-                        .text_color(rgb(t.fg))
-                        .child("Checking for jj..."),
-                );
+            root = root.child(icons::icon(glyph::SYNC, 44., t.fg_dim)).child(
+                div()
+                    .text_size(ui_font_size(18.))
+                    .text_color(rgb(t.fg))
+                    .child("Checking for jj..."),
+            );
         }
         JjCheckState::Loaded(status) if status.is_installed => {
             root = root.child(success_badge(t)).child(

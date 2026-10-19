@@ -51,7 +51,7 @@ pub(crate) fn group_icon_item(
 ) -> Stateful<Div> {
     group_item(id, tooltip, edge, theme).child(icons::icon(
         glyph_str,
-        icons::CODICON_GRID,
+        icons::ICON_GRID,
         theme.fg_dim,
     ))
 }

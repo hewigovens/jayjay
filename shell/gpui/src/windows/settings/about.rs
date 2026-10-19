@@ -54,7 +54,7 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
                 ))
                 .child(link_button(
                     "tb-github",
-                    glyph::ARROW_CIRCLE_RIGHT,
+                    glyph::MARK_GITHUB,
                     "Star on GitHub",
                     REPOSITORY_URL,
                     t,
