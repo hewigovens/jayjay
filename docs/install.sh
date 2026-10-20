@@ -224,10 +224,6 @@ install_appimage() {
     return
   fi
   asset="jayjay-gpui-$arch.AppImage"
-  # Releases through 0.3.21-beta.4 published the AppImage with a -linux suffix.
-  if ! curl -fsL -r 0-0 -o /dev/null "https://github.com/$repo/releases/download/$tag/$asset"; then
-    asset="jayjay-gpui-$arch-linux.AppImage"
-  fi
 
   echo "Installing JayJay $tag for $arch..."
   download_with_checksum "$tag" "$asset"
