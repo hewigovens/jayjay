@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use jayjay_network::{Auth, DEFAULT_TEXT_CAP, Fetch, Header, HttpClient, Method, Request};
 use serde::Serialize;
 use serde::de::{DeserializeOwned, IgnoredAny};
@@ -11,7 +13,7 @@ pub(crate) struct ForgeClient<F: Fetch = HttpClient, T: TokenProvider = RepoHost
     fetch: F,
     tokens: T,
     host: RepoHost,
-    root: &'static str,
+    root: Cow<'static, str>,
     headers: &'static [(&'static str, &'static str)],
 }
 
@@ -21,7 +23,7 @@ impl<F: Fetch, T: TokenProvider> ForgeClient<F, T> {
             fetch,
             tokens,
             host: RepoHost::GitHub,
-            root: "https://api.github.com",
+            root: Self::github_root(),
             headers: &[
                 ("Accept", "application/vnd.github+json"),
                 ("X-GitHub-Api-Version", "2022-11-28"),
@@ -34,9 +36,18 @@ impl<F: Fetch, T: TokenProvider> ForgeClient<F, T> {
             fetch,
             tokens,
             host: RepoHost::GitLab,
-            root: "https://gitlab.com/api/v4",
+            root: "https://gitlab.com/api/v4".into(),
             headers: &[],
         }
+    }
+
+    // Lets the feature videos record a stacked-PR submit against a local stub; release builds always talk to GitHub.
+    fn github_root() -> Cow<'static, str> {
+        #[cfg(debug_assertions)]
+        if let Ok(root) = std::env::var("JAYJAY_GITHUB_API_ROOT") {
+            return root.into();
+        }
+        "https://api.github.com".into()
     }
 
     pub(crate) fn has_token(&self) -> bool {
