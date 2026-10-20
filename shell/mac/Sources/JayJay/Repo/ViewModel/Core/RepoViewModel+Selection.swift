@@ -111,7 +111,17 @@ extension RepoViewModel {
             case 1:
                 select(changeId: selectedChanges[0].selectionRevision)
             default:
-                guard selectionIsContiguous(selection: selection, order: orderedRevisions) else {
+                if hasCombinedDiff(commitIds: selectedChanges.map(\.commitId.id)) {
+                    guard let combined = combinedCompareState(changes: selectedChanges) else { return }
+                    compareWith(
+                        from: combined.fromRev,
+                        to: combined.toRev,
+                        display: combined.display,
+                        selectedChangeIds: selectedChanges.map(\.selectionRevision),
+                        primarySelectionId: selection.primary,
+                        selectionAnchorId: selection.anchor
+                    )
+                } else if selectedChanges.count == 2 || !selectionIsContiguous(selection: selection, order: orderedRevisions) {
                     guard let newest = selectedChanges.first,
                           let oldest = selectedChanges.last
                     else { return }
@@ -127,25 +137,13 @@ extension RepoViewModel {
                         primarySelectionId: selection.primary,
                         selectionAnchorId: selection.anchor
                     )
-                    return
-                }
-                guard hasCombinedDiff(commitIds: selectedChanges.map(\.commitId.id)) else {
+                } else {
                     showSelectionWithoutDiff(
                         selectedChanges.map(\.selectionRevision),
                         primaryID: selection.primary,
                         anchorID: selection.anchor
                     )
-                    return
                 }
-                guard let combined = combinedCompareState(changes: selectedChanges) else { return }
-                compareWith(
-                    from: combined.fromRev,
-                    to: combined.toRev,
-                    display: combined.display,
-                    selectedChangeIds: selectedChanges.map(\.selectionRevision),
-                    primarySelectionId: selection.primary,
-                    selectionAnchorId: selection.anchor
-                )
         }
     }
 

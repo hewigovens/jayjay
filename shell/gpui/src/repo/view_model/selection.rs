@@ -218,14 +218,14 @@ impl RepoViewModel {
         match selected.as_slice() {
             [] => self.show_selection_without_diff(None, cx),
             [only] => self.select_change(*only, cx),
-            _ if !self.selected_changes.is_contiguous_in(&order) => {
-                if let (Some(newest), Some(oldest)) = (changes.first(), changes.last()) {
-                    self.compare_summary(compare::CompareState::between(oldest, newest), cx);
-                }
-            }
             _ if self.has_diffable_linear_selection() => {
                 if let Some(compare) = compare::CompareState::combined(&changes) {
                     self.compare_summary(compare, cx);
+                }
+            }
+            _ if selected.len() == 2 || !self.selected_changes.is_contiguous_in(&order) => {
+                if let (Some(newest), Some(oldest)) = (changes.first(), changes.last()) {
+                    self.compare_summary(compare::CompareState::between(oldest, newest), cx);
                 }
             }
             _ => self.show_selection_without_diff(self.primary_selected_index(), cx),

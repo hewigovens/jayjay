@@ -175,6 +175,51 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertTrue(prFetchTask.isCancelled)
     }
 
+    func testTwoRevisionSelectionFallsBackWhenCombinedDiffIsUnavailable() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.setBackgroundRefreshSuspended(true)
+        let path = viewModel.repoPath
+        try viewModel.repo.newChange(parent: "@", message: "left")
+        try "left\n".write(toFile: path + "/left.txt", atomically: true, encoding: .utf8)
+        try viewModel.repo.newChange(parent: "@-", message: "right")
+        try "right\n".write(toFile: path + "/right.txt", atomically: true, encoding: .utf8)
+        _ = try runJj(["new", "@", "subject(\"left\")", "-m", "merge"], in: path)
+        try viewModel.repo.newChange(parent: "@", message: "after merge")
+        try "after merge\n".write(toFile: path + "/after.txt", atomically: true, encoding: .utf8)
+        try viewModel.repo.refreshWorkingCopy()
+
+        for revset in [
+            "subject(\"left\") | subject(\"right\")",
+            "subject(\"merge\") | subject(\"after merge\")"
+        ] {
+            try viewModel.setGraph(viewModel.repo.logGraph(revset: revset))
+            XCTAssertEqual(viewModel.changes.count, 2)
+            let newest = try XCTUnwrap(viewModel.changes.first)
+            let oldest = try XCTUnwrap(viewModel.changes.last)
+            XCTAssertFalse(viewModel.hasCombinedDiff(commitIds: [newest.commitId.id, oldest.commitId.id]))
+            try viewModel.applySingleSelectedChange(viewModel.repo.showSummary(rev: newest.commitId.id))
+
+            viewModel.updateSelection(changeId: oldest.selectionRevision, click: .toggle)
+
+            XCTAssertEqual(viewModel.compareFromId, oldest.commitId.id)
+            XCTAssertEqual(viewModel.compareToId, newest.commitId.id)
+            XCTAssertEqual(viewModel.selectedChangeIds, [newest.selectionRevision, oldest.selectionRevision])
+            XCTAssertEqual(viewModel.selectedChangeId, oldest.selectionRevision)
+            XCTAssertEqual(viewModel.compareDisplay?.isCombinedSelection, false)
+            XCTAssertTrue(viewModel.canReverseCompare)
+            try await waitUntil("the comparison loads") { viewModel.repoTasks.isEmpty }
+            XCTAssertNil(viewModel.error)
+            let detail = try XCTUnwrap(viewModel.selectedChange)
+            XCTAssertFalse(detail.diff.isEmpty)
+
+            viewModel.reverseCompare()
+            try await waitUntil("the reversed comparison loads") { viewModel.repoTasks.isEmpty }
+            XCTAssertEqual(viewModel.compareFromId, newest.commitId.id)
+            XCTAssertEqual(viewModel.compareToId, oldest.commitId.id)
+            XCTAssertNil(viewModel.error)
+        }
+    }
+
     func testRemovingNonPrimarySelectionPreservesPrimary() throws {
         let viewModel = try XCTUnwrap(viewModel)
         try viewModel.repo.newChange(parent: "@", message: "middle")
@@ -210,6 +255,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.selectedChangeIds, [revisions[1], revisions[2]])
         XCTAssertEqual(viewModel.selectedChangeId, revisions[1])
         XCTAssertEqual(viewModel.selectedChangeAnchorId, revisions[2])
+        XCTAssertEqual(viewModel.compareDisplay?.isCombinedSelection, true)
     }
 
     func testBatchSquashRetainsDivergentDestinationSelection() async throws {

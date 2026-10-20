@@ -15,6 +15,16 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
 ) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
+    view.update_in(cx, |view, _, cx| {
+        view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
+    });
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let compare = vm.compare.as_ref().expect("combined pair");
+        assert!(compare.display.is_combined_selection);
+    });
+    view.update_in(cx, |view, _, cx| view.select_change(0, cx));
     select_first_three(&view, cx);
 
     view.read_with(cx, |view, cx| {
@@ -53,45 +63,73 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
 }
 
 #[gpui::test]
-fn sibling_or_merge_rooted_selection_keeps_rows_selected_without_a_diff(cx: &mut TestAppContext) {
-    let make_siblings = |vm: &mut RepoViewModel| {
-        let parents = vm.graph.changes[1].parents.clone();
-        edit_change(vm, 0, |change| change.parents = parents.clone());
-    };
-    let make_merge = |vm: &mut RepoViewModel| {
-        edit_change(vm, 1, |change| {
-            change.parents.push("second-parent".to_owned())
-        });
-    };
-
-    for (forge, is_merge) in [
-        (&make_siblings as &dyn Fn(&mut RepoViewModel), false),
-        (&make_merge, true),
-    ] {
+fn two_revision_selection_falls_back_to_comparing_siblings_or_a_merge(cx: &mut TestAppContext) {
+    for is_merge in [false, true] {
         let fixture = LinearFixture::build();
+        if is_merge {
+            run_jj_in(&fixture.path, &["new", "@--", "-m", "sibling"]);
+            run_jj_in(
+                &fixture.path,
+                &["new", "@", "subject(\"add feature\")", "-m", "merge"],
+            );
+            run_jj_in(&fixture.path, &["new", "-m", "after merge"]);
+            std::fs::write(fixture.path.join("after-merge.txt"), "after merge\n")
+                .expect("write after-merge.txt");
+            run_jj_in(&fixture.path, &["st"]);
+        } else {
+            run_jj_in(&fixture.path, &["parallelize", "@ | @-"]);
+        }
         let (view, cx) = open_fixture(&fixture, cx);
+        let [newest, oldest] = changes(&view, cx, [0, 1]);
+        assert_eq!(oldest.parents.len(), if is_merge { 2 } else { 1 });
         view.update_in(cx, |view, _, cx| {
-            view.view_model().update(cx, |vm, _| forge(vm));
             view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
         });
         settle_visual(cx);
 
+        assert_compare(
+            &view,
+            cx,
+            oldest.selection_revision(),
+            newest.selection_revision(),
+        );
         view.read_with(cx, |view, cx| {
             let vm = view.view_model().read(cx);
             assert_eq!(vm.selected_change_indices(), vec![0, 1]);
-            assert_eq!(vm.selection_without_diff_count(), Some(2));
-            assert!(vm.compare.is_none());
+            assert_eq!(vm.selection_without_diff_count(), None);
+            assert!(!vm.compare.as_ref().unwrap().display.is_combined_selection);
+            assert!(vm.files.as_ref().is_some_and(|files| !files.is_empty()));
             if is_merge {
                 assert!(vm.can_squash_selected_changes());
             }
         });
-        if is_merge {
-            assert!(cx.debug_bounds("detail-multi-selection-no-diff").is_some());
-            let content = cx
-                .debug_bounds("detail-multi-selection-content")
-                .expect("multi-selection explanation");
-            assert!(f32::from(content.size.width) <= 460.);
-        }
+        assert!(cx.debug_bounds("detail-multi-selection-no-diff").is_none());
+        assert!(cx.debug_bounds("compare-combined-selection").is_none());
+        let reverse = cx
+            .debug_bounds("compare-reverse")
+            .expect("reverse comparison");
+        cx.simulate_click(reverse.center(), Modifiers::default());
+        settle_visual(cx);
+        assert_compare(
+            &view,
+            cx,
+            newest.selection_revision(),
+            oldest.selection_revision(),
+        );
+
+        view.update_in(cx, |view, _, cx| view.select_change(0, cx));
+        select_first_three(&view, cx);
+        view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            assert_eq!(vm.selected_change_indices(), vec![0, 1, 2]);
+            assert_eq!(vm.selection_without_diff_count(), Some(3));
+            assert!(vm.compare.is_none());
+        });
+        assert!(cx.debug_bounds("detail-multi-selection-no-diff").is_some());
+        let content = cx
+            .debug_bounds("detail-multi-selection-content")
+            .expect("multi-selection explanation");
+        assert!(f32::from(content.size.width) <= 460.);
     }
 }
 
