@@ -203,8 +203,11 @@
     .show-text p { margin-top: 14px; font-size: 17px; color: var(--muted); }
     .show-text strong { color: var(--ink); font-weight: 600; }
     .show-text .note { font-size: 13px; color: var(--faint); }
-    .show-img { border-radius: 12px; overflow: hidden; box-shadow: var(--shot-shadow); }
-    .show-img img { display: block; width: 100%; }
+    .show-img { position: relative; border-radius: 12px; overflow: hidden; box-shadow: var(--shot-shadow); }
+    .show-img img, .show-img video { display: block; width: 100%; height: auto; }
+    .loop-stage { position: relative; }
+    .loop-cap { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--panel); font-size: 16px; font-weight: 600; letter-spacing: -.01em; text-align: left; }
+    .loop-cap .n { flex: none; padding: 2px 9px; border-radius: 980px; background: var(--accent); color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; animation: tour-step .35s ease-out; }
     code { font-size: .86em; padding: 1px 6px; border-radius: 5px; background: var(--bg-alt); color: var(--ink); }
     .alt code { background: var(--panel); }
     @media (max-width: 860px) {
@@ -425,9 +428,11 @@
           <h3>Split exactly the lines you mean.</h3>
           <p>Pick hunks or individual lines from any file in the change, then split that selection into a clean child or parallel change.</p>
         </div>
-        <div class="show-img">
-          <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — split by line" width="2560" height="1300" loading="lazy">
-          <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — split by line" width="2560" height="1300" loading="lazy">
+        <div class="show-img" data-captions="0 Open Edit Diff on a change|1.8 Pick lines in two files|6.6 Split them into a new change">
+          <div class="loop-stage">
+            <video class="dark-only loop" muted loop playsinline preload="none" poster="imgs/loop-split-lines-dark.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change" data-cues="0.48 0.961 0.217, 2.29 0.297 0.249, 3.58 0.277 0.157, 4.86 0.297 0.336, 5.54 0.297 0.358, 7.03 0.475 0.946, 8.71 0.636 0.946"><source src="https://media.hewig.dev/split-lines-dark-3bb22a3f.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" poster="imgs/loop-split-lines.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change" data-cues="0.51 0.961 0.217, 2.34 0.297 0.249, 3.61 0.277 0.157, 4.90 0.297 0.336, 5.58 0.297 0.358, 7.07 0.475 0.946, 8.75 0.636 0.946"><source src="https://media.hewig.dev/split-lines-3d6f59a5.mp4" type="video/mp4"></video>
+          </div>
         </div>
       </div>
 
@@ -450,9 +455,11 @@
           <p>Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.</p>
           <p class="note">GitHub and GitLab use an existing CLI login or an environment token. Cursor Origin requires its <code>origin</code> CLI.</p>
         </div>
-        <div class="show-img">
-          <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview" width="2560" height="1300" loading="lazy">
-          <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview" width="2560" height="1300" loading="lazy">
+        <div class="show-img" data-captions="0 Right-click the top of a stack|4.7 Name a branch per change|8.2 One PR per change">
+          <div class="loop-stage">
+            <video class="dark-only loop" muted loop playsinline preload="none" poster="imgs/loop-stacked-prs-dark.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change" data-cues="0.44 0.125 0.234, 2.20 0.214 0.684, 5.17 0.519 0.404, 6.66 0.628 0.408, 8.45 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-dark-1cfb814a.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" poster="imgs/loop-stacked-prs.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change" data-cues="0.47 0.125 0.234, 2.25 0.214 0.684, 5.25 0.519 0.404, 6.74 0.628 0.408, 8.53 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4" type="video/mp4"></video>
+          </div>
         </div>
       </div>
 
@@ -477,6 +484,20 @@
         <div class="show-img">
           <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
           <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
+        </div>
+      </div>
+
+      <div class="show rev">
+        <div class="show-text">
+          <div class="eyebrow">Operation log</div>
+          <h3>Undo anything.</h3>
+          <p>Every abandon, rebase, and split is an operation. Click the last one in the status bar, or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>, to open the operation log and restore the repository to any earlier point.</p>
+        </div>
+        <div class="show-img" data-captions="0 Abandon a change|6 Open the operation log|8.2 Restore the operation before it">
+          <div class="loop-stage">
+            <video class="dark-only loop" muted loop playsinline preload="none" poster="imgs/loop-undo-dark.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log" data-cues="0.44 0.125 0.234, 2.21 0.214 0.920, 4.39 0.527 0.604, 6.61 0.786 0.987, 8.78 0.365 0.348, 10.08 0.673 0.740, 12.28 0.125 0.312"><source src="https://media.hewig.dev/undo-dark-b1554907.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" poster="imgs/loop-undo.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log" data-cues="0.42 0.125 0.234, 2.18 0.214 0.920, 4.32 0.527 0.604, 6.49 0.786 0.987, 8.61 0.365 0.348, 9.92 0.673 0.740, 12.10 0.125 0.312"><source src="https://media.hewig.dev/undo-b5280b09.mp4" type="video/mp4"></video>
+          </div>
         </div>
       </div>
     </div>
@@ -658,6 +679,7 @@
   <!-- Click any screenshot to zoom -->
   <script src="js/lightbox.js" defer></script>
   <script src="js/tour.js" defer></script>
+  <script src="js/loops.js" defer></script>
 </body>
 
 </html>
