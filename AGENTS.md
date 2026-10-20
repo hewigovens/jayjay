@@ -82,7 +82,7 @@ just test-ui JayJayUITests/<Scene>/<test>
 just ffi                          # only when UniFFI / Swift bindings changed
 ```
 
-Each workspace builds into its own `target/`; never share `CARGO_TARGET_DIR` across workspaces. If a sandbox cannot run the configured compiler wrapper, set `RUSTC_WRAPPER=""` for that command; wrapper and cache details are in [Version Control](agents/version-control.md).
+Each workspace builds into its own `target/`; never share `CARGO_TARGET_DIR` across workspaces. Builds are cached by the mbx `cargo` shim; cache details are in [Version Control](agents/version-control.md).
 
 Default to focused tests during implementation. Run `just build` or `just run` when the task requires a bundle or runtime check, and Swift tests when Swift behavior changed. Broaden testing when the affected boundary or a failure requires it.
 
