@@ -14,6 +14,6 @@ pub(crate) use check::checked_menu_row;
 pub(crate) use check::{check_circle, checkbox_glyph, checkbox_row};
 pub(crate) use chips::{capsule, icon_chip, icon_label};
 pub(crate) use layout::{
-    divider_h, divider_v, dot_separator, no_scrollbar_gutter, placeholder, placeholder_err,
+    divider_h, dot_separator, no_scrollbar_gutter, placeholder, placeholder_err,
 };
 pub(crate) use tooltip::text_tooltip;

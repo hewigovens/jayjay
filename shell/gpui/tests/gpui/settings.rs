@@ -724,3 +724,34 @@ fn clearing_review_data_empties_the_store_and_repaints_open_repo_windows(cx: &mu
     );
     assert!(repo_cx.debug_bounds("file-row-3").is_some());
 }
+
+#[gpui::test]
+fn settings_sidebar_resizes_from_just_beside_its_divider(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(SettingsView::open);
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut settings_cx);
+
+    let initial = settings_cx
+        .debug_bounds("settings-nav-Fonts")
+        .expect("Fonts nav row")
+        .size
+        .width;
+    let handle = settings_cx
+        .debug_bounds("settings-sidebar-resize-handle")
+        .expect("sidebar resize handle");
+    let start = point(handle.right() - px(8.), handle.center().y);
+    let end = point(start.x + px(80.), start.y);
+    settings_cx.simulate_mouse_down(start, gpui::MouseButton::Left, Modifiers::default());
+    settings_cx.simulate_mouse_move(end, gpui::MouseButton::Left, Modifiers::default());
+    settings_cx.simulate_mouse_up(end, gpui::MouseButton::Left, Modifiers::default());
+    settle_visual(&mut settings_cx);
+
+    let resized = settings_cx
+        .debug_bounds("settings-nav-Fonts")
+        .expect("Fonts nav row")
+        .size
+        .width;
+    assert!(resized > initial + px(70.), "{initial:?} -> {resized:?}");
+}

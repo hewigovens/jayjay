@@ -15,7 +15,7 @@ pub(super) enum EvologPane {
 pub(super) struct EvologLayout {
     entry_list_width: f32,
     file_list_width: f32,
-    drag: Option<PaneDrag<EvologPane>>,
+    pub(super) drag: Option<PaneDrag<EvologPane>>,
 }
 
 impl EvologLayout {

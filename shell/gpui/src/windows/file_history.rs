@@ -23,6 +23,7 @@ use crate::ui::primitives::{
     capsule, icon_button, no_scrollbar_gutter, placeholder, placeholder_err, small_button,
     text_tooltip,
 };
+use crate::ui::resizable_pane::ResizablePane;
 use crate::ui::resize_handle::resize_handle;
 
 mod comparison;
@@ -32,7 +33,6 @@ mod layout;
 
 use comparison::{FileHistoryComparison, FileHistoryEndpoint};
 use context_menu::{FileHistoryMenu, render_menu};
-use layout::HistoryListLayout;
 
 pub struct FileHistoryView {
     repo: Arc<Repo>,
@@ -47,7 +47,7 @@ pub struct FileHistoryView {
     diff_error: Option<SharedString>,
     menu: Option<FileHistoryMenu>,
     history_scroll: UniformListScrollHandle,
-    list_layout: HistoryListLayout,
+    list_layout: ResizablePane,
     focus_handle: FocusHandle,
 }
 
@@ -101,7 +101,7 @@ impl FileHistoryView {
                             diff_error: None,
                             menu: None,
                             history_scroll: UniformListScrollHandle::new(),
-                            list_layout: HistoryListLayout::from_config(cx),
+                            list_layout: Self::list_pane(cx),
                             focus_handle: cx.focus_handle(),
                         };
                         view.load(cx);
@@ -348,9 +348,8 @@ impl Render for FileHistoryView {
             }))
             .on_key_down(cx.listener(Self::on_key))
             .track_pane_drag(
-                |view: &mut FileHistoryView, x, viewport_width, cx| {
-                    view.drag_list_to(x, viewport_width, cx)
-                },
+                self.list_layout.is_dragging(),
+                FileHistoryView::drag_list_to,
                 FileHistoryView::end_list_drag,
                 cx,
             )

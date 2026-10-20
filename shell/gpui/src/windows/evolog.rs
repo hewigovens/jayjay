@@ -257,9 +257,8 @@ impl Render for EvologView {
                 window.remove_window();
             }))
             .track_pane_drag(
-                |view: &mut EvologView, x, viewport_width, cx| {
-                    view.drag_pane_to(x, viewport_width, cx)
-                },
+                self.layout.drag.is_some(),
+                EvologView::drag_pane_to,
                 EvologView::end_pane_drag,
                 cx,
             )

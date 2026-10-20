@@ -48,9 +48,8 @@ impl Render for RepoListWindow {
                 window.remove_window();
             }))
             .track_pane_drag(
-                |view: &mut RepoListWindow, x, viewport_width, cx| {
-                    view.drag_panel_to(x, viewport_width, cx)
-                },
+                self.panel.drag.is_some(),
+                RepoListWindow::drag_panel_to,
                 RepoListWindow::end_panel_drag,
                 cx,
             )

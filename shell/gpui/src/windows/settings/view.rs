@@ -16,6 +16,9 @@ use super::dropdown::{OpenDropdown, dropdown_overlay};
 use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::ui::logo::Logo;
+use crate::ui::pane_drag::TrackPaneDrag;
+use crate::ui::resizable_pane::ResizablePane;
+use crate::ui::resize_handle::resize_handle;
 use crate::ui::text_area::TextArea;
 use jayjay_core::UserIdentity;
 use jayjay_review::ReviewStoreSummary;
@@ -44,6 +47,7 @@ pub struct SettingsView {
     pub(super) diff_preview_dark: Option<bool>,
     pub(super) review_summary: Option<ReviewStoreSummary>,
     pub(super) confirm_clear_review: bool,
+    pub(super) sidebar: ResizablePane,
     logo: Logo,
 }
 
@@ -101,6 +105,7 @@ impl SettingsView {
                             diff_preview_dark: None,
                             review_summary: None,
                             confirm_clear_review: false,
+                            sidebar: Self::sidebar_pane(cx),
                             logo: Logo::load(cx),
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
@@ -137,6 +142,7 @@ impl Render for SettingsView {
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let active = self.section;
         let dropdown = self.open_dropdown.clone();
+        let sidebar_width = self.sidebar.fitted(f32::from(window.viewport_size().width));
 
         let mut root = div()
             .font_family(crate::app::fonts::interface())
@@ -163,8 +169,19 @@ impl Render for SettingsView {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(sidebar(active, &t, cx))
-            .child(crate::ui::primitives::divider_v(&t))
+            .track_pane_drag(
+                self.sidebar.is_dragging(),
+                Self::drag_sidebar_to,
+                Self::end_sidebar_drag,
+                cx,
+            )
+            .child(sidebar(active, sidebar_width, &t, cx))
+            .child(resize_handle(
+                "settings-sidebar-resize-handle",
+                &t,
+                Self::start_sidebar_drag,
+                cx,
+            ))
             .child(
                 div()
                     .flex()

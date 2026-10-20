@@ -161,7 +161,8 @@ impl RepoWindow {
                 view.handle_nav_key(ev, cx);
             }))
             .track_pane_drag(
-                |view: &mut RepoWindow, x, viewport_width, cx| view.drag_to(x, viewport_width, cx),
+                self.layout.drag.is_some(),
+                RepoWindow::drag_to,
                 RepoWindow::end_drag,
                 cx,
             )

@@ -21,4 +21,5 @@ mod view;
 mod workflow;
 
 pub use section::SettingsSection;
+pub(crate) use sidebar::SETTINGS_SIDEBAR_DEFAULT;
 pub use view::SettingsView;

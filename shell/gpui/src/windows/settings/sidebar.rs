@@ -1,14 +1,21 @@
 use gpui::{
-    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
+    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use super::{SettingsSection, SettingsView};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
+use crate::ui::resizable_pane::ResizablePane;
+
+pub(crate) const SETTINGS_SIDEBAR_DEFAULT: f32 = 230.;
+const SIDEBAR_MIN: f32 = 160.;
+const SIDEBAR_MAX: f32 = 360.;
+const CONTENT_MIN: f32 = 420.;
 
 pub(super) fn sidebar(
     active: SettingsSection,
+    width: f32,
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
@@ -17,7 +24,7 @@ pub(super) fn sidebar(
         .flex()
         .flex_col()
         .flex_none()
-        .w(px(230.))
+        .w(px(width))
         .h_full()
         .overflow_y_scroll()
         .bg(rgb(t.row_alt_bg))
@@ -79,4 +86,36 @@ pub(super) fn sidebar(
                 .child(div().min_w_0().truncate().child(label))
         }))
         .into_any_element()
+}
+
+impl SettingsView {
+    pub(super) fn sidebar_pane(cx: &App) -> ResizablePane {
+        let width = crate::app::config::current(cx)
+            .layout
+            .settings_sidebar_width;
+        ResizablePane::new(width, SIDEBAR_MIN, SIDEBAR_MAX, CONTENT_MIN)
+    }
+
+    pub(super) fn start_sidebar_drag(
+        &mut self,
+        x: f32,
+        viewport_width: f32,
+        cx: &mut Context<Self>,
+    ) {
+        self.sidebar.start_drag(x, viewport_width);
+        cx.notify();
+    }
+
+    pub(super) fn drag_sidebar_to(&mut self, x: f32, viewport_width: f32, cx: &mut Context<Self>) {
+        if self.sidebar.drag_to(x, viewport_width) {
+            cx.notify();
+        }
+    }
+
+    pub(super) fn end_sidebar_drag(&mut self, cx: &mut Context<Self>) {
+        if let Some(width) = self.sidebar.end_drag() {
+            crate::app::config::update(cx, move |c| c.layout.settings_sidebar_width = width);
+            cx.notify();
+        }
+    }
 }

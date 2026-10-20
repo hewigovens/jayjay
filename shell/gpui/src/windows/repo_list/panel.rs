@@ -29,7 +29,7 @@ pub(super) struct RecentPanel {
     width: f32,
     shown: Option<bool>,
     slide: Option<PanelSlide>,
-    drag: Option<PaneDrag<()>>,
+    pub(super) drag: Option<PaneDrag<()>>,
 }
 
 /// The panel's width and its on-screen width this frame, which is narrower mid-slide.

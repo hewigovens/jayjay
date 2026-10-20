@@ -6,6 +6,7 @@ use gpui::{
 use crate::app::theme::Theme;
 
 pub(crate) const RESIZE_HANDLE_WIDTH: f32 = 5.;
+const GRAB_SLOP: f32 = 4.;
 
 /// Vertical divider that starts a horizontal drag; `on_down` gets the pointer x and the viewport width.
 pub(crate) fn resize_handle<V: 'static>(
@@ -14,19 +15,28 @@ pub(crate) fn resize_handle<V: 'static>(
     on_down: impl Fn(&mut V, f32, f32, &mut Context<V>) + 'static,
     cx: &mut Context<V>,
 ) -> AnyElement {
+    // Overlaps the left pane, which paints first, so overlays painted later still cover the handle.
     div()
         .flex_none()
-        .w(px(RESIZE_HANDLE_WIDTH))
+        .w(px(RESIZE_HANDLE_WIDTH + GRAB_SLOP))
+        .ml(px(-GRAB_SLOP))
         .h_full()
         .cursor(CursorStyle::ResizeLeftRight)
         .debug_selector(move || debug_selector.to_owned())
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(move |view, ev: &MouseDownEvent, window, cx| {
+                cx.stop_propagation();
                 let viewport_width = f32::from(window.viewport_size().width);
                 on_down(view, f32::from(ev.position.x), viewport_width, cx);
             }),
         )
-        .child(div().w(px(1.)).h_full().ml(px(2.)).bg(rgb(t.border)))
+        .child(
+            div()
+                .w(px(1.))
+                .h_full()
+                .ml(px(GRAB_SLOP + 2.))
+                .bg(rgb(t.border)),
+        )
         .into_any_element()
 }

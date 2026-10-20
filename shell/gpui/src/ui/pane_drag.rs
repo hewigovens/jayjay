@@ -1,4 +1,7 @@
-use gpui::{Context, InteractiveElement, MouseButton, MouseMoveEvent, MouseUpEvent};
+use gpui::{
+    Context, CursorStyle, InteractiveElement, MouseButton, MouseMoveEvent, MouseUpEvent,
+    ParentElement, Styled, deferred, div,
+};
 
 /// A divider drag in progress; `pane` names what is being resized.
 #[derive(Debug, Clone, Copy)]
@@ -27,23 +30,34 @@ pub(crate) fn pane_max(min: f32, max: f32, room: f32) -> f32 {
     max.min(room.max(min))
 }
 
-/// Follows the pointer across the whole window once a resize handle starts a drag.
-pub(crate) trait TrackPaneDrag: InteractiveElement + Sized {
+/// Follows the pointer across the whole window once a resize handle starts a drag, holding the resize cursor while `dragging`.
+pub(crate) trait TrackPaneDrag: InteractiveElement + ParentElement + Sized {
     fn track_pane_drag<V: 'static>(
         self,
+        dragging: bool,
         on_move: impl Fn(&mut V, f32, f32, &mut Context<V>) + 'static,
         on_end: impl Fn(&mut V, &mut Context<V>) + 'static,
         cx: &mut Context<V>,
     ) -> Self {
-        self.on_mouse_move(cx.listener(move |view, ev: &MouseMoveEvent, window, cx| {
-            let viewport_width = f32::from(window.viewport_size().width);
-            on_move(view, f32::from(ev.position.x), viewport_width, cx);
-        }))
-        .on_mouse_up(
-            MouseButton::Left,
-            cx.listener(move |view, _: &MouseUpEvent, _, cx| on_end(view, cx)),
-        )
+        let this = self
+            .on_mouse_move(cx.listener(move |view, ev: &MouseMoveEvent, window, cx| {
+                let viewport_width = f32::from(window.viewport_size().width);
+                on_move(view, f32::from(ev.position.x), viewport_width, cx);
+            }))
+            .on_mouse_up(
+                MouseButton::Left,
+                cx.listener(move |view, _: &MouseUpEvent, _, cx| on_end(view, cx)),
+            );
+        if !dragging {
+            return this;
+        }
+        this.child(deferred(
+            div()
+                .absolute()
+                .inset_0()
+                .cursor(CursorStyle::ResizeLeftRight),
+        ))
     }
 }
 
-impl<E: InteractiveElement> TrackPaneDrag for E {}
+impl<E: InteractiveElement + ParentElement> TrackPaneDrag for E {}

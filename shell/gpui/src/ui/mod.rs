@@ -17,6 +17,7 @@ pub(crate) mod overlay;
 pub(crate) mod pane_drag;
 pub(crate) mod popup_menu;
 pub mod primitives;
+pub(crate) mod resizable_pane;
 pub(crate) mod resize_handle;
 pub mod scrollbar;
 pub(crate) mod selection;
