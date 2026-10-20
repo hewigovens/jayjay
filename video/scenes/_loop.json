@@ -1,0 +1,4 @@
+{
+  "extends": "../examples/hero.json",
+  "window": [80, 60, 1440, 900]
+}

@@ -1,0 +1,4 @@
+{
+  "extends": "stacked-prs.json",
+  "defaults": { "jayjay.appearanceMode": "dark" }
+}

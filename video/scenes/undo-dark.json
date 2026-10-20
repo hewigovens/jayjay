@@ -1,0 +1,4 @@
+{
+  "extends": "undo.json",
+  "defaults": { "jayjay.appearanceMode": "dark" }
+}

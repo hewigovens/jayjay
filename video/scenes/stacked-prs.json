@@ -1,0 +1,26 @@
+{
+  "extends": "_loop.json",
+  "setup": ["bash", "video/stacked-pr-fixture.sh", "/Users/Shared/jayjay-example", "8790"],
+  "env": {
+    "JAYJAY_GITHUB_API_ROOT": "http://127.0.0.1:8790",
+    "GH_TOKEN": "fake-github-token",
+    "GIT_CONFIG_GLOBAL": "/Users/Shared/jayjay-example/gitconfig"
+  },
+  "steps": [
+    { "rightClick": { "row": "group route helpers" }, "label": "stack top" },
+    { "beat": 1.5 },
+    { "menu": "Create / Update Stacked PRs…" },
+    { "wait": { "role": "staticText", "label": "Stacked Pull Requests" } },
+    { "beat": 2 },
+    { "click": { "id": "pencil", "role": "button", "index": 0 }, "label": "rename branch" },
+    { "wait": { "role": "textField", "label": "branch name" }, "timeout": 3 },
+    { "key": "cmd+a" },
+    { "paste": "route-helpers" },
+    { "beat": 1 },
+    { "click": "checkmark.circle.fill", "label": "Done" },
+    { "beat": 1.5 },
+    { "click": { "role": "button", "label": "Submit" }, "label": "Submit" },
+    { "wait": { "role": "staticText", "label": "Stacked PRs Submitted" }, "timeout": 30 },
+    { "beat": 2 }
+  ]
+}

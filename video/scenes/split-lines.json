@@ -1,0 +1,23 @@
+{
+  "extends": "_loop.json",
+  "steps": [
+    { "click": "diffEdit.open", "label": "Edit Diff" },
+    { "wait": "diffEdit.cancel", "timeout": 5 },
+    { "beat": 1.5 },
+    { "click": { "id": "diff.gutter", "line": "□ {4}18$", "x": 35 }, "label": "cache line" },
+    { "beat": 1 },
+    { "click": "diffEdit.fileToggle.src/cache.rs", "label": "collapse cache.rs" },
+    { "beat": 1 },
+    { "click": { "id": "diff.gutter", "line": "□  6 *$", "x": 35 }, "label": "removed route line" },
+    { "beat": 0.4 },
+    { "click": { "id": "diff.gutter", "line": "□ {5}6$", "x": 35 }, "label": "added route line" },
+    { "beat": 1.2 },
+    { "click": { "role": "textField", "label": "New change description" }, "label": "description" },
+    { "key": "cmd+a" },
+    { "paste": "perf: rank routes by estimate and evict stale ones" },
+    { "beat": 1.2 },
+    { "click": { "role": "button", "label": "Create New Child Change" }, "label": "split" },
+    { "wait": "diffEdit.open" },
+    { "beat": 3 }
+  ]
+}

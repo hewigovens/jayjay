@@ -1,0 +1,23 @@
+{
+  "extends": "_loop.json",
+  "steps": [
+    { "rightClick": { "row": "group route helpers" }, "label": "change" },
+    { "beat": 1.5 },
+    { "menu": "Abandon" },
+    { "wait": { "role": "button", "label": "Abandon" } },
+    { "beat": 1.2 },
+    { "click": { "role": "button", "label": "Abandon" }, "label": "confirm abandon" },
+    { "waitGone": { "role": "button", "label": "Abandon" } },
+    { "beat": 1.5 },
+    { "click": { "role": "button", "label": "abandon" }, "label": "Operation Log" },
+    { "wait": { "role": "staticText", "label": "Operation Log" }, "timeout": 5 },
+    { "beat": 1.5 },
+    { "click": { "role": "staticText", "label": "snapshot working copy", "index": 0 }, "label": "before abandon" },
+    { "beat": 1 },
+    { "click": { "role": "button", "label": "Restore" }, "label": "Restore" },
+    { "waitGone": { "role": "staticText", "label": "Operation Log" } },
+    { "beat": 1.5 },
+    { "click": { "row": "include transfer time" }, "label": "back to start" },
+    { "beat": 1 }
+  ]
+}

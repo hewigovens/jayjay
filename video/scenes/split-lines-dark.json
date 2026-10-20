@@ -1,0 +1,4 @@
+{
+  "extends": "split-lines.json",
+  "defaults": { "jayjay.appearanceMode": "dark" }
+}
