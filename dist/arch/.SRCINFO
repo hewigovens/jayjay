@@ -21,9 +21,9 @@ pkgbase = jayjay-appimage
 	options = !strip
 	source = LICENSE-0.3.20::https://raw.githubusercontent.com/hewigovens/jayjay/v0.3.20/LICENSE
 	sha256sums = 5450f4b263bbbfc9b90e843051f739a20b1484d142a1ea7a7a2d37899d6e2578
-	source_x86_64 = jayjay-gpui-x86_64.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.20/jayjay-gpui-x86_64.AppImage
+	source_x86_64 = jayjay-gpui-x86_64.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.20/jayjay-gpui-x86_64-linux.AppImage
 	sha256sums_x86_64 = 8347966c575bc70b662063b0b0421ab8ce179941de65a9620b25d4baa30fe807
-	source_aarch64 = jayjay-gpui-aarch64.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.20/jayjay-gpui-aarch64.AppImage
+	source_aarch64 = jayjay-gpui-aarch64.AppImage::https://github.com/hewigovens/jayjay/releases/download/v0.3.20/jayjay-gpui-aarch64-linux.AppImage
 	sha256sums_aarch64 = a03ae3db5c0e2853d9406f67caca2b6d0f9c5f59c5aee7714ccaa29eb64f51ad
 
 pkgname = jayjay-appimage
