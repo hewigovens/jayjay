@@ -40,7 +40,7 @@ immutable; add the next numbered migration and checksum for every schema change.
 - `just release` produces the notarized zip in `build/release/`.
 - `just release` also preserves `build/release/JayJay-<version>.dSYM.zip`; keep it for crash-log symbolication because release binaries are stripped before signing.
 - The GitHub release must include the zip asset and its SHA-256.
-- For GPUI Linux releases, the AppImage workflow attaches `jayjay-gpui-x86_64-linux.AppImage`, `jayjay-gpui-aarch64-linux.AppImage`, and matching `.sha256` files after the release is published. This is asynchronous and non-blocking for the macOS release.
+- For GPUI Linux releases, the AppImage workflow attaches `jayjay-gpui-x86_64.AppImage`, `jayjay-gpui-aarch64.AppImage`, and matching `.sha256` files after the release is published. This is asynchronous and non-blocking for the macOS release.
 - For Debian/Ubuntu, the same workflow attaches `jayjay_<version>-1_amd64.deb`, `jayjay_<version>-1_arm64.deb`, and matching `.sha256` files after package lifecycle checks pass; beta versions use `~beta.N` in place of the tag’s `-beta.N`.
 - `docs/appcast.xml` must match the uploaded release asset and include a `<description>` block sourced only from the SwiftUI notes in `releases/<version>.html`.
 - The GitHub release body uses `releases/<version>.html` plus `releases/<version>-gpui.md` when that optional GPUI notes file exists. Sparkle continues to use only the SwiftUI HTML file. GPUI builds live on the same tag and GitHub release as asynchronously attached artifacts.

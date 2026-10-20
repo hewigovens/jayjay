@@ -48,7 +48,7 @@ curl -fsSL --retry 3 -o "$runtime" \
 echo "$runtime_sha256  $runtime" | sha256sum -c --quiet
 
 mkdir -p "$out"
-name=jayjay-gpui-$arch-linux.AppImage
+name=jayjay-gpui-$arch.AppImage
 mksquashfs "$appdir" "$work/payload.squashfs" -comp zstd -b 128K -root-owned -noappend -no-progress
 cat "$runtime" "$work/payload.squashfs" >"$out/$name"
 chmod +x "$out/$name"

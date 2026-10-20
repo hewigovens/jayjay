@@ -22,7 +22,7 @@ sed -i \
   -e "s/^pkgver=.*/pkgver=${pkgver}/" \
   -e "s/^_tag=.*/_tag=\"${tag}\"/" \
   -e "s/^sha256sums=.*/sha256sums=('$(sha256sum "LICENSE-${pkgver}" | cut -d' ' -f1)')/" \
-  -e "s/^sha256sums_${arch}=.*/sha256sums_${arch}=('$(sha256sum "jayjay-gpui-${arch}-linux.AppImage" | cut -d' ' -f1)')/" \
+  -e "s/^sha256sums_${arch}=.*/sha256sums_${arch}=('$(sha256sum "jayjay-gpui-${arch}.AppImage" | cut -d' ' -f1)')/" \
   PKGBUILD
 
 useradd --create-home builder

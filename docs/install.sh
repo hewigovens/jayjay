@@ -218,11 +218,15 @@ install_appimage() {
     fi
   done
 
-  asset="jayjay-gpui-$arch-linux.AppImage"
   version_file="$app_dir/VERSION"
   if [ -z "${JAYJAY_FORCE:-}" ] && [ -x "$app_dir/JayJay.AppImage" ] && [ -L "$bin_dir/jayjay" ] && [ "$(cat "$version_file" 2>/dev/null)" = "$tag" ]; then
     echo "JayJay $tag is already installed at $app_dir/JayJay.AppImage. Set JAYJAY_FORCE=1 to reinstall."
     return
+  fi
+  asset="jayjay-gpui-$arch.AppImage"
+  # Releases through 0.3.21-beta.4 published the AppImage with a -linux suffix.
+  if ! curl -fsL -r 0-0 -o /dev/null "https://github.com/$repo/releases/download/$tag/$asset"; then
+    asset="jayjay-gpui-$arch-linux.AppImage"
   fi
 
   echo "Installing JayJay $tag for $arch..."

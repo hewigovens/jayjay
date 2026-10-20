@@ -55,7 +55,8 @@ Description: Native desktop client for Jujutsu version control
 EOF
 (cd "$package" && find opt usr -type f -print0 | LC_ALL=C sort -z | xargs -0 md5sum >DEBIAN/md5sums)
 mkdir -p "$out"
-name=jayjay_${version}_${arch}.deb
+# GitHub publishes ~ as . in asset names; match it so the checksum and the rerun dedupe name the published file.
+name=jayjay_${version//\~/.}_${arch}.deb
 dpkg-deb --root-owner-group -Zxz --build "$package" "$out/$name"
 (cd "$out" && sha256sum "$name" >"$name.sha256")
 echo "built $out/$name"

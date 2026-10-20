@@ -12,15 +12,15 @@ license=('BUSL-1.1')
 depends=('fontconfig' 'fuse3' 'gcc-libs' 'libxcb' 'libxkbcommon' 'libxkbcommon-x11' 'vulkan-driver' 'vulkan-icd-loader' 'wayland' 'xdg-utils')
 options=('!strip')
 source=("LICENSE-${pkgver}::https://raw.githubusercontent.com/hewigovens/jayjay/${_tag}/LICENSE")
-source_x86_64=("jayjay-gpui-x86_64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-x86_64-linux.AppImage")
-source_aarch64=("jayjay-gpui-aarch64-linux.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-aarch64-linux.AppImage")
-noextract=('jayjay-gpui-x86_64-linux.AppImage' 'jayjay-gpui-aarch64-linux.AppImage')
+source_x86_64=("jayjay-gpui-x86_64.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-x86_64.AppImage")
+source_aarch64=("jayjay-gpui-aarch64.AppImage::https://github.com/hewigovens/jayjay/releases/download/${_tag}/jayjay-gpui-aarch64.AppImage")
+noextract=('jayjay-gpui-x86_64.AppImage' 'jayjay-gpui-aarch64.AppImage')
 sha256sums=('5450f4b263bbbfc9b90e843051f739a20b1484d142a1ea7a7a2d37899d6e2578')
 sha256sums_x86_64=('8347966c575bc70b662063b0b0421ab8ce179941de65a9620b25d4baa30fe807')
 sha256sums_aarch64=('a03ae3db5c0e2853d9406f67caca2b6d0f9c5f59c5aee7714ccaa29eb64f51ad')
 
 prepare() {
-  local _appimage="jayjay-gpui-${CARCH}-linux.AppImage"
+  local _appimage="jayjay-gpui-${CARCH}.AppImage"
   rm -rf "${srcdir}/squashfs-root"
   chmod +x "${_appimage}"
   "./${_appimage}" --appimage-extract >/dev/null
@@ -28,7 +28,7 @@ prepare() {
 }
 
 package() {
-  local _appimage="jayjay-gpui-${CARCH}-linux.AppImage"
+  local _appimage="jayjay-gpui-${CARCH}.AppImage"
   local _metainfo
   _metainfo=$(find squashfs-root -path '*/share/metainfo/dev.hewig.JayJay.metainfo.xml' -print -quit)
   test -n "${_metainfo}"

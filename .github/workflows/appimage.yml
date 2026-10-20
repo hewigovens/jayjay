@@ -89,9 +89,9 @@ jobs:
       - name: Inspect AppImage metadata
         run: |
           rm -rf squashfs-root
-          ./out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage --appimage-extract >/tmp/jayjay-appimage-extract.log
+          ./out/jayjay-gpui-${{ matrix.arch }}.AppImage --appimage-extract >/tmp/jayjay-appimage-extract.log
           dist/appimage/libraries.sh check squashfs-root
-          ./out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage --version
+          ./out/jayjay-gpui-${{ matrix.arch }}.AppImage --version
           test -f squashfs-root/dev.hewig.JayJay.desktop
           test -f squashfs-root/.DirIcon
           test -f squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
@@ -103,7 +103,7 @@ jobs:
       - name: Upload artifact
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          name: jayjay-gpui-${{ matrix.arch }}.AppImage
           path: out/
           retention-days: 14
 
@@ -137,7 +137,7 @@ jobs:
       - name: Download AppImage artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          name: jayjay-gpui-${{ matrix.arch }}.AppImage
           path: out
 
       - name: Reuse an AppImage already attached to the release
@@ -147,7 +147,7 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
         # On a rerun the attached AppImage is canonical.
         run: |
-          name=jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          name=jayjay-gpui-${{ matrix.arch }}.AppImage
           if gh release view "$TAG_NAME" --json assets --jq '.assets[].name' | grep -qx "$name"; then
             gh release download "$TAG_NAME" -p "$name" -D out --clobber
             (cd out && sha256sum "$name" >"$name.sha256")
@@ -158,15 +158,15 @@ jobs:
         if: github.event_name == 'release'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          name: jayjay-gpui-${{ matrix.arch }}.AppImage
           path: out/
           overwrite: true
           retention-days: 14
 
       - name: Smoke test with the host Vulkan loader
         run: |
-          chmod +x out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
-          dist/appimage/smoke.sh out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          chmod +x out/jayjay-gpui-${{ matrix.arch }}.AppImage
+          dist/appimage/smoke.sh out/jayjay-gpui-${{ matrix.arch }}.AppImage
 
   release-assets:
     name: Publish Linux release assets
@@ -235,13 +235,13 @@ jobs:
       - name: Download AppImage artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          name: jayjay-gpui-${{ matrix.arch }}.AppImage
           path: out
 
       - name: Build the package
         env:
           TAG_NAME: ${{ github.event.release.tag_name || (github.ref_type == 'tag' && github.ref_name || '') }}
-        run: dist/deb/build-package.sh "out/jayjay-gpui-${{ matrix.arch }}-linux.AppImage" "${{ matrix.deb_arch }}" packages "$TAG_NAME"
+        run: dist/deb/build-package.sh "out/jayjay-gpui-${{ matrix.arch }}.AppImage" "${{ matrix.deb_arch }}" packages "$TAG_NAME"
 
       - name: Install, launch, and remove
         run: |
@@ -295,14 +295,14 @@ jobs:
       - name: Download AppImage artifact
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          name: jayjay-gpui-${{ matrix.arch }}.AppImage
           path: dist/arch
 
       - name: Smoke test the AppImage on Arch
         # Arch ICD manifests name drivers by bare file name, which is what broke the Nix bundle (#204).
         run: |
-          chmod +x dist/arch/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
-          dist/appimage/smoke.sh dist/arch/jayjay-gpui-${{ matrix.arch }}-linux.AppImage
+          chmod +x dist/arch/jayjay-gpui-${{ matrix.arch }}.AppImage
+          dist/appimage/smoke.sh dist/arch/jayjay-gpui-${{ matrix.arch }}.AppImage
 
       - name: Build the package
         shell: bash
