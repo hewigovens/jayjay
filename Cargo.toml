@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui"]
+members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui", "infra/worker"]
 resolver = "2"
 
 [workspace.package]
@@ -52,6 +52,7 @@ etcetera = "0.11"
 gethostname = "1"
 rand = "0.10"
 shell-words = "1.1.1"
+url = "2"
 
 # One tag for both so a bump moves every gpui reference together
 gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.20.2" }
@@ -100,3 +101,6 @@ strip = "symbols"
 
 [workspace.lints.clippy]
 too_many_lines = "warn"
+
+[profile.release.package.jayjay-worker]
+opt-level = "s"

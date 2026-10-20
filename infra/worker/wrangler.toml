@@ -1,12 +1,9 @@
 name = "jayjay"
-# Cloudflare's entrypoint is the generated JS module that loads the Go WASM.
-main = "./build/worker.mjs"
+main = "./build/index.js"
 compatibility_date = "2026-06-01"
-compatibility_flags = ["nodejs_compat"]
 
-# Standard Go -> WASM. workers-assets-gen writes build/worker.mjs + wasm_exec.js;
 [build]
-command = "go run github.com/syumai/workers/cmd/workers-assets-gen -mode=go && GOOS=js GOARCH=wasm go build -o ./build/app.wasm ."
+command = "worker-build --release -- --locked"
 
 # Real appcast the /appcast.xml route proxies to.
 [vars]
