@@ -1,31 +1,35 @@
 :root {
-  --blue: #2563eb;
-  --blue-bright: #4f93ff;
-  --blue-deep: #1e3a8a;
-  --sky: #93c5fd;
-  --amber: #f59e0b;
-  --green: #61c554;
-  --bg: #fbfcfe;
-  --bg-grad: radial-gradient(1100px 520px at 78% -10%, rgba(37, 99, 235, .10), transparent 60%);
+  --bg: #ffffff;
+  --bg-alt: #f5f5f7;
   --panel: #ffffff;
-  --ink: #0b1020;
-  --muted: #566381;
-  --line: #e3eaf5;
-  --accent: var(--blue);
-  --glow: 0 40px 110px -55px rgba(37, 99, 235, .45);
-  --nav-bg: rgba(251, 252, 254, .72);
+  --ink: #1d1d1f;
+  --muted: #6e6e73;
+  --faint: #86868b;
+  --line: #e5e5ea;
+  --accent: #0a66e8;
+  --accent-ink: #ffffff;
+  --shot-shadow: 0 24px 60px -28px rgba(0, 0, 0, .28), 0 0 0 1px rgba(0, 0, 0, .06);
+  --nav-bg: rgba(255, 255, 255, .78);
+  --kbd-bg: #ffffff;
+  --kbd-edge: #d2d2d7;
+  --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+  --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
+  --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 }
 
 [data-theme="dark"] {
-  --bg: #080b14;
-  --bg-grad: radial-gradient(1100px 540px at 78% -8%, rgba(79, 147, 255, .16), transparent 60%);
-  --panel: #0e1424;
-  --ink: #eaf0fb;
-  --muted: #8595b8;
-  --line: #1b2540;
-  --accent: var(--blue-bright);
-  --glow: 0 44px 130px -55px rgba(79, 147, 255, .55);
-  --nav-bg: rgba(8, 11, 20, .68);
+  --bg: #000000;
+  --bg-alt: #0d0d0f;
+  --panel: #161618;
+  --ink: #f5f5f7;
+  --muted: #a1a1a6;
+  --faint: #6e6e73;
+  --line: #26262a;
+  --accent: #3b8bff;
+  --shot-shadow: 0 24px 70px -28px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .08);
+  --nav-bg: rgba(0, 0, 0, .7);
+  --kbd-bg: #1d1d20;
+  --kbd-edge: #3a3a3e;
 }
 
 html {
@@ -44,10 +48,9 @@ body {
   overflow-x: hidden;
   color: var(--ink);
   background: var(--bg);
-  background-image: var(--bg-grad);
-  background-repeat: no-repeat;
-  font-family: "DM Sans", -apple-system, BlinkMacSystemFont, sans-serif;
+  font-family: var(--sans);
   line-height: 1.6;
+  letter-spacing: -.005em;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -57,8 +60,22 @@ a {
 
 .mono,
 code,
-kbd {
-  font-family: "JetBrains Mono", "SF Mono", monospace;
+kbd,
+pre {
+  font-family: var(--mono);
+}
+
+h1,
+h2,
+h3 {
+  font-family: var(--display);
+  letter-spacing: -.022em;
+}
+
+:focus-visible {
+  outline: 2px solid var(--accent);
+  outline-offset: 3px;
+  border-radius: 6px;
 }
 
 .wrap {
@@ -75,44 +92,47 @@ kbd {
   z-index: 100;
   border-bottom: 1px solid var(--line);
   background: var(--nav-bg);
-  backdrop-filter: blur(14px);
-  -webkit-backdrop-filter: blur(14px);
+  backdrop-filter: saturate(180%) blur(20px);
+  -webkit-backdrop-filter: saturate(180%) blur(20px);
 }
 
 .nav {
   display: flex;
   align-items: center;
   justify-content: space-between;
-  height: 62px;
-  max-width: 1140px;
+  height: 52px;
+  max-width: 1120px;
 }
 
 .brand {
   display: flex;
   align-items: center;
-  gap: 10px;
+  gap: 9px;
   color: var(--ink);
-  font-weight: 700;
+  font-size: 15px;
+  font-weight: 600;
   text-decoration: none;
 }
 
 .brand img {
-  width: 26px;
-  height: 26px;
-  border-radius: 6px;
+  width: 22px;
+  height: 22px;
+  border-radius: 5px;
+  background: #fff;
+  box-shadow: 0 0 0 1px rgba(0, 0, 0, .08);
 }
 
 .nav-right {
   display: flex;
   align-items: center;
-  gap: 22px;
+  gap: 24px;
 }
 
 .nav-links {
   display: flex;
   gap: 24px;
   color: var(--muted);
-  font-size: 13.5px;
+  font-size: 13px;
 }
 
 .nav-links a {
@@ -130,14 +150,14 @@ kbd {
   flex: none;
   align-items: center;
   justify-content: center;
-  width: 36px;
-  height: 36px;
+  width: 32px;
+  height: 32px;
   padding: 0;
   border: 0;
   color: var(--muted);
   background: none;
   cursor: pointer;
-  font-size: 16px;
+  font-size: 15px;
   line-height: 1;
 }
 
@@ -146,50 +166,47 @@ kbd {
 }
 
 .nav-dl {
-  display: inline-flex;
-  align-items: center;
-  min-height: 36px;
-  padding: 7px 13px;
-  border: 1px solid var(--line);
-  border-radius: 8px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
+  padding: 5px 13px;
+  border-radius: 980px;
+  color: var(--accent-ink);
+  background: var(--accent);
   font-size: 12.5px;
+  font-weight: 500;
   text-decoration: none;
 }
 
 .nav-dl:hover {
-  border-color: var(--accent);
+  filter: brightness(1.08);
 }
 
 .g-head {
-  padding: 64px 0 30px;
+  padding: 80px 0 48px;
 }
 
 .g-head .sec-label {
   color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  letter-spacing: .08em;
-  text-transform: uppercase;
+  font-size: 15px;
+  font-weight: 600;
 }
 
 .g-head h1 {
-  margin: 10px 0 14px;
-  font-size: 44px;
+  margin: 8px 0 16px;
+  font-size: 52px;
   font-weight: 700;
-  line-height: 1.08;
+  line-height: 1.06;
+  letter-spacing: -.03em;
 }
 
 .g-head p {
-  max-width: 60ch;
+  max-width: 58ch;
   color: var(--muted);
-  font-size: 17px;
+  font-size: 19px;
+  line-height: 1.45;
 }
 
 .guide-container {
   width: 100%;
-  max-width: 1080px;
+  max-width: 1120px;
   margin: 0 auto;
   padding-right: 32px;
   padding-left: 32px;
@@ -197,8 +214,8 @@ kbd {
 
 .guide-layout {
   display: grid;
-  grid-template-columns: 210px 1fr;
-  gap: 56px;
+  grid-template-columns: 200px minmax(0, 760px);
+  gap: 72px;
   align-items: start;
 }
 
@@ -208,17 +225,16 @@ kbd {
 
 .toc {
   position: sticky;
-  top: 78px;
+  top: 76px;
   align-self: start;
 }
 
 .toc h2 {
   margin: 0 0 14px;
-  color: var(--muted);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  color: var(--ink);
+  font-size: 13px;
+  font-weight: 600;
+  letter-spacing: 0;
 }
 
 .toc ol {
@@ -229,18 +245,18 @@ kbd {
 }
 
 .toc li {
-  margin-bottom: 11px;
+  margin-bottom: 10px;
   counter-increment: t;
-  font-size: 14px;
+  font-size: 13.5px;
   line-height: 1.35;
 }
 
 .toc li::before {
   content: counter(t, decimal-leading-zero) " ";
-  margin-right: 8px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 11px;
+  margin-right: 6px;
+  color: var(--faint);
+  font-size: 12px;
+  font-variant-numeric: tabular-nums;
 }
 
 .toc a {
@@ -250,11 +266,11 @@ kbd {
 }
 
 .toc a:hover {
-  color: var(--accent);
+  color: var(--ink);
 }
 
 section.g {
-  padding: 30px 0;
+  padding: 40px 0;
   border-top: 1px solid var(--line);
   scroll-margin-top: 76px;
 }
@@ -264,8 +280,9 @@ section.g:first-of-type {
 }
 
 section.g h2 {
-  margin: 0 0 6px;
-  font-size: 25px;
+  margin: 0 0 8px;
+  font-size: 28px;
+  line-height: 1.15;
   font-weight: 700;
 }
 
@@ -286,7 +303,7 @@ section.g h2 a:focus-visible {
 section.g > p {
   margin: 10px 0;
   color: var(--muted);
-  font-size: 16px;
+  font-size: 16.5px;
 }
 
 section.g ul {
@@ -300,18 +317,18 @@ section.g li {
   margin-bottom: 10px;
   padding-left: 20px;
   color: var(--muted);
-  font-size: 15.5px;
+  font-size: 16px;
 }
 
 section.g li::before {
   content: "";
   position: absolute;
-  top: 10px;
-  left: 2px;
-  width: 6px;
-  height: 6px;
+  top: 11px;
+  left: 3px;
+  width: 5px;
+  height: 5px;
   border-radius: 50%;
-  background: var(--accent);
+  background: var(--faint);
 }
 
 section.g li strong,
@@ -323,11 +340,26 @@ section.g p strong {
 section.g code,
 .kbd-table code {
   padding: 1px 6px;
-  border: 1px solid var(--line);
   border-radius: 5px;
-  color: var(--accent);
-  background: var(--panel);
-  font-size: 13px;
+  color: var(--ink);
+  background: var(--bg-alt);
+  font-size: .86em;
+}
+
+section.g pre {
+  margin: 16px 0;
+  padding: 18px 20px;
+  overflow-x: auto;
+  border-radius: 12px;
+  background: var(--bg-alt);
+  font-size: 13.5px;
+  line-height: 1.7;
+}
+
+section.g pre code {
+  padding: 0;
+  background: none;
+  font-size: inherit;
 }
 
 .guide-page .shot-grid {
@@ -344,11 +376,10 @@ section.g code,
 }
 
 figure.shot {
-  margin: 22px 0 6px;
+  margin: 24px 0 8px;
   overflow: hidden;
-  border: 1px solid var(--line);
-  border-radius: 13px;
-  box-shadow: var(--glow);
+  border-radius: 12px;
+  box-shadow: var(--shot-shadow);
 }
 
 figure.shot img {
@@ -361,7 +392,7 @@ figure.shot img {
 figure.shot figcaption {
   padding: 10px 14px;
   border-top: 1px solid var(--line);
-  color: var(--muted);
+  color: var(--faint);
   background: var(--panel);
   font-size: 13px;
 }
@@ -389,21 +420,30 @@ figure.shot figcaption {
 .kbd-table th {
   padding: 16px 18px 8px;
   border-top: 1px solid var(--line);
-  color: var(--muted);
-  background: var(--panel);
-  font-size: 12px;
+  color: var(--ink);
+  background: var(--bg-alt);
+  font-size: 13px;
   font-weight: 600;
-  letter-spacing: 0.04em;
   text-align: left;
-  text-transform: uppercase;
 }
 
 .kbd-table td:first-child {
   width: 42%;
 }
 
-.kbd-table kbd {
-  color: var(--accent);
+.guide-content kbd {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 22px;
+  height: 22px;
+  padding: 0 6px;
+  vertical-align: 1px;
+  border-radius: 6px;
+  color: var(--ink);
+  background: var(--kbd-bg);
+  box-shadow: inset 0 0 0 1px var(--kbd-edge), 0 1px 0 var(--kbd-edge);
+  font-family: var(--sans);
   font-size: 12.5px;
 }
 
@@ -420,9 +460,11 @@ figure.shot figcaption {
 }
 
 footer {
-  margin-top: 40px;
-  padding: 40px 0;
+  margin-top: 64px;
+  padding: 32px 0 48px;
   border-top: 1px solid var(--line);
+  color: var(--muted);
+  font-size: 13px;
 }
 
 .foot {
@@ -431,12 +473,11 @@ footer {
   gap: 16px;
   align-items: center;
   justify-content: space-between;
-  max-width: 1140px;
+  max-width: 1120px;
 }
 
 .foot .spons {
-  color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .foot .spons a {
@@ -448,12 +489,15 @@ footer {
   display: flex;
   flex-wrap: wrap;
   gap: 22px;
-  color: var(--muted);
-  font-size: 14px;
+  font-size: 13px;
 }
 
 .foot-links a {
   text-decoration: none;
+}
+
+.foot-links a:hover {
+  color: var(--ink);
 }
 
 @media (max-width: 860px) {
@@ -466,9 +510,8 @@ footer {
     position: static;
     margin-bottom: 24px;
     padding: 22px 26px;
-    border: 1px solid var(--line);
-    border-radius: 14px;
-    background: var(--panel);
+    border-radius: 18px;
+    background: var(--bg-alt);
   }
 
   .toc ol {
@@ -498,12 +541,20 @@ footer {
     padding-top: 44px;
   }
 
+  .g-head {
+    padding-bottom: 32px;
+  }
+
   .g-head h1 {
-    font-size: 34px;
+    font-size: 36px;
+  }
+
+  .g-head p {
+    font-size: 17px;
   }
 
   section.g h2 {
-    font-size: 22px;
+    font-size: 24px;
   }
 
   .guide-page .shot-grid {
@@ -513,5 +564,12 @@ footer {
   .kbd-table td {
     padding: 11px 14px;
     font-size: 13.5px;
+  }
+
+  .foot-links {
+    display: grid;
+    grid-template-columns: repeat(3, auto);
+    justify-content: start;
+    gap: 10px 28px;
   }
 }

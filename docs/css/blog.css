@@ -8,12 +8,9 @@
 }
 
 .blog-page .post-meta {
-  margin-top: 12px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  margin-top: 14px;
+  color: var(--faint);
+  font-size: 14px;
 }
 
 .blog-page .guide-content a {
@@ -57,17 +54,17 @@
   height: auto;
   border-radius: 0;
   background: none;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
+  color: var(--faint);
+  font-size: 14px;
+  font-variant-numeric: tabular-nums;
 }
 
 .blog-page .kbd-table th {
   padding: 12px 18px;
   border-bottom: 1px solid var(--line);
   color: var(--ink);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12.5px;
+  background: var(--bg-alt);
+  font-size: 13px;
   font-weight: 600;
   text-align: left;
 }
@@ -76,8 +73,7 @@
   overflow-x: auto;
 }
 
-.table-scroll:focus-visible,
-.blog-page section.g pre:focus-visible {
+.table-scroll:focus-visible {
   border-radius: 10px;
   outline: 2px solid var(--accent);
   outline-offset: 4px;
@@ -98,12 +94,9 @@
 }
 
 .blog-card time {
-  padding-top: 4px;
-  color: var(--accent);
-  font-family: "JetBrains Mono", monospace;
-  font-size: 12px;
-  letter-spacing: .06em;
-  text-transform: uppercase;
+  padding-top: 6px;
+  color: var(--faint);
+  font-size: 14px;
 }
 
 .blog-card h2 {
@@ -132,22 +125,6 @@
 
 .blog-page .post-meta a {
   color: inherit;
-}
-
-.blog-page section.g pre {
-  margin: 16px 0;
-  padding: 16px;
-  overflow-x: auto;
-  border: 1px solid var(--line);
-  border-radius: 10px;
-  background: var(--panel);
-  line-height: 1.7;
-}
-
-.blog-page section.g pre code {
-  padding: 0;
-  border: 0;
-  background: none;
 }
 
 .blog-page .command-table {

@@ -9,8 +9,8 @@
     content="JayJay is a native GUI for Jujutsu (jj) on macOS and Linux: fast, keyboard-driven version control with a DAG graph, side-by-side diffs, diff edit, and conflict resolution.">
   <meta name="keywords" content="jj, jujutsu, jj gui, jujutsu gui, jj client, jujutsu mac, jj macos, jj linux, jujutsu linux, jj gui linux, jujutsu gui linux, appimage, arch linux, version control, vcs, dag, interdiff, evolog, swiftui, gpui, rust">
   <meta name="author" content="hewigovens">
-  <meta name="theme-color" content="#fbfcfe" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#080b14" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://jayjay.hewig.dev/">
 
   <meta property="og:type" content="website">
@@ -71,112 +71,106 @@
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link
-    href="https://fonts.googleapis.com/css2?family=DM+Sans:ital,opsz,wght@0,9..40,400;0,9..40,500;0,9..40,600;0,9..40,700&family=JetBrains+Mono:wght@400;500;700&display=swap"
-    rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="imgs/tour-dark.webp">
   <script src="js/theme.js"></script>
 
   <style>
     :root {
-      --blue: #2563eb;
-      --blue-bright: #4f93ff;
-      --blue-deep: #1e3a8a;
-      --sky: #93c5fd;
-      --amber: #f59e0b;
-      --green: #61c554;
-
-      /* light */
-      --bg: #fbfcfe;
-      --bg-grad: radial-gradient(1100px 520px at 78% -10%, rgba(37, 99, 235, .10), transparent 60%);
+      --bg: #ffffff;
+      --bg-alt: #f5f5f7;
       --panel: #ffffff;
-      --ink: #0b1020;
-      --muted: #566381;
-      --line: #e3eaf5;
-      --accent: var(--blue);
-      --glow: 0 40px 110px -55px rgba(37, 99, 235, .45);
-      --nav-bg: rgba(251, 252, 254, .72);
+      --ink: #1d1d1f;
+      --muted: #6e6e73;
+      --faint: #86868b;
+      --line: #e5e5ea;
+      --accent: #0a66e8;
+      --accent-ink: #ffffff;
+      --shot-shadow: 0 30px 80px -30px rgba(0, 0, 0, .28), 0 0 0 1px rgba(0, 0, 0, .06);
+      --nav-bg: rgba(255, 255, 255, .78);
+      --kbd-bg: #ffffff;
+      --kbd-edge: #d2d2d7;
     }
 
     [data-theme="dark"] {
-      --bg: #080b14;
-      --bg-grad: radial-gradient(1100px 540px at 78% -8%, rgba(79, 147, 255, .16), transparent 60%);
-      --panel: #0e1424;
-      --ink: #eaf0fb;
-      --muted: #8595b8;
-      --line: #1b2540;
-      --accent: var(--blue-bright);
-      --glow: 0 44px 130px -55px rgba(79, 147, 255, .55);
-      --nav-bg: rgba(8, 11, 20, .68);
+      --bg: #000000;
+      --bg-alt: #0d0d0f;
+      --panel: #161618;
+      --ink: #f5f5f7;
+      --muted: #a1a1a6;
+      --faint: #6e6e73;
+      --line: #26262a;
+      --accent: #3b8bff;
+      --accent-ink: #ffffff;
+      --shot-shadow: 0 30px 90px -30px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .08);
+      --nav-bg: rgba(0, 0, 0, .7);
+      --kbd-bg: #1d1d20;
+      --kbd-edge: #3a3a3e;
     }
 
     *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
     html { scroll-behavior: smooth; }
     body {
-      font-family: 'DM Sans', -apple-system, BlinkMacSystemFont, sans-serif;
-      background: var(--bg); background-image: var(--bg-grad); background-repeat: no-repeat;
-      color: var(--ink); line-height: 1.55; -webkit-font-smoothing: antialiased; overflow-x: hidden;
+      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
+      background: var(--bg); color: var(--ink); line-height: 1.5; letter-spacing: -.005em;
+      -webkit-font-smoothing: antialiased; overflow-x: hidden;
     }
     a { color: inherit; }
-    .mono, code, kbd { font-family: 'JetBrains Mono', 'SF Mono', monospace; }
-    .wrap { width: 100%; max-width: 1140px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+    a.link, .prose a { color: var(--accent); text-decoration: none; }
+    a.link:hover, .prose a:hover { text-decoration: underline; }
+    code, kbd, pre { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
+    .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
+    .wide { max-width: 1280px; }
     img { max-width: 100%; height: auto; }
+    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
+
+    h1, h2, h3 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif; letter-spacing: -.022em; }
+    .eyebrow { font-size: 15px; font-weight: 600; color: var(--accent); }
+    .sec-h { font-size: 44px; line-height: 1.08; font-weight: 700; margin-top: 8px; max-width: 24ch; }
+    .sec-sub { margin-top: 14px; font-size: 19px; color: var(--muted); max-width: 52ch; }
+    section { padding: 112px 0; }
+    .alt { background: var(--bg-alt); }
 
     /* ── Nav ── */
-    nav { position: sticky; top: 0; z-index: 100; border-bottom: 1px solid var(--line);
-      background: var(--nav-bg); backdrop-filter: blur(14px); -webkit-backdrop-filter: blur(14px); }
-    .nav { display: flex; align-items: center; justify-content: space-between; height: 62px; }
-    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; text-decoration: none; color: var(--ink); }
-    .brand img { width: 26px; height: 26px; border-radius: 6px; }
-    .nav-right { display: flex; align-items: center; gap: 22px; }
-    .nav-links { display: flex; gap: 24px; font-size: 13.5px; color: var(--muted); }
+    nav { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line); }
+    .nav { display: flex; align-items: center; justify-content: space-between; height: 52px; }
+    .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; text-decoration: none; }
+    .brand img { width: 22px; height: 22px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); }
+    .nav-right { display: flex; align-items: center; gap: 24px; }
+    .nav-links { display: flex; gap: 24px; font-size: 13px; color: var(--muted); }
     .nav-links a { text-decoration: none; transition: color .15s; }
     .nav-links a:hover { color: var(--ink); }
-    .theme-btn { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 16px; line-height: 1; padding: 0; width: 36px; height: 36px; display: inline-flex; align-items: center; justify-content: center; flex: none; }
+    .theme-btn { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 15px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
     .theme-btn:hover { color: var(--ink); }
-    .nav-dl { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; border: 1px solid var(--line); padding: 7px 13px; border-radius: 8px; color: var(--accent); text-decoration: none; display: inline-flex; align-items: center; min-height: 36px; }
-    .nav-dl:hover { border-color: var(--accent); }
-    @media (max-width: 840px) { .nav-links { display: none; } }
+    .nav-dl { font-size: 12.5px; font-weight: 500; padding: 5px 13px; border-radius: 980px; background: var(--accent); color: var(--accent-ink); text-decoration: none; }
+    .nav-dl:hover { filter: brightness(1.08); }
+    @media (max-width: 860px) { .nav-links { display: none; } }
 
     /* ── Hero ── */
-    .hero { display: grid; grid-template-columns: 1.05fr 1fr; gap: 56px; align-items: center; padding-top: 86px; padding-bottom: 70px; }
-    .tag { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .1em; text-transform: uppercase; color: var(--accent); display: inline-flex; align-items: center; gap: 9px; }
-    .tag::before { content: ""; width: 7px; height: 7px; border-radius: 50%; background: var(--green); box-shadow: 0 0 10px var(--green); }
-    h1 { font-size: 60px; line-height: 1.04; font-weight: 700; margin: 20px 0 0; }
-    h1 .g { background: linear-gradient(120deg, var(--sky), var(--blue-bright) 55%, var(--blue-deep)); -webkit-background-clip: text; background-clip: text; color: transparent; }
-    .lede { margin-top: 20px; font-size: 18.5px; color: var(--muted); max-width: 48ch; }
-    .term { margin-top: 30px; background: var(--panel); border: 1px solid var(--line); border-radius: 11px; overflow: hidden; }
-    .term .bar { height: 30px; display: flex; align-items: center; gap: 7px; padding: 0 12px; border-bottom: 1px solid var(--line); }
-    .d { width: 10px; height: 10px; border-radius: 50%; }
-    .term pre { padding: 15px 18px; font-family: 'JetBrains Mono', monospace; font-size: 13px; color: var(--ink); white-space: pre-wrap; }
-    .term .c { color: var(--green); } .term .o { color: var(--muted); }
-    .term .bar-title { margin-left: 6px; font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--muted); }
-    .term a { color: var(--accent); text-decoration: none; }
-    .term a:hover { text-decoration: underline; }
-    .term .p { color: var(--accent); }
-    /* Terminal-style get-started: bigger, centered, roomy line-height. */
-    .term-steps { max-width: 820px; margin: 36px auto 0; }
-    .term-steps pre { font-size: 14px; line-height: 1.75; padding: 20px 22px; }
-    .cta { margin-top: 26px; display: flex; gap: 14px; flex-wrap: wrap; }
-    .btn { display: inline-flex; align-items: center; gap: 8px; text-decoration: none; font-weight: 600; font-size: 15px; padding: 12px 19px; border-radius: 10px; transition: transform .12s, filter .15s; }
-    .btn:active { transform: translateY(1px); }
-    .btn-p { background: var(--accent); color: #fff; }
-    [data-theme="dark"] .btn-p { color: #051022; }
-    .btn-p:hover { filter: brightness(1.06); }
-    .btn-o { border: 1px solid var(--line); color: var(--ink); }
-    .btn-o:hover { border-color: var(--accent); }
-    .hero-shot { position: relative; border: 1px solid var(--line); border-radius: 14px; overflow: hidden; box-shadow: var(--glow); }
+    .hero { text-align: center; padding-top: 88px; }
+    .hero-icon { width: 104px; height: 104px; border-radius: 23px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 14px 32px -10px rgba(10, 40, 120, .35); }
+    [data-theme="dark"] .hero-icon { box-shadow: 0 0 0 1px rgba(255, 255, 255, .1), 0 14px 36px -10px rgba(59, 139, 255, .35); }
+    h1 { font-size: 76px; line-height: 1.02; font-weight: 700; margin-top: 26px; letter-spacing: -.035em; }
+    .lede { margin: 22px auto 0; font-size: 22px; line-height: 1.4; color: var(--muted); max-width: 40ch; }
+    .cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
+    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 500; font-size: 16px; padding: 12px 24px; border-radius: 980px; transition: filter .15s, background .15s; }
+    .btn-p { background: var(--accent); color: var(--accent-ink); }
+    .btn-p:hover { filter: brightness(1.08); }
+    .btn-o { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
+    .btn-o:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
+    .meta { margin-top: 18px; font-size: 13px; color: var(--faint); }
+    .hero-shot { position: relative; margin: 64px auto 0; max-width: 1280px; border-radius: 14px; overflow: hidden; box-shadow: var(--shot-shadow); }
     .hero-shot img { display: block; width: 100%; cursor: pointer; }
-    .play-btn { position: absolute; left: 50%; top: 50%; width: 46px; height: 46px; transform: translate(-50%, -50%); display: inline-flex; align-items: center; justify-content: center;
-      border-radius: 50%; border: 0; background: var(--accent); cursor: pointer; box-shadow: 0 0 0 4px rgba(255, 255, 255, .55), 0 10px 26px -8px rgba(11, 16, 32, .55); transition: transform .15s, filter .15s; }
-    [data-theme="dark"] .play-btn { box-shadow: 0 0 0 4px rgba(8, 11, 20, .55), 0 10px 26px -8px rgba(0, 0, 0, .7); }
-    .play-btn:hover { transform: translate(-50%, -50%) scale(1.06); filter: brightness(1.06); }
-    .play-btn svg { margin-left: 3px; }
+    .play-btn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px 12px 16px; border-radius: 980px; border: 0; cursor: pointer; white-space: nowrap;
+      font: 500 15px -apple-system, BlinkMacSystemFont, Inter, sans-serif; color: #fff; background: rgba(20, 20, 22, .62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
+      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 255, 255, .14); transition: transform .15s, background .15s; }
+    .play-btn:hover { transform: translate(-50%, -50%) scale(1.04); background: rgba(20, 20, 22, .74); }
+    .play-btn svg { flex: none; }
 
     /* ── Tour ── */
     .tour { margin: auto; border: 0; padding: 0; background: transparent; width: min(1200px, 94vw, (100dvh - 7rem) * 2560 / 1300); max-width: none; overflow: visible; }
-    .tour::backdrop { background: rgba(5, 8, 16, .72); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); }
-    .tour-frame { position: relative; overflow: hidden; border-radius: 12px; border: 1px solid var(--line); background: var(--panel); aspect-ratio: 2560 / 1300; box-shadow: 0 40px 120px -40px rgba(0, 0, 0, .6); }
+    .tour::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
+    .tour-frame { position: relative; overflow: hidden; border-radius: 12px; background: var(--panel); aspect-ratio: 2560 / 1300; box-shadow: 0 40px 120px -40px rgba(0, 0, 0, .6); }
     .tour-stage { position: absolute; inset: 0; transition: transform .9s cubic-bezier(.4, 0, .2, 1), transform-origin .9s cubic-bezier(.4, 0, .2, 1); }
     .tour-stage video { display: block; width: 100%; height: 100%; }
     .tour-cursor { position: absolute; left: 0; top: 0; width: 1.6%; min-width: 12px; pointer-events: none; transform: translate(-12%, -6%); filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
@@ -184,132 +178,143 @@
     .tour-ripple.on { animation: tour-ripple .45s ease-out; }
     @media (prefers-reduced-motion: reduce) { .tour-stage { transition: none; } }
     @keyframes tour-ripple { from { opacity: .9; transform: translate(-50%, -50%) scale(.3); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.4); } }
-    .tour-bar { display: flex; align-items: center; gap: 10px; margin-top: 12px; color: #eaf0fb; font-size: 14px; }
-    .tour-cap { flex: 1; min-height: 1.5em; }
-    .tour-cap .n { font-family: 'JetBrains Mono', monospace; font-size: 12px; opacity: .55; margin-right: 8px; }
-    .tour-bar button { font: 500 13px 'DM Sans', -apple-system, sans-serif; color: #eaf0fb; background: rgba(255, 255, 255, .08); border: 1px solid rgba(255, 255, 255, .14); border-radius: 8px; padding: 6px 12px; cursor: pointer; }
-    .tour-bar button:hover { background: rgba(255, 255, 255, .16); }
-    .tour-bar button[aria-pressed="true"] { border-color: var(--blue-bright); color: #fff; }
-    @media (max-width: 880px) {
-      .hero { grid-template-columns: 1fr; gap: 40px; padding-top: 60px; }
-      h1 { font-size: 48px; }
-    }
+    .tour-bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: #f5f5f7; font-size: 14px; }
+    .tour-cap { flex: 1; display: flex; align-items: center; gap: 12px; min-height: 32px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: #fff; text-shadow: 0 1px 12px rgba(0, 0, 0, .6); }
+    .tour-cap .n { flex: none; padding: 3px 10px; border-radius: 980px; background: #0a66e8; font: 600 13px -apple-system, BlinkMacSystemFont, Inter, sans-serif; font-variant-numeric: tabular-nums; text-shadow: none; animation: tour-step .35s ease-out; }
+    @keyframes tour-step { from { opacity: 0; transform: translateY(4px); } }
+    @media (max-width: 600px) { .tour-cap { font-size: 16px; gap: 8px; } }
+    .tour-bar button { font: 500 13px -apple-system, BlinkMacSystemFont, Inter, sans-serif; color: #f5f5f7; background: rgba(255, 255, 255, .1); border: 0; border-radius: 980px; padding: 6px 14px; cursor: pointer; }
+    .tour-bar button:hover { background: rgba(255, 255, 255, .18); }
+    .tour-bar button[aria-pressed="true"] { background: #f5f5f7; color: #000; }
 
-    /* ── Feature strip ── */
-    .features { border-top: 1px solid var(--line); border-bottom: 1px solid var(--line); background: var(--panel); }
-    .features .wrap { padding-top: 56px; padding-bottom: 56px; }
-    .sec-label { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .08em; text-transform: uppercase; color: var(--accent); }
-    .sec-h { font-size: 28px; font-weight: 700; margin: 8px 0 36px; max-width: 24ch; }
-    .grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 28px 36px; }
-    .cell .n { font-family: 'JetBrains Mono', monospace; font-size: 12px; color: var(--accent); }
-    .cell h3 { font-size: 17px; margin: 8px 0 6px; }
-    .cell p { font-size: 14px; color: var(--muted); }
-    @media (max-width: 820px) { .grid { grid-template-columns: 1fr 1fr; } }
-    @media (max-width: 560px) { .grid { grid-template-columns: 1fr; } }
+    /* ── Pillars ── */
+    .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; padding: 96px 0 0; text-align: left; }
+    .pillar h3 { font-size: 19px; font-weight: 600; margin-bottom: 6px; }
+    .pillar p { font-size: 15.5px; color: var(--muted); }
 
     /* ── Showcase ── */
-    .showcase { padding-top: 80px; padding-bottom: 30px; }
-    .show { display: grid; grid-template-columns: 1fr 1.2fr; gap: 48px; align-items: center; padding: 36px 0; }
-    .show.rev { grid-template-columns: 1.2fr 1fr; }
+    .spot { text-align: center; }
+    .spot .sec-h, .spot .sec-sub { margin-left: auto; margin-right: auto; }
+    .spot .show-img { margin-top: 56px; }
+    .show { display: grid; grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; margin-top: 128px; }
+    .show.rev { grid-template-columns: 7fr 5fr; }
     .show.rev .show-text { order: 2; }
-    .show-text .lbl { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
-    .show-text h3 { font-size: 26px; margin: 10px 0 12px; }
-    .show-text p { font-size: 16px; color: var(--muted); max-width: 46ch; }
-    .show-text kbd { font-size: 12px; border: 1px solid var(--line); border-radius: 6px; padding: 2px 7px; color: var(--ink); }
-    .show-text code { font-size: 13px; background: var(--panel); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--accent); }
-    .show-img { border: 1px solid var(--line); border-radius: 13px; overflow: hidden; box-shadow: var(--glow); }
+    .show-text h3 { font-size: 34px; line-height: 1.12; font-weight: 700; margin-top: 6px; }
+    .show-text p { margin-top: 14px; font-size: 17px; color: var(--muted); }
+    .show-text strong { color: var(--ink); font-weight: 600; }
+    .show-text .note { font-size: 13px; color: var(--faint); }
+    .show-img { border-radius: 12px; overflow: hidden; box-shadow: var(--shot-shadow); }
     .show-img img { display: block; width: 100%; }
-    /* Close-up screenshots: frame smaller and centered instead of blown up edge-to-edge. */
-    .show-img.tight { display: flex; align-items: center; justify-content: center; padding: 28px; background: var(--panel); }
-    .show-img.tight img { width: auto; max-width: 76%; filter: drop-shadow(0 10px 22px rgba(0, 0, 0, .22)); }
-    @media (max-width: 820px) { .show, .show.rev { grid-template-columns: 1fr; gap: 22px; } .show.rev .show-text { order: 0; } }
-    .show-more { text-align: center; margin-top: 18px; font-size: 15.5px; color: var(--muted); }
-    .show-more a { color: var(--accent); text-decoration: none; font-weight: 600; }
-    .show-more a:hover { text-decoration: underline; }
+    code { font-size: .86em; padding: 1px 6px; border-radius: 5px; background: var(--bg-alt); color: var(--ink); }
+    .alt code { background: var(--panel); }
+    @media (max-width: 860px) {
+      .show, .show.rev { grid-template-columns: 1fr; gap: 28px; margin-top: 88px; }
+      .show.rev .show-text { order: 0; }
+    }
 
-    /* ── Shortcuts ── */
-    .keys { border-top: 1px solid var(--line); background: var(--panel); }
-    .keys .wrap { padding-top: 64px; padding-bottom: 64px; }
-    .keys-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; margin-top: 28px; }
-    .krow { background: var(--bg); display: flex; align-items: center; justify-content: space-between; padding: 15px 20px; font-size: 14.5px; }
-    .krow kbd { font-size: 12px; color: var(--accent); }
-    @media (max-width: 620px) { .keys-grid { grid-template-columns: 1fr; } }
+    /* ── More ── */
+    .more { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px 32px; margin-top: 56px; }
+    .more svg { width: 26px; height: 26px; color: var(--accent); }
+    .more h3 { font-size: 16px; font-weight: 600; margin: 12px 0 4px; }
+    .more p { font-size: 14.5px; color: var(--muted); }
+    .guide-link { margin-top: 56px; font-size: 17px; }
+    @media (max-width: 960px) { .more { grid-template-columns: repeat(2, 1fr); } }
+
+    /* ── Keyboard ── */
+    .keys-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; margin-top: 56px; }
+    .keys-list { list-style: none; }
+    .keys-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
+    .keys-list li:first-child { border-top: 1px solid var(--line); }
+    kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; font-size: 12.5px; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; color: var(--ink);
+      background: var(--kbd-bg); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--kbd-edge), 0 1px 0 var(--kbd-edge); }
+    .combo { display: inline-flex; gap: 4px; flex: none; }
+    .palette-shot { display: flex; justify-content: center; }
+    .palette-shot img { display: block; width: 100%; max-width: 520px; border-radius: 14px; box-shadow: var(--shot-shadow); }
+    @media (max-width: 860px) { .keys-layout { grid-template-columns: 1fr; gap: 40px; } }
 
     /* ── Install ── */
-    .install { padding-top: 78px; padding-bottom: 78px; }
+    .install-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 56px; }
+    .card { background: var(--panel); border-radius: 18px; padding: 30px 32px; box-shadow: 0 0 0 1px var(--line); }
+    .card h3 { font-size: 21px; font-weight: 600; }
+    .card .req { margin-top: 4px; font-size: 14px; color: var(--muted); }
+    .card pre { margin-top: 22px; font-size: 13px; line-height: 1.8; overflow-x: auto; color: var(--ink); }
+    .card pre .c { color: var(--faint); }
+    .card pre .p { color: var(--accent); user-select: none; }
+    .card .after { margin-top: 18px; font-size: 14px; color: var(--muted); }
+    @media (max-width: 860px) { .install-grid { grid-template-columns: minmax(0, 1fr); } }
 
     /* ── Story ── */
-    .story { border-top: 1px solid var(--line); background: var(--panel); }
-    .story .wrap { padding-top: 72px; padding-bottom: 72px; }
-    .story h2 { font-size: 30px; margin: 8px 0 20px; }
-    .story h2 span { color: var(--accent); }
-    /* Title left-aligns with other sections; the quote stays centered. */
-    .story-quote { max-width: 820px; margin: 0 auto; }
-    .story p { color: var(--muted); font-size: 16.5px; margin-bottom: 16px; }
-    .story strong { color: var(--ink); font-weight: 600; }
+    .story { text-align: center; }
+    .story .sec-h { margin-left: auto; margin-right: auto; }
+    .story-body { max-width: 640px; margin: 28px auto 0; }
+    .story-body p { font-size: 19px; line-height: 1.55; color: var(--muted); margin-top: 18px; }
+    .story-body strong { color: var(--ink); font-weight: 600; }
 
     /* ── FAQ ── */
-    .faq { padding-top: 78px; padding-bottom: 78px; }
-    .faq-list { margin-top: 30px; display: grid; gap: 1px; background: var(--line); border: 1px solid var(--line); border-radius: 12px; overflow: hidden; }
-    .qa { background: var(--panel); padding: 22px 26px; }
-    .qa h3 { font-size: 16.5px; margin-bottom: 7px; }
-    .qa p { font-size: 14.5px; color: var(--muted); }
-    .qa a { color: var(--accent); text-decoration: none; }
-    .qa a:hover { text-decoration: underline; }
-    .qa code { font-family: 'JetBrains Mono', monospace; font-size: 12.5px; background: var(--bg); border: 1px solid var(--line); border-radius: 5px; padding: 1px 6px; color: var(--accent); }
+    .faq-list { margin-top: 48px; }
+    .faq-list details { border-bottom: 1px solid var(--line); }
+    .faq-list details:first-child { border-top: 1px solid var(--line); }
+    .faq-list summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 20px 0; font-size: 18px; font-weight: 600; }
+    .faq-list summary::-webkit-details-marker { display: none; }
+    .faq-list summary::after { content: "+"; flex: none; font-size: 24px; font-weight: 300; color: var(--muted); transition: transform .2s; }
+    .faq-list details[open] summary::after { transform: rotate(45deg); }
+    .faq-list details p { padding: 0 40px 24px 0; font-size: 16px; color: var(--muted); }
 
-    /* ── Blog teaser ── */
-    .blog-teaser { padding-top: 78px; padding-bottom: 78px; border-top: 1px solid var(--line); }
-    .post-card { display: block; max-width: 640px; padding: 22px 26px; border: 1px solid var(--line); border-radius: 12px; background: var(--panel); text-decoration: none; transition: border-color .15s; }
-    .post-card:hover { border-color: var(--accent); }
-    .post-card + .post-card { margin-top: 16px; }
-    .post-card time { font-family: 'JetBrains Mono', monospace; font-size: 12px; letter-spacing: .06em; text-transform: uppercase; color: var(--accent); }
-    .post-card h3 { font-size: 20px; margin: 8px 0 8px; }
-    .post-card p { font-size: 14.5px; color: var(--muted); }
+    /* ── Blog ── */
+    .posts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
+    .post-card { display: block; padding: 28px 30px; border-radius: 18px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); text-decoration: none; transition: box-shadow .15s; }
+    .post-card:hover { box-shadow: 0 0 0 1px var(--accent); }
+    .post-card time { font-size: 13px; color: var(--faint); }
+    .post-card h3 { font-size: 21px; font-weight: 600; margin: 6px 0 8px; line-height: 1.25; }
+    .post-card p { font-size: 15px; color: var(--muted); }
+    @media (max-width: 760px) { .posts { grid-template-columns: 1fr; } }
 
     /* ── Footer ── */
-    footer { border-top: 1px solid var(--line); padding: 40px 0; }
+    footer { border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 13px; color: var(--muted); }
     .foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-    .foot .spons { font-size: 14px; color: var(--muted); }
-    .foot .spons a { color: var(--accent); text-decoration: none; }
-    .foot-links { display: flex; flex-wrap: wrap; gap: 22px; font-size: 14px; color: var(--muted); }
-    .foot-links a { text-decoration: none; }
+    .foot-links { display: flex; flex-wrap: wrap; gap: 22px; }
+    .foot a { text-decoration: none; }
+    .foot a:hover { color: var(--ink); }
+    .foot .spons a { color: var(--accent); }
 
     /* Theme-scoped so these beat `.hero-shot img`/`.show-img img` (0,1,1). data-theme is set in <head> before paint. */
     [data-theme="dark"] .light-only, [data-theme="light"] .dark-only { display: none; }
     [data-theme="dark"] .dark-only, [data-theme="light"] .light-only { display: block; }
 
+    @media (max-width: 860px) {
+      section { padding: 80px 0; }
+      h1 { font-size: 56px; }
+      .sec-h { font-size: 36px; }
+      .pillars { grid-template-columns: 1fr; gap: 28px; padding-top: 72px; }
+    }
+
     @media (max-width: 600px) {
       .wrap { padding-left: 20px; padding-right: 20px; }
-      .nav { height: 58px; }
-      .nav-right { gap: 10px; }
-      .theme-btn { width: 44px; height: 44px; }
-      .nav-dl { min-height: 40px; padding: 6px 10px; font-size: 12px; }
-      .hero { gap: 30px; padding-top: 46px; padding-bottom: 50px; }
-      .tag { font-size: 11px; letter-spacing: .08em; flex-wrap: wrap; }
-      h1 { font-size: 36px; line-height: 1.08; }
-      .lede { font-size: 16.5px; max-width: none; }
-      .term { margin-top: 24px; }
-      .term pre { padding: 14px; font-size: 12px; overflow-wrap: anywhere; }
-      .cta { flex-direction: column; gap: 12px; }
-      .btn { width: 100%; justify-content: center; min-height: 48px; }
-      .features .wrap { padding-top: 46px; padding-bottom: 46px; }
-      .sec-h { font-size: 25px; margin-bottom: 28px; }
-      .grid { gap: 24px; }
-      .showcase { padding-top: 54px; padding-bottom: 20px; }
-      .show { gap: 18px; padding: 30px 0; }
-      .show-text h3 { font-size: 23px; line-height: 1.18; }
-      .show-text p { font-size: 15.5px; }
-      .show-img:not(.tight) { overflow: hidden; }
-      .show-img:not(.tight) img { width: 100%; max-width: 100%; }
-      .show-img.tight { padding: 20px; }
-      .show-img.tight img { max-width: 86%; }
-      .keys .wrap, .story .wrap { padding-top: 54px; padding-bottom: 54px; }
-      .krow { gap: 16px; padding: 14px 16px; }
-      .install, .faq, .blog-teaser { padding-top: 58px; padding-bottom: 58px; }
-      .story h2 { font-size: 26px; line-height: 1.18; }
-      .qa { padding: 20px; }
-      .foot { align-items: flex-start; }
+      section { padding: 64px 0; }
+      .hero { padding-top: 56px; }
+      .hero-icon { width: 76px; height: 76px; border-radius: 17px; }
+      h1 { font-size: 40px; line-height: 1.06; }
+      .lede { font-size: 18px; }
+      .cta { flex-direction: column; align-items: stretch; }
+      .btn { min-height: 48px; }
+      .hero-shot { margin-top: 44px; border-radius: 10px; }
+      .play-btn { padding: 10px 14px 10px 12px; font-size: 13px; }
+      .sec-h { font-size: 30px; }
+      .sec-sub { font-size: 17px; }
+      .show-text h3 { font-size: 27px; }
+      .show-text p { font-size: 16px; }
+      .show, .show.rev { margin-top: 64px; }
+      .show-img { border-radius: 8px; }
+      .more { grid-template-columns: 1fr; gap: 22px; }
+      .more > div { display: grid; grid-template-columns: 26px 1fr; column-gap: 14px; }
+      .more svg { grid-row: span 2; margin-top: 1px; }
+      .more h3 { margin-top: 0; }
+      .foot-links { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 10px 28px; }
+      .card { padding: 24px 20px; }
+      .card pre { font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
+      .story-body p { font-size: 17px; }
+      .faq-list summary { font-size: 16.5px; }
+      .faq-list details p { padding-right: 0; font-size: 15px; }
     }
   </style>
 </head>
@@ -324,7 +329,7 @@
   -->
   <nav>
     <div class="wrap nav">
-      <a class="brand" href="#"><img src="icon.svg" alt="JayJay"> JayJay</a>
+      <a class="brand" href="#"><img src="icon.svg" alt=""> JayJay</a>
       <div class="nav-right">
         <div class="nav-links">
           <a href="#features">Features</a>
@@ -336,31 +341,39 @@
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         </div>
         <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
-        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">↓ Download</a>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
       </div>
     </div>
   </nav>
 
   <!-- Hero -->
-  <header class="wrap hero">
-    <div>
-      <span class="tag">native macOS &amp; Linux · jujutsu</span>
-      <h1>The native way to<br><span class="g">drive jj.</span></h1>
-      <p class="lede">A fast, keyboard-friendly client for Jujutsu. The change graph, diffs, splits, and conflicts — in one window, built on jj-lib in Rust.</p>
+  <header class="hero">
+    <div class="wrap">
+      <img class="hero-icon" src="icon.svg" alt="" width="104" height="104">
+      <h1>The native way<br>to drive jj.</h1>
+      <p class="lede">A fast, keyboard-friendly client for Jujutsu. The change graph, diffs, splits, and conflicts, in one window.</p>
       <div class="cta">
-        <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">
-          <svg width="16" height="16" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round"><path d="M8 2v9m0 0l-3-3m3 3l3-3M3 14h10" /></svg>
-          Download for macOS
-        </a>
-        <a class="btn btn-o" href="https://github.com/hewigovens/jayjay/releases">Download for Linux</a>
+        <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">Download for macOS</a>
+        <a class="btn btn-o" href="#install">Install on Linux</a>
+      </div>
+      <p class="meta">Free · macOS 26 or later · Linux x86_64 &amp; aarch64 · Windows alpha</p>
+    </div>
+    <div class="wrap wide">
+      <div class="hero-shot">
+        <img class="dark-only" src="imgs/tour-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1300" loading="eager">
+        <img class="light-only" src="imgs/tour.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1300" loading="eager">
+        <button class="play-btn" type="button" aria-haspopup="dialog">
+          <svg width="12" height="14" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+          Watch the 12-second tour
+        </button>
       </div>
     </div>
-    <div class="hero-shot">
-      <img class="dark-only" src="imgs/tour-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1300" loading="eager">
-      <img class="light-only" src="imgs/tour.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1300" loading="eager">
-      <button class="play-btn" type="button" aria-haspopup="dialog" aria-label="Play a 12-second tour">
-        <svg width="14" height="16" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
-      </button>
+    <div class="wrap">
+      <div class="pillars">
+        <div class="pillar"><h3>Speaks jj</h3><p>Changes, bookmarks, revsets, and mutable history, the way jj intends. No git branches bolted on.</p></div>
+        <div class="pillar"><h3>Truly native</h3><p>SwiftUI on macOS and GPUI on Linux, over a shared Rust core that links jj-lib directly. No CLI scraping, no web view.</p></div>
+        <div class="pillar"><h3>Free, no strings</h3><p>No subscription and no repository data. Anonymous build and OS stats can be turned off in Settings.</p></div>
+      </div>
     </div>
     <dialog class="tour" aria-label="JayJay in action">
       <div class="tour-frame">
@@ -379,282 +392,261 @@
     </dialog>
   </header>
 
-  <!-- Features -->
-  <section class="features" id="features">
-    <div class="wrap">
-      <div class="sec-label">// what's inside</div>
-      <h2 class="sec-h">A complete jj surface — graph to conflict, one window.</h2>
-      <div class="grid">
-        <div class="cell"><div class="n">graph</div><h3>Lane-based DAG</h3><p>Fork/merge lanes with bookmark, tag, conflict, and divergent markers. Highlighted shortest change-ids; revset filtering with preset chips; immutable-aware menus.</p></div>
-        <div class="cell"><div class="n">diff</div><h3>Side-by-side &amp; rich previews</h3><p>Histogram diff, tree-sitter highlighting, intraline changes, context collapsing, background preloading, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p></div>
-        <div class="cell"><div class="n">interdiff</div><h3>Compare any revisions</h3><p>Shift-click two changes for a PR-style diff between them — or compare the two versions of a divergent change. Full file navigation included.</p></div>
-        <div class="cell"><div class="n">diff edit</div><h3>Split by line</h3><p>Select files, hunks, or individual lines and extract them into a new change. Mark files reviewed, then split.</p></div>
-        <div class="cell"><div class="n">review</div><h3>Review files and hunks</h3><p>Mark files or individual hunks reviewed, leave notes on changed lines, and keep matching review marks across edits and rebases.</p></div>
-        <div class="cell"><div class="n">evolog</div><h3>Change evolution</h3><p>Replay every snapshot of a change over time, with filtering and restore — jj's superpower, made visible.</p></div>
-        <div class="cell"><div class="n">bookmark</div><h3>Bookmarks &amp; diff</h3><p>Drag a bookmark onto any change to move it, with a live drop preview. Per-remote sync state (ahead / behind / diverged), forget stale or deleted bookmarks, explicit remote tracking, and diff a bookmark against its base.</p></div>
-        <div class="cell"><div class="n">stacked PR</div><h3>Stacked PRs &amp; MRs</h3><p>One GitHub, GitLab, or Cursor Origin pull request per change in a linear stack, with dependent bases. Editable, AI-named branches; re-run to update them.</p></div>
-        <div class="cell"><div class="n">conflict</div><h3>Edit conflicts in place</h3><p>Use Ours / Use Theirs inline, or edit and save complete or partial resolutions without leaving the repository window.</p></div>
-        <div class="cell"><div class="n">palette</div><h3>Command palette</h3><p>Search actions and local help; run raw jj with an <span class="mono">!</span> prefix and inline output — no terminal needed.</p></div>
-        <div class="cell"><div class="n">integrations</div><h3>Editors, terminals, AI</h3><p>VS Code, VSCodium, Zed, Xcode, Vim · Terminal, iTerm2, Ghostty · AI commit messages via Codex, Claude, or Apple Intelligence.</p></div>
-      </div>
-    </div>
-  </section>
-
   <!-- Showcase -->
-  <section class="showcase wrap">
-    <div class="show">
-      <div class="show-text">
-        <div class="lbl">diffs</div>
-        <h3>Side-by-side, tree view, rich formats</h3>
-        <p>Toggle unified or side-by-side, browse files as a tree, and read tree-sitter syntax highlighting with intraline change highlights. Markdown, notebooks, CSV/TSV, SARIF, and binary plists get rich previews when raw text is not enough.</p>
-      </div>
+  <section id="features">
+    <div class="wrap spot">
+      <div class="eyebrow">Diffs</div>
+      <h2 class="sec-h">Read changes the way you read code.</h2>
+      <p class="sec-sub">Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p>
+    </div>
+    <div class="wrap wide spot">
       <div class="show-img">
         <img class="dark-only" src="imgs/side-by-side-dark.webp" alt="Side-by-side tree diff" width="2560" height="1300" loading="lazy">
         <img class="light-only" src="imgs/side-by-side.webp" alt="Side-by-side tree diff" width="2560" height="1300" loading="lazy">
       </div>
     </div>
 
-    <div class="show rev">
-      <div class="show-text">
-        <div class="lbl">review &amp; split</div>
-        <h3>Keep your place through every edit</h3>
-        <p>Press <code>Space</code> to review a file, or click a hunk's gutter stripe to mark just that part. Matching reviewed hunks survive edits and rebases. Leave a note on a changed line when something needs another look.</p>
+    <div class="wrap">
+      <div class="show rev">
+        <div class="show-text">
+          <div class="eyebrow">Review</div>
+          <h3>Keep your place through every edit.</h3>
+          <p>Press <kbd>Space</kbd> to review a file, or click a hunk's gutter stripe to mark just that part. Reviewed hunks survive edits and rebases, and notes stay on the changed line.</p>
+        </div>
+        <div class="show-img">
+          <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
+          <img class="light-only" src="imgs/review.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
+        </div>
       </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
-      </div>
-    </div>
 
-    <div class="show">
-      <div class="show-text">
-        <div class="lbl">diff edit</div>
-        <h3>Edit diffs across files</h3>
-        <p>Pick hunks or individual lines from any file in the change, then split exactly that selection into a clean child — line-by-line control across your whole working copy.</p>
+      <div class="show">
+        <div class="show-text">
+          <div class="eyebrow">Diff edit</div>
+          <h3>Split exactly the lines you mean.</h3>
+          <p>Pick hunks or individual lines from any file in the change, then split that selection into a clean child or parallel change.</p>
+        </div>
+        <div class="show-img">
+          <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — split by line" width="2560" height="1300" loading="lazy">
+          <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — split by line" width="2560" height="1300" loading="lazy">
+        </div>
       </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — split by line" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — split by line" width="2560" height="1300" loading="lazy">
-      </div>
-    </div>
 
-    <div class="show rev">
-      <div class="show-text">
-        <div class="lbl">stacked pull requests</div>
-        <h3>One PR per change, stacked</h3>
-        <p>Right-click the tip of a linear stack → <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change — editable, or suggested by Apple Intelligence — pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases. Re-run any time to update.</p>
-        <p style="margin-top: 10px; font-size: 13px; color: var(--muted);">* GitHub and GitLab use an existing CLI login or an environment token. Cursor Origin requires its <code>origin</code> CLI.</p>
+      <div class="show rev">
+        <div class="show-text">
+          <div class="eyebrow">Interdiff</div>
+          <h3>Diff any two revisions.</h3>
+          <p>Shift-click two changes, two bookmarks, or a PR branch and its base to see exactly what moved between them. For a divergent change, <strong>Compare Divergent Versions</strong> shows which one to keep.</p>
+        </div>
+        <div class="show-img">
+          <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff" width="2560" height="1300" loading="lazy">
+          <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff" width="2560" height="1300" loading="lazy">
+        </div>
       </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview" width="2560" height="1300" loading="lazy">
-      </div>
-    </div>
 
-    <div class="show">
-      <div class="show-text">
-        <div class="lbl">interdiff</div>
-        <h3>Diff any two revisions</h3>
-        <p>Shift-click any two revisions in the DAG — two bookmarks, a PR branch and its base, or any two changes — to see exactly what moved between them. Syntax-highlighted, with file-by-file navigation. Got a divergent change? Right-click it and <strong>Compare Divergent Versions</strong> to diff the two versions of the same change-id and decide which to abandon.</p>
+      <div class="show">
+        <div class="show-text">
+          <div class="eyebrow">Stacked pull requests</div>
+          <h3>One PR per change, stacked.</h3>
+          <p>Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.</p>
+          <p class="note">GitHub and GitLab use an existing CLI login or an environment token. Cursor Origin requires its <code>origin</code> CLI.</p>
+        </div>
+        <div class="show-img">
+          <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview" width="2560" height="1300" loading="lazy">
+          <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview" width="2560" height="1300" loading="lazy">
+        </div>
       </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff" width="2560" height="1300" loading="lazy">
-      </div>
-    </div>
 
-    <div class="show rev">
-      <div class="show-text">
-        <div class="lbl">conflict resolution</div>
-        <h3>Resolve without leaving the app</h3>
-        <p>Conflicted files show a banner with whole-file choices and resolution actions. Choose <strong>Edit in JayJay</strong> for the built-in merge editor, or hand off to your configured external tool.</p>
+      <div class="show rev">
+        <div class="show-text">
+          <div class="eyebrow">Conflicts</div>
+          <h3>Resolve without leaving the app.</h3>
+          <p>Take Left, Right, or Base per hunk in the built-in merge editor, edit the raw markers, and save a partial resolution when work remains. Or hand off to your configured external tool.</p>
+        </div>
+        <div class="show-img">
+          <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
+          <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
+        </div>
       </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/conflict-resolution-dark.webp" alt="Conflict banner with whole-file choices" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolution.webp" alt="Conflict banner with whole-file choices" width="2560" height="1300" loading="lazy">
-      </div>
-    </div>
-    <div class="show rev">
-      <div class="show-text">
-        <div class="lbl">merge editor</div>
-        <h3>Resolve one conflict at a time</h3>
-        <p>Accept Left, Right, or Base for each hunk, switch to raw marker editing, and save a partial resolution when work remains.</p>
-      </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
-      </div>
-    </div>
 
-    <div class="show">
-      <div class="show-text">
-        <div class="lbl">evolog</div>
-        <h3>Replay a change's evolution</h3>
-        <p>Every snapshot of a change over time, with filtering and one-click restore — jj's hidden superpower, made visible. Undo a rebase or recover lost work without touching the op log by hand.</p>
-      </div>
-      <div class="show-img">
-        <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
-      </div>
-    </div>
-
-    <div class="show rev">
-      <div class="show-text">
-        <div class="lbl">command palette</div>
-        <h3>Every action, one keystroke away</h3>
-        <p>Hit <kbd>⌘ ⇧ P</kbd> and fuzzy-search any operation. Type <code>help split</code> to discover features, or prefix with <code>!</code> to run raw jj commands with inline output.</p>
-      </div>
-      <div class="show-img tight">
-        <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="1040" height="720" loading="lazy">
-        <img class="light-only" src="imgs/command-palette.webp" alt="Command palette" width="1040" height="720" loading="lazy">
+      <div class="show">
+        <div class="show-text">
+          <div class="eyebrow">Evolog</div>
+          <h3>Replay a change's evolution.</h3>
+          <p>Every snapshot of a change over time, with filtering and one-click restore. Undo a rebase or recover lost work without touching the op log by hand.</p>
+        </div>
+        <div class="show-img">
+          <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
+          <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
+        </div>
       </div>
     </div>
+  </section>
 
-    <p class="show-more">Every feature, in detail → <a href="guide.html">read the full guide</a>.</p>
+  <!-- Everything else -->
+  <section class="alt">
+    <div class="wrap">
+      <div class="eyebrow">And more</div>
+      <h2 class="sec-h">A complete jj surface.</h2>
+      <div class="more">
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 3 3 6 3h4"/></svg><h3>Lane-based DAG</h3><p>Fork and merge lanes, shortest change IDs, and revset filtering with preset chips.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><h3>Bookmarks</h3><p>Drag a bookmark onto any change to move it. Per-remote ahead, behind, and diverged state.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><h3>Undo anything</h3><p>Step back through the operation log with one shortcut.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg><h3>Rich previews</h3><p>Images before and after, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><h3>File annotate</h3><p>See which change last touched each line of a file.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><h3>AI descriptions</h3><p>Change descriptions drafted by Codex, Claude, or Apple Intelligence.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/></svg><h3>Your tools</h3><p>VS Code, VSCodium, Zed, Xcode, Vim, Terminal, iTerm2, and Ghostty.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v6M12 15v6M5 12H3M21 12h-2"/><circle cx="12" cy="12" r="3"/></svg><h3>Git interop</h3><p>Colocated Git repos, Git LFS, and submodules work out of the box.</p></div>
+      </div>
+      <p class="guide-link"><a class="link" href="guide.html">Read the full guide ›</a></p>
+    </div>
   </section>
 
   <!-- Shortcuts -->
-  <section class="keys" id="shortcuts">
+  <section id="shortcuts">
     <div class="wrap">
-      <div class="sec-label">// keyboard-friendly</div>
-      <h2 class="sec-h" style="margin-bottom:0">Every action reachable without the mouse.</h2>
-      <div class="keys-grid">
-        <div class="krow"><span>Command palette</span><kbd>⌘ ⇧ P</kbd></div>
-        <div class="krow"><span>Bookmark manager</span><kbd>⌘ ⇧ B</kbd></div>
-        <div class="krow"><span>Find in diff</span><kbd>⌘ F</kbd></div>
-        <div class="krow"><span>Refresh</span><kbd>⌘ R</kbd></div>
-        <div class="krow"><span>Open repository</span><kbd>⌘ O</kbd></div>
-        <div class="krow"><span>Zoom in / out / reset</span><kbd>⌘+ ⌘- ⌘0</kbd></div>
-        <div class="krow"><span>Undo (operation log)</span><kbd>⌘ ⇧ U</kbd></div>
-        <div class="krow"><span>Mark reviewed</span><kbd>Space</kbd></div>
-        <div class="krow"><span>Compare revisions</span><kbd>⇧ Click</kbd></div>
-        <div class="krow"><span>Next / previous file</span><kbd>J / K</kbd></div>
+      <div class="eyebrow">Keyboard</div>
+      <h2 class="sec-h">Every action, one keystroke away.</h2>
+      <p class="sec-sub">Fuzzy-search any operation in the command palette, type <code>help split</code> to discover features, or prefix <code>!</code> to run raw jj with inline output.</p>
+      <div class="keys-layout">
+        <div class="palette-shot">
+          <img class="dark-only" src="imgs/command-palette-dark.webp" alt="Command palette" width="1040" height="720" loading="lazy">
+          <img class="light-only" src="imgs/command-palette.webp" alt="Command palette" width="1040" height="720" loading="lazy">
+        </div>
+        <ul class="keys-list">
+          <li><span>Command palette</span><span class="combo"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>P</kbd></span></li>
+          <li><span>Bookmark manager</span><span class="combo"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>B</kbd></span></li>
+          <li><span>Undo (operation log)</span><span class="combo"><kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd></span></li>
+          <li><span>Find in diff</span><span class="combo"><kbd>⌘</kbd><kbd>F</kbd></span></li>
+          <li><span>Open repository</span><span class="combo"><kbd>⌘</kbd><kbd>O</kbd></span></li>
+          <li><span>Refresh</span><span class="combo"><kbd>⌘</kbd><kbd>R</kbd></span></li>
+          <li><span>Mark reviewed</span><span class="combo"><kbd>Space</kbd></span></li>
+          <li><span>Next / previous file</span><span class="combo"><kbd>J</kbd><kbd>K</kbd></span></li>
+          <li><span>Compare revisions</span><span class="combo"><kbd>⇧</kbd><kbd>Click</kbd></span></li>
+        </ul>
       </div>
     </div>
   </section>
 
   <!-- Install -->
-  <section class="install wrap" id="install">
-    <div class="sec-label">// get started in terminal</div>
-    <h2 class="sec-h">Install, open a repo, you're in.</h2>
-    <p class="lede" style="margin-top:-26px">Requires macOS 26 or later; Apple-silicon and notarized. On Linux, JayJay ships as an AppImage and an Arch package on <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>. Anonymous build and OS stats can be disabled in Settings.</p>
-    <div class="term term-steps">
-      <div class="bar">
-        <span class="d" style="background:#ec6a5e"></span><span class="d" style="background:#f4bf4f"></span><span class="d" style="background:#61c554"></span>
-        <span class="bar-title">zsh — ~/my-project</span>
+  <section class="alt" id="install">
+    <div class="wrap">
+      <div class="eyebrow">Get started</div>
+      <h2 class="sec-h">Install, open a repo, you're in.</h2>
+      <div class="install-grid">
+        <div class="card">
+          <h3>macOS</h3>
+          <p class="req">macOS 26 or later · Apple silicon · signed and notarized</p>
+          <pre><span class="c"># Homebrew trusts the cask the first time</span>
+<span class="p">$ </span>brew install --cask hewigovens/tap/jayjay
+<span class="p">$ </span>jayjay ~/my-project</pre>
+          <p class="after">Or <a class="link" href="https://github.com/hewigovens/jayjay/releases/latest">download the app</a>.</p>
+        </div>
+        <div class="card">
+          <h3>Linux</h3>
+          <p class="req">x86_64 &amp; aarch64 · AppImage, Debian/Ubuntu, Arch</p>
+          <pre><span class="c"># AppImage into ~/.local, checksum verified</span>
+<span class="p">$ </span>curl -fsSL https://jayjay.hewig.dev/install.sh | bash
+<span class="c"># Arch: signed pacman repo</span>
+<span class="p">$ </span>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</pre>
+          <p class="after">Packages are on <a class="link" href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>.</p>
+        </div>
       </div>
-      <pre><span class="o"># 1 · install  (or <a href="https://github.com/hewigovens/jayjay/releases/latest">download the .app</a>)</span>
-<span class="c">$</span> brew install --cask hewigovens/tap/jayjay
-<span class="o">#      brew trusts this cask the first time</span>
-
-<span class="o"># 2 · open a repo  (or File → Open in the app)</span>
-<span class="c">$</span> jayjay ~/my-project
-
-<span class="o"># 3 · then work — all keyboard-driven</span>
-<span class="p">browse · diff · split · commit</span></pre>
-    </div>
-    <div class="term term-steps">
-      <div class="bar">
-        <span class="d" style="background:#ec6a5e"></span><span class="d" style="background:#f4bf4f"></span><span class="d" style="background:#61c554"></span>
-        <span class="bar-title">bash — ~/my-project · Linux</span>
-      </div>
-      <pre><span class="o"># 1 · install  (AppImage into ~/.local; Arch: signed pacman repo)</span>
-<span class="c">$</span> curl -fsSL https://jayjay.hewig.dev/install.sh | bash
-<span class="o"># Arch instead:</span>
-<span class="c">$</span> curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo
-
-<span class="o"># 2 · open a repo</span>
-<span class="c">$</span> jayjay ~/my-project</pre>
     </div>
   </section>
 
   <!-- Story -->
   <section class="story">
     <div class="wrap">
-      <div class="sec-label">// why JayJay</div>
-      <h2>Built for jj, <span>not bolted onto git.</span></h2>
-      <div class="story-quote">
-        <p>Jujutsu has a better model than git — but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong></p>
-        <p>So it's opinionated and fast: one native way to do each workflow — changes, bookmarks, mutable history — the way jj intends. Git LFS, submodules, and colocated Git repos work out of the box. <strong>No subscription. No repository data. Anonymous build and OS stats can be disabled in Settings.</strong></p>
-        <p><strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters — down to a hidden easter egg. Can you find it?</p>
+      <div class="eyebrow">Why JayJay</div>
+      <h2 class="sec-h">Built for jj, not bolted onto git.</h2>
+      <div class="story-body">
+        <p>Jujutsu has a better model than git, but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong></p>
+        <p>So it's opinionated and fast: one native way to do each workflow, the way jj intends. <strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters, down to a hidden easter egg. Can you find it?</p>
       </div>
     </div>
   </section>
 
   <!-- FAQ -->
-  <section class="faq wrap" id="faq">
-    <div class="sec-label">// faq</div>
-    <h2 class="sec-h">Questions, answered.</h2>
-    <div class="faq-list">
-      <div class="qa">
-        <h3>What is JayJay?</h3>
-        <p>A native GUI for <a href="https://github.com/jj-vcs/jj">Jujutsu (jj)</a> on macOS and Linux — the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. Built with Rust (wrapping <code>jj-lib</code> directly, no CLI scraping) and SwiftUI.</p>
-      </div>
-      <div class="qa">
-        <h3>Is there a GUI for Jujutsu?</h3>
-        <p>Yes — JayJay is a full-featured native jj GUI for macOS and Linux: DAG visualization, unified + side-by-side diffs with tree-sitter highlighting, interdiff, diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, absorb, revert, merge, duplicate, describe, abandon) without memorizing flags.</p>
-      </div>
-      <div class="qa">
-        <h3>How do I install JayJay on macOS?</h3>
-        <p><code>brew install --cask hewigovens/tap/jayjay</code> is the easiest path — Homebrew 6.0 trusts the cask the first time you install it. Or download the signed, notarized app from <a href="https://github.com/hewigovens/jayjay/releases/latest">GitHub Releases</a>. Requires macOS 26 or later.</p>
-      </div>
-      <div class="qa">
-        <h3>Does JayJay support interdiff (comparing two revisions)?</h3>
-        <p>Yes. Shift-click two revisions in the DAG to compare them PR-style — the same unified and side-by-side views with word-level highlighting, rendering the difference between the two change contents.</p>
-      </div>
-      <div class="qa">
-        <h3>Does JayJay support side-by-side diffs?</h3>
-        <p>Yes. Toggle unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level highlights. Image files (PNG, JPG, SVG, HEIC...) render as actual before/after images, and Markdown, notebooks, CSV/TSV, SARIF, and binary property lists have rich previews when source text is not enough.</p>
-      </div>
-      <div class="qa">
-        <h3>Can JayJay extract individual lines or hunks into a new change?</h3>
-        <p>Yes — that's diff edit mode. Select files, hunks, or line ranges and split them into a new child or parallel change. On the working copy you can also right-click → Abandon Selected Lines to drop individual edits.</p>
-      </div>
-      <div class="qa">
-        <h3>How is JayJay different from using jj on the command line?</h3>
-        <p>It complements the CLI rather than replacing it. The DAG graph, visual diff review, diff-edit, evolution viewer, and bookmark manager are far easier in a GUI. The command palette (<kbd>⌘ ⇧ P</kbd>) searches actions and local help, and takes a <code>jj</code> (or <code>!</code>) prefix to run raw jj in-window.</p>
-      </div>
-      <div class="qa">
-        <h3>Is JayJay open source?</h3>
-        <p>Free and source-available. The macOS app is <a href="https://github.com/hewigovens/jayjay/blob/main/LICENSE">BSL 1.1</a> — free to use, fork, modify, and redistribute; only paid app-store distribution needs permission. It converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today.</p>
-      </div>
-      <div class="qa">
-        <h3>How do I install JayJay on Linux?</h3>
-        <p>Run <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code>. The <a href="install.sh">script</a> downloads the latest AppImage for x86_64 or aarch64, verifies its checksum, and installs it into <code>~/.local</code> with a <code>jayjay</code> command and a desktop entry; run it again to upgrade. On Arch Linux, use the <a href="guide.html#gpui">signed pacman repo</a> instead — <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code>. Then run <code>jayjay /path/to/repo</code> or open a repository from the window. The <a href="guide.html#gpui">guide</a> lists what it covers.</p>
-      </div>
-      <div class="qa">
-        <h3>Is there a pacman repo for JayJay on Arch Linux?</h3>
-        <p>Yes, for stable releases on x86_64 and aarch64. The one-command setup trusts the key, adds the repo, and installs: <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code>. Prefer reviewable steps? Fetch <a href="https://pkgs.hewig.dev/arch/jayjay-packages.asc">the signing key</a>, add it with <code>sudo pacman-key --add</code>, and sign it locally with <code>sudo pacman-key --lsign-key BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF</code>. Then append a <code>[jayjay]</code> section to <code>/etc/pacman.conf</code> with <code>SigLevel = Required DatabaseOptional</code> and <code>Server = https://pkgs.hewig.dev/arch/$arch</code>, and run <code>sudo pacman -Syu jayjay-appimage</code> for a first install, or <code>sudo pacman -Syu</code> if already installed; the <a href="guide.html#gpui">guide</a> has the copy-paste block. Betas are not in the repo — install those with <code>pacman -U</code> from the pre-release page, and pacman leaves an installed beta alone until the repo's stable version is newer.</p>
-      </div>
-      <div class="qa">
-        <h3>Does JayJay work on Windows or Linux?</h3>
-        <p>Yes on Linux. The Linux app is built on Zed's <a href="https://github.com/zed-industries/zed">GPUI</a> framework, shares its Rust core with the macOS app, and covers the jj workflows: the change graph, diffs and rich previews, review, diff edit, bookmarks, conflicts, workspaces, and the command palette. It ships with every release as an AppImage, Debian/Ubuntu package, and Arch Linux package; see the <a href="guide.html#gpui">guide</a> and the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI checklist</a>. A Windows x64 portable alpha ZIP is also available: extract it and run <code>jayjay-gpui.exe</code>, with <code>jj</code> installed separately on PATH. It requires Windows 10 version 1903 or later, or Windows 11, and has no installer or automatic updater.</p>
+  <section class="alt" id="faq">
+    <div class="wrap">
+      <div class="eyebrow">FAQ</div>
+      <h2 class="sec-h">Questions, answered.</h2>
+      <div class="faq-list prose">
+        <details>
+          <summary>What is JayJay?</summary>
+          <p>A native GUI for <a href="https://github.com/jj-vcs/jj">Jujutsu (jj)</a> on macOS and Linux — the version control system that reimagines the git model with mutable history, changes instead of commits, and bookmarks instead of branches. Built with Rust (wrapping <code>jj-lib</code> directly, no CLI scraping) and SwiftUI.</p>
+        </details>
+        <details>
+          <summary>Is there a GUI for Jujutsu?</summary>
+          <p>Yes — JayJay is a full-featured native jj GUI for macOS and Linux: DAG visualization, unified + side-by-side diffs with tree-sitter highlighting, interdiff, diff edit mode, file annotate, one-click conflict resolution, and every common jj operation (squash, split, absorb, revert, merge, duplicate, describe, abandon) without memorizing flags.</p>
+        </details>
+        <details>
+          <summary>How do I install JayJay on macOS?</summary>
+          <p><code>brew install --cask hewigovens/tap/jayjay</code> is the easiest path — Homebrew 6.0 trusts the cask the first time you install it. Or download the signed, notarized app from <a href="https://github.com/hewigovens/jayjay/releases/latest">GitHub Releases</a>. Requires macOS 26 or later.</p>
+        </details>
+        <details>
+          <summary>Does JayJay support interdiff (comparing two revisions)?</summary>
+          <p>Yes. Shift-click two revisions in the DAG to compare them PR-style — the same unified and side-by-side views with word-level highlighting, rendering the difference between the two change contents.</p>
+        </details>
+        <details>
+          <summary>Does JayJay support side-by-side diffs?</summary>
+          <p>Yes. Toggle unified and side-by-side with one click. Both use tree-sitter syntax highlighting and word-level highlights. Image files (PNG, JPG, SVG, HEIC...) render as actual before/after images, and Markdown, notebooks, CSV/TSV, SARIF, and binary property lists have rich previews when source text is not enough.</p>
+        </details>
+        <details>
+          <summary>Can JayJay extract individual lines or hunks into a new change?</summary>
+          <p>Yes — that's diff edit mode. Select files, hunks, or line ranges and split them into a new child or parallel change. On the working copy you can also right-click → Abandon Selected Lines to drop individual edits.</p>
+        </details>
+        <details>
+          <summary>How is JayJay different from using jj on the command line?</summary>
+          <p>It complements the CLI rather than replacing it. The DAG graph, visual diff review, diff-edit, evolution viewer, and bookmark manager are far easier in a GUI. The command palette (<kbd>⌘</kbd> <kbd>⇧</kbd> <kbd>P</kbd>) searches actions and local help, and takes a <code>jj</code> (or <code>!</code>) prefix to run raw jj in-window.</p>
+        </details>
+        <details>
+          <summary>Is JayJay open source?</summary>
+          <p>Free and source-available. The macOS app is <a href="https://github.com/hewigovens/jayjay/blob/main/LICENSE">BSL 1.1</a> — free to use, fork, modify, and redistribute; only paid app-store distribution needs permission. It converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today.</p>
+        </details>
+        <details>
+          <summary>How do I install JayJay on Linux?</summary>
+          <p>Run <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code>. The <a href="install.sh">script</a> downloads the latest AppImage for x86_64 or aarch64, verifies its checksum, and installs it into <code>~/.local</code> with a <code>jayjay</code> command and a desktop entry; run it again to upgrade. On Arch Linux, use the <a href="guide.html#gpui">signed pacman repo</a> instead — <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code>. Then run <code>jayjay /path/to/repo</code> or open a repository from the window. The <a href="guide.html#gpui">guide</a> lists what it covers.</p>
+        </details>
+        <details>
+          <summary>Is there a pacman repo for JayJay on Arch Linux?</summary>
+          <p>Yes, for stable releases on x86_64 and aarch64. The one-command setup trusts the key, adds the repo, and installs: <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code>. Prefer reviewable steps? Fetch <a href="https://pkgs.hewig.dev/arch/jayjay-packages.asc">the signing key</a>, add it with <code>sudo pacman-key --add</code>, and sign it locally with <code>sudo pacman-key --lsign-key BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF</code>. Then append a <code>[jayjay]</code> section to <code>/etc/pacman.conf</code> with <code>SigLevel = Required DatabaseOptional</code> and <code>Server = https://pkgs.hewig.dev/arch/$arch</code>, and run <code>sudo pacman -Syu jayjay-appimage</code> for a first install, or <code>sudo pacman -Syu</code> if already installed; the <a href="guide.html#gpui">guide</a> has the copy-paste block. Betas are not in the repo — install those with <code>pacman -U</code> from the pre-release page, and pacman leaves an installed beta alone until the repo's stable version is newer.</p>
+        </details>
+        <details>
+          <summary>Does JayJay work on Windows or Linux?</summary>
+          <p>Yes on Linux. The Linux app is built on Zed's <a href="https://github.com/zed-industries/zed">GPUI</a> framework, shares its Rust core with the macOS app, and covers the jj workflows: the change graph, diffs and rich previews, review, diff edit, bookmarks, conflicts, workspaces, and the command palette. It ships with every release as an AppImage, Debian/Ubuntu package, and Arch Linux package; see the <a href="guide.html#gpui">guide</a> and the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI checklist</a>. A Windows x64 portable alpha ZIP is also available: extract it and run <code>jayjay-gpui.exe</code>, with <code>jj</code> installed separately on PATH. It requires Windows 10 version 1903 or later, or Windows 11, and has no installer or automatic updater.</p>
+        </details>
       </div>
     </div>
   </section>
 
   <!-- Blog teaser -->
-  <section class="blog-teaser wrap" id="blog">
-    <div class="sec-label">// blog</div>
-    <h2 class="sec-h">From the notebook.</h2>
-    <a class="post-card" href="blog/why-jj-git-cheatsheet.html">
-      <time datetime="2026-09-12">12 Sep 2026</time>
-      <h3>Why jj? A Jujutsu cheatsheet for Git users</h3>
-      <p>Editable history, stable change IDs, and eight essential commands to get started with jj.</p>
-    </a>
-    <a class="post-card" href="blog/origin-code-storage-deltadb.html">
-      <time datetime="2026-08-19">19 Aug 2026</time>
-      <h3>Origin, Code Storage, and DeltaDB</h3>
-      <p>Three answers to agent-scale code infrastructure—at three different layers.</p>
-    </a>
+  <section id="blog">
+    <div class="wrap">
+      <div class="eyebrow">Blog</div>
+      <h2 class="sec-h">From the notebook.</h2>
+      <div class="posts">
+        <a class="post-card" href="blog/why-jj-git-cheatsheet.html">
+          <time datetime="2026-09-12">12 Sep 2026</time>
+          <h3>Why jj? A Jujutsu cheatsheet for Git users</h3>
+          <p>Editable history, stable change IDs, and eight essential commands to get started with jj.</p>
+        </a>
+        <a class="post-card" href="blog/origin-code-storage-deltadb.html">
+          <time datetime="2026-08-19">19 Aug 2026</time>
+          <h3>Origin, Code Storage, and DeltaDB</h3>
+          <p>Three answers to agent-scale code infrastructure—at three different layers.</p>
+        </a>
+      </div>
+    </div>
   </section>
 
   <!-- Footer -->
   <footer>
     <div class="wrap foot">
-      <p class="spons">Enjoy JayJay? <a href="https://github.com/sponsors/hewigovens">♥ Sponsor on GitHub</a></p>
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay">★ Star it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ sponsor</a></p>
       <div class="foot-links">
         <a href="blog/">Blog</a>
+        <a href="guide.html">Guide</a>
         <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
         <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
