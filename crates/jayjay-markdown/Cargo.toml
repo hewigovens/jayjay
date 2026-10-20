@@ -9,7 +9,12 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+ondine = { package = "compiler", git = "https://github.com/wevm/ondine", rev = "6a1586e5af980e67c104239593ae931837157b8b" }
 pulldown-cmark = { workspace = true }
+roxmltree = "0.21"
+
+[dev-dependencies]
+resvg = "0.46"
 
 [lints]
 workspace = true

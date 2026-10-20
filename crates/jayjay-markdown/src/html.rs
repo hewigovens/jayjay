@@ -1,6 +1,6 @@
 mod tags;
 
-use pulldown_cmark::{Event, HeadingLevel, Tag, TagEnd};
+use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Tag, TagEnd};
 
 use self::tags::heading_tag;
 use crate::images::{
@@ -78,6 +78,31 @@ impl<'a> HtmlRenderer<'a> {
                 }
                 self.index = matching_end_index(&self.events, self.index, TagEnd::Image)
                     .unwrap_or(self.index);
+            }
+            Event::Start(Tag::CodeBlock(CodeBlockKind::Fenced(language)))
+                if crate::MermaidDiagram::is_language(&language) =>
+            {
+                self.flush_pending_items();
+                let end = matching_end_index(&self.events, self.index, TagEnd::CodeBlock)
+                    .unwrap_or(self.index);
+                let source = self.events[self.index + 1..end]
+                    .iter()
+                    .filter_map(|event| match event {
+                        Event::Text(text) => Some(text.as_ref()),
+                        _ => None,
+                    })
+                    .collect::<String>();
+                if let Some(diagram) = crate::MermaidDiagram::render(&source, self.index) {
+                    self.output.push_str("<div class=\"mermaid-diagram\">");
+                    self.output.push_str(&diagram.html_svg());
+                    self.output.push_str("</div>");
+                } else {
+                    self.output
+                        .push_str("<pre><code class=\"language-mermaid\">");
+                    self.output.push_str(&escape_html(&source));
+                    self.output.push_str("</code></pre>");
+                }
+                self.index = end;
             }
             Event::Start(tag) => self.render_start_tag(&tag),
             Event::End(tag) => self.render_end_tag(tag),

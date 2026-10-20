@@ -22,7 +22,7 @@ public struct MarkdownDiffView: View {
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case let .web(markdown):
-                    PreviewWebView(source: .renderedHTML(renderMarkdownHtml(markdown: markdown), location: location))
+                    MarkdownWebPreview(markdown: markdown, location: location)
                 case let .plainPreview(preview, truncated):
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {

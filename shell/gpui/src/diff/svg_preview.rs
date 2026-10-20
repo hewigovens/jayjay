@@ -1,4 +1,5 @@
 use std::{
+    borrow::Cow,
     cell::RefCell,
     rc::Rc,
     sync::{Arc, LazyLock},
@@ -14,8 +15,31 @@ use super::media_diff::media_image;
 use crate::app::theme::Theme;
 
 #[derive(Clone, PartialEq, Eq)]
+enum SvgSource {
+    Document(Arc<str>),
+    Mermaid {
+        diagram: Arc<jayjay_markdown::MermaidDiagram>,
+        background: u32,
+        font_family: String,
+    },
+}
+
+impl SvgSource {
+    fn svg(&self, foreground: u32) -> Cow<'_, str> {
+        match self {
+            Self::Document(content) => Cow::Borrowed(content),
+            Self::Mermaid {
+                diagram,
+                background,
+                font_family,
+            } => Cow::Owned(diagram.svg(foreground, *background, font_family)),
+        }
+    }
+}
+
+#[derive(Clone, PartialEq, Eq)]
 struct SvgRequest {
-    content: Arc<str>,
+    content: SvgSource,
     color: u32,
     width: u32,
     height: u32,
@@ -38,7 +62,28 @@ struct PreviewResult {
 }
 
 pub(super) fn svg_preview(content: &str, theme: &Theme) -> impl IntoElement {
-    let content: Arc<str> = content.into();
+    preview(SvgSource::Document(content.into()), theme)
+}
+
+pub(super) fn mermaid_preview(
+    diagram: Arc<jayjay_markdown::MermaidDiagram>,
+    theme: &Theme,
+) -> impl IntoElement {
+    preview(
+        SvgSource::Mermaid {
+            diagram,
+            background: theme.detail_bg,
+            font_family: format!("{}, monospace", crate::app::fonts::mono()),
+        },
+        theme,
+    )
+}
+
+fn preview(content: SvgSource, theme: &Theme) -> impl IntoElement {
+    let fit = match &content {
+        SvgSource::Document(_) => ObjectFit::ScaleDown,
+        SvgSource::Mermaid { .. } => ObjectFit::Contain,
+    };
     let color = theme.fg;
     let dim = theme.fg_dim;
     canvas(
@@ -84,7 +129,7 @@ pub(super) fn svg_preview(content: &str, theme: &Theme) -> impl IntoElement {
                     if bounds.size.width > gpui::Pixels::ZERO
                         && bounds.size.height > gpui::Pixels::ZERO =>
                 {
-                    let fitted = ObjectFit::ScaleDown.get_bounds(bounds, raster.intrinsic_size);
+                    let fitted = fit.get_bounds(bounds, raster.intrinsic_size);
                     (
                         media_image(raster.image.clone())
                             .w(fitted.size.width)
@@ -154,8 +199,9 @@ impl SvgRequest {
             fonts.load_system_fonts();
             Arc::new(fonts)
         });
+        let content = self.content.svg(self.color);
         let xml = usvg::roxmltree::Document::parse_with_options(
-            &self.content,
+            &content,
             usvg::roxmltree::ParsingOptions {
                 allow_dtd: true,
                 ..Default::default()
@@ -167,16 +213,15 @@ impl SvgRequest {
         let source = if root.attribute("color").is_none() {
             let start = root.range().start + 1;
             let end = start
-                + self.content[start..]
-                    .find(|c: char| c.is_whitespace() || c == '/' || c == '>')?;
+                + content[start..].find(|c: char| c.is_whitespace() || c == '/' || c == '>')?;
             format!(
                 "{} color=\"#{:06x}\"{}",
-                &self.content[..end],
+                &content[..end],
                 self.color,
-                &self.content[end..]
+                &content[end..]
             )
         } else {
-            self.content.to_string()
+            content.to_string()
         };
         let options = usvg::Options {
             fontdb: FONTS.clone(),
@@ -223,7 +268,7 @@ mod tests {
             let state = cx.update(|window, cx| {
                 PreviewState::new(
                     SvgRequest {
-                        content,
+                        content: SvgSource::Document(content),
                         color: 0xffffff,
                         width: 64,
                         height: 64,
@@ -257,7 +302,7 @@ mod tests {
     fn rasterization_fits_the_budget_before_allocating() {
         for (width, height) in [(100_000, 100_000), (100_000, 1), (1, 100_000), (24, 24)] {
             let request = SvgRequest {
-                content: format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><rect width="100%" height="100%" fill="red"/></svg>"#).into(),
+                content: SvgSource::Document(format!(r#"<svg xmlns="http://www.w3.org/2000/svg" width="{width}" height="{height}"><rect width="100%" height="100%" fill="red"/></svg>"#).into()),
                 color: 0xffffff, width: 320, height: 180,
             };
             let raster = request.render().unwrap();
@@ -295,7 +340,7 @@ mod tests {
             ),
         ] {
             let request = SvgRequest {
-                content: format!(r#"<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" width="2" height="2" {attributes}>{children}<rect width="2" height="2" fill="currentColor"/></svg>"#).into(),
+                content: SvgSource::Document(format!(r#"<?xml version="1.0"?><svg xmlns="http://www.w3.org/2000/svg" width="2" height="2" {attributes}>{children}<rect width="2" height="2" fill="currentColor"/></svg>"#).into()),
                 color, width: 2, height: 2,
             };
             let raster = request.render().unwrap();

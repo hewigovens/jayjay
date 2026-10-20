@@ -1,6 +1,7 @@
 mod blocks;
 mod html;
 mod images;
+mod mermaid;
 mod text;
 
 use pulldown_cmark::{Options, Parser};
@@ -9,6 +10,7 @@ pub use blocks::{
     MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow,
 };
 pub use images::MarkdownImageSource;
+pub use mermaid::MermaidDiagram;
 
 const DOCUMENT_PREFIX: &str = r#"<!DOCTYPE html>
 <html>
@@ -90,6 +92,24 @@ pre code {
     background: transparent;
     font-size: 1em;
 }
+.mermaid-diagram { position: relative; margin: 0 0 1em; overflow-x: auto; }
+.mermaid-diagram svg { display: block; max-width: 100%; height: auto; }
+.mermaid-diagram::after {
+    content: "Pinch to zoom";
+    position: absolute;
+    top: 6px;
+    right: 6px;
+    padding: 2px 8px;
+    border: 1px solid rgba(128, 128, 128, 0.35);
+    border-radius: 999px;
+    background: Canvas;
+    color: GrayText;
+    font: 11px -apple-system, BlinkMacSystemFont, sans-serif;
+    opacity: 0;
+    pointer-events: none;
+    transition: opacity 0.15s;
+}
+.mermaid-diagram:hover::after { opacity: 1; }
 blockquote {
     padding-left: 1em;
     border-left: 3px solid rgba(128, 128, 128, 0.35);

@@ -83,6 +83,24 @@ fn block_element(
         MarkdownBlock::Heading { level, text } => heading_block(*level, text, t),
         MarkdownBlock::Paragraph(text) => paragraph_block(text, t),
         MarkdownBlock::CodeBlock { language, text } => code_block(language.as_deref(), text, t),
+        MarkdownBlock::Mermaid(diagram) => {
+            let natural_width = diagram.width as f32 * t.scaled_code_font_size(16.) / 16.;
+            let width = available_width
+                .map(|width| f32::from(width) - 2. * DOCUMENT_PADDING_X)
+                .unwrap_or(natural_width)
+                .max(1.)
+                .min(natural_width);
+            div()
+                .id(("markdown-mermaid", diagram.index))
+                .w(px(width))
+                .h(px(width * diagram.height as f32 / diagram.width as f32))
+                .debug_selector(|| "markdown-mermaid".to_owned())
+                .child(crate::diff::svg_preview::mermaid_preview(
+                    diagram.clone(),
+                    t,
+                ))
+                .into_any_element()
+        }
         MarkdownBlock::Image {
             source, alt, align, ..
         } => image_block(

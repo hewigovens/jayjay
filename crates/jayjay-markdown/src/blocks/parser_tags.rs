@@ -81,10 +81,21 @@ impl BlockParser {
             }
             TagEnd::CodeBlock => {
                 if let Some(code) = self.code.take() {
-                    self.push_block(MarkdownBlock::CodeBlock {
-                        language: code.language,
-                        text: code.text,
-                    });
+                    if self.item.is_none()
+                        && code
+                            .language
+                            .as_deref()
+                            .is_some_and(crate::MermaidDiagram::is_language)
+                        && let Some(diagram) =
+                            crate::MermaidDiagram::render(&code.text, self.blocks.len())
+                    {
+                        self.push_block(MarkdownBlock::Mermaid(std::sync::Arc::new(diagram)));
+                    } else {
+                        self.push_block(MarkdownBlock::CodeBlock {
+                            language: code.language,
+                            text: code.text,
+                        });
+                    }
                 }
             }
             TagEnd::Item => {

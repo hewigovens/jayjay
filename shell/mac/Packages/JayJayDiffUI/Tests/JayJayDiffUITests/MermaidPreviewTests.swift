@@ -1,3 +1,4 @@
+import JayJayCore
 @testable import JayJayDiffUI
 import WebKit
 import XCTest
@@ -7,16 +8,13 @@ final class MermaidPreviewTests: XCTestCase {
     func testMermaidBlocksRenderWhilePageJavaScriptStaysDisabled() async throws {
         let coordinator = PreviewWebView.Coordinator()
         let webView = coordinator.makeWebView()
-        let html = """
-        <main><pre><code class="language-mermaid">flowchart LR
-          A --&gt; B</code></pre></main>
-        <script>document.body.dataset.pageScript = "ran"</script>
-        """
+        let html = renderMarkdownHtml(markdown: "```mermaid\nflowchart LR\n A --> B\n```") +
+            "<script>document.body.dataset.pageScript = \"ran\"</script>"
 
         coordinator.load(.renderedHTML(html, location: nil), in: webView)
 
         let script = """
-        document.querySelector('.mermaid-diagram svg.pele') !== null &&
+        document.querySelector('.mermaid-diagram svg.ondine') !== null &&
         document.querySelector('pre') === null &&
         document.body.dataset.pageScript === undefined
         """

@@ -15,13 +15,6 @@ struct PreviewWebView: NSViewRepresentable {
                 case .file: .rawHTML
             }
         }
-
-        var containsMermaid: Bool {
-            switch self {
-                case let .renderedHTML(html, _): html.contains(MermaidPreview.blockMarker)
-                case .file: false
-            }
-        }
     }
 
     let source: ContentSource
@@ -56,6 +49,7 @@ struct PreviewWebView: NSViewRepresentable {
 
             let webView = WKWebView(frame: .zero, configuration: configuration)
             webView.navigationDelegate = self
+            webView.allowsMagnification = true
             webView.setValue(false, forKey: "drawsBackground")
             PreviewContentBlocker.apply(to: configuration) { [weak self] ruleList in
                 self?.blockerDidResolve(ruleList != nil ? .ready : .unavailable)
@@ -86,7 +80,6 @@ struct PreviewWebView: NSViewRepresentable {
         }
 
         private func performLoad(_ source: ContentSource, in webView: WKWebView) {
-            MermaidPreview.install(in: webView.configuration.userContentController, enabled: source.containsMermaid)
             switch source {
                 case let .renderedHTML(html, location):
                     schemeHandler.setRoot(location?.root)

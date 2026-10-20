@@ -7,7 +7,7 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 | Crate / target | Responsibility |
 | --- | --- |
 | `jayjay-primitives` | jj-lib-free domain types: `Change`, `Bookmark`, `DiffHunk`, review types, hashing |
-| `jayjay-markdown` | Shared Markdown parser/event stream plus safe HTML renderer for rich previews |
+| `jayjay-markdown` | Shared Markdown parser/event stream, local Mermaid compiler and SVG normalization, plus safe HTML renderer for rich previews |
 | `jj-diff` | Diff engine: Histogram line diff, word diff, tree-sitter syntax, context collapse, wrapping, conflict display, canonical change groups, review group fingerprints |
 | `jayjay-review` | Review marks, hunk baselines, notes, and reconciliation with optional native filesystem persistence (uses `jj-diff`) |
 | `jayjay-network` | Platform-neutral HTTP request/response policy with an optional blocking adapter |
@@ -20,6 +20,7 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 
 Dependency direction (never invert): `primitives` is the leaf → `jj-diff` (may use `primitives`) → `jayjay-review` → `jayjay-core` → `jayjay-uniffi` / `shell/gpui`.
 
+- Mermaid fences compile in `jayjay-markdown`; its SVG adapter resolves native colors, fonts, and CSS expressions for both shells. SwiftUI receives finished SVG through the existing HTML bridge and keeps page JavaScript disabled; GPUI rasterizes the shared diagram with its current theme.
 - New shared types go in `jayjay-primitives`, not `jayjay-core`, so review/CLI code stays jj-lib-light.
 - Anything two surfaces must agree on (change groups, review identity, group fingerprints, note reconciliation) lives at or below `jayjay-review`/`jj-diff` and is consumed by all surfaces. Do not re-implement a diff, fingerprint, or identity computation per surface; the GUI and `jayjay review notes` must reconcile through the same provider or notes silently report stale.
 - App-owned headless commands parse, execute, and format their outcomes once in `jayjay-core`; GPUI calls that dispatcher directly and SwiftUI calls it through one UniFFI entry point. Shell code only writes stdout/stderr and exits.

@@ -11,6 +11,7 @@ pub enum MarkdownBlock {
         text: String,
     },
     Paragraph(String),
+    Mermaid(std::sync::Arc<crate::MermaidDiagram>),
     CodeBlock {
         language: Option<String>,
         text: String,
@@ -73,6 +74,7 @@ pub(super) fn block_text(block: &MarkdownBlock) -> String {
         | MarkdownBlock::Paragraph(text)
         | MarkdownBlock::CodeBlock { text, .. }
         | MarkdownBlock::BlockQuote(text) => text.clone(),
+        MarkdownBlock::Mermaid(diagram) => diagram.source().to_owned(),
         MarkdownBlock::Image { source, alt, .. } => image_text(source, alt),
         MarkdownBlock::List { start, items } => items
             .iter()

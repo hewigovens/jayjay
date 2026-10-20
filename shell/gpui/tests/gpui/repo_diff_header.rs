@@ -468,7 +468,7 @@ fn raster_previews_fit_without_covering_the_header(cx: &mut TestAppContext) {
 #[gpui::test]
 fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     let target = "docs/README.md";
-    let markdown = "# Title\n\n- [x] Done\n- [ ] Todo\n";
+    let markdown = "# Title\n\n- [x] Done\n- [ ] Todo\n\n```mermaid\nflowchart LR\n A --> B\n style A rx:10,ry:10\n```\n";
     let (_fixture, view, cx) = open_repo_with_selected_file_content(cx, target, markdown);
 
     let toggle = cx
@@ -501,6 +501,10 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert!(cx.debug_bounds("markdown-preview-pane").is_some());
+    assert!(cx.debug_bounds("markdown-mermaid").is_some());
+    cx.update(|window, cx| window.simulate_next_frame(cx));
+    settle_visual(cx);
+    assert!(cx.debug_bounds("svg-preview-image").is_some());
     let rich_gutter_width = cx
         .debug_bounds("rich-preview-gutter")
         .expect("rich preview gutter")

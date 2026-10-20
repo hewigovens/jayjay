@@ -16,7 +16,7 @@ pub fn parse_markdown_blocks(markdown: &str) -> Vec<MarkdownBlock> {
 
 #[derive(Default)]
 pub(super) struct BlockParser {
-    blocks: Vec<MarkdownBlock>,
+    pub(super) blocks: Vec<MarkdownBlock>,
     text: Option<TextBuilder>,
     pub(super) code: Option<CodeBuilder>,
     pub(super) list_stack: Vec<ListBuilder>,
