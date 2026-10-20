@@ -74,8 +74,7 @@ struct CliLogin {
 }
 
 impl RepoHost {
-    /// Cursor goes through its own CLI.
-    pub const TOKEN_HOSTS: [Self; 3] = [Self::GitHub, Self::GitLab, Self::Codeberg];
+    pub const TOKEN_HOSTS: [Self; 4] = [Self::GitHub, Self::GitLab, Self::Codeberg, Self::Cursor];
 
     pub fn token_source(self) -> Option<TokenSource> {
         self.token().map(|token| token.source)
@@ -125,7 +124,12 @@ impl RepoHost {
                 refresh: None,
                 credential_request: Some("protocol=https\nhost=codeberg.org\n\n"),
             }),
-            Self::Cursor => None,
+            Self::Cursor => Some(CliLogin {
+                binary: "origin",
+                print_token: &["credential-helper", "get"],
+                refresh: None,
+                credential_request: Some("protocol=https\nhost=origin.cursor.com\n\n"),
+            }),
         }
     }
 

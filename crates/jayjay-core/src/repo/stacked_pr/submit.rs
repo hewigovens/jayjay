@@ -69,7 +69,7 @@ impl Repo {
 
         let layers: Vec<_> = targets
             .iter()
-            .map(|target| forge.submit_layer(self, target))
+            .map(|target| forge.submit_layer(target))
             .collect();
 
         let mut linked = false;

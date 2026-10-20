@@ -34,10 +34,8 @@ impl Repo {
         };
         let lookup = self.pull_request_info_for_remote(&remote, bookmark);
         match remote.host {
-            RepoHost::Cursor => {
-                cursor::open_or_create_url(self, bookmark, lookup, remote.web_url())
-                    .map_err(JayError::internal)
-            }
+            RepoHost::Cursor => cursor::open_or_create_url(self, &remote, bookmark, lookup)
+                .map_err(JayError::internal),
             _ => Ok(open_url_for_lookup(lookup, || {
                 let base = if remote.host == RepoHost::Codeberg {
                     self.default_pull_request_base()
@@ -88,7 +86,7 @@ impl Repo {
             RepoHost::GitHub => github::pr_info(remote, bookmark),
             RepoHost::Codeberg => codeberg::pr_info(remote, bookmark),
             RepoHost::GitLab => gitlab::pr_info(remote, bookmark),
-            RepoHost::Cursor => cursor::pr_info(self, bookmark),
+            RepoHost::Cursor => cursor::pr_info(remote, bookmark),
         }
     }
 }

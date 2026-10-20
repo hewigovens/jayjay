@@ -6,7 +6,7 @@ use jayjay_core::{HostLogin, JayError, RepoHost, SyncToken};
 
 use super::SettingsView;
 use super::shared::form_section;
-use super::tools::{ToolState, detected_cli_row, status_row};
+use super::tools::{ToolState, status_row};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::primitives::button;
@@ -33,15 +33,6 @@ pub(super) fn forge_section(
             rows.push(sign_in_row(sign_in, t, cx));
         }
     }
-    rows.push(
-        detected_cli_row(
-            "origin",
-            glyph::GIT_MERGE,
-            diagnostics.map(|d| &d.origin),
-            t,
-        )
-        .into_any_element(),
-    );
     form_section("Forges", rows, t).into_any_element()
 }
 

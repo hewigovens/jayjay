@@ -60,7 +60,7 @@ fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestApp
     );
     assert!(
         settings_cx
-            .debug_bounds("settings-tool-row-origin")
+            .debug_bounds("settings-tool-row-Cursor")
             .is_some()
     );
     let copy_config_icon = settings_cx
@@ -299,11 +299,6 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
             view.set_cli_diagnostics(
                 CliDiagnostics {
                     jj: missing,
-                    origin: jayjay_core::CliStatus {
-                        is_installed: true,
-                        version: "1.2.3".to_owned(),
-                        path: "/mock/bin/origin".to_owned(),
-                    },
                     forge_logins: vec![
                         HostLogin {
                             host: RepoHost::GitHub,
@@ -320,6 +315,12 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
                         HostLogin {
                             host: RepoHost::Codeberg,
                             source: None,
+                            signed_in: false,
+                            can_sign_in: false,
+                        },
+                        HostLogin {
+                            host: RepoHost::Cursor,
+                            source: Some(TokenSource::Cli("origin")),
                             signed_in: false,
                             can_sign_in: false,
                         },
@@ -360,7 +361,7 @@ fn integrations_reuse_detection_snapshots_across_page_navigation(cx: &mut TestAp
         );
         assert!(
             settings_cx
-                .debug_bounds("settings-tool-state-origin-found")
+                .debug_bounds("settings-tool-state-Cursor-found")
                 .is_some()
         );
         assert!(

@@ -8,6 +8,7 @@ use crate::repo::Repo;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
 use crate::repo::pull_requests::ForgeClient;
 use crate::repo::pull_requests::codeberg::codeberg_token;
+use crate::repo::pull_requests::cursor::Api as CursorApi;
 use crate::repo::pull_requests::github::Api as GitHubApi;
 use crate::types::{JayError, JayResult, SubmittedLayer};
 
@@ -32,16 +33,16 @@ impl StackForge {
                 self.gitlab().preflight()?;
                 Ok(repo.default_pull_request_base())
             }
-            RepoHost::Cursor => cursor::preflight(repo),
+            RepoHost::Cursor => cursor::preflight(&self.cursor()),
             RepoHost::Codeberg => self.codeberg().preflight(),
         }
     }
 
-    pub(super) fn submit_layer(&self, repo: &Repo, target: &ForgeTarget) -> SubmittedLayer {
+    pub(super) fn submit_layer(&self, target: &ForgeTarget) -> SubmittedLayer {
         match self.remote.host {
             RepoHost::GitHub => github::create_or_update_pr(&self.github(), target),
             RepoHost::GitLab => gitlab::create_or_update_mr(&self.gitlab(), &self.remote, target),
-            RepoHost::Cursor => cursor::create_or_update_pr(repo, target),
+            RepoHost::Cursor => cursor::create_or_update_pr(&self.cursor(), target),
             RepoHost::Codeberg => self.codeberg().submit_layer(target),
         }
     }
@@ -82,6 +83,10 @@ impl StackForge {
 
     fn gitlab(&self) -> ForgeClient {
         ForgeClient::gitlab(HttpClient::default(), RepoHost::GitLab)
+    }
+
+    fn cursor(&self) -> CursorApi {
+        CursorApi::for_remote(&self.remote)
     }
 
     fn codeberg(&self) -> CodebergStack<'_, HttpClient> {

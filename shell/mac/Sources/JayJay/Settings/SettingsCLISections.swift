@@ -69,15 +69,11 @@ struct SettingsCLISections: View {
                         .font(.system(size: 11))
                         .foregroundStyle(.red)
                 }
-                detectedCliRow("origin", icon: "arrow.triangle.pull", status: diagnostics.value?["origin"])
             }
         }
         .task {
             await diagnostics.load {
-                [
-                    "jj": checkJjEnvironment(),
-                    "origin": checkOriginEnvironment()
-                ]
+                ["jj": checkJjEnvironment()]
             }
         }
         .task { await forgeLogins.load(Self.readLogins) }

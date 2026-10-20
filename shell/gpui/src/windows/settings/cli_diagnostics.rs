@@ -6,7 +6,6 @@ use super::SettingsView;
 #[derive(Clone, Debug)]
 pub struct CliDiagnostics {
     pub jj: CliStatus,
-    pub origin: CliStatus,
     pub forge_logins: Vec<HostLogin>,
 }
 
@@ -14,7 +13,6 @@ impl CliDiagnostics {
     pub(super) fn load() -> Self {
         Self {
             jj: jayjay_core::check_jj_environment(),
-            origin: jayjay_core::check_origin_environment(),
             forge_logins: RepoHost::TOKEN_HOSTS.map(RepoHost::login).to_vec(),
         }
     }

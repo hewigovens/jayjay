@@ -223,11 +223,6 @@ fn clone_git_repo(
 }
 
 #[uniffi::export]
-fn check_origin_environment() -> CliStatus {
-    jayjay_core::check_origin_environment()
-}
-
-#[uniffi::export]
 fn is_valid_bookmark_name(name: String) -> bool {
     jayjay_core::is_valid_bookmark_name(&name)
 }

@@ -15,6 +15,8 @@ pub(crate) struct ForgeClient<F: Fetch = HttpClient, T: TokenProvider = RepoHost
     host: RepoHost,
     root: Cow<'static, str>,
     headers: &'static [(&'static str, &'static str)],
+    /// A cheap authenticated GET that proves the login works.
+    probe: &'static str,
 }
 
 impl<F: Fetch, T: TokenProvider> ForgeClient<F, T> {
@@ -28,6 +30,7 @@ impl<F: Fetch, T: TokenProvider> ForgeClient<F, T> {
                 ("Accept", "application/vnd.github+json"),
                 ("X-GitHub-Api-Version", "2022-11-28"),
             ],
+            probe: "user",
         }
     }
 
@@ -38,6 +41,18 @@ impl<F: Fetch, T: TokenProvider> ForgeClient<F, T> {
             host: RepoHost::GitLab,
             root: "https://gitlab.com/api/v4".into(),
             headers: &[],
+            probe: "user",
+        }
+    }
+
+    pub(crate) fn cursor(fetch: F, tokens: T) -> Self {
+        Self {
+            fetch,
+            tokens,
+            host: RepoHost::Cursor,
+            root: "https://api.cursor.com/v1/origin".into(),
+            headers: &[],
+            probe: "rate_limit",
         }
     }
 
@@ -63,11 +78,13 @@ impl<F: Fetch, T: TokenProvider> ForgeClient<F, T> {
                 "This needs a {name} login. {hint}"
             )));
         }
-        self.get::<IgnoredAny>("user").map(drop).map_err(|error| {
-            JayError::internal(format!(
-                "{name} didn't accept the current login: {error}. {hint}"
-            ))
-        })
+        self.get::<IgnoredAny>(self.probe)
+            .map(drop)
+            .map_err(|error| {
+                JayError::internal(format!(
+                    "{name} didn't accept the current login: {error}. {hint}"
+                ))
+            })
     }
 
     pub(crate) fn get<R: DeserializeOwned>(&self, path: &str) -> Result<R, ApiError> {

@@ -37,7 +37,7 @@ jj bookmark set <topic> -r @
 jj git push --bookmark <topic>
 ```
 
-Open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Cursor**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported. For Cursor Origin, JayJay runs `origin pr create` when no PR exists for that bookmark. GitHub-mirrored Origin remotes cannot host Origin PRs; JayJay reports that error instead of opening the codebase page.
+Open the bookmark context menu in JayJay and choose **Pull Request on GitHub** or **Pull Request on Cursor**. For GitHub, `gh pr create --draft --base main --head <topic>` is also supported. For Cursor Origin, JayJay creates the PR through the Origin API, using the `origin auth login` token, when no PR exists for that bookmark. GitHub-mirrored Origin remotes cannot host Origin PRs; JayJay reports that error instead of opening the codebase page.
 
 ## Update after review
 

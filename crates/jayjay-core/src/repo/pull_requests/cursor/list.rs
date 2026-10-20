@@ -1,288 +1,165 @@
-use serde::Deserialize;
-use serde_json::Value;
+use jayjay_network::Fetch;
 
-use super::super::super::Repo;
-use super::super::super::environment::origin_binary;
 use super::super::PrLookup;
-use super::super::checks::{self, CheckState};
-use crate::types::{ChecksStatus, PrInfo, PrState};
+use super::api::Api;
+use super::pull_request::OriginPull;
+use super::status::OriginCheckRun;
+use crate::repo::forge_auth::TokenProvider;
+use crate::repo::hosted_repo::HostedRepo;
+use crate::types::{ChecksStatus, PrState};
 
-const JSON_FIELDS: &str = "number,title,url,status,ciState";
-
-/// `origin pr list` argv with `--head` so an option-shaped bookmark is never a flag.
-fn pr_list_args(bookmark: &str) -> [&str; 10] {
-    [
-        "pr",
-        "list",
-        "--state",
-        "all",
-        "--limit",
-        "30",
-        "--json",
-        JSON_FIELDS,
-        "--head",
-        bookmark,
-    ]
+pub(crate) fn pr_info(remote: &HostedRepo, bookmark: &str) -> PrLookup {
+    lookup(&Api::for_remote(remote), bookmark)
 }
 
-/// Confirmed list (possibly empty). `Err` means the lookup failed, so stacked submit must not create.
-fn listed_prs(success: bool, stdout: &str, stderr: &str) -> Result<Vec<OriginPrResponse>, String> {
-    if !success {
-        return if is_no_pr_error(stderr) {
-            Ok(Vec::new())
-        } else {
-            Err(stderr.trim().to_owned())
-        };
-    }
-    parse_prs(stdout).ok_or_else(|| "origin pr list returned invalid JSON".to_owned())
-}
-
-fn list_prs(repo: &Repo, bookmark: &str) -> Result<Vec<OriginPrResponse>, String> {
-    match repo.command_output(&origin_binary(), &pr_list_args(bookmark), "origin pr list") {
-        Ok(output) => listed_prs(
-            output.status.success(),
-            &Repo::stdout_text(&output),
-            &Repo::stderr_text(&output),
-        ),
-        Err(error) => Err(error.to_string()),
-    }
-}
-
-pub(crate) fn pr_info(repo: &Repo, bookmark: &str) -> PrLookup {
-    match list_prs(repo, bookmark).and_then(pick_pr) {
-        Ok(Some(pr)) => PrLookup::Found(pr),
+fn lookup(api: &Api<impl Fetch, impl TokenProvider>, bookmark: &str) -> PrLookup {
+    match find_pull(api, bookmark) {
+        Ok(Some((pull, state))) => {
+            let checks = pull
+                .head_sha()
+                .and_then(|sha| api.check_runs(sha).ok())
+                .map_or(ChecksStatus::None, |runs| OriginCheckRun::rollup(&runs));
+            PrLookup::Found(pull.into_pr_info(state, checks))
+        }
         Ok(None) => PrLookup::NotFound,
         Err(_) => PrLookup::Unknown,
     }
 }
 
-pub(crate) fn open_pr(repo: &Repo, bookmark: &str) -> Result<Option<(u32, String)>, String> {
-    Ok(pick_pr(list_prs(repo, bookmark)?)?
-        .filter(|pr| pr.state == PrState::Open)
-        .map(|pr| (pr.number, pr.url)))
+pub(crate) fn open_pr(
+    api: &Api<impl Fetch, impl TokenProvider>,
+    bookmark: &str,
+) -> Result<Option<(u32, String)>, String> {
+    Ok(find_pull(api, bookmark)?
+        .filter(|(_, state)| *state == PrState::Open)
+        .map(|(pull, _)| (pull.number, pull.web_url)))
 }
 
-/// Origin reports a confirmed absence as an empty list or "no open or draft change".
-fn is_no_pr_error(stderr: &str) -> bool {
-    stderr.contains("No open or draft change found for branch")
-        || stderr.contains("No matching changes")
-}
-
-fn parse_prs(json: &str) -> Option<Vec<OriginPrResponse>> {
-    serde_json::from_str(json).ok()
-}
-
-fn pick_pr(prs: Vec<OriginPrResponse>) -> Result<Option<PrInfo>, String> {
+/// The open pull request, else the newest one. `Err` means the lookup failed, so nothing may be created.
+fn find_pull(
+    api: &Api<impl Fetch, impl TokenProvider>,
+    bookmark: &str,
+) -> Result<Option<(OriginPull, PrState)>, String> {
     let mut fallback = None;
-    for pr in prs {
-        let state = pr_state(&pr.status)?;
-        let info = pr.into_pr_info(state);
+    for pull in api.pulls(bookmark).map_err(|error| error.to_string())? {
+        let state = pull.pr_state()?;
         if state == PrState::Open {
-            return Ok(Some(info));
+            return Ok(Some((pull, state)));
         }
-        fallback.get_or_insert(info);
+        fallback.get_or_insert((pull, state));
     }
     Ok(fallback)
 }
 
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct OriginPrResponse {
-    #[serde(deserialize_with = "deserialize_pr_number")]
-    number: u32,
-    status: String,
-    title: String,
-    url: String,
-    #[serde(default)]
-    ci_state: Option<OriginCiState>,
-}
-
-/// Origin CLI `--json` emits lowercase status strings; unknown values make the lookup uncertain so they can never trigger PR creation.
-fn pr_state(status: &str) -> Result<PrState, String> {
-    match status {
-        "draft" | "open" => Ok(PrState::Open),
-        "closed" => Ok(PrState::Closed),
-        "merged" => Ok(PrState::Merged),
-        _ => Err(format!(
-            "origin pr list returned unsupported status {status:?}"
-        )),
-    }
-}
-
-impl OriginPrResponse {
-    fn into_pr_info(self, state: PrState) -> PrInfo {
-        let checks = self.ci_state.as_ref().map_or(ChecksStatus::None, |ci| {
-            checks::rollup(
-                ci.check_run_groups
-                    .iter()
-                    .flat_map(|group| group.check_runs.iter())
-                    .map(OriginCheckRun::state),
-            )
-        });
-        PrInfo {
-            number: self.number,
-            state,
-            title: self.title,
-            url: self.url,
-            checks,
-        }
-    }
-}
-
-fn deserialize_pr_number<'de, D: serde::Deserializer<'de>>(
-    deserializer: D,
-) -> Result<u32, D::Error> {
-    let value = Value::deserialize(deserializer)?;
-    match value {
-        Value::Number(n) => n
-            .as_u64()
-            .and_then(|n| u32::try_from(n).ok())
-            .ok_or_else(|| serde::de::Error::custom("pull request number out of range")),
-        Value::String(s) => s
-            .parse()
-            .map_err(|_| serde::de::Error::custom("invalid pull request number")),
-        _ => Err(serde::de::Error::custom("expected pull request number")),
-    }
-}
-
-#[derive(Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct OriginCiState {
-    #[serde(default)]
-    check_run_groups: Vec<OriginCheckRunGroup>,
-}
-
-#[derive(Deserialize, Default)]
-#[serde(rename_all = "camelCase")]
-struct OriginCheckRunGroup {
-    #[serde(default)]
-    check_runs: Vec<OriginCheckRun>,
-}
-
-#[derive(Deserialize)]
-struct OriginCheckRun {
-    #[serde(default)]
-    status: Value,
-    conclusion: Option<Value>,
-}
-
-impl OriginCheckRun {
-    fn state(&self) -> CheckState {
-        if !is_completed(&self.status) {
-            CheckState::Pending
-        } else if is_success(self.conclusion.as_ref()) {
-            CheckState::Success
-        } else {
-            CheckState::Failure
-        }
-    }
-}
-
-fn is_completed(status: &Value) -> bool {
-    match status {
-        Value::String(s) => s.eq_ignore_ascii_case("completed"),
-        Value::Number(n) => n.as_i64() == Some(3),
-        _ => false,
-    }
-}
-
-fn is_success(conclusion: Option<&Value>) -> bool {
-    match conclusion {
-        Some(Value::String(s)) => s.eq_ignore_ascii_case("success"),
-        Some(Value::Number(n)) => n.as_i64() == Some(1),
-        _ => false,
-    }
-}
-
 #[cfg(test)]
 mod tests {
+    use jayjay_network::{MockFetch, NetError, Request, Response};
+
     use super::*;
-    use crate::types::PrState;
+    use crate::repo::forge_auth::{ForgeToken, TokenSource};
+    use crate::repo::hosted_repo::RepoHost;
 
-    fn parse_pick(json: &str) -> Result<Option<PrInfo>, String> {
-        pick_pr(parse_prs(json).unwrap())
+    fn run(pulls: &'static str, checks: &'static str) -> PrLookup {
+        let fetch = MockFetch::new(move |request: &Request| {
+            if request.url.contains("/check-runs") {
+                Response::ok(200, checks)
+            } else {
+                Response::ok(200, pulls)
+            }
+        });
+        lookup(&api(&fetch), "feat/x")
+    }
+
+    fn api<F: Fetch>(fetch: F) -> Api<F, Option<ForgeToken>> {
+        let token = Some(ForgeToken {
+            secret: "t".into(),
+            source: TokenSource::Cli("origin"),
+        });
+        let remote = HostedRepo {
+            host: RepoHost::Cursor,
+            owner: "o".into(),
+            repo: "r".into(),
+        };
+        Api::new(fetch, token, &remote)
     }
 
     #[test]
-    fn pick_prefers_open_or_draft_then_falls_back() {
-        let mixed = parse_pick(
-            r#"[{"number":"1","status":"merged","title":"old","url":"https://cursor.com/codebase/o/r/pull/1"},{"number":2,"status":"draft","title":"wip","url":"https://cursor.com/codebase/o/r/pull/2"}]"#,
-        )
-        .unwrap()
-        .unwrap();
-        assert_eq!(mixed.number, 2);
-        assert_eq!(mixed.state, PrState::Open);
-        assert_eq!(mixed.checks, ChecksStatus::None);
+    fn prefers_the_open_pull_and_rolls_up_its_checks() {
+        let pulls = r#"{"pullRequests":[
+            {"number":"9","state":"closed","merged":true,"title":"old","webUrl":"https://cursor.com/codebase/o/r/pull/9"},
+            {"number":"12","state":"open","draft":true,"title":"wip","webUrl":"https://cursor.com/codebase/o/r/pull/12","head":{"ref":"feat/x","sha":"abc"}}
+        ]}"#;
+        let checks =
+            r#"{"checkRuns":[{"status":"completed","conclusion":"success"},{"status":"failing"}]}"#;
+        let PrLookup::Found(pr) = run(pulls, checks) else {
+            panic!("expected a pull request");
+        };
+        assert_eq!((pr.number, pr.state), (12, PrState::Open));
+        assert_eq!(pr.checks, ChecksStatus::Pending);
 
-        let merged = parse_pick(
-            r#"[{"number":9,"status":"merged","title":"done","url":"https://cursor.com/codebase/o/r/pull/9"}]"#,
-        )
-        .unwrap()
-        .unwrap();
-        assert_eq!(merged.number, 9);
-        assert_eq!(merged.state, PrState::Merged);
-        assert!(parse_pick("[]").unwrap().is_none());
+        let merged = r#"{"pullRequests":[{"number":"9","state":"closed","merged":true,"title":"old","webUrl":"u"}]}"#;
+        let PrLookup::Found(pr) = run(merged, "{}") else {
+            panic!("expected a pull request");
+        };
+        assert_eq!((pr.state, pr.checks), (PrState::Merged, ChecksStatus::None));
     }
 
     #[test]
-    fn parse_string_and_numeric_check_states() {
-        let pending = parse_pick(
-            r#"[{"number":4,"status":"open","title":"feat","url":"https://cursor.com/codebase/o/r/pull/4","ciState":{"checkRunGroups":[{"checkRuns":[{"name":"ci","status":"completed","conclusion":"success"},{"name":"lint","status":2}]}]}}]"#,
-        )
-        .unwrap()
-        .unwrap();
-        assert_eq!(pending.checks, ChecksStatus::Pending);
-
-        let failing = parse_pick(
-            r#"[{"number":5,"status":"open","title":"feat","url":"https://cursor.com/codebase/o/r/pull/5","ciState":{"checkRunGroups":[{"checkRuns":[{"name":"ci","status":3,"conclusion":2}]}]}}]"#,
-        )
-        .unwrap()
-        .unwrap();
-        assert_eq!(failing.checks, ChecksStatus::Failing);
-
-        let passing = parse_pick(
-            r#"[{"number":7,"status":"closed","title":"feat","url":"https://cursor.com/codebase/o/r/pull/7","ciState":{"checkRunGroups":[{"checkRuns":[{"name":"ci","status":"completed","conclusion":"success"},{"name":"lint","status":3,"conclusion":1}]}]}}]"#,
-        )
-        .unwrap()
-        .unwrap();
-        assert_eq!(passing.checks, ChecksStatus::Passing);
-        assert_eq!(passing.state, PrState::Closed);
+    fn check_rollup_includes_later_pages_and_discards_partial_results() {
+        let pulls = r#"{"pullRequests":[{"number":"1","state":"open","title":"t","webUrl":"u","head":{"sha":"abc"}}]}"#;
+        let first_page = serde_json::json!({
+            "checkRuns": vec![serde_json::json!({"status":"completed","conclusion":"success"}); 100],
+            "nextPageToken": "next/+?=&",
+        })
+        .to_string();
+        for (last_page, expected) in [
+            (
+                Some(r#"{"checkRuns":[{"status":"completed","conclusion":"failure"}]}"#),
+                ChecksStatus::Failing,
+            ),
+            (
+                Some(r#"{"checkRuns":[{"status":"in_progress"}]}"#),
+                ChecksStatus::Pending,
+            ),
+            (None, ChecksStatus::None),
+        ] {
+            let fetch = MockFetch::new(|request: &Request| {
+                if !request.url.contains("/check-runs") {
+                    Response::ok(200, pulls)
+                } else if request.url.contains("pageToken=") {
+                    assert!(request.url.ends_with("&pageToken=next%2F%2B%3F%3D%26"));
+                    match last_page {
+                        Some(body) => Response::ok(200, body),
+                        None => Err(NetError::Transport),
+                    }
+                } else {
+                    Response::ok(200, first_page.clone())
+                }
+            });
+            let PrLookup::Found(pr) = lookup(&api(&fetch), "feat/x") else {
+                panic!("expected a pull request");
+            };
+            assert_eq!(pr.checks, expected);
+        }
     }
 
     #[test]
-    fn unknown_status_keeps_lookup_uncertain() {
-        let error = parse_pick(
-            r#"[{"number":6,"status":"superseded","title":"future","url":"https://cursor.com/codebase/o/r/pull/6"}]"#,
-        )
-        .unwrap_err();
-        assert!(error.contains("unsupported status \"superseded\""));
-    }
-
-    #[test]
-    fn list_failure_is_unknown_not_absence() {
-        assert!(listed_prs(false, "", "Not authenticated. Run `origin auth login`.").is_err());
-        assert!(
-            listed_prs(
-                false,
-                "",
-                "No open or draft change found for branch \"feat-x\" in acme/checkout."
-            )
-            .unwrap()
-            .is_empty()
-        );
-        assert!(listed_prs(true, "[]", "").unwrap().is_empty());
-        assert!(listed_prs(true, "{", "").is_err());
-        assert!(is_no_pr_error(
-            "No open or draft change found for branch \"feat-x\" in acme/checkout."
+    fn only_a_confirmed_empty_list_is_absence() {
+        assert!(matches!(
+            run(r#"{"pullRequests":[]}"#, "{}"),
+            PrLookup::NotFound
         ));
-        assert!(!is_no_pr_error(
-            "Not authenticated. Run `origin auth login`."
+        assert!(matches!(
+            run(
+                r#"{"pullRequests":[{"number":"1","state":"superseded","title":"t","webUrl":"u"}]}"#,
+                "{}"
+            ),
+            PrLookup::Unknown
         ));
-    }
-
-    #[test]
-    fn argv_puts_bookmark_on_head() {
-        assert_eq!(pr_list_args("feat-x")[8..], ["--head", "feat-x"]);
-        assert_eq!(pr_list_args("--repo=evil")[8..], ["--head", "--repo=evil"]);
+        let offline = MockFetch::new(|_| Err(NetError::Transport));
+        assert!(matches!(
+            lookup(&api(&offline), "feat/x"),
+            PrLookup::Unknown
+        ));
     }
 }

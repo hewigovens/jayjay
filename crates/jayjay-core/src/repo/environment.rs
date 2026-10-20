@@ -276,10 +276,6 @@ pub(crate) fn require_jj() -> JayResult<String> {
     Ok(status.path)
 }
 
-pub(crate) fn origin_binary() -> String {
-    find_binary("origin")
-}
-
 fn check_cli(binary: &str) -> CliStatus {
     let resolved = find_binary(binary);
     let is_fallback = resolved == binary;
@@ -330,10 +326,6 @@ fn extract_version(raw: &str) -> String {
 
 pub fn check_jj_environment() -> CliStatus {
     check_cli("jj")
-}
-
-pub fn check_origin_environment() -> CliStatus {
-    check_cli("origin")
 }
 
 #[cfg(test)]
