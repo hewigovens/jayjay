@@ -45,11 +45,11 @@ The sibling-workspace rule and the `jj workspace add` recipe are in `AGENTS.md` 
 
 Each JJ workspace gets its own Cargo `target/` by default. Preserve that isolation for concurrent builds; do not share a `CARGO_TARGET_DIR` because Cargo will serialize processes on the shared build-directory lock.
 
-Preserve the configured compiler wrapper for Rust-backed commands. Kache is preferred for concurrent workspaces because it normalizes checkout paths and restores cached libraries, build outputs, and executables into each isolated target. On filesystems that support clones, restored outputs share physical storage with the cache until either copy changes.
+Rust builds are cached by mbx, which `mbx setup` installs as a `cargo` shim on `PATH`; no `rustc-wrapper` is configured. Keep running plain `cargo` so the shim applies. mbx shares compiled work across checkouts and reflinks it into each isolated target, so restored outputs share physical storage with the cache until either copy changes.
 
-Keep each workspace's default target when builds run concurrently. Let the Kache configuration manage incremental artifacts; do not force a shared target or override incremental settings.
+Keep each workspace's default target when builds run concurrently. Let mbx manage incremental artifacts; do not force a shared target or override incremental settings.
 
-Compiler caches do not replace workspace cleanup. When removing a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate. If a sandbox cannot use the configured wrapper or daemon, use `RUSTC_WRAPPER=""` for that command rather than changing the developer's global Cargo or cache configuration.
+Compiler caches do not replace workspace cleanup. When removing a completed sibling directory, remove its `target/` with it so old per-workspace artifacts do not accumulate. If a sandbox cannot run the mbx shim, run the toolchain's cargo directly for that command rather than changing the developer's global Cargo or cache configuration.
 
 ## Common Commands
 
