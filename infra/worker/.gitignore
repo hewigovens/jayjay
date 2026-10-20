@@ -1,4 +1,5 @@
 build/
 .wrangler/
 *.log
-.dev.vars
+.dev.vars*
+.env*

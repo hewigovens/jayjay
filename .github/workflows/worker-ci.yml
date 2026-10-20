@@ -1,0 +1,59 @@
+name: Worker CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "infra/worker/**"
+      - "infra/worker.just"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/worker-ci.yml"
+  pull_request:
+    paths:
+      - "infra/worker/**"
+      - "infra/worker.just"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".github/workflows/worker-ci.yml"
+
+permissions:
+  contents: read
+
+concurrency:
+  group: worker-ci-${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  worker:
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    defaults:
+      run:
+        working-directory: infra/worker
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+      - uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+          components: rustfmt, clippy
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: worker
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+      - name: Install worker tools
+        run: |
+          cargo install --locked --version 0.8.7 worker-build
+          npm install --global wrangler@4.100.0
+      - name: Check Rust and migrations
+        run: |
+          cargo fmt -p jayjay-worker -- --check
+          cargo clippy -p jayjay-worker --locked --all-targets -- -D warnings
+          cargo clippy -p jayjay-worker --locked --target wasm32-unknown-unknown -- -D warnings
+          python3 scripts/verify_migrations.py
+      - name: Test Rust, local Worker, and D1
+        run: cargo test -p jayjay-worker --locked -- --include-ignored

@@ -7,6 +7,8 @@ database := "jayjay_stats"
 
 list:
     @echo "worker recipes:"
+    @echo "  just worker::build            Build the Rust Worker locally"
+    @echo "  just worker::test             Run Rust and local Worker/D1 tests"
     @echo "  just worker::check-migrations Verify migration names and immutable checksums"
     @echo "  just worker::apply-schema     Apply pending migrations to remote D1"
     @echo "  just worker::deploy           Verify, migrate, verify remote D1, then deploy"
@@ -16,6 +18,12 @@ list:
     @echo "  just worker::platforms        Current-month platform split"
     @echo "  just worker::systems [limit]  Current-month OS/arch split, default top 30"
     @echo "  just worker::recent [limit]   Recent telemetry rows, default 20"
+
+build:
+    cd "{{ worker_dir }}" && worker-build --release -- --locked
+
+test: check-migrations
+    cargo test -p jayjay-worker --locked -- --include-ignored
 
 check-migrations:
     cd "{{ worker_dir }}" && python3 scripts/verify_migrations.py
