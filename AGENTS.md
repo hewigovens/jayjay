@@ -59,6 +59,14 @@ At task completion, describe the workspace's current change with `jj describe` w
 
 Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
 
+At task completion, after the last repository-fixture tests and any workspace-directory removal, clean orphaned repo config:
+
+```bash
+printf 'y\n' | JJ_INTERACTIVE=1 jj config gc
+```
+
+jj 0.46 has no `-y` flag; `JJ_INTERACTIVE=1` lets it read the piped confirmation without a terminal. GC covers all missing repository paths, including those outside this task, and preserves config for existing repositories.
+
 ### Do not snapshot unless you mean to
 
 `jj st`, `jj log`, `jj diff`, `jj describe`, `jj commit`, `jj new`, `jj git fetch`, and `jayjay review` can snapshot the working copy. Two of those in parallel in the same workspace can create divergent `@` commits.

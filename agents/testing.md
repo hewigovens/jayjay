@@ -8,6 +8,8 @@ The validation policy and inner-loop commands are in [AGENTS.md](../AGENTS.md#in
 
 `just test` is `cargo test --workspace` (includes GPUI). Use it for changes spanning crates or publication when focused tests do not cover the affected boundary. `just test-app` and unfiltered `just test-ui` rebuild FFI, the Help Book, and the Xcode app — skip them unless Swift/app behavior changed and a package-scoped Rust test cannot prove it. `just test-gpui` after `just test` is redundant.
 
+Temporary repository fixtures can leave repo-scoped config in jj's user config directory (for example, `~/.config/jj/repos`) after the repositories are deleted. After the task's last fixture test, run `jj config gc` and confirm deletion of the orphaned entries. For unattended agent runs and workspace cleanup, use the [task-completion command](../AGENTS.md#feature-loop).
+
 Choose the exact test target when a name filter could hit the wrong unit or integration binary, and inspect the result count. A green compile with zero intended tests selected, or a skipped optional fixture, is not evidence that the behavior passed. Two name filters go after `--`: `cargo test -p <crate> -- a b`. Report results per the evidence rule in `AGENTS.md` (Task Authority).
 
 ## Coverage
