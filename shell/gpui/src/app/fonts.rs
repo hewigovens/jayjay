@@ -14,6 +14,7 @@ struct ActiveFonts {
     interface: String,
     code: String,
     code_features: FontFeatures,
+    resolved_from: Option<(String, String)>,
 }
 
 impl Default for ActiveFonts {
@@ -22,6 +23,7 @@ impl Default for ActiveFonts {
             interface: SYSTEM_UI_FONT.to_owned(),
             code: default_mono().to_owned(),
             code_features: FontFeatures::default(),
+            resolved_from: None,
         }
     }
 }
@@ -81,19 +83,31 @@ pub fn ui_text_width(cx: &App, text: &str, size: Pixels) -> Pixels {
         .fold(px(0.), |acc, width| acc + width)
 }
 
+/// Runs on every config write; font lookups are slow, so only a changed preference re-resolves.
 pub(crate) fn sync_from_config(config: &AppConfig) {
-    let next = ActiveFonts {
-        interface: pick(&[config.interface_font_family.trim()])
-            .unwrap_or_else(|| SYSTEM_UI_FONT.to_owned()),
-        code: resolve_preference(&config.code_font_family),
-        code_features: if config.code_ligatures {
-            FontFeatures::default()
-        } else {
-            no_ligatures()
-        },
+    let preferences = (
+        config.interface_font_family.trim().to_owned(),
+        config.code_font_family.clone(),
+    );
+    let unchanged = with_active(|fonts| fonts.resolved_from.as_ref() == Some(&preferences));
+    let resolved = (!unchanged).then(|| {
+        (
+            pick(&[&preferences.0]).unwrap_or_else(|| SYSTEM_UI_FONT.to_owned()),
+            resolve_preference(&preferences.1),
+        )
+    });
+    let code_features = if config.code_ligatures {
+        FontFeatures::default()
+    } else {
+        no_ligatures()
     };
     if let Ok(mut fonts) = ACTIVE.get_or_init(Default::default).write() {
-        *fonts = next;
+        if let Some((interface, code)) = resolved {
+            fonts.interface = interface;
+            fonts.code = code;
+            fonts.resolved_from = Some(preferences);
+        }
+        fonts.code_features = code_features;
     }
 }
 
