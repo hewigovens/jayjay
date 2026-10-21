@@ -1,4 +1,4 @@
-name: Windows portable alpha
+name: Windows CI
 
 on:
   workflow_dispatch:
@@ -26,7 +26,7 @@ concurrency:
 
 jobs:
   portable:
-    name: Build and smoke Windows x64 ZIP
+    name: Build and smoke
     runs-on: windows-2025
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
@@ -38,7 +38,7 @@ jobs:
       - name: Install jj for the extracted CLI test
         shell: pwsh
         env:
-          JJ_VERSION: v0.45.1
+          JJ_VERSION: v0.46.0
         run: |
           Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-x86_64-pc-windows-msvc.zip" -OutFile "$env:RUNNER_TEMP/jj.zip"
           Expand-Archive "$env:RUNNER_TEMP/jj.zip" "$env:RUNNER_TEMP/jj-bin"

@@ -139,10 +139,14 @@ extension DAGRow {
             .help("Working copy of the \(name) workspace")
             .accessibilityLabel("Workspace \(name)")
         chip.selectionContextMenuExclusion().contextMenu {
-            Button("Filter by This Workspace") { actions?.filterByWorkspace(name: name) }
             if let workspace = workspacesByName[name] {
-                Divider()
-                WorkspaceMenuItems(workspace: workspace) { onRequest?(.openWorkspace(workspace)) }
+                WorkspaceMenuItems(
+                    workspace: workspace,
+                    onFilter: { actions?.filterByWorkspace(name: name) },
+                    onOpen: { onRequest?(.openWorkspace(workspace)) }
+                )
+            } else {
+                Button("Filter by This Workspace") { actions?.filterByWorkspace(name: name) }
             }
         }
     }

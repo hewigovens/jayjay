@@ -18,6 +18,7 @@ pub enum FocusStop {
     RevsetPresets,
     RevsetFilter,
     RevsetReset,
+    FileManager,
     Editor,
     Terminal,
     Settings,
@@ -26,7 +27,7 @@ pub enum FocusStop {
 }
 
 impl FocusStop {
-    pub(super) const CYCLE: [Self; 22] = [
+    pub(super) const CYCLE: [Self; 23] = [
         Self::Dag,
         Self::FileList,
         Self::TreeToggle,
@@ -44,6 +45,7 @@ impl FocusStop {
         Self::RevsetPresets,
         Self::RevsetFilter,
         Self::RevsetReset,
+        Self::FileManager,
         Self::Editor,
         Self::Terminal,
         Self::Settings,

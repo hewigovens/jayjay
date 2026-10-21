@@ -161,6 +161,7 @@ impl RepoWindow {
             FocusStop::RevsetPresets => self.toggle_revset_popup(window, cx),
             FocusStop::RevsetFilter => self.begin_revset_edit(window, cx),
             FocusStop::RevsetReset => self.apply_revset("", cx),
+            FocusStop::FileManager => self.show_repo_in_file_manager(cx),
             FocusStop::Editor => self.open_repo_in_editor(cx),
             FocusStop::Terminal => self.open_repo_in_terminal(cx),
             FocusStop::Settings => crate::windows::settings::SettingsView::open(cx),

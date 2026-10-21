@@ -2,7 +2,7 @@ use crate::harness::*;
 use gpui::{
     Entity, Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext, point, px,
 };
-use jayjay_core::bookmark_filter_revset;
+use jayjay_core::{bookmark_filter_revset, workspace_filter_revset};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
 use jj_test::{LinearFixture, run_git, run_jj_in};
@@ -472,6 +472,42 @@ fn clicks_inside_a_picker_do_not_dismiss_it(cx: &mut TestAppContext) {
     );
     settle_visual(repo_cx);
     assert!(repo_cx.debug_bounds("bookmark-picker-panel").is_none());
+}
+
+#[gpui::test]
+fn workspace_picker_filters_without_switching(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    add_workspace(&fixture, "feature filter");
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    repo_cx.focus(&view);
+
+    for name in ["feature filter", "default"] {
+        let title = repo_cx
+            .debug_bounds("repo-switcher-button")
+            .expect("repository title picker button");
+        repo_cx.simulate_click(title.center(), Modifiers::default());
+        settle_visual(repo_cx);
+        let row = repo_cx
+            .debug_bounds(selector(format!("repo-switcher-workspace-{name}")))
+            .expect("workspace row");
+        repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+        settle_visual(repo_cx);
+        let filter = repo_cx
+            .debug_bounds("context-menu-Filter by This Workspace")
+            .expect("filter menu item");
+        repo_cx.simulate_click(filter.center(), Modifiers::default());
+        settle_visual(repo_cx);
+
+        assert!(repo_cx.debug_bounds("repo-switcher-panel").is_none());
+        assert!(!menu_shows(repo_cx, "Filter by This Workspace"));
+        assert_eq!(current_workspace(&view, repo_cx), "default");
+        assert_eq!(repo_window_count(repo_cx), 1);
+        view.read_with(repo_cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            assert_eq!(vm.revset(), workspace_filter_revset(name));
+            assert!(vm.error.is_none(), "{:?}", vm.error);
+        });
+    }
 }
 
 #[gpui::test]

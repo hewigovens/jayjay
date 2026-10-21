@@ -6,6 +6,29 @@ final class WorkspaceSwitchScene: SceneBase {
         "workspace-switch"
     }
 
+    func testPickerFiltersWorkspaceWithoutSwitching() throws {
+        let app = try XCTUnwrap(app)
+        let source = app.windows[Self.fixtureName]
+        let bar = app.buttons[AID.Toolbar.revsetBar]
+        for name in ["first", "default"] {
+            openRepositoryTitlePicker(in: source)
+            let row = app.element(AID.Picker.row("ws-\(name)")).firstMatch
+            rightClickCenter(row)
+            let filter = app.menuItems["Filter by This Workspace"]
+            XCTAssertTrue(filter.waitForExistence(timeout: 3))
+            filter.click()
+
+            XCTAssertTrue(row.waitForNonExistence(timeout: 5), "Filtering did not dismiss the picker")
+            let filtered = NSPredicate(format: "value == %@", "::\(name)@")
+            XCTAssertEqual(
+                XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: filtered, object: bar)], timeout: 5),
+                .completed
+            )
+            XCTAssertTrue(source.exists, "Filtering switched workspaces")
+            XCTAssertEqual(app.windows.count, 1)
+        }
+    }
+
     func testSwitchPreservesUnsavedDrafts() throws {
         let app = try XCTUnwrap(app)
         let summary = app.textFields[AID.CommitBox.summary]

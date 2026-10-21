@@ -6,7 +6,7 @@ use gpui::{
     percentage, point, px, rgb, svg,
 };
 
-use crate::app::actions::ToggleSidebar;
+use crate::app::actions::{ShowRepoInFileManager, ToggleSidebar};
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::Theme;
 use crate::repo::toolbar::ToolbarActivity;
@@ -19,6 +19,7 @@ use crate::windows::settings::SettingsView;
 
 #[derive(Clone, Copy)]
 enum RepoToolAction {
+    FileManager,
     Editor,
     Terminal,
 }
@@ -26,6 +27,7 @@ enum RepoToolAction {
 impl RepoToolAction {
     fn focus_stop(self) -> FocusStop {
         match self {
+            Self::FileManager => FocusStop::FileManager,
             Self::Editor => FocusStop::Editor,
             Self::Terminal => FocusStop::Terminal,
         }
@@ -153,14 +155,27 @@ pub(super) fn tools_cluster(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let file_manager_label = SharedString::from(format!(
+        "{} ({})",
+        crate::platform::SHOW_IN_FILE_MANAGER_LABEL,
+        KeyCaps::label(&ShowRepoInFileManager, cx)
+    ));
     button_group::button_group(
         t,
         vec![
             repo_tool_button(
+                RepoToolAction::FileManager,
+                file_manager_label,
+                focused,
+                GroupEdge::Leading,
+                t,
+                cx,
+            ),
+            repo_tool_button(
                 RepoToolAction::Editor,
                 open_editor_label,
                 focused,
-                GroupEdge::Leading,
+                GroupEdge::Inner,
                 t,
                 cx,
             ),
@@ -319,6 +334,7 @@ fn repo_tool_button(
     )
     .on_click(
         cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
+            RepoToolAction::FileManager => view.show_repo_in_file_manager(cx),
             RepoToolAction::Editor => view.open_repo_in_editor(cx),
             RepoToolAction::Terminal => view.open_repo_in_terminal(cx),
         }),
@@ -328,6 +344,7 @@ fn repo_tool_button(
 
 fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str) {
     match action {
+        RepoToolAction::FileManager => ("tb-file-manager", glyph::FOLDER),
         RepoToolAction::Editor => ("tb-open-editor", glyph::BRACES),
         RepoToolAction::Terminal => ("tb-open-terminal", glyph::TERMINAL),
     }

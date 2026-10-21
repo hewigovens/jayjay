@@ -93,7 +93,7 @@ mod tests {
             [
                 FocusStop::RevsetPresets,
                 FocusStop::RevsetFilter,
-                FocusStop::Editor
+                FocusStop::FileManager
             ]
         );
         assert_eq!(walk(stops, FocusStop::Dag, 1, true), [FocusStop::Settings]);

@@ -6,6 +6,7 @@ struct RepoTitlePicker: View {
     let repoPath: String
     let repositoryName: String
     let workspaces: [WorkspaceInfo]
+    let onFilterWorkspace: (WorkspaceInfo) -> Void
     let onSwitchWorkspace: (WorkspaceInfo) -> Void
     let onOpenWorkspaceInNewWindow: (WorkspaceInfo) -> Void
     let onForget: (WorkspaceInfo) -> Void
@@ -136,10 +137,17 @@ struct RepoTitlePicker: View {
             pinButton(path: path)
             Divider()
         }
-        WorkspaceMenuItems(workspace: workspace) {
-            panel.dismiss()
-            deferred { onOpenWorkspaceInNewWindow(workspace) }
-        }
+        WorkspaceMenuItems(
+            workspace: workspace,
+            onFilter: {
+                panel.dismiss()
+                onFilterWorkspace(workspace)
+            },
+            onOpen: {
+                panel.dismiss()
+                deferred { onOpenWorkspaceInNewWindow(workspace) }
+            }
+        )
         if !workspace.isCurrent {
             Divider()
             Button("Forget") {

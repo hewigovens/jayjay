@@ -203,7 +203,7 @@ fn keyboard_opened_filters_submit_and_release_text_focus(cx: &mut TestAppContext
     });
     keys(cx, "tab");
     view.read_with(cx, |view, _| {
-        assert_eq!(view.focused_control(), Some(FocusStop::Editor));
+        assert_eq!(view.focused_control(), Some(FocusStop::FileManager));
         assert!(view.revset_editor_text().is_none());
     });
 }

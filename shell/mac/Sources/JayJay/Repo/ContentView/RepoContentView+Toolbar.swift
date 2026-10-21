@@ -60,6 +60,12 @@ extension RepoContentView {
 
         ToolbarItemGroup(placement: .primaryAction) {
             toolbarButton(
+                .finder,
+                help: "Show in Finder (\(AppShortcut.showInFinder.symbol))",
+                action: { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) },
+                label: { Label("Show in Finder", systemImage: "folder") }
+            )
+            toolbarButton(
                 .editor,
                 help: "Open repository in \(settings.externalEditor.title)",
                 action: { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) },
@@ -113,6 +119,9 @@ extension RepoContentView {
                 repoPath: viewModel.repoPath,
                 repositoryName: viewModel.repositoryName,
                 workspaces: viewModel.workspaces,
+                onFilterWorkspace: { workspace in
+                    viewModel.filterByWorkspace(name: workspace.name)
+                },
                 onSwitchWorkspace: { workspace in
                     guard workspace.isPathResolved else { return }
                     windowManager.switchRepo(from: viewModel, to: workspace.path, changePath: onSwitchWorkspace)

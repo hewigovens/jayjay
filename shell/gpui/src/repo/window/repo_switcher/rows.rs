@@ -12,7 +12,7 @@ use super::sections::{RowContent, SwitcherRow};
 use crate::app::repositories;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::repo::window::picker::row;
-use crate::repo::window::workspace_menu::workspace_open_copy_items;
+use crate::repo::window::workspace_menu::workspace_menu_items;
 use crate::repo::window::{RepoWindow, compact_id, format_relative, id_cell};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::{self, glyph};
@@ -245,7 +245,7 @@ fn workspace_context_items(
         items.push(repository_pin_item(path, cx));
         items.push(ContextMenuItem::separator());
     }
-    items.extend(workspace_open_copy_items(workspace));
+    items.extend(workspace_menu_items(workspace));
     if !workspace.is_current {
         items.push(ContextMenuItem::new(
             "Forget",

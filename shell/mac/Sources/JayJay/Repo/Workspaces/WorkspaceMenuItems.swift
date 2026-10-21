@@ -4,9 +4,12 @@ import SwiftUI
 
 struct WorkspaceMenuItems: View {
     let workspace: WorkspaceInfo
+    let onFilter: () -> Void
     let onOpen: () -> Void
 
     var body: some View {
+        Button("Filter by This Workspace", action: onFilter)
+        Divider()
         if !workspace.isCurrent, workspace.isPathResolved {
             Button("Open in New Window", action: onOpen)
         }
