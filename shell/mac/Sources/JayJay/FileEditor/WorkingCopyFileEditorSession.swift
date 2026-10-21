@@ -41,7 +41,7 @@ final class WorkingCopyFileEditorSession: Identifiable {
             content = prepared.0.content
             highlightedLines = prepared.1
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.friendlyDescription
         }
         isLoading = false
     }

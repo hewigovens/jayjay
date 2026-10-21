@@ -129,6 +129,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
                 systemImage: "exclamationmark.triangle",
                 description: Text(errorMessage)
             )
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if session.showsSources {
             VSplitView {
                 sourcesPane

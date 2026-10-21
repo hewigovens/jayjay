@@ -97,7 +97,7 @@ final class ExternalMergeSession: MergeEditingSession {
             isTextMerge = merge.isText
             highlights = prepared.1
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.friendlyDescription
             onLoadFailure()
         }
         isLoading = false
@@ -133,7 +133,7 @@ final class ExternalMergeSession: MergeEditingSession {
                 }.value
                 Darwin.exit(0)
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = error.friendlyDescription
                 isSaving = false
             }
         }

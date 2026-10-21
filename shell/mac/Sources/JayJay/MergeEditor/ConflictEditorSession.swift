@@ -78,7 +78,7 @@ final class ConflictEditorSession: Identifiable, MergeEditingSession {
             result = prepared.0.result
             highlights = prepared.1
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.friendlyDescription
         }
         isLoading = false
     }

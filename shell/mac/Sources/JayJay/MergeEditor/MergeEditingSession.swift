@@ -34,7 +34,7 @@ extension MergeEditingSession {
             selectedSource = nil
             return true
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.friendlyDescription
             return false
         }
     }

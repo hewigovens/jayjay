@@ -18,6 +18,7 @@ struct ExternalDiffToolView: View {
             header
             Divider()
             content
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
         .frame(minWidth: 900, minHeight: 620)
         .task { await session.load() }
@@ -38,9 +39,11 @@ struct ExternalDiffToolView: View {
                     .foregroundStyle(.secondary)
             }
             Spacer()
-            Text("\(session.files.count) changed \(session.files.count == 1 ? "file" : "files")")
-                .jayjayFont(11, design: .monospaced)
-                .foregroundStyle(.secondary)
+            if !session.files.isEmpty {
+                Text("\(session.files.count) changed \(session.files.count == 1 ? "file" : "files")")
+                    .jayjayFont(11, design: .monospaced)
+                    .foregroundStyle(.secondary)
+            }
             Button("Cancel", action: session.cancel)
                 .keyboardShortcut(.cancelAction)
             if session.editable {
@@ -59,7 +62,6 @@ struct ExternalDiffToolView: View {
     private var content: some View {
         if session.isLoading {
             LoadingStatus(label: "Loading comparison…")
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = session.errorMessage {
             ContentUnavailableView(
                 "Couldn’t Open Tool Session",

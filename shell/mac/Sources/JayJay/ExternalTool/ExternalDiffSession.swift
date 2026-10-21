@@ -49,7 +49,7 @@ final class ExternalDiffSession {
             }
             files = states
         } catch {
-            errorMessage = error.localizedDescription
+            errorMessage = error.friendlyDescription
             onLoadFailure()
         }
         isLoading = false
@@ -72,7 +72,7 @@ final class ExternalDiffSession {
                 }.value
                 Darwin.exit(0)
             } catch {
-                errorMessage = error.localizedDescription
+                errorMessage = error.friendlyDescription
                 isSaving = false
             }
         }
