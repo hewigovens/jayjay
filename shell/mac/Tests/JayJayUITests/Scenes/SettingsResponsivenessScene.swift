@@ -12,13 +12,15 @@ final class SettingsResponsivenessScene: SceneBase {
 
     func testWorkflowTogglesDoNotRunCliProbesAndPagesReuseDetection() throws {
         let app = try XCTUnwrap(app)
-        let binary = Self.fixtureRoot.appendingPathComponent("settings-tools/origin")
+        let binary = Self.fixtureRoot.appendingPathComponent("settings-tools/jj")
         let calls = binary.appendingPathExtension("calls")
+        let previousCalls = (try? String(contentsOf: calls, encoding: .utf8)) ?? ""
+        let expectedCalls = previousCalls + "probe\n"
         keyStroke(",", modifiers: [.command])
         selectSettingsPage("integrations", in: app)
         let detectedPath = settingsWindow(in: app).staticTexts[binary.path]
         XCTAssertTrue(detectedPath.waitForExistence(timeout: 10), "background detection never finished")
-        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n")
+        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), expectedCalls)
 
         selectSettingsPage("workflow", in: app)
         let toggle = settingsWindow(in: app).switches[AID.Settings.confirmAbandon]
@@ -31,9 +33,9 @@ final class SettingsResponsivenessScene: SceneBase {
         XCTAssertEqual(toggle.value as? Int, 0, "Confirmation preference must survive navigation")
         toggle.click()
         XCTAssertEqual(toggle.value as? Int, 1)
-        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n", "Workflow toggles must not probe CLI tools")
+        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), expectedCalls, "Workflow toggles must not probe CLI tools")
         selectSettingsPage("integrations", in: app)
         XCTAssertTrue(detectedPath.waitForExistence(timeout: 5))
-        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), "probe\n", "page changes must reuse the loaded detection")
+        XCTAssertEqual(try String(contentsOf: calls, encoding: .utf8), expectedCalls, "page changes must reuse the loaded detection")
     }
 }

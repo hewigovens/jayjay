@@ -476,13 +476,13 @@ fixture_workspace_switch() {
 fixture_settings_tools() {
   local bin="$fixtures/settings-tools"
   mkdir -p "$bin"
-  cat > "$bin/origin" <<'SH'
+  cat > "$bin/jj" <<'SH'
 #!/bin/sh
 printf 'probe\n' >> "$0.calls"
 sleep 2
-printf 'origin version 1.2.3\n'
+printf 'jj 1.2.3\n'
 SH
-  chmod +x "$bin/origin"
+  chmod +x "$bin/jj"
 }
 
 fixture_repository_stores() {
