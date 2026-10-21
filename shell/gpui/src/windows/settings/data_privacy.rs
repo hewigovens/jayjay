@@ -46,11 +46,31 @@ pub(super) fn data_privacy_section(
             t,
         ))
         .child(form_section(
+            "Diagnostics",
+            [field_row(
+                glyph::WRENCH,
+                "Debug mode",
+                debug_mode_toggle(cfg, t),
+                t,
+            )],
+            t,
+        ))
+        .child(form_section(
             "Review Data",
             [review_data_row(view.review_summary, t, cx)],
             t,
         ))
         .into_any_element()
+}
+
+fn debug_mode_toggle(cfg: &AppConfig, t: &Theme) -> AnyElement {
+    let enabled = cfg.debug_mode();
+    boolean_toggle_button(
+        SharedString::from("setting-debug-mode"),
+        enabled,
+        t,
+        move |_, _, cx| config::update(cx, |c| c.debug_mode = Some(!enabled)),
+    )
 }
 
 fn review_data_row(

@@ -78,6 +78,7 @@ impl Repo {
     #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
     pub fn log_graph(&self, revset_str: &str) -> JayResult<Vec<GraphEntry>> {
         let repo = self.get_repo();
+        let started = std::time::Instant::now();
         on_worker_stack(|| {
             let immutable_ids = self.immutable_ids(&repo);
             let revset_result = self.evaluate_revset(&repo, revset_str)?;
@@ -124,6 +125,11 @@ impl Repo {
                     entry.change.is_divergent = true;
                 }
             }
+            log::debug!(
+                "log graph: {} entries in {}ms",
+                entries.len(),
+                started.elapsed().as_millis()
+            );
             Ok(entries)
         })
     }

@@ -58,6 +58,7 @@ jobs:
       - name: Build portable ZIP
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
+          JAYJAY_PRERELEASE: ${{ contains(github.event.release.tag_name || github.ref_name, '-beta') && '1' || '' }}
         run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '')
 
       - name: Verify extracted ZIP

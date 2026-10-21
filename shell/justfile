@@ -65,7 +65,7 @@ ffi-debug:
 
 # Release pins the target and deployment flags and always regenerates.
 ffi-release:
-  bash "{{root}}/scripts/macos/ffi.sh" release "{{macos_target}}" "{{deployment_target}}"
+  JAYJAY_PRERELEASE={{ if version =~ '-beta' { "1" } else { "" } }} bash "{{root}}/scripts/macos/ffi.sh" release "{{macos_target}}" "{{deployment_target}}"
 
 # Generate the Swift bindings from the staticlib and wrap it in the XCFramework.
 _ffi-wrap profile staticlib:

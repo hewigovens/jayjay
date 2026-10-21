@@ -1,15 +1,39 @@
-use gpui::{AnyWindowHandle, App, AppContext, ClipboardItem, PromptLevel};
+use std::path::Path;
 
+use gpui::{AnyWindowHandle, App, AppContext, ClipboardItem, PromptLevel};
+use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
+
+use super::config;
 use super::links::{FEEDBACK_ADDRESS, FEEDBACK_URL, url_opener};
 
 const OPEN_FAILURE_MESSAGE: &str = "Couldn’t Open Your Email App";
 
+/// `mailto:` cannot carry attachments, so debug mode asks for the revealed log in the body instead.
+fn feedback_url(log: Option<&Path>) -> String {
+    let Some(log) = log else {
+        return FEEDBACK_URL.to_owned();
+    };
+    let body = format!("Please attach the debug log: {}\n\n", log.display());
+    format!(
+        "{FEEDBACK_URL}&body={}",
+        utf8_percent_encode(&body, NON_ALPHANUMERIC)
+    )
+}
+
 pub(crate) fn open(cx: &mut App) {
     let window = cx.active_window();
     let open_url = url_opener(cx);
+    let log = config::current(cx)
+        .debug_mode()
+        .then(jayjay_core::LogFile::path)
+        .flatten();
     cx.spawn(async move |cx| {
+        if let Some(log) = log.clone() {
+            cx.background_spawn(async move { crate::platform::reveal_path(&log) })
+                .detach();
+        }
         let opened = cx
-            .background_spawn(async move { open_url(FEEDBACK_URL) })
+            .background_spawn(async move { open_url(&feedback_url(log.as_deref())) })
             .await;
         if !opened {
             cx.update(|cx| present_open_failure(window, cx));
@@ -52,6 +76,14 @@ fn present_open_failure(window: Option<AnyWindowHandle>, cx: &mut App) {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn debug_feedback_asks_for_the_log() {
+        assert_eq!(feedback_url(None), FEEDBACK_URL);
+        let url = feedback_url(Some(Path::new("/logs/jayjay.log")));
+        assert!(url.starts_with(FEEDBACK_URL));
+        assert!(url.contains("%2Flogs%2Fjayjay%2Elog"));
+    }
 
     #[gpui::test]
     fn failed_open_shows_address_and_can_copy_it(cx: &mut gpui::TestAppContext) {

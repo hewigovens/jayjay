@@ -5,6 +5,7 @@ use gpui::{App, AppContext};
 
 use super::config::{self, AppConfig, AppConfigStore};
 use super::gpui_assets::GpuiAssets;
+use super::stall_monitor::StallMonitor;
 use super::startup_window::{open_startup_window, resolve_repo_path};
 use super::theme::Theme;
 use crate::startup::GuiLaunch;
@@ -20,7 +21,8 @@ pub(crate) fn run(launch: GuiLaunch) {
     let app = gpui_platform::application().with_assets(GpuiAssets);
     app.run(move |cx: &mut App| {
         log::info!("platform ready at {}ms", launched_at.elapsed().as_millis());
-        super::stall_monitor::start(launched_at, cx);
+        let mut stall_monitor = StallMonitor::new(launched_at);
+        apply_debug_mode(&mut stall_monitor, cfg.debug_mode(), cx);
         let fonts = vec![Cow::Borrowed(OCTICONS_FONT), Cow::Borrowed(SETI_FONT)];
         if let Err(error) = cx.text_system().add_fonts(fonts) {
             log::error!("failed to register the icon fonts: {error}");
@@ -37,6 +39,10 @@ pub(crate) fn run(launch: GuiLaunch) {
             "fonts resolved in {}ms",
             fonts_started.elapsed().as_millis()
         );
+        cx.observe_global::<AppConfigStore>(move |cx| {
+            apply_debug_mode(&mut stall_monitor, config::current(cx).debug_mode(), cx)
+        })
+        .detach();
         cx.set_global(super::rating_prompt::RatingPromptStore::load());
         match launch {
             GuiLaunch::ExternalTool(invocation) => {
@@ -69,4 +75,9 @@ pub(crate) fn run(launch: GuiLaunch) {
             }
         }
     });
+}
+
+fn apply_debug_mode(stall_monitor: &mut StallMonitor, enabled: bool, cx: &mut App) {
+    jayjay_core::LogFile::set_debug(enabled);
+    stall_monitor.set_enabled(enabled, cx);
 }

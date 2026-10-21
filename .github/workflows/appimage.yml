@@ -81,6 +81,8 @@ jobs:
           toolchain: stable
 
       - name: Build jayjay-gpui
+        env:
+          JAYJAY_PRERELEASE: ${{ contains(github.event.release.tag_name || github.ref_name, '-beta') && '1' || '' }}
         run: cargo build --release --locked -p jayjay-gpui
 
       - name: Build AppImage

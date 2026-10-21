@@ -28,6 +28,8 @@ pub struct AppConfig {
     pub(crate) features: FeaturesConfig,
     pub onboarding: OnboardingConfig,
     pub telemetry: TelemetryConfig,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) debug_mode: Option<bool>,
     pub update_channel: UpdateChannel,
     pub window: WindowState,
     pub recent_repos: Vec<String>,
@@ -49,6 +51,7 @@ impl Default for AppConfig {
             features: FeaturesConfig::default(),
             onboarding: OnboardingConfig::default(),
             telemetry: TelemetryConfig::default(),
+            debug_mode: None,
             update_channel: UpdateChannel::Stable,
             window: WindowState::default(),
             recent_repos: Vec::new(),
@@ -58,6 +61,12 @@ impl Default for AppConfig {
 
 impl AppConfig {
     const MAX_RECENT_REPOS: usize = 12;
+
+    /// Beta builds default to debug mode until the user picks a side.
+    pub fn debug_mode(&self) -> bool {
+        self.debug_mode
+            .unwrap_or_else(jayjay_core::is_prerelease_build)
+    }
     pub(crate) const MIN_FONT_SIZE: f32 = 9.;
     pub(crate) const MAX_FONT_SIZE: f32 = 24.;
     pub(crate) const DEFAULT_FONT_SIZE: f32 = 12.;
