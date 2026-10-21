@@ -60,16 +60,6 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '')
 
-      - name: Verify MSIX version mapping
-        run: ./dist/windows/test-msix-version.ps1
-
-      - name: Verify final MSIX contents
-        run: |
-          $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
-          if ($LASTEXITCODE) { throw 'Cargo metadata failed' }
-          $version = ($metadata.packages | Where-Object name -EQ 'jayjay-gpui').version
-          ./dist/windows/verify-msix.ps1 -Package (Get-ChildItem build/windows/*.msix | Select-Object -ExpandProperty FullName) -AppVersion $version
-
       - name: Verify extracted ZIP
         run: ./dist/windows/smoke.ps1 -Archive (Get-ChildItem build/windows/*.zip | Select-Object -ExpandProperty FullName)
 
@@ -81,14 +71,6 @@ jobs:
           path: build/windows/*.zip*
           if-no-files-found: error
           retention-days: 1
-
-      - name: Upload unsigned MSIX
-        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
-        with:
-          name: windows-msix
-          path: build/windows/*.msix
-          if-no-files-found: error
-          retention-days: 14
 
   publish:
     # The only job with write credentials.
