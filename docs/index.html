@@ -59,7 +59,7 @@
       { "@type": "Question", "name": "Can JayJay extract individual lines or hunks into a new change?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, via diff edit mode. Select files, hunks, or line ranges across a change and split them into a new child or parallel change. On the working copy you can also right-click to abandon selected lines." } },
       { "@type": "Question", "name": "How is JayJay different from using jj on the command line?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay complements the jj CLI rather than replacing it. The DAG graph, visual diff review, diff-edit mode, evolution viewer, and bookmark manager are much easier in a GUI. The command palette also accepts a jj (or !) prefix to run raw jj commands in-window." } },
       { "@type": "Question", "name": "Is JayJay open source?", "acceptedAnswer": { "@type": "Answer", "text": "JayJay is free and source-available. The macOS app is BSL 1.1 (free to use, fork, modify, and redistribute; only paid app-store distribution needs permission) and converts to Apache-2.0 on 2030-03-23. The Rust crates are Apache-2.0 today." } },
-      { "@type": "Question", "name": "How do I install JayJay on Linux?", "acceptedAnswer": { "@type": "Answer", "text": "Run curl -fsSL https://jayjay.hewig.dev/install.sh | bash, which downloads the latest AppImage for x86_64 or aarch64, verifies its checksum, and installs it into ~/.local with a jayjay command and a desktop entry; run it again to upgrade. On Arch Linux, use the signed pacman repo instead (curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo). Then run jayjay /path/to/repo or open a repository from the window. See the GPUI section of the user guide at jayjay.hewig.dev/guide.html." } },
+      { "@type": "Question", "name": "How do I install JayJay on Linux?", "acceptedAnswer": { "@type": "Answer", "text": "Run curl -fsSL https://jayjay.hewig.dev/install.sh | bash, which installs the latest Debian package on apt-based systems and the AppImage elsewhere for x86_64 or aarch64, after verifying its checksum; run it again to upgrade. On Arch Linux, use the signed pacman repo instead (curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo). Add --beta to install the newest beta when it is ahead of stable. Then run jayjay /path/to/repo or open a repository from the window. See the GPUI section of the user guide at jayjay.hewig.dev/guide.html." } },
       { "@type": "Question", "name": "Is there a pacman repo for JayJay on Arch Linux?", "acceptedAnswer": { "@type": "Answer", "text": "Yes, for stable releases on x86_64 and aarch64. One command trusts the key, adds the repo, and installs: curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo. Manual alternative: add the signing key from https://pkgs.hewig.dev/arch/jayjay-packages.asc with pacman-key --add, locally sign BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF, append a [jayjay] section to /etc/pacman.conf with SigLevel = Required DatabaseOptional and Server = https://pkgs.hewig.dev/arch/$arch, then run sudo pacman -Syu jayjay-appimage for a first install, or sudo pacman -Syu if already installed. Betas are not in the repo: install those with pacman -U from the pre-release page, and pacman leaves an installed beta alone until the repo's stable version is newer." } },
       { "@type": "Question", "name": "Does JayJay work on Windows or Linux?", "acceptedAnswer": { "@type": "Answer", "text": "Yes on Linux. The Linux app is built on Zed's GPUI framework, shares its Rust core with the macOS app, and covers the jj workflows: the change graph, diffs and rich previews, review, diff edit, bookmarks, conflicts, workspaces, and the command palette. It ships with every release as an AppImage, Debian/Ubuntu package, and Arch Linux package for x86_64 and aarch64. A Windows x64 portable alpha ZIP is also available; it requires Windows 10 version 1903 or later, or Windows 11, with jj installed separately. The Windows alpha has no installer or automatic updater." } }
     ]
@@ -453,7 +453,7 @@
           <div class="eyebrow">Stacked pull requests</div>
           <h3>One PR per change, stacked.</h3>
           <p>Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.</p>
-          <p class="note">GitHub and GitLab use an existing CLI login or an environment token. Cursor Origin requires its <code>origin</code> CLI.</p>
+          <p class="note">Sign in to GitHub and GitLab from Settings, or use an existing CLI login or environment token. Cursor Origin uses your <code>origin auth login</code> credentials.</p>
         </div>
         <div class="show-img" data-captions="0 Right-click the top of a stack|4.7 Name a branch per change|8.2 One PR per change">
           <div class="loop-stage">
@@ -565,7 +565,7 @@
         <div class="card">
           <h3>Linux</h3>
           <p class="req">x86_64 &amp; aarch64 · AppImage, Debian/Ubuntu, Arch</p>
-          <pre><span class="c"># AppImage into ~/.local, checksum verified</span>
+          <pre><span class="c"># Debian package or AppImage; checksum verified</span>
 <span class="p">$ </span>curl -fsSL https://jayjay.hewig.dev/install.sh | bash
 <span class="c"># Arch: signed pacman repo</span>
 <span class="p">$ </span>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</pre>
@@ -627,7 +627,7 @@
         </details>
         <details>
           <summary>How do I install JayJay on Linux?</summary>
-          <p>Run <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code>. The <a href="install.sh">script</a> downloads the latest AppImage for x86_64 or aarch64, verifies its checksum, and installs it into <code>~/.local</code> with a <code>jayjay</code> command and a desktop entry; run it again to upgrade. On Arch Linux, use the <a href="guide.html#gpui">signed pacman repo</a> instead — <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code>. Then run <code>jayjay /path/to/repo</code> or open a repository from the window. The <a href="guide.html#gpui">guide</a> lists what it covers.</p>
+          <p>Run <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code>. The <a href="install.sh">script</a> installs the latest Debian package on apt-based systems and the AppImage elsewhere for x86_64 or aarch64, after verifying its checksum; run it again to upgrade. On Arch Linux, use the <a href="guide.html#gpui">signed pacman repo</a> instead — <code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code>. Add <code>--beta</code> to install the newest beta when it is ahead of stable. Then run <code>jayjay /path/to/repo</code> or open a repository from the window. The <a href="guide.html#gpui">guide</a> lists what it covers.</p>
         </details>
         <details>
           <summary>Is there a pacman repo for JayJay on Arch Linux?</summary>

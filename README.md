@@ -63,7 +63,7 @@ Or download the latest `.zip` from [GitHub Releases](https://github.com/hewigove
 
 #### Linux
 
-The Linux app is built for x86_64 and aarch64. The install script puts the AppImage in `~/.local/share/jayjay` and links `jayjay` into `~/.local/bin`:
+The Linux app is built for x86_64 and aarch64. The installer uses the Debian package on apt-based systems and an AppImage elsewhere. AppImages live in `~/.local/share/jayjay` with a `jayjay` launcher in `~/.local/bin`:
 
 ```bash
 curl -fsSL https://jayjay.hewig.dev/install.sh | bash
@@ -73,6 +73,12 @@ On Arch Linux, use the signed pacman repo instead, so stable upgrades arrive wit
 
 ```bash
 curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo
+```
+
+For the newest beta when it is ahead of stable, add `--beta` (signed pacman package on Arch, Debian package on apt systems, AppImage elsewhere):
+
+```bash
+curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --beta
 ```
 
 The [guide](https://jayjay.hewig.dev/guide.html#gpui) has the reviewable manual steps.

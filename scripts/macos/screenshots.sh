@@ -6,11 +6,15 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 screenshot_root="$1"
 shift
 
-bash "${root}/scripts/screenshot-fixture.sh" "${screenshot_root}"
-xcodegen --spec "${project}/project.yml" --project "${project}"
 out="${root}/build/screenshots"
 rm -rf "$out"
-mkdir -p "$out"
+mkdir -p "$out/ffi"
+cargo build -p jayjay-uniffi --features jayjay-core/mock
+# Binding generation rebuilds the default core, so retain the isolated library before wrapping it.
+cp "$target_dir/debug/libjayjay_uniffi.a" "$out/ffi/libjayjay_uniffi.a"
+bash "$root/scripts/macos/ffi.sh" wrap debug "$out/ffi/libjayjay_uniffi.a"
+bash "${root}/scripts/screenshot-fixture.sh" "${screenshot_root}"
+xcodegen --spec "${project}/project.yml" --project "${project}"
 args=()
 if [ "$#" -eq 0 ]; then
   args+=(-only-testing:JayJayUITests/ReleaseScreenshots -only-testing:JayJayUITests/OverviewScreenshots)

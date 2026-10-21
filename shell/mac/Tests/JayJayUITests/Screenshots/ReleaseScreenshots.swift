@@ -182,16 +182,20 @@ final class ReleaseScreenshots: ScreenshotScene {
         }
     }
 
-    func testSettingsAppearanceAndIntegrations() throws {
+    func testSettingsAppearance() throws {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
-        for page in ["appearance", "integrations"] {
-            selectSettingsPage(page, in: app)
-            if page == "integrations" {
-                settingsWindow(in: app).staticTexts["Version control"].scroll(byDeltaX: 0, deltaY: -600)
-            }
-            capture("settings-\(page)", frame: settingsWindow(in: app).frame)
-        }
+        selectSettingsPage("appearance", in: app)
+        capture("settings-appearance", frame: settingsWindow(in: app).frame)
+    }
+
+    func testSettingsIntegrations() throws {
+        let app = try XCTUnwrap(app)
+        keyStroke(",", modifiers: [.command])
+        selectSettingsPage("integrations", in: app)
+        XCTAssertTrue(settingsWindow(in: app).buttons["Sign In…"].firstMatch.waitForExistence(timeout: 5), "Forge sign-in controls missing")
+        settingsWindow(in: app).staticTexts["Version control"].scroll(byDeltaX: 0, deltaY: -600)
+        capture("settings-integrations", frame: settingsWindow(in: app).frame)
     }
 
     func testBisect() throws {
