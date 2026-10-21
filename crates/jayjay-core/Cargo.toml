@@ -31,6 +31,7 @@ repository = [
     "dep:windows-native-keyring-store",
     "dep:zbus-secret-service-keyring-store",
     "dep:libc",
+    "dep:log",
     "dep:parking_lot",
     "dep:percent-encoding",
     "dep:plist",
@@ -70,6 +71,7 @@ pollster = { workspace = true, optional = true }
 stacker = { workspace = true, optional = true }
 chrono = { workspace = true, optional = true }
 libc = { workspace = true, optional = true }
+log = { version = "0.4", features = ["std"], optional = true }
 futures = { workspace = true, optional = true }
 serde = { workspace = true, optional = true }
 serde_json = { workspace = true, optional = true }

@@ -7,9 +7,9 @@ use super::actions::{
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, SendFeedback,
-    ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff,
-    ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
+    OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, RevealLogs,
+    SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace,
+    ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::tools;
@@ -79,6 +79,7 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
             MenuItem::separator(),
             MenuItem::action("Report an Issue", ReportIssue),
             MenuItem::action("Send Feedback", SendFeedback),
+            MenuItem::action("Reveal Logs", RevealLogs),
         ]),
     ]
 }
@@ -158,6 +159,11 @@ fn register_global_actions(cx: &mut App) {
     });
     cx.on_action(|_: &ReportIssue, cx| crate::app::links::open_url(cx, REPORT_ISSUE_URL));
     cx.on_action(|_: &SendFeedback, cx| crate::app::feedback::open(cx));
+    cx.on_action(|_: &RevealLogs, _| {
+        if let Some(path) = jayjay_core::LogFile::path() {
+            crate::platform::reveal_path(&path);
+        }
+    });
     cx.on_action(|_: &ZoomIn, cx| toggle(cx, |c| c.zoom(1.)));
     cx.on_action(|_: &ZoomOut, cx| toggle(cx, |c| c.zoom(-1.)));
     cx.on_action(|_: &ResetZoom, cx| toggle(cx, AppConfig::reset_zoom));

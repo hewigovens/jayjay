@@ -8,7 +8,6 @@ pub mod fs_watcher;
 mod gpui_assets;
 pub mod key_caps;
 pub mod links;
-pub mod log_file;
 pub mod menus;
 pub mod motion;
 pub mod rating_prompt;

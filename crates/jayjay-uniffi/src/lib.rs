@@ -18,6 +18,8 @@ mod fonts;
 mod forge;
 mod fuzzy;
 mod github_alias;
+#[cfg(feature = "desktop")]
+mod log_file;
 mod markdown;
 #[cfg(feature = "desktop")]
 mod merge_scroll;

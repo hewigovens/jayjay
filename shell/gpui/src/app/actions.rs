@@ -18,6 +18,7 @@ actions!(
         OpenJujutsuDocumentation,
         ReportIssue,
         SendFeedback,
+        RevealLogs,
         OpenBookmarkManager,
         OpenOverview,
         OpenOperationLog,

@@ -5,45 +5,56 @@ use std::sync::Mutex;
 
 use log::{Level, LevelFilter, Log, Metadata, Record};
 
-const FILE_NAME: &str = "jayjay-gpui.log";
-const ROTATED_FILE_NAME: &str = "jayjay-gpui.1.log";
+const FILE_NAME: &str = "jayjay.log";
+const ROTATED_FILE_NAME: &str = "jayjay.1.log";
 const MAX_BYTES: u64 = 2 * 1024 * 1024;
 
-/// Mirrors log records to stderr and to a size-capped file, since the Windows GUI subsystem has no console.
 pub struct LogFile {
-    dir: PathBuf,
+    dir: Option<PathBuf>,
     file: Mutex<Option<File>>,
 }
 
 impl LogFile {
-    pub fn install() {
-        let Some(dir) = Self::dir() else { return };
-        let logger = Self::new(dir);
-        if log::set_boxed_logger(Box::new(logger)).is_ok() {
+    pub fn install(shell: &str, version: &str) {
+        if log::set_boxed_logger(Box::new(Self::new(Self::dir()))).is_ok() {
             log::set_max_level(LevelFilter::Info);
         }
+        log::info!(
+            "launching {shell} {version} on {} {}",
+            std::env::consts::OS,
+            std::env::consts::ARCH
+        );
+    }
+
+    pub fn path() -> Option<PathBuf> {
+        Self::dir().map(|dir| dir.join(FILE_NAME))
     }
 
     fn dir() -> Option<PathBuf> {
-        jayjay_core::AppDirs::new().map(|dirs| dirs.data.join("logs"))
+        crate::AppDirs::new().map(|dirs| dirs.data.join("logs"))
     }
 
-    fn new(dir: PathBuf) -> Self {
-        let file = Mutex::new(Self::open(&dir));
+    fn new(dir: Option<PathBuf>) -> Self {
+        let file = Mutex::new(dir.as_deref().and_then(Self::open));
         Self { dir, file }
     }
 
     fn open(dir: &Path) -> Option<File> {
         fs::create_dir_all(dir).ok()?;
         let path = dir.join(FILE_NAME);
-        if path.metadata().is_ok_and(|meta| meta.len() > MAX_BYTES) {
-            let _ = fs::rename(&path, dir.join(ROTATED_FILE_NAME));
+        let oversized = path.metadata().is_ok_and(|meta| meta.len() > MAX_BYTES);
+        let truncate = oversized && fs::rename(&path, dir.join(ROTATED_FILE_NAME)).is_err();
+        let mut options = OpenOptions::new();
+        if truncate {
+            options.write(true).truncate(true);
+        } else {
+            options.append(true);
         }
-        OpenOptions::new().create(true).append(true).open(path).ok()
+        options.create(true).open(path).ok()
     }
 
     fn append(&self, line: &str) {
-        let Ok(mut file) = self.file.lock() else {
+        let (Some(dir), Ok(mut file)) = (&self.dir, self.file.lock()) else {
             return;
         };
         if file
@@ -51,7 +62,7 @@ impl LogFile {
             .is_some_and(|file| file.metadata().is_ok_and(|meta| meta.len() > MAX_BYTES))
         {
             *file = None;
-            *file = Self::open(&self.dir);
+            *file = Self::open(dir);
         }
         if let Some(file) = file.as_mut() {
             let _ = file.write_all(line.as_bytes());
@@ -61,7 +72,6 @@ impl LogFile {
 
 impl Log for LogFile {
     fn enabled(&self, metadata: &Metadata) -> bool {
-        // GPUI and its platform crates log chatty info lines; keep only their warnings.
         let ceiling = if metadata.target().starts_with("jayjay") {
             Level::Info
         } else {
@@ -81,7 +91,9 @@ impl Log for LogFile {
             record.target(),
             record.args()
         );
-        eprint!("{line}");
+        if record.level() <= Level::Warn {
+            let _ = std::io::stderr().write_all(line.as_bytes());
+        }
         self.append(&line);
     }
 
@@ -101,7 +113,7 @@ mod tests {
     #[test]
     fn oversized_log_rotates() {
         let dir = tempfile::tempdir().unwrap();
-        let log = LogFile::new(dir.path().to_owned());
+        let log = LogFile::new(Some(dir.path().to_owned()));
         let oversized = "x".repeat(MAX_BYTES as usize + 1);
         log.append(&oversized);
         log.append("fresh\n");
@@ -112,6 +124,19 @@ mod tests {
         assert_eq!(
             fs::read_to_string(dir.path().join(ROTATED_FILE_NAME)).unwrap(),
             oversized
+        );
+    }
+
+    #[test]
+    fn oversized_log_truncates_when_rotation_fails() {
+        let dir = tempfile::tempdir().unwrap();
+        fs::create_dir_all(dir.path().join(ROTATED_FILE_NAME).join("blocker")).unwrap();
+        let log = LogFile::new(Some(dir.path().to_owned()));
+        log.append(&"x".repeat(MAX_BYTES as usize + 1));
+        log.append("fresh\n");
+        assert_eq!(
+            fs::read_to_string(dir.path().join(FILE_NAME)).unwrap(),
+            "fresh\n"
         );
     }
 }

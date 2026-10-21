@@ -14,12 +14,7 @@ const SETI_FONT: &[u8] = include_bytes!("../../../../assets/fonts/Seti.ttf");
 
 pub(crate) fn run(launch: GuiLaunch) {
     let launched_at = Instant::now();
-    super::log_file::LogFile::install();
-    log::info!(
-        "launching {} on {}",
-        env!("CARGO_PKG_VERSION"),
-        std::env::consts::OS
-    );
+    jayjay_core::LogFile::install("gpui", env!("CARGO_PKG_VERSION"));
     super::cli_install::repair_broken_link();
     let cfg = AppConfig::load();
     let app = gpui_platform::application().with_assets(GpuiAssets);
