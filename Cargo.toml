@@ -55,8 +55,8 @@ shell-words = "1.1.1"
 url = "2"
 
 # One tag for both so a bump moves every gpui reference together
-gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.20.2" }
-gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.20.2" }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.24.4" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.24.4" }
 
 tree-sitter = "0.27"
 tree-sitter-highlight = "0.27"
