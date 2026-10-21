@@ -10,7 +10,8 @@ try {
     if ((cargo about --version) -notmatch '0\.9\.2$') { throw "Install cargo-about 0.9.2: cargo install cargo-about --version 0.9.2 --features cli --locked" }
     $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
     if ($LASTEXITCODE) { throw "Cargo metadata failed" }
-    if (-not $Version) { $Version = ($metadata.packages | Where-Object name -EQ "jayjay-gpui").version }
+    $appVersion = ($metadata.packages | Where-Object name -EQ "jayjay-gpui").version
+    if (-not $Version) { $Version = $appVersion }
     # cargo-about's metadata also needs the locked sources for non-Windows targets.
     cargo fetch --locked
     if ($LASTEXITCODE) { throw "Dependency source fetch failed" }
@@ -34,6 +35,7 @@ try {
     }
     python dist/windows/package.py $payload $Version $OutputDirectory
     if ($LASTEXITCODE) { throw "PE validation or ZIP packaging failed" }
+    & "$PSScriptRoot/msix.ps1" -Payload $payload -Version $Version -AppVersion $appVersion -OutputDirectory $OutputDirectory
 } finally {
     $env:CARGO_ENCODED_RUSTFLAGS = $savedFlags
     Pop-Location
