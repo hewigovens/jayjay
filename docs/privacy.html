@@ -1,0 +1,101 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Privacy Policy — JayJay</title>
+  <meta name="description" content="What data JayJay, the native GUI for Jujutsu, sends over the network and what stays on your computer.">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://jayjay.hewig.dev/privacy.html">
+  <link rel="icon" href="favicon.ico" sizes="32x32">
+  <link rel="icon" href="icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link
+    href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap"
+    rel="stylesheet">
+  <script src="js/theme.js"></script>
+  <link rel="stylesheet" href="css/help-common.css">
+  <link rel="stylesheet" href="css/guide.css">
+</head>
+
+<body class="guide-page">
+  <nav class="site-nav">
+    <div class="wrap nav">
+      <a class="brand" href="index.html"><img src="icon.svg" alt="JayJay"> JayJay</a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="index.html#features">Features</a>
+          <a href="index.html#install">Install</a>
+          <a href="index.html#faq">FAQ</a>
+          <a href="blog/">Blog</a>
+          <a href="guide.html">Guide</a>
+          <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
+      </div>
+    </div>
+  </nav>
+  <header class="guide-container g-head">
+    <h1>Privacy Policy</h1>
+    <p>JayJay works on your repositories locally. This page lists everything the app itself sends over the network.</p>
+    <p class="post-meta">Last updated <time datetime="2026-10-22">22 October 2026</time></p>
+  </header>
+  <main class="guide-container">
+    <article class="guide-content">
+      <section class="g" id="summary">
+        <h2>Summary</h2>
+        <ul>
+          <li>JayJay has no accounts and does not collect your code, file names, repository names, commit messages, or commands.</li>
+          <li>It sends anonymous build and OS statistics once a day. You can turn this off in Settings › Data &amp; Privacy.</li>
+          <li>Everything else it sends goes to services you chose to use: your Git remotes, your code forge, avatar services, and AI tools you run.</li>
+        </ul>
+      </section>
+
+      <section class="g" id="statistics">
+        <h2>Anonymous usage statistics</h2>
+        <p>At most once per day, JayJay sends a small request to <code>jayjay.hewigovens.workers.dev</code> containing the app version, the platform (macOS or Windows/Linux), the OS name and version, and the CPU architecture. It also sends two random identifiers, derived on your computer from a secret that never leaves it, that change every day and every month. They let us count daily and monthly active installs without a stable ID that could follow you over time.</p>
+        <p>The statistics service does not read or store your IP address and receives no repository, file, or command data. Statistics are on by default; turn them off in <strong>Settings › Data &amp; Privacy › Share anonymous build and OS stats</strong> and nothing more is sent. Development builds never send them.</p>
+      </section>
+
+      <section class="g" id="services">
+        <h2>Services you use through JayJay</h2>
+        <ul>
+          <li><strong>Git remotes.</strong> Fetch, push, and clone talk to the remotes you configured, exactly as jj and Git would on the command line.</li>
+          <li><strong>Code forges.</strong> If you sign in to GitHub, GitLab, or Codeberg to work with pull requests, JayJay calls that forge's API with your token. Tokens are stored in your operating system's credential store (macOS Keychain, Windows Credential Manager, or the Linux Secret Service) and are sent only to the forge they belong to.</li>
+          <li><strong>Avatars.</strong> To show author pictures, JayJay requests avatars from GitHub, GitLab, or Gravatar. Gravatar receives a SHA-256 hash of the author's email address, not the address itself. Avatars are cached on your computer.</li>
+          <li><strong>AI writing tools.</strong> When you ask JayJay to draft a commit message or bookmark name, it passes a short excerpt of the diff to the AI tool you picked: the Codex or Claude command-line tool installed on your computer, which sends it to its own provider under that provider's terms, or Apple Intelligence on macOS, which runs on your device. JayJay has no AI service of its own and sends nothing unless you ask.</li>
+          <li><strong>Updates (macOS).</strong> The macOS app checks the update feed on GitHub. It does not send system profile information.</li>
+        </ul>
+      </section>
+
+      <section class="g" id="local">
+        <h2>Data on your computer</h2>
+        <p>Review marks and notes, settings, the avatar cache, and the statistics secret are stored in JayJay's local application folders and are never uploaded. You can clear review data from Settings › Data &amp; Privacy, and uninstalling the app removes the rest.</p>
+        <p>JayJay does not include crash reporting, advertising, or third-party analytics.</p>
+      </section>
+
+      <section class="g" id="contact">
+        <h2>Contact</h2>
+        <p>Questions or requests about privacy: open an issue at <a href="https://github.com/hewigovens/jayjay/issues">github.com/hewigovens/jayjay/issues</a>. If this policy changes, the date above changes with it.</p>
+      </section>
+    </article>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay">★ Star it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ sponsor</a></p>
+      <div class="foot-links">
+        <a href="index.html">Home</a>
+        <a href="blog/">Blog</a>
+        <a href="guide.html">Guide</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
