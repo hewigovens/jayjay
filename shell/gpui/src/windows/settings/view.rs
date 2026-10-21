@@ -13,6 +13,7 @@ use gpui::{
 
 use super::dropdown::{OpenDropdown, dropdown_overlay};
 
+use super::font_catalog_state::FontCatalogState;
 use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance};
 use crate::ui::logo::Logo;
@@ -33,6 +34,7 @@ pub struct SettingsView {
     focus_handle: FocusHandle,
     pub(super) scroll: ScrollHandle,
     pub(super) open_dropdown: Option<OpenDropdown>,
+    pub(super) fonts: FontCatalogState,
     pub(super) jj_config: Option<config::JjConfigSnapshot>,
     pub(super) jj_config_loading: bool,
     pub(crate) identity: Option<UserIdentity>,
@@ -93,6 +95,7 @@ impl SettingsView {
                             focus_handle: cx.focus_handle(),
                             scroll: ScrollHandle::new(),
                             open_dropdown: None,
+                            fonts: FontCatalogState::default(),
                             jj_config: None,
                             jj_config_loading: false,
                             identity: None,
@@ -112,6 +115,7 @@ impl SettingsView {
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
                         match section {
+                            SettingsSection::Fonts => view.ensure_font_catalog_loaded(cx),
                             SettingsSection::Integrations => view.ensure_tools_loaded(cx),
                             SettingsSection::Jujutsu => view.ensure_jj_config_loaded(cx),
                             SettingsSection::DataPrivacy => view.refresh_review_summary(cx),

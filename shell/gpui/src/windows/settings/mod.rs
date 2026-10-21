@@ -9,6 +9,7 @@ mod diff;
 mod diff_palette;
 mod dropdown;
 mod feedback;
+mod font_catalog_state;
 mod font_preview;
 mod fonts;
 mod forges;

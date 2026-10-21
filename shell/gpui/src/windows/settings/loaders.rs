@@ -3,6 +3,8 @@ use gpui::{AppContext, Context};
 use super::{SettingsView, cli_diagnostics, config, tools};
 use jayjay_core::UserIdentity;
 
+use crate::app::fonts::FontCatalog;
+
 impl SettingsView {
     // Re-read on every entry: repo windows write the shared store, so a once-per-window snapshot would go stale.
     pub(super) fn refresh_review_summary(&mut self, cx: &mut Context<Self>) {
@@ -71,6 +73,24 @@ impl SettingsView {
                     view.cli_install = Some(cli_install);
                 }
                 cx.notify();
+            });
+        })
+        .detach();
+    }
+
+    pub(super) fn ensure_font_catalog_loaded(&mut self, cx: &mut Context<Self>) {
+        if self.fonts.catalog.is_some() || self.fonts.loading {
+            return;
+        }
+        self.fonts.loading = true;
+        cx.spawn(async move |this, cx| {
+            let catalog = cx.background_spawn(async { FontCatalog::load() }).await;
+            let _ = this.update(cx, move |view, cx| {
+                view.fonts.loading = false;
+                view.fonts.catalog = Some(catalog);
+                if let Some((field_id, anchor)) = view.fonts.pending_dropdown.take() {
+                    view.open_dropdown(field_id, anchor, cx);
+                }
             });
         })
         .detach();
