@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::time::Instant;
 
 use gpui::{App, AppContext};
 
@@ -12,13 +13,22 @@ const OCTICONS_FONT: &[u8] = include_bytes!("../../assets/fonts/Octicons.ttf");
 const SETI_FONT: &[u8] = include_bytes!("../../../../assets/fonts/Seti.ttf");
 
 pub(crate) fn run(launch: GuiLaunch) {
+    let launched_at = Instant::now();
+    super::log_file::LogFile::install();
+    log::info!(
+        "launching {} on {}",
+        env!("CARGO_PKG_VERSION"),
+        std::env::consts::OS
+    );
     super::cli_install::repair_broken_link();
     let cfg = AppConfig::load();
     let app = gpui_platform::application().with_assets(GpuiAssets);
     app.run(move |cx: &mut App| {
+        log::info!("platform ready at {}ms", launched_at.elapsed().as_millis());
+        super::stall_monitor::start(launched_at, cx);
         let fonts = vec![Cow::Borrowed(OCTICONS_FONT), Cow::Borrowed(SETI_FONT)];
         if let Err(error) = cx.text_system().add_fonts(fonts) {
-            eprintln!("[jayjay-gpui] failed to register the icon fonts: {error}");
+            log::error!("failed to register the icon fonts: {error}");
         }
         cx.set_global(
             Theme::for_appearance(cfg.appearance, cx.window_appearance(), &cfg.diff.palette)
@@ -26,12 +36,17 @@ pub(crate) fn run(launch: GuiLaunch) {
         );
         cx.bind_keys(super::actions::app_key_bindings());
 
+        let fonts_started = Instant::now();
         cx.set_global(AppConfigStore::new(cfg));
+        log::info!(
+            "fonts resolved in {}ms",
+            fonts_started.elapsed().as_millis()
+        );
         cx.set_global(super::rating_prompt::RatingPromptStore::load());
         match launch {
             GuiLaunch::ExternalTool(invocation) => {
                 if let Err(error) = crate::external_tool::open_external_tool(invocation, cx) {
-                    eprintln!("[jayjay-gpui] failed to open external tool: {error}");
+                    log::error!("failed to open external tool: {error}");
                     std::process::exit(1);
                 }
                 cx.activate(true);
@@ -50,6 +65,10 @@ pub(crate) fn run(launch: GuiLaunch) {
                         })
                         .await;
                     cx.update(|cx| open_startup_window(path, cx));
+                    log::info!(
+                        "first window opened at {}ms",
+                        launched_at.elapsed().as_millis()
+                    );
                 })
                 .detach();
             }

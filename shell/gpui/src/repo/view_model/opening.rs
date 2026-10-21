@@ -49,7 +49,19 @@ impl RepoViewModel {
         self.begin_refreshing(cx);
         Self::background_update(
             cx,
-            async move { Self::open_blocking(path, &revset) },
+            async move {
+                let started = std::time::Instant::now();
+                let opened = Self::open_blocking(path, &revset);
+                match &opened {
+                    Ok(loaded) => log::info!(
+                        "repo opened in {}ms with {} changes",
+                        started.elapsed().as_millis(),
+                        loaded.entries.len()
+                    ),
+                    Err(error) => log::warn!("repo open failed: {error}"),
+                }
+                opened
+            },
             move |vm, opened, cx| {
                 vm.finish_repo_task(cx);
                 match opened {

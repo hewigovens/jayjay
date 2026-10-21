@@ -20,7 +20,7 @@ pub(crate) fn open(cx: &mut App) {
 
 fn present_open_failure(window: Option<AnyWindowHandle>, cx: &mut App) {
     let Some(window) = window else {
-        eprintln!("[jayjay-gpui] could not open email app; feedback address: {FEEDBACK_ADDRESS}");
+        log::warn!("could not open email app; feedback address: {FEEDBACK_ADDRESS}");
         return;
     };
     if window
@@ -45,9 +45,7 @@ fn present_open_failure(window: Option<AnyWindowHandle>, cx: &mut App) {
         })
         .is_err()
     {
-        eprintln!(
-            "[jayjay-gpui] could not present email fallback; feedback address: {FEEDBACK_ADDRESS}"
-        );
+        log::warn!("could not present email fallback; feedback address: {FEEDBACK_ADDRESS}");
     }
 }
 

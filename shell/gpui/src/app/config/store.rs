@@ -50,7 +50,7 @@ where
         if store.persist
             && let Err(err) = next.save()
         {
-            eprintln!("[jayjay-gpui] failed to save config: {err}");
+            log::error!("failed to save config: {err}");
         }
         fonts::sync_from_config(&next);
         store.config = Arc::new(next);
