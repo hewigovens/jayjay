@@ -7,7 +7,7 @@ use gpui::{
 use super::SettingsView;
 use super::shared::ROW_FONT_SIZE;
 use crate::app::config::{current as current_cfg, update as update_cfg};
-use crate::app::fonts;
+use crate::app::fonts::{self, FontCatalog};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use crate::ui::icons::{self, glyph};
@@ -144,26 +144,23 @@ struct DropdownOption {
     group: Option<&'static str>,
 }
 
-fn dropdown_options(field_id: &str) -> Vec<DropdownOption> {
-    match field_id {
-        "editor" => static_options(EDITOR_OPTIONS),
-        "terminal" => static_options(TERMINAL_OPTIONS),
-        "interface-font-family" => font_options(
+fn dropdown_options(field_id: &str, fonts: Option<&FontCatalog>) -> Vec<DropdownOption> {
+    match (field_id, fonts) {
+        ("editor", _) => static_options(EDITOR_OPTIONS),
+        ("terminal", _) => static_options(TERMINAL_OPTIONS),
+        ("interface-font-family", Some(fonts)) => font_options(
             fonts::interface_preference_label(""),
-            [("My Fonts", fonts::interface_font_choices())],
+            [("My Fonts", fonts.interface.clone())],
         ),
-        "code-font-family" => {
-            let choices = fonts::code_font_choices();
-            font_options(
-                fonts::mono_preference_label(""),
-                [
-                    ("Coding Fonts", choices.coding),
-                    ("Other Monospaced", choices.other),
-                ],
-            )
-        }
-        "diff-light-palette" => diff_palette_options(false),
-        "diff-dark-palette" => diff_palette_options(true),
+        ("code-font-family", Some(fonts)) => font_options(
+            fonts::mono_preference_label(""),
+            [
+                ("Coding Fonts", fonts.code.coding.clone()),
+                ("Other Monospaced", fonts.code.other.clone()),
+            ],
+        ),
+        ("diff-light-palette", _) => diff_palette_options(false),
+        ("diff-dark-palette", _) => diff_palette_options(true),
         _ => Vec::new(),
     }
 }
@@ -366,7 +363,17 @@ impl SettingsView {
         anchor: Point<Pixels>,
         cx: &mut Context<Self>,
     ) {
-        let options = dropdown_options(field_id.as_ref());
+        self.fonts.pending_dropdown = None;
+        let is_font_field = matches!(
+            field_id.as_ref(),
+            "interface-font-family" | "code-font-family"
+        );
+        if is_font_field && self.fonts.catalog.is_none() {
+            self.fonts.pending_dropdown = Some((field_id, anchor));
+            self.ensure_font_catalog_loaded(cx);
+            return;
+        }
+        let options = dropdown_options(field_id.as_ref(), self.fonts.catalog.as_ref());
         self.open_dropdown = Some(OpenDropdown {
             field_id,
             anchor,
@@ -376,6 +383,7 @@ impl SettingsView {
     }
 
     pub(super) fn close_dropdown(&mut self, cx: &mut Context<Self>) {
+        self.fonts.pending_dropdown = None;
         if self.open_dropdown.take().is_some() {
             cx.notify();
         }

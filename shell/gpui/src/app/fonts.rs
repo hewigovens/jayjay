@@ -2,12 +2,15 @@ use std::sync::{Arc, OnceLock, RwLock};
 
 use font_kit::source::SystemSource;
 use gpui::{App, FontFeatures, Pixels, Styled, TextRun, Window, black, font, px};
-use jayjay_core::{CodeFontChoices, font_family_choices, mono_font_family};
+use jayjay_core::mono_font_family;
 
 use crate::app::config::AppConfig;
 use crate::app::theme::Theme;
 
+mod catalog;
 mod platform;
+
+pub(crate) use catalog::FontCatalog;
 
 /// GPUI has no app-wide default font, so window roots and code elements read the configured fonts from here.
 struct ActiveFonts {
@@ -140,20 +143,12 @@ pub(crate) fn code_font_has_ligatures(window: &Window) -> bool {
     glyphs(FontFeatures::default()) != glyphs(no_ligatures())
 }
 
-pub(crate) fn interface_font_choices() -> Vec<String> {
-    font_family_choices(platform::user_families())
-}
-
 pub(crate) fn interface_preference_label(preference: &str) -> String {
     if preference.trim().is_empty() {
         "System".to_owned()
     } else {
         preference.to_owned()
     }
-}
-
-pub(crate) fn code_font_choices() -> CodeFontChoices {
-    CodeFontChoices::new(platform::monospaced_families())
 }
 
 pub(crate) fn mono_preference_id(preference: &str) -> String {
