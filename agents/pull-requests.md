@@ -49,7 +49,9 @@ Hosted review-thread resolution also requires authorization under [Task Authorit
 
 ## Multiple changes
 
-Use one bookmark per independent pull request. For stacked work, create separate bookmarks only when the dependency is useful to reviewers. Push the base first, push the dependent change second, and set the dependent pull request's base branch to the base bookmark in the hosting UI.
+Split work into one change per logical piece and publish each as its own bookmark and pull request. Do not bundle several changes into one pull request.
+
+When a change depends on another, stack them: open each pull request against the bookmark below it (`gh pr create --base <lower-topic> --head <topic>`), pushing from the bottom up, then link them into a GitHub stack with `gh stack init <bottom-topic> … <top-topic>` and `gh stack submit --auto` (the `github/gh-stack` extension; it works on git branches, so run it from the colocated default checkout). JayJay's **Create / Update Stacked PRs…** context-menu action does the same from the app.
 
 ## After landing
 
