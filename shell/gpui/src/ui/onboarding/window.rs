@@ -39,7 +39,7 @@ impl OnboardingView {
             .ok()
             .and_then(|handle| Some((handle, handle.entity(cx).ok()?)))
         else {
-            eprintln!("[jayjay-gpui] failed to open onboarding window");
+            log::error!("failed to open onboarding window");
             cx.quit();
             return;
         };

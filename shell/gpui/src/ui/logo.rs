@@ -27,7 +27,7 @@ impl Logo {
         let image = cx
             .svg_renderer()
             .render_single_frame(LOGO_SVG, LOGO_SCALE)
-            .inspect_err(|err| eprintln!("[jayjay-gpui] failed to render logo: {err}"))
+            .inspect_err(|err| log::error!("failed to render logo: {err}"))
             .ok();
         let logo = Self { image };
         cx.set_global(SharedLogo(logo.clone()));

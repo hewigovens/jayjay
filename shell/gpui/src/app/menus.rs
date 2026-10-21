@@ -199,7 +199,7 @@ pub(crate) fn prompt_open_repository(cx: &mut App) {
             Ok(Ok(Some(paths))) => paths,
             Ok(Ok(None)) | Err(_) => return,
             Ok(Err(error)) => {
-                eprintln!("[jayjay-gpui] path picker unavailable: {error}");
+                log::error!("path picker unavailable: {error}");
                 cx.update(crate::windows::open_repository::OpenRepositoryPathView::open);
                 return;
             }

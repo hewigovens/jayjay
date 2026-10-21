@@ -68,7 +68,7 @@ pub fn open_startup_window(path: Option<PathBuf>, cx: &mut App) {
     let window_handle = match RepoWindow::open(path, initial_window_bounds, cx) {
         Ok(handle) => handle,
         Err(error) => {
-            eprintln!("[jayjay-gpui] failed to open window: {error}");
+            log::error!("failed to open window: {error}");
             cx.quit();
             return;
         }

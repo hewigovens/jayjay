@@ -4315,6 +4315,7 @@ dependencies = [
  "jayjay-review",
  "jj-test",
  "libc",
+ "log",
  "notify",
  "notify-rust",
  "open",

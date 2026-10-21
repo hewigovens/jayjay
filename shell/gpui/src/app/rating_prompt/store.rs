@@ -53,7 +53,7 @@ impl RatingPromptStore {
                 .map_err(std::io::Error::other)
                 .and_then(|contents| write_atomically(path, &contents))
         {
-            eprintln!("[jayjay-gpui] failed to save the rating prompt state: {error}");
+            log::error!("failed to save the rating prompt state: {error}");
         }
         result
     }
