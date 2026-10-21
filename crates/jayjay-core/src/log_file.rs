@@ -26,6 +26,14 @@ impl LogFile {
         );
     }
 
+    pub fn set_debug(enabled: bool) {
+        log::set_max_level(if enabled {
+            LevelFilter::Debug
+        } else {
+            LevelFilter::Info
+        });
+    }
+
     pub fn path() -> Option<PathBuf> {
         Self::dir().map(|dir| dir.join(FILE_NAME))
     }
@@ -73,9 +81,9 @@ impl LogFile {
 impl Log for LogFile {
     fn enabled(&self, metadata: &Metadata) -> bool {
         let ceiling = if metadata.target().starts_with("jayjay") {
-            Level::Info
+            log::max_level()
         } else {
-            Level::Warn
+            LevelFilter::Warn
         };
         metadata.level() <= ceiling
     }

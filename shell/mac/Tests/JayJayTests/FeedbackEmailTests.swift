@@ -6,7 +6,7 @@ final class FeedbackEmailTests: XCTestCase {
     func testOpenUsesAddressAndPrefilledSubject() throws {
         var openedURL: URL?
 
-        XCTAssertTrue(FeedbackEmail.open(using: {
+        XCTAssertTrue(FeedbackEmail.open(attaching: nil, using: {
             openedURL = $0
             return true
         }))
@@ -23,9 +23,16 @@ final class FeedbackEmailTests: XCTestCase {
     func testOpenReportsFailureWhenNoMailClientAcceptsURL() {
         var didReportFailure = false
 
-        XCTAssertFalse(FeedbackEmail.open(using: { _ in false }, onFailure: {
+        XCTAssertFalse(FeedbackEmail.open(attaching: nil, using: { _ in false }, onFailure: {
             didReportFailure = true
         }))
         XCTAssertTrue(didReportFailure)
+    }
+
+    func testComposeURLAsksForTheDebugLog() throws {
+        let url = FeedbackEmail.composeURL(askingFor: URL(fileURLWithPath: "/logs/jayjay.log"))
+        let body = try URLComponents(url: url, resolvingAgainstBaseURL: false)?
+            .queryItems?.first { $0.name == "body" }?.value
+        XCTAssertEqual(body, "Please attach the debug log: /logs/jayjay.log\n\n")
     }
 }

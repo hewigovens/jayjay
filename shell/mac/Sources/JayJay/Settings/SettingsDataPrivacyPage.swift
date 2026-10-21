@@ -6,6 +6,7 @@ struct SettingsDataPrivacyPage: View {
     let windowManager: RepoWindowManager
     @State private var reviewSummary = ReviewStoreSummary(marks: 0, notes: 0)
     @State private var confirmClearReviewData = false
+    @AppStorage(DebugMode.defaultsKey) private var debugMode = isPrereleaseBuild()
 
     var body: some View {
         Form {
@@ -23,6 +24,17 @@ struct SettingsDataPrivacyPage: View {
                 Text("Privacy")
             } footer: {
                 Text(AppTelemetry.optInDetail)
+            }
+
+            Section {
+                Toggle(isOn: $debugMode) {
+                    SettingsLabel("Debug mode", icon: "ladybug")
+                }
+                .onChange(of: debugMode) { setDebugLogging(enabled: debugMode) }
+            } header: {
+                Text("Diagnostics")
+            } footer: {
+                Text("Logs more detail. Send Feedback attaches the log in Mail, or reveals it for you to attach in other mail apps.")
             }
 
             reviewSection

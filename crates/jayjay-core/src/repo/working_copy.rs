@@ -96,6 +96,7 @@ impl Repo {
 
     pub fn refresh_working_copy(&self) -> JayResult<()> {
         let _write = self.write_guard()?;
+        let started = std::time::Instant::now();
         // Swift cooperative executor threads have small stacks; jj descendant rebases can need substantially more while polling tree merges.
         std::thread::scope(|scope| {
             let worker = std::thread::Builder::new()
@@ -109,6 +110,12 @@ impl Repo {
                 Ok(result) => result,
                 Err(payload) => std::panic::resume_unwind(payload),
             }
+        })
+        .inspect(|()| {
+            log::debug!(
+                "working-copy snapshot in {}ms",
+                started.elapsed().as_millis()
+            )
         })
     }
 
