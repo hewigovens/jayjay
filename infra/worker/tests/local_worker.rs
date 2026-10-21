@@ -11,14 +11,11 @@ use std::sync::atomic::{AtomicBool, AtomicU16, Ordering};
 use std::thread;
 use std::time::{Duration, Instant};
 
-use chrono::DateTime;
 use serde_json::{Value, json};
-use sha2::{Digest, Sha256};
 use tempfile::TempDir;
 use ureq::Agent;
 
 const APPCAST: &[u8] = br#"<?xml version="1.0"?><rss><channel>JayJay</channel></rss>"#;
-const IP: &str = "203.0.113.1";
 const WRANGLER_ENV: [(&str, &str); 3] = [
     ("CI", "1"),
     ("WRANGLER_SEND_METRICS", "false"),
@@ -98,12 +95,7 @@ impl LocalWorker {
                 "0",
             ])
             .args(["--persist-to".as_ref(), state.path().as_os_str()])
-            .args([
-                "--show-interactive-dev-session=false",
-                "--var",
-                "HASH_SECRET:secret",
-                "--var",
-            ])
+            .args(["--show-interactive-dev-session=false", "--var"])
             .arg(format!(
                 "APPCAST_ORIGIN:http://127.0.0.1:{origin_port}/appcast.xml"
             ))
@@ -166,7 +158,6 @@ impl LocalWorker {
         let request = ureq::http::Request::builder()
             .method(method)
             .uri(format!("{}{path}", self.url))
-            .header("CF-Connecting-IP", IP)
             .header("Accept-Encoding", "identity")
             .body(())
             .unwrap();
@@ -251,7 +242,7 @@ fn client_ping_writes_d1(worker: &LocalWorker) {
     );
 }
 
-fn legacy_appcast_routes_and_hashes(worker: &LocalWorker) {
+fn legacy_appcast_routes_without_identity_do_not_write(worker: &LocalWorker) {
     for path in ["/appcast.xml", "/", "/older-client-path"] {
         let response = worker.request(
             "GET",
@@ -268,28 +259,10 @@ fn legacy_appcast_routes_and_hashes(worker: &LocalWorker) {
         );
         assert!(!response.origin_header);
     }
-    let rows = worker.sql("SELECT day, ts, unique_key, monthly_key, identity_kind, channel, platform, os, os_version, arch FROM pings");
-    let rows = rows.as_array().unwrap();
-    assert_eq!(rows.len(), 3);
-    let key = |period: String| hex::encode(&Sha256::digest(format!("{IP}|{period}|secret"))[..12]);
-    for row in rows {
-        let month = DateTime::from_timestamp(row["ts"].as_i64().unwrap(), 0)
-            .unwrap()
-            .format("%Y-%m");
-        assert_eq!(row["unique_key"], key(row["day"].to_string()));
-        assert_eq!(row["monthly_key"], key(month.to_string()));
-        assert_eq!(
-            [
-                &row["identity_kind"],
-                &row["channel"],
-                &row["platform"],
-                &row["os"],
-                &row["os_version"],
-                &row["arch"]
-            ],
-            ["network", "swiftui", "macos", "macos", "15.5", "arm64"]
-        );
-    }
+    assert_eq!(
+        worker.sql("SELECT COUNT(*) AS count FROM pings"),
+        json!([{ "count": 0 }])
+    );
 }
 
 fn probes_and_non_releases_do_not_write(worker: &LocalWorker) {
@@ -333,8 +306,16 @@ fn upstream_connection_failure_returns_bad_gateway(worker: &LocalWorker) {
 
 fn telemetry_failure_does_not_break_responses(worker: &LocalWorker) {
     worker.sql("ALTER TABLE pings RENAME TO unavailable_pings");
-    worker.assert_response("GET", "/ping?version=0.3.1", 200, b"ok");
-    worker.assert_response("GET", "/appcast.xml?appVersionShort=0.3.1", 200, APPCAST);
+    worker.assert_response(
+        "GET",
+        &format!(
+            "/ping?version=0.3.1&daily_id={}&monthly_id={}",
+            "a".repeat(64),
+            "b".repeat(64)
+        ),
+        200,
+        b"ok",
+    );
     worker.sql("ALTER TABLE unavailable_pings RENAME TO pings");
 }
 
@@ -344,7 +325,7 @@ fn local_worker_and_d1() {
     let worker = LocalWorker::start();
     let cases: [fn(&LocalWorker); 7] = [
         client_ping_writes_d1,
-        legacy_appcast_routes_and_hashes,
+        legacy_appcast_routes_without_identity_do_not_write,
         probes_and_non_releases_do_not_write,
         head_and_post_keep_existing_routes,
         upstream_error_status_keeps_legacy_proxy_response,

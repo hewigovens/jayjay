@@ -1,5 +1,3 @@
-use chrono::{DateTime, Utc};
-use sha2::{Digest, Sha256};
 use url::Url;
 
 pub(crate) struct Event {
@@ -11,7 +9,8 @@ pub(crate) struct Event {
     pub(crate) version: String,
     pub(crate) build: String,
     pub(crate) model: String,
-    identity: Option<(String, String)>,
+    pub(crate) daily_id: String,
+    pub(crate) monthly_id: String,
 }
 
 impl Event {
@@ -39,6 +38,8 @@ impl Event {
             return None;
         }
 
+        let daily_id = period_id(get("daily_id"))?;
+        let monthly_id = period_id(get("monthly_id"))?;
         let default = if channel == "swiftui" { "macos" } else { "" };
         let or_default = |value: &str| if value.is_empty() { default } else { value }.to_owned();
         let arch = match get("arch") {
@@ -59,28 +60,9 @@ impl Event {
             version: version.to_owned(),
             build: get("build").trim().to_owned(),
             model: get("model").to_owned(),
-            identity: period_id(get("daily_id")).zip(period_id(get("monthly_id"))),
+            daily_id,
+            monthly_id,
         })
-    }
-
-    pub(crate) fn identity_keys(
-        &self,
-        ip: &str,
-        now: DateTime<Utc>,
-        secret: &str,
-    ) -> (String, String, &'static str) {
-        if let Some((daily, monthly)) = &self.identity {
-            return (daily.clone(), monthly.clone(), "client");
-        }
-        let period_key = |period| {
-            let hash = Sha256::digest(format!("{ip}|{period}|{secret}"));
-            hex::encode(&hash[..12])
-        };
-        (
-            period_key((now.timestamp() / 86400).to_string()),
-            period_key(now.format("%Y-%m").to_string()),
-            "network",
-        )
     }
 }
 

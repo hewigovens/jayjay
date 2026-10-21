@@ -2,6 +2,17 @@ use super::*;
 use url::Url;
 
 fn event(query: &str, channel: &'static str) -> Option<Event> {
+    raw_event(
+        &format!(
+            "{query}&daily_id={}&monthly_id={}",
+            "c".repeat(64),
+            "d".repeat(64)
+        ),
+        channel,
+    )
+}
+
+fn raw_event(query: &str, channel: &'static str) -> Option<Event> {
     Event::from_url(
         &Url::parse(&format!("https://worker.test/?{query}")).unwrap(),
         channel,
@@ -54,10 +65,9 @@ fn parses_client_payload_and_normalizes_identity() {
         ),
         ("0.3.1", "42", "Mac Studio")
     );
-    let now = "2026-07-15T12:00:00Z".parse().unwrap();
     assert_eq!(
-        event.identity_keys("203.0.113.1", now, "secret"),
-        ("a".repeat(64), "b".repeat(64), "client")
+        (event.daily_id, event.monthly_id),
+        ("a".repeat(64), "b".repeat(64))
     );
 }
 
@@ -106,38 +116,16 @@ fn preserves_query_precedence_and_first_duplicate() {
 }
 
 #[test]
-fn legacy_and_invalid_identities_keep_exact_network_hashes() {
+fn drops_events_without_a_valid_identity() {
     let valid = "a".repeat(64);
-    let now = "2026-07-15T12:00:00Z".parse().unwrap();
     for identity in [
         String::new(),
         format!("daily_id={valid}"),
         format!("daily_id=not-hex&monthly_id={valid}"),
         format!("daily_id={valid}&monthly_id=short"),
     ] {
-        let event = event(&format!("version=0.3.1&{identity}"), "gpui").unwrap();
-        assert_eq!(
-            event.identity_keys("203.0.113.1", now, "secret"),
-            (
-                "62b4319c65396906c6688389".into(),
-                "617ee4b1080fb87f8a6ff2c5".into(),
-                "network"
-            )
-        );
+        assert!(raw_event(&format!("version=0.3.1&{identity}"), "gpui").is_none());
     }
     let event = event("version=0.3.1", "gpui").unwrap();
     assert!(event.platform.is_empty() && event.os.is_empty());
-    let (daily, monthly, _) = event.identity_keys(
-        "203.0.113.1",
-        "2026-07-16T00:00:00Z".parse().unwrap(),
-        "secret",
-    );
-    assert_ne!(daily, "62b4319c65396906c6688389");
-    assert_eq!(monthly, "617ee4b1080fb87f8a6ff2c5");
-    let (_, next_month, _) = event.identity_keys(
-        "203.0.113.1",
-        "2026-08-01T00:00:00Z".parse().unwrap(),
-        "secret",
-    );
-    assert_ne!(next_month, monthly);
 }

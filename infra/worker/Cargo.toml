@@ -8,9 +8,6 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
-chrono.workspace = true
-hex.workspace = true
-sha2.workspace = true
 url.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]

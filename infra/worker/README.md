@@ -11,7 +11,7 @@ Stats land in **D1** (SQLite); schema in `schema.sql`. Rust compiles to `wasm32-
 
 No IP, repository, file, or command data is stored. Each client keeps a random installation secret locally and derives separate SHA-256 identifiers for the current UTC day and month. The server can count DAU and MAU but cannot link an installation across months. The secret itself never leaves the device.
 
-Anonymous build and OS statistics are enabled by default and can be disabled in Settings. Explicit opt-outs persist. Older clients that do not send rotating identifiers fall back to salted network-period hashes and are reported separately as estimates; the raw IP never leaves the request handler.
+Anonymous build and OS statistics are enabled by default and can be disabled in Settings. Explicit opt-outs persist. Events without valid rotating identifiers, such as pings from older clients, are not recorded.
 
 GPUI skips pings whenever the `CI` environment variable is set. AppImage smoke tests also use a temporary configuration with telemetry disabled, including when launching older releases.
 
@@ -25,20 +25,19 @@ cargo install --locked --version 0.8.7 worker-build
 npm install --global wrangler@4.100.0
 ```
 
-The `[build]` command in `wrangler.toml` generates `build/index.js` and its Wasm module. For a new deployment, configure D1 and the secret from `infra/worker`:
+The `[build]` command in `wrangler.toml` generates `build/index.js` and its Wasm module. For a new deployment, configure D1 from `infra/worker`:
 
 ```bash
 cd infra/worker
 wrangler d1 create jayjay_stats                  # one-time; id already in wrangler.toml
-wrangler secret put HASH_SECRET                  # one-time; any long random string
 just worker::deploy                              # verifies, migrates, rechecks D1, then deploys
 ```
 
 Local build only: `just worker::build`.
 
-Run `just worker::test` for the Rust telemetry tests, migration checksum verification, and HTTP/D1 integration test in `tests/local_worker.rs`. Plain `cargo test` skips that test because it needs Wrangler; it builds and starts the Worker locally, applies migrations to a temporary local D1 database, and serves a local appcast fixture. It exercises client and legacy telemetry, probe filtering, proxy responses, and database/upstream failure handling without accessing production.
+Run `just worker::test` for the Rust telemetry tests, migration checksum verification, and HTTP/D1 integration test in `tests/local_worker.rs`. Plain `cargo test` skips that test because it needs Wrangler; it builds and starts the Worker locally, applies migrations to a temporary local D1 database, and serves a local appcast fixture. It exercises client telemetry, dropped legacy pings, probe filtering, proxy responses, and database/upstream failure handling without accessing production.
 
-The Rust migration retains the existing Worker name, D1 binding/database, and `HASH_SECRET`. Existing deployments need no database recreation, secret rotation, or client changes.
+The Rust migration retains the existing Worker name and D1 binding/database. Existing deployments need no database recreation or client changes.
 
 ## Query
 
@@ -69,14 +68,14 @@ test, dev, and missing-version rows are ignored. DAU counts deduplicate by the
 day-scoped rotating identifier. MAU and build/OS distributions use each monthly
 identifier's latest event so an upgrade is counted once under its newest build.
 `exact_client_installs` uses rotating client identifiers; `network_estimates`
-is the compatibility count for older releases.
+is always 0 now that network-hash fallbacks are no longer recorded.
 
 ## Older clients and migrations
 
 Older SwiftUI releases may continue to request `/appcast.xml`, and older GPUI
-releases may call `/ping` without rotating identifiers. The worker accepts both
-payloads and records them as `network_estimates`; raw IP addresses are never
-stored. Existing rows remain available for DAU, but exact historical MAU cannot
+releases may call `/ping` without rotating identifiers. The worker still serves
+both routes but does not record those pings and never reads the client IP.
+Existing legacy rows remain available for DAU, but exact historical MAU cannot
 be reconstructed because those rows have no month-scoped client identifier.
 
 Schema migrations are additive and must be applied before deploying worker code
