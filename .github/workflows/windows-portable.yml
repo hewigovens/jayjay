@@ -60,6 +60,16 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '')
 
+      - name: Verify MSIX version mapping
+        run: ./dist/windows/test-msix-version.ps1
+
+      - name: Verify final MSIX contents
+        run: |
+          $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
+          if ($LASTEXITCODE) { throw 'Cargo metadata failed' }
+          $version = ($metadata.packages | Where-Object name -EQ 'jayjay-gpui').version
+          ./dist/windows/verify-msix.ps1 -Package (Get-ChildItem build/windows/*.msix | Select-Object -ExpandProperty FullName) -AppVersion $version
+
       - name: Verify extracted ZIP
         run: ./dist/windows/smoke.ps1 -Archive (Get-ChildItem build/windows/*.zip | Select-Object -ExpandProperty FullName)
 

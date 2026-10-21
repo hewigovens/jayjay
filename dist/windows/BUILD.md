@@ -7,6 +7,9 @@ rustup toolchain install 1.99.0 --profile minimal
 $env:RUSTUP_TOOLCHAIN = '1.99.0'
 cargo install cargo-about --version 0.9.2 --features cli --locked
 ./dist/windows/build.ps1
+./dist/windows/test-msix-version.ps1
+$appVersion = ((cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json).packages | Where-Object name -EQ 'jayjay-gpui').version
+./dist/windows/verify-msix.ps1 -Package (Get-ChildItem build/windows/*.msix).FullName -AppVersion $appVersion
 ./dist/windows/smoke.ps1 -Archive (Get-ChildItem build/windows/*.zip).FullName
 ```
 
@@ -19,5 +22,7 @@ Outputs are `build/windows/JayJay-<version>-windows-x64-alpha.zip`, its `.zip.sh
 The ZIP is byte-for-byte deterministic for the same payload and zlib version: entries are sorted, permissions and timestamps are fixed, and entries use deflate at level 9. Reproducing the compiled binaries across different Windows SDKs, checkout locations, or build machines has not been verified.
 
 `.github/workflows/windows-portable.yml` builds the ZIP and smoke-checks the extracted payload; GPUI CI runs the Windows Rust workspace tests. Every run uploads the unsigned MSIX as the `windows-msix` artifact for 14 days; CI keeps no other build artifacts. A published `v*` GitHub release hands the ZIP to the `publish` job, which attaches it and its `.zip.sha256` to the release. For stable releases it also copies both to `https://pkgs.hewig.dev/windows/` (R2, never overwritten) and uploads a `winget-manifests` artifact generated from the served bytes; submit that `manifests/h/hewig/JayJay/<version>` directory to microsoft/winget-pkgs. The job reuses the pacman publisher's `R2_*` secrets and runs from `main`.
+
+The MSIX CI check uses MakeAppx to unpack the final archive and MakePRI to read its resource index. It verifies the pinned Partner Center identity, Store version limits and app-version mapping, GUI/CLI entry points and execution alias, PNG dimensions and indexed icon variants, PE subsystems/runtime dependencies, and payload checksums. It does not install or sign the package. Installation, registered alias execution, packaged GUI activation, uninstall, Windows App Certification Kit (WACK), and Partner Center acceptance remain unverified; the hosted Windows Server runner is not a Windows client certification environment. MakeAppx performs only limited semantic validation ([Microsoft documentation](https://learn.microsoft.com/en-us/windows/msix/package/create-app-package-with-makeappx-tool)).
 
 The smoke check exercises real extracted CLI help/version/config/review/error behavior and the terminal helper. A separate GUI-subsystem fixture verifies the console launcher's literal argument forwarding, output pipes, blocking wait, and exit status without requiring a desktop. It also checks batch-wrapper argument handling through the real terminal helper. Completing real diff/edit/merge windows, File Explorer reveal, default associations, editor and terminal desktop interaction, rendering, scaling, keyboard workflows, and authentication still require a Windows desktop test pass.
