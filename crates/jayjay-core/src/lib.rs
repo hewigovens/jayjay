@@ -28,6 +28,8 @@ mod jj_command;
 #[cfg(feature = "repository")]
 mod json_store;
 #[cfg(feature = "repository")]
+mod log_file;
+#[cfg(feature = "repository")]
 mod merge_editor;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
@@ -62,6 +64,8 @@ pub use fonts::{
 };
 #[cfg(feature = "repository")]
 pub use jj_command::{JjCommand, JjCommandResult};
+#[cfg(feature = "repository")]
+pub use log_file::LogFile;
 #[cfg(feature = "repository")]
 pub use merge_editor::{MergeEditorHunkExt, MergeScrollMap};
 #[cfg(feature = "repository")]

@@ -4277,6 +4277,7 @@ dependencies = [
  "jj-test",
  "keyring-core",
  "libc",
+ "log",
  "nucleo-matcher",
  "parking_lot",
  "percent-encoding",

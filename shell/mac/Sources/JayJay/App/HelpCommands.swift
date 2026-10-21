@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct HelpCommands: Commands {
@@ -25,6 +26,12 @@ struct HelpCommands: Commands {
                 FeedbackEmail.open()
             } label: {
                 Label("Send Feedback", systemImage: "envelope")
+            }
+            Button {
+                guard let path = logFilePath() else { return }
+                NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
+            } label: {
+                Label("Reveal Logs", systemImage: "doc.text.magnifyingglass")
             }
             Divider()
             Button { openWindow(id: AppWindows.shortcuts) } label: {
