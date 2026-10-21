@@ -1,4 +1,8 @@
-use crate::{CliCommandOutcome, JayError};
+use crate::external_tools::EXTERNAL_TOOL_USAGE;
+use crate::{
+    CliCommandOutcome, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
+    JJ_TOOL_CONFIG, JayError,
+};
 
 use super::parser::{ReviewOutcome, parse_review};
 
@@ -8,14 +12,18 @@ pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCom
     if first == "--version" || first == "-v" {
         return Some(CliCommandOutcome::ok(format!("jayjay {version}\n")));
     }
-    if first == crate::JAYJAY_CONFIG_COMMAND {
+    if first == JAYJAY_CONFIG_COMMAND {
         return Some(if arguments.len() == 1 {
-            CliCommandOutcome::ok(crate::JJ_TOOL_CONFIG)
+            CliCommandOutcome::ok(JJ_TOOL_CONFIG)
         } else {
             CliCommandOutcome::err("error: usage: jayjay config\n")
         });
     }
-    if first != crate::JAYJAY_REVIEW_COMMAND {
+    if first == JAYJAY_TOOL_COMMAND {
+        return matches!(arguments.get(1).map(String::as_str), Some("-h" | "--help"))
+            .then(|| CliCommandOutcome::ok(EXTERNAL_TOOL_USAGE));
+    }
+    if first != JAYJAY_REVIEW_COMMAND {
         return None;
     }
 
@@ -77,7 +85,7 @@ mod tests {
     fn config_prints_paste_ready_jj_configuration() {
         assert_eq!(
             run_app_cli_command(&args(&["config"]), "1.2.3"),
-            Some(CliCommandOutcome::ok(crate::JJ_TOOL_CONFIG))
+            Some(CliCommandOutcome::ok(JJ_TOOL_CONFIG))
         );
     }
 
@@ -89,6 +97,19 @@ mod tests {
             outcome,
             CliCommandOutcome::err("error: usage: jayjay config\n")
         );
+    }
+
+    #[test]
+    fn tool_help_prints_usage_and_other_tool_arguments_fall_through() {
+        for flag in ["-h", "--help"] {
+            assert_eq!(
+                run_app_cli_command(&args(&["tool", flag]), "1.2.3"),
+                Some(CliCommandOutcome::ok(EXTERNAL_TOOL_USAGE))
+            );
+        }
+        for arguments in [&["tool", "diff", "a", "b"][..], &["tool", "diff", "--help"]] {
+            assert!(run_app_cli_command(&args(arguments), "1.2.3").is_none());
+        }
     }
 
     #[test]

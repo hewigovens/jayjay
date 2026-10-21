@@ -11,8 +11,20 @@ enum CommandLineInterface {
     }
 
     static func outcome(for arguments: [String]) -> CliCommandOutcome? {
-        let cliArguments = Array(arguments.dropFirst())
+        let cliArguments = appArguments(arguments)
         guard !cliArguments.isEmpty else { return nil }
         return runAppCliCommand(arguments: cliArguments, version: AppMetadata.shortVersion)
+    }
+
+    /// The `jayjay` launcher prefixes tool sessions with `-ApplePersistenceIgnoreState YES`.
+    static func appArguments(_ arguments: [String]) -> [String] {
+        var appArguments = Array(arguments.dropFirst())
+        if let index = appArguments.firstIndex(of: "-ApplePersistenceIgnoreState") {
+            appArguments.remove(at: index)
+            if index < appArguments.endIndex {
+                appArguments.remove(at: index)
+            }
+        }
+        return appArguments
     }
 }

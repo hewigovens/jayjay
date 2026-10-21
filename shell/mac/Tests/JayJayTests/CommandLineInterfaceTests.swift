@@ -12,4 +12,10 @@ final class CommandLineInterfaceTests: XCTestCase {
         XCTAssertEqual(outcome?.exitCode, 0)
         XCTAssertEqual(outcome?.message, "jayjay \(AppMetadata.shortVersion)\n")
     }
+
+    func testLauncherPrefixedToolHelpPrintsUsage() {
+        let outcome = CommandLineInterface.outcome(for: ["JayJay", "-ApplePersistenceIgnoreState", "YES", "tool", "--help"])
+        XCTAssertEqual(outcome?.exitCode, 0)
+        XCTAssertTrue(outcome?.message.hasPrefix("usage: jayjay tool") == true)
+    }
 }

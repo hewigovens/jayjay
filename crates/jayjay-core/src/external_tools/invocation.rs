@@ -1,7 +1,7 @@
 use std::path::Path;
 
 use crate::filesystem::normalized_absolute_path;
-use crate::{JayError, JayResult};
+use crate::{JAYJAY_TOOL_COMMAND, JayError, JayResult};
 
 use super::JJ_INSTRUCTIONS;
 
@@ -39,10 +39,12 @@ impl ExternalToolInvocation {
     }
 }
 
+pub(crate) const EXTERNAL_TOOL_USAGE: &str = "usage: jayjay tool diff|edit <left> <right>\n       jayjay tool merge <left> <base> <right> <output> [<path> <marker-length>]\n";
+
 pub fn parse_external_tool_invocation(
     arguments: &[String],
 ) -> JayResult<Option<ExternalToolInvocation>> {
-    if arguments.len() == 2 {
+    if arguments.len() == 2 && arguments[0] != JAYJAY_TOOL_COMMAND {
         let left = normalized_absolute_path(&arguments[0]);
         let right = normalized_absolute_path(&arguments[1]);
         let editable = Path::new(&right).join(JJ_INSTRUCTIONS).is_file();
@@ -52,7 +54,7 @@ pub fn parse_external_tool_invocation(
             editable,
         }));
     }
-    if arguments.first().map(String::as_str) != Some("tool") {
+    if arguments.first().map(String::as_str) != Some(JAYJAY_TOOL_COMMAND) {
         return Ok(None);
     }
     match arguments.get(1).map(String::as_str) {
@@ -174,6 +176,13 @@ mod tests {
             parse_external_tool_invocation(&arguments),
             Ok(Some(ExternalToolInvocation::Diff { editable: true, .. }))
         ));
+    }
+
+    #[test]
+    fn tool_keyword_wins_over_the_two_path_form() {
+        for arguments in [["tool", "--help"], ["tool", "diff"]] {
+            assert!(parse_external_tool_invocation(&args(&arguments)).is_err());
+        }
     }
 
     #[test]
