@@ -1,8 +1,11 @@
 param([Parameter(Mandatory)][string]$Payload, [Parameter(Mandatory)][string]$Version, [Parameter(Mandatory)][string]$AppVersion, [string]$OutputDirectory = "build/windows")
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
-. "$PSScriptRoot/msix-version.ps1"
-$packageVersion = Get-MsixVersion $AppVersion
+if ($AppVersion -notmatch '^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$') { throw "MSIX needs a major.minor.patch app version, got $AppVersion" }
+$major, $minor, $patch = $Matches[1..3] | ForEach-Object { [long]$_ }
+if ($major -ge 65535 -or $minor -gt 65535 -or $patch -gt 65535) { throw "App version exceeds the Store MSIX version range: $AppVersion" }
+# The Store rejects a zero first section and reserves the fourth; major+1 keeps 0.x and later releases increasing.
+$packageVersion = "$($major + 1).$minor.$patch.0"
 $sdk = Get-ChildItem "${env:ProgramFiles(x86)}/Windows Kits/10/bin/*/x64/makeappx.exe" |
     Sort-Object { [version]$_.Directory.Parent.Name } | Select-Object -Last 1
 if (-not $sdk) { throw "makeappx.exe not found; install the Windows SDK" }
