@@ -55,7 +55,7 @@ jobs:
       - name: Install pinned license generator
         run: cargo install cargo-about --version 0.9.2 --features cli --locked
 
-      - name: Build portable ZIP
+      - name: Build portable ZIP and MSIX
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
         run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '')
@@ -71,6 +71,14 @@ jobs:
           path: build/windows/*.zip*
           if-no-files-found: error
           retention-days: 1
+
+      - name: Upload unsigned MSIX
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: windows-msix
+          path: build/windows/*.msix
+          if-no-files-found: error
+          retention-days: 14
 
   publish:
     # The only job with write credentials.
