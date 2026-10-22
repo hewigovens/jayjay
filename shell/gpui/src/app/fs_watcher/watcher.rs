@@ -3,7 +3,7 @@ use std::sync::Mutex;
 use std::time::Instant;
 
 use flume::Sender;
-use notify::{RecommendedWatcher, RecursiveMode, Watcher};
+use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 
 use super::debounce::{Debounce, next_event};
 use super::fs_event::{FsEvent, IsRelevantWcChange};
@@ -28,7 +28,7 @@ impl RepoFsWatcher {
         };
         let debounce = Mutex::new(Debounce::fresh());
 
-        let mut watcher = notify::recommended_watcher(move |res: notify::Result<notify::Event>| {
+        let handler = move |res: notify::Result<notify::Event>| {
             let Ok(event) = res else {
                 return;
             };
@@ -41,8 +41,10 @@ impl RepoFsWatcher {
             ) {
                 let _ = tx.send(out);
             }
-        })
-        .ok()?;
+        };
+        // pnpm's node_modules symlinks make the inotify walk revisit the same trees.
+        let config = Config::default().with_follow_symlinks(false);
+        let mut watcher = RecommendedWatcher::new(handler, config).ok()?;
 
         watcher.watch(&repo_root, RecursiveMode::Recursive).ok()?;
         if !op_heads_dir.starts_with(&repo_root) {
