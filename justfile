@@ -33,6 +33,7 @@ list:
   @echo "just install-cli       Install the jayjay launcher into ~/.local/bin"
   @echo "just gpui [path]       Build and launch GPUI; reopen the last repo when no path is given"
   @echo "just gpui-appimage     Build the GPUI Linux AppImage"
+  @echo "just gpui-windows      Cross-build the x64 Windows GPUI exe for VM testing"
   @echo "just worker::list      Show Cloudflare Worker/D1 recipes"
 
 # Inner-loop Rust tests. Example: just test-rust jayjay-core
@@ -99,6 +100,9 @@ gpui repo='':
 
 gpui-appimage:
   just shell::gpui-appimage
+
+gpui-windows:
+  just shell::gpui-windows
 
 format:
   cargo fmt

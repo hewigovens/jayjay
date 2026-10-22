@@ -10,6 +10,12 @@ Load this file to launch or drive a JayJay build, or to debug a CI, test-runner,
 - Relaunching kills the process together with any unsaved modal.
 - Running instances snapshot the repository on every filesystem event; quit them before divergence cleanup or history rewrites (see [Version Control](version-control.md)).
 
+## Windows Builds From macOS
+
+`just shell::gpui-windows` cross-builds `target/x86_64-pc-windows-msvc/release/jayjay-gpui.exe` with `cargo-xwin`, for checking Windows behavior in a VM; CI's portable ZIP remains the release build. gpui precompiles its DirectX shaders only on a Windows build host, so the recipe keeps debug assertions on, which makes the app compile `shaders.hlsl` and `color_text_raster.hlsl` at startup from the gpui checkout path baked into the binary. Copy those files from `~/.cargo/git/checkouts/zed-*/<rev>/crates/gpui_windows/src/` (the revision in `Cargo.lock`) to the same path under `C:\` in the VM, or the app panics with "Recreating GPU state for DirectWrite: The system cannot find the path specified." Runtime shader compilation adds a few hundred milliseconds whenever a window opens, so use these builds to compare behavior, not absolute startup times. Prefix `JAYJAY_PRERELEASE=1` to get Debug mode on by default.
+
+Over SSH, programs run outside the desktop session, so start GUI runs in the logged-in session with an interactive scheduled task (`schtasks /create /it … /tr <command>` then `schtasks /run`). With Debug mode on, the log under `%APPDATA%\hewig\jayjay\data\logs\jayjay.log` records startup timings and main-thread stalls of 250 ms or more.
+
 ## Test Runner Recovery
 
 - Run `just test-app` and `just test-ui` in the foreground to completion, one at a time: one test session owns DerivedData and `testmanagerd`, and a backgrounded or concurrent run wedges both.
