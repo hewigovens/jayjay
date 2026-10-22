@@ -29,7 +29,7 @@ fi
 
 args=("$@")
 case "${CARGO_PKG_NAME:-}" in
-  tree-sitter-c|tree-sitter-c-sharp|tree-sitter-css|tree-sitter-md)
+  tree-sitter-batch|tree-sitter-c|tree-sitter-c-sharp|tree-sitter-cmake|tree-sitter-css|tree-sitter-md|tree-sitter-powershell)
     # These grammar releases still compile the old per-grammar libc; Tree-sitter 0.27 now supplies it once in the runtime.
     if [[ "${DEP_TREE_SITTER_LANGUAGE_WASM_SRC:-}" == */wasm/unsupported/tree-sitter-0.26 ]]; then
       for i in "${!args[@]}"; do
