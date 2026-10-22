@@ -11,9 +11,9 @@ use crate::app::config;
 use crate::app::repositories;
 use crate::app::theme::Theme;
 use crate::platform::TOOLBAR_LEADING_INSET;
-use crate::ui::icons::glyph;
+use crate::ui::icons;
 use crate::ui::pane_drag::TrackPaneDrag;
-use crate::ui::primitives::{divider_h, icon_button, text_tooltip};
+use crate::ui::primitives::{TOOLBAR_ICON_SIZE, divider_h, svg_icon_button, text_tooltip};
 use crate::ui::resize_handle::resize_handle;
 
 const TOP_INSET: f32 = 38.;
@@ -149,10 +149,10 @@ impl RepoListWindow {
 }
 
 fn panel_toggle(panel_shown: bool, t: &Theme) -> Stateful<Div> {
-    icon_button(
+    svg_icon_button(
         "repo-list-toggle-recent",
-        glyph::COLUMNS,
-        14.,
+        icons::SIDEBAR_LEADING_SVG,
+        TOOLBAR_ICON_SIZE,
         28.,
         24.,
         t.fg_dim,

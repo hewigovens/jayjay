@@ -1,7 +1,7 @@
 use gpui::{
     AnyElement, App, ClickEvent, ClipboardItem, Div, InteractiveElement, IntoElement,
     ParentElement, Role, SharedString, Stateful, StatefulInteractiveElement, Styled, Toggled,
-    Window, div, px, rgb,
+    Window, div, px, rgb, svg,
 };
 
 use crate::app::theme::{Theme, ui_font_size};
@@ -62,6 +62,12 @@ pub(crate) fn inert_icon_button(
     height: f32,
     color: u32,
 ) -> Stateful<Div> {
+    icon_button_frame(id, width, height)
+        .text_color(rgb(color))
+        .child(icons::icon(glyph_str, icon_size, color))
+}
+
+fn icon_button_frame(id: impl Into<SharedString>, width: f32, height: f32) -> Stateful<Div> {
     div()
         .id(id.into())
         .flex()
@@ -71,8 +77,6 @@ pub(crate) fn inert_icon_button(
         .w(px(width))
         .h(px(height))
         .rounded_md()
-        .text_color(rgb(color))
-        .child(icons::icon(glyph_str, icon_size, color))
 }
 
 pub(crate) fn icon_button(
@@ -87,6 +91,21 @@ pub(crate) fn icon_button(
     inert_icon_button(id, glyph_str, icon_size, width, height, color)
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
+}
+
+pub(crate) fn svg_icon_button(
+    id: impl Into<SharedString>,
+    path: &'static str,
+    icon_size: f32,
+    width: f32,
+    height: f32,
+    color: u32,
+    theme: &Theme,
+) -> Stateful<Div> {
+    icon_button_frame(id, width, height)
+        .cursor_pointer()
+        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
+        .child(svg().path(path).size(px(icon_size)).text_color(rgb(color)))
 }
 
 pub(crate) fn copy_icon_button(
