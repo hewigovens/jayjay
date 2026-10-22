@@ -4242,7 +4242,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jayjay-cli"
-version = "0.3.21"
+version = "0.3.22"
 dependencies = [
  "clap",
  "dunce",
@@ -4297,7 +4297,7 @@ dependencies = [
 
 [[package]]
 name = "jayjay-gpui"
-version = "0.3.21"
+version = "0.3.22"
 dependencies = [
  "base64 0.23.1",
  "chrono",

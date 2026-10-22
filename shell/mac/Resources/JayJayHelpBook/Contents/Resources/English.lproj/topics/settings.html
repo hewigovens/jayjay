@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="description" content="Configure JayJay appearance, diff behavior, editor, terminal, CLI tools, and jj settings." />
-  <meta name="keywords" content="jayjay, settings, theme, font, editor, terminal, cli, jj config, ai provider, sign in, sign out, github, gitlab, gh, glab, origin" />
+  <meta name="keywords" content="jayjay, settings, theme, font, editor, terminal, cli, jj config, diagnostics, debug mode, logs, reveal logs, feedback, ai provider, sign in, sign out, github, gitlab, gh, glab, origin" />
   <title>Configure tools and settings</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
@@ -46,7 +46,8 @@
       <li>The update channel dropdown in About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
       <li><strong>Data &amp; Privacy</strong> shows how many review marks and notes are stored. <strong>Clear…</strong> beside <strong>Review marks and notes</strong> opens a confirmation; choosing Clear there removes them for every repository on this Mac. This cannot be undone through the repository’s operation log.</li>
       <li>Anonymous build and OS statistics are enabled by default and can be disabled here. JayJay sends no repository, file, or command data, and rotating identifiers cannot link an installation across months.</li>
-      <li>Choose <strong>Help &gt; Send Feedback</strong> to email us.</li>
+      <li>Choose <strong>Help &gt; Reveal Logs</strong> to inspect the local <code>jayjay.log</code>; it rotates after 2 MiB and keeps one previous file. In <strong>Settings &gt; Data &amp; Privacy &gt; Diagnostics</strong>, enable <strong>Debug mode</strong> to record snapshot and graph timings. Beta builds enable it by default unless you have saved a preference.</li>
+      <li>With Debug mode enabled, <strong>Help &gt; Send Feedback</strong> attaches the log when Apple Mail is your default mail client, or reveals it for you to attach in another mail app. Review the draft and log before sending.</li>
     </ul>
     <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#settings">Online guide with screenshots</a></p>
   </div>

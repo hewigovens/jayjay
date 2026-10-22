@@ -12,10 +12,11 @@
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
 [![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
 
-**JayJay is a native macOS and Linux GUI for [Jujutsu](https://github.com/jj-vcs/jj), with reusable Rust libraries for diff and review tooling.**
+**JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows alpha and reusable Rust libraries for diff and review tooling.**
 
 - **macOS:** native SwiftUI app.
 - **Linux:** GPUI app. Its macOS build is for development.
+- **Windows:** GPUI alpha, available from the Microsoft Store or as a portable ZIP.
 - **Rust libraries:** diffing, review state, repository operations, and app bindings.
 
 
@@ -87,7 +88,7 @@ Debian/Ubuntu packages for amd64 and arm64 are also attached to each release. Do
 
 #### Windows alpha
 
-Download the Windows x64 portable alpha ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. The alpha has no installer or automatic updater; Windows desktop behavior is still experimental.
+Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. The Store manages installation and updates. To try beta builds, download the Windows x64 portable alpha ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows desktop behavior is still experimental.
 
 ### Feedback
 

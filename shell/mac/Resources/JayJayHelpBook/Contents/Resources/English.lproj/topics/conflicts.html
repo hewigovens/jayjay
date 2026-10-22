@@ -41,6 +41,7 @@
     </ul>
     <p>For direct CLI use, first install the bundled <code>jayjay</code> launcher from <strong>Settings &gt; Integrations &gt; Version control</strong> and ensure <code>~/.local/bin</code> is on your PATH; see <a href="settings.html">tools and settings</a>. Run <code>jayjay config</code> for the paste-ready tool definition, or choose <strong>Copy Config</strong> beside <strong>jj tool configuration</strong> on that settings page. Paste it into your jj user config file; <code>jj config path --user</code> prints its path.</p>
     <p>Then run <code>jj -R /path/to/repo diff --tool jayjay</code> for a read-only comparison, <code>jj -R /path/to/repo split --tool jayjay</code> for interactive diff editing, or <code>jj -R /path/to/repo resolve --tool jayjay path/to/conflicted-file</code> for conflict resolution. <code>jj edit</code> selects the working-copy revision and does not accept a diff tool.</p>
+    <p>External diff session headers remain visible while you scroll. Diff and merge load failures show a readable error. Run <code>jayjay tool --help</code> to see usage without opening a session.</p>
     <p>For Git, configure the same app as a custom diff and merge tool:</p>
     <pre><code>[diff]
     tool = jayjay

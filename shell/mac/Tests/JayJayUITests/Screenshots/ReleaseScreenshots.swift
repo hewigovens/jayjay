@@ -173,13 +173,31 @@ final class ReleaseScreenshots: ScreenshotScene {
         keyStroke(",", modifiers: [.command])
         let pages = [
             ("fonts", "fonts"), ("diff", "diff"), ("workflow", "workflow"),
-            ("jujutsu", "jj"), ("dataPrivacy", "data-privacy"), ("about", "about")
+            ("jujutsu", "jj"), ("about", "about")
         ]
         for (page, name) in pages {
             selectSettingsPage(page, in: app)
             settle()
             capture("settings-\(name)", frame: settingsWindow(in: app).frame)
         }
+    }
+
+    func testWorkspaceActions() throws {
+        let app = try XCTUnwrap(app)
+        openRepositoryTitlePicker(in: mainWindow(app))
+        let workspace = app.element(AID.Picker.row("ws-route-experiment")).firstMatch
+        XCTAssertTrue(workspace.waitForExistence(timeout: 5), "Workspace row missing")
+        rightClickCenter(workspace)
+        XCTAssertTrue(app.menuItems["Filter by This Workspace"].waitForExistence(timeout: 5), "Workspace filter action missing")
+        capture("workspace-actions", frame: mainFrame)
+    }
+
+    func testSettingsDataPrivacy() throws {
+        let app = try XCTUnwrap(app)
+        keyStroke(",", modifiers: [.command])
+        selectSettingsPage("dataPrivacy", in: app)
+        XCTAssertTrue(settingsWindow(in: app).staticTexts["Diagnostics"].waitForExistence(timeout: 5), "Diagnostics section missing")
+        capture("settings-data-privacy", frame: settingsWindow(in: app).frame)
     }
 
     func testSettingsAppearance() throws {

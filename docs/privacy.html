@@ -75,7 +75,9 @@
 
       <section class="g" id="local">
         <h2>Data on your computer</h2>
-        <p>Review marks and notes, settings, the avatar cache, and the statistics secret are stored in JayJay's local application folders and are never uploaded. You can clear review data from Settings › Data &amp; Privacy, and uninstalling the app removes the rest.</p>
+        <p>Review marks and notes, settings, the avatar cache, and the statistics secret stay in JayJay's local application folders. You can clear review data from Settings › Data &amp; Privacy.</p>
+        <p>Both shells also write a local <code>jayjay.log</code>, rotated after 2 MiB with one previous file retained. Debug mode in Settings › Data &amp; Privacy adds snapshot and graph timings; GPUI also records main-thread stalls. Beta builds enable Debug mode by default unless you have saved a preference. Use Help › Reveal Logs to inspect the file.</p>
+        <p>With Debug mode enabled, Help › Send Feedback prepares an email draft with the log attached when Apple Mail is the default mail app on macOS. Other mail apps and GPUI reveal the file for you to attach. Logs can include local paths and error details; review the draft and log before sending them.</p>
         <p>JayJay does not include crash reporting, advertising, or third-party analytics.</p>
       </section>
 
