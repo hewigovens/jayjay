@@ -141,10 +141,12 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
             .map { DiffMovedBadgeButton.reservedWidth(for: $0, font: badgeFont) }
             .max() ?? 0
         let movedLabelCols = UInt32(ceil(Float(reservedWidth) / advance))
-        let visualRows = wrapSbsRows(
+        let wrapped = wrapSbsRows(
             rows: rows, oldCols: oldCols, newCols: newCols, movedLabelCols: movedLabelCols
-        ).map(\.row)
-        renderVisualRows(visualRows, fonts: (code: font, badge: badgeFont), theme: theme, left: left, right: right)
+        )
+        (left.textView as? DiffTextView)?.copyRows = DiffCopyRow.rows(wrapped, side: \.old)
+        (right.textView as? DiffTextView)?.copyRows = DiffCopyRow.rows(wrapped, side: \.new)
+        renderVisualRows(wrapped.map(\.row), fonts: (code: font, badge: badgeFont), theme: theme, left: left, right: right)
     }
 
     private func renderVisualRows(

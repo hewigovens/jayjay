@@ -102,6 +102,25 @@ final class SideBySideRenderingTests: XCTestCase {
         XCTAssertFalse(right.textView.string.isEmpty)
     }
 
+    func testCopyJoinsWrappedRowsAndSkipsPadding() {
+        let long = Array(repeating: "very long line", count: 12).joined(separator: " ")
+        let diff = computeFileDiff(path: "sample.txt", oldContent: "\(long)\nnext\n", newContent: "short\nadded\nnext\n", ignoreWhitespace: false)
+        let (_, left, right) = makeRenderer(diff)
+        XCTAssertGreaterThan(right.textView.string.filter { $0 == "\n" }.count, 3)
+        let pasteboard = NSPasteboard(name: NSPasteboard.Name("DiffCopyTest-\(UUID().uuidString)"))
+        defer { pasteboard.releaseGlobally() }
+        func copied(_ pane: DiffTextContainerView) -> String? {
+            pane.textView.selectAll(nil)
+            XCTAssertTrue(pane.textView.writeSelection(to: pasteboard, types: [.rtf, .string]))
+            let rtf = pasteboard.data(forType: .rtf).flatMap { NSAttributedString(rtf: $0, documentAttributes: nil) }
+            XCTAssertEqual(rtf?.string, pasteboard.string(forType: .string))
+            return pasteboard.string(forType: .string)
+        }
+
+        XCTAssertEqual(copied(left), "\(long)\nnext\n")
+        XCTAssertEqual(copied(right), "short\nadded\nnext\n")
+    }
+
     private func makeRenderer(_ diff: FileDiff) -> (SideBySideCoordinator, DiffTextContainerView, DiffTextContainerView) {
         let view = SideBySideRepresentable(diff: diff)
         let left = view.makeContainer()
