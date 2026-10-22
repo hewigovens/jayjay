@@ -64,31 +64,27 @@ Or download the latest `.zip` from [GitHub Releases](https://github.com/hewigove
 
 #### Linux
 
-The Linux app is built for x86_64 and aarch64. The installer uses the Debian package on apt-based systems and an AppImage elsewhere. AppImages live in `~/.local/share/jayjay` with a `jayjay` launcher in `~/.local/bin`:
+For x86_64 and aarch64. The installer picks the Debian package on apt-based systems and an AppImage elsewhere:
 
 ```bash
 curl -fsSL https://jayjay.hewig.dev/install.sh | bash
 ```
 
-On Arch Linux, use the signed pacman repo instead, so stable upgrades arrive with `pacman -Syu`:
+Or download the AppImage from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest). The [guide](https://jayjay.hewig.dev/guide.html#gpui) covers the Arch pacman repo, betas, and `.deb` packages.
+
+#### Windows
+
+Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. To try beta builds, download the Windows x64 portable alpha ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows desktop behavior is still experimental.
+
+### Agent skill
+
+The [`jayjay` skill](skills/jayjay/SKILL.md) lets coding agents read and resolve your review notes, pre-mark straightforward files, and set JayJay up as jj's diff and merge tool. Install it with the [`skills`](https://github.com/vercel-labs/skills) CLI, or copy `skills/jayjay` into your agent's skills directory (such as `~/.claude/skills/jayjay`):
 
 ```bash
-curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo
+npx skills add hewigovens/jayjay --skill jayjay
 ```
 
-For the newest beta when it is ahead of stable, add `--beta` (signed pacman package on Arch, Debian package on apt systems, AppImage elsewhere):
-
-```bash
-curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --beta
-```
-
-The [guide](https://jayjay.hewig.dev/guide.html#gpui) has the reviewable manual steps.
-
-Debian/Ubuntu packages for amd64 and arm64 are also attached to each release. Download the matching `.deb` and install it with `sudo apt install ./jayjay_<version>-1_<architecture>.deb`.
-
-#### Windows alpha
-
-Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. The Store manages installation and updates. To try beta builds, download the Windows x64 portable alpha ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows desktop behavior is still experimental.
+It needs the `jayjay` command on `PATH`: on macOS choose **JayJay → Install Command Line Tool…**; the Linux installer sets it up.
 
 ### Feedback
 
