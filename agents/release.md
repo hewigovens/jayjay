@@ -15,6 +15,7 @@ Releases are not complete after `just release`. The full release flow is:
 9. Commit and push the Homebrew tap change in `../tap`.
 10. After the AppImage workflow has attached both architectures, update the checked-in `dist/arch/PKGBUILD` version and source checksums, regenerate `dist/arch/.SRCINFO` with `makepkg --printsrcinfo`, run the workflow's Arch package lifecycle check, and submit both files to AUR. `PKGBUILD` is the maintained package source; `.SRCINFO` is generated from it, not edited independently.
 11. For a stable release, after the Windows portable workflow's `publish` job attaches the ZIP and copies it to `https://pkgs.hewig.dev/windows/`, download its `winget-manifests` artifact and open a pull request adding `manifests/h/hewig/JayJay/<version>` to microsoft/winget-pkgs (the job runs from `main` with the `R2_*` secrets, like the Arch publisher, and needs the release commit on `main`). Pre-releases only get the ZIP attached to the release page.
+12. For a stable release, the `Announce release` workflow posts the release to the Discord announcements channel when it is published, listing the notes' `<h2>` headings and linking the release page. It needs the `DISCORD_ANNOUNCEMENTS_WEBHOOK` secret (a webhook on that channel); a webhook post is not crossposted to following servers, so press Publish on the message in Discord if that is wanted. Rerun the job if it failed; it never runs for pre-releases.
 
 ## Beta Releases
 
