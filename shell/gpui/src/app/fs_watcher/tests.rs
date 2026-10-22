@@ -216,3 +216,30 @@ fn cli_operations_reach_primary_and_secondary_workspace_watchers() {
         );
     }
 }
+
+#[cfg(unix)]
+#[test]
+fn symlinked_directories_are_not_followed() {
+    let fixture = jj_test::LinearFixture::build();
+    let outside = fixture
+        .path
+        .parent()
+        .expect("fixture parent")
+        .join("linked-target");
+    std::fs::create_dir_all(&outside).expect("create link target");
+    std::os::unix::fs::symlink(&outside, fixture.path.join("linked")).expect("create symlink");
+
+    let (tx, rx) = flume::unbounded::<FsEvent>();
+    let filter: IsRelevantWcChange = Arc::new(|_| true);
+    let _watcher = RepoFsWatcher::new(&fixture.path, tx, filter).expect("start watcher");
+    std::thread::sleep(Duration::from_millis(500));
+    while rx.try_recv().is_ok() {}
+
+    std::fs::write(outside.join("file.txt"), "outside").expect("write through link target");
+    let seen: Vec<FsEvent> =
+        std::iter::from_fn(|| rx.recv_timeout(Duration::from_secs(1)).ok()).collect();
+    assert!(
+        seen.is_empty(),
+        "writes behind a symlink must not reach the watcher, saw {seen:?}"
+    );
+}

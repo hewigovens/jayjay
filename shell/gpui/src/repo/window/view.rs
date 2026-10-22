@@ -749,12 +749,15 @@ impl RepoWindow {
                 repo.has_unignored_working_copy_paths(&strs).unwrap_or(true)
             }
         });
-        let Some(watcher) = RepoFsWatcher::new(&path, tx, filter) else {
-            return;
-        };
-        self.fs_watcher = Some(watcher);
-
         cx.spawn(async move |this, cx| {
+            // inotify's recursive `watch` blocks until every directory is watched.
+            let Some(watcher) = cx
+                .background_spawn(async move { RepoFsWatcher::new(&path, tx, filter) })
+                .await
+            else {
+                return;
+            };
+            let _ = this.update(cx, |view, _| view.fs_watcher = Some(watcher));
             while let Ok(event) = rx.recv_async().await {
                 let _ = this.update(cx, |view, cx| {
                     view.handle_fs_event(event, cx);
