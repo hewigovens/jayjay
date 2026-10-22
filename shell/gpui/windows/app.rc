@@ -1,2 +1,2 @@
 // GPUI loads icon resource 1 for its windows.
-1 ICON "windows/app-icon.ico"
+1 ICON "app-icon.ico"
