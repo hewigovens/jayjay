@@ -79,7 +79,7 @@ impl FileKind {
                 Self::Config
             }
             "json" | "yaml" | "yml" | "xml" | "plist" | "sarif" => Self::Data,
-            "sh" | "bash" | "zsh" | "fish" => Self::Shell,
+            "sh" | "bash" | "zsh" | "fish" | "ps1" | "psm1" | "bat" | "cmd" => Self::Shell,
             _ if name.starts_with('.') => Self::Config,
             _ => Self::Other,
         }
@@ -95,6 +95,7 @@ mod tests {
         for (path, kind) in [
             ("Makefile", FileKind::Config),
             ("scripts/setup.sh", FileKind::Shell),
+            ("scripts/Install.PS1", FileKind::Shell),
             ("shell/mac/project.yml", FileKind::Data),
             ("results.sarif", FileKind::Data),
             ("web/package-lock.json", FileKind::Lockfile),

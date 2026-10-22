@@ -87,6 +87,10 @@ tree-sitter-xml = "0.7"
 tree-sitter-zig = "1.1"
 tree-sitter-nix = "0.3"
 tree-sitter-make = "1.1"
+tree-sitter-powershell = "0.26"
+tree-sitter-batch = "0.11"
+tree-sitter-ini = "1.4"
+tree-sitter-cmake = "0.7"
 
 [profile.dev]
 debug = "line-tables-only"

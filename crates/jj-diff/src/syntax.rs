@@ -140,6 +140,16 @@ static SOLIDITY_HIGHLIGHT_QUERY: std::sync::LazyLock<String> = std::sync::LazyLo
     )
 });
 
+// Some grammars ship Neovim-dialect queries: tree-sitter-highlight keeps the last of `@comment @spell` and ignores `#lua-match?`, which would apply its capture to every node.
+fn without_neovim_extensions(query: &str) -> String {
+    query
+        .replace(" @nospell", "")
+        .replace(" @spell", "")
+        .replace("#lua-match?", "#match?")
+        .replace("%u", "A-Z")
+        .replace("%d", "\\d")
+}
+
 /// One table drives both highlighting and the syntax matcher, so a language supported by one is supported by the other.
 macro_rules! languages {
     ($($feature:literal: $name:literal $(| $alias:literal)* => $grammar:expr, $query:expr;)*) => {
@@ -160,7 +170,7 @@ macro_rules! languages {
                 $name $(| $alias)* => {
                     fn build_config() -> Option<HighlightConfiguration> {
                         let mut config =
-                            HighlightConfiguration::new($grammar.into(), $name, $query, "", "").ok()?;
+                            HighlightConfiguration::new($grammar.into(), $name, &without_neovim_extensions($query), "", "").ok()?;
                         config.configure(&HIGHLIGHT_NAMES);
                         Some(config)
                     }
@@ -193,7 +203,9 @@ languages! {
     "lang-css": "css" => tree_sitter_css::LANGUAGE, tree_sitter_css::HIGHLIGHTS_QUERY;
     "lang-html": "html" => tree_sitter_html::LANGUAGE, tree_sitter_html::HIGHLIGHTS_QUERY;
     "lang-bash": "shell" | "bash" => tree_sitter_bash::LANGUAGE, tree_sitter_bash::HIGHLIGHT_QUERY;
+    "lang-batch": "batch" => tree_sitter_batch::LANGUAGE, tree_sitter_batch::HIGHLIGHTS_QUERY;
     "lang-fish": "fish" => tree_sitter_fish::language(), tree_sitter_fish::HIGHLIGHTS_QUERY;
+    "lang-powershell": "powershell" => tree_sitter_powershell::LANGUAGE, tree_sitter_powershell::HIGHLIGHTS_QUERY;
     "lang-yaml": "yaml" => tree_sitter_yaml::LANGUAGE, tree_sitter_yaml::HIGHLIGHTS_QUERY;
     "lang-swift": "swift" => tree_sitter_swift::LANGUAGE, tree_sitter_swift::HIGHLIGHTS_QUERY;
     "lang-solidity": "solidity" => tree_sitter_solidity::LANGUAGE, SOLIDITY_HIGHLIGHT_QUERY.as_str();
@@ -202,6 +214,8 @@ languages! {
     "lang-zig": "zig" => tree_sitter_zig::LANGUAGE, tree_sitter_zig::HIGHLIGHTS_QUERY;
     "lang-nix": "nix" => tree_sitter_nix::LANGUAGE, tree_sitter_nix::HIGHLIGHTS_QUERY;
     "lang-make": "make" => tree_sitter_make::LANGUAGE, tree_sitter_make::HIGHLIGHTS_QUERY;
+    "lang-cmake": "cmake" => tree_sitter_cmake::LANGUAGE, tree_sitter_cmake::HIGHLIGHTS_QUERY;
+    "lang-ini": "ini" => tree_sitter_ini::LANGUAGE, tree_sitter_ini::HIGHLIGHTS_QUERY;
 }
 
 pub(crate) fn language_for_path(path: &str) -> &'static str {
@@ -209,7 +223,19 @@ pub(crate) fn language_for_path(path: &str) -> &'static str {
     if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
         return "make";
     }
-    let ext = path.rsplit('.').next().unwrap_or("");
+    if basename == "CMakeLists.txt" {
+        return "cmake";
+    }
+    let name = basename.to_ascii_lowercase();
+    if let Some(stem) = name.strip_suffix(".config")
+        && (matches!(stem, "web" | "app" | "nuget" | "packages")
+            || stem.starts_with("web.")
+            || stem.ends_with(".exe")
+            || stem.ends_with(".dll"))
+    {
+        return "xml";
+    }
+    let ext = name.rsplit_once('.').map_or("", |(_, ext)| ext);
     match ext {
         "rs" => "rust",
         "swift" => "swift",
@@ -221,8 +247,8 @@ pub(crate) fn language_for_path(path: &str) -> &'static str {
         "java" => "java",
         "kt" | "kts" => "kotlin",
         "c" | "h" => "c",
-        "cs" => "csharp",
-        "cpp" | "cc" | "cxx" | "hpp" => "cpp",
+        "cs" | "csx" => "csharp",
+        "cpp" | "cc" | "cxx" | "hpp" | "hxx" | "hh" | "inl" | "ixx" => "cpp",
         "rb" => "ruby",
         "sh" | "bash" | "zsh" => "shell",
         "fish" => "fish",
@@ -234,7 +260,14 @@ pub(crate) fn language_for_path(path: &str) -> &'static str {
         "yaml" | "yml" => "yaml",
         "md" | "markdown" => "markdown",
         "sql" => "sql",
-        "xml" => "xml",
+        "xml" | "xsd" | "xsl" | "xslt" | "svg" | "plist" | "entitlements" | "xib"
+        | "storyboard" | "xcscheme" | "xcworkspacedata" | "xaml" | "csproj" | "fsproj"
+        | "vbproj" | "vcxproj" | "props" | "targets" | "resx" | "nuspec" | "slnx" | "manifest"
+        | "appxmanifest" | "wxs" | "wxi" | "filters" | "ruleset" | "runsettings" => "xml",
+        "ps1" | "psm1" | "psd1" => "powershell",
+        "bat" | "cmd" => "batch",
+        "ini" | "editorconfig" | "gitconfig" => "ini",
+        "cmake" => "cmake",
         "sol" => "solidity",
         "zig" => "zig",
         "nix" => "nix",

@@ -26,6 +26,127 @@ fn fish_source_is_detected_and_highlighted() {
 }
 
 #[test]
+fn windows_build_and_script_sources_are_detected_and_highlighted() {
+    for (path, language, source, tokens) in [
+        (
+            "scripts/greet.ps1",
+            "powershell",
+            "# Greeting\nfunction Get-Greeting {\n    param([string]$Name)\n    Write-Output \"Hello $Name\"\n}\n",
+            &[
+                SyntaxToken::Comment,
+                SyntaxToken::Keyword,
+                SyntaxToken::Variable,
+                SyntaxToken::StringLit,
+            ][..],
+        ),
+        (
+            "BUILD.CMD",
+            "batch",
+            "@echo off\nREM Build\nset NAME=jayjay\nif exist out goto done\necho \"%NAME%\"\n:done\n",
+            &[
+                SyntaxToken::Comment,
+                SyntaxToken::Keyword,
+                SyntaxToken::Variable,
+            ],
+        ),
+        (
+            "setup.ini",
+            "ini",
+            "[core]\n; Defaults\neditor = vim\n",
+            &[
+                SyntaxToken::Comment,
+                SyntaxToken::Type,
+                SyntaxToken::Variable,
+            ],
+        ),
+        (
+            "src/CMakeLists.txt",
+            "cmake",
+            "# Targets\nif(WIN32)\n  add_executable(app main.cpp)\n  set(NAME \"app\")\nendif()\n",
+            &[
+                SyntaxToken::Comment,
+                SyntaxToken::Keyword,
+                SyntaxToken::Function,
+                SyntaxToken::StringLit,
+            ],
+        ),
+    ] {
+        let diff = compute_file_diff_full(path, "", source, false);
+        assert_eq!(diff.language, language, "{path}");
+        let spans: Vec<_> = diff.lines.iter().flat_map(|line| &line.spans).collect();
+        for token in tokens {
+            assert!(
+                spans.iter().any(|span| span.token == *token),
+                "{language} should highlight {token:?}: {spans:?}"
+            );
+        }
+    }
+}
+
+#[test]
+fn spell_marked_comments_keep_the_comment_color() {
+    for (path, source) in [
+        ("App.swift", "// note\n"),
+        ("query.sql", "-- note\n"),
+        ("setup.ini", "; note\n"),
+        ("app.cmake", "# note\n"),
+    ] {
+        let lines = highlight_file(path, source);
+        assert!(
+            lines[0]
+                .iter()
+                .any(|span| span.token == SyntaxToken::Comment),
+            "{path}: {:?}",
+            lines[0]
+        );
+    }
+}
+
+#[test]
+fn lua_match_predicates_still_filter_captures() {
+    let lines = highlight_file("main.zig", "const max_len = MAX;\n");
+    let token = |text: &str| {
+        lines[0]
+            .iter()
+            .find(|span| span.text == text)
+            .map(|span| span.token)
+    };
+    assert_eq!(token("max_len"), Some(SyntaxToken::Variable));
+    assert_eq!(token("MAX"), Some(SyntaxToken::Number));
+}
+
+#[test]
+fn xml_family_extensions_use_the_xml_grammar() {
+    for path in [
+        "App/App.csproj",
+        "Base.lproj/Main.storyboard",
+        "Info.plist",
+        "Views/MainWindow.xaml",
+        "Web.config",
+        "Web.Release.config",
+        "bin/MyApp.exe.config",
+    ] {
+        let diff =
+            compute_file_diff_full(path, "", "<root attr=\"1\"><!-- note --></root>\n", false);
+        assert_eq!(diff.language, "xml", "{path}");
+        assert!(
+            diff.lines[0]
+                .spans
+                .iter()
+                .any(|span| span.token == SyntaxToken::Comment),
+            "{path}"
+        );
+    }
+    for path in ["config", "kernel/configs/tiny.config"] {
+        assert_eq!(
+            compute_file_diff_full(path, "", "CONFIG_FOO=y\n", false).language,
+            "plaintext",
+            "{path}"
+        );
+    }
+}
+
+#[test]
 fn solidity_source_is_detected_and_highlighted() {
     let source = r#"// SPDX-License-Identifier: MIT
 pragma solidity ^0.8.0;
