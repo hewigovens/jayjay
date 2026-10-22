@@ -5,6 +5,7 @@ use super::pages::onboarding_pane;
 use super::state::{JjCheckState, OnboardingPage};
 use crate::app::theme::theme_for_window;
 use crate::ui::logo::Logo;
+use crate::ui::title_bar;
 
 pub(crate) struct OnboardingView {
     pub(super) page: OnboardingPage,
@@ -35,6 +36,7 @@ impl OnboardingView {
 impl Render for OnboardingView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let theme = theme_for_window(window, cx).clone();
-        onboarding_pane(self, &theme, cx)
+        let pane = onboarding_pane(self, &theme, cx);
+        title_bar::overlay(pane, None, "onboarding-title-bar", &theme, window)
     }
 }

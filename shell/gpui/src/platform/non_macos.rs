@@ -1,4 +1,4 @@
-use gpui::{Context, ParentElement};
+use gpui::{Context, ParentElement, Window};
 
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -12,6 +12,11 @@ pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;
 pub const TOOLBAR_ICON_SIZE: f32 = 16.;
 pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (12., 14.);
 
-pub fn append_menu_bar(root: gpui::Div, t: &Theme, cx: &mut Context<RepoWindow>) -> gpui::Div {
-    root.child(crate::ui::app_menu::menu_bar(t, cx))
+pub fn append_menu_bar(
+    root: gpui::Div,
+    t: &Theme,
+    window: &Window,
+    cx: &mut Context<RepoWindow>,
+) -> gpui::Div {
+    root.child(crate::ui::app_menu::menu_bar(t, window, cx))
 }

@@ -22,3 +22,4 @@ pub(crate) mod resize_handle;
 pub mod scrollbar;
 pub(crate) mod selection;
 pub mod text_area;
+pub(crate) mod title_bar;

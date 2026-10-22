@@ -1,4 +1,4 @@
-use gpui::{Context, Div, InteractiveElement, Styled, div, rgb};
+use gpui::{Context, Div, InteractiveElement, Styled, Window, div, rgb};
 
 use super::super::RepoWindow;
 use crate::app::actions::{
@@ -17,7 +17,7 @@ use crate::windows::repo_list::RepoListWindow;
 use crate::windows::settings::{SettingsSection, SettingsView};
 
 impl RepoWindow {
-    pub(super) fn render_root(&self, t: &Theme, cx: &mut Context<Self>) -> Div {
+    pub(super) fn render_root(&self, t: &Theme, window: &Window, cx: &mut Context<Self>) -> Div {
         let mut root = div()
             .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
@@ -181,6 +181,6 @@ impl RepoWindow {
             });
         }
 
-        append_menu_bar(root, t, cx)
+        append_menu_bar(root, t, window, cx)
     }
 }

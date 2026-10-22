@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicBool, Ordering};
 
 use gpui::{
     App, Context, Entity, FocusHandle, Focusable, InteractiveElement, IntoElement, ParentElement,
-    Render, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    Render, StatefulInteractiveElement, Styled, Window, div, prelude::FluentBuilder as _, px, rgb,
 };
 
 use crate::app::theme::{theme, ui_font_size};
@@ -13,6 +13,7 @@ use crate::ui::loading::loading_status;
 use crate::ui::merge_scroll::MergeSync;
 use crate::ui::primitives::button;
 use crate::ui::text_area::TextArea;
+use crate::ui::title_bar;
 
 use super::ExternalToolInvocation;
 use super::diff::ExternalDiffSession;
@@ -217,6 +218,9 @@ impl Render for ExternalToolWindow {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
+            .when(title_bar::DRAWN, |root| {
+                root.child(title_bar::strip("external-tool-title-bar", &t, window))
+            })
             .child(self.header(cx));
         if let Some(error) = &self.error_message {
             root = root.child(

@@ -10,14 +10,14 @@ mod windows;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) use linux::{
-    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, SHOW_IN_FILE_MANAGER_LABEL, TRANSPARENT_TITLEBAR,
-    reveal_path, send_notification,
+    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, SHOW_IN_FILE_MANAGER_LABEL, reveal_path,
+    send_notification,
 };
 #[cfg(target_os = "macos")]
 pub(crate) use macos::{
     CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, REPO_TRAFFIC_LIGHTS, SHOW_IN_FILE_MANAGER_LABEL,
     TOOLBAR_BUTTON_HEIGHT, TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET,
-    TRANSPARENT_TITLEBAR, append_menu_bar, reveal_path, send_notification,
+    append_menu_bar, reveal_path, send_notification,
 };
 #[cfg(target_os = "macos")]
 pub use macos::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
@@ -30,8 +30,8 @@ pub(crate) use non_macos::{
 };
 #[cfg(windows)]
 pub(crate) use windows::{
-    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, SHOW_IN_FILE_MANAGER_LABEL, TRANSPARENT_TITLEBAR,
-    open_url, reveal_path, send_notification,
+    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, SHOW_IN_FILE_MANAGER_LABEL, open_url, reveal_path,
+    send_notification,
 };
 
 /// Runs the platform's URL handler with stdio detached.

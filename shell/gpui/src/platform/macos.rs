@@ -19,10 +19,14 @@ pub const TOOLBAR_BUTTON_HEIGHT: f32 = 36.;
 pub const TOOLBAR_ICON_SIZE: f32 = 18.;
 pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (20., 19.);
 pub const CUSTOM_TERMINAL_LABEL: &str = "App name";
-pub const TRANSPARENT_TITLEBAR: bool = true;
 pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 
-pub fn append_menu_bar(root: gpui::Div, _t: &Theme, _cx: &mut Context<RepoWindow>) -> gpui::Div {
+pub fn append_menu_bar(
+    root: gpui::Div,
+    _t: &Theme,
+    _window: &gpui::Window,
+    _cx: &mut Context<RepoWindow>,
+) -> gpui::Div {
     root
 }
 

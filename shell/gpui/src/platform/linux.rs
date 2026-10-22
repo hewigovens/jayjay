@@ -8,7 +8,6 @@ use crate::app::APP_ID;
 
 pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in File Manager";
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
-pub const TRANSPARENT_TITLEBAR: bool = true;
 pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 
 pub fn reveal_path(path: &Path) -> bool {

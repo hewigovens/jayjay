@@ -15,6 +15,7 @@ use crate::ui::icons;
 use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::primitives::{TOOLBAR_ICON_SIZE, divider_h, svg_icon_button, text_tooltip};
 use crate::ui::resize_handle::resize_handle;
+use crate::ui::title_bar;
 
 const TOP_INSET: f32 = 38.;
 
@@ -35,8 +36,8 @@ impl Render for RepoListWindow {
             .flex_row()
             .min_h_0()
             .children(panel.into_iter().flatten())
-            .child(self.detail(&pinned, &t))
-            .child(panel_toggle(panel_shown, &t));
+            .child(self.detail(&pinned, &t));
+        let toggle = panel_toggle(panel_shown, &t).into_any_element();
 
         div()
             .id("repo-list-window")
@@ -58,7 +59,13 @@ impl Render for RepoListWindow {
             .flex_col()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(content)
+            .child(title_bar::overlay(
+                content,
+                Some(toggle),
+                "repo-list-title-bar",
+                &t,
+                window,
+            ))
     }
 }
 
@@ -159,6 +166,7 @@ fn panel_toggle(panel_shown: bool, t: &Theme) -> Stateful<Div> {
         t,
     )
     .debug_selector(|| "repo-list-toggle-recent".to_owned())
+    .occlude()
     .absolute()
     .top(px(8.))
     .left(px(TOOLBAR_LEADING_INSET))

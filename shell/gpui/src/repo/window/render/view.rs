@@ -157,7 +157,7 @@ impl Render for RepoWindow {
             .zip(self.revset_bar_bounds.get())
             .map(|(state, bar)| render_revset_completions(state, bar, &t, &cx.entity()));
 
-        let mut root = self.render_root(&t, cx);
+        let mut root = self.render_root(&t, window, cx);
 
         if let Some(message) = init_error {
             root = root.child(repo_init_error_pane(

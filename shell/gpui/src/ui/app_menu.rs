@@ -1,12 +1,14 @@
 use gpui::{
     Action, Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton,
     MouseDownEvent, OwnedMenu, OwnedMenuItem, ParentElement, Pixels, Point, SharedString, Styled,
-    anchored, deferred, div, px, rgb,
+    Window, anchored, deferred, div, px, rgb,
 };
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::RepoWindow;
+use crate::ui::logo::Logo;
 use crate::ui::primitives::checked_menu_row;
+use crate::ui::title_bar;
 
 #[derive(Clone)]
 pub struct AppMenuState {
@@ -59,25 +61,54 @@ pub(crate) fn render_app_menu(
 }
 
 #[cfg(not(target_os = "macos"))]
-pub(crate) fn menu_bar(t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElement {
+pub(crate) fn menu_bar(
+    t: &Theme,
+    window: &Window,
+    cx: &mut gpui::Context<RepoWindow>,
+) -> AnyElement {
     let menus = cx.get_menus().unwrap_or_default();
-    let mut row = div()
-        .id("app-menu-bar")
+    let row = if title_bar::DRAWN {
+        title_bar::drag_strip("app-menu-bar")
+            .h(px(t.scaled_control_height(28., 12.).max(32.)))
+            .child(
+                div()
+                    .flex_none()
+                    .mr(px(6.))
+                    .child(Logo::load(cx).image(16.)),
+            )
+    } else {
+        div()
+            .id("app-menu-bar")
+            .flex()
+            .flex_row()
+            .items_center()
+            .w_full()
+            .h(px(t.scaled_control_height(28., 12.)))
+            .pr(px(8.))
+    };
+    let mut row = row
         .debug_selector(|| "app-menu-bar".to_owned())
-        .flex()
-        .flex_row()
-        .items_center()
         .gap(px(2.))
-        .w_full()
-        .h(px(t.scaled_control_height(28., 12.)))
-        .px(px(8.))
+        .pl(px(8.))
         .bg(rgb(t.header_bg))
         .border_b_1()
         .border_color(rgb(t.border));
 
+    let mut items = div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .gap(px(2.))
+        .min_w_0()
+        .overflow_hidden();
     for menu in menus {
-        let name = menu.name.clone();
-        row = row.child(menu_bar_item(name, t, cx));
+        items = items.child(menu_bar_item(menu.name.clone(), t, cx));
+    }
+    row = row.child(items);
+    if title_bar::DRAWN {
+        row = row
+            .child(div().flex_1())
+            .child(title_bar::caption_buttons(t, window));
     }
 
     row.into_any_element()
@@ -104,6 +135,7 @@ fn menu_bar_item(name: SharedString, t: &Theme, cx: &mut gpui::Context<RepoWindo
         .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .cursor_pointer()
+        .occlude()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_mouse_down(
             MouseButton::Left,
@@ -118,6 +150,7 @@ fn menu_bar_item(name: SharedString, t: &Theme, cx: &mut gpui::Context<RepoWindo
 fn menu_panel(menus: &[OwnedMenu], t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
     let mut col = div()
         .debug_selector(|| "app-menu-panel".to_owned())
+        .occlude()
         .flex()
         .flex_col()
         .min_w(px(240.))
