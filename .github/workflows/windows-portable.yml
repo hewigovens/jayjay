@@ -178,7 +178,8 @@ jobs:
           mkdir -p "$dir"
           for template in dist/windows/winget/*.yaml; do
             manifest="$dir/${template##*/}"
-            envsubst <"$template" >"$manifest"
+            # shellcheck disable=SC2016 # Only these variables; the templates' $schema headers must stay literal.
+            envsubst '$VERSION $URL $SHA256' <"$template" >"$manifest"
           done
 
       - name: Upload winget manifests

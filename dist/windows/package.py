@@ -92,7 +92,7 @@ def package(payload, version, output):
                    for path in files)
     (payload / "SHA256SUMS").write_bytes(sums.encode("utf-8"))
     output.mkdir(parents=True, exist_ok=True)
-    archive = output / f"JayJay-{version}-windows-x64-alpha.zip"
+    archive = output / f"JayJay-{version}-windows-x64.zip"
     with zipfile.ZipFile(archive, "w") as zip_file:
         for path in sorted([*files, payload / "SHA256SUMS"], key=lambda path: path.relative_to(payload).as_posix()):
             info = zipfile.ZipInfo(path.relative_to(payload).as_posix(), (1980, 1, 1, 0, 0, 0))
