@@ -18,6 +18,11 @@ if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -For
 New-Item -ItemType Directory -Path $layout | Out-Null
 Copy-Item "$Payload/*" $layout
 Copy-Item "$PSScriptRoot/msix/Assets" $layout -Recurse
+# Without default and light-theme variants the taskbar plates the icon.
+Get-ChildItem "$layout/Assets/*_altform-unplated.png" | ForEach-Object {
+    Copy-Item $_.FullName ($_.FullName -replace '_altform-unplated', '')
+    Copy-Item $_.FullName ($_.FullName -replace '_altform-unplated', '_altform-lightunplated')
+}
 [xml]$manifest = Get-Content -LiteralPath "$PSScriptRoot/msix/AppxManifest.xml"
 $manifest.Package.Identity.Version = $packageVersion
 $manifest.Save((Join-Path $layout "AppxManifest.xml"))
