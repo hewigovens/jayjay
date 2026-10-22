@@ -74,7 +74,7 @@ Or download the AppImage from [GitHub Releases](https://github.com/hewigovens/ja
 
 #### Windows
 
-Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. To try beta builds, download the Windows x64 portable alpha ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows desktop behavior is still experimental.
+Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. To try beta builds, download the Windows x64 portable ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows desktop behavior is still experimental.
 
 ### Agent skill
 

@@ -3,7 +3,7 @@
 <head>
   <meta http-equiv="Content-Type" content="text/html; charset=utf-8" />
   <meta name="description" content="Review and edit changed working-copy files, use rich previews, and track reviewed state in JayJay." />
-  <meta name="keywords" content="jayjay, diff review, edit file, working copy, reviewed files, rich preview, markdown, mermaid, diagram, moved code, file icons, binary size, html default app, notebook, csv, sarif, plist, space, side by side diff" />
+  <meta name="keywords" content="jayjay, diff review, edit file, working copy, reviewed files, rich preview, markdown, mermaid, diagram, moved code, file icons, binary size, html default app, notebook, csv, sarif, plist, space, side by side diff, copy, clipboard, wrapped lines" />
   <title>Review changed files</title>
   <link rel="stylesheet" type="text/css" href="../sty/help.css" />
 </head>
@@ -38,6 +38,7 @@
       <li>Moved code has linked line-number badges in unified and side-by-side diffs. Click a badge to jump to the matching block in the same file; its destination is briefly highlighted.</li>
       <li>Binary sizes follow your locale. Hover over a size to see the exact byte count.</li>
       <li>Use <code>Cmd+F</code> to search in the current diff.</li>
+      <li>Select text in either diff pane and press <code>Cmd+C</code> to copy it without gutter line numbers. Side-by-side copies preserve the original source lines, joining wrapped rows and skipping blank alignment rows in both plain text and rich text.</li>
       <li>Syntax highlighting includes PowerShell, Batch, INI, CMake, and XML-family files alongside the other supported source formats.</li>
       <li>Use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal collapsed context in place.</li>
       <li>Click a changed group's gutter stripe to review that hunk. File rows show unreviewed, partial, reviewed, or changed-since-review state.</li>
