@@ -18,8 +18,8 @@ impl DiffFormatPlugin for IpynbPlugin {
         1
     }
 
-    fn label(&self) -> &'static str {
-        "Notebook"
+    fn label(&self) -> String {
+        jayjay_i18n::diff::plugin_notebook()
     }
 
     fn render_kind(&self) -> DiffRenderKind {

@@ -55,11 +55,11 @@ pub struct Overview {
 }
 
 impl OverviewChange {
-    pub fn title(&self) -> &str {
+    pub fn title(&self) -> String {
         match (self.description.as_str(), self.is_empty) {
-            ("", true) => "(empty)",
-            ("", false) => "(no description)",
-            (description, _) => description,
+            ("", true) => jayjay_i18n::repo::empty_placeholder(),
+            ("", false) => jayjay_i18n::repo::no_description_placeholder(),
+            (description, _) => description.to_owned(),
         }
     }
 }
@@ -120,10 +120,10 @@ impl OverviewLane {
         &self.changes[0]
     }
 
-    pub fn title(&self) -> &str {
+    pub fn title(&self) -> String {
         match self.head().description.as_str() {
-            "" => "(no description)",
-            description => description,
+            "" => jayjay_i18n::repo::no_description_placeholder(),
+            description => description.to_owned(),
         }
     }
 

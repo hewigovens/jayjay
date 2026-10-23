@@ -18,8 +18,8 @@ impl DiffFormatPlugin for DelimitedPlugin {
         1
     }
 
-    fn label(&self) -> &'static str {
-        "Delimited table"
+    fn label(&self) -> String {
+        jayjay_i18n::diff::plugin_delimited_table()
     }
 
     fn render_kind(&self) -> DiffRenderKind {

@@ -78,3 +78,21 @@ diff-line-stats-label = { NUMBER($added) } added, { NUMBER($removed) } removed
 diff-before-percent = Before { NUMBER($percent) } percent
 diff-reviewed-of-total = { NUMBER($reviewed) }/{ NUMBER($total) } reviewed
 diff-files-reviewed-with-agent = { NUMBER($reviewed) } of { NUMBER($total) } files reviewed, { NUMBER($agent) } include agent marks
+diff-unmodified-lines =
+    { $count ->
+        [one] { $count } unmodified line
+       *[other] { $count } unmodified lines
+    }
+diff-edit-hint = Select files, hunks, or line ranges to edit
+diff-edit-selection =
+    { $files ->
+        [one] { $files } file
+       *[other] { $files } files
+    }, { $lines ->
+        [one] { $lines } line
+       *[other] { $lines } lines
+    } selected
+diff-plugin-notebook = Notebook
+diff-plugin-delimited-table = Delimited table
+diff-plugin-property-list = Property list
+diff-plugin-sarif-report = SARIF report

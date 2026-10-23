@@ -159,7 +159,7 @@ pub(super) fn separator_line(region: ContextRegion) -> DiffLine {
         new_line_no: None,
         style: DiffSpanStyle::Separator,
         spans: vec![DiffSpan {
-            text: format!("{} unmodified lines", region.line_count),
+            text: jayjay_i18n::diff::unmodified_lines(region.line_count),
             style: DiffSpanStyle::Separator,
             token: SyntaxToken::Plain,
             tooltip: None,

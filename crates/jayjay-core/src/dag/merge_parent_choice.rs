@@ -30,7 +30,7 @@ impl MergeParentChoice {
                 }
                 let description = change.description.lines().next().unwrap_or("").trim();
                 parts.push(if description.is_empty() {
-                    "(no description)".to_owned()
+                    jayjay_i18n::repo::no_description_placeholder()
                 } else {
                     Self::abbreviate(description, 40)
                 });

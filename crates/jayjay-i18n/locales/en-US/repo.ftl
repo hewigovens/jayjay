@@ -543,3 +543,30 @@ repo-no-repository-here-yet = No repository here yet
 repo-jj-git-init-creates-repository = jj git init creates a new jj repository in this folder.
 repo-initialize-jj = Initialize jj
 repo-initialize-with-jj-git-init = Initialize with jj git init
+repo-preset-all = All
+repo-preset-mine = Mine
+repo-preset-tags = Tags
+repo-preset-trunk = Trunk
+repo-preset-conflicts = Conflicts
+repo-preset-heads = Heads
+repo-preset-default = Default
+repo-bisect-testing = Testing { $subject } · { NUMBER($count) } left, about { NUMBER($steps) } more
+repo-bisect-this-change = this change
+repo-bisect-range-changed = A change in the range was rewritten or hidden. Stop, or restart from the same ends.
+repo-bisect-needs-two-changes = A bisect range needs two different changes.
+repo-bisect-not-same-line = Those changes are not in the same line, so they cannot be bisected.
+repo-bisect-restart-unavailable = Restart is only available when the range has changed.
+repo-bisect-result-not-ready = The bisect result is not ready to dismiss.
+repo-bisect-enter-range = Enter a good end and a bad end, or a revset range.
+repo-bisect-original-gone = The original change was gone, so this restored a new change on its parents.
+repo-bisect-no-first-bad = No first bad change found: every candidate was skipped, or the range's head was not bad.
+repo-bisect-command-not-found = The test command returned 127 (command not found).
+repo-bisect-first-bad-possibly-skipped = First bad: { $bad }. Possibly bad (skipped): { $skipped }
+repo-bisect-first-bad =
+    { $count ->
+        [one] First bad change: { $changes }
+       *[other] First bad changes: { $changes }
+    }
+repo-bisect-none = (none)
+repo-bisect-working-copy-moved = The working copy moved away from the bisect candidate. Stop and start a new bisect.
+repo-empty-placeholder = (empty)
