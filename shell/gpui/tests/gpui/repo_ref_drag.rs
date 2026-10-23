@@ -3,6 +3,36 @@ use gpui::{Modifiers, MouseButton, TestAppContext};
 use jj_test::{LinearFixture, run_git, run_jj_in};
 
 #[gpui::test]
+fn bookmark_chip_menu_filters_by_the_bookmark(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "filter-me", "-r", "@-"],
+    );
+    let (view, cx) = open_fixture(&fixture, cx);
+
+    let chip = cx
+        .debug_bounds("dag-bookmark-filter-me")
+        .expect("bookmark chip");
+    cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    let filter = cx
+        .debug_bounds("context-menu-Filter by This Bookmark")
+        .expect("filter menu item");
+    cx.simulate_click(filter.center(), Modifiers::default());
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.revset(),
+            jayjay_core::bookmark_filter_revset("filter-me", None).as_str()
+        );
+        assert!(vm.error.is_none(), "{:?}", vm.error);
+    });
+}
+
+#[gpui::test]
 fn bookmark_chip_drag_moves_bookmark_to_target_change(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     run_jj_in(&fixture.path, &["bookmark", "create", "drag-me", "-r", "@"]);

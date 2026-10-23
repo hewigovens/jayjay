@@ -1,6 +1,6 @@
 use gpui::{App, AppContext, Context, SharedString};
 use jayjay_core::compare;
-use jayjay_core::{BookmarkInfo, trunk};
+use jayjay_core::{BookmarkInfo, bookmark_filter_revset, trunk};
 
 use super::RepoWindow;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
@@ -50,7 +50,16 @@ impl RepoWindow {
                     .collect()
             })
             .unwrap_or_default();
-        let mut items = vec![
+        let mut items = Vec::new();
+        if rev.is_some() {
+            items.push(ContextMenuItem::new(
+                "Filter by This Bookmark",
+                glyph::FILTER,
+                ContextAction::FilterRevset(bookmark_filter_revset(name, None).into()),
+            ));
+            items.push(ContextMenuItem::separator());
+        }
+        items.extend([
             ContextMenuItem::new(
                 move_label,
                 glyph::ARROW_CIRCLE_RIGHT,
@@ -64,7 +73,7 @@ impl RepoWindow {
                 glyph::ARROW_UP,
                 ContextAction::PushBookmark(name.to_owned().into()),
             ),
-        ];
+        ]);
         if is_tracking {
             items.push(ContextMenuItem::new(
                 "Pull",
