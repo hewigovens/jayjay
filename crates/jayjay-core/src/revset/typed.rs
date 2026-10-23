@@ -1,10 +1,15 @@
 use super::expressions::BookmarkFilterTarget;
-use super::presets::{default_revset_preset, revset_presets};
+use super::presets::{RevsetPreset, revset_presets};
 use crate::BookmarkInfo;
 
-pub fn typed_revset(text: &str, bookmarks: &[BookmarkInfo]) -> String {
+/// `default_revset` is the repository's Default preset, so typing its name picks what the Default chip does.
+pub fn typed_revset(
+    text: &str,
+    bookmarks: &[BookmarkInfo],
+    default_revset: &RevsetPreset,
+) -> String {
     let text = text.trim();
-    let preset = std::iter::once(default_revset_preset())
+    let preset = std::iter::once(default_revset.clone())
         .chain(revset_presets().iter().cloned())
         .find(|preset| preset.label.eq_ignore_ascii_case(text));
     if let Some(preset) = preset {
@@ -21,7 +26,7 @@ pub fn typed_revset(text: &str, bookmarks: &[BookmarkInfo]) -> String {
 mod tests {
     use super::*;
     use crate::mock::{bookmark_info, strings};
-    use crate::revset::{DEFAULT_REVSET, bookmark_filter_revset};
+    use crate::revset::{bookmark_filter_revset, default_revset_preset};
 
     #[test]
     fn typed_names_pick_presets_and_bookmarks_before_parsing_as_revsets() {
@@ -37,8 +42,14 @@ mod tests {
                 ..bookmark_info("work")
             },
         ];
+        let configured = RevsetPreset {
+            revset: "::@".to_owned(),
+            ..default_revset_preset()
+        };
+        let typed_revset =
+            |text: &str, bookmarks: &[BookmarkInfo]| typed_revset(text, bookmarks, &configured);
         assert_eq!(typed_revset(" mine ", &bookmarks), "mine()");
-        assert_eq!(typed_revset("Default", &bookmarks), DEFAULT_REVSET);
+        assert_eq!(typed_revset("Default", &bookmarks), "::@");
         assert_eq!(
             typed_revset("feature", &bookmarks),
             bookmark_filter_revset("feature", None)

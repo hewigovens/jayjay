@@ -20,6 +20,7 @@ func mockChangeInfo(
         description: description,
         author: .tester,
         coAuthors: [],
+        committedAtMillis: 0,
         parents: parents,
         bookmarks: bookmarks,
         tags: tags,

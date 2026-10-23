@@ -18,7 +18,8 @@ class RepoViewModelTestCase: XCTestCase {
             path: directory.path,
             repo: repo,
             primaryRoot: directory.path,
-            workingCopyIsLarge: false
+            workingCopyIsLarge: false,
+            defaultRevsetPreset: repo.defaultRevsetPreset()
         )
     }
 

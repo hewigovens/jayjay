@@ -65,7 +65,8 @@ extension RepoViewModel {
     }
 
     func applyFilter(_ newRevset: String, selecting revision: String) {
-        let filter = revsetFilterApply(state: revsetFilter, revset: newRevset)
+        let isEmpty = newRevset.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty
+        let filter = revsetFilterApply(state: revsetFilter, revset: isEmpty ? defaultRevsetPreset.revset : newRevset)
         let recent = recentRevsetsRemember(repositoryPath: primaryRoot, revset: filter.revset)
         reloadFilter(RevsetFilterState(revset: filter.revset, previous: filter.previous, recent: recent), selecting: revision)
     }

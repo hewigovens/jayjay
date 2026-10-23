@@ -115,6 +115,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     }
 
     let repo: JayJayRepo
+    /// Where Reset and an empty filter return: the user's `revsets.log`, else JayJay's default.
+    let defaultRevsetPreset: RevsetPreset
 
     /// Huge checkouts (e.g. chromium) skip the working-copy snapshot on open; small repos refresh eagerly.
     let workingCopyIsLarge: Bool
@@ -162,6 +164,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
             repo: repo,
             primaryRoot: workspacePrimaryRoot(path: path) ?? path,
             workingCopyIsLarge: repo.workingCopyIsLarge(),
+            defaultRevsetPreset: repo.defaultRevsetPreset(),
             includeSubmoduleStatuses: includeSubmoduleStatuses
         )
     }
@@ -173,6 +176,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         repo: JayJayRepo,
         primaryRoot: String,
         workingCopyIsLarge: Bool,
+        defaultRevsetPreset: RevsetPreset,
         includeSubmoduleStatuses: Bool = false
     ) {
         repoPath = path
@@ -180,6 +184,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         self.primaryRoot = primaryRoot
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
+        self.defaultRevsetPreset = defaultRevsetPreset
         self.workingCopyIsLarge = workingCopyIsLarge
         fsWatcher = RepoFSWatcher(
             repoPath: path,
@@ -190,7 +195,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
                 (try? repo.hasUnignoredWorkingCopyPaths(paths: paths)) ?? true
             }
         )
-        revsetFilter = RevsetFilterState(revset: revsetFilter.revset, previous: nil, recent: recentRevsets(repositoryPath: primaryRoot))
+        revsetFilter = RevsetFilterState(revset: defaultRevsetPreset.revset, previous: nil, recent: recentRevsets(repositoryPath: primaryRoot))
     }
 
     @MainActor
@@ -237,10 +242,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         guard isShuttingDown else { return }
         isShuttingDown = false
         refresh()
-    }
-
-    static func buildDefaultRevset() -> String {
-        buildDefaultRevset(depth: defaultRevsetPageSize)
     }
 
     static func buildDefaultRevset(depth: Int) -> String {

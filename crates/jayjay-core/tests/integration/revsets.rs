@@ -279,3 +279,37 @@ fn revset_vocabulary_offers_the_refs_tags_and_aliases_of_the_repository() {
     assert!(symbols(&vocabulary.aliases).contains(&"wip".to_owned()));
     assert!(symbols(&vocabulary.aliases).contains(&"reviewed(".to_owned()));
 }
+
+#[test]
+fn default_revset_follows_the_users_log_revset() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        "revsets.log",
+        "nope(",
+    ]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    assert_eq!(repo.default_revset_preset().revset, DEFAULT_REVSET);
+
+    run_jj(&[
+        "-R",
+        repo_str,
+        "config",
+        "set",
+        "--repo",
+        "revsets.log",
+        "::@",
+    ]);
+    let repo = Repo::open(&repo_path).expect("reopen repo");
+    let preset = repo.default_revset_preset();
+    assert_eq!(
+        (preset.label.as_str(), preset.revset.as_str()),
+        ("Default", "::@")
+    );
+}

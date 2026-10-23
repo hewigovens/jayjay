@@ -71,6 +71,7 @@ extension EvologEntry {
             description: description,
             author: .empty(timestampMillis: timestampMillis),
             coAuthors: [],
+            committedAtMillis: timestampMillis,
             parents: [],
             bookmarks: [],
             tags: [],

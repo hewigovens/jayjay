@@ -95,6 +95,8 @@ pub struct ChangeInfo {
     pub author: CommitAuthor,
     /// A committer other than the author, then each `Co-authored-by` trailer, as GitHub credits them.
     pub co_authors: Vec<CommitAuthor>,
+    /// When the change was last rewritten, which `jj log` shows; the author date stays with the author.
+    pub committed_at_millis: i64,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub tags: Vec<String>,
@@ -214,6 +216,7 @@ mod change_info_tests {
             description: String::new(),
             author: CommitAuthor::empty(0),
             co_authors: Vec::new(),
+            committed_at_millis: 0,
             parents: Vec::new(),
             bookmarks: Vec::new(),
             tags: Vec::new(),
