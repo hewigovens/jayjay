@@ -47,7 +47,9 @@ fn main() {
                 repo.log_graph(DEFAULT_REVSET).expect("log graph")
             });
             timed("layout", || {
-                black_box((DagLayout::compute(&entries), SelectionGraph::new(&entries)))
+                let layout = DagLayout::compute(&entries);
+                let selection = SelectionGraph::new(&entries, &layout);
+                black_box((layout, selection))
             });
             eprintln!("rows: {}", entries.len());
         }

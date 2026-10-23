@@ -13,7 +13,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     private(set) var dagLayout = DAGLayout(entries: [])
     /// Views key derived work on this so the entries are compared once per refresh, not per body pass.
     private(set) var graphGeneration: UInt64 = 0
-    @ObservationIgnored private var selectionGraph: DagSelectionGraph?
+    @ObservationIgnored private(set) var selectionGraph: DagSelectionGraph?
     @ObservationIgnored private var capabilitiesKey: (UInt64, [String])?
     @ObservationIgnored private var cachedCapabilities = DAGSelectionCapabilities.empty
     var changes: [ChangeInfo] {

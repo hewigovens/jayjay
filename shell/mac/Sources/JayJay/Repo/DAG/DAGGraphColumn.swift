@@ -19,14 +19,29 @@ struct DAGGraphColumn: View {
             }
         ).sorted()
         let hasVisibleParent = viewModel.entry.edges.contains { $0.edgeType != .missing }
+        let index = viewModel.index
+        let activeLane = viewModel.activeLane.map { (lane: Int($0.lane), first: Int($0.firstRow), last: Int($0.lastRow)) }
+        let activeDisplayLane = activeLane.map { viewModel.layout.displayLane(for: $0.lane) }
 
         return Canvas { ctx, size in
             let height = size.height
-            let lineColor = contrast == .increased ? Color.primary : AppColors.graphLine(colorScheme)
+            let baseColor = contrast == .increased ? Color.primary : AppColors.graphLine(colorScheme)
+            let fadedColor = baseColor.opacity(contrast == .increased ? 0.55 : colorScheme == .dark ? 0.4 : 0.3)
+            let lineColor = activeLane == nil ? baseColor : fadedColor
             let laneStroke: (Int) -> StrokeStyle = { displayLane in
                 hasOverflow && displayLane == overflowDisplayLane
                     ? dagOverflowStroke
                     : dagSolidStroke
+            }
+            let lineContext = ctx
+            let stroke: (Path, StrokeStyle, Bool) -> Void = { path, style, isActive in
+                guard isActive else {
+                    lineContext.stroke(path, with: .color(lineColor), style: style)
+                    return
+                }
+                var emphasized = style
+                emphasized.lineWidth = 2
+                lineContext.stroke(path, with: .color(baseColor), style: emphasized)
             }
 
             for displayLane in passThroughDisplayLanes where displayLane != myDisplayLane {
@@ -35,7 +50,8 @@ struct DAGGraphColumn: View {
                     p.move(to: CGPoint(x: laneX, y: 0))
                     p.addLine(to: CGPoint(x: laneX, y: height))
                 }
-                ctx.stroke(path, with: .color(lineColor), style: laneStroke(displayLane))
+                let isActive = activeLane.map { displayLane == activeDisplayLane && $0.first < index && index < $0.last } ?? false
+                stroke(path, laneStroke(displayLane), isActive)
             }
 
             // Top stub: connect down from the row above when the lane continues.
@@ -46,7 +62,8 @@ struct DAGGraphColumn: View {
                         p.move(to: CGPoint(x: myX, y: 0))
                         p.addLine(to: CGPoint(x: myX, y: nodeCenterY - nodeRadius))
                     }
-                    ctx.stroke(path, with: .color(lineColor), style: laneStroke(myDisplayLane))
+                    let isActive = activeLane.map { myLane == $0.lane && $0.first < index && index <= $0.last } ?? false
+                    stroke(path, laneStroke(myDisplayLane), isActive)
                 }
             }
 
@@ -80,7 +97,10 @@ struct DAGGraphColumn: View {
                 } else {
                     dagSolidStroke
                 }
-                ctx.stroke(path, with: .color(lineColor), style: style)
+                let isActive = activeLane.map {
+                    myLane == $0.lane && targetLane == $0.lane && $0.first <= index && index < $0.last
+                } ?? false
+                stroke(path, style, isActive)
             }
 
             if viewModel.layout.hasMissingAncestry(at: viewModel.index) {

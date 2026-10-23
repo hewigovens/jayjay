@@ -1,5 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
+use super::DagLayout;
 use crate::types::{EdgeType, GraphEntry};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -14,6 +15,13 @@ pub struct SelectionState {
     /// Indexed by graph row, as is `can_merge_with`.
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct LaneSpan {
+    pub lane: usize,
+    pub first_row: usize,
+    pub last_row: usize,
 }
 
 #[derive(Debug)]
@@ -31,10 +39,11 @@ struct Row {
     /// As jj reports them, including parents this page does not show.
     parent_commit_ids: Vec<String>,
     is_immutable: bool,
+    lane: usize,
 }
 
 impl SelectionGraph {
-    pub fn new(entries: &[GraphEntry]) -> Self {
+    pub fn new(entries: &[GraphEntry], layout: &DagLayout) -> Self {
         let row_by_commit_id: HashMap<String, usize> = entries
             .iter()
             .enumerate()
@@ -52,6 +61,7 @@ impl SelectionGraph {
                     .collect(),
                 parent_commit_ids: entry.change.parents.clone(),
                 is_immutable: entry.change.is_immutable,
+                lane: layout.lane(&entry.change.commit_id.id),
             })
             .collect();
         let mut children = vec![Vec::new(); rows.len()];
@@ -126,6 +136,78 @@ impl SelectionGraph {
         }
     }
 
+    /// At a lane's end, continues to the next segment drawn in the same column, entering at its top.
+    pub fn lane_parent(&self, row: usize) -> Option<usize> {
+        let current = self.rows.get(row)?;
+        self.in_lane_of(row, &current.parents).or_else(|| {
+            (row + 1..self.rows.len())
+                .find(|&ix| self.rows[ix].lane == current.lane)
+                .filter(|&ix| self.in_lane_of(ix, &self.children[ix]).is_none())
+        })
+    }
+
+    pub fn lane_child(&self, row: usize) -> Option<usize> {
+        let current = self.rows.get(row)?;
+        self.in_lane_of(row, &self.children[row]).or_else(|| {
+            (0..row)
+                .rev()
+                .find(|&ix| self.rows[ix].lane == current.lane)
+                .filter(|&ix| self.in_lane_of(ix, &self.rows[ix].parents).is_none())
+        })
+    }
+
+    pub fn lane_left(&self, row: usize) -> Option<usize> {
+        self.across_lanes(row, false)
+    }
+
+    pub fn lane_right(&self, row: usize) -> Option<usize> {
+        self.across_lanes(row, true)
+    }
+
+    pub fn lane_span(&self, row: usize) -> Option<LaneSpan> {
+        let lane = self.rows.get(row)?.lane;
+        let mut first_row = row;
+        while let Some(child) = self.in_lane_of(first_row, &self.children[first_row]) {
+            first_row = child;
+        }
+        let mut last_row = row;
+        while let Some(parent) = self.in_lane_of(last_row, &self.rows[last_row].parents) {
+            last_row = parent;
+        }
+        Some(LaneSpan {
+            lane,
+            first_row,
+            last_row,
+        })
+    }
+
+    fn across_lanes(&self, row: usize, rightward: bool) -> Option<usize> {
+        let lane = self.rows.get(row)?.lane;
+        let target = self
+            .rows
+            .iter()
+            .map(|candidate| candidate.lane)
+            .filter(|&other| {
+                if rightward {
+                    other > lane
+                } else {
+                    other < lane
+                }
+            })
+            .min_by_key(|other| other.abs_diff(lane))?;
+        (0..self.rows.len())
+            .filter(|&ix| self.rows[ix].lane == target)
+            .min_by_key(|ix| ix.abs_diff(row))
+    }
+
+    fn in_lane_of(&self, row: usize, candidates: &[usize]) -> Option<usize> {
+        let lane = self.rows[row].lane;
+        candidates
+            .iter()
+            .copied()
+            .find(|&ix| self.rows[ix].lane == lane)
+    }
+
     fn reaches(&self, child: usize, ancestor: usize) -> bool {
         self.reachable(&[child], &|ix| &self.rows[ix].parents)
             .contains(&ancestor)
@@ -160,6 +242,10 @@ mod tests {
     use super::*;
     use crate::mock::graph_entry;
 
+    fn graph(entries: &[GraphEntry]) -> SelectionGraph {
+        SelectionGraph::new(entries, &DagLayout::compute(entries))
+    }
+
     /// d — c — b — a, plus a sibling head `x` on `c`, and `i` is immutable.
     fn fixture() -> Vec<GraphEntry> {
         let mut entries = vec![
@@ -176,7 +262,7 @@ mod tests {
 
     fn state(selected: &[&str]) -> SelectionState {
         let selected: Vec<String> = selected.iter().map(|id| (*id).to_owned()).collect();
-        SelectionGraph::new(&fixture()).state(&selected)
+        graph(&fixture()).state(&selected)
     }
 
     fn row(id: &str) -> usize {
@@ -288,6 +374,60 @@ mod tests {
     }
 
     #[test]
+    fn lane_steps_follow_and_cross_the_drawn_lanes() {
+        let graph = graph(&[
+            graph_entry("s2", &["s1"]),
+            graph_entry("s1", &["trunk"]),
+            graph_entry("t2", &["t1"]),
+            graph_entry("t1", &["trunk"]),
+            graph_entry("trunk", &[]),
+        ]);
+
+        assert_eq!(graph.lane_parent(1), Some(4));
+        assert_eq!(graph.lane_child(4), Some(1));
+        assert_eq!(graph.lane_parent(3), None);
+        assert_eq!(graph.lane_child(2), None);
+        assert_eq!(graph.lane_parent(4), None);
+
+        let entries = [graph_entry("h1", &[]), graph_entry("h2", &[])];
+        let heads = SelectionGraph::new(&entries, &DagLayout::compute(&entries));
+        assert_eq!(
+            (heads.lane_parent(0), heads.lane_child(1)),
+            (Some(1), Some(0))
+        );
+
+        let entries = [
+            graph_entry("a", &["z"]),
+            graph_entry("b", &["z"]),
+            graph_entry("c", &["z"]),
+            graph_entry("d", &["z"]),
+            graph_entry("z", &[]),
+        ];
+        let siblings = SelectionGraph::new(&entries, &DagLayout::compute(&entries));
+        assert_eq!(
+            (siblings.lane_parent(1), siblings.lane_parent(2)),
+            (Some(2), Some(3))
+        );
+        assert_eq!(
+            (siblings.lane_parent(3), siblings.lane_child(3)),
+            (None, Some(2))
+        );
+
+        assert_eq!(graph.lane_right(1), Some(2));
+        assert_eq!(graph.lane_right(3), None);
+        assert_eq!(graph.lane_left(3), Some(4));
+        assert_eq!(graph.lane_left(0), None);
+
+        let span = |row| {
+            graph
+                .lane_span(row)
+                .map(|s| (s.lane, s.first_row, s.last_row))
+        };
+        assert_eq!(span(3), Some((1, 2, 3)));
+        assert_eq!(span(1), Some((0, 0, 4)));
+    }
+
+    #[test]
     fn an_edge_that_leaves_the_page_carries_no_ancestry() {
         let mut entries = vec![
             graph_entry("child", &["off-page"]),
@@ -298,16 +438,14 @@ mod tests {
             target: "other".to_owned(),
             edge_type: EdgeType::Indirect,
         });
-        let graph = SelectionGraph::new(&entries);
-
-        let state = graph.state(&["child".to_owned()]);
+        let state = graph(&entries).state(&["child".to_owned()]);
         assert!(
             !state.can_merge_with[1],
             "an indirect edge still means the row is an ancestor"
         );
 
         entries[0].edges.pop();
-        let state = SelectionGraph::new(&entries).state(&["child".to_owned()]);
+        let state = graph(&entries).state(&["child".to_owned()]);
         assert!(
             state.can_merge_with[1],
             "with only the missing edge left there is no path between them"

@@ -1,14 +1,15 @@
 use gpui::{AnyElement, ContentMask, IntoElement, Pixels, Styled, canvas, px};
-use jayjay_core::dag::DagLayout;
+use jayjay_core::dag::{DagLayout, LaneSpan};
 use jayjay_core::{EdgeType, GraphEntry};
 
 use crate::app::theme::Theme;
 
 use super::super::dag_row::node_center_offset;
-use super::paint::{LinePattern, paint_node, stroke_curve_pattern, stroke_line_pattern};
+use super::paint::{LineInk, LinePattern, paint_node, stroke_curve_pattern, stroke_line_pattern};
 use super::style::DagNodeStyle;
 
 const LANE_WIDTH: f32 = 18.0;
+const ACTIVE_LINE_WIDTH: f32 = 2.5;
 const LEADING_PAD: f32 = 8.0;
 const TRAILING_PAD: f32 = 6.0;
 const OVERFLOW_DASH_PATTERN: &[f32] = &[10.0, 4.0, 10.0, 12.0];
@@ -21,7 +22,9 @@ pub(crate) fn lane_column_width(display_lane_count: usize) -> f32 {
 }
 
 pub(crate) struct DagRowLanes {
+    pub row: usize,
     pub row_lane: usize,
+    pub active_lane: Option<LaneSpan>,
     pub pass_through_lanes: Vec<usize>,
     pub prev_active_lanes: Vec<usize>,
     pub has_overflow: bool,
@@ -35,7 +38,9 @@ pub(crate) fn dag_column(
     theme: &Theme,
 ) -> AnyElement {
     let DagRowLanes {
+        row,
         row_lane,
+        active_lane,
         pass_through_lanes,
         prev_active_lanes,
         has_overflow,
@@ -45,17 +50,42 @@ pub(crate) fn dag_column(
     let total_w = lane_column_width(display_lane_count);
     let overflow_display_lane = display_lane_count.max(1) - 1;
     let style = DagNodeStyle::resolve(&entry.change, theme);
+    let row_display_lane = layout.display_lane(row_lane);
+    let faded_alpha = if theme.is_dark { 0.4 } else { 0.3 };
+    let ink = move |color: u32, is_active: bool| match (active_lane, is_active) {
+        (None, _) => LineInk::from(color),
+        (Some(_), true) => LineInk {
+            color,
+            alpha: 1.0,
+            width: ACTIVE_LINE_WIDTH,
+        },
+        (Some(_), false) => LineInk {
+            color,
+            alpha: faded_alpha,
+            ..color.into()
+        },
+    };
+    let span = active_lane.map(|span| (span, layout.display_lane(span.lane)));
+    let in_lane = |lane: usize| span.is_some_and(|(span, _)| span.lane == lane);
     let line_color = theme.dag_line;
     let edge_color = theme.dag_edge;
-    let row_display_lane = layout.display_lane(row_lane);
     let node_top_offset = node_center_offset(theme);
 
     // Resolve targets up front — `layout` can't move into the canvas closure.
-    let edge_targets: Vec<(usize, EdgeType)> = entry
+    let continues_lane = span.is_some_and(|(span, _)| span.first_row <= row && row < span.last_row);
+    let edge_targets: Vec<(usize, EdgeType, LineInk)> = entry
         .edges
         .iter()
         .filter(|e| !matches!(e.edge_type, EdgeType::Missing))
-        .map(|e| (layout.display_lane(layout.lane(&e.target)), e.edge_type))
+        .map(|e| {
+            let target_lane = layout.lane(&e.target);
+            let is_active = continues_lane && in_lane(row_lane) && in_lane(target_lane);
+            (
+                layout.display_lane(target_lane),
+                e.edge_type,
+                ink(edge_color, is_active),
+            )
+        })
         .collect();
 
     let mut pass_through_display_lanes: Vec<usize> = pass_through_lanes
@@ -67,6 +97,20 @@ pub(crate) fn dag_column(
     pass_through_display_lanes.dedup();
 
     let has_above = prev_active_lanes.contains(&row_lane);
+    let top_stub_ink = ink(
+        line_color,
+        in_lane(row_lane)
+            && span.is_some_and(|(span, _)| span.first_row < row && row <= span.last_row),
+    );
+    let passes_active = span.is_some_and(|(span, _)| span.first_row < row && row < span.last_row);
+    let pass_through_inks: Vec<(usize, LineInk)> = pass_through_display_lanes
+        .iter()
+        .map(|&lane| {
+            let is_active = passes_active && span.is_some_and(|(_, display)| display == lane);
+            (lane, ink(line_color, is_active))
+        })
+        .collect();
+    let side_ink = ink(edge_color, false);
 
     let overflow_pattern = LinePattern::Dashed(OVERFLOW_DASH_PATTERN);
     let line_pattern = move |display_lane| {
@@ -93,14 +137,14 @@ pub(crate) fn dag_column(
             let row_bottom = oy + h;
 
             window.with_content_mask(Some(ContentMask { bounds }), |window| {
-                for &display_lane in &pass_through_display_lanes {
+                for &(display_lane, lane_ink) in &pass_through_inks {
                     stroke_line_pattern(
                         window,
                         display_lane_center_x(display_lane),
                         oy,
                         display_lane_center_x(display_lane),
                         row_bottom,
-                        line_color,
+                        lane_ink,
                         line_pattern(display_lane),
                     );
                 }
@@ -113,13 +157,13 @@ pub(crate) fn dag_column(
                         oy,
                         my_x,
                         node_y - radius_px,
-                        line_color,
+                        top_stub_ink,
                         line_pattern(row_display_lane),
                     );
                 }
 
                 let start_y = node_y + radius_px;
-                for &(target_display_lane, edge_type) in &edge_targets {
+                for &(target_display_lane, edge_type, edge_ink) in &edge_targets {
                     let target_x = display_lane_center_x(target_display_lane);
                     let edge_pattern = if edge_type == EdgeType::Indirect {
                         LinePattern::Dashed(INDIRECT_EDGE_DASH_PATTERN)
@@ -138,7 +182,7 @@ pub(crate) fn dag_column(
                             start_y,
                             my_x,
                             row_bottom,
-                            edge_color,
+                            edge_ink,
                             edge_pattern,
                         );
                     } else {
@@ -148,7 +192,7 @@ pub(crate) fn dag_column(
                             start_y,
                             target_x,
                             row_bottom,
-                            edge_color,
+                            edge_ink,
                             edge_pattern,
                         );
                     }
@@ -171,7 +215,7 @@ pub(crate) fn dag_column(
                         start_y,
                         terminal_x,
                         terminal_y,
-                        edge_color,
+                        side_ink,
                         LinePattern::Dashed(MISSING_EDGE_DASH_PATTERN),
                     );
                     stroke_line_pattern(
@@ -180,7 +224,7 @@ pub(crate) fn dag_column(
                         terminal_y,
                         terminal_x + px(2.0),
                         terminal_y,
-                        edge_color,
+                        side_ink,
                         LinePattern::Solid,
                     );
                 }

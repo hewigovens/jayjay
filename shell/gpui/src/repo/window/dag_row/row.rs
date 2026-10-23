@@ -1,9 +1,10 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use gpui::{
-    AnyElement, App, AppContext, ClickEvent, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
-    px, relative, rgb,
+    Animation, AnimationExt as _, AnyElement, App, AppContext, ClickEvent, InteractiveElement,
+    IntoElement, MouseButton, MouseDownEvent, ParentElement, SharedString,
+    StatefulInteractiveElement, Styled, Window, div, px, relative, rgb,
 };
 use jayjay_core::{BisectVerdict, BookmarkInfo, ChangeInfo, GraphEntry};
 
@@ -49,6 +50,7 @@ pub(crate) struct DagRow<'a> {
     pub bisect_dimmed: bool,
     pub bisect_candidate: bool,
     pub bisect_badge: Option<BisectVerdict>,
+    pub lane_end_blink: Option<usize>,
 }
 
 pub(crate) fn dag_row<F, FR>(
@@ -79,6 +81,7 @@ where
         bisect_dimmed,
         bisect_candidate,
         bisect_badge,
+        lane_end_blink,
     } = row;
     let summary = first_line(&change.description);
 
@@ -168,7 +171,20 @@ where
             .border_l(px(3.))
             .border_color(rgb(t.toggle_active_bg));
     }
-    row_div.into_any_element()
+    match lane_end_blink {
+        Some(blink) => row_div
+            .with_animation(
+                ("lane-end-blink", blink),
+                Animation::new(Duration::from_millis(320)),
+                move |row, delta| {
+                    let mut bg = selected_bg;
+                    bg.a *= 1. - 0.7 * (delta * std::f32::consts::PI).sin();
+                    row.bg(bg)
+                },
+            )
+            .into_any_element(),
+        None => row_div.into_any_element(),
+    }
 }
 
 fn summary_with_badge(

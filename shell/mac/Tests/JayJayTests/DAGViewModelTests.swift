@@ -103,6 +103,34 @@ final class DAGViewModelTests: XCTestCase {
         XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: 1), "second-commit")
     }
 
+    func testMovesSelectionAlongTheSelectedLane() {
+        let entries = [
+            makeEntry(changeId: "mine", commitId: "mine-commit", parents: ["trunk-commit"], isDivergent: false),
+            makeEntry(changeId: "other", commitId: "other-commit", parents: ["trunk-commit"], isDivergent: false),
+            makeEntry(changeId: "trunk", commitId: "trunk-commit", isDivergent: false)
+        ]
+        var viewModel = makeViewModel(entries: entries, selectedId: "mine")
+        viewModel.selectionGraph = DagSelectionGraph(entries: entries)
+
+        XCTAssertEqual(viewModel.selectedChangeId(afterMovingBy: 1), "trunk")
+        XCTAssertNil(viewModel.selectedChangeId(afterMovingBy: -1))
+        XCTAssertEqual(viewModel.selectedChangeId(acrossLanesRightward: true), "other")
+        var other = makeViewModel(entries: entries, selectedId: "other")
+        other.selectionGraph = viewModel.selectionGraph
+        XCTAssertNil(other.selectedChangeId(afterMovingBy: 1))
+        XCTAssertNil(viewModel.selectedChangeId(acrossLanesRightward: false))
+        XCTAssertEqual(viewModel.activeLane.map { [$0.lane, $0.firstRow, $0.lastRow] }, [0, 0, 2])
+
+        var unfocused = makeViewModel(entries: entries, selectedId: "mine")
+        unfocused.selectionGraph = viewModel.selectionGraph
+        unfocused.isActivePane = false
+        XCTAssertEqual(unfocused.activeLane.map { [$0.lane, $0.firstRow, $0.lastRow] }, [0, 0, 2])
+
+        var multiple = makeViewModel(entries: entries, selectedId: "mine", selectedIds: ["mine", "trunk"])
+        multiple.selectionGraph = viewModel.selectionGraph
+        XCTAssertNil(multiple.selectedChangeId(acrossLanesRightward: true))
+    }
+
     func testUsesListEndsWithoutSelection() {
         let first = makeEntry(changeId: "first", commitId: "first-commit", isDivergent: false)
         let second = makeEntry(changeId: "second", commitId: "second-commit", isDivergent: false)

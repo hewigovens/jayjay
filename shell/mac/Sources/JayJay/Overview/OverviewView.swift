@@ -167,6 +167,16 @@ struct OverviewView: View {
                     viewModel.selectChangeNeighbor(-1)
                     return .handled
                 }
+                .onKeyPress(characters: CharacterSet(charactersIn: "hjkl")) { press in
+                    guard press.modifiers.isEmpty else { return .ignored }
+                    switch press.characters {
+                        case "h": viewModel.selectNeighbor(-1)
+                        case "l": viewModel.selectNeighbor(1)
+                        case "j": viewModel.selectChangeNeighbor(1)
+                        default: viewModel.selectChangeNeighbor(-1)
+                    }
+                    return .handled
+                }
                 .onKeyPress(.escape) {
                     if viewModel.selectedChangeId != nil {
                         viewModel.selectedChangeId = nil

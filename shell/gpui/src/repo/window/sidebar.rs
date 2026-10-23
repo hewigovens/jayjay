@@ -75,17 +75,26 @@ pub(super) fn sidebar(
                     drag_selection,
                     refresh_mode,
                     bisect,
+                    active_lane,
+                    lane_end_blink,
                 ) = {
                     let vm = this.vm.read(cx);
+                    let selected_changes = vm.selected_change_indices();
+                    let active_lane = vm
+                        .selected
+                        .filter(|_| selected_changes.len() <= 1)
+                        .and_then(|row| vm.lane_span(row));
                     (
                         vm.selected,
-                        vm.selected_change_indices(),
+                        selected_changes,
                         vm.compare
                             .as_ref()
                             .and_then(|compare| compare.source_change_id.clone()),
                         DagDragSelection::of(vm),
                         vm.refresh_mode(),
                         vm.bisect.state.clone(),
+                        active_lane,
+                        this.lane_end_blink,
                     )
                 };
                 let bisect_rows = BisectRowStyles::new(bisect.as_ref());
@@ -150,7 +159,9 @@ pub(super) fn sidebar(
                             dag_column(
                                 entry,
                                 DagRowLanes {
+                                    row: ix,
                                     row_lane,
+                                    active_lane,
                                     pass_through_lanes,
                                     prev_active_lanes,
                                     has_overflow,
@@ -183,6 +194,9 @@ pub(super) fn sidebar(
                                 bisect_dimmed: row_style.dimmed,
                                 bisect_candidate: row_style.candidate,
                                 bisect_badge: row_style.badge,
+                                lane_end_blink: lane_end_blink
+                                    .filter(|&(row, _)| row == ix && is_selected)
+                                    .map(|(_, blink)| blink),
                             },
                             on_click,
                             on_right_click,
