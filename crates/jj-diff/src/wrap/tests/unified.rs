@@ -37,3 +37,14 @@ fn moved_block_first_rows_leave_room_for_their_jump_label() {
         .collect();
     assert_eq!(rows, [(0, 20), (0, 25), (1, 25)]);
 }
+
+#[test]
+fn tabs_wrap_as_four_cells() {
+    let line = diff_line("\tab\tc", Some(1), Some(1), DiffSpanStyle::Added);
+    let wrapped = wrap_diff_lines(&[line], 6, 0);
+
+    let texts: Vec<String> = wrapped.iter().map(|w| w.line.text()).collect();
+    assert_eq!(texts, vec!["\tab", "\tc"]);
+    assert_eq!(wrapped[0].line_len, 11);
+    assert_eq!((wrapped[1].col_start, wrapped[1].col_end), (6, 11));
+}

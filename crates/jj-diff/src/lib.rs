@@ -62,9 +62,9 @@ pub use types::{
     LineSpan, MovedRow,
 };
 pub use wrap::{
-    DEFAULT_WRAP_COLS, WrappedDiffLine, WrappedSbsRow, WrappedSide, sbs_line_to_row,
-    visual_index_for_line, visual_index_for_sbs_row, wrap_cols_for_width, wrap_diff_lines,
-    wrap_sbs_rows,
+    DEFAULT_WRAP_COLS, TAB_SPACES, WrappedDiffLine, WrappedSbsRow, WrappedSide, grapheme_cells,
+    sbs_line_to_row, visual_index_for_line, visual_index_for_sbs_row, wrap_cols_for_width,
+    wrap_diff_lines, wrap_sbs_rows,
 };
 
 #[cfg(test)]

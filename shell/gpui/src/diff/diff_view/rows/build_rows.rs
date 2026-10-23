@@ -2,7 +2,7 @@ use std::collections::HashMap;
 
 use gpui::SharedString;
 use jayjay_core::diff::{
-    DiffLine, DiffSide, WrappedDiffLine, anchor_side_and_number, change_groups,
+    DiffLine, DiffSide, TAB_SPACES, WrappedDiffLine, anchor_side_and_number, change_groups,
 };
 use jayjay_review::{NoteSide, NoteStatus, ReviewNoteStatus};
 use unicode_segmentation::UnicodeSegmentation;
@@ -59,7 +59,14 @@ fn leading_indent_cols(line: &DiffLine) -> u32 {
     line.text()
         .chars()
         .take_while(|c| *c == ' ' || *c == '\t')
-        .count() as u32
+        .map(|c| {
+            if c == '\t' {
+                TAB_SPACES.len() as u32
+            } else {
+                1
+            }
+        })
+        .sum()
 }
 
 fn push_note_rows(

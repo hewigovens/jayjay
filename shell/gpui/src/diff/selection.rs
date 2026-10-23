@@ -168,11 +168,10 @@ struct GraphemeCell<'a> {
 
 fn grapheme_cells(text: &str) -> Vec<GraphemeCell<'_>> {
     use unicode_segmentation::UnicodeSegmentation;
-    use unicode_width::UnicodeWidthStr;
     let mut cell = 0usize;
     text.graphemes(true)
         .map(|g| {
-            let w = UnicodeWidthStr::width(g).max(1);
+            let w = jayjay_core::diff::grapheme_cells(g);
             let start = cell;
             cell += w;
             GraphemeCell {
