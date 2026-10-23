@@ -55,10 +55,14 @@ impl BookmarkFilterTarget {
         }
     }
 
+    pub fn local(name: &str) -> Self {
+        Self::new(name.to_owned(), name, None)
+    }
+
     pub fn for_bookmark(bookmark: &BookmarkInfo) -> Vec<Self> {
         let local = bookmark
             .has_local_target
-            .then(|| Self::new(bookmark.name.clone(), &bookmark.name, None));
+            .then(|| Self::local(&bookmark.name));
         let remotes = bookmark
             .available_remotes
             .iter()

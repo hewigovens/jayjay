@@ -102,6 +102,10 @@ extension DAGRow {
         .accessibilityIdentifier(AID.DAG.bookmark(name))
         .selectionContextMenuExclusion()
         .contextMenu {
+            Button(Localized.Repo.filterByThisBookmark) {
+                actions?.filterByBookmark(localBookmarkFilterTarget(name: name))
+            }
+            Divider()
             Button(conflicted ? Localized.Menu.resolveConflictSetTo : Localized.Menu.moveTo) {
                 actions?.moveBookmark(name: name, toRev: conflicted ? "@" : "@-")
             }
