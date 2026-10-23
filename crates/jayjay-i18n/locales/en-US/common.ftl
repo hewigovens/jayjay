@@ -1,0 +1,3 @@
+common-cancel = Cancel
+common-clear = Clear
+common-clear-ellipsis = Clear…

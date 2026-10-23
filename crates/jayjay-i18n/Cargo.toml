@@ -1,0 +1,29 @@
+[package]
+name = "jayjay-i18n"
+version = "0.1.0"
+publish = false
+description = "Fluent message catalog shared by JayJay's shells and core"
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+repository.workspace = true
+build = "build/main.rs"
+
+[[bin]]
+name = "l10n-swift"
+path = "src/bin/l10n_swift.rs"
+
+[dependencies]
+fluent-bundle = { workspace = true }
+fluent-langneg = { workspace = true }
+fluent-pseudo = "0.3"
+unic-langid = { workspace = true, features = ["likelysubtags"] }
+icu_decimal = { version = "2.3", features = ["alloc"] }
+icu_locale_core = "2.3"
+
+[build-dependencies]
+fluent-bundle = { workspace = true }
+fluent-syntax = { workspace = true }
+
+[lints]
+workspace = true

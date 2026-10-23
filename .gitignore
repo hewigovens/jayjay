@@ -1,10 +1,12 @@
 target/
 build/
+!crates/jayjay-i18n/build/
 *.xcframework
 *.xcodeproj
 .build/
 DerivedData/
 JayJayCore.swift
+/shell/mac/Sources/JayJayCore/Localized.swift
 .DS_Store
 /.wrangler/
 shell/mac/Resources/app.icon/Assets/jaybird.svg

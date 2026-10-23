@@ -103,7 +103,7 @@ pub(super) fn detail_row(
 
 pub(super) fn field_row(
     glyph_str: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     value: AnyElement,
     t: &Theme,
 ) -> AnyElement {
@@ -114,7 +114,13 @@ pub(super) fn field_row(
             icons::icon(glyph_str, t.scaled_font_size(14.), t.fg_dim)
                 .w(px(t.scaled_font_size(16.))),
         )
-        .child(div().flex_1().min_w_0().text_color(rgb(t.fg)).child(label))
+        .child(
+            div()
+                .flex_1()
+                .min_w_0()
+                .text_color(rgb(t.fg))
+                .child(label.into()),
+        )
         .child(
             div()
                 .max_w(gpui::relative(0.6))

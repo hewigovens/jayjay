@@ -208,17 +208,17 @@ struct OnboardingView: View {
 
     private var statsToggle: some View {
         HStack(spacing: 10) {
-            Toggle(AppTelemetry.optInTitle, isOn: Binding(
+            Toggle(Localized.Telemetry.optIn, isOn: Binding(
                 get: { settings.sendsAnonymousStats },
                 set: { settings.sendsAnonymousStats = $0 }
             ))
             .labelsHidden()
             .frame(width: 20)
-            Text(AppTelemetry.optInTitle)
+            Text(Localized.Telemetry.optIn)
                 .jayjayFont(13)
                 .onTapGesture { settings.sendsAnonymousStats.toggle() }
         }
-        .help(AppTelemetry.optInDetail)
+        .help(Localized.Telemetry.optInDetail)
     }
 
     // MARK: - Helpers

@@ -11,6 +11,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | Task | Load |
 | --- | --- |
 | crate boundaries, UniFFI, MVVM | [Architecture](agents/architecture.md) |
+| user-facing text, translations | [Architecture](agents/architecture.md#localization) |
 | SwiftUI layout / view-models | [SwiftUI](agents/swiftui.md) |
 | GPUI layout / state | [GPUI](agents/gpui.md) |
 | review marks or notes | [Review State](agents/review-state.md) |

@@ -68,6 +68,8 @@ class SceneBase: XCTestCase {
         app.launchArguments = Self.ignoresWindowRestoration
             ? ["-ApplePersistenceIgnoreState", "YES"]
             : []
+        // Scenes find elements by their English labels, whatever the runner's own language is.
+        app.launchArguments += ["-AppleLanguages", "(en)"]
         if Self.opensFixtureOnLaunch {
             let fixture = root.appendingPathComponent(Self.fixtureName, isDirectory: true)
             fixtureURL = fixture
