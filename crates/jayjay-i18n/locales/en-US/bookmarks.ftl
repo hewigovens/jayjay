@@ -1,0 +1,11 @@
+bookmarks-no-bookmarks-found = No bookmarks found.
+bookmarks-reveal = Reveal
+bookmarks-diff = Diff
+bookmarks-ahead-of = ahead of { $remote }
+bookmarks-behind = behind { $remote }
+bookmarks-diverged-from = diverged from { $remote }
+bookmarks-remote-has-newer = { $remote } has newer commits — fetch to catch up.
+bookmarks-active-count = { NUMBER($count) } active
+bookmarks-local-only-count = { NUMBER($count) } local-only
+bookmarks-remote-only-count = { NUMBER($count) } remote-only
+bookmarks-local = local

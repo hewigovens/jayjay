@@ -151,31 +151,37 @@ fn status_chips(bookmark: &BookmarkInfo, t: &Theme) -> Vec<AnyElement> {
             capsule("remote-only", t.toggle_active_bg, t.toggle_active_fg, 9.).into_any_element(),
         );
     } else if bookmark.has_local_target && !bookmark.is_tracking_remote && !bookmark.is_deleted {
-        chips.push(capsule("local", t.tag_bg, t.tag_fg, 9.).into_any_element());
+        chips.push(
+            capsule(jayjay_i18n::bookmarks::local(), t.tag_bg, t.tag_fg, 9.).into_any_element(),
+        );
     }
     chips
 }
 
 fn remote_badge(target: &RemoteBookmarkTarget, t: &Theme) -> AnyElement {
     let (label, bg, fg) = match target.status {
-        RemoteSyncStatus::Deleted => (format!("deleted on {}", target.remote), t.tag_bg, t.tag_fg),
+        RemoteSyncStatus::Deleted => (
+            jayjay_i18n::repo::deleted_on(&target.remote),
+            t.tag_bg,
+            t.tag_fg,
+        ),
         RemoteSyncStatus::Synced => (
             format!("{} ✓", target.remote),
             t.tag_bookmark_bg,
             t.tag_bookmark_icon,
         ),
         RemoteSyncStatus::Ahead => (
-            format!("ahead of {}", target.remote),
+            jayjay_i18n::bookmarks::ahead_of(&target.remote),
             t.tag_divergent_bg,
             t.tag_divergent_fg,
         ),
         RemoteSyncStatus::Behind => (
-            format!("behind {}", target.remote),
+            jayjay_i18n::bookmarks::behind(&target.remote),
             t.tag_divergent_bg,
             t.tag_divergent_fg,
         ),
         RemoteSyncStatus::Diverged => (
-            format!("diverged from {}", target.remote),
+            jayjay_i18n::bookmarks::diverged_from(&target.remote),
             t.tag_conflict_bg,
             t.tag_conflict_fg,
         ),

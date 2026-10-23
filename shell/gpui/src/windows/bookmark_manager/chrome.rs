@@ -55,7 +55,7 @@ pub(super) fn header(filter: Entity<TextArea>, t: &Theme) -> AnyElement {
                 .debug_selector(|| "bookmark-manager-title".to_owned())
                 .text_size(ui_font_size(15.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                .child("Bookmark Manager"),
+                .child(jayjay_i18n::menu::bookmark_manager()),
         )
         .child(div().flex_1())
         .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
@@ -86,28 +86,55 @@ pub(super) fn stats_bar(
         .bg(rgba(with_alpha(t.fg, if t.is_dark { 0x10 } else { 0x08 })))
         .border_b_1()
         .border_color(rgb(t.border))
-        .child(stat_badge("active", stats.active, t.file_added_color))
-        .children(
-            (stats.deleted > 0).then(|| stat_badge("deleted", stats.deleted, t.file_removed_color)),
-        )
-        .children(
-            (stats.conflicted > 0)
-                .then(|| stat_badge("conflicted", stats.conflicted, t.tag_divergent_fg)),
-        )
-        .children(
-            (stats.local_only > 0).then(|| stat_badge("local-only", stats.local_only, t.fg_dim)),
-        )
-        .children(
-            (stats.remote_only > 0)
-                .then(|| stat_badge("remote-only", stats.remote_only, t.selected_accent)),
-        )
+        .child(stat_badge(
+            "active",
+            jayjay_i18n::bookmarks::active_count(stats.active),
+            stats.active,
+            t.file_added_color,
+        ))
+        .children((stats.deleted > 0).then(|| {
+            stat_badge(
+                "deleted",
+                jayjay_i18n::repo::deleted_count(stats.deleted),
+                stats.deleted,
+                t.file_removed_color,
+            )
+        }))
+        .children((stats.conflicted > 0).then(|| {
+            stat_badge(
+                "conflicted",
+                jayjay_i18n::repo::conflicted_count(stats.conflicted),
+                stats.conflicted,
+                t.tag_divergent_fg,
+            )
+        }))
+        .children((stats.local_only > 0).then(|| {
+            stat_badge(
+                "local-only",
+                jayjay_i18n::bookmarks::local_only_count(stats.local_only),
+                stats.local_only,
+                t.fg_dim,
+            )
+        }))
+        .children((stats.remote_only > 0).then(|| {
+            stat_badge(
+                "remote-only",
+                jayjay_i18n::bookmarks::remote_only_count(stats.remote_only),
+                stats.remote_only,
+                t.selected_accent,
+            )
+        }))
         .child(div().flex_1())
         .child(
-            checkbox_row("bookmark-show-deleted", "Show deleted", show_deleted, t).on_click(
-                cx.listener(|view, _: &ClickEvent, _, cx| {
-                    view.toggle_deleted(cx);
-                }),
-            ),
+            checkbox_row(
+                "bookmark-show-deleted",
+                jayjay_i18n::repo::show_deleted(),
+                show_deleted,
+                t,
+            )
+            .on_click(cx.listener(|view, _: &ClickEvent, _, cx| {
+                view.toggle_deleted(cx);
+            })),
         )
         .into_any_element()
 }
@@ -124,7 +151,7 @@ pub(super) fn footer(t: &Theme, cx: &mut Context<BookmarkManagerView>) -> AnyEle
         .border_t_1()
         .border_color(rgb(t.border))
         .child(
-            button("bookmark-manager-done", "Done", t, false)
+            button("bookmark-manager-done", jayjay_i18n::repo::done(), t, false)
                 .debug_selector(|| "bookmark-manager-done".to_owned())
                 .on_click(cx.listener(|_, _: &ClickEvent, window, _| {
                     window.remove_window();
@@ -133,8 +160,8 @@ pub(super) fn footer(t: &Theme, cx: &mut Context<BookmarkManagerView>) -> AnyEle
         .into_any_element()
 }
 
-fn stat_badge(label: &'static str, count: usize, color: u32) -> AnyElement {
-    let selector = SharedString::from(format!("bookmark-stat-{label}-{count}"));
+fn stat_badge(id: &'static str, text: String, count: usize, color: u32) -> AnyElement {
+    let selector = SharedString::from(format!("bookmark-stat-{id}-{count}"));
     let debug_selector = selector.clone();
     div()
         .id(selector)
@@ -147,6 +174,6 @@ fn stat_badge(label: &'static str, count: usize, color: u32) -> AnyElement {
         .text_size(ui_font_size(10.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(color))
-        .child(SharedString::from(format!("{count} {label}")))
+        .child(SharedString::from(text))
         .into_any_element()
 }

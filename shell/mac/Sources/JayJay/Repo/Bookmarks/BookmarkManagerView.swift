@@ -88,7 +88,7 @@ struct BookmarkManagerView: View {
 
     private var statsBar: some View {
         HStack(spacing: 16) {
-            statBadge("\(activeCount) active", color: .green)
+            statBadge(Localized.Bookmarks.activeCount(count: activeCount), color: .green)
             if deletedCount > 0 {
                 statBadge(Localized.Repo.deletedCount(count: deletedCount), color: .red)
             }
@@ -96,10 +96,10 @@ struct BookmarkManagerView: View {
                 statBadge(Localized.Repo.conflictedCount(count: conflictedCount), color: .orange)
             }
             if localOnlyCount > 0 {
-                statBadge("\(localOnlyCount) local-only", color: .secondary)
+                statBadge(Localized.Bookmarks.localOnlyCount(count: localOnlyCount), color: .secondary)
             }
             if remoteOnlyCount > 0 {
-                statBadge("\(remoteOnlyCount) remote-only", color: .blue)
+                statBadge(Localized.Bookmarks.remoteOnlyCount(count: remoteOnlyCount), color: .blue)
             }
             Spacer()
             Toggle(Localized.Repo.showDeleted, isOn: $showDeleted)

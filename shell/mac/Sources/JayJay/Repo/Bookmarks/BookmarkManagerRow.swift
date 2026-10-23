@@ -60,7 +60,7 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                     if !bookmark.hasLocalTarget, !bookmark.isDeleted {
                         badge("remote-only", color: .blue)
                     } else if bookmark.hasLocalTarget, !bookmark.isTrackingRemote, !bookmark.isDeleted {
-                        badge("local", color: .secondary)
+                        badge(Localized.Bookmarks.local, color: .secondary)
                     }
                 }
                 HStack(spacing: 6) {
@@ -167,19 +167,19 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
     private func remoteBadge(_ target: RemoteBookmarkTarget) -> some View {
         switch target.status {
             case .deleted:
-                badge("deleted on \(target.remote)", color: .secondary)
+                badge(Localized.Repo.deletedOn(remote: target.remote), color: .secondary)
                     .help(Localized.Repo.bookmarkDeletedOnRemote(bookmark: bookmark.name, remote: target.remote))
             case .synced:
                 badge("\(target.remote) ✓", color: .green)
                     .help(Localized.Repo.inSyncWith(remote: target.remote))
             case .ahead:
-                badge("ahead of \(target.remote)", color: .orange)
+                badge(Localized.Bookmarks.aheadOf(remote: target.remote), color: .orange)
                     .help(remoteHelp(target, Localized.Repo.aheadOf(remote: target.remote)))
             case .behind:
-                badge("behind \(target.remote)", color: .orange)
-                    .help(remoteHelp(target, "\(target.remote) has newer commits — fetch to catch up."))
+                badge(Localized.Bookmarks.behind(remote: target.remote), color: .orange)
+                    .help(remoteHelp(target, Localized.Bookmarks.remoteHasNewer(remote: target.remote)))
             case .diverged:
-                badge("diverged from \(target.remote)", color: .red)
+                badge(Localized.Bookmarks.divergedFrom(remote: target.remote), color: .red)
                     .help(remoteHelp(target, Localized.Repo.bookmarkDivergedFromRemote(bookmark: bookmark.name, remote: target.remote)))
             @unknown default:
                 EmptyView()
