@@ -17,6 +17,8 @@ struct DAGViewModel {
     let capabilities: DAGSelectionCapabilities
     var isActivePane = true
     var bisect: BisectDAGState?
+    var selectionGraph: DagSelectionGraph?
+    var laneEndBlink = false
     private let cache = Cache()
 
     var isEmpty: Bool {
@@ -72,6 +74,20 @@ struct DAGViewModel {
         return changes
     }
 
+    var activeLane: DagLaneSpan? {
+        if let cached = cache.activeLane {
+            return cached
+        }
+        var span: DagLaneSpan?
+        if selectedIds.count <= 1, let selectionGraph, let selectedId,
+           let row = entries.firstIndex(where: { $0.change.selectionRevision == selectedId })
+        {
+            span = selectionGraph.laneSpan(row: UInt32(row))
+        }
+        cache.activeLane = .some(span)
+        return span
+    }
+
     func rowViewModel(
         for entry: GraphEntry,
         index: Int,
@@ -91,7 +107,9 @@ struct DAGViewModel {
             bookmarkPreviewText: bookmarkPreviewText,
             colorScheme: colorScheme,
             isActivePane: isActivePane,
-            bisect: bisect
+            bisect: bisect,
+            activeLane: activeLane,
+            laneEndBlink: laneEndBlink
         )
     }
 
@@ -109,9 +127,23 @@ struct DAGViewModel {
         } else {
             delta > 0 ? -1 : entries.count
         }
+        if let selectionGraph, entries.indices.contains(currentIdx) {
+            let row = UInt32(currentIdx)
+            let next = delta > 0 ? selectionGraph.laneParent(row: row) : selectionGraph.laneChild(row: row)
+            return next.map { entries[Int($0)].change.selectionRevision }
+        }
         let newIdx = max(0, min(entries.count - 1, currentIdx + delta))
         guard newIdx != currentIdx else { return nil }
         return entries[newIdx].change.selectionRevision
+    }
+
+    func selectedChangeId(acrossLanesRightward rightward: Bool) -> String? {
+        guard selectedIds.count <= 1, let selectionGraph, let selectedId,
+              let idx = entries.firstIndex(where: { $0.change.selectionRevision == selectedId })
+        else { return nil }
+        let row = UInt32(idx)
+        let next = rightward ? selectionGraph.laneRight(row: row) : selectionGraph.laneLeft(row: row)
+        return next.map { entries[Int($0)].change.selectionRevision }
     }
 
     func isSelected(_ change: ChangeInfo) -> Bool {
@@ -190,5 +222,6 @@ struct DAGViewModel {
     private final class Cache {
         var selectedChanges: [ChangeInfo]?
         var changesByRevision: [String: ChangeInfo]?
+        var activeLane: DagLaneSpan??
     }
 }

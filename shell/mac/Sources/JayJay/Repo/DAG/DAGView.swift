@@ -20,6 +20,7 @@ struct DAGView: View {
     var workspacesByName: [String: WorkspaceInfo] = [:]
     var refreshMode: RefreshMode = .refresh
     var bisect: BisectState?
+    var selectionGraph: DagSelectionGraph?
 
     @State var rowFrameCache = DAGRowFrameCache()
     @State var rebaseDrag: DAGRebaseDragState?
@@ -31,6 +32,7 @@ struct DAGView: View {
     @State var bookmarkPreviewTargetId: String?
     @State var bookmarkPreviewTask: Task<Void, Never>?
     @State private var keyboardReveal: DAGRevealRequest?
+    @State private var laneEndBlink = false
     @State private var contextMenuRequest: SelectionContextMenuRequest?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(KeyboardFocus.self) private var keyboardFocus: KeyboardFocus?
@@ -52,7 +54,8 @@ struct DAGView: View {
         remoteTagNames: Set<String> = [],
         workspacesByName: [String: WorkspaceInfo] = [:],
         refreshMode: RefreshMode = .refresh,
-        bisect: BisectState? = nil
+        bisect: BisectState? = nil,
+        selectionGraph: DagSelectionGraph? = nil
     ) {
         self.entries = entries
         self.layout = layout
@@ -71,6 +74,7 @@ struct DAGView: View {
         self.workspacesByName = workspacesByName
         self.refreshMode = refreshMode
         self.bisect = bisect
+        self.selectionGraph = selectionGraph
     }
 
     var body: some View {
@@ -85,7 +89,9 @@ struct DAGView: View {
             layout: layout,
             capabilities: capabilities,
             isActivePane: activePane == .dag,
-            bisect: bisect.map(BisectDAGState.init)
+            bisect: bisect.map(BisectDAGState.init),
+            selectionGraph: selectionGraph,
+            laneEndBlink: laneEndBlink
         )
         Group {
             if viewModel.isEmpty {
@@ -232,8 +238,8 @@ struct DAGView: View {
         }
     }
 
-    private func moveSelection(by delta: Int) {
-        let viewModel = DAGViewModel(
+    private var navigationViewModel: DAGViewModel {
+        DAGViewModel(
             entries: entries,
             selectedId: selectedId,
             selectedIds: selectedIds,
@@ -242,11 +248,27 @@ struct DAGView: View {
             bookmarkDrag: bookmarkDrag,
             colorScheme: colorScheme,
             layout: layout,
-            capabilities: capabilities
+            capabilities: capabilities,
+            selectionGraph: selectionGraph
         )
-        guard let changeId = viewModel.selectedChangeId(afterMovingBy: delta) else { return }
+    }
+
+    private func selectFromKeyboard(_ changeId: String?) {
+        guard let changeId else {
+            if selectedId != nil {
+                blinkLaneEnd()
+            }
+            return
+        }
         actions?.select(changeId: changeId, coalescing: true)
         keyboardReveal = DAGRevealRequest(changeId: changeId)
+    }
+
+    private func blinkLaneEnd() {
+        withAnimation(.easeOut(duration: 0.08)) { laneEndBlink = true }
+        DispatchQueue.main.asyncAfter(deadline: .now() + 0.12) {
+            withAnimation(.easeIn(duration: 0.2)) { laneEndBlink = false }
+        }
     }
 
     private func handleContextMenuKeyDown(_ event: NSEvent) -> Bool {
@@ -280,9 +302,10 @@ struct DAGView: View {
         }
         switch event.horizontalNavigationKeyCode {
             case KeyCode.rightArrow:
-                keyboardFocus?.focusPane(.fileColumn)
+                selectFromKeyboard(navigationViewModel.selectedChangeId(acrossLanesRightward: true))
                 return true
             case KeyCode.leftArrow:
+                selectFromKeyboard(navigationViewModel.selectedChangeId(acrossLanesRightward: false))
                 return true
             default:
                 break
@@ -293,7 +316,7 @@ struct DAGView: View {
             charactersIgnoringModifiers: event.charactersIgnoringModifiers,
             controlPressed: isCtrl
         ) else { return false }
-        moveSelection(by: delta)
+        selectFromKeyboard(navigationViewModel.selectedChangeId(afterMovingBy: delta))
         return true
     }
 

@@ -52,7 +52,7 @@ fn keyboard_change_menu_targets_the_navigated_change(cx: &mut TestAppContext) {
 fn keyboard_file_menu_copies_the_selected_path_in_both_layouts(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
-    keys(cx, "l j");
+    keys(cx, "tab j");
     let path = view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         vm.files.as_ref().unwrap()[vm.selected_file_ix.unwrap()]

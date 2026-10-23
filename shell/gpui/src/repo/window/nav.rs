@@ -26,15 +26,18 @@ impl RepoWindow {
         }
         if !m.modified() {
             match ev.keystroke.key.as_str() {
-                "h" | "left" => {
-                    if !self.layout.sidebar_hidden {
+                "h" | "left" | "l" | "right" => {
+                    let rightward = matches!(ev.keystroke.key.as_str(), "l" | "right");
+                    if matches!(self.active_pane, ActivePane::Sidebar) {
+                        if !self.select_across_lanes(rightward, cx)
+                            && let Some(row) = self.vm.read(cx).selected
+                        {
+                            self.blink_lane_end(row, cx);
+                        }
+                    } else if !rightward && !self.layout.sidebar_hidden {
                         self.active_pane = ActivePane::Sidebar;
                         cx.notify();
                     }
-                    return true;
-                }
-                "l" | "right" => {
-                    self.focus_file_list(cx);
                     return true;
                 }
                 _ => {}
@@ -47,18 +50,46 @@ impl RepoWindow {
         false
     }
 
+    fn select_across_lanes(&mut self, rightward: bool, cx: &mut Context<Self>) -> bool {
+        let vm = self.vm.read(cx);
+        let Some(new) = vm
+            .selected
+            .filter(|_| vm.selected_change_indices().len() <= 1)
+            .and_then(|row| vm.lane_across(row, rightward))
+        else {
+            return false;
+        };
+        self.select_change(new, cx);
+        self.scrolls
+            .changes
+            .scroll_to_item(new, ScrollStrategy::Top);
+        true
+    }
+
+    fn blink_lane_end(&mut self, row: usize, cx: &mut Context<Self>) {
+        let blink = self.lane_end_blink.map_or(0, |(_, blink)| blink + 1);
+        self.lane_end_blink = Some((row, blink));
+        cx.notify();
+    }
+
     fn move_selection(&mut self, direction: ListNav, cx: &mut Context<Self>) {
         match self.active_pane {
             ActivePane::Sidebar => {
                 let vm = self.vm.read(cx);
-                let len = vm.graph.changes.len();
-                if let Some(new) = navigation::move_index(vm.selected, len, direction)
-                    && Some(new) != vm.selected
-                {
-                    self.select_change(new, cx);
-                    self.scrolls
-                        .changes
-                        .scroll_to_item(new, ScrollStrategy::Top);
+                let selected = vm.selected;
+                let new = match selected {
+                    Some(row) => vm.lane_step(row, direction),
+                    None => navigation::move_index(None, vm.graph.changes.len(), direction),
+                };
+                match (new, selected) {
+                    (Some(new), _) if Some(new) != selected => {
+                        self.select_change(new, cx);
+                        self.scrolls
+                            .changes
+                            .scroll_to_item(new, ScrollStrategy::Top);
+                    }
+                    (None, Some(row)) => self.blink_lane_end(row, cx),
+                    _ => {}
                 }
             }
             ActivePane::FileColumn => self.move_file_selection(direction, cx),

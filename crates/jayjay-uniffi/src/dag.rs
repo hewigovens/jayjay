@@ -25,12 +25,19 @@ pub struct GraphWithLayout {
     pub selection: Arc<DagSelectionGraph>,
 }
 
+#[derive(uniffi::Record, Debug, Clone)]
+pub struct DagLaneSpan {
+    pub lane: u32,
+    pub first_row: u32,
+    pub last_row: u32,
+}
+
 #[derive(uniffi::Object, Debug)]
 pub struct DagSelectionGraph(SelectionGraph);
 
 impl DagSelectionGraph {
-    pub(crate) fn from_entries(entries: &[GraphEntry]) -> Self {
-        Self(SelectionGraph::new(entries))
+    pub(crate) fn from_entries(entries: &[GraphEntry], layout: &DagLayout) -> Self {
+        Self(SelectionGraph::new(entries, layout))
     }
 }
 
@@ -39,17 +46,41 @@ impl DagSelectionGraph {
     /// Only for a graph the shell patched itself; a loaded graph arrives with one already built.
     #[uniffi::constructor]
     pub fn new(entries: Vec<GraphEntry>) -> Self {
-        Self::from_entries(&entries)
+        Self::from_entries(&entries, &DagLayout::compute(&entries))
     }
 
     pub fn selection_state(&self, selected_commit_ids: Vec<String>) -> SelectionState {
         self.0.state(&selected_commit_ids)
     }
+
+    pub fn lane_parent(&self, row: u32) -> Option<u32> {
+        self.0.lane_parent(row as usize).map(|ix| ix as u32)
+    }
+
+    pub fn lane_child(&self, row: u32) -> Option<u32> {
+        self.0.lane_child(row as usize).map(|ix| ix as u32)
+    }
+
+    pub fn lane_left(&self, row: u32) -> Option<u32> {
+        self.0.lane_left(row as usize).map(|ix| ix as u32)
+    }
+
+    pub fn lane_right(&self, row: u32) -> Option<u32> {
+        self.0.lane_right(row as usize).map(|ix| ix as u32)
+    }
+
+    pub fn lane_span(&self, row: u32) -> Option<DagLaneSpan> {
+        self.0.lane_span(row as usize).map(|span| DagLaneSpan {
+            lane: span.lane as u32,
+            first_row: span.first_row as u32,
+            last_row: span.last_row as u32,
+        })
+    }
 }
 
 #[uniffi::export]
 fn compute_dag_layout(entries: Vec<GraphEntry>) -> DagLayoutData {
-    layout_data(&entries)
+    layout_data(DagLayout::compute(&entries))
 }
 
 #[uniffi::export]
@@ -95,8 +126,7 @@ fn selection_is_contiguous(selection: OrderedSelection, order: Vec<String>) -> b
     selection.is_contiguous_in(&order)
 }
 
-pub(crate) fn layout_data(entries: &[GraphEntry]) -> DagLayoutData {
-    let layout = DagLayout::compute(entries);
+pub(crate) fn layout_data(layout: DagLayout) -> DagLayoutData {
     let display_lane_count = layout.display_lane_count();
     DagLayoutData {
         lanes: layout

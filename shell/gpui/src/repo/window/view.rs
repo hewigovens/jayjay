@@ -98,6 +98,8 @@ pub struct RepoWindow {
     fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
     fs_watcher_armed: bool,
+    /// The row j/k last stopped at and a count that restarts its dimming animation.
+    pub(crate) lane_end_blink: Option<(usize, usize)>,
     pub(crate) review_store: super::review::SharedReviewStore,
 }
 
@@ -516,6 +518,7 @@ impl RepoWindow {
             stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
             fs_watcher: None,
             fs_watcher_armed: false,
+            lane_end_blink: None,
             review_store,
         }
     }

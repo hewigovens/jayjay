@@ -49,6 +49,8 @@ struct DAGRowViewModel {
     let bisectDimmed: Bool
     let bisectCandidate: Bool
     let bisectBadge: BisectVerdict?
+    let activeLane: DagLaneSpan?
+    let laneEndBlink: Bool
 
     init(
         entry: GraphEntry,
@@ -63,13 +65,17 @@ struct DAGRowViewModel {
         bookmarkPreviewText: String?,
         colorScheme: ColorScheme,
         isActivePane: Bool = true,
-        bisect: BisectDAGState? = nil
+        bisect: BisectDAGState? = nil,
+        activeLane: DagLaneSpan? = nil,
+        laneEndBlink: Bool = false
     ) {
         self.entry = entry
         self.layout = layout
         self.index = index
         self.colorScheme = colorScheme
         self.isActivePane = isActivePane
+        self.activeLane = activeLane
+        self.laneEndBlink = laneEndBlink
         let commitId = entry.change.commitId.id
         bisectDimmed = bisect.map { $0.isEvaluating && !$0.focusedCommitIds.contains(commitId) } ?? false
         bisectCandidate = bisect?.candidateCommitId == commitId
@@ -163,7 +169,8 @@ struct DAGRowViewModel {
         switch selectionAccent {
             case .selected?:
                 let opacity = colorScheme == .dark ? 0.12 : 0.07
-                return AnyShapeStyle(Color.accentColor.opacity(isActivePane ? opacity * 2 : opacity))
+                let strength = isActivePane ? opacity * 2 : opacity
+                return AnyShapeStyle(Color.accentColor.opacity(laneEndBlink ? strength * 0.3 : strength))
             case .compareSource?:
                 return AnyShapeStyle(Color.orange.opacity(colorScheme == .dark ? 0.15 : 0.08))
             case .contextTarget?:

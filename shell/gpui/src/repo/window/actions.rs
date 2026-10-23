@@ -28,6 +28,7 @@ impl RepoWindow {
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
+        self.lane_end_blink = None;
         self.prepare_change_selection(cx);
         self.file_column.multi_select.clear();
         if self.vm.read(cx).selected != Some(ix) {

@@ -101,7 +101,7 @@ fn change_panel_description_wraps_and_copies_as_selected_text(cx: &mut TestAppCo
     let (view, repo_cx) = open_fixture(&fixture, cx);
     let mut overview_cx = open_overview(&view, repo_cx);
 
-    overview_cx.simulate_keystrokes("right down");
+    overview_cx.simulate_keystrokes("l j");
     settle_visual(&mut overview_cx);
     let label = overview_cx
         .debug_bounds("overview-panel-body")

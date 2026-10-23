@@ -37,7 +37,8 @@ extension RepoContentView {
                 remoteTagNames: viewModel.remoteTagNames,
                 workspacesByName: viewModel.workspacesByName,
                 refreshMode: viewModel.refreshMode,
-                bisect: viewModel.bisect.state
+                bisect: viewModel.bisect.state,
+                selectionGraph: viewModel.selectionGraph
             )
             if shouldShowCommitBox {
                 Divider()

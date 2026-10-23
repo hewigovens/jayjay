@@ -1,12 +1,14 @@
+use std::cell::RefMut;
 use std::collections::HashSet;
 use std::sync::Arc;
 
 use gpui::Context;
 use jayjay_core::compare::{self, CompareState};
-use jayjay_core::dag::{SelectionClick, SelectionGraph, SelectionState};
+use jayjay_core::dag::{LaneSpan, SelectionClick, SelectionGraph, SelectionState};
 use jayjay_core::{ChangeInfo, DiffHunk, GraphEntry};
 
 use super::RepoViewModel;
+use crate::ui::navigation::ListNav;
 
 pub(super) struct SelectionCache {
     pub(super) entries: Arc<Vec<GraphEntry>>,
@@ -476,8 +478,7 @@ impl RepoViewModel {
             .position(|candidate| candidate.commit_id == change.commit_id)
     }
 
-    pub(crate) fn selection_state(&self) -> Arc<SelectionState> {
-        let selected = self.selected_change_indices();
+    fn selection_cache(&self) -> RefMut<'_, SelectionCache> {
         let mut cache = self.selection_cache.borrow_mut();
         if cache
             .as_ref()
@@ -485,11 +486,39 @@ impl RepoViewModel {
         {
             *cache = Some(SelectionCache {
                 entries: self.graph.entries.clone(),
-                graph: SelectionGraph::new(&self.graph.entries),
+                graph: SelectionGraph::new(&self.graph.entries, &self.graph.dag_layout),
                 state: None,
             });
         }
-        let cache = cache.as_mut().expect("selection cache installed above");
+        RefMut::map(cache, |cache| {
+            cache.as_mut().expect("selection cache installed above")
+        })
+    }
+
+    pub(crate) fn lane_step(&self, row: usize, direction: ListNav) -> Option<usize> {
+        let cache = self.selection_cache();
+        match direction {
+            ListNav::Next => cache.graph.lane_parent(row),
+            ListNav::Previous => cache.graph.lane_child(row),
+        }
+    }
+
+    pub(crate) fn lane_span(&self, row: usize) -> Option<LaneSpan> {
+        self.selection_cache().graph.lane_span(row)
+    }
+
+    pub(crate) fn lane_across(&self, row: usize, rightward: bool) -> Option<usize> {
+        let cache = self.selection_cache();
+        if rightward {
+            cache.graph.lane_right(row)
+        } else {
+            cache.graph.lane_left(row)
+        }
+    }
+
+    pub(crate) fn selection_state(&self) -> Arc<SelectionState> {
+        let selected = self.selected_change_indices();
+        let mut cache = self.selection_cache();
         if cache
             .state
             .as_ref()
