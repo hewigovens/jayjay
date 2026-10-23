@@ -77,6 +77,11 @@ fn bookmark_filter_targets(
 }
 
 #[uniffi::export]
+fn local_bookmark_filter_target(name: String) -> jayjay_core::BookmarkFilterTarget {
+    jayjay_core::BookmarkFilterTarget::local(&name)
+}
+
+#[uniffi::export]
 fn default_revset_preset() -> RevsetPreset {
     jayjay_core::default_revset_preset()
 }
