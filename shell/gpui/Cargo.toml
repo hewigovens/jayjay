@@ -12,6 +12,7 @@ path = "src/main.rs"
 
 [dependencies]
 jayjay-core = { path = "../../crates/jayjay-core" }
+jayjay-i18n = { path = "../../crates/jayjay-i18n" }
 jayjay-markdown = { path = "../../crates/jayjay-markdown" }
 jayjay-network = { path = "../../crates/jayjay-network", features = ["blocking"] }
 jayjay-review = { path = "../../crates/jayjay-review" }
@@ -33,6 +34,7 @@ hex = "0.4"
 log = "0.4"
 notify = "8"
 open = "5"
+sys-locale = { workspace = true }
 flume = "0.12"
 serde = { workspace = true }
 serde_json = { workspace = true }

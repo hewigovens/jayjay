@@ -52,7 +52,7 @@ pub(super) fn leading_items(
             "status-path",
             Some(glyph::FOLDER),
             repo_path,
-            Some(crate::platform::SHOW_IN_FILE_MANAGER_LABEL.into()),
+            Some(crate::platform::show_in_file_manager_label().into()),
             true,
         ),
         t,

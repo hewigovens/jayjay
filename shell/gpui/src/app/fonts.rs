@@ -145,7 +145,7 @@ pub(crate) fn code_font_has_ligatures(window: &Window) -> bool {
 
 pub(crate) fn interface_preference_label(preference: &str) -> String {
     if preference.trim().is_empty() {
-        "System".to_owned()
+        jayjay_i18n::settings::font_system()
     } else {
         preference.to_owned()
     }
@@ -156,7 +156,7 @@ pub(crate) fn mono_preference_id(preference: &str) -> String {
 }
 
 pub(crate) fn mono_preference_label(preference: &str) -> String {
-    family_or(preference, "System default")
+    family_or(preference, &jayjay_i18n::settings::font_system_default())
 }
 
 fn family_or(preference: &str, system: &str) -> String {

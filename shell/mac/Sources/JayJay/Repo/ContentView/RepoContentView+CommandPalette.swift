@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 extension RepoContentView {
@@ -231,7 +232,7 @@ extension RepoContentView {
     private var toolsPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Show in Finder", icon: "folder", category: "Tools", shortcut: AppShortcut.showInFinder.symbol
+            title: Localized.Common.showIn(app: "Finder"), icon: "folder", category: "Tools", shortcut: AppShortcut.showInFinder.symbol
         ) {
             RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
         })

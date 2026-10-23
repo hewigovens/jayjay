@@ -7,6 +7,7 @@ use gpui::{
     SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{JjConfigEntry, JjConfigSection, UserIdentity};
+use jayjay_i18n::{common, settings};
 
 use super::SettingsView;
 use super::shared::{
@@ -61,7 +62,7 @@ pub(super) fn jujutsu_section(
     if loading {
         return root
             .child(
-                loading_label("Loading jj config…", t)
+                loading_label(settings::loading_config(), t)
                     .debug_selector(|| "jj-config-status".to_owned())
                     .py(px(8.)),
             )
@@ -69,11 +70,15 @@ pub(super) fn jujutsu_section(
     }
     let Some(snapshot) = snapshot else {
         return root
-            .child(status_message("jj config has not been loaded.", t))
+            .child(status_message(&settings::config_not_loaded(), t))
             .into_any_element();
     };
     let snapshot = &snapshot.0;
-    root = root.child(form_section("Identity", [identity_row(identity, t, cx)], t));
+    root = root.child(form_section(
+        settings::identity(),
+        [identity_row(identity, t, cx)],
+        t,
+    ));
 
     // The path row stays above a load error, so a config that fails to parse can still be opened for repair; a missing config has nothing to open.
     if snapshot.exists && !snapshot.path.is_empty() {
@@ -103,11 +108,18 @@ fn identity_row(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
+    let selector = identity.map_or_else(
+        || "identity-status-unset".to_owned(),
+        |identity| format!("identity-status-{identity}"),
+    );
     let (status, color, action) = match identity {
-        Some(identity) => (identity.to_string(), t.fg, "Edit…"),
-        None => ("Not set up".to_owned(), t.fg_dim, "Set Up…"),
+        Some(identity) => (identity.to_string(), t.fg, common::edit_ellipsis()),
+        None => (
+            settings::identity_not_set_up(),
+            t.fg_dim,
+            common::set_up_ellipsis(),
+        ),
     };
-    let selector = format!("identity-status-{status}");
     row_container()
         .child(
             div()
@@ -215,7 +227,7 @@ fn open_button(path: String, t: &Theme) -> AnyElement {
                 crate::app::links::open_url(cx, &format!("file://{path}"));
             }
         })
-        .child("Open")
+        .child(common::open())
         .into_any_element()
 }
 

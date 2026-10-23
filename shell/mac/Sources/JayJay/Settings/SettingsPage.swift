@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 enum SettingsPage: String, CaseIterable, Identifiable {
@@ -16,14 +17,14 @@ enum SettingsPage: String, CaseIterable, Identifiable {
 
     var title: String {
         switch self {
-            case .appearance: "Appearance"
-            case .fonts: "Fonts"
-            case .diff: "Diff & Files"
-            case .workflow: "Workflow"
-            case .integrations: "Integrations"
-            case .jujutsu: "Jujutsu"
-            case .dataPrivacy: "Data & Privacy"
-            case .about: "About"
+            case .appearance: Localized.Settings.pageAppearance
+            case .fonts: Localized.Settings.pageFonts
+            case .diff: Localized.Settings.pageDiff
+            case .workflow: Localized.Settings.pageWorkflow
+            case .integrations: Localized.Settings.pageIntegrations
+            case .jujutsu: Localized.Settings.pageJujutsu
+            case .dataPrivacy: Localized.Settings.pageDataPrivacy
+            case .about: Localized.Settings.pageAbout
         }
     }
 

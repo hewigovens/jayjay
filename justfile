@@ -111,6 +111,36 @@ format:
 lint:
   cargo clippy --workspace --all-targets -- -D warnings
   just shell::lint
+  just lint-i18n
+
+# Files fully migrated to the jayjay-i18n catalog.
+i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/mac/Sources/JayJay/Settings"
+# Proper names that stay English in every locale.
+i18n_names := "JayJay|Codex CLI|Claude CLI|Terminal|Frog"
+
+lint-i18n:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  status=0
+  camel() { awk -F'[-_]' '{ printf "%s", $1; for (i = 2; i <= NF; i++) printf "%s", toupper(substr($i, 1, 1)) substr($i, 2) }' <<< "$1"; }
+  for file in crates/jayjay-i18n/locales/en-US/*.ftl; do
+    stem=$(basename "$file" .ftl)
+    swift_enum=$(camel "$stem")
+    swift_enum=$(tr a-z A-Z <<< "${swift_enum:0:1}")${swift_enum:1}
+    for id in $(sed -n "s/^\(${stem}-[a-z0-9-]*\) =.*/\1/p" "$file"); do
+      name=${id#"$stem"-}
+      if ! grep -rqE --include='*.rs' "${stem}::${name//-/_}\(" crates shell/gpui/src --exclude-dir=jayjay-i18n \
+        && ! grep -rqE --include='*.swift' "Localized\.${swift_enum}\.$(camel "$name")([^A-Za-z0-9_]|$)" shell/mac/Sources shell/mac/Packages; then
+        echo "unused message: $id ($file)"
+        status=1
+      fi
+    done
+  done
+  if grep -rnE --include='*.rs' --include='*.swift' --exclude='tests.rs' "\"[A-Z][A-Za-z]+([ ,.…?!&'][^\"]*)?\"" {{i18n_migrated}} | grep -vE "\"({{i18n_names}})\"|key_context\(|assert"; then
+    echo "hardcoded user-facing text in a migrated file; add it to crates/jayjay-i18n/locales/en-US"
+    status=1
+  fi
+  exit $status
 
 clean:
   cargo clean

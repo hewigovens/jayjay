@@ -31,10 +31,9 @@ pub(super) fn sidebar(
         .px(px(8.))
         .py(px(12.))
         .children(SettingsSection::ALL.into_iter().map(|section| {
-            let label = section.label();
             div()
-                .id(SharedString::from(format!("settings-nav-{label}")))
-                .debug_selector(move || format!("settings-nav-{label}"))
+                .id(SharedString::from(format!("settings-nav-{section:?}")))
+                .debug_selector(move || format!("settings-nav-{section:?}"))
                 .flex()
                 .flex_none()
                 .items_center()
@@ -85,7 +84,7 @@ pub(super) fn sidebar(
                         .bg(rgb(section.color(t)))
                         .child(icons::icon(section.glyph(), 12., t.detail_bg)),
                 )
-                .child(div().min_w_0().truncate().child(label))
+                .child(div().min_w_0().truncate().child(section.label()))
         }))
         .into_any_element()
 }

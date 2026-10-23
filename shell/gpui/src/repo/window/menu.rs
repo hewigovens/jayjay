@@ -314,7 +314,7 @@ impl RepoWindow {
                 },
             ),
             ContextMenuItem::new(
-                "Show in File Manager",
+                crate::platform::show_in_file_manager_label(),
                 glyph::FOLDER,
                 ContextAction::ShowInFileManager(path.to_owned().into()),
             ),

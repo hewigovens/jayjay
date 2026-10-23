@@ -67,7 +67,10 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
             ),
             MenuItem::separator(),
             MenuItem::action("View Remote Repository", OpenRemoteRepository),
-            MenuItem::action("Show in File Manager", ShowRepoInFileManager),
+            MenuItem::action(
+                crate::platform::show_in_file_manager_label(),
+                ShowRepoInFileManager,
+            ),
             MenuItem::action(tools::open_in_editor_label(cx), OpenRepoInEditor),
             MenuItem::action(tools::open_in_terminal_label(cx), OpenRepoInTerminal),
         ]),

@@ -174,7 +174,7 @@ lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --strict --quiet
 
 clean:
-  rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift"
+  rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift" "{{swift_out}}/Localized.swift"
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
   rm -f "{{project}}/Resources/DockIcon/jayjay-dock-light.png"
   rm -f "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"

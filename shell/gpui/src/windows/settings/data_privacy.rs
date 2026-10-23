@@ -2,11 +2,12 @@ use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
+use jayjay_i18n::{common, settings, telemetry};
 use jayjay_review::ReviewStoreSummary;
 
 use super::SettingsView;
 use super::shared::{field_row, form_section};
-use crate::app::config::{self, AppConfig, TelemetryConfig};
+use crate::app::config::{self, AppConfig};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{confirmation_card, overlay_actions, overlay_layer};
@@ -36,27 +37,22 @@ pub(super) fn data_privacy_section(
         .w_full()
         .gap(px(24.))
         .child(form_section(
-            "Privacy",
-            [field_row(
-                glyph::CHART_BAR,
-                TelemetryConfig::LABEL,
-                toggle,
-                t,
-            )],
+            settings::privacy(),
+            [field_row(glyph::CHART_BAR, telemetry::opt_in(), toggle, t)],
             t,
         ))
         .child(form_section(
-            "Diagnostics",
+            settings::diagnostics(),
             [field_row(
                 glyph::WRENCH,
-                "Debug mode",
+                settings::debug_mode(),
                 debug_mode_toggle(cfg, t),
                 t,
             )],
             t,
         ))
         .child(form_section(
-            "Review Data",
+            settings::review_data(),
             [review_data_row(view.review_summary, t, cx)],
             t,
         ))
@@ -82,7 +78,7 @@ fn review_data_row(
     let summary = summary.map(summary_text).unwrap_or_default();
     field_row(
         glyph::CHECK,
-        "Review marks and notes",
+        settings::review_marks_and_notes(),
         div()
             .flex()
             .flex_row()
@@ -101,8 +97,13 @@ fn review_data_row(
 }
 
 fn clear_review_button(clearable: bool, t: &Theme, cx: &mut Context<SettingsView>) -> AnyElement {
-    let clear = button("settings-clear-review-data", "Clear…", t, false)
-        .debug_selector(|| "settings-clear-review-data".to_owned());
+    let clear = button(
+        "settings-clear-review-data",
+        common::clear_ellipsis(),
+        t,
+        false,
+    )
+    .debug_selector(|| "settings-clear-review-data".to_owned());
     if !clearable {
         return clear.opacity(0.45).cursor_default().into_any_element();
     }
@@ -119,25 +120,20 @@ pub(super) fn clear_review_confirmation(
     t: &Theme,
     cx: &mut Context<SettingsView>,
 ) -> AnyElement {
-    let message = format!(
-        "Removes {} for every repository. This cannot be undone.",
-        summary.map(summary_text).unwrap_or_default()
-    );
+    let message = settings::clear_review_message(&summary.map(summary_text).unwrap_or_default());
     overlay_layer()
         .child(
-            confirmation_card("Clear all review marks and notes?", message, t).child(
-                overlay_actions(
-                    button("settings-clear-review-cancel", "Cancel", t, false)
-                        .debug_selector(|| "settings-clear-review-cancel".to_owned())
-                        .on_click(cx.listener(|view, _, _, cx| {
-                            view.confirm_clear_review = false;
-                            cx.notify();
-                        })),
-                    button("settings-clear-review-submit", "Clear", t, true)
-                        .debug_selector(|| "settings-clear-review-submit".to_owned())
-                        .on_click(cx.listener(|view, _, _, cx| view.clear_review_data(cx))),
-                ),
-            ),
+            confirmation_card(settings::clear_review_title(), message, t).child(overlay_actions(
+                button("settings-clear-review-cancel", common::cancel(), t, false)
+                    .debug_selector(|| "settings-clear-review-cancel".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| {
+                        view.confirm_clear_review = false;
+                        cx.notify();
+                    })),
+                button("settings-clear-review-submit", common::clear(), t, true)
+                    .debug_selector(|| "settings-clear-review-submit".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| view.clear_review_data(cx))),
+            )),
         )
         .into_any_element()
 }
@@ -155,7 +151,5 @@ impl SettingsView {
 }
 
 fn summary_text(summary: ReviewStoreSummary) -> String {
-    let marks = if summary.marks == 1 { "mark" } else { "marks" };
-    let notes = if summary.notes == 1 { "note" } else { "notes" };
-    format!("{} {}, {} {}", summary.marks, marks, summary.notes, notes)
+    settings::review_summary(summary.marks, summary.notes)
 }

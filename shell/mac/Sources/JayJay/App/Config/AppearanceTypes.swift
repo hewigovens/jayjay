@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 extension AppSettings {
@@ -10,9 +11,9 @@ extension AppSettings {
 
         var title: String {
             switch self {
-                case .system: "System"
-                case .light: "☀ Light"
-                case .dark: "☾ Dark"
+                case .system: Localized.Settings.appearanceSystem
+                case .light: "☀ \(Localized.Settings.appearanceLight)"
+                case .dark: "☾ \(Localized.Settings.appearanceDark)"
             }
         }
 

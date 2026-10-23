@@ -157,7 +157,7 @@ pub(super) fn tools_cluster(
 ) -> AnyElement {
     let file_manager_label = SharedString::from(format!(
         "{} ({})",
-        crate::platform::SHOW_IN_FILE_MANAGER_LABEL,
+        crate::platform::show_in_file_manager_label(),
         KeyCaps::label(&ShowRepoInFileManager, cx)
     ));
     button_group::button_group(

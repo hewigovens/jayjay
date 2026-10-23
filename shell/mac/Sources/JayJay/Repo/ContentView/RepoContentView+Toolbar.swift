@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 extension RepoContentView {
@@ -61,9 +62,9 @@ extension RepoContentView {
         ToolbarItemGroup(placement: .primaryAction) {
             toolbarButton(
                 .finder,
-                help: "Show in Finder (\(AppShortcut.showInFinder.symbol))",
+                help: "\(Localized.Common.showIn(app: "Finder")) (\(AppShortcut.showInFinder.symbol))",
                 action: { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) },
-                label: { Label("Show in Finder", systemImage: "folder") }
+                label: { Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder") }
             )
             toolbarButton(
                 .editor,

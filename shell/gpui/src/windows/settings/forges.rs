@@ -3,6 +3,7 @@ use gpui::{
     ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{HostLogin, JayError, RepoHost, SyncToken};
+use jayjay_i18n::{common, settings};
 
 use super::SettingsView;
 use super::shared::form_section;
@@ -33,7 +34,7 @@ pub(super) fn forge_section(
             rows.push(sign_in_row(sign_in, t, cx));
         }
     }
-    form_section("Forges", rows, t).into_any_element()
+    form_section(settings::forges(), rows, t).into_any_element()
 }
 
 fn login_row(
@@ -45,8 +46,8 @@ fn login_row(
 ) -> AnyElement {
     let (detail, state) = match login.map(|login| login.source) {
         Some(Some(source)) => (source.label(), ToolState::Found),
-        Some(None) => ("Not signed in".to_owned(), ToolState::Missing),
-        None => ("Checking…".to_owned(), ToolState::Checking),
+        Some(None) => (settings::not_signed_in(), ToolState::Missing),
+        None => (common::checking(), ToolState::Checking),
     };
     let glyph_str = match host {
         RepoHost::GitHub => glyph::MARK_GITHUB,
@@ -58,10 +59,10 @@ fn login_row(
     let id = SharedString::from(format!("settings-forge-{}-action", host.display_name()));
     let selector = id.to_string();
     let action = if signed_in {
-        button(id, "Sign Out", t, false)
+        button(id, common::sign_out(), t, false)
             .on_click(cx.listener(move |view, _, _, cx| view.sign_out_of_forge(host, cx)))
     } else if can_sign_in {
-        button(id, "Sign In…", t, false)
+        button(id, common::sign_in_ellipsis(), t, false)
             .on_click(cx.listener(move |view, _, _, cx| view.start_forge_sign_in(host, cx)))
     } else {
         return row.into_any_element();
@@ -73,8 +74,8 @@ fn login_row(
 fn sign_in_row(sign_in: &ForgeSignIn, t: &Theme, cx: &mut Context<SettingsView>) -> AnyElement {
     let message: SharedString = match (&sign_in.error, &sign_in.code) {
         (Some(error), _) => error.clone().into(),
-        (None, Some((code, uri))) => format!("Enter {code} at {uri}").into(),
-        (None, None) => "Requesting a sign-in code…".into(),
+        (None, Some((code, uri))) => settings::sign_in_code(code, uri).into(),
+        (None, None) => settings::requesting_code().into(),
     };
     let mut row = div()
         .debug_selector(|| "settings-forge-sign-in".to_owned())
@@ -100,7 +101,7 @@ fn sign_in_row(sign_in: &ForgeSignIn, t: &Theme, cx: &mut Context<SettingsView>)
         row = row.child(
             button(
                 "settings-forge-sign-in-open",
-                "Copy Code & Open Browser",
+                settings::copy_code_and_open(),
                 t,
                 true,
             )
@@ -108,9 +109,9 @@ fn sign_in_row(sign_in: &ForgeSignIn, t: &Theme, cx: &mut Context<SettingsView>)
         );
     }
     let close = if sign_in.error.is_some() {
-        "Close"
+        common::close()
     } else {
-        "Cancel"
+        common::cancel()
     };
     row.child(
         button("settings-forge-sign-in-cancel", close, t, false)

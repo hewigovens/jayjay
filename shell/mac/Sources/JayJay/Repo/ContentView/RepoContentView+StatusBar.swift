@@ -13,7 +13,7 @@ extension RepoContentView {
         var items: [StatusBarItem] = []
         items.append(.action(
             id: "path", icon: "folder", text: viewModel.repoPath,
-            tooltip: "Show in Finder", shrinks: true
+            tooltip: Localized.Common.showIn(app: "Finder"), shrinks: true
         ) {
             RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
         })

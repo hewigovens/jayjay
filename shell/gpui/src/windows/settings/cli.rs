@@ -11,6 +11,7 @@ use super::tools::{AiToolStatuses, binary_row, detected_cli_row};
 use crate::app::cli_install;
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
+use jayjay_i18n::{common, settings};
 
 const JJ_TOOL_CONFIG_COPY_ID: &str = "settings-copy-jj-tool-config";
 
@@ -58,7 +59,7 @@ fn version_control_rows(
                 "jayjay",
                 glyph::INFO,
                 ai_tools.map(|s| s.jayjay.as_deref()),
-                "Not installed",
+                common::not_installed(),
                 t,
             )
             .into_any_element(),
@@ -67,8 +68,8 @@ fn version_control_rows(
     rows.push(
         detail_row(
             glyph::FILE_CODE,
-            "jj tool configuration",
-            "diff, edit & merge",
+            settings::jj_tool_config(),
+            settings::jj_tool_config_detail(),
             t.fg_dim,
             t,
         )
@@ -85,5 +86,5 @@ fn version_control_rows(
     rows.push(
         detected_cli_row("jj", glyph::GIT_BRANCH, diagnostics.map(|d| &d.jj), t).into_any_element(),
     );
-    form_section("Version Control", rows, t).into_any_element()
+    form_section(settings::version_control(), rows, t).into_any_element()
 }

@@ -6,7 +6,7 @@ use gpui::{
 use super::OnboardingView;
 use super::state::{JjCheckState, OnboardingPage};
 use super::widgets::{command_row, mono_line, success_badge, tip};
-use crate::app::config::{self, TelemetryConfig};
+use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::platform::JJ_PACKAGE_MANAGER;
 use crate::ui::icons::{self, glyph};
@@ -267,8 +267,8 @@ fn stats_toggle(t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement
                 .w(px(16.))
                 .child(checkbox_glyph(enabled, t)),
         )
-        .child(TelemetryConfig::LABEL)
-        .tooltip(text_tooltip(TelemetryConfig::HINT))
+        .child(jayjay_i18n::telemetry::opt_in())
+        .tooltip(text_tooltip(jayjay_i18n::telemetry::opt_in_detail()))
         .on_click(cx.listener(move |_, _, _, cx| {
             config::update(cx, |cfg| cfg.telemetry.enabled = !enabled);
             cx.notify();

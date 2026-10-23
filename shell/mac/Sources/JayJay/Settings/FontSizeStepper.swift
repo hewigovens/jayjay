@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct FontSizeStepper: View {
@@ -6,9 +7,9 @@ struct FontSizeStepper: View {
 
     var body: some View {
         HStack {
-            SettingsLabel("Size", icon: "textformat.size")
+            SettingsLabel(Localized.Settings.fontSize, icon: "textformat.size")
             Spacer()
-            Text("\(Int(value)) pt")
+            Text(Localized.Settings.fontPoints(size: Int(value)))
                 .foregroundStyle(.secondary)
                 .monospacedDigit()
                 .accessibilityIdentifier(id)

@@ -44,7 +44,7 @@ struct AboutView: View {
                     .transition(.scale.combined(with: .opacity))
             }
 
-            Text(AppMetadata.tagline)
+            Text(Localized.Settings.tagline)
                 .font(.system(size: 12))
                 .foregroundStyle(.secondary)
 
@@ -58,17 +58,17 @@ struct AboutView: View {
             }
 
             VStack(spacing: 6) {
-                Text("Love JayJay?")
+                Text(Localized.Settings.loveJayjay)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
                 HStack(spacing: 8) {
                     Link(destination: AppMetadata.sponsorURL) {
-                        Label("Sponsor", systemImage: "heart.fill")
+                        Label(Localized.Settings.sponsor, systemImage: "heart.fill")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     Link(destination: AppMetadata.githubURL) {
-                        Label("Star on GitHub", systemImage: "star.fill")
+                        Label(Localized.Settings.starOnGithub, systemImage: "star.fill")
                     }
                     .buttonStyle(.bordered)
                     .controlSize(.small)
@@ -95,23 +95,23 @@ struct AboutView: View {
 
     private var updateRow: some View {
         HStack(spacing: 16) {
-            Text("Check for updates automatically")
+            Text(Localized.Settings.checkUpdates)
             HStack(spacing: 8) {
-                Picker("Update channel", selection: Binding(
+                Picker(Localized.Settings.updateChannel, selection: Binding(
                     get: { settings.updateChannel },
                     set: {
                         settings.updateChannel = $0
                         updater.channelSelectionChanged()
                     }
                 )) {
-                    Text("Stable").tag(UpdateChannel.stable)
-                    Text("Beta").tag(UpdateChannel.beta)
+                    Text(Localized.Settings.updateStable).tag(UpdateChannel.stable)
+                    Text(Localized.Settings.updateBeta).tag(UpdateChannel.beta)
                 }
                 .labelsHidden()
                 .pickerStyle(.menu)
                 .controlSize(.small)
                 .fixedSize()
-                Toggle("Check for updates automatically", isOn: Binding(
+                Toggle(Localized.Settings.checkUpdates, isOn: Binding(
                     get: { updater.autoChecksEnabled },
                     set: { updater.autoChecksEnabled = $0 }
                 ))

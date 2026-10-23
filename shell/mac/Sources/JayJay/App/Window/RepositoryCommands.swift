@@ -72,7 +72,7 @@ struct RepositoryCommands: Commands {
                 guard let repoPath else { return }
                 RepositoryActions.showInFinder(repoPath: repoPath)
             } label: {
-                Label("Show in Finder", systemImage: "folder")
+                Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder")
             }
             .keyboardShortcut(AppShortcut.showInFinder)
             .disabled(repoPath == nil)

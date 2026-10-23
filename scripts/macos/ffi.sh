@@ -22,6 +22,7 @@ wrap() {
   cp "${bindings_dir}/JayJayFFI.h" "${headers_dir}/"
   cp "${bindings_dir}/JayJayFFI.modulemap" "${headers_dir}/module.modulemap"
   cp "${bindings_dir}/JayJayCore.swift" "${swift_out}/"
+  cargo run -q -p jayjay-i18n --bin l10n-swift > "${swift_out}/Localized.swift"
   rm -rf "${xcframework}"
   xcodebuild -create-xcframework \
     -library "${staticlib}" \
@@ -36,7 +37,8 @@ case "$1" in
     test -f "$staticlib"
     if cmp -s "$staticlib" "${xcframework}/macos-arm64/${lib_name}" \
        && [[ "${swift_out}/JayJayCore.swift" -nt "$staticlib" \
-       && "${swift_out}/JayJayCore.swift" -nt "${uniffi_config}" ]]; then
+       && "${swift_out}/JayJayCore.swift" -nt "${uniffi_config}" \
+       && "${swift_out}/Localized.swift" -nt "$staticlib" ]]; then
       echo "Bindings and XCFramework are up to date"
       exit 0
     fi

@@ -61,7 +61,7 @@ extension ChangeDetailView {
             appSettings.openInEditor(filePath: path, repoPath: repoPath)
         }
         .keyboardShortcut("o", modifiers: [])
-        Button("Show in Finder") { showInFinder(path) }
+        Button(Localized.Common.showIn(app: "Finder")) { showInFinder(path) }
             .keyboardShortcut("f", modifiers: [])
         Button("Copy Path") {
             NSPasteboard.general.clearContents()
