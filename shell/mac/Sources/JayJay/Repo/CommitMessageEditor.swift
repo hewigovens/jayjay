@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct CommitMessageEditor: View {
@@ -33,7 +34,7 @@ struct CommitMessageEditor: View {
                 .keyboardFocusInput(.commitDescription, isAvailable: participatesInPaneNavigation)
                 .overlay(alignment: .topLeading) {
                     if details.isEmpty {
-                        Text("Description (optional)")
+                        Text(Localized.Repo.descriptionOptional)
                             .jayjayFont(13, design: .monospaced)
                             .foregroundStyle(.tertiary)
                             // Match the TextEditor's text origin so the placeholder aligns with the cursor.
@@ -69,10 +70,10 @@ struct CommitMessageEditor: View {
     @ViewBuilder
     private var summaryField: some View {
         if focusSummaryAtEnd {
-            TextField("Summary", text: $summary)
+            TextField(Localized.Repo.summary, text: $summary)
                 .focused($isSummaryFocused)
         } else {
-            TextField("Summary", text: $summary)
+            TextField(Localized.Repo.summary, text: $summary)
         }
     }
 }

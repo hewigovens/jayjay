@@ -13,37 +13,37 @@ static REVSET_PRESETS: LazyLock<[RevsetPreset; 7]> = LazyLock::new(|| {
     [
         RevsetPreset {
             id: "all".to_owned(),
-            label: "All".to_owned(),
+            label: jayjay_i18n::repo::preset_all(),
             revset: "all()".to_owned(),
         },
         RevsetPreset {
             id: "mine".to_owned(),
-            label: "Mine".to_owned(),
+            label: jayjay_i18n::repo::preset_mine(),
             revset: "mine()".to_owned(),
         },
         RevsetPreset {
             id: "bookmarks".to_owned(),
-            label: "Bookmarks".to_owned(),
+            label: jayjay_i18n::repo::bookmarks(),
             revset: "bookmarks()".to_owned(),
         },
         RevsetPreset {
             id: "tags".to_owned(),
-            label: "Tags".to_owned(),
+            label: jayjay_i18n::repo::preset_tags(),
             revset: "tags()".to_owned(),
         },
         RevsetPreset {
             id: "trunk".to_owned(),
-            label: "Trunk".to_owned(),
+            label: jayjay_i18n::repo::preset_trunk(),
             revset: "trunk()".to_owned(),
         },
         RevsetPreset {
             id: "conflicts".to_owned(),
-            label: "Conflicts".to_owned(),
+            label: jayjay_i18n::repo::preset_conflicts(),
             revset: "conflicts()".to_owned(),
         },
         RevsetPreset {
             id: "heads".to_owned(),
-            label: "Heads".to_owned(),
+            label: jayjay_i18n::repo::preset_heads(),
             revset: "heads(all())".to_owned(),
         },
     ]
@@ -56,7 +56,7 @@ pub fn revset_presets() -> &'static [RevsetPreset] {
 pub fn default_revset_preset() -> RevsetPreset {
     RevsetPreset {
         id: "default".to_owned(),
-        label: "Default".to_owned(),
+        label: jayjay_i18n::repo::preset_default(),
         revset: DEFAULT_REVSET.to_owned(),
     }
 }

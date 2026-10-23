@@ -103,7 +103,7 @@ pub(super) fn trailing_items(
                     "status-wc-stat",
                     Some(glyph::PENCIL),
                     stats,
-                    Some("Working-copy changes".into()),
+                    Some(jayjay_i18n::repo::working_copy_changes().into()),
                     false,
                 ),
                 t,
@@ -123,7 +123,7 @@ pub(super) fn trailing_items(
             StatusItemSpec::new(
                 "status-divergent",
                 Some(glyph::GIT_BRANCH),
-                format!("{divergent_count} divergent"),
+                jayjay_i18n::repo::divergent_count(divergent_count),
                 None,
                 false,
             ),
@@ -141,7 +141,7 @@ pub(super) fn trailing_items(
             StatusItemSpec::new(
                 "status-conflicts",
                 Some(glyph::WARNING),
-                format!("{conflict_count} conflicted"),
+                jayjay_i18n::repo::conflicted_count(conflict_count),
                 None,
                 false,
             ),

@@ -1,5 +1,5 @@
 use gpui::{
-    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
+    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::DiffEditDestination;
@@ -49,20 +49,30 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
     let selecting = view.diff_edit_selecting_all();
     let deselect = view.diff_edit_should_deselect();
     let toggle_label = if selecting {
-        "Selecting..."
+        jayjay_i18n::repo::selecting_ellipsis()
     } else if deselect {
-        "Deselect All"
+        jayjay_i18n::repo::deselect_all()
     } else {
-        "Select All"
+        jayjay_i18n::repo::select_all()
     };
     let mut toggle = button("diff-edit-select-all", toggle_label, t, false);
     if !selecting {
         toggle = toggle.on_click(cx.listener(|view, _, _, cx| view.toggle_diff_edit_all(cx)));
     }
-    let collapse_all = button("diff-edit-collapse-all", "Collapse All", t, false)
-        .on_click(cx.listener(|view, _, _, cx| view.collapse_all_diff_edit(cx)));
-    let expand_all = button("diff-edit-expand-all", "Expand All", t, false)
-        .on_click(cx.listener(|view, _, _, cx| view.expand_all_diff_edit(cx)));
+    let collapse_all = button(
+        "diff-edit-collapse-all",
+        jayjay_i18n::repo::collapse_all(),
+        t,
+        false,
+    )
+    .on_click(cx.listener(|view, _, _, cx| view.collapse_all_diff_edit(cx)));
+    let expand_all = button(
+        "diff-edit-expand-all",
+        jayjay_i18n::repo::expand_all(),
+        t,
+        false,
+    )
+    .on_click(cx.listener(|view, _, _, cx| view.expand_all_diff_edit(cx)));
     div()
         .flex()
         .items_center()
@@ -75,7 +85,7 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
             div()
                 .text_size(ui_font_size(15.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                .child("Diff Edit"),
+                .child(jayjay_i18n::repo::diff_edit()),
         )
         .child(div().code_text(12., t).text_color(rgb(t.fg_dim)).child(rev))
         .child(div().flex_1())
@@ -89,7 +99,7 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
         .child(expand_all)
         .child(toggle)
         .child(
-            button("diff-edit-cancel", "Cancel", t, false)
+            button("diff-edit-cancel", jayjay_i18n::common::cancel(), t, false)
                 .debug_selector(|| "diff-edit-cancel".to_owned())
                 .on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.exit_diff_edit(cx))),
         )
@@ -120,8 +130,8 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
             .lines()
             .next()
             .filter(|line| !line.trim().is_empty())
-            .unwrap_or("Add description...")
-            .to_owned();
+            .map(str::to_owned)
+            .unwrap_or_else(jayjay_i18n::repo::add_description_ellipsis);
         row = row
             .child(
                 div()
@@ -149,7 +159,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
             )
             .child(destination_button(
                 "diff-edit-child",
-                "Create New Child Change",
+                jayjay_i18n::repo::create_new_child_change(),
                 DiffEditDestination::NewChild,
                 true,
                 t,
@@ -157,7 +167,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
             ))
             .child(destination_button(
                 "diff-edit-parallel",
-                "Create Parallel Change",
+                jayjay_i18n::repo::create_parallel_change(),
                 DiffEditDestination::NewParallel,
                 false,
                 t,
@@ -165,7 +175,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
             ))
             .child(destination_button(
                 "diff-edit-move",
-                "Move to Working Copy",
+                jayjay_i18n::menu::move_to_working_copy(),
                 DiffEditDestination::MoveToWorkingCopy,
                 false,
                 t,
@@ -174,7 +184,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
     }
     row = row.child(destination_button(
         "diff-edit-done",
-        "Done",
+        jayjay_i18n::repo::done(),
         DiffEditDestination::RemoveFromSource,
         false,
         t,
@@ -190,7 +200,7 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
 
 fn destination_button(
     id: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     destination: DiffEditDestination,
     primary: bool,
     t: &Theme,

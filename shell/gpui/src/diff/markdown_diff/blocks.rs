@@ -175,7 +175,11 @@ fn source_label(source: &str) -> &str {
 }
 
 fn image_placeholder(source: &str, alt: &str, t: &Theme) -> gpui::Div {
-    let label = if alt.is_empty() { "Image" } else { alt };
+    let label = if alt.is_empty() {
+        jayjay_i18n::diff::image()
+    } else {
+        alt.to_owned()
+    };
     div()
         .flex()
         .flex_col()

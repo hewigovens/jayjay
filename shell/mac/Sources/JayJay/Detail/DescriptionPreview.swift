@@ -25,15 +25,15 @@ struct DescriptionPreview: View {
                         HStack(alignment: .firstTextBaseline, spacing: 4) {
                             Image(systemName: "pencil")
                                 .jayjayFont(12, weight: .semibold)
-                            Text("Edit").jayjayFont(12)
+                            Text(Localized.Menu.edit).jayjayFont(12)
                         }
                     }
                     .buttonStyle(.plain)
                     .foregroundStyle(.secondary)
                     .fixedSize()
                     .keyboardFocusStop(.editDescription, action: onEdit)
-                    .accessibilityLabel("Edit description")
-                    .help("Edit description")
+                    .accessibilityLabel(Localized.Repo.editDescriptionSentence)
+                    .help(Localized.Repo.editDescriptionSentence)
                 }
                 DescriptionExpansionToggle(expanded: expanded, action: onToggleExpansion)
             }

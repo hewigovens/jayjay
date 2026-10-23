@@ -45,9 +45,9 @@ pub(super) fn sidebar(
             .justify_center()
             .text_color(rgb(t.fg_dim))
             .child(if default_revset {
-                "No changes in default revset."
+                jayjay_i18n::repo::no_changes_in_default_revset()
             } else {
-                "No changes match this revset."
+                jayjay_i18n::repo::no_changes_match_this_revset()
             })
             .into_any_element()
     } else {
@@ -239,11 +239,7 @@ pub(super) fn sidebar(
                     .text_size(ui_font_size(12.))
                     .text_color(rgb(t.fg_dim))
                     .debug_selector(move || format!("sidebar-changes-header-{change_count}"))
-                    .child(if change_count == 1 {
-                        "1 change".to_owned()
-                    } else {
-                        format!("{change_count} changes")
-                    }),
+                    .child(jayjay_i18n::repo::change_count(change_count)),
             ),
     );
     if let Some(banner) = push_follow_up_banner(view, t, cx) {
@@ -262,7 +258,7 @@ fn push_follow_up_banner(
     cx: &mut Context<RepoWindow>,
 ) -> Option<AnyElement> {
     let bookmark = view.feedback.pending_push_bookmark.clone()?;
-    let mut push = button("pending-push-confirm", "Push", t, true)
+    let mut push = button("pending-push-confirm", jayjay_i18n::menu::push(), t, true)
         .debug_selector(|| "pending-push-confirm".to_owned());
     if view.sync_activity.is_pushing() {
         push = push.opacity(0.45);
@@ -288,7 +284,7 @@ fn push_follow_up_banner(
             .debug_selector(|| "pending-push-banner".to_owned())
             .child(icon_label(
                 glyph::BOOKMARK,
-                "Moved",
+                jayjay_i18n::repo::moved(),
                 12.,
                 t.tag_bookmark_icon,
             ))
@@ -306,7 +302,7 @@ fn push_follow_up_banner(
             .child(
                 icon_button("pending-push-dismiss", glyph::X, 12., 24., 24., t.fg_dim, t)
                     .debug_selector(|| "pending-push-dismiss".to_owned())
-                    .tooltip(text_tooltip("Dismiss"))
+                    .tooltip(text_tooltip(jayjay_i18n::repo::dismiss()))
                     .on_click(cx.listener(|view, _: &ClickEvent, _window, cx| {
                         view.dismiss_pending_push(cx);
                     })),
@@ -337,9 +333,9 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
                 .child(super::commit_ai::generate_button(view, t, cx))
                 .child(commit_box_button(
                     "describe-working-copy",
-                    "Describe",
+                    jayjay_i18n::repo::describe(),
                     false,
-                    "Save description (jj describe)",
+                    jayjay_i18n::repo::save_description_jj_describe(),
                     RepoWindow::describe_working_copy_from_input,
                     t,
                     cx,
@@ -347,9 +343,9 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
                 .child(
                     commit_box_button(
                         "commit-working-copy",
-                        "Commit",
+                        jayjay_i18n::repo::commit(),
                         true,
-                        "Describe + start new change (jj commit)",
+                        jayjay_i18n::repo::describe_start_new_change_jj_commit(),
                         RepoWindow::commit_working_copy_from_input,
                         t,
                         cx,
@@ -362,13 +358,14 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
 
 fn commit_box_button(
     id: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     primary: bool,
-    tooltip: &'static str,
+    tooltip: impl Into<SharedString>,
     handler: fn(&mut RepoWindow, &mut Context<RepoWindow>),
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> gpui::Stateful<gpui::Div> {
+    let tooltip = tooltip.into();
     button(id, label, t, primary)
         .debug_selector(move || id.to_owned())
         .tooltip(text_tooltip(tooltip))
@@ -376,7 +373,11 @@ fn commit_box_button(
 }
 
 fn load_more_button(loading: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
-    let label = if loading { "Loading…" } else { "Load more" };
+    let label = if loading {
+        jayjay_i18n::repo::loading_ellipsis()
+    } else {
+        jayjay_i18n::repo::load_more()
+    };
     let mut button = div()
         .id(SharedString::from("load-more"))
         .flex()

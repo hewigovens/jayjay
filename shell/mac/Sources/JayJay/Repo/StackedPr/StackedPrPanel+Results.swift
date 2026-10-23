@@ -22,7 +22,7 @@ extension StackedPrPanel {
             }
             HStack {
                 Spacer()
-                Button("Done") {
+                Button(Localized.Repo.done) {
                     openResultUrls(result)
                     onDismiss()
                 }

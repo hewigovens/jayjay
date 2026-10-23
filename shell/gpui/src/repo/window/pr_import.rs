@@ -22,9 +22,12 @@ pub(crate) struct PrImportState {
 
 impl PrImportState {
     fn new(cx: &mut Context<RepoWindow>) -> Self {
-        let url_input = cx.new(|cx| TextArea::new("", "Pull request URL", false, 32., cx));
-        let name_input = cx.new(|cx| TextArea::new("", "Workspace name", false, 32., cx));
-        let dest_input = cx.new(|cx| TextArea::new("", "Location", false, 32., cx));
+        let url_input =
+            cx.new(|cx| TextArea::new("", jayjay_i18n::repo::pull_request_url(), false, 32., cx));
+        let name_input =
+            cx.new(|cx| TextArea::new("", jayjay_i18n::repo::workspace_name(), false, 32., cx));
+        let dest_input =
+            cx.new(|cx| TextArea::new("", jayjay_i18n::repo::location(), false, 32., cx));
         for input in [&url_input, &name_input, &dest_input] {
             TextArea::subscribe_updates(input, cx);
         }
@@ -144,7 +147,7 @@ impl PrImportState {
 impl RepoWindow {
     pub fn open_pr_import(&mut self, cx: &mut Context<Self>) {
         if self.vm.read(cx).repo.is_none() {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         }
         self.pr_import = Some(PrImportState::new(cx));

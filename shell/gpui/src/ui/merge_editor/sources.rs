@@ -43,7 +43,7 @@ pub(crate) fn merge_source_row(
 pub(crate) fn merge_source_panel(
     index: usize,
     scroll_id: SharedString,
-    label: &'static str,
+    label: impl Into<SharedString>,
     content: Entity<TextArea>,
     action: AnyElement,
     t: &Theme,
@@ -70,7 +70,7 @@ pub(crate) fn merge_source_panel(
                         .flex_1()
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_size(ui_font_size(12.))
-                        .child(label),
+                        .child(label.into()),
                 )
                 .child(action),
         )
@@ -89,7 +89,7 @@ pub(crate) fn merge_source_panel(
 
 pub(crate) fn merge_result_mode_button(
     id: impl Into<SharedString>,
-    label: &'static str,
+    label: impl Into<SharedString>,
     selected: bool,
     t: &Theme,
 ) -> Stateful<Div> {

@@ -18,7 +18,7 @@ public struct MarkdownDiffView: View {
         Group {
             switch renderPlan {
                 case .empty:
-                    Text("No post-change Markdown content.")
+                    Text(Localized.Diff.noPostChangeMarkdownContent)
                         .foregroundStyle(.secondary)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 case let .web(markdown):
@@ -27,7 +27,7 @@ public struct MarkdownDiffView: View {
                     ScrollView {
                         VStack(alignment: .leading, spacing: 12) {
                             if truncated {
-                                Text("Large Markdown preview truncated to keep JayJay responsive.")
+                                Text(Localized.Diff.largeMarkdownPreviewTruncatedToKeep)
                                     .font(.callout)
                                     .foregroundStyle(.secondary)
                             }

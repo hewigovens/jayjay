@@ -210,7 +210,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
                 .font: font,
                 .foregroundColor: NSColor.secondaryLabelColor
             ]
-            leftAcc.text.append(NSAttributedString(string: "No differences", attributes: attrs))
+            leftAcc.text.append(NSAttributedString(string: Localized.Diff.noDifferences, attributes: attrs))
             leftAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
             rightAcc.gutter.append(NSAttributedString(string: "\n", attributes: gutterAttrs))
         }

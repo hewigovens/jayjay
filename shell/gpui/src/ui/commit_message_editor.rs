@@ -17,12 +17,18 @@ impl CommitMessageEditor {
         Self {
             original: message.to_owned(),
             summary: cx.new(|cx| {
-                TextArea::new(commit_message::summary(message), "Summary", false, 32., cx)
+                TextArea::new(
+                    commit_message::summary(message),
+                    jayjay_i18n::repo::summary(),
+                    false,
+                    32.,
+                    cx,
+                )
             }),
             body: cx.new(|cx| {
                 TextArea::new(
                     commit_message::body(message),
-                    "Description (optional)",
+                    jayjay_i18n::repo::description_optional(),
                     true,
                     body_height,
                     cx,

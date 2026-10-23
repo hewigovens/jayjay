@@ -72,7 +72,7 @@ impl RepoViewModel {
 
     pub(crate) fn run_bisect(&mut self, command: String, to_end: bool, cx: &mut Context<Self>) {
         let Some(repo) = self.repo.clone() else {
-            self.present_error("repository is not open");
+            self.present_error(jayjay_i18n::repo::repository_not_open());
             cx.notify();
             return;
         };

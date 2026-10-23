@@ -11,13 +11,13 @@ use crate::diff::line::gutter_column;
 
 pub(crate) fn media_diff_layout<F>(hunk_type: HunkType, t: &Theme, pane: F) -> AnyElement
 where
-    F: Fn(DiffSide, &'static str, u32, u32, bool, &Theme) -> AnyElement,
+    F: Fn(DiffSide, SharedString, u32, u32, bool, &Theme) -> AnyElement,
 {
     match hunk_type {
         HunkType::Added => single_pane_for(
             &pane,
             DiffSide::New,
-            "Added",
+            jayjay_i18n::diff::added().into(),
             t.tag_added_bg,
             t.tag_added_fg,
             t,
@@ -25,7 +25,7 @@ where
         HunkType::Removed => single_pane_for(
             &pane,
             DiffSide::Old,
-            "Removed",
+            jayjay_i18n::diff::removed().into(),
             t.tag_removed_bg,
             t.tag_removed_fg,
             t,
@@ -33,7 +33,7 @@ where
         HunkType::Renamed => single_pane_for(
             &pane,
             DiffSide::New,
-            "Renamed",
+            jayjay_i18n::diff::renamed().into(),
             t.tag_renamed_bg,
             t.tag_renamed_fg,
             t,
@@ -41,7 +41,7 @@ where
         HunkType::Copied => single_pane_for(
             &pane,
             DiffSide::New,
-            "Copied",
+            jayjay_i18n::diff::copied().into(),
             t.tag_added_bg,
             t.tag_added_fg,
             t,
@@ -58,7 +58,7 @@ where
             .bg(rgb(t.detail_bg))
             .child(pane(
                 DiffSide::Old,
-                "Before",
+                jayjay_i18n::diff::before().into(),
                 t.tag_removed_bg,
                 t.tag_removed_fg,
                 true,
@@ -66,7 +66,7 @@ where
             ))
             .child(pane(
                 DiffSide::New,
-                "After",
+                jayjay_i18n::diff::after().into(),
                 t.tag_added_bg,
                 t.tag_added_fg,
                 true,
@@ -79,13 +79,13 @@ where
 fn single_pane_for<F>(
     pane: &F,
     side: DiffSide,
-    label: &'static str,
+    label: SharedString,
     label_bg: u32,
     label_fg: u32,
     t: &Theme,
 ) -> AnyElement
 where
-    F: Fn(DiffSide, &'static str, u32, u32, bool, &Theme) -> AnyElement,
+    F: Fn(DiffSide, SharedString, u32, u32, bool, &Theme) -> AnyElement,
 {
     single_pane_layout(pane(side, label, label_bg, label_fg, false, t), t)
 }
@@ -136,7 +136,7 @@ pub(crate) fn diff_body_with_gutter(
 }
 
 pub(crate) fn media_pane(
-    label: &'static str,
+    label: SharedString,
     label_bg: u32,
     label_fg: u32,
     show_label: bool,

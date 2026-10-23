@@ -1,3 +1,5 @@
+use gpui::SharedString;
+
 pub(crate) trait PickerRow {
     type Action: Clone;
 
@@ -6,7 +8,7 @@ pub(crate) trait PickerRow {
 
 pub(crate) struct PickerSection<R> {
     pub(crate) id: &'static str,
-    pub(crate) title: Option<&'static str>,
+    pub(crate) title: Option<SharedString>,
     pub(crate) rows: Vec<R>,
     best_score: u32,
 }
@@ -14,7 +16,7 @@ pub(crate) struct PickerSection<R> {
 impl<R> PickerSection<R> {
     pub(crate) fn filtered(
         id: &'static str,
-        title: Option<&'static str>,
+        title: Option<SharedString>,
         rows: Vec<R>,
         query: &str,
         search_text: impl Fn(&R) -> String,
@@ -67,19 +69,19 @@ pub(crate) fn picker_actions<R: PickerRow>(
 pub(crate) enum PickerItem<R> {
     Header {
         id: &'static str,
-        title: &'static str,
+        title: SharedString,
     },
     Row {
         row: R,
         selected: bool,
     },
-    Empty(&'static str),
+    Empty(SharedString),
 }
 
 pub(crate) fn picker_items<R: PickerRow>(
     sections: Vec<PickerSection<R>>,
     selected: Option<usize>,
-    empty_label: &'static str,
+    empty_label: impl Into<SharedString>,
 ) -> Vec<PickerItem<R>> {
     let mut action_index = 0;
     let mut items = Vec::new();
@@ -98,7 +100,7 @@ pub(crate) fn picker_items<R: PickerRow>(
         }
     }
     if items.is_empty() {
-        items.push(PickerItem::Empty(empty_label));
+        items.push(PickerItem::Empty(empty_label.into()));
     }
     items
 }
@@ -122,7 +124,7 @@ mod tests {
         let sections = vec![
             PickerSection {
                 id: "workspaces",
-                title: Some("Workspaces"),
+                title: Some("Workspaces".into()),
                 rows: vec![Row(None), Row(Some("open workspace"))],
                 best_score: 0,
             },

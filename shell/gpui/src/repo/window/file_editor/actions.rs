@@ -57,10 +57,7 @@ impl RepoWindow {
             vm.selected_hunk().map(|hunk| hunk.path.clone())
         };
         let Some(path) = path.filter(|_| self.can_edit_selected_working_copy_file(cx)) else {
-            self.show_toast(
-                "Only regular text files in the working copy can be edited",
-                cx,
-            );
+            self.show_toast(jayjay_i18n::repo::only_regular_text_files_in_the(), cx);
             return;
         };
         self.enter_file_editor(path, line, cx);
@@ -94,7 +91,7 @@ impl RepoWindow {
                         TextArea::prepared_code_editor(
                             data.content.clone(),
                             data.path.clone(),
-                            "File content",
+                            jayjay_i18n::repo::file_content(),
                             520.,
                             highlighted_lines,
                             cx,

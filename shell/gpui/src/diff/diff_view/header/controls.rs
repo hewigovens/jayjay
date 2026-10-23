@@ -23,11 +23,13 @@ pub(super) fn file_editor_button(
         header_action(
             "edit-working-copy-file",
             glyph::PENCIL,
-            (!compact).then_some("Edit File"),
+            (!compact).then(jayjay_i18n::diff::edit_file),
             false,
             t,
         )
-        .tooltip(text_tooltip("Edit this working-copy file"))
+        .tooltip(text_tooltip(
+            jayjay_i18n::diff::edit_this_working_copy_file(),
+        ))
         .on_click(cx.listener(|view, _, _, cx| {
             view.enter_selected_file_editor(None, cx);
         })),
@@ -47,11 +49,13 @@ pub(super) fn edit_diff_button(
         header_action(
             "edit-diff",
             glyph::EDIT_CODE,
-            (!compact).then_some("Edit Diff"),
+            (!compact).then(jayjay_i18n::diff::edit_diff),
             false,
             t,
         )
-        .tooltip(text_tooltip("Open dedicated diff edit mode"))
+        .tooltip(text_tooltip(
+            jayjay_i18n::diff::open_dedicated_diff_edit_mode(),
+        ))
         .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx))),
         focused,
         t,
@@ -70,13 +74,13 @@ pub(super) fn view_mode_button(
         header_action(
             "toggle-mode",
             mode_glyph(mode),
-            (!compact).then_some(mode_label(mode)),
+            (!compact).then(|| mode_label(mode)),
             false,
             t,
         )
         .tooltip(text_tooltip(match mode {
-            DiffViewMode::Unified => "Switch to side-by-side",
-            DiffViewMode::SideBySide => "Switch to unified",
+            DiffViewMode::Unified => jayjay_i18n::diff::switch_to_side_by_side(),
+            DiffViewMode::SideBySide => jayjay_i18n::diff::switch_to_unified(),
         }))
         .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_view_mode(cx);
@@ -116,7 +120,7 @@ pub(super) fn svg_preview_button(
     preview_button(
         "toggle-svg-preview",
         glyph::EYE,
-        "Show rendered SVG preview",
+        jayjay_i18n::diff::show_rendered_svg_preview(),
         active,
         compact,
         t,
@@ -135,7 +139,7 @@ pub(super) fn markdown_preview_button(
     preview_button(
         "toggle-markdown-preview",
         glyph::EYE,
-        "Show rendered Markdown",
+        jayjay_i18n::diff::show_rendered_markdown(),
         active,
         compact,
         t,
@@ -147,7 +151,9 @@ pub(super) fn markdown_preview_button(
 
 pub(super) fn html_external_open_button(url: String, t: &Theme) -> AnyElement {
     header_action("open-html-external", glyph::EXTERNAL_LINK, None, false, t)
-        .tooltip(text_tooltip("Open working-copy HTML in default app"))
+        .tooltip(text_tooltip(
+            jayjay_i18n::diff::open_working_copy_html_in_default(),
+        ))
         .on_click(move |_, _, cx| crate::app::links::open_url(cx, &url))
         .into_any_element()
 }
@@ -170,7 +176,7 @@ pub(super) fn exit_annotate_button(t: &Theme, cx: &mut Context<RepoWindow>) -> A
             view.toggle_annotate(cx);
         }))
         .child(icons::icon(glyph::X, 11., t.toggle_active_fg))
-        .child("Exit Annotate")
+        .child(jayjay_i18n::repo::exit_annotate())
         .into_any_element()
 }
 
@@ -190,7 +196,7 @@ pub(super) fn path_copy_button(
 fn preview_button<F>(
     id: &'static str,
     glyph_str: &'static str,
-    help: &'static str,
+    help: impl Into<SharedString>,
     active: bool,
     compact: bool,
     t: &Theme,
@@ -199,16 +205,23 @@ fn preview_button<F>(
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
-    header_action(id, glyph_str, (!compact).then_some("Preview"), active, t)
-        .tooltip(text_tooltip(help))
-        .on_click(on_click)
-        .into_any_element()
+    let help = help.into();
+    header_action(
+        id,
+        glyph_str,
+        (!compact).then(jayjay_i18n::common::preview),
+        active,
+        t,
+    )
+    .tooltip(text_tooltip(help))
+    .on_click(on_click)
+    .into_any_element()
 }
 
 fn header_action(
     id: &'static str,
     glyph_str: &'static str,
-    label: Option<&'static str>,
+    label: Option<String>,
     active: bool,
     t: &Theme,
 ) -> Stateful<Div> {
@@ -239,9 +252,9 @@ fn mode_glyph(mode: DiffViewMode) -> &'static str {
     }
 }
 
-pub(super) fn mode_label(mode: DiffViewMode) -> &'static str {
+pub(super) fn mode_label(mode: DiffViewMode) -> String {
     match mode {
-        DiffViewMode::Unified => "Unified",
-        DiffViewMode::SideBySide => "Side-by-side",
+        DiffViewMode::Unified => jayjay_i18n::diff::unified(),
+        DiffViewMode::SideBySide => jayjay_i18n::diff::side_by_side(),
     }
 }

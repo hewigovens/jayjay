@@ -41,7 +41,7 @@ extension DAGView {
         if let refusal = rebaseDrag.targetRefusal {
             return refusal
         }
-        return "Rebase \(rebaseDrag.sourceLabel) onto \(DAGRebaseGesturePolicy.displayLabel(for: change))?"
+        return Localized.Repo.rebaseOntoQuestion(source: rebaseDrag.sourceLabel, destination: DAGRebaseGesturePolicy.displayLabel(for: change))
     }
 
     private func handleRebaseGestureChanged(
@@ -114,7 +114,7 @@ extension DAGView {
             sourceRev: DAGRebaseGesturePolicy.revision(for: entry.change),
             sourceLabel: selection.isEmpty
                 ? DAGRebaseGesturePolicy.displayLabel(for: entry.change)
-                : "\(selection.count) changes",
+                : Localized.Repo.changeCount(count: selection.count),
             sourceParents: entry.change.parents,
             startLocation: location,
             phase: .pressing,
@@ -245,8 +245,7 @@ extension DAGView {
     }
 
     private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout) -> CGPoint? {
-        guard let rowFrame = rowFrameCache.frames[entry.change.commitId.id] else { return nil }
-        guard let rowIndex = entries.firstIndex(where: { $0.change.commitId.id == entry.change.commitId.id }) else { return nil }
+        guard let rowFrame = rowFrameCache.frames[entry.change.commitId.id], let rowIndex = entries.firstIndex(where: { $0.change.commitId.id == entry.change.commitId.id }) else { return nil }
         let lane = layout.lane(for: entry.change.commitId.id)
         return CGPoint(
             x: rowFrame.minX + dagRowLeadingPadding + layout.xPosition(for: lane, at: rowIndex),

@@ -44,11 +44,11 @@ enum DiffProjectionDisplayPolicy {
     static func title(for projection: DiffProjection) -> String {
         if projection.diagnostics.isEmpty {
             if projection.pluginId == "plist" {
-                return "Binary property list on disk, previewed as XML"
+                return Localized.Diff.binaryPropertyListOnDiskPreviewed
             }
-            return "\(projection.pluginLabel) preview"
+            return Localized.Diff.projectionPreview(plugin: projection.pluginLabel)
         }
-        return "\(projection.pluginLabel) preview unavailable"
+        return Localized.Diff.projectionPreviewUnavailable(plugin: projection.pluginLabel)
     }
 
     static func iconName(for projection: DiffProjection?) -> String {
@@ -62,11 +62,11 @@ enum DiffProjectionDisplayPolicy {
 
     static func help(for projection: DiffProjection?) -> String {
         switch projection?.pluginId {
-            case .some("delimited"): "Show table preview"
-            case .some("ipynb"): "Show notebook preview"
-            case .some("plist"): "Show property list preview"
-            case .some("sarif"): "Show SARIF report preview"
-            default: "Show rich preview"
+            case .some("delimited"): Localized.Diff.showTablePreview
+            case .some("ipynb"): Localized.Diff.showNotebookPreview
+            case .some("plist"): Localized.Diff.showPropertyListPreview
+            case .some("sarif"): Localized.Diff.showSarifReportPreview
+            default: Localized.Diff.showRichPreview
         }
     }
 }

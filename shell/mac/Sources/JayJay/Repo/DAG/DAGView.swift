@@ -90,9 +90,9 @@ struct DAGView: View {
         Group {
             if viewModel.isEmpty {
                 ContentUnavailableView(
-                    "No Changes Matched",
+                    Localized.Repo.noChangesMatched,
                     systemImage: "line.3.horizontal.decrease.circle",
-                    description: Text("Try a broader revset or refresh.")
+                    description: Text(Localized.Repo.tryABroaderRevsetOrRefresh)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -146,7 +146,7 @@ struct DAGView: View {
                                 } label: {
                                     HStack {
                                         Spacer()
-                                        Label("Load More", systemImage: "arrow.down.circle")
+                                        Label(Localized.Repo.loadMoreTitle, systemImage: "arrow.down.circle")
                                             .jayjayFont(12, weight: .medium)
                                             .foregroundStyle(.secondary)
                                         Spacer()

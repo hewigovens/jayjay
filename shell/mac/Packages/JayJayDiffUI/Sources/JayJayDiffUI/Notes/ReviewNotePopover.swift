@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 @MainActor
@@ -48,7 +49,7 @@ struct ReviewNotePopover: View {
                 Image(systemName: "text.bubble.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(.orange)
-                Text(notes.count == 1 ? "Review Note" : "\(notes.count) Review Notes")
+                Text(notes.count == 1 ? Localized.Diff.reviewNote : "\(notes.count) Review Notes")
                     .font(.system(size: 12, weight: .semibold))
                 Spacer(minLength: 0)
             }
@@ -98,7 +99,7 @@ private struct ReviewNotePopoverRow: View {
     var body: some View {
         VStack(alignment: .leading, spacing: 6) {
             if note.isResolved {
-                Label("Resolved", systemImage: "checkmark.circle.fill")
+                Label(Localized.Repo.resolved, systemImage: "checkmark.circle.fill")
                     .font(.system(size: 10, weight: .semibold))
                     .foregroundStyle(.secondary)
             }
@@ -111,11 +112,11 @@ private struct ReviewNotePopoverRow: View {
 
             HStack(spacing: 4) {
                 if !note.isResolved {
-                    actionButton("Edit", systemImage: "pencil") { editNote(note.id) }
-                    actionButton("Resolve", systemImage: "checkmark.circle") { resolveNote(note.id) }
+                    actionButton(Localized.Menu.edit, systemImage: "pencil") { editNote(note.id) }
+                    actionButton(Localized.Repo.resolve, systemImage: "checkmark.circle") { resolveNote(note.id) }
                 }
                 Spacer(minLength: 0)
-                actionButton("Delete", systemImage: "trash", role: .destructive) { deleteNote(note.id) }
+                actionButton(Localized.Repo.delete, systemImage: "trash", role: .destructive) { deleteNote(note.id) }
             }
             .padding(.top, 2)
         }

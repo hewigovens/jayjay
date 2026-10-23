@@ -34,17 +34,21 @@ pub(super) fn conflict_result_section(
             div()
                 .text_size(ui_font_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                .child("Result"),
+                .child(jayjay_i18n::repo::result()),
         )
         .children(has_hunks.then(|| {
-            merge_result_mode_button("conflict-result-hunks", "Hunks", !raw, t).on_click(
-                cx.listener(|view, _, window, cx| view.set_conflict_result_raw(false, window, cx)),
-            )
+            merge_result_mode_button("conflict-result-hunks", jayjay_i18n::repo::hunks(), !raw, t)
+                .on_click(cx.listener(|view, _, window, cx| {
+                    view.set_conflict_result_raw(false, window, cx)
+                }))
         }))
         .children(has_hunks.then(|| {
-            merge_result_mode_button("conflict-result-raw", "Raw", raw, t).on_click(
-                cx.listener(|view, _, window, cx| view.set_conflict_result_raw(true, window, cx)),
-            )
+            merge_result_mode_button("conflict-result-raw", jayjay_i18n::repo::raw(), raw, t)
+                .on_click(
+                    cx.listener(|view, _, window, cx| {
+                        view.set_conflict_result_raw(true, window, cx)
+                    }),
+                )
         }))
         .child(div().flex_1())
         .child(
@@ -52,13 +56,11 @@ pub(super) fn conflict_result_section(
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
                 .child(if raw {
-                    "Edit markers directly; unresolved markers save as a partial resolution"
-                        .to_owned()
+                    jayjay_i18n::repo::edit_markers_directly_unresolved_markers_save()
                 } else {
-                    format!(
-                        "Select a hunk, then use {} for Left or {} for Right",
-                        KeyCaps::label(&MergeUseLeftHunk, cx),
-                        KeyCaps::label(&MergeUseRightHunk, cx)
+                    jayjay_i18n::repo::select_hunk_hint(
+                        &KeyCaps::label(&MergeUseLeftHunk, cx),
+                        &KeyCaps::label(&MergeUseRightHunk, cx),
                     )
                 }),
         );

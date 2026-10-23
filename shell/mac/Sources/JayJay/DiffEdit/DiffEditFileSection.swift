@@ -108,11 +108,11 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @ViewBuilder
     private var hintText: some View {
         if supportsDiffEdit {
-            Text("Select files or lines to edit")
+            Text(Localized.Repo.selectFilesOrLinesToEdit)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
         } else {
-            Text("Text edits not supported")
+            Text(Localized.Repo.textEditsNotSupported)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
         }
@@ -121,7 +121,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @ViewBuilder
     private var content: some View {
         if isLoading {
-            LoadingStatus(label: "Loading file diff…")
+            LoadingStatus(label: Localized.Repo.loadingFileDiffEllipsis)
                 .frame(maxWidth: .infinity, minHeight: 120)
         } else if let loadError {
             Text(loadError)
@@ -143,7 +143,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             )
             .frame(height: measuredHeight ?? displayDiff.estimatedCardHeight(typography: typography))
         } else {
-            Text("No textual preview available for this file.")
+            Text(Localized.Repo.noTextualPreviewAvailableForThis)
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 120)
@@ -171,7 +171,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         if selected == changed {
             return (.all, nil)
         }
-        return (.partial, "\(selected) / \(changed) lines")
+        return (.partial, Localized.Repo.linesSelected(selected: selected, total: changed))
     }
 
     private var borderColor: Color {

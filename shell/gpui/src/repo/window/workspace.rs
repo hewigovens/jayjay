@@ -14,20 +14,23 @@ impl RepoWindow {
             (vm.repo.is_some(), vm.repo_path.to_string())
         };
         if !repo_open {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         }
         let Some(parent) = sibling_parent_dir(&repo_path) else {
-            self.show_toast("Repository has no parent directory for a workspace", cx);
+            self.show_toast(
+                jayjay_i18n::repo::repository_has_no_parent_directory_for(),
+                cx,
+            );
             return;
         };
         self.text_modal = Some(TextModalState::new(
             TextPrompt::single_line(
-                "New Workspace",
+                jayjay_i18n::repo::new_workspace(),
                 format!("{}{}<name>", parent.display(), std::path::MAIN_SEPARATOR),
                 "",
-                "Workspace name",
-                "Create",
+                jayjay_i18n::repo::workspace_name(),
+                jayjay_i18n::repo::create(),
                 cx,
             ),
             TextModalAction::CreateWorkspace(parent),
@@ -43,11 +46,11 @@ impl RepoWindow {
     ) {
         let name = text.trim().to_owned();
         if name.is_empty() {
-            self.show_toast("Workspace name required", cx);
+            self.show_toast(jayjay_i18n::repo::workspace_name_required(), cx);
             return;
         }
         if !jayjay_core::is_valid_workspace_name(&name) {
-            self.show_toast(format!("Invalid workspace name: {name}"), cx);
+            self.show_toast(jayjay_i18n::repo::invalid_workspace_name(&name), cx);
             return;
         }
         let dest = parent.join(&name);
@@ -61,7 +64,7 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, |view, cx| {
-                    view.show_toast(format!("Created workspace {name}"), cx);
+                    view.show_toast(jayjay_i18n::repo::created_workspace(&name), cx);
                 });
                 // SwiftUI parity: the new workspace opens in its own window right after creation.
                 cx.update(|cx| {

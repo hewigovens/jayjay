@@ -56,7 +56,7 @@ impl RepoWindow {
             let enabled = target_ix.is_some_and(|ix| vm.can_rebase_selected_changes_onto(ix));
             items.push(
                 ContextMenuItem::new(
-                    format!("Rebase {count} selected onto this"),
+                    jayjay_i18n::menu::rebase_count_selected_onto_this(count),
                     glyph::ARROW_UP,
                     change_action(ChangeAction::RebaseMany {
                         revs: revisions,
@@ -95,8 +95,10 @@ impl RepoWindow {
         } else {
             Vec::new()
         };
-        let mut choices =
-            vec![ContextMenuItem::new("First parent", "", ContextAction::Noop).with_enabled(false)];
+        let mut choices = vec![
+            ContextMenuItem::new(jayjay_i18n::menu::first_parent(), "", ContextAction::Noop)
+                .with_enabled(false),
+        ];
         choices.extend(
             MergeParentChoice::for_selection(&changes)
                 .into_iter()
@@ -111,10 +113,14 @@ impl RepoWindow {
                 }),
         );
         let mut items = vec![
-            ContextMenuItem::submenu(format!("Merge {count} selected"), glyph::GIT_MERGE, choices)
-                .with_enabled(can_merge),
+            ContextMenuItem::submenu(
+                jayjay_i18n::menu::merge_selected(count),
+                glyph::GIT_MERGE,
+                choices,
+            )
+            .with_enabled(can_merge),
             ContextMenuItem::new(
-                format!("Squash {count} selected…"),
+                jayjay_i18n::menu::squash_selected(count),
                 glyph::ARROW_DOWN,
                 change_action(ChangeAction::SquashMany {
                     revs: revisions.clone(),
@@ -122,7 +128,7 @@ impl RepoWindow {
             )
             .with_enabled(vm.can_squash_selected_changes()),
             ContextMenuItem::new(
-                format!("Parallelize {count} selected"),
+                jayjay_i18n::menu::parallelize_selected(count),
                 glyph::GIT_BRANCH,
                 change_action(ChangeAction::ParallelizeMany {
                     revs: revisions.clone(),
@@ -130,7 +136,7 @@ impl RepoWindow {
             )
             .with_enabled(vm.can_parallelize_selected_changes()),
             ContextMenuItem::new(
-                format!("Run formatters on {count} selected (jj fix)"),
+                jayjay_i18n::menu::fix_selected(count),
                 glyph::BRACES,
                 change_action(ChangeAction::Fix {
                     revs: revisions.clone(),
@@ -140,7 +146,7 @@ impl RepoWindow {
             .with_disabled_reason(vm.fix_unavailable_reason.clone()),
             ContextMenuItem::separator(),
             ContextMenuItem::new(
-                format!("Abandon {count} selected…"),
+                jayjay_i18n::menu::abandon_selected(count),
                 glyph::X_CIRCLE,
                 change_action(ChangeAction::AbandonMany { revs: revisions }),
             )
@@ -150,7 +156,7 @@ impl RepoWindow {
             items.insert(
                 items.len().saturating_sub(1),
                 ContextMenuItem::new(
-                    "Bisect between",
+                    jayjay_i18n::menu::bisect_between(),
                     glyph::ARROWS_LEFT_RIGHT,
                     change_action(ChangeAction::BisectBetween {
                         first: first.clone(),
@@ -200,7 +206,7 @@ impl RepoWindow {
         let mut items = Vec::new();
         if change.is_working_copy && self.vm.read(cx).working_copy_stale {
             items.push(ContextMenuItem::new(
-                "Update Workspace",
+                jayjay_i18n::menu::update_workspace(),
                 glyph::WARNING,
                 ContextAction::UpdateWorkspace,
             ));
@@ -208,14 +214,14 @@ impl RepoWindow {
         }
         if change.new_change.on_top {
             items.push(ContextMenuItem::new(
-                "New change on top",
+                jayjay_i18n::menu::new_change_on_top(),
                 glyph::PLUS,
                 ContextAction::NewChangeOnTop(rev.clone().into()),
             ));
         }
         if change.new_change.before {
             items.push(ContextMenuItem::new(
-                "New change before",
+                jayjay_i18n::menu::new_change_before(),
                 glyph::ARROW_DOWN,
                 change_action(ChangeAction::Insert {
                     rev: rev.clone(),
@@ -225,7 +231,7 @@ impl RepoWindow {
         }
         if change.new_change.after {
             items.push(ContextMenuItem::new(
-                "New change after",
+                jayjay_i18n::menu::new_change_after(),
                 glyph::ARROW_UP,
                 change_action(ChangeAction::Insert {
                     rev: rev.clone(),
@@ -236,13 +242,13 @@ impl RepoWindow {
         items.push(ContextMenuItem::separator());
         if !change.is_immutable {
             items.push(ContextMenuItem::new(
-                "Edit (modify this change)",
+                jayjay_i18n::menu::edit_modify_this_change(),
                 glyph::PENCIL,
                 change_action(ChangeAction::Edit { rev: rev.clone() }),
             ));
             if !change.is_working_copy {
                 items.push(ContextMenuItem::new(
-                    "Describe…",
+                    jayjay_i18n::menu::describe_ellipsis(),
                     glyph::EDIT_CODE,
                     ContextAction::EditDescription {
                         rev: rev.clone().into(),
@@ -252,7 +258,7 @@ impl RepoWindow {
             }
             if can_squash_into_parent {
                 items.push(ContextMenuItem::new(
-                    "Squash into parent",
+                    jayjay_i18n::menu::squash_into_parent(),
                     glyph::ARROW_DOWN,
                     change_action(ChangeAction::Squash {
                         rev: rev.clone(),
@@ -263,7 +269,7 @@ impl RepoWindow {
             if !change.is_working_copy {
                 items.push(
                     ContextMenuItem::new(
-                        "Move changes to working copy",
+                        jayjay_i18n::menu::move_changes_to_working_copy(),
                         glyph::ARROW_DOWN,
                         change_action(ChangeAction::Squash {
                             rev: rev.clone(),
@@ -274,7 +280,7 @@ impl RepoWindow {
                 );
             }
             items.push(ContextMenuItem::new(
-                "Rebase onto trunk",
+                jayjay_i18n::menu::rebase_onto_trunk(),
                 glyph::ARROW_UP,
                 change_action(ChangeAction::RebaseOntoTrunk { rev: rev.clone() }),
             ));
@@ -285,13 +291,13 @@ impl RepoWindow {
         }
         if divergent_compares.len() == 1 {
             items.push(ContextMenuItem::new(
-                "Compare Divergent Version",
+                jayjay_i18n::menu::compare_divergent_version(),
                 glyph::ARROWS_LEFT_RIGHT,
                 ContextAction::ShowCompare(divergent_compares[0].1.clone()),
             ));
         } else if !divergent_compares.is_empty() {
             items.push(ContextMenuItem::submenu(
-                "Compare Divergent Versions",
+                jayjay_i18n::menu::compare_divergent_versions(),
                 glyph::ARROWS_LEFT_RIGHT,
                 divergent_compares
                     .into_iter()
@@ -307,14 +313,14 @@ impl RepoWindow {
         }
         if let Some(compare) = compare_with_selected {
             items.push(ContextMenuItem::new(
-                "Compare with selected",
+                jayjay_i18n::menu::compare_with_selected(),
                 glyph::ARROWS_LEFT_RIGHT,
                 ContextAction::ShowCompare(compare),
             ));
         }
         if let Some(request) = bookmark_diff {
             items.push(ContextMenuItem::new(
-                "Diff Bookmark",
+                jayjay_i18n::menu::diff_bookmark(),
                 glyph::ARROWS_LEFT_RIGHT,
                 ContextAction::ShowBookmarkDiff(request),
             ));
@@ -323,7 +329,7 @@ impl RepoWindow {
             // Rebase and squash rewrite the selected change; the menu target is only a destination.
             if !selected_immutable {
                 items.push(ContextMenuItem::new(
-                    "Rebase selected onto this",
+                    jayjay_i18n::menu::rebase_selected_onto_this(),
                     glyph::ARROW_UP,
                     change_action(ChangeAction::Rebase {
                         rev: selected_rev.clone(),
@@ -332,7 +338,7 @@ impl RepoWindow {
                 ));
                 if !change.is_immutable {
                     items.push(ContextMenuItem::new(
-                        "Squash selected into this",
+                        jayjay_i18n::menu::squash_selected_into_this(),
                         glyph::ARROW_DOWN,
                         change_action(ChangeAction::Squash {
                             rev: selected_rev.clone(),
@@ -343,7 +349,7 @@ impl RepoWindow {
             }
             items.push(
                 ContextMenuItem::new(
-                    "Merge with selected",
+                    jayjay_i18n::menu::merge_with_selected(),
                     glyph::GIT_MERGE,
                     change_action(ChangeAction::Merge {
                         parents: vec![selected_rev, rev.clone()],
@@ -355,36 +361,36 @@ impl RepoWindow {
 
         items.push(ContextMenuItem::separator());
         items.push(ContextMenuItem::new(
-            "Create bookmark here...",
+            jayjay_i18n::menu::create_bookmark_here_ellipsis(),
             glyph::BOOKMARK,
             ContextAction::CreateBookmark(rev.clone().into()),
         ));
         items.push(ContextMenuItem::new(
-            "Create tag here...",
+            jayjay_i18n::menu::create_tag_here_ellipsis(),
             glyph::TAG,
             ContextAction::CreateTag(change.commit_id.id.clone().into()),
         ));
         if !change.is_immutable {
             items.push(ContextMenuItem::new(
-                "Create / Update Stacked PRs…",
+                jayjay_i18n::menu::create_update_stacked_prs_ellipsis(),
                 glyph::GIT_BRANCH,
                 ContextAction::OpenStackedPr(rev.clone().into()),
             ));
         }
         for name in &change.tags {
             items.push(ContextMenuItem::submenu(
-                format!("Tag: {name}"),
+                jayjay_i18n::repo::tag_named(name),
                 glyph::TAG,
                 self.build_tag_menu(name, cx),
             ));
         }
         items.push(ContextMenuItem::new(
-            "Show ancestors…",
+            jayjay_i18n::menu::show_ancestors_ellipsis(),
             glyph::GIT_BRANCH,
             ContextAction::ShowAncestors(change.commit_id.id.clone().into()),
         ));
         items.push(ContextMenuItem::new(
-            "Show evolution…",
+            jayjay_i18n::menu::show_evolution_ellipsis(),
             glyph::HISTORY,
             ContextAction::OpenEvologFor(rev.clone().into()),
         ));
@@ -392,13 +398,13 @@ impl RepoWindow {
         items.extend([
             ContextMenuItem::separator(),
             ContextMenuItem::new(
-                "Copy Change ID",
+                jayjay_i18n::menu::copy_change_id(),
                 glyph::COPY,
                 ContextAction::CopyText(change.change_id.id.clone().into()),
             )
             .with_shortcut('c'),
             ContextMenuItem::new(
-                "Copy Commit ID",
+                jayjay_i18n::menu::copy_commit_id(),
                 glyph::COPY,
                 ContextAction::CopyText(change.commit_id.id.clone().into()),
             ),
@@ -406,30 +412,30 @@ impl RepoWindow {
         ]);
 
         let mut more_actions = vec![ContextMenuItem::new(
-            "Duplicate",
+            jayjay_i18n::menu::duplicate(),
             glyph::COPY,
             change_action(ChangeAction::Duplicate { rev: rev.clone() }),
         )];
         if !change.is_immutable {
             more_actions.push(ContextMenuItem::new(
-                "Absorb into ancestors",
+                jayjay_i18n::menu::absorb_into_ancestors(),
                 glyph::ARROW_DOWN,
                 change_action(ChangeAction::Absorb { rev: rev.clone() }),
             ));
         }
         more_actions.push(ContextMenuItem::new(
-            "Revert change",
+            jayjay_i18n::menu::revert_change(),
             glyph::HISTORY,
             change_action(ChangeAction::Revert { rev: rev.clone() }),
         ));
         items.push(ContextMenuItem::submenu(
-            "More Actions",
+            jayjay_i18n::menu::more_actions(),
             glyph::DOT,
             more_actions,
         ));
         items.push(ContextMenuItem::separator());
         items.push(ContextMenuItem::new(
-            "Bisect from here…",
+            jayjay_i18n::menu::bisect_from_here_ellipsis(),
             glyph::ARROWS_LEFT_RIGHT,
             change_action(ChangeAction::BisectFrom {
                 commit_id: change.commit_id.id.clone(),
@@ -439,7 +445,7 @@ impl RepoWindow {
         if !change.is_immutable {
             items.push(
                 ContextMenuItem::new(
-                    "Run formatters (jj fix)",
+                    jayjay_i18n::menu::run_formatters_jj_fix(),
                     glyph::BRACES,
                     change_action(ChangeAction::Fix {
                         revs: vec![rev.clone()],
@@ -449,9 +455,9 @@ impl RepoWindow {
             );
             items.push(ContextMenuItem::separator());
             let label = if change.is_divergent {
-                "Abandon (resolve divergence)"
+                jayjay_i18n::menu::abandon_resolve_divergence()
             } else {
-                "Abandon"
+                jayjay_i18n::menu::abandon()
             };
             items.push(ContextMenuItem::new(
                 label,
@@ -471,10 +477,7 @@ impl RepoWindow {
             )
         };
         if !eligible {
-            self.show_toast(
-                "Select two or more mutable changes on one line to parallelize.",
-                cx,
-            );
+            self.show_toast(jayjay_i18n::menu::select_two_or_more_mutable_changes(), cx);
             return;
         }
         self.run_change_action(Arc::new(ChangeAction::ParallelizeMany { revs }), cx);
@@ -486,10 +489,7 @@ impl RepoWindow {
             (vm.selected_revisions(), vm.selection_state().can_fix)
         };
         if !eligible {
-            self.show_toast(
-                "Select one or more mutable changes to run formatters on.",
-                cx,
-            );
+            self.show_toast(jayjay_i18n::menu::select_one_or_more_mutable_changes(), cx);
             return;
         }
         self.run_change_action(Arc::new(ChangeAction::Fix { revs }), cx);
@@ -522,9 +522,10 @@ impl RepoWindow {
                 let count = revs.len();
                 self.request_confirmation(
                     Confirmation {
-                        title: format!("Squash {count} Changes?").into(),
-                        message: "This combines the selected linear range into its oldest change and abandons the other selected changes. You can undo it with jj op restore.".into(),
-                        confirm_label: "Squash".into(),
+                        title: jayjay_i18n::repo::squash_changes_title(count).into(),
+                        message: jayjay_i18n::menu::this_combines_the_selected_linear_range()
+                            .into(),
+                        confirm_label: jayjay_i18n::menu::squash().into(),
                         action: ConfirmedAction::SquashChanges { revs: revs.clone() },
                         dont_ask_again: None,
                     },
@@ -536,9 +537,9 @@ impl RepoWindow {
                 let count = revs.len();
                 self.request_confirmation(
                     Confirmation {
-                        title: format!("Abandon {count} Changes?").into(),
-                        message: "This removes the selected changes and reparents their descendants. You can undo it with jj op restore.".into(),
-                        confirm_label: format!("Abandon {count}").into(),
+                        title: jayjay_i18n::repo::abandon_changes_title(count).into(),
+                        message: jayjay_i18n::menu::this_removes_the_selected_changes_and().into(),
+                        confirm_label: jayjay_i18n::repo::abandon_count(count).into(),
                         action: ConfirmedAction::AbandonChanges { revs: revs.clone() },
                         dont_ask_again: None,
                     },
@@ -554,7 +555,7 @@ impl RepoWindow {
                     if let Ok(MutationEffect::Unchanged) = task.await {
                         let _ = this.update(cx, move |view, cx| {
                             view.show_toast(
-                                "Nothing to parallelize. The selection would keep its current parents.",
+                                jayjay_i18n::menu::nothing_to_parallelize_the_selection_would(),
                                 cx,
                             );
                         });
@@ -574,7 +575,7 @@ impl RepoWindow {
                     if let Ok(MutationEffect::Unchanged) = task.await {
                         let _ = this.update(cx, move |view, cx| {
                             view.show_toast(
-                                "Nothing to absorb. Use Squash into parent instead.",
+                                jayjay_i18n::menu::nothing_to_absorb_use_squash_into(),
                                 cx,
                             );
                         });

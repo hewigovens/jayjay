@@ -49,10 +49,10 @@ struct BisectBar: View {
         let busy = !viewModel.bisect.isIdle || viewModel.isRefreshingInFlight
         switch state.phase {
             case .evaluating:
-                markButton("Good", verdict: .good, identifier: AID.Bisect.good)
-                markButton("Bad", verdict: .bad, identifier: AID.Bisect.bad)
-                markButton("Skip", verdict: .skip, identifier: AID.Bisect.skip)
-                Button("Run Test…") { showsTestRunner = true }
+                markButton(Localized.Repo.good, verdict: .good, identifier: AID.Bisect.good)
+                markButton(Localized.Repo.bad, verdict: .bad, identifier: AID.Bisect.bad)
+                markButton(Localized.Repo.skip, verdict: .skip, identifier: AID.Bisect.skip)
+                Button(Localized.Repo.runTestEllipsis) { showsTestRunner = true }
                     .buttonStyle(.bordered)
                     .disabled(busy)
                     .popover(isPresented: $showsTestRunner, arrowEdge: .bottom) {
@@ -60,13 +60,13 @@ struct BisectBar: View {
                     }
                 stopButton
             case .pausedRangeChanged:
-                Button("Restart") { viewModel.restartBisect() }
+                Button(Localized.Repo.restart) { viewModel.restartBisect() }
                     .buttonStyle(.bordered)
                     .disabled(busy)
                     .accessibilityIdentifier(AID.Bisect.restart)
                 stopButton
             case .finished:
-                Button("Dismiss") { viewModel.dismissBisect() }
+                Button(Localized.Repo.dismiss) { viewModel.dismissBisect() }
                     .buttonStyle(.bordered)
                     .disabled(busy)
                     .accessibilityIdentifier(AID.Bisect.dismiss)
@@ -80,25 +80,25 @@ struct BisectBar: View {
         }
         .buttonStyle(.plain)
         .disabled(!viewModel.bisect.canStop || (viewModel.isRefreshingInFlight && !viewModel.bisect.commandIsRunning))
-        .help("Stop bisecting and restore the working copy")
-        .accessibilityLabel("Stop bisecting")
+        .help(Localized.Repo.stopBisectingAndRestoreTheWorking)
+        .accessibilityLabel(Localized.Repo.stopBisecting)
         .accessibilityIdentifier(AID.Bisect.stop)
     }
 
     private func testRunner(_ state: BisectState, busy: Bool) -> some View {
         VStack(alignment: .leading, spacing: 8) {
-            Text("Exit 0 marks the change good, 125 skips it, anything else marks it bad.")
+            Text(Localized.Repo.exitN0MarksTheChangeGood)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            TextField("Test command", text: $viewModel.bisect.command)
+            TextField(Localized.Repo.testCommand, text: $viewModel.bisect.command)
                 .textFieldStyle(.roundedBorder)
                 .frame(width: 320)
                 .accessibilityIdentifier(AID.Bisect.command)
             HStack {
-                Button("Run for This Step") { run(toEnd: false) }
+                Button(Localized.Repo.runForThisStep) { run(toEnd: false) }
                     .disabled(busy)
                     .accessibilityIdentifier(AID.Bisect.runStep)
-                Button("Run to the End") { run(toEnd: true) }
+                Button(Localized.Repo.runToTheEnd) { run(toEnd: true) }
                     .disabled(busy)
                     .accessibilityIdentifier(AID.Bisect.runToEnd)
             }
@@ -130,15 +130,15 @@ struct BisectBar: View {
 private extension BisectPhase {
     var title: String {
         switch self {
-            case .evaluating: "Bisecting"
-            case .pausedRangeChanged: "Bisect paused"
-            case .finished: "Bisect finished"
+            case .evaluating: Localized.Repo.bisecting
+            case .pausedRangeChanged: Localized.Repo.bisectPaused
+            case .finished: Localized.Repo.bisectFinished
         }
     }
 }
 
 private extension BisectResultView {
     var notes: [String] {
-        (restoreNote.map { [$0] } ?? []) + kept.map { "Kept \($0.description.split(separator: "\n").first ?? "a change")" }
+        (restoreNote.map { [$0] } ?? []) + kept.map { Localized.Repo.keptChange(description: $0.description.split(separator: "\n").first.map(String.init) ?? Localized.Repo.aChange) }
     }
 }

@@ -39,7 +39,7 @@ pub(crate) fn detail_pane(
             .items_center()
             .justify_center()
             .text_color(rgb(t.fg_dim))
-            .child("Select a change")
+            .child(jayjay_i18n::repo::select_a_change())
             .into_any_element();
     };
 
@@ -205,7 +205,7 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                         .text_size(ui_font_size(15.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
-                        .child(format!("{count} Changes Selected")),
+                        .child(jayjay_i18n::repo::changes_selected_count(count)),
                 )
                 .child(
                     div()
@@ -215,8 +215,8 @@ fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {
                         .text_size(ui_font_size(11.))
                         .line_height(ui_font_size(16.))
                         .text_color(rgb(t.fg_faint))
-                        .child("These changes don't form a single linear range, so they can't be shown as one combined diff.")
-                        .child("Right-click any selected change for batch actions."),
+                        .child(jayjay_i18n::repo::these_changes_dont_form_a_single())
+                        .child(jayjay_i18n::repo::right_click_any_selected_change_for()),
                 ),
         )
         .into_any_element()

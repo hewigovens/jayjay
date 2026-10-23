@@ -38,18 +38,14 @@ impl CommitMessageProvider for CliCommitMessageProvider {
         AiProvider::ALL
             .into_iter()
             .find_map(|provider| provider.generate_commit_message(diff_summary))
-            .ok_or_else(|| {
-                "AI generation failed; check that codex or claude works in a terminal".to_owned()
-            })
+            .ok_or_else(jayjay_i18n::repo::ai_generation_failed_check_that_codex)
     }
 
     fn generate_branch_name(&self, description: &str) -> Result<String, String> {
         AiProvider::ALL
             .into_iter()
             .find_map(|provider| provider.generate_branch_name(description))
-            .ok_or_else(|| {
-                "AI naming failed; check that codex or claude works in a terminal".to_owned()
-            })
+            .ok_or_else(jayjay_i18n::repo::ai_naming_failed_check_that_codex)
     }
 }
 
@@ -87,12 +83,14 @@ fn run_generation(provider: &dyn CommitMessageProvider, repo: &Repo) -> Generate
         Ok(Some(excerpt)) => excerpt,
         Ok(None) => return GenerateOutcome::EmptyDiff,
         Err(error) => {
-            return GenerateOutcome::Failed(format!("Could not read working-copy diff: {error}"));
+            return GenerateOutcome::Failed(jayjay_i18n::repo::could_not_read_diff(
+                &error.to_string(),
+            ));
         }
     };
     match provider.generate(&excerpt.text(DiffExcerpt::DEFAULT_MAX_BYTES)) {
         Ok(message) if !message.trim().is_empty() => GenerateOutcome::Message(message),
-        Ok(_) => GenerateOutcome::Failed("AI returned an empty message".to_owned()),
+        Ok(_) => GenerateOutcome::Failed(jayjay_i18n::repo::ai_returned_an_empty_message()),
         Err(error) => GenerateOutcome::Failed(error),
     }
 }
@@ -149,14 +147,11 @@ impl RepoWindow {
             return;
         }
         if self.commit_ai.provider_name.is_none() {
-            self.show_toast(
-                "No AI CLI found. Install codex or claude to generate messages.",
-                cx,
-            );
+            self.show_toast(jayjay_i18n::repo::no_ai_cli_found_install_codex(), cx);
             return;
         }
         let Some(repo) = self.vm.read(cx).repo.clone() else {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         };
         let snapshot = (
@@ -210,7 +205,7 @@ impl RepoWindow {
                     .update(cx, |input, cx| input.set_text(body, cx));
             }
             GenerateOutcome::EmptyDiff => {
-                self.show_toast("Working copy has no changes to describe", cx);
+                self.show_toast(jayjay_i18n::repo::working_copy_has_no_changes_to(), cx);
             }
             GenerateOutcome::Failed(message) => self.show_toast(message, cx),
         }
@@ -227,11 +222,11 @@ pub(super) fn generate_button(
     let provider_name = view.commit_ai.provider_name.clone();
     let enabled = !in_flight && provider_name.is_some();
     let tooltip: SharedString = if in_flight {
-        "Generating…".into()
+        jayjay_i18n::repo::generating_ellipsis().into()
     } else {
         match &provider_name {
-            Some(name) => format!("Generate with {name}").into(),
-            None => "No AI available".into(),
+            Some(name) => jayjay_i18n::repo::generate_with(name).into(),
+            None => jayjay_i18n::repo::no_ai_available().into(),
         }
     };
     let base = if enabled {

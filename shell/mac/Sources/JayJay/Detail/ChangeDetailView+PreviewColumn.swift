@@ -89,17 +89,17 @@ extension ChangeDetailView {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if visibleDiff.isEmpty {
                 ContentUnavailableView(
-                    "No Files Changed",
+                    Localized.Repo.noFilesChanged,
                     systemImage: "doc.badge.minus",
-                    description: Text("This revision does not modify any tracked files.")
+                    description: Text(Localized.Repo.thisRevisionDoesNotModifyAny)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
                 Spacer()
                 ContentUnavailableView(
-                    "Select a File",
+                    Localized.Repo.selectAFile,
                     systemImage: "doc.text.magnifyingglass",
-                    description: Text("Choose a file to inspect.")
+                    description: Text(Localized.Repo.chooseAFileToInspect)
                 )
                 .frame(maxWidth: .infinity)
                 Spacer()
@@ -153,12 +153,12 @@ extension ChangeDetailView {
 
     private var hiddenOnlyStateTitle: String {
         if hiddenGitLfsCount > 0, hiddenSubmoduleCount > 0 {
-            return "Only Git-managed Changes Hidden"
+            return Localized.Repo.onlyGitManagedChangesHidden
         }
         if hiddenGitLfsCount > 0 {
-            return "Only Git LFS-backed Files Hidden"
+            return Localized.Repo.onlyGitLfsBackedFilesHidden
         }
-        return "Only Git Submodule Changes Hidden"
+        return Localized.Repo.onlyGitSubmoduleChangesHidden
     }
 
     private var hiddenOnlyStateIcon: String {
@@ -173,11 +173,11 @@ extension ChangeDetailView {
 
     private var hiddenOnlyStateDescription: String {
         if hiddenGitLfsCount > 0, hiddenSubmoduleCount > 0 {
-            return "This revision only changes Git LFS-backed files and submodules, and the current diff settings hide them."
+            return Localized.Repo.thisRevisionOnlyChangesGitLfs
         }
         if hiddenGitLfsCount > 0 {
-            return "This revision only changes Git LFS-backed files, and the current diff setting hides them."
+            return Localized.Repo.thisRevisionOnlyChangesGitLfsBacked
         }
-        return "This revision only changes Git submodules, and the current settings hide them."
+        return Localized.Repo.thisRevisionOnlyChangesGitSubmodules
     }
 }

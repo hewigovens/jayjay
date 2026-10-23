@@ -26,7 +26,7 @@ pub(super) fn byline(
 ) -> AnyElement {
     let shows_date = byline_width(change, stats, bookmarks, t, cx) <= budget;
     let compact = compact_id(&change.change_id);
-    let change_copy_id: SharedString = "Change".into();
+    let change_copy_id: SharedString = jayjay_i18n::repo::change().into();
 
     let mut row = div()
         .debug_selector(|| "detail-metadata".to_owned())

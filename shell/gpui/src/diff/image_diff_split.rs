@@ -64,7 +64,7 @@ impl ImageDiffSplit {
                     .justify_center()
                     .cursor(CursorStyle::ResizeLeftRight)
                     .tooltip(crate::ui::primitives::text_tooltip(
-                        "Drag to resize images. Double-click to restore equal widths.",
+                        jayjay_i18n::diff::drag_to_resize_images_double_click(),
                     ))
                     .debug_selector(|| "image-comparison-divider".to_owned())
                     .on_mouse_down(MouseButton::Left, move |event: &MouseDownEvent, _, cx| {

@@ -18,7 +18,7 @@ extension RepoContentView {
         Group {
             switch overlayState {
                 case .loading:
-                    LoadingStatus(label: "Opening repository…")
+                    LoadingStatus(label: Localized.Repo.openingRepositoryEllipsis)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                         .background(.background)
                 case let .toast(toast):
@@ -108,7 +108,7 @@ extension RepoContentView {
             request: request,
             onSuccess: { repoViewModel, feedback in
                 let action = feedback.undoOperationId.map { operationId in
-                    RepoToastAction(title: "Undo") {
+                    RepoToastAction(title: Localized.Repo.undo) {
                         repoViewModel.opRestore(opId: operationId)
                     }
                 }

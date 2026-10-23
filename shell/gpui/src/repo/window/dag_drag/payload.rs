@@ -40,7 +40,7 @@ impl DagDrag {
 
     pub(super) fn source_label(&self) -> String {
         match (self.selection(), self.source_change()) {
-            (Some(selection), _) => format!("{} changes", selection.commit_ids.len()),
+            (Some(selection), _) => jayjay_i18n::repo::change_count(selection.commit_ids.len()),
             (None, Some(source)) => Self::label_for_change(source),
             (None, None) => String::new(),
         }

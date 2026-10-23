@@ -94,7 +94,7 @@ fn markdown_viewer(
             .items_center()
             .justify_center()
             .text_color(rgb(t.fg_dim))
-            .child("No post-change Markdown content."),
+            .child(jayjay_i18n::diff::no_post_change_markdown_content()),
     };
 
     chrome

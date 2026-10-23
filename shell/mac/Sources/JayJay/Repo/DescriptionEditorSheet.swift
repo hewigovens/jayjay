@@ -20,11 +20,11 @@ struct DescriptionEditorSheet: View {
 
     var body: some View {
         SheetContainer(
-            title: "Edit Description",
+            title: Localized.Repo.editDescription,
             subtitle: revision,
             inlineHeaderIcon: "pencil",
-            cancelLabel: "Cancel",
-            confirmLabel: "Save",
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: Localized.Common.save,
             onCancel: onCancel,
             onConfirm: { onSave(updateCommitMessage(original: original, summary: summary, body: details)) },
             content: {

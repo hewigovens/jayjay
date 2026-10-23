@@ -5,7 +5,7 @@ use super::{FormatInput, ProjectionPair};
 pub(super) trait DiffFormatPlugin: Sync {
     fn id(&self) -> &'static str;
     fn version(&self) -> u32;
-    fn label(&self) -> &'static str;
+    fn label(&self) -> String;
     fn render_kind(&self) -> DiffRenderKind;
     fn matches_path(&self, path: &str) -> bool;
     fn matches_input(&self, input: FormatInput<'_>) -> bool {
@@ -21,7 +21,7 @@ pub(super) trait DiffFormatPlugin: Sync {
     fn projection(&self, path: &str, mode: DiffProjectionMode) -> DiffProjection {
         DiffProjection {
             plugin_id: self.id().to_owned(),
-            plugin_label: self.label().to_owned(),
+            plugin_label: self.label(),
             plugin_version: self.version(),
             mode,
             render_kind: self.render_kind(),

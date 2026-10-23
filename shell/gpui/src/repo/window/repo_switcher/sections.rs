@@ -14,7 +14,7 @@ pub(super) enum RowContent {
         current: bool,
     },
     Action {
-        label: &'static str,
+        label: String,
         glyph: &'static str,
     },
 }
@@ -72,7 +72,7 @@ pub(super) fn switcher_sections(
             .collect();
         sections.extend(filtered_section(
             "repo-switcher-workspaces",
-            Some("Workspaces"),
+            Some(jayjay_i18n::repo::workspaces()),
             rows,
             state.query.input.text(),
         ));
@@ -112,7 +112,7 @@ pub(super) fn switcher_sections(
     }
     sections.extend(filtered_section(
         "repo-switcher-repositories",
-        Some("Repositories"),
+        Some(jayjay_i18n::repo::repositories()),
         repository_rows,
         state.query.input.text(),
     ));
@@ -120,30 +120,30 @@ pub(super) fn switcher_sections(
     let globals = vec![
         SwitcherRow {
             id: "repo-switcher-list".to_owned(),
-            search_text: "Repository List".to_owned(),
+            search_text: jayjay_i18n::repo::repository_list(),
             height: 28.,
             content: RowContent::Action {
-                label: "Repository List…",
+                label: jayjay_i18n::repo::repository_list_ellipsis(),
                 glyph: glyph::LIST,
             },
             action: Some(RepoSwitcherAction::ShowRepositoryList),
         },
         SwitcherRow {
             id: "repo-switcher-open-repository".to_owned(),
-            search_text: "Open Repository".to_owned(),
+            search_text: jayjay_i18n::repo::open_repository(),
             height: 28.,
             content: RowContent::Action {
-                label: "Open Repository…",
+                label: jayjay_i18n::menu::open_repository_ellipsis(),
                 glyph: glyph::FOLDER,
             },
             action: Some(RepoSwitcherAction::OpenRepository),
         },
         SwitcherRow {
             id: "repo-switcher-clone-repository".to_owned(),
-            search_text: "Clone Repository".to_owned(),
+            search_text: jayjay_i18n::repo::clone_repository(),
             height: 28.,
             content: RowContent::Action {
-                label: "Clone Repository…",
+                label: jayjay_i18n::menu::clone_repository_ellipsis(),
                 glyph: glyph::ARROW_DOWN,
             },
             action: Some(RepoSwitcherAction::CloneRepository),
@@ -160,9 +160,11 @@ pub(super) fn switcher_sections(
 
 fn filtered_section(
     id: &'static str,
-    title: Option<&'static str>,
+    title: Option<String>,
     rows: Vec<SwitcherRow>,
     query: &str,
 ) -> Option<PickerSection<SwitcherRow>> {
-    PickerSection::filtered(id, title, rows, query, |row| row.search_text.clone())
+    PickerSection::filtered(id, title.map(Into::into), rows, query, |row| {
+        row.search_text.clone()
+    })
 }

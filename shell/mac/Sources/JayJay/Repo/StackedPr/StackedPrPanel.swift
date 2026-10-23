@@ -29,7 +29,7 @@ struct StackedPrPanel: View {
         VStack(alignment: .leading, spacing: 14) {
             HStack(spacing: 8) {
                 Label(
-                    results == nil ? "Stacked Pull Requests" : "Stacked PRs Submitted",
+                    results == nil ? Localized.Repo.stackedPullRequests : Localized.Repo.stackedPrsSubmitted,
                     systemImage: "square.stack.3d.up.fill"
                 )
                 .jayjayFont(15, weight: .semibold)
@@ -61,13 +61,13 @@ struct StackedPrPanel: View {
     private var previewBody: some View {
         if let stack {
             if stack.layers.isEmpty {
-                message("No changes above trunk() to stack.")
+                message(Localized.Repo.noChangesAboveTrunkToStack)
                 closeRow
             } else {
                 let count = stack.layers.count
                 HStack(alignment: .firstTextBaseline, spacing: 8) {
                     message(
-                        "\(count) change\(count == 1 ? "" : "s") — one PR each, bottom targets \(stack.baseBookmark)."
+                        Localized.Repo.stackSummary(count: count, base: stack.baseBookmark)
                     )
                     Spacer()
                     if !aiProviderLabel.isEmpty {
@@ -78,12 +78,12 @@ struct StackedPrPanel: View {
                                 } else {
                                     Image(systemName: "sparkles")
                                 }
-                                Text(aiNaming ? "Generating…" : "Generate bookmarks").jayjayFont(11)
+                                Text(aiNaming ? Localized.Repo.generatingEllipsis : Localized.Repo.generateBookmarks).jayjayFont(11)
                             }
                         }
                         .controlSize(.small)
                         .disabled(aiNaming || isWorking)
-                        .help("Suggest branch names with \(aiProviderLabel)")
+                        .help(Localized.Repo.suggestBranchNamesWith(provider: aiProviderLabel))
                     }
                 }
                 // While submitting, freeze the stack — no name edits or regenerate.
@@ -91,7 +91,7 @@ struct StackedPrPanel: View {
                 if let errorMessage {
                     errorBanner(errorMessage)
                 }
-                actionRow(confirm: "Submit", disabled: !allNamesValid(stack)) { submit() }
+                actionRow(confirm: Localized.Repo.submit, disabled: !allNamesValid(stack)) { submit() }
             }
         } else if let errorMessage {
             message(errorMessage)
@@ -142,7 +142,7 @@ struct StackedPrPanel: View {
     private func bookmarkField(_ layer: StackLayer) -> some View {
         if editingChangeId == layer.changeId {
             HStack(spacing: 5) {
-                TextField("branch name", text: Binding(
+                TextField(Localized.Repo.branchNamePlaceholder, text: Binding(
                     get: { editedNames[layer.changeId] ?? layer.bookmark },
                     set: { editedNames[layer.changeId] = $0 }
                 ))
@@ -156,7 +156,7 @@ struct StackedPrPanel: View {
                     Image(systemName: "checkmark.circle.fill").jayjayFont(12)
                 }
                 .buttonStyle(.plain).foregroundStyle(.green)
-                .help("Done")
+                .help(Localized.Repo.done)
             }
         } else {
             HStack(spacing: 5) {
@@ -170,7 +170,7 @@ struct StackedPrPanel: View {
                     Image(systemName: "pencil").jayjayFont(10)
                 }
                 .buttonStyle(.plain).foregroundStyle(.tertiary)
-                .help("Edit branch name")
+                .help(Localized.Repo.editBranchName)
             }
         }
     }
@@ -195,7 +195,7 @@ struct StackedPrPanel: View {
     private func validityWarning(_ layer: StackLayer) -> some View {
         if nameInvalid(layer) {
             Image(systemName: "exclamationmark.triangle.fill").jayjayFont(9)
-                .foregroundStyle(.orange).help("Not a valid branch name")
+                .foregroundStyle(.orange).help(Localized.Repo.notAValidBranchName)
         }
     }
 
@@ -215,7 +215,7 @@ struct StackedPrPanel: View {
     }
 
     private var newBadge: some View {
-        Text("new").jayjayFont(9, weight: .semibold)
+        Text(Localized.Repo.newBadge).jayjayFont(9, weight: .semibold)
             .padding(.horizontal, 4).padding(.vertical, 1)
             .background(.green.opacity(0.18), in: Capsule())
             .foregroundStyle(.green)
@@ -232,7 +232,7 @@ struct StackedPrPanel: View {
 
     private var closeRow: some View {
         HStack { Spacer()
-            Button("Close") { onDismiss() }.keyboardShortcut(.cancelAction)
+            Button(Localized.Common.close) { onDismiss() }.keyboardShortcut(.cancelAction)
             Spacer()
         }
     }
@@ -240,7 +240,7 @@ struct StackedPrPanel: View {
     private func actionRow(confirm: String, disabled: Bool = false, action: @escaping () -> Void) -> some View {
         HStack(spacing: 12) {
             Spacer()
-            Button("Cancel") { onDismiss() }.keyboardShortcut(.cancelAction).disabled(isWorking)
+            Button(Localized.Common.cancel) { onDismiss() }.keyboardShortcut(.cancelAction).disabled(isWorking)
             Button(confirm, action: action)
                 .keyboardShortcut(.defaultAction).buttonStyle(.borderedProminent)
                 .disabled(isWorking || disabled)

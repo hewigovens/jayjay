@@ -8,16 +8,16 @@ struct WorkspaceMenuItems: View {
     let onOpen: () -> Void
 
     var body: some View {
-        Button("Filter by This Workspace", action: onFilter)
+        Button(Localized.Menu.filterByThisWorkspace, action: onFilter)
         Divider()
         if !workspace.isCurrent, workspace.isPathResolved {
-            Button("Open in New Window", action: onOpen)
+            Button(Localized.Menu.openInNewWindow, action: onOpen)
         }
-        Button("Copy Workspace Name") {
+        Button(Localized.Menu.copyWorkspaceName) {
             copy(workspace.name)
         }
         if workspace.isPathResolved {
-            Button("Copy Path") {
+            Button(Localized.Menu.copyPath) {
                 copy(workspace.path)
             }
         }

@@ -19,7 +19,7 @@ pub(super) fn active_bookmark_sync_item_data(
             } else {
                 format!("{name} {badge}")
             };
-            return Some((text, format!("{name} vs {}", target.remote)));
+            return Some((text, jayjay_i18n::repo::compared_with(name, &target.remote)));
         }
     }
     None
@@ -29,8 +29,7 @@ pub(super) fn working_copy_stat_label(stats: &DiffStats) -> Option<String> {
     if stats.files_changed == 0 {
         return None;
     }
-    let plural = if stats.files_changed == 1 { "" } else { "s" };
-    let mut text = format!("{} file{plural}", stats.files_changed);
+    let mut text = jayjay_i18n::repo::file_count(stats.files_changed);
     if stats.insertions > 0 || stats.deletions > 0 {
         text.push_str(&format!(" +{} -{}", stats.insertions, stats.deletions));
     }
@@ -47,7 +46,7 @@ fn primary_remote_target(bookmark: &BookmarkInfo) -> Option<&RemoteBookmarkTarge
 
 fn sync_badge(target: &RemoteBookmarkTarget) -> String {
     match target.status {
-        RemoteSyncStatus::Deleted => format!("deleted on {}", target.remote),
+        RemoteSyncStatus::Deleted => jayjay_i18n::repo::deleted_on(&target.remote),
         RemoteSyncStatus::Synced => "✓".to_owned(),
         RemoteSyncStatus::Ahead => format!("↑{}", target.ahead),
         RemoteSyncStatus::Behind => format!("↓{}", target.behind),

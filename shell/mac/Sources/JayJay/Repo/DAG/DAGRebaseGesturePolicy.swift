@@ -58,13 +58,13 @@ enum DAGRebaseGesturePolicy {
     /// What the hover bubble says when dropping here would cancel; nil when the target is valid.
     static func targetRefusal(rebaseDrag: DAGRebaseDragState, targetCommitId: String) -> String? {
         if !rebaseDrag.selectionCommitIds.isEmpty {
-            return rebaseDrag.selectionTargets.contains(targetCommitId) ? nil : "Can't rebase the selection here"
+            return rebaseDrag.selectionTargets.contains(targetCommitId) ? nil : Localized.Repo.cantRebaseSelectionHere
         }
         if rebaseDrag.sourceParents == [targetCommitId] {
-            return "Already its parent"
+            return Localized.Repo.alreadyItsParent
         }
         if rebaseDrag.descendantCommitIds.contains(targetCommitId) {
-            return "Can't rebase onto its own descendant"
+            return Localized.Repo.cantRebaseOntoItsOwnDescendant
         }
         return nil
     }
@@ -76,8 +76,7 @@ enum DAGRebaseGesturePolicy {
         location: CGPoint
     ) -> DAGRebaseGestureChangeAction {
         guard !entryIsImmutable else { return .ignore }
-        guard let rebaseDrag else { return .beginPress }
-        guard rebaseDrag.sourceCommitId == sourceCommitId else { return .beginPress }
+        guard let rebaseDrag, rebaseDrag.sourceCommitId == sourceCommitId else { return .beginPress }
 
         let movement = movementDistance(from: rebaseDrag.startLocation, to: location)
         switch rebaseDrag.phase {

@@ -64,20 +64,13 @@ pub(crate) fn format_relative(ts_millis: i64) -> String {
     // Floor to whole minutes so a fresh change reads "1 minute ago" instead of ticking
     // per second; clamping also reads a clock-skewed future timestamp as "1 minute ago".
     let secs = Local::now().signed_duration_since(dt).num_seconds().max(60);
-    let ago = |n: i64, unit: &str| {
-        if n == 1 {
-            format!("1 {unit} ago")
-        } else {
-            format!("{n} {unit}s ago")
-        }
-    };
     match secs {
-        s if s < 3600 => ago(s / 60, "minute"),
-        s if s < 86_400 => ago(s / 3600, "hour"),
-        s if s < 604_800 => ago(s / 86_400, "day"),
-        s if s < 2_592_000 => ago(s / 604_800, "week"),
-        s if s < 31_536_000 => ago(s / 2_592_000, "month"),
-        s => ago(s / 31_536_000, "year"),
+        s if s < 3600 => jayjay_i18n::repo::minutes_ago(s / 60),
+        s if s < 86_400 => jayjay_i18n::repo::hours_ago(s / 3600),
+        s if s < 604_800 => jayjay_i18n::repo::days_ago(s / 86_400),
+        s if s < 2_592_000 => jayjay_i18n::repo::weeks_ago(s / 604_800),
+        s if s < 31_536_000 => jayjay_i18n::repo::months_ago(s / 2_592_000),
+        s => jayjay_i18n::repo::years_ago(s / 31_536_000),
     }
 }
 

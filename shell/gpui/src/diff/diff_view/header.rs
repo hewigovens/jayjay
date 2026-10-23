@@ -62,8 +62,13 @@ pub(super) fn file_header(
         .projection
         .projection
         .is_some_and(|projection| !projection::opens_automatically(projection));
-    let reserved =
-        header_reserved_width(&state, label, show_projection_button, old_path.is_some(), t);
+    let reserved = header_reserved_width(
+        &state,
+        &label,
+        show_projection_button,
+        old_path.is_some(),
+        t,
+    );
 
     let compact = state.detail_width < COMPACT_HEADER_WIDTH;
     let mut row = div()
@@ -188,7 +193,7 @@ fn on_path_baseline(size: f32, t: &Theme) -> gpui::Pixels {
     px((t.scaled_font_size(PATH_FONT_SIZE) - t.scaled_font_size(size)) * BASELINE_BELOW_CENTER_EM)
 }
 
-fn hunk_status_pill(label: &'static str, bg: u32, fg: u32, t: &Theme) -> impl IntoElement {
+fn hunk_status_pill(label: String, bg: u32, fg: u32, t: &Theme) -> impl IntoElement {
     div()
         .flex_none()
         .relative()

@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct OnboardingScene: Scene {
@@ -6,7 +7,7 @@ struct OnboardingScene: Scene {
     let windowManager: RepoWindowManager
 
     var body: some Scene {
-        Window("Welcome to JayJay", id: AppWindows.onboarding) {
+        Window(Localized.Menu.welcomeToJayjay, id: AppWindows.onboarding) {
             OnboardingView { windowManager.finishOnboarding() }
                 .appEnvironment(settings)
                 .background(RepoListWindowBridge(windowManager: windowManager, scene: AppWindows.onboarding))

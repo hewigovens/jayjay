@@ -105,7 +105,7 @@ impl Repo {
             Ok(())
         } else {
             Err(JayError::refused(
-                "The working copy moved away from the bisect candidate. Stop and start a new bisect.",
+                jayjay_i18n::repo::bisect_working_copy_moved(),
             ))
         }
     }

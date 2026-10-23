@@ -121,9 +121,11 @@ pub fn review_stripe(
     theme: &Theme,
 ) -> Stateful<Div> {
     let (color, label) = match state {
-        ReviewGroupState::Reviewed => (theme.selected_accent, "Reviewed"),
-        ReviewGroupState::Unreviewed => (theme.selected_bg, "Unreviewed"),
-        ReviewGroupState::ChangedSinceReview => (theme.note_accent, "Changed since review"),
+        ReviewGroupState::Reviewed => (theme.selected_accent, jayjay_i18n::repo::reviewed()),
+        ReviewGroupState::Unreviewed => (theme.selected_bg, jayjay_i18n::repo::unreviewed()),
+        ReviewGroupState::ChangedSinceReview => {
+            (theme.note_accent, jayjay_i18n::repo::changed_since_review())
+        }
     };
     div()
         .id(id)

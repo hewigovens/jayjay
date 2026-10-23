@@ -54,10 +54,10 @@ impl StackedPrState {
         }
     }
 
-    pub(crate) fn warning(&self, index: usize) -> Option<&'static str> {
+    pub(crate) fn warning(&self, index: usize) -> Option<String> {
         let name = self.inputs.get(index)?.text();
         if !is_valid_bookmark_name(name) {
-            return Some("Not a valid bookmark name");
+            return Some(jayjay_i18n::repo::not_a_valid_bookmark_name());
         }
         if self
             .inputs
@@ -65,7 +65,7 @@ impl StackedPrState {
             .enumerate()
             .any(|(other, input)| other != index && input.text() == name)
         {
-            return Some("Duplicate bookmark name");
+            return Some(jayjay_i18n::repo::duplicate_bookmark_name());
         }
         None
     }
@@ -168,7 +168,9 @@ impl RepoWindow {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             self.finish_stacked_pr_detection(
                 state.generation,
-                Err(jayjay_core::JayError::internal("repository is not open")),
+                Err(jayjay_core::JayError::internal(
+                    jayjay_i18n::repo::repository_not_open(),
+                )),
                 cx,
             );
             return;

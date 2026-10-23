@@ -98,9 +98,9 @@ fn row_at(
         }
         DiffEditRow::Placeholder { loading, .. } => placeholder_row(
             if *loading {
-                loading_label("Loading file diff…", t).into_any_element()
+                loading_label(jayjay_i18n::repo::loading_file_diff_ellipsis(), t).into_any_element()
             } else {
-                "No textual preview available for this file.".into_any_element()
+                jayjay_i18n::repo::no_textual_preview_available_for_this().into_any_element()
             },
             t,
         ),
@@ -118,7 +118,7 @@ fn notice_row(t: &Theme) -> AnyElement {
         .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
         .child(icons::icon(glyph::INFO, 11., t.fg_dim))
-        .child("Projected, renamed, and non-text files can be previewed here but are not editable yet.")
+        .child(jayjay_i18n::repo::projected_renamed_and_non_text_files())
         .into_any_element()
 }
 

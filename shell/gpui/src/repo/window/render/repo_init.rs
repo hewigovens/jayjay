@@ -41,47 +41,43 @@ pub(super) fn repo_init_error_pane(
             (
                 glyph::INFO,
                 t.fg_dim,
-                "This folder is inside a jj repository",
-                format!("Open the repository root instead: {}", root.display()).into(),
+                jayjay_i18n::repo::inside_jj_repository(),
+                jayjay_i18n::repo::open_repository_root(&root.display().to_string()).into(),
             )
         } else if let Some(root) = enclosing_git.filter(|_| needs_setup) {
             (
             glyph::INFO,
             t.fg_dim,
-            "This folder is inside a Git repository",
-            format!(
-                "Open {} to use its history, or initialize jj here to start a separate repository.",
-                root.display()
-            )
-            .into(),
+            jayjay_i18n::repo::inside_git_repository(),
+            jayjay_i18n::repo::open_git_root_or_initialize(&root.display().to_string()).into(),
         )
         } else if !path.is_dir() {
             (
                 glyph::WARNING,
                 t.compare_accent,
-                "Failed to open repository",
-                "This folder no longer exists.".into(),
+                jayjay_i18n::repo::failed_to_open_repository(),
+                jayjay_i18n::repo::folder_no_longer_exists().into(),
             )
         } else if !needs_setup {
             (
                 glyph::WARNING,
                 t.compare_accent,
-                "Failed to open repository",
+                jayjay_i18n::repo::failed_to_open_repository(),
                 repo_init_error_message(message.as_ref(), repo_path.as_ref()),
             )
         } else if path.join(".git").exists() {
             (
                 glyph::GIT_BRANCH,
                 t.fg_dim,
-                "Set up jj for this Git repository",
-                "Your Git history and branches stay as they are.".into(),
+                jayjay_i18n::repo::set_up_jj_for_git_repository(),
+                jayjay_i18n::repo::git_history_stays().into(),
             )
         } else {
             (
                 glyph::FOLDER,
                 t.fg_dim,
-                "No repository here yet",
-                "jj git init creates a new jj repository in this folder.".into(),
+                jayjay_i18n::repo::no_repository_here_yet(),
+                jayjay_i18n::repo::jj_git_init_creates_repository().into(),
             )
         };
 
@@ -91,9 +87,9 @@ pub(super) fn repo_init_error_pane(
     let mut actions = div().flex().justify_center();
     if can_initialize {
         let label = if initializing {
-            "Initializing…"
+            jayjay_i18n::repo::initializing_ellipsis()
         } else {
-            "Initialize jj"
+            jayjay_i18n::repo::initialize_jj()
         };
         let mut init_button = button("repo-init", label, t, true);
         if !initializing {
@@ -149,11 +145,11 @@ pub(super) fn repo_init_error_pane(
 
 /// Shown while the repo is opening off the main thread (see `RepoViewModel::open_async`).
 pub(super) fn repo_loading_pane(t: &Theme) -> AnyElement {
-    loading_status("Opening repository…", t)
+    loading_status(jayjay_i18n::repo::opening_repository_ellipsis(), t)
 }
 
 fn repo_init_error_message(message: &str, repo_path: &str) -> gpui::SharedString {
-    let without_path = message.replace(repo_path, "this path");
+    let without_path = message.replace(repo_path, &jayjay_i18n::repo::this_path());
     without_path
         .trim()
         .trim_start_matches("repository not found at ")

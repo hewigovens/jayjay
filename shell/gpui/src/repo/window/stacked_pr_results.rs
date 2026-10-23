@@ -23,9 +23,9 @@ pub(super) fn results_body(
         .overflow_y_scroll();
     for (index, layer) in result.layers.iter().enumerate() {
         let (label, color) = match layer.outcome {
-            StackLayerOutcome::Created => ("Created", t.success_fg),
-            StackLayerOutcome::Updated => ("Updated", t.toggle_active_fg),
-            StackLayerOutcome::Failed => ("Failed", t.error_fg),
+            StackLayerOutcome::Created => (jayjay_i18n::repo::created(), t.success_fg),
+            StackLayerOutcome::Updated => (jayjay_i18n::repo::updated(), t.toggle_active_fg),
+            StackLayerOutcome::Failed => (jayjay_i18n::repo::failed(), t.error_fg),
         };
         let mut title = div()
             .flex()
@@ -93,7 +93,7 @@ pub(super) fn results_body(
         )
         .child(
             div().flex().justify_end().child(
-                button("stacked-pr-done", "Done", t, true)
+                button("stacked-pr-done", jayjay_i18n::repo::done(), t, true)
                     .on_click(cx.listener(|view, _, _, cx| view.complete_stacked_pr(cx))),
             ),
         )
@@ -121,18 +121,18 @@ pub(super) fn error_body(error: &str, t: &Theme, cx: &mut Context<RepoWindow>) -
                 .justify_end()
                 .gap(px(8.))
                 .child(
-                    button("stacked-pr-close", "Close", t, false)
+                    button("stacked-pr-close", jayjay_i18n::common::close(), t, false)
                         .on_click(cx.listener(|view, _, _, cx| view.close_stacked_pr(cx))),
                 )
                 .child(
-                    button("stacked-pr-retry", "Retry", t, true)
+                    button("stacked-pr-retry", jayjay_i18n::repo::retry(), t, true)
                         .on_click(cx.listener(|view, _, _, cx| view.retry_stacked_pr(cx))),
                 ),
         )
         .into_any_element()
 }
 
-pub(super) fn centered_message(message: &'static str, t: &Theme) -> AnyElement {
+pub(super) fn centered_message(message: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
         .h(px(80.))
         .flex()
@@ -140,6 +140,6 @@ pub(super) fn centered_message(message: &'static str, t: &Theme) -> AnyElement {
         .justify_center()
         .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
-        .child(message)
+        .child(message.into())
         .into_any_element()
 }

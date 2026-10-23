@@ -118,12 +118,12 @@ pub(super) fn header_reserved_width(
             11.,
         );
     }
-    reserved += action(super::controls::mode_label(state.view_mode));
+    reserved += action(&super::controls::mode_label(state.view_mode));
     if state.can_edit_file {
-        reserved += action("Edit File");
+        reserved += action(&jayjay_i18n::diff::edit_file());
     }
     if state.can_edit_diff {
-        reserved += action("Edit Diff");
+        reserved += action(&jayjay_i18n::diff::edit_diff());
     }
     if state.is_annotating {
         reserved += 100.;
@@ -134,7 +134,7 @@ pub(super) fn header_reserved_width(
     let preview_buttons = show_projection_button as usize
         + state.can_render_markdown_preview as usize
         + state.can_render_svg_preview as usize;
-    reserved += action("Preview") * preview_buttons as f32;
+    reserved += action(&jayjay_i18n::common::preview()) * preview_buttons as f32;
     reserved += 28. * state.html_external_url.is_some() as usize as f32;
     reserved
 }

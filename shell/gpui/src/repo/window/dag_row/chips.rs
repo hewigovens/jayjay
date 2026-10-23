@@ -30,8 +30,8 @@ impl DagChip {
     fn label(&self, change: &ChangeInfo) -> String {
         match self {
             DagChip::WorkingCopy { .. } => "@".to_owned(),
-            DagChip::Conflict => "conflict".to_owned(),
-            DagChip::Divergent => "divergent".to_owned(),
+            DagChip::Conflict => jayjay_i18n::repo::conflict_badge(),
+            DagChip::Divergent => jayjay_i18n::repo::divergent_badge(),
             DagChip::Bookmark(ix) => change.bookmarks[*ix].clone(),
             DagChip::GitTag(ix) => change.tags[*ix].clone(),
             DagChip::Workspace(ix) => format!("{}@", change.workspaces[*ix]),
@@ -183,11 +183,15 @@ fn chip_element(
 ) -> AnyElement {
     match *chip {
         DagChip::WorkingCopy { stale } => working_copy_chip(row_ix, stale, t).into_any_element(),
-        DagChip::Conflict => {
-            capsule("conflict", t.tag_conflict_bg, t.tag_conflict_fg, FONT_TAG).into_any_element()
-        }
+        DagChip::Conflict => capsule(
+            jayjay_i18n::repo::conflict_badge(),
+            t.tag_conflict_bg,
+            t.tag_conflict_fg,
+            FONT_TAG,
+        )
+        .into_any_element(),
         DagChip::Divergent => capsule(
-            "divergent",
+            jayjay_i18n::repo::divergent_badge(),
             t.tag_divergent_bg,
             t.tag_divergent_fg,
             FONT_TAG,
@@ -266,12 +270,16 @@ fn working_copy_chip(row_ix: usize, stale: bool, t: &Theme) -> impl IntoElement 
         return row;
     }
     row.child(
-        icon(glyph::WARNING, t.scaled_font_size(FONT_TAG) + 2., t.warning_fg)
-            .id(("stale", row_ix))
-            .debug_selector(|| "dag-stale-working-copy".to_owned())
-            .tooltip(text_tooltip(
-                "Working copy is stale: another workspace rewrote this change. Update Workspace from the context menu or the Refresh button.",
-            )),
+        icon(
+            glyph::WARNING,
+            t.scaled_font_size(FONT_TAG) + 2.,
+            t.warning_fg,
+        )
+        .id(("stale", row_ix))
+        .debug_selector(|| "dag-stale-working-copy".to_owned())
+        .tooltip(text_tooltip(
+            jayjay_i18n::repo::working_copy_is_stale_another_workspace(),
+        )),
     )
 }
 
