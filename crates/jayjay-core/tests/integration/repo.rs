@@ -895,6 +895,46 @@ fn log_reloads_immutability_config_without_a_new_operation() {
 }
 
 #[test]
+fn log_graph_keeps_each_stack_contiguous_with_the_working_copy_stack_first() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    for (parent, description) in [
+        ("@", "a1"),
+        ("@-", "b1"),
+        ("subject(exact:a1)", "a2"),
+        ("subject(exact:b1)", "b2"),
+        ("subject(exact:a2)", "a3"),
+        ("subject(exact:b2)", "b3"),
+    ] {
+        run_jj_in(&repo_path, &["new", parent, "-m", description]);
+    }
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let order: Vec<String> = repo
+        .log_graph("subject(exact:a1):: | subject(exact:b1)::")
+        .expect("log")
+        .into_iter()
+        .map(|entry| entry.change.description.trim().to_owned())
+        .collect();
+    assert_eq!(order, ["b3", "b2", "b1", "a3", "a2", "a1"]);
+}
+
+#[test]
+fn log_graph_dates_a_change_by_its_last_rewrite() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(
+        &repo_path,
+        &["metaedit", "--author-timestamp", "2020-01-01T00:00:00Z"],
+    );
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let head = &repo.log_graph("@").expect("log")[0].change;
+    assert_eq!(head.author.timestamp_millis, 1_577_836_800_000);
+    assert!(head.committed_at_millis > head.author.timestamp_millis);
+}
+
+#[test]
 fn log_emptiness_and_bookmarks_follow_new_operations_on_one_repo() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

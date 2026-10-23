@@ -254,7 +254,7 @@ fn meta_row(change: &ChangeInfo, row_ix: usize, t: &Theme) -> impl IntoElement {
             div()
                 .text_color(rgb(t.fg_faint))
                 .child(SharedString::from(format_relative(
-                    change.author.timestamp_millis,
+                    change.committed_at_millis,
                 ))),
         )
 }

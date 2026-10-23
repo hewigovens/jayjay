@@ -106,7 +106,7 @@ extension RepoContentView {
         let presetFilters = RevsetFilterPresets.all.map { (Localized.Palette.showFilter(filter: $0.label), $0.revset) }
         for (label, revset) in presetFilters + [
             (Localized.Palette.showMutable, "mutable()"),
-            (Localized.Palette.resetFilter, RepoViewModel.buildDefaultRevset())
+            (Localized.Palette.resetFilter, viewModel.defaultRevsetPreset.revset)
         ] {
             items.append(CommandPaletteItem(
                 title: label,

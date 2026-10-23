@@ -3,7 +3,7 @@
 use std::borrow::Cow;
 use std::sync::{Arc, OnceLock};
 
-use jayjay_core::{ChangeInfo, ShortId, WorkspaceInfo, default_revset_preset, revset_presets};
+use jayjay_core::{ChangeInfo, ShortId, WorkspaceInfo, revset_presets};
 
 use super::actions::{ACTIONS, PaletteAction};
 use super::help::{self, HelpTopic};
@@ -35,6 +35,7 @@ pub(super) fn dynamic_rows(
     workspaces: &[WorkspaceInfo],
     selected: Option<&ChangeInfo>,
     sync: &SyncActivity,
+    default_revset: &str,
 ) -> Vec<DynamicRow> {
     let mut rows = cancel_sync_rows(sync);
     for workspace in workspaces.iter().filter(|workspace| !workspace.is_current) {
@@ -46,7 +47,7 @@ pub(super) fn dynamic_rows(
             rows.push(delete_row(workspace));
         }
     }
-    rows.extend(revset_rows());
+    rows.extend(revset_rows(default_revset));
     if let Some(change) = selected {
         rows.extend(change_rows(change));
     }
@@ -159,7 +160,7 @@ fn delete_row(workspace: &WorkspaceInfo) -> DynamicRow {
     }
 }
 
-fn revset_rows() -> Vec<DynamicRow> {
+fn revset_rows(default_revset: &str) -> Vec<DynamicRow> {
     let mut rows = revset_presets()
         .iter()
         .map(|preset| {
@@ -178,7 +179,7 @@ fn revset_rows() -> Vec<DynamicRow> {
     rows.push(revset_row(
         "reset",
         jayjay_i18n::palette::reset_filter(),
-        default_revset_preset().revset,
+        default_revset.to_owned(),
     ));
     rows
 }

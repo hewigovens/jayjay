@@ -47,7 +47,12 @@ impl RepoViewModel {
     }
 
     fn apply_and_remember(&mut self, revset: &str, cx: &mut Context<Self>) {
-        self.revset_filter.apply(revset);
+        let revset = if revset.trim().is_empty() {
+            self.default_revset.revset.clone()
+        } else {
+            revset.to_owned()
+        };
+        self.revset_filter.apply(&revset);
         let root = Path::new(self.repo_root_path.as_ref());
         let revset = &self.revset_filter.revset;
         self.revset_filter.recent =

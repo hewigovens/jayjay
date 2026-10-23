@@ -87,8 +87,12 @@ fn workspace_filter_revset(name: String) -> String {
 }
 
 #[uniffi::export]
-fn typed_revset(text: String, bookmarks: Vec<jayjay_core::BookmarkInfo>) -> String {
-    jayjay_core::typed_revset(&text, &bookmarks)
+fn typed_revset(
+    text: String,
+    bookmarks: Vec<jayjay_core::BookmarkInfo>,
+    default_revset: RevsetPreset,
+) -> String {
+    jayjay_core::typed_revset(&text, &bookmarks, &default_revset)
 }
 
 #[uniffi::export]
@@ -657,6 +661,10 @@ impl JayJayRepo {
 
     fn check_revset(&self, revset: String) -> Result<(), JayError> {
         self.inner.check_revset(&revset)
+    }
+
+    fn default_revset_preset(&self) -> RevsetPreset {
+        self.inner.default_revset_preset()
     }
 
     fn log_graph(&self, revset: String) -> Result<Vec<GraphEntry>, JayError> {

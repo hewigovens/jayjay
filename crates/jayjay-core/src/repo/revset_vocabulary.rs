@@ -1,8 +1,19 @@
 use super::Repo;
-use crate::revset::{RevsetName, RevsetVocabulary};
+use crate::revset::{RevsetName, RevsetPreset, RevsetVocabulary, default_revset_preset};
 use crate::types::BookmarkInfo;
 
 impl Repo {
+    /// The user's `revsets.log` when it resolves, else JayJay's default.
+    pub fn default_revset_preset(&self) -> RevsetPreset {
+        let preset = default_revset_preset();
+        match self.get_repo().settings().get_string("revsets.log") {
+            Ok(revset) if !revset.trim().is_empty() && self.check_revset(&revset).is_ok() => {
+                RevsetPreset { revset, ..preset }
+            }
+            _ => preset,
+        }
+    }
+
     /// Names the revset bar can complete to; the caller passes the bookmarks it already loaded.
     pub fn revset_vocabulary(&self, bookmarks: &[BookmarkInfo]) -> RevsetVocabulary {
         RevsetVocabulary {

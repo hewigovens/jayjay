@@ -511,3 +511,33 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
         assert_eq!(view.view_model().read(cx).revset(), "@ | tags()");
     });
 }
+
+#[gpui::test]
+fn a_configured_log_revset_is_the_default_filter(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    jj_test::run_jj_in(
+        &fixture.path,
+        &["config", "set", "--repo", "revsets.log", "::@"],
+    );
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    settle_visual(cx);
+    let revset = |cx: &VisualTestContext| {
+        view.read_with(cx, |view, cx| {
+            view.view_model().read(cx).revset().to_owned()
+        })
+    };
+    assert_eq!(revset(cx), "::@");
+
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, cx| vm.apply_revset("trunk()", cx));
+    });
+    settle(cx);
+    view.update(cx, |view, cx| {
+        view.view_model()
+            .update(cx, |vm, cx| vm.apply_revset(" ", cx));
+    });
+    settle(cx);
+    assert_eq!(revset(cx), "::@");
+}
