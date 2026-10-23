@@ -186,7 +186,7 @@ build-apple: ffi-debug
 
 # === GPUI shell (alpha, cross-platform) ===
 
-# Build a .app bundle for the GPUI shell (ad-hoc signed so launchd accepts it).
+# Build a .app bundle for the GPUI shell (signed so launchd accepts it).
 gpui-bundle:
   @cargo build -p jayjay-gpui
   @mkdir -p "{{root}}/build/gpui/JayJay.app/Contents/MacOS"
@@ -195,7 +195,7 @@ gpui-bundle:
   @cp "{{root}}/assets/AppIcon.icns" "{{root}}/build/gpui/JayJay.app/Contents/Resources/AppIcon.icns"
   @cp "{{root}}/target/debug/jayjay-gpui" "{{root}}/build/gpui/JayJay.app/Contents/MacOS/jayjay-gpui"
   @xattr -dr com.apple.quarantine "{{root}}/build/gpui/JayJay.app" 2>/dev/null || true
-  @codesign --force --deep --sign - "{{root}}/build/gpui/JayJay.app"
+  @bash "{{root}}/scripts/macos/sign-debug.sh" --deep "{{root}}/build/gpui/JayJay.app"
   @touch "{{root}}/build/gpui/JayJay.app"
   @echo "Built {{root}}/build/gpui/JayJay.app"
 
