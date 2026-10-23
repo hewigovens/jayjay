@@ -25,7 +25,7 @@ pub(super) struct HelpTopic {
 
 impl HelpTopic {
     pub(super) fn palette_title(&self) -> String {
-        format!("Help: {}", self.title)
+        jayjay_i18n::palette::help_topic(&self.title)
     }
 
     /// The public guide opened at this topic's anchor; GPUI has no bundled Help Book, so this mirrors SwiftUI's online-guide fallback.

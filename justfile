@@ -114,7 +114,7 @@ lint:
   just lint-i18n
 
 # Files fully migrated to the jayjay-i18n catalog.
-i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/gpui/src/repo shell/gpui/src/app/menus.rs shell/gpui/src/diff shell/mac/Sources/JayJay/Settings shell/mac/Sources/JayJay/Repo shell/mac/Sources/JayJay/Detail shell/mac/Sources/JayJay/Diff shell/mac/Sources/JayJay/DiffEdit shell/mac/Packages/JayJayDiffUI/Sources shell/mac/Sources/JayJay/App/Window shell/mac/Sources/JayJay/App/AppCommands.swift shell/mac/Sources/JayJay/App/AppInfoCommands.swift shell/mac/Sources/JayJay/App/HelpCommands.swift"
+i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/gpui/src/repo shell/gpui/src/app/menus.rs shell/gpui/src/diff shell/mac/Sources/JayJay/Settings shell/mac/Sources/JayJay/Repo shell/mac/Sources/JayJay/Detail shell/mac/Sources/JayJay/Diff shell/mac/Sources/JayJay/DiffEdit shell/mac/Packages/JayJayDiffUI/Sources shell/mac/Sources/JayJay/App/Window shell/mac/Sources/JayJay/App/AppCommands.swift shell/mac/Sources/JayJay/App/AppInfoCommands.swift shell/mac/Sources/JayJay/App/HelpCommands.swift shell/gpui/src/windows/command_palette shell/mac/Sources/JayJay/Shared/CommandPalette"
 # Proper names that stay English in every locale.
 i18n_names := "JayJay|Codex CLI|Claude CLI|Codex|Claude|Terminal|Finder|Frog"
 
@@ -136,7 +136,7 @@ lint-i18n:
       fi
     done
   done
-  hits=$(find {{i18n_migrated}} -type f \( -name '*.rs' -o -name '*.swift' \) ! -name 'tests.rs' ! -name 'RepoContentView+CommandPalette*' -print0 \
+  hits=$(find {{i18n_migrated}} -type f \( -name '*.rs' -o -name '*.swift' \) ! -name 'tests.rs' -print0 \
     | xargs -0 awk -v names='^"({{i18n_names}})"$' '
       FNR == 1 { skip = 0 }
       /#\[cfg\(test\)\]/ { skip = 1 }

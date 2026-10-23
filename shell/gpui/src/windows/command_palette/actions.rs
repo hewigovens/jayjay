@@ -17,9 +17,10 @@ pub(super) struct PaletteCtx<'a> {
     pub repo_window: Option<Entity<RepoWindow>>,
 }
 
-/// One row in the palette: human label, search keywords, and a side-effect.
+/// One row in the palette: stable id, catalog label, search keywords, and a side-effect.
 pub(super) struct PaletteAction {
-    pub name: &'static str,
+    pub id: &'static str,
+    pub label: fn() -> String,
     pub keywords: &'static [&'static str],
     pub glyph_str: &'static str,
     pub dispatch: fn(&PaletteCtx, &mut App),
@@ -27,17 +28,18 @@ pub(super) struct PaletteAction {
 
 impl PaletteAction {
     pub(super) fn display_name(&self, cx: &App) -> String {
-        match self.name {
-            "Open in Editor" => tools::open_in_editor_label(cx),
-            "Open in Terminal" => tools::open_in_terminal_label(cx),
-            name => name.to_owned(),
+        match self.id {
+            "open-in-editor" => tools::open_in_editor_label(cx),
+            "open-in-terminal" => tools::open_in_terminal_label(cx),
+            _ => (self.label)(),
         }
     }
 }
 
 pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
-        name: "Refresh",
+        id: "refresh",
+        label: jayjay_i18n::repo::refresh,
         keywords: &["reload", "repository", "working", "copy"],
         glyph_str: glyph::SYNC,
         dispatch: |ctx, cx| {
@@ -48,7 +50,8 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Bisect…",
+        id: "bisect",
+        label: jayjay_i18n::palette::bisect_ellipsis,
         keywords: &["bisect", "binary", "search", "bug", "regression"],
         glyph_str: glyph::ARROWS_LEFT_RIGHT,
         dispatch: |ctx, cx| {
@@ -56,31 +59,36 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Open Settings",
+        id: "open-settings",
+        label: jayjay_i18n::palette::open_settings,
         keywords: &["settings", "preferences", "config"],
         glyph_str: glyph::GEAR,
         dispatch: |_, cx| SettingsView::open(cx),
     },
     PaletteAction {
-        name: "Keyboard Shortcuts",
+        id: "keyboard-shortcuts",
+        label: jayjay_i18n::menu::keyboard_shortcuts,
         keywords: &["keyboard", "shortcut", "shortcuts", "keys", "help"],
         glyph_str: glyph::INFO,
         dispatch: |_, cx| KeyboardShortcutsView::open(cx),
     },
     PaletteAction {
-        name: "Open User Guide",
+        id: "open-user-guide",
+        label: jayjay_i18n::palette::open_user_guide,
         keywords: &["help", "guide", "manual", "docs", "documentation"],
         glyph_str: glyph::INFO,
         dispatch: |_, cx| crate::app::links::open_url(cx, GUIDE_URL),
     },
     PaletteAction {
-        name: "Send Feedback",
+        id: "send-feedback",
+        label: jayjay_i18n::menu::send_feedback,
         keywords: &["email", "contact", "support", "help"],
         glyph_str: glyph::EXTERNAL_LINK,
         dispatch: |_, cx| crate::app::feedback::open(cx),
     },
     PaletteAction {
-        name: "Open Bookmark Manager",
+        id: "open-bookmark-manager",
+        label: jayjay_i18n::palette::open_bookmark_manager,
         keywords: &["bookmark", "bookmarks", "manager", "branch", "branches"],
         glyph_str: glyph::GIT_BRANCH,
         dispatch: |ctx, cx| {
@@ -90,7 +98,8 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Repo Overview",
+        id: "repo-overview",
+        label: jayjay_i18n::menu::repo_overview,
         keywords: &[
             "overview",
             "lanes",
@@ -103,7 +112,8 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_overview),
     },
     PaletteAction {
-        name: "Repository List",
+        id: "repository-list",
+        label: jayjay_i18n::repo::repository_list,
         keywords: &[
             "repository",
             "repositories",
@@ -116,13 +126,15 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |_, cx| RepoListWindow::open(cx),
     },
     PaletteAction {
-        name: "New Workspace",
+        id: "new-workspace",
+        label: jayjay_i18n::repo::new_workspace,
         keywords: &["workspace", "workspaces", "add", "create", "sibling"],
         glyph_str: glyph::PLUS,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_create_workspace),
     },
     PaletteAction {
-        name: "New Workspace from Pull Request",
+        id: "new-workspace-from-pull-request",
+        label: jayjay_i18n::repo::new_workspace_from_pull_request,
         keywords: &[
             "workspace",
             "pull",
@@ -136,13 +148,15 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_pr_import),
     },
     PaletteAction {
-        name: "Operation Log",
+        id: "operation-log",
+        label: jayjay_i18n::repo::operation_log,
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
         glyph_str: glyph::HISTORY,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_operation_log),
     },
     PaletteAction {
-        name: "Open in Terminal",
+        id: "open-in-terminal",
+        label: jayjay_i18n::palette::open_in_terminal,
         keywords: &["terminal", "shell", "open"],
         glyph_str: glyph::TERMINAL,
         dispatch: |ctx, cx| {
@@ -154,7 +168,8 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Open in Editor",
+        id: "open-in-editor",
+        label: jayjay_i18n::palette::open_in_editor,
         keywords: &["editor", "code", "open"],
         glyph_str: glyph::FILE_CODE,
         dispatch: |ctx, cx| {
@@ -166,61 +181,71 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Theme: System",
+        id: "theme-system",
+        label: jayjay_i18n::palette::theme_system,
         keywords: &["theme", "appearance", "system"],
         glyph_str: glyph::WHITESPACE,
         dispatch: |_, cx| set_appearance(cx, AppearanceMode::System),
     },
     PaletteAction {
-        name: "Theme: Light",
+        id: "theme-light",
+        label: jayjay_i18n::palette::theme_light,
         keywords: &["theme", "appearance", "light"],
         glyph_str: glyph::WHITESPACE,
         dispatch: |_, cx| set_appearance(cx, AppearanceMode::Light),
     },
     PaletteAction {
-        name: "Theme: Dark",
+        id: "theme-dark",
+        label: jayjay_i18n::palette::theme_dark,
         keywords: &["theme", "appearance", "dark"],
         glyph_str: glyph::WHITESPACE,
         dispatch: |_, cx| set_appearance(cx, AppearanceMode::Dark),
     },
     PaletteAction {
-        name: "Toggle Side-by-side Diff",
+        id: "toggle-side-by-side-diff",
+        label: jayjay_i18n::palette::toggle_side_by_side_diff,
         keywords: &["diff", "split", "side", "by", "unified"],
         glyph_str: glyph::COLUMNS,
         dispatch: |_, cx| config::update(cx, |c| c.diff.side_by_side ^= true),
     },
     PaletteAction {
-        name: "Toggle Ignore Whitespace",
+        id: "toggle-ignore-whitespace",
+        label: jayjay_i18n::palette::toggle_ignore_whitespace,
         keywords: &["whitespace", "diff", "ignore"],
         glyph_str: glyph::WHITESPACE,
         dispatch: |_, cx| config::update(cx, |c| c.diff.ignore_whitespace ^= true),
     },
     PaletteAction {
-        name: "Toggle Hide Git LFS-backed Files",
+        id: "toggle-hide-git-lfs-backed-files",
+        label: jayjay_i18n::palette::toggle_hide_git_lfs_backed_files,
         keywords: &["lfs", "large", "file", "diff", "hide"],
         glyph_str: glyph::DATABASE,
         dispatch: |_, cx| config::update(cx, |c| c.diff.hide_git_lfs ^= true),
     },
     PaletteAction {
-        name: "Toggle Tree File List",
+        id: "toggle-tree-file-list",
+        label: jayjay_i18n::palette::toggle_tree_file_list,
         keywords: &["tree", "file", "folder", "list"],
         glyph_str: glyph::FOLDER,
         dispatch: |_, cx| config::update(cx, |c| c.diff.tree_file_list ^= true),
     },
     PaletteAction {
-        name: "Toggle Auto-Expand Descriptions",
+        id: "toggle-auto-expand-descriptions",
+        label: jayjay_i18n::palette::toggle_auto_expand_descriptions,
         keywords: &["description", "commit", "message", "expand", "auto"],
         glyph_str: glyph::CARET_DOWN,
         dispatch: |_, cx| config::update(cx, |c| c.diff.auto_expand_description ^= true),
     },
     PaletteAction {
-        name: "Filter by Revset...",
+        id: "filter-by-revset",
+        label: jayjay_i18n::menu::filter_by_revset_ellipsis,
         keywords: &["revset", "filter", "query", "graph", "log"],
         glyph_str: glyph::FILTER,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::request_revset_edit),
     },
     PaletteAction {
-        name: "Hide / Show Sidebar",
+        id: "hide-show-sidebar",
+        label: jayjay_i18n::palette::hide_show_sidebar,
         keywords: &[
             "sidebar", "hide", "show", "panel", "history", "dag", "graph",
         ],
@@ -228,13 +253,15 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::toggle_sidebar),
     },
     PaletteAction {
-        name: "Git Pull (fetch + rebase)",
+        id: "git-pull-fetch-rebase",
+        label: jayjay_i18n::repo::git_pull_fetch_rebase,
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_fetch_origin),
     },
     PaletteAction {
-        name: "Rebase Working Copy onto Trunk",
+        id: "rebase-working-copy-onto-trunk",
+        label: jayjay_i18n::palette::rebase_working_copy_onto_trunk,
         keywords: &["rebase", "trunk", "main", "update", "working copy"],
         glyph_str: glyph::ARROW_UP,
         dispatch: |ctx, cx| {
@@ -247,7 +274,8 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "Parallelize Selected Changes",
+        id: "parallelize-selected-changes",
+        label: jayjay_i18n::palette::parallelize_selected_changes,
         keywords: &[
             "parallelize",
             "parallel",
@@ -260,25 +288,29 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::parallelize_selection),
     },
     PaletteAction {
-        name: "Run Formatters on Selected Changes (jj fix)",
+        id: "run-formatters-on-selected-changes-jj-fix",
+        label: jayjay_i18n::palette::run_formatters_on_selected_changes_jj,
         keywords: &["fix", "format", "formatter", "selection"],
         glyph_str: glyph::BRACES,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::fix_selection),
     },
     PaletteAction {
-        name: "Git Push",
+        id: "git-push",
+        label: jayjay_i18n::repo::git_push,
         keywords: &["git", "push", "sync"],
         glyph_str: glyph::ARROW_UP,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_push_default),
     },
     PaletteAction {
-        name: "Clean Up Stale Bookmarks",
+        id: "clean-up-stale-bookmarks",
+        label: jayjay_i18n::palette::clean_up_stale_bookmarks,
         keywords: &["bookmark", "bookmarks", "stale", "forget", "cleanup"],
         glyph_str: glyph::BOOKMARK,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::forget_stale_bookmarks),
     },
     PaletteAction {
-        name: "Show in File Manager",
+        id: "show-in-file-manager",
+        label: jayjay_i18n::palette::show_in_file_manager,
         keywords: &["finder", "file", "manager", "reveal", "folder"],
         glyph_str: glyph::FOLDER,
         dispatch: |ctx, cx| {
@@ -290,7 +322,8 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         },
     },
     PaletteAction {
-        name: "View Remote Repository",
+        id: "view-remote-repository",
+        label: jayjay_i18n::menu::view_remote_repository,
         keywords: &[
             "remote", "origin", "web", "browser", "github", "codeberg", "gitlab", "cursor",
         ],
@@ -298,25 +331,29 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_remote_repository),
     },
     PaletteAction {
-        name: "Zoom In",
+        id: "zoom-in",
+        label: jayjay_i18n::menu::zoom_in,
         keywords: &["zoom", "font", "size", "larger"],
         glyph_str: glyph::ZOOM_IN,
         dispatch: |_, cx| config::update(cx, |c| c.zoom(1.)),
     },
     PaletteAction {
-        name: "Zoom Out",
+        id: "zoom-out",
+        label: jayjay_i18n::menu::zoom_out,
         keywords: &["zoom", "font", "size", "smaller"],
         glyph_str: glyph::ZOOM_OUT,
         dispatch: |_, cx| config::update(cx, |c| c.zoom(-1.)),
     },
     PaletteAction {
-        name: "Reset Zoom",
+        id: "reset-zoom",
+        label: jayjay_i18n::menu::reset_zoom,
         keywords: &["zoom", "font", "size", "reset", "default"],
         glyph_str: glyph::A_LARGE_SMALL,
         dispatch: |_, cx| config::update(cx, |c| c.reset_zoom()),
     },
     PaletteAction {
-        name: "Expand All Unmodified Lines",
+        id: "expand-all-unmodified-lines",
+        label: jayjay_i18n::palette::expand_all_unmodified_lines,
         keywords: &[
             "context",
             "expand",
@@ -357,7 +394,7 @@ mod tests {
             cx.set_global(AppConfigStore::new(cfg));
             let action = ACTIONS
                 .iter()
-                .find(|action| action.name == "Open in Editor")
+                .find(|action| action.id == "open-in-editor")
                 .expect("open editor action");
 
             assert_eq!(action.display_name(cx), "Open in Zed");
@@ -368,13 +405,13 @@ mod tests {
     fn open_terminal_action_display_name_uses_configured_terminal(cx: &mut gpui::TestAppContext) {
         cx.update(|cx| {
             let (terminal, title) = jayjay_core::tools::TERMINAL_OPTIONS[1];
-            let label = format!("Open in {title}");
+            let label = jayjay_i18n::menu::open_in(title);
             let mut cfg = AppConfig::default();
             cfg.tools.terminal = terminal.to_owned();
             cx.set_global(AppConfigStore::new(cfg));
             let action = ACTIONS
                 .iter()
-                .find(|action| action.name == "Open in Terminal")
+                .find(|action| action.id == "open-in-terminal")
                 .expect("open terminal action");
 
             assert_eq!(action.display_name(cx), label);

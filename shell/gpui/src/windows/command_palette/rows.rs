@@ -70,7 +70,14 @@ pub(super) fn search_candidates(dynamic: &[DynamicRow]) -> Cow<'static, [String]
     let base = CANDIDATES.get_or_init(|| {
         let mut candidates: Vec<String> = ACTIONS
             .iter()
-            .map(|action| format!("{} {}", action.name, action.keywords.join(" ")))
+            .map(|action| {
+                format!(
+                    "{} {} {}",
+                    (action.label)(),
+                    action.id,
+                    action.keywords.join(" ")
+                )
+            })
             .collect();
         candidates.extend(help::topics().iter().map(HelpTopic::search_text));
         candidates
@@ -94,14 +101,14 @@ fn cancel_sync_rows(sync: &SyncActivity) -> Vec<DynamicRow> {
     let mut rows = Vec::new();
     if sync.is_fetching() {
         rows.push(row(
-            "Cancel Pull",
+            &jayjay_i18n::palette::cancel_pull(),
             "command-palette-cancel-pull",
             RepoWindow::cancel_pull,
         ));
     }
     if sync.is_pushing() {
         rows.push(row(
-            "Cancel Push",
+            &jayjay_i18n::palette::cancel_push(),
             "command-palette-cancel-push",
             RepoWindow::cancel_push,
         ));
@@ -110,7 +117,7 @@ fn cancel_sync_rows(sync: &SyncActivity) -> Vec<DynamicRow> {
 }
 
 fn switch_row(workspace: &WorkspaceInfo) -> DynamicRow {
-    let label = format!("Switch to {}", workspace.name);
+    let label = jayjay_i18n::palette::switch_to(&workspace.name);
     DynamicRow {
         search: format!("{label} switch workspace"),
         selector: format!("command-palette-workspace-{}", workspace.name),
@@ -123,7 +130,7 @@ fn switch_row(workspace: &WorkspaceInfo) -> DynamicRow {
 }
 
 fn forget_row(workspace: &WorkspaceInfo) -> DynamicRow {
-    let label = format!("Forget Workspace {}", workspace.name);
+    let label = jayjay_i18n::palette::forget_workspace_named(&workspace.name);
     DynamicRow {
         search: label.clone(),
         selector: format!("command-palette-forget-{}", workspace.name),
@@ -139,7 +146,7 @@ fn forget_row(workspace: &WorkspaceInfo) -> DynamicRow {
 }
 
 fn delete_row(workspace: &WorkspaceInfo) -> DynamicRow {
-    let label = format!("Forget & Delete Workspace {}", workspace.name);
+    let label = jayjay_i18n::palette::forget_delete_workspace_named(&workspace.name);
     DynamicRow {
         search: label.clone(),
         selector: format!("command-palette-delete-{}", workspace.name),
@@ -158,19 +165,19 @@ fn revset_rows() -> Vec<DynamicRow> {
         .map(|preset| {
             revset_row(
                 &preset.id,
-                format!("Show {}", preset.label),
+                jayjay_i18n::palette::show_filter(&preset.label),
                 preset.revset.clone(),
             )
         })
         .collect::<Vec<_>>();
     rows.push(revset_row(
         "mutable",
-        "Show Mutable".to_owned(),
+        jayjay_i18n::palette::show_mutable(),
         "mutable()".to_owned(),
     ));
     rows.push(revset_row(
         "reset",
-        "Reset Filter".to_owned(),
+        jayjay_i18n::palette::reset_filter(),
         default_revset_preset().revset,
     ));
     rows
@@ -190,33 +197,33 @@ fn change_rows(change: &ChangeInfo) -> Vec<DynamicRow> {
     let rev = change.selection_revision().to_owned();
     let short = change.change_id.prefix(ShortId::LABEL_CHARS);
     let mut rows = vec![change_row(
-        format!("New Child Change ({short})"),
+        jayjay_i18n::palette::new_child_change(&short),
         "command-palette-new-child",
         glyph::PLUS,
         ContextAction::NewChangeOnTop(rev.clone().into()),
     )];
     if !change.is_immutable {
         rows.push(change_row(
-            format!("Edit / Switch To ({short})"),
+            jayjay_i18n::palette::edit_switch_to(&short),
             "command-palette-edit-change",
             glyph::PENCIL,
             ContextAction::Change(Arc::new(ChangeAction::Edit { rev: rev.clone() })),
         ));
     }
     rows.push(change_row(
-        format!("Duplicate ({short})"),
+        jayjay_i18n::palette::duplicate_change(&short),
         "command-palette-duplicate-change",
         glyph::COPY,
         ContextAction::Change(Arc::new(ChangeAction::Duplicate { rev: rev.clone() })),
     ));
     rows.push(change_row(
-        format!("Revert Change ({short})"),
+        jayjay_i18n::palette::revert_change(&short),
         "command-palette-revert-change",
         glyph::ARROW_UTURN_BACK,
         ContextAction::Change(Arc::new(ChangeAction::Revert { rev: rev.clone() })),
     ));
     rows.push(change_row(
-        format!("Create Bookmark on {short}"),
+        jayjay_i18n::palette::create_bookmark_on(&short),
         "command-palette-create-bookmark",
         glyph::BOOKMARK,
         ContextAction::CreateBookmark(rev.into()),
