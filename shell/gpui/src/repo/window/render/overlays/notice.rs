@@ -60,9 +60,6 @@ pub(crate) fn toast_overlay(message: gpui::SharedString, t: &Theme) -> AnyElemen
         .px(px(24.))
         .child(
             div()
-                .flex()
-                .items_center()
-                .justify_center()
                 .max_w(px(520.))
                 .px(px(18.))
                 .py(px(10.))
