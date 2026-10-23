@@ -19,7 +19,7 @@ pub fn span_element(
     let color = theme.diff_syntax.color(span.token).unwrap_or(base_fg);
     let bg = word_bg(line_style, span.style, theme);
 
-    // Text shapers disagree on a tab's advance (DirectWrite gives it none); draw it as the cells the wrap geometry counts.
+    // DirectWrite gives a tab no advance.
     let text = span.text.replace('\t', TAB_SPACES);
     let parts = match find_query.filter(|q| !q.is_empty()) {
         Some(q) => split_query(&text, q),

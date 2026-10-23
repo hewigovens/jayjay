@@ -27,7 +27,7 @@ pub(crate) use diff_view::{
 };
 pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use file_column::{FileColumnState, file_column};
-pub(crate) use file_column::{FileTreeCache, file_row_height};
+pub(crate) use file_column::{FileTreeCache, file_row_height, middle_elide};
 pub(crate) use image_diff::{hunk_is_image, image_diff_view};
 pub(crate) use line_stats::line_stats;
 pub(crate) use read_only::read_only_diff;

@@ -11,7 +11,6 @@ pub(super) struct SpanChunk {
     pub(super) spans: Vec<DiffSpan>,
 }
 
-/// Shells draw a tab as these spaces, so a tab spans this many cells.
 pub const TAB_SPACES: &str = "    ";
 
 /// Display-cell width of a grapheme cluster; width-1 floor keeps control/zero-width
@@ -31,7 +30,7 @@ fn text_cells(text: &str) -> usize {
     text.graphemes(true).map(grapheme_cells).sum()
 }
 
-/// ASCII graphemes are single bytes of one cell each, except CRLF, which is one cluster, and tab.
+/// ASCII graphemes are one byte and one cell each, except CRLF and tab.
 fn is_single_cell_ascii(text: &str) -> bool {
     text.is_ascii() && !text.contains("\r\n") && !text.contains('\t')
 }
