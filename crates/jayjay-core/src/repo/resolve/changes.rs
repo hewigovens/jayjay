@@ -79,6 +79,7 @@ impl Repo {
             description: commit.description().to_owned(),
             author: commit_author(commit.author()),
             co_authors: co_authors(commit),
+            committed_at_millis: commit_author(commit.committer()).timestamp_millis,
             parents: commit.parent_ids().iter().map(|id| id.hex()).collect(),
             bookmarks,
             tags,

@@ -91,7 +91,10 @@ impl RepoWindow {
     fn apply_typed_revset(&mut self, text: &str, cx: &mut Context<Self>) -> Result<(), String> {
         let (revset, repo) = {
             let vm = self.vm.read(cx);
-            (typed_revset(text, &vm.graph.bookmarks), vm.repo.clone())
+            (
+                typed_revset(text, &vm.graph.bookmarks, &vm.default_revset),
+                vm.repo.clone(),
+            )
         };
         if revset == text
             && let Some(repo) = repo
@@ -291,7 +294,8 @@ impl RepoWindow {
         self.focus_handle.focus(window, cx);
         self.close_revset_editor(cx);
         self.close_bookmark_picker(cx);
-        self.revset_popup = Some(RevsetPopupState::new(query, error));
+        let default_revset = self.vm.read(cx).default_revset.clone();
+        self.revset_popup = Some(RevsetPopupState::new(query, error, default_revset));
         LineInput::show_for_owner(self, cx, Self::revset_popup_input);
         cx.notify();
     }

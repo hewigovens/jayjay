@@ -3,8 +3,8 @@ use gpui::{
     ParentElement, Pixels, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{
-    RevsetCompletion, RevsetFilterState, RevsetSuggestion, RevsetSuggestionKind,
-    default_revset_preset, revset_presets,
+    RevsetCompletion, RevsetFilterState, RevsetPreset, RevsetSuggestion, RevsetSuggestionKind,
+    revset_presets,
 };
 
 use super::super::RepoWindow;
@@ -20,15 +20,17 @@ const REVSET_DOCS_URL: &str = "https://jj-vcs.github.io/jj/latest/revsets/";
 pub(crate) struct RevsetPopupState {
     pub(super) query: PickerQuery,
     pub(super) error: Option<String>,
+    pub(super) default_revset: RevsetPreset,
 }
 
 impl RevsetPopupState {
-    pub(super) fn new(query: String, error: Option<String>) -> Self {
+    pub(super) fn new(query: String, error: Option<String>, default_revset: RevsetPreset) -> Self {
         let mut picker_query = PickerQuery::new();
         picker_query.input.set_text(query);
         Self {
             query: picker_query,
             error,
+            default_revset,
         }
     }
 }
@@ -156,7 +158,7 @@ fn panel(
                 .text_color(rgb(t.tag_removed_fg))
                 .child(SharedString::from(error))
         }))
-        .child(chips(&filter.revset, t, view))
+        .child(chips(&state.default_revset, &filter.revset, t, view))
         .child(
             div()
                 .id("revset-popup-rows")
@@ -205,8 +207,13 @@ fn field(state: &RevsetPopupState, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn chips(current: &str, t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {
-    let presets = std::iter::once(default_revset_preset()).chain(revset_presets().iter().cloned());
+fn chips(
+    default_revset: &RevsetPreset,
+    current: &str,
+    t: &Theme,
+    view: &Entity<RepoWindow>,
+) -> AnyElement {
+    let presets = std::iter::once(default_revset.clone()).chain(revset_presets().iter().cloned());
     div()
         .flex()
         .flex_row()

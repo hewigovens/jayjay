@@ -40,6 +40,7 @@ pub struct ChangeInfo {
     pub description: String,
     pub author: core::CommitAuthor,
     pub co_authors: Vec<core::CommitAuthor>,
+    pub committed_at_millis: i64,
     pub parents: Vec<String>,
     pub bookmarks: Vec<String>,
     pub tags: Vec<String>,

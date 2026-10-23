@@ -7,8 +7,8 @@ use crate::diff::{DetailMode, DiffViewMode};
 use gpui::{AppContext, Context, SharedString};
 use jayjay_core::dag::{DagLayout, OrderedSelection};
 use jayjay_core::{
-    BookmarkInfo, ChangeInfo, DEFAULT_REVSET_DEPTH, GraphEntry, Repo, RevsetFilterState,
-    RevsetVocabulary, TagInfo, WorkspaceInfo, build_default_revset, default_revset_depth,
+    BookmarkInfo, ChangeInfo, GraphEntry, Repo, RevsetFilterState, RevsetPreset, RevsetVocabulary,
+    TagInfo, WorkspaceInfo, default_revset_depth, default_revset_preset,
 };
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -18,6 +18,7 @@ use std::sync::Arc;
 struct OpenedRepo {
     repo: Arc<Repo>,
     repo_root_path: String,
+    default_revset: RevsetPreset,
     entries: Vec<GraphEntry>,
     bookmarks: Vec<BookmarkInfo>,
     tags: Vec<TagInfo>,
@@ -30,9 +31,8 @@ struct OpenedRepo {
 impl RepoViewModel {
     pub fn new(path: PathBuf) -> Self {
         let repo_path: SharedString = path.display().to_string().into();
-        let revset = build_default_revset(DEFAULT_REVSET_DEPTH);
-        match Self::open_blocking(path, &revset) {
-            Ok(loaded) => Self::ready(repo_path, RevsetFilterState::new(&revset), loaded),
+        match Self::open_blocking(path) {
+            Ok(loaded) => Self::ready(repo_path, loaded),
             Err(e) => Self::error(repo_path, format!("{e}")),
         }
     }
@@ -44,14 +44,12 @@ impl RepoViewModel {
     /// Keeps window-open off the UI thread, since open/revset eval is slow on large checkouts.
     pub fn open_async(&mut self, cx: &mut Context<Self>) {
         let path = PathBuf::from(self.repo_path.as_ref());
-        let revset = self.revset().to_owned();
-        let ready_revset = self.revset_filter.clone();
         self.begin_refreshing(cx);
         Self::background_update(
             cx,
             async move {
                 let started = std::time::Instant::now();
-                let opened = Self::open_blocking(path, &revset);
+                let opened = Self::open_blocking(path);
                 match &opened {
                     Ok(loaded) => log::info!(
                         "repo opened in {}ms with {} changes",
@@ -66,7 +64,7 @@ impl RepoViewModel {
                 vm.finish_repo_task(cx);
                 match opened {
                     Ok(loaded) => {
-                        *vm = Self::ready(vm.repo_path.clone(), ready_revset, loaded);
+                        *vm = Self::ready(vm.repo_path.clone(), loaded);
                         vm.finish_open(cx);
                     }
                     Err(e) => vm.present_error(e),
@@ -81,13 +79,10 @@ impl RepoViewModel {
         cx: &mut gpui::AsyncApp,
     ) -> jayjay_core::JayResult<gpui::Entity<Self>> {
         let repo_path: SharedString = path.display().to_string().into();
-        let revset = build_default_revset(DEFAULT_REVSET_DEPTH);
-        let loaded = {
-            let revset = revset.clone();
-            cx.background_spawn(async move { Self::open_blocking(path, &revset) })
-                .await?
-        };
-        Ok(cx.new(|_| Self::ready(repo_path, RevsetFilterState::new(&revset), loaded)))
+        let loaded = cx
+            .background_spawn(async move { Self::open_blocking(path) })
+            .await?;
+        Ok(cx.new(|_| Self::ready(repo_path, loaded)))
     }
 
     pub(crate) fn finish_open(&mut self, cx: &mut Context<Self>) {
@@ -99,11 +94,12 @@ impl RepoViewModel {
         self.boot(cx);
     }
 
-    fn open_blocking(path: PathBuf, revset: &str) -> jayjay_core::JayResult<OpenedRepo> {
+    fn open_blocking(path: PathBuf) -> jayjay_core::JayResult<OpenedRepo> {
         let repo_root_path = jayjay_core::workspace_primary_root(&path.to_string_lossy())
             .unwrap_or_else(|| path.to_string_lossy().into_owned());
         let repo = Repo::open(&path)?;
-        let entries = repo.log_graph(revset)?;
+        let default_revset = repo.default_revset_preset();
+        let entries = repo.log_graph(&default_revset.revset)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
         let tags = repo.list_tags().unwrap_or_default();
         let vocabulary = repo.revset_vocabulary(&bookmarks);
@@ -113,6 +109,7 @@ impl RepoViewModel {
         Ok(OpenedRepo {
             repo: Arc::new(repo),
             repo_root_path,
+            default_revset,
             entries,
             bookmarks,
             tags,
@@ -123,14 +120,11 @@ impl RepoViewModel {
         })
     }
 
-    fn ready(
-        repo_path: SharedString,
-        revset_filter: RevsetFilterState,
-        loaded: OpenedRepo,
-    ) -> Self {
+    fn ready(repo_path: SharedString, loaded: OpenedRepo) -> Self {
         let OpenedRepo {
             repo,
             repo_root_path,
+            default_revset,
             entries,
             bookmarks,
             tags,
@@ -139,6 +133,7 @@ impl RepoViewModel {
             pr_host_name,
             fix_unavailable_reason,
         } = loaded;
+        let revset_filter = RevsetFilterState::new(&default_revset.revset);
         let selected = entries
             .iter()
             .position(|e| e.change.is_working_copy)
@@ -172,6 +167,7 @@ impl RepoViewModel {
             can_load_more: default_revset_depth(&revset_filter.revset)
                 .is_some_and(|depth| changes.len() >= depth as usize),
             revset_filter,
+            default_revset,
             vocabulary,
             detail_mode: DetailMode::Diff,
             annotate_lines: None,
@@ -219,7 +215,8 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
-            revset_filter: RevsetFilterState::new(&build_default_revset(DEFAULT_REVSET_DEPTH)),
+            revset_filter: RevsetFilterState::new(&default_revset_preset().revset),
+            default_revset: default_revset_preset(),
             can_load_more: false,
             vocabulary: RevsetVocabulary::default(),
             detail_mode: DetailMode::Diff,

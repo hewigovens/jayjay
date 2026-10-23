@@ -47,7 +47,7 @@ struct RevsetPanelContent: View {
     }
 
     private var presets: [RevsetPreset] {
-        [defaultRevsetPreset()] + RevsetFilterPresets.all
+        [actions.defaultRevsetPreset] + RevsetFilterPresets.all
     }
 
     private var rows: [RevsetSuggestion] {

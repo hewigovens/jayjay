@@ -6,7 +6,7 @@ use jayjay_core::compare::CompareState;
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::ConflictLineKind;
 use jayjay_core::{
-    AnnotationLine, ChangeInfo, DiffHunk, DiffStats, PrInfo, Repo, RevsetFilterState,
+    AnnotationLine, ChangeInfo, DiffHunk, DiffStats, PrInfo, Repo, RevsetFilterState, RevsetPreset,
     RevsetVocabulary,
 };
 
@@ -36,6 +36,7 @@ pub struct RepoViewModel {
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
     pub revset_filter: RevsetFilterState,
+    pub(crate) default_revset: RevsetPreset,
     pub can_load_more: bool,
     /// Loaded with the graph, not on each keystroke.
     pub(crate) vocabulary: RevsetVocabulary,

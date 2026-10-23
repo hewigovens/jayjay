@@ -30,6 +30,7 @@ impl CommandPalette {
                     vm.graph.workspaces.as_ref(),
                     vm.selected_change(),
                     &window.sync_activity,
+                    &vm.default_revset.revset,
                 )
             })
             .unwrap_or_default();
