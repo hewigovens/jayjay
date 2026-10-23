@@ -61,7 +61,7 @@ fn unknown_or_wrong_side_diff_palette_id_falls_back_to_side_default() {
 }
 
 #[test]
-fn catalog_diff_palettes_have_unique_ids_and_meet_contrast_thresholds() {
+fn catalog_diff_palettes_have_unique_ids_names_and_meet_contrast_thresholds() {
     let palettes = diff_palettes();
     let mut ids = std::collections::HashSet::new();
     let mut failures = Vec::new();
@@ -69,6 +69,11 @@ fn catalog_diff_palettes_have_unique_ids_and_meet_contrast_thresholds() {
         assert!(
             ids.insert(palette.id.as_str()),
             "duplicate id: {}",
+            palette.id
+        );
+        assert_ne!(
+            palette.name, palette.id,
+            "no catalog name for {}",
             palette.id
         );
         let c = &palette.colors;

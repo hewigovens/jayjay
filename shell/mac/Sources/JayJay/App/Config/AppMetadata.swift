@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 import JayJayDiffUI
 
 enum AppWindows {
@@ -20,7 +21,6 @@ enum URLScheme {
 
 enum AppMetadata {
     static let appName = "JayJay"
-    static let tagline = "A native GUI for Jujutsu"
     static let sponsorURL = URL(string: "https://github.com/sponsors/hewigovens")!
     static let githubURL = URL(string: "https://github.com/hewigovens/jayjay")!
     static let jjDocsURL = URL(string: "https://jj-vcs.github.io/jj/latest/")!
@@ -34,12 +34,8 @@ enum AppMetadata {
         Bundle.main.object(forInfoDictionaryKey: "CFBundleVersion") as? String ?? "1"
     }
 
-    static var versionLabel: String {
-        "Version \(shortVersion)"
-    }
-
     static var detailedVersionLabel: String {
-        "Version \(shortVersion) • Build \(buildNumber)"
+        Localized.Settings.versionBuild(version: shortVersion, build: buildNumber)
     }
 
     static var compactVersionLabel: String {

@@ -245,7 +245,7 @@ fn copy_feedback_selector(id: &str, copied: bool) -> String {
 
 pub(super) fn toggle_field(
     glyph_str: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     active: bool,
     mutate: fn(&mut crate::app::config::AppConfig),
     id: &'static str,

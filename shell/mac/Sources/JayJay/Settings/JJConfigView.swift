@@ -9,17 +9,17 @@ struct JJConfigView: View {
     @State private var isEditingIdentity = false
 
     var body: some View {
-        Section("Identity") {
+        Section(Localized.Settings.identity) {
             HStack {
                 if let identity {
                     Text(identity.label)
                         .textSelection(.enabled)
                 } else {
-                    Text("Not set up")
+                    Text(Localized.Settings.identityNotSetUp)
                         .foregroundStyle(.secondary)
                 }
                 Spacer()
-                Button(identity == nil ? "Set Up…" : "Edit…") { isEditingIdentity = true }
+                Button(identity == nil ? Localized.Common.setUpEllipsis : Localized.Common.editEllipsis) { isEditingIdentity = true }
                     .accessibilityIdentifier(AID.Settings.identitySetUp)
             }
         }
@@ -31,7 +31,7 @@ struct JJConfigView: View {
             if let snapshot = config.value {
                 switch snapshot {
                     case .missing:
-                        emptyState("Config not found")
+                        emptyState(Localized.Settings.configNotFound)
                     case let .failed(path, message):
                         if !path.isEmpty {
                             Section {
@@ -53,7 +53,7 @@ struct JJConfigView: View {
                         }
                 }
             } else {
-                LoadingStatus(label: "Loading jj config…")
+                LoadingStatus(label: Localized.Settings.loadingConfig)
                     .frame(maxWidth: .infinity, minHeight: 80)
             }
         }
@@ -77,7 +77,7 @@ struct JJConfigView: View {
                 .textSelection(.enabled)
                 .accessibilityIdentifier(AID.Settings.jjConfigPath)
             Spacer()
-            Button("Open") {
+            Button(Localized.Common.open) {
                 if !settings.openInEditor(absolutePath: path) {
                     NSWorkspace.shared.open(URL(fileURLWithPath: path))
                 }

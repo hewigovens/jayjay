@@ -25,7 +25,7 @@ struct DiffPaletteSection: View {
             }
         } label: {
             SettingsLabel(
-                isDark ? "Dark theme" : "Light theme",
+                isDark ? Localized.Settings.darkTheme : Localized.Settings.lightTheme,
                 icon: isDark ? "moon" : "sun.max"
             )
         }
@@ -33,24 +33,24 @@ struct DiffPaletteSection: View {
     }
 
     var body: some View {
-        Section("Colors") {
+        Section(Localized.Settings.colors) {
             palettePicker(for: .light)
             palettePicker(for: .dark)
             Toggle(isOn: Binding(
                 get: { settings.effectiveTintWindowWithWallpaper },
                 set: { settings.tintWindowWithWallpaper = $0 }
             )) {
-                SettingsLabel("Tint window background with wallpaper color", icon: "rectangle.fill")
+                SettingsLabel(Localized.Settings.wallpaperTint, icon: "rectangle.fill")
                 Text(
                     settings.usesDefaultDarkDiffPalette
-                        ? "Allow macOS wallpaper tinting in dark mode. Turn off for a flat, neutral background."
-                        : "Wallpaper tinting is available with the Default Dark theme."
+                        ? Localized.Settings.wallpaperTintDetail
+                        : Localized.Settings.wallpaperTintUnavailable(theme: diffPalette(id: defaultDiffPaletteId(isDark: true), isDark: true).name)
                 )
             }
             .disabled(!settings.usesDefaultDarkDiffPalette)
         }
 
-        Section("Preview") {
+        Section(Localized.Common.preview) {
             SettingsPreview(scheme: previewScheme)
         }
     }

@@ -11,7 +11,7 @@ struct SettingsCLISections: View {
 
     var body: some View {
         Group {
-            Section("Version control") {
+            Section(Localized.Settings.versionControl) {
                 HStack {
                     SettingsLabel("jayjay", icon: "bird")
                     Spacer()
@@ -20,7 +20,7 @@ struct SettingsCLISections: View {
                         .foregroundStyle(.secondary)
                         .textSelection(.enabled)
                     if cliInstalled {
-                        Button("Uninstall") {
+                        Button(Localized.Common.uninstall) {
                             try? CLIInstaller.uninstall()
                             cliInstalled = CLIInstaller.isInstalled
                         }
@@ -28,7 +28,7 @@ struct SettingsCLISections: View {
                         Image(systemName: "checkmark.circle.fill")
                             .foregroundStyle(.green)
                     } else {
-                        Button("Install") {
+                        Button(Localized.Common.install) {
                             do {
                                 try CLIInstaller.install()
                                 cliError = nil
@@ -45,22 +45,22 @@ struct SettingsCLISections: View {
                         .foregroundStyle(.red)
                 }
                 HStack {
-                    SettingsLabel("jj tool configuration", icon: "doc.on.doc")
+                    SettingsLabel(Localized.Settings.jjToolConfig, icon: "doc.on.doc")
                     Spacer()
-                    Text("diff, edit & merge")
+                    Text(Localized.Settings.jjToolConfigDetail)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                     CopyIconButton(
                         value: jjToolConfig(),
-                        help: "Copy jj tool configuration",
-                        label: "Copy Config"
+                        help: Localized.Settings.copyJjToolConfig,
+                        label: Localized.Settings.copyConfig
                     )
                     .accessibilityIdentifier(AID.Settings.copyJJToolConfig)
                 }
                 detectedCliRow("jj", icon: "arrow.triangle.branch", status: diagnostics.value?["jj"])
             }
 
-            Section("Forges") {
+            Section(Localized.Settings.forges) {
                 ForEach(tokenHosts(), id: \.self) { host in
                     forgeLoginRow(host)
                 }
@@ -113,14 +113,14 @@ struct SettingsCLISections: View {
                         .font(.system(size: 11, design: .monospaced))
                         .foregroundStyle(.secondary)
                 } else {
-                    Text("Not signed in")
+                    Text(Localized.Settings.notSignedIn)
                         .font(.system(size: 11))
                         .foregroundStyle(.secondary)
                 }
                 if login.signedIn {
-                    Button("Sign Out") { signOut(host) }
+                    Button(Localized.Common.signOut) { signOut(host) }
                 } else if login.canSignIn {
-                    Button("Sign In…") {
+                    Button(Localized.Common.signInEllipsis) {
                         signOutError = nil
                         signingIn = host
                     }
@@ -131,7 +131,7 @@ struct SettingsCLISections: View {
                         .foregroundStyle(.green)
                 }
             } else {
-                Text("Checking…")
+                Text(Localized.Common.checking)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }
@@ -152,7 +152,7 @@ struct SettingsCLISections: View {
                 Image(systemName: "checkmark.circle.fill")
                     .foregroundStyle(.green)
             } else {
-                Text(status == nil ? "Checking…" : "Not installed")
+                Text(status == nil ? Localized.Common.checking : Localized.Common.notInstalled)
                     .font(.system(size: 11))
                     .foregroundStyle(.secondary)
             }

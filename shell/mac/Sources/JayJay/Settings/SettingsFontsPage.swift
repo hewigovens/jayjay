@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct SettingsFontsPage: View {
@@ -11,25 +12,25 @@ struct SettingsFontsPage: View {
             Section {
                 FontFamilyPicker(
                     selection: $settings.interfaceFontFamily,
-                    systemTitle: "System",
-                    groups: [FontFamilyGroup(title: "My Fonts", families: userFamilies)]
+                    systemTitle: Localized.Settings.fontSystem,
+                    groups: [FontFamilyGroup(title: Localized.Settings.myFonts, families: userFamilies)]
                 )
                 FontSizeStepper(value: $settings.interfaceFontSize, id: AID.Settings.interfaceFontSize)
             } header: {
-                Text("Interface Font")
+                Text(Localized.Settings.interfaceFont)
             } footer: {
-                Text("Press \(AppShortcut.zoomIn.symbol) or \(AppShortcut.zoomOut.symbol) to change the interface and code font sizes, \(AppShortcut.resetZoom.symbol) to reset them.")
+                Text(Localized.Settings.fontZoomHint(zoomIn: AppShortcut.zoomIn.symbol, zoomOut: AppShortcut.zoomOut.symbol, resetZoom: AppShortcut.resetZoom.symbol))
             }
 
             Section {
                 FontFamilyPicker(
                     selection: $settings.codeFontFamily,
-                    systemTitle: "System Mono",
+                    systemTitle: Localized.Settings.fontSystemMono,
                     groups: fontGroups
                 )
                 FontSizeStepper(value: $settings.codeFontSize, id: AID.Settings.codeFontSize)
                 HStack {
-                    SettingsLabel("Line spacing", icon: "arrow.up.and.down.text.horizontal")
+                    SettingsLabel(Localized.Settings.lineSpacing, icon: "arrow.up.and.down.text.horizontal")
                     Spacer()
                     Text(settings.codeLineSpacing, format: .number.precision(.fractionLength(1)))
                         .foregroundStyle(.secondary)
@@ -41,19 +42,19 @@ struct SettingsFontsPage: View {
                 }
                 ligaturesToggle(isOn: $settings.codeLigatures)
             } header: {
-                Text("Code Font")
+                Text(Localized.Settings.codeFont)
             } footer: {
-                Text("Used for diffs, editors, revsets, and identifiers.")
+                Text(Localized.Settings.codeFontDetail)
                     .font(.caption)
                     .foregroundStyle(.secondary)
             }
 
-            Section("Preview") {
+            Section(Localized.Common.preview) {
                 SettingsPreview()
             }
 
             Section {
-                Button("Reset Fonts") { settings.resetFonts() }
+                Button(Localized.Settings.resetFonts) { settings.resetFonts() }
                     .accessibilityIdentifier(AID.Settings.resetFonts)
             }
         }
@@ -68,10 +69,10 @@ struct SettingsFontsPage: View {
         let family = settings.codeFontFamily
         let available = family.hasLigatures
         return Toggle(isOn: available ? isOn : .constant(false)) {
-            SettingsLabel("Ligatures", icon: "character")
+            SettingsLabel(Localized.Settings.ligatures, icon: "character")
         }
         .disabled(!available)
-        .help(available ? "" : "\(family == .system ? "The system font" : family.rawValue) has no ligatures.")
+        .help(available ? "" : Localized.Settings.ligaturesUnavailable(family: family == .system ? Localized.Settings.systemFont : family.rawValue))
         .accessibilityIdentifier(AID.Settings.codeLigatures)
     }
 }

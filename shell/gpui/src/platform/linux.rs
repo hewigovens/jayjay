@@ -6,7 +6,10 @@ use jayjay_core::tools::detach_stdio;
 #[cfg(target_os = "linux")]
 use crate::app::APP_ID;
 
-pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in File Manager";
+pub fn file_manager_name() -> String {
+    jayjay_i18n::common::file_manager()
+}
+
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
 pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 

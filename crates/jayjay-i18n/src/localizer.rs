@@ -50,25 +50,11 @@ impl Localizer {
             .iter()
             .map(|(locale, _)| locale.parse().unwrap())
             .collect();
-        let default: LanguageIdentifier = SOURCE_LOCALE.parse().unwrap();
-        let mut chosen: Vec<String> = negotiate_languages(
-            &requested,
-            &available,
-            Some(&default),
-            NegotiationStrategy::Filtering,
-        )
-        .into_iter()
-        .filter(|locale| {
-            requested
-                .iter()
-                .any(|language| same_script(language, locale))
-        })
-        .map(ToString::to_string)
-        .collect();
-        chosen.retain(|locale| locale != SOURCE_LOCALE);
-        chosen.push(SOURCE_LOCALE.to_owned());
         Self {
-            bundles: chosen.iter().map(|locale| bundle(locale, locale)).collect(),
+            bundles: chosen_locales(&requested, &available)
+                .iter()
+                .map(|locale| bundle(locale, locale))
+                .collect(),
         }
     }
 
@@ -84,6 +70,31 @@ impl Localizer {
     }
 }
 
+fn chosen_locales(
+    requested: &[LanguageIdentifier],
+    available: &[LanguageIdentifier],
+) -> Vec<String> {
+    let default: LanguageIdentifier = SOURCE_LOCALE.parse().unwrap();
+    let mut chosen: Vec<String> = negotiate_languages(
+        requested,
+        available,
+        Some(&default),
+        NegotiationStrategy::Filtering,
+    )
+    .into_iter()
+    .filter(|locale| {
+        requested
+            .iter()
+            .any(|language| same_script(language, locale))
+    })
+    .map(ToString::to_string)
+    .collect();
+    if !chosen.iter().any(|locale| locale == SOURCE_LOCALE) {
+        chosen.push(SOURCE_LOCALE.to_owned());
+    }
+    chosen
+}
+
 /// Plain negotiation would give `zh-TW` the Simplified catalog.
 fn same_script(requested: &LanguageIdentifier, available: &LanguageIdentifier) -> bool {
     let (mut requested, mut available) = (requested.clone(), available.clone());
@@ -96,6 +107,7 @@ fn bundle(locale: &str, catalog: &str) -> FluentBundle<FluentResource> {
     let mut bundle = FluentBundle::new_concurrent(vec![locale.parse().unwrap()]);
     bundle.set_use_isolating(false);
     bundle.set_formatter(Some(format_number));
+    bundle.add_builtins().unwrap();
     let (_, sources) = LOCALES.iter().find(|(name, _)| *name == catalog).unwrap();
     for source in *sources {
         let resource = FluentResource::try_new((*source).to_owned()).unwrap();
@@ -115,6 +127,7 @@ mod tests {
             "1 mark, 1,234 notes"
         );
         assert_eq!(crate::settings::review_summary(0, 2), "0 marks, 2 notes");
+        assert_eq!(crate::settings::font_points(14), "14 pt");
         crate::set_number_locale("de_DE.UTF-8");
         assert_eq!(
             crate::settings::review_summary(1, 1234),
@@ -141,5 +154,26 @@ mod tests {
             Localizer::negotiate(&["en-US"]).format("missing-id", None),
             "missing-id"
         );
+    }
+
+    #[test]
+    fn keeps_english_where_the_user_ranked_it() {
+        let ids = |tags: &[&str]| -> Vec<LanguageIdentifier> {
+            tags.iter().map(|tag| tag.parse().unwrap()).collect()
+        };
+        let available = ids(&["en-US", "fr", "zh-Hans"]);
+        assert_eq!(
+            chosen_locales(&ids(&["en-US", "fr-FR"]), &available),
+            ["en-US", "fr"]
+        );
+        assert_eq!(
+            chosen_locales(&ids(&["fr-FR", "en-US"]), &available),
+            ["fr", "en-US"]
+        );
+        assert_eq!(
+            chosen_locales(&ids(&["fr-FR"]), &available),
+            ["fr", "en-US"]
+        );
+        assert_eq!(chosen_locales(&ids(&["zh-TW"]), &available), ["en-US"]);
     }
 }

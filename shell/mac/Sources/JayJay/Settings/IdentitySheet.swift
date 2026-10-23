@@ -33,25 +33,25 @@ struct IdentitySheet: View {
 
     var body: some View {
         SheetContainer(
-            title: "Set Up Identity",
+            title: Localized.Settings.identityTitle,
             subtitle: path,
-            cancelLabel: "Cancel",
+            cancelLabel: Localized.Common.cancel,
             cancelDisabled: isSaving,
-            confirmLabel: "Save",
+            confirmLabel: Localized.Common.save,
             confirmDisabled: identity == nil || isSaving,
             confirmAccessibilityIdentifier: AID.Settings.identitySave,
             onCancel: onDismiss,
             onConfirm: save,
             content: {
-                Text("jj records this name and email on the changes you create.")
+                Text(Localized.Settings.identityDetail)
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
-                TextField("Name", text: $name, prompt: Text("Your Name"))
+                TextField(Localized.Settings.identityName, text: $name, prompt: Text(Localized.Settings.identityNamePlaceholder))
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier(AID.Settings.identityName)
                     .disabled(path == nil)
-                TextField("Email", text: $email, prompt: Text("you@example.com"))
+                TextField(Localized.Settings.identityEmail, text: $email, prompt: Text("you@example.com"))
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier(AID.Settings.identityEmail)
                     .disabled(path == nil)

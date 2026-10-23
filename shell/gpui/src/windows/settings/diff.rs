@@ -1,5 +1,6 @@
 use crate::app::config::AppConfig;
 use gpui::{AnyElement, IntoElement, ParentElement, Styled, div, px};
+use jayjay_i18n::settings;
 
 use super::shared::{form_section, toggle_field};
 use crate::app::theme::Theme;
@@ -13,11 +14,11 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         .gap(px(24.))
         .children([
             form_section(
-                "Display",
+                settings::display(),
                 [
                     toggle_field(
                         glyph::COLUMNS,
-                        "Side-by-side diff",
+                        settings::side_by_side(),
                         cfg.diff.side_by_side,
                         |c| c.diff.side_by_side ^= true,
                         "diff-sbs",
@@ -25,7 +26,7 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                     ),
                     toggle_field(
                         glyph::WHITESPACE,
-                        "Ignore whitespace changes",
+                        settings::ignore_whitespace(),
                         cfg.diff.ignore_whitespace,
                         |c| c.diff.ignore_whitespace ^= true,
                         "diff-ws",
@@ -33,7 +34,7 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                     ),
                     toggle_field(
                         glyph::LIST_TREE,
-                        "Tree view for files",
+                        settings::tree_view(),
                         cfg.diff.tree_file_list,
                         |c| c.diff.tree_file_list ^= true,
                         "diff-tree",
@@ -41,7 +42,7 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                     ),
                     toggle_field(
                         glyph::EYE_OFF,
-                        "Hide reviewed files",
+                        settings::hide_reviewed(),
                         cfg.diff.hide_reviewed_files,
                         |c| c.diff.hide_reviewed_files ^= true,
                         "diff-hide-reviewed",
@@ -49,7 +50,7 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                     ),
                     toggle_field(
                         glyph::UNFOLD_VERTICAL,
-                        "Auto-expand descriptions",
+                        settings::auto_expand(),
                         cfg.diff.auto_expand_description,
                         |c| c.diff.auto_expand_description ^= true,
                         "diff-auto-expand",
@@ -59,10 +60,10 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                 t,
             ),
             form_section(
-                "Large Files",
+                settings::large_files(),
                 [toggle_field(
                     glyph::DATABASE,
-                    "Hide Git LFS-backed files",
+                    settings::hide_lfs(),
                     cfg.diff.hide_git_lfs,
                     |c| c.diff.hide_git_lfs ^= true,
                     "diff-lfs",

@@ -114,7 +114,9 @@ lint:
   just lint-i18n
 
 # Files fully migrated to the jayjay-i18n catalog.
-i18n_migrated := "shell/gpui/src/windows/settings/section.rs shell/gpui/src/windows/settings/data_privacy.rs shell/mac/Sources/JayJay/Settings/SettingsPage.swift shell/mac/Sources/JayJay/Settings/SettingsDataPrivacyPage.swift"
+i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/mac/Sources/JayJay/Settings"
+# Proper names that stay English in every locale.
+i18n_names := "JayJay|Codex CLI|Claude CLI|Terminal|Frog"
 
 lint-i18n:
   #!/usr/bin/env bash
@@ -134,7 +136,7 @@ lint-i18n:
       fi
     done
   done
-  if grep -nE "\"[A-Z][A-Za-z]+([ ,.…?!&'][^\"]*)?\"" {{i18n_migrated}}; then
+  if grep -rnE --include='*.rs' --include='*.swift' --exclude='tests.rs' "\"[A-Z][A-Za-z]+([ ,.…?!&'][^\"]*)?\"" {{i18n_migrated}} | grep -vE "\"({{i18n_names}})\"|key_context\(|assert"; then
     echo "hardcoded user-facing text in a migrated file; add it to crates/jayjay-i18n/locales/en-US"
     status=1
   fi

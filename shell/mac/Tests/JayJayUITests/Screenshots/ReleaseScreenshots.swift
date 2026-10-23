@@ -212,7 +212,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         keyStroke(",", modifiers: [.command])
         selectSettingsPage("integrations", in: app)
         XCTAssertTrue(settingsWindow(in: app).buttons["Sign In…"].firstMatch.waitForExistence(timeout: 5), "Forge sign-in controls missing")
-        settingsWindow(in: app).staticTexts["Version control"].scroll(byDeltaX: 0, deltaY: -600)
+        settingsWindow(in: app).staticTexts["Version Control"].scroll(byDeltaX: 0, deltaY: -600)
         capture("settings-integrations", frame: settingsWindow(in: app).frame)
     }
 

@@ -6,12 +6,12 @@ use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
+use jayjay_i18n::settings;
 
 const APP_NAME: &str = "JayJay";
-const TAGLINE: &str = "A native GUI for Jujutsu";
 
 pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
-    let version = format!("Version {} (GPUI)", env!("CARGO_PKG_VERSION"));
+    let version = settings::version(concat!(env!("CARGO_PKG_VERSION"), " (GPUI)"));
 
     div()
         .debug_selector(|| "settings-about-section".to_owned())
@@ -31,7 +31,7 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
             div()
                 .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
-                .child(TAGLINE),
+                .child(settings::tagline()),
         )
         .child(
             div()
@@ -48,14 +48,14 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
                 .child(link_button(
                     "tb-sponsor",
                     glyph::SPARKLE,
-                    "Sponsor",
+                    settings::sponsor(),
                     SPONSOR_URL,
                     t,
                 ))
                 .child(link_button(
                     "tb-github",
                     glyph::MARK_GITHUB,
-                    "Star on GitHub",
+                    settings::star_on_github(),
                     REPOSITORY_URL,
                     t,
                 )),
@@ -65,7 +65,7 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
 fn link_button(
     id: &'static str,
     glyph_str: &'static str,
-    label: &'static str,
+    label: String,
     url: &'static str,
     t: &Theme,
 ) -> impl IntoElement {

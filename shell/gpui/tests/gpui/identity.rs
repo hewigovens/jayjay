@@ -53,11 +53,7 @@ fn set_up_in_settings_saves_the_identity_and_refreshes_open_repos(cx: &mut TestA
     let settings = window_of(&repo_cx.cx, |w| w.downcast::<SettingsView>().is_some())[0];
     let mut settings_cx = VisualTestContext::from_window(settings, &repo_cx.cx);
     settle_visual(&mut settings_cx);
-    assert!(
-        settings_cx
-            .debug_bounds("identity-status-Not set up")
-            .is_some()
-    );
+    assert!(settings_cx.debug_bounds("identity-status-unset").is_some());
 
     click(&mut settings_cx, "identity-set-up");
     click(&mut settings_cx, "identity-set-up");

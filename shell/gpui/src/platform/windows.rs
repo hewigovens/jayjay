@@ -1,6 +1,9 @@
 use std::path::Path;
 
-pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in File Explorer";
+pub fn file_manager_name() -> String {
+    "File Explorer".to_owned()
+}
+
 pub const CUSTOM_TERMINAL_LABEL: &str = "Command (accepts PowerShell arguments)";
 pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("WinGet", "winget install jj-vcs.jj");
 

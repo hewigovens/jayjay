@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct FontFamilyGroup: Identifiable {
@@ -26,9 +27,9 @@ struct FontFamilyPicker: View {
                 Text(selection.rawValue).tag(selection)
             }
         } label: {
-            SettingsLabel("Family", icon: "textformat")
+            SettingsLabel(Localized.Settings.fontFamily, icon: "textformat")
             if !selection.isInstalled {
-                Text("\(selection.rawValue) is not installed; using \(systemTitle).")
+                Text(Localized.Settings.fontNotInstalled(family: selection.rawValue, fallback: systemTitle))
             }
         }
     }
