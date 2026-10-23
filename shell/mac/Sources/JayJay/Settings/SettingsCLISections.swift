@@ -124,6 +124,7 @@ struct SettingsCLISections: View {
                         signOutError = nil
                         signingIn = host
                     }
+                    .accessibilityIdentifier(AID.Settings.forgeSignIn)
                 }
                 if login.source != nil {
                     Spacer().frame(width: 8)

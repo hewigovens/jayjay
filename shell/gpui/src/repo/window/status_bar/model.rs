@@ -19,7 +19,7 @@ pub(super) fn active_bookmark_sync_item_data(
             } else {
                 format!("{name} {badge}")
             };
-            return Some((text, jayjay_i18n::repo::compared_with(name, &target.remote)));
+            return Some((text, jayjay_i18n::repo::bookmark_vs_remote(name, &target.remote)));
         }
     }
     None

@@ -49,7 +49,7 @@ struct ReviewNotePopover: View {
                 Image(systemName: "text.bubble.fill")
                     .font(.system(size: 11))
                     .foregroundStyle(.orange)
-                Text(notes.count == 1 ? Localized.Diff.reviewNote : "\(notes.count) Review Notes")
+                Text(Localized.Diff.reviewNoteCount(count: notes.count))
                     .font(.system(size: 12, weight: .semibold))
                 Spacer(minLength: 0)
             }

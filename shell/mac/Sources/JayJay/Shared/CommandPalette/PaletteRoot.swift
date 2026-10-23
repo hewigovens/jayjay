@@ -30,7 +30,7 @@ struct PaletteRoot: View {
                 Image(systemName: isJJ ? "terminal" : "magnifyingglass")
                     .foregroundStyle(.secondary)
                     .frame(width: 16)
-                TextField("Search commands, type `jj status`, or use `!status`", text: $query)
+                TextField(Localized.Palette.searchCommandsTypeJjStatusOr, text: $query)
                     .textFieldStyle(.plain)
                     .font(.system(size: 14))
                     .focused($isSearchFocused)
@@ -162,9 +162,9 @@ struct PaletteRoot: View {
             Image(systemName: "questionmark.bubble")
                 .font(.system(size: 28))
                 .foregroundStyle(.secondary)
-            Text("No matching JayJay feature")
+            Text(Localized.Palette.noMatchingJayjayFeature)
                 .font(.system(size: 13, weight: .semibold))
-            Text("Open a prefilled issue if this is something JayJay should support.")
+            Text(Localized.Palette.openAPrefilledIssueIfThis)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -172,7 +172,7 @@ struct PaletteRoot: View {
             Button {
                 openFeatureRequest()
             } label: {
-                Label("Request Feature", systemImage: "exclamationmark.bubble")
+                Label(Localized.Palette.requestFeature, systemImage: "exclamationmark.bubble")
             }
             .controlSize(.small)
             Spacer()

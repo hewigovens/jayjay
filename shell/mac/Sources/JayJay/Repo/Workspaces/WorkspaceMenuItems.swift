@@ -9,6 +9,7 @@ struct WorkspaceMenuItems: View {
 
     var body: some View {
         Button(Localized.Menu.filterByThisWorkspace, action: onFilter)
+            .accessibilityIdentifier(AID.Picker.filterByWorkspace)
         Divider()
         if !workspace.isCurrent, workspace.isPathResolved {
             Button(Localized.Menu.openInNewWindow, action: onOpen)

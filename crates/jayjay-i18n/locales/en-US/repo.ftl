@@ -444,7 +444,6 @@ repo-forgot-workspace = Forgot workspace { $name }
 repo-deleted-workspace = Deleted workspace { $name }
 repo-pushed-bookmark = Pushed { $bookmark }
 repo-created-workspace = Created workspace { $name }
-repo-unresolved-count = { NUMBER($count) } unresolved
 repo-divergent-count = { NUMBER($count) } divergent
 repo-conflicted-count = { NUMBER($count) } conflicted
 repo-file-count =
@@ -465,7 +464,6 @@ repo-change-count =
 repo-changes-selected-count = { NUMBER($count) } Changes Selected
 repo-lines-selected = { NUMBER($selected) } / { NUMBER($total) } lines
 repo-deleted-on = deleted on { $remote }
-repo-compared-with = { $name } vs { $remote }
 repo-this-path = this path
 repo-minutes-ago =
     { $count ->
@@ -570,3 +568,13 @@ repo-bisect-first-bad =
 repo-bisect-none = (none)
 repo-bisect-working-copy-moved = The working copy moved away from the bisect candidate. Stop and start a new bisect.
 repo-empty-placeholder = (empty)
+repo-no-email-set = (no email set)
+repo-rebased-with-conflicts = { $message } Conflicts need resolution.
+repo-bookmark-vs-remote = { $name } vs { $remote }
+repo-lfs-hidden = { NUMBER($count) } LFS hidden
+repo-submodules-hidden =
+    { $count ->
+        [one] { $count } submodule hidden
+       *[other] { $count } submodules hidden
+    }
+repo-match-position = { NUMBER($current) } of { NUMBER($total) }

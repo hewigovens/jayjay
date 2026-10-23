@@ -35,7 +35,7 @@ extension PaletteRoot {
 
     var jjDiscovery: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Raw jj commands run in this repository. Use ↑/↓ for history.")
+            Text(Localized.Palette.rawJjCommandsRunInThisRepository)
                 .font(.system(size: 11))
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
@@ -45,7 +45,7 @@ extension PaletteRoot {
                 }
             }
             if !history.isEmpty {
-                Text("Recent")
+                Text(Localized.Repo.recent)
                     .font(.system(size: 11, weight: .medium))
                     .foregroundStyle(.secondary)
                 ForEach(history.prefix(5), id: \.self) { command in
@@ -90,7 +90,7 @@ extension PaletteRoot {
                 Text(succeeded ? "exit 0" : "exit \(result.exitCode)")
                     .font(.system(size: 10, design: .monospaced))
                     .foregroundStyle(.secondary)
-                Button("Copy Output") {
+                Button(Localized.Palette.copyOutput) {
                     NSPasteboard.general.clearContents()
                     NSPasteboard.general.setString(result.output, forType: .string)
                 }
@@ -117,7 +117,7 @@ extension PaletteRoot {
                     .foregroundStyle(.secondary)
                 Spacer()
                 if !jjCmd.isEmpty {
-                    Text("Enter ↵")
+                    Text(Localized.Palette.enterSentence)
                         .font(.system(size: 10))
                         .foregroundStyle(.tertiary)
                 }
@@ -131,7 +131,7 @@ extension PaletteRoot {
     func executeJJ() {
         guard !jjCmd.isEmpty else { return }
         guard parseJjCommandArgs(command: jjCmd) != nil else {
-            jjError = "Unclosed quote in jj command."
+            jjError = Localized.Palette.unclosedQuoteInJjCommand
             return
         }
         isRunning = true
@@ -147,7 +147,7 @@ extension PaletteRoot {
                     onJjCommandFinished(commandResult)
                 }
             } catch {
-                jjError = error is CancellationError ? "Repository operation was cancelled." : error.localizedDescription
+                jjError = error is CancellationError ? Localized.Palette.repositoryOperationWasCancelled : error.localizedDescription
             }
             isRunning = false
         }

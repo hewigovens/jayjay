@@ -24,7 +24,8 @@ extension NativeDiffView {
                 items.append(DiffGutterMenuItem(
                     title: Localized.Menu.addReviewNote,
                     enabled: true,
-                    action: { noteActions.addNote(anchor: anchor) }
+                    action: { noteActions.addNote(anchor: anchor) },
+                    identifier: "diff.addReviewNote"
                 ))
             }
             if let noteId = noteIds.last {

@@ -28,6 +28,7 @@ extension FileHistoryView {
                     comparison.pin(target)
                 }
             }
+            .accessibilityIdentifier(AID.FileHistory.pinBase)
             .disabled(comparison.target == nil)
             .help(Localized.Repo.pinTheSelectedRevisionAsThe)
             if comparison.isPinned {

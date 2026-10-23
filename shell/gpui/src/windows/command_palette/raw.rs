@@ -21,12 +21,14 @@ pub(super) fn command_view(
     let (cmd_text, hint, hint_color) = match output {
         None | Some(CommandOutput::Idle) => (
             pending_command.to_owned(),
-            SharedString::from("Enter"),
+            SharedString::from(jayjay_i18n::palette::enter()),
             t.fg_faint,
         ),
-        Some(CommandOutput::Running { display }) => {
-            (display.clone(), SharedString::from("Running..."), t.fg_dim)
-        }
+        Some(CommandOutput::Running { display }) => (
+            display.clone(),
+            SharedString::from(jayjay_i18n::palette::running_ellipsis()),
+            t.fg_dim,
+        ),
         Some(CommandOutput::Done {
             display, exit_code, ..
         }) => {
@@ -115,7 +117,7 @@ fn discovery(history: &[String], t: &Theme, cx: &mut Context<CommandPalette>) ->
         .py(px(10.))
         .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
-        .child("Raw jj commands run in this repository. Use Up/Down for history.")
+        .child(jayjay_i18n::palette::raw_jj_commands_run_in_this())
         .child(suggestion_buttons(t, cx));
 
     if !history.is_empty() {
@@ -123,7 +125,7 @@ fn discovery(history: &[String], t: &Theme, cx: &mut Context<CommandPalette>) ->
             div()
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
-                .child("Recent"),
+                .child(jayjay_i18n::repo::recent()),
         );
         for command in history.iter().take(5) {
             recent = recent.child(history_row(command, t, cx));
@@ -188,11 +190,15 @@ fn copy_output_button(
     t: &Theme,
     cx: &mut Context<CommandPalette>,
 ) -> impl IntoElement {
-    button("command-copy-output", "Copy Output", t, false).on_click(cx.listener(
-        move |_, _: &ClickEvent, _, cx| {
-            cx.write_to_clipboard(ClipboardItem::new_string(output.clone()));
-        },
-    ))
+    button(
+        "command-copy-output",
+        jayjay_i18n::palette::copy_output(),
+        t,
+        false,
+    )
+    .on_click(cx.listener(move |_, _: &ClickEvent, _, cx| {
+        cx.write_to_clipboard(ClipboardItem::new_string(output.clone()));
+    }))
 }
 
 fn output_pane(text: &str, t: &Theme) -> impl IntoElement {

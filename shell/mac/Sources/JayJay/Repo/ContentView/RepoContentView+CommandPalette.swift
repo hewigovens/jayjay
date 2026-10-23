@@ -26,70 +26,70 @@ extension RepoContentView {
     private var viewPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Refresh", icon: "arrow.triangle.2.circlepath", category: "View", shortcut: AppShortcut.refresh.symbol
+            title: Localized.Repo.refresh, icon: "arrow.triangle.2.circlepath", category: Localized.Menu.view, shortcut: AppShortcut.refresh.symbol
         ) {
             viewModel.refresh()
         })
         items.append(CommandPaletteItem(
-            title: "Bisect…",
+            title: Localized.Palette.bisectEllipsis,
             icon: "arrow.left.and.right",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["bisect", "binary", "search", "bug", "regression"]
         ) {
             modal = .bisect(good: "trunk()", bad: "")
         })
         items.append(CommandPaletteItem(
-            title: settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar",
+            title: settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar,
             icon: "sidebar.left",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["toggle", "sidebar", "dag", "history", "panel"],
             shortcut: AppShortcut.toggleSidebar.symbol
         ) { settings.sidebarHidden.toggle() })
         items.append(CommandPaletteItem(
-            title: "Toggle Side-by-Side Diff",
+            title: Localized.Palette.toggleSideBySideDiffTitle,
             icon: "rectangle.split.2x1",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["diff", "split", "side", "by", "unified"]
         ) { settings.sideBySideDiff.toggle() })
         items.append(CommandPaletteItem(
-            title: "Toggle Tree File List",
+            title: Localized.Palette.toggleTreeFileList,
             icon: "list.bullet.indent",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["tree", "file", "folder", "list"]
         ) { settings.treeFileList.toggle() })
         items.append(CommandPaletteItem(
-            title: "Toggle Auto-Expand Descriptions",
+            title: Localized.Palette.toggleAutoExpandDescriptions,
             icon: "arrow.up.and.line.horizontal.and.arrow.down",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["description", "commit", "message", "expand", "auto"]
         ) { settings.autoExpandDescription.toggle() })
         items.append(CommandPaletteItem(
-            title: "Expand All Unmodified Lines",
+            title: Localized.Palette.expandAllUnmodifiedLines,
             icon: "arrow.up.and.down.text.horizontal",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["context", "expand", "unmodified", "collapsed", "show", "diff"]
         ) { diffCommands.expandAllContext() })
         items.append(CommandPaletteItem(
-            title: "Toggle Ignore Whitespace",
+            title: Localized.Palette.toggleIgnoreWhitespace,
             icon: "text.alignleft",
-            category: "View",
+            category: Localized.Menu.view,
             keywords: ["whitespace", "diff", "ignore"]
         ) { settings.ignoreWhitespace.toggle() })
         items.append(CommandPaletteItem(
-            title: "Toggle Hide Git LFS-backed Files",
+            title: Localized.Palette.toggleHideGitLfsBackedFiles,
             icon: "externaldrive",
-            category: "View"
+            category: Localized.Menu.view
         ) { settings.hideGitLfsDiffs.toggle() })
 
         for (mode, label, icon) in [
-            (AppSettings.AppearanceMode.system, "System", "circle.lefthalf.filled"),
-            (.light, "Light", "sun.max"),
-            (.dark, "Dark", "moon")
+            (AppSettings.AppearanceMode.system, Localized.Settings.appearanceSystem, "circle.lefthalf.filled"),
+            (.light, Localized.Settings.appearanceLight, "sun.max"),
+            (.dark, Localized.Settings.appearanceDark, "moon")
         ] {
             items.append(CommandPaletteItem(
-                title: "Theme: \(label)",
+                title: Localized.Palette.theme(theme: label),
                 icon: icon,
-                category: "View",
+                category: Localized.Menu.view,
                 keywords: ["theme", "appearance", "mode", "color", "scheme"]
             ) { settings.appearanceMode = mode })
         }
@@ -98,20 +98,20 @@ extension RepoContentView {
 
     private var filterPaletteItems: [CommandPaletteItem] {
         var items = [CommandPaletteItem(
-            title: "Filter by Revset…",
+            title: Localized.Menu.filterByRevsetEllipsis,
             icon: "line.3.horizontal.decrease",
-            category: "Filter",
+            category: Localized.Repo.filter,
             keywords: ["revset", "filter", "query"]
         ) { revsetEditRequest += 1 }]
-        let presetFilters = RevsetFilterPresets.all.map { ("Show \($0.label)", $0.revset) }
+        let presetFilters = RevsetFilterPresets.all.map { (Localized.Palette.showFilter(filter: $0.label), $0.revset) }
         for (label, revset) in presetFilters + [
-            ("Show Mutable", "mutable()"),
-            ("Reset Filter", RepoViewModel.buildDefaultRevset())
+            (Localized.Palette.showMutable, "mutable()"),
+            (Localized.Palette.resetFilter, RepoViewModel.buildDefaultRevset())
         ] {
             items.append(CommandPaletteItem(
                 title: label,
                 icon: "line.3.horizontal.decrease.circle",
-                category: "Filter"
+                category: Localized.Repo.filter
             ) {
                 viewModel.applyFilter(revset)
             })
@@ -122,18 +122,18 @@ extension RepoContentView {
     private var gitPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items
-            .append(CommandPaletteItem(title: "Git Pull (fetch + rebase)", icon: "arrow.down.circle", category: "Git") {
+            .append(CommandPaletteItem(title: Localized.Repo.gitPullFetchRebase, icon: "arrow.down.circle", category: Localized.Palette.git) {
                 viewModel.gitFetch()
             })
         items.append(CommandPaletteItem(
-            title: "Rebase Working Copy onto Trunk",
+            title: Localized.Palette.rebaseWorkingCopyOntoTrunk,
             icon: "arrow.uturn.up",
-            category: "Git",
+            category: Localized.Palette.git,
             keywords: ["rebase", "trunk", "main", "update"]
         ) {
             viewModel.rebase(rev: "@", dest: "trunk()", mode: .branch)
         })
-        items.append(CommandPaletteItem(title: "Git Push", icon: "arrow.up.circle", category: "Git") {
+        items.append(CommandPaletteItem(title: Localized.Repo.gitPush, icon: "arrow.up.circle", category: Localized.Palette.git) {
             viewModel.gitPush(bookmark: "")
         })
         items.append(contentsOf: cancelSyncPaletteItems)
@@ -143,26 +143,26 @@ extension RepoContentView {
     private var repositoryPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Bookmark Manager",
+            title: Localized.Menu.bookmarkManager,
             icon: "bookmark",
-            category: "Repository",
+            category: Localized.Menu.repository,
             shortcut: AppShortcut.bookmarkManager.symbol
         ) { modal = .bookmarkManager })
         items.append(CommandPaletteItem(
-            title: "Repo Overview",
+            title: Localized.Menu.repoOverview,
             icon: "rectangle.split.3x1",
-            category: "Repository",
+            category: Localized.Menu.repository,
             shortcut: AppShortcut.repoOverview.symbol
         ) { windowManager.openOverview(for: viewModel.repoPath) })
         items.append(CommandPaletteItem(
-            title: "Clean Up Stale Bookmarks",
+            title: Localized.Palette.cleanUpStaleBookmarks,
             icon: "bookmark.slash",
-            category: "Repository"
+            category: Localized.Menu.repository
         ) { viewModel.forgetStaleBookmarks() })
         items.append(CommandPaletteItem(
-            title: "Repository List",
+            title: Localized.Repo.repositoryList,
             icon: "list.bullet.rectangle",
-            category: "Repository"
+            category: Localized.Menu.repository
         ) { windowManager.showRepoList() })
         return items
     }
@@ -170,36 +170,36 @@ extension RepoContentView {
     private var workspacePaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "New Workspace",
+            title: Localized.Repo.newWorkspace,
             icon: "folder.badge.plus",
-            category: "Workspace"
+            category: Localized.Repo.workspace
         ) { modal = .workspaceCreate })
         items.append(CommandPaletteItem(
             title: "\(PullRequestImportSheet.title)…",
             icon: "arrow.triangle.pull",
-            category: "Workspace",
+            category: Localized.Repo.workspace,
             keywords: ["pr", "github", "import", "checkout", "merge request"]
         ) { modal = .pullRequestImport })
         for workspace in viewModel.workspaces where !workspace.isCurrent {
             if workspace.isPathResolved {
                 items.append(CommandPaletteItem(
-                    title: "Switch to \(workspace.name)",
+                    title: Localized.Palette.switchTo(name: workspace.name),
                     icon: "arrow.right.square",
-                    category: "Workspace"
+                    category: Localized.Repo.workspace
                 ) {
                     windowManager.switchRepo(from: viewModel, to: workspace.path, changePath: onSwitchWorkspace)
                 })
             }
             items.append(CommandPaletteItem(
-                title: "Forget Workspace \(workspace.name)",
+                title: Localized.Palette.forgetWorkspaceNamed(name: workspace.name),
                 icon: "folder.badge.minus",
-                category: "Workspace"
+                category: Localized.Repo.workspace
             ) { removeWorkspace(workspace, deleteFromDisk: false) })
             if workspace.isPathResolved {
                 items.append(CommandPaletteItem(
-                    title: "Forget & Delete Workspace \(workspace.name)",
+                    title: Localized.Palette.forgetDeleteWorkspaceNamed(name: workspace.name),
                     icon: "trash",
-                    category: "Workspace"
+                    category: Localized.Repo.workspace
                 ) { requestWorkspaceDelete(workspace) })
             }
         }
@@ -209,21 +209,21 @@ extension RepoContentView {
     private var zoomPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Zoom In",
+            title: Localized.Menu.zoomIn,
             icon: "plus.magnifyingglass",
-            category: "View",
+            category: Localized.Menu.view,
             shortcut: AppShortcut.zoomIn.symbol
         ) { settings.zoomIn() })
         items.append(CommandPaletteItem(
-            title: "Zoom Out",
+            title: Localized.Menu.zoomOut,
             icon: "minus.magnifyingglass",
-            category: "View",
+            category: Localized.Menu.view,
             shortcut: AppShortcut.zoomOut.symbol
         ) { settings.zoomOut() })
         items.append(CommandPaletteItem(
-            title: "Reset Zoom",
+            title: Localized.Menu.resetZoom,
             icon: "1.magnifyingglass",
-            category: "View",
+            category: Localized.Menu.view,
             shortcut: AppShortcut.resetZoom.symbol
         ) { settings.resetZoom() })
         return items
@@ -232,26 +232,26 @@ extension RepoContentView {
     private var toolsPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: Localized.Common.showIn(app: "Finder"), icon: "folder", category: "Tools", shortcut: AppShortcut.showInFinder.symbol
+            title: Localized.Common.showIn(app: "Finder"), icon: "folder", category: Localized.Palette.tools, shortcut: AppShortcut.showInFinder.symbol
         ) {
             RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
         })
         items.append(CommandPaletteItem(
-            title: "View Remote Repository",
+            title: Localized.Menu.viewRemoteRepository,
             icon: "globe",
-            category: "Tools"
+            category: Localized.Palette.tools
         ) {
             RepositoryCommands.openRemoteRepository(repo: viewModel.repo)
         })
         items.append(CommandPaletteItem(
-            title: "Open in \(settings.externalEditor.title)",
+            title: Localized.Menu.openIn(app: settings.externalEditor.title),
             icon: "curlybraces",
-            category: "Tools"
+            category: Localized.Palette.tools
         ) { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
         items.append(CommandPaletteItem(
-            title: "Open in \(settings.terminal.title)",
+            title: Localized.Menu.openIn(app: settings.terminal.title),
             icon: "terminal",
-            category: "Tools"
+            category: Localized.Palette.tools
         ) { settings.openInTerminal(at: viewModel.repoPath) })
         return items
     }
@@ -259,13 +259,13 @@ extension RepoContentView {
     private var appPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: "Undo Last Operation",
+            title: Localized.Menu.undoLastOperation,
             icon: "arrow.uturn.backward.circle",
-            category: "Repository",
+            category: Localized.Menu.repository,
             shortcut: AppShortcut.undoLastOperation.symbol
         ) { showUndo() })
         items.append(CommandPaletteItem(
-            title: "Settings", icon: "gearshape", category: "App", shortcut: AppShortcut.settings.symbol
+            title: Localized.Repo.settings, icon: "gearshape", category: Localized.Palette.app, shortcut: AppShortcut.settings.symbol
         ) {
             openSettings()
         })
@@ -278,7 +278,7 @@ extension RepoContentView {
             items.append(CommandPaletteItem(
                 title: feature.commandPaletteTitle,
                 icon: "questionmark.circle",
-                category: "Help",
+                category: Localized.Menu.help,
                 detail: feature.summary,
                 keywords: feature.commandPaletteKeywords,
                 shortcut: feature.shortcut
@@ -287,18 +287,18 @@ extension RepoContentView {
             })
         }
         items.append(CommandPaletteItem(
-            title: "Open JayJay User Guide",
+            title: Localized.Palette.openJayjayUserGuide,
             icon: "book",
-            category: "Help",
-            detail: "Open the full web guide in your browser.",
+            category: Localized.Menu.help,
+            detail: Localized.Palette.openTheFullWebGuideIn,
             keywords: ["help", "guide", "manual", "documentation", "docs"]
         ) {
             HelpBook.openOnlineGuide()
         })
         items.append(CommandPaletteItem(
-            title: "Send Feedback",
+            title: Localized.Menu.sendFeedback,
             icon: "envelope",
-            category: "Help",
+            category: Localized.Menu.help,
             keywords: ["email", "contact", "support"]
         ) {
             FeedbackEmail.open()
@@ -310,27 +310,27 @@ extension RepoContentView {
         var items: [CommandPaletteItem] = []
         // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
         items.append(.keybind(
-            title: "Command Palette", icon: "command", shortcut: AppShortcut.commandPalette.symbol,
+            title: Localized.Menu.commandPalette, icon: "command", shortcut: AppShortcut.commandPalette.symbol,
             keywords: ["palette", "command", "search"]
         ))
         items.append(.keybind(
-            title: "Next / Previous Change", icon: "arrow.up.arrow.down", shortcut: "J / K",
+            title: Localized.Palette.nextPreviousChange, icon: "arrow.up.arrow.down", shortcut: "J / K",
             keywords: ["move", "select", "next", "previous", "down", "up", "navigate", "ctrl", "n", "p"]
         ))
         items.append(.keybind(
-            title: "Mark File Reviewed", icon: "checkmark.circle", shortcut: "Space",
+            title: Localized.Palette.markFileReviewed, icon: "checkmark.circle", shortcut: Localized.Palette.space,
             keywords: ["review", "reviewed", "check", "diff"]
         ))
         items.append(.keybind(
-            title: "Find in Diff", icon: "magnifyingglass", shortcut: AppShortcut.findInDiff.symbol,
+            title: Localized.Palette.findInDiff, icon: "magnifyingglass", shortcut: AppShortcut.findInDiff.symbol,
             keywords: ["find", "search", "diff"]
         ))
         items.append(.keybind(
-            title: "Open Repository", icon: "folder.badge.plus", shortcut: AppShortcut.openRepository.symbol,
+            title: Localized.Repo.openRepository, icon: "folder.badge.plus", shortcut: AppShortcut.openRepository.symbol,
             keywords: ["open", "repository", "repo"]
         ))
         items.append(.keybind(
-            title: "Keyboard Shortcuts", icon: "keyboard", shortcut: AppShortcut.keyboardShortcuts.symbol,
+            title: Localized.Menu.keyboardShortcuts, icon: "keyboard", shortcut: AppShortcut.keyboardShortcuts.symbol,
             keywords: ["shortcut", "shortcuts", "keys", "cheatsheet", "keybind", "help"]
         ))
         return items
@@ -339,12 +339,12 @@ extension RepoContentView {
     private var cancelSyncPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         if viewModel.isPullingInFlight {
-            items.append(CommandPaletteItem(title: "Cancel Pull", icon: "xmark.circle", category: "Git") {
+            items.append(CommandPaletteItem(title: Localized.Palette.cancelPull, icon: "xmark.circle", category: Localized.Palette.git) {
                 viewModel.cancelPull()
             })
         }
         if viewModel.isPushingInFlight {
-            items.append(CommandPaletteItem(title: "Cancel Push", icon: "xmark.circle", category: "Git") {
+            items.append(CommandPaletteItem(title: Localized.Palette.cancelPush, icon: "xmark.circle", category: Localized.Palette.git) {
                 viewModel.cancelPush()
             })
         }

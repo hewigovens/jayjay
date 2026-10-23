@@ -118,17 +118,8 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
     } else {
         t.fg_dim
     };
-    let file_label = (workspace.files_changed > 0).then(|| {
-        format!(
-            "{} file{}",
-            workspace.files_changed,
-            if workspace.files_changed == 1 {
-                ""
-            } else {
-                "s"
-            },
-        )
-    });
+    let file_label = (workspace.files_changed > 0)
+        .then(|| jayjay_i18n::repo::file_count(workspace.files_changed));
     div()
         .flex()
         .min_w_0()

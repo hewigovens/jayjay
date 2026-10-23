@@ -237,7 +237,7 @@ fn merge_tool_accepts_a_hunk_and_saves_the_output(cx: &mut TestAppContext) {
 
     let second_before = cx.debug_bounds("merge-hunk-1").expect("second merge hunk");
     let use_first_right = cx
-        .debug_bounds("external-hunk-0-Accept Right")
+        .debug_bounds("external-hunk-0-Right")
         .expect("first Accept Right hunk action");
     cx.simulate_click(use_first_right.center(), Modifiers::default());
     settle_visual(cx);
@@ -254,7 +254,7 @@ fn merge_tool_accepts_a_hunk_and_saves_the_output(cx: &mut TestAppContext) {
         "advancing the selection should reveal the next card"
     );
     let use_second_right = cx
-        .debug_bounds("external-hunk-1-Accept Right")
+        .debug_bounds("external-hunk-1-Right")
         .expect("second Accept Right hunk action");
     cx.simulate_click(use_second_right.center(), Modifiers::default());
     settle_visual(cx);

@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 struct CommandPaletteItem: Identifiable {
     let id = UUID()
@@ -44,7 +45,7 @@ struct CommandPaletteItem: Identifiable {
         CommandPaletteItem(
             title: title,
             icon: icon,
-            category: "Shortcut",
+            category: Localized.Palette.shortcut,
             keywords: keywords,
             shortcut: shortcut,
             action: nil

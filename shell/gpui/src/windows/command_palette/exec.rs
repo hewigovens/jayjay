@@ -14,7 +14,7 @@ impl CommandPalette {
         if jayjay_core::JjCommand::new(&body).parse_args().is_none() {
             self.output = CommandOutput::Done {
                 display,
-                output: "Unclosed quote in jj command.".to_owned(),
+                output: jayjay_i18n::palette::unclosed_quote_in_jj_command(),
                 exit_code: -1,
             };
             cx.notify();

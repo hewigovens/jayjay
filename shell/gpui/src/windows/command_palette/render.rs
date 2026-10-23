@@ -22,7 +22,7 @@ pub(super) fn query_box(query: &LineInput, t: &Theme) -> impl IntoElement {
         .child(icons::icon(glyph::SEARCH, 14., t.fg_dim))
         .child(line_input_content(
             query,
-            "Search commands, type `jj status`, or use `!status`",
+            jayjay_i18n::palette::search_commands_type_jj_status_or(),
             t,
             Some("command-palette-caret"),
         ))
@@ -46,7 +46,7 @@ pub(super) fn action_list(
             .items_center()
             .justify_center()
             .text_color(rgb(t.fg_dim))
-            .child("No matches")
+            .child(jayjay_i18n::repo::no_matches())
             .into_any_element();
     }
     let mut col = div().flex().flex_col().flex_1().min_h_0().py(px(4.));
@@ -68,7 +68,7 @@ fn action_row(
 ) -> impl IntoElement {
     let (selector, label, glyph_str) = match row {
         PaletteRow::Action(action) => (
-            action_selector(action.name),
+            action_selector(action.id),
             action.display_name(cx),
             action.glyph_str,
         ),
@@ -109,18 +109,6 @@ fn action_row(
         ))
 }
 
-fn action_selector(name: &str) -> String {
-    let mut slug = String::new();
-    let mut last_dash = false;
-    for ch in name.chars() {
-        if ch.is_ascii_alphanumeric() {
-            slug.push(ch.to_ascii_lowercase());
-            last_dash = false;
-        } else if !last_dash {
-            slug.push('-');
-            last_dash = true;
-        }
-    }
-    let slug = slug.trim_matches('-');
-    format!("command-palette-action-{slug}")
+fn action_selector(id: &str) -> String {
+    format!("command-palette-action-{id}")
 }

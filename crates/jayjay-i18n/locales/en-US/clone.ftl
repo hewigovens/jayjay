@@ -1,0 +1,6 @@
+clone-choose-where-to-clone = Choose where to clone
+clone-repository-url = Repository URL
+clone-choose-ellipsis = Choose…
+clone-choose = Choose
+clone-name = Name
+clone-cloning = Cloning { $name }…

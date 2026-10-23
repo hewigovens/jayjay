@@ -14,9 +14,12 @@ pub(crate) fn merge_base_toggle(
     t: &Theme,
 ) -> Stateful<Div> {
     let (icon_glyph, label) = if shows_base {
-        (glyph::ARROW_UTURN_BACK, "Back to Left & Right")
+        (
+            glyph::ARROW_UTURN_BACK,
+            jayjay_i18n::merge::back_to_left_right(),
+        )
     } else {
-        (glyph::EYE, "Show Base")
+        (glyph::EYE, jayjay_i18n::merge::show_base())
     };
     button_container(id, t, false)
         .gap(px(6.))

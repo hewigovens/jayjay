@@ -10,6 +10,10 @@ class ExternalToolSceneBase: SceneBase {
         false
     }
 
+    override class var languages: String? {
+        nil
+    }
+
     override class var startsWithDefaultSettings: Bool {
         false
     }

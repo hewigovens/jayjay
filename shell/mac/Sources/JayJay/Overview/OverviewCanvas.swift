@@ -93,40 +93,40 @@ struct OverviewCanvas: View {
 
     @ViewBuilder
     private func laneMenu(_ lane: OverviewLane, id: String) -> some View {
-        Button("Show in Graph") { onShowInGraph(lane, nil) }
+        Button(Localized.Repo.showInGraph) { onShowInGraph(lane, nil) }
         ForEach(lane.workspaces, id: \.name) { workspace in
             if let info = actions.workspaceInfo(workspace.name), info.isPathResolved {
                 if !workspace.isCurrent {
-                    Button("Open \(workspace.name) in Window") { actions.openWorkspace(info) }
+                    Button(Localized.Overview.openInWindow(name: workspace.name)) { actions.openWorkspace(info) }
                 }
-                Button("Reveal \(workspace.name) in Finder") { RepositoryActions.showInFinder(repoPath: info.path) }
+                Button(Localized.Overview.showIn(name: workspace.name, app: "Finder")) { RepositoryActions.showInFinder(repoPath: info.path) }
             }
         }
         Divider()
         if lane.isBehindTrunk {
-            Button("Rebase Lane onto \(trunkName)") { actions.rebaseOntoTrunk(lane) }
+            Button(Localized.Overview.rebaseLaneOnto(trunk: trunkName)) { actions.rebaseOntoTrunk(lane) }
         }
-        Button("Abandon Lane…", role: .destructive) { actions.abandon(.lane(lane, id: id)) }
+        Button(Localized.Overview.abandonLaneEllipsis, role: .destructive) { actions.abandon(.lane(lane, id: id)) }
         ForEach(lane.workspaces.filter { !$0.isCurrent }, id: \.name) { workspace in
             if let info = actions.workspaceInfo(workspace.name) {
                 Divider()
-                Button("Forget Workspace \(workspace.name)") { actions.forgetWorkspace(info, false) }
+                Button(Localized.Palette.forgetWorkspaceNamed(name: workspace.name)) { actions.forgetWorkspace(info, false) }
                 if info.isPathResolved {
-                    Button("Forget & Delete \(workspace.name) from Disk…", role: .destructive) { actions.forgetWorkspace(info, true) }
+                    Button(Localized.Overview.forgetDeleteFromDisk(name: workspace.name), role: .destructive) { actions.forgetWorkspace(info, true) }
                 }
             }
         }
         Divider()
-        Button("Copy Head Change ID") { copy(lane.head.changeId.id) }
+        Button(Localized.Overview.copyHeadChangeId) { copy(lane.head.changeId.id) }
     }
 
     @ViewBuilder
     private func changeMenu(_ lane: OverviewLane, _ change: OverviewChange) -> some View {
-        Button("Show in Graph") { onShowInGraph(lane, change) }
+        Button(Localized.Repo.showInGraph) { onShowInGraph(lane, change) }
         Divider()
-        Button("Abandon Change…", role: .destructive) { actions.abandon(.change(change)) }
+        Button(Localized.Overview.abandonChangeEllipsis, role: .destructive) { actions.abandon(.change(change)) }
         Divider()
-        Button("Copy Change ID") { copy(change.changeId.id) }
+        Button(Localized.Menu.copyChangeId) { copy(change.changeId.id) }
     }
 
     private func copy(_ text: String) {
@@ -247,8 +247,8 @@ private struct OverviewChangeRow: View {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .jayjayFont(9, weight: .semibold)
                     .foregroundStyle(.red)
-                    .accessibilityLabel("Conflicted")
-                    .help("This change has conflicts")
+                    .accessibilityLabel(Localized.Diff.conflicted)
+                    .help(Localized.Overview.thisChangeHasConflicts)
             }
             Text(change.title)
                 .jayjayFont(11)
@@ -306,8 +306,8 @@ private struct OverviewTrunkLabel: View {
     private var label: String {
         switch base.kind {
             case .trunk: base.bookmarks.first ?? trunkName
-            case .olderTrunk: "\(base.behindTrunk) behind \(trunkName)"
-            case .mutable: "fork point"
+            case .olderTrunk: Localized.Overview.behindShort(count: Int(base.behindTrunk), trunk: trunkName)
+            case .mutable: Localized.Overview.forkPoint
             case .other: base.bookmarks.first ?? base.changeId.prefix
         }
     }

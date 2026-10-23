@@ -36,10 +36,7 @@ impl OverviewView {
         let count = lane.changes.len();
         let meta = panel_meta(
             [
-                (
-                    format!("{count} change{}", if count == 1 { "" } else { "s" }),
-                    t.fg_dim,
-                ),
+                (jayjay_i18n::repo::change_count(count), t.fg_dim),
                 (
                     format!("updated {}", format_relative(lane.latest_timestamp_millis)),
                     t.fg_dim,
@@ -86,7 +83,7 @@ impl OverviewView {
                 let action = OverviewAction::RebaseOntoTrunk(root.commit_id.id.clone());
                 small_button(
                     "overview-lane-rebase",
-                    format!("Rebase onto {trunk_name}"),
+                    jayjay_i18n::overview::rebase_onto(trunk_name),
                     t,
                 )
                 .on_click(cx.listener(move |view, _: &ClickEvent, _, cx| {
@@ -109,19 +106,24 @@ impl OverviewView {
         }
         let rows = lane.workspaces.iter().enumerate().map(|(ix, workspace)| {
             let position = match workspace.changes_above {
-                0 => "at the head".to_owned(),
-                above => format!("{above} below the head"),
+                0 => jayjay_i18n::overview::at_the_head(),
+                above => jayjay_i18n::overview::below_the_head(above),
             };
             let open = snapshot
                 .workspace(&workspace.name)
                 .filter(|info| info.is_path_resolved && !workspace.is_current)
                 .map(|info| {
                     let action = OverviewAction::OpenWorkspace(info.path.clone());
-                    small_button(format!("overview-lane-open-{ix}"), "Open", t).on_click(
-                        cx.listener(move |view, _: &ClickEvent, _, cx| {
-                            view.dispatch(action.clone(), cx);
-                        }),
+                    small_button(
+                        format!("overview-lane-open-{ix}"),
+                        jayjay_i18n::common::open(),
+                        t,
                     )
+                    .on_click(cx.listener(
+                        move |view, _: &ClickEvent, _, cx| {
+                            view.dispatch(action.clone(), cx);
+                        },
+                    ))
                 });
             div()
                 .flex()
@@ -138,7 +140,11 @@ impl OverviewView {
                 .children(open)
                 .into_any_element()
         });
-        Some(section("WORKSPACES", t, rows.collect::<Vec<_>>()))
+        Some(section(
+            jayjay_i18n::overview::workspaces(),
+            t,
+            rows.collect::<Vec<_>>(),
+        ))
     }
 
     fn change_section(
@@ -184,7 +190,11 @@ impl OverviewView {
                 }))
                 .into_any_element()
         });
-        section("CHANGES", t, rows.collect::<Vec<_>>())
+        section(
+            jayjay_i18n::overview::changes(),
+            t,
+            rows.collect::<Vec<_>>(),
+        )
     }
 }
 
@@ -218,25 +228,27 @@ fn bookmark_section(lane: &OverviewLane, t: &Theme) -> Option<AnyElement> {
         bookmarks
             .map(|bookmark| capsule(bookmark.clone(), t.tag_bookmark_bg, t.tag_bookmark_fg, 10.)),
     );
-    Some(section("BOOKMARKS", t, [chips.into_any_element()]))
+    Some(section(
+        jayjay_i18n::overview::bookmarks(),
+        t,
+        [chips.into_any_element()],
+    ))
 }
 
 fn base_sentence(base: &OverviewBase, trunk_name: &str) -> String {
     let short = || base.change_id.unique_prefix();
     match base.kind {
-        OverviewBaseKind::Trunk => format!("On {trunk_name}"),
-        OverviewBaseKind::OlderTrunk => format!(
-            "{} commit{} behind {trunk_name}",
-            base.behind_trunk,
-            if base.behind_trunk == 1 { "" } else { "s" }
-        ),
+        OverviewBaseKind::Trunk => jayjay_i18n::overview::on_trunk(trunk_name),
+        OverviewBaseKind::OlderTrunk => {
+            jayjay_i18n::overview::commits_behind(base.behind_trunk, trunk_name)
+        }
         OverviewBaseKind::Mutable => match base.description.as_str() {
-            "" => format!("Forked from {}", short()),
-            description => format!("Forked from {description}"),
+            "" => jayjay_i18n::overview::forked_from(&short()),
+            description => jayjay_i18n::overview::forked_from(description),
         },
-        OverviewBaseKind::Other => format!(
-            "On {}, off {trunk_name}",
-            base.bookmarks.first().cloned().unwrap_or_else(short)
+        OverviewBaseKind::Other => jayjay_i18n::overview::on_off_trunk(
+            &base.bookmarks.first().cloned().unwrap_or_else(short),
+            trunk_name,
         ),
     }
 }

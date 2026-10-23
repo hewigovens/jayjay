@@ -135,6 +135,7 @@ extension DiffSection {
         Button(action: action) {
             actionLabel(Localized.Common.preview, systemImage: icon)
         }
+        .accessibilityIdentifier(AID.Diff.preview)
         .buttonStyle(HeaderActionButtonStyle(isActive: active))
         .help(active ? Localized.Diff.showSourceDiff : inactiveHelp)
     }
@@ -166,6 +167,7 @@ extension DiffSection {
         .keyboardFocusStop(.diffLayout, action: toggle)
         .help(effectiveSideBySideDiff ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide)
         .accessibilityLabel(effectiveSideBySideDiff ? Localized.Diff.sideBySide : Localized.Diff.unified)
+        .accessibilityIdentifier(AID.Diff.layoutToggle)
     }
 
     private var effectiveSideBySideDiff: Bool {

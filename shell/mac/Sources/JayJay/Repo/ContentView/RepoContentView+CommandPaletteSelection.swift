@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 extension RepoContentView {
@@ -6,37 +7,37 @@ extension RepoContentView {
         let short = String(selection.prefix(8))
         // Safe actions — show selected change ID so user knows the target
         items.append(CommandPaletteItem(
-            title: "New Child Change (\(short))",
+            title: Localized.Palette.newChildChange(change: short),
             icon: "plus.circle",
-            category: "Change"
+            category: Localized.Repo.change
         ) { viewModel.newChange(parent: selection) })
         if viewModel.change(for: selection)?.isImmutable != true {
             items.append(CommandPaletteItem(
-                title: "Edit / Switch To (\(short))",
+                title: Localized.Palette.editSwitchTo(change: short),
                 icon: "pencil.circle",
-                category: "Change"
+                category: Localized.Repo.change
             ) { viewModel.edit(rev: selection) })
             items.append(CommandPaletteItem(
-                title: "Run Formatters on \(short) (jj fix)",
+                title: Localized.Palette.runFormattersOn(change: short),
                 icon: "wand.and.stars",
-                category: "Change",
+                category: Localized.Repo.change,
                 keywords: ["format", "formatter", "fix", "lint"]
             ) { viewModel.fix(revs: [selection]) })
         }
         items.append(CommandPaletteItem(
-            title: "Duplicate (\(short))",
+            title: Localized.Palette.duplicateChange(change: short),
             icon: "doc.on.doc",
-            category: "Change"
+            category: Localized.Repo.change
         ) { viewModel.duplicate(rev: selection) })
         items.append(CommandPaletteItem(
-            title: "Revert Change (\(short))",
+            title: Localized.Palette.revertChange(change: short),
             icon: "arrow.uturn.backward",
-            category: "Change"
+            category: Localized.Repo.change
         ) { viewModel.revertChange(rev: selection) })
         items.append(CommandPaletteItem(
-            title: "Create Bookmark on \(short)",
+            title: Localized.Palette.createBookmarkOn(change: short),
             icon: "bookmark",
-            category: "Change"
+            category: Localized.Repo.change
         ) {
             presentBookmarkCreate(rev: selection)
         })
@@ -51,9 +52,9 @@ extension RepoContentView {
         var items: [CommandPaletteItem] = []
         if viewModel.selectionCapabilities.canParallelize {
             items.append(CommandPaletteItem(
-                title: "Parallelize \(revisions.count) selected",
+                title: Localized.Menu.parallelizeSelected(count: revisions.count),
                 icon: "arrow.triangle.branch",
-                category: "Change",
+                category: Localized.Repo.change,
                 keywords: ["parallel", "independent", "sibling", "split", "stack"]
             ) {
                 viewModel.parallelize(revs: revisions)
@@ -61,9 +62,9 @@ extension RepoContentView {
         }
         if viewModel.selectionCapabilities.canFix {
             items.append(CommandPaletteItem(
-                title: "Run formatters on \(revisions.count) selected (jj fix)",
+                title: Localized.Menu.fixSelected(count: revisions.count),
                 icon: "wand.and.stars",
-                category: "Change",
+                category: Localized.Repo.change,
                 keywords: ["format", "formatter", "fix", "lint", "stack"]
             ) {
                 viewModel.fix(revs: revisions)

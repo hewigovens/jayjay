@@ -41,7 +41,7 @@ pub(crate) fn conflict_editor_overlay(
     let status = if unresolved == 0 {
         jayjay_i18n::repo::resolved()
     } else {
-        jayjay_i18n::repo::unresolved_count(unresolved)
+        jayjay_i18n::merge::unresolved_count(unresolved)
     };
     let save_label = if state.saving {
         jayjay_i18n::repo::saving_ellipsis()

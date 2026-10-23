@@ -45,7 +45,7 @@ struct OverviewChangePanel: View {
                     }
                 }
             }
-            Button("Show in Graph", action: onShowInGraph)
+            Button(Localized.Repo.showInGraph, action: onShowInGraph)
                 .controlSize(.small)
             if !descriptionBody.isEmpty {
                 Text(descriptionBody)
@@ -65,11 +65,11 @@ struct OverviewChangePanel: View {
     private var fileList: some View {
         if let files {
             if files.isEmpty {
-                Text("No file changes")
+                Text(Localized.Overview.noFileChanges)
                     .jayjayFont(11)
                     .foregroundStyle(.tertiary)
             } else {
-                OverviewPanelSection(title: "\(files.count) file\(files.count == 1 ? "" : "s")") {
+                OverviewPanelSection(title: Localized.Repo.fileCount(count: files.count)) {
                     ForEach(files, id: \.path) { file in
                         HStack(spacing: 6) {
                             Text(file.path)
@@ -93,7 +93,7 @@ struct OverviewChangePanel: View {
                 }
             }
         } else {
-            LoadingStatus(label: "Loading files…")
+            LoadingStatus(label: Localized.Diff.loadingFilesEllipsis)
         }
     }
 }

@@ -127,7 +127,7 @@ struct FileRow: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .accessibilityLabel(hunk.hunkType.hasSource
-                            ? hunk.oldPath.map { "\(hunk.hunkType.label) from \($0) to \(hunk.path)" } ?? hunk.path
+                            ? hunk.oldPath.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path
                             : hunk.path)
                 }
 

@@ -116,6 +116,6 @@ extension RepoViewModel {
     private static func rebaseMessage(for request: DAGRebaseRequest, hadConflicts: Bool) -> String {
         let base = Localized.Repo.rebasedOnto(source: request.sourceLabel, destination: request.destLabel)
         guard hadConflicts else { return base }
-        return "\(base) Conflicts need resolution."
+        return Localized.Repo.rebasedWithConflicts(message: base)
     }
 }

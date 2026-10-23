@@ -105,7 +105,7 @@ extension RepoContentView {
                     id: "bookmark-sync",
                     icon: "bookmark",
                     text: badge.isEmpty ? name : "\(name) \(badge)",
-                    tooltip: "\(name) vs \(target.remote)"
+                    tooltip: Localized.Repo.bookmarkVsRemote(name: name, remote: target.remote)
                 )
             }
         }

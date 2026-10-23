@@ -107,10 +107,9 @@ impl OverviewView {
         };
         let count = lane.changes.len();
         let footer = lane.attention.first().cloned().unwrap_or_else(|| {
-            format!(
-                "{count} change{} · {}",
-                if count == 1 { "" } else { "s" },
-                format_relative(lane.latest_timestamp_millis)
+            jayjay_i18n::overview::lane_summary(
+                &jayjay_i18n::repo::change_count(count),
+                &format_relative(lane.latest_timestamp_millis),
             )
         });
         // GPUI borders sit inside the box, so the padding gives back what a thicker border takes.
@@ -433,10 +432,10 @@ fn trunk_label(base: &OverviewBase, trunk_name: &str, t: &Theme) -> gpui::Div {
             t.tag_wc_fg,
         ),
         OverviewBaseKind::OlderTrunk => (
-            format!("{} behind {trunk_name}", base.behind_trunk),
+            jayjay_i18n::overview::behind_short(base.behind_trunk, trunk_name),
             t.warning_fg,
         ),
-        OverviewBaseKind::Mutable => ("fork point".to_owned(), t.fg_dim),
+        OverviewBaseKind::Mutable => (jayjay_i18n::overview::fork_point(), t.fg_dim),
         OverviewBaseKind::Other => (
             base.bookmarks
                 .first()

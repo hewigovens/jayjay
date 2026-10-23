@@ -20,7 +20,8 @@ pub(super) struct LaneFilter {
 
 impl LaneFilter {
     pub(super) fn new(cx: &mut Context<OverviewView>) -> Self {
-        let input = cx.new(|cx| TextArea::new("", "Filter lanes", false, 26., cx));
+        let input =
+            cx.new(|cx| TextArea::new("", jayjay_i18n::overview::filter_lanes(), false, 26., cx));
         TextArea::subscribe_updates(&input, cx);
         Self {
             input,
@@ -117,20 +118,33 @@ impl OverviewView {
             .bg(rgb(t.header_bg))
             .border_b_1()
             .border_color(rgb(t.border))
-            .child(stat(lanes.len(), "lane", "lanes", None, t))
-            .child(stat(changes, "change", "changes", None, t))
-            .child(stat(workspaces, "workspace", "workspaces", None, t))
+            .child(stat(
+                lanes.len(),
+                jayjay_i18n::overview::stat_lanes(lanes.len()),
+                None,
+                t,
+            ))
+            .child(stat(
+                changes,
+                jayjay_i18n::overview::stat_changes(changes),
+                None,
+                t,
+            ))
+            .child(stat(
+                workspaces,
+                jayjay_i18n::overview::stat_workspaces(workspaces),
+                None,
+                t,
+            ))
             .child(stat(
                 behind,
-                "behind trunk",
-                "behind trunk",
+                jayjay_i18n::overview::stat_behind_trunk(),
                 (behind > 0).then_some(t.warning_fg),
                 t,
             ))
             .child(stat(
                 attention,
-                "needs attention",
-                "need attention",
+                jayjay_i18n::overview::stat_attention(attention),
                 (attention > 0).then_some(t.warning_fg),
                 t,
             ))
@@ -156,28 +170,32 @@ impl OverviewView {
     ) -> Option<AnyElement> {
         let (title, message, label) = match self.confirmation.as_ref()? {
             Confirmation::Abandon(request) => (
-                format!("Abandon \u{201C}{}\u{201D}?", request.title),
+                jayjay_i18n::overview::abandon_title(&request.title),
                 request.message(),
-                "Abandon",
+                jayjay_i18n::menu::abandon(),
             ),
             Confirmation::DeleteWorkspace { name, path } => (
-                format!("Delete Workspace {name}?"),
-                format!(
-                    "This closes its window, forgets the workspace, and deletes its directory from disk:\n{path}"
-                ),
-                "Delete",
+                jayjay_i18n::repo::delete_workspace_title(name),
+                jayjay_i18n::repo::delete_workspace_message(path),
+                jayjay_i18n::repo::delete(),
             ),
         };
         Some(
             overlay_layer()
                 .child(
                     confirmation_card(title, message, t).child(overlay_actions(
-                        button("overview-confirm-cancel", "Cancel", t, false).on_click(
-                            cx.listener(|view, _: &ClickEvent, _, cx| {
+                        button(
+                            "overview-confirm-cancel",
+                            jayjay_i18n::common::cancel(),
+                            t,
+                            false,
+                        )
+                        .on_click(cx.listener(
+                            |view, _: &ClickEvent, _, cx| {
                                 view.confirmation = None;
                                 cx.notify();
-                            }),
-                        ),
+                            },
+                        )),
                         button("overview-confirm-submit", label, t, true)
                             .debug_selector(|| "overview-confirm-submit".to_owned())
                             .on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.confirm(cx))),
@@ -188,7 +206,7 @@ impl OverviewView {
     }
 }
 
-fn stat(count: usize, singular: &str, plural: &str, tint: Option<u32>, t: &Theme) -> AnyElement {
+fn stat(count: usize, label: String, tint: Option<u32>, t: &Theme) -> AnyElement {
     div()
         .flex()
         .flex_row()
@@ -200,8 +218,6 @@ fn stat(count: usize, singular: &str, plural: &str, tint: Option<u32>, t: &Theme
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(SharedString::from(count.to_string())),
         )
-        .child(SharedString::from(
-            if count == 1 { singular } else { plural }.to_owned(),
-        ))
+        .child(SharedString::from(label))
         .into_any_element()
 }
