@@ -153,7 +153,7 @@ struct EvologView: View {
             Image(systemName: "camera")
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
-            Text("\(row.count) snapshots")
+            Text(Localized.Evolog.snapshotCount(count: Int(row.count)))
                 .jayjayFont(12, weight: .medium)
                 .lineLimit(1)
             Spacer()

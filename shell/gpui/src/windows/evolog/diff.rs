@@ -135,27 +135,24 @@ pub(super) fn comparison(
     cx: &mut Context<EvologView>,
 ) -> AnyElement {
     let Some((from, to)) = view.selected_endpoints() else {
-        return placeholder(
-            "Select a version to compare it with the latest version",
-            theme,
-        );
+        return placeholder(jayjay_i18n::evolog::select_a_version_to_compare_it(), theme);
     };
     let file_count = view.files.as_deref().map(Vec::len);
     let content = if let Some(error) = view.diff_error.as_ref() {
         placeholder_err(error, theme)
     } else if view.diff_loading && view.files.is_none() {
-        loading_status("Loading diff…", theme)
+        loading_status(jayjay_i18n::diff::loading_diff_ellipsis(), theme)
     } else if let Some(files) = view.files.clone() {
         if files.is_empty() {
-            placeholder("No changes between the selected versions", theme)
+            placeholder(
+                jayjay_i18n::evolog::no_changes_between_the_selected_versions(),
+                theme,
+            )
         } else {
             comparison_content(view, files, theme, file_list_width, window, cx)
         }
     } else {
-        placeholder(
-            "Select a version to compare it with the latest version",
-            theme,
-        )
+        placeholder(jayjay_i18n::evolog::select_a_version_to_compare_it(), theme)
     };
 
     div()
@@ -231,9 +228,9 @@ fn comparison_content(
     } else if let Some(diff) = view.current_diff.clone() {
         read_only_diff("evolog-diff", diff, theme, cx)
     } else if view.diff_loading {
-        loading_status("Loading file…", theme)
+        loading_status(jayjay_i18n::evolog::loading_file_ellipsis(), theme)
     } else {
-        placeholder("Select a file", theme)
+        placeholder(jayjay_i18n::diff::select_a_file(), theme)
     };
     div()
         .flex()
@@ -285,7 +282,7 @@ fn comparison_header(
                 .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
                 .text_color(rgb(theme.fg))
-                .child("Comparing Versions"),
+                .child(jayjay_i18n::repo::comparing_versions()),
         )
         .child(version_label(from, theme))
         .child(icon(glyph::ARROW_RIGHT, 10., theme.fg_dim))
@@ -296,7 +293,7 @@ fn comparison_header(
         let label = if file_count == 1 {
             "1 file changed".to_owned()
         } else {
-            format!("{file_count} files changed")
+            jayjay_i18n::repo::files_changed_count(file_count)
         };
         header = header.child(
             div()
