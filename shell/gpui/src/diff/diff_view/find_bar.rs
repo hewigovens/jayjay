@@ -20,7 +20,7 @@ pub(super) fn render_find_bar(
     let count_label = if query.is_empty() {
         String::new()
     } else if match_count == 0 {
-        String::from("No matches")
+        jayjay_i18n::repo::no_matches()
     } else {
         format!("{} of {}", match_current + 1, match_count)
     };
@@ -68,7 +68,12 @@ fn search_input(
             RepoWindow::find_input,
             RepoWindow::find_query_edited,
         ))
-        .child(line_input_content(query, "Type to find...", t, None))
+        .child(line_input_content(
+            query,
+            jayjay_i18n::diff::type_to_find_ellipsis(),
+            t,
+            None,
+        ))
         .into_any_element()
 }
 
@@ -78,15 +83,14 @@ fn nav_controls(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEl
         .flex_row()
         .items_center()
         .gap(px(2.))
-        .child(nav_button("<", "Previous match", true, enabled, t, cx))
-        .child(nav_button(">", "Next match", false, enabled, t, cx))
+        .child(nav_button("<", true, enabled, t, cx))
+        .child(nav_button(">", false, enabled, t, cx))
         .child(done_button(t, cx))
         .into_any_element()
 }
 
 fn nav_button(
     symbol: &'static str,
-    label: &'static str,
     previous: bool,
     enabled: bool,
     t: &Theme,
@@ -95,7 +99,11 @@ fn nav_button(
     let fg = if enabled { t.fg_dim } else { t.fg_faint };
     let hover_bg = t.row_alt_bg;
     let mut button = div()
-        .id(SharedString::from(format!("find-nav-{label}")))
+        .id(if previous {
+            "find-nav-previous"
+        } else {
+            "find-nav-next"
+        })
         .flex()
         .items_center()
         .justify_center()
@@ -132,7 +140,7 @@ fn done_button(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         .rounded_md()
         .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
-        .child("Done")
+        .child(jayjay_i18n::repo::done())
         .cursor_pointer()
         .hover(move |s| s.bg(rgb(hover_bg)))
         .on_click(cx.listener(|view, _ev: &ClickEvent, _w: &mut Window, cx| {

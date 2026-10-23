@@ -69,11 +69,11 @@ extension HunkType {
 
     var label: String {
         switch self {
-            case .added: "Added"
-            case .removed: "Removed"
-            case .modified: "Modified"
-            case .renamed: "Renamed"
-            case .copied: "Copied"
+            case .added: Localized.Diff.added
+            case .removed: Localized.Diff.removed
+            case .modified: Localized.Repo.modified
+            case .renamed: Localized.Diff.renamed
+            case .copied: Localized.Diff.copied
         }
     }
 }

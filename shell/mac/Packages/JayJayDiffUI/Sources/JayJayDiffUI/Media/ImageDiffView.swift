@@ -39,7 +39,7 @@ public struct ImageDiffView: View {
                 imagePane(
                     image: newImage,
                     path: newPath,
-                    label: "Added",
+                    label: Localized.Diff.added,
                     tint: .green,
                     showsLabel: false
                 )
@@ -48,7 +48,7 @@ public struct ImageDiffView: View {
                 imagePane(
                     image: oldImage,
                     path: oldPath,
-                    label: "Removed",
+                    label: Localized.Diff.removed,
                     tint: .red,
                     showsLabel: false
                 )
@@ -58,7 +58,7 @@ public struct ImageDiffView: View {
                 imagePane(
                     image: newImage,
                     path: newPath,
-                    label: "Renamed",
+                    label: Localized.Diff.renamed,
                     tint: .blue,
                     showsLabel: false
                 )
@@ -67,7 +67,7 @@ public struct ImageDiffView: View {
                 imagePane(
                     image: newImage,
                     path: newPath,
-                    label: "Copied",
+                    label: Localized.Diff.copied,
                     tint: .green,
                     showsLabel: false
                 )
@@ -76,10 +76,10 @@ public struct ImageDiffView: View {
                 GeometryReader { geometry in
                     let width = max(0, geometry.size.width - ImageDiffDivider.width)
                     HStack(spacing: 0) {
-                        imagePane(image: oldImage, path: oldPath, label: "Before", tint: .red)
+                        imagePane(image: oldImage, path: oldPath, label: Localized.Diff.before, tint: .red)
                             .frame(width: width * splitFraction)
                         ImageDiffDivider(fraction: $splitFraction, availableWidth: width)
-                        imagePane(image: newImage, path: newPath, label: "After", tint: .green)
+                        imagePane(image: newImage, path: newPath, label: Localized.Diff.after, tint: .green)
                             .frame(width: width * (1 - splitFraction))
                     }
                 }
@@ -112,7 +112,7 @@ public struct ImageDiffView: View {
                         .resizable()
                         .interpolation(.high)
                         .scaledToFit()
-                        .accessibilityLabel("\(label) image")
+                        .accessibilityLabel(Localized.Diff.imageLabel(side: label))
                         .frame(maxWidth: image.size.width, maxHeight: image.size.height)
                         .padding(8)
                 } else if path == nil {

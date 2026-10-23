@@ -21,21 +21,21 @@ public struct SvgDiffView: View {
     private var content: some View {
         switch hunkType {
             case .added:
-                pane(svg: newContent, label: "Added", tint: .green, showsLabel: false)
+                pane(svg: newContent, label: Localized.Diff.added, tint: .green, showsLabel: false)
                     .padding(16)
             case .removed:
-                pane(svg: oldContent, label: "Removed", tint: .red, showsLabel: false)
+                pane(svg: oldContent, label: Localized.Diff.removed, tint: .red, showsLabel: false)
                     .padding(16)
             case .renamed:
-                pane(svg: newContent, label: "Renamed", tint: .blue, showsLabel: false)
+                pane(svg: newContent, label: Localized.Diff.renamed, tint: .blue, showsLabel: false)
                     .padding(16)
             case .copied:
-                pane(svg: newContent, label: "Copied", tint: .green, showsLabel: false)
+                pane(svg: newContent, label: Localized.Diff.copied, tint: .green, showsLabel: false)
                     .padding(16)
             case .modified:
                 HStack(spacing: 12) {
-                    pane(svg: oldContent, label: "Before", tint: .red)
-                    pane(svg: newContent, label: "After", tint: .green)
+                    pane(svg: oldContent, label: Localized.Diff.before, tint: .red)
+                    pane(svg: newContent, label: Localized.Diff.after, tint: .green)
                 }
                 .padding(16)
         }

@@ -25,13 +25,13 @@ pub(crate) fn color_for_hunk_type(hunk_type: HunkType, theme: &Theme) -> u32 {
     }
 }
 
-pub(crate) fn label(hunk_type: HunkType) -> &'static str {
+pub(crate) fn label(hunk_type: HunkType) -> String {
     match hunk_type {
-        HunkType::Added => "Added",
-        HunkType::Removed => "Removed",
-        HunkType::Modified => "Modified",
-        HunkType::Renamed => "Renamed",
-        HunkType::Copied => "Copied",
+        HunkType::Added => jayjay_i18n::diff::added(),
+        HunkType::Removed => jayjay_i18n::diff::removed(),
+        HunkType::Modified => jayjay_i18n::repo::modified(),
+        HunkType::Renamed => jayjay_i18n::diff::renamed(),
+        HunkType::Copied => jayjay_i18n::diff::copied(),
     }
 }
 

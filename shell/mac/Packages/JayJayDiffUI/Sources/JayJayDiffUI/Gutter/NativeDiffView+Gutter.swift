@@ -22,7 +22,7 @@ extension NativeDiffView {
             let noteIds = noteActions.activeNotes(anchor: anchor).map(\.id)
             if noteIds.isEmpty {
                 items.append(DiffGutterMenuItem(
-                    title: "Add Review Note",
+                    title: Localized.Menu.addReviewNote,
                     enabled: true,
                     action: { noteActions.addNote(anchor: anchor) }
                 ))
@@ -32,17 +32,17 @@ extension NativeDiffView {
                     items.append(.separator)
                 }
                 items.append(DiffGutterMenuItem(
-                    title: "Edit Review Note",
+                    title: Localized.Menu.editReviewNote,
                     enabled: true,
                     action: { noteActions.editNote(id: noteId) }
                 ))
                 items.append(DiffGutterMenuItem(
-                    title: "Resolve Review Note",
+                    title: Localized.Menu.resolveReviewNote,
                     enabled: true,
                     action: { noteActions.resolveNote(id: noteId) }
                 ))
                 items.append(DiffGutterMenuItem(
-                    title: "Delete Review Note",
+                    title: Localized.Menu.deleteReviewNote,
                     enabled: true,
                     action: { noteActions.deleteNote(id: noteId) }
                 ))
@@ -56,7 +56,7 @@ extension NativeDiffView {
             }
             items.append(
                 DiffGutterMenuItem(
-                    title: "Select Change Group",
+                    title: Localized.Diff.selectChangeGroup,
                     enabled: true,
                     action: { selectionActions.selectChangeGroup(groupRange) }
                 )
@@ -64,7 +64,7 @@ extension NativeDiffView {
         }
         if let selectionActions = gutterActions as? any DiffGutterSelectionActions {
             items.append(
-                DiffGutterMenuItem(title: "Select File", enabled: true, action: { selectionActions.selectFile() })
+                DiffGutterMenuItem(title: Localized.Diff.selectFile, enabled: true, action: { selectionActions.selectFile() })
             )
         }
         if let editActions = gutterActions as? any DiffGutterEditActions,
@@ -72,11 +72,11 @@ extension NativeDiffView {
            let line = displayLines[safe: selection.menuLineNumber - 1]?.newLineNo
         {
             items.append(
-                DiffGutterMenuItem(title: "Edit File at Line \(line)", enabled: true, action: { editActions.editFile(atLine: line) })
+                DiffGutterMenuItem(title: Localized.Menu.editFileAtLine(line: String(line)), enabled: true, action: { editActions.editFile(atLine: line) })
             )
             if let editor = editActions.externalEditorName {
                 items.append(
-                    DiffGutterMenuItem(title: "Open in \(editor) at Line \(line)", enabled: true, action: { editActions.openInExternalEditor(atLine: line) })
+                    DiffGutterMenuItem(title: Localized.Menu.actionAtLine(action: Localized.Menu.openIn(app: editor), line: String(line)), enabled: true, action: { editActions.openInExternalEditor(atLine: line) })
                 )
             }
         }
@@ -84,7 +84,7 @@ extension NativeDiffView {
            editActions.canOpenDiffEdit
         {
             items.append(
-                DiffGutterMenuItem(title: "Open Diff Edit Mode", enabled: true, action: { editActions.openDiffEdit() })
+                DiffGutterMenuItem(title: Localized.Menu.openDiffEditMode, enabled: true, action: { editActions.openDiffEdit() })
             )
         }
         if let editActions = gutterActions as? any DiffGutterEditActions,
@@ -96,7 +96,7 @@ extension NativeDiffView {
             let isWholeGroup = groupRange == selection.lineRange && selection.changedLineCount > 1
             items.append(
                 DiffGutterMenuItem(
-                    title: isWholeGroup ? "Abandon Change Group" : "Abandon Selected Lines",
+                    title: isWholeGroup ? Localized.Menu.abandonChangeGroup : Localized.Menu.abandonSelectedLines,
                     enabled: selection.changedLineCount > 0,
                     action: selection.changedLineCount > 0 ? {
                         editActions.abandonSelectedLines(in: selection.lineRange)
@@ -222,8 +222,7 @@ extension NativeDiffView {
     }
 
     func checkboxText(for lineNumber: Int, line: DiffLine) -> String {
-        guard line.isChanged else { return "  " }
-        guard let state = (gutterActions as? any DiffGutterSelectionActions)?.lineCheckboxState(for: lineNumber) else {
+        guard line.isChanged, let state = (gutterActions as? any DiffGutterSelectionActions)?.lineCheckboxState(for: lineNumber) else {
             return "  "
         }
         switch state {

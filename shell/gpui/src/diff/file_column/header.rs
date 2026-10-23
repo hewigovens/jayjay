@@ -48,20 +48,24 @@ pub(super) fn file_column_header(
     } = state;
     let shows_reviewed = show_review && reviewed > 0;
     let label = if loading {
-        String::from("Loading…")
+        jayjay_i18n::repo::loading_ellipsis()
     } else if file_filter_has_query {
-        format!("{visible_count} of {count} files")
+        jayjay_i18n::repo::files_filtered(visible_count, count)
     } else if shows_reviewed {
-        format!("{reviewed}/{count} reviewed")
-    } else if visible_count == 0 {
-        String::from("0 files")
+        jayjay_i18n::diff::reviewed_of_total(reviewed, count)
     } else {
-        format!("{visible_count} files")
+        jayjay_i18n::repo::file_count(visible_count)
     };
     let (tree_glyph, tree_help) = if tree_mode {
-        (glyph::LIST_TREE, "Showing files as a tree")
+        (
+            glyph::LIST_TREE,
+            jayjay_i18n::repo::showing_files_as_a_tree(),
+        )
     } else {
-        (glyph::LIST, "Showing files as a flat list")
+        (
+            glyph::LIST,
+            jayjay_i18n::repo::showing_files_as_a_flat_list(),
+        )
     };
     let mut row = div()
         .flex()
@@ -104,9 +108,9 @@ pub(super) fn file_column_header(
                     view.toggle_notes_only_files(cx);
                 }))
                 .tooltip(text_tooltip(if notes_only {
-                    "Showing only files with review notes"
+                    jayjay_i18n::repo::showing_only_files_with_review_notes()
                 } else {
-                    "Show only files with review notes"
+                    jayjay_i18n::repo::show_only_files_with_review_notes()
                 }))
                 .child(SharedString::from(format!("\u{25cf} {active_note_count}"))),
         );
@@ -124,8 +128,8 @@ pub(super) fn file_column_header(
                 t,
             )
             .debug_selector(|| "file-split-reviewed".to_owned())
-            .tooltip(text_tooltip(format!(
-                "Split {reviewed} checked files to a new change"
+            .tooltip(text_tooltip(jayjay_i18n::repo::split_checked_files(
+                reviewed,
             )))
             .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                 view.open_reviewed_files_split_modal(cx);
@@ -157,9 +161,9 @@ pub(super) fn file_column_header(
             .debug_selector(|| "file-hide-reviewed".to_owned())
             .bg(rgb(bg))
             .tooltip(text_tooltip(if hide_reviewed {
-                "Showing only unreviewed files"
+                jayjay_i18n::repo::showing_only_unreviewed_files()
             } else {
-                "Hide reviewed files"
+                jayjay_i18n::settings::hide_reviewed()
             }))
             .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                 view.toggle_hide_reviewed_files(cx);
@@ -199,9 +203,9 @@ pub(super) fn file_column_header(
         count_label
             .debug_selector(|| "file-reviewed-count".to_owned())
             .tooltip(text_tooltip(if agent_marked > 0 {
-                format!("{reviewed} of {count} files reviewed, {agent_marked} include agent marks")
+                jayjay_i18n::diff::files_reviewed_with_agent(reviewed, count, agent_marked)
             } else {
-                format!("{reviewed} of {count} files reviewed")
+                jayjay_i18n::repo::files_reviewed_progress(reviewed, count)
             }))
     } else {
         count_label
@@ -214,7 +218,7 @@ pub(super) fn file_column_header(
         )
         .debug_selector(|| "toggle-file-filter".to_owned())
         .bg(rgb(bg))
-        .tooltip(text_tooltip("Filter files"))
+        .tooltip(text_tooltip(jayjay_i18n::repo::filter_files()))
         .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
             view.toggle_file_filter(window, cx);
         })),
@@ -275,7 +279,7 @@ pub(super) fn file_filter_bar(
                 ))
                 .child(line_input_content(
                     input,
-                    "Filter files",
+                    jayjay_i18n::repo::filter_files(),
                     t,
                     Some("file-filter-caret"),
                 )),
@@ -291,7 +295,7 @@ pub(super) fn file_filter_bar(
                 t,
             )
             .debug_selector(|| "file-filter-close".to_owned())
-            .tooltip(text_tooltip("Close file filter"))
+            .tooltip(text_tooltip(jayjay_i18n::diff::close_file_filter()))
             .on_click(cx.listener(|view, _: &ClickEvent, window, cx| {
                 view.dismiss_file_filter(window, cx);
             })),

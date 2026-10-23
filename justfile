@@ -114,7 +114,7 @@ lint:
   just lint-i18n
 
 # Files fully migrated to the jayjay-i18n catalog.
-i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/gpui/src/repo shell/gpui/src/app/menus.rs shell/mac/Sources/JayJay/Settings shell/mac/Sources/JayJay/Repo shell/mac/Sources/JayJay/Detail shell/mac/Sources/JayJay/App/Window shell/mac/Sources/JayJay/App/AppCommands.swift shell/mac/Sources/JayJay/App/AppInfoCommands.swift shell/mac/Sources/JayJay/App/HelpCommands.swift"
+i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/gpui/src/repo shell/gpui/src/app/menus.rs shell/gpui/src/diff shell/mac/Sources/JayJay/Settings shell/mac/Sources/JayJay/Repo shell/mac/Sources/JayJay/Detail shell/mac/Sources/JayJay/Diff shell/mac/Sources/JayJay/DiffEdit shell/mac/Packages/JayJayDiffUI/Sources shell/mac/Sources/JayJay/App/Window shell/mac/Sources/JayJay/App/AppCommands.swift shell/mac/Sources/JayJay/App/AppInfoCommands.swift shell/mac/Sources/JayJay/App/HelpCommands.swift"
 # Proper names that stay English in every locale.
 i18n_names := "JayJay|Codex CLI|Claude CLI|Codex|Claude|Terminal|Finder|Frog"
 
@@ -140,7 +140,7 @@ lint-i18n:
     | xargs -0 awk -v names='^"({{i18n_names}})"$' '
       FNR == 1 { skip = 0 }
       /#\[cfg\(test\)\]/ { skip = 1 }
-      skip || /^[[:space:]]*\/\// || /key_context|KeyContext|assert|\.contains\(/ { next }
+      skip || /^[[:space:]]*\/\// || /key_context|KeyContext|assert|precondition|fatalError|\.contains\(/ { next }
       {
         rest = $0
         while (match(rest, /"[A-Z][a-z]+([ ,.…?!&:'\''][^"]*)?"/)) {

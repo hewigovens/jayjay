@@ -61,17 +61,25 @@ where
     let selector = format!("{}-{}", id.0, id.1);
     // Mirrors the SwiftUI chrome: outlined check for partial, half-filled green for changed since review.
     let (state, accent, label) = match rollup {
-        ReviewFileRollup::Unreviewed => (CheckCircleState::Off, t.file_added_color, "Unreviewed"),
+        ReviewFileRollup::Unreviewed => (
+            CheckCircleState::Off,
+            t.file_added_color,
+            jayjay_i18n::repo::unreviewed(),
+        ),
         ReviewFileRollup::Partial => (
             CheckCircleState::CheckOutline,
             t.fg_dim,
-            "Partially reviewed",
+            jayjay_i18n::repo::partially_reviewed(),
         ),
-        ReviewFileRollup::Reviewed => (CheckCircleState::On, t.file_added_color, "Reviewed"),
+        ReviewFileRollup::Reviewed => (
+            CheckCircleState::On,
+            t.file_added_color,
+            jayjay_i18n::repo::reviewed(),
+        ),
         ReviewFileRollup::ChangedSinceReview => (
             CheckCircleState::HalfFilled,
             t.file_added_color,
-            "Changed since review",
+            jayjay_i18n::repo::changed_since_review(),
         ),
     };
     let label = if agent_marked {
@@ -203,7 +211,7 @@ fn status_indicator(
         block.child(file_status::badge(hunk.hunk_type, t))
     };
     block.tooltip(text_tooltip(if has_conflict {
-        "Conflicted"
+        jayjay_i18n::diff::conflicted()
     } else {
         file_status::label(hunk.hunk_type)
     }))
@@ -245,8 +253,10 @@ pub(super) fn agent_badge(path: &str, t: &Theme) -> AnyElement {
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
         .debug_selector(move || selector.clone())
-        .tooltip(text_tooltip("Includes changes marked by an agent"))
-        .child(SharedString::from("Agent"))
+        .tooltip(text_tooltip(
+            jayjay_i18n::repo::includes_changes_marked_by_an_agent(),
+        ))
+        .child(SharedString::from(jayjay_i18n::repo::agent()))
         .into_any_element()
 }
 

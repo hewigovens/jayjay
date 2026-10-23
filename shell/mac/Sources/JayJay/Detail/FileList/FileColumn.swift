@@ -195,8 +195,9 @@ extension ChangeDetailView {
         let agentMarked = agentMarkedPaths.filter { path in
             fileRollups[path].map { $0 != .unreviewed } ?? false
         }.count
-        let base = Localized.Repo.filesReviewedProgress(reviewed: reviewedPaths.count, total: reviewableDiff.count)
-        return agentMarked > 0 ? "\(base), \(agentMarked) include agent marks" : base
+        return agentMarked > 0
+            ? Localized.Diff.filesReviewedWithAgent(reviewed: reviewedPaths.count, total: reviewableDiff.count, agent: agentMarked)
+            : Localized.Repo.filesReviewedProgress(reviewed: reviewedPaths.count, total: reviewableDiff.count)
     }
 
     func toggleReview(_ path: String) {
@@ -221,7 +222,7 @@ extension ChangeDetailView {
         var parts = if !fileFilter.isEmpty {
             [Localized.Repo.filesFiltered(shown: filteredDiff.count, total: visibleDiff.count)]
         } else if showsReviewedCount {
-            ["\(reviewedPaths.count)/\(reviewableDiff.count) reviewed"]
+            [Localized.Diff.reviewedOfTotal(reviewed: reviewedPaths.count, total: reviewableDiff.count)]
         } else {
             [Localized.Repo.fileCount(count: filteredDiff.count)]
         }

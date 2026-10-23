@@ -48,10 +48,10 @@ struct ReviewNoteSheet: View {
 
     var body: some View {
         SheetContainer(
-            title: editor.noteId == nil ? "Add Review Note" : "Edit Review Note",
+            title: editor.noteId == nil ? Localized.Menu.addReviewNote : Localized.Menu.editReviewNote,
             subtitle: nil,
-            cancelLabel: "Cancel",
-            confirmLabel: editor.noteId == nil ? "Add Note" : "Save",
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: editor.noteId == nil ? Localized.Repo.addNote : Localized.Common.save,
             confirmDisabled: bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
             onCancel: onCancel,
             onConfirm: { onSave(bodyText) },
@@ -68,7 +68,7 @@ struct ReviewNoteSheet: View {
                     .accessibilityIdentifier(AID.ReviewNote.body)
                 HStack {
                     Spacer()
-                    Text("\(AppShortcut.saveReviewNote.symbol) to save")
+                    Text(Localized.Diff.shortcutToSave(shortcut: AppShortcut.saveReviewNote.symbol))
                         .jayjayFont(10)
                         .foregroundStyle(.tertiary)
                 }

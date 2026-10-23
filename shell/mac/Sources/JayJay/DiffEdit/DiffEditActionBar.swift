@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct DiffEditActionBar: View {
@@ -11,17 +12,17 @@ struct DiffEditActionBar: View {
                     .jayjayFont(12, weight: .medium)
                 Spacer()
                 if !session.detail.info.isWorkingCopy {
-                    TextField("New change description", text: Bindable(session).newChangeMessage)
+                    TextField(Localized.Diff.newChangeDescription, text: Bindable(session).newChangeMessage)
                         .textFieldStyle(.roundedBorder)
                         .frame(width: 260)
-                    Button("Create New Child Change") { session.apply(.newChild) }
+                    Button(Localized.Repo.createNewChildChange) { session.apply(.newChild) }
                         .buttonStyle(.borderedProminent)
-                    Button("Create Parallel Change") { session.apply(.newParallel) }
+                    Button(Localized.Repo.createParallelChange) { session.apply(.newParallel) }
                         .buttonStyle(.bordered)
-                    Button("Move to Working Copy") { session.apply(.moveToWorkingCopy) }
+                    Button(Localized.Menu.moveToWorkingCopy) { session.apply(.moveToWorkingCopy) }
                         .buttonStyle(.bordered)
                 }
-                Button("Done") {
+                Button(Localized.Repo.done) {
                     session.apply(.removeFromSource)
                 }
                 .buttonStyle(.bordered)
