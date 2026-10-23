@@ -24,6 +24,7 @@ mod tag;
 mod time;
 mod tool_config;
 mod update_channel;
+mod workspace_dir;
 
 pub use app_dirs::*;
 pub use bisect::*;
@@ -51,3 +52,4 @@ pub use tag::*;
 pub use time::*;
 pub use tool_config::*;
 pub use update_channel::*;
+pub use workspace_dir::*;

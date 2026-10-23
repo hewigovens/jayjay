@@ -8,7 +8,7 @@ pub(crate) struct Cli {
     #[command(subcommand)]
     pub(crate) command: Option<Command>,
 
-    /// Path to a jj repository (default: current directory if it contains .jj)
+    /// Path inside a jj workspace (default: the current directory's workspace)
     pub(crate) path: Option<String>,
 
     /// Open repository at PATH

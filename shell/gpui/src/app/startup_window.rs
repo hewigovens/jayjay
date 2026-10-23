@@ -1,4 +1,4 @@
-use std::path::PathBuf;
+use std::path::{Path, PathBuf};
 
 use gpui::{App, Bounds, Point, Size, WindowBounds, px, size};
 
@@ -13,14 +13,21 @@ pub(super) fn resolve_repo_path(
     recent_repos: &[String],
 ) -> Option<PathBuf> {
     if let Some(path) = explicit {
-        return Some(dunce::canonicalize(&path).unwrap_or(path));
+        return Some(
+            jayjay_core::enclosing_workspace_root(&path)
+                .unwrap_or_else(|| dunce::canonicalize(&path).unwrap_or(path)),
+        );
     }
-    cwd.into_iter()
-        .chain(recent_repos.iter().map(PathBuf::from))
-        .find_map(|path| {
-            jayjay_core::workspace_root(&path)
-                .map(|root| jayjay_core::repositories::normalize_repository_path(&root))
-        })
+    if let Some(root) = cwd
+        .as_deref()
+        .and_then(jayjay_core::enclosing_workspace_root)
+    {
+        return Some(root);
+    }
+    recent_repos.iter().find_map(|path| {
+        jayjay_core::workspace_root(Path::new(path))
+            .map(|root| jayjay_core::repositories::normalize_repository_path(&root))
+    })
 }
 
 pub fn open_startup_window(path: Option<PathBuf>, cx: &mut App) {
@@ -124,10 +131,18 @@ mod tests {
             Some(dunce::canonicalize(&first.path).unwrap())
         );
         let nested = first.path.join("src/nested");
+        let broken_nested = broken.path().join("src");
         std::fs::create_dir_all(&nested).unwrap();
+        std::fs::create_dir_all(&broken_nested).unwrap();
+        for (explicit, cwd) in [(Some(nested.clone()), None), (None, Some(nested))] {
+            assert_eq!(
+                resolve_repo_path(explicit, cwd, &recent),
+                Some(dunce::canonicalize(&first.path).unwrap())
+            );
+        }
         assert_eq!(
-            resolve_repo_path(None, Some(nested), &recent),
-            Some(dunce::canonicalize(&first.path).unwrap())
+            resolve_repo_path(None, Some(broken_nested), &recent),
+            Some(dunce::canonicalize(broken.path()).unwrap())
         );
         for cwd in [Some(invalid.path().to_owned()), None] {
             assert_eq!(

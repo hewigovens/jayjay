@@ -1,4 +1,4 @@
-use jayjay_core::{Repo, WorkspaceInfo};
+use jayjay_core::{Repo, WorkspaceInfo, workspace_root};
 use jj_lib::ref_name::WorkspaceName;
 use jj_lib::simple_workspace_store::SimpleWorkspaceStore;
 use jj_lib::workspace_store::WorkspaceStore as _;
@@ -55,6 +55,24 @@ fn current_op_id_ignoring_working_copy(repo_path: &std::path::Path) -> String {
         .next()
         .expect("current operation id")
         .to_owned()
+}
+
+#[test]
+fn workspace_root_from_a_subdirectory_is_the_nearest_workspace() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let nested = repo_path.join("vendor/nested");
+    std::fs::create_dir_all(repo_path.join("vendor")).expect("create vendor");
+    repo.workspace_add(nested.to_str().expect("utf8 dest"), "nested", "")
+        .expect("workspace add");
+
+    std::fs::create_dir_all(nested.join("src")).expect("create subdirectory");
+
+    assert_eq!(
+        workspace_root(&nested.join("src")),
+        Some(canonical(&nested))
+    );
 }
 
 #[test]

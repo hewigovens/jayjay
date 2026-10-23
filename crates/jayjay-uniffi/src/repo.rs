@@ -233,6 +233,12 @@ fn is_valid_workspace_name(name: String) -> bool {
 }
 
 #[uniffi::export]
+fn enclosing_workspace_root(path: String) -> Option<String> {
+    jayjay_core::enclosing_workspace_root(Path::new(&path))
+        .and_then(|root| root.into_os_string().into_string().ok())
+}
+
+#[uniffi::export]
 fn workspace_primary_root(path: String) -> Option<String> {
     jayjay_core::workspace_primary_root(&path)
 }

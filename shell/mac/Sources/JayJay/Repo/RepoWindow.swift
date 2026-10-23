@@ -163,11 +163,17 @@ private struct RepoInitErrorView: View {
                 .textSelection(.enabled)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
-            if !FileManager.default.fileExists(atPath: "\(repoPath)/.jj") {
+            if canInitialize {
                 Button("Initialize with jj git init", action: onInitialize)
                     .buttonStyle(.borderedProminent)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var canInitialize: Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: repoPath, isDirectory: &isDirectory) && isDirectory.boolValue
+            && enclosingWorkspaceRoot(path: repoPath) == nil
     }
 }

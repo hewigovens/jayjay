@@ -14,7 +14,8 @@ use crate::windows::repo_list::RepoListWindow;
 use super::view::RepoWindow;
 
 pub fn open_repo_window(path: PathBuf, cx: &mut App) {
-    let path = normalize_repository_path(&path);
+    let path = jayjay_core::enclosing_workspace_root(&path)
+        .unwrap_or_else(|| normalize_repository_path(&path));
     if activate_normalized_repo_window(&path, cx) {
         RepoListWindow::close(cx);
         return;
