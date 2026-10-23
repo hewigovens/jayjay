@@ -75,17 +75,24 @@ pub(super) fn sidebar(
                     drag_selection,
                     refresh_mode,
                     bisect,
+                    active_lane,
                 ) = {
                     let vm = this.vm.read(cx);
+                    let selected_changes = vm.selected_change_indices();
+                    let active_lane = vm
+                        .selected
+                        .filter(|_| is_pane_active && selected_changes.len() <= 1)
+                        .and_then(|row| vm.lane_span(row));
                     (
                         vm.selected,
-                        vm.selected_change_indices(),
+                        selected_changes,
                         vm.compare
                             .as_ref()
                             .and_then(|compare| compare.source_change_id.clone()),
                         DagDragSelection::of(vm),
                         vm.refresh_mode(),
                         vm.bisect.state.clone(),
+                        active_lane,
                     )
                 };
                 let bisect_rows = BisectRowStyles::new(bisect.as_ref());
@@ -150,7 +157,9 @@ pub(super) fn sidebar(
                             dag_column(
                                 entry,
                                 DagRowLanes {
+                                    row: ix,
                                     row_lane,
+                                    active_lane,
                                     pass_through_lanes,
                                     prev_active_lanes,
                                     has_overflow,
