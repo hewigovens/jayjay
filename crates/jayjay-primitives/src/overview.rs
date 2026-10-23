@@ -86,31 +86,23 @@ impl OverviewLane {
     }
 
     fn attention(changes: &[OverviewChange]) -> Vec<String> {
-        let plural = |count: usize| if count == 1 { "" } else { "s" };
         let mut attention = Vec::new();
         let head = &changes[0];
         if head.is_empty && head.description.is_empty() && changes.len() > 1 {
             let below = changes.len() - 1;
-            attention.push(format!(
-                "Empty, undescribed checkout above {below} change{}",
-                plural(below)
-            ));
+            attention.push(jayjay_i18n::overview::empty_checkout_above(below));
         }
         let conflicted = changes.iter().filter(|change| change.has_conflict).count();
         if conflicted > 0 {
-            attention.push(format!(
-                "{conflicted} change{} with conflicts",
-                plural(conflicted)
-            ));
+            attention.push(jayjay_i18n::overview::changes_with_conflicts(conflicted));
         }
         let undescribed = changes
             .iter()
             .filter(|change| change.description.is_empty() && !change.is_empty)
             .count();
         if undescribed > 0 {
-            attention.push(format!(
-                "{undescribed} change{} without a description",
-                plural(undescribed)
+            attention.push(jayjay_i18n::overview::changes_without_description(
+                undescribed,
             ));
         }
         attention

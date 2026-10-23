@@ -88,7 +88,7 @@ impl OverviewView {
             WindowOptions {
                 window_bounds: Some(WindowBounds::Windowed(bounds)),
                 titlebar: Some(TitlebarOptions {
-                    title: Some(format!("Repo Overview — {name}").into()),
+                    title: Some(jayjay_i18n::overview::window_title(&name).into()),
                     ..Default::default()
                 }),
                 ..crate::app::window_options()
@@ -204,10 +204,10 @@ impl Render for OverviewView {
         let body = match snapshot.as_deref() {
             None => match &self.load.error {
                 Some(error) => placeholder_err(error, &t),
-                None => loading_status("Loading overview…", &t),
+                None => loading_status(jayjay_i18n::overview::loading_overview_ellipsis(), &t),
             },
             Some(snapshot) if snapshot.overview.lanes.is_empty() => placeholder(
-                "No mutable changes. Every change is on trunk or immutable.",
+                jayjay_i18n::overview::no_mutable_changes_every_change_is(),
                 &t,
             ),
             Some(snapshot) => {

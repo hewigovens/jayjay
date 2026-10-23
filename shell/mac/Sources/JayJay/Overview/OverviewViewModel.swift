@@ -294,18 +294,18 @@ extension OverviewLane {
     func baseSentence(trunkName: String) -> String {
         switch base.kind {
             case .trunk:
-                "On \(trunkName)"
+                Localized.Overview.onTrunk(trunk: trunkName)
             case .olderTrunk:
-                "\(base.behindTrunk) commit\(base.behindTrunk == 1 ? "" : "s") behind \(trunkName)"
+                Localized.Overview.commitsBehind(count: Int(base.behindTrunk), trunk: trunkName)
             case .mutable:
-                "Forked from \(base.description.isEmpty ? base.changeId.prefix : base.description)"
+                Localized.Overview.forkedFrom(base: base.description.isEmpty ? base.changeId.prefix : base.description)
             case .other:
-                "On \(base.bookmarks.first ?? base.changeId.prefix), off \(trunkName)"
+                Localized.Overview.onOffTrunk(base: base.bookmarks.first ?? base.changeId.prefix, trunk: trunkName)
         }
     }
 
     var footer: String {
-        attention.first ?? "\(changes.count) change\(changes.count == 1 ? "" : "s") · \(Date.relativeLabel(millis: latestTimestampMillis))"
+        attention.first ?? Localized.Overview.laneSummary(changes: Localized.Repo.changeCount(count: changes.count), age: Date.relativeLabel(millis: latestTimestampMillis))
     }
 
     func matches(filter: String) -> Bool {
@@ -357,8 +357,8 @@ struct OverviewAbandonRequest: Identifiable {
 
     var message: String {
         commitIds.count == 1
-            ? "Abandon this change? Its descendants are rebased onto its parent, and a workspace checked out here moves to a new empty change."
-            : "Abandon all \(commitIds.count) changes of this lane? A workspace checked out in it moves to a new empty change on the base."
+            ? Localized.Overview.abandonThisChangeItsDescendantsAre
+            : Localized.Overview.abandonLaneMessage(count: commitIds.count)
     }
 
     func isCurrent(in lanes: [OverviewLane], ids: [String]) -> Bool {

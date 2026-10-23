@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct OverviewWindow: View {
@@ -19,7 +20,7 @@ struct OverviewWindow: View {
                 viewModel.hasRepoWindow = { windowManager.repoWindow(at: repoPath) != nil }
                 await viewModel.open()
             }
-            .navigationTitle("Repo Overview")
+            .navigationTitle(Localized.Menu.repoOverview)
             .navigationSubtitle(URL(fileURLWithPath: repoPath).repositoryDisplayName)
             .background(WindowFramePersistence(key: AppWindows.overview))
             // The URL feeds the Repository menu; the registrations keep this window out of repo-window lookups.

@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct OverviewPanel<Content: View>: View {
@@ -32,7 +33,7 @@ struct OverviewPanelHeader<Title: View>: View {
             }
             .buttonStyle(.plain)
             .foregroundStyle(.secondary)
-            .help("Close")
+            .help(Localized.Common.close)
         }
     }
 }
