@@ -90,7 +90,10 @@ pub(super) fn header_row(
                 .bg(rgba(with_alpha(t.selected_accent, 0x24)))
                 .text_size(ui_font_size(10.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
-                .child(format!("{selected_count} / {} lines", card.changed_total)),
+                .child(jayjay_i18n::repo::lines_selected(
+                    selected_count,
+                    card.changed_total,
+                )),
         );
     }
     let row = row.child(div().flex_1()).child(
@@ -98,9 +101,9 @@ pub(super) fn header_row(
             .text_size(ui_font_size(11.))
             .text_color(rgb(t.fg_dim))
             .child(if card.supported {
-                "Select files or lines to edit"
+                jayjay_i18n::repo::select_files_or_lines_to_edit()
             } else {
-                "Text edits not supported"
+                jayjay_i18n::repo::text_edits_not_supported()
             }),
     );
     div()

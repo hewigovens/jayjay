@@ -34,39 +34,49 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
     vec![
         app_menu(),
         file_menu(&cfg.recent_repos),
-        Menu::new("Edit").items([MenuItem::action("Find...", OpenFind)]),
-        Menu::new("View").items([
+        Menu::new(jayjay_i18n::menu::edit()).items([MenuItem::action(
+            jayjay_i18n::menu::find_ellipsis(),
+            OpenFind,
+        )]),
+        Menu::new(jayjay_i18n::menu::view()).items([
             MenuItem::action(
                 if cfg.layout.sidebar_hidden {
-                    "Show Sidebar"
+                    jayjay_i18n::menu::show_sidebar()
                 } else {
-                    "Hide Sidebar"
+                    jayjay_i18n::menu::hide_sidebar()
                 },
                 ToggleSidebar,
             ),
             MenuItem::separator(),
-            MenuItem::action("Zoom In", ZoomIn).disabled(
+            MenuItem::action(jayjay_i18n::menu::zoom_in(), ZoomIn).disabled(
                 cfg.interface_font_size().min(cfg.code_font_size()) >= AppConfig::MAX_FONT_SIZE,
             ),
-            MenuItem::action("Zoom Out", ZoomOut).disabled(
+            MenuItem::action(jayjay_i18n::menu::zoom_out(), ZoomOut).disabled(
                 cfg.interface_font_size().max(cfg.code_font_size()) <= AppConfig::MIN_FONT_SIZE,
             ),
-            MenuItem::action("Reset Zoom", ResetZoom).checked(cfg.is_default_zoom()),
+            MenuItem::action(jayjay_i18n::menu::reset_zoom(), ResetZoom)
+                .checked(cfg.is_default_zoom()),
         ]),
-        Menu::new("Repository").items([
-            MenuItem::action("Command Palette", OpenCommandPalette),
-            MenuItem::action("Undo Last Operation", OpenOperationLog),
+        Menu::new(jayjay_i18n::menu::repository()).items([
+            MenuItem::action(jayjay_i18n::menu::command_palette(), OpenCommandPalette),
+            MenuItem::action(jayjay_i18n::menu::undo_last_operation(), OpenOperationLog),
             MenuItem::separator(),
-            MenuItem::action("Filter by Revset...", FilterByRevset),
-            MenuItem::action("Bookmark Manager", OpenBookmarkManager),
-            MenuItem::action("Repo Overview", OpenOverview),
-            MenuItem::action("New Workspace...", NewWorkspace),
             MenuItem::action(
-                "New Workspace from Pull Request...",
+                jayjay_i18n::menu::filter_by_revset_ellipsis(),
+                FilterByRevset,
+            ),
+            MenuItem::action(jayjay_i18n::menu::bookmark_manager(), OpenBookmarkManager),
+            MenuItem::action(jayjay_i18n::menu::repo_overview(), OpenOverview),
+            MenuItem::action(jayjay_i18n::menu::new_workspace_ellipsis(), NewWorkspace),
+            MenuItem::action(
+                jayjay_i18n::menu::new_workspace_from_pull_request_ellipsis(),
                 NewWorkspaceFromPullRequest,
             ),
             MenuItem::separator(),
-            MenuItem::action("View Remote Repository", OpenRemoteRepository),
+            MenuItem::action(
+                jayjay_i18n::menu::view_remote_repository(),
+                OpenRemoteRepository,
+            ),
             MenuItem::action(
                 crate::platform::show_in_file_manager_label(),
                 ShowRepoInFileManager,
@@ -74,41 +84,53 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
             MenuItem::action(tools::open_in_editor_label(cx), OpenRepoInEditor),
             MenuItem::action(tools::open_in_terminal_label(cx), OpenRepoInTerminal),
         ]),
-        Menu::new("Help").items([
-            MenuItem::action("Keyboard Shortcuts", OpenKeyboardShortcuts),
+        Menu::new(jayjay_i18n::menu::help()).items([
+            MenuItem::action(
+                jayjay_i18n::menu::keyboard_shortcuts(),
+                OpenKeyboardShortcuts,
+            ),
             MenuItem::separator(),
-            MenuItem::action("JayJay User Guide", OpenUserGuide),
-            MenuItem::action("Jujutsu Documentation", OpenJujutsuDocumentation),
+            MenuItem::action(jayjay_i18n::menu::jayjay_user_guide(), OpenUserGuide),
+            MenuItem::action(
+                jayjay_i18n::menu::jujutsu_documentation(),
+                OpenJujutsuDocumentation,
+            ),
             MenuItem::separator(),
-            MenuItem::action("Report an Issue", ReportIssue),
-            MenuItem::action("Send Feedback", SendFeedback),
-            MenuItem::action("Reveal Logs", RevealLogs),
+            MenuItem::action(jayjay_i18n::menu::report_an_issue(), ReportIssue),
+            MenuItem::action(jayjay_i18n::menu::send_feedback(), SendFeedback),
+            MenuItem::action(jayjay_i18n::menu::reveal_logs(), RevealLogs),
         ]),
     ]
 }
 
 fn app_menu() -> Menu {
     Menu::new("JayJay").items([
-        MenuItem::action("About JayJay", OpenAbout),
+        MenuItem::action(jayjay_i18n::menu::about_jayjay(), OpenAbout),
         MenuItem::separator(),
-        MenuItem::action("Settings...", OpenSettings),
+        MenuItem::action(jayjay_i18n::menu::settings_ellipsis(), OpenSettings),
         MenuItem::separator(),
-        MenuItem::action("Quit JayJay", Quit),
+        MenuItem::action(jayjay_i18n::menu::quit_jayjay(), Quit),
     ])
 }
 
 fn file_menu(recent_repos: &[String]) -> Menu {
-    Menu::new("File").items([
-        MenuItem::action("Open Repository...", OpenRepository),
-        MenuItem::action("Clone Repository...", CloneRepository),
+    Menu::new(jayjay_i18n::menu::file()).items([
+        MenuItem::action(
+            jayjay_i18n::menu::open_repository_ellipsis(),
+            OpenRepository,
+        ),
+        MenuItem::action(
+            jayjay_i18n::menu::clone_repository_ellipsis(),
+            CloneRepository,
+        ),
         MenuItem::submenu(open_recent_menu(recent_repos)),
     ])
 }
 
 fn open_recent_menu(recent_repos: &[String]) -> Menu {
     if recent_repos.is_empty() {
-        return Menu::new("Open Recent").items([MenuItem::action(
-            "No Recent Repositories",
+        return Menu::new(jayjay_i18n::menu::open_recent()).items([MenuItem::action(
+            jayjay_i18n::menu::no_recent_repositories(),
             ClearRecentRepositories,
         )
         .disabled(true)]);
@@ -124,8 +146,11 @@ fn open_recent_menu(recent_repos: &[String]) -> Menu {
         })
         .collect();
     items.push(MenuItem::separator());
-    items.push(MenuItem::action("Clear", ClearRecentRepositories));
-    Menu::new("Open Recent").items(items)
+    items.push(MenuItem::action(
+        jayjay_i18n::common::clear(),
+        ClearRecentRepositories,
+    ));
+    Menu::new(jayjay_i18n::menu::open_recent()).items(items)
 }
 
 fn recent_repo_label(path: &str) -> String {
@@ -201,7 +226,7 @@ pub(crate) fn prompt_open_repository(cx: &mut App) {
         files: false,
         directories: true,
         multiple: false,
-        prompt: Some("Choose a Jujutsu repository".into()),
+        prompt: Some(jayjay_i18n::menu::choose_a_jujutsu_repository().into()),
     });
     cx.spawn(async move |cx| {
         let paths = match paths.await {

@@ -46,7 +46,7 @@ impl RepoWindow {
                     })
                     .collect(),
                 warnings: (0..state.inputs.len())
-                    .map(|index| state.warning(index).map(str::to_owned))
+                    .map(|index| state.warning(index))
                     .collect(),
                 can_submit: state.can_submit(),
                 ai_in_flight: state.ai_in_flight,

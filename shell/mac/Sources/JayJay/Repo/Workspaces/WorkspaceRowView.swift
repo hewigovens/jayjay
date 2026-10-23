@@ -21,7 +21,7 @@ struct WorkspaceRowView: View {
                     font: .system(size: 11, design: .monospaced)
                 ))
                 if workspace.hasConflict {
-                    Text("conflict")
+                    Text(Localized.Repo.conflictBadge)
                         .font(.system(size: 9, weight: .semibold))
                         .padding(.horizontal, 5).padding(.vertical, 1)
                         .background(.red.opacity(0.15), in: Capsule())
@@ -38,7 +38,7 @@ struct WorkspaceRowView: View {
                     .truncationMode(.tail)
                 Spacer(minLength: 8)
                 if workspace.filesChanged > 0 {
-                    Text("\(workspace.filesChanged) file\(workspace.filesChanged == 1 ? "" : "s")")
+                    Text(Localized.Repo.fileCount(count: Int(workspace.filesChanged)))
                         .font(.system(size: 10))
                         .foregroundStyle(.secondary)
                         .layoutPriority(1)
@@ -52,10 +52,10 @@ struct WorkspaceRowView: View {
     @ViewBuilder
     private var descriptionText: some View {
         if !workspace.isPathResolved {
-            Text("Path unavailable — Forget to clean up")
+            Text(Localized.Repo.pathUnavailableForgetToCleanUp)
                 .foregroundStyle(.orange)
         } else if workspace.description.isEmpty {
-            Text("(no description)")
+            Text(Localized.Repo.noDescriptionPlaceholder)
                 .foregroundStyle(.tertiary)
         } else {
             Text(workspace.description)

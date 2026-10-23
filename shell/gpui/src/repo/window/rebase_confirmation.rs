@@ -20,7 +20,7 @@ pub(super) fn rebase_confirmation_overlay(
 ) -> AnyElement {
     let toggle = checkbox_row(
         "rebase-confirm-toggle",
-        "Confirm before drag-to-rebase",
+        jayjay_i18n::repo::confirm_before_drag_to_rebase(),
         config::current(cx).features.confirm_drag_rebase,
         t,
     )
@@ -36,9 +36,9 @@ pub(super) fn rebase_confirmation_overlay(
                     glyph::ARROW_UP,
                     t.fg_dim,
                     if request.selection_commit_ids.is_empty() {
-                        "Rebase Change?".to_owned()
+                        jayjay_i18n::repo::rebase_change()
                     } else {
-                        format!("Rebase {} Changes?", request.selection_commit_ids.len())
+                        jayjay_i18n::repo::rebase_changes_title(request.selection_commit_ids.len())
                     },
                     format!(
                         "{} -> {}",
@@ -48,19 +48,19 @@ pub(super) fn rebase_confirmation_overlay(
                     t,
                 ))
                 .child(summary_row(
-                    "Change",
+                    &jayjay_i18n::repo::change(),
                     &request.source_label,
                     &request.source_change_id,
                     t,
                 ))
                 .child(icon_label(
                     glyph::ARROW_DOWN,
-                    "Will become a child of",
+                    jayjay_i18n::repo::will_become_a_child_of(),
                     11.,
                     t.fg_dim,
                 ))
                 .child(summary_row(
-                    "New parent",
+                    &jayjay_i18n::repo::new_parent(),
                     &request.dest_label,
                     &request.dest_change_id,
                     t,
@@ -70,15 +70,25 @@ pub(super) fn rebase_confirmation_overlay(
                     div()
                         .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
-                        .child("Any conflicts will appear inline after the rebase."),
+                        .child(jayjay_i18n::repo::any_conflicts_will_appear_inline_after()),
                 )
                 .child(overlay_actions(
-                    button("rebase-confirm-cancel", "Cancel", t, false)
-                        .debug_selector(|| "rebase-confirm-cancel".to_owned())
-                        .on_click(cx.listener(|view, _, _, cx| view.cancel_drag_rebase(cx))),
-                    button("rebase-confirm-submit", "Rebase", t, true)
-                        .debug_selector(|| "rebase-confirm-submit".to_owned())
-                        .on_click(cx.listener(|view, _, _, cx| view.confirm_drag_rebase(cx))),
+                    button(
+                        "rebase-confirm-cancel",
+                        jayjay_i18n::common::cancel(),
+                        t,
+                        false,
+                    )
+                    .debug_selector(|| "rebase-confirm-cancel".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| view.cancel_drag_rebase(cx))),
+                    button(
+                        "rebase-confirm-submit",
+                        jayjay_i18n::repo::rebase(),
+                        t,
+                        true,
+                    )
+                    .debug_selector(|| "rebase-confirm-submit".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| view.confirm_drag_rebase(cx))),
                 )),
         )
         .into_any_element()

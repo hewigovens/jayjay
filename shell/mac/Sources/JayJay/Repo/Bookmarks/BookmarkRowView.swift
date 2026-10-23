@@ -11,7 +11,7 @@ struct BookmarkRowView: View {
             return bookmark.trackedRemotes.map { "@\($0)" }.joined(separator: ", ")
         }
         if !bookmark.availableRemotes.isEmpty {
-            return "Remote available: \(bookmark.availableRemotes.map { "@\($0)" }.joined(separator: ", "))"
+            return Localized.Repo.remoteAvailable(remotes: bookmark.availableRemotes.map { "@\($0)" }.joined(separator: ", "))
         }
         return nil
     }

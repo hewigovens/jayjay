@@ -44,22 +44,21 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         let count = request.paths.len();
-        let noun = if count == 1 { "file" } else { "files" };
         let mut sorted_paths = request.paths.clone();
         sorted_paths.sort();
         self.text_modal = Some(TextModalState {
             prompt: TextPrompt::single_line(
-                format!("Split {count} {noun} to new change"),
+                jayjay_i18n::repo::split_files_title(count),
                 SharedString::default(),
                 "",
-                "Description for split change",
-                "Split",
+                jayjay_i18n::repo::description_for_split_change(),
+                jayjay_i18n::repo::split(),
                 cx,
             ),
             action: TextModalAction::SplitFiles(request),
             context: None,
             checkbox: Some(TextModalCheckbox {
-                label: "Parallel split".into(),
+                label: jayjay_i18n::repo::parallel_split().into(),
                 checked: false,
             }),
             file_list: Some(sorted_paths.into_iter().map(SharedString::from).collect()),

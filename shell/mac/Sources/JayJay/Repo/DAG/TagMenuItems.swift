@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct TagMenuItems: View {
@@ -9,17 +10,17 @@ struct TagMenuItems: View {
 
     var body: some View {
         if !isOnRemote {
-            Button("Push") { actions?.gitPushTag(name: name) }
+            Button(Localized.Menu.push) { actions?.gitPushTag(name: name) }
             Divider()
         }
-        Button("Copy Tag Name") {
+        Button(Localized.Menu.copyTagName) {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(name, forType: .string)
         }
         Divider()
-        Button("Delete Tag", role: .destructive) { actions?.deleteTag(name: name) }
+        Button(Localized.Menu.deleteTag, role: .destructive) { actions?.deleteTag(name: name) }
         if isOnRemote {
-            Button("Delete Tag on Remote", role: .destructive) { onRequest?(.deleteTagOnRemote(name: name)) }
+            Button(Localized.Menu.deleteTagOnRemote, role: .destructive) { onRequest?(.deleteTagOnRemote(name: name)) }
         }
     }
 }

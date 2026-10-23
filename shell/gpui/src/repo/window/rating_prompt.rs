@@ -11,8 +11,6 @@ use crate::ui::icons;
 use crate::ui::overlay::{overlay_card, overlay_layer};
 use crate::ui::primitives::button;
 
-const MESSAGE: &str = "If JayJay is useful to you, a star on GitHub helps others find it, or sponsoring supports development.";
-
 impl RepoWindow {
     pub(super) fn record_successful_action(&mut self, cx: &mut Context<Self>) {
         let can_show = !self.rating_prompt && !self.has_refresh_sensitive_interaction();
@@ -60,7 +58,7 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
                         .text_size(ui_font_size(16.))
                         .font_weight(FontWeight::BOLD)
                         .text_color(rgb(t.fg))
-                        .child("Enjoying JayJay?"),
+                        .child(jayjay_i18n::repo::enjoying_jayjay()),
                 )
                 .child(
                     div()
@@ -68,7 +66,7 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
                         .text_color(rgb(t.fg_dim))
                         .text_center()
                         .whitespace_normal()
-                        .child(MESSAGE),
+                        .child(jayjay_i18n::repo::rating_prompt_detail()),
                 )
                 .child(
                     div()
@@ -77,18 +75,30 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
                         .gap(px(8.))
                         .pt(px(4.))
                         .child(
-                            button("rating-prompt-star", "Star on GitHub", t, true)
-                                .debug_selector(|| "rating-prompt-star".to_owned())
-                                .on_click(cx.listener(|view, _, _, cx| {
-                                    view.open_prompt_link(REPOSITORY_URL, cx)
-                                })),
+                            button(
+                                "rating-prompt-star",
+                                jayjay_i18n::settings::star_on_github(),
+                                t,
+                                true,
+                            )
+                            .debug_selector(|| "rating-prompt-star".to_owned())
+                            .on_click(cx.listener(|view, _, _, cx| {
+                                view.open_prompt_link(REPOSITORY_URL, cx)
+                            })),
                         )
                         .child(
-                            button("rating-prompt-sponsor", "Sponsor", t, false)
-                                .debug_selector(|| "rating-prompt-sponsor".to_owned())
-                                .on_click(cx.listener(|view, _, _, cx| {
+                            button(
+                                "rating-prompt-sponsor",
+                                jayjay_i18n::settings::sponsor(),
+                                t,
+                                false,
+                            )
+                            .debug_selector(|| "rating-prompt-sponsor".to_owned())
+                            .on_click(
+                                cx.listener(|view, _, _, cx| {
                                     view.open_prompt_link(SPONSOR_URL, cx)
-                                })),
+                                }),
+                            ),
                         ),
                 )
                 .child(
@@ -99,7 +109,7 @@ pub(super) fn rating_prompt_overlay(t: &Theme, cx: &mut Context<RepoWindow>) -> 
                         .text_color(rgb(t.fg_faint))
                         .cursor_pointer()
                         .hover(|s| s.text_color(rgb(t.fg_dim)))
-                        .child("Don't show again")
+                        .child(jayjay_i18n::repo::dont_show_again())
                         .on_click(cx.listener(|view, _, _, cx| {
                             RatingPromptStore::turn_off(cx);
                             view.close_rating_prompt(cx);

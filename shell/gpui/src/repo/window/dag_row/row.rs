@@ -211,7 +211,7 @@ fn summary_line(change: &ChangeInfo, summary: &str, row_ix: usize, t: &Theme) ->
             .text_size(ui_font_size(FONT_BODY))
             .text_color(rgb(t.fg_faint))
             .truncate()
-            .child("(no description)")
+            .child(jayjay_i18n::repo::no_description_placeholder())
             .into_any_element()
     } else {
         div()

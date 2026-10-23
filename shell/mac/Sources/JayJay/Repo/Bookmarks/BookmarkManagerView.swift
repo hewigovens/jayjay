@@ -57,13 +57,13 @@ struct BookmarkManagerView: View {
 
     private var header: some View {
         HStack(spacing: 12) {
-            Label("Bookmark Manager", systemImage: "bookmark.fill")
+            Label(Localized.Menu.bookmarkManager, systemImage: "bookmark.fill")
                 .jayjayFont(15, weight: .semibold)
             Spacer()
             HStack(spacing: 4) {
                 Image(systemName: "magnifyingglass")
                     .foregroundStyle(.secondary)
-                TextField("Filter bookmarks", text: $filter)
+                TextField(Localized.Repo.filterBookmarks, text: $filter)
                     .textFieldStyle(.roundedBorder)
                     .frame(width: 180)
             }
@@ -77,7 +77,7 @@ struct BookmarkManagerView: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Button("Done", action: onDismiss)
+            Button(Localized.Repo.done, action: onDismiss)
                 .keyboardShortcut(.cancelAction)
         }
         .padding(.horizontal, 16)
@@ -90,10 +90,10 @@ struct BookmarkManagerView: View {
         HStack(spacing: 16) {
             statBadge("\(activeCount) active", color: .green)
             if deletedCount > 0 {
-                statBadge("\(deletedCount) deleted", color: .red)
+                statBadge(Localized.Repo.deletedCount(count: deletedCount), color: .red)
             }
             if conflictedCount > 0 {
-                statBadge("\(conflictedCount) conflicted", color: .orange)
+                statBadge(Localized.Repo.conflictedCount(count: conflictedCount), color: .orange)
             }
             if localOnlyCount > 0 {
                 statBadge("\(localOnlyCount) local-only", color: .secondary)
@@ -102,7 +102,7 @@ struct BookmarkManagerView: View {
                 statBadge("\(remoteOnlyCount) remote-only", color: .blue)
             }
             Spacer()
-            Toggle("Show deleted", isOn: $showDeleted)
+            Toggle(Localized.Repo.showDeleted, isOn: $showDeleted)
                 .jayjayFont(11)
                 .toggleStyle(.checkbox)
         }

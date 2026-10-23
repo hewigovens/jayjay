@@ -15,15 +15,15 @@ struct RepositoryCommands: Commands {
     }
 
     var body: some Commands {
-        CommandMenu("Repository") {
+        CommandMenu(Localized.Menu.repository) {
             Button { tracker.handler?.showCommandPalette() } label: {
-                Label("Command Palette", systemImage: "command")
+                Label(Localized.Menu.commandPalette, systemImage: "command")
             }
             .keyboardShortcut(AppShortcut.commandPalette)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showUndo() } label: {
-                Label("Undo Last Operation", systemImage: "arrow.uturn.backward.circle")
+                Label(Localized.Menu.undoLastOperation, systemImage: "arrow.uturn.backward.circle")
             }
             .keyboardShortcut(AppShortcut.undoLastOperation)
             .disabled(tracker.handler == nil)
@@ -31,25 +31,25 @@ struct RepositoryCommands: Commands {
             Divider()
 
             Button { tracker.handler?.showRevsetFilter() } label: {
-                Label("Filter by Revset…", systemImage: "line.3.horizontal.decrease")
+                Label(Localized.Menu.filterByRevsetEllipsis, systemImage: "line.3.horizontal.decrease")
             }
             .keyboardShortcut(AppShortcut.revsetFilter)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showBookmarkManager() } label: {
-                Label("Bookmark Manager", systemImage: "bookmark")
+                Label(Localized.Menu.bookmarkManager, systemImage: "bookmark")
             }
             .keyboardShortcut(AppShortcut.bookmarkManager)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showOverview() } label: {
-                Label("Repo Overview", systemImage: "rectangle.split.3x1")
+                Label(Localized.Menu.repoOverview, systemImage: "rectangle.split.3x1")
             }
             .keyboardShortcut(AppShortcut.repoOverview)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showNewWorkspace() } label: {
-                Label("New Workspace...", systemImage: "plus.rectangle.on.folder")
+                Label(Localized.Menu.newWorkspaceEllipsis, systemImage: "plus.rectangle.on.folder")
             }
             .disabled(tracker.handler == nil)
 
@@ -64,7 +64,7 @@ struct RepositoryCommands: Commands {
                 guard let repoPath else { return }
                 Self.openRemoteRepository(at: repoPath)
             } label: {
-                Label("View Remote Repository", systemImage: "globe")
+                Label(Localized.Menu.viewRemoteRepository, systemImage: "globe")
             }
             .disabled(repoPath == nil)
 
@@ -82,7 +82,7 @@ struct RepositoryCommands: Commands {
                     guard let repoPath else { return }
                     settings.openInEditor(filePath: ".", repoPath: repoPath)
                 } label: {
-                    Label("Open in \(settings.externalEditor.title)", systemImage: "curlybraces")
+                    Label(Localized.Menu.openIn(app: settings.externalEditor.title), systemImage: "curlybraces")
                 }
                 .disabled(repoPath == nil)
 
@@ -90,7 +90,7 @@ struct RepositoryCommands: Commands {
                     guard let repoPath else { return }
                     settings.openInTerminal(at: repoPath)
                 } label: {
-                    Label("Open in \(settings.terminal.title)", systemImage: "terminal")
+                    Label(Localized.Menu.openIn(app: settings.terminal.title), systemImage: "terminal")
                 }
                 .disabled(repoPath == nil)
             }

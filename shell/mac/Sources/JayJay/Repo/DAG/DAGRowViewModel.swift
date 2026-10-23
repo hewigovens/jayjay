@@ -253,14 +253,14 @@ struct DAGRowViewModel {
     var dragTargetText: String? {
         switch rebaseState {
             case let .hoverTarget(previewText):
-                return previewText ?? "Release to rebase here"
+                return previewText ?? Localized.Repo.releaseToRebaseHere
             case .sourceArmed:
-                return "Drag to choose a new parent"
+                return Localized.Repo.dragToChooseANewParent
             default:
                 break
         }
         if case let .hoverTarget(previewText) = bookmarkDropState {
-            return previewText ?? "Release to move here"
+            return previewText ?? Localized.Repo.releaseToMoveHere
         }
         return nil
     }

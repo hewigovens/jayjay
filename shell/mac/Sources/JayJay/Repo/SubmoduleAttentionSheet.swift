@@ -13,14 +13,14 @@ struct SubmoduleAttentionSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 14) {
-            Text("Submodule changes need attention")
+            Text(Localized.Repo.submoduleChangesNeedAttention)
                 .jayjayFont(14, weight: .semibold)
             Text(
-                "JayJay found Git submodule changes. Review the items below, then optionally let JayJay handle the safe ones."
+                Localized.Repo.jayjayFoundGitSubmoduleChangesReview
             )
             .jayjayFont(12)
             .foregroundStyle(.secondary)
-            Text("To disable this alert, turn off Enable Git submodule support in Settings > Diff > Git.")
+            Text(Localized.Repo.toDisableThisAlertTurnOff)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
 
@@ -35,14 +35,14 @@ struct SubmoduleAttentionSheet: View {
 
             if hasSafeAutoCommitStatuses {
                 Toggle(isOn: $autoCommitSafeSubmodules) {
-                    Text("Auto-commit safe submodule updates")
+                    Text(Localized.Repo.autoCommitSafeSubmoduleUpdates)
                         .jayjayFont(12)
                 }
             }
 
             HStack {
                 Spacer()
-                Button("Close", action: onClose)
+                Button(Localized.Common.close, action: onClose)
                     .keyboardShortcut(autoCommitSafeSubmodules ? .cancelAction : .defaultAction)
                 if autoCommitSafeSubmodules {
                     Button {
@@ -59,7 +59,7 @@ struct SubmoduleAttentionSheet: View {
                             ProgressView()
                                 .controlSize(.small)
                         } else {
-                            Text("Commit Safe Updates")
+                            Text(Localized.Repo.commitSafeUpdates)
                         }
                     }
                     .keyboardShortcut(.defaultAction)
@@ -95,12 +95,12 @@ struct SubmoduleAttentionSheet: View {
             actionButton(systemImage: "curlybraces") {
                 settings.openInEditor(filePath: ".", repoPath: absolutePath)
             }
-            .help("Open submodule in editor")
+            .help(Localized.Repo.openSubmoduleInEditor)
 
             actionButton(systemImage: "terminal") {
                 settings.openInTerminal(at: absolutePath)
             }
-            .help("Open submodule in terminal")
+            .help(Localized.Repo.openSubmoduleInTerminal)
         }
         .padding(.horizontal, 10)
         .padding(.vertical, 8)
@@ -125,19 +125,19 @@ struct SubmoduleAttentionSheet: View {
     private func statusLabel(for status: GitSubmoduleStatus) -> String {
         var parts = [String]()
         if status.hasNewCommits {
-            parts.append("new commits")
+            parts.append(Localized.Repo.submoduleNewCommits)
         }
         if status.hasModifiedContent {
-            parts.append("modified content")
+            parts.append(Localized.Repo.submoduleModifiedContent)
         }
         if status.hasUntrackedContent {
-            parts.append("untracked content")
+            parts.append(Localized.Repo.submoduleUntrackedContent)
         }
         if parts.isEmpty {
-            return "submodule change"
+            return Localized.Repo.submoduleChange
         }
         if status.hasNewCommits, !status.hasModifiedContent, !status.hasUntrackedContent {
-            return "new commits"
+            return Localized.Repo.submoduleNewCommits
         }
         return parts.joined(separator: ", ")
     }

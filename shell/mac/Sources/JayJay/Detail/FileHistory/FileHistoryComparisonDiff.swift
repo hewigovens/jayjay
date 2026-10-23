@@ -32,9 +32,9 @@ struct FileHistoryComparisonDiff: View {
             )
         } else if isLoaded {
             ContentUnavailableView(
-                "No Changes to This File",
+                Localized.Repo.noChangesToThisFile,
                 systemImage: "doc",
-                description: Text("The file is the same in both revisions.")
+                description: Text(Localized.Repo.theFileIsTheSameIn)
             )
         } else {
             Color.clear

@@ -44,7 +44,7 @@ struct DetailView: View {
                 "\(selectionWithoutDiffCount) Changes Selected",
                 systemImage: "square.stack.3d.up.slash",
                 description: Text(
-                    "These changes don't form a single linear range, so they can't be shown as one combined diff. Right-click a selected change for actions."
+                    Localized.Repo.theseChangesDontFormASingleLinear
                 )
             )
             .accessibilityIdentifier(AID.Detail.selectionWithoutDiff)
@@ -65,8 +65,8 @@ struct DetailView: View {
             .id("\(detail.info.selectionRevision)|\(compareFromId ?? "")")
         } else {
             ContentUnavailableView(
-                "Select a Change", systemImage: "doc.text",
-                description: Text("Choose a change from the list to see its details.")
+                Localized.Repo.selectAChangeTitle, systemImage: "doc.text",
+                description: Text(Localized.Repo.chooseAChangeFromTheList)
             )
         }
     }

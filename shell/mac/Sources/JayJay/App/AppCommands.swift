@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct AppCommands: Commands {
@@ -10,7 +11,7 @@ struct AppCommands: Commands {
 
         CommandGroup(after: .sidebar) {
             Button { settings.sidebarHidden.toggle() } label: {
-                Label(settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar", systemImage: "sidebar.leading")
+                Label(settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar, systemImage: "sidebar.leading")
             }
             .keyboardShortcut(AppShortcut.toggleSidebar)
             .disabled(ActiveRepoTracker.shared.handler == nil)
@@ -18,17 +19,17 @@ struct AppCommands: Commands {
             Divider()
 
             Button { settings.zoomIn() } label: {
-                Label("Zoom In", systemImage: "plus.magnifyingglass")
+                Label(Localized.Menu.zoomIn, systemImage: "plus.magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.zoomIn)
 
             Button { settings.zoomOut() } label: {
-                Label("Zoom Out", systemImage: "minus.magnifyingglass")
+                Label(Localized.Menu.zoomOut, systemImage: "minus.magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.zoomOut)
 
             Button { settings.resetZoom() } label: {
-                Label("Reset Zoom", systemImage: "1.magnifyingglass")
+                Label(Localized.Menu.resetZoom, systemImage: "1.magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.resetZoom)
         }
@@ -44,7 +45,7 @@ struct AppCommands: Commands {
                     tv.performFindPanelAction(item)
                 }
             } label: {
-                Label("Find...", systemImage: "magnifyingglass")
+                Label(Localized.Menu.findEllipsis, systemImage: "magnifyingglass")
             }
             .keyboardShortcut(AppShortcut.findInDiff)
         }
@@ -53,19 +54,19 @@ struct AppCommands: Commands {
             Button {
                 windowManager.openRepositoryPicker()
             } label: {
-                Label("Open Repository...", systemImage: "folder")
+                Label(Localized.Menu.openRepositoryEllipsis, systemImage: "folder")
             }
             .keyboardShortcut(AppShortcut.openRepository)
 
             Button {
                 windowManager.showCloneRepository()
             } label: {
-                Label("Clone Repository...", systemImage: "square.and.arrow.down")
+                Label(Localized.Menu.cloneRepositoryEllipsis, systemImage: "square.and.arrow.down")
             }
 
             Menu {
                 if settings.recentRepos.isEmpty {
-                    Text("No Recent Repositories")
+                    Text(Localized.Menu.noRecentRepositories)
                 } else {
                     ForEach(settings.recentRepos, id: \.self) { path in
                         Button {
@@ -84,11 +85,11 @@ struct AppCommands: Commands {
                         settings.recentRepos = []
                         settings.lastOpenedRepo = nil
                     } label: {
-                        Label("Clear", systemImage: "trash")
+                        Label(Localized.Common.clear, systemImage: "trash")
                     }
                 }
             } label: {
-                Label("Open Recent", systemImage: "clock")
+                Label(Localized.Menu.openRecent, systemImage: "clock")
             }
         }
     }

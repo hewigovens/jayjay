@@ -32,11 +32,11 @@ private struct DetailDescriptionSection: View {
     var body: some View {
         if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             HStack(alignment: .center, spacing: 8) {
-                Text("No description")
+                Text(Localized.Repo.noDescription)
                     .jayjayFont(20, weight: .semibold)
                     .foregroundStyle(.tertiary)
                 if canEditDescription {
-                    Button("Add description", systemImage: "pencil", action: onEdit)
+                    Button(Localized.Repo.addDescription, systemImage: "pencil", action: onEdit)
                         .buttonStyle(.plain)
                         .keyboardFocusStop(.editDescription, action: onEdit)
                         .jayjayFont(12)

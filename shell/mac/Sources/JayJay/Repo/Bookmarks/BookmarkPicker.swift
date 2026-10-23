@@ -31,10 +31,10 @@ struct BookmarkPicker: View {
     var sections: [PickerSection] {
         var sections: [PickerSection] = []
         if !trackedBookmarks.isEmpty {
-            sections.append(PickerSection(id: "tracked", title: "Tracked", rows: trackedBookmarks.map(bookmarkRow)))
+            sections.append(PickerSection(id: "tracked", title: Localized.Repo.tracked, rows: trackedBookmarks.map(bookmarkRow)))
         }
         if !localOnlyBookmarks.isEmpty {
-            sections.append(PickerSection(id: "local", title: "Local Only", rows: localOnlyBookmarks.map(bookmarkRow)))
+            sections.append(PickerSection(id: "local", title: Localized.Repo.localOnly, rows: localOnlyBookmarks.map(bookmarkRow)))
         }
         let remoteRows = bookmarks
             .filter { !$0.hasLocalTarget }
@@ -46,7 +46,7 @@ struct BookmarkPicker: View {
                     .map { remoteRow(bookmark, remote: $0) }
             }
         if !remoteRows.isEmpty {
-            sections.append(PickerSection(id: "remote", title: "Remote Only", rows: remoteRows))
+            sections.append(PickerSection(id: "remote", title: Localized.Repo.remoteOnly, rows: remoteRows))
         }
         return sections
     }
@@ -63,7 +63,7 @@ struct BookmarkPicker: View {
             HStack(spacing: 6) {
                 Image(systemName: "bookmark")
                     .imageScale(.small)
-                Text("Bookmarks")
+                Text(Localized.Repo.bookmarks)
                     .jayjayFont(12, weight: .medium)
                     .lineLimit(1)
                 if bookmarkCount > 0 {
@@ -84,8 +84,8 @@ struct BookmarkPicker: View {
         .buttonStyle(.plain)
         .fixedSize()
         .background(PickerAnchorView(anchor: anchor))
-        .accessibilityLabel(bookmarkCount == 0 ? "Bookmarks" : "Bookmarks (\(bookmarkCount))")
-        .help("Show a bookmark's change, or manage bookmarks")
+        .accessibilityLabel(bookmarkCount == 0 ? Localized.Repo.bookmarks : Localized.Repo.bookmarksCount(count: bookmarkCount))
+        .help(Localized.Repo.showABookmarksChangeOrManage)
         .popover(isPresented: $showingCreate) {
             createPopover
         }
@@ -122,15 +122,15 @@ struct BookmarkPicker: View {
         guard let anchorView = anchor.view else { return }
         let sections = sections
         let root = PickerPanelRoot(
-            placeholder: "Filter",
-            actionLabel: "New",
+            placeholder: Localized.Repo.filter,
+            actionLabel: Localized.Repo.new,
             onAction: {
                 newBookmarkName = ""
                 showingCreate = true
             },
             sections: sections,
-            emptyText: "No bookmarks yet",
-            loadingText: isLoaded ? nil : "Loading bookmarks…",
+            emptyText: Localized.Repo.noBookmarksYet,
+            loadingText: isLoaded ? nil : Localized.Repo.loadingBookmarksEllipsis,
             onDismiss: { [weak panel] in panel?.dismiss() }
         )
         panel.show(under: anchorView, size: PickerPanelRoot.idealSize(sections: sections, width: 280), content: root)
@@ -161,12 +161,12 @@ struct BookmarkPicker: View {
         )
         .withContextMenu {
             if let target {
-                Button("Filter by This Bookmark") {
+                Button(Localized.Repo.filterByThisBookmark) {
                     panel.dismiss()
                     actions?.filterByBookmark(target)
                 }
             }
-            Button("Track \(symbol)") {
+            Button(Localized.Repo.trackSymbol(symbol: symbol)) {
                 panel.dismiss()
                 actions?.trackBookmark(name: name, remote: remote)
             }
@@ -182,7 +182,7 @@ struct BookmarkPicker: View {
     private func bookmarkContextMenu(_ bookmark: BookmarkInfo) -> some View {
         let untrackedRemotes = bookmark.availableRemotes.filter { !bookmark.trackedRemotes.contains($0) }
         if let target = target(bookmark, remote: nil) {
-            Button("Filter by This Bookmark") {
+            Button(Localized.Repo.filterByThisBookmark) {
                 panel.dismiss()
                 actions?.filterByBookmark(target)
             }
@@ -192,35 +192,35 @@ struct BookmarkPicker: View {
                 panel.dismiss()
                 actions?.gitPullBookmark(name: bookmark.name)
             } label: {
-                Label("Pull", systemImage: "arrow.down.circle")
+                Label(Localized.Menu.pull, systemImage: "arrow.down.circle")
             }
         }
         Button {
             panel.dismiss()
             actions?.gitPush(bookmark: bookmark.name)
         } label: {
-            Label("Push", systemImage: "arrow.up.circle")
+            Label(Localized.Menu.push, systemImage: "arrow.up.circle")
         }
         Button {
             panel.dismiss()
             actions?.moveBookmarkForward(name: bookmark.name)
         } label: {
-            Label("Move to @-", systemImage: "arrow.right.circle")
+            Label(Localized.Menu.moveTo, systemImage: "arrow.right.circle")
         }
         Button {
             panel.dismiss()
             renameNewName = bookmark.name
             renamingBookmark = bookmark.name
         } label: {
-            Label("Rename...", systemImage: "pencil")
+            Label(Localized.Menu.renameEllipsis, systemImage: "pencil")
         }
 
         if !bookmark.trackedRemotes.isEmpty {
-            Text("Tracking \(bookmark.trackedRemotes.joined(separator: ", "))")
+            Text(Localized.Repo.trackingRemotes(remotes: bookmark.trackedRemotes.joined(separator: ", ")))
         }
 
         if !untrackedRemotes.isEmpty {
-            Menu("Track Remote") {
+            Menu(Localized.Menu.trackRemote) {
                 ForEach(untrackedRemotes, id: \.self) { remote in
                     Button(remote) {
                         panel.dismiss()
@@ -229,7 +229,7 @@ struct BookmarkPicker: View {
                 }
             }
         } else if bookmark.availableRemotes.isEmpty {
-            Text("No remote bookmark available")
+            Text(Localized.Repo.noRemoteBookmarkAvailable)
         }
 
         if canDeleteBookmark(name: bookmark.name, conflicted: bookmark.isConflicted) {
@@ -238,25 +238,25 @@ struct BookmarkPicker: View {
                 panel.dismiss()
                 actions?.deleteBookmark(name: bookmark.name)
             } label: {
-                Label("Delete", systemImage: "trash")
+                Label(Localized.Repo.delete, systemImage: "trash")
             }
         }
     }
 
     private var createPopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("New Bookmark")
+            Text(Localized.Repo.newBookmark)
                 .jayjayFont(13, weight: .semibold)
-            TextField("Bookmark name", text: $newBookmarkName)
+            TextField(Localized.Repo.bookmarkName, text: $newBookmarkName)
                 .textFieldStyle(.roundedBorder)
                 .jayjayFont(13, design: .monospaced)
                 .frame(width: 220)
                 .onSubmit { submitCreate() }
             HStack {
                 Spacer()
-                Button("Cancel") { showingCreate = false }
+                Button(Localized.Common.cancel) { showingCreate = false }
                     .keyboardShortcut(.cancelAction)
-                Button("Create") { submitCreate() }
+                Button(Localized.Repo.create) { submitCreate() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canSubmitCreate)
             }
@@ -266,21 +266,21 @@ struct BookmarkPicker: View {
 
     private var renamePopover: some View {
         VStack(alignment: .leading, spacing: 10) {
-            Text("Rename Bookmark")
+            Text(Localized.Repo.renameBookmark)
                 .jayjayFont(13, weight: .semibold)
-            Text("From: \(renamingBookmark ?? "")")
+            Text(Localized.Repo.renameFrom(name: renamingBookmark ?? ""))
                 .jayjayFont(11, design: .monospaced)
                 .foregroundStyle(.secondary)
-            TextField("New name", text: $renameNewName)
+            TextField(Localized.Repo.newName, text: $renameNewName)
                 .textFieldStyle(.roundedBorder)
                 .jayjayFont(13, design: .monospaced)
                 .frame(width: 220)
                 .onSubmit { submitRename() }
             HStack {
                 Spacer()
-                Button("Cancel") { renamingBookmark = nil }
+                Button(Localized.Common.cancel) { renamingBookmark = nil }
                     .keyboardShortcut(.cancelAction)
-                Button("Rename") { submitRename() }
+                Button(Localized.Repo.rename) { submitRename() }
                     .keyboardShortcut(.defaultAction)
                     .disabled(!canSubmitRename)
             }

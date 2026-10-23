@@ -44,11 +44,11 @@ struct RevsetBar: View {
     var body: some View {
         HStack(spacing: 2) {
             if actions.revsetFilter.previous != nil, !isEditing {
-                icon("chevron.backward", label: "Back to previous filter", stop: .revsetBack, action: actions.returnToPreviousRevset)
+                icon("chevron.backward", label: Localized.Repo.backToPreviousFilter, stop: .revsetBack, action: actions.returnToPreviousRevset)
             }
             icon(
                 filterIcon,
-                label: "Presets, bookmarks and recent revsets",
+                label: Localized.Repo.presetsBookmarksAndRecentRevsets,
                 stop: .revsetPresets,
                 tint: isNarrowed,
                 showsTooltip: false,
@@ -57,7 +57,7 @@ struct RevsetBar: View {
             if isEditing {
                 FilterField(
                     text: $draft,
-                    placeholder: "Revset",
+                    placeholder: Localized.Repo.revset,
                     accessibilityIdentifier: AID.Toolbar.revsetField,
                     isPlain: true,
                     endsEditingOnOutsideClick: true,
@@ -80,13 +80,13 @@ struct RevsetBar: View {
                     .onTapGesture(perform: beginEditing)
                     .accessibilityElement(children: .ignore)
                     .accessibilityAddTraits(.isButton)
-                    .accessibilityLabel("Revset")
+                    .accessibilityLabel(Localized.Repo.revset)
                     .accessibilityValue(revset)
                     .accessibilityAction(.default, beginEditing)
                     .accessibilityIdentifier(AID.Toolbar.revsetBar)
             }
             if isNarrowed, !isEditing {
-                icon("xmark.circle.fill", label: "Reset to default", stop: .revsetReset) { actions.applyFilter("") }
+                icon("xmark.circle.fill", label: Localized.Repo.resetToDefault, stop: .revsetReset) { actions.applyFilter("") }
             }
         }
         .padding(.leading, 4)

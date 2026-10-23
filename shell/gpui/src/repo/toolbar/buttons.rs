@@ -62,10 +62,10 @@ impl SyncAction {
         }
     }
 
-    fn label(self) -> &'static str {
+    fn label(self) -> String {
         match self {
-            Self::FetchOrigin => "Pull",
-            Self::PushDefault => "Push",
+            Self::FetchOrigin => jayjay_i18n::menu::pull(),
+            Self::PushDefault => jayjay_i18n::menu::push(),
         }
     }
 
@@ -84,9 +84,9 @@ fn sidebar_toggle_button(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let title = if sidebar_hidden {
-        "Show Sidebar"
+        jayjay_i18n::menu::show_sidebar()
     } else {
-        "Hide Sidebar"
+        jayjay_i18n::menu::hide_sidebar()
     };
     let tooltip = format!("{title} ({})", KeyCaps::label(&ToggleSidebar, cx));
     focus_ring(
@@ -255,7 +255,7 @@ fn sync_button(
             SyncAction::PushDefault => view.push_or_cancel(cx),
         }),
     )
-    .debug_selector(move || format!("toolbar-{label}"))
+    .debug_selector(move || action.id().to_owned())
     .child(sync_icon(
         action.icon_path(),
         id,
@@ -352,7 +352,13 @@ fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str
 
 fn settings_button(focused: Option<FocusStop>, edge: GroupEdge, t: &Theme) -> AnyElement {
     focus_ring(
-        group_icon_item("tb-settings", glyph::GEAR, "Settings", edge, t),
+        group_icon_item(
+            "tb-settings",
+            glyph::GEAR,
+            jayjay_i18n::repo::settings(),
+            edge,
+            t,
+        ),
         focused == Some(FocusStop::Settings),
         t,
     )

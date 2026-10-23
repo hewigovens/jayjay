@@ -103,9 +103,11 @@ impl RepoViewModel {
         T: Send + 'static,
     {
         let Some(repo) = self.repo.clone() else {
-            self.present_error("repository is not open");
+            self.present_error(jayjay_i18n::repo::repository_not_open());
             cx.notify();
-            return cx.spawn(async move |_, _| Err(JayError::internal("repository is not open")));
+            return cx.spawn(async move |_, _| {
+                Err(JayError::internal(jayjay_i18n::repo::repository_not_open()))
+            });
         };
 
         self.clear_error();

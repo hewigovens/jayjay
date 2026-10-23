@@ -29,6 +29,11 @@ class SceneBase: XCTestCase {
         []
     }
 
+    /// Scenes find elements by their English labels, whatever the runner's own language is.
+    class var languages: String {
+        "(en)"
+    }
+
     class var providesJJIdentity: Bool {
         true
     }
@@ -68,8 +73,7 @@ class SceneBase: XCTestCase {
         app.launchArguments = Self.ignoresWindowRestoration
             ? ["-ApplePersistenceIgnoreState", "YES"]
             : []
-        // Scenes find elements by their English labels, whatever the runner's own language is.
-        app.launchArguments += ["-AppleLanguages", "(en)"]
+        app.launchArguments += ["-AppleLanguages", Self.languages]
         if Self.opensFixtureOnLaunch {
             let fixture = root.appendingPathComponent(Self.fixtureName, isDirectory: true)
             fixtureURL = fixture

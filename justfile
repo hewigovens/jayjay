@@ -114,9 +114,9 @@ lint:
   just lint-i18n
 
 # Files fully migrated to the jayjay-i18n catalog.
-i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/mac/Sources/JayJay/Settings"
+i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/gpui/src/repo shell/gpui/src/app/menus.rs shell/mac/Sources/JayJay/Settings shell/mac/Sources/JayJay/Repo shell/mac/Sources/JayJay/Detail shell/mac/Sources/JayJay/App/Window shell/mac/Sources/JayJay/App/AppCommands.swift shell/mac/Sources/JayJay/App/AppInfoCommands.swift shell/mac/Sources/JayJay/App/HelpCommands.swift"
 # Proper names that stay English in every locale.
-i18n_names := "JayJay|Codex CLI|Claude CLI|Terminal|Frog"
+i18n_names := "JayJay|Codex CLI|Claude CLI|Codex|Claude|Terminal|Finder|Frog"
 
 lint-i18n:
   #!/usr/bin/env bash
@@ -129,14 +129,28 @@ lint-i18n:
     swift_enum=$(tr a-z A-Z <<< "${swift_enum:0:1}")${swift_enum:1}
     for id in $(sed -n "s/^\(${stem}-[a-z0-9-]*\) =.*/\1/p" "$file"); do
       name=${id#"$stem"-}
-      if ! grep -rqE --include='*.rs' "${stem}::${name//-/_}\(" crates shell/gpui/src --exclude-dir=jayjay-i18n \
+      if ! grep -rqE --include='*.rs' "${stem}::${name//-/_}([^a-z0-9_]|$)" crates shell/gpui/src --exclude-dir=jayjay-i18n \
         && ! grep -rqE --include='*.swift' "Localized\.${swift_enum}\.$(camel "$name")([^A-Za-z0-9_]|$)" shell/mac/Sources shell/mac/Packages; then
         echo "unused message: $id ($file)"
         status=1
       fi
     done
   done
-  if grep -rnE --include='*.rs' --include='*.swift' --exclude='tests.rs' "\"[A-Z][A-Za-z]+([ ,.…?!&'][^\"]*)?\"" {{i18n_migrated}} | grep -vE "\"({{i18n_names}})\"|key_context\(|assert"; then
+  hits=$(find {{i18n_migrated}} -type f \( -name '*.rs' -o -name '*.swift' \) ! -name 'tests.rs' ! -name 'RepoContentView+CommandPalette*' -print0 \
+    | xargs -0 awk -v names='^"({{i18n_names}})"$' '
+      FNR == 1 { skip = 0 }
+      /#\[cfg\(test\)\]/ { skip = 1 }
+      skip || /^[[:space:]]*\/\// || /key_context|KeyContext|assert|\.contains\(/ { next }
+      {
+        rest = $0
+        while (match(rest, /"[A-Z][a-z]+([ ,.…?!&:'\''][^"]*)?"/)) {
+          literal = substr(rest, RSTART, RLENGTH)
+          if (literal !~ names) { print FILENAME ":" FNR ": " $0; break }
+          rest = substr(rest, RSTART + RLENGTH)
+        }
+      }')
+  if [ -n "$hits" ]; then
+    echo "$hits"
     echo "hardcoded user-facing text in a migrated file; add it to crates/jayjay-i18n/locales/en-US"
     status=1
   fi

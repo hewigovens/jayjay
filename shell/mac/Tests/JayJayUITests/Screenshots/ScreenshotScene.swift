@@ -24,6 +24,10 @@ class ScreenshotScene: SceneBase {
         ["JJ_CONFIG": fixtureRoot.appendingPathComponent("jj-config.toml").path]
     }
 
+    override class var languages: String {
+        environment["JAYJAY_SCREENSHOT_LANGUAGE"].map { "(\($0))" } ?? super.languages
+    }
+
     override class var startsWithDefaultLayout: Bool {
         false
     }

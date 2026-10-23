@@ -27,7 +27,7 @@ extension RepoViewModel {
         // The confirmation can stay open across a refresh; never rebase commits it did not show.
         let shown = Set(graphEntries.map(\.change.commitId.id))
         guard ([request.sourceCommitId, request.destCommitId] + request.selectionCommitIds).allSatisfy(shown.contains) else {
-            MainActor.assumeIsolated { onFailure(self, "Rebase cancelled: the changes moved while confirming") }
+            MainActor.assumeIsolated { onFailure(self, Localized.Repo.rebaseCancelledTheChangesMovedWhile) }
             return
         }
         lastInternalMutationAt = Date()
@@ -114,7 +114,7 @@ extension RepoViewModel {
     }
 
     private static func rebaseMessage(for request: DAGRebaseRequest, hadConflicts: Bool) -> String {
-        let base = "Rebased \(request.sourceLabel) onto \(request.destLabel)."
+        let base = Localized.Repo.rebasedOnto(source: request.sourceLabel, destination: request.destLabel)
         guard hadConflicts else { return base }
         return "\(base) Conflicts need resolution."
     }

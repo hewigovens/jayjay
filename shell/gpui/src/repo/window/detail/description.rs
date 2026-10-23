@@ -93,9 +93,9 @@ pub(super) fn description_block(
             .text_color(rgb(t.fg_dim)),
     )
     .tooltip(text_tooltip(if expanded {
-        "Collapse description"
+        jayjay_i18n::repo::collapse_description()
     } else {
-        "Expand description"
+        jayjay_i18n::repo::expand_description()
     }))
     .on_click(cx.listener(|view, _, _, cx| {
         view.description.expanded = !view.description.expanded;
@@ -129,7 +129,7 @@ pub(super) fn description_block(
                     .text_size(ui_font_size(20.))
                     .line_height(px(t.scaled_font_size(HEADER_HEIGHT - 12.)))
                     .text_color(rgb(t.fg_faint))
-                    .child("No description"),
+                    .child(jayjay_i18n::repo::no_description()),
             )
         })
         .when_some(edit_button(change, focused, t, cx), |el, button| {
@@ -175,13 +175,17 @@ fn edit_button(
         .text_color(rgb(t.fg_dim))
         .rounded_md()
         .child(icon(glyph::PENCIL, 12., t.fg_dim))
-        .child(if is_empty { "Add description" } else { "Edit" })
+        .child(if is_empty {
+            jayjay_i18n::repo::add_description()
+        } else {
+            jayjay_i18n::menu::edit()
+        })
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .tooltip(text_tooltip(if is_empty {
-            "Add description"
+            jayjay_i18n::repo::add_description()
         } else {
-            "Edit description"
+            jayjay_i18n::repo::edit_description_sentence()
         }))
         .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
         .into_any_element(),

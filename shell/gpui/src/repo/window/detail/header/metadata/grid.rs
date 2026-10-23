@@ -28,14 +28,14 @@ pub(super) fn grid(
         .flex_col()
         .gap(px(5.))
         .child(grid_row(
-            "Author:",
+            &jayjay_i18n::repo::author_colon(),
             person(&change.author, "detail-author", t),
             GridAlign::Center,
             t,
         ))
         .when(!change.co_authors.is_empty(), |col| {
             col.child(grid_row(
-                "Co-authors:",
+                &jayjay_i18n::repo::co_authors_colon(),
                 div()
                     .flex()
                     .flex_col()
@@ -55,7 +55,7 @@ pub(super) fn grid(
             ))
         })
         .child(grid_row(
-            "Date:",
+            &jayjay_i18n::repo::date_colon(),
             div()
                 .text_size(ui_font_size(FONT_ID))
                 .text_color(rgb(t.fg))
@@ -67,7 +67,7 @@ pub(super) fn grid(
             t,
         ))
         .child(id_row(
-            "Change:",
+            &jayjay_i18n::repo::change_colon(),
             &change.change_id,
             t.change_id_prefix,
             recently_copied,
@@ -75,7 +75,7 @@ pub(super) fn grid(
             cx,
         ))
         .child(id_row(
-            "Commit:",
+            &jayjay_i18n::repo::commit_colon(),
             &change.commit_id,
             t.commit_id_prefix,
             recently_copied,
@@ -91,7 +91,7 @@ pub(super) fn grid(
             .collect::<Vec<_>>()
             .join(", ");
         col = col.child(grid_row(
-            "Parents:",
+            &jayjay_i18n::repo::parents_colon(),
             div()
                 .min_w_0()
                 .truncate()
@@ -117,7 +117,7 @@ pub(super) fn grid(
             ));
         }
         col = col.child(grid_row(
-            "Bookmarks:",
+            &jayjay_i18n::repo::bookmarks_colon(),
             value.into_any_element(),
             GridAlign::Center,
             t,
@@ -130,7 +130,7 @@ pub(super) fn grid(
             value = value.child(tag_chip(name, t));
         }
         col = col.child(grid_row(
-            "Tags:",
+            &jayjay_i18n::repo::tags_colon(),
             value.into_any_element(),
             GridAlign::Center,
             t,
@@ -138,7 +138,12 @@ pub(super) fn grid(
     }
 
     if let Some(stats) = stats.and_then(|stats| diff_stats(stats, true, t)) {
-        col = col.child(grid_row("Changes:", stats, GridAlign::Baseline, t));
+        col = col.child(grid_row(
+            &jayjay_i18n::repo::changes_colon(),
+            stats,
+            GridAlign::Baseline,
+            t,
+        ));
     }
 
     col.into_any_element()
@@ -180,7 +185,7 @@ fn label_cell(label: &str, t: &Theme) -> AnyElement {
 }
 
 fn id_row(
-    label: &'static str,
+    label: &str,
     id: &jayjay_core::ShortId,
     prefix_color: u32,
     recently_copied: Option<&SharedString>,

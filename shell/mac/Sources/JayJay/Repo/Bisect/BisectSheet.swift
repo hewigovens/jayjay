@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct BisectSheet: View {
@@ -22,19 +23,19 @@ struct BisectSheet: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 12) {
-            Text("Bisect")
+            Text(Localized.Repo.bisect)
                 .font(.headline)
-            labeledField("Good", text: $goodText, identifier: AID.Bisect.sheetGood, prompt: "Good end")
-            labeledField("Bad", text: $badText, identifier: AID.Bisect.sheetBad, prompt: "Bad end")
-            labeledField("Range", text: $rangeText, identifier: AID.Bisect.sheetRange, prompt: "Revset range")
+            labeledField(Localized.Repo.good, text: $goodText, identifier: AID.Bisect.sheetGood, prompt: Localized.Repo.goodEnd)
+            labeledField(Localized.Repo.bad, text: $badText, identifier: AID.Bisect.sheetBad, prompt: Localized.Repo.badEnd)
+            labeledField(Localized.Repo.range, text: $rangeText, identifier: AID.Bisect.sheetRange, prompt: Localized.Repo.revsetRange)
             Text("A range is used as-is. Otherwise the ends become (good)..(bad).")
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {
                 Spacer()
-                Button("Cancel", action: onCancel)
+                Button(Localized.Common.cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
-                Button("Start") { onStart(goodText, badText, rangeText) }
+                Button(Localized.Repo.start) { onStart(goodText, badText, rangeText) }
                     .keyboardShortcut(.defaultAction)
                     .accessibilityIdentifier(AID.Bisect.sheetStart)
             }

@@ -12,10 +12,7 @@ impl RepoWindow {
             return;
         }
         if self.commit_ai.provider_name.is_none() {
-            self.show_toast(
-                "No AI CLI found. Install codex or claude to generate names.",
-                cx,
-            );
+            self.show_toast(jayjay_i18n::repo::no_ai_cli_found_install_codex_or(), cx);
             return;
         }
         let stack = state.stack().unwrap();

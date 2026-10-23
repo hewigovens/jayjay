@@ -279,8 +279,8 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
             "Rebase selected onto this",
             "Squash selected into this",
             "Merge with selected",
-            "Create bookmark here...",
-            "Create tag here...",
+            "Create bookmark here…",
+            "Create tag here…",
             "Create / Update Stacked PRs…",
             "Show evolution…",
             "Copy Change ID",
@@ -293,8 +293,8 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
             );
         }
         let position = |label: &str| labels.iter().position(|item| item == label).unwrap();
-        assert!(position("Edit (modify this change)") < position("Create bookmark here..."));
-        assert!(position("Create bookmark here...") < position("Show evolution…"));
+        assert!(position("Edit (modify this change)") < position("Create bookmark here…"));
+        assert!(position("Create bookmark here…") < position("Show evolution…"));
         assert!(position("Show evolution…") < position("Copy Change ID"));
         assert!(position("Copy Change ID") < position("Copy Commit ID"));
         assert!(position("Copy Commit ID") < position("More Actions"));

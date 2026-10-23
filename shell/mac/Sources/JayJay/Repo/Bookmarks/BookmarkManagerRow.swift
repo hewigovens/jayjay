@@ -38,9 +38,9 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
 
     private var pullRequestLabel: String {
         if let prHostName {
-            return "Pull Request on \(prHostName)"
+            return Localized.Repo.pullRequestOn(host: prHostName)
         }
-        return "Pull Request"
+        return Localized.Menu.pullRequest
     }
 
     var body: some View {
@@ -87,28 +87,28 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
         .contextMenu {
             if !bookmark.isDeleted, !bookmark.changeId.id.isEmpty {
                 Button { actions.filterBookmark(bookmark) } label: {
-                    Label("Filter in DAG", systemImage: "line.3.horizontal.decrease.circle")
+                    Label(Localized.Repo.filterInDag, systemImage: "line.3.horizontal.decrease.circle")
                 }
                 if canDiffBookmark {
                     Button { actions.diffBookmark(bookmark) } label: {
-                        Label("Diff Bookmark", systemImage: "arrow.left.arrow.right")
+                        Label(Localized.Menu.diffBookmark, systemImage: "arrow.left.arrow.right")
                     }
                 }
             }
             if bookmark.isConflicted {
                 Button { actions.resolveBookmarkConflict(bookmark) } label: {
-                    Label("Resolve conflict (set to @)", systemImage: "arrow.triangle.merge")
+                    Label(Localized.Menu.resolveConflictSetTo, systemImage: "arrow.triangle.merge")
                 }
             }
             if !bookmark.hasLocalTarget, !bookmark.isDeleted {
                 ForEach(bookmark.availableRemotes, id: \.self) { remote in
                     Button { actions.trackBookmark(bookmark, remote: remote) } label: {
-                        Label("Track \(bookmark.name)@\(remote)", systemImage: "arrow.down.circle")
+                        Label(Localized.Repo.trackRemoteBookmark(bookmark: bookmark.name, remote: remote), systemImage: "arrow.down.circle")
                     }
                 }
             } else if bookmark.isTrackingRemote, !bookmark.isDeleted {
                 Button { actions.pushBookmark(bookmark) } label: {
-                    Label("Push", systemImage: "arrow.up.circle")
+                    Label(Localized.Menu.push, systemImage: "arrow.up.circle")
                 }
             }
             if canOpenPR {
@@ -119,12 +119,12 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
             if bookmark.isDeleted {
                 Divider()
                 Button { actions.forgetBookmark(bookmark) } label: {
-                    Label("Forget (clean up)", systemImage: "bookmark.slash")
+                    Label(Localized.Repo.forgetCleanUp, systemImage: "bookmark.slash")
                 }
             } else if bookmark.hasLocalTarget {
                 Divider()
                 Button(role: .destructive) { actions.deleteBookmark(bookmark) } label: {
-                    Label("Delete", systemImage: "trash")
+                    Label(Localized.Repo.delete, systemImage: "trash")
                 }
             }
         }
@@ -168,19 +168,19 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
         switch target.status {
             case .deleted:
                 badge("deleted on \(target.remote)", color: .secondary)
-                    .help("\(bookmark.name) was deleted on \(target.remote).")
+                    .help(Localized.Repo.bookmarkDeletedOnRemote(bookmark: bookmark.name, remote: target.remote))
             case .synced:
                 badge("\(target.remote) ✓", color: .green)
-                    .help("In sync with \(target.remote).")
+                    .help(Localized.Repo.inSyncWith(remote: target.remote))
             case .ahead:
                 badge("ahead of \(target.remote)", color: .orange)
-                    .help(remoteHelp(target, "Local is ahead of \(target.remote) — push to update it."))
+                    .help(remoteHelp(target, Localized.Repo.aheadOf(remote: target.remote)))
             case .behind:
                 badge("behind \(target.remote)", color: .orange)
                     .help(remoteHelp(target, "\(target.remote) has newer commits — fetch to catch up."))
             case .diverged:
                 badge("diverged from \(target.remote)", color: .red)
-                    .help(remoteHelp(target, "\(bookmark.name) and \(target.remote) have each moved on."))
+                    .help(remoteHelp(target, Localized.Repo.bookmarkDivergedFromRemote(bookmark: bookmark.name, remote: target.remote)))
             @unknown default:
                 EmptyView()
         }

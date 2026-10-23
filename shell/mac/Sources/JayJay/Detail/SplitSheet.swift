@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 /// Item-based sheet payload so the file list is populated on the sheet's first render, not after the first re-render (issue #102).
@@ -19,17 +20,17 @@ struct SplitSheetView: View {
 
     var body: some View {
         SheetContainer(
-            title: "Split \(paths.count) \(paths.count == 1 ? "file" : "files") to new change",
-            cancelLabel: "Cancel",
-            confirmLabel: "Split",
+            title: Localized.Repo.splitFilesTitle(count: paths.count),
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: Localized.Repo.split,
             confirmDisabled: message.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
             onCancel: onCancel,
             onConfirm: { onConfirm(message, parallel) },
             content: {
-                TextField("Description for split change", text: $message)
+                TextField(Localized.Repo.descriptionForSplitChange, text: $message)
                     .textFieldStyle(.roundedBorder)
                     .accessibilityIdentifier(AID.SplitSheet.messageField)
-                Toggle("Parallel split", isOn: $parallel)
+                Toggle(Localized.Repo.parallelSplit, isOn: $parallel)
                     .jayjayFont(12)
                 fileList
             }

@@ -48,7 +48,7 @@ extension RepoContentView {
             items.append(.action(
                 id: "conflicts",
                 icon: "exclamationmark.triangle.fill",
-                text: "\(conflictedCount) conflicted"
+                text: Localized.Repo.conflictedCount(count: conflictedCount)
             ) {
                 viewModel.applyFilter(conflicts.revset)
             })
@@ -59,18 +59,18 @@ extension RepoContentView {
     /// Working-copy edit summary (files + line counts), hidden when clean.
     private var workingCopyStatItem: StatusBarItem? {
         guard let stats = viewModel.workingCopyStats, stats.filesChanged > 0 else { return nil }
-        var text = "\(stats.filesChanged) file\(stats.filesChanged == 1 ? "" : "s")"
+        var text = Localized.Repo.fileCount(count: Int(stats.filesChanged))
         if stats.insertions > 0 || stats.deletions > 0 {
             text += " +\(stats.insertions) −\(stats.deletions)"
         }
-        return .text(id: "wc-stat", icon: "pencil", text: text, tooltip: "Working-copy changes")
+        return .text(id: "wc-stat", icon: "pencil", text: text, tooltip: Localized.Repo.workingCopyChanges)
     }
 
     /// Count of divergent change-ids in view; clicking filters to `divergent()`.
     private var divergentItem: StatusBarItem? {
         let ids = Set(viewModel.changes.filter(\.isDivergent).map(\.changeId.id))
         guard !ids.isEmpty else { return nil }
-        return .action(id: "divergent", icon: "arrow.triangle.branch", text: "\(ids.count) divergent") {
+        return .action(id: "divergent", icon: "arrow.triangle.branch", text: Localized.Repo.divergentCount(count: ids.count)) {
             viewModel.applyFilter("divergent()")
         }
     }

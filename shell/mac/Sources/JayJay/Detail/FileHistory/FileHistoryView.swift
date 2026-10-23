@@ -22,9 +22,9 @@ struct FileHistoryView: View {
             Divider()
             if history.isEmpty {
                 ContentUnavailableView(
-                    "No History",
+                    Localized.Repo.noHistory,
                     systemImage: "clock",
-                    description: Text("No revisions modified this file.")
+                    description: Text(Localized.Repo.noRevisionsModifiedThisFile)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -67,8 +67,8 @@ struct FileHistoryView: View {
         .listStyle(.plain)
         .contextMenu(forSelectionType: String.self) { ids in
             if let change = entry(for: ids) {
-                Button("Pin as Base") { pin(change) }
-                Button("Show in Graph") { reveal(change) }
+                Button(Localized.Repo.pinAsBase) { pin(change) }
+                Button(Localized.Repo.showInGraph) { reveal(change) }
             }
         } primaryAction: { ids in
             if let change = entry(for: ids) {
@@ -115,7 +115,7 @@ struct FileHistoryView: View {
                     .jayjayFont(12, weight: .medium)
                     .lineLimit(1)
             } else {
-                Text("(no description)")
+                Text(Localized.Repo.noDescriptionPlaceholder)
                     .jayjayFont(12)
                     .foregroundStyle(.tertiary)
             }

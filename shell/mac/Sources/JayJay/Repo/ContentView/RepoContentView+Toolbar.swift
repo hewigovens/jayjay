@@ -5,7 +5,7 @@ extension RepoContentView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
         ToolbarItemGroup(placement: .navigation) {
-            let title = settings.sidebarHidden ? "Show Sidebar" : "Hide Sidebar"
+            let title = settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar
             toolbarButton(
                 .sidebarToggle,
                 help: "\(title) (\(AppShortcut.toggleSidebar.symbol))",
@@ -68,21 +68,21 @@ extension RepoContentView {
             )
             toolbarButton(
                 .editor,
-                help: "Open repository in \(settings.externalEditor.title)",
+                help: Localized.Repo.openRepositoryIn(app: settings.externalEditor.title),
                 action: { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) },
-                label: { Label("Editor", systemImage: "curlybraces") }
+                label: { Label(Localized.Settings.editor, systemImage: "curlybraces") }
             )
             toolbarButton(
                 .terminal,
-                help: "Open repository in \(settings.terminal.title)",
+                help: Localized.Repo.openRepositoryIn(app: settings.terminal.title),
                 action: { settings.openInTerminal(at: viewModel.repoPath) },
                 label: { Label("Terminal", systemImage: "terminal") }
             )
             toolbarButton(
                 .settings,
-                help: "Settings",
+                help: Localized.Repo.settings,
                 action: { openSettings() },
-                label: { Label("Settings", systemImage: "gearshape") }
+                label: { Label(Localized.Repo.settings, systemImage: "gearshape") }
             )
         }
     }
@@ -107,7 +107,7 @@ extension RepoContentView {
     ) -> some View {
         toolbarButton(
             direction.focusStop,
-            help: inFlight ? "Cancel \(direction.label)" : direction.help,
+            help: inFlight ? Localized.Repo.cancelDirection(direction: direction.label) : direction.help,
             action: toggle,
             label: { SyncArrowIndicator(direction: direction, animating: inFlight) }
         )
@@ -149,8 +149,8 @@ extension RepoContentView {
 private extension SyncArrowIndicator.Direction {
     var help: String {
         switch self {
-            case .pull: "Git Pull (fetch + rebase)"
-            case .push: "Git Push"
+            case .pull: Localized.Repo.gitPullFetchRebase
+            case .push: Localized.Repo.gitPush
         }
     }
 

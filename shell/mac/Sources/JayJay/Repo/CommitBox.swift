@@ -50,14 +50,14 @@ struct CommitBox: View {
                 }
                 .buttonStyle(.plain)
                 .foregroundStyle(.secondary)
-                .help(aiProvider.isEmpty ? "No AI available" : "Generate with \(aiProvider)")
+                .help(aiProvider.isEmpty ? Localized.Repo.noAiAvailable : Localized.Repo.generateWith(provider: aiProvider))
                 .disabled(isGenerating || aiProvider.isEmpty)
 
-                Button("Describe", action: saveDescription)
+                Button(Localized.Repo.describe, action: saveDescription)
                     .buttonStyle(.bordered)
                     .controlSize(.small)
                     .disabled(trimmedDraft.isEmpty || isCommitting)
-                    .help("Save description (jj describe)")
+                    .help(Localized.Repo.saveDescriptionJjDescribe)
                     .accessibilityIdentifier(AID.CommitBox.save)
 
                 Button(action: commit) {
@@ -65,14 +65,14 @@ struct CommitBox: View {
                         ProgressView()
                             .controlSize(.small)
                     } else {
-                        Text("Commit")
+                        Text(Localized.Repo.commit)
                             .jayjayFont(12, weight: .semibold)
                     }
                 }
                 .buttonStyle(.borderedProminent)
                 .controlSize(.small)
                 .disabled(trimmedSummary.isEmpty || isCommitting)
-                .help("Describe + start new change (jj commit)")
+                .help(Localized.Repo.describeStartNewChangeJjCommit)
                 .accessibilityIdentifier(AID.CommitBox.commit)
             }
         }
