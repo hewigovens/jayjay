@@ -15,7 +15,7 @@ use crate::ui::primitives::text_tooltip;
 fn merge_hunk_action_link(
     id: impl Into<SharedString>,
     label: impl Into<SharedString>,
-    help: &'static str,
+    help: String,
     enabled: bool,
     t: &Theme,
 ) -> Stateful<Div> {
@@ -28,7 +28,7 @@ fn merge_hunk_action_link(
         .focusable()
         .tab_stop(enabled)
         .role(Role::Button)
-        .aria_label(help)
+        .aria_label(help.clone())
         .flex()
         .items_center()
         .h(px(t.scaled_control_height(20., 10.)))
@@ -59,28 +59,28 @@ pub(crate) fn merge_hunk_action_links(
     [
         (
             MergeHunkSource::Base,
-            "Accept Base",
+            jayjay_i18n::merge::accept_base(),
             String::new(),
-            "Use Base for this conflict",
+            jayjay_i18n::merge::use_base_for_this_conflict(),
         ),
         (
             MergeHunkSource::Left,
-            "Accept Left",
+            jayjay_i18n::merge::accept_left(),
             shortcut(&MergeUseLeftHunk),
-            "Use Left for this conflict",
+            jayjay_i18n::merge::use_left_for_this_conflict(),
         ),
         (
             MergeHunkSource::Right,
-            "Accept Right",
+            jayjay_i18n::merge::accept_right(),
             shortcut(&MergeUseRightHunk),
-            "Use Right for this conflict",
+            jayjay_i18n::merge::use_right_for_this_conflict(),
         ),
     ]
     .map(|(source, label, shortcut, help)| {
         (
             source,
             merge_hunk_action_link(
-                format!("{id_prefix}-hunk-{index}-{label}"),
+                format!("{id_prefix}-hunk-{index}-{source:?}"),
                 format!("{label}{shortcut}"),
                 help,
                 enabled,
@@ -144,7 +144,7 @@ pub(crate) fn merge_hunk_card(
                     div()
                         .text_size(ui_font_size(11.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .child(format!("Conflict {}", hunk.index + 1)),
+                        .child(jayjay_i18n::merge::conflict_number(hunk.index + 1)),
                 )
                 .child(
                     div()
@@ -154,7 +154,11 @@ pub(crate) fn merge_hunk_card(
                         } else {
                             t.success_fg
                         }))
-                        .child(if unresolved { "Unresolved" } else { "Resolved" }),
+                        .child(if unresolved {
+                            jayjay_i18n::merge::unresolved()
+                        } else {
+                            jayjay_i18n::repo::resolved()
+                        }),
                 )
                 .child(div().flex_1()),
         )

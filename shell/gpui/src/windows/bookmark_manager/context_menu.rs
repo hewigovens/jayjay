@@ -26,7 +26,7 @@ pub(super) fn bookmark_menu_items(
     let mut items = Vec::new();
     if !bookmark.is_deleted && !bookmark.change_id.is_empty() {
         items.push(PopupMenuEntry::item(
-            "Reveal",
+            jayjay_i18n::bookmarks::reveal(),
             glyph::ARROW_CIRCLE_RIGHT,
             BookmarkContextAction::Reveal(bookmark.change_id.id.clone()),
         ));
@@ -37,14 +37,14 @@ pub(super) fn bookmark_menu_items(
         && !trunk::is_trunk_bookmark(&bookmark.name)
     {
         items.push(PopupMenuEntry::item(
-            "Diff",
+            jayjay_i18n::bookmarks::diff(),
             glyph::ARROWS_LEFT_RIGHT,
             BookmarkContextAction::ShowDiff(bookmark.clone()),
         ));
     }
     if bookmark.is_conflicted {
         items.push(PopupMenuEntry::item(
-            "Resolve conflict (set to @)",
+            jayjay_i18n::menu::resolve_conflict_set_to(),
             glyph::GIT_MERGE,
             BookmarkContextAction::Resolve(bookmark.name.clone()),
         ));
@@ -52,7 +52,7 @@ pub(super) fn bookmark_menu_items(
     if !bookmark.is_deleted && !bookmark.has_local_target {
         for remote in &bookmark.available_remotes {
             items.push(PopupMenuEntry::item(
-                format!("Track {}@{remote}", bookmark.name),
+                jayjay_i18n::repo::track_remote_bookmark(&bookmark.name, remote),
                 glyph::GIT_BRANCH,
                 BookmarkContextAction::Track {
                     name: bookmark.name.clone(),
@@ -62,7 +62,7 @@ pub(super) fn bookmark_menu_items(
         }
     } else if bookmark.is_tracking_remote && !bookmark.is_deleted {
         items.push(PopupMenuEntry::item(
-            "Push",
+            jayjay_i18n::menu::push(),
             glyph::ARROW_UP,
             BookmarkContextAction::Push(bookmark.name.clone()),
         ));
@@ -73,26 +73,26 @@ pub(super) fn bookmark_menu_items(
     {
         items.push(PopupMenuEntry::item(
             pr_host_name
-                .map(|host| format!("Pull Request on {host}"))
-                .unwrap_or_else(|| "Pull Request".to_owned()),
+                .map(jayjay_i18n::repo::pull_request_on)
+                .unwrap_or_else(jayjay_i18n::menu::pull_request),
             glyph::EXTERNAL_LINK,
             BookmarkContextAction::OpenPullRequest(bookmark.name.clone()),
         ));
     }
     if bookmark.is_deleted {
         items.push(PopupMenuEntry::item(
-            "Forget (clean up)",
+            jayjay_i18n::repo::forget_clean_up(),
             glyph::BOOKMARK,
             BookmarkContextAction::Forget(bookmark.name.clone()),
         ));
     } else if bookmark.has_local_target {
         items.push(PopupMenuEntry::item(
-            "Rename",
+            jayjay_i18n::repo::rename(),
             glyph::PENCIL,
             BookmarkContextAction::Rename(bookmark.name.clone()),
         ));
         items.push(PopupMenuEntry::item(
-            "Delete",
+            jayjay_i18n::repo::delete(),
             glyph::X_CIRCLE,
             BookmarkContextAction::Delete(bookmark.name.clone()),
         ));

@@ -22,14 +22,14 @@ struct OverviewLanePanel: View {
                     .textSelection(.enabled)
             }
             OverviewMetaLine(parts: [
-                ("\(lane.changes.count) change\(lane.changes.count == 1 ? "" : "s")", .secondary),
-                ("updated \(Date.relativeLabel(millis: lane.latestTimestampMillis))", .secondary),
+                (Localized.Repo.changeCount(count: lane.changes.count), .secondary),
+                (Localized.Overview.updated(age: Date.relativeLabel(millis: lane.latestTimestampMillis)), .secondary),
                 (lane.baseSentence(trunkName: trunkName), lane.isBehindTrunk ? .orange : .secondary)
             ])
             HStack(spacing: 6) {
-                Button("Show in Graph", action: onShowInGraph)
+                Button(Localized.Repo.showInGraph, action: onShowInGraph)
                 if lane.isBehindTrunk {
-                    Button("Rebase onto \(trunkName)", action: onRebase)
+                    Button(Localized.Overview.rebaseOnto(trunk: trunkName), action: onRebase)
                 }
             }
             .controlSize(.small)
@@ -43,7 +43,7 @@ struct OverviewLanePanel: View {
                 }
             }
             if !lane.workspaces.isEmpty {
-                OverviewPanelSection(title: "Workspaces") {
+                OverviewPanelSection(title: Localized.Repo.workspaces) {
                     ForEach(lane.workspaces, id: \.name) { workspace in
                         workspaceRow(workspace)
                     }
@@ -51,7 +51,7 @@ struct OverviewLanePanel: View {
             }
             let bookmarks = lane.changes.flatMap(\.bookmarks)
             if !bookmarks.isEmpty {
-                OverviewPanelSection(title: "Bookmarks") {
+                OverviewPanelSection(title: Localized.Repo.bookmarks) {
                     FlowLayout(spacing: 4) {
                         ForEach(bookmarks, id: \.self) { bookmark in
                             OverviewChip(text: bookmark, tint: AppColors.bookmark(colorScheme))
@@ -59,7 +59,7 @@ struct OverviewLanePanel: View {
                     }
                 }
             }
-            OverviewPanelSection(title: "Changes") {
+            OverviewPanelSection(title: Localized.Overview.changesSentence) {
                 ForEach(lane.changes, id: \.commitId.id) { change in
                     changeRow(change)
                 }
@@ -70,12 +70,12 @@ struct OverviewLanePanel: View {
     private func workspaceRow(_ workspace: OverviewWorkspace) -> some View {
         HStack(spacing: 8) {
             OverviewChip(text: workspace.label, tint: AppColors.workspace(colorScheme))
-            Text(workspace.changesAbove == 0 ? "at the head" : "\(workspace.changesAbove) below the head")
+            Text(workspace.changesAbove == 0 ? Localized.Overview.atTheHead : Localized.Overview.belowTheHead(count: Int(workspace.changesAbove)))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 0)
             if !workspace.isCurrent, let info = workspaceInfo(workspace.name), info.isPathResolved {
-                Button("Open") { onOpenWorkspace(info) }
+                Button(Localized.Common.open) { onOpenWorkspace(info) }
                     .controlSize(.small)
             }
         }

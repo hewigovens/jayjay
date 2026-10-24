@@ -1,5 +1,6 @@
 use crate::app::config::AppConfig;
 use gpui::{AnyElement, IntoElement, ParentElement, Styled, div, px};
+use jayjay_i18n::settings;
 
 use super::shared::{form_section, toggle_field};
 use crate::app::theme::Theme;
@@ -13,11 +14,11 @@ pub(super) fn workflow_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
         .gap(px(24.))
         .children([
             form_section(
-                "Confirmations",
+                settings::confirmations(),
                 [
                     toggle_field(
                         glyph::TRASH,
-                        "Confirm before abandoning changes",
+                        settings::confirm_abandon(),
                         !cfg.features.skip_abandon_confirmation,
                         |c| c.features.skip_abandon_confirmation ^= true,
                         "workflow-confirm-abandon",
@@ -25,7 +26,7 @@ pub(super) fn workflow_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                     ),
                     toggle_field(
                         glyph::FOLDER_MINUS,
-                        "Confirm before deleting a workspace",
+                        settings::confirm_workspace_delete(),
                         !cfg.features.skip_workspace_delete_confirmation,
                         |c| c.features.skip_workspace_delete_confirmation ^= true,
                         "workflow-confirm-workspace-delete",
@@ -33,7 +34,7 @@ pub(super) fn workflow_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                     ),
                     toggle_field(
                         glyph::APP_WINDOW,
-                        "Confirm drag-to-rebase",
+                        settings::confirm_drag_rebase(),
                         cfg.features.confirm_drag_rebase,
                         |c| c.features.confirm_drag_rebase ^= true,
                         "workflow-confirm-rebase",
@@ -43,10 +44,10 @@ pub(super) fn workflow_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                 t,
             ),
             form_section(
-                "Repository Behavior",
+                settings::repository_behavior(),
                 [toggle_field(
                     glyph::SUBMODULE,
-                    "Enable Git submodule support",
+                    settings::submodule_support(),
                     cfg.diff.enable_git_submodule_support,
                     |c| c.diff.enable_git_submodule_support ^= true,
                     "workflow-sub",

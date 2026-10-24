@@ -24,7 +24,7 @@ pub(super) fn header(t: &Theme) -> AnyElement {
             div()
                 .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
-                .child("Operation Log"),
+                .child(jayjay_i18n::repo::operation_log()),
         )
         .into_any_element()
 }
@@ -46,11 +46,16 @@ pub(super) fn footer(
         .border_t_1()
         .border_color(rgb(t.border))
         .child(
-            button("operation-log-close", "Close", t, false)
-                .debug_selector(|| "operation-log-close".to_owned())
-                .on_click(cx.listener(|_, _: &ClickEvent, window, _| {
-                    window.remove_window();
-                })),
+            button(
+                "operation-log-close",
+                jayjay_i18n::common::close(),
+                t,
+                false,
+            )
+            .debug_selector(|| "operation-log-close".to_owned())
+            .on_click(cx.listener(|_, _: &ClickEvent, window, _| {
+                window.remove_window();
+            })),
         )
         .child(restore_button(can_restore && !restoring, restoring, t, cx))
         .into_any_element()
@@ -67,7 +72,11 @@ fn restore_button(
     } else {
         (t.toggle_inactive_bg, t.fg_faint)
     };
-    let label = if restoring { "Restoring..." } else { "Restore" };
+    let label = if restoring {
+        jayjay_i18n::oplog::restoring_ellipsis()
+    } else {
+        jayjay_i18n::repo::restore()
+    };
     let base = div()
         .id("operation-log-restore")
         .debug_selector(|| "operation-log-restore".to_owned())

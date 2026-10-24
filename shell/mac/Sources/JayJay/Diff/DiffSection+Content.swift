@@ -36,25 +36,25 @@ extension DiffSection {
         } else if hunk.isSubmodulePlaceholder {
             placeholderMessage(
                 systemImage: "shippingbox.fill",
-                title: "Git submodule",
-                description: "This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository."
+                title: Localized.Diff.gitSubmodule,
+                description: Localized.Diff.thisSubmoduleHasWorkingCopyChanges
             )
         } else if isGitLfsPlaceholder {
             placeholderMessage(
                 systemImage: "externaldrive.fill.badge.timemachine",
-                title: "Git LFS-backed file",
-                description: "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object."
+                title: Localized.Diff.gitLfsBackedFile,
+                description: Localized.Diff.thisFileIsTrackedThroughGit
             )
         } else if hunk.isContentFreeRenameOrCopy {
             placeholderMessage(
                 systemImage: hunk.hunkType == .copied ? "square.on.square" : "arrow.right.circle",
-                title: "No content changes",
+                title: Localized.Diff.noContentChanges,
                 description: hunk.hunkType == .copied
-                    ? "This file was copied; its contents match the source."
-                    : "This file was renamed; its contents are identical."
+                    ? Localized.Diff.thisFileWasCopiedItsContents
+                    : Localized.Diff.thisFileWasRenamedItsContents
             )
         } else if shouldShowBlockingProgress {
-            LoadingStatus(label: "Loading diff…")
+            LoadingStatus(label: Localized.Diff.loadingDiffEllipsis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if canRenderMarkdownPreview {
             richPreviewWithGutter {
@@ -111,7 +111,7 @@ extension DiffSection {
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         } else if hunk.oldContent == nil, hunk.newContent == nil, !isComputing, loadedPath == hunk.path {
-            Text("No textual preview available for this file.")
+            Text(Localized.Repo.noTextualPreviewAvailableForThis)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
         }
@@ -189,7 +189,7 @@ extension DiffSection {
         HStack(spacing: 8) {
             Image(systemName: "eye.slash")
                 .foregroundStyle(.orange)
-            Text("Whitespace-only changes hidden by the 'Ignore whitespace' setting.")
+            Text(Localized.Diff.whitespaceOnlyChangesHiddenByThe)
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
             Spacer()
@@ -234,11 +234,11 @@ extension DiffSection {
         return HStack(spacing: 8) {
             Image(systemName: "text.bubble.fill")
                 .foregroundStyle(.orange)
-            Text(count == 1 ? "1 review note on this file" : "\(count) review notes on this file")
+            Text(Localized.Diff.reviewNotesOnFile(count: count))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
             Spacer()
-            Button("Show in Unified") {
+            Button(Localized.Diff.showInUnified) {
                 settings.sideBySideDiff = false
             }
             .buttonStyle(.plain)

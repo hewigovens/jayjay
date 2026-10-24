@@ -35,7 +35,7 @@ impl Repo {
         let second_commit = self.resolve_commit(&repo, second)?;
         if first_commit.id() == second_commit.id() {
             return Err(JayError::refused(
-                "A bisect range needs two different changes.",
+                jayjay_i18n::repo::bisect_needs_two_changes(),
             ));
         }
         let first_is_older = block_on_ancestor(&repo, first_commit.id(), second_commit.id())?;
@@ -45,9 +45,7 @@ impl Repo {
         } else if second_is_older && !first_is_older {
             (second_commit, first_commit)
         } else {
-            return Err(JayError::refused(
-                "Those changes are not in the same line, so they cannot be bisected.",
-            ));
+            return Err(JayError::refused(jayjay_i18n::repo::bisect_not_same_line()));
         };
         let expression = ResolvedRevsetExpression::commit(good.id().clone())
             .range(&ResolvedRevsetExpression::commit(bad.id().clone()));
@@ -89,7 +87,7 @@ impl Repo {
                 .ok_or_else(|| JayError::refused("No bisect is running."))?;
             if session.phase() != BisectPhase::PausedRangeChanged {
                 return Err(JayError::refused(
-                    "Restart is only available when the range has changed.",
+                    jayjay_i18n::repo::bisect_restart_unavailable(),
                 ));
             }
             (
@@ -128,7 +126,7 @@ impl Repo {
                 Ok(())
             }
             Some(_) => Err(JayError::refused(
-                "The bisect result is not ready to dismiss.",
+                jayjay_i18n::repo::bisect_result_not_ready(),
             )),
             None => Err(JayError::refused("No bisect is running.")),
         }

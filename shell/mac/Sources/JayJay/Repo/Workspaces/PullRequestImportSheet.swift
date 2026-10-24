@@ -2,7 +2,9 @@ import JayJayCore
 import SwiftUI
 
 struct PullRequestImportSheet: View {
-    static let title = "New Workspace from Pull Request"
+    static var title: String {
+        Localized.Repo.newWorkspaceFromPullRequest
+    }
 
     let viewModel: RepoViewModel
     let onDismiss: () -> Void
@@ -18,9 +20,9 @@ struct PullRequestImportSheet: View {
     var body: some View {
         SheetContainer(
             title: Self.title,
-            subtitle: viewModel.prHostName.map { "Create a workspace from a pull request on \($0)" }
-                ?? "Create a workspace from a pull request",
-            cancelLabel: "Cancel",
+            subtitle: viewModel.prHostName.map { Localized.Repo.createWorkspaceFromPullRequestOn(host: $0) }
+                ?? Localized.Repo.createAWorkspaceFromAPull,
+            cancelLabel: Localized.Common.cancel,
             confirmLabel: confirmLabel,
             confirmDisabled: confirmDisabled,
             confirmAccessibilityIdentifier: preview == nil
@@ -44,12 +46,12 @@ struct PullRequestImportSheet: View {
 
     private var confirmLabel: String {
         if preview == nil {
-            return viewModel.isResolvingPullRequest ? "Resolving…" : "Resolve"
+            return viewModel.isResolvingPullRequest ? Localized.Repo.resolvingEllipsis : Localized.Repo.resolve
         }
         if existingWorkspace != nil {
-            return "Open Workspace"
+            return Localized.Repo.openWorkspace
         }
-        return viewModel.isImportingPullRequest ? "Creating…" : "Fetch & Create Workspace"
+        return viewModel.isImportingPullRequest ? Localized.Repo.creatingEllipsis : Localized.Repo.fetchCreateWorkspace
     }
 
     private var confirmDisabled: Bool {
@@ -65,7 +67,7 @@ struct PullRequestImportSheet: View {
 
     private var urlContent: some View {
         VStack(alignment: .leading, spacing: 10) {
-            TextField("Pull request URL", text: $url)
+            TextField(Localized.Repo.pullRequestUrl, text: $url)
                 .textFieldStyle(.roundedBorder)
                 .jayjayFont(13, design: .monospaced)
                 .accessibilityIdentifier(AID.PullRequestImport.urlField)
@@ -86,27 +88,27 @@ struct PullRequestImportSheet: View {
                     .truncationMode(.tail)
             }
             VStack(alignment: .leading, spacing: 6) {
-                summaryRow(label: "Repository", value: "\(preview.pullRequest.host) · \(preview.pullRequest.baseRepo)")
+                summaryRow(label: Localized.Menu.repository, value: "\(preview.pullRequest.host) · \(preview.pullRequest.baseRepo)")
                 summaryRow(
-                    label: "Remote",
+                    label: Localized.Repo.remote,
                     value: preview.remote.name,
-                    note: preview.remote.exists ? "existing remote" : "will be added"
+                    note: preview.remote.exists ? Localized.Repo.existingRemote : Localized.Repo.willBeAdded
                 )
-                summaryRow(label: "Bookmark", value: preview.remote.bookmark)
-                summaryRow(label: "Head", value: String(preview.headCommitId.prefix(8)))
+                summaryRow(label: Localized.Repo.bookmark, value: preview.remote.bookmark)
+                summaryRow(label: Localized.Repo.head, value: String(preview.headCommitId.prefix(8)))
             }
             if let existingWorkspace {
                 HStack(spacing: 8) {
-                    summaryRow(label: "Workspace", value: existingWorkspace.name, note: "already imported")
-                    Button("Import Again") { importsAgain = true }
+                    summaryRow(label: Localized.Repo.workspace, value: existingWorkspace.name, note: Localized.Repo.alreadyImported)
+                    Button(Localized.Repo.importAgain) { importsAgain = true }
                         .buttonStyle(.link)
                         .jayjayFont(11)
                 }
             } else {
-                TextField("Workspace name", text: $workspaceName)
+                TextField(Localized.Repo.workspaceName, text: $workspaceName)
                     .textFieldStyle(.roundedBorder)
                     .jayjayFont(13, design: .monospaced)
-                TextField("Location", text: $workspaceDest)
+                TextField(Localized.Repo.location, text: $workspaceDest)
                     .textFieldStyle(.roundedBorder)
                     .jayjayFont(13, design: .monospaced)
             }
@@ -138,13 +140,13 @@ struct PullRequestImportSheet: View {
         let color: Color
         switch state {
             case .open:
-                label = "Open"
+                label = Localized.Common.open
                 color = .green
             case .closed:
-                label = "Closed"
+                label = Localized.Repo.closed
                 color = .red
             case .merged:
-                label = "Merged"
+                label = Localized.Repo.merged
                 color = .purple
         }
         return Text(label)

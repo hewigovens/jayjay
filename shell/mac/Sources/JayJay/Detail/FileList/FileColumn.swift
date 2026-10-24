@@ -33,8 +33,8 @@ extension ChangeDetailView {
                     .buttonStyle(.plain)
                     .help(
                         showNotedFilesOnly
-                            ? "Showing only files with review notes"
-                            : "Show only files with review notes"
+                            ? Localized.Repo.showingOnlyFilesWithReviewNotes
+                            : Localized.Repo.showOnlyFilesWithReviewNotes
                     )
                     .accessibilityIdentifier(AID.ReviewNote.activeCount(activeReviewNoteCount))
                 }
@@ -51,7 +51,7 @@ extension ChangeDetailView {
                             .jayjayFont(14)
                     }
                     .buttonStyle(.plain)
-                    .help("Split \(reviewedPaths.count) checked files to a new change")
+                    .help(Localized.Repo.splitCheckedFiles(count: reviewedPaths.count))
                     .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
                 if showsReviewControls, !reviewedPaths.isEmpty || appSettings.hideReviewedFiles {
@@ -63,7 +63,7 @@ extension ChangeDetailView {
                             .jayjayFont(14)
                     }
                     .buttonStyle(.plain)
-                    .help(appSettings.hideReviewedFiles ? "Showing only unreviewed files" : "Hide reviewed files")
+                    .help(appSettings.hideReviewedFiles ? Localized.Repo.showingOnlyUnreviewedFiles : Localized.Settings.hideReviewed)
                 }
                 Button {
                     appSettings.treeFileList.toggle()
@@ -74,7 +74,7 @@ extension ChangeDetailView {
                 }
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
-                .help(appSettings.treeFileList ? "Showing files as a tree" : "Showing files as a flat list")
+                .help(appSettings.treeFileList ? Localized.Repo.showingFilesAsATree : Localized.Repo.showingFilesAsAFlatList)
                 Button {
                     toggleFileFilter()
                 } label: {
@@ -84,7 +84,7 @@ extension ChangeDetailView {
                 }
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
-                .help("Filter files")
+                .help(Localized.Repo.filterFiles)
                 .accessibilityIdentifier(AID.FileList.filterToggle)
                 Spacer(minLength: 8)
                 Text(fileCountLabel)
@@ -195,8 +195,9 @@ extension ChangeDetailView {
         let agentMarked = agentMarkedPaths.filter { path in
             fileRollups[path].map { $0 != .unreviewed } ?? false
         }.count
-        let base = "\(reviewedPaths.count) of \(reviewableDiff.count) files reviewed"
-        return agentMarked > 0 ? "\(base), \(agentMarked) include agent marks" : base
+        return agentMarked > 0
+            ? Localized.Diff.filesReviewedWithAgent(reviewed: reviewedPaths.count, total: reviewableDiff.count, agent: agentMarked)
+            : Localized.Repo.filesReviewedProgress(reviewed: reviewedPaths.count, total: reviewableDiff.count)
     }
 
     func toggleReview(_ path: String) {
@@ -209,27 +210,27 @@ extension ChangeDetailView {
 
     private var emptyFileListLabel: String {
         if detail.diff.isEmpty {
-            return "No files"
+            return Localized.Repo.noFiles
         }
         if !fileFilter.isEmpty {
-            return "No matching files"
+            return Localized.Repo.noMatchingFiles
         }
-        return "All files hidden"
+        return Localized.Repo.allFilesHidden
     }
 
     private var fileCountLabel: String {
         var parts = if !fileFilter.isEmpty {
-            ["\(filteredDiff.count) of \(visibleDiff.count) files"]
+            [Localized.Repo.filesFiltered(shown: filteredDiff.count, total: visibleDiff.count)]
         } else if showsReviewedCount {
-            ["\(reviewedPaths.count)/\(reviewableDiff.count) reviewed"]
+            [Localized.Diff.reviewedOfTotal(reviewed: reviewedPaths.count, total: reviewableDiff.count)]
         } else {
-            ["\(filteredDiff.count) files"]
+            [Localized.Repo.fileCount(count: filteredDiff.count)]
         }
         if hiddenGitLfsCount > 0 {
-            parts.append("\(hiddenGitLfsCount) LFS hidden")
+            parts.append(Localized.Repo.lfsHidden(count: hiddenGitLfsCount))
         }
         if hiddenSubmoduleCount > 0 {
-            parts.append("\(hiddenSubmoduleCount) submodule hidden")
+            parts.append(Localized.Repo.submodulesHidden(count: hiddenSubmoduleCount))
         }
         return parts.joined(separator: ", ")
     }

@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 
 extension AppSettings {
     enum Terminal: String, CaseIterable, Identifiable {
@@ -13,7 +14,7 @@ extension AppSettings {
                 case .terminal: "Terminal"
                 case .iterm: "iTerm2"
                 case .ghostty: "Ghostty"
-                case .custom: "Custom"
+                case .custom: Localized.Settings.custom
             }
         }
 

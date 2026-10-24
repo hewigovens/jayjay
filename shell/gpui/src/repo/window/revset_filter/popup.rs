@@ -76,7 +76,7 @@ fn panel(
     if !completions.is_empty() {
         rows.push(picker::section_header(
             "revset-popup-completions",
-            "Completions",
+            jayjay_i18n::repo::completions(),
             t,
         ));
     }
@@ -94,22 +94,22 @@ fn panel(
     for (kind, title, id) in [
         (
             RevsetSuggestionKind::Current,
-            "Current",
+            jayjay_i18n::repo::current(),
             "revset-popup-current",
         ),
         (
             RevsetSuggestionKind::Bookmark,
-            "Bookmarks",
+            jayjay_i18n::repo::bookmarks(),
             "revset-popup-bookmarks",
         ),
         (
             RevsetSuggestionKind::Workspace,
-            "Workspaces",
+            jayjay_i18n::repo::workspaces(),
             "revset-popup-workspaces",
         ),
         (
             RevsetSuggestionKind::Recent,
-            "Recent",
+            jayjay_i18n::repo::recent(),
             "revset-popup-recent",
         ),
     ] {
@@ -132,7 +132,10 @@ fn panel(
         }
     }
     if rows.is_empty() {
-        rows.push(picker::empty("Return applies it as a revset", t));
+        rows.push(picker::empty(
+            jayjay_i18n::repo::return_applies_it_as_a_revset(),
+            t,
+        ));
     }
 
     div()
@@ -200,7 +203,7 @@ fn field(state: &RevsetPopupState, t: &Theme) -> AnyElement {
         ))
         .child(line_input_content(
             &state.query.input,
-            "Revset, bookmark or preset",
+            jayjay_i18n::repo::revset_bookmark_or_preset(),
             t,
             Some("revset-popup-caret"),
         ))
@@ -327,8 +330,8 @@ fn footer(t: &Theme) -> AnyElement {
         .border_color(rgb(t.border))
         .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_faint))
-        .child("Return to apply")
-        .child("Esc to cancel")
+        .child(jayjay_i18n::repo::return_to_apply())
+        .child(jayjay_i18n::repo::esc_to_cancel())
         .child(div().flex_1())
         .child(
             div()
@@ -339,7 +342,7 @@ fn footer(t: &Theme) -> AnyElement {
                     cx.stop_propagation();
                     crate::app::links::open_url(cx, REVSET_DOCS_URL);
                 })
-                .child("Revset language"),
+                .child(jayjay_i18n::repo::revset_language()),
         )
         .into_any_element()
 }

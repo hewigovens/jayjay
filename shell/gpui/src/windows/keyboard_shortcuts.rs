@@ -27,7 +27,7 @@ impl KeyboardShortcutsView {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("Keyboard Shortcuts".into()),
+                        title: Some(jayjay_i18n::menu::keyboard_shortcuts().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -100,7 +100,7 @@ impl Render for KeyboardShortcutsView {
                     .py(px(10.))
                     .text_size(ui_font_size(11.))
                     .text_color(rgb(t.fg_faint))
-                    .child("Esc closes the palette and sheets · Ctrl+N / Ctrl+P also move the selection"),
+                    .child(jayjay_i18n::shortcuts::esc_closes_the_palette_and_sheets()),
             )
     }
 }
@@ -120,7 +120,7 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
                 .text_size(ui_font_size(16.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .child(icons::icon(glyph::INFO, 15., t.fg_dim))
-                .child("Keyboard Shortcuts"),
+                .child(jayjay_i18n::menu::keyboard_shortcuts()),
         )
         .child(
             div()
@@ -148,10 +148,10 @@ fn column(sections: &[ShortcutSection], t: &Theme, cx: &App) -> AnyElement {
 }
 
 fn section_block(section: &ShortcutSection, t: &Theme, cx: &App) -> AnyElement {
-    let title = section.title;
+    let id = section.id;
     let mut block = div()
-        .id(SharedString::from(format!("shortcut-section-{title}")))
-        .debug_selector(move || format!("shortcut-section-{title}"))
+        .id(SharedString::from(format!("shortcut-section-{id}")))
+        .debug_selector(move || format!("shortcut-section-{id}"))
         .flex()
         .flex_col()
         .gap(px(9.))
@@ -160,23 +160,24 @@ fn section_block(section: &ShortcutSection, t: &Theme, cx: &App) -> AnyElement {
                 .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::BOLD)
                 .text_color(rgb(t.fg_dim))
-                .child(title.to_uppercase()),
+                .child((section.title)().to_uppercase()),
         );
-    for entry in section.entries {
-        block = block.child(shortcut_row(entry, t, cx));
+    for (ix, entry) in section.entries.iter().enumerate() {
+        block = block.child(shortcut_row(&format!("{id}-{ix}"), entry, t, cx));
     }
     block.into_any_element()
 }
 
-fn shortcut_row(entry: &ShortcutEntry, t: &Theme, cx: &App) -> AnyElement {
-    let label = entry.label;
+fn shortcut_row(id: &str, entry: &ShortcutEntry, t: &Theme, cx: &App) -> AnyElement {
+    let label = (entry.label)();
     let mut caps = div().flex().items_center().gap(px(4.));
     for (ix, key) in entry.key_caps(cx).into_iter().enumerate() {
-        caps = caps.child(key_cap(label, ix, key, t));
+        caps = caps.child(key_cap(id, ix, key, t));
     }
+    let selector = format!("shortcut-entry-{id}");
     div()
-        .id(SharedString::from(format!("shortcut-entry-{label}")))
-        .debug_selector(move || format!("shortcut-entry-{label}"))
+        .id(SharedString::from(selector.clone()))
+        .debug_selector(move || selector)
         .flex()
         .items_center()
         .justify_between()
@@ -187,10 +188,11 @@ fn shortcut_row(entry: &ShortcutEntry, t: &Theme, cx: &App) -> AnyElement {
         .into_any_element()
 }
 
-fn key_cap(label: &'static str, ix: usize, key: String, t: &Theme) -> AnyElement {
+fn key_cap(entry_id: &str, ix: usize, key: String, t: &Theme) -> AnyElement {
+    let selector = format!("shortcut-key-{entry_id}-{ix}");
     div()
-        .id(SharedString::from(format!("shortcut-key-{label}-{ix}")))
-        .debug_selector(move || format!("shortcut-key-{label}-{ix}"))
+        .id(SharedString::from(selector.clone()))
+        .debug_selector(move || selector)
         .min_w(px(18.))
         .px(px(6.))
         .py(px(3.))

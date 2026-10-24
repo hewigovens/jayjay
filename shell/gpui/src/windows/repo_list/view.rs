@@ -141,7 +141,7 @@ impl RepoListWindow {
                     .child(divider_h(t))
                     .child(
                         sections::repository_section(
-                            "Pinned",
+                            jayjay_i18n::onboarding::pinned(),
                             self.groups.pinned.clone(),
                             sections::RowKind::Pinned,
                             pinned,
@@ -171,9 +171,9 @@ fn panel_toggle(panel_shown: bool, t: &Theme) -> Stateful<Div> {
     .top(px(8.))
     .left(px(TOOLBAR_LEADING_INSET))
     .tooltip(text_tooltip(if panel_shown {
-        "Hide Recent Repositories"
+        jayjay_i18n::onboarding::hide_recent_repositories()
     } else {
-        "Show Recent Repositories"
+        jayjay_i18n::onboarding::show_recent_repositories()
     }))
     .on_click(|_, _, cx| {
         config::update(cx, |cfg| {

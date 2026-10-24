@@ -144,9 +144,9 @@ fn preview(content: SvgSource, theme: &Theme) -> impl IntoElement {
                     div()
                         .text_color(gpui::rgb(dim))
                         .child(SharedString::from(if loaded {
-                            "(preview unavailable)"
+                            jayjay_i18n::diff::preview_unavailable()
                         } else {
-                            ""
+                            String::new()
                         }))
                         .into_any_element(),
                     bounds,

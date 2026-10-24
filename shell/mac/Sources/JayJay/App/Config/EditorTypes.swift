@@ -18,7 +18,7 @@ extension AppSettings {
                 case .zed: "Zed"
                 case .xcode: "Xcode"
                 case .vim: "Vim"
-                case .custom: "Custom"
+                case .custom: Localized.Settings.custom
             }
         }
 

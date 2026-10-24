@@ -55,11 +55,11 @@ pub struct Overview {
 }
 
 impl OverviewChange {
-    pub fn title(&self) -> &str {
+    pub fn title(&self) -> String {
         match (self.description.as_str(), self.is_empty) {
-            ("", true) => "(empty)",
-            ("", false) => "(no description)",
-            (description, _) => description,
+            ("", true) => jayjay_i18n::repo::empty_placeholder(),
+            ("", false) => jayjay_i18n::repo::no_description_placeholder(),
+            (description, _) => description.to_owned(),
         }
     }
 }
@@ -86,31 +86,23 @@ impl OverviewLane {
     }
 
     fn attention(changes: &[OverviewChange]) -> Vec<String> {
-        let plural = |count: usize| if count == 1 { "" } else { "s" };
         let mut attention = Vec::new();
         let head = &changes[0];
         if head.is_empty && head.description.is_empty() && changes.len() > 1 {
             let below = changes.len() - 1;
-            attention.push(format!(
-                "Empty, undescribed checkout above {below} change{}",
-                plural(below)
-            ));
+            attention.push(jayjay_i18n::overview::empty_checkout_above(below));
         }
         let conflicted = changes.iter().filter(|change| change.has_conflict).count();
         if conflicted > 0 {
-            attention.push(format!(
-                "{conflicted} change{} with conflicts",
-                plural(conflicted)
-            ));
+            attention.push(jayjay_i18n::overview::changes_with_conflicts(conflicted));
         }
         let undescribed = changes
             .iter()
             .filter(|change| change.description.is_empty() && !change.is_empty)
             .count();
         if undescribed > 0 {
-            attention.push(format!(
-                "{undescribed} change{} without a description",
-                plural(undescribed)
+            attention.push(jayjay_i18n::overview::changes_without_description(
+                undescribed,
             ));
         }
         attention
@@ -120,10 +112,10 @@ impl OverviewLane {
         &self.changes[0]
     }
 
-    pub fn title(&self) -> &str {
+    pub fn title(&self) -> String {
         match self.head().description.as_str() {
-            "" => "(no description)",
-            description => description,
+            "" => jayjay_i18n::repo::no_description_placeholder(),
+            description => description.to_owned(),
         }
     }
 

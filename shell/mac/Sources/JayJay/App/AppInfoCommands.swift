@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct AppInfoCommands: Commands {
@@ -7,15 +8,15 @@ struct AppInfoCommands: Commands {
     var body: some Commands {
         CommandGroup(replacing: .appInfo) {
             Button { openWindow(id: AppWindows.about) } label: {
-                Label("About JayJay", systemImage: "info.circle")
+                Label(Localized.Menu.aboutJayjay, systemImage: "info.circle")
             }
             Button { updater.checkForUpdates() } label: {
-                Label("Check for Updates...", systemImage: "arrow.down.circle")
+                Label(Localized.Menu.checkForUpdatesEllipsis, systemImage: "arrow.down.circle")
             }
             .disabled(!updater.canCheckForUpdates)
             Divider()
             Button { CLIInstaller.installWithFeedback() } label: {
-                Label("Install Command Line Tool...", systemImage: "terminal")
+                Label(Localized.Menu.installCommandLineToolEllipsis, systemImage: "terminal")
             }
         }
     }

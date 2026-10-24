@@ -51,9 +51,9 @@ extension DAGView {
         guard bookmarkPreviewTargetId == change.commitId.id, let bookmarkDrag else { return nil }
         if bookmarkDrag.bookmarkName == workingCopyDragLabel {
             // jj refuses to edit an immutable change; say so instead of offering a drop that would do nothing.
-            return change.isImmutable ? "Can't move @ here (immutable)" : "Move working copy here?"
+            return change.isImmutable ? Localized.Repo.cantMoveHereImmutable : Localized.Repo.moveWorkingCopyHere
         }
-        return "Move \(bookmarkDrag.bookmarkName) here?"
+        return Localized.Repo.moveBookmarkHere(bookmark: bookmarkDrag.bookmarkName)
     }
 
     private func beginBookmarkPress(name: String, sourceCommitId: String, location: CGPoint) {

@@ -25,9 +25,9 @@ use jayjay_core::UserIdentity;
 use jayjay_review::ReviewStoreSummary;
 
 #[cfg(target_os = "macos")]
-const CUSTOM_TERMINAL_PLACEHOLDER: &str = "e.g. Terminal";
+const CUSTOM_TERMINAL_EXAMPLE: &str = "Terminal";
 #[cfg(not(target_os = "macos"))]
-const CUSTOM_TERMINAL_PLACEHOLDER: &str = "e.g. foot --title JayJay";
+const CUSTOM_TERMINAL_EXAMPLE: &str = "foot --title JayJay";
 
 pub struct SettingsView {
     pub(super) section: SettingsSection,
@@ -67,7 +67,7 @@ impl SettingsView {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     window_min_size: Some(size(px(760.), px(500.))),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("JayJay Settings".into()),
+                        title: Some(jayjay_i18n::settings::window_title().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -80,13 +80,13 @@ impl SettingsView {
                         let cfg = current_cfg(cx);
                         let custom_editor_command = tools::persisted_command(
                             cfg.tools.custom_editor_command.clone(),
-                            "e.g. code --reuse-window",
+                            jayjay_i18n::settings::example("code --reuse-window"),
                             |cfg, value| cfg.tools.custom_editor_command = value,
                             cx,
                         );
                         let custom_terminal_command = tools::persisted_command(
                             cfg.tools.custom_terminal_command.clone(),
-                            CUSTOM_TERMINAL_PLACEHOLDER,
+                            jayjay_i18n::settings::example(CUSTOM_TERMINAL_EXAMPLE),
                             |cfg, value| cfg.tools.custom_terminal_command = value,
                             cx,
                         );

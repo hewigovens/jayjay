@@ -65,8 +65,8 @@ enum RefreshMode {
 
     var help: String {
         switch self {
-            case .refresh: "Refresh (\(AppShortcut.refresh.symbol))"
-            case .updateWorkspace: "Update Workspace — the working copy is stale (\(AppShortcut.refresh.symbol))"
+            case .refresh: Localized.Repo.refreshShortcut(shortcut: AppShortcut.refresh.symbol)
+            case .updateWorkspace: Localized.Repo.updateWorkspaceStale(shortcut: AppShortcut.refresh.symbol)
         }
     }
 

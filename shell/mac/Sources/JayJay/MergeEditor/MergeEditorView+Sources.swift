@@ -5,9 +5,9 @@ extension MergeEditorView {
     var sourcesPane: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(spacing: 8) {
-                Text("Sources")
+                Text(Localized.Repo.sources)
                     .jayjayFont(12, weight: .semibold)
-                Text("Use a complete side as the starting point for the result.")
+                Text(Localized.Repo.useACompleteSideAsThe)
                     .jayjayFont(11)
                     .foregroundStyle(.secondary)
                 Spacer()
@@ -15,7 +15,7 @@ extension MergeEditorView {
                     showsBase.toggle()
                 } label: {
                     Label(
-                        showsBase ? "Back to Left & Right" : "Show Base",
+                        showsBase ? Localized.Merge.backToLeftRight : Localized.Merge.showBase,
                         systemImage: showsBase ? "arrow.uturn.backward" : "eye"
                     )
                     .jayjayFont(11)
@@ -49,12 +49,12 @@ extension MergeEditorView {
                 Text(source.label)
                     .jayjayFont(12, weight: .semibold)
                 Spacer()
-                Button("Use \(source.label)") { session.useSource(source) }
+                Button(Localized.Merge.useSource(source: source.label)) { session.useSource(source) }
                     .buttonStyle(.plain)
                     .jayjayFont(11, weight: .medium)
                     .foregroundStyle(.secondary)
                     .disabled(!session.canUseSources)
-                    .accessibilityIdentifier(AID.ExternalTool.useSource(source.label.lowercased()))
+                    .accessibilityIdentifier(AID.ExternalTool.useSource(source.slug))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
@@ -64,7 +64,7 @@ extension MergeEditorView {
                 text: .constant(content.isEmpty ? "∅" : content),
                 isEditable: false,
                 wrapsLines: true,
-                accessibilityIdentifier: AID.Conflict.editorSource(source.label.lowercased()),
+                accessibilityIdentifier: AID.Conflict.editorSource(source.slug),
                 preparedText: content,
                 preparedHighlightedLines: sourceHighlights(source)?.spans,
                 preparedLineStyles: sourceHighlights(source)?.lineStyles,

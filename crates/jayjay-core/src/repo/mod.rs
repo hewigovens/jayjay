@@ -71,4 +71,6 @@ pub use review_note_output::{
 pub use review_notes::ReviewNotesReport;
 pub use review_snapshot::{review_display_group_map_from_hunk, review_snapshot_from_hunk};
 pub use stacked_pr::branch_name_slug;
-pub use workspace_path::{is_valid_workspace_name, workspace_primary_root, workspace_root};
+pub use workspace_path::{
+    enclosing_workspace_root, is_valid_workspace_name, workspace_primary_root, workspace_root,
+};

@@ -6,13 +6,6 @@ use super::view::DiffEditSnapshot;
 use crate::repo::view_model::mutations::DiffEditApplyRequest;
 use crate::repo::window::RepoWindow;
 
-const EMPTY_SELECTION_MESSAGE: &str =
-    "Select at least one file, hunk, or line before applying diff edit.";
-const SELECTION_STILL_LOADING_MESSAGE: &str =
-    "Wait for Select All to finish loading before applying diff edit.";
-const FILES_STILL_LOADING_MESSAGE: &str =
-    "Wait for all editable files to finish loading before applying diff edit.";
-
 impl RepoWindow {
     pub fn diff_edit_has_selection(&self) -> bool {
         self.diff_edit.session.has_selection()
@@ -86,17 +79,17 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         if self.diff_edit.session.is_selecting_all() {
-            self.show_toast(SELECTION_STILL_LOADING_MESSAGE, cx);
+            self.show_toast(jayjay_i18n::repo::wait_for_select_all_to_finish(), cx);
             return;
         }
         if !self.diff_edit_has_selection() {
-            self.show_toast(EMPTY_SELECTION_MESSAGE, cx);
+            self.show_toast(jayjay_i18n::repo::select_at_least_one_file_hunk(), cx);
             return;
         }
         if destination == DiffEditDestination::RemoveFromSource
             && !self.diff_edit_inverse_files_ready(cx)
         {
-            self.show_toast(FILES_STILL_LOADING_MESSAGE, cx);
+            self.show_toast(jayjay_i18n::repo::wait_for_all_editable_files_to(), cx);
             return;
         }
         let message = self.diff_edit.message.clone();
@@ -122,7 +115,7 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         let Some(request) = self.build_diff_edit_request(destination, message, cx) else {
-            self.show_toast(EMPTY_SELECTION_MESSAGE, cx);
+            self.show_toast(jayjay_i18n::repo::select_at_least_one_file_hunk(), cx);
             return;
         };
         self.vm

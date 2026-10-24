@@ -5,6 +5,7 @@ use gpui::{
     TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, size,
 };
 use jayjay_core::UserIdentity;
+use jayjay_i18n::{common, settings};
 
 use crate::app::actions::{CloseWindow, Dismiss};
 use crate::app::fonts::CodeText as _;
@@ -55,7 +56,7 @@ impl IdentityDialog {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("Set Up Identity".into()),
+                        title: Some(settings::identity_title().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -73,7 +74,7 @@ impl IdentityDialog {
 
     fn new(on_saved: OnSaved, cx: &mut Context<Self>) -> Self {
         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
-        let field = |placeholder: &'static str, cx: &mut Context<Self>| {
+        let field = |placeholder: String, cx: &mut Context<Self>| {
             let input = cx.new(|cx| {
                 let mut input = TextArea::new("", placeholder, false, 28., cx);
                 input.set_read_only(true, cx);
@@ -109,8 +110,8 @@ impl IdentityDialog {
         })
         .detach();
         Self {
-            name: field("Your Name", cx),
-            email: field("you@example.com", cx),
+            name: field(settings::identity_name_placeholder(), cx),
+            email: field("you@example.com".to_owned(), cx),
             path: None,
             error: None,
             saving: false,
@@ -199,8 +200,8 @@ impl Render for IdentityDialog {
                 .w_full()
                 .child(input.clone())
         };
-        let save =
-            button("identity-save", "Save", &t, true).debug_selector(|| "identity-save".to_owned());
+        let save = button("identity-save", common::save(), &t, true)
+            .debug_selector(|| "identity-save".to_owned());
         let save = if !self.saving && self.identity(cx).is_some() {
             save.on_click(cx.listener(|dialog, _, window, cx| dialog.save(window, cx)))
         } else {
@@ -224,7 +225,7 @@ impl Render for IdentityDialog {
                 div()
                     .text_size(ui_font_size(12.))
                     .text_color(rgb(t.fg_dim))
-                    .child("jj records this name and email on the changes you create."),
+                    .child(settings::identity_detail()),
             )
             .child(field("identity-name", &self.name))
             .child(field("identity-email", &self.email))
@@ -254,7 +255,7 @@ impl Render for IdentityDialog {
                     .justify_end()
                     .gap(px(8.))
                     .child(
-                        button("identity-cancel", "Cancel", &t, false)
+                        button("identity-cancel", common::cancel(), &t, false)
                             .on_click(cx.listener(|_, _, window, _| window.remove_window())),
                     )
                     .child(save),

@@ -17,14 +17,14 @@ impl RepoWindow {
         let pull_request_label = self.pull_request_menu_label(cx);
         let conflicted = self.bookmark_is_conflicted(name, cx);
         let move_label = if conflicted {
-            "Resolve conflict (set to @)"
+            jayjay_i18n::menu::resolve_conflict_set_to()
         } else {
-            "Move to @-"
+            jayjay_i18n::menu::move_to()
         };
         let delete_label = if conflicted {
-            "Remove from This Change"
+            jayjay_i18n::menu::remove_from_this_change()
         } else {
-            "Delete Bookmark"
+            jayjay_i18n::menu::delete_bookmark()
         };
         let bookmark = self
             .vm
@@ -60,14 +60,14 @@ impl RepoWindow {
                 },
             ),
             ContextMenuItem::new(
-                "Push",
+                jayjay_i18n::menu::push(),
                 glyph::ARROW_UP,
                 ContextAction::PushBookmark(name.to_owned().into()),
             ),
         ];
         if is_tracking {
             items.push(ContextMenuItem::new(
-                "Pull",
+                jayjay_i18n::menu::pull(),
                 glyph::ARROW_DOWN,
                 ContextAction::PullBookmark(name.to_owned().into()),
             ));
@@ -82,26 +82,26 @@ impl RepoWindow {
         }
         if let Some(request) = self.bookmark_diff_request(name, cx) {
             items.push(ContextMenuItem::new(
-                "Show Bookmark Diff",
+                jayjay_i18n::menu::show_bookmark_diff(),
                 glyph::ARROWS_LEFT_RIGHT,
                 ContextAction::ShowBookmarkDiff(request),
             ));
         }
         items.push(ContextMenuItem::new(
-            "Copy Bookmark Name",
+            jayjay_i18n::menu::copy_bookmark_name(),
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         ));
         if has_local {
             items.push(ContextMenuItem::new(
-                "Rename...",
+                jayjay_i18n::menu::rename_ellipsis(),
                 glyph::PENCIL,
                 ContextAction::RenameBookmark(name.to_owned().into()),
             ));
         }
         if has_local && !untracked.is_empty() {
             items.push(ContextMenuItem::submenu(
-                "Track Remote",
+                jayjay_i18n::menu::track_remote(),
                 glyph::GIT_BRANCH,
                 untracked
                     .into_iter()
@@ -140,8 +140,8 @@ impl RepoWindow {
             .read(cx)
             .pr_host_name
             .as_ref()
-            .map(|host| format!("Pull Request on {host}"))
-            .unwrap_or_else(|| "Pull Request".to_owned())
+            .map(|host| jayjay_i18n::repo::pull_request_on(host))
+            .unwrap_or_else(jayjay_i18n::menu::pull_request)
     }
 
     pub(super) fn bookmark_is_conflicted(&self, name: &str, cx: &App) -> bool {
@@ -157,9 +157,9 @@ impl RepoWindow {
         let bookmark = name.to_string();
         let dest = to_rev.to_string();
         let message = match dest.as_str() {
-            "@" => format!("Resolved {bookmark} to @"),
-            "@-" => format!("Moved {bookmark} to @-"),
-            _ => format!("Moved {bookmark}"),
+            "@" => jayjay_i18n::repo::resolved_bookmark_to_working_copy(&bookmark),
+            "@-" => jayjay_i18n::repo::moved_bookmark_to_parent(&bookmark),
+            _ => jayjay_i18n::repo::moved_bookmark(&bookmark),
         };
         self.move_bookmark_to_rev(bookmark, dest, message, cx);
     }
@@ -209,9 +209,9 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let message = if conflicted {
-                    format!("Removed {bookmark} from this change")
+                    jayjay_i18n::repo::removed_bookmark_from_change(&bookmark)
                 } else {
-                    format!("Deleted bookmark {bookmark}")
+                    jayjay_i18n::repo::deleted_bookmark(&bookmark)
                 };
                 let _ = this.update(cx, move |view, cx| {
                     view.show_toast(message, cx);
@@ -227,7 +227,7 @@ impl RepoWindow {
 
     pub(super) fn open_pr_for_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         };
         let bookmark = name.to_string();

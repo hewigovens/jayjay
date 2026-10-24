@@ -132,7 +132,7 @@ extension RepoViewModel {
                     case .changed:
                         break
                     case .unchanged:
-                        viewModel.info = "Nothing to parallelize. The selection would keep its current parents."
+                        viewModel.info = Localized.Menu.nothingToParallelizeTheSelectionWould
                 }
             },
             { try $0.parallelize(revs: revs) }
@@ -176,7 +176,7 @@ extension RepoViewModel {
                     case .changed:
                         break
                     case .unchanged:
-                        viewModel.info = "Nothing to absorb. Use Squash into parent instead."
+                        viewModel.info = Localized.Menu.nothingToAbsorbUseSquashInto
                 }
             },
             { try $0.absorb(rev: rev) }

@@ -11,9 +11,14 @@ pub(super) struct SpanChunk {
     pub(super) spans: Vec<DiffSpan>,
 }
 
+pub const TAB_SPACES: &str = "    ";
+
 /// Display-cell width of a grapheme cluster; width-1 floor keeps control/zero-width
 /// clusters addressable by the cell-based selection geometry.
-pub(super) fn grapheme_cells(g: &str) -> usize {
+pub fn grapheme_cells(g: &str) -> usize {
+    if g == "\t" {
+        return TAB_SPACES.len();
+    }
     UnicodeWidthStr::width(g).max(1)
 }
 
@@ -25,9 +30,9 @@ fn text_cells(text: &str) -> usize {
     text.graphemes(true).map(grapheme_cells).sum()
 }
 
-/// ASCII graphemes are single bytes of one cell each, except CRLF, which is one cluster.
+/// ASCII graphemes are one byte and one cell each, except CRLF and tab.
 fn is_single_cell_ascii(text: &str) -> bool {
-    text.is_ascii() && !text.contains("\r\n")
+    text.is_ascii() && !text.contains("\r\n") && !text.contains('\t')
 }
 
 pub(super) fn line_char_len(line: &DiffLine) -> usize {

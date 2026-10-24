@@ -20,7 +20,7 @@ extension ChangeDetailView {
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
                     Spacer()
-                    Button("Resolve") {
+                    Button(Localized.Repo.resolve) {
                         reviewStore.resolveNote(id: item.note.id)
                         refreshReviewState()
                     }
@@ -35,10 +35,10 @@ extension ChangeDetailView {
 
     private func reviewNoteStatusLabel(_ status: NoteStatus) -> String {
         switch status {
-            case .stale: "Stale"
-            case .orphaned: "Orphaned"
-            case .resolved: "Resolved"
-            case .current: "Current"
+            case .stale: Localized.Repo.stale
+            case .orphaned: Localized.Repo.orphaned
+            case .resolved: Localized.Repo.resolved
+            case .current: Localized.Repo.current
         }
     }
 }

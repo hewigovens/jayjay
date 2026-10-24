@@ -1,5 +1,4 @@
 use icu_decimal::{DecimalFormatter, input::Decimal};
-use icu_locale_core::Locale;
 
 use crate::diff::{DiffSpan, DiffSpanStyle};
 use crate::placeholder::binary_file_size;
@@ -11,24 +10,9 @@ pub struct FileSizeFormatter {
 
 impl FileSizeFormatter {
     pub fn new(locale: &str) -> Self {
-        let (identifier, keywords) = locale.split_once('@').unwrap_or((locale, ""));
-        let mut identifier = identifier
-            .split('.')
-            .next()
-            .unwrap_or_default()
-            .replace('_', "-");
-        if let Some(numbering) = keywords
-            .split(';')
-            .find_map(|keyword| keyword.strip_prefix("numbers="))
-        {
-            identifier.push_str("-u-nu-");
-            identifier.push_str(numbering);
+        Self {
+            decimal: jayjay_i18n::decimal_formatter(locale),
         }
-        let locale = identifier.parse::<Locale>().unwrap_or(Locale::UNKNOWN);
-        let decimal = DecimalFormatter::try_new(locale.into(), Default::default())
-            .or_else(|_| DecimalFormatter::try_new(Default::default(), Default::default()))
-            .expect("compiled decimal data includes the default locale");
-        Self { decimal }
     }
 
     fn compact(&self, bytes: u64) -> String {

@@ -400,7 +400,8 @@ impl RepoWindow {
         let context_menu_keys = cx.intercept_keystrokes(context_menu_keys);
         let review_store = super::review::shared(cx);
         let commit_message = CommitMessageEditor::new("", 60., cx);
-        let bisect_command = cx.new(|cx| TextArea::new("", "Test command", false, 28., cx));
+        let bisect_command =
+            cx.new(|cx| TextArea::new("", jayjay_i18n::repo::test_command(), false, 28., cx));
         cx.observe(&vm, |this, _vm, cx| {
             // A repo that opened after `new` (e.g. in-app `jj git init`) has no watcher yet.
             if !this.fs_watcher_armed {

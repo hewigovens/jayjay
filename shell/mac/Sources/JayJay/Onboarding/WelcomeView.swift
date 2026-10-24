@@ -47,13 +47,13 @@ struct WelcomeView: View {
     @ViewBuilder
     private func recentPanel(_ recent: [RepoGroup]) -> some View {
         if recent.isEmpty {
-            Text("No Recent Repositories")
+            Text(Localized.Menu.noRecentRepositories)
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else {
             ScrollView {
-                repositorySection(title: "Recent Repositories", showsClear: true) {
+                repositorySection(title: Localized.Onboarding.recentRepositories, showsClear: true) {
                     ForEach(recent) { group in
                         repoGroupRows(group, pinned: false)
                     }
@@ -81,7 +81,7 @@ struct WelcomeView: View {
                             .padding(.bottom, 22)
                             .padding(.horizontal, 30)
                         Divider()
-                        repositorySection(title: "Pinned") {
+                        repositorySection(title: Localized.Onboarding.pinned) {
                             ForEach(pinned) { group in
                                 repoGroupRows(group, pinned: true)
                             }
@@ -108,7 +108,7 @@ struct WelcomeView: View {
                 .jayjayFont(14)
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {
-                Button("Open") {
+                Button(Localized.Common.open) {
                     let panel = NSOpenPanel()
                     panel.canChooseFiles = false
                     panel.canChooseDirectories = true
@@ -118,7 +118,7 @@ struct WelcomeView: View {
                     }
                 }
                 .keyboardShortcut(.defaultAction)
-                Button("Clone", action: onClone)
+                Button(Localized.Onboarding.clone, action: onClone)
                     .accessibilityIdentifier(AID.CloneRepository.open)
             }
         }
@@ -162,7 +162,7 @@ struct WelcomeView: View {
                     .jayjayFont(13, weight: .semibold)
                 Spacer()
                 if showsClear {
-                    Button("Clear") {
+                    Button(Localized.Common.clear) {
                         settings.recentRepos = []
                         settings.lastOpenedRepo = nil
                     }
@@ -204,7 +204,7 @@ struct WelcomeView: View {
                 .foregroundStyle(.tertiary)
         }
         .buttonStyle(.plain)
-        .help(pinned ? "Unpin Repository" : "Pin Repository")
+        .help(pinned ? Localized.Onboarding.unpinRepository : Localized.Onboarding.pinRepository)
 
         if !pinned {
             Button { settings.removeRecentRepo(path) } label: {
@@ -212,7 +212,7 @@ struct WelcomeView: View {
                     .foregroundStyle(.tertiary)
             }
             .buttonStyle(.plain)
-            .help("Remove from Recent")
+            .help(Localized.Repo.removeFromRecent)
         }
     }
 

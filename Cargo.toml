@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "shell/gpui", "infra/worker"]
+members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "crates/jayjay-i18n", "shell/gpui", "infra/worker"]
 resolver = "2"
 
 [workspace.package]
@@ -41,7 +41,7 @@ csv = "1.4"
 sha2 = "0.11"
 hex = "0.4"
 uuid = { version = "1", features = ["v4"] }
-similar = "3.2"
+similar = "3.2.1"
 unicode-width = "0.2"
 unicode-segmentation = "1"
 nucleo-matcher = "0.3"
@@ -53,6 +53,14 @@ gethostname = "1"
 rand = "0.10"
 shell-words = "1.1.1"
 url = "2"
+fluent-bundle = "0.16"
+fluent-langneg = "0.13"
+fluent-syntax = "0.12"
+fluent-pseudo = "0.3"
+icu_decimal = { version = "2.3", features = ["alloc"] }
+icu_locale_core = "2.3"
+unic-langid = "0.9"
+sys-locale = "0.3"
 
 # One tag for both so a bump moves every gpui reference together
 gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.24.4" }

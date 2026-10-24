@@ -2,7 +2,7 @@ use jayjay_core::{DiffHunk, HunkType};
 
 use crate::app::theme::Theme;
 
-pub fn tag_for_hunk(hunk: &DiffHunk, theme: &Theme) -> (&'static str, u32, u32) {
+pub fn tag_for_hunk(hunk: &DiffHunk, theme: &Theme) -> (String, u32, u32) {
     let (bg, fg) = match hunk.hunk_type {
         HunkType::Added | HunkType::Copied => (theme.tag_added_bg, theme.tag_added_fg),
         HunkType::Removed => (theme.tag_removed_bg, theme.tag_removed_fg),

@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 struct HelpFeature: Decodable, Equatable, Identifiable {
     let id: String
@@ -15,7 +16,7 @@ struct HelpFeature: Decodable, Equatable, Identifiable {
     }
 
     var commandPaletteTitle: String {
-        "Help: \(title)"
+        Localized.Repo.helpTitle(title: title)
     }
 
     var commandPaletteKeywords: [String] {

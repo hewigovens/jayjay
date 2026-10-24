@@ -80,14 +80,14 @@ struct FileRow: View {
                             .lineLimit(1)
                             .opacity(showsReviewedStyle ? 0.5 : 1)
                         if hunk.isSubmodulePlaceholder {
-                            Text("Submodule")
+                            Text(Localized.Repo.submodule)
                                 .jayjayFont(9, weight: .semibold)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color.secondary.opacity(0.12), in: Capsule())
                         } else if hunk.isGitLfsPlaceholder {
-                            Text("LFS")
+                            Text(Localized.Repo.lfs)
                                 .jayjayFont(9, weight: .semibold)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)
@@ -95,13 +95,13 @@ struct FileRow: View {
                                 .background(Color.secondary.opacity(0.12), in: Capsule())
                         }
                         if showsAgentBadge {
-                            Text("Agent")
+                            Text(Localized.Repo.agent)
                                 .jayjayFont(9, weight: .semibold)
                                 .foregroundStyle(.secondary)
                                 .padding(.horizontal, 6)
                                 .padding(.vertical, 2)
                                 .background(Color.secondary.opacity(0.12), in: Capsule())
-                                .help("Includes changes marked by an agent")
+                                .help(Localized.Repo.includesChangesMarkedByAnAgent)
                                 .accessibilityIdentifier(AID.FileList.agentReviewed(hunk.path))
                         }
                         if noteCount > 0 {
@@ -127,7 +127,7 @@ struct FileRow: View {
                         .lineLimit(1)
                         .truncationMode(.middle)
                         .accessibilityLabel(hunk.hunkType.hasSource
-                            ? hunk.oldPath.map { "\(hunk.hunkType.label) from \($0) to \(hunk.path)" } ?? hunk.path
+                            ? hunk.oldPath.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path
                             : hunk.path)
                 }
 

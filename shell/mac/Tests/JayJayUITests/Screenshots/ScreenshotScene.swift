@@ -24,6 +24,10 @@ class ScreenshotScene: SceneBase {
         ["JJ_CONFIG": fixtureRoot.appendingPathComponent("jj-config.toml").path]
     }
 
+    override class var languages: String? {
+        environment["JAYJAY_SCREENSHOT_LANGUAGE"].map { "(\($0))" } ?? super.languages
+    }
+
     override class var startsWithDefaultLayout: Bool {
         false
     }
@@ -71,13 +75,21 @@ class ScreenshotScene: SceneBase {
     /// A screen capture cropped to the window, so open menus and popovers are included and the pointer is not.
     func capture(_ name: String, frame: CGRect) {
         settle()
-        let screenshot = XCUIScreen.main.screenshot()
-        let image = screenshot.image
+        let primaryHeight = NSScreen.screens.first?.frame.height ?? 0
+        let screens = NSScreen.screens.map { CGRect(x: $0.frame.minX, y: primaryHeight - $0.frame.maxY, width: $0.frame.width, height: $0.frame.height) }
+        let index = screens.firstIndex { $0.contains(CGPoint(x: frame.midX, y: frame.midY)) } ?? 0
+        let screen = screens.indices.contains(index) ? screens[index] : CGRect(origin: .zero, size: frame.size)
+        let image = XCUIScreen.screens[min(index, XCUIScreen.screens.count - 1)].screenshot().image
         guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
             return XCTFail("Screen capture failed for \(name)")
         }
-        let scale = CGFloat(cgImage.width) / (NSScreen.screens.first?.frame.width ?? image.size.width)
-        let crop = CGRect(x: frame.minX * scale, y: frame.minY * scale, width: frame.width * scale, height: frame.height * scale)
+        let scale = CGFloat(cgImage.width) / screen.width
+        let crop = CGRect(
+            x: (frame.minX - screen.minX) * scale,
+            y: (frame.minY - screen.minY) * scale,
+            width: frame.width * scale,
+            height: frame.height * scale
+        )
         guard let cropped = cgImage.cropping(to: crop.integral) else {
             return XCTFail("Could not crop the capture for \(name)")
         }

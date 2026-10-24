@@ -2,14 +2,16 @@ use std::path::{Path, PathBuf};
 
 use jj_lib::workspace::{DefaultWorkspaceLoaderFactory, WorkspaceLoaderFactory as _};
 
+/// Like `workspace_root` without the load check, so a broken workspace still reports its error.
+pub fn enclosing_workspace_root(path: &Path) -> Option<PathBuf> {
+    let path = dunce::canonicalize(path).ok()?;
+    jayjay_primitives::enclosing_workspace_dir(&path).map(Path::to_path_buf)
+}
+
 /// Discover and validate the containing workspace without loading the repository at its operation head.
 pub fn workspace_root(path: &Path) -> Option<PathBuf> {
-    let path = dunce::canonicalize(path).ok()?;
-    if !path.is_dir() {
-        return None;
-    }
-    let root = path.ancestors().find(|dir| dir.join(".jj").is_dir())?;
-    super::support::load_workspace(root)
+    let root = enclosing_workspace_root(path)?;
+    super::support::load_workspace(&root)
         .ok()
         .map(|workspace| workspace.workspace_root().to_owned())
 }

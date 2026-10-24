@@ -38,8 +38,8 @@ extension DAGRow {
     private func chipView(_ chip: DAGRefChip) -> some View {
         switch chip {
             case .workingCopy: workingCopyTag()
-            case .conflict: tag("conflict", tint: .red.opacity(0.18))
-            case .divergent: tag("divergent", tint: .orange.opacity(0.18))
+            case .conflict: tag(Localized.Repo.conflictBadge, tint: .red.opacity(0.18))
+            case .divergent: tag(Localized.Repo.divergentBadge, tint: .orange.opacity(0.18))
             case let .bookmark(name): bookmarkTag(name)
             case let .gitTag(name): gitTag(name)
             case let .workspace(name): workspaceChip(name)
@@ -67,8 +67,8 @@ extension DAGRow {
         HStack(alignment: .firstTextBaseline, spacing: 4) {
             tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
                 .foregroundStyle(AppColors.workspace(colorScheme))
-                .accessibilityLabel("working copy")
-                .help("Working copy — drag onto a change to move it here")
+                .accessibilityLabel(Localized.Repo.workingCopyLabel)
+                .help(Localized.Repo.workingCopyDragOntoAChange)
                 .gesture(
                     DragGesture(minimumDistance: 0, coordinateSpace: .named(DAGRebaseCoordinateSpace.name))
                         .onChanged { onBookmarkDragChanged?(workingCopyDragLabel, change.commitId.id, $0) }
@@ -78,7 +78,7 @@ extension DAGRow {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .jayjayFont(10, weight: .semibold)
                     .foregroundStyle(.orange)
-                    .help("Working copy is stale: another workspace rewrote this change. Update Workspace from the context menu or the Refresh button.")
+                    .help(Localized.Repo.workingCopyIsStaleAnotherWorkspace)
                     .accessibilityIdentifier(AID.DAG.staleWorkingCopy)
             }
         }
@@ -95,17 +95,17 @@ extension DAGRow {
         )
         .help(
             conflicted
-                ? "Conflicted bookmark: \(name) — points at more than one change. Drag onto a change to set it there."
-                : "Bookmark: \(name) — drag onto a change to move it"
+                ? Localized.Repo.conflictedBookmarkDragHelp(name: name)
+                : Localized.Repo.bookmarkDragHelp(name: name)
         )
-        .accessibilityLabel(conflicted ? "Conflicted bookmark \(name)" : "Bookmark \(name)")
+        .accessibilityLabel(conflicted ? Localized.Repo.conflictedBookmarkLabel(name: name) : Localized.Repo.bookmarkLabel(name: name))
         .accessibilityIdentifier(AID.DAG.bookmark(name))
         .selectionContextMenuExclusion()
         .contextMenu {
-            Button(conflicted ? "Resolve conflict (set to @)" : "Move to @-") {
+            Button(conflicted ? Localized.Menu.resolveConflictSetTo : Localized.Menu.moveTo) {
                 actions?.moveBookmark(name: name, toRev: conflicted ? "@" : "@-")
             }
-            Button("Push") {
+            Button(Localized.Menu.push) {
                 actions?.gitPush(bookmark: name)
             }
             if !isTrunkBookmark(name: name) {
@@ -114,13 +114,13 @@ extension DAGRow {
                 }
             }
             Divider()
-            Button("Copy Bookmark Name") {
+            Button(Localized.Menu.copyBookmarkName) {
                 NSPasteboard.general.clearContents()
                 NSPasteboard.general.setString(name, forType: .string)
             }
             if canRemoveBookmarkFromChip(name: name, conflicted: conflicted) {
                 Divider()
-                Button(conflicted ? "Remove from This Change" : "Delete Bookmark", role: .destructive) {
+                Button(conflicted ? Localized.Menu.removeFromThisChange : Localized.Menu.deleteBookmark, role: .destructive) {
                     actions?.removeBookmark(name: name, fromRev: change.commitId.id)
                 }
             }
@@ -136,8 +136,8 @@ extension DAGRow {
     private func workspaceChip(_ name: String) -> some View {
         let chip = tag("\(name)@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.16))
             .foregroundStyle(AppColors.workspace(colorScheme))
-            .help("Working copy of the \(name) workspace")
-            .accessibilityLabel("Workspace \(name)")
+            .help(Localized.Repo.workspaceWorkingCopy(name: name))
+            .accessibilityLabel(Localized.Repo.workspaceLabel(name: name))
         chip.selectionContextMenuExclusion().contextMenu {
             if let workspace = workspacesByName[name] {
                 WorkspaceMenuItems(
@@ -146,7 +146,7 @@ extension DAGRow {
                     onOpen: { onRequest?(.openWorkspace(workspace)) }
                 )
             } else {
-                Button("Filter by This Workspace") { actions?.filterByWorkspace(name: name) }
+                Button(Localized.Menu.filterByThisWorkspace) { actions?.filterByWorkspace(name: name) }
             }
         }
     }
@@ -158,8 +158,8 @@ extension DAGRow {
             systemImage: "tag",
             iconColor: AppColors.commitIdPrefix(colorScheme)
         )
-        .help("Tag: \(name)")
-        .accessibilityLabel("Tag \(name)")
+        .help(Localized.Repo.tagNamed(name: name))
+        .accessibilityLabel(Localized.Repo.tagLabel(name: name))
         .selectionContextMenuExclusion()
         .contextMenu {
             TagMenuItems(name: name, isOnRemote: remoteTagNames.contains(name), actions: actions, onRequest: onRequest)
@@ -175,8 +175,8 @@ extension DAGRow {
 
     private var pullRequestLabel: String {
         if let prHostName {
-            return "Pull Request on \(prHostName)"
+            return Localized.Repo.pullRequestOn(host: prHostName)
         }
-        return "Pull Request"
+        return Localized.Menu.pullRequest
     }
 }

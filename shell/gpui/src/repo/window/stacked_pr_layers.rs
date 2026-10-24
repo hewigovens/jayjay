@@ -100,7 +100,7 @@ fn bookmark_field(
     let editing = state.active_input == Some(index);
     let editable = matches!(state.phase, StackedPrPhase::Preview(_));
     let warning = state.warning(index);
-    let warning_icon = warning.map(|message| {
+    let warning_icon = warning.clone().map(|message| {
         div()
             .id(("stacked-pr-warning", index))
             .flex_none()
@@ -118,7 +118,7 @@ fn bookmark_field(
     if editing {
         let input = line_input_content(
             &state.inputs[index],
-            "bookmark name",
+            jayjay_i18n::repo::bookmark_name_placeholder(),
             t,
             Some("stacked-pr-caret"),
         );

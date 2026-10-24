@@ -16,13 +16,13 @@ extension RepoContentView {
                     }
                 )
             case let .createBookmark(rev):
-                refCreateSheet(title: "Create Bookmark", placeholder: "Bookmark name", rev: rev) { name in
+                refCreateSheet(title: Localized.Repo.createBookmark, placeholder: Localized.Repo.bookmarkName, rev: rev) { name in
                     viewModel.createBookmark(name: name, rev: rev)
                 }
             case let .createTag(rev):
                 refCreateSheet(
-                    title: "Create Tag",
-                    placeholder: "Tag name",
+                    title: Localized.Repo.createTag,
+                    placeholder: Localized.Repo.tagName,
                     note: "A tagged change becomes immutable.",
                     rev: rev
                 ) { name in
@@ -129,9 +129,9 @@ extension RepoContentView {
         let submit = { submitRefCreate(onCreate) }
         return SheetContainer(
             title: title,
-            subtitle: "On change: \(String(rev.prefix(12)))",
-            cancelLabel: "Cancel",
-            confirmLabel: "Create",
+            subtitle: Localized.Repo.onChange(rev: String(rev.prefix(12))),
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: Localized.Repo.create,
             confirmDisabled: !isValidBookmarkName(name: refCreateName.trimmingCharacters(in: .whitespacesAndNewlines)),
             onCancel: { modal = nil },
             onConfirm: submit,
@@ -150,11 +150,11 @@ extension RepoContentView {
     }
 
     private func tagDeleteOnRemoteSheet(name: String) -> some View {
-        let remotes = viewModel.tags.first { $0.name == name }?.trackedRemotes.joined(separator: ", ") ?? "the remote"
+        let remotes = viewModel.tags.first { $0.name == name }?.trackedRemotes.joined(separator: ", ") ?? Localized.Repo.theRemote
         return DestructiveConfirmSheet(
-            title: "Delete Tag \(name) on \(remotes)?",
-            message: "This removes the tag locally and pushes the deletion to \(remotes). A GitHub release on this tag turns into a draft and its downloads stop working until the tag exists again.",
-            confirmLabel: "Delete on Remote",
+            title: Localized.Repo.deleteTagTitle(name: name, remotes: remotes),
+            message: Localized.Repo.deleteTagMessage(remotes: remotes),
+            confirmLabel: Localized.Menu.deleteOnRemote,
             width: 400,
             onCancel: { modal = nil },
             onConfirm: {
@@ -166,9 +166,9 @@ extension RepoContentView {
 
     private func abandonSheet(rev: String) -> some View {
         DestructiveConfirmSheet(
-            title: "Abandon Change?",
-            message: "This will remove the change and reparent its children.\nYou can undo this with jj op restore.",
-            confirmLabel: "Abandon",
+            title: Localized.Repo.abandonChange,
+            message: Localized.Repo.abandonChangeMessage,
+            confirmLabel: Localized.Menu.abandon,
             dontAskAgain: Binding(
                 get: { settings.skipAbandonConfirmation },
                 set: { settings.skipAbandonConfirmation = $0 }
@@ -183,9 +183,9 @@ extension RepoContentView {
 
     private func abandonSelectionSheet(revisions: [String]) -> some View {
         DestructiveConfirmSheet(
-            title: "Abandon \(revisions.count) Changes?",
-            message: "This will remove the selected changes and reparent their descendants.\nYou can undo this with jj op restore.",
-            confirmLabel: "Abandon \(revisions.count)",
+            title: Localized.Repo.abandonChangesTitle(count: revisions.count),
+            message: Localized.Repo.abandonChangesMessage,
+            confirmLabel: Localized.Repo.abandonCount(count: revisions.count),
             onCancel: { modal = nil },
             onConfirm: {
                 viewModel.abandon(revs: revisions)
@@ -197,10 +197,10 @@ extension RepoContentView {
     private func squashSelectionSheet(revisions: [String]) -> some View {
         let destination = revisions.last ?? ""
         return SheetContainer(
-            title: "Squash \(revisions.count) Changes?",
-            subtitle: "Into \(String(destination.prefix(12)))",
-            cancelLabel: "Cancel",
-            confirmLabel: "Squash",
+            title: Localized.Repo.squashChangesTitle(count: revisions.count),
+            subtitle: Localized.Repo.intoRev(rev: String(destination.prefix(12))),
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: Localized.Menu.squash,
             onCancel: { modal = nil },
             onConfirm: {
                 viewModel.squash(revs: revisions)
@@ -208,7 +208,7 @@ extension RepoContentView {
             },
             content: {
                 Text(
-                    "This combines the selected linear range into its oldest change and abandons the other selected changes. You can undo it with jj op restore."
+                    Localized.Menu.thisCombinesTheSelectedLinearRange
                 )
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
@@ -220,10 +220,10 @@ extension RepoContentView {
 
     private func rebaseConfirmationSheet(request: DAGRebaseRequest) -> some View {
         SheetContainer(
-            title: request.selectionCommitIds.isEmpty ? "Rebase Change?" : "Rebase \(request.selectionCommitIds.count) Changes?",
+            title: request.selectionCommitIds.isEmpty ? Localized.Repo.rebaseChange : Localized.Repo.rebaseChangesTitle(count: request.selectionCommitIds.count),
             subtitle: "\(String(request.sourceCommitId.prefix(12))) -> \(String(request.destCommitId.prefix(12)))",
-            cancelLabel: "Cancel",
-            confirmLabel: "Rebase",
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: Localized.Repo.rebase,
             onCancel: { modal = nil },
             onConfirm: {
                 modal = nil
@@ -232,15 +232,15 @@ extension RepoContentView {
             content: {
                 VStack(alignment: .leading, spacing: 12) {
                     rebaseSummaryRow(
-                        title: "Change",
+                        title: Localized.Repo.change,
                         value: request.sourceLabel,
                         detail: request.sourceChangeId
                     )
-                    Label("Will become a child of", systemImage: "arrow.down")
+                    Label(Localized.Repo.willBecomeAChildOf, systemImage: "arrow.down")
                         .jayjayFont(11)
                         .foregroundStyle(.secondary)
                     rebaseSummaryRow(
-                        title: "New parent",
+                        title: Localized.Repo.newParent,
                         value: request.destLabel,
                         detail: request.destChangeId
                     )
@@ -248,10 +248,10 @@ extension RepoContentView {
                         get: { settings.confirmDragRebase },
                         set: { settings.confirmDragRebase = $0 }
                     )) {
-                        Text("Confirm before drag-to-rebase")
+                        Text(Localized.Repo.confirmBeforeDragToRebase)
                             .jayjayFont(12)
                     }
-                    Text("Any conflicts will appear inline after the rebase.")
+                    Text(Localized.Repo.anyConflictsWillAppearInlineAfter)
                         .jayjayFont(11)
                         .foregroundStyle(.secondary)
                 }
@@ -262,11 +262,11 @@ extension RepoContentView {
 
     private var workspaceCreateSheet: some View {
         SheetContainer(
-            title: "New Workspace",
-            subtitle: "Creates a new working copy in a sibling directory",
-            cancelLabel: "Cancel",
+            title: Localized.Repo.newWorkspace,
+            subtitle: Localized.Repo.createsANewWorkingCopyIn,
+            cancelLabel: Localized.Common.cancel,
             cancelDisabled: workspaceCreating,
-            confirmLabel: workspaceCreating ? "Creating…" : "Create",
+            confirmLabel: workspaceCreating ? Localized.Repo.creatingEllipsis : Localized.Repo.create,
             confirmDisabled: workspaceCreating
                 || workspaceName.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
             onCancel: {
@@ -278,7 +278,7 @@ extension RepoContentView {
                 let name = workspaceName.trimmingCharacters(in: .whitespacesAndNewlines)
                 guard !name.isEmpty else { return }
                 guard isValidWorkspaceName(name: name) else {
-                    workspaceNameError = "Invalid workspace name: \(name)"
+                    workspaceNameError = Localized.Repo.invalidWorkspaceName(name: name)
                     return
                 }
                 workspaceNameError = nil
@@ -298,7 +298,7 @@ extension RepoContentView {
                 })
             },
             content: {
-                TextField("Workspace name", text: $workspaceName)
+                TextField(Localized.Repo.workspaceName, text: $workspaceName)
                     .textFieldStyle(.roundedBorder)
                     .jayjayFont(13, design: .monospaced)
                 if let workspaceNameError {
@@ -320,9 +320,9 @@ extension RepoContentView {
 
     private func workspaceDeleteSheet(workspace: WorkspaceInfo) -> some View {
         DestructiveConfirmSheet(
-            title: "Delete Workspace \(workspace.name)?",
-            message: "This closes its window, forgets the workspace, and deletes its directory from disk:\n\(workspace.path)",
-            confirmLabel: "Delete",
+            title: Localized.Repo.deleteWorkspaceTitle(name: workspace.name),
+            message: Localized.Repo.deleteWorkspaceMessage(path: workspace.path),
+            confirmLabel: Localized.Repo.delete,
             width: 400,
             dontAskAgain: Binding(
                 get: { settings.skipWorkspaceDeleteConfirmation },

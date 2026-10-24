@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 /// A 1Password-style keyboard cheatsheet shown on ⌘/. Two balanced columns of sectioned shortcuts; closes with Esc, the X, or the window's close button.
@@ -34,7 +35,7 @@ struct KeyboardShortcutsView: View {
                 Image(systemName: "keyboard")
                     .font(.system(size: 15))
                     .foregroundStyle(.secondary)
-                Text("Keyboard Shortcuts")
+                Text(Localized.Menu.keyboardShortcuts)
                     .jayjayFont(16, weight: .semibold)
             }
             HStack {
@@ -47,7 +48,7 @@ struct KeyboardShortcutsView: View {
                         .background(Color.primary.opacity(0.06), in: Circle())
                 }
                 .buttonStyle(.plain)
-                .help("Close")
+                .help(Localized.Common.close)
             }
         }
         .padding(.horizontal, 20)
@@ -74,7 +75,7 @@ struct KeyboardShortcutsView: View {
 
     private var footer: some View {
         HStack(spacing: 0) {
-            Text("Esc closes the palette and sheets · ⌃N / ⌃P also move the selection")
+            Text(Localized.Shortcuts.escClosesThePaletteAndSheetsN)
                 .jayjayFont(11)
                 .foregroundStyle(.tertiary)
             Spacer()

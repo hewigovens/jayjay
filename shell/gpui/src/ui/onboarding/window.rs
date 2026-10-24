@@ -17,7 +17,7 @@ impl OnboardingView {
                 window_min_size: Some(bounds.size),
                 is_minimizable: false,
                 titlebar: Some(TitlebarOptions {
-                    title: Some("Welcome to JayJay".into()),
+                    title: Some(jayjay_i18n::menu::welcome_to_jayjay().into()),
                     appears_transparent: true,
                     traffic_light_position: Some(Point {
                         x: px(crate::platform::REPO_TRAFFIC_LIGHTS.0),

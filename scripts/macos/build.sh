@@ -24,7 +24,7 @@ else
 fi
 bash "$root/scripts/prepare-app-bundle.sh" "$app_path" "$target_dir/$profile/jayjay"
 if [[ "$configuration" == Debug ]]; then
-  codesign --force --sign - "$app_path/Contents/MacOS/jayjay-cli"
-  codesign --force --sign - "$app_path"
+  bash "$root/scripts/macos/sign-debug.sh" "$app_path/Contents/MacOS/jayjay-cli"
+  bash "$root/scripts/macos/sign-debug.sh" "$app_path"
   echo "Built $app_path"
 fi

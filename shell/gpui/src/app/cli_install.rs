@@ -84,10 +84,11 @@ fn remove_managed_entry(link: &Path, install_targets: &[PathBuf]) -> Result<(), 
         EntryStatus::Installed { .. } | EntryStatus::Broken { .. } => {
             std::fs::remove_file(link).map_err(|err| err.to_string())
         }
-        EntryStatus::NotInstalled => Err(format!("nothing is installed at {}", link.display())),
-        EntryStatus::Unmanaged { .. } => Err(format!(
-            "{} was not installed by JayJay; remove it manually",
-            link.display()
+        EntryStatus::NotInstalled => Err(jayjay_i18n::settings::cli_nothing_installed_at(
+            &link.display().to_string(),
+        )),
+        EntryStatus::Unmanaged { .. } => Err(jayjay_i18n::settings::cli_not_installed_by_jayjay(
+            &link.display().to_string(),
         )),
     }
 }
@@ -206,7 +207,9 @@ fn resolve_target_from(appimage: Option<PathBuf>, exe: Option<PathBuf>) -> Resul
         if image.is_absolute() && image.is_file() {
             return Ok(image);
         }
-        return Err(format!("AppImage not found at {}", image.display()));
+        return Err(jayjay_i18n::settings::appimage_not_found(
+            &image.display().to_string(),
+        ));
     }
     let exe = exe.ok_or_else(|| "cannot resolve the running executable".to_owned())?;
     let exe = exe.canonicalize().unwrap_or(exe);
@@ -272,7 +275,7 @@ use std::os::unix::fs::symlink;
 #[cfg(not(unix))]
 fn symlink(_target: &Path, _link: &Path) -> io::Result<()> {
     Err(io::Error::other(
-        "CLI install is not supported on this platform yet",
+        jayjay_i18n::settings::cli_install_is_not_supported_on(),
     ))
 }
 
@@ -287,18 +290,16 @@ fn dir_on_path(bin_dir: &Path, path_var: &str) -> bool {
 }
 
 fn path_hint_for_shell(shell: &str, bin_dir: &Path) -> String {
-    let dir = bin_dir.display();
+    let dir = bin_dir.display().to_string();
     if shell.ends_with("fish") {
-        return format!(
-            "{dir} is not on your PATH. Add to ~/.config/fish/config.fish: fish_add_path {dir}"
-        );
+        return jayjay_i18n::settings::cli_not_on_path_fish(&dir);
     }
     let rc_file = if shell.ends_with("zsh") {
         "~/.zshrc"
     } else {
         "~/.bashrc"
     };
-    format!("{dir} is not on your PATH. Add to {rc_file}: export PATH=\"{dir}:$PATH\"")
+    jayjay_i18n::settings::cli_not_on_path(&dir, rc_file)
 }
 
 #[cfg(test)]

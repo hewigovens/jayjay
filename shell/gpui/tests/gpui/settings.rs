@@ -469,7 +469,7 @@ fn custom_tool_commands_are_editable_and_persisted(cx: &mut TestAppContext) {
     settings_cx.simulate_input("foot --title JayJay");
     settle_visual(&mut settings_cx);
 
-    click_setting(&mut settings_cx, "settings-nav-Diff & Files");
+    click_setting(&mut settings_cx, "settings-nav-Diff");
     click_setting(&mut settings_cx, "settings-nav-Integrations");
     let editor = settings_cx
         .debug_bounds("setting-custom-editor-command")
@@ -511,7 +511,7 @@ fn workflow_and_privacy_preferences_survive_page_navigation(cx: &mut TestAppCont
         );
     });
 
-    click_setting(&mut settings_cx, "settings-nav-Diff & Files");
+    click_setting(&mut settings_cx, "settings-nav-Diff");
     assert!(settings_cx.debug_bounds("setting-diff-sbs").is_some());
     assert!(
         settings_cx
@@ -536,7 +536,7 @@ fn workflow_and_privacy_preferences_survive_page_navigation(cx: &mut TestAppCont
         );
     });
 
-    click_setting(&mut settings_cx, "settings-nav-Data & Privacy");
+    click_setting(&mut settings_cx, "settings-nav-DataPrivacy");
     click_setting(&mut settings_cx, "setting-privacy-telemetry");
     click_setting(&mut settings_cx, "settings-nav-About");
     assert!(
@@ -544,7 +544,7 @@ fn workflow_and_privacy_preferences_survive_page_navigation(cx: &mut TestAppCont
             .debug_bounds("setting-privacy-telemetry")
             .is_none()
     );
-    click_setting(&mut settings_cx, "settings-nav-Data & Privacy");
+    click_setting(&mut settings_cx, "settings-nav-DataPrivacy");
     assert!(
         settings_cx
             .debug_bounds("setting-privacy-telemetry")

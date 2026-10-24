@@ -42,9 +42,9 @@ fn stale_note_row(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let label = if status.status == NoteStatus::Orphaned {
-        "Orphaned"
+        jayjay_i18n::repo::orphaned()
     } else {
-        "Stale"
+        jayjay_i18n::repo::stale()
     };
     let note_id = status.note.id.clone();
     div()
@@ -80,7 +80,7 @@ fn stale_note_row(
         .child(
             button(
                 SharedString::from(format!("stale-note-resolve-{note_id}")),
-                "Resolve",
+                jayjay_i18n::repo::resolve(),
                 t,
                 false,
             )

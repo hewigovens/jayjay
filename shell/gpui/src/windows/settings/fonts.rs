@@ -12,6 +12,7 @@ use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{boolean_toggle_button, button};
+use jayjay_i18n::{common, settings};
 
 pub(super) fn fonts_section(
     cfg: &AppConfig,
@@ -41,11 +42,11 @@ pub(super) fn fonts_section(
         .w_full()
         .gap(px(24.))
         .child(form_section(
-            "Interface Font",
+            settings::interface_font(),
             [
                 field_row(
                     glyph::CASE_SENSITIVE,
-                    "Family",
+                    settings::font_family(),
                     dropdown_button(
                         "interface-font-family",
                         fonts::interface_preference_label(&cfg.interface_font_family),
@@ -56,10 +57,10 @@ pub(super) fn fonts_section(
                 ),
                 field_row(
                     glyph::A_LARGE_SMALL,
-                    "Size",
+                    settings::font_size(),
                     stepper(
                         "interface-font-size",
-                        format!("{:.0}pt", cfg.interface_font_size()),
+                        settings::font_points(cfg.interface_font_size().round()),
                         cfg.interface_font_size(),
                         AppConfig::MIN_FONT_SIZE..=AppConfig::MAX_FONT_SIZE,
                         AppConfig::adjust_interface_font_size,
@@ -71,11 +72,11 @@ pub(super) fn fonts_section(
             t,
         ))
         .child(form_section(
-            "Code Font",
+            settings::code_font(),
             [
                 field_row(
                     glyph::CASE_SENSITIVE,
-                    "Family",
+                    settings::font_family(),
                     dropdown_button(
                         "code-font-family",
                         fonts::mono_preference_label(&cfg.code_font_family),
@@ -86,10 +87,10 @@ pub(super) fn fonts_section(
                 ),
                 field_row(
                     glyph::A_LARGE_SMALL,
-                    "Size",
+                    settings::font_size(),
                     stepper(
                         "code-font-size",
-                        format!("{:.0}pt", cfg.code_font_size()),
+                        settings::font_points(cfg.code_font_size().round()),
                         cfg.code_font_size(),
                         AppConfig::MIN_FONT_SIZE..=AppConfig::MAX_FONT_SIZE,
                         AppConfig::adjust_code_font_size,
@@ -99,7 +100,7 @@ pub(super) fn fonts_section(
                 ),
                 field_row(
                     glyph::ARROW_UP_DOWN,
-                    "Line spacing",
+                    settings::line_spacing(),
                     stepper(
                         "code-line-spacing",
                         format!("{:.1}", cfg.code_line_spacing),
@@ -110,17 +111,17 @@ pub(super) fn fonts_section(
                     ),
                     t,
                 ),
-                field_row(glyph::LIGATURE, "Ligatures", ligatures, t),
+                field_row(glyph::LIGATURE, settings::ligatures(), ligatures, t),
             ],
             t,
         ))
-        .child(form_section("Preview", [font_preview(t, t, cx)], t))
+        .child(form_section(common::preview(), [font_preview(t, t, cx)], t))
         .child(form_group(
             [div()
                 .flex()
                 .py(px(10.))
                 .child(
-                    button("setting-reset-fonts", "Reset Fonts", t, false)
+                    button("setting-reset-fonts", settings::reset_fonts(), t, false)
                         .debug_selector(|| "setting-reset-fonts".to_owned())
                         .on_click(|_, _, cx| config::update(cx, AppConfig::reset_fonts)),
                 )

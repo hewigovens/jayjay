@@ -16,23 +16,26 @@ impl Repo {
             possibly_bad,
         } = match result {
             BisectionResult::Found(bad) => found_pieces(false, bad, Vec::new()),
-            BisectionResult::FoundDespiteSkips { bad_commits, possibly_bad } => {
-                found_pieces(true, bad_commits, possibly_bad)
-            }
+            BisectionResult::FoundDespiteSkips {
+                bad_commits,
+                possibly_bad,
+            } => found_pieces(true, bad_commits, possibly_bad),
             BisectionResult::Indeterminate => FoundPieces {
                 kind: BisectResultKind::Indeterminate,
-                message: "No first bad change found: every candidate was skipped, or the range's head was not bad.".to_owned(),
+                message: jayjay_i18n::repo::bisect_no_first_bad(),
                 bad: Vec::new(),
                 possibly_bad: Vec::new(),
             },
             BisectionResult::Abort => FoundPieces {
                 kind: BisectResultKind::Abort,
-                message: "The test command returned 127 (command not found).".to_owned(),
+                message: jayjay_i18n::repo::bisect_command_not_found(),
                 bad: Vec::new(),
                 possibly_bad: Vec::new(),
             },
             BisectionResult::VerificationFailed => {
-                return Err(JayError::internal("bisect precondition verification is not used"));
+                return Err(JayError::internal(
+                    "bisect precondition verification is not used",
+                ));
             }
         };
         let (restore_note, kept) = if session.temps.is_empty() {
@@ -68,21 +71,15 @@ fn found_pieces(despite_skips: bool, bad: Vec<Commit>, possibly_bad: Vec<Commit>
     let (kind, message) = if despite_skips {
         (
             BisectResultKind::FoundDespiteSkips,
-            format!(
-                "First bad: {}. Possibly bad (skipped): {}",
-                change_list(&bad),
-                change_list(&possibly_bad)
+            jayjay_i18n::repo::bisect_first_bad_possibly_skipped(
+                &change_list(&bad),
+                &change_list(&possibly_bad),
             ),
-        )
-    } else if bad.len() == 1 {
-        (
-            BisectResultKind::Found,
-            format!("First bad change: {}", change_list(&bad)),
         )
     } else {
         (
             BisectResultKind::Found,
-            format!("First bad changes: {}", change_list(&bad)),
+            jayjay_i18n::repo::bisect_first_bad(bad.len(), &change_list(&bad)),
         )
     };
     FoundPieces {
@@ -95,7 +92,7 @@ fn found_pieces(despite_skips: bool, bad: Vec<Commit>, possibly_bad: Vec<Commit>
 
 fn change_list(changes: &[BisectChange]) -> String {
     if changes.is_empty() {
-        return "(none)".to_owned();
+        return jayjay_i18n::repo::bisect_none();
     }
     changes
         .iter()

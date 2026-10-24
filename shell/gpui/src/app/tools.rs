@@ -10,16 +10,18 @@ use crate::platform::reveal_path;
 
 pub use jayjay_core::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 
-pub(crate) fn editor_title(cx: &App) -> &'static str {
+pub(crate) fn editor_title(cx: &App) -> String {
     let cfg = config::current(cx);
     EDITOR_OPTIONS
         .iter()
-        .find_map(|(id, label)| (*id == cfg.tools.external_editor.as_str()).then_some(*label))
-        .unwrap_or("Editor")
+        .find(|(id, _)| *id == cfg.tools.external_editor.as_str())
+        .map_or_else(jayjay_i18n::settings::editor, |(_, label)| {
+            (*label).to_owned()
+        })
 }
 
 pub(crate) fn open_in_editor_label(cx: &App) -> String {
-    format!("Open in {}", editor_title(cx))
+    jayjay_i18n::menu::open_in(&editor_title(cx))
 }
 
 fn terminal_title(cx: &App) -> &'static str {
@@ -31,7 +33,7 @@ fn terminal_title(cx: &App) -> &'static str {
 }
 
 pub(crate) fn open_in_terminal_label(cx: &App) -> String {
-    format!("Open in {}", terminal_title(cx))
+    jayjay_i18n::menu::open_in(terminal_title(cx))
 }
 
 pub(crate) fn open_in_editor(

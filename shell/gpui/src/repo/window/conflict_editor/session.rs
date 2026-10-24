@@ -80,7 +80,7 @@ impl RepoWindow {
             return;
         }
         let Some((rev, path)) = self.selected_resolution_target(cx) else {
-            self.show_toast("No conflicted file selected", cx);
+            self.show_toast(jayjay_i18n::repo::no_conflicted_file_selected(), cx);
             return;
         };
         self.conflict_editor.session = self.conflict_editor.session.wrapping_add(1);
@@ -165,7 +165,7 @@ impl RepoWindow {
                         TextArea::prepared_code_editor(
                             data.result.clone(),
                             data.path.clone(),
-                            "Merge result",
+                            jayjay_i18n::repo::merge_result(),
                             360.,
                             prepared.result,
                             cx,

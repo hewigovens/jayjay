@@ -48,7 +48,7 @@ impl OperationLogView {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("Operation Log".into()),
+                        title: Some(jayjay_i18n::repo::operation_log().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -156,7 +156,7 @@ impl OperationLogView {
         let _ = self.parent.update(cx, |view, cx| {
             let vm = view.view_model();
             vm.update(cx, |vm, cx| vm.refresh(false, cx));
-            view.show_toast("Restored operation", cx);
+            view.show_toast(jayjay_i18n::oplog::restored_operation(), cx);
         });
     }
 
@@ -181,17 +181,17 @@ impl Render for OperationLogView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let body = if self.loading {
-            loading_status("Loading operations…", &t)
+            loading_status(jayjay_i18n::oplog::loading_operations_ellipsis(), &t)
         } else if let Some(error) = self.error.clone() {
             placeholder_err(&error, &t)
         } else if let Some(entries) = self.entries.clone() {
             if entries.is_empty() {
-                placeholder("No operations found", &t)
+                placeholder(jayjay_i18n::repo::no_operations_found(), &t)
             } else {
                 operation_list(entries, self.selected_id.clone(), t.clone(), cx)
             }
         } else {
-            placeholder("Unable to load operations", &t)
+            placeholder(jayjay_i18n::oplog::unable_to_load_operations(), &t)
         };
 
         div()

@@ -62,7 +62,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
             Image(systemName: "arrow.trianglehead.merge")
                 .foregroundStyle(.orange)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Resolve Conflict")
+                Text(Localized.Repo.resolveConflict)
                     .jayjayFont(14, weight: .semibold)
                     .accessibilityIdentifier(headerAccessibilityIdentifier ?? "")
                 Text(session.path)
@@ -73,7 +73,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
             }
             Spacer()
             resolutionStatus
-            Button("Cancel", action: onCancel)
+            Button(Localized.Common.cancel, action: onCancel)
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier(AID.Conflict.editorCancel)
             Button(saveTitle, action: onSave)
@@ -90,18 +90,18 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
     private var resolutionStatus: some View {
         if session.unresolvedCount > 0 {
             Label(
-                "\(session.unresolvedCount) unresolved",
+                Localized.Merge.unresolvedCount(count: session.unresolvedCount),
                 systemImage: "exclamationmark.triangle.fill"
             )
             .foregroundStyle(.orange)
             .jayjayFont(11, weight: .semibold)
         } else if !session.isLoading, session.errorMessage == nil {
             if session.canSave {
-                Label("Resolved", systemImage: "checkmark.circle.fill")
+                Label(Localized.Repo.resolved, systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
                     .jayjayFont(11, weight: .semibold)
             } else {
-                Label("Needs resolution", systemImage: "exclamationmark.triangle.fill")
+                Label(Localized.Merge.needsResolution, systemImage: "exclamationmark.triangle.fill")
                     .foregroundStyle(.orange)
                     .jayjayFont(11, weight: .semibold)
             }
@@ -110,22 +110,22 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
 
     private var saveTitle: String {
         if session.isSaving {
-            return "Saving…"
+            return Localized.Repo.savingEllipsis
         }
         if session.unresolvedCount > 0 {
-            return "Save Partial Resolution"
+            return Localized.Merge.savePartialResolution
         }
-        return "Save Resolution"
+        return Localized.Repo.saveResolution
     }
 
     @ViewBuilder
     private var content: some View {
         if session.isLoading {
-            LoadingStatus(label: "Loading conflict sides…")
+            LoadingStatus(label: Localized.Merge.loadingConflictSidesEllipsis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let errorMessage = session.errorMessage {
             ContentUnavailableView(
-                "Couldn’t Open Merge Session",
+                Localized.Merge.couldntOpenMergeSession,
                 systemImage: "exclamationmark.triangle",
                 description: Text(errorMessage)
             )

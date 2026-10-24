@@ -6,9 +6,9 @@ extension Error {
         if let jjError = self as? JayError {
             switch jjError {
                 case let .RepoNotFound(path):
-                    return "No Jujutsu repository found at \(URL(fileURLWithPath: path).lastPathComponent)"
+                    return Localized.Repo.noRepositoryFoundAt(name: URL(fileURLWithPath: path).lastPathComponent)
                 case let .RevNotFound(rev):
-                    return "Revision not found: \(rev)"
+                    return Localized.Repo.revisionNotFound(revision: rev)
                 case let .Review(message):
                     return unwrapCommandError(message: message)
                 case let .Diff(message):
@@ -20,13 +20,13 @@ extension Error {
                 case let .FileEditorStale(path):
                     return "\(path): file changed since the editor opened — refresh and retry"
                 case .WorkingCopyStale:
-                    return "Working copy is stale: its change was rewritten outside this workspace — update the workspace and retry"
+                    return Localized.Repo.workingCopyIsStaleItsChange
                 case let .Refused(message):
                     return message
                 case let .Internal(message):
                     return unwrapCommandError(message: message)
                 case .Canceled:
-                    return "Canceled"
+                    return Localized.Repo.canceled
             }
         }
         return localizedDescription

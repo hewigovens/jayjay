@@ -24,9 +24,9 @@ pub(super) fn stacked_pr_overlay(
             StackedPrPhase::Loading | StackedPrPhase::Submitting(_)
         );
     let title = if matches!(state.phase, StackedPrPhase::Results(_)) {
-        "Stacked PRs Submitted"
+        jayjay_i18n::repo::stacked_prs_submitted()
     } else {
-        "Stacked Pull Requests"
+        jayjay_i18n::repo::stacked_pull_requests()
     };
     let panel = div()
         .key_context(if state.active_input.is_some() {
@@ -59,7 +59,7 @@ pub(super) fn stacked_pr_overlay(
                         div()
                             .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
-                            .child("Working…"),
+                            .child(jayjay_i18n::repo::working_ellipsis()),
                     )
                 }),
         )
@@ -70,7 +70,10 @@ pub(super) fn stacked_pr_overlay(
 
 fn phase_body(state: &StackedPrState, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     match &state.phase {
-        StackedPrPhase::Loading => centered_message("Detecting changes above trunk()…", t),
+        StackedPrPhase::Loading => centered_message(
+            jayjay_i18n::repo::detecting_changes_above_trunk_ellipsis(),
+            t,
+        ),
         StackedPrPhase::Preview(stack) | StackedPrPhase::Submitting(stack) => {
             let submitting = matches!(state.phase, StackedPrPhase::Submitting(_));
             div()
@@ -97,9 +100,9 @@ fn subtitle_row(
     let count = stack.layers.len();
     let busy = submitting || state.ai_in_flight;
     let label = if state.ai_in_flight {
-        "Generating…"
+        jayjay_i18n::repo::generating_ellipsis()
     } else {
-        "Generate bookmarks"
+        jayjay_i18n::repo::generate_bookmarks()
     };
     let mut generate = button("stacked-pr-ai-name", label, t, false)
         .text_size(ui_font_size(11.))
@@ -118,10 +121,9 @@ fn subtitle_row(
                 .min_w_0()
                 .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
-                .child(format!(
-                    "{count} change{} — one PR each, bottom targets {}.",
-                    if count == 1 { "" } else { "s" },
-                    stack.base_bookmark
+                .child(jayjay_i18n::repo::stack_summary(
+                    count,
+                    &stack.base_bookmark,
                 )),
         )
         .child(
@@ -144,11 +146,11 @@ fn action_row(
     let busy = submitting || state.ai_in_flight;
     let enabled = state.can_submit();
     let submit = if enabled {
-        button("stacked-pr-submit", "Submit", t, true)
+        button("stacked-pr-submit", jayjay_i18n::repo::submit(), t, true)
             .on_click(cx.listener(|view, _, _, cx| view.submit_stacked_pr(cx)))
             .into_any_element()
     } else {
-        button("stacked-pr-submit", "Submit", t, false)
+        button("stacked-pr-submit", jayjay_i18n::repo::submit(), t, false)
             .opacity(0.45)
             .into_any_element()
     };
@@ -157,7 +159,7 @@ fn action_row(
         .justify_center()
         .gap(px(12.))
         .child(
-            button("stacked-pr-cancel", "Cancel", t, false)
+            button("stacked-pr-cancel", jayjay_i18n::common::cancel(), t, false)
                 .when(!busy, |button| {
                     button.on_click(cx.listener(|view, _, _, cx| view.close_stacked_pr(cx)))
                 })

@@ -1,3 +1,5 @@
+use jayjay_i18n::settings;
+
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
 
@@ -25,16 +27,16 @@ impl SettingsSection {
         Self::About,
     ];
 
-    pub fn label(self) -> &'static str {
+    pub fn label(self) -> String {
         match self {
-            Self::Appearance => "Appearance",
-            Self::Fonts => "Fonts",
-            Self::Diff => "Diff & Files",
-            Self::Workflow => "Workflow",
-            Self::Integrations => "Integrations",
-            Self::Jujutsu => "Jujutsu",
-            Self::DataPrivacy => "Data & Privacy",
-            Self::About => "About",
+            Self::Appearance => settings::page_appearance(),
+            Self::Fonts => settings::page_fonts(),
+            Self::Diff => settings::page_diff(),
+            Self::Workflow => settings::page_workflow(),
+            Self::Integrations => settings::page_integrations(),
+            Self::Jujutsu => settings::page_jujutsu(),
+            Self::DataPrivacy => settings::page_data_privacy(),
+            Self::About => settings::page_about(),
         }
     }
 

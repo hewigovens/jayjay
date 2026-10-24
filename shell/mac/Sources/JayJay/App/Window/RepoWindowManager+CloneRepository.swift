@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 
 extension RepoWindowManager {
     func showCloneRepository() {
@@ -14,7 +15,7 @@ extension RepoWindowManager {
         panel.canChooseFiles = false
         panel.canChooseDirectories = true
         panel.allowsMultipleSelection = false
-        panel.message = "Choose a Jujutsu repository"
+        panel.message = Localized.Menu.chooseAJujutsuRepository
         if panel.runModal() == .OK, let url = panel.url {
             openRepo(url.path)
         }

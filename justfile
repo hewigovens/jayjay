@@ -111,6 +111,10 @@ format:
 lint:
   cargo clippy --workspace --all-targets -- -D warnings
   just shell::lint
+  just lint-i18n
+
+lint-i18n:
+  bash "{{root}}/scripts/lint-i18n.sh"
 
 clean:
   cargo clean

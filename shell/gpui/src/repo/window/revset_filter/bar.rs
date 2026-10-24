@@ -66,7 +66,7 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
             bar_icon(
                 "revset-back",
                 glyph::ARROW_UTURN_BACK,
-                Some("Back to previous filter"),
+                Some(jayjay_i18n::repo::back_to_previous_filter()),
                 t.fg_dim,
                 focused == Some(FocusStop::RevsetBack),
                 t,
@@ -121,7 +121,7 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
                 }))
                 .child(line_input_content(
                     input,
-                    "Revset",
+                    jayjay_i18n::repo::revset(),
                     t,
                     Some("revset-editor-caret"),
                 )),
@@ -133,7 +133,7 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
             bar_icon(
                 "revset-reset",
                 glyph::X_CIRCLE,
-                Some("Reset to default"),
+                Some(jayjay_i18n::repo::reset_to_default()),
                 t.fg_faint,
                 focused == Some(FocusStop::RevsetReset),
                 t,
@@ -203,7 +203,7 @@ fn summary(
 fn bar_icon(
     id: &'static str,
     glyph_str: &'static str,
-    tooltip: Option<&'static str>,
+    tooltip: Option<String>,
     color: u32,
     focused: bool,
     t: &Theme,

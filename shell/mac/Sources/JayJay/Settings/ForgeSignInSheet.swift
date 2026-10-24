@@ -12,15 +12,15 @@ struct ForgeSignInSheet: View {
 
     var body: some View {
         SheetContainer(
-            title: "Sign In to \(repoHostName(host: host))",
-            cancelLabel: "Cancel",
-            confirmLabel: "Copy Code & Open Browser",
+            title: Localized.Settings.signInTitle(host: repoHostName(host: host)),
+            cancelLabel: Localized.Common.cancel,
+            confirmLabel: Localized.Settings.copyCodeAndOpen,
             confirmDisabled: signIn == nil,
             confirmAccessibilityIdentifier: AID.Settings.forgeSignInOpen,
             onCancel: cancel,
             onConfirm: openBrowser,
             content: {
-                Text("Enter this code in your browser to let JayJay use your account.")
+                Text(Localized.Settings.signInDetail)
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
                     .fixedSize(horizontal: false, vertical: true)
@@ -38,7 +38,7 @@ struct ForgeSignInSheet: View {
                 } else {
                     HStack(spacing: 6) {
                         ProgressView().controlSize(.small)
-                        Text(signIn == nil ? "Requesting a code…" : "Waiting for approval…")
+                        Text(signIn == nil ? Localized.Settings.requestingCode : Localized.Settings.waitingForApproval)
                             .jayjayFont(11)
                             .foregroundStyle(.secondary)
                     }

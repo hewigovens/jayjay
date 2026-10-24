@@ -53,7 +53,7 @@ pub(super) fn command_row(command: &'static str, t: &Theme) -> impl IntoElement 
         )
 }
 
-pub(super) fn tip(glyph_str: &'static str, text: &'static str, t: &Theme) -> impl IntoElement {
+pub(super) fn tip(glyph_str: &'static str, text: String, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_row()

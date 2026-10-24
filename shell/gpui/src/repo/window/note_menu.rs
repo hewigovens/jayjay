@@ -75,17 +75,17 @@ impl RepoWindow {
         {
             return vec![
                 ContextMenuItem::new(
-                    "Edit Review Note",
+                    jayjay_i18n::menu::edit_review_note(),
                     glyph::PENCIL,
                     ContextAction::OpenEditReviewNote(note.note.id.clone().into()),
                 ),
                 ContextMenuItem::new(
-                    "Resolve Review Note",
+                    jayjay_i18n::menu::resolve_review_note(),
                     glyph::CHECK,
                     ContextAction::ResolveReviewNote(note.note.id.clone().into()),
                 ),
                 ContextMenuItem::new(
-                    "Delete Review Note",
+                    jayjay_i18n::menu::delete_review_note(),
                     glyph::X_CIRCLE,
                     ContextAction::DeleteReviewNote(note.note.id.clone().into()),
                 ),
@@ -103,7 +103,7 @@ impl RepoWindow {
             ignore_whitespace,
         });
         let mut items = vec![ContextMenuItem::new(
-            "Add Review Note",
+            jayjay_i18n::menu::add_review_note(),
             glyph::PLUS,
             ContextAction::OpenAddReviewNote(request),
         )];
@@ -113,7 +113,7 @@ impl RepoWindow {
             .filter(|s| s.status == NoteStatus::Resolved)
         {
             items.push(ContextMenuItem::new(
-                "Delete Review Note",
+                jayjay_i18n::menu::delete_review_note(),
                 glyph::X_CIRCLE,
                 ContextAction::DeleteReviewNote(resolved.note.id.clone().into()),
             ));

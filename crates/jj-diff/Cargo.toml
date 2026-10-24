@@ -83,6 +83,7 @@ hotpath = ["dep:hotpath", "hotpath/hotpath"]
 hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
 
 [dependencies]
+jayjay-i18n = { version = "0.1.0", path = "../jayjay-i18n" }
 hotpath = { workspace = true, optional = true }
 hex = { workspace = true }
 sha2 = { workspace = true }

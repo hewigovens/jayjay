@@ -92,7 +92,7 @@ impl RepoWindow {
 
     pub(crate) fn open_overview(&mut self, cx: &mut Context<Self>) {
         if self.vm.read(cx).repo.is_none() {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         }
         OverviewView::open(cx.entity(), self.vm.clone(), cx);
@@ -100,7 +100,7 @@ impl RepoWindow {
 
     pub(crate) fn open_operation_log(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         };
         OperationLogView::open(repo, cx.entity(), self.vm.clone(), cx);
@@ -140,7 +140,13 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         self.text_modal = Some(TextModalState::new(
-            TextPrompt::commit_message("Edit Description", subtitle, &description, "Save", cx),
+            TextPrompt::commit_message(
+                jayjay_i18n::repo::edit_description(),
+                subtitle,
+                &description,
+                jayjay_i18n::common::save(),
+                cx,
+            ),
             action,
         ));
         cx.notify();
@@ -149,9 +155,9 @@ impl RepoWindow {
     pub(crate) fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
         let subtitle = rev.chars().take(12).collect::<String>();
         self.open_create_ref(
-            "Create Bookmark",
+            &jayjay_i18n::repo::create_bookmark(),
             subtitle,
-            "Bookmark name",
+            &jayjay_i18n::repo::bookmark_name(),
             TextModalAction::CreateBookmark { rev },
             cx,
         );
@@ -163,9 +169,9 @@ impl RepoWindow {
             rev.chars().take(12).collect::<String>()
         );
         self.open_create_ref(
-            "Create Tag",
+            &jayjay_i18n::repo::create_tag(),
             subtitle,
-            "Tag name",
+            &jayjay_i18n::repo::tag_name(),
             TextModalAction::CreateTag { rev },
             cx,
         );
@@ -174,11 +180,11 @@ impl RepoWindow {
     pub(crate) fn open_rename_bookmark(&mut self, name: String, cx: &mut Context<Self>) {
         self.text_modal = Some(TextModalState::new(
             TextPrompt::single_line(
-                "Rename Bookmark",
+                jayjay_i18n::repo::rename_bookmark(),
                 name.clone(),
                 name.clone(),
-                "New name",
-                "Rename",
+                jayjay_i18n::repo::new_name(),
+                jayjay_i18n::repo::rename(),
                 cx,
             ),
             TextModalAction::RenameBookmark { old_name: name },
@@ -192,11 +198,11 @@ impl RepoWindow {
             return;
         }
         if new_name.is_empty() {
-            self.show_toast("Bookmark name required", cx);
+            self.show_toast(jayjay_i18n::repo::bookmark_name_required(), cx);
             return;
         }
         if !jayjay_core::is_valid_bookmark_name(&new_name) {
-            self.show_toast(format!("Invalid bookmark name: {new_name}"), cx);
+            self.show_toast(jayjay_i18n::repo::invalid_bookmark_name(&new_name), cx);
             return;
         }
         self.text_modal = None;
@@ -215,7 +221,14 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         self.text_modal = Some(TextModalState::new(
-            TextPrompt::single_line(title, subtitle, "", placeholder, "Create", cx),
+            TextPrompt::single_line(
+                title,
+                subtitle,
+                "",
+                placeholder,
+                jayjay_i18n::repo::create(),
+                cx,
+            ),
             action,
         ));
         cx.notify();
@@ -223,7 +236,7 @@ impl RepoWindow {
 
     fn submit_create_ref(
         &mut self,
-        noun: &'static str,
+        kind: RefKind,
         text: &str,
         rev: String,
         create: impl FnOnce(
@@ -236,12 +249,11 @@ impl RepoWindow {
     ) {
         let name = text.trim().to_string();
         if name.is_empty() {
-            self.show_toast(format!("{noun} name required"), cx);
+            self.show_toast(kind.name_required(), cx);
             return;
         }
-        let noun = noun.to_lowercase();
         if !jayjay_core::is_valid_bookmark_name(&name) {
-            self.show_toast(format!("Invalid {noun} name: {name}"), cx);
+            self.show_toast(kind.invalid_name(&name), cx);
             return;
         }
         self.text_modal = None;
@@ -251,7 +263,7 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(format!("Created {noun} {name}"), cx);
+                    view.show_toast(kind.created(&name), cx);
                 });
             }
         })
@@ -290,17 +302,23 @@ impl RepoWindow {
                 self.apply_diff_edit_description(session, text);
             }
             TextModalAction::CreateBookmark { rev } => {
-                self.submit_create_ref("Bookmark", &text, rev, RepoViewModel::create_bookmark, cx);
+                self.submit_create_ref(
+                    RefKind::Bookmark,
+                    &text,
+                    rev,
+                    RepoViewModel::create_bookmark,
+                    cx,
+                );
             }
             TextModalAction::CreateTag { rev } => {
-                self.submit_create_ref("Tag", &text, rev, RepoViewModel::create_tag, cx);
+                self.submit_create_ref(RefKind::Tag, &text, rev, RepoViewModel::create_tag, cx);
             }
             TextModalAction::RenameBookmark { old_name } => {
                 self.submit_rename_bookmark(old_name, &text, cx);
             }
             TextModalAction::ReviewNote(target) => {
                 if text.trim().is_empty() {
-                    self.show_toast("Note cannot be empty", cx);
+                    self.show_toast(jayjay_i18n::repo::note_cannot_be_empty(), cx);
                     return;
                 }
                 self.text_modal = None;
@@ -312,7 +330,7 @@ impl RepoWindow {
             TextModalAction::SplitFiles(request) => {
                 let message = text.trim().to_owned();
                 if message.is_empty() {
-                    self.show_toast("Description required", cx);
+                    self.show_toast(jayjay_i18n::repo::description_required(), cx);
                     return;
                 }
                 let parallel = self
@@ -340,7 +358,7 @@ impl RepoWindow {
             .trim()
             .is_empty()
         {
-            self.show_toast("Summary required", cx);
+            self.show_toast(jayjay_i18n::repo::summary_required(), cx);
             return None;
         }
         Some(self.commit_message.text(cx))
@@ -388,7 +406,7 @@ impl RepoWindow {
     pub fn describe_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
         let message = self.commit_message.text(cx);
         if message.is_empty() {
-            self.show_toast("Description required", cx);
+            self.show_toast(jayjay_i18n::repo::description_required(), cx);
             return;
         }
         // Unlike commit, a pending AI generation stays valid: describe leaves the inputs (its snapshot) and the working-copy diff untouched, and the untouched-snapshot guard already drops replies once the user types.
@@ -439,7 +457,7 @@ impl RepoWindow {
             return;
         };
         if change.is_immutable {
-            self.show_toast("Immutable change cannot be edited", cx);
+            self.show_toast(jayjay_i18n::repo::immutable_change_cannot_be_edited(), cx);
             return;
         }
         if change.is_working_copy {
@@ -574,5 +592,34 @@ impl RepoWindow {
             self.collapsed_dirs.insert(path);
         }
         cx.notify();
+    }
+}
+
+#[derive(Clone, Copy)]
+enum RefKind {
+    Bookmark,
+    Tag,
+}
+
+impl RefKind {
+    fn name_required(self) -> String {
+        match self {
+            Self::Bookmark => jayjay_i18n::repo::bookmark_name_required(),
+            Self::Tag => jayjay_i18n::repo::tag_name_required(),
+        }
+    }
+
+    fn invalid_name(self, name: &str) -> String {
+        match self {
+            Self::Bookmark => jayjay_i18n::repo::invalid_bookmark_name(name),
+            Self::Tag => jayjay_i18n::repo::invalid_tag_name(name),
+        }
+    }
+
+    fn created(self, name: &str) -> String {
+        match self {
+            Self::Bookmark => jayjay_i18n::repo::created_bookmark(name),
+            Self::Tag => jayjay_i18n::repo::created_tag(name),
+        }
     }
 }

@@ -69,7 +69,7 @@ struct DiffSection: View {
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
             Spacer(minLength: 8)
-            Button("Dismiss") { contextExpansionDisplay.errorMessage = nil }
+            Button(Localized.Repo.dismiss) { contextExpansionDisplay.errorMessage = nil }
                 .buttonStyle(.plain)
                 .jayjayFont(12)
                 .foregroundStyle(Color.accentColor)

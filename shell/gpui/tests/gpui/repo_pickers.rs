@@ -1142,7 +1142,7 @@ fn bookmark_picker_rename_rewrites_the_local_name(cx: &mut TestAppContext) {
     let (view, repo_cx) = open_fixture(&fixture, cx);
 
     open_bookmark_menu(&view, repo_cx, "rename-me");
-    click_menu_item(repo_cx, "context-menu-Rename...");
+    click_menu_item(repo_cx, "context-menu-Rename…");
     let input = view
         .read_with(repo_cx, |view, _| view.text_modal_input())
         .expect("rename dialog");

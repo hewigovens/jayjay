@@ -100,7 +100,10 @@ pub(super) fn comparison_diff(
         image_diff_view(hunk, theme, window, cx)
     } else if let Some(diff) = view.current_diff.clone() {
         if diff.lines.is_empty() {
-            placeholder("No textual diff (binary, identical, or empty)", theme)
+            placeholder(
+                jayjay_i18n::diff::no_textual_diff_binary_identical_or(),
+                theme,
+            )
         } else {
             div()
                 .flex_1()
@@ -111,12 +114,9 @@ pub(super) fn comparison_diff(
                 .into_any_element()
         }
     } else if view.comparison.target().is_none() {
-        placeholder(
-            "Pick a revision above to see its change to this file.",
-            theme,
-        )
+        placeholder(jayjay_i18n::history::pick_a_revision_above_to_see(), theme)
     } else {
-        loading_status("Loading diff…", theme)
+        loading_status(jayjay_i18n::diff::loading_diff_ellipsis(), theme)
     };
 
     div()
@@ -144,13 +144,13 @@ fn same_revision_note(theme: &Theme) -> AnyElement {
                 .text_size(ui_font_size(13.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(theme.fg))
-                .child("Same Revision as the Base"),
+                .child(jayjay_i18n::repo::same_revision_as_the_base()),
         )
         .child(
             div()
                 .text_size(ui_font_size(12.))
                 .text_color(rgb(theme.fg_dim))
-                .child("Choose a different revision to compare against the base."),
+                .child(jayjay_i18n::repo::choose_a_different_revision_to_compare()),
         )
         .into_any_element()
 }

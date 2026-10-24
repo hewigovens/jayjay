@@ -39,16 +39,16 @@ pub(crate) fn conflict_editor_overlay(
         conflict_marker_count(&result_text, data.marker_length as usize)
     };
     let status = if unresolved == 0 {
-        "Resolved".to_owned()
+        jayjay_i18n::repo::resolved()
     } else {
-        format!("{unresolved} unresolved")
+        jayjay_i18n::merge::unresolved_count(unresolved)
     };
     let save_label = if state.saving {
-        "Saving…"
+        jayjay_i18n::repo::saving_ellipsis()
     } else if unresolved > 0 {
-        "Save Partial"
+        jayjay_i18n::repo::save_partial()
     } else {
-        "Save Resolution"
+        jayjay_i18n::repo::save_resolution()
     };
     let mut save = button("conflict-editor-save", save_label, t, true)
         .debug_selector(|| "conflict-editor-save".to_owned());
@@ -94,7 +94,7 @@ pub(crate) fn conflict_editor_overlay(
                             div()
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
                                 .text_size(ui_font_size(14.))
-                                .child("Resolve Conflict"),
+                                .child(jayjay_i18n::repo::resolve_conflict()),
                         )
                         .child(
                             div()
@@ -116,8 +116,13 @@ pub(crate) fn conflict_editor_overlay(
                         .child(status),
                 )
                 .child(
-                    button("conflict-editor-cancel", "Cancel", t, false)
-                        .on_click(cx.listener(|view, _, _, cx| view.exit_conflict_editor(cx))),
+                    button(
+                        "conflict-editor-cancel",
+                        jayjay_i18n::common::cancel(),
+                        t,
+                        false,
+                    )
+                    .on_click(cx.listener(|view, _, _, cx| view.exit_conflict_editor(cx))),
                 )
                 .child(save),
         )
@@ -140,21 +145,33 @@ fn sources_section(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let sources = if view.conflict_editor.show_base {
-        vec![(MergeHunkSource::Base, "Base", source_views[1].clone())]
+        vec![(
+            MergeHunkSource::Base,
+            jayjay_i18n::repo::base(),
+            source_views[1].clone(),
+        )]
     } else {
         vec![
-            (MergeHunkSource::Left, "Left", source_views[0].clone()),
-            (MergeHunkSource::Right, "Right", source_views[2].clone()),
+            (
+                MergeHunkSource::Left,
+                jayjay_i18n::repo::left(),
+                source_views[0].clone(),
+            ),
+            (
+                MergeHunkSource::Right,
+                jayjay_i18n::repo::right(),
+                source_views[2].clone(),
+            ),
         ]
     };
     let panels = sources
         .into_iter()
         .enumerate()
         .map(|(index, (source, label, content))| {
-            let selector = format!("conflict-editor-use-{}", label.to_lowercase());
+            let selector = format!("conflict-editor-use-{source:?}").to_lowercase();
             let mut action = button(
                 SharedString::from(selector.clone()),
-                format!("Use {label}"),
+                jayjay_i18n::repo::use_side(&label),
                 t,
                 false,
             )
@@ -194,13 +211,13 @@ fn sources_section(
                     div()
                         .text_size(ui_font_size(12.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
-                        .child("Sources"),
+                        .child(jayjay_i18n::repo::sources()),
                 )
                 .child(
                     div()
                         .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
-                        .child("Use a complete side as the starting point for the result."),
+                        .child(jayjay_i18n::repo::use_a_complete_side_as_the()),
                 )
                 .child(div().flex_1())
                 .child(

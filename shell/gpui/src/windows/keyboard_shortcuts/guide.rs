@@ -15,19 +15,19 @@ enum Keys {
 }
 
 pub(super) struct ShortcutEntry {
-    pub(super) label: &'static str,
+    pub(super) label: fn() -> String,
     keys: Keys,
 }
 
 impl ShortcutEntry {
-    const fn bound(label: &'static str, action: &'static dyn Action) -> Self {
+    const fn bound(label: fn() -> String, action: &'static dyn Action) -> Self {
         Self {
             label,
             keys: Keys::Bound(action),
         }
     }
 
-    const fn fixed(label: &'static str, keys: &'static [&'static str]) -> Self {
+    const fn fixed(label: fn() -> String, keys: &'static [&'static str]) -> Self {
         Self {
             label,
             keys: Keys::Fixed(keys),
@@ -45,77 +45,106 @@ impl ShortcutEntry {
 }
 
 pub(super) struct ShortcutSection {
-    pub(super) title: &'static str,
+    pub(super) id: &'static str,
+    pub(super) title: fn() -> String,
     pub(super) entries: &'static [ShortcutEntry],
 }
 
 pub(super) const SECTIONS: &[ShortcutSection] = &[
     ShortcutSection {
-        title: "General",
+        id: "general",
+        title: jayjay_i18n::shortcuts::general,
         entries: &[
-            ShortcutEntry::bound("Open Repository", &OpenRepository),
-            ShortcutEntry::bound("Command Palette", &OpenCommandPalette),
-            ShortcutEntry::bound("Refresh", &Refresh),
-            ShortcutEntry::bound("Keyboard Shortcuts", &OpenKeyboardShortcuts),
-            ShortcutEntry::bound("Settings", &OpenSettings),
-            ShortcutEntry::bound("Close Window", &CloseWindow),
+            ShortcutEntry::bound(jayjay_i18n::repo::open_repository, &OpenRepository),
+            ShortcutEntry::bound(jayjay_i18n::menu::command_palette, &OpenCommandPalette),
+            ShortcutEntry::bound(jayjay_i18n::repo::refresh, &Refresh),
+            ShortcutEntry::bound(
+                jayjay_i18n::menu::keyboard_shortcuts,
+                &OpenKeyboardShortcuts,
+            ),
+            ShortcutEntry::bound(jayjay_i18n::repo::settings, &OpenSettings),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::close_window, &CloseWindow),
         ],
     },
     ShortcutSection {
-        title: "View",
+        id: "view",
+        title: jayjay_i18n::menu::view,
         entries: &[
-            ShortcutEntry::bound("Hide / Show Sidebar", &ToggleSidebar),
-            ShortcutEntry::bound("Filter by Revset", &FilterByRevset),
-            ShortcutEntry::bound("Zoom In", &ZoomIn),
-            ShortcutEntry::bound("Zoom Out", &ZoomOut),
-            ShortcutEntry::bound("Reset Zoom", &ResetZoom),
+            ShortcutEntry::bound(jayjay_i18n::palette::hide_show_sidebar, &ToggleSidebar),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::filter_by_revset, &FilterByRevset),
+            ShortcutEntry::bound(jayjay_i18n::menu::zoom_in, &ZoomIn),
+            ShortcutEntry::bound(jayjay_i18n::menu::zoom_out, &ZoomOut),
+            ShortcutEntry::bound(jayjay_i18n::menu::reset_zoom, &ResetZoom),
         ],
     },
     ShortcutSection {
-        title: "Navigation",
+        id: "navigation",
+        title: jayjay_i18n::shortcuts::navigation,
         entries: &[
-            ShortcutEntry::fixed("Next / Previous Item", &["J", "K"]),
-            ShortcutEntry::fixed("Move Up / Down", &["↑", "↓"]),
-            ShortcutEntry::fixed("Alternate Up / Down", &["Ctrl", "P", "/", "N"]),
-            ShortcutEntry::fixed("Switch Pane", &["Tab"]),
+            ShortcutEntry::fixed(jayjay_i18n::shortcuts::next_previous_item, &["J", "K"]),
+            ShortcutEntry::fixed(jayjay_i18n::shortcuts::move_up_down, &["↑", "↓"]),
+            ShortcutEntry::fixed(
+                jayjay_i18n::shortcuts::alternate_up_down,
+                &["Ctrl", "P", "/", "N"],
+            ),
+            ShortcutEntry::fixed(jayjay_i18n::shortcuts::switch_pane, &["Tab"]),
         ],
     },
     ShortcutSection {
-        title: "Repository",
+        id: "repository",
+        title: jayjay_i18n::menu::repository,
         entries: &[
-            ShortcutEntry::bound("Bookmark Manager", &OpenBookmarkManager),
-            ShortcutEntry::bound("Repo Overview", &OpenOverview),
-            ShortcutEntry::bound("Filter Overview Lanes", &OpenFind),
-            ShortcutEntry::bound("Undo Last Operation", &OpenOperationLog),
-            ShortcutEntry::bound("Show in File Manager", &ShowRepoInFileManager),
+            ShortcutEntry::bound(jayjay_i18n::menu::bookmark_manager, &OpenBookmarkManager),
+            ShortcutEntry::bound(jayjay_i18n::menu::repo_overview, &OpenOverview),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::filter_overview_lanes, &OpenFind),
+            ShortcutEntry::bound(jayjay_i18n::menu::undo_last_operation, &OpenOperationLog),
+            ShortcutEntry::bound(
+                jayjay_i18n::palette::show_in_file_manager,
+                &ShowRepoInFileManager,
+            ),
         ],
     },
     ShortcutSection {
-        title: "Diff & Review",
+        id: "diff-review",
+        title: jayjay_i18n::shortcuts::diff_review,
         entries: &[
-            ShortcutEntry::bound("Find in Diff", &OpenFind),
-            ShortcutEntry::bound("Copy Diff Selection", &CopyDiffSelection),
-            ShortcutEntry::fixed("Mark File Reviewed", &["Space"]),
-            ShortcutEntry::bound("Save Review Note", &SaveNoteComposer),
-            ShortcutEntry::bound("Save Edited File", &SaveFileEditor),
-            ShortcutEntry::bound("Expand All Files", &DiffEditExpandAll),
-            ShortcutEntry::bound("Collapse All Files", &DiffEditCollapseAll),
-            ShortcutEntry::fixed("Collapse / Expand File", &["←", "→"]),
-            ShortcutEntry::fixed("Toggle File", &["Enter"]),
+            ShortcutEntry::bound(jayjay_i18n::palette::find_in_diff, &OpenFind),
+            ShortcutEntry::bound(
+                jayjay_i18n::shortcuts::copy_diff_selection,
+                &CopyDiffSelection,
+            ),
+            ShortcutEntry::fixed(jayjay_i18n::palette::mark_file_reviewed, &["Space"]),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::save_review_note, &SaveNoteComposer),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::save_edited_file, &SaveFileEditor),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::expand_all_files, &DiffEditExpandAll),
+            ShortcutEntry::bound(
+                jayjay_i18n::shortcuts::collapse_all_files,
+                &DiffEditCollapseAll,
+            ),
+            ShortcutEntry::fixed(jayjay_i18n::shortcuts::collapse_expand_file, &["←", "→"]),
+            ShortcutEntry::fixed(jayjay_i18n::merge::toggle_file, &["Enter"]),
         ],
     },
     ShortcutSection {
-        title: "Conflicts",
+        id: "conflicts",
+        title: jayjay_i18n::repo::preset_conflicts,
         entries: &[
-            ShortcutEntry::bound("Accept Left", &MergeUseLeftHunk),
-            ShortcutEntry::bound("Accept Right", &MergeUseRightHunk),
-            ShortcutEntry::bound("Previous Conflict", &MergePreviousHunk),
-            ShortcutEntry::bound("Next Conflict", &MergeNextHunk),
+            ShortcutEntry::bound(jayjay_i18n::merge::accept_left, &MergeUseLeftHunk),
+            ShortcutEntry::bound(jayjay_i18n::merge::accept_right, &MergeUseRightHunk),
+            ShortcutEntry::bound(
+                jayjay_i18n::shortcuts::previous_conflict,
+                &MergePreviousHunk,
+            ),
+            ShortcutEntry::bound(jayjay_i18n::shortcuts::next_conflict, &MergeNextHunk),
         ],
     },
     ShortcutSection {
-        title: "Drag & Drop",
-        entries: &[ShortcutEntry::bound("Cancel Drag", &Dismiss)],
+        id: "drag-drop",
+        title: jayjay_i18n::shortcuts::drag_drop,
+        entries: &[ShortcutEntry::bound(
+            jayjay_i18n::shortcuts::cancel_drag,
+            &Dismiss,
+        )],
     },
 ];
 

@@ -24,27 +24,28 @@ pub(crate) fn svg_diff_view(
                 DiffSide::Old => content.old,
                 DiffSide::New => content.new,
             };
-            pane(content, label, label_bg, label_fg, show_label, t)
+            pane(side, content, label, label_bg, label_fg, show_label, t)
         },
     )
 }
 
 fn pane(
+    side: DiffSide,
     content: Option<&str>,
-    label: &'static str,
+    label: SharedString,
     label_bg: u32,
     label_fg: u32,
     show_label: bool,
     t: &Theme,
 ) -> AnyElement {
     let meta = metadata_line(content, t);
-    let viewer = svg_viewer(content, label, t);
+    let viewer = svg_viewer(side, content, t);
     media_pane(label, label_bg, label_fg, show_label, viewer, Some(meta))
 }
 
-fn svg_viewer(content: Option<&str>, label: &'static str, t: &Theme) -> AnyElement {
+fn svg_viewer(side: DiffSide, content: Option<&str>, t: &Theme) -> AnyElement {
     let frame = media_frame(t)
-        .id(label)
+        .id(SharedString::from(format!("svg-{side:?}")))
         .debug_selector(|| "svg-preview-pane".to_owned());
     match content {
         Some(content) => frame

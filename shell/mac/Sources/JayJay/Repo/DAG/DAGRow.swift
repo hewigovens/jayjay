@@ -75,7 +75,7 @@ struct DAGRow: View {
                         .jayjayFont(13, weight: .medium).lineLimit(2)
                         .help(change.description)
                 } else {
-                    Text("(no description)").jayjayFont(13).foregroundStyle(.tertiary)
+                    Text(Localized.Repo.noDescriptionPlaceholder).jayjayFont(13).foregroundStyle(.tertiary)
                 }
             }
 
@@ -86,8 +86,8 @@ struct DAGRow: View {
                     prefixColor: AppColors.commitIdPrefix(colorScheme)
                 ))
                 .fixedSize(horizontal: true, vertical: false)
-                .help("Commit: \(change.commitId.id)")
-                .accessibilityLabel("Commit \(change.commitId.compact)")
+                .help(Localized.Repo.commitNamed(id: change.commitId.id))
+                .accessibilityLabel(Localized.Repo.commitLabel(id: change.commitId.compact))
                 CommitAvatar(email: change.author.email, size: 14)
                 Text(change.author.name)
                 Text(Date.relativeLabel(millis: change.committedAtMillis)).foregroundStyle(.secondary)

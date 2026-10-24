@@ -7,7 +7,7 @@ extension RepoContentView {
             HStack(spacing: 8) {
                 BookmarkPicker(bookmarks: viewModel.bookmarks, isLoaded: viewModel.hasFinishedFirstLoad, actions: viewModel)
                 Spacer(minLength: 8)
-                Text("\(viewModel.changes.count) \(viewModel.changes.count == 1 ? "change" : "changes")")
+                Text(Localized.Repo.changeCount(count: viewModel.changes.count))
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
@@ -67,10 +67,10 @@ extension RepoContentView {
     func pushFollowUpBanner(_ name: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "bookmark.fill").foregroundStyle(.green).jayjayFont(11)
-            Text("Moved").jayjayFont(11).foregroundStyle(.secondary)
+            Text(Localized.Repo.moved).jayjayFont(11).foregroundStyle(.secondary)
             Text(name).jayjayFont(11, weight: .medium, design: .monospaced).lineLimit(1)
             Spacer()
-            Button("Push") { viewModel.confirmPendingPush() }
+            Button(Localized.Menu.push) { viewModel.confirmPendingPush() }
                 .controlSize(.small)
                 .disabled(viewModel.isPushingInFlight)
             Button {
@@ -79,7 +79,7 @@ extension RepoContentView {
                 Image(systemName: "xmark").jayjayFont(10)
             }
             .buttonStyle(.plain).foregroundStyle(.secondary)
-            .help("Dismiss")
+            .help(Localized.Repo.dismiss)
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
         .glassEffect(in: RoundedRectangle(cornerRadius: 8))

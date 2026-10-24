@@ -86,8 +86,8 @@ struct RepoContentView: View {
             )
             .overlay { presentationOverlay }
             .animation(.easeOut(duration: 0.3), value: toast?.id)
-            .alert("Error", isPresented: isErrorPresented, presenting: viewModel.error) { _ in
-                Button("OK") { viewModel.error = nil }
+            .alert(Localized.Repo.error, isPresented: isErrorPresented, presenting: viewModel.error) { _ in
+                Button(Localized.Repo.ok) { viewModel.error = nil }
             } message: { message in
                 Text(message)
             }

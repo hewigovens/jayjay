@@ -2,7 +2,9 @@ import JayJayCore
 import SwiftUI
 
 struct RepoWindow: View {
-    private static let removingWorkspace = "Cannot switch to a workspace while it is being removed."
+    private static var removingWorkspace: String {
+        Localized.Repo.removingWorkspace
+    }
 
     let repoPath: String
     let windowNumber: Int?
@@ -29,7 +31,7 @@ struct RepoWindow: View {
             } else if let err = initError {
                 RepoInitErrorView(repoPath: repoPath, error: err, onInitialize: initJJRepo)
             } else {
-                ProgressView("Loading repository...")
+                ProgressView(Localized.Repo.loadingRepositoryEllipsis)
             }
         }
         .task(id: repoPath) { await openRepo() }
@@ -96,7 +98,7 @@ struct RepoWindow: View {
             let abandoned: String? = if model.isShuttingDown {
                 Self.removingWorkspace
             } else if model.workspaceVanished {
-                "The workspace no longer exists."
+                Localized.Repo.theWorkspaceNoLongerExists
             } else {
                 nil
             }
@@ -157,7 +159,7 @@ private struct RepoInitErrorView: View {
             Image(systemName: "exclamationmark.triangle")
                 .font(.system(size: 40))
                 .foregroundStyle(.orange)
-            Text("Failed to open repository")
+            Text(Localized.Repo.failedToOpenRepository)
                 .jayjayFont(16, weight: .semibold)
             Text(error)
                 .jayjayFont(12)
@@ -165,11 +167,17 @@ private struct RepoInitErrorView: View {
                 .textSelection(.enabled)
                 .multilineTextAlignment(.center)
                 .frame(maxWidth: 360)
-            if !FileManager.default.fileExists(atPath: "\(repoPath)/.jj") {
-                Button("Initialize with jj git init", action: onInitialize)
+            if canInitialize {
+                Button(Localized.Repo.initializeWithJjGitInit, action: onInitialize)
                     .buttonStyle(.borderedProminent)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
+    }
+
+    private var canInitialize: Bool {
+        var isDirectory: ObjCBool = false
+        return FileManager.default.fileExists(atPath: repoPath, isDirectory: &isDirectory) && isDirectory.boolValue
+            && enclosingWorkspaceRoot(path: repoPath) == nil
     }
 }

@@ -51,7 +51,7 @@ fn menu_panel(
             picker::header_button(
                 "repo-switcher-overview",
                 glyph::COLUMNS,
-                "Overview",
+                jayjay_i18n::repo::overview(),
                 t,
                 move |_, cx| {
                     overview_view.update(cx, |view, cx| {
@@ -60,12 +60,18 @@ fn menu_panel(
                     });
                 },
             ),
-            picker::header_button("repo-switcher-new", glyph::PLUS, "New", t, move |_, cx| {
-                new_view.update(cx, |view, cx| {
-                    view.close_repo_switcher(cx);
-                    view.open_create_workspace(cx);
-                });
-            }),
+            picker::header_button(
+                "repo-switcher-new",
+                glyph::PLUS,
+                jayjay_i18n::repo::new(),
+                t,
+                move |_, cx| {
+                    new_view.update(cx, |view, cx| {
+                        view.close_repo_switcher(cx);
+                        view.open_create_workspace(cx);
+                    });
+                },
+            ),
         ],
         t,
     );
@@ -78,7 +84,7 @@ fn menu_panel(
         picker_items(
             switcher_sections(state, workspaces),
             state.query.selected,
-            "No matches",
+            jayjay_i18n::repo::no_matches(),
         ),
         &state.query,
         t,

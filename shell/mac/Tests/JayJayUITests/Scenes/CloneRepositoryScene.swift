@@ -53,7 +53,7 @@ final class CloneRepositoryScene: SceneBase {
         XCTAssertTrue(window.waitForNonExistence(timeout: 5), "Clone window stayed open after cloning")
 
         app.menuBars.menuBarItems["File"].click()
-        app.menuItems["Clone Repository..."].click()
+        app.menuItems["Clone Repository…"].click()
         XCTAssertTrue(source.waitForExistence(timeout: 5), "File menu did not reopen the clone window")
         // An empty field can report its prompt as its value, so check for the previous URL rather than for "".
         let reopened = source.value as? String ?? ""

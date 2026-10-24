@@ -454,4 +454,20 @@ final class RepoWindowManagerTests: XCTestCase {
         XCTAssertEqual(opened.count, 1, "closing the window must make openRepo open a fresh one")
         XCTAssertFalse(window.isVisible, "the closed window was resurrected")
     }
+
+    func testSubdirectoryLaunchesAndOpensUseItsWorkspace() throws {
+        var opened: [String] = []
+        let manager = try makeManager(openedPaths: { opened.append($0) })
+        let (repo, _) = try makeRepository(named: "subdirectory")
+        let subdirectory = repo.appending(path: "src/nested")
+        try FileManager.default.createDirectory(at: subdirectory, withIntermediateDirectories: true)
+        let plain = try makeTemporaryDirectory(named: "plain")
+
+        manager.openRepo(subdirectory.path)
+        manager.openRepo(plain.path)
+
+        let expected = [repo.path, plain.path].map { normalizedRepositoryPath(path: $0) }
+        XCTAssertEqual(opened, expected)
+        XCTAssertEqual(LaunchArguments.repoPath(from: ["JayJay", "--repo", subdirectory.path]), expected[0])
+    }
 }

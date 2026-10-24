@@ -10,7 +10,10 @@ use crate::repo::window::RepoWindow;
 
 pub const MOD_KEY: &str = "cmd";
 pub const SIDEBAR_TOGGLE_KEY: &str = "ctrl-cmd-s";
-pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in Finder";
+pub fn file_manager_name() -> String {
+    "Finder".to_owned()
+}
+
 /// Matches the SwiftUI shell's unified toolbar on macOS 26.
 pub const TOOLBAR_HEIGHT: f32 = 52.;
 pub const TOOLBAR_LEADING_INSET: f32 = 96.;
@@ -18,7 +21,9 @@ pub const TOOLBAR_BUTTON_HEIGHT: f32 = 36.;
 /// 18 puts the icons' 2-unit stroke on whole device pixels at 2x; SF Symbols in the SwiftUI toolbar measure about the same.
 pub const TOOLBAR_ICON_SIZE: f32 = 18.;
 pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (20., 19.);
-pub const CUSTOM_TERMINAL_LABEL: &str = "App name";
+pub fn custom_terminal_label() -> String {
+    jayjay_i18n::settings::terminal_app_name()
+}
 pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 
 pub fn append_menu_bar(

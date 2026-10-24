@@ -40,7 +40,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                         .foregroundStyle(file.keepsAnyChanges ? Color.accentColor : Color.secondary.opacity(0.5))
                 }
                 .buttonStyle(.plain)
-                .help("Keep or discard every change in this file")
+                .help(Localized.Merge.keepOrDiscardEveryChangeIn)
                 .accessibilityIdentifier(AID.ExternalTool.fileToggle(file.hunk.path))
             }
             file.hunk.hunkType.icon
@@ -52,7 +52,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
             HStack(spacing: 8) {
                 Spacer(minLength: 12)
                 if editable, !file.supportsEditing {
-                    Text("Whole-file selection")
+                    Text(Localized.Merge.wholeFileSelection)
                         .jayjayFont(11)
                         .foregroundStyle(.secondary)
                 }
@@ -84,7 +84,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
             )
             .frame(height: file.measuredHeight ?? file.displayDiff.estimatedCardHeight(typography: typography))
         } else {
-            Text("The file contents differ, but no inline textual preview is available.")
+            Text(Localized.Merge.theFileContentsDifferButNo)
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
                 .frame(maxWidth: .infinity, minHeight: 100)

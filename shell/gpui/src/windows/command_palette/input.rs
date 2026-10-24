@@ -57,7 +57,7 @@ impl CommandPalette {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("JayJay Command Palette".into()),
+                        title: Some(jayjay_i18n::palette::jayjay_command_palette().into()),
                         ..Default::default()
                     }),
                     kind: WindowKind::PopUp,

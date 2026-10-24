@@ -191,9 +191,13 @@ pub(super) fn show_in_graph_button(
     cx: &mut Context<OverviewView>,
     show: impl Fn(&mut OverviewView, &mut Context<OverviewView>) + 'static,
 ) -> AnyElement {
-    small_button("overview-panel-show-in-graph", "Show in Graph", t)
-        .on_click(cx.listener(move |view, _: &ClickEvent, _, cx| show(view, cx)))
-        .into_any_element()
+    small_button(
+        "overview-panel-show-in-graph",
+        jayjay_i18n::repo::show_in_graph(),
+        t,
+    )
+    .on_click(cx.listener(move |view, _: &ClickEvent, _, cx| show(view, cx)))
+    .into_any_element()
 }
 
 pub(super) fn panel_actions(buttons: impl IntoIterator<Item = AnyElement>) -> AnyElement {
@@ -231,7 +235,7 @@ pub(super) fn note(text: impl Into<SharedString>, color: u32) -> gpui::Div {
 }
 
 pub(super) fn section(
-    title: &'static str,
+    title: impl Into<SharedString>,
     t: &Theme,
     rows: impl IntoIterator<Item = AnyElement>,
 ) -> AnyElement {
@@ -253,7 +257,7 @@ fn section_title(title: impl Into<SharedString>, t: &Theme) -> gpui::Div {
 }
 
 pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElement {
-    let note = |text: &'static str| {
+    let note = |text: String| {
         div()
             .text_size(ui_font_size(11.))
             .text_color(rgb(t.fg_faint))
@@ -261,10 +265,10 @@ pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElemen
             .into_any_element()
     };
     let Some(files) = files else {
-        return loading_label("Loading files…", t).into_any_element();
+        return loading_label(jayjay_i18n::diff::loading_files_ellipsis(), t).into_any_element();
     };
     if files.is_empty() {
-        return note("No file changes");
+        return note(jayjay_i18n::overview::no_file_changes());
     }
     let count = files.len();
     div()

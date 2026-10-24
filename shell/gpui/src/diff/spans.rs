@@ -2,7 +2,7 @@ use gpui::{
     AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
-use jayjay_core::diff::{DiffSpan, DiffSpanStyle};
+use jayjay_core::diff::{DiffSpan, DiffSpanStyle, TAB_SPACES};
 
 use crate::app::theme::Theme;
 use crate::ui::primitives::text_tooltip;
@@ -19,9 +19,11 @@ pub fn span_element(
     let color = theme.diff_syntax.color(span.token).unwrap_or(base_fg);
     let bg = word_bg(line_style, span.style, theme);
 
+    // DirectWrite gives a tab no advance.
+    let text = span.text.replace('\t', TAB_SPACES);
     let parts = match find_query.filter(|q| !q.is_empty()) {
-        Some(q) => split_query(&span.text, q),
-        None => vec![(span.text.clone(), false)],
+        Some(q) => split_query(&text, q),
+        None => vec![(text, false)],
     };
 
     let element = if parts.len() == 1 && !parts[0].1 {

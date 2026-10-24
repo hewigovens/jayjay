@@ -13,24 +13,24 @@ impl RepoWindow {
         let mut items = Vec::new();
         if !on_remote {
             items.push(ContextMenuItem::new(
-                "Push",
+                jayjay_i18n::menu::push(),
                 glyph::ARROW_UP,
                 ContextAction::PushTag(name.to_owned().into()),
             ));
         }
         items.push(ContextMenuItem::new(
-            "Copy Tag Name",
+            jayjay_i18n::menu::copy_tag_name(),
             glyph::COPY,
             ContextAction::CopyText(name.to_owned().into()),
         ));
         items.push(ContextMenuItem::new(
-            "Delete Tag",
+            jayjay_i18n::menu::delete_tag(),
             glyph::X_CIRCLE,
             ContextAction::DeleteTag(name.to_owned().into()),
         ));
         if on_remote {
             items.push(ContextMenuItem::new(
-                "Delete Tag on Remote",
+                jayjay_i18n::menu::delete_tag_on_remote(),
                 glyph::X_CIRCLE,
                 ContextAction::DeleteRemoteTag(name.to_owned().into()),
             ));
@@ -43,12 +43,9 @@ impl RepoWindow {
         let remotes = TagInfo::remotes_of(&self.vm.read(cx).graph.tags, &name).join(", ");
         self.request_confirmation(
             Confirmation {
-                title: format!("Delete Tag {name} on {remotes}?").into(),
-                message: format!(
-                    "This removes the tag locally and pushes the deletion to {remotes}. A GitHub release on this tag turns into a draft and its downloads stop working until the tag exists again."
-                )
-                .into(),
-                confirm_label: "Delete on Remote".into(),
+                title: jayjay_i18n::repo::delete_tag_title(&name, &remotes).into(),
+                message: jayjay_i18n::repo::delete_tag_message(&remotes).into(),
+                confirm_label: jayjay_i18n::menu::delete_on_remote().into(),
                 action: ConfirmedAction::DeleteRemoteTag { name },
                 dont_ask_again: None,
             },
@@ -61,7 +58,7 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(format!("Deleted tag {tag}"), cx);
+                    view.show_toast(jayjay_i18n::repo::deleted_tag(&tag), cx);
                 });
             }
         })

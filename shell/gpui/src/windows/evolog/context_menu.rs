@@ -67,7 +67,7 @@ enum EvologMenuAction {
 
 struct EvologMenuItem {
     selector: &'static str,
-    label: &'static str,
+    label: String,
     icon: &'static str,
     action: EvologMenuAction,
     tooltip: Option<SharedString>,
@@ -80,14 +80,14 @@ fn menu_panel(
     view: &Entity<EvologView>,
 ) -> AnyElement {
     let restore_help: SharedString = if state.is_immutable {
-        "Immutable changes cannot be restored".into()
+        jayjay_i18n::repo::immutable_changes_cannot_be_restored().into()
     } else {
-        format!("Restore this version into {}", state.into_rev).into()
+        jayjay_i18n::repo::restore_version_into(&state.into_rev).into()
     };
     let items = [
         EvologMenuItem {
             selector: "evolog-context-restore",
-            label: "Restore this version",
+            label: jayjay_i18n::repo::restore_this_version(),
             icon: glyph::HISTORY,
             action: EvologMenuAction::Restore(state.commit_id.clone()),
             tooltip: Some(restore_help),
@@ -95,7 +95,7 @@ fn menu_panel(
         },
         EvologMenuItem {
             selector: "evolog-context-copy-commit",
-            label: "Copy Commit ID",
+            label: jayjay_i18n::menu::copy_commit_id(),
             icon: glyph::COPY,
             action: EvologMenuAction::Copy(state.commit_id.clone()),
             tooltip: None,
@@ -103,7 +103,7 @@ fn menu_panel(
         },
         EvologMenuItem {
             selector: "evolog-context-copy-restore",
-            label: "Copy ‘jj restore’ command",
+            label: jayjay_i18n::repo::copy_jj_restore_command(),
             icon: glyph::TERMINAL,
             action: EvologMenuAction::Copy(format!(
                 "jj restore --from {} --into {}",
@@ -148,7 +148,7 @@ fn menu_row(
         .text_size(ui_font_size(12.))
         .child(icon_label(
             item.icon,
-            SharedString::from(item.label),
+            SharedString::from(item.label.clone()),
             12.,
             theme.fg_dim,
         ));

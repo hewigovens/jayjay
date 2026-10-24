@@ -53,9 +53,9 @@ impl RepoWindow {
         }
         self.request_confirmation(
             Confirmation {
-                title: "Abandon Change?".into(),
-                message: "This removes the change and reparents its children. You can undo it with jj op restore.".into(),
-                confirm_label: "Abandon".into(),
+                title: jayjay_i18n::repo::abandon_change().into(),
+                message: jayjay_i18n::repo::this_removes_the_change_and_reparents().into(),
+                confirm_label: jayjay_i18n::menu::abandon().into(),
                 action: ConfirmedAction::AbandonChange { rev },
                 dont_ask_again: Some(DontAskAgain {
                     is_set: |config| config.features.skip_abandon_confirmation,
@@ -111,7 +111,7 @@ pub(super) fn confirmation_overlay(
         card = card.child(
             checkbox_row(
                 "confirmation-dont-ask-again",
-                "Don't ask again",
+                jayjay_i18n::repo::dont_ask_again(),
                 (dont_ask_again.is_set)(&config::current(cx)),
                 t,
             )
@@ -121,9 +121,14 @@ pub(super) fn confirmation_overlay(
     overlay_layer()
         .child(
             card.child(overlay_actions(
-                button("confirmation-cancel", "Cancel", t, false)
-                    .debug_selector(|| "confirmation-cancel".to_owned())
-                    .on_click(cx.listener(|view, _, _, cx| view.cancel_confirmation(cx))),
+                button(
+                    "confirmation-cancel",
+                    jayjay_i18n::common::cancel(),
+                    t,
+                    false,
+                )
+                .debug_selector(|| "confirmation-cancel".to_owned())
+                .on_click(cx.listener(|view, _, _, cx| view.cancel_confirmation(cx))),
                 button(
                     "confirmation-submit",
                     confirmation.confirm_label.clone(),

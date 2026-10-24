@@ -94,6 +94,40 @@ tree-sitter-cpp = "0.23"
 }
 
 #[test]
+fn histogram_diff_handles_scattered_line_and_word_edits_on_a_small_stack() {
+    std::thread::Builder::new()
+        .stack_size(512 * 1024)
+        .spawn(|| {
+            let edits = 1500;
+            for separator in ["\n", " "] {
+                let old: String = (0..edits)
+                    .map(|i| format!("anchor{i}{separator}oldvalue{i}{separator}"))
+                    .collect();
+                let new: String = (0..edits)
+                    .map(|i| format!("anchor{i}{separator}newvalue{i}{separator}"))
+                    .collect();
+                let diff = compute_file_diff_full("test.txt", &old, &new, false);
+                for (style, expected) in [
+                    (DiffSpanStyle::Removed, "old"),
+                    (DiffSpanStyle::Added, "new"),
+                ] {
+                    let changed: String = diff
+                        .lines
+                        .iter()
+                        .flat_map(|line| &line.spans)
+                        .filter(|span| span.style == style)
+                        .map(|span| span.text.as_str())
+                        .collect();
+                    assert_eq!(changed, expected.repeat(edits), "{separator:?}");
+                }
+            }
+        })
+        .unwrap()
+        .join()
+        .unwrap();
+}
+
+#[test]
 fn change_groups_are_contiguous_runs_of_changed_lines() {
     let diff = compute_file_diff("test.txt", "a\nold\nc\nold2\n", "a\nnew\nc\nnew2\n", false);
 

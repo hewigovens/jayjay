@@ -21,11 +21,11 @@ fn shortcut_action_opens_complete_reference_window(cx: &mut TestAppContext) {
     for selector in [
         "keyboard-shortcuts-window",
         "keyboard-shortcuts-scroll",
-        "shortcut-section-General",
-        "shortcut-entry-Keyboard Shortcuts",
-        "shortcut-section-Diff & Review",
-        "shortcut-entry-Move Up / Down",
-        "shortcut-entry-Hide / Show Sidebar",
+        "shortcut-section-general",
+        "shortcut-entry-general-3",
+        "shortcut-section-diff-review",
+        "shortcut-entry-navigation-1",
+        "shortcut-entry-view-0",
     ] {
         assert!(
             shortcuts_cx.debug_bounds(selector).is_some(),

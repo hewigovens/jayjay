@@ -5,34 +5,35 @@ extension FileHistoryView {
     var comparisonBar: some View {
         HStack(spacing: 6) {
             if let base = comparison.base {
-                endpointLabel("Base", base, color: .orange)
+                endpointLabel(Localized.Repo.base, base, color: .orange)
                     .accessibilityIdentifier(AID.FileHistory.base)
                 Button { comparison.swap() } label: {
                     Image(systemName: "arrow.left.arrow.right")
                 }
                 .buttonStyle(.borderless)
-                .help("Swap base and target")
+                .help(Localized.Repo.swapBaseAndTarget)
                 .accessibilityIdentifier(AID.FileHistory.swap)
             }
             if let target = comparison.target {
-                endpointLabel("Target", target, color: .accentColor)
+                endpointLabel(Localized.Repo.target, target, color: .accentColor)
                     .accessibilityIdentifier(AID.FileHistory.target)
             } else {
-                Text("Select a revision")
+                Text(Localized.Repo.selectARevision)
                     .jayjayFont(11)
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
-            Button("Pin as Base") {
+            Button(Localized.Repo.pinAsBase) {
                 if let target = comparison.target {
                     comparison.pin(target)
                 }
             }
+            .accessibilityIdentifier(AID.FileHistory.pinBase)
             .disabled(comparison.target == nil)
-            .help("Pin the selected revision as the base to compare against")
+            .help(Localized.Repo.pinTheSelectedRevisionAsThe)
             if comparison.isPinned {
-                Button("Clear") { comparison.clear() }
-                    .help("Clear the pinned base (esc)")
+                Button(Localized.Common.clear) { comparison.clear() }
+                    .help(Localized.Repo.clearThePinnedBaseEsc)
             }
         }
     }
@@ -41,9 +42,9 @@ extension FileHistoryView {
     var comparisonDiff: some View {
         if comparison.isSameRevision {
             ContentUnavailableView(
-                "Same Revision as the Base",
+                Localized.Repo.sameRevisionAsTheBase,
                 systemImage: "equal.circle",
-                description: Text("Choose a different revision to compare against the base.")
+                description: Text(Localized.Repo.chooseADifferentRevisionToCompare)
             )
         } else if let target = comparison.compareTo {
             FileHistoryComparisonDiff(
@@ -57,9 +58,9 @@ extension FileHistoryView {
             .id("\(comparison.compareFrom ?? "")|\(target)|\(path)")
         } else {
             ContentUnavailableView(
-                "Select a Revision",
+                Localized.Repo.selectARevisionTitle,
                 systemImage: "clock",
-                description: Text("Pick a revision to see its change to this file.")
+                description: Text(Localized.Repo.pickARevisionToSeeIts)
             )
         }
     }
@@ -86,7 +87,7 @@ extension FileHistoryView {
                 .jayjayFont(11, design: .monospaced)
                 .foregroundStyle(.secondary)
         }
-        .help("\(role): change \(endpoint.changeId.id), commit \(endpoint.commitId.id)")
+        .help(Localized.Repo.comparisonEndpointHelp(role: role, change: endpoint.changeId.id, commit: endpoint.commitId.id))
         .accessibilityElement(children: .combine)
         .accessibilityValue(endpoint.commitId.id)
     }
@@ -94,9 +95,9 @@ extension FileHistoryView {
     @ViewBuilder
     func roleBadge(for change: ChangeInfo) -> some View {
         if comparison.base?.commitId.id == change.commitId.id {
-            roleTag("Base", color: .orange)
+            roleTag(Localized.Repo.base, color: .orange)
         } else if comparison.target?.commitId.id == change.commitId.id {
-            roleTag("Target", color: .accentColor)
+            roleTag(Localized.Repo.target, color: .accentColor)
         }
     }
 

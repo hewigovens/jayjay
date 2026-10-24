@@ -11,6 +11,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | Task | Load |
 | --- | --- |
 | crate boundaries, UniFFI, MVVM | [Architecture](agents/architecture.md) |
+| user-facing text, translations | [Architecture](agents/architecture.md#localization) |
 | SwiftUI layout / view-models | [SwiftUI](agents/swiftui.md) |
 | GPUI layout / state | [GPUI](agents/gpui.md) |
 | review marks or notes | [Review State](agents/review-state.md) |
@@ -56,6 +57,12 @@ jj workspace add --name <topic> -r 'main@origin' ../<topic>
 Then make `../<topic>` the session's working root before editing. The destination is a sibling directory of the repo, named after the workspace — the same convention as JayJay's New Workspace action. Use `-r 'master@origin'` / `-r 'trunk@origin'` when that is the trunk bookmark. Do not `jj git fetch` first unless the user asked to start from latest origin.
 
 At task completion, describe the workspace's current change with `jj describe` when it has a meaningful diff. Do not use `jj commit` just to mark the task done; it creates a new empty working-copy change.
+
+When the user explicitly asks for a review bookmark, point a local `review/<topic>` bookmark at the described change so a reviewer on another machine can fetch it (`jj git fetch --remote <host> --branch 'glob:review/*'`). Set it once; it follows later amends. Never push it.
+
+```bash
+jj bookmark set review/<topic> -r @
+```
 
 Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
 

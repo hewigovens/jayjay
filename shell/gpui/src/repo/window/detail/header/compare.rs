@@ -119,6 +119,6 @@ fn files_changed_label(file_count: usize) -> String {
     if file_count == 1 {
         "1 file changed".to_string()
     } else {
-        format!("{file_count} files changed")
+        jayjay_i18n::repo::files_changed_count(file_count)
     }
 }

@@ -20,7 +20,7 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::no_scrollbar_gutter;
 
-pub(super) fn middle_elide(s: &str, max_cells: usize) -> String {
+pub(crate) fn middle_elide(s: &str, max_cells: usize) -> String {
     if s.width() <= max_cells {
         return s.to_owned();
     }

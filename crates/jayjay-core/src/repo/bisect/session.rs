@@ -139,13 +139,11 @@ impl Session {
                     .candidate
                     .as_ref()
                     .map(|change| change_subject(change.description()))
-                    .unwrap_or_else(|| "this change".to_owned());
+                    .unwrap_or_else(jayjay_i18n::repo::bisect_this_change);
                 let count = self.focused.len();
-                format!("Testing {subject} · {count} left, about {} more", steps_left(count))
+                jayjay_i18n::repo::bisect_testing(&subject, count, steps_left(count))
             }
-            BisectPhase::PausedRangeChanged => {
-                "A change in the range was rewritten or hidden. Stop, or restart from the same ends.".to_owned()
-            }
+            BisectPhase::PausedRangeChanged => jayjay_i18n::repo::bisect_range_changed(),
             BisectPhase::Finished => self
                 .result
                 .as_ref()
@@ -198,8 +196,7 @@ pub(super) fn change_subject(description: &str) -> String {
         .next()
         .map(str::trim)
         .filter(|line| !line.is_empty())
-        .unwrap_or("this change")
-        .to_owned()
+        .map_or_else(jayjay_i18n::repo::bisect_this_change, str::to_owned)
 }
 
 impl Repo {

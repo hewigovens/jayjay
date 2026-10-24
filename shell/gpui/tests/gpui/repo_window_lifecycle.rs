@@ -145,12 +145,7 @@ fn removing_a_recent_repo_does_not_open_it(cx: &mut TestAppContext) {
             .update(|cx| config::current(cx).recent_repos.is_empty())
     );
     assert_eq!(
-        visual
-            .cx
-            .windows()
-            .iter()
-            .filter(|handle| handle.downcast::<RepoWindow>().is_some())
-            .count(),
+        repo_window_count(&visual.cx),
         0,
         "removing a recent repository must not trigger the row's open action"
     );
@@ -177,35 +172,34 @@ fn opening_a_recent_repo_replaces_the_repo_list(cx: &mut TestAppContext) {
     settle(&mut visual.cx);
 
     assert_eq!(repo_list_count(&visual.cx), 0);
-    assert_eq!(
-        visual
-            .cx
-            .windows()
-            .iter()
-            .filter(|handle| handle.downcast::<RepoWindow>().is_some())
-            .count(),
-        1
-    );
+    assert_eq!(repo_window_count(&visual.cx), 1);
 }
 
 #[gpui::test]
-fn opening_an_already_open_repo_activates_one_window(cx: &mut TestAppContext) {
+fn opening_a_repo_or_its_subdirectory_activates_one_window(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    let subdirectory = fixture.path.join("src/nested");
+    std::fs::create_dir_all(&subdirectory).unwrap();
+    let plain = tempfile::tempdir().unwrap();
     install_test_globals(cx);
 
     cx.update(|cx| {
         open_repo_window(fixture.path.clone(), cx);
-        open_repo_window(fixture.path.clone(), cx);
+        open_repo_window(subdirectory, cx);
     });
     settle(cx);
+    assert_eq!(repo_window_count(cx), 1);
 
-    assert_eq!(
-        cx.windows()
-            .iter()
-            .filter(|handle| handle.downcast::<RepoWindow>().is_some())
-            .count(),
-        1
-    );
+    cx.update(|cx| open_repo_window(plain.path().to_owned(), cx));
+    settle(cx);
+    assert_eq!(repo_window_count(cx), 2);
+}
+
+fn repo_window_count(cx: &TestAppContext) -> usize {
+    cx.windows()
+        .iter()
+        .filter(|handle| handle.downcast::<RepoWindow>().is_some())
+        .count()
 }
 
 fn assert_single_repo_list(cx: &TestAppContext) {

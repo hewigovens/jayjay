@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct DestructiveConfirmSheet: View {
@@ -22,12 +23,12 @@ struct DestructiveConfirmSheet: View {
                 .multilineTextAlignment(.center)
 
             if let dontAskAgain {
-                Toggle("Don't ask again", isOn: dontAskAgain)
+                Toggle(Localized.Repo.dontAskAgain, isOn: dontAskAgain)
                     .jayjayFont(12)
             }
 
             HStack(spacing: 12) {
-                Button("Cancel", action: onCancel)
+                Button(Localized.Common.cancel, action: onCancel)
                     .keyboardShortcut(.cancelAction)
                 Button(confirmLabel, action: onConfirm)
                     .keyboardShortcut(.defaultAction)

@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 enum LaunchArguments {
     static func repoPath(from arguments: [String]) -> String? {
@@ -31,7 +32,7 @@ enum LaunchArguments {
 
     private static func normalizedRepoPath(_ path: String) -> String {
         let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
-        let url = URL(fileURLWithPath: path, relativeTo: cwd)
-        return url.standardizedFileURL.path
+        let path = URL(fileURLWithPath: path, relativeTo: cwd).standardizedFileURL.path
+        return enclosingWorkspaceRoot(path: path) ?? path
     }
 }

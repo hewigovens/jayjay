@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct DiffEditHeader: View {
@@ -5,7 +6,7 @@ struct DiffEditHeader: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Label("Diff Edit", systemImage: "slider.horizontal.3")
+            Label(Localized.Repo.diffEdit, systemImage: "slider.horizontal.3")
                 .jayjayFont(15, weight: .semibold)
             Text(String(session.detailRevision.prefix(12)))
                 .jayjayFont(12, design: .monospaced)
@@ -17,14 +18,14 @@ struct DiffEditHeader: View {
             Button {
                 session.expandAllFiles()
             } label: {
-                Label("Expand All", systemImage: "rectangle.expand.vertical")
+                Label(Localized.Repo.expandAll, systemImage: "rectangle.expand.vertical")
             }
             .keyboardShortcut(AppShortcut.expandAllFiles)
             .accessibilityIdentifier(AID.DiffEdit.expandAll)
             Button {
                 session.collapseAllFiles()
             } label: {
-                Label("Collapse All", systemImage: "rectangle.compress.vertical")
+                Label(Localized.Repo.collapseAll, systemImage: "rectangle.compress.vertical")
             }
             .keyboardShortcut(AppShortcut.collapseAllFiles)
             .accessibilityIdentifier(AID.DiffEdit.collapseAll)
@@ -35,7 +36,7 @@ struct DiffEditHeader: View {
             }
             .disabled(session.selectionToggleDisabled)
             .controlSize(.small)
-            Button("Cancel", action: session.onDone)
+            Button(Localized.Common.cancel, action: session.onDone)
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier(AID.DiffEdit.cancel)
         }

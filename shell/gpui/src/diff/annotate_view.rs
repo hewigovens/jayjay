@@ -5,7 +5,7 @@ use gpui::{
     div, px, rgb, uniform_list,
 };
 use jayjay_core::AnnotationLine;
-use jayjay_core::diff::{DiffSpan, highlight_file};
+use jayjay_core::diff::{DiffSpan, TAB_SPACES, highlight_file};
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{ANNOTATE_PALETTE, Theme};
@@ -163,11 +163,11 @@ fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
             cell.child(
                 div()
                     .text_color(rgb(color))
-                    .child(SharedString::from(span.text.clone())),
+                    .child(SharedString::from(span.text.replace('\t', TAB_SPACES))),
             )
         }),
         // No highlight available (e.g. diff line count drifted); plain text.
-        _ => cell.child(SharedString::from(text.to_owned())),
+        _ => cell.child(SharedString::from(text.replace('\t', TAB_SPACES))),
     }
 }
 

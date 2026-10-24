@@ -20,8 +20,7 @@ extension RepoViewModel {
     }
 
     func markBisect(_ verdict: BisectVerdict) {
-        guard bisect.canMark else { return }
-        guard let commitId = bisect.state?.candidate?.commitId else { return }
+        guard bisect.canMark, let commitId = bisect.state?.candidate?.commitId else { return }
         runBisect { try $0.bisectMark(commitId: commitId, verdict: verdict) }
     }
 
@@ -31,8 +30,7 @@ extension RepoViewModel {
     }
 
     func dismissBisect() {
-        guard bisect.canDismiss else { return }
-        guard bisect.beginTransition() else { return }
+        guard bisect.canDismiss, bisect.beginTransition() else { return }
         performBisect(selecting: { _ in "@" }, { try $0.bisectDismiss() })
     }
 
@@ -47,7 +45,7 @@ extension RepoViewModel {
         guard bisect.canRun else { return }
         let command = bisect.command.trimmingCharacters(in: .whitespacesAndNewlines)
         guard !command.isEmpty else {
-            error = "Enter a command to run."
+            error = Localized.Repo.enterACommandToRun
             return
         }
         let sync = repo.syncToken()

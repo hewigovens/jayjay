@@ -17,9 +17,7 @@ pub fn compose_bisect_range(good: &str, bad: &str, range: &str) -> JayResult<Str
     let good = good.trim();
     let bad = bad.trim();
     if good.is_empty() || bad.is_empty() {
-        return Err(JayError::refused(
-            "Enter a good end and a bad end, or a revset range.",
-        ));
+        return Err(JayError::refused(jayjay_i18n::repo::bisect_enter_range()));
     }
     Ok(format!("({good})..({bad})"))
 }

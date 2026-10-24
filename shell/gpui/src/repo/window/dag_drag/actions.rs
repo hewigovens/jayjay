@@ -19,7 +19,7 @@ impl RepoWindow {
         match &drag {
             DagDrag::WorkingCopy => self.drop_working_copy_on_change(destination, cx),
             DagDrag::Bookmark { name, .. } => {
-                let message = format!("Moved {name}");
+                let message = jayjay_i18n::repo::moved_bookmark(name);
                 self.move_bookmark_to_rev(
                     name.clone(),
                     destination.selection_revision().to_owned(),
@@ -77,7 +77,10 @@ impl RepoWindow {
             .all(|id| shown.contains(id))
         };
         if !all_shown {
-            self.show_toast("Rebase cancelled: the changes moved while confirming", cx);
+            self.show_toast(
+                jayjay_i18n::repo::rebase_cancelled_the_changes_moved_while(),
+                cx,
+            );
             return;
         }
         self.run_drag_rebase(request, cx);
@@ -102,7 +105,10 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(format!("Rebased {source_label} onto {dest_label}"), cx);
+                    view.show_toast(
+                        jayjay_i18n::repo::rebased_onto(&source_label, &dest_label),
+                        cx,
+                    );
                 });
             }
         })
@@ -119,7 +125,7 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             if task.await.is_ok() {
                 let _ = this.update(cx, |view, cx| {
-                    view.show_toast("Moved working copy", cx);
+                    view.show_toast(jayjay_i18n::repo::moved_working_copy(), cx);
                 });
             }
         })

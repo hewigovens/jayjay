@@ -15,6 +15,7 @@ enum AID {
         static let push = "toolbar.push"
         static let revsetBar = "toolbar.revsetBar"
         static let revsetField = "toolbar.revsetField"
+        static let repositoryTitle = "toolbar.repositoryTitle"
         static let staleBadge = "toolbar.staleBadge"
     }
 
@@ -24,6 +25,7 @@ enum AID {
 
     enum Picker {
         static let overview = "picker.overview"
+        static let filterByWorkspace = "picker.filterByWorkspace"
 
         static func row(_ id: String) -> String {
             "picker.row.\(id)"
@@ -66,10 +68,14 @@ enum AID {
         static let section = "diff.section"
         static let gutter = "diff.gutter"
         static let text = "diff.text"
+        static let layoutToggle = "diff.layoutToggle"
+        static let preview = "diff.preview"
+        static let addReviewNote = "diff.addReviewNote"
     }
 
     enum ReviewNote {
         static let body = "reviewNote.body"
+        static let save = "reviewNote.save"
         static let contextCode = "reviewNote.contextCode"
 
         static func activeCount(_ count: Int) -> String {
@@ -116,6 +122,7 @@ enum AID {
         static let base = "fileHistory.base"
         static let target = "fileHistory.target"
         static let swap = "fileHistory.swap"
+        static let pinBase = "fileHistory.pinBase"
         static let divider = "fileHistory.divider"
 
         static func row(_ index: Int) -> String {
@@ -218,6 +225,8 @@ enum AID {
         static let identitySave = "settings.identitySave"
         static let identitySetUp = "settings.identitySetUp"
         static let forgeSignInOpen = "settings.forgeSignInOpen"
+        static let forgeSignIn = "settings.forgeSignIn"
+        static let diagnostics = "settings.diagnostics"
         static let forgeSignInCode = "settings.forgeSignInCode"
         static let interfaceFontSize = "settings.interfaceFontSize"
         static let codeFontSize = "settings.codeFontSize"
@@ -281,6 +290,12 @@ enum AID {
         static let sheetBad = "bisect.sheet.bad"
         static let sheetRange = "bisect.sheet.range"
         static let sheetStart = "bisect.sheet.start"
+    }
+
+    enum Panel {
+        static let bookmarkManager = "panel.bookmarkManager"
+        static let operationLog = "panel.operationLog"
+        static let stackedPullRequests = "panel.stackedPullRequests"
     }
 
     enum DiffEdit {

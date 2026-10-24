@@ -9,10 +9,14 @@ license.workspace = true
 repository.workspace = true
 
 [dependencies]
+jayjay-i18n = { version = "0.1.0", path = "../jayjay-i18n" }
 etcetera = { workspace = true }
 hex = { workspace = true }
 serde = { workspace = true }
 sha2 = { workspace = true }
+
+[dev-dependencies]
+tempfile = { workspace = true }
 
 [lints]
 workspace = true

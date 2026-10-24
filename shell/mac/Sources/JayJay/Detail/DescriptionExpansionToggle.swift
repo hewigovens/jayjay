@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct DescriptionExpansionToggle: View {
@@ -13,7 +14,7 @@ struct DescriptionExpansionToggle: View {
         .foregroundStyle(.secondary)
         .keyboardFocusStop(.expandDescription, action: action)
         .accessibilityIdentifier(AID.Detail.descriptionExpansion)
-        .accessibilityLabel(expanded ? "Collapse description" : "Expand description")
-        .help(expanded ? "Collapse description" : "Expand description")
+        .accessibilityLabel(expanded ? Localized.Repo.collapseDescription : Localized.Repo.expandDescription)
+        .help(expanded ? Localized.Repo.collapseDescription : Localized.Repo.expandDescription)
     }
 }

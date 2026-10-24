@@ -370,7 +370,7 @@ fn commit_box_keeps_input_when_commit_fails(cx: &mut TestAppContext) {
         assert_eq!(view.summary_input().read(cx).text(), "keep this message");
         assert_eq!(
             view.view_model().read(cx).error.as_deref(),
-            Some("repository is not open")
+            Some("Repository is not open")
         );
     });
 }

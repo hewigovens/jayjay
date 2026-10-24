@@ -31,13 +31,20 @@ pub fn image_diff_view(
             &hunk.path,
             pane(
                 old_path,
-                "Before",
+                jayjay_i18n::diff::before().into(),
                 t.tag_removed_bg,
                 t.tag_removed_fg,
                 true,
                 t,
             ),
-            pane(new_path, "After", t.tag_added_bg, t.tag_added_fg, true, t),
+            pane(
+                new_path,
+                jayjay_i18n::diff::after().into(),
+                t.tag_added_bg,
+                t.tag_added_fg,
+                true,
+                t,
+            ),
             t,
             window,
             cx,
@@ -58,7 +65,7 @@ pub fn image_diff_view(
 
 fn pane(
     path: Option<String>,
-    label: &'static str,
+    label: SharedString,
     label_bg: u32,
     label_fg: u32,
     show_label: bool,
@@ -81,7 +88,7 @@ fn image_viewer(path: Option<String>, t: &Theme) -> AnyElement {
             .into_any_element(),
         Some(_) => frame
             .text_color(rgb(t.fg_dim))
-            .child(SharedString::from("(file unavailable)"))
+            .child(jayjay_i18n::diff::file_unavailable())
             .into_any_element(),
         None => frame
             .text_color(rgb(t.fg_dim))

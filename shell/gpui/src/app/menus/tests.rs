@@ -129,7 +129,7 @@ fn help_menu_send_feedback_reports_open_failure(cx: &mut gpui::TestAppContext) {
 
     cx.run_until_parked();
     let (message, detail) = cx.pending_prompt().expect("feedback fallback prompt");
-    assert_eq!(message, "Couldn’t Open Your Email App");
+    assert_eq!(message, jayjay_i18n::common::unable_to_open_mail());
     assert!(detail.contains(crate::app::links::FEEDBACK_ADDRESS));
     cx.simulate_prompt_answer("OK");
 }

@@ -250,7 +250,7 @@ impl RepoWindow {
             ContextAction::ShowInFileManager(path) => {
                 let repo_path = self.vm.read(cx).repo_path.to_string();
                 if !crate::app::tools::show_in_file_manager(&repo_path, Some(path.as_ref())) {
-                    self.show_toast("File could not be shown in the file manager", cx);
+                    self.show_toast(jayjay_i18n::menu::file_could_not_be_shown_in(), cx);
                 }
             }
             ContextAction::OpenWorkspaceAt(path) => {
@@ -314,28 +314,28 @@ impl RepoWindow {
                 },
             ),
             ContextMenuItem::new(
-                "Show in File Manager",
+                crate::platform::show_in_file_manager_label(),
                 glyph::FOLDER,
                 ContextAction::ShowInFileManager(path.to_owned().into()),
             ),
             ContextMenuItem::new(
-                "Annotate",
+                jayjay_i18n::menu::annotate(),
                 glyph::FILE_CODE,
                 ContextAction::ToggleAnnotateFor(path.to_owned().into()),
             ),
             ContextMenuItem::new(
-                "Show History",
+                jayjay_i18n::menu::show_history(),
                 glyph::HISTORY,
                 ContextAction::OpenFileHistoryFor(path.to_owned().into()),
             ),
             ContextMenuItem::new(
-                "Copy Path",
+                jayjay_i18n::menu::copy_path(),
                 glyph::COPY,
                 ContextAction::CopyText(path.to_owned().into()),
             )
             .with_shortcut('c'),
             ContextMenuItem::new(
-                "Copy Filename",
+                jayjay_i18n::menu::copy_filename(),
                 glyph::COPY,
                 ContextAction::CopyText(basename.into()),
             ),

@@ -14,7 +14,7 @@ struct FileHistoryWindow: View {
     var body: some View {
         content
             .frame(minWidth: 760, minHeight: 420)
-            .navigationTitle("History: \(request.path)")
+            .navigationTitle(Localized.Repo.historyTitle(path: request.path))
             .navigationSubtitle(URL(fileURLWithPath: request.repoPath).repositoryDisplayName)
             .background(WindowFramePersistence(key: AppWindows.fileHistory))
             .task { await load() }
@@ -35,7 +35,7 @@ struct FileHistoryWindow: View {
                 onDismiss: { dismiss() }
             )
         } else if let error {
-            ContentUnavailableView("History Unavailable", systemImage: "exclamationmark.triangle", description: Text(error))
+            ContentUnavailableView(Localized.Repo.historyUnavailable, systemImage: "exclamationmark.triangle", description: Text(error))
         } else {
             Color.clear
         }

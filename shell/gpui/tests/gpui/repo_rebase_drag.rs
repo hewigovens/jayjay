@@ -38,7 +38,7 @@ fn change_row_drag_confirms_and_rebases_onto_target(cx: &mut TestAppContext) {
                 .map(|change| change.change_id.id.as_str()),
             Some(source_change_id.as_str())
         );
-        assert_eq!(view.toast().as_deref(), Some("Rebased main onto initial"));
+        assert_eq!(view.toast().as_deref(), Some("Rebased main onto initial."));
     });
 }
 
@@ -100,7 +100,10 @@ fn dragging_part_of_a_selection_rebases_every_selected_change(cx: &mut TestAppCo
             find(&feature.change_id.id).parents,
             vec![moved_hello.commit_id.id]
         );
-        assert_eq!(view.toast().as_deref(), Some("Rebased 2 changes onto side"));
+        assert_eq!(
+            view.toast().as_deref(),
+            Some("Rebased 2 changes onto side.")
+        );
     });
 }
 

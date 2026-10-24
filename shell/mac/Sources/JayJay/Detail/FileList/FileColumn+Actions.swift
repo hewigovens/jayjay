@@ -57,22 +57,22 @@ extension ChangeDetailView {
 
     @ViewBuilder
     private func singleFileActions(path: String, isSubmodulePlaceholder: Bool) -> some View {
-        Button("Open in \(appSettings.externalEditor.title)") {
+        Button(Localized.Menu.openIn(app: appSettings.externalEditor.title)) {
             appSettings.openInEditor(filePath: path, repoPath: repoPath)
         }
         .keyboardShortcut("o", modifiers: [])
-        Button("Show in Finder") { showInFinder(path) }
+        Button(Localized.Common.showIn(app: "Finder")) { showInFinder(path) }
             .keyboardShortcut("f", modifiers: [])
-        Button("Copy Path") {
+        Button(Localized.Menu.copyPath) {
             NSPasteboard.general.clearContents()
             NSPasteboard.general.setString(path, forType: .string)
         }
         .keyboardShortcut("c", modifiers: [])
         if !isSubmodulePlaceholder {
             Divider()
-            Button("Annotate (Blame)") { loadAnnotate(rev: detailRevision, path: path) }
+            Button(Localized.Menu.annotateBlame) { loadAnnotate(rev: detailRevision, path: path) }
                 .keyboardShortcut("b", modifiers: [])
-            Button("File History") {
+            Button(Localized.Menu.fileHistory) {
                 windowManager?.openFileHistory(FileHistoryRequest(repoPath: repoPath, path: path))
             }
             .keyboardShortcut("h", modifiers: [])
@@ -85,7 +85,7 @@ extension ChangeDetailView {
         if detail.info.parents.count > 1 {
             Menu(restoreActionLabel(for: cardPaths)) {
                 ForEach(Array(detail.info.parents.enumerated()), id: \.offset) { index, parentId in
-                    Button("Parent \(index + 1): \(String(parentId.prefix(8)))") {
+                    Button(Localized.Menu.parentNumbered(index: index + 1, id: String(parentId.prefix(8)))) {
                         actions?.restoreFiles(rev: parentId, paths: paths)
                     }
                 }
@@ -120,30 +120,30 @@ extension ChangeDetailView {
     }
 
     private func splitActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Split to New Change" : "Split \(paths.count) Files to New Change"
+        Localized.Menu.splitFiles(count: paths.count)
     }
 
     private func moveToWorkingCopyActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Move to Working Copy" : "Move \(paths.count) Files to Working Copy"
+        Localized.Menu.moveFilesToWorkingCopy(count: paths.count)
     }
 
     private func restoreActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Restore to Parent" : "Restore \(paths.count) Files to Parent"
+        Localized.Menu.restoreFilesToParent(count: paths.count)
     }
 
     private func deleteActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Delete from Disk" : "Delete \(paths.count) Files from Disk"
+        Localized.Menu.deleteFilesFromDisk(count: paths.count)
     }
 
     private func ignoreActionLabel(for paths: [String]) -> String {
-        paths.count == 1 ? "Ignore & Untrack" : "Ignore & Untrack \(paths.count) Files"
+        Localized.Menu.ignoreUntrackFiles(count: paths.count)
     }
 
     private func reviewActionLabel(for paths: [String]) -> String {
         if paths.allSatisfy(reviewedPaths.contains) {
-            return paths.count == 1 ? "Mark as Unreviewed" : "Mark \(paths.count) Files as Unreviewed"
+            return Localized.Menu.markFilesUnreviewed(count: paths.count)
         }
-        return paths.count == 1 ? "Mark as Reviewed" : "Mark \(paths.count) Files as Reviewed"
+        return Localized.Menu.markFilesReviewed(count: paths.count)
     }
 
     /// Marks carry the fingerprints of a diff that has been viewed; a file marked straight from the list keeps a whole-file baseline.

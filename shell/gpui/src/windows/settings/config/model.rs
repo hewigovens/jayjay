@@ -37,7 +37,7 @@ fn snapshot_from(config: JjUserConfig) -> JjConfigSnapshot {
             path: config.path,
             exists: false,
             sections: Vec::new(),
-            error: Some("Config not found".to_owned()),
+            error: Some(jayjay_i18n::settings::config_not_found()),
         };
     }
     JjConfigSnapshot {

@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct SettingsAppearancePage: View {
@@ -14,7 +15,7 @@ struct SettingsAppearancePage: View {
                         Text(mode.title).tag(mode)
                     }
                 } label: {
-                    SettingsLabel("Appearance", icon: "circle.lefthalf.filled")
+                    SettingsLabel(Localized.Settings.pageAppearance, icon: "circle.lefthalf.filled")
                 }
                 .pickerStyle(.segmented)
             }

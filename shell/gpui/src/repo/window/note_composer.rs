@@ -1,6 +1,6 @@
 //! An overlay, not a `uniform_list` row: a row would clip and lose focus once note rows scroll out of the list.
 
-use gpui::{App, AppContext, Context};
+use gpui::{App, AppContext, Context, SharedString};
 use jayjay_core::diff::{DiffSpanStyle, build_diff_display_lines};
 use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 
@@ -56,8 +56,8 @@ impl RepoWindow {
             }),
         };
         self.open_note_composer(
-            "Add Review Note",
-            "Add Note",
+            jayjay_i18n::menu::add_review_note(),
+            jayjay_i18n::repo::add_note(),
             target,
             String::new(),
             context,
@@ -78,8 +78,8 @@ impl RepoWindow {
             anchor: None,
         };
         self.open_note_composer(
-            "Edit Review Note",
-            "Save",
+            jayjay_i18n::menu::edit_review_note(),
+            jayjay_i18n::common::save(),
             target,
             note.body.clone(),
             context,
@@ -141,8 +141,8 @@ impl RepoWindow {
 
     fn open_note_composer(
         &mut self,
-        title: &'static str,
-        primary_label: &'static str,
+        title: impl Into<SharedString>,
+        primary_label: impl Into<SharedString>,
         target: NoteComposerTarget,
         body: String,
         context: Vec<NoteContextLine>,
@@ -159,7 +159,15 @@ impl RepoWindow {
             TextArea::selectable_code_block(context_text, context.len(), emphasized_line, cx)
         });
         self.text_modal = Some(TextModalState {
-            prompt: TextPrompt::multiline(title, subtitle, body, "Note", primary_label, 130., cx),
+            prompt: TextPrompt::multiline(
+                title,
+                subtitle,
+                body,
+                jayjay_i18n::repo::note(),
+                primary_label,
+                130.,
+                cx,
+            ),
             action: TextModalAction::ReviewNote(target),
             context: Some(TextModalContext {
                 lines: context,

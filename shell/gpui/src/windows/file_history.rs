@@ -67,7 +67,7 @@ impl FileHistoryView {
             },
             cx,
         );
-        let title = format!("History: {path}");
+        let title = jayjay_i18n::history::window_title(&path);
         let path_for_view: SharedString = path.into();
         let handle = cx
             .open_window(
@@ -323,17 +323,17 @@ impl Render for FileHistoryView {
             .map(|menu| render_menu(menu, &t, &cx.entity()));
 
         let body = if self.loading {
-            loading_status("Loading history…", &t)
+            loading_status(jayjay_i18n::history::loading_history_ellipsis(), &t)
         } else if let Some(err) = self.error.clone() {
             placeholder_err(&err, &t)
         } else if let Some(history) = self.history.clone() {
             if history.is_empty() {
-                placeholder("No revisions modified this file.", &t)
+                placeholder(jayjay_i18n::repo::no_revisions_modified_this_file(), &t)
             } else {
                 history_body(self, history, &t, window, cx)
             }
         } else {
-            placeholder("Unable to load history.", &t)
+            placeholder(jayjay_i18n::history::unable_to_load_history(), &t)
         };
 
         let mut root = div()
@@ -374,7 +374,7 @@ fn header(
     t: &Theme,
     cx: &mut Context<FileHistoryView>,
 ) -> AnyElement {
-    let revisions = format!("{count} revisions");
+    let revisions = jayjay_i18n::history::revision_count(count);
     div()
         .flex()
         .flex_col()
@@ -422,7 +422,13 @@ fn comparison_bar(
         .py(px(8.));
     if let Some(base) = view.comparison.base() {
         bar = bar
-            .child(endpoint_label("Base", base, t.compare_accent, t))
+            .child(endpoint_label(
+                "base",
+                &jayjay_i18n::repo::base(),
+                base,
+                t.compare_accent,
+                t,
+            ))
             .child(
                 icon_button(
                     "file-history-swap",
@@ -434,26 +440,32 @@ fn comparison_bar(
                     t,
                 )
                 .debug_selector(|| "file-history-swap".to_owned())
-                .tooltip(text_tooltip("Swap base and target"))
+                .tooltip(text_tooltip(jayjay_i18n::repo::swap_base_and_target()))
                 .on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.swap_endpoints(cx))),
             );
     }
     if let Some(target) = view.comparison.target() {
-        bar = bar.child(endpoint_label("Target", target, t.selected_accent, t));
+        bar = bar.child(endpoint_label(
+            "target",
+            &jayjay_i18n::repo::target(),
+            target,
+            t.selected_accent,
+            t,
+        ));
     } else {
         bar = bar.child(
             div()
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
-                .child("Select a revision"),
+                .child(jayjay_i18n::repo::select_a_revision()),
         );
     }
     bar = bar.child(div().flex_1()).child(pin_button(view, t, cx));
     if view.comparison.is_pinned() {
         bar = bar.child(
-            small_button("file-history-clear", "Clear", t)
+            small_button("file-history-clear", jayjay_i18n::common::clear(), t)
                 .debug_selector(|| "file-history-clear".to_owned())
-                .tooltip(text_tooltip("Clear the pinned base (esc)"))
+                .tooltip(text_tooltip(jayjay_i18n::repo::clear_the_pinned_base_esc()))
                 .on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.clear_base(cx))),
         );
     }
@@ -461,10 +473,10 @@ fn comparison_bar(
 }
 
 fn pin_button(view: &FileHistoryView, t: &Theme, cx: &mut Context<FileHistoryView>) -> AnyElement {
-    let mut button = small_button("file-history-pin", "Pin as Base", t)
+    let mut button = small_button("file-history-pin", jayjay_i18n::repo::pin_as_base(), t)
         .debug_selector(|| "file-history-pin".to_owned())
         .tooltip(text_tooltip(
-            "Pin the selected revision as the base to compare against",
+            jayjay_i18n::repo::pin_the_selected_revision_as_the(),
         ));
     if view.comparison.target().is_some() {
         button = button.on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.pin_selected(cx)));
@@ -474,19 +486,21 @@ fn pin_button(view: &FileHistoryView, t: &Theme, cx: &mut Context<FileHistoryVie
     button.into_any_element()
 }
 
-fn endpoint_label(role: &str, endpoint: &FileHistoryEndpoint, color: u32, t: &Theme) -> AnyElement {
+fn endpoint_label(
+    id: &str,
+    role: &str,
+    endpoint: &FileHistoryEndpoint,
+    color: u32,
+    t: &Theme,
+) -> AnyElement {
     let selector = format!(
-        "file-history-{}-{}-{}",
-        role.to_ascii_lowercase(),
-        endpoint.change_id.id,
-        endpoint.commit_id.id
+        "file-history-{id}-{}-{}",
+        endpoint.change_id.id, endpoint.commit_id.id
     );
     let change_id = compact_id(&endpoint.change_id);
     let commit_id = compact_id(&endpoint.commit_id);
-    let help = format!(
-        "{role}: change {}, commit {}",
-        endpoint.change_id.id, endpoint.commit_id.id
-    );
+    let help =
+        jayjay_i18n::history::endpoint_help(role, &endpoint.change_id.id, &endpoint.commit_id.id);
     div()
         .id(SharedString::from(selector.clone()))
         .debug_selector(move || selector)
@@ -590,7 +604,7 @@ fn history_row(
     let short_id = compact_id(&entry.change_id);
     let when = format_when(entry.author.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
-        "(no description)".to_owned()
+        jayjay_i18n::repo::no_description_placeholder()
     } else {
         entry
             .description
@@ -604,9 +618,13 @@ fn history_row(
     let commit_id = entry.commit_id.id.clone();
     let selected = target_commit.as_deref() == Some(commit_id.as_str());
     let role = if base_commit.as_deref() == Some(commit_id.as_str()) {
-        Some(("Base", t.compare_accent, t.compare_bg))
+        Some((jayjay_i18n::repo::base(), t.compare_accent, t.compare_bg))
     } else if selected {
-        Some(("Target", t.selected_accent, t.selected_bg))
+        Some((
+            jayjay_i18n::repo::target(),
+            t.selected_accent,
+            t.selected_bg,
+        ))
     } else {
         None
     };
