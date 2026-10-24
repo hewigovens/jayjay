@@ -365,15 +365,16 @@ final class RepoWindowManager {
     }
 
     func openRepo(_ path: String) {
-        let normalizedPath = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
-        guard !isRemovingRepo(at: path) else { return }
+        let standardizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        let normalizedPath = enclosingWorkspaceRoot(path: standardizedPath) ?? normalizedRepositoryPath(path: standardizedPath)
+        guard !isRemovingRepo(at: normalizedPath) else { return }
         settings.recordOpenedRepo(normalizedPath)
         guard settings.hasCompletedOnboarding else {
             pendingRepoAfterOnboarding = normalizedPath
             showOnboarding()
             return
         }
-        if activateRepo(path) {
+        if activateRepo(normalizedPath) {
             return
         }
         openWindowAction?(AppWindows.repo, normalizedPath)
