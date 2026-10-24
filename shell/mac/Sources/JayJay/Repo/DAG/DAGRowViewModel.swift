@@ -49,6 +49,7 @@ struct DAGRowViewModel {
     let bisectDimmed: Bool
     let bisectCandidate: Bool
     let bisectBadge: BisectVerdict?
+    let activeLane: DagLaneSpan?
 
     init(
         entry: GraphEntry,
@@ -63,13 +64,15 @@ struct DAGRowViewModel {
         bookmarkPreviewText: String?,
         colorScheme: ColorScheme,
         isActivePane: Bool = true,
-        bisect: BisectDAGState? = nil
+        bisect: BisectDAGState? = nil,
+        activeLane: DagLaneSpan? = nil
     ) {
         self.entry = entry
         self.layout = layout
         self.index = index
         self.colorScheme = colorScheme
         self.isActivePane = isActivePane
+        self.activeLane = activeLane
         let commitId = entry.change.commitId.id
         bisectDimmed = bisect.map { $0.isEvaluating && !$0.focusedCommitIds.contains(commitId) } ?? false
         bisectCandidate = bisect?.candidateCommitId == commitId

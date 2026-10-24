@@ -14,7 +14,7 @@ use std::collections::HashMap;
 pub use merge_parent_choice::MergeParentChoice;
 pub use ordered_selection::{OrderedSelection, SelectionClick};
 pub use rebase::{can_rebase_onto, descendant_commit_ids};
-pub use selection::{SelectionGraph, SelectionState};
+pub use selection::{LaneSpan, SelectionGraph, SelectionState};
 
 use crate::types::{EdgeType, GraphEntry};
 

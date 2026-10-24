@@ -27,14 +27,20 @@ impl RepoWindow {
         if !m.modified() {
             match ev.keystroke.key.as_str() {
                 "h" | "left" => {
-                    if !self.layout.sidebar_hidden {
+                    if matches!(self.active_pane, ActivePane::Sidebar) {
+                        self.select_across_lanes(false, cx);
+                    } else if !self.layout.sidebar_hidden {
                         self.active_pane = ActivePane::Sidebar;
                         cx.notify();
                     }
                     return true;
                 }
                 "l" | "right" => {
-                    self.focus_file_list(cx);
+                    if !matches!(self.active_pane, ActivePane::Sidebar)
+                        || !self.select_across_lanes(true, cx)
+                    {
+                        self.focus_file_list(cx);
+                    }
                     return true;
                 }
                 _ => {}
@@ -47,12 +53,32 @@ impl RepoWindow {
         false
     }
 
+    /// False when there is no lane on that side, so `l` can fall through to the file column; a multi-selection stays put.
+    fn select_across_lanes(&mut self, rightward: bool, cx: &mut Context<Self>) -> bool {
+        let vm = self.vm.read(cx);
+        let Some(new) = vm
+            .selected
+            .filter(|_| vm.selected_change_indices().len() <= 1)
+            .and_then(|row| vm.lane_across(row, rightward))
+        else {
+            return false;
+        };
+        self.select_change(new, cx);
+        self.scrolls
+            .changes
+            .scroll_to_item(new, ScrollStrategy::Top);
+        true
+    }
+
     fn move_selection(&mut self, direction: ListNav, cx: &mut Context<Self>) {
         match self.active_pane {
             ActivePane::Sidebar => {
                 let vm = self.vm.read(cx);
-                let len = vm.graph.changes.len();
-                if let Some(new) = navigation::move_index(vm.selected, len, direction)
+                let new = match vm.selected {
+                    Some(row) => vm.lane_step(row, direction),
+                    None => navigation::move_index(None, vm.graph.changes.len(), direction),
+                };
+                if let Some(new) = new
                     && Some(new) != vm.selected
                 {
                     self.select_change(new, cx);

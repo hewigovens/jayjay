@@ -252,6 +252,52 @@ fn tab_to(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, stop: FocusStop
 }
 
 #[gpui::test]
+fn change_list_keys_follow_the_selected_lane(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    jj_test::run_jj_in(&fixture.path, &["new", "-m", "left"]);
+    jj_test::run_jj_in(&fixture.path, &["new", "@-", "-m", "right"]);
+    let (view, cx) = open_focused(&fixture, cx);
+    let row = |cx: &VisualTestContext, subject: &str| {
+        let commit_id = change_with_subject(&view, cx, subject).commit_id;
+        view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            vm.graph
+                .changes
+                .iter()
+                .position(|change| change.commit_id == commit_id)
+        })
+    };
+    let selected =
+        |cx: &VisualTestContext| view.read_with(cx, |view, cx| view.view_model().read(cx).selected);
+    let right = row(cx, "right").expect("right row");
+    let left = row(cx, "left").expect("left row");
+    let parent = left + 1;
+    assert!(right < left);
+
+    view.update(cx, |view, cx| view.select_change(right, cx));
+    cx.simulate_keystrokes("j");
+    settle_visual(cx);
+    assert_eq!(selected(cx), Some(parent));
+    cx.simulate_keystrokes("up");
+    settle_visual(cx);
+    assert_eq!(selected(cx), Some(right));
+
+    let pane = |cx: &VisualTestContext| view.read_with(cx, |view, _| view.active_pane());
+    cx.simulate_keystrokes("l");
+    settle_visual(cx);
+    assert_eq!((selected(cx), pane(cx)), (Some(left), ActivePane::Sidebar));
+    cx.simulate_keystrokes("right");
+    settle_visual(cx);
+    assert_eq!(
+        (selected(cx), pane(cx)),
+        (Some(left), ActivePane::FileColumn)
+    );
+    cx.simulate_keystrokes("h h");
+    settle_visual(cx);
+    assert_eq!((selected(cx), pane(cx)), (Some(right), ActivePane::Sidebar));
+}
+
+#[gpui::test]
 fn closing_a_modal_returns_keys_to_the_window(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);

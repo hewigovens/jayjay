@@ -20,6 +20,7 @@ use jayjay_review::ReviewStore;
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use jayjay_core::JayError;
+use jayjay_core::dag::DagLayout;
 
 #[uniffi::export]
 fn compose_bisect_range(good: String, bad: String, range: String) -> Result<String, JayError> {
@@ -673,8 +674,9 @@ impl JayJayRepo {
     /// One crossing for the graph and its layout, so the shell never sends the entries back.
     fn log_graph_with_layout(&self, revset: String) -> Result<GraphWithLayout, JayError> {
         let entries = self.inner.log_graph(&revset)?;
-        let layout = layout_data(&entries);
-        let selection = Arc::new(DagSelectionGraph::from_entries(&entries));
+        let dag_layout = DagLayout::compute(&entries);
+        let selection = Arc::new(DagSelectionGraph::from_entries(&entries, &dag_layout));
+        let layout = layout_data(dag_layout);
         Ok(GraphWithLayout {
             entries,
             layout,

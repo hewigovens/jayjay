@@ -4,6 +4,34 @@ use super::style::{DagNodeStyle, NodeFill, NodeShape};
 
 const LINE_WIDTH: f32 = 1.5;
 
+/// A graph line's color, opacity and weight; a bare color is a full-strength line at the base weight.
+#[derive(Clone, Copy)]
+pub(crate) struct LineInk {
+    pub(crate) color: u32,
+    pub(crate) alpha: f32,
+    pub(crate) width: f32,
+}
+
+impl From<u32> for LineInk {
+    fn from(color: u32) -> Self {
+        Self {
+            color,
+            alpha: 1.0,
+            width: LINE_WIDTH,
+        }
+    }
+}
+
+impl LineInk {
+    fn paint(self, window: &mut Window, pb: PathBuilder) {
+        if let Ok(path) = pb.build() {
+            let mut color = rgb(self.color);
+            color.a = self.alpha;
+            window.paint_path(path, color);
+        }
+    }
+}
+
 #[derive(Clone, Copy)]
 pub(crate) enum LinePattern {
     Solid,
@@ -16,15 +44,14 @@ pub(crate) fn stroke_line_pattern(
     y0: Pixels,
     x1: Pixels,
     y1: Pixels,
-    color: u32,
+    ink: impl Into<LineInk>,
     pattern: LinePattern,
 ) {
-    let mut pb = path_builder(pattern);
+    let ink = ink.into();
+    let mut pb = path_builder(pattern, ink.width);
     pb.move_to(point(x0, y0));
     pb.line_to(point(x1, y1));
-    if let Ok(path) = pb.build() {
-        window.paint_path(path, rgb(color));
-    }
+    ink.paint(window, pb);
 }
 
 pub(super) fn stroke_curve_pattern(
@@ -33,20 +60,19 @@ pub(super) fn stroke_curve_pattern(
     sy: Pixels,
     ex: Pixels,
     ey: Pixels,
-    color: u32,
+    ink: impl Into<LineInk>,
     pattern: LinePattern,
 ) {
+    let ink = ink.into();
     let mid_y = sy + (ey - sy) * 0.4;
-    let mut pb = path_builder(pattern);
+    let mut pb = path_builder(pattern, ink.width);
     pb.move_to(point(sx, sy));
     pb.cubic_bezier_to(point(ex, ey), point(sx, mid_y), point(ex, mid_y));
-    if let Ok(path) = pb.build() {
-        window.paint_path(path, rgb(color));
-    }
+    ink.paint(window, pb);
 }
 
-fn path_builder(pattern: LinePattern) -> PathBuilder {
-    let builder = PathBuilder::stroke(px(LINE_WIDTH));
+fn path_builder(pattern: LinePattern, width: f32) -> PathBuilder {
+    let builder = PathBuilder::stroke(px(width));
     match pattern {
         LinePattern::Solid => builder,
         LinePattern::Dashed(dash_pattern) => {

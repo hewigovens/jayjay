@@ -153,11 +153,16 @@ impl OverviewView {
         {
             return;
         }
+        let vim = !event.keystroke.modifiers.modified();
         match event.keystroke.key.as_str() {
             "left" => self.move_lane(-1, cx),
             "right" => self.move_lane(1, cx),
             "down" => self.move_change(1, cx),
             "up" => self.move_change(-1, cx),
+            "h" if vim => self.move_lane(-1, cx),
+            "l" if vim => self.move_lane(1, cx),
+            "j" if vim => self.move_change(1, cx),
+            "k" if vim => self.move_change(-1, cx),
             "enter" => {
                 if let Some(lane) = self.selected_lane_ix() {
                     self.show_in_graph(lane, self.selection.change.clone(), cx);
