@@ -9,9 +9,9 @@ final class KeyboardPaneFocusScene: SceneBase {
         let secondFile = app.element(AID.FileList.row("wip2.txt"))
         XCTAssertTrue(firstFile.waitForExistence(timeout: 10), "Detail never loaded the working copy")
 
-        keyStroke("l")
+        keyStroke(.tab)
         keyStroke("j")
-        XCTAssertTrue(secondFile.wait(for: \.isSelected, toEqual: true, timeout: 5), "l did not hand navigation to the file list")
+        XCTAssertTrue(secondFile.wait(for: \.isSelected, toEqual: true, timeout: 5), "Tab did not hand navigation to the file list")
         keyStroke("k")
         XCTAssertTrue(firstFile.wait(for: \.isSelected, toEqual: true, timeout: 5))
         keyStroke("h")

@@ -41,7 +41,7 @@ final class KeyboardContextMenuScene: SceneBase {
         let app = try XCTUnwrap(app)
         try waitForDAGRows().firstMatch.click()
         XCTAssertTrue(app.element(AID.FileList.row("wip1.txt")).waitForExistence(timeout: 10))
-        keyStroke("l")
+        keyStroke(.tab)
         keyStroke("j")
         let second = app.element(AID.FileList.row("wip2.txt"))
         XCTAssertTrue(second.wait(for: \.isSelected, toEqual: true, timeout: 5))
