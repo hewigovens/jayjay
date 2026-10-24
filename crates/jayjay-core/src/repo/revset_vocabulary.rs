@@ -1,8 +1,20 @@
 use super::Repo;
-use crate::revset::{RevsetName, RevsetVocabulary};
+use crate::revset::{RevsetName, RevsetPreset, RevsetVocabulary, default_revset_preset};
 use crate::types::BookmarkInfo;
 
 impl Repo {
+    /// The revset a window opens on and Reset returns to: the user's `revsets.log`, as `jj log` uses, else JayJay's pageable default.
+    pub fn default_revset_preset(&self) -> RevsetPreset {
+        let preset = default_revset_preset();
+        match self.get_repo().settings().get_string("revsets.log") {
+            // A broken config revset would leave the window with nothing to fall back to.
+            Ok(revset) if !revset.trim().is_empty() && self.check_revset(&revset).is_ok() => {
+                RevsetPreset { revset, ..preset }
+            }
+            _ => preset,
+        }
+    }
+
     /// Names the revset bar can complete to; the caller passes the bookmarks it already loaded.
     pub fn revset_vocabulary(&self, bookmarks: &[BookmarkInfo]) -> RevsetVocabulary {
         RevsetVocabulary {

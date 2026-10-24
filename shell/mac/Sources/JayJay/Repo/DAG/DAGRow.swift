@@ -90,7 +90,7 @@ struct DAGRow: View {
                 .accessibilityLabel("Commit \(change.commitId.compact)")
                 CommitAvatar(email: change.author.email, size: 14)
                 Text(change.author.name)
-                Text(Date.relativeLabel(millis: change.author.timestampMillis)).foregroundStyle(.secondary)
+                Text(Date.relativeLabel(millis: change.committedAtMillis)).foregroundStyle(.secondary)
             }
             .jayjayFont(11).lineLimit(1).truncationMode(.tail).foregroundStyle(.secondary)
         }

@@ -14,6 +14,7 @@ pub fn change_info(change_id: &str, commit_id: &str) -> ChangeInfo {
         description: String::new(),
         author: CommitAuthor::empty(0),
         co_authors: Vec::new(),
+        committed_at_millis: 0,
         parents: Vec::new(),
         bookmarks: Vec::new(),
         tags: Vec::new(),

@@ -2,7 +2,9 @@ use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use futures::StreamExt as _;
+use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit;
+use jj_lib::graph::TopoGroupedGraph;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
 use jj_lib::revset::{
@@ -84,7 +86,15 @@ impl Repo {
             let revset_result = self.evaluate_revset(&repo, revset_str)?;
 
             let mut entries = Vec::new();
-            let mut stream = revset_result.stream_graph();
+            // Index order interleaves concurrent stacks; group each branch like `jj log`, @'s first.
+            let mut grouped =
+                TopoGroupedGraph::new(revset_result.stream_graph(), |id: &CommitId| id);
+            if let Some(wc_id) = repo.view().get_wc_commit_id(self.workspace_name.as_ref())
+                && block_on(revset_result.containing_fn()(wc_id)).unwrap_or(false)
+            {
+                grouped.prioritize_branch(wc_id.clone());
+            }
+            let mut stream = std::pin::pin!(grouped.stream());
             while let Some(result) = block_on(stream.next()) {
                 let (commit_id, edge_list) = result.map_err(|e| JayError::Internal {
                     message: format!("graph stream: {e}"),
