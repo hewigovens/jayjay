@@ -33,6 +33,7 @@ struct StackedPrPanel: View {
                     systemImage: "square.stack.3d.up.fill"
                 )
                 .jayjayFont(15, weight: .semibold)
+                .accessibilityIdentifier(AID.Panel.stackedPullRequests)
                 if isWorking {
                     ProgressView().controlSize(.small)
                 }

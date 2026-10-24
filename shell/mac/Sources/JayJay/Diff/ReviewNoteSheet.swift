@@ -53,6 +53,7 @@ struct ReviewNoteSheet: View {
             cancelLabel: Localized.Common.cancel,
             confirmLabel: editor.noteId == nil ? Localized.Repo.addNote : Localized.Common.save,
             confirmDisabled: bodyText.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty,
+            confirmAccessibilityIdentifier: AID.ReviewNote.save,
             onCancel: onCancel,
             onConfirm: { onSave(bodyText) },
             content: {

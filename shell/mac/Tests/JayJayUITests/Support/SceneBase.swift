@@ -190,10 +190,8 @@ class SceneBase: XCTestCase {
     }
 
     /// Toolbar items expose labels, not identifiers.
-    static let repositoryTitleLabel = "Switch Repository or Workspace"
-
     func repositoryTitleButton(in window: XCUIElement) -> XCUIElement {
-        window.toolbars.buttons[Self.repositoryTitleLabel].firstMatch
+        window.toolbars.buttons[AID.Toolbar.repositoryTitle].firstMatch
     }
 
     func openRepositoryTitlePicker(in window: XCUIElement) {

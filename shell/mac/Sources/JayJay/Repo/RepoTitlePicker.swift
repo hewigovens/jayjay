@@ -52,6 +52,7 @@ struct RepoTitlePicker: View {
         .background(PickerAnchorView(anchor: anchor))
         .help(Localized.Repo.switchRepositoryOrWorkspace)
         .accessibilityLabel(Localized.Repo.switchRepositoryOrWorkspaceTitle)
+        .accessibilityIdentifier(AID.Toolbar.repositoryTitle)
         .onAppear(perform: refresh)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refresh()

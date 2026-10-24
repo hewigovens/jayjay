@@ -32,6 +32,7 @@ struct UndoView: View {
                 .foregroundStyle(.secondary)
             Text(Localized.Repo.operationLog)
                 .jayjayFont(15, weight: .semibold)
+                .accessibilityIdentifier(AID.Panel.operationLog)
             Spacer()
         }
         .padding(.horizontal, 16)

@@ -200,6 +200,7 @@ public final class DiffGutterTextView: NSTextView {
             )
             menuItem.target = self
             menuItem.tag = index
+            menuItem.identifier = item.identifier.map { NSUserInterfaceItemIdentifier($0) }
             menuItem.isEnabled = item.enabled && item.action != nil
             menu.addItem(menuItem)
         }
@@ -239,8 +240,7 @@ public final class DiffGutterTextView: NSTextView {
     }
 
     private func applyExternalSelection() {
-        guard let externalSelection else { return }
-        guard selectedLineRange != externalSelection else { return }
+        guard let externalSelection, selectedLineRange != externalSelection else { return }
         selectionAnchorLine = externalSelection.lowerBound
         selectLines(externalSelection)
     }

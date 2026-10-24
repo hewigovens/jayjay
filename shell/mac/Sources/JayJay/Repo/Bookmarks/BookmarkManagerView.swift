@@ -59,6 +59,7 @@ struct BookmarkManagerView: View {
         HStack(spacing: 12) {
             Label(Localized.Menu.bookmarkManager, systemImage: "bookmark.fill")
                 .jayjayFont(15, weight: .semibold)
+                .accessibilityIdentifier(AID.Panel.bookmarkManager)
             Spacer()
             HStack(spacing: 4) {
                 Image(systemName: "magnifyingglass")

@@ -33,6 +33,7 @@ struct SettingsDataPrivacyPage: View {
                 .onChange(of: debugMode) { setDebugLogging(enabled: debugMode) }
             } header: {
                 Text(Localized.Settings.diagnostics)
+                    .accessibilityIdentifier(AID.Settings.diagnostics)
             } footer: {
                 Text(Localized.Settings.debugModeDetail)
             }
