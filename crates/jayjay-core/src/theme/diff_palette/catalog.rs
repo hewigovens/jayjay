@@ -23,5 +23,5 @@ pub(super) static CATALOG: LazyLock<Vec<DiffPalette>> = LazyLock::new(|| {
 });
 
 pub fn diff_palettes() -> Vec<DiffPalette> {
-    CATALOG.clone()
+    CATALOG.iter().map(DiffPalette::localized).collect()
 }

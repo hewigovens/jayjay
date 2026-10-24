@@ -91,9 +91,9 @@ pub(crate) fn panel<R: Clone + 'static>(
     }
     let theme = t.clone();
     let body = list(query.list.clone(), move |ix, _, _| match &items[ix] {
-        PickerItem::Header { id, title } => section_header(id, title, &theme),
+        PickerItem::Header { id, title } => section_header(id, title.clone(), &theme),
         PickerItem::Row { row, selected } => render_row(row.clone(), *selected, &theme),
-        PickerItem::Empty(label) => empty(*label, &theme),
+        PickerItem::Empty(label) => empty(label.clone(), &theme),
     })
     .with_sizing_behavior(ListSizingBehavior::Infer)
     .min_h_0()
@@ -139,7 +139,7 @@ pub(crate) fn header(
 pub(crate) fn header_button(
     id: &'static str,
     icon: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     t: &Theme,
     on_click: impl Fn(&mut Window, &mut App) + 'static,
 ) -> AnyElement {
@@ -174,13 +174,17 @@ fn search_box(
         .child(ime_layer)
         .child(line_input_content(
             query,
-            "Filter",
+            jayjay_i18n::repo::filter(),
             t,
             Some("picker-search-caret"),
         ))
 }
 
-pub(crate) fn section_header(id: &'static str, label: &'static str, t: &Theme) -> AnyElement {
+pub(crate) fn section_header(
+    id: &'static str,
+    label: impl Into<SharedString>,
+    t: &Theme,
+) -> AnyElement {
     div()
         .id(id)
         .debug_selector(move || id.to_owned())
@@ -190,7 +194,7 @@ pub(crate) fn section_header(id: &'static str, label: &'static str, t: &Theme) -
         .text_size(ui_font_size(11.))
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
-        .child(label)
+        .child(label.into())
         .into_any_element()
 }
 

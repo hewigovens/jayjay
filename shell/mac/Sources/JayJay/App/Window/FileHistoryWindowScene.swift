@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct FileHistoryWindowScene: Scene {
@@ -5,7 +6,7 @@ struct FileHistoryWindowScene: Scene {
     let windowManager: RepoWindowManager
 
     var body: some Scene {
-        WindowGroup("File History", id: AppWindows.fileHistory, for: String.self) { $value in
+        WindowGroup(Localized.Menu.fileHistory, id: AppWindows.fileHistory, for: String.self) { $value in
             if let request = FileHistoryRequest(windowValue: value) {
                 FileHistoryWindow(request: request)
                     .environment(windowManager)

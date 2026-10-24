@@ -55,13 +55,16 @@ impl RepoWindow {
         let mut items = self.note_menu_items(hunk, line_ix, cx);
         if let Some(line) = self.editable_new_line(line_ix, cx) {
             items.push(ContextMenuItem::new(
-                format!("Edit File at Line {line}"),
+                jayjay_i18n::menu::edit_file_at_line(&line.to_string()),
                 glyph::PENCIL,
                 ContextAction::EditFileAtLine(line),
             ));
             if tools::editor_opens_at_line(cx) {
                 items.push(ContextMenuItem::new(
-                    format!("{} at Line {line}", tools::open_in_editor_label(cx)),
+                    jayjay_i18n::menu::action_at_line(
+                        &tools::open_in_editor_label(cx),
+                        &line.to_string(),
+                    ),
                     glyph::EXTERNAL_LINK,
                     ContextAction::OpenInEditor {
                         path: hunk.path.clone().into(),
@@ -72,7 +75,7 @@ impl RepoWindow {
         }
         if self.can_enter_diff_edit(cx) {
             items.push(ContextMenuItem::new(
-                "Open Diff Edit Mode",
+                jayjay_i18n::menu::open_diff_edit_mode(),
                 glyph::PENCIL,
                 ContextAction::OpenDiffEdit,
             ));
@@ -156,9 +159,9 @@ impl RepoWindow {
             source_selection: selection.clone(),
         });
         let title = if is_whole_group {
-            "Abandon Change Group"
+            jayjay_i18n::menu::abandon_change_group()
         } else {
-            "Abandon Selected Lines"
+            jayjay_i18n::menu::abandon_selected_lines()
         };
         Some(ContextMenuItem::new(
             title,

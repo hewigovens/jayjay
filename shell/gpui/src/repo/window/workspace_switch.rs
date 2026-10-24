@@ -42,7 +42,7 @@ impl RepoWindow {
     ) {
         if self.vm.read(cx).loading.operations > 0 {
             self.show_toast(
-                "Finish the running operation before switching workspaces",
+                jayjay_i18n::repo::finish_the_running_operation_before_switching(),
                 cx,
             );
             return;

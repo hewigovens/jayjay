@@ -45,7 +45,7 @@ impl CloneRepositoryView {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("Clone Repository".into()),
+                        title: Some(jayjay_i18n::repo::clone_repository().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -218,7 +218,7 @@ impl CloneRepositoryView {
             files: false,
             directories: true,
             multiple: false,
-            prompt: Some("Choose where to clone".into()),
+            prompt: Some(jayjay_i18n::clone::choose_where_to_clone().into()),
         });
         cx.spawn(async move |this, cx| {
             let Ok(Ok(Some(paths))) = paths.await else {
@@ -246,7 +246,9 @@ impl CloneRepositoryView {
         if self.cloning.is_some() {
             return Some(
                 row.text_color(rgb(t.fg_dim))
-                    .child(format!("Cloning {}…", self.name.read(cx).text().trim()))
+                    .child(jayjay_i18n::clone::cloning(
+                        self.name.read(cx).text().trim(),
+                    ))
                     .into_any_element(),
             );
         }
@@ -268,7 +270,7 @@ impl Drop for CloneRepositoryView {
     }
 }
 
-fn field_row(label: &'static str, field: impl IntoElement, t: &Theme) -> impl IntoElement {
+fn field_row(label: String, field: impl IntoElement, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_row()
@@ -313,10 +315,14 @@ impl Render for CloneRepositoryView {
             .p(px(20.))
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
-            .child(field_row("Repository URL", input(&self.source), &t))
-            .child(field_row("Name", input(&self.name), &t))
             .child(field_row(
-                "Location",
+                jayjay_i18n::clone::repository_url(),
+                input(&self.source),
+                &t,
+            ))
+            .child(field_row(jayjay_i18n::clone::name(), input(&self.name), &t))
+            .child(field_row(
+                jayjay_i18n::repo::location(),
                 div()
                     .flex()
                     .flex_row()
@@ -331,13 +337,16 @@ impl Render for CloneRepositoryView {
                             .child(input(&self.location)),
                     )
                     .child(
-                        button("clone-repository-choose", "Choose…", &t, false)
-                            .when(cloning, |choose| choose.opacity(0.5).cursor_default())
-                            .when(!cloning, |choose| {
-                                choose.on_click(
-                                    cx.listener(|view, _, _, cx| view.choose_location(cx)),
-                                )
-                            }),
+                        button(
+                            "clone-repository-choose",
+                            jayjay_i18n::clone::choose_ellipsis(),
+                            &t,
+                            false,
+                        )
+                        .when(cloning, |choose| choose.opacity(0.5).cursor_default())
+                        .when(!cloning, |choose| {
+                            choose.on_click(cx.listener(|view, _, _, cx| view.choose_location(cx)))
+                        }),
                     ),
                 &t,
             ))
@@ -353,17 +362,29 @@ impl Render for CloneRepositoryView {
                     .justify_end()
                     .gap(px(8.))
                     .child(
-                        button("clone-repository-cancel", "Cancel", &t, false)
-                            .on_click(cx.listener(|view, _, window, _| view.cancel(window))),
+                        button(
+                            "clone-repository-cancel",
+                            jayjay_i18n::common::cancel(),
+                            &t,
+                            false,
+                        )
+                        .on_click(cx.listener(|view, _, window, _| view.cancel(window))),
                     )
                     .child(
-                        button("clone-repository-submit", "Clone", &t, true)
-                            .when(!can_clone, |submit| submit.opacity(0.5).cursor_default())
-                            .when(can_clone, |submit| {
-                                submit.on_click(cx.listener(|view, _, window, cx| {
+                        button(
+                            "clone-repository-submit",
+                            jayjay_i18n::onboarding::clone(),
+                            &t,
+                            true,
+                        )
+                        .when(!can_clone, |submit| submit.opacity(0.5).cursor_default())
+                        .when(can_clone, |submit| {
+                            submit.on_click(
+                                cx.listener(|view, _, window, cx| {
                                     view.clone_repository(window, cx)
-                                }))
-                            }),
+                                }),
+                            )
+                        }),
                     ),
             )
     }

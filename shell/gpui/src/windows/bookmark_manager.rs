@@ -62,7 +62,7 @@ impl BookmarkManagerView {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("Bookmark Manager".into()),
+                        title: Some(jayjay_i18n::menu::bookmark_manager().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -81,8 +81,9 @@ impl BookmarkManagerView {
                             cx.notify();
                         })
                         .detach();
-                        let filter =
-                            cx.new(|cx| TextArea::new("", "Filter bookmarks", false, 32., cx));
+                        let filter = cx.new(|cx| {
+                            TextArea::new("", jayjay_i18n::repo::filter_bookmarks(), false, 32., cx)
+                        });
                         TextArea::subscribe_updates(&filter, cx);
                         Self {
                             repo,
@@ -197,11 +198,11 @@ impl BookmarkManagerView {
     fn open_rename_modal(&mut self, name: String, cx: &mut Context<Self>) {
         self.error = None;
         self.rename = Some(TextPrompt::single_line(
-            "Rename Bookmark",
+            jayjay_i18n::repo::rename_bookmark(),
             name.clone(),
             name,
-            "New name",
-            "Rename",
+            jayjay_i18n::repo::new_name(),
+            jayjay_i18n::repo::rename(),
             cx,
         ));
         cx.notify();
@@ -350,13 +351,13 @@ impl Render for BookmarkManagerView {
         }
         let count = bookmarks.len();
         let body = if self.rename.is_none() && self.loading {
-            loading_status("Loading bookmarks…", &t)
+            loading_status(jayjay_i18n::repo::loading_bookmarks_ellipsis(), &t)
         } else if self.rename.is_none()
             && let Some(error) = self.error.clone()
         {
             placeholder_err(&error, &t)
         } else if count == 0 {
-            placeholder("No bookmarks found.", &t)
+            placeholder(jayjay_i18n::bookmarks::no_bookmarks_found(), &t)
         } else {
             bookmark_list(Arc::new(bookmarks), &t, cx)
         };

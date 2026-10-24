@@ -19,7 +19,7 @@ pub(crate) fn editor_title(cx: &App) -> &'static str {
 }
 
 pub(crate) fn open_in_editor_label(cx: &App) -> String {
-    format!("Open in {}", editor_title(cx))
+    jayjay_i18n::menu::open_in(editor_title(cx))
 }
 
 fn terminal_title(cx: &App) -> &'static str {
@@ -31,7 +31,7 @@ fn terminal_title(cx: &App) -> &'static str {
 }
 
 pub(crate) fn open_in_terminal_label(cx: &App) -> String {
-    format!("Open in {}", terminal_title(cx))
+    jayjay_i18n::menu::open_in(terminal_title(cx))
 }
 
 pub(crate) fn open_in_editor(

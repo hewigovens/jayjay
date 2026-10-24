@@ -43,24 +43,42 @@ pub(super) fn bookmark_sections(
     }
     sections_by_best_match(
         [
-            ("bookmark-picker-tracked", "Tracked", tracked),
-            ("bookmark-picker-local", "Local Only", local),
-            ("bookmark-picker-remote", "Remote Only", remote),
+            (
+                "bookmark-picker-tracked",
+                jayjay_i18n::repo::tracked(),
+                tracked,
+            ),
+            (
+                "bookmark-picker-local",
+                jayjay_i18n::repo::local_only(),
+                local,
+            ),
+            (
+                "bookmark-picker-remote",
+                jayjay_i18n::repo::remote_only(),
+                remote,
+            ),
         ]
         .into_iter()
         .filter_map(|(id, title, rows)| {
-            PickerSection::filtered(id, Some(title), rows, state.query.input.text(), |entry| {
-                let bookmark = &entry.bookmark;
-                if entry.remote.is_some() {
-                    return entry.label();
-                }
-                format!(
-                    "{} {} {}",
-                    bookmark.name,
-                    bookmark.tracked_remotes.join(" "),
-                    bookmark.available_remotes.join(" ")
-                )
-            })
+            PickerSection::filtered(
+                id,
+                Some(title.into()),
+                rows,
+                state.query.input.text(),
+                |entry| {
+                    let bookmark = &entry.bookmark;
+                    if entry.remote.is_some() {
+                        return entry.label();
+                    }
+                    format!(
+                        "{} {} {}",
+                        bookmark.name,
+                        bookmark.tracked_remotes.join(" "),
+                        bookmark.available_remotes.join(" ")
+                    )
+                },
+            )
         }),
     )
 }
@@ -101,7 +119,7 @@ pub(super) fn bookmark_row(
                     .iter()
                     .map(|target| {
                         ContextMenuItem::new(
-                            "Filter by This Bookmark",
+                            jayjay_i18n::repo::filter_by_this_bookmark(),
                             glyph::FILTER,
                             ContextAction::FilterRevset(target.revset.clone().into()),
                         )
@@ -109,7 +127,7 @@ pub(super) fn bookmark_row(
                     .collect();
                 if let Some(remote) = &remote {
                     items.push(ContextMenuItem::new(
-                        format!("Track {}@{remote}", bookmark.name),
+                        jayjay_i18n::repo::track_remote_bookmark(&bookmark.name, remote),
                         glyph::GIT_BRANCH,
                         ContextAction::TrackBookmark {
                             name: bookmark.name.clone(),
@@ -171,14 +189,13 @@ fn bookmark_caption(bookmark: &BookmarkInfo) -> Option<String> {
         );
     }
     (!bookmark.available_remotes.is_empty()).then(|| {
-        format!(
-            "Remote available: {}",
-            bookmark
+        jayjay_i18n::repo::remote_available(
+            &bookmark
                 .available_remotes
                 .iter()
                 .map(|remote| format!("@{remote}"))
                 .collect::<Vec<_>>()
-                .join(", ")
+                .join(", "),
         )
     })
 }
@@ -219,9 +236,9 @@ mod tests {
         );
 
         assert_eq!(sections.len(), 2);
-        assert_eq!(sections[0].title, Some("Tracked"));
+        assert_eq!(sections[0].title.as_deref(), Some("Tracked"));
         assert_eq!(sections[0].rows[0].bookmark.name, "tracked");
-        assert_eq!(sections[1].title, Some("Local Only"));
+        assert_eq!(sections[1].title.as_deref(), Some("Local Only"));
         assert_eq!(sections[1].rows[0].bookmark.name, "local");
         assert_eq!(
             picker_revsets(&sections),
@@ -242,7 +259,7 @@ mod tests {
         remote.available_remotes = vec!["upstream".to_owned(), "origin".to_owned()];
         let bookmarks = [bookmark("local", false), remote];
         let sections = bookmark_sections(&state, &bookmarks);
-        assert_eq!(sections[1].title, Some("Remote Only"));
+        assert_eq!(sections[1].title.as_deref(), Some("Remote Only"));
         assert_eq!(
             sections[1]
                 .rows

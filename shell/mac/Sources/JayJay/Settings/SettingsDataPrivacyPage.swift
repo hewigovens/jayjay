@@ -18,23 +18,24 @@ struct SettingsDataPrivacyPage: View {
                         AppTelemetry.maybePing(enabled: $0)
                     }
                 )) {
-                    SettingsLabel(AppTelemetry.optInTitle, icon: "chart.bar")
+                    SettingsLabel(Localized.Telemetry.optIn, icon: "chart.bar")
                 }
             } header: {
-                Text("Privacy")
+                Text(Localized.Settings.privacy)
             } footer: {
-                Text(AppTelemetry.optInDetail)
+                Text(Localized.Telemetry.optInDetail)
             }
 
             Section {
                 Toggle(isOn: $debugMode) {
-                    SettingsLabel("Debug mode", icon: "ladybug")
+                    SettingsLabel(Localized.Settings.debugMode, icon: "ladybug")
                 }
                 .onChange(of: debugMode) { setDebugLogging(enabled: debugMode) }
             } header: {
-                Text("Diagnostics")
+                Text(Localized.Settings.diagnostics)
+                    .accessibilityIdentifier(AID.Settings.diagnostics)
             } footer: {
-                Text("Logs more detail. Send Feedback attaches the log in Mail, or reveals it for you to attach in other mail apps.")
+                Text(Localized.Settings.debugModeDetail)
             }
 
             reviewSection
@@ -45,34 +46,32 @@ struct SettingsDataPrivacyPage: View {
     private var reviewSection: some View {
         Section {
             HStack {
-                SettingsLabel("Review marks and notes", icon: "checkmark.circle")
+                SettingsLabel(Localized.Settings.reviewMarksAndNotes, icon: "checkmark.circle")
                 Spacer()
                 Text(reviewSummaryText)
                     .foregroundStyle(.secondary)
-                Button("Clear…", role: .destructive) {
+                Button(Localized.Common.clearEllipsis, role: .destructive) {
                     confirmClearReviewData = true
                 }
                 .disabled(reviewSummary.marks == 0 && reviewSummary.notes == 0)
                 .accessibilityIdentifier(AID.Settings.clearReviewData)
             }
             .task { reviewSummary = ReviewStore().summary() }
-            .alert("Clear all review marks and notes?", isPresented: $confirmClearReviewData) {
-                Button("Clear", role: .destructive) { clearReviewData() }
-                Button("Cancel", role: .cancel) {}
+            .alert(Localized.Settings.clearReviewTitle, isPresented: $confirmClearReviewData) {
+                Button(Localized.Common.clear, role: .destructive) { clearReviewData() }
+                Button(Localized.Common.cancel, role: .cancel) {}
             } message: {
-                Text("Removes \(reviewSummaryText) for every repository. This cannot be undone.")
+                Text(Localized.Settings.clearReviewMessage(summary: reviewSummaryText))
             }
         } header: {
-            Text("Review Data")
+            Text(Localized.Settings.reviewData)
         } footer: {
-            Text("Review marks and notes are stored on this Mac. Clearing them affects every repository and cannot be undone.")
+            Text(Localized.Settings.reviewDataDetail)
         }
     }
 
     private var reviewSummaryText: String {
-        let marks = reviewSummary.marks == 1 ? "mark" : "marks"
-        let notes = reviewSummary.notes == 1 ? "note" : "notes"
-        return "\(reviewSummary.marks.formatted()) \(marks), \(reviewSummary.notes.formatted()) \(notes)"
+        Localized.Settings.reviewSummary(marks: Int(reviewSummary.marks), notes: Int(reviewSummary.notes))
     }
 
     private func clearReviewData() {

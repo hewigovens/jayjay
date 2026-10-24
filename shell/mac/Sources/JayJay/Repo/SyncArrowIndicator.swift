@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct SyncArrowIndicator: View {
@@ -7,8 +8,8 @@ struct SyncArrowIndicator: View {
 
         var label: String {
             switch self {
-                case .pull: "Pull"
-                case .push: "Push"
+                case .pull: Localized.Menu.pull
+                case .push: Localized.Menu.push
             }
         }
 
@@ -39,7 +40,7 @@ struct SyncArrowIndicator: View {
         TimelineView(.animation(paused: !motionEnabled)) { context in
             let progress = motionEnabled ? progress(at: context.date) : 0
             Label {
-                Text(animating ? "Cancel \(direction.label)" : direction.label)
+                Text(animating ? Localized.Repo.cancelDirection(direction: direction.label) : direction.label)
             } icon: {
                 ZStack {
                     Image(systemName: "circle")

@@ -66,15 +66,15 @@ struct RevsetPanelContent: View {
                 VStack(alignment: .leading, spacing: 0) {
                     let rows = rows
                     if !completions.isEmpty {
-                        sectionTitle("Completions")
+                        sectionTitle(Localized.Repo.completions)
                         RevsetCompletionRows(completions: completions, selected: selectedIndex, onPick: accept)
                     }
-                    section("Current", rows.filter { $0.kind == .current })
-                    section("Bookmarks", rows.filter { $0.kind == .bookmark })
-                    section("Workspaces", rows.filter { $0.kind == .workspace })
-                    section("Recent", rows.filter { $0.kind == .recent })
+                    section(Localized.Repo.current, rows.filter { $0.kind == .current })
+                    section(Localized.Repo.bookmarks, rows.filter { $0.kind == .bookmark })
+                    section(Localized.Repo.workspaces, rows.filter { $0.kind == .workspace })
+                    section(Localized.Repo.recent, rows.filter { $0.kind == .recent })
                     if rows.isEmpty, completions.isEmpty {
-                        Text("Return applies it as a revset")
+                        Text(Localized.Repo.returnAppliesItAsARevset)
                             .jayjayFont(12)
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)
@@ -102,7 +102,7 @@ struct RevsetPanelContent: View {
                 .frame(width: 14)
             FilterField(
                 text: $query,
-                placeholder: "Revset, bookmark or preset",
+                placeholder: Localized.Repo.revsetBookmarkOrPreset,
                 accessibilityIdentifier: AID.Toolbar.revsetField,
                 focusGeneration: focusRequest,
                 isPlain: true,
@@ -216,8 +216,8 @@ struct RevsetPanelContent: View {
                 }
                 .buttonStyle(.plain)
                 .padding(.trailing, 10)
-                .help("Remove from Recent")
-                .accessibilityLabel("Remove \(row.title) from Recent")
+                .help(Localized.Repo.removeFromRecent)
+                .accessibilityLabel(Localized.Repo.removeTitleFromRecent(title: row.title))
             }
         }
         .background(
@@ -229,10 +229,10 @@ struct RevsetPanelContent: View {
 
     private var footer: some View {
         HStack(spacing: 14) {
-            Text("Return to apply")
-            Text("Esc to cancel")
+            Text(Localized.Repo.returnToApply)
+            Text(Localized.Repo.escToCancel)
             Spacer()
-            Link("Revset language", destination: AppMetadata.revsetDocsURL)
+            Link(Localized.Repo.revsetLanguage, destination: AppMetadata.revsetDocsURL)
         }
         .jayjayFont(11)
         .foregroundStyle(.tertiary)

@@ -49,8 +49,8 @@ impl AbandonRequest {
 
     pub(super) fn message(&self) -> String {
         match self.commit_ids.len() {
-            1 => "Abandon this change? Its descendants are rebased onto its parent, and a workspace checked out here moves to a new empty change.".to_owned(),
-            count => format!("Abandon all {count} changes of this lane? A workspace checked out in it moves to a new empty change on the base."),
+            1 => jayjay_i18n::overview::abandon_this_change_its_descendants_are(),
+            count => jayjay_i18n::overview::abandon_lane_message(count),
         }
     }
 
@@ -83,7 +83,7 @@ pub(super) fn lane_menu(
 ) -> Vec<PopupMenuEntry<OverviewAction>> {
     let lane = &snapshot.overview.lanes[lane_ix];
     let mut entries = vec![PopupMenuEntry::item(
-        "Show in Graph",
+        jayjay_i18n::repo::show_in_graph(),
         glyph::ARROW_CIRCLE_RIGHT,
         OverviewAction::ShowInGraph {
             lane: lane_ix,
@@ -99,13 +99,13 @@ pub(super) fn lane_menu(
         };
         if !workspace.is_current {
             entries.push(PopupMenuEntry::item(
-                format!("Open {} in Window", workspace.name),
+                jayjay_i18n::overview::open_in_window(&workspace.name),
                 glyph::COLUMNS,
                 OverviewAction::OpenWorkspace(info.path.clone()),
             ));
         }
         entries.push(PopupMenuEntry::item(
-            format!("Show {} in File Manager", workspace.name),
+            jayjay_i18n::overview::show_in(&workspace.name, &crate::platform::file_manager_name()),
             glyph::FOLDER,
             OverviewAction::RevealWorkspace(info.path.clone()),
         ));
@@ -115,13 +115,13 @@ pub(super) fn lane_menu(
         && let Some(root) = lane.changes.last()
     {
         entries.push(PopupMenuEntry::item(
-            format!("Rebase Lane onto {}", snapshot.trunk_name()),
+            jayjay_i18n::overview::rebase_lane_onto(snapshot.trunk_name()),
             glyph::GIT_BRANCH,
             OverviewAction::RebaseOntoTrunk(root.commit_id.id.clone()),
         ));
     }
     entries.push(PopupMenuEntry::item(
-        "Abandon Lane…",
+        jayjay_i18n::overview::abandon_lane_ellipsis(),
         glyph::X_CIRCLE,
         OverviewAction::Abandon(AbandonRequest::lane(lane, lane_id)),
     ));
@@ -135,7 +135,7 @@ pub(super) fn lane_menu(
         };
         entries.push(PopupMenuEntry::Separator);
         entries.push(PopupMenuEntry::item(
-            format!("Forget Workspace {}", workspace.name),
+            jayjay_i18n::palette::forget_workspace_named(&workspace.name),
             glyph::FOLDER_MINUS,
             OverviewAction::ForgetWorkspace {
                 name: workspace.name.clone(),
@@ -144,7 +144,7 @@ pub(super) fn lane_menu(
         ));
         if info.is_path_resolved {
             entries.push(PopupMenuEntry::item(
-                format!("Forget & Delete {} from Disk…", workspace.name),
+                jayjay_i18n::overview::forget_delete_from_disk(&workspace.name),
                 glyph::X_CIRCLE,
                 OverviewAction::DeleteWorkspace {
                     name: workspace.name.clone(),
@@ -155,7 +155,7 @@ pub(super) fn lane_menu(
     }
     entries.push(PopupMenuEntry::Separator);
     entries.push(PopupMenuEntry::item(
-        "Copy Head Change ID",
+        jayjay_i18n::overview::copy_head_change_id(),
         glyph::COPY,
         OverviewAction::Copy(lane.head().change_id.id.clone()),
     ));
@@ -168,7 +168,7 @@ pub(super) fn change_menu(
 ) -> Vec<PopupMenuEntry<OverviewAction>> {
     vec![
         PopupMenuEntry::item(
-            "Show in Graph",
+            jayjay_i18n::repo::show_in_graph(),
             glyph::ARROW_CIRCLE_RIGHT,
             OverviewAction::ShowInGraph {
                 lane: lane_ix,
@@ -177,13 +177,13 @@ pub(super) fn change_menu(
         ),
         PopupMenuEntry::Separator,
         PopupMenuEntry::item(
-            "Abandon Change…",
+            jayjay_i18n::overview::abandon_change_ellipsis(),
             glyph::X_CIRCLE,
             OverviewAction::Abandon(AbandonRequest::change(change)),
         ),
         PopupMenuEntry::Separator,
         PopupMenuEntry::item(
-            "Copy Change ID",
+            jayjay_i18n::menu::copy_change_id(),
             glyph::COPY,
             OverviewAction::Copy(change.change_id.id.clone()),
         ),

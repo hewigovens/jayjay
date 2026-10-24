@@ -68,7 +68,7 @@ final class RepoListWindowScene: SceneBase {
 
         app.menuBars.menuBarItems["File"].click()
 
-        XCTAssertTrue(app.menuItems["Open Repository..."].waitForExistence(timeout: 3), "File menu lost Open Repository")
+        XCTAssertTrue(app.menuItems["Open Repository…"].waitForExistence(timeout: 3), "File menu lost Open Repository")
         XCTAssertTrue(app.menuItems["Open Recent"].exists, "File menu lost Open Recent")
         keyStroke(.escape)
     }

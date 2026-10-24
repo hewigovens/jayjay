@@ -44,7 +44,7 @@ struct OverviewView: View {
                 if isFilterShown {
                     filterField
                         .background(
-                            Button("Filter Lanes") { filterFocusGeneration += 1 }
+                            Button(Localized.Overview.filterLanesTitle) { filterFocusGeneration += 1 }
                                 .keyboardShortcut(AppShortcut.filterOverviewLanes)
                                 .hidden()
                         )
@@ -52,32 +52,32 @@ struct OverviewView: View {
                     Button {
                         isFilterShown = true
                     } label: {
-                        Label("Filter Lanes", systemImage: "magnifyingglass")
+                        Label(Localized.Overview.filterLanesTitle, systemImage: "magnifyingglass")
                     }
                     .keyboardShortcut(AppShortcut.filterOverviewLanes)
-                    .help("Filter lanes (\(AppShortcut.filterOverviewLanes.symbol))")
+                    .help(Localized.Overview.filterLanesShortcut(shortcut: AppShortcut.filterOverviewLanes.symbol))
                 }
             }
         }
         .alert(
-            "Abandon \u{201C}\(viewModel.pendingAbandon?.title ?? "")\u{201D}?",
+            Localized.Overview.abandonTitle(title: viewModel.pendingAbandon?.title ?? ""),
             isPresented: isPresented($viewModel.pendingAbandon),
             presenting: viewModel.pendingAbandon
         ) { request in
-            Button("Abandon", role: .destructive) { viewModel.abandon(request) }
-            Button("Cancel", role: .cancel) {}
+            Button(Localized.Menu.abandon, role: .destructive) { viewModel.abandon(request) }
+            Button(Localized.Common.cancel, role: .cancel) {}
         } message: { request in
             Text(request.message)
         }
         .alert(
-            "Delete Workspace \(viewModel.pendingWorkspaceDelete?.name ?? "")?",
+            Localized.Repo.deleteWorkspaceTitle(name: viewModel.pendingWorkspaceDelete?.name ?? ""),
             isPresented: isPresented($viewModel.pendingWorkspaceDelete),
             presenting: viewModel.pendingWorkspaceDelete
         ) { workspace in
-            Button("Delete", role: .destructive) { removeWorkspace(workspace, deleteFromDisk: true) }
-            Button("Cancel", role: .cancel) {}
+            Button(Localized.Repo.delete, role: .destructive) { removeWorkspace(workspace, deleteFromDisk: true) }
+            Button(Localized.Common.cancel, role: .cancel) {}
         } message: { workspace in
-            Text("This closes its window, forgets the workspace, and deletes its directory from disk:\n\(workspace.path)")
+            Text(Localized.Repo.deleteWorkspaceMessage(path: workspace.path))
         }
     }
 
@@ -92,7 +92,7 @@ struct OverviewView: View {
     private var filterField: some View {
         FilterField(
             text: $viewModel.filter,
-            placeholder: "Filter lanes",
+            placeholder: Localized.Overview.filterLanes,
             accessibilityIdentifier: AID.Overview.filterField,
             focusGeneration: filterFocusGeneration,
             onSubmit: {
@@ -116,7 +116,7 @@ struct OverviewView: View {
     private var content: some View {
         if let snapshot = viewModel.snapshot {
             if snapshot.overview.lanes.isEmpty {
-                emptyState("No mutable changes. Every change is on trunk or immutable.")
+                emptyState(Localized.Overview.noMutableChangesEveryChangeIs)
             } else {
                 GeometryReader { proxy in
                     ScrollView([.horizontal, .vertical]) {
@@ -186,7 +186,7 @@ struct OverviewView: View {
         } else if let error = viewModel.error {
             emptyState(error)
         } else {
-            LoadingStatus(label: "Loading overview…")
+            LoadingStatus(label: Localized.Overview.loadingOverviewEllipsis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
     }
@@ -205,11 +205,11 @@ struct OverviewView: View {
         let behind = lanes.filter(\.isBehindTrunk).count
         let attention = lanes.filter { !$0.attention.isEmpty }.count
         return HStack(spacing: 16) {
-            stat(lanes.count, "lane", "lanes")
-            stat(changeCount, "change", "changes")
-            stat(Int(overview?.workspaceCount ?? 0), "workspace", "workspaces")
-            stat(behind, "behind trunk", "behind trunk", tint: behind > 0 ? .orange : nil)
-            stat(attention, "needs attention", "need attention", tint: attention > 0 ? .orange : nil)
+            stat(lanes.count, Localized.Overview.statLanes(count: lanes.count))
+            stat(changeCount, Localized.Overview.statChanges(count: changeCount))
+            stat(Int(overview?.workspaceCount ?? 0), Localized.Overview.statWorkspaces(count: Int(overview?.workspaceCount ?? 0)))
+            stat(behind, Localized.Overview.statBehindTrunk, tint: behind > 0 ? .orange : nil)
+            stat(attention, Localized.Overview.statAttention(count: attention), tint: attention > 0 ? .orange : nil)
             Spacer()
             if let error = viewModel.actionError ?? (viewModel.snapshot == nil ? nil : viewModel.error) {
                 Text(error)
@@ -222,11 +222,11 @@ struct OverviewView: View {
         .frame(height: 30)
     }
 
-    private func stat(_ count: Int, _ singular: String, _ plural: String, tint: Color? = nil) -> some View {
+    private func stat(_ count: Int, _ label: String, tint: Color? = nil) -> some View {
         HStack(spacing: 4) {
             Text("\(count)")
                 .jayjayFont(11, weight: .semibold)
-            Text(count == 1 ? singular : plural)
+            Text(label)
                 .jayjayFont(11)
         }
         .foregroundStyle(tint ?? .secondary)

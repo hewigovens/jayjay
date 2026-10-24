@@ -11,6 +11,7 @@ use crate::app::fonts::{self, FontCatalog};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::app::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 use crate::ui::icons::{self, glyph};
+use jayjay_i18n::settings;
 
 #[derive(Clone)]
 pub(super) struct OpenDropdown {
@@ -62,8 +63,8 @@ pub(super) fn dropdown_overlay(
     let mut group = None;
     for option in state.options {
         if option.group != group {
-            group = option.group;
-            panel = panel.children(group.map(|title| dropdown_group_header(title, t)));
+            group = option.group.clone();
+            panel = panel.children(group.clone().map(|title| dropdown_group_header(title, t)));
         }
         let is_selected = current == option.id;
         panel = panel.child(dropdown_row(
@@ -141,7 +142,7 @@ pub(super) fn dropdown_button(
 struct DropdownOption {
     id: String,
     label: String,
-    group: Option<&'static str>,
+    group: Option<SharedString>,
 }
 
 fn dropdown_options(field_id: &str, fonts: Option<&FontCatalog>) -> Vec<DropdownOption> {
@@ -150,13 +151,13 @@ fn dropdown_options(field_id: &str, fonts: Option<&FontCatalog>) -> Vec<Dropdown
         ("terminal", _) => static_options(TERMINAL_OPTIONS),
         ("interface-font-family", Some(fonts)) => font_options(
             fonts::interface_preference_label(""),
-            [("My Fonts", fonts.interface.clone())],
+            [(settings::my_fonts(), fonts.interface.clone())],
         ),
         ("code-font-family", Some(fonts)) => font_options(
             fonts::mono_preference_label(""),
             [
-                ("Coding Fonts", fonts.code.coding.clone()),
-                ("Other Monospaced", fonts.code.other.clone()),
+                (settings::coding_fonts(), fonts.code.coding.clone()),
+                (settings::other_monospaced(), fonts.code.other.clone()),
             ],
         ),
         ("diff-light-palette", _) => diff_palette_options(false),
@@ -179,7 +180,7 @@ fn diff_palette_options(is_dark: bool) -> Vec<DropdownOption> {
 
 fn font_options<const N: usize>(
     system_label: String,
-    groups: [(&'static str, Vec<String>); N],
+    groups: [(String, Vec<String>); N],
 ) -> Vec<DropdownOption> {
     let system = DropdownOption {
         id: fonts::SYSTEM_PREFERENCE.to_owned(),
@@ -187,10 +188,11 @@ fn font_options<const N: usize>(
         group: None,
     };
     let grouped = groups.into_iter().flat_map(|(group, families)| {
+        let group = SharedString::from(group);
         families.into_iter().map(move |family| DropdownOption {
             id: family.clone(),
             label: family,
-            group: Some(group),
+            group: Some(group.clone()),
         })
     });
     std::iter::once(system).chain(grouped).collect()
@@ -299,7 +301,7 @@ fn dropdown_row(
         .into_any_element()
 }
 
-fn dropdown_group_header(title: &'static str, t: &Theme) -> AnyElement {
+fn dropdown_group_header(title: SharedString, t: &Theme) -> AnyElement {
     div()
         .flex_none()
         .px(px(10.))

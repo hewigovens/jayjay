@@ -79,13 +79,13 @@ struct DiffEditView: View {
         .safeAreaInset(edge: .bottom) {
             DiffEditActionBar(session: session)
         }
-        .alert("Nothing Selected", isPresented: Bindable(session).showEmptySelectionAlert) {
-            Button("OK", role: .cancel) {}
+        .alert(Localized.Diff.nothingSelected, isPresented: Bindable(session).showEmptySelectionAlert) {
+            Button(Localized.Repo.ok, role: .cancel) {}
         } message: {
-            Text("Select at least one file, hunk, or line before applying diff edit.")
+            Text(Localized.Repo.selectAtLeastOneFileHunk)
         }
         .alert(
-            "Couldn't Load All Files",
+            Localized.Diff.couldntLoadAllFiles,
             isPresented: Binding(
                 get: { session.applyLoadFailurePath != nil },
                 set: {
@@ -95,12 +95,12 @@ struct DiffEditView: View {
                 }
             )
         ) {
-            Button("OK", role: .cancel) {}
+            Button(Localized.Repo.ok, role: .cancel) {}
         } message: {
-            Text("Failed to load \(session.applyLoadFailurePath ?? ""). Done was not applied — try again.")
+            Text(Localized.Diff.editLoadFailed(path: session.applyLoadFailurePath ?? ""))
         }
         .alert(
-            "Diff Changed",
+            Localized.Diff.diffChanged,
             isPresented: Binding(
                 get: { session.applyStalePath != nil },
                 set: {
@@ -110,7 +110,7 @@ struct DiffEditView: View {
                 }
             )
         ) {
-            Button("OK", role: .cancel) {}
+            Button(Localized.Repo.ok, role: .cancel) {}
         } message: {
             Text("\(session.applyStalePath ?? "") changed after its selection was rendered. Done was not applied — refresh and try again.")
         }
@@ -129,7 +129,7 @@ struct DiffEditView: View {
         HStack(spacing: 10) {
             Image(systemName: "info.circle")
                 .foregroundStyle(.secondary)
-            Text("Projected, renamed, and non-text files can be previewed here but are not editable yet.")
+            Text(Localized.Repo.projectedRenamedAndNonTextFiles)
                 .jayjayFont(12)
                 .foregroundStyle(.secondary)
             Spacer()

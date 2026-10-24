@@ -29,6 +29,11 @@ class SceneBase: XCTestCase {
         []
     }
 
+    /// Scenes find elements by their English labels, whatever the runner's own language is.
+    class var languages: String {
+        "(en)"
+    }
+
     class var providesJJIdentity: Bool {
         true
     }
@@ -68,6 +73,7 @@ class SceneBase: XCTestCase {
         app.launchArguments = Self.ignoresWindowRestoration
             ? ["-ApplePersistenceIgnoreState", "YES"]
             : []
+        app.launchArguments += ["-AppleLanguages", Self.languages]
         if Self.opensFixtureOnLaunch {
             let fixture = root.appendingPathComponent(Self.fixtureName, isDirectory: true)
             fixtureURL = fixture
@@ -183,11 +189,8 @@ class SceneBase: XCTestCase {
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).rightClick()
     }
 
-    /// Toolbar items expose labels, not identifiers.
-    static let repositoryTitleLabel = "Switch Repository or Workspace"
-
     func repositoryTitleButton(in window: XCUIElement) -> XCUIElement {
-        window.toolbars.buttons[Self.repositoryTitleLabel].firstMatch
+        window.toolbars.buttons[AID.Toolbar.repositoryTitle].firstMatch
     }
 
     func openRepositoryTitlePicker(in window: XCUIElement) {

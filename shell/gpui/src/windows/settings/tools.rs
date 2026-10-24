@@ -12,6 +12,7 @@ use crate::app::theme::Theme;
 use crate::platform::CUSTOM_TERMINAL_LABEL;
 use crate::ui::icons::{self, glyph};
 use crate::ui::text_area::{TextArea, TextAreaUpdated};
+use jayjay_i18n::{common, settings};
 
 #[derive(Clone, Debug, Default, PartialEq, Eq)]
 pub struct AiToolStatuses {
@@ -46,7 +47,7 @@ pub(super) fn tool_sections(
 ) -> AnyElement {
     let mut rows = vec![field_row(
         glyph::BRACES,
-        "Editor",
+        settings::editor(),
         dropdown_button(
             "editor",
             dropdown_label(EDITOR_OPTIONS, &cfg.tools.external_editor),
@@ -58,7 +59,7 @@ pub(super) fn tool_sections(
     if cfg.tools.external_editor == "custom" {
         rows.push(field_row(
             glyph::TERMINAL,
-            "Command",
+            settings::command(),
             command_input(
                 "setting-custom-editor-command",
                 custom_editor_command.clone(),
@@ -68,7 +69,7 @@ pub(super) fn tool_sections(
     }
     rows.push(field_row(
         glyph::TERMINAL,
-        "Terminal",
+        settings::terminal(),
         dropdown_button(
             "terminal",
             dropdown_label(TERMINAL_OPTIONS, &cfg.tools.terminal),
@@ -93,7 +94,7 @@ pub(super) fn tool_sections(
         .flex_col()
         .w_full()
         .gap(px(24.))
-        .child(form_section("Applications", rows, t))
+        .child(form_section(settings::applications(), rows, t))
         .child(ai_tool_rows(ai_tools, t))
         .into_any_element()
 }
@@ -119,13 +120,13 @@ fn dropdown_label(options: &[(&str, &str)], current: &str) -> String {
 
 fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElement {
     form_section(
-        "AI Commit Message",
+        settings::ai_commit_message(),
         [
             binary_row(
                 "Codex CLI",
                 glyph::FILE_CODE,
                 ai_tools.map(|s| s.codex.as_deref()),
-                "Not found",
+                common::not_found(),
                 t,
             )
             .into_any_element(),
@@ -133,7 +134,7 @@ fn ai_tool_rows(ai_tools: Option<&AiToolStatuses>, t: &Theme) -> impl IntoElemen
                 "Claude CLI",
                 glyph::SPARKLE,
                 ai_tools.map(|s| s.claude.as_deref()),
-                "Not found",
+                common::not_found(),
                 t,
             )
             .into_any_element(),
@@ -147,11 +148,11 @@ pub(super) fn binary_row(
     name: &'static str,
     glyph_str: &'static str,
     resolved: Option<Option<&str>>,
-    missing_label: &'static str,
+    missing_label: String,
     t: &Theme,
 ) -> impl IntoElement {
     let (detail, state): (SharedString, ToolState) = match resolved {
-        None => ("Checking…".into(), ToolState::Checking),
+        None => (common::checking().into(), ToolState::Checking),
         Some(Some(path)) => (path.to_owned().into(), ToolState::Found),
         Some(None) => (missing_label.into(), ToolState::Missing),
     };
@@ -173,8 +174,8 @@ pub(super) fn detected_cli_row(
             },
             ToolState::Found,
         ),
-        Some(_) => ("Not installed".to_owned(), ToolState::Missing),
-        None => ("Checking…".to_owned(), ToolState::Checking),
+        Some(_) => (common::not_installed(), ToolState::Missing),
+        None => (common::checking(), ToolState::Checking),
     };
     status_row(name, glyph_str, detail, state, t)
 }
@@ -207,7 +208,7 @@ pub(super) fn status_row(
 
 pub(super) fn persisted_command(
     initial: String,
-    placeholder: &'static str,
+    placeholder: String,
     persist: fn(&mut crate::app::config::AppConfig, String),
     cx: &mut Context<SettingsView>,
 ) -> Entity<TextArea> {

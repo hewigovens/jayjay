@@ -111,6 +111,52 @@ format:
 lint:
   cargo clippy --workspace --all-targets -- -D warnings
   just shell::lint
+  just lint-i18n
+
+# Files fully migrated to the jayjay-i18n catalog.
+i18n_migrated := "shell/gpui/src/windows/settings shell/gpui/src/windows/identity_dialog.rs shell/gpui/src/repo shell/gpui/src/app/menus.rs shell/gpui/src/diff shell/mac/Sources/JayJay/Settings shell/mac/Sources/JayJay/Repo shell/mac/Sources/JayJay/Detail shell/mac/Sources/JayJay/Diff shell/mac/Sources/JayJay/DiffEdit shell/mac/Packages/JayJayDiffUI/Sources shell/mac/Sources/JayJay/App/Window shell/mac/Sources/JayJay/App/AppCommands.swift shell/mac/Sources/JayJay/App/AppInfoCommands.swift shell/mac/Sources/JayJay/App/HelpCommands.swift shell/gpui/src/windows/command_palette shell/mac/Sources/JayJay/Shared/CommandPalette shell/gpui/src/windows/overview shell/gpui/src/windows/overview.rs shell/mac/Sources/JayJay/Overview shell/gpui/src/windows/evolog shell/gpui/src/windows/evolog.rs shell/gpui/src/windows/operation_log shell/gpui/src/windows/bookmark_manager shell/gpui/src/windows/bookmark_manager.rs shell/gpui/src/ui/onboarding shell/gpui/src/windows/repo_list shell/gpui/src/windows/open_repository.rs shell/mac/Sources/JayJay/Onboarding/OnboardingView.swift shell/mac/Sources/JayJay/Onboarding/RepoListViewModel.swift shell/mac/Sources/JayJay/Onboarding/WelcomeView.swift shell/gpui/src/windows/clone_repository.rs shell/mac/Sources/JayJay/Onboarding/CloneRepositoryModel.swift shell/mac/Sources/JayJay/Onboarding/CloneRepositoryView.swift shell/gpui/src/ui/merge_editor shell/gpui/src/ui/merge_nav.rs shell/gpui/src/external_tool shell/mac/Sources/JayJay/MergeEditor shell/mac/Sources/JayJay/ExternalTool"
+# Proper names that stay English in every locale.
+i18n_names := "JayJay|Codex CLI|Claude CLI|Codex|Claude|Terminal|Finder|Frog|Homebrew|Seti"
+
+lint-i18n:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  status=0
+  camel() { awk -F'[-_]' '{ printf "%s", $1; for (i = 2; i <= NF; i++) printf "%s", toupper(substr($i, 1, 1)) substr($i, 2) }' <<< "$1"; }
+  used=$( { grep -rhoE --include='*.rs' '[a-z0-9_:]*[a-z_]+::[a-z0-9_]+' crates shell/gpui/src --exclude-dir=jayjay-i18n \
+      | sed -n 's/^jayjay_i18n:://; /^[a-z_]*::[a-z0-9_]*$/p'
+    grep -rhoE --include='*.swift' 'Localized\.[A-Za-z]+\.[A-Za-z0-9]+' shell/mac/Sources shell/mac/Packages; } | sort -u)
+  for file in crates/jayjay-i18n/locales/en-US/*.ftl; do
+    stem=$(basename "$file" .ftl)
+    swift_enum=$(camel "$stem")
+    swift_enum=$(tr a-z A-Z <<< "${swift_enum:0:1}")${swift_enum:1}
+    for id in $(sed -n "s/^\(${stem}-[a-z0-9-]*\) =.*/\1/p" "$file"); do
+      name=${id#"$stem"-}
+      if ! grep -qxF -e "${stem}::${name//-/_}" -e "Localized.${swift_enum}.$(camel "$name")" <<< "$used"; then
+        echo "unused message: $id ($file)"
+        status=1
+      fi
+    done
+  done
+  hits=$(find {{i18n_migrated}} -type f \( -name '*.rs' -o -name '*.swift' \) ! -name 'tests.rs' ! -path '*/tests/*' -print0 \
+    | xargs -0 awk -v names='^"({{i18n_names}})"$' '
+      FNR == 1 { skip = 0 }
+      /#\[cfg\(test\)\]/ { skip = 1 }
+      skip || /^[[:space:]]*\/\// || /key_context|KeyContext|assert|precondition|fatalError|\.contains\(|search: |=\\"/ { next }
+      {
+        rest = $0
+        while (match(rest, /"([A-Z][a-z]+([ ,.…?!&:'\''][^"]*)?|\([a-z]+( [a-z]+)*\)|(\\\([^)"]*\)|\{[^}"]*\}) [A-Za-z][a-z]+[^"]*)"/)) {
+          literal = substr(rest, RSTART, RLENGTH)
+          if (literal !~ names) { print FILENAME ":" FNR ": " $0; break }
+          rest = substr(rest, RSTART + RLENGTH)
+        }
+      }')
+  if [ -n "$hits" ]; then
+    echo "$hits"
+    echo "hardcoded user-facing text in a migrated file; add it to crates/jayjay-i18n/locales/en-US"
+    status=1
+  fi
+  exit $status
 
 clean:
   cargo clean

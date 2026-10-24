@@ -18,7 +18,7 @@ pub(crate) fn pr_import_overlay(
     let mut card = overlay_card(t, 440.).child(overlay_header(
         glyph::GIT_MERGE,
         t.fg_dim,
-        "New Workspace from Pull Request",
+        jayjay_i18n::repo::new_workspace_from_pull_request(),
         "",
         t,
     ));
@@ -53,7 +53,7 @@ pub(crate) fn pr_import_overlay(
     overlay_layer()
         .child(
             card.child(overlay_actions(
-                button("pr-import-cancel", "Cancel", t, false)
+                button("pr-import-cancel", jayjay_i18n::common::cancel(), t, false)
                     .debug_selector(|| "pr-import-cancel".to_owned())
                     .on_click(cx.listener(|view, _, _, cx| view.cancel_pr_import(cx))),
                 primary,
@@ -62,23 +62,23 @@ pub(crate) fn pr_import_overlay(
         .into_any_element()
 }
 
-fn pr_import_primary(state: &PrImportState) -> (&'static str, &'static str) {
+fn pr_import_primary(state: &PrImportState) -> (String, &'static str) {
     if state.preview.is_none() {
         let label = if state.resolving {
-            "Resolving…"
+            jayjay_i18n::repo::resolving_ellipsis()
         } else {
-            "Resolve"
+            jayjay_i18n::repo::resolve()
         };
         return (label, "pr-import-resolve");
     }
     if state.existing_workspace().is_some() {
-        return ("Open Workspace", "pr-import-open");
+        return (jayjay_i18n::repo::open_workspace(), "pr-import-open");
     }
     let busy = state.importing || state.resolving;
     let label = if busy {
-        "Creating…"
+        jayjay_i18n::repo::creating_ellipsis()
     } else {
-        "Fetch & Create Workspace"
+        jayjay_i18n::repo::fetch_create_workspace()
     };
     (label, "pr-import-create")
 }
@@ -123,29 +123,29 @@ fn pr_import_preview(
                 .flex_col()
                 .gap(px(4.))
                 .child(summary_row(
-                    "Repository",
+                    jayjay_i18n::menu::repository(),
                     format!("{} · {}", pr.host, pr.base_repo),
                     None,
                     t,
                 ))
                 .child(summary_row(
-                    "Remote",
+                    jayjay_i18n::repo::remote(),
                     preview.remote.name.clone(),
                     Some(if preview.remote.exists {
-                        "existing remote"
+                        jayjay_i18n::repo::existing_remote()
                     } else {
-                        "will be added"
+                        jayjay_i18n::repo::will_be_added()
                     }),
                     t,
                 ))
                 .child(summary_row(
-                    "Bookmark",
+                    jayjay_i18n::repo::bookmark(),
                     preview.remote.bookmark.clone(),
                     None,
                     t,
                 ))
                 .child(summary_row(
-                    "Head",
+                    jayjay_i18n::repo::head(),
                     preview.head_commit_id.chars().take(8).collect::<String>(),
                     None,
                     t,
@@ -159,20 +159,25 @@ fn pr_import_preview(
                 .items_center()
                 .gap(px(8.))
                 .child(summary_row(
-                    "Workspace",
+                    jayjay_i18n::repo::workspace(),
                     existing.name.clone(),
-                    Some("already imported"),
+                    Some(jayjay_i18n::repo::already_imported()),
                     t,
                 ))
                 .child(
-                    button("pr-import-again", "Import Again", t, false)
-                        .debug_selector(|| "pr-import-again".to_owned())
-                        .on_click(cx.listener(|view, _, _, cx| {
-                            if let Some(state) = view.pr_import.as_mut() {
-                                state.import_again = true;
-                                cx.notify();
-                            }
-                        })),
+                    button(
+                        "pr-import-again",
+                        jayjay_i18n::repo::import_again(),
+                        t,
+                        false,
+                    )
+                    .debug_selector(|| "pr-import-again".to_owned())
+                    .on_click(cx.listener(|view, _, _, cx| {
+                        if let Some(state) = view.pr_import.as_mut() {
+                            state.import_again = true;
+                            cx.notify();
+                        }
+                    })),
                 ),
         );
     } else {
@@ -194,9 +199,9 @@ fn pr_import_preview(
 }
 
 fn summary_row(
-    label: &'static str,
+    label: impl Into<SharedString>,
     value: String,
-    note: Option<&'static str>,
+    note: Option<String>,
     t: &Theme,
 ) -> gpui::Div {
     let mut row = div()
@@ -213,7 +218,7 @@ fn summary_row(
                 .text_size(ui_font_size(11.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg_dim))
-                .child(label),
+                .child(label.into()),
         )
         .child(
             div()
@@ -236,9 +241,9 @@ fn summary_row(
 
 fn pr_state_badge(state: jayjay_core::PrState, t: &Theme) -> gpui::Div {
     let (label, color) = match state {
-        jayjay_core::PrState::Open => ("Open", t.success_fg),
-        jayjay_core::PrState::Closed => ("Closed", t.error_fg),
-        jayjay_core::PrState::Merged => ("Merged", t.note_accent),
+        jayjay_core::PrState::Open => (jayjay_i18n::common::open(), t.success_fg),
+        jayjay_core::PrState::Closed => (jayjay_i18n::repo::closed(), t.error_fg),
+        jayjay_core::PrState::Merged => (jayjay_i18n::repo::merged(), t.note_accent),
     };
     div()
         .flex_none()

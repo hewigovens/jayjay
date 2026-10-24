@@ -20,30 +20,30 @@ extension ChangeDetailView {
 
     private var metadataGrid: some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 8, verticalSpacing: 5) {
-            IdentifierRow(label: "Author:") {
+            IdentifierRow(label: Localized.Repo.authorColon) {
                 person(detail.info.author)
             }
             if !detail.info.coAuthors.isEmpty {
-                IdentifierRow(label: "Co-authors:") {
+                IdentifierRow(label: Localized.Repo.coAuthorsColon) {
                     VStack(alignment: .leading, spacing: 5) {
                         ForEach(Array(detail.info.coAuthors.enumerated()), id: \.offset) { person($0.element) }
                     }
                 }
             }
-            IdentifierRow(label: "Date:") {
+            IdentifierRow(label: Localized.Repo.dateColon) {
                 Text(formatTimestamp(detail.info.author.timestampMillis))
                     .jayjayFont(11)
                     .textSelection(.enabled)
             }
-            IdentifierRow(label: "Change:") {
+            IdentifierRow(label: Localized.Repo.changeColon) {
                 IdentifierText(
                     value: detail.info.changeId.id,
                     prefixLength: Int(detail.info.changeId.shortLen),
                     prefixStyle: .changeId
                 )
-                CopyIconButton(value: detail.info.changeId.id, help: "Copy change")
+                CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
             }
-            IdentifierRow(label: "Commit:") {
+            IdentifierRow(label: Localized.Repo.commitColon) {
                 IdentifierText(
                     value: detail.info.commitId.id,
                     prefixLength: Int(detail.info.commitId.shortLen),
@@ -51,25 +51,25 @@ extension ChangeDetailView {
                 )
                 .accessibilityIdentifier(AID.Detail.commitId)
                 .accessibilityValue(detail.info.commitId.id)
-                CopyIconButton(value: detail.info.commitId.id, help: "Copy commit")
+                CopyIconButton(value: detail.info.commitId.id, help: Localized.Repo.copyCommit)
             }
             if !detail.info.parents.isEmpty {
-                IdentifierRow(label: "Parents:") {
+                IdentifierRow(label: Localized.Repo.parentsColon) {
                     IdentifierText(value: detail.info.parents.map { String($0.prefix(12)) }.joined(separator: ", "))
                 }
             }
             if !detail.info.bookmarks.isEmpty {
-                IdentifierRow(label: "Bookmarks:") {
+                IdentifierRow(label: Localized.Repo.bookmarksColon) {
                     ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0, showsCopy: true) }
                 }
             }
             if !detail.info.tags.isEmpty {
-                IdentifierRow(label: "Tags:") {
+                IdentifierRow(label: Localized.Repo.tagsColon) {
                     ForEach(detail.info.tags, id: \.self) { tagChip($0) }
                 }
             }
             if let visibleDiffStats {
-                IdentifierRow(label: "Changes:") { diffStatsView(visibleDiffStats, spelledOut: true) }
+                IdentifierRow(label: Localized.Repo.changesColon) { diffStatsView(visibleDiffStats, spelledOut: true) }
             }
         }
     }
@@ -90,7 +90,7 @@ extension ChangeDetailView {
                 prefixLength: Int(detail.info.changeId.shortLen),
                 prefixStyle: .changeId
             )
-            CopyIconButton(value: detail.info.changeId.id, help: "Copy change")
+            CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
             if showsDate {
                 bylineSeparator
                 Text(formatTimestamp(detail.info.author.timestampMillis))
@@ -182,7 +182,7 @@ extension ChangeDetailView {
             if compareDisplay?.isCombinedSelection == true {
                 Image(systemName: "square.stack.3d.up.fill")
                     .foregroundStyle(.orange)
-                    .accessibilityLabel("Combined selection")
+                    .accessibilityLabel(Localized.Repo.combinedSelection)
                     .accessibilityIdentifier(AID.Compare.combinedSelection)
             } else {
                 Button {
@@ -193,10 +193,10 @@ extension ChangeDetailView {
                 }
                 .buttonStyle(.plain)
                 .disabled(onReverseCompare == nil)
-                .help("Reverse compare direction")
+                .help(Localized.Repo.reverseCompareDirection)
                 .accessibilityIdentifier(AID.Compare.reverseDirection)
             }
-            Text(compareDisplay?.title ?? "Comparing")
+            Text(compareDisplay?.title ?? Localized.Repo.comparing)
                 .jayjayFont(12, weight: .medium)
                 .accessibilityIdentifier(AID.Compare.banner)
             compareLabel(compareDisplay?.from ?? String(compareFromId?.prefix(8) ?? ""))
@@ -205,7 +205,7 @@ extension ChangeDetailView {
                 .foregroundStyle(.secondary)
             compareLabel(compareDisplay?.to ?? String(detailRevision.prefix(8)))
             Spacer()
-            Text("\(detail.diff.count) files changed")
+            Text(Localized.Repo.filesChangedCount(count: detail.diff.count))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
             Button {
@@ -215,7 +215,7 @@ extension ChangeDetailView {
                     .foregroundStyle(.secondary)
             }
             .buttonStyle(.plain)
-            .help("Exit compare mode")
+            .help(Localized.Repo.exitCompareMode)
         }
         .padding(.horizontal, PaneLayout.detailInset)
         .padding(.vertical, 8)
@@ -232,7 +232,7 @@ extension ChangeDetailView {
         .padding(.horizontal, 6).padding(.vertical, 2)
         .background(Color.primary.opacity(0.08), in: .capsule)
         .lineLimit(1)
-        .help("Tag: \(name)")
+        .help(Localized.Repo.tagNamed(name: name))
     }
 
     private func bookmarkChip(_ name: String, showsCopy: Bool) -> some View {
@@ -252,14 +252,14 @@ extension ChangeDetailView {
                 in: .capsule
             )
             if showsCopy {
-                CopyIconButton(value: name, help: "Copy bookmark name")
+                CopyIconButton(value: name, help: Localized.Repo.copyBookmarkName)
             }
         }
         .lineLimit(1)
         .help(
             conflicted
-                ? "Conflicted bookmark: \(name) — points at more than one change"
-                : "Bookmark: \(name)"
+                ? Localized.Repo.conflictedBookmarkNamed(name: name)
+                : Localized.Repo.bookmarkNamed(name: name)
         )
     }
 
@@ -279,21 +279,21 @@ extension ChangeDetailView {
         return HStack(spacing: 10) {
             Image(systemName: "exclamationmark.triangle.fill")
                 .foregroundStyle(.red)
-            Text("Conflict")
+            Text(Localized.Repo.conflict)
                 .jayjayFont(12, weight: .semibold)
             Spacer()
-            Button("Use Ours") {
+            Button(Localized.Repo.useOurs) {
                 actions?.resolveUseOurs(rev: detailRevision, path: path)
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useOurs(path))
-            Button("Use Theirs") {
+            Button(Localized.Repo.useTheirs) {
                 actions?.resolveUseTheirs(rev: detailRevision, path: path)
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useTheirs(path))
             if Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode) {
-                Button("Edit in JayJay") {
+                Button(Localized.Repo.editInJayjay) {
                     prepareConflictEditor(path: path)
                 }
                 .buttonStyle(.bordered)
@@ -301,12 +301,12 @@ extension ChangeDetailView {
                 .accessibilityIdentifier(AID.Conflict.resolveInJayJay(path))
             }
             if let tool = appSettings.externalEditor.jjMergeTool {
-                Button("Resolve in \(appSettings.externalEditor.title)") {
+                Button(Localized.Menu.resolveIn(app: appSettings.externalEditor.title)) {
                     actions?.resolveInEditor(rev: detailRevision, path: path, tool: tool)
                 }
                 .buttonStyle(.bordered)
             } else {
-                Button("Open in \(appSettings.externalEditor.title)") {
+                Button(Localized.Menu.openIn(app: appSettings.externalEditor.title)) {
                     appSettings.openInEditor(filePath: path, repoPath: repoPath)
                 }
                 .buttonStyle(.bordered)

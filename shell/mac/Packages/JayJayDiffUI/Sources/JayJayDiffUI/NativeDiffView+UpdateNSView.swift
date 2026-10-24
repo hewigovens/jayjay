@@ -160,7 +160,7 @@ public extension NativeDiffView {
 
         if diff.lines.isEmpty {
             result.append(NSAttributedString(
-                string: "No differences",
+                string: Localized.Diff.noDifferences,
                 attributes: [.font: font, .foregroundColor: NSColor.secondaryLabelColor]
             ))
             contentLineBgColors.append(.clear)

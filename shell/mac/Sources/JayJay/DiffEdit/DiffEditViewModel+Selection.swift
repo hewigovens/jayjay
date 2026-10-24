@@ -4,9 +4,9 @@ import JayJayDiffUI
 extension DiffEditViewModel {
     var selectionToggleTitle: String {
         if isSelectingAll {
-            return "Selecting..."
+            return Localized.Repo.selectingEllipsis
         }
-        return shouldDeselect ? "Deselect All" : "Select All"
+        return shouldDeselect ? Localized.Repo.deselectAll : Localized.Repo.selectAll
     }
 
     var selectionToggleSystemImage: String {

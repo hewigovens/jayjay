@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct SettingsWorkflowPage: View {
@@ -5,35 +6,35 @@ struct SettingsWorkflowPage: View {
 
     var body: some View {
         Form {
-            Section("Confirmations") {
+            Section(Localized.Settings.confirmations) {
                 Toggle(isOn: Binding(
                     get: { !settings.skipAbandonConfirmation },
                     set: { settings.skipAbandonConfirmation = !$0 }
                 )) {
-                    SettingsLabel("Confirm before abandoning changes", icon: "trash")
+                    SettingsLabel(Localized.Settings.confirmAbandon, icon: "trash")
                 }
                 .accessibilityIdentifier(AID.Settings.confirmAbandon)
                 Toggle(isOn: Binding(
                     get: { !settings.skipWorkspaceDeleteConfirmation },
                     set: { settings.skipWorkspaceDeleteConfirmation = !$0 }
                 )) {
-                    SettingsLabel("Confirm before deleting a workspace", icon: "folder.badge.minus")
+                    SettingsLabel(Localized.Settings.confirmWorkspaceDelete, icon: "folder.badge.minus")
                 }
                 .accessibilityIdentifier(AID.Settings.confirmWorkspaceDelete)
                 Toggle(isOn: Binding(
                     get: { settings.confirmDragRebase },
                     set: { settings.confirmDragRebase = $0 }
                 )) {
-                    SettingsLabel("Confirm drag-to-rebase", icon: "arrow.up.forward.app")
+                    SettingsLabel(Localized.Settings.confirmDragRebase, icon: "arrow.up.forward.app")
                 }
             }
 
-            Section("Repository Behavior") {
+            Section(Localized.Settings.repositoryBehavior) {
                 Toggle(isOn: Binding(
                     get: { settings.enableGitSubmoduleSupport },
                     set: { settings.enableGitSubmoduleSupport = $0 }
                 )) {
-                    SettingsLabel("Enable Git submodule support", icon: "square.stack.3d.up")
+                    SettingsLabel(Localized.Settings.submoduleSupport, icon: "square.stack.3d.up")
                 }
             }
         }

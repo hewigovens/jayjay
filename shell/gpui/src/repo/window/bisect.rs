@@ -1,7 +1,7 @@
 use gpui::{
     Anchor, AnyElement, AppContext, Context, Entity, Focusable, FontWeight, InteractiveElement,
-    IntoElement, ParentElement, StatefulInteractiveElement, Styled, Window, anchored, deferred,
-    div, px, rgb,
+    IntoElement, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, anchored,
+    deferred, div, px, rgb,
 };
 use jayjay_core::{BisectPhase, BisectState, BisectVerdict};
 
@@ -25,9 +25,12 @@ impl RepoWindow {
     pub(crate) fn open_bisect_sheet(&mut self, bad: Option<String>, cx: &mut Context<Self>) {
         let bad_text = bad.unwrap_or_default();
         let from_here = !bad_text.is_empty();
-        let good = cx.new(|cx| TextArea::new("trunk()", "Good end", false, 32., cx));
-        let bad_input = cx.new(|cx| TextArea::new(bad_text, "Bad end", false, 32., cx));
-        let range = cx.new(|cx| TextArea::new("", "Revset range", false, 32., cx));
+        let good =
+            cx.new(|cx| TextArea::new("trunk()", jayjay_i18n::repo::good_end(), false, 32., cx));
+        let bad_input =
+            cx.new(|cx| TextArea::new(bad_text, jayjay_i18n::repo::bad_end(), false, 32., cx));
+        let range =
+            cx.new(|cx| TextArea::new("", jayjay_i18n::repo::revset_range(), false, 32., cx));
         let focus = if from_here {
             good.clone()
         } else {
@@ -151,7 +154,7 @@ pub(super) fn bisect_bar(
         let kept = result
             .kept
             .iter()
-            .map(|change| format!("Kept {}", subject(&change.description)));
+            .map(|change| jayjay_i18n::repo::kept_change(subject(&change.description)));
         for note in result.restore_note.clone().into_iter().chain(kept) {
             bar = bar.child(
                 div()
@@ -172,15 +175,15 @@ struct BarEnablement {
 }
 
 trait PhaseTitle {
-    fn title(self) -> &'static str;
+    fn title(self) -> String;
 }
 
 impl PhaseTitle for BisectPhase {
-    fn title(self) -> &'static str {
+    fn title(self) -> String {
         match self {
-            BisectPhase::Evaluating => "Bisecting",
-            BisectPhase::PausedRangeChanged => "Bisect paused",
-            BisectPhase::Finished => "Bisect finished",
+            BisectPhase::Evaluating => jayjay_i18n::repo::bisecting(),
+            BisectPhase::PausedRangeChanged => jayjay_i18n::repo::bisect_paused(),
+            BisectPhase::Finished => jayjay_i18n::repo::bisect_finished(),
         }
     }
 }
@@ -206,7 +209,7 @@ fn bisect_actions(
         BisectPhase::Evaluating => row
             .child(mark_button(
                 "bisect-good",
-                "Good",
+                jayjay_i18n::repo::good(),
                 BisectVerdict::Good,
                 enabled.mark,
                 t,
@@ -214,7 +217,7 @@ fn bisect_actions(
             ))
             .child(mark_button(
                 "bisect-bad",
-                "Bad",
+                jayjay_i18n::repo::bad(),
                 BisectVerdict::Bad,
                 enabled.mark,
                 t,
@@ -222,7 +225,7 @@ fn bisect_actions(
             ))
             .child(mark_button(
                 "bisect-skip",
-                "Skip",
+                jayjay_i18n::repo::skip(),
                 BisectVerdict::Skip,
                 enabled.mark,
                 t,
@@ -233,7 +236,7 @@ fn bisect_actions(
         BisectPhase::PausedRangeChanged => row
             .child(action_button(
                 "bisect-restart",
-                "Restart",
+                jayjay_i18n::repo::restart(),
                 enabled.act,
                 t,
                 cx,
@@ -244,7 +247,7 @@ fn bisect_actions(
             .child(stop_button(enabled.stop, t, cx)),
         BisectPhase::Finished => row.child(action_button(
             "bisect-dismiss",
-            "Dismiss",
+            jayjay_i18n::repo::dismiss(),
             enabled.act,
             t,
             cx,
@@ -263,7 +266,7 @@ fn test_runner_button(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let mut button = small_button("bisect-run-test", "Run Test…", t)
+    let mut button = small_button("bisect-run-test", jayjay_i18n::repo::run_test_ellipsis(), t)
         .debug_selector(|| "bisect-run-test".to_owned());
     if enabled {
         button = button.on_click(cx.listener(|view, _, window, cx| {
@@ -319,7 +322,7 @@ fn test_runner(
         .child(
             div()
                 .text_color(rgb(t.fg_dim))
-                .child("Exit 0 marks the change good, 125 skips it, anything else marks it bad."),
+                .child(jayjay_i18n::repo::exit_n0_marks_the_change_good()),
         )
         .child(view.bisect_command.clone())
         .child(
@@ -329,7 +332,7 @@ fn test_runner(
                 .gap(px(6.))
                 .child(action_button(
                     "bisect-run-step",
-                    "Run for This Step",
+                    jayjay_i18n::repo::run_for_this_step(),
                     true,
                     t,
                     cx,
@@ -339,7 +342,7 @@ fn test_runner(
                 ))
                 .child(action_button(
                     "bisect-run-to-end",
-                    "Run to the End",
+                    jayjay_i18n::repo::run_to_the_end(),
                     true,
                     t,
                     cx,
@@ -373,13 +376,15 @@ fn stop_button(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEle
     };
     button
         .debug_selector(|| "bisect-stop".to_owned())
-        .tooltip(text_tooltip("Stop bisecting and restore the working copy"))
+        .tooltip(text_tooltip(
+            jayjay_i18n::repo::stop_bisecting_and_restore_the_working(),
+        ))
         .into_any_element()
 }
 
 fn mark_button(
     id: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     verdict: BisectVerdict,
     enabled: bool,
     t: &Theme,
@@ -392,7 +397,7 @@ fn mark_button(
 
 fn action_button(
     id: &'static str,
-    label: &'static str,
+    label: impl Into<SharedString>,
     enabled: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
@@ -427,15 +432,15 @@ pub(super) fn bisect_sheet_overlay(
                 .child(overlay_header(
                     glyph::ARROWS_LEFT_RIGHT,
                     t.fg_dim,
-                    "Bisect",
+                    jayjay_i18n::repo::bisect(),
                     "",
                     t,
                 ))
-                .child(field_label("Good", t))
+                .child(field_label(jayjay_i18n::repo::good(), t))
                 .child(good)
-                .child(field_label("Bad", t))
+                .child(field_label(jayjay_i18n::repo::bad(), t))
                 .child(bad)
-                .child(field_label("Range", t))
+                .child(field_label(jayjay_i18n::repo::range(), t))
                 .child(range)
                 .child(
                     div()
@@ -450,14 +455,17 @@ pub(super) fn bisect_sheet_overlay(
                         .justify_end()
                         .gap(px(8.))
                         .child(
-                            button("bisect-sheet-cancel", "Cancel", t, false)
-                                .debug_selector(|| "bisect-sheet-cancel".to_owned())
-                                .on_click(
-                                    cx.listener(|view, _, _, cx| view.close_bisect_sheet(cx)),
-                                ),
+                            button(
+                                "bisect-sheet-cancel",
+                                jayjay_i18n::common::cancel(),
+                                t,
+                                false,
+                            )
+                            .debug_selector(|| "bisect-sheet-cancel".to_owned())
+                            .on_click(cx.listener(|view, _, _, cx| view.close_bisect_sheet(cx))),
                         )
                         .child(
-                            button("bisect-sheet-start", "Start", t, true)
+                            button("bisect-sheet-start", jayjay_i18n::repo::start(), t, true)
                                 .debug_selector(|| "bisect-sheet-start".to_owned())
                                 .on_click(
                                     cx.listener(|view, _, _, cx| view.submit_bisect_sheet(cx)),
@@ -468,10 +476,10 @@ pub(super) fn bisect_sheet_overlay(
         .into_any_element()
 }
 
-fn field_label(text: &'static str, t: &Theme) -> AnyElement {
+fn field_label(text: impl Into<SharedString>, t: &Theme) -> AnyElement {
     div()
         .text_size(ui_font_size(11.))
         .text_color(rgb(t.fg_dim))
-        .child(text)
+        .child(text.into())
         .into_any_element()
 }

@@ -11,7 +11,7 @@ extension DiffSection {
                 .textSelection(.enabled)
                 .help(hunk.path)
                 .accessibilityIdentifier(AID.Diff.section)
-            CopyIconButton(value: hunk.path, help: "Copy path")
+            CopyIconButton(value: hunk.path, help: Localized.Diff.copyPath)
             Text(hunk.hunkType.label)
                 .jayjayFont(10, weight: .medium)
                 .foregroundStyle(hunk.hunkType.iconColor)
@@ -28,20 +28,20 @@ extension DiffSection {
                 sideBySideButton
                 if canOpenDiffEdit {
                     Button(action: openDiffEdit) {
-                        actionLabel("Edit Diff", systemImage: "square.and.pencil")
+                        actionLabel(Localized.Diff.editDiff, systemImage: "square.and.pencil")
                     }
                     .keyboardFocusStop(.editDiff, action: openDiffEdit)
-                    .help("Open dedicated diff edit mode")
-                    .accessibilityLabel("Edit Diff")
+                    .help(Localized.Diff.openDedicatedDiffEditMode)
+                    .accessibilityLabel(Localized.Diff.editDiff)
                     .accessibilityIdentifier(AID.DiffEdit.open)
                 }
                 if canEditFile {
                     Button(action: editFile) {
-                        actionLabel("Edit File", systemImage: "pencil")
+                        actionLabel(Localized.Diff.editFile, systemImage: "pencil")
                     }
                     .keyboardFocusStop(.editFile, action: editFile)
-                    .help("Edit this working-copy file")
-                    .accessibilityLabel("Edit File")
+                    .help(Localized.Diff.editThisWorkingCopyFile)
+                    .accessibilityLabel(Localized.Diff.editFile)
                     .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
                 }
             }
@@ -82,7 +82,7 @@ extension DiffSection {
             richPreviewButton(
                 icon: activeSvgRichView ? "eye.fill" : "eye",
                 active: activeSvgRichView,
-                inactiveHelp: "Show rendered SVG"
+                inactiveHelp: Localized.Diff.showRenderedSvg
             ) {
                 toggleSvgRichView()
             }
@@ -91,7 +91,7 @@ extension DiffSection {
             richPreviewButton(
                 icon: activeMarkdownRichView ? "eye.fill" : "eye",
                 active: activeMarkdownRichView,
-                inactiveHelp: "Show rendered Markdown"
+                inactiveHelp: Localized.Diff.showRenderedMarkdown
             ) {
                 toggleMarkdownRichView()
             }
@@ -101,14 +101,14 @@ extension DiffSection {
                 icon: activeHTMLRichView ? "eye.fill" : "eye",
                 active: activeHTMLRichView,
                 inactiveHelp: htmlPreviewMayNeedScript
-                    ? "Show rendered HTML (scripts won't run in this preview)"
-                    : "Show rendered HTML"
+                    ? Localized.Diff.showRenderedHtmlScriptsWontRun
+                    : Localized.Diff.showRenderedHtml
             ) {
                 toggleHTMLRichView()
             }
             externalOpenButton(
                 icon: "arrow.up.right.square",
-                help: "Open working-copy HTML in default app"
+                help: Localized.Diff.openWorkingCopyHtmlInDefault
             ) {
                 openHTMLExternally()
             }
@@ -133,10 +133,11 @@ extension DiffSection {
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            actionLabel("Preview", systemImage: icon)
+            actionLabel(Localized.Common.preview, systemImage: icon)
         }
+        .accessibilityIdentifier(AID.Diff.preview)
         .buttonStyle(HeaderActionButtonStyle(isActive: active))
-        .help(active ? "Show source diff" : inactiveHelp)
+        .help(active ? Localized.Diff.showSourceDiff : inactiveHelp)
     }
 
     @ViewBuilder
@@ -159,13 +160,14 @@ extension DiffSection {
         let toggle = { settings.sideBySideDiff.toggle() }
         return Button(action: toggle) {
             actionLabel(
-                effectiveSideBySideDiff ? "Side-by-side" : "Unified",
+                effectiveSideBySideDiff ? Localized.Diff.sideBySide : Localized.Diff.unified,
                 systemImage: effectiveSideBySideDiff ? "rectangle.split.2x1" : "text.justify"
             )
         }
         .keyboardFocusStop(.diffLayout, action: toggle)
-        .help(effectiveSideBySideDiff ? "Switch to unified" : "Switch to side-by-side")
-        .accessibilityLabel(effectiveSideBySideDiff ? "Side-by-side" : "Unified")
+        .help(effectiveSideBySideDiff ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide)
+        .accessibilityLabel(effectiveSideBySideDiff ? Localized.Diff.sideBySide : Localized.Diff.unified)
+        .accessibilityIdentifier(AID.Diff.layoutToggle)
     }
 
     private var effectiveSideBySideDiff: Bool {

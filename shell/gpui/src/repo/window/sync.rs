@@ -40,7 +40,7 @@ impl RepoWindow {
         ) -> Task<JayResult<FetchResult>>,
     ) {
         if self.sync_activity.is_fetching() {
-            self.show_toast("Pull already in progress", cx);
+            self.show_toast(jayjay_i18n::repo::pull_already_in_progress(), cx);
             return;
         }
         let Some(sync) = self.new_sync_token(cx) else {
@@ -61,7 +61,7 @@ impl RepoWindow {
                         Ok(message)
                     }
                     Err(JayError::Canceled) => {
-                        view.finish_canceled_sync("Pull canceled", cx);
+                        view.finish_canceled_sync(jayjay_i18n::repo::pull_canceled(), cx);
                         return;
                     }
                     Err(error) => Err(crate::app::error_text(error).to_string()),
@@ -103,12 +103,12 @@ impl RepoWindow {
     fn new_sync_token(&mut self, cx: &mut Context<Self>) -> Option<SyncToken> {
         let sync = self.vm.read(cx).repo.as_ref().map(|repo| repo.sync_token());
         if sync.is_none() {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
         }
         sync
     }
 
-    fn finish_canceled_sync(&mut self, message: &'static str, cx: &mut Context<Self>) {
+    fn finish_canceled_sync(&mut self, message: String, cx: &mut Context<Self>) {
         self.show_toast(message, cx);
         // The remote side may have landed before the cancel took effect.
         self.vm.update(cx, |vm, cx| vm.refresh(false, cx));
@@ -138,12 +138,9 @@ impl RepoWindow {
         let task = self.vm.update(cx, |vm, cx| vm.forget_stale_bookmarks(cx));
         Self::spawn_ok(cx, task, |view, count, cx| {
             let message = if count == 0 {
-                "No stale bookmarks found".to_owned()
+                jayjay_i18n::repo::no_stale_bookmarks_found()
             } else {
-                format!(
-                    "Forgot {count} stale bookmark{}",
-                    if count == 1 { "" } else { "s" }
-                )
+                jayjay_i18n::repo::forgot_stale_bookmarks(count)
             };
             view.show_toast(message, cx);
         });
@@ -164,7 +161,7 @@ impl RepoWindow {
                 WorkspaceDrafts::discard(Path::new(&path), cx);
                 cx.defer(move |cx| super::open::close_repo_window_at(Path::new(&path), cx));
             }
-            view.show_toast(format!("Forgot workspace {name}"), cx);
+            view.show_toast(jayjay_i18n::repo::forgot_workspace(&name), cx);
         });
     }
 
@@ -183,12 +180,9 @@ impl RepoWindow {
         }
         self.request_confirmation(
             Confirmation {
-                title: format!("Delete Workspace {name}?").into(),
-                message: format!(
-                    "This closes its window, forgets the workspace, and deletes its directory from disk:\n{path}"
-                )
-                .into(),
-                confirm_label: "Delete".into(),
+                title: jayjay_i18n::repo::delete_workspace_title(&name).into(),
+                message: jayjay_i18n::repo::delete_workspace_message(&path).into(),
+                confirm_label: jayjay_i18n::repo::delete().into(),
                 action: ConfirmedAction::DeleteWorkspace { name, path },
                 dont_ask_again: Some(DontAskAgain {
                     is_set: |config| config.features.skip_workspace_delete_confirmation,
@@ -214,7 +208,7 @@ impl RepoWindow {
             WorkspaceDrafts::discard(Path::new(&recent_entry), cx);
             match warning {
                 Some(warning) => view.vm.update(cx, |vm, _| vm.present_error(warning)),
-                None => view.show_toast(format!("Deleted workspace {name}"), cx),
+                None => view.show_toast(jayjay_i18n::repo::deleted_workspace(&name), cx),
             }
         });
     }
@@ -222,27 +216,27 @@ impl RepoWindow {
     pub(crate) fn open_repo_in_editor(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
         if !crate::app::tools::open_in_editor(&repo_path, ".", None, cx) {
-            self.show_toast("Editor could not be opened", cx);
+            self.show_toast(jayjay_i18n::repo::editor_could_not_be_opened(), cx);
         }
     }
 
     pub(crate) fn open_repo_in_terminal(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
         if !crate::app::tools::open_in_terminal(&repo_path, cx) {
-            self.show_toast("Terminal could not be opened", cx);
+            self.show_toast(jayjay_i18n::repo::terminal_could_not_be_opened(), cx);
         }
     }
 
     pub(crate) fn show_repo_in_file_manager(&mut self, cx: &mut Context<Self>) {
         let repo_path = self.vm.read(cx).repo_path.to_string();
         if !crate::app::tools::show_in_file_manager(&repo_path, None) {
-            self.show_toast("Repository could not be shown in the file manager", cx);
+            self.show_toast(jayjay_i18n::repo::repository_could_not_be_shown_in(), cx);
         }
     }
 
     pub(crate) fn open_remote_repository(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
-            self.show_toast("Repository is not open", cx);
+            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         };
         Self::spawn_update(
@@ -252,7 +246,7 @@ impl RepoWindow {
                 if let Some(url) = url {
                     crate::app::links::open_url(cx, &url);
                 } else {
-                    view.show_toast("Couldn't determine a web URL for origin", cx);
+                    view.show_toast(jayjay_i18n::repo::couldnt_determine_a_web_url_for(), cx);
                 }
             },
         );
@@ -270,7 +264,7 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) -> bool {
         if self.sync_activity.is_pushing() {
-            self.show_toast("Push already in progress", cx);
+            self.show_toast(jayjay_i18n::repo::push_already_in_progress(), cx);
             return false;
         }
         let Some(sync) = self.new_sync_token(cx) else {
@@ -293,7 +287,7 @@ impl RepoWindow {
                         Ok(message)
                     }
                     Err(JayError::Canceled) => {
-                        view.finish_canceled_sync("Push canceled", cx);
+                        view.finish_canceled_sync(jayjay_i18n::repo::push_canceled(), cx);
                         return;
                     }
                     Err(error) => Err(crate::app::error_text(error).to_string()),
@@ -320,7 +314,7 @@ impl RepoWindow {
             return;
         };
         cx.background_spawn(async move {
-            crate::platform::send_notification(title, &body);
+            crate::platform::send_notification(&title, &body);
         })
         .detach();
     }
@@ -371,22 +365,22 @@ fn sync_completion_notification(
     window_active: bool,
     operation: SyncOperation,
     outcome: Result<String, String>,
-) -> Option<(&'static str, String)> {
+) -> Option<(String, String)> {
     if window_active {
         return None;
     }
     Some(match (operation, outcome) {
-        (SyncOperation::Fetch, Ok(message)) => ("Fetch complete", message),
-        (SyncOperation::Fetch, Err(message)) => ("Fetch failed", message),
-        (SyncOperation::Push, Ok(message)) => ("Push complete", message),
-        (SyncOperation::Push, Err(message)) => ("Push failed", message),
+        (SyncOperation::Fetch, Ok(message)) => (jayjay_i18n::repo::fetch_complete(), message),
+        (SyncOperation::Fetch, Err(message)) => (jayjay_i18n::repo::fetch_failed(), message),
+        (SyncOperation::Push, Ok(message)) => (jayjay_i18n::repo::push_complete(), message),
+        (SyncOperation::Push, Err(message)) => (jayjay_i18n::repo::push_failed(), message),
     })
 }
 
 fn fetch_status_message(result: &FetchResult) -> String {
     let mut message = result.message.trim().to_owned();
     if message.is_empty() {
-        message = "Fetched origin".to_owned();
+        message = jayjay_i18n::repo::fetched_origin();
     }
     if !result.abandoned_bookmarks.is_empty() {
         message.push_str("\nAbandoned merged: ");
@@ -408,9 +402,9 @@ fn push_status_message(bookmark: &str, message: &str) -> String {
         .map(str::to_owned)
         .unwrap_or_else(|| {
             if bookmark.is_empty() {
-                "Pushed bookmarks".to_owned()
+                jayjay_i18n::repo::pushed_bookmarks()
             } else {
-                format!("Pushed {bookmark}")
+                jayjay_i18n::repo::pushed_bookmark(bookmark)
             }
         })
 }
@@ -431,7 +425,7 @@ mod tests {
                 SyncOperation::Push,
                 Err("authentication failed".to_owned()),
             ),
-            Some(("Push failed", "authentication failed".to_owned()))
+            Some(("Push failed".to_owned(), "authentication failed".to_owned()))
         );
     }
 }

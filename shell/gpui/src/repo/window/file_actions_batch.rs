@@ -69,23 +69,19 @@ impl RepoWindow {
                 paths: changed_paths.clone(),
             });
             items.push(ContextMenuItem::new(
-                plural_label(paths, "Split to New Change", |n| {
-                    format!("Split {n} Files to New Change")
-                }),
+                jayjay_i18n::menu::split_files(paths.len()),
                 glyph::GIT_BRANCH,
                 batch(FileBatchAction::Split(request.clone())),
             ));
             if change.is_working_copy {
                 items.push(ContextMenuItem::new(
-                    plural_label(paths, "Commit File", |n| format!("Commit {n} Files")),
+                    jayjay_i18n::menu::commit_files(paths.len()),
                     glyph::CHECK,
                     batch(FileBatchAction::Commit(request)),
                 ));
             } else {
                 items.push(ContextMenuItem::new(
-                    plural_label(paths, "Move to Working Copy", |n| {
-                        format!("Move {n} Files to Working Copy")
-                    }),
+                    jayjay_i18n::menu::move_files_to_working_copy(paths.len()),
                     glyph::ARROW_DOWN,
                     batch(FileBatchAction::MoveToWorkingCopy(request)),
                 ));
@@ -97,9 +93,7 @@ impl RepoWindow {
         }
         if change.is_working_copy {
             items.push(ContextMenuItem::new(
-                plural_label(paths, "Delete from Disk", |n| {
-                    format!("Delete {n} Files from Disk")
-                }),
+                jayjay_i18n::menu::delete_files_from_disk(paths.len()),
                 glyph::X_CIRCLE,
                 batch(FileBatchAction::Delete {
                     paths: paths.to_vec(),
@@ -107,9 +101,7 @@ impl RepoWindow {
             ));
         }
         items.push(ContextMenuItem::new(
-            plural_label(paths, "Ignore & Untrack", |n| {
-                format!("Ignore & Untrack {n} Files")
-            }),
+            jayjay_i18n::menu::ignore_untrack_files(paths.len()),
             glyph::EYE_OFF,
             batch(FileBatchAction::IgnoreAndUntrack {
                 paths: paths.to_vec(),
@@ -127,11 +119,10 @@ impl RepoWindow {
         vm: &crate::repo::view_model::RepoViewModel,
     ) -> ContextMenuItem {
         let (all_reviewed, action) = self.set_reviewed_action(paths, change, hunks, vm);
-        let label = match (all_reviewed, paths.len()) {
-            (true, 1) => "Mark as Unreviewed".to_owned(),
-            (true, n) => format!("Mark {n} Files as Unreviewed"),
-            (false, 1) => "Mark as Reviewed".to_owned(),
-            (false, n) => format!("Mark {n} Files as Reviewed"),
+        let label = if all_reviewed {
+            jayjay_i18n::menu::mark_files_unreviewed(paths.len())
+        } else {
+            jayjay_i18n::menu::mark_files_reviewed(paths.len())
         };
         ContextMenuItem::new(
             label,
@@ -266,9 +257,7 @@ fn restore_items(
     paths: &[String],
     changed_paths: &[String],
 ) -> Vec<ContextMenuItem> {
-    let label = plural_label(paths, "Restore to Parent", |n| {
-        format!("Restore {n} Files to Parent")
-    });
+    let label = jayjay_i18n::menu::restore_files_to_parent(paths.len());
     let rev = change.selection_revision().to_owned();
     if change.parents.len() > 1 {
         return change
@@ -307,17 +296,6 @@ fn hunks_for_paths<'a>(files: Option<&'a [DiffHunk]>, paths: &[String]) -> Vec<&
         .iter()
         .filter(|hunk| path_set.contains(hunk.path.as_str()))
         .collect()
-}
-
-pub(super) fn plural_label(
-    paths: &[String],
-    singular: &str,
-    plural: impl Fn(usize) -> String,
-) -> String {
-    match paths.len() {
-        1 => singular.to_owned(),
-        n => plural(n),
-    }
 }
 
 pub(super) fn batch(action: FileBatchAction) -> ContextAction {

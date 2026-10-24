@@ -97,7 +97,7 @@ fn identity(person: &CommitAuthor) -> String {
 
 fn email_label(person: &CommitAuthor) -> String {
     if person.email.is_empty() {
-        "(no email set)".to_owned()
+        jayjay_i18n::repo::no_email_set()
     } else {
         format!("<{}>", person.email)
     }

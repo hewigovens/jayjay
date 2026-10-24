@@ -7,6 +7,7 @@ use super::shared::{field_row, form_section};
 use crate::app::config::{AppConfig, AppearanceMode};
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
+use jayjay_i18n::{common, settings};
 
 pub(super) fn diff_palette_section(
     view: &SettingsView,
@@ -28,15 +29,27 @@ pub(super) fn diff_palette_section(
         .w_full()
         .gap(px(24.))
         .child(form_section(
-            "Colors",
+            settings::colors(),
             [
-                palette_row(glyph::SUN, "Light theme", "diff-light-palette", false, cx),
-                palette_row(glyph::MOON, "Dark theme", "diff-dark-palette", true, cx),
+                palette_row(
+                    glyph::SUN,
+                    settings::light_theme(),
+                    "diff-light-palette",
+                    false,
+                    cx,
+                ),
+                palette_row(
+                    glyph::MOON,
+                    settings::dark_theme(),
+                    "diff-dark-palette",
+                    true,
+                    cx,
+                ),
             ],
             t,
         ))
         .child(form_section(
-            "Preview",
+            common::preview(),
             [font_preview(
                 t,
                 &preview_theme(cfg, view.diff_preview_dark.unwrap_or(t.is_dark)),

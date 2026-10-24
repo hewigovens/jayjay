@@ -28,8 +28,8 @@ enum DAGRefChip: Hashable {
     var label: String {
         switch self {
             case .workingCopy: "@"
-            case .conflict: "conflict"
-            case .divergent: "divergent"
+            case .conflict: Localized.Repo.conflictBadge
+            case .divergent: Localized.Repo.divergentBadge
             case let .bookmark(name): name
             case let .gitTag(name): name
             case let .workspace(name): "\(name)@"

@@ -128,11 +128,11 @@ private struct MergeHunkCard: View {
     var body: some View {
         VStack(spacing: 0) {
             HStack(spacing: 8) {
-                Text("Conflict \(highlights.hunk.index + 1)")
+                Text(Localized.Merge.conflictNumber(number: Int(highlights.hunk.index) + 1))
                     .jayjayFont(11, weight: .semibold)
                     .accessibilityIdentifier(AID.Conflict.hunkCard(highlights.id))
-                    .accessibilityValue(isSelected ? "Selected" : "")
-                Text(isUnresolved ? "Unresolved" : "Resolved")
+                    .accessibilityValue(isSelected ? Localized.Merge.selected : "")
+                Text(isUnresolved ? Localized.Merge.unresolved : Localized.Repo.resolved)
                     .jayjayFont(10, weight: .medium)
                     .foregroundStyle(isUnresolved ? .orange : .green)
                 Spacer()
@@ -141,16 +141,16 @@ private struct MergeHunkCard: View {
             .padding(.vertical, 7)
             Divider()
             HStack(spacing: 12) {
-                actionButton("Accept Left", shortcut: .acceptLeftHunk, source: .left)
+                actionButton(Localized.Merge.acceptLeft, shortcut: .acceptLeftHunk, source: .left)
                     .accessibilityIdentifier(AID.Conflict.hunkUse(highlights.hunk.index, "left"))
-                actionButton("Accept Right", shortcut: .acceptRightHunk, source: .right)
+                actionButton(Localized.Merge.acceptRight, shortcut: .acceptRightHunk, source: .right)
                     .accessibilityIdentifier(AID.Conflict.hunkUse(highlights.hunk.index, "right"))
-                actionButton("Accept Base", source: .base)
+                actionButton(Localized.Merge.acceptBase, source: .base)
                     .accessibilityIdentifier(AID.Conflict.hunkUse(highlights.hunk.index, "base"))
                 Spacer()
                 HStack(spacing: 8) {
-                    Label("Left", systemImage: "minus")
-                    Label("Right", systemImage: "plus")
+                    Label(Localized.Repo.left, systemImage: "minus")
+                    Label(Localized.Repo.right, systemImage: "plus")
                 }
                 .jayjayFont(10, design: .monospaced)
                 .foregroundStyle(.tertiary)
@@ -198,6 +198,6 @@ private struct MergeHunkCard: View {
         }
         .buttonStyle(.plain)
         .disabled(!isUnresolved)
-        .help(title.replacingOccurrences(of: "Accept ", with: "Use ") + " for this conflict")
+        .help(source.useHelp)
     }
 }

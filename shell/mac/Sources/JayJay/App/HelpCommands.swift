@@ -9,33 +9,33 @@ struct HelpCommands: Commands {
             Button {
                 HelpBook.open()
             } label: {
-                Label("JayJay Help", systemImage: "questionmark.circle")
+                Label(Localized.Menu.jayjayHelp, systemImage: "questionmark.circle")
             }
             Link(destination: HelpBook.onlineGuideURL) {
-                Label("JayJay User Guide", systemImage: "book")
+                Label(Localized.Menu.jayjayUserGuide, systemImage: "book")
             }
             Divider()
             Link(destination: AppMetadata.jjDocsURL) {
-                Label("Jujutsu Documentation", systemImage: "book.closed")
+                Label(Localized.Menu.jujutsuDocumentation, systemImage: "book.closed")
             }
             Divider()
             Link(destination: URL(string: "https://github.com/hewigovens/jayjay/issues")!) {
-                Label("Report an Issue", systemImage: "exclamationmark.bubble")
+                Label(Localized.Menu.reportAnIssue, systemImage: "exclamationmark.bubble")
             }
             Button {
                 FeedbackEmail.open()
             } label: {
-                Label("Send Feedback", systemImage: "envelope")
+                Label(Localized.Menu.sendFeedback, systemImage: "envelope")
             }
             Button {
                 guard let path = logFilePath() else { return }
                 NSWorkspace.shared.activateFileViewerSelecting([URL(fileURLWithPath: path)])
             } label: {
-                Label("Reveal Logs", systemImage: "doc.text.magnifyingglass")
+                Label(Localized.Menu.revealLogs, systemImage: "doc.text.magnifyingglass")
             }
             Divider()
             Button { openWindow(id: AppWindows.shortcuts) } label: {
-                Label("Keyboard Shortcuts", systemImage: "keyboard")
+                Label(Localized.Menu.keyboardShortcuts, systemImage: "keyboard")
             }
             .keyboardShortcut(AppShortcut.keyboardShortcuts)
         }

@@ -42,10 +42,10 @@ enum FileRowReviewChrome: Equatable {
     var accessibilityLabel: String {
         switch self {
             case .hidden: ""
-            case .unreviewed: "Unreviewed"
-            case .partial: "Partially reviewed"
-            case .reviewed: "Reviewed"
-            case .changedSinceReview: "Changed since review"
+            case .unreviewed: Localized.Repo.unreviewed
+            case .partial: Localized.Repo.partiallyReviewed
+            case .reviewed: Localized.Repo.reviewed
+            case .changedSinceReview: Localized.Repo.changedSinceReview
         }
     }
 }

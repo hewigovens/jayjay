@@ -17,8 +17,8 @@ impl DiffFormatPlugin for SarifPlugin {
         1
     }
 
-    fn label(&self) -> &'static str {
-        "SARIF report"
+    fn label(&self) -> String {
+        jayjay_i18n::diff::plugin_sarif_report()
     }
 
     fn render_kind(&self) -> DiffRenderKind {

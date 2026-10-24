@@ -177,7 +177,7 @@ fn text_width(
 fn description_label(description: &str) -> String {
     let trimmed = description.trim();
     if trimmed.is_empty() {
-        "(no description)".to_owned()
+        jayjay_i18n::repo::no_description_placeholder()
     } else {
         trimmed.lines().next().unwrap_or("").trim().to_owned()
     }

@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 /// One documented shortcut: an action and the key-caps that trigger it. `keys` are display glyphs in press order, e.g. ["⇧", "⌘", "P"] or ["Space"].
 struct ShortcutEntry: Identifiable {
@@ -57,7 +58,7 @@ enum ShortcutGuide {
             ShortcutEntry("Repo Overview", .repoOverview),
             ShortcutEntry("Filter Overview Lanes", .filterOverviewLanes),
             ShortcutEntry("Undo Last Operation", .undoLastOperation),
-            ShortcutEntry("Show in Finder", .showInFinder)
+            ShortcutEntry(Localized.Common.showIn(app: "Finder"), .showInFinder)
         ]),
         ShortcutSection(title: "Diff & Review", entries: [
             ShortcutEntry("Find in Diff", .findInDiff),

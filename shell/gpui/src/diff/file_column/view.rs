@@ -122,9 +122,9 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 column = column.child(file_filter_bar(input, &file_filter_focus, cx, &t));
             }
             let body = if loading {
-                loading_status("Loading files…", &t)
+                loading_status(jayjay_i18n::diff::loading_files_ellipsis(), &t)
             } else {
-                placeholder("No files", &t)
+                placeholder(jayjay_i18n::repo::no_files(), &t)
             };
             return column.child(body).into_any_element();
         }
@@ -138,9 +138,9 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
     let body = if visible_count == 0 {
         placeholder(
             if file_filter_has_query {
-                "No matching files"
+                jayjay_i18n::repo::no_matching_files()
             } else {
-                "All files hidden"
+                jayjay_i18n::repo::all_files_hidden()
             },
             &t,
         )

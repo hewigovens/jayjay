@@ -13,6 +13,8 @@ struct JayJayApp: App {
     init() {
         CommandLineInterface.runAndExitIfNeeded(arguments: CommandLine.arguments)
         installLogFile(version: AppMetadata.compactVersionLabel)
+        setPreferredLanguages(languages: Locale.preferredLanguages)
+        setNumberLocale(locale: Locale.current.identifier(.bcp47))
         // With saved state consulted, SwiftUI presents the previous session's scenes instead of the launch route.
         UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
 

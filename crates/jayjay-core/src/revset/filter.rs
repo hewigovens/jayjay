@@ -20,7 +20,7 @@ pub struct RevsetFilter {
 impl RevsetFilter {
     pub fn of(revset: &str) -> Self {
         if default_revset_depth(revset).is_some() {
-            return Self::named(RevsetFilterKind::Default, "Revset");
+            return Self::named(RevsetFilterKind::Default, &jayjay_i18n::repo::revset());
         }
         if let Some(preset) = revset_presets()
             .iter()

@@ -1,12 +1,12 @@
-use gpui::{IntoElement, ParentElement, Styled, div, px, rgb};
+use gpui::{IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 
 pub(super) fn placeholder_card(
     glyph_str: &'static str,
-    title: &'static str,
-    body: &'static str,
+    title: impl Into<SharedString>,
+    body: impl Into<SharedString>,
     t: &Theme,
 ) -> impl IntoElement {
     div()
@@ -23,17 +23,21 @@ pub(super) fn placeholder_card(
             div()
                 .text_size(ui_font_size(14.))
                 .text_color(rgb(t.fg))
-                .child(title),
+                .child(title.into()),
         )
         .child(
             div()
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
-                .child(body),
+                .child(body.into()),
         )
 }
 
-pub(super) fn placeholder(title: &'static str, body: &'static str, t: &Theme) -> impl IntoElement {
+pub(super) fn placeholder(
+    title: impl Into<SharedString>,
+    body: impl Into<SharedString>,
+    t: &Theme,
+) -> impl IntoElement {
     div()
         .flex()
         .flex_1()
@@ -48,22 +52,22 @@ pub(super) fn placeholder(title: &'static str, body: &'static str, t: &Theme) ->
                 .text_size(ui_font_size(17.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg_dim))
-                .child(title),
+                .child(title.into()),
         )
         .child(
             div()
                 .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_faint))
-                .child(body),
+                .child(body.into()),
         )
 }
 
-pub(super) fn placeholder_inner(text: &'static str, t: &Theme) -> impl IntoElement {
+pub(super) fn placeholder_inner(text: impl Into<SharedString>, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .size_full()
         .items_center()
         .justify_center()
         .text_color(rgb(t.fg_dim))
-        .child(text)
+        .child(text.into())
 }

@@ -79,6 +79,9 @@ jobs:
       - name: Lint Swift
         run: swiftlint lint --config .swiftlint.yml --strict
 
+      - name: Lint localization
+        run: just lint-i18n
+
       - name: Build app
         run: just build
 

@@ -52,7 +52,6 @@ hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
 
 [dependencies]
 icu_decimal = { version = "2.3", features = ["alloc"] }
-icu_locale_core = "2.3"
 base64 = { workspace = true, optional = true }
 hotpath = { workspace = true, optional = true }
 clap = { workspace = true, optional = true }
@@ -62,6 +61,7 @@ gix-url = { workspace = true, optional = true }
 keyring-core = { workspace = true, optional = true }
 percent-encoding = { workspace = true, optional = true }
 jj-diff = { version = "0.1.0", path = "../jj-diff" }
+jayjay-i18n = { version = "0.1.0", path = "../jayjay-i18n" }
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
 jayjay-review = { version = "0.1.0", path = "../jayjay-review", optional = true }
 jayjay-network = { version = "0.1.0", path = "../jayjay-network", default-features = false, optional = true }

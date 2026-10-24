@@ -50,8 +50,9 @@ struct RepoTitlePicker: View {
         .buttonStyle(.plain)
         .fixedSize()
         .background(PickerAnchorView(anchor: anchor))
-        .help("Switch repository or workspace")
-        .accessibilityLabel("Switch Repository or Workspace")
+        .help(Localized.Repo.switchRepositoryOrWorkspace)
+        .accessibilityLabel(Localized.Repo.switchRepositoryOrWorkspaceTitle)
+        .accessibilityIdentifier(AID.Toolbar.repositoryTitle)
         .onAppear(perform: refresh)
         .onReceive(NotificationCenter.default.publisher(for: NSApplication.didBecomeActiveNotification)) { _ in
             refresh()
@@ -80,8 +81,8 @@ struct RepoTitlePicker: View {
         guard let anchorView = anchor.view else { return }
         let sections = [workspaceSection, repositorySection, globalSection].compactMap(\.self)
         let root = PickerPanelRoot(
-            placeholder: "Filter",
-            actionLabel: "New",
+            placeholder: Localized.Repo.filter,
+            actionLabel: Localized.Repo.new,
             onAction: { deferred { onCreateWorkspace() } },
             onOverview: { deferred { onOpenOverview() } },
             sections: sections,
@@ -128,7 +129,7 @@ struct RepoTitlePicker: View {
             }
             .withContextMenu { workspaceContextMenu(workspace) }
         }
-        return PickerSection(id: "workspaces", title: "Workspaces", rows: rows)
+        return PickerSection(id: "workspaces", title: Localized.Repo.workspaces, rows: rows)
     }
 
     @ViewBuilder
@@ -150,12 +151,12 @@ struct RepoTitlePicker: View {
         )
         if !workspace.isCurrent {
             Divider()
-            Button("Forget") {
+            Button(Localized.Repo.forget) {
                 panel.dismiss()
                 onForget(workspace)
             }
             if workspace.isPathResolved {
-                Button("Forget & Delete from Disk", role: .destructive) {
+                Button(Localized.Repo.forgetDeleteFromDisk, role: .destructive) {
                     panel.dismiss()
                     onForgetDelete(workspace)
                 }
@@ -182,7 +183,7 @@ struct RepoTitlePicker: View {
                 deferred { windowManager.openRepo(path) }
             }
         }
-        return PickerSection(id: "repositories", title: "Repositories", rows: openRows + pinnedRows)
+        return PickerSection(id: "repositories", title: Localized.Repo.repositories, rows: openRows + pinnedRows)
     }
 
     private func repoRow(path: String, icon: String, iconTint: Color, action: (() -> Void)? = nil) -> PickerRow {
@@ -216,7 +217,7 @@ struct RepoTitlePicker: View {
     private func pinButton(path: String) -> some View {
         let path = normalizedRepositoryPath(path: path)
         let pinned = repositoryStore.paths.contains(path)
-        return Button(pinned ? "Unpin" : "Pin", systemImage: pinned ? "pin.slash" : "pin") {
+        return Button(pinned ? Localized.Repo.unpin : Localized.Repo.pin, systemImage: pinned ? "pin.slash" : "pin") {
             panel.dismiss()
             repositoryStore.setPinned(!pinned, path: path, keepingListedIn: settings)
         }
@@ -224,13 +225,13 @@ struct RepoTitlePicker: View {
 
     private var globalSection: PickerSection? {
         PickerSection(id: "global", title: nil, rows: [
-            actionRow(id: "repo-list", title: "Repository List…", icon: "list.bullet") {
+            actionRow(id: "repo-list", title: Localized.Repo.repositoryListEllipsis, icon: "list.bullet") {
                 deferred { windowManager.showRepoList() }
             },
-            actionRow(id: "open-repo", title: "Open Repository…", icon: "folder") {
+            actionRow(id: "open-repo", title: Localized.Menu.openRepositoryEllipsis, icon: "folder") {
                 deferred { windowManager.openRepositoryPicker() }
             },
-            actionRow(id: "clone-repo", title: "Clone Repository…", icon: "square.and.arrow.down") {
+            actionRow(id: "clone-repo", title: Localized.Menu.cloneRepositoryEllipsis, icon: "square.and.arrow.down") {
                 deferred { windowManager.showCloneRepository() }
             }
         ])

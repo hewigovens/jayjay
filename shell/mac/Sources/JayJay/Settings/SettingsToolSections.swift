@@ -7,7 +7,7 @@ struct SettingsToolSections: View {
 
     var body: some View {
         Group {
-            Section("Applications") {
+            Section(Localized.Settings.applications) {
                 Picker(selection: Binding(
                     get: { settings.externalEditor },
                     set: { settings.externalEditor = $0 }
@@ -16,13 +16,13 @@ struct SettingsToolSections: View {
                         Text(editor.title).tag(editor)
                     }
                 } label: {
-                    SettingsLabel("Editor", icon: "curlybraces")
+                    SettingsLabel(Localized.Settings.editor, icon: "curlybraces")
                 }
                 if settings.externalEditor == .custom {
-                    TextField("Command", text: Binding(
+                    TextField(Localized.Settings.command, text: Binding(
                         get: { settings.customEditorCommand },
                         set: { settings.customEditorCommand = $0 }
-                    ), prompt: Text("e.g. code, nvim"))
+                    ), prompt: Text(Localized.Settings.example(example: "code, nvim")))
                 }
                 Picker(selection: Binding(
                     get: { settings.terminal },
@@ -32,13 +32,13 @@ struct SettingsToolSections: View {
                         Text(term.title).tag(term)
                     }
                 } label: {
-                    SettingsLabel("Terminal", icon: "terminal")
+                    SettingsLabel(Localized.Settings.terminal, icon: "terminal")
                 }
                 if settings.terminal == .custom {
-                    TextField("App name", text: Binding(
+                    TextField(Localized.Settings.appName, text: Binding(
                         get: { settings.customTerminalCommand },
                         set: { settings.customTerminalCommand = $0 }
-                    ), prompt: Text("e.g. Terminal"))
+                    ), prompt: Text(Localized.Settings.example(example: "Terminal")))
                 }
             }
 
@@ -57,9 +57,9 @@ struct SettingsToolSections: View {
                 .scrollContentBackground(.hidden)
                 .frame(height: CGFloat(settings.aiProviderOrder.count) * Self.providerRowHeight)
             } header: {
-                Text("AI Providers")
+                Text(Localized.Settings.aiProviders)
             } footer: {
-                Text("Drag to reorder. The first provider that answers wins.")
+                Text(Localized.Settings.aiProvidersDetail)
             }
         }
         .task {
@@ -90,10 +90,10 @@ struct SettingsToolSections: View {
     }
 
     private func status(of provider: AiProvider) -> String {
-        guard let ready = availability.value?[provider] else { return "Checking…" }
+        guard let ready = availability.value?[provider] else { return Localized.Common.checking }
         if provider == .appleIntelligence {
-            return ready ? "Available" : "Not available"
+            return ready ? Localized.Settings.available : Localized.Settings.notAvailable
         }
-        return ready ? "Installed" : "Not found"
+        return ready ? Localized.Common.installed : Localized.Common.notFound
     }
 }

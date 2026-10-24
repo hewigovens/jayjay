@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct OverviewWindowScene: Scene {
@@ -5,7 +6,7 @@ struct OverviewWindowScene: Scene {
     let windowManager: RepoWindowManager
 
     var body: some Scene {
-        WindowGroup("Repo Overview", id: AppWindows.overview, for: String.self) { $repoPath in
+        WindowGroup(Localized.Menu.repoOverview, id: AppWindows.overview, for: String.self) { $repoPath in
             if !repoPath.isEmpty {
                 OverviewWindow(repoPath: repoPath)
                     .environment(windowManager)

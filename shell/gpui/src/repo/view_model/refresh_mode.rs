@@ -10,10 +10,12 @@ pub(crate) enum RefreshMode {
 }
 
 impl RefreshMode {
-    pub(crate) fn tooltip(self) -> &'static str {
+    pub(crate) fn tooltip(self) -> String {
         match self {
-            RefreshMode::Refresh => "Refresh",
-            RefreshMode::UpdateWorkspace => "Update Workspace — the working copy is stale",
+            RefreshMode::Refresh => jayjay_i18n::repo::refresh(),
+            RefreshMode::UpdateWorkspace => {
+                jayjay_i18n::repo::update_workspace_the_working_copy_is()
+            }
         }
     }
 

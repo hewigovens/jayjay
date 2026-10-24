@@ -29,25 +29,25 @@ struct ExternalDiffToolView: View {
             Image(systemName: session.editable ? "rectangle.and.pencil.and.ellipsis" : "square.split.2x1")
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 2) {
-                Text(session.editable ? "Edit Diff" : "Folder Comparison")
+                Text(session.editable ? Localized.Diff.editDiff : Localized.Merge.folderComparison)
                     .jayjayFont(14, weight: .semibold)
                     .accessibilityIdentifier(AID.ExternalTool.diff)
                 Text(session.editable
-                    ? "Keep the checked files and lines in the edited result."
-                    : "Reviewing the exact left and right snapshots supplied by the calling tool.")
+                    ? Localized.Merge.keepTheCheckedFilesAndLines
+                    : Localized.Merge.reviewingTheExactLeftAndRight)
                     .jayjayFont(11)
                     .foregroundStyle(.secondary)
             }
             Spacer()
             if !session.files.isEmpty {
-                Text("\(session.files.count) changed \(session.files.count == 1 ? "file" : "files")")
+                Text(Localized.Merge.changedFiles(count: session.files.count))
                     .jayjayFont(11, design: .monospaced)
                     .foregroundStyle(.secondary)
             }
-            Button("Cancel", action: session.cancel)
+            Button(Localized.Common.cancel, action: session.cancel)
                 .keyboardShortcut(.cancelAction)
             if session.editable {
-                Button(session.isSaving ? "Saving…" : "Done", action: session.save)
+                Button(session.isSaving ? Localized.Repo.savingEllipsis : Localized.Repo.done, action: session.save)
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .disabled(!session.canSave)
@@ -61,18 +61,18 @@ struct ExternalDiffToolView: View {
     @ViewBuilder
     private var content: some View {
         if session.isLoading {
-            LoadingStatus(label: "Loading comparison…")
+            LoadingStatus(label: Localized.Merge.loadingComparisonEllipsis)
         } else if let error = session.errorMessage {
             ContentUnavailableView(
-                "Couldn’t Open Tool Session",
+                Localized.Merge.couldntOpenToolSession,
                 systemImage: "exclamationmark.triangle",
                 description: Text(error)
             )
         } else if session.files.isEmpty {
             ContentUnavailableView(
-                "No Differences",
+                Localized.Merge.noDifferences,
                 systemImage: "checkmark.circle",
-                description: Text("The supplied snapshots have identical contents.")
+                description: Text(Localized.Merge.theSuppliedSnapshotsHaveIdenticalContents)
             )
         } else {
             ScrollView {

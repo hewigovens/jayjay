@@ -27,22 +27,22 @@ use crate::ui::primitives::button;
 
 fn hidden_only_placeholder(
     hidden: &crate::repo::window::HiddenGitFiles,
-) -> (&'static str, &'static str, &'static str) {
+) -> (&'static str, String, String) {
     match (hidden.lfs > 0, hidden.submodules > 0) {
         (true, true) => (
             glyph::DATABASE,
-            "Only Git-managed Changes Hidden",
-            "This revision only changes Git LFS-backed files and submodules, and the current diff settings hide them.",
+            jayjay_i18n::repo::only_git_managed_changes_hidden(),
+            jayjay_i18n::repo::this_revision_only_changes_git_lfs(),
         ),
         (true, false) => (
             glyph::DATABASE,
-            "Only Git LFS-backed Files Hidden",
-            "This revision only changes Git LFS-backed files, and the current diff setting hides them.",
+            jayjay_i18n::repo::only_git_lfs_backed_files_hidden(),
+            jayjay_i18n::repo::this_revision_only_changes_git_lfs_backed(),
         ),
         (false, _) => (
             glyph::SUBMODULE,
-            "Only Git Submodule Changes Hidden",
-            "This revision only changes Git submodules, and the current settings hide them.",
+            jayjay_i18n::repo::only_git_submodule_changes_hidden(),
+            jayjay_i18n::repo::this_revision_only_changes_git_submodules(),
         ),
     }
 }
@@ -70,13 +70,13 @@ pub fn diff_view(
         }
         let (title, body) = if state.no_changes {
             (
-                "No Files Changed",
-                "This revision does not modify any tracked files.",
+                jayjay_i18n::repo::no_files_changed(),
+                jayjay_i18n::repo::this_revision_does_not_modify_any(),
             )
         } else {
             (
-                "Select a file",
-                "Choose a file from the list to see its diff.",
+                jayjay_i18n::diff::select_a_file(),
+                jayjay_i18n::diff::choose_a_file_from_the_list(),
             )
         };
         return placeholder(title, body, &t).into_any_element();
@@ -127,10 +127,11 @@ pub fn diff_view(
 
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
-            loading_status("Loading annotations…", &t)
+            loading_status(jayjay_i18n::diff::loading_annotations_ellipsis(), &t)
         } else if let Some(lines) = state.annotate_lines.as_ref() {
             if lines.is_empty() {
-                placeholder_inner("No annotations available", &t).into_any_element()
+                placeholder_inner(jayjay_i18n::diff::no_annotations_available(), &t)
+                    .into_any_element()
             } else {
                 crate::diff::annotate_view::annotate_body(
                     hunk.path.clone(),
@@ -140,7 +141,7 @@ pub fn diff_view(
                 )
             }
         } else {
-            placeholder_inner("Annotations unavailable", &t).into_any_element()
+            placeholder_inner(jayjay_i18n::diff::annotations_unavailable(), &t).into_any_element()
         }
     } else if hunk_is_image(hunk) {
         image_diff_view(hunk, &t, window, cx)
@@ -174,16 +175,16 @@ pub fn diff_view(
     } else if hunk_is_submodule(hunk) {
         placeholder_card(
             glyph::PACKAGE,
-            "Git submodule",
-            "This submodule has working-copy changes, but JayJay does not render an inline text diff for submodule contents. Open or commit the submodule in its own repository.",
+            jayjay_i18n::diff::git_submodule(),
+            jayjay_i18n::diff::this_submodule_has_working_copy_changes(),
             &t,
         )
         .into_any_element()
     } else if hunk_is_git_lfs(hunk) {
         placeholder_card(
             glyph::DATABASE,
-            "Git LFS-backed file",
-            "This file is tracked through Git LFS. JayJay does not render an inline text diff between the committed pointer and the local binary object.",
+            jayjay_i18n::diff::git_lfs_backed_file(),
+            jayjay_i18n::diff::this_file_is_tracked_through_git(),
             &t,
         )
         .into_any_element()
@@ -191,26 +192,27 @@ pub fn diff_view(
         let (icon, message) = if hunk.hunk_type == HunkType::Copied {
             (
                 glyph::COPY,
-                "This file was copied; its contents match the source.",
+                jayjay_i18n::diff::this_file_was_copied_its_contents(),
             )
         } else {
             (
                 glyph::ARROW_CIRCLE_RIGHT,
-                "This file was renamed; its contents are identical.",
+                jayjay_i18n::diff::this_file_was_renamed_its_contents(),
             )
         };
-        placeholder_card(icon, "No content changes", message, &t).into_any_element()
+        placeholder_card(icon, jayjay_i18n::diff::no_content_changes(), message, &t)
+            .into_any_element()
     } else {
         match (state.file_diff, view_mode) {
             (None, _) if hunk.projection.is_some() => diff_body_with_gutter(
-                loading_status("Loading diff…", &t),
+                loading_status(jayjay_i18n::diff::loading_diff_ellipsis(), &t),
                 &t,
                 "diff-loading-gutter",
                 state.shows_review,
             ),
-            (None, _) => loading_status("Loading diff…", &t),
+            (None, _) => loading_status(jayjay_i18n::diff::loading_diff_ellipsis(), &t),
             (Some(fd), _) if fd.lines.is_empty() => {
-                placeholder_inner("No textual diff (binary, identical, or empty)", &t)
+                placeholder_inner(jayjay_i18n::diff::no_textual_diff_binary_identical_or(), &t)
                     .into_any_element()
             }
             (Some(fd), DiffViewMode::Unified) => unified_body(
@@ -368,31 +370,41 @@ fn conflict_banner(
                 .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.tag_conflict_fg))
-                .child("Conflict"),
+                .child(jayjay_i18n::repo::conflict()),
         )
         .child(div().flex_1())
         .child(
-            button("conflict-use-ours", "Use Ours", t, false)
+            button("conflict-use-ours", jayjay_i18n::repo::use_ours(), t, false)
                 .debug_selector(|| "conflict-use-ours".to_owned())
                 .on_click(cx.listener(|view, _, _, cx| {
                     view.resolve_selected_file_with_tool(":ours".to_owned(), cx);
                 })),
         )
         .child(
-            button("conflict-use-theirs", "Use Theirs", t, false)
-                .debug_selector(|| "conflict-use-theirs".to_owned())
-                .on_click(cx.listener(|view, _, _, cx| {
-                    view.resolve_selected_file_with_tool(":theirs".to_owned(), cx);
-                })),
+            button(
+                "conflict-use-theirs",
+                jayjay_i18n::repo::use_theirs(),
+                t,
+                false,
+            )
+            .debug_selector(|| "conflict-use-theirs".to_owned())
+            .on_click(cx.listener(|view, _, _, cx| {
+                view.resolve_selected_file_with_tool(":theirs".to_owned(), cx);
+            })),
         );
 
     if supports_conflict_editor {
         bar = bar.child(
-            button("conflict-resolve-jayjay", "Edit in JayJay", t, false)
-                .debug_selector(|| "conflict-resolve-jayjay".to_owned())
-                .on_click(cx.listener(|view, _, _, cx| {
-                    view.enter_selected_conflict_editor(cx);
-                })),
+            button(
+                "conflict-resolve-jayjay",
+                jayjay_i18n::repo::edit_in_jayjay(),
+                t,
+                false,
+            )
+            .debug_selector(|| "conflict-resolve-jayjay".to_owned())
+            .on_click(cx.listener(|view, _, _, cx| {
+                view.enter_selected_conflict_editor(cx);
+            })),
         );
     }
 
@@ -400,7 +412,7 @@ fn conflict_banner(
         bar = bar.child(
             button(
                 "conflict-resolve-editor",
-                format!("Resolve in {editor_title}"),
+                jayjay_i18n::menu::resolve_in(editor_title),
                 t,
                 false,
             )
@@ -412,7 +424,7 @@ fn conflict_banner(
         bar = bar.child(
             button(
                 "conflict-open-editor",
-                format!("Open in {editor_title}"),
+                jayjay_i18n::menu::open_in(editor_title),
                 t,
                 false,
             )

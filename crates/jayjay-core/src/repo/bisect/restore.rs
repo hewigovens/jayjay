@@ -21,9 +21,7 @@ impl Repo {
                     }
                     Err(_) => {
                         self.new_on_parents(parents, "bisect: finish")?;
-                        Ok(Some(
-                        "The original change was gone, so this restored a new change on its parents.".to_owned(),
-                    ))
+                        Ok(Some(jayjay_i18n::repo::bisect_original_gone()))
                     }
                 }
             }

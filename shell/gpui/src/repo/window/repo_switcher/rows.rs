@@ -89,7 +89,11 @@ fn repository_pin_item(path: &str, cx: &mut gpui::App) -> ContextMenuItem {
         .into_owned();
     let pinned = repositories::current(cx).contains(&path);
     ContextMenuItem::new(
-        if pinned { "Unpin" } else { "Pin" },
+        if pinned {
+            jayjay_i18n::repo::unpin()
+        } else {
+            jayjay_i18n::repo::pin()
+        },
         if pinned { glyph::PIN_OFF } else { glyph::PIN },
         ContextAction::SetRepositoryPinned {
             path: path.into(),
@@ -101,9 +105,9 @@ fn repository_pin_item(path: &str, cx: &mut gpui::App) -> ContextMenuItem {
 fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
     let shown = compact_id(&workspace.change_id);
     let description = if !workspace.is_path_resolved {
-        "Path unavailable — Forget to clean up".to_owned()
+        jayjay_i18n::repo::path_unavailable_forget_to_clean_up()
     } else if workspace.description.trim().is_empty() {
-        "(no description)".to_owned()
+        jayjay_i18n::repo::no_description_placeholder()
     } else {
         workspace.description.clone()
     };
@@ -114,17 +118,8 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
     } else {
         t.fg_dim
     };
-    let file_label = (workspace.files_changed > 0).then(|| {
-        format!(
-            "{} file{}",
-            workspace.files_changed,
-            if workspace.files_changed == 1 {
-                ""
-            } else {
-                "s"
-            },
-        )
-    });
+    let file_label = (workspace.files_changed > 0)
+        .then(|| jayjay_i18n::repo::file_count(workspace.files_changed));
     div()
         .flex()
         .min_w_0()
@@ -248,7 +243,7 @@ fn workspace_context_items(
     items.extend(workspace_menu_items(workspace));
     if !workspace.is_current {
         items.push(ContextMenuItem::new(
-            "Forget",
+            jayjay_i18n::repo::forget(),
             glyph::X_CIRCLE,
             ContextAction::ForgetWorkspace {
                 name: workspace.name.clone().into(),
@@ -262,7 +257,7 @@ fn workspace_context_items(
             == normalize_repository_path(Path::new(primary_root));
         if workspace.is_path_resolved && !owns_repository {
             items.push(ContextMenuItem::new(
-                "Forget & Delete from Disk",
+                jayjay_i18n::repo::forget_delete_from_disk(),
                 glyph::WARNING,
                 ContextAction::DeleteWorkspace {
                     name: workspace.name.clone().into(),

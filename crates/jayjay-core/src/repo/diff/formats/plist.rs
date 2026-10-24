@@ -21,8 +21,8 @@ impl DiffFormatPlugin for PlistPlugin {
         1
     }
 
-    fn label(&self) -> &'static str {
-        "Property list"
+    fn label(&self) -> String {
+        jayjay_i18n::diff::plugin_property_list()
     }
 
     fn render_kind(&self) -> DiffRenderKind {

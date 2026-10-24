@@ -84,7 +84,7 @@ impl EvologView {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some(format!("Evolution: {title}").into()),
+                        title: Some(jayjay_i18n::evolog::window_title(&title).into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -225,12 +225,12 @@ impl Render for EvologView {
             .map(|state| render_context_menu(state, &t, &cx.entity()));
         let hide_snapshots = self.hide_snapshots;
         let body = if self.loading {
-            loading_status("Loading evolution…", &t)
+            loading_status(jayjay_i18n::evolog::loading_evolution_ellipsis(), &t)
         } else if let Some(err) = self.error.clone() {
             placeholder_err(&err, &t)
         } else if let Some(entries) = self.entries.clone() {
             if entries.is_empty() {
-                placeholder("No history", &t)
+                placeholder(jayjay_i18n::evolog::no_history(), &t)
             } else {
                 evolog_body(
                     self,
@@ -243,7 +243,7 @@ impl Render for EvologView {
                 )
             }
         } else {
-            placeholder("Unable to load history", &t)
+            placeholder(jayjay_i18n::evolog::unable_to_load_history(), &t)
         };
 
         let mut root = div()
@@ -303,7 +303,7 @@ fn header(
                 .code_text(13., t)
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
-                .child("Evolution: ")
+                .child(format!("{} ", jayjay_i18n::repo::evolution_prefix()))
                 .child(id_cell(
                     &shown,
                     change_id.short_len,
@@ -314,11 +314,15 @@ fn header(
         )
         .child(div().flex_1())
         .child(
-            checkbox_row("evolog-hide-snapshots", "Hide snapshots", hide_snapshots, t).on_click(
-                cx.listener(|view, _: &ClickEvent, _, cx| {
-                    view.set_hide_snapshots(!view.hide_snapshots, cx);
-                }),
-            ),
+            checkbox_row(
+                "evolog-hide-snapshots",
+                jayjay_i18n::repo::hide_snapshots(),
+                hide_snapshots,
+                t,
+            )
+            .on_click(cx.listener(|view, _: &ClickEvent, _, cx| {
+                view.set_hide_snapshots(!view.hide_snapshots, cx);
+            })),
         )
         .into_any_element()
 }
@@ -389,7 +393,7 @@ fn evolog_row(
     let entry = &entries[row.start as usize];
     let collapsed = row.is_collapsed_run();
     let operation: SharedString = if collapsed {
-        format!("{} snapshots", row.count).into()
+        jayjay_i18n::evolog::snapshot_count(row.count).into()
     } else {
         entry.operation.clone().into()
     };
@@ -397,7 +401,7 @@ fn evolog_row(
     let short_commit = compact_id(&entry.commit_id);
     let when = format_when(entry.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
-        "(no description)".to_owned()
+        jayjay_i18n::repo::no_description_placeholder()
     } else {
         entry
             .description

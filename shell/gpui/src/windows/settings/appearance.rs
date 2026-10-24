@@ -3,6 +3,7 @@ use gpui::{
     AnyElement, ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
+use jayjay_i18n::settings;
 
 use super::SettingsView;
 use super::diff_palette::diff_palette_section;
@@ -25,7 +26,7 @@ pub(super) fn appearance_section(
         .child(form_group(
             [field_row(
                 glyph::CONTRAST,
-                "Appearance",
+                settings::page_appearance(),
                 appearance_segmented(cfg.appearance, t),
                 t,
             )],
@@ -45,21 +46,21 @@ fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
         .bg(rgb(t.toggle_inactive_bg))
         .child(appearance_option(
             AppearanceMode::System,
-            "System",
+            settings::appearance_system(),
             current,
             "appearance-system",
             t,
         ))
         .child(appearance_option(
             AppearanceMode::Light,
-            "Light",
+            settings::appearance_light(),
             current,
             "appearance-light",
             t,
         ))
         .child(appearance_option(
             AppearanceMode::Dark,
-            "Dark",
+            settings::appearance_dark(),
             current,
             "appearance-dark",
             t,
@@ -69,7 +70,7 @@ fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {
 
 fn appearance_option(
     mode: AppearanceMode,
-    label: &'static str,
+    label: String,
     current: AppearanceMode,
     id: &'static str,
     t: &Theme,

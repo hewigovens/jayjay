@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct RatingPromptView: View {
@@ -12,10 +13,10 @@ struct RatingPromptView: View {
                 .font(.system(size: 40))
                 .foregroundStyle(.pink)
 
-            Text("Enjoying JayJay?")
+            Text(Localized.Repo.enjoyingJayjay)
                 .jayjayFont(18, weight: .bold)
 
-            Text("If JayJay is useful to you, a star on GitHub helps others find it, or sponsoring supports development.")
+            Text(Localized.Repo.ratingPromptDetail)
                 .jayjayFont(13)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
@@ -23,14 +24,14 @@ struct RatingPromptView: View {
                 .fixedSize(horizontal: false, vertical: true)
 
             HStack(spacing: 12) {
-                Button("Star on GitHub") { open(AppMetadata.githubURL) }
+                Button(Localized.Settings.starOnGithub) { open(AppMetadata.githubURL) }
                     .buttonStyle(.borderedProminent)
                     .keyboardShortcut(.defaultAction)
-                Button("Sponsor") { open(AppMetadata.sponsorURL) }
+                Button(Localized.Settings.sponsor) { open(AppMetadata.sponsorURL) }
             }
             .padding(.top, 4)
 
-            Button("Don't show again") { onDontShowAgain() }
+            Button(Localized.Repo.dontShowAgain) { onDontShowAgain() }
                 .buttonStyle(.plain)
                 .jayjayFont(11)
                 .foregroundStyle(.tertiary)

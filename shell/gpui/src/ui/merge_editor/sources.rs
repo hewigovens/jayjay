@@ -14,9 +14,12 @@ pub(crate) fn merge_base_toggle(
     t: &Theme,
 ) -> Stateful<Div> {
     let (icon_glyph, label) = if shows_base {
-        (glyph::ARROW_UTURN_BACK, "Back to Left & Right")
+        (
+            glyph::ARROW_UTURN_BACK,
+            jayjay_i18n::merge::back_to_left_right(),
+        )
     } else {
-        (glyph::EYE, "Show Base")
+        (glyph::EYE, jayjay_i18n::merge::show_base())
     };
     button_container(id, t, false)
         .gap(px(6.))
@@ -43,7 +46,7 @@ pub(crate) fn merge_source_row(
 pub(crate) fn merge_source_panel(
     index: usize,
     scroll_id: SharedString,
-    label: &'static str,
+    label: impl Into<SharedString>,
     content: Entity<TextArea>,
     action: AnyElement,
     t: &Theme,
@@ -70,7 +73,7 @@ pub(crate) fn merge_source_panel(
                         .flex_1()
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_size(ui_font_size(12.))
-                        .child(label),
+                        .child(label.into()),
                 )
                 .child(action),
         )
@@ -89,7 +92,7 @@ pub(crate) fn merge_source_panel(
 
 pub(crate) fn merge_result_mode_button(
     id: impl Into<SharedString>,
-    label: &'static str,
+    label: impl Into<SharedString>,
     selected: bool,
     t: &Theme,
 ) -> Stateful<Div> {

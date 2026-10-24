@@ -94,7 +94,7 @@ fn markdown_viewer(
             .items_center()
             .justify_center()
             .text_color(rgb(t.fg_dim))
-            .child("No post-change Markdown content."),
+            .child(jayjay_i18n::diff::no_post_change_markdown_content()),
     };
 
     chrome
@@ -117,10 +117,9 @@ fn preview_frame(t: &Theme) -> Div {
 fn metadata_line(document: Option<&MarkdownDocument>, t: &Theme) -> AnyElement {
     let label = document
         .map(|document| {
-            format!(
-                "{} blocks, {}",
+            jayjay_i18n::diff::markdown_metadata(
                 document.blocks().len(),
-                format_size(document.source().len() as u64)
+                &format_size(document.source().len() as u64),
             )
         })
         .unwrap_or_else(|| " ".to_owned());

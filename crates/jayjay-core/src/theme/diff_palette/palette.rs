@@ -44,6 +44,10 @@ impl DiffPalette {
         Self::new(id, name, seed.is_dark(), DiffThemeColors::from_seed(&seed))
     }
 
+    pub(super) fn default_for(is_dark: bool, colors: DiffThemeColors) -> Self {
+        Self::new(Self::default_id(is_dark), "", is_dark, colors)
+    }
+
     pub fn default_id(is_dark: bool) -> &'static str {
         if is_dark {
             DEFAULT_DARK_DIFF_PALETTE_ID
@@ -58,6 +62,18 @@ impl DiffPalette {
         find(id)
             .or_else(|| find(Self::default_id(is_dark)))
             .expect("the catalog holds both defaults")
-            .clone()
+            .localized()
+    }
+
+    pub(super) fn localized(&self) -> Self {
+        let name = match self.id.as_str() {
+            DEFAULT_LIGHT_DIFF_PALETTE_ID => jayjay_i18n::theme::jayjay_light(),
+            DEFAULT_DARK_DIFF_PALETTE_ID => jayjay_i18n::theme::jayjay_dark(),
+            _ => return self.clone(),
+        };
+        Self {
+            name,
+            ..self.clone()
+        }
     }
 }

@@ -27,7 +27,11 @@ pub(crate) fn file_editor_overlay(
     let has_changes = content != data.content;
     let mut save = button(
         "file-editor-save",
-        if state.saving { "Saving…" } else { "Save" },
+        if state.saving {
+            jayjay_i18n::repo::saving_ellipsis()
+        } else {
+            jayjay_i18n::common::save()
+        },
         t,
         true,
     )
@@ -73,7 +77,7 @@ pub(crate) fn file_editor_overlay(
                             div()
                                 .font_weight(gpui::FontWeight::SEMIBOLD)
                                 .text_size(ui_font_size(14.))
-                                .child("Edit Working-Copy File"),
+                                .child(jayjay_i18n::repo::edit_working_copy_file()),
                         )
                         .child(
                             div()
@@ -88,11 +92,16 @@ pub(crate) fn file_editor_overlay(
                     div()
                         .text_size(ui_font_size(11.))
                         .text_color(rgb(t.tag_conflict_fg))
-                        .child("Modified")
+                        .child(jayjay_i18n::repo::modified())
                 }))
                 .child(
-                    button("file-editor-cancel", "Cancel", t, false)
-                        .on_click(cx.listener(|view, _, _, cx| view.exit_file_editor(cx))),
+                    button(
+                        "file-editor-cancel",
+                        jayjay_i18n::common::cancel(),
+                        t,
+                        false,
+                    )
+                    .on_click(cx.listener(|view, _, _, cx| view.exit_file_editor(cx))),
                 )
                 .child(save),
         )
@@ -107,7 +116,7 @@ pub(crate) fn file_editor_overlay(
                 .border_color(rgb(t.border))
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
-                .child("Edits are saved directly to the current working-copy change."),
+                .child(jayjay_i18n::repo::edits_are_saved_directly_to_the()),
         )
         .child(
             div()

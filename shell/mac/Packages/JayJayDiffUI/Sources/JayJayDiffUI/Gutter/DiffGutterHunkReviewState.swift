@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 
 /// App-agnostic per-group review disposition rendered in the gutter stripe.
 public enum DiffGutterHunkReviewState: Equatable, Sendable {
@@ -20,11 +21,11 @@ public enum DiffGutterHunkReviewState: Equatable, Sendable {
     public var accessibilityLabel: String {
         switch self {
             case .reviewed:
-                "Reviewed"
+                Localized.Repo.reviewed
             case .unreviewed:
-                "Unreviewed"
+                Localized.Repo.unreviewed
             case .changedSinceReview:
-                "Changed since review"
+                Localized.Repo.changedSinceReview
         }
     }
 }

@@ -25,7 +25,7 @@ impl OpenRepositoryPathView {
                 WindowOptions {
                     window_bounds: Some(WindowBounds::Windowed(bounds)),
                     titlebar: Some(TitlebarOptions {
-                        title: Some("Open Repository by Path".into()),
+                        title: Some(jayjay_i18n::onboarding::open_repository_by_path().into()),
                         ..Default::default()
                     }),
                     ..crate::app::window_options()
@@ -87,13 +87,13 @@ impl Render for OpenRepositoryPathView {
             .child(
                 div()
                     .text_size(ui_font_size(18.))
-                    .child("Choose a repository directory"),
+                    .child(jayjay_i18n::onboarding::choose_a_repository_directory()),
             )
             .child(
                 div()
                     .text_size(ui_font_size(12.))
                     .text_color(rgb(t.fg_dim))
-                    .child("The desktop file picker is unavailable. Enter a path instead."),
+                    .child(jayjay_i18n::onboarding::the_desktop_file_picker_is_unavailable()),
             )
             .child(
                 div()
@@ -118,12 +118,22 @@ impl Render for OpenRepositoryPathView {
                     .justify_end()
                     .gap(px(8.))
                     .child(
-                        button("open-repository-path-cancel", "Cancel", &t, false)
-                            .on_click(cx.listener(|_, _, window, _| window.remove_window())),
+                        button(
+                            "open-repository-path-cancel",
+                            jayjay_i18n::common::cancel(),
+                            &t,
+                            false,
+                        )
+                        .on_click(cx.listener(|_, _, window, _| window.remove_window())),
                     )
                     .child(
-                        button("open-repository-path-submit", "Open", &t, true)
-                            .on_click(cx.listener(|view, _, window, cx| view.submit(window, cx))),
+                        button(
+                            "open-repository-path-submit",
+                            jayjay_i18n::common::open(),
+                            &t,
+                            true,
+                        )
+                        .on_click(cx.listener(|view, _, window, cx| view.submit(window, cx))),
                     ),
             )
     }
@@ -132,20 +142,25 @@ impl Render for OpenRepositoryPathView {
 fn resolve_directory(input: &str) -> Result<PathBuf, String> {
     let input = input.trim();
     if input.is_empty() {
-        return Err("Enter a repository path.".to_owned());
+        return Err(jayjay_i18n::onboarding::enter_a_repository_path());
     }
     let path = expand_home(input);
     let path = if path.is_absolute() {
         path
     } else {
         std::env::current_dir()
-            .map_err(|error| format!("Could not resolve the current directory: {error}"))?
+            .map_err(|error| {
+                jayjay_i18n::onboarding::current_directory_unavailable(&error.to_string())
+            })?
             .join(path)
     };
-    let path = dunce::canonicalize(&path)
-        .map_err(|error| format!("Could not open {}: {error}", path.display()))?;
+    let path = dunce::canonicalize(&path).map_err(|error| {
+        jayjay_i18n::onboarding::could_not_open(&path.display().to_string(), &error.to_string())
+    })?;
     if !path.is_dir() {
-        return Err(format!("{} is not a directory.", path.display()));
+        return Err(jayjay_i18n::onboarding::not_a_directory(
+            &path.display().to_string(),
+        ));
     }
     Ok(path)
 }

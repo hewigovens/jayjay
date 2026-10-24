@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 
 final class DiffMovedBadgeButton: NSButton {
     private struct FontFit {
@@ -87,7 +88,7 @@ final class DiffMovedBadgeButton: NSButton {
             return cached.size
         }
         attributedTitle = Self.attributedTitle(for: title, font: font)
-        setAccessibilityLabel("Jump to moved copy at \(title.dropFirst(2))")
+        setAccessibilityLabel(Localized.Diff.jumpToMovedCopy(location: String(title.dropFirst(2))))
         let size = fittingSize
         configuration = Configuration(title: title, font: font, size: size)
         return size

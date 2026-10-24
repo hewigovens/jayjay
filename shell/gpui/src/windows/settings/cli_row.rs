@@ -11,6 +11,7 @@ use crate::app::cli_install::{self, CliInstallState, EntryStatus};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::button;
+use jayjay_i18n::{common, settings};
 
 /// `install` is `None` while the Integrations load is in flight and `Some(None)` when no install state could be resolved.
 pub(super) fn command_line_rows(
@@ -31,9 +32,9 @@ pub(super) fn command_line_rows(
         }
         loading_or_unavailable => {
             let detail = if loading_or_unavailable.is_none() {
-                "Checking…"
+                common::checking()
             } else {
-                "Unavailable: no home directory"
+                settings::cli_unavailable()
             };
             col = col.child(
                 detail_row(glyph::TERMINAL, "jayjay", detail, t.fg_faint, t)
@@ -53,7 +54,7 @@ fn install_row(state: &CliInstallState, t: &Theme, cx: &mut Context<SettingsView
         EntryStatus::NotInstalled => {
             row = row.child(action_button(
                 "settings-cli-install-btn",
-                "Install",
+                common::install(),
                 t,
                 cx,
                 SettingsView::cli_install_clicked,
@@ -63,7 +64,7 @@ fn install_row(state: &CliInstallState, t: &Theme, cx: &mut Context<SettingsView
             row = row
                 .child(action_button(
                     "settings-cli-remove-btn",
-                    "Remove",
+                    common::remove(),
                     t,
                     cx,
                     SettingsView::cli_remove_clicked,
@@ -74,14 +75,14 @@ fn install_row(state: &CliInstallState, t: &Theme, cx: &mut Context<SettingsView
             row = row
                 .child(action_button(
                     "settings-cli-reinstall-btn",
-                    "Reinstall",
+                    common::reinstall(),
                     t,
                     cx,
                     SettingsView::cli_install_clicked,
                 ))
                 .child(action_button(
                     "settings-cli-remove-btn",
-                    "Remove",
+                    common::remove(),
                     t,
                     cx,
                     SettingsView::cli_remove_clicked,
@@ -103,19 +104,16 @@ fn hint_lines(state: &CliInstallState, t: &Theme) -> Vec<(String, u32)> {
     }
     if let EntryStatus::Broken { target } = &state.status {
         lines.push((
-            format!("Link target is missing: {}", target.display()),
+            settings::cli_link_missing(&target.display().to_string()),
             t.error_fg,
         ));
     }
     if let EntryStatus::Unmanaged { target } = &state.status {
         let what = match target {
-            Some(target) => format!("This entry links to {}", target.display()),
-            None => "A file JayJay didn't install is already here".to_owned(),
+            Some(target) => settings::cli_links_to(&target.display().to_string()),
+            None => settings::cli_unknown_file(),
         };
-        lines.push((
-            format!("{what}; remove it manually if JayJay should manage this command."),
-            t.fg_faint,
-        ));
+        lines.push((settings::cli_unmanaged(&what), t.fg_faint));
     }
     if !matches!(state.status, EntryStatus::NotInstalled)
         && let Some(hint) = &state.path_hint
@@ -138,7 +136,7 @@ fn hint_line(text: String, color: u32) -> AnyElement {
 
 fn action_button(
     id: &'static str,
-    label: &'static str,
+    label: String,
     t: &Theme,
     cx: &mut Context<SettingsView>,
     on_click: fn(&mut SettingsView, &mut Context<SettingsView>),

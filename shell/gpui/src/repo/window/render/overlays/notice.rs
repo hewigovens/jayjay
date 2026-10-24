@@ -20,7 +20,7 @@ pub(crate) fn error_overlay(
                 .child(overlay_header(
                     glyph::WARNING,
                     t.error_fg,
-                    "Operation failed",
+                    jayjay_i18n::repo::operation_failed(),
                     "",
                     t,
                 ))
@@ -33,7 +33,7 @@ pub(crate) fn error_overlay(
                 )
                 .child(
                     div().flex().flex_row().justify_end().child(
-                        button("error-ok", "OK", t, true)
+                        button("error-ok", jayjay_i18n::repo::ok(), t, true)
                             .debug_selector(|| "error-ok".to_owned())
                             .on_click(cx.listener(|view, _, _, cx| {
                                 view.vm.update(cx, |vm, cx| {

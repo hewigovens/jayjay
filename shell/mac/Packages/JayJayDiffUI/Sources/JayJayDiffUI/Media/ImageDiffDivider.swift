@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct ImageDiffDivider: View {
@@ -16,10 +17,10 @@ struct ImageDiffDivider: View {
                     .frame(width: 1)
                     .allowsHitTesting(false)
             }
-            .help("Drag to resize images. Double-click to restore equal widths.")
+            .help(Localized.Diff.dragToResizeImagesDoubleClick)
             .accessibilityElement()
-            .accessibilityLabel("Image comparison divider")
-            .accessibilityValue("Before \(Int(fraction * 100)) percent")
+            .accessibilityLabel(Localized.Diff.imageComparisonDivider)
+            .accessibilityValue(Localized.Diff.beforePercent(percent: Int(fraction * 100)))
             .accessibilityAdjustableAction { direction in
                 switch direction {
                     case .increment: fraction = min(fraction + 0.05, 0.9)
@@ -27,7 +28,7 @@ struct ImageDiffDivider: View {
                     @unknown default: break
                 }
             }
-            .accessibilityAction(named: "Restore equal widths") { fraction = 0.5 }
+            .accessibilityAction(named: Localized.Diff.restoreEqualWidths) { fraction = 0.5 }
     }
 
     private struct MouseHandler: NSViewRepresentable {

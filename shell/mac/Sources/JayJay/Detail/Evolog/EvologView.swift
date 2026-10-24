@@ -39,9 +39,9 @@ struct EvologView: View {
             Divider()
             if viewModel.entries.isEmpty {
                 ContentUnavailableView(
-                    "No Evolution",
+                    Localized.Repo.noEvolution,
                     systemImage: "clock.arrow.circlepath",
-                    description: Text("This change has no recorded rewrites.")
+                    description: Text(Localized.Repo.thisChangeHasNoRecordedRewrites)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else {
@@ -70,7 +70,7 @@ struct EvologView: View {
     /// "Evolution: <change-id>" with the id's prefix highlighted (all entries share
     /// the change-id). Built as one AttributedString to avoid the deprecated `Text(+)`.
     private var headerLabel: Text {
-        var label = AttributedString("Evolution: ")
+        var label = AttributedString("\(Localized.Repo.evolutionPrefix) ")
         if let first = viewModel.entries.first {
             label.append(first.changeId.highlighted(
                 scheme: colorScheme,
@@ -90,20 +90,20 @@ struct EvologView: View {
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
-            Toggle("Hide snapshots", isOn: Binding(
+            Toggle(Localized.Repo.hideSnapshots, isOn: Binding(
                 get: { viewModel.hideSnapshots },
                 set: { viewModel.setHideSnapshots($0) }
             ))
             .toggleStyle(.checkbox)
             .jayjayFont(11)
-            .help("Hide consecutive working-copy snapshots")
+            .help(Localized.Repo.hideConsecutiveWorkingCopySnapshots)
             .accessibilityIdentifier(AID.Evolog.hideSnapshots)
-            Text("\(viewModel.entries.count) version\(viewModel.entries.count == 1 ? "" : "s")")
+            Text(Localized.Evolog.versionCount(count: viewModel.entries.count))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
-            Button("Done", action: onDismiss)
+            Button(Localized.Repo.done, action: onDismiss)
                 .keyboardShortcut(.cancelAction)
-                .help("Close evolution view (esc)")
+                .help(Localized.Repo.closeEvolutionViewEsc)
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
@@ -153,7 +153,7 @@ struct EvologView: View {
             Image(systemName: "camera")
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
-            Text("\(row.count) snapshots")
+            Text(Localized.Evolog.snapshotCount(count: Int(row.count)))
                 .jayjayFont(12, weight: .medium)
                 .lineLimit(1)
             Spacer()
@@ -204,19 +204,19 @@ struct EvologView: View {
         Button {
             onRestore(commitId)
         } label: {
-            Label("Restore this version", systemImage: "arrow.uturn.backward")
+            Label(Localized.Repo.restoreThisVersion, systemImage: "arrow.uturn.backward")
         }
         .disabled(isRestoring || target?.isImmutable == true)
         .help(restoreHelp)
         Button {
             viewModel.copyCommitId(commitId)
         } label: {
-            Label("Copy Commit ID", systemImage: "doc.on.doc")
+            Label(Localized.Menu.copyCommitId, systemImage: "doc.on.doc")
         }
         Button {
             viewModel.copyRestoreCommand(commitId, into: restoreIntoRev)
         } label: {
-            Label("Copy ‘jj restore’ command", systemImage: "terminal")
+            Label(Localized.Repo.copyJjRestoreCommand, systemImage: "terminal")
         }
     }
 
@@ -229,9 +229,9 @@ struct EvologView: View {
 
     private var restoreHelp: String {
         if target?.isImmutable == true {
-            return "Immutable changes cannot be restored"
+            return Localized.Repo.immutableChangesCannotBeRestored
         }
-        return "Restore this version into \(restoreIntoRev)"
+        return Localized.Repo.restoreVersionInto(rev: restoreIntoRev)
     }
 
     private var diffPane: some View {
@@ -252,9 +252,9 @@ struct EvologView: View {
     private var diffContent: some View {
         if viewModel.selectedIndex == nil {
             ContentUnavailableView(
-                "Select a Version",
+                Localized.Repo.selectAVersion,
                 systemImage: "arrow.left",
-                description: Text("Click a row on the left to see what changed since that version.")
+                description: Text(Localized.Repo.clickARowOnTheLeft)
             )
         } else if viewModel.interdiffLoading {
             ProgressView().controlSize(.small)
@@ -264,9 +264,9 @@ struct EvologView: View {
         } else if let detail = viewModel.interdiffDetail {
             if detail.diff.isEmpty {
                 ContentUnavailableView(
-                    "No File Changes",
+                    Localized.Repo.noFileChanges,
                     systemImage: "equal.circle",
-                    description: Text("Description-only or identical to the current version.")
+                    description: Text(Localized.Repo.descriptionOnlyOrIdenticalToThe)
                 )
             } else {
                 interdiffContent(detail: detail)
@@ -284,9 +284,9 @@ struct EvologView: View {
             }
             .buttonStyle(.plain)
             .disabled(!viewModel.canReverseComparison)
-            .help("Reverse comparison direction")
+            .help(Localized.Repo.reverseComparisonDirection)
             .accessibilityIdentifier(AID.Evolog.reverseComparison)
-            Text("Comparing Versions")
+            Text(Localized.Repo.comparingVersions)
                 .jayjayFont(12, weight: .medium)
                 .accessibilityIdentifier(AID.Evolog.comparisonBanner)
             versionLabel(from)
@@ -296,7 +296,7 @@ struct EvologView: View {
             versionLabel(to)
             Spacer()
             if let fileCount {
-                Text(fileCount == 1 ? "1 file changed" : "\(fileCount) files changed")
+                Text(Localized.Repo.filesChangedCount(count: fileCount))
                     .jayjayFont(11)
                     .foregroundStyle(.secondary)
             }
@@ -348,9 +348,9 @@ struct EvologView: View {
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else {
                     ContentUnavailableView(
-                        "Select a File",
+                        Localized.Repo.selectAFile,
                         systemImage: "doc",
-                        description: Text("Pick a file from the list to see its diff.")
+                        description: Text(Localized.Repo.pickAFileFromTheList)
                     )
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
                 }
@@ -360,11 +360,11 @@ struct EvologView: View {
 
     private func loadError(_ message: String, retry: @escaping () -> Void) -> some View {
         ContentUnavailableView {
-            Label("Couldn’t Load Diff", systemImage: "exclamationmark.triangle")
+            Label(Localized.Repo.couldntLoadDiff, systemImage: "exclamationmark.triangle")
         } description: {
             Text(message)
         } actions: {
-            Button("Retry", action: retry)
+            Button(Localized.Repo.retry, action: retry)
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }

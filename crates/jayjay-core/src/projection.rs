@@ -24,13 +24,13 @@ impl DiffProjectionPlugin {
         matches!(self, Self::Plist)
     }
 
-    fn help(self) -> &'static str {
+    fn help(self) -> String {
         match self {
-            Self::Delimited => "Show table preview",
-            Self::Ipynb => "Show notebook preview",
-            Self::Plist => "Show property list preview",
-            Self::Sarif => "Show SARIF report preview",
-            Self::Other => "Show rich preview",
+            Self::Delimited => jayjay_i18n::diff::show_table_preview(),
+            Self::Ipynb => jayjay_i18n::diff::show_notebook_preview(),
+            Self::Plist => jayjay_i18n::diff::show_property_list_preview(),
+            Self::Sarif => jayjay_i18n::diff::show_sarif_report_preview(),
+            Self::Other => jayjay_i18n::diff::show_rich_preview(),
         }
     }
 }
@@ -63,14 +63,14 @@ pub fn shows_banner(projection: &DiffProjection, rich_view: bool) -> bool {
 pub fn title(projection: &DiffProjection) -> String {
     if projection.diagnostics.is_empty() {
         if DiffProjectionPlugin::from_projection(projection) == DiffProjectionPlugin::Plist {
-            return "Binary property list on disk, previewed as XML".to_owned();
+            return jayjay_i18n::diff::binary_property_list_on_disk_previewed();
         }
-        return format!("{} preview", projection.plugin_label);
+        return jayjay_i18n::diff::projection_preview(&projection.plugin_label);
     }
-    format!("{} preview unavailable", projection.plugin_label)
+    jayjay_i18n::diff::projection_preview_unavailable(&projection.plugin_label)
 }
 
-pub fn help(projection: Option<&DiffProjection>) -> &'static str {
+pub fn help(projection: Option<&DiffProjection>) -> String {
     projection
         .map(DiffProjectionPlugin::from_projection)
         .unwrap_or(DiffProjectionPlugin::Other)

@@ -12,19 +12,19 @@ pub(super) fn workspace_menu_items(workspace: &WorkspaceInfo) -> Vec<ContextMenu
     ];
     if workspace.is_switch_target() {
         items.push(ContextMenuItem::new(
-            "Open in New Window",
+            jayjay_i18n::menu::open_in_new_window(),
             glyph::COLUMNS,
             ContextAction::OpenWorkspaceAt(workspace.path.clone().into()),
         ));
     }
     items.push(ContextMenuItem::new(
-        "Copy Workspace Name",
+        jayjay_i18n::menu::copy_workspace_name(),
         glyph::COPY,
         ContextAction::CopyText(workspace.name.clone().into()),
     ));
     if workspace.is_path_resolved {
         items.push(ContextMenuItem::new(
-            "Copy Path",
+            jayjay_i18n::menu::copy_path(),
             glyph::COPY,
             ContextAction::CopyText(workspace.path.clone().into()),
         ));
@@ -34,7 +34,7 @@ pub(super) fn workspace_menu_items(workspace: &WorkspaceInfo) -> Vec<ContextMenu
 
 fn workspace_filter_item(name: &str) -> ContextMenuItem {
     ContextMenuItem::new(
-        "Filter by This Workspace",
+        jayjay_i18n::menu::filter_by_this_workspace(),
         glyph::FILTER,
         ContextAction::FilterRevset(workspace_filter_revset(name).into()),
     )

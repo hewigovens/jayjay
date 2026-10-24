@@ -29,20 +29,22 @@ pub(super) fn context_error_banner(
         .debug_selector(|| "context-error-banner".to_owned())
         .child(div().flex_1().min_w_0().truncate().child(message))
         .child(
-            button("context-error-dismiss", "Dismiss", t, false).on_click(cx.listener(
-                |view, _, _, cx| {
-                    view.dismiss_context_expansion_error(cx);
-                },
-            )),
+            button(
+                "context-error-dismiss",
+                jayjay_i18n::repo::dismiss(),
+                t,
+                false,
+            )
+            .on_click(cx.listener(|view, _, _, cx| {
+                view.dismiss_context_expansion_error(cx);
+            })),
         )
         .into_any_element()
 }
 
 const SHOW_MORE_LINES: u32 = 10;
 const SHOW_MORE_ID: &str = "show-10";
-const SHOW_MORE_LABEL: &str = "Show 10";
 const SHOW_ALL_ID: &str = "show-all";
-const SHOW_ALL_LABEL: &str = "Show all";
 
 pub(super) fn context_controls(
     scope: &'static str,
@@ -61,7 +63,7 @@ pub(super) fn context_controls(
             scope,
             region.id,
             SHOW_MORE_ID,
-            SHOW_MORE_LABEL,
+            jayjay_i18n::diff::show_more_lines(SHOW_MORE_LINES),
             ContextExpansion::ShowMore {
                 line_count: SHOW_MORE_LINES,
             },
@@ -73,7 +75,7 @@ pub(super) fn context_controls(
         scope,
         region.id,
         SHOW_ALL_ID,
-        SHOW_ALL_LABEL,
+        jayjay_i18n::diff::show_all(),
         ContextExpansion::ShowAll,
         theme,
         cx,
@@ -84,7 +86,7 @@ fn context_button(
     scope: &'static str,
     region_id: u32,
     action_id: &'static str,
-    label: &'static str,
+    label: String,
     expansion: ContextExpansion,
     theme: &Theme,
     cx: &mut Context<RepoWindow>,
@@ -97,7 +99,7 @@ fn context_button(
         .focusable()
         .tab_stop(true)
         .role(Role::Button)
-        .aria_label(format!("{label} unmodified lines"))
+        .aria_label(jayjay_i18n::diff::unmodified_lines_action(&label))
         .flex()
         .items_center()
         .h(px(theme.scaled_control_height(16., 11.)))

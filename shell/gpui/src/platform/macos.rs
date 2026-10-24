@@ -10,7 +10,10 @@ use crate::repo::window::RepoWindow;
 
 pub const MOD_KEY: &str = "cmd";
 pub const SIDEBAR_TOGGLE_KEY: &str = "ctrl-cmd-s";
-pub const SHOW_IN_FILE_MANAGER_LABEL: &str = "Show in Finder";
+pub fn file_manager_name() -> String {
+    "Finder".to_owned()
+}
+
 /// Matches the SwiftUI shell's unified toolbar on macOS 26.
 pub const TOOLBAR_HEIGHT: f32 = 52.;
 pub const TOOLBAR_LEADING_INSET: f32 = 96.;

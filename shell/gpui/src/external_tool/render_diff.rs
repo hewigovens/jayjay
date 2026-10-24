@@ -24,7 +24,7 @@ impl ExternalToolWindow {
                 .items_center()
                 .justify_center()
                 .text_color(rgb(t.fg_dim))
-                .child("No differences")
+                .child(jayjay_i18n::diff::no_differences())
                 .into_any_element();
         }
 
@@ -148,9 +148,9 @@ impl ExternalToolWindow {
                     .text_size(ui_font_size(11.))
                     .text_color(rgb(t.fg_dim))
                     .child(if executable_changed && changed_count == 0 {
-                        "Executable permission changed".to_owned()
+                        jayjay_i18n::merge::executable_permission_changed()
                     } else {
-                        format!("{selected_count} of {changed_count} changed lines")
+                        jayjay_i18n::merge::selected_changed_lines(selected_count, changed_count)
                     }),
             );
         if editable {
@@ -159,18 +159,23 @@ impl ExternalToolWindow {
                     div()
                         .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
-                        .child("Whole-file selection"),
+                        .child(jayjay_i18n::merge::whole_file_selection()),
                 );
             }
             header = header.child(
-                button("external-toggle-file", "Toggle File", t, false)
-                    .debug_selector(|| "external-toggle-file".to_owned())
-                    .on_click(cx.listener(|view, _, _, cx| {
-                        if let ExternalToolState::Diff(session) = &mut view.state {
-                            session.toggle_selected_file();
-                            cx.notify();
-                        }
-                    })),
+                button(
+                    "external-toggle-file",
+                    jayjay_i18n::merge::toggle_file(),
+                    t,
+                    false,
+                )
+                .debug_selector(|| "external-toggle-file".to_owned())
+                .on_click(cx.listener(|view, _, _, cx| {
+                    if let ExternalToolState::Diff(session) = &mut view.state {
+                        session.toggle_selected_file();
+                        cx.notify();
+                    }
+                })),
             );
         }
 

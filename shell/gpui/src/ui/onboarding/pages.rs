@@ -6,7 +6,7 @@ use gpui::{
 use super::OnboardingView;
 use super::state::{JjCheckState, OnboardingPage};
 use super::widgets::{command_row, mono_line, success_badge, tip};
-use crate::app::config::{self, TelemetryConfig};
+use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::platform::JJ_PACKAGE_MANAGER;
 use crate::ui::icons::{self, glyph};
@@ -66,7 +66,7 @@ fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
                 .text_size(ui_font_size(28.))
                 .font_weight(gpui::FontWeight::BOLD)
                 .text_color(rgb(t.fg))
-                .child("Welcome to JayJay"),
+                .child(jayjay_i18n::menu::welcome_to_jayjay()),
         )
         .child(
             div()
@@ -98,7 +98,7 @@ fn jj_check_page(
                 div()
                     .text_size(ui_font_size(18.))
                     .text_color(rgb(t.fg))
-                    .child("Checking for jj..."),
+                    .child(jayjay_i18n::onboarding::checking_for_jj_ellipsis()),
             );
         }
         JjCheckState::Loaded(status) if status.is_installed => {
@@ -107,7 +107,7 @@ fn jj_check_page(
                     .text_size(ui_font_size(22.))
                     .font_weight(gpui::FontWeight::SEMIBOLD)
                     .text_color(rgb(t.fg))
-                    .child("Jujutsu is installed"),
+                    .child(jayjay_i18n::onboarding::jujutsu_is_installed()),
             );
             if !status.version.is_empty() {
                 root = root.child(mono_line(status.version.clone(), 13., t.fg_dim, t));
@@ -125,26 +125,27 @@ fn jj_check_page(
                         .text_size(ui_font_size(22.))
                         .font_weight(gpui::FontWeight::SEMIBOLD)
                         .text_color(rgb(t.fg))
-                        .child("Jujutsu not found"),
+                        .child(jayjay_i18n::onboarding::jujutsu_not_found()),
                 )
                 .child(
                     div()
                         .text_size(ui_font_size(14.))
                         .line_height(ui_font_size(20.))
                         .text_color(rgb(t.fg_dim))
-                        .child(format!(
-                            "JayJay requires jj to be installed. Install it with {} or Cargo:",
-                            JJ_PACKAGE_MANAGER.0
-                        )),
+                        .child(jayjay_i18n::onboarding::requires_jj(JJ_PACKAGE_MANAGER.0)),
                 )
                 .child(command_row(JJ_PACKAGE_MANAGER.1, t))
                 .child(command_row("cargo install --locked jj-cli", t))
                 .child(
-                    button("onboarding-check-again", "Check Again", t, false).on_click(
-                        cx.listener(|view, _, _, cx| {
-                            view.check_jj(cx);
-                        }),
-                    ),
+                    button(
+                        "onboarding-check-again",
+                        jayjay_i18n::onboarding::check_again(),
+                        t,
+                        false,
+                    )
+                    .on_click(cx.listener(|view, _, _, cx| {
+                        view.check_jj(cx);
+                    })),
                 );
         }
     }
@@ -168,26 +169,34 @@ fn identity_line(
         .text_color(rgb(t.fg_dim))
         .whitespace_normal();
     match (&state.identity, state.identity_skipped) {
-        (Some(identity), _) => line.child(SharedString::from(format!("Identity: {identity}"))),
-        (None, true) => line.child("You can set your jj identity later in Settings › Jujutsu."),
+        (Some(identity), _) => line.child(jayjay_i18n::onboarding::identity(&identity.to_string())),
+        (None, true) => line.child(jayjay_i18n::onboarding::you_can_set_your_jj_identity()),
         (None, false) => line
-            .child("jj author identity is not set")
+            .child(jayjay_i18n::onboarding::identity_not_set())
             .child(
-                button("onboarding-identity-set-up", "Set Up…", t, false).on_click(cx.listener(
-                    |_, _, _, cx| {
-                        IdentityDialog::open(cx, |view: &mut OnboardingView, identity, _| {
-                            view.identity = Some(identity.clone());
-                        });
-                    },
-                )),
+                button(
+                    "onboarding-identity-set-up",
+                    jayjay_i18n::common::set_up_ellipsis(),
+                    t,
+                    false,
+                )
+                .on_click(cx.listener(|_, _, _, cx| {
+                    IdentityDialog::open(cx, |view: &mut OnboardingView, identity, _| {
+                        view.identity = Some(identity.clone());
+                    });
+                })),
             )
             .child(
-                button("onboarding-identity-skip", "Skip", t, false).on_click(cx.listener(
-                    |view, _, _, cx| {
-                        view.identity_skipped = true;
-                        cx.notify();
-                    },
-                )),
+                button(
+                    "onboarding-identity-skip",
+                    jayjay_i18n::repo::skip(),
+                    t,
+                    false,
+                )
+                .on_click(cx.listener(|view, _, _, cx| {
+                    view.identity_skipped = true;
+                    cx.notify();
+                })),
             ),
     }
     .into_any_element()
@@ -195,9 +204,9 @@ fn identity_line(
 
 fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
     let multi_select_tip = if cfg!(target_os = "macos") {
-        "Shift-click selects a range; ⌘-click toggles changes"
+        jayjay_i18n::onboarding::shift_click_selects_a_range_click()
     } else {
-        "Shift-click selects a range; Ctrl-click toggles changes"
+        jayjay_i18n::onboarding::shift_click_selects_a_range_ctrl()
     };
     div()
         .flex()
@@ -212,7 +221,7 @@ fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
                 .text_size(ui_font_size(22.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.fg))
-                .child("You're all set"),
+                .child(jayjay_i18n::onboarding::youre_all_set()),
         )
         .child(
             div()
@@ -223,23 +232,23 @@ fn ready_page(t: &Theme, cx: &mut Context<OnboardingView>) -> AnyElement {
                 .pt(px(4.))
                 .child(tip(
                     glyph::FOLDER,
-                    "Open any jj repository to get started",
+                    jayjay_i18n::onboarding::open_any_jj_repository_to_get(),
                     t,
                 ))
                 .child(tip(
                     glyph::SEARCH,
-                    "Use the command palette to find actions",
+                    jayjay_i18n::onboarding::use_the_command_palette_to_find(),
                     t,
                 ))
                 .child(tip(
                     glyph::CHECK,
-                    "Press Space to mark the selected file reviewed",
+                    jayjay_i18n::onboarding::press_space_to_mark_the_selected(),
                     t,
                 ))
                 .child(tip(glyph::GIT_BRANCH, multi_select_tip, t))
                 .child(tip(
                     glyph::WARNING,
-                    "Close GitHub Desktop when working in jj repos",
+                    jayjay_i18n::onboarding::close_github_desktop_when_working_in(),
                     t,
                 ))
                 .child(stats_toggle(t, cx)),
@@ -267,8 +276,8 @@ fn stats_toggle(t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement
                 .w(px(16.))
                 .child(checkbox_glyph(enabled, t)),
         )
-        .child(TelemetryConfig::LABEL)
-        .tooltip(text_tooltip(TelemetryConfig::HINT))
+        .child(jayjay_i18n::telemetry::opt_in())
+        .tooltip(text_tooltip(jayjay_i18n::telemetry::opt_in_detail()))
         .on_click(cx.listener(move |_, _, _, cx| {
             config::update(cx, |cfg| cfg.telemetry.enabled = !enabled);
             cx.notify();
@@ -312,7 +321,7 @@ fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<OnboardingView>) -> 
     let mut left = div().w(px(80.));
     if let Some(previous) = page.previous() {
         left = left.child(
-            button("onboarding-back", "Back", t, false)
+            button("onboarding-back", jayjay_i18n::onboarding::back(), t, false)
                 .debug_selector(|| "onboarding-back".to_owned())
                 .on_click(cx.listener(move |view, _, _, cx| {
                     view.set_page(previous, cx);
@@ -321,17 +330,22 @@ fn footer(page: OnboardingPage, t: &Theme, cx: &mut Context<OnboardingView>) -> 
     }
 
     let right = if let Some(next) = page.next() {
-        button("onboarding-next", "Next", t, true)
+        button("onboarding-next", jayjay_i18n::onboarding::next(), t, true)
             .debug_selector(|| "onboarding-next".to_owned())
             .on_click(cx.listener(move |view, _, _, cx| {
                 view.set_page(next, cx);
             }))
     } else {
-        button("onboarding-finish", "Get Started", t, true)
-            .debug_selector(|| "onboarding-finish".to_owned())
-            .on_click(cx.listener(|view, _, _, cx| {
-                view.finish(cx);
-            }))
+        button(
+            "onboarding-finish",
+            jayjay_i18n::onboarding::get_started(),
+            t,
+            true,
+        )
+        .debug_selector(|| "onboarding-finish".to_owned())
+        .on_click(cx.listener(|view, _, _, cx| {
+            view.finish(cx);
+        }))
     };
 
     div()

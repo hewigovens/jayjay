@@ -211,13 +211,9 @@ impl DiffEditSession {
     pub fn summary_text(&self) -> String {
         let DiffEditSelectionSummary { files, lines } = self.summary();
         if lines == 0 {
-            return "Select files, hunks, or line ranges to edit".to_owned();
+            return jayjay_i18n::diff::edit_hint();
         }
-        format!(
-            "{files} {}, {lines} {} selected",
-            if files == 1 { "file" } else { "files" },
-            if lines == 1 { "line" } else { "lines" }
-        )
+        jayjay_i18n::diff::edit_selection(files, lines)
     }
 
     /// The apply request in card order; invert for `RemoveFromSource` so the rewrite removes the unselected rows.

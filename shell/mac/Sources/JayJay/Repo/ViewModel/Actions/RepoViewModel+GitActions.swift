@@ -49,7 +49,7 @@ extension RepoViewModel {
     func forgetStaleBookmarks() {
         performMessaging { repo in
             let count = try repo.forgetStaleBookmarks()
-            return count > 0 ? "Forgot \(count) stale bookmark\(count == 1 ? "" : "s")" : "No stale bookmarks found"
+            return count > 0 ? Localized.Repo.forgotStaleBookmarks(count: Int(count)) : Localized.Repo.noStaleBookmarksFound
         }
     }
 
@@ -84,7 +84,7 @@ extension RepoViewModel {
         let started = performResult(
             gatedBy: RepoActionGate(
                 state: \.isPullingInFlight,
-                busyMessage: "Pull already in progress"
+                busyMessage: Localized.Repo.pullAlreadyInProgress
             ),
             onSuccess: { viewModel, result in
                 viewModel.pullSync = nil
@@ -92,7 +92,7 @@ extension RepoViewModel {
             },
             onFailure: { viewModel, error in
                 viewModel.pullSync = nil
-                viewModel.presentSyncFailure(error, canceledMessage: "Pull canceled")
+                viewModel.presentSyncFailure(error, canceledMessage: Localized.Repo.pullCanceled)
             },
             { repo in try operation(repo, sync) }
         )
@@ -108,7 +108,7 @@ extension RepoViewModel {
             selecting: nil,
             gatedBy: RepoActionGate(
                 state: \.isPushingInFlight,
-                busyMessage: "Push already in progress"
+                busyMessage: Localized.Repo.pushAlreadyInProgress
             ),
             onSuccess: { viewModel, message in
                 viewModel.pushSync = nil
@@ -116,7 +116,7 @@ extension RepoViewModel {
             },
             onFailure: { viewModel, error in
                 viewModel.pushSync = nil
-                viewModel.presentSyncFailure(error, canceledMessage: "Push canceled")
+                viewModel.presentSyncFailure(error, canceledMessage: Localized.Repo.pushCanceled)
             },
             { repo in try operation(repo, sync) }
         )

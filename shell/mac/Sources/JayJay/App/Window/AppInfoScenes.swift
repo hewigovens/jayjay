@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct AppInfoScenes: Scene {
@@ -13,7 +14,7 @@ struct AppInfoScenes: Scene {
         .defaultSize(width: 800, height: 560)
         .windowResizability(.contentMinSize)
 
-        Window("About JayJay", id: AppWindows.about) {
+        Window(Localized.Menu.aboutJayjay, id: AppWindows.about) {
             AboutView(updater: updater)
                 .appEnvironment(settings)
         }
@@ -21,7 +22,7 @@ struct AppInfoScenes: Scene {
         .windowResizability(.contentSize)
         .defaultSize(width: 420, height: 460)
 
-        Window("Keyboard Shortcuts", id: AppWindows.shortcuts) {
+        Window(Localized.Menu.keyboardShortcuts, id: AppWindows.shortcuts) {
             KeyboardShortcutsView()
                 .appEnvironment(settings)
         }

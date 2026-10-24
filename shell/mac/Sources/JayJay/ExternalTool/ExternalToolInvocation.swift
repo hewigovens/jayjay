@@ -18,8 +18,8 @@ extension ExternalToolInvocation {
 
     var windowTitle: String {
         switch self {
-            case let .diff(_, _, editable): editable ? "Edit Diff — JayJay" : "Compare — JayJay"
-            case let .merge(_, _, _, _, path, _): "Resolve \(path) — JayJay"
+            case let .diff(_, _, editable): editable ? Localized.Merge.editDiffJayjay : Localized.Merge.compareJayjay
+            case let .merge(_, _, _, _, path, _): Localized.Merge.resolveWindowTitle(path: path)
         }
     }
 }

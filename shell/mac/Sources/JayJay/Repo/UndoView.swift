@@ -30,8 +30,9 @@ struct UndoView: View {
             Image(systemName: "clock.arrow.circlepath")
                 .font(.system(size: 16))
                 .foregroundStyle(.secondary)
-            Text("Operation Log")
+            Text(Localized.Repo.operationLog)
                 .jayjayFont(15, weight: .semibold)
+                .accessibilityIdentifier(AID.Panel.operationLog)
             Spacer()
         }
         .padding(.horizontal, 16)
@@ -40,7 +41,7 @@ struct UndoView: View {
 
     private var emptyState: some View {
         VStack(spacing: 8) {
-            Text("No operations found")
+            Text(Localized.Repo.noOperationsFound)
                 .jayjayFont(13)
                 .foregroundStyle(.secondary)
         }
@@ -57,7 +58,7 @@ struct UndoView: View {
                             .jayjayFont(13, weight: entry.isCurrent ? .semibold : .regular)
                             .lineLimit(1)
                         if entry.isCurrent {
-                            Text("current")
+                            Text(Localized.Repo.currentBadge)
                                 .jayjayFont(9, weight: .semibold)
                                 .foregroundStyle(.white)
                                 .padding(.horizontal, 5)
@@ -84,9 +85,9 @@ struct UndoView: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Button("Cancel") { onDismiss() }
+            Button(Localized.Common.cancel) { onDismiss() }
                 .keyboardShortcut(.cancelAction)
-            Button("Restore") {
+            Button(Localized.Repo.restore) {
                 guard let id = selectedId else { return }
                 onRestore(id)
                 onDismiss()
@@ -105,7 +106,7 @@ struct UndoView: View {
 
     private func descriptionLabel(_ description: String) -> String {
         let trimmed = description.trimmingCharacters(in: .whitespacesAndNewlines)
-        return trimmed.isEmpty ? "(no description)" : trimmed
+        return trimmed.isEmpty ? Localized.Repo.noDescriptionPlaceholder : trimmed
     }
 
     @ViewBuilder

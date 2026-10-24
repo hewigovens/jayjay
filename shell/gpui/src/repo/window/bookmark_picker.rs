@@ -166,7 +166,7 @@ fn menu_panel(
         [picker::header_button(
             "bookmark-picker-new",
             glyph::PLUS,
-            "New",
+            jayjay_i18n::repo::new(),
             t,
             move |_, cx| {
                 new_view.update(cx, |view, cx| {
@@ -188,9 +188,9 @@ fn menu_panel(
             bookmark_sections(state, bookmarks),
             state.query.selected,
             if has_any_bookmarks {
-                "No matches"
+                jayjay_i18n::repo::no_matches()
             } else {
-                "No bookmarks yet"
+                jayjay_i18n::repo::no_bookmarks_yet()
             },
         ),
         &state.query,
@@ -244,7 +244,7 @@ pub(crate) fn bookmarks_header_button(
         )
         .child(picker::opener_bounds(bounds))
         .child(icons::icon(glyph::BOOKMARK, 12., t.fg))
-        .child("Bookmarks");
+        .child(jayjay_i18n::repo::bookmarks());
     let mut button = picker::opener(
         button,
         |view| view.bookmark_picker.is_some(),

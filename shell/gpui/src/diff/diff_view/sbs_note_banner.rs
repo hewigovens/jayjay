@@ -56,7 +56,7 @@ pub(super) fn with_sbs_note_banner(
                 .text_color(rgb(t.selected_accent))
                 .cursor_pointer()
                 .on_click(cx.listener(|view, _, _, cx| view.toggle_view_mode(cx)))
-                .child("Show in Unified"),
+                .child(jayjay_i18n::diff::show_in_unified()),
         );
     div()
         .flex()

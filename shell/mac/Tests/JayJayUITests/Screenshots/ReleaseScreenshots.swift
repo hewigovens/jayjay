@@ -8,7 +8,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectChange("include transfer time", in: app)
         selectFile("src/routes.rs", in: app)
-        XCTAssertTrue(app.buttons["Unified"].waitForExistence(timeout: 5), "Unified diff missing")
+        XCTAssertTrue(app.buttons[AID.Diff.layoutToggle].waitForExistence(timeout: 5), "Diff layout toggle missing")
         capture("home", frame: mainFrame)
     }
 
@@ -22,7 +22,7 @@ final class ReleaseScreenshots: ScreenshotScene {
     func testMermaid() throws {
         let app = try XCTUnwrap(app)
         selectFile("docs/routing.md", in: app)
-        clickCenter(app.buttons["Preview"], message: "Markdown preview missing")
+        clickCenter(app.buttons[AID.Diff.preview], message: "Markdown preview missing")
         XCTAssertTrue(app.webViews.firstMatch.waitForExistence(timeout: 5), "Rendered Markdown missing")
         capture("mermaid", frame: mainFrame)
     }
@@ -32,7 +32,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         selectFile("src/stations.rs", in: app)
         let gutter = app.textViews[AID.Diff.gutter]
         XCTAssertTrue(gutter.waitForExistence(timeout: 5), "Diff gutter did not appear")
-        let addNote = app.menuItems["Add Review Note"]
+        let addNote = app.menuItems[AID.Diff.addReviewNote]
         for _ in 0 ..< 3 where !addNote.exists {
             gutter.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 12, dy: 12)).rightClick()
             if !addNote.waitForExistence(timeout: 3) {
@@ -42,7 +42,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         clickCenter(addNote, message: "Add Review Note missing")
         XCTAssertTrue(app.textViews[AID.ReviewNote.body].waitForExistence(timeout: 5), "Note editor missing")
         paste("Should plan_route call this before filtering candidates?")
-        clickCenter(app.buttons["Add Note"], message: "Add Note missing")
+        clickCenter(app.buttons[AID.ReviewNote.save], message: "Add Note missing")
         settle()
         gutter.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 12, dy: 12)).click()
         clickCenter(app.buttons[AID.FileList.review("README.md")], message: "README review control missing")
@@ -54,8 +54,12 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectChange("include transfer time", in: app)
         selectFile("src/routes.rs", in: app)
-        clickCenter(app.buttons["Unified"], message: "Diff layout toggle missing")
-        XCTAssertTrue(app.buttons["Side-by-side"].waitForExistence(timeout: 5), "Side-by-side diff missing")
+        let toggle = app.buttons[AID.Diff.layoutToggle]
+        XCTAssertTrue(toggle.waitForExistence(timeout: 5), "Diff layout toggle missing")
+        let unifiedLabel = toggle.label
+        clickCenter(toggle, message: "Diff layout toggle missing")
+        let switched = NSPredicate(format: "label != %@", unifiedLabel)
+        XCTAssertEqual(XCTWaiter().wait(for: [expectation(for: switched, evaluatedWith: toggle)], timeout: 5), .completed, "Side-by-side diff missing")
         capture("side-by-side", frame: mainFrame)
     }
 
@@ -103,7 +107,8 @@ final class ReleaseScreenshots: ScreenshotScene {
     func testEvolog() throws {
         let app = try XCTUnwrap(app)
         rightClickCenter(row("include transfer time", in: app))
-        clickCenter(app.menuItems["Show evolution…"].firstMatch, message: "Show evolution missing")
+        XCTAssertTrue(app.menuItems.firstMatch.waitForExistence(timeout: 3), "Change menu missing")
+        keyStroke("v")
         let toggle = app.element(AID.Evolog.hideSnapshots).firstMatch
         XCTAssertTrue(toggle.waitForExistence(timeout: 5), "Evolution did not open")
         let versions = (0 ..< 8).map { app.element(AID.Evolog.version($0)).firstMatch }
@@ -113,14 +118,16 @@ final class ReleaseScreenshots: ScreenshotScene {
     }
 
     func testStackedPr() throws {
+        try skipUnlessEnglish()
         let app = try XCTUnwrap(app)
         rightClickCenter(row("include transfer time", in: app))
         clickCenter(app.menuItems["Create / Update Stacked PRs…"], message: "Stacked PRs menu item missing")
-        XCTAssertTrue(app.staticTexts["Stacked Pull Requests"].waitForExistence(timeout: 10), "Stacked PR panel missing")
+        XCTAssertTrue(app.element(AID.Panel.stackedPullRequests).waitForExistence(timeout: 10), "Stacked PR panel missing")
         capture("stacked-pr", frame: mainFrame)
     }
 
     func testStackedPrMenu() throws {
+        try skipUnlessEnglish()
         let app = try XCTUnwrap(app)
         selectChange("include transfer time", in: app)
         rightClickCenter(row("include transfer time", in: app))
@@ -135,14 +142,14 @@ final class ReleaseScreenshots: ScreenshotScene {
     func testBookmarkManager() throws {
         let app = try XCTUnwrap(app)
         keyStroke("b", modifiers: [.command, .shift])
-        XCTAssertTrue(app.staticTexts["Bookmark Manager"].waitForExistence(timeout: 5), "Bookmark Manager missing")
+        XCTAssertTrue(app.element(AID.Panel.bookmarkManager).waitForExistence(timeout: 5), "Bookmark Manager missing")
         capture("bookmark-manager", frame: mainFrame)
     }
 
     func testOperationLog() throws {
         let app = try XCTUnwrap(app)
         keyStroke("u", modifiers: [.command, .shift])
-        XCTAssertTrue(app.staticTexts["Operation Log"].waitForExistence(timeout: 5), "Operation Log missing")
+        XCTAssertTrue(app.element(AID.Panel.operationLog).waitForExistence(timeout: 5), "Operation Log missing")
         capture("undo-operation-log", frame: mainFrame)
     }
 
@@ -188,7 +195,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let workspace = app.element(AID.Picker.row("ws-route-experiment")).firstMatch
         XCTAssertTrue(workspace.waitForExistence(timeout: 5), "Workspace row missing")
         rightClickCenter(workspace)
-        XCTAssertTrue(app.menuItems["Filter by This Workspace"].waitForExistence(timeout: 5), "Workspace filter action missing")
+        XCTAssertTrue(app.menuItems[AID.Picker.filterByWorkspace].waitForExistence(timeout: 5), "Workspace filter action missing")
         capture("workspace-actions", frame: mainFrame)
     }
 
@@ -196,7 +203,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
         selectSettingsPage("dataPrivacy", in: app)
-        XCTAssertTrue(settingsWindow(in: app).staticTexts["Diagnostics"].waitForExistence(timeout: 5), "Diagnostics section missing")
+        XCTAssertTrue(settingsWindow(in: app).staticTexts[AID.Settings.diagnostics].waitForExistence(timeout: 5), "Diagnostics section missing")
         capture("settings-data-privacy", frame: settingsWindow(in: app).frame)
     }
 
@@ -211,8 +218,9 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
         selectSettingsPage("integrations", in: app)
-        XCTAssertTrue(settingsWindow(in: app).buttons["Sign In…"].firstMatch.waitForExistence(timeout: 5), "Forge sign-in controls missing")
-        settingsWindow(in: app).staticTexts["Version control"].scroll(byDeltaX: 0, deltaY: -600)
+        let signIn = settingsWindow(in: app).buttons[AID.Settings.forgeSignIn].firstMatch
+        XCTAssertTrue(signIn.waitForExistence(timeout: 5), "Forge sign-in controls missing")
+        settingsWindow(in: app).scrollViews.containing(.button, identifier: AID.Settings.forgeSignIn).firstMatch.scroll(byDeltaX: 0, deltaY: -600)
         capture("settings-integrations", frame: settingsWindow(in: app).frame)
     }
 
@@ -234,9 +242,9 @@ final class ReleaseScreenshots: ScreenshotScene {
 
     func testCloneRepository() throws {
         let app = try XCTUnwrap(app)
-        app.menuBars.menuBarItems["File"].click()
-        app.menuItems["Clone Repository..."].click()
-        let window = app.windows["Clone Repository"]
+        openRepositoryTitlePicker(in: mainWindow(app))
+        clickCenter(app.element(AID.Picker.row("clone-repo")).firstMatch, message: "Clone action missing")
+        let window = app.windows.containing(.textField, identifier: AID.CloneRepository.sourceField).firstMatch
         XCTAssertTrue(window.waitForExistence(timeout: 5), "Clone window missing")
         let source = window.textFields[AID.CloneRepository.sourceField]
         source.click()
@@ -265,13 +273,14 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectChange("include transfer time", in: app)
         rightClickCenter(app.element(AID.FileList.row("src/routes.rs")).firstMatch)
-        app.menuItems["File History"].firstMatch.click()
+        XCTAssertTrue(app.menuItems.firstMatch.waitForExistence(timeout: 3), "File menu missing")
+        keyStroke("h")
         let window = app.windows["file-history-window"]
         XCTAssertTrue(window.waitForExistence(timeout: 5), "File History window missing")
         let newest = app.element(AID.FileHistory.row(0)).firstMatch
         XCTAssertTrue(newest.waitForExistence(timeout: 5), "File History revisions missing")
         newest.click()
-        app.buttons["Pin as Base"].click()
+        app.buttons[AID.FileHistory.pinBase].click()
         let older = app.element(AID.FileHistory.row(2)).firstMatch
         XCTAssertTrue(older.waitForExistence(timeout: 5), "Older File History revision missing")
         older.click()
@@ -280,6 +289,11 @@ final class ReleaseScreenshots: ScreenshotScene {
     }
 
     // MARK: - Helpers
+
+    /// The change context menu is an NSHostingMenu, which drops accessibility identifiers, so these scenes find the item by its English title.
+    private func skipUnlessEnglish() throws {
+        try XCTSkipIf(Self.languages != "(en)", "Stacked PR scenes match the English menu title")
+    }
 
     private func mainWindow(_ app: XCUIApplication) -> XCUIElement {
         app.windows.firstMatch

@@ -7,8 +7,8 @@ extension AppSettings.FontFamily {
             CTFontCreateWithFontDescriptor($0, 12, nil).hasFixedAdvances
         })
         return [
-            FontFamilyGroup(title: "Coding Fonts", families: choices.coding.compactMap(Self.init(rawValue:))),
-            FontFamilyGroup(title: "Other Monospaced", families: choices.other.compactMap(Self.init(rawValue:)))
+            FontFamilyGroup(title: Localized.Settings.codingFonts, families: choices.coding.compactMap(Self.init(rawValue:))),
+            FontFamilyGroup(title: Localized.Settings.otherMonospaced, families: choices.other.compactMap(Self.init(rawValue:)))
         ]
     }
 

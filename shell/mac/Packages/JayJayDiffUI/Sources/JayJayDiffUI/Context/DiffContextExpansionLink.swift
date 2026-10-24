@@ -3,8 +3,14 @@ import JayJayCore
 
 enum DiffContextExpansionLink {
     static let showMoreCount: UInt32 = 10
-    static let showMoreLabel = "Show\u{00A0}\(showMoreCount)"
-    static let showAllLabel = "Show\u{00A0}all"
+    static var showMoreLabel: String {
+        Localized.Diff.showMoreLines(count: Int(showMoreCount)).replacingOccurrences(of: " ", with: "\u{00A0}")
+    }
+
+    static var showAllLabel: String {
+        Localized.Diff.showAll.replacingOccurrences(of: " ", with: "\u{00A0}")
+    }
+
     private static let showMoreActionValue = "show-more"
     private static let showAllActionValue = "show-all"
 
@@ -94,7 +100,7 @@ enum DiffContextExpansionLink {
         )
         if region.initialLineCount > showMoreCount {
             appendLink(
-                "Show\u{00A0}10",
+                showMoreLabel,
                 url: url(regionId: region.id, expansion: .showMore(lineCount: showMoreCount)),
                 font: font,
                 color: foregroundColor,

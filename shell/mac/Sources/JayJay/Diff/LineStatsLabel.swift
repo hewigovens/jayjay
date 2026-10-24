@@ -21,7 +21,7 @@ struct LineStatsLabel: View {
             .jayjayFont(size, weight: .semibold, design: .monospaced)
             .fixedSize()
             .accessibilityElement(children: .ignore)
-            .accessibilityLabel("\(stats.insertions) added, \(stats.deletions) removed")
+            .accessibilityLabel(Localized.Diff.lineStatsLabel(added: Int(stats.insertions), removed: Int(stats.deletions)))
         }
     }
 }

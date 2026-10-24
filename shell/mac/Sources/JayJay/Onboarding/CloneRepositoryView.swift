@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 struct CloneRepositoryView: View {
@@ -17,17 +18,17 @@ struct CloneRepositoryView: View {
         @Bindable var model = model
         VStack(alignment: .leading, spacing: 14) {
             Form {
-                TextField("Repository URL", text: $model.source, prompt: Text("https://github.com/owner/repo.git"))
+                TextField(Localized.Clone.repositoryUrl, text: $model.source, prompt: Text("https://github.com/owner/repo.git"))
                     .focused($sourceFocused)
                     .accessibilityIdentifier(AID.CloneRepository.sourceField)
-                TextField("Name", text: $model.name)
+                TextField(Localized.Clone.name, text: $model.name)
                     .accessibilityIdentifier(AID.CloneRepository.nameField)
-                LabeledContent("Location") {
+                LabeledContent(Localized.Repo.location) {
                     HStack(spacing: 6) {
-                        TextField("Location", text: $model.location)
+                        TextField(Localized.Repo.location, text: $model.location)
                             .labelsHidden()
                             .accessibilityIdentifier(AID.CloneRepository.locationField)
-                        Button("Choose…", action: chooseLocation)
+                        Button(Localized.Clone.chooseEllipsis, action: chooseLocation)
                     }
                 }
                 status
@@ -39,9 +40,9 @@ struct CloneRepositoryView: View {
 
             HStack {
                 Spacer()
-                Button("Cancel", action: cancel)
+                Button(Localized.Common.cancel, action: cancel)
                     .keyboardShortcut(.cancelAction)
-                Button("Clone") { model.clone(onCloned: finish) }
+                Button(Localized.Onboarding.clone) { model.clone(onCloned: finish) }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
                     .disabled(!model.canClone)
@@ -62,7 +63,7 @@ struct CloneRepositoryView: View {
         if model.isCloning {
             HStack(spacing: 6) {
                 ProgressView().controlSize(.small)
-                Text("Cloning \(model.name)…")
+                Text(Localized.Clone.cloning(name: model.name))
                     .foregroundStyle(.secondary)
             }
             .jayjayFont(11)
@@ -82,7 +83,7 @@ struct CloneRepositoryView: View {
         panel.canChooseDirectories = true
         panel.canCreateDirectories = true
         panel.allowsMultipleSelection = false
-        panel.prompt = "Choose"
+        panel.prompt = Localized.Clone.choose
         panel.directoryURL = URL(fileURLWithPath: (model.folder as NSString).expandingTildeInPath)
         if panel.runModal() == .OK, let url = panel.url {
             model.choose(folder: url.path)

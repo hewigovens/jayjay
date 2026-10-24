@@ -95,25 +95,25 @@ impl ExternalToolWindow {
         let t = theme(cx);
         let status = {
             match &self.state {
-                ExternalToolState::Loading => "Loading…".to_owned(),
+                ExternalToolState::Loading => jayjay_i18n::repo::loading_ellipsis(),
                 ExternalToolState::Diff(session) => {
-                    format!("{} changed files", session.files.len())
+                    jayjay_i18n::merge::changed_files(session.files.len())
                 }
                 ExternalToolState::Merge {
                     session, result, ..
                 } => {
                     let count = session.unresolved_count(&result.read(cx).text());
                     if !session.is_text {
-                        "Non-text conflict".to_owned()
+                        jayjay_i18n::merge::non_text_conflict()
                     } else if count == 0 && session.can_save(&result.read(cx).text()) {
-                        "Ready to save".to_owned()
+                        jayjay_i18n::merge::ready_to_save()
                     } else if count == 0 {
-                        "Unresolved conflict markers".to_owned()
+                        jayjay_i18n::merge::unresolved_conflict_markers()
                     } else {
-                        format!("{count} unresolved conflict blocks")
+                        jayjay_i18n::merge::unresolved_blocks(count)
                     }
                 }
-                ExternalToolState::Error => "Could not open tool session".to_owned(),
+                ExternalToolState::Error => jayjay_i18n::merge::could_not_open_tool_session(),
             }
         };
         let editable = !matches!(
@@ -130,7 +130,11 @@ impl ExternalToolWindow {
             } => session.can_save(&result.read(cx).text()),
             ExternalToolState::Loading | ExternalToolState::Error => false,
         };
-        let cancel_label = if editable { "Cancel" } else { "Close" };
+        let cancel_label = if editable {
+            jayjay_i18n::common::cancel()
+        } else {
+            jayjay_i18n::common::close()
+        };
         let (header_glyph, header_color) = match &self.invocation {
             ExternalToolInvocation::Diff { editable: true, .. } => {
                 (glyph::PENCIL, t.selected_accent)
@@ -171,8 +175,10 @@ impl ExternalToolWindow {
             let label = match &self.state {
                 ExternalToolState::Merge {
                     session, result, ..
-                } if session.unresolved_count(&result.read(cx).text()) > 0 => "Save Partial",
-                _ => "Done",
+                } if session.unresolved_count(&result.read(cx).text()) > 0 => {
+                    jayjay_i18n::repo::save_partial()
+                }
+                _ => jayjay_i18n::repo::done(),
             };
             header = header.child(
                 button("external-save", label, t, true)
@@ -186,9 +192,9 @@ impl ExternalToolWindow {
                 } if session.is_text_merge()
                     && session.unresolved_count(&result.read(cx).text()) > 0 =>
                 {
-                    "Resolve all conflict blocks before saving"
+                    jayjay_i18n::merge::resolve_all_conflict_blocks_before_saving()
                 }
-                _ => "Choose a side to save this non-text conflict",
+                _ => jayjay_i18n::merge::choose_a_side_to_save_this(),
             };
             header = header.child(
                 div()
@@ -236,8 +242,12 @@ impl Render for ExternalToolWindow {
         root.child(match &self.state {
             ExternalToolState::Loading => loading_status(
                 match self.invocation {
-                    ExternalToolInvocation::Diff { .. } => "Loading comparison…",
-                    ExternalToolInvocation::Merge { .. } => "Loading conflict sides…",
+                    ExternalToolInvocation::Diff { .. } => {
+                        jayjay_i18n::merge::loading_comparison_ellipsis()
+                    }
+                    ExternalToolInvocation::Merge { .. } => {
+                        jayjay_i18n::merge::loading_conflict_sides_ellipsis()
+                    }
                 },
                 &t,
             ),
