@@ -100,7 +100,7 @@ fn merge_state(
         TextArea::code_editor(
             session.initial_result.clone(),
             session.repo_path.clone(),
-            "Merge result",
+            jayjay_i18n::repo::merge_result(),
             360.,
             cx,
         )

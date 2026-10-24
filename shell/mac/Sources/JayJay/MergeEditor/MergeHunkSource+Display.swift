@@ -11,9 +11,17 @@ extension MergeHunkSource {
 
     var label: String {
         switch self {
-            case .left: "Left"
-            case .base: "Base"
-            case .right: "Right"
+            case .left: Localized.Repo.left
+            case .base: Localized.Repo.base
+            case .right: Localized.Repo.right
+        }
+    }
+
+    var useHelp: String {
+        switch self {
+            case .left: Localized.Merge.useLeftForThisConflict
+            case .base: Localized.Merge.useBaseForThisConflict
+            case .right: Localized.Merge.useRightForThisConflict
         }
     }
 }

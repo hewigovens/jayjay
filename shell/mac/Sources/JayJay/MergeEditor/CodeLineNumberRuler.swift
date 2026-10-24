@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import JayJayDiffUI
 
 final class CodeLineNumberRuler: NSRulerView {
@@ -11,7 +12,7 @@ final class CodeLineNumberRuler: NSRulerView {
         clientView = textView
         ruleThickness = 40
         setAccessibilityElement(true)
-        setAccessibilityLabel("Line numbers")
+        setAccessibilityLabel(Localized.Merge.lineNumbers)
         updateText()
     }
 

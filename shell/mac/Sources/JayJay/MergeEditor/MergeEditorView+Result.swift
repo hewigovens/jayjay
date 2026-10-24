@@ -6,7 +6,7 @@ extension MergeEditorView {
     var resultPane: some View {
         VStack(alignment: .leading, spacing: 0) {
             HStack {
-                Text("Result")
+                Text(Localized.Repo.result)
                     .jayjayFont(12, weight: .semibold)
                 if hasHunkView {
                     resultModePicker
@@ -43,11 +43,11 @@ extension MergeEditorView {
     }
 
     private var resultModePicker: some View {
-        Picker("Result view", selection: $session.resultMode) {
-            Label("Hunks", systemImage: "square.split.2x1")
+        Picker(Localized.Merge.resultView, selection: $session.resultMode) {
+            Label(Localized.Repo.hunks, systemImage: "square.split.2x1")
                 .tag(MergeResultMode.hunks)
                 .accessibilityIdentifier(AID.Conflict.editorHunks)
-            Label("Raw", systemImage: "chevron.left.forwardslash.chevron.right")
+            Label(Localized.Repo.raw, systemImage: "chevron.left.forwardslash.chevron.right")
                 .tag(MergeResultMode.raw)
                 .accessibilityIdentifier(AID.Conflict.editorRaw)
         }
@@ -60,12 +60,12 @@ extension MergeEditorView {
 
     private var resultHint: String {
         if let selectedSource = session.selectedSource {
-            return "Using \(selectedSource.label)"
+            return Localized.Merge.usingSource(source: selectedSource.label)
         }
         if session.isText {
-            return "Edit freely; remaining markers are saved as a partial resolution."
+            return Localized.Merge.editFreelyRemainingMarkersAreSaved
         }
-        return "Non-text conflicts can be resolved with Use Ours or Use Theirs."
+        return Localized.Merge.nonTextConflictsCanBeResolved
     }
 
     private var hasHunkView: Bool {

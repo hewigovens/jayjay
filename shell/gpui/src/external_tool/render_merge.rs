@@ -29,11 +29,23 @@ impl ExternalToolWindow {
         let path = session.repo_path.clone();
         let is_text = session.is_text_merge();
         let source_views = if self.show_merge_base {
-            vec![(MergeHunkSource::Base, "Base", sources[1].clone())]
+            vec![(
+                MergeHunkSource::Base,
+                jayjay_i18n::repo::base(),
+                sources[1].clone(),
+            )]
         } else {
             vec![
-                (MergeHunkSource::Left, "Left", sources[0].clone()),
-                (MergeHunkSource::Right, "Right", sources[2].clone()),
+                (
+                    MergeHunkSource::Left,
+                    jayjay_i18n::repo::left(),
+                    sources[0].clone(),
+                ),
+                (
+                    MergeHunkSource::Right,
+                    jayjay_i18n::repo::right(),
+                    sources[2].clone(),
+                ),
             ]
         };
         let result = result.clone();
@@ -45,8 +57,8 @@ impl ExternalToolWindow {
             .enumerate()
             .map(|(index, (source, label, content))| {
                 let action = button(
-                    SharedString::from(format!("external-use-{label}")),
-                    format!("Use {label}"),
+                    SharedString::from(format!("external-use-{source:?}")),
+                    jayjay_i18n::merge::use_source(&label),
                     t,
                     false,
                 )
@@ -66,9 +78,9 @@ impl ExternalToolWindow {
             .collect::<Vec<_>>();
         let source_row = merge_source_row(panels, 260., t);
         let result_label = if is_text {
-            "Edit freely or replace the result from a source"
+            jayjay_i18n::merge::edit_freely_or_replace_the_result()
         } else {
-            "Choose Left, Base, or Right for this non-text conflict"
+            jayjay_i18n::merge::choose_left_base_or_right_for()
         };
         div()
             .flex()
@@ -90,13 +102,13 @@ impl ExternalToolWindow {
                         div()
                             .text_size(ui_font_size(12.))
                             .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .child("Sources"),
+                            .child(jayjay_i18n::repo::sources()),
                     )
                     .child(
                         div()
                             .text_size(ui_font_size(11.))
                             .text_color(rgb(t.fg_dim))
-                            .child("Use a complete side as the starting point for the result."),
+                            .child(jayjay_i18n::repo::use_a_complete_side_as_the()),
                     )
                     .child(div().flex_1())
                     .child(
@@ -122,20 +134,29 @@ impl ExternalToolWindow {
                         div()
                             .text_size(ui_font_size(12.))
                             .font_weight(gpui::FontWeight::SEMIBOLD)
-                            .child("Result"),
+                            .child(jayjay_i18n::repo::result()),
                     )
                     .children(has_hunks.then(|| {
-                        merge_result_mode_button("external-result-hunks", "Hunks", !raw, t)
-                            .on_click(cx.listener(|view, _, window, cx| {
-                                view.set_merge_result_raw(false, window, cx);
-                            }))
+                        merge_result_mode_button(
+                            "external-result-hunks",
+                            jayjay_i18n::repo::hunks(),
+                            !raw,
+                            t,
+                        )
+                        .on_click(cx.listener(|view, _, window, cx| {
+                            view.set_merge_result_raw(false, window, cx);
+                        }))
                     }))
                     .children(has_hunks.then(|| {
-                        merge_result_mode_button("external-result-raw", "Raw", raw, t).on_click(
-                            cx.listener(|view, _, window, cx| {
-                                view.set_merge_result_raw(true, window, cx);
-                            }),
+                        merge_result_mode_button(
+                            "external-result-raw",
+                            jayjay_i18n::repo::raw(),
+                            raw,
+                            t,
                         )
+                        .on_click(cx.listener(|view, _, window, cx| {
+                            view.set_merge_result_raw(true, window, cx);
+                        }))
                     }))
                     .child(
                         div()
@@ -153,10 +174,9 @@ impl ExternalToolWindow {
                             .child(if raw {
                                 result_label.to_owned()
                             } else {
-                                format!(
-                                    "Select a hunk; {} uses Left and {} uses Right",
-                                    KeyCaps::label(&MergeUseLeftHunk, cx),
-                                    KeyCaps::label(&MergeUseRightHunk, cx)
+                                jayjay_i18n::merge::select_hunk_hint(
+                                    &KeyCaps::label(&MergeUseLeftHunk, cx),
+                                    &KeyCaps::label(&MergeUseRightHunk, cx),
                                 )
                             }),
                     ),
