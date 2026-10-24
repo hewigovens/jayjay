@@ -33,6 +33,7 @@
     <h1>Use the command palette</h1>
     <p>With a repository open, choose <strong>Repository &gt; Command Palette</strong> or press <code>Cmd+Shift+P</code>. Type an action’s name, use the Up and Down arrows to select a result, and press Return to run it; clicking a result also runs it. <code>Esc</code> closes the palette. Type <code>help split</code> to find and open local feature help.</p>
     <ul>
+      <li>With a change selected in the graph, search for <strong>Show Evolution</strong>, select the result, and press Return to inspect that change’s rewrite history. Choose <strong>Done</strong> or press <code>Esc</code> to return to the file diff.</li>
       <li>Open the complete keyboard reference with <code>Cmd+/</code> or Help &gt; Keyboard Shortcuts.</li>
       <li>For raw commands, install the <code>jj</code> executable and make it available on your PATH; <a href="settings.html">Settings &gt; Integrations</a> shows whether it is detected. Type <code>jj &lt;args&gt;</code> or <code>!&lt;args&gt;</code>, for example <code>jj status</code>, and press Return. The command runs in the open repository. Input is passed directly to jj, so shell pipes are unavailable. Commands that need an interactive editor must receive their message inline, such as <code>jj describe -m "Fix parser"</code>.</li>
       <li>The result shows output and an exit status inside the palette. Choose <strong>Copy Output</strong> to copy it. Successful repository-changing commands refresh the repository view.</li>

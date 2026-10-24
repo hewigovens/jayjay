@@ -4,7 +4,7 @@
     "title": "Open a repository",
     "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI, switch workspaces from the title picker, and see every lane of work in the Repo Overview.",
     "category": "Getting Started",
-    "keywords": ["help", "open", "repo", "repository", "workspace", "switch workspace", "forget workspace", "overview", "repo overview", "lanes", "folder", "cli", "launcher", "jayjay .", "jj git init"],
+    "keywords": ["help", "open", "repo", "repository", "workspace", "switch workspace", "forget workspace", "overview", "repo overview", "lanes", "folder", "subdirectory", "subfolder", "cli", "launcher", "jayjay .", "jj git init"],
     "shortcut": "Cmd+O",
     "menuPath": "File > Open Repository...",
     "guideAnchor": "open"
@@ -14,7 +14,7 @@
     "title": "Navigate history",
     "summary": "Move through the DAG, filter it from the revset bar, and drag changes or bookmarks when you need to rewrite.",
     "category": "History",
-    "keywords": ["help", "history", "dag", "graph", "revset", "mine", "trunk", "conflicts", "heads", "drag", "rebase", "rebase onto trunk", "trunk()", "move", "working copy", "edit"],
+    "keywords": ["help", "history", "dag", "graph", "lane", "column", "keyboard navigation", "committer date", "revsets.log", "revset", "mine", "trunk", "conflicts", "heads", "drag", "rebase", "rebase onto trunk", "trunk()", "move", "working copy", "edit"],
     "shortcut": "J / K",
     "guideAnchor": "navigate"
   },
@@ -67,7 +67,7 @@
     "title": "Manage bookmarks and pull requests",
     "summary": "Use Bookmark Manager, bookmark chip actions, and forge links for GitHub, GitLab, Codeberg, or Cursor PRs.",
     "category": "Bookmarks",
-    "keywords": ["help", "bookmark", "bookmarks", "branch", "pull request", "pr", "merge request", "mr", "github", "gitlab", "codeberg", "cursor", "origin", "push", "fetch", "remote", "ci"],
+    "keywords": ["help", "bookmark", "bookmarks", "filter by this bookmark", "bookmark chip", "branch", "pull request", "pr", "merge request", "mr", "github", "gitlab", "codeberg", "cursor", "origin", "push", "fetch", "remote", "ci"],
     "shortcut": "Cmd+Shift+B",
     "menuPath": "Repository > Bookmark Manager",
     "guideAnchor": "bookmarks"
@@ -102,7 +102,7 @@
     "title": "Use the command palette",
     "summary": "Search actions with Cmd+Shift+P, type help for feature help, or run raw jj commands with jj or !.",
     "category": "Tools",
-    "keywords": ["help", "command palette", "palette", "commands", "search", "raw jj", "terminal", "jj command", "!status", "history"],
+    "keywords": ["help", "command palette", "palette", "commands", "search", "show evolution", "evolog", "raw jj", "terminal", "jj command", "!status", "history"],
     "shortcut": "Cmd+Shift+P",
     "guideAnchor": "palette"
   },
@@ -111,7 +111,7 @@
     "title": "Configure tools and settings",
     "summary": "Set appearance, diff behavior, external editor, terminal, CLI tools, jj config, fonts, and AI providers.",
     "category": "Settings",
-    "keywords": ["help", "settings", "appearance", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "diagnostics", "debug mode", "logs", "reveal logs", "feedback", "ai", "codex", "claude", "apple intelligence", "forge", "sign in", "sign out", "device code", "github", "gitlab", "codeberg", "cursor", "authentication", "token", "gh", "glab", "origin", "avatar"],
+    "keywords": ["help", "settings", "appearance", "language", "Japanese", "English", "relaunch", "Rex", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "diagnostics", "debug mode", "logs", "reveal logs", "feedback", "ai", "codex", "claude", "apple intelligence", "forge", "sign in", "sign out", "device code", "github", "gitlab", "codeberg", "cursor", "authentication", "token", "gh", "glab", "origin", "avatar"],
     "shortcut": "Cmd+,",
     "menuPath": "JayJay > Settings...",
     "guideAnchor": "settings"

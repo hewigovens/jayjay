@@ -31,7 +31,7 @@
     <a name="open"></a>
     <p class="eyebrow">Getting started</p>
     <h1>Open a repository</h1>
-    <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a folder that already contains a jj repository.</p>
+    <p>Choose <strong>File &gt; Open Repository...</strong> or press <code>Cmd+O</code>, then select a jj workspace or a folder inside it. JayJay opens the enclosing workspace. The CLI launcher also accepts subfolders, so <code>jayjay .</code> works from a nested source directory.</p>
     <p>The history sidebar lists changes. Select a change to populate the file list, then select a file to read its diff. The <code>@</code> row is this workspace's working copy; see the <a href="../Start.html#concepts">core concepts</a> for jj terminology.</p>
     <ul>
       <li>To open repositories from a terminal, choose <strong>JayJay &gt; Settings… &gt; Integrations</strong> and click <strong>Install</strong> beside <strong>jayjay</strong>. This links the bundled CLI at <code>~/.local/bin/jayjay</code>. Add <code>~/.local/bin</code> to your shell’s PATH, then run <code>jayjay /path/to/repo</code> or <code>jayjay .</code>; you can also invoke <code>~/.local/bin/jayjay .</code> directly.</li>
