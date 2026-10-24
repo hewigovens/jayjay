@@ -98,7 +98,7 @@ struct EvologView: View {
             .jayjayFont(11)
             .help(Localized.Repo.hideConsecutiveWorkingCopySnapshots)
             .accessibilityIdentifier(AID.Evolog.hideSnapshots)
-            Text("\(viewModel.entries.count) version\(viewModel.entries.count == 1 ? "" : "s")")
+            Text(Localized.Evolog.versionCount(count: viewModel.entries.count))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
             Button(Localized.Repo.done, action: onDismiss)

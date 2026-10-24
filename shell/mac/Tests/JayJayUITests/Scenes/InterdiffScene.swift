@@ -34,7 +34,7 @@ final class InterdiffScene: SceneBase {
             "Linear changes cannot be merged as independent heads"
         )
         XCTAssertFalse(app.menuItems["New change on top"].exists)
-        XCTAssertFalse(app.menuItems["Create bookmark here..."].exists)
+        XCTAssertFalse(app.menuItems["Create bookmark here…"].exists)
         app.typeKey(.escape, modifierFlags: [])
 
         app.typeKey(.escape, modifierFlags: [])

@@ -280,7 +280,7 @@ extension OverviewLane {
     }
 
     var title: String {
-        head.description.isEmpty ? "(no description)" : head.description
+        head.description.isEmpty ? Localized.Repo.noDescriptionPlaceholder : head.description
     }
 
     var currentWorkspace: OverviewWorkspace? {
@@ -324,7 +324,7 @@ extension OverviewWorkspace {
 
 extension OverviewChange {
     var title: String {
-        description.isEmpty ? (isEmpty ? "(empty)" : "(no description)") : description
+        description.isEmpty ? (isEmpty ? Localized.Repo.emptyPlaceholder : Localized.Repo.noDescriptionPlaceholder) : description
     }
 }
 

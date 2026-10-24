@@ -41,7 +41,7 @@ struct DetailView: View {
             .id("\(rev)-\(entries.first?.commitId.id ?? "")")
         } else if selectionWithoutDiffCount > 1 {
             ContentUnavailableView(
-                "\(selectionWithoutDiffCount) Changes Selected",
+                Localized.Repo.changesSelectedCount(count: selectionWithoutDiffCount),
                 systemImage: "square.stack.3d.up.slash",
                 description: Text(
                     Localized.Repo.theseChangesDontFormASingleLinear

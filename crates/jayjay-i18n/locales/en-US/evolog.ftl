@@ -10,3 +10,8 @@ evolog-snapshot-count =
         [one] { $count } snapshot
        *[other] { $count } snapshots
     }
+evolog-version-count =
+    { $count ->
+        [one] { $count } version
+       *[other] { $count } versions
+    }

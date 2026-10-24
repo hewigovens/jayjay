@@ -570,3 +570,13 @@ repo-bisect-first-bad =
 repo-bisect-none = (none)
 repo-bisect-working-copy-moved = The working copy moved away from the bisect candidate. Stop and start a new bisect.
 repo-empty-placeholder = (empty)
+repo-no-email-set = (no email set)
+repo-rebased-with-conflicts = { $message } Conflicts need resolution.
+repo-bookmark-vs-remote = { $name } vs { $remote }
+repo-lfs-hidden = { NUMBER($count) } LFS hidden
+repo-submodules-hidden =
+    { $count ->
+        [one] { $count } submodule hidden
+       *[other] { $count } submodules hidden
+    }
+repo-match-position = { NUMBER($current) } of { NUMBER($total) }

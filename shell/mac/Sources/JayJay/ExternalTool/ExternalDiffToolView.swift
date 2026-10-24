@@ -40,7 +40,7 @@ struct ExternalDiffToolView: View {
             }
             Spacer()
             if !session.files.isEmpty {
-                Text("\(session.files.count) changed \(session.files.count == 1 ? "file" : "files")")
+                Text(Localized.Merge.changedFiles(count: session.files.count))
                     .jayjayFont(11, design: .monospaced)
                     .foregroundStyle(.secondary)
             }

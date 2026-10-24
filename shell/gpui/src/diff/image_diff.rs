@@ -88,7 +88,7 @@ fn image_viewer(path: Option<String>, t: &Theme) -> AnyElement {
             .into_any_element(),
         Some(_) => frame
             .text_color(rgb(t.fg_dim))
-            .child(SharedString::from("(file unavailable)"))
+            .child(jayjay_i18n::diff::file_unavailable())
             .into_any_element(),
         None => frame
             .text_color(rgb(t.fg_dim))

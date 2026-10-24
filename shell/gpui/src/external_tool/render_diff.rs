@@ -150,7 +150,7 @@ impl ExternalToolWindow {
                     .child(if executable_changed && changed_count == 0 {
                         jayjay_i18n::merge::executable_permission_changed()
                     } else {
-                        format!("{selected_count} of {changed_count} changed lines")
+                        jayjay_i18n::merge::selected_changed_lines(selected_count, changed_count)
                     }),
             );
         if editable {

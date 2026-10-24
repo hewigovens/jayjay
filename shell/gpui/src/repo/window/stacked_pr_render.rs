@@ -121,10 +121,9 @@ fn subtitle_row(
                 .min_w_0()
                 .text_size(ui_font_size(12.))
                 .text_color(rgb(t.fg_dim))
-                .child(format!(
-                    "{count} change{} — one PR each, bottom targets {}.",
-                    if count == 1 { "" } else { "s" },
-                    stack.base_bookmark
+                .child(jayjay_i18n::repo::stack_summary(
+                    count,
+                    &stack.base_bookmark,
                 )),
         )
         .child(

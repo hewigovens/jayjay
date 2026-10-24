@@ -43,7 +43,6 @@ diff-image-comparison-divider = Image comparison divider
 diff-restore-equal-widths = Restore equal widths
 diff-large-markdown-preview-truncated-to-keep = Large Markdown preview truncated to keep JayJay responsive.
 diff-no-differences = No differences
-diff-review-note = Review Note
 diff-binary-property-list-on-disk-previewed = Binary property list on disk, previewed as XML
 diff-show-table-preview = Show table preview
 diff-show-notebook-preview = Show notebook preview
@@ -96,3 +95,12 @@ diff-plugin-notebook = Notebook
 diff-plugin-delimited-table = Delimited table
 diff-plugin-property-list = Property list
 diff-plugin-sarif-report = SARIF report
+diff-review-note-count =
+    { $count ->
+        [one] Review Note
+       *[other] { $count } Review Notes
+    }
+diff-moved-from-to = { $kind } from { $old } to { $new }
+diff-file-unavailable = (file unavailable)
+diff-preview-unavailable = (preview unavailable)
+diff-markdown-metadata = { NUMBER($count) } blocks, { $size }

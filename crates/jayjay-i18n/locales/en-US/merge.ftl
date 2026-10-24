@@ -48,3 +48,9 @@ merge-unresolved-blocks = { $count ->
     [one] { $count } unresolved conflict block
    *[other] { $count } unresolved conflict blocks
 }
+merge-changed-files =
+    { $count ->
+        [one] { $count } changed file
+       *[other] { $count } changed files
+    }
+merge-selected-changed-lines = { NUMBER($selected) } of { NUMBER($total) } changed lines

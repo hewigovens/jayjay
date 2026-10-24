@@ -97,7 +97,7 @@ impl ExternalToolWindow {
             match &self.state {
                 ExternalToolState::Loading => jayjay_i18n::repo::loading_ellipsis(),
                 ExternalToolState::Diff(session) => {
-                    format!("{} changed files", session.files.len())
+                    jayjay_i18n::merge::changed_files(session.files.len())
                 }
                 ExternalToolState::Merge {
                     session, result, ..

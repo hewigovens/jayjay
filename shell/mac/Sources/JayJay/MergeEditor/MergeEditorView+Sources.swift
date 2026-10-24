@@ -54,7 +54,7 @@ extension MergeEditorView {
                     .jayjayFont(11, weight: .medium)
                     .foregroundStyle(.secondary)
                     .disabled(!session.canUseSources)
-                    .accessibilityIdentifier(AID.ExternalTool.useSource(source.label.lowercased()))
+                    .accessibilityIdentifier(AID.ExternalTool.useSource(source.slug))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)
@@ -64,7 +64,7 @@ extension MergeEditorView {
                 text: .constant(content.isEmpty ? "∅" : content),
                 isEditable: false,
                 wrapsLines: true,
-                accessibilityIdentifier: AID.Conflict.editorSource(source.label.lowercased()),
+                accessibilityIdentifier: AID.Conflict.editorSource(source.slug),
                 preparedText: content,
                 preparedHighlightedLines: sourceHighlights(source)?.spans,
                 preparedLineStyles: sourceHighlights(source)?.lineStyles,

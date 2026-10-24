@@ -123,27 +123,29 @@ lint-i18n:
   set -euo pipefail
   status=0
   camel() { awk -F'[-_]' '{ printf "%s", $1; for (i = 2; i <= NF; i++) printf "%s", toupper(substr($i, 1, 1)) substr($i, 2) }' <<< "$1"; }
+  used=$( { grep -rhoE --include='*.rs' '[a-z0-9_:]*[a-z_]+::[a-z0-9_]+' crates shell/gpui/src --exclude-dir=jayjay-i18n \
+      | sed -n 's/^jayjay_i18n:://; /^[a-z_]*::[a-z0-9_]*$/p'
+    grep -rhoE --include='*.swift' 'Localized\.[A-Za-z]+\.[A-Za-z0-9]+' shell/mac/Sources shell/mac/Packages; } | sort -u)
   for file in crates/jayjay-i18n/locales/en-US/*.ftl; do
     stem=$(basename "$file" .ftl)
     swift_enum=$(camel "$stem")
     swift_enum=$(tr a-z A-Z <<< "${swift_enum:0:1}")${swift_enum:1}
     for id in $(sed -n "s/^\(${stem}-[a-z0-9-]*\) =.*/\1/p" "$file"); do
       name=${id#"$stem"-}
-      if ! grep -rqE --include='*.rs' "${stem}::${name//-/_}([^a-z0-9_]|$)" crates shell/gpui/src --exclude-dir=jayjay-i18n \
-        && ! grep -rqE --include='*.swift' "Localized\.${swift_enum}\.$(camel "$name")([^A-Za-z0-9_]|$)" shell/mac/Sources shell/mac/Packages; then
+      if ! grep -qxF -e "${stem}::${name//-/_}" -e "Localized.${swift_enum}.$(camel "$name")" <<< "$used"; then
         echo "unused message: $id ($file)"
         status=1
       fi
     done
   done
-  hits=$(find {{i18n_migrated}} -type f \( -name '*.rs' -o -name '*.swift' \) ! -name 'tests.rs' -print0 \
+  hits=$(find {{i18n_migrated}} -type f \( -name '*.rs' -o -name '*.swift' \) ! -name 'tests.rs' ! -path '*/tests/*' -print0 \
     | xargs -0 awk -v names='^"({{i18n_names}})"$' '
       FNR == 1 { skip = 0 }
       /#\[cfg\(test\)\]/ { skip = 1 }
-      skip || /^[[:space:]]*\/\// || /key_context|KeyContext|assert|precondition|fatalError|\.contains\(/ { next }
+      skip || /^[[:space:]]*\/\// || /key_context|KeyContext|assert|precondition|fatalError|\.contains\(|search: |=\\"/ { next }
       {
         rest = $0
-        while (match(rest, /"[A-Z][a-z]+([ ,.…?!&:'\''][^"]*)?"/)) {
+        while (match(rest, /"([A-Z][a-z]+([ ,.…?!&:'\''][^"]*)?|\([a-z]+( [a-z]+)*\)|(\\\([^)"]*\)|\{[^}"]*\}) [A-Za-z][a-z]+[^"]*)"/)) {
           literal = substr(rest, RSTART, RLENGTH)
           if (literal !~ names) { print FILENAME ":" FNR ": " $0; break }
           rest = substr(rest, RSTART + RLENGTH)

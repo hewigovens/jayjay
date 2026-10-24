@@ -189,7 +189,6 @@ class SceneBase: XCTestCase {
         element.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5)).rightClick()
     }
 
-    /// Toolbar items expose labels, not identifiers.
     func repositoryTitleButton(in window: XCUIElement) -> XCUIElement {
         window.toolbars.buttons[AID.Toolbar.repositoryTitle].firstMatch
     }

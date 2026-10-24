@@ -227,10 +227,10 @@ extension ChangeDetailView {
             [Localized.Repo.fileCount(count: filteredDiff.count)]
         }
         if hiddenGitLfsCount > 0 {
-            parts.append("\(hiddenGitLfsCount) LFS hidden")
+            parts.append(Localized.Repo.lfsHidden(count: hiddenGitLfsCount))
         }
         if hiddenSubmoduleCount > 0 {
-            parts.append("\(hiddenSubmoduleCount) submodule hidden")
+            parts.append(Localized.Repo.submodulesHidden(count: hiddenSubmoduleCount))
         }
         return parts.joined(separator: ", ")
     }

@@ -22,7 +22,7 @@ pub(super) fn render_find_bar(
     } else if match_count == 0 {
         jayjay_i18n::repo::no_matches()
     } else {
-        format!("{} of {}", match_current + 1, match_count)
+        jayjay_i18n::repo::match_position(match_current + 1, match_count)
     };
     div()
         .flex()

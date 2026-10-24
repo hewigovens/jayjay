@@ -193,7 +193,7 @@ struct OnboardingView: View {
 
             VStack(alignment: .leading, spacing: 10) {
                 tip(icon: "folder", text: Localized.Onboarding.openAnyJjRepositoryToGet)
-                tip(icon: "keyboard", text: "\(AppShortcut.commandPalette.symbol) finds actions; type help split for feature help")
+                tip(icon: "keyboard", text: Localized.Onboarding.paletteTip(shortcut: AppShortcut.commandPalette.symbol))
                 tip(icon: "checkmark.circle", text: Localized.Onboarding.pressSpaceToMarkTheSelected)
                 tip(icon: "arrow.triangle.branch", text: Localized.Onboarding.shiftClickSelectsARangeClick)
                 tip(icon: "exclamationmark.triangle", text: Localized.Onboarding.closeGithubDesktopItMayConflict)

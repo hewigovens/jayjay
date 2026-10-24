@@ -36,3 +36,4 @@ onboarding-identity-not-set = jj author identity is not set
 onboarding-current-directory-unavailable = Could not resolve the current directory: { $error }
 onboarding-could-not-open = Could not open { $path }: { $error }
 onboarding-not-a-directory = { $path } is not a directory.
+onboarding-palette-tip = { $shortcut } finds actions; type help split for feature help

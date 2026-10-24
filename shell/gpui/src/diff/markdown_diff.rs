@@ -117,10 +117,9 @@ fn preview_frame(t: &Theme) -> Div {
 fn metadata_line(document: Option<&MarkdownDocument>, t: &Theme) -> AnyElement {
     let label = document
         .map(|document| {
-            format!(
-                "{} blocks, {}",
+            jayjay_i18n::diff::markdown_metadata(
                 document.blocks().len(),
-                format_size(document.source().len() as u64)
+                &format_size(document.source().len() as u64),
             )
         })
         .unwrap_or_else(|| " ".to_owned());

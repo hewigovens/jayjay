@@ -36,10 +36,7 @@ impl OverviewView {
         let count = lane.changes.len();
         let meta = panel_meta(
             [
-                (
-                    format!("{count} change{}", if count == 1 { "" } else { "s" }),
-                    t.fg_dim,
-                ),
+                (jayjay_i18n::repo::change_count(count), t.fg_dim),
                 (
                     format!("updated {}", format_relative(lane.latest_timestamp_millis)),
                     t.fg_dim,

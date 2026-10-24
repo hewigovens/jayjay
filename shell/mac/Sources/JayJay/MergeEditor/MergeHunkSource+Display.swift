@@ -17,6 +17,14 @@ extension MergeHunkSource {
         }
     }
 
+    var slug: String {
+        switch self {
+            case .left: "left"
+            case .base: "base"
+            case .right: "right"
+        }
+    }
+
     var useHelp: String {
         switch self {
             case .left: Localized.Merge.useLeftForThisConflict

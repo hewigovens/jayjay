@@ -432,7 +432,7 @@ fn trunk_label(base: &OverviewBase, trunk_name: &str, t: &Theme) -> gpui::Div {
             t.tag_wc_fg,
         ),
         OverviewBaseKind::OlderTrunk => (
-            format!("{} behind {trunk_name}", base.behind_trunk),
+            jayjay_i18n::overview::behind_short(base.behind_trunk, trunk_name),
             t.warning_fg,
         ),
         OverviewBaseKind::Mutable => (jayjay_i18n::overview::fork_point(), t.fg_dim),

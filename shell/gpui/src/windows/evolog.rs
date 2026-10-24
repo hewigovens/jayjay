@@ -401,7 +401,7 @@ fn evolog_row(
     let short_commit = compact_id(&entry.commit_id);
     let when = format_when(entry.timestamp_millis);
     let description = if entry.description.trim().is_empty() {
-        "(no description)".to_owned()
+        jayjay_i18n::repo::no_description_placeholder()
     } else {
         entry
             .description
