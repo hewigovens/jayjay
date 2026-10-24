@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct FilePathLabel: View {
@@ -20,7 +21,7 @@ struct FilePathLabel: View {
         .lineLimit(1)
         .truncationMode(.head)
         .accessibilityElement(children: .ignore)
-        .accessibilityLabel(oldPath.map { "Renamed from \($0) to \(path)" } ?? path)
+        .accessibilityLabel(oldPath.map { Localized.Diff.movedFromTo(kind: Localized.Diff.renamed, old: $0, new: path) } ?? path)
     }
 
     private func text(for path: String) -> Text {

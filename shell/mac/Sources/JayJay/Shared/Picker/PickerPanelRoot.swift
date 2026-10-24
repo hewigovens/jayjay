@@ -11,7 +11,7 @@ struct PickerPanelRoot: View {
     let onAction: (() -> Void)?
     var onOverview: (() -> Void)?
     let sections: [PickerSection]
-    var emptyText = "No matches"
+    var emptyText = Localized.Repo.noMatches
     var loadingText: String?
     let onDismiss: () -> Void
 
@@ -76,7 +76,7 @@ struct PickerPanelRoot: View {
                     onDismiss()
                     onOverview()
                 } label: {
-                    Label("Overview", systemImage: "rectangle.split.3x1")
+                    Label(Localized.Repo.overview, systemImage: "rectangle.split.3x1")
                 }
                 .buttonStyle(.bordered)
                 .controlSize(.small)
@@ -119,7 +119,7 @@ struct PickerPanelRoot: View {
                             .frame(maxWidth: .infinity)
                             .padding(.vertical, 18)
                     } else if filteredSections.isEmpty {
-                        Text(sections.isEmpty ? emptyText : "No matches")
+                        Text(sections.isEmpty ? emptyText : Localized.Repo.noMatches)
                             .font(.system(size: 12))
                             .foregroundStyle(.secondary)
                             .frame(maxWidth: .infinity)

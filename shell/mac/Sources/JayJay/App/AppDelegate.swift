@@ -38,11 +38,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     func applicationDockMenu(_ sender: NSApplication) -> NSMenu? {
         dockMenuActions.removeAll(keepingCapacity: true)
         let menu = NSMenu()
-        let openItem = dockMenuItem(title: "Open Repository...") { [weak self] in
+        let openItem = dockMenuItem(title: Localized.Menu.openRepositoryEllipsis) { [weak self] in
             self?.openRepositoryPicker?()
         }
         menu.addItem(openItem)
-        let listItem = dockMenuItem(title: "Repository List...") { [weak self] in
+        let listItem = dockMenuItem(title: Localized.Repo.repositoryListEllipsis) { [weak self] in
             self?.showRepoSelector?()
         }
         menu.addItem(listItem)
@@ -51,7 +51,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         guard !repos.isEmpty else { return menu }
 
         menu.addItem(.separator())
-        let submenu = NSMenu(title: "Recent Repositories")
+        let submenu = NSMenu(title: Localized.Onboarding.recentRepositories)
         for path in repos {
             let name = URL(fileURLWithPath: path).repositoryDisplayName
             let item = dockMenuItem(title: name) { [weak self] in
@@ -59,7 +59,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
             }
             submenu.addItem(item)
         }
-        let recentItem = NSMenuItem(title: "Recent Repositories", action: nil, keyEquivalent: "")
+        let recentItem = NSMenuItem(title: Localized.Onboarding.recentRepositories, action: nil, keyEquivalent: "")
         recentItem.submenu = submenu
         menu.addItem(recentItem)
         return menu

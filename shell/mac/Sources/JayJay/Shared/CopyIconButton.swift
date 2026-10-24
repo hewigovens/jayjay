@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct CopyIconButton: View {
@@ -20,7 +21,7 @@ struct CopyIconButton: View {
                 Image(systemName: copied ? "checkmark" : "doc.on.doc")
                     .jayjayFont(9)
                 if let label {
-                    Text(copied ? "Copied" : label)
+                    Text(copied ? Localized.Diff.copied : label)
                         .font(.system(size: 11))
                 }
             }

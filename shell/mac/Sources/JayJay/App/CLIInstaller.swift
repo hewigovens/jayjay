@@ -58,23 +58,23 @@ enum CLIInstaller {
         let alert = NSAlert()
         alert.alertStyle = .informational
         if alreadyLinked {
-            alert.messageText = "CLI Already Installed"
+            alert.messageText = Localized.Settings.cliAlreadyInstalled
             alert.informativeText = isInPATH ? "jayjay is already linked at \(installPath)." : "jayjay is linked at \(installPath), but the directory is not in your PATH.\n\n\(pathHint)"
-            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: Localized.Repo.ok)
             alert.runModal()
             return
         }
         do {
             try install()
-            alert.messageText = "CLI Installed"
+            alert.messageText = Localized.Settings.cliInstalled
             alert.informativeText = isInPATH ? "jayjay is linked at \(installPath)." : "jayjay was linked at \(installPath), but the directory is not in your PATH.\n\n\(pathHint)"
-            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: Localized.Repo.ok)
             alert.runModal()
         } catch {
             alert.alertStyle = .warning
-            alert.messageText = "CLI Install Failed"
+            alert.messageText = Localized.Settings.cliInstallFailed
             alert.informativeText = (error as? LocalizedError)?.errorDescription ?? error.localizedDescription
-            alert.addButton(withTitle: "OK")
+            alert.addButton(withTitle: Localized.Repo.ok)
             alert.runModal()
         }
     }
@@ -85,8 +85,8 @@ enum CLIInstaller {
 
         var errorDescription: String? {
             switch self {
-                case .notBundled: "CLI binary not found in app bundle"
-                case let .notExecutable(path): "CLI binary not executable: \(path)"
+                case .notBundled: Localized.Settings.cliBinaryNotFoundInApp
+                case let .notExecutable(path): Localized.Settings.cliNotExecutable(path: path)
             }
         }
     }
@@ -96,12 +96,12 @@ enum CLIInstaller {
         let rcFile: String
         if shell.hasSuffix("fish") {
             rcFile = "~/.config/fish/config.fish"
-            return "Add to \(rcFile):\nfish_add_path \(installDir)"
+            return Localized.Settings.cliAddToRcFish(file: rcFile, dir: installDir)
         } else if shell.hasSuffix("zsh") {
             rcFile = "~/.zshrc"
         } else {
             rcFile = "~/.bashrc"
         }
-        return "Add to \(rcFile):\nexport PATH=\"\(installDir):$PATH\""
+        return Localized.Settings.cliAddToRc(file: rcFile, dir: installDir)
     }
 }

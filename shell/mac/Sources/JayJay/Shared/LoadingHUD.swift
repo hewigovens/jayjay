@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct LoadingHUD: View {
@@ -6,7 +7,7 @@ struct LoadingHUD: View {
     var body: some View {
         ZStack {
             Color.clear
-            LoadingStatus(label: "Loading…")
+            LoadingStatus(label: Localized.Repo.loadingEllipsis)
                 .padding(.horizontal, 16)
                 .padding(.vertical, 12)
                 .background(.regularMaterial, in: RoundedRectangle(cornerRadius: 10, style: .continuous))
@@ -14,7 +15,7 @@ struct LoadingHUD: View {
         }
         .contentShape(Rectangle())
         .accessibilityElement(children: .combine)
-        .accessibilityLabel("Loading")
+        .accessibilityLabel(Localized.Common.loading)
         .accessibilityIdentifier(accessibilityIdentifier)
     }
 }

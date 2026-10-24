@@ -104,3 +104,4 @@ diff-moved-from-to = { $kind } from { $old } to { $new }
 diff-file-unavailable = (file unavailable)
 diff-preview-unavailable = (preview unavailable)
 diff-markdown-metadata = { NUMBER($count) } blocks, { $size }
+diff-couldnt-open-file-editor = Couldn’t Open File Editor

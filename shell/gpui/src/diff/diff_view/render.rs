@@ -412,7 +412,7 @@ fn conflict_banner(
         bar = bar.child(
             button(
                 "conflict-resolve-editor",
-                jayjay_i18n::menu::resolve_in(editor_title),
+                jayjay_i18n::menu::resolve_in(&editor_title),
                 t,
                 false,
             )
@@ -424,7 +424,7 @@ fn conflict_banner(
         bar = bar.child(
             button(
                 "conflict-open-editor",
-                jayjay_i18n::menu::open_in(editor_title),
+                jayjay_i18n::menu::open_in(&editor_title),
                 t,
                 false,
             )

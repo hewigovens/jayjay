@@ -6,14 +6,15 @@ use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use super::config;
 use super::links::{FEEDBACK_ADDRESS, FEEDBACK_URL, url_opener};
 
-const OPEN_FAILURE_MESSAGE: &str = "Couldn’t Open Your Email App";
-
 /// `mailto:` cannot carry attachments, so debug mode asks for the revealed log in the body instead.
 fn feedback_url(log: Option<&Path>) -> String {
     let Some(log) = log else {
         return FEEDBACK_URL.to_owned();
     };
-    let body = format!("Please attach the debug log: {}\n\n", log.display());
+    let body = format!(
+        "{}\n\n",
+        jayjay_i18n::common::attach_debug_log(&log.display().to_string())
+    );
     format!(
         "{FEEDBACK_URL}&body={}",
         utf8_percent_encode(&body, NON_ALPHANUMERIC)
@@ -49,11 +50,13 @@ fn present_open_failure(window: Option<AnyWindowHandle>, cx: &mut App) {
     };
     if window
         .update(cx, |_, window, cx| {
+            let copy_address = jayjay_i18n::common::copy_address();
+            let ok = jayjay_i18n::repo::ok();
             let answer = window.prompt(
                 PromptLevel::Warning,
-                OPEN_FAILURE_MESSAGE,
-                Some(&format!("Send feedback directly to {FEEDBACK_ADDRESS}.")),
-                &["Copy Address", "OK"],
+                &jayjay_i18n::common::unable_to_open_mail(),
+                Some(&jayjay_i18n::common::send_feedback_to(FEEDBACK_ADDRESS)),
+                &[copy_address.as_str(), ok.as_str()],
                 cx,
             );
             cx.spawn(async move |cx| {
@@ -91,7 +94,7 @@ mod tests {
         cx.update(|cx| present_open_failure(Some(window.into()), cx));
 
         let (message, detail) = cx.pending_prompt().expect("feedback fallback prompt");
-        assert_eq!(message, OPEN_FAILURE_MESSAGE);
+        assert_eq!(message, jayjay_i18n::common::unable_to_open_mail());
         assert!(detail.contains(FEEDBACK_ADDRESS));
 
         cx.simulate_prompt_answer("Copy Address");

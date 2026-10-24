@@ -45,7 +45,7 @@ pub(crate) fn loading_status(label: impl Into<SharedString>, t: &Theme) -> AnyEl
 
 /// For loading over content that stays visible.
 pub(crate) fn loading_hud(t: &Theme) -> AnyElement {
-    let hud = loading_label("Loading…", t)
+    let hud = loading_label(jayjay_i18n::repo::loading_ellipsis(), t)
         .px(px(16.))
         .py(px(12.))
         .rounded_lg()

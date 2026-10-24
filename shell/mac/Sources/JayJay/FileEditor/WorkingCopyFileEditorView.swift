@@ -29,7 +29,7 @@ struct WorkingCopyFileEditorView: View {
             Image(systemName: "pencil.and.scribble")
                 .foregroundStyle(Color.accentColor)
             VStack(alignment: .leading, spacing: 2) {
-                Text("Edit Working-Copy File")
+                Text(Localized.Repo.editWorkingCopyFile)
                     .jayjayFont(14, weight: .semibold)
                     .accessibilityIdentifier(AID.FileEditor.modal)
                 Text(session.path)
@@ -40,14 +40,14 @@ struct WorkingCopyFileEditorView: View {
             }
             Spacer()
             if session.hasChanges {
-                Text("Modified")
+                Text(Localized.Repo.modified)
                     .jayjayFont(11, weight: .semibold)
                     .foregroundStyle(.orange)
             }
-            Button("Cancel", action: onDone)
+            Button(Localized.Common.cancel, action: onDone)
                 .keyboardShortcut(.cancelAction)
                 .accessibilityIdentifier(AID.FileEditor.cancel)
-            Button(session.isSaving ? "Saving…" : "Save", action: save)
+            Button(session.isSaving ? Localized.Repo.savingEllipsis : Localized.Common.save, action: save)
                 .keyboardShortcut(AppShortcut.saveEditedFile)
                 .buttonStyle(.borderedProminent)
                 .disabled(session.isSaving || !session.hasChanges)
@@ -61,14 +61,14 @@ struct WorkingCopyFileEditorView: View {
     private var content: some View {
         if let errorMessage = session.errorMessage {
             ContentUnavailableView(
-                "Couldn’t Open File Editor",
+                Localized.Diff.couldntOpenFileEditor,
                 systemImage: "exclamationmark.triangle",
                 description: Text(errorMessage)
             )
         } else {
             VStack(alignment: .leading, spacing: 0) {
                 HStack {
-                    Text("Edits are saved directly to the current working-copy change.")
+                    Text(Localized.Repo.editsAreSavedDirectlyToThe)
                         .jayjayFont(11)
                         .foregroundStyle(.secondary)
                     Spacer()

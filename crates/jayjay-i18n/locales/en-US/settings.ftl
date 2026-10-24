@@ -123,3 +123,25 @@ settings-review-summary =
     }
 settings-clear-review-title = Clear all review marks and notes?
 settings-clear-review-message = Removes { $summary } for every repository. This cannot be undone.
+settings-custom = Custom
+settings-file-explorer = File Explorer
+settings-cli-install-is-not-supported-on = CLI install is not supported on this platform yet
+settings-cli-already-installed = CLI Already Installed
+settings-cli-installed = CLI Installed
+settings-cli-install-failed = CLI Install Failed
+settings-cli-binary-not-found-in-app = CLI binary not found in app bundle
+settings-cli-not-installed-by-jayjay = { $path } was not installed by JayJay; remove it manually
+settings-appimage-not-found = AppImage not found at { $path }
+settings-cli-not-on-path-fish = { $dir } is not on your PATH. Add to ~/.config/fish/config.fish: fish_add_path { $dir }
+settings-cli-not-on-path = { $dir } is not on your PATH. Add to { $file }: export PATH="{ $dir }:$PATH"
+settings-cli-not-executable = CLI binary not executable: { $path }
+settings-cli-add-to-rc-fish =
+    Add to { $file }:
+    fish_add_path { $dir }
+settings-cli-add-to-rc =
+    Add to { $file }:
+    export PATH="{ $dir }:$PATH"
+settings-terminal-app-name = App name
+settings-terminal-command = Command
+settings-terminal-command-powershell = Command (accepts PowerShell arguments)
+settings-cli-nothing-installed-at = Nothing is installed at { $path }

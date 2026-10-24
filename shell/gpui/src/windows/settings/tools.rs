@@ -9,7 +9,7 @@ use super::SettingsView;
 use super::dropdown::dropdown_button;
 use super::shared::{detail_row, field_row, form_section};
 use crate::app::theme::Theme;
-use crate::platform::CUSTOM_TERMINAL_LABEL;
+use crate::platform::custom_terminal_label;
 use crate::ui::icons::{self, glyph};
 use crate::ui::text_area::{TextArea, TextAreaUpdated};
 use jayjay_i18n::{common, settings};
@@ -81,7 +81,7 @@ pub(super) fn tool_sections(
     if cfg.tools.terminal == "custom" {
         rows.push(field_row(
             glyph::TERMINAL,
-            CUSTOM_TERMINAL_LABEL,
+            custom_terminal_label(),
             command_input(
                 "setting-custom-terminal-command",
                 custom_terminal_command.clone(),

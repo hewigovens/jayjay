@@ -578,3 +578,13 @@ repo-submodules-hidden =
        *[other] { $count } submodules hidden
     }
 repo-match-position = { NUMBER($current) } of { NUMBER($total) }
+repo-working-copy-is-stale-its-change = Working copy is stale: its change was rewritten outside this workspace — update the workspace and retry
+repo-canceled = Canceled
+repo-no-repository-found-at = No Jujutsu repository found at { $name }
+repo-revision-not-found = Revision not found: { $revision }
+repo-help-title = Help: { $title }
+repo-review-note-count =
+    { $count ->
+        [one] { $count } review note
+       *[other] { $count } review notes
+    }

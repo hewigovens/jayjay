@@ -12,7 +12,7 @@ enum FeedbackEmail {
         components.path = recipient
         components.queryItems = [URLQueryItem(name: "subject", value: subject)]
         if let log {
-            components.queryItems?.append(URLQueryItem(name: "body", value: "Please attach the debug log: \(log.path)\n\n"))
+            components.queryItems?.append(URLQueryItem(name: "body", value: Localized.Common.attachDebugLog(path: log.path) + "\n\n"))
         }
         return components.url!
     }
@@ -62,9 +62,9 @@ enum FeedbackEmail {
     private static func showFailureAlert() {
         let alert = NSAlert()
         alert.alertStyle = .warning
-        alert.messageText = "Unable to Open Mail"
-        alert.informativeText = "No email app could be opened. You can send feedback to \(recipient)."
-        alert.addButton(withTitle: "OK")
+        alert.messageText = Localized.Common.unableToOpenMail
+        alert.informativeText = Localized.Common.noEmailApp(address: recipient)
+        alert.addButton(withTitle: Localized.Repo.ok)
         alert.runModal()
     }
 }

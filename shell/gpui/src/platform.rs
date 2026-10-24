@@ -10,13 +10,13 @@ mod windows;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 pub(crate) use linux::{
-    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, file_manager_name, reveal_path, send_notification,
+    JJ_PACKAGE_MANAGER, custom_terminal_label, file_manager_name, reveal_path, send_notification,
 };
 #[cfg(target_os = "macos")]
 pub(crate) use macos::{
-    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, REPO_TRAFFIC_LIGHTS, TOOLBAR_BUTTON_HEIGHT,
-    TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET, append_menu_bar, file_manager_name,
-    reveal_path, send_notification,
+    JJ_PACKAGE_MANAGER, REPO_TRAFFIC_LIGHTS, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_HEIGHT,
+    TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET, append_menu_bar, custom_terminal_label,
+    file_manager_name, reveal_path, send_notification,
 };
 #[cfg(target_os = "macos")]
 pub use macos::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
@@ -29,7 +29,7 @@ pub(crate) use non_macos::{
 };
 #[cfg(windows)]
 pub(crate) use windows::{
-    CUSTOM_TERMINAL_LABEL, JJ_PACKAGE_MANAGER, file_manager_name, open_url, reveal_path,
+    JJ_PACKAGE_MANAGER, custom_terminal_label, file_manager_name, open_url, reveal_path,
     send_notification,
 };
 

@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 /// A replacement the owner asks the field to make; a new `id` applies it once.
@@ -11,7 +12,7 @@ struct FilterFieldEdit: Equatable {
 /// SwiftUI's TextField ignores programmatic focus and Escape in the repo window.
 struct FilterField: NSViewRepresentable {
     @Binding var text: String
-    var placeholder = "Filter files"
+    var placeholder = Localized.Repo.filterFiles
     var accessibilityIdentifier = AID.FileList.filterField
     var focusGeneration = 0
     var isPlain = false

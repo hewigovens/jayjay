@@ -223,7 +223,7 @@ impl TextPrompt {
             primary.opacity(0.45)
         };
         panel = panel.child(overlay_actions(
-            button(style.cancel_id, "Cancel", t, false)
+            button(style.cancel_id, jayjay_i18n::common::cancel(), t, false)
                 .debug_selector(|| style.cancel_id.to_owned())
                 .on_click(cx.listener(move |view, _, _, cx| on_cancel(view, cx))),
             primary,

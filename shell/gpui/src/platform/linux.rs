@@ -10,7 +10,9 @@ pub fn file_manager_name() -> String {
     jayjay_i18n::common::file_manager()
 }
 
-pub const CUSTOM_TERMINAL_LABEL: &str = "Command";
+pub fn custom_terminal_label() -> String {
+    jayjay_i18n::settings::terminal_command()
+}
 pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 
 pub fn reveal_path(path: &Path) -> bool {

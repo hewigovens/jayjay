@@ -34,53 +34,53 @@ struct ShortcutSection: Identifiable {
 
 enum ShortcutGuide {
     static let sections: [ShortcutSection] = [
-        ShortcutSection(title: "General", entries: [
-            ShortcutEntry("Open Repository", .openRepository),
-            ShortcutEntry("Command Palette", .commandPalette),
-            ShortcutEntry("Refresh", .refresh),
-            ShortcutEntry("Keyboard Shortcuts", .keyboardShortcuts),
-            ShortcutEntry("Settings", .settings)
+        ShortcutSection(title: Localized.Shortcuts.general, entries: [
+            ShortcutEntry(Localized.Repo.openRepository, .openRepository),
+            ShortcutEntry(Localized.Menu.commandPalette, .commandPalette),
+            ShortcutEntry(Localized.Repo.refresh, .refresh),
+            ShortcutEntry(Localized.Menu.keyboardShortcuts, .keyboardShortcuts),
+            ShortcutEntry(Localized.Repo.settings, .settings)
         ]),
-        ShortcutSection(title: "View", entries: [
-            ShortcutEntry("Hide / Show Sidebar", .toggleSidebar),
-            ShortcutEntry("Zoom In", .zoomIn),
-            ShortcutEntry("Zoom Out", .zoomOut),
-            ShortcutEntry("Reset Zoom", .resetZoom)
+        ShortcutSection(title: Localized.Menu.view, entries: [
+            ShortcutEntry(Localized.Palette.hideShowSidebar, .toggleSidebar),
+            ShortcutEntry(Localized.Menu.zoomIn, .zoomIn),
+            ShortcutEntry(Localized.Menu.zoomOut, .zoomOut),
+            ShortcutEntry(Localized.Menu.resetZoom, .resetZoom)
         ]),
-        ShortcutSection(title: "Navigation", entries: [
-            ShortcutEntry(label: "Next / Previous Change", keys: ["J", "K"]),
-            ShortcutEntry(label: "Next / Previous File", keys: ["J", "K"]),
-            ShortcutEntry(label: "Move Up / Down", keys: ["↑", "↓"])
+        ShortcutSection(title: Localized.Shortcuts.navigation, entries: [
+            ShortcutEntry(label: Localized.Palette.nextPreviousChange, keys: ["J", "K"]),
+            ShortcutEntry(label: Localized.Shortcuts.nextPreviousFile, keys: ["J", "K"]),
+            ShortcutEntry(label: Localized.Shortcuts.moveUpDown, keys: ["↑", "↓"])
         ]),
-        ShortcutSection(title: "Repository", entries: [
-            ShortcutEntry("Filter by Revset", .revsetFilter),
-            ShortcutEntry("Bookmark Manager", .bookmarkManager),
-            ShortcutEntry("Repo Overview", .repoOverview),
-            ShortcutEntry("Filter Overview Lanes", .filterOverviewLanes),
-            ShortcutEntry("Undo Last Operation", .undoLastOperation),
+        ShortcutSection(title: Localized.Menu.repository, entries: [
+            ShortcutEntry(Localized.Shortcuts.filterByRevset, .revsetFilter),
+            ShortcutEntry(Localized.Menu.bookmarkManager, .bookmarkManager),
+            ShortcutEntry(Localized.Menu.repoOverview, .repoOverview),
+            ShortcutEntry(Localized.Shortcuts.filterOverviewLanes, .filterOverviewLanes),
+            ShortcutEntry(Localized.Menu.undoLastOperation, .undoLastOperation),
             ShortcutEntry(Localized.Common.showIn(app: "Finder"), .showInFinder)
         ]),
-        ShortcutSection(title: "Diff & Review", entries: [
-            ShortcutEntry("Find in Diff", .findInDiff),
-            ShortcutEntry(label: "Mark File Reviewed", keys: ["Space"]),
-            ShortcutEntry("Save Review Note", .saveReviewNote),
-            ShortcutEntry("Save Edited File", .saveEditedFile),
-            ShortcutEntry("Expand All Files", .expandAllFiles),
-            ShortcutEntry("Collapse All Files", .collapseAllFiles),
-            ShortcutEntry(label: "Next / Previous File Card", keys: ["J", "K"]),
-            ShortcutEntry(label: "Collapse / Expand File Card", keys: ["←", "→"]),
-            ShortcutEntry(label: "Select File Card", keys: ["Space"]),
-            ShortcutEntry(label: "Toggle File Card", keys: ["Return"])
+        ShortcutSection(title: Localized.Shortcuts.diffReview, entries: [
+            ShortcutEntry(Localized.Palette.findInDiff, .findInDiff),
+            ShortcutEntry(label: Localized.Palette.markFileReviewed, keys: ["Space"]),
+            ShortcutEntry(Localized.Shortcuts.saveReviewNote, .saveReviewNote),
+            ShortcutEntry(Localized.Shortcuts.saveEditedFile, .saveEditedFile),
+            ShortcutEntry(Localized.Shortcuts.expandAllFiles, .expandAllFiles),
+            ShortcutEntry(Localized.Shortcuts.collapseAllFiles, .collapseAllFiles),
+            ShortcutEntry(label: Localized.Shortcuts.nextPreviousFileCard, keys: ["J", "K"]),
+            ShortcutEntry(label: Localized.Shortcuts.collapseExpandFileCard, keys: ["←", "→"]),
+            ShortcutEntry(label: Localized.Shortcuts.selectFileCard, keys: ["Space"]),
+            ShortcutEntry(label: Localized.Shortcuts.toggleFileCard, keys: ["Return"])
         ]),
-        ShortcutSection(title: "Conflicts", entries: [
-            ShortcutEntry("Accept Left", .acceptLeftHunk),
-            ShortcutEntry("Accept Right", .acceptRightHunk),
-            ShortcutEntry("Previous Conflict", .previousHunk),
-            ShortcutEntry("Next Conflict", .nextHunk)
+        ShortcutSection(title: Localized.Repo.presetConflicts, entries: [
+            ShortcutEntry(Localized.Merge.acceptLeft, .acceptLeftHunk),
+            ShortcutEntry(Localized.Merge.acceptRight, .acceptRightHunk),
+            ShortcutEntry(Localized.Shortcuts.previousConflict, .previousHunk),
+            ShortcutEntry(Localized.Shortcuts.nextConflict, .nextHunk)
         ]),
-        ShortcutSection(title: "Drag & Drop", entries: [
-            ShortcutEntry(label: "Confirm Drop", keys: ["Return"]),
-            ShortcutEntry(label: "Cancel Drag", keys: ["Esc"])
+        ShortcutSection(title: Localized.Shortcuts.dragDrop, entries: [
+            ShortcutEntry(label: Localized.Shortcuts.confirmDrop, keys: ["Return"]),
+            ShortcutEntry(label: Localized.Shortcuts.cancelDrag, keys: ["Esc"])
         ])
     ]
 

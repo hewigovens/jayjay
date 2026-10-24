@@ -89,7 +89,7 @@ fn menu_panel(menu: &FileHistoryMenu, theme: &Theme, view: &Entity<FileHistoryVi
         .rounded_sm()
         .child(menu_row(
             "file-history-menu-pin",
-            "Pin as Base",
+            jayjay_i18n::repo::pin_as_base(),
             glyph::PIN,
             entry.clone(),
             theme,
@@ -98,7 +98,7 @@ fn menu_panel(menu: &FileHistoryMenu, theme: &Theme, view: &Entity<FileHistoryVi
         ))
         .child(menu_row(
             "file-history-menu-show",
-            "Show in Graph",
+            jayjay_i18n::repo::show_in_graph(),
             glyph::LIST_TREE,
             entry,
             theme,
@@ -116,7 +116,7 @@ enum MenuAction {
 
 fn menu_row(
     selector: &'static str,
-    label: &'static str,
+    label: String,
     icon: &'static str,
     entry: ChangeInfo,
     theme: &Theme,
