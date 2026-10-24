@@ -18,10 +18,10 @@ pub(super) fn recent_section(groups: Vec<RepoGroup>, pinned_paths: &[String], t:
             .justify_center()
             .text_size(ui_font_size(12.))
             .text_color(rgb(t.fg_dim))
-            .child("No Recent Repositories");
+            .child(jayjay_i18n::menu::no_recent_repositories());
     }
     repository_section(
-        "Recent Repositories",
+        jayjay_i18n::onboarding::recent_repositories(),
         groups,
         RowKind::Recent,
         pinned_paths,
@@ -36,7 +36,7 @@ pub(super) enum RowKind {
 }
 
 pub(super) fn repository_section(
-    title: &'static str,
+    title: String,
     groups: Vec<RepoGroup>,
     kind: RowKind,
     pinned_paths: &[String],
@@ -56,7 +56,7 @@ pub(super) fn repository_section(
     );
     if matches!(kind, RowKind::Recent) {
         header = header.child(
-            button("repo-list-clear", "Clear", t, false)
+            button("repo-list-clear", jayjay_i18n::common::clear(), t, false)
                 .debug_selector(|| "repo-list-clear".to_owned())
                 .on_click(|_, _, cx| config::update(cx, |cfg| cfg.clear_recent_repos())),
         );

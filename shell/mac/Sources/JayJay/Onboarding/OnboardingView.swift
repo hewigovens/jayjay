@@ -23,14 +23,14 @@ struct OnboardingView: View {
 
             HStack {
                 if let previousPage = currentPage.previous {
-                    Button("Back") { currentPage = previousPage }
+                    Button(Localized.Onboarding.back) { currentPage = previousPage }
                 }
                 Spacer()
                 if let nextPage = currentPage.next {
-                    Button("Next") { currentPage = nextPage }
+                    Button(Localized.Onboarding.next) { currentPage = nextPage }
                         .keyboardShortcut(.defaultAction)
                 } else {
-                    Button("Get Started") { onContinue() }
+                    Button(Localized.Onboarding.getStarted) { onContinue() }
                         .keyboardShortcut(.defaultAction)
                         .buttonStyle(.borderedProminent)
                 }
@@ -81,7 +81,7 @@ struct OnboardingView: View {
             }
             .accessibilityAddTraits(.isButton)
             .accessibilityLabel(page.title)
-            .accessibilityValue(isCurrentPage ? "Current page" : "")
+            .accessibilityValue(isCurrentPage ? Localized.Onboarding.currentPage : "")
             .accessibilityAction {
                 currentPage = page
             }
@@ -95,7 +95,7 @@ struct OnboardingView: View {
                 .resizable()
                 .interpolation(.high)
                 .frame(width: 96, height: 96)
-            Text("Welcome to JayJay")
+            Text(Localized.Menu.welcomeToJayjay)
                 .jayjayFont(28, weight: .bold)
             Text(
                 "A native GUI for Jujutsu version control.\nBrowse history, review diffs, and manage changes — all from one window."
@@ -117,7 +117,7 @@ struct OnboardingView: View {
                     Image(systemName: "checkmark.circle.fill")
                         .font(.system(size: 48))
                         .foregroundStyle(.green)
-                    Text("Jujutsu is installed")
+                    Text(Localized.Onboarding.jujutsuIsInstalled)
                         .jayjayFont(22, weight: .semibold)
                     if let version = status.version {
                         Text(version)
@@ -135,9 +135,9 @@ struct OnboardingView: View {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .font(.system(size: 48))
                         .foregroundStyle(.orange)
-                    Text("Jujutsu not found")
+                    Text(Localized.Onboarding.jujutsuNotFound)
                         .jayjayFont(22, weight: .semibold)
-                    Text("JayJay requires jj to be installed.\nInstall it with Homebrew or Cargo:")
+                    Text(Localized.Onboarding.requiresJj(manager: "Homebrew"))
                         .jayjayFont(14)
                         .foregroundStyle(.secondary)
                         .multilineTextAlignment(.center)
@@ -148,11 +148,11 @@ struct OnboardingView: View {
                     }
                     .padding(.top, 8)
 
-                    Button("Check Again") { jjStatus = JJEnvironment.check() }
+                    Button(Localized.Onboarding.checkAgain) { jjStatus = JJEnvironment.check() }
                         .padding(.top, 4)
                 }
             } else {
-                ProgressView("Checking for jj...")
+                ProgressView(Localized.Onboarding.checkingForJjEllipsis)
             }
             Spacer()
         }
@@ -162,22 +162,22 @@ struct OnboardingView: View {
     @ViewBuilder
     private var identityLine: some View {
         if let identity {
-            Text("Identity: \(identity.label)")
+            Text(Localized.Onboarding.identity(identity: identity.label))
                 .jayjayFont(13)
                 .foregroundStyle(.secondary)
         } else if isIdentitySkipped {
-            Text("You can set your jj identity later in Settings › Jujutsu.")
+            Text(Localized.Onboarding.youCanSetYourJjIdentity)
                 .jayjayFont(13)
                 .foregroundStyle(.secondary)
                 .multilineTextAlignment(.center)
                 .fixedSize(horizontal: false, vertical: true)
         } else {
             HStack(spacing: 8) {
-                Text("jj author identity is not set")
+                Text(Localized.Onboarding.identityNotSet)
                     .jayjayFont(13)
                     .foregroundStyle(.secondary)
-                Button("Set Up…") { isSettingUpIdentity = true }
-                Button("Skip") { isIdentitySkipped = true }
+                Button(Localized.Common.setUpEllipsis) { isSettingUpIdentity = true }
+                Button(Localized.Repo.skip) { isIdentitySkipped = true }
             }
         }
     }
@@ -188,15 +188,15 @@ struct OnboardingView: View {
             Image(systemName: "checkmark.circle.fill")
                 .font(.system(size: 48))
                 .foregroundStyle(.green)
-            Text("You're all set!")
+            Text(Localized.Onboarding.youreAllSetSentence)
                 .jayjayFont(22, weight: .semibold)
 
             VStack(alignment: .leading, spacing: 10) {
-                tip(icon: "folder", text: "Open any jj repository to get started")
+                tip(icon: "folder", text: Localized.Onboarding.openAnyJjRepositoryToGet)
                 tip(icon: "keyboard", text: "\(AppShortcut.commandPalette.symbol) finds actions; type help split for feature help")
-                tip(icon: "checkmark.circle", text: "Press Space to mark the selected file reviewed")
-                tip(icon: "arrow.triangle.branch", text: "Shift-click selects a range; ⌘-click toggles changes")
-                tip(icon: "exclamationmark.triangle", text: "Close GitHub Desktop — it may conflict with jj")
+                tip(icon: "checkmark.circle", text: Localized.Onboarding.pressSpaceToMarkTheSelected)
+                tip(icon: "arrow.triangle.branch", text: Localized.Onboarding.shiftClickSelectsARangeClick)
+                tip(icon: "exclamationmark.triangle", text: Localized.Onboarding.closeGithubDesktopItMayConflict)
                 statsToggle
                     .padding(.top, 8)
             }
@@ -265,11 +265,11 @@ private enum OnboardingPage: Int, CaseIterable, Identifiable {
     var title: String {
         switch self {
             case .welcome:
-                "Welcome"
+                Localized.Onboarding.welcome
             case .jjCheck:
-                "Jujutsu Check"
+                Localized.Onboarding.jujutsuCheck
             case .ready:
-                "Ready"
+                Localized.Onboarding.ready
         }
     }
 
