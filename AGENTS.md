@@ -57,6 +57,12 @@ Then make `../<topic>` the session's working root before editing. The destinatio
 
 At task completion, describe the workspace's current change with `jj describe` when it has a meaningful diff. Do not use `jj commit` just to mark the task done; it creates a new empty working-copy change.
 
+When the user explicitly asks for a review bookmark, point a local `review/<topic>` bookmark at the described change so a reviewer on another machine can fetch it (`jj git fetch --remote <host> --branch 'glob:review/*'`). Set it once; it follows later amends. Never push it.
+
+```bash
+jj bookmark set review/<topic> -r @
+```
+
 Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
 
 At task completion, after the last repository-fixture tests and any workspace-directory removal, clean orphaned repo config:
