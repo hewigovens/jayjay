@@ -5,6 +5,11 @@ final class ConflictResolutionScene: SceneBase {
         "conflict"
     }
 
+    /// Ignores the developer's own `ui.merge-editor`.
+    override class var launchEnvironment: [String: String] {
+        ["JJ_CONFIG": "/dev/null"]
+    }
+
     func testConflictCanBeEditedWithoutOpeningAnotherTool() throws {
         let app = try XCTUnwrap(app)
         let file = fileRows(of: app)
@@ -16,7 +21,7 @@ final class ConflictResolutionScene: SceneBase {
         let diff = app.element(AID.Diff.section)
         XCTAssertTrue(diff.waitForExistence(timeout: 5), "Diff section did not appear")
 
-        let edit = app.buttons[AID.Conflict.resolveInJayJay("conflict.swift")]
+        let edit = app.popUpButtons[AID.Conflict.resolveInJayJay("conflict.swift")].buttons.firstMatch
         clickCenter(edit, timeout: 10, message: "Expected Edit in JayJay action")
 
         // Preparation highlights five texts before the sheet opens; on a slow CI runner that outlasts a short fixed wait, so wait for the app's own loading state to clear.

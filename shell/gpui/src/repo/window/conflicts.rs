@@ -1,16 +1,21 @@
 use gpui::Context;
+use jayjay_core::{JayResult, Repo};
 
 use super::RepoWindow;
 
 impl RepoWindow {
-    pub(crate) fn resolve_selected_file_with_tool(&mut self, tool: String, cx: &mut Context<Self>) {
+    pub(crate) fn resolve_selected_file(
+        &mut self,
+        resolve: impl FnOnce(&Repo, &str, &str) -> JayResult<()> + Send + 'static,
+        cx: &mut Context<Self>,
+    ) {
         let Some((rev, path)) = self.selected_resolution_target(cx) else {
             self.show_toast(jayjay_i18n::repo::no_conflicted_file_selected(), cx);
             return;
         };
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.resolve_with_tool(rev, path, tool, cx));
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.resolve_file(move |repo| resolve(&repo, &rev, &path), cx)
+        });
         task.detach();
     }
 

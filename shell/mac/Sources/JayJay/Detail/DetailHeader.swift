@@ -292,29 +292,59 @@ extension ChangeDetailView {
             }
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useTheirs(path))
-            if Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode) {
-                Button(Localized.Repo.editInJayjay) {
-                    prepareConflictEditor(path: path)
-                }
-                .buttonStyle(.bordered)
-                .disabled(conflictEditorPreparation != nil)
-                .accessibilityIdentifier(AID.Conflict.resolveInJayJay(path))
-            }
-            if let tool = appSettings.externalEditor.jjMergeTool {
-                Button(Localized.Menu.resolveIn(app: appSettings.externalEditor.title)) {
-                    actions?.resolveInEditor(rev: detailRevision, path: path, tool: tool)
-                }
-                .buttonStyle(.bordered)
-            } else {
-                Button(Localized.Menu.openIn(app: appSettings.externalEditor.title)) {
-                    appSettings.openInEditor(filePath: path, repoPath: repoPath)
-                }
-                .buttonStyle(.bordered)
-            }
+            resolutionButton(path: path, options: ConflictResolution.options(
+                mergeEditor: repo?.mergeEditorName(),
+                supportsConflictEditor: Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode),
+                editor: appSettings.externalEditor
+            ))
         }
         .padding(.horizontal, 14)
         .padding(.vertical, 8)
         .background(.red.opacity(0.08))
+    }
+
+    @ViewBuilder private func resolutionButton(path: String, options: [ConflictResolution]) -> some View {
+        if let primary = options.first {
+            let others = options.dropFirst()
+            Group {
+                if others.isEmpty {
+                    Button(primary.title(editor: appSettings.externalEditor)) { resolve(primary, path: path) }
+                } else {
+                    Menu {
+                        ForEach(Array(others), id: \.self) { option in
+                            Button(option.title(editor: appSettings.externalEditor)) { resolve(option, path: path) }
+                                .disabled(isPreparing(option))
+                        }
+                    } label: {
+                        Text(primary.title(editor: appSettings.externalEditor))
+                    } primaryAction: {
+                        resolve(primary, path: path)
+                    }
+                    .menuStyle(.button)
+                    .fixedSize()
+                }
+            }
+            .buttonStyle(.bordered)
+            .disabled(isPreparing(primary))
+            .accessibilityIdentifier(primary.accessibilityIdentifier(path: path))
+        }
+    }
+
+    private func isPreparing(_ resolution: ConflictResolution) -> Bool {
+        resolution == .inJayJay && conflictEditorPreparation != nil
+    }
+
+    private func resolve(_ resolution: ConflictResolution, path: String) {
+        switch resolution {
+            case .mergeEditor:
+                actions?.resolveWithMergeEditor(rev: detailRevision, path: path)
+            case .inJayJay:
+                prepareConflictEditor(path: path)
+            case let .editorTool(tool):
+                actions?.resolveInEditor(rev: detailRevision, path: path, tool: tool)
+            case .openInEditor:
+                appSettings.openInEditor(filePath: path, repoPath: repoPath)
+        }
     }
 }
 

@@ -1,6 +1,7 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, UniformListScrollHandle, Window, div, px, rgb, rgba,
+    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    ParentElement, StatefulInteractiveElement, Styled, UniformListScrollHandle, Window, div, px,
+    rgb, rgba,
 };
 use jayjay_core::{DiffProjection, HunkType};
 
@@ -20,10 +21,11 @@ use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection;
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
 use crate::diff::{hunk_is_image, image_diff_view};
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{ConflictResolution, RepoWindow};
+use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::{self, glyph};
 use crate::ui::loading::loading_status;
-use crate::ui::primitives::button;
+use crate::ui::primitives::{button, button_container};
 
 fn hidden_only_placeholder(
     hidden: &crate::repo::window::HiddenGitFiles,
@@ -265,7 +267,7 @@ pub fn diff_view(
         .min_h_0()
         .bg(rgb(t.detail_bg));
     if show_conflict_bar {
-        root = root.child(conflict_banner(state.supports_conflict_editor, &t, cx));
+        root = root.child(conflict_banner(&state.conflict_resolutions, &t, cx));
     }
     root = root.child(header);
     if let Some(bar) = find_bar {
@@ -346,14 +348,10 @@ fn render_projection_banner(projection: &DiffProjection, t: &Theme) -> AnyElemen
 }
 
 fn conflict_banner(
-    supports_conflict_editor: bool,
-    t: &crate::app::theme::Theme,
+    resolutions: &[ConflictResolution],
+    t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let cfg = crate::app::config::current(cx);
-    let editor_id = cfg.tools.external_editor.as_str();
-    let editor_title = crate::app::tools::editor_title(cx);
-    let merge_tool = matches!(editor_id, "vscode" | "zed").then(|| editor_id.to_owned());
     let mut bar = div()
         .flex()
         .flex_row()
@@ -377,7 +375,10 @@ fn conflict_banner(
             button("conflict-use-ours", jayjay_i18n::repo::use_ours(), t, false)
                 .debug_selector(|| "conflict-use-ours".to_owned())
                 .on_click(cx.listener(|view, _, _, cx| {
-                    view.resolve_selected_file_with_tool(":ours".to_owned(), cx);
+                    view.resolve_selected_file(
+                        |repo, rev, path| repo.resolve_with_tool(rev, path, ":ours"),
+                        cx,
+                    );
                 })),
         )
         .child(
@@ -389,50 +390,61 @@ fn conflict_banner(
             )
             .debug_selector(|| "conflict-use-theirs".to_owned())
             .on_click(cx.listener(|view, _, _, cx| {
-                view.resolve_selected_file_with_tool(":theirs".to_owned(), cx);
+                view.resolve_selected_file(
+                    |repo, rev, path| repo.resolve_with_tool(rev, path, ":theirs"),
+                    cx,
+                );
             })),
         );
 
-    if supports_conflict_editor {
-        bar = bar.child(
-            button(
-                "conflict-resolve-jayjay",
-                jayjay_i18n::repo::edit_in_jayjay(),
-                t,
-                false,
-            )
-            .debug_selector(|| "conflict-resolve-jayjay".to_owned())
-            .on_click(cx.listener(|view, _, _, cx| {
-                view.enter_selected_conflict_editor(cx);
-            })),
-        );
-    }
-
-    if let Some(tool) = merge_tool {
-        bar = bar.child(
-            button(
-                "conflict-resolve-editor",
-                jayjay_i18n::menu::resolve_in(&editor_title),
-                t,
-                false,
-            )
-            .on_click(cx.listener(move |view, _, _, cx| {
-                view.resolve_selected_file_with_tool(tool.clone(), cx);
-            })),
-        );
-    } else {
-        bar = bar.child(
-            button(
-                "conflict-open-editor",
-                jayjay_i18n::menu::open_in(&editor_title),
-                t,
-                false,
-            )
-            .on_click(cx.listener(|view, _, _, cx| {
-                view.open_selected_file_in_editor(cx);
-            })),
-        );
+    if let Some((primary, others)) = resolutions.split_first() {
+        bar = bar.child(resolution_button(primary.clone(), others, t, cx));
     }
 
     bar.into_any_element()
+}
+
+fn resolution_button(
+    primary: ConflictResolution,
+    others: &[ConflictResolution],
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let id = primary.debug_id();
+    let main = button(id, primary.label(), t, false)
+        .debug_selector(move || id.to_owned())
+        .on_click(cx.listener(move |view, _, _, cx| {
+            view.resolve_conflict(primary.clone(), cx);
+        }));
+    if others.is_empty() {
+        return main.into_any_element();
+    }
+    let items: Vec<ContextMenuItem> = others
+        .iter()
+        .map(|option| {
+            ContextMenuItem::new(
+                option.label(),
+                option.glyph(),
+                ContextAction::ResolveConflict(option.clone()),
+            )
+        })
+        .collect();
+    let more = button_container("conflict-resolve-more", t, false)
+        .px(px(6.))
+        .rounded_l_none()
+        .debug_selector(|| "conflict-resolve-more".to_owned())
+        .child(icons::icon(glyph::CARET_DOWN, 12., t.toggle_inactive_fg))
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(move |view, event: &MouseDownEvent, _, cx| {
+                view.open_context_menu(event.position, items.clone(), cx);
+            }),
+        );
+    div()
+        .flex()
+        .flex_row()
+        .gap(px(1.))
+        .child(main.rounded_r_none())
+        .child(more)
+        .into_any_element()
 }

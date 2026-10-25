@@ -15,7 +15,8 @@ use unicode_width::UnicodeWidthStr;
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::{
-    AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, FileBatchAction, RepoWindow,
+    AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, ConflictResolution, FileBatchAction,
+    RepoWindow,
 };
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::text_tooltip;
@@ -95,6 +96,7 @@ pub enum ContextAction {
     OpenEditReviewNote(SharedString),
     ResolveReviewNote(SharedString),
     DeleteReviewNote(SharedString),
+    ResolveConflict(ConflictResolution),
 }
 
 #[derive(Clone)]

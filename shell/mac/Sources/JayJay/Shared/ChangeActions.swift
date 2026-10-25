@@ -30,4 +30,5 @@ protocol ChangeActions: AnyObject {
         completion: @escaping @MainActor (Bool) -> Void
     )
     func resolveInEditor(rev: String, path: String, tool: String)
+    func resolveWithMergeEditor(rev: String, path: String)
 }

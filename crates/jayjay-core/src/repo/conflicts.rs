@@ -1,3 +1,4 @@
+use std::path::Path;
 use std::sync::Arc;
 
 use jj_lib::backend::{MergedTreeValueExt as _, TreeValue};
@@ -6,10 +7,12 @@ use jj_lib::conflicts::{
     MaterializedTreeValue, choose_materialized_conflict_marker_len,
     materialize_merge_result_to_bytes, materialize_tree_value, update_from_content,
 };
+use jj_lib::dsl_util::format_string;
 use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::object_id::ObjectId as _;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::settings::UserSettings;
 
 use super::Repo;
 use crate::file_display::{MAX_DIFF_BYTES, bytes_to_display};
@@ -59,9 +62,34 @@ impl Repo {
 
     /// Resolve a conflicted file using a named tool (e.g. ":ours", ":theirs", or an editor).
     pub fn resolve_with_tool(&self, rev: &str, path: &str, tool: &str) -> JayResult<()> {
+        self.run_resolve(rev, &["--tool", tool], path)
+    }
+
+    pub fn resolve_with_merge_editor(&self, rev: &str, path: &str) -> JayResult<()> {
+        self.run_resolve(rev, &[], path)
+    }
+
+    /// `None` for jj's built-in tools and JayJay, which have their own actions.
+    pub fn merge_editor_name(&self) -> Option<String> {
+        merge_editor_name(self.get_repo().settings())
+    }
+
+    fn run_resolve(&self, rev: &str, tool_args: &[&str], path: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         let rev = self.snapshot_and_follow_one(rev)?;
-        self.run_jj_reload(&["resolve", "-r", &rev, "--tool", tool, path])
+        let fileset = format!("root-file:{}", format_string(path));
+        let mut args = vec!["resolve", "-r", &rev];
+        args.extend_from_slice(tool_args);
+        args.extend(["--", &fileset]);
+        let output = self.run_jj_output(&args)?;
+        // A tool closed without saving leaves the conflict, which jj reports as a failure.
+        if !output.status.success()
+            && Self::stderr_text(&output).contains("unchanged or empty after the editor quit")
+        {
+            return Ok(());
+        }
+        self.ensure_success(&output, "command failed")?;
+        self.reload()
     }
 
     /// Load a file conflict for editing inside the current repository window.
@@ -239,6 +267,17 @@ impl Repo {
         let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":theirs")
     }
+}
+
+fn merge_editor_name(settings: &UserSettings) -> Option<String> {
+    let program = match settings.get_string("ui.merge-editor") {
+        Ok(line) => line.split_whitespace().next()?.to_owned(),
+        Err(_) => ["ui.merge-editor", "ui.merge-editor.command"]
+            .into_iter()
+            .find_map(|key| settings.get::<Vec<String>>(key).ok()?.into_iter().next())?,
+    };
+    let name = Path::new(&program).file_stem()?.to_str()?;
+    (!name.starts_with(':') && name != "jayjay").then(|| name.to_owned())
 }
 
 #[cfg(test)]

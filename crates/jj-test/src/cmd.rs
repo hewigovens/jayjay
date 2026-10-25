@@ -1,3 +1,5 @@
+#[cfg(unix)]
+use std::os::unix::fs::PermissionsExt as _;
 use std::path::Path;
 use std::process::{Command, Output};
 
@@ -69,20 +71,36 @@ pub fn init_colocated(path: &Path) {
 
 /// Adds `[fix.tools.fixer]`, which pipes files matching `patterns` (a TOML array) through `script`.
 pub fn configure_fix_tool(repo: &Path, script: &str, patterns: &str) {
-    let tool = repo.join("fix-tool.sh");
-    std::fs::write(&tool, script).expect("write fix tool");
-    #[cfg(unix)]
-    {
-        use std::os::unix::fs::PermissionsExt as _;
-        std::fs::set_permissions(&tool, std::fs::Permissions::from_mode(0o755))
-            .expect("make fix tool executable");
-    }
+    write_script(&repo.join("fix-tool.sh"), script);
     for (key, value) in [
         ("fix.tools.fixer.command", r#"["$root/fix-tool.sh"]"#),
         ("fix.tools.fixer.patterns", patterns),
     ] {
         run_jj_in(repo, &["config", "set", "--repo", key, value]);
     }
+}
+
+/// Configures a merge editor that writes `merged\n`.
+pub fn configure_merge_editor(repo: &Path) {
+    let tool = repo.join(".jj").join("merge-tool.sh");
+    write_script(&tool, "#!/bin/sh\nprintf 'merged\\n' > \"$1\"\n");
+    for (key, value) in [
+        (
+            "merge-tools.fake.program",
+            tool.to_str().expect("utf-8 tool path"),
+        ),
+        ("merge-tools.fake.merge-args", r#"["$output"]"#),
+        ("ui.merge-editor", "fake"),
+    ] {
+        run_jj_in(repo, &["config", "set", "--repo", key, value]);
+    }
+}
+
+fn write_script(path: &Path, script: &str) {
+    std::fs::write(path, script).expect("write script");
+    #[cfg(unix)]
+    std::fs::set_permissions(path, std::fs::Permissions::from_mode(0o755))
+        .expect("make script executable");
 }
 
 /// Set a deterministic test identity so commit hashes are reproducible.

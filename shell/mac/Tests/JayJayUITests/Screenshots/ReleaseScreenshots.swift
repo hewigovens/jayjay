@@ -98,7 +98,7 @@ final class ReleaseScreenshots: ScreenshotScene {
     func testConflictResolver() throws {
         let app = try XCTUnwrap(app)
         selectChange("merge rail and ferry", in: app)
-        clickCenter(app.buttons[AID.Conflict.resolveInJayJay("src/timetable.rs")], timeout: 10, message: "Edit in JayJay missing")
+        clickCenter(app.popUpButtons[AID.Conflict.resolveInJayJay("src/timetable.rs")].buttons.firstMatch, timeout: 10, message: "Edit in JayJay missing")
         XCTAssertTrue(app.element(AID.Conflict.editorPreparing).waitForNonExistence(timeout: 60))
         XCTAssertTrue(app.staticTexts[AID.Conflict.editorModal].waitForExistence(timeout: 10), "Conflict editor missing")
         capture("conflict-resolver", frame: mainFrame)
