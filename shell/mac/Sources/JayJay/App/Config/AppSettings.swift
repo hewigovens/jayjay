@@ -127,6 +127,9 @@ final class AppSettings {
         ) }
     }
 
+    /// AppKit and Sparkle keep the language they launched with.
+    let launchLanguage: String?
+
     var language: String? {
         didSet {
             defaults.set(language, forKey: StorageKeys.language)
@@ -326,9 +329,10 @@ final class AppSettings {
             .clamped(to: Self.lineSpacingRange)
         codeLigatures = defaults.object(forKey: StorageKeys.codeLigatures) as? Bool ?? true
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
-        language = defaults.string(forKey: StorageKeys.language).flatMap { tag in
+        launchLanguage = defaults.string(forKey: StorageKeys.language).flatMap { tag in
             availableLanguages().contains { $0.tag == tag } ? tag : nil
         }
+        language = launchLanguage
         let lightPaletteId = defaults.string(forKey: StorageKeys.diffPaletteLight) ?? Self.defaultLightDiffPaletteId
         let darkPaletteId = defaults.string(forKey: StorageKeys.diffPaletteDark) ?? Self.defaultDarkDiffPaletteId
         diffPaletteLight = lightPaletteId

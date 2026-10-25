@@ -33,7 +33,13 @@ struct SettingsAppearancePage: View {
                     SettingsLabel(Localized.Settings.language, icon: "globe")
                 }
             } footer: {
-                Text(Localized.Settings.languageDetail)
+                HStack {
+                    Text(Localized.Settings.languageDetail)
+                    Spacer()
+                    if settings.language != settings.launchLanguage {
+                        Button(Localized.Settings.languageRelaunch) { NSApp.relaunch() }
+                    }
+                }
             }
 
             DiffPaletteSection()
