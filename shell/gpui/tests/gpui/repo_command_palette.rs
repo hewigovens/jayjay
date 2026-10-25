@@ -8,6 +8,7 @@ use jayjay_gpui::app::config::{self, AppearanceMode};
 use jayjay_gpui::app::links;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::command_palette::CommandPalette;
+use jayjay_gpui::windows::evolog::EvologView;
 use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
@@ -317,6 +318,22 @@ fn command_palette_new_child_creates_a_change_on_the_selection(cx: &mut TestAppC
         assert!(selected.is_working_copy);
         assert_eq!(selected.parents.first(), Some(&parent_commit));
     });
+}
+
+#[gpui::test]
+fn command_palette_show_evolution_opens_the_evolog_window(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+
+    run_repo_palette(&view, repo_cx, "evolog", "command-palette-show-evolution");
+
+    assert!(
+        repo_cx
+            .cx
+            .windows()
+            .iter()
+            .any(|window| window.downcast::<EvologView>().is_some())
+    );
 }
 
 #[gpui::test]

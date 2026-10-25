@@ -223,6 +223,14 @@ fn change_rows(change: &ChangeInfo) -> Vec<DynamicRow> {
         glyph::ARROW_UTURN_BACK,
         ContextAction::Change(Arc::new(ChangeAction::Revert { rev: rev.clone() })),
     ));
+    let mut evolution = change_row(
+        jayjay_i18n::palette::show_evolution(&short),
+        "command-palette-show-evolution",
+        glyph::HISTORY,
+        ContextAction::OpenEvologFor(rev.clone().into()),
+    );
+    evolution.search.push_str(" evolog obslog history");
+    rows.push(evolution);
     rows.push(change_row(
         jayjay_i18n::palette::create_bookmark_on(&short),
         "command-palette-create-bookmark",
