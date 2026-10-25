@@ -2,7 +2,9 @@
 
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, px, rgb};
 
-use super::cache::{cache_path, email_hash};
+use jayjay_core::avatar::email_hash;
+
+use super::cache::cache_path;
 
 /// Stable palette index from the email — same email, same fallback color.
 fn initial_color(email: &str) -> u32 {

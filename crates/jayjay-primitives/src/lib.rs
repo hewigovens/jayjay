@@ -1,4 +1,5 @@
 mod app_dirs;
+pub mod avatar;
 mod bisect;
 mod bookmark;
 mod change;
@@ -9,8 +10,10 @@ mod diffedit;
 mod error;
 mod evolog;
 mod file_editor;
+pub mod file_tree;
 mod fix;
 mod git;
+pub mod github_alias;
 mod hash;
 mod mutation_effect;
 mod ops;

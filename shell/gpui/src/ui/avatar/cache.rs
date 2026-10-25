@@ -2,18 +2,12 @@
 
 use std::path::PathBuf;
 
+use jayjay_core::avatar::{AvatarSource, email_hash};
 use jayjay_core::{AppDirs, github_alias};
-use sha2::{Digest, Sha256};
 
-use super::resolve::{AvatarSource, avatar_source, bot_avatar_url, gitlab_avatar_url};
+use super::resolve::{PIXEL_SIZE, bot_avatar_url, gitlab_avatar_url};
 
 const AVATAR_BYTE_CAP: u32 = 2 * 1024 * 1024; // hard cap 2MB
-
-pub(super) fn email_hash(email: &str) -> String {
-    let mut hasher = Sha256::new();
-    hasher.update(email.trim().to_lowercase().as_bytes());
-    hex::encode(hasher.finalize())
-}
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
     let alias = github_alias::noreply_email(email);
@@ -33,7 +27,7 @@ pub fn fetch_blocking(email: &str) -> bool {
     if path.exists() {
         return true;
     }
-    let url = match avatar_source(email) {
+    let url = match AvatarSource::for_email(email, PIXEL_SIZE) {
         Some(AvatarSource::Url(url)) => url,
         Some(AvatarSource::GitHubBot(id)) => match bot_avatar_url(&id) {
             Some(url) => url,
