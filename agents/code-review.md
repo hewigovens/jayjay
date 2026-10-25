@@ -21,7 +21,7 @@ Use the agent's native review workflow and output format. [Task Authority](../AG
 
 ## Correctness Review
 
-Review as an independent maintainer: the pass runs in a fresh context that did not implement the change and starts from the diff, the task, and this guide, because an author reviewing its own patch shares its assumptions. Fresh means no harness memory, notes, or artifacts from the implementing session; a reviewer that finds them ignores them. For non-trivial behavior changes, actively try to falsify the implementation:
+Review as a maintainer reading a stranger's patch, starting from the diff, the task, and this guide. Before a direct push to `main`, the pass runs in a fresh context that did not implement the change, because an author reviewing its own patch shares its assumptions; fresh means no harness memory, notes, or artifacts from the implementing session, and a reviewer that finds them ignores them. Before a push to a pull request the implementing session may review its own change ([Ready to commit or publish](../AGENTS.md#ready-to-commit-or-publish)); it argues against its implementation notes rather than relying on them. For non-trivial behavior changes, actively try to falsify the implementation:
 
 - Infer the contract from the issue or task, public APIs, surrounding callers, and invariants, and from the platform's published rules where one exists (for an AppImage, the upstream `excludelist` and `appdir-lint.sh` that the catalog runs). Existing tests are evidence, not proof of correctness; their fixtures and assertions may share the implementation's wrong assumption.
 - The author's own validation is the surface to attack, not a checklist to repeat: re-running it proves nothing the description did not already claim. Look for the scenario it did not run.
@@ -61,7 +61,7 @@ Use adversarial review when the patch changes a trust boundary, destructive repo
 
 ## Reporting
 
-Report concrete defects first, ordered by severity, with file and line references. Each finding needs a specific failing scenario or minimal test case, expected versus actual behavior, impact, and the smallest reasonable fix. Do not report style nits, speculative concerns, missing tests, or duplicated logic without a supported behavioral failure. Cleanup (trivial helpers, restating comments, unused parameters) belongs to the author's cleanup rounds, not to findings.
+Report concrete defects first, ordered by severity, with file and line references. Each finding needs a specific failing scenario or minimal test case, expected versus actual behavior, impact, and the smallest reasonable fix. Do not report style nits, speculative concerns, missing tests, or duplicated logic without a supported behavioral failure. In a review of someone else's patch, cleanup (trivial helpers, restating comments, unused parameters) belongs to the author's cleanup rounds, not to findings; a pre-push review of your own change fixes it directly.
 
 After the findings, two separate non-blocking lists: verification gaps (a behavioral bug fix without its regression test, scenarios no test covers, checks not run) and pre-existing bugs found near the change, which are reported against the base revision, not the patch.
 

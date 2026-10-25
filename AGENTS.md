@@ -125,7 +125,7 @@ During the loop — especially after concurrent agent or workspace work, snapsho
 
 For code changes, finish cleanup, run `jj fix`, validate the resulting code with relevant tests, and run `just lint` once. Documentation-only changes need documentation checks; build the app only when verifying runtime presentation or bundled content. Load [Pull Requests](agents/pull-requests.md) only when publishing.
 
-Before pushing a non-trivial behavior change to `main` or a pull request, get an independent review per [Code Review](agents/code-review.md): a fresh session or agent that did not implement the change, given the diff, the task, and that guide. Fix its findings across every site sharing the same assumption, then push. This replaces the first hosted review round; it is not part of the inner loop.
+Before pushing a non-trivial behavior change, review the whole diff per [Code Review](agents/code-review.md). A direct push to `main` needs an independent review: a fresh session or agent that did not implement the change, given the diff, the task, and that guide. A push to a pull request, whether a new change or a follow-up commit, needs the review but not the independence, since the pull request also gets a hosted review. Use the pass to catch what hosted review keeps flagging, such as comments that restate the code and tests that [Testing](agents/testing.md#before-adding-a-test) would trim. Fix its findings across every site sharing the same assumption, then push. It is not part of the inner loop.
 
 ## User-Facing Docs
 
@@ -154,6 +154,7 @@ Update `agents/*.md` in the feature change only when the **contributor/agent con
 - Split by single responsibility and module, not by line count. When a type or module grows a second job, extract a type or a sibling module — do not split a cohesive type just because the file got long.
 - Group related files into responsibility folders; don't create folders for singletons.
 - Rust: prefer folder modules over long single-file modules. Keep `mod.rs` and `lib.rs` thin: module declarations and `pub use` re-exports only. Put implementation in sibling modules named for the responsibility they own, such as `wrap/cols.rs`, `wrap/unified.rs`, and `wrap/side_by_side.rs`.
+- Rust imports: put `use` declarations at the top of the module; a function-local `use` is only for an import gated by `#[cfg]`.
 - Rust visibility: use `pub(crate)` (or `pub(super)` for a direct parent); never path-scoped `pub(in crate::…)` / `pub(in super::super)`, which buries the signature behind a module path.
 - Swift: growing types split into `TypeName+Responsibility.swift` extension files by job, not by length.
 
