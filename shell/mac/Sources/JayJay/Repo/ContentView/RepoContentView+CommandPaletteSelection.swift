@@ -35,6 +35,12 @@ extension RepoContentView {
             category: Localized.Repo.change
         ) { viewModel.revertChange(rev: selection) })
         items.append(CommandPaletteItem(
+            title: Localized.Palette.showEvolution(change: short),
+            icon: "clock.arrow.circlepath",
+            category: Localized.Repo.change,
+            keywords: ["evolog", "obslog", "history"]
+        ) { viewModel.showEvolog(rev: selection) })
+        items.append(CommandPaletteItem(
             title: Localized.Palette.createBookmarkOn(change: short),
             icon: "bookmark",
             category: Localized.Repo.change
