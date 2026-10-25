@@ -46,12 +46,6 @@ impl Repo {
         self.running_jj_processes.close();
     }
 
-    pub(crate) fn run_jj_reload(&self, args: &[&str]) -> JayResult<()> {
-        self.debug_assert_write_guarded();
-        self.run_jj(args)?;
-        self.reload()
-    }
-
     pub(crate) fn command_output(
         &self,
         binary: &str,

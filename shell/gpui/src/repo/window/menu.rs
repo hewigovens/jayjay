@@ -280,6 +280,7 @@ impl RepoWindow {
             }
             ContextAction::OpenDiffEdit => self.enter_diff_edit(cx),
             ContextAction::EditFileAtLine(line) => self.enter_selected_file_editor(Some(line), cx),
+            ContextAction::ResolveConflict(resolution) => self.resolve_conflict(resolution, cx),
             ContextAction::AbandonSelectedLines(request) => {
                 self.abandon_selected_diff_lines(request, cx);
             }

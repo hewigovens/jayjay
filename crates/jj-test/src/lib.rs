@@ -10,8 +10,8 @@ mod template;
 
 pub use bisect::BisectStack;
 pub use cmd::{
-    configure_fix_tool, configure_test_user, git_stdout, init_colocated, run_command, run_git,
-    run_jj, run_jj_in,
+    configure_fix_tool, configure_merge_editor, configure_test_user, git_stdout, init_colocated,
+    run_command, run_git, run_jj, run_jj_in,
 };
 pub use env::{review_store_env, scoped_env};
 pub use formats::FormatFixture;

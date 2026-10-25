@@ -9,7 +9,7 @@ use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
 
 use super::review_row_map::ReviewRowMap;
 use crate::diff::MarkdownImageCacheSlot;
-use crate::repo::window::{DiffWrapCacheSlot, FocusStop, PanelBoundsSlot};
+use crate::repo::window::{ConflictResolution, DiffWrapCacheSlot, FocusStop, PanelBoundsSlot};
 use crate::ui::input::LineInput;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -83,7 +83,7 @@ pub struct DiffViewState<'a> {
     pub(crate) can_edit_diff: bool,
     pub(crate) detail_width: f32,
     pub(crate) selected_file_has_conflict: bool,
-    pub(crate) supports_conflict_editor: bool,
+    pub(crate) conflict_resolutions: Vec<ConflictResolution>,
     pub(crate) unified_bounds: PanelBoundsSlot,
     pub(crate) sbs_old_bounds: PanelBoundsSlot,
     pub(crate) sbs_new_bounds: PanelBoundsSlot,

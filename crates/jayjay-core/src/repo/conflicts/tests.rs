@@ -1,5 +1,7 @@
 use std::fs;
 
+use jj_lib::config::{ConfigLayer, ConfigSource, StackedConfig};
+use jj_lib::settings::UserSettings;
 use jj_test::{current_op_id, init_jj_repo, run_jj_in};
 
 use crate::{MergeEditorHunkExt, MergeHunkSource, Repo};
@@ -277,4 +279,71 @@ fn rejects_a_conflict_edit_after_the_working_copy_moved_to_another_change() {
         .expect_err("stale edit should fail");
 
     assert!(matches!(error, crate::JayError::ConflictEditorStale { .. }));
+}
+
+#[test]
+fn merge_editor_name_reads_each_command_form_and_skips_own_actions() {
+    let name = |text: &str| {
+        let mut config = StackedConfig::with_defaults();
+        config.add_layer(ConfigLayer::parse(ConfigSource::User, text).expect("parse config"));
+        let settings = UserSettings::from_config_and_home_dir(config, None).expect("settings");
+        super::merge_editor_name(&settings)
+    };
+
+    assert_eq!(
+        name(r#"ui.merge-editor = "p4merge""#).as_deref(),
+        Some("p4merge")
+    );
+    assert_eq!(
+        name(r#"ui.merge-editor = "/opt/bin/meld --auto""#).as_deref(),
+        Some("meld")
+    );
+    assert_eq!(
+        name(r#"ui.merge-editor = ["/opt/bin/kdiff3", "$base"]"#).as_deref(),
+        Some("kdiff3")
+    );
+    assert_eq!(
+        name(r#"ui.merge-editor = { env = {}, command = ["smerge"] }"#).as_deref(),
+        Some("smerge")
+    );
+    assert_eq!(name(r#"ui.merge-editor = ":builtin""#), None);
+    assert_eq!(name(r#"ui.merge-editor = "jayjay""#), None);
+    assert_eq!(name(""), None);
+}
+
+#[cfg(unix)]
+#[test]
+fn resolves_with_the_configured_merge_editor() {
+    let (temp_dir, _) = conflict_fixture();
+    let repo_path = temp_dir.path().join("repo");
+    jj_test::configure_merge_editor(&repo_path);
+    let repo = Repo::open(&repo_path).expect("reopen with merge editor");
+
+    assert_eq!(repo.merge_editor_name().as_deref(), Some("fake"));
+    repo.resolve_with_merge_editor("@", "hello.txt")
+        .expect("resolve with merge editor");
+
+    assert!(!repo.show("@").expect("show change").info.has_conflict);
+    assert_eq!(
+        repo.file_content("@", "hello.txt").expect("file content"),
+        "merged\n"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn closing_a_merge_tool_without_saving_keeps_the_conflict_without_an_error() {
+    let (temp_dir, repo) = conflict_fixture();
+    let repo_path = temp_dir.path().join("repo");
+    for (key, value) in [
+        ("merge-tools.noop.program", r#""true""#),
+        ("merge-tools.noop.merge-args", r#"["$output"]"#),
+    ] {
+        run_jj_in(&repo_path, &["config", "set", "--repo", key, value]);
+    }
+
+    repo.resolve_with_tool("@", "hello.txt", "noop")
+        .expect("closing the tool is not an error");
+
+    assert!(repo.show("@").expect("show change").info.has_conflict);
 }

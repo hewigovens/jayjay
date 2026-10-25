@@ -914,6 +914,14 @@ impl JayJayRepo {
         self.inner.resolve_with_tool(&rev, &path, &tool)
     }
 
+    fn resolve_with_merge_editor(&self, rev: String, path: String) -> Result<(), JayError> {
+        self.inner.resolve_with_merge_editor(&rev, &path)
+    }
+
+    fn merge_editor_name(&self) -> Option<String> {
+        self.inner.merge_editor_name()
+    }
+
     fn conflict_editor(&self, rev: String, path: String) -> Result<ConflictEditorData, JayError> {
         self.inner.conflict_editor(&rev, &path)
     }

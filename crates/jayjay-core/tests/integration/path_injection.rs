@@ -47,6 +47,32 @@ fn split_treats_option_shaped_filename_as_literal_path() {
     );
 }
 
+#[test]
+fn resolve_treats_option_and_fileset_shaped_filename_as_literal_path() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let hostile = "--tool=theirs all()";
+
+    run_jj_in(&repo_path, &["new", "@"]);
+    fs::write(repo_path.join(hostile), "left\n").expect("write left");
+    fs::write(repo_path.join("other.txt"), "left\n").expect("write other left");
+    run_jj_in(&repo_path, &["bookmark", "create", "left", "-r", "@"]);
+    run_jj_in(&repo_path, &["new", "@-"]);
+    fs::write(repo_path.join(hostile), "right\n").expect("write right");
+    fs::write(repo_path.join("other.txt"), "right\n").expect("write other right");
+    run_jj_in(&repo_path, &["new", "left", "@"]);
+    let repo = Repo::open(&repo_path).expect("open conflicted repo");
+
+    repo.resolve_use_ours("@", hostile)
+        .expect("resolve must take the filename as a path");
+
+    assert_eq!(repo.resolve_list("@").expect("conflicts"), ["other.txt"]);
+    assert_eq!(
+        repo.file_content("@", hostile).expect("file content"),
+        "left\n"
+    );
+}
+
 /// Finding 3: a file named `all()` must restore only itself, not every file.
 #[test]
 fn restore_working_copy_matches_only_the_named_fileset_filename() {

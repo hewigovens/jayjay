@@ -185,6 +185,10 @@ enum AID {
             "conflict.resolveInJayJay.\(path)"
         }
 
+        static func resolveElsewhere(_ path: String) -> String {
+            "conflict.resolveElsewhere.\(path)"
+        }
+
         static let editorResult = "conflict.editor.result"
         static let editorPreparing = "conflict.editor.preparing"
         static let editorModal = "conflict.editor.modal"

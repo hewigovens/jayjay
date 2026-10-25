@@ -3,7 +3,7 @@ use gpui::{
     rgb,
 };
 
-use super::super::{DiffRichPreviewKind, RepoWindow};
+use super::super::{ConflictResolution, DiffRichPreviewKind, RepoWindow};
 use super::description;
 use super::header::{DetailHeaderState, detail_header};
 use crate::app::theme::{Theme, ui_font_size};
@@ -88,6 +88,22 @@ pub(crate) fn detail_pane(
     let bookmarks = vm.graph.bookmarks.clone();
     let review = view.review_display_state(selected_hunk.as_ref(), current_diff.as_ref(), cx);
 
+    let conflict_resolutions = if selected_file_has_conflict {
+        ConflictResolution::options(
+            vm.repo
+                .as_ref()
+                .and_then(|repo| repo.merge_editor_name())
+                .as_deref(),
+            selected_hunk
+                .as_ref()
+                .is_some_and(|hunk| hunk.supports_conflict_editor)
+                && !change.is_immutable,
+            cx,
+        )
+    } else {
+        Vec::new()
+    };
+
     let diff_state = DiffViewState {
         hunk: selected_hunk.as_ref(),
         line_stats: selected_hunk
@@ -122,10 +138,7 @@ pub(crate) fn detail_pane(
         can_edit_diff,
         detail_width,
         selected_file_has_conflict,
-        supports_conflict_editor: selected_hunk
-            .as_ref()
-            .is_some_and(|hunk| hunk.supports_conflict_editor)
-            && !change.is_immutable,
+        conflict_resolutions,
         unified_bounds: view.diff.unified_bounds.clone(),
         sbs_old_bounds: view.diff.sbs_old_bounds.clone(),
         sbs_new_bounds: view.diff.sbs_new_bounds.clone(),

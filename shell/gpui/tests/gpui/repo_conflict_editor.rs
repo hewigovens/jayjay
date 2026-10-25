@@ -1,4 +1,5 @@
 use std::fs;
+use std::path::Path;
 
 use crate::harness::{open_repo, scroll_wheel, scrollable_merge_side, settle_visual};
 use gpui::{Modifiers, TestAppContext, px};
@@ -31,6 +32,7 @@ fn conflicted_repo() -> tempfile::TempDir {
     .expect("write right");
     run_jj_in(&path, &["describe", "-m", "right"]);
     run_jj_in(&path, &["new", "left", "@"]);
+    without_user_merge_editor(&path);
 
     temp_dir
 }
@@ -48,8 +50,17 @@ fn scrollable_conflicted_repo() -> tempfile::TempDir {
     fs::write(path.join("values.rs"), scrollable_merge_side(20)).expect("write right");
     run_jj_in(&path, &["describe", "-m", "right"]);
     run_jj_in(&path, &["new", "left-values", "@"]);
+    without_user_merge_editor(&path);
 
     temp_dir
+}
+
+/// Ignores the developer's own `ui.merge-editor`.
+fn without_user_merge_editor(path: &Path) {
+    run_jj_in(
+        path,
+        &["config", "set", "--repo", "ui.merge-editor", ":builtin"],
+    );
 }
 
 fn rebased_binary_conflict_repo() -> tempfile::TempDir {
@@ -164,6 +175,51 @@ fn conflict_banner_edits_and_saves_inside_the_repository_window(cx: &mut TestApp
         fs::read_to_string(path.join("greeting.rs")).expect("read resolved file"),
         "combined in JayJay\n"
     );
+}
+
+#[cfg(unix)]
+#[gpui::test]
+fn conflict_banner_resolves_with_the_configured_merge_editor(cx: &mut TestAppContext) {
+    let fixture = conflicted_repo();
+    let path = fixture.path().join("repo");
+    jj_test::configure_merge_editor(&path);
+    let (_view, cx) = open_repo(path.clone(), cx);
+
+    let resolve = cx
+        .debug_bounds("conflict-resolve-merge-editor")
+        .expect("Resolve in merge editor button");
+    cx.simulate_click(resolve.center(), Modifiers::default());
+    settle_visual(cx);
+
+    let repo = Repo::open(&path).expect("reopen repo");
+    assert!(!repo.show("@").expect("show change").info.has_conflict);
+    assert_eq!(
+        fs::read_to_string(path.join("greeting.rs")).expect("read resolved file"),
+        "merged\n"
+    );
+}
+
+#[cfg(unix)]
+#[gpui::test]
+fn conflict_banner_menu_offers_the_other_resolutions(cx: &mut TestAppContext) {
+    let fixture = conflicted_repo();
+    let path = fixture.path().join("repo");
+    jj_test::configure_merge_editor(&path);
+    let (view, cx) = open_repo(path, cx);
+
+    assert!(cx.debug_bounds("conflict-resolve-jayjay").is_none());
+    let more = cx
+        .debug_bounds("conflict-resolve-more")
+        .expect("more resolutions button");
+    cx.simulate_click(more.center(), Modifiers::default());
+    settle_visual(cx);
+    let edit = cx
+        .debug_bounds("context-menu-Edit in JayJay")
+        .expect("Edit in JayJay menu item");
+    cx.simulate_click(edit.center(), Modifiers::default());
+    settle_visual(cx);
+
+    assert!(view.read_with(cx, |view, _| view.conflict_editor_active()));
 }
 
 #[gpui::test]

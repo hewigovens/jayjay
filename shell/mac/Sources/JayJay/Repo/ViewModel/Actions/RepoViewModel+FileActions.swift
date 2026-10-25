@@ -104,6 +104,10 @@ extension RepoViewModel {
         perform(selecting: rev) { try $0.resolveWithTool(rev: rev, path: path, tool: tool) }
     }
 
+    func resolveWithMergeEditor(rev: String, path: String) {
+        perform(selecting: rev) { try $0.resolveWithMergeEditor(rev: rev, path: path) }
+    }
+
     func applyConflictEditor(
         rev: String,
         data: ConflictEditorData,
