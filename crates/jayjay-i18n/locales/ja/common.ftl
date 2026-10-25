@@ -1,3 +1,5 @@
+-language-name = 日本語
+
 common-cancel = キャンセル
 common-checking = 確認中…
 common-clear = 消去

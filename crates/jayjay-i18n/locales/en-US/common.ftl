@@ -1,3 +1,5 @@
+-language-name = English
+
 common-cancel = Cancel
 common-checking = Checking…
 common-clear = Clear
