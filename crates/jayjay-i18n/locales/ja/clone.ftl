@@ -1,0 +1,6 @@
+clone-choose-where-to-clone = クローン先を選択
+clone-repository-url = リポジトリ URL
+clone-choose-ellipsis = 選択…
+clone-choose = 選択
+clone-name = 名前
+clone-cloning = { $name } をクローン中…

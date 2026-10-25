@@ -157,6 +157,10 @@ mod tests {
             Localizer::negotiate(&["en-US"]).format("missing-id", None),
             "missing-id"
         );
+        assert_eq!(
+            Localizer::negotiate(&["ja-JP"]).format("common-cancel", None),
+            "キャンセル"
+        );
     }
 
     #[test]

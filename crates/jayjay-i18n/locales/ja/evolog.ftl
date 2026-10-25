@@ -1,0 +1,9 @@
+evolog-loading-evolution-ellipsis = 変遷を読み込み中…
+evolog-no-history = 履歴がありません
+evolog-unable-to-load-history = 履歴を読み込めません
+evolog-select-a-version-to-compare-it = 最新のバージョンと比較するバージョンを選択してください
+evolog-no-changes-between-the-selected-versions = 選択したバージョン間に変更はありません
+evolog-loading-file-ellipsis = ファイルを読み込み中…
+evolog-window-title = 変遷: { $title }
+evolog-snapshot-count = { $count } 個のスナップショット
+evolog-version-count = { $count } 個のバージョン

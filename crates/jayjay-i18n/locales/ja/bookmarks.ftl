@@ -1,0 +1,11 @@
+bookmarks-no-bookmarks-found = ブックマークが見つかりません。
+bookmarks-reveal = 表示
+bookmarks-diff = 差分
+bookmarks-ahead-of = { $remote } より先行
+bookmarks-behind = { $remote } より遅れ
+bookmarks-diverged-from = { $remote } と分岐
+bookmarks-remote-has-newer = { $remote } に新しいコミットがあります — フェッチして追いついてください。
+bookmarks-active-count = アクティブ { NUMBER($count) }
+bookmarks-local-only-count = ローカルのみ { NUMBER($count) }
+bookmarks-remote-only-count = リモートのみ { NUMBER($count) }
+bookmarks-local = ローカル

@@ -60,7 +60,7 @@ User-facing text lives in `crates/jayjay-i18n/locales/en-US/<area>.ftl`; the fil
 - Shells call `set_preferred_languages` once at launch: SwiftUI with `Locale.preferredLanguages`, GPUI with the OS list from `sys-locale`. They also call `set_number_locale` with the region, since numbers follow it rather than the UI language; core's `FileSizeFormatter` shares the same `decimal_formatter`. A language only matches a catalog of the same script, so `zh-TW` falls back to English rather than Simplified Chinese.
 - The `en-XA` pseudo-locale runs every catalog string through `fluent-pseudo` (lookalike letters, doubled vowels), so unmigrated text stands out and length assumptions show: `-AppleLanguages '(en-XA)'` for SwiftUI, `defaults write com.hewigovens.JayJay AppleLanguages -array en-XA` for the GPUI dev bundle, `LANGUAGE=en_XA` on Linux.
 - `just lint-i18n` fails on catalog messages no shell uses and on prose literals anywhere in the shell sources. Product, font, and key names that stay English go in the `names` list in `scripts/lint-i18n.sh`; whole files that stay English (CLI help, generated bindings, model prompts) go in its `english` list. UI test scenes launch with `-AppleLanguages (en)`, except external-tool scenes, whose command line must stay exact.
-- A new shipping locale also goes in `CFBundleLocalizations` in `shell/mac/Info.plist`, so macOS offers it per app and localizes AppKit's own menus and panels.
+- A new shipping locale also goes in `CFBundleLocalizations` under the `JayJay` target's `info.properties` in `shell/mac/project.yml` (XcodeGen regenerates `Info.plist` from it), so macOS offers it per app and localizes AppKit's own menus and panels.
 
 ## Tracing Cross-Layer Behavior
 
