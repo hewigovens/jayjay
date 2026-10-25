@@ -41,7 +41,9 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
     let payload = format!("{line}; exec $SHELL");
 
     match term {
-        Terminal::SystemDefault | Terminal::ITerm | Terminal::PowerShell => spawn_default(&payload),
+        Terminal::SystemDefault | Terminal::ITerm | Terminal::PowerShell | Terminal::Rex => {
+            spawn_default(&payload)
+        }
         Terminal::GnomeTerminal => spawn_with_args(
             "gnome-terminal",
             vec![

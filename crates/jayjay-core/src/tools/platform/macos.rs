@@ -21,6 +21,7 @@ pub const TERMINAL_OPTIONS: &[(&str, &str)] = &[
     ("terminal", "Terminal"),
     ("iterm", "iTerm2"),
     ("ghostty", "Ghostty"),
+    ("rex", "Rex"),
     ("custom", "Custom"),
 ];
 
@@ -51,7 +52,9 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
         }
         Terminal::ITerm => run_applescript(&iterm_script(&shell_line(cwd, command))),
         Terminal::Ghostty => spawn_ghostty(cwd, command),
-        Terminal::PowerShell
+        Terminal::Rex if command.is_none() => open_rex(cwd),
+        Terminal::Rex
+        | Terminal::PowerShell
         | Terminal::GnomeTerminal
         | Terminal::Konsole
         | Terminal::LxTerminal
@@ -76,6 +79,13 @@ fn spawn_ghostty(cwd: &str, command: Option<&str>) -> bool {
         cmd.args(["-e", "bash", "-c", c]);
     }
     detach_stdio(&mut cmd).spawn().is_ok()
+}
+
+/// Rex's folder-open handler cannot launch a command.
+fn open_rex(cwd: &str) -> bool {
+    detach_stdio(Command::new("/usr/bin/open").args(["-b", "com.superlogical.rex", cwd]))
+        .spawn()
+        .is_ok()
 }
 
 fn run_applescript(source: &str) -> bool {
