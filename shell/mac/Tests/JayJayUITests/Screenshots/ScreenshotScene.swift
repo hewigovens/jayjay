@@ -38,13 +38,15 @@ class ScreenshotScene: SceneBase {
             "-jayjay.tintWindowWithWallpaper", "NO",
             "-jayjay.fontFamily", "system",
             "-jayjay.fontSize", "12",
+            "-jayjay.interfaceFontFamily", "system",
+            "-jayjay.interfaceFontSize", "12",
             "-jayjay.treeFileList", "NO",
             "-jayjay.sideBySideDiff", "NO",
             "-jayjay.hasCompletedOnboarding", "YES",
-            "-jayjay.windowFrame.repo-window", "{{80, 80}, {1600, 960}}",
-            "-jayjay.sidebarWidth", "",
-            "-jayjay.secondaryPaneWidth", "",
-            "-jayjay.fileColumnWidth", "",
+            "-jayjay.windowFrame.repo-window", "{{80, 80}, {1100, 700}}",
+            "-jayjay.sidebarWidth", "240",
+            "-jayjay.secondaryPaneWidth", "220",
+            "-jayjay.fileColumnWidth", "220",
             "-jayjay.sidebarHidden", "NO",
             "-commandPalette.frameOrigin", "{0, 0}"
         ]
@@ -93,8 +95,30 @@ class ScreenshotScene: SceneBase {
         guard let cropped = cgImage.cropping(to: crop.integral) else {
             return XCTFail("Could not crop the capture for \(name)")
         }
+        attach(name, image: NSImage(cgImage: cropped, size: frame.size))
+    }
+
+    func capture(_ name: String, window: XCUIElement, frame: CGRect? = nil) {
+        settle()
+        let image = window.screenshot().image
+        guard let frame else {
+            return attach(name, image: image)
+        }
+        guard let cgImage = image.cgImage(forProposedRect: nil, context: nil, hints: nil) else {
+            return XCTFail("Window capture failed for \(name)")
+        }
+        let bounds = window.frame
+        let scale = CGFloat(cgImage.width) / bounds.width
+        let crop = CGRect(x: (frame.minX - bounds.minX) * scale, y: (frame.minY - bounds.minY) * scale, width: frame.width * scale, height: frame.height * scale)
+        guard let cropped = cgImage.cropping(to: crop.integral) else {
+            return XCTFail("Could not crop the window capture for \(name)")
+        }
+        attach(name, image: NSImage(cgImage: cropped, size: frame.size))
+    }
+
+    private func attach(_ name: String, image: NSImage) {
         let suffix = Self.appearance == "dark" ? "-dark" : ""
-        let attachment = XCTAttachment(image: NSImage(cgImage: cropped, size: frame.size))
+        let attachment = XCTAttachment(image: image)
         attachment.name = "\(name)\(suffix)"
         attachment.lifetime = .keepAlways
         add(attachment)

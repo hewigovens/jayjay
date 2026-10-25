@@ -123,6 +123,12 @@ pub fn departures(station: &str) -> Vec<String> {
 }
 RS
 jj new rail-feed @ -m "merge rail and ferry timetables"
+# An untouched automatic merge has no diff against its merged parents; keep the conflict and give the banner a visible edit.
+python3 - <<'PYEDIT'
+from pathlib import Path
+p = Path("src/timetable.rs")
+p.write_text(p.read_text().replace("REFRESH_MINUTES: u32 = 15;", "REFRESH_MINUTES: u32 = 20;"))
+PYEDIT
 
 jj new main -m "test: cover route endpoints"
 

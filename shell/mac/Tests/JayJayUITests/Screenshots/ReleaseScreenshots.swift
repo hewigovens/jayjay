@@ -92,7 +92,11 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectChange("merge rail and ferry", in: app)
         selectFile("src/timetable.rs", in: app)
-        capture("conflict-resolution", frame: mainFrame)
+        XCTAssertTrue(app.textViews[AID.Diff.text].firstMatch.waitForExistence(timeout: 10), "Conflict diff text missing")
+        let window = mainWindow(app)
+        let left = app.element(AID.FileList.column).frame.maxX + 1
+        let frame = CGRect(x: left, y: window.frame.minY + 52, width: window.frame.maxX - left, height: 500)
+        capture("conflict-resolution", window: window, frame: frame)
     }
 
     func testConflictResolver() throws {
@@ -211,7 +215,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
         selectSettingsPage("appearance", in: app)
-        capture("settings-appearance", frame: settingsWindow(in: app).frame)
+        capture("settings-appearance", window: settingsWindow(in: app))
     }
 
     func testSettingsIntegrations() throws {
