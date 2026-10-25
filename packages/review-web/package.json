@@ -1,0 +1,30 @@
+{
+  "name": "@jayjay/review-web",
+  "version": "0.0.0",
+  "private": true,
+  "type": "module",
+  "exports": {
+    "./react": "./src/react.ts",
+    "./local": "./src/local.ts",
+    "./types": "./src/types.ts",
+    "./styles.css": "./src/styles.css"
+  },
+  "files": [
+    "src"
+  ],
+  "sideEffects": [
+    "**/*.css"
+  ],
+  "peerDependencies": {
+    "react": "^19.3.1"
+  },
+  "devDependencies": {
+    "@types/react": "^19.3.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5",
+    "oxlint": "^1.90.0"
+  },
+  "scripts": {
+    "check": "tsc --noEmit && oxlint src --ignore-pattern \"**/wasm/**\""
+  }
+}

@@ -1,0 +1,34 @@
+[package]
+name = "jj-diff-web"
+version.workspace = true
+edition.workspace = true
+rust-version.workspace = true
+license.workspace = true
+publish = false
+
+[lib]
+crate-type = ["cdylib", "rlib"]
+
+[features]
+default = []
+rust = ["jj-diff/lang-rust"]
+web = ["jj-diff/lang-javascript", "jj-diff/lang-typescript", "jj-diff/lang-html", "jj-diff/lang-css"]
+python = ["jj-diff/lang-python"]
+swift = ["jj-diff/lang-swift"]
+shell = ["jj-diff/lang-bash", "jj-diff/lang-fish", "jj-diff/lang-powershell", "jj-diff/lang-batch"]
+data = ["jj-diff/lang-fluent", "jj-diff/lang-json", "jj-diff/lang-toml", "jj-diff/lang-yaml", "jj-diff/lang-ini", "jj-diff/lang-xml", "jj-diff/lang-markdown"]
+systems = ["jj-diff/lang-c", "jj-diff/lang-cpp", "jj-diff/lang-csharp", "jj-diff/lang-go", "jj-diff/lang-zig"]
+jvm = ["jj-diff/lang-java", "jj-diff/lang-kotlin"]
+other = ["jj-diff/lang-ruby", "jj-diff/lang-php", "jj-diff/lang-nix", "jj-diff/lang-make", "jj-diff/lang-cmake", "jj-diff/lang-solidity", "jj-diff/lang-sql"]
+
+[dependencies]
+jayjay-i18n = { path = "../../../crates/jayjay-i18n" }
+jj-diff = { path = "../../../crates/jj-diff", default-features = false }
+jayjay-primitives = { path = "../../../crates/jayjay-primitives" }
+jayjay-review = { path = "../../../crates/jayjay-review", default-features = false }
+serde.workspace = true
+serde_json.workspace = true
+wasm-bindgen = "0.2.129"
+
+[lints]
+workspace = true

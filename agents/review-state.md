@@ -2,7 +2,7 @@
 
 Load this file before changing review marks, review notes, the review store, or the reconciliation pipeline. Crate boundaries live in [Architecture Guide](architecture.md).
 
-Review state (marks and notes) is persistent across app restarts, local to the user, and shared by every surface through one store file.
+Review state (marks and notes) is persistent across app restarts and local to the user. Every surface shares the canonical Rust model and JSON format; desktop surfaces use one store file, while the browser uses an IndexedDB adapter.
 
 ## Store
 
@@ -24,7 +24,7 @@ Review state (marks and notes) is persistent across app restarts, local to the u
 
 Notes attach reviewer feedback to diff lines — an anchor of side, line, excerpt, context, and the `ignore_whitespace` mode the diff was rendered with — and are consumed by agents through the CLI:
 
-- Reconciliation (`ReviewStore::reconcile`) runs against a `ReviewDiffProvider`. Repository-backed GUI and CLI use `jayjay-core`'s provider (`repo/review_notes.rs`), keeping identity, rename pairing, and LFS/image placeholder content consistent.
+- Reconciliation (`ReviewStore::reconcile`) runs against a `ReviewDiffProvider`. Repository-backed GUI and CLI use `jayjay-core`'s provider (`repo/review_notes.rs`), keeping identity, rename pairing, and LFS/image placeholder content consistent. The browser's validated text-bundle provider (`packages/review-web/wasm/src/bundle.rs`) implements the same trait and requires caller-supplied native review identities; it does not materialize repository objects or binary placeholders.
 - Anchor matching replays the exact GUI render pipeline: Histogram `compute_file_diff` with the note's recorded `ignore_whitespace`, then display lines, then `change_group_for_anchor`. If you change any stage of the diff pipeline, note anchors are part of its contract.
 - GUI anchors are built shell-side from the rendered line (side/line from the line's span style, excerpt/context from the display lines and change group) and stamped with the ignore-whitespace mode the diff was actually rendered with. `Repo::review_note_anchor`/`build_note_anchor` are the CLI add-note path only — they hardcode `ignore_whitespace = false`, so calling them from a GUI with the whitespace toggle on either errors or records a wrong-mode anchor that can reconcile stale in the very diff it was created from.
 
@@ -38,7 +38,7 @@ Notes attach reviewer feedback to diff lines — an anchor of side, line, excerp
 
 `notes(&store)` reconciles the change's notes against the inspected commit. `add_note(&mut store, &WorkingCopyReviewNote)` anchors with the same pipeline as reconciliation in the displayed whitespace mode and saves only if `@` is still the expected commit; `resolve_note` accepts only IDs belonging to the inspected change. Both write under the review-store lock and return errors on failed saves.
 
-Connected Control Room clients must link this Rust API and use the shared native store as authority.
+Connected Control Room clients must link this Rust API and use the shared native store as authority. The standalone browser PWA’s IndexedDB adapter remains an offline/local prototype; connected clients must route shared marks through the server rather than overwrite native state with a cached JSON document.
 
 ## Agent Workflow
 

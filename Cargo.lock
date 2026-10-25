@@ -4460,6 +4460,7 @@ dependencies = [
  "etcetera",
  "hex",
  "jayjay-i18n",
+ "js-sys",
  "serde",
  "serde_json",
  "sha2 0.11.1",
@@ -4647,6 +4648,19 @@ dependencies = [
  "tree-sitter-zig",
  "unicode-segmentation",
  "unicode-width",
+]
+
+[[package]]
+name = "jj-diff-web"
+version = "0.3.22"
+dependencies = [
+ "jayjay-i18n",
+ "jayjay-primitives",
+ "jayjay-review",
+ "jj-diff",
+ "serde",
+ "serde_json",
+ "wasm-bindgen",
 ]
 
 [[package]]
