@@ -107,11 +107,21 @@ final class SideBySideRenderingTests: XCTestCase {
         let diff = computeFileDiff(path: "sample.txt", oldContent: "\(long)\nnext\n", newContent: "short\nadded\nnext\n", ignoreWhitespace: false)
         let (_, left, right) = makeRenderer(diff)
         XCTAssertGreaterThan(right.textView.string.filter { $0 == "\n" }.count, 3)
-        let pasteboard = NSPasteboard(name: NSPasteboard.Name("DiffCopyTest-\(UUID().uuidString)"))
-        defer { pasteboard.releaseGlobally() }
+        let pasteboard = NSPasteboard.general
+        let saved = pasteboard.pasteboardItems?.map { item -> NSPasteboardItem in
+            let copy = NSPasteboardItem()
+            for type in item.types {
+                item.data(forType: type).map { copy.setData($0, forType: type) }
+            }
+            return copy
+        } ?? []
+        defer {
+            pasteboard.clearContents()
+            pasteboard.writeObjects(saved)
+        }
         func copied(_ pane: DiffTextContainerView) -> String? {
             pane.textView.selectAll(nil)
-            XCTAssertTrue(pane.textView.writeSelection(to: pasteboard, types: [.rtf, .string]))
+            pane.textView.copy(nil)
             let rtf = pasteboard.data(forType: .rtf).flatMap { NSAttributedString(rtf: $0, documentAttributes: nil) }
             XCTAssertEqual(rtf?.string, pasteboard.string(forType: .string))
             return pasteboard.string(forType: .string)
@@ -119,6 +129,8 @@ final class SideBySideRenderingTests: XCTestCase {
 
         XCTAssertEqual(copied(left), "\(long)\nnext\n")
         XCTAssertEqual(copied(right), "short\nadded\nnext\n")
+        right.textView.copyFont(nil)
+        XCTAssertNotNil(NSPasteboard(name: .font).data(forType: .font))
     }
 
     private func makeRenderer(_ diff: FileDiff) -> (SideBySideCoordinator, DiffTextContainerView, DiffTextContainerView) {

@@ -3,10 +3,13 @@ import AppKit
 final class DiffTextView: NSTextView {
     weak var findPartner: DiffTextView?
     var copyRows: [DiffCopyRow] = []
+    /// Copy requests the legacy names, which never equal the modern constants; Copy Style's font and ruler requests stay with super.
+    private static let textTypes: Set<NSPasteboard.PasteboardType> = [
+        .string, .rtf, .init("NSStringPboardType"), .init("NeXT Rich Text Format v1.0 pasteboard type")
+    ]
 
     override func writeSelection(to pboard: NSPasteboard, types: [NSPasteboard.PasteboardType]) -> Bool {
-        let written = types.filter { [.string, .rtf, .rtfd].contains($0) }
-        guard !copyRows.isEmpty, !written.isEmpty, let storage = textStorage else {
+        guard !copyRows.isEmpty, types.contains(where: Self.textTypes.contains), let storage = textStorage else {
             return super.writeSelection(to: pboard, types: types)
         }
         let text = NSMutableAttributedString()
@@ -16,15 +19,9 @@ final class DiffTextView: NSTextView {
             }
             text.append(storage.copyText(in: range.rangeValue, rows: copyRows))
         }
-        let whole = NSRange(location: 0, length: text.length)
-        pboard.declareTypes(written, owner: nil)
-        return written.allSatisfy { type in
-            switch type {
-                case .rtf: text.rtf(from: whole).map { pboard.setData($0, forType: type) } ?? false
-                case .rtfd: text.rtfd(from: whole).map { pboard.setData($0, forType: type) } ?? false
-                default: pboard.setString(text.string, forType: type)
-            }
-        }
+        pboard.declareTypes([.rtf, .string], owner: nil)
+        let rtf = text.rtf(from: NSRange(location: 0, length: text.length))
+        return rtf.map { pboard.setData($0, forType: .rtf) } == true && pboard.setString(text.string, forType: .string)
     }
 
     override func setFrameSize(_ newSize: NSSize) {
