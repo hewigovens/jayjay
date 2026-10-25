@@ -1,5 +1,5 @@
 use jayjay_primitives::ReviewFileDiff;
-use jayjay_primitives::{JayResult, NoteAnchor, NoteSide, ReviewDiffProvider};
+use jayjay_primitives::{JayError, JayResult, NoteAnchor, NoteSide, ReviewDiffProvider};
 use jj_diff::{ChangeGroup, DiffLine, DiffSide, DiffSpanStyle, change_group_for_anchor};
 
 use crate::replay::{diff_side, render_display_lines};
@@ -20,20 +20,47 @@ pub fn build_note_anchor(
         return Ok(None);
     };
     let file_diff = provider.review_file_diff(&hunk)?;
-    let lines = render_display_lines(path, &file_diff, false);
-    let Some((excerpt, group)) = changed_line_group(&lines, side, line) else {
-        return Ok(None);
-    };
-    Ok(Some(NoteAnchor {
+    Ok(note_anchor(
+        change_id,
+        path,
+        &hunk.review_identity,
+        &file_diff,
+        side,
+        line,
+        false,
+    ))
+}
+
+/// The anchor of a note on a changed line of `file_diff` as rendered in the given whitespace mode; `None` for any other line.
+pub fn note_anchor(
+    change_id: &str,
+    path: &str,
+    identity: &str,
+    file_diff: &ReviewFileDiff,
+    side: NoteSide,
+    line: u32,
+    ignore_whitespace: bool,
+) -> Option<NoteAnchor> {
+    let lines = render_display_lines(path, file_diff, ignore_whitespace);
+    let (excerpt, group) = changed_line_group(&lines, side, line)?;
+    Some(NoteAnchor {
         change_id: change_id.to_owned(),
         path: path.to_owned(),
-        identity: hunk.review_identity,
+        identity: identity.to_owned(),
         side,
         line,
         anchor_excerpt: excerpt,
         anchor_context: group.anchor_context,
-        ignore_whitespace: false,
-    }))
+        ignore_whitespace,
+    })
+}
+
+pub fn checked_note_body(body: &str) -> JayResult<&str> {
+    let body = body.trim();
+    if body.is_empty() || body.len() > 64 * 1024 {
+        return Err(JayError::review("A review note must contain 1–65536 bytes"));
+    }
+    Ok(body)
 }
 
 /// Index of the exact-whitespace display change group containing the changed line, or `None` when the line is not a changed line.

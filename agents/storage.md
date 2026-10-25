@@ -75,12 +75,12 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
 }
 ```
 
-- Same refresh-before-mutate and atomic temp-file/rename rules as the pin store. Malformed JSON is preserved as `review_store.json.corrupt`.
+- Every persistent review mutation takes an exclusive OS lock on the stable `review_store.json.lock` sidecar, reloads the latest state, stages the mutation, and atomically replaces the JSON before releasing the lock. Marks, ownership, notes, and clear operations share this boundary. A failed checked transaction leaves staged changes unpublished. Reads and refreshes never take the lock, since writers replace the JSON atomically; only preserving malformed JSON as `review_store.json.corrupt` does.
 - Unknown top-level fields, unknown note entries, and unknown fields inside parseable notes and review entries survive a save so mixed JayJay/CLI versions can share the store. Entries in the pre-tag `file_marked`/`hunks` shape migrate to file/hunk states on load; anything else unreadable and the obsolete `review_baselines` map are dropped.
 - One tagged review entry per `(change_id, path)`: a whole-file mark, snapshot-less hunk indices, or fingerprinted groups. Persist hashes and review state only — never whole-file contents.
 - `JAYJAY_REVIEW_STORE_PATH` overrides the path for tests.
 
-Neither JSON store is a synchronization service. The refresh-before-mutate contract prevents ordinary cross-process lost updates, but simultaneous writes are still last-rename-wins. Keep mutations short and route all writes through the Rust store.
+Review locking coordinates processes built with this crate; an older app that ignores the sidecar lock must be updated before running alongside another writer. Control Room uses `ReviewStore::try_load()` and checked transactions so storage errors reach its API. Legacy infallible UI methods retain their logging behavior on failure. Pins and recent revsets still use refresh-before-mutate without cross-process locking and remain last-rename-wins for simultaneous writes.
 
 ## Shell-local Preferences
 

@@ -41,6 +41,7 @@ mod transaction;
 mod undo;
 mod working_copy;
 mod working_copy_ignore;
+mod working_copy_review;
 mod workspace;
 mod workspace_path;
 mod write_lock;
@@ -71,6 +72,10 @@ pub use review_note_output::{
 pub use review_notes::ReviewNotesReport;
 pub use review_snapshot::{review_display_group_map_from_hunk, review_snapshot_from_hunk};
 pub use stacked_pr::branch_name_slug;
+pub use working_copy_review::{
+    WorkingCopyReview, WorkingCopyReviewFile, WorkingCopyReviewMark, WorkingCopyReviewNote,
+    WorkingCopyReviewStatus,
+};
 pub use workspace_path::{
     enclosing_workspace_root, is_valid_workspace_name, workspace_primary_root, workspace_root,
 };

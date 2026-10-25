@@ -8,7 +8,7 @@ pub mod store;
 #[cfg(any(test, feature = "test-util"))]
 pub mod test_util;
 
-pub use anchor::{build_note_anchor, change_group_index};
+pub use anchor::{build_note_anchor, change_group_index, checked_note_body, note_anchor};
 pub use file_state::display_group_states;
 pub use jayjay_primitives::{
     HunkType, JayError, JayResult, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
