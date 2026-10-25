@@ -53,6 +53,9 @@ where
             log::error!("failed to save config: {err}");
         }
         fonts::sync_from_config(&next);
+        if next.language != store.config.language {
+            jayjay_i18n::set_preferred_languages(&next.preferred_languages());
+        }
         store.config = Arc::new(next);
     });
     theme::refresh_for_current_appearance(cx);

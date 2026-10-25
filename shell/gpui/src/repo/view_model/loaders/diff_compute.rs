@@ -142,15 +142,17 @@ pub(super) fn diff_cache_key(
     hunk: &DiffHunk,
     projection_mode: Option<DiffProjectionMode>,
     ignore_whitespace: bool,
+    language: Option<&str>,
 ) -> String {
     format!(
-        "{}\0{}\0{}\0{}\0{}\0{}",
+        "{}\0{}\0{}\0{}\0{}\0{}\0{}",
         compare_from_rev.unwrap_or(""),
         rev,
         hunk.path,
         hunk.review_identity,
         projection::cache_identity(hunk.projection.as_ref(), projection_mode),
-        ignore_whitespace
+        ignore_whitespace,
+        language.unwrap_or("")
     )
 }
 

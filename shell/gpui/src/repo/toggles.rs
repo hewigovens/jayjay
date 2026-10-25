@@ -17,12 +17,17 @@ impl RepoViewModel {
         cx.notify();
     }
 
-    pub(crate) fn sync_ignore_whitespace(&mut self, cx: &mut Context<Self>) {
-        let ignore_whitespace = config::current(cx).diff.ignore_whitespace;
-        if self.ignore_whitespace == ignore_whitespace {
+    /// Loaded diffs carry localized separator text, so a language change reloads them too.
+    pub(crate) fn sync_diff_settings(&mut self, cx: &mut Context<Self>) {
+        let cfg = config::current(cx);
+        if self.ignore_whitespace == cfg.diff.ignore_whitespace && self.language == cfg.language {
             return;
         }
-        self.ignore_whitespace = ignore_whitespace;
+        self.ignore_whitespace = cfg.diff.ignore_whitespace;
+        if self.language != cfg.language {
+            self.language = cfg.language.clone();
+            self.clear_diff_cache_state();
+        }
         if self.compare.is_none()
             && let Some(rev) = self.selected_revision()
         {

@@ -7,6 +7,7 @@ use jayjay_i18n::settings;
 
 use super::SettingsView;
 use super::diff_palette::diff_palette_section;
+use super::dropdown::dropdown_button;
 use super::shared::{ROW_FONT_SIZE, field_row, form_group};
 use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
@@ -32,8 +33,26 @@ pub(super) fn appearance_section(
             )],
             t,
         ))
+        .child(form_group(
+            [field_row(
+                glyph::GLOBE,
+                settings::language(),
+                dropdown_button("language", language_label(cfg), t, cx),
+                t,
+            )],
+            t,
+        ))
         .child(diff_palette_section(view, cfg, t, cx))
         .into_any_element()
+}
+
+fn language_label(cfg: &AppConfig) -> String {
+    cfg.language
+        .as_deref()
+        .and_then(|tag| jayjay_i18n::Language::all().find(|language| language.tag == tag))
+        .map_or_else(settings::language_system, |language| {
+            language.name.to_owned()
+        })
 }
 
 fn appearance_segmented(current: AppearanceMode, t: &Theme) -> AnyElement {

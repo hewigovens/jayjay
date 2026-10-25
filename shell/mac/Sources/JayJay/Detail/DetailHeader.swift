@@ -271,7 +271,7 @@ extension ChangeDetailView {
     }
 
     func formatTimestamp(_ millis: Int64) -> String {
-        Date(timeIntervalSince1970: Double(millis) / 1000.0).formatted(.dateTime.year().month().day().hour().minute())
+        Date(timeIntervalSince1970: Double(millis) / 1000.0).formatted(.dateTime.year().month().day().hour().minute().locale(Localized.locale))
     }
 
     func conflictBar(hunk: DiffHunk) -> some View {

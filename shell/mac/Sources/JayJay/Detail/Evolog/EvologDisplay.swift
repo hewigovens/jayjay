@@ -6,6 +6,7 @@ enum EvologDisplay {
     static func timestamp(_ millis: Int64) -> String {
         let date = Date(timeIntervalSince1970: Double(millis) / 1000)
         let formatter = RelativeDateTimeFormatter()
+        formatter.locale = Localized.locale
         formatter.unitsStyle = .abbreviated
         return formatter.localizedString(for: date, relativeTo: Date())
     }

@@ -34,6 +34,7 @@ impl RepoViewModel {
             &hunk,
             projection_mode,
             self.ignore_whitespace,
+            self.language.as_deref(),
         );
         self.diff_cache.load_failures.remove(&cache_key);
         if let Some(cached) = self.diff_cache.loaded.get(&cache_key).cloned() {
@@ -173,6 +174,7 @@ impl RepoViewModel {
         };
         let generation = self.loading.change_gen;
         let ignore_whitespace = self.ignore_whitespace;
+        let language = self.language.clone();
         let reviewable = self.shows_review_controls();
         let pending: Vec<_> = hunks
             .iter()
@@ -181,7 +183,14 @@ impl RepoViewModel {
             .map(|(_, hunk)| {
                 let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
                 (
-                    diff_cache_key(None, &rev, hunk, projection_mode, ignore_whitespace),
+                    diff_cache_key(
+                        None,
+                        &rev,
+                        hunk,
+                        projection_mode,
+                        ignore_whitespace,
+                        language.as_deref(),
+                    ),
                     hunk.clone(),
                     projection_mode,
                 )
@@ -255,7 +264,14 @@ impl RepoViewModel {
             return DiffLoadState::Missing;
         };
         let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
-        let key = diff_cache_key(None, &rev, hunk, projection_mode, self.ignore_whitespace);
+        let key = diff_cache_key(
+            None,
+            &rev,
+            hunk,
+            projection_mode,
+            self.ignore_whitespace,
+            self.language.as_deref(),
+        );
         if let Some(loaded) = self.diff_cache.loaded.get(&key) {
             DiffLoadState::Loaded(loaded.clone())
         } else if self.diff_cache.load_failures.contains(&key) {

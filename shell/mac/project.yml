@@ -92,6 +92,9 @@ targets:
               - jayjay
         CFBundleHelpBookFolder: JayJay.help
         CFBundleHelpBookName: JayJay Manual
+        CFBundleLocalizations:
+          - en
+          - ja
         NSDockTilePlugIn: JayJayDockTilePlugin.docktileplugin
         SUFeedURL: https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml
         SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=

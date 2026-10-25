@@ -16,6 +16,8 @@ final class AppSettings {
         static let codeLineSpacing = "jayjay.codeLineSpacing"
         static let codeLigatures = "jayjay.codeLigatures"
         static let appearanceMode = "jayjay.appearanceMode"
+        static let language = "jayjay.language"
+        static let appleLanguages = "AppleLanguages"
         static let diffPaletteLight = "jayjay.diffPaletteLight"
         static let diffPaletteDark = "jayjay.diffPaletteDark"
 
@@ -123,6 +125,19 @@ final class AppSettings {
             appearanceMode.rawValue,
             forKey: StorageKeys.appearanceMode
         ) }
+    }
+
+    var language: String? {
+        didSet {
+            defaults.set(language, forKey: StorageKeys.language)
+            // AppKit reads AppleLanguages only at launch, so its own menus and panels follow on the next one.
+            if let language {
+                defaults.set([language], forKey: StorageKeys.appleLanguages)
+            } else {
+                defaults.removeObject(forKey: StorageKeys.appleLanguages)
+            }
+            Localized.setLanguage(language)
+        }
     }
 
     // MARK: - Diff
@@ -311,6 +326,9 @@ final class AppSettings {
             .clamped(to: Self.lineSpacingRange)
         codeLigatures = defaults.object(forKey: StorageKeys.codeLigatures) as? Bool ?? true
         appearanceMode = AppearanceMode(rawValue: defaults.string(forKey: StorageKeys.appearanceMode) ?? "") ?? .system
+        language = defaults.string(forKey: StorageKeys.language).flatMap { tag in
+            availableLanguages().contains { $0.tag == tag } ? tag : nil
+        }
         let lightPaletteId = defaults.string(forKey: StorageKeys.diffPaletteLight) ?? Self.defaultLightDiffPaletteId
         let darkPaletteId = defaults.string(forKey: StorageKeys.diffPaletteDark) ?? Self.defaultDarkDiffPaletteId
         diffPaletteLight = lightPaletteId
@@ -352,32 +370,6 @@ final class AppSettings {
         ratingPromptNextCount = max(defaults.integer(forKey: StorageKeys.ratingPromptNextCount), 5)
         sendsAnonymousStats = defaults.object(forKey: Self.sendsAnonymousStatsKey) as? Bool ?? true
         updateChannel = parseUpdateChannel(value: defaults.string(forKey: Self.updateChannelKey) ?? "")
-    }
-
-    // MARK: - Repo helpers
-
-    func recordOpenedRepo(_ path: String) {
-        lastOpenedRepo = addRecentRepo(path)
-    }
-
-    @discardableResult
-    func addRecentRepo(_ path: String) -> String {
-        let standardizedPath = Self.standardizedRepositoryPath(path)
-        recentRepos.removeAll(where: { $0 == standardizedPath })
-        recentRepos.insert(standardizedPath, at: 0)
-        recentRepos = Array(recentRepos.prefix(12))
-        return standardizedPath
-    }
-
-    func removeRecentRepo(_ path: String) {
-        recentRepos.removeAll(where: { $0 == path })
-        if lastOpenedRepo == path {
-            lastOpenedRepo = recentRepos.first
-        }
-    }
-
-    private static func standardizedRepositoryPath(_ path: String) -> String {
-        URL(fileURLWithPath: path).standardizedFileURL.path
     }
 }
 

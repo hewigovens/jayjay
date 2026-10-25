@@ -12,6 +12,8 @@ use super::{
 #[serde(default)]
 pub struct AppConfig {
     pub appearance: AppearanceMode,
+    #[serde(skip_serializing_if = "Option::is_none")]
+    pub(crate) language: Option<String>,
     pub interface_font_family: String,
     /// Missing only in configs saved before the split, where one size drove interface text too; `parse` seeds it from the code size.
     #[serde(default)]
@@ -39,6 +41,7 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             appearance: AppearanceMode::System,
+            language: None,
             interface_font_family: String::new(),
             interface_font_size: Some(AppConfig::DEFAULT_FONT_SIZE),
             code_font_family: String::new(),
@@ -72,6 +75,13 @@ impl AppConfig {
     pub(crate) const DEFAULT_FONT_SIZE: f32 = 12.;
     pub(crate) const MIN_LINE_SPACING: f32 = 1.;
     pub(crate) const MAX_LINE_SPACING: f32 = 2.;
+
+    pub(crate) fn preferred_languages(&self) -> Vec<String> {
+        match &self.language {
+            Some(tag) => vec![tag.clone()],
+            None => sys_locale::get_locales().collect(),
+        }
+    }
 
     pub fn interface_font_size(&self) -> f32 {
         self.interface_font_size.unwrap_or(self.code_font_size)

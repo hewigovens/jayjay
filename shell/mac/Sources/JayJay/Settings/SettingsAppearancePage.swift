@@ -20,6 +20,22 @@ struct SettingsAppearancePage: View {
                 .pickerStyle(.segmented)
             }
 
+            Section {
+                Picker(selection: Binding(
+                    get: { settings.language },
+                    set: { settings.language = $0 }
+                )) {
+                    Text(Localized.Settings.languageSystem).tag(String?.none)
+                    ForEach(availableLanguages(), id: \.tag) { language in
+                        Text(language.name).tag(Optional(language.tag))
+                    }
+                } label: {
+                    SettingsLabel(Localized.Settings.language, icon: "globe")
+                }
+            } footer: {
+                Text(Localized.Settings.languageDetail)
+            }
+
             DiffPaletteSection()
         }
         .formStyle(.grouped)

@@ -60,6 +60,7 @@ OCTICON = {
     "GEAR": "gear",
     "GIT_BRANCH": "git-branch",
     "GIT_MERGE": "git-merge",
+    "GLOBE": "globe",
     "HISTORY": "history",
     "INFO": "info",
     "LIST": "list-unordered",

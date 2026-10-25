@@ -35,6 +35,7 @@ pub struct RepoViewModel {
     pub current_operation_description: String,
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
+    pub(crate) language: Option<String>,
     pub revset_filter: RevsetFilterState,
     pub(crate) default_revset: RevsetPreset,
     pub can_load_more: bool,
@@ -107,7 +108,7 @@ impl RepoViewModel {
         })
     }
 
-    pub(super) fn clear_diff_cache_state(&mut self) {
+    pub(crate) fn clear_diff_cache_state(&mut self) {
         self.diff_cache.loaded.clear();
         self.diff_cache.preloads_in_flight.clear();
         self.diff_cache.load_failures.clear();

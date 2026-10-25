@@ -47,7 +47,7 @@ impl Localizer {
             .collect();
         let available: Vec<LanguageIdentifier> = LOCALES
             .iter()
-            .map(|(locale, _)| locale.parse().unwrap())
+            .map(|(language, _)| language.tag.parse().unwrap())
             .collect();
         Self {
             bundles: chosen_locales(&requested, &available)
@@ -111,7 +111,10 @@ fn bundle(locale: &str, catalog: &str) -> FluentBundle<FluentResource> {
     bundle.set_use_isolating(false);
     bundle.set_formatter(Some(format_number));
     bundle.add_builtins().unwrap();
-    let (_, sources) = LOCALES.iter().find(|(name, _)| *name == catalog).unwrap();
+    let (_, sources) = LOCALES
+        .iter()
+        .find(|(language, _)| language.tag == catalog)
+        .unwrap();
     for source in *sources {
         let resource = FluentResource::try_new((*source).to_owned()).unwrap();
         bundle.add_resource(resource).unwrap();
@@ -156,6 +159,10 @@ mod tests {
         assert_eq!(
             Localizer::negotiate(&["en-US"]).format("missing-id", None),
             "missing-id"
+        );
+        assert_eq!(
+            Localizer::negotiate(&["ja-JP"]).format("common-cancel", None),
+            "キャンセル"
         );
     }
 

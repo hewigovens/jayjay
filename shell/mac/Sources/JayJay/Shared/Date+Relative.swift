@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 
 extension Date {
     private static let relativeFormatter = RelativeDateTimeFormatter()
@@ -7,6 +8,7 @@ extension Date {
     static func relativeLabel(millis: Int64) -> String {
         let date = Date(timeIntervalSince1970: Double(millis) / 1000)
         let now = Date()
+        relativeFormatter.locale = Localized.locale
         return relativeFormatter.localizedString(for: min(date, now.addingTimeInterval(-60)), relativeTo: now)
     }
 }
