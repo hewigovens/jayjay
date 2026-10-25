@@ -52,8 +52,7 @@ final class DiffStore {
         ignoreWhitespace: Bool = false,
         projectionMode: DiffProjectionMode? = nil
     ) async -> CachedDiff? {
-        guard !hunk.isSubmodulePlaceholder else { return nil }
-        guard !hunk.isContentFreeRenameOrCopy else { return nil }
+        guard !hunk.isSubmodulePlaceholder, !hunk.isContentFreeRenameOrCopy else { return nil }
         let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
             ignoreWhitespace: ignoreWhitespace, path: hunk.path,
@@ -72,8 +71,7 @@ final class DiffStore {
         ignoreWhitespace: Bool = false,
         projectionMode: DiffProjectionMode? = nil
     ) async -> CachedDiff? {
-        guard let repo else { return nil }
-        guard !hunk.isSubmodulePlaceholder else { return nil }
+        guard let repo, !hunk.isSubmodulePlaceholder else { return nil }
         // A byte-identical rename has no content to load; loading by the new path alone would render every line as added.
         guard !hunk.isContentFreeRenameOrCopy else { return nil }
 
@@ -163,7 +161,7 @@ final class DiffStore {
     nonisolated static func key(_ parts: CacheKeyParts) -> String {
         let base = (parts.commitId?.isEmpty == false ? parts.commitId : parts.rev) ?? ""
         let identity = parts.compareFromRev.map { "\($0)→\(base)" } ?? base
-        return "\(identity)|\(parts.ignoreWhitespace ? "iw" : "")|\(parts.projectionKey)|\(parts.path)"
+        return "\(identity)|\(parts.ignoreWhitespace ? "iw" : "")|\(parts.projectionKey)|\(Localized.locale.identifier)|\(parts.path)"
     }
 
     nonisolated static func shouldLoadFileContent(

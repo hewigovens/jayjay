@@ -55,7 +55,7 @@ struct DiffSection: View {
         .onChange(of: diffCommands?.expandAllContextRequest) { _, _ in
             expandAllContext()
         }
-        .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(projectionModeKey)") {
+        .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(settings.language ?? "")|\(projectionModeKey)") {
             await computeDiffAsync()
         }
         .environment(\.diffTypography, typography.diffTypography)

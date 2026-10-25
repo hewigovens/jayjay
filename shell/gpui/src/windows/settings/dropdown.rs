@@ -21,6 +21,7 @@ pub(super) struct OpenDropdown {
 }
 
 const MENU_MARGIN: f32 = 6.;
+const SYSTEM_LANGUAGE: &str = "system";
 
 pub(super) fn dropdown_overlay(
     state: OpenDropdown,
@@ -160,10 +161,25 @@ fn dropdown_options(field_id: &str, fonts: Option<&FontCatalog>) -> Vec<Dropdown
                 (settings::other_monospaced(), fonts.code.other.clone()),
             ],
         ),
+        ("language", _) => language_options(),
         ("diff-light-palette", _) => diff_palette_options(false),
         ("diff-dark-palette", _) => diff_palette_options(true),
         _ => Vec::new(),
     }
+}
+
+fn language_options() -> Vec<DropdownOption> {
+    let system = DropdownOption {
+        id: SYSTEM_LANGUAGE.to_owned(),
+        label: settings::language_system(),
+        group: None,
+    };
+    let languages = jayjay_i18n::Language::all().map(|language| DropdownOption {
+        id: language.tag.to_owned(),
+        label: language.name.to_owned(),
+        group: None,
+    });
+    std::iter::once(system).chain(languages).collect()
 }
 
 fn diff_palette_options(is_dark: bool) -> Vec<DropdownOption> {
@@ -208,6 +224,11 @@ fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Opti
             cfg.interface_font_family.clone()
         }),
         "code-font-family" => Some(fonts::mono_preference_id(&cfg.code_font_family)),
+        "language" => Some(
+            cfg.language
+                .clone()
+                .unwrap_or_else(|| SYSTEM_LANGUAGE.to_owned()),
+        ),
         "diff-light-palette" => Some(cfg.diff.palette.resolve(false).id),
         "diff-dark-palette" => Some(cfg.diff.palette.resolve(true).id),
         _ => None,
@@ -279,6 +300,7 @@ fn dropdown_row(
                         };
                     }
                     "code-font-family" => c.code_font_family = value.clone(),
+                    "language" => c.language = (value != SYSTEM_LANGUAGE).then(|| value.clone()),
                     "diff-light-palette" => c.diff.palette.light = value.clone(),
                     "diff-dark-palette" => c.diff.palette.dark = value.clone(),
                     _ => {}

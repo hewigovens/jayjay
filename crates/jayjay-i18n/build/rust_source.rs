@@ -6,7 +6,7 @@ use crate::identifier::snake;
 
 pub(crate) fn render(source: &[Catalog], locales: &[Locale]) -> String {
     let mut out = format!(
-        "pub(crate) const SOURCE_LOCALE: &str = {SOURCE_LOCALE:?};\npub(crate) const LOCALES: &[(&str, &[&str])] = &[\n"
+        "pub(crate) const SOURCE_LOCALE: &str = {SOURCE_LOCALE:?};\npub(crate) const LOCALES: &[(crate::Language, &[&str])] = &[\n"
     );
     for locale in locales {
         let files: Vec<String> = locale
@@ -14,7 +14,14 @@ pub(crate) fn render(source: &[Catalog], locales: &[Locale]) -> String {
             .iter()
             .map(|p| format!("include_str!({:?})", p.display().to_string()))
             .collect();
-        writeln!(out, "    ({:?}, &[{}]),", locale.name, files.join(", ")).unwrap();
+        writeln!(
+            out,
+            "    (crate::Language {{ tag: {:?}, name: {:?} }}, &[{}]),",
+            locale.name,
+            locale.native_name,
+            files.join(", ")
+        )
+        .unwrap();
     }
     out.push_str("];\n");
     for catalog in source {

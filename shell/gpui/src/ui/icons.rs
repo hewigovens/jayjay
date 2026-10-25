@@ -109,6 +109,7 @@ pub mod glyph {
     pub const GEAR: &str = "\u{eaf8}";
     pub const GIT_BRANCH: &str = "\u{ea68}";
     pub const GIT_MERGE: &str = "\u{eafe}";
+    pub const GLOBE: &str = "\u{eb01}";
     pub const HISTORY: &str = "\u{eb37}";
     pub const INFO: &str = "\u{ea74}";
     pub const LIGATURE: &str = "\u{eb7e}";

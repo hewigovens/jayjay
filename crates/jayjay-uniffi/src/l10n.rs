@@ -8,6 +8,22 @@ pub enum LocalizedArgument {
     Number { value: i64 },
 }
 
+#[derive(uniffi::Record)]
+pub struct Language {
+    pub tag: String,
+    pub name: String,
+}
+
+#[uniffi::export]
+fn available_languages() -> Vec<Language> {
+    jayjay_i18n::Language::all()
+        .map(|language| Language {
+            tag: language.tag.to_owned(),
+            name: language.name.to_owned(),
+        })
+        .collect()
+}
+
 #[uniffi::export]
 fn set_preferred_languages(languages: Vec<String>) {
     jayjay_i18n::set_preferred_languages(&languages);

@@ -24,7 +24,7 @@ pub(crate) fn render(source: &[Catalog]) -> String {
                 values.push(format!("{:?}: {value}", arg.name));
             }
             let call = format!(
-                "localizedMessage(id: {:?}, args: [{}])",
+                "Localized.message(id: {:?}, args: [{}])",
                 message.id,
                 if values.is_empty() {
                     ":".to_owned()

@@ -16,10 +16,10 @@ const SETI_FONT: &[u8] = include_bytes!("../../../../assets/fonts/Seti.ttf");
 pub(crate) fn run(launch: GuiLaunch) {
     let launched_at = Instant::now();
     jayjay_core::LogFile::install("gpui", env!("CARGO_PKG_VERSION"));
-    jayjay_i18n::set_preferred_languages(&sys_locale::get_locales().collect::<Vec<_>>());
+    let cfg = AppConfig::load();
+    jayjay_i18n::set_preferred_languages(&cfg.preferred_languages());
     jayjay_i18n::set_number_locale(&crate::platform::numeric_locale());
     super::cli_install::repair_broken_link();
-    let cfg = AppConfig::load();
     let app = gpui_platform::application().with_assets(GpuiAssets);
     app.run(move |cx: &mut App| {
         log::info!("platform ready at {}ms", launched_at.elapsed().as_millis());

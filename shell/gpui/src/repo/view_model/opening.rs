@@ -164,6 +164,7 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
+            language: None,
             can_load_more: default_revset_depth(&revset_filter.revset)
                 .is_some_and(|depth| changes.len() >= depth as usize),
             revset_filter,
@@ -215,6 +216,7 @@ impl RepoViewModel {
             current_operation_description: String::new(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
+            language: None,
             revset_filter: RevsetFilterState::new(&default_revset_preset().revset),
             default_revset: default_revset_preset(),
             can_load_more: false,
@@ -244,8 +246,8 @@ impl RepoViewModel {
     }
 
     pub fn boot(&mut self, cx: &mut Context<Self>) {
-        self.sync_ignore_whitespace(cx);
-        cx.observe_global::<config::AppConfigStore>(|vm, cx| vm.sync_ignore_whitespace(cx))
+        self.sync_diff_settings(cx);
+        cx.observe_global::<config::AppConfigStore>(|vm, cx| vm.sync_diff_settings(cx))
             .detach();
         cx.on_app_quit(|vm, _| {
             vm.stop_bisect_for_shutdown();

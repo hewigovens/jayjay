@@ -2,7 +2,7 @@ use std::fs;
 use std::path::{Path, PathBuf};
 
 use fluent_bundle::{FluentBundle, FluentResource};
-use fluent_syntax::ast::Entry;
+use fluent_syntax::ast::{Entry, PatternElement};
 
 use crate::SOURCE_LOCALE;
 use crate::identifier::Identifier;
@@ -17,6 +17,7 @@ pub(crate) struct Catalog {
 
 pub(crate) struct Locale {
     pub(crate) name: String,
+    pub(crate) native_name: String,
     pub(crate) paths: Vec<PathBuf>,
 }
 
@@ -91,9 +92,35 @@ impl Locale {
                 .add_resource(&catalog.resource)
                 .unwrap_or_else(|errors| panic!("{}: {errors:?}", catalog.path.display()));
         }
+        let native_name = native_name(&name, catalogs);
         let paths = catalogs.iter().map(|c| c.path.clone()).collect();
-        Self { name, paths }
+        Self {
+            name,
+            native_name,
+            paths,
+        }
     }
+}
+
+fn native_name(locale: &str, catalogs: &[Catalog]) -> String {
+    let term = catalogs
+        .iter()
+        .flat_map(|c| c.resource.entries())
+        .find_map(|entry| match entry {
+            Entry::Term(term) if term.id.name == "language-name" => Some(term),
+            _ => None,
+        })
+        .unwrap_or_else(|| panic!("locales/{locale} needs a `-language-name` term"));
+    term.value
+        .elements
+        .iter()
+        .map(|element| match element {
+            PatternElement::TextElement { value } => *value,
+            PatternElement::Placeable { .. } => {
+                panic!("locales/{locale}: `-language-name` must be plain text")
+            }
+        })
+        .collect()
 }
 
 pub(crate) fn sorted_entries(dir: &Path) -> Vec<PathBuf> {
