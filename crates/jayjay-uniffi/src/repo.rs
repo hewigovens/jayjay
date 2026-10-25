@@ -152,7 +152,7 @@ fn revset_suggestions(
 
 #[uniffi::export]
 fn revset_presets() -> Vec<RevsetPreset> {
-    jayjay_core::revset_presets().to_vec()
+    jayjay_core::revset_presets()
 }
 
 #[uniffi::export]

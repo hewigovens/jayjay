@@ -1,5 +1,3 @@
-use std::sync::LazyLock;
-
 use super::default::DEFAULT_REVSET;
 
 #[derive(Clone, Debug, Eq, PartialEq)]
@@ -9,8 +7,8 @@ pub struct RevsetPreset {
     pub revset: String,
 }
 
-static REVSET_PRESETS: LazyLock<[RevsetPreset; 7]> = LazyLock::new(|| {
-    [
+pub fn revset_presets() -> Vec<RevsetPreset> {
+    vec![
         RevsetPreset {
             id: "all".to_owned(),
             label: jayjay_i18n::repo::preset_all(),
@@ -47,10 +45,6 @@ static REVSET_PRESETS: LazyLock<[RevsetPreset; 7]> = LazyLock::new(|| {
             revset: "heads(all())".to_owned(),
         },
     ]
-});
-
-pub fn revset_presets() -> &'static [RevsetPreset] {
-    REVSET_PRESETS.as_slice()
 }
 
 pub fn default_revset_preset() -> RevsetPreset {

@@ -9,7 +9,7 @@ pub fn typed_revset(
 ) -> String {
     let text = text.trim();
     let preset = std::iter::once(default_revset.clone())
-        .chain(revset_presets().iter().cloned())
+        .chain(revset_presets())
         .find(|preset| {
             preset.id.eq_ignore_ascii_case(text) || preset.label.eq_ignore_ascii_case(text)
         });

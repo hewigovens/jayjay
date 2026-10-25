@@ -216,7 +216,7 @@ fn chips(
     t: &Theme,
     view: &Entity<RepoWindow>,
 ) -> AnyElement {
-    let presets = std::iter::once(default_revset.clone()).chain(revset_presets().iter().cloned());
+    let presets = std::iter::once(default_revset.clone()).chain(revset_presets());
     div()
         .flex()
         .flex_row()

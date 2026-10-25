@@ -5,12 +5,9 @@ struct DiffPaletteSection: View {
     @Environment(AppSettings.self) private var settings
     @State private var previewScheme: ColorScheme?
 
-    private static let lightPalettes = diffPalettes().filter { !$0.isDark }
-    private static let darkPalettes = diffPalettes().filter(\.isDark)
-
     private func palettePicker(for scheme: ColorScheme) -> some View {
         let isDark = scheme == .dark
-        let palettes = isDark ? Self.darkPalettes : Self.lightPalettes
+        let palettes = diffPalettes().filter { $0.isDark == isDark }
         let keyPath: ReferenceWritableKeyPath<AppSettings, String> = isDark ? \.diffPaletteDark : \.diffPaletteLight
         let selection = Binding(
             get: { isDark ? settings.darkDiffPalette.id : settings.lightDiffPalette.id },

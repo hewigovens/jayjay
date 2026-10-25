@@ -23,7 +23,7 @@ impl RevsetFilter {
             return Self::named(RevsetFilterKind::Default, &jayjay_i18n::repo::revset());
         }
         if let Some(preset) = revset_presets()
-            .iter()
+            .into_iter()
             .find(|preset| preset.revset == revset)
         {
             return Self::named(RevsetFilterKind::Preset, &preset.label);
