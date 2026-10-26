@@ -11,7 +11,7 @@ repository = "https://github.com/hewigovens/jayjay"
 
 [workspace.dependencies]
 async-trait = "0.1"
-hotpath = { version = "0.28.4", default-features = false }
+hotpath = { version = "0.29.0", default-features = false }
 jj-lib = { version = "0.46.0", default-features = false }
 gix = { version = "0.88.0", default-features = false }
 gix-url = "0.39.0"
