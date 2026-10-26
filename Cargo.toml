@@ -54,7 +54,7 @@ rand = "0.10"
 shell-words = "1.1.1"
 url = "2"
 fluent-bundle = "0.16"
-fluent-langneg = "0.13"
+fluent-langneg = "0.14"
 fluent-syntax = "0.12"
 fluent-pseudo = "0.3"
 icu_decimal = { version = "2.3", features = ["alloc"] }
