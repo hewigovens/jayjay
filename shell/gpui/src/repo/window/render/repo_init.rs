@@ -46,11 +46,11 @@ pub(super) fn repo_init_error_pane(
             )
         } else if let Some(root) = enclosing_git.filter(|_| needs_setup) {
             (
-            glyph::INFO,
-            t.fg_dim,
-            jayjay_i18n::repo::inside_git_repository(),
-            jayjay_i18n::repo::open_git_root_or_initialize(&root.display().to_string()).into(),
-        )
+                glyph::INFO,
+                t.fg_dim,
+                jayjay_i18n::repo::inside_git_repository(),
+                jayjay_i18n::repo::open_git_root_or_initialize(&root.display().to_string()).into(),
+            )
         } else if !path.is_dir() {
             (
                 glyph::WARNING,

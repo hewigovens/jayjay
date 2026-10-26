@@ -68,10 +68,7 @@ enum HelpBook {
     }
 
     private static func openSystemHelp(anchor: String) -> Bool {
-        guard let relativePath = pageByAnchor[anchor] else {
-            return false
-        }
-        guard let helpBookURL = Bundle.main.url(forResource: "JayJay", withExtension: "help") else {
+        guard let relativePath = pageByAnchor[anchor], let helpBookURL = Bundle.main.url(forResource: "JayJay", withExtension: "help") else {
             return false
         }
 
