@@ -9,6 +9,7 @@ enum AppWindows {
     static let about = "about-window"
     static let shortcuts = "shortcuts-window"
     static let overview = "overview-window"
+    static let openRemoteRepository = "open-remote-repository-window"
     static let cloneRepository = "clone-repository-window"
     static let fileHistory = "file-history-window"
 }

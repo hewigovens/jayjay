@@ -159,13 +159,13 @@ extension DiffSection {
 
     /// Rooted at the repo checkout, not the file's directory, so parent-relative asset references stay resolvable and contained; the failable init rejects hunk paths that escape the root.
     private var markdownPreviewLocation: RepoPreviewLocation? {
-        guard canRenderMarkdownFilePreview, let repoPath = repo?.path() else { return nil }
+        guard canRenderMarkdownFilePreview, let repoPath = repo?.path(), !repoPath.isSSHLocation else { return nil }
         return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
     }
 
     /// Loads the real working-copy file through the scheme handler, not diff content; canOpenHTMLExternally already verified the file exists inside the repo.
     private var htmlPreviewLocation: RepoPreviewLocation? {
-        guard canOpenHTMLExternally, let repoPath = repo?.path() else { return nil }
+        guard canOpenHTMLExternally, let repoPath = repo?.path(), !repoPath.isSSHLocation else { return nil }
         return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
     }
 

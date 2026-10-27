@@ -157,6 +157,7 @@ struct RepoContentView: View {
                     .background(paneBackground)
                 }
             )
+            .disabled(!viewModel.sshConnected)
             Divider()
             statusBar
         }

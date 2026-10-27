@@ -1,6 +1,14 @@
 import Foundation
 
 enum AID {
+    enum OpenRemoteRepository {
+        static let machine = "openRemoteRepository.machine"
+        static let connect = "openRemoteRepository.connect"
+        static let path = "openRemoteRepository.path"
+        static let folders = "openRemoteRepository.folders"
+        static let open = "openRemoteRepository.open"
+    }
+
     enum Palette {
         static let textField = "commandPalette.searchField"
 

@@ -164,6 +164,11 @@ extension RepoContentView {
             icon: "list.bullet.rectangle",
             category: Localized.Menu.repository
         ) { windowManager.showRepoList() })
+        items.append(CommandPaletteItem(
+            title: Localized.Ssh.openRemoteRepositoryEllipsis,
+            icon: "network",
+            category: Localized.Menu.repository
+        ) { windowManager.openRemoteRepository() })
         return items
     }
 

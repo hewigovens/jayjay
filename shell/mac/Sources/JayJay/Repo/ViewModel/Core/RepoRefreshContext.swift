@@ -8,23 +8,27 @@ struct RepoRefreshContext {
     let trunkName: String
     let prHostName: String?
     let fixUnavailableReason: String?
+    let bisectState: BisectState?
     let statusBar: StatusBarSnapshot
 
     init(repo: JayJayRepo) throws {
-        bookmarks = try repo.listBookmarks()
-        tags = try repo.listTags()
-        revsetVocabulary = repo.revsetVocabulary(bookmarks: bookmarks)
-        workspaces = try? repo.workspaceList()
-        trunkName = repo.trunkName()
-        prHostName = repo.prHostName()
-        fixUnavailableReason = repo.fixUnavailableReason()
-        statusBar = StatusBarSnapshot.load(from: repo)
+        let context = try repo.repositoryContext()
+        bisectState = context.bisectState
+        bookmarks = context.bookmarks
+        tags = context.tags
+        revsetVocabulary = context.vocabulary
+        workspaces = context.workspaces
+        trunkName = context.trunkName
+        prHostName = context.prHostName
+        fixUnavailableReason = context.fixUnavailableReason
+        statusBar = StatusBarSnapshot(workingCopyStats: context.workingCopyStats, currentOperationDescription: context.operation)
     }
 }
 
+@MainActor
 extension RepoViewModel {
-    @MainActor
     func apply(_ context: RepoRefreshContext) {
+        bisect.state = context.bisectState
         bookmarks = context.bookmarks
         tags = context.tags
         revsetVocabulary = context.revsetVocabulary

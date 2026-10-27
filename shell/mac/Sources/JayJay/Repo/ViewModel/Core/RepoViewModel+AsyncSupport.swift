@@ -92,6 +92,7 @@ extension RepoViewModel {
         },
         _ action: @escaping RepoOperation<Result>
     ) -> Bool {
+        guard repo.sshState() == .connected else { return false }
         if let gate {
             guard !self[keyPath: gate.state] else {
                 info = gate.busyMessage

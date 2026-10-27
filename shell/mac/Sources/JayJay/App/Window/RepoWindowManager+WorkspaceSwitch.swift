@@ -3,7 +3,7 @@ import JayJayCore
 
 extension RepoWindowManager {
     func switchRepo(from viewModel: RepoViewModel, to path: String, changePath: (String) -> Void) {
-        let target = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
+        let target = normalizedRepositoryPath(path: path.standardizedRepositoryLocation)
         guard !isRemovingRepo(at: target), target != normalizedRepositoryPath(path: viewModel.repoPath) else { return }
         settings.recordOpenedRepo(target)
         if activateRepo(target) {

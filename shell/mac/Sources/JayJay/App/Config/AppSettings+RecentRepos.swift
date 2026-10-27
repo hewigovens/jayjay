@@ -22,6 +22,6 @@ extension AppSettings {
     }
 
     static func standardizedRepositoryPath(_ path: String) -> String {
-        URL(fileURLWithPath: path).standardizedFileURL.path
+        path.standardizedRepositoryLocation
     }
 }

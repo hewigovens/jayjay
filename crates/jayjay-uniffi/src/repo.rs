@@ -641,6 +641,38 @@ impl JayJayRepo {
         Ok(Arc::new(Self { inner: repo }))
     }
 
+    fn repository_context(&self) -> Result<jayjay_core::RepositoryContext, JayError> {
+        self.inner.repository_context()
+    }
+
+    fn is_remote(&self) -> bool {
+        self.inner.is_remote()
+    }
+
+    fn ssh_state(&self) -> jayjay_core::ssh::ConnectionState {
+        self.inner.connection_state()
+    }
+
+    fn ssh_error(&self) -> Option<String> {
+        self.inner.connection_error()
+    }
+
+    fn reconnect_ssh(&self) -> Result<(), JayError> {
+        self.inner.reconnect()
+    }
+
+    fn disconnect_ssh(&self) -> Result<(), JayError> {
+        self.inner.disconnect()
+    }
+
+    fn poll_remote_changes(&self) -> Result<bool, JayError> {
+        self.inner.poll_remote_changes()
+    }
+
+    fn primary_root(&self) -> String {
+        self.inner.primary_root().to_string_lossy().into_owned()
+    }
+
     fn path(&self) -> String {
         self.inner.path().display().to_string()
     }

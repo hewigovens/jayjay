@@ -28,6 +28,12 @@ extension RepoViewModel {
         {
             return
         }
+        requestBackgroundReload()
+    }
+
+    /// Remote polls call this directly: each reports an operation once, so the echo window would drop it for good.
+    func requestBackgroundReload() {
+        guard !isShuttingDown else { return }
         pendingBackgroundRefresh = .reload
         resumePendingBackgroundRefresh()
     }
@@ -113,6 +119,9 @@ extension RepoViewModel {
     }
 
     func revsetError(_ revset: String) -> String? {
+        if repo.isRemote() {
+            return nil
+        }
         do {
             try repo.checkRevset(revset: revset)
             return nil
@@ -126,7 +135,8 @@ extension RepoViewModel {
         isAutoTriggered: Bool = false,
         snapshotWorkingCopy: Bool = true
     ) {
-        guard !isShuttingDown else { return }
+        sshState = repo.sshState()
+        guard !isShuttingDown, sshConnected else { return }
         if isAutoTriggered, isRefreshingInFlight {
             pendingBackgroundRefresh = .reload
             return
@@ -242,7 +252,6 @@ extension RepoViewModel {
             changeId: content.workingCopyChangeId,
             description: content.workingCopyDescription
         )
-        bisect.state = repo.bisectState()
         isLoading = false
     }
 
@@ -362,26 +371,5 @@ extension RepoViewModel {
             workingCopyDescription: workingCopy?.description ?? "",
             context: includeContext ? RepoRefreshContext(repo: repo) : nil
         )
-    }
-}
-
-extension RepoViewModel {
-    /// A clean box follows the working copy; a typed draft is never replaced, even when @ moves to a described change.
-    func applyWorkingCopy(changeId: String, description: String) {
-        let previousDescription = workingCopyDescription
-        workingCopyDescription = description
-        guard !changeId.isEmpty else { return }
-        let identityChanged = changeId != workingCopyChangeId
-        let descriptionChanged = description != previousDescription
-        guard identityChanged || descriptionChanged else { return }
-        workingCopyChangeId = changeId
-        let boxIsClean = commitDraftIsClean(
-            summary: commitSummaryDraft,
-            body: commitDescriptionDraft,
-            message: previousDescription
-        )
-        guard boxIsClean else { return }
-        commitSummaryDraft = commitSummary(message: description)
-        commitDescriptionDraft = commitBody(message: description)
     }
 }

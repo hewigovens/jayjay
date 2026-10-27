@@ -11,7 +11,7 @@ struct RepoWindowScene: View {
             .frame(minWidth: 900, minHeight: 500)
             .background(WindowFramePersistence(key: AppWindows.repo))
             .background(WindowConfigurator { window in
-                window.representedURL = URL(fileURLWithPath: repoPath)
+                window.representedURL = repoPath.repositoryLocationURL
                 windowNumber = window.windowNumber
                 windowManager.repoWindowDidAppear()
             })
@@ -19,7 +19,7 @@ struct RepoWindowScene: View {
                 guard let windowNumber, let window = NSApp.windows.first(where: { $0.windowNumber == windowNumber }) else { return }
                 // A text field in the outgoing content would otherwise keep taking keys while the switch is pending.
                 window.makeFirstResponder(nil)
-                window.representedURL = URL(fileURLWithPath: path)
+                window.representedURL = path.repositoryLocationURL
                 windowManager.refreshOpenRepoPaths()
                 ActiveRepoTracker.shared.repoPath = path
             }

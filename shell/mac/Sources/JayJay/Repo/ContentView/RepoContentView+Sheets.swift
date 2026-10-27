@@ -42,7 +42,7 @@ extension RepoContentView {
                 )
             case .bookmarkManager:
                 bookmarkManagerSheet
-            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect:
+            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect, .sshConnection:
                 secondarySheet(for: modal)
             case .ratingPrompt:
                 RatingPromptView(
@@ -77,6 +77,8 @@ extension RepoContentView {
     @ViewBuilder
     private func secondarySheet(for modal: RepoModalState) -> some View {
         switch modal {
+            case .sshConnection:
+                SSHConnectionView(viewModel: viewModel, onDismiss: { self.modal = nil })
             case .workspaceCreate:
                 workspaceCreateSheet
             case .pullRequestImport:
@@ -283,8 +285,8 @@ extension RepoContentView {
                 }
                 workspaceNameError = nil
                 workspaceCreating = true
-                let parent = URL(fileURLWithPath: viewModel.repoPath).deletingLastPathComponent()
-                let dest = parent.appendingPathComponent(name).path
+                let parent = viewModel.repoPath.repositoryLocationURL.deletingLastPathComponent()
+                let dest = parent.appendingPathComponent(name).repositoryLocationPath
                 let windowManager = windowManager
                 viewModel.workspaceAdd(dest: dest, name: name, onSuccess: {
                     workspaceCreating = false

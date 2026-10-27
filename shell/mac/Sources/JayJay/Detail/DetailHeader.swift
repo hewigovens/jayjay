@@ -293,7 +293,7 @@ extension ChangeDetailView {
             .buttonStyle(.bordered)
             .accessibilityIdentifier(AID.Conflict.useTheirs(path))
             resolutionButton(path: path, options: ConflictResolution.options(
-                mergeEditor: repo?.mergeEditorName(),
+                mergeEditor: repo.flatMap { $0.isRemote() ? nil : $0.mergeEditorName() },
                 supportsConflictEditor: Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode),
                 editor: appSettings.externalEditor
             ))

@@ -40,7 +40,7 @@ final class ActiveRepoTracker {
         ) { [weak self] notification in
             MainActor.assumeIsolated {
                 guard let window = notification.object as? NSWindow else { return }
-                if let path = window.representedURL?.path {
+                if let path = window.representedURL?.repositoryLocationPath {
                     self?.repoPath = path
                     self?.keyWindowIsOverview = self?.overviewWindows.contains(window) == true
                 } else if window.identifier?.rawValue == AppWindows.repoList {
@@ -61,7 +61,7 @@ final class ActiveRepoTracker {
         overviewWindows.add(window)
         if window.isKeyWindow {
             keyWindowIsOverview = true
-            repoPath = window.representedURL?.path ?? repoPath
+            repoPath = window.representedURL?.repositoryLocationPath ?? repoPath
         }
     }
 

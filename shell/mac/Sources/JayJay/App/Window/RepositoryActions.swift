@@ -23,6 +23,7 @@ enum RepositoryActions {
     }
 
     static func showInFinder(repoPath: String, path: String?) {
+        guard !repoPath.isSSHLocation else { return }
         let targetURL = fileViewerSelectionURL(repoPath: repoPath, path: path)
         if ProcessInfo.processInfo.environment[captureShowInFinderPasteboardEnvironmentKey] == "1" {
             NSPasteboard.general.clearContents()

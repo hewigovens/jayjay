@@ -11,6 +11,7 @@ struct RepoWindow: View {
     let onSwitchWorkspace: (String) -> Void
     @State private var viewModel: RepoViewModel?
     @State private var initError: String?
+    @State private var repoMissing = false
     @Environment(AppSettings.self) private var settings
     @Environment(RepoWindowManager.self) private var windowManager
 
@@ -26,18 +27,26 @@ struct RepoWindow: View {
                     onSwitchWorkspace(path)
                 })
                 .id(model.repoPath)
+                .task(id: model.repoPath) {
+                    guard model.repo.isRemote() else { return }
+                    while !Task.isCancelled {
+                        try? await Task.sleep(for: .seconds(3))
+                        guard !Task.isCancelled else { return }
+                        await model.pollSSH()
+                    }
+                }
                 .disabled(isSwitching)
                 .allowsHitTesting(!isSwitching)
             } else if let err = initError {
-                RepoInitErrorView(repoPath: repoPath, error: err, onInitialize: initJJRepo)
+                RepoInitErrorView(repoPath: repoPath, error: err, repoMissing: repoMissing, onInitialize: initJJRepo)
             } else {
                 ProgressView(Localized.Repo.loadingRepositoryEllipsis)
             }
         }
         .task(id: repoPath) { await openRepo() }
-        .navigationTitle(URL(fileURLWithPath: viewModel?.repoPath ?? repoPath).repositoryDisplayName)
+        .navigationTitle((viewModel?.repoPath ?? repoPath).repositoryLocationURL.repositoryDisplayName)
         .toolbar(removing: .title)
-        .background(WindowConfigurator { $0.representedURL = URL(fileURLWithPath: repoPath) })
+        .background(WindowConfigurator { $0.representedURL = repoPath.repositoryLocationURL })
     }
 
     private func openRepo() async {
@@ -50,7 +59,7 @@ struct RepoWindow: View {
                 let repo = try JayJayRepo.open(path: path)
                 return (
                     repo: repo,
-                    primaryRoot: workspacePrimaryRoot(path: path) ?? path,
+                    primaryRoot: repo.primaryRoot(),
                     workingCopyIsLarge: repo.workingCopyIsLarge(),
                     defaultRevsetPreset: repo.defaultRevsetPreset()
                 )
@@ -77,6 +86,11 @@ struct RepoWindow: View {
                 }
                 await show(model)
             case let .failure(error):
+                if case .RepoNotFound? = error as? JayError {
+                    repoMissing = true
+                } else {
+                    repoMissing = false
+                }
                 leaveSwitch(error: error.friendlyDescription, closingWindow: false)
         }
     }
@@ -152,6 +166,7 @@ struct RepoWindow: View {
 private struct RepoInitErrorView: View {
     let repoPath: String
     let error: String
+    let repoMissing: Bool
     let onInitialize: () -> Void
 
     var body: some View {
@@ -176,6 +191,9 @@ private struct RepoInitErrorView: View {
     }
 
     private var canInitialize: Bool {
+        if repoPath.isSSHLocation {
+            return repoMissing
+        }
         var isDirectory: ObjCBool = false
         return FileManager.default.fileExists(atPath: repoPath, isDirectory: &isDirectory) && isDirectory.boolValue
             && enclosingWorkspaceRoot(path: repoPath) == nil

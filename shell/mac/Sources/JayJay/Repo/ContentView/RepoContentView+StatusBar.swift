@@ -11,12 +11,31 @@ extension RepoContentView {
 
     private var statusBarLeadingItems: [StatusBarItem] {
         var items: [StatusBarItem] = []
-        items.append(.action(
-            id: "path", icon: "folder", text: viewModel.repoPath,
-            tooltip: Localized.Common.showIn(app: "Finder"), shrinks: true
-        ) {
-            RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
-        })
+        if let machine = sshMachine(location: viewModel.repoPath) {
+            let state = viewModel.sshStatusLabel
+            items.append(.action(
+                id: "ssh", icon: viewModel.sshStatusIcon,
+                text: "\(machine) · \(state)", tooltip: viewModel.sshErrorMessage ?? state
+            ) {
+                modal = .sshConnection
+            })
+            items.append(.action(
+                id: "path", icon: "folder", text: sshPath(location: viewModel.repoPath),
+                tooltip: Localized.Ssh.copyPath, shrinks: true
+            ) {
+                viewModel.copySSHPath()
+            })
+            if !viewModel.sshConnected {
+                items.append(.action(id: "ssh-reconnect", icon: "arrow.clockwise", text: Localized.Ssh.reconnect) { viewModel.reconnectSSH() })
+            }
+        } else {
+            items.append(.action(
+                id: "path", icon: "folder", text: viewModel.repoPath,
+                tooltip: Localized.Common.showIn(app: "Finder"), shrinks: true
+            ) {
+                RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
+            })
+        }
         if let bookmark = activeBookmarkSyncItem {
             items.append(bookmark)
         }

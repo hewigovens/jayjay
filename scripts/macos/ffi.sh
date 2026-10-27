@@ -34,6 +34,7 @@ case "$1" in
   debug)
     staticlib="${target_dir}/debug/${lib_name}"
     cargo build -p jayjay-uniffi
+    bash "$root/scripts/ssh-helper.sh" "" debug
     test -f "$staticlib"
     if cmp -s "$staticlib" "${xcframework}/macos-arm64/${lib_name}" \
        && [[ "${swift_out}/JayJayCore.swift" -nt "$staticlib" \
@@ -55,6 +56,7 @@ case "$1" in
     RUSTFLAGS="-C link-arg=${macos_min_flag}" \
     cargo build --release --target "${macos_target}" -p jayjay-uniffi
     test -f "$staticlib"
+    bash "$root/scripts/ssh-helper.sh" "$macos_target" release
     wrap release "$staticlib"
     ;;
   wrap) wrap "$2" "$3" ;;

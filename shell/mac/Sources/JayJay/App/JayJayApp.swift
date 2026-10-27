@@ -12,6 +12,8 @@ struct JayJayApp: App {
 
     init() {
         CommandLineInterface.runAndExitIfNeeded(arguments: CommandLine.arguments)
+        // Writing to an exited child (ssh, jj) must fail with EPIPE instead of killing the app.
+        signal(SIGPIPE, SIG_IGN)
         installLogFile(version: AppMetadata.compactVersionLabel)
         setPreferredLanguages(languages: Locale.preferredLanguages)
         setNumberLocale(locale: Locale.current.identifier(.bcp47))
@@ -19,6 +21,9 @@ struct JayJayApp: App {
         UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
 
         NSWindow.allowsAutomaticWindowTabbing = false
+        if let helpers = Bundle.main.resourceURL?.appendingPathComponent("ssh-helpers") {
+            setSshHelperDirectory(path: helpers.path)
+        }
 
         let tool = ExternalToolInvocation.parse(arguments: CommandLine.arguments)
         let initialSettings = AppSettings()
@@ -64,6 +69,7 @@ struct JayJayApp: App {
             updater: updater
         )
         OverviewWindowScene(settings: settings, windowManager: windowManager)
+        OpenRemoteRepositoryWindowScene(settings: settings, windowManager: windowManager)
         CloneRepositoryWindowScene(settings: settings, windowManager: windowManager)
         FileHistoryWindowScene(settings: settings, windowManager: windowManager)
         AppInfoScenes(settings: settings, updater: updater, windowManager: windowManager)

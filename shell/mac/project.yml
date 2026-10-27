@@ -53,6 +53,9 @@ targets:
           - JayJay.help/**
           - JayJayHelpBook
           - JayJayHelpBook/**
+      - path: ../../build/ssh-helpers
+        buildPhase: resources
+        type: folder
       - path: ../../build/help.noindex/JayJay.help
         buildPhase: resources
         type: folder

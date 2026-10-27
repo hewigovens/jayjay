@@ -34,6 +34,8 @@ mod repo;
 #[cfg(feature = "desktop")]
 mod repositories;
 mod review;
+#[cfg(feature = "desktop")]
+mod ssh;
 mod theme;
 mod tool_config;
 mod trunk;

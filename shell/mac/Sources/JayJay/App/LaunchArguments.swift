@@ -31,6 +31,9 @@ enum LaunchArguments {
     }
 
     private static func normalizedRepoPath(_ path: String) -> String {
+        if path.isSSHLocation {
+            return path
+        }
         let cwd = URL(fileURLWithPath: FileManager.default.currentDirectoryPath)
         let path = URL(fileURLWithPath: path, relativeTo: cwd).standardizedFileURL.path
         return enclosingWorkspaceRoot(path: path) ?? path

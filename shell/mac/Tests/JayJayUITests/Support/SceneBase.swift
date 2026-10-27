@@ -109,6 +109,7 @@ class SceneBase: XCTestCase {
             .appendingPathComponent(Self.repositoryStoreFixtureName)
             .path
         app.launchEnvironment["JAYJAY_RECENT_REVSETS_PATH"] = recentRevsetsPath
+        app.launchEnvironment["JAYJAY_SSH_MACHINES_PATH"] = root.appendingPathComponent("ssh_machines.json").path
         for (key, value) in Self.launchEnvironment {
             app.launchEnvironment[key] = value
         }

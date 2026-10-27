@@ -66,18 +66,21 @@ extension RepoContentView {
                 action: { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) },
                 label: { Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder") }
             )
+            .disabled(viewModel.repo.isRemote())
             toolbarButton(
                 .editor,
                 help: Localized.Repo.openRepositoryIn(app: settings.externalEditor.title),
                 action: { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) },
                 label: { Label(Localized.Settings.editor, systemImage: "curlybraces") }
             )
+            .disabled(viewModel.repo.isRemote())
             toolbarButton(
                 .terminal,
                 help: Localized.Repo.openRepositoryIn(app: settings.terminal.title),
                 action: { settings.openInTerminal(at: viewModel.repoPath) },
                 label: { Label("Terminal", systemImage: "terminal") }
             )
+            .disabled(viewModel.repo.isRemote())
             toolbarButton(
                 .settings,
                 help: Localized.Repo.settings,
@@ -111,6 +114,7 @@ extension RepoContentView {
             action: toggle,
             label: { SyncArrowIndicator(direction: direction, animating: inFlight) }
         )
+        .disabled(!viewModel.sshConnected && !inFlight)
         .accessibilityIdentifier(direction.accessibilityIdentifier)
     }
 

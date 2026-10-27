@@ -5,6 +5,10 @@ import JayJayCore
 final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagActions, RevsetActions {
     static let defaultRevsetPageSize = 20
 
+    var sshState = ConnectionState.connected
+    var isReconnectingSSH = false
+    var sshConnectionError: String?
+
     let repoPath: String
     /// Secondary workspaces are named after their checkout; the title shows the primary repo instead.
     let repositoryName: String
@@ -162,7 +166,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         self.init(
             path: path,
             repo: repo,
-            primaryRoot: workspacePrimaryRoot(path: path) ?? path,
+            primaryRoot: repo.primaryRoot(),
             workingCopyIsLarge: repo.workingCopyIsLarge(),
             defaultRevsetPreset: repo.defaultRevsetPreset(),
             includeSubmoduleStatuses: includeSubmoduleStatuses
@@ -180,10 +184,11 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         includeSubmoduleStatuses: Bool = false
     ) {
         repoPath = path
-        repositoryName = URL(fileURLWithPath: primaryRoot).repositoryDisplayName
+        repositoryName = primaryRoot.repositoryLocationURL.repositoryDisplayName
         self.primaryRoot = primaryRoot
         self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
+        sshState = repo.sshState()
         self.defaultRevsetPreset = defaultRevsetPreset
         self.workingCopyIsLarge = workingCopyIsLarge
         fsWatcher = RepoFSWatcher(

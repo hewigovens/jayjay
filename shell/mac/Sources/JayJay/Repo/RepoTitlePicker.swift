@@ -21,7 +21,7 @@ struct RepoTitlePicker: View {
     @State private var panel = PickerPanel()
 
     private var standardizedRepoPath: String {
-        URL(fileURLWithPath: repoPath).standardizedFileURL.path
+        repoPath.standardizedRepositoryLocation
     }
 
     private var currentWorkspaceName: String? {
@@ -187,7 +187,7 @@ struct RepoTitlePicker: View {
     }
 
     private func repoRow(path: String, icon: String, iconTint: Color, action: (() -> Void)? = nil) -> PickerRow {
-        let name = URL(fileURLWithPath: path).repositoryDisplayName
+        let name = path.repositoryLocationURL.repositoryDisplayName
         return PickerRow(
             id: "repo-\(path)",
             searchText: "\(name) \(path)",
@@ -202,7 +202,7 @@ struct RepoTitlePicker: View {
                     .font(.system(size: 13))
                     .lineLimit(1)
                 Spacer(minLength: 8)
-                Text(path)
+                Text(path.repositoryLocationLabel)
                     .font(.system(size: 10))
                     .foregroundStyle(.tertiary)
                     .lineLimit(1)

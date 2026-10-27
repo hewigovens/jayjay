@@ -11,6 +11,7 @@ enum RepoModalState: Identifiable {
     case submoduleAttention
     case undoLog
     case bookmarkManager
+    case sshConnection
     case workspaceCreate
     case pullRequestImport
     case confirmWorkspaceDelete(workspace: WorkspaceInfo)
@@ -28,6 +29,7 @@ enum RepoModalState: Identifiable {
             case .submoduleAttention: "submodule-attention"
             case .undoLog: "undo-log"
             case .bookmarkManager: "bookmark-manager"
+            case .sshConnection: "ssh-connection"
             case .workspaceCreate: "workspace-create"
             case .pullRequestImport: "pull-request-import"
             case let .confirmWorkspaceDelete(workspace): "workspace-delete-\(workspace.name)"

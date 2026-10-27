@@ -53,7 +53,7 @@ class AppDelegate: NSObject, NSApplicationDelegate {
         menu.addItem(.separator())
         let submenu = NSMenu(title: Localized.Onboarding.recentRepositories)
         for path in repos {
-            let name = URL(fileURLWithPath: path).repositoryDisplayName
+            let name = path.repositoryLocationTitle
             let item = dockMenuItem(title: name) { [weak self] in
                 self?.openHandler?(path)
             }

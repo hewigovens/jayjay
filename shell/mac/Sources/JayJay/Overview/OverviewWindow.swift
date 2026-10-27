@@ -21,11 +21,11 @@ struct OverviewWindow: View {
                 await viewModel.open()
             }
             .navigationTitle(Localized.Menu.repoOverview)
-            .navigationSubtitle(URL(fileURLWithPath: repoPath).repositoryDisplayName)
+            .navigationSubtitle(repoPath.repositoryLocationTitle)
             .background(WindowFramePersistence(key: AppWindows.overview))
             // The URL feeds the Repository menu; the registrations keep this window out of repo-window lookups.
             .background(WindowConfigurator { window in
-                window.representedURL = URL(fileURLWithPath: repoPath)
+                window.representedURL = repoPath.repositoryLocationURL
                 windowNumber = window.windowNumber
                 windowManager.overviewWindowDidAppear(window, for: repoPath)
                 ActiveRepoTracker.shared.registerOverview(window)

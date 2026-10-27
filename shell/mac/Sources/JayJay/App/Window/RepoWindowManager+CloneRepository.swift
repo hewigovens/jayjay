@@ -20,4 +20,11 @@ extension RepoWindowManager {
             openRepo(url.path)
         }
     }
+
+    func openRemoteRepository() {
+        if !liveWindows.contains(where: { $0.identifier?.rawValue.hasPrefix(AppWindows.openRemoteRepository) == true }) {
+            openRemoteRepositoryGeneration += 1
+        }
+        presentWindow(AppWindows.openRemoteRepository)
+    }
 }

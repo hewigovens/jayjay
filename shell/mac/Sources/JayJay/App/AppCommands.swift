@@ -59,6 +59,12 @@ struct AppCommands: Commands {
             .keyboardShortcut(AppShortcut.openRepository)
 
             Button {
+                windowManager.openRemoteRepository()
+            } label: {
+                Label(Localized.Ssh.openRemoteRepositoryEllipsis, systemImage: "network")
+            }
+
+            Button {
                 windowManager.showCloneRepository()
             } label: {
                 Label(Localized.Menu.cloneRepositoryEllipsis, systemImage: "square.and.arrow.down")
@@ -73,7 +79,7 @@ struct AppCommands: Commands {
                             windowManager.openRepo(path)
                         } label: {
                             Label(
-                                URL(fileURLWithPath: path).repositoryDisplayName,
+                                path.repositoryLocationTitle,
                                 systemImage: "arrow.triangle.branch"
                             )
                         }

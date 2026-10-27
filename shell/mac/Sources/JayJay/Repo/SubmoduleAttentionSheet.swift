@@ -74,7 +74,7 @@ struct SubmoduleAttentionSheet: View {
 
     @ViewBuilder
     private func row(for status: GitSubmoduleStatus) -> some View {
-        let absolutePath = URL(fileURLWithPath: repoPath).appendingPathComponent(status.path).path
+        let absolutePath = repoPath.repositoryLocationURL.appendingPathComponent(status.path).repositoryLocationPath
 
         HStack(spacing: 10) {
             Image(systemName: "square.stack.3d.up")

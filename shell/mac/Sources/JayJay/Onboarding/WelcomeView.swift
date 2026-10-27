@@ -137,14 +137,14 @@ struct WelcomeView: View {
     private func groupedRepoCard(_ group: RepoGroup, pinned: Bool) -> some View {
         VStack(alignment: .leading, spacing: 7) {
             HStack(spacing: 8) {
-                Text(URL(fileURLWithPath: group.path).repositoryDisplayName)
+                Text(group.path.repositoryLocationTitle)
                     .jayjayFont(12, weight: .semibold)
                 Spacer()
                 pinAndRemoveButtons(path: group.path, pinned: pinned)
             }
             workspaceEntryRow(name: "default", path: group.path, nested: false)
             ForEach(group.workspaces, id: \.self) { path in
-                workspaceEntryRow(name: URL(fileURLWithPath: path).lastPathComponent, path: path, nested: true)
+                workspaceEntryRow(name: path.repositoryLocationURL.lastPathComponent, path: path, nested: true)
             }
         }
         .padding(8)
@@ -177,9 +177,9 @@ struct WelcomeView: View {
         HStack(spacing: 8) {
             Button { onOpen(path) } label: {
                 VStack(alignment: .leading, spacing: 2) {
-                    Text(URL(fileURLWithPath: path).repositoryDisplayName)
+                    Text(path.repositoryLocationURL.repositoryDisplayName)
                         .jayjayFont(12, weight: .medium)
-                    Text(path)
+                    Text(path.repositoryLocationLabel)
                         .jayjayFont(10)
                         .foregroundStyle(.secondary)
                         .lineLimit(1)
@@ -227,7 +227,7 @@ struct WelcomeView: View {
                     VStack(alignment: .leading, spacing: 2) {
                         Text(name)
                             .jayjayFont(12, weight: .medium)
-                        Text(path)
+                        Text(path.repositoryLocationLabel)
                             .jayjayFont(10)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)

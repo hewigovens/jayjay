@@ -18,6 +18,7 @@ final class RepoWindowManager {
 
     private(set) var openRepoPaths: [String] = []
     var cloneRepositoryGeneration = 0
+    var openRemoteRepositoryGeneration = 0
     let settings: AppSettings
     private(set) var openWindowAction: ((_ id: String, _ value: String?) -> Void)?
     private var dismissWindowAction: ((_ id: String) -> Void)?
@@ -171,7 +172,7 @@ final class RepoWindowManager {
     func refreshOpenRepoPaths() {
         var seen = Set<String>()
         openRepoPaths = liveRepoWindows.compactMap { window in
-            guard let path = window.representedURL?.standardizedFileURL.path,
+            guard let path = window.representedURL?.repositoryLocationPath,
                   seen.insert(path).inserted
             else { return nil }
             return path
@@ -180,7 +181,7 @@ final class RepoWindowManager {
 
     @discardableResult
     func activateRepo(_ path: String) -> Bool {
-        let standardizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        let standardizedPath = path.standardizedRepositoryLocation
         if activateRepoWindow(matching: standardizedPath) {
             return true
         }
@@ -310,14 +311,14 @@ final class RepoWindowManager {
 
     private func repoWindows(at paths: Set<String>) -> [NSWindow] {
         liveRepoWindows.filter {
-            guard let path = $0.representedURL?.path else { return false }
+            guard let path = $0.representedURL?.repositoryLocationPath else { return false }
             return paths.contains(normalizedRepositoryPath(path: path))
         }
     }
 
     private func activateRepoWindow(matching path: String) -> Bool {
         guard let window = liveRepoWindows.first(where: {
-            $0.representedURL?.standardizedFileURL.path == path
+            $0.representedURL?.repositoryLocationPath == path
         }) else { return false }
         activate(window)
         hideRepoList()
@@ -332,7 +333,7 @@ final class RepoWindowManager {
     }
 
     func openOverview(for path: String) {
-        let normalizedPath = normalizedRepositoryPath(path: URL(fileURLWithPath: path).standardizedFileURL.path)
+        let normalizedPath = normalizedRepositoryPath(path: path.standardizedRepositoryLocation)
         if let window = overviewWindows[normalizedPath]?.window, liveWindows.contains(window) {
             activate(window)
             return
@@ -365,7 +366,7 @@ final class RepoWindowManager {
     }
 
     func openRepo(_ path: String) {
-        let standardizedPath = URL(fileURLWithPath: path).standardizedFileURL.path
+        let standardizedPath = path.standardizedRepositoryLocation
         let normalizedPath = enclosingWorkspaceRoot(path: standardizedPath) ?? normalizedRepositoryPath(path: standardizedPath)
         guard !isRemovingRepo(at: normalizedPath) else { return }
         settings.recordOpenedRepo(normalizedPath)
