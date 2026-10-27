@@ -1,4 +1,4 @@
-use crate::types::FileTreeEntry;
+use crate::FileTreeEntry;
 
 struct TreeNode {
     name: String,
@@ -55,7 +55,6 @@ impl TreeNode {
     }
 
     fn flatten(&self, depth: u32, parent_path: &str, results: &mut Vec<FileTreeEntry>) {
-        // Sort: directories first, then files
         let mut sorted: Vec<&(String, TreeNode)> = self.children.iter().collect();
         sorted.sort_by_key(|(_, n)| n.hunk_index.is_some());
 
@@ -91,9 +90,7 @@ impl TreeNode {
     }
 }
 
-/// Build a flattened file tree from a list of file paths.
-/// Each path is split by `/`, built into a trie, collapsed (single-child dirs merged),
-/// then flattened with depth info. `hunk_index` corresponds to the index in the input `paths` vec.
+/// Paths as a flattened tree with single-child directories collapsed; `hunk_index` is the index into `paths`.
 pub fn build_file_tree(paths: &[String]) -> Vec<FileTreeEntry> {
     let mut root = TreeNode::new("");
     for (i, path) in paths.iter().enumerate() {
@@ -194,7 +191,6 @@ mod tests {
         }
     }
 
-    /// Every entry — including directories — has a non-empty, unique `path`.
     #[test]
     fn test_directory_paths_are_unique_and_populated() {
         let tree = build_file_tree(&[
@@ -222,8 +218,7 @@ mod tests {
 
         let dirs: Vec<&FileTreeEntry> = tree.iter().filter(|e| e.hunk_index.is_none()).collect();
         let dir_paths: Vec<&str> = dirs.iter().map(|e| e.path.as_str()).collect();
-        // Directory paths must be the full accumulated path (including any
-        // prefix collapsed into root) so they prefix-match their file children.
+        // Directory paths include any prefix collapsed into root so they prefix-match their files.
         assert!(
             dir_paths.contains(&"src/diff"),
             "missing 'src/diff' dir, got {dir_paths:?}"

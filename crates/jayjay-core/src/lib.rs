@@ -2,6 +2,7 @@ pub use jayjay_primitives::{
     AppDirs, EvologRow, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
     JJ_TOOL_CONFIG, evolog_rows, is_prerelease_build, is_snapshot_operation, os_version,
 };
+pub use jayjay_primitives::{avatar, file_tree, github_alias};
 pub use jj_diff as diff;
 pub use jj_diff::syntax;
 #[cfg(feature = "repository")]
@@ -19,12 +20,10 @@ pub mod external_tools;
 mod file_display;
 mod file_kind;
 mod file_size_formatter;
-pub mod file_tree;
 #[cfg(feature = "repository")]
 mod filesystem;
 pub mod fonts;
 pub mod fuzzy;
-pub mod github_alias;
 #[cfg(feature = "repository")]
 mod jj_command;
 #[cfg(feature = "repository")]
