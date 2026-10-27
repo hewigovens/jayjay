@@ -97,9 +97,7 @@ struct OnboardingView: View {
                 .frame(width: 96, height: 96)
             Text(Localized.Menu.welcomeToJayjay)
                 .jayjayFont(28, weight: .bold)
-            Text(
-                "A native GUI for Jujutsu version control.\nBrowse history, review diffs, and manage changes — all from one window."
-            )
+            Text(Localized.Onboarding.welcomeDescription)
             .jayjayFont(14)
             .foregroundStyle(.secondary)
             .multilineTextAlignment(.center)

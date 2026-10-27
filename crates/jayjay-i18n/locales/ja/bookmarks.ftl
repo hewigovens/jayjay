@@ -9,3 +9,4 @@ bookmarks-active-count = アクティブ { NUMBER($count) }
 bookmarks-local-only-count = ローカルのみ { NUMBER($count) }
 bookmarks-remote-only-count = リモートのみ { NUMBER($count) }
 bookmarks-local = ローカル
+bookmarks-remote-is-at = { $lead } { $remote } は { $change }{ $summary } にあります。

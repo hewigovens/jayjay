@@ -54,7 +54,7 @@ pub(super) fn markdown_document(
             div()
                 .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg_dim))
-                .child("(empty Markdown document)"),
+                .child(jayjay_i18n::diff::empty_markdown()),
         );
     }
 

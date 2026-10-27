@@ -165,10 +165,8 @@ impl RepoWindow {
     }
 
     pub(crate) fn open_create_tag(&mut self, rev: String, cx: &mut Context<Self>) {
-        let subtitle = format!(
-            "{} · a tagged change becomes immutable",
-            rev.chars().take(12).collect::<String>()
-        );
+        let short_rev: String = rev.chars().take(12).collect();
+        let subtitle = jayjay_i18n::repo::tagged_change_immutable_hint(&short_rev);
         self.open_create_ref(
             &jayjay_i18n::repo::create_tag(),
             subtitle,

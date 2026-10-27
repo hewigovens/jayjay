@@ -190,6 +190,11 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
     private func remoteHelp(_ target: RemoteBookmarkTarget, _ lead: String) -> String {
         guard !target.changeId.isEmpty else { return lead }
         let summary = target.description.isEmpty ? "" : " — \(target.description)"
-        return "\(lead) \(target.remote) is at \(String(target.changeId.prefix(8)))\(summary)."
+        return Localized.Bookmarks.remoteIsAt(
+            lead: lead,
+            remote: target.remote,
+            change: String(target.changeId.prefix(8)),
+            summary: summary
+        )
     }
 }

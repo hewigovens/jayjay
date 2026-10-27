@@ -105,3 +105,7 @@ diff-file-unavailable = (file unavailable)
 diff-preview-unavailable = (preview unavailable)
 diff-markdown-metadata = { NUMBER($count) } blocks, { $size }
 diff-couldnt-open-file-editor = Couldn’t Open File Editor
+diff-empty-markdown = (empty Markdown document)
+diff-edit-selection-stale = { $path } changed after its selection was rendered. Done was not applied — refresh and try again.
+diff-includes-agent-marks = { $label }, includes agent marks
+diff-mode-changed = mode

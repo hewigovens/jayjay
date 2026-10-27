@@ -149,3 +149,13 @@ settings-terminal-app-name = App name
 settings-terminal-command = Command
 settings-terminal-command-powershell = Command (accepts PowerShell arguments)
 settings-cli-nothing-installed-at = Nothing is installed at { $path }
+settings-cli-already-linked-at = jayjay is already linked at { $path }.
+settings-cli-linked-at = jayjay is linked at { $path }.
+settings-cli-linked-not-in-path =
+    jayjay is linked at { $path }, but the directory is not in your PATH.
+    
+    { $hint }
+settings-cli-was-linked-not-in-path =
+    jayjay was linked at { $path }, but the directory is not in your PATH.
+    
+    { $hint }

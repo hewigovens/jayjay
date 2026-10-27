@@ -83,7 +83,7 @@ where
         ),
     };
     let label = if agent_marked {
-        format!("{label}, includes agent marks")
+        jayjay_i18n::diff::includes_agent_marks(&label)
     } else {
         label.to_owned()
     };

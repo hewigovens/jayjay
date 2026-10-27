@@ -142,3 +142,13 @@ settings-terminal-app-name = アプリ名
 settings-terminal-command = コマンド
 settings-terminal-command-powershell = コマンド（PowerShell の引数を指定可能）
 settings-cli-nothing-installed-at = { $path } には何もインストールされていません
+settings-cli-already-linked-at = jayjay はすでに { $path } にリンクされています。
+settings-cli-linked-at = jayjay は { $path } にリンクされました。
+settings-cli-linked-not-in-path =
+    jayjay は { $path } にリンクされていますが、そのディレクトリは PATH に含まれていません。
+    
+    { $hint }
+settings-cli-was-linked-not-in-path =
+    jayjay は { $path } にリンクされましたが、そのディレクトリは PATH に含まれていません。
+    
+    { $hint }

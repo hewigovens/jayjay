@@ -70,11 +70,11 @@ extension RepoViewModel {
         var msg = result.message
         if !result.abandonedBookmarks.isEmpty {
             let names = result.abandonedBookmarks.joined(separator: ", ")
-            msg += "\nAbandoned merged: \(names)"
+            msg += "\n\(Localized.Repo.syncAbandonedMerged(names: names))"
         }
         if !result.suggestAbandonBookmarks.isEmpty {
             let names = result.suggestAbandonBookmarks.joined(separator: ", ")
-            msg += "\nConflicting (may be merged): \(names) — consider abandoning"
+            msg += "\n\(Localized.Repo.syncConflictingMayBeMerged(names: names))"
         }
         info = msg
     }

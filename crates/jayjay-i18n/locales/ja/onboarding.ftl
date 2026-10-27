@@ -37,3 +37,6 @@ onboarding-current-directory-unavailable = 現在のディレクトリを特定�
 onboarding-could-not-open = { $path } を開けませんでした: { $error }
 onboarding-not-a-directory = { $path } はディレクトリではありません。
 onboarding-palette-tip = { $shortcut } でアクションを検索。機能のヘルプは help split のように入力
+onboarding-welcome-description =
+    Jujutsu バージョン管理用のネイティブ GUI。
+    履歴の閲覧、差分のレビュー、チェンジの管理をすべて 1 つのウィンドウで行えます。

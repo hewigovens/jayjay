@@ -23,7 +23,7 @@ extension RepoContentView {
                 refCreateSheet(
                     title: Localized.Repo.createTag,
                     placeholder: Localized.Repo.tagName,
-                    note: "A tagged change becomes immutable.",
+                    note: Localized.Repo.taggedChangeImmutable,
                     rev: rev
                 ) { name in
                     viewModel.createTag(name: name, rev: rev)

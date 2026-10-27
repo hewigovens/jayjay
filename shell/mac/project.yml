@@ -95,6 +95,7 @@ targets:
         CFBundleLocalizations:
           - en
           - ja
+          - zh-Hans
         NSDockTilePlugIn: JayJayDockTilePlugin.docktileplugin
         SUFeedURL: https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/appcast.xml
         SUPublicEDKey: UOMJSZnts1cRolglWcFAcibe9T9dD9flzz7fAQ3jmoQ=

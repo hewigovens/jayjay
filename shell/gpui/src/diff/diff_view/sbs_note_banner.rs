@@ -23,11 +23,10 @@ pub(super) fn with_sbs_note_banner(
     if count == 0 {
         return body;
     }
-    let label = if count == 1 {
-        "\u{25cf} 1 review note on this file".to_owned()
-    } else {
-        format!("\u{25cf} {count} review notes on this file")
-    };
+    let label = format!(
+        "\u{25cf} {}",
+        jayjay_i18n::diff::review_notes_on_file(count)
+    );
     let banner = div()
         .debug_selector(|| "sbs-notes-banner".to_owned())
         .flex()

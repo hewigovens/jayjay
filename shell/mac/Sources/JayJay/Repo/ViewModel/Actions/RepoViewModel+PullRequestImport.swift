@@ -39,7 +39,7 @@ extension RepoViewModel {
             selecting: nil,
             gatedBy: RepoActionGate(
                 state: \.isImportingPullRequest,
-                busyMessage: "A pull request import is already in progress"
+                busyMessage: Localized.Repo.prImportAlreadyInProgress
             ),
             onSuccess: { viewModel, createdPath in
                 viewModel.pullRequestImportSync = nil

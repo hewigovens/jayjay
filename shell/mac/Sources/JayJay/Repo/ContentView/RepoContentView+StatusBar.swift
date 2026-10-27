@@ -94,7 +94,7 @@ extension RepoContentView {
                       let target = primaryRemoteTarget(bookmark)
                 else { continue }
                 let badge = switch target.status {
-                    case .deleted: "deleted on \(target.remote)"
+                    case .deleted: Localized.Repo.deletedOn(remote: target.remote)
                     case .synced: "✓"
                     case .ahead: "↑\(target.ahead)"
                     case .behind: "↓\(target.behind)"

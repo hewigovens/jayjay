@@ -446,7 +446,7 @@ pub(super) fn bisect_sheet_overlay(
                     div()
                         .text_size(ui_font_size(11.))
                         .text_color(rgb(t.fg_dim))
-                        .child("A range is used as-is. Otherwise the ends become (good)..(bad)."),
+                        .child(jayjay_i18n::repo::bisect_range_hint()),
                 )
                 .child(
                     div()

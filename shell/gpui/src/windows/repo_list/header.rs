@@ -26,7 +26,7 @@ pub(super) fn header(logo: &Logo, t: &Theme) -> impl IntoElement {
             div()
                 .text_size(ui_font_size(14.))
                 .text_color(rgb(t.fg_dim))
-                .child("A native GUI for Jujutsu"),
+                .child(jayjay_i18n::settings::tagline()),
         )
         .child(
             div()

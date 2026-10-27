@@ -31,7 +31,7 @@ struct FileRow: View {
     }
 
     var reviewAccessibilityLabel: String {
-        showsAgentBadge ? "\(reviewChrome.accessibilityLabel), includes agent marks" : reviewChrome.accessibilityLabel
+        showsAgentBadge ? Localized.Diff.includesAgentMarks(label: reviewChrome.accessibilityLabel) : reviewChrome.accessibilityLabel
     }
 
     var body: some View {
