@@ -1,0 +1,12 @@
+bookmarks-no-bookmarks-found = 找不到書籤。
+bookmarks-reveal = 顯示
+bookmarks-diff = 差異
+bookmarks-ahead-of = 領先 { $remote }
+bookmarks-behind = 落後 { $remote }
+bookmarks-diverged-from = 與 { $remote } 分歧
+bookmarks-remote-has-newer = { $remote } 有較新的提交 — 請取得以同步。
+bookmarks-active-count = { NUMBER($count) } 個使用中
+bookmarks-local-only-count = { NUMBER($count) } 個僅限本機
+bookmarks-remote-only-count = { NUMBER($count) } 個僅限遠端
+bookmarks-local = 本機
+bookmarks-remote-is-at = { $lead } { $remote } 位於 { $change }{ $summary }。

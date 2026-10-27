@@ -1,0 +1,9 @@
+evolog-loading-evolution-ellipsis = 正在載入演進記錄…
+evolog-no-history = 沒有歷史記錄
+evolog-unable-to-load-history = 無法載入歷史記錄
+evolog-select-a-version-to-compare-it = 選取一個版本，與最新版本比較
+evolog-no-changes-between-the-selected-versions = 所選版本之間沒有變更
+evolog-loading-file-ellipsis = 正在載入檔案…
+evolog-window-title = 演進：{ $title }
+evolog-snapshot-count = { $count } 個快照
+evolog-version-count = { $count } 個版本

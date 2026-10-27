@@ -1,6 +1,6 @@
-# 简体中文术语表
+# 中文术语表 / 中文術語表
 
-本表约定 JayJay 简体中文界面里的核心术语。新增文案时优先沿用这里的译法；确需改动时，同时更新本表。
+本表同时约定 JayJay 简体中文（`zh-Hans`）与繁体中文（`zh-Hant`，台湾惯例）界面里的核心术语；`zh-Hant/glossary.md` 是指向本文件的符号链接。新增文案时优先沿用这里的译法；确需改动时，同时更新本表。
 
 ## 基本原则
 
@@ -9,65 +9,89 @@
 - 菜单和按钮用动词短语，不加句号；说明文字用完整句，句末加句号。
 - 中文与拉丁字母、数字之间留一个半角空格，例如 `jj 仓库`、`3 个文件`。
 - 使用全角标点：`，`、`。`、`：`、`；`、`？`、`！`；省略号统一用 `…`。
-- 界面引用的操作或配置名使用全角双引号：`“完成”`、`“压缩到父变更”`，不用西文直引号 `"`。
 - 中文语境下的补充说明统一使用全角括号：`保存说明（jj describe）`、`关闭逐行追溯视图（esc）`。
 - 占位符两边保留空格，例如 `{ $count } 个文件`。
+- 两种中文都称呼用户为“你”，不用“您”。
+
+## 简体中文惯例
+
+- 界面引用的操作或配置名使用全角双引号：`“完成”`、`“压缩到父变更”`，不用西文直引号 `"`。
+
+## 繁體中文（台灣）慣例
+
+繁體中文不是簡體中文的逐字轉換，而是依照台灣的用語。系統選單由 macOS 以台灣用語顯示，所以通用操作沿用 Apple 繁體中文（台灣）的譯法：Copy 為「拷貝」、Undo 為「還原」、Paste 為「貼上」。
+
+- 引號使用「」，巢狀時用『』：`「完成」`、`「壓縮到父變更」`。
+- 以台灣用語取代中國大陸用語，例如：檔案（文件）、資料夾（文件夹）、設定（设置）、預設（默认）、儲存（保存）、載入（加载）、開啟（打开）、執行（运行）、搜尋（搜索）、選取（选择）、建立（创建）、新增（新建）、重新命名（重命名）、重新整理（刷新）、程式碼（代码）、資料（数据）、資訊（信息）、訊息（消息）、使用者（用户）、帳號（账号）、登入／登出（登录／退出登录）、解除安裝（卸载）、視窗（窗口）、選單（菜单）、工具列（工具栏）、側邊欄（侧边栏）、字型（字体）、文字（文本）、圖示（图标）、介面（界面）、支援（支持）、存取（访问）、網路（网络）、快取（缓存）、除錯（调试）、記錄（日志）、指令（命令）、終端機（终端）、範本（模板）、自訂（自定义）、啟用／停用（启用／禁用）、收合（折叠）、篩選（筛选）、相容（兼容）、偵測（检测）、影片（视频）、伺服器（服务器）、外掛（插件）、快速鍵（快捷键）、金鑰（密钥）、憑證（证书）、隱私權（隐私）、意見回饋（反馈）、輔助說明（帮助）、匯入／匯出（导入／导出）、透過（通过）、App（应用）。
+- 表格的 row 是「列」，column 是「欄」，與簡體中文相反；文字的 line 仍是「行」（`行號`）。
+- 「文件」在台灣指 document，不指 file。
 
 ## 核心术语
 
-| English | 简体中文 | 说明 |
-| --- | --- | --- |
-| change | 变更 | jj 的核心概念，指会随时间演化的提交 |
-| change ID | 变更 ID | |
-| commit | 提交 | |
-| commit ID | 提交 ID | |
-| revision | 修订 | 与 commit 同义时按上下文使用 |
-| revset | revset | 不翻译，保持小写 |
-| bookmark | 书签 | |
-| tag | 标签 | |
-| working copy | 工作副本 | 与“工作区”区分 |
-| working-copy commit | 工作副本提交 | |
-| workspace | 工作区 | 对应 Git 的 worktree |
-| operation log / oplog | 操作日志 | |
-| evolution log / evolog | 演化日志 | 界面上也用“演化” |
-| immutable | 不可变 | |
-| mutable | 可变 | |
-| divergent | 分叉 | |
-| conflict | 冲突 | |
-| trunk | 主干 | |
-| parent / child | 父变更 / 子变更 | |
-| ancestor / descendant | 祖先 / 后代 | |
-| describe | 编辑说明 | 命令 `jj describe` 不译 |
-| abandon | 放弃 | |
-| squash | 压缩 | |
-| split | 拆分 | |
-| rebase | 变基 | |
-| absorb | 吸收 | |
-| duplicate | 创建副本 | 与 copy（复制）区分 |
-| revert | 还原 | |
-| undo | 撤销 | |
-| restore | 恢复 | |
-| forget | 忘记 | |
-| bisect | 二分查找 | |
-| annotate / blame | 逐行追溯 | |
-| fetch / push / pull | 获取 / 推送 / 拉取 | |
-| pull request | Pull Request | 保持英文，与 GitHub 界面一致 |
-| remote | 远程 | |
-| review note | 评审备注 | |
-| review mark | 评审标记 | |
-| hunk | 差异块 | |
-| diff | 差异 | |
-| snapshot | 快照 | |
-| rewrite | 重写 | |
-| head | 头部 | |
-| stack / stacked PR | 堆叠 / 堆叠 PR | |
-| agent | 智能体 | 指标记变更的 AI 智能体 |
+| English | 简体中文 | 繁體中文 | 说明 |
+| --- | --- | --- | --- |
+| change | 变更 | 變更 | jj 的核心概念，指会随时间演化的提交 |
+| change ID | 变更 ID | 變更 ID | |
+| commit | 提交 | 提交 | |
+| commit ID | 提交 ID | 提交 ID | |
+| revision | 修订 | 修訂 | 与 commit 同义时按上下文使用 |
+| revset | revset | revset | 不翻译，保持小写 |
+| repository | 仓库 | 儲存庫 | |
+| bookmark | 书签 | 書籤 | |
+| tag | 标签 | 標籤 | |
+| working copy | 工作副本 | 工作副本 | 与“工作区”区分 |
+| working-copy commit | 工作副本提交 | 工作副本提交 | |
+| workspace | 工作区 | 工作區 | 对应 Git 的 worktree |
+| operation log / oplog | 操作日志 | 操作記錄 | |
+| evolution log / evolog | 演化日志 | 演進記錄 | 界面上也用“演化”／「演進」 |
+| stale | 过期 | 過期 | |
+| immutable | 不可变 | 不可變 | |
+| mutable | 可变 | 可變 | |
+| divergent | 分叉 | 分歧 | |
+| conflict | 冲突 | 衝突 | |
+| trunk | 主干 | 主幹 | |
+| parent / child | 父变更 / 子变更 | 父變更 / 子變更 | |
+| ancestor / descendant | 祖先 / 后代 | 祖先 / 後代 | |
+| describe / description | 编辑说明 / 说明 | 編輯描述 / 描述 | 命令 `jj describe` 不译；繁中「說明」易与輔助說明混淆 |
+| abandon | 放弃 | 捨棄 | |
+| squash | 压缩 | 壓縮 | |
+| split | 拆分 | 分割 | |
+| rebase | 变基 | 重定基底 | |
+| absorb | 吸收 | 吸收 | |
+| duplicate | 创建副本 | 建立副本 | 与 copy、clone 区分 |
+| copy | 复制 | 拷貝 | 繁中沿用 macOS 的 Copy |
+| clone | 克隆 | 複製 | 仅用于复制仓库 |
+| revert | 还原 | 回復 | 繁中「還原」已用于 undo |
+| undo | 撤销 | 還原 | 繁中沿用 macOS 的 Undo |
+| restore | 恢复 | 恢復 | |
+| forget | 忘记 | 忘記 | |
+| bisect | 二分查找 | 二分搜尋 | |
+| annotate / blame | 逐行追溯 | 逐行追溯 | |
+| fetch / push / pull | 获取 / 推送 / 拉取 | 取得 / 推送 / 拉取 | |
+| pull request | Pull Request | Pull Request | 保持英文，与 GitHub 界面一致 |
+| remote | 远程 | 遠端 | |
+| review | 评审 | 審查 | |
+| review note | 评审备注 | 審查備註 | |
+| review mark | 评审标记 | 審查標記 | |
+| hunk | 差异块 | 差異區塊 | |
+| diff | 差异 | 差異 | |
+| snapshot | 快照 | 快照 | |
+| rewrite | 重写 | 重寫 | |
+| base | 基线 | 基準 | 冲突与比较共用同一标签 |
+| head | 头部 | 頭部 | |
+| stack / stacked PR | 堆叠 / 堆叠 PR | 堆疊 / 堆疊 PR | |
+| agent | 智能体 | 代理程式 | 指标记变更的 AI 智能体 |
+| command palette | 命令面板 | 指令面板 | |
+| file / folder | 文件 / 文件夹 | 檔案 / 資料夾 | |
+| settings | 设置 | 設定 | |
+| OK | 确定 | 確定 | |
+| skill | 技能 | 技能 | 指 coding agent 的技能包 |
 
 ## 保持英文的类别
 
 以下内容不进入翻译 catalog，也不随界面语言变化：
 
-- `OK`、`LFS`、`Enter`、`Git`、`Jujutsu`、字体名、编辑器/终端名、代码托管平台名。
+- `LFS`、`Enter`、`Git`、`Jujutsu`、字体名、编辑器/终端名、代码托管平台名。
 - jj 命令、revset、配置键、路径、URL。
 - jj 输出、核心层的内部错误、日志。
 - 提交信息里的技术后缀（例如 `(submodule)`），避免仓库内容随界面语言变化。

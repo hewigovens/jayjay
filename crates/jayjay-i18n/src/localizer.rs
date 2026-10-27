@@ -165,6 +165,14 @@ mod tests {
             Localizer::negotiate(&["ja-JP"]).format("common-cancel", None),
             "キャンセル"
         );
+        assert_eq!(
+            Localizer::negotiate(&["zh-TW"]).format("common-close", None),
+            "關閉"
+        );
+        assert_eq!(
+            Localizer::negotiate(&["zh-CN"]).format("common-close", None),
+            "关闭"
+        );
     }
 
     #[test]

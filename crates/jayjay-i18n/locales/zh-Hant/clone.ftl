@@ -1,0 +1,6 @@
+clone-choose-where-to-clone = 選擇複製位置
+clone-repository-url = 儲存庫 URL
+clone-choose-ellipsis = 選擇…
+clone-choose = 選擇
+clone-name = 名稱
+clone-cloning = 正在複製 { $name }…
