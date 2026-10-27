@@ -324,3 +324,27 @@ fn plain_full_diff_matches_highlighted_line_structure() {
             .any(|span| span.token != SyntaxToken::Plain)
     }));
 }
+
+#[test]
+fn fluent_messages_terms_and_selectors_are_highlighted() {
+    let source = "## Repository\n-brand = JayJay\nrepo-count = { $count ->\n        [one] One change\n       *[other] { NUMBER($count) } changes\n    }\n    .title = Open { -brand }\n";
+    let diff = compute_file_diff_full("locales/en-US/repo.ftl", "", source, false);
+    assert_eq!(diff.language, "fluent");
+    let spans: Vec<_> = diff.lines.iter().flat_map(|line| &line.spans).collect();
+    for (text, token) in [
+        ("## Repository", SyntaxToken::Comment),
+        ("-brand", SyntaxToken::Function),
+        ("repo-count", SyntaxToken::Type),
+        ("$count", SyntaxToken::Variable),
+        ("other", SyntaxToken::Variable),
+        ("NUMBER", SyntaxToken::Function),
+        ("title", SyntaxToken::Attribute),
+    ] {
+        assert!(
+            spans
+                .iter()
+                .any(|span| span.text == text && span.token == token),
+            "Fluent should highlight {text:?} as {token:?}: {spans:?}"
+        );
+    }
+}

@@ -24,6 +24,7 @@ all-languages = [
     "lang-csharp",
     "lang-css",
     "lang-fish",
+    "lang-fluent",
     "lang-go",
     "lang-html",
     "lang-ini",
@@ -56,6 +57,7 @@ lang-cpp = ["dep:tree-sitter-cpp"]
 lang-csharp = ["dep:tree-sitter-c-sharp"]
 lang-css = ["dep:tree-sitter-css"]
 lang-fish = ["dep:tree-sitter-fish"]
+lang-fluent = ["dep:tree-sitter-language"]
 lang-go = ["dep:tree-sitter-go"]
 lang-html = ["dep:tree-sitter-html"]
 lang-ini = ["dep:tree-sitter-ini"]
@@ -123,6 +125,10 @@ tree-sitter-powershell = { workspace = true, optional = true }
 tree-sitter-batch = { workspace = true, optional = true }
 tree-sitter-ini = { workspace = true, optional = true }
 tree-sitter-cmake = { workspace = true, optional = true }
+tree-sitter-language = { workspace = true, optional = true }
+
+[build-dependencies]
+cc = { workspace = true }
 
 [lints]
 workspace = true
