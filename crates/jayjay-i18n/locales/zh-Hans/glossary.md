@@ -9,8 +9,8 @@
 - 菜单和按钮用动词短语，不加句号；说明文字用完整句，句末加句号。
 - 中文与拉丁字母、数字之间留一个半角空格，例如 `jj 仓库`、`3 个文件`。
 - 使用全角标点：`，`、`。`、`：`、`；`、`？`、`！`；省略号统一用 `…`。
-- 界面引用的操作或配置名使用全角双引号：`“完成”`、`“压缩到父提交”`，不用西文直引号 `"`。
-- 中文语境下的补充说明统一使用全角括号：`保存说明（jj describe）`、`关闭注释视图（esc）`。
+- 界面引用的操作或配置名使用全角双引号：`“完成”`、`“压缩到父变更”`，不用西文直引号 `"`。
+- 中文语境下的补充说明统一使用全角括号：`保存说明（jj describe）`、`关闭逐行追溯视图（esc）`。
 - 占位符两边保留空格，例如 `{ $count } 个文件`。
 
 ## 核心术语
@@ -35,7 +35,7 @@
 | divergent | 分叉 | |
 | conflict | 冲突 | |
 | trunk | 主干 | |
-| parent / child | 父提交 / 子提交 | |
+| parent / child | 父变更 / 子变更 | |
 | ancestor / descendant | 祖先 / 后代 | |
 | describe | 编辑说明 | 命令 `jj describe` 不译 |
 | abandon | 放弃 | |
@@ -43,12 +43,13 @@
 | split | 拆分 | |
 | rebase | 变基 | |
 | absorb | 吸收 | |
-| duplicate | 复制 | |
+| duplicate | 创建副本 | 与 copy（复制）区分 |
 | revert | 还原 | |
 | undo | 撤销 | |
 | restore | 恢复 | |
 | forget | 忘记 | |
 | bisect | 二分查找 | |
+| annotate / blame | 逐行追溯 | |
 | fetch / push / pull | 获取 / 推送 / 拉取 | |
 | pull request | Pull Request | 保持英文，与 GitHub 界面一致 |
 | remote | 远程 | |

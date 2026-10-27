@@ -517,5 +517,5 @@ repo-pr-import-already-in-progress = Pull Request のインポートはすでに
 repo-version-already-being-restored = バージョンはすでに復元中です
 repo-tagged-change-immutable = タグ付けされたチェンジは不変になります。
 repo-tagged-change-immutable-hint = { $target } · タグ付けされたチェンジは不変になります
-repo-sync-abandoned-merged = マージ済みを放棄しました: { $names }
-repo-sync-conflicting-may-be-merged = 競合中（マージ済みの可能性あり）: { $names } — 放棄を検討してください
+repo-sync-abandoned-merged = マージ済みを破棄しました: { $names }
+repo-sync-conflicting-may-be-merged = 競合中（マージ済みの可能性あり）: { $names } — 破棄を検討してください
