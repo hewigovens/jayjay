@@ -107,16 +107,16 @@ impl ReviewStore {
         path: Option<&str>,
         source: ReviewMarkSource,
     ) -> std::io::Result<Vec<String>> {
-        let cleared: Vec<String> = self
-            .paths_owned_by(change_id, source)
-            .into_iter()
-            .filter(|p| path.is_none_or(|path| path == p))
-            .collect();
-        if cleared.is_empty() {
-            return Ok(cleared);
-        }
-        let agent = source == ReviewMarkSource::Agent;
         self.mutate_checked(|store| {
+            let cleared: Vec<String> = store
+                .paths_owned_by(change_id, source)
+                .into_iter()
+                .filter(|p| path.is_none_or(|path| path == p))
+                .collect();
+            if cleared.is_empty() {
+                return cleared;
+            }
+            let agent = source == ReviewMarkSource::Agent;
             for path in &cleared {
                 let k = key(change_id, path);
                 let entry = store.state.reviewed.get_mut(&k).expect("listed entry");
@@ -157,17 +157,5 @@ impl ReviewStore {
             }
             cleared
         })
-    }
-
-    // A failed save must not leave the mutation in memory for the next write.
-    fn mutate_checked<T>(&mut self, mutate: impl FnOnce(&mut Self) -> T) -> std::io::Result<T> {
-        let mut staged = Self::from_state(self.state.clone());
-        let result = mutate(&mut staged);
-        let previous = std::mem::replace(&mut self.state, staged.state);
-        if let Err(error) = self.save_checked() {
-            self.state = previous;
-            return Err(error);
-        }
-        Ok(result)
     }
 }

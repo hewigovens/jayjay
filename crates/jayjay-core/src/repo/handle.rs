@@ -8,6 +8,7 @@ use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo_path::RepoPathBuf;
 use jj_lib::transaction::Transaction;
 use jj_lib::ui_path::RepoPathUiConverter;
+use jj_lib::workspace::Workspace;
 
 use super::cache::RepoCache;
 use super::command_process::RunningJjProcesses;
@@ -57,8 +58,12 @@ impl Repo {
 
         let repo = load_repo_at_head(&workspace, "failed to load repo")?;
 
+        Ok(Self::from_workspace(workspace, repo))
+    }
+
+    pub(super) fn from_workspace(workspace: Workspace, repo: Arc<ReadonlyRepo>) -> Self {
         let repo_path = canonicalize(workspace.repo_path());
-        Ok(Self {
+        Self {
             path: workspace.workspace_root().to_owned(),
             write_lock: write_lock::for_store(&repo_path),
             repo_path,
@@ -74,7 +79,7 @@ impl Repo {
             bisect: Mutex::new(None),
             bisect_execution: Mutex::new(()),
             bisect_closed: AtomicBool::new(false),
-        })
+        }
     }
 
     pub fn path(&self) -> &Path {

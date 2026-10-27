@@ -1,5 +1,7 @@
-use std::fs;
+use std::fs::{self, File, OpenOptions};
+use std::io;
 use std::path::{Path, PathBuf};
+use std::sync::atomic::{AtomicU64, Ordering};
 use std::time::SystemTime;
 
 use jayjay_primitives::AppDirs;
@@ -14,6 +16,12 @@ struct FileStamp {
     len: u64,
 }
 
+enum StoredFile {
+    Missing,
+    Parsed(StoredReviews),
+    Corrupt(serde_json::Error),
+}
+
 pub(crate) struct Persistence {
     save_path: Option<PathBuf>,
     loaded_stamp: Option<FileStamp>,
@@ -25,6 +33,10 @@ impl Persistence {
             save_path: None,
             loaded_stamp: None,
         }
+    }
+
+    pub(crate) fn is_persistent(&self) -> bool {
+        self.save_path.is_some()
     }
 
     fn at_path(save_path: PathBuf, loaded_stamp: Option<FileStamp>) -> Self {
@@ -44,12 +56,83 @@ impl ReviewStore {
     }
 
     pub fn load_from(path: PathBuf) -> Self {
-        // Stamp before reading: if a writer lands in between, the stamp mismatch forces a safe reload on the next staleness check.
+        match Self::try_load_from(path.clone()) {
+            Ok(store) => store,
+            Err(error) => {
+                eprintln!("[review_store] load: {error}");
+                let mut store = Self::in_memory();
+                store.persistence = Persistence::at_path(path, None);
+                store
+            }
+        }
+    }
+
+    pub fn try_load() -> io::Result<Self> {
+        let path = Self::store_path()
+            .ok_or_else(|| io::Error::other("Review store directory is unavailable"))?;
+        Self::try_load_from(path)
+    }
+
+    pub fn try_load_from(path: PathBuf) -> io::Result<Self> {
+        let mut store = Self::in_memory();
+        store.persistence = Persistence::at_path(path.clone(), None);
+        store.reload()?;
+        Ok(store)
+    }
+
+    // Writers replace the JSON atomically, so reads never need the lock; only quarantining a corrupt file does.
+    fn reload(&mut self) -> io::Result<()> {
+        let Some(path) = self.persistence.save_path.clone() else {
+            return Ok(());
+        };
         let stamp = Self::stamp(&path);
-        let state = Self::load_path(path.clone());
-        let mut store = Self::from_state(state);
-        store.persistence = Persistence::at_path(path, stamp);
-        store
+        match Self::read_path(&path)? {
+            StoredFile::Missing => {}
+            StoredFile::Parsed(state) => {
+                self.state = state;
+                self.persistence.loaded_stamp = stamp;
+            }
+            StoredFile::Corrupt(_) => {
+                self.begin_mutation()?;
+            }
+        }
+        Ok(())
+    }
+
+    pub(crate) fn begin_mutation(&mut self) -> io::Result<Option<File>> {
+        let Some(path) = self.persistence.save_path.clone() else {
+            return Ok(None);
+        };
+        if let Some(parent) = path
+            .parent()
+            .filter(|parent| !parent.as_os_str().is_empty())
+        {
+            fs::create_dir_all(parent)?;
+        }
+        // A separate inode stays locked across atomic replacement of the JSON file.
+        let lock = OpenOptions::new()
+            .read(true)
+            .write(true)
+            .create(true)
+            .truncate(false)
+            .open(path.with_extension("json.lock"))?;
+        lock.lock()?;
+        match Self::read_path(&path)? {
+            StoredFile::Missing => {}
+            StoredFile::Parsed(state) => self.state = state,
+            StoredFile::Corrupt(error) => {
+                let bad = path.with_extension("json.corrupt");
+                eprintln!(
+                    "[review_store] {} failed to parse ({error}); preserving as {}",
+                    path.display(),
+                    bad.display()
+                );
+                fs::rename(&path, bad)?;
+                self.state = StoredReviews::default();
+            }
+        }
+        self.persistence.loaded_stamp = Self::stamp(&path);
+        Ok(Some(lock))
     }
 
     fn stamp(path: &Path) -> Option<FileStamp> {
@@ -60,40 +143,27 @@ impl ReviewStore {
         })
     }
 
-    /// An unparseable file is renamed to `.json.corrupt` before defaulting to empty, so the next save cannot destroy recoverable marks.
-    pub(crate) fn load_path(path: PathBuf) -> StoredReviews {
-        let Ok(text) = fs::read_to_string(&path) else {
-            return StoredReviews::default();
+    fn read_path(path: &Path) -> io::Result<StoredFile> {
+        let text = match fs::read_to_string(path) {
+            Ok(text) => text,
+            Err(error) if error.kind() == io::ErrorKind::NotFound => {
+                return Ok(StoredFile::Missing);
+            }
+            Err(error) => return Err(error),
         };
-        match serde_json::from_str::<StoredReviews>(&text) {
+        Ok(match serde_json::from_str::<StoredReviews>(&text) {
             Ok(mut state) => {
                 state.extra.remove("review_baselines");
-                state
+                StoredFile::Parsed(state)
             }
-            Err(e) => {
-                let bad = path.with_extension("json.corrupt");
-                eprintln!(
-                    "[review_store] {} failed to parse ({e}); preserving as {}",
-                    path.display(),
-                    bad.display()
-                );
-                let _ = fs::rename(&path, &bad);
-                StoredReviews::default()
-            }
-        }
+            Err(error) => StoredFile::Corrupt(error),
+        })
     }
 
-    /// Long-lived stores must call this before mutating, otherwise save rewrites state another process persisted since loading.
     pub fn refresh_from_disk(&mut self) {
-        let Some(path) = self.persistence.save_path.clone() else {
-            return;
-        };
-        // A missing file means the store was deleted externally; keep the in-memory state so the next save restores it.
-        if !path.exists() {
-            return;
+        if let Err(error) = self.reload() {
+            eprintln!("[review_store] refresh: {error}");
         }
-        self.persistence.loaded_stamp = Self::stamp(&path);
-        self.state = Self::load_path(path);
     }
 
     /// Cheap staleness check for read/render paths; mutations still refresh unconditionally.
@@ -105,8 +175,7 @@ impl ReviewStore {
         if current.is_none() || current == self.persistence.loaded_stamp {
             return;
         }
-        self.persistence.loaded_stamp = current;
-        self.state = Self::load_path(path);
+        self.refresh_from_disk();
     }
 
     /// Canonical on-disk path shared by every shell.
@@ -117,12 +186,6 @@ impl ReviewStore {
             return Some(PathBuf::from(path));
         }
         AppDirs::new().map(|dirs| dirs.config.join("review_store.json"))
-    }
-
-    pub(crate) fn save(&mut self) {
-        if let Err(error) = self.save_checked() {
-            eprintln!("[review_store] save: {error}");
-        }
     }
 
     pub(crate) fn save_checked(&mut self) -> std::io::Result<()> {
@@ -136,7 +199,6 @@ impl ReviewStore {
 
     /// Persist atomically with a unique sibling temp file so concurrent writers cannot observe or rename a half-written store.
     pub(crate) fn write_to(&self, path: &Path) -> std::io::Result<()> {
-        use std::sync::atomic::{AtomicU64, Ordering};
         static WRITE_SEQ: AtomicU64 = AtomicU64::new(0);
 
         if let Some(parent) = path.parent() {

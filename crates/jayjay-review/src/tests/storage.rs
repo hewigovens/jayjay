@@ -1,3 +1,6 @@
+use std::process::Command;
+use std::time::{Duration, Instant};
+
 use super::*;
 use crate::store::key;
 
@@ -86,7 +89,7 @@ fn write_to_replaces_existing_file_without_clobbering_notes_or_extra_keys() {
     let json = r#"{"reviewed":{},"notes":[{"id":"n1","change_id":"c1","path":"a.txt","identity":"id","side":"new","line":1,"anchor_excerpt":"x","body":"check","created_at_ms":1,"updated_at_ms":1}],"future":true}"#;
     std::fs::write(&path, json).unwrap();
 
-    let state = ReviewStore::load_path(path.clone());
+    let state = serde_json::from_str(&std::fs::read_to_string(&path).unwrap()).unwrap();
     let mut store = ReviewStore::from_state(state);
     store.mark_reviewed("c1", "b.txt", "id-v1");
     store.write_to(&path).unwrap();
@@ -106,9 +109,9 @@ fn corrupt_file_is_preserved_not_silently_wiped_on_load() {
     // Truncated JSON, the shape an interrupted write would leave behind.
     std::fs::write(&path, r#"{"reviewed":{"c|a.txt":{"identi"#).unwrap();
 
-    let state = ReviewStore::load_path(path.clone());
+    let store = ReviewStore::try_load_from(path.clone()).unwrap();
 
-    assert!(state.reviewed.is_empty());
+    assert_eq!(store.summary().marks, 0);
     assert!(!path.exists());
     assert!(path.with_extension("json.corrupt").exists());
 }
@@ -118,9 +121,9 @@ fn missing_file_loads_empty_without_creating_corrupt_sibling() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("review_store.json");
 
-    let state = ReviewStore::load_path(path.clone());
+    let store = ReviewStore::try_load_from(path.clone()).unwrap();
 
-    assert!(state.reviewed.is_empty());
+    assert_eq!(store.summary().marks, 0);
     assert!(!path.with_extension("json.corrupt").exists());
 }
 
@@ -157,4 +160,91 @@ fn failed_agent_writes_restore_in_memory_state() {
         ["a.txt"]
     );
     assert!(!reloaded.is_reviewed("c1", "b.txt", "id"));
+}
+
+#[test]
+fn reads_do_not_wait_for_a_held_write_lock() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("review_store.json");
+    let mut writer = ReviewStore::try_load_from(path.clone()).unwrap();
+    writer.mark_reviewed("c1", "a.txt", "id");
+    let lock = std::fs::OpenOptions::new()
+        .write(true)
+        .open(path.with_extension("json.lock"))
+        .unwrap();
+    lock.lock().unwrap();
+    let (sender, receiver) = std::sync::mpsc::channel();
+    std::thread::spawn(move || {
+        let mut store = ReviewStore::load_from(path.clone());
+        store.refresh_if_stale();
+        let reviewed = store.is_reviewed("c1", "a.txt", "id");
+        sender.send(reviewed).unwrap();
+    });
+    assert_eq!(receiver.recv_timeout(Duration::from_secs(5)), Ok(true));
+}
+
+#[test]
+fn concurrent_processes_preserve_marks_notes_and_unknown_fields() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("review_store.json");
+    std::fs::write(&path, r#"{"reviewed":{},"notes":[],"future":true}"#).unwrap();
+    let mut children: Vec<_> = ["phone", "app"]
+        .into_iter()
+        .map(|writer| {
+            Command::new(std::env::current_exe().unwrap())
+                .args([
+                    "--exact",
+                    "tests::storage::review_writer_process",
+                    "--ignored",
+                ])
+                .env("JAYJAY_TEST_REVIEW_WRITER", writer)
+                .env("JAYJAY_TEST_REVIEW_DIRECTORY", dir.path())
+                .spawn()
+                .unwrap()
+        })
+        .collect();
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !["phone", "app"]
+        .iter()
+        .all(|name| dir.path().join(name).exists())
+    {
+        assert!(
+            Instant::now() < deadline,
+            "writers did not reach the barrier"
+        );
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    std::fs::write(dir.path().join("start"), "").unwrap();
+    for child in &mut children {
+        assert!(child.wait().unwrap().success());
+    }
+    let store = ReviewStore::try_load_from(path).unwrap();
+    for writer in ["phone", "app"] {
+        for index in 0..20 {
+            assert!(store.is_reviewed("c1", &format!("{writer}-{index}"), "identity"));
+        }
+    }
+    assert_eq!(store.list_notes("c1", true).len(), 2);
+    let json: serde_json::Value = serde_json::from_str(&store.snapshot_json().unwrap()).unwrap();
+    assert_eq!(json["future"], true);
+}
+
+#[test]
+#[ignore = "subprocess helper for concurrent_processes_preserve_marks_notes_and_unknown_fields"]
+fn review_writer_process() {
+    let writer = std::env::var("JAYJAY_TEST_REVIEW_WRITER").unwrap();
+    let dir = std::path::PathBuf::from(std::env::var_os("JAYJAY_TEST_REVIEW_DIRECTORY").unwrap());
+    let mut store = ReviewStore::try_load_from(dir.join("review_store.json")).unwrap();
+    std::fs::write(dir.join(&writer), "").unwrap();
+    let deadline = Instant::now() + Duration::from_secs(10);
+    while !dir.join("start").exists() {
+        assert!(Instant::now() < deadline, "start barrier timed out");
+        std::thread::sleep(Duration::from_millis(10));
+    }
+    for index in 0..20 {
+        store.mark_reviewed("c1", &format!("{writer}-{index}"), "identity");
+        let mut anchor = anchor();
+        anchor.path = writer.clone();
+        store.add_note(anchor, &format!("{writer} note {index}"));
+    }
 }

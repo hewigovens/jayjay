@@ -57,6 +57,18 @@ impl super::Repo {
         ))
     }
 
+    /// A conflict-only placeholder has no tree-diff entry to load, so it stays the listed card without review content.
+    pub(super) fn load_listed_review_hunk(
+        &self,
+        rev: &str,
+        listed: &DiffHunk,
+    ) -> crate::types::JayResult<DiffHunk> {
+        if listed.is_conflict_only_placeholder() {
+            return Ok(listed.clone());
+        }
+        self.load_review_hunk(rev, &listed.path, listed.old_path.as_deref())
+    }
+
     pub(super) fn load_review_hunk(
         &self,
         rev: &str,

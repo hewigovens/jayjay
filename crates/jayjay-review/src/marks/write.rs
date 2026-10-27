@@ -58,7 +58,6 @@ impl ReviewStore {
             .with_extra(self.entry_extra(&k));
         entry.inherit_group_sources(self.state.reviewed.get(&k), hunk_indices);
         self.state.reviewed.insert(k, entry);
-        self.save();
     }
 
     pub(super) fn aligned_state(
@@ -118,7 +117,7 @@ impl ReviewStore {
         let k = key(change_id, path);
         match self.state.reviewed.get_mut(&k) {
             Some(entry) if entry.identity == identity => match &mut entry.state {
-                ReviewEntryState::File if entry.source == ReviewMarkSource::User => return,
+                ReviewEntryState::File if entry.source == ReviewMarkSource::User => (),
                 ReviewEntryState::File => {
                     entry.state = ReviewEntryState::Hunks {
                         indices: vec![hunk_idx],
@@ -150,7 +149,6 @@ impl ReviewStore {
                 self.state.reviewed.insert(k, entry);
             }
         }
-        self.save();
     }
 
     pub(super) fn write_file(
@@ -172,12 +170,10 @@ impl ReviewStore {
             && removed_reviewed.is_empty();
         if empty {
             self.state.reviewed.remove(&k);
-            self.save();
             return;
         }
         let entry = persisted_entry(identity, fingerprints, state, removed_reviewed)
             .with_extra(self.entry_extra(&k));
         self.state.reviewed.insert(k, entry);
-        self.save();
     }
 }

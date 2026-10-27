@@ -15,55 +15,51 @@ impl ReviewStore {
     }
 
     pub fn add_note(&mut self, anchor: NoteAnchor, body: &str) -> NoteEntry {
-        let now = now_ms();
-        if let Some(note) = self
-            .state
-            .notes
-            .iter_mut()
-            .filter_map(StoredNote::parsed_mut)
-            .find(|note| !note.resolved && note.same_line(&anchor))
-        {
-            note.update_at_anchor(anchor, body, now);
-            let out = note.clone();
-            self.save();
-            return out;
-        }
-        let note = NoteEntry::new(self.id_source.next_id(), anchor, body, now);
-        self.state.notes.push(StoredNote::new(note.clone()));
-        self.save();
-        note
+        self.mutate(|store| {
+            let now = now_ms();
+            if let Some(note) = store
+                .state
+                .notes
+                .iter_mut()
+                .filter_map(StoredNote::parsed_mut)
+                .find(|note| !note.resolved && note.same_line(&anchor))
+            {
+                note.update_at_anchor(anchor, body, now);
+                return note.clone();
+            }
+            let note = NoteEntry::new(store.id_source.next_id(), anchor, body, now);
+            store.state.notes.push(StoredNote::new(note.clone()));
+            note
+        })
     }
 
     pub fn update_note(&mut self, id: &str, body: &str) -> Option<NoteEntry> {
-        let now = now_ms();
-        let note = self.find_note_mut(id)?;
-        note.update_body(body, now);
-        let out = note.clone();
-        self.save();
-        Some(out)
+        self.mutate(|store| {
+            let now = now_ms();
+            let note = store.find_note_mut(id)?;
+            note.update_body(body, now);
+            Some(note.clone())
+        })
     }
 
     pub fn delete_note(&mut self, id: &str) -> bool {
-        let before = self.state.notes.len();
-        self.state
-            .notes
-            .retain(|note| note.parsed().is_none_or(|note| note.id != id));
-        let deleted = self.state.notes.len() != before;
-        if deleted {
-            self.save();
-        }
-        deleted
+        self.mutate(|store| {
+            let before = store.state.notes.len();
+            store
+                .state
+                .notes
+                .retain(|note| note.parsed().is_none_or(|note| note.id != id));
+            store.state.notes.len() != before
+        })
     }
 
     pub fn resolve_note(&mut self, id: &str) -> Option<NoteEntry> {
-        let now = now_ms();
-        let note = self.find_note_mut(id)?;
-        let changed = note.resolve(now);
-        let out = note.clone();
-        if changed {
-            self.save();
-        }
-        Some(out)
+        self.mutate(|store| {
+            let now = now_ms();
+            let note = store.find_note_mut(id)?;
+            note.resolve(now);
+            Some(note.clone())
+        })
     }
 
     fn find_note_mut(&mut self, id: &str) -> Option<&mut NoteEntry> {

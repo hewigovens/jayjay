@@ -53,7 +53,7 @@ pub fn mark_review_file(
         .iter()
         .find(|hunk| hunk.path == file)
         .ok_or_else(|| JayError::review(format!("{file} is not part of this change's diff")))?;
-    let hunk = repo.load_review_hunk(&commit_id, &listed.path, listed.old_path.as_deref())?;
+    let hunk = repo.load_listed_review_hunk(&commit_id, listed)?;
     if hunk.review_identity.is_empty() {
         return Err(JayError::review(format!(
             "{file} cannot carry review marks"

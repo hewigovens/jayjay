@@ -60,8 +60,9 @@ impl ReviewStore {
 
     /// Drops every mark and note for every repository; unknown top-level fields stay for other versions.
     pub fn clear_all(&mut self) {
-        self.state.reviewed.clear();
-        self.state.notes.clear();
-        self.save();
+        self.mutate(|store| {
+            store.state.reviewed.clear();
+            store.state.notes.clear();
+        })
     }
 }

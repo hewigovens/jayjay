@@ -7,7 +7,7 @@ Review state (marks and notes) is persistent across app restarts, local to the u
 ## Store
 
 - Canonical implementation: `jayjay_review::ReviewStore` (marks in `marks/`, notes in `note_store.rs`, reconciliation in `reconcile.rs`).
-- Persistence and file format: [Storage Guide](storage.md).
+- Persistence and file format: [Storage Guide](storage.md). Every native review writer shares a lock across reload, mutation, and atomic replacement, including marks, ownership, notes, and clear operations. Use checked transactions for callers that must acknowledge persistence.
 - SwiftUI: `Shared/ReviewStore.swift` is an `@Observable` UniFFI facade with a per-file marks cache.
 - GPUI: one process-global store; mutate only through `window/review.rs::mutate` (refresh from disk first). Render-path reads use `refresh_if_stale`. Note reconciliation loads asynchronously on the view model (`loaders/review_notes.rs`, generation-guarded).
 
@@ -24,9 +24,21 @@ Review state (marks and notes) is persistent across app restarts, local to the u
 
 Notes attach reviewer feedback to diff lines — an anchor of side, line, excerpt, context, and the `ignore_whitespace` mode the diff was rendered with — and are consumed by agents through the CLI:
 
-- Reconciliation (`ReviewStore::reconcile`) runs against a `ReviewDiffProvider`. The only production provider is `jayjay-core`'s (`repo/review_notes.rs`), used by GUI and CLI alike — this is what keeps both surfaces agreeing on identity, rename pairing, and LFS/image placeholder content.
+- Reconciliation (`ReviewStore::reconcile`) runs against a `ReviewDiffProvider`. Repository-backed GUI and CLI use `jayjay-core`'s provider (`repo/review_notes.rs`), keeping identity, rename pairing, and LFS/image placeholder content consistent.
 - Anchor matching replays the exact GUI render pipeline: Histogram `compute_file_diff` with the note's recorded `ignore_whitespace`, then display lines, then `change_group_for_anchor`. If you change any stage of the diff pipeline, note anchors are part of its contract.
 - GUI anchors are built shell-side from the rendered line (side/line from the line's span style, excerpt/context from the display lines and change group) and stamped with the ignore-whitespace mode the diff was actually rendered with. `Repo::review_note_anchor`/`build_note_anchor` are the CLI add-note path only — they hardcode `ignore_whitespace = false`, so calling them from a GUI with the whitespace toggle on either errors or records a wrong-mode anchor that can reconcile stale in the very diff it was created from.
+
+## External Working-Copy Review
+
+`jayjay_core::WorkingCopyReview::open(path)` pins the workspace’s `@` to one existing operation without snapshotting, importing Git state, updating stale workspaces, or resolving concurrent operation heads. Multiple operation heads return an error for the caller to retry after the repository owner reconciles them. `files()` lists metadata; `load_file()` materializes one file through the native provider; `status(&store, ignore_whitespace)` returns loaded files, canonical snapshots, display-to-canonical group maps, rollups, ownership, and group states. Read a fresh `ReviewStore::try_load()` for each API refresh.
+
+`set_reviewed(&mut store, &WorkingCopyReviewMark)` accepts the full expected commit ID, path, optional display-group index, displayed whitespace mode, and desired reviewed state. A group index is scoped to that commit, path, and mode. The setter checks the current workspace commit again just before taking the review-store lock (a later rewrite still reconciles as changed since review), rejects stale requests, and writes a person’s ownership without changing jj state. Whole-file actions take ownership of that file; group actions preserve untouched owners. Branch/range comparisons are read-only: their combined fingerprints must never be saved under the working-copy change ID.
+
+`open_change(path, change_id)` gives the same view of another mutable change, such as an unpushed ancestor of `@`, keyed by that change; its writes re-resolve the full change id and are refused once it was rewritten. Bookmarks, revsets, divergent ids and immutable changes are refused.
+
+`notes(&store)` reconciles the change's notes against the inspected commit. `add_note(&mut store, &WorkingCopyReviewNote)` anchors with the same pipeline as reconciliation in the displayed whitespace mode and saves only if `@` is still the expected commit; `resolve_note` accepts only IDs belonging to the inspected change. Both write under the review-store lock and return errors on failed saves.
+
+Connected Control Room clients must link this Rust API and use the shared native store as authority.
 
 ## Agent Workflow
 
