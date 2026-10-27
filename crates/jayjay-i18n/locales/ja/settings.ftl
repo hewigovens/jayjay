@@ -58,6 +58,14 @@ settings-confirm-drag-rebase = ドラッグでのリベースを確認
 settings-repository-behavior = リポジトリの動作
 settings-submodule-support = Git サブモジュールのサポートを有効にする
 
+settings-coding-agents = コーディングエージェント
+settings-agent-skill = コーディングエージェントと連携
+settings-agent-skill-detail = JayJay スキルをインストールしてレビューノートとレビューマークを操作できます。
+settings-agent-skill-agents = Claude Code、Codex、Cursor に JayJay の使い方を教えます。すべてのプロジェクトに適用されます。
+settings-agent-skill-cli = このスキルには jayjay コマンドが必要です。下の「バージョン管理」でインストールしてください。
+settings-agent-skill-repair = インストールを更新
+settings-agent-skill-conflict = カスタムまたは編集済みのスキルが { $path } にすでにあります。JayJay スキルをインストールする前に移動してください。
+
 settings-applications = アプリケーション
 settings-editor = エディター
 settings-terminal = ターミナル

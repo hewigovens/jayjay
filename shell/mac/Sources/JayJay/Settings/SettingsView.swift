@@ -53,6 +53,7 @@ struct SettingsView: View {
                 SettingsWorkflowPage()
             case .integrations:
                 Form {
+                    SettingsAgentSkillsSection()
                     SettingsToolSections(availability: toolAvailability)
                     SettingsCLISections(diagnostics: cliDiagnostics, forgeLogins: forgeLogins)
                 }

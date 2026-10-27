@@ -1,6 +1,8 @@
 uniffi::setup_scaffolding!();
 
 #[cfg(feature = "desktop")]
+mod agent_skills;
+#[cfg(feature = "desktop")]
 mod ai;
 #[cfg(feature = "desktop")]
 mod cli;

@@ -58,6 +58,14 @@ settings-confirm-drag-rebase = Confirm drag-to-rebase
 settings-repository-behavior = Repository Behavior
 settings-submodule-support = Enable Git submodule support
 
+settings-coding-agents = Coding Agents
+settings-agent-skill = Integrate with coding agents
+settings-agent-skill-detail = Install the JayJay skill to work with review notes and review marks.
+settings-agent-skill-agents = Teach Claude Code, Codex, and Cursor how to use JayJay. Applies to all your projects.
+settings-agent-skill-cli = The skill requires the jayjay command. Install it in Version Control below.
+settings-agent-skill-repair = Update Installation
+settings-agent-skill-conflict = A custom or edited skill already exists at { $path }. Move it before installing the JayJay skill.
+
 settings-applications = Applications
 settings-editor = Editor
 settings-terminal = Terminal

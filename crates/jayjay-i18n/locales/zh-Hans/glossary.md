@@ -61,7 +61,7 @@
 | rewrite | 重写 | |
 | head | 头部 | |
 | stack / stacked PR | 堆叠 / 堆叠 PR | |
-| agent | 代理 | 指标记变更的 AI 代理 |
+| agent | 智能体 | 指标记变更的 AI 智能体 |
 
 ## 保持英文的类别
 

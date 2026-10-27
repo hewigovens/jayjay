@@ -5,6 +5,8 @@ pub use jayjay_primitives::{
 pub use jj_diff as diff;
 pub use jj_diff::syntax;
 #[cfg(feature = "repository")]
+pub mod agent_skills;
+#[cfg(feature = "repository")]
 mod cli;
 pub mod commit_message;
 pub mod compare;

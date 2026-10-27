@@ -527,7 +527,7 @@ write_conflict_file() {
 
 setup_defaults
 rm -rf "$fixtures"
-mkdir -p "$fixtures"
+mkdir -p "$fixtures/agent-skills-home"
 fixture_simple
 fixture_mutating_scenes
 fixture_description_height

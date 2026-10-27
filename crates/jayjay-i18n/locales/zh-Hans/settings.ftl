@@ -58,6 +58,14 @@ settings-confirm-drag-rebase = 拖动变基前确认
 settings-repository-behavior = 仓库行为
 settings-submodule-support = 启用 Git 子模块支持
 
+settings-coding-agents = 编程智能体
+settings-agent-skill = 与编程智能体集成
+settings-agent-skill-detail = 安装 JayJay 技能以处理评审备注和评审标记。
+settings-agent-skill-agents = 让 Claude Code、Codex 和 Cursor 学会使用 JayJay。适用于所有项目。
+settings-agent-skill-cli = 此技能需要 jayjay 命令。请在下方“版本控制”中安装。
+settings-agent-skill-repair = 更新技能
+settings-agent-skill-conflict = { $path } 已存在自定义或已编辑的技能。请先将其移走，再安装 JayJay 技能。
+
 settings-applications = 应用
 settings-editor = 编辑器
 settings-terminal = 终端
