@@ -18,7 +18,7 @@ english=(
 status=0
 camel() { awk -F'[-_]' '{ printf "%s", $1; for (i = 2; i <= NF; i++) printf "%s", toupper(substr($i, 1, 1)) substr($i, 2) }' <<< "$1"; }
 
-used=$( { grep -rhoE --include='*.rs' '[a-z0-9_:]*[a-z_]+::[a-z0-9_]+' crates shell/gpui/src --exclude-dir=jayjay-i18n \
+used=$( { grep -rhoE --include='*.rs' '[a-z0-9_:]*[a-z_]+::[a-z0-9_]+' crates shell/gpui/src packages/review-web/wasm/src --exclude-dir=jayjay-i18n \
     | sed -n 's/^jayjay_i18n:://; /^[a-z_]*::[a-z0-9_]*$/p'
   grep -rhoE --include='*.swift' 'Localized\.[A-Za-z]+\.[A-Za-z0-9]+' shell/mac/Sources shell/mac/Packages; } | sort -u)
 for file in crates/jayjay-i18n/locales/en-US/*.ftl; do

@@ -9,13 +9,14 @@ license.workspace = true
 repository.workspace = true
 
 [features]
-default = ["storage"]
+default = ["storage", "all-languages"]
+all-languages = ["jj-diff/all-languages"]
 storage = []
 test-util = []
 
 [dependencies]
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }
-jj-diff = { version = "0.1.0", path = "../jj-diff" }
+jj-diff = { version = "0.1.0", path = "../jj-diff", default-features = false }
 serde = { workspace = true }
 serde_json = { workspace = true }
 uuid = { workspace = true }

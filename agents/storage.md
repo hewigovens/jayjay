@@ -82,6 +82,12 @@ The canonical implementation is `crates/jayjay-review/src/store/`. See [Review S
 
 Review locking coordinates processes built with this crate; an older app that ignores the sidecar lock must be updated before running alongside another writer. Control Room uses `ReviewStore::try_load()` and checked transactions so storage errors reach its API. Legacy infallible UI methods retain their logging behavior on failure. Pins and recent revsets still use refresh-before-mutate without cross-process locking and remain last-rename-wins for simultaneous writes.
 
+### Browser review PWA
+
+`packages/review-web/src/local/BrowserReviewStorage.ts` adapts a consumer-named IndexedDB database, object store `data`. Server-backed hosts bypass this adapter. `active-bundle` holds the imported source bundle; `review:<repositoryId>` holds canonical review JSON. Each review write reads the latest snapshot and runs the Rust mutation synchronously inside one IndexedDB transaction; the UI reports success after commit. An import stores a recovery snapshot under `review-backup:<repositoryId>`; restoration checks that no later edit would be overwritten. Browser review state is local to the origin and repository ID, with desktop-schema JSON import/export but no cross-device synchronization. Imported bundles and notes are private source-review data; browser eviction remains possible, so exports are the portable backup.
+
+Cache Storage is separate: `jayjay-shell-<version>` holds generated static assets and the grammar-free base; `jayjay-syntax-v1` holds content-addressed WASM groups. Neither cache holds review bundles or API responses. The service worker cleans only its own obsolete assets; it leaves IndexedDB review state intact.
+
 ## Shell-local Preferences
 
 ### SwiftUI

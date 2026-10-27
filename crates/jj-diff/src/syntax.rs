@@ -1,3 +1,4 @@
+#[cfg(feature = "syntax")]
 #[cfg_attr(target_family = "wasm", path = "syntax/wasm.rs")]
 mod cache;
 #[cfg(feature = "lang-fluent")]
@@ -76,6 +77,7 @@ const HIGHLIGHTS: &[(&str, SyntaxToken)] = &[
     ("tag.attribute", SyntaxToken::Attribute),
 ];
 
+#[cfg(feature = "syntax")]
 static HIGHLIGHT_NAMES: std::sync::LazyLock<Vec<&str>> =
     std::sync::LazyLock::new(|| HIGHLIGHTS.iter().map(|(name, _)| *name).collect());
 
@@ -144,6 +146,7 @@ static SOLIDITY_HIGHLIGHT_QUERY: std::sync::LazyLock<String> = std::sync::LazyLo
 });
 
 // Some grammars ship Neovim-dialect queries: tree-sitter-highlight keeps the last of `@comment @spell` and ignores `#lua-match?`, which would apply its capture to every node.
+#[cfg(feature = "syntax")]
 fn without_neovim_extensions(query: &str) -> String {
     query
         .replace(" @nospell", "")
@@ -166,7 +169,7 @@ macro_rules! languages {
 
         fn with_config_for_language<R>(
             language: &str,
-            use_config: impl FnOnce(&HighlightConfiguration) -> R,
+            _use_config: impl FnOnce(&HighlightConfiguration) -> R,
         ) -> Option<R> {
             match language {
                 $(#[cfg(feature = $feature)]
@@ -177,7 +180,7 @@ macro_rules! languages {
                         config.configure(&HIGHLIGHT_NAMES);
                         Some(config)
                     }
-                    cache::with_config!(build_config, use_config)
+                    cache::with_config!(build_config, _use_config)
                 })*
                 _ => None,
             }
@@ -222,7 +225,7 @@ languages! {
     "lang-ini": "ini" => tree_sitter_ini::LANGUAGE, tree_sitter_ini::HIGHLIGHTS_QUERY;
 }
 
-pub(crate) fn language_for_path(path: &str) -> &'static str {
+pub fn language_for_path(path: &str) -> &'static str {
     let basename = path.rsplit('/').next().unwrap_or(path);
     if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
         return "make";

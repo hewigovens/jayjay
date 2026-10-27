@@ -66,6 +66,10 @@ Discovery is read-only; report evidence before editing, and prefer a few high-co
 - To test cancelling a fetch or push, do not fake the network: set the repo's `git.executable-path` to a shell script that touches a marker and sleeps, add an unreachable remote, poll the marker, then cancel. `crates/jayjay-core/tests/integration/remote_operations.rs`, `RepoViewModelSyncCancelTests`, and the `sync-cancel` fixture in `scripts/ui-test-fixtures.sh` share this pattern; dead hosts and timeouts are slow and flaky.
 - `jj_test` fixtures pin commit timestamps, so two identical rewrites of `@` collapse into one commit and `is_divergent` stays false even when the code raced. Assert races through the op log — a raced write leaves two op heads, and the next load merges them into an operation with two parents — and confirm the test fails on the old code before trusting it.
 
+## Browser Review Tests
+
+The reusable package lives in `packages/review-web`; `shell/web` is its browser test host. Run `npm ci` at the repository root. Rust adapter behavior is tested with `cargo test --locked -p jj-diff-web`; shared tree behavior lives in `jayjay-primitives::file_tree`. After `npm run build`, run `npm run test:browser` from `shell/web` to exercise the production bundle and real WASM in Chromium and WebKit. Keep screenshots and one-off QA scripts outside source. Native shell tests do not prove this browser boundary.
+
 ## Swift Tests
 
 Swift unit tests live in `shell/mac/Tests/JayJayTests/` (`just test-app`). Cover Swift-only behavior; shared logic belongs in Rust tests.

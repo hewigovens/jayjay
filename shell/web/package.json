@@ -1,0 +1,29 @@
+{
+  "name": "@jayjay/review-web-tests",
+  "private": true,
+  "version": "0.0.0",
+  "type": "module",
+  "scripts": {
+    "wasm": "bash ../../scripts/build-diff-web.sh",
+    "dev": "npm run wasm && vite --host 127.0.0.1",
+    "build": "npm run wasm && npm run build:ui",
+    "preview": "vite preview --host 127.0.0.1",
+    "check": "npm run check --workspace @jayjay/review-web && tsc --noEmit && oxlint src",
+    "test:browser": "playwright test",
+    "build:ui": "tsc --noEmit && vite build"
+  },
+  "dependencies": {
+    "react": "^19.3.1",
+    "react-dom": "^19.3.1",
+    "@jayjay/review-web": "0.0.0"
+  },
+  "devDependencies": {
+    "@playwright/test": "^1.64.1",
+    "@types/node": "^26.6.5",
+    "@types/react": "^19.3.0",
+    "@types/react-dom": "^19.3.0",
+    "oxlint": "^1.90.0",
+    "typescript": "^7.0.2",
+    "vite": "^8.3.5"
+  }
+}

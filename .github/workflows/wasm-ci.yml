@@ -14,7 +14,34 @@ on:
       - "shell/justfile"
       - "**/*.just"
       - "scripts/llvm-clang"
+      - "scripts/build-diff-web.sh"
+      - "scripts/with-wasm-toolchain.sh"
+      - "scripts/wasm-bindgen-version.sh"
       - "wasm/**"
+      - "packages/**"
+      - "shell/web/**"
+      - "package.json"
+      - "package-lock.json"
+  pull_request:
+    paths:
+      - "crates/**"
+      - "Cargo.toml"
+      - "Cargo.lock"
+      - ".cargo/**"
+      - "rust-toolchain*"
+      - ".github/workflows/wasm-ci.yml"
+      - "justfile"
+      - "shell/justfile"
+      - "**/*.just"
+      - "scripts/llvm-clang"
+      - "scripts/build-diff-web.sh"
+      - "scripts/with-wasm-toolchain.sh"
+      - "scripts/wasm-bindgen-version.sh"
+      - "wasm/**"
+      - "packages/**"
+      - "shell/web/**"
+      - "package.json"
+      - "package-lock.json"
 
 permissions:
   contents: read
@@ -52,3 +79,57 @@ jobs:
 
       - name: Link portable WASM library
         run: just test-wasm
+
+  review-web:
+    name: Review web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@v1
+        with:
+          toolchain: stable
+          targets: wasm32-unknown-unknown
+          components: llvm-tools
+
+      - uses: actions/setup-node@249970729cb0ef3589644e2896645e5dc5ba9c38 # v6
+        with:
+          node-version: 24
+          cache: npm
+
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y clang python3
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          key: review-web
+          save-if: ${{ github.ref == 'refs/heads/main' }}
+
+      - name: Test review session
+        run: cargo test --locked -p jj-diff-web
+
+      - name: Read wasm-bindgen version
+        id: wasm-bindgen
+        run: echo "version=$(bash scripts/wasm-bindgen-version.sh)" >> "$GITHUB_OUTPUT"
+
+      - name: Install wasm-bindgen
+        uses: taiki-e/install-action@5488ac5a951645ce95062214902ac4b6bc1a1037 # v2.87.32
+        with:
+          tool: wasm-bindgen@${{ steps.wasm-bindgen.outputs.version }}
+
+      - name: Build and check the web review
+        run: |
+          npm ci
+          npm run build --workspace @jayjay/review-web-tests
+          npm run check --workspace @jayjay/review-web-tests
+
+      - name: Test in Chromium and WebKit
+        working-directory: shell/web
+        run: |
+          npx playwright install --with-deps chromium webkit
+          npm run test:browser

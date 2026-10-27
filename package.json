@@ -1,0 +1,8 @@
+{
+  "name": "jayjay-web-workspace",
+  "private": true,
+  "workspaces": [
+    "packages/review-web",
+    "shell/web"
+  ]
+}

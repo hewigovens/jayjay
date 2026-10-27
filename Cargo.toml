@@ -1,5 +1,5 @@
 [workspace]
-members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "crates/jayjay-i18n", "shell/gpui", "infra/worker"]
+members = ["crates/jayjay-markdown", "crates/jj-diff", "crates/jj-test", "crates/jayjay-network", "crates/jayjay-primitives", "crates/jayjay-review", "crates/jayjay-core", "crates/jayjay-uniffi", "crates/jayjay-cli", "crates/jayjay-i18n", "shell/gpui", "packages/review-web/wasm", "infra/worker"]
 resolver = "2"
 
 [workspace.package]
