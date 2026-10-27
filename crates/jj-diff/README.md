@@ -56,6 +56,7 @@ jj-diff = { version = "0.1", default-features = false, features = ["lang-rust", 
 | `lang-csharp` | `.cs` |
 | `lang-css` | `.css`, `.scss` |
 | `lang-fish` | `.fish` |
+| `lang-fluent` | `.ftl` |
 | `lang-go` | `.go` |
 | `lang-html` | `.html`, `.htm` |
 | `lang-java` | `.java` |

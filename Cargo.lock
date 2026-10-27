@@ -4604,6 +4604,7 @@ dependencies = [
 name = "jj-diff"
 version = "0.1.1"
 dependencies = [
+ "cc",
  "hex",
  "hotpath",
  "jayjay-i18n",
@@ -4626,6 +4627,7 @@ dependencies = [
  "tree-sitter-javascript",
  "tree-sitter-json",
  "tree-sitter-kotlin-sg",
+ "tree-sitter-language",
  "tree-sitter-make",
  "tree-sitter-md",
  "tree-sitter-nix",

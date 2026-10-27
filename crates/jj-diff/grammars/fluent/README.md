@@ -1,0 +1,1 @@
+Vendored from [outskirtslabs/fluent-tooling](https://github.com/outskirtslabs/fluent-tooling) at `cb95e082c5a1fbef06e42bbc27a03a191720278c` (`src/parser.c`, `src/scanner.c`, `src/tree_sitter/`, `queries/highlights.scm`, `LICENSE`) because the grammar is not on crates.io. Update by copying those files from a newer commit.
