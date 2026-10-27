@@ -25,6 +25,7 @@ trap 'rm -rf "$work"' EXIT
 appdir=$work/AppDir
 
 install -Dm755 "$binary" "$appdir/usr/bin/jayjay-gpui"
+install -Dm755 "$(dirname "$binary")/jayjay-ssh" "$appdir/usr/bin/jayjay-ssh"
 "$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"

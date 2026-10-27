@@ -7,6 +7,7 @@ use std::path::{Component, Path, PathBuf};
 
 use crate::app::config;
 use crate::platform::reveal_path;
+use jayjay_core::ssh::RemoteLocation;
 
 pub use jayjay_core::tools::{EDITOR_OPTIONS, TERMINAL_OPTIONS};
 
@@ -54,6 +55,9 @@ pub(crate) fn open_in_terminal(repo_path: &str, cx: &App) -> bool {
 }
 
 pub(crate) fn show_in_file_manager(repo_path: &str, file_path: Option<&str>) -> bool {
+    if RemoteLocation::from_path(repo_path).is_some() {
+        return false;
+    }
     reveal_path(&file_viewer_selection_path(repo_path, file_path))
 }
 

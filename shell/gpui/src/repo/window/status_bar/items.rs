@@ -4,6 +4,7 @@ use gpui::{
     AnyElement, ClickEvent, Context, Div, InteractiveElement, IntoElement, ParentElement,
     SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
+use jayjay_core::ssh::ConnectionState;
 use jayjay_core::{BookmarkInfo, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrState};
 
 use super::RepoWindow;
@@ -40,6 +41,7 @@ impl StatusItemSpec {
 
 pub(super) fn leading_items(
     repo_path: SharedString,
+    repo: Option<std::sync::Arc<jayjay_core::Repo>>,
     changes: &[ChangeInfo],
     bookmarks: &[BookmarkInfo],
     pr: Option<&PrInfo>,
@@ -47,20 +49,60 @@ pub(super) fn leading_items(
     cx: &mut Context<RepoWindow>,
 ) -> Vec<AnyElement> {
     let mut items = Vec::new();
-    items.push(status_action(
-        StatusItemSpec::new(
-            "status-path",
-            Some(glyph::FOLDER),
-            repo_path,
-            Some(crate::platform::show_in_file_manager_label().into()),
-            true,
-        ),
-        t,
-        cx,
-        |view, _, _, cx| {
-            view.show_repo_in_file_manager(cx);
-        },
-    ));
+    if let Some(location) = jayjay_core::ssh::RemoteLocation::from_path(repo_path.as_ref()) {
+        let (icon, state) = match repo.as_ref().map(|repo| repo.connection_state()) {
+            Some(ConnectionState::Connected) => (glyph::CHECK, jayjay_i18n::ssh::connected()),
+            Some(ConnectionState::Connecting) => (glyph::X, jayjay_i18n::ssh::reconnecting()),
+            _ => (glyph::X, jayjay_i18n::ssh::disconnected()),
+        };
+        let details = location.clone();
+        items.push(status_action(
+            StatusItemSpec::new(
+                "ssh-status",
+                Some(icon),
+                format!("{} · {state}", location.machine),
+                Some(jayjay_i18n::ssh::connection().into()),
+                false,
+            ),
+            t,
+            cx,
+            move |_, _, _, cx| {
+                if let Some(repo) = repo.clone() {
+                    crate::windows::ssh_connection::SSHConnectionView::open(
+                        repo,
+                        details.clone(),
+                        cx,
+                    );
+                }
+            },
+        ));
+        let path = location.path;
+        items.push(status_action(
+            StatusItemSpec::new(
+                "status-path",
+                Some(glyph::FOLDER),
+                path.clone(),
+                Some(jayjay_i18n::ssh::copy_path().into()),
+                true,
+            ),
+            t,
+            cx,
+            move |_, _, _, cx| cx.write_to_clipboard(gpui::ClipboardItem::new_string(path.clone())),
+        ));
+    } else {
+        items.push(status_action(
+            StatusItemSpec::new(
+                "status-path",
+                Some(glyph::FOLDER),
+                repo_path,
+                Some(crate::platform::show_in_file_manager_label().into()),
+                true,
+            ),
+            t,
+            cx,
+            |view, _, _, cx| view.show_repo_in_file_manager(cx),
+        ));
+    }
     if let Some(item) = active_bookmark_sync_item(changes, bookmarks, t) {
         items.push(item);
     }

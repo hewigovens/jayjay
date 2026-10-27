@@ -195,10 +195,9 @@ impl AppConfig {
 }
 
 fn normalize_repo_path(path: &Path) -> String {
-    dunce::canonicalize(path)
-        .unwrap_or_else(|_| path.to_path_buf())
+    jayjay_core::repositories::normalize_repository_path(path)
         .to_string_lossy()
-        .to_string()
+        .into_owned()
 }
 
 #[cfg(test)]

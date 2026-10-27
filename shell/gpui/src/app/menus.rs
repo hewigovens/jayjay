@@ -7,8 +7,8 @@ use super::actions::{
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenRepository, OpenSettings, OpenUserGuide, Quit, ReportIssue, ResetZoom, RevealLogs,
-    SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace,
+    OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, ReportIssue, ResetZoom,
+    RevealLogs, SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace,
     ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
@@ -120,6 +120,10 @@ fn file_menu(recent_repos: &[String]) -> Menu {
             OpenRepository,
         ),
         MenuItem::action(
+            jayjay_i18n::ssh::open_remote_repository_ellipsis(),
+            OpenSshRepository,
+        ),
+        MenuItem::action(
             jayjay_i18n::menu::clone_repository_ellipsis(),
             CloneRepository,
         ),
@@ -169,6 +173,9 @@ fn register_global_actions(cx: &mut App) {
     });
     cx.on_action(|_: &Quit, cx| cx.quit());
     cx.on_action(|_: &OpenRepository, cx| prompt_open_repository(cx));
+    cx.on_action(|_: &OpenSshRepository, cx| {
+        crate::windows::open_remote_repository::OpenRemoteRepositoryView::open(cx);
+    });
     cx.on_action(|_: &CloneRepository, cx| {
         crate::windows::clone_repository::CloneRepositoryView::open(cx);
     });

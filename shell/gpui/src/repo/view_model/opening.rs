@@ -96,9 +96,8 @@ impl RepoViewModel {
     }
 
     fn open_blocking(path: PathBuf) -> jayjay_core::JayResult<OpenedRepo> {
-        let repo_root_path = jayjay_core::workspace_primary_root(&path.to_string_lossy())
-            .unwrap_or_else(|| path.to_string_lossy().into_owned());
         let repo = Repo::open(&path)?;
+        let repo_root_path = repo.primary_root().to_string_lossy().into_owned();
         let default_revset = repo.default_revset_preset();
         let entries = repo.log_graph(&default_revset.revset)?;
         let bookmarks = repo.list_bookmarks().unwrap_or_default();
@@ -266,7 +265,7 @@ impl RepoViewModel {
         if self
             .repo
             .as_ref()
-            .is_some_and(|repo| !repo.working_copy_is_large())
+            .is_some_and(|repo| repo.is_remote() || !repo.working_copy_is_large())
         {
             self.refresh(false, cx);
         } else if let Some(ix) = self.selected {

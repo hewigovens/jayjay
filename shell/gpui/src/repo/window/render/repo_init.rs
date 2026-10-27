@@ -33,9 +33,15 @@ pub(super) fn repo_init_error_pane(
     };
     let enclosing_jj = enclosing(".jj").filter(|_| !has_jj);
     let enclosing_git = enclosing(".git").filter(|_| !path.join(".git").exists());
-    let can_initialize = path.is_dir() && !has_jj && enclosing_jj.is_none();
+    let missing = message.starts_with("repository not found at ");
+    let remote = jayjay_core::ssh::RemoteLocation::from_path(path).is_some();
+    let can_initialize = if remote {
+        missing
+    } else {
+        path.is_dir() && !has_jj && enclosing_jj.is_none()
+    };
     // Any other message, e.g. a failed init, is a real error.
-    let needs_setup = can_initialize && message.starts_with("repository not found at ");
+    let needs_setup = can_initialize && missing;
     let (glyph, color, title, message): (_, _, _, gpui::SharedString) =
         if let Some(root) = enclosing_jj {
             (
@@ -51,7 +57,7 @@ pub(super) fn repo_init_error_pane(
                 jayjay_i18n::repo::inside_git_repository(),
                 jayjay_i18n::repo::open_git_root_or_initialize(&root.display().to_string()).into(),
             )
-        } else if !path.is_dir() {
+        } else if !remote && !path.is_dir() {
             (
                 glyph::WARNING,
                 t.compare_accent,

@@ -8,6 +8,7 @@ use crate::app::tools;
 use crate::repo::window::{ChangeAction, RepoWindow};
 use crate::ui::icons::glyph;
 use crate::windows::keyboard_shortcuts::KeyboardShortcutsView;
+use crate::windows::open_remote_repository::OpenRemoteRepositoryView;
 use crate::windows::repo_list::RepoListWindow;
 use crate::windows::settings::SettingsView;
 
@@ -124,6 +125,13 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         ],
         glyph_str: glyph::DATABASE,
         dispatch: |_, cx| RepoListWindow::open(cx),
+    },
+    PaletteAction {
+        id: "open-remote-repository",
+        label: jayjay_i18n::ssh::open_remote_repository_ellipsis,
+        keywords: &["open", "remote", "ssh", "repository", "machine", "host"],
+        glyph_str: glyph::GLOBE,
+        dispatch: |_, cx| OpenRemoteRepositoryView::open(cx),
     },
     PaletteAction {
         id: "new-workspace",

@@ -35,6 +35,7 @@ pub(super) fn status_bar(
         .child(items::status_group(
             items::leading_items(
                 repo_path,
+                vm.repo.clone(),
                 changes.as_ref(),
                 bookmarks.as_ref(),
                 pr.as_ref(),

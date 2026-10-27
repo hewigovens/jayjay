@@ -83,7 +83,7 @@ jobs:
       - name: Build jayjay-gpui
         env:
           JAYJAY_PRERELEASE: ${{ contains(github.event.release.tag_name || github.ref_name, '-beta') && '1' || '' }}
-        run: cargo build --release --locked -p jayjay-gpui
+        run: cargo build --release --locked -p jayjay-gpui -p jayjay-core --bin jayjay-gpui --bin jayjay-ssh
 
       - name: Build AppImage
         run: dist/appimage/build.sh target/release/jayjay-gpui ${{ matrix.arch }} out

@@ -1,6 +1,6 @@
 use gpui::{
-    Animation, AnimationExt as _, Context, IntoElement, ParentElement, Render, Styled, Window, div,
-    ease_in_out, px,
+    Animation, AnimationExt as _, Context, InteractiveElement, IntoElement, ParentElement, Render,
+    Styled, Window, div, ease_in_out, px,
 };
 
 use super::super::bisect::{bisect_bar, bisect_sheet_overlay};
@@ -157,6 +157,13 @@ impl Render for RepoWindow {
             .zip(self.revset_bar_bounds.get())
             .map(|(state, bar)| render_revset_completions(state, bar, &t, &cx.entity()));
 
+        let offline = self.vm.read(cx).repo.as_ref().is_some_and(|repo| {
+            repo.connection_state() != jayjay_core::ssh::ConnectionState::Connected
+        });
+        if offline && !self.offline {
+            self.focus_handle.focus(window, cx);
+        }
+        self.offline = offline;
         let mut root = self.render_root(&t, window, cx);
 
         if let Some(message) = init_error {
@@ -219,24 +226,32 @@ impl Render for RepoWindow {
                 .child(resize_handle(DragTarget::FileColumn, &t, cx))
                 .child(detail_pane(self, &t, window, cx))
         };
-        root = root.child(crate::repo::toolbar::toolbar(
-            toolbar_repo,
-            self.repo_switcher_button_bounds.clone(),
-            self.layout.sidebar_hidden,
-            super::super::revset_filter::revset_bar(self, &t, cx),
-            ToolbarActivity {
-                is_refreshing,
-                refresh: refresh_mode,
-                is_fetching,
-                is_pushing,
-            },
-            self.focused_control,
-            cx,
-        ));
+        let mut body = div().relative().flex().flex_col().flex_1().min_h_0().child(
+            crate::repo::toolbar::toolbar(
+                toolbar_repo,
+                self.repo_switcher_button_bounds.clone(),
+                self.layout.sidebar_hidden,
+                super::super::revset_filter::revset_bar(self, &t, cx),
+                ToolbarActivity {
+                    is_refreshing,
+                    refresh: refresh_mode,
+                    is_fetching,
+                    is_pushing,
+                },
+                self.focused_control,
+                cx,
+            ),
+        );
         if let Some(bar) = bisect_bar(self, &t, cx) {
-            root = root.child(bar);
+            body = body.child(bar);
         }
-        root = root.child(content).child(status_bar(self, &t, cx));
+        body = body.child(content);
+        if offline {
+            body = body
+                .opacity(0.6)
+                .child(div().absolute().inset_0().block_mouse_except_scroll());
+        }
+        root = root.child(body).child(status_bar(self, &t, cx));
 
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);

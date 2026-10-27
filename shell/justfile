@@ -189,9 +189,11 @@ build-apple: ffi-debug
 # Build a .app bundle for the GPUI shell (signed so launchd accepts it).
 gpui-bundle:
   @cargo build -p jayjay-gpui
+  @bash "{{root}}/scripts/ssh-helper.sh"
   @mkdir -p "{{root}}/build/gpui/JayJay.app/Contents/MacOS"
   @mkdir -p "{{root}}/build/gpui/JayJay.app/Contents/Resources"
   @cp "{{root}}/shell/gpui/Info.plist" "{{root}}/build/gpui/JayJay.app/Contents/Info.plist"
+  @cp -R "{{root}}/build/ssh-helpers" "{{root}}/build/gpui/JayJay.app/Contents/Resources/"
   @cp "{{root}}/assets/AppIcon.icns" "{{root}}/build/gpui/JayJay.app/Contents/Resources/AppIcon.icns"
   @cp "{{root}}/target/debug/jayjay-gpui" "{{root}}/build/gpui/JayJay.app/Contents/MacOS/jayjay-gpui"
   @xattr -dr com.apple.quarantine "{{root}}/build/gpui/JayJay.app" 2>/dev/null || true
@@ -215,7 +217,7 @@ gpui-appimage:
     echo "gpui-appimage requires Linux"; \
     exit 1; \
   fi
-  cargo build --release --locked -p jayjay-gpui
+  cargo build --release --locked -p jayjay-gpui -p jayjay-core --bin jayjay-gpui --bin jayjay-ssh
   "{{root}}/dist/appimage/build.sh" "{{root}}/target/release/jayjay-gpui" "$(uname -m)" "{{root}}/build/gpui-appimage"
 
 # Cross-build the x64 Windows GPUI exe from macOS (needs `brew install llvm lld` and `cargo install cargo-xwin`); see agents/run-debug.md.

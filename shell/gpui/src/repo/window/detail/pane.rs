@@ -92,6 +92,7 @@ pub(crate) fn detail_pane(
         ConflictResolution::options(
             vm.repo
                 .as_ref()
+                .filter(|repo| !repo.is_remote())
                 .and_then(|repo| repo.merge_editor_name())
                 .as_deref(),
             selected_hunk

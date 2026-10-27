@@ -98,6 +98,7 @@ pub struct RepoWindow {
     fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
     fs_watcher_armed: bool,
+    pub(super) offline: bool,
     /// The row j/k last stopped at and a count that restarts its dimming animation.
     pub(crate) lane_end_blink: Option<(usize, usize)>,
     pub(crate) review_store: super::review::SharedReviewStore,
@@ -518,6 +519,7 @@ impl RepoWindow {
             stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
             fs_watcher: None,
             fs_watcher_armed: false,
+            offline: false,
             lane_end_blink: None,
             review_store,
         }
@@ -723,6 +725,50 @@ impl RepoWindow {
         });
     }
 
+    fn poll_remote_working_copy(
+        &self,
+        repo: std::sync::Arc<jayjay_core::Repo>,
+        cx: &mut Context<Self>,
+    ) {
+        cx.spawn(async move |this, cx| {
+            loop {
+                cx.background_executor()
+                    .timer(std::time::Duration::from_secs(3))
+                    .await;
+                let changed = cx
+                    .background_spawn({
+                        let repo = repo.clone();
+                        async move {
+                            repo.connection_state() == jayjay_core::ssh::ConnectionState::Connected
+                                && repo.poll_remote_changes().unwrap_or(true)
+                        }
+                    })
+                    .await;
+                let polling = this.update(cx, |view, cx| {
+                    let vm = view.vm.clone();
+                    // A workspace switch swaps the view model; stop polling the repo it replaced.
+                    if !vm
+                        .read(cx)
+                        .repo
+                        .as_ref()
+                        .is_some_and(|current| std::sync::Arc::ptr_eq(current, &repo))
+                    {
+                        return false;
+                    }
+                    if changed {
+                        vm.update(cx, |vm, cx| vm.request_background_reload(cx));
+                    }
+                    cx.notify();
+                    true
+                });
+                if !matches!(polling, Ok(true)) {
+                    break;
+                }
+            }
+        })
+        .detach();
+    }
+
     fn start_fs_watcher(&mut self, cx: &mut Context<Self>) {
         let (repo_path, repo) = {
             let vm = self.vm.read(cx);
@@ -735,11 +781,15 @@ impl RepoWindow {
             return;
         }
         let path = std::path::PathBuf::from(&repo_path);
-        if !path.join(".jj").exists() {
+        if !repo.is_remote() && !path.join(".jj").exists() {
             return;
         }
         self.fs_watcher_armed = true;
         if crate::app::fs_watcher::is_watcher_suppressed(cx) {
+            return;
+        }
+        if repo.is_remote() {
+            self.poll_remote_working_copy(repo, cx);
             return;
         }
         let (tx, rx) = flume::unbounded::<FsEvent>();

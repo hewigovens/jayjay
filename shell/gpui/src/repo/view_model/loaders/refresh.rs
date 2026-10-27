@@ -3,10 +3,7 @@ use std::time::Duration;
 
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
-use jayjay_core::{
-    BookmarkInfo, ChangeInfo, DiffStats, GraphEntry, JayError, JayResult, Repo, RevsetVocabulary,
-    TagInfo, WorkspaceInfo,
-};
+use jayjay_core::{ChangeInfo, GraphEntry, JayError, JayResult, Repo, RepositoryContext};
 
 use super::super::{PendingRefresh, RepoViewModel};
 
@@ -25,6 +22,11 @@ impl RepoViewModel {
         if !self.refresh_suspended && self.is_internal_mutation_echo() {
             return;
         }
+        self.request_background_reload(cx);
+    }
+
+    /// Remote polls call this directly: each reports an operation once, so the echo window would drop it for good.
+    pub fn request_background_reload(&mut self, cx: &mut Context<Self>) {
         self.loading.pending_auto_refresh = Some(PendingRefresh::Reload);
         self.resume_pending_refresh(cx);
     }
@@ -83,6 +85,9 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
+        if repo.connection_state() == jayjay_core::ssh::ConnectionState::Disconnected {
+            return;
+        }
         self.loading.pending_auto_refresh = None;
         // A background refresh must not dismiss an error the user is still reading; manual refresh is an explicit retry.
         if !is_auto_triggered {
@@ -134,20 +139,22 @@ impl RepoViewModel {
             Ok(data) => {
                 self.working_copy_stale = data.working_copy_stale;
                 let entries = data.entries;
-                self.fix_unavailable_reason = data.fix_unavailable_reason.map(SharedString::from);
+                let context = data.context;
+                self.fix_unavailable_reason =
+                    context.fix_unavailable_reason.map(SharedString::from);
                 self.can_load_more = self
                     .revset_depth()
                     .is_some_and(|depth| entries.len() >= depth as usize);
-                self.graph.bookmarks = Arc::new(data.bookmarks);
-                self.graph.tags = Arc::new(data.tags);
-                self.vocabulary = data.vocabulary;
-                if let Some(workspaces) = data.workspaces {
+                self.graph.bookmarks = Arc::new(context.bookmarks);
+                self.graph.tags = Arc::new(context.tags);
+                self.vocabulary = context.vocabulary;
+                if let Some(workspaces) = context.workspaces {
                     self.graph.workspaces = Arc::new(workspaces);
                 }
-                self.graph.trunk_name = data.trunk_name;
-                self.pr_host_name = data.pr_host_name.map(SharedString::from);
-                self.working_copy_stats = data.working_copy_stats;
-                self.current_operation_description = data.current_operation_description;
+                self.graph.trunk_name = context.trunk_name;
+                self.pr_host_name = context.pr_host_name.map(SharedString::from);
+                self.working_copy_stats = context.working_copy_stats;
+                self.current_operation_description = context.operation;
                 self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
                 let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
                 let new_selected = previous_selection
@@ -186,7 +193,7 @@ impl RepoViewModel {
                 if pending_error.is_some() {
                     self.error = pending_error;
                 }
-                self.bisect.state = self.repo.as_ref().and_then(|repo| repo.bisect_state());
+                self.bisect.state = context.bisect_state;
             }
             Err(error) => self.present_error(error),
         }
@@ -197,15 +204,7 @@ impl RepoViewModel {
 struct RefreshData {
     working_copy_stale: bool,
     entries: Vec<GraphEntry>,
-    bookmarks: Vec<BookmarkInfo>,
-    tags: Vec<TagInfo>,
-    vocabulary: RevsetVocabulary,
-    workspaces: Option<Vec<WorkspaceInfo>>,
-    trunk_name: String,
-    pr_host_name: Option<String>,
-    working_copy_stats: Option<DiffStats>,
-    current_operation_description: String,
-    fix_unavailable_reason: Option<String>,
+    context: RepositoryContext,
 }
 
 fn refresh_graph_blocking(repo: &Repo, revset: &str) -> JayResult<RefreshData> {
@@ -214,27 +213,9 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> JayResult<RefreshData> {
         Err(JayError::WorkingCopyStale) => true,
         Err(error) => return Err(error),
     };
-    let entries = repo.log_graph(revset)?;
-    let bookmarks = repo.list_bookmarks().unwrap_or_default();
-    let tags = repo.list_tags().unwrap_or_default();
-    let vocabulary = repo.revset_vocabulary(&bookmarks);
-    let workspaces = repo.workspace_list().ok();
-    let trunk_name = repo.trunk_name();
-    let pr_host_name = repo.pr_host_name();
-    let working_copy_stats = repo.diff_stats("@").ok();
-    let current_operation_description = repo.current_operation_description();
-    let fix_unavailable_reason = repo.fix_unavailable_reason();
     Ok(RefreshData {
         working_copy_stale,
-        entries,
-        bookmarks,
-        tags,
-        vocabulary,
-        workspaces,
-        trunk_name,
-        pr_host_name,
-        working_copy_stats,
-        current_operation_description,
-        fix_unavailable_reason,
+        entries: repo.log_graph(revset)?,
+        context: repo.repository_context()?,
     })
 }
