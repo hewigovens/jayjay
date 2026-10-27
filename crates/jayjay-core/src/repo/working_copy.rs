@@ -7,6 +7,7 @@ use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
 use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
+use jj_lib::object_id::ObjectId as _;
 use jj_lib::op_store::OpStoreError;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathBuf;
@@ -92,6 +93,15 @@ impl Repo {
             .set_wc_commit(self.workspace_name.clone(), new_commit.id().clone())
             .map_err(|error| JayError::internal(format!("move working copy: {error}")))?;
         Ok(())
+    }
+
+    /// The head operation after a snapshot; a remote poll compares it to skip reloads when nothing changed.
+    pub fn snapshot_operation(&self) -> JayResult<String> {
+        match self.refresh_working_copy() {
+            Err(JayError::WorkingCopyStale) => self.reload()?,
+            result => result?,
+        }
+        Ok(self.get_repo().op_id().hex())
     }
 
     pub fn refresh_working_copy(&self) -> JayResult<()> {

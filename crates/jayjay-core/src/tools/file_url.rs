@@ -2,6 +2,8 @@ use std::path::{Component, Path, PathBuf};
 
 use percent_encoding::{AsciiSet, CONTROLS, utf8_percent_encode};
 
+use crate::ssh::RemoteLocation;
+
 /// Return a `file://` URL for an existing non-directory file inside `repo_path`.
 pub fn repo_file_url(repo_path: &str, file_path: &str) -> Option<String> {
     repo_file_path(repo_path, file_path)
@@ -11,6 +13,9 @@ pub fn repo_file_url(repo_path: &str, file_path: &str) -> Option<String> {
 
 /// Canonical path of an existing file inside `repo_path`; parent components are fine when the canonical result stays inside the root.
 pub fn repo_file_path(repo_path: &str, file_path: &str) -> Option<PathBuf> {
+    if RemoteLocation::from_path(repo_path).is_some() {
+        return None;
+    }
     let relative = Path::new(file_path);
     if relative.is_absolute()
         || relative

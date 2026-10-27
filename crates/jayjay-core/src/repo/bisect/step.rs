@@ -7,7 +7,7 @@ use jj_lib::revset::{ResolvedRevsetExpression, Revset};
 
 use super::range::commit_visible;
 use super::session::{Session, StoredMark, ToEvaluation};
-use crate::Repo;
+use crate::repo::Repo;
 use crate::repo::support::{block_on_result, short_commit_id};
 use crate::types::*;
 

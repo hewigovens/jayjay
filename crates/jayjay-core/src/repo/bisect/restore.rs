@@ -4,7 +4,7 @@ use jj_lib::repo::ReadonlyRepo;
 
 use super::result::change_view;
 use super::session::RestoreTarget;
-use crate::Repo;
+use crate::repo::Repo;
 use crate::repo::support::block_on_result;
 use crate::types::*;
 use jj_lib::repo::Repo as _;

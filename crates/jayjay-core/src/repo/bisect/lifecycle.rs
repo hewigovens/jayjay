@@ -5,7 +5,7 @@ use jj_lib::revset::ResolvedRevsetExpression;
 
 use super::range::{collect_commits, end_change_ids};
 use super::session::Session;
-use crate::Repo;
+use crate::repo::Repo;
 use crate::repo::support::block_on_result;
 use crate::types::*;
 use jj_lib::repo::Repo as _;

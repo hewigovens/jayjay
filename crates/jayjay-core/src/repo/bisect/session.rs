@@ -6,7 +6,7 @@ use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId as _;
 
 use super::result::change_view;
-use crate::Repo;
+use crate::repo::Repo;
 use crate::types::*;
 
 #[derive(Clone)]

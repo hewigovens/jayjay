@@ -34,6 +34,7 @@ mod review_note_output;
 mod review_notes;
 mod revsets;
 mod small_stack;
+mod ssh;
 mod stacked_pr;
 mod tags;
 mod working_copy;

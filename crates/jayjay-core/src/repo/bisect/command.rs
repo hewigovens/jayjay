@@ -5,7 +5,7 @@ use jj_lib::object_id::ObjectId as _;
 
 use super::super::command_process::SyncToken;
 use super::session::Session;
-use crate::Repo;
+use crate::repo::Repo;
 use crate::types::*;
 
 impl Repo {

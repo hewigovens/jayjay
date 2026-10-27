@@ -10,6 +10,7 @@ pub(super) fn repo_path(repo: Option<String>, path: Option<String>) -> Option<Pa
 
 fn launch_path(explicit: Option<&str>, cwd: Option<&Path>) -> Option<PathBuf> {
     match explicit {
+        Some(path) if path.starts_with("ssh://") => Some(PathBuf::from(path)),
         Some(path) => {
             let path = canonicalize(path, cwd);
             Some(enclosing_workspace_dir(&path).map_or_else(|| path.clone(), Path::to_path_buf))
@@ -48,6 +49,8 @@ mod tests {
         assert_eq!(explicit("plain", &base), Some(plain.clone()));
         assert_eq!(launch_path(None, Some(&subfolder)), Some(repo.clone()));
         assert_eq!(launch_path(None, Some(&plain)), None);
+        let remote = "ssh://DevBox//home/alice/project%20with%20spaces";
+        assert_eq!(explicit(remote, &plain), Some(remote.into()));
         #[cfg(unix)]
         {
             let link = base.join("link");

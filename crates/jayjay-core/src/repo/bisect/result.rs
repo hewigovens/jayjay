@@ -4,7 +4,7 @@ use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId as _;
 
 use super::session::{Session, change_subject};
-use crate::Repo;
+use crate::repo::Repo;
 use crate::types::*;
 
 impl Repo {

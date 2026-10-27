@@ -4,6 +4,7 @@ use std::path::{Path, PathBuf};
 use serde::{Deserialize, Serialize};
 
 use crate::json_store::JsonStore;
+use crate::ssh::RemoteLocation;
 
 mod grouping;
 pub use grouping::{RepoGroup, RepoListGroups, group_repositories};
@@ -81,6 +82,9 @@ impl Store {
 }
 
 pub fn normalize_repository_path(path: &Path) -> PathBuf {
+    if let Some(location) = RemoteLocation::from_path(path) {
+        return PathBuf::from(location.encode());
+    }
     dunce::canonicalize(path)
         .or_else(|_| std::path::absolute(path))
         .unwrap_or_else(|_| path.to_path_buf())

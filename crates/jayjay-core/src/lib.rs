@@ -43,11 +43,17 @@ pub mod projection;
 #[cfg(feature = "repository")]
 mod repo;
 #[cfg(feature = "repository")]
+mod repository;
+#[cfg(feature = "repository")]
+mod rooted_directory;
+#[cfg(feature = "repository")]
+pub mod ssh;
+#[cfg(feature = "repository")]
+pub use repository::{Repo, RepositoryContext};
+#[cfg(feature = "repository")]
 pub mod repositories;
 #[cfg(feature = "repository")]
 pub mod revset;
-#[cfg(feature = "repository")]
-mod rooted_directory;
 mod seti;
 pub mod theme;
 #[cfg(feature = "repository")]
@@ -78,7 +84,7 @@ pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]
 pub use repo::{
     AiProvider, CloneRequest, DeviceSignIn, DiffExcerpt, HostLogin, JjConfigEntry, JjConfigSection,
-    JjUserConfig, Repo, RepoHost, ReviewNotesReport, ReviewOutputFormat, SyncToken, TokenSource,
+    JjUserConfig, RepoHost, ReviewNotesReport, ReviewOutputFormat, SyncToken, TokenSource,
     UserIdentity, WorkingCopyReview, WorkingCopyReviewFile, WorkingCopyReviewMark,
     WorkingCopyReviewNote, WorkingCopyReviewStatus, add_review_note, branch_name_slug,
     check_jj_environment, compose_bisect_range, enclosing_workspace_root, find_existing_binary,

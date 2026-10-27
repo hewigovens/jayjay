@@ -42,6 +42,9 @@ list:
 test-rust crate *args:
   cargo test -p "{{crate}}" {{args}}
 
+ssh-helper target="" profile="debug":
+  bash "{{root}}/scripts/ssh-helper.sh" "{{target}}" "{{profile}}"
+
 test-wasm:
   bash "{{root}}/scripts/test-wasm.sh"
 

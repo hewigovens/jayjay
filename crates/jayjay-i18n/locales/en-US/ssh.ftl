@@ -1,0 +1,14 @@
+ssh-error-host = Enter an SSH host or config alias.
+ssh-error-path = Enter an absolute remote path or a path starting with ~/.
+ssh-error-other-machine = Choose a path on the same SSH machine.
+ssh-error-disconnected = SSH disconnected. Reconnect to continue.
+ssh-error-write-uncertain = { $message } Reconnect and refresh before retrying; a write may have completed.
+ssh-error-response-lost = SSH response lost. Refresh before retrying; a write may have completed.
+ssh-error-send = Could not send SSH request: { $error }.
+ssh-error-setup-timeout = SSH setup timed out. Check the host and SSH configuration.
+ssh-error-busy = Wait for current SSH operations to finish.
+ssh-error-disconnect-busy = Wait for SSH operations to finish before disconnecting.
+ssh-error-incompatible-helper = The SSH helper is incompatible with this version of JayJay.
+ssh-error-too-many-machines = Too many SSH machines are connected. Disconnect unused machines or restart JayJay.
+ssh-error-unsupported-platform = This SSH host platform is not supported.
+ssh-error-absolute-path = Choose an absolute remote path.

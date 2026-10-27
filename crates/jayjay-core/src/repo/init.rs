@@ -1,9 +1,13 @@
 use std::path::Path;
 
 use super::environment;
+use crate::ssh::{RemoteLocation, init_repository};
 use crate::types::*;
 
 pub fn init_jj_git_repo(path: &Path) -> JayResult<()> {
+    if let Some(location) = RemoteLocation::from_path(path) {
+        return init_repository(&location);
+    }
     let output = environment::command(environment::require_jj()?)
         .current_dir(path)
         .args(["git", "init"])

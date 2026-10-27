@@ -26,6 +26,13 @@ pub fn workspace_primary_root(path: &str) -> Option<String> {
     Some(root.to_string_lossy().into_owned())
 }
 
+impl super::Repo {
+    pub(crate) fn primary_root(&self) -> PathBuf {
+        workspace_primary_root(&self.path().to_string_lossy())
+            .map_or_else(|| self.path().to_owned(), PathBuf::from)
+    }
+}
+
 /// True when `name` is safe both as a jj workspace name and as the sibling directory both shells create for it: no path separators or traversal, no option shape, no characters that are invalid in directory names on any supported platform.
 pub fn is_valid_workspace_name(name: &str) -> bool {
     if name.is_empty() || name.len() > 255 {

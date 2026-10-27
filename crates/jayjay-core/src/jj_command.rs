@@ -12,7 +12,7 @@ pub struct JjCommand {
     raw: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct JjCommandResult {
     pub output: String,
     pub exit_code: i32,
@@ -60,10 +60,7 @@ impl JjCommand {
     }
 
     pub fn run_in_repo(&self, repo: &Repo) -> JayResult<JjCommandResult> {
-        let args = self.validated_args()?;
-        let mut command_args = NON_INTERACTIVE_ARGS.to_vec();
-        command_args.extend(args.iter().map(String::as_str));
-        Ok(command_result(repo.run_jj_output(&command_args)?))
+        repo.run_jj_command(&self.raw)
     }
 
     fn validated_args(&self) -> JayResult<Vec<String>> {
@@ -76,6 +73,15 @@ impl JjCommand {
             });
         }
         Ok(args)
+    }
+}
+
+impl crate::repo::Repo {
+    pub(crate) fn run_jj_command(&self, command: &str) -> JayResult<JjCommandResult> {
+        let args = JjCommand::new(command).validated_args()?;
+        let mut command_args = NON_INTERACTIVE_ARGS.to_vec();
+        command_args.extend(args.iter().map(String::as_str));
+        Ok(command_result(self.run_jj_output(&command_args)?))
     }
 }
 

@@ -2,6 +2,7 @@ use std::path::Path;
 use std::process::{Command, Stdio};
 
 use crate::repo::{find_existing_binary, subprocess_command};
+use crate::ssh::RemoteLocation;
 
 use super::config::ToolsConfig;
 use super::editor::Editor;
@@ -16,6 +17,9 @@ pub fn open_in_editor(
     line: Option<u32>,
     cfg: &ToolsConfig,
 ) -> bool {
+    if RemoteLocation::from_path(repo_path).is_some() {
+        return false;
+    }
     let editor = Editor::from_id(&cfg.external_editor).unwrap_or(Editor::Custom);
     let absolute = absolutize(repo_path, file_path);
 
@@ -153,6 +157,9 @@ fn classify_editor(command: &str) -> EditorKind {
 /// Open the user's terminal at `repo_path`. If `command` is set, the terminal
 /// runs it after `cd`-ing into `repo_path`.
 pub fn open_in_terminal(repo_path: &str, command: Option<&str>, cfg: &ToolsConfig) -> bool {
+    if RemoteLocation::from_path(repo_path).is_some() {
+        return false;
+    }
     let term = Terminal::from_id(&cfg.terminal).unwrap_or(Terminal::SystemDefault);
     platform::spawn_terminal(term, repo_path, command, &cfg.custom_terminal_command)
 }

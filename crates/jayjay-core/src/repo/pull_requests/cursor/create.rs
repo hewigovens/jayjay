@@ -58,7 +58,7 @@ mod tests {
     use super::super::super::PrLookup;
     use super::super::repo::GITHUB_MIRROR_BLOCK;
     use super::{open_or_create_url_with, title_and_body_for_bookmark};
-    use crate::Repo;
+    use crate::repo::Repo;
     use crate::types::{ChecksStatus, PrInfo, PrState};
     use jj_test::{init_jj_repo, run_jj};
 
