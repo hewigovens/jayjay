@@ -1,5 +1,5 @@
-import Sparkle
 import JayJayCore
+import Sparkle
 import SwiftUI
 
 private final class UpdaterChannelDelegate: NSObject, SPUUpdaterDelegate {
@@ -28,9 +28,9 @@ final class SparkleUpdater: ObservableObject {
         channelDelegate = UpdaterChannelDelegate(includesBetaUpdates: includesBetaUpdates)
         // Debug builds must not offer production releases as updates to the development app.
         #if DEBUG
-        let startsUpdater = false
+            let startsUpdater = false
         #else
-        let startsUpdater = true
+            let startsUpdater = true
         #endif
         controller = SPUStandardUpdaterController(
             startingUpdater: startsUpdater,

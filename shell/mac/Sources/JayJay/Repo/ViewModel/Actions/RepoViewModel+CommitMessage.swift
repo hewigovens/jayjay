@@ -1,8 +1,8 @@
 import Foundation
 import JayJayCore
 
+@MainActor
 extension RepoViewModel {
-    @MainActor
     func generateCommitMessage(using order: [AiProvider]) async -> String? {
         do {
             guard let excerpt = try await awaitRepoTask({ try $0.diffExcerpt() }),

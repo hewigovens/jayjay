@@ -75,13 +75,14 @@ fn chosen_locales(
 ) -> Vec<String> {
     let mut chosen: Vec<String> = Vec::new();
     for language in requested {
-        let compatible: Vec<LanguageIdentifier> = available
+        let compatible: Vec<fluent_langneg::LanguageIdentifier> = available
             .iter()
             .filter(|locale| same_script(language, locale))
-            .cloned()
+            .map(|locale| locale.to_string().parse().unwrap())
             .collect();
+        let language: fluent_langneg::LanguageIdentifier = language.to_string().parse().unwrap();
         for locale in negotiate_languages(
-            std::slice::from_ref(language),
+            std::slice::from_ref(&language),
             &compatible,
             None,
             NegotiationStrategy::Filtering,
