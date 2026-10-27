@@ -112,7 +112,7 @@ struct DiffEditView: View {
         ) {
             Button(Localized.Repo.ok, role: .cancel) {}
         } message: {
-            Text("\(session.applyStalePath ?? "") changed after its selection was rendered. Done was not applied — refresh and try again.")
+            Text(Localized.Diff.editSelectionStale(path: session.applyStalePath ?? ""))
         }
         .task(id: "\(session.sessionCommit)|\(session.settings.ignoreWhitespace)") {
             await session.loadFileStats()

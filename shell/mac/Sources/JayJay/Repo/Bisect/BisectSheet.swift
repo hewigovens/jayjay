@@ -28,7 +28,7 @@ struct BisectSheet: View {
             labeledField(Localized.Repo.good, text: $goodText, identifier: AID.Bisect.sheetGood, prompt: Localized.Repo.goodEnd)
             labeledField(Localized.Repo.bad, text: $badText, identifier: AID.Bisect.sheetBad, prompt: Localized.Repo.badEnd)
             labeledField(Localized.Repo.range, text: $rangeText, identifier: AID.Bisect.sheetRange, prompt: Localized.Repo.revsetRange)
-            Text("A range is used as-is. Otherwise the ends become (good)..(bad).")
+            Text(Localized.Repo.bisectRangeHint)
                 .font(.caption)
                 .foregroundStyle(.secondary)
             HStack {

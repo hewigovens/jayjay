@@ -100,7 +100,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                 Text("-\(file.stats.deletions)").foregroundStyle(.red)
             }
             if file.executableChanged {
-                Text("mode").foregroundStyle(.secondary)
+                Text(Localized.Diff.modeChanged).foregroundStyle(.secondary)
             }
         }
         .jayjayFont(11, weight: .semibold, design: .monospaced)

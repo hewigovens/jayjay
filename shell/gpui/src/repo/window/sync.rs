@@ -383,13 +383,16 @@ fn fetch_status_message(result: &FetchResult) -> String {
         message = jayjay_i18n::repo::fetched_origin();
     }
     if !result.abandoned_bookmarks.is_empty() {
-        message.push_str("\nAbandoned merged: ");
-        message.push_str(&result.abandoned_bookmarks.join(", "));
+        message.push('\n');
+        message.push_str(&jayjay_i18n::repo::sync_abandoned_merged(
+            &result.abandoned_bookmarks.join(", "),
+        ));
     }
     if !result.suggest_abandon_bookmarks.is_empty() {
-        message.push_str("\nConflicting (may be merged): ");
-        message.push_str(&result.suggest_abandon_bookmarks.join(", "));
-        message.push_str(" - consider abandoning");
+        message.push('\n');
+        message.push_str(&jayjay_i18n::repo::sync_conflicting_may_be_merged(
+            &result.suggest_abandon_bookmarks.join(", "),
+        ));
     }
     message
 }

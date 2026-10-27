@@ -19,7 +19,7 @@ extension RepoViewModel {
             selecting: rev,
             gatedBy: RepoActionGate(
                 state: \.isRestoringEvologVersion,
-                busyMessage: "A version is already being restored"
+                busyMessage: Localized.Repo.versionAlreadyBeingRestored
             ),
             onSuccess: { viewModel, _ in viewModel.loadEvolog(rev: rev) },
             { try $0.restoreVersion(rev: rev, version: commitId) }

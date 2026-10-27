@@ -104,7 +104,7 @@ struct WelcomeView: View {
                 .frame(width: 80, height: 80)
             Text("JayJay")
                 .jayjayFont(28, weight: .bold)
-            Text("A native GUI for Jujutsu")
+            Text(Localized.Settings.tagline)
                 .jayjayFont(14)
                 .foregroundStyle(.secondary)
             HStack(spacing: 8) {

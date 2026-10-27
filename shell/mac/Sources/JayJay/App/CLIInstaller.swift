@@ -59,7 +59,9 @@ enum CLIInstaller {
         alert.alertStyle = .informational
         if alreadyLinked {
             alert.messageText = Localized.Settings.cliAlreadyInstalled
-            alert.informativeText = isInPATH ? "jayjay is already linked at \(installPath)." : "jayjay is linked at \(installPath), but the directory is not in your PATH.\n\n\(pathHint)"
+            alert.informativeText = isInPATH
+                ? Localized.Settings.cliAlreadyLinkedAt(path: installPath)
+                : Localized.Settings.cliLinkedNotInPath(path: installPath, hint: pathHint)
             alert.addButton(withTitle: Localized.Repo.ok)
             alert.runModal()
             return
@@ -67,7 +69,9 @@ enum CLIInstaller {
         do {
             try install()
             alert.messageText = Localized.Settings.cliInstalled
-            alert.informativeText = isInPATH ? "jayjay is linked at \(installPath)." : "jayjay was linked at \(installPath), but the directory is not in your PATH.\n\n\(pathHint)"
+            alert.informativeText = isInPATH
+                ? Localized.Settings.cliLinkedAt(path: installPath)
+                : Localized.Settings.cliWasLinkedNotInPath(path: installPath, hint: pathHint)
             alert.addButton(withTitle: Localized.Repo.ok)
             alert.runModal()
         } catch {

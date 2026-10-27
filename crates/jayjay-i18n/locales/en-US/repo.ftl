@@ -588,3 +588,14 @@ repo-review-note-count =
         [one] { $count } review note
        *[other] { $count } review notes
     }
+repo-bisect-range-hint = A range is used as-is. Otherwise the ends become (good)..(bad).
+repo-diff-selection-stale = { $path }: file changed since the diff was rendered — refresh and retry
+repo-conflict-editor-stale = { $path }: conflict changed since the editor opened — refresh and retry
+repo-file-editor-stale = { $path }: file changed since the editor opened — refresh and retry
+repo-workspace-already-being-created = A workspace is already being created
+repo-pr-import-already-in-progress = A pull request import is already in progress
+repo-version-already-being-restored = A version is already being restored
+repo-tagged-change-immutable = A tagged change becomes immutable.
+repo-tagged-change-immutable-hint = { $target } · a tagged change becomes immutable
+repo-sync-abandoned-merged = Abandoned merged: { $names }
+repo-sync-conflicting-may-be-merged = Conflicting (may be merged): { $names } — consider abandoning

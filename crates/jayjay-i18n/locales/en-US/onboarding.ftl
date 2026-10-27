@@ -37,3 +37,6 @@ onboarding-current-directory-unavailable = Could not resolve the current directo
 onboarding-could-not-open = Could not open { $path }: { $error }
 onboarding-not-a-directory = { $path } is not a directory.
 onboarding-palette-tip = { $shortcut } finds actions; type help split for feature help
+onboarding-welcome-description =
+    A native GUI for Jujutsu version control.
+    Browse history, review diffs, and manage changes — all from one window.

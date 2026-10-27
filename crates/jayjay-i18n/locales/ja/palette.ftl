@@ -57,5 +57,6 @@ palette-run-formatters-on = { $change } にフォーマッターを実行 (jj fi
 palette-duplicate-change = 複製 ({ $change })
 palette-revert-change = チェンジを元に戻す ({ $change })
 palette-create-bookmark-on = { $change } にブックマークを作成
+palette-show-evolution = 変遷を表示 ({ $change })
 palette-theme = テーマ: { $theme }
 palette-help-topic = ヘルプ: { $title }

@@ -14,11 +14,11 @@ extension Error {
                 case let .Diff(message):
                     return unwrapCommandError(message: message)
                 case let .DiffSelectionStale(path):
-                    return "\(path): file changed since the diff was rendered — refresh and retry"
+                    return Localized.Repo.diffSelectionStale(path: path)
                 case let .ConflictEditorStale(path):
-                    return "\(path): conflict changed since the editor opened — refresh and retry"
+                    return Localized.Repo.conflictEditorStale(path: path)
                 case let .FileEditorStale(path):
-                    return "\(path): file changed since the editor opened — refresh and retry"
+                    return Localized.Repo.fileEditorStale(path: path)
                 case .WorkingCopyStale:
                     return Localized.Repo.workingCopyIsStaleItsChange
                 case let .Refused(message):

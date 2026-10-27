@@ -1,0 +1,6 @@
+clone-choose-where-to-clone = 选择克隆位置
+clone-repository-url = 仓库 URL
+clone-choose-ellipsis = 选择…
+clone-choose = 选择
+clone-name = 名称
+clone-cloning = 正在克隆 { $name }…

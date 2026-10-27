@@ -12,7 +12,7 @@ extension RepoViewModel {
         performResult(
             gatedBy: RepoActionGate(
                 state: \.isAddingWorkspace,
-                busyMessage: "A workspace is already being created"
+                busyMessage: Localized.Repo.workspaceAlreadyBeingCreated
             ),
             beforeRefresh: { _ in onSuccess() },
             onSuccess: { viewModel, message in viewModel.info = message },
