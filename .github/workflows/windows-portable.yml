@@ -2,18 +2,10 @@ name: Windows CI
 
 on:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths: &paths
-      - "crates/**"
-      - "shell/gpui/**"
-      - "dist/windows/**"
-      - "Cargo.toml"
-      - "Cargo.lock"
-      - "LICENSE"
-      - ".github/workflows/windows-portable.yml"
   pull_request:
-    paths: *paths
+    paths:
+      - "dist/windows/**"
+      - ".github/workflows/windows-portable.yml"
   release:
     types: [published]
 
