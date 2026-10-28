@@ -224,6 +224,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         selectSettingsPage("integrations", in: app)
         let signIn = settingsWindow(in: app).buttons[AID.Settings.forgeSignIn].firstMatch
         XCTAssertTrue(signIn.waitForExistence(timeout: 5), "Forge sign-in controls missing")
+        capture("settings-coding-agents", frame: settingsWindow(in: app).frame)
         settingsWindow(in: app).scrollViews.containing(.button, identifier: AID.Settings.forgeSignIn).firstMatch.scroll(byDeltaX: 0, deltaY: -600)
         capture("settings-integrations", frame: settingsWindow(in: app).frame)
     }
