@@ -12,6 +12,11 @@ if [ ! -s "$swiftui_notes" ]; then
   echo "Release notes are missing or empty: $swiftui_notes" >&2
   exit 1
 fi
+announcement="${root}/releases/${version}-discord.md"
+if [ "$channel" = "stable" ] && [ ! -s "$announcement" ]; then
+  echo "Discord announcement is missing or empty: $announcement" >&2
+  exit 1
+fi
 github_notes="$swiftui_notes"
 if [ -s "$gpui_notes" ]; then
   github_notes=$(mktemp)

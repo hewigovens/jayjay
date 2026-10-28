@@ -3,31 +3,48 @@ name: Announce release
 on:
   release:
     types: [published]
+  workflow_dispatch:
+    inputs:
+      version:
+        description: Stable version to announce again, such as 0.3.22; its announcement is read from the dispatched ref
+        required: true
 
-permissions: {}
+permissions:
+  contents: read
 
 jobs:
   discord:
     name: Post to Discord announcements
-    if: startsWith(github.event.release.tag_name, 'v') && !github.event.release.prerelease && !contains(github.event.release.tag_name, '-')
+    if: github.event_name == 'workflow_dispatch' || (startsWith(github.event.release.tag_name, 'v') && !github.event.release.prerelease && !contains(github.event.release.tag_name, '-'))
     runs-on: ubuntu-latest
     steps:
-      - name: Post the release
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          ref: ${{ github.event.release.tag_name || github.ref }}
+          sparse-checkout: releases
+
+      - name: Post the announcement
         env:
           WEBHOOK_URL: ${{ secrets.DISCORD_ANNOUNCEMENTS_WEBHOOK }}
-          TAG_NAME: ${{ github.event.release.tag_name }}
-          RELEASE_URL: ${{ github.event.release.html_url }}
-          RELEASE_BODY: ${{ github.event.release.body }}
+          VERSION: ${{ inputs.version || github.event.release.tag_name }}
+          REPOSITORY: ${{ github.repository }}
         run: |
           if [ -z "$WEBHOOK_URL" ]; then
             echo "::error::DISCORD_ANNOUNCEMENTS_WEBHOOK is not set"
             exit 1
           fi
-          highlights=$(printf '%s' "$RELEASE_BODY" | grep -o '<h2>[^<]*</h2>' | sed -e 's/<[^>]*>//g' -e 's/&amp;/\&/g' -e 's/&lt;/</g' -e 's/&gt;/>/g' -e 's/^/• /' || true)
-          description="Update from JayJay, or download it from the [release page]($RELEASE_URL)."
-          if [ -n "$highlights" ]; then
-            description=$(printf "**What's new**\n%s\n\n%s" "$highlights" "$description")
+          version=${VERSION#v}
+          announcement="releases/${version}-discord.md"
+          if [ ! -s "$announcement" ]; then
+            echo "::error::$announcement is missing or empty"
+            exit 1
           fi
-          jq -n --arg title "JayJay ${TAG_NAME#v}" --arg url "$RELEASE_URL" --arg description "$description" \
+          release_url="https://github.com/${REPOSITORY}/releases/tag/v${version}"
+          description=$(printf '%s\n\nUpdate from inside JayJay, or download it from the [release page](%s).' "$(cat "$announcement")" "$release_url")
+          if [ "${#description}" -gt 4096 ]; then
+            echo "::error::$announcement exceeds Discord's 4096-character embed limit"
+            exit 1
+          fi
+          jq -n --arg title "JayJay $version" --arg url "$release_url" --arg description "$description" \
             '{allowed_mentions: {parse: []}, embeds: [{title: $title, url: $url, description: $description, color: 5793266}]}' |
             curl -fsS -H 'Content-Type: application/json' --data-binary @- "$WEBHOOK_URL?wait=true" >/dev/null
