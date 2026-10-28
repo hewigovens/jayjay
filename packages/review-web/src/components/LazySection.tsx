@@ -10,5 +10,5 @@ export function LazySection({ index, version, loaded, load, children }: { index:
     return () => observer.disconnect();
   }, []);
   useEffect(() => { if (near && !loaded) load(index); }, [near, loaded, index, version]);
-  return <section className="file-section" ref={element}>{children}</section>;
+  return <section className="jj-file-section" ref={element}>{children}</section>;
 }

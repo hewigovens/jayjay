@@ -23,20 +23,20 @@ export function ChangeHeader({ overview, labels, actions, avatars }: { overview:
     ? new Intl.DateTimeFormat(undefined, { dateStyle: "medium", timeStyle: "short" }).format(overview.timestampMillis)
     : null;
   const toggleLabel = expanded ? labels.collapseDescription : labels.expandDescription;
-  return <header className="change-header">
-    <div className="change-title">
+  return <header className="jj-change-header">
+    <div className="jj-change-title">
       <h1>{overview.title}</h1>
-      {overview.description && <button className="tool description-toggle" aria-expanded={expanded} aria-label={toggleLabel} title={toggleLabel}
+      {overview.description && <button className="jj-tool jj-description-toggle" aria-expanded={expanded} aria-label={toggleLabel} title={toggleLabel}
         onClick={() => setExpanded(!expanded)}><ExpandIcon expanded={expanded} /></button>}
-      {actions && <div className="change-actions">{actions}</div>}
+      {actions && <div className="jj-change-actions">{actions}</div>}
     </div>
-    {overview.description && <p className={`change-description ${expanded ? "expanded" : ""}`}>{reflow(overview.description)}</p>}
-    <div className="byline">
+    {overview.description && <p className={`jj-change-description ${expanded ? "jj-expanded" : ""}`}>{reflow(overview.description)}</p>}
+    <div className="jj-byline">
       {overview.author && <><Avatar source={avatars ? overview.authorAvatar : null} name={overview.author} />
-        <span className="author">{overview.author}</span><span className="separator" aria-hidden="true">·</span></>}
-      <code className="change-id" title={overview.changeId}><b>{overview.changeId.slice(0, prefix)}</b>{overview.changeId.slice(prefix)}</code>
-      {date && <><span className="separator" aria-hidden="true">·</span><time>{date}</time></>}
-      <span className="spacer" />
+        <span className="jj-author">{overview.author}</span><span className="jj-separator" aria-hidden="true">·</span></>}
+      <code className="jj-change-id" title={overview.changeId}><b>{overview.changeId.slice(0, prefix)}</b>{overview.changeId.slice(prefix)}</code>
+      {date && <><span className="jj-separator" aria-hidden="true">·</span><time>{date}</time></>}
+      <span className="jj-spacer" />
       <DiffStats added={added} removed={removed} />
     </div>
   </header>;

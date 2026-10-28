@@ -2,7 +2,7 @@ import { readFile } from "node:fs/promises";
 import { expect, test, type Page } from "@playwright/test";
 
 async function ready(page: Page) {
-  await expect(page.locator(".review-workspace")).toHaveAttribute("aria-busy", "false");
+  await expect(page.locator(".jj-review-workspace")).toHaveAttribute("aria-busy", "false");
   await expect(page.getByRole("alert")).toHaveCount(0);
 }
 
@@ -31,11 +31,11 @@ test("loads syntax on demand, navigates files, and persists group marks and note
   await page.getByRole("button", { name: "Add note: After 5", exact: true }).click();
   await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Check input handling. 日本語 <img src=x>");
   await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
-  await expect(page.locator(".review-note.current")).toContainText("Check input handling. 日本語 <img src=x>");
-  await expect(page.locator(".review-note img")).toHaveCount(0);
+  await expect(page.locator(".jj-review-note.jj-current")).toContainText("Check input handling. 日本語 <img src=x>");
+  await expect(page.locator(".jj-review-note img")).toHaveCount(0);
   await page.reload(); await ready(page);
   await expect(page.getByRole("checkbox", { name: /Change group 1/ })).toBeChecked();
-  await expect(page.locator(".review-note.current")).toContainText("Check input handling");
+  await expect(page.locator(".jj-review-note.jj-current")).toContainText("Check input handling");
   await page.getByText("Local review data", { exact: true }).click();
   const download = page.waitForEvent("download");
   await page.getByRole("button", { name: "Export review state", exact: true }).click();
@@ -45,13 +45,13 @@ test("loads syntax on demand, navigates files, and persists group marks and note
   expect(Object.keys(state.reviewed)).toContain("control-room-preview|src/greeting.rs");
   await page.getByLabel("Import review state", { exact: true }).setInputFiles({ name: "review_store.json", mimeType: "application/json", buffer: Buffer.from('{"reviewed":{},"notes":[]}') });
   await ready(page);
-  await expect(page.locator(".review-note")).toHaveCount(0);
+  await expect(page.locator(".jj-review-note")).toHaveCount(0);
   await page.getByRole("button", { name: "Undo import", exact: true }).click(); await ready(page);
-  await expect(page.locator(".review-note.current")).toContainText("Check input handling");
+  await expect(page.locator(".jj-review-note.jj-current")).toContainText("Check input handling");
   await page.getByRole("button", { name: "Resolve", exact: true }).click(); await ready(page);
-  await expect(page.locator(".review-note")).toHaveCount(0);
+  await expect(page.locator(".jj-review-note")).toHaveCount(0);
   await page.getByRole("button", { name: "Resolved: After 5", exact: true }).click();
-  await expect(page.locator(".review-note.resolved")).toContainText("Check input handling");
+  await expect(page.locator(".jj-review-note.jj-resolved")).toContainText("Check input handling");
   expect(errors).toEqual([]);
 });
 
@@ -59,7 +59,7 @@ test("reviews a file without syntax when its language pack cannot load", async (
   await page.route("**/jj_diff_data_bg*.wasm", route => route.abort("failed"));
   await page.goto("/"); await ready(page);
   await page.getByRole("button", { name: "config/settings.json", exact: true }).click(); await ready(page);
-  await expect(page.locator(".review-detail .notice")).toContainText("Syntax highlighting is unavailable");
+  await expect(page.locator(".jj-review-detail .jj-notice")).toContainText("Syntax highlighting is unavailable");
   await page.getByRole("checkbox", { name: "Mark reviewed", exact: true }).click(); await ready(page);
   await expect(page.getByRole("checkbox", { name: "Mark reviewed: config/settings.json", exact: true })).toBeChecked();
 });
@@ -68,10 +68,10 @@ test("wraps long lines instead of widening the diff", async ({ page }) => {
   await page.goto("/"); await ready(page);
   await bundle(page, `foo\n${"wrapped ".repeat(80)}\nbar\n`);
   for (const layout of ["unified", "split"]) {
-    if (layout === "split") { await page.locator(".header-actions > button.header-action").click(); await ready(page); }
-    const scroll = page.locator(".diff-scroll");
+    if (layout === "split") { await page.locator(".jj-header-actions > button.jj-header-action").click(); await ready(page); }
+    const scroll = page.locator(".jj-diff-scroll");
     expect(await scroll.evaluate(element => element.scrollWidth - element.clientWidth), layout).toBeLessThanOrEqual(1);
-    const cell = page.locator(".diff-cell", { hasText: "wrapped wrapped" }).last();
+    const cell = page.locator(".jj-diff-cell", { hasText: "wrapped wrapped" }).last();
     expect((await cell.boundingBox())!.height, layout).toBeGreaterThan(19 * 2);
   }
 });
@@ -89,16 +89,16 @@ test("loads the author's avatar only after opting in", async ({ page }) => {
     files: [{ path: "a.txt", reviewIdentity: "identity", before: "a\n", after: "b\n" }],
   })) });
   await author("49699333+dependabot[bot]@users.noreply.github.com"); await ready(page);
-  await expect(page.locator(".change-header .avatar")).toHaveText("D");
+  await expect(page.locator(".jj-change-header .jj-avatar")).toHaveText("D");
   expect(lookups).toEqual([]);
   await page.getByText("Local review data", { exact: true }).click();
   await page.getByLabel("Load author avatars from Gravatar, GitHub, or GitLab", { exact: true }).check();
-  await expect(page.locator(".change-header .avatar img.loaded")).toHaveAttribute("src", "https://avatars.githubusercontent.com/in/29110?v=4&size=96");
+  await expect(page.locator(".jj-change-header .jj-avatar img.jj-loaded")).toHaveAttribute("src", "https://avatars.githubusercontent.com/in/29110?v=4&size=96");
   await page.reload(); await ready(page);
-  await expect(page.locator(".change-header .avatar img.loaded")).toHaveCount(1);
+  await expect(page.locator(".jj-change-header .jj-avatar img.jj-loaded")).toHaveCount(1);
   await author("dev@example.com"); await ready(page);
-  await expect(page.locator(".change-header .avatar")).toHaveText("D");
-  await expect(page.locator(".change-header .avatar img")).toHaveCount(0);
+  await expect(page.locator(".jj-change-header .jj-avatar")).toHaveText("D");
+  await expect(page.locator(".jj-change-header .jj-avatar img")).toHaveCount(0);
 });
 
 test("marking a file in the list keeps the open file", async ({ page }) => {
@@ -106,7 +106,7 @@ test("marking a file in the list keeps the open file", async ({ page }) => {
   const cargo = page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true });
   await cargo.click(); await ready(page);
   await expect(cargo).toBeChecked();
-  await expect(page.locator(".file-heading h2")).toHaveText("src/greeting.rs");
+  await expect(page.locator(".jj-file-heading h2")).toHaveText("src/greeting.rs");
 });
 
 test("imports another change when the stored change cannot open", async ({ page }) => {
@@ -124,7 +124,7 @@ test("imports another change when the stored change cannot open", async ({ page 
   await page.reload();
   await expect(page.getByRole("alert")).toBeVisible();
   await bundle(page);
-  await expect(page.locator(".change-header h1")).toHaveText("Whitespace review");
+  await expect(page.locator(".jj-change-header h1")).toHaveText("Whitespace review");
 });
 
 test("keeps the notes filter reachable after the last note is resolved", async ({ page }) => {
@@ -170,14 +170,14 @@ test.describe("phone portrait", () => {
 
   test("lists every file's diff in one scroll with its own mark", async ({ page }) => {
     await page.goto("/"); await ready(page);
-    await expect(page.locator(".file-column")).toHaveCount(0);
-    await expect(page.locator(".file-section")).toHaveCount(5);
+    await expect(page.locator(".jj-file-column")).toHaveCount(0);
+    await expect(page.locator(".jj-file-section")).toHaveCount(5);
     const toggle = page.getByRole("button", { name: "Expand description", exact: true });
     await toggle.click();
     await expect(page.getByRole("button", { name: "Collapse description", exact: true })).toHaveAttribute("aria-expanded", "true");
     const cargo = page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true });
     await cargo.scrollIntoViewIfNeeded();
-    await expect(page.locator('.diff-scroll[data-path="Cargo.toml"] .diff-cell').first()).toBeVisible();
+    await expect(page.locator('.jj-diff-scroll[data-path="Cargo.toml"] .jj-diff-cell').first()).toBeVisible();
     await cargo.tap(); await ready(page);
     await expect(cargo).toBeChecked();
     await expect(page.getByRole("checkbox", { name: "Mark reviewed: src/greeting.rs", exact: true })).not.toBeChecked();
@@ -187,7 +187,7 @@ test.describe("phone portrait", () => {
 
   test("importing review state refreshes every loaded file's marks", async ({ page }) => {
     await page.goto("/"); await ready(page);
-    const cargo = page.locator(".file-section", { has: page.locator('.diff-scroll[data-path="Cargo.toml"]') });
+    const cargo = page.locator(".jj-file-section", { has: page.locator('.jj-diff-scroll[data-path="Cargo.toml"]') });
     await cargo.scrollIntoViewIfNeeded();
     const group = cargo.getByRole("checkbox", { name: /Change group 1/ });
     await group.tap(); await ready(page);
@@ -225,7 +225,7 @@ test.describe("phone portrait", () => {
       (window as unknown as { releaseRender: () => void }).releaseRender();
       await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
     });
-    const section = page.locator(".file-section", { has: page.locator('.diff-scroll[data-path="Cargo.toml"]') });
+    const section = page.locator(".jj-file-section", { has: page.locator('.jj-diff-scroll[data-path="Cargo.toml"]') });
     await expect(section.getByRole("checkbox", { name: /Change group 1/ })).toBeChecked();
   });
 
@@ -244,10 +244,10 @@ test.describe("phone portrait", () => {
       };
     });
     await page.goto("/"); await ready(page);
-    const cargo = page.locator(".file-section", { has: page.locator('.diff-scroll[data-path="Cargo.toml"]') });
+    const cargo = page.locator(".jj-file-section", { has: page.locator('.jj-diff-scroll[data-path="Cargo.toml"]') });
     await cargo.scrollIntoViewIfNeeded();
     await cargo.getByRole("button", { name: "Retry", exact: true }).click();
-    await expect(cargo.locator(".diff-cell").first()).toBeVisible();
+    await expect(cargo.locator(".jj-diff-cell").first()).toBeVisible();
   });
 });
 
@@ -259,10 +259,10 @@ test("uses the recorded whitespace mode and flags changed review data", async ({
   await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Inspect the duplicate line");
   await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
   await page.getByLabel("Ignore whitespace", { exact: true }).uncheck(); await ready(page);
-  await expect(page.locator(".review-note.current")).toContainText("Inspect the duplicate line");
+  await expect(page.locator(".jj-review-note.jj-current")).toContainText("Inspect the duplicate line");
   await page.getByRole("checkbox", { name: "Mark reviewed", exact: true }).click(); await ready(page);
   await bundle(page, "different\n", "identity-2");
-  await expect(page.locator(".review-note.stale")).toContainText("Inspect the duplicate line");
+  await expect(page.locator(".jj-review-note.jj-stale")).toContainText("Inspect the duplicate line");
   await expect(page.getByRole("checkbox", { name: "Mark reviewed", exact: true })).not.toBeChecked();
   await expect(page.getByRole("checkbox", { name: "Mark reviewed: a.txt", exact: true })).toHaveJSProperty("indeterminate", true);
 });
@@ -293,7 +293,7 @@ test("ignores a slow syntax result after selecting another file", async ({ page 
   release();
   await expect(page.locator("html")).toHaveAttribute("data-worker-file", "src/web/session.ts");
   await page.evaluate(() => new Promise<void>(resolve => requestAnimationFrame(() => requestAnimationFrame(() => resolve()))));
-  await expect(page.locator(".file-heading h2")).toHaveText("src/greeting.rs");
+  await expect(page.locator(".jj-file-heading h2")).toHaveText("src/greeting.rs");
   await expect(page.getByRole("button", { name: "src/greeting.rs", exact: true })).toHaveAttribute("aria-current", "true");
 });
 
@@ -316,8 +316,8 @@ test("keeps the file selected until an in-flight note save is acknowledged", asy
   await page.evaluate(() => (window as unknown as { releaseMutation: () => void }).releaseMutation());
   await ready(page);
   await expect(page.getByRole("textbox", { name: "Write a review note", exact: true })).toHaveCount(0);
-  await expect(page.locator(".file-heading h2")).toHaveText("src/greeting.rs");
-  await expect(page.locator(".review-note", { hasText: "Saved once" })).toHaveCount(1);
+  await expect(page.locator(".jj-file-heading h2")).toHaveText("src/greeting.rs");
+  await expect(page.locator(".jj-review-note", { hasText: "Saved once" })).toHaveCount(1);
 });
 
 test("retrying after a lost save response re-renders instead of writing again", async ({ page }) => {
@@ -366,9 +366,31 @@ test("does not acknowledge a failed browser-storage write", async ({ page }) => 
   await page.getByRole("checkbox", { name: "Mark reviewed", exact: true }).click();
   await expect(page.getByRole("alert")).toBeVisible();
   await expect(page.getByRole("checkbox", { name: "Mark reviewed", exact: true })).not.toBeChecked();
-  await expect(page.locator(".review-detail .result-footer")).not.toContainText("Saved on this device");
+  await expect(page.locator(".jj-review-detail .jj-result-footer")).not.toContainText("Saved on this device");
 });
 
+
+test("keeps a host's generic class and token names out of the review", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  // Everything the review paints inside its root, plus the tokens it resolves.
+  const fingerprint = () => page.locator(".jj-review-workspace").evaluate(root => {
+    const nodes = [root, ...root.querySelectorAll("*")];
+    return JSON.stringify({
+      tokens: ["--jj-accent", "--jj-surface", "--jj-ink"].map(name => getComputedStyle(root).getPropertyValue(name).trim()),
+      styles: nodes.map(node => {
+        const computed = getComputedStyle(node);
+        return [computed.color, computed.backgroundColor, computed.display, computed.borderTopWidth];
+      }),
+    });
+  });
+  const before = await fingerprint();
+  // Names a host styles itself, which must never reach the review.
+  await page.addStyleTag({ content: `
+    .active, .label, .new, .primary { color: rgb(255, 0, 0); background: rgb(255, 0, 255); display: none; border-width: 9px; }
+    * { --page: rgb(1, 2, 3); --surface: rgb(4, 5, 6); --ink: rgb(7, 8, 9); --accent: rgb(10, 11, 12); }
+  ` });
+  expect(await fingerprint()).toBe(before);
+});
 
 test("rejects malformed UTF-8 and empty imports without replacing review data", async ({ page }) => {
   await page.goto("/"); await ready(page);

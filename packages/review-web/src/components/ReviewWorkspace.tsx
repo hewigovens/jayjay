@@ -58,7 +58,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
     if (pending || !jumpTarget.current || !result) return;
     const note = jumpTarget.current.note;
     const section = detail.current?.querySelector<HTMLElement>(`[data-path="${CSS.escape(note.path)}"]`);
-    const node = section?.querySelector<HTMLElement>(`.diff-cell[data-side="${note.side}"][data-line="${note.line}"]`);
+    const node = section?.querySelector<HTMLElement>(`.jj-diff-cell[data-side="${note.side}"][data-line="${note.line}"]`);
     // In the compact list the section may still be loading, so keep the jump until its lines render.
     if (!node) { section?.scrollIntoView({ block: "start" }); if (!compact) jumpTarget.current = null; return; }
     node.scrollIntoView({ block: "center" }); node.focus({ preventScroll: true });
@@ -121,7 +121,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
 
   function diffPane(index: number, data: ReviewResult) {
     const filePath = data.overview.files[index].path;
-    if (!data.diff) return <p className="empty-diff">{labels.noFiles}</p>;
+    if (!data.diff) return <p className="jj-empty-diff">{labels.noFiles}</p>;
     const annotation = (anchor: DiffAnchor) => {
       const key = anchorKey(filePath, anchor.side, anchor.line);
       const shown = (placed.get(key) ?? []).filter(item => item.status === "current" || expanded.has(key));
@@ -137,7 +137,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
       const resolved = (placed.get(key) ?? []).filter(item => item.status === "resolved");
       if (!resolved.length) return null;
       const open = expanded.has(key);
-      return <button className="note-marker resolved" aria-expanded={open} aria-label={`${labels.resolved}: ${lineLabel(labels, anchor.side, anchor.line)}`}
+      return <button className="jj-note-marker jj-resolved" aria-expanded={open} aria-label={`${labels.resolved}: ${lineLabel(labels, anchor.side, anchor.line)}`}
         title={labels.resolved} onClick={() => setExpanded(previous => toggled(previous, key))}>
         <NoteIcon />{resolved.length > 1 && resolved.length}</button>;
     };
@@ -147,36 +147,36 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
         ...notes && { note, annotation, marker } }} />;
   }
 
-  return <div className={`jayjay-review review-workspace ${compact ? "compact" : ""}`} aria-busy={pending}>
-    {error && <div className="review-error" role="alert">{labels.renderError} {error === "worker-stopped" ? labels.workerError : error}
+  return <div className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""}`} aria-busy={pending}>
+    {error && <div className="jj-review-error" role="alert">{labels.renderError} {error === "worker-stopped" ? labels.workerError : error}
       <button onClick={onRetry ?? review.retry}>{labels.retry}</button>{!result && headerActions}</div>}
-    {!result && !error && <p className="notice">{labels.loading}</p>}
-    {result && <div className="review-columns">
+    {!result && !error && <p className="jj-notice">{labels.loading}</p>}
+    {result && <div className="jj-review-columns">
       {!compact && <FileColumn overview={result.overview} selected={selected} disabled={disabled} labels={labels} select={select} notes={notes} toggle={toggleFile} />}
-      <section className="review-detail" aria-label={labels.result} aria-busy={pending} ref={detail}>
+      <section className="jj-review-detail" aria-label={labels.result} aria-busy={pending} ref={detail}>
         <ChangeHeader overview={result.overview} labels={labels} actions={headerActions} avatars={avatars} />
-        {compact && <div className="pane-heading diff-options"><div className="header-actions"><DiffOptionControls labels={labels} options={options} configure={configure} /></div></div>}
+        {compact && <div className="jj-pane-heading jj-diff-options"><div className="jj-header-actions"><DiffOptionControls labels={labels} options={options} configure={configure} /></div></div>}
         {!compact && file && <FileHeader file={file} labels={labels} disabled={disabled} toggleReviewed={() => toggleFile(result.file)}
           controls={<DiffOptionControls labels={labels} options={options} configure={configure} />} />}
-        {result.syntaxUnavailable && <p className="notice">{labels.syntaxUnavailable} <button onClick={() => select(selected)}>{labels.retry}</button></p>}
-        {!compact && result.diff?.whitespaceOnlyHidden && <p className="notice">{labels.whitespaceOnly}</p>}
+        {result.syntaxUnavailable && <p className="jj-notice">{labels.syntaxUnavailable} <button onClick={() => select(selected)}>{labels.retry}</button></p>}
+        {!compact && result.diff?.whitespaceOnlyHidden && <p className="jj-notice">{labels.whitespaceOnly}</p>}
         <NotesBanner items={unplaced} labels={labels} disabled={disabled} resolve={resolve} locate={locate} />
         {compact
-          ? <div className="file-sections">
+          ? <div className="jj-file-sections">
             {result.overview.files.map((entry, index) => <LazySection key={entry.path} index={index} version={cacheKey} loaded={loaded.has(index)} load={load}>
               <FileHeader file={entry} labels={labels} disabled={disabled} toggleReviewed={() => toggleFile(index)} />
-              <div className="diff-scroll" data-path={entry.path} aria-label={`${labels.lines}: ${entry.path}`}>
+              <div className="jj-diff-scroll" data-path={entry.path} aria-label={`${labels.lines}: ${entry.path}`}>
                 {loaded.get(index) ? diffPane(index, loaded.get(index)!)
-                  : failed.has(index) ? <p className="notice">{labels.renderError} <button onClick={() => load(index)}>{labels.retry}</button></p>
-                  : <p className="notice">{labels.loadingFile}</p>}
+                  : failed.has(index) ? <p className="jj-notice">{labels.renderError} <button onClick={() => load(index)}>{labels.retry}</button></p>
+                  : <p className="jj-notice">{labels.loadingFile}</p>}
               </div>
             </LazySection>)}
-            {!result.overview.files.length && <p className="empty-diff">{labels.noChangedFiles}</p>}
+            {!result.overview.files.length && <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>
-          : <div className="diff-scroll" data-path={path} tabIndex={0} aria-label={labels.lines}>
-            {result.diff ? diffPane(result.file, result) : <p className="empty-diff">{result.overview.files.length ? labels.noFiles : labels.noChangedFiles}</p>}
+          : <div className="jj-diff-scroll" data-path={path} tabIndex={0} aria-label={labels.lines}>
+            {result.diff ? diffPane(result.file, result) : <p className="jj-empty-diff">{result.overview.files.length ? labels.noFiles : labels.noChangedFiles}</p>}
           </div>}
-        <div className="result-footer" aria-live="polite"><span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span><span>{result.pack} · {result.elapsed.toFixed(1)} ms</span></div>
+        <div className="jj-result-footer" aria-live="polite"><span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span><span>{result.pack} · {result.elapsed.toFixed(1)} ms</span></div>
       </section>
     </div>}
     {footer}

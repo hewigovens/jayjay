@@ -29,7 +29,30 @@ Requests receive an abort signal and stale results never replace newer presentat
 
 `ReviewWorkspace` accepts `headerActions` and `footer` slots. `useReview` exposes `run(signal => Promise<ReviewResult>)` for imports or refresh, plus selection, options, pending/error state, and Retry. Host copy goes through `savedLabel`; local-storage claims are never assumed. Labels come from JayJay's catalog or the host's localization adapter.
 
-Styles are scoped to `.jayjay-review`, including form defaults. The optional `.jayjay-theme` class applies the palette and typography to a host root. Override custom properties inside your own scoped selector to theme it. A standalone `DiffPane` needs a `.jayjay-review` ancestor. The package does not register a service worker or style controls outside its root.
+Styles are scoped to `.jayjay-review`, including form defaults. The optional `.jayjay-theme` class applies the palette and typography to a host root. A standalone `DiffPane` needs a `.jayjay-review` ancestor. The package does not register a service worker or style controls outside its root. [Class and variable names](#class-and-variable-names) lists what a host may theme or override.
+
+## Class and variable names
+
+Classes are `jj-` plus a role (`jj-file-row`, `jj-diff-cell`, `jj-token-Keyword`) and custom properties are `--jj-` plus a role (`--jj-accent`, `--jj-ink`), avoiding accidental collisions with a host's class and custom-property names. Host tag selectors and resets still apply. `.jayjay-review` and `.jayjay-theme` are the only unprefixed classes.
+
+A host may rely on:
+
+- `.jayjay-review` on an ancestor: every other rule needs it.
+- `.jayjay-theme` on a host root: the palette and typography.
+- `--jj-sticky-top`: the height of the host's own pinned bar, below which the compact list's path rows stick.
+- The theme variables below, set on `.jayjay-review` or `.jayjay-theme`.
+
+| Purpose | Variables |
+| --- | --- |
+| Surfaces | `--jj-page`, `--jj-surface`, `--jj-border` |
+| Text | `--jj-ink`, `--jj-muted`, `--jj-mono` |
+| Accent | `--jj-accent` |
+| Added and removed lines | `--jj-added-ink`, `--jj-added-bg`, `--jj-removed-ink`, `--jj-removed-bg`, `--jj-word-added`, `--jj-word-removed` |
+| File kinds | `--jj-kind-added`, `--jj-kind-removed`, `--jj-kind-modified` |
+| Group stripes | `--jj-stripe-unreviewed`, `--jj-stripe-reviewed`, `--jj-stripe-changed`, `--jj-reviewed-ink` |
+| Notes | `--jj-note-ink`, `--jj-note-bg`, `--jj-note-border`, `--jj-note-pill` |
+
+Everything else is internal: it names structure the package owns, and may change in a release. Theme through the variables rather than styling a `jj-` class by name.
 
 ## Local WASM backend
 

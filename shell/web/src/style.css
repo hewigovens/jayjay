@@ -1,12 +1,12 @@
 body { margin: 0; }
 main { width: 100%; max-width: 1900px; margin: auto; padding: 0 14px; box-sizing: border-box; }
-.file-button { position: relative; color: var(--muted); border-radius: 3px; padding: 3px 5px; overflow: hidden; cursor: pointer; }
-.file-button:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
+.file-button { position: relative; color: var(--jj-muted); border-radius: 3px; padding: 3px 5px; overflow: hidden; cursor: pointer; }
+.file-button:hover { color: var(--jj-accent); background: color-mix(in srgb, var(--jj-accent) 6%, var(--jj-surface)); }
 .file-button input { position: absolute; inset: 0; opacity: 0; width: 100%; cursor: pointer; }
-.file-button:focus-within { outline: 2px solid var(--accent); }
-.import-button { display: inline-block; border: 1px solid var(--border); border-radius: 5px; padding: 6px 10px; font-size: 12px; color: var(--ink); background: var(--surface); }
+.file-button:focus-within { outline: 2px solid var(--jj-accent); }
+.import-button { display: inline-block; border: 1px solid var(--jj-border); border-radius: 5px; padding: 6px 10px; font-size: 12px; color: var(--jj-ink); background: var(--jj-surface); }
 .import-button:has(input:disabled) { opacity: .5; cursor: default; }
-.review-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 14px 4px 22px; color: var(--muted); font-size: 10px; }
+.review-footer { display: flex; justify-content: space-between; align-items: flex-start; gap: 20px; padding: 14px 4px 22px; color: var(--jj-muted); font-size: 10px; }
 .review-footer details { max-width: 360px; text-align: right; }
 .review-footer summary { cursor: pointer; }
 .review-footer details > div { padding: 12px 0; line-height: 1.6; }

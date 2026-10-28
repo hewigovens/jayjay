@@ -2,259 +2,259 @@
   color-scheme: light dark;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
   font-size: 14px;
-  --page: light-dark(#f5f7fa, #171c25);
-  --surface: light-dark(#fdfefe, #1d2430);
-  --ink: light-dark(#243247, #d5dfed);
-  --muted: light-dark(#5f6f85, #9aaac1);
-  --border: light-dark(#dce3ed, #354052);
-  --accent: light-dark(#255ab3, #91b8ff);
-  --added-ink: light-dark(#186442, #99ddbb);
-  --removed-ink: light-dark(#a43f49, #ffb0ba);
-  --added-bg: light-dark(#eff9f2, #1c352c);
-  --removed-bg: light-dark(#fff0f0, #3c252e);
-  --word-added: light-dark(#bde8ca, #2d6349);
-  --word-removed: light-dark(#facbd0, #743b48);
-  --kind-added: light-dark(#1c7c3a, #5fd17f);
-  --kind-removed: light-dark(#b42318, #ff8a80);
-  --kind-modified: light-dark(#175cd3, #7cb4ff);
-  --stripe-unreviewed: light-dark(#b6d3fb, #35507a);
-  --stripe-reviewed: var(--accent);
-  --stripe-changed: light-dark(#e8890c, #f5a742);
-  --reviewed-ink: light-dark(#1c7c3a, #5fd17f);
-  --note-ink: light-dark(#b45309, #edc18a);
-  --note-bg: light-dark(#fff8ee, #2a2419);
-  --note-border: light-dark(#f3d6ad, #5a4526);
-  --note-pill: light-dark(#fdebd3, #4a3518);
-  --mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
-  color: var(--ink);
-  background: var(--page);
+  --jj-page: light-dark(#f5f7fa, #171c25);
+  --jj-surface: light-dark(#fdfefe, #1d2430);
+  --jj-ink: light-dark(#243247, #d5dfed);
+  --jj-muted: light-dark(#5f6f85, #9aaac1);
+  --jj-border: light-dark(#dce3ed, #354052);
+  --jj-accent: light-dark(#255ab3, #91b8ff);
+  --jj-added-ink: light-dark(#186442, #99ddbb);
+  --jj-removed-ink: light-dark(#a43f49, #ffb0ba);
+  --jj-added-bg: light-dark(#eff9f2, #1c352c);
+  --jj-removed-bg: light-dark(#fff0f0, #3c252e);
+  --jj-word-added: light-dark(#bde8ca, #2d6349);
+  --jj-word-removed: light-dark(#facbd0, #743b48);
+  --jj-kind-added: light-dark(#1c7c3a, #5fd17f);
+  --jj-kind-removed: light-dark(#b42318, #ff8a80);
+  --jj-kind-modified: light-dark(#175cd3, #7cb4ff);
+  --jj-stripe-unreviewed: light-dark(#b6d3fb, #35507a);
+  --jj-stripe-reviewed: var(--jj-accent);
+  --jj-stripe-changed: light-dark(#e8890c, #f5a742);
+  --jj-reviewed-ink: light-dark(#1c7c3a, #5fd17f);
+  --jj-note-ink: light-dark(#b45309, #edc18a);
+  --jj-note-bg: light-dark(#fff8ee, #2a2419);
+  --jj-note-border: light-dark(#f3d6ad, #5a4526);
+  --jj-note-pill: light-dark(#fdebd3, #4a3518);
+  --jj-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  color: var(--jj-ink);
+  background: var(--jj-page);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
 }
 :where(.jayjay-review), :where(.jayjay-review) * { box-sizing: border-box; }
-:where(.jayjay-review) textarea { display: block; width: 100%; resize: vertical; background: var(--surface); }
+:where(.jayjay-review) textarea { display: block; width: 100%; resize: vertical; background: var(--jj-surface); }
 :where(.jayjay-review) button, :where(.jayjay-review) input, :where(.jayjay-review) textarea { font: inherit; color: inherit; }
 :where(.jayjay-review) button { cursor: pointer; }
-:where(.jayjay-review) button { border: 1px solid var(--border); border-radius: 5px; background: var(--surface); padding: 6px 11px; font-size: 12px; }
-:where(.jayjay-review) button:hover { color: var(--accent); background: color-mix(in srgb, var(--accent) 6%, var(--surface)); }
-:where(.jayjay-review) :focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
+:where(.jayjay-review) button { border: 1px solid var(--jj-border); border-radius: 5px; background: var(--jj-surface); padding: 6px 11px; font-size: 12px; }
+:where(.jayjay-review) button:hover { color: var(--jj-accent); background: color-mix(in srgb, var(--jj-accent) 6%, var(--jj-surface)); }
+:where(.jayjay-review) :focus-visible { outline: 2px solid var(--jj-accent); outline-offset: 2px; }
 :where(.jayjay-review) h2 { font-size: 13px; font-weight: 600; margin: 0; }
-:where(.jayjay-review) .diff-stats { font: 12px var(--mono); display: inline-flex; gap: 6px; white-space: nowrap; }
-:where(.jayjay-review) .diff-stats .added { color: var(--added-ink); }
-:where(.jayjay-review) .diff-stats .removed { color: var(--removed-ink); }
-:where(.jayjay-review) input[type="checkbox"] { accent-color: var(--accent); margin: 0; }
-:where(.jayjay-review) .icon { display: block; flex: none; }
+:where(.jayjay-review) .jj-diff-stats { font: 12px var(--jj-mono); display: inline-flex; gap: 6px; white-space: nowrap; }
+:where(.jayjay-review) .jj-diff-stats .jj-added { color: var(--jj-added-ink); }
+:where(.jayjay-review) .jj-diff-stats .jj-removed { color: var(--jj-removed-ink); }
+:where(.jayjay-review) input[type="checkbox"] { accent-color: var(--jj-accent); margin: 0; }
+:where(.jayjay-review) .jj-icon { display: block; flex: none; }
 
 /* ---------- diff lines ---------- */
-:where(.jayjay-review) .diff-scroll { overflow: auto; max-height: 65vh; }
-:where(.jayjay-review) .diff-lines { width: 100%; font: 12px/19px var(--mono); tab-size: 4; }
-:where(.jayjay-review) .diff-row { display: grid; }
-:where(.jayjay-review) .split .diff-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
-:where(.jayjay-review) .split .diff-row.full-width { grid-template-columns: 1fr; }
-:where(.jayjay-review) .diff-cell { position: relative; display: flex; align-items: baseline; min-width: 0; padding-right: 20px; }
-:where(.jayjay-review) .split .diff-cell + .diff-cell { border-left: 1px solid var(--border); }
-:where(.jayjay-review) .diff-cell.added { background: var(--added-bg); }
-:where(.jayjay-review) .diff-cell.removed { background: var(--removed-bg); }
+:where(.jayjay-review) .jj-diff-scroll { overflow: auto; max-height: 65vh; }
+:where(.jayjay-review) .jj-diff-lines { width: 100%; font: 12px/19px var(--jj-mono); tab-size: 4; }
+:where(.jayjay-review) .jj-diff-row { display: grid; }
+:where(.jayjay-review) .jj-split .jj-diff-row { grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); }
+:where(.jayjay-review) .jj-split .jj-diff-row.jj-full-width { grid-template-columns: 1fr; }
+:where(.jayjay-review) .jj-diff-cell { position: relative; display: flex; align-items: baseline; min-width: 0; padding-right: 20px; }
+:where(.jayjay-review) .jj-split .jj-diff-cell + .jj-diff-cell { border-left: 1px solid var(--jj-border); }
+:where(.jayjay-review) .jj-diff-cell.jj-added { background: var(--jj-added-bg); }
+:where(.jayjay-review) .jj-diff-cell.jj-removed { background: var(--jj-removed-bg); }
 /* Two number columns ruled off from the code, then the +/− marker. */
-:where(.jayjay-review) .line-number { flex: 0 0 38px; text-align: right; padding-right: 8px; color: var(--muted); user-select: none; font-size: 11px; opacity: .8; }
-:where(.jayjay-review) .line-number ~ .marker { box-shadow: inset 1px 0 var(--border); }
-:where(.jayjay-review) .split .line-number { box-shadow: inset -1px 0 var(--border); }
-:where(.jayjay-review) .marker { flex: 0 0 20px; text-align: center; user-select: none; color: var(--muted); }
-:where(.jayjay-review) .added > .marker { color: var(--added-ink); }
-:where(.jayjay-review) .removed > .marker { color: var(--removed-ink); }
+:where(.jayjay-review) .jj-line-number { flex: 0 0 38px; text-align: right; padding-right: 8px; color: var(--jj-muted); user-select: none; font-size: 11px; opacity: .8; }
+:where(.jayjay-review) .jj-line-number ~ .jj-marker { box-shadow: inset 1px 0 var(--jj-border); }
+:where(.jayjay-review) .jj-split .jj-line-number { box-shadow: inset -1px 0 var(--jj-border); }
+:where(.jayjay-review) .jj-marker { flex: 0 0 20px; text-align: center; user-select: none; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-added > .jj-marker { color: var(--jj-added-ink); }
+:where(.jayjay-review) .jj-removed > .jj-marker { color: var(--jj-removed-ink); }
 :where(.jayjay-review) code { font: inherit; white-space: pre; }
-:where(.jayjay-review) .diff-cell code { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-:where(.jayjay-review) .word-added { background: var(--word-added); }
-:where(.jayjay-review) .word-removed { background: var(--word-removed); }
-:where(.jayjay-review) .token-Keyword, :where(.jayjay-review) .token-Attribute { color: light-dark(#9b386e, #e9a5d2); }
-:where(.jayjay-review) .token-StringLit { color: light-dark(#26744e, #a3d9b7); }
-:where(.jayjay-review) .token-Comment { color: var(--muted); font-style: italic; }
-:where(.jayjay-review) .token-Number { color: light-dark(#855224, #e6bf90); }
-:where(.jayjay-review) .token-Type, :where(.jayjay-review) .token-Function { color: light-dark(#235e9b, #9fc8f5); }
-:where(.jayjay-review) .token-Operator, :where(.jayjay-review) .token-Punctuation { color: var(--muted); }
-:where(.jayjay-review) .eof { font-size: 10px; font-style: italic; color: var(--muted); }
-:where(.jayjay-review) .context-row { display: block; width: 100%; text-align: left; border: 0; border-radius: 0; border-block: 1px solid var(--border); padding: 3px 20px 3px 66px; color: var(--accent); background: color-mix(in srgb, var(--accent) 5%, var(--surface)); font: 11px/18px var(--mono); }
-:where(.jayjay-review) .split-head { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; background: var(--surface); border-bottom: 1px solid var(--border); color: var(--muted); font: 11px/normal -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
-:where(.jayjay-review) .split-head span { padding: 6px 16px; }
-:where(.jayjay-review) .split-head span + span { border-left: 1px solid var(--border); }
+:where(.jayjay-review) .jj-diff-cell code { flex: 1 1 auto; min-width: 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+:where(.jayjay-review) .jj-word-added { background: var(--jj-word-added); }
+:where(.jayjay-review) .jj-word-removed { background: var(--jj-word-removed); }
+:where(.jayjay-review) .jj-token-Keyword, :where(.jayjay-review) .jj-token-Attribute { color: light-dark(#9b386e, #e9a5d2); }
+:where(.jayjay-review) .jj-token-StringLit { color: light-dark(#26744e, #a3d9b7); }
+:where(.jayjay-review) .jj-token-Comment { color: var(--jj-muted); font-style: italic; }
+:where(.jayjay-review) .jj-token-Number { color: light-dark(#855224, #e6bf90); }
+:where(.jayjay-review) .jj-token-Type, :where(.jayjay-review) .jj-token-Function { color: light-dark(#235e9b, #9fc8f5); }
+:where(.jayjay-review) .jj-token-Operator, :where(.jayjay-review) .jj-token-Punctuation { color: var(--jj-muted); }
+:where(.jayjay-review) .jj-eof { font-size: 10px; font-style: italic; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-context-row { display: block; width: 100%; text-align: left; border: 0; border-radius: 0; border-block: 1px solid var(--jj-border); padding: 3px 20px 3px 66px; color: var(--jj-accent); background: color-mix(in srgb, var(--jj-accent) 5%, var(--jj-surface)); font: 11px/18px var(--jj-mono); }
+:where(.jayjay-review) .jj-split-head { position: sticky; top: 0; z-index: 1; display: grid; grid-template-columns: 1fr 1fr; background: var(--jj-surface); border-bottom: 1px solid var(--jj-border); color: var(--jj-muted); font: 11px/normal -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; }
+:where(.jayjay-review) .jj-split-head span { padding: 6px 16px; }
+:where(.jayjay-review) .jj-split-head span + span { border-left: 1px solid var(--jj-border); }
 /* A change group: its rows share a gutter stripe in the group's review colour, which is also its checkbox. */
-:where(.jayjay-review) .review-group { position: relative; }
-:where(.jayjay-review) .group-toggle { appearance: none; -webkit-appearance: none; position: absolute; left: 0; top: 0; bottom: 0; z-index: 1; width: 5px; margin: 0; border: 0; border-radius: 0; background: var(--stripe-unreviewed); cursor: pointer; transition: width .12s; }
-:where(.jayjay-review) .reviewed > .group-toggle { background: var(--stripe-reviewed); }
-:where(.jayjay-review) .changed_since_review > .group-toggle { background: var(--stripe-changed); }
-:where(.jayjay-review) .group-toggle:hover, :where(.jayjay-review) .group-toggle:focus-visible { width: 9px; outline-offset: 0; }
-:where(.jayjay-review) .group-toggle:disabled { cursor: default; }
-:where(.jayjay-review) .line-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; align-self: flex-start; }
+:where(.jayjay-review) .jj-review-group { position: relative; }
+:where(.jayjay-review) .jj-group-toggle { appearance: none; -webkit-appearance: none; position: absolute; left: 0; top: 0; bottom: 0; z-index: 1; width: 5px; margin: 0; border: 0; border-radius: 0; background: var(--jj-stripe-unreviewed); cursor: pointer; transition: width .12s; }
+:where(.jayjay-review) .jj-reviewed > .jj-group-toggle { background: var(--jj-stripe-reviewed); }
+:where(.jayjay-review) .jj-changed_since_review > .jj-group-toggle { background: var(--jj-stripe-changed); }
+:where(.jayjay-review) .jj-group-toggle:hover, :where(.jayjay-review) .jj-group-toggle:focus-visible { width: 9px; outline-offset: 0; }
+:where(.jayjay-review) .jj-group-toggle:disabled { cursor: default; }
+:where(.jayjay-review) .jj-line-actions { display: flex; align-items: center; gap: 2px; margin-left: auto; align-self: flex-start; }
 /* The line-number gutter right of the group stripe is the add-note button; its "+" badge shows on hover or focus, as the macOS gutter does. */
-:where(.jayjay-review) .gutter-note { position: absolute; top: 0; bottom: 0; left: 9px; width: 67px; z-index: 2; display: flex; align-items: flex-start; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
-:where(.jayjay-review) .split .gutter-note { width: 29px; }
-:where(.jayjay-review) .gutter-note:hover { background: transparent; }
-:where(.jayjay-review) .gutter-note > span { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--accent); border-radius: 4px; background: var(--surface); color: var(--accent); font: 600 13px/1 var(--mono); box-shadow: 0 1px 3px color-mix(in srgb, var(--ink) 20%, transparent); opacity: 0; }
-:where(.jayjay-review) .gutter-note:hover > span, :where(.jayjay-review) .gutter-note:focus-visible > span, :where(.jayjay-review) .gutter-note.armed > span, :where(.jayjay-review) .diff-cell:focus > .gutter-note > span { opacity: 1; }
-:where(.jayjay-review) .gutter-note:focus-visible { outline: none; }
-:where(.jayjay-review) .gutter-note:focus-visible > span { outline: 2px solid var(--accent); outline-offset: 1px; }
-:where(.jayjay-review) .gutter-note:hover > span { color: var(--surface); background: var(--accent); }
-:where(.jayjay-review) .gutter-note:disabled { opacity: 1; pointer-events: none; }
-:where(.jayjay-review) .gutter-note:disabled > span { opacity: 0; }
-:where(.jayjay-review) .notice, :where(.jayjay-review) .empty-diff { padding: 12px 18px; margin: 0; font-size: 12px; color: var(--muted); }
-:where(.jayjay-review) .notice { border-bottom: 1px solid var(--border); }
-:where(.jayjay-review) .result-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 15px; border-top: 1px solid var(--border); font-size: 10px; color: var(--muted); }
+:where(.jayjay-review) .jj-gutter-note { position: absolute; top: 0; bottom: 0; left: 9px; width: 67px; z-index: 2; display: flex; align-items: flex-start; padding: 0; border: 0; border-radius: 0; background: transparent; cursor: pointer; }
+:where(.jayjay-review) .jj-split .jj-gutter-note { width: 29px; }
+:where(.jayjay-review) .jj-gutter-note:hover { background: transparent; }
+:where(.jayjay-review) .jj-gutter-note > span { display: grid; place-items: center; width: 18px; height: 18px; border: 1px solid var(--jj-accent); border-radius: 4px; background: var(--jj-surface); color: var(--jj-accent); font: 600 13px/1 var(--jj-mono); box-shadow: 0 1px 3px color-mix(in srgb, var(--jj-ink) 20%, transparent); opacity: 0; }
+:where(.jayjay-review) .jj-gutter-note:hover > span, :where(.jayjay-review) .jj-gutter-note:focus-visible > span, :where(.jayjay-review) .jj-gutter-note.jj-armed > span, :where(.jayjay-review) .jj-diff-cell:focus > .jj-gutter-note > span { opacity: 1; }
+:where(.jayjay-review) .jj-gutter-note:focus-visible { outline: none; }
+:where(.jayjay-review) .jj-gutter-note:focus-visible > span { outline: 2px solid var(--jj-accent); outline-offset: 1px; }
+:where(.jayjay-review) .jj-gutter-note:hover > span { color: var(--jj-surface); background: var(--jj-accent); }
+:where(.jayjay-review) .jj-gutter-note:disabled { opacity: 1; pointer-events: none; }
+:where(.jayjay-review) .jj-gutter-note:disabled > span { opacity: 0; }
+:where(.jayjay-review) .jj-notice, :where(.jayjay-review) .jj-empty-diff { padding: 12px 18px; margin: 0; font-size: 12px; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-notice { border-bottom: 1px solid var(--jj-border); }
+:where(.jayjay-review) .jj-result-footer { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 8px 15px; border-top: 1px solid var(--jj-border); font-size: 10px; color: var(--jj-muted); }
 :where(.jayjay-review) button:disabled { cursor: default; opacity: .5; }
 
 /* ---------- layout ---------- */
-:where(.jayjay-review) .review-columns { display: grid; grid-template-columns: 300px minmax(0, 1fr); height: max(560px, calc(100dvh - 220px)); border: 1px solid var(--border); border-radius: 7px; overflow: hidden; background: var(--surface); }
-:where(.jayjay-review) .file-column, :where(.jayjay-review) .review-detail { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
-:where(.jayjay-review) .file-column { border-right: 1px solid var(--border); background: var(--page); }
-:where(.jayjay-review) .pane-heading { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 14px; border-bottom: 1px solid var(--border); }
-:where(.jayjay-review) .pane-heading h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-:where(.jayjay-review) .tool { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 4px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); }
-:where(.jayjay-review) .tool:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--ink); }
-:where(.jayjay-review) .tool[aria-pressed="true"] { color: var(--accent); }
-:where(.jayjay-review) .notes-filter { color: var(--note-ink); font-size: 10px; font-weight: 600; }
-:where(.jayjay-review) .notes-filter[aria-pressed="true"] { background: var(--note-pill); }
+:where(.jayjay-review) .jj-review-columns { display: grid; grid-template-columns: 300px minmax(0, 1fr); height: max(560px, calc(100dvh - 220px)); border: 1px solid var(--jj-border); border-radius: 7px; overflow: hidden; background: var(--jj-surface); }
+:where(.jayjay-review) .jj-file-column, :where(.jayjay-review) .jj-review-detail { min-width: 0; min-height: 0; display: flex; flex-direction: column; }
+:where(.jayjay-review) .jj-file-column { border-right: 1px solid var(--jj-border); background: var(--jj-page); }
+:where(.jayjay-review) .jj-pane-heading { min-height: 40px; display: flex; align-items: center; justify-content: space-between; gap: 10px; padding: 6px 14px; border-bottom: 1px solid var(--jj-border); }
+:where(.jayjay-review) .jj-pane-heading h2 { min-width: 0; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(.jayjay-review) .jj-tool { display: inline-grid; place-items: center; min-width: 24px; height: 24px; padding: 0 4px; border: 0; border-radius: 5px; background: transparent; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-tool:hover { background: color-mix(in srgb, var(--jj-ink) 7%, transparent); color: var(--jj-ink); }
+:where(.jayjay-review) .jj-tool[aria-pressed="true"] { color: var(--jj-accent); }
+:where(.jayjay-review) .jj-notes-filter { color: var(--jj-note-ink); font-size: 10px; font-weight: 600; }
+:where(.jayjay-review) .jj-notes-filter[aria-pressed="true"] { background: var(--jj-note-pill); }
 
 /* ---------- file column ---------- */
-:where(.jayjay-review) .file-tools { justify-content: flex-start; gap: 4px; padding-inline: 10px 14px; }
-:where(.jayjay-review) .file-count { margin-left: auto; font-size: 12px; color: var(--muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
-:where(.jayjay-review) .file-filter { display: flex; align-items: center; gap: 4px; padding: 0 10px 8px 14px; border-bottom: 1px solid var(--border); }
-:where(.jayjay-review) .file-filter > input { flex: 1; min-width: 0; padding: 5px 8px; background: var(--surface); border: 1px solid var(--border); border-radius: 6px; font-size: 12px; }
-:where(.jayjay-review) .file-rows { flex: 1; overflow: auto; padding: 4px 6px 8px; }
-:where(.jayjay-review) .folder-row { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 28px; text-align: left; border: 0; border-radius: 6px; background: transparent; color: var(--ink); font-size: 12px; font-weight: 500; padding-block: 4px; }
-:where(.jayjay-review) .folder-row .icon { color: var(--muted); }
-:where(.jayjay-review) .folder-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
-:where(.jayjay-review) .file-row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding-right: 8px; border-radius: 8px; }
-:where(.jayjay-review) .file-row.selected { background: color-mix(in srgb, var(--accent) 16%, transparent); }
-:where(.jayjay-review) .file-select { flex: 1; display: flex; align-items: flex-start; gap: 8px; min-width: 0; border: 0; background: transparent; text-align: left; padding: 6px 0; border-radius: 0; font-size: 12px; }
-:where(.jayjay-review) .file-select:hover { background: transparent; color: inherit; }
-:where(.jayjay-review) .file-text { display: grid; gap: 2px; min-width: 0; flex: 1; }
-:where(.jayjay-review) .file-name { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; font-weight: 500; color: var(--ink); }
-:where(.jayjay-review) .file-row.reviewed .file-name { opacity: .5; }
-:where(.jayjay-review) .file-path { display: flex; gap: 4px; min-width: 0; font: 10px var(--mono); color: var(--muted); }
+:where(.jayjay-review) .jj-file-tools { justify-content: flex-start; gap: 4px; padding-inline: 10px 14px; }
+:where(.jayjay-review) .jj-file-count { margin-left: auto; font-size: 12px; color: var(--jj-muted); white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+:where(.jayjay-review) .jj-file-filter { display: flex; align-items: center; gap: 4px; padding: 0 10px 8px 14px; border-bottom: 1px solid var(--jj-border); }
+:where(.jayjay-review) .jj-file-filter > input { flex: 1; min-width: 0; padding: 5px 8px; background: var(--jj-surface); border: 1px solid var(--jj-border); border-radius: 6px; font-size: 12px; }
+:where(.jayjay-review) .jj-file-rows { flex: 1; overflow: auto; padding: 4px 6px 8px; }
+:where(.jayjay-review) .jj-folder-row { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 28px; text-align: left; border: 0; border-radius: 6px; background: transparent; color: var(--jj-ink); font-size: 12px; font-weight: 500; padding-block: 4px; }
+:where(.jayjay-review) .jj-folder-row .jj-icon { color: var(--jj-muted); }
+:where(.jayjay-review) .jj-folder-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+:where(.jayjay-review) .jj-file-row { display: flex; align-items: center; gap: 8px; min-height: 44px; padding-right: 8px; border-radius: 8px; }
+:where(.jayjay-review) .jj-file-row.jj-selected { background: color-mix(in srgb, var(--jj-accent) 16%, transparent); }
+:where(.jayjay-review) .jj-file-select { flex: 1; display: flex; align-items: flex-start; gap: 8px; min-width: 0; border: 0; background: transparent; text-align: left; padding: 6px 0; border-radius: 0; font-size: 12px; }
+:where(.jayjay-review) .jj-file-select:hover { background: transparent; color: inherit; }
+:where(.jayjay-review) .jj-file-text { display: grid; gap: 2px; min-width: 0; flex: 1; }
+:where(.jayjay-review) .jj-file-name { display: flex; align-items: center; gap: 6px; overflow: hidden; white-space: nowrap; font-weight: 500; color: var(--jj-ink); }
+:where(.jayjay-review) .jj-file-row.jj-reviewed .jj-file-name { opacity: .5; }
+:where(.jayjay-review) .jj-file-path { display: flex; gap: 4px; min-width: 0; font: 10px var(--jj-mono); color: var(--jj-muted); }
 /* Snapping to whole monospace cells avoids a clipped-glyph gap before the ellipsis; the .1px slack keeps an exact fit whole. */
-:where(.jayjay-review) .middle-path { display: inline-flex; min-width: 0; max-width: 100%; max-width: min(100%, round(down, 100% + .1px, 1ch) + .1px); overflow: hidden; white-space: nowrap; letter-spacing: normal; }
-:where(.jayjay-review) .middle-path-head { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
-:where(.jayjay-review) .middle-path-tail { flex: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
-:where(.jayjay-review) .kind-dot { flex: none; width: 6px; height: 6px; margin-top: 5px; border-radius: 50%; background: var(--kind-modified); }
-:where(.jayjay-review) .kind-dot.added, :where(.jayjay-review) .kind-dot.copied { background: var(--kind-added); }
-:where(.jayjay-review) .kind-dot.removed { background: var(--kind-removed); }
-:where(.jayjay-review) .note-count { padding: 1px 6px; border-radius: 99px; font-size: 9px; font-weight: 600; color: var(--note-ink); background: var(--note-pill); }
+:where(.jayjay-review) .jj-middle-path { display: inline-flex; min-width: 0; max-width: 100%; max-width: min(100%, round(down, 100% + .1px, 1ch) + .1px); overflow: hidden; white-space: nowrap; letter-spacing: normal; }
+:where(.jayjay-review) .jj-middle-path-head { flex: 0 1 auto; min-width: 0; overflow: hidden; text-overflow: ellipsis; }
+:where(.jayjay-review) .jj-middle-path-tail { flex: none; max-width: 100%; overflow: hidden; text-overflow: ellipsis; }
+:where(.jayjay-review) .jj-kind-dot { flex: none; width: 6px; height: 6px; margin-top: 5px; border-radius: 50%; background: var(--jj-kind-modified); }
+:where(.jayjay-review) .jj-kind-dot.jj-added, :where(.jayjay-review) .jj-kind-dot.jj-copied { background: var(--jj-kind-added); }
+:where(.jayjay-review) .jj-kind-dot.jj-removed { background: var(--jj-kind-removed); }
+:where(.jayjay-review) .jj-note-count { padding: 1px 6px; border-radius: 99px; font-size: 9px; font-weight: 600; color: var(--jj-note-ink); background: var(--jj-note-pill); }
 /* The review circle: empty, checked, or half filled for partly reviewed and changed-since-review files. */
-:where(.jayjay-review) .review-toggle { appearance: none; -webkit-appearance: none; flex: none; width: 15px; height: 15px; margin: 0; border: 1.5px solid color-mix(in srgb, var(--muted) 55%, transparent); border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
-:where(.jayjay-review) .review-toggle[data-state="partial"] { border-color: var(--muted); background: linear-gradient(90deg, var(--muted) 50%, transparent 50%); }
-:where(.jayjay-review) .review-toggle[data-state="changed_since_review"] { border-color: var(--reviewed-ink); background: linear-gradient(90deg, var(--reviewed-ink) 50%, transparent 50%); }
-:where(.jayjay-review) .review-toggle:checked { border-color: var(--reviewed-ink); background: var(--reviewed-ink); }
-:where(.jayjay-review) .review-toggle:checked::after { content: ""; width: 4px; height: 7px; margin-top: -1px; border: solid var(--surface); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
-:where(.jayjay-review) .review-toggle:disabled { cursor: default; opacity: .6; }
+:where(.jayjay-review) .jj-review-toggle { appearance: none; -webkit-appearance: none; flex: none; width: 15px; height: 15px; margin: 0; border: 1.5px solid color-mix(in srgb, var(--jj-muted) 55%, transparent); border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
+:where(.jayjay-review) .jj-review-toggle[data-state="partial"] { border-color: var(--jj-muted); background: linear-gradient(90deg, var(--jj-muted) 50%, transparent 50%); }
+:where(.jayjay-review) .jj-review-toggle[data-state="changed_since_review"] { border-color: var(--jj-reviewed-ink); background: linear-gradient(90deg, var(--jj-reviewed-ink) 50%, transparent 50%); }
+:where(.jayjay-review) .jj-review-toggle:checked { border-color: var(--jj-reviewed-ink); background: var(--jj-reviewed-ink); }
+:where(.jayjay-review) .jj-review-toggle:checked::after { content: ""; width: 4px; height: 7px; margin-top: -1px; border: solid var(--jj-surface); border-width: 0 1.5px 1.5px 0; transform: rotate(45deg); }
+:where(.jayjay-review) .jj-review-toggle:disabled { cursor: default; opacity: .6; }
 
 /* ---------- change and file headers ---------- */
-:where(.jayjay-review) .change-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--border); }
-:where(.jayjay-review) .change-title { display: flex; align-items: flex-start; gap: 6px; }
-:where(.jayjay-review) .change-header h1 { flex: 0 1 auto; min-width: 0; font-size: 19px; font-weight: 650; letter-spacing: -.3px; line-height: 1.3; margin: 0; white-space: normal; overflow-wrap: anywhere; }
-:where(.jayjay-review) .change-actions { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
-:where(.jayjay-review) .change-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--ink); white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; }
-:where(.jayjay-review) .change-description.expanded { display: block; max-height: 50vh; overflow: auto; }
-:where(.jayjay-review) .description-toggle { margin-top: 2px; }
-:where(.jayjay-review) .byline { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 11px; color: var(--muted); white-space: nowrap; min-width: 0; }
-:where(.jayjay-review) .byline .author { color: var(--ink); overflow: hidden; text-overflow: ellipsis; }
-:where(.jayjay-review) .byline .spacer { flex: 1; }
-:where(.jayjay-review) .avatar { position: relative; overflow: hidden; display: inline-grid; place-items: center; flex: none; width: 15px; height: 15px; border-radius: 50%; background: color-mix(in srgb, var(--accent) 22%, var(--surface)); color: var(--accent); font-size: 8px; font-weight: 700; }
-:where(.jayjay-review) .avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
-:where(.jayjay-review) .avatar img.loaded { opacity: 1; }
-:where(.jayjay-review) .change-id { font: 11px var(--mono); color: var(--muted); }
-:where(.jayjay-review) .change-id b { color: light-dark(#a3248f, #e88ad6); font-weight: 650; }
-:where(.jayjay-review) .file-heading { flex-wrap: wrap; row-gap: 4px; padding-block: 8px; }
-:where(.jayjay-review) .file-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 420px; color: var(--muted); }
-:where(.jayjay-review) .file-heading h2 { min-width: 0; font: 13px var(--mono); color: var(--ink); }
+:where(.jayjay-review) .jj-change-header { padding: 16px 18px 12px; border-bottom: 1px solid var(--jj-border); }
+:where(.jayjay-review) .jj-change-title { display: flex; align-items: flex-start; gap: 6px; }
+:where(.jayjay-review) .jj-change-header h1 { flex: 0 1 auto; min-width: 0; font-size: 19px; font-weight: 650; letter-spacing: -.3px; line-height: 1.3; margin: 0; white-space: normal; overflow-wrap: anywhere; }
+:where(.jayjay-review) .jj-change-actions { display: flex; align-items: center; gap: 8px; flex: none; margin-left: auto; }
+:where(.jayjay-review) .jj-change-description { display: -webkit-box; -webkit-box-orient: vertical; -webkit-line-clamp: 2; margin: 8px 0 0; font-size: 13px; line-height: 1.5; color: var(--jj-ink); white-space: pre-wrap; overflow-wrap: anywhere; overflow: hidden; }
+:where(.jayjay-review) .jj-change-description.jj-expanded { display: block; max-height: 50vh; overflow: auto; }
+:where(.jayjay-review) .jj-description-toggle { margin-top: 2px; }
+:where(.jayjay-review) .jj-byline { display: flex; align-items: center; gap: 6px; margin-top: 10px; font-size: 11px; color: var(--jj-muted); white-space: nowrap; min-width: 0; }
+:where(.jayjay-review) .jj-byline .jj-author { color: var(--jj-ink); overflow: hidden; text-overflow: ellipsis; }
+:where(.jayjay-review) .jj-byline .jj-spacer { flex: 1; }
+:where(.jayjay-review) .jj-avatar { position: relative; overflow: hidden; display: inline-grid; place-items: center; flex: none; width: 15px; height: 15px; border-radius: 50%; background: color-mix(in srgb, var(--jj-accent) 22%, var(--jj-surface)); color: var(--jj-accent); font-size: 8px; font-weight: 700; }
+:where(.jayjay-review) .jj-avatar img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; opacity: 0; }
+:where(.jayjay-review) .jj-avatar img.jj-loaded { opacity: 1; }
+:where(.jayjay-review) .jj-change-id { font: 11px var(--jj-mono); color: var(--jj-muted); }
+:where(.jayjay-review) .jj-change-id b { color: light-dark(#a3248f, #e88ad6); font-weight: 650; }
+:where(.jayjay-review) .jj-file-heading { flex-wrap: wrap; row-gap: 4px; padding-block: 8px; }
+:where(.jayjay-review) .jj-file-title { display: flex; align-items: center; gap: 8px; min-width: 0; flex: 1 1 420px; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-file-heading h2 { min-width: 0; font: 13px var(--jj-mono); color: var(--jj-ink); }
 /* A rename's old path gives up its width before the new path does. */
-:where(.jayjay-review) .old-path { flex: 0 1000 auto; min-width: 2em; text-decoration: line-through; }
-:where(.jayjay-review) .file-title .old-path { font: 11px var(--mono); }
-:where(.jayjay-review) .kind-pill { flex: none; padding: 1px 7px; border-radius: 99px; font-size: 10px; font-weight: 500; color: var(--kind-modified); background: color-mix(in srgb, var(--kind-modified) 12%, transparent); }
-:where(.jayjay-review) .kind-pill.added, :where(.jayjay-review) .kind-pill.copied { color: var(--kind-added); background: color-mix(in srgb, var(--kind-added) 12%, transparent); }
-:where(.jayjay-review) .kind-pill.removed { color: var(--kind-removed); background: color-mix(in srgb, var(--kind-removed) 12%, transparent); }
-:where(.jayjay-review) .header-actions { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-left: auto; }
-:where(.jayjay-review) .header-action { position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 2px 7px; border: 0; border-radius: 5px; background: transparent; color: var(--muted); font-size: 11px; white-space: nowrap; cursor: pointer; }
-:where(.jayjay-review) .header-action:hover { background: color-mix(in srgb, var(--ink) 7%, transparent); color: var(--ink); }
-:where(.jayjay-review) .header-action.active { color: var(--accent); background: color-mix(in srgb, var(--accent) 10%, transparent); }
-:where(.jayjay-review) .header-action > input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
-:where(.jayjay-review) .header-action:has(> input:focus-visible) { outline: 2px solid var(--accent); }
-:where(.jayjay-review) .header-action:has(> input:disabled) { opacity: .5; cursor: default; }
-:where(.jayjay-review) .header-action .icon { opacity: .8; }
-:where(.jayjay-review) .header-action:not(.active):has(> input[type="checkbox"]) .icon { opacity: .35; }
-:where(.jayjay-review) .review-detail .diff-scroll { flex: 1; max-height: none; min-height: 0; }
+:where(.jayjay-review) .jj-old-path { flex: 0 1000 auto; min-width: 2em; text-decoration: line-through; }
+:where(.jayjay-review) .jj-file-title .jj-old-path { font: 11px var(--jj-mono); }
+:where(.jayjay-review) .jj-kind-pill { flex: none; padding: 1px 7px; border-radius: 99px; font-size: 10px; font-weight: 500; color: var(--jj-kind-modified); background: color-mix(in srgb, var(--jj-kind-modified) 12%, transparent); }
+:where(.jayjay-review) .jj-kind-pill.jj-added, :where(.jayjay-review) .jj-kind-pill.jj-copied { color: var(--jj-kind-added); background: color-mix(in srgb, var(--jj-kind-added) 12%, transparent); }
+:where(.jayjay-review) .jj-kind-pill.jj-removed { color: var(--jj-kind-removed); background: color-mix(in srgb, var(--jj-kind-removed) 12%, transparent); }
+:where(.jayjay-review) .jj-header-actions { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-left: auto; }
+:where(.jayjay-review) .jj-header-action { position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 2px 7px; border: 0; border-radius: 5px; background: transparent; color: var(--jj-muted); font-size: 11px; white-space: nowrap; cursor: pointer; }
+:where(.jayjay-review) .jj-header-action:hover { background: color-mix(in srgb, var(--jj-ink) 7%, transparent); color: var(--jj-ink); }
+:where(.jayjay-review) .jj-header-action.jj-active { color: var(--jj-accent); background: color-mix(in srgb, var(--jj-accent) 10%, transparent); }
+:where(.jayjay-review) .jj-header-action > input { position: absolute; inset: 0; width: 100%; height: 100%; opacity: 0; margin: 0; cursor: pointer; }
+:where(.jayjay-review) .jj-header-action:has(> input:focus-visible) { outline: 2px solid var(--jj-accent); }
+:where(.jayjay-review) .jj-header-action:has(> input:disabled) { opacity: .5; cursor: default; }
+:where(.jayjay-review) .jj-header-action .jj-icon { opacity: .8; }
+:where(.jayjay-review) .jj-header-action:not(.jj-active):has(> input[type="checkbox"]) .jj-icon { opacity: .35; }
+:where(.jayjay-review) .jj-review-detail .jj-diff-scroll { flex: 1; max-height: none; min-height: 0; }
 /* Below this the labelled header actions would squeeze the path, so they drop to icons (as on macOS). */
-:where(.jayjay-review) .review-detail { container-type: inline-size; }
+:where(.jayjay-review) .jj-review-detail { container-type: inline-size; }
 @container (max-width: 640px) {
-  :where(.jayjay-review) .header-action .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :where(.jayjay-review) .jj-header-action .jj-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
 }
-:where(.jayjay-review) .review-detail .result-footer { min-height: 30px; }
+:where(.jayjay-review) .jj-review-detail .jj-result-footer { min-height: 30px; }
 
 /* ---------- compact all-files list ---------- */
-/* Hosts with their own pinned bar set --jayjay-sticky-top so path rows stop below it. */
-:where(.jayjay-review).compact .review-columns { overflow: clip; }
-:where(.jayjay-review).compact .file-section + .file-section { border-top: 1px solid var(--border); }
-:where(.jayjay-review).compact .file-section > .file-heading { position: sticky; top: var(--jayjay-sticky-top, 0px); z-index: 3; flex-wrap: nowrap; gap: 8px; padding-block: 4px; background: var(--surface); }
-:where(.jayjay-review).compact .diff-scroll { max-height: none; overflow-x: auto; }
-:where(.jayjay-review).compact .file-section .file-title { flex: 1 1 auto; }
-:where(.jayjay-review).compact .file-section :is(.copy-button, .kind-pill, .old-path, .old-path + span) { display: none; }
-:where(.jayjay-review).compact .file-section .header-actions { flex: none; }
+/* Hosts with their own pinned bar set --jj-sticky-top so path rows stop below it. */
+:where(.jayjay-review).jj-compact .jj-review-columns { overflow: clip; }
+:where(.jayjay-review).jj-compact .jj-file-section + .jj-file-section { border-top: 1px solid var(--jj-border); }
+:where(.jayjay-review).jj-compact .jj-file-section > .jj-file-heading { position: sticky; top: var(--jj-sticky-top, 0px); z-index: 3; flex-wrap: nowrap; gap: 8px; padding-block: 4px; background: var(--jj-surface); }
+:where(.jayjay-review).jj-compact .jj-diff-scroll { max-height: none; overflow-x: auto; }
+:where(.jayjay-review).jj-compact .jj-file-section .jj-file-title { flex: 1 1 auto; }
+:where(.jayjay-review).jj-compact .jj-file-section :is(.jj-copy-button, .jj-kind-pill, .jj-old-path, .jj-old-path + span) { display: none; }
+:where(.jayjay-review).jj-compact .jj-file-section .jj-header-actions { flex: none; }
 
 /* ---------- notes ---------- */
 /* Notes sit under their line, kept in the visible width when the code scrolls sideways, as the macOS diff's note bubbles do. */
-:where(.jayjay-review) .diff-scroll { container-type: inline-size; }
-:where(.jayjay-review) .note-row { position: sticky; left: 0; width: 100cqi; padding: 4px 16px 8px 96px; }
-:where(.jayjay-review) .split .note-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 0; }
-:where(.jayjay-review) .split .note-slot { grid-column: 1; padding: 4px 16px 8px 66px; }
-:where(.jayjay-review) .split .note-slot.new { grid-column: 2; }
-:where(.jayjay-review) .note-slot { display: grid; gap: 6px; }
-:where(.jayjay-review) .review-note, :where(.jayjay-review) .note-composer { max-width: 720px; padding: 8px 10px; border: 1px solid var(--note-border); border-radius: 6px; background: var(--note-bg); font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--ink); white-space: normal; }
-:where(.jayjay-review) .review-note.resolved { opacity: .65; }
-:where(.jayjay-review) .note-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
-:where(.jayjay-review) .note-status { flex: none; font-size: 10px; font-weight: 600; color: var(--note-ink); }
-:where(.jayjay-review) .note-location { display: flex; min-width: 0; padding: 0; border: 0; background: transparent; font: 10px var(--mono); color: var(--accent); text-align: left; }
-:where(.jayjay-review) .note-location:hover { background: transparent; text-decoration: underline; }
-:where(.jayjay-review) .review-note p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
-:where(.jayjay-review) .review-note blockquote { margin: 6px 0 0; padding-left: 8px; border-left: 2px solid var(--note-border); font: 10px/1.6 var(--mono); color: var(--muted); white-space: pre-wrap; overflow-wrap: anywhere; }
-:where(.jayjay-review) .note-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
-:where(.jayjay-review) .note-actions button { padding: 3px 8px; font-size: 11px; }
-:where(.jayjay-review) .note-composer .note-heading { margin-bottom: 6px; font-size: 11px; color: var(--muted); }
-:where(.jayjay-review) .note-line { margin-left: auto; font: 10px var(--mono); }
-:where(.jayjay-review) .note-composer textarea { height: 80px; padding: 8px; border: 1px solid var(--border); border-radius: 4px; }
-:where(.jayjay-review) .note-marker { display: inline-flex; align-items: center; gap: 2px; flex: none; padding: 0 4px; border: 0; background: transparent; font: 10px var(--mono); color: var(--note-ink); }
-:where(.jayjay-review) .note-marker.resolved { opacity: .55; }
-:where(.jayjay-review) .note-marker[aria-expanded="true"] { opacity: 1; }
-:where(.jayjay-review) .notes-banner { display: grid; gap: 6px; max-height: 30%; overflow: auto; padding: 8px 14px; border-bottom: 1px solid var(--border); background: var(--note-bg); }
-:where(.jayjay-review) .notes-banner .review-note { max-width: none; background: var(--surface); }
+:where(.jayjay-review) .jj-diff-scroll { container-type: inline-size; }
+:where(.jayjay-review) .jj-note-row { position: sticky; left: 0; width: 100cqi; padding: 4px 16px 8px 96px; }
+:where(.jayjay-review) .jj-split .jj-note-row { display: grid; grid-template-columns: minmax(0, 1fr) minmax(0, 1fr); padding: 0; }
+:where(.jayjay-review) .jj-split .jj-note-slot { grid-column: 1; padding: 4px 16px 8px 66px; }
+:where(.jayjay-review) .jj-split .jj-note-slot.jj-new { grid-column: 2; }
+:where(.jayjay-review) .jj-note-slot { display: grid; gap: 6px; }
+:where(.jayjay-review) .jj-review-note, :where(.jayjay-review) .jj-note-composer { max-width: 720px; padding: 8px 10px; border: 1px solid var(--jj-note-border); border-radius: 6px; background: var(--jj-note-bg); font: 12px/1.5 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif; color: var(--jj-ink); white-space: normal; }
+:where(.jayjay-review) .jj-review-note.jj-resolved { opacity: .65; }
+:where(.jayjay-review) .jj-note-heading { display: flex; align-items: center; gap: 8px; min-width: 0; }
+:where(.jayjay-review) .jj-note-status { flex: none; font-size: 10px; font-weight: 600; color: var(--jj-note-ink); }
+:where(.jayjay-review) .jj-note-location { display: flex; min-width: 0; padding: 0; border: 0; background: transparent; font: 10px var(--jj-mono); color: var(--jj-accent); text-align: left; }
+:where(.jayjay-review) .jj-note-location:hover { background: transparent; text-decoration: underline; }
+:where(.jayjay-review) .jj-review-note p { margin: 4px 0 0; white-space: pre-wrap; overflow-wrap: anywhere; }
+:where(.jayjay-review) .jj-review-note blockquote { margin: 6px 0 0; padding-left: 8px; border-left: 2px solid var(--jj-note-border); font: 10px/1.6 var(--jj-mono); color: var(--jj-muted); white-space: pre-wrap; overflow-wrap: anywhere; }
+:where(.jayjay-review) .jj-note-actions { display: flex; justify-content: flex-end; gap: 6px; margin-top: 6px; }
+:where(.jayjay-review) .jj-note-actions button { padding: 3px 8px; font-size: 11px; }
+:where(.jayjay-review) .jj-note-composer .jj-note-heading { margin-bottom: 6px; font-size: 11px; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-note-line { margin-left: auto; font: 10px var(--jj-mono); }
+:where(.jayjay-review) .jj-note-composer textarea { height: 80px; padding: 8px; border: 1px solid var(--jj-border); border-radius: 4px; }
+:where(.jayjay-review) .jj-note-marker { display: inline-flex; align-items: center; gap: 2px; flex: none; padding: 0 4px; border: 0; background: transparent; font: 10px var(--jj-mono); color: var(--jj-note-ink); }
+:where(.jayjay-review) .jj-note-marker.jj-resolved { opacity: .55; }
+:where(.jayjay-review) .jj-note-marker[aria-expanded="true"] { opacity: 1; }
+:where(.jayjay-review) .jj-notes-banner { display: grid; gap: 6px; max-height: 30%; overflow: auto; padding: 8px 14px; border-bottom: 1px solid var(--jj-border); background: var(--jj-note-bg); }
+:where(.jayjay-review) .jj-notes-banner .jj-review-note { max-width: none; background: var(--jj-surface); }
 @container (max-width: 680px) {
-  :where(.jayjay-review) .note-row, :where(.jayjay-review) .split .note-row { display: grid; grid-template-columns: minmax(0, 1fr); padding: 4px 10px 8px 14px; }
-  :where(.jayjay-review) .split .note-slot, :where(.jayjay-review) .split .note-slot.new { grid-column: 1; padding: 0; }
+  :where(.jayjay-review) .jj-note-row, :where(.jayjay-review) .jj-split .jj-note-row { display: grid; grid-template-columns: minmax(0, 1fr); padding: 4px 10px 8px 14px; }
+  :where(.jayjay-review) .jj-split .jj-note-slot, :where(.jayjay-review) .jj-split .jj-note-slot.jj-new { grid-column: 1; padding: 0; }
 }
-:where(.jayjay-review) .primary { color: var(--surface); background: var(--accent); border-color: var(--accent); }
-:where(.jayjay-review) .primary:hover { color: var(--surface); background: color-mix(in srgb, var(--accent) 85%, var(--ink)); }
-:where(.jayjay-review) .review-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin-bottom: 14px; background: var(--removed-bg); color: var(--removed-ink); border-radius: 5px; font-size: 12px; }
+:where(.jayjay-review) .jj-primary { color: var(--jj-surface); background: var(--jj-accent); border-color: var(--jj-accent); }
+:where(.jayjay-review) .jj-primary:hover { color: var(--jj-surface); background: color-mix(in srgb, var(--jj-accent) 85%, var(--jj-ink)); }
+:where(.jayjay-review) .jj-review-error { display: flex; align-items: center; justify-content: space-between; gap: 12px; padding: 10px 14px; margin-bottom: 14px; background: var(--jj-removed-bg); color: var(--jj-removed-ink); border-radius: 5px; font-size: 12px; }
 
 @media (hover: none) {
-  :where(.jayjay-review) .gutter-note:not(.armed):hover > span { opacity: 0; }
-  :where(.jayjay-review) .group-toggle { width: 7px; }
-  :where(.jayjay-review) .tool, :where(.jayjay-review) .header-action { min-height: 32px; min-width: 32px; }
-  :where(.jayjay-review) .review-toggle { width: 18px; height: 18px; }
+  :where(.jayjay-review) .jj-gutter-note:not(.jj-armed):hover > span { opacity: 0; }
+  :where(.jayjay-review) .jj-group-toggle { width: 7px; }
+  :where(.jayjay-review) .jj-tool, :where(.jayjay-review) .jj-header-action { min-height: 32px; min-width: 32px; }
+  :where(.jayjay-review) .jj-review-toggle { width: 18px; height: 18px; }
 }
 @media (max-width: 1000px) {
-  :where(.jayjay-review) .review-columns { grid-template-columns: 250px minmax(0, 1fr); height: auto; }
-  :where(.jayjay-review) .review-detail, :where(.jayjay-review) .file-column { height: 640px; }
+  :where(.jayjay-review) .jj-review-columns { grid-template-columns: 250px minmax(0, 1fr); height: auto; }
+  :where(.jayjay-review) .jj-review-detail, :where(.jayjay-review) .jj-file-column { height: 640px; }
 }
 @media (max-width: 680px) {
-  :where(.jayjay-review) .split .diff-row { min-width: 800px; }
-  :where(.jayjay-review) .split-head { min-width: 800px; }
-  :where(.jayjay-review) .result-footer { flex-wrap: wrap; }
-  :where(.jayjay-review) .review-columns { display: flex; flex-direction: column; }
-  :where(.jayjay-review) .review-detail { display: contents; }
-  :where(.jayjay-review) .change-header { padding: 14px 14px 10px; }
-  :where(.jayjay-review) .file-heading h2 { font-size: 12px; }
-  :where(.jayjay-review) .change-header h1 { font-size: 18px; }
-  :where(.jayjay-review) .pane-heading { padding-inline: 12px; }
-  :where(.jayjay-review) .file-title > .icon:first-child { display: none; }
-  :where(.jayjay-review) .header-action .label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
-  :where(.jayjay-review) .header-actions { margin-left: 0; }
-  :where(.jayjay-review) .byline { flex-wrap: wrap; row-gap: 4px; }
-  :where(.jayjay-review) .byline .spacer { display: none; }
+  :where(.jayjay-review) .jj-split .jj-diff-row { min-width: 800px; }
+  :where(.jayjay-review) .jj-split-head { min-width: 800px; }
+  :where(.jayjay-review) .jj-result-footer { flex-wrap: wrap; }
+  :where(.jayjay-review) .jj-review-columns { display: flex; flex-direction: column; }
+  :where(.jayjay-review) .jj-review-detail { display: contents; }
+  :where(.jayjay-review) .jj-change-header { padding: 14px 14px 10px; }
+  :where(.jayjay-review) .jj-file-heading h2 { font-size: 12px; }
+  :where(.jayjay-review) .jj-change-header h1 { font-size: 18px; }
+  :where(.jayjay-review) .jj-pane-heading { padding-inline: 12px; }
+  :where(.jayjay-review) .jj-file-title > .jj-icon:first-child { display: none; }
+  :where(.jayjay-review) .jj-header-action .jj-label { position: absolute; width: 1px; height: 1px; overflow: hidden; clip-path: inset(50%); white-space: nowrap; }
+  :where(.jayjay-review) .jj-header-actions { margin-left: 0; }
+  :where(.jayjay-review) .jj-byline { flex-wrap: wrap; row-gap: 4px; }
+  :where(.jayjay-review) .jj-byline .jj-spacer { display: none; }
 }

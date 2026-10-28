@@ -42,7 +42,7 @@ export function Avatar({ source, name }: { source?: AvatarSource | null; name: s
     void resolve(source).then(resolved => { if (live) setUrl(resolved); });
     return () => { live = false; };
   }, [source?.kind, source?.value]);
-  return <span className="avatar" aria-hidden="true">{name.trim().charAt(0).toUpperCase()}
-    {url && <img src={url} alt="" referrerPolicy="no-referrer" className={loaded ? "loaded" : undefined}
+  return <span className="jj-avatar" aria-hidden="true">{name.trim().charAt(0).toUpperCase()}
+    {url && <img src={url} alt="" referrerPolicy="no-referrer" className={loaded ? "jj-loaded" : undefined}
       onLoad={() => setLoaded(true)} onError={() => setUrl(null)} />}</span>;
 }

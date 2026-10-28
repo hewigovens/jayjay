@@ -13,16 +13,16 @@ function FileRow({ file, index, name, depth, selected, disabled, labels, select,
 }) {
   const kind = file.kind ?? "modified";
   const shownPath = file.oldPath ? `${file.oldPath} → ${file.path}` : file.path;
-  return <div className={`file-row ${file.review} ${selected === index ? "selected" : ""}`} style={{ paddingLeft: 8 + depth * 12 }}>
+  return <div className={`jj-file-row jj-${file.review} ${selected === index ? "jj-selected" : ""}`} style={{ paddingLeft: 8 + depth * 12 }}>
     <ReviewToggle file={file} labels={labels} disabled={disabled} toggle={() => toggle(index)} />
-    <button className="file-select" aria-current={selected === index ? "true" : undefined} aria-label={file.path}
+    <button className="jj-file-select" aria-current={selected === index ? "true" : undefined} aria-label={file.path}
       title={`${shownPath} · ${labels[file.review]}`} onClick={() => select(index)}>
-      <span className={`kind-dot ${kind}`} title={labels[`kind.${kind}`]} />
-      <span className="file-text">
-        <span className="file-name">{name}
-          {file.noteCount > 0 && <span className="note-count" title={labels.notes}>{file.noteCount}</span>}
+      <span className={`jj-kind-dot jj-${kind}`} title={labels[`kind.${kind}`]} />
+      <span className="jj-file-text">
+        <span className="jj-file-name">{name}
+          {file.noteCount > 0 && <span className="jj-note-count" title={labels.notes}>{file.noteCount}</span>}
         </span>
-        <span className="file-path">{file.oldPath && <><MiddlePath path={file.oldPath} className="old-path" /><span aria-hidden="true">→</span></>}<MiddlePath path={file.path} /></span>
+        <span className="jj-file-path">{file.oldPath && <><MiddlePath path={file.oldPath} className="jj-old-path" /><span aria-hidden="true">→</span></>}<MiddlePath path={file.path} /></span>
       </span>
     </button>
   </div>;
@@ -52,31 +52,31 @@ export function FileColumn({ overview, selected, disabled, labels, select, toggl
   }
   function closeSearch() { setSearching(false); setFilter(""); }
 
-  return <aside className="file-column" aria-label={labels.files}>
-    <div className="pane-heading file-tools">
-      {notes && (activeNotes > 0 || onlyNotes) && <button className="tool notes-filter" aria-pressed={onlyNotes} title={labels.onlyNotes} aria-label={labels.onlyNotes}
+  return <aside className="jj-file-column" aria-label={labels.files}>
+    <div className="jj-pane-heading jj-file-tools">
+      {notes && (activeNotes > 0 || onlyNotes) && <button className="jj-tool jj-notes-filter" aria-pressed={onlyNotes} title={labels.onlyNotes} aria-label={labels.onlyNotes}
         onClick={() => setOnlyNotes(!onlyNotes)}>{activeNotes}</button>}
-      {(reviewed || hideReviewed) && <button className="tool" aria-pressed={hideReviewed} aria-label={labels.hideReviewedFiles}
+      {(reviewed || hideReviewed) && <button className="jj-tool" aria-pressed={hideReviewed} aria-label={labels.hideReviewedFiles}
         title={hideReviewed ? labels.showingUnreviewed : labels.hideReviewedFiles} onClick={() => setHideReviewed(!hideReviewed)}><HideReviewedIcon /></button>}
-      <button className="tool" aria-pressed={tree} aria-label={tree ? labels.showingTree : labels.showingFlat}
+      <button className="jj-tool" aria-pressed={tree} aria-label={tree ? labels.showingTree : labels.showingFlat}
         title={tree ? labels.showingTree : labels.showingFlat} onClick={() => setTree(!tree)}>{tree ? <TreeIcon /> : <ListIcon />}</button>
-      <button className="tool" aria-pressed={searching} aria-label={labels.filterFiles} title={labels.filterFiles}
+      <button className="jj-tool" aria-pressed={searching} aria-label={labels.filterFiles} title={labels.filterFiles}
         onClick={() => searching ? closeSearch() : setSearching(true)}><SearchIcon /></button>
-      <span className="file-count" title={counts.reviewed}>{countLabel}</span>
+      <span className="jj-file-count" title={counts.reviewed}>{countLabel}</span>
     </div>
-    {searching && <div className="file-filter">
+    {searching && <div className="jj-file-filter">
       <input type="search" autoFocus aria-label={labels.filterFiles} placeholder={labels.filterFiles} value={filter}
         onChange={event => setFilter(event.target.value)} onKeyDown={event => { if (event.key === "Escape") closeSearch(); }} />
-      <button className="tool" aria-label={labels.cancel} title={labels.cancel} onClick={closeSearch}><CloseIcon /></button>
+      <button className="jj-tool" aria-label={labels.cancel} title={labels.cancel} onClick={closeSearch}><CloseIcon /></button>
     </div>}
-    <div className="file-rows">
-      {visible.size === 0 && <p className="notice">{filter ? labels.noMatchingFiles : overview.files.length ? labels.allFilesHidden : labels.noChangedFiles}</p>}
+    <div className="jj-file-rows">
+      {visible.size === 0 && <p className="jj-notice">{filter ? labels.noMatchingFiles : overview.files.length ? labels.allFilesHidden : labels.noChangedFiles}</p>}
       {tree ? overview.tree.map(entry => {
         if ([...collapsed].some(path => entry.path.startsWith(`${path}/`))) return null;
         if (entry.file === null) {
           if (!overview.files.some((file, index) => visible.has(index) && file.path.startsWith(`${entry.path}/`))) return null;
           const open = !collapsed.has(entry.path);
-          return <button className="folder-row" key={`dir:${entry.path}`} style={{ paddingLeft: 10 + entry.depth * 12 }}
+          return <button className="jj-folder-row" key={`dir:${entry.path}`} style={{ paddingLeft: 10 + entry.depth * 12 }}
             aria-expanded={open} onClick={() => folder(entry.path)}><ChevronIcon open={open} /><FolderIcon /><span>{entry.name}</span></button>;
         }
         return visible.has(entry.file) ? <FileRow key={entry.path} file={overview.files[entry.file]} index={entry.file} name={entry.name} depth={entry.depth}

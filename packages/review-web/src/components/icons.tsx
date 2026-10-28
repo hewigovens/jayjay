@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
 
 function Icon({ d, size = 14 }: { d: string; size?: number }) {
-  return <svg className="icon" viewBox="0 0 16 16" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.4"
+  return <svg className="jj-icon" viewBox="0 0 16 16" width={size} height={size} fill="none" stroke="currentColor" strokeWidth="1.4"
     strokeLinecap="round" strokeLinejoin="round" aria-hidden="true"><path d={d} /></svg>;
 }
 
