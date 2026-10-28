@@ -191,8 +191,19 @@ macro_rules! languages {
 languages! {
     "lang-rust": "rust" => tree_sitter_rust::LANGUAGE, tree_sitter_rust::HIGHLIGHTS_QUERY;
     "lang-javascript": "javascript" | "jsx" => tree_sitter_javascript::LANGUAGE, tree_sitter_javascript::HIGHLIGHT_QUERY;
-    "lang-typescript": "typescript" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT, tree_sitter_typescript::HIGHLIGHTS_QUERY;
-    "lang-typescript": "tsx" => tree_sitter_typescript::LANGUAGE_TSX, tree_sitter_typescript::HIGHLIGHTS_QUERY;
+    // TypeScript's query extends JavaScript's; TSX also needs the JSX captures.
+    // Capture the void token itself so JavaScript's nested keyword capture cannot override its enclosing type.
+    "lang-typescript": "typescript" => tree_sitter_typescript::LANGUAGE_TYPESCRIPT, &[
+        tree_sitter_javascript::HIGHLIGHT_QUERY,
+        tree_sitter_typescript::HIGHLIGHTS_QUERY,
+        "(predefined_type \"void\" @type.builtin)",
+    ].join("\n");
+    "lang-typescript": "tsx" => tree_sitter_typescript::LANGUAGE_TSX, &[
+        tree_sitter_javascript::HIGHLIGHT_QUERY,
+        tree_sitter_javascript::JSX_HIGHLIGHT_QUERY,
+        tree_sitter_typescript::HIGHLIGHTS_QUERY,
+        "(predefined_type \"void\" @type.builtin)",
+    ].join("\n");
     "lang-python": "python" => tree_sitter_python::LANGUAGE, tree_sitter_python::HIGHLIGHTS_QUERY;
     "lang-go": "go" => tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY;
     "lang-c": "c" => tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY;

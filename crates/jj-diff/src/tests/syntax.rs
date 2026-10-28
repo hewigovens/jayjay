@@ -25,6 +25,65 @@ fn fish_source_is_detected_and_highlighted() {
     assert_eq!(diff.language, "fish");
 }
 
+#[cfg(feature = "lang-typescript")]
+#[test]
+fn typescript_and_tsx_keep_javascript_highlights() {
+    let source = "// Greeting\nfunction greet(name: string): string {\n    const count: number = 42;\n    return \"Hello\" + name + count;\n}\nfunction notify(): void {}\nvoid notify();\n";
+    for path in ["greeting.ts", "greeting.tsx"] {
+        let lines = highlight_file(path, source);
+        let spans: Vec<_> = lines.iter().flatten().collect();
+        for (text, token) in [
+            ("// Greeting", SyntaxToken::Comment),
+            ("const", SyntaxToken::Keyword),
+            ("greet", SyntaxToken::Function),
+            ("string", SyntaxToken::Type),
+            ("42", SyntaxToken::Number),
+            ("\"Hello\"", SyntaxToken::StringLit),
+            ("return", SyntaxToken::Keyword),
+        ] {
+            assert!(
+                spans
+                    .iter()
+                    .any(|span| span.text == text && span.token == token),
+                "{path} should highlight {text:?} as {token:?}: {spans:?}"
+            );
+        }
+        let void_tokens: Vec<_> = spans
+            .iter()
+            .filter(|span| span.text == "void")
+            .map(|span| span.token)
+            .collect();
+        assert_eq!(
+            void_tokens,
+            [SyntaxToken::Type, SyntaxToken::Keyword],
+            "{path}"
+        );
+    }
+}
+
+#[cfg(feature = "lang-typescript")]
+#[test]
+fn tsx_highlights_jsx_tags_and_attributes() {
+    let lines = highlight_file(
+        "view.tsx",
+        "const view = <section title=\"Greeting\"><Widget /></section>;\n",
+    );
+    let spans: Vec<_> = lines.iter().flatten().collect();
+    for (text, token) in [
+        ("section", SyntaxToken::Type),
+        ("title", SyntaxToken::Attribute),
+        ("\"Greeting\"", SyntaxToken::StringLit),
+        ("Widget", SyntaxToken::Type),
+    ] {
+        assert!(
+            spans
+                .iter()
+                .any(|span| span.text == text && span.token == token),
+            "TSX should highlight {text:?} as {token:?}: {spans:?}"
+        );
+    }
+}
+
 #[test]
 fn windows_build_and_script_sources_are_detected_and_highlighted() {
     for (path, language, source, tokens) in [
