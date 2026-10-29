@@ -3,24 +3,21 @@ use std::io::ErrorKind;
 use std::path::Path;
 
 use crate::filesystem::{io_error, is_executable, set_executable};
+use crate::rooted_directory::{Removal, RootedDirectory};
 use crate::{JayError, JayResult};
 
 pub(super) fn output_matches_selection(
     path: &Path,
     selected_text: &str,
-    selected_exists: bool,
     selected_executable: Option<bool>,
 ) -> JayResult<bool> {
     let metadata = match fs::symlink_metadata(path) {
         Ok(metadata) => metadata,
         Err(error) if matches!(error.kind(), ErrorKind::NotFound | ErrorKind::NotADirectory) => {
-            return Ok(!selected_exists);
+            return Ok(false);
         }
         Err(error) => return Err(io_error("inspect", path, error)),
     };
-    if !selected_exists {
-        return Ok(!metadata.is_file());
-    }
     if !metadata.is_file() || metadata.file_type().is_symlink() {
         return Ok(false);
     }
@@ -49,10 +46,8 @@ pub(super) fn copy_entry(
     }
     if directory_output {
         prepare_parent_directories(right_root, relative)?;
-        remove_output_path(&right_root.join(relative))?;
-    } else {
-        remove_output_path(output)?;
     }
+    remove_output_path(right_root, relative, directory_output, Removal::Entry)?;
     if metadata.file_type().is_symlink() {
         let target =
             fs::read_link(source).map_err(|error| io_error("read symlink", source, error))?;
@@ -86,20 +81,24 @@ pub(super) fn write_text(
     Ok(())
 }
 
-pub(super) fn remove_output_path(path: &Path) -> JayResult<()> {
-    let metadata = match fs::symlink_metadata(path) {
-        Ok(metadata) => metadata,
-        Err(error) if matches!(error.kind(), ErrorKind::NotFound | ErrorKind::NotADirectory) => {
-            return Ok(());
-        }
-        Err(error) => return Err(io_error("inspect", path, error)),
-    };
-    let result = if metadata.is_dir() && !metadata.file_type().is_symlink() {
-        fs::remove_dir(path)
+pub(super) fn remove_output_path(
+    root: &Path,
+    relative: &Path,
+    directory_output: bool,
+    mode: Removal,
+) -> JayResult<()> {
+    let (directory, relative) = if directory_output {
+        (root, relative)
     } else {
-        fs::remove_file(path)
+        let name = root
+            .file_name()
+            .ok_or_else(|| JayError::internal("external diff output has no file name"))?;
+        (
+            root.parent().unwrap_or_else(|| Path::new(".")),
+            Path::new(name),
+        )
     };
-    result.map_err(|error| io_error("remove", path, error))
+    RootedDirectory::open(directory)?.remove(relative, mode)
 }
 
 fn prepare_write_path(root: &Path, relative: &Path) -> JayResult<()> {

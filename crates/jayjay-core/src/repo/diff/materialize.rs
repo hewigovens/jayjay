@@ -1,5 +1,3 @@
-use std::hash::{Hash, Hasher};
-
 use jj_lib::backend::MergedTreeValueExt as _;
 use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
@@ -12,6 +10,7 @@ use jj_lib::tree_merge::MergeOptions;
 
 pub(super) use crate::file_display::is_image_path;
 use crate::file_display::{MAX_DIFF_BYTES, MAX_IMAGE_BYTES, bytes_to_display};
+use crate::image_cache::ImageCache;
 use crate::repo::support::block_on_result;
 use crate::types::*;
 
@@ -57,32 +56,7 @@ pub(super) fn extract_image_preview(
         ));
     }
 
-    let path_str = path.as_internal_file_string();
-    let ext = path_str
-        .rsplit('.')
-        .next()
-        .unwrap_or("img")
-        .to_ascii_lowercase();
-
-    let mut hasher = std::collections::hash_map::DefaultHasher::new();
-    bytes.hash(&mut hasher);
-    let hash = hasher.finish();
-
-    let cache_dir = std::env::temp_dir().join("jayjay-images");
-    if let Err(err) = std::fs::create_dir_all(&cache_dir) {
-        return Err(JayError::Internal {
-            message: format!("create image cache dir: {err}"),
-        });
-    }
-    let cache_path = cache_dir.join(format!("{hash:016x}.{ext}"));
-
-    if !cache_path.exists()
-        && let Err(err) = std::fs::write(&cache_path, &bytes)
-    {
-        return Err(JayError::Internal {
-            message: format!("write image cache {}: {err}", cache_path.display()),
-        });
-    }
+    let cache_path = ImageCache::shared()?.store(&bytes, path.as_internal_file_string())?;
 
     Ok((
         ImagePreviewResult::Image(DiffPreview::Image {

@@ -2,6 +2,7 @@ use std::path::{Path, PathBuf};
 
 use crate::filesystem::safe_relative_path;
 use crate::repo::partition_validated_text_selection;
+use crate::rooted_directory::Removal;
 use crate::{JayError, JayResult};
 
 use super::output::{copy_entry, output_matches_selection, remove_output_path, write_text};
@@ -78,7 +79,12 @@ pub fn apply_external_diff_selections(
                         directory_output,
                     )?;
                 } else {
-                    remove_output_path(&operation.right_path)?;
+                    remove_output_path(
+                        right_root,
+                        &operation.relative,
+                        directory_output,
+                        Removal::Entry,
+                    )?;
                 }
                 continue;
             }
@@ -87,26 +93,30 @@ pub fn apply_external_diff_selections(
         let PreparedContent::Lines(selected_text) = &operation.content else {
             unreachable!();
         };
+        if !operation.selected_exists {
+            remove_output_path(
+                right_root,
+                &operation.relative,
+                directory_output,
+                Removal::RegularFile,
+            )?;
+            continue;
+        }
         if output_matches_selection(
             &operation.right_path,
             selected_text,
-            operation.selected_exists,
             operation.selected_executable,
         )? {
             continue;
         }
-        if operation.selected_exists {
-            write_text(
-                right_root,
-                &operation.relative,
-                &operation.right_path,
-                directory_output,
-                selected_text,
-                operation.selected_executable,
-            )?;
-        } else {
-            remove_output_path(&operation.right_path)?;
-        }
+        write_text(
+            right_root,
+            &operation.relative,
+            &operation.right_path,
+            directory_output,
+            selected_text,
+            operation.selected_executable,
+        )?;
     }
     Ok(())
 }

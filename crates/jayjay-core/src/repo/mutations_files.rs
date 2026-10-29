@@ -1,3 +1,5 @@
+use std::io::{Read, Write};
+use std::path::Path;
 use std::sync::Arc;
 
 use jj_lib::commit::Commit;
@@ -9,6 +11,7 @@ use super::Repo;
 use super::mutations::combined_description;
 use super::path_operands::{gitignore_pattern, reject_control_chars};
 use super::support::block_on_result;
+use crate::rooted_directory::{Removal, RootedDirectory};
 use crate::types::*;
 
 impl Repo {
@@ -76,15 +79,9 @@ impl Repo {
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
     pub fn delete_files(&self, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
+        let directory = RootedDirectory::open(&self.path)?;
         for path in paths {
-            let abs_path = self.path.join(path);
-            if abs_path.exists() {
-                std::fs::remove_file(&abs_path)
-                    .or_else(|_| std::fs::remove_dir_all(&abs_path))
-                    .map_err(|e| JayError::Internal {
-                        message: format!("delete {path}: {e}"),
-                    })?;
-            }
+            directory.remove(Path::new(path), Removal::Tree)?;
         }
         self.refresh_working_copy()
     }
@@ -95,26 +92,28 @@ impl Repo {
         // Reject control chars first: a newline would inject extra .gitignore patterns.
         reject_control_chars(paths)?;
 
-        let gitignore_path = self.path.join(".gitignore");
-        let existing = std::fs::read_to_string(&gitignore_path).unwrap_or_default();
+        if paths.is_empty() {
+            return Ok(());
+        }
+        let directory = RootedDirectory::open(&self.path)?;
+        let mut file = directory.open_regular_append(Path::new(".gitignore"))?;
+        let mut existing = Vec::new();
+        file.read_to_end(&mut existing)
+            .map_err(|error| JayError::internal(format!("read .gitignore: {error}")))?;
         let mut lines_to_add = Vec::new();
         for path in paths {
             let pattern = gitignore_pattern(path);
-            if !existing.lines().any(|line| line.trim() == pattern) {
+            if !existing
+                .split(|byte| *byte == b'\n')
+                .any(|line| std::str::from_utf8(line).is_ok_and(|line| line.trim() == pattern))
+            {
                 lines_to_add.push(pattern);
             }
         }
         if !lines_to_add.is_empty() {
-            use std::io::Write;
-            let mut file = std::fs::OpenOptions::new()
-                .create(true)
-                .append(true)
-                .open(&gitignore_path)
-                .map_err(|e| JayError::Internal {
-                    message: format!("open .gitignore: {e}"),
-                })?;
-            if !existing.is_empty() && !existing.ends_with('\n') {
-                writeln!(file).ok();
+            if !existing.is_empty() && !existing.ends_with(b"\n") {
+                writeln!(file)
+                    .map_err(|error| JayError::internal(format!("write .gitignore: {error}")))?;
             }
             for line in &lines_to_add {
                 writeln!(file, "{line}").map_err(|e| JayError::Internal {

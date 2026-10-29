@@ -13,6 +13,8 @@ default = ["repository", "watchman"]
 mock = []
 repository = [
     "dep:base64",
+    "dep:cap-fs-ext",
+    "dep:cap-std",
     "dep:chrono",
     "dep:csv",
     "dep:dunce",
@@ -40,6 +42,8 @@ repository = [
     "dep:serde",
     "dep:serde_json",
     "dep:clap",
+    "dep:sha2",
+    "dep:hex",
     "dep:shell-words",
     "dep:stacker",
     "dep:tempfile",
@@ -51,6 +55,10 @@ hotpath = ["dep:hotpath", "hotpath/hotpath", "jj-diff/hotpath"]
 hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
 
 [dependencies]
+cap-fs-ext = { version = "4.0.3", optional = true }
+cap-std = { version = "4.0.3", optional = true }
+sha2 = { workspace = true, optional = true }
+hex = { workspace = true, optional = true }
 icu_decimal = { workspace = true }
 base64 = { workspace = true, optional = true }
 hotpath = { workspace = true, optional = true }

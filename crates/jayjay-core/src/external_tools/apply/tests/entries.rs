@@ -137,3 +137,31 @@ fn restores_into_an_existing_directory_but_never_through_a_symlinked_one() {
     assert!(error.to_string().contains("unsafe path"), "{error}");
     assert!(!outside.path().join("file.txt").exists());
 }
+
+#[cfg(unix)]
+#[test]
+fn absent_selections_never_delete_through_a_symlinked_parent() {
+    for whole_file in [false, true] {
+        let left = tempfile::tempdir().unwrap();
+        let right = tempfile::tempdir().unwrap();
+        let outside = tempfile::tempdir().unwrap();
+        fs::create_dir(left.path().join("item")).unwrap();
+        fs::write(left.path().join("item/victim.txt"), "old\n").unwrap();
+        fs::write(outside.path().join("victim.txt"), "outside\n").unwrap();
+        std::os::unix::fs::symlink(outside.path(), right.path().join("item")).unwrap();
+        let mut selections = all_loaded_selections(left.path(), right.path());
+        if whole_file {
+            selections
+                .iter_mut()
+                .find(|selection| selection.file.path == "item/victim.txt")
+                .unwrap()
+                .whole_file_side = Some(ExternalDiffSide::Old);
+        }
+        let result = apply_external_diff_selections(left.path(), right.path(), &selections, false);
+        assert!(result.is_err(), "an outside descendant must be refused");
+        assert_eq!(
+            fs::read_to_string(outside.path().join("victim.txt")).unwrap(),
+            "outside\n"
+        );
+    }
+}

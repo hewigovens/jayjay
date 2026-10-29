@@ -25,6 +25,8 @@ mod filesystem;
 pub mod fonts;
 pub mod fuzzy;
 #[cfg(feature = "repository")]
+mod image_cache;
+#[cfg(feature = "repository")]
 mod jj_command;
 #[cfg(feature = "repository")]
 mod json_store;
@@ -44,6 +46,8 @@ mod repo;
 pub mod repositories;
 #[cfg(feature = "repository")]
 pub mod revset;
+#[cfg(feature = "repository")]
+mod rooted_directory;
 mod seti;
 pub mod theme;
 #[cfg(feature = "repository")]

@@ -212,15 +212,19 @@ fn ignore_and_untrack_keeps_the_file_on_disk_and_out_of_git() {
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
     fs::write(repo_path.join("secret.env"), "token\n").expect("write secret");
-    fs::write(repo_path.join(".gitignore"), "target").expect("write unterminated .gitignore");
+    fs::write(
+        repo_path.join(".gitignore"),
+        b"# legacy comment \xff\ntarget",
+    )
+    .expect("write unterminated non-UTF-8 .gitignore");
     repo.refresh_working_copy().expect("snapshot");
 
     repo.ignore_and_untrack(&["secret.env".to_owned()])
         .expect("ignore and untrack");
 
     assert_eq!(
-        fs::read_to_string(repo_path.join(".gitignore")).expect("read .gitignore"),
-        "target\nsecret.env\n"
+        fs::read(repo_path.join(".gitignore")).expect("read .gitignore"),
+        b"# legacy comment \xff\ntarget\nsecret.env\n"
     );
 
     assert_eq!(
@@ -309,5 +313,73 @@ fn clone_treats_option_shaped_source_as_literal() {
     assert!(
         !marker.exists(),
         "the source configured jj's git executable"
+    );
+}
+
+#[cfg(unix)]
+#[test]
+fn ignore_and_untrack_refuses_symlinked_gitignore_without_touching_its_target() {
+    let fixture = init_jj_repo();
+    let root = fixture.path().join("repo");
+    let repo = Repo::open(&root).unwrap();
+    fs::write(root.join("touch pwned"), "tracked\n").unwrap();
+    repo.refresh_working_copy().unwrap();
+    for exists in [true, false] {
+        let outside = fixture.path().join("outside");
+        if exists {
+            fs::write(&outside, "original\n").unwrap();
+        }
+        std::os::unix::fs::symlink(&outside, root.join(".gitignore")).unwrap();
+        let result = repo.ignore_and_untrack(&["touch pwned".into()]);
+        assert!(result.is_err(), "a symlinked ignore file must be refused");
+        if exists {
+            assert_eq!(fs::read_to_string(&outside).unwrap(), "original\n");
+            fs::remove_file(&outside).unwrap();
+        } else {
+            assert!(!outside.exists());
+        }
+        fs::remove_file(root.join(".gitignore")).unwrap();
+    }
+    assert!(diff_paths(&repo, "@").contains(&"touch pwned".into()));
+}
+
+#[cfg(unix)]
+#[test]
+fn delete_files_stays_inside_the_repository_and_unlinks_terminal_symlinks() {
+    let fixture = init_jj_repo();
+    let root = fixture.path().join("repo");
+    let repo = Repo::open(&root).unwrap();
+    let outside = fixture.path().join("outside");
+    fs::create_dir(&outside).unwrap();
+    fs::write(outside.join("victim.txt"), "outside\n").unwrap();
+    std::os::unix::fs::symlink(&outside, root.join("item")).unwrap();
+    for path in [
+        "item/victim.txt".to_owned(),
+        "../outside/victim.txt".to_owned(),
+        outside.join("victim.txt").to_string_lossy().into_owned(),
+    ] {
+        assert!(repo.delete_files(&[path]).is_err());
+        assert_eq!(
+            fs::read_to_string(outside.join("victim.txt")).unwrap(),
+            "outside\n"
+        );
+    }
+    std::os::unix::fs::symlink("missing", root.join("dangling")).unwrap();
+    fs::create_dir(root.join("directory")).unwrap();
+    fs::write(root.join("directory/child"), "inside").unwrap();
+    fs::write(root.join("file"), "inside").unwrap();
+    repo.delete_files(&[
+        "item".into(),
+        "dangling".into(),
+        "directory".into(),
+        "file".into(),
+    ])
+    .unwrap();
+    for name in ["item", "dangling", "directory", "file"] {
+        assert!(fs::symlink_metadata(root.join(name)).is_err());
+    }
+    assert_eq!(
+        fs::read_to_string(outside.join("victim.txt")).unwrap(),
+        "outside\n"
     );
 }
