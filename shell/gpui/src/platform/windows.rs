@@ -41,7 +41,7 @@ pub(super) fn numeric_locale() -> String {
 
 /// Posted rather than sent so the modal menu loop starts after GPUI finishes dispatching the click.
 pub(crate) fn show_system_menu(window: &Window) {
-    let Ok(handle) = window.window_handle() else {
+    let Ok(handle) = HasWindowHandle::window_handle(window) else {
         return;
     };
     let RawWindowHandle::Win32(handle) = handle.as_raw() else {
