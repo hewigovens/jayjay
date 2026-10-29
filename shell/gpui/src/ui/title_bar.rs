@@ -5,6 +5,9 @@ use gpui::{
     Styled, Window, WindowControlArea, div, font, prelude::FluentBuilder as _, px, rgb,
 };
 
+#[cfg(not(target_os = "macos"))]
+use gpui::MouseButton;
+
 use crate::app::theme::Theme;
 
 /// Only Windows loses its caption buttons with a transparent title bar.
@@ -27,6 +30,21 @@ pub(crate) fn drag_strip(id: impl Into<SharedString>) -> Stateful<Div> {
         .w_full()
         .h(px(HEIGHT))
         .window_control_area(WindowControlArea::Drag)
+}
+
+/// Like a native caption icon, a click opens the window's system menu.
+#[cfg(not(target_os = "macos"))]
+pub(crate) fn system_menu_icon(icon: impl IntoElement) -> Stateful<Div> {
+    div()
+        .id("title-bar-icon")
+        .flex_none()
+        .occlude()
+        .child(icon)
+        .on_mouse_down(MouseButton::Left, |_, _window, cx| {
+            cx.stop_propagation();
+            #[cfg(windows)]
+            crate::platform::show_system_menu(_window);
+        })
 }
 
 pub(crate) fn strip(id: impl Into<SharedString>, t: &Theme, window: &Window) -> Stateful<Div> {

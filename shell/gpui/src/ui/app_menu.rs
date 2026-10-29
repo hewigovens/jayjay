@@ -70,12 +70,7 @@ pub(crate) fn menu_bar(
     let row = if title_bar::DRAWN {
         title_bar::drag_strip("app-menu-bar")
             .h(px(t.scaled_control_height(28., 12.).max(32.)))
-            .child(
-                div()
-                    .flex_none()
-                    .mr(px(6.))
-                    .child(Logo::load(cx).image(16.)),
-            )
+            .child(title_bar::system_menu_icon(Logo::load(cx).image(16.)).mr(px(6.)))
     } else {
         div()
             .id("app-menu-bar")

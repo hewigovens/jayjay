@@ -4407,6 +4407,7 @@ dependencies = [
  "notify-rust",
  "open",
  "percent-encoding",
+ "raw-window-handle",
  "resvg",
  "serde",
  "serde_json",

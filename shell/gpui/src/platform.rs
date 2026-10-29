@@ -30,7 +30,7 @@ pub(crate) use non_macos::{
 #[cfg(windows)]
 pub(crate) use windows::{
     JJ_PACKAGE_MANAGER, custom_terminal_label, file_manager_name, open_url, reveal_path,
-    send_notification,
+    send_notification, show_system_menu,
 };
 
 pub(crate) fn show_in_file_manager_label() -> String {
