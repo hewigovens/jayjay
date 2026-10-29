@@ -12,11 +12,11 @@
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
 [![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
 
-**JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows alpha and reusable Rust libraries for diff and review tooling.**
+**JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows beta and reusable Rust libraries for diff and review tooling.**
 
 - **macOS:** native SwiftUI app.
 - **Linux:** GPUI app. Its macOS build is for development.
-- **Windows:** GPUI alpha, available from the Microsoft Store or as a portable ZIP.
+- **Windows:** GPUI beta, available from the Microsoft Store or as a portable ZIP.
 - **Rust libraries:** diffing, review state, repository operations, and app bindings.
 
 
@@ -70,11 +70,11 @@ For x86_64 and aarch64. The installer picks the Debian package on apt-based syst
 curl -fsSL https://jayjay.hewig.dev/install.sh | bash
 ```
 
-Or download the AppImage from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest). The [guide](https://jayjay.hewig.dev/guide.html#gpui) covers the Arch pacman repo, betas, and `.deb` packages.
+Or download the AppImage from [GitHub Releases](https://github.com/hewigovens/jayjay/releases/latest). On Arch Linux, install [`jayjay-appimage` from AUR](https://aur.archlinux.org/packages/jayjay-appimage), for example with `yay -S jayjay-appimage`. The [guide](https://jayjay.hewig.dev/guide.html#gpui) covers installation, betas, and migration from the retired pacman repo.
 
 #### Windows
 
-Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. To try beta builds, download the Windows x64 portable ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows desktop behavior is still experimental.
+Install JayJay from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch it from the Start menu. To try beta builds, download the Windows x64 portable ZIP from [GitHub Releases](https://github.com/hewigovens/jayjay/releases), extract it, and run `jayjay-gpui.exe`; the portable ZIP has no automatic updater. Requires Windows 10 version 1903 or later, or Windows 11, with `jj` installed separately on PATH. Windows support is in beta.
 
 ### Agent skill
 

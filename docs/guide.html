@@ -500,31 +500,19 @@
       <h2>GPUI Shell <a href="#gpui">#</a></h2>
       <p>On Debian and Ubuntu, the one-line installer installs the matching <code>.deb</code> with apt and resolves its dependencies. On other Linux distributions it installs the AppImage under <code>~/.local</code> with a <code>jayjay</code> launcher and desktop entry; FUSE is required for AppImages. Both x86_64 and aarch64 are supported:</p>
       <pre><code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code></pre>
-      <p>For the newest beta when it is ahead of stable, add <code>--beta</code>. This installs the signed pacman package on Arch, the Debian package on apt systems, and the AppImage elsewhere. Run the installer without sudo; it elevates package operations itself:</p>
+      <p>For the newest beta when it is ahead of stable, add <code>--beta</code>. This installs the Debian package on apt systems and the AppImage elsewhere. Run the installer without sudo; it elevates package operations itself:</p>
       <pre><code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --beta</code></pre>
       <p>Debian and Ubuntu users can download the matching <code>.deb</code> (amd64 or arm64) from the same release page and install it with <code>sudo apt install ./jayjay_&lt;version&gt;-1_&lt;architecture&gt;.deb</code>.</p>
-      <p>On Windows, install JayJay from the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> and launch it from the Start menu; the Store manages installation and updates. To try a beta, download the Windows x64 portable ZIP from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, extract it, and run <code>jayjay-gpui.exe</code>. Install <code>jj</code> separately on PATH for either distribution. Requires Windows 10 version 1903 or later, or Windows 11. The portable ZIP has no automatic updater, and Windows desktop behavior is still experimental.</p>
+      <p>Windows support is in beta. Install JayJay from the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> and launch it from the Start menu; the Store manages installation and updates. To try a beta, download the Windows x64 portable ZIP from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>, extract it, and run <code>jayjay-gpui.exe</code>. Install <code>jj</code> separately on PATH for either distribution. Requires Windows 10 version 1903 or later, or Windows 11. The portable ZIP has no automatic updater.</p>
       <p>On Windows, the app menu bar includes minimize, maximize/restore, and close controls. Drag an empty title-bar area to move the window. MSIX installations include taskbar icons for light and dark appearances.</p>
-      <p>On Arch Linux (x86_64 and aarch64), use the signed pacman repo instead so stable upgrades arrive with the rest of your system. One command trusts the key, adds the repo, and prompts for a full system upgrade and installation:</p>
-      <pre><code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo</code></pre>
-      <p>Prefer reviewable steps? Trust the key once, append the repo to <code>/etc/pacman.conf</code> if it is not already present, then install:</p>
-      <pre><code>curl -fsSL https://pkgs.hewig.dev/arch/jayjay-packages.asc -o /tmp/jayjay-packages.asc
-sudo pacman-key --add /tmp/jayjay-packages.asc
-sudo pacman-key --lsign-key BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF
-if ! grep -q '^\[jayjay\]' /etc/pacman.conf; then
-  sudo tee -a /etc/pacman.conf &gt;/dev/null &lt;&lt;'EOF'
-
-[jayjay]
-SigLevel = Required DatabaseOptional
-Server = https://pkgs.hewig.dev/arch/$arch
-EOF
-fi
-if pacman -Q jayjay-appimage &gt;/dev/null 2&gt;&amp;1; then
-  sudo pacman -Syu
-else
-  sudo pacman -Syu jayjay-appimage
-fi</code></pre>
-      <p>The repo carries stable releases only, for x86_64 and aarch64; a beta installed with <code>pacman -U</code> is correctly left in place until the repo's stable version is newer.</p>
+      <p>On Arch Linux (x86_64 and aarch64), install <a href="https://aur.archlinux.org/packages/jayjay-appimage"><code>jayjay-appimage</code> from AUR</a>, for example with an AUR helper:</p>
+      <pre><code>yay -S jayjay-appimage</code></pre>
+      <p>Without a helper, review and build the AUR package as your regular user:</p>
+      <pre><code>git clone https://aur.archlinux.org/jayjay-appimage.git
+cd jayjay-appimage
+makepkg -si</code></pre>
+      <p>The custom pacman repo has been retired. If you previously added it, remove the entire <code>[jayjay]</code> section from <code>/etc/pacman.conf</code>, then install or upgrade <code>jayjay-appimage</code> through AUR. Your repositories and settings stay in place.</p>
+      <p>For an AppImage beta on Arch, remove an installed <code>jayjay-appimage</code> package with <code>sudo pacman -R jayjay-appimage</code> first, then run the installer with <code>--beta</code>. This avoids having a per-user launcher override the packaged app.</p>
       <ul>
         <li>To build from source, run <code>just gpui</code> or <code>just gpui /path/to/repo</code>.</li>
         <li>GPUI's current parity target is Linux. Its macOS build is for development and is not expected to duplicate every SwiftUI integration; the released macOS app remains SwiftUI.</li>

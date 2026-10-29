@@ -6,7 +6,7 @@ $root = (Resolve-Path "$PSScriptRoot/../..").Path
 Push-Location $root
 $savedFlags = $env:CARGO_ENCODED_RUSTFLAGS
 try {
-    if ((rustc --version) -notmatch '^rustc 1\.99\.0 ') { throw "Use Rust 1.99.0 for the portable alpha." }
+    if ((rustc --version) -notmatch '^rustc 1\.99\.0 ') { throw "Use Rust 1.99.0 for the portable beta." }
     if ((cargo about --version) -notmatch '0\.9\.2$') { throw "Install cargo-about 0.9.2: cargo install cargo-about --version 0.9.2 --features cli --locked" }
     $metadata = cargo metadata --locked --no-deps --format-version 1 | ConvertFrom-Json
     if ($LASTEXITCODE) { throw "Cargo metadata failed" }

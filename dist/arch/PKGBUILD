@@ -3,7 +3,6 @@
 pkgname=jayjay-appimage
 pkgver=0.3.22
 pkgrel=1
-# CI overrides pkgver and _tag for pre-releases, whose hyphenated tags are not valid pkgver values.
 _tag="v${pkgver}"
 pkgdesc="Native desktop client for Jujutsu version control"
 arch=('x86_64' 'aarch64')

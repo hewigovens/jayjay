@@ -1,15 +1,12 @@
 #!/usr/bin/env bash
-# Installs JayJay for Linux: the Debian package on apt-based systems, a local AppImage elsewhere, or the signed Arch pacman repo.
+# Installs JayJay for Linux: the Debian package on apt-based systems or a local AppImage elsewhere. Arch packages are available from AUR.
 # Usage: curl -fsSL https://jayjay.hewig.dev/install.sh | bash
 #        JAYJAY_VERSION=0.3.19 bash install.sh   # a specific release instead of the latest stable
-#        curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo   # Arch Linux: signed pacman repo
 #        curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --beta   # the latest beta when it is newer than stable
-#        bash install.sh --pacman-repo --no-install   # configure the repo without upgrading or installing
 set -euo pipefail
 shopt -s inherit_errexit
 
 repo="hewigovens/jayjay"
-key_fpr="BA65B3D77235F76AAA32AE1EC6D21FA837FDEFEF"
 
 die() {
   echo "$*" >&2
@@ -77,97 +74,6 @@ print_next_steps() {
   fi
 }
 
-check_appimage_overrides() {
-  local launcher desktop_entry
-  local artifacts=()
-  for launcher in "$bin_dir/jayjay" "$bin_dir/jayjay-gpui"; do
-    if [ -L "$launcher" ] && [ "$(readlink "$launcher")" = "$app_dir/JayJay.AppImage" ]; then
-      artifacts+=("$launcher")
-    fi
-  done
-  desktop_entry="$data_dir/applications/dev.hewig.JayJay.desktop"
-  if [ -f "$desktop_entry" ] && grep -Fxq "Exec=\"$exec_path\" %F" "$desktop_entry"; then
-    artifacts+=("$desktop_entry")
-  fi
-  if [ "${#artifacts[@]}" -ne 0 ]; then
-    echo "Existing AppImage launchers would override the pacman package. Remove these launchers, then rerun this command:" >&2
-    printf '  rm --' >&2
-    printf ' %q' "${artifacts[@]}" >&2
-    printf '\nThe AppImage itself is left in place.\n' >&2
-    exit 1
-  fi
-}
-
-configure_pacman_repo() {
-  local conf="/etc/pacman.conf"
-  run_as_root pacman-key --add "$tmp/jayjay-packages.asc"
-  run_as_root pacman-key --lsign-key "$key_fpr"
-  if grep -q '^\[jayjay\]' "$conf"; then
-    echo "[jayjay] is already in $conf; leaving it in place."
-  else
-    # shellcheck disable=SC2016 # pacman expands $arch when reading this configuration.
-    printf '\n[jayjay]\nSigLevel = Required DatabaseOptional\nServer = https://pkgs.hewig.dev/arch/$arch\n' | run_as_root tee -a "$conf" >/dev/null
-    echo "Added [jayjay] to $conf."
-  fi
-}
-
-install_beta() {
-  local tag="$1" pkgver assets asset
-  pkgver="${tag#v}"
-  pkgver="${pkgver//-/}"
-  assets="$(curl -fsSL --retry 3 -H 'Accept: application/vnd.github+json' "https://api.github.com/repos/$repo/releases/tags/$tag" \
-    | sed -n 's/.*"name": *"\([^"]*\)".*/\1/p')"
-  asset="$(printf '%s\n' "$assets" | grep -xE "jayjay-appimage-${pkgver//./\\.}-[0-9]+-$arch\.pkg\.tar\.zst" || true)"
-  if [ -z "$asset" ] || [ "$(printf '%s\n' "$asset" | wc -l)" -ne 1 ]; then
-    die "The $tag pacman package for $arch is not available yet; try again after the release build finishes."
-  fi
-  if ! printf '%s\n' "$assets" | grep -qxF "$asset.sha256" || ! printf '%s\n' "$assets" | grep -qxF "$asset.sig"; then
-    die "The $tag package checksum or signature is not available yet; try again after the release build finishes."
-  fi
-  echo "Downloading JayJay $tag for $arch..."
-  download_with_checksum "$tag" "$asset"
-  curl -fsSL --retry 3 -o "$tmp/$asset.sig" "https://github.com/$repo/releases/download/$tag/$asset.sig"
-  gpg --batch --homedir "$tmp/gnupg" --import "$tmp/jayjay-packages.asc"
-  gpg --batch --homedir "$tmp/gnupg" --verify "$tmp/$asset.sig" "$tmp/$asset"
-  configure_pacman_repo
-  echo "Updating the system and installing JayJay $tag..."
-  # Read confirmation from the terminal even when the installer itself is piped into bash.
-  run_as_root pacman -Syu </dev/tty
-  run_as_root pacman -U --needed "$tmp/$asset" </dev/tty
-  echo "Installed JayJay $tag; rerun this command for future betas."
-}
-
-install_pacman() {
-  local fingerprint tag
-  require_tools pacman pacman-key curl gpg sha256sum
-  if [ -n "${SUDO_USER:-}" ] && [ "$SUDO_USER" != root ]; then
-    die "Run this installer without sudo so it can check your per-user AppImage launchers; it elevates package operations itself."
-  fi
-  check_appimage_overrides
-  curl -fsSL --retry 3 -o "$tmp/jayjay-packages.asc" https://pkgs.hewig.dev/arch/jayjay-packages.asc
-  mkdir -m700 "$tmp/gnupg"
-  fingerprint="$(gpg --batch --homedir "$tmp/gnupg" --with-colons --show-keys "$tmp/jayjay-packages.asc" | awk -F: '$1 == "pub" { primary = 1 } $1 == "fpr" && primary { print $10; primary = 0 }')"
-  [ "$fingerprint" = "$key_fpr" ] || die "Key fingerprint mismatch; refusing to trust the downloaded key."
-  if "$beta" && ! "$no_install"; then
-    tag="$(release_tag)"
-    case "$tag" in *-beta.*) install_beta "$tag"; return ;; esac
-  fi
-  configure_pacman_repo
-  if "$no_install"; then
-    echo "Repo configured. Run sudo pacman -Syu; if JayJay is not installed, use sudo pacman -Syu jayjay-appimage."
-    return
-  fi
-  echo "Updating the system and installing JayJay from the signed pacman repo..."
-  # An explicit target would downgrade a newer installed beta to the repo's stable version.
-  if pacman -Q jayjay-appimage >/dev/null 2>&1; then
-    run_as_root pacman -Syu </dev/tty
-  else
-    run_as_root pacman -Syu jayjay-appimage </dev/tty
-  fi
-  echo "Repo configured; future stable upgrades arrive with sudo pacman -Syu."
-  echo "For the latest beta, rerun this installer with --beta."
-}
-
 install_deb() {
   local tag="$1" deb_version installed deb_arch asset
   deb_version="${tag#v}"
@@ -199,8 +105,8 @@ install_deb() {
 install_appimage() {
   local tag="$1" launcher target asset version_file desktop_entry line
   if command -v pacman >/dev/null && pacman -Q jayjay-appimage >/dev/null 2>&1; then
-    echo "JayJay is installed as the jayjay-appimage package; upgrade it with sudo pacman -Syu (stable repo) or rerun this installer with --beta." >&2
-    die "Missing the repo? Run: curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --pacman-repo"
+    echo "JayJay is installed as the jayjay-appimage package; upgrade it through AUR: https://aur.archlinux.org/packages/jayjay-appimage" >&2
+    die "To switch to an AppImage (including a beta), remove jayjay-appimage with pacman first, then rerun this installer."
   fi
   require_tools curl sha256sum
   if ! command -v fusermount3 >/dev/null && ! command -v fusermount >/dev/null; then
@@ -262,22 +168,15 @@ install_appimage() {
 }
 
 main() {
-  local pacman_repo=false beta=false no_install=false option
+  local beta=false option
   local prefix data_dir bin_dir app_dir exec_path arch machine tag
   for option in "$@"; do
     case "$option" in
-      --pacman-repo) pacman_repo=true ;;
+      --pacman-repo | --no-install) die "The custom pacman repo has been retired. Remove the [jayjay] section from /etc/pacman.conf and install jayjay-appimage from AUR: https://aur.archlinux.org/packages/jayjay-appimage" ;;
       --beta) beta=true ;;
-      --no-install) no_install=true ;;
       *) die "Unknown option: $option" ;;
     esac
   done
-  if "$beta" && command -v pacman >/dev/null; then
-    pacman_repo=true
-  fi
-  if "$no_install" && ! "$pacman_repo"; then
-    die "Usage: install.sh [--pacman-repo | --beta] [--no-install]"
-  fi
 
   # The default install follows the XDG data directory the desktop searches; a custom prefix keeps everything under itself.
   if [ -n "${JAYJAY_PREFIX:-}" ]; then
@@ -300,10 +199,6 @@ main() {
 
   tmp="$(mktemp -d)"
   trap 'rm -rf "$tmp"' EXIT
-  if "$pacman_repo"; then
-    install_pacman
-    return
-  fi
   tag="$(release_tag)"
   if command -v apt-get >/dev/null && command -v dpkg-query >/dev/null; then
     install_deb "$tag"
