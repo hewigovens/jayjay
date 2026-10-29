@@ -152,6 +152,12 @@ extension DAGRow {
             } else {
                 Button(Localized.Menu.filterByThisWorkspace) { actions?.filterByWorkspace(name: name) }
             }
+            if !change.isImmutable {
+                Divider()
+                Button(Localized.Overview.rebaseLaneOnto(trunk: trunkName)) {
+                    actions?.rebase(rev: change.commitId.id, dest: "trunk()", mode: .branch)
+                }
+            }
         }
     }
 

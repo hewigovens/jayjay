@@ -10,6 +10,7 @@ pub struct GraphData {
     pub(crate) bookmarks: Arc<Vec<BookmarkInfo>>,
     pub(crate) tags: Arc<Vec<TagInfo>>,
     pub workspaces: Arc<Vec<WorkspaceInfo>>,
+    pub(crate) trunk_name: String,
 }
 
 impl Default for GraphData {
@@ -21,6 +22,7 @@ impl Default for GraphData {
             bookmarks: Arc::new(Vec::new()),
             tags: Arc::new(Vec::new()),
             workspaces: Arc::new(Vec::new()),
+            trunk_name: String::new(),
         }
     }
 }

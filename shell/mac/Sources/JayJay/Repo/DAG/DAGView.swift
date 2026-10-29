@@ -14,6 +14,7 @@ struct DAGView: View {
     var onRequest: ((DAGRequest) -> Void)?
     @Binding var activePane: ActivePane
     var revealRequest: DAGRevealRequest?
+    var trunkName = "trunk"
     var prHostName: String?
     var conflictedBookmarkNames: Set<String> = []
     var remoteTagNames: Set<String> = []
@@ -49,6 +50,7 @@ struct DAGView: View {
         onRequest: ((DAGRequest) -> Void)? = nil,
         activePane: Binding<ActivePane>,
         revealRequest: DAGRevealRequest? = nil,
+        trunkName: String = "trunk",
         prHostName: String? = nil,
         conflictedBookmarkNames: Set<String> = [],
         remoteTagNames: Set<String> = [],
@@ -68,6 +70,7 @@ struct DAGView: View {
         self.onRequest = onRequest
         _activePane = activePane
         self.revealRequest = revealRequest
+        self.trunkName = trunkName
         self.prHostName = prHostName
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.remoteTagNames = remoteTagNames
@@ -117,6 +120,7 @@ struct DAGView: View {
                                     viewModel: rowViewModel,
                                     actions: actions,
                                     onRequest: onRequest,
+                                    trunkName: trunkName,
                                     prHostName: prHostName,
                                     conflictedBookmarkNames: conflictedBookmarkNames,
                                     remoteTagNames: remoteTagNames,

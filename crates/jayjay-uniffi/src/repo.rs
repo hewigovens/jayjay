@@ -870,6 +870,10 @@ impl JayJayRepo {
         )
     }
 
+    fn trunk_name(&self) -> String {
+        self.inner.trunk_name()
+    }
+
     fn pr_host_name(&self) -> Option<String> {
         self.inner.pr_host_name()
     }

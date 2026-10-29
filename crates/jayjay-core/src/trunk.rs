@@ -8,6 +8,14 @@ pub fn is_trunk_bookmark(name: &str) -> bool {
     TRUNK_BOOKMARKS.contains(&bare)
 }
 
+/// What menus call `trunk()`: its one local bookmark, or "trunk" when it has none or several.
+pub fn display_name(bookmarks: &[String]) -> &str {
+    match bookmarks {
+        [bookmark] => bookmark,
+        _ => "trunk",
+    }
+}
+
 /// DAG chips may drop a conflicted target even on trunk; whole-bookmark delete stays hidden for resolved trunk names.
 pub fn can_remove_bookmark_from_chip(name: &str, conflicted: bool) -> bool {
     conflicted || !is_trunk_bookmark(name)

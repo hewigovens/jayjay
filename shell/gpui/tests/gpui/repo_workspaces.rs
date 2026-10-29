@@ -207,6 +207,7 @@ fn workspace_chip_menu_acts_on_that_workspace(cx: &mut TestAppContext) {
     settle_visual(repo_cx);
     assert!(menu_shows(repo_cx, "Open in New Window"));
     assert!(menu_shows(repo_cx, "Copy Workspace Name"));
+    assert!(menu_shows(repo_cx, "Rebase Lane onto trunk"));
     assert!(
         !menu_shows(repo_cx, "New change on top"),
         "chip menu must not open the change menu"

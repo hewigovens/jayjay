@@ -24,6 +24,7 @@ struct OpenedRepo {
     tags: Vec<TagInfo>,
     vocabulary: RevsetVocabulary,
     workspaces: Vec<WorkspaceInfo>,
+    trunk_name: String,
     pr_host_name: Option<String>,
     fix_unavailable_reason: Option<String>,
 }
@@ -104,6 +105,7 @@ impl RepoViewModel {
         let tags = repo.list_tags().unwrap_or_default();
         let vocabulary = repo.revset_vocabulary(&bookmarks);
         let workspaces = repo.workspace_list().unwrap_or_default();
+        let trunk_name = repo.trunk_name();
         let pr_host_name = repo.pr_host_name();
         let fix_unavailable_reason = repo.fix_unavailable_reason();
         Ok(OpenedRepo {
@@ -115,6 +117,7 @@ impl RepoViewModel {
             tags,
             vocabulary,
             workspaces,
+            trunk_name,
             pr_host_name,
             fix_unavailable_reason,
         })
@@ -130,6 +133,7 @@ impl RepoViewModel {
             tags,
             vocabulary,
             workspaces,
+            trunk_name,
             pr_host_name,
             fix_unavailable_reason,
         } = loaded;
@@ -183,6 +187,7 @@ impl RepoViewModel {
                 bookmarks: Arc::new(bookmarks),
                 tags: Arc::new(tags),
                 workspaces: Arc::new(workspaces),
+                trunk_name,
             },
             loading: LoadingState::default(),
             last_internal_mutation_at: None,

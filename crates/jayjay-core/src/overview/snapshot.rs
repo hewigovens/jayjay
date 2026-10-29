@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 
 use super::OverviewGroup;
+use crate::trunk;
 use crate::types::{Overview, OverviewBaseKind, WorkspaceInfo};
 
 #[derive(Debug, Clone)]
@@ -49,15 +50,12 @@ impl OverviewSnapshot {
     }
 
     pub fn trunk_name(&self) -> &str {
-        match self
-            .groups
-            .iter()
-            .find(|group| group.base.kind == OverviewBaseKind::Trunk)
-            .map(|group| group.base.bookmarks.as_slice())
-        {
-            Some([bookmark]) => bookmark,
-            _ => "trunk",
-        }
+        trunk::display_name(
+            self.groups
+                .iter()
+                .find(|group| group.base.kind == OverviewBaseKind::Trunk)
+                .map_or(&[], |group| group.base.bookmarks.as_slice()),
+        )
     }
 
     pub fn workspace(&self, name: &str) -> Option<&WorkspaceInfo> {

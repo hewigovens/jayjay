@@ -133,8 +133,9 @@ pub(super) fn sidebar(
                         let on_tag = chip_menu(view_handle.clone(), |view, name, cx| {
                             view.build_tag_menu(name, cx)
                         });
-                        let on_workspace = chip_menu(view_handle.clone(), |view, name, cx| {
-                            view.build_workspace_chip_menu(name, cx)
+                        let workspace_change = change.clone();
+                        let on_workspace = chip_menu(view_handle.clone(), move |view, name, cx| {
+                            view.build_workspace_chip_menu(name, &workspace_change, cx)
                         });
                         let view_for_drop = view_handle.clone();
                         let drop_target = change.clone();

@@ -32,6 +32,7 @@ extension RepoContentView {
                 onRequest: { handleDAGRequest($0) },
                 activePane: Bindable(keyboardFocus).activePane,
                 revealRequest: viewModel.dagRevealRequest,
+                trunkName: viewModel.trunkName,
                 prHostName: viewModel.prHostName,
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                 remoteTagNames: viewModel.remoteTagNames,

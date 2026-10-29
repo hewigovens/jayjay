@@ -11,9 +11,21 @@ use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use super::Repo;
 use super::ref_name::ensure_valid_ref_name;
 use super::support::{block_on_result, short_change_id};
+use crate::trunk;
 use crate::types::*;
 
 impl Repo {
+    pub fn trunk_name(&self) -> String {
+        let repo = self.get_repo();
+        let bookmarks: Vec<String> = self
+            .revset_commit_ids(&repo, "trunk()")
+            .iter()
+            .filter_map(CommitId::try_from_hex)
+            .flat_map(|id| self.commit_bookmarks(&repo).names(&id))
+            .collect();
+        trunk::display_name(&bookmarks).to_owned()
+    }
+
     #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "Repo"))]
     pub fn list_bookmarks(&self) -> JayResult<Vec<BookmarkInfo>> {
         let repo = self.get_repo();

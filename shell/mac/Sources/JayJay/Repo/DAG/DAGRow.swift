@@ -34,6 +34,7 @@ struct DAGRow: View {
     let viewModel: DAGRowViewModel
     var actions: (any DAGActions & BookmarkActions & TagActions)?
     var onRequest: ((DAGRequest) -> Void)?
+    var trunkName = "trunk"
     var prHostName: String?
     var conflictedBookmarkNames: Set<String> = []
     var remoteTagNames: Set<String> = []

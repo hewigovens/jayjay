@@ -150,6 +150,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
+    var trunkName = "trunk"
     var prHostName: String?
     var fixUnavailableReason: String?
     var evologEntries: [EvologEntry]?

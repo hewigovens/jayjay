@@ -246,19 +246,6 @@ extension RepoViewModel {
         isLoading = false
     }
 
-    @MainActor
-    func apply(_ context: RepoRefreshContext) {
-        bookmarks = context.bookmarks
-        tags = context.tags
-        revsetVocabulary = context.revsetVocabulary
-        if let workspaces = context.workspaces {
-            self.workspaces = workspaces
-        }
-        prHostName = context.prHostName
-        fixUnavailableReason = context.fixUnavailableReason
-        apply(context.statusBar)
-    }
-
     func loadMore() {
         guard !isShuttingDown, canLoadMore, let currentDepth = Self.defaultRevsetDepth(for: revset) else { return }
 

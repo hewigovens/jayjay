@@ -243,6 +243,7 @@ fn overview_snapshot_filters_lanes_by_description_bookmark_or_workspace() {
 
     let snapshot = repo.overview_snapshot().expect("snapshot");
     assert_eq!(snapshot.trunk_name(), "main");
+    assert_eq!(repo.trunk_name(), "main");
     assert_eq!(snapshot.workspaces.len(), 3);
     let heads = |groups: Vec<jayjay_core::overview::OverviewGroup>| -> Vec<String> {
         groups

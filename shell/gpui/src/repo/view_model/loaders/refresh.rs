@@ -144,6 +144,7 @@ impl RepoViewModel {
                 if let Some(workspaces) = data.workspaces {
                     self.graph.workspaces = Arc::new(workspaces);
                 }
+                self.graph.trunk_name = data.trunk_name;
                 self.pr_host_name = data.pr_host_name.map(SharedString::from);
                 self.working_copy_stats = data.working_copy_stats;
                 self.current_operation_description = data.current_operation_description;
@@ -200,6 +201,7 @@ struct RefreshData {
     tags: Vec<TagInfo>,
     vocabulary: RevsetVocabulary,
     workspaces: Option<Vec<WorkspaceInfo>>,
+    trunk_name: String,
     pr_host_name: Option<String>,
     working_copy_stats: Option<DiffStats>,
     current_operation_description: String,
@@ -217,6 +219,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> JayResult<RefreshData> {
     let tags = repo.list_tags().unwrap_or_default();
     let vocabulary = repo.revset_vocabulary(&bookmarks);
     let workspaces = repo.workspace_list().ok();
+    let trunk_name = repo.trunk_name();
     let pr_host_name = repo.pr_host_name();
     let working_copy_stats = repo.diff_stats("@").ok();
     let current_operation_description = repo.current_operation_description();
@@ -228,6 +231,7 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> JayResult<RefreshData> {
         tags,
         vocabulary,
         workspaces,
+        trunk_name,
         pr_host_name,
         working_copy_stats,
         current_operation_description,

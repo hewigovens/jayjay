@@ -1,7 +1,8 @@
 use gpui::App;
-use jayjay_core::{WorkspaceInfo, workspace_filter_revset};
+use jayjay_core::{ChangeInfo, WorkspaceInfo, workspace_filter_revset};
 
 use super::RepoWindow;
+use super::change_actions::{ChangeAction, change_action};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
@@ -42,11 +43,14 @@ fn workspace_filter_item(name: &str) -> ContextMenuItem {
 
 impl RepoWindow {
     /// Open and copy need the listing's workspace of that name; a chip carries only the name.
-    pub(super) fn build_workspace_chip_menu(&self, name: &str, cx: &App) -> Vec<ContextMenuItem> {
-        if let Some(workspace) = self
-            .vm
-            .read(cx)
-            .graph
+    pub(super) fn build_workspace_chip_menu(
+        &self,
+        name: &str,
+        change: &ChangeInfo,
+        cx: &App,
+    ) -> Vec<ContextMenuItem> {
+        let graph = &self.vm.read(cx).graph;
+        let mut items = if let Some(workspace) = graph
             .workspaces
             .iter()
             .find(|workspace| workspace.name == name)
@@ -54,6 +58,17 @@ impl RepoWindow {
             workspace_menu_items(workspace)
         } else {
             vec![workspace_filter_item(name)]
+        };
+        if !change.is_immutable {
+            items.push(ContextMenuItem::separator());
+            items.push(ContextMenuItem::new(
+                jayjay_i18n::overview::rebase_lane_onto(&graph.trunk_name),
+                glyph::GIT_BRANCH,
+                change_action(ChangeAction::RebaseOntoTrunk {
+                    rev: change.commit_id.id.clone(),
+                }),
+            ));
         }
+        items
     }
 }
