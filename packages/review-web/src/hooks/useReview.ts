@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import type { ReviewBackend, ReviewSelection } from "../model/backend";
-import { defaultOptions, type DiffOptions, type ReviewAction, type ReviewResult } from "../model/review";
+import { defaultOptions, type DiffOptions, type ImageSide, type ReviewAction, type ReviewResult } from "../model/review";
 
 type Operation = (signal: AbortSignal) => Promise<ReviewResult>;
 type RunKind = "render" | "mutate" | "replace";
@@ -81,7 +81,14 @@ export function useReview(backend: ReviewBackend) {
   }
 
   const selection: ReviewSelection | undefined = result ? { session: result.session, file: result.file, options: result.options } : undefined;
-  return { result, selected, options, pending, error, selection, revision, select, configure, mutate, renderFile, run,
+  // Loads one side of an image file of the current session; undefined when the backend has no images.
+  const image = backend.image && ((file: number, side: ImageSide, signal: AbortSignal) => {
+    const active = current.current;
+    if (!active) return Promise.reject(new Error("No review is open"));
+    return backend.image!({ session: active.session, file, options: active.options }, side, signal);
+  });
+
+  return { result, selected, options, pending, error, selection, revision, select, configure, mutate, renderFile, run, image,
     retry: () => { if (lastOperation.current) void run(lastOperation.current.operation, lastOperation.current.kind); },
   };
 }

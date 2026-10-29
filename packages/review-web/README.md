@@ -17,11 +17,12 @@ export function Review({ backend, labels, savedLabel }: { backend: ReviewBackend
 }
 ```
 
-Keep the backend object stable (a module instance or `useMemo`). It implements three async methods:
+Keep the backend object stable (a module instance or `useMemo`). It implements three async methods, and a fourth optional one:
 
 - `open(signal?)`: load the initial change and selected file, returning a `ReviewResult`.
 - `render(selection, signal?)`: load a file with the requested options. Content can be fetched lazily here.
 - `mutate(selection, action, signal?)`: apply a file/group mark or note action and return refreshed state after the durable write succeeds. Failures reject the promise; the viewer retains its previous result and offers Retry.
+- `image(selection, side, signal?)`, optional: one side (`"old"` or `"new"`) of an image file as a `Blob`, or `null` when that side has none. With it, files whose extension `isImagePath` accepts (PNG, JPEG, GIF, WebP, BMP, ICO, SVG) show their before and after side by side, above their text diff. Give the blob an image type, since a blob opened as a page runs as the host's origin.
 
 `ReviewSelection` contains an opaque numeric session handle, file index, and diff options. The adapter binds that handle to its immutable source revision. Control Room must retain and send the native expected commit when writing a Working-scope person mark. Reject stale sessions; a file or display-group index belongs to its pinned revision and whitespace mode. Branch comparisons remain outside the shared Working review contract.
 

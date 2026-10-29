@@ -258,3 +258,17 @@
   :where(.jayjay-review) .jj-byline { flex-wrap: wrap; row-gap: 4px; }
   :where(.jayjay-review) .jj-byline .jj-spacer { display: none; }
 }
+
+/* Image files: before and after side by side, on a checkerboard so transparency shows. */
+:where(.jayjay-review) .jj-image-diff { display: grid; grid-template-columns: repeat(auto-fit, minmax(min(100%, 240px), 1fr)); gap: 12px; padding: 12px 16px; }
+:where(.jayjay-review) .jj-image-side { display: grid; gap: 6px; margin: 0; min-width: 0; align-content: start; }
+:where(.jayjay-review) .jj-image-side figcaption { display: flex; align-items: baseline; gap: 8px; font-size: 11px; color: var(--jj-muted); }
+:where(.jayjay-review) .jj-image-label { font-weight: 600; }
+:where(.jayjay-review) .jj-old .jj-image-label { color: var(--jj-removed-ink); }
+:where(.jayjay-review) .jj-new .jj-image-label { color: var(--jj-added-ink); }
+:where(.jayjay-review) .jj-image-size { font-variant-numeric: tabular-nums; }
+:where(.jayjay-review) .jj-image-frame {
+  display: grid; place-items: center; min-height: 96px; padding: 8px; border: 1px solid var(--jj-border); border-radius: 6px;
+  background: repeating-conic-gradient(color-mix(in srgb, var(--jj-border) 60%, transparent) 0 25%, transparent 0 50%) 0 0 / 16px 16px;
+}
+:where(.jayjay-review) .jj-image-frame img { display: block; max-width: 100%; max-height: 60vh; object-fit: contain; }

@@ -88,6 +88,10 @@ pub(super) fn labels(languages: &str) -> Value {
             ("noMatchingFiles", jayjay_i18n::repo::no_matching_files()),
             ("allFilesHidden", jayjay_i18n::repo::all_files_hidden()),
             ("noChangedFiles", jayjay_i18n::repo::no_files()),
+            (
+                "previewUnavailable",
+                jayjay_i18n::diff::preview_unavailable(),
+            ),
         ]
         .into_iter()
         .map(|(key, value)| (key.to_owned(), Value::String(value)))

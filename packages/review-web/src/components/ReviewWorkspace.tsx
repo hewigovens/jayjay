@@ -1,10 +1,11 @@
 /** @jsxRuntime automatic */
 import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { DiffAnchor, Labels } from "../model/diff";
-import type { ReviewNote, ReviewResult } from "../model/review";
+import { isImagePath, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
 import { useCompact } from "../hooks/useCompact";
 import type { ReviewController } from "../hooks/useReview";
 import { DiffPane, lineLabel } from "./diff/DiffPane";
+import { ImageDiff } from "./diff/ImageDiff";
 import { FileColumn } from "./files/FileColumn";
 import { ChangeHeader } from "./header/ChangeHeader";
 import { DiffOptionControls } from "./header/DiffOptionControls";
@@ -26,7 +27,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   /** Looks up the author's avatar on Gravatar, GitHub, or GitLab, which shares their email hash or username with that service. */
   avatars?: boolean;
 }) {
-  const { result, selected, options, pending, error, revision, select, configure, mutate, renderFile } = review;
+  const { result, selected, options, pending, error, revision, select, configure, mutate, renderFile, image } = review;
   const compact = useCompact();
   const [target, setTarget] = useState<NoteTarget | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
@@ -121,7 +122,12 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
 
   function diffPane(index: number, data: ReviewResult) {
     const filePath = data.overview.files[index].path;
-    if (!data.diff) return <p className="jj-empty-diff">{labels.noFiles}</p>;
+    // A picture of each side above the text diff, which keeps the group toggle: an SVG's source, a raster's size line.
+    const picture = image && isImagePath(filePath)
+      ? <ImageDiff key={`${data.session}|${revision}|${filePath}`} kind={data.overview.files[index].kind} labels={labels}
+        load={(side: ImageSide, signal: AbortSignal) => image(index, side, signal)} />
+      : null;
+    if (!data.diff) return picture ?? <p className="jj-empty-diff">{labels.noFiles}</p>;
     const annotation = (anchor: DiffAnchor) => {
       const key = anchorKey(filePath, anchor.side, anchor.line);
       const shown = (placed.get(key) ?? []).filter(item => item.status === "current" || expanded.has(key));
@@ -142,9 +148,9 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
         <NoteIcon />{resolved.length > 1 && resolved.length}</button>;
     };
     const note = (anchor: DiffAnchor) => setTarget({ file: index, path: filePath, anchor, ignoreWhitespace: data.options.ignoreWhitespace });
-    return <DiffPane labels={labels} view={data.diff} split={data.options.split} showAll={() => configure({ ...options, showAll: true })}
+    return <>{picture}<DiffPane labels={labels} view={data.diff} split={data.options.split} showAll={() => configure({ ...options, showAll: true })}
       review={{ states: data.groupStates, disabled, toggle: group => void mutate({ kind: "setGroup", file: index, group, reviewed: data.groupStates[group] !== "reviewed", ignoreWhitespace: data.options.ignoreWhitespace }, index),
-        ...notes && { note, annotation, marker } }} />;
+        ...notes && { note, annotation, marker } }} /></>;
   }
 
   return <div className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""}`} aria-busy={pending}>
@@ -174,7 +180,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
             {!result.overview.files.length && <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>
           : <div className="jj-diff-scroll" data-path={path} tabIndex={0} aria-label={labels.lines}>
-            {result.diff ? diffPane(result.file, result) : <p className="jj-empty-diff">{result.overview.files.length ? labels.noFiles : labels.noChangedFiles}</p>}
+            {file ? diffPane(result.file, result) : <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>}
         <div className="jj-result-footer" aria-live="polite"><span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span><span>{result.pack} · {result.elapsed.toFixed(1)} ms</span></div>
       </section>
