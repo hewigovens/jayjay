@@ -1,6 +1,6 @@
 pub type JayResult<T> = Result<T, JayError>;
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub enum JayError {
     RepoNotFound { path: String },
     RevNotFound { rev: String },

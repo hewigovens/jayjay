@@ -1,6 +1,6 @@
 use super::HunkType;
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DiffEditDestination {
     RemoveFromSource,
     MoveToWorkingCopy,
@@ -8,13 +8,13 @@ pub enum DiffEditDestination {
     NewParallel,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DiffEditRange {
     pub start_line: u32,
     pub end_line: u32,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DiffEditFileSelection {
     pub path: String,
     pub old_path: Option<String>,

@@ -1,6 +1,6 @@
 use super::change::ShortId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BookmarkInfo {
     pub name: String,
     pub change_id: ShortId,
@@ -25,7 +25,7 @@ impl BookmarkInfo {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct RemoteBookmarkTarget {
     pub remote: String,
     /// Empty if the target can't be resolved.
@@ -37,7 +37,7 @@ pub struct RemoteBookmarkTarget {
     pub behind: u32,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum RemoteSyncStatus {
     Synced,
     /// Local bookmark has commits the remote lacks — push to update the remote.

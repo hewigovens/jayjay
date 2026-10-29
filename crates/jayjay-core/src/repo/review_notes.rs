@@ -8,6 +8,7 @@ use jj_lib::object_id::ObjectId;
 
 use super::Repo;
 
+#[derive(serde::Serialize, serde::Deserialize)]
 pub struct ReviewNotesReport {
     pub change_id: String,
     pub notes: Vec<ReviewNoteStatus>,

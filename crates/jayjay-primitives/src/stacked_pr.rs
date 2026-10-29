@@ -1,5 +1,5 @@
 /// One change in a stacked-PR plan, ordered bottom (closest to trunk) → top.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct StackLayer {
     pub change_id: String,
     pub commit_id: String,
@@ -15,7 +15,7 @@ pub struct StackLayer {
 }
 
 /// One layer's finalized name as submitted from the UI — the bookmark may have been edited or AI-generated, so `submit_stack` uses it verbatim.
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SubmitStackLayer {
     pub change_id: String,
     pub bookmark: String,
@@ -23,21 +23,21 @@ pub struct SubmitStackLayer {
     pub body: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct Stack {
     pub layers: Vec<StackLayer>,
     /// Trunk branch (e.g. `main`).
     pub base_bookmark: String,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum StackLayerOutcome {
     Created,
     Updated,
     Failed,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct SubmittedLayer {
     pub bookmark: String,
     pub base: String,
@@ -49,7 +49,7 @@ pub struct SubmittedLayer {
     pub detail: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct StackedPrResult {
     pub layers: Vec<SubmittedLayer>,
     pub message: String,

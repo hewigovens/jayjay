@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct TagInfo {
     pub name: String,
     pub tracked_remotes: Vec<String>,

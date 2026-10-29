@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DiffHunk {
     /// Repo-relative path, always `/`-separated (jj's canonical form); do not build this from `format_file_path`, which emits `\` on Windows and breaks the `/`-based file-tree and basename logic downstream.
     pub path: String,
@@ -38,7 +38,7 @@ impl DiffHunk {
     }
 }
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct DiffContent {
     pub content: Option<String>,
     pub preview: Option<DiffPreview>,
@@ -50,12 +50,12 @@ impl DiffContent {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub enum DiffPreview {
     Image { path: String },
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct DiffProjection {
     pub plugin_id: String,
     pub plugin_label: String,
@@ -77,7 +77,7 @@ impl DiffProjection {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DiffProjectionMode {
     Raw,
     Processed,
@@ -92,14 +92,14 @@ impl DiffProjectionMode {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum DiffRenderKind {
     Text,
     Markdown,
     Table,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum HunkType {
     Added,
     Removed,
@@ -115,14 +115,14 @@ impl HunkType {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DiffStats {
     pub files_changed: u32,
     pub insertions: u32,
     pub deletions: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct FileDiffStats {
     pub path: String,
     pub insertions: u32,

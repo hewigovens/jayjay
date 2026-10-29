@@ -11,7 +11,7 @@ const LOCK_FILE_NAMES: [&str; 4] = [
     "Package.resolved",
 ];
 
-#[derive(Debug)]
+#[derive(Debug, serde::Serialize, serde::Deserialize)]
 pub struct DiffExcerpt {
     pub stat: String,
     pub diff: String,

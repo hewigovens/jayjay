@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GitSubmoduleStatus {
     pub path: String,
     pub has_new_commits: bool,
@@ -7,14 +7,14 @@ pub struct GitSubmoduleStatus {
 }
 
 /// Domain PR state. Each host module owns its own wire enum (GitHubPrState, CodebergPrState) and converts into this.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum PrState {
     Open,
     Closed,
     Merged,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum ChecksStatus {
     Passing,
     Failing,
@@ -22,7 +22,7 @@ pub enum ChecksStatus {
     None,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PrInfo {
     pub number: u32,
     pub state: PrState,
@@ -31,7 +31,7 @@ pub struct PrInfo {
     pub checks: ChecksStatus,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PullRequestImportPreview {
     pub pull_request: PullRequestImportSource,
     pub remote: PullRequestImportRemote,
@@ -41,7 +41,7 @@ pub struct PullRequestImportPreview {
     pub existing_workspace: Option<PullRequestImportWorkspace>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PullRequestImportSource {
     pub host: String,
     pub base_repo: String,
@@ -51,7 +51,7 @@ pub struct PullRequestImportSource {
     pub url: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PullRequestImportRemote {
     pub name: String,
     pub url: String,
@@ -59,13 +59,13 @@ pub struct PullRequestImportRemote {
     pub bookmark: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct PullRequestImportWorkspace {
     pub name: String,
     pub dest: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FetchResult {
     pub message: String,
     pub abandoned_bookmarks: Vec<String>,

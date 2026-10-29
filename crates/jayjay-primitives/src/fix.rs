@@ -3,7 +3,7 @@ use std::collections::{BTreeMap, BTreeSet};
 const SHOWN_STDERR_LINES: usize = 3;
 const SHOWN_LINE_CHARS: usize = 200;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug, Clone, Default, serde::Serialize, serde::Deserialize)]
 pub struct FixSummary {
     pub checked_changes: u32,
     pub fixed_changes: u32,
@@ -61,7 +61,7 @@ fn clip(line: &str) -> String {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct FixToolFailure {
     pub tool: String,
     pub path: String,

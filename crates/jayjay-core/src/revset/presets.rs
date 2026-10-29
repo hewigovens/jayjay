@@ -1,6 +1,6 @@
 use super::default::DEFAULT_REVSET;
 
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RevsetPreset {
     pub id: String,
     pub label: String,
@@ -45,6 +45,12 @@ pub fn revset_presets() -> Vec<RevsetPreset> {
             revset: "heads(all())".to_owned(),
         },
     ]
+}
+
+impl Default for RevsetPreset {
+    fn default() -> Self {
+        default_revset_preset()
+    }
 }
 
 pub fn default_revset_preset() -> RevsetPreset {

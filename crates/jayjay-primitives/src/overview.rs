@@ -1,6 +1,6 @@
 use super::change::ShortId;
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct OverviewChange {
     pub change_id: ShortId,
     pub commit_id: ShortId,
@@ -13,7 +13,7 @@ pub struct OverviewChange {
     pub workspaces: Vec<String>,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, serde::Serialize, serde::Deserialize)]
 pub enum OverviewBaseKind {
     Trunk,
     OlderTrunk,
@@ -21,7 +21,7 @@ pub enum OverviewBaseKind {
     Other,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct OverviewBase {
     pub change_id: ShortId,
     pub commit_id: ShortId,
@@ -32,14 +32,14 @@ pub struct OverviewBase {
     pub behind_trunk: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct OverviewWorkspace {
     pub name: String,
     pub is_current: bool,
     pub changes_above: u32,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct OverviewLane {
     pub changes: Vec<OverviewChange>,
     pub base: OverviewBase,
@@ -48,7 +48,7 @@ pub struct OverviewLane {
     pub attention: Vec<String>,
 }
 
-#[derive(Debug, Clone, Default, PartialEq, Eq)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct Overview {
     pub lanes: Vec<OverviewLane>,
     pub workspace_count: u32,

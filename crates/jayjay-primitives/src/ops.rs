@@ -1,6 +1,6 @@
 use super::change::ShortId;
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct OpLogEntry {
     /// Operation id. Its `short_len` is the prefix unique among the listed operations (op ids have no templater `shortest()`, so it's computed in `op_log`).
     pub id: ShortId,
@@ -9,7 +9,7 @@ pub struct OpLogEntry {
     pub is_current: bool,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct WorkspaceInfo {
     pub name: String,
     /// Display path, possibly lossy; empty for repositories that predate recorded roots.
@@ -32,10 +32,11 @@ impl WorkspaceInfo {
 }
 
 /// Not a bool: a repo that momentarily fails to load is undecided, not forgotten.
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum WorkspacePresence {
     Exists,
     Gone,
+    #[default]
     Unknown,
 }
 
@@ -48,7 +49,7 @@ pub struct FileTreeEntry {
     pub hunk_index: Option<u32>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct AnnotationLine {
     pub change_id: ShortId,
     pub author: String,

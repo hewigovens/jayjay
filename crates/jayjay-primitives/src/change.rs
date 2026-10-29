@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct CommitAuthor {
     pub name: String,
     pub email: String,
@@ -42,7 +42,7 @@ impl CommitAuthor {
 }
 
 /// An id (change-id or commit-id) paired with the length of its shortest unique prefix among visible commits; shells highlight that prefix and dim the rest.
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct ShortId {
     pub id: String,
     pub short_len: u32,
@@ -87,7 +87,7 @@ impl PartialEq<String> for ShortId {
     }
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChangeInfo {
     pub change_id: ShortId,
     pub commit_id: ShortId,
@@ -143,20 +143,20 @@ impl ChangeInfo {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct NewChangeEligibility {
     pub on_top: bool,
     pub before: bool,
     pub after: bool,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum InsertPosition {
     Before,
     After,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct EvologEntry {
     pub change_id: ShortId,
     pub commit_id: ShortId,
@@ -167,27 +167,27 @@ pub struct EvologEntry {
     pub description: String,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphEntry {
     pub change: ChangeInfo,
     pub edges: Vec<GraphEdge>,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct GraphEdge {
     /// Target commit_id (hex) this edge points to.
     pub target: String,
     pub edge_type: EdgeType,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum EdgeType {
     Direct,
     Indirect,
     Missing,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ChangeDetail {
     pub info: ChangeInfo,
     pub diff: Vec<super::DiffHunk>,

@@ -1,4 +1,4 @@
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct ConflictEditorData {
     pub path: String,
     /// Whether the editor was opened for this workspace's working-copy commit.
@@ -24,7 +24,7 @@ pub enum MergeHunkSource {
     Right,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct MergeEditorHunk {
     pub index: u32,
     /// Initial ordinal among byte-identical raw blocks; remaining identical conflicts become interchangeable as earlier blocks are resolved.

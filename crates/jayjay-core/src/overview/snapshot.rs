@@ -5,6 +5,7 @@ use crate::trunk;
 use crate::types::{Overview, OverviewBaseKind, WorkspaceInfo};
 
 #[derive(Debug, Clone)]
+#[cfg_attr(feature = "repository", derive(serde::Serialize, serde::Deserialize))]
 pub struct OverviewSnapshot {
     pub overview: Overview,
     pub groups: Vec<OverviewGroup>,

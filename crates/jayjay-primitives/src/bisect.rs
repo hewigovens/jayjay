@@ -1,18 +1,18 @@
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BisectVerdict {
     Good,
     Bad,
     Skip,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BisectPhase {
     Evaluating,
     PausedRangeChanged,
     Finished,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub enum BisectResultKind {
     Found,
     FoundDespiteSkips,
@@ -20,20 +20,20 @@ pub enum BisectResultKind {
     Abort,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct BisectChange {
     pub change_id: String,
     pub commit_id: String,
     pub description: String,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct BisectMark {
     pub commit_id: String,
     pub verdict: BisectVerdict,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct BisectResultView {
     pub kind: BisectResultKind,
     pub message: String,
@@ -43,7 +43,7 @@ pub struct BisectResultView {
     pub restore_note: Option<String>,
 }
 
-#[derive(Debug, Clone, PartialEq, Eq)]
+#[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct BisectState {
     pub phase: BisectPhase,
     pub status: String,

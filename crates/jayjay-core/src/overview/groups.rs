@@ -3,6 +3,7 @@ use std::collections::HashMap;
 use crate::types::{Overview, OverviewBase, OverviewBaseKind};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
+#[cfg_attr(feature = "repository", derive(serde::Serialize, serde::Deserialize))]
 pub struct OverviewGroup {
     pub base: OverviewBase,
     pub lanes: Vec<u32>,

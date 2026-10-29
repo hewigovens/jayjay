@@ -29,7 +29,7 @@ pub struct RevsetCompletion {
 }
 
 /// A name a completion can offer and the revset text that stands for it.
-#[derive(Clone, Debug, Eq, PartialEq)]
+#[derive(Clone, Debug, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RevsetName {
     pub name: String,
     /// The symbol a shell inserts, quoted when jj would not read the name as one.
@@ -73,7 +73,7 @@ impl RevsetName {
 }
 
 /// What a position can offer besides jj's built-in functions; both shells load it with the repository.
-#[derive(Clone, Debug, Default, Eq, PartialEq)]
+#[derive(Clone, Debug, Default, Eq, PartialEq, serde::Serialize, serde::Deserialize)]
 pub struct RevsetVocabulary {
     pub aliases: Vec<RevsetName>,
     pub bookmarks: Vec<RevsetName>,
