@@ -28,7 +28,7 @@ $manifest.Package.Identity.Version = $packageVersion
 $manifest.Save((Join-Path $layout "AppxManifest.xml"))
 
 # Without resources.pri the shell ignores the targetsize/unplated logo variants.
-& $makepri createconfig /cf "$work/priconfig.xml" /dq en-US /o
+& $makepri createconfig /cf "$work/priconfig.xml" /dq en-US_ja-JP_zh-Hans_zh-Hant /o
 if ($LASTEXITCODE) { throw "makepri createconfig failed" }
 & $makepri new /pr $layout /cf "$work/priconfig.xml" /mn "$layout/AppxManifest.xml" /of "$layout/resources.pri" /o
 if ($LASTEXITCODE) { throw "makepri new failed" }

@@ -18,6 +18,9 @@
   </Dependencies>
   <Resources>
     <Resource Language="en-us" />
+    <Resource Language="ja-jp" />
+    <Resource Language="zh-hans" />
+    <Resource Language="zh-hant" />
   </Resources>
   <Applications>
     <Application Id="JayJay" Executable="jayjay-gpui.exe" EntryPoint="Windows.FullTrustApplication">
