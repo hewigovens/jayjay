@@ -172,7 +172,7 @@ final class RepoWindowManager {
     func refreshOpenRepoPaths() {
         var seen = Set<String>()
         openRepoPaths = liveRepoWindows.compactMap { window in
-            guard let path = window.representedURL?.repositoryLocationPath,
+            guard let path = window.representedURL?.standardizedRepositoryLocationPath,
                   seen.insert(path).inserted
             else { return nil }
             return path
@@ -318,7 +318,7 @@ final class RepoWindowManager {
 
     private func activateRepoWindow(matching path: String) -> Bool {
         guard let window = liveRepoWindows.first(where: {
-            $0.representedURL?.repositoryLocationPath == path
+            $0.representedURL?.standardizedRepositoryLocationPath == path
         }) else { return false }
         activate(window)
         hideRepoList()
