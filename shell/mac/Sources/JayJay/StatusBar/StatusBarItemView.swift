@@ -9,7 +9,7 @@ struct StatusBarItemView: View {
             case let .text(_, icon, text, tooltip, _):
                 HStack(spacing: 3) {
                     if let icon {
-                        Image(systemName: icon).jayjayFont(10)
+                        StatusBarIcon(name: icon)
                     }
                     Text(text)
                         .lineLimit(1)
@@ -23,7 +23,7 @@ struct StatusBarItemView: View {
                 } label: {
                     HStack(spacing: 3) {
                         Text(text)
-                        Image(systemName: icon).jayjayFont(10)
+                        StatusBarIcon(name: icon)
                     }
                 }
                 .buttonStyle(StatusBarButtonStyle())
@@ -32,7 +32,7 @@ struct StatusBarItemView: View {
             case let .action(_, icon, text, tooltip, _, perform):
                 Button(action: perform) {
                     HStack(spacing: 3) {
-                        Image(systemName: icon).jayjayFont(10)
+                        StatusBarIcon(name: icon)
                         Text(text)
                             .lineLimit(1)
                             .truncationMode(.tail)

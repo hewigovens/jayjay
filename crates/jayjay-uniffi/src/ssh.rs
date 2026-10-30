@@ -4,9 +4,16 @@ use jayjay_core::{
 };
 use jayjay_core::{
     JayError,
-    ssh::{self, ConnectionState, RemoteDirectory, RemoteFolder, RemoteLocation},
+    ssh::{self, ConnectionState, HostPlatform, RemoteDirectory, RemoteFolder, RemoteLocation},
 };
 use std::path::PathBuf;
+
+#[uniffi::remote(Enum)]
+pub enum HostPlatform {
+    MacOS,
+    Linux,
+    Windows,
+}
 
 #[uniffi::remote(Enum)]
 pub enum ConnectionState {

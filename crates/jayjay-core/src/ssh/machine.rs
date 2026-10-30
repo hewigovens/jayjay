@@ -12,6 +12,13 @@ use std::sync::{
 };
 
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
+pub enum HostPlatform {
+    MacOS,
+    Linux,
+    Windows,
+}
+
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub enum ConnectionState {
     Connected,
     Connecting,
@@ -40,6 +47,7 @@ pub fn helper_directory() -> PathBuf {
 
 pub(crate) struct MachineConnection {
     connection: Mutex<Arc<Connection>>,
+    platform: HostPlatform,
     connecting: AtomicBool,
 }
 struct Connecting<'a>(&'a AtomicBool);
@@ -50,6 +58,9 @@ impl Drop for Connecting<'_> {
 }
 
 impl MachineConnection {
+    pub fn platform(&self) -> HostPlatform {
+        self.platform
+    }
     pub fn snapshot(&self) -> Arc<Connection> {
         self.connection.lock().unwrap().clone()
     }
@@ -93,7 +104,8 @@ impl MachineConnection {
             Connecting(&shared.connecting)
         });
         let host = Host::probe(machine)?;
-        let helper = if host.windows {
+        let windows = host.platform == HostPlatform::Windows;
+        let helper = if windows {
             "jayjay-ssh.exe"
         } else {
             "jayjay-ssh"
@@ -121,7 +133,7 @@ impl MachineConnection {
         };
         let bytes = std::fs::read(&executable).map_err(JayError::internal)?;
         let hash = hex::encode(Sha256::digest(&bytes));
-        let command = if host.windows {
+        let command = if windows {
             install_windows_helper(machine, &hash, &executable)?
         } else {
             install_unix_helper(machine, &hash, &bytes)?
@@ -134,6 +146,7 @@ impl MachineConnection {
             }
             None => Arc::new(MachineConnection {
                 connection: Mutex::new(connection),
+                platform: host.platform,
                 connecting: AtomicBool::new(false),
             }),
         };
@@ -147,7 +160,7 @@ impl MachineConnection {
 
 struct Host {
     target: &'static str,
-    windows: bool,
+    platform: HostPlatform,
 }
 
 impl Host {
@@ -177,17 +190,14 @@ impl Host {
     }
 
     fn unix(output: &str) -> Option<Self> {
-        let target = match output.trim() {
-            "Darwin-arm64" => "aarch64-apple-darwin",
-            "Darwin-x86_64" => "x86_64-apple-darwin",
-            "Linux-aarch64" => "aarch64-unknown-linux-musl",
-            "Linux-x86_64" => "x86_64-unknown-linux-musl",
+        let (target, platform) = match output.trim() {
+            "Darwin-arm64" => ("aarch64-apple-darwin", HostPlatform::MacOS),
+            "Darwin-x86_64" => ("x86_64-apple-darwin", HostPlatform::MacOS),
+            "Linux-aarch64" => ("aarch64-unknown-linux-musl", HostPlatform::Linux),
+            "Linux-x86_64" => ("x86_64-unknown-linux-musl", HostPlatform::Linux),
             _ => return None,
         };
-        Some(Self {
-            target,
-            windows: false,
-        })
+        Some(Self { target, platform })
     }
 
     fn windows(output: &str) -> Option<Self> {
@@ -199,7 +209,7 @@ impl Host {
         };
         Some(Self {
             target,
-            windows: true,
+            platform: HostPlatform::Windows,
         })
     }
 }
@@ -249,7 +259,19 @@ function Test-Helper($path) {{ (Test-Path -LiteralPath $path) -and ((Get-FileHas
         ),
         b"",
     )?;
-    let path = match check.trim().strip_prefix("upload:") {
+    // cmd strips the quotes around a path holding any of these and PowerShell expands or re-quotes some, so the helper would not start.
+    let check = check.trim();
+    if check.is_empty()
+        || check.contains([
+            '"', '&', '(', ')', '@', '^', '|', '<', '>', '%', '$', '`', '\u{2018}', '\u{2019}',
+            '\0', '\r', '\n',
+        ])
+    {
+        return Err(JayError::internal(format!(
+            "The SSH helper can't be started from {check}."
+        )));
+    }
+    let path = match check.strip_prefix("upload:") {
         Some(upload) => {
             connection::upload(machine, executable, &super::host_path::wire_form(upload))?;
             connection::run(
@@ -260,20 +282,11 @@ function Test-Helper($path) {{ (Test-Path -LiteralPath $path) -and ((Get-FileHas
                 )),
                 b"",
             )?
+            .trim()
+            .to_owned()
         }
-        None => check,
+        None => check.to_owned(),
     };
-    let path = path.trim();
-    // cmd strips the quotes around a path holding any of these, so the helper would not start.
-    if path.is_empty()
-        || path.contains([
-            '"', '&', '(', ')', '@', '^', '|', '<', '>', '%', '\0', '\r', '\n',
-        ])
-    {
-        return Err(JayError::internal(format!(
-            "The SSH helper can't be started from {path}."
-        )));
-    }
     Ok(format!("cmd /c \"{path}\""))
 }
 
@@ -301,17 +314,17 @@ pub(super) fn request<T: DeserializeOwned>(
 
 #[cfg(test)]
 mod tests {
-    use super::Host;
+    use super::{Host, HostPlatform};
 
     #[test]
     fn probes_pick_the_helper_for_unix_and_windows_hosts() {
         assert_eq!(
-            Host::unix("Linux-aarch64\n").map(|host| (host.target, host.windows)),
-            Some(("aarch64-unknown-linux-musl", false))
+            Host::unix("Linux-aarch64\n").map(|host| (host.target, host.platform)),
+            Some(("aarch64-unknown-linux-musl", HostPlatform::Linux))
         );
         assert_eq!(
-            Host::windows("Windows_NT-ARM64\"\r\n").map(|host| (host.target, host.windows)),
-            Some(("aarch64-pc-windows-msvc", true))
+            Host::windows("Windows_NT-ARM64\"\r\n").map(|host| (host.target, host.platform)),
+            Some(("aarch64-pc-windows-msvc", HostPlatform::Windows))
         );
         assert_eq!(
             Host::windows("Windows_NT-AMD64\r\n").map(|host| host.target),

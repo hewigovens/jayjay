@@ -12,7 +12,7 @@ pub use config::{last_machine, machines, remember_machine};
 pub(crate) use host_path::{to_native as host_path, wire_paths};
 pub use location::RemoteLocation;
 pub(crate) use machine::init_repository;
-pub use machine::{ConnectionState, browse, helper_directory, set_helper_directory};
+pub use machine::{ConnectionState, HostPlatform, browse, helper_directory, set_helper_directory};
 pub use protocol::{RemoteDirectory, RemoteFolder};
 pub use server::serve;
 pub(crate) use session::RemoteRepo;

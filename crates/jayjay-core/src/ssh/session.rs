@@ -1,6 +1,6 @@
 use super::machine::{MachineConnection, request};
 use super::server::OpenedRepo;
-use super::{ConnectionState, RemoteLocation};
+use super::{ConnectionState, HostPlatform, RemoteLocation};
 use crate::{JayError, JayResult, SyncToken};
 use serde::de::DeserializeOwned;
 use serde_json::Value;
@@ -33,6 +33,9 @@ impl RemoteRepo {
     }
     pub fn state(&self) -> ConnectionState {
         self.connection.state()
+    }
+    pub fn platform(&self) -> HostPlatform {
+        self.connection.platform()
     }
     pub fn error(&self) -> Option<String> {
         self.connection.snapshot().error()

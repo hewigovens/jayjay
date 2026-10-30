@@ -17,8 +17,15 @@ extension RepoViewModel {
         return sshConnected ? Localized.Ssh.connected : Localized.Ssh.disconnected
     }
 
+    /// The host's platform logo while connected; `linux.logo` and `windows.logo` come from PlatformLogos.xcassets.
     var sshStatusIcon: String {
-        sshConnected ? "network" : "exclamationmark.triangle"
+        guard sshConnected else { return "exclamationmark.triangle" }
+        return switch repo.sshPlatform() {
+            case .macOs: "apple.logo"
+            case .linux: "linux.logo"
+            case .windows: "windows.logo"
+            case nil: "network"
+        }
     }
 
     var sshErrorMessage: String? {

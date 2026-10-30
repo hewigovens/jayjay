@@ -1,4 +1,4 @@
-use crate::ssh::{ConnectionState, RemoteLocation, RemoteRepo};
+use crate::ssh::{ConnectionState, HostPlatform, RemoteLocation, RemoteRepo};
 use crate::*;
 use jayjay_review::ReviewStore;
 use std::path::{Path, PathBuf};
@@ -45,6 +45,12 @@ impl Repo {
     }
     pub fn is_remote(&self) -> bool {
         matches!(self.backend, Backend::Remote(_))
+    }
+    pub fn remote_platform(&self) -> Option<HostPlatform> {
+        match &self.backend {
+            Backend::Local(_) => None,
+            Backend::Remote(repo) => Some(repo.platform()),
+        }
     }
     pub fn connection_state(&self) -> ConnectionState {
         match &self.backend {

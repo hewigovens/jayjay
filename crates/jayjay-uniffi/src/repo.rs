@@ -653,6 +653,10 @@ impl JayJayRepo {
         self.inner.connection_state()
     }
 
+    fn ssh_platform(&self) -> Option<jayjay_core::ssh::HostPlatform> {
+        self.inner.remote_platform()
+    }
+
     fn ssh_error(&self) -> Option<String> {
         self.inner.connection_error()
     }

@@ -42,8 +42,12 @@ struct SSHConnectionView: View {
                     }
                 }
                 .jayjayFont(12)
-                Label(viewModel.sshStatusLabel, systemImage: viewModel.sshStatusIcon)
-                    .jayjayFont(12)
+                Label {
+                    Text(viewModel.sshStatusLabel)
+                } icon: {
+                    StatusBarIcon(name: viewModel.sshStatusIcon)
+                }
+                .jayjayFont(12)
                 if let message = viewModel.sshErrorMessage {
                     Text(message).jayjayFont(12).foregroundStyle(.secondary).textSelection(.enabled)
                 }
