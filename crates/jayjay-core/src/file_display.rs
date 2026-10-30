@@ -1,4 +1,4 @@
-use crate::file_kind::IMAGE_EXTENSIONS;
+use jayjay_primitives::file_kind::IMAGE_EXTENSIONS;
 
 pub const MAX_IMAGE_BYTES: usize = 16 * 1024 * 1024;
 pub(crate) const MAX_DIFF_BYTES: usize = 32 * 1024 * 1024;

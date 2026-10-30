@@ -32,11 +32,16 @@ export function isImagePath(path: string): boolean {
   const dot = path.lastIndexOf(".");
   return dot > path.lastIndexOf("/") + 1 && IMAGE_EXTENSIONS.has(path.slice(dot + 1).toLowerCase());
 }
+/** From `jayjay_primitives::seti`; metrics are fractions of the em. */
+export interface FileGlyph { glyph: string; scale: number; inkLeft: number; inkWidth: number; inkCenter: number }
+
 export interface FileSummary {
   path: string;
   oldPath: string | null;
   /** Missing from backends that predate it; shown as modified. */
   kind?: FileKind;
+  /** Missing from backends that predate it; shown as a plain page icon. */
+  icon?: FileGlyph;
   added: number;
   removed: number;
   review: ReviewState;

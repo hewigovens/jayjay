@@ -1,3 +1,4 @@
+pub use jayjay_primitives::seti::{SetiGlyph, SetiMetrics};
 pub use jayjay_primitives::{
     AppDirs, EvologRow, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
     JJ_TOOL_CONFIG, evolog_rows, is_prerelease_build, is_snapshot_operation, os_version,
@@ -18,7 +19,6 @@ pub mod error_message;
 pub mod external_tools;
 #[cfg(feature = "repository")]
 mod file_display;
-mod file_kind;
 mod file_size_formatter;
 #[cfg(feature = "repository")]
 mod filesystem;
@@ -54,7 +54,6 @@ pub use repository::{Repo, RepositoryContext};
 pub mod repositories;
 #[cfg(feature = "repository")]
 pub mod revset;
-mod seti;
 pub mod theme;
 #[cfg(feature = "repository")]
 pub mod tools;
@@ -103,7 +102,6 @@ pub use revset::{
     default_revset_preset, revset_completions, revset_presets, typed_revset,
     workspace_filter_revset,
 };
-pub use seti::{SetiGlyph, SetiMetrics};
 pub use theme::{DiffPalette, DiffThemeColors, RepoColors, ThemeSeed, diff_palettes, repo_colors};
 #[cfg(feature = "repository")]
 pub use tools::{

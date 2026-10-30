@@ -1,3 +1,4 @@
+@font-face { font-family: "JayJay Seti"; src: url("./fonts/Seti.woff2") format("woff2"); font-display: block; }
 .jayjay-theme, .jayjay-review {
   color-scheme: light dark;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
@@ -17,6 +18,7 @@
   --jj-kind-added: light-dark(#1c7c3a, #5fd17f);
   --jj-kind-removed: light-dark(#b42318, #ff8a80);
   --jj-kind-modified: light-dark(#175cd3, #7cb4ff);
+  --jj-kind-renamed: light-dark(#a21caf, #e28cf0);
   --jj-stripe-unreviewed: light-dark(#b6d3fb, #35507a);
   --jj-stripe-reviewed: var(--jj-accent);
   --jj-stripe-changed: light-dark(#e8890c, #f5a742);
@@ -119,6 +121,7 @@
 :where(.jayjay-review) .jj-file-filter { display: flex; align-items: center; gap: 4px; padding: 0 10px 8px 14px; border-bottom: 1px solid var(--jj-border); }
 :where(.jayjay-review) .jj-file-filter > input { flex: 1; min-width: 0; padding: 5px 8px; background: var(--jj-surface); border: 1px solid var(--jj-border); border-radius: 6px; font-size: 12px; }
 :where(.jayjay-review) .jj-file-rows { flex: 1; overflow: auto; padding: 4px 6px 8px; }
+:where(.jayjay-review) .jj-file-rows:focus { outline: none; }
 :where(.jayjay-review) .jj-folder-row { display: flex; align-items: center; gap: 4px; width: 100%; min-height: 28px; text-align: left; border: 0; border-radius: 6px; background: transparent; color: var(--jj-ink); font-size: 12px; font-weight: 500; padding-block: 4px; }
 :where(.jayjay-review) .jj-folder-row .jj-icon { color: var(--jj-muted); }
 :where(.jayjay-review) .jj-folder-row span { overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
@@ -137,6 +140,9 @@
 :where(.jayjay-review) .jj-kind-dot { flex: none; width: 6px; height: 6px; margin-top: 5px; border-radius: 50%; background: var(--jj-kind-modified); }
 :where(.jayjay-review) .jj-kind-dot.jj-added, :where(.jayjay-review) .jj-kind-dot.jj-copied { background: var(--jj-kind-added); }
 :where(.jayjay-review) .jj-kind-dot.jj-removed { background: var(--jj-kind-removed); }
+:where(.jayjay-review) .jj-kind-dot.jj-renamed { background: var(--jj-kind-renamed); }
+:where(.jayjay-review) .jj-seti { display: flex; justify-content: center; width: 14px; height: 16px; line-height: 16px; color: var(--jj-muted); font-family: "JayJay Seti"; font-style: normal; font-weight: 400; }
+:where(.jayjay-review) .jj-seti > span { position: relative; display: block; white-space: nowrap; }
 :where(.jayjay-review) .jj-note-count { padding: 1px 6px; border-radius: 99px; font-size: 9px; font-weight: 600; color: var(--jj-note-ink); background: var(--jj-note-pill); }
 /* The review circle: empty, checked, or half filled for partly reviewed and changed-since-review files. */
 :where(.jayjay-review) .jj-review-toggle { appearance: none; -webkit-appearance: none; flex: none; width: 15px; height: 15px; margin: 0; border: 1.5px solid color-mix(in srgb, var(--jj-muted) 55%, transparent); border-radius: 50%; background: transparent; cursor: pointer; display: grid; place-items: center; }
@@ -171,6 +177,7 @@
 :where(.jayjay-review) .jj-kind-pill { flex: none; padding: 1px 7px; border-radius: 99px; font-size: 10px; font-weight: 500; color: var(--jj-kind-modified); background: color-mix(in srgb, var(--jj-kind-modified) 12%, transparent); }
 :where(.jayjay-review) .jj-kind-pill.jj-added, :where(.jayjay-review) .jj-kind-pill.jj-copied { color: var(--jj-kind-added); background: color-mix(in srgb, var(--jj-kind-added) 12%, transparent); }
 :where(.jayjay-review) .jj-kind-pill.jj-removed { color: var(--jj-kind-removed); background: color-mix(in srgb, var(--jj-kind-removed) 12%, transparent); }
+:where(.jayjay-review) .jj-kind-pill.jj-renamed { color: var(--jj-kind-renamed); background: color-mix(in srgb, var(--jj-kind-renamed) 12%, transparent); }
 :where(.jayjay-review) .jj-header-actions { display: flex; align-items: center; gap: 2px; flex-wrap: wrap; margin-left: auto; }
 :where(.jayjay-review) .jj-header-action { position: relative; display: inline-flex; align-items: center; gap: 4px; min-height: 24px; padding: 2px 7px; border: 0; border-radius: 5px; background: transparent; color: var(--jj-muted); font-size: 11px; white-space: nowrap; cursor: pointer; }
 :where(.jayjay-review) .jj-header-action:hover { background: color-mix(in srgb, var(--jj-ink) 7%, transparent); color: var(--jj-ink); }

@@ -90,3 +90,12 @@ fn counts_use_the_catalog_plural_for_each_number() {
         "1/1 reviewed"
     );
 }
+
+#[test]
+fn describes_each_file_with_its_seti_icon() {
+    let described = session("v1", "x\n")
+        .describe(r#"{"reviewed":{},"notes":[]}"#)
+        .unwrap();
+    let glyph = jayjay_primitives::seti::SetiGlyph::for_path("a.txt").0;
+    assert_eq!(described["files"][0]["icon"]["glyph"], glyph.to_string());
+}

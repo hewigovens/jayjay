@@ -4,7 +4,8 @@ import type { Labels } from "../../model/diff";
 import type { FileSummary } from "../../model/review";
 import { MiddlePath } from "../files/MiddlePath";
 import { ReviewToggle } from "../files/ReviewToggle";
-import { CheckIcon, FileIcon } from "../icons";
+import { SetiIcon } from "../files/SetiIcon";
+import { CheckIcon } from "../icons";
 import { CopyButton } from "./CopyButton";
 import { DiffStats } from "./DiffStats";
 
@@ -14,7 +15,7 @@ export function FileHeader({ file, labels, disabled, toggleReviewed, controls }:
   const kind = file.kind ?? "modified";
   return <div className="jj-pane-heading jj-file-heading">
     <div className="jj-file-title">
-      <FileIcon />
+      <SetiIcon icon={file.icon} />
       {file.oldPath && <><MiddlePath path={file.oldPath} className="jj-old-path" /><span aria-hidden="true">→</span></>}
       <h2><MiddlePath path={file.path} /></h2>
       <CopyButton value={file.path} label={labels.copyPath} />

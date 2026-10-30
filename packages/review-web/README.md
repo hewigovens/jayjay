@@ -24,6 +24,8 @@ Keep the backend object stable (a module instance or `useMemo`). It implements t
 - `mutate(selection, action, signal?)`: apply a file/group mark or note action and return refreshed state after the durable write succeeds. Failures reject the promise; the viewer retains its previous result and offers Retry.
 - `image(selection, side, signal?)`, optional: one side (`"old"` or `"new"`) of an image file as a `Blob`, or `null` when that side has none. With it, files whose extension `isImagePath` accepts (PNG, JPEG, GIF, WebP, BMP, ICO, SVG) show their before and after side by side, above their text diff. Give the blob an image type, since a blob opened as a page runs as the host's origin.
 
+Each `FileSummary` may carry `kind` and `icon`. The WASM adapter fills both; a native backend gets `icon` from `jayjay_primitives::seti::SetiGlyph`, and a file without one shows a plain page icon. `styles.css` loads the Seti font from `src/fonts/`, so a strict host CSP needs `font-src 'self'`.
+
 `ReviewSelection` contains an opaque numeric session handle, file index, and diff options. The adapter binds that handle to its immutable source revision. Control Room must retain and send the native expected commit when writing a Working-scope person mark. Reject stale sessions; a file or display-group index belongs to its pinned revision and whitespace mode. Branch comparisons remain outside the shared Working review contract.
 
 Requests receive an abort signal and stale results never replace newer presentation. Check cancellation before beginning a write; aborting a request does not undo a write already accepted by the server. File/group actions set a desired state, so retries are idempotent. Notes need the backend's own retry semantics if a response can be lost after saving.
@@ -49,7 +51,7 @@ A host may rely on:
 | Text | `--jj-ink`, `--jj-muted`, `--jj-mono` |
 | Accent | `--jj-accent` |
 | Added and removed lines | `--jj-added-ink`, `--jj-added-bg`, `--jj-removed-ink`, `--jj-removed-bg`, `--jj-word-added`, `--jj-word-removed` |
-| File kinds | `--jj-kind-added`, `--jj-kind-removed`, `--jj-kind-modified` |
+| File kinds | `--jj-kind-added`, `--jj-kind-removed`, `--jj-kind-modified`, `--jj-kind-renamed` |
 | Group stripes | `--jj-stripe-unreviewed`, `--jj-stripe-reviewed`, `--jj-stripe-changed`, `--jj-reviewed-ink` |
 | Notes | `--jj-note-ink`, `--jj-note-bg`, `--jj-note-border`, `--jj-note-pill` |
 

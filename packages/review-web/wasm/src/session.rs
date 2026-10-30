@@ -1,4 +1,5 @@
 use jayjay_primitives::avatar::AvatarSource;
+use jayjay_primitives::seti::SetiGlyph;
 use jayjay_primitives::{NoteSide, ReviewFileDiff, ReviewFileRollup, ReviewGroupState};
 use jayjay_review::ReviewStore;
 use jj_diff::ReviewFileSnapshot;
@@ -41,6 +42,12 @@ impl FileStats {
             kind,
         }
     }
+}
+
+fn file_icon(path: &str) -> Value {
+    let glyph = SetiGlyph::for_path(path);
+    let metrics = glyph.metrics();
+    json!({ "glyph": glyph.0.to_string(), "scale": metrics.scale, "inkLeft": metrics.ink_left, "inkWidth": metrics.ink_width, "inkCenter": metrics.ink_center })
 }
 
 #[derive(Deserialize)]
@@ -144,7 +151,7 @@ impl ReviewSession {
             let FileStats { added, removed, kind } = self.stats[i];
             let rollup = store.file_review_state(&self.bundle.change_id, &file.path, &file.review_identity, Some(&self.snapshots[i])).rollup();
             reviewed += usize::from(rollup == ReviewFileRollup::Reviewed);
-            json!({ "path": file.path, "oldPath": file.old_path, "kind": kind, "added": added, "removed": removed,
+            json!({ "path": file.path, "oldPath": file.old_path, "kind": kind, "icon": file_icon(&file.path), "added": added, "removed": removed,
                 "review": rollup, "noteCount": notes.iter().filter(|note| note.note.path == file.path && !note.note.resolved).count() })
         }).collect();
         let total = files.len();

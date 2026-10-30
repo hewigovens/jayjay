@@ -36,6 +36,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   const [failed, setFailed] = useState<Set<number>>(() => new Set());
   const jumpTarget = useRef<ReviewNote | null>(null);
   const detail = useRef<HTMLElement>(null);
+  const columns = useRef<HTMLDivElement>(null);
   const file = result?.overview.files[result.file];
   const path = file?.path;
   const cacheKey = result ? `${result.session}|${revision}|${JSON.stringify(result.options)}` : "";
@@ -101,7 +102,17 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   const disabled = pending || Boolean(error);
   const resolve = (id: string) => void mutate({ kind: "resolveNote", id });
   // The compact list re-renders the marked file's section; the wide layout keeps the selected file open.
-  const toggleFile = (index: number) => result && void mutate({ kind: "setFile", file: index, reviewed: result.overview.files[index].review !== "reviewed" }, compact ? index : undefined);
+  async function toggleFile(index: number) {
+    if (!result) return;
+    const { files } = result.overview;
+    const marking = files[index].review !== "reviewed";
+    // The rendered rows give display order; the compact list has none and stays put.
+    const order = [...columns.current?.querySelectorAll<HTMLButtonElement>(".jj-file-select") ?? []].map(row => Number(row.dataset.file));
+    if (!await mutate({ kind: "setFile", file: index, reviewed: marking }, compact ? index : undefined) || !marking || index !== selected || target) return;
+    const position = order.indexOf(index);
+    const next = [...order.slice(position + 1), ...order.slice(0, Math.max(position, 0))].find(file => files[file].review !== "reviewed");
+    columns.current?.querySelector<HTMLButtonElement>(`.jj-file-select[data-file="${next}"]`)?.click();
+  }
 
   // Current notes sit under their line and resolved ones behind a gutter marker; the banner takes stale and orphaned notes, and current ones whose line is folded away.
   const placed = new Map<string, ReviewNote[]>();
@@ -157,7 +168,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
     {error && <div className="jj-review-error" role="alert">{labels.renderError} {error === "worker-stopped" ? labels.workerError : error}
       <button onClick={onRetry ?? review.retry}>{labels.retry}</button>{!result && headerActions}</div>}
     {!result && !error && <p className="jj-notice">{labels.loading}</p>}
-    {result && <div className="jj-review-columns">
+    {result && <div className="jj-review-columns" ref={columns}>
       {!compact && <FileColumn overview={result.overview} selected={selected} disabled={disabled} labels={labels} select={select} notes={notes} toggle={toggleFile} />}
       <section className="jj-review-detail" aria-label={labels.result} aria-busy={pending} ref={detail}>
         <ChangeHeader overview={result.overview} labels={labels} actions={headerActions} avatars={avatars} />

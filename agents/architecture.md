@@ -6,7 +6,7 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 
 | Crate / target | Responsibility |
 | --- | --- |
-| `jayjay-primitives` | jj-lib-free domain types: `Change`, `Bookmark`, `DiffHunk`, review types, hashing, and the shared file-tree builder |
+| `jayjay-primitives` | jj-lib-free domain types: `Change`, `Bookmark`, `DiffHunk`, review types, hashing, Seti file icons, and the shared file-tree builder |
 | `jayjay-markdown` | Shared Markdown parser/event stream, local Mermaid compiler and SVG normalization, plus safe HTML renderer for rich previews |
 | `jj-diff` | Diff engine: Histogram line diff, word diff, tree-sitter syntax, context collapse, wrapping, conflict display, canonical change groups, review group fingerprints |
 | `jayjay-review` | Review marks, hunk baselines, notes, and reconciliation with optional native filesystem persistence (uses `jj-diff`) |

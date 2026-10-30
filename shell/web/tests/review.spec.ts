@@ -251,14 +251,91 @@ test.describe("phone portrait", () => {
   });
 });
 
-test("uses the recorded whitespace mode and flags changed review data", async ({ page }) => {
+test("Space marks the focused file and moves to the next unreviewed one", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  await page.getByRole("button", { name: "src/greeting.rs", exact: true }).click(); await ready(page);
+  await page.keyboard.press("Space"); await ready(page);
+  await expect(page.getByRole("checkbox", { name: "Mark reviewed: src/greeting.rs", exact: true })).toBeChecked();
+  const next = page.locator('.jj-file-select[aria-current="true"]');
+  await expect(next).not.toHaveAccessibleName("src/greeting.rs");
+  await expect(next).toBeFocused();
+  await page.getByRole("button", { name: "src/greeting.rs", exact: true }).click(); await ready(page);
+  await page.keyboard.press("Space"); await ready(page);
+  await expect(page.getByRole("checkbox", { name: "Mark reviewed: src/greeting.rs", exact: true })).not.toBeChecked();
+  await expect(page.getByRole("button", { name: "src/greeting.rs", exact: true })).toHaveAttribute("aria-current", "true");
+});
+
+test("marking the open file jumps forward, wraps, and keeps a note draft", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  const open = page.locator('.jj-file-select[aria-current="true"]');
+  const names = await page.locator(".jj-file-select").evaluateAll(rows => rows.map(row => row.getAttribute("aria-label")!));
+  await page.getByRole("button", { name: names[1], exact: true }).click(); await ready(page);
+  await page.keyboard.press("Space"); await ready(page);
+  await expect(open).toHaveAccessibleName(names[2]);
+  await page.getByRole("button", { name: names[names.length - 1], exact: true }).click(); await ready(page);
+  await page.keyboard.press("Space"); await ready(page);
+  await expect(open).toHaveAccessibleName(names[0]);
+  await page.getByRole("button", { name: /^Add note: After/ }).first().click();
+  await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Keep this draft");
+  await page.getByRole("checkbox", { name: "Mark reviewed", exact: true }).click(); await ready(page);
+  await expect(open).toHaveAccessibleName(names[0]);
+  await expect(page.getByRole("textbox", { name: "Write a review note", exact: true })).toHaveValue("Keep this draft");
+});
+
+test("Space keeps focus in the list while reviewed files are hidden", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  await page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true }).click(); await ready(page);
+  await page.getByRole("button", { name: "Hide reviewed", exact: false }).click();
+  const unselected = page.locator('.jj-file-select:not([aria-current])').first();
+  await unselected.focus();
+  await page.keyboard.press("Space"); await ready(page);
+  await expect(page.locator(".jj-file-select:focus")).toHaveCount(1);
+});
+
+test("gives each file kind its own colour and a file-type icon", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({
+    schemaVersion: 1, repositoryId: "test/repository", changeId: "stable-change", title: "Kinds",
+    files: [
+      { path: "added.rs", reviewIdentity: "1", before: "", after: "a\n" },
+      { path: "changed.rs", reviewIdentity: "2", before: "a\n", after: "b\n" },
+      { path: "removed.rs", reviewIdentity: "3", before: "a\n", after: "" },
+      { path: "moved.rs", oldPath: "old.rs", reviewIdentity: "4", before: "a\n", after: "a\n" },
+    ],
+  })) });
+  await ready(page);
+  const colours = await page.locator(".jj-kind-dot").evaluateAll(dots => dots.map(dot => getComputedStyle(dot).backgroundColor));
+  expect(new Set(colours).size).toBe(4);
+  await expect(page.locator(".jj-file-select .jj-seti")).toHaveCount(4);
+  expect(await page.evaluate(async () => { await document.fonts.ready; return document.fonts.check('16px "JayJay Seti"', "\ue001"); })).toBe(true);
+});
+
+test("offers the whitespace toggle only after a note turns the mode on", async ({ page }) => {
   await page.goto("/"); await ready(page);
   await bundle(page);
-  await page.getByLabel("Ignore whitespace", { exact: true }).check(); await ready(page);
-  await page.getByRole("button", { name: "Add note: After 2", exact: true }).click();
+  const toggle = page.getByLabel("Ignore whitespace", { exact: true });
+  await expect(toggle).toHaveCount(0);
+  await page.getByRole("button", { name: "Add note: After 1", exact: true }).click();
   await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Inspect the duplicate line");
   await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
-  await page.getByLabel("Ignore whitespace", { exact: true }).uncheck(); await ready(page);
+  await page.getByText("Local review data", { exact: true }).click();
+  const download = page.waitForEvent("download");
+  await page.getByRole("button", { name: "Export review state", exact: true }).click();
+  const state = JSON.parse(await readFile((await (await download).path())!, "utf8"));
+  state.notes[0].ignore_whitespace = true;
+  await page.getByLabel("Import review state", { exact: true }).setInputFiles({ name: "review_store.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(state)) });
+  await ready(page);
+  await page.locator(".jj-notes-banner button").first().click(); await ready(page);
+  await toggle.click(); await ready(page);
+  await expect(toggle).toHaveCount(0);
+});
+
+test("flags changed review data", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  await bundle(page);
+  await page.getByRole("button", { name: "Add note: After 1", exact: true }).click();
+  await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Inspect the duplicate line");
+  await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
   await expect(page.locator(".jj-review-note.jj-current")).toContainText("Inspect the duplicate line");
   await page.getByRole("checkbox", { name: "Mark reviewed", exact: true }).click(); await ready(page);
   await bundle(page, "different\n", "identity-2");
@@ -399,8 +476,8 @@ test("rejects malformed UTF-8 and empty imports without replacing review data", 
     if (label === "Import review state") await page.getByText("Local review data", { exact: true }).click();
     await page.getByLabel(label, { exact: true }).setInputFiles({ name: "invalid.json", mimeType: "application/json", buffer });
     await expect(page.getByRole("alert")).toBeVisible();
-    await expect(page.getByRole("checkbox", { name: "Mark reviewed", exact: true })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Mark reviewed: src/greeting.rs", exact: true })).toBeChecked();
     await page.reload(); await ready(page);
-    await expect(page.getByRole("checkbox", { name: "Mark reviewed", exact: true })).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Mark reviewed: src/greeting.rs", exact: true })).toBeChecked();
   }
 });

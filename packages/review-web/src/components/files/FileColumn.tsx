@@ -4,20 +4,24 @@ import type { Labels } from "../../model/diff";
 import { ChevronIcon, CloseIcon, FolderIcon, HideReviewedIcon, ListIcon, SearchIcon, TreeIcon } from "../icons";
 import { MiddlePath } from "./MiddlePath";
 import { ReviewToggle } from "./ReviewToggle";
+import { SetiIcon } from "./SetiIcon";
 import { toggled } from "../toggled";
 import type { FileSummary, Overview } from "../../model/review";
 
-function FileRow({ file, index, name, depth, selected, disabled, labels, select, toggle }: {
+function FileRow({ file, index, name, depth, selected, disabled, labels, select, toggle, mark }: {
   file: FileSummary; index: number; name: string; depth: number; selected: number; disabled: boolean;
-  labels: Labels; select: (index: number) => void; toggle: (index: number) => void;
+  labels: Labels; select: (index: number) => void; toggle: (index: number) => void; mark: (index: number, row: HTMLElement) => void;
 }) {
   const kind = file.kind ?? "modified";
   const shownPath = file.oldPath ? `${file.oldPath} → ${file.path}` : file.path;
   return <div className={`jj-file-row jj-${file.review} ${selected === index ? "jj-selected" : ""}`} style={{ paddingLeft: 8 + depth * 12 }}>
     <ReviewToggle file={file} labels={labels} disabled={disabled} toggle={() => toggle(index)} />
-    <button className="jj-file-select" aria-current={selected === index ? "true" : undefined} aria-label={file.path}
-      title={`${shownPath} · ${labels[file.review]}`} onClick={() => select(index)}>
+    {/* Safari leaves a clicked button unfocused, and Space needs it focused. */}
+    <button className="jj-file-select" data-file={index} aria-current={selected === index ? "true" : undefined} aria-label={file.path} aria-description={labels[`kind.${kind}`]}
+      aria-keyshortcuts="Space" title={`${shownPath} · ${labels[file.review]}`} onClick={event => { event.currentTarget.focus(); select(index); }}
+      onKeyDown={event => { if (event.key !== " ") return; event.preventDefault(); if (!event.repeat && !disabled) mark(index, event.currentTarget); }}>
       <span className={`jj-kind-dot jj-${kind}`} title={labels[`kind.${kind}`]} />
+      <SetiIcon icon={file.icon} />
       <span className="jj-file-text">
         <span className="jj-file-name">{name}
           {file.noteCount > 0 && <span className="jj-note-count" title={labels.notes}>{file.noteCount}</span>}
@@ -51,6 +55,16 @@ export function FileColumn({ overview, selected, disabled, labels, select, toggl
     setCollapsed(previous => toggled(previous, path));
   }
   function closeSearch() { setSearching(false); setFilter(""); }
+  function mark(index: number, row: HTMLElement) {
+    // Hiding reviewed files unmounts this row, which would drop focus to the page.
+    if (hideReviewed && overview.files[index].review !== "reviewed") {
+      const list = row.closest<HTMLElement>(".jj-file-rows");
+      const rows = [...list?.querySelectorAll<HTMLElement>(".jj-file-select") ?? []];
+      const at = rows.indexOf(row);
+      (rows[at + 1] ?? rows[at - 1] ?? list)?.focus();
+    }
+    toggle(index);
+  }
 
   return <aside className="jj-file-column" aria-label={labels.files}>
     <div className="jj-pane-heading jj-file-tools">
@@ -69,7 +83,7 @@ export function FileColumn({ overview, selected, disabled, labels, select, toggl
         onChange={event => setFilter(event.target.value)} onKeyDown={event => { if (event.key === "Escape") closeSearch(); }} />
       <button className="jj-tool" aria-label={labels.cancel} title={labels.cancel} onClick={closeSearch}><CloseIcon /></button>
     </div>}
-    <div className="jj-file-rows">
+    <div className="jj-file-rows" tabIndex={-1}>
       {visible.size === 0 && <p className="jj-notice">{filter ? labels.noMatchingFiles : overview.files.length ? labels.allFilesHidden : labels.noChangedFiles}</p>}
       {tree ? overview.tree.map(entry => {
         if ([...collapsed].some(path => entry.path.startsWith(`${path}/`))) return null;
@@ -80,9 +94,9 @@ export function FileColumn({ overview, selected, disabled, labels, select, toggl
             aria-expanded={open} onClick={() => folder(entry.path)}><ChevronIcon open={open} /><FolderIcon /><span>{entry.name}</span></button>;
         }
         return visible.has(entry.file) ? <FileRow key={entry.path} file={overview.files[entry.file]} index={entry.file} name={entry.name} depth={entry.depth}
-          selected={selected} disabled={disabled} labels={labels} select={select} toggle={toggle} /> : null;
+          selected={selected} disabled={disabled} labels={labels} select={select} toggle={toggle} mark={mark} /> : null;
       }) : overview.files.map((file, index) => visible.has(index) ? <FileRow key={file.path} file={file} index={index} name={file.path.split("/").at(-1) ?? file.path} depth={0}
-        selected={selected} disabled={disabled} labels={labels} select={select} toggle={toggle} /> : null)}
+        selected={selected} disabled={disabled} labels={labels} select={select} toggle={toggle} mark={mark} /> : null)}
     </div>
   </aside>;
 }

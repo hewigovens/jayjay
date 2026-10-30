@@ -8,8 +8,8 @@ use std::sync::LazyLock;
 use sha2::{Digest, Sha256};
 use tempfile::{NamedTempFile, TempDir};
 
-use crate::file_kind::IMAGE_EXTENSIONS;
 use crate::{JayError, JayResult, MAX_IMAGE_BYTES};
+use jayjay_primitives::file_kind::IMAGE_EXTENSIONS;
 
 static CACHE: LazyLock<std::io::Result<ImageCache>> = LazyLock::new(ImageCache::new);
 
