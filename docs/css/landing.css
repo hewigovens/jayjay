@@ -64,6 +64,7 @@ nav { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdro
 .nav-links a:hover { color: var(--ink); }
 .theme-btn, .lang-btn { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 15px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
 .theme-btn:hover, .lang-btn:hover { color: var(--ink); }
+.lang-btn { width: auto; min-width: 32px; gap: 6px; font-size: 13px; }
 .lang-btn svg { width: 17px; height: 17px; }
 .nav-dl { white-space: nowrap; font-size: 12.5px; font-weight: 500; padding: 5px 13px; border-radius: 980px; background: var(--accent); color: var(--accent-ink); text-decoration: none; }
 .nav-dl:hover { filter: brightness(1.08); }
@@ -244,11 +245,12 @@ footer { border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 13p
 }
 
 /* ── Language menu ── */
-.lang-menu { position: fixed; inset: 56px max(32px, calc((100vw - 1120px) / 2 + 32px)) auto auto; margin: 0; padding: 6px; min-width: 132px; border: 0; border-radius: 12px; background: var(--panel); color: var(--ink); box-shadow: var(--shot-shadow); }
-.lang-menu a { display: block; padding: 7px 12px; border-radius: 7px; font-size: 14px; text-decoration: none; }
+.lang-menu { position: fixed; inset: 56px 16px auto auto; margin: 0; padding: 6px; width: 132px; border: 0; border-radius: 12px; background: var(--panel); color: var(--ink); box-shadow: var(--shot-shadow); }
+.lang-menu a { display: block; padding: 7px 12px; border-radius: 7px; font-size: 14px; text-align: center; text-decoration: none; }
 .lang-menu a:hover { background: var(--bg-alt); }
 .lang-menu a[aria-current] { color: var(--accent); font-weight: 600; }
-@media (max-width: 600px) { .nav-right { gap: 12px; } .lang-menu { right: 20px; } }
+@media (max-width: 600px) { .nav-right { gap: 12px; } }
+@media (max-width: 420px) { .lang-now { display: none; } }
 
 /* ── CJK pages ── */
 :lang(ja) { --cjk: "Hiragino Sans", "Yu Gothic UI", "Noto Sans CJK JP", "Noto Sans JP"; }

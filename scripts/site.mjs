@@ -8,6 +8,7 @@ const root = path.dirname(path.dirname(fileURLToPath(import.meta.url)));
 const check = process.argv.includes('--check');
 const source = fs.readFileSync(path.join(root, 'docs/index.html'), 'utf8');
 const ogLocales = { ja: 'ja_JP', 'zh-Hans': 'zh_CN', 'zh-Hant': 'zh_TW' };
+const menuLabels = { ja: '日本語', 'zh-Hans': '简体', 'zh-Hant': '繁體' };
 const plain = html => html.replace(/<[^>]+>/g, '').replace(/&amp;/g, '&').replace(/&gt;/g, '>').replace(/&lt;/g, '<');
 
 // Each message's comment is its English source, so editing the English invalidates the translation.
@@ -54,6 +55,7 @@ function render(lang, strings) {
     [' aria-current="page"', ''],
     [`hreflang="${lang}">`, `hreflang="${lang}" aria-current="page">`],
     ['href="./"', 'href="../"'],
+    ['<span class="lang-now">EN</span>', `<span class="lang-now">${menuLabels[lang]}</span>`],
   ].reduce((text, [from, to]) => swap(text, from, to), source);
 
   page = page
