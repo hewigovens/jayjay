@@ -56,7 +56,7 @@ Feature PRs do not update the user guide, Help Book, website, or parity matrix. 
 - `docs/imgs/` — screenshots shared with the Help Book
 - `shell/mac/Resources/JayJayHelpBook/` — topic HTML reused from the guide; rebuild with `just shell::help`
 - `docs/llms.txt` — machine-readable feature summary, only if the feature list changed
-- `docs/index.html` FAQ — only if the range answers a common question
+- `docs/index.html` FAQ — only if the range answers a common question; then translate and run `just site` per [Website](website.md#translated-landing-pages)
 - `agents/shell-parity.md` — matrix rows aligned to the guide, including closed gaps
 - `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
 - `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide

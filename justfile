@@ -24,6 +24,7 @@ list:
   @echo "just format            Format Rust and Swift sources (publish)"
   @echo "just lint              Lint Rust (clippy) and Swift (swiftlint) (publish)"
   @echo "just profile diff|refresh [--alloc] args  Hotpath profile of jj-diff or a repo refresh"
+  @echo "just site [--check]    Generate the translated landing pages from docs/index.html"
   @echo "just clean             Remove generated build artifacts"
   @echo "just build             Build the macOS app"
   @echo "just run               Build and launch the app"
@@ -118,6 +119,9 @@ lint:
 
 lint-i18n:
   bash "{{root}}/scripts/lint-i18n.sh"
+
+site *args:
+  node "{{root}}/scripts/site.mjs" "$@"
 
 clean:
   cargo clean

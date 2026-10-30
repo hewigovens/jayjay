@@ -12,6 +12,11 @@
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
   <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://jayjay.hewig.dev/">
+  <link rel="alternate" hreflang="en" href="https://jayjay.hewig.dev/">
+  <link rel="alternate" hreflang="ja" href="https://jayjay.hewig.dev/ja/">
+  <link rel="alternate" hreflang="zh-Hans" href="https://jayjay.hewig.dev/zh-hans/">
+  <link rel="alternate" hreflang="zh-Hant" href="https://jayjay.hewig.dev/zh-hant/">
+  <link rel="alternate" hreflang="x-default" href="https://jayjay.hewig.dev/">
 
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="JayJay">
@@ -73,253 +78,9 @@
   <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
   <link rel="preload" as="image" href="imgs/tour-dark.webp">
+  <link rel="stylesheet" href="css/landing.css">
   <script src="js/theme.js"></script>
 
-  <style>
-    :root {
-      --bg: #ffffff;
-      --bg-alt: #f5f5f7;
-      --panel: #ffffff;
-      --ink: #1d1d1f;
-      --muted: #6e6e73;
-      --faint: #86868b;
-      --line: #e5e5ea;
-      --accent: #0a66e8;
-      --accent-ink: #ffffff;
-      --shot-shadow: 0 30px 80px -30px rgba(0, 0, 0, .28), 0 0 0 1px rgba(0, 0, 0, .06);
-      --nav-bg: rgba(255, 255, 255, .78);
-      --kbd-bg: #ffffff;
-      --kbd-edge: #d2d2d7;
-    }
-
-    [data-theme="dark"] {
-      --bg: #000000;
-      --bg-alt: #0d0d0f;
-      --panel: #161618;
-      --ink: #f5f5f7;
-      --muted: #a1a1a6;
-      --faint: #6e6e73;
-      --line: #26262a;
-      --accent: #3b8bff;
-      --accent-ink: #ffffff;
-      --shot-shadow: 0 30px 90px -30px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .08);
-      --nav-bg: rgba(0, 0, 0, .7);
-      --kbd-bg: #1d1d20;
-      --kbd-edge: #3a3a3e;
-    }
-
-    *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
-    html { scroll-behavior: smooth; }
-    body {
-      font-family: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
-      background: var(--bg); color: var(--ink); line-height: 1.5; letter-spacing: -.005em;
-      -webkit-font-smoothing: antialiased; overflow-x: hidden;
-    }
-    a { color: inherit; }
-    a.link, .prose a { color: var(--accent); text-decoration: none; }
-    a.link:hover, .prose a:hover { text-decoration: underline; }
-    code, kbd, pre { font-family: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace; }
-    .wrap { width: 100%; max-width: 1120px; margin: 0 auto; padding-left: 32px; padding-right: 32px; }
-    .wide { max-width: 1280px; }
-    img { max-width: 100%; height: auto; }
-    :focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 6px; }
-
-    h1, h2, h3 { font-family: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif; letter-spacing: -.022em; }
-    .eyebrow { font-size: 15px; font-weight: 600; color: var(--accent); }
-    .sec-h { font-size: 44px; line-height: 1.08; font-weight: 700; margin-top: 8px; max-width: 24ch; }
-    .sec-sub { margin-top: 14px; font-size: 19px; color: var(--muted); max-width: 52ch; }
-    section { padding: 112px 0; }
-    .alt { background: var(--bg-alt); }
-
-    /* ── Nav ── */
-    nav { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdrop-filter: saturate(180%) blur(20px); -webkit-backdrop-filter: saturate(180%) blur(20px); border-bottom: 1px solid var(--line); }
-    .nav { display: flex; align-items: center; justify-content: space-between; height: 52px; }
-    .brand { display: flex; align-items: center; gap: 9px; font-weight: 600; font-size: 15px; text-decoration: none; }
-    .brand img { width: 22px; height: 22px; border-radius: 5px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .08); }
-    .nav-right { display: flex; align-items: center; gap: 24px; }
-    .nav-links { display: flex; gap: 24px; font-size: 13px; color: var(--muted); }
-    .nav-links a { text-decoration: none; transition: color .15s; }
-    .nav-links a:hover { color: var(--ink); }
-    .theme-btn { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 15px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; }
-    .theme-btn:hover { color: var(--ink); }
-    .nav-dl { font-size: 12.5px; font-weight: 500; padding: 5px 13px; border-radius: 980px; background: var(--accent); color: var(--accent-ink); text-decoration: none; }
-    .nav-dl:hover { filter: brightness(1.08); }
-    @media (max-width: 860px) { .nav-links { display: none; } }
-
-    /* ── Hero ── */
-    .hero { text-align: center; padding-top: 88px; }
-    .hero-icon { width: 104px; height: 104px; border-radius: 23px; background: #fff; box-shadow: 0 0 0 1px rgba(0, 0, 0, .06), 0 14px 32px -10px rgba(10, 40, 120, .35); }
-    [data-theme="dark"] .hero-icon { box-shadow: 0 0 0 1px rgba(255, 255, 255, .1), 0 14px 36px -10px rgba(59, 139, 255, .35); }
-    h1 { font-size: 76px; line-height: 1.02; font-weight: 700; margin-top: 26px; letter-spacing: -.035em; }
-    .lede { margin: 22px auto 0; font-size: 22px; line-height: 1.4; color: var(--muted); max-width: 40ch; }
-    .cta { margin-top: 34px; display: flex; gap: 14px; justify-content: center; flex-wrap: wrap; }
-    .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; text-decoration: none; font-weight: 500; font-size: 16px; padding: 12px 24px; border-radius: 980px; transition: filter .15s, background .15s; }
-    .btn-p { background: var(--accent); color: var(--accent-ink); }
-    .btn-p:hover { filter: brightness(1.08); }
-    .btn-o { color: var(--accent); box-shadow: inset 0 0 0 1px var(--accent); }
-    .btn-o:hover { background: color-mix(in srgb, var(--accent) 8%, transparent); }
-    .meta { margin-top: 18px; font-size: 13px; color: var(--faint); }
-    .hero-shot { position: relative; margin: 64px auto 0; max-width: 1280px; border-radius: 14px; overflow: hidden; box-shadow: var(--shot-shadow); }
-    .hero-shot img { display: block; width: 100%; cursor: pointer; }
-    .play-btn { position: absolute; left: 50%; top: 50%; transform: translate(-50%, -50%); display: inline-flex; align-items: center; gap: 10px; padding: 12px 20px 12px 16px; border-radius: 980px; border: 0; cursor: pointer; white-space: nowrap;
-      font: 500 15px -apple-system, BlinkMacSystemFont, Inter, sans-serif; color: #fff; background: rgba(20, 20, 22, .62); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px);
-      box-shadow: 0 10px 30px -10px rgba(0, 0, 0, .5), inset 0 0 0 1px rgba(255, 255, 255, .14); transition: transform .15s, background .15s; }
-    .play-btn:hover { transform: translate(-50%, -50%) scale(1.04); background: rgba(20, 20, 22, .74); }
-    .play-btn svg { flex: none; }
-
-    /* ── Tour ── */
-    .tour { margin: auto; border: 0; padding: 0; background: transparent; width: min(1200px, 94vw, (100dvh - 7rem) * 2560 / 1300); max-width: none; overflow: visible; }
-    .tour::backdrop { background: rgba(0, 0, 0, .78); backdrop-filter: blur(8px); -webkit-backdrop-filter: blur(8px); }
-    .tour-frame { position: relative; overflow: hidden; border-radius: 12px; background: var(--panel); aspect-ratio: 2560 / 1300; box-shadow: 0 40px 120px -40px rgba(0, 0, 0, .6); }
-    .tour-stage { position: absolute; inset: 0; transition: transform .9s cubic-bezier(.4, 0, .2, 1), transform-origin .9s cubic-bezier(.4, 0, .2, 1); }
-    .tour-stage video { display: block; width: 100%; height: 100%; }
-    .tour-cursor { position: absolute; left: 0; top: 0; width: 1.6%; min-width: 12px; pointer-events: none; transform: translate(-12%, -6%); filter: drop-shadow(0 1px 1.5px rgba(0, 0, 0, .35)); }
-    .tour-ripple { position: absolute; width: 3.2%; aspect-ratio: 1; border-radius: 50%; border: 2px solid var(--accent); pointer-events: none; opacity: 0; }
-    .tour-ripple.on { animation: tour-ripple .45s ease-out; }
-    @media (prefers-reduced-motion: reduce) { .tour-stage { transition: none; } }
-    @keyframes tour-ripple { from { opacity: .9; transform: translate(-50%, -50%) scale(.3); } to { opacity: 0; transform: translate(-50%, -50%) scale(1.4); } }
-    .tour-bar { display: flex; align-items: center; gap: 10px; margin-top: 16px; color: #f5f5f7; font-size: 14px; }
-    .tour-cap { flex: 1; display: flex; align-items: center; gap: 12px; min-height: 32px; font-size: 20px; font-weight: 600; letter-spacing: -.01em; color: #fff; text-shadow: 0 1px 12px rgba(0, 0, 0, .6); }
-    .tour-cap .n { flex: none; padding: 3px 10px; border-radius: 980px; background: #0a66e8; font: 600 13px -apple-system, BlinkMacSystemFont, Inter, sans-serif; font-variant-numeric: tabular-nums; text-shadow: none; animation: tour-step .35s ease-out; }
-    @keyframes tour-step { from { opacity: 0; transform: translateY(4px); } }
-    @media (max-width: 600px) { .tour-cap { font-size: 16px; gap: 8px; } }
-    .tour-bar button { font: 500 13px -apple-system, BlinkMacSystemFont, Inter, sans-serif; color: #f5f5f7; background: rgba(255, 255, 255, .1); border: 0; border-radius: 980px; padding: 6px 14px; cursor: pointer; }
-    .tour-bar button:hover { background: rgba(255, 255, 255, .18); }
-    .tour-bar button[aria-pressed="true"] { background: #f5f5f7; color: #000; }
-
-    /* ── Pillars ── */
-    .pillars { display: grid; grid-template-columns: repeat(3, 1fr); gap: 48px; padding: 96px 0 0; text-align: left; }
-    .pillar h3 { font-size: 19px; font-weight: 600; margin-bottom: 6px; }
-    .pillar p { font-size: 15.5px; color: var(--muted); }
-
-    /* ── Showcase ── */
-    .spot { text-align: center; }
-    .spot .sec-h, .spot .sec-sub { margin-left: auto; margin-right: auto; }
-    .spot .show-img { margin-top: 56px; }
-    .show { display: grid; grid-template-columns: 5fr 7fr; gap: 64px; align-items: center; margin-top: 128px; }
-    .show.rev { grid-template-columns: 7fr 5fr; }
-    .show.rev .show-text { order: 2; }
-    .show-text h3 { font-size: 34px; line-height: 1.12; font-weight: 700; margin-top: 6px; }
-    .show-text p { margin-top: 14px; font-size: 17px; color: var(--muted); }
-    .show-text strong { color: var(--ink); font-weight: 600; }
-    .show-text .note { font-size: 13px; color: var(--faint); }
-    .show-img { position: relative; border-radius: 12px; overflow: hidden; box-shadow: var(--shot-shadow); }
-    .show-img img, .show-img video { display: block; width: 100%; height: auto; }
-    .loop-stage { position: relative; }
-    .loop-cap { display: flex; align-items: center; gap: 10px; min-height: 48px; padding: 10px 16px; border-top: 1px solid var(--line); background: var(--panel); font-size: 16px; font-weight: 600; letter-spacing: -.01em; text-align: left; }
-    .loop-cap .n { flex: none; padding: 2px 9px; border-radius: 980px; background: var(--accent); color: #fff; font-size: 12px; font-variant-numeric: tabular-nums; animation: tour-step .35s ease-out; }
-    code { font-size: .86em; padding: 1px 6px; border-radius: 5px; background: var(--bg-alt); color: var(--ink); }
-    .alt code { background: var(--panel); }
-    @media (max-width: 860px) {
-      .show, .show.rev { grid-template-columns: 1fr; gap: 28px; margin-top: 88px; }
-      .show.rev .show-text { order: 0; }
-    }
-
-    /* ── More ── */
-    .more { display: grid; grid-template-columns: repeat(4, 1fr); gap: 40px 32px; margin-top: 56px; }
-    .more svg { width: 26px; height: 26px; color: var(--accent); }
-    .more h3 { font-size: 16px; font-weight: 600; margin: 12px 0 4px; }
-    .more p { font-size: 14.5px; color: var(--muted); }
-    .guide-link { margin-top: 56px; font-size: 17px; }
-    @media (max-width: 960px) { .more { grid-template-columns: repeat(2, 1fr); } }
-
-    /* ── Keyboard ── */
-    .keys-layout { display: grid; grid-template-columns: 1fr 1fr; gap: 72px; align-items: center; margin-top: 56px; }
-    .keys-list { list-style: none; }
-    .keys-list li { display: flex; align-items: center; justify-content: space-between; gap: 16px; padding: 13px 0; border-bottom: 1px solid var(--line); font-size: 15.5px; }
-    .keys-list li:first-child { border-top: 1px solid var(--line); }
-    kbd { display: inline-flex; align-items: center; justify-content: center; min-width: 24px; height: 24px; padding: 0 7px; font-size: 12.5px; font-family: -apple-system, BlinkMacSystemFont, Inter, sans-serif; color: var(--ink);
-      background: var(--kbd-bg); border-radius: 6px; box-shadow: inset 0 0 0 1px var(--kbd-edge), 0 1px 0 var(--kbd-edge); }
-    .combo { display: inline-flex; gap: 4px; flex: none; }
-    .palette-shot { display: flex; justify-content: center; }
-    .palette-shot img { display: block; width: 100%; max-width: 520px; border-radius: 14px; box-shadow: var(--shot-shadow); }
-    @media (max-width: 860px) { .keys-layout { grid-template-columns: 1fr; gap: 40px; } }
-
-    /* ── Install ── */
-    .install-grid { display: grid; grid-template-columns: repeat(2, minmax(0, 1fr)); gap: 24px; margin-top: 56px; }
-    .card { background: var(--panel); border-radius: 18px; padding: 30px 32px; box-shadow: 0 0 0 1px var(--line); }
-    .card h3 { font-size: 21px; font-weight: 600; }
-    .card .req { margin-top: 4px; font-size: 14px; color: var(--muted); }
-    .card pre { margin-top: 22px; font-size: 13px; line-height: 1.8; overflow-x: auto; color: var(--ink); }
-    .card pre .c { color: var(--faint); }
-    .card pre .p { color: var(--accent); user-select: none; }
-    .card .after { margin-top: 18px; font-size: 14px; color: var(--muted); }
-    @media (max-width: 860px) { .install-grid { grid-template-columns: minmax(0, 1fr); } }
-
-    /* ── Story ── */
-    .story { text-align: center; }
-    .story .sec-h { margin-left: auto; margin-right: auto; }
-    .story-body { max-width: 640px; margin: 28px auto 0; }
-    .story-body p { font-size: 19px; line-height: 1.55; color: var(--muted); margin-top: 18px; }
-    .story-body strong { color: var(--ink); font-weight: 600; }
-
-    /* ── FAQ ── */
-    .faq-list { margin-top: 48px; }
-    .faq-list details { border-bottom: 1px solid var(--line); }
-    .faq-list details:first-child { border-top: 1px solid var(--line); }
-    .faq-list summary { list-style: none; cursor: pointer; display: flex; justify-content: space-between; align-items: center; gap: 24px; padding: 20px 0; font-size: 18px; font-weight: 600; }
-    .faq-list summary::-webkit-details-marker { display: none; }
-    .faq-list summary::after { content: "+"; flex: none; font-size: 24px; font-weight: 300; color: var(--muted); transition: transform .2s; }
-    .faq-list details[open] summary::after { transform: rotate(45deg); }
-    .faq-list details p { padding: 0 40px 24px 0; font-size: 16px; color: var(--muted); }
-
-    /* ── Blog ── */
-    .posts { display: grid; grid-template-columns: 1fr 1fr; gap: 24px; margin-top: 48px; }
-    .post-card { display: block; padding: 28px 30px; border-radius: 18px; background: var(--panel); box-shadow: 0 0 0 1px var(--line); text-decoration: none; transition: box-shadow .15s; }
-    .post-card:hover { box-shadow: 0 0 0 1px var(--accent); }
-    .post-card time { font-size: 13px; color: var(--faint); }
-    .post-card h3 { font-size: 21px; font-weight: 600; margin: 6px 0 8px; line-height: 1.25; }
-    .post-card p { font-size: 15px; color: var(--muted); }
-    @media (max-width: 760px) { .posts { grid-template-columns: 1fr; } }
-
-    /* ── Footer ── */
-    footer { border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 13px; color: var(--muted); }
-    .foot { display: flex; align-items: center; justify-content: space-between; flex-wrap: wrap; gap: 16px; }
-    .foot-links { display: flex; flex-wrap: wrap; gap: 22px; }
-    .foot a { text-decoration: none; }
-    .foot a:hover { color: var(--ink); }
-    .foot .spons a { color: var(--accent); }
-
-    /* Theme-scoped so these beat `.hero-shot img`/`.show-img img` (0,1,1). data-theme is set in <head> before paint. */
-    [data-theme="dark"] .light-only, [data-theme="light"] .dark-only { display: none; }
-    [data-theme="dark"] .dark-only, [data-theme="light"] .light-only { display: block; }
-
-    @media (max-width: 860px) {
-      section { padding: 80px 0; }
-      h1 { font-size: 56px; }
-      .sec-h { font-size: 36px; }
-      .pillars { grid-template-columns: 1fr; gap: 28px; padding-top: 72px; }
-    }
-
-    @media (max-width: 600px) {
-      .wrap { padding-left: 20px; padding-right: 20px; }
-      section { padding: 64px 0; }
-      .hero { padding-top: 56px; }
-      .hero-icon { width: 76px; height: 76px; border-radius: 17px; }
-      h1 { font-size: 40px; line-height: 1.06; }
-      .lede { font-size: 18px; }
-      .cta { flex-direction: column; align-items: stretch; }
-      .btn { min-height: 48px; }
-      .hero-shot { margin-top: 44px; border-radius: 10px; }
-      .play-btn { padding: 10px 14px 10px 12px; font-size: 13px; }
-      .sec-h { font-size: 30px; }
-      .sec-sub { font-size: 17px; }
-      .show-text h3 { font-size: 27px; }
-      .show-text p { font-size: 16px; }
-      .show, .show.rev { margin-top: 64px; }
-      .show-img { border-radius: 8px; }
-      .more { grid-template-columns: 1fr; gap: 22px; }
-      .more > div { display: grid; grid-template-columns: 26px 1fr; column-gap: 14px; }
-      .more svg { grid-row: span 2; margin-top: 1px; }
-      .more h3 { margin-top: 0; }
-      .foot-links { display: grid; grid-template-columns: repeat(3, auto); justify-content: start; gap: 10px 28px; }
-      .card { padding: 24px 20px; }
-      .card pre { font-size: 12px; white-space: pre-wrap; overflow-wrap: anywhere; }
-      .story-body p { font-size: 17px; }
-      .faq-list summary { font-size: 16.5px; }
-      .faq-list details p { padding-right: 0; font-size: 15px; }
-    }
-  </style>
 </head>
 
 <body>
@@ -342,6 +103,13 @@
           <a href="blog/">Blog</a>
           <a href="guide.html">Guide</a>
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="lang-btn" popovertarget="lang-menu" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg></button>
+        <div class="lang-menu" id="lang-menu" popover>
+          <a href="./" lang="en" hreflang="en" aria-current="page">English</a>
+          <a href="ja/" lang="ja" hreflang="ja">日本語</a>
+          <a href="zh-hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a>
+          <a href="zh-hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a>
         </div>
         <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
         <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
@@ -378,7 +146,7 @@
         <div class="pillar"><h3>Free, no strings</h3><p>No subscription and no repository data. Anonymous build and OS stats can be turned off in Settings.</p></div>
       </div>
     </div>
-    <dialog class="tour" aria-label="JayJay in action">
+    <dialog class="tour" aria-label="JayJay in action" data-captions="Select a change in the graph|Open its diff|Jump to the working copy|Open a file|Mark it reviewed|Back where we started">
       <div class="tour-frame">
         <div class="tour-stage">
           <video muted playsinline preload="none"></video>

@@ -1,0 +1,34 @@
+name: Site CI
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "docs/index.html"
+      - "docs/ja/**"
+      - "docs/zh-hans/**"
+      - "docs/zh-hant/**"
+      - "site/**"
+      - "scripts/site.mjs"
+      - ".github/workflows/site-ci.yml"
+  pull_request:
+    paths:
+      - "docs/index.html"
+      - "docs/ja/**"
+      - "docs/zh-hans/**"
+      - "docs/zh-hant/**"
+      - "site/**"
+      - "scripts/site.mjs"
+      - ".github/workflows/site-ci.yml"
+
+permissions:
+  contents: read
+
+jobs:
+  translations:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Check translated landing pages
+        run: node scripts/site.mjs --check

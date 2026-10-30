@@ -1,22 +1,24 @@
 // Plays the hero tour in a dialog, drawing the pointer from the take's click cues (video/examples/hero.json).
 (function () {
+  const imgs = new URL('../imgs/', document.currentScript.src);
+  const dialog = document.querySelector('.tour');
+  const captions = dialog.dataset.captions.split('|');
   const steps = [
-    [0.79, 0.141, 0.430, 'Select a change in the graph'],
-    [2.07, 0.399, 0.185, 'Open its diff'],
-    [4.34, 0.141, 0.213, 'Jump to the working copy'],
-    [5.63, 0.399, 0.326, 'Open a file'],
-    [7.41, 0.298, 0.326, 'Mark it reviewed'],
-    [9.18, 0.141, 0.322, 'Back where we started'],
-  ].map(([t, x, y, caption]) => ({ t, x, y, caption }));
+    [0.79, 0.141, 0.430],
+    [2.07, 0.399, 0.185],
+    [4.34, 0.141, 0.213],
+    [5.63, 0.399, 0.326],
+    [7.41, 0.298, 0.326],
+    [9.18, 0.141, 0.322],
+  ].map(([t, x, y], i) => ({ t, x, y, caption: captions[i] }));
   const clips = {
-    light: { src: 'https://media.hewig.dev/tour-7416ccff.mp4', poster: 'imgs/tour.webp' },
-    dark: { src: 'https://media.hewig.dev/tour-dark-283eba50.mp4', poster: 'imgs/tour-dark.webp' },
+    light: { src: 'https://media.hewig.dev/tour-7416ccff.mp4', poster: new URL('tour.webp', imgs).href },
+    dark: { src: 'https://media.hewig.dev/tour-dark-283eba50.mp4', poster: new URL('tour-dark.webp', imgs).href },
   };
   const rest = { x: 0.55, y: 0.6 };
   const reduced = matchMedia('(prefers-reduced-motion: reduce)').matches;
   const move = reduced ? 0 : 0.5, lead = 0.08, scale = 1.35;
 
-  const dialog = document.querySelector('.tour');
   const stage = dialog.querySelector('.tour-stage');
   const video = stage.querySelector('video');
   const cursor = stage.querySelector('.tour-cursor');
