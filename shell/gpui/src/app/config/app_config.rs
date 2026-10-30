@@ -195,9 +195,13 @@ impl AppConfig {
 }
 
 fn normalize_repo_path(path: &Path) -> String {
-    jayjay_core::repositories::normalize_repository_path(path)
-        .to_string_lossy()
-        .into_owned()
+    match jayjay_core::ssh::RemoteLocation::from_path(path) {
+        Some(location) => location.encode(),
+        None => dunce::canonicalize(path)
+            .unwrap_or_else(|_| path.to_path_buf())
+            .to_string_lossy()
+            .into_owned(),
+    }
 }
 
 #[cfg(test)]
