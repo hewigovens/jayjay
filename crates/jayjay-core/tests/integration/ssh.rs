@@ -72,8 +72,9 @@ fn helper_operates_on_the_actual_workspace_and_preserves_typed_failures() {
     let opened = helper.call(1, &path, "__open", json!([])).unwrap();
     assert_eq!(
         opened["root"],
-        std::fs::canonicalize(&path)
+        jayjay_core::Repo::open(&path)
             .unwrap()
+            .path()
             .to_string_lossy()
             .as_ref()
     );
@@ -121,7 +122,7 @@ fn helper_operates_on_the_actual_workspace_and_preserves_typed_failures() {
             .to_string_lossy()
             .as_ref()
     );
-    let uri = RemoteLocation::new("DevBox", path.to_str().unwrap())
+    let uri = RemoteLocation::new("DevBox", "/home/dev/project with spaces")
         .unwrap()
         .encode();
     assert_eq!(
