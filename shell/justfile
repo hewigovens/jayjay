@@ -222,7 +222,7 @@ gpui-appimage:
 
 # Cross-build the x64 Windows GPUI exe from macOS (needs `brew install llvm lld` and `cargo install cargo-xwin`); see agents/run-debug.md.
 gpui-windows:
-  PATH="$(brew --prefix llvm)/bin:$(brew --prefix lld)/bin:$PATH" CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true cargo xwin build --release --locked --target x86_64-pc-windows-msvc -p jayjay-gpui
+  PATH="$(brew --prefix llvm)/bin:$(brew --prefix lld)/bin:$PATH" RUSTFLAGS="-Ctarget-feature=+crt-static" CARGO_PROFILE_RELEASE_DEBUG_ASSERTIONS=true cargo xwin build --release --locked --target x86_64-pc-windows-msvc -p jayjay-gpui
   @echo "Built {{root}}/target/x86_64-pc-windows-msvc/release/jayjay-gpui.exe"
 
 gpui-test:
