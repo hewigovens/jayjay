@@ -6,7 +6,10 @@ use gpui::{
 };
 
 #[cfg(not(target_os = "macos"))]
-use gpui::MouseButton;
+use std::{cell::Cell, rc::Rc};
+
+#[cfg(not(target_os = "macos"))]
+use gpui::{Bounds, MouseButton, Pixels, canvas};
 
 use crate::app::theme::Theme;
 
@@ -35,15 +38,25 @@ pub(crate) fn drag_strip(id: impl Into<SharedString>) -> Stateful<Div> {
 /// Like a native caption icon, a click opens the window's system menu.
 #[cfg(not(target_os = "macos"))]
 pub(crate) fn system_menu_icon(icon: impl IntoElement) -> Stateful<Div> {
+    let bounds = Rc::new(Cell::new(None::<Bounds<Pixels>>));
+    let painted = bounds.clone();
     div()
         .id("title-bar-icon")
+        .relative()
         .flex_none()
         .occlude()
         .child(icon)
-        .on_mouse_down(MouseButton::Left, |_, _window, cx| {
+        .child(
+            canvas(move |b, _, _| painted.set(Some(b)), |_, _, _, _| {})
+                .absolute()
+                .inset_0(),
+        )
+        .on_mouse_down(MouseButton::Left, move |_, _window, cx| {
             cx.stop_propagation();
             #[cfg(windows)]
-            crate::platform::show_system_menu(_window);
+            if let Some(bounds) = bounds.get() {
+                crate::platform::show_system_menu(bounds.bottom_left(), _window, cx);
+            }
         })
 }
 
