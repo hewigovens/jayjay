@@ -70,14 +70,18 @@ fn helper_operates_on_the_actual_workspace_and_preserves_typed_failures() {
     run_jj_in(&path, &["describe", "-m", "original"]);
     let mut helper = Helper::new();
     let opened = helper.call(1, &path, "__open", json!([])).unwrap();
-    assert_eq!(
-        opened["root"],
-        jayjay_core::Repo::open(&path)
-            .unwrap()
-            .path()
-            .to_string_lossy()
-            .as_ref()
-    );
+    let root = jayjay_core::Repo::open(&path)
+        .unwrap()
+        .path()
+        .to_string_lossy()
+        .into_owned();
+    // Windows hosts send `C:\dir` as `/C:/dir`.
+    let root = if cfg!(windows) {
+        format!("/{}", root.replace('\\', "/"))
+    } else {
+        root
+    };
+    assert_eq!(opened["root"], root);
     std::fs::write(path.join("name with spaces.txt"), "after\n").unwrap();
     helper
         .call(2, &path, "refresh_working_copy", json!([]))
@@ -117,10 +121,7 @@ fn helper_operates_on_the_actual_workspace_and_preserves_typed_failures() {
     assert!(!path.join("marker").exists());
     assert_eq!(
         helper.call(8, &path, "__browse", json!([])).unwrap()["path"],
-        std::fs::canonicalize(&path)
-            .unwrap()
-            .to_string_lossy()
-            .as_ref()
+        root
     );
     let uri = RemoteLocation::new("DevBox", "/home/dev/project with spaces")
         .unwrap()
