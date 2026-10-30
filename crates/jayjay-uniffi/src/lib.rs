@@ -15,6 +15,8 @@ mod diff;
 mod diff_edit;
 mod error;
 mod file_tree;
+#[cfg(feature = "desktop")]
+mod flock;
 mod fonts;
 #[cfg(feature = "desktop")]
 mod forge;

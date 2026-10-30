@@ -65,6 +65,8 @@ struct SettingsView: View {
                 .formStyle(.grouped)
             case .dataPrivacy:
                 SettingsDataPrivacyPage(windowManager: windowManager)
+            case .flock:
+                FlockPage()
             case .about:
                 ScrollView {
                     AboutView(embedded: true, updater: updater)

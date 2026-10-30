@@ -1,0 +1,34 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="vane" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#7CC4FF" />
+      <stop offset="0.55" stop-color="#2F7FEA" />
+      <stop offset="1" stop-color="#14389A" />
+    </linearGradient>
+    <clipPath id="shape">
+      <path d="M852 150 C740 156 620 200 520 276 L556 304 L486 304 C420 362 368 432 332 500 L376 520 L306 556 C288 600 280 640 282 690 L336 700 C372 740 420 750 470 738 L490 690 L528 722 C610 690 690 620 748 530 L706 508 L776 486 C816 390 842 280 852 150 Z" />
+    </clipPath>
+  </defs>
+  <path d="M852 150 C740 156 620 200 520 276 L556 304 L486 304 C420 362 368 432 332 500 L376 520 L306 556 C288 600 280 640 282 690 L336 700 C372 740 420 750 470 738 L490 690 L528 722 C610 690 690 620 748 530 L706 508 L776 486 C816 390 842 280 852 150 Z" fill="url(#vane)" />
+  <g clip-path="url(#shape)" fill="none">
+    <g stroke="#0D1633" stroke-width="22">
+      <path d="M610 150 C660 250 720 300 870 322" />
+      <path d="M500 230 C545 345 620 405 800 432" />
+      <path d="M400 330 C450 455 530 515 700 548" />
+      <path d="M330 450 C375 570 440 625 570 655" />
+    </g>
+    <g stroke="#DDF0FF" stroke-width="9">
+      <path d="M655 130 C705 225 760 268 880 284" />
+      <path d="M552 200 C600 300 668 358 830 392" />
+      <path d="M445 295 C495 410 575 470 742 505" />
+      <path d="M362 402 C410 522 480 580 628 610" />
+    </g>
+  </g>
+  <g fill="none" stroke="#BFD9F5" stroke-width="10" stroke-linecap="round" opacity="0.85">
+    <path d="M300 716 C270 716 244 730 226 756" />
+    <path d="M314 726 C296 746 286 772 288 802" />
+    <path d="M284 744 C258 750 236 766 222 790" />
+  </g>
+  <path d="M852 150 C650 340 440 560 150 880" fill="none" stroke="#E6BD68" stroke-width="15" stroke-linecap="round" />
+  <path d="M852 150 C650 340 440 560 150 880" fill="none" stroke="#AF802C" stroke-width="4" stroke-linecap="round" />
+</svg>

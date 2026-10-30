@@ -1,6 +1,8 @@
-//! Platform-neutral HTTP request and response handling for JayJay.
+//! Platform-neutral HTTP and GraphQL request/response handling for JayJay.
 
 mod fetch;
+#[cfg(feature = "json")]
+pub mod graphql;
 #[cfg(feature = "json")]
 mod json;
 #[cfg(feature = "mock")]

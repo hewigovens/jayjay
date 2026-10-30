@@ -1,6 +1,8 @@
 import AppKit
 
 final class DockIconView: NSImageView {
+    static let preferenceKey = "jayjay.flockDockIcon"
+    static let variantDidChange = Notification.Name("dev.hewig.jayjay.flockDockIconDidChange")
     private weak var dockTile: NSDockTile?
     private let lightImage: NSImage
     private let darkImage: NSImage
@@ -9,20 +11,23 @@ final class DockIconView: NSImageView {
         private let developmentBadge = DevelopmentBadgeView()
     #endif
 
-    static func install(on dockTile: NSDockTile, bundle: Bundle) {
+    static func install(on dockTile: NSDockTile, bundle: Bundle, variant: String?) {
         guard let iconView = DockIconView(
             frame: NSRect(origin: .zero, size: dockTile.size),
             dockTile: dockTile,
-            bundle: bundle
+            bundle: bundle,
+            variant: variant
         ) else { return }
         dockTile.badgeLabel = nil
         dockTile.contentView = iconView
         dockTile.display()
     }
 
-    init?(frame frameRect: NSRect, dockTile: NSDockTile, bundle: Bundle) {
-        guard let lightURL = bundle.url(forResource: "jayjay-dock-light", withExtension: "png"),
-              let darkURL = bundle.url(forResource: "jayjay-dock-dark", withExtension: "png"),
+    init?(frame frameRect: NSRect, dockTile: NSDockTile, bundle: Bundle, variant: String?) {
+        let customLightURL = variant.flatMap { bundle.url(forResource: "flock-\($0)-light", withExtension: "png") }
+        let customDarkURL = variant.flatMap { bundle.url(forResource: "flock-\($0)-dark", withExtension: "png") }
+        guard let lightURL = customLightURL ?? bundle.url(forResource: "jayjay-dock-light", withExtension: "png"),
+              let darkURL = customDarkURL ?? bundle.url(forResource: "jayjay-dock-dark", withExtension: "png"),
               let lightImage = NSImage(contentsOf: lightURL),
               let darkImage = NSImage(contentsOf: darkURL)
         else { return nil }

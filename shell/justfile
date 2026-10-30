@@ -170,6 +170,17 @@ sync-icon:
     "{{project}}/Resources/DockIcon/jayjay-dock-light.png" \
     "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
 
+sync-flock-icons:
+  #!/usr/bin/env bash
+  set -euo pipefail
+  mkdir -p "{{root}}/build/flock" "{{project}}/Resources/Flock"
+  for artwork in "{{root}}"/assets/flock/flock-*-{light,dark}.svg; do
+    name="$(basename "$artwork" .svg)"
+    sips -s format png "$artwork" --out "{{root}}/build/flock/$name.png" >/dev/null
+    swift "{{root}}/scripts/render-flock-icons.swift" "{{root}}/build/flock/$name.png" "{{project}}/Resources/Flock/$name.png"
+  done
+  sips -s format png -Z 512 "{{root}}/assets/flock/flock-feather.svg" --out "{{project}}/Resources/Flock/flock-feather.png" >/dev/null
+
 lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --strict --quiet
 

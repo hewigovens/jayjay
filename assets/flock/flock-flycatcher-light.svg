@@ -1,0 +1,43 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="1024" height="1024" viewBox="0 0 1024 1024">
+  <defs>
+    <linearGradient id="background" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#EEF4E4" />
+      <stop offset="1" stop-color="#C6D9B8" />
+    </linearGradient>
+    <linearGradient id="cobalt" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#3C8DF2" />
+      <stop offset="1" stop-color="#123A9E" />
+    </linearGradient>
+    <linearGradient id="wing" x1="0" y1="0" x2="1" y2="1">
+      <stop stop-color="#2460D2" />
+      <stop offset="1" stop-color="#0D2A78" />
+    </linearGradient>
+    <linearGradient id="belly" x1="0" y1="0" x2="0" y2="1">
+      <stop stop-color="#FFFFFF" />
+      <stop offset="1" stop-color="#E4EAEE" />
+    </linearGradient>
+    <clipPath id="tile">
+      <rect x="100" y="100" width="824" height="824" rx="205" />
+    </clipPath>
+  </defs>
+  <g clip-path="url(#tile)">
+    <rect x="100" y="100" width="824" height="824" fill="url(#background)" />
+    <path d="M90 872 C300 836 640 842 940 884" fill="none" stroke="#6E5238" stroke-width="30" stroke-linecap="round" />
+    <path d="M250 852 C222 816 216 790 222 756 C254 772 272 806 278 846 Z" fill="#7FA662" />
+    <path d="M740 660 L960 890 L960 720 L800 560 Z" fill="#0F2C80" />
+    <path d="M432 520 C362 650 394 800 540 852 C660 892 786 830 812 700 C826 610 760 500 650 470 Z" fill="url(#belly)" />
+    <path d="M520 240 C650 232 770 330 806 470 C836 590 830 700 800 770 C720 720 640 620 590 520 Z" fill="url(#cobalt)" />
+    <circle cx="512" cy="424" r="206" fill="url(#cobalt)" />
+    <path d="M404 256 C452 226 530 218 594 244 C530 240 462 252 416 284 Z" fill="#8CC8FF" opacity="0.75" />
+    <path d="M308 408 C340 372 400 372 448 404 C520 440 590 506 628 584 C610 640 540 672 470 650 C396 628 330 580 310 500 Z" fill="#14161F" />
+    <path d="M432 520 C410 590 420 640 470 650 C540 672 610 640 628 584 C600 620 520 640 470 610 Z" fill="#14161F" />
+    <circle cx="418" cy="416" r="38" fill="#14161F" />
+    <circle cx="418" cy="416" r="26" fill="#050608" />
+    <circle cx="418" cy="416" r="31" fill="none" stroke="#5B86C9" stroke-width="4" opacity="0.8" />
+    <circle cx="407" cy="405" r="9" fill="#FFFFFF" />
+    <path d="M320 420 L222 452 L322 480 Z" fill="#14161F" />
+    <path d="M222 452 L320 448 L322 480 Z" fill="#050608" />
+    <path d="M610 508 C690 500 790 590 812 712 C816 760 806 800 790 824 C706 780 636 690 596 604 Z" fill="url(#wing)" />
+    <path d="M660 560 C712 604 754 668 772 738 M628 590 C672 644 712 700 748 752" fill="none" stroke="#5FA8F5" stroke-width="15" stroke-linecap="round" opacity="0.55" />
+  </g>
+</svg>

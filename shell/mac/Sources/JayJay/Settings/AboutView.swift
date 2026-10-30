@@ -4,6 +4,8 @@ import SwiftUI
 
 struct AboutView: View {
     @Environment(AppSettings.self) private var settings
+    @Environment(FlockModel.self) private var flock
+    @Environment(\.colorScheme) private var colorScheme
 
     var embedded = false
     @ObservedObject var updater: SparkleUpdater
@@ -14,10 +16,12 @@ struct AboutView: View {
 
     var body: some View {
         VStack(spacing: embedded ? 16 : 12) {
-            Image(nsImage: NSApplication.shared.applicationIconImage)
+            Image(nsImage: flock.activeIcon.image(dark: colorScheme == .dark))
                 .resizable()
                 .interpolation(.high)
                 .frame(width: embedded ? 80 : 128, height: embedded ? 80 : 128)
+                .accessibilityLabel(flock.activeIcon.title)
+                .accessibilityIdentifier(AID.Settings.aboutIcon)
                 .scaleEffect(bouncing ? 1.15 : 1.0)
                 .rotationEffect(.degrees(bouncing ? -8 : 0))
                 .animation(.interpolatingSpring(stiffness: 300, damping: 8), value: bouncing)

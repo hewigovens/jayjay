@@ -5,11 +5,13 @@ struct AppInfoScenes: Scene {
     let settings: AppSettings
     let updater: SparkleUpdater
     let windowManager: RepoWindowManager
+    let flock: FlockModel
 
     var body: some Scene {
         Settings {
             SettingsView(updater: updater, windowManager: windowManager)
                 .appEnvironment(settings)
+                .environment(flock)
         }
         .defaultSize(width: 800, height: 560)
         .windowResizability(.contentMinSize)
@@ -17,6 +19,7 @@ struct AppInfoScenes: Scene {
         Window(Localized.Menu.aboutJayjay, id: AppWindows.about) {
             AboutView(updater: updater)
                 .appEnvironment(settings)
+                .environment(flock)
         }
         .handlesExternalEvents(matching: [])
         .windowResizability(.contentSize)

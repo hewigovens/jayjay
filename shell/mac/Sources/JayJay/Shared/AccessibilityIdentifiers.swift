@@ -250,6 +250,20 @@ enum AID {
         static let resetFonts = "settings.resetFonts"
         static let diffLightPalette = "settings.diffLightPalette"
         static let diffDarkPalette = "settings.diffDarkPalette"
+        static let aboutIcon = "settings.about.icon"
+        static let flockUnlock = "settings.flock.unlock"
+        static let flockVerify = "settings.flock.verify"
+        static let flockFeather = "settings.flock.feather"
+        static let flockForget = "settings.flock.forget"
+        static let flockCode = "settings.flock.code"
+        static let flockCodeField = "settings.flock.code.field"
+        static let flockCodeName = "settings.flock.code.name"
+        static let flockCodeUnlock = "settings.flock.code.unlock"
+        static let flockContent = "settings.flock.content"
+
+        static func flockIcon(_ name: String) -> String {
+            "settings.flock.icon.\(name)"
+        }
 
         static func page(_ id: String) -> String {
             "settings.page.\(id)"

@@ -1,0 +1,12 @@
+query VerifySponsorship($sponsorable: String!) {
+  viewer {
+    id
+    login
+    name
+  }
+  user(login: $sponsorable) {
+    sponsorshipForViewerAsSponsor(activeOnly: false) {
+      __typename
+    }
+  }
+}

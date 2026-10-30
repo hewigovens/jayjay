@@ -9,7 +9,6 @@ mod token;
 pub use device_sign_in::DeviceSignIn;
 pub use host_login::HostLogin;
 pub use stored_login::use_system_keychain;
-#[cfg(test)]
 pub(crate) use token::ForgeToken;
 pub(crate) use token::TokenProvider;
 pub use token::TokenSource;

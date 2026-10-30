@@ -167,3 +167,38 @@ settings-cli-was-linked-not-in-path =
     jayjay was linked at { $path }, but the directory is not in your PATH.
     
     { $hint }
+
+settings-page-flock = Flock
+settings-flock-title = JayJay Flock
+settings-flock-dock-icon = Dock icon
+settings-flock-dock-icon-detail = Your selected bird also appears in About.
+settings-flock-claim = A small gift for sponsors
+settings-flock-unlock = Unlock with GitHub…
+settings-flock-verify = Verify sponsorship
+settings-flock-verify-detail = A keepsake feather and a few new birds for your Dock.
+settings-flock-checking = Checking GitHub sign-in…
+settings-flock-another-account = Use another GitHub account…
+settings-flock-not-sponsored = We couldn’t find a personal sponsorship for { $login }. Try another account, or become a sponsor to unwrap your gift.
+settings-flock-thanks = You helped this bird fly.
+settings-flock-feather-title = Flock Feather
+settings-flock-keep = Your feather is yours to keep.
+settings-flock-replay = Replay feather animation
+settings-flock-debug-build = Debug build
+settings-flock-debug-detail = Flock is unlocked for development. You can still verify a GitHub sponsorship.
+settings-flock-your-feather = Your feather
+settings-flock-privacy-detail = We’ll try your existing GitHub login first. If it can’t confirm your sponsorship, sign-in requests read-only profile access.
+settings-flock-sponsor = Become a sponsor
+settings-flock-icon-classic = Classic
+settings-flock-icon-fish-owl = Fish Owl
+settings-flock-icon-golden-pheasant = Golden Pheasant
+settings-flock-icon-kingfisher = Kingfisher
+settings-flock-icon-flycatcher = Flycatcher
+settings-flock-sign-in-failed = GitHub could not verify this sign-in. Try again.
+settings-flock-forget = Forget this account
+settings-flock-code-enter = Enter sponsor code…
+settings-flock-code-title = Enter your sponsor code
+settings-flock-code-detail = It’s in your GitHub Sponsors welcome email. No sign-in needed.
+settings-flock-code-field = Sponsor code
+settings-flock-code-name = Name for your feather
+settings-flock-code-unlock = Unlock
+settings-flock-code-invalid = That code doesn’t match. Check it and try again.

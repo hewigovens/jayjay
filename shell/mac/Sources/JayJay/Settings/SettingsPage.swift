@@ -9,6 +9,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     case integrations
     case jujutsu
     case dataPrivacy
+    case flock
     case about
 
     var id: Self {
@@ -24,6 +25,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
             case .integrations: Localized.Settings.pageIntegrations
             case .jujutsu: Localized.Settings.pageJujutsu
             case .dataPrivacy: Localized.Settings.pageDataPrivacy
+            case .flock: Localized.Settings.pageFlock
             case .about: Localized.Settings.pageAbout
         }
     }
@@ -37,6 +39,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
             case .integrations: "wrench.and.screwdriver"
             case .jujutsu: "arrow.triangle.branch"
             case .dataPrivacy: "hand.raised"
+            case .flock: "bird.fill"
             case .about: "info.circle"
         }
     }
@@ -50,6 +53,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
             case .integrations: .teal
             case .jujutsu: .green
             case .dataPrivacy: .indigo
+            case .flock: .blue
             case .about: .blue
         }
     }

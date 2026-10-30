@@ -14,7 +14,7 @@ mod environment;
 mod evolog;
 mod file_editor;
 mod fix;
-mod forge_auth;
+pub(crate) mod forge_auth;
 mod git;
 mod handle;
 mod hosted_repo;

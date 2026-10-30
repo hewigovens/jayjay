@@ -1,5 +1,5 @@
+use jayjay_network::graphql::{GraphQlRequest, GraphQlResponse, GraphQlResponseError};
 use jayjay_network::{Fetch, HttpClient, Method, encode_path_segment};
-use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
@@ -52,28 +52,64 @@ impl<F: Fetch, T: TokenProvider> Api<F, T> {
     ) -> Result<R, ApiError> {
         variables["owner"] = json!(self.owner);
         variables["repo"] = json!(self.repo);
-        let body = json!({ "query": query, "variables": variables });
-        let response: GraphQlResponse<R> = self.client.send(Method::Post, "graphql", &body)?;
-        if let Some(error) = response.errors.into_iter().next() {
-            let status = (error.kind.as_deref() == Some("NOT_FOUND")).then_some(404);
-            return Err(ApiError::new(status, error.message));
-        }
-        response
-            .data
-            .ok_or_else(|| ApiError::new(None, "GitHub returned no data"))
+        let body = GraphQlRequest { query, variables };
+        let response: GraphQlResponse = self.client.send(Method::Post, "graphql", &body)?;
+        response.into_data().map_err(|error| {
+            let status = match &error {
+                GraphQlResponseError::Errors(errors) => errors
+                    .first()
+                    .is_some_and(|error| error.kind() == Some("NOT_FOUND"))
+                    .then_some(404),
+                _ => None,
+            };
+            ApiError::new(status, error.to_string())
+        })
     }
 }
 
-#[derive(Deserialize)]
-struct GraphQlResponse<R> {
-    data: Option<R>,
-    #[serde(default)]
-    errors: Vec<GraphQlError>,
-}
+#[cfg(test)]
+mod tests {
+    use jayjay_network::{MockFetch, Response};
+    use serde::Deserialize;
 
-#[derive(Deserialize)]
-struct GraphQlError {
-    message: String,
-    #[serde(rename = "type")]
-    kind: Option<String>,
+    use super::*;
+    use crate::repo::forge_auth::{ForgeToken, TokenSource};
+
+    #[test]
+    fn graphql_errors_keep_their_status_when_partial_data_is_incompatible() {
+        #[derive(Debug, Deserialize)]
+        struct Data {
+            _value: u32,
+        }
+
+        for (kind, status) in [("NOT_FOUND", Some(404)), ("FORBIDDEN", None)] {
+            let body = json!({
+                "data": { "_value": null },
+                "errors": [
+                    { "type": kind, "message": "first reason" },
+                    { "type": "NOT_FOUND", "message": "second reason" }
+                ]
+            })
+            .to_string();
+            let fetch = MockFetch::new(|_| Response::ok(200, body.clone()));
+            let api = Api::new(
+                fetch,
+                Some(ForgeToken {
+                    secret: "token".into(),
+                    source: TokenSource::Stored,
+                }),
+                &HostedRepo {
+                    host: RepoHost::GitHub,
+                    owner: "owner".into(),
+                    repo: "repo".into(),
+                },
+            );
+            let error = api
+                .graphql::<Data>("query { _value }", json!({}))
+                .unwrap_err();
+            assert_eq!(error.status(), status);
+            assert!(error.to_string().contains("first reason"));
+            assert!(!error.to_string().contains("second reason"));
+        }
+    }
 }

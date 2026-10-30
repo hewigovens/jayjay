@@ -57,26 +57,7 @@ impl RepoHost {
                 self.display_name()
             ))
         })?;
-        let request = Request::form(
-            app.device_code_url,
-            &[("client_id", app.client_id), ("scope", app.scope)],
-        );
-        let code: DeviceCode = fetch
-            .fetch(&request)
-            .map_err(|error| self.sign_in_error(error))?
-            .error_for_status()
-            .map_err(|response| self.sign_in_error(format!("HTTP {}", response.status)))?
-            .json()
-            .map_err(|error| self.sign_in_error(error))?;
-        Ok(DeviceSignIn {
-            host: self,
-            user_code: code.user_code,
-            verification_uri: code.verification_uri,
-            app,
-            device_code: code.device_code,
-            interval: Duration::from_secs(code.interval.max(1)),
-            expires_at: Instant::now() + Duration::from_secs(code.expires_in),
-        })
+        DeviceSignIn::start(self, app, fetch)
     }
 
     fn sign_in_error(self, detail: impl std::fmt::Display) -> JayError {
@@ -88,12 +69,58 @@ impl RepoHost {
 }
 
 impl DeviceSignIn {
+    pub(crate) fn start_flock() -> JayResult<Self> {
+        Self::start_flock_with(&HttpClient::default())
+    }
+
+    fn start_flock_with(fetch: &impl Fetch) -> JayResult<Self> {
+        let mut app = RepoHost::GitHub
+            .oauth_app()
+            .expect("GitHub supports device sign-in");
+        app.scope = "read:user";
+        Self::start(RepoHost::GitHub, app, fetch)
+    }
+
+    fn start(host: RepoHost, app: OAuthApp, fetch: &impl Fetch) -> JayResult<Self> {
+        let request = Request::form(
+            app.device_code_url,
+            &[("client_id", app.client_id), ("scope", app.scope)],
+        );
+        let code: DeviceCode = fetch
+            .fetch(&request)
+            .map_err(|error| host.sign_in_error(error))?
+            .error_for_status()
+            .map_err(|response| host.sign_in_error(format!("HTTP {}", response.status)))?
+            .json()
+            .map_err(|error| host.sign_in_error(error))?;
+        Ok(DeviceSignIn {
+            host,
+            user_code: code.user_code,
+            verification_uri: code.verification_uri,
+            app,
+            device_code: code.device_code,
+            interval: Duration::from_secs(code.interval.max(1)),
+            expires_at: Instant::now() + Duration::from_secs(code.expires_in),
+        })
+    }
+
     /// `sync` cancels the wait.
     pub fn wait(&self, sync: &SyncToken) -> JayResult<()> {
         self.wait_with(&HttpClient::default(), sync)
     }
 
     fn wait_with(&self, fetch: &impl Fetch, sync: &SyncToken) -> JayResult<()> {
+        let login = self.wait_for_login(fetch, sync)?;
+        self.host.store_sign_in(&login, sync)
+    }
+
+    pub(crate) fn wait_for_token(&self, sync: &SyncToken) -> JayResult<String> {
+        Ok(self
+            .wait_for_login(&HttpClient::default(), sync)?
+            .access_token)
+    }
+
+    fn wait_for_login(&self, fetch: &impl Fetch, sync: &SyncToken) -> JayResult<StoredLogin> {
         let mut interval = self.interval;
         loop {
             sleep_unless_canceled(interval, sync)?;
@@ -105,7 +132,7 @@ impl DeviceSignIn {
             match self.poll(fetch)? {
                 Poll::Pending => {}
                 Poll::SlowDown => interval += SLOW_DOWN_STEP,
-                Poll::Done(login) => return self.host.store_sign_in(&login, sync),
+                Poll::Done(login) => return Ok(login),
             }
         }
     }
@@ -194,6 +221,21 @@ mod tests {
         let sign_in = sign_in(host);
         let fetch = MockFetch::new(move |_| Response::ok(status, body));
         sign_in.poll(&fetch)
+    }
+
+    #[test]
+    fn flock_sign_in_requests_identity_access_without_repository_permissions() {
+        let fetch = MockFetch::new(|_| {
+            Response::ok(
+                200,
+                r#"{"device_code":"dc","user_code":"ABCD-1234","verification_uri":"https://github.com/login/device","expires_in":900}"#,
+            )
+        });
+        let sign_in = DeviceSignIn::start_flock_with(&fetch).unwrap();
+        assert_eq!(sign_in.user_code, "ABCD-1234");
+        let body = fetch.requests()[0].body_text().to_owned();
+        assert!(body.contains("scope=read%3Auser"), "{body}");
+        assert!(!body.contains("repo"), "{body}");
     }
 
     #[test]

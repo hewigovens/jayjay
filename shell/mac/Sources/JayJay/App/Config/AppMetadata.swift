@@ -22,7 +22,8 @@ enum URLScheme {
 
 enum AppMetadata {
     static let appName = "JayJay"
-    static let sponsorURL = URL(string: "https://github.com/sponsors/hewigovens")!
+    static let sponsorableLogin = "hewigovens"
+    static let sponsorURL = URL(string: "https://github.com/sponsors")!.appendingPathComponent(sponsorableLogin)
     static let githubURL = URL(string: "https://github.com/hewigovens/jayjay")!
     static let jjDocsURL = URL(string: "https://jj-vcs.github.io/jj/latest/")!
     static let revsetDocsURL = URL(string: "https://jj-vcs.github.io/jj/latest/revsets/")!

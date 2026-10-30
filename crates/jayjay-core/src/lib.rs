@@ -22,6 +22,8 @@ mod file_display;
 mod file_size_formatter;
 #[cfg(feature = "repository")]
 mod filesystem;
+#[cfg(feature = "repository")]
+pub mod flock;
 pub mod fonts;
 pub mod fuzzy;
 #[cfg(feature = "repository")]

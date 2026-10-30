@@ -5,6 +5,7 @@ import SwiftUI
 struct JayJayApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
     @State private var settings = AppSettings()
+    @State private var flock: FlockModel
     @State private var repositoryStore = RepositoryStore()
     @State private var windowManager: RepoWindowManager
     private let launchScene: LaunchScene
@@ -27,6 +28,8 @@ struct JayJayApp: App {
 
         let tool = ExternalToolInvocation.parse(arguments: CommandLine.arguments)
         let initialSettings = AppSettings()
+        let flock = FlockModel()
+        _flock = State(initialValue: flock)
         setDebugLogging(enabled: DebugMode.isEnabled)
         updater = SparkleUpdater(includesBetaUpdates: { initialSettings.updateChannel == .beta })
         if tool == nil, initialSettings.hasCompletedOnboarding {
@@ -43,6 +46,7 @@ struct JayJayApp: App {
         )
         manager.pendingRepoAfterOnboarding = launchScene.onboardingNextRepo
         manager.launchScene = launchScene
+        appDelegate.flock = flock
         appDelegate.settings = initialSettings
         appDelegate.externalToolInvocation = tool
         appDelegate.openRepositoryPicker = { manager.openRepositoryPicker() }
@@ -72,6 +76,6 @@ struct JayJayApp: App {
         OpenRemoteRepositoryWindowScene(settings: settings, windowManager: windowManager)
         CloneRepositoryWindowScene(settings: settings, windowManager: windowManager)
         FileHistoryWindowScene(settings: settings, windowManager: windowManager)
-        AppInfoScenes(settings: settings, updater: updater, windowManager: windowManager)
+        AppInfoScenes(settings: settings, updater: updater, windowManager: windowManager, flock: flock)
     }
 }

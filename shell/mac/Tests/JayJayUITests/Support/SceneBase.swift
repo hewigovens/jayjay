@@ -69,6 +69,7 @@ class SceneBase: XCTestCase {
         try? FileManager.default.removeItem(atPath: recentRevsetsPath)
 
         let app = XCUIApplication()
+        app.launchEnvironment["JAYJAY_FLOCK_PATH"] = root.appendingPathComponent("flock-empty.json").path
         // Ignore restored windows so each test controls its initial app state.
         app.launchArguments = Self.ignoresWindowRestoration
             ? ["-ApplePersistenceIgnoreState", "YES"]
@@ -233,6 +234,13 @@ class SceneBase: XCTestCase {
         let page = app.descendants(matching: .any)[AID.Settings.page(id)].firstMatch
         XCTAssertTrue(page.waitForExistence(timeout: 5), "Settings page \(id) missing")
         page.click()
+    }
+
+    func capture(_ window: XCUIElement, name: String) {
+        let attachment = XCTAttachment(screenshot: window.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
     }
 
     // MARK: - Key input

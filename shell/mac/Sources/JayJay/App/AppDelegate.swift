@@ -14,8 +14,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
     private var dockMenuActions: [DockMenuAction] = []
     private var externalToolWindowController: ExternalToolWindowController?
 
+    var flock: FlockModel?
+
     func applicationDidFinishLaunching(_ notification: Notification) {
-        DockIcon.install()
+        DockIcon.install(variant: UserDefaults.standard.string(forKey: DockIconView.preferenceKey))
+        Task { await flock?.load() }
         Task.detached { CLIInstaller.refreshLinkIfInstalled() }
         if let invocation = externalToolInvocation {
             terminateAfterLastWindowClosed = true

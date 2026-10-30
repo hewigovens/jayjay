@@ -10,7 +10,7 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 | `jayjay-markdown` | Shared Markdown parser/event stream, local Mermaid compiler and SVG normalization, plus safe HTML renderer for rich previews |
 | `jj-diff` | Diff engine: Histogram line diff, word diff, tree-sitter syntax, context collapse, wrapping, conflict display, canonical change groups, review group fingerprints |
 | `jayjay-review` | Review marks, hunk baselines, notes, and reconciliation with optional native filesystem persistence (uses `jj-diff`) |
-| `jayjay-network` | Platform-neutral HTTP request/response policy with an optional blocking adapter |
+| `jayjay-network` | Platform-neutral HTTP and GraphQL request/response policy (`json` enables GraphQL), with an optional blocking adapter |
 | `jayjay-i18n` | Fluent message catalog (`locales/<locale>/*.ftl`), locale negotiation, and generated typed accessors for Rust and Swift |
 | `jayjay-core` | Portable analysis helpers plus native jj-lib/repository operations and the shared app-owned CLI dispatcher; re-exports `jj-diff` as `jayjay_core::diff` |
 | `jayjay-uniffi` | UniFFI bindings for the SwiftUI shell and portable/WASM consumers; no business logic |
