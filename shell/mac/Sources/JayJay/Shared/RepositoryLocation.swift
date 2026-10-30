@@ -14,7 +14,7 @@ extension String {
     }
 
     var standardizedRepositoryLocation: String {
-        repositoryLocationURL.repositoryLocationPath
+        repositoryLocationURL.standardizedRepositoryLocationPath
     }
 
     var repositoryLocationTitle: String {
@@ -30,6 +30,10 @@ extension String {
 
 extension URL {
     var repositoryLocationPath: String {
+        scheme == "ssh" ? absoluteString : path
+    }
+
+    var standardizedRepositoryLocationPath: String {
         scheme == "ssh" ? absoluteString : standardizedFileURL.path
     }
 }
