@@ -1,3 +1,4 @@
+use super::host_path::{to_native, to_wire};
 use super::protocol::{Hello, PROTOCOL, Request, Response, read_frame, write_frame};
 use super::{RemoteDirectory, RemoteFolder};
 use crate::repo::Repo;
@@ -34,7 +35,7 @@ fn serve_stream(
         &mut *writer.lock().unwrap(),
         &Hello {
             protocol: PROTOCOL,
-            home: home.to_string_lossy().into_owned(),
+            home: to_wire(&home),
         },
     )?;
     let repositories = Arc::new(Mutex::new(HashMap::<PathBuf, Arc<Repo>>::new()));
@@ -109,7 +110,7 @@ fn execute(
     } else if let Some(rest) = request.path.strip_prefix("~/") {
         home.join(rest)
     } else {
-        PathBuf::from(&request.path)
+        to_native(&request.path)
     };
     if !path.is_absolute() || request.path.contains(['\0', '\r', '\n']) {
         return Err(JayError::refused("Choose an absolute remote path."));
@@ -147,9 +148,9 @@ fn execute(
     sync.check()?;
     if request.method == "__open" {
         return serde_json::to_value(OpenedRepo {
-            root: repo.path().to_string_lossy().into_owned(),
-            primary: repo.primary_root().to_string_lossy().into_owned(),
-            store: repo.repository_store_path().to_string_lossy().into_owned(),
+            root: to_wire(repo.path()),
+            primary: to_wire(&repo.primary_root()),
+            store: to_wire(repo.repository_store_path()),
             workspace: repo.workspace_name().into(),
             operation: repo.snapshot_operation().unwrap_or_default(),
         })
@@ -159,7 +160,7 @@ fn execute(
 }
 
 fn browse(path: &Path) -> JayResult<RemoteDirectory> {
-    let path = std::fs::canonicalize(path).map_err(JayError::internal)?;
+    let path = dunce::canonicalize(path).map_err(JayError::internal)?;
     let mut folders = Vec::new();
     for entry in std::fs::read_dir(&path)
         .map_err(JayError::internal)?
@@ -171,14 +172,14 @@ fn browse(path: &Path) -> JayResult<RemoteDirectory> {
         {
             folders.push(RemoteFolder {
                 name: name.into(),
-                path: entry.path().to_string_lossy().into_owned(),
+                path: to_wire(&entry.path()),
             });
         }
     }
     folders.sort_by_key(|folder| folder.name.to_lowercase());
     Ok(RemoteDirectory {
-        parent: path.parent().map(|p| p.to_string_lossy().into_owned()),
-        path: path.to_string_lossy().into_owned(),
+        parent: path.parent().map(to_wire),
+        path: to_wire(&path),
         folders,
     })
 }

@@ -1,5 +1,6 @@
 mod config;
 mod connection;
+mod host_path;
 mod images;
 mod location;
 mod machine;
@@ -8,6 +9,7 @@ mod response;
 mod server;
 mod session;
 pub use config::{last_machine, machines, remember_machine};
+pub(crate) use host_path::{to_native as host_path, wire_paths};
 pub use location::RemoteLocation;
 pub(crate) use machine::init_repository;
 pub use machine::{ConnectionState, browse, helper_directory, set_helper_directory};

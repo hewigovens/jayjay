@@ -31,5 +31,16 @@ if [[ "$target" == *-linux-musl && "$(uname -s)" == Darwin ]]; then
     ' "$target" "$profile" "${args[@]}"
 fi
 
-cargo build --locked -p jayjay-core --bin jayjay-ssh --target "$target" "${args[@]}"
-cp "$root/target/$target/$profile/jayjay-ssh" "$destination/jayjay-ssh"
+exe=""
+build=(cargo build)
+if [[ "$target" == *-windows-msvc ]]; then
+  exe=.exe
+  # Windows hosts are not expected to have the Visual C++ runtime installed.
+  export RUSTFLAGS="-Ctarget-feature=+crt-static"
+  if [[ "$(uname -s)" == Darwin ]]; then
+    PATH="$(brew --prefix llvm)/bin:$(brew --prefix lld)/bin:$PATH"
+    build=(cargo xwin build --cross-compiler clang)
+  fi
+fi
+"${build[@]}" --locked -p jayjay-core --bin jayjay-ssh --target "$target" "${args[@]}"
+cp "$root/target/$target/$profile/jayjay-ssh$exe" "$destination/jayjay-ssh$exe"

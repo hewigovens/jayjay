@@ -78,27 +78,11 @@ fn validate_web_url(value: &Value, allow_empty: bool) -> JayResult<()> {
 }
 
 fn qualify_paths(value: &mut Value, location: &RemoteLocation) {
-    match value {
-        Value::Object(object) => {
-            for (key, value) in object {
-                if matches!(key.as_str(), "path" | "pinnable_path" | "dest") {
-                    if let Value::String(path) = value
-                        && path.starts_with('/')
-                    {
-                        *path = location.qualify(path);
-                    }
-                } else {
-                    qualify_paths(value, location);
-                }
-            }
+    super::host_path::for_each_path(value, &mut |path| {
+        if path.starts_with('/') {
+            *path = location.qualify(path);
         }
-        Value::Array(values) => {
-            for value in values {
-                qualify_paths(value, location);
-            }
-        }
-        _ => {}
-    }
+    });
 }
 
 #[cfg(test)]

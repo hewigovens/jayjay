@@ -69,6 +69,17 @@ macro_rules! wire_arg {
         serde_json::to_value($v).map_err(JayError::internal)?
     };
 }
+macro_rules! host_arg {
+    (Location, $v:ident) => {
+        crate::ssh::host_path(&$v).to_string_lossy().into_owned()
+    };
+    (OptionalLocation, $v:ident) => {
+        $v.map(|v| crate::ssh::host_path(&v).to_string_lossy().into_owned())
+    };
+    ($t:ident, $v:ident) => {
+        $v
+    };
+}
 macro_rules! qualifies {
     () => {
         false
@@ -111,9 +122,12 @@ macro_rules! api {
             let mut args = args.into_iter();
             match method {
                 $(stringify!($name) => {
-                    $(let $arg: owned_type!($kind) = serde_json::from_value(args.next().ok_or_else(|| JayError::refused("Missing SSH argument."))?).map_err(JayError::internal)?;)*
+                    $(let $arg: owned_type!($kind) = serde_json::from_value(args.next().ok_or_else(|| JayError::refused("Missing SSH argument."))?).map_err(JayError::internal)?;
+                    let $arg = host_arg!($kind, $arg);)*
                     if args.next().is_some() { return Err(JayError::refused("Unexpected SSH argument.")); }
-                    serde_json::to_value(repo.$name($(borrow_arg!($kind, $arg, sync_token)),*)?).map_err(JayError::internal)
+                    let mut value = serde_json::to_value(repo.$name($(borrow_arg!($kind, $arg, sync_token)),*)?).map_err(JayError::internal)?;
+                    if qualifies!($($mark)?) { crate::ssh::wire_paths(&mut value); }
+                    Ok(value)
                 },)*
                 $(stringify!($value) => {
                     $(let $varg: owned_type!($vkind) = serde_json::from_value(args.next().ok_or_else(|| JayError::refused("Missing SSH argument."))?).map_err(JayError::internal)?;)*

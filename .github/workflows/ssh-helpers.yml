@@ -36,6 +36,10 @@ jobs:
             runner: ubuntu-24.04-arm
           - target: x86_64-unknown-linux-musl
             runner: ubuntu-latest
+          - target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
+          - target: x86_64-pc-windows-msvc
+            runner: windows-latest
     steps:
       - name: Install musl toolchain
         if: runner.os == 'Linux'
@@ -54,6 +58,7 @@ jobs:
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Build and pack helper
+        shell: bash
         env:
           HELPER_TARGET: ${{ matrix.target }}
         run: |

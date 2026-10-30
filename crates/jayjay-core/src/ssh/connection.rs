@@ -21,37 +21,52 @@ pub(crate) struct Connection {
     error: Mutex<Option<String>>,
 }
 
+const OPTIONS: [&str; 16] = [
+    "-o",
+    "ForwardAgent=no",
+    "-o",
+    "ClearAllForwardings=yes",
+    "-o",
+    "RemoteCommand=none",
+    "-o",
+    "BatchMode=yes",
+    "-o",
+    "StrictHostKeyChecking=yes",
+    "-o",
+    "ConnectTimeout=15",
+    "-o",
+    "ServerAliveInterval=15",
+    "-o",
+    "ServerAliveCountMax=2",
+];
+
 pub(crate) fn ssh(machine: &str) -> Command {
     let mut cmd = crate::repo::subprocess_command("ssh");
-    cmd.args([
-        "-T",
-        "-a",
-        "-o",
-        "ForwardAgent=no",
-        "-o",
-        "ClearAllForwardings=yes",
-        "-o",
-        "RemoteCommand=none",
-        "-o",
-        "BatchMode=yes",
-        "-o",
-        "StrictHostKeyChecking=yes",
-        "-o",
-        "ConnectTimeout=15",
-        "-o",
-        "ServerAliveInterval=15",
-        "-o",
-        "ServerAliveCountMax=2",
-        "--",
-        machine,
-    ]);
+    cmd.args(["-T", "-a"]).args(OPTIONS).args(["--", machine]);
     cmd
 }
 
 pub(crate) fn run(machine: &str, command: &str, bytes: &[u8]) -> JayResult<String> {
-    let limit = Duration::from_secs(45 + bytes.len() as u64 / 65_536);
-    let mut child = ssh(machine)
-        .arg(command)
+    let mut ssh = ssh(machine);
+    ssh.arg(command);
+    run_setup(ssh, bytes, bytes.len() as u64)
+}
+
+/// Copies a file to `remote` over the SSH file transfer channel, for hosts whose shells can't take a large upload on stdin.
+pub(crate) fn upload(machine: &str, local: &Path, remote: &str) -> JayResult<()> {
+    let size = std::fs::metadata(local).map_err(JayError::internal)?.len();
+    let mut scp = crate::repo::subprocess_command("scp");
+    scp.arg("-q")
+        .args(OPTIONS)
+        .arg("--")
+        .arg(local)
+        .arg(format!("{machine}:{remote}"));
+    run_setup(scp, b"", size).map(drop)
+}
+
+fn run_setup(mut command: Command, bytes: &[u8], transferred: u64) -> JayResult<String> {
+    let limit = Duration::from_secs(45 + transferred / 65_536);
+    let mut child = command
         .stdin(Stdio::piped())
         .stdout(Stdio::piped())
         .stderr(Stdio::piped())
@@ -85,10 +100,13 @@ pub(crate) fn run(machine: &str, command: &str, bytes: &[u8]) -> JayResult<Strin
         .join()
         .map_err(|_| JayError::internal("SSH setup reader failed."))??;
     if !status.success() {
-        return Err(JayError::internal(format!(
-            "SSH: {}",
-            String::from_utf8_lossy(&stderr).trim()
-        )));
+        let message = format!("SSH: {}", String::from_utf8_lossy(&stderr).trim());
+        // 255 is ssh itself failing (unreachable host, authentication), as opposed to the remote command.
+        return Err(if status.code() == Some(255) {
+            JayError::refused(message)
+        } else {
+            JayError::internal(message)
+        });
     }
     String::from_utf8(stdout).map_err(JayError::internal)
 }
@@ -111,9 +129,9 @@ fn read_setup_output(mut reader: impl Read) -> JayResult<Vec<u8>> {
 }
 
 impl Connection {
-    pub fn connect(machine: &str, executable: &str) -> JayResult<Arc<Self>> {
+    pub fn connect(machine: &str, helper_command: &str) -> JayResult<Arc<Self>> {
         let mut command = ssh(machine);
-        command.arg(format!("exec {executable}"));
+        command.arg(helper_command);
         Self::start(command)
     }
 
@@ -146,7 +164,7 @@ impl Connection {
             Err(_) => return abort(JayError::internal("The SSH helper did not respond.")),
         };
         let _ = reader.join();
-        if hello.protocol != PROTOCOL || !Path::new(&hello.home).is_absolute() {
+        if hello.protocol != PROTOCOL || !hello.home.starts_with('/') {
             return abort(JayError::refused(
                 jayjay_i18n::ssh::error_incompatible_helper(),
             ));
