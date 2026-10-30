@@ -1,11 +1,16 @@
 use gpui::{
     Action, Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, OwnedMenu, OwnedMenuItem, ParentElement, Pixels, Point, SharedString, Styled,
-    Window, anchored, deferred, div, px, rgb,
+    MouseDownEvent, OwnedMenu, OwnedMenuItem, ParentElement, Pixels, Point, SharedString,
+    StatefulInteractiveElement, Styled, Window, anchored, deferred, div,
+    prelude::FluentBuilder as _, px, rgb,
 };
 
 use crate::app::theme::{Theme, ui_font_size};
+#[cfg(not(target_os = "macos"))]
+use crate::repo::window::PanelBoundsSlot;
 use crate::repo::window::RepoWindow;
+#[cfg(not(target_os = "macos"))]
+use crate::repo::window::picker::{below, opener, opener_bounds};
 use crate::ui::logo::Logo;
 use crate::ui::primitives::checked_menu_row;
 use crate::ui::title_bar;
@@ -13,7 +18,7 @@ use crate::ui::title_bar;
 #[derive(Clone)]
 pub struct AppMenuState {
     pub(crate) anchor: Point<Pixels>,
-    pub(crate) menu_name: Option<SharedString>,
+    pub(crate) menu_name: SharedString,
 }
 
 pub(crate) fn render_app_menu(
@@ -23,9 +28,7 @@ pub(crate) fn render_app_menu(
     cx: &mut gpui::Context<RepoWindow>,
 ) -> AnyElement {
     let mut menus = cx.get_menus().unwrap_or_default();
-    if let Some(menu_name) = state.menu_name.as_ref() {
-        menus.retain(|menu| menu.name == *menu_name);
-    }
+    menus.retain(|menu| menu.name == state.menu_name);
     let backdrop_left_view = view.clone();
     let backdrop_right_view = view.clone();
     let backdrop = div()
@@ -62,6 +65,7 @@ pub(crate) fn render_app_menu(
 
 #[cfg(not(target_os = "macos"))]
 pub(crate) fn menu_bar(
+    open_menu: Option<&SharedString>,
     t: &Theme,
     window: &Window,
     cx: &mut gpui::Context<RepoWindow>,
@@ -97,7 +101,8 @@ pub(crate) fn menu_bar(
         .min_w_0()
         .overflow_hidden();
     for menu in menus {
-        items = items.child(menu_bar_item(menu.name.clone(), t, cx));
+        let is_open = open_menu == Some(&menu.name);
+        items = items.child(menu_bar_item(menu.name.clone(), is_open, t, cx));
     }
     row = row.child(items);
     if title_bar::DRAWN {
@@ -110,36 +115,66 @@ pub(crate) fn menu_bar(
 }
 
 #[cfg(not(target_os = "macos"))]
-fn menu_bar_item(name: SharedString, t: &Theme, cx: &mut gpui::Context<RepoWindow>) -> AnyElement {
+fn menu_bar_item(
+    name: SharedString,
+    is_open: bool,
+    t: &Theme,
+    cx: &mut gpui::Context<RepoWindow>,
+) -> AnyElement {
     let id = SharedString::from(format!(
         "app-menu-bar-{}",
         name.as_ref().to_ascii_lowercase()
     ));
-    let clicked_name = name.clone();
-    div()
+    let bounds = PanelBoundsSlot::default();
+    let clicked = (name.clone(), bounds.clone());
+    let hovered = (name.clone(), bounds.clone());
+    let shown = name.clone();
+    let title = div()
         .id(id)
         .debug_selector({
             let name = name.clone();
             move || format!("app-menu-bar-{}", name.as_ref())
         })
+        .relative()
         .flex()
         .items_center()
         .h(px(t.scaled_control_height(22., 12.)))
         .px(px(8.))
         .rounded_sm()
         .text_size(ui_font_size(12.))
-        .text_color(rgb(t.fg_dim))
+        .text_color(rgb(if is_open { t.fg } else { t.fg_dim }))
+        .when(is_open, |row| row.bg(rgb(t.row_alt_bg)))
         .cursor_pointer()
         .occlude()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
         .on_mouse_down(
             MouseButton::Left,
-            cx.listener(move |view, ev: &MouseDownEvent, _w, cx| {
-                view.open_named_app_menu(clicked_name.clone(), ev.position, cx);
+            cx.listener(move |view, _: &MouseDownEvent, _w, cx| {
+                let (name, bounds) = &clicked;
+                if let Some(bounds) = bounds.get() {
+                    view.open_named_app_menu(name.clone(), below(bounds), cx);
+                }
             }),
         )
-        .child(name)
-        .into_any_element()
+        .on_hover(cx.listener(move |view, hovering: &bool, _w, cx| {
+            let (name, bounds) = &hovered;
+            let switching = view.open_app_menu_name().is_some_and(|open| open != name);
+            if *hovering
+                && switching
+                && let Some(bounds) = bounds.get()
+            {
+                view.open_named_app_menu(name.clone(), below(bounds), cx);
+            }
+        }))
+        .child(opener_bounds(bounds))
+        .child(name);
+    opener(
+        title,
+        move |view| view.open_app_menu_name() == Some(&shown),
+        RepoWindow::close_app_menu,
+        cx,
+    )
+    .into_any_element()
 }
 
 fn menu_panel(menus: &[OwnedMenu], t: &Theme, view: &Entity<RepoWindow>) -> AnyElement {

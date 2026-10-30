@@ -34,7 +34,7 @@ mod nav;
 mod note_composer;
 mod note_menu;
 mod open;
-mod picker;
+pub(crate) mod picker;
 mod pr_import;
 mod rating_prompt;
 mod rebase_confirmation;

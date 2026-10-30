@@ -181,6 +181,6 @@ impl RepoWindow {
             });
         }
 
-        append_menu_bar(root, t, window, cx)
+        append_menu_bar(root, self.open_app_menu_name(), t, window, cx)
     }
 }

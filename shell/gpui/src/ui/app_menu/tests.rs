@@ -50,3 +50,50 @@ fn menu_item_click_dispatches_its_action(cx: &mut gpui::TestAppContext) {
 
     assert_eq!(cx.windows().len(), windows_before + 1);
 }
+
+#[cfg(not(target_os = "macos"))]
+#[gpui::test]
+fn menu_bar_menus_open_under_their_title(cx: &mut gpui::TestAppContext) {
+    cx.update(|cx| {
+        cx.set_global(Theme::light());
+        cx.set_global(AppConfigStore::new(AppConfig::default()));
+        crate::app::menus::install(cx);
+    });
+    let dir = tempfile::tempdir().unwrap();
+    let (_, cx) = cx.add_window_view(|_, cx| RepoWindow::new(dir.path().to_path_buf(), cx));
+    let cx: &mut VisualTestContext = cx;
+    cx.simulate_resize(size(px(900.), px(600.)));
+    cx.run_until_parked();
+    let title = |cx: &mut VisualTestContext, selector: &'static str| {
+        cx.debug_bounds(selector).expect("menu title bounds")
+    };
+    let panel_origin = |cx: &mut VisualTestContext| {
+        cx.debug_bounds("app-menu-panel")
+            .map(|bounds| bounds.origin)
+    };
+    // The panel snaps to whole pixels.
+    let opens_under = |origin: Option<gpui::Point<gpui::Pixels>>,
+                       title: gpui::Bounds<gpui::Pixels>| {
+        origin.is_some_and(|origin| {
+            (origin.x - title.left()).abs() < px(1.)
+                && (origin.y - title.bottom() - px(4.)).abs() < px(1.)
+        })
+    };
+
+    let first = title(cx, "app-menu-bar-Edit");
+    cx.simulate_click(
+        first.bottom_right() - gpui::point(px(2.), px(2.)),
+        Modifiers::default(),
+    );
+    cx.run_until_parked();
+    assert!(opens_under(panel_origin(cx), first));
+
+    let second = title(cx, "app-menu-bar-View");
+    cx.simulate_mouse_move(second.center(), None, Modifiers::default());
+    cx.run_until_parked();
+    assert!(opens_under(panel_origin(cx), second));
+
+    cx.simulate_click(second.center(), Modifiers::default());
+    cx.run_until_parked();
+    assert_eq!(panel_origin(cx), None);
+}

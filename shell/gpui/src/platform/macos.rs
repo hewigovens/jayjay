@@ -28,6 +28,7 @@ pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
 
 pub fn append_menu_bar(
     root: gpui::Div,
+    _open_menu: Option<&gpui::SharedString>,
     _t: &Theme,
     _window: &gpui::Window,
     _cx: &mut Context<RepoWindow>,

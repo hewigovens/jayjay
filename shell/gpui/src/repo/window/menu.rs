@@ -19,10 +19,7 @@ impl RepoWindow {
         cx: &mut Context<Self>,
     ) {
         self.context_menu = None;
-        self.app_menu = Some(AppMenuState {
-            anchor,
-            menu_name: Some(menu_name),
-        });
+        self.app_menu = Some(AppMenuState { anchor, menu_name });
         cx.notify();
     }
 
@@ -34,6 +31,16 @@ impl RepoWindow {
     #[cfg(target_os = "macos")]
     pub(crate) fn app_menu_open(&self) -> bool {
         false
+    }
+
+    #[cfg(not(target_os = "macos"))]
+    pub(crate) fn open_app_menu_name(&self) -> Option<&SharedString> {
+        self.app_menu.as_ref().map(|menu| &menu.menu_name)
+    }
+
+    #[cfg(target_os = "macos")]
+    pub(crate) fn open_app_menu_name(&self) -> Option<&gpui::SharedString> {
+        None
     }
 
     #[cfg(not(target_os = "macos"))]
