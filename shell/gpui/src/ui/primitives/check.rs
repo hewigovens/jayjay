@@ -1,5 +1,3 @@
-#[cfg(not(target_os = "macos"))]
-use gpui::{AnyElement, IntoElement};
 use gpui::{
     Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful, Styled, div, px,
     rgb, svg,
@@ -125,48 +123,4 @@ pub(crate) fn checkbox_row(
                 .text_color(rgb(theme.fg))
                 .child(label.into()),
         )
-}
-
-#[cfg(not(target_os = "macos"))]
-pub(crate) fn checked_menu_row(
-    id: impl Into<SharedString>,
-    label: impl Into<SharedString>,
-    checked: bool,
-    unchecked_glyph: Option<(&'static str, u32)>,
-    text_color: u32,
-    checked_color: u32,
-) -> Stateful<Div> {
-    div()
-        .id(id.into())
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(8.))
-        .px(px(10.))
-        .py(px(5.))
-        .text_size(ui_font_size(12.))
-        .text_color(rgb(text_color))
-        .child(menu_checkmark(checked, unchecked_glyph, checked_color))
-        .child(div().flex_1().min_w_0().truncate().child(label.into()))
-}
-
-#[cfg(not(target_os = "macos"))]
-fn menu_checkmark(
-    checked: bool,
-    unchecked_glyph: Option<(&'static str, u32)>,
-    checked_color: u32,
-) -> AnyElement {
-    let marker = if checked {
-        icons::icon(icons::glyph::CHECK, 12., checked_color).into_any_element()
-    } else if let Some((glyph_str, color)) = unchecked_glyph {
-        icons::icon(glyph_str, 12., color).into_any_element()
-    } else {
-        div().into_any_element()
-    };
-
-    div()
-        .flex_none()
-        .w(px(14.))
-        .child(marker)
-        .into_any_element()
 }

@@ -1,4 +1,4 @@
-use gpui::{Context, ParentElement, SharedString, Window};
+use gpui::{Context, ParentElement, Window};
 
 use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
@@ -14,10 +14,16 @@ pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (12., 14.);
 
 pub fn append_menu_bar(
     root: gpui::Div,
-    open_menu: Option<&SharedString>,
+    view: &RepoWindow,
     t: &Theme,
     window: &Window,
     cx: &mut Context<RepoWindow>,
 ) -> gpui::Div {
-    root.child(crate::ui::app_menu::menu_bar(open_menu, t, window, cx))
+    root.child(crate::ui::app_menu::menu_bar(
+        view.open_app_menu_name(),
+        &view.app_menu_titles,
+        t,
+        window,
+        cx,
+    ))
 }

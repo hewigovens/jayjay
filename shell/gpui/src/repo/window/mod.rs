@@ -1,4 +1,5 @@
 mod actions;
+mod app_menu_keyboard;
 mod bisect;
 mod bisect_row_styles;
 mod bookmark_menu;

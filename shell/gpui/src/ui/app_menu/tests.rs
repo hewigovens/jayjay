@@ -3,7 +3,7 @@ use gpui::{
     Window, div, px, size,
 };
 
-use super::action_row;
+use super::{ActionRow, MenuRow, action_row};
 use crate::app::actions::OpenSettings;
 use crate::app::config::{AppConfig, AppConfigStore};
 use crate::app::theme::Theme;
@@ -15,14 +15,17 @@ struct MenuRowHost {
 
 impl Render for MenuRowHost {
     fn render(&mut self, _: &mut Window, _: &mut Context<Self>) -> impl IntoElement {
-        div().size_full().child(action_row(
-            "Settings...".to_owned(),
-            Box::new(OpenSettings),
-            false,
-            false,
-            &Theme::light(),
-            &self.repo,
-        ))
+        div().size_full().child(action_row(ActionRow {
+            ix: 0,
+            name: "Settings...".to_owned(),
+            action: Box::new(OpenSettings),
+            shortcut: String::new(),
+            checked: None,
+            disabled: false,
+            selected: false,
+            t: &Theme::light(),
+            view: &self.repo,
+        }))
     }
 }
 
@@ -51,7 +54,6 @@ fn menu_item_click_dispatches_its_action(cx: &mut gpui::TestAppContext) {
     assert_eq!(cx.windows().len(), windows_before + 1);
 }
 
-#[cfg(not(target_os = "macos"))]
 #[gpui::test]
 fn menu_bar_menus_open_under_their_title(cx: &mut gpui::TestAppContext) {
     cx.update(|cx| {
@@ -60,8 +62,12 @@ fn menu_bar_menus_open_under_their_title(cx: &mut gpui::TestAppContext) {
         crate::app::menus::install(cx);
     });
     let dir = tempfile::tempdir().unwrap();
-    let (_, cx) = cx.add_window_view(|_, cx| RepoWindow::new(dir.path().to_path_buf(), cx));
+    let (repo, cx) = cx.add_window_view(|_, cx| RepoWindow::new(dir.path().to_path_buf(), cx));
     let cx: &mut VisualTestContext = cx;
+    cx.update(|window, cx| {
+        let handle = repo.read(cx).focus_handle.clone();
+        window.focus(&handle, cx);
+    });
     cx.simulate_resize(size(px(900.), px(600.)));
     cx.run_until_parked();
     let title = |cx: &mut VisualTestContext, selector: &'static str| {
@@ -93,7 +99,35 @@ fn menu_bar_menus_open_under_their_title(cx: &mut gpui::TestAppContext) {
     cx.run_until_parked();
     assert!(opens_under(panel_origin(cx), second));
 
+    cx.simulate_keystrokes("left");
+    assert!(opens_under(panel_origin(cx), first));
+    cx.simulate_keystrokes("right");
+    assert!(opens_under(panel_origin(cx), second));
+
     cx.simulate_click(second.center(), Modifiers::default());
     cx.run_until_parked();
     assert_eq!(panel_origin(cx), None);
+}
+
+#[test]
+fn menu_selection_skips_rows_that_cannot_run_and_wraps() {
+    let action = |disabled| MenuRow::Action {
+        name: "Settings...".to_owned(),
+        action: Box::new(OpenSettings),
+        checked: false,
+        disabled,
+    };
+    let rows = [
+        MenuRow::Label("Zoom".into()),
+        action(true),
+        MenuRow::Separator,
+        action(false),
+        action(false),
+    ];
+
+    assert_eq!(MenuRow::step(&rows, None, true), Some(3));
+    assert_eq!(MenuRow::step(&rows, None, false), Some(4));
+    assert_eq!(MenuRow::step(&rows, Some(4), true), Some(3));
+    assert_eq!(MenuRow::step(&rows, Some(3), false), Some(4));
+    assert_eq!(MenuRow::step(&rows[..3], None, true), None);
 }

@@ -100,7 +100,7 @@ impl Render for RepoWindow {
         let app_menu_overlay = self
             .app_menu
             .as_ref()
-            .map(|state| render_app_menu(state, &t, &cx.entity(), cx));
+            .map(|state| render_app_menu(state, &self.app_menu_titles, &t, &cx.entity(), cx));
         #[cfg(target_os = "macos")]
         let app_menu_overlay: Option<gpui::AnyElement> = None;
         let picker_ime_focus = if self.modal_overlay_open() {

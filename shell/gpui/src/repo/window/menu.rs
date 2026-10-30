@@ -12,14 +12,21 @@ use gpui::{App, ClipboardItem, Context, Pixels, Point};
 
 impl RepoWindow {
     #[cfg(not(target_os = "macos"))]
+    /// Opens `menu_name` under its title with `selected` highlighted; does nothing until the title has been painted.
     pub(crate) fn open_named_app_menu(
         &mut self,
         menu_name: SharedString,
-        anchor: Point<Pixels>,
+        selected: Option<usize>,
         cx: &mut Context<Self>,
     ) {
+        if !self.app_menu_titles.borrow().contains_key(&menu_name) {
+            return;
+        }
         self.context_menu = None;
-        self.app_menu = Some(AppMenuState { anchor, menu_name });
+        self.app_menu = Some(AppMenuState {
+            menu_name,
+            selected,
+        });
         cx.notify();
     }
 
@@ -36,11 +43,6 @@ impl RepoWindow {
     #[cfg(not(target_os = "macos"))]
     pub(crate) fn open_app_menu_name(&self) -> Option<&SharedString> {
         self.app_menu.as_ref().map(|menu| &menu.menu_name)
-    }
-
-    #[cfg(target_os = "macos")]
-    pub(crate) fn open_app_menu_name(&self) -> Option<&gpui::SharedString> {
-        None
     }
 
     #[cfg(not(target_os = "macos"))]

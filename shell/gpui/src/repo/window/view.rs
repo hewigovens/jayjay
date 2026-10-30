@@ -19,7 +19,7 @@ use crate::diff::{
 };
 use crate::repo::view_model::{ActionSucceeded, RepoViewModel};
 #[cfg(not(target_os = "macos"))]
-use crate::ui::app_menu::AppMenuState;
+use crate::ui::app_menu::{AppMenuState, MenuTitleBounds};
 use crate::ui::context_menu::ContextMenuState;
 use crate::ui::input::LineInput;
 use crate::ui::overlay::TextPrompt;
@@ -77,6 +77,8 @@ pub struct RepoWindow {
     pub(crate) file_tree_cache: FileTreeCacheSlot,
     #[cfg(not(target_os = "macos"))]
     pub(crate) app_menu: Option<AppMenuState>,
+    #[cfg(not(target_os = "macos"))]
+    pub(crate) app_menu_titles: MenuTitleBounds,
     pub(crate) context_menu: Option<ContextMenuState>,
     pub(crate) bookmark_picker: Option<BookmarkPickerState>,
     pub(crate) confirmation: Option<Confirmation>,
@@ -499,6 +501,8 @@ impl RepoWindow {
             file_tree_cache: Rc::new(RefCell::new(FileTreeCache::default())),
             #[cfg(not(target_os = "macos"))]
             app_menu: None,
+            #[cfg(not(target_os = "macos"))]
+            app_menu_titles: MenuTitleBounds::default(),
             context_menu: None,
             bookmark_picker: None,
             confirmation: None,

@@ -10,8 +10,6 @@ pub(crate) use buttons::{
     svg_icon_button,
 };
 pub use check::CheckCircleState;
-#[cfg(not(target_os = "macos"))]
-pub(crate) use check::checked_menu_row;
 pub(crate) use check::{check_circle, checkbox_glyph, checkbox_row};
 pub(crate) use chips::{capsule, icon_chip, icon_label};
 pub(crate) use layout::{

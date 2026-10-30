@@ -127,9 +127,11 @@ impl RepoWindow {
                     view.collapse_all_diff_edit(cx);
                 }
             }))
-            // Capture phase: Tab must move on from inside a focused text input, whose own key handler would otherwise keep it.
+            // Capture phase: Tab and an open menu bar menu's keys must win over a focused text input's own key handler.
             .capture_key_down(cx.listener(|view, ev: &gpui::KeyDownEvent, window, cx| {
-                if view.handle_keyboard_focus_key(ev, window, cx) {
+                if view.handle_app_menu_key(&ev.keystroke, window, cx)
+                    || view.handle_keyboard_focus_key(ev, window, cx)
+                {
                     cx.stop_propagation();
                 }
             }))
@@ -181,6 +183,6 @@ impl RepoWindow {
             });
         }
 
-        append_menu_bar(root, self.open_app_menu_name(), t, window, cx)
+        append_menu_bar(root, self, t, window, cx)
     }
 }
