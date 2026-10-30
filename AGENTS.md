@@ -64,7 +64,7 @@ When the user explicitly asks for a review bookmark, point a local `review/<topi
 jj bookmark set review/<topic> -r @
 ```
 
-Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
+Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory and its container volumes ([Testing](agents/testing.md#gpui-tests)) without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
 
 At task completion, after the last repository-fixture tests and any workspace-directory removal, clean orphaned repo config:
 
