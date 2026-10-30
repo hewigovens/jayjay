@@ -1,13 +1,14 @@
 use gpui::{Context, InteractiveElement, MouseButton, MouseDownEvent, MouseMoveEvent, Pixels};
 
 use crate::diff::SbsSide;
+use crate::diff::line::CODE_INSET;
 use crate::repo::window::{PanelBoundsSlot, RepoWindow};
 
 fn pixel_to_col(slot: &PanelBoundsSlot, x: Pixels, advance: Pixels) -> usize {
     let Some(bounds) = slot.get() else {
         return 0;
     };
-    let local = (f32::from(x) - f32::from(bounds.origin.x)).max(0.);
+    let local = (f32::from(x) - f32::from(bounds.origin.x) - CODE_INSET).max(0.);
     (local / f32::from(advance)).floor() as usize
 }
 

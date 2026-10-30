@@ -6,7 +6,8 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
 
 use super::line::{
-    GUTTER_NUMBER_WIDTH, conflict_stripe_overlay, gutter_cell, line_bg_color, line_text_color,
+    CODE_INSET, GUTTER_NUMBER_WIDTH, conflict_stripe_overlay, gutter_cell, line_bg_color,
+    line_text_color,
 };
 use super::spans::span_element;
 
@@ -110,7 +111,8 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
         .flex_row()
         .flex_1()
         .min_w_0()
-        .h(px(theme.code_line_height()));
+        .h(px(theme.code_line_height()))
+        .pl(px(CODE_INSET));
     for span in &side.spans {
         text_row = text_row.child(span_element(
             span,

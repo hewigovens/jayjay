@@ -19,7 +19,7 @@ use super::state::ReviewDisplayState;
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
 use crate::diff::line::{
-    content_row, content_row_tint, interactive_gutter_column, interactive_gutter_row,
+    CODE_INSET, content_row, content_row_tint, interactive_gutter_column, interactive_gutter_row,
     line_bg_color, note_content_row, note_dot_cell, note_gutter_row, review_stripe_spacer,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
@@ -335,7 +335,7 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
             ..
         } => {
             let indent_cols = rendered.note_indents.get(&ix).copied().unwrap_or(0);
-            let indent = px(indent_cols as f32 * f32::from(advance));
+            let indent = px(CODE_INSET + indent_cols as f32 * f32::from(advance));
             note_content_row(text.clone(), theme, *is_first, *is_last, indent).into_any_element()
         }
     }

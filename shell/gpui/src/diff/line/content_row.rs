@@ -9,6 +9,9 @@ use crate::app::theme::Theme;
 use super::super::spans::span_element;
 use super::colors::{line_bg_color, line_text_color};
 
+/// Keeps the first column clear of the 3px conflict stripe; column↔pixel math adds it back.
+pub const CODE_INSET: f32 = 6.;
+
 pub fn content_row(
     line: &DiffLine,
     theme: &Theme,
@@ -51,7 +54,8 @@ pub fn content_row(
         .flex_row()
         .flex_1()
         .min_w_0()
-        .h(px(theme.code_line_height()));
+        .h(px(theme.code_line_height()))
+        .pl(px(CODE_INSET));
     for span in &line.spans {
         text_row = text_row.child(span_element(
             span,
@@ -101,7 +105,7 @@ pub fn conflict_stripe_overlay(kind: ConflictLineKind, theme: &Theme) -> Div {
 
 // MUST be the row's last child — siblings paint in declaration order.
 pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> Div {
-    let left = cols.start as f32 * f32::from(advance);
+    let left = CODE_INSET + cols.start as f32 * f32::from(advance);
     let width = (cols.end.saturating_sub(cols.start)) as f32 * f32::from(advance);
     let bg = rgba(((theme.selected_bg as u64) << 8) as u32 | 0x66);
     div()
