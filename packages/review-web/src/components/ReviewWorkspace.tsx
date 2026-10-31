@@ -15,6 +15,8 @@ import { LazySection } from "./LazySection";
 import { anchorKey, NoteBubble, NoteComposer, NotesBanner, type NoteTarget } from "./notes/InlineNotes";
 import { toggled } from "./toggled";
 
+interface LoadedFile { file: number; data: ReviewResult; key: string }
+
 export function ReviewWorkspace({ review, labels, savedLabel, headerActions, footer, onRetry, notes = true, avatars = false }: {
   review: ReviewController;
   labels: Labels;
@@ -32,7 +34,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   const [target, setTarget] = useState<NoteTarget | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const [unfolded, setUnfolded] = useState<Set<string>>(() => new Set());
-  const [loaded, setLoaded] = useState<Map<number, ReviewResult>>(() => new Map());
+  const [loaded, setLoaded] = useState<Map<string, LoadedFile>>(() => new Map());
   const loading = useRef(new Set<number>());
   const [failed, setFailed] = useState<Set<number>>(() => new Set());
   const jumpTarget = useRef<ReviewNote | null>(null);
@@ -46,17 +48,26 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   // The newest result the review itself produced for each file; a lazy render that started before it is stale.
   const reviewed = useRef(new Map<number, ReviewResult>());
 
-  useEffect(() => { jumpTarget.current = null; setUnfolded(new Set()); }, [result?.session]);
-  useEffect(() => { setTarget(null); setExpanded(new Set()); }, [result?.session, compact ? undefined : path]);
-  useEffect(() => { liveKey.current = cacheKey; reviewed.current.clear(); loading.current.clear(); setLoaded(new Map()); setFailed(new Set()); }, [cacheKey]);
-  useEffect(() => {
-    if (!result) return;
+  useEffect(() => { jumpTarget.current = null; }, [result?.session]);
+  useEffect(() => { setTarget(null); setExpanded(new Set()); }, [compact ? undefined : path]);
+  // Layout effects, because a section's load effect runs next and must see this render's guards.
+  useLayoutEffect(() => {
+    liveKey.current = cacheKey; reviewed.current.clear(); loading.current.clear(); setFailed(new Set());
+    // Sections stay until their new render arrives, so a host's refresh doesn't collapse the list under the reader.
+    setLoaded(previous => new Map([...previous].filter(([path]) => result?.overview.files.some(entry => entry.path === path))));
+  }, [cacheKey]);
+  useLayoutEffect(() => {
+    if (!result) return setTarget(null);
+    setTarget(current => {
+      const index = current ? result.overview.files.findIndex(entry => entry.path === current.path) : -1;
+      return current && index >= 0 ? { ...current, file: index } : null;
+    });
     reviewed.current.set(result.file, result);
-    setLoaded(previous => new Map(previous).set(result.file, result));
+    if (path) setLoaded(previous => new Map(previous).set(path, { file: result.file, data: result, key: cacheKey }));
   }, [result]);
 
-  // Every rendered file's diff, keyed by file index: the selected one on wide screens, all loaded sections in the compact list.
-  const diffs = compact ? loaded : new Map(result ? [[result.file, result]] : []);
+  // Every rendered file's diff: the selected one on wide screens, all loaded sections in the compact list.
+  const diffs: LoadedFile[] = compact ? [...loaded.values()] : result ? [{ file: result.file, data: result, key: cacheKey }] : [];
 
   useEffect(() => {
     if (pending || !jumpTarget.current || !result) return;
@@ -87,7 +98,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
       if (key !== liveKey.current) return;
       loading.current.delete(index);
       if (reviewed.current.get(index) !== latest) return;
-      if (`${next.session}|${revision}|${JSON.stringify(next.options)}` === key) setLoaded(previous => new Map(previous).set(index, next));
+      if (`${next.session}|${revision}|${JSON.stringify(next.options)}` === key) setLoaded(previous => new Map(previous).set(next.overview.files[index].path, { file: index, data: next, key }));
     }, () => {
       if (key !== liveKey.current) return;
       loading.current.delete(index);
@@ -144,14 +155,14 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
 
   // Current notes sit under their line and resolved ones behind a gutter marker; the banner takes stale and orphaned notes, and current ones whose line is folded away.
   const placed = new Map<string, ReviewNote[]>();
-  const rendered = new Set<string>();
-  for (const [index, data] of diffs) {
+  const rendered = new Map<string, string>();
+  for (const { file: index, data } of diffs) {
     const filePath = data.overview.files[index]?.path;
-    const entry = result?.overview.files[index];
+    const entry = result?.overview.files.find(candidate => candidate.path === filePath);
     if (entry && folded(entry)) continue;
-    for (const row of data.diff?.rows ?? []) for (const cell of row.cells) if (cell.anchor && filePath) rendered.add(anchorKey(filePath, cell.anchor.side, cell.anchor.line));
+    for (const row of data.diff?.rows ?? []) for (const cell of row.cells) if (cell.anchor && filePath) rendered.set(anchorKey(filePath, cell.anchor.side, cell.anchor.line), cell.spans.map(span => span.text).join(""));
   }
-  const renderedPaths = new Set([...diffs.keys()].map(index => result?.overview.files[index]?.path));
+  const renderedPaths = new Set(diffs.map(({ file: index, data }) => data.overview.files[index]?.path));
   // A folded file never loads in the compact list, and the banner is the only place its notes can show.
   if (compact) for (const path of foldedPaths) renderedPaths.add(path);
   const unplaced: ReviewNote[] = [];
@@ -163,16 +174,21 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
     else if (item.status === "current") unplaced.push(item);
   }
 
-  function diffPane(index: number, data: ReviewResult) {
+  const draftKey = target && (compact ? loaded.get(target.path)?.key : target.path === path ? cacheKey : undefined);
+  const draftLost = target !== null && draftKey === cacheKey && rendered.get(anchorKey(target.path, target.anchor.side, target.anchor.line)) !== target.text;
+  useEffect(() => { if (draftLost) setTarget(null); }, [draftLost]);
+
+  function diffPane(index: number, data: ReviewResult, stale = false) {
     const filePath = data.overview.files[index].path;
+    const locked = disabled || stale;
     const annotation = (anchor: DiffAnchor) => {
       const key = anchorKey(filePath, anchor.side, anchor.line);
       const shown = (placed.get(key) ?? []).filter(item => item.status === "current" || expanded.has(key));
       const composing = target !== null && anchorKey(target.path, target.anchor.side, target.anchor.line) === key;
       if (!shown.length && !composing) return null;
       return <>
-        {shown.map(item => <NoteBubble key={item.note.id} item={item} labels={labels} disabled={disabled} resolve={resolve} />)}
-        {composing && <NoteComposer target={target} labels={labels} disabled={disabled} save={saveNote} cancel={() => setTarget(null)} />}
+        {shown.map(item => <NoteBubble key={item.note.id} item={item} labels={labels} disabled={locked} resolve={resolve} />)}
+        {composing && <NoteComposer target={target} labels={labels} disabled={locked} save={saveNote} cancel={() => setTarget(null)} />}
       </>;
     };
     const marker = (anchor: DiffAnchor) => {
@@ -184,12 +200,12 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
         title={labels.resolved} onClick={() => setExpanded(previous => toggled(previous, key))}>
         <NoteIcon />{resolved.length > 1 && resolved.length}</button>;
     };
-    const note = (anchor: DiffAnchor) => setTarget({ file: index, path: filePath, anchor, ignoreWhitespace: data.options.ignoreWhitespace });
+    const note = (anchor: DiffAnchor) => setTarget({ file: index, path: filePath, anchor, ignoreWhitespace: data.options.ignoreWhitespace, text: rendered.get(anchorKey(filePath, anchor.side, anchor.line)) });
     const diff = data.diff && <DiffPane labels={labels} view={data.diff} split={data.options.split} showAll={() => configure({ ...options, showAll: true })}
-      review={{ states: data.groupStates, disabled, toggle: group => void mutate({ kind: "setGroup", file: index, group, reviewed: data.groupStates[group] !== "reviewed", ignoreWhitespace: data.options.ignoreWhitespace }, index),
+      review={{ states: data.groupStates, disabled: locked, toggle: group => void mutate({ kind: "setGroup", file: index, group, reviewed: data.groupStates[group] !== "reviewed", ignoreWhitespace: data.options.ignoreWhitespace }, index),
         ...notes && { note, annotation, marker } }} />;
     // Notes anchor to source lines, so a file with notes keeps its source under the preview.
-    if (image && isImagePath(filePath)) return <ImageDiff key={`${data.session}|${filePath}`} kind={data.overview.files[index].kind} labels={labels}
+    if (image && isImagePath(filePath)) return <ImageDiff key={filePath} version={data.session} kind={data.overview.files[index].kind} labels={labels}
       keepSource={notes && (target?.path === filePath || Boolean(result?.overview.notes.some(item => item.note.path === filePath)))} load={(side: ImageSide, signal: AbortSignal) => image(index, side, signal)}>{diff}</ImageDiff>;
     return diff ?? <p className="jj-empty-diff">{labels.noFiles}</p>;
   }
@@ -210,15 +226,19 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
         <NotesBanner items={unplaced} labels={labels} disabled={disabled} resolve={resolve} locate={locate} />
         {compact
           ? <div className="jj-file-sections">
-            {result.overview.files.map((entry, index) => <LazySection key={entry.path} index={index} version={cacheKey} loaded={loaded.has(index) || folded(entry)} load={load}>
-              <FileHeader file={entry} labels={labels} disabled={disabled} toggleReviewed={() => toggleFile(index)} />
-              <div className="jj-diff-scroll" data-path={entry.path} aria-label={`${labels.lines}: ${entry.path}`}>
-                {folded(entry) ? null
-                  : loaded.get(index) ? diffPane(index, loaded.get(index)!)
-                  : failed.has(index) ? <p className="jj-notice">{labels.renderError} <button onClick={() => load(index)}>{labels.retry}</button></p>
-                  : <p className="jj-notice">{labels.loadingFile}</p>}
-              </div>
-            </LazySection>)}
+            {result.overview.files.map((entry, index) => {
+              const section = loaded.get(entry.path);
+              const current = section?.key === cacheKey;
+              return <LazySection key={entry.path} index={index} version={cacheKey} loaded={current || folded(entry)} load={load}>
+                <FileHeader file={entry} labels={labels} disabled={disabled} toggleReviewed={() => toggleFile(index)} />
+                <div className="jj-diff-scroll" data-path={entry.path} aria-label={`${labels.lines}: ${entry.path}`}>
+                  {!folded(entry) && <>
+                    {failed.has(index) && !current && <p className="jj-notice">{labels.renderError} <button onClick={() => load(index)}>{labels.retry}</button></p>}
+                    {section ? diffPane(section.file, section.data, !current) : !failed.has(index) && <p className="jj-notice">{labels.loadingFile}</p>}
+                  </>}
+                </div>
+              </LazySection>;
+            })}
             {!result.overview.files.length && <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>
           : <div className="jj-diff-scroll" data-path={path} tabIndex={0} aria-label={labels.lines}>

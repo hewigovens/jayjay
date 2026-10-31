@@ -242,6 +242,61 @@ test.describe("phone portrait", () => {
     await expect(page.locator(".jj-notes-banner")).toContainText("Still here");
   });
 
+  test("a refresh keeps every section in place until its new render arrives", async ({ page }) => {
+    await longBundle(page);
+    const change = { schemaVersion: 1, repositoryId: "test/repository", changeId: "stable-change", title: "Long",
+      files: [{ path: "long.txt", reviewIdentity: "1", before: "", after: Array.from({ length: 120 }, (_, line) => `line ${line}`).join("\n") }, { path: "next.txt", reviewIdentity: "2", before: "", after: "x\n" }] };
+    await page.getByRole("button", { name: "Add note: After 100", exact: true }).click();
+    const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
+    await draft.fill("Keep this draft");
+    await page.evaluate(() => {
+      const state = window as unknown as { shortest: number };
+      state.shortest = Infinity;
+      new ResizeObserver(() => { state.shortest = Math.min(state.shortest, document.documentElement.scrollHeight); }).observe(document.body);
+    });
+    const before = await page.evaluate(() => document.documentElement.scrollHeight);
+    await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify(change)) });
+    await ready(page);
+    expect(await page.evaluate(() => (window as unknown as { shortest: number }).shortest)).toBeGreaterThanOrEqual(before - 1);
+    await expect(draft).toHaveValue("Keep this draft");
+    await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
+    await expect(page.locator(".jj-review-note.jj-current")).toContainText("Keep this draft");
+  });
+
+  test("a draft outside the open file stays saveable after a refresh, and survives a failed one", async ({ page }) => {
+    await page.addInitScript(() => {
+      const state = window as unknown as { failRender?: number };
+      const failed = new Set<number>();
+      const OriginalWorker = window.Worker;
+      window.Worker = class extends OriginalWorker {
+        postMessage(message: { kind?: string; id?: number; file?: number }) {
+          if (message.kind === "render" && message.file === state.failRender) { failed.add(message.id!); state.failRender = undefined; }
+          super.postMessage(message);
+        }
+        set onmessage(handler: (event: MessageEvent) => void) {
+          super.onmessage = event => handler(failed.has(event.data.id) ? new MessageEvent("message", { data: { id: event.data.id, error: "Render lost" } }) : event);
+        }
+      };
+    });
+    await page.goto("/"); await ready(page);
+    const change = Buffer.from(JSON.stringify({ schemaVersion: 1, repositoryId: "test/repository", changeId: "stable-change", title: "Two",
+      files: [{ path: "a.txt", reviewIdentity: "1", before: "", after: "a\n" }, { path: "b.txt", reviewIdentity: "2", before: "", after: "b\n" }] }));
+    const reopen = () => page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: change });
+    await reopen(); await ready(page);
+    const section = page.locator(".jj-file-section", { has: page.locator('.jj-diff-scroll[data-path="b.txt"]') });
+    await section.getByRole("button", { name: "Add note: After 1", exact: true }).click();
+    const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
+    await draft.fill("Keep this draft");
+    await page.evaluate(() => { (window as unknown as { failRender?: number }).failRender = 1; });
+    await reopen(); await ready(page);
+    await section.getByRole("button", { name: "Retry", exact: true }).click();
+    await expect(section.getByRole("button", { name: "Retry", exact: true })).toHaveCount(0);
+    await expect(draft).toHaveValue("Keep this draft");
+    await reopen(); await ready(page);
+    await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
+    await expect(section.locator(".jj-review-note.jj-current")).toContainText("Keep this draft");
+  });
+
   test("retries a file whose diff failed to load", async ({ page }) => {
     await page.addInitScript(() => {
       const failed = new Set<number>();
@@ -318,13 +373,14 @@ test("a reviewed file folds until it is unmarked or a note opens it", async ({ p
 test("a shown image preview replaces its source", async ({ page }) => {
   await page.goto("/"); await ready(page);
   const svg = (size: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"></svg>\n`;
-  await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({
+  const change = Buffer.from(JSON.stringify({
     schemaVersion: 1, repositoryId: "test/repository", changeId: "stable-change", title: "Images",
     files: [
       { path: "fine.svg", reviewIdentity: "1", before: svg(8), after: svg(16) },
       { path: "broken.svg", reviewIdentity: "3", before: svg(8), after: "<svg\n" },
     ],
-  })) });
+  }));
+  await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: change });
   await ready(page);
   await expect(page.locator(".jj-image-side img")).toHaveCount(2);
   await expect(page.locator(".jj-diff-cell")).toHaveCount(0);
@@ -338,6 +394,24 @@ test("a shown image preview replaces its source", async ({ page }) => {
   await expect(page.locator(".jj-review-note.jj-current")).toContainText("Check the size");
   await page.getByRole("button", { name: "Resolve", exact: true }).click(); await ready(page);
   await expect(page.locator(".jj-diff-cell").first()).toBeVisible();
+  await page.getByRole("button", { name: /^Add note: After/ }).first().click();
+  await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Keep this draft");
+  await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: change });
+  await ready(page);
+  await expect(page.getByRole("textbox", { name: "Write a review note", exact: true })).toHaveValue("Keep this draft");
+  await expect(page.locator(".jj-image-side img")).toHaveCount(2);
+});
+
+test("a refresh keeps a note draft unless its line is gone", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  await bundle(page);
+  await page.getByRole("button", { name: "Add note: After 1", exact: true }).click();
+  const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
+  await draft.fill("Keep this draft");
+  await bundle(page);
+  await expect(draft).toHaveValue("Keep this draft");
+  await bundle(page, "changed\nfoo\nbar\n", "identity-2");
+  await expect(draft).toHaveCount(0);
 });
 
 test("Space keeps focus in the list while reviewed files are hidden", async ({ page }) => {

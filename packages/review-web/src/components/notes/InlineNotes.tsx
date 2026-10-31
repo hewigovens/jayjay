@@ -5,7 +5,7 @@ import type { DiffAnchor, Labels } from "../../model/diff";
 import { MiddlePath } from "../files/MiddlePath";
 import type { ReviewNote } from "../../model/review";
 
-export interface NoteTarget { file: number; path: string; anchor: DiffAnchor; ignoreWhitespace: boolean }
+export interface NoteTarget { file: number; path: string; anchor: DiffAnchor; ignoreWhitespace: boolean; text: string | undefined }
 
 export const anchorKey = (path: string, side: string, line: number) => `${path}|${side}:${line}`;
 
