@@ -82,6 +82,7 @@ struct DiffSectionLoadedDiff {
     var displayGroups: [ChangeGroup]?
     var content: DiffLoadedContent
     var basis: String?
+    var opensSvgPreview = false
     var reviewQuery: ReviewDisplayQuery?
 
     nonisolated func withReviewFingerprints(hunk: DiffHunk, ignoreWhitespace: Bool) -> DiffSectionLoadedDiff {

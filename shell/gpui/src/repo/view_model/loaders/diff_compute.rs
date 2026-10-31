@@ -99,6 +99,7 @@ pub(super) fn compute_diff_blocking(
     let svg_preview = projection::is_svg_path(&path).then(|| SvgPreviewContent {
         old: (!old.is_empty()).then(|| old.to_string()),
         new: (!new.is_empty()).then(|| new.to_string()),
+        opens_preview: projection::svg_opens_preview(&old, &new),
     });
     let markdown_preview = (projection::renders_as_markdown(&path, projection.as_ref())
         && !new.is_empty())

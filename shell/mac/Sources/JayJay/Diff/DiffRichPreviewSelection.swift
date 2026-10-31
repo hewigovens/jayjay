@@ -4,6 +4,7 @@ struct DiffRichPreviewSelection: Equatable {
         case markdown
         case html
         case projection
+        case source
     }
 
     let kind: Kind

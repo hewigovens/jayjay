@@ -196,7 +196,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         let cached = await diffStore.loadDiff(
             hunk: hunk, rev: rev, commitId: commitId, repo: repo,
             ignoreWhitespace: settings.ignoreWhitespace,
-            projectionMode: DiffProjectionDisplayPolicy.requestMode(for: hunk.projection, richView: false)
+            projectionMode: DiffProjectionDisplayPolicy.requestMode(for: hunk.projection)
         )
         let loaded = await DiffEditLoadedFile.make(
             hunk: hunk, oldContent: cached?.content.oldContent, newContent: cached?.content.newContent,

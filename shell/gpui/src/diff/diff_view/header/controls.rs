@@ -101,7 +101,11 @@ pub(super) fn projection_button(
     preview_button(
         "toggle-projection-preview",
         projection::icon(Some(projection)),
-        projection::help(Some(projection)),
+        if active {
+            projection::active_help(Some(projection))
+        } else {
+            projection::help(Some(projection))
+        },
         active,
         compact,
         t,
@@ -109,6 +113,30 @@ pub(super) fn projection_button(
             view.toggle_projection_rich_preview(cx);
         }),
     )
+}
+
+pub(super) fn source_button(
+    active: bool,
+    compact: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    header_action(
+        "toggle-projection-source",
+        glyph::FILE_CODE,
+        (!compact).then(jayjay_i18n::diff::source),
+        active,
+        t,
+    )
+    .tooltip(text_tooltip(if active {
+        jayjay_i18n::diff::show_notebook_diff()
+    } else {
+        jayjay_i18n::diff::show_source_diff()
+    }))
+    .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+        view.toggle_projection_source(cx);
+    }))
+    .into_any_element()
 }
 
 pub(super) fn svg_preview_button(
@@ -120,7 +148,11 @@ pub(super) fn svg_preview_button(
     preview_button(
         "toggle-svg-preview",
         glyph::EYE,
-        jayjay_i18n::diff::show_rendered_svg_preview(),
+        if active {
+            jayjay_i18n::diff::show_source_diff()
+        } else {
+            jayjay_i18n::diff::show_rendered_svg_preview()
+        },
         active,
         compact,
         t,

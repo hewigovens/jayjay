@@ -15,7 +15,8 @@ extension DiffSection {
             hunkPath: hunk.path,
             hasRenderedDiff: fileDiff != nil,
             loadedProjectionMode: loadedProjection?.mode,
-            requestedProjectionMode: projectionRequestMode
+            requestedProjectionMode: projectionRequestMode,
+            projectionFailed: loadedProjection?.diagnostics.isEmpty == false
         )
     }
 
@@ -40,11 +41,13 @@ extension DiffSection {
         hunkPath: String,
         hasRenderedDiff: Bool,
         loadedProjectionMode: DiffProjectionMode?,
-        requestedProjectionMode: DiffProjectionMode?
+        requestedProjectionMode: DiffProjectionMode?,
+        projectionFailed: Bool = false
     ) -> Bool {
+        // A failed projection answers a processed request with its raw source and diagnostics.
         loadedPath == hunkPath
             && hasRenderedDiff
-            && loadedProjectionMode == requestedProjectionMode
+            && (loadedProjectionMode == requestedProjectionMode || projectionFailed)
     }
 
     nonisolated static func shouldShowBlockingProgress(
@@ -159,7 +162,11 @@ extension DiffSection {
                 displayLines: lines,
                 displayGroups: changeGroups(lines: lines),
                 content: cached.content,
-                basis: basis
+                basis: basis,
+                opensSvgPreview: path.lowercased().hasSuffix(".svg") && svgOpensPreview(
+                    oldContent: cached.content.oldContent,
+                    newContent: cached.content.newContent
+                )
             )
             .withReviewFingerprints(hunk: hunk, ignoreWhitespace: ignoreWhitespace)
         }.value

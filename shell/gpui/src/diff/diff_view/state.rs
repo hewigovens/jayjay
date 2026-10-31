@@ -9,6 +9,7 @@ use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
 
 use super::review_row_map::ReviewRowMap;
 use crate::diff::MarkdownImageCacheSlot;
+use crate::diff::projection::ProjectionView;
 use crate::repo::window::{ConflictResolution, DiffWrapCacheSlot, FocusStop, PanelBoundsSlot};
 use crate::ui::input::LineInput;
 
@@ -63,7 +64,7 @@ pub struct DiffViewState<'a> {
     pub(crate) hidden_only_files: Option<HiddenGitFiles>,
     pub(crate) file_diff: Option<&'a Arc<FileDiff>>,
     pub(crate) loaded_projection: Option<&'a DiffProjection>,
-    pub(crate) active_projection_preview: bool,
+    pub(crate) projection_view: Option<ProjectionView>,
     pub(crate) active_markdown_preview: bool,
     pub(crate) active_svg_preview: bool,
     pub(crate) markdown_preview: Option<&'a Arc<MarkdownDocument>>,

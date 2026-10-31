@@ -192,25 +192,25 @@ fn large_diff_seeds_collapse_before_per_file_stats_arrive(cx: &mut TestAppContex
 fn cached_rich_preview_does_not_replace_the_raw_card(cx: &mut TestAppContext) {
     let fixture = FormatFixture::build();
     let (view, cx) = open_repo(fixture.path.clone(), cx);
-    select_file(&view, FormatFixture::NOTEBOOK, cx);
+    select_file(&view, FormatFixture::CSV, cx);
     view.update_in(cx, |view, _, cx| view.toggle_projection_rich_preview(cx));
     settle_visual(cx);
 
     view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
     settle_visual(cx);
 
-    let (notebook_lines, plist_lines) = view.update_in(cx, |view, _, cx| {
+    let (csv_lines, plist_lines) = view.update_in(cx, |view, _, cx| {
         (
-            view.diff_edit_preview_line_count(FormatFixture::NOTEBOOK, cx),
+            view.diff_edit_preview_line_count(FormatFixture::CSV, cx),
             view.diff_edit_preview_line_count(FormatFixture::PLIST, cx),
         )
     });
-    let raw_lines = fs::read_to_string(fixture.path.join(FormatFixture::NOTEBOOK))
+    let raw_lines = fs::read_to_string(fixture.path.join(FormatFixture::CSV))
         .unwrap()
         .lines()
         .count();
     assert_eq!(
-        notebook_lines, raw_lines,
+        csv_lines, raw_lines,
         "the card shows the raw source rows its stats describe, not the cached processed preview"
     );
     let xml_lines = jayjay_core::Repo::open(&fixture.path)

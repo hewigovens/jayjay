@@ -12,7 +12,7 @@ use self::path::*;
 use super::DiffViewMode;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::tag_for_hunk;
-use crate::diff::projection;
+use crate::diff::projection::{self, ProjectionView};
 use crate::diff::{file_status, line_stats};
 use crate::repo::window::{FocusStop, RepoWindow};
 
@@ -26,7 +26,7 @@ pub(crate) const DETAIL_INSET: f32 = 20.;
 
 pub(super) struct ProjectionHeaderState<'a> {
     pub(super) projection: Option<&'a DiffProjection>,
-    pub(super) active: bool,
+    pub(super) view: Option<ProjectionView>,
 }
 
 pub(super) struct FileHeaderState<'a> {
@@ -142,11 +142,19 @@ pub(super) fn file_header(
     {
         actions = actions.child(projection_button(
             projection,
-            state.projection.active,
+            state.projection.view == Some(ProjectionView::Rendered),
             compact,
             t,
             cx,
         ));
+        if projection::shows_source_toggle(projection) {
+            actions = actions.child(source_button(
+                state.projection.view == Some(ProjectionView::Source),
+                compact,
+                t,
+                cx,
+            ));
+        }
     }
     if let Some(url) = state.html_external_url {
         actions = actions.child(html_external_open_button(url.to_owned(), t));

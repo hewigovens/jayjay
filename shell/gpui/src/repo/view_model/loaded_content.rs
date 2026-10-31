@@ -32,4 +32,5 @@ pub(crate) enum DiffLoadState {
 pub struct SvgPreviewContent {
     pub(crate) old: Option<String>,
     pub new: Option<String>,
+    pub(crate) opens_preview: bool,
 }

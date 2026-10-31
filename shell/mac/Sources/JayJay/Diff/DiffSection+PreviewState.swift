@@ -104,10 +104,7 @@ extension DiffSection {
 
     var shouldShowProjectionBanner: Bool {
         guard let projection = effectiveProjection else { return false }
-        return DiffProjectionDisplayPolicy.showsBanner(
-            for: projection,
-            richView: activeProjectionRichView
-        )
+        return DiffProjectionDisplayPolicy.showsBanner(for: projection, view: projectionView)
     }
 
     var effectiveProjection: DiffProjection? {
@@ -120,14 +117,40 @@ extension DiffSection {
     }
 
     var projectionRequestMode: DiffProjectionMode? {
-        DiffProjectionDisplayPolicy.requestMode(
-            for: effectiveProjection,
-            richView: activeProjectionRichView
-        )
+        DiffProjectionDisplayPolicy.requestMode(for: effectiveProjection, view: projectionView)
+    }
+
+    var projectionView: DiffProjectionView? {
+        guard let projection = effectiveProjection else { return nil }
+        switch selectedPreviewKind {
+            case .projection: return .rendered
+            case .source: return .source
+            default: return DiffProjectionDisplayPolicy.defaultView(for: projection)
+        }
+    }
+
+    private var selectedPreviewKind: DiffRichPreviewSelection.Kind? {
+        richPreviewSelection?.path == hunk.path ? richPreviewSelection?.kind : nil
     }
 
     var activeSvgRichView: Bool {
-        richPreviewSelection?.isActive(.svg, path: hunk.path) ?? false
+        switch selectedPreviewKind {
+            case .svg: true
+            case .source: false
+            default: svgOpensPreview
+        }
+    }
+
+    /// Notes anchor to source lines, so a noted file stays on its source.
+    private var svgOpensPreview: Bool {
+        isSvgFile && loadedPath == hunk.path && loadedDiff?.opensSvgPreview == true
+            && loadedReviewNoteSummaries().isEmpty
+    }
+
+    /// A conflicted or binary side would render as a broken image.
+    nonisolated static func svgOpensPreview(oldContent: String?, newContent: String?) -> Bool {
+        let sides = [oldContent, newContent].compactMap { $0 }.filter { !$0.isEmpty }
+        return !sides.isEmpty && sides.allSatisfy { $0.contains("<svg") && !$0.contains("<<<<<<<") }
     }
 
     var activeMarkdownRichView: Bool {
@@ -139,7 +162,7 @@ extension DiffSection {
     }
 
     var activeProjectionRichView: Bool {
-        richPreviewSelection?.isActive(.projection, path: hunk.path) ?? false
+        projectionView == .rendered
     }
 
     var projectionModeKey: String {
@@ -155,7 +178,7 @@ extension DiffSection {
     }
 
     func toggleSvgRichView() {
-        toggleRichView(.svg)
+        toggleDefaultPreview(.svg, previewing: activeSvgRichView, opensPreview: svgOpensPreview)
     }
 
     func toggleMarkdownRichView() {
@@ -172,7 +195,27 @@ extension DiffSection {
     }
 
     func toggleProjectionRichView() {
-        toggleRichView(.projection)
+        let opensRendered = effectiveProjection.map(DiffProjectionDisplayPolicy.defaultView) == .rendered
+        toggleDefaultPreview(.projection, previewing: activeProjectionRichView, opensPreview: opensRendered)
+    }
+
+    func toggleProjectionSourceView() {
+        toggleRichView(.source)
+    }
+
+    /// Turning off a default preview has to be remembered as choosing source.
+    private func toggleDefaultPreview(
+        _ kind: DiffRichPreviewSelection.Kind,
+        previewing: Bool,
+        opensPreview: Bool
+    ) {
+        if !previewing {
+            richPreviewSelection = DiffRichPreviewSelection(kind: kind, path: hunk.path)
+        } else if opensPreview {
+            richPreviewSelection = DiffRichPreviewSelection(kind: .source, path: hunk.path)
+        } else {
+            richPreviewSelection = nil
+        }
     }
 
     private func toggleRichView(_ kind: DiffRichPreviewSelection.Kind) {

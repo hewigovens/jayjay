@@ -63,16 +63,12 @@ pub(crate) fn detail_pane(
         .and_then(|files| view.hidden_only_files(files, &vm.tracked_lfs_paths));
     let file_stats = vm.stats.per_file.clone();
     let selected_file_has_conflict = vm.selected_file_has_conflict();
-    let active_projection_preview = selected_hunk.as_ref().is_some_and(|hunk| {
-        view.diff.rich_preview.as_ref().is_some_and(|selection| {
-            selection.is_active(DiffRichPreviewKind::Projection, hunk.path.as_str())
-        })
-    });
-    let active_svg_preview = selected_hunk.as_ref().is_some_and(|hunk| {
-        view.diff.rich_preview.as_ref().is_some_and(|selection| {
-            selection.is_active(DiffRichPreviewKind::Svg, hunk.path.as_str())
-        })
-    });
+    let projection_view = selected_hunk
+        .as_ref()
+        .and_then(|hunk| view.diff.projection_view(hunk));
+    let active_svg_preview = selected_hunk
+        .as_ref()
+        .is_some_and(|hunk| view.svg_preview_is_active(hunk, cx));
     let active_markdown_preview = selected_hunk.as_ref().is_some_and(|hunk| {
         view.diff.rich_preview.as_ref().is_some_and(|selection| {
             selection.is_active(DiffRichPreviewKind::Markdown, hunk.path.as_str())
@@ -114,7 +110,7 @@ pub(crate) fn detail_pane(
         hidden_only_files,
         file_diff: current_diff.as_ref(),
         loaded_projection: current_projection.as_ref(),
-        active_projection_preview,
+        projection_view,
         active_markdown_preview,
         active_svg_preview,
         markdown_preview: current_markdown_preview.as_ref(),
