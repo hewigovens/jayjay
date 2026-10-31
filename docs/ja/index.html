@@ -68,7 +68,8 @@
       { "@type": "Question", "name": "JayJay はオープンソースですか？", "acceptedAnswer": { "@type": "Answer", "text": "無料で、ソースコードも公開しています（source-available）。macOS アプリのライセンスは BSL 1.1 で、使用、フォーク、改変、再配布は自由です。許可が必要なのは有料のアプリストアでの配布のみです。2030-03-23 に Apache-2.0 へ移行します。Rust クレートはすでに Apache-2.0 です。" } },
       { "@type": "Question", "name": "Linux へのインストール方法は？", "acceptedAnswer": { "@type": "Answer", "text": "curl -fsSL https://jayjay.hewig.dev/install.sh | bash を実行します。このスクリプトは、チェックサムを検証したうえで、apt ベースのシステムには最新の Debian パッケージを、それ以外の x86_64 / aarch64 環境には AppImage をインストールします。アップグレードするにはもう一度実行してください。Arch Linux では AUR の jayjay-appimage をインストールします（例：yay -S jayjay-appimage）。--beta を付けると、安定版より新しいベータ版があるときにそれをインストールします。その後 jayjay /path/to/repo を実行するか、ウィンドウからリポジトリを開いてください。対応内容はガイド（英語）に記載しています。" } },
       { "@type": "Question", "name": "Arch Linux へのインストール方法は？", "acceptedAnswer": { "@type": "Answer", "text": "x86_64 または aarch64 向けに AUR の jayjay-appimage をインストールします（例：yay -S jayjay-appimage）。独自の pacman リポジトリは廃止されました。AUR 経由でアップグレードする前に、/etc/pacman.conf から [jayjay] セクション全体を削除してください。AppImage のベータ版を試すには、インストール済みのパッケージを先に削除してから、Linux インストーラを --beta 付きで実行します。手順はガイド（英語）に記載しています。" } },
-      { "@type": "Question", "name": "Windows や Linux でも使えますか？", "acceptedAnswer": { "@type": "Answer", "text": "Linux と Windows は GPUI シェルを使い、macOS と Rust コアを共有しています。Linux 版は x86_64 と aarch64 向けに AppImage、Debian/Ubuntu パッケージ、AUR パッケージとして提供しています。詳しくはガイド（英語）をご覧ください。Windows 対応はベータ版です。Windows x64 版は Microsoft Store からインストールするか、ベータ版ビルドは GitHub Releases のポータブル ZIP を利用してください。Windows 10 バージョン 1903 以降または Windows 11 が必要で、jj は別途インストールが必要です。Store 版の更新は Store が管理します。ポータブル ZIP に自動更新機能はありません。" } }
+      { "@type": "Question", "name": "Windows や Linux でも使えますか？", "acceptedAnswer": { "@type": "Answer", "text": "Linux と Windows は GPUI シェルを使い、macOS と Rust コアを共有しています。Linux 版は x86_64 と aarch64 向けに AppImage、Debian/Ubuntu パッケージ、AUR パッケージとして提供しています。詳しくはガイド（英語）をご覧ください。Windows 対応はベータ版です。Windows x64 版は Microsoft Store からインストールするか、ベータ版ビルドは GitHub Releases のポータブル ZIP を利用してください。Windows 10 バージョン 1903 以降または Windows 11 が必要で、jj は別途インストールが必要です。Store 版の更新は Store が管理します。ポータブル ZIP に自動更新機能はありません。" } },
+      { "@type": "Question", "name": "SSH で別のマシンのリポジトリを開けますか？", "acceptedAnswer": { "@type": "Answer", "text": "はい、macOS アプリと Linux 版で使えます。File > Open Remote Repository… を選び、SSH 設定にあるホストを選んでリポジトリのフォルダを開きます。接続先は macOS、Linux、Windows に対応しています。初回接続時に小さなヘルパーをホストへインストールします。ホストには鍵またはエージェントで認証できる必要があります。レビューノートは手元のマシンに残ります。詳しくはガイド（英語）をご覧ください。" } }
     ]
   }
   </script>
@@ -408,6 +409,10 @@
         <details>
           <summary>Windows や Linux でも使えますか？</summary>
           <p>Linux と Windows は GPUI シェルを使い、macOS と Rust コアを共有しています。Linux 版は x86_64 と aarch64 向けに AppImage、Debian/Ubuntu パッケージ、AUR パッケージとして提供しています。詳しくは<a hreflang="en" href="../guide.html#gpui">ガイド</a>（英語）をご覧ください。Windows 対応はベータ版です。Windows x64 版は <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> からインストールするか、ベータ版ビルドは <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> のポータブル ZIP を利用してください。Windows 10 バージョン 1903 以降または Windows 11 が必要で、<code>jj</code> は別途インストールが必要です。Store 版の更新は Store が管理します。ポータブル ZIP に自動更新機能はありません。</p>
+        </details>
+        <details>
+          <summary>SSH で別のマシンのリポジトリを開けますか？</summary>
+          <p>はい、macOS アプリと Linux 版で使えます。<strong>File &gt; Open Remote Repository…</strong> を選び、SSH 設定にあるホストを選んでリポジトリのフォルダを開きます。接続先は macOS、Linux、Windows に対応しています。初回接続時に小さなヘルパーをホストへインストールします。ホストには鍵またはエージェントで認証できる必要があります。レビューノートは手元のマシンに残ります。詳しくは<a hreflang="en" href="../guide.html#remote">ガイド</a>（英語）をご覧ください。</p>
         </details>
       </div>
     </div>

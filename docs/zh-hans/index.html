@@ -68,7 +68,8 @@
       { "@type": "Question", "name": "JayJay 是开源的吗？", "acceptedAnswer": { "@type": "Answer", "text": "免费，源代码公开（source-available）。macOS 应用采用 BSL 1.1 许可：可以免费使用、复刻、修改和再分发，只有在付费应用商店分发才需要许可。它将于 2030-03-23 转为 Apache-2.0。Rust crate 已经是 Apache-2.0。" } },
       { "@type": "Question", "name": "如何在 Linux 上安装 JayJay？", "acceptedAnswer": { "@type": "Answer", "text": "运行 curl -fsSL https://jayjay.hewig.dev/install.sh | bash。该脚本会先验证校验和，然后在基于 apt 的系统上安装最新的 Debian 包，在其他 x86_64 或 aarch64 系统上安装 AppImage；再次运行即可升级。在 Arch Linux 上，请安装 AUR 中的 jayjay-appimage，例如 yay -S jayjay-appimage。添加 --beta 可在有比稳定版更新的测试版时安装它。之后运行 jayjay /path/to/repo，或在窗口中打开仓库。指南（英文）列出了支持的内容。" } },
       { "@type": "Question", "name": "如何在 Arch Linux 上安装 JayJay？", "acceptedAnswer": { "@type": "Answer", "text": "为 x86_64 或 aarch64 安装 AUR 中的 jayjay-appimage，例如 yay -S jayjay-appimage。自定义 pacman 仓库已停用；通过 AUR 升级前，请从 /etc/pacman.conf 中删除整个 [jayjay] 小节。要试用 AppImage 测试版，请先卸载已安装的软件包，然后使用 --beta 运行 Linux 安装脚本。指南（英文）中有详细步骤。" } },
-      { "@type": "Question", "name": "JayJay 能在 Windows 或 Linux 上运行吗？", "acceptedAnswer": { "@type": "Answer", "text": "Linux 和 Windows 使用 GPUI 界面，并与 macOS 共享 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 包和 AUR 包的形式提供，支持 x86_64 和 aarch64；详见指南（英文）。Windows 支持处于测试阶段。可从 Microsoft Store 安装 Windows x64 版，或使用 GitHub Releases 上的便携版 ZIP 获取测试版构建。Windows 需要 Windows 10 版本 1903 或更高版本，或 Windows 11，并需另行安装 jj。Store 版由 Store 管理更新；便携版 ZIP 没有自动更新功能。" } }
+      { "@type": "Question", "name": "JayJay 能在 Windows 或 Linux 上运行吗？", "acceptedAnswer": { "@type": "Answer", "text": "Linux 和 Windows 使用 GPUI 界面，并与 macOS 共享 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 包和 AUR 包的形式提供，支持 x86_64 和 aarch64；详见指南（英文）。Windows 支持处于测试阶段。可从 Microsoft Store 安装 Windows x64 版，或使用 GitHub Releases 上的便携版 ZIP 获取测试版构建。Windows 需要 Windows 10 版本 1903 或更高版本，或 Windows 11，并需另行安装 jj。Store 版由 Store 管理更新；便携版 ZIP 没有自动更新功能。" } },
+      { "@type": "Question", "name": "JayJay 能通过 SSH 打开另一台机器上的仓库吗？", "acceptedAnswer": { "@type": "Answer", "text": "可以，macOS 应用和 Linux 版都支持。选择 File > Open Remote Repository…，从 SSH 配置中挑选主机，再浏览到仓库所在文件夹即可。远程主机可以是 macOS、Linux 或 Windows；首次连接时，JayJay 会在主机上安装一个小巧的辅助程序，主机需支持密钥或 agent 认证。审阅备注只保存在你自己的机器上。详见指南（英文）。" } }
     ]
   }
   </script>
@@ -408,6 +409,10 @@
         <details>
           <summary>JayJay 能在 Windows 或 Linux 上运行吗？</summary>
           <p>Linux 和 Windows 使用 GPUI 界面，并与 macOS 共享 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 包和 AUR 包的形式提供，支持 x86_64 和 aarch64；详见<a hreflang="en" href="../guide.html#gpui">指南</a>（英文）。Windows 支持处于测试阶段。可从 <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> 安装 Windows x64 版，或使用 <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> 上的便携版 ZIP 获取测试版构建。Windows 需要 Windows 10 版本 1903 或更高版本，或 Windows 11，并需另行安装 <code>jj</code>。Store 版由 Store 管理更新；便携版 ZIP 没有自动更新功能。</p>
+        </details>
+        <details>
+          <summary>JayJay 能通过 SSH 打开另一台机器上的仓库吗？</summary>
+          <p>可以，macOS 应用和 Linux 版都支持。选择 <strong>File &gt; Open Remote Repository…</strong>，从 SSH 配置中挑选主机，再浏览到仓库所在文件夹即可。远程主机可以是 macOS、Linux 或 Windows；首次连接时，JayJay 会在主机上安装一个小巧的辅助程序，主机需支持密钥或 agent 认证。审阅备注只保存在你自己的机器上。详见<a hreflang="en" href="../guide.html#remote">指南</a>（英文）。</p>
         </details>
       </div>
     </div>

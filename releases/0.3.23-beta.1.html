@@ -1,0 +1,15 @@
+<h2>Remote repositories over SSH</h2>
+<ul>
+  <li>Choose <strong>File &gt; Open Remote Repository…</strong> or search the command palette to open a jj repository on another machine. Pick a host from your SSH config or type one, then browse to its folder. A folder that is not a repository yet offers <code>jj git init</code>.</li>
+  <li>macOS, Linux, and Windows hosts are supported. On first connect JayJay downloads the small helper it runs on that host and checks it against this release.</li>
+  <li>The status bar shows the host’s platform and connection state, with Disconnect and Reconnect. While disconnected the repository stays on screen, and JayJay never retries a write on its own: reconnect and refresh first.</li>
+  <li>Remote working copies refresh on their own, like local ones. Review notes stay on this Mac; JayJay checks them against the host’s diffs here.</li>
+</ul>
+<h2>History and workspaces</h2>
+<ul>
+  <li>A workspace chip’s menu in the graph offers <strong>Rebase Lane onto <em>trunk</em></strong>, as in Repo Overview.</li>
+</ul>
+<h2>Safety</h2>
+<ul>
+  <li>File deletions and ignore-file additions stay inside the repository even through symbolic links, image previews use a private cache, and SVG previews render as inert images.</li>
+</ul>

@@ -261,6 +261,12 @@ does-jayjay-work-on-windows-or = JayJay 能在 Windows 或 Linux 上运行吗？
 # Linux and Windows use the GPUI shell and share the Rust core with macOS. Linux ships as an AppImage, Debian/Ubuntu package, and AUR package for x86_64 and aarch64; see the <a href="guide.html#gpui">guide</a>. Windows support is in beta. Install Windows x64 from the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a>, or use the portable ZIP from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> for beta builds. Windows requires Windows 10 version 1903 or later, or Windows 11, with <code>jj</code> installed separately. The Store manages its updates; the portable ZIP has no automatic updater.
 linux-and-windows-use-the-gpui = Linux 和 Windows 使用 GPUI 界面，并与 macOS 共享 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 包和 AUR 包的形式提供，支持 x86_64 和 aarch64；详见<a href="guide.html#gpui">指南</a>（英文）。Windows 支持处于测试阶段。可从 <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> 安装 Windows x64 版，或使用 <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> 上的便携版 ZIP 获取测试版构建。Windows 需要 Windows 10 版本 1903 或更高版本，或 Windows 11，并需另行安装 <code>jj</code>。Store 版由 Store 管理更新；便携版 ZIP 没有自动更新功能。
 
+# Can JayJay open a repository on another machine over SSH?
+can-jayjay-open-a-repository-on = JayJay 能通过 SSH 打开另一台机器上的仓库吗？
+
+# Yes, in the macOS app and on Linux. Choose <strong>File &gt; Open Remote Repository…</strong>, pick a host from your SSH config, and browse to the repository. macOS, Linux, and Windows hosts are supported; on first connect JayJay installs a small helper on the host, and the host must accept key or agent authentication. Review notes stay on your machine. The <a href="guide.html#remote">guide</a> has the details.
+yes-in-the-macos-app-and = 可以，macOS 应用和 Linux 版都支持。选择 <strong>File &gt; Open Remote Repository…</strong>，从 SSH 配置中挑选主机，再浏览到仓库所在文件夹即可。远程主机可以是 macOS、Linux 或 Windows；首次连接时，JayJay 会在主机上安装一个小巧的辅助程序，主机需支持密钥或 agent 认证。审阅备注只保存在你自己的机器上。详见<a href="guide.html#remote">指南</a>（英文）。
+
 # From the notebook.
 from-the-notebook = 开发笔记
 

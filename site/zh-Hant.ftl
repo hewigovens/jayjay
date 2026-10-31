@@ -261,6 +261,12 @@ does-jayjay-work-on-windows-or = JayJay 能在 Windows 或 Linux 上執行嗎？
 # Linux and Windows use the GPUI shell and share the Rust core with macOS. Linux ships as an AppImage, Debian/Ubuntu package, and AUR package for x86_64 and aarch64; see the <a href="guide.html#gpui">guide</a>. Windows support is in beta. Install Windows x64 from the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a>, or use the portable ZIP from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> for beta builds. Windows requires Windows 10 version 1903 or later, or Windows 11, with <code>jj</code> installed separately. The Store manages its updates; the portable ZIP has no automatic updater.
 linux-and-windows-use-the-gpui = Linux 和 Windows 使用 GPUI 介面，並與 macOS 共用 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 套件和 AUR 套件提供，支援 x86_64 和 aarch64；詳見<a href="guide.html#gpui">指南</a>（英文）。Windows 支援處於測試階段。可從 <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> 安裝 Windows x64 版，或使用 <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> 上的可攜式 ZIP 取得測試版組建。Windows 需要 Windows 10 版本 1903 或以上，或 Windows 11，並需另行安裝 <code>jj</code>。Store 版由 Store 管理更新；可攜式 ZIP 沒有自動更新功能。
 
+# Can JayJay open a repository on another machine over SSH?
+can-jayjay-open-a-repository-on = JayJay 能透過 SSH 開啟另一台機器上的儲存庫嗎？
+
+# Yes, in the macOS app and on Linux. Choose <strong>File &gt; Open Remote Repository…</strong>, pick a host from your SSH config, and browse to the repository. macOS, Linux, and Windows hosts are supported; on first connect JayJay installs a small helper on the host, and the host must accept key or agent authentication. Review notes stay on your machine. The <a href="guide.html#remote">guide</a> has the details.
+yes-in-the-macos-app-and = 可以，macOS 應用程式和 Linux 版都支援。選擇 <strong>File &gt; Open Remote Repository…</strong>，從 SSH 設定中挑選主機，再瀏覽到儲存庫所在的資料夾即可。遠端主機可以是 macOS、Linux 或 Windows；首次連線時，JayJay 會在主機上安裝一個小巧的輔助程式，主機需支援金鑰或 agent 認證。審閱備註只會保存在你自己的機器上。詳見<a href="guide.html#remote">指南</a>（英文）。
+
 # From the notebook.
 from-the-notebook = 開發筆記
 

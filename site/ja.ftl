@@ -261,6 +261,12 @@ does-jayjay-work-on-windows-or = Windows や Linux でも使えますか？
 # Linux and Windows use the GPUI shell and share the Rust core with macOS. Linux ships as an AppImage, Debian/Ubuntu package, and AUR package for x86_64 and aarch64; see the <a href="guide.html#gpui">guide</a>. Windows support is in beta. Install Windows x64 from the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a>, or use the portable ZIP from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> for beta builds. Windows requires Windows 10 version 1903 or later, or Windows 11, with <code>jj</code> installed separately. The Store manages its updates; the portable ZIP has no automatic updater.
 linux-and-windows-use-the-gpui = Linux と Windows は GPUI シェルを使い、macOS と Rust コアを共有しています。Linux 版は x86_64 と aarch64 向けに AppImage、Debian/Ubuntu パッケージ、AUR パッケージとして提供しています。詳しくは<a href="guide.html#gpui">ガイド</a>（英語）をご覧ください。Windows 対応はベータ版です。Windows x64 版は <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> からインストールするか、ベータ版ビルドは <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> のポータブル ZIP を利用してください。Windows 10 バージョン 1903 以降または Windows 11 が必要で、<code>jj</code> は別途インストールが必要です。Store 版の更新は Store が管理します。ポータブル ZIP に自動更新機能はありません。
 
+# Can JayJay open a repository on another machine over SSH?
+can-jayjay-open-a-repository-on = SSH で別のマシンのリポジトリを開けますか？
+
+# Yes, in the macOS app and on Linux. Choose <strong>File &gt; Open Remote Repository…</strong>, pick a host from your SSH config, and browse to the repository. macOS, Linux, and Windows hosts are supported; on first connect JayJay installs a small helper on the host, and the host must accept key or agent authentication. Review notes stay on your machine. The <a href="guide.html#remote">guide</a> has the details.
+yes-in-the-macos-app-and = はい、macOS アプリと Linux 版で使えます。<strong>File &gt; Open Remote Repository…</strong> を選び、SSH 設定にあるホストを選んでリポジトリのフォルダを開きます。接続先は macOS、Linux、Windows に対応しています。初回接続時に小さなヘルパーをホストへインストールします。ホストには鍵またはエージェントで認証できる必要があります。レビューノートは手元のマシンに残ります。詳しくは<a href="guide.html#remote">ガイド</a>（英語）をご覧ください。
+
 # From the notebook.
 from-the-notebook = 開発ノートより
 
