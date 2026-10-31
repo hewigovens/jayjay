@@ -83,10 +83,23 @@ jobs:
       - name: Build jayjay-gpui
         env:
           JAYJAY_PRERELEASE: ${{ contains(github.event.release.tag_name || github.ref_name, '-beta') && '1' || '' }}
-        run: cargo build --release --locked -p jayjay-gpui -p jayjay-core --bin jayjay-gpui --bin jayjay-ssh
+          HELPER: ${{ github.event_name != 'release' && '-p jayjay-core --bin jayjay-ssh' || '' }}
+        run: cargo build --release --locked -p jayjay-gpui --bin jayjay-gpui $HELPER
+
+      - name: Download the SSH helper manifest
+        if: github.event_name == 'release'
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        # The macOS publish uploads it just after creating the release.
+        run: |
+          for _ in $(seq 60); do
+            curl -fsSL -o ssh-helpers.json "https://github.com/${{ github.repository }}/releases/download/$TAG_NAME/ssh-helpers.json" && break
+            sleep 30
+          done
+          grep -q "/$TAG_NAME/" ssh-helpers.json
 
       - name: Build AppImage
-        run: dist/appimage/build.sh target/release/jayjay-gpui ${{ matrix.arch }} out
+        run: dist/appimage/build.sh target/release/jayjay-gpui ${{ matrix.arch }} out ${{ github.event_name == 'release' && 'ssh-helpers.json' || '' }}
 
       - name: Inspect AppImage metadata
         run: |
@@ -96,6 +109,7 @@ jobs:
           ./out/jayjay-gpui-${{ matrix.arch }}.AppImage --version
           test -f squashfs-root/dev.hewig.JayJay.desktop
           test -f squashfs-root/.DirIcon
+          test -f squashfs-root/usr/share/jayjay/ssh-helpers/manifest.json || test -x squashfs-root/usr/bin/jayjay-ssh
           test -f squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg
           test -f squashfs-root/usr/share/icons/hicolor/256x256/apps/dev.hewig.JayJay.png
           grep -q '#3B82F6' squashfs-root/usr/share/icons/hicolor/scalable/apps/dev.hewig.JayJay.svg

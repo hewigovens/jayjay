@@ -70,6 +70,7 @@ pub use review_note_output::{
     ReviewOutputFormat, add_review_note, resolve_review_note, review_notes_output,
 };
 pub use review_notes::ReviewNotesReport;
+pub(crate) use review_notes::{CoreReviewDiffProvider, ReviewDiffSource};
 pub use review_snapshot::{review_display_group_map_from_hunk, review_snapshot_from_hunk};
 pub use stacked_pr::branch_name_slug;
 pub use working_copy_review::{

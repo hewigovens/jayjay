@@ -21,9 +21,11 @@ pub(crate) struct Connection {
     error: Mutex<Option<String>>,
 }
 
-const OPTIONS: [&str; 16] = [
+const OPTIONS: [&str; 18] = [
     "-o",
     "ForwardAgent=no",
+    "-o",
+    "ForwardX11=no",
     "-o",
     "ClearAllForwardings=yes",
     "-o",

@@ -24,7 +24,16 @@ esac
 
 app_path="$derived_data/Build/Products/Release/$app_name.app"
 zip_path="$release_dir/$app_name-$version.zip"
+# Debug bundles copy the same folder and must not pick up the release manifest.
+trap 'rm -f "$root/build/ssh-helpers/manifest.json"' EXIT
+bash "$root/scripts/macos/ssh-helpers.sh" "$version"
+rm -rf "$app_path"
 bash "$root/scripts/macos/build.sh" Release
+helpers="$app_path/Contents/Resources/ssh-helpers"
+if [[ "$(ls "$helpers")" != manifest.json ]] || ! grep -q "/v$version/" "$helpers/manifest.json"; then
+  echo "The app must bundle only the SSH helper manifest for v$version." >&2
+  exit 1
+fi
 if [[ "$mode" == release ]]; then
   echo "Signing with ${signing_identity}..."
   cp "$provisioning_profile" "$app_path/Contents/embedded.provisionprofile"

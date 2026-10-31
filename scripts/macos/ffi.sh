@@ -56,7 +56,6 @@ case "$1" in
     RUSTFLAGS="-C link-arg=${macos_min_flag}" \
     cargo build --release --target "${macos_target}" -p jayjay-uniffi
     test -f "$staticlib"
-    bash "$root/scripts/ssh-helper.sh" "$macos_target" release
     wrap release "$staticlib"
     ;;
   wrap) wrap "$2" "$3" ;;

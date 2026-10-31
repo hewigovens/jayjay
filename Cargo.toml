@@ -24,6 +24,7 @@ zbus-secret-service-keyring-store = { version = "1", features = ["crypto-rust"] 
 base64 = "0.23"
 image = { version = "0.25", default-features = false, features = ["png", "jpeg", "gif", "webp", "bmp"] }
 ureq = "3"
+flate2 = "1"
 uniffi = { version = "0.32", default-features = false }
 clap = { version = "4", features = ["derive"] }
 thiserror = "2"

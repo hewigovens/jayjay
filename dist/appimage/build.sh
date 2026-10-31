@@ -3,13 +3,14 @@
 set -euo pipefail
 
 usage() {
-  echo "usage: $0 <jayjay-gpui binary> <x86_64|aarch64> <output dir>" >&2
+  echo "usage: $0 <jayjay-gpui binary> <x86_64|aarch64> <output dir> [ssh-helpers.json]" >&2
   exit 2
 }
-[[ $# -eq 3 ]] || usage
+[[ $# -eq 3 || $# -eq 4 ]] || usage
 binary=$1
 arch=$2
 out=$3
+manifest=${4:-}
 
 runtime_release=20251108
 case "$arch" in
@@ -25,7 +26,12 @@ trap 'rm -rf "$work"' EXIT
 appdir=$work/AppDir
 
 install -Dm755 "$binary" "$appdir/usr/bin/jayjay-gpui"
-install -Dm755 "$(dirname "$binary")/jayjay-ssh" "$appdir/usr/bin/jayjay-ssh"
+# Releases download a host's helper from the manifest; other builds bundle the native one.
+if [[ -n "$manifest" ]]; then
+  install -Dm644 "$manifest" "$appdir/usr/share/jayjay/ssh-helpers/manifest.json"
+else
+  install -Dm755 "$(dirname "$binary")/jayjay-ssh" "$appdir/usr/bin/jayjay-ssh"
+fi
 "$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"

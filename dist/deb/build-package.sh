@@ -30,6 +30,10 @@ install -Dm755 "$appdir/AppRun" "$package/opt/jayjay/AppRun"
 install -Dm755 "$appdir/usr/bin/jayjay-gpui" "$package/opt/jayjay/usr/bin/jayjay-gpui"
 install -d "$package/opt/jayjay/usr/lib"
 cp -a "$appdir/usr/lib/." "$package/opt/jayjay/usr/lib/"
+if [[ -d "$appdir/usr/share/jayjay" ]]; then
+  install -d "$package/opt/jayjay/usr/share"
+  cp -a "$appdir/usr/share/jayjay" "$package/opt/jayjay/usr/share/"
+fi
 install -d "$package/usr/bin"
 ln -s /opt/jayjay/AppRun "$package/usr/bin/jayjay"
 ln -s /opt/jayjay/AppRun "$package/usr/bin/jayjay-gpui"

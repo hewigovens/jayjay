@@ -32,8 +32,13 @@ upload-release:
     echo "Release archive or SHA-256 missing at $zip_path. Run 'just shell::release' first." >&2
     exit 1
   fi
-  echo "Uploading $zip_path to release v{{version}}"
-  gh release upload "v{{version}}" "$zip_path" "$zip_path.sha256" --clobber
+  helpers="{{release_dir}}/ssh-helpers"
+  if ! grep -q "/v{{version}}/" "$helpers/ssh-helpers.json" 2>/dev/null; then
+    echo "SSH helper assets for v{{version}} missing at $helpers. Run 'just shell::release' first." >&2
+    exit 1
+  fi
+  echo "Uploading $zip_path and the SSH helpers to release v{{version}}"
+  gh release upload "v{{version}}" "$zip_path" "$zip_path.sha256" "$helpers"/* --clobber
 
 # Verify the uploaded asset is publicly reachable at the URL Sparkle downloads.
 verify-public-release:
@@ -46,6 +51,14 @@ verify-public-release:
     exit 1
   fi
   echo "Verified public release asset: $asset_url"
+  for helper_url in $(grep -o 'https://[^"]*' "{{release_dir}}/ssh-helpers/ssh-helpers.json"); do
+    status=$(curl -I -L -s -o /dev/null -w '%{http_code}' "$helper_url")
+    if [ "$status" != "200" ]; then
+      echo "SSH helper asset is not publicly downloadable ($status): $helper_url" >&2
+      exit 1
+    fi
+  done
+  echo "Verified public SSH helper assets"
 
 # Update the Homebrew cask at ../tap/Casks/jayjay.rb with the current version and SHA.
 update-cask:

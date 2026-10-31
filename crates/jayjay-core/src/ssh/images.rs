@@ -9,15 +9,17 @@ fn for_each_image_path(
     visit: &mut impl FnMut(&mut String) -> JayResult<()>,
 ) -> JayResult<()> {
     match value {
-        Value::Object(object) => match object.get_mut("Image") {
-            Some(Value::Object(image)) => match image.get_mut("path") {
-                Some(Value::String(path)) => visit(path),
-                _ => Ok(()),
-            },
-            _ => object
+        Value::Object(object) => {
+            if let Some(Value::Object(image)) = object.get_mut("Image")
+                && let Some(Value::String(path)) = image.get_mut("path")
+            {
+                visit(path)?;
+            }
+            // A host can add fields beside an image, so every sibling is still searched for previews.
+            object
                 .values_mut()
-                .try_for_each(|value| for_each_image_path(value, visit)),
-        },
+                .try_for_each(|value| for_each_image_path(value, visit))
+        }
         Value::Array(values) => values
             .iter_mut()
             .try_for_each(|value| for_each_image_path(value, visit)),
@@ -79,6 +81,8 @@ mod tests {
         assert_ne!(cached, source.to_str().unwrap());
         assert_eq!(std::fs::read(cached).unwrap(), bytes);
         assert!(materialize(&mut json!({"Image": {"path": "/missing"}}), &images).is_err());
+        let mut shadowed = json!({"Image": {}, "new": {"Image": {"path": "/dev/zero"}}});
+        assert!(materialize(&mut shadowed, &images).is_err());
     }
 
     #[cfg(unix)]

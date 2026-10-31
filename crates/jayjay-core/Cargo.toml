@@ -24,6 +24,7 @@ repository = [
     "dep:csv",
     "dep:dunce",
     "dep:etcetera",
+    "dep:flate2",
     "dep:futures",
     "dep:gix",
     "dep:gix-url",
@@ -94,6 +95,7 @@ serde_json = { workspace = true, optional = true }
 plist = { workspace = true, optional = true }
 csv = { workspace = true, optional = true }
 dunce = { workspace = true, optional = true }
+flate2 = { workspace = true, optional = true }
 etcetera = { workspace = true, optional = true }
 gethostname = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }

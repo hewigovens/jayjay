@@ -1,13 +1,13 @@
 use super::connection::{self, Connection};
+use super::helper::Helper;
 use super::{RemoteDirectory, RemoteLocation};
 use crate::{JayError, JayResult};
 use base64::Engine;
 use serde::de::DeserializeOwned;
-use sha2::{Digest, Sha256};
 use std::collections::HashMap;
-use std::path::{Path, PathBuf};
+use std::path::Path;
 use std::sync::{
-    Arc, LazyLock, Mutex, OnceLock,
+    Arc, LazyLock, Mutex,
     atomic::{AtomicBool, Ordering},
 };
 
@@ -25,25 +25,9 @@ pub enum ConnectionState {
     Disconnected,
 }
 
-static HELPERS: OnceLock<PathBuf> = OnceLock::new();
 static CONNECTIONS: LazyLock<Mutex<HashMap<String, Arc<MachineConnection>>>> =
     LazyLock::new(Mutex::default);
 static SETUPS: LazyLock<Mutex<HashMap<String, Arc<Mutex<()>>>>> = LazyLock::new(Mutex::default);
-
-pub fn set_helper_directory(path: PathBuf) {
-    let _ = HELPERS.set(path);
-}
-pub fn helper_directory() -> PathBuf {
-    HELPERS
-        .get()
-        .cloned()
-        .or_else(|| {
-            std::env::current_exe()
-                .ok()
-                .and_then(|p| p.parent().map(|p| p.join("../Resources/ssh-helpers")))
-        })
-        .unwrap_or_default()
-}
 
 pub(crate) struct MachineConnection {
     connection: Mutex<Arc<Connection>>,
@@ -104,39 +88,11 @@ impl MachineConnection {
             Connecting(&shared.connecting)
         });
         let host = Host::probe(machine)?;
-        let windows = host.platform == HostPlatform::Windows;
-        let helper = if windows {
-            "jayjay-ssh.exe"
+        let helper = Helper::locate(host.target)?;
+        let command = if host.platform == HostPlatform::Windows {
+            install_windows_helper(machine, &helper.hash, &helper.path)?
         } else {
-            "jayjay-ssh"
-        };
-        let bundled = helper_directory().join(host.target).join(helper);
-        let executable = if bundled.is_file() {
-            bundled
-        } else {
-            let sibling = std::env::current_exe()
-                .ok()
-                .and_then(|p| p.parent().map(|p| p.join(helper)))
-                .unwrap_or_default();
-            let target = host.target;
-            let native = ((cfg!(target_os = "macos") && target.ends_with("apple-darwin"))
-                || (cfg!(target_os = "linux") && target.ends_with("linux-musl"))
-                || (cfg!(windows) && target.ends_with("windows-msvc")))
-                && target.starts_with(std::env::consts::ARCH);
-            if native && sibling.is_file() {
-                sibling
-            } else {
-                return Err(JayError::internal(format!(
-                    "The SSH helper for {target} is missing. Build it with `just ssh-helper {target}` or install a release containing it."
-                )));
-            }
-        };
-        let bytes = std::fs::read(&executable).map_err(JayError::internal)?;
-        let hash = hex::encode(Sha256::digest(&bytes));
-        let command = if windows {
-            install_windows_helper(machine, &hash, &executable)?
-        } else {
-            install_unix_helper(machine, &hash, &bytes)?
+            install_unix_helper(machine, &helper.hash, &helper.bytes)?
         };
         let connection = Connection::connect(machine, &command)?;
         let shared = match &existing {

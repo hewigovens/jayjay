@@ -7,7 +7,7 @@ macro_rules! arg_type {
     (Text) => { &str }; (OptionalText) => { Option<&str> }; (Strings) => { &[String] };
     (Location) => { &str }; (OptionalLocation) => { Option<&str> };
     (FileEditor) => { &FileEditorData }; (ConflictEditor) => { &ConflictEditorData };
-    (Selections) => { &[DiffEditFileSelection] }; (Notes) => { Vec<NoteEntry> };
+    (Selections) => { &[DiffEditFileSelection] };
     (Layers) => { Vec<SubmitStackLayer> }; (Bookmarks) => { &[BookmarkInfo] }; (Sync) => { &SyncToken };
     ($t:ident) => { $t };
 }
@@ -15,7 +15,7 @@ macro_rules! owned_type {
     (Text) => { String }; (OptionalText) => { Option<String> }; (Strings) => { Vec<String> };
     (Location) => { String }; (OptionalLocation) => { Option<String> };
     (FileEditor) => { FileEditorData }; (ConflictEditor) => { ConflictEditorData };
-    (Selections) => { Vec<DiffEditFileSelection> }; (Notes) => { Vec<NoteEntry> };
+    (Selections) => { Vec<DiffEditFileSelection> };
     (Layers) => { Vec<SubmitStackLayer> }; (Bookmarks) => { Vec<BookmarkInfo> }; (Sync) => { () };
     ($t:ident) => { $t };
 }
@@ -147,7 +147,6 @@ api! {
         fn refresh_working_copy() -> ();
         fn snapshot_operation() -> String;
         fn has_unignored_working_copy_paths(paths: Strings) -> bool;
-        fn reconcile_review_notes(notes: Notes, rev: Text) -> ReviewNotesReport;
         fn annotate_file(rev: Text, path: Text) -> Vec<AnnotationLine>;
         fn file_history(path: Text) -> Vec<ChangeInfo>;
         fn describe(rev: Text, message: Text) -> ();

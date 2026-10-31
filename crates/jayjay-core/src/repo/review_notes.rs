@@ -1,6 +1,6 @@
 use jayjay_primitives::{
-    JayError, JayResult, NoteAnchor, NoteEntry, NoteSide, ReviewDiffProvider, ReviewFileDiff,
-    ReviewHunk, ReviewNoteStatus,
+    DiffHunk, JayError, JayResult, NoteAnchor, NoteEntry, NoteSide, ReviewDiffProvider,
+    ReviewFileDiff, ReviewHunk, ReviewNoteStatus,
 };
 use jayjay_review::ReviewStore;
 use jj_lib::hex_util::encode_reverse_hex;
@@ -14,10 +14,26 @@ pub struct ReviewNotesReport {
     pub notes: Vec<ReviewNoteStatus>,
 }
 
-struct CoreReviewDiffProvider<'a> {
-    repo: &'a Repo,
+/// The file diffs notes are reconciled against, so a remote session can reconcile on this machine from the host's diffs.
+pub(crate) trait ReviewDiffSource {
+    fn show_file(&self, rev: &str, path: &str) -> JayResult<DiffHunk>;
+    fn show_file_rename(&self, rev: &str, old_path: &str, new_path: &str) -> JayResult<DiffHunk>;
+}
+
+pub(crate) struct CoreReviewDiffProvider<'a, S> {
+    source: &'a S,
     rev: &'a str,
     hunks: Vec<ReviewHunk>,
+}
+
+impl<'a, S: ReviewDiffSource> CoreReviewDiffProvider<'a, S> {
+    pub(crate) fn new(source: &'a S, rev: &'a str, diff: Vec<DiffHunk>) -> Self {
+        Self {
+            source,
+            rev,
+            hunks: diff.into_iter().map(ReviewHunk::from).collect(),
+        }
+    }
 }
 
 impl Repo {
@@ -96,17 +112,28 @@ impl Repo {
     }
 
     // self and rev share lifetime 'a because CoreReviewDiffProvider borrows both into the same field lifetime.
-    fn review_diff_provider<'a>(&'a self, rev: &'a str) -> JayResult<CoreReviewDiffProvider<'a>> {
-        let summary = self.show_summary(rev)?;
-        Ok(CoreReviewDiffProvider {
-            repo: self,
+    fn review_diff_provider<'a>(
+        &'a self,
+        rev: &'a str,
+    ) -> JayResult<CoreReviewDiffProvider<'a, Self>> {
+        Ok(CoreReviewDiffProvider::new(
+            self,
             rev,
-            hunks: summary.diff.into_iter().map(ReviewHunk::from).collect(),
-        })
+            self.show_summary(rev)?.diff,
+        ))
     }
 }
 
-impl ReviewDiffProvider for CoreReviewDiffProvider<'_> {
+impl ReviewDiffSource for Repo {
+    fn show_file(&self, rev: &str, path: &str) -> JayResult<DiffHunk> {
+        Repo::show_file(self, rev, path)
+    }
+    fn show_file_rename(&self, rev: &str, old_path: &str, new_path: &str) -> JayResult<DiffHunk> {
+        Repo::show_file_rename(self, rev, old_path, new_path)
+    }
+}
+
+impl<S: ReviewDiffSource> ReviewDiffProvider for CoreReviewDiffProvider<'_, S> {
     fn review_hunks(&self) -> JayResult<Vec<ReviewHunk>> {
         Ok(self.hunks.clone())
     }
@@ -117,8 +144,10 @@ impl ReviewDiffProvider for CoreReviewDiffProvider<'_> {
             .as_deref()
             .filter(|_| hunk.hunk_type.has_source());
         let diff = match source {
-            Some(old_path) => self.repo.show_file_rename(self.rev, old_path, &hunk.path)?,
-            None => self.repo.show_file(self.rev, &hunk.path)?,
+            Some(old_path) => self
+                .source
+                .show_file_rename(self.rev, old_path, &hunk.path)?,
+            None => self.source.show_file(self.rev, &hunk.path)?,
         };
         Ok(ReviewFileDiff::from(&diff))
     }

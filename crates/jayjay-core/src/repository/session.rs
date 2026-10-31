@@ -1,3 +1,4 @@
+use crate::repo::{CoreReviewDiffProvider, ReviewDiffSource};
 use crate::ssh::{ConnectionState, HostPlatform, RemoteLocation, RemoteRepo};
 use crate::*;
 use jayjay_review::ReviewStore;
@@ -127,12 +128,45 @@ impl Repo {
         match &self.backend {
             Backend::Local(repo) => repo.review_notes_report(store, rev, include_resolved),
             Backend::Remote(_) => {
-                let report = self.reconcile_review_notes(vec![], rev)?;
-                self.reconcile_review_notes(
-                    store.list_notes(&report.change_id, include_resolved),
-                    rev,
-                )
+                self.reconcile_remote_notes(rev, |id| store.list_notes(id, include_resolved))
             }
         }
+    }
+    pub fn reconcile_review_notes(
+        &self,
+        notes: Vec<NoteEntry>,
+        rev: &str,
+    ) -> JayResult<ReviewNotesReport> {
+        match &self.backend {
+            Backend::Local(repo) => repo.reconcile_review_notes(notes, rev),
+            Backend::Remote(_) => self.reconcile_remote_notes(rev, |_| notes),
+        }
+    }
+    /// Note bodies never reach the host: it supplies only the diff they are reconciled against here.
+    fn reconcile_remote_notes(
+        &self,
+        rev: &str,
+        notes: impl FnOnce(&str) -> Vec<NoteEntry>,
+    ) -> JayResult<ReviewNotesReport> {
+        let [change] = <[ChangeInfo; 1]>::try_from(self.log(rev)?)
+            .map_err(|_| JayError::internal(format!("{rev} must name exactly one change.")))?;
+        let change_id = change.change_id.id;
+        let notes = notes(&change_id);
+        let notes = if notes.is_empty() {
+            vec![]
+        } else {
+            let diff = self.show_summary(rev)?.diff;
+            jayjay_review::reconcile_notes(notes, &CoreReviewDiffProvider::new(self, rev, diff))?
+        };
+        Ok(ReviewNotesReport { change_id, notes })
+    }
+}
+
+impl ReviewDiffSource for Repo {
+    fn show_file(&self, rev: &str, path: &str) -> JayResult<DiffHunk> {
+        Repo::show_file(self, rev, path)
+    }
+    fn show_file_rename(&self, rev: &str, old_path: &str, new_path: &str) -> JayResult<DiffHunk> {
+        Repo::show_file_rename(self, rev, old_path, new_path)
     }
 }

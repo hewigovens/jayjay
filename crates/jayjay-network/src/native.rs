@@ -6,13 +6,15 @@ use crate::{Auth, DEFAULT_TEXT_CAP, Fetch, Header, Method, NetError, Request, Re
 
 const REQUEST_TIMEOUT: Duration = Duration::from_secs(10);
 
-static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| {
+static AGENT: LazyLock<ureq::Agent> = LazyLock::new(|| agent(REQUEST_TIMEOUT));
+
+fn agent(timeout: Duration) -> ureq::Agent {
     ureq::Agent::config_builder()
-        .timeout_global(Some(REQUEST_TIMEOUT))
+        .timeout_global(Some(timeout))
         .http_status_as_error(false)
         .build()
         .into()
-});
+}
 
 /// Reusable blocking HTTP client for desktop callers. Run its methods on a background executor.
 #[derive(Clone)]
@@ -24,6 +26,15 @@ impl Default for HttpClient {
     fn default() -> Self {
         Self {
             agent: AGENT.clone(),
+        }
+    }
+}
+
+impl HttpClient {
+    /// For downloads that can outlast the default request timeout.
+    pub fn with_timeout(timeout: Duration) -> Self {
+        Self {
+            agent: agent(timeout),
         }
     }
 }
