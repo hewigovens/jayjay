@@ -1,7 +1,7 @@
-import { useMemo, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { ReviewWorkspace, useReview } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
-import type { Labels, ReviewBackend } from "@jayjay/review-web/types";
+import type { Labels, ReviewBackend, ReviewBundle } from "@jayjay/review-web/types";
 import { fixture } from "./fixture";
 
 async function readJson(file: File, limit: number, signal: AbortSignal) {
@@ -19,10 +19,16 @@ function storedAvatars() {
 
 export function LocalReview({ client, labels }: { client: LocalReviewClient; labels: Labels }) {
   const [avatars, setAvatars] = useState(storedAvatars);
+  const imported = useRef<ReviewBundle>(null);
   const backend = useMemo<ReviewBackend>(() => ({
     open: async () => await client.open() ?? await client.open(JSON.stringify(fixture)),
     render: selection => client.render(selection),
     mutate: (selection, action) => client.mutate(selection, action),
+    image: async (selection, side) => {
+      const file = imported.current?.files[selection.file];
+      const source = side === "old" ? file?.before : file?.after;
+      return source ? new Blob([source], { type: "image/svg+xml" }) : null;
+    },
   }), [client]);
   const review = useReview(backend);
   const { result, selection, pending, run } = review;
@@ -36,7 +42,7 @@ export function LocalReview({ client, labels }: { client: LocalReviewClient; lab
     onRetry={() => review.error === "worker-stopped" ? location.reload() : review.retry()}
     headerActions={<label className="file-button import-button">{labels.importChange}<input type="file" accept="application/json,.json" aria-label={labels.importChange} disabled={pending} onChange={event => {
       const file = event.target.files?.[0];
-      if (file) void run(async signal => client.open(await readJson(file, 32, signal)));
+      if (file) void run(async signal => { const text = await readJson(file, 32, signal); const opened = await client.open(text); imported.current = JSON.parse(text); return opened; });
       event.target.value = "";
     }} /></label>}
     footer={<footer className="review-footer"><span>{labels.private}</span><details><summary>{labels.localData}</summary>

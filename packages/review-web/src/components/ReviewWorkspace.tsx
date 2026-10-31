@@ -165,12 +165,6 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
 
   function diffPane(index: number, data: ReviewResult) {
     const filePath = data.overview.files[index].path;
-    // A picture of each side above the text diff, which keeps the group toggle: an SVG's source, a raster's size line.
-    const picture = image && isImagePath(filePath)
-      ? <ImageDiff key={`${data.session}|${revision}|${filePath}`} kind={data.overview.files[index].kind} labels={labels}
-        load={(side: ImageSide, signal: AbortSignal) => image(index, side, signal)} />
-      : null;
-    if (!data.diff) return picture ?? <p className="jj-empty-diff">{labels.noFiles}</p>;
     const annotation = (anchor: DiffAnchor) => {
       const key = anchorKey(filePath, anchor.side, anchor.line);
       const shown = (placed.get(key) ?? []).filter(item => item.status === "current" || expanded.has(key));
@@ -191,9 +185,13 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
         <NoteIcon />{resolved.length > 1 && resolved.length}</button>;
     };
     const note = (anchor: DiffAnchor) => setTarget({ file: index, path: filePath, anchor, ignoreWhitespace: data.options.ignoreWhitespace });
-    return <>{picture}<DiffPane labels={labels} view={data.diff} split={data.options.split} showAll={() => configure({ ...options, showAll: true })}
+    const diff = data.diff && <DiffPane labels={labels} view={data.diff} split={data.options.split} showAll={() => configure({ ...options, showAll: true })}
       review={{ states: data.groupStates, disabled, toggle: group => void mutate({ kind: "setGroup", file: index, group, reviewed: data.groupStates[group] !== "reviewed", ignoreWhitespace: data.options.ignoreWhitespace }, index),
-        ...notes && { note, annotation, marker } }} /></>;
+        ...notes && { note, annotation, marker } }} />;
+    // Notes anchor to source lines, so a file with notes keeps its source under the preview.
+    if (image && isImagePath(filePath)) return <ImageDiff key={`${data.session}|${filePath}`} kind={data.overview.files[index].kind} labels={labels}
+      keepSource={notes && (target?.path === filePath || Boolean(result?.overview.notes.some(item => item.note.path === filePath)))} load={(side: ImageSide, signal: AbortSignal) => image(index, side, signal)}>{diff}</ImageDiff>;
+    return diff ?? <p className="jj-empty-diff">{labels.noFiles}</p>;
   }
 
   return <div className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""}`} aria-busy={pending}>

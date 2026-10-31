@@ -22,7 +22,7 @@ Keep the backend object stable (a module instance or `useMemo`). It implements t
 - `open(signal?)`: load the initial change and selected file, returning a `ReviewResult`.
 - `render(selection, signal?)`: load a file with the requested options. Content can be fetched lazily here.
 - `mutate(selection, action, signal?)`: apply a file/group mark or note action and return refreshed state after the durable write succeeds. Failures reject the promise; the viewer retains its previous result and offers Retry.
-- `image(selection, side, signal?)`, optional: one side (`"old"` or `"new"`) of an image file as a `Blob`, or `null` when that side has none. With it, files whose extension `isImagePath` accepts (PNG, JPEG, GIF, WebP, BMP, ICO, SVG) show their before and after side by side, above their text diff. Give the blob an image type, since a blob opened as a page runs as the host's origin.
+- `image(selection, side, signal?)`, optional: one side (`"old"` or `"new"`) of an image file as a `Blob`, or `null` when that side has none. With it, files whose extension `isImagePath` accepts (PNG, JPEG, GIF, WebP, BMP, ICO, SVG) show their before and after side by side instead of their text diff, behind a Show source button. The source shows by itself if a side fails to render, no side renders, or the file has notes. Give the blob an image type, since a blob opened as a page runs as the host's origin.
 
 Each `FileSummary` may carry `kind` and `icon`. The WASM adapter fills both; a native backend gets `icon` from `jayjay_primitives::seti::SetiGlyph`, and a file without one shows a plain page icon. `styles.css` loads the Seti font from `src/fonts/`, so a strict host CSP needs `font-src 'self'`.
 

@@ -213,7 +213,7 @@ test.describe("phone portrait", () => {
   test("folding a long file from a group keeps its header in view and focused", async ({ page }) => {
     await longBundle(page);
     const toggle = page.getByRole("checkbox", { name: "Mark reviewed: long.txt", exact: true });
-    await page.getByRole("checkbox", { name: /Change group 1/ }).focus();
+    await page.locator(".jj-file-section").first().getByRole("checkbox", { name: /Change group 1/ }).focus();
     await page.keyboard.press("Space"); await ready(page);
     await expect(page.locator(".jj-file-section").first().locator(".jj-diff-cell")).toHaveCount(0);
     await expect(toggle).toBeInViewport();
@@ -313,6 +313,31 @@ test("a reviewed file folds until it is unmarked or a note opens it", async ({ p
   await expect(lines.first()).toBeVisible();
   await page.getByRole("checkbox", { name: /Change group 1/ }).click(); await ready(page);
   await expect(lines).toHaveCount(0);
+});
+
+test("a shown image preview replaces its source", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  const svg = (size: number) => `<svg xmlns="http://www.w3.org/2000/svg" width="${size}" height="${size}"></svg>\n`;
+  await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({
+    schemaVersion: 1, repositoryId: "test/repository", changeId: "stable-change", title: "Images",
+    files: [
+      { path: "fine.svg", reviewIdentity: "1", before: svg(8), after: svg(16) },
+      { path: "broken.svg", reviewIdentity: "3", before: svg(8), after: "<svg\n" },
+    ],
+  })) });
+  await ready(page);
+  await expect(page.locator(".jj-image-side img")).toHaveCount(2);
+  await expect(page.locator(".jj-diff-cell")).toHaveCount(0);
+  await page.getByRole("button", { name: "Show source", exact: true }).click();
+  await page.getByRole("button", { name: /^Add note: After/ }).first().click();
+  await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Check the size");
+  await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
+  await page.getByRole("button", { name: "broken.svg", exact: true }).click(); await ready(page);
+  await expect(page.locator(".jj-diff-cell").first()).toBeVisible();
+  await page.getByRole("button", { name: "fine.svg", exact: true }).click(); await ready(page);
+  await expect(page.locator(".jj-review-note.jj-current")).toContainText("Check the size");
+  await page.getByRole("button", { name: "Resolve", exact: true }).click(); await ready(page);
+  await expect(page.locator(".jj-diff-cell").first()).toBeVisible();
 });
 
 test("Space keeps focus in the list while reviewed files are hidden", async ({ page }) => {

@@ -1,12 +1,13 @@
 /** @jsxRuntime automatic */
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState, type ReactNode } from "react";
 import type { Labels } from "../../model/diff";
 import type { FileKind, ImageSide } from "../../model/review";
 
+type Outcome = "shown" | "missing" | "failed";
 type Loaded = { url: string; bytes: number; width: number; height: number } | "missing" | "failed" | null;
 
 /** One side of an image change, fetched from the backend as a blob and shown with its size. */
-function Side({ side, label, load, labels }: { side: ImageSide; label: string; load: (side: ImageSide, signal: AbortSignal) => Promise<Blob | null>; labels: Labels }) {
+function Side({ side, label, load, labels, settle }: { side: ImageSide; label: string; load: (side: ImageSide, signal: AbortSignal) => Promise<Blob | null>; labels: Labels; settle: (side: ImageSide, outcome: Outcome) => void }) {
   const [state, setState] = useState<Loaded>(null);
   // The host's loader is a fresh closure each render; the parent's key already remounts this for another file.
   const loader = useRef(load);
@@ -26,6 +27,7 @@ function Side({ side, label, load, labels }: { side: ImageSide; label: string; l
     }, () => !controller.signal.aborted && setState("failed"));
     return () => { controller.abort(); if (url) URL.revokeObjectURL(url); };
   }, [side]);
+  useEffect(() => { if (state !== null) settle(side, typeof state === "object" ? "shown" : state); }, [state]);
   return <figure className={`jj-image-side jj-${side}`}>
     <figcaption><span className="jj-image-label">{label}</span>
       {state && typeof state === "object" && <span className="jj-image-size">{state.width} × {state.height} · {size(state.bytes)}</span>}</figcaption>
@@ -45,9 +47,20 @@ function size(bytes: number) {
 }
 
 /** An image's before and after, side by side; an added or removed image shows its one side. */
-export function ImageDiff({ kind, load, labels }: { kind: FileKind | undefined; load: (side: ImageSide, signal: AbortSignal) => Promise<Blob | null>; labels: Labels }) {
-  return <div className="jj-image-diff">
-    {kind !== "added" && <Side side="old" label={labels.before} load={load} labels={labels} />}
-    {kind !== "removed" && <Side side="new" label={labels.after} load={load} labels={labels} />}
-  </div>;
+export function ImageDiff({ kind, load, labels, keepSource, children }: { kind: FileKind | undefined; load: (side: ImageSide, signal: AbortSignal) => Promise<Blob | null>; labels: Labels; keepSource: boolean; children: ReactNode }) {
+  const [settled, setSettled] = useState<Partial<Record<ImageSide, Outcome>>>({});
+  const [sourceOpen, setSourceOpen] = useState(false);
+  const settle = (side: ImageSide, outcome: Outcome) => setSettled(previous => ({ ...previous, [side]: outcome }));
+  const sides = kind === "added" || kind === "removed" ? 1 : 2;
+  const outcomes = Object.values(settled);
+  const shown = outcomes.includes("shown");
+  const required = keepSource || outcomes.includes("failed") || (outcomes.length === sides && !shown);
+  return <>
+    <div className="jj-image-diff">
+      {kind !== "added" && <Side side="old" label={labels.before} load={load} labels={labels} settle={settle} />}
+      {kind !== "removed" && <Side side="new" label={labels.after} load={load} labels={labels} settle={settle} />}
+    </div>
+    {shown && !required && children && <div className="jj-image-source"><button className={`jj-header-action ${sourceOpen ? "jj-active" : ""}`} aria-expanded={sourceOpen} onClick={() => setSourceOpen(!sourceOpen)}>{labels.showSource}</button></div>}
+    {(required || sourceOpen) && children}
+  </>;
 }

@@ -1,5 +1,6 @@
 web-result = Diff result
 web-ignore-whitespace = Ignore whitespace
+web-show-source = Show source
 web-all-lines = All lines
 web-eof = No newline at end of file
 web-empty = Paste some text or open two files to compare.

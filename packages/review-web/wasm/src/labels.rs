@@ -9,6 +9,7 @@ pub(super) fn labels(languages: &str) -> Value {
             ("undoImport", jayjay_i18n::web::undo_import()),
             ("result", jayjay_i18n::web::result()),
             ("ignoreWhitespace", jayjay_i18n::web::ignore_whitespace()),
+            ("showSource", jayjay_i18n::web::show_source()),
             ("allLines", jayjay_i18n::web::all_lines()),
             ("eof", jayjay_i18n::web::eof()),
             ("empty", jayjay_i18n::web::empty()),

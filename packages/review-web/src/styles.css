@@ -272,6 +272,7 @@
 :where(.jayjay-review) .jj-image-side { display: grid; gap: 6px; margin: 0; min-width: 0; align-content: start; }
 :where(.jayjay-review) .jj-image-side figcaption { display: flex; align-items: baseline; gap: 8px; font-size: 11px; color: var(--jj-muted); }
 :where(.jayjay-review) .jj-image-label { font-weight: 600; }
+:where(.jayjay-review) .jj-image-source { padding: 0 16px 12px; }
 :where(.jayjay-review) .jj-old .jj-image-label { color: var(--jj-removed-ink); }
 :where(.jayjay-review) .jj-new .jj-image-label { color: var(--jj-added-ink); }
 :where(.jayjay-review) .jj-image-size { font-variant-numeric: tabular-nums; }
