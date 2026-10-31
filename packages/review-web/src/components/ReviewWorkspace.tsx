@@ -1,7 +1,7 @@
 /** @jsxRuntime automatic */
-import { useEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
 import type { DiffAnchor, Labels } from "../model/diff";
-import { isImagePath, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
+import { isImagePath, type FileSummary, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
 import { useCompact } from "../hooks/useCompact";
 import type { ReviewController } from "../hooks/useReview";
 import { DiffPane, lineLabel } from "./diff/DiffPane";
@@ -31,10 +31,12 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   const compact = useCompact();
   const [target, setTarget] = useState<NoteTarget | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
+  const [unfolded, setUnfolded] = useState<Set<string>>(() => new Set());
   const [loaded, setLoaded] = useState<Map<number, ReviewResult>>(() => new Map());
   const loading = useRef(new Set<number>());
   const [failed, setFailed] = useState<Set<number>>(() => new Set());
   const jumpTarget = useRef<ReviewNote | null>(null);
+  const foldedBefore = useRef<{ session?: number; paths: string[] }>({ paths: [] });
   const detail = useRef<HTMLElement>(null);
   const columns = useRef<HTMLDivElement>(null);
   const file = result?.overview.files[result.file];
@@ -44,7 +46,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   // The newest result the review itself produced for each file; a lazy render that started before it is stale.
   const reviewed = useRef(new Map<number, ReviewResult>());
 
-  useEffect(() => { jumpTarget.current = null; }, [result?.session]);
+  useEffect(() => { jumpTarget.current = null; setUnfolded(new Set()); }, [result?.session]);
   useEffect(() => { setTarget(null); setExpanded(new Set()); }, [result?.session, compact ? undefined : path]);
   useEffect(() => { liveKey.current = cacheKey; reviewed.current.clear(); loading.current.clear(); setLoaded(new Map()); setFailed(new Set()); }, [cacheKey]);
   useEffect(() => {
@@ -66,6 +68,14 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
     node.scrollIntoView({ block: "center" }); node.focus({ preventScroll: true });
     jumpTarget.current = null;
   }, [pending, result, loaded, compact]);
+
+  useEffect(() => {
+    const files = result?.overview.files ?? [];
+    setUnfolded(previous => {
+      const kept = [...previous].filter(path => files.some(entry => entry.path === path && entry.review === "reviewed"));
+      return kept.length === previous.size ? previous : new Set(kept);
+    });
+  }, [result]);
 
   function load(index: number) {
     if (loading.current.has(index) || !result) return;
@@ -96,12 +106,30 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
     if (!result) return;
     const index = result.overview.files.findIndex(entry => entry.path === item.note.path);
     if (index < 0) return;
-    if (configure({ ...options, ignoreWhitespace: item.note.ignore_whitespace, showAll: options.showAll || item.status === "current" }, index)) jumpTarget.current = item;
+    const entry = result.overview.files[index];
+    if (entry.review === "reviewed") setUnfolded(previous => new Set(previous).add(entry.path));
+    if (configure({ ...options, ignoreWhitespace: item.note.ignore_whitespace, showAll: options.showAll || (item.status === "current" && !folded(entry)) }, index)) jumpTarget.current = item;
   }
 
   const disabled = pending || Boolean(error);
+  // A note draft keeps its file open, since folding would discard the text.
+  const folded = (entry: FileSummary) => entry.review === "reviewed" && !unfolded.has(entry.path) && target?.path !== entry.path;
+  const foldedPaths = result?.overview.files.filter(folded).map(entry => entry.path) ?? [];
+
+  // Folding unmounts the diff, which may hold focus, and leaves a long file's reader past its end.
+  useLayoutEffect(() => {
+    const { session, paths } = foldedBefore.current;
+    foldedBefore.current = { session: result?.session, paths: foldedPaths };
+    const fresh = foldedPaths.filter(path => !paths.includes(path));
+    if (session !== result?.session || fresh.length !== 1) return;
+    const diff = detail.current?.querySelector(`[data-path="${CSS.escape(fresh[0])}"]`);
+    if (!diff) return;
+    const section = diff.closest(".jj-file-section");
+    if (section && section.getBoundingClientRect().top < 0) section.scrollIntoView({ block: "start" });
+    if (document.activeElement === document.body) (section ?? detail.current)?.querySelector<HTMLElement>(".jj-file-heading input")?.focus({ preventScroll: true });
+  }, [result?.session, foldedPaths.join("\0")]);
   const resolve = (id: string) => void mutate({ kind: "resolveNote", id });
-  // The compact list re-renders the marked file's section; the wide layout keeps the selected file open.
+  // The compact list re-renders the marked file's section; the wide layout re-renders the open file.
   async function toggleFile(index: number) {
     if (!result) return;
     const { files } = result.overview;
@@ -119,9 +147,13 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   const rendered = new Set<string>();
   for (const [index, data] of diffs) {
     const filePath = data.overview.files[index]?.path;
+    const entry = result?.overview.files[index];
+    if (entry && folded(entry)) continue;
     for (const row of data.diff?.rows ?? []) for (const cell of row.cells) if (cell.anchor && filePath) rendered.add(anchorKey(filePath, cell.anchor.side, cell.anchor.line));
   }
   const renderedPaths = new Set([...diffs.keys()].map(index => result?.overview.files[index]?.path));
+  // A folded file never loads in the compact list, and the banner is the only place its notes can show.
+  if (compact) for (const path of foldedPaths) renderedPaths.add(path);
   const unplaced: ReviewNote[] = [];
   for (const item of notes && result ? result.overview.notes : []) {
     const key = anchorKey(item.note.path, item.note.side, item.note.line);
@@ -180,10 +212,11 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
         <NotesBanner items={unplaced} labels={labels} disabled={disabled} resolve={resolve} locate={locate} />
         {compact
           ? <div className="jj-file-sections">
-            {result.overview.files.map((entry, index) => <LazySection key={entry.path} index={index} version={cacheKey} loaded={loaded.has(index)} load={load}>
+            {result.overview.files.map((entry, index) => <LazySection key={entry.path} index={index} version={cacheKey} loaded={loaded.has(index) || folded(entry)} load={load}>
               <FileHeader file={entry} labels={labels} disabled={disabled} toggleReviewed={() => toggleFile(index)} />
               <div className="jj-diff-scroll" data-path={entry.path} aria-label={`${labels.lines}: ${entry.path}`}>
-                {loaded.get(index) ? diffPane(index, loaded.get(index)!)
+                {folded(entry) ? null
+                  : loaded.get(index) ? diffPane(index, loaded.get(index)!)
                   : failed.has(index) ? <p className="jj-notice">{labels.renderError} <button onClick={() => load(index)}>{labels.retry}</button></p>
                   : <p className="jj-notice">{labels.loadingFile}</p>}
               </div>
@@ -191,7 +224,9 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
             {!result.overview.files.length && <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>
           : <div className="jj-diff-scroll" data-path={path} tabIndex={0} aria-label={labels.lines}>
-            {file ? diffPane(result.file, result) : <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
+            {!file ? <p className="jj-empty-diff">{labels.noChangedFiles}</p>
+              : folded(file) ? <p className="jj-empty-diff">{labels.reviewed}</p>
+              : diffPane(result.file, result)}
           </div>}
         <div className="jj-result-footer" aria-live="polite"><span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span><span>{result.pack} · {result.elapsed.toFixed(1)} ms</span></div>
       </section>

@@ -198,6 +198,7 @@
 /* ---------- compact all-files list ---------- */
 /* Hosts with their own pinned bar set --jj-sticky-top so path rows stop below it. */
 :where(.jayjay-review).jj-compact .jj-review-columns { overflow: clip; }
+:where(.jayjay-review).jj-compact .jj-file-section { scroll-margin-top: var(--jj-sticky-top, 0px); }
 :where(.jayjay-review).jj-compact .jj-file-section + .jj-file-section { border-top: 1px solid var(--jj-border); }
 :where(.jayjay-review).jj-compact .jj-file-section > .jj-file-heading { position: sticky; top: var(--jj-sticky-top, 0px); z-index: 3; flex-wrap: nowrap; gap: 8px; padding-block: 4px; background: var(--jj-surface); }
 :where(.jayjay-review).jj-compact .jj-diff-scroll { max-height: none; overflow-x: auto; }

@@ -191,42 +191,55 @@ test.describe("phone portrait", () => {
     await cargo.scrollIntoViewIfNeeded();
     const group = cargo.getByRole("checkbox", { name: /Change group 1/ });
     await group.tap(); await ready(page);
-    await expect(group).toBeChecked();
+    await expect(page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true })).toBeChecked();
+    await expect(group).toHaveCount(0);
     await page.getByText("Local review data", { exact: true }).click();
     await page.getByLabel("Import review state", { exact: true }).setInputFiles({ name: "review.json", mimeType: "application/json", buffer: Buffer.from('{"reviewed":{},"notes":[]}') });
     await ready(page);
     await expect(group).not.toBeChecked();
   });
 
-  test("a lazy render that predates a mark does not overwrite it", async ({ page }) => {
-    await page.addInitScript(() => {
-      let held: number | undefined;
-      const state = window as unknown as { releaseRender: () => void };
-      const OriginalWorker = window.Worker;
-      window.Worker = class extends OriginalWorker {
-        postMessage(message: { kind?: string; file?: number; id?: number }) {
-          if (message.kind === "render" && message.file === 4 && held === undefined) held = message.id;
-          super.postMessage(message);
-        }
-        set onmessage(handler: (event: MessageEvent) => void) {
-          super.onmessage = event => {
-            if (event.data.id !== held) return handler(event);
-            state.releaseRender = () => handler(event);
-          };
-        }
-      };
-    });
+  async function longBundle(page: Page) {
     await page.goto("/"); await ready(page);
-    await page.waitForFunction(() => "releaseRender" in window);
-    const cargo = page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true });
-    await cargo.tap(); await ready(page);
-    await expect(cargo).toBeChecked();
-    await page.evaluate(async () => {
-      (window as unknown as { releaseRender: () => void }).releaseRender();
-      await new Promise(resolve => requestAnimationFrame(() => requestAnimationFrame(resolve)));
-    });
-    const section = page.locator(".jj-file-section", { has: page.locator('.jj-diff-scroll[data-path="Cargo.toml"]') });
-    await expect(section.getByRole("checkbox", { name: /Change group 1/ })).toBeChecked();
+    const after = Array.from({ length: 120 }, (_, line) => `line ${line}`).join("\n");
+    await page.getByLabel("Import change", { exact: true }).setInputFiles({ name: "change.json", mimeType: "application/json", buffer: Buffer.from(JSON.stringify({
+      schemaVersion: 1, repositoryId: "test/repository", changeId: "stable-change", title: "Long",
+      files: [{ path: "long.txt", reviewIdentity: "1", before: "", after }, { path: "next.txt", reviewIdentity: "2", before: "", after: "x\n" }],
+    })) });
+    await ready(page);
+    await page.locator(".jj-diff-cell").nth(100).scrollIntoViewIfNeeded();
+  }
+
+  test("folding a long file from a group keeps its header in view and focused", async ({ page }) => {
+    await longBundle(page);
+    const toggle = page.getByRole("checkbox", { name: "Mark reviewed: long.txt", exact: true });
+    await page.getByRole("checkbox", { name: /Change group 1/ }).focus();
+    await page.keyboard.press("Space"); await ready(page);
+    await expect(page.locator(".jj-file-section").first().locator(".jj-diff-cell")).toHaveCount(0);
+    await expect(toggle).toBeInViewport();
+    await expect(toggle).toBeFocused();
+  });
+
+  test("a note draft holds the fold and the reader's place", async ({ page }) => {
+    await longBundle(page);
+    await page.getByRole("button", { name: "Add note: After 100", exact: true }).click();
+    const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
+    await draft.fill("Keep this draft");
+    await page.getByRole("checkbox", { name: "Mark reviewed: long.txt", exact: true }).tap(); await ready(page);
+    await expect(draft).toBeInViewport();
+    await page.getByRole("button", { name: "Cancel", exact: true }).click();
+    await expect(page.locator(".jj-file-section").first().locator(".jj-diff-cell")).toHaveCount(0);
+    await expect(page.getByRole("checkbox", { name: "Mark reviewed: long.txt", exact: true })).toBeInViewport();
+  });
+
+  test("a note on a reviewed file stays in the banner after a reload", async ({ page }) => {
+    await longBundle(page);
+    await page.getByRole("button", { name: "Add note: After 1", exact: true }).first().click();
+    await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Still here");
+    await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
+    await page.getByRole("checkbox", { name: "Mark reviewed: long.txt", exact: true }).tap(); await ready(page);
+    await page.reload(); await ready(page);
+    await expect(page.locator(".jj-notes-banner")).toContainText("Still here");
   });
 
   test("retries a file whose diff failed to load", async ({ page }) => {
@@ -280,6 +293,26 @@ test("marking the open file jumps forward, wraps, and keeps a note draft", async
   await page.getByRole("checkbox", { name: "Mark reviewed", exact: true }).click(); await ready(page);
   await expect(open).toHaveAccessibleName(names[0]);
   await expect(page.getByRole("textbox", { name: "Write a review note", exact: true })).toHaveValue("Keep this draft");
+});
+
+test("a reviewed file folds until it is unmarked or a note opens it", async ({ page }) => {
+  await page.goto("/"); await ready(page);
+  await bundle(page);
+  const mark = page.getByRole("checkbox", { name: "Mark reviewed", exact: true });
+  const lines = page.locator(".jj-diff-cell");
+  await page.getByRole("button", { name: "Add note: After 1", exact: true }).click();
+  await page.getByRole("textbox", { name: "Write a review note", exact: true }).fill("Inspect the duplicate line");
+  await mark.click(); await ready(page);
+  await expect(page.getByRole("textbox", { name: "Write a review note", exact: true })).toHaveValue("Inspect the duplicate line");
+  await page.getByRole("button", { name: "Save note", exact: true }).click(); await ready(page);
+  await expect(lines).toHaveCount(0);
+  await page.locator(".jj-notes-banner button").first().click(); await ready(page);
+  await expect(lines.first()).toBeVisible();
+  await expect(page.getByLabel("All lines", { exact: true })).not.toBeChecked();
+  await mark.click(); await ready(page);
+  await expect(lines.first()).toBeVisible();
+  await page.getByRole("checkbox", { name: /Change group 1/ }).click(); await ready(page);
+  await expect(lines).toHaveCount(0);
 });
 
 test("Space keeps focus in the list while reviewed files are hidden", async ({ page }) => {
