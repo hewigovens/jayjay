@@ -16,7 +16,7 @@ $work = Join-Path (Split-Path (Resolve-Path $Payload).Path) "windows-msix"
 $layout = Join-Path $work "layout"
 if (Test-Path -LiteralPath $work) { Remove-Item -LiteralPath $work -Recurse -Force }
 New-Item -ItemType Directory -Path $layout | Out-Null
-Copy-Item "$Payload/*" $layout
+Copy-Item "$Payload/*" $layout -Recurse
 Copy-Item "$PSScriptRoot/msix/Assets" $layout -Recurse
 # Without default and light-theme variants the taskbar plates the icon.
 Get-ChildItem "$layout/Assets/*_altform-unplated.png" | ForEach-Object {

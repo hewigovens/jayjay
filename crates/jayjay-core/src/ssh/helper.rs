@@ -81,6 +81,8 @@ impl Helper {
     fn directory() -> PathBuf {
         let bundled = if cfg!(target_os = "macos") {
             "../Resources/ssh-helpers"
+        } else if cfg!(windows) {
+            "ssh-helpers"
         } else {
             "../share/jayjay/ssh-helpers"
         };

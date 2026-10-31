@@ -47,11 +47,28 @@ jobs:
       - name: Install pinned license generator
         run: cargo install cargo-about --version 0.9.2 --features cli --locked
 
+      - name: Download the SSH helper manifest
+        if: github.event_name == 'release'
+        env:
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        # The macOS publish uploads it just after creating the release.
+        run: |
+          foreach ($attempt in 1..60) {
+            try { Invoke-WebRequest "https://github.com/${{ github.repository }}/releases/download/$env:TAG_NAME/ssh-helpers.json" -OutFile ssh-helpers.json; break } catch { Start-Sleep 30 }
+          }
+          $manifest = Get-Content -Raw ssh-helpers.json | ConvertFrom-Json
+          if (-not ($manifest.PSObject.Properties.Value.url -like "*/$env:TAG_NAME/*")) { throw "ssh-helpers.json does not belong to $env:TAG_NAME" }
+
       - name: Build portable ZIP and MSIX
         env:
           TAG_NAME: ${{ github.event.release.tag_name }}
           JAYJAY_PRERELEASE: ${{ contains(github.event.release.tag_name || github.ref_name, '-beta') && '1' || '' }}
-        run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '')
+          SSH_HELPERS: ${{ github.event_name == 'release' && 'ssh-helpers.json' || '' }}
+        run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '') -SshHelpers $env:SSH_HELPERS
+
+      - name: Check the bundled SSH helper manifest
+        if: github.event_name == 'release'
+        run: if (-not (Test-Path build/windows-payload/ssh-helpers/manifest.json)) { throw "The release payload has no SSH helper manifest" }
 
       - name: Verify extracted ZIP
         run: ./dist/windows/smoke.ps1 -Archive (Get-ChildItem build/windows/*.zip | Select-Object -ExpandProperty FullName)

@@ -1,4 +1,4 @@
-param([string]$OutputDirectory = "build/windows", [string]$Version = "")
+param([string]$OutputDirectory = "build/windows", [string]$Version = "", [string]$SshHelpers = "")
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 if (-not $IsWindows) { throw "Build this package on Windows x64 with the MSVC tools and Windows SDK installed." }
@@ -29,6 +29,10 @@ try {
     Copy-Item shell/gpui/assets/fonts/Octicons.LICENSE "$payload/OCTICONS-LICENSE.txt"
     Copy-Item assets/fonts/Seti.LICENSE "$payload/SETI-LICENSE.txt"
     Copy-Item dist/windows/README.txt $payload
+    if ($SshHelpers) {
+        New-Item -ItemType Directory -Path "$payload/ssh-helpers" | Out-Null
+        Copy-Item -LiteralPath $SshHelpers "$payload/ssh-helpers/manifest.json"
+    }
     foreach ($item in @(@('shell/gpui/Cargo.toml', 'GUI'), @('crates/jayjay-cli/Cargo.toml', 'CLI'))) {
         cargo about generate --offline --locked --fail --manifest-path $item[0] --config dist/windows/about.toml --output-file "$payload/THIRD-PARTY-$($item[1]).html" dist/windows/licenses.hbs
         if ($LASTEXITCODE) { throw "Dependency license generation failed" }
