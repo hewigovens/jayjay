@@ -13,16 +13,35 @@
   font-size: 14px;
 }
 
-.blog-page .guide-content a {
+.blog-page .post-update {
+  max-width: none;
+  margin-top: 20px;
+  padding: 12px 16px;
+  border: 1px solid var(--line);
+  border-radius: 10px;
+  background: var(--bg-alt);
+  font-size: 15px;
+  line-height: 1.5;
+}
+
+.blog-page .post-update strong {
+  color: var(--ink);
+  font-weight: 600;
+}
+
+.blog-page .guide-content a,
+.blog-page .post-update a {
   color: var(--accent);
   text-decoration: none;
 }
 
-.blog-page .guide-content a:hover {
+.blog-page .guide-content a:hover,
+.blog-page .post-update a:hover {
   text-decoration: underline;
 }
 
 .blog-page .guide-content a:focus-visible,
+.blog-page .post-update a:focus-visible,
 .blog-card:focus-visible {
   border-radius: 4px;
   outline: 2px solid var(--accent);

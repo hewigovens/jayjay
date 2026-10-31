@@ -16,6 +16,7 @@
   <meta property="og:description" content="A technical comparison of Git storage, machine-oriented repositories, and operation-level collaboration.">
   <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
   <meta property="article:published_time" content="2026-08-19">
+  <meta property="article:modified_time" content="2026-10-31">
   <script type="application/ld+json">
   {
     "@context": "https://schema.org",
@@ -23,6 +24,7 @@
     "headline": "Origin, Code Storage, and DeltaDB",
     "description": "A technical comparison of three approaches to agent-scale code infrastructure: Git storage, machine-oriented repositories, and operation-level collaboration.",
     "datePublished": "2026-08-19",
+    "dateModified": "2026-10-31",
     "url": "https://jayjay.hewig.dev/blog/origin-code-storage-deltadb.html",
     "image": "https://jayjay.hewig.dev/imgs/home.png",
     "author": {
@@ -73,6 +75,7 @@
     <h1>Origin, Code Storage, and DeltaDB</h1>
     <p>Three answers to agent-scale code infrastructure—at three different layers.</p>
     <p class="post-meta"><time datetime="2026-08-19">19 August 2026</time></p>
+    <p class="post-update"><strong>Updated <time datetime="2026-10-31">31 October 2026</time>.</strong> Added a <a href="#watch-list">watch list</a> covering Scion, Anthropic’s in-house replacement for Git, plus Lore and Manyana. The original comparison is unchanged.</p>
   </header>
   <main class="guide-container">
     <div class="guide-layout">
@@ -85,6 +88,7 @@
           <li><a href="#deltadb">DeltaDB</a></li>
           <li><a href="#comparison">What actually differs</a></li>
           <li><a href="#where-jj-fits">Where jj fits</a></li>
+          <li><a href="#watch-list">Watch list</a></li>
           <li><a href="#jayjay">JayJay, briefly</a></li>
           <li><a href="#further-reading">Further reading</a></li>
         </ol>
@@ -152,6 +156,17 @@
           <p>There is a real jj-native server inside Google. The <a href="https://docs.jj-vcs.dev/latest/roadmap/">jj roadmap</a> describes an internal database-backed service that stores commits and repository operation logs in the cloud, with a local daemon caching reads, prefetching data, and optimistically acknowledging writes. That backend and service are private to Google.</p>
           <p>No equivalent public jj-native server or remote protocol ships today. Public jj repositories normally cross the network through Git remotes, which share Git commits and refs but not the complete local operation log or every jj-specific identity. A future public service can follow the Google architecture without making Git’s object model the permanent center of jj.</p>
         </section>
+        <section class="g" id="watch-list">
+          <h2>Watch list <a href="#watch-list">#</a></h2>
+          <p>Three other projects sit outside the comparison above. Scion is built for agent scale but is private to Anthropic. Lore and Manyana are public, but neither is hosted agent infrastructure: Lore replaces Git’s object model outright, and Manyana asks what version control looks like when a merge can never fail.</p>
+          <p><strong><a href="https://www.anthropic.com/engineering/redesigning-source-control">Scion</a></strong> is Anthropic’s replacement for Git on its own monorepo, and the most direct response here to the pressure this post describes. Anthropic reports merges rising from about 2,500 a day in May 2026 to over 30,000 by September, with about 25 million CI checkouts a day and several hundred Git mirrors at peak. Its diagnosis was that Git was already being used as a centralized system, and almost every client was an agent or job that is always online.</p>
+          <p>Scion therefore puts the server at the center. A changeset is a write-ahead-log entry listing the files changed from its first parent, with content-addressed pointers into blob storage. Commits, merges, and rebases happen on the server, moving a ref is a compare-and-swap on a Spanner row, and clients fetch objects on demand through regional caches. No fully materialized copy of the repository exists, even on the server, and offline use is not supported. Anthropic reports a footprint 200x smaller than its Git mirrors and checkouts about two orders of magnitude faster.</p>
+          <p>Scion is not released, and Anthropic says it only suits enormous monorepos, partly because adopters would also need their own review, search, and CI. Its shape is closer to Google’s internal jj service than to Origin or Code Storage: a cloud database of record, a local daemon, and data fetched on demand.</p>
+          <p><strong><a href="https://github.com/EpicGames/lore">Lore</a></strong> is Epic Games’ centralized, content-addressed version control system, built for repositories that mix code with large binary assets. Files are split into fragments addressed by BLAKE3 hashes, and revisions form Merkle trees. Commits and branches work offline, while the server remains the record for durability, access control, and conflict resolution. Two pushes to one branch serialize on a compare-and-swap of its pointer in a mutable store.</p>
+          <p>Lore is a clean break: its <a href="https://epicgames.github.io/lore/explanation/system-design/">design document</a> and <a href="https://epicgames.github.io/lore/roadmap/">roadmap</a> describe no Git bridge. The library, CLI, and server are MIT-licensed and self-hostable, with S3 and DynamoDB as reference backends behind replaceable interfaces. The design document lists agent-based development as one use case, giving each agent its own instance over a shared fragment cache, but binary-heavy projects are the main target. Lore is pre-1.0 (v0.12.0 as of this update), and its interfaces and on-disk formats may still change. Nothing connects it to jj, but it is a useful public reference for what a non-Git server can look like.</p>
+          <p><strong><a href="https://bramcohen.com/p/manyana">Manyana</a></strong> is Bram Cohen’s demo of version control built on a CRDT. In about 470 lines of Python, it represents one file as a weave of every line that has ever existed, with generation counts recording whether each line is present. Merges always succeed and converge, and they need no common ancestor because the weave already holds the history. Concurrent edits that land too close together are flagged for a person to review; the merge itself does not stop.</p>
+          <p>jj already lets a merge or rebase succeed by recording conflicts in the commit; Manyana builds that property into the file representation. It is a <a href="https://github.com/bramcohen/manyana">public-domain demo</a>, not a usable system: there is no server, remote protocol, Git interop, or blame, and the last commit was in April 2026. DeltaDB is the closer production relative, since it also uses CRDTs to converge replicated edits.</p>
+        </section>
         <section class="g" id="jayjay">
           <h2>JayJay, briefly <a href="#jayjay">#</a></h2>
           <p>JayJay sits above these storage choices and presents jj changes, bookmarks, revsets, conflicts, and local review state. Origin could become another forge adapter, Code Storage already fits as a generic Git remote, and DeltaDB would be a separate live-collaboration integration. None should redefine the app around Git commits merely because Git is today’s public transport.</p>
@@ -163,6 +178,9 @@
             <li><a href="https://code.storage/">Code Storage</a> and its <a href="https://code.storage/docs">documentation</a> — managed Git infrastructure for agents.</li>
             <li><a href="https://zed.dev/blog/introducing-deltadb">Introducing DeltaDB</a> and <a href="https://zed.dev/blog/introducing-delta">Introducing Delta</a> — the replicated edit stream and its first app.</li>
             <li><a href="https://www.jj-vcs.dev/latest/technical/architecture/">jj architecture</a> and the <a href="https://docs.jj-vcs.dev/latest/roadmap/">jj roadmap</a> — public backends and Google’s internal server architecture.</li>
+            <li><a href="https://www.anthropic.com/engineering/redesigning-source-control">Redesigning source control at Anthropic</a> — Scion’s server-centered design and migration.</li>
+            <li><a href="https://github.com/EpicGames/lore">Lore</a> and its <a href="https://epicgames.github.io/lore/explanation/system-design/">system design</a> — Epic’s fragment store and branch model.</li>
+            <li><a href="https://bramcohen.com/p/manyana">Manyana</a> and its <a href="https://github.com/bramcohen/manyana">repository</a> — the weave and the merge rules.</li>
           </ul>
         </section>
         <a class="backtop" href="#">↑ Back to top</a>
