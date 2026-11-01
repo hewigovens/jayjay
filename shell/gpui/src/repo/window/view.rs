@@ -9,10 +9,12 @@ use gpui::{
     ScrollStrategy, SharedString, Subscription, UniformListScrollHandle, Window, point,
 };
 
+use jayjay_core::DiffHunk;
 use jayjay_review::NoteEntry;
 
 use crate::app::fs_watcher::{FsEvent, IsRelevantWcChange, RepoFsWatcher};
 use crate::app::theme::{Theme, theme};
+use crate::diff::projection::ProjectionView;
 use crate::diff::{
     DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection, MarkdownImageCache,
     MarkdownImageCacheSlot,
@@ -210,6 +212,25 @@ pub(crate) enum DiffRichPreviewKind {
     Projection,
     Markdown,
     Svg,
+    Source,
+}
+
+impl DiffPanelState {
+    pub(crate) fn rich_preview_kind(&self, path: &str) -> Option<DiffRichPreviewKind> {
+        self.rich_preview
+            .as_ref()
+            .filter(|selection| selection.path == path)
+            .map(|selection| selection.kind)
+    }
+
+    pub(crate) fn projection_view(&self, hunk: &DiffHunk) -> Option<ProjectionView> {
+        let projection = hunk.projection.as_ref()?;
+        Some(match self.rich_preview_kind(&hunk.path) {
+            Some(DiffRichPreviewKind::Projection) => ProjectionView::Rendered,
+            Some(DiffRichPreviewKind::Source) => ProjectionView::Source,
+            _ => ProjectionView::default_for(projection),
+        })
+    }
 }
 
 impl DiffRichPreviewSelection {

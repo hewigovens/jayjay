@@ -16,29 +16,44 @@ extension DiffProjectionMode {
     }
 }
 
+enum DiffProjectionView {
+    case source
+    case diff
+    case rendered
+}
+
 enum DiffProjectionDisplayPolicy {
     static func opensAutomatically(_ projection: DiffProjection) -> Bool {
         projection.pluginId == "plist"
     }
 
+    static func defaultView(for projection: DiffProjection) -> DiffProjectionView {
+        switch projection.pluginId {
+            case "plist", "ipynb": .diff
+            case "sarif": .rendered
+            default: .source
+        }
+    }
+
+    static func showsSourceToggle(_ projection: DiffProjection?) -> Bool {
+        projection?.pluginId == "ipynb"
+    }
+
     static func requestMode(
         for projection: DiffProjection?,
-        richView: Bool
+        view: DiffProjectionView? = nil
     ) -> DiffProjectionMode? {
         guard let projection else { return nil }
-        if opensAutomatically(projection) {
-            return .processed
-        }
-        return richView ? .processed : .raw
+        return (view ?? defaultView(for: projection)) == .source ? .raw : .processed
     }
 
     static func showsBanner(
         for projection: DiffProjection,
-        richView: Bool
+        view: DiffProjectionView?
     ) -> Bool {
         let hasDiagnostics = !projection.diagnostics.isEmpty
         let isProcessedPreview = projection.mode == .processed
-        return hasDiagnostics || (isProcessedPreview && (richView || opensAutomatically(projection)))
+        return hasDiagnostics || (isProcessedPreview && view != .source)
     }
 
     static func title(for projection: DiffProjection) -> String {
@@ -58,6 +73,10 @@ enum DiffProjectionDisplayPolicy {
             case .some("sarif"): "checklist"
             default: "sparkles"
         }
+    }
+
+    static func activeHelp(for projection: DiffProjection?) -> String {
+        showsSourceToggle(projection) ? Localized.Diff.showNotebookDiff : Localized.Diff.showSourceDiff
     }
 
     static func help(for projection: DiffProjection?) -> String {

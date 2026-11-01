@@ -1,12 +1,12 @@
-use gpui::{Context, Modifiers, ScrollStrategy, SharedString, Task, point, px};
-use jayjay_core::JayResult;
+use gpui::{App, Context, Modifiers, ScrollStrategy, SharedString, Task, point, px};
 use jayjay_core::dag::SelectionClick;
+use jayjay_core::{DiffHunk, JayResult};
 
 use super::{
     ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoWindow, TextModalAction,
     TextModalState,
 };
-use crate::diff::projection;
+use crate::diff::projection::{self, ProjectionView};
 use crate::repo::view_model::RepoViewModel;
 use crate::ui::overlay::TextPrompt;
 use crate::ui::selection::click_from_modifiers;
@@ -32,7 +32,7 @@ impl RepoWindow {
         self.prepare_change_selection(cx);
         self.file_column.multi_select.clear();
         if self.vm.read(cx).selected != Some(ix) {
-            self.reset_diff_panel_for_new_file();
+            self.reset_diff_panel_for_new_file(cx);
         } else {
             self.diff.selection = None;
         }
@@ -48,7 +48,7 @@ impl RepoWindow {
     ) {
         self.prepare_change_selection(cx);
         self.file_column.multi_select.clear();
-        self.reset_diff_panel_for_new_file();
+        self.reset_diff_panel_for_new_file(cx);
         self.vm
             .update(cx, |vm, cx| vm.update_change_selection(ix, click, cx));
     }
@@ -431,15 +431,17 @@ impl RepoWindow {
             return;
         }
 
-        self.reset_diff_panel_for_new_file();
+        self.reset_diff_panel_for_new_file(cx);
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));
     }
 
-    fn reset_diff_panel_for_new_file(&mut self) {
+    fn reset_diff_panel_for_new_file(&mut self, cx: &mut Context<Self>) {
         self.diff.selection = None;
         self.diff.gutter_selection = None;
         self.diff.rich_preview = None;
+        self.vm
+            .update(cx, |vm, _| vm.projection_mode_override = None);
         self.reset_context_expansion();
         let base = self.scrolls.diff.0.borrow().base_handle.clone();
         let offset = base.offset();
@@ -475,24 +477,47 @@ impl RepoWindow {
     }
 
     pub fn toggle_projection_rich_preview(&mut self, cx: &mut Context<Self>) {
-        let (rev, hunk) = {
-            let vm = self.vm.read(cx);
-            let rev = vm.selected_revision();
-            let hunk = vm.selected_hunk().cloned();
-            (rev, hunk)
-        };
-        let (Some(rev), Some(hunk)) = (rev, hunk) else {
+        let Some((rev, hunk)) = self.selected_projected_hunk(cx) else {
             return;
         };
-        if hunk.projection.is_none() {
-            return;
-        }
+        let rendered = self.diff.projection_view(&hunk) == Some(ProjectionView::Rendered);
+        let opens_rendered = hunk.projection.as_ref().is_some_and(|projection| {
+            ProjectionView::default_for(projection) == ProjectionView::Rendered
+        });
+        self.toggle_default_preview(
+            DiffRichPreviewKind::Projection,
+            &hunk.path,
+            rendered,
+            opens_rendered,
+        );
+        self.reload_projection(rev, hunk, cx);
+    }
 
-        let active = self.toggle_rich_preview(DiffRichPreviewKind::Projection, hunk.path.as_str());
-        let projection_mode = projection::request_mode(hunk.projection.as_ref(), active);
+    pub(crate) fn toggle_projection_source(&mut self, cx: &mut Context<Self>) {
+        let Some((rev, hunk)) = self.selected_projected_hunk(cx) else {
+            return;
+        };
+        self.toggle_rich_preview(DiffRichPreviewKind::Source, hunk.path.as_str());
+        self.reload_projection(rev, hunk, cx);
+    }
+
+    fn selected_projected_hunk(&self, cx: &App) -> Option<(String, DiffHunk)> {
+        let vm = self.vm.read(cx);
+        let hunk = vm
+            .selected_hunk()
+            .filter(|hunk| hunk.projection.is_some())?;
+        Some((vm.selected_revision()?, hunk.clone()))
+    }
+
+    fn reload_projection(&mut self, rev: String, hunk: DiffHunk, cx: &mut Context<Self>) {
+        let mode = self
+            .diff
+            .projection_view(&hunk)
+            .map(ProjectionView::request_mode);
         let vm = self.vm.clone();
         vm.update(cx, |vm, cx| {
-            vm.load_diff_async_with_projection(rev, hunk, projection_mode, cx)
+            vm.projection_mode_override = mode.map(|mode| (hunk.path.clone(), mode));
+            vm.load_diff_async(rev, hunk, cx)
         });
         cx.notify();
     }
@@ -505,8 +530,34 @@ impl RepoWindow {
         if !projection::can_render_svg_preview(&hunk) {
             return;
         }
-        self.toggle_rich_preview(DiffRichPreviewKind::Svg, hunk.path.as_str());
+        let previewing = self.svg_preview_is_active(&hunk, cx);
+        let opens_preview = self.svg_opens_preview(&hunk, cx);
+        self.toggle_default_preview(
+            DiffRichPreviewKind::Svg,
+            &hunk.path,
+            previewing,
+            opens_preview,
+        );
         cx.notify();
+    }
+
+    pub(crate) fn svg_preview_is_active(&self, hunk: &DiffHunk, cx: &App) -> bool {
+        match self.diff.rich_preview_kind(&hunk.path) {
+            Some(DiffRichPreviewKind::Svg) => true,
+            Some(DiffRichPreviewKind::Source) => false,
+            _ => self.svg_opens_preview(hunk, cx),
+        }
+    }
+
+    /// Notes anchor to source lines, so a noted file stays on its source.
+    fn svg_opens_preview(&self, hunk: &DiffHunk, cx: &App) -> bool {
+        let shown = &self.vm.read(cx).shown;
+        projection::can_render_svg_preview(hunk)
+            && shown
+                .svg_preview
+                .as_ref()
+                .is_some_and(|svg| svg.opens_preview)
+            && self.notes_for_selected_hunk(cx).is_empty()
     }
 
     pub fn toggle_markdown_rich_preview(&mut self, cx: &mut Context<Self>) {
@@ -521,22 +572,36 @@ impl RepoWindow {
         cx.notify();
     }
 
-    fn toggle_rich_preview(&mut self, kind: DiffRichPreviewKind, path: &str) -> bool {
-        if self
+    fn toggle_rich_preview(&mut self, kind: DiffRichPreviewKind, path: &str) {
+        let active = self
             .diff
             .rich_preview
             .as_ref()
-            .is_some_and(|selection| selection.is_active(kind, path))
-        {
-            self.diff.rich_preview = None;
-            false
-        } else {
-            self.diff.rich_preview = Some(DiffRichPreviewSelection {
-                kind,
-                path: path.to_owned(),
-            });
-            true
-        }
+            .is_some_and(|selection| selection.is_active(kind, path));
+        self.set_rich_preview((!active).then_some(kind), path);
+    }
+
+    /// Turning off a default preview has to be remembered as choosing source.
+    fn toggle_default_preview(
+        &mut self,
+        kind: DiffRichPreviewKind,
+        path: &str,
+        previewing: bool,
+        opens_preview: bool,
+    ) {
+        let next = match (previewing, opens_preview) {
+            (false, _) => Some(kind),
+            (true, true) => Some(DiffRichPreviewKind::Source),
+            (true, false) => None,
+        };
+        self.set_rich_preview(next, path);
+    }
+
+    fn set_rich_preview(&mut self, kind: Option<DiffRichPreviewKind>, path: &str) {
+        self.diff.rich_preview = kind.map(|kind| DiffRichPreviewSelection {
+            kind,
+            path: path.to_owned(),
+        });
     }
 
     pub(crate) fn toggle_annotate(&mut self, cx: &mut Context<Self>) {

@@ -78,6 +78,7 @@ enum AID {
         static let text = "diff.text"
         static let layoutToggle = "diff.layoutToggle"
         static let preview = "diff.preview"
+        static let source = "diff.source"
         static let addReviewNote = "diff.addReviewNote"
     }
 

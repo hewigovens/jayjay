@@ -179,6 +179,7 @@ impl RepoViewModel {
             pr_info: None,
             pr_host_name: pr_host_name.map(SharedString::from),
             compare: None,
+            projection_mode_override: None,
             graph: GraphData {
                 changes: Arc::new(changes),
                 entries: Arc::new(entries),
@@ -231,6 +232,7 @@ impl RepoViewModel {
             pr_info: None,
             pr_host_name: None,
             compare: None,
+            projection_mode_override: None,
             graph: GraphData::default(),
             loading: LoadingState::default(),
             last_internal_mutation_at: None,

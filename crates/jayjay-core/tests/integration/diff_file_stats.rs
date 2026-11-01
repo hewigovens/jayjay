@@ -222,27 +222,36 @@ fn diff_file_stats_counts_symlinks_as_zero() {
 }
 
 #[test]
-fn diff_file_stats_counts_auto_projected_plists_in_processed_mode() {
+fn diff_file_stats_count_processed_default_formats_in_processed_mode() {
     let fixture = FormatFixture::build();
     let repo = Repo::open(&fixture.path).expect("open repo");
     repo.refresh_working_copy().expect("snapshot working copy");
 
     let stats = repo.diff_file_stats("@", false).expect("diff file stats");
-    let plist = stats
-        .iter()
-        .find(|file| file.path == FormatFixture::PLIST)
-        .expect("missing stats for the binary plist");
-    let projected = repo
-        .show_file("@", FormatFixture::PLIST)
-        .expect("projected plist hunk");
-    let xml_lines = projected
-        .new
-        .content
-        .as_deref()
-        .expect("projected content")
-        .lines()
-        .count() as u32;
-    assert_eq!((plist.insertions, plist.deletions), (xml_lines, 0));
+    for path in [
+        FormatFixture::PLIST,
+        FormatFixture::NOTEBOOK,
+        FormatFixture::SARIF,
+    ] {
+        let file = stats
+            .iter()
+            .find(|file| file.path == path)
+            .unwrap_or_else(|| panic!("missing stats for {path}"));
+        let projected_lines = repo
+            .show_file("@", path)
+            .expect("projected hunk")
+            .new
+            .content
+            .as_deref()
+            .expect("projected content")
+            .lines()
+            .count() as u32;
+        assert_eq!(
+            (file.insertions, file.deletions),
+            (projected_lines, 0),
+            "{path}"
+        );
+    }
 }
 
 #[test]

@@ -219,7 +219,7 @@ fn binary_plist_projection_banner_is_inset(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_format_repo_with_selected_file(cx, FormatFixture::NOTEBOOK);
+    let (_fixture, view, cx) = open_format_repo_with_selected_file(cx, FormatFixture::CSV);
 
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
@@ -229,7 +229,7 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
         );
         assert_eq!(
             vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
-            Some(FormatFixture::NOTEBOOK)
+            Some(FormatFixture::CSV)
         );
     });
     let text_gutter_width = cx
@@ -263,7 +263,7 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
         );
         assert_eq!(
             vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
-            Some("analysis.ipynb.md")
+            Some("data.csv.md")
         );
         assert!(vm.shown.markdown_preview.is_some());
     });
@@ -361,13 +361,12 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
             Some(Some(svg))
         );
     });
-    assert!(cx.debug_bounds("svg-preview-pane").is_none());
-
-    cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     cx.update(|window, cx| window.simulate_next_frame(cx));
     settle_visual(cx);
-    let pane = cx.debug_bounds("svg-preview-pane").expect("SVG pane");
+    let pane = cx
+        .debug_bounds("svg-preview-pane")
+        .expect("SVG opens rendered");
     let image = cx.debug_bounds("svg-preview-image").expect("SVG image");
     assert!(
         image.size.width > px(0.) && image.size.width <= px(24.),
@@ -378,10 +377,153 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
 
     let toggle = cx
         .debug_bounds("toggle-svg-preview")
-        .expect("svg preview toggle after activation");
+        .expect("svg preview toggle after opening");
     cx.simulate_click(toggle.center(), Modifiers::default());
     settle_visual(cx);
     assert!(cx.debug_bounds("svg-preview-pane").is_none());
+
+    let toggle = cx
+        .debug_bounds("toggle-svg-preview")
+        .expect("svg preview toggle on source");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("svg-preview-pane").is_some());
+}
+
+#[gpui::test]
+fn svg_that_cannot_render_stays_on_source(cx: &mut TestAppContext) {
+    let (_fixture, _view, cx) =
+        open_repo_with_selected_file_content(cx, "broken.svg", "not an image\n");
+    settle_visual(cx);
+    assert!(cx.debug_bounds("svg-preview-pane").is_none());
+    assert!(cx.debug_bounds("diff-gutter").is_some());
+}
+
+#[gpui::test]
+fn notebook_opens_a_processed_diff_with_source_and_preview_buttons(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_format_repo_with_selected_file(cx, FormatFixture::NOTEBOOK);
+    let shown_path = |view: &gpui::Entity<RepoWindow>, cx: &mut VisualTestContext| {
+        view.read_with(cx, |view, cx| {
+            view.view_model()
+                .read(cx)
+                .shown
+                .diff
+                .as_ref()
+                .map(|diff| diff.path.clone())
+        })
+    };
+    assert_eq!(shown_path(&view, cx).as_deref(), Some("analysis.ipynb.md"));
+    assert!(cx.debug_bounds("projection-banner").is_some());
+    assert!(cx.debug_bounds("markdown-preview-pane").is_none());
+
+    let source = cx
+        .debug_bounds("toggle-projection-source")
+        .expect("source toggle");
+    cx.simulate_click(source.center(), Modifiers::default());
+    settle_visual(cx);
+    assert_eq!(
+        shown_path(&view, cx).as_deref(),
+        Some(FormatFixture::NOTEBOOK)
+    );
+    assert!(cx.debug_bounds("projection-banner").is_none());
+
+    cx.dispatch_action(ToggleIgnoreWhitespace);
+    settle_visual(cx);
+    assert_eq!(
+        shown_path(&view, cx).as_deref(),
+        Some(FormatFixture::NOTEBOOK),
+        "a refresh keeps the chosen source view"
+    );
+
+    let preview = cx
+        .debug_bounds("toggle-projection-preview")
+        .expect("preview toggle");
+    cx.simulate_click(preview.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("markdown-preview-pane").is_some());
+
+    let preview = cx
+        .debug_bounds("toggle-projection-preview")
+        .expect("preview toggle");
+    cx.simulate_click(preview.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("markdown-preview-pane").is_none());
+    assert_eq!(shown_path(&view, cx).as_deref(), Some("analysis.ipynb.md"));
+}
+
+#[gpui::test]
+fn sarif_opens_rendered_and_its_button_returns_to_source(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_format_repo_with_selected_file(cx, FormatFixture::SARIF);
+    assert!(cx.debug_bounds("markdown-preview-pane").is_some());
+    assert!(cx.debug_bounds("toggle-projection-source").is_none());
+
+    let preview = cx
+        .debug_bounds("toggle-projection-preview")
+        .expect("preview toggle");
+    cx.simulate_click(preview.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("markdown-preview-pane").is_none());
+    view.read_with(cx, |view, cx| {
+        assert_eq!(
+            view.view_model()
+                .read(cx)
+                .shown
+                .projection
+                .as_ref()
+                .map(|p| p.mode),
+            Some(DiffProjectionMode::Raw)
+        );
+    });
+}
+
+#[gpui::test]
+fn unparseable_projection_falls_back_to_source_with_a_banner(cx: &mut TestAppContext) {
+    let (_fixture, _view, cx) =
+        open_repo_with_selected_file_content(cx, "broken.sarif", "{not json\n");
+    settle_visual(cx);
+    assert!(cx.debug_bounds("markdown-preview-pane").is_none());
+    assert!(cx.debug_bounds("diff-gutter").is_some());
+    assert!(cx.debug_bounds("projection-banner").is_some());
+}
+
+#[gpui::test]
+fn another_change_opens_the_same_notebook_in_its_default_view(cx: &mut TestAppContext) {
+    let fixture = FormatFixture::build();
+    let notebook = fixture.path.join(FormatFixture::NOTEBOOK);
+    for (from, to) in [("Sales", "Revenue"), ("Revenue", "Margin")] {
+        run_jj_in(&fixture.path, &["new", "-m", to]);
+        let edited = fs::read_to_string(&notebook).unwrap().replace(from, to);
+        fs::write(&notebook, edited).unwrap();
+        run_jj_in(&fixture.path, &["st"]);
+    }
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+
+    let source = cx
+        .debug_bounds("toggle-projection-source")
+        .expect("source toggle");
+    cx.simulate_click(source.center(), Modifiers::default());
+    settle_visual(cx);
+
+    view.update_in(cx, |view, _, cx| {
+        let ix = view
+            .view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .position(|change| change.description.trim() == "Revenue")
+            .expect("Revenue change");
+        view.select_change(ix, cx);
+    });
+    settle_visual(cx);
+
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(
+            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
+            Some("analysis.ipynb.md")
+        );
+    });
 }
 
 #[gpui::test]
@@ -392,9 +534,6 @@ fn oversized_svg_previews_stay_inside_the_media_pane(cx: &mut TestAppContext) {
         );
         let (_fixture, _view, cx) = open_repo_with_selected_file_content(cx, "large.svg", &svg);
         cx.simulate_resize(size(px(1200.), px(800.)));
-        settle_visual(cx);
-        let toggle = cx.debug_bounds("toggle-svg-preview").unwrap();
-        cx.simulate_click(toggle.center(), Modifiers::default());
         settle_visual(cx);
         cx.update(|window, cx| window.simulate_next_frame(cx));
         settle_visual(cx);

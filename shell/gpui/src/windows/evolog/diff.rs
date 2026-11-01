@@ -76,7 +76,7 @@ impl EvologView {
             .as_deref()
             .and_then(|files| files.get(index))
             .map(|file| {
-                let mode = projection::request_mode(file.projection.as_ref(), false)
+                let mode = projection::default_mode(file.projection.as_ref())
                     .unwrap_or(DiffProjectionMode::Raw);
                 (file.path.clone(), file.old_path.clone(), mode)
             })

@@ -125,7 +125,7 @@ fn raw_interdiff_preserves_both_sides_of_a_projected_rename() {
         .find(|hunk| hunk.hunk_type == HunkType::Renamed)
         .expect("rename hunk");
     // The evolog viewer picks the mode per file exactly like this; delimited files must stay raw.
-    let mode = jayjay_core::projection::request_mode(rename.projection.as_ref(), false)
+    let mode = jayjay_core::projection::default_mode(rename.projection.as_ref())
         .unwrap_or(DiffProjectionMode::Raw);
     assert_eq!(mode, DiffProjectionMode::Raw);
     let hunk = repo

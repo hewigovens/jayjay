@@ -8,6 +8,24 @@ use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 use jj_test::LinearFixture;
 
 #[gpui::test]
+fn svg_with_a_note_stays_on_its_source(cx: &mut TestAppContext) {
+    let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"/>";
+    let (_fixture, view, cx, hunk) = open_repo_and_select(
+        cx,
+        |fixture| std::fs::write(fixture.path.join("logo.svg"), format!("{svg}\n")).unwrap(),
+        "logo.svg",
+    );
+    assert!(cx.debug_bounds("svg-preview-pane").is_some());
+
+    let change_id = selected_change_id(&view, cx);
+    add_note_via_store(cx, &change_id, &hunk, NoteSide::New, 1, svg, "check this");
+    view.update_in(cx, |view, _, cx| view.refresh_review_notes(cx));
+    settle_visual(cx);
+
+    assert!(cx.debug_bounds("svg-preview-pane").is_none());
+}
+
+#[gpui::test]
 fn add_note_creates_a_note_text_row_right_after_its_anchor_line(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select(
         cx,

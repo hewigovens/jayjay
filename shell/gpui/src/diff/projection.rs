@@ -3,7 +3,8 @@ use jayjay_core::{DiffHunk, DiffProjection, DiffProjectionMode, DiffRenderKind};
 use crate::ui::icons::glyph;
 
 pub(crate) use jayjay_core::projection::{
-    cache_identity, help, opens_automatically, request_mode, shows_banner, title,
+    ProjectionView, active_help, cache_identity, default_mode, help, opens_automatically,
+    shows_banner, shows_source_toggle, svg_opens_preview, title,
 };
 
 pub(crate) fn icon(projection: Option<&DiffProjection>) -> &'static str {

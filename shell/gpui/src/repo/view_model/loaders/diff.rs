@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::Context;
 use jayjay_core::diff::FileDiff;
-use jayjay_core::{DiffHunk, DiffPreview, DiffProjectionMode};
+use jayjay_core::{DiffHunk, DiffPreview};
 
 use super::super::{DiffLoadState, LoadedDiff, RepoViewModel};
 use super::diff_compute::{compute_diff_blocking, diff_cache_key};
@@ -10,17 +10,10 @@ use crate::diff::{DetailMode, projection};
 
 impl RepoViewModel {
     pub(crate) fn load_diff_async(&mut self, rev: String, hunk: DiffHunk, cx: &mut Context<Self>) {
-        let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
-        self.load_diff_async_with_projection(rev, hunk, projection_mode, cx);
-    }
-
-    pub(crate) fn load_diff_async_with_projection(
-        &mut self,
-        rev: String,
-        hunk: DiffHunk,
-        projection_mode: Option<DiffProjectionMode>,
-        cx: &mut Context<Self>,
-    ) {
+        let projection_mode = match &self.projection_mode_override {
+            Some((path, mode)) if *path == hunk.path => Some(*mode),
+            _ => projection::default_mode(hunk.projection.as_ref()),
+        };
         // Every request supersedes the previous one, even a cache hit, or an older in-flight miss can overwrite the cached selection.
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         let generation = self.loading.diff_gen;
@@ -181,7 +174,7 @@ impl RepoViewModel {
             .enumerate()
             .filter(|(ix, _)| Some(*ix) != self.selected_file_ix)
             .map(|(_, hunk)| {
-                let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
+                let projection_mode = projection::default_mode(hunk.projection.as_ref());
                 (
                     diff_cache_key(
                         None,
@@ -263,7 +256,7 @@ impl RepoViewModel {
         let Some(rev) = self.selected_revision() else {
             return DiffLoadState::Missing;
         };
-        let projection_mode = projection::request_mode(hunk.projection.as_ref(), false);
+        let projection_mode = projection::default_mode(hunk.projection.as_ref());
         let key = diff_cache_key(
             None,
             &rev,

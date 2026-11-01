@@ -10,6 +10,7 @@ use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::file_column::head_elide;
+use crate::diff::projection;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::text_tooltip;
@@ -135,6 +136,13 @@ pub(super) fn header_reserved_width(
         + state.can_render_markdown_preview as usize
         + state.can_render_svg_preview as usize;
     reserved += action(&jayjay_i18n::common::preview()) * preview_buttons as f32;
+    if state
+        .projection
+        .projection
+        .is_some_and(projection::shows_source_toggle)
+    {
+        reserved += action(&jayjay_i18n::diff::source());
+    }
     reserved += 28. * state.html_external_url.is_some() as usize as f32;
     reserved
 }

@@ -18,7 +18,7 @@ use super::unified_body::{UnifiedBodyState, unified_body};
 use crate::app::theme::{Theme, theme, ui_font_size, with_alpha};
 use crate::diff::markdown_diff::{MarkdownDiffState, MarkdownImages, markdown_diff_view};
 use crate::diff::media_diff::diff_body_with_gutter;
-use crate::diff::projection;
+use crate::diff::projection::{self, ProjectionView};
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
 use crate::diff::{hunk_is_image, image_diff_view};
 use crate::repo::window::{ConflictResolution, RepoWindow};
@@ -95,7 +95,7 @@ pub fn diff_view(
             view_mode,
             projection: ProjectionHeaderState {
                 projection: state.effective_projection(),
-                active: state.active_projection_preview,
+                view: state.projection_view,
             },
             active_markdown_preview: state.active_markdown_preview,
             can_render_markdown_preview: projection::can_render_markdown_file_preview(hunk),
@@ -119,13 +119,17 @@ pub fn diff_view(
         .filter(|q| !q.is_empty())
         .map(|q| q.to_owned());
     let projection_has_markdown_preview =
-        projection::has_markdown_render_kind(state.effective_projection());
+        projection::has_markdown_render_kind(state.effective_projection())
+            && state
+                .effective_projection()
+                .is_some_and(|projection| projection.diagnostics.is_empty());
     let projection_render_kind = state
         .effective_projection()
         .map(|projection| projection.render_kind);
     let can_render_markdown_preview = state.active_markdown_preview
         && projection::can_render_markdown_file_preview(hunk)
-        || state.active_projection_preview && projection_has_markdown_preview;
+        || state.projection_view == Some(ProjectionView::Rendered)
+            && projection_has_markdown_preview;
 
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
@@ -254,8 +258,8 @@ pub fn diff_view(
     let find_bar = find.query.map(|q| render_find_bar(q, &find, &t, cx));
     let show_conflict_bar = state.can_resolve_conflict && state.selected_file_has_conflict;
     let projection_banner = state.effective_projection().and_then(|projection| {
-        projection::shows_banner(projection, state.active_projection_preview)
-            .then(|| render_projection_banner(projection, &t))
+        let view = state.projection_view.unwrap_or(ProjectionView::Source);
+        projection::shows_banner(projection, view).then(|| render_projection_banner(projection, &t))
     });
     let stale_notes_bar = stale_notes_banner(state.stale_or_orphaned_notes, &t, cx);
 

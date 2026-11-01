@@ -73,9 +73,22 @@ extension DiffSection {
             richPreviewButton(
                 icon: DiffProjectionDisplayPolicy.iconName(for: effectiveProjection),
                 active: activeProjectionRichView,
-                inactiveHelp: DiffProjectionDisplayPolicy.help(for: effectiveProjection)
+                inactiveHelp: DiffProjectionDisplayPolicy.help(for: effectiveProjection),
+                activeHelp: DiffProjectionDisplayPolicy.activeHelp(for: effectiveProjection)
             ) {
                 toggleProjectionRichView()
+            }
+            if DiffProjectionDisplayPolicy.showsSourceToggle(effectiveProjection) {
+                richPreviewButton(
+                    icon: "curlybraces",
+                    active: projectionView == .source,
+                    inactiveHelp: Localized.Diff.showSourceDiff,
+                    activeHelp: Localized.Diff.showNotebookDiff,
+                    title: Localized.Diff.source,
+                    identifier: AID.Diff.source
+                ) {
+                    toggleProjectionSourceView()
+                }
             }
         }
         if isSvgFile {
@@ -130,14 +143,18 @@ extension DiffSection {
         icon: String,
         active: Bool,
         inactiveHelp: String,
+        activeHelp: String = Localized.Diff.showSourceDiff,
+        title: String = Localized.Common.preview,
+        identifier: String = AID.Diff.preview,
         action: @escaping () -> Void
     ) -> some View {
         Button(action: action) {
-            actionLabel(Localized.Common.preview, systemImage: icon)
+            actionLabel(title, systemImage: icon)
         }
-        .accessibilityIdentifier(AID.Diff.preview)
+        .accessibilityLabel(title)
+        .accessibilityIdentifier(identifier)
         .buttonStyle(HeaderActionButtonStyle(isActive: active))
-        .help(active ? Localized.Diff.showSourceDiff : inactiveHelp)
+        .help(active ? activeHelp : inactiveHelp)
     }
 
     @ViewBuilder

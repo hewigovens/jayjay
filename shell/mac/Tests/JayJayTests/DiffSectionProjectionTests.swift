@@ -30,18 +30,20 @@ final class DiffSectionProjectionTests: XCTestCase {
         )
 
         XCTAssertTrue(DiffProjectionDisplayPolicy.opensAutomatically(projection))
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, richView: false), .processed)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .processed)
     }
 
-    func testNotebookProjectionStillUsesRichToggle() {
+    func testNotebookOpensProcessedDiffWithSourceToggle() {
         let projection = testProjection(pluginId: "ipynb", pluginLabel: "Notebook", mode: .raw)
 
         XCTAssertFalse(DiffProjectionDisplayPolicy.opensAutomatically(projection))
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, richView: false), .raw)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, richView: true), .processed)
+        XCTAssertTrue(DiffProjectionDisplayPolicy.showsSourceToggle(projection))
+        XCTAssertEqual(DiffProjectionDisplayPolicy.defaultView(for: projection), .diff)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .processed)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, view: .source), .raw)
     }
 
-    func testSarifProjectionStillUsesRichToggle() {
+    func testSarifOpensRenderedAndCanReturnToSource() {
         let projection = testProjection(
             pluginId: "sarif",
             pluginLabel: "SARIF",
@@ -50,8 +52,37 @@ final class DiffSectionProjectionTests: XCTestCase {
         )
 
         XCTAssertFalse(DiffProjectionDisplayPolicy.opensAutomatically(projection))
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, richView: false), .raw)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, richView: true), .processed)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.defaultView(for: projection), .rendered)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .processed)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, view: .source), .raw)
+    }
+
+    func testDelimitedProjectionStaysOnSource() {
+        let projection = testProjection(pluginId: "delimited", pluginLabel: "Table", mode: .raw, renderKind: .table)
+
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .raw)
+        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, view: .rendered), .processed)
+    }
+
+    func testSvgOpensPreviewOnlyWhenEverySideCanRender() {
+        let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"/>"
+
+        XCTAssertTrue(DiffSection.svgOpensPreview(oldContent: nil, newContent: svg))
+        XCTAssertTrue(DiffSection.svgOpensPreview(oldContent: svg, newContent: svg))
+        XCTAssertFalse(DiffSection.svgOpensPreview(oldContent: svg, newContent: "<<<<<<< conflict\n<svg/>"))
+        XCTAssertFalse(DiffSection.svgOpensPreview(oldContent: "<binary file>", newContent: svg))
+        XCTAssertFalse(DiffSection.svgOpensPreview(oldContent: nil, newContent: nil))
+    }
+
+    func testFailedProjectionShowsItsRawFallback() {
+        XCTAssertTrue(DiffSection.hasCurrentRenderableDiff(
+            loadedPath: "broken.ipynb",
+            hunkPath: "broken.ipynb",
+            hasRenderedDiff: true,
+            loadedProjectionMode: .raw,
+            requestedProjectionMode: .processed,
+            projectionFailed: true
+        ))
     }
 
     func testRichPreviewStateDoesNotCarryAcrossPaths() {
@@ -71,7 +102,7 @@ final class DiffSectionProjectionTests: XCTestCase {
             virtualPath: "Info.plist.xml"
         )
 
-        XCTAssertTrue(DiffProjectionDisplayPolicy.showsBanner(for: projection, richView: false))
+        XCTAssertTrue(DiffProjectionDisplayPolicy.showsBanner(for: projection, view: .diff))
         XCTAssertEqual(
             DiffProjectionDisplayPolicy.title(for: projection),
             "Binary property list on disk, previewed as XML"

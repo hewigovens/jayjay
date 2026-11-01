@@ -6,8 +6,8 @@ use jayjay_core::compare::CompareState;
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::diff::ConflictLineKind;
 use jayjay_core::{
-    AnnotationLine, ChangeInfo, DiffHunk, DiffStats, PrInfo, Repo, RevsetFilterState, RevsetPreset,
-    RevsetVocabulary,
+    AnnotationLine, ChangeInfo, DiffHunk, DiffProjectionMode, DiffStats, PrInfo, Repo,
+    RevsetFilterState, RevsetPreset, RevsetVocabulary,
 };
 
 use super::BisectModel;
@@ -47,6 +47,8 @@ pub struct RepoViewModel {
     pub pr_info: Option<PrInfo>,
     pub(crate) pr_host_name: Option<SharedString>,
     pub compare: Option<CompareState>,
+    /// Survives reloads of this path; cleared with the panel's rich preview.
+    pub(crate) projection_mode_override: Option<(String, DiffProjectionMode)>,
     pub graph: GraphData,
     pub loading: LoadingState,
     /// Stamped when we start a jj write so the FS echo from our own mutation is ignored.

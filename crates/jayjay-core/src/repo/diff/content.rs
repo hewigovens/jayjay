@@ -115,7 +115,7 @@ impl Repo {
         let files = self.diff_file_list(trees)?;
         let mut stats = Vec::with_capacity(files.len());
         for file in files {
-            let mode = crate::projection::request_mode(file.projection.as_ref(), false)
+            let mode = crate::projection::default_mode(file.projection.as_ref())
                 .unwrap_or(DiffProjectionMode::Raw);
             let hunk = match file.old_path.as_deref() {
                 Some(old_path) => {
