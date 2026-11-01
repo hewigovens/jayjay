@@ -201,4 +201,5 @@ See [`crates/jj-diff/README.md`](crates/jj-diff/README.md) for the full API.
 ## License
 
 - **Rust crates** (`crates/`): [Apache-2.0](crates/LICENSE)
+- **Web review package** (`packages/review-web/`): [Apache-2.0](packages/review-web/LICENSE), except its MIT-licensed [Seti font](packages/review-web/src/fonts/Seti.LICENSE)
 - **Apps and everything else** (`shell/`, docs, packaging): [BSL 1.1](LICENSE) - free to use, modify, and redistribute; paid app store distribution requires permission. Converts to Apache-2.0 on 2030-03-23.

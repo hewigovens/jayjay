@@ -162,3 +162,7 @@ review.set_reviewed(&mut store, &jayjay_core::WorkingCopyReviewMark {
 Run these synchronous native calls on a blocking worker in an async server. `files()` and `load_file(path)` support lazy file-content loading. The status result includes native file identities, canonical snapshots, display-group mappings, states, rollups, and ownership. A display-group index is valid only with its exact commit, path, and whitespace mode; pass `Some(index)` for a group action. Commands set a desired state and record a person’s ownership. Open a fresh session and checked store for each refresh; a retained session also rechecks the workspace commit before saving a mark. The bridge never snapshots or reconciles concurrent jj operations; multiple operation heads produce a retryable error. Agents’ unsnapshotted disk edits remain outside this immutable view.
 
 All native review writers lock the same sidecar across reload and atomic save. Update the desktop app to a build using this locking implementation before running it alongside another writer. The Control Room server/API and connected PWA wiring live in the separate Control Room repository; this checkout supplies the library boundary, not that integration.
+
+## License
+
+[Apache-2.0](LICENSE), including the `wasm` crate, except the Seti icon font, which keeps its MIT license ([src/fonts/Seti.LICENSE](src/fonts/Seti.LICENSE)). The rest of JayJay's licensing is in the [repository README](../../README.md#license).
