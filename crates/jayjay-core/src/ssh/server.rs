@@ -2,6 +2,7 @@ use super::host_path::{to_native, to_wire};
 use super::protocol::{Hello, PROTOCOL, Request, Response, read_frame, write_frame};
 use super::{RemoteDirectory, RemoteFolder};
 use crate::repo::Repo;
+use crate::types::WorkspacePresence;
 use crate::{JayError, JayResult, SyncToken};
 use serde::{Deserialize, Serialize};
 use serde_json::Value;
@@ -124,6 +125,14 @@ fn execute(
     }
     let repo = {
         let mut repos = repositories.lock().unwrap();
+        // A checkout deleted since it was cached would otherwise open and then vanish on its first refresh.
+        if request.method == "__open"
+            && repos
+                .get(&path)
+                .is_some_and(|repo| repo.workspace_presence() == WorkspacePresence::Gone)
+        {
+            repos.remove(&path);
+        }
         if let Some(repo) = repos.get(&path) {
             repo.clone()
         } else {
@@ -182,4 +191,29 @@ fn browse(path: &Path) -> JayResult<RemoteDirectory> {
         path: to_wire(&path),
         folders,
     })
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn reopening_a_deleted_checkout_reports_it_missing() {
+        let temp = jj_test::init_jj_repo();
+        let path = temp.path().join("repo");
+        let repositories = Mutex::new(HashMap::new());
+        let sync = Mutex::new(SyncToken::standalone());
+        let open = Request {
+            id: 1,
+            path: to_wire(&path),
+            method: "__open".into(),
+            args: vec![],
+        };
+        execute(&open, temp.path(), &repositories, &sync).unwrap();
+        std::fs::remove_dir_all(path.join(".jj")).unwrap();
+        assert!(matches!(
+            execute(&open, temp.path(), &repositories, &sync),
+            Err(JayError::RepoNotFound { .. })
+        ));
+    }
 }
