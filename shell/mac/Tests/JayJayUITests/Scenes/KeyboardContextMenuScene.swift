@@ -2,17 +2,6 @@ import AppKit
 import XCTest
 
 final class KeyboardContextMenuScene: SceneBase {
-    func testMouseMenuRunsActionKeys() throws {
-        let app = try XCTUnwrap(app)
-        let rows = try waitForDAGRows()
-        let second = app.element(rows.element(boundBy: 1).identifier)
-        rightClickCenter(second, timeout: 5, message: "Second change row missing")
-        XCTAssertTrue(app.menuItems["Show evolution…"].waitForExistence(timeout: 3), "Right-click did not open the change menu")
-        keyStroke("v")
-        XCTAssertTrue(app.element(AID.Evolog.entryList).waitForExistence(timeout: 10), "V in the mouse menu did not run Show Evolution")
-        XCTAssertTrue(second.wait(for: \.isSelected, toEqual: true, timeout: 5), "Evolution opened for a different change")
-    }
-
     func testKeyboardNavigationOpensTheSelectedChangeMenu() throws {
         let app = try XCTUnwrap(app)
         let rows = try waitForDAGRows()

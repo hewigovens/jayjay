@@ -28,4 +28,16 @@ final class FlockModelTests: XCTestCase {
         flock.choose(.goldenPheasant)
         XCTAssertEqual(flock.activeIcon, .goldenPheasant)
     }
+
+    func testMemberWithoutANameIsShownByLogin() throws {
+        let suite = "FlockModelTests.\(UUID().uuidString)"
+        let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
+        defer { defaults.removePersistentDomain(forName: suite) }
+        let flock = FlockModel(defaults: defaults)
+
+        for name in [nil, " \n"] {
+            flock.accept(FlockMember(id: "sponsor", login: "first-supporter", name: name))
+            XCTAssertEqual(flock.name, "first-supporter")
+        }
+    }
 }
