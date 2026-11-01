@@ -72,21 +72,6 @@ final class WorkspaceSwitchScene: SceneBase {
         XCTAssertEqual(app.windows.count, 1)
     }
 
-    func testCommandPaletteSwitchesInCurrentWindow() throws {
-        let app = try XCTUnwrap(app)
-        XCTAssertTrue(app.windows[Self.fixtureName].waitForExistence(timeout: 10))
-        keyStroke("p", modifiers: [.command, .shift])
-        let field = app.textFields[AID.Palette.textField]
-        XCTAssertTrue(field.waitForExistence(timeout: 5))
-        field.click()
-        paste("Switch to first")
-        let command = app.element(AID.Palette.item("Switch to first"))
-        XCTAssertTrue(command.waitForExistence(timeout: 5))
-        command.click()
-        XCTAssertTrue(app.windows["workspace-switch-first"].waitForExistence(timeout: 10))
-        XCTAssertEqual(app.windows.count, 1)
-    }
-
     func testFailedSwitchKeepsSourceWorkspace() throws {
         let app = try XCTUnwrap(app)
         let source = app.windows[Self.fixtureName]

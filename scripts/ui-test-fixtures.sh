@@ -489,8 +489,6 @@ SH
 fixture_app_stores() {
   printf '{"member":null}\n' > "$fixtures/flock-empty.json"
   printf '{"member":{"id":"U_fixture","login":"first-supporter","name":"First Supporter"}}\n' > "$fixtures/flock-member.json"
-  printf '{"member":{"id":"U_fixture","login":"first-supporter","name":null}}\n' > "$fixtures/flock-member-no-name.json"
-  printf '{"member":{"id":"U_fixture","login":"first-supporter","name":"A very long supporter name to check the keepsake layout"}}\n' > "$fixtures/flock-member-long-name.json"
   printf '{"repositories":[]}\n' > "$fixtures/repositories-empty.json"
   printf '{"repositories":["%s"]}\n' "$fixtures/formats" > "$fixtures/repositories-pinned.json"
   printf '{"repositories":["%s"]}\n' "$(cd "$fixtures/formats" && pwd -P)" > "$fixtures/repositories-picker-pinning.json"

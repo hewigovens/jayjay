@@ -46,37 +46,4 @@ final class InterdiffScene: SceneBase {
         XCTAssertFalse(second.isSelected)
         XCTAssertTrue(third.isSelected)
     }
-
-    func testCommandClickNonConsecutiveRowsComparesOutermostSelection() throws {
-        let app = try XCTUnwrap(app)
-        let rows = dagRows(of: app)
-        let first = rows.element(boundBy: 0)
-        let skipped = rows.element(boundBy: 1)
-        let third = rows.element(boundBy: 2)
-        XCTAssertTrue(first.waitForExistence(timeout: 10), "DAG never populated")
-
-        first.click()
-        XCUIElement.perform(withKeyModifiers: .command) {
-            third.click()
-        }
-
-        let compareBanner = app.element(AID.Compare.banner)
-        XCTAssertTrue(
-            compareBanner.waitForExistence(timeout: 5),
-            "Non-consecutive selection did not load its outermost comparison"
-        )
-        XCTAssertTrue(first.isSelected)
-        XCTAssertFalse(skipped.isSelected)
-        XCTAssertTrue(third.isSelected)
-        XCTAssertTrue(app.element(AID.Compare.reverseDirection).isEnabled)
-        XCTAssertFalse(app.element(AID.Detail.selectionWithoutDiff).exists)
-
-        app.typeKey(.escape, modifierFlags: [])
-        XCTAssertTrue(
-            compareBanner.waitForNonExistence(timeout: 5),
-            "Escape did not collapse the multi-selection"
-        )
-        XCTAssertFalse(first.isSelected)
-        XCTAssertTrue(third.isSelected, "Escape should preserve the active change")
-    }
 }

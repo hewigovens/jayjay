@@ -85,6 +85,7 @@ final class FileSelectionScrollScene: SceneBase {
         let config = fileRows(of: app).matching(identifier: AID.FileList.row("config/environments/development.json")).firstMatch
         let guide = fileRows(of: app).matching(identifier: AID.FileList.row("docs/guides/guide-01.md")).firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 10))
+        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
         first.click()
         keyStroke("k")
         XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))

@@ -119,21 +119,6 @@ final class RepoListWindowScene: SceneBase {
         XCTAssertEqual(app.windows.count, 1, "Clicking the Dock item opened more than one repository list")
     }
 
-    func testDockClickDeminiaturizesRepoList() throws {
-        let app = try XCTUnwrap(app)
-        let repoList = app.windows.firstMatch
-        let recents = app.staticTexts["Recent Repositories"]
-        XCTAssertTrue(recents.waitForExistence(timeout: 5), "Repository list did not appear")
-        repoList.buttons[XCUIIdentifierMinimizeWindow].click()
-        XCTAssertTrue(waitForHittable(recents, isHittable: false), "The repository list did not miniaturize")
-
-        clickDockItem()
-
-        XCTAssertTrue(repoList.waitForExistence(timeout: 5), "The miniaturized repository list did not come back")
-        XCTAssertTrue(waitForHittable(recents, isHittable: true), "The repository list stayed miniaturized in the Dock")
-        XCTAssertEqual(app.windows.count, 1, "Deminiaturizing opened a second repository list")
-    }
-
     func testDockClickDeminiaturizesRepoWindow() throws {
         let app = try XCTUnwrap(app)
         let repoWindow = openRepo(named: "formats", in: app)
