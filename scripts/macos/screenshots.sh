@@ -6,6 +6,8 @@ source "$(dirname "${BASH_SOURCE[0]}")/common.sh"
 screenshot_root="$1"
 shift
 
+command -v magick >/dev/null || { echo "screenshots need ImageMagick (brew install imagemagick)" >&2; exit 1; }
+
 out="${root}/build/screenshots"
 rm -rf "$out"
 mkdir -p "$out/ffi"
@@ -39,6 +41,8 @@ done
 python3 - "$out" "${root}/docs/imgs" <<'PY'
 import json, pathlib, subprocess, sys
 out, imgs = pathlib.Path(sys.argv[1]), pathlib.Path(sys.argv[2])
+# These are shown at close to full size, where the desktop captured behind their rounded corners is visible.
+corner_radius = {"clone-repository": 31, "workspaces": 23}
 for manifest in out.glob("*/manifest.json"):
     for test in json.loads(manifest.read_text()):
         for attachment in test["attachments"]:
@@ -46,6 +50,11 @@ for manifest in out.glob("*/manifest.json"):
             if " " in name or not attachment["exportedFileName"].endswith(".png"):
                 continue
             source = manifest.parent / attachment["exportedFileName"]
+            radius = corner_radius.get(name.removesuffix("-dark"))
+            if radius:
+                rounded = source.with_name(f"{name}-rounded.png")
+                subprocess.run(["magick", str(source), "-alpha", "set", "(", "+clone", "-alpha", "transparent", "-fill", "white", "-draw", f"roundrectangle 0,0 %[fx:w-1],%[fx:h-1] {radius},{radius}", ")", "-compose", "DstIn", "-composite", str(rounded)], check=True)
+                source = rounded
             subprocess.run(["cwebp", "-quiet", "-q", "90", str(source), "-o", str(imgs / f"{name}.webp")], check=True)
             print(f"docs/imgs/{name}.webp")
 PY

@@ -18,8 +18,8 @@ jayjay-dag-graph-and-side-by = JayJay — Jujutsu 儲存庫的 DAG 圖與並排�
 # JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting and rich previews for supported formats, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.
 jayjay-is-a-native-gui-for-2 = JayJay 是 Jujutsu (jj) 版本控制的原生圖形用戶端，支援 macOS 與 Linux。提供以分道呈現分叉與合併的 DAG 圖、具 tree-sitter 語法高亮的統一與並排差異、支援格式的豐富預覽、interdiff、差異編輯模式、演進記錄檢視器、書籤差異、檔案逐行追溯、一鍵解決衝突、AI 產生描述與指令面板。以 Rust (jj-lib) 與 SwiftUI 打造。
 
-# The native way<br>to drive jj.
-the-native-way-to-drive-jj = 用原生的方式，<br>駕馭 jj。
+# The native way<br>to drive jj
+the-native-way-to-drive-jj = 用原生的方式，<br>駕馭 jj
 
 # A fast, keyboard-friendly client for Jujutsu. The change graph, diffs, splits, and conflicts, in one window.
 a-fast-keyboard-friendly-client-for = 為 Jujutsu 打造的快速用戶端，鍵盤操作順手。變更圖、差異、分割、衝突，一個視窗全部搞定。
@@ -33,26 +33,26 @@ speaks-jj = 道地的 jj 體驗
 # Changes, bookmarks, revsets, and mutable history, the way jj intends. No git branches bolted on.
 changes-bookmarks-revsets-and-mutable-history = 變更、書籤、revset、可變歷史，全照 jj 的思路走，不硬套 git 分支。
 
-# Truly native
-truly-native = 真正原生
+# Native on each platform
+native-on-each-platform = 每個平台都原生
 
 # SwiftUI on macOS and GPUI on Linux, over a shared Rust core that links jj-lib directly. No CLI scraping, no web view.
 swiftui-on-macos-and-gpui-on = macOS 用 SwiftUI，Linux 用 GPUI，底層是同一個直接連結 jj-lib 的 Rust 核心。不解析命令列輸出，也不包 Web 檢視。
 
-# Free, no strings
-free-no-strings = 完全免費
+# Free to use
+free-to-use = 完全免費
 
 # No subscription and no repository data. Anonymous build and OS stats can be turned off in Settings.
 no-subscription-and-no-repository-data = 不用訂閱，也不收集你的儲存庫資料。匿名的版本與系統統計可在設定中關閉。
 
-# Read changes the way you read code.
-read-changes-the-way-you-read = 像讀程式碼一樣看變更。
+# Read changes the way you read code
+read-changes-the-way-you-read = 像讀程式碼一樣看變更
 
-# Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.
-unified-or-side-by-side-a = 統一或並排檢視、檔案樹、tree-sitter 高亮與行內變更，並為 Markdown、Notebook、CSV/TSV、SARIF 和二進位 plist 提供豐富預覽。
+# Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for images, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.
+unified-or-side-by-side-a = 統一或並排檢視、檔案樹、tree-sitter 高亮與行內變更，並為圖片、Markdown、Notebook、CSV/TSV、SARIF 和二進位 plist 提供豐富預覽。
 
-# Keep your place through every edit.
-keep-your-place-through-every-edit = 怎麼改，審查進度都還在。
+# Keep your place through every edit
+keep-your-place-through-every-edit = 怎麼改，審查進度都還在
 
 # Press <kbd>Space</kbd> to review a file, or click a hunk's gutter stripe to mark just that part. Reviewed hunks survive edits and rebases, and notes stay on the changed line.
 press-space-to-review-a-file = 按<kbd>空白鍵</kbd>標記檔案已審查，或點選差異區塊旁的色條，只標記那一部分。已審查的差異區塊在編輯和重定基底後依然有效，審查備註也一直跟著那一行。
@@ -60,20 +60,20 @@ press-space-to-review-a-file = 按<kbd>空白鍵</kbd>標記檔案已審查，�
 # Coding agents can read your notes and mark files with the <code>jayjay</code> CLI. Install the <a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay skill</a> with <code>npx skills add hewigovens/jayjay --skill jayjay</code>, or on macOS from Settings &gt; Integrations.
 coding-agents-can-read-your-notes = AI 代理程式可透過 <code>jayjay</code> CLI 讀取你的審查備註並標記檔案。用 <code>npx skills add hewigovens/jayjay --skill jayjay</code> 安裝 <a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay 技能</a>，或在 macOS 上從「設定」&gt;「整合」安裝。
 
-# Split exactly the lines you mean.
-split-exactly-the-lines-you-mean = 想分哪行，就分哪行。
+# Split exactly the lines you mean
+split-exactly-the-lines-you-mean = 想分哪行，就分哪行
 
 # Pick hunks or individual lines from any file in the change, then split that selection into a clean child or parallel change.
 pick-hunks-or-individual-lines-from = 從變更的任一檔案裡挑出差異區塊或個別的行，分割成乾淨的子變更或平行變更。
 
-# Diff any two revisions.
-diff-any-two-revisions = 任意兩個修訂，隨時比較。
+# Diff any two revisions
+diff-any-two-revisions = 任意兩個修訂，隨時比較
 
 # Shift-click two changes, two bookmarks, or a PR branch and its base to see exactly what moved between them. For a divergent change, <strong>Compare Divergent Versions</strong> shows which one to keep.
 shift-click-two-changes-two-bookmarks = 按住 Shift 點選兩個變更、兩個書籤，或 PR 分支和它的基準，就能看清兩者之間到底改了什麼。遇到分歧的變更，用<strong>比較分歧版本</strong>決定留下哪一個。
 
-# One PR per change, stacked.
-one-pr-per-change-stacked = 每個變更一個 PR，層層堆疊。
+# One PR per change, stacked
+one-pr-per-change-stacked = 每個變更一個 PR，層層堆疊
 
 # Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.
 right-click-the-tip-of-a = 在線性堆疊的頂端按右鍵，選擇<strong>建立 / 更新堆疊 PR</strong>。JayJay 會為每個變更命名分支並推送，再為每個變更建立一個 GitHub PR、GitLab MR 或 Cursor Origin PR，並設定好相互依賴的基準。
@@ -81,26 +81,26 @@ right-click-the-tip-of-a = 在線性堆疊的頂端按右鍵，選擇<strong>建
 # Sign in to GitHub and GitLab from Settings, or use an existing CLI login or environment token. Cursor Origin uses your <code>origin auth login</code> credentials.
 sign-in-to-github-and-gitlab = 可在「設定」中登入 GitHub 和 GitLab，也可使用現有的 CLI 登入或環境變數權杖。Cursor Origin 使用你的 <code>origin auth login</code> 憑證。
 
-# Resolve without leaving the app.
-resolve-without-leaving-the-app = 不用離開 App，就能解決衝突。
+# Resolve without leaving the app
+resolve-without-leaving-the-app = 不用離開 App，就能解決衝突
 
 # Take Left, Right, or Base per hunk in the built-in merge editor, edit the raw markers, and save a partial resolution when work remains. Or hand off to your configured external tool.
 take-left-right-or-base-per = 在內建合併編輯器裡逐塊選擇左側、右側或基準，也可以直接改衝突標記；還沒解決完也能先儲存。也可以交給你設定好的外部工具。
 
-# Replay a change's evolution.
-replay-a-changes-evolution = 回顧變更的演進過程。
+# Replay a change's evolution
+replay-a-changes-evolution = 回顧變更的演進過程
 
 # Every snapshot of a change over time, with filtering and one-click restore. Undo a rebase or recover lost work without touching the op log by hand.
 every-snapshot-of-a-change-over = 變更的每一個快照都依時間排好，可篩選，可一鍵恢復。還原重定基底、找回遺失的工作，都不用手動翻操作記錄。
 
-# Undo anything.
-undo-anything = 什麼都能還原。
+# Undo anything
+undo-anything = 什麼都能還原
 
 # Every abandon, rebase, and split is an operation. Click the last one in the status bar, or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>, to open the operation log and restore the repository to any earlier point.
 every-abandon-rebase-and-split-is = 每次捨棄、重定基底、分割都會記錄為一次操作。點選狀態列裡最近的操作，或按 <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>，開啟操作記錄，把儲存庫恢復到之前的任一時刻。
 
-# A complete jj surface.
-a-complete-jj-surface = jj 的功能，一應俱全。
+# Also in the app
+also-in-the-app = 還有這些功能
 
 # Lane-based DAG
 lane-based-dag = 分道 DAG 圖
@@ -113,18 +113,6 @@ bookmarks = 書籤
 
 # Drag a bookmark onto any change to move it. Per-remote ahead, behind, and diverged state.
 drag-a-bookmark-onto-any-change = 把書籤拖到任一變更上即可移動。依遠端顯示領先、落後與分歧狀態。
-
-# Undo anything
-undo-anything-2 = 什麼都能還原
-
-# Step back through the operation log with one shortcut.
-step-back-through-the-operation-log = 一個快捷鍵，沿著操作記錄往回退。
-
-# Rich previews
-rich-previews = 豐富預覽
-
-# Images before and after, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.
-images-before-and-after-markdown-notebooks = 圖片前後對照、Markdown、Notebook、CSV/TSV、SARIF 和二進位 plist。
 
 # File annotate
 file-annotate = 檔案逐行追溯
@@ -153,14 +141,14 @@ colocated-git-repos-git-lfs-and = 與 Git 共存的 jj 儲存庫、Git LFS、子
 # <a class="link" href="guide.html">Read the full guide ›</a>
 read-the-full-guide = <a class="link" href="guide.html">閱讀完整指南（英文）›</a>
 
-# Every action, one keystroke away.
-every-action-one-keystroke-away = 所有操作，鍵盤直達。
+# Run any jj operation from the keyboard
+run-any-jj-operation-from-the = 所有操作，鍵盤直達
 
 # Fuzzy-search any operation in the command palette, type <code>help split</code> to discover features, or prefix <code>!</code> to run raw jj with inline output.
 fuzzy-search-any-operation-in-the = 在指令面板裡模糊搜尋任何操作，輸入 <code>help split</code> 了解功能，或加 <code>!</code> 前綴直接執行 jj 指令並查看輸出。
 
-# Install, open a repo, you're in.
-install-open-a-repo-youre-in = 裝好，開啟儲存庫，就能開始。
+# Install and open a repo
+install-and-open-a-repo = 裝好，開啟儲存庫，就能開始
 
 # macOS
 macos = macOS
@@ -183,8 +171,8 @@ packages-are-on-github-releases = 安裝套件在 <a class="link" href="https://
 # Windows: <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Get JayJay from the Microsoft Store</a>, or download a <a href="https://github.com/hewigovens/jayjay/releases">portable beta ZIP</a>. Install <code>jj</code> separately.
 windows-get-jayjay-from-the-microsoft = Windows：<a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">從 Microsoft Store 取得 JayJay</a>，或下載<a href="https://github.com/hewigovens/jayjay/releases">可攜式測試版 ZIP</a>。需另行安裝 <code>jj</code>。
 
-# Built for jj, not bolted onto git.
-built-for-jj-not-bolted-onto = 為 jj 而生，不是幫 git 套殼。
+# Built for jj, not bolted onto git
+built-for-jj-not-bolted-onto = 為 jj 而生，不是幫 git 套殼
 
 # Jujutsu has a better model than git, but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong>
 jujutsu-has-a-better-model-than = Jujutsu 的模型比 git 更好，但大多數圖形用戶端不是還在用 git 分支的思路，就是套了殼的 Web 應用程式。JayJay 的起點只有一個問題：<strong>為什麼沒有一個真正原生、真正懂 jj 的用戶端？</strong>
@@ -192,8 +180,8 @@ jujutsu-has-a-better-model-than = Jujutsu 的模型比 git 更好，但大多數
 # So it's opinionated and fast: one native way to do each workflow, the way jj intends. <strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters, down to a hidden easter egg. Can you find it?
 so-its-opinionated-and-fast-one = 所以它有自己的取捨，而且很快：每個工作流程只提供一種原生做法，一切照 jj 的思路走。<strong>JayJay 完全免費</strong>，由開發者為開發者打造。每個細節都用了心，甚至藏了一個彩蛋，你找得到嗎？
 
-# Questions, answered.
-questions-answered = 常見問題
+# Common questions
+common-questions = 常見問題
 
 # What is JayJay?
 what-is-jayjay = JayJay 是什麼？
@@ -267,10 +255,10 @@ can-jayjay-open-a-repository-on = JayJay 能透過 SSH 開啟另一台機器上�
 # Yes, in the macOS app and on Linux. Choose <strong>File &gt; Open Remote Repository…</strong>, pick a host from your SSH config, and browse to the repository. macOS, Linux, and Windows hosts are supported; on first connect JayJay installs a small helper on the host, and the host must accept key or agent authentication. Review notes stay on your machine. The <a href="guide.html#remote">guide</a> has the details.
 yes-in-the-macos-app-and = 可以，macOS 應用程式和 Linux 版都支援。選擇 <strong>File &gt; Open Remote Repository…</strong>，從 SSH 設定中挑選主機，再瀏覽到儲存庫所在的資料夾即可。遠端主機可以是 macOS、Linux 或 Windows；首次連線時，JayJay 會在主機上安裝一個小巧的輔助程式，主機需支援金鑰或 agent 認證。審閱備註只會保存在你自己的機器上。詳見<a href="guide.html#remote">指南</a>（英文）。
 
-# From the notebook.
-from-the-notebook = 開發筆記
+# Writing on jj and its neighbors
+writing-on-jj-and-its-neighbors = 關於 jj 及其周邊
 
-# Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay">★ Star it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ sponsor</a>
+# Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a>
 enjoy-jayjay-star-it-on-github = 喜歡 JayJay？歡迎<a href="https://github.com/hewigovens/jayjay">★ 在 GitHub 上加星</a>或<a href="https://github.com/sponsors/hewigovens">♥ 贊助</a>
 
 # Diffs
@@ -279,8 +267,8 @@ diffs = 差異
 # Review
 review = 審查
 
-# Diff edit
-diff-edit = 差異編輯
+# Split
+split = 分割
 
 # Interdiff
 interdiff = Interdiff

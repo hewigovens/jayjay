@@ -10,7 +10,7 @@
   <meta name="keywords" content="jj, jujutsu, jj gui, jujutsu gui, jj client, jujutsu mac, jj macos, jj linux, jujutsu linux, jj gui linux, jujutsu gui linux, appimage, arch linux, version control, vcs, dag, interdiff, evolog, swiftui, gpui, rust">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://jayjay.hewig.dev/">
   <link rel="alternate" hreflang="en" href="https://jayjay.hewig.dev/">
   <link rel="alternate" hreflang="ja" href="https://jayjay.hewig.dev/ja/">
@@ -104,14 +104,14 @@
           <a href="guide.html">Guide</a>
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         </div>
-        <button class="lang-btn" popovertarget="lang-menu" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span class="lang-now">EN</span></button>
+        <button class="lang-btn" popovertarget="lang-menu" aria-label="Language"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span class="lang-now">EN</span></button>
         <div class="lang-menu" id="lang-menu" popover>
           <a href="./" lang="en" hreflang="en" aria-current="page">English</a>
           <a href="ja/" lang="ja" hreflang="ja">日本語</a>
           <a href="zh-hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a>
           <a href="zh-hant/" lang="zh-Hant" hreflang="zh-Hant">繁體中文</a>
         </div>
-        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon"></span></button>
         <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
       </div>
     </div>
@@ -121,7 +121,7 @@
   <header class="hero">
     <div class="wrap">
       <img class="hero-icon" src="icon.svg" alt="" width="104" height="104">
-      <h1>The native way<br>to drive jj.</h1>
+      <h1>The native way<br>to drive jj</h1>
       <p class="lede">A fast, keyboard-friendly client for Jujutsu. The change graph, diffs, splits, and conflicts, in one window.</p>
       <div class="cta">
         <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">Download for macOS</a>
@@ -134,7 +134,7 @@
         <img class="dark-only" src="imgs/tour-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1300" loading="eager">
         <img class="light-only" src="imgs/tour.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1300" loading="eager">
         <button class="play-btn" type="button" aria-haspopup="dialog">
-          <svg width="12" height="14" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+          <svg width="10" height="12" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           Watch the 12-second tour
         </button>
       </div>
@@ -142,8 +142,8 @@
     <div class="wrap">
       <div class="pillars">
         <div class="pillar"><h3>Speaks jj</h3><p>Changes, bookmarks, revsets, and mutable history, the way jj intends. No git branches bolted on.</p></div>
-        <div class="pillar"><h3>Truly native</h3><p>SwiftUI on macOS and GPUI on Linux, over a shared Rust core that links jj-lib directly. No CLI scraping, no web view.</p></div>
-        <div class="pillar"><h3>Free, no strings</h3><p>No subscription and no repository data. Anonymous build and OS stats can be turned off in Settings.</p></div>
+        <div class="pillar"><h3>Native on each platform</h3><p>SwiftUI on macOS and GPUI on Linux, over a shared Rust core that links jj-lib directly. No CLI scraping, no web view.</p></div>
+        <div class="pillar"><h3>Free to use</h3><p>No subscription and no repository data. Anonymous build and OS stats can be turned off in Settings.</p></div>
       </div>
     </div>
     <dialog class="tour" aria-label="JayJay in action" data-captions="Select a change in the graph|Open its diff|Jump to the working copy|Open a file|Mark it reviewed|Back where we started">
@@ -166,9 +166,9 @@
   <!-- Showcase -->
   <section id="features">
     <div class="wrap spot">
-      <div class="eyebrow">Diffs</div>
-      <h2 class="sec-h">Read changes the way you read code.</h2>
-      <p class="sec-sub">Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p>
+      <div class="eyebrow"><span>D</span>iffs</div>
+      <h2 class="sec-h">Read changes the way you read code</h2>
+      <p class="sec-sub">Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for images, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p>
     </div>
     <div class="wrap wide spot">
       <div class="show-img">
@@ -180,8 +180,8 @@
     <div class="wrap">
       <div class="show rev">
         <div class="show-text">
-          <div class="eyebrow">Review</div>
-          <h3>Keep your place through every edit.</h3>
+          <div class="eyebrow"><span>R</span>eview</div>
+          <h3>Keep your place through every edit</h3>
           <p>Press <kbd>Space</kbd> to review a file, or click a hunk's gutter stripe to mark just that part. Reviewed hunks survive edits and rebases, and notes stay on the changed line.</p>
           <p class="note">Coding agents can read your notes and mark files with the <code>jayjay</code> CLI. Install the <a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay skill</a> with <code>npx skills add hewigovens/jayjay --skill jayjay</code>, or on macOS from Settings &gt; Integrations.</p>
         </div>
@@ -193,8 +193,8 @@
 
       <div class="show">
         <div class="show-text">
-          <div class="eyebrow">Diff edit</div>
-          <h3>Split exactly the lines you mean.</h3>
+          <div class="eyebrow"><span>Sp</span>lit</div>
+          <h3>Split exactly the lines you mean</h3>
           <p>Pick hunks or individual lines from any file in the change, then split that selection into a clean child or parallel change.</p>
         </div>
         <div class="show-img" data-captions="0 Open Edit Diff on a change|1.8 Pick lines in two files|6.6 Split them into a new change">
@@ -207,8 +207,8 @@
 
       <div class="show rev">
         <div class="show-text">
-          <div class="eyebrow">Interdiff</div>
-          <h3>Diff any two revisions.</h3>
+          <div class="eyebrow"><span>I</span>nterdiff</div>
+          <h3>Diff any two revisions</h3>
           <p>Shift-click two changes, two bookmarks, or a PR branch and its base to see exactly what moved between them. For a divergent change, <strong>Compare Divergent Versions</strong> shows which one to keep.</p>
         </div>
         <div class="show-img">
@@ -219,8 +219,8 @@
 
       <div class="show">
         <div class="show-text">
-          <div class="eyebrow">Stacked pull requests</div>
-          <h3>One PR per change, stacked.</h3>
+          <div class="eyebrow"><span>St</span>acked pull requests</div>
+          <h3>One PR per change, stacked</h3>
           <p>Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.</p>
           <p class="note">Sign in to GitHub and GitLab from Settings, or use an existing CLI login or environment token. Cursor Origin uses your <code>origin auth login</code> credentials.</p>
         </div>
@@ -234,8 +234,8 @@
 
       <div class="show rev">
         <div class="show-text">
-          <div class="eyebrow">Conflicts</div>
-          <h3>Resolve without leaving the app.</h3>
+          <div class="eyebrow"><span>C</span>onflicts</div>
+          <h3>Resolve without leaving the app</h3>
           <p>Take Left, Right, or Base per hunk in the built-in merge editor, edit the raw markers, and save a partial resolution when work remains. Or hand off to your configured external tool.</p>
         </div>
         <div class="show-img">
@@ -246,8 +246,8 @@
 
       <div class="show">
         <div class="show-text">
-          <div class="eyebrow">Evolog</div>
-          <h3>Replay a change's evolution.</h3>
+          <div class="eyebrow"><span>E</span>volog</div>
+          <h3>Replay a change's evolution</h3>
           <p>Every snapshot of a change over time, with filtering and one-click restore. Undo a rebase or recover lost work without touching the op log by hand.</p>
         </div>
         <div class="show-img">
@@ -258,8 +258,8 @@
 
       <div class="show rev">
         <div class="show-text">
-          <div class="eyebrow">Operation log</div>
-          <h3>Undo anything.</h3>
+          <div class="eyebrow"><span>O</span>peration log</div>
+          <h3>Undo anything</h3>
           <p>Every abandon, rebase, and split is an operation. Click the last one in the status bar, or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>, to open the operation log and restore the repository to any earlier point.</p>
         </div>
         <div class="show-img" data-captions="0 Abandon a change|6 Open the operation log|8.2 Restore the operation before it">
@@ -275,17 +275,15 @@
   <!-- Everything else -->
   <section class="alt">
     <div class="wrap">
-      <div class="eyebrow">And more</div>
-      <h2 class="sec-h">A complete jj surface.</h2>
+      <div class="eyebrow"><span>A</span>nd more</div>
+      <h2 class="sec-h">Also in the app</h2>
       <div class="more">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 3 3 6 3h4"/></svg><h3>Lane-based DAG</h3><p>Fork and merge lanes, shortest change IDs, and revset filtering with preset chips.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><h3>Bookmarks</h3><p>Drag a bookmark onto any change to move it. Per-remote ahead, behind, and diverged state.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><h3>Undo anything</h3><p>Step back through the operation log with one shortcut.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg><h3>Rich previews</h3><p>Images before and after, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><h3>File annotate</h3><p>See which change last touched each line of a file.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><h3>AI descriptions</h3><p>Change descriptions drafted by Codex, Claude, or Apple Intelligence.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/></svg><h3>Your tools</h3><p>VS Code, VSCodium, Zed, Xcode, Vim, Terminal, iTerm2, and Ghostty.</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v6M12 15v6M5 12H3M21 12h-2"/><circle cx="12" cy="12" r="3"/></svg><h3>Git interop</h3><p>Colocated Git repos, Git LFS, and submodules work out of the box.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 3 3 6 3h4"/></svg><h3>Lane-based DAG</h3><p>Fork and merge lanes, shortest change IDs, and revset filtering with preset chips.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><h3>Bookmarks</h3><p>Drag a bookmark onto any change to move it. Per-remote ahead, behind, and diverged state.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><h3>File annotate</h3><p>See which change last touched each line of a file.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19z"/><path d="M14 7l3 3"/></svg><h3>AI descriptions</h3><p>Change descriptions drafted by Codex, Claude, or Apple Intelligence.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/></svg><h3>Your tools</h3><p>VS Code, VSCodium, Zed, Xcode, Vim, Terminal, iTerm2, and Ghostty.</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v6M12 15v6M5 12H3M21 12h-2"/><circle cx="12" cy="12" r="3"/></svg><h3>Git interop</h3><p>Colocated Git repos, Git LFS, and submodules work out of the box.</p></div>
       </div>
       <p class="guide-link"><a class="link" href="guide.html">Read the full guide ›</a></p>
     </div>
@@ -294,8 +292,8 @@
   <!-- Shortcuts -->
   <section id="shortcuts">
     <div class="wrap">
-      <div class="eyebrow">Keyboard</div>
-      <h2 class="sec-h">Every action, one keystroke away.</h2>
+      <div class="eyebrow"><span>K</span>eyboard</div>
+      <h2 class="sec-h">Run any jj operation from the keyboard</h2>
       <p class="sec-sub">Fuzzy-search any operation in the command palette, type <code>help split</code> to discover features, or prefix <code>!</code> to run raw jj with inline output.</p>
       <div class="keys-layout">
         <div class="palette-shot">
@@ -320,8 +318,8 @@
   <!-- Install -->
   <section class="alt" id="install">
     <div class="wrap">
-      <div class="eyebrow">Get started</div>
-      <h2 class="sec-h">Install, open a repo, you're in.</h2>
+      <div class="eyebrow"><span>G</span>et started</div>
+      <h2 class="sec-h">Install and open a repo</h2>
       <div class="install-grid">
         <div class="card">
           <h3>macOS</h3>
@@ -348,8 +346,8 @@
   <!-- Story -->
   <section class="story">
     <div class="wrap">
-      <div class="eyebrow">Why JayJay</div>
-      <h2 class="sec-h">Built for jj, not bolted onto git.</h2>
+      <div class="eyebrow"><span>W</span>hy JayJay</div>
+      <h2 class="sec-h">Built for jj, not bolted onto git</h2>
       <div class="story-body">
         <p>Jujutsu has a better model than git, but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong></p>
         <p>So it's opinionated and fast: one native way to do each workflow, the way jj intends. <strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters, down to a hidden easter egg. Can you find it?</p>
@@ -360,8 +358,8 @@
   <!-- FAQ -->
   <section class="alt" id="faq">
     <div class="wrap">
-      <div class="eyebrow">FAQ</div>
-      <h2 class="sec-h">Questions, answered.</h2>
+      <div class="eyebrow"><span>F</span>AQ</div>
+      <h2 class="sec-h">Common questions</h2>
       <div class="faq-list prose">
         <details>
           <summary>What is JayJay?</summary>
@@ -418,8 +416,8 @@
   <!-- Blog teaser -->
   <section id="blog">
     <div class="wrap">
-      <div class="eyebrow">Blog</div>
-      <h2 class="sec-h">From the notebook.</h2>
+      <div class="eyebrow"><span>B</span>log</div>
+      <h2 class="sec-h">Writing on jj and its neighbors</h2>
       <div class="posts">
         <a class="post-card" href="blog/why-jj-git-cheatsheet.html">
           <time datetime="2026-09-12">12 Sep 2026</time>
@@ -438,7 +436,7 @@
   <!-- Footer -->
   <footer>
     <div class="wrap foot">
-      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay">★ Star it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ sponsor</a></p>
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a></p>
       <div class="foot-links">
         <a href="blog/">Blog</a>
         <a href="guide.html">Guide</a>

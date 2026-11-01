@@ -1,35 +1,39 @@
 :root {
   --bg: #ffffff;
-  --bg-alt: #f5f5f7;
+  --bg-alt: #f5f7fa;
   --panel: #ffffff;
-  --ink: #1d1d1f;
-  --muted: #6e6e73;
-  --faint: #86868b;
-  --line: #e5e5ea;
+  --ink: #111827;
+  --muted: #4b5565;
+  --faint: #667085;
+  --line: #e4e7ec;
   --accent: #0a66e8;
+  --accent-fill: #0a66e8;
   --accent-ink: #ffffff;
-  --shot-shadow: 0 24px 60px -28px rgba(0, 0, 0, .28), 0 0 0 1px rgba(0, 0, 0, .06);
-  --nav-bg: rgba(255, 255, 255, .78);
+  --shot-shadow: 0 24px 64px -32px rgba(0, 0, 0, .28), 0 0 0 1px rgba(17, 24, 39, .08);
+  --nav-bg: rgba(255, 255, 255, .8);
   --kbd-bg: #ffffff;
-  --kbd-edge: #d2d2d7;
+  --kbd-edge: #d0d5dd;
+  --sheet-edge: drop-shadow(0 0 .5px rgba(17, 24, 39, .4)) drop-shadow(0 8px 16px rgba(17, 24, 39, .08));
   --sans: -apple-system, BlinkMacSystemFont, "SF Pro Text", Inter, "Segoe UI", system-ui, sans-serif;
   --display: -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
   --mono: ui-monospace, "SF Mono", "JetBrains Mono", Menlo, monospace;
 }
 
 [data-theme="dark"] {
-  --bg: #000000;
-  --bg-alt: #0d0d0f;
-  --panel: #161618;
-  --ink: #f5f5f7;
-  --muted: #a1a1a6;
-  --faint: #6e6e73;
-  --line: #26262a;
+  --bg: #0b0d14;
+  --bg-alt: #11141c;
+  --panel: #1a1e28;
+  --ink: #eef0f5;
+  --muted: #a3a9b8;
+  --faint: #838ba0;
+  --line: #242833;
   --accent: #3b8bff;
-  --shot-shadow: 0 24px 70px -28px rgba(0, 0, 0, .9), 0 0 0 1px rgba(255, 255, 255, .08);
-  --nav-bg: rgba(0, 0, 0, .7);
-  --kbd-bg: #1d1d20;
-  --kbd-edge: #3a3a3e;
+  --accent-fill: #2563eb;
+  --shot-shadow: 0 24px 72px -32px rgba(0, 0, 0, .9), 0 0 0 1px rgba(238, 240, 245, .1);
+  --nav-bg: rgba(11, 13, 20, .76);
+  --kbd-bg: #1a1e28;
+  --kbd-edge: #363c4a;
+  --sheet-edge: drop-shadow(0 0 .5px rgba(238, 240, 245, .3)) drop-shadow(0 8px 16px rgba(0, 0, 0, .4));
 }
 
 html {
@@ -50,7 +54,6 @@ body {
   background: var(--bg);
   font-family: var(--sans);
   line-height: 1.6;
-  letter-spacing: -.005em;
   -webkit-font-smoothing: antialiased;
 }
 
@@ -69,12 +72,12 @@ h1,
 h2,
 h3 {
   font-family: var(--display);
-  letter-spacing: -.022em;
+  font-weight: 600;
 }
 
 :focus-visible {
   outline: 2px solid var(--accent);
-  outline-offset: 3px;
+  outline-offset: 2px;
   border-radius: 6px;
 }
 
@@ -107,17 +110,17 @@ h3 {
 .brand {
   display: flex;
   align-items: center;
-  gap: 9px;
+  gap: 8px;
   color: var(--ink);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 600;
   text-decoration: none;
 }
 
 .brand img {
-  width: 22px;
-  height: 22px;
-  border-radius: 5px;
+  width: 24px;
+  height: 24px;
+  border-radius: 6px;
   background: #fff;
   box-shadow: 0 0 0 1px rgba(0, 0, 0, .08);
 }
@@ -157,8 +160,15 @@ h3 {
   color: var(--muted);
   background: none;
   cursor: pointer;
-  font-size: 15px;
+  font-size: 13px;
   line-height: 1;
+}
+
+.theme-icon,
+.theme-icon svg {
+  display: inline-flex;
+  width: 16px;
+  height: 16px;
 }
 
 .theme-btn:hover {
@@ -166,17 +176,17 @@ h3 {
 }
 
 .nav-dl {
-  padding: 5px 13px;
-  border-radius: 980px;
+  padding: 4px 12px;
+  border-radius: 8px;
   color: var(--accent-ink);
-  background: var(--accent);
-  font-size: 12.5px;
+  background: var(--accent-fill);
+  font-size: 13px;
   font-weight: 500;
   text-decoration: none;
 }
 
 .nav-dl:hover {
-  filter: brightness(1.08);
+  background: color-mix(in srgb, var(--accent-fill) 88%, #000);
 }
 
 .g-head {
@@ -184,15 +194,21 @@ h3 {
 }
 
 .g-head .sec-label {
+  color: var(--faint);
+  font-family: var(--mono);
+  font-size: 13px;
+  line-height: 20px;
+  text-transform: lowercase;
+}
+
+.g-head .sec-label::first-letter {
   color: var(--accent);
-  font-size: 15px;
   font-weight: 600;
 }
 
 .g-head h1 {
   margin: 8px 0 16px;
-  font-size: 52px;
-  font-weight: 700;
+  font-size: 56px;
   line-height: 1.06;
   letter-spacing: -.03em;
 }
@@ -200,7 +216,7 @@ h3 {
 .g-head p {
   max-width: 58ch;
   color: var(--muted);
-  font-size: 19px;
+  font-size: 18px;
   line-height: 1.45;
 }
 
@@ -230,7 +246,7 @@ h3 {
 }
 
 .toc h2 {
-  margin: 0 0 14px;
+  margin: 0 0 12px;
   color: var(--ink);
   font-size: 13px;
   font-weight: 600;
@@ -247,7 +263,7 @@ h3 {
 .toc li {
   margin-bottom: 10px;
   counter-increment: t;
-  font-size: 13.5px;
+  font-size: 14px;
   line-height: 1.35;
 }
 
@@ -283,7 +299,6 @@ section.g h2 {
   margin: 0 0 8px;
   font-size: 28px;
   line-height: 1.15;
-  font-weight: 700;
 }
 
 section.g h2 a {
@@ -303,7 +318,7 @@ section.g h2 a:focus-visible {
 section.g > p {
   margin: 10px 0;
   color: var(--muted);
-  font-size: 16.5px;
+  font-size: 16px;
 }
 
 section.g ul {
@@ -340,7 +355,7 @@ section.g p strong {
 section.g code,
 .kbd-table code {
   padding: 1px 6px;
-  border-radius: 5px;
+  border-radius: 4px;
   color: var(--ink);
   background: var(--bg-alt);
   font-size: .86em;
@@ -348,12 +363,12 @@ section.g code,
 
 section.g pre {
   margin: 16px 0;
-  padding: 18px 20px;
+  padding: 16px 20px;
   overflow-x: auto;
-  border-radius: 12px;
+  border-radius: 10px;
   background: var(--bg-alt);
-  font-size: 13.5px;
-  line-height: 1.7;
+  font-size: 13px;
+  line-height: 1.75;
 }
 
 section.g pre code {
@@ -379,6 +394,7 @@ figure.shot {
   margin: 24px 0 8px;
   overflow: hidden;
   border-radius: 12px;
+  background: var(--panel);
   box-shadow: var(--shot-shadow);
 }
 
@@ -386,7 +402,7 @@ figure.shot img {
   display: block;
   width: 100%;
   border: 0;
-  border-radius: 0;
+  border-radius: 12px;
 }
 
 figure.shot figcaption {
@@ -395,6 +411,24 @@ figure.shot figcaption {
   color: var(--faint);
   background: var(--panel);
   font-size: 13px;
+}
+
+figure.shot.sheet {
+  overflow: visible;
+  border-radius: 0;
+  background: none;
+  box-shadow: none;
+}
+
+figure.shot.sheet img {
+  border-radius: 0;
+  filter: var(--sheet-edge);
+}
+
+figure.shot.sheet figcaption {
+  padding: 8px 0 0;
+  border-top: 0;
+  background: none;
 }
 
 .kbd-table {
@@ -409,7 +443,7 @@ figure.shot figcaption {
 .kbd-table td {
   padding: 12px 18px;
   border-top: 1px solid var(--line);
-  font-size: 14.5px;
+  font-size: 14px;
 }
 
 .kbd-table tr:first-child td,
@@ -444,14 +478,14 @@ figure.shot figcaption {
   background: var(--kbd-bg);
   box-shadow: inset 0 0 0 1px var(--kbd-edge), 0 1px 0 var(--kbd-edge);
   font-family: var(--sans);
-  font-size: 12.5px;
+  font-size: 12px;
 }
 
 .backtop {
   display: inline-block;
-  margin: 30px 0 0;
+  margin: 32px 0 0;
   color: var(--accent);
-  font-size: 14.5px;
+  font-size: 14px;
   text-decoration: none;
 }
 
@@ -459,7 +493,7 @@ figure.shot figcaption {
   text-decoration: underline;
 }
 
-footer {
+.guide-page footer {
   margin-top: 64px;
   padding: 32px 0 48px;
   border-top: 1px solid var(--line);
@@ -488,7 +522,7 @@ footer {
 .foot-links {
   display: flex;
   flex-wrap: wrap;
-  gap: 22px;
+  gap: 24px;
   font-size: 13px;
 }
 
@@ -509,8 +543,8 @@ footer {
   .toc {
     position: static;
     margin-bottom: 24px;
-    padding: 22px 26px;
-    border-radius: 18px;
+    padding: 20px 24px;
+    border-radius: 14px;
     background: var(--bg-alt);
   }
 
@@ -562,14 +596,14 @@ footer {
   }
 
   .kbd-table td {
-    padding: 11px 14px;
-    font-size: 13.5px;
+    padding: 12px 16px;
+    font-size: 13px;
   }
 
   .foot-links {
     display: grid;
     grid-template-columns: repeat(3, auto);
     justify-content: start;
-    gap: 10px 28px;
+    gap: 12px 28px;
   }
 }

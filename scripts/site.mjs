@@ -72,7 +72,7 @@ function render(lang, strings) {
       return `<summary>${stash(t(q))}</summary>${gap}<p>${stash(t(a))}</p>`;
     })
     .replace(/(<(h1|h2|h3|p)\b[^>]*>)([\s\S]*?)(<\/\2>)/g, (m, open, tag, x, close) => (x.startsWith('@@') ? m : open + stash(t(x)) + close))
-    .replace(/<div class="eyebrow">(.*?)<\/div>/g, (m, x) => `<div class="eyebrow">${t(x)}</div>`)
+    .replace(/<div class="eyebrow">(.*?)<\/div>/g, (m, x) => `<div class="eyebrow">${t(plain(x))}</div>`)
     .replace(/(<a\b[^>]*>)([^<]+)(<\/a>)/g, (m, open, x, close) => open + t(x) + close)
     .replace(/<li><span>(.*?)<\/span>/g, (m, x) => `<li><span>${t(x)}</span>`)
     .replace(/<kbd>(Space|Click)<\/kbd>/g, (m, x) => `<kbd>${t(x)}</kbd>`)

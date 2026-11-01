@@ -10,7 +10,7 @@
   <meta name="keywords" content="jayjay guide, jj gui guide, jujutsu gui, repository list, pinned repositories, stacked pull requests, diff edit, rich preview, html default app, notebook diff, sarif diff, review notes, evolog, conflict resolution">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://jayjay.hewig.dev/guide.html">
 
   <meta property="og:type" content="article">
@@ -48,7 +48,7 @@
           <a href="guide.html" class="active">Guide</a>
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         </div>
-        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon">☾</span></button>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon"></span></button>
         <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
       </div>
     </div>
@@ -100,7 +100,7 @@
         <li>If you open a folder that is not a jj repository, JayJay shows an onboarding view with a <code>jj git init</code> path.</li>
         <li>JayJay watches the repository and working tree, then refreshes visible working-copy details after jj operations or file edits. A refresh waits while an editor, review-note composer, or confirmation sheet holds unfinished input.</li>
       </ul>
-      <figure class="shot">
+      <figure class="shot sheet">
         <img class="dark-only" src="imgs/clone-repository-dark.webp" alt="Clone a Git repository with a chosen name and location" width="960" height="386" loading="lazy">
         <img class="light-only" src="imgs/clone-repository.webp" alt="Clone a Git repository with a chosen name and location" width="960" height="386" loading="lazy">
         <figcaption>Clone a Git repository into a new jj checkout.</figcaption>
@@ -313,7 +313,7 @@
         <img class="light-only" src="imgs/workspace-actions.webp" alt="Workspace picker context menu with Filter by This Workspace" width="3840" height="1950" loading="lazy">
         <figcaption>Filter the graph from a workspace row without switching checkouts.</figcaption>
       </figure>
-      <figure class="shot">
+      <figure class="shot sheet">
         <img class="dark-only" src="imgs/workspaces-dark.webp" alt="Search workspaces by name" width="360" height="235" loading="lazy">
         <img class="light-only" src="imgs/workspaces.webp" alt="Search workspaces by name" width="360" height="235" loading="lazy">
         <figcaption>Search and switch between working copies from the repository title.</figcaption>
@@ -533,7 +533,6 @@ makepkg -si</code></pre>
         <li>Opening a Git-only folder in GPUI offers jj setup instead of treating it as a failed repository. A folder inside a jj workspace opens that workspace; missing folders and failed initialization still show an error. Long setup paths fit within two lines, and long notification text wraps inside its bubble.</li>
         <li>GPUI starts filesystem monitoring in the background so opening a repository stays responsive. The watcher does not follow symlinks inside the checkout, avoiding repeated traversal of linked dependency trees such as pnpm’s <code>node_modules</code>.</li>
         <li>Write coverage includes the full DAG change-operation menu (edit, squash, rebase, merge, parallelize, duplicate, absorb, revert, abandon, and new change), description-aware commit and Describe flows, AI-generated messages via the codex or claude CLIs, direct split and move-to-working-copy actions for historical files, syntax-highlighted working-copy file editing, working-copy file commit and batch actions, workspaces, review notes, conflict resolution including Use Ours and Use Theirs for submodule and other non-text conflicts, and the dedicated multi-file Diff Edit destinations.</li>
-        <li>Remaining GPUI work is tracked in the <a href="https://github.com/hewigovens/jayjay/issues/165">GPUI checklist</a>.</li>
       </ul>
     </section>
 
@@ -608,7 +607,7 @@ makepkg -si</code></pre>
 
   <footer>
     <div class="wrap foot">
-      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay">★ Star it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ sponsor</a></p>
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a></p>
       <div class="foot-links">
         <a href="index.html">Home</a>
         <a href="blog/">Blog</a>

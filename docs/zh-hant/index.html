@@ -11,7 +11,7 @@
   <meta name="keywords" content="jj, jujutsu, jj gui, jujutsu gui, jj 用戶端, jujutsu 圖形介面, 版本控制, macOS, Linux, DAG, 差異, 衝突解決">
   <meta name="author" content="hewigovens">
   <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
-  <meta name="theme-color" content="#000000" media="(prefers-color-scheme: dark)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
   <link rel="canonical" href="https://jayjay.hewig.dev/zh-hant/">
   <link rel="alternate" hreflang="en" href="https://jayjay.hewig.dev/">
   <link rel="alternate" hreflang="ja" href="https://jayjay.hewig.dev/ja/">
@@ -107,14 +107,14 @@
           <a hreflang="en" href="../guide.html">指南</a>
           <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         </div>
-        <button class="lang-btn" popovertarget="lang-menu" aria-label="語言"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span class="lang-now">繁體</span></button>
+        <button class="lang-btn" popovertarget="lang-menu" aria-label="語言"><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="12" cy="12" r="9"/><path d="M3 12h18M12 3c2.5 2.5 3.8 5.5 3.8 9s-1.3 6.5-3.8 9c-2.5-2.5-3.8-5.5-3.8-9S9.5 5.5 12 3z"/></svg><span class="lang-now">繁體</span></button>
         <div class="lang-menu" id="lang-menu" popover>
           <a href="../" lang="en" hreflang="en">English</a>
           <a href="../ja/" lang="ja" hreflang="ja">日本語</a>
           <a href="../zh-hans/" lang="zh-Hans" hreflang="zh-Hans">简体中文</a>
           <a href="../zh-hant/" lang="zh-Hant" hreflang="zh-Hant" aria-current="page">繁體中文</a>
         </div>
-        <button class="theme-btn" aria-label="切換主題"><span class="theme-icon">☾</span></button>
+        <button class="theme-btn" aria-label="切換主題"><span class="theme-icon"></span></button>
         <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">下載</a>
       </div>
     </div>
@@ -124,7 +124,7 @@
   <header class="hero">
     <div class="wrap">
       <img class="hero-icon" src="../icon.svg" alt="" width="104" height="104">
-      <h1>用原生的方式，<br>駕馭 jj。</h1>
+      <h1>用原生的方式，<br>駕馭 jj</h1>
       <p class="lede">為 Jujutsu 打造的快速用戶端，鍵盤操作順手。變更圖、差異、分割、衝突，一個視窗全部搞定。</p>
       <div class="cta">
         <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">下載 macOS 版</a>
@@ -137,7 +137,7 @@
         <img class="dark-only" src="../imgs/tour-dark.webp" alt="JayJay — DAG 圖與差異（深色）" width="2560" height="1300" loading="eager">
         <img class="light-only" src="../imgs/tour.webp" alt="JayJay — DAG 圖與差異（淺色）" width="2560" height="1300" loading="eager">
         <button class="play-btn" type="button" aria-haspopup="dialog">
-          <svg width="12" height="14" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="#fff" stroke="#fff" stroke-width="2" stroke-linejoin="round"/></svg>
+          <svg width="10" height="12" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           觀看 12 秒導覽
         </button>
       </div>
@@ -145,7 +145,7 @@
     <div class="wrap">
       <div class="pillars">
         <div class="pillar"><h3>道地的 jj 體驗</h3><p>變更、書籤、revset、可變歷史，全照 jj 的思路走，不硬套 git 分支。</p></div>
-        <div class="pillar"><h3>真正原生</h3><p>macOS 用 SwiftUI，Linux 用 GPUI，底層是同一個直接連結 jj-lib 的 Rust 核心。不解析命令列輸出，也不包 Web 檢視。</p></div>
+        <div class="pillar"><h3>每個平台都原生</h3><p>macOS 用 SwiftUI，Linux 用 GPUI，底層是同一個直接連結 jj-lib 的 Rust 核心。不解析命令列輸出，也不包 Web 檢視。</p></div>
         <div class="pillar"><h3>完全免費</h3><p>不用訂閱，也不收集你的儲存庫資料。匿名的版本與系統統計可在設定中關閉。</p></div>
       </div>
     </div>
@@ -170,8 +170,8 @@
   <section id="features">
     <div class="wrap spot">
       <div class="eyebrow">差異</div>
-      <h2 class="sec-h">像讀程式碼一樣看變更。</h2>
-      <p class="sec-sub">統一或並排檢視、檔案樹、tree-sitter 高亮與行內變更，並為 Markdown、Notebook、CSV/TSV、SARIF 和二進位 plist 提供豐富預覽。</p>
+      <h2 class="sec-h">像讀程式碼一樣看變更</h2>
+      <p class="sec-sub">統一或並排檢視、檔案樹、tree-sitter 高亮與行內變更，並為圖片、Markdown、Notebook、CSV/TSV、SARIF 和二進位 plist 提供豐富預覽。</p>
     </div>
     <div class="wrap wide spot">
       <div class="show-img">
@@ -184,7 +184,7 @@
       <div class="show rev">
         <div class="show-text">
           <div class="eyebrow">審查</div>
-          <h3>怎麼改，審查進度都還在。</h3>
+          <h3>怎麼改，審查進度都還在</h3>
           <p>按<kbd>空白鍵</kbd>標記檔案已審查，或點選差異區塊旁的色條，只標記那一部分。已審查的差異區塊在編輯和重定基底後依然有效，審查備註也一直跟著那一行。</p>
           <p class="note">AI 代理程式可透過 <code>jayjay</code> CLI 讀取你的審查備註並標記檔案。用 <code>npx skills add hewigovens/jayjay --skill jayjay</code> 安裝 <a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay 技能</a>，或在 macOS 上從「設定」&gt;「整合」安裝。</p>
         </div>
@@ -196,8 +196,8 @@
 
       <div class="show">
         <div class="show-text">
-          <div class="eyebrow">差異編輯</div>
-          <h3>想分哪行，就分哪行。</h3>
+          <div class="eyebrow">分割</div>
+          <h3>想分哪行，就分哪行</h3>
           <p>從變更的任一檔案裡挑出差異區塊或個別的行，分割成乾淨的子變更或平行變更。</p>
         </div>
         <div class="show-img" data-captions="0 在變更上開啟「編輯差異」|1.8 在兩個檔案中挑選行|6.6 分割到新變更">
@@ -211,7 +211,7 @@
       <div class="show rev">
         <div class="show-text">
           <div class="eyebrow">Interdiff</div>
-          <h3>任意兩個修訂，隨時比較。</h3>
+          <h3>任意兩個修訂，隨時比較</h3>
           <p>按住 Shift 點選兩個變更、兩個書籤，或 PR 分支和它的基準，就能看清兩者之間到底改了什麼。遇到分歧的變更，用<strong>比較分歧版本</strong>決定留下哪一個。</p>
         </div>
         <div class="show-img">
@@ -223,7 +223,7 @@
       <div class="show">
         <div class="show-text">
           <div class="eyebrow">堆疊 Pull Request</div>
-          <h3>每個變更一個 PR，層層堆疊。</h3>
+          <h3>每個變更一個 PR，層層堆疊</h3>
           <p>在線性堆疊的頂端按右鍵，選擇<strong>建立 / 更新堆疊 PR</strong>。JayJay 會為每個變更命名分支並推送，再為每個變更建立一個 GitHub PR、GitLab MR 或 Cursor Origin PR，並設定好相互依賴的基準。</p>
           <p class="note">可在「設定」中登入 GitHub 和 GitLab，也可使用現有的 CLI 登入或環境變數權杖。Cursor Origin 使用你的 <code>origin auth login</code> 憑證。</p>
         </div>
@@ -238,7 +238,7 @@
       <div class="show rev">
         <div class="show-text">
           <div class="eyebrow">衝突</div>
-          <h3>不用離開 App，就能解決衝突。</h3>
+          <h3>不用離開 App，就能解決衝突</h3>
           <p>在內建合併編輯器裡逐塊選擇左側、右側或基準，也可以直接改衝突標記；還沒解決完也能先儲存。也可以交給你設定好的外部工具。</p>
         </div>
         <div class="show-img">
@@ -250,7 +250,7 @@
       <div class="show">
         <div class="show-text">
           <div class="eyebrow">演進記錄</div>
-          <h3>回顧變更的演進過程。</h3>
+          <h3>回顧變更的演進過程</h3>
           <p>變更的每一個快照都依時間排好，可篩選，可一鍵恢復。還原重定基底、找回遺失的工作，都不用手動翻操作記錄。</p>
         </div>
         <div class="show-img">
@@ -262,7 +262,7 @@
       <div class="show rev">
         <div class="show-text">
           <div class="eyebrow">操作記錄</div>
-          <h3>什麼都能還原。</h3>
+          <h3>什麼都能還原</h3>
           <p>每次捨棄、重定基底、分割都會記錄為一次操作。點選狀態列裡最近的操作，或按 <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>，開啟操作記錄，把儲存庫恢復到之前的任一時刻。</p>
         </div>
         <div class="show-img" data-captions="0 捨棄一個變更|6 開啟操作記錄|8.2 恢復到它之前的操作">
@@ -279,16 +279,14 @@
   <section class="alt">
     <div class="wrap">
       <div class="eyebrow">更多</div>
-      <h2 class="sec-h">jj 的功能，一應俱全。</h2>
+      <h2 class="sec-h">還有這些功能</h2>
       <div class="more">
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 3 3 6 3h4"/></svg><h3>分道 DAG 圖</h3><p>分叉合併分道顯示、最短變更 ID，還有具預設標籤的 revset 篩選。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><h3>書籤</h3><p>把書籤拖到任一變更上即可移動。依遠端顯示領先、落後與分歧狀態。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M3 12a9 9 0 1 0 3-6.7L3 8"/><path d="M3 3v5h5"/></svg><h3>什麼都能還原</h3><p>一個快捷鍵，沿著操作記錄往回退。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3" y="4" width="18" height="16" rx="2"/><path d="M3 9h18M9 9v11"/></svg><h3>豐富預覽</h3><p>圖片前後對照、Markdown、Notebook、CSV/TSV、SARIF 和二進位 plist。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><h3>檔案逐行追溯</h3><p>查看檔案每一行最後由哪個變更修改。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3l1.8 4.7L18.5 9l-4.7 1.8L12 15.5l-1.8-4.7L5.5 9l4.7-1.3z"/><path d="M19 15l.8 2.2L22 18l-2.2.8L19 21l-.8-2.2L16 18l2.2-.8z"/></svg><h3>AI 描述</h3><p>由 Codex、Claude 或 Apple Intelligence 草擬變更描述。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/></svg><h3>常用工具</h3><p>VS Code、VSCodium、Zed、Xcode、Vim、終端機、iTerm2 和 Ghostty。</p></div>
-        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v6M12 15v6M5 12H3M21 12h-2"/><circle cx="12" cy="12" r="3"/></svg><h3>Git 互通</h3><p>與 Git 共存的 jj 儲存庫、Git LFS、子模組，開箱即用。</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><circle cx="6" cy="5" r="2"/><circle cx="6" cy="19" r="2"/><circle cx="18" cy="12" r="2"/><path d="M6 7v10M6 9c0 3 3 3 6 3h4"/></svg><h3>分道 DAG 圖</h3><p>分叉合併分道顯示、最短變更 ID，還有具預設標籤的 revset 篩選。</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M7 3h10v18l-5-4-5 4z"/></svg><h3>書籤</h3><p>把書籤拖到任一變更上即可移動。依遠端顯示領先、落後與分歧狀態。</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 6h10M4 12h16M4 18h7"/><circle cx="18" cy="6" r="2"/></svg><h3>檔案逐行追溯</h3><p>查看檔案每一行最後由哪個變更修改。</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20l1-4L16 5a2 2 0 0 1 3 3L8 19z"/><path d="M14 7l3 3"/></svg><h3>AI 描述</h3><p>由 Codex、Claude 或 Apple Intelligence 草擬變更描述。</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M8 9l-4 3 4 3M16 9l4 3-4 3M13.5 6l-3 12"/></svg><h3>常用工具</h3><p>VS Code、VSCodium、Zed、Xcode、Vim、終端機、iTerm2 和 Ghostty。</p></div>
+        <div><svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M12 3v6M12 15v6M5 12H3M21 12h-2"/><circle cx="12" cy="12" r="3"/></svg><h3>Git 互通</h3><p>與 Git 共存的 jj 儲存庫、Git LFS、子模組，開箱即用。</p></div>
       </div>
       <p class="guide-link"><a class="link" hreflang="en" href="../guide.html">閱讀完整指南（英文）›</a></p>
     </div>
@@ -298,7 +296,7 @@
   <section id="shortcuts">
     <div class="wrap">
       <div class="eyebrow">鍵盤</div>
-      <h2 class="sec-h">所有操作，鍵盤直達。</h2>
+      <h2 class="sec-h">所有操作，鍵盤直達</h2>
       <p class="sec-sub">在指令面板裡模糊搜尋任何操作，輸入 <code>help split</code> 了解功能，或加 <code>!</code> 前綴直接執行 jj 指令並查看輸出。</p>
       <div class="keys-layout">
         <div class="palette-shot">
@@ -324,7 +322,7 @@
   <section class="alt" id="install">
     <div class="wrap">
       <div class="eyebrow">開始使用</div>
-      <h2 class="sec-h">裝好，開啟儲存庫，就能開始。</h2>
+      <h2 class="sec-h">裝好，開啟儲存庫，就能開始</h2>
       <div class="install-grid">
         <div class="card">
           <h3>macOS</h3>
@@ -352,7 +350,7 @@
   <section class="story">
     <div class="wrap">
       <div class="eyebrow">為什麼做 JayJay</div>
-      <h2 class="sec-h">為 jj 而生，不是幫 git 套殼。</h2>
+      <h2 class="sec-h">為 jj 而生，不是幫 git 套殼</h2>
       <div class="story-body">
         <p>Jujutsu 的模型比 git 更好，但大多數圖形用戶端不是還在用 git 分支的思路，就是套了殼的 Web 應用程式。JayJay 的起點只有一個問題：<strong>為什麼沒有一個真正原生、真正懂 jj 的用戶端？</strong></p>
         <p>所以它有自己的取捨，而且很快：每個工作流程只提供一種原生做法，一切照 jj 的思路走。<strong>JayJay 完全免費</strong>，由開發者為開發者打造。每個細節都用了心，甚至藏了一個彩蛋，你找得到嗎？</p>
@@ -422,7 +420,7 @@
   <section id="blog">
     <div class="wrap">
       <div class="eyebrow">部落格</div>
-      <h2 class="sec-h">開發筆記</h2>
+      <h2 class="sec-h">關於 jj 及其周邊</h2>
       <p class="sec-sub">文章為英文。</p>
       <div class="posts">
         <a class="post-card" lang="en" hreflang="en" href="../blog/why-jj-git-cheatsheet.html">

@@ -18,8 +18,8 @@ jayjay-dag-graph-and-side-by = JayJay — Jujutsu リポジトリの DAG グラ�
 # JayJay is a native GUI for Jujutsu (jj) version control on macOS and Linux. DAG graph with lane-based fork/merge rendering, unified and side-by-side diffs with tree-sitter syntax highlighting and rich previews for supported formats, interdiff (PR-style revision comparison), diff edit mode (select files/hunks/lines to extract), evolog (change evolution viewer), bookmark diff, file annotate, one-click conflict resolution, AI-generated commit messages, and a command palette. Built with Rust (jj-lib) and SwiftUI.
 jayjay-is-a-native-gui-for-2 = JayJay は macOS と Linux で使える Jujutsu (jj) バージョン管理のネイティブ GUI です。レーン表示の DAG グラフ、tree-sitter による構文ハイライト付きの統合・左右並べての差分、対応形式のリッチプレビュー、interdiff、差分編集モード、変遷ビューア、ブックマーク差分、ファイル注釈、ワンクリックの競合解決、AI による説明の生成、コマンドパレットを備えています。Rust (jj-lib) と SwiftUI で構築されています。
 
-# The native way<br>to drive jj.
-the-native-way-to-drive-jj = jj を、<br>ネイティブに操る。
+# The native way<br>to drive jj
+the-native-way-to-drive-jj = jj を、<br>ネイティブに操る
 
 # A fast, keyboard-friendly client for Jujutsu. The change graph, diffs, splits, and conflicts, in one window.
 a-fast-keyboard-friendly-client-for = キーボード操作が快適な、高速の Jujutsu クライアント。チェンジグラフ、差分、分割、競合解決をひとつのウィンドウで。
@@ -33,26 +33,26 @@ speaks-jj = jj の考え方そのまま
 # Changes, bookmarks, revsets, and mutable history, the way jj intends. No git branches bolted on.
 changes-bookmarks-revsets-and-mutable-history = チェンジ、ブックマーク、revset、書き換えられる履歴。すべて jj の流儀のままで、git のブランチを無理に持ち込みません。
 
-# Truly native
-truly-native = 正真正銘のネイティブ
+# Native on each platform
+native-on-each-platform = どの OS でもネイティブ
 
 # SwiftUI on macOS and GPUI on Linux, over a shared Rust core that links jj-lib directly. No CLI scraping, no web view.
 swiftui-on-macos-and-gpui-on = macOS は SwiftUI、Linux は GPUI。その下で共通の Rust コアが jj-lib を直接リンクしています。CLI の出力を解析することも、Web ビューを使うこともありません。
 
-# Free, no strings
-free-no-strings = 完全無料
+# Free to use
+free-to-use = 完全無料
 
 # No subscription and no repository data. Anonymous build and OS stats can be turned off in Settings.
 no-subscription-and-no-repository-data = サブスクリプションは不要で、リポジトリのデータも収集しません。匿名のビルド・OS 統計は設定でオフにできます。
 
-# Read changes the way you read code.
-read-changes-the-way-you-read = コードを読むように、チェンジを読む。
+# Read changes the way you read code
+read-changes-the-way-you-read = コードを読むように、チェンジを読む
 
-# Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for Markdown, notebooks, CSV/TSV, SARIF, and binary plists.
-unified-or-side-by-side-a = 統合表示と左右並べての表示、ファイルツリー、tree-sitter によるハイライトと行内の変更表示、そして Markdown、ノートブック、CSV/TSV、SARIF、バイナリ plist のリッチプレビュー。
+# Unified or side-by-side, a file tree, tree-sitter highlighting with intraline changes, and rich previews for images, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.
+unified-or-side-by-side-a = 統合表示と左右並べての表示、ファイルツリー、tree-sitter によるハイライトと行内の変更表示、そして画像、Markdown、ノートブック、CSV/TSV、SARIF、バイナリ plist のリッチプレビュー。
 
-# Keep your place through every edit.
-keep-your-place-through-every-edit = 編集しても、レビューは続きから。
+# Keep your place through every edit
+keep-your-place-through-every-edit = 編集しても、レビューは続きから
 
 # Press <kbd>Space</kbd> to review a file, or click a hunk's gutter stripe to mark just that part. Reviewed hunks survive edits and rebases, and notes stay on the changed line.
 press-space-to-review-a-file = <kbd>スペース</kbd> キーでファイルをレビュー済みに。ハンク横のガターをクリックすれば、その部分だけをマークできます。レビュー済みの印は編集やリベースのあとも残り、メモも変更行についたままです。
@@ -60,20 +60,20 @@ press-space-to-review-a-file = <kbd>スペース</kbd> キーでファイルを�
 # Coding agents can read your notes and mark files with the <code>jayjay</code> CLI. Install the <a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay skill</a> with <code>npx skills add hewigovens/jayjay --skill jayjay</code>, or on macOS from Settings &gt; Integrations.
 coding-agents-can-read-your-notes = コーディングエージェントは <code>jayjay</code> CLI でメモを読み、ファイルをマークできます。<a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay スキル</a>は <code>npx skills add hewigovens/jayjay --skill jayjay</code> でインストールするか、macOS では「設定」&gt;「連携」から追加できます。
 
-# Split exactly the lines you mean.
-split-exactly-the-lines-you-mean = 分けたい行だけを、きっちり分割。
+# Split exactly the lines you mean
+split-exactly-the-lines-you-mean = 分けたい行だけを、きっちり分割
 
 # Pick hunks or individual lines from any file in the change, then split that selection into a clean child or parallel change.
 pick-hunks-or-individual-lines-from = チェンジ内のどのファイルからでもハンクや行を選び、きれいな子チェンジや並列のチェンジに切り出せます。
 
-# Diff any two revisions.
-diff-any-two-revisions = どの 2 つのリビジョンでも比較。
+# Diff any two revisions
+diff-any-two-revisions = どの 2 つのリビジョンでも比較
 
 # Shift-click two changes, two bookmarks, or a PR branch and its base to see exactly what moved between them. For a divergent change, <strong>Compare Divergent Versions</strong> shows which one to keep.
 shift-click-two-changes-two-bookmarks = 2 つのチェンジやブックマーク、PR ブランチとそのベースを Shift+クリックすると、その間で何が変わったかがひと目でわかります。チェンジが分岐しているときは、<strong>分岐したバージョンを比較</strong>でどちらを残すか判断できます。
 
-# One PR per change, stacked.
-one-pr-per-change-stacked = 1 チェンジ 1 PR で、スタックに積む。
+# One PR per change, stacked
+one-pr-per-change-stacked = 1 チェンジ 1 PR で、スタックに積む
 
 # Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.
 right-click-the-tip-of-a = 直線状のスタックの先端を右クリックし、<strong>スタック PR を作成 / 更新</strong>を選びます。JayJay がチェンジごとにブランチ名を付けてプッシュし、依存関係のあるベースを設定した GitHub PR、GitLab MR、または Cursor Origin PR をチェンジごとに作成します。
@@ -81,26 +81,26 @@ right-click-the-tip-of-a = 直線状のスタックの先端を右クリック�
 # Sign in to GitHub and GitLab from Settings, or use an existing CLI login or environment token. Cursor Origin uses your <code>origin auth login</code> credentials.
 sign-in-to-github-and-gitlab = GitHub と GitLab には「設定」からサインインするか、既存の CLI ログインや環境変数のトークンを利用できます。Cursor Origin では <code>origin auth login</code> の認証情報を使用します。
 
-# Resolve without leaving the app.
-resolve-without-leaving-the-app = 競合は、アプリの中で解決。
+# Resolve without leaving the app
+resolve-without-leaving-the-app = 競合は、アプリの中で解決
 
 # Take Left, Right, or Base per hunk in the built-in merge editor, edit the raw markers, and save a partial resolution when work remains. Or hand off to your configured external tool.
 take-left-right-or-base-per = 内蔵のマージエディタでハンクごとに左、右、ベースを選んだり、競合マーカーを直接編集したりできます。途中まで解決して保存することも、設定済みの外部ツールに任せることも可能です。
 
-# Replay a change's evolution.
-replay-a-changes-evolution = チェンジの変遷をたどる。
+# Replay a change's evolution
+replay-a-changes-evolution = チェンジの変遷をたどる
 
 # Every snapshot of a change over time, with filtering and one-click restore. Undo a rebase or recover lost work without touching the op log by hand.
 every-snapshot-of-a-change-over = チェンジのスナップショットを時系列で確認し、絞り込みやワンクリックでの復元ができます。リベースの取り消しも失った作業の復旧も、操作ログを手で触らずに行えます。
 
-# Undo anything.
-undo-anything = どんな操作も、元に戻せる。
+# Undo anything
+undo-anything = どんな操作も、元に戻せる
 
 # Every abandon, rebase, and split is an operation. Click the last one in the status bar, or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>, to open the operation log and restore the repository to any earlier point.
 every-abandon-rebase-and-split-is = 破棄もリベースも分割も、すべて操作として記録されます。ステータスバーの最後の操作をクリックするか <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd> を押すと操作ログが開き、リポジトリを過去の好きな時点に復元できます。
 
-# A complete jj surface.
-a-complete-jj-surface = jj の機能を、ひと通り。
+# Also in the app
+also-in-the-app = ほかにもこんな機能
 
 # Lane-based DAG
 lane-based-dag = レーン表示の DAG
@@ -113,18 +113,6 @@ bookmarks = ブックマーク
 
 # Drag a bookmark onto any change to move it. Per-remote ahead, behind, and diverged state.
 drag-a-bookmark-onto-any-change = ブックマークを任意のチェンジにドラッグして移動。リモートごとの先行・遅れ・分岐の状態も表示します。
-
-# Undo anything
-undo-anything-2 = どんな操作も元に戻せる
-
-# Step back through the operation log with one shortcut.
-step-back-through-the-operation-log = ショートカットひとつで、操作ログをさかのぼれます。
-
-# Rich previews
-rich-previews = リッチプレビュー
-
-# Images before and after, Markdown, notebooks, CSV/TSV, SARIF, and binary plists.
-images-before-and-after-markdown-notebooks = 画像の変更前後、Markdown、ノートブック、CSV/TSV、SARIF、バイナリ plist。
 
 # File annotate
 file-annotate = ファイル注釈
@@ -153,14 +141,14 @@ colocated-git-repos-git-lfs-and = Git と同居する jj リポジトリ、Git L
 # <a class="link" href="guide.html">Read the full guide ›</a>
 read-the-full-guide = <a class="link" href="guide.html">詳しいガイドを読む（英語）›</a>
 
-# Every action, one keystroke away.
-every-action-one-keystroke-away = どの操作も、キーボードからすぐ。
+# Run any jj operation from the keyboard
+run-any-jj-operation-from-the = どの操作も、キーボードからすぐ
 
 # Fuzzy-search any operation in the command palette, type <code>help split</code> to discover features, or prefix <code>!</code> to run raw jj with inline output.
 fuzzy-search-any-operation-in-the = コマンドパレットでどの操作もあいまい検索できます。<code>help split</code> と入力すれば機能を調べられ、先頭に <code>!</code> を付ければ jj コマンドをそのまま実行して出力を確認できます。
 
-# Install, open a repo, you're in.
-install-open-a-repo-youre-in = インストールして、リポジトリを開くだけ。
+# Install and open a repo
+install-and-open-a-repo = インストールして、リポジトリを開くだけ
 
 # macOS
 macos = macOS
@@ -183,8 +171,8 @@ packages-are-on-github-releases = パッケージは <a class="link" href="https
 # Windows: <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Get JayJay from the Microsoft Store</a>, or download a <a href="https://github.com/hewigovens/jayjay/releases">portable beta ZIP</a>. Install <code>jj</code> separately.
 windows-get-jayjay-from-the-microsoft = Windows：<a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store から入手</a>するか、<a href="https://github.com/hewigovens/jayjay/releases">ポータブルなベータ版 ZIP</a> をダウンロードしてください。<code>jj</code> は別途インストールが必要です。
 
-# Built for jj, not bolted onto git.
-built-for-jj-not-bolted-onto = git の延長ではなく、jj のために。
+# Built for jj, not bolted onto git
+built-for-jj-not-bolted-onto = git の延長ではなく、jj のために
 
 # Jujutsu has a better model than git, but most GUIs either think in git branches or run a web app in a shell. JayJay started from one question: <strong>why isn't there a true native client that speaks jj?</strong>
 jujutsu-has-a-better-model-than = Jujutsu のモデルは git より優れています。それなのに多くの GUI は、git のブランチを前提にしていたり、Web アプリをラップしただけだったりします。JayJay の出発点はひとつの疑問でした。<strong>jj をそのまま扱える、本物のネイティブクライアントはなぜないのか？</strong>
@@ -192,8 +180,8 @@ jujutsu-has-a-better-model-than = Jujutsu のモデルは git より優れてい
 # So it's opinionated and fast: one native way to do each workflow, the way jj intends. <strong>JayJay is 100% free</strong>, built by a developer for developers. Every detail matters, down to a hidden easter egg. Can you find it?
 so-its-opinionated-and-fast-one = だから、割り切っていて速い。ワークフローごとにネイティブなやり方をひとつだけ、jj の流儀で用意しました。<strong>JayJay は完全無料</strong>で、開発者が開発者のために作っています。細部までこだわり、イースターエッグも隠してあります。見つけられますか？
 
-# Questions, answered.
-questions-answered = よくある質問
+# Common questions
+common-questions = よくある質問
 
 # What is JayJay?
 what-is-jayjay = JayJay とは何ですか？
@@ -267,10 +255,10 @@ can-jayjay-open-a-repository-on = SSH で別のマシンのリポジトリを開
 # Yes, in the macOS app and on Linux. Choose <strong>File &gt; Open Remote Repository…</strong>, pick a host from your SSH config, and browse to the repository. macOS, Linux, and Windows hosts are supported; on first connect JayJay installs a small helper on the host, and the host must accept key or agent authentication. Review notes stay on your machine. The <a href="guide.html#remote">guide</a> has the details.
 yes-in-the-macos-app-and = はい、macOS アプリと Linux 版で使えます。<strong>File &gt; Open Remote Repository…</strong> を選び、SSH 設定にあるホストを選んでリポジトリのフォルダを開きます。接続先は macOS、Linux、Windows に対応しています。初回接続時に小さなヘルパーをホストへインストールします。ホストには鍵またはエージェントで認証できる必要があります。レビューノートは手元のマシンに残ります。詳しくは<a href="guide.html#remote">ガイド</a>（英語）をご覧ください。
 
-# From the notebook.
-from-the-notebook = 開発ノートより
+# Writing on jj and its neighbors
+writing-on-jj-and-its-neighbors = jj とその周辺について
 
-# Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay">★ Star it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ sponsor</a>
+# Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a>
 enjoy-jayjay-star-it-on-github = JayJay が気に入ったら、<a href="https://github.com/hewigovens/jayjay">★ GitHub でスター</a>や<a href="https://github.com/sponsors/hewigovens">♥ スポンサー</a>で応援してください
 
 # Diffs
@@ -279,8 +267,8 @@ diffs = 差分
 # Review
 review = レビュー
 
-# Diff edit
-diff-edit = 差分編集
+# Split
+split = 分割
 
 # Interdiff
 interdiff = Interdiff

@@ -20,7 +20,7 @@
   border: 1px solid var(--line);
   border-radius: 10px;
   background: var(--bg-alt);
-  font-size: 15px;
+  font-size: 14px;
   line-height: 1.5;
 }
 
@@ -107,7 +107,7 @@
   display: grid;
   grid-template-columns: minmax(112px, .35fr) minmax(0, 1fr);
   gap: clamp(20px, 5vw, 64px);
-  padding: 28px 4px;
+  padding: 28px 0;
   border-bottom: 1px solid var(--line);
   text-decoration: none;
 }
@@ -120,8 +120,7 @@
 
 .blog-card h2 {
   margin: 0 0 8px;
-  font-size: clamp(20px, 3vw, 26px);
-  font-weight: 700;
+  font-size: clamp(20px, 3vw, 24px);
   line-height: 1.25;
   transition: color .15s;
 }
@@ -132,7 +131,7 @@
 
 .blog-card p {
   color: var(--muted);
-  font-size: 15px;
+  font-size: 14px;
 }
 
 @media (max-width: 600px) {
