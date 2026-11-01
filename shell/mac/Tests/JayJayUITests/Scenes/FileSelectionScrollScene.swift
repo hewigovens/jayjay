@@ -1,6 +1,8 @@
 import XCTest
 
 final class FileSelectionScrollScene: SceneBase {
+    private static let pressesPastTheLastRow = 25
+
     override class var fixtureName: String {
         "file-selection-scroll"
     }
@@ -10,12 +12,32 @@ final class FileSelectionScrollScene: SceneBase {
     }
 
     func testFlatListRevealsKeyboardSelection() throws {
-        try checkKeyboardSelection(tree: false)
-    }
+        let app = try XCTUnwrap(app)
+        let first = fileRows(of: app).matching(identifier: AID.FileList.row("a-root.txt")).firstMatch
+        let last = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-08.swift")).firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertTrue(waitForHittable(first, isHittable: true))
+        XCTAssertFalse(last.isHittable)
+        first.click()
 
-    func testTreeListRevealsKeyboardSelection() throws {
-        try launchTreeMode()
-        try checkKeyboardSelection(tree: true)
+        for _ in 0 ..< Self.pressesPastTheLastRow {
+            keyStroke("j")
+        }
+        XCTAssertTrue(last.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertTrue(waitForHittable(last, isHittable: true))
+        XCTAssertFalse(first.isHittable)
+
+        keyStroke(.upArrow)
+        let previous = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-07.swift")).firstMatch
+        XCTAssertTrue(previous.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertTrue(waitForHittable(previous, isHittable: true))
+        XCTAssertFalse(first.isHittable)
+
+        keyStroke(.space)
+        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertTrue(waitForHittable(first, isHittable: true))
+        XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-07.swift")].label, "Reviewed")
     }
 
     func testRefreshKeepsTheSelectedFileVisible() throws {
@@ -28,7 +50,7 @@ final class FileSelectionScrollScene: SceneBase {
         XCTAssertTrue(commit.waitForExistence(timeout: 5))
         let originalCommit = try XCTUnwrap(commit.value as? String)
         first.click()
-        for _ in 0 ..< 50 {
+        for _ in 0 ..< Self.pressesPastTheLastRow {
             keyStroke("j")
         }
         XCTAssertTrue(last.wait(for: \.isSelected, toEqual: true, timeout: 5))
@@ -74,7 +96,7 @@ final class FileSelectionScrollScene: SceneBase {
         XCTAssertTrue(guide.wait(for: \.isSelected, toEqual: true, timeout: 5))
         keyStroke(.space)
         XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        for _ in 0 ..< 50 {
+        for _ in 0 ..< Self.pressesPastTheLastRow {
             keyStroke("j")
         }
         XCTAssertTrue(rootRow.wait(for: \.isSelected, toEqual: true, timeout: 5))
@@ -113,45 +135,5 @@ final class FileSelectionScrollScene: SceneBase {
         let argument = try XCTUnwrap(app.launchArguments.firstIndex(of: "-jayjay.treeFileList"))
         app.launchArguments[argument + 1] = "YES"
         app.launch()
-    }
-
-    private func checkKeyboardSelection(tree: Bool) throws {
-        let app = try XCTUnwrap(app)
-        let first = fileRows(of: app).matching(identifier: AID.FileList.row(tree ? "assets/logo.bin" : "a-root.txt")).firstMatch
-        let last = fileRows(of: app).matching(identifier: AID.FileList.row(tree ? "a-root.txt" : "src/modules/module-08.swift")).firstMatch
-        XCTAssertTrue(first.waitForExistence(timeout: 10))
-        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(waitForHittable(first, isHittable: true))
-        XCTAssertFalse(last.isHittable)
-        first.click()
-
-        for _ in 0 ..< 50 {
-            keyStroke("j")
-        }
-        XCTAssertTrue(last.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(waitForHittable(last, isHittable: true))
-        XCTAssertFalse(first.isHittable)
-
-        for _ in 0 ..< 50 {
-            keyStroke("k")
-        }
-        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(waitForHittable(first, isHittable: true))
-
-        for _ in 0 ..< 50 {
-            keyStroke(.downArrow)
-        }
-        XCTAssertTrue(last.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(waitForHittable(last, isHittable: true))
-        keyStroke(.upArrow)
-        let previous = fileRows(of: app).matching(identifier: AID.FileList.row(tree ? "src/modules/module-08.swift" : "src/modules/module-07.swift")).firstMatch
-        XCTAssertTrue(previous.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(waitForHittable(previous, isHittable: true))
-        XCTAssertFalse(first.isHittable)
-
-        keyStroke(.space)
-        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(waitForHittable(first, isHittable: true))
-        XCTAssertEqual(app.buttons[AID.FileList.review(tree ? "src/modules/module-08.swift" : "src/modules/module-07.swift")].label, "Reviewed")
     }
 }

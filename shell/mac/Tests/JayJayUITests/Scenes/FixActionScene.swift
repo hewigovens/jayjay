@@ -12,8 +12,7 @@ final class FixActionScene: SceneBase {
 
         rightClickCenter(rows.element(boundBy: 1))
         let fix = app.menuItems["Run formatters (jj fix)"]
-        let menuLabels = app.menuItems.allElementsBoundByIndex.map(\.label)
-        XCTAssertTrue(fix.waitForExistence(timeout: 5), "Run formatters menu item missing; menu=\(menuLabels)")
+        XCTAssertTrue(fix.waitForExistence(timeout: 5), "Run formatters menu item missing; menu=\(app.menuItems.allElementsBoundByIndex.map(\.label))")
         XCTAssertTrue(fix.isEnabled, "a repo with [fix.tools] must enable Fix")
         fix.click()
 
