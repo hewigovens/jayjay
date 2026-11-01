@@ -553,6 +553,7 @@ fixture_context_expansion
 fixture_complex
 copy_fixture complex file-selection-scroll
 printf 'Root file\n' > "$fixtures/file-selection-scroll/a-root.txt"
+for area in $(seq -f '%02g' 5 24); do rm -r "$fixtures/file-selection-scroll/src/features/area-$area"; done
 fixture_conflict
 fixture_dag_long
 fixture_parallelize

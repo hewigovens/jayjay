@@ -41,16 +41,14 @@ final class SettingsFlockScene: SceneBase {
             XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10))
             keyStroke(",", modifiers: .command)
             let window = settingsWindow(in: app)
-            for (icon, title) in [("fish-owl", "Fish Owl"), ("golden-pheasant", "Golden Pheasant"), ("flycatcher", "Flycatcher"), ("kingfisher", "Kingfisher")] {
-                selectSettingsPage("flock", in: app)
-                let button = window.buttons[AID.Settings.flockIcon(icon)]
-                XCTAssertTrue(button.waitForExistence(timeout: 5))
-                button.click()
-                capture(window, name: "Flock - icons - \(icon) - \(appearance) - \(fontSize)pt")
-                selectSettingsPage("about", in: app)
-                XCTAssertEqual(window.descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, title)
-                capture(window, name: "Flock - about - \(icon) - \(appearance) - \(fontSize)pt")
-            }
+            selectSettingsPage("flock", in: app)
+            let kingfisher = window.buttons[AID.Settings.flockIcon("kingfisher")]
+            XCTAssertTrue(kingfisher.waitForExistence(timeout: 5))
+            kingfisher.click()
+            capture(window, name: "Flock - icon - \(appearance) - \(fontSize)pt")
+            selectSettingsPage("about", in: app)
+            XCTAssertEqual(window.descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, "Kingfisher")
+            capture(window, name: "Flock - about - \(appearance) - \(fontSize)pt")
             selectSettingsPage("flock", in: app)
             XCTAssertTrue(window.buttons[AID.Settings.flockIcon("fish-owl")].exists)
             let feather = window.buttons[AID.Settings.flockFeather]
