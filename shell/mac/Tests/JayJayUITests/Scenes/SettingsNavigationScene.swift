@@ -8,29 +8,18 @@ final class SettingsNavigationScene: SceneBase {
         let window = settingsWindow(in: app)
         XCTAssertTrue(window.waitForExistence(timeout: 5))
 
-        let pages: [(String, [String])] = [
-            ("Appearance", [AID.Settings.diffDarkPalette]),
-            ("Fonts", [AID.Settings.preview]),
-            ("Diff & Files", ["Side-by-side diff"]),
-            ("Workflow", ["Confirm before abandoning changes"]),
-            ("Integrations", ["Editor"]),
-            ("Jujutsu", [AID.Settings.jjConfigPath, AID.Settings.jjConfigMissing]),
-            ("Data & Privacy", ["Share anonymous build and OS stats"]),
-            ("About", ["Love JayJay?"])
-        ]
-        for (index, page) in pages.enumerated() {
-            if index > 0 {
-                keyStroke(.downArrow)
-            }
-            let shown = page.1.contains { marker in
-                window.descendants(matching: .any).matching(identifier: marker).firstMatch.waitForExistence(timeout: 5)
-            }
-            XCTAssertTrue(shown, "Keyboard navigation did not show \(page.0)")
-            let screenshot = XCTAttachment(screenshot: window.screenshot())
-            screenshot.name = "Settings - \(page.0)"
-            screenshot.lifetime = .keepAlways
-            add(screenshot)
+        let pages = window.descendants(matching: .any)
+            .matching(NSPredicate(format: "identifier BEGINSWITH %@", AID.Settings.page("")))
+            .allElementsBoundByIndex
+            .compactMap { $0.value as? String }
+        XCTAssertEqual(pages.first, "Appearance")
+        XCTAssertEqual(pages.last, "About")
+
+        for page in pages.dropFirst() {
+            keyStroke(.downArrow)
+            XCTAssertTrue(window.wait(for: \.title, toEqual: page, timeout: 5), "Keyboard navigation did not show \(page)")
         }
+        XCTAssertTrue(window.descendants(matching: .any).matching(identifier: "Love JayJay?").firstMatch.waitForExistence(timeout: 5))
         keyStroke(.escape)
         XCTAssertTrue(window.waitForNonExistence(timeout: 5))
     }
