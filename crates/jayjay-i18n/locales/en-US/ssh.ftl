@@ -24,6 +24,7 @@ ssh-error-send = Could not send SSH request: { $error }.
 ssh-error-setup-timeout = SSH setup timed out. Check the host and SSH configuration.
 ssh-error-busy = Wait for current SSH operations to finish.
 ssh-error-disconnect-busy = Wait for SSH operations to finish before disconnecting.
+ssh-error-cancel-unanswered = The SSH host did not stop the canceled operation, so JayJay disconnected.
 ssh-error-incompatible-helper = The SSH helper is incompatible with this version of JayJay.
 ssh-error-too-many-machines = Too many SSH machines are connected. Disconnect unused machines or restart JayJay.
 ssh-error-unsupported-platform = This SSH host platform is not supported.

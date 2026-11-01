@@ -24,6 +24,7 @@ ssh-error-send = SSH リクエストを送信できませんでした: { $error 
 ssh-error-setup-timeout = SSH のセットアップがタイムアウトしました。ホストと SSH の設定を確認してください。
 ssh-error-busy = 実行中の SSH 操作が完了するまでお待ちください。
 ssh-error-disconnect-busy = 切断する前に、SSH 操作が完了するまでお待ちください。
+ssh-error-cancel-unanswered = キャンセルされた操作を SSH ホストが停止しなかったため、JayJay は切断しました。
 ssh-error-incompatible-helper = SSH ヘルパーはこのバージョンの JayJay と互換性がありません。
 ssh-error-too-many-machines = 接続中の SSH マシンが多すぎます。使用していないマシンを切断するか、JayJay を再起動してください。
 ssh-error-unsupported-platform = この SSH ホストのプラットフォームはサポートされていません。

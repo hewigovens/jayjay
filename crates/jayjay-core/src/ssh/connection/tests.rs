@@ -348,3 +348,35 @@ fn slow_machine_setup_does_not_block_other_machines() {
         .unwrap();
     assert!(status.success());
 }
+
+#[test]
+fn canceled_request_to_a_host_that_stopped_reading_disconnects() {
+    let mut command = Command::new("sh");
+    command.args([
+        "-c",
+        "printf '{\"protocol\":1,\"home\":\"/\"}\\n'; exec sleep 30",
+    ]);
+    let connection = Connection::start(command).unwrap();
+    let sync = SyncToken::standalone();
+    let canceler = sync.clone();
+    thread::spawn(move || {
+        thread::sleep(Duration::from_millis(100));
+        canceler.cancel();
+    });
+    let started = Instant::now();
+    let Err(error) = connection.request(
+        "/repo",
+        "describe",
+        vec![json!("x".repeat(1 << 20))],
+        Some(&sync),
+    ) else {
+        panic!("the canceled request answered");
+    };
+    assert!(started.elapsed() < CANCEL_GRACE + Duration::from_secs(2));
+    assert!(
+        error
+            .to_string()
+            .contains(&jayjay_i18n::ssh::error_cancel_unanswered())
+    );
+    assert!(!connection.connected() && !connection.busy());
+}

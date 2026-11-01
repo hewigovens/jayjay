@@ -3,7 +3,7 @@ use crate::{JayError, JayResult, SyncToken};
 use std::collections::HashMap;
 use std::io::{BufReader, Read, Write};
 use std::path::Path;
-use std::process::{Child, ChildStdin, Command, Stdio};
+use std::process::{Child, Command, Stdio};
 use std::sync::{
     Arc, Mutex,
     atomic::{AtomicBool, AtomicU64, Ordering},
@@ -14,12 +14,14 @@ use std::time::{Duration, Instant};
 
 pub(crate) struct Connection {
     child: Mutex<Child>,
-    input: Mutex<ChildStdin>,
+    input: mpsc::Sender<Vec<u8>>,
     pending: Mutex<HashMap<u64, mpsc::Sender<JayResult<Response>>>>,
     next: AtomicU64,
     connected: AtomicBool,
     error: Mutex<Option<String>>,
 }
+
+const CANCEL_GRACE: Duration = Duration::from_secs(if cfg!(test) { 1 } else { 30 });
 
 const OPTIONS: [&str; 18] = [
     "-o",
@@ -144,7 +146,7 @@ impl Connection {
             .stderr(Stdio::null())
             .spawn()
             .map_err(JayError::internal)?;
-        let input = child.stdin.take().unwrap();
+        let mut input = child.stdin.take().unwrap();
         let mut output = BufReader::new(child.stdout.take().unwrap());
         let (tx, rx) = mpsc::sync_channel(1);
         let reader = thread::spawn(move || {
@@ -171,15 +173,28 @@ impl Connection {
                 jayjay_i18n::ssh::error_incompatible_helper(),
             ));
         }
+        let (input_sender, frames) = mpsc::channel();
         let this = Arc::new(Self {
             child: Mutex::new(child),
-            input: Mutex::new(input),
+            input: input_sender,
             pending: Mutex::default(),
             next: AtomicU64::new(1),
             connected: AtomicBool::new(true),
             error: Mutex::new(None),
         });
         let weak = Arc::downgrade(&this);
+        let writer = weak.clone();
+        // Requests never write to the host themselves, so one it stops reading can't block their cancellation.
+        thread::spawn(move || {
+            for frame in frames {
+                if let Err(error) = input.write_all(&frame).and_then(|()| input.flush()) {
+                    if let Some(connection) = writer.upgrade() {
+                        connection.fail(&jayjay_i18n::ssh::error_send(&error.to_string()));
+                    }
+                    break;
+                }
+            }
+        });
         thread::spawn(move || {
             loop {
                 let result = read_frame(&mut output).and_then(|frame| {
@@ -268,10 +283,10 @@ impl Connection {
             method: method.into(),
             args,
         };
-        if let Err(error) = write_frame(&mut *self.input.lock().unwrap(), &request) {
+        if let Err(error) = self.send(&request) {
             self.fail(&jayjay_i18n::ssh::error_send(&error.to_string()));
         }
-        let mut canceled = false;
+        let mut canceled = None;
         loop {
             match receiver.recv_timeout(Duration::from_millis(50)) {
                 Ok(response) => return response,
@@ -280,19 +295,30 @@ impl Connection {
                 }
                 Err(mpsc::RecvTimeoutError::Timeout) => {}
             }
-            if !canceled && sync.is_some_and(|sync| sync.check().is_err()) {
-                canceled = true;
-                let _ = write_frame(
-                    &mut *self.input.lock().unwrap(),
-                    &Request {
+            match canceled {
+                None if sync.is_some_and(|sync| sync.check().is_err()) => {
+                    canceled = Some(Instant::now());
+                    let _ = self.send(&Request {
                         id,
                         path: String::new(),
                         method: "__cancel".into(),
                         args: vec![],
-                    },
-                );
+                    });
+                }
+                Some(at) if at.elapsed() > CANCEL_GRACE => {
+                    self.fail(&jayjay_i18n::ssh::error_cancel_unanswered());
+                }
+                _ => {}
             }
         }
+    }
+
+    fn send(&self, request: &Request) -> JayResult<()> {
+        let mut frame = Vec::new();
+        write_frame(&mut frame, request)?;
+        self.input
+            .send(frame)
+            .map_err(|_| JayError::internal(jayjay_i18n::ssh::error_disconnected()))
     }
 }
 

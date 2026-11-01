@@ -24,6 +24,7 @@ ssh-error-send = 無法傳送 SSH 要求：{ $error }
 ssh-error-setup-timeout = SSH 設定逾時。請檢查主機和 SSH 設定。
 ssh-error-busy = 請等待目前的 SSH 操作完成。
 ssh-error-disconnect-busy = 請等待 SSH 操作完成後再中斷連線。
+ssh-error-cancel-unanswered = SSH 主機沒有停止已取消的操作，JayJay 已中斷連線。
 ssh-error-incompatible-helper = SSH 輔助程式與此版本的 JayJay 不相容。
 ssh-error-too-many-machines = 已連線的 SSH 機器過多。請中斷未使用的機器或重新啟動 JayJay。
 ssh-error-unsupported-platform = 不支援此 SSH 主機平台。
