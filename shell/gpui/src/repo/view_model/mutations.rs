@@ -324,6 +324,19 @@ impl RepoViewModel {
         )
     }
 
+    pub(crate) fn update_from_gerrit(
+        &mut self,
+        rev: String,
+        sync: SyncToken,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<JayResult<String>> {
+        self.repo_result_task_without_indicator(
+            cx,
+            move |repo| repo.update_from_gerrit(&rev, &sync),
+            |vm, _message, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub(crate) fn git_pull_bookmark(
         &mut self,
         name: String,

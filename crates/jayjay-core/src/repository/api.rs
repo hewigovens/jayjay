@@ -244,6 +244,7 @@ api! {
         fn git_push_tag(tag: Text, sync: Sync) -> String;
         fn git_fetch(sync: Sync) -> FetchResult;
         fn upload(revision: Text, sync: Sync) -> String;
+        fn update_from_gerrit(revision: Text, sync: Sync) -> String;
         fn git_pull_bookmark(bookmark: Text, sync: Sync) -> FetchResult;
         fn apply_diff_selection(rev: Text, destination: DiffEditDestination, selections: Selections, message: Text, ignore_whitespace: bool) -> ();
     }

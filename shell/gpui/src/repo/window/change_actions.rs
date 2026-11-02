@@ -376,11 +376,19 @@ impl RepoWindow {
                 glyph::GIT_BRANCH,
                 ContextAction::OpenStackedPr(rev.clone().into()),
             ));
-            if let Some(title) = self.vm.read(cx).upload_title.clone() {
+            let vm = self.vm.read(cx);
+            if let Some(title) = vm.upload_title.clone() {
                 items.push(ContextMenuItem::new(
                     title,
                     glyph::CLOUD,
                     ContextAction::UploadChange(rev.clone().into()),
+                ));
+            }
+            if let Some(title) = vm.gerrit_update_title.clone() {
+                items.push(ContextMenuItem::new(
+                    title,
+                    glyph::ARROW_DOWN,
+                    ContextAction::UpdateFromGerrit(rev.clone().into()),
                 ));
             }
         }

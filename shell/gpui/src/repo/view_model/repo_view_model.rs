@@ -47,6 +47,7 @@ pub struct RepoViewModel {
     pub pr_info: Option<PrInfo>,
     pub(crate) pr_host_name: Option<SharedString>,
     pub(crate) upload_title: Option<SharedString>,
+    pub(crate) gerrit_update_title: Option<SharedString>,
     pub compare: Option<CompareState>,
     /// Survives reloads of this path; cleared with the panel's rich preview.
     pub(crate) projection_mode_override: Option<(String, DiffProjectionMode)>,

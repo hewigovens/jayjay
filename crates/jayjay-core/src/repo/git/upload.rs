@@ -51,7 +51,10 @@ impl Repo {
             .ok_or_else(|| JayError::internal("This repository has no upload command"))?;
         let commit = self.snapshot_and_follow_one(revision)?;
         let args = match &command {
-            UploadCommand::Gerrit => self.gerrit_upload_args(commit),
+            UploadCommand::Gerrit => {
+                self.ensure_gerrit_not_ahead(&commit)?;
+                self.gerrit_upload_args(commit)
+            }
             UploadCommand::Custom(args) => args
                 .iter()
                 .map(|arg| arg.replace(REVISION_PLACEHOLDER, &commit))
@@ -60,9 +63,17 @@ impl Repo {
         let args: Vec<&str> = args.iter().map(String::as_str).collect();
         let output = self.run_remote_command(&args, "upload failed", sync)?;
         Ok(match command {
-            UploadCommand::Gerrit => gerrit_summary(output),
+            UploadCommand::Gerrit => {
+                let summary = gerrit_summary(output);
+                self.record_gerrit_upload(&summary);
+                summary
+            }
             UploadCommand::Custom(_) => output,
         })
+    }
+
+    pub(super) fn uploads_to_gerrit(&self) -> bool {
+        matches!(self.upload_command(), Some(UploadCommand::Gerrit))
     }
 
     fn gerrit_upload_args(&self, commit: String) -> Vec<String> {

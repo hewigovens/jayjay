@@ -1235,6 +1235,14 @@ impl JayJayRepo {
         self.inner.upload(&revision, &sync.inner)
     }
 
+    fn update_from_gerrit(
+        &self,
+        revision: String,
+        sync: Arc<JayJaySyncToken>,
+    ) -> Result<String, JayError> {
+        self.inner.update_from_gerrit(&revision, &sync.inner)
+    }
+
     fn git_pull_bookmark(
         &self,
         bookmark: String,

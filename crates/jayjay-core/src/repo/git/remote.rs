@@ -62,7 +62,7 @@ impl Repo {
         }
     }
 
-    fn git_repo(&self, context: &str) -> JayResult<gix::Repository> {
+    pub(super) fn git_repo(&self, context: &str) -> JayResult<gix::Repository> {
         get_git_repo(self.get_repo().store()).map_err(|error| JayError::Internal {
             message: format!("{context}: {error}"),
         })

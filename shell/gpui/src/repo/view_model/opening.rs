@@ -179,6 +179,7 @@ impl RepoViewModel {
             pr_info: None,
             pr_host_name: pr_host_name.map(SharedString::from),
             upload_title: None,
+            gerrit_update_title: None,
             compare: None,
             projection_mode_override: None,
             graph: GraphData {
@@ -233,6 +234,7 @@ impl RepoViewModel {
             pr_info: None,
             pr_host_name: None,
             upload_title: None,
+            gerrit_update_title: None,
             compare: None,
             projection_mode_override: None,
             graph: GraphData::default(),

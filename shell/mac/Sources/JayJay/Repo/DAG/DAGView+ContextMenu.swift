@@ -168,6 +168,11 @@ extension DAGView {
                 Label(uploadTitle, systemImage: "icloud.and.arrow.up")
             }
         }
+        if let gerritUpdateTitle {
+            Button { actions?.updateFromGerrit(rev: rev) } label: {
+                Label(gerritUpdateTitle, systemImage: "icloud.and.arrow.down")
+            }
+        }
     }
 
     @ViewBuilder
