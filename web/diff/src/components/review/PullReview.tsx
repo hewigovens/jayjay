@@ -1,0 +1,112 @@
+import { useRef } from "react";
+import { ReviewWorkspace } from "@jayjay/review-web/react";
+import type { LocalReviewClient } from "@jayjay/review-web/local";
+import type { Labels } from "@jayjay/review-web/types";
+import { pullPath, type PullRequestRef } from "../../github/PullRequestRef";
+import { usePullReview } from "../../hooks/usePullReview";
+import { GitHubIcon, SignOutIcon } from "../icons";
+import { SignInPanel } from "../sign-in/SignInPanel";
+import { CommitPicker } from "./CommitPicker";
+import { ShareNotesButton } from "./ShareNotesButton";
+import { StackPicker } from "./StackPicker";
+import { SyncViewedButton } from "./SyncViewedButton";
+
+export function PullReview({
+  client,
+  labels,
+  pull,
+  onOpen,
+}: {
+  client: LocalReviewClient;
+  labels: Labels;
+  pull: PullRequestRef;
+  onOpen: (pull: PullRequestRef) => void;
+}) {
+  const {
+    review,
+    shown,
+    commits,
+    stack,
+    signedIn,
+    needsSignIn,
+    syncing,
+    syncFailed,
+    signOut,
+    notes,
+    onSignedIn,
+    enableSync,
+  } = usePullReview(client, labels, pull);
+  const picked = useRef<"commits" | "stack">(undefined);
+
+  return (
+    <ReviewWorkspace
+      key={shown ?? ""}
+      review={review}
+      labels={labels}
+      savedLabel={labels.savedLocally}
+      avatars
+      fill
+      onRetry={() => (review.error === "worker-stopped" ? location.reload() : review.retry())}
+      footer={
+        needsSignIn &&
+        !signedIn &&
+        !review.result && <SignInPanel labels={labels} onSignedIn={onSignedIn} />
+      }
+      headerActions={
+        <>
+          {commits.length > 1 && (
+            <CommitPicker
+              commits={commits}
+              selected={pull.commit}
+              labels={labels}
+              autoFocus={picked.current === "commits"}
+              onSelect={(sha) => {
+                picked.current = "commits";
+                onOpen({ ...pull, commit: sha });
+              }}
+            />
+          )}
+          {stack && (
+            <StackPicker
+              stack={stack}
+              number={pull.number}
+              labels={labels}
+              autoFocus={picked.current === "stack"}
+              onSelect={(number) => {
+                picked.current = "stack";
+                onOpen({ owner: pull.owner, repo: pull.repo, number });
+              }}
+            />
+          )}
+          {review.result && <ShareNotesButton labels={labels} notes={notes} />}
+          {shown === "" && (
+            <SyncViewedButton
+              labels={labels}
+              syncing={syncing}
+              failed={syncFailed}
+              onEnabled={enableSync}
+            />
+          )}
+          {signedIn && (
+            <button
+              className="pull-link"
+              title={labels.pullSignOut}
+              aria-label={labels.pullSignOut}
+              onClick={signOut}
+            >
+              <SignOutIcon />
+            </button>
+          )}
+          <a
+            className="pull-link"
+            href={`https://github.com${pullPath(pull)}`}
+            title={labels.pullOnGitHub}
+            aria-label={labels.pullOnGitHub}
+          >
+            <GitHubIcon />
+          </a>
+        </>
+      }
+    />
+  );
+}

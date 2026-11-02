@@ -21,8 +21,8 @@ list:
   @echo "just test-gpui         Run GPUI shell tests (via shell::gpui-test, needs jj on PATH)"
   @echo "just test-linux        Run the Rust tests on Linux with Apple container"
   @echo "just ffi               Rebuild UniFFI Swift bindings"
-  @echo "just format            Format Rust and Swift sources (publish)"
-  @echo "just lint              Lint Rust (clippy) and Swift (swiftlint) (publish)"
+  @echo "just format            Format Rust, Swift, and web sources (publish)"
+  @echo "just lint              Lint Rust (clippy), Swift (swiftlint), and web (tsc, oxlint) (publish)"
   @echo "just profile diff|refresh [--alloc] args  Hotpath profile of jj-diff or a repo refresh"
   @echo "just site [--check]    Generate the translated landing pages from docs/index.html"
   @echo "just clean             Remove generated build artifacts"
@@ -111,10 +111,13 @@ gpui-windows:
 format:
   cargo fmt
   just shell::format
+  npm run format
 
 lint:
   cargo clippy --workspace --all-targets -- -D warnings
   just shell::lint
+  npm run format:check
+  npm run check --workspaces
   just lint-i18n
 
 lint-i18n:

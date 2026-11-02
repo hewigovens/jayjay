@@ -1,0 +1,48 @@
+:where(.jayjay-review) .jj-shortcuts {
+  width: min(26rem, calc(100vw - 32px));
+  padding: 18px 20px;
+  border: 1px solid var(--jj-border);
+  border-radius: 12px;
+  background: var(--jj-surface);
+  color: var(--jj-ink);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.24);
+}
+:where(.jayjay-review) .jj-shortcuts::backdrop {
+  background: rgb(0 0 0 / 0.32);
+}
+:where(.jayjay-review) .jj-shortcuts h2 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}
+:where(.jayjay-review) .jj-shortcuts dl {
+  display: grid;
+  gap: 8px;
+  margin: 0;
+}
+:where(.jayjay-review) .jj-shortcuts dl > div {
+  display: grid;
+  grid-template-columns: 5.5rem 1fr;
+  align-items: baseline;
+  gap: 12px;
+  font-size: 13px;
+}
+:where(.jayjay-review) .jj-shortcuts dt {
+  display: flex;
+  gap: 4px;
+}
+:where(.jayjay-review) .jj-shortcuts dd {
+  margin: 0;
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) kbd {
+  min-width: 1.4em;
+  padding: 1px 5px;
+  border: 1px solid var(--jj-border);
+  border-bottom-width: 2px;
+  border-radius: 4px;
+  background: var(--jj-page);
+  color: var(--jj-ink);
+  font: 11px/1.5 var(--jj-mono);
+  text-align: center;
+}

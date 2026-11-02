@@ -1,0 +1,88 @@
+:where(.jayjay-review) .jj-review-columns {
+  --jj-files-default: 300px;
+  position: relative;
+  display: grid;
+  grid-template-columns: min(var(--jj-files-width, var(--jj-files-default)), 60%) minmax(0, 1fr);
+  height: max(560px, calc(100dvh - 220px));
+  border: 1px solid var(--jj-border);
+  border-radius: 7px;
+  overflow: hidden;
+  background: var(--jj-surface);
+}
+:where(.jayjay-review) .jj-file-column,
+:where(.jayjay-review) .jj-review-detail {
+  min-width: 0;
+  min-height: 0;
+  display: flex;
+  flex-direction: column;
+}
+:where(.jayjay-review) .jj-file-column {
+  border-right: 1px solid var(--jj-border);
+  background: var(--jj-page);
+}
+/* Stays inside the file column, so the diff's hunk toggles at its left edge keep their clicks. */
+:where(.jayjay-review) .jj-column-resizer {
+  position: absolute;
+  z-index: 2;
+  top: 0;
+  bottom: 0;
+  left: calc(min(var(--jj-files-width, var(--jj-files-default)), 60%) - 6px);
+  width: 6px;
+  cursor: col-resize;
+  touch-action: none;
+}
+:where(.jayjay-review) .jj-column-resizer::after {
+  content: "";
+  position: absolute;
+  inset: 0 0 0 4px;
+  transition: background 0.12s;
+}
+:where(.jayjay-review) .jj-column-resizer:hover::after,
+:where(.jayjay-review) .jj-column-resizer:active::after,
+:where(.jayjay-review) .jj-column-resizer:focus-visible::after {
+  background: var(--jj-accent);
+}
+:where(.jayjay-review) .jj-column-resizer:focus-visible {
+  outline: none;
+}
+:where(.jayjay-review) .jj-pane-heading {
+  min-height: 40px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 10px;
+  padding: 6px 14px;
+  border-bottom: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-pane-heading h2 {
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-tool {
+  display: inline-grid;
+  place-items: center;
+  min-width: 24px;
+  height: 24px;
+  padding: 0 4px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-tool:hover {
+  background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
+  color: var(--jj-ink);
+}
+:where(.jayjay-review) .jj-tool[aria-pressed="true"] {
+  color: var(--jj-accent);
+}
+:where(.jayjay-review) .jj-notes-filter {
+  color: var(--jj-note-ink);
+  font-size: 10px;
+  font-weight: 600;
+}
+:where(.jayjay-review) .jj-notes-filter[aria-pressed="true"] {
+  background: var(--jj-note-pill);
+}

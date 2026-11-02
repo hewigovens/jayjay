@@ -1,0 +1,174 @@
+/* Notes sit under their line, kept in the visible width when the code scrolls sideways, as the macOS diff's note bubbles do. */
+:where(.jayjay-review) .jj-diff-scroll {
+  container-type: inline-size;
+}
+:where(.jayjay-review) .jj-note-row {
+  position: sticky;
+  left: 0;
+  width: 100cqi;
+  padding: 4px 16px 8px 104px;
+}
+:where(.jayjay-review) .jj-split .jj-note-row {
+  display: grid;
+  grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
+  padding: 0;
+}
+:where(.jayjay-review) .jj-split .jj-note-slot {
+  grid-column: 1;
+  padding: 4px 16px 8px 74px;
+}
+:where(.jayjay-review) .jj-split .jj-note-slot.jj-new {
+  grid-column: 2;
+  padding-left: 66px;
+}
+:where(.jayjay-review) .jj-note-slot {
+  display: grid;
+  gap: 6px;
+}
+:where(.jayjay-review) .jj-review-note,
+:where(.jayjay-review) .jj-note-composer {
+  max-width: 720px;
+  padding: 8px 10px;
+  border: 1px solid var(--jj-note-border);
+  border-radius: 6px;
+  background: var(--jj-note-bg);
+  font:
+    12px/1.5 -apple-system,
+    BlinkMacSystemFont,
+    "Segoe UI",
+    sans-serif;
+  color: var(--jj-ink);
+  white-space: normal;
+}
+:where(.jayjay-review) .jj-review-note.jj-resolved {
+  opacity: 0.65;
+}
+:where(.jayjay-review) .jj-note-heading {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+}
+:where(.jayjay-review) .jj-note-status {
+  flex: none;
+  font-size: 10px;
+  font-weight: 600;
+  color: var(--jj-note-ink);
+}
+:where(.jayjay-review) .jj-note-location {
+  display: flex;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  font: 10px var(--jj-mono);
+  color: var(--jj-accent);
+  text-align: left;
+}
+:where(.jayjay-review) .jj-note-location:hover {
+  background: transparent;
+  text-decoration: underline;
+}
+:where(.jayjay-review) .jj-review-note p {
+  margin: 4px 0 0;
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+:where(.jayjay-review) .jj-review-note blockquote {
+  margin: 6px 0 0;
+  padding-left: 8px;
+  border-left: 2px solid var(--jj-note-border);
+  font: 10px/1.6 var(--jj-mono);
+  color: var(--jj-muted);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+}
+:where(.jayjay-review) .jj-note-actions {
+  display: flex;
+  justify-content: flex-end;
+  gap: 6px;
+  margin-top: 6px;
+}
+:where(.jayjay-review) .jj-note-actions button {
+  padding: 3px 8px;
+  font-size: 11px;
+}
+:where(.jayjay-review) .jj-note-composer .jj-note-heading {
+  margin-bottom: 6px;
+  font-size: 11px;
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-note-line {
+  margin-left: auto;
+  font: 10px var(--jj-mono);
+}
+:where(.jayjay-review) .jj-note-composer textarea {
+  height: 80px;
+  padding: 8px;
+  border: 1px solid var(--jj-border);
+  border-radius: 4px;
+}
+:where(.jayjay-review) .jj-note-marker {
+  display: inline-flex;
+  align-items: center;
+  gap: 2px;
+  flex: none;
+  padding: 0 4px;
+  border: 0;
+  background: transparent;
+  font: 10px var(--jj-mono);
+  color: var(--jj-note-ink);
+}
+:where(.jayjay-review) .jj-note-marker.jj-resolved {
+  opacity: 0.55;
+}
+:where(.jayjay-review) .jj-note-marker[aria-expanded="true"] {
+  opacity: 1;
+}
+:where(.jayjay-review) .jj-notes-banner {
+  display: grid;
+  gap: 6px;
+  max-height: 30%;
+  overflow: auto;
+  padding: 8px 14px;
+  border-bottom: 1px solid var(--jj-border);
+  background: var(--jj-note-bg);
+}
+:where(.jayjay-review) .jj-notes-banner .jj-review-note {
+  max-width: none;
+  background: var(--jj-surface);
+}
+@container (max-width: 680px) {
+  :where(.jayjay-review) .jj-note-row,
+  :where(.jayjay-review) .jj-split .jj-note-row {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr);
+    padding: 4px 10px 8px 14px;
+  }
+  :where(.jayjay-review) .jj-split .jj-note-slot,
+  :where(.jayjay-review) .jj-split .jj-note-slot.jj-new {
+    grid-column: 1;
+    padding: 0;
+  }
+}
+:where(.jayjay-review) .jj-primary {
+  color: var(--jj-surface);
+  background: var(--jj-accent);
+  border-color: var(--jj-accent);
+}
+:where(.jayjay-review) .jj-primary:hover {
+  color: var(--jj-surface);
+  background: color-mix(in srgb, var(--jj-accent) 85%, var(--jj-ink));
+}
+:where(.jayjay-review) .jj-review-error {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+  padding: 10px 14px;
+  margin-bottom: 14px;
+  background: var(--jj-removed-bg);
+  color: var(--jj-removed-ink);
+  border-radius: 5px;
+  font-size: 12px;
+}

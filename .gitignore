@@ -1,9 +1,12 @@
 target/
 node_modules/
-shell/web/dist/
-shell/web/test-results/
-shell/web/playwright-report/
-packages/review-web/src/wasm/
+web/review-host/dist/
+web/diff/dist/
+web/diff/.wrangler/
+web/diff/.dev.vars
+web/review-host/test-results/
+web/review-host/playwright-report/
+web/review/src/wasm/
 build/
 !crates/jayjay-i18n/build/
 *.xcframework
