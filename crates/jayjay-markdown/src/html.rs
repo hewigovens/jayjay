@@ -7,6 +7,7 @@ use crate::images::{
     RawHtml, RawImageParagraphs, image_html, image_html_with_align, keeps_raw_image_wrapper,
     sanitized_image_source,
 };
+use crate::raw_html::RawHtmlSanitizer;
 use crate::text::{escape_html, render_text_with_bare_autolinks};
 
 pub(crate) fn render_markdown_events_html<'a>(
@@ -26,6 +27,7 @@ struct HtmlRenderer<'a> {
     pending_item_starts: usize,
     table_head_depth: usize,
     raw_images: RawImageParagraphs,
+    raw_html: RawHtmlSanitizer,
 }
 
 impl<'a> HtmlRenderer<'a> {
@@ -39,6 +41,7 @@ impl<'a> HtmlRenderer<'a> {
             pending_item_starts: 0,
             table_head_depth: 0,
             raw_images: RawImageParagraphs::default(),
+            raw_html: RawHtmlSanitizer::default(),
         }
     }
 
@@ -55,7 +58,7 @@ impl<'a> HtmlRenderer<'a> {
         if !keeps_raw_image_wrapper(&event)
             && let Some(opening) = self.raw_images.take_unmatched()
         {
-            self.output.push_str(&escape_html(&opening));
+            self.output.push_str(&self.raw_html.sanitize(&opening));
         }
         match event {
             Event::Start(Tag::Heading { level, .. }) => {
@@ -108,8 +111,12 @@ impl<'a> HtmlRenderer<'a> {
             Event::End(tag) => self.render_end_tag(tag),
             Event::Text(text) => {
                 self.flush_pending_items();
-                self.output
-                    .push_str(&render_text_with_bare_autolinks(text.as_ref()));
+                let text = if self.raw_html.in_link() {
+                    escape_html(text.as_ref())
+                } else {
+                    render_text_with_bare_autolinks(text.as_ref())
+                };
+                self.output.push_str(&text);
             }
             Event::Code(code) => {
                 self.flush_pending_items();
@@ -178,11 +185,11 @@ impl<'a> HtmlRenderer<'a> {
                     align,
                 ));
                 if let Some(rest) = rest {
-                    self.output.push_str(&escape_html(rest));
+                    self.output.push_str(&self.raw_html.sanitize(rest));
                 }
             }
             RawHtml::Skip => {}
-            RawHtml::Text(text) => self.output.push_str(&escape_html(&text)),
+            RawHtml::Text(text) => self.output.push_str(&self.raw_html.sanitize(&text)),
         }
     }
 

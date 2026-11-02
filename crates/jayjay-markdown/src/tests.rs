@@ -1,6 +1,7 @@
 use crate::blocks::parse_markdown_blocks;
 use crate::{
-    MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownImageSource, render_markdown_html,
+    MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownImageSource,
+    render_markdown_fragment, render_markdown_html,
 };
 
 #[test]
@@ -86,10 +87,15 @@ fn raw_image_tags_tolerate_attribute_syntax_variants() {
             "<img src=\"ü.png\" alt=\"ü\"",
         ),
         ("<img src=a.png alt=x> tail", "decoding=\"async\"> tail"),
-        ("<img src=a.png alt=x></p>", "decoding=\"async\">&lt;/p&gt;"),
+        (
+            "<img src=\"a&amp;#65;.png\" alt=x>",
+            "<img src=\"a&amp;#65;.png\"",
+        ),
+        ("![x](b&amp;#65;.png)", "<img src=\"b&amp;#65;.png\""),
+        ("<img src=a.png alt=x></p>", "decoding=\"async\"></p>"),
         (
             "<p align=\"center\">\n<img src=\"a.png\" alt=\"c\">\n<span>x</span>\n</p>\n",
-            "</p>&lt;span&gt;x&lt;/span&gt;\n\n",
+            "</p><span>x</span>\n\n",
         ),
         (
             "<p align=\"left\"><img src=\"a.png\" alt=\"l\"></p>",
@@ -97,7 +103,7 @@ fn raw_image_tags_tolerate_attribute_syntax_variants() {
         ),
         (
             "<p align=\"center\"><img src=\"a.png\" alt=\"c\"><span>x</span></p>",
-            "</p>&lt;span&gt;x&lt;/span&gt;&lt;/p&gt;",
+            "</p><span>x</span></p>",
         ),
     ];
     for (markdown, expected) in cases {
@@ -116,11 +122,11 @@ fn raw_image_tags_tolerate_attribute_syntax_variants() {
         assert!(!html.contains("<img "), "{markdown:?} -> {html}");
     }
     let html = render_markdown_html("<p>\nplain\n</p>\n");
-    assert!(html.contains("&lt;/p&gt;"), "{html}");
+    assert!(html.contains("<p>\nplain\n</p>"), "{html}");
 }
 
 #[test]
-fn wrapper_alignment_spans_every_image_and_unmatched_openings_stay_text() {
+fn wrapper_alignment_spans_every_image_and_unmatched_openings_render() {
     let centered = "<p align=\"center\">\n<img src=\"a.png\" alt=\"A\">\n<img src=\"b.png\" alt=\"B\">\n</p>\n";
     let html = render_markdown_html(centered);
     assert_eq!(
@@ -140,10 +146,7 @@ fn wrapper_alignment_spans_every_image_and_unmatched_openings_stay_text() {
 
     let inline = "- <p align=\"center\">text</p>\n- <p align=\"center\"> <img src=\"a.png\" alt=\"A\"> </p>\n";
     let html = render_markdown_html(inline);
-    assert!(
-        html.contains("<li>&lt;p align=&quot;center&quot;&gt;text&lt;/p&gt;"),
-        "{html}"
-    );
+    assert!(html.contains("<li><p align=\"center\">text</p>"), "{html}");
     assert!(
         html.contains("<li><p class=\"image-align-center\"><img src=\"a.png\" alt=\"A\""),
         "{html}"
@@ -167,7 +170,7 @@ fn wrapper_alignment_spans_every_image_and_unmatched_openings_stay_text() {
     let unmatched = "<p align=\"center\">\ntext only\n</p>\n";
     let html = render_markdown_html(unmatched);
     assert!(
-        html.contains("&lt;p align=&quot;center&quot;&gt;\ntext only\n&lt;/p&gt;"),
+        html.contains("<p align=\"center\">\ntext only\n</p>"),
         "{html}"
     );
     assert_eq!(
@@ -327,6 +330,97 @@ fn escapes_raw_html_and_unsafe_links() {
     assert!(html.contains("&lt;script&gt;alert(1)&lt;/script&gt;"));
     assert!(!html.contains("href=\"javascript:alert(1)\""));
     assert!(html.contains("href=\"https://example.com?a=1&amp;b=2\""));
+}
+
+#[test]
+fn keeps_github_formatting_tags_and_drops_unsafe_markup() {
+    let html = render_markdown_fragment(
+        r#"<details open onclick="x()">
+<summary>Release notes</summary>
+<p><em>Sourced from <a href="https://github.com/o/r/releases?a=1&amp;b=2" target=_blank>r's releases</a>.</em></p>
+<blockquote><h2>v1 &rarr; v2</h2><a href="javascript:alert(1)">bad</a> <a href=" JAVA&#83;cript:x">worse</a></blockquote>
+<!-- hidden --><iframe src="https://e.com"></iframe><img src=x onerror=alert(1)><table><tr><td align=center onmouseover=y>c</td></tr></table>
+</details>
+"#,
+    );
+
+    assert!(
+        html.contains("<details open>\n<summary>Release notes</summary>"),
+        "{html}"
+    );
+    assert!(html.contains("<a href=\"https://github.com/o/r/releases?a=1&amp;b=2\" rel=\"noopener noreferrer\">r's releases</a>"), "{html}");
+    assert!(html.contains("<h2>v1 &rarr; v2</h2>"), "{html}");
+    assert!(
+        html.contains(
+            "<a rel=\"noopener noreferrer\">bad</a> <a rel=\"noopener noreferrer\">worse</a>"
+        ),
+        "{html}"
+    );
+    assert!(
+        html.contains("&lt;iframe src=&quot;https://e.com&quot;&gt;"),
+        "{html}"
+    );
+    assert!(html.contains("<td align=\"center\">c</td>"), "{html}");
+    for unsafe_markup in [
+        "onclick",
+        "<img src=x",
+        "onmouseover",
+        "target",
+        "hidden",
+        "<iframe",
+        "javascript",
+    ] {
+        assert!(!html.contains(unsafe_markup), "{unsafe_markup} in {html}");
+    }
+}
+
+#[test]
+fn raw_html_comments_and_links_span_events() {
+    let html = render_markdown_fragment(
+        "<!--\n<b>hidden</b>\n-->\n\nvisible <a href=\"https://example.com/actual\">https://example.com/label</a>\n\n<p align=\"center\">\n\n**hello**\n\n</p>\n",
+    );
+
+    assert!(
+        !html.contains("hidden") && !html.contains("--&gt;"),
+        "{html}"
+    );
+    assert!(html.contains("<a href=\"https://example.com/actual\" rel=\"noopener noreferrer\">https://example.com/label</a>"), "{html}");
+    assert!(
+        html.contains("<p align=\"center\">") && !html.contains("&lt;p"),
+        "{html}"
+    );
+}
+
+#[test]
+fn raw_html_matches_whole_tag_names_and_decodes_hrefs() {
+    let html = render_markdown_fragment(
+        "<details-widget>a</details-widget> <pre-commit>b</pre-commit> <a href=\"https://example.com/?a=1&#38;b=2\">c</a> <a href=https://example.com/path/>d</a> <details open/>",
+    );
+
+    assert!(
+        html.contains("&lt;details-widget&gt;a&lt;/details-widget&gt;"),
+        "{html}"
+    );
+    assert!(html.contains("&lt;pre-commit&gt;b"), "{html}");
+    assert!(
+        html.contains("href=\"https://example.com/?a=1&amp;b=2\""),
+        "{html}"
+    );
+    assert!(
+        html.contains("<a href=\"https://example.com/path/\" rel=\"noopener noreferrer\">d</a>"),
+        "{html}"
+    );
+    assert!(html.contains("<details open>"), "{html}");
+}
+
+#[test]
+fn raw_html_survives_unicode_tags_and_drops_control_prefixed_images() {
+    let html = render_markdown_fragment(
+        "<div>\n<\u{e9}>\n</div>\n\n<img src=\"\u{1}https://tracker.example/pixel\">\n",
+    );
+
+    assert!(html.contains("&lt;\u{e9}&gt;"), "{html}");
+    assert!(!html.contains("<img"), "{html}");
 }
 
 #[test]

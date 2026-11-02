@@ -1,3 +1,4 @@
+#[cfg(feature = "mermaid")]
 use super::svg;
 
 #[derive(Clone, Debug, PartialEq, Eq)]
@@ -17,6 +18,12 @@ impl MermaidDiagram {
             .is_some_and(|language| language.eq_ignore_ascii_case("mermaid"))
     }
 
+    #[cfg(not(feature = "mermaid"))]
+    pub(crate) fn render(_source: &str, _index: usize) -> Option<Self> {
+        None
+    }
+
+    #[cfg(feature = "mermaid")]
     pub(crate) fn render(source: &str, index: usize) -> Option<Self> {
         let options = format!(
             r#"{{"idPrefix":"jayjay-mermaid-{index}","images":false,"links":false,"limit":10000,"maxEdges":500,"outputLimit":1000000}}"#
@@ -42,12 +49,20 @@ impl MermaidDiagram {
         &self.source
     }
 
+    #[cfg(feature = "mermaid")]
     pub fn svg(&self, foreground: u32, background: u32, font_family: &str) -> String {
         let foreground = format!("#{:06x}", foreground & 0xffffff);
         let background = format!("#{:06x}", background & 0xffffff);
         svg::flatten(&self.svg, &foreground, &background, font_family)
     }
 
+    // Unreachable without the feature, since `render` never builds a diagram.
+    #[cfg(not(feature = "mermaid"))]
+    pub(crate) fn html_svg(&self) -> String {
+        self.svg.clone()
+    }
+
+    #[cfg(feature = "mermaid")]
     pub(crate) fn html_svg(&self) -> String {
         svg::flatten(
             &self.svg,
@@ -58,7 +73,7 @@ impl MermaidDiagram {
     }
 }
 
-#[cfg(not(target_arch = "wasm32"))]
+#[cfg(all(feature = "mermaid", not(target_arch = "wasm32")))]
 fn now_ms() -> f64 {
     std::time::SystemTime::now()
         .duration_since(std::time::UNIX_EPOCH)
@@ -66,7 +81,7 @@ fn now_ms() -> f64 {
 }
 
 // SystemTime::now panics on wasm32-unknown-unknown; ondine reads a non-finite time as the epoch.
-#[cfg(target_arch = "wasm32")]
+#[cfg(all(feature = "mermaid", target_arch = "wasm32"))]
 fn now_ms() -> f64 {
     f64::NAN
 }

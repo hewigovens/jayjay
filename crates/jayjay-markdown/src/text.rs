@@ -27,6 +27,29 @@ pub(crate) fn escape_html(text: &str) -> String {
     })
 }
 
+/// The name of a character reference (`amp`, `#39`, `#x27`) at the front of `input`, without its `&` and `;`.
+pub(crate) fn character_reference(input: &str) -> Option<&str> {
+    let body = input.strip_prefix('&')?;
+    let end = body
+        .char_indices()
+        .take(34)
+        .find(|(_, ch)| !(ch.is_ascii_alphanumeric() || *ch == '#'))?;
+    let name = &body[..end.0];
+    let valid = end.1 == ';'
+        && match name.strip_prefix('#') {
+            Some(hex) if hex.starts_with(['x', 'X']) => {
+                hex.len() > 1 && hex[1..].chars().all(|ch| ch.is_ascii_hexdigit())
+            }
+            Some(digits) => !digits.is_empty() && digits.chars().all(|ch| ch.is_ascii_digit()),
+            None => {
+                !name.is_empty()
+                    && name.len() <= 32
+                    && name.chars().all(|ch| ch.is_ascii_alphanumeric())
+            }
+        };
+    valid.then_some(name)
+}
+
 pub(crate) fn sanitized_link(url: &str) -> Option<&str> {
     if url.starts_with('#') {
         return Some(url);

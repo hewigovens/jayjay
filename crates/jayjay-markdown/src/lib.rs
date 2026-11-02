@@ -2,6 +2,7 @@ mod blocks;
 mod html;
 mod images;
 mod mermaid;
+mod raw_html;
 mod text;
 
 use pulldown_cmark::{Options, Parser};
@@ -149,11 +150,15 @@ const DOCUMENT_SUFFIX: &str = r#"
 "#;
 
 pub fn render_markdown_html(markdown: &str) -> String {
-    let body = html::render_markdown_events_html(Parser::new_ext(markdown, markdown_options()));
     let mut document = String::from(DOCUMENT_PREFIX);
-    document.push_str(&body);
+    document.push_str(&render_markdown_fragment(markdown));
     document.push_str(DOCUMENT_SUFFIX);
     document
+}
+
+/// The rendered body alone, for a host page that styles it itself.
+pub fn render_markdown_fragment(markdown: &str) -> String {
+    html::render_markdown_events_html(Parser::new_ext(markdown, markdown_options()))
 }
 
 fn markdown_options() -> Options {
