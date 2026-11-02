@@ -23,6 +23,7 @@ other = ["jj-diff/lang-ruby", "jj-diff/lang-php", "jj-diff/lang-nix", "jj-diff/l
 
 [dependencies]
 jayjay-i18n = { path = "../../../crates/jayjay-i18n" }
+jayjay-markdown = { path = "../../../crates/jayjay-markdown", default-features = false }
 jj-diff = { path = "../../../crates/jj-diff", default-features = false }
 jayjay-primitives = { path = "../../../crates/jayjay-primitives" }
 jayjay-review = { path = "../../../crates/jayjay-review", default-features = false }

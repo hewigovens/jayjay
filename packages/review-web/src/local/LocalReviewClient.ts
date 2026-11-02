@@ -42,6 +42,8 @@ export class LocalReviewClient {
   open(bundle: string): Promise<ReviewResult>;
   open(): Promise<ReviewResult | null>;
   open(bundle?: string) { return this.request<ReviewResult | null>({ kind: "open", bundle }); }
+  /** Supplies both sides of a file opened without content; render and mutate it only after this resolves. */
+  load(session: number, file: number, before: string, after: string) { return this.request<void>({ kind: "load", session, file, before, after }); }
   render(selection: ReviewSelection) { return this.request<ReviewResult>({ kind: "render", ...selection }); }
   mutate(selection: ReviewSelection, action: ReviewAction) { return this.request<ReviewResult>({ kind: "mutate", ...selection, action }); }
   exportState(session: number) { return this.request<string>({ kind: "export", session }); }

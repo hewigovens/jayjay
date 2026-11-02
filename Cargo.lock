@@ -4781,6 +4781,7 @@ name = "jj-diff-web"
 version = "0.3.23"
 dependencies = [
  "jayjay-i18n",
+ "jayjay-markdown",
  "jayjay-primitives",
  "jayjay-review",
  "jj-diff",

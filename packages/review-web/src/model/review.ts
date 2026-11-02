@@ -4,14 +4,20 @@ export interface ReviewFile {
   path: string;
   oldPath?: string;
   reviewIdentity: string;
-  before: string;
-  after: string;
+  /** Omit both sides to load the file later with `LocalReviewClient.load`; give `kind` and the line counts so the file list is right before then. */
+  before?: string;
+  after?: string;
+  kind?: FileKind;
+  added?: number;
+  removed?: number;
 }
 
 export interface ReviewBundle {
   schemaVersion: 1;
   repositoryId: string;
   changeId: string;
+  /** Leading characters of `changeId` to highlight as jj does; 0 for an id that is not a jj change id. */
+  changeIdPrefix?: number;
   title: string;
   description?: string;
   author?: string;
@@ -59,6 +65,8 @@ export interface Overview {
   changeId: string;
   title: string;
   description: string;
+  /** The description rendered as Markdown by `jayjay_markdown`, raw HTML limited to its safe formatting tags; absent from backends that predate it. */
+  descriptionHtml?: string;
   author: string;
   /** From `jayjay_primitives::avatar::AvatarSource`; absent or null shows the monogram. */
   authorAvatar?: AvatarSource | null;

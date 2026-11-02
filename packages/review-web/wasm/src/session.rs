@@ -1,6 +1,8 @@
 use jayjay_primitives::avatar::AvatarSource;
 use jayjay_primitives::seti::SetiGlyph;
-use jayjay_primitives::{NoteSide, ReviewFileDiff, ReviewFileRollup, ReviewGroupState};
+use jayjay_primitives::{
+    NoteSide, NoteStatus, ReviewFileDiff, ReviewFileRollup, ReviewGroupState, ReviewNoteStatus,
+};
 use jayjay_review::ReviewStore;
 use jj_diff::ReviewFileSnapshot;
 use serde::Deserialize;
@@ -12,36 +14,25 @@ use crate::bundle::{ReviewBundle, ReviewFile};
 #[wasm_bindgen]
 pub struct ReviewSession {
     bundle: ReviewBundle,
-    snapshots: Vec<ReviewFileSnapshot>,
-    stats: Vec<FileStats>,
+    /// `None` until the file's content is loaded.
+    snapshots: Vec<Option<ReviewFileSnapshot>>,
+    stats: Vec<(u32, u32)>,
     filtered_labels: Vec<String>,
+    description_html: String,
 }
 
-struct FileStats {
-    added: u32,
-    removed: u32,
-    kind: &'static str,
-}
-
-impl FileStats {
-    fn new(file: &ReviewFile) -> Self {
-        let (added, removed) = jj_diff::count_changed_lines(&file.before, &file.after, false);
-        let kind = match (
-            file.before.is_empty(),
-            file.after.is_empty(),
-            file.old_path.is_some(),
-        ) {
-            (_, _, true) => "renamed",
-            (true, false, _) => "added",
-            (false, true, _) => "removed",
-            _ => "modified",
-        };
-        Self {
-            added,
-            removed,
-            kind,
-        }
+/// Counts the host supplied, else counts from loaded content, else zero until it loads.
+fn line_counts(file: &ReviewFile) -> (u32, u32) {
+    match (file.added, file.removed, file.content()) {
+        (Some(added), Some(removed), _) => (added, removed),
+        (_, _, Some((before, after))) => jj_diff::count_changed_lines(before, after, false),
+        _ => (0, 0),
     }
+}
+
+fn snapshot(file: &ReviewFile) -> Option<ReviewFileSnapshot> {
+    file.content()
+        .map(|(before, after)| jj_diff::canonical_review_snapshot(before, after))
 }
 
 fn file_icon(path: &str) -> Value {
@@ -97,6 +88,11 @@ impl ReviewSession {
             .map_err(|error| JsError::new(&error))
     }
 
+    pub fn load_file(&mut self, index: usize, before: &str, after: &str) -> Result<(), JsError> {
+        self.load(index, before, after)
+            .map_err(|error| JsError::new(&error))
+    }
+
     pub fn file_review(
         &self,
         index: usize,
@@ -113,43 +109,80 @@ impl ReviewSession {
 impl ReviewSession {
     pub fn parse(bundle_json: &str) -> Result<Self, String> {
         let bundle = ReviewBundle::parse(bundle_json)?;
-        let snapshots = bundle
-            .files
-            .iter()
-            .map(|file| jj_diff::canonical_review_snapshot(&file.before, &file.after))
-            .collect();
-        let stats = bundle.files.iter().map(FileStats::new).collect();
+        let snapshots = bundle.files.iter().map(snapshot).collect();
+        let stats = bundle.files.iter().map(line_counts).collect();
         // The file filter counts in the viewer, so every shown-of-total label is formatted once with the catalog's plural rules.
         let total = bundle.files.len();
         let filtered_labels = (0..=total)
             .map(|shown| jayjay_i18n::repo::files_filtered(shown, total))
             .collect();
+        let description_html = jayjay_markdown::render_markdown_fragment(&bundle.description);
         Ok(Self {
             bundle,
             snapshots,
             stats,
             filtered_labels,
+            description_html,
         })
+    }
+
+    pub fn load(&mut self, index: usize, before: &str, after: &str) -> Result<(), String> {
+        let file = self
+            .bundle
+            .files
+            .get_mut(index)
+            .ok_or("Unknown review file")?;
+        file.load(before, after)?;
+        self.snapshots[index] = snapshot(file);
+        self.stats[index] = line_counts(file);
+        Ok(())
+    }
+
+    /// A note on a file whose content has not loaded yet cannot be placed; its identity still decides whether it is stale.
+    fn pending_note(&self, status: ReviewNoteStatus) -> ReviewNoteStatus {
+        let unloaded = self.bundle.files.iter().any(|file| {
+            file.path == status.note.path
+                && file.content().is_none()
+                && file.review_identity == status.note.identity
+        });
+        if unloaded && status.status == NoteStatus::Stale {
+            ReviewNoteStatus::new(&status.note, NoteStatus::Current, None)
+        } else {
+            status
+        }
     }
 
     fn store(state: &str) -> Result<ReviewStore, String> {
         ReviewStore::in_memory_from_json(state).map_err(|error| error.to_string())
     }
 
-    fn file(&self, index: usize) -> Result<(usize, &ReviewFile), String> {
+    fn loaded(&self, index: usize) -> Result<Loaded<'_>, String> {
         let file = self.bundle.files.get(index).ok_or("Unknown review file")?;
-        Ok((index, file))
+        let (before, after) = file.content().ok_or("Review file is not loaded")?;
+        let snapshot = self.snapshots[index]
+            .as_ref()
+            .ok_or("Review file is not loaded")?;
+        Ok(Loaded {
+            file,
+            before,
+            after,
+            snapshot,
+        })
     }
 
     pub fn describe(&self, state: &str) -> Result<Value, String> {
         let store = Self::store(state)?;
-        let notes = store
+        let notes: Vec<ReviewNoteStatus> = store
             .reconcile(&self.bundle, &self.bundle.change_id, true)
-            .map_err(|error| error.to_string())?;
+            .map_err(|error| error.to_string())?
+            .into_iter()
+            .map(|status| self.pending_note(status))
+            .collect();
         let mut reviewed = 0;
         let files: Vec<Value> = self.bundle.files.iter().enumerate().map(|(i, file)| {
-            let FileStats { added, removed, kind } = self.stats[i];
-            let rollup = store.file_review_state(&self.bundle.change_id, &file.path, &file.review_identity, Some(&self.snapshots[i])).rollup();
+            let (added, removed) = self.stats[i];
+            let kind = file.kind().as_str();
+            let rollup = store.file_review_state(&self.bundle.change_id, &file.path, &file.review_identity, self.snapshots[i].as_ref()).rollup();
             reviewed += usize::from(rollup == ReviewFileRollup::Reviewed);
             json!({ "path": file.path, "oldPath": file.old_path, "kind": kind, "icon": file_icon(&file.path), "added": added, "removed": removed,
                 "review": rollup, "noteCount": notes.iter().filter(|note| note.note.path == file.path && !note.note.resolved).count() })
@@ -160,8 +193,8 @@ impl ReviewSession {
         let tree: Vec<Value> = jayjay_primitives::file_tree::build_file_tree(&self.bundle.files.iter().map(|file| file.path.clone()).collect::<Vec<_>>())
             .into_iter().map(|entry| json!({"name": entry.name, "path": entry.path, "depth": entry.depth, "file": entry.hunk_index})).collect();
         Ok(
-            json!({ "repositoryId": self.bundle.repository_id, "changeId": self.bundle.change_id, "title": self.bundle.title,
-            "description": self.bundle.description, "author": self.bundle.author,
+            json!({ "repositoryId": self.bundle.repository_id, "changeId": self.bundle.change_id, "changeIdPrefix": self.bundle.change_id_prefix, "title": self.bundle.title,
+            "description": self.bundle.description, "descriptionHtml": self.description_html, "author": self.bundle.author,
             "authorAvatar": AvatarSource::for_email(&self.bundle.author_email, 96), "files": files, "counts": counts, "tree": tree, "notes": notes }),
         )
     }
@@ -172,15 +205,18 @@ impl ReviewSession {
         state: &str,
         ignore_whitespace: bool,
     ) -> Result<Value, String> {
-        let file = self.bundle.files.get(index).ok_or("Unknown review file")?;
+        let loaded = self.loaded(index)?;
         let store = Self::store(state)?;
-        let mapping =
-            jj_diff::display_group_canonical_indices(&file.before, &file.after, ignore_whitespace);
+        let mapping = jj_diff::display_group_canonical_indices(
+            loaded.before,
+            loaded.after,
+            ignore_whitespace,
+        );
         let groups = store.display_hunk_states(
             &self.bundle.change_id,
-            &file.path,
-            &file.review_identity,
-            &self.snapshots[index],
+            &loaded.file.path,
+            &loaded.file.review_identity,
+            loaded.snapshot,
             &mapping,
         );
         Ok(json!({"groupStates": groups}))
@@ -193,13 +229,13 @@ impl ReviewSession {
         let change_id = &self.bundle.change_id;
         match action {
             ReviewAction::SetFile { file, reviewed } => {
-                let (index, file) = self.file(file)?;
+                let Loaded { file, snapshot, .. } = self.loaded(file)?;
                 if reviewed {
                     store.mark_reviewed_snapshot(
                         change_id,
                         &file.path,
                         &file.review_identity,
-                        Some(&self.snapshots[index]),
+                        Some(snapshot),
                     );
                 } else {
                     store.mark_unreviewed(change_id, &file.path);
@@ -211,12 +247,14 @@ impl ReviewSession {
                 reviewed,
                 ignore_whitespace,
             } => {
-                let (index, file) = self.file(file)?;
-                let mapping = jj_diff::display_group_canonical_indices(
-                    &file.before,
-                    &file.after,
-                    ignore_whitespace,
-                );
+                let Loaded {
+                    file,
+                    before,
+                    after,
+                    snapshot,
+                } = self.loaded(file)?;
+                let mapping =
+                    jj_diff::display_group_canonical_indices(before, after, ignore_whitespace);
                 if group as usize >= mapping.len() {
                     return Err("Unknown review group".into());
                 }
@@ -224,7 +262,7 @@ impl ReviewSession {
                     change_id,
                     &file.path,
                     &file.review_identity,
-                    &self.snapshots[index],
+                    snapshot,
                     &mapping,
                 );
                 if (states.get(group as usize) == Some(&ReviewGroupState::Reviewed)) != reviewed {
@@ -232,7 +270,7 @@ impl ReviewSession {
                         change_id,
                         &file.path,
                         &file.review_identity,
-                        &self.snapshots[index],
+                        snapshot,
                         &mapping,
                         group,
                     );
@@ -245,12 +283,17 @@ impl ReviewSession {
                 body,
                 ignore_whitespace,
             } => {
-                let (_, file) = self.file(file)?;
+                let Loaded {
+                    file,
+                    before,
+                    after,
+                    ..
+                } = self.loaded(file)?;
                 let body =
                     jayjay_review::checked_note_body(&body).map_err(|error| error.to_string())?;
                 let file_diff = ReviewFileDiff {
-                    old_content: Some(file.before.clone()),
-                    new_content: Some(file.after.clone()),
+                    old_content: Some(before.to_owned()),
+                    new_content: Some(after.to_owned()),
                 };
                 let anchor = jayjay_review::note_anchor(
                     change_id,
@@ -277,4 +320,11 @@ impl ReviewSession {
         }
         store.snapshot_json().map_err(|error| error.to_string())
     }
+}
+
+struct Loaded<'a> {
+    file: &'a ReviewFile,
+    before: &'a str,
+    after: &'a str,
+    snapshot: &'a ReviewFileSnapshot,
 }

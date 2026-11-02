@@ -1,11 +1,12 @@
 /** @jsxRuntime automatic */
-import { useEffect, useLayoutEffect, useRef, useState, type ReactNode } from "react";
+import { useEffect, useLayoutEffect, useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { DiffAnchor, Labels } from "../model/diff";
 import { isImagePath, type FileSummary, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
 import { useCompact } from "../hooks/useCompact";
 import type { ReviewController } from "../hooks/useReview";
 import { DiffPane, lineLabel } from "./diff/DiffPane";
 import { ImageDiff } from "./diff/ImageDiff";
+import { ColumnResizer, useFilesWidth } from "./files/ColumnResizer";
 import { FileColumn } from "./files/FileColumn";
 import { ChangeHeader } from "./header/ChangeHeader";
 import { DiffOptionControls } from "./header/DiffOptionControls";
@@ -17,7 +18,7 @@ import { toggled } from "./toggled";
 
 interface LoadedFile { file: number; data: ReviewResult; key: string }
 
-export function ReviewWorkspace({ review, labels, savedLabel, headerActions, footer, onRetry, notes = true, avatars = false }: {
+export function ReviewWorkspace({ review, labels, savedLabel, headerActions, footer, onRetry, notes = true, avatars = false, fill = false }: {
   review: ReviewController;
   labels: Labels;
   savedLabel: string;
@@ -28,6 +29,8 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   notes?: boolean;
   /** Looks up the author's avatar on Gravatar, GitHub, or GitLab, which shares their email hash or username with that service. */
   avatars?: boolean;
+  /** Fills the host's height edge to edge instead of sitting in a bordered card; the phone-width list still scrolls with the page. */
+  fill?: boolean;
 }) {
   const { result, selected, options, pending, error, revision, select, configure, mutate, renderFile, image } = review;
   const compact = useCompact();
@@ -41,6 +44,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   const foldedBefore = useRef<{ session?: number; paths: string[] }>({ paths: [] });
   const detail = useRef<HTMLElement>(null);
   const columns = useRef<HTMLDivElement>(null);
+  const [filesWidth, setFilesWidth] = useFilesWidth();
   const file = result?.overview.files[result.file];
   const path = file?.path;
   const cacheKey = result ? `${result.session}|${revision}|${JSON.stringify(result.options)}` : "";
@@ -123,8 +127,8 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
   }
 
   const disabled = pending || Boolean(error);
-  // A note draft keeps its file open, since folding would discard the text.
-  const folded = (entry: FileSummary) => entry.review === "reviewed" && !unfolded.has(entry.path) && target?.path !== entry.path;
+  // Only the phone-width list folds reviewed files, to shorten the scroll; a note draft keeps its file open, since folding would discard the text.
+  const folded = (entry: FileSummary) => compact && entry.review === "reviewed" && !unfolded.has(entry.path) && target?.path !== entry.path;
   const foldedPaths = result?.overview.files.filter(folded).map(entry => entry.path) ?? [];
 
   // Folding unmounts the diff, which may hold focus, and leaves a long file's reader past its end.
@@ -210,12 +214,13 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
     return diff ?? <p className="jj-empty-diff">{labels.noFiles}</p>;
   }
 
-  return <div className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""}`} aria-busy={pending}>
+  return <div className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""} ${fill ? "jj-fill" : ""}`} aria-busy={pending}>
     {error && <div className="jj-review-error" role="alert">{labels.renderError} {error === "worker-stopped" ? labels.workerError : error}
       <button onClick={onRetry ?? review.retry}>{labels.retry}</button>{!result && headerActions}</div>}
     {!result && !error && <p className="jj-notice">{labels.loading}</p>}
-    {result && <div className="jj-review-columns" ref={columns}>
+    {result && <div className="jj-review-columns" ref={columns} style={!compact && filesWidth ? { "--jj-files-width": `${filesWidth}px` } as CSSProperties : undefined}>
       {!compact && <FileColumn overview={result.overview} selected={selected} disabled={disabled} labels={labels} select={select} notes={notes} toggle={toggleFile} />}
+      {!compact && <ColumnResizer columns={columns} width={filesWidth} setWidth={setFilesWidth} label={labels.resizeFiles} />}
       <section className="jj-review-detail" aria-label={labels.result} aria-busy={pending} ref={detail}>
         <ChangeHeader overview={result.overview} labels={labels} actions={headerActions} avatars={avatars} />
         {compact && <div className="jj-pane-heading jj-diff-options"><div className="jj-header-actions"><DiffOptionControls labels={labels} options={options} configure={configure} /></div></div>}
@@ -242,9 +247,7 @@ export function ReviewWorkspace({ review, labels, savedLabel, headerActions, foo
             {!result.overview.files.length && <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>
           : <div className="jj-diff-scroll" data-path={path} tabIndex={0} aria-label={labels.lines}>
-            {!file ? <p className="jj-empty-diff">{labels.noChangedFiles}</p>
-              : folded(file) ? <p className="jj-empty-diff">{labels.reviewed}</p>
-              : diffPane(result.file, result)}
+            {file ? diffPane(result.file, result) : <p className="jj-empty-diff">{labels.noChangedFiles}</p>}
           </div>}
         <div className="jj-result-footer" aria-live="polite"><span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span><span>{result.pack} · {result.elapsed.toFixed(1)} ms</span></div>
       </section>

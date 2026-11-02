@@ -25,7 +25,9 @@ async function render(session: number, file: number, options: DiffOptions): Prom
   const canUndoImport = Boolean(backup && JSON.parse(backup).imported === state);
   const start = performance.now();
   const overview = JSON.parse(selected.session.overview(state));
-  const diff = source ? JSON.parse(module.render_diff(source.path, source.before, source.after, options.ignoreWhitespace, options.showAll, options.split)) : null;
+  const { before, after } = source ?? {};
+  if (source && (before === undefined || after === undefined)) throw new Error("Review file is not loaded");
+  const diff = source ? JSON.parse(module.render_diff(source.path, before!, after!, options.ignoreWhitespace, options.showAll, options.split)) : null;
   const review = source ? JSON.parse(selected.session.file_review(file, state, options.ignoreWhitespace)) : { groupStates: [] };
   return { overview, diff, ...review, file, options, session, pack, syntaxUnavailable, canUndoImport, elapsed: performance.now() - start };
 }
@@ -46,6 +48,12 @@ async function handle(request: WorkerRequest): Promise<unknown> {
       active?.session.free();
       active = { bundle, session, version: ++version };
       return render(version, 0, defaultOptions);
+    }
+    case "load": {
+      const selected = current(request.session);
+      selected.session.load_file(request.file, request.before, request.after);
+      Object.assign(selected.bundle.files[request.file], { before: request.before, after: request.after });
+      return;
     }
     case "render": return render(request.session, request.file, request.options);
     case "mutate": {
