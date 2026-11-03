@@ -154,7 +154,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: P
     return () => controller.abort();
   }, [syncing, session]);
   useEffect(() => {
-    document.title = `${pull.owner}/${pull.repo}#${pull.number} · JayJay`;
+    document.title = `${pull.owner}/${pull.repo}#${pull.number} · JayJay Diff`;
   }, [path]);
 
   return {
