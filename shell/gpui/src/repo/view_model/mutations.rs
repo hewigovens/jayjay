@@ -311,6 +311,19 @@ impl RepoViewModel {
         )
     }
 
+    pub(crate) fn upload_change(
+        &mut self,
+        rev: String,
+        sync: SyncToken,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<JayResult<String>> {
+        self.repo_result_task_without_indicator(
+            cx,
+            move |repo| repo.upload(&rev, &sync),
+            |vm, _message, cx| vm.refresh(false, cx),
+        )
+    }
+
     pub(crate) fn git_pull_bookmark(
         &mut self,
         name: String,

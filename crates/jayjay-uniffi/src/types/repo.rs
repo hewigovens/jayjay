@@ -205,6 +205,7 @@ pub struct PrInfo {
 #[uniffi::remote(Record)]
 pub struct FetchResult {
     pub message: String,
+    pub abandoned_changes: Vec<String>,
     pub abandoned_bookmarks: Vec<String>,
     pub suggest_abandon_bookmarks: Vec<String>,
 }

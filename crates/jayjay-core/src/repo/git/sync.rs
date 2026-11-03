@@ -6,6 +6,7 @@ use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId as _;
 use jj_lib::ref_name::{RefName, RemoteName};
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::settings::UserSettings;
 
 use crate::repo::bookmarks::bookmark_target_without_commit;
 use crate::repo::support::block_on_result;
@@ -26,7 +27,7 @@ impl Repo {
         if !bookmark.is_empty() {
             args.extend(["--bookmark", bookmark]);
         }
-        self.run_git_push(&args, sync)
+        self.run_remote_command(&args, "git push failed", sync)
     }
 
     /// A locally deleted tag that a remote still tracks pushes as a deletion; jj targets one remote per call, so each tracked remote gets its own push.
@@ -35,19 +36,32 @@ impl Repo {
         let pattern = format!("exact:{}", format_string(tag));
         let remotes = tag_remotes(self.get_repo().view(), RefName::new(tag));
         if remotes.is_empty() {
-            return self.run_git_push(&["git", "push", "--tag", &pattern], sync);
+            return self.run_remote_command(
+                &["git", "push", "--tag", &pattern],
+                "git push failed",
+                sync,
+            );
         }
         let mut messages = Vec::new();
         for remote in &remotes {
             let remote = format!("--remote={remote}");
-            messages.push(self.run_git_push(&["git", "push", &remote, "--tag", &pattern], sync)?);
+            messages.push(self.run_remote_command(
+                &["git", "push", &remote, "--tag", &pattern],
+                "git push failed",
+                sync,
+            )?);
         }
         Ok(messages.join("\n"))
     }
 
-    fn run_git_push(&self, args: &[&str], sync: &SyncToken) -> JayResult<String> {
+    pub(super) fn run_remote_command(
+        &self,
+        args: &[&str],
+        failure: &str,
+        sync: &SyncToken,
+    ) -> JayResult<String> {
         let output = self.run_jj_output(args)?;
-        self.ensure_success(&output, "git push failed")?;
+        self.ensure_success(&output, failure)?;
         self.reload()?;
         sync.check()?;
         Ok(combine_output(
@@ -81,8 +95,18 @@ impl Repo {
         ))
     }
 
-    /// Fetch the configured remotes without changing bookmark tracking, rebase, and clean up merged bookmarks.
+    /// Fetch without changing bookmark tracking, rebase, and clean up merged bookmarks, unless `jayjay.sync-command` replaces all of that.
     pub fn git_fetch(&self, sync: &SyncToken) -> JayResult<FetchResult> {
+        if let Some(args) = configured_command(self.get_repo().settings(), SYNC_COMMAND) {
+            let _enter = sync.enter();
+            let args: Vec<&str> = args.iter().map(String::as_str).collect();
+            return Ok(FetchResult {
+                message: self.run_remote_command(&args, "sync failed", sync)?,
+                abandoned_changes: Vec::new(),
+                abandoned_bookmarks: Vec::new(),
+                suggest_abandon_bookmarks: Vec::new(),
+            });
+        }
         self.pull(sync, |repo| repo.git_fetch_raw("", ""), None)
     }
 
@@ -113,7 +137,9 @@ impl Repo {
                 let _ = self.track_bookmark(bookmark, &remote);
             }
             self.rebase_to_trunk();
-            self.post_fetch_cleanup(&before, sync)
+            let landed = self.abandon_landed_changes(&before)?;
+            let (abandoned, suggested) = self.post_fetch_cleanup(&before, sync)?;
+            Ok((landed, abandoned, suggested))
         });
         fetch_result(msg, cleanup)
     }
@@ -268,18 +294,33 @@ impl Repo {
     }
 }
 
+const SYNC_COMMAND: &str = "jayjay.sync-command";
+
+/// A jj argv from config, such as `["sync"]` for a backend with its own sync command.
+pub(super) fn configured_command(
+    settings: &UserSettings,
+    key: &'static str,
+) -> Option<Vec<String>> {
+    settings
+        .get::<Vec<String>>(key)
+        .ok()
+        .filter(|args| !args.is_empty())
+}
+
 /// A cleanup failure is reported inside the successful fetch; only a cancel is still an error, since nothing was applied.
 fn fetch_result(
     message: String,
-    cleanup: JayResult<(Vec<String>, Vec<String>)>,
+    cleanup: JayResult<(Vec<String>, Vec<String>, Vec<String>)>,
 ) -> JayResult<FetchResult> {
     let mut result = FetchResult {
         message,
+        abandoned_changes: Vec::new(),
         abandoned_bookmarks: Vec::new(),
         suggest_abandon_bookmarks: Vec::new(),
     };
     match cleanup {
-        Ok((abandoned, suggested)) => {
+        Ok((landed, abandoned, suggested)) => {
+            result.abandoned_changes = landed;
             result.abandoned_bookmarks = abandoned;
             result.suggest_abandon_bookmarks = suggested;
         }

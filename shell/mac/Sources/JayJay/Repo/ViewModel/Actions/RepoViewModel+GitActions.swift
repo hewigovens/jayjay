@@ -26,6 +26,12 @@ extension RepoViewModel {
         }
     }
 
+    func upload(rev: String) {
+        performPush { repo, sync in
+            try repo.upload(revision: rev, sync: sync)
+        }
+    }
+
     func deleteTagAndPush(name: String) {
         performPush { repo, sync in
             try repo.deleteTagAndPush(name: name, sync: sync)
@@ -68,6 +74,9 @@ extension RepoViewModel {
 
     private func handleFetchResult(_ result: FetchResult) {
         var msg = result.message
+        if !result.abandonedChanges.isEmpty {
+            msg += "\n\(Localized.Repo.syncAbandonedLanded(changes: result.abandonedChanges.joined(separator: ", ")))"
+        }
         if !result.abandonedBookmarks.isEmpty {
             let names = result.abandonedBookmarks.joined(separator: ", ")
             msg += "\n\(Localized.Repo.syncAbandonedMerged(names: names))"

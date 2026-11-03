@@ -2,7 +2,8 @@ use std::fs;
 
 use jayjay_core::{FetchResult, RemoteSyncStatus, Repo};
 use jj_test::{
-    configure_test_user, find_bookmark, first_change, init_colocated, run_git, run_jj, run_jj_in,
+    configure_test_user, find_bookmark, first_change, git_stdout, init_colocated, repo_with_remote,
+    run_git, run_jj, run_jj_in,
 };
 
 #[test]
@@ -245,6 +246,97 @@ fn forget_stale_bookmarks_works_from_a_workspace_without_git_dir() {
 
     assert!(find_bookmark(&repo, "feature").is_conflicted);
     assert!(!find_bookmark(&repo, "main").is_tracking_remote);
+}
+
+#[test]
+fn pull_abandons_a_change_gerrit_submitted_unless_it_changed_since_upload() {
+    for edited_after_upload in [false, true] {
+        let fixture = UploadedChange::new();
+        if edited_after_upload {
+            fs::write(fixture.repo.join("more.txt"), "more\n").unwrap();
+        }
+        run_git(
+            &fixture.bare,
+            &["update-ref", "refs/heads/main", "refs/for/main"],
+        );
+        let repo = Repo::open(&fixture.repo).unwrap();
+
+        let result = fetch(&repo);
+
+        if edited_after_upload {
+            assert!(result.abandoned_changes.is_empty(), "{result:?}");
+            assert_eq!(
+                fs::read_to_string(fixture.repo.join("more.txt")).unwrap(),
+                "more\n"
+            );
+        } else {
+            assert_eq!(result.abandoned_changes.len(), 1, "{result:?}");
+            assert!(result.abandoned_changes[0].ends_with(" work"), "{result:?}");
+            assert!(repo.log("divergent()").unwrap().is_empty());
+            assert!(first_change(&repo, "@").is_empty);
+        }
+    }
+}
+
+#[test]
+fn pull_abandons_a_change_gerrit_rebased_by_its_change_id_trailer() {
+    let fixture = UploadedChange::new();
+    let tree = git_stdout(&fixture.bare, &["rev-parse", "refs/for/main^{tree}"]);
+    let message = git_stdout(
+        &fixture.bare,
+        &["log", "-1", "--format=%B", "refs/for/main"],
+    );
+    assert!(message.contains("Change-Id: I"), "{message}");
+    let landed = git_stdout(
+        &fixture.bare,
+        &[
+            "-c",
+            "user.name=Gerrit",
+            "-c",
+            "user.email=gerrit@example.com",
+            "commit-tree",
+            tree.trim(),
+            "-p",
+            "refs/heads/main",
+            "-m",
+            &message,
+        ],
+    );
+    run_git(
+        &fixture.bare,
+        &["update-ref", "refs/heads/main", landed.trim()],
+    );
+    let repo = Repo::open(&fixture.repo).unwrap();
+
+    let result = fetch(&repo);
+
+    assert_eq!(result.abandoned_changes.len(), 1, "{result:?}");
+    assert!(first_change(&repo, "@").is_empty);
+    assert_eq!(first_change(&repo, "@-").description.trim(), message.trim());
+}
+
+/// A described change uploaded with `jj gerrit upload` as `refs/for/main`.
+struct UploadedChange {
+    _dir: tempfile::TempDir,
+    repo: std::path::PathBuf,
+    bare: std::path::PathBuf,
+}
+
+impl UploadedChange {
+    fn new() -> Self {
+        let (dir, repo, bare) = repo_with_remote("origin");
+        fs::write(repo.join("work.txt"), "work\n").unwrap();
+        run_jj_in(&repo, &["describe", "-m", "work"]);
+        run_jj_in(
+            &repo,
+            &["gerrit", "upload", "-r", "@", "--remote-branch", "main"],
+        );
+        Self {
+            _dir: dir,
+            repo,
+            bare,
+        }
+    }
 }
 
 fn fetch(repo: &Repo) -> FetchResult {

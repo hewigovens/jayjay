@@ -136,12 +136,7 @@ extension DAGView {
         }
         .keyboardShortcut("t", modifiers: [])
         if !entry.change.isImmutable {
-            Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
-                Label(
-                    Localized.Menu.createUpdateStackedPrsEllipsis,
-                    systemImage: "square.stack.3d.up.fill"
-                )
-            }
+            reviewActionsSection(rev: rev)
         }
         Divider()
         bisectFromButton(entry)
@@ -157,6 +152,21 @@ extension DAGView {
         if !entry.change.isImmutable {
             Divider()
             abandonButton(entry: entry, rev: rev)
+        }
+    }
+
+    @ViewBuilder
+    private func reviewActionsSection(rev: String) -> some View {
+        Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
+            Label(
+                Localized.Menu.createUpdateStackedPrsEllipsis,
+                systemImage: "square.stack.3d.up.fill"
+            )
+        }
+        if let uploadTitle {
+            Button { actions?.upload(rev: rev) } label: {
+                Label(uploadTitle, systemImage: "icloud.and.arrow.up")
+            }
         }
     }
 

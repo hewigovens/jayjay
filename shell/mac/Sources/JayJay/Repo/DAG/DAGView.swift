@@ -16,6 +16,7 @@ struct DAGView: View {
     var revealRequest: DAGRevealRequest?
     var trunkName = "trunk"
     var prHostName: String?
+    var uploadTitle: String?
     var conflictedBookmarkNames: Set<String> = []
     var remoteTagNames: Set<String> = []
     var workspacesByName: [String: WorkspaceInfo] = [:]
@@ -52,6 +53,7 @@ struct DAGView: View {
         revealRequest: DAGRevealRequest? = nil,
         trunkName: String = "trunk",
         prHostName: String? = nil,
+        uploadTitle: String? = nil,
         conflictedBookmarkNames: Set<String> = [],
         remoteTagNames: Set<String> = [],
         workspacesByName: [String: WorkspaceInfo] = [:],
@@ -72,6 +74,7 @@ struct DAGView: View {
         self.revealRequest = revealRequest
         self.trunkName = trunkName
         self.prHostName = prHostName
+        self.uploadTitle = uploadTitle
         self.conflictedBookmarkNames = conflictedBookmarkNames
         self.remoteTagNames = remoteTagNames
         self.workspacesByName = workspacesByName

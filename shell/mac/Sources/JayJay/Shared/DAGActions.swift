@@ -21,6 +21,7 @@ protocol DAGActions: AnyObject {
     func compareWith(from: String, to: String)
     func diffBookmark(_ request: BookmarkDiffRequest)
     func showEvolog(rev: String)
+    func upload(rev: String)
     func updateStaleWorkspace()
     func filterByWorkspace(name: String)
     var canLoadMore: Bool { get }

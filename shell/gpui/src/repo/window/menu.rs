@@ -147,6 +147,9 @@ impl RepoWindow {
             ContextAction::OpenStackedPr(rev) => {
                 self.open_stacked_pr(rev.to_string(), cx);
             }
+            ContextAction::UploadChange(rev) => {
+                self.git_push(rev.to_string(), RepoViewModel::upload_change, cx);
+            }
             ContextAction::MoveBookmark { name, to_rev } => {
                 self.move_bookmark(name, to_rev, cx);
             }
