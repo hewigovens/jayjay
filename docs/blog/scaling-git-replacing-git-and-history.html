@@ -1,0 +1,163 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Scaling Git, Replacing Git, and Changing What History Records — JayJay</title>
+  <meta name="description" content="The choices behind Pando, Scion, and the next generation of source control.">
+  <meta name="author" content="hewigovens">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://jayjay.hewig.dev/blog/scaling-git-replacing-git-and-history.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="JayJay">
+  <meta property="og:url" content="https://jayjay.hewig.dev/blog/scaling-git-replacing-git-and-history.html">
+  <meta property="og:title" content="Scaling Git, Replacing Git, and Changing What History Records">
+  <meta property="og:description" content="The choices behind Pando, Scion, and the next generation of source control.">
+  <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
+  <meta property="article:published_time" content="2026-11-03">
+  <meta property="article:modified_time" content="2026-11-03">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "Scaling Git, Replacing Git, and Changing What History Records",
+    "description": "The choices behind Pando, Scion, and the next generation of source control.",
+    "datePublished": "2026-11-03",
+    "dateModified": "2026-11-03",
+    "url": "https://jayjay.hewig.dev/blog/scaling-git-replacing-git-and-history.html",
+    "image": "https://jayjay.hewig.dev/imgs/home.png",
+    "author": {
+      "@type": "Person",
+      "name": "hewigovens",
+      "url": "https://github.com/hewigovens"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "JayJay",
+      "url": "https://jayjay.hewig.dev/"
+    }
+  }
+  </script>
+  <link rel="icon" href="../favicon.ico" sizes="32x32">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="../css/help-common.css">
+  <link rel="stylesheet" href="../css/guide.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+
+<body class="guide-page blog-page">
+  <nav class="site-nav">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><img src="../icon.svg" alt="JayJay"> JayJay</a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="../index.html#features">Features</a>
+          <a href="../index.html#shortcuts">Shortcuts</a>
+          <a href="../index.html#install">Install</a>
+          <a href="../index.html#faq">FAQ</a>
+          <a href="index.html" class="active">Blog</a>
+          <a href="../guide.html">Guide</a>
+          <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon"></span></button>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
+      </div>
+    </div>
+  </nav>
+  <header class="guide-container g-head">
+    <div class="sec-label"><a href="index.html">Blog</a></div>
+    <h1>Scaling Git, Replacing Git, and Changing What History Records</h1>
+    <p>The choices behind Pando, Scion, and the next generation of source control.</p>
+    <p class="post-meta"><time datetime="2026-11-03">3 November 2026</time></p>
+  </header>
+  <main class="guide-container">
+    <div class="guide-layout">
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#keep-git">Keep Git, rebuild its service</a></li>
+          <li><a href="#replace-git">Replace the repository model</a></li>
+          <li><a href="#record-history">Record the work between commits</a></li>
+          <li><a href="#compare">Compare the decisions</a></li>
+          <li><a href="#jj">What this means for jj</a></li>
+        </ol>
+      </nav>
+      <div class="guide-content">
+        <section class="g intro">
+          <p>When source control struggles under agent workloads, which part needs to change? The service distributing repository data, the division of work between client and server, or the history that developers collaborate through?</p>
+          <p>Our earlier <a href="origin-code-storage-deltadb.html">comparison of Origin, Code Storage, and DeltaDB</a> separated storage infrastructure from collaboration. Pando and Scion make the next question more concrete: how much of Git’s contract should a new system preserve?</p>
+          <p>These choices can coexist. A service can improve data delivery while a separate tool records richer history. Each changes a different part of the contract between a repository and its clients.</p>
+        </section>
+        <section class="g" id="keep-git">
+          <h2>Keep Git, rebuild its service <a href="#keep-git">#</a></h2>
+          <p><a href="https://openai.com/index/scaling-git-at-openai/">Pando</a> preserves Git objects and workflows while changing how OpenAI serves its monorepo. Pushes stream packs into blob storage and publish ref versions through metadata transactions. Updates to unrelated refs proceed independently: readers get read-your-own-write consistency, but not a globally consistent view across branches.</p>
+          <p>Fetches reuse stored packs through <code>packfile-uri</code> and regional caches. Restricting which refs the server advertises during a push makes its pack easier to reuse, at the cost of sending redundant objects. Background compaction combines packs into larger covers. OpenAI reports nearly 80% lower median push latency; its interactive architecture comparison is a simulation, not a production benchmark. Pando runs internally, and the announcement discusses possible future sharing rather than offering a public service.</p>
+          <p><a href="https://cursor.com/blog/git-at-any-scale">Continuity</a>, the storage architecture behind Origin, also puts durable Git data in object storage. Its ordering authority is a write-ahead-log index. Cursor describes pushes as linearizable, while materialized Git repositories serve as warm caches that can catch up from the log. Idle repositories need no permanently hot replica.</p>
+          <p>The architectural distinction is where ordering and read work live. Continuity retains materialized repositories and an ordered log; Pando plans reads over reusable packs and coordinates writes per ref. Both preserve Git, but that compatibility leaves room for different consistency and caching choices.</p>
+          <p><a href="https://code.storage/docs/getting-started/introduction">Code Storage</a> makes another decision explicit: expose repository infrastructure as a product for software. It offers Git over HTTPS alongside APIs and SDKs for creating repositories, writing commits, merging branches, and isolating refs. Its documented quorum architecture differs from Continuity, but the product question is independent of that implementation: does a caller want a forge, or programmable repositories beneath its own application?</p>
+        </section>
+        <section class="g" id="replace-git">
+          <h2>Replace the repository model <a href="#replace-git">#</a></h2>
+          <p><a href="https://www.anthropic.com/research/redesigning-source-control">Scion</a> moves computation to a server that clients are expected to reach. Anthropic’s system creates commits, performs merges and rebases, and answers history queries remotely. Clients keep bounded caches and fetch data on demand; no fully materialized repository exists even on the server.</p>
+          <p>Its changeset records files changed from the first parent, with pointers to content in blob storage. Creating changesets does not require moving refs; when a ref does move, it uses compare-and-swap on a Spanner row. This separates publishing new history from updating a shared name. Anthropic built the surrounding review and search tools too. The result is an internal system designed for its enormous monorepo, with online access as a requirement.</p>
+          <p>That is a larger migration boundary than replacing a Git host. A team must account for every tool that expects local history, a Git command, or an existing forge API. Removing work from clients is valuable only when the service and its integrations can take responsibility for it.</p>
+          <p><a href="https://epicgames.github.io/lore/explanation/system-design/">Lore</a> illustrates a different reason to choose a new repository model. Epic’s design treats large binary content as first-class data, splitting files into content-addressed fragments and representing revisions as Merkle trees. The remote is authoritative, but clients can commit and branch offline when the required data is cached. Pushes upload fragments before conditionally advancing the remote branch pointer.</p>
+          <p>Lore is a public implementation; Scion is an internal deployment. Their shared use of central authority does not make their workloads or client contracts equivalent. In particular, Lore’s offline capability shows that replacing Git does not inherently require an always-online client.</p>
+        </section>
+        <section class="g" id="record-history">
+          <h2>Record the work between commits <a href="#record-history">#</a></h2>
+          <p>A faster checkout cannot recover a conversation that was never recorded. This is the separate problem addressed by <a href="https://zed.dev/blog/introducing-deltadb">DeltaDB</a>: retain fine-grained edits and conversations together, with stable identities that references can follow as code changes. Replicated worktrees let people and agents collaborate before making a commit.</p>
+          <p><a href="https://zed.dev/blog/introducing-delta">Delta</a>, the application built on it, still commits and pushes to an existing Git repository. That makes Git an interoperability boundary for a richer collaboration record. Someone outside Delta can consume the resulting commits without participating in the live session.</p>
+          <p><a href="https://bramcohen.com/p/manyana">Manyana</a> explores a narrower question through a CRDT-based demo: can merging always produce a convergent result while still drawing attention to overlapping edits? Its weave retains lines and their history, allowing merges without searching for a common ancestor. Potential conflicts become information to review rather than a failure to produce a merged state.</p>
+          <p>This is an experiment in merge semantics, not a hosted alternative to Pando or Scion. It also highlights a distinction worth preserving in any collaboration system: convergence means participants agree on a result. It does not mean the resulting program expresses the right intent. Review and testing still have a job.</p>
+        </section>
+        <section class="g" id="compare">
+          <h2>Compare the decisions <a href="#compare">#</a></h2>
+          <p>Read together, these designs suggest five decisions to make explicit when evaluating source control.</p>
+          <div class="table-scroll" role="region" aria-label="Source control architectural decisions" tabindex="0">
+            <table class="kbd-table">
+              <thead><tr><th scope="col">Decision</th><th scope="col">Examples</th><th scope="col">Question to carry forward</th></tr></thead>
+              <tbody>
+                <tr><td>Preserve Git, change its serving architecture</td><td>Pando, Continuity</td><td>What must be ordered together, and which bytes can readers reuse?</td></tr>
+                <tr><td>Make repositories programmable infrastructure</td><td>Code Storage</td><td>Which operations should an application perform without a checkout?</td></tr>
+                <tr><td>Change the repository and client contract</td><td>Scion, Lore</td><td>Which operations stay local, and which require the authority?</td></tr>
+                <tr><td>Retain edits and conversations</td><td>DeltaDB</td><td>What context must survive beyond a published snapshot?</td></tr>
+                <tr><td>Make merging converge by construction</td><td>Manyana</td><td>How will people inspect and resolve competing intent?</td></tr>
+              </tbody>
+            </table>
+          </div>
+          <p>A fleet creating temporary repositories and a team driving one enormous monorepo can both be described as agent scale. Their storage lifetime, contention, and checkout patterns may be very different. Likewise, a live collaborative worktree is solving a different coordination problem from thousands of independent branch pushes. The workload has to come before the architecture.</p>
+        </section>
+        <section class="g" id="jj">
+          <h2>What this means for jj <a href="#jj">#</a></h2>
+          <p><a href="https://docs.jj-vcs.dev/latest/technical/architecture/">Jujutsu separates</a> commit storage, operation storage, operation heads, indexes, and working copies behind interfaces. That separation matters here: changing where bytes are stored need not dictate how a user identifies changes or recovers repository operations.</p>
+          <p>The <a href="https://docs.jj-vcs.dev/latest/roadmap/">jj roadmap</a> describes Google’s internal database-backed service, which stores commits and operation logs in the cloud with a local caching daemon. A similar public server remains a roadmap goal. It is evidence that jj’s model can extend beyond Git storage, not an integration that JayJay can already offer.</p>
+          <p>For a Git-backed jj repository, a new Git service must still work with the transport capabilities of the client in use. Preserving Git’s object model alone does not establish that compatibility. Nor does sharing commits and refs imply sharing the local operation log or the complete identity and evolution of a jj change.</p>
+          <p>For JayJay, the useful direction is to keep those boundaries explicit: repository transport, forge review, and live collaboration are separate integrations. A faster remote can improve an existing workflow. A different history model needs a deliberate account of which identities, discussions, and recovery paths survive the crossing.</p>
+        </section>
+        <a class="backtop" href="#">↑ Back to top</a>
+      </div>
+    </div>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a></p>
+      <div class="foot-links">
+        <a href="../index.html">Home</a>
+        <a href="index.html">Blog</a>
+        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
+        <a href="https://discord.gg/ekknRNkVrT">Discord</a>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>
