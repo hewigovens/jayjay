@@ -19,6 +19,20 @@ if [[ "$configuration" == Release ]]; then
   xcode JayJay Release ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
   cargo build --release -p jayjay-cli
   export JAYJAY_STRIP_APP=1
+  licenses="$app_path/Contents/Resources/Licenses"
+  rm -rf "$licenses"
+  mkdir -p "$licenses"
+  cargo fetch --locked
+  for crate in jayjay-uniffi jayjay-cli; do
+    cargo about generate --offline --locked --fail --manifest-path "$root/crates/$crate/Cargo.toml" \
+      --config "$root/dist/macos/about.toml" --output-file "$licenses/THIRD-PARTY-$crate.html" "$root/dist/licenses.hbs"
+  done
+  mermaid="$project/Packages/JayJayDiffUI/Sources/JayJayDiffUI/Resources/Mermaid"
+  cp "$derived_data/SourcePackages/checkouts/Sparkle/LICENSE" "$licenses/Sparkle.LICENSE"
+  cp "$root/assets/fonts/Seti.LICENSE" "$licenses/Seti.LICENSE"
+  cp "$mermaid/ondine-LICENSE.txt" "$licenses/Ondine.LICENSE"
+  cp "$mermaid/pele-LICENSE.txt" "$licenses/Pele.LICENSE"
+  cp "$root/crates/jj-diff/grammars/fluent/LICENSE" "$licenses/tree-sitter-fluent.LICENSE"
 else
   xcode JayJay Debug build
 fi

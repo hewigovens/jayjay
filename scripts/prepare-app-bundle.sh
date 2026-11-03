@@ -37,8 +37,11 @@ stale_resource_bundles=(
   "SwiftUIMath_SwiftUIMath.bundle"
   "textual_Textual.bundle"
   "Textual_Textual.bundle"
+  "JayJayDiffUI_JayJayDiffUI.bundle"
+  "JayJayDiffUI.bundle"
 )
 
 for bundle_name in "${stale_resource_bundles[@]}"; do
   rm -rf "$resources_dir/$bundle_name"
 done
+rm -f "$resources_dir/Seti.LICENSE"

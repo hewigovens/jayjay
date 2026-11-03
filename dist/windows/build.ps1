@@ -34,7 +34,7 @@ try {
         Copy-Item -LiteralPath $SshHelpers "$payload/ssh-helpers/manifest.json"
     }
     foreach ($item in @(@('shell/gpui/Cargo.toml', 'GUI'), @('crates/jayjay-cli/Cargo.toml', 'CLI'))) {
-        cargo about generate --offline --locked --fail --manifest-path $item[0] --config dist/windows/about.toml --output-file "$payload/THIRD-PARTY-$($item[1]).html" dist/windows/licenses.hbs
+        cargo about generate --offline --locked --fail --manifest-path $item[0] --config dist/windows/about.toml --output-file "$payload/THIRD-PARTY-$($item[1]).html" dist/licenses.hbs
         if ($LASTEXITCODE) { throw "Dependency license generation failed" }
     }
     python dist/windows/package.py $payload $Version $OutputDirectory

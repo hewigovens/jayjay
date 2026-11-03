@@ -5,6 +5,7 @@ on:
   pull_request:
     paths:
       - "dist/windows/**"
+      - "dist/licenses.hbs"
       - ".github/workflows/windows-portable.yml"
   release:
     types: [published]

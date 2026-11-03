@@ -17,7 +17,7 @@ let package = Package(
                 .product(name: "JayJayCore", package: "mac")
             ],
             path: "Sources/JayJayDiffUI",
-            resources: [.copy("Resources/Mermaid")]
+            exclude: ["Resources/Mermaid"]
         ),
         .testTarget(
             name: "JayJayDiffUITests",

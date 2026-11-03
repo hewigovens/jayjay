@@ -61,8 +61,6 @@ targets:
         type: folder
       - path: ../../assets/fonts/Seti.ttf
         buildPhase: resources
-      - path: ../../assets/fonts/Seti.LICENSE
-        buildPhase: resources
     dependencies:
       - target: JayJayDockTilePlugin
         embed: true
