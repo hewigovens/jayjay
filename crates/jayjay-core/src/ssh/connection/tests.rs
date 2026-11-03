@@ -156,14 +156,8 @@ fn real_ssh_disconnect_reports_uncertainty_and_reconnect_reads_persisted_changes
     )
     .unwrap();
     thread::scope(|scope| {
-        let pending = scope.spawn(|| {
-            remote.request(
-                path_text,
-                "git_fetch",
-                vec![json!("origin"), Value::Null],
-                None,
-            )
-        });
+        let pending =
+            scope.spawn(|| remote.request(path_text, "git_fetch", vec![Value::Null], None));
         let deadline = Instant::now() + Duration::from_secs(10);
         while !marker.exists() {
             if pending.is_finished() {

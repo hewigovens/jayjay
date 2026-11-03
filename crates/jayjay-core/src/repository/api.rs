@@ -242,7 +242,7 @@ api! {
         fn commit_safe_submodule_updates(message: Text, paths: Strings) -> String;
         fn git_push(bookmark: Text, sync: Sync) -> String;
         fn git_push_tag(tag: Text, sync: Sync) -> String;
-        fn git_fetch(remote: Text, sync: Sync) -> FetchResult;
+        fn git_fetch(sync: Sync) -> FetchResult;
         fn git_pull_bookmark(bookmark: Text, sync: Sync) -> FetchResult;
         fn apply_diff_selection(rev: Text, destination: DiffEditDestination, selections: Selections, message: Text, ignore_whitespace: bool) -> ();
     }

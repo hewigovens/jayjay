@@ -5,7 +5,7 @@ import JayJayCore
 extension RepoViewModel {
     func gitFetch() {
         performPull { repo, sync in
-            try repo.gitFetch(remote: "origin", sync: sync)
+            try repo.gitFetch(sync: sync)
         }
     }
 

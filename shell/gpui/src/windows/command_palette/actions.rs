@@ -265,7 +265,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         label: jayjay_i18n::repo::git_pull_fetch_rebase,
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,
-        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_fetch_origin),
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_fetch),
     },
     PaletteAction {
         id: "rebase-working-copy-onto-trunk",

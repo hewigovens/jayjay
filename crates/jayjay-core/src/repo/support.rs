@@ -9,8 +9,8 @@ use jj_lib::hex_util::encode_reverse_hex;
 use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::OperationId;
 use jj_lib::op_walk;
-use jj_lib::repo::ReadonlyRepo;
 use jj_lib::repo::Repo as JjRepo;
+use jj_lib::repo::{ReadonlyRepo, StoreLoadError};
 use jj_lib::workspace::{
     DefaultWorkspaceLoaderFactory, Workspace, WorkspaceLoadError, WorkspaceLoaderFactory as _,
 };
@@ -65,6 +65,13 @@ pub(crate) fn load_workspace(path: &Path) -> Result<Workspace, String> {
 }
 
 fn error_chain(error: WorkspaceLoadError) -> String {
+    if let WorkspaceLoadError::StoreLoadError(StoreLoadError::UnsupportedType {
+        store,
+        store_type,
+    }) = &error
+    {
+        return jayjay_i18n::repo::unsupported_backend(store_type, store);
+    }
     let mut message = error.to_string();
     let mut source = error.source();
     while let Some(err) = source {

@@ -1227,12 +1227,8 @@ impl JayJayRepo {
         self.inner.remote_web_url()
     }
 
-    fn git_fetch(
-        &self,
-        remote: String,
-        sync: Arc<JayJaySyncToken>,
-    ) -> Result<FetchResult, JayError> {
-        self.inner.git_fetch(&remote, &sync.inner)
+    fn git_fetch(&self, sync: Arc<JayJaySyncToken>) -> Result<FetchResult, JayError> {
+        self.inner.git_fetch(&sync.inner)
     }
 
     fn git_pull_bookmark(

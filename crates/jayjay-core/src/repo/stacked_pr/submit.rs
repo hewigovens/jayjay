@@ -106,15 +106,15 @@ impl Repo {
             let owner = if existing.is_conflicted {
                 "a conflicted change".to_owned()
             } else {
-                let origin_owner = self
-                    .remote_bookmark_change_id(&existing.name, "origin")
+                let remote_owner = self
+                    .remote_bookmark_change_id(&existing.name, &self.default_remote())
                     .filter(|change| !change.is_empty() && change != &layer.change_id);
                 let local_owner = (existing.has_local_target
                     && !existing.is_deleted
                     && existing.change_id.as_str() != layer.change_id)
                     .then(|| existing.change_id.id.clone());
-                origin_owner.or(local_owner).map_or_else(
-                    || "another local or origin change".to_owned(),
+                remote_owner.or(local_owner).map_or_else(
+                    || "another local or remote change".to_owned(),
                     |change| format!("change {change}"),
                 )
             };
@@ -152,14 +152,14 @@ impl Repo {
         if local_active && bookmark.change_id.as_str() != change_id {
             return false;
         }
-        let origin_change = self.remote_bookmark_change_id(&bookmark.name, "origin");
-        if origin_change
+        let remote_change = self.remote_bookmark_change_id(&bookmark.name, &self.default_remote());
+        if remote_change
             .as_deref()
             .is_some_and(|remote_change| remote_change != change_id)
         {
             return false;
         }
-        local_active || origin_change.as_deref() == Some(change_id)
+        local_active || remote_change.as_deref() == Some(change_id)
     }
 }
 

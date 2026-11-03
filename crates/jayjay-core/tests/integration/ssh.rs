@@ -171,7 +171,7 @@ fn helper_acknowledges_cancel_after_the_remote_fetch_process_exits() {
         ],
     );
     let began = Instant::now();
-    helper.send(1, &path, "git_fetch", json!(["origin", null]));
+    helper.send(1, &path, "git_fetch", json!([null]));
     let deadline = Instant::now() + Duration::from_secs(10);
     while !started.exists() {
         assert!(Instant::now() < deadline, "fetch did not reach git");
