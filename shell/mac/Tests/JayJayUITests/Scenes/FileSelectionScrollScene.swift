@@ -35,9 +35,29 @@ final class FileSelectionScrollScene: SceneBase {
         XCTAssertFalse(first.isHittable)
 
         keyStroke(.space)
+        XCTAssertTrue(last.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-07.swift")].label, "Reviewed")
+        keyStroke(.space)
         XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
         XCTAssertTrue(waitForHittable(first, isHittable: true))
-        XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-07.swift")].label, "Reviewed")
+    }
+
+    func testMarkingReviewedByClickMovesPastSkippedFiles() throws {
+        let app = try XCTUnwrap(app)
+        let second = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-02.swift")).firstMatch
+        let third = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-03.swift")).firstMatch
+        let fourth = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-04.swift")).firstMatch
+        XCTAssertTrue(second.waitForExistence(timeout: 10))
+        second.click()
+
+        app.buttons[AID.Diff.markReviewed].click()
+        XCTAssertTrue(third.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertTrue(app.buttons[AID.Diff.markReviewed].wait(for: \.label, toEqual: "Mark Reviewed", timeout: 5))
+        app.buttons[AID.FileList.review("src/modules/module-03.swift")].click()
+        XCTAssertTrue(fourth.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-02.swift")].label, "Reviewed")
+        XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-03.swift")].label, "Reviewed")
+        XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-01.swift")].label, "Unreviewed")
     }
 
     func testRefreshKeepsTheSelectedFileVisible() throws {
@@ -96,7 +116,8 @@ final class FileSelectionScrollScene: SceneBase {
         keyStroke("j")
         XCTAssertTrue(guide.wait(for: \.isSelected, toEqual: true, timeout: 5))
         keyStroke(.space)
-        XCTAssertTrue(first.wait(for: \.isSelected, toEqual: true, timeout: 5))
+        let nextGuide = fileRows(of: app).matching(identifier: AID.FileList.row("docs/guides/guide-02.md")).firstMatch
+        XCTAssertTrue(nextGuide.wait(for: \.isSelected, toEqual: true, timeout: 5))
         for _ in 0 ..< Self.pressesPastTheLastRow {
             keyStroke("j")
         }

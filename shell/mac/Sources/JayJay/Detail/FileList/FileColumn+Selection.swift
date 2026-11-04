@@ -30,24 +30,28 @@ extension ChangeDetailView {
 
     private func toggleReviewOnSelection() -> Bool {
         reconcileFileSelection()
-        let selectedReviewablePaths = selectedPaths
+        let paths = selectedPaths
             .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
             .sorted()
-        guard showsReviewControls, !selectedReviewablePaths.isEmpty else { return false }
-        applyReviewMarks(
-            paths: selectedReviewablePaths,
-            reviewed: !selectedReviewablePaths.allSatisfy { fileRollups[$0] == .reviewed }
-        )
-        if let primaryPath = selectedPath, reviewedPaths.contains(primaryPath) {
-            let unreviewed = displayOrderedPaths.filter { !reviewedPaths.contains($0) }
-            if let next = unreviewed.first(where: { !isInCollapsedDir($0) }) ?? unreviewed.first {
-                if isInCollapsedDir(next) {
-                    collapsedDirs = collapsedDirs.filter { !next.hasPrefix("\($0)/") }
-                }
-                selectSingleFile(next)
-            }
-        }
+        guard showsReviewControls, !paths.isEmpty else { return false }
+        toggleReview(paths)
         return true
+    }
+
+    /// Marking the selected file reviewed moves on to the next unreviewed file after it, so files the reviewer skipped stay behind.
+    func toggleReview(_ paths: [String]) {
+        let order = displayOrderedPaths
+        let reviewed = !paths.allSatisfy { fileRollups[$0] == .reviewed }
+        applyReviewMarks(paths: paths, reviewed: reviewed)
+        guard reviewed, let selectedPath, paths.contains(selectedPath),
+              let position = order.firstIndex(of: selectedPath)
+        else { return }
+        let following = order[(position + 1)...] + order[..<position]
+        guard let next = following.first(where: { !reviewedPaths.contains($0) }) else { return }
+        if isInCollapsedDir(next) {
+            collapsedDirs = collapsedDirs.filter { !next.hasPrefix("\($0)/") }
+        }
+        selectSingleFile(next)
     }
 
     func reconcileFileSelection() {

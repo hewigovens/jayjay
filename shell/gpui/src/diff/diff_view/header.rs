@@ -6,6 +6,7 @@ use gpui::{
     Styled, div, px, rgb,
 };
 use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats, HunkType};
+use jayjay_review::ReviewFileRollup;
 
 use self::controls::*;
 use self::path::*;
@@ -43,6 +44,7 @@ pub(super) struct FileHeaderState<'a> {
     pub(super) html_external_url: Option<&'a str>,
     pub(super) can_edit_file: bool,
     pub(super) can_edit_diff: bool,
+    pub(super) file_review: Option<ReviewFileRollup>,
     pub(super) detail_width: f32,
     pub(super) focused: Option<FocusStop>,
 }
@@ -136,6 +138,15 @@ pub(super) fn file_header(
         .gap(px(2.));
     if state.is_annotating {
         actions = actions.child(exit_annotate_button(t, cx));
+    }
+    if let Some(rollup) = state.file_review {
+        actions = actions.child(mark_reviewed_button(
+            rollup == ReviewFileRollup::Reviewed,
+            compact,
+            state.focused == Some(FocusStop::MarkReviewed),
+            t,
+            cx,
+        ));
     }
     if let Some(projection) = state.projection.projection
         && !projection::opens_automatically(projection)

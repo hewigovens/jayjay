@@ -160,7 +160,7 @@ pub(super) fn flat_body(state: FlatBodyState, cx: &mut Context<RepoWindow>) -> A
                             on_review_click: cx.listener(
                                 move |view, _event: &ClickEvent, _w, cx| {
                                     if let Some(cid) = change_for_review.clone() {
-                                        view.toggle_reviewed(
+                                        view.toggle_file_reviewed(
                                             cid,
                                             path_for_review.clone(),
                                             identity_for_review.clone(),

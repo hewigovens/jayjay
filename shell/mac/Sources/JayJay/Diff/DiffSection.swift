@@ -22,6 +22,8 @@ struct DiffSection: View {
     var onOpenInExternalEditor: ((UInt32) -> Void)?
     var onReviewStateChanged: (() -> Void)?
     var onReviewSnapshotLoaded: ((DiffHunk, ReviewFileSnapshot?) -> Void)?
+    var fileReview: FileRowReviewChrome = .hidden
+    var onToggleFileReview: (() -> Void)?
     var compareFromRev: String?
     var lineStats: FileDiffStats?
 
@@ -37,6 +39,7 @@ struct DiffSection: View {
     @Environment(AppSettings.self) var settings
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

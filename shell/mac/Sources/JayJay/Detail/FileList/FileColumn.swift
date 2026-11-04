@@ -4,7 +4,7 @@ import SwiftUI
 
 extension ChangeDetailView {
     var reviewableDiff: [DiffHunk] {
-        visibleDiff.filter { !$0.isSubmodulePlaceholder && !$0.reviewIdentity.isEmpty }
+        visibleDiff.filter(\.isReviewable)
     }
 
     var fileColumn: some View {
@@ -170,12 +170,12 @@ extension ChangeDetailView {
             hunk: hunk,
             isSelected: selectedPaths.contains(hunk.path),
             isPaneActive: activePane == .fileColumn,
-            showReview: showsReviewControls && !hunk.isSubmodulePlaceholder && !hunk.reviewIdentity.isEmpty,
+            showReview: showsReviewControls && hunk.isReviewable,
             reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
             agentMarked: agentMarkedPaths.contains(hunk.path),
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
-            onToggleReview: { toggleReview(hunk.path) }
+            onToggleReview: { toggleReview([hunk.path]) }
         )
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
@@ -198,10 +198,6 @@ extension ChangeDetailView {
         return agentMarked > 0
             ? Localized.Diff.filesReviewedWithAgent(reviewed: reviewedPaths.count, total: reviewableDiff.count, agent: agentMarked)
             : Localized.Repo.filesReviewedProgress(reviewed: reviewedPaths.count, total: reviewableDiff.count)
-    }
-
-    func toggleReview(_ path: String) {
-        applyReviewMarks(paths: [path], reviewed: fileRollups[path] != .reviewed)
     }
 
     private var showsReviewedCount: Bool {

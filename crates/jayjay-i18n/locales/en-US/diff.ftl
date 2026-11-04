@@ -78,6 +78,7 @@ diff-shortcut-to-save = { $shortcut } to save
 diff-line-stats-label = { NUMBER($added) } added, { NUMBER($removed) } removed
 diff-before-percent = Before { NUMBER($percent) } percent
 diff-reviewed-of-total = { NUMBER($reviewed) }/{ NUMBER($total) } reviewed
+diff-mark-reviewed = Mark Reviewed
 diff-files-reviewed-with-agent = { NUMBER($reviewed) } of { NUMBER($total) } files reviewed, { NUMBER($agent) } include agent marks
 diff-unmodified-lines =
     { $count ->

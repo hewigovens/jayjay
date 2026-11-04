@@ -106,6 +106,7 @@ pub fn diff_view(
             html_external_url: state.html_external_url,
             can_edit_file: state.can_edit_file,
             can_edit_diff: state.can_edit_diff,
+            file_review: state.file_review,
             detail_width: state.detail_width,
             focused: state.focused,
         },

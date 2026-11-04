@@ -74,6 +74,7 @@ diff-shortcut-to-save = { $shortcut } 儲存
 diff-line-stats-label = 新增 { NUMBER($added) } 行，移除 { NUMBER($removed) } 行
 diff-before-percent = 之前 { NUMBER($percent) }%
 diff-reviewed-of-total = 已審查 { NUMBER($reviewed) }/{ NUMBER($total) }
+diff-mark-reviewed = 標記為已審查
 diff-files-reviewed-with-agent = 已審查 { NUMBER($reviewed) }/{ NUMBER($total) } 個檔案，其中 { NUMBER($agent) } 個含有代理程式標記
 diff-unmodified-lines = { $count } 行未修改
 diff-edit-hint = 選取要編輯的檔案、差異區塊或行範圍

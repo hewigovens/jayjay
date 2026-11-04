@@ -319,8 +319,21 @@ impl RepoWindow {
         hasher.finish()
     }
 
+    pub(crate) fn selected_file_review(&self, cx: &App) -> Option<ReviewFileRollup> {
+        let vm = self.vm.read(cx);
+        if !vm.shows_review_controls() {
+            return None;
+        }
+        let change_id = &vm.selected_change()?.change_id.id;
+        let hunk = vm.selected_hunk().filter(|hunk| {
+            !hunk.review_identity.is_empty() && !crate::diff::file_status::is_submodule(hunk)
+        })?;
+        self.review_rollups_with_vm(change_id, std::iter::once(hunk), vm)
+            .remove(&hunk.path)
+    }
+
     pub(crate) fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
-        let (change_id, path, identity, files) = {
+        let (change_id, path, identity) = {
             let vm = self.vm.read(cx);
             if !vm.shows_review_controls() {
                 return;
@@ -334,50 +347,64 @@ impl RepoWindow {
             else {
                 return;
             };
+            (change_id, hunk.path.clone(), hunk.review_identity.clone())
+        };
+        self.toggle_file_reviewed(change_id, path, identity, cx);
+    }
+
+    /// Marking the selected file reviewed moves on to the next unreviewed file after it, so files the reviewer skipped stay behind.
+    pub(crate) fn toggle_file_reviewed(
+        &mut self,
+        change_id: String,
+        path: String,
+        identity: String,
+        cx: &mut Context<Self>,
+    ) {
+        let (files, selected) = {
+            let vm = self.vm.read(cx);
             (
-                change_id,
-                hunk.path.clone(),
-                hunk.review_identity.clone(),
                 vm.files.clone().unwrap_or_default(),
+                vm.selected_hunk().is_some_and(|hunk| hunk.path == path),
             )
         };
+        let order = self.review_order(&files, cx);
         self.toggle_reviewed(change_id.clone(), path.clone(), identity, cx);
         let rollups = self.review_rollups_with_vm(&change_id, files.iter(), self.vm.read(cx));
-        let reviewed = |path: &str| rollups.get(path) == Some(&ReviewFileRollup::Reviewed);
-        if !reviewed(&path) {
-            cx.notify();
+        let reviewed =
+            |ix: usize| rollups.get(&files[ix].path) == Some(&ReviewFileRollup::Reviewed);
+        let Some(position) = order.iter().position(|&ix| files[ix].path == path) else {
+            return;
+        };
+        if !selected || !reviewed(order[position]) {
             return;
         }
-        let (show_review, change_id) = self.review_file_context(cx);
-        let visible = Arc::new(self.visible_indices(&files, change_id.as_deref(), show_review, cx));
-        let tree_mode = crate::app::config::current(cx).diff.tree_file_list;
-        let order: Vec<usize> = if tree_mode {
-            let paths: Vec<String> = visible.iter().map(|&ix| files[ix].path.clone()).collect();
-            build_file_tree(&paths)
-                .iter()
-                .filter_map(|entry| entry.hunk_index.map(|row| visible[row as usize]))
-                .collect()
-        } else {
-            visible.to_vec()
-        };
-        let in_collapsed_dir = |ix: usize| {
-            tree_mode
-                && self
-                    .collapsed_dirs
-                    .iter()
-                    .any(|dir| files[ix].path.starts_with(&format!("{dir}/")))
-        };
-        let mut unreviewed = order.into_iter().filter(|&ix| !reviewed(&files[ix].path));
-        let Some(next_ix) = unreviewed
-            .clone()
-            .find(|&ix| !in_collapsed_dir(ix))
-            .or_else(|| unreviewed.next())
+        let Some(next_ix) = order[position + 1..]
+            .iter()
+            .chain(&order[..position])
+            .copied()
+            .find(|&ix| !reviewed(ix))
         else {
-            cx.notify();
             return;
         };
+        let (show_review, change_id) = self.review_file_context(cx);
+        let visible = Arc::new(self.visible_indices(&files, change_id.as_deref(), show_review, cx));
         self.select_file(next_ix, cx);
+        let tree_mode = crate::app::config::current(cx).diff.tree_file_list;
         self.reveal_file(next_ix, &files, &visible, tree_mode);
+    }
+
+    /// File indices in the order the file column lists them, folders collapsed or not.
+    fn review_order(&self, files: &Arc<Vec<DiffHunk>>, cx: &App) -> Vec<usize> {
+        let (show_review, change_id) = self.review_file_context(cx);
+        let visible = self.visible_indices(files, change_id.as_deref(), show_review, cx);
+        if !crate::app::config::current(cx).diff.tree_file_list {
+            return visible;
+        }
+        let paths: Vec<String> = visible.iter().map(|&ix| files[ix].path.clone()).collect();
+        build_file_tree(&paths)
+            .iter()
+            .filter_map(|entry| entry.hunk_index.map(|row| visible[row as usize]))
+            .collect()
     }
 
     pub(super) fn reveal_file(

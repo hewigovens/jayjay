@@ -149,6 +149,12 @@ impl RepoWindow {
                 self.description.expanded ^= true;
                 cx.notify();
             }
+            FocusStop::MarkReviewed => {
+                self.toggle_reviewed_for_selected_file(cx);
+                if self.selected_file_review(cx).is_some() {
+                    self.focused_control = Some(FocusStop::MarkReviewed);
+                }
+            }
             FocusStop::DiffLayout => self.toggle_view_mode(cx),
             FocusStop::EditDescription => self.edit_selected_description(cx),
             FocusStop::EditDiff => self.enter_diff_edit(cx),
@@ -202,6 +208,7 @@ impl RepoWindow {
             .flatten();
         VisibleStops {
             expand_description: detail_change.is_some(),
+            mark_reviewed: self.selected_file_review(cx).is_some(),
             diff_layout: vm.selected_hunk().is_some(),
             edit_description: detail_change
                 .is_some_and(|change| !change.is_immutable && !change.is_working_copy),

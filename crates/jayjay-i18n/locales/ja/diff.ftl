@@ -74,6 +74,7 @@ diff-shortcut-to-save = { $shortcut } で保存
 diff-line-stats-label = { NUMBER($added) } 行追加、{ NUMBER($removed) } 行削除
 diff-before-percent = 変更前 { NUMBER($percent) } パーセント
 diff-reviewed-of-total = { NUMBER($reviewed) }/{ NUMBER($total) } レビュー済み
+diff-mark-reviewed = レビュー済みにする
 diff-files-reviewed-with-agent = { NUMBER($total) } ファイル中 { NUMBER($reviewed) } ファイルをレビュー済み、{ NUMBER($agent) } ファイルにエージェントのマークあり
 diff-unmodified-lines = 未変更の行 { $count } 行
 diff-edit-hint = 編集するファイル、ハンク、または行範囲を選択してください

@@ -80,6 +80,7 @@ enum AID {
         static let preview = "diff.preview"
         static let source = "diff.source"
         static let addReviewNote = "diff.addReviewNote"
+        static let markReviewed = "diff.markReviewed"
     }
 
     enum ReviewNote {

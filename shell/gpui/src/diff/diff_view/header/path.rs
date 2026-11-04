@@ -120,6 +120,9 @@ pub(super) fn header_reserved_width(
         );
     }
     reserved += action(&super::controls::mode_label(state.view_mode));
+    if state.file_review.is_some() {
+        reserved += action(&jayjay_i18n::diff::mark_reviewed());
+    }
     if state.can_edit_file {
         reserved += action(&jayjay_i18n::diff::edit_file());
     }

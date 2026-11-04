@@ -18,6 +18,7 @@ pub(crate) fn detail_pane(
 ) -> AnyElement {
     let can_edit_file = view.can_edit_selected_working_copy_file(cx);
     let can_edit_diff = view.can_enter_diff_edit(cx);
+    let file_review = view.selected_file_review(cx);
     let viewport_width = f32::from(window.viewport_size().width);
     let (sidebar_width, file_column_width) = view.layout.fitted(viewport_width);
     let handles = if view.layout.sidebar_hidden { 1. } else { 2. };
@@ -133,6 +134,7 @@ pub(crate) fn detail_pane(
         can_resolve_conflict: compare.is_none(),
         can_edit_file,
         can_edit_diff,
+        file_review,
         detail_width,
         selected_file_has_conflict,
         conflict_resolutions,

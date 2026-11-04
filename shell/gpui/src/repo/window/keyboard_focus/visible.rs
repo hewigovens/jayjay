@@ -4,6 +4,7 @@ use super::stop::FocusStop;
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct VisibleStops {
     pub(super) expand_description: bool,
+    pub(super) mark_reviewed: bool,
     pub(super) diff_layout: bool,
     pub(super) edit_description: bool,
     pub(super) edit_diff: bool,
@@ -21,6 +22,7 @@ impl VisibleStops {
         }
         match stop {
             FocusStop::ExpandDescription => self.expand_description,
+            FocusStop::MarkReviewed => self.mark_reviewed,
             FocusStop::DiffLayout => self.diff_layout,
             FocusStop::EditDescription => self.edit_description,
             FocusStop::EditDiff => self.edit_diff,
@@ -50,6 +52,7 @@ mod tests {
 
     const ALL: VisibleStops = VisibleStops {
         expand_description: true,
+        mark_reviewed: true,
         diff_layout: true,
         edit_description: true,
         edit_diff: true,

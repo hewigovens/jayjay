@@ -159,6 +159,10 @@ extension DiffHunk {
     var reviewSnapshotKey: ReviewSnapshotKey {
         ReviewSnapshotKey(path: path, identity: reviewIdentity)
     }
+
+    var isReviewable: Bool {
+        !isSubmodulePlaceholder && !reviewIdentity.isEmpty
+    }
 }
 
 struct ReviewSnapshotLoad {

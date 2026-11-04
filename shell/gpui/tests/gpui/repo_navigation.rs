@@ -2,12 +2,14 @@ use std::fs;
 use std::sync::Arc;
 
 use crate::harness::*;
-use gpui::{AppContext, Focusable, ScrollStrategy, TestAppContext, VisualTestContext, px};
+use gpui::{
+    AppContext, Focusable, Modifiers, ScrollStrategy, TestAppContext, VisualTestContext, px,
+};
 use jayjay_core::compare;
 use jayjay_gpui::app::{actions::ToggleIgnoreWhitespace, menus};
 use jayjay_gpui::diff::{DiffSelection, SbsSide};
 use jayjay_gpui::repo::view_model::RepoViewModel;
-use jayjay_gpui::repo::{ActivePane, RepoWindow};
+use jayjay_gpui::repo::{ActivePane, FocusStop, RepoWindow};
 use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
@@ -602,3 +604,87 @@ fn space_picks_the_next_unreviewed_file_in_tree_order(cx: &mut TestAppContext) {
         );
     });
 }
+
+#[gpui::test]
+fn marking_from_the_header_or_row_moves_past_skipped_files(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(&fixture.path, &["new"]);
+    for name in ["a", "b", "c", "d"] {
+        fs::write(fixture.path.join(format!("{name}.txt")), "new\n").unwrap();
+    }
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.tree_file_list = false));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+
+    let ix = |view: &RepoWindow, cx: &gpui::App, path: &str| {
+        let files = view.view_model().read(cx).files.clone().unwrap();
+        files.iter().position(|h| h.path == path).unwrap()
+    };
+    let selected = |view: &RepoWindow, cx: &gpui::App| view.view_model().read(cx).selected_file_ix;
+    view.update_in(cx, |view, _, cx| {
+        let b = ix(view, cx, "b.txt");
+        view.select_file(b, cx);
+    });
+    settle_visual(cx);
+
+    let header = cx
+        .debug_bounds("mark-reviewed")
+        .expect("header offers the mark");
+    cx.simulate_click(header.center(), Modifiers::default());
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(selected(view, cx), Some(ix(view, cx, "c.txt")))
+    });
+
+    let c = view.read_with(cx, |view, cx| ix(view, cx, "c.txt"));
+    let selector: &'static str = Box::leak(format!("review-flat-{c}").into_boxed_str());
+    let row_mark = cx.debug_bounds(selector).expect("row shows its mark");
+    cx.simulate_click(row_mark.center(), Modifiers::default());
+    settle_visual(cx);
+    view.read_with(cx, |view, cx| {
+        assert_eq!(selected(view, cx), Some(ix(view, cx, "d.txt")));
+        let change_id = view
+            .view_model()
+            .read(cx)
+            .selected_change()
+            .unwrap()
+            .change_id
+            .id
+            .clone();
+        let files = view.view_model().read(cx).files.clone().unwrap();
+        let reviewed = |path: &str| {
+            let hunk = &files[ix(view, cx, path)];
+            view.is_reviewed(&change_id, &hunk.path, &hunk.review_identity)
+        };
+        assert!(reviewed("b.txt") && reviewed("c.txt"));
+        assert!(!reviewed("a.txt"), "the skipped file stays unreviewed");
+    });
+
+    view.update_in(cx, |view, window, cx| {
+        view.focus_handle(cx).focus(window, cx)
+    });
+    for _ in 0..FOCUS_STOPS {
+        if view.read_with(cx, |view, _| view.focused_control()) == Some(FocusStop::MarkReviewed) {
+            break;
+        }
+        keys(cx, "tab");
+    }
+    keys(cx, "space");
+    view.read_with(cx, |view, cx| {
+        assert_eq!(
+            selected(view, cx),
+            Some(ix(view, cx, "a.txt")),
+            "wraps to the skipped file"
+        );
+        assert_eq!(
+            view.focused_control(),
+            Some(FocusStop::MarkReviewed),
+            "focus stays on the button"
+        );
+    });
+}
+
+const FOCUS_STOPS: usize = 30;

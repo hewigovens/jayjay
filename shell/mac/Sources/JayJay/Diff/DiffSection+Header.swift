@@ -24,6 +24,7 @@ extension DiffSection {
             }
             Spacer(minLength: 8)
             HStack(spacing: 2) {
+                fileReviewButton
                 richPreviewButtons
                 sideBySideButton
                 if canOpenDiffEdit {
@@ -65,6 +66,22 @@ extension DiffSection {
 
     private func editFile() {
         onEditFile?(nil)
+    }
+
+    @ViewBuilder
+    private var fileReviewButton: some View {
+        if fileReview != .hidden, let onToggleFileReview {
+            let reviewed = fileReview == .reviewed
+            let title = reviewed ? Localized.Repo.reviewed : Localized.Diff.markReviewed
+            Button(action: onToggleFileReview) {
+                actionLabel(title, systemImage: fileReview.systemImage(for: colorScheme))
+            }
+            .buttonStyle(HeaderActionButtonStyle(isActive: reviewed))
+            .keyboardFocusStop(.markReviewed, action: onToggleFileReview)
+            .help(reviewed ? Localized.Menu.markFilesUnreviewed(count: 1) : title)
+            .accessibilityLabel(title)
+            .accessibilityIdentifier(AID.Diff.markReviewed)
+        }
     }
 
     @ViewBuilder

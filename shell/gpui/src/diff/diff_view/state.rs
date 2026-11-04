@@ -5,7 +5,7 @@ use gpui::{FocusHandle, ScrollHandle};
 use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, FileDiff};
 use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats};
 use jayjay_markdown::MarkdownDocument;
-use jayjay_review::{ReviewGroupState, ReviewNoteStatus};
+use jayjay_review::{ReviewFileRollup, ReviewGroupState, ReviewNoteStatus};
 
 use super::review_row_map::ReviewRowMap;
 use crate::diff::MarkdownImageCacheSlot;
@@ -82,6 +82,7 @@ pub struct DiffViewState<'a> {
     pub(crate) can_resolve_conflict: bool,
     pub(crate) can_edit_file: bool,
     pub(crate) can_edit_diff: bool,
+    pub(crate) file_review: Option<ReviewFileRollup>,
     pub(crate) detail_width: f32,
     pub(crate) selected_file_has_conflict: bool,
     pub(crate) conflict_resolutions: Vec<ConflictResolution>,

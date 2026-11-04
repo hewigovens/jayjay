@@ -63,6 +63,39 @@ pub(super) fn edit_diff_button(
     .into_any_element()
 }
 
+pub(super) fn mark_reviewed_button(
+    reviewed: bool,
+    compact: bool,
+    focused: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let label = if reviewed {
+        jayjay_i18n::repo::reviewed()
+    } else {
+        jayjay_i18n::diff::mark_reviewed()
+    };
+    let help = if reviewed {
+        jayjay_i18n::menu::mark_files_unreviewed(1)
+    } else {
+        label.clone()
+    };
+    focus_ring(
+        header_action(
+            "mark-reviewed",
+            glyph::CHECK,
+            (!compact).then_some(label),
+            reviewed,
+            t,
+        )
+        .tooltip(text_tooltip(help))
+        .on_click(cx.listener(|view, _, _, cx| view.toggle_reviewed_for_selected_file(cx))),
+        focused,
+        t,
+    )
+    .into_any_element()
+}
+
 pub(super) fn view_mode_button(
     mode: DiffViewMode,
     compact: bool,

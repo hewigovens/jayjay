@@ -48,7 +48,7 @@ fn zoom_updates_rendered_review_surface_metrics(cx: &mut TestAppContext) {
 fn diff_header_keeps_medium_repo_paths_visible(cx: &mut TestAppContext) {
     let target = "shell/gpui/src/diff/diff_view/header.rs";
     let (_fixture, _view, cx) = open_repo_with_selected_file(cx, target);
-    cx.simulate_resize(size(px(1280.), px(720.)));
+    cx.simulate_resize(size(px(1440.), px(720.)));
     settle_visual(cx);
 
     let path_bounds = cx.debug_bounds("diff-file-path").expect("path bounds");
