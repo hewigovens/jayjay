@@ -95,3 +95,33 @@ test("Space keeps focus in the list while reviewed files are hidden", async ({ p
   await ready(page);
   await expect(page.locator(".jj-file-select:focus")).toHaveCount(1);
 });
+
+test("marking a file scrolled to its end opens the next one at its top", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  const after = Array.from({ length: 200 }, (_, line) => `line ${line}`).join("\n");
+  await page.getByLabel("Import change", { exact: true }).setInputFiles({
+    name: "change.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        repositoryId: "test/repository",
+        changeId: "stable-change",
+        title: "Long",
+        files: [
+          { path: "first.txt", reviewIdentity: "1", before: "", after },
+          { path: "second.txt", reviewIdentity: "2", before: "", after },
+        ],
+      }),
+    ),
+  });
+  await ready(page);
+  const scroll = page.locator(".jj-diff-scroll");
+  await scroll.evaluate((node) => node.scrollTo(0, node.scrollHeight));
+  expect(await scroll.evaluate((node) => node.scrollTop)).toBeGreaterThan(0);
+  await page.getByRole("checkbox", { name: "Mark reviewed: first.txt", exact: true }).click();
+  await ready(page);
+  await expect(scroll).toHaveAttribute("data-path", "second.txt");
+  expect(await scroll.evaluate((node) => node.scrollTop)).toBe(0);
+});

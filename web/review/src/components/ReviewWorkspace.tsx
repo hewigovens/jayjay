@@ -72,6 +72,7 @@ export function ReviewWorkspace({
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const detail = useRef<HTMLElement>(null);
   const columns = useRef<HTMLDivElement>(null);
+  const diffScroll = useRef<HTMLDivElement>(null);
   const filesWidth = useFilesWidth();
   const file = result?.overview.files[result.file];
   const path = file?.path;
@@ -81,6 +82,9 @@ export function ReviewWorkspace({
     setTarget(null);
     setExpanded(new Set());
   }, [compact ? undefined : path]);
+  useLayoutEffect(() => {
+    diffScroll.current?.scrollTo(0, 0);
+  }, [path]);
   useLayoutEffect(() => {
     if (!result) return setTarget(null);
     setTarget((current) => {
@@ -426,6 +430,7 @@ export function ReviewWorkspace({
               </div>
             ) : (
               <div
+                ref={diffScroll}
                 className="jj-diff-scroll"
                 data-path={path}
                 tabIndex={0}
