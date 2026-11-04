@@ -99,3 +99,44 @@ fn describes_each_file_with_its_seti_icon() {
     let glyph = jayjay_primitives::seti::SetiGlyph::for_path("a.txt").0;
     assert_eq!(described["files"][0]["icon"]["glyph"], glyph.to_string());
 }
+
+#[test]
+fn files_load_on_demand_and_keep_their_review_state() {
+    let empty = r#"{"reviewed":{},"notes":[]}"#;
+    let first = session("v1", "foo\nbaz\n");
+    let state = first
+        .mutate(r#"{"kind":"setFile","file":0,"reviewed":true}"#, empty)
+        .unwrap();
+    let state = first.mutate(r#"{"kind":"addNote","file":0,"side":"new","line":2,"body":"Check","ignoreWhitespace":false}"#, &state).unwrap();
+
+    let lazy = |identity: &str| {
+        ReviewSession::parse(&json!({
+            "schemaVersion": 1, "repositoryId": "repo", "changeId": "change", "title": "Review",
+            "files": [{"path": "a.txt", "reviewIdentity": identity, "kind": "removed", "added": 0, "removed": 2}]
+        }).to_string()).unwrap()
+    };
+    let mut session = lazy("v1");
+    let overview = session.describe(&state).unwrap();
+    assert_eq!(overview["files"][0]["kind"], "removed");
+    assert_eq!(overview["files"][0]["removed"], 2);
+    assert_eq!(overview["files"][0]["review"], "reviewed");
+    assert_eq!(overview["notes"][0]["status"], "current");
+    assert_eq!(
+        lazy("v2").describe(&state).unwrap()["notes"][0]["status"],
+        "stale"
+    );
+    assert!(session.file_state(0, &state, false).is_err());
+    assert!(
+        session
+            .mutate(r#"{"kind":"setFile","file":0,"reviewed":false}"#, &state)
+            .is_err()
+    );
+
+    session.load(0, "foo\nbar\n", "foo\nbaz\n").unwrap();
+    assert_eq!(
+        session.describe(&state).unwrap()["notes"][0]["group_index"],
+        0
+    );
+    assert!(session.file_state(0, &state, false).is_ok());
+    assert!(session.load(0, "\0", "").is_err());
+}

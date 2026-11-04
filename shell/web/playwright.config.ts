@@ -2,6 +2,8 @@ import { defineConfig, devices } from "@playwright/test";
 
 export default defineConfig({
   testDir: "./tests",
+  // Shared CI runners sometimes need more than 5 s for WebKit to import and render a change.
+  expect: { timeout: 15_000 },
   fullyParallel: true,
   use: { baseURL: "http://127.0.0.1:4173", locale: "en-US" },
   projects: [

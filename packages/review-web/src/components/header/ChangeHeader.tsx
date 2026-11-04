@@ -30,11 +30,13 @@ export function ChangeHeader({ overview, labels, actions, avatars }: { overview:
         onClick={() => setExpanded(!expanded)}><ExpandIcon expanded={expanded} /></button>}
       {actions && <div className="jj-change-actions">{actions}</div>}
     </div>
-    {overview.description && <p className={`jj-change-description ${expanded ? "jj-expanded" : ""}`}>{reflow(overview.description)}</p>}
+    {overview.description && (overview.descriptionHtml
+      ? <div className={`jj-change-description jj-markdown ${expanded ? "jj-expanded" : ""}`} dangerouslySetInnerHTML={{ __html: overview.descriptionHtml }} />
+      : <p className={`jj-change-description ${expanded ? "jj-expanded" : ""}`}>{reflow(overview.description)}</p>)}
     <div className="jj-byline">
       {overview.author && <><Avatar source={avatars ? overview.authorAvatar : null} name={overview.author} />
         <span className="jj-author">{overview.author}</span><span className="jj-separator" aria-hidden="true">·</span></>}
-      <code className="jj-change-id" title={overview.changeId}><b>{overview.changeId.slice(0, prefix)}</b>{overview.changeId.slice(prefix)}</code>
+      <code className="jj-change-id" title={overview.changeId}>{prefix > 0 && <b>{overview.changeId.slice(0, prefix)}</b>}{overview.changeId.slice(prefix)}</code>
       {date && <><span className="jj-separator" aria-hidden="true">·</span><time>{date}</time></>}
       <span className="jj-spacer" />
       <DiffStats added={added} removed={removed} />
