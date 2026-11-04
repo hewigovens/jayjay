@@ -5,9 +5,8 @@ use jj_lib::conflict_labels::ConflictLabels;
 use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, materialize_merge_result_to_bytes,
 };
-use jj_lib::files::FileMergeHunkLevel;
+use jj_lib::files::{FileMergeHunkLevel, MergeOptions};
 use jj_lib::merge::{Merge, SameChange};
-use jj_lib::tree_merge::MergeOptions;
 
 use crate::JayResult;
 use crate::MergeEditorHunk;

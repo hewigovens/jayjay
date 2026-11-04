@@ -1,5 +1,6 @@
-use chrono::{DateTime, Local, TimeZone};
 use gpui::{IntoElement, ParentElement, SharedString, Styled, div, rgb};
+use jiff::Timestamp;
+use jiff::tz::TimeZone;
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
@@ -31,11 +32,12 @@ pub(crate) fn id_cell(
 }
 
 pub(crate) fn format_when(ts_millis: i64) -> String {
-    let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts_millis).single() {
-        Some(dt) => dt,
-        None => return String::new(),
+    let Ok(ts) = Timestamp::from_millisecond(ts_millis) else {
+        return String::new();
     };
-    dt.format("%Y-%m-%d %H:%M").to_string()
+    ts.to_zoned(TimeZone::system())
+        .strftime("%Y-%m-%d %H:%M")
+        .to_string()
 }
 
 pub(crate) fn compact_id_len(short_len: u32) -> usize {
@@ -57,13 +59,12 @@ fn split_prefix(value: &str, short_len: u32) -> (String, String) {
 
 /// "10 days ago" — coarse relative age for the DAG meta line.
 pub(crate) fn format_relative(ts_millis: i64) -> String {
-    let dt: DateTime<Local> = match Local.timestamp_millis_opt(ts_millis).single() {
-        Some(dt) => dt,
-        None => return String::new(),
-    };
+    if Timestamp::from_millisecond(ts_millis).is_err() {
+        return String::new();
+    }
     // Floor to whole minutes so a fresh change reads "1 minute ago" instead of ticking
     // per second; clamping also reads a clock-skewed future timestamp as "1 minute ago".
-    let secs = Local::now().signed_duration_since(dt).num_seconds().max(60);
+    let secs = ((Timestamp::now().as_millisecond() - ts_millis) / 1000).max(60);
     match secs {
         s if s < 3600 => jayjay_i18n::repo::minutes_ago(s / 60),
         s if s < 86_400 => jayjay_i18n::repo::hours_ago(s / 3600),
@@ -81,11 +82,11 @@ pub(crate) fn first_line(s: &str) -> String {
 #[cfg(test)]
 mod tests {
     use super::format_relative;
-    use chrono::Local;
+    use jiff::Timestamp;
 
     #[test]
     fn format_relative_floors_sub_minute_to_one_minute() {
-        let now = Local::now().timestamp_millis();
+        let now = Timestamp::now().as_millisecond();
         assert_eq!(format_relative(now), "1 minute ago");
         assert_eq!(format_relative(now - 30_000), "1 minute ago");
         assert_eq!(format_relative(now - 2 * 3_600_000), "2 hours ago");

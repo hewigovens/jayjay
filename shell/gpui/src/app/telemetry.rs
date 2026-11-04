@@ -4,8 +4,8 @@
 
 use std::path::{Path, PathBuf};
 
-use chrono::{DateTime, Utc};
 use jayjay_core::{AppDirs, os_version};
+use jiff::Timestamp;
 use percent_encoding::{NON_ALPHANUMERIC, utf8_percent_encode};
 use sha2::{Digest, Sha256};
 use uuid::Uuid;
@@ -22,7 +22,7 @@ pub fn maybe_ping(enabled: bool) {
         return;
     }
 
-    let periods = Periods::at(Utc::now());
+    let periods = Periods::at(Timestamp::now());
     let Some(stamp) = stamp_path() else { return };
     if last_sent_day(&stamp).as_deref() == Some(periods.day.as_str()) {
         return;
@@ -78,10 +78,10 @@ struct Periods {
 }
 
 impl Periods {
-    fn at(now: DateTime<Utc>) -> Self {
+    fn at(now: Timestamp) -> Self {
         Self {
-            day: now.format("%Y-%m-%d").to_string(),
-            month: now.format("%Y-%m").to_string(),
+            day: now.strftime("%Y-%m-%d").to_string(),
+            month: now.strftime("%Y-%m").to_string(),
         }
     }
 }
@@ -142,7 +142,7 @@ fn write_stamp(path: &Path, day: &str) -> std::io::Result<()> {
 
 #[cfg(test)]
 mod tests {
-    use chrono::{TimeZone, Utc};
+    use jiff::Timestamp;
 
     use super::{
         Periods, is_release_version, last_sent_day, load_or_create_secret_at, period_id,
@@ -152,9 +152,9 @@ mod tests {
     #[test]
     fn daily_and_monthly_ids_rotate_at_their_utc_boundaries() {
         let secret = "local-install-secret";
-        let first = Periods::at(Utc.with_ymd_and_hms(2026, 7, 14, 23, 59, 59).unwrap());
-        let next_day = Periods::at(Utc.with_ymd_and_hms(2026, 7, 15, 0, 0, 0).unwrap());
-        let next_month = Periods::at(Utc.with_ymd_and_hms(2026, 8, 1, 0, 0, 0).unwrap());
+        let first = Periods::at("2026-07-14T23:59:59Z".parse::<Timestamp>().unwrap());
+        let next_day = Periods::at("2026-07-15T00:00:00Z".parse::<Timestamp>().unwrap());
+        let next_month = Periods::at("2026-08-01T00:00:00Z".parse::<Timestamp>().unwrap());
 
         assert_ne!(
             period_id(secret, "day", &first.day),

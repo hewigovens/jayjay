@@ -2,9 +2,9 @@ use std::sync::Arc;
 #[cfg(test)]
 use std::sync::Mutex;
 
+use futures::StreamExt as _;
 use jj_lib::commit::Commit;
 use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
-use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::object_id::ObjectId as _;
@@ -55,7 +55,10 @@ impl Repo {
         self.sync_colocated_git(&mut tx)?;
         let new_repo = block_on_result("commit tx", tx.commit(description))?;
         self.set_repo(new_repo);
-        let repo = block_on_result(context, repo_loader.load_at_head())?;
+        let repo = block_on_result(
+            context,
+            repo_loader.load_at_head(Some(&self.workspace_name)),
+        )?;
         let commit = self.working_copy_commit(&repo)?;
         if commit.id() != old_commit.id() {
             block_on_result(context, locked_ws.locked_wc().check_out(&commit))?;
@@ -148,7 +151,10 @@ impl Repo {
     ) -> JayResult<(LockedWorkspace<'w>, Arc<ReadonlyRepo>)> {
         let repo_loader = workspace.repo_loader().clone();
         let mut locked_ws = block_on_result(context, workspace.start_working_copy_mutation())?;
-        let head = block_on_result(context, repo_loader.load_at_head())?;
+        let head = block_on_result(
+            context,
+            repo_loader.load_at_head(Some(&self.workspace_name)),
+        )?;
         let repo = self.ensure_working_copy_fresh(&mut locked_ws, head)?;
         Ok((locked_ws, repo))
     }
@@ -263,8 +269,8 @@ impl Repo {
         let wc_tree = wc_commit.tree();
         let matcher = FilesMatcher::new(paths.iter().map(|path| path.as_ref()));
         let mut builder = MergedTreeBuilder::new(wc_tree.clone());
-        for (path, _) in wc_tree.entries_matching(&matcher) {
-            builder.set_or_remove(path, Merge::absent());
+        for (path, _) in block_on(wc_tree.entries_matching(&matcher).collect::<Vec<_>>()) {
+            builder.set_or_remove(path, None);
         }
         let new_tree = block_on_result(context, builder.write_tree())?;
         let mut tx = repo.start_transaction();
@@ -279,7 +285,7 @@ impl Repo {
         // A path the ignore rules do not actually cover comes straight back in this snapshot and is reported below.
         let snapshot_tree = self.snapshot_tree(&repo, &mut locked_ws, context)?;
         if snapshot_tree.tree_ids() != new_commit.tree_ids() {
-            if let Some((path, _)) = snapshot_tree.entries_matching(&matcher).next() {
+            if let Some((path, _)) = block_on(snapshot_tree.entries_matching(&matcher).next()) {
                 return Err(JayError::internal(format!(
                     "{} is not ignored, so the next snapshot would track it again",
                     path.as_internal_file_string()
@@ -367,7 +373,7 @@ mod tests {
                 .recv_timeout(Duration::from_secs(10))
                 .expect("mutation started");
             let finished_while_locked = finished_rx.recv_timeout(Duration::from_secs(1)).is_ok();
-            let head = block_on_result("read head", loader.load_at_head()).expect("head");
+            let head = block_on_result("read head", loader.load_at_head(None)).expect("head");
             block_on_result("unlock", locked.finish(base.op_id().clone())).expect("unlock");
             mutation.join().expect("mutation thread").expect("mutation");
             assert!(!finished_while_locked);
@@ -406,7 +412,11 @@ mod tests {
             reached_lock_rx
                 .recv_timeout(Duration::from_secs(10))
                 .expect("refresh reaches the working-copy lock");
-            let head = block_on_result("load head", repo_loader.load_at_head()).expect("load head");
+            let head = block_on_result(
+                "load head",
+                repo_loader.load_at_head(Some(&repo.workspace_name)),
+            )
+            .expect("load head");
             repo.snapshot_locked_working_copy(locked_ws, head)
                 .expect("snapshot under the held lock");
             refresh

@@ -24,7 +24,12 @@ impl Repo {
     }
 
     pub fn overview(&self) -> JayResult<Overview> {
-        let repo = block_on_result("load overview", self.get_repo().loader().load_at_head())?;
+        let repo = block_on_result(
+            "load overview",
+            self.get_repo()
+                .loader()
+                .load_at_head(Some(&self.workspace_name)),
+        )?;
         self.set_repo(repo.clone());
         on_worker_stack(|| self.overview_of(&repo))
     }

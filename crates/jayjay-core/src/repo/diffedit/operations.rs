@@ -1,9 +1,7 @@
 use std::sync::Arc;
 
-use jj_lib::backend::MergedTreeValue;
 use jj_lib::backend::TreeValue;
 use jj_lib::commit::Commit;
-use jj_lib::merge::Merge;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
@@ -271,9 +269,9 @@ impl Repo {
                     repo_path.as_ref(),
                     &partition.selected_text,
                 )?;
-                builder.set_or_remove(repo_path, new_value);
+                builder.set_or_remove(repo_path, Some(new_value));
             } else {
-                builder.set_or_remove(repo_path, Merge::absent());
+                builder.set_or_remove(repo_path, None);
             }
         }
 
@@ -314,9 +312,9 @@ impl Repo {
                     repo_path.as_ref(),
                     &partition.remaining_text,
                 )?;
-                builder.set_or_remove(repo_path, new_value);
+                builder.set_or_remove(repo_path, Some(new_value));
             } else {
-                builder.set_or_remove(repo_path, Merge::absent());
+                builder.set_or_remove(repo_path, None);
             }
         }
 
@@ -336,7 +334,7 @@ impl Repo {
         parent_tree: &MergedTree,
         path: &RepoPath,
         text: &str,
-    ) -> JayResult<MergedTreeValue> {
+    ) -> JayResult<TreeValue> {
         let metadata = self
             .resolved_file_value(source_tree, path, "load selected file metadata")?
             .or_else(|| {
@@ -369,11 +367,11 @@ impl Repo {
             &format!("write file {}", path.as_internal_file_string()),
             repo.store().write_file(path, &mut text.as_bytes()),
         )?;
-        Ok(Merge::normal(TreeValue::File {
+        Ok(TreeValue::File {
             id: file_id,
             executable,
             copy_id,
-        }))
+        })
     }
 
     fn resolved_file_value(

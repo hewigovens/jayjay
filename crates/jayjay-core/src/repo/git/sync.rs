@@ -270,7 +270,7 @@ impl Repo {
             }
             if commit.has_conflict() {
                 suggested.extend(names);
-            } else if block_on_result("check cleanup candidate", commit.is_empty(repo.as_ref()))? {
+            } else if block_on_result("check cleanup candidate", commit.is_empty(repo.index()))? {
                 for name in &names {
                     let target = tx.repo().view().get_local_bookmark(RefName::new(name));
                     if let Some(target) = bookmark_target_without_commit(target, &id) {

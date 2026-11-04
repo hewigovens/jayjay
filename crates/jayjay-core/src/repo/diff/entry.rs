@@ -268,7 +268,7 @@ pub(super) fn first_diff_content(
     matcher: &dyn Matcher,
     projection_mode: DiffProjectionMode,
 ) -> JayResult<Option<(RepoPathBuf, MaterializedDiffContent, String)>> {
-    let mut diff_stream = trees.before.diff_stream(&trees.after, matcher);
+    let mut diff_stream = trees.before.diff(&trees.after, matcher);
     let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) else {
         return Ok(None);
     };

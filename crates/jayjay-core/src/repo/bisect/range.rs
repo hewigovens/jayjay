@@ -48,8 +48,11 @@ pub(super) fn commit_visible(repo: &ReadonlyRepo, id: &CommitId) -> JayResult<bo
         Ok(commit) => commit,
         Err(_) => return Ok(false),
     };
-    let hidden = block_on_result("bisect visibility", commit.is_hidden(repo))?;
-    Ok(!hidden)
+    let targets = block_on_result(
+        "bisect visibility",
+        repo.resolve_change_id(commit.change_id()),
+    )?;
+    Ok(targets.is_some_and(|targets| targets.has_visible(commit.id())))
 }
 
 fn change_ids(

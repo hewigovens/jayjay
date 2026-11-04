@@ -65,6 +65,7 @@ impl Repo {
                 &repo,
                 &LocalWorkingCopyFactory {},
                 workspace_name.clone(),
+                Some(&self.workspace_name),
             ),
         )?;
         let sparse_patterns = load_workspace_internal(&self.path, "read sparse patterns")?

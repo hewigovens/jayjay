@@ -92,7 +92,7 @@ impl Repo {
     }
 
     fn edit_would_abandon(&self, repo: &ReadonlyRepo, commit: &Commit) -> JayResult<bool> {
-        let discardable = block_on_result("bisect restore", commit.is_discardable(repo))?;
+        let discardable = block_on_result("bisect restore", commit.is_discardable(repo.index()))?;
         if !discardable || !repo.view().heads().contains(commit.id()) {
             return Ok(false);
         }

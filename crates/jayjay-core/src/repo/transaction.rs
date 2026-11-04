@@ -4,7 +4,7 @@ use jj_lib::commit::Commit;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::op_store::RefTarget;
 use jj_lib::ref_name::RefName;
-use jj_lib::repo::{MutableRepo, ReadonlyRepo};
+use jj_lib::repo::{MutableRepo, ReadonlyRepo, Repo as _};
 
 use super::Repo;
 use super::support::block_on_result;
@@ -17,7 +17,7 @@ impl Repo {
         commit: &Commit,
         context: &str,
     ) -> JayResult<MergedTree> {
-        block_on_result(context, commit.parent_tree(repo.as_ref()))
+        block_on_result(context, commit.parent_tree(repo.index()))
     }
 
     pub(crate) fn with_repo_transaction<F>(

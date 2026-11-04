@@ -31,7 +31,7 @@ jobs:
       - name: Install jj for the extracted CLI test
         shell: pwsh
         env:
-          JJ_VERSION: v0.46.0
+          JJ_VERSION: v0.47.1
         run: |
           Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-x86_64-pc-windows-msvc.zip" -OutFile "$env:RUNNER_TEMP/jj.zip"
           Expand-Archive "$env:RUNNER_TEMP/jj.zip" "$env:RUNNER_TEMP/jj-bin"

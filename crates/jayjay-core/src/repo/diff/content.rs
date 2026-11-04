@@ -13,7 +13,7 @@ use crate::types::*;
 impl Repo {
     /// Walk tree diff and return file list WITHOUT content (fast).
     pub(super) fn diff_file_list(&self, trees: &TreePair) -> JayResult<Vec<DiffHunk>> {
-        let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
+        let mut diff_stream = trees.before.diff(&trees.after, &EverythingMatcher);
         let mut files = on_worker_stack(|| -> JayResult<Vec<DiffHunk>> {
             let mut files = Vec::new();
             while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
@@ -56,7 +56,7 @@ impl Repo {
 
     /// Walk tree diff and return all hunks WITH content.
     pub(super) fn diff_all_files(&self, trees: &TreePair) -> JayResult<Vec<DiffHunk>> {
-        let mut diff_stream = trees.before.diff_stream(&trees.after, &EverythingMatcher);
+        let mut diff_stream = trees.before.diff(&trees.after, &EverythingMatcher);
         let mut diff = on_worker_stack(|| -> JayResult<Vec<DiffHunk>> {
             let mut diff = Vec::new();
             while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {

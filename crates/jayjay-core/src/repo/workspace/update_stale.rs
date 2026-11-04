@@ -25,13 +25,19 @@ impl Repo {
             Ok(operation) => {
                 let seen = block_on_result(context, repo_loader.load_at(&operation))?;
                 self.record_working_copy(&mut locked_ws, seen)?;
-                let head = block_on_result(context, repo_loader.load_at_head())?;
+                let head = block_on_result(
+                    context,
+                    repo_loader.load_at_head(Some(&self.workspace_name)),
+                )?;
                 let wc_commit = self.working_copy_commit(&head)?;
                 block_on_result(context, locked_ws.locked_wc().check_out(&wc_commit))?;
                 head
             }
             Err(OpStoreError::ObjectNotFound { .. }) => {
-                let head = block_on_result(context, repo_loader.load_at_head())?;
+                let head = block_on_result(
+                    context,
+                    repo_loader.load_at_head(Some(&self.workspace_name)),
+                )?;
                 let recovery = create_and_check_out_recovery_commit(
                     locked_ws.locked_wc(),
                     &head,

@@ -94,7 +94,7 @@ impl Log for LogFile {
         }
         let line = format!(
             "{} {:<5} {} {}\n",
-            chrono::Local::now().format("%Y-%m-%d %H:%M:%S%.3f"),
+            jiff::Zoned::now().strftime("%Y-%m-%d %H:%M:%S%.3f"),
             record.level(),
             record.target(),
             record.args()

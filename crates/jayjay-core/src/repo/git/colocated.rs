@@ -28,6 +28,11 @@ impl Repo {
 
     /// A colocated checkout expects Git HEAD at @'s parent and Git refs at the bookmarks; the CLI does this after every command, jj-lib leaves it to the caller.
     pub(crate) fn sync_colocated_git(&self, tx: &mut Transaction) -> JayResult<()> {
+        let base_repo = tx.base_repo().clone();
+        let old_wc_commit = base_repo
+            .view()
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .and_then(|id| base_repo.store().get_commit(id).ok());
         let repo_mut = tx.repo_mut();
         if !self.is_colocated(repo_mut.store()) {
             return Ok(());
@@ -45,7 +50,7 @@ impl Repo {
                     repo_mut,
                     &self.workspace_name,
                     &self.path,
-                    &wc_commit,
+                    (old_wc_commit.as_ref(), &wc_commit),
                 ))
             })?;
         }
@@ -81,6 +86,7 @@ impl Repo {
             &index_path,
             gix::lock::acquire::Fail::AfterDurationWithBackoff(GIT_LOCK_TIMEOUT),
             None,
+            0,
         )
         .map_err(index_error)?;
         let mut index = if index_path.exists() {
@@ -127,7 +133,7 @@ async fn intent_to_add_changes(
 ) -> JayResult<(Vec<(BString, Mode)>, HashSet<BString>)> {
     let mut added_paths = Vec::new();
     let mut removed_paths = HashSet::new();
-    let mut diff_stream = old_tree.diff_stream(new_tree, &EverythingMatcher);
+    let mut diff_stream = old_tree.diff(new_tree, &EverythingMatcher);
     while let Some(TreeDiffEntry { path, values }) = diff_stream.next().await {
         let values = values.map_err(index_error)?;
         if values.before.is_absent() {

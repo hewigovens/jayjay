@@ -3,10 +3,9 @@ use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
     MaterializedFileValue, MaterializedTreeValue, materialize_merge_result_to_bytes,
 };
-use jj_lib::files::FileMergeHunkLevel;
+use jj_lib::files::{FileMergeHunkLevel, MergeOptions};
 use jj_lib::merge::SameChange;
 use jj_lib::object_id::ObjectId;
-use jj_lib::tree_merge::MergeOptions;
 
 pub(super) use crate::file_display::is_image_path;
 use crate::file_display::{MAX_DIFF_BYTES, MAX_IMAGE_BYTES, bytes_to_display};

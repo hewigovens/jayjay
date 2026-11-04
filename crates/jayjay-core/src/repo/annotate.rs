@@ -1,13 +1,11 @@
 use std::collections::HashMap;
 
-use chrono::DateTime;
-use chrono::Local;
-use chrono::Utc;
+use jiff::Timestamp;
+use jiff::tz::TimeZone;
 use jj_lib::annotate::FileAnnotator;
 use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit as JjCommit;
 use jj_lib::fileset::FilesetExpression;
-use jj_lib::object_id::ObjectId;
 use jj_lib::revset::RevsetExpression;
 use jj_lib::revset::RevsetFilterPredicate;
 use jj_lib::revset::SymbolResolver;
@@ -51,18 +49,12 @@ impl Repo {
         let lines = on_worker_stack(|| {
             let mut cache: HashMap<CommitId, AnnotationMeta> = HashMap::new();
             let mut lines = Vec::new();
-            for (line_idx, (commit_id_result, raw_line)) in annotation.lines().enumerate() {
-                let commit_id = match commit_id_result {
-                    Ok(id) | Err(id) => id,
-                };
-                let meta = match cache.get(commit_id) {
-                    Some(m) => m.clone(),
-                    None => {
-                        let m = AnnotationMeta::load(repo.as_ref(), commit_id);
-                        cache.insert(commit_id.clone(), m.clone());
-                        m
-                    }
-                };
+            for (line_idx, (commit_result, raw_line)) in annotation.lines().enumerate() {
+                let (Ok(commit) | Err(commit)) = commit_result;
+                let meta = cache
+                    .entry(commit.id().clone())
+                    .or_insert_with(|| AnnotationMeta::load(repo.as_ref(), commit))
+                    .clone();
                 let trimmed = raw_line.strip_suffix(b"\n").unwrap_or(raw_line);
                 let text = String::from_utf8_lossy(trimmed).into_owned();
                 lines.push(AnnotationLine {
@@ -96,34 +88,21 @@ struct AnnotationMeta {
 }
 
 impl AnnotationMeta {
-    fn load(repo: &dyn jj_lib::repo::Repo, commit_id: &CommitId) -> Self {
-        let Ok(commit) = repo.store().get_commit(commit_id) else {
-            return Self::placeholder(commit_id);
-        };
+    fn load(repo: &dyn jj_lib::repo::Repo, commit: &JjCommit) -> Self {
         Self {
-            change_id: short_change_id(repo, &commit),
+            change_id: short_change_id(repo, commit),
             author: commit.author().email.clone(),
-            timestamp: format_timestamp(&commit),
-        }
-    }
-
-    fn placeholder(commit_id: &CommitId) -> Self {
-        let id = commit_id.hex();
-        let len = id.len() as u32;
-        Self {
-            change_id: ShortId::new(id, len),
-            author: String::new(),
-            timestamp: String::new(),
+            timestamp: format_timestamp(commit),
         }
     }
 }
 
 fn format_timestamp(commit: &JjCommit) -> String {
     let millis = commit.author().timestamp.timestamp.0;
-    let Some(utc) = DateTime::<Utc>::from_timestamp_millis(millis) else {
+    let Ok(ts) = Timestamp::from_millisecond(millis) else {
         return String::new();
     };
-    utc.with_timezone(&Local)
-        .format("%Y-%m-%d %H:%M:%S")
+    ts.to_zoned(TimeZone::system())
+        .strftime("%Y-%m-%d %H:%M:%S")
         .to_string()
 }

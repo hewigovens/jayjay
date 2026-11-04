@@ -3,7 +3,7 @@ use std::sync::{Arc, RwLock};
 
 use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit;
-use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use super::super::support::block_on;
 
@@ -20,7 +20,7 @@ impl CommitEmptiness {
         if let Some(&empty) = self.0.read().unwrap().get(commit.id()) {
             return empty;
         }
-        let Ok(empty) = block_on(commit.is_empty(repo.as_ref())) else {
+        let Ok(empty) = block_on(commit.is_empty(repo.index())) else {
             return false;
         };
         let mut cache = self.0.write().unwrap();

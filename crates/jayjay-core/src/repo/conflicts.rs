@@ -1,6 +1,7 @@
 use std::path::Path;
 use std::sync::Arc;
 
+use futures::StreamExt as _;
 use jj_lib::backend::{MergedTreeValueExt as _, TreeValue};
 use jj_lib::commit::Commit;
 use jj_lib::conflicts::{
@@ -16,7 +17,7 @@ use jj_lib::settings::UserSettings;
 
 use super::Repo;
 use crate::file_display::{MAX_DIFF_BYTES, bytes_to_display};
-use crate::repo::support::block_on_result;
+use crate::repo::support::{block_on, block_on_result};
 use crate::types::*;
 
 pub(super) use self::content::materialized_conflict_supports_editor;
@@ -32,9 +33,8 @@ impl Repo {
     pub fn resolve_list(&self, rev: &str) -> JayResult<Vec<String>> {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
-        commit
-            .tree()
-            .conflicts()
+        block_on(commit.tree().conflicts().collect::<Vec<_>>())
+            .into_iter()
             .map(|(path, value)| {
                 value.map_err(|error| JayError::Internal {
                     message: format!("read conflict {}: {error}", path.as_internal_file_string()),
@@ -48,7 +48,8 @@ impl Repo {
         let repo = self.get_repo();
         let commit = self.resolve_commit(&repo, rev)?;
         let tree = commit.tree();
-        tree.conflicts()
+        block_on(tree.conflicts().collect::<Vec<_>>())
+            .into_iter()
             .map(|(path, value)| {
                 let value = value.map_err(|error| JayError::Internal {
                     message: format!("read conflict {}: {error}", path.as_internal_file_string()),
@@ -240,7 +241,11 @@ impl Repo {
             Err(new_file_ids) => current_value.with_new_file_ids(&new_file_ids),
         };
         let mut builder = MergedTreeBuilder::new(tree);
-        builder.set_or_remove(repo_path, new_value);
+        builder
+            .set_or_remove_merge(repo_path, new_value)
+            .map_err(|_| JayError::ConflictEditorStale {
+                path: path.to_owned(),
+            })?;
         let new_tree = block_on_result("write conflict resolution", builder.write_tree())?;
         self.rewrite_existing_commit_with_tree(
             repo,

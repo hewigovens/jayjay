@@ -86,7 +86,7 @@ pub(crate) fn load_repo_at_head(
     workspace: &Workspace,
     context: &str,
 ) -> JayResult<Arc<ReadonlyRepo>> {
-    block_on_result(context, workspace.repo_loader().load_at_head())
+    block_on_result(context, workspace.load_at_head())
 }
 
 /// True when `ancestor` is `descendant`'s operation or one of its ancestors.

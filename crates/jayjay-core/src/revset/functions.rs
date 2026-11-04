@@ -87,7 +87,6 @@ mod tests {
         self, RevsetAliasesMap, RevsetDiagnostics, RevsetParseContext, RevsetParseError,
         RevsetParseErrorKind, RevsetWorkspaceContext,
     };
-    use jj_lib::time_util::DatePatternContext;
     use jj_lib::ui_path::RepoPathUiConverter;
 
     use super::{Arguments, FUNCTIONS};
@@ -107,7 +106,7 @@ mod tests {
             aliases_map: &aliases,
             local_variables: HashMap::new(),
             user_email: "jayjay@example.com",
-            date_pattern_context: DatePatternContext::from(chrono::Local::now()),
+            current_time: jiff::Zoned::now(),
             default_ignored_remote: None,
             fileset_aliases_map: &filesets,
             extensions: &extensions,

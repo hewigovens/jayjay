@@ -137,7 +137,7 @@ impl Repo {
         let mut builder = MergedTreeBuilder::new(target.tree);
         builder.set_or_remove(
             target.path,
-            jj_lib::merge::Merge::normal(TreeValue::File {
+            Some(TreeValue::File {
                 id: new_id,
                 executable,
                 copy_id,

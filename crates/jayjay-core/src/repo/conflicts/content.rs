@@ -1,9 +1,8 @@
 use jj_lib::backend::{FileId, TreeValue};
 use jj_lib::backend::{MergedTreeValue, MergedTreeValueExt as _};
 use jj_lib::conflicts::{ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedTreeValue};
-use jj_lib::files::FileMergeHunkLevel;
+use jj_lib::files::{FileMergeHunkLevel, MergeOptions};
 use jj_lib::object_id::ObjectId as _;
-use jj_lib::tree_merge::MergeOptions;
 
 use crate::file_display::{MAX_DIFF_BYTES, optional_bytes_to_display, text_content};
 use crate::repo::support::block_on_result;

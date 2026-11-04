@@ -20,10 +20,10 @@ gpui = { workspace = true }
 # font-kit/runtime_shaders are macOS-only forwards; wayland/x11 enable the Linux
 # windowing backends (no-ops elsewhere). Without them the Linux binary cannot open a window.
 gpui_platform = { workspace = true, features = ["font-kit", "runtime_shaders", "wayland", "x11"] }
-chrono = { workspace = true }
 clap = { workspace = true }
 sha2 = { workspace = true }
 uuid = { workspace = true }
+jiff = { workspace = true }
 percent-encoding = { workspace = true }
 base64 = { workspace = true }
 dunce = { workspace = true }

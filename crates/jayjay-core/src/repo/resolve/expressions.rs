@@ -10,7 +10,6 @@ use jj_lib::revset::{
     UserRevsetExpression,
 };
 use jj_lib::str_util::StringExpression;
-use jj_lib::time_util::DatePatternContext;
 
 use super::super::Repo;
 
@@ -29,7 +28,7 @@ impl Repo {
             aliases_map,
             local_variables: HashMap::new(),
             user_email,
-            date_pattern_context: DatePatternContext::from(chrono::Local::now()),
+            current_time: jiff::Zoned::now(),
             default_ignored_remote: Some(REMOTE_NAME_FOR_LOCAL_GIT_REPO),
             fileset_aliases_map,
             extensions: &extensions,

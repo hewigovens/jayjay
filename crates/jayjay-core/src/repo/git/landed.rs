@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use jj_lib::backend::{ChangeId, CommitId};
 use jj_lib::object_id::ObjectId as _;
-use jj_lib::repo::ReadonlyRepo;
+use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use crate::repo::Repo;
 use crate::repo::support::block_on_result;
@@ -56,7 +56,7 @@ impl Repo {
                 || gerrit_change_ids(change_id)
                     .iter()
                     .any(|id| landed_trailers.contains(id));
-            if landed && block_on_result("check landed change", commit.is_empty(repo.as_ref()))? {
+            if landed && block_on_result("check landed change", commit.is_empty(repo.index()))? {
                 abandoned.push(change_label(&commit));
                 tx.repo_mut().record_abandoned_commit(&commit);
             }
