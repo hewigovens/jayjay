@@ -7,6 +7,7 @@ private struct AppEnvironmentModifier: ViewModifier {
         content
             .environment(settings)
             .environment(\.jayjayTypography, settings.typography)
+            .environment(\.appThemes, settings.appThemes)
             .environment(\.diffPalettes, settings.diffPalettes)
             .preferredColorScheme(settings.appearanceMode.colorScheme)
     }

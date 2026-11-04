@@ -1,13 +1,13 @@
 mod color;
+mod color_theme;
 mod diff_colors;
-mod diff_palette;
 mod repo_colors;
 mod seed;
 
 pub use color::{contrast_ratio, is_dark, luminance, mix};
+pub use color_theme::{ColorTheme, color_themes};
 pub use diff_colors::DiffThemeColors;
-pub use diff_palette::{DiffPalette, diff_palettes};
-pub use repo_colors::{RepoColors, repo_colors};
+pub use repo_colors::RepoColors;
 pub use seed::ThemeSeed;
 
 #[cfg(test)]

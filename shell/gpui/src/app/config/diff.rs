@@ -1,4 +1,4 @@
-use jayjay_core::DiffPalette;
+use jayjay_core::ColorTheme;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -11,7 +11,7 @@ pub struct DiffConfig {
     pub tree_file_list: bool,
     pub hide_reviewed_files: bool,
     pub auto_expand_description: bool,
-    pub palette: DiffPaletteSelection,
+    pub palette: ThemeSelection,
 }
 
 impl Default for DiffConfig {
@@ -24,30 +24,30 @@ impl Default for DiffConfig {
             tree_file_list: false,
             hide_reviewed_files: false,
             auto_expand_description: false,
-            palette: DiffPaletteSelection::default(),
+            palette: ThemeSelection::default(),
         }
     }
 }
 
-/// Stored palette ids, kept verbatim even when this build does not know them.
+/// Stored theme ids, kept verbatim even when this build does not know them.
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq, Eq)]
 #[serde(default)]
-pub struct DiffPaletteSelection {
+pub struct ThemeSelection {
     pub light: String,
     pub dark: String,
 }
 
-impl Default for DiffPaletteSelection {
+impl Default for ThemeSelection {
     fn default() -> Self {
         Self {
-            light: DiffPalette::default_id(false).to_owned(),
-            dark: DiffPalette::default_id(true).to_owned(),
+            light: ColorTheme::default_id(false).to_owned(),
+            dark: ColorTheme::default_id(true).to_owned(),
         }
     }
 }
 
-impl DiffPaletteSelection {
-    pub fn resolve(&self, is_dark: bool) -> DiffPalette {
-        DiffPalette::resolve(if is_dark { &self.dark } else { &self.light }, is_dark)
+impl ThemeSelection {
+    pub fn resolve(&self, is_dark: bool) -> ColorTheme {
+        ColorTheme::resolve(if is_dark { &self.dark } else { &self.light }, is_dark)
     }
 }

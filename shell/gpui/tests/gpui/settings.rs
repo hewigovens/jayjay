@@ -578,7 +578,7 @@ fn open_about_action_opens_about_settings_section(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn changing_dark_diff_palette_recolors_open_diff_without_losing_selection_or_scroll_or_recoloring_chrome(
+fn changing_dark_theme_recolors_open_window_without_losing_selection_or_scroll(
     cx: &mut TestAppContext,
 ) {
     use jayjay_gpui::app::config::{AppearanceMode, update as update_config};
@@ -619,20 +619,67 @@ fn changing_dark_diff_palette_recolors_open_diff_without_losing_selection_or_scr
         let t = cx.global::<Theme>();
         (t.diff_context_bg, t.success_fg)
     });
+    let nord = jayjay_core::ColorTheme::resolve("nord", true);
     assert_ne!(after_context_bg, before_context_bg);
-    assert_eq!(
-        after_context_bg,
-        jayjay_core::DiffPalette::resolve("nord", true)
-            .colors
-            .context_bg
-    );
-    assert_eq!(after_success_fg, before_success_fg);
+    assert_ne!(after_success_fg, before_success_fg);
+    assert_eq!(after_context_bg, nord.colors.context_bg);
+    assert_eq!(after_success_fg, nord.colors.text_added);
     view.read_with(repo_cx, |view, cx| {
         assert_eq!(
             view.view_model().read(cx).selected_file_ix,
             before_selected_file
         );
         assert_eq!(view.diff_scroll_offset_y(), px(-72.));
+    });
+}
+
+#[gpui::test]
+fn appearance_theme_segmented_edits_inactive_side_without_changing_appearance_mode_or_active_theme(
+    cx: &mut TestAppContext,
+) {
+    use jayjay_gpui::app::config::AppearanceMode;
+    use jayjay_gpui::app::theme::Theme;
+
+    install_test_globals(cx);
+    cx.update(SettingsView::open);
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut settings_cx);
+
+    let before_theme = settings_cx.cx.update(|cx| cx.global::<Theme>().clone());
+    assert!(settings_cx.debug_bounds("theme-row-jayjay-light").is_some());
+    assert!(settings_cx.debug_bounds("theme-row-nord").is_none());
+
+    click_setting(&mut settings_cx, "theme-side-dark");
+    assert!(settings_cx.debug_bounds("theme-row-nord").is_some());
+    assert!(settings_cx.debug_bounds("theme-row-jayjay-light").is_none());
+    settings_cx.cx.update(|cx| {
+        assert_eq!(current_config(cx).appearance, AppearanceMode::System);
+        assert_eq!(cx.global::<Theme>(), &before_theme);
+    });
+
+    click_setting(&mut settings_cx, "theme-row-nord");
+    settings_cx.cx.update(|cx| {
+        let cfg = current_config(cx);
+        assert_eq!(cfg.appearance, AppearanceMode::System);
+        assert_eq!(cfg.diff.palette.dark, "nord");
+        assert_eq!(cfg.diff.palette.light, "jayjay-light");
+        assert_eq!(cx.global::<Theme>(), &before_theme);
+    });
+
+    click_setting(&mut settings_cx, "theme-side-light");
+    settings_cx.simulate_keystrokes("down");
+    settle_visual(&mut settings_cx);
+    settings_cx.cx.update(|cx| {
+        let cfg = current_config(cx);
+        assert_eq!(cfg.appearance, AppearanceMode::System);
+        assert_eq!(cfg.diff.palette.light, "solarized-light");
+        assert_eq!(
+            cx.global::<Theme>().diff_context_bg,
+            jayjay_core::ColorTheme::resolve("solarized-light", false)
+                .colors
+                .context_bg
+        );
     });
 }
 

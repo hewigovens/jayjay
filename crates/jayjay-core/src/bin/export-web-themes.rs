@@ -1,6 +1,6 @@
 use std::{env, fmt::Write, fs, path::PathBuf};
 
-use jayjay_core::diff_palettes;
+use jayjay_core::color_themes;
 
 fn main() -> Result<(), Box<dyn std::error::Error>> {
     let output = PathBuf::from(env::args().nth(1).ok_or("expected output directory")?);
@@ -12,7 +12,7 @@ fn main() -> Result<(), Box<dyn std::error::Error>> {
     let mut bindings = String::from(
         "[data-jj-theme-light][data-jj-theme-dark] {\n  --jj-diff-gutter-opacity: 1;\n",
     );
-    for (index, palette) in diff_palettes().into_iter().enumerate() {
+    for (index, palette) in color_themes().into_iter().enumerate() {
         writeln!(
             catalog,
             "  {{ id: {:?}, name: {:?}, dark: {} }},",

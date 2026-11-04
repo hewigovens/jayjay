@@ -1,4 +1,4 @@
-use jayjay_core::{CodeFontChoices, FontSpecimen};
+use jayjay_core::{CodeFontChoices, FontSpecimen, HunkType, ShortId, SpecimenChange, SpecimenFile};
 
 #[uniffi::export]
 fn mono_font_family(preference: String) -> String {
@@ -27,10 +27,26 @@ fn code_font_choices(monospaced_families: Vec<String>) -> CodeFontChoices {
 }
 
 #[uniffi::remote(Record)]
+pub struct SpecimenChange {
+    pub change_id: ShortId,
+    pub summary: String,
+    pub bookmark: Option<String>,
+    pub is_working_copy: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct SpecimenFile {
+    pub path: String,
+    pub hunk_type: HunkType,
+}
+
+#[uniffi::remote(Record)]
 pub struct FontSpecimen {
     pub summary: String,
     pub change_id: String,
     pub path: String,
+    pub changes: Vec<SpecimenChange>,
+    pub files: Vec<SpecimenFile>,
     pub diff: jayjay_core::diff::FileDiff,
 }
 

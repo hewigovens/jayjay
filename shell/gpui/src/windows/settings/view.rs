@@ -46,7 +46,7 @@ pub struct SettingsView {
     pub(super) recently_copied: Option<SharedString>,
     pub(super) custom_editor_command: Entity<TextArea>,
     pub(super) custom_terminal_command: Entity<TextArea>,
-    pub(super) diff_preview_dark: Option<bool>,
+    pub(super) edited_theme_dark: Option<bool>,
     pub(super) review_summary: Option<ReviewStoreSummary>,
     pub(super) confirm_clear_review: bool,
     pub(super) sidebar: ResizablePane,
@@ -106,7 +106,7 @@ impl SettingsView {
                             recently_copied: None,
                             custom_editor_command,
                             custom_terminal_command,
-                            diff_preview_dark: None,
+                            edited_theme_dark: None,
                             review_summary: None,
                             confirm_clear_review: false,
                             sidebar: Self::sidebar_pane(cx),
@@ -173,7 +173,9 @@ impl Render for SettingsView {
                     let backward = event.keystroke.modifiers.shift;
                     flock.update(cx, |flock, cx| flock.handle_tab(backward, window, cx));
                     cx.stop_propagation();
+                    return;
                 }
+                this.handle_appearance_key(event, cx);
             }))
             .on_action(
                 cx.listener(|_, _: &crate::app::actions::CloseWindow, window, _cx| {

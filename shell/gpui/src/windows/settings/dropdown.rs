@@ -162,8 +162,6 @@ fn dropdown_options(field_id: &str, fonts: Option<&FontCatalog>) -> Vec<Dropdown
             ],
         ),
         ("language", _) => language_options(),
-        ("diff-light-palette", _) => diff_palette_options(false),
-        ("diff-dark-palette", _) => diff_palette_options(true),
         _ => Vec::new(),
     }
 }
@@ -180,18 +178,6 @@ fn language_options() -> Vec<DropdownOption> {
         group: None,
     });
     std::iter::once(system).chain(languages).collect()
-}
-
-fn diff_palette_options(is_dark: bool) -> Vec<DropdownOption> {
-    jayjay_core::diff_palettes()
-        .into_iter()
-        .filter(|p| p.is_dark == is_dark)
-        .map(|p| DropdownOption {
-            id: p.id,
-            label: p.name,
-            group: None,
-        })
-        .collect()
 }
 
 fn font_options<const N: usize>(
@@ -229,8 +215,6 @@ fn dropdown_current(field_id: &str, cfg: &crate::app::config::AppConfig) -> Opti
                 .clone()
                 .unwrap_or_else(|| SYSTEM_LANGUAGE.to_owned()),
         ),
-        "diff-light-palette" => Some(cfg.diff.palette.resolve(false).id),
-        "diff-dark-palette" => Some(cfg.diff.palette.resolve(true).id),
         _ => None,
     }
 }
@@ -301,15 +285,8 @@ fn dropdown_row(
                     }
                     "code-font-family" => c.code_font_family = value.clone(),
                     "language" => c.language = (value != SYSTEM_LANGUAGE).then(|| value.clone()),
-                    "diff-light-palette" => c.diff.palette.light = value.clone(),
-                    "diff-dark-palette" => c.diff.palette.dark = value.clone(),
                     _ => {}
                 });
-                match field_for_click.as_ref() {
-                    "diff-light-palette" => view.diff_preview_dark = Some(false),
-                    "diff-dark-palette" => view.diff_preview_dark = Some(true),
-                    _ => {}
-                }
                 view.close_dropdown(cx);
             }),
         )

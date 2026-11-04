@@ -249,9 +249,14 @@ enum AID {
         static let codeLigatures = "settings.codeLigatures"
         static let preview = "settings.preview"
         static let resetFonts = "settings.resetFonts"
-        static let diffLightPalette = "settings.diffLightPalette"
-        static let diffDarkPalette = "settings.diffDarkPalette"
+        static let themeSide = "settings.themeSide"
+        static let themeList = "settings.themeList"
         static let aboutIcon = "settings.about.icon"
+
+        static func themeRow(_ id: String) -> String {
+            "settings.themeRow.\(id)"
+        }
+
         static let flockUnlock = "settings.flock.unlock"
         static let flockVerify = "settings.flock.verify"
         static let flockFeather = "settings.flock.feather"

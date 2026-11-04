@@ -2,46 +2,89 @@ import JayJayCore
 import JayJayDiffUI
 import SwiftUI
 
-/// App-specific brand colors. Values that both shells share live in core's `theme`
-/// module so the SwiftUI and GPUI shells stay in sync.
-enum AppColors {
-    static func readingBackground(_ scheme: ColorScheme, palettes: DiffPalettes) -> Color {
-        Color(rgb: (scheme == .dark ? palettes.dark : palettes.light).contextBg)
+struct AppColors: Equatable {
+    private let theme: ColorTheme
+    private let isDefault: Bool
+
+    init(theme: ColorTheme, isDefault: Bool) {
+        self.theme = theme
+        self.isDefault = isDefault
     }
 
-    static func navigationBackground(_ scheme: ColorScheme) -> Color {
-        scheme == .dark ? Color(rgb: 0x1B2330) : Color(nsColor: .controlBackgroundColor)
+    var readingBackground: Color {
+        Color(rgb: theme.colors.contextBg)
     }
 
-    static func graphLine(_ scheme: ColorScheme) -> Color {
-        Color(rgb: repo(scheme).graphLine)
+    var navigationBackground: Color {
+        theme.repo.navigationBg.map(Color.init(rgb:)) ?? Color(nsColor: .controlBackgroundColor)
     }
 
-    static func workspace(_ scheme: ColorScheme) -> Color {
-        Color(rgb: repo(scheme).workspace)
+    var graphLine: Color {
+        Color(rgb: theme.repo.graphLine)
     }
 
-    static func bookmark(_ scheme: ColorScheme) -> Color {
-        Color(rgb: repo(scheme).bookmark)
+    var workspace: Color {
+        Color(rgb: theme.repo.workspace)
     }
 
-    static func commitIdPrefix(_ scheme: ColorScheme) -> Color {
-        Color(rgb: repo(scheme).commitIdPrefix)
+    var bookmark: Color {
+        Color(rgb: theme.repo.bookmark)
     }
 
-    static func changeIdPrefix(_ scheme: ColorScheme) -> Color {
-        Color(rgb: repo(scheme).changeIdPrefix)
+    var changeIdPrefix: Color {
+        Color(rgb: theme.repo.changeIdPrefix)
     }
 
-    private static let darkRepoColors = repoColors(isDark: true)
-    private static let lightRepoColors = repoColors(isDark: false)
+    var commitIdPrefix: Color {
+        Color(rgb: theme.repo.commitIdPrefix)
+    }
 
-    private static func repo(_ scheme: ColorScheme) -> RepoColors {
-        scheme == .dark ? darkRepoColors : lightRepoColors
+    var fileAdded: Color {
+        isDefault ? .green : Color(rgb: theme.repo.fileAdded)
+    }
+
+    var fileRemoved: Color {
+        isDefault ? .red : Color(rgb: theme.repo.fileRemoved)
+    }
+
+    var fileModified: Color {
+        isDefault ? .blue : Color(rgb: theme.repo.fileModified)
+    }
+
+    var fileRenamed: Color {
+        isDefault ? .blue : Color(rgb: theme.repo.fileRenamed)
+    }
+
+    var fileLfs: Color {
+        isDefault ? .purple : Color(rgb: theme.repo.fileLfs)
+    }
+
+    var noteAccent: Color {
+        isDefault ? .orange : Color(rgb: theme.repo.noteAccent)
+    }
+
+    func fileColor(for hunkType: HunkType) -> Color {
+        switch hunkType {
+            case .added, .copied: fileAdded
+            case .removed: fileRemoved
+            case .modified: fileModified
+            case .renamed: fileRenamed
+        }
+    }
+
+    func fileBadgeColor(for hunkType: HunkType) -> Color {
+        guard isDefault, !theme.isDark else {
+            return fileColor(for: hunkType)
+        }
+        switch hunkType {
+            case .added, .copied: return Color(red: 28 / 255, green: 124 / 255, blue: 58 / 255)
+            case .removed: return Color(red: 180 / 255, green: 35 / 255, blue: 24 / 255)
+            case .modified, .renamed: return Color(red: 23 / 255, green: 92 / 255, blue: 211 / 255)
+        }
     }
 }
 
-private extension Color {
+extension Color {
     /// From a packed `0xRRGGBB` value (core's shared design tokens are `u32`).
     init(rgb: UInt32) {
         self.init(

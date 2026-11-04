@@ -31,6 +31,7 @@ private struct DAGRefsRowBoundsPreferenceKey: PreferenceKey {
 struct DAGRow: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.jayjayTypography) var typography
+    @Environment(\.appThemes) var appThemes
     let viewModel: DAGRowViewModel
     var actions: (any DAGActions & BookmarkActions & TagActions)?
     var onRequest: ((DAGRequest) -> Void)?
@@ -82,9 +83,8 @@ struct DAGRow: View {
 
             HStack(spacing: 6) {
                 Text(change.commitId.highlighted(
-                    scheme: colorScheme,
                     font: typography.identifierFont,
-                    prefixColor: AppColors.commitIdPrefix(colorScheme)
+                    prefixColor: appThemes.colors(for: colorScheme).commitIdPrefix
                 ))
                 .fixedSize(horizontal: true, vertical: false)
                 .help(Localized.Repo.commitNamed(id: change.commitId.id))

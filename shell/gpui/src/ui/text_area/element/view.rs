@@ -61,7 +61,7 @@ impl Element for TextAreaElement {
         if self.input.read(cx).is_label() {
             let input = self.input.clone();
             let t = theme(cx);
-            let key = layout_key(px(0.), window, t, self.input.read(cx).syntax_colors(t));
+            let key = layout_key(px(0.), window, t);
             let layout =
                 window.request_measured_layout(style, move |known, available, window, cx| {
                     let width = known.width.unwrap_or(match available.width {
@@ -97,7 +97,7 @@ impl Element for TextAreaElement {
         let gutter_width = gutter_width(input, window);
         let bounds = text_bounds(bounds, gutter_width);
         let t = theme(cx);
-        let key = layout_key(bounds.size.width, window, t, input.syntax_colors(t));
+        let key = layout_key(bounds.size.width, window, t);
         let (lines, line_height) = match input
             .last_layout
             .as_ref()
@@ -366,20 +366,21 @@ mod tests {
     }
 
     #[gpui::test]
-    fn diff_highlighted_blocks_take_the_selected_palette_tokens(cx: &mut gpui::TestAppContext) {
+    fn diff_highlighted_blocks_take_the_selected_palette_line_colors(
+        cx: &mut gpui::TestAppContext,
+    ) {
         use gpui::AppContext as _;
         use jayjay_core::diff::DiffSpanStyle;
 
-        use crate::app::config::{AppearanceMode, DiffPaletteSelection};
+        use crate::app::config::{AppearanceMode, ThemeSelection};
         use crate::app::theme::Theme;
 
-        let nord = DiffPaletteSelection {
+        let nord = ThemeSelection {
             dark: "nord".to_owned(),
-            ..DiffPaletteSelection::default()
+            ..ThemeSelection::default()
         };
         let theme =
             Theme::for_appearance(AppearanceMode::Dark, gpui::WindowAppearance::Dark, &nord);
-        assert_ne!(theme.diff_syntax, theme.syntax);
         cx.update(|cx| cx.set_global(theme.clone()));
         let (diff, cx) = cx.add_window_view(|_, cx| {
             TextArea::diff_highlighted_code_block("let x = 1;", "a.rs", "let x = 0;", cx)
@@ -387,14 +388,12 @@ mod tests {
         let plain = cx.update(|_, cx| cx.new(|cx| TextArea::new("let x = 1;", "", true, 120., cx)));
 
         diff.read_with(cx, |input, _| {
-            assert_eq!(input.syntax_colors(&theme), &theme.diff_syntax);
             assert_eq!(
                 input.diff_text_color(DiffSpanStyle::Added, &theme),
                 Some(theme.diff_text_added)
             );
         });
         plain.read_with(cx, |input, _| {
-            assert_eq!(input.syntax_colors(&theme), &theme.syntax);
             assert_eq!(input.diff_text_color(DiffSpanStyle::Added, &theme), None);
         });
     }

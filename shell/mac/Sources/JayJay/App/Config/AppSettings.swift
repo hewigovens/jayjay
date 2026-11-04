@@ -148,19 +148,19 @@ final class AppSettings {
     var diffPaletteLight: String {
         didSet {
             defaults.set(diffPaletteLight, forKey: StorageKeys.diffPaletteLight)
-            lightDiffPalette = diffPalette(id: diffPaletteLight, isDark: false)
+            lightColorTheme = colorTheme(id: diffPaletteLight, isDark: false)
         }
     }
 
     var diffPaletteDark: String {
         didSet {
             defaults.set(diffPaletteDark, forKey: StorageKeys.diffPaletteDark)
-            darkDiffPalette = diffPalette(id: diffPaletteDark, isDark: true)
+            darkColorTheme = colorTheme(id: diffPaletteDark, isDark: true)
         }
     }
 
-    private(set) var lightDiffPalette: DiffPalette
-    private(set) var darkDiffPalette: DiffPalette
+    private(set) var lightColorTheme: ColorTheme
+    private(set) var darkColorTheme: ColorTheme
 
     var sideBySideDiff: Bool {
         didSet { defaults.set(sideBySideDiff, forKey: StorageKeys.sideBySideDiff) }
@@ -333,12 +333,12 @@ final class AppSettings {
             availableLanguages().contains { $0.tag == tag } ? tag : nil
         }
         language = launchLanguage
-        let lightPaletteId = defaults.string(forKey: StorageKeys.diffPaletteLight) ?? Self.defaultLightDiffPaletteId
-        let darkPaletteId = defaults.string(forKey: StorageKeys.diffPaletteDark) ?? Self.defaultDarkDiffPaletteId
+        let lightPaletteId = defaults.string(forKey: StorageKeys.diffPaletteLight) ?? Self.defaultLightColorThemeId
+        let darkPaletteId = defaults.string(forKey: StorageKeys.diffPaletteDark) ?? Self.defaultDarkColorThemeId
         diffPaletteLight = lightPaletteId
         diffPaletteDark = darkPaletteId
-        lightDiffPalette = diffPalette(id: lightPaletteId, isDark: false)
-        darkDiffPalette = diffPalette(id: darkPaletteId, isDark: true)
+        lightColorTheme = colorTheme(id: lightPaletteId, isDark: false)
+        darkColorTheme = colorTheme(id: darkPaletteId, isDark: true)
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true

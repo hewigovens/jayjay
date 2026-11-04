@@ -4,6 +4,7 @@ import SwiftUI
 struct FileHistoryView: View {
     @Environment(\.colorScheme) var colorScheme
     @Environment(\.jayjayTypography) var typography
+    @Environment(\.appThemes) var appThemes
     let history: [ChangeInfo]
     let path: String
     let repo: JayJayRepo?
@@ -98,8 +99,8 @@ struct FileHistoryView: View {
         VStack(alignment: .leading, spacing: 4) {
             HStack(spacing: 6) {
                 Text(change.changeId.highlighted(
-                    scheme: colorScheme,
-                    font: typography.identifierFont
+                    font: typography.identifierFont,
+                    prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
                 ))
                 Text(change.author.name)
                     .jayjayFont(11)

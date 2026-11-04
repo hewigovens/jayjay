@@ -1,11 +1,31 @@
-use jayjay_core::{DiffPalette, DiffThemeColors, RepoColors};
+use jayjay_core::{ColorTheme, DiffThemeColors, RepoColors, ThemeSeed};
 
 #[uniffi::remote(Record)]
-pub struct DiffPalette {
+pub struct ColorTheme {
     pub id: String,
     pub name: String,
     pub is_dark: bool,
+    pub seed: ThemeSeed,
     pub colors: DiffThemeColors,
+    pub repo: RepoColors,
+}
+
+#[uniffi::remote(Record)]
+pub struct ThemeSeed {
+    pub background: u32,
+    pub foreground: u32,
+    pub surface: u32,
+    pub muted: u32,
+    pub border: u32,
+    pub accent: u32,
+    pub selection: u32,
+    pub red: u32,
+    pub green: u32,
+    pub yellow: u32,
+    pub blue: u32,
+    pub magenta: u32,
+    pub cyan: u32,
+    pub orange: u32,
 }
 
 #[uniffi::remote(Record)]
@@ -44,9 +64,17 @@ pub struct DiffThemeColors {
 
 #[uniffi::remote(Record)]
 pub struct RepoColors {
+    pub navigation_bg: Option<u32>,
+    pub media_frame_bg: u32,
     pub graph_line: u32,
     pub workspace: u32,
     pub bookmark: u32,
     pub change_id_prefix: u32,
     pub commit_id_prefix: u32,
+    pub file_added: u32,
+    pub file_removed: u32,
+    pub file_modified: u32,
+    pub file_renamed: u32,
+    pub file_lfs: u32,
+    pub note_accent: u32,
 }

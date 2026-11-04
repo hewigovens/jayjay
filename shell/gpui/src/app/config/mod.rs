@@ -13,7 +13,7 @@ pub mod window;
 
 pub use app_config::AppConfig;
 pub use appearance::AppearanceMode;
-pub use diff::{DiffConfig, DiffPaletteSelection};
+pub use diff::{DiffConfig, ThemeSelection};
 pub use features::FeaturesConfig;
 pub use layout::LayoutConfig;
 pub use onboarding::OnboardingConfig;

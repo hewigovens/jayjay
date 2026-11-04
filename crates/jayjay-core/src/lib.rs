@@ -72,8 +72,8 @@ pub use file_size_formatter::FileSizeFormatter;
 #[cfg(feature = "repository")]
 pub use filesystem::write_atomically;
 pub use fonts::{
-    CodeFontChoices, FontSpecimen, coding_font_families, font_family_choices, is_user_font_path,
-    mono_font_family,
+    CodeFontChoices, FontSpecimen, SpecimenChange, SpecimenFile, coding_font_families,
+    font_family_choices, is_user_font_path, mono_font_family,
 };
 #[cfg(feature = "repository")]
 pub use jj_command::{JjCommand, JjCommandResult};
@@ -105,7 +105,7 @@ pub use revset::{
     default_revset_preset, revset_completions, revset_presets, typed_revset,
     workspace_filter_revset,
 };
-pub use theme::{DiffPalette, DiffThemeColors, RepoColors, ThemeSeed, diff_palettes, repo_colors};
+pub use theme::{ColorTheme, DiffThemeColors, RepoColors, ThemeSeed, color_themes};
 #[cfg(feature = "repository")]
 pub use tools::{
     EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, editor_opens_at_line, open_in_editor,

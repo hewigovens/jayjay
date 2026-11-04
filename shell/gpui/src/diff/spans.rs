@@ -16,7 +16,7 @@ pub fn span_element(
     theme: &Theme,
     find_query: Option<&str>,
 ) -> AnyElement {
-    let color = theme.diff_syntax.color(span.token).unwrap_or(base_fg);
+    let color = theme.syntax.color(span.token).unwrap_or(base_fg);
     let bg = word_bg(line_style, span.style, theme);
 
     // DirectWrite gives a tab no advance.

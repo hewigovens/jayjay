@@ -4,7 +4,7 @@ use gpui::{Bounds, Font, Hsla, Pixels, ShapedLine, SharedString, TextRun, Window
 use jayjay_core::diff::DiffSpanStyle;
 
 use super::super::{LineLayout, TextArea, TextLayout, TextLayoutKey, Tint};
-use crate::app::theme::{SyntaxColors, Theme};
+use crate::app::theme::Theme;
 use crate::ui::input::{next_boundary, previous_boundary};
 
 /// Shapes from a captured `TextLayoutKey`, so a layout can be built outside the element's own style scope.
@@ -50,12 +50,7 @@ impl Typeset {
     }
 }
 
-pub(crate) fn layout_key(
-    width: Pixels,
-    window: &Window,
-    theme: &Theme,
-    syntax: &SyntaxColors,
-) -> TextLayoutKey {
+pub(crate) fn layout_key(width: Pixels, window: &Window, theme: &Theme) -> TextLayoutKey {
     let style = window.text_style();
     TextLayoutKey {
         width,
@@ -71,11 +66,11 @@ pub(crate) fn layout_key(
             theme.diff_text_context,
             theme.diff_text_added,
             theme.diff_text_removed,
-            syntax.keyword,
-            syntax.string,
-            syntax.comment,
-            syntax.number,
-            syntax.ty,
+            theme.syntax.keyword,
+            theme.syntax.string,
+            theme.syntax.comment,
+            theme.syntax.number,
+            theme.syntax.ty,
             theme.change_id_prefix,
             theme.commit_id_prefix,
         ],
@@ -167,7 +162,6 @@ fn build_lines(
                 content_color,
                 line_style,
                 theme,
-                input.syntax_colors(theme),
             );
             let text = SharedString::from(content[range.clone()].to_string());
             lines.push(line_layout(
@@ -198,7 +192,6 @@ fn build_lines(
                     content_color,
                     line_style,
                     theme,
-                    input.syntax_colors(theme),
                 )
             } else {
                 tinted_runs(&input.tints, start..end, content_color, theme)
@@ -286,7 +279,6 @@ fn highlighted_runs(
     fallback: Hsla,
     line_style: DiffSpanStyle,
     theme: &Theme,
-    syntax: &SyntaxColors,
 ) -> Vec<(usize, Hsla, Option<Hsla>)> {
     let background = line_background(line_style, DiffSpanStyle::Unchanged, theme);
     let fallback_run = |len| (len, fallback, background);
@@ -304,7 +296,8 @@ fn highlighted_runs(
             if covered < start {
                 runs.push(fallback_run(start - covered));
             }
-            let color = syntax
+            let color = theme
+                .syntax
                 .color(span.token)
                 .map(|color| rgb(color).into())
                 .unwrap_or(fallback);

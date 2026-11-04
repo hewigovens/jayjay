@@ -9,6 +9,7 @@ struct OverviewChangePanel: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
 
     private var descriptionBody: String {
         let lines = change.fullDescription.split(separator: "\n", omittingEmptySubsequences: false).dropFirst()
@@ -16,6 +17,7 @@ struct OverviewChangePanel: View {
     }
 
     var body: some View {
+        let colors = appThemes.colors(for: colorScheme)
         OverviewPanel(accessibilityIdentifier: AID.Overview.changePanel) {
             OverviewPanelHeader(onClose: onClose) {
                 Text(change.title)
@@ -23,11 +25,10 @@ struct OverviewChangePanel: View {
                     .textSelection(.enabled)
             }
             HStack(spacing: 8) {
-                Text(change.changeId.highlighted(scheme: colorScheme, font: idFont))
+                Text(change.changeId.highlighted(font: idFont, prefixColor: colors.changeIdPrefix))
                 Text(change.commitId.highlighted(
-                    scheme: colorScheme,
                     font: idFont,
-                    prefixColor: AppColors.commitIdPrefix(colorScheme)
+                    prefixColor: colors.commitIdPrefix
                 ))
                 Text("·").foregroundStyle(.tertiary)
                 Text(Date.relativeLabel(millis: change.timestampMillis))
@@ -38,7 +39,7 @@ struct OverviewChangePanel: View {
             if !change.workspaces.isEmpty || change.hasConflict {
                 FlowLayout(spacing: 4) {
                     ForEach(change.workspaces, id: \.self) { name in
-                        OverviewChip(text: "\(name)@", tint: AppColors.workspace(colorScheme))
+                        OverviewChip(text: "\(name)@", tint: colors.workspace)
                     }
                     if change.hasConflict {
                         OverviewChip(text: "conflict", tint: .red)

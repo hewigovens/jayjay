@@ -4,6 +4,7 @@ import SwiftUI
 struct FileRow: View {
     @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
     @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     /// macOS List adds 8 pt of its own on each side; this nets out to a 4 pt inset so the selection covers the row.
     static let listInsets = EdgeInsets(top: 0, leading: -4, bottom: 0, trailing: -4)
@@ -35,6 +36,8 @@ struct FileRow: View {
     }
 
     var body: some View {
+        let colors = appThemes.colors(for: colorScheme)
+        let statusColor = color(colors: colors)
         HStack(spacing: 8) {
             if showReview {
                 Button {
@@ -57,7 +60,7 @@ struct FileRow: View {
                 } else {
                     Group {
                         if !showReview {
-                            hunk.hunkType.badge(colorScheme)
+                            hunk.hunkType.badge(colorScheme, colors: colors)
                                 .jayjayFont(18)
                         } else if differentiateWithoutColor {
                             hunk.hunkType.icon
@@ -68,7 +71,7 @@ struct FileRow: View {
                                 .padding(.top, 4 * typography.interfaceScale)
                         }
                     }
-                    .foregroundStyle(color)
+                    .foregroundStyle(statusColor)
                     .accessibilityLabel(hunk.hunkType.label)
                     .help(hunk.hunkType.label)
                 }
@@ -112,10 +115,10 @@ struct FileRow: View {
                                     .jayjayFont(9, weight: .semibold)
                                     .accessibilityIdentifier(AID.ReviewNote.fileCount(path: hunk.path, count: noteCount))
                             }
-                            .foregroundStyle(.orange)
+                            .foregroundStyle(colors.noteAccent)
                             .padding(.horizontal, 6)
                             .padding(.vertical, 2)
-                            .background(Color.orange.opacity(0.12), in: Capsule())
+                            .background(colors.noteAccent.opacity(0.12), in: Capsule())
                             .help(noteCount.reviewNoteCountLabel)
                         }
                     }
@@ -144,18 +147,13 @@ struct FileRow: View {
         )
     }
 
-    private var color: Color {
+    private func color(colors: AppColors) -> Color {
         if hunk.isSubmodulePlaceholder {
-            return Color.blue
+            return colors.fileRenamed
         }
         if hunk.isGitLfsPlaceholder {
-            return Color.purple
+            return colors.fileLfs
         }
-        switch hunk.hunkType {
-            case .added, .copied: return Color.green
-            case .removed: return Color.red
-            case .modified: return FileStatusColors.modified
-            case .renamed: return Color.blue
-        }
+        return colors.fileColor(for: hunk.hunkType)
     }
 }

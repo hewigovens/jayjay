@@ -4,7 +4,8 @@ import SwiftUI
 
 extension DiffSection {
     var diffHeader: some View {
-        HStack(alignment: .firstTextBaseline, spacing: 8) {
+        let statusColor = appThemes.colors(for: colorScheme).fileColor(for: hunk.hunkType)
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
             FileIcon(path: hunk.path)
             renamePathLabel
             FilePathLabel(path: hunk.path, size: 13)
@@ -14,10 +15,10 @@ extension DiffSection {
             CopyIconButton(value: hunk.path, help: Localized.Diff.copyPath)
             Text(hunk.hunkType.label)
                 .jayjayFont(10, weight: .medium)
-                .foregroundStyle(hunk.hunkType.iconColor)
+                .foregroundStyle(statusColor)
                 .padding(.horizontal, 7)
                 .padding(.vertical, 1)
-                .background(hunk.hunkType.iconColor.opacity(0.12), in: Capsule())
+                .background(statusColor.opacity(0.12), in: Capsule())
                 .fixedSize()
             if let lineStats, lineStats.hasLineChanges {
                 LineStatsLabel(stats: lineStats)

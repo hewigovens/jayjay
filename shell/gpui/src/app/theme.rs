@@ -6,7 +6,7 @@ mod syntax;
 
 pub(crate) use syntax::SyntaxColors;
 
-#[derive(Clone, Debug)]
+#[derive(Clone, Debug, PartialEq)]
 pub struct Theme {
     pub(crate) is_dark: bool,
 
@@ -69,9 +69,7 @@ pub struct Theme {
     pub(crate) diff_text_added: u32,
     pub(crate) diff_text_removed: u32,
     pub(crate) diff_text_dim: u32,
-    /// Default-palette token colors for chrome and text inputs; diff surfaces use `diff_syntax`.
     pub(crate) syntax: SyntaxColors,
-    pub(crate) diff_syntax: SyntaxColors,
     pub(crate) tag_added_bg: u32,
     pub(crate) tag_added_fg: u32,
     pub(crate) tag_removed_bg: u32,
@@ -93,7 +91,6 @@ pub struct Theme {
     pub(crate) bisect_accent: u32,
     pub(crate) bisect_bar_bg: u32,
     pub(crate) error_fg: u32,
-    /// Default-palette add/remove hues for chrome such as change stats; diff surfaces use `diff_gutter_*`.
     pub(crate) added_fg: u32,
     pub(crate) removed_fg: u32,
     pub(crate) warning_fg: u32,

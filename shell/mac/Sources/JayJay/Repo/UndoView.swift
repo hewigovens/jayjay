@@ -9,6 +9,7 @@ struct UndoView: View {
     @State private var selectedId: String?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
@@ -72,8 +73,8 @@ struct UndoView: View {
                 }
                 Spacer()
                 Text(entry.id.highlighted(
-                    scheme: colorScheme,
-                    font: typography.identifierFont
+                    font: typography.identifierFont,
+                    prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
                 ))
             }
             .padding(.vertical, 2)

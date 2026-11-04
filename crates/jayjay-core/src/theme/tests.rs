@@ -33,19 +33,20 @@ fn derived_seed_fills_every_optional_token_from_the_pair() {
 }
 
 #[test]
-fn default_diff_palette_ids_resolve_to_hand_tuned_palettes() {
-    assert_eq!(
-        DiffPalette::resolve(DiffPalette::default_id(false), false).colors,
-        DiffThemeColors::light()
-    );
-    assert_eq!(
-        DiffPalette::resolve(DiffPalette::default_id(true), true).colors,
-        DiffThemeColors::dark()
-    );
+fn default_color_theme_ids_resolve_to_hand_tuned_themes() {
+    let light = ColorTheme::resolve(ColorTheme::default_id(false), false);
+    assert_eq!(light.seed, ThemeSeed::light());
+    assert_eq!(light.colors, DiffThemeColors::light());
+    assert_eq!(light.repo, RepoColors::light());
+
+    let dark = ColorTheme::resolve(ColorTheme::default_id(true), true);
+    assert_eq!(dark.seed, ThemeSeed::dark());
+    assert_eq!(dark.colors, DiffThemeColors::dark());
+    assert_eq!(dark.repo, RepoColors::dark());
 }
 
 #[test]
-fn unknown_or_wrong_side_diff_palette_id_falls_back_to_side_default() {
+fn unknown_or_wrong_side_color_theme_id_falls_back_to_side_default() {
     for (id, is_dark) in [
         ("unknown-light", false),
         ("unknown-dark", true),
@@ -53,30 +54,22 @@ fn unknown_or_wrong_side_diff_palette_id_falls_back_to_side_default() {
         ("solarized-light", true),
     ] {
         assert_eq!(
-            DiffPalette::resolve(id, is_dark).id,
-            DiffPalette::default_id(is_dark),
+            ColorTheme::resolve(id, is_dark).id,
+            ColorTheme::default_id(is_dark),
             "{id}"
         );
     }
 }
 
 #[test]
-fn catalog_diff_palettes_have_unique_ids_names_and_meet_contrast_thresholds() {
-    let palettes = diff_palettes();
+fn catalog_color_themes_have_unique_ids_names_and_meet_contrast_thresholds() {
+    let themes = color_themes();
     let mut ids = std::collections::HashSet::new();
     let mut failures = Vec::new();
-    for palette in &palettes {
-        assert!(
-            ids.insert(palette.id.as_str()),
-            "duplicate id: {}",
-            palette.id
-        );
-        assert_ne!(
-            palette.name, palette.id,
-            "no catalog name for {}",
-            palette.id
-        );
-        let c = &palette.colors;
+    for theme in &themes {
+        assert!(ids.insert(theme.id.as_str()), "duplicate id: {}", theme.id);
+        assert_ne!(theme.name, theme.id, "no catalog name for {}", theme.id);
+        let c = &theme.colors;
         let mut checks = vec![
             ("context", c.text_context, c.context_bg, 4.5),
             ("added", c.text_added, c.added_bg, 4.5),
@@ -112,12 +105,40 @@ fn catalog_diff_palettes_have_unique_ids_names_and_meet_contrast_thresholds() {
             ("added word", c.text_added, c.added_word_bg, 2.8),
             ("removed word", c.text_removed, c.removed_word_bg, 2.8),
         ]);
+        if theme.id != ColorTheme::default_id(theme.is_dark) {
+            let r = &theme.repo;
+            let seed = theme.seed;
+            assert_eq!(r.navigation_bg, Some(seed.surface));
+            let text = [
+                ("workspace", r.workspace),
+                ("bookmark", r.bookmark),
+                ("change id prefix", r.change_id_prefix),
+                ("commit id prefix", r.commit_id_prefix),
+                ("file added", r.file_added),
+                ("file removed", r.file_removed),
+                ("file modified", r.file_modified),
+                ("file renamed", r.file_renamed),
+                ("file lfs", r.file_lfs),
+                ("note accent", r.note_accent),
+            ];
+            let text_floors = [
+                (seed.background, 4.5),
+                (seed.surface, 4.5),
+                (seed.selection, 3.0),
+            ];
+            for (bg, min_ratio) in text_floors {
+                checks.extend(text.iter().map(|(label, fg)| (*label, *fg, bg, min_ratio)));
+            }
+            for bg in [seed.background, seed.surface] {
+                checks.push(("graph line", r.graph_line, bg, 3.0));
+            }
+        }
         for (label, fg, bg, min_ratio) in checks {
             let ratio = contrast_ratio(fg, bg);
             if ratio < min_ratio {
                 failures.push(format!(
                     "{} ({label}): {fg:06x} on {bg:06x} is {ratio:.2} < {min_ratio}",
-                    palette.id
+                    theme.id
                 ));
             }
         }

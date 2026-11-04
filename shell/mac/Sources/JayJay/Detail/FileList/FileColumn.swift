@@ -8,7 +8,8 @@ extension ChangeDetailView {
     }
 
     var fileColumn: some View {
-        VStack(spacing: 0) {
+        let noteAccent = appSettings.appThemes.colors(for: colorScheme).noteAccent
+        return VStack(spacing: 0) {
             HStack(spacing: 6) {
                 if showsReviewControls, activeReviewNoteCount > 0 {
                     Button {
@@ -20,12 +21,12 @@ extension ChangeDetailView {
                             Text("\(activeReviewNoteCount)")
                                 .jayjayFont(10, weight: .medium)
                         }
-                        .foregroundStyle(.orange)
+                        .foregroundStyle(noteAccent)
                         .padding(.horizontal, 5)
                         .padding(.vertical, 2)
                         .background(
                             showNotedFilesOnly
-                                ? AnyShapeStyle(Color.orange.opacity(0.16))
+                                ? AnyShapeStyle(noteAccent.opacity(0.16))
                                 : AnyShapeStyle(Color.clear),
                             in: RoundedRectangle(cornerRadius: 4, style: .continuous)
                         )
