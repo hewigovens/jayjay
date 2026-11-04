@@ -164,6 +164,59 @@ test("diffs one of the pull request's commits against its parent", async () => {
   ).rejects.toMatchObject({ code: "not-found" });
 });
 
+test("compares a branch with the default branch from their merge base", async () => {
+  const commit = (sha: string, parent: string, message: string) => ({
+    sha,
+    commit: { message, author: { name: "U", date: "2026-11-01T00:00:00Z" } },
+    author: null,
+    parents: [{ sha: parent }],
+  });
+  const routes = {
+    "/repos/o/r": { private: false, default_branch: "main" },
+    "/repos/o/r/compare/main...feature/x?per_page=100&page=1": {
+      total_commits: 2,
+      merge_base_commit: { sha: "base" },
+      commits: [commit("one", "base", "First"), commit("two", "one", "Second")],
+    },
+    "https://github.com/o/r/compare/main...feature/x.diff": modified("a.rs"),
+    "https://github.com/o/r/commit/one.diff": modified("b.rs"),
+  };
+  const manifest = await github(routes).manifest({ owner: "o", repo: "r", head: "feature/x" });
+  expect(manifest).toMatchObject({
+    repository: "o/r",
+    range: "main...feature/x",
+    title: "main...feature/x",
+    baseSha: "base",
+    headSha: "two",
+    author: null,
+  });
+  expect(manifest.files.map((file) => file.path)).toEqual(["a.rs"]);
+  expect(manifest.commits.map((item) => item.sha)).toEqual(["one", "two"]);
+
+  const first = await github(routes).manifest({
+    owner: "o",
+    repo: "r",
+    base: "main",
+    head: "feature/x",
+    commit: "one",
+  });
+  expect(first).toMatchObject({
+    range: "main...feature/x",
+    title: "First",
+    baseSha: "base",
+    headSha: "one",
+    commit: "one",
+  });
+  expect(first.files.map((file) => file.path)).toEqual(["b.rs"]);
+  await expect(
+    github({ ...routes, "/repos/o/r": { private: true, default_branch: "main" } }).manifest({
+      owner: "o",
+      repo: "r",
+      head: "feature/x",
+    }),
+  ).rejects.toMatchObject({ code: "not-found" });
+});
+
 test("maps GitHub failures to the errors the page explains", async () => {
   const pull = { owner: "o", repo: "r", number: 1 };
   const failing = (response: Response) =>

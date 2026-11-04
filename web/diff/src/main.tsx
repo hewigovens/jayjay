@@ -4,7 +4,7 @@ import { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import { Landing } from "./components/landing/Landing";
 import { PullReview } from "./components/review/PullReview";
-import { parsePullRequest, pullPath, type PullRequestRef } from "./github/PullRequestRef";
+import { parseReviewRef, reviewPath, type ReviewRef } from "./github/ReviewRef";
 import "@jayjay/review-web/styles.css";
 import "./style.css";
 
@@ -29,15 +29,15 @@ function App() {
     };
   }, []);
 
-  const pull = parsePullRequest(path);
+  const pull = parseReviewRef(path);
   useEffect(() => {
-    if (pull && pullPath(pull) !== location.pathname)
-      history.replaceState(null, "", pullPath(pull));
+    if (pull && reviewPath(pull) !== location.pathname)
+      history.replaceState(null, "", reviewPath(pull));
   }, [path]);
 
-  const open = (next: PullRequestRef) => {
-    history.pushState(null, "", pullPath(next));
-    setPath(pullPath(next));
+  const open = (next: ReviewRef) => {
+    history.pushState(null, "", reviewPath(next));
+    setPath(reviewPath(next));
   };
 
   if (!labels || !client)

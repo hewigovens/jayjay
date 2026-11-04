@@ -1,4 +1,4 @@
-import type { PullRequestRef } from "./PullRequestRef";
+import type { PullRequestRef } from "./ReviewRef";
 
 export interface PullSample extends PullRequestRef {
   title: string;

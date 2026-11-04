@@ -1,6 +1,8 @@
 export interface PullManifest {
   repository: string;
-  number: number;
+  number?: number;
+  // A comparison's `base...head`, with the default branch filled in as base.
+  range?: string;
   title: string;
   body: string;
   author: { login: string; id: number } | null;

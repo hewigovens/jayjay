@@ -3,8 +3,7 @@ import { Exports } from "../worker/Exports";
 import type { NotesExport } from "../src/github/NotesExport";
 
 const body: NotesExport = {
-  repository: "o/r",
-  number: 7,
+  review: "/o/r/pull/7",
   title: "Fix it",
   headSha: "abc",
   notes: [
@@ -62,7 +61,7 @@ test("refuses bodies that are not an export or are too large", async () => {
   const post = (text: string) =>
     exports().create(new Request("https://x/api/exports", { method: "POST", body: text }));
   expect((await post("{}")).status).toBe(400);
-  expect((await post(JSON.stringify({ ...body, repository: "../etc" }))).status).toBe(400);
+  expect((await post(JSON.stringify({ ...body, review: "/../etc/pull/1" }))).status).toBe(400);
   expect((await post(JSON.stringify({ ...body, title: "x".repeat(1024 * 1024) }))).status).toBe(
     413,
   );

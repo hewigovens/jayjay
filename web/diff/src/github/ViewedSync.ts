@@ -1,4 +1,4 @@
-import type { PullRequestRef } from "./PullRequestRef";
+import type { PullRequestRef } from "./ReviewRef";
 
 const filesQuery = `query($owner: String!, $name: String!, $number: Int!, $after: String) {
   repository(owner: $owner, name: $name) { pullRequest(number: $number) { id

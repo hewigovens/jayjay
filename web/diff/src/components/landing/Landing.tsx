@@ -1,19 +1,13 @@
 import { useState } from "react";
 import type { Labels } from "@jayjay/review-web/types";
 import { CheckIcon, FileIcon, StackIcon, SyncIcon } from "../icons";
-import { parsePullRequest, pullPath, type PullRequestRef } from "../../github/PullRequestRef";
+import { parseReviewRef, reviewPath, type ReviewRef } from "../../github/ReviewRef";
 import { samples } from "../../github/samples";
 
 const repository = "https://github.com/hewigovens/jayjay";
 const app = "https://jayjay.hewig.dev";
 
-export function Landing({
-  labels,
-  onOpen,
-}: {
-  labels: Labels;
-  onOpen: (pull: PullRequestRef) => void;
-}) {
+export function Landing({ labels, onOpen }: { labels: Labels; onOpen: (pull: ReviewRef) => void }) {
   const [invalid, setInvalid] = useState(false);
   const features = [
     [<CheckIcon />, labels.pullFeatureMarks, labels.pullFeatureMarksDetail],
@@ -54,7 +48,7 @@ export function Landing({
         className="landing-wrap landing-hero"
         onSubmit={(event) => {
           event.preventDefault();
-          const pull = parsePullRequest(
+          const pull = parseReviewRef(
             new FormData(event.currentTarget).get("url")?.toString() ?? "",
           );
           setInvalid(!pull);
@@ -74,7 +68,7 @@ export function Landing({
             aria-label={labels.pullUrl}
             aria-invalid={invalid}
             aria-describedby="landing-hint"
-            placeholder={`github.com${pullPath(samples[1])}`}
+            placeholder={`github.com${reviewPath(samples[1])}`}
             onInput={() => setInvalid(false)}
           />
           <button type="submit">{labels.pullOpen}</button>
@@ -110,9 +104,9 @@ export function Landing({
         <div className="landing-samples">
           {samples.map((sample) => (
             <a
-              key={pullPath(sample)}
+              key={reviewPath(sample)}
               className="landing-sample"
-              href={pullPath(sample)}
+              href={reviewPath(sample)}
               onClick={(event) => {
                 event.preventDefault();
                 onOpen(sample);

@@ -1,9 +1,9 @@
 import type { Overview } from "@jayjay/review-web/types";
-import { parsePullRequest } from "./PullRequestRef";
+import { gitHubUrl, parseReviewRef, reviewName, type ReviewRef } from "./ReviewRef";
 
 export interface NotesExport {
-  repository: string;
-  number: number;
+  // This app's path for the review.
+  review: string;
   title: string;
   headSha: string;
   notes: {
@@ -20,15 +20,9 @@ export interface NotesExport {
 export const maxExportBytes = 1024 * 1024;
 export const exportDays = 7;
 
-export function notesExport(
-  overview: Overview,
-  repository: string,
-  number: number,
-  headSha: string,
-): NotesExport {
+export function notesExport(overview: Overview, review: string, headSha: string): NotesExport {
   return {
-    repository,
-    number,
+    review,
     headSha,
     title: overview.title,
     notes: overview.notes
@@ -49,8 +43,8 @@ export function notesExport(
 export function isNotesExport(value: unknown): value is NotesExport {
   const body = value as NotesExport;
   return (
-    typeof body?.repository === "string" &&
-    parsePullRequest(`${body.repository}#${body.number}`) !== null &&
+    typeof body?.review === "string" &&
+    parseReviewRef(body.review) !== null &&
     typeof body.title === "string" &&
     typeof body.headSha === "string" &&
     Array.isArray(body.notes) &&
@@ -67,12 +61,13 @@ export function isNotesExport(value: unknown): value is NotesExport {
 
 // Stays English like other tool output for agents.
 export function notesMarkdown(body: NotesExport): string {
+  const review = parseReviewRef(body.review) as ReviewRef;
   const lines = [
-    `# Review notes for ${body.repository}#${body.number}: ${body.title}`,
+    `# Review notes for ${reviewName(review)}: ${body.title}`,
     "",
-    `Pull request: https://github.com/${body.repository}/pull/${body.number} (reviewed at head ${body.headSha})`,
+    `On GitHub: ${gitHubUrl(review)} (reviewed at head ${body.headSha})`,
     "",
-    "Each note is anchored to a line of the pull request's diff: `new` lines are in the head, `old` lines in the merge base. A `stale` note's line changed after it was written.",
+    "Each note is anchored to a line of the diff: `new` lines are in the head, `old` lines in the base. A `stale` note's line changed after it was written.",
   ];
   const byPath = new Map<string, NotesExport["notes"]>();
   for (const note of body.notes) byPath.set(note.path, [...(byPath.get(note.path) ?? []), note]);

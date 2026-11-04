@@ -1,4 +1,4 @@
-import { parsePullRequest, pullPath } from "../src/github/PullRequestRef";
+import { parseReviewRef, reviewPath } from "../src/github/ReviewRef";
 import { GitHub, GitHubError } from "./github/GitHub";
 import { Exports } from "./Exports";
 import { GitHubLogin } from "./github/GitHubLogin";
@@ -11,7 +11,7 @@ interface Env {
 }
 
 const prefix = "/api/";
-const samplePaths = new Set(samples.map(pullPath));
+const samplePaths = new Set(samples.map(reviewPath));
 
 function json(body: unknown, status: number, maxAge = 0) {
   return Response.json(body, {
@@ -46,13 +46,13 @@ export default {
       return new Exports(env.STORE).create(request);
     if (request.method === "GET" && pathname.startsWith("/api/exports/"))
       return new Exports(env.STORE).read(pathname.slice("/api/exports/".length));
-    const pull = pathname.startsWith(prefix)
-      ? parsePullRequest(pathname.slice(prefix.length))
+    const target = pathname.startsWith(prefix)
+      ? parseReviewRef(pathname.slice(prefix.length))
       : null;
-    if (!pull) return json({ error: "not-found" }, 404);
+    if (!target) return json({ error: "not-found" }, 404);
     if (request.method !== "GET") return json({ error: "not-found" }, 405);
     // Samples are kept once fetched, so the landing page's links open even when the rate limit is spent.
-    const sample = samplePaths.has(pullPath(pull)) ? `sample:${pullPath(pull)}` : undefined;
+    const sample = samplePaths.has(reviewPath(target)) ? `sample:${reviewPath(target)}` : undefined;
     const kept = sample && (await env.STORE.get(sample));
     if (kept)
       return new Response(kept, {
@@ -65,7 +65,7 @@ export default {
       /^Bearer (\S+)$/.exec(request.headers.get("authorization") ?? "")?.[1] ?? env.GITHUB_TOKEN;
     try {
       // A short edge cache absorbs reloads and shared links; new pushes show up within a minute.
-      const manifest = await new GitHub(token).manifest(pull);
+      const manifest = await new GitHub(token).manifest(target);
       if (sample) context.waitUntil(env.STORE.put(sample, JSON.stringify(manifest)));
       const response = json(manifest, 200, 60);
       context.waitUntil(caches.default.put(request, response.clone()));

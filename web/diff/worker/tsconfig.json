@@ -12,5 +12,5 @@
     "resolveJsonModule": true,
     "types": ["@cloudflare/workers-types"]
   },
-  "include": [".", "../src/github/PullManifest.ts", "../src/github/PullRequestRef.ts", "../src/github/SignIn.ts", "../src/github/NotesExport.ts", "../src/github/samples.ts"]
+  "include": [".", "../src/github/PullManifest.ts", "../src/github/ReviewRef.ts", "../src/github/SignIn.ts", "../src/github/NotesExport.ts", "../src/github/samples.ts"]
 }
