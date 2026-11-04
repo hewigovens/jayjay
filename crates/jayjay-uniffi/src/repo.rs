@@ -1231,6 +1231,10 @@ impl JayJayRepo {
         self.inner.git_fetch(&sync.inner)
     }
 
+    fn upload(&self, revision: String, sync: Arc<JayJaySyncToken>) -> Result<String, JayError> {
+        self.inner.upload(&revision, &sync.inner)
+    }
+
     fn git_pull_bookmark(
         &self,
         bookmark: String,

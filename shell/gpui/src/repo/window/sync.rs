@@ -382,6 +382,12 @@ fn fetch_status_message(result: &FetchResult) -> String {
     if message.is_empty() {
         message = jayjay_i18n::repo::fetch_complete();
     }
+    if !result.abandoned_changes.is_empty() {
+        message.push('\n');
+        message.push_str(&jayjay_i18n::repo::sync_abandoned_landed(
+            &result.abandoned_changes.join(", "),
+        ));
+    }
     if !result.abandoned_bookmarks.is_empty() {
         message.push('\n');
         message.push_str(&jayjay_i18n::repo::sync_abandoned_merged(

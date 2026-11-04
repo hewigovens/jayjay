@@ -228,6 +228,28 @@ impl Repo {
         })
     }
 
+    pub(crate) fn commit(&self, repo: &Arc<ReadonlyRepo>, id: &CommitId) -> JayResult<Commit> {
+        repo.store().get_commit(id).map_err(|e| JayError::Internal {
+            message: format!("get commit: {e}"),
+        })
+    }
+
+    pub(crate) fn revset_commits(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        revset_str: &str,
+    ) -> JayResult<Vec<CommitId>> {
+        let revset = self.evaluate_revset(repo, revset_str)?;
+        let mut stream = revset.stream();
+        let mut ids = Vec::new();
+        while let Some(result) = block_on(stream.next()) {
+            ids.push(result.map_err(|e| JayError::Internal {
+                message: format!("revset stream: {e}"),
+            })?);
+        }
+        Ok(ids)
+    }
+
     /// Find change IDs that appear more than once in the given changes.
     fn find_divergent_ids<'a>(changes: impl Iterator<Item = &'a ChangeInfo>) -> HashSet<String> {
         let mut counts: HashMap<&str, u32> = HashMap::new();

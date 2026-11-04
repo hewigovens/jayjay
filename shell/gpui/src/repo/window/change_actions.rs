@@ -376,6 +376,13 @@ impl RepoWindow {
                 glyph::GIT_BRANCH,
                 ContextAction::OpenStackedPr(rev.clone().into()),
             ));
+            if let Some(title) = self.vm.read(cx).upload_title.clone() {
+                items.push(ContextMenuItem::new(
+                    title,
+                    glyph::CLOUD,
+                    ContextAction::UploadChange(rev.clone().into()),
+                ));
+            }
         }
         for name in &change.tags {
             items.push(ContextMenuItem::submenu(

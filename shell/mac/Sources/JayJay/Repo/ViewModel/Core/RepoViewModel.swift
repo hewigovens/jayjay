@@ -156,6 +156,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var prFetchTask: Task<Void, Never>?
     var trunkName = "trunk"
     var prHostName: String?
+    var uploadTitle: String?
     var fixUnavailableReason: String?
     var evologEntries: [EvologEntry]?
     var evologRev: String?

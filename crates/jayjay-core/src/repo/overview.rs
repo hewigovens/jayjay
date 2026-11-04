@@ -1,12 +1,10 @@
 use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
-use futures::StreamExt as _;
 use jj_lib::backend::CommitId;
 use jj_lib::commit::Commit;
 use jj_lib::object_id::ObjectId;
 use jj_lib::repo::ReadonlyRepo;
-use jj_lib::repo::Repo as _;
 
 use super::Repo;
 use super::support::{
@@ -169,27 +167,5 @@ impl Repo {
                 .cloned()
                 .unwrap_or_default(),
         }
-    }
-
-    fn commit(&self, repo: &Arc<ReadonlyRepo>, id: &CommitId) -> JayResult<Commit> {
-        repo.store().get_commit(id).map_err(|e| JayError::Internal {
-            message: format!("get commit: {e}"),
-        })
-    }
-
-    fn revset_commits(
-        &self,
-        repo: &Arc<ReadonlyRepo>,
-        revset_str: &str,
-    ) -> JayResult<Vec<CommitId>> {
-        let revset = self.evaluate_revset(repo, revset_str)?;
-        let mut stream = revset.stream();
-        let mut ids = Vec::new();
-        while let Some(result) = block_on(stream.next()) {
-            ids.push(result.map_err(|e| JayError::Internal {
-                message: format!("revset stream: {e}"),
-            })?);
-        }
-        Ok(ids)
     }
 }

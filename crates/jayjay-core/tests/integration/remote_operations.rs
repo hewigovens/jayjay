@@ -2,11 +2,14 @@
 
 use std::fs;
 use std::os::unix::fs::PermissionsExt;
+use std::path::Path;
 use std::thread;
 use std::time::{Duration, Instant};
 
 use jayjay_core::{JayError, Repo};
-use jj_test::{find_bookmark, git_stdout, init_jj_repo, repo_with_remote, run_git, run_jj_in};
+use jj_test::{
+    find_bookmark, first_change, git_stdout, init_jj_repo, repo_with_remote, run_git, run_jj_in,
+};
 
 #[test]
 fn canceling_the_sync_token_interrupts_a_fetch() {
@@ -56,6 +59,14 @@ fn canceling_the_sync_token_interrupts_a_fetch() {
 
     let error = outcome.expect_err("fetch should be canceled");
     assert!(matches!(error, JayError::Canceled), "{error}");
+}
+
+fn upload_title(repo: &Repo) -> Option<String> {
+    repo.repository_context().expect("context").upload_title
+}
+
+fn set_repo_config(repo_path: &Path, key: &str, value: &str) {
+    run_jj_in(repo_path, &["config", "set", "--repo", key, value]);
 }
 
 #[test]
@@ -116,4 +127,62 @@ fn pulling_a_bookmark_tracks_it_on_the_remote_it_came_from() {
     let other = find_bookmark(&repo, "other");
     assert_eq!(other.tracked_remotes, ["upstream"]);
     assert_eq!(other.description.trim(), "upstream other");
+}
+
+#[test]
+fn a_configured_sync_command_replaces_fetch_and_rebase() {
+    let (_dir, repo_path, _bare) = repo_with_remote("origin");
+    set_repo_config(
+        &repo_path,
+        "jayjay.sync-command",
+        r#"["describe", "-m", "synced"]"#,
+    );
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.git_fetch(&repo.sync_token()).expect("sync");
+
+    assert_eq!(first_change(&repo, "@").description.trim(), "synced");
+}
+
+#[test]
+fn a_configured_upload_command_runs_on_the_chosen_change() {
+    let (_dir, repo_path, _bare) = repo_with_remote("origin");
+    set_repo_config(
+        &repo_path,
+        "jayjay.upload-command",
+        r#"["describe", "-r", "$revision", "-m", "uploaded"]"#,
+    );
+    run_jj_in(&repo_path, &["describe", "-m", "work"]);
+    run_jj_in(&repo_path, &["new"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let work = first_change(&repo, "@-");
+
+    assert_eq!(upload_title(&repo).as_deref(), Some("Upload Change"));
+    repo.upload(&work.change_id.id, &repo.sync_token())
+        .expect("upload");
+
+    assert_eq!(first_change(&repo, "@-").description.trim(), "uploaded");
+}
+
+#[test]
+fn a_gerrit_repo_uploads_to_the_branch_trunk_tracks() {
+    let (_dir, repo_path, bare) = repo_with_remote("origin");
+    set_repo_config(&repo_path, "gerrit.default-remote", "origin");
+    fs::write(repo_path.join("work.txt"), "work\n").expect("write work");
+    run_jj_in(&repo_path, &["describe", "-m", "work"]);
+    let repo = Repo::open(&repo_path).expect("open repo");
+    assert_eq!(upload_title(&repo).as_deref(), Some("Upload to Gerrit"));
+
+    repo.upload("@", &repo.sync_token()).expect("upload");
+
+    let refs = git_stdout(&bare, &["for-each-ref", "--format=%(refname)", "refs/for"]);
+    assert_eq!(refs.trim(), "refs/for/main");
+}
+
+#[test]
+fn a_plain_git_repo_has_no_upload_action() {
+    let (_dir, repo_path, _bare) = repo_with_remote("origin");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    assert_eq!(upload_title(&repo), None);
 }

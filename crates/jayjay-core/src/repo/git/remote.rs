@@ -139,6 +139,18 @@ pub(crate) fn free_remote_name(remotes: &[GitRemote], hint: &str) -> String {
     })
 }
 
+/// 29418 is Gerrit's SSH port; Google's Gerrit hosts are `*.googlesource.com`, or `sso://` and `rpc://` helper URLs inside Google.
+pub(crate) fn remote_url_is_gerrit(url: &str) -> bool {
+    gix_url::parse(url.trim().as_bytes()).is_ok_and(|url| {
+        matches!(&url.scheme, Scheme::HelperUrl(helper) if helper == "sso" || helper == "rpc")
+            || (url.scheme == Scheme::Ssh && url.port == Some(29418))
+            || url.host().is_some_and(|host| {
+                let host = host.to_ascii_lowercase();
+                host.ends_with(".googlesource.com") || host.ends_with(".git.corp.google.com")
+            })
+    })
+}
+
 pub(crate) fn remote_url_uses_ssh(url: &str) -> bool {
     gix_url::parse(url.trim().as_bytes()).is_ok_and(|url| url.scheme == Scheme::Ssh)
 }
@@ -183,8 +195,27 @@ pub(crate) fn git_remote_to_web_url(raw: &str) -> Option<String> {
 mod tests {
     use super::{
         GitRemote, free_remote_name, git_remote_to_web_url, is_valid_remote_url,
-        remote_url_uses_ssh,
+        remote_url_is_gerrit, remote_url_uses_ssh,
     };
+
+    #[test]
+    fn gerrit_remotes_are_google_hosts_or_the_gerrit_ssh_port() {
+        assert!(remote_url_is_gerrit(
+            "https://chromium.googlesource.com/chromium/src"
+        ));
+        assert!(remote_url_is_gerrit(
+            "sso://googleplex-android/platform/build"
+        ));
+        assert!(remote_url_is_gerrit("rpc://chromium/chromium/src"));
+        assert!(remote_url_is_gerrit(
+            "ssh://alice@review.example.org:29418/project"
+        ));
+        assert!(!remote_url_is_gerrit("https://github.com/alice/repo.git"));
+        assert!(!remote_url_is_gerrit(
+            "git@googlesource.com.evil.org:repo.git"
+        ));
+        assert!(!remote_url_is_gerrit("https://example.org:29418/repo.git"));
+    }
 
     #[test]
     fn only_ssh_origins_prefer_ssh_clone_urls() {
