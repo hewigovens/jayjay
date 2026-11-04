@@ -34,7 +34,6 @@ export const CommitIcon = ({ size }: IconProps) => (
 export const StackIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M8 2l6 3-6 3-6-3 6-3ZM2 8l6 3 6-3M2 11l6 3 6-3" />
 );
-export const CheckIcon = ({ size }: IconProps) => <Icon size={size} d="M3 8.5l3 3 7-7" />;
-export const FileIcon = ({ size }: IconProps) => (
-  <Icon size={size} d="M4 1.75h5.25L12.5 5v9.25H4V1.75ZM9 1.75V5.25h3.5" />
+export const ArrowIcon = ({ size }: IconProps) => (
+  <Icon size={size} d="M2.5 8h11M9 3.5 13.5 8 9 12.5" />
 );
