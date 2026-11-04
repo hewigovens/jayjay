@@ -1,0 +1,291 @@
+:where(.jayjay-review) .jj-change-header {
+  padding: 16px 18px 12px;
+  border-bottom: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-change-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 6px;
+}
+:where(.jayjay-review) .jj-change-header h1 {
+  flex: 0 1 auto;
+  min-width: 0;
+  font-size: 19px;
+  font-weight: 650;
+  letter-spacing: -0.3px;
+  line-height: 1.3;
+  margin: 0;
+  white-space: normal;
+  overflow-wrap: anywhere;
+}
+:where(.jayjay-review) .jj-change-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+  flex: none;
+  margin-left: auto;
+}
+:where(.jayjay-review) .jj-change-description {
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 2;
+  margin: 8px 0 0;
+  font-size: 13px;
+  line-height: 1.5;
+  color: var(--jj-ink);
+  white-space: pre-wrap;
+  overflow-wrap: anywhere;
+  overflow: hidden;
+}
+:where(.jayjay-review) .jj-change-description.jj-expanded {
+  display: block;
+  max-height: 50vh;
+  overflow: auto;
+}
+/* Rendered Markdown can't line-clamp, so the collapsed description is cut at about three lines and fades out. */
+:where(.jayjay-review) .jj-change-description.jj-markdown {
+  display: block;
+  max-height: 4.5em;
+  white-space: normal;
+  mask-image: linear-gradient(to bottom, #000 60%, transparent);
+}
+:where(.jayjay-review) .jj-change-description.jj-markdown.jj-expanded {
+  max-height: 50vh;
+  mask-image: none;
+}
+:where(.jayjay-review) .jj-markdown > :first-child {
+  margin-top: 0;
+}
+:where(.jayjay-review) .jj-markdown :is(p, ul, ol, blockquote, pre, table, details) {
+  margin: 0 0 0.7em;
+}
+:where(.jayjay-review) .jj-markdown :is(h1, h2, h3, h4, h5, h6) {
+  margin: 0.9em 0 0.4em;
+  font-size: 1.05em;
+  font-weight: 650;
+}
+:where(.jayjay-review) .jj-markdown :is(ul, ol) {
+  padding-left: 1.4em;
+}
+:where(.jayjay-review) .jj-markdown a {
+  color: var(--jj-accent);
+  overflow-wrap: anywhere;
+}
+:where(.jayjay-review) .jj-markdown code {
+  font: 0.9em var(--jj-mono);
+  padding: 0.1em 0.3em;
+  border-radius: 4px;
+  background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
+}
+:where(.jayjay-review) .jj-markdown pre {
+  overflow-x: auto;
+  padding: 8px 10px;
+  border-radius: 6px;
+  background: color-mix(in srgb, var(--jj-ink) 5%, transparent);
+}
+:where(.jayjay-review) .jj-markdown pre code {
+  padding: 0;
+  background: none;
+}
+:where(.jayjay-review) .jj-markdown blockquote {
+  padding-left: 0.8em;
+  border-left: 3px solid var(--jj-border);
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-markdown summary {
+  cursor: pointer;
+  font-weight: 500;
+}
+:where(.jayjay-review) .jj-markdown details > :not(summary) {
+  margin-left: 1em;
+}
+:where(.jayjay-review) .jj-markdown table {
+  display: block;
+  overflow-x: auto;
+  border-collapse: collapse;
+}
+:where(.jayjay-review) .jj-markdown :is(th, td) {
+  padding: 3px 8px;
+  border: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-markdown img {
+  max-width: 100%;
+}
+:where(.jayjay-review) .jj-description-toggle {
+  margin-top: 2px;
+}
+:where(.jayjay-review) .jj-byline {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 10px;
+  font-size: 11px;
+  color: var(--jj-muted);
+  white-space: nowrap;
+  min-width: 0;
+}
+:where(.jayjay-review) .jj-byline .jj-author {
+  color: var(--jj-ink);
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:where(.jayjay-review) .jj-byline .jj-spacer {
+  flex: 1;
+}
+:where(.jayjay-review) .jj-avatar {
+  position: relative;
+  overflow: hidden;
+  display: inline-grid;
+  place-items: center;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  border-radius: 50%;
+  background: color-mix(in srgb, var(--jj-accent) 22%, var(--jj-surface));
+  color: var(--jj-accent);
+  font-size: 8px;
+  font-weight: 700;
+}
+:where(.jayjay-review) .jj-avatar img {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  opacity: 0;
+}
+:where(.jayjay-review) .jj-avatar img.jj-loaded {
+  opacity: 1;
+}
+:where(.jayjay-review) .jj-change-id {
+  font: 11px var(--jj-mono);
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-change-id b {
+  color: light-dark(#a3248f, #e88ad6);
+  font-weight: 650;
+}
+:where(.jayjay-review) .jj-file-heading {
+  flex-wrap: wrap;
+  row-gap: 4px;
+  padding-block: 8px;
+}
+:where(.jayjay-review) .jj-file-title {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-width: 0;
+  flex: 1 1 420px;
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-file-heading h2 {
+  min-width: 0;
+  font: 13px var(--jj-mono);
+  color: var(--jj-ink);
+}
+/* A rename's old path gives up its width before the new path does. */
+:where(.jayjay-review) .jj-old-path {
+  flex: 0 1000 auto;
+  min-width: 2em;
+  text-decoration: line-through;
+}
+:where(.jayjay-review) .jj-file-title .jj-old-path {
+  font: 11px var(--jj-mono);
+}
+:where(.jayjay-review) .jj-kind-pill {
+  flex: none;
+  padding: 1px 7px;
+  border-radius: 99px;
+  font-size: 10px;
+  font-weight: 500;
+  color: var(--jj-kind-modified);
+  background: color-mix(in srgb, var(--jj-kind-modified) 12%, transparent);
+}
+:where(.jayjay-review) .jj-kind-pill.jj-added,
+:where(.jayjay-review) .jj-kind-pill.jj-copied {
+  color: var(--jj-kind-added);
+  background: color-mix(in srgb, var(--jj-kind-added) 12%, transparent);
+}
+:where(.jayjay-review) .jj-kind-pill.jj-removed {
+  color: var(--jj-kind-removed);
+  background: color-mix(in srgb, var(--jj-kind-removed) 12%, transparent);
+}
+:where(.jayjay-review) .jj-kind-pill.jj-renamed {
+  color: var(--jj-kind-renamed);
+  background: color-mix(in srgb, var(--jj-kind-renamed) 12%, transparent);
+}
+:where(.jayjay-review) .jj-header-actions {
+  display: flex;
+  align-items: center;
+  gap: 2px;
+  flex-wrap: wrap;
+  margin-left: auto;
+}
+:where(.jayjay-review) .jj-header-action {
+  position: relative;
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  min-height: 24px;
+  padding: 2px 7px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  color: var(--jj-muted);
+  font-size: 11px;
+  white-space: nowrap;
+  cursor: pointer;
+}
+:where(.jayjay-review) .jj-header-action:hover {
+  background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
+  color: var(--jj-ink);
+}
+:where(.jayjay-review) .jj-header-action.jj-active {
+  color: var(--jj-accent);
+  background: color-mix(in srgb, var(--jj-accent) 10%, transparent);
+}
+:where(.jayjay-review) .jj-header-action > input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  opacity: 0;
+  margin: 0;
+  cursor: pointer;
+}
+:where(.jayjay-review) .jj-header-action:has(> input:focus-visible) {
+  outline: 2px solid var(--jj-accent);
+}
+:where(.jayjay-review) .jj-header-action:has(> input:disabled) {
+  opacity: 0.5;
+  cursor: default;
+}
+:where(.jayjay-review) .jj-header-action .jj-icon {
+  opacity: 0.8;
+}
+:where(.jayjay-review) .jj-header-action:not(.jj-active):has(> input[type="checkbox"]) .jj-icon {
+  opacity: 0.35;
+}
+:where(.jayjay-review) .jj-review-detail .jj-diff-scroll {
+  flex: 1;
+  max-height: none;
+  min-height: 0;
+}
+/* Below this the labelled header actions would squeeze the path, so they drop to icons (as on macOS). */
+:where(.jayjay-review) .jj-review-detail {
+  container-type: inline-size;
+}
+@container (max-width: 640px) {
+  :where(.jayjay-review) .jj-header-action .jj-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+}
+:where(.jayjay-review) .jj-review-detail .jj-result-footer {
+  min-height: 30px;
+}

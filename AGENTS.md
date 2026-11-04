@@ -14,6 +14,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | user-facing text, translations | [Architecture](agents/architecture.md#localization) |
 | SwiftUI layout / view-models | [SwiftUI](agents/swiftui.md) |
 | GPUI layout / state | [GPUI](agents/gpui.md) |
+| web code under `web/` (TypeScript, React, CSS) | [TypeScript](agents/typescript.md) |
 | review marks or notes | [Review State](agents/review-state.md) |
 | persisted stores | [Storage](agents/storage.md) |
 | tests or fixtures | [Testing](agents/testing.md) |

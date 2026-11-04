@@ -1,0 +1,90 @@
+@media (hover: none) {
+  :where(.jayjay-review) .jj-gutter-note:not(.jj-armed):hover > span {
+    opacity: 0;
+  }
+  :where(.jayjay-review) .jj-group-toggle {
+    width: 7px;
+  }
+  :where(.jayjay-review) .jj-tool,
+  :where(.jayjay-review) .jj-header-action {
+    min-height: 32px;
+    min-width: 32px;
+  }
+  :where(.jayjay-review) .jj-review-toggle {
+    width: 18px;
+    height: 18px;
+  }
+}
+@media (max-width: 1000px) and (min-height: 501px) {
+  :where(.jayjay-review) .jj-review-columns {
+    --jj-files-default: 250px;
+    height: auto;
+  }
+  :where(.jayjay-review) .jj-review-detail,
+  :where(.jayjay-review) .jj-file-column {
+    height: 640px;
+  }
+}
+/* Matches useCompact: phones in either orientation, where two columns leave the diff no room. */
+@media (max-width: 680px), (max-height: 500px) {
+  :where(.jayjay-review) .jj-split .jj-diff-row {
+    min-width: 800px;
+  }
+  :where(.jayjay-review) .jj-split-head {
+    min-width: 800px;
+  }
+  :where(.jayjay-review) .jj-result-footer {
+    flex-wrap: wrap;
+  }
+  :where(.jayjay-review) .jj-review-columns {
+    display: flex;
+    flex-direction: column;
+    height: auto;
+  }
+  :where(.jayjay-review) .jj-review-detail {
+    display: contents;
+  }
+  :where(.jayjay-review) .jj-change-header {
+    padding: 14px 14px 10px;
+  }
+  :where(.jayjay-review) .jj-file-heading h2 {
+    font-size: 12px;
+  }
+  :where(.jayjay-review) .jj-change-header h1 {
+    flex: 1 1 0;
+    font-size: 18px;
+  }
+  /* The host's actions take their own row, so a long title keeps the width. */
+  :where(.jayjay-review) .jj-change-title {
+    flex-wrap: wrap;
+  }
+  :where(.jayjay-review) .jj-change-actions {
+    order: 1;
+    flex-basis: 100%;
+    margin-left: -7px;
+  }
+  :where(.jayjay-review) .jj-pane-heading {
+    padding-inline: 12px;
+  }
+  :where(.jayjay-review) .jj-file-title > .jj-icon:first-child {
+    display: none;
+  }
+  :where(.jayjay-review) .jj-header-action .jj-label {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    overflow: hidden;
+    clip-path: inset(50%);
+    white-space: nowrap;
+  }
+  :where(.jayjay-review) .jj-header-actions {
+    margin-left: 0;
+  }
+  :where(.jayjay-review) .jj-byline {
+    flex-wrap: wrap;
+    row-gap: 4px;
+  }
+  :where(.jayjay-review) .jj-byline .jj-spacer {
+    display: none;
+  }
+}

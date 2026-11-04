@@ -1,0 +1,33 @@
+/* A warmer, higher-contrast palette than the package default; the GitHub viewer has no desktop app to match. */
+:root.jayjay-theme,
+:root .jayjay-review {
+  --jj-page: light-dark(#f6f5f2, #1a1917);
+  --jj-surface: light-dark(#ffffff, #211f1d);
+  --jj-ink: light-dark(#1d1f23, #ece7df);
+  --jj-muted: light-dark(#66625c, #a59f96);
+  --jj-border: light-dark(#e4e0d9, #38342f);
+  --jj-accent: light-dark(#2563eb, #7ba5ff);
+  --jj-added-ink: light-dark(#116633, #9be0b4);
+  --jj-removed-ink: light-dark(#b0303a, #ffb0b4);
+  --jj-added-bg: light-dark(#e7f7ec, #1d3324);
+  --jj-removed-bg: light-dark(#fdeceb, #3b2224);
+  --jj-word-added: light-dark(#b4e6c3, #2c6140);
+  --jj-word-removed: light-dark(#f6c4c6, #6d3339);
+  --jj-stripe-unreviewed: light-dark(#bcd2fa, #34507e);
+}
+body {
+  margin: 0;
+  background: var(--jj-page);
+}
+main {
+  width: 100%;
+  max-width: 1900px;
+  margin: auto;
+  padding: 0 14px;
+  box-sizing: border-box;
+}
+main.pull-page {
+  max-width: none;
+  height: 100dvh;
+  padding: 0;
+}

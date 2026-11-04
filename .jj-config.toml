@@ -3,7 +3,8 @@
 # See: jj help -k config "Code formatting and other file content transformations"
 #
 # rustfmt ships with rustup; swiftformat comes from Homebrew. Both are on PATH
-# after running ./scripts/setup.sh, so bare command names resolve fine.
+# after running ./scripts/setup.sh, so bare command names resolve fine. oxfmt
+# comes from the root npm workspace (`npm ci`).
 
 [fix.tools.rustfmt]
 command = ["rustfmt", "--edition", "2024"]
@@ -12,3 +13,7 @@ patterns = ["glob:'**/*.rs'"]
 [fix.tools.swiftformat]
 command = ["swiftformat", "--stdinpath", "$path", "stdin"]
 patterns = ["glob:'**/*.swift'"]
+
+[fix.tools.oxfmt]
+command = ["npx", "--no-install", "oxfmt", "--stdin-filepath", "$path"]
+patterns = ["glob:'web/**/*.ts'", "glob:'web/**/*.tsx'", "glob:'web/**/*.js'", "glob:'web/**/*.css'"]

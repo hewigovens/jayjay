@@ -18,8 +18,9 @@ Load this file before changing crate ownership, module boundaries, or cross-shel
 | `jj-test` | Shared jj repo fixtures for integration and component tests |
 | `shell/gpui` | Cross-platform GPUI shell; links the Rust crates directly (no UniFFI); writes shared headless CLI outcomes before any window init |
 | `shell/mac` | SwiftUI shell + the `JayJayDiffUI` Swift package (AppKit diff renderer) |
-| `packages/review-web` | Reusable React review UI, typed async backend contract, optional worker/IndexedDB adapter, and thin WASM bindings to `jj-diff`, `jayjay-review`, and the shared file-tree builder |
-| `shell/web` | Browser test host for `@jayjay/review-web`: mounts the local backend on a fixture change for Playwright |
+| `web/review` | Reusable React review UI, typed async backend contract, optional worker/IndexedDB adapter, and thin WASM bindings to `jj-diff`, `jayjay-review`, and the shared file-tree builder |
+| `web/review-host` | Browser test host for `@jayjay/review-web`: mounts the local backend on a fixture change for Playwright |
+| `web/diff` | JayJay Diff (diff.hewig.dev), the public GitHub pull request and comparison viewer: a Cloudflare Worker reads the GitHub API, the browser fetches file contents and reviews them with the local backend |
 
 Dependency direction (never invert): `primitives` is the leaf → `jj-diff` (may use `primitives`) → `jayjay-review` → `jayjay-core` → `jayjay-uniffi` / `shell/gpui`.
 `jayjay-i18n` is a leaf any crate may depend on.
@@ -37,7 +38,7 @@ Diffing, Tree-sitter syntax, DAG layout, file trees, themes, projections, and in
 
 `jayjay-uniffi` defaults to its `desktop` profile, which enables repository operations, Watchman, review storage, and the binding generator CLI. A WASM consumer builds with `--no-default-features --features wasm`, supplies persistence and repository access, and implements the async `HttpTransport` foreign trait. Verify that graph and its LLVM-linked Tree-sitter grammars with `just test-wasm`.
 
-`@jayjay/review-web` binds `jj-diff` and `jayjay-review` with wasm-bindgen, not UniFFI. Its React entry point consumes a typed async `ReviewBackend` and imports no worker or persistence, so hosts can supply native server state; the optional local adapter owns the worker and IndexedDB. A grammar-free base WASM owns review sessions and lazily loaded language groups only highlight. File-tree construction lives in primitives (`jayjay_core::file_tree` re-exports it) and labels come from `jayjay-i18n`. The bundle, storage, and native bridge contracts are in `packages/review-web/README.md`; build steps and browser checks are in `shell/web/README.md`.
+`@jayjay/review-web` binds `jj-diff` and `jayjay-review` with wasm-bindgen, not UniFFI. Its React entry point consumes a typed async `ReviewBackend` and imports no worker or persistence, so hosts can supply native server state; the optional local adapter owns the worker and IndexedDB. A grammar-free base WASM owns review sessions and lazily loaded language groups only highlight. File-tree construction lives in primitives (`jayjay_core::file_tree` re-exports it) and labels come from `jayjay-i18n`. The bundle, storage, and native bridge contracts are in `web/review/README.md`; build steps and browser checks are in `web/review-host/README.md`.
 
 ## MVVM
 

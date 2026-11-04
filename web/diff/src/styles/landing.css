@@ -1,0 +1,71 @@
+.landing {
+  max-width: 620px;
+  margin: 22vh auto 0;
+  color: var(--jj-ink);
+}
+.landing h1 {
+  margin: 0 0 14px;
+  font-size: 22px;
+  font-weight: 650;
+  letter-spacing: -0.3px;
+}
+.landing-row {
+  display: flex;
+  gap: 8px;
+}
+.landing input {
+  flex: 1;
+  min-width: 0;
+  padding: 8px 10px;
+  border: 1px solid var(--jj-border);
+  border-radius: 6px;
+  background: var(--jj-surface);
+  color: var(--jj-ink);
+  font: 13px var(--jj-mono);
+}
+.landing input:focus {
+  outline: 2px solid var(--jj-accent);
+  outline-offset: -1px;
+}
+.landing input[aria-invalid="true"] {
+  border-color: var(--jj-removed-ink);
+}
+.landing button {
+  padding: 8px 16px;
+  border: 0;
+  border-radius: 6px;
+  background: var(--jj-accent);
+  color: var(--jj-page);
+  font-size: 13px;
+  font-weight: 600;
+  cursor: pointer;
+}
+.landing button:focus-visible {
+  outline: 2px solid var(--jj-ink);
+  outline-offset: 2px;
+}
+.landing p {
+  margin: 10px 0 0;
+  color: var(--jj-muted);
+  font-size: 12px;
+  line-height: 1.5;
+}
+.landing-samples {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px 14px;
+  margin-top: 22px;
+  font-size: 12px;
+  color: var(--jj-muted);
+}
+.landing-samples a {
+  color: var(--jj-accent);
+  font-family: var(--jj-mono);
+  text-decoration: none;
+}
+.landing-samples a:hover {
+  text-decoration: underline;
+}
+.landing p[role="alert"] {
+  color: var(--jj-removed-ink);
+}

@@ -68,7 +68,7 @@ Discovery is read-only; report evidence before editing, and prefer a few high-co
 
 ## Browser Review Tests
 
-The reusable package lives in `packages/review-web`; `shell/web` is its browser test host. Run `npm ci` at the repository root. Rust adapter behavior is tested with `cargo test --locked -p jj-diff-web`; shared tree behavior lives in `jayjay-primitives::file_tree`. After `npm run build`, run `npm run test:browser` from `shell/web` to exercise the production bundle and real WASM in Chromium and WebKit. Keep screenshots and one-off QA scripts outside source. Native shell tests do not prove this browser boundary.
+The reusable package lives in `web/review`; `web/review-host` is its browser test host. Run `npm ci` at the repository root. Rust adapter behavior is tested with `cargo test --locked -p jj-diff-web`; shared tree behavior lives in `jayjay-primitives::file_tree`. After `npm run build`, run `npm run test:browser` from `web/review-host` to exercise the production bundle and real WASM in Chromium and WebKit. `web/diff` keeps its GitHub mapping and bundle building in Vitest (`npm test` there). Keep screenshots and one-off QA scripts outside source. Native shell tests do not prove this browser boundary.
 
 ## Swift Tests
 

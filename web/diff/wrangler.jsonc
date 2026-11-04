@@ -1,0 +1,28 @@
+{
+	"$schema": "../../node_modules/wrangler/config-schema.json",
+	"name": "jayjay-pr",
+	"main": "worker/index.ts",
+	"compatibility_date": "2026-10-01",
+	"vars": {
+		"GITHUB_CLIENT_ID": "Ov23liGundhgu3dNoyVN"
+	},
+	"kv_namespaces": [
+		{
+			"binding": "STORE",
+			"id": "24132426320e47da8d1391bef9c2a979"
+		}
+	],
+	"routes": [
+		{
+			"pattern": "diff.hewig.dev",
+			"custom_domain": true
+		}
+	],
+	"assets": {
+		"not_found_handling": "single-page-application",
+		"run_worker_first": [
+			"/api/*"
+		]
+	}
+	// Secret: GITHUB_TOKEN, a token with no scopes, only to raise GitHub's API rate limit (`wrangler secret put GITHUB_TOKEN`).
+}

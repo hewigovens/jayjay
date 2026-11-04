@@ -1,0 +1,216 @@
+:where(.jayjay-review) .jj-file-tools {
+  justify-content: flex-start;
+  gap: 4px;
+  padding-inline: 10px 14px;
+}
+:where(.jayjay-review) .jj-file-count {
+  margin-left: auto;
+  font-size: 12px;
+  color: var(--jj-muted);
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:where(.jayjay-review) .jj-file-filter {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 10px 8px 14px;
+  border-bottom: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-file-filter > input {
+  flex: 1;
+  min-width: 0;
+  padding: 5px 8px;
+  background: var(--jj-surface);
+  border: 1px solid var(--jj-border);
+  border-radius: 6px;
+  font-size: 12px;
+}
+:where(.jayjay-review) .jj-file-rows {
+  flex: 1;
+  overflow: auto;
+  padding: 4px 6px 8px;
+}
+:where(.jayjay-review) .jj-file-rows:focus {
+  outline: none;
+}
+:where(.jayjay-review) .jj-folder-row {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  width: 100%;
+  min-height: 28px;
+  text-align: left;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: var(--jj-ink);
+  font-size: 12px;
+  font-weight: 500;
+  padding-block: 4px;
+}
+:where(.jayjay-review) .jj-folder-row .jj-icon {
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-folder-row span {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-file-row {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  min-height: 44px;
+  padding-right: 8px;
+  border-radius: 8px;
+}
+:where(.jayjay-review) .jj-file-row.jj-selected {
+  background: color-mix(in srgb, var(--jj-accent) 16%, transparent);
+}
+:where(.jayjay-review) .jj-file-select {
+  flex: 1;
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  min-width: 0;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 6px 0;
+  border-radius: 0;
+  font-size: 12px;
+}
+:where(.jayjay-review) .jj-file-select:hover {
+  background: transparent;
+  color: inherit;
+}
+:where(.jayjay-review) .jj-file-text {
+  display: grid;
+  gap: 2px;
+  min-width: 0;
+  flex: 1;
+}
+:where(.jayjay-review) .jj-file-name {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  overflow: hidden;
+  white-space: nowrap;
+  font-weight: 500;
+  color: var(--jj-ink);
+}
+:where(.jayjay-review) .jj-file-row.jj-reviewed .jj-file-name {
+  opacity: 0.5;
+}
+:where(.jayjay-review) .jj-file-path {
+  display: flex;
+  gap: 4px;
+  min-width: 0;
+  font: 10px var(--jj-mono);
+  color: var(--jj-muted);
+}
+/* Snapping to whole monospace cells avoids a clipped-glyph gap before the ellipsis; the .1px slack keeps an exact fit whole. */
+:where(.jayjay-review) .jj-middle-path {
+  display: inline-flex;
+  min-width: 0;
+  max-width: 100%;
+  max-width: min(100%, round(down, 100% + 0.1px, 1ch) + 0.1px);
+  overflow: hidden;
+  white-space: nowrap;
+  letter-spacing: normal;
+}
+:where(.jayjay-review) .jj-middle-path-head {
+  flex: 0 1 auto;
+  min-width: 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:where(.jayjay-review) .jj-middle-path-tail {
+  flex: none;
+  max-width: 100%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+:where(.jayjay-review) .jj-kind-dot {
+  flex: none;
+  width: 6px;
+  height: 6px;
+  margin-top: 5px;
+  border-radius: 50%;
+  background: var(--jj-kind-modified);
+}
+:where(.jayjay-review) .jj-kind-dot.jj-added,
+:where(.jayjay-review) .jj-kind-dot.jj-copied {
+  background: var(--jj-kind-added);
+}
+:where(.jayjay-review) .jj-kind-dot.jj-removed {
+  background: var(--jj-kind-removed);
+}
+:where(.jayjay-review) .jj-kind-dot.jj-renamed {
+  background: var(--jj-kind-renamed);
+}
+:where(.jayjay-review) .jj-seti {
+  display: flex;
+  justify-content: center;
+  width: 14px;
+  height: 16px;
+  line-height: 16px;
+  color: var(--jj-muted);
+  font-family: "JayJay Seti";
+  font-style: normal;
+  font-weight: 400;
+}
+:where(.jayjay-review) .jj-seti > span {
+  position: relative;
+  display: block;
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-note-count {
+  padding: 1px 6px;
+  border-radius: 99px;
+  font-size: 9px;
+  font-weight: 600;
+  color: var(--jj-note-ink);
+  background: var(--jj-note-pill);
+}
+:where(.jayjay-review) .jj-review-toggle {
+  appearance: none;
+  -webkit-appearance: none;
+  flex: none;
+  width: 15px;
+  height: 15px;
+  margin: 0;
+  border: 1.5px solid color-mix(in srgb, var(--jj-muted) 55%, transparent);
+  border-radius: 50%;
+  background: transparent;
+  cursor: pointer;
+  display: grid;
+  place-items: center;
+}
+:where(.jayjay-review) .jj-review-toggle[data-state="partial"] {
+  border-color: var(--jj-muted);
+  background: linear-gradient(90deg, var(--jj-muted) 50%, transparent 50%);
+}
+:where(.jayjay-review) .jj-review-toggle[data-state="changed_since_review"] {
+  border-color: var(--jj-reviewed-ink);
+  background: linear-gradient(90deg, var(--jj-reviewed-ink) 50%, transparent 50%);
+}
+:where(.jayjay-review) .jj-review-toggle:checked {
+  border-color: var(--jj-reviewed-ink);
+  background: var(--jj-reviewed-ink);
+}
+:where(.jayjay-review) .jj-review-toggle:checked::after {
+  content: "";
+  width: 4px;
+  height: 7px;
+  margin-top: -1px;
+  border: solid var(--jj-surface);
+  border-width: 0 1.5px 1.5px 0;
+  transform: rotate(45deg);
+}
+:where(.jayjay-review) .jj-review-toggle:disabled {
+  cursor: default;
+  opacity: 0.6;
+}

@@ -2,7 +2,15 @@
   "name": "jayjay-web-workspace",
   "private": true,
   "workspaces": [
-    "packages/review-web",
-    "shell/web"
-  ]
+    "web/review",
+    "web/review-host",
+    "web/diff"
+  ],
+  "scripts": {
+    "format": "oxfmt \"web/**/*.{ts,tsx,js,css}\"",
+    "format:check": "oxfmt --check \"web/**/*.{ts,tsx,js,css}\""
+  },
+  "devDependencies": {
+    "oxfmt": "^0.76.0"
+  }
 }

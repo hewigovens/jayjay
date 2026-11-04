@@ -1,0 +1,21 @@
+:where(.jayjay-review).jj-fill:not(.jj-compact) {
+  display: flex;
+  flex-direction: column;
+  height: 100%;
+}
+:where(.jayjay-review).jj-fill:not(.jj-compact) .jj-review-columns {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+:where(.jayjay-review).jj-fill .jj-review-columns {
+  border: 0;
+  border-radius: 0;
+}
+:where(.jayjay-review).jj-fill:not(.jj-compact) :is(.jj-review-detail, .jj-file-column) {
+  height: auto;
+}
+:where(.jayjay-review).jj-fill .jj-review-error {
+  margin: 0;
+  border-radius: 0;
+}

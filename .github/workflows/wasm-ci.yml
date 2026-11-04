@@ -18,8 +18,7 @@ on:
       - "scripts/with-wasm-toolchain.sh"
       - "scripts/wasm-bindgen-version.sh"
       - "wasm/**"
-      - "packages/**"
-      - "shell/web/**"
+      - "web/**"
       - "package.json"
       - "package-lock.json"
   pull_request:
@@ -38,8 +37,7 @@ on:
       - "scripts/with-wasm-toolchain.sh"
       - "scripts/wasm-bindgen-version.sh"
       - "wasm/**"
-      - "packages/**"
-      - "shell/web/**"
+      - "web/**"
       - "package.json"
       - "package-lock.json"
 
@@ -125,11 +123,14 @@ jobs:
       - name: Build and check the web review
         run: |
           npm ci
-          npm run build --workspace @jayjay/review-web-tests
-          npm run check --workspace @jayjay/review-web-tests
+          npm run format:check
+          npm run build --workspace @jayjay/review-host
+          npm run check --workspace @jayjay/review-host
+          npm run check --workspace @jayjay/diff
+          npm test --workspace @jayjay/diff
 
       - name: Test in Chromium and WebKit
-        working-directory: shell/web
+        working-directory: web/review-host
         run: |
           npx playwright install --with-deps chromium webkit
           npm run test:browser

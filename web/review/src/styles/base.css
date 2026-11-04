@@ -1,0 +1,102 @@
+@font-face {
+  font-family: "JayJay Seti";
+  src: url("../fonts/Seti.woff2") format("woff2");
+  font-display: block;
+}
+.jayjay-theme,
+.jayjay-review {
+  color-scheme: light dark;
+  font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  font-size: 14px;
+  --jj-page: light-dark(#f5f7fa, #171c25);
+  --jj-surface: light-dark(#fdfefe, #1d2430);
+  --jj-ink: light-dark(#243247, #d5dfed);
+  --jj-muted: light-dark(#5f6f85, #9aaac1);
+  --jj-border: light-dark(#dce3ed, #354052);
+  --jj-accent: light-dark(#255ab3, #91b8ff);
+  --jj-added-ink: light-dark(#186442, #99ddbb);
+  --jj-removed-ink: light-dark(#a43f49, #ffb0ba);
+  --jj-added-bg: light-dark(#eff9f2, #1c352c);
+  --jj-removed-bg: light-dark(#fff0f0, #3c252e);
+  --jj-word-added: light-dark(#bde8ca, #2d6349);
+  --jj-word-removed: light-dark(#facbd0, #743b48);
+  --jj-kind-added: light-dark(#1c7c3a, #5fd17f);
+  --jj-kind-removed: light-dark(#b42318, #ff8a80);
+  --jj-kind-modified: light-dark(#175cd3, #7cb4ff);
+  --jj-kind-renamed: light-dark(#a21caf, #e28cf0);
+  --jj-stripe-unreviewed: light-dark(#b6d3fb, #35507a);
+  --jj-stripe-reviewed: var(--jj-accent);
+  --jj-stripe-changed: light-dark(#e8890c, #f5a742);
+  --jj-reviewed-ink: light-dark(#1c7c3a, #5fd17f);
+  --jj-note-ink: light-dark(#b45309, #edc18a);
+  --jj-note-bg: light-dark(#fff8ee, #2a2419);
+  --jj-note-border: light-dark(#f3d6ad, #5a4526);
+  --jj-note-pill: light-dark(#fdebd3, #4a3518);
+  --jj-mono: "SFMono-Regular", Consolas, "Liberation Mono", monospace;
+  color: var(--jj-ink);
+  background: var(--jj-page);
+  font-synthesis: none;
+  text-rendering: optimizeLegibility;
+  /* iOS Safari enlarges text in landscape unless told not to; the layout already fits that width. */
+  -webkit-text-size-adjust: 100%;
+  text-size-adjust: 100%;
+}
+:where(.jayjay-review),
+:where(.jayjay-review) * {
+  box-sizing: border-box;
+}
+:where(.jayjay-review) textarea {
+  display: block;
+  width: 100%;
+  resize: vertical;
+  background: var(--jj-surface);
+}
+:where(.jayjay-review) button,
+:where(.jayjay-review) input,
+:where(.jayjay-review) textarea {
+  font: inherit;
+  color: inherit;
+}
+:where(.jayjay-review) button {
+  cursor: pointer;
+}
+:where(.jayjay-review) button {
+  border: 1px solid var(--jj-border);
+  border-radius: 5px;
+  background: var(--jj-surface);
+  padding: 6px 11px;
+  font-size: 12px;
+}
+:where(.jayjay-review) button:hover {
+  color: var(--jj-accent);
+  background: color-mix(in srgb, var(--jj-accent) 6%, var(--jj-surface));
+}
+:where(.jayjay-review) :focus-visible {
+  outline: 2px solid var(--jj-accent);
+  outline-offset: 2px;
+}
+:where(.jayjay-review) h2 {
+  font-size: 13px;
+  font-weight: 600;
+  margin: 0;
+}
+:where(.jayjay-review) .jj-diff-stats {
+  font: 12px var(--jj-mono);
+  display: inline-flex;
+  gap: 6px;
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-diff-stats .jj-added {
+  color: var(--jj-added-ink);
+}
+:where(.jayjay-review) .jj-diff-stats .jj-removed {
+  color: var(--jj-removed-ink);
+}
+:where(.jayjay-review) input[type="checkbox"] {
+  accent-color: var(--jj-accent);
+  margin: 0;
+}
+:where(.jayjay-review) .jj-icon {
+  display: block;
+  flex: none;
+}

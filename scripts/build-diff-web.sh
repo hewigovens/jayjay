@@ -16,5 +16,5 @@ for pack in base rust web python swift shell data systems jvm other; do
   if [[ "$pack" != base ]]; then features+=(--features "$pack"); fi
   bash "$root/scripts/with-wasm-toolchain.sh" cargo build --locked -p jj-diff-web "${features[@]}" --target wasm32-unknown-unknown --release
   "$bindgen" target/wasm32-unknown-unknown/release/jj_diff_web.wasm \
-    --target web --out-dir "packages/review-web/src/wasm/$pack" --out-name "jj_diff_$pack"
+    --target web --out-dir "web/review/src/wasm/$pack" --out-name "jj_diff_$pack"
 done
