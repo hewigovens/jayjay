@@ -4,8 +4,8 @@ import type { Labels } from "../../model/diff";
 import type { FileSummary } from "../../model/review";
 import { MiddlePath } from "../files/MiddlePath";
 import { ReviewToggle } from "../files/ReviewToggle";
+import { ReviewStateIcon } from "../files/ReviewStateIcon";
 import { SetiIcon } from "../files/SetiIcon";
-import { CheckIcon } from "../icons";
 import { CopyButton } from "./CopyButton";
 import { DiffStats } from "./DiffStats";
 
@@ -43,7 +43,9 @@ export function FileHeader({
       <div className="jj-header-actions">
         {controls ? (
           <>
-            <label className={`jj-header-action ${file.review === "reviewed" ? "jj-active" : ""}`}>
+            <label
+              className={`jj-header-action jj-review-action ${file.review === "reviewed" ? "jj-active" : ""}`}
+            >
               <input
                 type="checkbox"
                 checked={file.review === "reviewed"}
@@ -51,8 +53,13 @@ export function FileHeader({
                 aria-label={labels.markReviewed}
                 onChange={toggleReviewed}
               />
-              <CheckIcon />
-              <span className="jj-label">{labels.markReviewed}</span>
+              <ReviewStateIcon
+                state={file.review === "reviewed" ? "reviewed" : "unreviewed"}
+                size={14}
+              />
+              <span className="jj-label">
+                {file.review === "reviewed" ? labels.reviewed : labels.markReviewed}
+              </span>
             </label>
             {controls}
           </>

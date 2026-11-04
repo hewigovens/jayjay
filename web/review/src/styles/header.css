@@ -245,6 +245,9 @@
   color: var(--jj-accent);
   background: color-mix(in srgb, var(--jj-accent) 10%, transparent);
 }
+:where(.jayjay-review) .jj-review-action.jj-active {
+  background: none;
+}
 :where(.jayjay-review) .jj-header-action > input {
   position: absolute;
   inset: 0;

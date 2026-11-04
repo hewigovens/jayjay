@@ -2,6 +2,7 @@
 import { useEffect, useRef } from "react";
 import type { Labels } from "../../model/diff";
 import type { FileSummary } from "../../model/review";
+import { ReviewStateIcon } from "./ReviewStateIcon";
 
 export function ReviewToggle({
   file,
@@ -21,16 +22,17 @@ export function ReviewToggle({
         file.review === "partial" || file.review === "changed_since_review";
   }, [file.review]);
   return (
-    <input
-      ref={checkbox}
-      type="checkbox"
-      className="jj-review-toggle"
-      data-state={file.review}
-      checked={file.review === "reviewed"}
-      disabled={disabled}
-      aria-label={`${labels.markReviewed}: ${file.path}`}
-      title={labels[file.review]}
-      onChange={toggle}
-    />
+    <span className="jj-review-toggle" data-state={file.review}>
+      <input
+        ref={checkbox}
+        type="checkbox"
+        checked={file.review === "reviewed"}
+        disabled={disabled}
+        aria-label={`${labels.markReviewed}: ${file.path}`}
+        title={labels[file.review]}
+        onChange={toggle}
+      />
+      <ReviewStateIcon state={file.review} />
+    </span>
   );
 }

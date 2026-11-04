@@ -176,41 +176,45 @@
   background: var(--jj-note-pill);
 }
 :where(.jayjay-review) .jj-review-toggle {
-  appearance: none;
-  -webkit-appearance: none;
-  flex: none;
-  width: 15px;
-  height: 15px;
-  margin: 0;
-  border: 1.5px solid color-mix(in srgb, var(--jj-muted) 55%, transparent);
-  border-radius: 50%;
-  background: transparent;
-  cursor: pointer;
+  position: relative;
   display: grid;
+  flex: none;
   place-items: center;
+  width: 16px;
+  height: 16px;
+  color: color-mix(in srgb, var(--jj-muted) 55%, transparent);
+}
+:where(.jayjay-review) .jj-review-toggle > input {
+  position: absolute;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  margin: 0;
+  opacity: 0;
+  cursor: pointer;
+}
+:where(.jayjay-review) .jj-review-toggle > .jj-review-icon {
+  width: 100%;
+  height: 100%;
+}
+:where(.jayjay-review) .jj-review-toggle:has(> input:focus-visible) {
+  border-radius: 50%;
+  outline: 2px solid var(--jj-accent);
+  outline-offset: 1px;
 }
 :where(.jayjay-review) .jj-review-toggle[data-state="partial"] {
-  border-color: var(--jj-muted);
-  background: linear-gradient(90deg, var(--jj-muted) 50%, transparent 50%);
+  color: var(--jj-muted);
 }
+:where(.jayjay-review) .jj-review-toggle[data-state="reviewed"],
 :where(.jayjay-review) .jj-review-toggle[data-state="changed_since_review"] {
-  border-color: var(--jj-reviewed-ink);
-  background: linear-gradient(90deg, var(--jj-reviewed-ink) 50%, transparent 50%);
+  color: var(--jj-reviewed-ink);
 }
-:where(.jayjay-review) .jj-review-toggle:checked {
-  border-color: var(--jj-reviewed-ink);
-  background: var(--jj-reviewed-ink);
+:where(.jayjay-review) .jj-review-icon[data-state="reviewed"] .jj-review-check {
+  stroke: var(--jj-surface);
 }
-:where(.jayjay-review) .jj-review-toggle:checked::after {
-  content: "";
-  width: 4px;
-  height: 7px;
-  margin-top: -1px;
-  border: solid var(--jj-surface);
-  border-width: 0 1.5px 1.5px 0;
-  transform: rotate(45deg);
-}
-:where(.jayjay-review) .jj-review-toggle:disabled {
-  cursor: default;
+:where(.jayjay-review) .jj-review-toggle:has(> input:disabled) {
   opacity: 0.6;
+}
+:where(.jayjay-review) .jj-review-toggle > input:disabled {
+  cursor: default;
 }
