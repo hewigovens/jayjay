@@ -1,12 +1,15 @@
-/* A warmer, higher-contrast palette than the package default; the GitHub viewer has no desktop app to match. */
+/* jayjay.hewig.dev's palette, so the viewer reads as part of the same product. */
 :root.jayjay-theme,
 :root .jayjay-review {
-  --jj-page: light-dark(#f6f5f2, #1a1917);
-  --jj-surface: light-dark(#ffffff, #211f1d);
-  --jj-ink: light-dark(#1d1f23, #ece7df);
-  --jj-muted: light-dark(#66625c, #a59f96);
-  --jj-border: light-dark(#e4e0d9, #38342f);
-  --jj-accent: light-dark(#2563eb, #7ba5ff);
+  --jj-page: light-dark(#ffffff, #0b0d14);
+  --jj-surface: light-dark(#f5f7fa, #1a1e28);
+  --jj-ink: light-dark(#111827, #eef0f5);
+  --jj-muted: light-dark(#4b5565, #a3a9b8);
+  --jj-border: light-dark(#e4e7ec, #242833);
+  --jj-accent: light-dark(#0a66e8, #3b8bff);
+  --jj-accent-fill: light-dark(#0a66e8, #2563eb);
+  --jj-faint: light-dark(#667085, #838ba0);
+  --jj-kbd-edge: light-dark(#d0d5dd, #363c4a);
   --jj-added-ink: light-dark(#116633, #9be0b4);
   --jj-removed-ink: light-dark(#b0303a, #ffb0b4);
   --jj-added-bg: light-dark(#e7f7ec, #1d3324);

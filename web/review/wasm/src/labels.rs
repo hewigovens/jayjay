@@ -122,6 +122,7 @@ fn review_labels() -> Vec<(&'static str, String)> {
 fn pull_labels() -> Vec<(&'static str, String)> {
     vec![
         ("pullHeading", jayjay_i18n::web::pull_heading()),
+        ("pullLede", jayjay_i18n::web::pull_lede()),
         ("pullUrl", jayjay_i18n::web::pull_url()),
         ("pullOpen", jayjay_i18n::web::pull_open()),
         ("pullHint", jayjay_i18n::web::pull_hint()),
@@ -141,6 +142,41 @@ fn pull_labels() -> Vec<(&'static str, String)> {
         ("pullShareCopied", jayjay_i18n::web::pull_share_copied()),
         ("pullShareFailed", jayjay_i18n::web::pull_share_failed()),
         ("pullSamples", jayjay_i18n::web::pull_samples()),
+        ("pullHow", jayjay_i18n::web::pull_how()),
+        ("pullHowMove", jayjay_i18n::web::pull_how_move()),
+        (
+            "pullHowMoveDetail",
+            jayjay_i18n::web::pull_how_move_detail(),
+        ),
+        ("pullHowMark", jayjay_i18n::web::pull_how_mark()),
+        (
+            "pullHowMarkDetail",
+            jayjay_i18n::web::pull_how_mark_detail(),
+        ),
+        ("pullHowMore", jayjay_i18n::web::pull_how_more()),
+        (
+            "pullHowMoreDetail",
+            jayjay_i18n::web::pull_how_more_detail(),
+        ),
+        ("pullFeatures", jayjay_i18n::web::pull_features()),
+        ("pullFeatureMarks", jayjay_i18n::web::pull_feature_marks()),
+        (
+            "pullFeatureMarksDetail",
+            jayjay_i18n::web::pull_feature_marks_detail(),
+        ),
+        ("pullFeatureStacks", jayjay_i18n::web::pull_feature_stacks()),
+        (
+            "pullFeatureStacksDetail",
+            jayjay_i18n::web::pull_feature_stacks_detail(),
+        ),
+        ("pullFeatureSync", jayjay_i18n::web::pull_feature_sync()),
+        (
+            "pullFeatureSyncDetail",
+            jayjay_i18n::web::pull_feature_sync_detail(),
+        ),
+        ("pullSource", jayjay_i18n::web::pull_source()),
+        ("pullApp", jayjay_i18n::web::pull_app()),
+        ("pullFooter", jayjay_i18n::web::pull_footer()),
         ("pullCommits", jayjay_i18n::web::pull_commits()),
         ("pullAllCommits", jayjay_i18n::web::pull_all_commits()),
         ("pullStack", jayjay_i18n::web::pull_stack()),
