@@ -154,6 +154,7 @@ impl RepoViewModel {
                 self.graph.trunk_name = context.trunk_name;
                 self.pr_host_name = context.pr_host_name.map(SharedString::from);
                 self.upload_title = context.upload_title.map(SharedString::from);
+                self.gerrit_update_title = context.gerrit_update_title.map(SharedString::from);
                 self.working_copy_stats = context.working_copy_stats;
                 self.current_operation_description = context.operation;
                 self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));

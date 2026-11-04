@@ -79,6 +79,30 @@ fn trailer_change_ids(description: &str) -> impl Iterator<Item = &str> {
     })
 }
 
+/// Maps a commit Gerrit rewrote back to its local change.
+pub(super) fn trailer_jj_change_ids(description: &str) -> impl Iterator<Item = ChangeId> {
+    trailer_change_ids(description).filter_map(|id| {
+        match id
+            .strip_prefix('I')
+            .and_then(|id| id.strip_suffix("6a6a6964"))
+        {
+            Some(hex) => ChangeId::try_from_hex(hex),
+            None => ChangeId::try_from_reverse_hex(id),
+        }
+    })
+}
+
+pub(super) fn without_gerrit_trailer(description: &str, change_id: &ChangeId) -> String {
+    let own = gerrit_change_ids(change_id);
+    description
+        .lines()
+        .filter(|line| !trailer_change_ids(line).any(|id| own.iter().any(|own| own == id)))
+        .collect::<Vec<_>>()
+        .join("\n")
+        .trim_end()
+        .to_owned()
+}
+
 /// jj-cli's `format_gerrit_change_id_trailer`, and the reverse-hex form `Link` trailers use.
 fn gerrit_change_ids(change_id: &ChangeId) -> [String; 2] {
     [
@@ -87,7 +111,7 @@ fn gerrit_change_ids(change_id: &ChangeId) -> [String; 2] {
     ]
 }
 
-fn change_label(commit: &jj_lib::commit::Commit) -> String {
+pub(super) fn change_label(commit: &jj_lib::commit::Commit) -> String {
     let short_id: String = commit.change_id().reverse_hex().chars().take(8).collect();
     match commit.description().lines().next() {
         Some(subject) if !subject.is_empty() => format!("{short_id} {subject}"),
@@ -99,26 +123,24 @@ fn change_label(commit: &jj_lib::commit::Commit) -> String {
 mod tests {
     use jj_lib::backend::ChangeId;
 
-    use super::{gerrit_change_ids, trailer_change_ids};
+    use super::{gerrit_change_ids, trailer_jj_change_ids, without_gerrit_trailer};
 
     #[test]
-    fn gerrit_change_ids_match_jj_gerrit_upload() {
+    fn gerrit_trailers_map_back_to_the_jj_change() {
         let change_id = ChangeId::from_hex("4a384355dfd8d2accd75fe1e8f6c7907");
+        let [change_trailer, link_id] = gerrit_change_ids(&change_id);
+        let uploaded = format!("Add hello\n\nBug: 42\nChange-Id: {change_trailer}\n");
         assert_eq!(
-            gerrit_change_ids(&change_id),
-            [
-                "I4a384355dfd8d2accd75fe1e8f6c79076a6a6964",
-                "vpwrvwuumkmrmxpnnmsuklylrktnsqzs"
-            ]
+            without_gerrit_trailer(&uploaded, &change_id),
+            "Add hello\n\nBug: 42"
         );
-    }
-
-    #[test]
-    fn trailer_change_ids_read_change_id_and_link_trailers() {
-        let description = "Add hello\n\nBug: 42\nChange-Id: I4a38\nLink: https://review.example.org/demo/id/vpwrvwuu\n";
+        let linked = format!("Add hello\n\nLink: https://review.example.org/id/{link_id}\n");
+        assert_eq!(without_gerrit_trailer(&linked, &change_id), "Add hello");
         assert_eq!(
-            trailer_change_ids(description).collect::<Vec<_>>(),
-            ["I4a38", "vpwrvwuu"]
+            trailer_jj_change_ids(&uploaded)
+                .chain(trailer_jj_change_ids(&linked))
+                .collect::<Vec<_>>(),
+            [change_id.clone(), change_id]
         );
     }
 }

@@ -150,6 +150,9 @@ impl RepoWindow {
             ContextAction::UploadChange(rev) => {
                 self.git_push(rev.to_string(), RepoViewModel::upload_change, cx);
             }
+            ContextAction::UpdateFromGerrit(rev) => {
+                self.git_push(rev.to_string(), RepoViewModel::update_from_gerrit, cx);
+            }
             ContextAction::MoveBookmark { name, to_rev } => {
                 self.move_bookmark(name, to_rev, cx);
             }

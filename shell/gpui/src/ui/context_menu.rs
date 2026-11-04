@@ -38,6 +38,7 @@ pub enum ContextAction {
     DeleteRemoteTag(SharedString),
     OpenStackedPr(SharedString),
     UploadChange(SharedString),
+    UpdateFromGerrit(SharedString),
     MoveBookmark {
         name: SharedString,
         to_rev: SharedString,

@@ -8,6 +8,7 @@ struct RepoRefreshContext {
     let trunkName: String
     let prHostName: String?
     let uploadTitle: String?
+    let gerritUpdateTitle: String?
     let fixUnavailableReason: String?
     let bisectState: BisectState?
     let statusBar: StatusBarSnapshot
@@ -22,6 +23,7 @@ struct RepoRefreshContext {
         trunkName = context.trunkName
         prHostName = context.prHostName
         uploadTitle = context.uploadTitle
+        gerritUpdateTitle = context.gerritUpdateTitle
         fixUnavailableReason = context.fixUnavailableReason
         statusBar = StatusBarSnapshot(workingCopyStats: context.workingCopyStats, currentOperationDescription: context.operation)
     }
@@ -40,6 +42,7 @@ extension RepoViewModel {
         trunkName = context.trunkName
         prHostName = context.prHostName
         uploadTitle = context.uploadTitle
+        gerritUpdateTitle = context.gerritUpdateTitle
         fixUnavailableReason = context.fixUnavailableReason
         apply(context.statusBar)
     }

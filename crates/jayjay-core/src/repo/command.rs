@@ -30,11 +30,20 @@ impl Repo {
     }
 
     fn spawn_jj(&self, args: &[&str]) -> JayResult<Output> {
-        let binary = environment::jj_binary();
         let context = format!("run jj {}", args.first().unwrap_or(&""));
-        let mut command = environment::command(&binary);
+        self.registered_output(&environment::jj_binary(), args, &context)
+    }
+
+    /// Registered like jj, so a sync cancel or quit stops it.
+    pub(crate) fn registered_output(
+        &self,
+        binary: &str,
+        args: &[&str],
+        context: &str,
+    ) -> JayResult<Output> {
+        let mut command = environment::command(binary);
         command.current_dir(&self.path).args(args);
-        self.running_jj_processes.output(&mut command, &context)
+        self.running_jj_processes.output(&mut command, context)
     }
 
     pub fn sync_token(&self) -> SyncToken {

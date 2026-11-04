@@ -32,6 +32,12 @@ extension RepoViewModel {
         }
     }
 
+    func updateFromGerrit(rev: String) {
+        performPush { repo, sync in
+            try repo.updateFromGerrit(revision: rev, sync: sync)
+        }
+    }
+
     func deleteTagAndPush(name: String) {
         performPush { repo, sync in
             try repo.deleteTagAndPush(name: name, sync: sync)

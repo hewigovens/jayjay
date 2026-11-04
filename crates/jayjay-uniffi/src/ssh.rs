@@ -72,6 +72,7 @@ pub struct RepositoryContext {
     pub trunk_name: String,
     pub pr_host_name: Option<String>,
     pub upload_title: Option<String>,
+    pub gerrit_update_title: Option<String>,
     pub fix_unavailable_reason: Option<String>,
     pub working_copy_stats: Option<DiffStats>,
     pub operation: String,

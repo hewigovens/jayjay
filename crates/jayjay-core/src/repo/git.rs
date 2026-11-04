@@ -1,5 +1,6 @@
 mod colocated;
 mod commit;
+mod gerrit;
 mod import;
 mod landed;
 pub(super) mod lfs;

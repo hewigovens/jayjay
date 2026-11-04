@@ -35,6 +35,7 @@ extension RepoContentView {
                 trunkName: viewModel.trunkName,
                 prHostName: viewModel.prHostName,
                 uploadTitle: viewModel.uploadTitle,
+                gerritUpdateTitle: viewModel.gerritUpdateTitle,
                 conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                 remoteTagNames: viewModel.remoteTagNames,
                 workspacesByName: viewModel.workspacesByName,
