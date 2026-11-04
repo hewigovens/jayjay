@@ -16,6 +16,7 @@ import { MiddlePath } from "./MiddlePath";
 import { ReviewToggle } from "./ReviewToggle";
 import { SetiIcon } from "./SetiIcon";
 import { ShortcutsDialog } from "./ShortcutsDialog";
+import { ToolButton } from "../ToolButton";
 import { toggled } from "../toggled";
 import type { FileSummary, Overview } from "../../model/review";
 
@@ -172,57 +173,49 @@ export function FileColumn({
     <aside className="jj-file-column" aria-label={labels.files}>
       <div className="jj-pane-heading jj-file-tools">
         {notes && (activeNotes > 0 || onlyNotes) && (
-          <button
-            className="jj-tool jj-notes-filter"
+          <ToolButton
+            className="jj-notes-filter"
             aria-pressed={onlyNotes}
-            title={labels.onlyNotes}
-            aria-label={labels.onlyNotes}
+            label={labels.onlyNotes}
             onClick={() => setOnlyNotes(!onlyNotes)}
           >
             {activeNotes}
-          </button>
+          </ToolButton>
         )}
         {(reviewed || hideReviewed) && (
-          <button
-            className="jj-tool"
+          <ToolButton
             aria-pressed={hideReviewed}
-            aria-label={labels.hideReviewedFiles}
+            label={labels.hideReviewedFiles}
             title={hideReviewed ? labels.showingUnreviewed : labels.hideReviewedFiles}
             onClick={() => setHideReviewed(!hideReviewed)}
           >
             <HideReviewedIcon />
-          </button>
+          </ToolButton>
         )}
-        <button
-          className="jj-tool"
+        <ToolButton
           aria-pressed={tree}
-          aria-label={tree ? labels.showingTree : labels.showingFlat}
-          title={tree ? labels.showingTree : labels.showingFlat}
+          label={tree ? labels.showingTree : labels.showingFlat}
           onClick={() => setTree(!tree)}
         >
           {tree ? <TreeIcon /> : <ListIcon />}
-        </button>
-        <button
-          className="jj-tool"
+        </ToolButton>
+        <ToolButton
           aria-pressed={searching}
-          aria-label={labels.filterFiles}
-          title={labels.filterFiles}
+          label={labels.filterFiles}
           onClick={() => (searching ? closeSearch() : setSearching(true))}
         >
           <SearchIcon />
-        </button>
+        </ToolButton>
         <span className="jj-file-count" title={counts.reviewed}>
           {countLabel}
         </span>
-        <button
-          className="jj-tool"
-          aria-label={labels.shortcuts}
-          title={labels.shortcuts}
+        <ToolButton
+          label={labels.shortcuts}
           aria-keyshortcuts="?"
           onClick={() => setShortcuts(true)}
         >
           <KeyboardIcon />
-        </button>
+        </ToolButton>
       </div>
       {searching && (
         <div className="jj-file-filter">
@@ -237,14 +230,9 @@ export function FileColumn({
               if (event.key === "Escape") closeSearch();
             }}
           />
-          <button
-            className="jj-tool"
-            aria-label={labels.cancel}
-            title={labels.cancel}
-            onClick={closeSearch}
-          >
+          <ToolButton label={labels.cancel} onClick={closeSearch}>
             <CloseIcon />
-          </button>
+          </ToolButton>
         </div>
       )}
       {shortcuts && <ShortcutsDialog labels={labels} onClose={() => setShortcuts(false)} />}

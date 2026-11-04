@@ -1,6 +1,6 @@
 /** @jsxRuntime automatic */
 
-function Icon({ d, size = 14 }: { d: string; size?: number }) {
+export function Icon({ d, size = 14 }: { d: string; size?: number }) {
   return (
     <svg
       className="jj-icon"

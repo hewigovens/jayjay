@@ -10,6 +10,10 @@
     min-height: 32px;
     min-width: 32px;
   }
+  :where(.jayjay-review) .jj-change-actions .jj-tool {
+    min-height: 40px;
+    min-width: 40px;
+  }
   :where(.jayjay-review) .jj-review-toggle {
     width: 18px;
     height: 18px;

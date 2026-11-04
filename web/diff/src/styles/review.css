@@ -1,32 +1,10 @@
-.pull-link {
-  display: inline-grid;
-  place-items: center;
-  min-width: 28px;
-  min-height: 28px;
-  padding: 0;
-  border-radius: 5px;
-  color: var(--jj-muted);
-}
-@media (hover: none) {
-  .pull-link {
-    min-width: 36px;
-    min-height: 36px;
-  }
-}
-.pull-link:hover {
-  background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
-  color: var(--jj-ink);
-}
-.pull-link:focus-visible {
-  outline: 2px solid var(--jj-accent);
-}
 .share-notes {
   display: inline-flex;
   align-items: center;
   gap: 6px;
 }
 .share-url {
-  width: 16em;
+  width: min(16em, 50vw);
   padding: 3px 6px;
   border: 1px solid var(--jj-border);
   border-radius: 4px;
@@ -37,11 +15,6 @@
 .share-failed {
   color: var(--jj-removed-ink);
   font-size: 11px;
-}
-button.pull-link {
-  border: 0;
-  background: transparent;
-  cursor: pointer;
 }
 .pull-synced {
   color: var(--jj-accent);
@@ -90,8 +63,16 @@ button.pull-link {
 }
 @media (max-width: 680px), (max-height: 500px) {
   .picker-menu {
-    right: auto;
-    left: 0;
+    position: fixed;
+    top: auto;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    max-height: 60dvh;
+    padding: 6px;
+    border-radius: 12px;
+    box-shadow: 0 -8px 32px rgb(0 0 0 / 0.2);
   }
 }
 .picker-row {
@@ -113,6 +94,11 @@ button.pull-link {
 .picker-row:focus-visible {
   background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
   outline: none;
+}
+@media (hover: none) {
+  .picker-row {
+    min-height: 44px;
+  }
 }
 .picker-row[aria-current="true"] {
   background: color-mix(in srgb, var(--jj-accent) 14%, transparent);

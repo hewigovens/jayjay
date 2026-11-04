@@ -1,4 +1,4 @@
-import { useEffect, useRef } from "react";
+import { Dialog } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
 import type { DeviceCode } from "../../github/SignIn";
 
@@ -15,17 +15,8 @@ export function DeviceCodeDialog({
   labels: Labels;
   onCancel: () => void;
 }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
   return (
-    <dialog
-      ref={dialog}
-      className="device-code"
-      aria-labelledby="device-code-title"
-      onCancel={onCancel}
-    >
+    <Dialog className="device-code" labelledBy="device-code-title" onClose={onCancel}>
       <h2 id="device-code-title">{title}</h2>
       {detail && <p>{detail}</p>}
       <p>{labels.pullDeviceCode}</p>
@@ -46,6 +37,6 @@ export function DeviceCodeDialog({
       <button className="device-code-cancel" onClick={onCancel}>
         {labels.cancel}
       </button>
-    </dialog>
+    </Dialog>
   );
 }

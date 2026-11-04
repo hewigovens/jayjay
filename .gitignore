@@ -6,6 +6,8 @@ web/diff/.wrangler/
 web/diff/.dev.vars
 web/review-host/test-results/
 web/review-host/playwright-report/
+web/diff/test-results/
+web/diff/playwright-report/
 web/review/src/wasm/
 build/
 !crates/jayjay-i18n/build/

@@ -1,12 +1,8 @@
 /** @jsxRuntime automatic */
-import { useEffect, useRef } from "react";
 import type { Labels } from "../../model/diff";
+import { Dialog } from "../Dialog";
 
 export function ShortcutsDialog({ labels, onClose }: { labels: Labels; onClose: () => void }) {
-  const dialog = useRef<HTMLDialogElement>(null);
-  useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
   const rows: [string[], string][] = [
     [["Space"], labels.shortcutMark],
     [["J", "↓"], labels.shortcutNext],
@@ -17,15 +13,7 @@ export function ShortcutsDialog({ labels, onClose }: { labels: Labels; onClose: 
     [["?"], labels.shortcuts],
   ];
   return (
-    <dialog
-      ref={dialog}
-      className="jj-shortcuts"
-      aria-label={labels.shortcuts}
-      onClose={onClose}
-      onClick={(event) => {
-        if (event.target === dialog.current) dialog.current.close();
-      }}
-    >
+    <Dialog className="jj-shortcuts" label={labels.shortcuts} onClose={onClose}>
       <h2>{labels.shortcuts}</h2>
       <dl>
         {rows.map(([keys, label]) => (
@@ -39,6 +27,6 @@ export function ShortcutsDialog({ labels, onClose }: { labels: Labels; onClose: 
           </div>
         ))}
       </dl>
-    </dialog>
+    </Dialog>
   );
 }

@@ -1,4 +1,5 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
+import { ToolButton } from "@jayjay/review-web/react";
 
 export interface PickerItem {
   key: string;
@@ -58,18 +59,17 @@ export function Picker({
 
   return (
     <div className="picker" ref={root} onKeyDown={open ? keyDown : undefined}>
-      <button
+      <ToolButton
         ref={toggle}
-        className="pull-link picker-toggle"
+        className="picker-toggle"
         autoFocus={autoFocus}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
-        title={label}
-        aria-label={label}
+        label={label}
         onClick={() => setOpen(!open)}
       >
         {button}
-      </button>
+      </ToolButton>
       {open && (
         <ol id={id} className="picker-menu" aria-label={label}>
           {items.map((item) => (

@@ -32,7 +32,7 @@ Requests receive an abort signal and stale results never replace newer presentat
 
 `ReviewWorkspace` accepts `headerActions` and `footer` slots. By default it sits in a bordered card sized to most of the viewport; `fill` drops the card and fills its parent's height, so give that parent a height (such as `100dvh`). `useReview` exposes `run(signal => Promise<ReviewResult>)` for imports or refresh, plus selection, options, pending/error state, and Retry. Host copy goes through `savedLabel`; local-storage claims are never assumed. Labels come from JayJay's catalog or the host's localization adapter.
 
-Styles are scoped to `.jayjay-review`, including form defaults. The optional `.jayjay-theme` class applies the palette and typography to a host root. A standalone `DiffPane` needs a `.jayjay-review` ancestor. The package does not register a service worker or style controls outside its root. [Class and variable names](#class-and-variable-names) lists what a host may theme or override.
+Styles are scoped to `.jayjay-review`, including form defaults. The optional `.jayjay-theme` class applies the palette and typography to a host root. A standalone `DiffPane` needs a `.jayjay-review` ancestor. Hosts can draw their own header actions and dialogs in the review's style with `ToolButton`, `ToolLink`, `Dialog`, and `Icon` (a 16-unit outline path), which share the package's touch sizes, focus rings, and modal behavior. The package does not register a service worker or style controls outside its root. [Class and variable names](#class-and-variable-names) lists what a host may theme or override.
 
 ## Class and variable names
 
@@ -87,7 +87,7 @@ Vite needs `worker: { format: "es" }`; TypeScript needs `jsx: "react-jsx"` and b
 - `react.ts`, `local.ts`, `types.ts`: the package entry points.
 - `model/`: the backend contract and the review and diff shapes it exchanges.
 - `hooks/`: `useReview` (the review state machine), `useCompact` (the narrow-screen layout switch), and the hooks `ReviewWorkspace` composes for lazy sections, folding, note jumps, file shortcuts, and the file column width.
-- `components/`: `ReviewWorkspace` and its parts, grouped as `header/`, `files/`, `diff/`, and `notes/`.
+- `components/`: `ReviewWorkspace` and its parts, grouped as `header/`, `files/`, `diff/`, and `notes/`, plus the `ToolButton`, `Dialog`, and icon primitives hosts reuse.
 - `styles/`: one stylesheet per area, imported in cascade order by `styles.css`.
 - `local/`: the optional worker backend (`LocalReviewClient`, its worker protocol, WASM pack loading, and IndexedDB storage).
 - `wasm/`: generated wasm-bindgen packs (ignored by version control).

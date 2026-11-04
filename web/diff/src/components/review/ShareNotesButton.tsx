@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { ToolButton } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
 import { ShareIcon } from "../icons";
 import type { NotesExport } from "../../github/NotesExport";
@@ -50,15 +51,13 @@ export function ShareNotesButton({
           {labels.pullShareFailed}
         </span>
       )}
-      <button
-        className="pull-link"
+      <ToolButton
         disabled={state === "sharing"}
-        title={labels.pullShareNotes}
-        aria-label={labels.pullShareNotes}
+        label={labels.pullShareNotes}
         onClick={() => void share()}
       >
         <ShareIcon />
-      </button>
+      </ToolButton>
     </span>
   );
 }

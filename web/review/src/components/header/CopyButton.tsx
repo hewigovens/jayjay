@@ -1,6 +1,7 @@
 /** @jsxRuntime automatic */
 import { useEffect, useState } from "react";
 import { CheckIcon, CopyIcon } from "../icons";
+import { ToolButton } from "../ToolButton";
 
 export function CopyButton({ value, label }: { value: string; label: string }) {
   const [copied, setCopied] = useState(false);
@@ -10,10 +11,9 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
     return () => clearTimeout(timer);
   }, [copied]);
   return (
-    <button
-      className="jj-tool jj-copy-button"
-      aria-label={label}
-      title={label}
+    <ToolButton
+      className="jj-copy-button"
+      label={label}
       onClick={() =>
         void navigator.clipboard?.writeText(value).then(
           () => setCopied(true),
@@ -22,6 +22,6 @@ export function CopyButton({ value, label }: { value: string; label: string }) {
       }
     >
       {copied ? <CheckIcon /> : <CopyIcon />}
-    </button>
+    </ToolButton>
   );
 }

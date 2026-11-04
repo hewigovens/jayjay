@@ -1,0 +1,19 @@
+:where(.jayjay-review) .jj-dialog {
+  width: min(26rem, calc(100vw - 32px));
+  max-height: calc(100dvh - 32px);
+  overflow: auto;
+  padding: 18px 20px;
+  border: 1px solid var(--jj-border);
+  border-radius: 12px;
+  background: var(--jj-surface);
+  color: var(--jj-ink);
+  box-shadow: 0 16px 48px rgb(0 0 0 / 0.24);
+}
+:where(.jayjay-review) .jj-dialog::backdrop {
+  background: rgb(0 0 0 / 0.32);
+}
+:where(.jayjay-review) .jj-dialog h2 {
+  margin: 0 0 12px;
+  font-size: 14px;
+  font-weight: 600;
+}

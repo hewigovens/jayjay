@@ -1,5 +1,5 @@
 import { useRef } from "react";
-import { ReviewWorkspace } from "@jayjay/review-web/react";
+import { ReviewWorkspace, ToolButton, ToolLink } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import { gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
@@ -88,23 +88,13 @@ export function PullReview({
             />
           )}
           {signedIn && (
-            <button
-              className="pull-link"
-              title={labels.pullSignOut}
-              aria-label={labels.pullSignOut}
-              onClick={signOut}
-            >
+            <ToolButton label={labels.pullSignOut} onClick={signOut}>
               <SignOutIcon />
-            </button>
+            </ToolButton>
           )}
-          <a
-            className="pull-link"
-            href={gitHubUrl(pull)}
-            title={labels.pullOnGitHub}
-            aria-label={labels.pullOnGitHub}
-          >
+          <ToolLink href={gitHubUrl(pull)} label={labels.pullOnGitHub}>
             <GitHubIcon />
-          </a>
+          </ToolLink>
         </>
       }
     />

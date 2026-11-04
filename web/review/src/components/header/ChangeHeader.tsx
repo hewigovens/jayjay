@@ -4,6 +4,7 @@ import type { Labels } from "../../model/diff";
 import type { Overview } from "../../model/review";
 import { Avatar } from "../Avatar";
 import { ExpandIcon } from "../icons";
+import { ToolButton } from "../ToolButton";
 import { DiffStats } from "./DiffStats";
 
 // Joins terminal-wrapped commit message lines into paragraphs, keeping list items, indented lines and blank lines.
@@ -45,15 +46,14 @@ export function ChangeHeader({
       <div className="jj-change-title">
         <h1>{overview.title}</h1>
         {overview.description && (
-          <button
-            className="jj-tool jj-description-toggle"
+          <ToolButton
+            className="jj-description-toggle"
             aria-expanded={expanded}
-            aria-label={toggleLabel}
-            title={toggleLabel}
+            label={toggleLabel}
             onClick={() => setExpanded(!expanded)}
           >
             <ExpandIcon expanded={expanded} />
-          </button>
+          </ToolButton>
         )}
         {actions && <div className="jj-change-actions">{actions}</div>}
       </div>

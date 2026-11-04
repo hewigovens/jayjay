@@ -134,3 +134,7 @@ jobs:
         run: |
           npx playwright install --with-deps chromium webkit
           npm run test:browser
+
+      - name: Test JayJay Diff on phones
+        working-directory: web/diff
+        run: npm run test:browser

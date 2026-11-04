@@ -38,13 +38,6 @@ p.sign-in-note {
   font-size: 12px;
 }
 .device-code {
-  width: min(24rem, calc(100vw - 32px));
-  padding: 22px 24px 16px;
-  border: 1px solid var(--jj-border);
-  border-radius: 12px;
-  background: var(--jj-surface);
-  color: var(--jj-ink);
-  box-shadow: 0 16px 48px rgb(0 0 0 / 0.24);
   text-align: center;
 }
 .device-code[open] {
@@ -53,19 +46,16 @@ p.sign-in-note {
   align-items: center;
   gap: 12px;
 }
-.device-code::backdrop {
-  background: rgb(0 0 0 / 0.32);
-}
 .device-code h2 {
   margin: 0;
   font-size: 15px;
-  font-weight: 600;
 }
 .device-code p {
   margin: 0;
   font-size: 13px;
 }
 .device-code-cancel {
+  min-height: 32px;
   border: 0;
   background: none;
   color: var(--jj-muted);

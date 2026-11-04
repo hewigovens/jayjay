@@ -1,3 +1,4 @@
+import { ToolButton } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
 import { SyncIcon } from "../icons";
 import { DeviceCodeDialog } from "../sign-in/DeviceCodeDialog";
@@ -20,7 +21,7 @@ export function SyncViewedButton({
     const label = failed ? labels.pullSyncViewedFailed : labels.pullSyncingViewed;
     return (
       <span
-        className={`pull-link pull-synced ${failed ? "pull-sync-failed" : ""}`}
+        className={`jj-tool pull-synced ${failed ? "pull-sync-failed" : ""}`}
         role="img"
         title={label}
         aria-label={label}
@@ -45,14 +46,9 @@ export function SyncViewedButton({
           {labels.pullSignInFailed}
         </span>
       )}
-      <button
-        className="pull-link"
-        title={labels.pullSyncViewed}
-        aria-label={labels.pullSyncViewed}
-        onClick={() => void start()}
-      >
+      <ToolButton label={labels.pullSyncViewed} onClick={() => void start()}>
         <SyncIcon />
-      </button>
+      </ToolButton>
     </span>
   );
 }

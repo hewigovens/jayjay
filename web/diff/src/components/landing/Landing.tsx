@@ -10,9 +10,9 @@ const app = "https://jayjay.hewig.dev";
 export function Landing({ labels, onOpen }: { labels: Labels; onOpen: (pull: ReviewRef) => void }) {
   const [invalid, setInvalid] = useState(false);
   const features = [
-    [<CheckIcon />, labels.pullFeatureMarks, labels.pullFeatureMarksDetail],
-    [<StackIcon />, labels.pullFeatureStacks, labels.pullFeatureStacksDetail],
-    [<SyncIcon />, labels.pullFeatureSync, labels.pullFeatureSyncDetail],
+    [<CheckIcon size={18} />, labels.pullFeatureMarks, labels.pullFeatureMarksDetail],
+    [<StackIcon size={18} />, labels.pullFeatureStacks, labels.pullFeatureStacksDetail],
+    [<SyncIcon size={18} />, labels.pullFeatureSync, labels.pullFeatureSyncDetail],
   ] as const;
   const steps = [
     [["J", "K"], labels.pullHowMove, labels.pullHowMoveDetail],
@@ -115,7 +115,7 @@ export function Landing({ labels, onOpen }: { labels: Labels; onOpen: (pull: Rev
               <code>{`${sample.owner}/${sample.repo} #${sample.number}`}</code>
               <span className="landing-sample-title">{sample.title}</span>
               <span className="landing-sample-stat">
-                <FileIcon />
+                <FileIcon size={16} />
                 {sample.files} <ins>+{sample.added}</ins> <del>−{sample.removed}</del>
               </span>
             </a>
