@@ -89,6 +89,19 @@ pub(super) fn choose_remote(
     }
 }
 
+/// Prefers the default remote when several hold the base repository.
+pub(super) fn base_remote<'a>(
+    remotes: &'a [GitRemote],
+    default: &str,
+    base: &HostedRepo,
+) -> Option<(&'a GitRemote, HostedRepo)> {
+    remotes
+        .iter()
+        .filter_map(|remote| Some((remote, HostedRepo::parse(&remote.fetch_url)?)))
+        .filter(|(_, repo)| repo.is_same_repository(base))
+        .min_by_key(|(remote, _)| remote.name != default)
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -101,6 +114,23 @@ mod tests {
                 fetch_url: url.to_string(),
             })
             .collect()
+    }
+
+    #[test]
+    fn the_base_remote_is_the_one_holding_the_base_repository() {
+        let existing = remotes(&[
+            ("fork", "https://github.com/alice/jayjay.git"),
+            ("origin", "https://github.com/hewigovens/jayjay.git"),
+            ("upstream", "git@github.com:hewigovens/jayjay.git"),
+        ]);
+        let base = HostedRepo::parse("https://github.com/hewigovens/jayjay").unwrap();
+        let name = |default| {
+            base_remote(&existing, default, &base).map(|(remote, _)| remote.name.as_str())
+        };
+        assert_eq!(name("fork"), Some("origin"));
+        assert_eq!(name("upstream"), Some("upstream"));
+        let other = HostedRepo::parse("https://github.com/owner/other").unwrap();
+        assert!(base_remote(&existing, "origin", &other).is_none());
     }
 
     #[test]

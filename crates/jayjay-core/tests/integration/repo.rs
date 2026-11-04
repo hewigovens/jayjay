@@ -1161,3 +1161,17 @@ fn co_authors_credit_trailers_and_a_distinct_committer_but_not_github_web_flow_o
     assert!(co_authors("@-").is_empty());
     assert!(co_authors("@").is_empty());
 }
+
+#[test]
+fn opening_a_repo_with_an_unknown_backend_names_the_backend() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    fs::write(repo_path.join(".jj/repo/store/type"), "piper").expect("write store type");
+
+    let Err(error) = Repo::open(&repo_path) else {
+        panic!("opened a repo with an unknown backend");
+    };
+
+    let message = error.to_string();
+    assert!(message.contains("“piper” commit backend"), "{message}");
+}

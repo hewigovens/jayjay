@@ -23,16 +23,59 @@ impl GitRemote {
 }
 
 impl Repo {
+    /// Same as `jj git push`: `git.push`, else the only remote, else `origin`.
+    pub(crate) fn default_remote(&self) -> String {
+        match self.git_repo("read git remotes") {
+            Ok(git_repo) => self.default_remote_in(&git_repo),
+            Err(_) => "origin".to_owned(),
+        }
+    }
+
+    /// Same as `jj git fetch`: `git.fetch`, else the only remote, else `origin`.
+    pub(crate) fn fetch_remotes(&self) -> Vec<String> {
+        let repo = self.get_repo();
+        let settings = repo.settings();
+        if let Ok(name) = settings.get_string("git.fetch") {
+            return vec![name];
+        }
+        if let Ok(names) = settings.get::<Vec<String>>("git.fetch") {
+            return names;
+        }
+        match self.git_repo("read git remotes") {
+            Ok(git_repo) if git_repo.remote_names().len() == 1 => git_repo
+                .remote_names()
+                .into_iter()
+                .map(|name| name.to_string())
+                .collect(),
+            _ => vec!["origin".to_owned()],
+        }
+    }
+
+    fn default_remote_in(&self, git_repo: &gix::Repository) -> String {
+        if let Ok(name) = self.get_repo().settings().get_string("git.push") {
+            return name;
+        }
+        let mut names = git_repo.remote_names().into_iter();
+        match (names.next(), names.next()) {
+            (Some(only), None) => only.to_string(),
+            _ => "origin".to_owned(),
+        }
+    }
+
+    fn git_repo(&self, context: &str) -> JayResult<gix::Repository> {
+        get_git_repo(self.get_repo().store()).map_err(|error| JayError::Internal {
+            message: format!("{context}: {error}"),
+        })
+    }
+
     /// Read from the git config of the store jj uses; `git remote get-url` spawns a subprocess and resolves against the working directory instead.
     pub(crate) fn git_remote_url(&self) -> JayResult<String> {
+        let git_repo = self.git_repo("read git remote")?;
+        let name = self.default_remote_in(&git_repo);
         let missing = || JayError::Internal {
-            message: "No remote 'origin' configured".to_owned(),
+            message: format!("No remote '{name}' configured"),
         };
-        let git_repo =
-            get_git_repo(self.get_repo().store()).map_err(|error| JayError::Internal {
-                message: format!("read git remote: {error}"),
-            })?;
-        let remote = git_repo.find_remote("origin").map_err(|_| missing())?;
+        let remote = git_repo.find_remote(name.as_str()).map_err(|_| missing())?;
         let url = remote.url(Direction::Fetch).ok_or_else(missing)?;
         Ok(url.to_bstring().to_string())
     }
@@ -42,10 +85,7 @@ impl Repo {
     }
 
     pub(crate) fn git_remotes(&self) -> JayResult<Vec<GitRemote>> {
-        let git_repo =
-            get_git_repo(self.get_repo().store()).map_err(|error| JayError::Internal {
-                message: format!("read git remotes: {error}"),
-            })?;
+        let git_repo = self.git_repo("read git remotes")?;
         Ok(git_repo
             .remote_names()
             .into_iter()

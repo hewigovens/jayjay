@@ -114,17 +114,20 @@ impl Repo {
     ) -> JayResult<PullRequestImportPlan> {
         let parsed =
             url::parse_pull_request_url(url).ok_or_else(|| JayError::internal(UNSUPPORTED_URL))?;
-        let origin_url = self.git_remote_url()?;
-        let origin = HostedRepo::parse(&origin_url).ok_or_else(|| {
-            JayError::internal("This repository's origin is not on a supported host.")
-        })?;
-        if !origin.is_same_repository(&parsed.base) {
+        let remotes = self.git_remotes()?;
+        let Some((base_remote, origin)) =
+            plan::base_remote(&remotes, &self.default_remote(), &parsed.base)
+        else {
+            let origin = HostedRepo::parse(&self.git_remote_url()?).ok_or_else(|| {
+                JayError::internal("This repository's origin is not on a supported host.")
+            })?;
             return Err(JayError::internal(format!(
                 "This pull request targets {}, but this repository's origin is {}.",
                 parsed.base.slug(),
                 origin.slug(),
             )));
-        }
+        };
+        let (base_name, origin_url) = (base_remote.name.clone(), base_remote.fetch_url.clone());
         let ssh = remote_url_uses_ssh(&origin_url);
         let (host, number) = (parsed.base.host, parsed.number);
         let resolved = sync
@@ -145,11 +148,10 @@ impl Repo {
                 ))
             })?;
 
-        let remotes = self.git_remotes()?;
         let remote = match &resolved.head {
             PrHeadRepo::SameRepository => plan::RemoteChoice::Reuse {
-                name: String::from("origin"),
-                url: origin_url.clone(),
+                name: base_name,
+                url: origin_url,
             },
             PrHeadRepo::Fork(fork) => {
                 plan::choose_remote(&remotes, &fork.name_hint, &fork.clone_url)

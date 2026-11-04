@@ -906,7 +906,7 @@ fn repeated_pull_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
     view.update(cx, |view, cx| {
         view.view_model()
             .update(cx, |vm, _| vm.loading.refresh_indicator = false);
-        view.git_fetch_origin(cx);
+        view.git_fetch(cx);
         let vm = view.view_model();
         let vm = vm.read(cx);
         assert!(
@@ -917,7 +917,7 @@ fn repeated_pull_while_in_flight_shows_feedback(cx: &mut TestAppContext) {
             !vm.loading.refresh_indicator,
             "refresh should not spin until pull completes"
         );
-        view.git_fetch_origin(cx);
+        view.git_fetch(cx);
         assert_eq!(view.toast().as_deref(), Some("Pull already in progress"));
     });
 }
@@ -953,7 +953,7 @@ fn clicking_pull_or_push_again_cancels_it_quietly(cx: &mut TestAppContext) {
     let runs: [(Action, Action, &str); 2] = [
         (
             RepoWindow::pull_or_cancel,
-            RepoWindow::git_fetch_origin,
+            RepoWindow::git_fetch,
             "Pull canceled",
         ),
         (

@@ -7,7 +7,7 @@ use jayjay_core::{BookmarkInfo, ChangeInfo, DiffEditFileSelection, DiffEditRange
 use tempfile::TempDir;
 
 use crate::template::copy_of;
-use crate::{configure_test_user, init_colocated, run_jj_in};
+use crate::{configure_test_user, init_colocated, run_git, run_jj_in};
 
 static TEMPLATE: OnceLock<TempDir> = OnceLock::new();
 
@@ -28,6 +28,23 @@ pub fn init_jj_repo() -> TempDir {
         fs::write(repo_path.join("hello.txt"), "hello from jayjay\n").expect("write initial file");
         run_jj_in(repo_path, &["describe", "-m", "initial change"]);
     })
+}
+
+/// `main` pushed to a bare remote named `remote`, with an undescribed `@` on top; returns the temp dir, repo, and bare remote paths.
+pub fn repo_with_remote(remote: &str) -> (TempDir, PathBuf, PathBuf) {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let bare = temp_dir.path().join("remote.git");
+    run_git(temp_dir.path(), &["init", "--bare", bare.to_str().unwrap()]);
+    run_jj_in(
+        &repo_path,
+        &["git", "remote", "add", remote, bare.to_str().unwrap()],
+    );
+    run_jj_in(&repo_path, &["describe", "-m", "trunk"]);
+    run_jj_in(&repo_path, &["bookmark", "create", "main", "-r", "@"]);
+    run_jj_in(&repo_path, &["new"]);
+    run_jj_in(&repo_path, &["git", "push", "-b", "main"]);
+    (temp_dir, repo_path, bare)
 }
 
 /// A tracked file whose edit produces two separated change groups, for review-mark tests; returns its repo-relative path.

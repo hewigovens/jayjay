@@ -248,7 +248,7 @@ fn forget_stale_bookmarks_works_from_a_workspace_without_git_dir() {
 }
 
 fn fetch(repo: &Repo) -> FetchResult {
-    repo.git_fetch("origin", &repo.sync_token()).unwrap()
+    repo.git_fetch(&repo.sync_token()).unwrap()
 }
 
 /// Alice pushed `main` and `feature`; Bob tracked `feature@origin` and moved his `feature` onto local work; Alice then squash-merged, deleted `feature`, and pushed.

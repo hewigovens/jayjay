@@ -299,14 +299,14 @@ impl RepoViewModel {
         )
     }
 
-    pub(crate) fn git_fetch_origin(
+    pub(crate) fn git_fetch(
         &mut self,
         sync: SyncToken,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<FetchResult>> {
         self.repo_result_task_without_indicator(
             cx,
-            move |repo| repo.git_fetch("origin", &sync),
+            move |repo| repo.git_fetch(&sync),
             |vm, _result, cx| vm.refresh(false, cx),
         )
     }

@@ -4,7 +4,7 @@ use jj_lib::backend::CommitId;
 use jj_lib::dsl_util::format_string;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId as _;
-use jj_lib::ref_name::RefName;
+use jj_lib::ref_name::{RefName, RemoteName};
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 
 use crate::repo::bookmarks::bookmark_target_without_commit;
@@ -19,7 +19,7 @@ impl Repo {
     pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> JayResult<String> {
         let _enter = sync.enter();
         if !bookmark.is_empty() {
-            let _ = self.track_bookmark(bookmark, "origin");
+            let _ = self.track_bookmark(bookmark, &self.default_remote());
         }
 
         let mut args = vec!["git", "push"];
@@ -62,8 +62,9 @@ impl Repo {
         if bookmarks.is_empty() {
             return Ok("Nothing to push.".to_owned());
         }
+        let remote = self.default_remote();
         for bookmark in bookmarks {
-            let _ = self.track_bookmark(bookmark, "origin");
+            let _ = self.track_bookmark(bookmark, &remote);
         }
         // `--bookmark` creates and tracks new remote bookmarks on its own; jj 0.42
         // has no `--allow-new` flag.
@@ -80,9 +81,9 @@ impl Repo {
         ))
     }
 
-    /// Fetch without changing bookmark tracking, rebase, and clean up merged bookmarks.
-    pub fn git_fetch(&self, remote: &str, sync: &SyncToken) -> JayResult<FetchResult> {
-        self.pull(sync, |repo| repo.git_fetch_raw(remote, ""), None)
+    /// Fetch the configured remotes without changing bookmark tracking, rebase, and clean up merged bookmarks.
+    pub fn git_fetch(&self, sync: &SyncToken) -> JayResult<FetchResult> {
+        self.pull(sync, |repo| repo.git_fetch_raw("", ""), None)
     }
 
     /// Fetch a specific bookmark, auto-track it, rebase, and clean up.
@@ -106,13 +107,27 @@ impl Repo {
         // The in-process rebase cannot be interrupted, so honour a cancel before it instead of reporting one after it has landed.
         sync.check()?;
         let cleanup = self.write_guard().and_then(|_write| {
-            if let Some(bookmark) = track {
-                let _ = self.track_bookmark(bookmark, "origin");
+            if let Some((bookmark, remote)) =
+                track.and_then(|bookmark| Some((bookmark, self.bookmark_remote(bookmark)?)))
+            {
+                let _ = self.track_bookmark(bookmark, &remote);
             }
             self.rebase_to_trunk();
             self.post_fetch_cleanup(&before, sync)
         });
         fetch_result(msg, cleanup)
+    }
+
+    /// `git.fetch` may name remotes other than the push default.
+    fn bookmark_remote(&self, bookmark: &str) -> Option<String> {
+        let repo = self.get_repo();
+        let name = RefName::new(bookmark);
+        self.fetch_remotes().into_iter().find(|remote| {
+            !repo
+                .view()
+                .get_remote_bookmark(name.to_remote_symbol(RemoteName::new(remote)))
+                .is_absent()
+        })
     }
 
     pub(crate) fn git_fetch_raw(&self, remote: &str, bookmark: &str) -> JayResult<String> {

@@ -65,7 +65,7 @@ impl RepoWindow {
                 view.open_remote_repository(cx);
             }))
             .on_action(cx.listener(|view, _: &GitFetchOrigin, _, cx| {
-                view.git_fetch_origin(cx);
+                view.git_fetch(cx);
             }))
             .on_action(cx.listener(|view, _: &GitPushDefault, _, cx| {
                 view.git_push_default(cx);

@@ -20,8 +20,8 @@ type PushTask = fn(
 ) -> Task<JayResult<String>>;
 
 impl RepoWindow {
-    pub fn git_fetch_origin(&mut self, cx: &mut Context<Self>) {
-        self.start_fetch(cx, |vm, sync, cx| vm.git_fetch_origin(sync, cx));
+    pub fn git_fetch(&mut self, cx: &mut Context<Self>) {
+        self.start_fetch(cx, |vm, sync, cx| vm.git_fetch(sync, cx));
     }
 
     pub fn git_pull_bookmark(&mut self, bookmark: String, cx: &mut Context<Self>) {
@@ -76,7 +76,7 @@ impl RepoWindow {
         if self.sync_activity.is_fetching() {
             self.cancel_pull(cx);
         } else {
-            self.git_fetch_origin(cx);
+            self.git_fetch(cx);
         }
     }
 
@@ -380,7 +380,7 @@ fn sync_completion_notification(
 fn fetch_status_message(result: &FetchResult) -> String {
     let mut message = result.message.trim().to_owned();
     if message.is_empty() {
-        message = jayjay_i18n::repo::fetched_origin();
+        message = jayjay_i18n::repo::fetch_complete();
     }
     if !result.abandoned_bookmarks.is_empty() {
         message.push('\n');

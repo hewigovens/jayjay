@@ -277,7 +277,7 @@ impl BookmarkManagerView {
             BookmarkContextAction::Resolve(name) => self.run_bookmark_action(
                 move |repo| repo.move_bookmark(&name, "@"),
                 |view, cx| {
-                    let _ = view.parent.update(cx, |view, cx| view.git_fetch_origin(cx));
+                    let _ = view.parent.update(cx, |view, cx| view.git_fetch(cx));
                 },
                 cx,
             ),

@@ -1,3 +1,4 @@
+use std::cell::LazyCell;
 use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 
@@ -108,6 +109,7 @@ impl Repo {
                 remote_ref.is_tracked(),
             ));
         }
+        let default_remote = LazyCell::new(|| self.default_remote());
         for (name, mut refs) in orphans {
             refs.sort_by(|a, b| a.0.cmp(&b.0));
             let remotes: Vec<String> = refs.iter().map(|(r, _, _)| r.clone()).collect();
@@ -118,7 +120,7 @@ impl Repo {
                 .collect();
             let first_target = &refs
                 .iter()
-                .find(|(remote, _, _)| remote == "origin")
+                .find(|(remote, _, _)| *remote == *default_remote)
                 .unwrap_or(&refs[0])
                 .1;
             let (change_id, description) = self.summary_at_target(first_target);
@@ -315,10 +317,10 @@ impl Repo {
         })
     }
 
-    /// Fetch `origin`, then forget bookmarks that are locally deleted or have no remote ref.
+    /// Fetch the configured remotes, then forget bookmarks that are locally deleted or have no remote ref.
     /// Forgetting never propagates deletions to remotes. Returns the number of bookmarks forgotten.
     pub fn forget_stale_bookmarks(&self) -> JayResult<u32> {
-        let _ = self.run_jj(&["git", "fetch", "--remote", "origin"]);
+        let _ = self.run_jj(&["git", "fetch"]);
         let _write = self.write_guard()?;
         self.reload()?;
 

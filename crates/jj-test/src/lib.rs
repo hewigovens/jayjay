@@ -18,6 +18,6 @@ pub use formats::FormatFixture;
 pub use linear::LinearFixture;
 pub use repo::{
     add_two_group_edit, change_by_description, changed_paths, current_op_id, find_bookmark,
-    find_change, first_change, init_jj_repo, selection_for_lines, setup_source_change_with_child,
-    setup_stack, whole_file_selection,
+    find_change, first_change, init_jj_repo, repo_with_remote, selection_for_lines,
+    setup_source_change_with_child, setup_stack, whole_file_selection,
 };

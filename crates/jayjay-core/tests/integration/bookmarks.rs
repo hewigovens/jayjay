@@ -77,7 +77,7 @@ fn sync_only_tracks_explicitly_requested_bookmarks() {
     );
     run_jj_in(&alice_path, &["git", "push", "--bookmark", "alice-feature"]);
 
-    repo.git_fetch("origin", &repo.sync_token()).expect("pull");
+    repo.git_fetch(&repo.sync_token()).expect("pull");
     let after = repo.list_bookmarks().expect("bookmarks after pull");
     let remote = after
         .iter()
