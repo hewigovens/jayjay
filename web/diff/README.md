@@ -1,12 +1,12 @@
 # Pull request review
 
-Renders any public GitHub pull request with [`@jayjay/review-web`](../../web/review/README.md): open `/<owner>/<repo>/pull/<number>`, or swap `github.com` for this site's host in a pull request URL. Review marks and notes stay in the browser's IndexedDB, keyed by `github.com/<owner>/<repo>` and `pull/<number>`, so they carry across pushes the same way desktop marks carry across rewrites.
+Renders any public GitHub pull request or comparison with [`@jayjay/review-web`](../review/README.md): open `/<owner>/<repo>/pull/<number>`, or swap `github.com` for this site's host in a pull request URL. Review marks and notes stay in the browser's IndexedDB, keyed by `github.com/<owner>/<repo>` and `pull/<number>`, so they carry across pushes the same way desktop marks carry across rewrites.
 
 A Cloudflare Worker (`worker/`) answers `/api/<owner>/<repo>/pull/<number>` with the pull request's title, author, merge base, head, and file list with line counts and blob IDs, cached at the edge for 60 seconds. The file list comes from the pull request's `.diff` on github.com, which is outside the API rate limit, so a pull request takes the same few REST calls however many files it changes. The browser opens the review as soon as the first file's two sides arrive from raw.githubusercontent.com, which is outside the API rate limit; it fetches a file on demand when it is selected and every other file in the background. A file's review identity is its two blob IDs, so marks apply before its content loads. Everything else is static assets. A service worker (`sw.js`, versioned at build time) caches the page and its scripts, and the diff engine keeps its WASM packs in Cache Storage, so repeat visits load nothing but the pull request until the next deploy. `src/styles/page.css` sets the viewer's palette through the package's `--jj-` theme variables.
 
 ## Run
 
-Build the WASM packs once as described in [web/review-host](../web/README.md#run), then from the repository root:
+Build the WASM packs once as described in [web/review-host](../review-host/README.md#run), then from the repository root:
 
 ```sh
 npm ci
@@ -24,6 +24,8 @@ When the site's limit runs out, the page offers **Sign in with GitHub**: a devic
 The sync icon turns on **Viewed sync**: it signs in again asking for `public_repo`, which GitHub's `markFileAsViewed` mutation needs, and the browser then talks to GitHub's GraphQL API directly with that token (`src/github/ViewedSync.ts`). On each open, files checked Viewed on GitHub are marked reviewed here; marking a whole file reviewed here, or a hunk that completes or reopens it, checks or clears its box on GitHub. Turning sync on also checks the files already reviewed here. Unchecking a box on GitHub doesn't clear a local mark, and hunk marks have no GitHub equivalent. Signing out stops syncing.
 
 The commit icon lists a pull request's commits, newest first, when it has more than one. Picking one opens `/<owner>/<repo>/pull/<number>/commits/<sha>`, GitHub's own URL for it; the Worker answers that path under `/api` with the commit diffed against its first parent, and only for the pull request's own commits. A commit's marks and notes are its own, keyed by its SHA, and Viewed sync pauses there, since GitHub's boxes belong to the whole pull request.
+
+A comparison opens the same way: `/<owner>/<repo>/compare/<base>...<head>`, or `/compare/<head>` against the default branch, as on GitHub. The Worker reads the merge base and commits from the compare API and the files from the comparison's `.diff`; marks are keyed by the range, so they carry across pushes to the head branch. Branches, tags, and commits of the same repository work; a fork's `owner:branch` and the two-dot form don't. A comparison has no stack or Viewed sync.
 
 Pull requests stacked through their base branches, each based on the head branch of the one below, as `gh stack` and jj bookmark stacks push them, get a stack icon listing them top first. The Worker follows the chain from the open pull request both ways with one `pulls?head=` or `pulls?base=` call a step, stops where a step finds none or several, and leaves `stack` out of the manifest when there's nothing to follow.
 

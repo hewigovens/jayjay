@@ -2,7 +2,7 @@ import { useRef } from "react";
 import { ReviewWorkspace } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
-import { pullPath, type PullRequestRef } from "../../github/PullRequestRef";
+import { gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
 import { GitHubIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
@@ -19,8 +19,8 @@ export function PullReview({
 }: {
   client: LocalReviewClient;
   labels: Labels;
-  pull: PullRequestRef;
-  onOpen: (pull: PullRequestRef) => void;
+  pull: ReviewRef;
+  onOpen: (pull: ReviewRef) => void;
 }) {
   const {
     review,
@@ -66,7 +66,7 @@ export function PullReview({
               }}
             />
           )}
-          {stack && (
+          {stack && isPullRequest(pull) && (
             <StackPicker
               stack={stack}
               number={pull.number}
@@ -79,7 +79,7 @@ export function PullReview({
             />
           )}
           {review.result && <ShareNotesButton labels={labels} notes={notes} />}
-          {shown === "" && (
+          {shown === "" && isPullRequest(pull) && (
             <SyncViewedButton
               labels={labels}
               syncing={syncing}
@@ -99,7 +99,7 @@ export function PullReview({
           )}
           <a
             className="pull-link"
-            href={`https://github.com${pullPath(pull)}`}
+            href={gitHubUrl(pull)}
             title={labels.pullOnGitHub}
             aria-label={labels.pullOnGitHub}
           >

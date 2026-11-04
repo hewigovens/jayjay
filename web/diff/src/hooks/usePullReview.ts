@@ -6,11 +6,11 @@ import { GitHubSignIn } from "../github/GitHubSignIn";
 import { notesExport } from "../github/NotesExport";
 import { PullLoader, PullLoadError, type FileContent } from "../github/PullLoader";
 import type { PullCommit, PullStackEntry } from "../github/PullManifest";
-import { pullPath, type PullRequestRef } from "../github/PullRequestRef";
+import { isPullRequest, reviewName, reviewPath, type ReviewRef } from "../github/ReviewRef";
 import { ViewedSync } from "../github/ViewedSync";
 
-export function usePullReview(client: LocalReviewClient, labels: Labels, pull: PullRequestRef) {
-  const path = pullPath({ ...pull, commit: undefined });
+export function usePullReview(client: LocalReviewClient, labels: Labels, pull: ReviewRef) {
+  const path = reviewPath({ ...pull, commit: undefined });
   // Read on each open, so picking a commit reopens the review in place and keeps the last one on screen until it is ready.
   const wanted = useRef(pull.commit);
   wanted.current = pull.commit;
@@ -133,7 +133,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: P
     const token = GitHubSignIn.token;
     sync.current = null;
     // GitHub's Viewed boxes belong to the whole pull request, not one commit.
-    if (!syncing || shown !== "" || !token) return;
+    if (!syncing || shown !== "" || !token || !isPullRequest(pull)) return;
     const controller = new AbortController();
     void (async () => {
       const loaded = await ViewedSync.load(pull, token, controller.signal);
@@ -154,7 +154,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: P
     return () => controller.abort();
   }, [syncing, session]);
   useEffect(() => {
-    document.title = `${pull.owner}/${pull.repo}#${pull.number} · JayJay Diff`;
+    document.title = `${reviewName(pull)} · JayJay Diff`;
   }, [path]);
 
   return {
@@ -168,13 +168,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: P
     syncFailed,
     signOut,
     notes: () =>
-      review.result &&
-      notesExport(
-        review.result.overview,
-        `${pull.owner}/${pull.repo}`,
-        pull.number,
-        headSha.current,
-      ),
+      review.result && notesExport(review.result.overview, reviewPath(pull), headSha.current),
     onSignedIn: () => {
       setSignedIn(true);
       setNeedsSignIn(false);

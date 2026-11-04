@@ -1,6 +1,6 @@
 import { isImagePath, type ImageSide, type ReviewBundle } from "@jayjay/review-web/types";
 import type { PullError, PullFile, PullManifest } from "./PullManifest";
-import { pullPath, type PullRequestRef } from "./PullRequestRef";
+import { reviewPath, type ReviewRef } from "./ReviewRef";
 
 export class PullLoadError extends Error {
   constructor(readonly code: PullError) {
@@ -43,12 +43,12 @@ export class PullLoader {
   ) {}
 
   static async open(
-    pull: PullRequestRef,
+    target: ReviewRef,
     token: string | null,
     signal?: AbortSignal,
     fetcher: typeof fetch = fetch.bind(globalThis),
   ) {
-    const response = await fetcher(`/api${pullPath(pull)}`, {
+    const response = await fetcher(`/api${reviewPath(target)}`, {
       signal,
       headers: token ? { authorization: `Bearer ${token}` } : {},
     });
@@ -67,7 +67,9 @@ export class PullLoader {
     const bundle: ReviewBundle = {
       schemaVersion: 1,
       repositoryId: `github.com/${manifest.repository}`,
-      changeId: manifest.commit?.slice(0, 12) ?? `pull/${manifest.number}`,
+      changeId:
+        manifest.commit?.slice(0, 12) ??
+        (manifest.range ? `compare/${manifest.range}` : `pull/${manifest.number}`),
       title: manifest.title,
       description: manifest.body,
       author: manifest.author?.login ?? "",

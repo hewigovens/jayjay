@@ -4,7 +4,13 @@ import {
   type PullError,
   type PullManifest,
 } from "../../src/github/PullManifest";
-import type { PullRequestRef } from "../../src/github/PullRequestRef";
+import {
+  compareRange,
+  isPullRequest,
+  type CompareRef,
+  type PullRequestRef,
+  type ReviewRef,
+} from "../../src/github/ReviewRef";
 import { diffFiles } from "./GitHubDiff";
 import { pullStack } from "./pullStack";
 
@@ -43,7 +49,7 @@ export class GitHubError extends Error {
 }
 
 const perPage = 100;
-// GitHub lists at most this many of a pull request's commits.
+// GitHub lists at most this many of a pull request's or comparison's commits.
 const maxCommits = 250;
 
 export class GitHub {
@@ -52,8 +58,11 @@ export class GitHub {
     private fetcher: typeof fetch = fetch.bind(globalThis),
   ) {}
 
-  manifest(pull: PullRequestRef): Promise<PullManifest> {
-    return pull.commit ? this.commitManifest(pull, pull.commit) : this.pullManifest(pull);
+  manifest(target: ReviewRef): Promise<PullManifest> {
+    if (!isPullRequest(target)) return this.compareManifest(target);
+    return target.commit
+      ? this.pullCommitManifest(target, target.commit)
+      : this.pullManifest(target);
   }
 
   private async pullManifest({ owner, repo, number }: PullRequestRef): Promise<PullManifest> {
@@ -83,14 +92,52 @@ export class GitHub {
     };
   }
 
-  private async commitManifest(
+  private async pullCommitManifest(
     { owner, repo, number }: PullRequestRef,
     sha: string,
   ): Promise<PullManifest> {
     const repository = `${owner}/${repo}`;
     const pull = await this.pull(repository, number);
-    const commits = await this.commits(repository, number, pull);
-    // Only the pull request's own commits open under its title.
+    return this.commitManifest(repository, await this.commits(repository, number, pull), sha, {
+      number,
+    });
+  }
+
+  private async compareManifest(target: CompareRef): Promise<PullManifest> {
+    const repository = `${target.owner}/${target.repo}`;
+    const { private: hidden, default_branch } = await this.get<{
+      private: boolean;
+      default_branch: string;
+    }>(`/repos/${repository}`);
+    if (hidden) throw new GitHubError("not-found", 404);
+    const range = compareRange({ ...target, base: target.base ?? default_branch });
+    const path = range.split("/").map(encodeURIComponent).join("/");
+    const [comparison, files] = await Promise.all([
+      this.comparison(repository, path),
+      target.commit ? [] : this.diff(`/${repository}/compare/${path}.diff`),
+    ]);
+    if (target.commit)
+      return this.commitManifest(repository, comparison.commits, target.commit, { range });
+    if (files.length > maxFiles) throw new GitHubError("too-large", 413);
+    return {
+      repository,
+      range,
+      title: range,
+      body: "",
+      author: null,
+      baseSha: comparison.mergeBase,
+      headSha: comparison.head,
+      files,
+      commits: comparison.commits.map(pullCommit),
+    };
+  }
+
+  private async commitManifest(
+    repository: string,
+    commits: GitHubCommit[],
+    sha: string,
+    of: Pick<PullManifest, "number" | "range">,
+  ): Promise<PullManifest> {
     const commit = commits.find((commit) => commit.sha === sha);
     if (!commit) throw new GitHubError("not-found", 404);
     const files = await this.diff(`/${repository}/commit/${sha}.diff`);
@@ -98,7 +145,7 @@ export class GitHub {
     const [title, ...body] = commit.commit.message.split("\n");
     return {
       repository,
-      number,
+      ...of,
       title,
       body: body.join("\n").trim(),
       author: commit.author && { login: commit.author.login, id: commit.author.id },
@@ -108,6 +155,35 @@ export class GitHub {
       files,
       commits: commits.map(pullCommit),
       commit: sha,
+    };
+  }
+
+  private async comparison(repository: string, range: string) {
+    type Page = {
+      total_commits: number;
+      merge_base_commit: { sha: string };
+      commits: GitHubCommit[];
+    };
+    const page = (size: number, index: number) =>
+      this.get<Page>(`/repos/${repository}/compare/${range}?per_page=${size}&page=${index}`);
+    const first = await page(perPage, 1);
+    const listed = Math.min(first.total_commits, maxCommits);
+    const rest = await Promise.all(
+      Array.from({ length: Math.ceil(listed / perPage) - 1 }, (_, index) =>
+        page(perPage, index + 2),
+      ),
+    );
+    const commits = [first, ...rest].flatMap((page) => page.commits).slice(0, maxCommits);
+    // A comparison past maxCommits lists its head only on a later page.
+    const last =
+      first.total_commits > listed
+        ? (await page(1, first.total_commits)).commits[0]
+        : commits.at(-1);
+    // With no commits of its own, the head is the merge base.
+    return {
+      mergeBase: first.merge_base_commit.sha,
+      head: last?.sha ?? first.merge_base_commit.sha,
+      commits,
     };
   }
 
