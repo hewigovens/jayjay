@@ -1,7 +1,7 @@
 use std::borrow::Cow;
 
 use crate::MarkdownImageAlign;
-use crate::text::{escape_html, url_scheme};
+use crate::text::{character_reference, escape_html, url_scheme};
 
 pub(crate) struct RawHtmlImage<'a> {
     pub(crate) source: String,
@@ -172,9 +172,9 @@ fn data_image_parts(source: &str) -> Option<(&str, &str)> {
     Some((&rest[..subtype_end], &rest[payload..]))
 }
 
+/// `source` is already decoded, by pulldown-cmark or `html_attributes`, so references in it are literal file name text.
 pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
-    let unescaped = unescape_html_attribute(source);
-    let trimmed = unescaped.trim();
+    let trimmed = source.trim();
     if trimmed.is_empty() {
         return None;
     }
@@ -183,8 +183,8 @@ pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
         return Some(safe_data_source.to_owned());
     }
 
-    // Absolute schemes (incl. http/https) are rejected since the preview WebView only loads jayjay-preview/data: URIs; scan a tab/newline-stripped copy since WebKit's parser strips those before reading the scheme, or "ht\ttp://" would evade this check.
-    let scheme_probe = strip_ascii_tab_and_newline(trimmed);
+    // Absolute schemes (incl. http/https) are rejected since the preview WebView only loads jayjay-preview/data: URIs; scan a copy trimmed of C0 controls and spaces and stripped of tabs/newlines since URL parsing drops those before reading the scheme, or "ht\ttp://" would evade this check.
+    let scheme_probe = strip_ascii_tab_and_newline(trimmed.trim_matches(|ch: char| ch <= ' '));
     if url_scheme(&scheme_probe).is_some() {
         return None;
     }
@@ -264,7 +264,10 @@ fn is_raw_html_tag(name: &str, input: &str) -> bool {
     let Some(rest) = input.strip_prefix('<') else {
         return false;
     };
-    if rest.len() < name.len() || !rest[..name.len()].eq_ignore_ascii_case(name) {
+    if !rest
+        .get(..name.len())
+        .is_some_and(|prefix| prefix.eq_ignore_ascii_case(name))
+    {
         return false;
     }
     rest[name.len()..]
@@ -385,12 +388,50 @@ fn is_html_attribute_name_character(ch: char) -> bool {
     ch.is_ascii_alphanumeric() || matches!(ch, '-' | '_' | ':')
 }
 
-fn unescape_html_attribute(value: &str) -> String {
-    value
-        .replace("&amp;", "&")
-        .replace("&quot;", "\"")
-        .replace("&#39;", "'")
-        .replace("&apos;", "'")
+pub(crate) fn unescape_html_attribute(value: &str) -> String {
+    let mut output = String::with_capacity(value.len());
+    let mut rest = value;
+    while let Some(start) = rest.find('&') {
+        output.push_str(&rest[..start]);
+        rest = &rest[start..];
+        let decoded =
+            character_reference(rest).and_then(|name| Some((name, decode_reference(name)?)));
+        match decoded {
+            Some((name, ch)) => {
+                output.push(ch);
+                rest = &rest[name.len() + 2..];
+            }
+            None => {
+                output.push('&');
+                rest = &rest[1..];
+            }
+        }
+    }
+    output.push_str(rest);
+    output
+}
+
+fn decode_reference(name: &str) -> Option<char> {
+    let code = match name.strip_prefix('#') {
+        Some(hex) if hex.starts_with(['x', 'X']) => u32::from_str_radix(&hex[1..], 16).ok(),
+        Some(digits) => digits.parse().ok(),
+        None => {
+            return match name {
+                "amp" => Some('&'),
+                "quot" => Some('"'),
+                "apos" => Some('\''),
+                "lt" => Some('<'),
+                "gt" => Some('>'),
+                "nbsp" => Some('\u{a0}'),
+                _ => None,
+            };
+        }
+    };
+    Some(
+        code.and_then(char::from_u32)
+            .filter(|&ch| ch != '\0')
+            .unwrap_or('\u{fffd}'),
+    )
 }
 
 fn percent_decode_path(value: &str) -> String {

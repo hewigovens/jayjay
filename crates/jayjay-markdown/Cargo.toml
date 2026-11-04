@@ -8,10 +8,15 @@ rust-version.workspace = true
 license.workspace = true
 repository.workspace = true
 
+[features]
+default = ["mermaid"]
+# Mermaid diagrams as SVG; without it they render as code blocks, which keeps the web WASM pack small.
+mermaid = ["dep:ondine", "dep:roxmltree"]
+
 [dependencies]
-ondine = { package = "compiler", git = "https://github.com/wevm/ondine", rev = "6a1586e5af980e67c104239593ae931837157b8b" }
+ondine = { package = "compiler", git = "https://github.com/wevm/ondine", rev = "6a1586e5af980e67c104239593ae931837157b8b", optional = true }
 pulldown-cmark = { workspace = true }
-roxmltree = "0.21"
+roxmltree = { version = "0.21", optional = true }
 
 [dev-dependencies]
 resvg = "0.49"
