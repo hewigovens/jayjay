@@ -53,6 +53,12 @@ pub fn install_from_path(cx: &mut App, path: PathBuf) {
     ))));
 }
 
+pub(super) struct ReviewAdvance {
+    files: Arc<Vec<DiffHunk>>,
+    order: Vec<usize>,
+    selected: Option<String>,
+}
+
 impl RepoWindow {
     pub fn toggle_reviewed(
         &mut self,
@@ -352,7 +358,6 @@ impl RepoWindow {
         self.toggle_file_reviewed(change_id, path, identity, cx);
     }
 
-    /// Marking the selected file reviewed moves on to the next unreviewed file after it, so files the reviewer skipped stay behind.
     pub(crate) fn toggle_file_reviewed(
         &mut self,
         change_id: String,
@@ -360,22 +365,49 @@ impl RepoWindow {
         identity: String,
         cx: &mut Context<Self>,
     ) {
-        let (files, selected) = {
-            let vm = self.vm.read(cx);
-            (
-                vm.files.clone().unwrap_or_default(),
-                vm.selected_hunk().is_some_and(|hunk| hunk.path == path),
-            )
-        };
+        let start = self.review_advance_start(cx);
+        self.toggle_reviewed(change_id, path.clone(), identity, cx);
+        self.advance_past_reviewed(start, &[path], cx);
+    }
+
+    /// Captured before the toggle, while hide-reviewed still lists the file being marked.
+    pub(super) fn review_advance_start(&self, cx: &App) -> ReviewAdvance {
+        let vm = self.vm.read(cx);
+        let files = vm.files.clone().unwrap_or_default();
+        let selected = vm.selected_hunk().map(|hunk| hunk.path.clone());
         let order = self.review_order(&files, cx);
-        self.toggle_reviewed(change_id.clone(), path.clone(), identity, cx);
+        ReviewAdvance {
+            files,
+            order,
+            selected,
+        }
+    }
+
+    /// Marking the selected file reviewed moves on to the next unreviewed file after it, so files the reviewer skipped stay behind.
+    pub(super) fn advance_past_reviewed(
+        &mut self,
+        ReviewAdvance {
+            files,
+            order,
+            selected,
+        }: ReviewAdvance,
+        toggled: &[String],
+        cx: &mut Context<Self>,
+    ) {
+        let (show_review, change_id) = self.review_file_context(cx);
+        let Some(change_id) = change_id.filter(|_| show_review) else {
+            return;
+        };
+        let Some(path) = selected.filter(|path| toggled.contains(path)) else {
+            return;
+        };
         let rollups = self.review_rollups_with_vm(&change_id, files.iter(), self.vm.read(cx));
         let reviewed =
             |ix: usize| rollups.get(&files[ix].path) == Some(&ReviewFileRollup::Reviewed);
         let Some(position) = order.iter().position(|&ix| files[ix].path == path) else {
             return;
         };
-        if !selected || !reviewed(order[position]) {
+        if !reviewed(order[position]) {
             return;
         }
         let Some(next_ix) = order[position + 1..]
@@ -386,8 +418,7 @@ impl RepoWindow {
         else {
             return;
         };
-        let (show_review, change_id) = self.review_file_context(cx);
-        let visible = Arc::new(self.visible_indices(&files, change_id.as_deref(), show_review, cx));
+        let visible = Arc::new(self.visible_indices(&files, Some(&change_id), show_review, cx));
         self.select_file(next_ix, cx);
         let tree_mode = crate::app::config::current(cx).diff.tree_file_list;
         self.reveal_file(next_ix, &files, &visible, tree_mode);

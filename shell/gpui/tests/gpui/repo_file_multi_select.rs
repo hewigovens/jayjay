@@ -246,11 +246,23 @@ fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
             "{path} marked with the selection"
         );
     }
+    assert_eq!(
+        selection(&view, cx),
+        ["wip2.txt"],
+        "marking moves on to the next unreviewed file"
+    );
 
+    click(&view, cx, "README.md", Modifiers::default());
+    click(&view, cx, "wip1.txt", shift());
     view.update_in(cx, |view, _, cx| {
         view.toggle_reviewed_for_selected_files(cx)
     });
     settle_visual(cx);
+    assert_eq!(
+        selection(&view, cx),
+        selected,
+        "unmarking keeps the selection"
+    );
     for path in &selected {
         assert!(
             !reviewed(&view, cx, path),

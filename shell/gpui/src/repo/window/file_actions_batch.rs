@@ -193,7 +193,9 @@ impl RepoWindow {
             }
             self.set_reviewed_action(&paths, change, &hunks, vm).1
         };
+        let start = self.review_advance_start(cx);
         self.run_file_batch_action(Arc::new(action), cx);
+        self.advance_past_reviewed(start, &paths, cx);
     }
 
     pub(crate) fn run_file_batch_action(
