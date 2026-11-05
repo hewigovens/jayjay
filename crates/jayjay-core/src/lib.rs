@@ -57,6 +57,7 @@ pub use repository::{Repo, RepositoryContext};
 pub mod repositories;
 #[cfg(feature = "repository")]
 pub mod revset;
+pub mod shortcuts;
 pub mod theme;
 #[cfg(feature = "repository")]
 pub mod tools;
