@@ -50,6 +50,7 @@ pub struct SettingsView {
     pub(super) review_summary: Option<ReviewStoreSummary>,
     pub(super) confirm_clear_review: bool,
     pub(super) sidebar: ResizablePane,
+    pub(super) shortcuts: Entity<super::shortcuts::ShortcutSettings>,
     flock: Option<Entity<super::flock::FlockView>>,
 }
 
@@ -90,6 +91,7 @@ impl SettingsView {
                             cx,
                         );
                         let mut view = Self {
+                            shortcuts: cx.new(super::shortcuts::ShortcutSettings::new),
                             section,
                             focus_handle: cx.focus_handle(),
                             scroll: ScrollHandle::new(),
@@ -197,6 +199,21 @@ impl Render for SettingsView {
                     }
                 }),
             )
+            .capture_key_down(cx.listener(|this, event: &gpui::KeyDownEvent, window, cx| {
+                if this.section == SettingsSection::KeyboardShortcuts
+                    && event.keystroke.key == "tab"
+                    && !event.keystroke.modifiers.control
+                    && !event.keystroke.modifiers.platform
+                    && !event.keystroke.modifiers.alt
+                {
+                    if event.keystroke.modifiers.shift {
+                        window.focus_prev(cx);
+                    } else {
+                        window.focus_next(cx);
+                    }
+                    cx.stop_propagation();
+                }
+            }))
             .relative()
             .flex()
             .flex_row()
@@ -295,6 +312,7 @@ impl SettingsView {
         match self.section {
             SettingsSection::Appearance => appearance::appearance_section(self, cfg, t, cx),
             SettingsSection::Fonts => fonts::fonts_section(cfg, t, window, cx),
+            SettingsSection::KeyboardShortcuts => self.shortcuts.clone().into_any_element(),
             SettingsSection::Diff => diff::diff_section(cfg, t),
             SettingsSection::Workflow => workflow::workflow_section(cfg, t),
             SettingsSection::Integrations => integrations::integrations_section(self, cfg, t, cx),

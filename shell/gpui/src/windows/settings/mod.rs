@@ -17,6 +17,7 @@ mod integrations;
 mod loaders;
 mod section;
 pub(crate) mod shared;
+mod shortcuts;
 mod sidebar;
 mod theme_section;
 pub mod tools;

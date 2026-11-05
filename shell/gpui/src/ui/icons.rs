@@ -114,6 +114,7 @@ pub mod glyph {
     pub const GLOBE: &str = "\u{eb01}";
     pub const HISTORY: &str = "\u{eb37}";
     pub const INFO: &str = "\u{ea74}";
+    pub const KEYBOARD: &str = "\u{e2a0}";
     pub const LIGATURE: &str = "\u{eb7e}";
     pub const LIST: &str = "\u{eb17}";
     pub const LIST_CHECKS: &str = "\u{eab3}";

@@ -92,7 +92,8 @@ impl Render for TextArea {
                 .border_1()
                 .border_color(rgba(border))
                 .bg(rgba(fill))
-                .px(px(6.));
+                .pr(px(6.))
+                .pl(px(self.leading_inset));
             if self.multiline {
                 root = root.py(px(6.));
                 Some(self.height - 12.)

@@ -9,6 +9,7 @@ use crate::app::config::{self, AppConfigStore};
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::divider_h;
+use crate::windows::settings::{SettingsSection, SettingsView};
 use jayjay_core::shortcuts::{EffectiveBindings, KeyPlatform};
 
 mod entry;
@@ -103,6 +104,27 @@ impl Render for KeyboardShortcutsView {
                     .p(px(20.))
                     .child(ShortcutSection::column(left, &bindings, &t, cx))
                     .child(ShortcutSection::column(right, &bindings, &t, cx)),
+            )
+            .child(
+                crate::ui::primitives::button(
+                    "shortcuts-customize",
+                    jayjay_i18n::shortcuts::customize(),
+                    &t,
+                    false,
+                )
+                .focusable()
+                .tab_stop(true)
+                .on_key_down(|event, _, cx| {
+                    if matches!(event.keystroke.key.as_str(), "enter" | "space")
+                        && !event.keystroke.modifiers.modified()
+                    {
+                        SettingsView::open_section(SettingsSection::KeyboardShortcuts, cx);
+                        cx.stop_propagation();
+                    }
+                })
+                .on_click(|_, _, cx| {
+                    SettingsView::open_section(SettingsSection::KeyboardShortcuts, cx)
+                }),
             )
             .child(divider_h(&t))
             .child(

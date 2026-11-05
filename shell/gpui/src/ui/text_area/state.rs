@@ -30,6 +30,7 @@ pub struct TextArea {
     presentation: TextAreaPresentation,
     pub(super) line_numbers: bool,
     pub(super) height: f32,
+    pub(super) leading_inset: f32,
     pub(super) line_height: f32,
     /// Clamped in prepaint, where geometry is known.
     pub(super) scroll_y: Pixels,
@@ -130,6 +131,7 @@ impl TextArea {
             presentation: TextAreaPresentation::Field,
             line_numbers: false,
             height,
+            leading_inset: 6.,
             line_height: 18.,
             scroll_y: px(0.),
             scroll_caret_into_view: false,
@@ -255,6 +257,16 @@ impl TextArea {
             TextAreaMode::Editable => None,
             TextAreaMode::SelectableCode { emphasized_line } => emphasized_line,
         }
+    }
+
+    pub(crate) fn leading_inset(mut self, inset: f32) -> Self {
+        self.leading_inset = inset;
+        self
+    }
+
+    pub(crate) fn tab_stop(mut self, enabled: bool) -> Self {
+        self.focus_handle = self.focus_handle.tab_stop(enabled);
+        self
     }
 
     pub fn text(&self) -> String {

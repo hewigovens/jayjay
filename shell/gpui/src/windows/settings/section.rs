@@ -7,6 +7,7 @@ use crate::ui::icons::glyph;
 pub enum SettingsSection {
     Appearance,
     Fonts,
+    KeyboardShortcuts,
     Diff,
     Workflow,
     Integrations,
@@ -17,9 +18,10 @@ pub enum SettingsSection {
 }
 
 impl SettingsSection {
-    pub const ALL: [Self; 9] = [
+    pub const ALL: [Self; 10] = [
         Self::Appearance,
         Self::Fonts,
+        Self::KeyboardShortcuts,
         Self::Diff,
         Self::Workflow,
         Self::Integrations,
@@ -33,6 +35,7 @@ impl SettingsSection {
         match self {
             Self::Appearance => settings::page_appearance(),
             Self::Fonts => settings::page_fonts(),
+            Self::KeyboardShortcuts => jayjay_i18n::menu::keyboard_shortcuts(),
             Self::Diff => settings::page_diff(),
             Self::Workflow => settings::page_workflow(),
             Self::Integrations => settings::page_integrations(),
@@ -47,6 +50,7 @@ impl SettingsSection {
         match self {
             Self::Appearance => glyph::PALETTE,
             Self::Fonts => glyph::CASE_SENSITIVE,
+            Self::KeyboardShortcuts => glyph::KEYBOARD,
             Self::Diff => glyph::DIFF,
             Self::Workflow => glyph::LIST_CHECKS,
             Self::Integrations => glyph::WRENCH,
@@ -60,7 +64,7 @@ impl SettingsSection {
     pub(super) fn color(self, t: &Theme) -> u32 {
         match self {
             Self::Appearance => t.change_id_prefix,
-            Self::Fonts => t.selected_accent,
+            Self::Fonts | Self::KeyboardShortcuts => t.selected_accent,
             Self::Diff | Self::Flock | Self::About => t.selected_accent,
             Self::Workflow => t.compare_accent,
             Self::Integrations => t.syntax.ty,

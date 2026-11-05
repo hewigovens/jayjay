@@ -147,6 +147,11 @@ DRAWN = {
     "BRACES": lambda svgs: union(stroked(LEFT_BRACE), stroked(LEFT_BRACE, MIRROR_X)),
     "CONTRAST": lambda svgs: union(stroked(RING), drawn("M8 1.25a6.75 6.75 0 0 0 0 13.5Z")),
     "FOLDER_MINUS": lambda svgs: union(*(drawn(d) for d in svgs["file-directory"]), stroked("M5.75 9h4.5")),
+    "KEYBOARD": lambda svgs: union(
+        stroked("M2.5 3.75h11a1.25 1.25 0 0 1 1.25 1.25v6a1.25 1.25 0 0 1-1.25 1.25h-11A1.25 1.25 0 0 1 1.25 11V5A1.25 1.25 0 0 1 2.5 3.75Z"),
+        *(drawn(f"M{x} {y}h1.2v1.2h-1.2Z") for x in (3.4, 5.6, 7.8, 10, 12.2) for y in (5.6, 7.6)),
+        stroked("M5.75 10.4h4.5"),
+    ),
     "LIGATURE": lambda svgs: union(
         stroked("M4.75 14V5.25a3 3 0 0 1 3-3h1.5a2.5 2.5 0 0 1 2.5 2.5"),
         stroked("M2.75 7.25h9v6.75"),
