@@ -1,7 +1,8 @@
-param([string]$OutputDirectory = "build/windows", [string]$Version = "", [string]$SshHelpers = "")
+param([string]$OutputDirectory = "build/windows", [string]$Version = "", [string]$SshHelpers = "", [ValidateSet("x64", "arm64")][string]$Architecture = "x64")
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
-if (-not $IsWindows) { throw "Build this package on Windows x64 with the MSVC tools and Windows SDK installed." }
+if (-not $IsWindows) { throw "Build this package on Windows with the MSVC tools and Windows SDK installed." }
+$target = @{ x64 = "x86_64-pc-windows-msvc"; arm64 = "aarch64-pc-windows-msvc" }[$Architecture]
 $root = (Resolve-Path "$PSScriptRoot/../..").Path
 Push-Location $root
 $savedFlags = $env:CARGO_ENCODED_RUSTFLAGS
@@ -16,12 +17,12 @@ try {
     cargo fetch --locked
     if ($LASTEXITCODE) { throw "Dependency source fetch failed" }
     $env:CARGO_ENCODED_RUSTFLAGS = @('-Ctarget-feature=+crt-static', '-Clink-arg=/Brepro', "--remap-path-prefix=$root=.") -join [char]0x1f
-    cargo build --locked --release --target x86_64-pc-windows-msvc -p jayjay-gpui -p jayjay-cli
+    cargo build --locked --release --target $target -p jayjay-gpui -p jayjay-cli
     if ($LASTEXITCODE) { throw "Release build failed" }
     $payload = Join-Path $root "build/windows-payload"
     if (Test-Path -LiteralPath $payload) { Remove-Item -LiteralPath $payload -Recurse -Force }
     New-Item -ItemType Directory -Path $payload | Out-Null
-    $binaries = "target/x86_64-pc-windows-msvc/release"
+    $binaries = "target/$target/release"
     Copy-Item "$binaries/jayjay.exe", "$binaries/jayjay-gpui.exe" $payload
     Get-ChildItem $binaries -Filter *.dll | Copy-Item -Destination $payload
     Copy-Item LICENSE "$payload/LICENSE.txt"
@@ -37,9 +38,9 @@ try {
         cargo about generate --offline --locked --fail --manifest-path $item[0] --config dist/windows/about.toml --output-file "$payload/THIRD-PARTY-$($item[1]).html" dist/licenses.hbs
         if ($LASTEXITCODE) { throw "Dependency license generation failed" }
     }
-    python dist/windows/package.py $payload $Version $OutputDirectory
+    python dist/windows/package.py $payload $Version $OutputDirectory --architecture $Architecture
     if ($LASTEXITCODE) { throw "PE validation or ZIP packaging failed" }
-    & "$PSScriptRoot/msix.ps1" -Payload $payload -Version $Version -AppVersion $appVersion -OutputDirectory $OutputDirectory
+    & "$PSScriptRoot/msix.ps1" -Payload $payload -Version $Version -AppVersion $appVersion -OutputDirectory $OutputDirectory -Architecture $Architecture
 } finally {
     $env:CARGO_ENCODED_RUSTFLAGS = $savedFlags
     Pop-Location

@@ -19,28 +19,41 @@ concurrency:
 
 jobs:
   portable:
-    name: Build and smoke
-    runs-on: windows-2025
+    name: Build and smoke (${{ matrix.arch }})
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - arch: x64
+            target: x86_64-pc-windows-msvc
+            runner: windows-2025
+          - arch: arm64
+            target: aarch64-pc-windows-msvc
+            runner: windows-11-arm
+    runs-on: ${{ matrix.runner }}
+    defaults:
+      run:
+        shell: pwsh
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - uses: dtolnay/rust-toolchain@v1
         with:
-          toolchain: 1.99.0
+          toolchain: 1.99.0-${{ matrix.target }}
 
       - name: Install jj for the extracted CLI test
-        shell: pwsh
         env:
           JJ_VERSION: v0.47.1
+          RUST_TARGET: ${{ matrix.target }}
         run: |
-          Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-x86_64-pc-windows-msvc.zip" -OutFile "$env:RUNNER_TEMP/jj.zip"
+          Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-$env:RUST_TARGET.zip" -OutFile "$env:RUNNER_TEMP/jj.zip"
           Expand-Archive "$env:RUNNER_TEMP/jj.zip" "$env:RUNNER_TEMP/jj-bin"
           Add-Content $env:GITHUB_PATH "$env:RUNNER_TEMP/jj-bin"
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          key: windows-portable
+          key: windows-portable-${{ matrix.arch }}
           cache-workspace-crates: true
           save-if: ${{ github.ref == 'refs/heads/main' }}
           cache-on-failure: true
@@ -65,7 +78,7 @@ jobs:
           TAG_NAME: ${{ github.event.release.tag_name }}
           JAYJAY_PRERELEASE: ${{ contains(github.event.release.tag_name || github.ref_name, '-beta') && '1' || '' }}
           SSH_HELPERS: ${{ github.event_name == 'release' && 'ssh-helpers.json' || '' }}
-        run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '') -SshHelpers $env:SSH_HELPERS
+        run: ./dist/windows/build.ps1 -Version ($env:TAG_NAME -replace '^v', '') -SshHelpers $env:SSH_HELPERS -Architecture ${{ matrix.arch }}
 
       - name: Check the bundled SSH helper manifest
         if: github.event_name == 'release'
@@ -78,7 +91,7 @@ jobs:
         if: github.event_name == 'release'
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: windows-portable
+          name: windows-portable-${{ matrix.arch }}
           path: build/windows/*.zip*
           if-no-files-found: error
           retention-days: 1
@@ -87,7 +100,7 @@ jobs:
         if: github.event_name == 'release' && !github.event.release.prerelease
         uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
         with:
-          name: windows-msix
+          name: windows-msix-${{ matrix.arch }}
           path: build/windows/*.msix
           if-no-files-found: error
           retention-days: 1
@@ -102,7 +115,7 @@ jobs:
       - name: Download MSIX
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: windows-msix
+          name: windows-msix-x64
           path: packages
 
       - name: Install the Microsoft Store Developer CLI
@@ -148,7 +161,8 @@ jobs:
       - name: Download portable ZIP
         uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
         with:
-          name: windows-portable
+          pattern: windows-portable-*
+          merge-multiple: true
           path: packages
 
       - name: Attach the ZIP to the release
@@ -180,16 +194,18 @@ jobs:
         run: |
           version=${TAG_NAME#v}
           [[ $version =~ ^[0-9]+(\.[0-9]+){1,3}$ ]] || { echo "winget needs a numeric version, got $version" >&2; exit 1; }
-          zip=$(find packages -name '*.zip' -print -quit)
-          export VERSION="$version" URL="https://pkgs.hewig.dev/windows/${zip##*/}"
-          SHA256=$(curl -fsSL "$URL" | sha256sum | cut -d' ' -f1 | tr a-f A-F)
-          export SHA256
+          export VERSION="$version"
+          export URL_X64="https://pkgs.hewig.dev/windows/JayJay-$version-windows-x64.zip"
+          export URL_ARM64="https://pkgs.hewig.dev/windows/JayJay-$version-windows-arm64.zip"
+          SHA256_X64=$(curl -fsSL "$URL_X64" | sha256sum | cut -d' ' -f1 | tr a-f A-F)
+          SHA256_ARM64=$(curl -fsSL "$URL_ARM64" | sha256sum | cut -d' ' -f1 | tr a-f A-F)
+          export SHA256_X64 SHA256_ARM64
           dir="winget/manifests/h/hewig/JayJay/$version"
           mkdir -p "$dir"
           for template in dist/windows/winget/*.yaml; do
             manifest="$dir/${template##*/}"
             # shellcheck disable=SC2016 # Only these variables; the templates' $schema headers must stay literal.
-            envsubst '$VERSION $URL $SHA256' <"$template" >"$manifest"
+            envsubst '$VERSION $URL_X64 $SHA256_X64 $URL_ARM64 $SHA256_ARM64' <"$template" >"$manifest"
           done
 
       - name: Upload winget manifests
