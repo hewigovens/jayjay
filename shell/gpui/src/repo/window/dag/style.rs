@@ -1,11 +1,12 @@
+use std::f32::consts::FRAC_PI_2;
+
 use jayjay_core::ChangeInfo;
 
 use crate::app::theme::Theme;
-use jayjay_core::trunk::is_trunk_bookmark;
 
 const NODE_RADIUS_BASE: f32 = 4.5;
 
-#[derive(Clone, Copy)]
+#[derive(Clone, Copy, Debug, PartialEq, Eq)]
 pub(crate) enum NodeShape {
     Circle,
     Diamond,
@@ -26,17 +27,20 @@ pub(crate) struct DagNodeStyle {
 
 impl DagNodeStyle {
     pub fn resolve(change: &ChangeInfo, theme: &Theme) -> Self {
-        let is_trunk = change.bookmarks.iter().any(|b| is_trunk_bookmark(b));
         let has_bookmark = !change.bookmarks.is_empty();
-        let shape = if is_trunk {
+        let shape = if change.is_immutable {
             NodeShape::Diamond
         } else {
             NodeShape::Circle
         };
-        let radius = if is_trunk || has_bookmark {
+        let circle_radius = if has_bookmark {
             NODE_RADIUS_BASE + 1.0
         } else {
             NODE_RADIUS_BASE
+        };
+        let radius = match shape {
+            NodeShape::Diamond => circle_radius * FRAC_PI_2.sqrt(),
+            NodeShape::Circle => circle_radius,
         };
         let fill = if change.is_working_copy {
             NodeFill::Filled(theme.selected_accent)
@@ -44,7 +48,7 @@ impl DagNodeStyle {
             NodeFill::Filled(theme.tag_conflict_fg)
         } else if change.is_empty {
             NodeFill::Outlined(theme.dag_node, 1.5)
-        } else if is_trunk || has_bookmark {
+        } else if has_bookmark {
             NodeFill::Outlined(theme.selected_accent, 1.8)
         } else {
             NodeFill::Filled(theme.dag_node)
@@ -53,6 +57,28 @@ impl DagNodeStyle {
             shape,
             radius,
             fill,
+        }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::{DagNodeStyle, NodeShape};
+    use crate::app::theme::Theme;
+    use jayjay_core::mock::change_info;
+
+    #[test]
+    fn node_shape_follows_immutability_regardless_of_bookmarks() {
+        for bookmarks in [vec![], vec!["main".to_owned()]] {
+            let mut change = change_info("c", "a");
+            change.bookmarks = bookmarks;
+            for (immutable, expected) in [(false, NodeShape::Circle), (true, NodeShape::Diamond)] {
+                change.is_immutable = immutable;
+                assert_eq!(
+                    DagNodeStyle::resolve(&change, &Theme::light()).shape,
+                    expected
+                );
+            }
         }
     }
 }

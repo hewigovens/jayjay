@@ -25,6 +25,7 @@ struct DAGGraphColumn: View {
         let activeDisplayLane = activeLane.map { viewModel.layout.displayLane(for: $0.lane) }
 
         let colors = appThemes.colors(for: colorScheme)
+        let nodeStyle = DAGNodeStyle.resolve(change: viewModel.change)
         return Canvas { ctx, size in
             let height = size.height
             let baseColor = contrast == .increased ? Color.primary : colors.graphLine
@@ -62,7 +63,7 @@ struct DAGGraphColumn: View {
                 if prevActive.contains(myLane) {
                     let path = Path { p in
                         p.move(to: CGPoint(x: myX, y: 0))
-                        p.addLine(to: CGPoint(x: myX, y: nodeCenterY - nodeRadius))
+                        p.addLine(to: CGPoint(x: myX, y: nodeCenterY - nodeStyle.radius))
                     }
                     let isActive = activeLane.map { myLane == $0.lane && $0.first < index && index <= $0.last } ?? false
                     stroke(path, laneStroke(myDisplayLane), isActive)
@@ -77,7 +78,7 @@ struct DAGGraphColumn: View {
                 let targetDisplayLane = viewModel.layout.displayLane(for: targetLane)
                 let targetX = viewModel.layout.xPosition(forDisplayLane: targetDisplayLane)
 
-                let start = CGPoint(x: myX, y: nodeCenterY + nodeRadius)
+                let start = CGPoint(x: myX, y: nodeCenterY + nodeStyle.radius)
                 let end = CGPoint(x: targetX, y: height)
                 let path = Path { path in
                     path.move(to: start)
@@ -107,7 +108,7 @@ struct DAGGraphColumn: View {
 
             if viewModel.layout.hasMissingAncestry(at: viewModel.index) {
                 let terminalX = myX + (hasVisibleParent ? laneWidth * 0.35 : 0)
-                let startY = nodeCenterY + nodeRadius
+                let startY = nodeCenterY + nodeStyle.radius
                 // Keep the ancestry cap short enough to distinguish it from a parent connector.
                 let endY = startY + (height - startY) * (hasVisibleParent ? 0.25 : 0.55)
                 let stem = Path { path in
@@ -122,15 +123,14 @@ struct DAGGraphColumn: View {
                 ctx.stroke(cap, with: .color(lineColor), style: dagSolidStroke)
             }
 
-            let style = DAGNodeStyle.resolve(change: viewModel.change)
             let nodeRect = CGRect(
-                x: myX - style.radius,
-                y: nodeCenterY - style.radius,
-                width: style.radius * 2,
-                height: style.radius * 2
+                x: myX - nodeStyle.radius,
+                y: nodeCenterY - nodeStyle.radius,
+                width: nodeStyle.radius * 2,
+                height: nodeStyle.radius * 2
             )
-            let nodePath = style.path(in: nodeRect)
-            switch style.fill {
+            let nodePath = nodeStyle.path(in: nodeRect)
+            switch nodeStyle.fill {
                 case let .filled(color):
                     ctx.fill(nodePath, with: .color(color))
                 case let .outlined(color, lineWidth):
@@ -146,7 +146,7 @@ struct DAGGraphColumn: View {
                 if viewModel.isRebaseHoverTarget {
                     let ringRect = nodeRect.insetBy(dx: -4, dy: -4)
                     ctx.stroke(
-                        style.path(in: ringRect),
+                        nodeStyle.path(in: ringRect),
                         with: .color(.accentColor.opacity(0.45)),
                         style: StrokeStyle(lineWidth: 2)
                     )
@@ -160,7 +160,7 @@ struct DAGGraphColumn: View {
                 if viewModel.isRebaseArmed {
                     let ringRect = nodeRect.insetBy(dx: -3, dy: -3)
                     ctx.stroke(
-                        style.path(in: ringRect),
+                        nodeStyle.path(in: ringRect),
                         with: .color(.accentColor.opacity(0.35)),
                         style: StrokeStyle(lineWidth: 1.5, dash: [3, 3])
                     )
