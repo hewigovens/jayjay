@@ -24,9 +24,10 @@ EXECUTABLE_SUBSYSTEMS = {"jayjay.exe": 3, "jayjay-gpui.exe": 2}  # console CLI, 
 REQUIRED_FILES = [*EXECUTABLE_SUBSYSTEMS, "LICENSE.txt", "CORE-LICENSE.txt", "README.txt",
                   "THIRD-PARTY-GUI.html", "THIRD-PARTY-CLI.html", "OCTICONS-LICENSE.txt",
                   "SETI-LICENSE.txt"]
+MACHINES = {"x64": 0x8664, "arm64": 0xAA64}
 
 
-def pe_info(path):
+def pe_info(path, architecture="x64"):
     data = path.read_bytes()
     if data[:2] != b"MZ":
         raise ValueError(f"not a PE executable: {path}")
@@ -36,8 +37,8 @@ def pe_info(path):
     machine, count = struct.unpack_from("<HH", data, pe + 4)
     optional_size = struct.unpack_from("<H", data, pe + 20)[0]
     optional = pe + 24
-    if machine != 0x8664 or struct.unpack_from("<H", data, optional)[0] != 0x20B:
-        raise ValueError(f"expected Windows x64 PE32+: {path}")
+    if machine != MACHINES[architecture] or struct.unpack_from("<H", data, optional)[0] != 0x20B:
+        raise ValueError(f"expected Windows {architecture} PE32+: {path}")
     subsystem = struct.unpack_from("<H", data, optional + 68)[0]
     sections = [struct.unpack_from("<IIII", data, optional + optional_size + i * 40 + 8)
                 for i in range(count)]
@@ -62,7 +63,7 @@ def pe_info(path):
     return subsystem, imports
 
 
-def validate(payload):
+def validate(payload, architecture="x64"):
     for name in REQUIRED_FILES:
         if not (payload / name).is_file() or not (payload / name).stat().st_size:
             raise ValueError(f"missing or empty payload file: {name}")
@@ -70,7 +71,7 @@ def validate(payload):
     for path in sorted(payload.iterdir()):
         if path.suffix.lower() not in (".exe", ".dll"):
             continue
-        subsystem, imports = pe_info(path)
+        subsystem, imports = pe_info(path, architecture)
         expected = EXECUTABLE_SUBSYSTEMS.get(path.name)
         if expected and subsystem != expected:
             raise ValueError(f"wrong console/GUI subsystem for {path.name}: {subsystem}")
@@ -82,17 +83,17 @@ def validate(payload):
                 raise ValueError(f"{path.name} requires unbundled runtime {dll}")
 
 
-def package(payload, version, output):
+def package(payload, version, output, architecture="x64"):
     if not re.fullmatch(r"[A-Za-z0-9][A-Za-z0-9.+-]*", version):
         raise ValueError("version must be a filename-safe version identifier")
-    validate(payload)
+    validate(payload, architecture)
     files = sorted((path for path in payload.rglob("*") if path.is_file() and path.name != "SHA256SUMS"),
                    key=lambda path: path.relative_to(payload).as_posix())
     sums = "".join(f"{hashlib.sha256(path.read_bytes()).hexdigest()}  {path.relative_to(payload).as_posix()}\n"
                    for path in files)
     (payload / "SHA256SUMS").write_bytes(sums.encode("utf-8"))
     output.mkdir(parents=True, exist_ok=True)
-    archive = output / f"JayJay-{version}-windows-x64.zip"
+    archive = output / f"JayJay-{version}-windows-{architecture}.zip"
     with zipfile.ZipFile(archive, "w") as zip_file:
         for path in sorted([*files, payload / "SHA256SUMS"], key=lambda path: path.relative_to(payload).as_posix()):
             info = zipfile.ZipInfo(path.relative_to(payload).as_posix(), (1980, 1, 1, 0, 0, 0))
@@ -111,5 +112,6 @@ if __name__ == "__main__":
     parser.add_argument("payload", type=Path)
     parser.add_argument("version")
     parser.add_argument("output", type=Path)
+    parser.add_argument("--architecture", choices=MACHINES, default="x64")
     args = parser.parse_args()
-    package(args.payload, args.version, args.output)
+    package(args.payload, args.version, args.output, args.architecture)

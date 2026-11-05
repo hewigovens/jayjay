@@ -1,4 +1,4 @@
-param([Parameter(Mandatory)][string]$Payload, [Parameter(Mandatory)][string]$Version, [Parameter(Mandatory)][string]$AppVersion, [string]$OutputDirectory = "build/windows")
+param([Parameter(Mandatory)][string]$Payload, [Parameter(Mandatory)][string]$Version, [Parameter(Mandatory)][string]$AppVersion, [string]$OutputDirectory = "build/windows", [ValidateSet("x64", "arm64")][string]$Architecture = "x64")
 $ErrorActionPreference = "Stop"
 Set-StrictMode -Version Latest
 if ($AppVersion -notmatch '^(\d+)\.(\d+)\.(\d+)(?:[-+].*)?$') { throw "MSIX needs a major.minor.patch app version, got $AppVersion" }
@@ -25,6 +25,7 @@ Get-ChildItem "$layout/Assets/*_altform-unplated.png" | ForEach-Object {
 }
 [xml]$manifest = Get-Content -LiteralPath "$PSScriptRoot/msix/AppxManifest.xml"
 $manifest.Package.Identity.Version = $packageVersion
+$manifest.Package.Identity.ProcessorArchitecture = $Architecture
 $manifest.Save((Join-Path $layout "AppxManifest.xml"))
 
 # Without resources.pri the shell ignores the targetsize/unplated logo variants.
@@ -34,7 +35,7 @@ if ($LASTEXITCODE) { throw "makepri createconfig failed" }
 if ($LASTEXITCODE) { throw "makepri new failed" }
 
 New-Item -ItemType Directory -Path $OutputDirectory -Force | Out-Null
-$package = Join-Path $OutputDirectory "JayJay-$Version-windows-x64.msix"
+$package = Join-Path $OutputDirectory "JayJay-$Version-windows-$Architecture.msix"
 & $makeappx pack /o /d $layout /p $package
 if ($LASTEXITCODE) { throw "makeappx pack failed" }
 Write-Host $package
