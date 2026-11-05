@@ -88,7 +88,7 @@ fn sidebar_toggle_button(
     } else {
         jayjay_i18n::menu::hide_sidebar()
     };
-    let tooltip = format!("{title} ({})", KeyCaps::label(&ToggleSidebar, cx));
+    let tooltip = KeyCaps::tooltip(title, &ToggleSidebar, cx);
     focus_ring(
         group_item("tb-sidebar-toggle", tooltip, GroupEdge::Leading, t).child(
             svg()
@@ -155,10 +155,10 @@ pub(super) fn tools_cluster(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let file_manager_label = SharedString::from(format!(
-        "{} ({})",
-        crate::platform::show_in_file_manager_label(),
-        KeyCaps::label(&ShowRepoInFileManager, cx)
+    let file_manager_label = SharedString::from(KeyCaps::tooltip(
+        crate::platform::show_in_file_manager_label().to_owned(),
+        &ShowRepoInFileManager,
+        cx,
     ));
     button_group::button_group(
         t,

@@ -44,6 +44,7 @@ mod render;
 mod repo_switcher;
 mod review;
 mod revset_filter;
+mod shortcut_actions;
 mod sidebar;
 mod sidebar_visibility;
 mod stacked_pr;

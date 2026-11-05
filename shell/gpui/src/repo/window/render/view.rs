@@ -1,6 +1,6 @@
 use gpui::{
     Animation, AnimationExt as _, Context, InteractiveElement, IntoElement, ParentElement, Render,
-    Styled, Window, div, ease_in_out, px,
+    StatefulInteractiveElement, Styled, Window, div, ease_in_out, px,
 };
 
 use super::super::bisect::{bisect_bar, bisect_sheet_overlay};
@@ -41,6 +41,7 @@ impl Render for RepoWindow {
         self.sync_revset_editor(window, cx);
         self.sync_keyboard_focus(window, cx);
         self.sync_refresh_gate(cx);
+        self.sync_changes_focus(window, cx);
         self.sync_diff_edit_change(cx);
         self.sync_editors(cx);
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
@@ -224,7 +225,16 @@ impl Render for RepoWindow {
         } else {
             row.child(file_column_wrapper(self, file_column_width, cx))
                 .child(resize_handle(DragTarget::FileColumn, &t, cx))
-                .child(detail_pane(self, &t, window, cx))
+                .child(
+                    div()
+                        .id("diff-pane-focus")
+                        .debug_selector(|| "diff-pane-focus".to_owned())
+                        .focusable()
+                        .flex()
+                        .flex_1()
+                        .min_w_0()
+                        .child(detail_pane(self, &t, window, cx)),
+                )
         };
         let mut body = div().relative().flex().flex_col().flex_1().min_h_0().child(
             crate::repo::toolbar::toolbar(

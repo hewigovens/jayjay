@@ -46,6 +46,7 @@ pub type PanelBoundsSlot = Rc<Cell<Option<Bounds<Pixels>>>>;
 pub struct RepoWindow {
     pub(crate) vm: Entity<RepoViewModel>,
     pub(crate) focus_handle: FocusHandle,
+    pub(crate) changes_focus: FocusHandle,
     pub(crate) active_pane: ActivePane,
     /// Reconciled with real text focus before rendering and handling keys.
     pub(crate) focused_control: Option<super::FocusStop>,
@@ -473,6 +474,7 @@ impl RepoWindow {
         Self {
             vm,
             focus_handle: cx.focus_handle(),
+            changes_focus: cx.focus_handle(),
             active_pane: if sidebar_hidden {
                 ActivePane::FileColumn
             } else {

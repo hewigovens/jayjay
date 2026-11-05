@@ -21,7 +21,11 @@ impl RepoWindow {
         let mut root = div()
             .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
-            .key_context("RepoWindow")
+            .key_context(if self.diff_edit_active() {
+                "RepoWindow DiffEditor"
+            } else {
+                "RepoWindow"
+            })
             .on_action(cx.listener(|_, _: &OpenSettings, _, cx| SettingsView::open(cx)))
             .on_action(cx.listener(|_, _: &OpenAbout, _, cx| {
                 SettingsView::open_section(SettingsSection::About, cx);
@@ -174,6 +178,7 @@ impl RepoWindow {
             .size_full()
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg));
+        root = Self::change_shortcuts(root, cx);
 
         if let Some(state) = self.stacked_pr.as_ref() {
             root = root.key_context(if state.active_input.is_some() {

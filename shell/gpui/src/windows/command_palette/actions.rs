@@ -1,8 +1,10 @@
+use jayjay_core::shortcuts::{EffectiveBindings, ShortcutCommand};
 use std::sync::Arc;
 
 use gpui::{App, Context, Entity};
 
 use crate::app::config::{self, AppearanceMode};
+use crate::app::key_caps::KeyCaps;
 use crate::app::links::GUIDE_URL;
 use crate::app::tools;
 use crate::repo::window::{ChangeAction, RepoWindow};
@@ -21,6 +23,7 @@ pub(super) struct PaletteCtx<'a> {
 /// One row in the palette: stable id, catalog label, search keywords, and a side-effect.
 pub(super) struct PaletteAction {
     pub id: &'static str,
+    pub shortcut: Option<ShortcutCommand>,
     pub label: fn() -> String,
     pub keywords: &'static [&'static str],
     pub glyph_str: &'static str,
@@ -28,6 +31,12 @@ pub(super) struct PaletteAction {
 }
 
 impl PaletteAction {
+    pub(super) fn shortcut_label(&self, bindings: &EffectiveBindings) -> Option<String> {
+        bindings
+            .effective_chord(self.shortcut?)
+            .map(|chord| KeyCaps::from(chord).to_string())
+    }
+
     pub(super) fn display_name(&self, cx: &App) -> String {
         match self.id {
             "open-in-editor" => tools::open_in_editor_label(cx),
@@ -40,6 +49,7 @@ impl PaletteAction {
 pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         id: "refresh",
+        shortcut: Some(ShortcutCommand::RepoRefresh),
         label: jayjay_i18n::repo::refresh,
         keywords: &["reload", "repository", "working", "copy"],
         glyph_str: glyph::SYNC,
@@ -52,6 +62,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "bisect",
+        shortcut: Some(ShortcutCommand::RepoBisect),
         label: jayjay_i18n::palette::bisect_ellipsis,
         keywords: &["bisect", "binary", "search", "bug", "regression"],
         glyph_str: glyph::ARROWS_LEFT_RIGHT,
@@ -61,6 +72,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "open-settings",
+        shortcut: Some(ShortcutCommand::AppSettings),
         label: jayjay_i18n::palette::open_settings,
         keywords: &["settings", "preferences", "config"],
         glyph_str: glyph::GEAR,
@@ -68,6 +80,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "keyboard-shortcuts",
+        shortcut: Some(ShortcutCommand::AppKeyboardShortcuts),
         label: jayjay_i18n::menu::keyboard_shortcuts,
         keywords: &["keyboard", "shortcut", "shortcuts", "keys", "help"],
         glyph_str: glyph::INFO,
@@ -75,6 +88,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "open-user-guide",
+        shortcut: None,
         label: jayjay_i18n::palette::open_user_guide,
         keywords: &["help", "guide", "manual", "docs", "documentation"],
         glyph_str: glyph::INFO,
@@ -82,6 +96,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "send-feedback",
+        shortcut: None,
         label: jayjay_i18n::menu::send_feedback,
         keywords: &["email", "contact", "support", "help"],
         glyph_str: glyph::EXTERNAL_LINK,
@@ -89,6 +104,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "open-bookmark-manager",
+        shortcut: Some(ShortcutCommand::RepoBookmarkManager),
         label: jayjay_i18n::palette::open_bookmark_manager,
         keywords: &["bookmark", "bookmarks", "manager", "branch", "branches"],
         glyph_str: glyph::GIT_BRANCH,
@@ -100,6 +116,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "repo-overview",
+        shortcut: Some(ShortcutCommand::RepoOverview),
         label: jayjay_i18n::menu::repo_overview,
         keywords: &[
             "overview",
@@ -114,6 +131,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "repository-list",
+        shortcut: None,
         label: jayjay_i18n::repo::repository_list,
         keywords: &[
             "repository",
@@ -128,6 +146,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "open-remote-repository",
+        shortcut: None,
         label: jayjay_i18n::ssh::open_remote_repository_ellipsis,
         keywords: &["open", "remote", "ssh", "repository", "machine", "host"],
         glyph_str: glyph::GLOBE,
@@ -135,6 +154,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "new-workspace",
+        shortcut: Some(ShortcutCommand::RepoNewWorkspace),
         label: jayjay_i18n::repo::new_workspace,
         keywords: &["workspace", "workspaces", "add", "create", "sibling"],
         glyph_str: glyph::PLUS,
@@ -142,6 +162,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "new-workspace-from-pull-request",
+        shortcut: Some(ShortcutCommand::RepoImportPullRequest),
         label: jayjay_i18n::repo::new_workspace_from_pull_request,
         keywords: &[
             "workspace",
@@ -157,6 +178,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "operation-log",
+        shortcut: Some(ShortcutCommand::RepoUndoLastOperation),
         label: jayjay_i18n::repo::operation_log,
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
         glyph_str: glyph::HISTORY,
@@ -164,6 +186,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "open-in-terminal",
+        shortcut: None,
         label: jayjay_i18n::palette::open_in_terminal,
         keywords: &["terminal", "shell", "open"],
         glyph_str: glyph::TERMINAL,
@@ -177,6 +200,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "open-in-editor",
+        shortcut: None,
         label: jayjay_i18n::palette::open_in_editor,
         keywords: &["editor", "code", "open"],
         glyph_str: glyph::FILE_CODE,
@@ -190,6 +214,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "theme-system",
+        shortcut: None,
         label: jayjay_i18n::palette::theme_system,
         keywords: &["theme", "appearance", "system"],
         glyph_str: glyph::WHITESPACE,
@@ -197,6 +222,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "theme-light",
+        shortcut: None,
         label: jayjay_i18n::palette::theme_light,
         keywords: &["theme", "appearance", "light"],
         glyph_str: glyph::WHITESPACE,
@@ -204,6 +230,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "theme-dark",
+        shortcut: None,
         label: jayjay_i18n::palette::theme_dark,
         keywords: &["theme", "appearance", "dark"],
         glyph_str: glyph::WHITESPACE,
@@ -211,6 +238,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "toggle-side-by-side-diff",
+        shortcut: Some(ShortcutCommand::RepoToggleSideBySide),
         label: jayjay_i18n::palette::toggle_side_by_side_diff,
         keywords: &["diff", "split", "side", "by", "unified"],
         glyph_str: glyph::COLUMNS,
@@ -218,6 +246,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "toggle-ignore-whitespace",
+        shortcut: Some(ShortcutCommand::RepoToggleIgnoreWhitespace),
         label: jayjay_i18n::palette::toggle_ignore_whitespace,
         keywords: &["whitespace", "diff", "ignore"],
         glyph_str: glyph::WHITESPACE,
@@ -225,6 +254,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "toggle-hide-git-lfs-backed-files",
+        shortcut: None,
         label: jayjay_i18n::palette::toggle_hide_git_lfs_backed_files,
         keywords: &["lfs", "large", "file", "diff", "hide"],
         glyph_str: glyph::DATABASE,
@@ -232,6 +262,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "toggle-tree-file-list",
+        shortcut: Some(ShortcutCommand::RepoToggleTreeFileList),
         label: jayjay_i18n::palette::toggle_tree_file_list,
         keywords: &["tree", "file", "folder", "list"],
         glyph_str: glyph::FOLDER,
@@ -239,6 +270,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "toggle-auto-expand-descriptions",
+        shortcut: None,
         label: jayjay_i18n::palette::toggle_auto_expand_descriptions,
         keywords: &["description", "commit", "message", "expand", "auto"],
         glyph_str: glyph::CARET_DOWN,
@@ -246,6 +278,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "filter-by-revset",
+        shortcut: Some(ShortcutCommand::RepoFilterByRevset),
         label: jayjay_i18n::menu::filter_by_revset_ellipsis,
         keywords: &["revset", "filter", "query", "graph", "log"],
         glyph_str: glyph::FILTER,
@@ -253,6 +286,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "hide-show-sidebar",
+        shortcut: Some(ShortcutCommand::RepoToggleSidebar),
         label: jayjay_i18n::palette::hide_show_sidebar,
         keywords: &[
             "sidebar", "hide", "show", "panel", "history", "dag", "graph",
@@ -262,6 +296,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "git-pull-fetch-rebase",
+        shortcut: Some(ShortcutCommand::RepoFetch),
         label: jayjay_i18n::repo::git_pull_fetch_rebase,
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,
@@ -269,6 +304,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "rebase-working-copy-onto-trunk",
+        shortcut: Some(ShortcutCommand::RepoRebaseOntoTrunk),
         label: jayjay_i18n::palette::rebase_working_copy_onto_trunk,
         keywords: &["rebase", "trunk", "main", "update", "working copy"],
         glyph_str: glyph::ARROW_UP,
@@ -283,6 +319,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "parallelize-selected-changes",
+        shortcut: None,
         label: jayjay_i18n::palette::parallelize_selected_changes,
         keywords: &[
             "parallelize",
@@ -297,6 +334,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "run-formatters-on-selected-changes-jj-fix",
+        shortcut: None,
         label: jayjay_i18n::palette::run_formatters_on_selected_changes_jj,
         keywords: &["fix", "format", "formatter", "selection"],
         glyph_str: glyph::BRACES,
@@ -304,6 +342,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "git-push",
+        shortcut: Some(ShortcutCommand::RepoPush),
         label: jayjay_i18n::repo::git_push,
         keywords: &["git", "push", "sync"],
         glyph_str: glyph::ARROW_UP,
@@ -311,6 +350,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "clean-up-stale-bookmarks",
+        shortcut: Some(ShortcutCommand::RepoCleanUpStaleBookmarks),
         label: jayjay_i18n::palette::clean_up_stale_bookmarks,
         keywords: &["bookmark", "bookmarks", "stale", "forget", "cleanup"],
         glyph_str: glyph::BOOKMARK,
@@ -318,6 +358,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "show-in-file-manager",
+        shortcut: Some(ShortcutCommand::RepoShowInFileManager),
         label: jayjay_i18n::palette::show_in_file_manager,
         keywords: &["finder", "file", "manager", "reveal", "folder"],
         glyph_str: glyph::FOLDER,
@@ -331,6 +372,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "view-remote-repository",
+        shortcut: None,
         label: jayjay_i18n::menu::view_remote_repository,
         keywords: &[
             "remote", "origin", "web", "browser", "github", "codeberg", "gitlab", "cursor",
@@ -340,6 +382,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "zoom-in",
+        shortcut: Some(ShortcutCommand::AppZoomIn),
         label: jayjay_i18n::menu::zoom_in,
         keywords: &["zoom", "font", "size", "larger"],
         glyph_str: glyph::ZOOM_IN,
@@ -347,6 +390,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "zoom-out",
+        shortcut: Some(ShortcutCommand::AppZoomOut),
         label: jayjay_i18n::menu::zoom_out,
         keywords: &["zoom", "font", "size", "smaller"],
         glyph_str: glyph::ZOOM_OUT,
@@ -354,6 +398,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "reset-zoom",
+        shortcut: Some(ShortcutCommand::AppResetZoom),
         label: jayjay_i18n::menu::reset_zoom,
         keywords: &["zoom", "font", "size", "reset", "default"],
         glyph_str: glyph::A_LARGE_SMALL,
@@ -361,6 +406,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "expand-all-unmodified-lines",
+        shortcut: None,
         label: jayjay_i18n::palette::expand_all_unmodified_lines,
         keywords: &[
             "context",

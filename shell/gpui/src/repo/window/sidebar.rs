@@ -260,7 +260,14 @@ pub(super) fn sidebar(
     if let Some(banner) = push_follow_up_banner(view, t, cx) {
         col = col.child(banner);
     }
-    col = col.child(div().flex_1().min_h_0().child(body));
+    col = col.child(
+        div()
+            .key_context("ChangesList")
+            .track_focus(&view.changes_focus)
+            .flex_1()
+            .min_h_0()
+            .child(body),
+    );
     if show_commit_box {
         col = col.child(commit_box_editor(view, t, cx));
     }

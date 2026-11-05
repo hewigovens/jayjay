@@ -352,3 +352,21 @@ fn conflict_editor_panes_stay_aligned_while_scrolling(cx: &mut TestAppContext) {
         "tracking the visible conflict must not move the explicit selection"
     );
 }
+
+#[gpui::test]
+fn keyboard_shortcuts_merge_hunks_accept_left(cx: &mut TestAppContext) {
+    let fixture = conflicted_repo();
+    let path = fixture.path().join("repo");
+    let (_, cx) = open_repo(path.clone(), cx);
+    let edit = cx.debug_bounds("conflict-resolve-jayjay").unwrap();
+    cx.simulate_click(edit.center(), Modifiers::default());
+    settle_visual(cx);
+    cx.update(|window, cx| window.focus_next(cx));
+    crate::harness::keys(cx, "alt-left");
+    let save = cx.debug_bounds("conflict-editor-save").unwrap();
+    cx.simulate_click(save.center(), Modifiers::default());
+    settle_visual(cx);
+    let result = fs::read_to_string(path.join("greeting.rs")).unwrap();
+    assert!(result.contains("Welcome from left"), "{result}");
+    assert!(!result.contains("Welcome from right"), "{result}");
+}

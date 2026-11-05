@@ -1,4 +1,6 @@
+use super::shortcut_chord::ShortcutChord;
 use gpui::{Action, App, Modifiers};
+use jayjay_core::shortcuts::{Chord, KeyPlatform};
 
 #[derive(Debug)]
 pub struct KeyCaps(Vec<String>);
@@ -11,9 +13,7 @@ impl KeyCaps {
         let [keystroke] = binding.keystrokes() else {
             return None;
         };
-        let mut caps = modifier_caps(keystroke.modifiers());
-        caps.push(key_cap(keystroke.key()));
-        Some(Self(caps))
+        keystroke.inner().chord().ok().map(Self::from)
     }
 
     pub fn label(action: &dyn Action, cx: &App) -> String {
@@ -22,8 +22,33 @@ impl KeyCaps {
             .unwrap_or_default()
     }
 
+    pub(crate) fn tooltip(title: String, action: &dyn Action, cx: &App) -> String {
+        match Self::for_action(action, cx) {
+            Some(caps) => format!("{title} ({caps})"),
+            None => title,
+        }
+    }
+
     pub fn caps(&self) -> &[String] {
         &self.0
+    }
+}
+
+impl From<&Modifiers> for KeyCaps {
+    fn from(modifiers: &Modifiers) -> Self {
+        let modifiers = jayjay_core::shortcuts::Modifiers {
+            ctrl: modifiers.control,
+            alt: modifiers.alt,
+            shift: modifiers.shift,
+            cmd: modifiers.platform,
+        };
+        Self(modifiers.symbols(KeyPlatform::current()))
+    }
+}
+
+impl From<Chord> for KeyCaps {
+    fn from(chord: Chord) -> Self {
+        Self(chord.symbols(KeyPlatform::current()))
     }
 }
 
@@ -31,42 +56,5 @@ impl std::fmt::Display for KeyCaps {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         let separator = if cfg!(target_os = "macos") { "" } else { "+" };
         f.write_str(&self.0.join(separator))
-    }
-}
-
-fn modifier_caps(modifiers: &Modifiers) -> Vec<String> {
-    let labels: [(bool, &str, &str); 4] = [
-        (modifiers.control, "⌃", "Ctrl"),
-        (modifiers.alt, "⌥", "Alt"),
-        (modifiers.shift, "⇧", "Shift"),
-        (modifiers.platform, "⌘", "Super"),
-    ];
-    labels
-        .into_iter()
-        .filter(|(held, _, _)| *held)
-        .map(|(_, mac, other)| {
-            if cfg!(target_os = "macos") {
-                mac
-            } else {
-                other
-            }
-            .to_owned()
-        })
-        .collect()
-}
-
-fn key_cap(key: &str) -> String {
-    let mac = cfg!(target_os = "macos");
-    match key {
-        "enter" if mac => "↩".to_owned(),
-        "enter" => "Enter".to_owned(),
-        "escape" => "Esc".to_owned(),
-        "space" => "Space".to_owned(),
-        "left" => "←".to_owned(),
-        "right" => "→".to_owned(),
-        "up" => "↑".to_owned(),
-        "down" => "↓".to_owned(),
-        "-" => "−".to_owned(),
-        other => other.to_uppercase(),
     }
 }

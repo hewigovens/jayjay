@@ -9,7 +9,6 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 
 pub const MOD_KEY: &str = "cmd";
-pub const SIDEBAR_TOGGLE_KEY: &str = "ctrl-cmd-s";
 pub fn file_manager_name() -> String {
     "Finder".to_owned()
 }

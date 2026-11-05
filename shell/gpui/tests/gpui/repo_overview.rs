@@ -1,6 +1,6 @@
 use crate::harness::*;
 use gpui::{TestAppContext, VisualContext, VisualTestContext, px};
-use jayjay_gpui::app::actions::{OpenFind, OpenOverview};
+use jayjay_gpui::app::actions::{OpenOverview, OpenOverviewFilter};
 use jayjay_gpui::windows::overview::OverviewView;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -54,7 +54,7 @@ fn overview_filters_lanes_and_reveals_the_keyboard_selection_in_the_graph(cx: &m
     assert!(overview_cx.debug_bounds(billing_lane).is_some());
     assert!(overview_cx.debug_bounds(search_lane).is_some());
 
-    overview_cx.dispatch_action(OpenFind);
+    overview_cx.dispatch_action(OpenOverviewFilter);
     overview_cx.simulate_input("rank");
     settle_visual(&mut overview_cx);
     assert!(overview_cx.debug_bounds(billing_lane).is_none());

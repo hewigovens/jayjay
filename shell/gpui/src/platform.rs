@@ -13,15 +13,15 @@ pub(crate) use linux::{
     JJ_PACKAGE_MANAGER, custom_terminal_label, file_manager_name, reveal_path, send_notification,
 };
 #[cfg(target_os = "macos")]
+pub use macos::MOD_KEY;
+#[cfg(target_os = "macos")]
 pub(crate) use macos::{
     JJ_PACKAGE_MANAGER, REPO_TRAFFIC_LIGHTS, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_HEIGHT,
     TOOLBAR_ICON_SIZE, TOOLBAR_LEADING_INSET, append_menu_bar, custom_terminal_label,
     file_manager_name, reveal_path, send_notification,
 };
-#[cfg(target_os = "macos")]
-pub use macos::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
 #[cfg(not(target_os = "macos"))]
-pub use non_macos::{MOD_KEY, SIDEBAR_TOGGLE_KEY};
+pub use non_macos::MOD_KEY;
 #[cfg(not(target_os = "macos"))]
 pub(crate) use non_macos::{
     REPO_TRAFFIC_LIGHTS, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_HEIGHT, TOOLBAR_ICON_SIZE,

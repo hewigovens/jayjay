@@ -1,4 +1,6 @@
+use super::shortcut_action::ShortcutAction;
 use gpui::actions;
+use jayjay_core::shortcuts::{EffectiveBindings, KeyPlatform};
 
 actions!(
     jayjay,
@@ -51,6 +53,16 @@ actions!(
         MergeUseLeftHunk,
         MergeUseRightHunk,
         MergePreviousHunk,
+        OpenOverviewFilter,
+        RebaseOntoTrunk,
+        OpenBisect,
+        NewChange,
+        EditChange,
+        DescribeChange,
+        SquashChange,
+        NewBookmark,
+        ShowEvolution,
+        AbandonChange,
         MergeNextHunk
     ]
 );
@@ -61,72 +73,37 @@ pub struct OpenRecentRepository {
     pub(crate) path: String,
 }
 
-/// The app keymap, shared by `main` and the component-test harness so key dispatch in tests matches production.
-pub fn app_key_bindings() -> Vec<gpui::KeyBinding> {
-    let mod_key = crate::platform::MOD_KEY;
-    let mut key_bindings = vec![
-        gpui::KeyBinding::new(format!("{mod_key}-o").as_str(), OpenRepository, None),
-        gpui::KeyBinding::new(format!("{mod_key}-,").as_str(), OpenSettings, None),
-        gpui::KeyBinding::new(format!("{mod_key}-q").as_str(), Quit, None),
-        gpui::KeyBinding::new(format!("{mod_key}-w").as_str(), CloseWindow, None),
-        gpui::KeyBinding::new("escape", Dismiss, None),
-        gpui::KeyBinding::new(format!("{mod_key}-r").as_str(), Refresh, None),
-        gpui::KeyBinding::new(format!("{mod_key}-+").as_str(), ZoomIn, None),
-        gpui::KeyBinding::new(format!("{mod_key}--").as_str(), ZoomOut, None),
-        gpui::KeyBinding::new(format!("{mod_key}-0").as_str(), ResetZoom, None),
-        gpui::KeyBinding::new(crate::platform::SIDEBAR_TOGGLE_KEY, ToggleSidebar, None),
-        gpui::KeyBinding::new(
-            format!("{mod_key}-shift-p").as_str(),
-            OpenCommandPalette,
-            None,
-        ),
-        gpui::KeyBinding::new(format!("{mod_key}-/").as_str(), OpenKeyboardShortcuts, None),
-        gpui::KeyBinding::new(
-            format!("{mod_key}-shift-b").as_str(),
-            OpenBookmarkManager,
-            None,
-        ),
-        gpui::KeyBinding::new(format!("{mod_key}-shift-o").as_str(), OpenOverview, None),
-        gpui::KeyBinding::new(format!("{mod_key}-l").as_str(), FilterByRevset, None),
-        gpui::KeyBinding::new(
-            format!("{mod_key}-shift-u").as_str(),
-            OpenOperationLog,
-            None,
-        ),
-        gpui::KeyBinding::new(
-            format!("{mod_key}-alt-f").as_str(),
-            ShowRepoInFileManager,
-            None,
-        ),
-        gpui::KeyBinding::new(format!("{mod_key}-f").as_str(), OpenFind, None),
-        gpui::KeyBinding::new(format!("{mod_key}-c").as_str(), CopyDiffSelection, None),
-        gpui::KeyBinding::new(format!("{mod_key}-alt-e").as_str(), DiffEditExpandAll, None),
-        gpui::KeyBinding::new(
-            format!("{mod_key}-alt-c").as_str(),
-            DiffEditCollapseAll,
-            None,
-        ),
-        // Scoped to the "NoteComposer" key context, not bare "TextArea", so mod+Return saves the note without binding on every other TextArea (commit box, edit description, ...).
-        gpui::KeyBinding::new(
-            format!("{mod_key}-enter").as_str(),
-            SaveNoteComposer,
-            Some("NoteComposer"),
-        ),
-        gpui::KeyBinding::new(
-            format!("{mod_key}-s").as_str(),
-            SaveFileEditor,
-            Some("FileEditor"),
-        ),
-        gpui::KeyBinding::new("alt-left", MergeUseLeftHunk, Some("MergeHunks")),
-        gpui::KeyBinding::new("alt-right", MergeUseRightHunk, Some("MergeHunks")),
-        gpui::KeyBinding::new("alt-up", MergePreviousHunk, Some("MergeHunks")),
-        gpui::KeyBinding::new("alt-down", MergeNextHunk, Some("MergeHunks")),
-        gpui::KeyBinding::new(
-            "enter",
-            SubmitStackedPr,
-            Some("StackedPrPanel && !StackedPrInput"),
-        ),
-    ];
-    key_bindings.extend(crate::ui::text_area::key_bindings(mod_key));
-    key_bindings
+pub fn app_key_bindings(
+    overrides: &jayjay_core::shortcuts::ShortcutOverrides,
+) -> Vec<gpui::KeyBinding> {
+    let mut bindings = Vec::new();
+    for entry in EffectiveBindings::resolve(overrides, KeyPlatform::current()).entries() {
+        if let Some(action) = entry.command.gpui_action() {
+            for chord in entry.chords() {
+                bindings.push(
+                    gpui::KeyBinding::load(
+                        &chord.to_string(),
+                        action.boxed_clone(),
+                        entry.command.key_context().map(|context| {
+                            gpui::KeyBindingContextPredicate::parse(context)
+                                .expect("shell key context")
+                                .into()
+                        }),
+                        false,
+                        None,
+                        &gpui::DummyKeyboardMapper,
+                    )
+                    .expect("registry chord"),
+                );
+            }
+        }
+    }
+    bindings.push(gpui::KeyBinding::new("escape", Dismiss, None));
+    bindings.push(gpui::KeyBinding::new(
+        "enter",
+        SubmitStackedPr,
+        Some("StackedPrPanel && !StackedPrInput"),
+    ));
+    bindings.extend(crate::ui::text_area::key_bindings(crate::platform::MOD_KEY));
+    bindings
 }

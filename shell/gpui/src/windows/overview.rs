@@ -10,7 +10,7 @@ use gpui::{
 use jayjay_core::overview::OverviewSnapshot;
 use jayjay_core::{JayResult, Repo};
 
-use crate::app::actions::{CloseWindow, Dismiss, OpenFind};
+use crate::app::actions::{CloseWindow, Dismiss, OpenFind, OpenOverviewFilter};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance, theme_for_window};
 use crate::repo::view_model::RepoViewModel;
@@ -283,6 +283,11 @@ impl Render for OverviewView {
             .key_context("OverviewView")
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| window.remove_window()))
             .on_action(cx.listener(|view, _: &Dismiss, window, cx| view.dismiss(window, cx)))
+            .on_action(
+                cx.listener(|view, _: &OpenOverviewFilter, window, cx| {
+                    view.show_filter(window, cx)
+                }),
+            )
             .on_action(cx.listener(|view, _: &OpenFind, window, cx| view.show_filter(window, cx)))
             .on_action(cx.listener(|view, _: &Newline, window, cx| {
                 if view.filter_focused(window, cx) {

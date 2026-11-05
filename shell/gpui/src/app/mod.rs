@@ -14,6 +14,8 @@ pub mod rating_prompt;
 pub mod recent_revsets;
 pub mod repositories;
 pub(crate) mod runtime;
+pub(crate) mod shortcut_action;
+pub(crate) mod shortcut_chord;
 pub(crate) mod stall_monitor;
 pub mod startup_window;
 pub mod telemetry;

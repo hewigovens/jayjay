@@ -56,6 +56,7 @@ impl RepoWindow {
         let mut fresh = Self::for_vm(vm, cx);
         fresh.boot(cx);
         fresh.focus_handle = self.focus_handle.clone();
+        fresh.changes_focus = self.changes_focus.clone();
         fresh.commit_ai = std::mem::take(&mut self.commit_ai);
         if let Some(draft) = restored {
             fresh.restore_commit_draft(draft, cx);

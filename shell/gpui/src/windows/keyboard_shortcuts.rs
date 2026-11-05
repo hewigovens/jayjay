@@ -1,19 +1,20 @@
 use gpui::{
     AnyElement, App, AppContext, Bounds, ClickEvent, Context, FocusHandle, Focusable,
-    InteractiveElement, IntoElement, ParentElement, Render, SharedString,
-    StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
-    px, rgb, size,
+    InteractiveElement, IntoElement, ParentElement, Render, StatefulInteractiveElement, Styled,
+    TitlebarOptions, Window, WindowBounds, WindowOptions, div, px, rgb, size,
 };
 
 use crate::app::actions::{CloseWindow, Dismiss};
-use crate::app::config::AppConfigStore;
+use crate::app::config::{self, AppConfigStore};
 use crate::app::theme::{Theme, observe_window_appearance, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::divider_h;
+use jayjay_core::shortcuts::{EffectiveBindings, KeyPlatform};
 
-mod guide;
+mod entry;
+mod section;
 
-use guide::{ShortcutEntry, ShortcutSection};
+use section::ShortcutSection;
 
 pub struct KeyboardShortcutsView {
     focus_handle: FocusHandle,
@@ -62,13 +63,23 @@ impl Focusable for KeyboardShortcutsView {
 impl Render for KeyboardShortcutsView {
     fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
         let t = crate::app::theme::theme_for_window(window, cx).clone();
-        let [left, right] = guide::columns();
+        let bindings = EffectiveBindings::resolve(
+            &config::current(cx).shortcut_overrides(),
+            KeyPlatform::current(),
+        );
+        let [left, right] = ShortcutSection::columns(&bindings);
         div()
             .id("keyboard-shortcuts-window")
             .debug_selector(|| "keyboard-shortcuts-window".to_owned())
             .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("KeyboardShortcutsView")
+            .on_key_down(|event, window, cx| {
+                if event.keystroke.key == "tab" && !event.keystroke.modifiers.modified() {
+                    window.focus_next(cx);
+                    cx.stop_propagation();
+                }
+            })
             .on_action(cx.listener(|_, _: &CloseWindow, window, _| window.remove_window()))
             .on_action(cx.listener(|_, _: &Dismiss, window, _| window.remove_window()))
             .flex()
@@ -90,8 +101,8 @@ impl Render for KeyboardShortcutsView {
                     .overflow_y_scroll()
                     .scrollbar_width(px(0.))
                     .p(px(20.))
-                    .child(column(left, &t, cx))
-                    .child(column(right, &t, cx)),
+                    .child(ShortcutSection::column(left, &bindings, &t, cx))
+                    .child(ShortcutSection::column(right, &bindings, &t, cx)),
             )
             .child(divider_h(&t))
             .child(
@@ -136,73 +147,5 @@ fn header(t: &Theme, cx: &mut Context<KeyboardShortcutsView>) -> AnyElement {
                 .on_click(cx.listener(|_, _: &ClickEvent, window, _| window.remove_window()))
                 .child(icons::icon(glyph::X, 11., t.fg_dim)),
         )
-        .into_any_element()
-}
-
-fn column(sections: &[ShortcutSection], t: &Theme, cx: &App) -> AnyElement {
-    let mut column = div().flex().flex_col().gap(px(20.)).flex_1().min_w_0();
-    for section in sections {
-        column = column.child(section_block(section, t, cx));
-    }
-    column.into_any_element()
-}
-
-fn section_block(section: &ShortcutSection, t: &Theme, cx: &App) -> AnyElement {
-    let id = section.id;
-    let mut block = div()
-        .id(SharedString::from(format!("shortcut-section-{id}")))
-        .debug_selector(move || format!("shortcut-section-{id}"))
-        .flex()
-        .flex_col()
-        .gap(px(9.))
-        .child(
-            div()
-                .text_size(ui_font_size(12.))
-                .font_weight(gpui::FontWeight::BOLD)
-                .text_color(rgb(t.fg_dim))
-                .child((section.title)().to_uppercase()),
-        );
-    for (ix, entry) in section.entries.iter().enumerate() {
-        block = block.child(shortcut_row(&format!("{id}-{ix}"), entry, t, cx));
-    }
-    block.into_any_element()
-}
-
-fn shortcut_row(id: &str, entry: &ShortcutEntry, t: &Theme, cx: &App) -> AnyElement {
-    let label = (entry.label)();
-    let mut caps = div().flex().items_center().gap(px(4.));
-    for (ix, key) in entry.key_caps(cx).into_iter().enumerate() {
-        caps = caps.child(key_cap(id, ix, key, t));
-    }
-    let selector = format!("shortcut-entry-{id}");
-    div()
-        .id(SharedString::from(selector.clone()))
-        .debug_selector(move || selector)
-        .flex()
-        .items_center()
-        .justify_between()
-        .gap(px(12.))
-        .text_size(ui_font_size(13.))
-        .child(div().min_w_0().child(label))
-        .child(caps)
-        .into_any_element()
-}
-
-fn key_cap(entry_id: &str, ix: usize, key: String, t: &Theme) -> AnyElement {
-    let selector = format!("shortcut-key-{entry_id}-{ix}");
-    div()
-        .id(SharedString::from(selector.clone()))
-        .debug_selector(move || selector)
-        .min_w(px(18.))
-        .px(px(6.))
-        .py(px(3.))
-        .rounded(px(5.))
-        .border_1()
-        .border_color(rgb(t.border))
-        .bg(rgb(t.row_alt_bg))
-        .text_size(ui_font_size(12.))
-        .text_color(rgb(t.fg))
-        .text_center()
-        .child(key)
         .into_any_element()
 }

@@ -1,6 +1,6 @@
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
-use crate::app::theme::ui_font_size;
+use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 
 pub(crate) fn capsule(label: impl Into<SharedString>, bg: u32, fg: u32, font_size: f32) -> Div {
@@ -12,6 +12,22 @@ pub(crate) fn capsule(label: impl Into<SharedString>, bg: u32, fg: u32, font_siz
         .bg(rgb(bg))
         .text_color(rgb(fg))
         .text_size(ui_font_size(font_size))
+        .child(label.into())
+}
+
+pub(crate) fn key_cap(label: impl Into<SharedString>, t: &Theme) -> Div {
+    div()
+        .flex_none()
+        .min_w(px(18.))
+        .px(px(6.))
+        .py(px(2.))
+        .rounded(px(5.))
+        .border_1()
+        .border_color(rgb(t.border))
+        .bg(rgb(t.row_alt_bg))
+        .text_size(ui_font_size(12.))
+        .text_color(rgb(t.fg))
+        .text_center()
         .child(label.into())
 }
 

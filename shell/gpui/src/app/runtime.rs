@@ -33,7 +33,7 @@ pub(crate) fn run(launch: GuiLaunch) {
             Theme::for_appearance(cfg.appearance, cx.window_appearance(), &cfg.diff.palette)
                 .with_typography(&cfg),
         );
-        cx.bind_keys(super::actions::app_key_bindings());
+        cx.bind_keys(super::actions::app_key_bindings(&cfg.shortcut_overrides()));
 
         let fonts_started = Instant::now();
         cx.set_global(AppConfigStore::new(cfg));

@@ -1,3 +1,5 @@
+use jayjay_core::shortcuts::{KeyPlatform, ShortcutOverrides};
+use std::collections::BTreeMap;
 use std::path::{Path, PathBuf};
 
 use jayjay_core::flock::FlockIcon;
@@ -12,6 +14,7 @@ use super::{
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
 #[serde(default)]
 pub struct AppConfig {
+    pub shortcuts: BTreeMap<String, Vec<String>>,
     pub appearance: AppearanceMode,
     pub flock_icon: String,
     #[serde(skip_serializing_if = "Option::is_none")]
@@ -42,6 +45,7 @@ pub struct AppConfig {
 impl Default for AppConfig {
     fn default() -> Self {
         Self {
+            shortcuts: BTreeMap::new(),
             appearance: AppearanceMode::System,
             flock_icon: FlockIcon::Classic.id().into(),
             language: None,
@@ -66,6 +70,10 @@ impl Default for AppConfig {
 }
 
 impl AppConfig {
+    pub fn shortcut_overrides(&self) -> ShortcutOverrides {
+        ShortcutOverrides::from_stored(self.shortcuts.clone(), KeyPlatform::current())
+    }
+
     const MAX_RECENT_REPOS: usize = 12;
 
     /// Beta builds default to debug mode until the user picks a side.

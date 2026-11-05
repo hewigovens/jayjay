@@ -4,8 +4,6 @@ use crate::app::theme::Theme;
 use crate::repo::window::RepoWindow;
 
 pub const MOD_KEY: &str = "ctrl";
-/// Ctrl is already the platform Mod here, so a plain `ctrl-s` would collide with the file editor's save.
-pub const SIDEBAR_TOGGLE_KEY: &str = "alt-ctrl-s";
 pub const TOOLBAR_HEIGHT: f32 = 44.;
 pub const TOOLBAR_LEADING_INSET: f32 = 12.;
 pub const TOOLBAR_BUTTON_HEIGHT: f32 = 30.;

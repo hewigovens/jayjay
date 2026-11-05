@@ -11,6 +11,18 @@ impl RepoWindow {
         self.focused_control
     }
 
+    pub(crate) fn sync_changes_focus(&self, window: &mut Window, cx: &mut Context<Self>) {
+        let changes_active = self.active_pane == ActivePane::Sidebar
+            && self.focused_control.is_none()
+            && !self.layout.sidebar_hidden
+            && !self.keyboard_focus_suspended(cx);
+        if changes_active && self.focus_handle.is_focused(window) {
+            self.changes_focus.focus(window, cx);
+        } else if !changes_active && self.changes_focus.is_focused(window) {
+            self.focus_handle.focus(window, cx);
+        }
+    }
+
     pub(crate) fn sync_keyboard_focus(&mut self, window: &Window, cx: &App) -> bool {
         // Mouse focus and field submission can bypass the Tab cycle.
         let focused = self.focused_text_input(window, cx).or_else(|| {

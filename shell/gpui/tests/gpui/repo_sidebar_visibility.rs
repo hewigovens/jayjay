@@ -1,5 +1,6 @@
 use crate::harness::*;
 use gpui::{TestAppContext, VisualTestContext};
+use jayjay_core::shortcuts::{KeyPlatform, ShortcutCommand};
 use jayjay_gpui::repo::{ActivePane, FocusStop, RepoWindow};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::LinearFixture;
@@ -182,12 +183,16 @@ fn revealing_actions_unhide_the_sidebar(cx: &mut TestAppContext) {
 fn sidebar_toggle_keybinding_hides_and_shows(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
+    let toggle = ShortcutCommand::RepoToggleSidebar
+        .default_chord(KeyPlatform::current())
+        .unwrap()
+        .to_string();
 
-    cx.simulate_keystrokes(jayjay_gpui::platform::SIDEBAR_TOGGLE_KEY);
+    cx.simulate_keystrokes(&toggle);
     settle_slide(cx);
     assert!(!sidebar_visible(cx));
 
-    cx.simulate_keystrokes(jayjay_gpui::platform::SIDEBAR_TOGGLE_KEY);
+    cx.simulate_keystrokes(&toggle);
     settle_slide(cx);
     assert!(sidebar_visible(cx));
     assert!(!view.read_with(cx, |view, _| view.sidebar_hidden()));

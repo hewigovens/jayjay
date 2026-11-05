@@ -1,7 +1,9 @@
+use crate::app::config;
 use gpui::{
     AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
+use jayjay_core::shortcuts::{EffectiveBindings, KeyPlatform};
 
 use super::rows::{self, PaletteRow};
 use super::state::CommandPalette;
@@ -49,12 +51,23 @@ pub(super) fn action_list(
             .child(jayjay_i18n::repo::no_matches())
             .into_any_element();
     }
+    let bindings = EffectiveBindings::resolve(
+        &config::current(cx).shortcut_overrides(),
+        KeyPlatform::current(),
+    );
     let mut col = div().flex().flex_col().flex_1().min_h_0().py(px(4.));
     for (vis_ix, action_ix) in visible.iter().enumerate() {
         let Some(row) = rows::row(*action_ix, &palette.dynamic_rows) else {
             continue;
         };
-        col = col.child(action_row(*action_ix, row, vis_ix == selected, t, cx));
+        col = col.child(action_row(
+            *action_ix,
+            row,
+            vis_ix == selected,
+            &bindings,
+            t,
+            cx,
+        ));
     }
     col.into_any_element()
 }
@@ -63,9 +76,14 @@ fn action_row(
     action_ix: usize,
     row: PaletteRow<'_>,
     is_selected: bool,
+    bindings: &EffectiveBindings,
     t: &Theme,
     cx: &mut Context<CommandPalette>,
 ) -> impl IntoElement {
+    let hint = match &row {
+        PaletteRow::Action(action) => action.shortcut_label(bindings),
+        _ => None,
+    };
     let (selector, label, glyph_str) = match row {
         PaletteRow::Action(action) => (
             action_selector(action.id),
@@ -107,6 +125,8 @@ fn action_row(
             14.,
             glyph_color,
         ))
+        .child(div().flex_1())
+        .children(hint.map(|hint| div().text_color(rgb(t.fg_dim)).child(hint)))
 }
 
 fn action_selector(id: &str) -> String {

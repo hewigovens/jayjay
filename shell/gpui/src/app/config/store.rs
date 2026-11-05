@@ -40,7 +40,7 @@ pub fn update<F>(cx: &mut App, mutate: F)
 where
     F: FnOnce(&mut AppConfig),
 {
-    cx.update_global::<AppConfigStore, _>(|store, _| {
+    cx.update_global::<AppConfigStore, _>(|store, cx| {
         let mut next = (*store.config).clone();
         mutate(&mut next);
         // The first recent shows the panel and the last removal hides it, whatever was chosen before.
@@ -55,6 +55,12 @@ where
         fonts::sync_from_config(&next);
         if next.language != store.config.language {
             jayjay_i18n::set_preferred_languages(&next.preferred_languages());
+        }
+        if next.shortcuts != store.config.shortcuts {
+            cx.clear_key_bindings();
+            cx.bind_keys(crate::app::actions::app_key_bindings(
+                &next.shortcut_overrides(),
+            ));
         }
         store.config = Arc::new(next);
     });
