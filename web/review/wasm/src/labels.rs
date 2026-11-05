@@ -11,6 +11,10 @@ pub(super) fn labels(languages: &str) -> Value {
     )
 }
 
+#[expect(
+    clippy::too_many_lines,
+    reason = "Keep the declarative review label table together"
+)]
 fn review_labels() -> Vec<(&'static str, String)> {
     vec![
         ("close", jayjay_i18n::common::close()),

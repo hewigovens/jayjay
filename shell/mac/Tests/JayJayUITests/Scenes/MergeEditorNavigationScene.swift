@@ -75,7 +75,9 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         XCTAssertTrue(viewport.waitForExistence(timeout: 5), "Scroll viewport did not appear", file: file, line: line)
         let bars = [viewport.scrollBars.firstMatch] + followers
         let initialValues = try bars.map { try XCTUnwrap($0.value as? Double, "Expected a numeric scroll position", file: file, line: line) }
-        viewport.scroll(byDeltaX: 0, deltaY: deltaY)
+        let center = viewport.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        center.hover()
+        center.scroll(byDeltaX: 0, deltaY: deltaY)
         let moved = NSPredicate { _, _ in
             zip(bars, initialValues).allSatisfy { bar, initial in
                 guard let current = bar.value as? Double else { return false }

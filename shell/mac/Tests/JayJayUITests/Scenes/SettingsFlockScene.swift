@@ -10,11 +10,11 @@ final class SettingsFlockScene: SceneBase {
         keyStroke(",", modifiers: .command)
         selectSettingsPage("about", in: app)
         let window = settingsWindow(in: app)
-        XCTAssertFalse(window.buttons[AID.Settings.flockUnlock].exists)
+        XCTAssertFalse(window.links[AID.Settings.flockUnlock].exists)
         XCTAssertTrue(window.descendants(matching: .any)[AID.Settings.page("flock")].exists)
         XCTAssertEqual(window.descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, "Classic")
         selectSettingsPage("flock", in: app)
-        XCTAssertTrue(window.buttons[AID.Settings.flockUnlock].waitForExistence(timeout: 5))
+        XCTAssertTrue(window.links[AID.Settings.flockUnlock].waitForExistence(timeout: 5))
         XCTAssertFalse(window.buttons[AID.Settings.flockIcon("fish-owl")].exists)
         app.terminate()
 
@@ -36,7 +36,7 @@ final class SettingsFlockScene: SceneBase {
         selectSettingsPage("about", in: app)
         XCTAssertFalse(window.staticTexts["First Supporter"].exists)
         XCTAssertEqual(window.descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, "Kingfisher")
-        XCTAssertFalse(window.buttons[AID.Settings.flockUnlock].exists)
+        XCTAssertFalse(window.links[AID.Settings.flockUnlock].exists)
         app.menuBars.menuBarItems["JayJay"].click()
         app.menuBars.menuBarItems["JayJay"].menuItems["About JayJay"].click()
         let about = app.windows["about-window"]
@@ -53,7 +53,7 @@ final class SettingsFlockScene: SceneBase {
         XCTAssertTrue(app.windows.firstMatch.waitForExistence(timeout: 10))
         keyStroke(",", modifiers: .command)
         selectSettingsPage("about", in: app)
-        XCTAssertFalse(settingsWindow(in: app).buttons[AID.Settings.flockUnlock].exists)
+        XCTAssertFalse(settingsWindow(in: app).links[AID.Settings.flockUnlock].exists)
         XCTAssertTrue(settingsWindow(in: app).descendants(matching: .any)[AID.Settings.page("flock")].exists)
         XCTAssertEqual(settingsWindow(in: app).descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, "Classic")
     }
