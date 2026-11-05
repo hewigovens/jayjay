@@ -1,0 +1,23 @@
+<h2>Review</h2>
+<ul>
+  <li>Clicking a file’s review mark, or the new <strong>Mark Reviewed</strong> button in the diff header, moves on to the next file like Space. The next file is the next unreviewed one after the current file, so files you skipped stay behind.</li>
+  <li>SVG and SARIF files open rendered, and their preview button returns to the source. Notebooks open as a text diff of their Markdown, with Preview and Source buttons beside it.</li>
+  <li>Pull request descriptions keep GitHub’s formatting tags, such as collapsible sections, tables, and lists, so release notes from Dependabot read as they do on GitHub.</li>
+</ul>
+<h2>Gerrit</h2>
+<ul>
+  <li>Changes on a Gerrit remote get <strong>Upload to Gerrit</strong> in the change menu. After a change is submitted, Pull abandons the empty local copy it leaves behind.</li>
+  <li>An upload that would replace a newer patch set made in Gerrit is refused, and <strong>Update from Gerrit</strong> brings that patch set into your local change.</li>
+  <li><code>jayjay.upload-command</code> and <code>jayjay.sync-command</code> let a repository replace Upload and Pull with its own jj commands.</li>
+</ul>
+<h2>Sync and Git</h2>
+<ul>
+  <li>Pull, push, and bookmark tracking follow <code>git.push</code>, or the only remote, instead of assuming <code>origin</code>.</li>
+  <li>Built on jj 0.47.1. In colocated repositories, describing or rewriting the working-copy change no longer resets the Git staging area.</li>
+</ul>
+<h2>Settings and SSH</h2>
+<ul>
+  <li>A new Flock page in Settings lets GitHub sponsors unlock a keepsake feather and extra light and dark Dock icons, also shown in About.</li>
+  <li>Reopening a remote repository whose checkout was deleted on the host reports it missing instead of opening and then vanishing, and a canceled request to a host that stopped answering disconnects instead of waiting.</li>
+  <li>The app bundles the license notices of its third-party components.</li>
+</ul>

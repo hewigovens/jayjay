@@ -320,7 +320,17 @@ final class ReleaseScreenshots: ScreenshotScene {
     }
 
     private func selectChange(_ subject: String, in app: XCUIApplication) {
-        clickCenter(row(subject, in: app), timeout: 10, message: "Change \(subject) missing")
+        let target = row(subject, in: app)
+        let graph = app.scrollViews.containing(NSPredicate(format: "identifier BEGINSWITH 'dag.row.'")).firstMatch
+        XCTAssertTrue(target.waitForExistence(timeout: 10), "Change \(subject) missing")
+        // The capture window shows only the top of the graph, so lower rows are scrolled into view first.
+        let visible = { graph.frame.insetBy(dx: 0, dy: 8).contains(CGPoint(x: target.frame.midX, y: target.frame.midY)) }
+        for _ in 0..<8 where !visible() {
+            graph.scroll(byDeltaX: 0, deltaY: -200)
+            settle()
+        }
+        XCTAssertTrue(visible(), "Change \(subject) did not scroll into view")
+        clickCenter(target, timeout: 10, message: "Change \(subject) missing")
         settle()
     }
 

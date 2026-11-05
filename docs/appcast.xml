@@ -6,6 +6,119 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.23-beta.2</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>82</sparkle:version>
+            <sparkle:shortVersionString>0.3.23</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Thu, 05 Nov 2026 02:47:23 +0000</pubDate>
+            <description><![CDATA[
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="color-scheme" content="light dark">
+                  <title>JayJay 0.3.23-beta.2 — Release notes</title>
+                  <style>
+                    :root {
+                      color-scheme: light dark;
+                      --background: #f7f8fa;
+                      --surface: #ffffff;
+                      --text: #20242c;
+                      --muted: #626b78;
+                      --border: #dfe4ec;
+                      --accent: #1d4ed8;
+                      --tint: #eaf1ff;
+                      --notice: #fff5de;
+                      --notice-text: #79520b;
+                    }
+                    @media (prefers-color-scheme: dark) {
+                      :root {
+                        --background: #181b21;
+                        --surface: #22262e;
+                        --text: #edf0f6;
+                        --muted: #adb6c5;
+                        --border: #3b424f;
+                        --accent: #93baff;
+                        --tint: #283b5d;
+                        --notice: #3a301d;
+                        --notice-text: #f4cc7d;
+                      }
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                      margin: 0;
+                      padding: 24px;
+                      background: var(--background);
+                      color: var(--text);
+                      font: 13px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                      overflow-wrap: anywhere;
+                    }
+                    .release { max-width: 720px; margin: 0 auto; }
+                    header { padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+                    h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -0.035em; }
+                    .metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; color: var(--muted); }
+                    .version { padding: 3px 10px; border-radius: 7px; background: var(--tint); color: var(--accent); font-weight: 650; }
+                    .beta-notice { margin: 20px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--notice); color: var(--notice-text); }
+                    main h2 { margin: 24px 0 10px; font-size: 16px; line-height: 1.35; }
+                    main ul, main ol { margin: 0; padding: 16px 18px 16px 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+                    main li + li { margin-top: 10px; }
+                    main li::marker { color: var(--accent); }
+                    main li ul, main li ol { margin-top: 10px; padding: 0 0 0 18px; border: 0; }
+                    code { padding: 1px 4px; border-radius: 4px; background: var(--tint); font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: var(--surface); }
+                    pre code { padding: 0; background: transparent; }
+                    a { color: var(--accent); text-underline-offset: 3px; }
+                    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+                    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); }
+                    @media (max-width: 420px) { body { padding: 16px; } h1 { font-size: 24px; } }
+                    @media (prefers-contrast: more) { :root { --muted: var(--text); --border: var(--text); } }
+                  </style>
+                </head>
+                <body>
+                  <div class="release">
+                    <header>
+                      <h1>What’s new</h1>
+                      <div class="metadata"><span class="version">v0.3.23-beta.2</span><time datetime="2026-11-05">November 5, 2026</time></div>
+                    </header>
+                    <p class="beta-notice"><strong>Beta build · 82</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>
+                    <main>
+                <h2>Review</h2>
+                <ul>
+                  <li>Clicking a file’s review mark, or the new <strong>Mark Reviewed</strong> button in the diff header, moves on to the next file like Space. The next file is the next unreviewed one after the current file, so files you skipped stay behind.</li>
+                  <li>SVG and SARIF files open rendered, and their preview button returns to the source. Notebooks open as a text diff of their Markdown, with Preview and Source buttons beside it.</li>
+                  <li>Pull request descriptions keep GitHub’s formatting tags, such as collapsible sections, tables, and lists, so release notes from Dependabot read as they do on GitHub.</li>
+                </ul>
+                <h2>Gerrit</h2>
+                <ul>
+                  <li>Changes on a Gerrit remote get <strong>Upload to Gerrit</strong> in the change menu. After a change is submitted, Pull abandons the empty local copy it leaves behind.</li>
+                  <li>An upload that would replace a newer patch set made in Gerrit is refused, and <strong>Update from Gerrit</strong> brings that patch set into your local change.</li>
+                  <li><code>jayjay.upload-command</code> and <code>jayjay.sync-command</code> let a repository replace Upload and Pull with its own jj commands.</li>
+                </ul>
+                <h2>Sync and Git</h2>
+                <ul>
+                  <li>Pull, push, and bookmark tracking follow <code>git.push</code>, or the only remote, instead of assuming <code>origin</code>.</li>
+                  <li>Built on jj 0.47.1. In colocated repositories, describing or rewriting the working-copy change no longer resets the Git staging area.</li>
+                </ul>
+                <h2>Settings and SSH</h2>
+                <ul>
+                  <li>A new Flock page in Settings lets GitHub sponsors unlock a keepsake feather and extra light and dark Dock icons, also shown in About.</li>
+                  <li>Reopening a remote repository whose checkout was deleted on the host reports it missing instead of opening and then vanishing, and a canceled request to a host that stopped answering disconnects instead of waiting.</li>
+                  <li>The app bundles the license notices of its third-party components.</li>
+                </ul>
+                    </main>
+                    <footer><a href="https://github.com/hewigovens/jayjay/releases">All releases</a> · <a href="https://jayjay.hewig.dev/guide.html">User guide</a></footer>
+                  </div>
+                </body>
+                </html>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.23-beta.2/JayJay-0.3.23-beta.2.zip"
+                       sparkle:edSignature="Hl7q8yJccJklBaqj8esCDjXreW9qeI3v1c6U5tu4orLRV4ZyRnF7WNNu/1DXsWM4AonDGj8nZTWutKwYQXU4Cg=="
+                       length="29164292"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.23-beta.1</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>81</sparkle:version>

@@ -115,7 +115,7 @@
         <li>macOS, Linux, and Windows hosts are supported. JayJay runs a small helper on the host, which it installs under <code>~/.local/share/jayjay/helpers</code> (<code>%LOCALAPPDATA%\JayJay\helpers</code> on Windows) on first connect. Release builds download the helper for the host's platform from the matching GitHub release and check it against the hash the app ships with.</li>
         <li>The status bar shows the host, its platform, and the connection state; click it for <strong>Disconnect</strong> and <strong>Reconnect</strong>. While disconnected the repository stays on screen, and JayJay never retries a write on its own: if a write may have completed, reconnect and refresh before trying again.</li>
         <li>Remote working copies refresh on their own, like local ones. Review marks and notes stay on this machine; notes are matched against the host's diffs here, so their text never goes to the host. Finder, editor, terminal, and external merge-editor actions are unavailable for remote repositories.</li>
-        <li>Remote repositories are available in the macOS app and on Linux; the Windows app follows in a later release.</li>
+        <li>Remote repositories are available in the macOS app, on Linux, and on Windows.</li>
       </ul>
     </section>
 
@@ -132,8 +132,8 @@
         <li>Press <kbd>Tab</kbd> to move keyboard focus through the window: graph, file list and its controls, description, diff layout, edit buttons, toolbar, and the commit fields, wrapping at the end; <kbd>Shift+Tab</kbd> reverses. <kbd>Space</kbd> or <kbd>Return</kbd> activates the focused control, <kbd>Esc</kbd> returns to the pane, and the active pane draws a stronger selection.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay main window — DAG graph and unified diff" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/home.webp" alt="JayJay main window — DAG graph and unified diff" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/home-dark.webp" alt="JayJay main window — DAG graph and unified diff" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/home.webp" alt="JayJay main window — DAG graph and unified diff" width="2200" height="1400" loading="lazy">
         <figcaption>DAG with highlighted change-ids, bookmark and tag chips, author avatars, and the diff pane.</figcaption>
       </figure>
     </section>
@@ -162,34 +162,34 @@
     <section class="g" id="diffs">
       <h2>Review Diffs <a href="#diffs">#</a></h2>
       <ul>
-        <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Hide reviewed files to focus on what's left, or filter the list by name; <code>Esc</code> clears and closes the filter, <code>Return</code> keeps the query and hands the keys back to the list.</li>
+        <li>Review your working copy like a pull request: step through the changed files and press <code>Space</code> to tick each one off with its review checkbox. Clicking a file's review mark or <strong>Mark Reviewed</strong> in the diff header does the same, and each moves on to the next unreviewed file after the current one, so files you skipped stay behind; in GPUI, Space marks a multi-selection and moves on too. Hide reviewed files to focus on what's left, or filter the list by name; <code>Esc</code> clears and closes the filter, <code>Return</code> keeps the query and hands the keys back to the list.</li>
         <li>Toggle between unified and side-by-side diffs, and browse changed files as a flat list or a tree. The file column header puts its controls first and one count last: filter matches while filtering, review progress once a file is reviewed, otherwise the file total.</li>
-        <li>The diff header shows a file-type or language icon, the file's status pill and added and removed line counts next to its name. Preview, the Unified/Side-by-side toggle, <strong>Edit Diff</strong>, and <strong>Edit File</strong> sit on the right in one borderless style and drop to icons when the pane is narrow; <kbd>Tab</kbd> reaches Edit File after Edit Diff.</li>
+        <li>The diff header shows a file-type or language icon, the file's status pill and added and removed line counts next to its name. <strong>Mark Reviewed</strong>, Preview, the Unified/Side-by-side toggle, <strong>Edit Diff</strong>, and <strong>Edit File</strong> sit on the right in one borderless style and drop to icons when the pane is narrow; <kbd>Tab</kbd> reaches Edit File after Edit Diff.</li>
         <li>Tabs occupy four visual cells when wrapping and selecting diff text; GPUI displays them as four spaces, including on Windows.</li>
         <li>Moved code is marked with linked line-number badges in unified and side-by-side diffs. Click a badge to jump to the matching block in the same file; the destination is briefly highlighted.</li>
         <li>Binary file sizes follow your locale; hover over a size to see the exact byte count.</li>
         <li>Use <code>Cmd+F</code> to search within the current diff.</li>
         <li>Review state is local to your machine and survives app restarts. Click a changed group's gutter stripe to review that hunk; file rows roll up unreviewed, partial, reviewed, and changed-since-review state. Marks follow uniquely matching hunks across edits and rebases, so changing one hunk does not discard review work on the others. Files whose marks came from an agent (see Review Notes) show an <strong>agent</strong> badge and are counted in the reviewed-count tooltip until you take them over.</li>
-        <li>Image files render as images where possible; drag the divider between the two versions to give either side more room and double-click it to reset. SVG files can be viewed as source or rendered output; the rendered view fits the image's own size and scales down to the pane.</li>
-        <li>Supported rich previews include Markdown, SVG, HTML, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. Text-backed files stay raw by default so diff review still works; click the rich preview icon to switch to the rendered view. Working-copy HTML files render inline in a sandboxed preview (scripts don't run); an external-open icon next to it still launches the file in the default app, so linked CSS and images work normally there too. Fenced <code>mermaid</code> blocks in rendered Markdown become diagrams offline in both shells; unsupported or oversized diagrams remain source code. On macOS, pinch to zoom the preview. Switch Preview off to read the source diff. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
+        <li>Image files render as images where possible; drag the divider between the two versions to give either side more room and double-click it to reset. SVG files open rendered, and the preview button returns to the source; SVG stays on source when the file has notes or can't render. The rendered view fits the image's own size and scales down to the pane.</li>
+        <li>Supported rich previews include Markdown, SVG, HTML, notebooks, CSV/TSV tables, SARIF reports, and binary property lists. SVG and SARIF open rendered; other text-backed files stay raw by default so diff review still works, and the rich preview icon switches to the rendered view. Notebooks open as a text diff of their Markdown projection, with Preview and Source buttons beside it, since the rendered view hides what changed. Working-copy HTML files render inline in a sandboxed preview (scripts don't run); an external-open icon next to it still launches the file in the default app, so linked CSS and images work normally there too. Fenced <code>mermaid</code> blocks in rendered Markdown become diagrams offline in both shells; unsupported or oversized diagrams remain source code. On macOS, pinch to zoom the preview. Switch Preview off to read the source diff. Binary property lists open as XML with a banner, while plain XML property lists stay raw.</li>
         <li>Renames, collapsed context, and ignore-whitespace behavior are reflected in the diff view. In either diff layout, use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal nearby context without leaving the file.</li>
         <li>Copying diff text excludes gutter line numbers. On macOS, select text in a side-by-side pane and press <kbd>Cmd+C</kbd> to copy the original source lines without extra line breaks from wrapping or blank rows used to align the panes.</li>
         <li>For changed working-copy text files, right-click a line number in either diff layout and choose <strong>Edit File at Line N</strong> to open the working-copy editor at that line. When the configured external editor supports line targeting, the same menu offers an action to open it at that line.</li>
         <li>For a changed regular text file in the current working copy, use <strong>Edit File</strong> in the diff header to open JayJay's syntax-highlighted editor in a large modal, leaving the diff detail intact underneath. Highlighting is ready when the editor appears, and long lines soft-wrap to the available width. Save with <code>Cmd+S</code> or cancel with <code>Esc</code>; JayJay refuses the save if that file or the working-copy change changed after the editor opened. Historical, compare-mode, conflicted, removed, projected, and image files stay read-only.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/moved-code-dark.webp" alt="Moved-code links between matching diff blocks" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/moved-code.webp" alt="Moved-code links between matching diff blocks" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/moved-code-dark.webp" alt="Moved-code links between matching diff blocks" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/moved-code.webp" alt="Moved-code links between matching diff blocks" width="2200" height="1400" loading="lazy">
         <figcaption>Click a moved-code badge to jump to its matching block.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/mermaid-dark.webp" alt="Mermaid flowchart in a rendered Markdown preview" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/mermaid.webp" alt="Mermaid flowchart in a rendered Markdown preview" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/mermaid-dark.webp" alt="Mermaid flowchart in a rendered Markdown preview" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/mermaid.webp" alt="Mermaid flowchart in a rendered Markdown preview" width="2200" height="1400" loading="lazy">
         <figcaption>Markdown previews render Mermaid diagrams offline in both shells.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with a reviewed hunk and inline note" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with a reviewed hunk and inline note" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/review.webp" alt="Working-copy review with a reviewed hunk and inline note" width="2200" height="1400" loading="lazy">
         <figcaption>Mark individual hunks reviewed and leave notes beside the lines that need attention.</figcaption>
       </figure>
     </section>
@@ -219,13 +219,13 @@
         <li>Diff divergent changes: right-click a change marked <em>divergent</em> and choose <strong>Compare Divergent Versions</strong> to interdiff the two commits that share its change-id — so you can see which one is safer to abandon.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff between two revisions" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff between two revisions" width="2560" height="1300" loading="lazy">
+        <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff between two revisions" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff between two revisions" width="2200" height="1400" loading="lazy">
         <figcaption>Bookmark diff: compare a feature bookmark against a base change or main bookmark.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/divergent-diff-dark.webp" alt="Compare divergent versions" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/divergent-diff.webp" alt="Compare divergent versions" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/divergent-diff-dark.webp" alt="Compare divergent versions" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/divergent-diff.webp" alt="Compare divergent versions" width="2200" height="1400" loading="lazy">
         <figcaption>Divergent compare shows the two commits that share a change-id before you abandon one.</figcaption>
       </figure>
     </section>
@@ -243,8 +243,8 @@
         <li>JayJay can also be a blocking CLI diff tool. <code>jj split --tool jayjay</code> opens the same multi-file, line-selectable editor; <code>jj diff --tool jayjay</code> and <code>git difftool --dir-diff</code> open read-only directory comparisons.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — selecting hunks to split" width="2560" height="1300" loading="lazy">
+        <img class="dark-only" src="imgs/diff-edit-dark.webp" alt="Diff edit — selecting hunks to split" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/diff-edit.webp" alt="Diff edit — selecting hunks to split" width="2200" height="1400" loading="lazy">
         <figcaption>Select files, hunks, or lines and extract them into a new change.</figcaption>
       </figure>
     </section>
@@ -261,8 +261,8 @@
         <li>Use Undo to inspect the jj operation log and roll back recent operations. JayJay shows lightweight toasts for completed actions and keeps the rest of the window usable when possible.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/undo-operation-log-dark.webp" alt="JayJay undo operation log" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/undo-operation-log.webp" alt="JayJay undo operation log" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/undo-operation-log-dark.webp" alt="JayJay undo operation log" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/undo-operation-log.webp" alt="JayJay undo operation log" width="2200" height="1400" loading="lazy">
         <figcaption>Undo uses jj's operation log so recent repo operations can be inspected before rolling back.</figcaption>
       </figure>
     </section>
@@ -276,15 +276,17 @@
         <li>Use bookmark actions to create, rename, track, move forward, delete, and push bookmarks, or drag a bookmark chip in the DAG to move it onto any change. On a conflicted DAG chip, <strong>Remove from This Change</strong> drops the bookmark from that change only; Bookmark Manager and the picker still delete every target.</li>
         <li>After moving a remote-tracking bookmark by drag, a one-click <strong>Push</strong> affordance appears in the sidebar so you can publish the move (it never pushes automatically).</li>
         <li>The <strong>Bookmarks</strong> picker in the graph header, beside the change count, groups bookmarks as Tracked, Local Only, and Remote Only. Click a bookmark to select its change, or, when the graph does not show it, to narrow the graph to its stack and select it; choose a remote-only bookmark to browse that remote's history without creating a local bookmark. <strong>Filter by This Bookmark</strong> in a picker row’s menu or a graph bookmark chip’s context menu narrows the graph to the bookmark and its changes over trunk.</li>
-        <li>Push and fetch Git remotes from JayJay. Pull and Push leave bookmark tracking alone: pushing a specific bookmark tracks it, and other tracking stays an explicit bookmark action.</li>
+        <li>Push and fetch Git remotes from JayJay. Pull, Push, and bookmark tracking use the remote in <code>git.push</code>, else the repository's only remote, else <code>origin</code>, as jj does. Pull and Push leave bookmark tracking alone: pushing a specific bookmark tracks it, and other tracking stays an explicit bookmark action.</li>
         <li>After a fetch or pull, a tracked bookmark whose remote branch was deleted, for example once its pull request merged, is cleaned up: its emptied changes and the bookmark go in one undoable operation. Changes with unmerged work, conflicts, or a workspace's working copy are kept, and Bookmark Manager marks the bookmark <em>deleted on</em> that remote.</li>
         <li>Right-click a bookmark in the DAG or Bookmark Manager to open a GitHub, GitLab, Codeberg, or Cursor pull/merge request. If a matching PR or MR already exists, JayJay opens it; otherwise GitHub, GitLab, and Codeberg open their compose pages. Cursor Origin has no compose URL, so <strong>Pull Request on Cursor</strong> creates a PR through the API using the change description as its title and body, then opens it. Sign in with <code>origin auth login</code> first. GitHub-mirrored Origin repositories and bookmarks missing from the remote report an error.</li>
         <li>The status bar shows the selected bookmark’s PR/MR link and CI checks through the forge’s API. Configure its authentication in Settings &gt; Integrations &gt; Forges; Cursor checks stay pending while any check run is unfinished.</li>
+        <li>On a Gerrit remote (<code>gerrit.*</code> config, a <code>*.googlesource.com</code> URL, or port 29418), <strong>Upload to Gerrit</strong> in the change menu runs <code>jj gerrit upload</code> and shows the change links Gerrit returns. Pull abandons local changes left empty because trunk carries them after submission. JayJay remembers the patch set it uploaded, refuses an upload that would replace a newer patch set made in Gerrit, and <strong>Update from Gerrit</strong> takes that patch set into the local change.</li>
+        <li><code>jayjay.upload-command</code> and <code>jayjay.sync-command</code> in jj config replace Upload and Pull with your own jj commands; <code>$revision</code> expands to the change.</li>
         <li>Remote repository URLs can be opened in the browser, including <code>git@...</code> URLs converted to HTTPS.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/bookmark-manager-dark.webp" alt="JayJay Bookmark Manager" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/bookmark-manager.webp" alt="JayJay Bookmark Manager" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/bookmark-manager-dark.webp" alt="JayJay Bookmark Manager" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/bookmark-manager.webp" alt="JayJay Bookmark Manager" width="2200" height="1400" loading="lazy">
         <figcaption>Bookmark Manager shows bookmark sync state, cleanup actions, and PR entry points in one place.</figcaption>
       </figure>
     </section>
@@ -309,8 +311,8 @@
         <figcaption>Repo Overview: every lane of mutable work, the workspaces on it, and what needs attention.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/workspace-actions-dark.webp" alt="Workspace picker context menu with Filter by This Workspace" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/workspace-actions.webp" alt="Workspace picker context menu with Filter by This Workspace" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/workspace-actions-dark.webp" alt="Workspace picker context menu with Filter by This Workspace" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/workspace-actions.webp" alt="Workspace picker context menu with Filter by This Workspace" width="2200" height="1400" loading="lazy">
         <figcaption>Filter the graph from a workspace row without switching checkouts.</figcaption>
       </figure>
       <figure class="shot sheet">
@@ -335,13 +337,13 @@
         <li>GitHub, GitLab, Codeberg, and Cursor Origin requests use their APIs directly. For GitHub or GitLab, sign in from <strong>Settings &gt; Integrations &gt; Forges</strong>, use an existing <code>gh auth login</code>/<code>glab auth login</code>, or supply <code>GH_TOKEN</code>/<code>GITHUB_TOKEN</code> or <code>GITLAB_TOKEN</code>. Environment tokens take precedence over JayJay sign-ins, then CLI logins. Codeberg accepts <code>CODEBERG_TOKEN</code>/<code>FORGEJO_TOKEN</code> or a <code>tea login add</code> login. Cursor Origin uses the login from <code>origin auth login</code>; the CLI supplies credentials while JayJay performs PR operations through the API. Settings shows the active authentication source. The forge is taken from the repo’s <code>origin</code> remote.</li>
       </ul>
       <figure class="shot">
-        <img class="dark-only" src="imgs/stacked-pr-menu-dark.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/stacked-pr-menu.webp" alt="Create / Update Stacked PRs menu item" width="2560" height="1300" loading="lazy">
+        <img class="dark-only" src="imgs/stacked-pr-menu-dark.webp" alt="Create / Update Stacked PRs menu item" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/stacked-pr-menu.webp" alt="Create / Update Stacked PRs menu item" width="2200" height="1400" loading="lazy">
         <figcaption>Right-click the tip change → Create / Update Stacked PRs.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview with editable branch names" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview with editable branch names" width="2560" height="1300" loading="lazy">
+        <img class="dark-only" src="imgs/stacked-pr-dark.webp" alt="Stacked PRs preview with editable branch names" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/stacked-pr.webp" alt="Stacked PRs preview with editable branch names" width="2200" height="1400" loading="lazy">
         <figcaption>The preview: one row per change, editable branch names, dependent bases.</figcaption>
       </figure>
     </section>
@@ -378,8 +380,8 @@
         <figcaption>The conflict banner offers whole-file choices and an entry point to resolve the file.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
-        <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2080" height="1056" loading="lazy">
+        <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2200" height="1400" loading="lazy">
         <figcaption>Resolve each conflict with Accept Left, Accept Right, or Accept Base; save a partial resolution when work remains.</figcaption>
       </figure>
     </section>
@@ -400,13 +402,13 @@
         <figcaption>Pin a base and choose another revision to compare the file between them.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/bisect-dark.webp" alt="Bisect progress and verdict controls above the change graph" width="3840" height="1950" loading="lazy">
-        <img class="light-only" src="imgs/bisect.webp" alt="Bisect progress and verdict controls above the change graph" width="3840" height="1950" loading="lazy">
+        <img class="dark-only" src="imgs/bisect-dark.webp" alt="Bisect progress and verdict controls above the change graph" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/bisect.webp" alt="Bisect progress and verdict controls above the change graph" width="2200" height="1400" loading="lazy">
         <figcaption>Bisect checks out a candidate and keeps Good, Bad, Skip, and Run Test close to the graph.</figcaption>
       </figure>
       <figure class="shot">
-        <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
-        <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2560" height="1300" loading="lazy">
+        <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2200" height="1400" loading="lazy">
         <figcaption>Evolog: every snapshot of a change, with operation labels and restore.</figcaption>
       </figure>
     </section>
@@ -437,7 +439,7 @@
     <section class="g" id="settings">
       <h2>Tools &amp; Settings <a href="#settings">#</a></h2>
       <ul>
-        <li>Settings is organized into Appearance, Fonts, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages. JayJay checks command availability in the background, detects supported AI providers, and offers a one-click copy of its jj diff/edit/merge tool configuration.</li>
+        <li>Settings is organized into Appearance, Fonts, Diff &amp; Files, Workflow, Integrations, Jujutsu, Data &amp; Privacy, and About pages; on macOS, Flock lets GitHub sponsors unlock a keepsake feather and alternate Dock icons, which About shows too. JayJay checks command availability in the background, detects supported AI providers, and offers a one-click copy of its jj diff/edit/merge tool configuration.</li>
         <li>Diff &amp; Files holds the diff layout and rendering defaults and <strong>Auto-expand descriptions</strong>, which opens an overflowing description at its expanded height as soon as a change is selected; the command palette toggles it too. Workflow holds confirmations, including the skipped Forget &amp; Delete prompt.</li>
         <li>The update channel dropdown in Settings &rarr; About switches between Stable and Beta; the Beta channel receives pre-release builds through the regular update check.</li>
         <li>Anonymous build and OS statistics are enabled by default and can be disabled in Settings. No repository, file, or command data is sent, and rotating identifiers cannot link an installation across months.</li>
