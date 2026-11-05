@@ -274,7 +274,7 @@ impl Repo {
         }
         let new_tree = block_on_result(context, builder.write_tree())?;
         let mut tx = repo.start_transaction();
-        let mut new_commit = block_on_result(
+        let new_commit = block_on_result(
             context,
             tx.repo_mut()
                 .rewrite_commit(&wc_commit)
@@ -292,7 +292,7 @@ impl Repo {
                 )));
             }
             // Concurrent edits landed in the validation snapshot; they stay in the change, since the snapshot already advanced the file monitor past them.
-            new_commit = block_on_result(
+            block_on_result(
                 context,
                 tx.repo_mut()
                     .rewrite_commit(&new_commit)
@@ -301,7 +301,6 @@ impl Repo {
             )?;
         }
         block_on_result("rebase descendants", tx.repo_mut().rebase_descendants())?;
-        self.sync_colocated_index(&repo, &wc_tree, &new_commit.tree())?;
         self.sync_colocated_git(&mut tx)?;
         let new_repo = block_on_result(context, tx.commit(context))?;
         block_on_result(context, locked_ws.finish(new_repo.op_id().clone()))?;
