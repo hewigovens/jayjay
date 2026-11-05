@@ -68,7 +68,7 @@ test("decodes comparison refs once and round-trips request paths", () => {
   }
   const target = parseReviewRef("o/r/compare/feature%2Fx%2By%40z");
   expect(target).toEqual({ owner: "o", repo: "r", head: "feature/x+y@z" });
-  expect(reviewPath(target!)).toBe("/o/r/compare/feature/x%2By%40z");
+  expect(reviewPath(target!)).toBe("/o/r/compare/feature/x+y@z");
   for (const range of [
     "main...bad%",
     "main...%FF",

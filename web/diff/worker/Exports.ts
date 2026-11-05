@@ -1,8 +1,9 @@
 import {
   exportDays,
-  parseNotesExport,
+  isNotesExport,
   maxExportBytes,
   notesMarkdown,
+  type NotesExport,
 } from "../src/github/NotesExport";
 
 interface ExportStore {
@@ -23,12 +24,9 @@ export class Exports {
     } catch {
       body = null;
     }
-    const normalized = parseNotesExport(body);
-    if (!normalized) return Response.json({ error: "invalid" }, { status: 400 });
+    if (!isNotesExport(body)) return Response.json({ error: "invalid" }, { status: 400 });
     const id = crypto.randomUUID().replaceAll("-", "");
-    await this.store.put(id, JSON.stringify(normalized), {
-      expirationTtl: exportDays * 24 * 60 * 60,
-    });
+    await this.store.put(id, JSON.stringify(body), { expirationTtl: exportDays * 24 * 60 * 60 });
     return Response.json({ url: new URL(`/api/exports/${id}`, request.url).href }, { status: 201 });
   }
 
@@ -36,12 +34,10 @@ export class Exports {
     const [, id, json] = /^([0-9a-f]{32})(\.json)?$/.exec(name) ?? [];
     const stored = id ? await this.store.get(id) : null;
     if (!stored) return new Response("Not found or expired\n", { status: 404 });
-    const body = parseNotesExport(JSON.parse(stored));
-    if (!body) return new Response("Invalid export\n", { status: 500 });
     const headers = { "cache-control": "no-store", "x-robots-tag": "noindex" };
     return json
       ? new Response(stored, { headers: { ...headers, "content-type": "application/json" } })
-      : new Response(notesMarkdown(body), {
+      : new Response(notesMarkdown(JSON.parse(stored) as NotesExport), {
           headers: { ...headers, "content-type": "text/markdown; charset=utf-8" },
         });
   }

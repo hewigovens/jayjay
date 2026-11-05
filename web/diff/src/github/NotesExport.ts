@@ -39,36 +39,24 @@ export function notesExport(overview: Overview, review: string, headSha: string)
   };
 }
 
-export function parseNotesExport(value: unknown): NotesExport | null {
-  const body = value as NotesExport & { repository?: unknown; number?: unknown };
-  const review =
-    body?.review === undefined &&
-    typeof body?.repository === "string" &&
-    /^[A-Za-z0-9_.-]+\/[A-Za-z0-9_.-]+$/.test(body.repository) &&
-    typeof body.number === "number" &&
-    Number.isSafeInteger(body.number) &&
-    body.number > 0
-      ? `/${body.repository}/pull/${body.number}`
-      : body?.review;
-  if (
-    !(
-      typeof review === "string" &&
-      parseReviewRef(review) !== null &&
-      typeof body.title === "string" &&
-      typeof body.headSha === "string" &&
-      Array.isArray(body.notes) &&
-      Array.isArray(body.files) &&
-      body.notes.every(
-        (note) =>
-          typeof note?.path === "string" &&
-          typeof note.body === "string" &&
-          Number.isSafeInteger(note.line),
-      ) &&
-      body.files.every((file) => typeof file?.path === "string" && typeof file.review === "string")
-    )
-  )
-    return null;
-  return { review, title: body.title, headSha: body.headSha, notes: body.notes, files: body.files };
+// The Worker stores nothing that fails this check.
+export function isNotesExport(value: unknown): value is NotesExport {
+  const body = value as NotesExport;
+  return (
+    typeof body?.review === "string" &&
+    parseReviewRef(body.review) !== null &&
+    typeof body.title === "string" &&
+    typeof body.headSha === "string" &&
+    Array.isArray(body.notes) &&
+    Array.isArray(body.files) &&
+    body.notes.every(
+      (note) =>
+        typeof note?.path === "string" &&
+        typeof note.body === "string" &&
+        Number.isSafeInteger(note.line),
+    ) &&
+    body.files.every((file) => typeof file?.path === "string" && typeof file.review === "string")
+  );
 }
 
 // Stays English like other tool output for agents.

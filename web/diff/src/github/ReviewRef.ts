@@ -73,9 +73,7 @@ export function compareRange({ base, head }: CompareRef) {
 // Also GitHub's path, except for a comparison's commit.
 export function reviewPath(target: ReviewRef) {
   const { owner, repo, commit } = target;
-  const what = isPullRequest(target)
-    ? `pull/${target.number}`
-    : `compare/${compareRange(target).split("/").map(encodeURIComponent).join("/")}`;
+  const what = isPullRequest(target) ? `pull/${target.number}` : `compare/${compareRange(target)}`;
   return `/${owner}/${repo}/${what}${commit ? `/commits/${commit}` : ""}`;
 }
 
