@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { diffThemeAttributes, type DiffThemeSelection } from "../themes";
 import type { DiffAnchor, Labels } from "../model/diff";
 import { isImagePath, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
 import { useCompact } from "../hooks/useCompact";
@@ -44,6 +45,7 @@ export function ReviewWorkspace({
   notes = true,
   avatars = false,
   fill = false,
+  diffThemes,
 }: {
   review: ReviewController;
   labels: Labels;
@@ -61,6 +63,8 @@ export function ReviewWorkspace({
   avatars?: boolean;
   /** Fills the host's height edge to edge instead of sitting in a bordered card; the phone-width list still scrolls with the page. */
   fill?: boolean;
+  /** Diff-only palettes with an optional appearance override. Omit to use the host CSS colors. */
+  diffThemes?: DiffThemeSelection;
 }) {
   const {
     result,
@@ -304,6 +308,7 @@ export function ReviewWorkspace({
     <div
       className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""} ${fill ? "jj-fill" : ""} ${!result ? "jj-review-empty" : ""}`}
       aria-busy={pending}
+      {...diffThemeAttributes(diffThemes)}
     >
       {error && (
         <div className={`jj-review-error ${!result ? "jj-review-error-empty" : ""}`} role="alert">

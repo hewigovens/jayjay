@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
 import { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
+import { useDiffThemes } from "./hooks/useDiffThemes";
 import { Landing } from "./components/landing/Landing";
 import { PullReview } from "./components/review/PullReview";
 import { parseReviewRef, reviewPath, type ReviewRef } from "./github/ReviewRef";
@@ -9,6 +10,7 @@ import "@jayjay/review-web/styles.css";
 import "./style.css";
 
 function App() {
+  const { themes, select } = useDiffThemes();
   const [client, setClient] = useState<LocalReviewClient>();
   const [labels, setLabels] = useState<Labels>();
   const [error, setError] = useState("");
@@ -45,7 +47,14 @@ function App() {
   return (
     <main className={pull ? "jayjay-review pull-page" : "jayjay-review"}>
       {pull ? (
-        <PullReview client={client} labels={labels} pull={pull} onOpen={open} />
+        <PullReview
+          client={client}
+          labels={labels}
+          pull={pull}
+          onOpen={open}
+          themes={themes}
+          selectTheme={select}
+        />
       ) : (
         <Landing labels={labels} onOpen={open} />
       )}

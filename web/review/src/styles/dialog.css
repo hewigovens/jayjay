@@ -2,6 +2,7 @@
   width: min(26rem, calc(100vw - 32px));
   max-height: calc(100dvh - 32px);
   overflow: auto;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
   padding: 18px 20px;
   border: 1px solid var(--jj-border);
   border-radius: 12px;
@@ -14,6 +15,6 @@
 }
 :where(.jayjay-review) .jj-dialog h2 {
   margin: 0 0 12px;
-  font-size: 14px;
+  font-size: calc(14px * var(--jj-interface-scale, 1));
   font-weight: 600;
 }

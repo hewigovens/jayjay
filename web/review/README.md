@@ -34,6 +34,14 @@ Requests receive an abort signal and stale results never replace newer presentat
 
 Styles are scoped to `.jayjay-review`, including form defaults. The optional `.jayjay-theme` class applies the palette and typography to a host root. A standalone `DiffPane` needs a `.jayjay-review` ancestor. Hosts can draw their own header actions and dialogs in the review's style with `ToolButton`, `ToolLink`, `Dialog`, and `Icon` (a 16-unit outline path), which share the package's touch sizes, focus rings, and modal behavior. The package does not register a service worker or style controls outside its root. [Class and variable names](#class-and-variable-names) lists what a host may theme or override.
 
+### Built-in diff themes
+
+`ReviewWorkspace` and standalone `DiffPane` accept `diffThemes={{ light: "solarized-light", dark: "nord" }}`. The optional `appearance` field accepts `"system"`, `"light"`, or `"dark"` to select the active palette; when omitted it inherits the host color scheme, normally the system preference. Changing the pair does not reload the review. Omitting the prop preserves the host's CSS palette. Unknown IDs and IDs from the wrong appearance fall back to that appearance's JayJay default.
+
+Import `diffThemes`, `resolveDiffTheme`, and `DiffThemeSelection` from `@jayjay/review-web/themes` to build a host picker. The catalog and CSS are generated from the native Rust palettes by `npm run themes` at the repository root (also run by the WASM build). Setting appearance on a workspace also sets the color scheme for its controls. Default palette names can be localized with `labels.jayjayLight` and `labels.jayjayDark`. Hosts can set `--jj-diff-font-size` (default `12px`) to scale source text and line numbers together. Hosts can set `--jj-interface-scale` (default `1`) to scale interface typography independently. Hosts own selection and persistence; the package does not access storage for themes.
+
+Built-in palettes set only `--jj-diff-*` properties: source text, syntax, gutters, separators, added/removed lines and words, and unreviewed group stripes. Review chrome and note controls retain the host palette. A nested standalone `DiffPane` can override an enclosing workspace's theme pair.
+
 ## Class and variable names
 
 Classes are `jj-` plus a role (`jj-file-row`, `jj-diff-cell`, `jj-token-Keyword`) and custom properties are `--jj-` plus a role (`--jj-accent`, `--jj-ink`), avoiding accidental collisions with a host's class and custom-property names. Host tag selectors and resets still apply. `.jayjay-review` and `.jayjay-theme` are the only unprefixed classes.

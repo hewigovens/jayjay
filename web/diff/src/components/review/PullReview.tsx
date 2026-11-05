@@ -8,11 +8,13 @@ import {
 } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
+import type { AppearanceSettings } from "../../AppearanceSettings";
 import { gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
 import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
 import { CommitPicker } from "./CommitPicker";
+import { DiffThemePicker } from "./DiffThemePicker";
 import { ShareNotesButton } from "./ShareNotesButton";
 import { StackPicker } from "./StackPicker";
 import { SyncViewedButton } from "./SyncViewedButton";
@@ -22,7 +24,11 @@ export function PullReview({
   labels,
   pull,
   onOpen,
+  themes,
+  selectTheme,
 }: {
+  themes: AppearanceSettings;
+  selectTheme: (themes: AppearanceSettings) => void;
   client: LocalReviewClient;
   labels: Labels;
   pull: ReviewRef;
@@ -55,6 +61,7 @@ export function PullReview({
             JayJay Diff
           </a>
           <div className="pull-app-actions">
+            <DiffThemePicker labels={labels} themes={themes} select={selectTheme} />
             <ToolButton
               label={labels.shortcuts}
               aria-keyshortcuts="?"
@@ -95,6 +102,7 @@ export function PullReview({
       <ReviewWorkspace
         key={shown ?? ""}
         review={review}
+        diffThemes={themes}
         hideChangeId={isPullRequest(pull) && shown === ""}
         onShowShortcuts={() => setShortcuts(true)}
         labels={labels}

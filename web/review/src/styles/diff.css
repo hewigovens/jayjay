@@ -1,11 +1,14 @@
 :where(.jayjay-review) .jj-diff-scroll {
   overflow: auto;
   max-height: 65vh;
+  background: var(--jj-diff-context-bg, transparent);
 }
 :where(.jayjay-review) .jj-diff-lines {
   width: 100%;
-  font: 12px/19px var(--jj-mono);
+  font: var(--jj-diff-font-size, 12px) / calc(19 / 12) var(--jj-mono);
   tab-size: 4;
+  background: var(--jj-diff-context-bg, transparent);
+  color: var(--jj-diff-text, var(--jj-ink));
 }
 :where(.jayjay-review) .jj-diff-row {
   display: grid;
@@ -27,10 +30,12 @@
   border-left: 1px solid var(--jj-border);
 }
 :where(.jayjay-review) .jj-diff-cell.jj-added {
-  background: var(--jj-added-bg);
+  background: var(--jj-diff-added-bg, var(--jj-added-bg));
+  color: var(--jj-diff-added-text, var(--jj-ink));
 }
 :where(.jayjay-review) .jj-diff-cell.jj-removed {
-  background: var(--jj-removed-bg);
+  background: var(--jj-diff-removed-bg, var(--jj-removed-bg));
+  color: var(--jj-diff-removed-text, var(--jj-ink));
 }
 /* The first cell of a row starts past the change group's stripe, so the stripe never covers a line number. */
 :where(.jayjay-review) .jj-diff-row > .jj-diff-cell:first-child {
@@ -43,10 +48,12 @@
   flex: 0 0 38px;
   text-align: right;
   padding-right: 8px;
-  color: var(--jj-muted);
+  color: var(--jj-diff-gutter-fg, var(--jj-muted));
+  background: var(--jj-diff-gutter-bg, transparent);
+  align-self: stretch;
   user-select: none;
-  font-size: 11px;
-  opacity: 0.8;
+  font-size: calc(var(--jj-diff-font-size, 12px) * 11 / 12);
+  opacity: var(--jj-diff-gutter-opacity, 0.8);
 }
 /* Dividers stretch the full row, which a wrapped line makes taller than its first line. */
 :where(.jayjay-review) .jj-line-number ~ .jj-marker {
@@ -54,20 +61,19 @@
   box-shadow: inset 1px 0 var(--jj-border);
 }
 :where(.jayjay-review) .jj-split .jj-line-number {
-  align-self: stretch;
   box-shadow: inset -1px 0 var(--jj-border);
 }
 :where(.jayjay-review) .jj-marker {
   flex: 0 0 20px;
   text-align: center;
   user-select: none;
-  color: var(--jj-muted);
+  color: var(--jj-diff-gutter-fg, var(--jj-muted));
 }
 :where(.jayjay-review) .jj-added > .jj-marker {
-  color: var(--jj-added-ink);
+  color: var(--jj-diff-gutter-added, var(--jj-added-ink));
 }
 :where(.jayjay-review) .jj-removed > .jj-marker {
-  color: var(--jj-removed-ink);
+  color: var(--jj-diff-gutter-removed, var(--jj-removed-ink));
 }
 :where(.jayjay-review) code {
   font: inherit;
@@ -80,37 +86,37 @@
   overflow-wrap: anywhere;
 }
 :where(.jayjay-review) .jj-word-added {
-  background: var(--jj-word-added);
+  background: var(--jj-diff-word-added, var(--jj-word-added));
 }
 :where(.jayjay-review) .jj-word-removed {
-  background: var(--jj-word-removed);
+  background: var(--jj-diff-word-removed, var(--jj-word-removed));
 }
 :where(.jayjay-review) .jj-token-Keyword,
 :where(.jayjay-review) .jj-token-Attribute {
-  color: light-dark(#9b386e, #e9a5d2);
+  color: var(--jj-diff-keyword, light-dark(#9b386e, #e9a5d2));
 }
 :where(.jayjay-review) .jj-token-StringLit {
-  color: light-dark(#26744e, #a3d9b7);
+  color: var(--jj-diff-string, light-dark(#26744e, #a3d9b7));
 }
 :where(.jayjay-review) .jj-token-Comment {
-  color: var(--jj-muted);
+  color: var(--jj-diff-comment, var(--jj-muted));
   font-style: italic;
 }
 :where(.jayjay-review) .jj-token-Number {
-  color: light-dark(#855224, #e6bf90);
+  color: var(--jj-diff-number, light-dark(#855224, #e6bf90));
 }
 :where(.jayjay-review) .jj-token-Type,
 :where(.jayjay-review) .jj-token-Function {
-  color: light-dark(#235e9b, #9fc8f5);
+  color: var(--jj-diff-type, light-dark(#235e9b, #9fc8f5));
 }
 :where(.jayjay-review) .jj-token-Operator,
 :where(.jayjay-review) .jj-token-Punctuation {
-  color: var(--jj-muted);
+  color: var(--jj-diff-dim, var(--jj-muted));
 }
 :where(.jayjay-review) .jj-eof {
   font-size: 10px;
   font-style: italic;
-  color: var(--jj-muted);
+  color: var(--jj-diff-dim, var(--jj-muted));
 }
 :where(.jayjay-review) .jj-context-row {
   display: block;
@@ -120,9 +126,13 @@
   border-radius: 0;
   border-block: 1px solid var(--jj-border);
   padding: 3px 20px 3px 74px;
-  color: var(--jj-accent);
-  background: color-mix(in srgb, var(--jj-accent) 5%, var(--jj-surface));
-  font: 11px/18px var(--jj-mono);
+  color: var(--jj-diff-dim, var(--jj-accent));
+  background: var(
+    --jj-diff-separator-bg,
+    color-mix(in srgb, var(--jj-accent) 5%, var(--jj-surface))
+  );
+  font: calc(11px * var(--jj-interface-scale, 1)) / calc(18px * var(--jj-interface-scale, 1))
+    var(--jj-mono);
 }
 :where(.jayjay-review) .jj-split-head {
   position: sticky;
@@ -130,11 +140,11 @@
   z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
-  background: var(--jj-surface);
+  background: var(--jj-diff-separator-bg, var(--jj-surface));
   border-bottom: 1px solid var(--jj-border);
-  color: var(--jj-muted);
+  color: var(--jj-diff-dim, var(--jj-muted));
   font:
-    11px/normal -apple-system,
+    calc(11px * var(--jj-interface-scale, 1)) / normal -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
@@ -162,7 +172,7 @@
   margin: 0;
   border: 0;
   border-radius: 0;
-  background: var(--jj-stripe-unreviewed);
+  background: var(--jj-diff-stripe, var(--jj-stripe-unreviewed));
   cursor: pointer;
   transition: width 0.12s;
 }
@@ -250,7 +260,7 @@
 :where(.jayjay-review) .jj-empty-diff {
   padding: 12px 18px;
   margin: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
 :where(.jayjay-review) .jj-notice {
@@ -263,7 +273,7 @@
   gap: 12px;
   padding: 8px 15px;
   border-top: 1px solid var(--jj-border);
-  font-size: 10px;
+  font-size: calc(10px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
 :where(.jayjay-review) button:disabled {

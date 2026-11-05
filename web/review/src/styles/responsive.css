@@ -52,11 +52,11 @@
     padding: 14px 14px 10px;
   }
   :where(.jayjay-review) .jj-file-heading h2 {
-    font-size: 12px;
+    font-size: calc(12px * var(--jj-interface-scale, 1));
   }
   :where(.jayjay-review) .jj-change-header h1 {
     flex: 1 1 auto;
-    font-size: 18px;
+    font-size: calc(18px * var(--jj-interface-scale, 1));
   }
   /* The host's actions take their own row, so a long title keeps the width. */
   :where(.jayjay-review) .jj-change-title {

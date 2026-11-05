@@ -7,6 +7,7 @@
   "exports": {
     "./react": "./src/react.ts",
     "./local": "./src/local.ts",
+    "./themes": "./src/themes.ts",
     "./types": "./src/types.ts",
     "./styles.css": "./src/styles.css"
   },

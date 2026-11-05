@@ -7,6 +7,7 @@
     "web/diff"
   ],
   "scripts": {
+    "themes": "cargo run --locked -p jayjay-core --no-default-features --bin export-web-themes -- web/review/src/generated && oxfmt web/review/src/generated",
     "format": "oxfmt \"web/**/*.{ts,tsx,js,css}\"",
     "format:check": "oxfmt --check \"web/**/*.{ts,tsx,js,css}\""
   },

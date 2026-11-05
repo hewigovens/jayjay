@@ -3,6 +3,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
+npm run themes
 bindgen="${WASM_BINDGEN:-$root/target/web-tools/bin/wasm-bindgen}"
 if [[ ! -x "$bindgen" && -z "${WASM_BINDGEN:-}" ]]; then bindgen=wasm-bindgen; fi
 version="$(bash "$root/scripts/wasm-bindgen-version.sh")"

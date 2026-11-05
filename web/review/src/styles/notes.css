@@ -34,7 +34,7 @@
   border-radius: 6px;
   background: var(--jj-page);
   font:
-    12px/1.5 -apple-system,
+    calc(12px * var(--jj-interface-scale, 1))/1.5 -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
@@ -82,7 +82,7 @@
 }
 :where(.jayjay-review) .jj-note-status {
   flex: none;
-  font-size: 10px;
+  font-size: calc(10px * var(--jj-interface-scale, 1));
   font-weight: 600;
   color: var(--jj-note-ink);
 }
@@ -92,7 +92,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  font: 10px var(--jj-mono);
+  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-accent);
   text-align: left;
 }
@@ -110,7 +110,7 @@
   margin: 6px 0 0;
   padding-left: 8px;
   border-left: 2px solid var(--jj-note-border);
-  font: 10px/1.6 var(--jj-mono);
+  font: calc(10px * var(--jj-interface-scale, 1))/1.6 var(--jj-mono);
   color: var(--jj-muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -123,16 +123,16 @@
 }
 :where(.jayjay-review) .jj-note-actions button {
   padding: 3px 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) .jj-note-composer .jj-note-heading {
   margin-bottom: 6px;
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
 :where(.jayjay-review) .jj-note-line {
   margin-left: auto;
-  font: 10px var(--jj-mono);
+  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
 }
 :where(.jayjay-review) .jj-note-composer textarea {
   height: 80px;
@@ -148,7 +148,7 @@
   padding: 0 4px;
   border: 0;
   background: transparent;
-  font: 10px var(--jj-mono);
+  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-note-ink);
 }
 :where(.jayjay-review) .jj-note-marker.jj-resolved {
@@ -205,7 +205,7 @@
   background: var(--jj-removed-bg);
   color: var(--jj-removed-ink);
   border-radius: 5px;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
 }
 
 :where(.jayjay-review) .jj-review-error p {
@@ -229,13 +229,13 @@
   border-radius: 8px;
   background: var(--jj-surface);
   color: var(--jj-ink);
-  font-size: 14px;
+  font-size: calc(14px * var(--jj-interface-scale, 1));
   line-height: 1.6;
 }
 :where(.jayjay-review) .jj-review-error-actions .jj-review-retry {
   min-height: 36px;
   padding: 8px 12px;
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
   font-weight: 500;
-  line-height: 18px;
+  line-height: calc(18px * var(--jj-interface-scale, 1));
 }

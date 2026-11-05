@@ -80,7 +80,7 @@
 }
 :where(.jayjay-review) .jj-notes-filter {
   color: var(--jj-note-ink);
-  font-size: 10px;
+  font-size: calc(10px * var(--jj-interface-scale, 1));
   font-weight: 600;
 }
 :where(.jayjay-review) .jj-notes-filter[aria-pressed="true"] {

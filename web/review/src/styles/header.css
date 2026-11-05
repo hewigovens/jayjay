@@ -10,7 +10,7 @@
 :where(.jayjay-review) .jj-change-header h1 {
   flex: 0 1 auto;
   min-width: 0;
-  font-size: 19px;
+  font-size: calc(19px * var(--jj-interface-scale, 1));
   font-weight: 650;
   letter-spacing: -0.3px;
   line-height: 1.3;
@@ -31,7 +31,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   margin: 8px 0 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
   line-height: 1.5;
   color: var(--jj-ink);
   white-space: pre-wrap;
@@ -120,7 +120,7 @@
   align-items: center;
   gap: 6px;
   margin-top: 10px;
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
   white-space: nowrap;
   min-width: 0;
@@ -144,7 +144,7 @@
   border-radius: 50%;
   background: color-mix(in srgb, var(--jj-accent) 22%, var(--jj-surface));
   color: var(--jj-accent);
-  font-size: 8px;
+  font-size: calc(8px * var(--jj-interface-scale, 1));
   font-weight: 700;
 }
 :where(.jayjay-review) .jj-avatar img {
@@ -159,7 +159,7 @@
   opacity: 1;
 }
 :where(.jayjay-review) .jj-change-id {
-  font: 11px var(--jj-mono);
+  font: calc(11px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-muted);
 }
 :where(.jayjay-review) .jj-change-id b {
@@ -181,7 +181,7 @@
 }
 :where(.jayjay-review) .jj-file-heading h2 {
   min-width: 0;
-  font: 13px var(--jj-mono);
+  font: calc(13px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-ink);
 }
 /* A rename's old path gives up its width before the new path does. */
@@ -191,13 +191,13 @@
   text-decoration: line-through;
 }
 :where(.jayjay-review) .jj-file-title .jj-old-path {
-  font: 11px var(--jj-mono);
+  font: calc(11px * var(--jj-interface-scale, 1)) var(--jj-mono);
 }
 :where(.jayjay-review) .jj-kind-pill {
   flex: none;
   padding: 1px 7px;
   border-radius: 99px;
-  font-size: 10px;
+  font-size: calc(10px * var(--jj-interface-scale, 1));
   font-weight: 500;
   color: var(--jj-kind-modified);
   background: color-mix(in srgb, var(--jj-kind-modified) 12%, transparent);
@@ -233,7 +233,7 @@
   border-radius: 5px;
   background: transparent;
   color: var(--jj-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
   white-space: nowrap;
   cursor: pointer;
 }

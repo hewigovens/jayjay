@@ -43,3 +43,9 @@ export const StackIcon = ({ size }: IconProps) => (
 export const ArrowIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M2.5 8h11M9 3.5 13.5 8 9 12.5" />
 );
+export const ThemeIcon = ({ size }: IconProps) => (
+  <Icon
+    size={size}
+    d="M8 1.5a6.5 6.5 0 1 0 0 13 1.5 1.5 0 0 0 1.1-2.5.8.8 0 0 1 .6-1.3h1.8a3 3 0 0 0 3-3A6.2 6.2 0 0 0 8 1.5ZM4.5 6h.01M7 4h.01M10 4.5h.01M12 7h.01"
+  />
+);

@@ -1,5 +1,6 @@
 /** @jsxRuntime automatic */
 import { useRef, useState, type CSSProperties, type ReactNode } from "react";
+import { diffThemeAttributes, type DiffThemeSelection } from "../../themes";
 import type { DiffAnchor, DiffCell, DiffView, Labels } from "../../model/diff";
 import type { ReviewState } from "../../model/review";
 
@@ -119,12 +120,14 @@ export function DiffPane({
   showAll,
   labels,
   review,
+  diffThemes,
 }: {
   view: DiffView;
   split: boolean;
   showAll: () => void;
   labels: Labels;
   review?: ReviewControls;
+  diffThemes?: DiffThemeSelection;
 }) {
   const [armed, arm] = useState<string | null>(null);
   const touch = useRef(false);
@@ -211,7 +214,10 @@ export function DiffPane({
   });
   flush();
   return (
-    <div className={`jj-diff-lines ${split ? "jj-split" : "jj-unified"}`}>
+    <div
+      className={`jj-diff-lines ${split ? "jj-split" : "jj-unified"}`}
+      {...diffThemeAttributes(diffThemes)}
+    >
       {split && (
         <div className="jj-split-head">
           <span>{labels.before}</span>

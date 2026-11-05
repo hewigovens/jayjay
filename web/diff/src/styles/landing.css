@@ -29,15 +29,15 @@
   align-items: center;
   gap: 10px;
   margin: 0;
-  font-size: 20px;
+  font-size: calc(20px * var(--jj-interface-scale, 1));
   font-weight: 500;
-  line-height: 28px;
+  line-height: calc(28px * var(--jj-interface-scale, 1));
 }
 .landing-tagline {
   margin: 24px 0 0;
   font-family:
     -apple-system, BlinkMacSystemFont, "SF Pro Display", Inter, "Segoe UI", system-ui, sans-serif;
-  font-size: 32px;
+  font-size: calc(32px * var(--jj-interface-scale, 1));
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.02em;
@@ -46,7 +46,7 @@
   max-width: 56ch;
   margin: 12px 0 0;
   color: var(--jj-muted);
-  font-size: 17px;
+  font-size: calc(17px * var(--jj-interface-scale, 1));
   line-height: 1.45;
 }
 .landing-field {
@@ -68,7 +68,7 @@
   outline: none;
   background: transparent;
   color: var(--jj-ink);
-  font: 15px var(--landing-mono);
+  font: calc(15px * var(--jj-interface-scale, 1)) var(--landing-mono);
 }
 .landing-field:focus-within {
   box-shadow:
@@ -108,7 +108,7 @@
 .landing-samples h2 {
   margin: 0 0 8px;
   color: var(--jj-muted);
-  font-size: 15px;
+  font-size: calc(15px * var(--jj-interface-scale, 1));
   font-weight: 400;
 }
 .landing-samples ul {
@@ -123,14 +123,14 @@
   gap: 8px;
   min-width: 0;
   border-radius: 4px;
-  font-size: 15px;
+  font-size: calc(15px * var(--jj-interface-scale, 1));
 }
 .landing-samples a > span {
   color: var(--jj-faint);
 }
 .landing-samples code {
   flex: none;
-  font: 14px/1.6 var(--landing-mono);
+  font: calc(14px * var(--jj-interface-scale, 1))/1.6 var(--landing-mono);
 }
 .landing-samples code,
 .landing-extension a,
@@ -147,12 +147,12 @@
 .landing-error {
   margin: 12px 0 0;
   color: var(--jj-removed-ink);
-  font-size: 14px;
+  font-size: calc(14px * var(--jj-interface-scale, 1));
 }
 .landing-extension {
   margin: 32px 0 0;
   color: var(--jj-muted);
-  font-size: 15px;
+  font-size: calc(15px * var(--jj-interface-scale, 1));
 }
 .landing-extension a {
   color: var(--jj-ink);
@@ -163,7 +163,7 @@
 }
 .landing-section h2 {
   margin: 0 0 24px;
-  font-size: 17px;
+  font-size: calc(17px * var(--jj-interface-scale, 1));
   font-weight: 500;
 }
 .landing-points {
@@ -176,7 +176,7 @@
   align-items: center;
   gap: 8px;
   margin: 0 0 4px;
-  font-size: 15px;
+  font-size: calc(15px * var(--jj-interface-scale, 1));
   font-weight: 500;
 }
 .landing h3 svg {
@@ -188,7 +188,7 @@
 .landing-points p {
   margin: 0;
   color: var(--jj-muted);
-  font-size: 14px;
+  font-size: calc(14px * var(--jj-interface-scale, 1));
 }
 .landing kbd {
   display: inline-flex;
@@ -204,7 +204,7 @@
     0 1px 0 var(--jj-kbd-edge);
   color: var(--jj-ink);
   font:
-    500 12px -apple-system,
+    500 calc(12px * var(--jj-interface-scale, 1)) -apple-system,
     BlinkMacSystemFont,
     Inter,
     sans-serif;
@@ -218,7 +218,7 @@
   padding-top: 32px;
   padding-bottom: 40px;
   color: var(--jj-faint);
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
 }
 .landing-footer p {
   margin: 0;
@@ -238,14 +238,14 @@
     padding-top: 40px;
   }
   .landing-tagline {
-    font-size: 26px;
+    font-size: calc(26px * var(--jj-interface-scale, 1));
   }
   .landing-lede {
-    font-size: 16px;
+    font-size: calc(16px * var(--jj-interface-scale, 1));
   }
   .landing input {
     padding-left: 16px;
-    font-size: 16px;
+    font-size: calc(16px * var(--jj-interface-scale, 1));
   }
   .landing-samples a {
     flex-wrap: wrap;

@@ -58,6 +58,7 @@ web/
 ## CSS
 
 - Plain CSS with custom properties. The package prefixes its classes with `jj-` and reads only its own `--jj-*` tokens, so a host's styles never leak in.
+- Built-in web diff palettes are generated from the Rust catalog: run `npm run themes` after palette changes and commit both files in `web/review/src/generated/`. Do not hand-edit generated colors or duplicate palette formulas in TypeScript.
 - Inline `style` only for computed values (widths, positions).
 
 ## Comments

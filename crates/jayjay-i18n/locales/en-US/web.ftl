@@ -98,3 +98,9 @@ web-pull-all-commits = All commits
 web-pull-stack = Stacked pull requests
 web-pull-merged = Merged
 web-pull-closed = Closed
+
+web-font-section = Font
+web-font-diff = Diff
+web-font-interface = Interface
+web-increase-font-size = Increase font size
+web-decrease-font-size = Decrease font size

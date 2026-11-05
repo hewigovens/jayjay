@@ -7,7 +7,7 @@
 .jayjay-review {
   color-scheme: light dark;
   font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
-  font-size: 14px;
+  font-size: calc(14px * var(--jj-interface-scale, 1));
   --jj-page: light-dark(#f5f7fa, #171c25);
   --jj-surface: light-dark(#fdfefe, #1d2430);
   --jj-ink: light-dark(#243247, #d5dfed);
@@ -65,7 +65,7 @@
   border-radius: 5px;
   background: var(--jj-surface);
   padding: 6px 11px;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) button:hover {
   color: var(--jj-accent);
@@ -76,12 +76,12 @@
   outline-offset: 2px;
 }
 :where(.jayjay-review) h2 {
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
   font-weight: 600;
   margin: 0;
 }
 :where(.jayjay-review) .jj-diff-stats {
-  font: 12px var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
   display: inline-flex;
   gap: 6px;
   white-space: nowrap;
@@ -99,4 +99,14 @@
 :where(.jayjay-review) .jj-icon {
   display: block;
   flex: none;
+}
+
+/* Literal values on each rule: the build lowers light-dark() to variables it toggles only where it sees a literal color-scheme. */
+[data-jj-appearance="light"],
+[data-jj-appearance="light"] :is(.jayjay-theme, .jayjay-review) {
+  color-scheme: light;
+}
+[data-jj-appearance="dark"],
+[data-jj-appearance="dark"] :is(.jayjay-theme, .jayjay-review) {
+  color-scheme: dark;
 }

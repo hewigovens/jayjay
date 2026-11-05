@@ -16,7 +16,7 @@
   display: flex;
   align-items: baseline;
   gap: 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
 :where(.jayjay-review) .jj-image-label {

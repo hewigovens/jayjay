@@ -5,7 +5,7 @@
 }
 :where(.jayjay-review) .jj-file-count {
   margin-left: auto;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
   white-space: nowrap;
   overflow: hidden;
@@ -25,7 +25,7 @@
   background: var(--jj-surface);
   border: 1px solid var(--jj-border);
   border-radius: 6px;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) .jj-file-rows {
   flex: 1;
@@ -46,7 +46,7 @@
   border-radius: 6px;
   background: transparent;
   color: var(--jj-ink);
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   font-weight: 500;
   padding-block: 4px;
 }
@@ -80,7 +80,7 @@
   text-align: left;
   padding: 6px 0;
   border-radius: 0;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) .jj-file-select:hover {
   background: transparent;
@@ -108,7 +108,7 @@
   display: flex;
   gap: 4px;
   min-width: 0;
-  font: 10px var(--jj-mono);
+  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-muted);
 }
 /* Snapping to whole monospace cells avoids a clipped-glyph gap before the ellipsis; the .1px slack keeps an exact fit whole. */
@@ -170,7 +170,7 @@
 :where(.jayjay-review) .jj-note-count {
   padding: 1px 6px;
   border-radius: 99px;
-  font-size: 9px;
+  font-size: calc(9px * var(--jj-interface-scale, 1));
   font-weight: 600;
   color: var(--jj-note-ink);
   background: var(--jj-note-pill);

@@ -41,7 +41,7 @@
   background: var(--jj-surface);
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
   color: var(--jj-muted);
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) .jj-loading-mark {
   position: relative;

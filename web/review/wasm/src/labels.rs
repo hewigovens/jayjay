@@ -13,6 +13,23 @@ pub(super) fn labels(languages: &str) -> Value {
 
 fn review_labels() -> Vec<(&'static str, String)> {
     vec![
+        ("close", jayjay_i18n::common::close()),
+        ("fontSection", jayjay_i18n::web::font_section()),
+        ("fontInterface", jayjay_i18n::web::font_interface()),
+        ("increaseFontSize", jayjay_i18n::web::increase_font_size()),
+        ("decreaseFontSize", jayjay_i18n::web::decrease_font_size()),
+        ("fontDiff", jayjay_i18n::web::font_diff()),
+        ("appearance", jayjay_i18n::settings::page_appearance()),
+        (
+            "appearanceSystem",
+            jayjay_i18n::settings::appearance_system(),
+        ),
+        ("appearanceLight", jayjay_i18n::settings::appearance_light()),
+        ("appearanceDark", jayjay_i18n::settings::appearance_dark()),
+        ("lightTheme", jayjay_i18n::settings::light_theme()),
+        ("darkTheme", jayjay_i18n::settings::dark_theme()),
+        ("jayjayLight", jayjay_i18n::theme::jayjay_light()),
+        ("jayjayDark", jayjay_i18n::theme::jayjay_dark()),
         ("syntaxUnavailable", jayjay_i18n::web::syntax_unavailable()),
         ("allFiles", jayjay_i18n::web::all_files()),
         ("undoImport", jayjay_i18n::web::undo_import()),

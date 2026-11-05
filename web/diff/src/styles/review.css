@@ -15,7 +15,7 @@
   border-radius: 6px;
   background: var(--jj-surface);
   color: var(--jj-ink);
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   white-space: normal;
 }
 .share-url {
@@ -27,11 +27,11 @@
   border-radius: 4px;
   background: var(--jj-surface);
   color: var(--jj-ink);
-  font: 11px var(--jj-mono);
+  font: calc(11px * var(--jj-interface-scale, 1)) var(--jj-mono);
 }
 .share-failed {
   color: var(--jj-removed-ink);
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
 }
 .pull-synced {
   color: var(--jj-accent);
@@ -49,7 +49,7 @@
   flex-wrap: wrap;
   align-items: center;
   gap: 4px 8px;
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
 .picker {
@@ -59,7 +59,7 @@
   grid-auto-flow: column;
   gap: 4px;
   padding: 0 6px;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   font-variant-numeric: tabular-nums;
 }
 .picker-menu {
@@ -111,7 +111,7 @@
   background: none;
   color: var(--jj-ink);
   font: inherit;
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   text-align: left;
   cursor: pointer;
 }
@@ -130,12 +130,13 @@
 }
 .picker-ref {
   color: var(--jj-muted);
-  font: 11px/18px var(--jj-mono);
+  font: calc(11px * var(--jj-interface-scale, 1))/calc(18px * var(--jj-interface-scale, 1))
+    var(--jj-mono);
 }
 .picker-title {
   grid-column: 2;
   overflow: hidden;
-  line-height: 18px;
+  line-height: calc(18px * var(--jj-interface-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
@@ -145,7 +146,7 @@
 .picker-meta {
   grid-column: 2;
   color: var(--jj-muted);
-  font-size: 11px;
+  font-size: calc(11px * var(--jj-interface-scale, 1));
 }
 
 .pull-brand {
@@ -172,7 +173,7 @@
   gap: 8px;
   min-height: 40px;
   color: var(--jj-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   font-weight: 600;
   text-decoration: none;
 }

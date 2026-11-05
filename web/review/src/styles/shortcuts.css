@@ -8,7 +8,6 @@
   grid-template-columns: 5.5rem 1fr;
   align-items: baseline;
   gap: 12px;
-  font-size: 13px;
 }
 :where(.jayjay-review) .jj-shortcuts dt {
   display: flex;
@@ -26,6 +25,6 @@
   border-radius: 4px;
   background: var(--jj-page);
   color: var(--jj-ink);
-  font: 11px/1.5 var(--jj-mono);
+  font: calc(11px * var(--jj-interface-scale, 1))/1.5 var(--jj-mono);
   text-align: center;
 }

@@ -14,9 +14,9 @@
   border-radius: 6px;
   background: var(--jj-accent);
   color: var(--jj-surface);
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
   font-weight: 500;
-  line-height: 18px;
+  line-height: calc(18px * var(--jj-interface-scale, 1));
   text-decoration: none;
   cursor: pointer;
 }
@@ -29,14 +29,14 @@
   border: 1px solid var(--jj-border);
   border-radius: 8px;
   background: var(--jj-surface);
-  font: 600 24px var(--jj-mono);
+  font: 600 calc(24px * var(--jj-interface-scale, 1)) var(--jj-mono);
   letter-spacing: 3px;
   user-select: all;
 }
 p.sign-in-note {
   margin: 0;
   color: var(--jj-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
 }
 .device-code {
   text-align: center;
@@ -49,18 +49,18 @@ p.sign-in-note {
 }
 .device-code h2 {
   margin: 0;
-  font-size: 15px;
+  font-size: calc(15px * var(--jj-interface-scale, 1));
 }
 .device-code p {
   margin: 0;
-  font-size: 13px;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
 }
 .device-code-cancel {
   min-height: 32px;
   border: 0;
   background: none;
   color: var(--jj-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   cursor: pointer;
 }
 .device-code-cancel:hover {
@@ -81,7 +81,7 @@ p.sign-in-note {
   grid-column: 1 / -1;
   margin-top: 4px;
   color: var(--jj-muted);
-  font-size: 12px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   text-decoration: underline;
   text-underline-offset: 3px;
 }
