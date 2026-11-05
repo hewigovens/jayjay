@@ -6,8 +6,8 @@ public struct DiffPalettes: Equatable {
     public var dark: DiffThemeColors
 
     public static let standard = DiffPalettes(
-        light: diffPalette(id: defaultDiffPaletteId(isDark: false), isDark: false).colors,
-        dark: diffPalette(id: defaultDiffPaletteId(isDark: true), isDark: true).colors
+        light: colorTheme(id: defaultColorThemeId(isDark: false), isDark: false).colors,
+        dark: colorTheme(id: defaultColorThemeId(isDark: true), isDark: true).colors
     )
 
     public init(light: DiffThemeColors, dark: DiffThemeColors) {

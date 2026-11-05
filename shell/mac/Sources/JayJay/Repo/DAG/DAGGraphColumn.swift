@@ -4,6 +4,7 @@ import SwiftUI
 struct DAGGraphColumn: View {
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.colorSchemeContrast) private var contrast
+    @Environment(\.appThemes) private var appThemes
     let viewModel: DAGRowViewModel
     let nodeCenterY: CGFloat
 
@@ -23,9 +24,10 @@ struct DAGGraphColumn: View {
         let activeLane = viewModel.activeLane.map { (lane: Int($0.lane), first: Int($0.firstRow), last: Int($0.lastRow)) }
         let activeDisplayLane = activeLane.map { viewModel.layout.displayLane(for: $0.lane) }
 
+        let colors = appThemes.colors(for: colorScheme)
         return Canvas { ctx, size in
             let height = size.height
-            let baseColor = contrast == .increased ? Color.primary : AppColors.graphLine(colorScheme)
+            let baseColor = contrast == .increased ? Color.primary : colors.graphLine
             let fadedColor = baseColor.opacity(contrast == .increased ? 0.55 : colorScheme == .dark ? 0.4 : 0.3)
             let lineColor = activeLane == nil ? baseColor : fadedColor
             let laneStroke: (Int) -> StrokeStyle = { displayLane in

@@ -40,6 +40,7 @@ struct DiffSection: View {
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
     @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.appThemes) var appThemes
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {

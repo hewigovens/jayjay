@@ -2,7 +2,7 @@ use gpui::WindowAppearance;
 use jayjay_core::{DiffThemeColors, RepoColors, ThemeSeed};
 
 use super::Theme;
-use crate::app::config::{AppearanceMode, DiffPaletteSelection};
+use crate::app::config::{AppearanceMode, ThemeSelection};
 
 impl Theme {
     pub fn light() -> Self {
@@ -16,7 +16,7 @@ impl Theme {
     pub fn for_appearance(
         mode: AppearanceMode,
         system: WindowAppearance,
-        palette: &DiffPaletteSelection,
+        palette: &ThemeSelection,
     ) -> Self {
         let is_dark = match mode {
             AppearanceMode::Light => false,
@@ -26,11 +26,7 @@ impl Theme {
                 WindowAppearance::Dark | WindowAppearance::VibrantDark
             ),
         };
-        let (seed, repo) = if is_dark {
-            (ThemeSeed::dark(), RepoColors::dark())
-        } else {
-            (ThemeSeed::light(), RepoColors::light())
-        };
-        Self::from_seed(&seed, palette.resolve(is_dark).colors, repo)
+        let resolved = palette.resolve(is_dark);
+        Self::from_seed(&resolved.seed, resolved.colors, resolved.repo)
     }
 }

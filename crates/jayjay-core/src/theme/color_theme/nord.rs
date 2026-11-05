@@ -1,7 +1,7 @@
-use super::DiffPalette;
+use super::ColorTheme;
 
-pub(super) fn dark() -> DiffPalette {
-    DiffPalette::themed(
+pub(super) fn dark() -> ColorTheme {
+    ColorTheme::themed(
         "nord",
         "Nord",
         0x2e3440,

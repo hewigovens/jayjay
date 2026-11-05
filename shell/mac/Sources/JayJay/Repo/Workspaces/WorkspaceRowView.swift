@@ -5,6 +5,7 @@ struct WorkspaceRowView: View {
     let workspace: WorkspaceInfo
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         VStack(alignment: .leading, spacing: 2) {
@@ -17,8 +18,8 @@ struct WorkspaceRowView: View {
                     .font(.system(size: 13, weight: .semibold))
                     .lineLimit(1)
                 Text(workspace.changeId.highlighted(
-                    scheme: colorScheme,
-                    font: .system(size: 11, design: .monospaced)
+                    font: .system(size: 11, design: .monospaced),
+                    prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
                 ))
                 if workspace.hasConflict {
                     Text(Localized.Repo.conflictBadge)

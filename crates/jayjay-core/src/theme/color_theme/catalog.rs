@@ -1,10 +1,8 @@
 use std::sync::LazyLock;
 
-use super::{
-    DiffPalette, catppuccin, default, dracula, gruvbox, nord, one, solarized, tokyo_night,
-};
+use super::{ColorTheme, catppuccin, default, dracula, gruvbox, nord, one, solarized, tokyo_night};
 
-pub(super) static CATALOG: LazyLock<Vec<DiffPalette>> = LazyLock::new(|| {
+pub(super) static CATALOG: LazyLock<Vec<ColorTheme>> = LazyLock::new(|| {
     vec![
         default::light(),
         solarized::light(),
@@ -22,6 +20,6 @@ pub(super) static CATALOG: LazyLock<Vec<DiffPalette>> = LazyLock::new(|| {
     ]
 });
 
-pub fn diff_palettes() -> Vec<DiffPalette> {
-    CATALOG.iter().map(DiffPalette::localized).collect()
+pub fn color_themes() -> Vec<ColorTheme> {
+    CATALOG.iter().map(ColorTheme::localized).collect()
 }

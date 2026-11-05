@@ -14,6 +14,7 @@ struct OverviewCanvas: View {
     let actions: OverviewLaneActions
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
     /// Only views inside this region are built.
     @State private var viewport = CGRect(x: 0, y: 0, width: 2048, height: 2048)
 
@@ -135,7 +136,7 @@ struct OverviewCanvas: View {
     }
 
     private func drawLines(in context: inout GraphicsContext, visible: CGRect) {
-        let line = AppColors.graphLine(colorScheme)
+        let line = appThemes.colors(for: colorScheme).graphLine
         let muted = line.opacity(0.55)
 
         for placed in placement.lanes(in: visible) {
@@ -235,14 +236,18 @@ private struct OverviewChangeRow: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         HStack(spacing: 6) {
             node
                 .frame(width: OverviewGeometry.nodeInset * 2, height: OverviewGeometry.rowHeight)
-            Text(change.changeId.highlighted(scheme: colorScheme, font: typography.font(10, design: .monospaced)))
-                .lineLimit(1)
-                .layoutPriority(1)
+            Text(change.changeId.highlighted(
+                font: typography.font(10, design: .monospaced),
+                prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
+            ))
+            .lineLimit(1)
+            .layoutPriority(1)
             if change.hasConflict {
                 Image(systemName: "exclamationmark.triangle.fill")
                     .jayjayFont(9, weight: .semibold)
@@ -275,7 +280,7 @@ private struct OverviewChangeRow: View {
             return .red
         }
         if !change.workspaces.isEmpty {
-            return AppColors.workspace(colorScheme)
+            return appThemes.colors(for: colorScheme).workspace
         }
         if change.isEmpty {
             return Color(nsColor: .windowBackgroundColor)
@@ -293,6 +298,7 @@ private struct OverviewTrunkLabel: View {
     let trunkName: String
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         Text(label)
@@ -314,7 +320,7 @@ private struct OverviewTrunkLabel: View {
 
     private var tint: Color {
         switch base.kind {
-            case .trunk: AppColors.workspace(colorScheme)
+            case .trunk: appThemes.colors(for: colorScheme).workspace
             case .olderTrunk: .orange
             case .mutable, .other: .secondary
         }
@@ -326,13 +332,13 @@ private struct OverviewBaseDetail: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         HStack(spacing: 6) {
             Text(base.commitId.highlighted(
-                scheme: colorScheme,
                 font: typography.font(10, design: .monospaced),
-                prefixColor: AppColors.commitIdPrefix(colorScheme)
+                prefixColor: appThemes.colors(for: colorScheme).commitIdPrefix
             ))
             Text(Date.relativeLabel(millis: base.timestampMillis))
                 .jayjayFont(10)

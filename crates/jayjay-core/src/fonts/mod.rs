@@ -4,7 +4,7 @@ use std::path::Path;
 mod platform;
 mod specimen;
 
-pub use specimen::FontSpecimen;
+pub use specimen::{FontSpecimen, SpecimenChange, SpecimenFile};
 
 struct CodingFont {
     family: &'static str,

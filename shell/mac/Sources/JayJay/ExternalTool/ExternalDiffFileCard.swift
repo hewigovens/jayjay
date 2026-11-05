@@ -8,6 +8,8 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
     let onToggleFile: () -> Void
 
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         VStack(alignment: .leading, spacing: 10) {
@@ -44,7 +46,7 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
                 .accessibilityIdentifier(AID.ExternalTool.fileToggle(file.hunk.path))
             }
             file.hunk.hunkType.icon
-                .foregroundStyle(file.hunk.hunkType.iconColor)
+                .foregroundStyle(appThemes.colors(for: colorScheme).fileColor(for: file.hunk.hunkType))
             Text(file.hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .textSelection(.enabled)

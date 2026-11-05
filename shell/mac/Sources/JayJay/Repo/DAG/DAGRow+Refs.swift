@@ -64,9 +64,10 @@ extension DAGRow {
     }
 
     private func workingCopyTag() -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 4) {
-            tag("@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.18))
-                .foregroundStyle(AppColors.workspace(colorScheme))
+        let workspace = appThemes.colors(for: colorScheme).workspace
+        return HStack(alignment: .firstTextBaseline, spacing: 4) {
+            tag("@", tint: workspace.opacity(colorScheme == .dark ? 0.15 : 0.18))
+                .foregroundStyle(workspace)
                 .accessibilityLabel(Localized.Repo.workingCopyLabel)
                 .help(Localized.Repo.workingCopyDragOntoAChange)
                 .gesture(
@@ -86,12 +87,13 @@ extension DAGRow {
 
     private func bookmarkTag(_ name: String) -> some View {
         let conflicted = conflictedBookmarkNames.contains(name)
+        let bookmark = appThemes.colors(for: colorScheme).bookmark
         return tag(
             name,
             tint: conflicted ? .orange.opacity(0.18)
-                : AppColors.bookmark(colorScheme).opacity(colorScheme == .dark ? 0.16 : 0.14),
+                : bookmark.opacity(colorScheme == .dark ? 0.16 : 0.14),
             systemImage: conflicted ? "exclamationmark.triangle.fill" : "bookmark",
-            iconColor: conflicted ? .orange : AppColors.bookmark(colorScheme)
+            iconColor: conflicted ? .orange : bookmark
         )
         .help(
             conflicted
@@ -138,8 +140,9 @@ extension DAGRow {
 
     @ViewBuilder
     private func workspaceChip(_ name: String) -> some View {
-        let chip = tag("\(name)@", tint: AppColors.workspace(colorScheme).opacity(colorScheme == .dark ? 0.15 : 0.16))
-            .foregroundStyle(AppColors.workspace(colorScheme))
+        let workspaceColor = appThemes.colors(for: colorScheme).workspace
+        let chip = tag("\(name)@", tint: workspaceColor.opacity(colorScheme == .dark ? 0.15 : 0.16))
+            .foregroundStyle(workspaceColor)
             .help(Localized.Repo.workspaceWorkingCopy(name: name))
             .accessibilityLabel(Localized.Repo.workspaceLabel(name: name))
         chip.selectionContextMenuExclusion().contextMenu {
@@ -162,11 +165,12 @@ extension DAGRow {
     }
 
     private func gitTag(_ name: String) -> some View {
-        tag(
+        let commitPrefix = appThemes.colors(for: colorScheme).commitIdPrefix
+        return tag(
             name,
-            tint: AppColors.commitIdPrefix(colorScheme).opacity(colorScheme == .dark ? 0.16 : 0.12),
+            tint: commitPrefix.opacity(colorScheme == .dark ? 0.16 : 0.12),
             systemImage: "tag",
-            iconColor: AppColors.commitIdPrefix(colorScheme)
+            iconColor: commitPrefix
         )
         .help(Localized.Repo.tagNamed(name: name))
         .accessibilityLabel(Localized.Repo.tagLabel(name: name))
@@ -178,8 +182,8 @@ extension DAGRow {
 
     private var changeIdText: Text {
         Text(change.changeId.highlighted(
-            scheme: colorScheme,
-            font: typography.identifierFont
+            font: typography.identifierFont,
+            prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
         ))
     }
 

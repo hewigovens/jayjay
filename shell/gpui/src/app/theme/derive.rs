@@ -11,11 +11,6 @@ impl Theme {
         let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
         let tag_bg = mix(bg, fg, pick(0.09, 0.075));
         let tag_fg = mix(fg, bg, pick(0.15, 0.25));
-        let chrome_diff = if dark {
-            DiffThemeColors::dark()
-        } else {
-            DiffThemeColors::light()
-        };
         Self {
             is_dark: dark,
             font_size: AppConfig::DEFAULT_FONT_SIZE,
@@ -36,9 +31,9 @@ impl Theme {
             row_border: mix(bg, fg, pick(0.08, 0.065)),
 
             selected_accent: seed.accent,
-            success_fg: chrome_diff.text_added,
-            added_fg: chrome_diff.gutter_added_fg,
-            removed_fg: chrome_diff.gutter_removed_fg,
+            success_fg: diff.text_added,
+            added_fg: diff.gutter_added_fg,
+            removed_fg: diff.gutter_removed_fg,
             wc_accent: if dark {
                 seed.orange
             } else {
@@ -71,7 +66,7 @@ impl Theme {
             diff_removed_bg: diff.removed_bg,
             diff_context_bg: diff.context_bg,
             diff_separator_bg: diff.separator_bg,
-            media_frame_bg: if dark { 0x14171c } else { 0xeef0f3 },
+            media_frame_bg: repo.media_frame_bg,
             diff_conflict_header_bg: diff.conflict_header_bg,
             diff_conflict_section_bg: diff.conflict_section_bg,
             diff_conflict_content_bg: diff.conflict_content_bg,
@@ -89,8 +84,7 @@ impl Theme {
             diff_text_removed: diff.text_removed,
             diff_text_dim: diff.text_dim,
 
-            syntax: SyntaxColors::of(&chrome_diff),
-            diff_syntax: SyntaxColors::of(&diff),
+            syntax: SyntaxColors::of(&diff),
 
             tag_added_bg: seed.tint(seed.green, pick(0.35, 0.16)),
             tag_added_fg: seed.ink(seed.green),
@@ -102,15 +96,15 @@ impl Theme {
             tag_renamed_bg: seed.tint(seed.blue, pick(0.40, 0.14)),
             tag_renamed_fg: seed.ink(seed.blue),
 
-            file_added_color: seed.green,
-            file_removed_color: seed.red,
-            file_modified_color: seed.blue,
-            file_renamed_color: seed.blue,
-            file_lfs_color: seed.magenta,
-            file_badge_added_fg: seed.deep(seed.green),
-            file_badge_removed_fg: seed.deep(seed.red),
-            file_badge_modified_fg: seed.deep(seed.blue),
-            note_accent: seed.orange,
+            file_added_color: repo.file_added,
+            file_removed_color: repo.file_removed,
+            file_modified_color: repo.file_modified,
+            file_renamed_color: repo.file_renamed,
+            file_lfs_color: repo.file_lfs,
+            file_badge_added_fg: seed.deep(repo.file_added),
+            file_badge_removed_fg: seed.deep(repo.file_removed),
+            file_badge_modified_fg: seed.deep(repo.file_modified),
+            note_accent: repo.note_accent,
             bisect_accent: seed.magenta,
             bisect_bar_bg: mix(bg, seed.magenta, 0.08),
 

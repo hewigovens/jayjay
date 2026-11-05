@@ -6,6 +6,7 @@ struct OverviewLaneCard: View {
     let isSelected: Bool
 
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
 
     private var needsAttention: Bool {
         !lane.attention.isEmpty
@@ -54,9 +55,8 @@ struct OverviewLaneCard: View {
 
 private extension OverviewLaneCard {
     var chips: [OverviewChipRow.Chip] {
-        let workspace = AppColors.workspace(colorScheme)
-        let bookmark = AppColors.bookmark(colorScheme)
-        return lane.workspaces.map { .init(text: $0.label, tint: workspace) }
-            + lane.changes.flatMap(\.bookmarks).map { .init(text: $0, tint: bookmark) }
+        let colors = appThemes.colors(for: colorScheme)
+        return lane.workspaces.map { .init(text: $0.label, tint: colors.workspace) }
+            + lane.changes.flatMap(\.bookmarks).map { .init(text: $0, tint: colors.bookmark) }
     }
 }

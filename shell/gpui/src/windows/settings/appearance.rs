@@ -6,9 +6,9 @@ use gpui::{
 use jayjay_i18n::settings;
 
 use super::SettingsView;
-use super::diff_palette::diff_palette_section;
 use super::dropdown::dropdown_button;
 use super::shared::{ROW_FONT_SIZE, field_row, form_group};
+use super::theme_section::theme_section;
 use crate::app::config;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
@@ -42,7 +42,7 @@ pub(super) fn appearance_section(
             )],
             t,
         ))
-        .child(diff_palette_section(view, cfg, t, cx))
+        .child(theme_section(view, cfg, t, cx))
         .into_any_element()
 }
 

@@ -22,21 +22,14 @@ extension HunkType {
             .compositingGroup()
     }
 
-    func badge(_ colorScheme: ColorScheme) -> some View {
-        Image(systemName: "square.fill")
+    func badge(_ colorScheme: ColorScheme, colors: AppColors) -> some View {
+        let iconColor = colors.fileColor(for: self)
+        return Image(systemName: "square.fill")
             .foregroundStyle(iconColor.opacity(colorScheme == .light ? 0.15 : 0.14))
             .overlay {
                 badgeGlyph
-                    .foregroundStyle(colorScheme == .light ? lightBadgeColor : iconColor)
+                    .foregroundStyle(colors.fileBadgeColor(for: self))
             }
-    }
-
-    private var lightBadgeColor: Color {
-        switch self {
-            case .added, .copied: Color(red: 28 / 255, green: 124 / 255, blue: 58 / 255)
-            case .removed: Color(red: 180 / 255, green: 35 / 255, blue: 24 / 255)
-            case .modified, .renamed: Color(red: 23 / 255, green: 92 / 255, blue: 211 / 255)
-        }
     }
 
     @ViewBuilder private var badgeGlyph: some View {
@@ -56,15 +49,6 @@ extension HunkType {
         Image(systemName: name)
             .fontWeight(.semibold)
             .scaleEffect(0.6)
-    }
-
-    var iconColor: Color {
-        switch self {
-            case .added, .copied: .green
-            case .removed: .red
-            case .modified: FileStatusColors.modified
-            case .renamed: .blue
-        }
     }
 
     var label: String {

@@ -1,7 +1,7 @@
 use gpui::WindowAppearance;
 
 use super::Theme;
-use crate::app::config::{AppearanceMode, DiffPaletteSelection};
+use crate::app::config::{AppearanceMode, ThemeSelection};
 
 #[test]
 fn system_appearance_follows_window_appearance() {
@@ -9,7 +9,7 @@ fn system_appearance_follows_window_appearance() {
         !Theme::for_appearance(
             AppearanceMode::System,
             WindowAppearance::Light,
-            &DiffPaletteSelection::default()
+            &ThemeSelection::default()
         )
         .is_dark
     );
@@ -17,7 +17,7 @@ fn system_appearance_follows_window_appearance() {
         Theme::for_appearance(
             AppearanceMode::System,
             WindowAppearance::Dark,
-            &DiffPaletteSelection::default()
+            &ThemeSelection::default()
         )
         .is_dark
     );
@@ -29,7 +29,7 @@ fn explicit_appearance_overrides_window_appearance() {
         !Theme::for_appearance(
             AppearanceMode::Light,
             WindowAppearance::Dark,
-            &DiffPaletteSelection::default()
+            &ThemeSelection::default()
         )
         .is_dark
     );
@@ -37,7 +37,7 @@ fn explicit_appearance_overrides_window_appearance() {
         Theme::for_appearance(
             AppearanceMode::Dark,
             WindowAppearance::Light,
-            &DiffPaletteSelection::default()
+            &ThemeSelection::default()
         )
         .is_dark
     );
@@ -50,7 +50,7 @@ fn builtin_themes_keep_readable_secondary_text() {
         Theme::for_appearance(
             AppearanceMode::Dark,
             WindowAppearance::Light,
-            &DiffPaletteSelection::default(),
+            &ThemeSelection::default(),
         ),
     ] {
         let bg = jayjay_core::theme::luminance(theme.sidebar_bg);
@@ -77,24 +77,38 @@ fn code_line_height_scales_with_code_size_and_line_spacing() {
 }
 
 #[test]
-fn a_selected_diff_palette_recolors_diff_syntax_but_not_chrome() {
-    let nord = DiffPaletteSelection {
+fn a_selected_theme_recolors_chrome_repo_and_diff_surfaces_while_preserving_fonts() {
+    let nord = ThemeSelection {
         dark: "nord".to_owned(),
-        ..DiffPaletteSelection::default()
+        ..ThemeSelection::default()
     };
     let default = Theme::for_appearance(
         AppearanceMode::Dark,
         WindowAppearance::Dark,
-        &DiffPaletteSelection::default(),
+        &ThemeSelection::default(),
     );
     let themed = Theme::for_appearance(AppearanceMode::Dark, WindowAppearance::Dark, &nord);
 
-    assert_ne!(themed.diff_syntax, default.diff_syntax);
-    assert_eq!(themed.syntax, default.syntax);
-    assert_eq!(themed.success_fg, default.success_fg);
-    assert_eq!(
+    assert_ne!(themed.detail_bg, default.detail_bg);
+    assert_ne!(themed.sidebar_bg, default.sidebar_bg);
+    assert_ne!(themed.fg, default.fg);
+    assert_ne!(themed.selected_bg, default.selected_bg);
+    assert_ne!(themed.dag_line, default.dag_line);
+    assert_ne!(themed.change_id_prefix, default.change_id_prefix);
+    assert_ne!(themed.file_added_color, default.file_added_color);
+    assert_ne!(themed.file_removed_color, default.file_removed_color);
+    assert_ne!(themed.file_modified_color, default.file_modified_color);
+    assert_ne!(themed.file_renamed_color, default.file_renamed_color);
+    assert_ne!(themed.file_lfs_color, default.file_lfs_color);
+    assert_ne!(themed.note_accent, default.note_accent);
+    assert_ne!(themed.syntax, default.syntax);
+    assert_ne!(themed.success_fg, default.success_fg);
+    assert_ne!(
         (themed.added_fg, themed.removed_fg),
         (default.added_fg, default.removed_fg)
     );
     assert_ne!(themed.diff_gutter_added_fg, default.diff_gutter_added_fg);
+    assert_eq!(themed.font_size, default.font_size);
+    assert_eq!(themed.code_font_size, default.code_font_size);
+    assert_eq!(themed.code_line_spacing, default.code_line_spacing);
 }

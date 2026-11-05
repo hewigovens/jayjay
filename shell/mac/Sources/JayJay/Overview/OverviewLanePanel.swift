@@ -13,6 +13,7 @@ struct OverviewLanePanel: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         OverviewPanel(accessibilityIdentifier: AID.Overview.lanePanel) {
@@ -54,7 +55,7 @@ struct OverviewLanePanel: View {
                 OverviewPanelSection(title: Localized.Repo.bookmarks) {
                     FlowLayout(spacing: 4) {
                         ForEach(bookmarks, id: \.self) { bookmark in
-                            OverviewChip(text: bookmark, tint: AppColors.bookmark(colorScheme))
+                            OverviewChip(text: bookmark, tint: appThemes.colors(for: colorScheme).bookmark)
                         }
                     }
                 }
@@ -69,7 +70,7 @@ struct OverviewLanePanel: View {
 
     private func workspaceRow(_ workspace: OverviewWorkspace) -> some View {
         HStack(spacing: 8) {
-            OverviewChip(text: workspace.label, tint: AppColors.workspace(colorScheme))
+            OverviewChip(text: workspace.label, tint: appThemes.colors(for: colorScheme).workspace)
             Text(workspace.changesAbove == 0 ? Localized.Overview.atTheHead : Localized.Overview.belowTheHead(count: Int(workspace.changesAbove)))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
@@ -87,8 +88,8 @@ struct OverviewLanePanel: View {
         } label: {
             HStack(alignment: .firstTextBaseline, spacing: 8) {
                 Text(change.changeId.highlighted(
-                    scheme: colorScheme,
-                    font: typography.font(11, design: .monospaced)
+                    font: typography.font(11, design: .monospaced),
+                    prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
                 ))
                 Text(change.title)
                     .jayjayFont(12)

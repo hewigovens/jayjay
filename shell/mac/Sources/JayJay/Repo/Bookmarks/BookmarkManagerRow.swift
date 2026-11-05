@@ -19,6 +19,7 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
 
     private var canOpenPR: Bool {
         bookmark.isTrackingRemote && !bookmark.isDeleted && !isTrunkBookmark(name: bookmark.name)
@@ -78,8 +79,8 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
             Spacer()
             if !bookmark.changeId.id.isEmpty {
                 Text(bookmark.changeId.highlighted(
-                    scheme: colorScheme,
-                    font: typography.identifierFont
+                    font: typography.identifierFont,
+                    prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
                 ))
             }
         }

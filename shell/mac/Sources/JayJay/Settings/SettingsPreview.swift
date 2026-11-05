@@ -3,7 +3,6 @@ import JayJayDiffUI
 import SwiftUI
 
 struct SettingsPreview: View {
-    var scheme: ColorScheme?
     @Environment(AppSettings.self) private var settings
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
@@ -15,8 +14,6 @@ struct SettingsPreview: View {
         let specimen = Self.specimen
         let directory = (specimen.path as NSString).deletingLastPathComponent + "/"
         let fileName = (specimen.path as NSString).lastPathComponent
-        let diffScheme = scheme ?? colorScheme
-        let palettes = settings.diffPalettes
         VStack(alignment: .leading, spacing: 12) {
             Text(specimen.summary)
                 .jayjayFont(13, weight: .semibold)
@@ -27,12 +24,10 @@ struct SettingsPreview: View {
             }
             NativeDiffView(diff: specimen.diff, onContentHeightChanged: { diffHeight = $0 })
                 .environment(\.diffTypography, typography.diffTypography)
-                .environment(\.diffPalettes, palettes)
-                .environment(\.colorScheme, diffScheme)
                 .frame(height: diffHeight ?? specimen.diff.estimatedCardHeight(typography: typography))
                 .padding(.vertical, 6)
                 .background(
-                    AppColors.readingBackground(diffScheme, palettes: palettes),
+                    settings.appThemes.colors(for: colorScheme).readingBackground,
                     in: RoundedRectangle(cornerRadius: 8, style: .continuous)
                 )
         }

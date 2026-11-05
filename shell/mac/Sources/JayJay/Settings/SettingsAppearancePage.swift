@@ -42,7 +42,7 @@ struct SettingsAppearancePage: View {
                 }
             }
 
-            DiffPaletteSection()
+            ThemeSection()
         }
         .formStyle(.grouped)
     }

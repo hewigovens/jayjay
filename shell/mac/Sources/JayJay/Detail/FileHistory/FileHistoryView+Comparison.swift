@@ -82,7 +82,10 @@ extension FileHistoryView {
             Text(role)
                 .jayjayFont(10, weight: .semibold)
                 .foregroundStyle(color)
-            Text(endpoint.changeId.highlighted(scheme: colorScheme, font: typography.identifierFont))
+            Text(endpoint.changeId.highlighted(
+                font: typography.identifierFont,
+                prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
+            ))
             Text(endpoint.commitId.compact)
                 .jayjayFont(11, design: .monospaced)
                 .foregroundStyle(.secondary)

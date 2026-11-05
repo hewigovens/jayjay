@@ -115,7 +115,7 @@ pub(super) fn fonts_section(
             ],
             t,
         ))
-        .child(form_section(common::preview(), [font_preview(t, t, cx)], t))
+        .child(form_section(common::preview(), [font_preview(t, cx)], t))
         .child(form_group(
             [div()
                 .flex()

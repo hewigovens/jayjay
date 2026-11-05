@@ -52,15 +52,6 @@ enum EvologDisplay {
             case .modified: "plusminus.circle"
         }
     }
-
-    static func hunkColor(_ type: HunkType) -> Color {
-        switch type {
-            case .added, .copied: .green
-            case .removed: .red
-            case .renamed: .blue
-            case .modified: FileStatusColors.modified
-        }
-    }
 }
 
 extension EvologEntry {

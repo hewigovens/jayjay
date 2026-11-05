@@ -6,7 +6,7 @@ use gpui::{
 };
 use jayjay_core::diff::DiffSpanStyle;
 
-use crate::app::theme::{SyntaxColors, Theme};
+use crate::app::theme::Theme;
 use crate::ui::input::{CaretBlink, TextSelection, line_ranges};
 
 mod highlighting;
@@ -97,14 +97,6 @@ pub(crate) struct LineLayout {
 }
 
 impl TextArea {
-    pub(super) fn syntax_colors<'t>(&self, theme: &'t Theme) -> &'t SyntaxColors {
-        if self.uses_diff_palette {
-            &theme.diff_syntax
-        } else {
-            &theme.syntax
-        }
-    }
-
     pub(super) fn diff_text_color(&self, line_style: DiffSpanStyle, theme: &Theme) -> Option<u32> {
         self.uses_diff_palette.then_some(match line_style {
             DiffSpanStyle::Added => theme.diff_text_added,

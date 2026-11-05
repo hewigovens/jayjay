@@ -129,41 +129,72 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(settings.lastOpenedRepo, "/tmp/example")
     }
 
-    func testDiffPaletteResolutionAndWallpaperTintingRule() throws {
+    func testColorThemeResolutionDefaultSystemColorsAndWallpaperTintingRule() throws {
         let suite = "AppSettingsTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
 
         let settings = AppSettings(defaults: defaults)
         XCTAssertEqual(settings.diffPalettes, .standard)
-        XCTAssertTrue(settings.usesDefaultDarkDiffPalette)
+        XCTAssertEqual(settings.appThemes, .standard)
+        XCTAssertTrue(settings.usesDefaultDarkColorTheme)
         XCTAssertFalse(settings.effectiveTintWindowWithWallpaper)
+
+        let defaultLightColors = settings.appThemes.colors(for: .light)
+        XCTAssertEqual(defaultLightColors.navigationBackground, Color(nsColor: .controlBackgroundColor))
+        XCTAssertEqual(defaultLightColors.fileAdded, .green)
+        XCTAssertEqual(defaultLightColors.fileRemoved, .red)
+        XCTAssertEqual(defaultLightColors.fileModified, .blue)
+        XCTAssertEqual(defaultLightColors.fileRenamed, .blue)
+        XCTAssertEqual(defaultLightColors.fileLfs, .purple)
+        XCTAssertEqual(defaultLightColors.noteAccent, .orange)
+
+        let defaultDarkColors = settings.appThemes.colors(for: .dark)
+        XCTAssertEqual(defaultDarkColors.navigationBackground, Color(rgb: 0x1B2330))
+        XCTAssertEqual(defaultDarkColors.fileAdded, .green)
+        XCTAssertEqual(defaultDarkColors.fileRemoved, .red)
+        XCTAssertEqual(defaultDarkColors.fileModified, .blue)
+        XCTAssertEqual(defaultDarkColors.fileRenamed, .blue)
+        XCTAssertEqual(defaultDarkColors.fileLfs, .purple)
+        XCTAssertEqual(defaultDarkColors.noteAccent, .orange)
 
         settings.tintWindowWithWallpaper = true
         XCTAssertTrue(settings.effectiveTintWindowWithWallpaper)
         XCTAssertEqual(settings.readingBackground(.dark), .clear)
+        XCTAssertEqual(settings.navigationBackground(.dark), .clear)
 
         settings.diffPaletteDark = "nord"
+        XCTAssertEqual(settings.appThemes.light, AppThemes.standard.light, "editing dark theme leaves light theme untouched")
         XCTAssertNotEqual(settings.diffPalettes.dark, DiffPalettes.standard.dark)
-        XCTAssertFalse(settings.usesDefaultDarkDiffPalette)
+        XCTAssertFalse(settings.usesDefaultDarkColorTheme)
         XCTAssertFalse(settings.effectiveTintWindowWithWallpaper)
         XCTAssertNotEqual(settings.readingBackground(.dark), .clear)
+        XCTAssertNotEqual(settings.navigationBackground(.dark), .clear)
+        let nordColors = settings.appThemes.colors(for: .dark)
+        XCTAssertNotEqual(nordColors.fileAdded, .green)
+        XCTAssertNotEqual(nordColors.noteAccent, .orange)
         XCTAssertTrue(settings.tintWindowWithWallpaper)
         XCTAssertEqual(defaults.object(forKey: "jayjay.tintWindowWithWallpaper") as? Bool, true)
 
-        settings.diffPaletteDark = AppSettings.defaultDarkDiffPaletteId
-        XCTAssertTrue(settings.usesDefaultDarkDiffPalette)
+        settings.diffPaletteDark = AppSettings.defaultDarkColorThemeId
+        XCTAssertTrue(settings.usesDefaultDarkColorTheme)
         XCTAssertTrue(settings.effectiveTintWindowWithWallpaper)
         XCTAssertEqual(settings.readingBackground(.dark), .clear)
+        XCTAssertEqual(settings.navigationBackground(.dark), .clear)
 
         XCTAssertNotEqual(settings.readingBackground(.light), .clear, "tinting is dark-mode only")
+        XCTAssertNotEqual(settings.navigationBackground(.light), .clear, "tinting is dark-mode only")
 
         defaults.set("future-dark-palette", forKey: "jayjay.diffPaletteDark")
+        defaults.set("nord", forKey: "jayjay.diffPaletteLight")
         let downgraded = AppSettings(defaults: defaults)
         XCTAssertEqual(downgraded.diffPaletteDark, "future-dark-palette")
+        XCTAssertEqual(downgraded.diffPaletteLight, "nord")
         XCTAssertEqual(defaults.string(forKey: "jayjay.diffPaletteDark"), "future-dark-palette")
+        XCTAssertEqual(defaults.string(forKey: "jayjay.diffPaletteLight"), "nord")
         XCTAssertEqual(downgraded.diffPalettes.dark, DiffPalettes.standard.dark)
-        XCTAssertTrue(downgraded.usesDefaultDarkDiffPalette)
+        XCTAssertEqual(downgraded.appThemes.light, AppThemes.standard.light)
+        XCTAssertTrue(downgraded.usesDefaultDarkColorTheme)
         XCTAssertTrue(downgraded.effectiveTintWindowWithWallpaper)
     }
 }

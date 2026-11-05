@@ -13,6 +13,7 @@ struct IdentifierText: View {
     var prefixStyle: PrefixStyle = .plain
     @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         text
@@ -35,10 +36,11 @@ struct IdentifierText: View {
     }
 
     private var prefixColor: Color {
-        switch prefixStyle {
+        let colors = appThemes.colors(for: colorScheme)
+        return switch prefixStyle {
             case .plain: .primary
-            case .changeId: AppColors.changeIdPrefix(colorScheme)
-            case .commitId: AppColors.commitIdPrefix(colorScheme)
+            case .changeId: colors.changeIdPrefix
+            case .commitId: colors.commitIdPrefix
         }
     }
 }

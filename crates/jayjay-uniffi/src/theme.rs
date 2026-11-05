@@ -1,19 +1,14 @@
 #[uniffi::export]
-fn diff_palettes() -> Vec<jayjay_core::DiffPalette> {
-    jayjay_core::diff_palettes()
+fn color_themes() -> Vec<jayjay_core::ColorTheme> {
+    jayjay_core::color_themes()
 }
 
 #[uniffi::export]
-fn diff_palette(id: String, is_dark: bool) -> jayjay_core::DiffPalette {
-    jayjay_core::DiffPalette::resolve(&id, is_dark)
+fn color_theme(id: String, is_dark: bool) -> jayjay_core::ColorTheme {
+    jayjay_core::ColorTheme::resolve(&id, is_dark)
 }
 
 #[uniffi::export]
-fn default_diff_palette_id(is_dark: bool) -> String {
-    jayjay_core::DiffPalette::default_id(is_dark).to_owned()
-}
-
-#[uniffi::export]
-fn repo_colors(is_dark: bool) -> jayjay_core::RepoColors {
-    jayjay_core::repo_colors(is_dark)
+fn default_color_theme_id(is_dark: bool) -> String {
+    jayjay_core::ColorTheme::default_id(is_dark).to_owned()
 }

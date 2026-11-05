@@ -1,7 +1,7 @@
-use super::DiffPalette;
+use super::ColorTheme;
 
-pub(super) fn light() -> DiffPalette {
-    DiffPalette::themed(
+pub(super) fn light() -> ColorTheme {
+    ColorTheme::themed(
         "one-light",
         "One Light",
         0xfafafa,
@@ -12,8 +12,8 @@ pub(super) fn light() -> DiffPalette {
     )
 }
 
-pub(super) fn dark() -> DiffPalette {
-    DiffPalette::themed(
+pub(super) fn dark() -> ColorTheme {
+    ColorTheme::themed(
         "one-dark",
         "One Dark",
         0x282c34,

@@ -6,6 +6,7 @@ struct EvologView: View {
     @State private var viewModel: EvologViewModel
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.appThemes) private var appThemes
     @Environment(AppSettings.self) private var appSettings
     @State private var entryListWidth = PaneLayout.secondaryPaneDefault
     @State private var fileListWidth = PaneLayout.secondaryPaneDefault
@@ -73,8 +74,8 @@ struct EvologView: View {
         var label = AttributedString("\(Localized.Repo.evolutionPrefix) ")
         if let first = viewModel.entries.first {
             label.append(first.changeId.highlighted(
-                scheme: colorScheme,
-                font: typography.font(13, weight: .semibold, design: .monospaced)
+                font: typography.font(13, weight: .semibold, design: .monospaced),
+                prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
             ))
         } else {
             label.append(AttributedString(String(viewModel.changeId.prefix(8))))
@@ -187,8 +188,8 @@ struct EvologView: View {
                 .foregroundStyle(.secondary)
                 .lineLimit(1)
             Text(entry.commitId.highlighted(
-                scheme: colorScheme,
-                font: typography.font(10, design: .monospaced)
+                font: typography.font(10, design: .monospaced),
+                prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
             ))
             .lineLimit(1)
         }
@@ -381,7 +382,7 @@ struct EvologView: View {
             HStack(spacing: 6) {
                 Image(systemName: EvologDisplay.hunkIcon(hunk.hunkType))
                     .jayjayFont(11)
-                    .foregroundStyle(EvologDisplay.hunkColor(hunk.hunkType))
+                    .foregroundStyle(appThemes.colors(for: colorScheme).fileColor(for: hunk.hunkType))
                 Text(hunk.path)
                     .jayjayFont(11, design: .monospaced)
                     .lineLimit(1)

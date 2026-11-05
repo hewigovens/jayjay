@@ -5,9 +5,9 @@ mod dracula;
 mod gruvbox;
 mod nord;
 mod one;
-mod palette;
 mod solarized;
+mod theme;
 mod tokyo_night;
 
-pub use catalog::diff_palettes;
-pub use palette::DiffPalette;
+pub use catalog::color_themes;
+pub use theme::ColorTheme;

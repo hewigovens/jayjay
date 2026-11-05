@@ -35,6 +35,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.jayjayTypography) private var typography
+    @Environment(\.colorScheme) private var colorScheme
+    @Environment(\.appThemes) private var appThemes
 
     var selectedChangedLines: Set<Int> {
         selection.selectedChangedLines
@@ -81,7 +83,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 .buttonStyle(.plain)
             }
             hunk.hunkType.icon
-                .foregroundStyle(hunk.hunkType.iconColor)
+                .foregroundStyle(appThemes.colors(for: colorScheme).fileColor(for: hunk.hunkType))
             Text(hunk.path)
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .textSelection(.enabled)
