@@ -6,9 +6,9 @@ use super::{
 
 use gpui::{
     AnyElement, App, AppContext, Bounds, Context, Entity, FocusHandle, Focusable, FontWeight,
-    InteractiveElement, IntoElement, ParentElement, Render, ScrollHandle, SharedString,
-    StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds, WindowOptions, div,
-    px, rgb, size,
+    InteractiveElement, IntoElement, KeyDownEvent, ParentElement, Render, ScrollHandle,
+    SharedString, StatefulInteractiveElement, Styled, TitlebarOptions, Window, WindowBounds,
+    WindowOptions, div, px, rgb, size,
 };
 
 use super::dropdown::{OpenDropdown, dropdown_overlay};
@@ -16,7 +16,6 @@ use super::dropdown::{OpenDropdown, dropdown_overlay};
 use super::font_catalog_state::FontCatalogState;
 use crate::app::config::{AppConfigStore, current as current_cfg};
 use crate::app::theme::{Theme, observe_window_appearance};
-use crate::ui::logo::Logo;
 use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::resizable_pane::ResizablePane;
 use crate::ui::resize_handle::resize_handle;
@@ -51,7 +50,7 @@ pub struct SettingsView {
     pub(super) review_summary: Option<ReviewStoreSummary>,
     pub(super) confirm_clear_review: bool,
     pub(super) sidebar: ResizablePane,
-    logo: Logo,
+    flock: Option<Entity<super::flock::FlockView>>,
 }
 
 impl SettingsView {
@@ -111,7 +110,7 @@ impl SettingsView {
                             review_summary: None,
                             confirm_clear_review: false,
                             sidebar: Self::sidebar_pane(cx),
-                            logo: Logo::load(cx),
+                            flock: None,
                         };
                         // Direct opens must kick off the same lazy loads a sidebar click would.
                         match section {
@@ -119,6 +118,9 @@ impl SettingsView {
                             SettingsSection::Integrations => view.ensure_tools_loaded(cx),
                             SettingsSection::Jujutsu => view.ensure_jj_config_loaded(cx),
                             SettingsSection::DataPrivacy => view.refresh_review_summary(cx),
+                            SettingsSection::Flock | SettingsSection::About => {
+                                view.ensure_flock(cx)
+                            }
                             _ => {}
                         }
                         view
@@ -149,11 +151,28 @@ impl Render for SettingsView {
         let active = self.section;
         let dropdown = self.open_dropdown.clone();
         let sidebar_width = self.sidebar.fitted(f32::from(window.viewport_size().width));
+        let flock = self
+            .flock
+            .clone()
+            .filter(|_| active == SettingsSection::Flock);
+        let gift = flock
+            .as_ref()
+            .and_then(|flock| flock.update(cx, |flock, cx| flock.gift(&t, cx)));
 
         let mut root = div()
             .font_family(crate::app::fonts::interface())
             .track_focus(&self.focus_handle)
             .key_context("SettingsView")
+            .on_key_down(cx.listener(|this, event: &KeyDownEvent, window, cx| {
+                if this.section == SettingsSection::Flock
+                    && event.keystroke.key == "tab"
+                    && let Some(flock) = this.flock.clone()
+                {
+                    let backward = event.keystroke.modifiers.shift;
+                    flock.update(cx, |flock, cx| flock.handle_tab(backward, window, cx));
+                    cx.stop_propagation();
+                }
+            }))
             .on_action(
                 cx.listener(|_, _: &crate::app::actions::CloseWindow, window, _cx| {
                     window.remove_window();
@@ -164,7 +183,12 @@ impl Render for SettingsView {
                     if this.confirm_clear_review {
                         this.confirm_clear_review = false;
                         cx.notify();
-                    } else {
+                    } else if !(this.section == SettingsSection::Flock
+                        && this
+                            .flock
+                            .as_ref()
+                            .is_some_and(|flock| flock.update(cx, |flock, cx| flock.dismiss(cx))))
+                    {
                         window.remove_window();
                     }
                 }),
@@ -190,6 +214,7 @@ impl Render for SettingsView {
             ))
             .child(
                 div()
+                    .relative()
                     .flex()
                     .flex_col()
                     .flex_1()
@@ -225,10 +250,16 @@ impl Render for SettingsView {
                                     .pb(px(24.))
                                     .child(self.section_body(&cfg, &t, window, cx)),
                             ),
-                    ),
+                    )
+                    .children(gift),
             );
         if let Some(d) = dropdown {
             root = root.child(dropdown_overlay(d, &t, window, cx));
+        }
+        if let Some(sheet) =
+            flock.and_then(|flock| flock.update(cx, |flock, cx| flock.sheet(&t, cx)))
+        {
+            root = root.child(sheet);
         }
         if self.confirm_clear_review {
             root = root.child(data_privacy::clear_review_confirmation(
@@ -242,6 +273,14 @@ impl Render for SettingsView {
 }
 
 impl SettingsView {
+    pub(super) fn ensure_flock(&mut self, cx: &mut Context<Self>) {
+        if self.flock.is_none() {
+            let flock = cx.new(super::flock::FlockView::new);
+            cx.observe(&flock, |_, _, cx| cx.notify()).detach();
+            self.flock = Some(flock);
+        }
+    }
+
     fn section_body(
         &self,
         cfg: &crate::app::config::AppConfig,
@@ -264,7 +303,21 @@ impl SettingsView {
                 cx,
             ),
             SettingsSection::DataPrivacy => data_privacy::data_privacy_section(self, cfg, t, cx),
-            SettingsSection::About => about::about_section(&self.logo, t).into_any_element(),
+            SettingsSection::Flock => self
+                .flock
+                .as_ref()
+                .expect("flock page initialized")
+                .clone()
+                .into_any_element(),
+            SettingsSection::About => about::about_section(
+                self.flock
+                    .as_ref()
+                    .expect("about page initialized")
+                    .read(cx)
+                    .icon(72., t, cx),
+                t,
+            )
+            .into_any_element(),
         }
     }
 }

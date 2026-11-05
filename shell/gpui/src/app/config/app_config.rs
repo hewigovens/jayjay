@@ -12,6 +12,7 @@ use super::{
 #[serde(default)]
 pub struct AppConfig {
     pub appearance: AppearanceMode,
+    pub flock_icon: String,
     #[serde(skip_serializing_if = "Option::is_none")]
     pub(crate) language: Option<String>,
     pub interface_font_family: String,
@@ -41,6 +42,7 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             appearance: AppearanceMode::System,
+            flock_icon: "classic".into(),
             language: None,
             interface_font_family: String::new(),
             interface_font_size: Some(AppConfig::DEFAULT_FONT_SIZE),

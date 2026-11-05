@@ -1,7 +1,6 @@
 use crate::app::links::{REPOSITORY_URL, SPONSOR_URL};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
-use crate::ui::logo::Logo;
 use gpui::{
     ClickEvent, InteractiveElement, IntoElement, ParentElement, SharedString,
     StatefulInteractiveElement, Styled, div, px, rgb,
@@ -10,7 +9,7 @@ use jayjay_i18n::settings;
 
 const APP_NAME: &str = "JayJay";
 
-pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
+pub(super) fn about_section(icon: gpui::AnyElement, t: &Theme) -> impl IntoElement {
     let version = settings::version(concat!(env!("CARGO_PKG_VERSION"), " (GPUI)"));
 
     div()
@@ -20,7 +19,7 @@ pub(super) fn about_section(logo: &Logo, t: &Theme) -> impl IntoElement {
         .items_center()
         .gap(px(12.))
         .pt(px(8.))
-        .child(logo.app_icon(72., t))
+        .child(icon)
         .child(
             div()
                 .text_size(ui_font_size(20.))

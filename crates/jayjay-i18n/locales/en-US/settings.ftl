@@ -202,3 +202,7 @@ settings-flock-code-field = Sponsor code
 settings-flock-code-name = Name for your feather
 settings-flock-code-unlock = Unlock
 settings-flock-code-invalid = That code doesn’t match. Check it and try again.
+
+settings-flock-about-icon = About icon
+settings-flock-about-detail = Choose the bird shown in About.
+settings-flock-gift-detail = A keepsake feather and a few new birds for About.

@@ -12,11 +12,12 @@ pub enum SettingsSection {
     Integrations,
     Jujutsu,
     DataPrivacy,
+    Flock,
     About,
 }
 
 impl SettingsSection {
-    pub const ALL: [Self; 8] = [
+    pub const ALL: [Self; 9] = [
         Self::Appearance,
         Self::Fonts,
         Self::Diff,
@@ -24,6 +25,7 @@ impl SettingsSection {
         Self::Integrations,
         Self::Jujutsu,
         Self::DataPrivacy,
+        Self::Flock,
         Self::About,
     ];
 
@@ -36,6 +38,7 @@ impl SettingsSection {
             Self::Integrations => settings::page_integrations(),
             Self::Jujutsu => settings::page_jujutsu(),
             Self::DataPrivacy => settings::page_data_privacy(),
+            Self::Flock => settings::page_flock(),
             Self::About => settings::page_about(),
         }
     }
@@ -49,6 +52,7 @@ impl SettingsSection {
             Self::Integrations => glyph::WRENCH,
             Self::Jujutsu => glyph::GIT_BRANCH,
             Self::DataPrivacy => glyph::SHIELD,
+            Self::Flock => glyph::BIRD,
             Self::About => glyph::INFO,
         }
     }
@@ -57,7 +61,7 @@ impl SettingsSection {
         match self {
             Self::Appearance => t.change_id_prefix,
             Self::Fonts => t.selected_accent,
-            Self::Diff | Self::About => t.selected_accent,
+            Self::Diff | Self::Flock | Self::About => t.selected_accent,
             Self::Workflow => t.compare_accent,
             Self::Integrations => t.syntax.ty,
             Self::Jujutsu => t.success_fg,

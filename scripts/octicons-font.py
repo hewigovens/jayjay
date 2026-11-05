@@ -58,6 +58,7 @@ OCTICON = {
     "FILTER": "filter",
     "FOLDER": "file-directory",
     "GEAR": "gear",
+    "GIFT": "gift",
     "GIT_BRANCH": "git-branch",
     "GIT_MERGE": "git-merge",
     "GLOBE": "globe",
@@ -112,6 +113,12 @@ def stroked(d, transform=None):
     return path
 
 
+def minus(path, *holes):
+    for hole in holes:
+        path = pathops.op(path, hole, pathops.PathOp.DIFFERENCE)
+    return path
+
+
 def union(*paths):
     out = pathops.Path()
     for path in paths:
@@ -128,6 +135,14 @@ DRAWN = {
     "A_LARGE_SMALL": lambda svgs: union(
         stroked("M1.5 13.25 5.25 2.75 9 13.25M2.85 9.5h4.8"),
         stroked("M9.25 13.25 11.75 7l2.5 6.25M10.15 11.25h3.2"),
+    ),
+    "BIRD": lambda svgs: minus(
+        union(
+            drawn("M10.75 2.25a2.75 2.75 0 1 1 0 5.5a2.75 2.75 0 1 1 0-5.5Z"),
+            drawn("M13.2 4.1 15.5 5l-2.3.9Z"),
+            drawn("M8.3 6.2C5.4 6 3.3 8 3.4 10.1L.5 11.6l3.6.4c.9 1.4 2.6 2.25 4.4 2.25 3 0 5.1-2.4 5-5.5-.2-1.2-1-2.3-1.9-3Z"),
+        ),
+        drawn("M11.4 3.75a.75.75 0 1 1 0 1.5a.75.75 0 1 1 0-1.5Z"),
     ),
     "BRACES": lambda svgs: union(stroked(LEFT_BRACE), stroked(LEFT_BRACE, MIRROR_X)),
     "CONTRAST": lambda svgs: union(stroked(RING), drawn("M8 1.25a6.75 6.75 0 0 0 0 13.5Z")),

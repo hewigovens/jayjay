@@ -69,6 +69,7 @@ pub(super) fn sidebar(
                         SettingsSection::Integrations => this.ensure_tools_loaded(cx),
                         SettingsSection::Jujutsu => this.ensure_jj_config_loaded(cx),
                         SettingsSection::DataPrivacy => this.refresh_review_summary(cx),
+                        SettingsSection::Flock | SettingsSection::About => this.ensure_flock(cx),
                         _ => {}
                     }
                     cx.notify();

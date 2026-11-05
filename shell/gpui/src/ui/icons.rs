@@ -83,6 +83,7 @@ pub mod glyph {
     pub const ARROW_UTURN_BACK: &str = "\u{eae2}";
     pub const ARROWS_LEFT_RIGHT: &str = "\u{ebcb}";
     pub const A_LARGE_SMALL: &str = "\u{eb69}";
+    pub const BIRD: &str = "\u{e0a0}";
     pub const BOOKMARK: &str = "\u{eaa5}";
     pub const BRACES: &str = "\u{ea8b}";
     pub const CARET_DOWN: &str = "\u{eab4}";
@@ -107,6 +108,7 @@ pub mod glyph {
     pub const FOLDER: &str = "\u{ea83}";
     pub const FOLDER_MINUS: &str = "\u{e0d8}";
     pub const GEAR: &str = "\u{eaf8}";
+    pub const GIFT: &str = "\u{e0a1}";
     pub const GIT_BRANCH: &str = "\u{ea68}";
     pub const GIT_MERGE: &str = "\u{eafe}";
     pub const GLOBE: &str = "\u{eb01}";

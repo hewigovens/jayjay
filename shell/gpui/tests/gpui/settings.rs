@@ -783,3 +783,47 @@ fn settings_sidebar_resizes_from_just_beside_its_divider(cx: &mut TestAppContext
         .width;
     assert!(resized > initial + px(70.), "{initial:?} -> {resized:?}");
 }
+
+#[gpui::test]
+fn flock_picks_birds_and_redeems_codes_from_the_keyboard(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Flock, cx));
+    let window = cx.windows().last().copied().expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settings_cx.simulate_resize(size(px(900.), px(1100.)));
+    settle_visual(&mut settings_cx);
+    settings_cx.simulate_keystrokes("tab tab tab tab tab space");
+    settle_visual(&mut settings_cx);
+    settings_cx
+        .cx
+        .update(|cx| assert_eq!(current_config(cx).flock_icon, "fish-owl"));
+    click_setting(&mut settings_cx, "flock-icon-kingfisher");
+    click_setting(&mut settings_cx, "settings-nav-About");
+    assert!(
+        settings_cx
+            .debug_bounds("flock-active-kingfisher")
+            .is_some()
+    );
+    click_setting(&mut settings_cx, "settings-nav-Flock");
+    click_setting(&mut settings_cx, "flock-code");
+    click_setting(&mut settings_cx, "flock-code-input");
+    settings_cx.simulate_input("invalid-code");
+    click_setting(&mut settings_cx, "flock-redeem");
+    assert!(
+        settings_cx.debug_bounds("flock-error").is_none(),
+        "Unlock waits for a name"
+    );
+    settings_cx.simulate_keystrokes("tab");
+    settings_cx.simulate_input("Supporter");
+    settle_visual(&mut settings_cx);
+    click_setting(&mut settings_cx, "flock-redeem");
+    assert!(settings_cx.debug_bounds("flock-error").is_some());
+    settings_cx.simulate_keystrokes("escape");
+    settle_visual(&mut settings_cx);
+    assert!(settings_cx.debug_bounds("flock-code-input").is_none());
+    assert!(settings_cx.debug_bounds("flock-error").is_none());
+    assert!(
+        settings_cx.debug_bounds("flock-forget").is_none(),
+        "debug cosmetics must not create a membership"
+    );
+}
