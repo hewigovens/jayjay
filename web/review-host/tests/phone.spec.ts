@@ -68,6 +68,7 @@ test.describe("phone portrait", () => {
       has: page.locator('.jj-diff-scroll[data-path="Cargo.toml"]'),
     });
     await cargo.scrollIntoViewIfNeeded();
+    await expect(page.locator(".jj-file-section .jj-diff-lines")).toHaveCount(5);
     const group = cargo.getByRole("checkbox", { name: /Change group 1/ });
     await group.tap();
     await ready(page);
@@ -291,6 +292,7 @@ test.describe("phone portrait", () => {
       has: page.locator('.jj-diff-scroll[data-path="Cargo.toml"]'),
     });
     await cargo.scrollIntoViewIfNeeded();
+    await expect(page.locator(".jj-file-section .jj-diff-lines")).toHaveCount(4);
     await cargo.getByRole("button", { name: "Retry", exact: true }).click();
     await expect(cargo.locator(".jj-diff-cell").first()).toBeVisible();
   });
