@@ -22,10 +22,16 @@ export const ShareIcon = ({ size }: IconProps) => (
 export const SignOutIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M6.5 2.5h-3v11h3M10.5 5l3 3-3 3M13.5 8h-7" />
 );
-export const SyncIcon = ({ size }: IconProps) => (
+export const RefreshIcon = ({ size }: IconProps) => (
   <Icon
     size={size}
     d="M12.9 6.5A5 5 0 0 0 3.5 5M3 2.5V5h2.5M3.1 9.5a5 5 0 0 0 9.4 1.5M13 13.5V11h-2.5"
+  />
+);
+export const SyncIcon = ({ size }: IconProps) => (
+  <Icon
+    size={size}
+    d="M4.5 11.5H4a3 3 0 0 1-.3-6 4.5 4.5 0 0 1 8.6 0 3 3 0 0 1-.3 6h-.5M8 14V7.5M5.5 10 8 7.5 10.5 10"
   />
 );
 export const CommitIcon = ({ size }: IconProps) => (

@@ -34,7 +34,11 @@ export function ReviewWorkspace({
   review,
   labels,
   savedLabel,
+  brand,
+  hideChangeId = false,
+  onShowShortcuts,
   headerActions,
+  errorActions,
   footer,
   onRetry,
   notes = true,
@@ -43,8 +47,12 @@ export function ReviewWorkspace({
 }: {
   review: ReviewController;
   labels: Labels;
-  savedLabel: string;
+  savedLabel?: string;
+  brand?: ReactNode;
+  hideChangeId?: boolean;
+  onShowShortcuts?: () => void;
   headerActions?: ReactNode;
+  errorActions?: ReactNode;
   footer?: ReactNode;
   onRetry?: () => void;
   /** Review notes in the diff, their per-line buttons, and the banner of notes the diff cannot place. */
@@ -294,17 +302,32 @@ export function ReviewWorkspace({
 
   return (
     <div
-      className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""} ${fill ? "jj-fill" : ""}`}
+      className={`jayjay-review jj-review-workspace ${compact ? "jj-compact" : ""} ${fill ? "jj-fill" : ""} ${!result ? "jj-review-empty" : ""}`}
       aria-busy={pending}
     >
       {error && (
-        <div className="jj-review-error" role="alert">
-          {labels.renderError} {error === "worker-stopped" ? labels.workerError : error}
-          <button onClick={onRetry ?? review.retry}>{labels.retry}</button>
-          {!result && headerActions}
+        <div className={`jj-review-error ${!result ? "jj-review-error-empty" : ""}`} role="alert">
+          {!result && brand}
+          <p>{error === "worker-stopped" ? labels.workerError : error}</p>
+          <div className="jj-review-error-actions">
+            {errorActions}
+            <button
+              className="jj-review-retry"
+              disabled={pending}
+              onClick={onRetry ?? review.retry}
+            >
+              {labels.retry}
+            </button>
+            {!result && headerActions}
+          </div>
         </div>
       )}
-      {!result && !error && <p className="jj-notice">{labels.loading}</p>}
+      {!result && !error && (
+        <div className="jj-loading-hud" role="status">
+          <span className="jj-loading-mark">{brand}</span>
+          <span>{labels.loading}</span>
+        </div>
+      )}
       {result && (
         <div
           className="jj-review-columns"
@@ -317,6 +340,7 @@ export function ReviewWorkspace({
         >
           {!compact && (
             <FileColumn
+              onShowShortcuts={onShowShortcuts}
               overview={result.overview}
               selected={selected}
               disabled={disabled}
@@ -344,6 +368,7 @@ export function ReviewWorkspace({
             <ChangeHeader
               overview={result.overview}
               labels={labels}
+              hideChangeId={hideChangeId}
               actions={headerActions}
               avatars={avatars}
             />
@@ -445,9 +470,7 @@ export function ReviewWorkspace({
             )}
             <div className="jj-result-footer" aria-live="polite">
               <span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span>
-              <span>
-                {result.pack} · {result.elapsed.toFixed(1)} ms
-              </span>
+              <span>{result.elapsed.toFixed(1)} ms</span>
             </div>
           </section>
         </div>

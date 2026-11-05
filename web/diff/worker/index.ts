@@ -53,12 +53,16 @@ export default {
     if (request.method !== "GET") return json({ error: "not-found" }, 405);
     // Samples are kept once fetched, so the landing page's links open even when the rate limit is spent.
     const sample = samplePaths.has(reviewPath(target)) ? `sample:${reviewPath(target)}` : undefined;
-    const kept = sample && (await env.STORE.get(sample));
+    const fresh = request.headers
+      .get("cache-control")
+      ?.split(",")
+      .some((value) => value.trim() === "no-cache");
+    const kept = !fresh && sample && (await env.STORE.get(sample));
     if (kept)
       return new Response(kept, {
         headers: { "content-type": "application/json", "cache-control": "public, max-age=3600" },
       });
-    const cached = await caches.default.match(request);
+    const cached = !fresh && (await caches.default.match(request));
     if (cached) return cached;
     // A signed-in reader spends their own rate limit; no scope it asks for reads private repositories, so what it reads is cacheable.
     const token =

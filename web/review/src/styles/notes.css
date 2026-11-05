@@ -15,23 +15,24 @@
 }
 :where(.jayjay-review) .jj-split .jj-note-slot {
   grid-column: 1;
-  padding: 4px 16px 8px 74px;
+  padding: 4px 16px 8px 66px;
 }
 :where(.jayjay-review) .jj-split .jj-note-slot.jj-new {
   grid-column: 2;
-  padding-left: 66px;
+  padding-left: 59px;
 }
 :where(.jayjay-review) .jj-note-slot {
   display: grid;
   gap: 6px;
+  margin-left: min(var(--jj-note-indent, 0px), 40%);
 }
 :where(.jayjay-review) .jj-review-note,
 :where(.jayjay-review) .jj-note-composer {
   max-width: 720px;
   padding: 8px 10px;
-  border: 1px solid var(--jj-note-border);
+  border: 1px solid var(--jj-border);
   border-radius: 6px;
-  background: var(--jj-note-bg);
+  background: var(--jj-page);
   font:
     12px/1.5 -apple-system,
     BlinkMacSystemFont,
@@ -39,6 +40,36 @@
     sans-serif;
   color: var(--jj-ink);
   white-space: normal;
+}
+:where(.jayjay-review) .jj-review-note {
+  width: fit-content;
+  max-width: min(720px, 100%);
+  padding: 5px 8px;
+}
+:where(.jayjay-review) .jj-review-note.jj-stale,
+:where(.jayjay-review) .jj-review-note.jj-orphaned {
+  border-color: var(--jj-note-border);
+  background: var(--jj-note-bg);
+}
+:where(.jayjay-review) .jj-note-content {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+}
+:where(.jayjay-review) .jj-note-resolve {
+  display: grid;
+  place-items: center;
+  flex: none;
+  width: 24px;
+  height: 24px;
+  margin-block: -3px;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-note-resolve:hover {
+  color: var(--jj-accent);
 }
 :where(.jayjay-review) .jj-review-note.jj-resolved {
   opacity: 0.65;
@@ -70,7 +101,8 @@
   text-decoration: underline;
 }
 :where(.jayjay-review) .jj-review-note p {
-  margin: 4px 0 0;
+  min-width: 0;
+  margin: 0;
   white-space: pre-wrap;
   overflow-wrap: anywhere;
 }
@@ -143,7 +175,10 @@
   :where(.jayjay-review) .jj-split .jj-note-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    padding: 4px 10px 8px 14px;
+    padding: 4px 10px 8px 104px;
+  }
+  :where(.jayjay-review) .jj-split .jj-note-row {
+    padding-left: 66px;
   }
   :where(.jayjay-review) .jj-split .jj-note-slot,
   :where(.jayjay-review) .jj-split .jj-note-slot.jj-new {
@@ -163,7 +198,7 @@
 :where(.jayjay-review) .jj-review-error {
   display: flex;
   align-items: center;
-  justify-content: space-between;
+  flex-wrap: wrap;
   gap: 12px;
   padding: 10px 14px;
   margin-bottom: 14px;
@@ -171,4 +206,36 @@
   color: var(--jj-removed-ink);
   border-radius: 5px;
   font-size: 12px;
+}
+
+:where(.jayjay-review) .jj-review-error p {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+:where(.jayjay-review) .jj-review-error-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 8px;
+}
+:where(.jayjay-review) .jj-review-error.jj-review-error-empty {
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 20px;
+  width: min(480px, calc(100% - 32px));
+  margin: 16px auto;
+  padding: 24px;
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+  background: var(--jj-surface);
+  color: var(--jj-ink);
+  font-size: 14px;
+  line-height: 1.6;
+}
+:where(.jayjay-review) .jj-review-error-actions .jj-review-retry {
+  min-height: 36px;
+  padding: 8px 12px;
+  font-size: 13px;
+  font-weight: 500;
+  line-height: 18px;
 }

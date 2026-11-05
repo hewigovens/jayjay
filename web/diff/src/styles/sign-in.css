@@ -1,21 +1,22 @@
 .sign-in {
   display: flex;
   flex-direction: column;
-  align-items: center;
-  gap: 12px;
-  margin: 12vh auto 0;
-  padding: 0 16px;
+  align-items: flex-start;
+  gap: 8px;
   color: var(--jj-ink);
   text-align: center;
 }
 .sign-in-button {
-  padding: 8px 16px;
-  border: 0;
+  box-sizing: border-box;
+  min-height: 36px;
+  padding: 8px 12px;
+  border: 1px solid transparent;
   border-radius: 6px;
   background: var(--jj-accent);
   color: var(--jj-surface);
   font-size: 13px;
-  font-weight: 600;
+  font-weight: 500;
+  line-height: 18px;
   text-decoration: none;
   cursor: pointer;
 }
@@ -63,5 +64,27 @@ p.sign-in-note {
   cursor: pointer;
 }
 .device-code-cancel:hover {
+  color: var(--jj-ink);
+}
+
+.jj-review-error-empty .jj-review-error-actions {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  align-items: stretch;
+  width: 100%;
+}
+.jj-review-error-empty .sign-in-button {
+  width: 100%;
+  height: 100%;
+}
+.pull-error-link {
+  grid-column: 1 / -1;
+  margin-top: 4px;
+  color: var(--jj-muted);
+  font-size: 12px;
+  text-decoration: underline;
+  text-underline-offset: 3px;
+}
+.pull-error-link:hover {
   color: var(--jj-ink);
 }

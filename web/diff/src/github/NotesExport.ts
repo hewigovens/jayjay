@@ -20,11 +20,16 @@ export interface NotesExport {
 export const maxExportBytes = 1024 * 1024;
 export const exportDays = 7;
 
-export function notesExport(overview: Overview, review: string, headSha: string): NotesExport {
+export function notesExport(
+  overview: Overview,
+  review: string,
+  headSha: string,
+  title: string,
+): NotesExport {
   return {
     review,
     headSha,
-    title: overview.title,
+    title,
     notes: overview.notes
       .filter((item) => item.status !== "resolved")
       .map(({ note, status }) => ({

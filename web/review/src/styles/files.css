@@ -212,9 +212,6 @@
 :where(.jayjay-review) .jj-review-icon[data-state="reviewed"] .jj-review-check {
   stroke: var(--jj-surface);
 }
-:where(.jayjay-review) .jj-review-toggle:has(> input:disabled) {
-  opacity: 0.6;
-}
 :where(.jayjay-review) .jj-review-toggle > input:disabled {
   cursor: default;
 }

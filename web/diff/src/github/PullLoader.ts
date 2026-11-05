@@ -47,10 +47,15 @@ export class PullLoader {
     token: string | null,
     signal?: AbortSignal,
     fetcher: typeof fetch = fetch.bind(globalThis),
+    fresh = false,
   ) {
     const response = await fetcher(`/api${reviewPath(target)}`, {
       signal,
-      headers: token ? { authorization: `Bearer ${token}` } : {},
+      cache: fresh ? "no-store" : "default",
+      headers: {
+        ...(token && { authorization: `Bearer ${token}` }),
+        ...(fresh && { "cache-control": "no-cache" }),
+      },
     });
     if (!response.ok) {
       const code = await response.json().then(
@@ -70,7 +75,11 @@ export class PullLoader {
       changeId:
         manifest.commit?.slice(0, 12) ??
         (manifest.range ? `compare/${manifest.range}` : `pull/${manifest.number}`),
-      title: manifest.title,
+      title:
+        manifest.number && !manifest.commit
+          ? `${manifest.title} #${manifest.number}`
+          : manifest.title,
+      timestampMillis: manifest.timestampMillis,
       description: manifest.body,
       author: manifest.author?.login ?? "",
       authorEmail: manifest.author

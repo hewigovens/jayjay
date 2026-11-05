@@ -38,7 +38,9 @@ test("sharing follows the displayed session while another commit loads", async (
   let finish: (response: Response) => void = () => {};
   const fetcher = vi
     .fn()
-    .mockResolvedValueOnce(Response.json({ files: [], commits: [], headSha: first }))
+    .mockResolvedValueOnce(
+      Response.json({ title: "Review 1", files: [], commits: [], headSha: first }),
+    )
     .mockImplementation(
       () =>
         new Promise<Response>((resolve) => {
@@ -68,7 +70,7 @@ test("sharing follows the displayed session while another commit loads", async (
     expect(state!.review.pending).toBe(true);
     expect(state!.notes()).toMatchObject(firstExport);
     await act(async () => {
-      finish(Response.json({ files: [], commits: [], headSha: second }));
+      finish(Response.json({ title: "Review 2", files: [], commits: [], headSha: second }));
     });
     expect(state!.notes()).toMatchObject({
       review: "/o/r/pull/7",

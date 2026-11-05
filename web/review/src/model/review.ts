@@ -19,6 +19,7 @@ export interface ReviewBundle {
   /** Leading characters of `changeId` to highlight as jj does; 0 for an id that is not a jj change id. */
   changeIdPrefix?: number;
   title: string;
+  timestampMillis?: number;
   description?: string;
   author?: string;
   authorEmail?: string;
@@ -91,8 +92,8 @@ export interface Overview {
   authorAvatar?: AvatarSource | null;
   /** How many leading characters of the change id are its shortest unique prefix, as jj highlights it. */
   changeIdPrefix?: number;
-  /** Author timestamp in milliseconds since the epoch. */
-  timestampMillis?: number;
+  /** Author or pull request creation timestamp in milliseconds since the epoch. */
+  timestampMillis?: number | null;
   files: FileSummary[];
   /** Count labels formatted by the catalog; `filtered` is indexed by the number of files shown. */
   counts: { files: string; reviewed: string; filtered: string[] };

@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import { useRef, useState, type ReactNode } from "react";
+import { useRef, useState, type CSSProperties, type ReactNode } from "react";
 import type { DiffAnchor, DiffCell, DiffView, Labels } from "../../model/diff";
 import type { ReviewState } from "../../model/review";
 
@@ -176,14 +176,26 @@ export function DiffPane({
     const annotations = cells.map((cell) => cell.anchor && review?.annotation?.(cell.anchor));
     const notes = annotations.some(Boolean) && (
       <div className="jj-note-row" key={`notes:${index}`}>
-        {annotations.map(
-          (content, i) =>
-            content && (
-              <div className={`jj-note-slot jj-${cells[i].anchor!.side}`} key={i}>
-                {content}
-              </div>
-            ),
-        )}
+        {annotations.map((content, i) => {
+          if (!content) return null;
+          const whitespace = cells[i].spans
+            .map((span) => span.text)
+            .join("")
+            .match(/^[ \t]*/)![0];
+          const indent = [...whitespace].reduce(
+            (column, character) => column + (character === "\t" ? 4 - (column % 4) : 1),
+            0,
+          );
+          return (
+            <div
+              className={`jj-note-slot jj-${cells[i].anchor!.side}`}
+              style={{ "--jj-note-indent": `${indent}ch` } as CSSProperties}
+              key={i}
+            >
+              {content}
+            </div>
+          );
+        })}
       </div>
     );
     if (group === undefined) {

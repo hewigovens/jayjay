@@ -24,6 +24,7 @@ test("diffs against the merge base and reads the files from GitHub's diff", asyn
         title: "T",
         body: null,
         user: { login: "u", id: 9 },
+        created_at: "2026-10-31T12:00:00Z",
         changed_files: 2,
         commits: 1,
         base: { sha: "tip", repo: { private: false } },
@@ -49,6 +50,7 @@ test("diffs against the merge base and reads the files from GitHub's diff", asyn
   expect(manifest).toMatchObject({
     repository: "o/r",
     title: "T",
+    timestampMillis: Date.parse("2026-10-31T12:00:00Z"),
     body: "",
     author: { login: "u", id: 9 },
     baseSha: "base",

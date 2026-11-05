@@ -55,7 +55,7 @@
     font-size: 12px;
   }
   :where(.jayjay-review) .jj-change-header h1 {
-    flex: 1 1 0;
+    flex: 1 1 auto;
     font-size: 18px;
   }
   /* The host's actions take their own row, so a long title keeps the width. */

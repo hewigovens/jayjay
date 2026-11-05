@@ -15,6 +15,8 @@ pub(crate) struct ReviewBundle {
     pub change_id_prefix: Option<usize>,
     pub title: String,
     #[serde(default)]
+    pub timestamp_millis: Option<i64>,
+    #[serde(default)]
     pub description: String,
     #[serde(default)]
     pub author: String,

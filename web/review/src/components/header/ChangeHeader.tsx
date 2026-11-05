@@ -23,11 +23,13 @@ function reflow(text: string): string {
 export function ChangeHeader({
   overview,
   labels,
+  hideChangeId = false,
   actions,
   avatars,
 }: {
   overview: Overview;
   labels: Labels;
+  hideChangeId?: boolean;
   actions?: ReactNode;
   avatars: boolean;
 }) {
@@ -73,20 +75,26 @@ export function ChangeHeader({
           <>
             <Avatar source={avatars ? overview.authorAvatar : null} name={overview.author} />
             <span className="jj-author">{overview.author}</span>
-            <span className="jj-separator" aria-hidden="true">
-              ·
-            </span>
+            {(!hideChangeId || date) && (
+              <span className="jj-separator" aria-hidden="true">
+                ·
+              </span>
+            )}
           </>
         )}
-        <code className="jj-change-id" title={overview.changeId}>
-          {prefix > 0 && <b>{overview.changeId.slice(0, prefix)}</b>}
-          {overview.changeId.slice(prefix)}
-        </code>
+        {!hideChangeId && (
+          <code className="jj-change-id" title={overview.changeId}>
+            {prefix > 0 && <b>{overview.changeId.slice(0, prefix)}</b>}
+            {overview.changeId.slice(prefix)}
+          </code>
+        )}
         {date && (
           <>
-            <span className="jj-separator" aria-hidden="true">
-              ·
-            </span>
+            {!hideChangeId && (
+              <span className="jj-separator" aria-hidden="true">
+                ·
+              </span>
+            )}
             <time>{date}</time>
           </>
         )}

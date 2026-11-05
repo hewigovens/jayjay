@@ -87,6 +87,8 @@ Review locking coordinates processes built with this crate; an older app that ig
 
 ### Browser review PWA
 
+Browser presentation preferences use origin-local `localStorage`: `jayjay.review.filesWidth` stores the sidebar width and `jayjay.review.filesView` stores `tree` or `list`. Missing or unreadable preferences use defaults; blocked writes leave the choice active for the current visit. These preferences are separate from review marks and notes.
+
 `web/review/src/local/BrowserReviewStorage.ts` adapts a consumer-named IndexedDB database, object store `data`. Server-backed hosts bypass this adapter. `active-bundle` holds the imported source bundle; `review:<repositoryId>` holds canonical review JSON. Each review write reads the latest snapshot and runs the Rust mutation synchronously inside one IndexedDB transaction; the UI reports success after commit. An import stores a recovery snapshot under `review-backup:<repositoryId>`; restoration checks that no later edit would be overwritten. Browser review state is local to the origin and repository ID, with desktop-schema JSON import/export but no cross-device synchronization. Imported bundles and notes are private source-review data; browser eviction remains possible, so exports are the portable backup.
 
 Cache Storage is separate: `jayjay-shell-<version>` holds generated static assets and the grammar-free base; `jayjay-syntax-v1` holds content-addressed WASM groups. Neither cache holds review bundles or API responses. The service worker cleans only its own obsolete assets; it leaves IndexedDB review state intact.

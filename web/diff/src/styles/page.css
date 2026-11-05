@@ -30,7 +30,18 @@ main {
   box-sizing: border-box;
 }
 main.pull-page {
+  display: flex;
+  flex-direction: column;
   max-width: none;
   height: 100dvh;
   padding: 0;
+}
+
+.pull-page > .jj-review-workspace:not(.jj-review-empty) {
+  flex: 1;
+  height: auto;
+  min-height: 0;
+}
+.pull-page > .jj-review-empty {
+  min-height: 100dvh;
 }

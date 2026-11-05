@@ -4,6 +4,7 @@ export interface PullManifest {
   // A comparison's `base...head`, with the default branch filled in as base.
   range?: string;
   title: string;
+  timestampMillis?: number;
   body: string;
   author: { login: string; id: number } | null;
   // The merge base, or a single commit's first parent.

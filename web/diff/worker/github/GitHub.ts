@@ -21,6 +21,7 @@ export interface GitHubPull {
   merged_at: string | null;
   body: string | null;
   user: GitHubUser | null;
+  created_at: string;
   changed_files: number;
   commits: number;
   base: { ref: string; sha: string; repo: { private: boolean; default_branch: string } };
@@ -82,6 +83,7 @@ export class GitHub {
       repository,
       number,
       title: pull.title,
+      timestampMillis: Date.parse(pull.created_at) || undefined,
       body: pull.body ?? "",
       author: pull.user && { login: pull.user.login, id: pull.user.id },
       baseSha: compare.merge_base_commit.sha,

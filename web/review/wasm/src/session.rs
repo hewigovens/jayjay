@@ -193,7 +193,7 @@ impl ReviewSession {
         let tree: Vec<Value> = jayjay_primitives::file_tree::build_file_tree(&self.bundle.files.iter().map(|file| file.path.clone()).collect::<Vec<_>>())
             .into_iter().map(|entry| json!({"name": entry.name, "path": entry.path, "depth": entry.depth, "file": entry.hunk_index})).collect();
         Ok(
-            json!({ "repositoryId": self.bundle.repository_id, "changeId": self.bundle.change_id, "changeIdPrefix": self.bundle.change_id_prefix, "title": self.bundle.title,
+            json!({ "repositoryId": self.bundle.repository_id, "changeId": self.bundle.change_id, "changeIdPrefix": self.bundle.change_id_prefix, "title": self.bundle.title, "timestampMillis": self.bundle.timestamp_millis,
             "description": self.bundle.description, "descriptionHtml": self.description_html, "author": self.bundle.author,
             "authorAvatar": AvatarSource::for_email(&self.bundle.author_email, 96), "files": files, "counts": counts, "tree": tree, "notes": notes }),
         )

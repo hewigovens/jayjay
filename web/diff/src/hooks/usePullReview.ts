@@ -14,7 +14,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
   // Read on each open, so picking a commit reopens the review in place and keeps the last one on screen until it is ready.
   const wanted = useRef(pull.commit);
   wanted.current = pull.commit;
-  const opened = useRef(new Map<number, { target: ReviewRef; headSha: string }>());
+  const opened = useRef(new Map<number, { target: ReviewRef; headSha: string; title: string }>());
   const [commits, setCommits] = useState<PullCommit[]>([]);
   const [stack, setStack] = useState<PullStackEntry[]>();
   const prefetch = useRef<AbortController>(undefined);
@@ -33,7 +33,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     setSyncing(false);
   }
 
-  const backend = useMemo<ReviewBackend>(() => {
+  const backend = useMemo(() => {
     let loader: PullLoader | undefined;
     let session = 0;
     let supplied = new Map<number, Promise<void>>();
@@ -65,11 +65,17 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     }
 
     return {
-      open: (signal) =>
+      open: (signal?: AbortSignal, fresh = false) =>
         localized(async () => {
           prefetch.current?.abort();
           const commit = wanted.current;
-          const next = await PullLoader.open({ ...pull, commit }, GitHubSignIn.token, signal);
+          const next = await PullLoader.open(
+            { ...pull, commit },
+            GitHubSignIn.token,
+            signal,
+            undefined,
+            fresh,
+          );
           const first = new Map<number, FileContent>();
           if (next.manifest.files.length) first.set(0, await next.content(0));
           // The worker holds one session, which an abandoned open must not replace.
@@ -81,6 +87,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
           opened.current.set(session, {
             target: { ...pull, commit },
             headSha: next.manifest.headSha,
+            title: next.manifest.title,
           });
           setCommits(next.manifest.commits);
           // Only the whole pull request's manifest follows the stack; a commit keeps what it showed.
@@ -110,7 +117,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
         }),
       image: async (selection, side) =>
         (await loader?.content(selection.file))?.images?.[side] ?? null,
-    };
+    } satisfies ReviewBackend;
     // The path identifies the pull request; a new `pull` object for the same path must not reload it.
   }, [client, labels, path]);
   const review = useReview(backend);
@@ -119,6 +126,20 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
   const session = review.result?.session;
   const displayed = session === undefined ? undefined : opened.current.get(session);
   const shown = displayed && (displayed.target.commit ?? "");
+
+  function refresh() {
+    const { result, selected, options } = review;
+    const path = result?.overview.files[selected]?.path;
+    return review.run(async (signal) => {
+      const next = await backend.open(signal, true);
+      if (!next.overview.files.length) return { ...next, options };
+      const file = Math.max(
+        0,
+        next.overview.files.findIndex((entry) => entry.path === path),
+      );
+      return backend.render({ session: next.session, file, options });
+    });
+  }
 
   // A failed open of the same commit waits for Retry rather than looping.
   const asked = useRef(pull.commit);
@@ -160,6 +181,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
 
   return {
     review,
+    refresh,
     shown,
     commits,
     stack,
@@ -170,12 +192,17 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     signOut,
     notes: () =>
       review.result && displayed
-        ? notesExport(review.result.overview, reviewPath(displayed.target), displayed.headSha)
+        ? notesExport(
+            review.result.overview,
+            reviewPath(displayed.target),
+            displayed.headSha,
+            displayed.title,
+          )
         : null,
     onSignedIn: () => {
       setSignedIn(true);
       setNeedsSignIn(false);
-      review.retry();
+      void refresh();
     },
     enableSync: () => {
       pushReviewed.current = true;

@@ -103,6 +103,7 @@ export function FileColumn({
   labels,
   select,
   toggle,
+  onShowShortcuts,
   notes = true,
 }: {
   overview: Overview;
@@ -111,9 +112,25 @@ export function FileColumn({
   labels: Labels;
   select: (index: number) => void;
   toggle: (index: number) => void;
+  onShowShortcuts?: () => void;
   notes?: boolean;
 }) {
-  const [tree, setTree] = useState(true);
+  const [tree, setTree] = useState(() => {
+    try {
+      return localStorage.getItem("jayjay.review.filesView") !== "list";
+    } catch {
+      return true;
+    }
+  });
+  function toggleTree() {
+    const next = !tree;
+    setTree(next);
+    try {
+      localStorage.setItem("jayjay.review.filesView", next ? "tree" : "list");
+    } catch {
+      return;
+    }
+  }
   const [searching, setSearching] = useState(false);
   const [filter, setFilter] = useState("");
   const [hideReviewed, setHideReviewed] = useState(false);
@@ -148,7 +165,7 @@ export function FileColumn({
     selected,
     select,
     () => setSearching(true),
-    () => setShortcuts(true),
+    onShowShortcuts ?? (() => setShortcuts(true)),
   );
 
   function folder(path: string) {
@@ -195,7 +212,7 @@ export function FileColumn({
         <ToolButton
           aria-pressed={tree}
           label={tree ? labels.showingTree : labels.showingFlat}
-          onClick={() => setTree(!tree)}
+          onClick={toggleTree}
         >
           {tree ? <TreeIcon /> : <ListIcon />}
         </ToolButton>
@@ -209,13 +226,15 @@ export function FileColumn({
         <span className="jj-file-count" title={counts.reviewed}>
           {countLabel}
         </span>
-        <ToolButton
-          label={labels.shortcuts}
-          aria-keyshortcuts="?"
-          onClick={() => setShortcuts(true)}
-        >
-          <KeyboardIcon />
-        </ToolButton>
+        {!onShowShortcuts && (
+          <ToolButton
+            label={labels.shortcuts}
+            aria-keyshortcuts="?"
+            onClick={() => setShortcuts(true)}
+          >
+            <KeyboardIcon />
+          </ToolButton>
+        )}
       </div>
       {searching && (
         <div className="jj-file-filter">
