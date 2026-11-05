@@ -1,10 +1,11 @@
 use crate::external_tools::EXTERNAL_TOOL_USAGE;
 use crate::{
-    CliCommandOutcome, JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
-    JJ_TOOL_CONFIG, JayError,
+    CliCommandOutcome, JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND,
+    JAYJAY_TOOL_COMMAND, JJ_TOOL_CONFIG, JayError, JayResult,
 };
 
-use super::parser::{ReviewOutcome, parse_review};
+use super::import::ImportCommand;
+use super::parser::{ParseOutcome, parse, parse_review};
 
 /// Runs app-owned headless commands before either desktop shell initializes its UI. `None` lets the caller continue normal app startup.
 pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCommandOutcome> {
@@ -23,18 +24,29 @@ pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCom
         return matches!(arguments.get(1).map(String::as_str), Some("-h" | "--help"))
             .then(|| CliCommandOutcome::ok(EXTERNAL_TOOL_USAGE));
     }
-    if first != JAYJAY_REVIEW_COMMAND {
-        return None;
+    let rest = &arguments[1..];
+    match first.as_str() {
+        JAYJAY_REVIEW_COMMAND => Some(run(parse_review(rest), |command| command.run())),
+        JAYJAY_IMPORT_COMMAND => Some(run(
+            parse("jayjay import", rest),
+            |command: ImportCommand| command.run(),
+        )),
+        _ => None,
     }
+}
 
-    Some(match parse_review(&arguments[1..]) {
-        Ok(ReviewOutcome::Run(command)) => match command.run() {
+fn run<T>(
+    parsed: Result<ParseOutcome<T>, String>,
+    execute: impl FnOnce(T) -> JayResult<String>,
+) -> CliCommandOutcome {
+    match parsed {
+        Ok(ParseOutcome::Run(command)) => match execute(command) {
             Ok(output) => CliCommandOutcome::ok(output),
             Err(error) => CliCommandOutcome::err(format!("error: {}\n", describe_error(&error))),
         },
-        Ok(ReviewOutcome::Print(text)) => CliCommandOutcome::ok(text),
+        Ok(ParseOutcome::Print(text)) => CliCommandOutcome::ok(text),
         Err(message) => CliCommandOutcome::err(format!("error: {message}\n")),
-    })
+    }
 }
 
 // Stable CLI output, deliberately diverging from JayError's Display in places (no "diff error:" prefix, capitalized "Canceled"); pinned by errors_use_shell_independent_text.

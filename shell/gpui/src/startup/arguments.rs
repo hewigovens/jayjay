@@ -39,6 +39,8 @@ pub(super) enum Command {
     Config(ForwardedArguments),
     #[command(about = "Manage review notes (notes, add-note, resolve-note)")]
     Review(ForwardedArguments),
+    #[command(about = "Import a pull request or merge request into a new workspace")]
+    Import(ForwardedArguments),
     #[command(
         about = "Open a blocking diff, edit, or merge session",
         after_help = "Usage:\n  jayjay tool diff <LEFT> <RIGHT>\n  jayjay tool edit <LEFT> <RIGHT>\n  jayjay tool merge <LEFT> <BASE> <RIGHT> <OUTPUT> [<PATH> <MARKER_LENGTH>]"

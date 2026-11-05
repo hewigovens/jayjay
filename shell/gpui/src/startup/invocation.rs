@@ -1,7 +1,10 @@
 use std::path::PathBuf;
 
 use jayjay_core::external_tools::{ExternalToolInvocation, parse_external_tool_invocation};
-use jayjay_core::{JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND, JayResult};
+use jayjay_core::{
+    JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
+    JayResult,
+};
 
 use super::arguments::{Arguments, Command};
 
@@ -28,6 +31,7 @@ impl TryFrom<Arguments> for Invocation {
             let (name, mut forwarded) = match command {
                 Command::Config(args) => (JAYJAY_CONFIG_COMMAND, args.arguments),
                 Command::Review(args) => (JAYJAY_REVIEW_COMMAND, args.arguments),
+                Command::Import(args) => (JAYJAY_IMPORT_COMMAND, args.arguments),
                 Command::Tool(args) => (JAYJAY_TOOL_COMMAND, args.arguments),
             };
             forwarded.insert(0, name.to_owned());
@@ -108,6 +112,7 @@ mod tests {
     fn shared_commands_keep_their_arguments() {
         for args in [
             &["review", "notes", "--repo", ".", "--format", "json"][..],
+            &["import", "https://github.com/o/r/pull/1", "--name", "pr-1"],
             &["config", "extra"],
         ] {
             assert_eq!(

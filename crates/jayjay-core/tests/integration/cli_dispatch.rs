@@ -78,3 +78,23 @@ fn review_round_trip_formats_outcomes_shared_by_both_shells() {
         rejected.message
     );
 }
+
+#[test]
+fn import_reports_unsupported_urls_without_touching_the_repo() {
+    let temp_dir = init_jj_repo();
+    let repo = temp_dir.path().join("repo");
+    let outcome = run(&[
+        "import",
+        "https://github.com/o/r/issues/1",
+        "--repo",
+        repo.to_str().expect("utf8 repo path"),
+    ]);
+    assert!(outcome.is_error());
+    assert!(
+        outcome
+            .message
+            .starts_with("error: Not a supported pull request URL."),
+        "{}",
+        outcome.message
+    );
+}

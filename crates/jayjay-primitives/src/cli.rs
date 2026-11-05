@@ -1,4 +1,5 @@
 pub const JAYJAY_CONFIG_COMMAND: &str = "config";
+pub const JAYJAY_IMPORT_COMMAND: &str = "import";
 pub const JAYJAY_REVIEW_COMMAND: &str = "review";
 pub const JAYJAY_TOOL_COMMAND: &str = "tool";
 

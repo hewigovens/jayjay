@@ -5,24 +5,32 @@ use crate::{NoteSide, ReviewOutputFormat};
 
 use super::review::ReviewCommand;
 
-/// Whether the parsed review command line starts the workflow or prints static text.
+/// Whether a parsed command line starts the workflow or prints static text.
 #[derive(Debug)]
-pub(super) enum ReviewOutcome {
-    Run(ReviewCommand),
+pub(super) enum ParseOutcome<T> {
+    Run(T),
     Print(String),
 }
 
-pub(super) fn parse_review(arguments: &[String]) -> Result<ReviewOutcome, String> {
-    let program = "jayjay review".to_owned();
-    match ReviewCli::try_parse_from(std::iter::once(&program).chain(arguments)) {
-        Ok(cli) => {
-            let subcommand = cli
-                .command
-                .ok_or_else(|| "missing review subcommand".to_owned())?;
-            Ok(ReviewOutcome::Run(subcommand.into()))
-        }
+pub(super) fn parse_review(arguments: &[String]) -> Result<ParseOutcome<ReviewCommand>, String> {
+    let cli: ReviewCli = match parse("jayjay review", arguments)? {
+        ParseOutcome::Run(cli) => cli,
+        ParseOutcome::Print(text) => return Ok(ParseOutcome::Print(text)),
+    };
+    let subcommand = cli
+        .command
+        .ok_or_else(|| "missing review subcommand".to_owned())?;
+    Ok(ParseOutcome::Run(subcommand.into()))
+}
+
+pub(super) fn parse<P: Parser>(
+    program: &str,
+    arguments: &[String],
+) -> Result<ParseOutcome<P>, String> {
+    match P::try_parse_from(std::iter::once(program).chain(arguments.iter().map(String::as_str))) {
+        Ok(parsed) => Ok(ParseOutcome::Run(parsed)),
         Err(error) => match error.kind() {
-            ErrorKind::DisplayHelp => Ok(ReviewOutcome::Print(error.to_string())),
+            ErrorKind::DisplayHelp => Ok(ParseOutcome::Print(error.to_string())),
             _ => Err(error_message(&error.to_string())),
         },
     }
@@ -225,8 +233,8 @@ mod tests {
 
     fn run_parse(arguments: &[&str]) -> ReviewCommand {
         match parse_review(&args(arguments)).expect("parses") {
-            ReviewOutcome::Run(command) => command,
-            ReviewOutcome::Print(text) => panic!("unexpected print: {text}"),
+            ParseOutcome::Run(command) => command,
+            ParseOutcome::Print(text) => panic!("unexpected print: {text}"),
         }
     }
 
@@ -458,7 +466,7 @@ mod tests {
             &["add-note", "--help"][..],
         ] {
             match parse_review(&args(arguments)) {
-                Ok(ReviewOutcome::Print(text)) => {
+                Ok(ParseOutcome::Print(text)) => {
                     assert!(text.contains("Usage"), "expected usage, got: {text}")
                 }
                 other => panic!("expected print outcome, got: {other:?}"),

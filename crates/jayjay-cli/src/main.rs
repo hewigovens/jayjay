@@ -6,7 +6,9 @@ use std::ffi::OsString;
 use std::path::Path;
 
 use crate::args::{Cli, Command};
-use jayjay_primitives::{JAYJAY_CONFIG_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND};
+use jayjay_primitives::{
+    JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
+};
 
 fn main() {
     let args: Vec<OsString> = std::env::args_os().collect();
@@ -29,7 +31,13 @@ fn main() {
 
 fn app_arguments(arguments: &[OsString]) -> Option<Vec<OsString>> {
     let first = arguments.get(1)?.to_str()?;
-    if first == JAYJAY_REVIEW_COMMAND || first == JAYJAY_TOOL_COMMAND {
+    if [
+        JAYJAY_REVIEW_COMMAND,
+        JAYJAY_IMPORT_COMMAND,
+        JAYJAY_TOOL_COMMAND,
+    ]
+    .contains(&first)
+    {
         return Some(arguments[1..].to_vec());
     }
     if first == JAYJAY_CONFIG_COMMAND {
@@ -64,7 +72,11 @@ mod tests {
 
     #[test]
     fn forwards_app_owned_cli_commands() {
-        for command in [JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND] {
+        for command in [
+            JAYJAY_REVIEW_COMMAND,
+            JAYJAY_IMPORT_COMMAND,
+            JAYJAY_TOOL_COMMAND,
+        ] {
             let arguments = vec![OsString::from("jayjay"), OsString::from(command)];
             assert_eq!(
                 app_arguments(&arguments),
