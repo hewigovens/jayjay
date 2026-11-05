@@ -33,7 +33,12 @@ export function parseReviewRef(input: string): ReviewRef | null {
     );
   if (compare) {
     const [, owner, repo, range, commit] = compare;
-    const refs = range.split("...");
+    let refs: string[];
+    try {
+      refs = range.split("...").map(decodeURIComponent);
+    } catch {
+      return null;
+    }
     const [base, head] = refs.length === 2 ? refs : [undefined, refs[0]];
     if (
       !name.test(owner) ||
