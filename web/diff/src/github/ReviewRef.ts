@@ -33,7 +33,12 @@ export function parseReviewRef(input: string): ReviewRef | null {
     );
   if (compare) {
     const [, owner, repo, range, commit] = compare;
-    const refs = range.split("...");
+    let refs: string[];
+    try {
+      refs = range.split("...").map(decodeURIComponent);
+    } catch {
+      return null;
+    }
     const [base, head] = refs.length === 2 ? refs : [undefined, refs[0]];
     if (
       !name.test(owner) ||
@@ -68,7 +73,9 @@ export function compareRange({ base, head }: CompareRef) {
 // Also GitHub's path, except for a comparison's commit.
 export function reviewPath(target: ReviewRef) {
   const { owner, repo, commit } = target;
-  const what = isPullRequest(target) ? `pull/${target.number}` : `compare/${compareRange(target)}`;
+  const what = isPullRequest(target)
+    ? `pull/${target.number}`
+    : `compare/${compareRange(target).split("/").map(encodeURIComponent).join("/")}`;
   return `/${owner}/${repo}/${what}${commit ? `/commits/${commit}` : ""}`;
 }
 

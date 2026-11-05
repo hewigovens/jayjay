@@ -56,3 +56,28 @@ test("rejects anything that is not one pull request or comparison", () => {
   ])
     expect(parseReviewRef(input), input).toBeNull();
 });
+
+test("decodes comparison refs once and round-trips request paths", () => {
+  for (const input of [
+    "https://github.com/o/r/compare/release%2Fv1...feature%2fx",
+    "/o/r/compare/release%2Fv1...feature%2Fx?expand=1",
+  ]) {
+    const target = parseReviewRef(input);
+    expect(target).toEqual({ owner: "o", repo: "r", base: "release/v1", head: "feature/x" });
+    expect(parseReviewRef(reviewPath(target!))).toEqual(target);
+  }
+  const target = parseReviewRef("o/r/compare/feature%2Fx%2By%40z");
+  expect(target).toEqual({ owner: "o", repo: "r", head: "feature/x+y@z" });
+  expect(reviewPath(target!)).toBe("/o/r/compare/feature/x%2By%40z");
+  for (const range of [
+    "main...bad%",
+    "main...%FF",
+    "main...%252Fx",
+    "main...%2E%2E/x",
+    "main...user%3Abranch",
+    "main...x%3Fy",
+    "main...x%23y",
+  ]) {
+    expect(parseReviewRef(`o/r/compare/${range}`)).toBeNull();
+  }
+});

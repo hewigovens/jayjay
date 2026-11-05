@@ -14,12 +14,10 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
   // Read on each open, so picking a commit reopens the review in place and keeps the last one on screen until it is ready.
   const wanted = useRef(pull.commit);
   wanted.current = pull.commit;
-  // The commit each opened session shows, "" for the whole pull request.
-  const opened = useRef(new Map<number, string>());
+  const opened = useRef(new Map<number, { target: ReviewRef; headSha: string }>());
   const [commits, setCommits] = useState<PullCommit[]>([]);
   const [stack, setStack] = useState<PullStackEntry[]>();
   const prefetch = useRef<AbortController>(undefined);
-  const headSha = useRef("");
   const [signedIn, setSignedIn] = useState(() => GitHubSignIn.token !== null);
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const [syncing, setSyncing] = useState(() => GitHubSignIn.canWrite);
@@ -80,8 +78,10 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
           loader = next;
           session = result.session;
           supplied = new Map([[0, Promise.resolve()]]);
-          opened.current.set(session, commit ?? "");
-          headSha.current = next.manifest.headSha;
+          opened.current.set(session, {
+            target: { ...pull, commit },
+            headSha: next.manifest.headSha,
+          });
           setCommits(next.manifest.commits);
           // Only the whole pull request's manifest follows the stack; a commit keeps what it showed.
           if (!commit) setStack(next.manifest.stack);
@@ -117,7 +117,8 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
   const latest = useRef(review);
   latest.current = review;
   const session = review.result?.session;
-  const shown = session === undefined ? undefined : opened.current.get(session);
+  const displayed = session === undefined ? undefined : opened.current.get(session);
+  const shown = displayed && (displayed.target.commit ?? "");
 
   // A failed open of the same commit waits for Retry rather than looping.
   const asked = useRef(pull.commit);
@@ -168,7 +169,9 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     syncFailed,
     signOut,
     notes: () =>
-      review.result && notesExport(review.result.overview, reviewPath(pull), headSha.current),
+      review.result && displayed
+        ? notesExport(review.result.overview, reviewPath(displayed.target), displayed.headSha)
+        : null,
     onSignedIn: () => {
       setSignedIn(true);
       setNeedsSignIn(false);
