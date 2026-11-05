@@ -12,11 +12,12 @@
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
 [![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
 
-**JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows beta and reusable Rust libraries for diff and review tooling.**
+**JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows beta, a web diff viewer, and reusable Rust and React libraries for diff and review tooling.**
 
 - **macOS:** native SwiftUI app.
 - **Linux:** GPUI app. Its macOS build is for development.
 - **Windows:** GPUI beta, available from the Microsoft Store or as a portable ZIP.
+- **Web:** [JayJay Diff](https://diff.hewig.dev) for public GitHub pull requests and comparisons, built with the reusable React review UI.
 - **Rust libraries:** diffing, review state, repository operations, and app bindings.
 
 
@@ -104,6 +105,14 @@ just gpui           # Build and launch the GPUI app
 just gpui-appimage  # Build the Linux AppImage
 ```
 
+## Web Diff and Review
+
+[JayJay Diff](https://diff.hewig.dev) ([`web/diff`](web/diff)) opens public GitHub pull requests, individual pull-request commits, and branch comparisons. A Cloudflare Worker fetches GitHub metadata; the browser loads file contents and uses the shared review engine for diffs, review marks, and notes. Review state stays in the browser's IndexedDB, with optional GitHub Viewed sync for pull requests.
+
+[`@jayjay/review-web`](web/review) is the reusable React review UI behind JayJay Diff. Hosts supply a typed async `ReviewBackend`; the optional local backend runs Rust through WASM in a worker and persists state in IndexedDB. The WASM adapter uses `jj-diff`, `jayjay-review`, and `jayjay-primitives` directly, without `jj-lib` or UniFFI. The package is consumed from source and is not published to a registry.
+
+See the [review package](web/review/README.md) for integration, [browser test host](web/review-host/README.md) for WASM build and browser test setup, and [JayJay Diff](web/diff/README.md) for development and deployment.
+
 ## Rust Libraries
 
 The Rust workspace keeps diff rendering, review state, and shared domain types independent of `jj-lib`.
@@ -117,6 +126,7 @@ The Rust workspace keeps diff rendering, review state, and shared domain types i
 | `jayjay-network` | Platform-neutral HTTP request handling with an optional blocking client | No |
 | `jayjay-core` | App-facing repo operations, jj data access, mutations, and format projections | Yes |
 | `jayjay-uniffi` | UniFFI bindings for the SwiftUI app and WASM consumers | Indirect |
+| [`jj-diff-web`](web/review/wasm) | WASM bindings for the web review backend, built with wasm-bindgen | No |
 | `jayjay-cli` | Thin app launcher; command-line subcommands are served by the bundled macOS app, or the GPUI app on Linux and Windows | No |
 
 Rule of thumb: `jj-lib` belongs in `jayjay-core`. Diff rendering, review state, and shared domain types stay below that boundary so they can be reused without embedding jj's repo model.
@@ -127,6 +137,8 @@ flowchart LR
   uniffi --> core["jayjay-core (jj-lib)"]
   gpui["GPUI app (Linux, Windows)"] --> core
   cli[jayjay-cli]
+  webdiff["JayJay Diff (web/diff)"] --> webreview["React review UI (web/review)"]
+  webreview -. optional local backend .-> wasm["jj-diff-web (wasm-bindgen)"]
 
   subgraph portable [No jj-lib]
     review[jayjay-review]
@@ -136,6 +148,10 @@ flowchart LR
     markdown[jayjay-markdown]
   end
 
+  wasm --> review
+  wasm --> diff
+  wasm --> primitives
+  wasm --> markdown
   core --> review
   core --> network
   review --> diff
@@ -148,13 +164,13 @@ flowchart LR
   classDef ffi fill:#E8F5E9,stroke:#43A047,color:#1B5E20;
   classDef core fill:#FFF8E1,stroke:#FB8C00,color:#E65100;
   classDef lib fill:#ECEFF1,stroke:#546E7A,color:#263238;
-  class swiftui,gpui,cli app;
-  class uniffi ffi;
+  class swiftui,gpui,cli,webdiff app;
+  class uniffi,wasm ffi;
   class core core;
-  class review,diff,primitives,network,markdown lib;
+  class review,diff,primitives,network,markdown,webreview lib;
 ```
 
-Arrows point from a crate to the crates it depends on.
+Solid arrows show selected package dependencies. The dotted arrow shows the optional local WASM backend; hosts can instead supply their own `ReviewBackend`.
 
 ### `jj-diff`
 
