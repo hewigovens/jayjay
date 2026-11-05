@@ -1,5 +1,5 @@
-use super::icon::FlockIcon;
 use gpui::{AnyElement, App, IntoElement, RenderImage, Styled, img, px};
+use jayjay_core::flock::FlockIcon;
 use std::sync::Arc;
 
 pub(super) struct Artwork {
@@ -21,7 +21,7 @@ impl Artwork {
             birds: FlockIcon::ALL
                 .into_iter()
                 .filter_map(|icon| {
-                    let (light, dark) = icon.svgs()?;
+                    let (light, dark) = svgs(icon)?;
                     Some((icon, render(light), render(dark)))
                 })
                 .collect(),
@@ -36,4 +36,26 @@ impl Artwork {
                 .into_any_element(),
         )
     }
+}
+
+fn svgs(icon: FlockIcon) -> Option<(&'static [u8], &'static [u8])> {
+    Some(match icon {
+        FlockIcon::Classic => return None,
+        FlockIcon::FishOwl => (
+            include_bytes!("../../../../../../assets/flock/flock-fish-owl-light.svg"),
+            include_bytes!("../../../../../../assets/flock/flock-fish-owl-dark.svg"),
+        ),
+        FlockIcon::GoldenPheasant => (
+            include_bytes!("../../../../../../assets/flock/flock-golden-pheasant-light.svg"),
+            include_bytes!("../../../../../../assets/flock/flock-golden-pheasant-dark.svg"),
+        ),
+        FlockIcon::Kingfisher => (
+            include_bytes!("../../../../../../assets/flock/flock-kingfisher-light.svg"),
+            include_bytes!("../../../../../../assets/flock/flock-kingfisher-dark.svg"),
+        ),
+        FlockIcon::Flycatcher => (
+            include_bytes!("../../../../../../assets/flock/flock-flycatcher-light.svg"),
+            include_bytes!("../../../../../../assets/flock/flock-flycatcher-dark.svg"),
+        ),
+    })
 }

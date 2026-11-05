@@ -1,3 +1,4 @@
+import JayJayCore
 import SwiftUI
 
 struct FlockIconPicker: View {
@@ -32,7 +33,7 @@ struct FlockIconPicker: View {
                 .buttonStyle(.plain)
                 .accessibilityLabel(icon.title)
                 .accessibilityAddTraits(flock.activeIcon == icon ? .isSelected : [])
-                .accessibilityIdentifier(AID.Settings.flockIcon(icon.rawValue))
+                .accessibilityIdentifier(AID.Settings.flockIcon(icon.id))
             }
         }
     }

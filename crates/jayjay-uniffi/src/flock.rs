@@ -1,7 +1,7 @@
 use std::sync::Arc;
 
 use jayjay_core::JayError;
-use jayjay_core::flock::{FlockMember, FlockStore, FlockVerification};
+use jayjay_core::flock::{FlockIcon, FlockMember, FlockStore, FlockVerification};
 
 use crate::repo::JayJaySyncToken;
 
@@ -17,6 +17,36 @@ pub enum FlockVerification {
     SignInRequired,
     NotSponsored { login: String },
     Unlocked { member: FlockMember },
+}
+
+#[uniffi::remote(Enum)]
+pub enum FlockIcon {
+    Classic,
+    FishOwl,
+    GoldenPheasant,
+    Kingfisher,
+    Flycatcher,
+}
+
+#[uniffi::export]
+fn flock_icons() -> Vec<FlockIcon> {
+    FlockIcon::ALL.to_vec()
+}
+
+/// Unknown ids, including a missing preference, fall back to the classic bird.
+#[uniffi::export]
+fn flock_icon(id: String) -> FlockIcon {
+    FlockIcon::from_id(&id)
+}
+
+#[uniffi::export]
+fn flock_icon_id(icon: FlockIcon) -> String {
+    icon.id().to_owned()
+}
+
+#[uniffi::export]
+fn flock_icon_title(icon: FlockIcon) -> String {
+    icon.title()
 }
 
 #[uniffi::export]

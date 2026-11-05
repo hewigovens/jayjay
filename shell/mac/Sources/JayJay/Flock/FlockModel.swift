@@ -10,7 +10,7 @@ final class FlockModel {
 
     init(defaults: UserDefaults = .standard) {
         self.defaults = defaults
-        icon = FlockIcon(rawValue: defaults.string(forKey: "jayjay.flockIcon") ?? "") ?? .classic
+        icon = flockIcon(id: defaults.string(forKey: "jayjay.flockIcon") ?? "")
     }
 
     var isUnlocked: Bool {
@@ -49,12 +49,12 @@ final class FlockModel {
     func choose(_ icon: FlockIcon) {
         guard isUnlocked else { return }
         self.icon = icon
-        defaults.set(icon.rawValue, forKey: "jayjay.flockIcon")
+        defaults.set(icon.id, forKey: "jayjay.flockIcon")
         applyIcon()
     }
 
     private func applyIcon() {
-        let variant = activeIcon == .classic ? nil : activeIcon.rawValue
+        let variant = activeIcon == .classic ? nil : activeIcon.id
         defaults.set(variant, forKey: DockIconView.preferenceKey)
         DockIcon.update(variant: variant)
     }

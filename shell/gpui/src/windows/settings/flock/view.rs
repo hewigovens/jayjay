@@ -1,6 +1,5 @@
 use super::activation::Activation;
 use super::artwork::Artwork;
-use super::icon::FlockIcon;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::app::{config, links};
 use crate::ui::icons::{self, glyph};
@@ -12,7 +11,7 @@ use gpui::{
     Role, SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, img,
     prelude::FluentBuilder as _, px, rgb,
 };
-use jayjay_core::flock::{FlockMember, FlockStore};
+use jayjay_core::flock::{FlockIcon, FlockMember, FlockStore};
 use jayjay_i18n::{common, settings};
 use std::{rc::Rc, time::Duration};
 
