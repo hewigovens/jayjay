@@ -59,15 +59,10 @@ struct FlockPage: View {
                             .foregroundStyle(.secondary)
                             .jayjayFont(11)
                             .accessibilityIdentifier(AID.Settings.flockForget)
-                    } else if flock.isUnlocked {
-                        FlockUnlockButton(title: Localized.Settings.flockVerify)
-                            .controlSize(.small)
-                        FlockCodeButton()
-                            .controlSize(.small)
                     }
                 }
                 if flock.isUnlocked {
-                    Text(flock.member == nil ? Localized.Settings.flockDebugDetail : Localized.Settings.flockThanks)
+                    Text(Localized.Settings.flockThanks)
                         .jayjayFont(12)
                         .foregroundStyle(.secondary)
                 }
@@ -100,11 +95,7 @@ struct FlockPage: View {
     }
 
     private var displayName: String {
-        if flock.member != nil {
-            flock.name
-        } else {
-            flock.isUnlocked ? Localized.Settings.flockDebugBuild : Localized.Settings.flockYourFeather
-        }
+        flock.member == nil ? Localized.Settings.flockYourFeather : flock.name
     }
 
     private var feather: some View {

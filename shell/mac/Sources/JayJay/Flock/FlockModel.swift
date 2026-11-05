@@ -14,11 +14,7 @@ final class FlockModel {
     }
 
     var isUnlocked: Bool {
-        #if DEBUG
-            member != nil || !defaults.bool(forKey: "jayjay.flockLocked")
-        #else
-            member != nil
-        #endif
+        member != nil
     }
 
     var activeIcon: FlockIcon {

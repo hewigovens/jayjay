@@ -5,14 +5,6 @@ use tempfile::TempDir;
 use super::*;
 use crate::repo::forge_auth::{ForgeToken, TokenSource};
 
-fn new_store(path: &std::path::Path) -> FlockStore {
-    FlockStore(JsonStore::new(
-        "flock",
-        Some(path.to_owned()),
-        State::normalize,
-    ))
-}
-
 fn tokens() -> Option<ForgeToken> {
     Some(ForgeToken {
         secret: "private-token".into(),
@@ -38,7 +30,7 @@ fn answer(
 fn sponsor_code_unlocks_only_with_a_matching_code_and_a_name() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("flock.json");
-    let mut store = new_store(&path);
+    let mut store = FlockStore::at(&path);
     let expected = hex::encode(Sha256::digest("FLOCK-TEST"));
     for (code, name) in [("FLOCK-WRONG", "Supporter"), ("flock-test", "  ")] {
         assert_eq!(store.redeem_with(code, name, &expected).unwrap(), None);
@@ -50,7 +42,7 @@ fn sponsor_code_unlocks_only_with_a_matching_code_and_a_name() {
         .unwrap()
         .unwrap();
     assert_eq!(member.login, "Supporter");
-    assert_eq!(new_store(&path).member(), Some(member));
+    assert_eq!(FlockStore::at(&path).member(), Some(member));
     assert!(
         !std::fs::read_to_string(&path)
             .unwrap()
@@ -62,7 +54,7 @@ fn sponsor_code_unlocks_only_with_a_matching_code_and_a_name() {
 fn verified_identity_persists_offline_without_keeping_the_token() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("flock.json");
-    let mut store = new_store(&path);
+    let mut store = FlockStore::at(&path);
     let fetch = answer("U_sponsor", "supporter", Some("First Supporter"), true);
     let sync = SyncToken::standalone();
     let FlockVerification::Unlocked { member } = store
@@ -85,7 +77,7 @@ fn verified_identity_persists_offline_without_keeping_the_token() {
     let query = body["query"].as_str().unwrap();
     assert!(!query.contains("another-maintainer"));
     assert!(query.contains("activeOnly: false"));
-    assert_eq!(new_store(&path).member(), Some(member.clone()));
+    assert_eq!(FlockStore::at(&path).member(), Some(member.clone()));
     assert!(
         !std::fs::read_to_string(&path)
             .unwrap()
@@ -101,7 +93,7 @@ fn verified_identity_persists_offline_without_keeping_the_token() {
     assert_eq!(store.member(), Some(member));
 
     std::fs::write(&path, r#"{"member":{"id":"U_legacy","login":"legacy"}}"#).unwrap();
-    let legacy = new_store(&path).member().unwrap();
+    let legacy = FlockStore::at(&path).member().unwrap();
     assert_eq!(legacy.login, "legacy");
     assert_eq!(legacy.name, None);
 }
@@ -110,7 +102,7 @@ fn verified_identity_persists_offline_without_keeping_the_token() {
 fn no_failed_or_negative_check_changes_the_verified_account() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("flock.json");
-    let mut store = new_store(&path);
+    let mut store = FlockStore::at(&path);
     let sync = SyncToken::standalone();
     store
         .verify_with(
@@ -215,14 +207,14 @@ fn no_failed_or_negative_check_changes_the_verified_account() {
     assert_eq!(store.member(), Some(member));
 
     store.forget().unwrap();
-    assert_eq!(new_store(&path).member(), None);
+    assert_eq!(FlockStore::at(&path).member(), None);
 }
 
 #[test]
 fn cancellation_and_failed_persistence_do_not_publish_an_unlock() {
     let dir = TempDir::new().unwrap();
     let path = dir.path().join("flock.json");
-    let mut store = new_store(&path);
+    let mut store = FlockStore::at(&path);
     let sync = SyncToken::standalone();
     let fetch = MockFetch::new(|_| {
         sync.cancel();
@@ -240,7 +232,7 @@ fn cancellation_and_failed_persistence_do_not_publish_an_unlock() {
 
     let blocked = dir.path().join("blocked");
     std::fs::write(&blocked, "file, not directory").unwrap();
-    let mut blocked_store = new_store(&blocked.join("flock.json"));
+    let mut blocked_store = FlockStore::at(&blocked.join("flock.json"));
     assert!(
         blocked_store
             .verify_with(

@@ -784,15 +784,55 @@ fn settings_sidebar_resizes_from_just_beside_its_divider(cx: &mut TestAppContext
     assert!(resized > initial + px(70.), "{initial:?} -> {resized:?}");
 }
 
-#[gpui::test]
-fn flock_picks_birds_and_redeems_codes_from_the_keyboard(cx: &mut TestAppContext) {
-    install_test_globals(cx);
+fn open_flock(cx: &mut TestAppContext) -> VisualTestContext {
     cx.update(|cx| SettingsView::open_section(SettingsSection::Flock, cx));
     let window = cx.windows().last().copied().expect("settings window");
     let mut settings_cx = VisualTestContext::from_window(window, cx);
     settings_cx.simulate_resize(size(px(900.), px(1100.)));
     settle_visual(&mut settings_cx);
-    settings_cx.simulate_keystrokes("tab tab tab tab tab space");
+    settings_cx
+}
+
+#[gpui::test]
+fn flock_locked_page_redeems_codes_from_the_keyboard(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    let mut settings_cx = open_flock(cx);
+    assert!(settings_cx.debug_bounds("flock-gift").is_some());
+    assert!(settings_cx.debug_bounds("flock-icon-fish-owl").is_none());
+    click_setting(&mut settings_cx, "flock-code");
+    settings_cx.simulate_input("invalid-code");
+    settings_cx.simulate_keystrokes("enter");
+    settle_visual(&mut settings_cx);
+    assert!(
+        settings_cx.debug_bounds("flock-error").is_none(),
+        "Unlock waits for a name"
+    );
+    settings_cx.simulate_keystrokes("tab");
+    settings_cx.simulate_input("Supporter");
+    settings_cx.simulate_keystrokes("enter");
+    settle_visual(&mut settings_cx);
+    assert!(settings_cx.debug_bounds("flock-error").is_some());
+    settings_cx.simulate_keystrokes("escape");
+    settle_visual(&mut settings_cx);
+    assert!(settings_cx.debug_bounds("flock-code-input").is_none());
+    assert!(settings_cx.debug_bounds("flock-error").is_none());
+    assert!(settings_cx.debug_bounds("flock-gift").is_some());
+}
+
+#[gpui::test]
+fn flock_members_pick_the_about_bird_until_they_forget(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("flock.json");
+    std::fs::write(
+        &path,
+        r#"{"member":{"id":"U_fixture","login":"first-supporter","name":"First Supporter"}}"#,
+    )
+    .unwrap();
+    cx.update(|cx| jayjay_gpui::windows::settings::install_flock_store(cx, path));
+    let mut settings_cx = open_flock(cx);
+    assert!(settings_cx.debug_bounds("flock-gift").is_none());
+    settings_cx.simulate_keystrokes("tab tab tab tab space");
     settle_visual(&mut settings_cx);
     settings_cx
         .cx
@@ -805,25 +845,8 @@ fn flock_picks_birds_and_redeems_codes_from_the_keyboard(cx: &mut TestAppContext
             .is_some()
     );
     click_setting(&mut settings_cx, "settings-nav-Flock");
-    click_setting(&mut settings_cx, "flock-code");
-    click_setting(&mut settings_cx, "flock-code-input");
-    settings_cx.simulate_input("invalid-code");
-    click_setting(&mut settings_cx, "flock-redeem");
-    assert!(
-        settings_cx.debug_bounds("flock-error").is_none(),
-        "Unlock waits for a name"
-    );
-    settings_cx.simulate_keystrokes("tab");
-    settings_cx.simulate_input("Supporter");
-    settle_visual(&mut settings_cx);
-    click_setting(&mut settings_cx, "flock-redeem");
-    assert!(settings_cx.debug_bounds("flock-error").is_some());
-    settings_cx.simulate_keystrokes("escape");
-    settle_visual(&mut settings_cx);
-    assert!(settings_cx.debug_bounds("flock-code-input").is_none());
-    assert!(settings_cx.debug_bounds("flock-error").is_none());
-    assert!(
-        settings_cx.debug_bounds("flock-forget").is_none(),
-        "debug cosmetics must not create a membership"
-    );
+    click_setting(&mut settings_cx, "flock-forget");
+    assert!(settings_cx.debug_bounds("flock-gift").is_some());
+    click_setting(&mut settings_cx, "settings-nav-About");
+    assert!(settings_cx.debug_bounds("flock-active-classic").is_some());
 }

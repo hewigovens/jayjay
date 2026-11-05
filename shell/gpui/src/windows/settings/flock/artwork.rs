@@ -8,6 +8,18 @@ pub(super) struct Artwork {
 }
 
 impl Artwork {
+    pub const FEATHER_TINT: u32 = 0x4A7BD8;
+
+    pub fn tint(icon: FlockIcon) -> u32 {
+        match icon {
+            FlockIcon::Classic => 0x3F63CF,
+            FlockIcon::FishOwl => 0x9C7A56,
+            FlockIcon::GoldenPheasant => 0xD49A38,
+            FlockIcon::Kingfisher => 0x2F9DB8,
+            FlockIcon::Flycatcher => 0x5A6FCF,
+        }
+    }
+
     pub fn load(cx: &App) -> Self {
         let render = |bytes: &[u8]| {
             cx.svg_renderer()

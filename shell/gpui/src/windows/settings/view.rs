@@ -164,8 +164,10 @@ impl Render for SettingsView {
             .track_focus(&self.focus_handle)
             .key_context("SettingsView")
             .on_key_down(cx.listener(|this, event: &KeyDownEvent, window, cx| {
+                let modifiers = &event.keystroke.modifiers;
                 if this.section == SettingsSection::Flock
                     && event.keystroke.key == "tab"
+                    && !(modifiers.platform || modifiers.alt || modifiers.control)
                     && let Some(flock) = this.flock.clone()
                 {
                     let backward = event.keystroke.modifiers.shift;
@@ -257,7 +259,7 @@ impl Render for SettingsView {
             root = root.child(dropdown_overlay(d, &t, window, cx));
         }
         if let Some(sheet) =
-            flock.and_then(|flock| flock.update(cx, |flock, cx| flock.sheet(&t, cx)))
+            flock.and_then(|flock| flock.update(cx, |flock, cx| flock.sheet(&t, window, cx)))
         {
             root = root.child(sheet);
         }

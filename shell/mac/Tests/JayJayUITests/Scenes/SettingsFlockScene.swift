@@ -5,7 +5,7 @@ final class SettingsFlockScene: SceneBase {
         ["-jayjay.flockIcon", "classic"]
     }
 
-    func testDebugAccessKeepsVerificationAvailableAndMembersSeeTheirIconInAbout() throws {
+    func testLockedPageHidesBirdsAndMembersSeeTheirIconInAbout() throws {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: .command)
         selectSettingsPage("about", in: app)
@@ -14,18 +14,8 @@ final class SettingsFlockScene: SceneBase {
         XCTAssertTrue(window.descendants(matching: .any)[AID.Settings.page("flock")].exists)
         XCTAssertEqual(window.descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, "Classic")
         selectSettingsPage("flock", in: app)
-        XCTAssertEqual(window.buttons[AID.Settings.flockFeather].label, "Debug build")
-        XCTAssertTrue(window.buttons[AID.Settings.flockUnlock].exists)
-        capture(window, name: "Flock - debug")
-        selectSettingsPage("appearance", in: app)
+        XCTAssertTrue(window.buttons[AID.Settings.flockUnlock].waitForExistence(timeout: 5))
         XCTAssertFalse(window.buttons[AID.Settings.flockIcon("fish-owl")].exists)
-        selectSettingsPage("flock", in: app)
-        let debugIcon = window.buttons[AID.Settings.flockIcon("fish-owl")]
-        XCTAssertTrue(debugIcon.exists)
-        debugIcon.click()
-        selectSettingsPage("about", in: app)
-        XCTAssertEqual(window.descendants(matching: .any)[AID.Settings.aboutIcon].firstMatch.label, "Fish Owl")
-        XCTAssertFalse(window.buttons[AID.Settings.flockUnlock].exists)
         app.terminate()
 
         let lockedPath = app.launchEnvironment["JAYJAY_FLOCK_PATH"]
@@ -56,7 +46,7 @@ final class SettingsFlockScene: SceneBase {
         app.terminate()
 
         app.launchEnvironment["JAYJAY_FLOCK_PATH"] = lockedPath
-        var lockedArguments = arguments + ["-jayjay.flockLocked", "YES"]
+        var lockedArguments = arguments
         try lockedArguments[XCTUnwrap(lockedArguments.firstIndex(of: "-jayjay.flockIcon")) + 1] = "kingfisher"
         app.launchArguments = lockedArguments
         app.launch()

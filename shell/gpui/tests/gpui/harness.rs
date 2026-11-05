@@ -201,6 +201,10 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
         jayjay_gpui::app::recent_revsets::install_in_memory(cx);
         // Hermetic review store: no reads or writes of the real review_store.json.
         jayjay_gpui::repo::window::install_in_memory_review_store(cx);
+        jayjay_gpui::windows::settings::install_flock_store(
+            cx,
+            std::env::temp_dir().join("jayjay-gpui-tests-without-flock/flock.json"),
+        );
     });
     suppress_fs_watcher(cx);
 }

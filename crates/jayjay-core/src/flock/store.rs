@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use jayjay_network::{Fetch, HttpClient};
 use serde::{Deserialize, Serialize};
 use sha2::{Digest, Sha256};
@@ -36,6 +38,14 @@ impl FlockStore {
             "flock",
             "JAYJAY_FLOCK_PATH",
             "flock.json",
+            State::normalize,
+        ))
+    }
+
+    pub fn at(path: &Path) -> Self {
+        Self(JsonStore::new(
+            "flock",
+            Some(path.to_owned()),
             State::normalize,
         ))
     }

@@ -1,6 +1,7 @@
+use super::store_source::FlockStoreSource;
 use super::view::{FlockView, Sheet};
 use gpui::{AppContext, AsyncApp, Context, WeakEntity};
-use jayjay_core::flock::{FlockSignIn, FlockStore, FlockVerification};
+use jayjay_core::flock::{FlockSignIn, FlockVerification};
 use jayjay_core::{JayError, JayResult, SyncToken};
 use jayjay_i18n::settings;
 
@@ -22,6 +23,9 @@ impl Drop for Activation {
 
 impl FlockView {
     pub(super) fn open_activation(&mut self, cx: &mut Context<Self>) {
+        if self.sheet.is_some() {
+            return;
+        }
         self.sheet = Some(Sheet::Activation(Activation {
             sync: SyncToken::standalone(),
             busy: false,
@@ -58,8 +62,9 @@ impl FlockView {
         activation.error = None;
         let sync = activation.sync.clone();
         cx.notify();
+        let store = FlockStoreSource::current(cx);
         cx.spawn(async move |this, cx| {
-            let result = Self::check_sponsorship(another_account, &sync, &this, cx).await;
+            let result = Self::check_sponsorship(another_account, store, &sync, &this, cx).await;
             let _ = this.update(cx, |view, cx| view.finish_verification(&sync, result, cx));
         })
         .detach();
@@ -67,21 +72,26 @@ impl FlockView {
 
     async fn check_sponsorship(
         another_account: bool,
+        store: FlockStoreSource,
         sync: &SyncToken,
         this: &WeakEntity<Self>,
         cx: &mut AsyncApp,
     ) -> JayResult<FlockVerification> {
         if !another_account {
-            let check_sync = sync.clone();
+            let (check_store, check_sync) = (store.clone(), sync.clone());
             let result = cx
                 .background_spawn(
-                    async move { FlockStore::load().verify(SPONSORABLE, &check_sync) },
+                    async move { check_store.open().verify(SPONSORABLE, &check_sync) },
                 )
                 .await?;
             if !matches!(result, FlockVerification::SignInRequired) {
                 return Ok(result);
             }
         }
+        this.update(cx, |view, _| view.activation(Some(sync)).map(|_| ()))
+            .ok()
+            .flatten()
+            .ok_or(JayError::Canceled)?;
         let sign_in = cx
             .background_spawn(async { FlockSignIn::start(SPONSORABLE.into()) })
             .await?;
@@ -97,7 +107,7 @@ impl FlockView {
         })
         .map_err(|_| JayError::Canceled)??;
         let wait_sync = sync.clone();
-        cx.background_spawn(async move { sign_in.wait(&wait_sync) })
+        cx.background_spawn(async move { sign_in.wait(&mut store.open(), &wait_sync) })
             .await
     }
 
@@ -143,9 +153,10 @@ impl FlockView {
         self.busy = true;
         self.message = None;
         cx.notify();
+        let store = FlockStoreSource::current(cx);
         cx.spawn(async move |this, cx| {
             let result = cx
-                .background_spawn(async move { FlockStore::load().redeem(&code, &name) })
+                .background_spawn(async move { store.open().redeem(&code, &name) })
                 .await;
             let _ = this.update(cx, |view, cx| {
                 view.busy = false;
@@ -170,9 +181,10 @@ impl FlockView {
         self.busy = true;
         self.message = None;
         cx.notify();
-        cx.spawn(async |this, cx| {
+        let store = FlockStoreSource::current(cx);
+        cx.spawn(async move |this, cx| {
             let result = cx
-                .background_spawn(async { FlockStore::load().forget() })
+                .background_spawn(async move { store.open().forget() })
                 .await;
             let _ = this.update(cx, |view, cx| {
                 view.busy = false;

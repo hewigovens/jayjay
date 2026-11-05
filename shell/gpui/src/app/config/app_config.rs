@@ -1,5 +1,6 @@
 use std::path::{Path, PathBuf};
 
+use jayjay_core::flock::FlockIcon;
 use jayjay_core::{AppDirs, UpdateChannel};
 use serde::{Deserialize, Serialize};
 
@@ -42,7 +43,7 @@ impl Default for AppConfig {
     fn default() -> Self {
         Self {
             appearance: AppearanceMode::System,
-            flock_icon: "classic".into(),
+            flock_icon: FlockIcon::Classic.id().into(),
             language: None,
             interface_font_family: String::new(),
             interface_font_size: Some(AppConfig::DEFAULT_FONT_SIZE),

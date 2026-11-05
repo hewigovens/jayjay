@@ -25,13 +25,13 @@ impl FlockSignIn {
         &self.inner.verification_uri
     }
 
-    pub fn wait(&self, sync: &SyncToken) -> JayResult<FlockVerification> {
+    pub fn wait(&self, store: &mut FlockStore, sync: &SyncToken) -> JayResult<FlockVerification> {
         let token = self.inner.wait_for_token(sync)?;
         // A Flock-only login never replaces the repository credential or persists its access token.
         let tokens = Some(ForgeToken {
             secret: token,
             source: TokenSource::Stored,
         });
-        FlockStore::load().verify_with(&self.sponsorable, &HttpClient::default(), &tokens, sync)
+        store.verify_with(&self.sponsorable, &HttpClient::default(), &tokens, sync)
     }
 }

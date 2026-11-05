@@ -5,7 +5,7 @@ import XCTest
 
 @MainActor
 final class FlockModelTests: XCTestCase {
-    func testPerkAccessDoesNotCreateVerifiedMembership() throws {
+    func testChoosingABirdNeedsMembership() throws {
         let suite = "FlockModelTests.\(UUID().uuidString)"
         let defaults = try XCTUnwrap(UserDefaults(suiteName: suite))
         defer { defaults.removePersistentDomain(forName: suite) }
@@ -13,13 +13,8 @@ final class FlockModelTests: XCTestCase {
 
         flock.choose(.fishOwl)
         XCTAssertNil(flock.member)
-        #if DEBUG
-            XCTAssertTrue(flock.isUnlocked)
-            XCTAssertEqual(flock.activeIcon, .fishOwl)
-        #else
-            XCTAssertFalse(flock.isUnlocked)
-            XCTAssertEqual(flock.activeIcon, .classic)
-        #endif
+        XCTAssertFalse(flock.isUnlocked)
+        XCTAssertEqual(flock.activeIcon, .classic)
 
         let member = FlockMember(id: "sponsor", login: "supporter", name: "First Supporter")
         flock.accept(member)

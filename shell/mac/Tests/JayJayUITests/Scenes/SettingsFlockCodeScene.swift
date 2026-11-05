@@ -2,7 +2,7 @@ import XCTest
 
 final class SettingsFlockCodeScene: SceneBase {
     override class var additionalLaunchArguments: [String] {
-        ["-jayjay.flockLocked", "YES", "-jayjay.flockIcon", "classic"]
+        ["-jayjay.flockIcon", "classic"]
     }
 
     override class var launchEnvironment: [String: String] {

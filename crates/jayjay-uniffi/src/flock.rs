@@ -33,7 +33,6 @@ fn flock_icons() -> Vec<FlockIcon> {
     FlockIcon::ALL.to_vec()
 }
 
-/// Unknown ids, including a missing preference, fall back to the classic bird.
 #[uniffi::export]
 fn flock_icon(id: String) -> FlockIcon {
     FlockIcon::from_id(&id)
@@ -95,6 +94,6 @@ impl FlockSignIn {
     }
 
     fn wait(&self, sync: Arc<JayJaySyncToken>) -> Result<FlockVerification, JayError> {
-        self.inner.wait(&sync.inner)
+        self.inner.wait(&mut FlockStore::load(), &sync.inner)
     }
 }

@@ -23,6 +23,7 @@ pub mod tools;
 mod view;
 mod workflow;
 
+pub use flock::install_flock_store;
 pub use section::SettingsSection;
 pub(crate) use sidebar::SETTINGS_SIDEBAR_DEFAULT;
 pub use view::SettingsView;

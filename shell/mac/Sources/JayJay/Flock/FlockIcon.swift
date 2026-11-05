@@ -1,7 +1,7 @@
 import AppKit
 import JayJayCore
 
-extension FlockIcon: Identifiable {
+extension FlockIcon: @retroactive Identifiable {
     @MainActor private static var images: [String: NSImage] = [:]
 
     static var allCases: [FlockIcon] {
