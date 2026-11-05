@@ -5,6 +5,7 @@ mod bookmarks;
 mod cli_dispatch;
 mod clone;
 mod conflicts;
+mod converge;
 mod diff_excerpt;
 mod diff_file_stats;
 mod diffedit;

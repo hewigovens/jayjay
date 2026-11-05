@@ -8,6 +8,7 @@ mod command;
 mod command_process;
 mod config;
 mod conflicts;
+mod converge;
 mod diff;
 mod diffedit;
 mod environment;

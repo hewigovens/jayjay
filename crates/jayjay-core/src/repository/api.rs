@@ -6,6 +6,7 @@ use serde_json::Value;
 macro_rules! arg_type {
     (Text) => { &str }; (OptionalText) => { Option<&str> }; (Strings) => { &[String] };
     (Location) => { &str }; (OptionalLocation) => { Option<&str> };
+    (ConvergePlan) => { &ConvergePlan }; (ConvergeChoices) => { &ConvergeChoices };
     (FileEditor) => { &FileEditorData }; (ConflictEditor) => { &ConflictEditorData };
     (Selections) => { &[DiffEditFileSelection] };
     (Layers) => { Vec<SubmitStackLayer> }; (Bookmarks) => { &[BookmarkInfo] }; (Sync) => { &SyncToken };
@@ -40,6 +41,12 @@ macro_rules! borrow_arg {
     };
     (Bookmarks, $v:ident, $s:ident) => {
         $v.as_slice()
+    };
+    (ConvergePlan, $v:ident, $s:ident) => {
+        &$v
+    };
+    (ConvergeChoices, $v:ident, $s:ident) => {
+        &$v
     };
     (FileEditor, $v:ident, $s:ident) => {
         &$v
@@ -213,6 +220,8 @@ api! {
         fn op_restore(op_id: Text) -> ();
         fn is_at_operation_head() -> bool;
         fn parallelize(revs: Strings) -> MutationEffect;
+        fn converge_preview(rev: Text) -> ConvergePlan;
+        fn converge_apply(plan: ConvergePlan, choices: ConvergeChoices) -> ConvergeOutcome;
         @paths fn overview_snapshot() -> OverviewSnapshot;
         @paths fn overview() -> Overview;
         fn submit_stack(layers: Layers) -> StackedPrResult;

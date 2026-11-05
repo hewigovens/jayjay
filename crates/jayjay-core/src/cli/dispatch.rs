@@ -76,6 +76,9 @@ pub(super) fn describe_error(error: &JayError) -> String {
         | JayError::Diff { message }
         | JayError::Refused { message }
         | JayError::Internal { message } => message.clone(),
+        JayError::ConvergePlanStale { .. }
+        | JayError::ConvergeBlocked { .. }
+        | JayError::ConvergeNotDivergent { .. } => error.to_string(),
         JayError::Canceled => "Canceled".to_owned(),
     }
 }
