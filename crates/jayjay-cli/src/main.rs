@@ -8,6 +8,7 @@ use std::path::Path;
 use crate::args::{Cli, Command};
 use jayjay_primitives::{
     JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
+    JAYJAY_WORKSPACE_COMMAND,
 };
 
 fn main() {
@@ -34,6 +35,7 @@ fn app_arguments(arguments: &[OsString]) -> Option<Vec<OsString>> {
     if [
         JAYJAY_REVIEW_COMMAND,
         JAYJAY_IMPORT_COMMAND,
+        JAYJAY_WORKSPACE_COMMAND,
         JAYJAY_TOOL_COMMAND,
     ]
     .contains(&first)
@@ -75,6 +77,7 @@ mod tests {
         for command in [
             JAYJAY_REVIEW_COMMAND,
             JAYJAY_IMPORT_COMMAND,
+            JAYJAY_WORKSPACE_COMMAND,
             JAYJAY_TOOL_COMMAND,
         ] {
             let arguments = vec![OsString::from("jayjay"), OsString::from(command)];

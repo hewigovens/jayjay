@@ -1,11 +1,12 @@
 use crate::external_tools::EXTERNAL_TOOL_USAGE;
 use crate::{
     CliCommandOutcome, JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND,
-    JAYJAY_TOOL_COMMAND, JJ_TOOL_CONFIG, JayError, JayResult,
+    JAYJAY_TOOL_COMMAND, JAYJAY_WORKSPACE_COMMAND, JJ_TOOL_CONFIG, JayError, JayResult,
 };
 
 use super::import::ImportCommand;
 use super::parser::{ParseOutcome, parse, parse_review};
+use super::workspace::WorkspaceCli;
 
 /// Runs app-owned headless commands before either desktop shell initializes its UI. `None` lets the caller continue normal app startup.
 pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCommandOutcome> {
@@ -31,6 +32,13 @@ pub fn run_app_cli_command(arguments: &[String], version: &str) -> Option<CliCom
             parse("jayjay import", rest),
             |command: ImportCommand| command.run(),
         )),
+        JAYJAY_WORKSPACE_COMMAND => {
+            Some(run(parse("jayjay workspace", rest), |cli: WorkspaceCli| {
+                cli.command
+                    .ok_or_else(|| JayError::internal("missing workspace subcommand"))?
+                    .run()
+            }))
+        }
         _ => None,
     }
 }
@@ -50,7 +58,7 @@ fn run<T>(
 }
 
 // Stable CLI output, deliberately diverging from JayError's Display in places (no "diff error:" prefix, capitalized "Canceled"); pinned by errors_use_shell_independent_text.
-fn describe_error(error: &JayError) -> String {
+pub(super) fn describe_error(error: &JayError) -> String {
     match error {
         JayError::RepoNotFound { path } => format!("repository not found: {path}"),
         JayError::RevNotFound { rev } => format!("revision not found: {rev}"),

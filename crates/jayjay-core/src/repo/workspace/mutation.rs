@@ -8,7 +8,7 @@ use jj_lib::rewrite::merge_commit_trees;
 use jj_lib::workspace::Workspace;
 
 use super::super::Repo;
-use super::super::support::{block_on_result, load_workspace_internal};
+use super::super::support::{block_on_result, canonicalize, load_workspace_internal};
 use super::super::workspace_path::is_valid_workspace_name;
 use super::listing::existing_dir;
 use crate::types::*;
@@ -128,6 +128,23 @@ impl Repo {
             return Err(JayError::Internal {
                 message: "cannot forget the current workspace".to_owned(),
             });
+        }
+        Ok(())
+    }
+
+    pub(crate) fn workspace_holds_store(&self, root: &Path) -> bool {
+        !root.as_os_str().is_empty() && self.repo_path.starts_with(canonicalize(root))
+    }
+
+    pub(crate) fn ensure_workspace_does_not_hold_store(
+        &self,
+        name: &str,
+        root: &Path,
+    ) -> JayResult<()> {
+        if self.workspace_holds_store(root) {
+            return Err(JayError::internal(format!(
+                "workspace {name} holds the repository store and cannot be deleted"
+            )));
         }
         Ok(())
     }

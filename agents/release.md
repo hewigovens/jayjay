@@ -51,7 +51,7 @@ immutable; add the next numbered migration and checksum for every schema change.
 
 ## Shipped User Docs
 
-Feature PRs do not update the user guide, Help Book, website, or parity matrix. Do that once per release from `v<previous>..@`. Skip a file whose topic did not ship in this range. Canonical sources, in order:
+Feature PRs do not update the user guide, Help Book, website, parity matrix, or agent skill. Do that once per release from `v<previous>..@`. Skip a file whose topic did not ship in this range. Canonical sources, in order:
 
 - `docs/guide.html` — public user guide (workflow source of truth)
 - `docs/imgs/` — screenshots shared with the Help Book
@@ -61,6 +61,7 @@ Feature PRs do not update the user guide, Help Book, website, or parity matrix. 
 - `agents/shell-parity.md` — matrix rows aligned to the guide, including closed gaps
 - `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
 - `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide
+- `skills/jayjay/SKILL.md` — shipped agent skill; document `jayjay` CLI commands and flags new in this range, then move `AGENTS.md` and `agents/*.md` recipes onto them now that the installed `jayjay` runs them
 
 Do not edit `docs/appcast.xml` in this pass; step 4 owns it.
 

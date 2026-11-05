@@ -7,7 +7,7 @@ use crate::repo::Repo;
 use crate::repo::command_process::SyncToken;
 use crate::repo::git::remote_url_uses_ssh;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
-use crate::repo::support::{canonicalize, unique_name};
+use crate::repo::support::unique_name;
 use crate::repo::workspace_path::is_valid_workspace_name;
 use crate::types::*;
 
@@ -100,11 +100,6 @@ impl Repo {
             )));
         }
         sync.check()
-    }
-
-    fn workspace_parent(&self) -> std::path::PathBuf {
-        let path = canonicalize(&self.path);
-        path.parent().unwrap_or(&path).to_path_buf()
     }
 
     fn resolve_pull_request_import(

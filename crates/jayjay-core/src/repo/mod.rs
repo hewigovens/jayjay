@@ -77,6 +77,7 @@ pub use working_copy_review::{
     WorkingCopyReview, WorkingCopyReviewFile, WorkingCopyReviewMark, WorkingCopyReviewNote,
     WorkingCopyReviewStatus,
 };
+pub(crate) use workspace::WorkspacePrune;
 pub use workspace_path::{
     enclosing_workspace_root, is_valid_workspace_name, workspace_primary_root, workspace_root,
 };

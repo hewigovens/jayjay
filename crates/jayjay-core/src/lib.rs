@@ -1,8 +1,8 @@
 pub use jayjay_primitives::seti::{SetiGlyph, SetiMetrics};
 pub use jayjay_primitives::{
     AppDirs, EvologRow, JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND,
-    JAYJAY_TOOL_COMMAND, JJ_TOOL_CONFIG, evolog_rows, is_prerelease_build, is_snapshot_operation,
-    os_version,
+    JAYJAY_TOOL_COMMAND, JAYJAY_WORKSPACE_COMMAND, JJ_TOOL_CONFIG, evolog_rows,
+    is_prerelease_build, is_snapshot_operation, os_version,
 };
 pub use jayjay_primitives::{avatar, file_tree, github_alias};
 pub use jj_diff as diff;

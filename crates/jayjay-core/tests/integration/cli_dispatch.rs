@@ -1,7 +1,7 @@
 use std::fs;
 
 use jayjay_core::{CliCommandOutcome, run_app_cli_command};
-use jj_test::{init_jj_repo, review_store_env};
+use jj_test::{init_jj_repo, review_store_env, run_jj_in};
 
 fn run(arguments: &[&str]) -> CliCommandOutcome {
     let arguments: Vec<String> = arguments.iter().map(|value| value.to_string()).collect();
@@ -97,4 +97,56 @@ fn import_reports_unsupported_urls_without_touching_the_repo() {
         "{}",
         outcome.message
     );
+}
+
+#[test]
+fn workspace_prune_removes_landed_siblings_and_keeps_unsnapshotted_work() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["bookmark", "create", "-r", "@", "main"]);
+    run_jj_in(
+        &repo_path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "revset-aliases.'trunk()'",
+            "main",
+        ],
+    );
+    run_jj_in(&repo_path, &["new", "main"]);
+    let repo = repo_path.to_str().expect("utf8 repo path");
+    for name in ["landed", "pending"] {
+        let added = run(&["workspace", "add", name, "--repo", repo]);
+        assert!(!added.is_error(), "{}", added.message);
+    }
+    let (landed, pending) = (
+        temp_dir.path().join("landed"),
+        temp_dir.path().join("pending"),
+    );
+    fs::write(pending.join("draft.txt"), "not snapshotted yet\n").expect("edit pending workspace");
+
+    let pruned = run(&["workspace", "prune", "--all", "--repo", repo]);
+    assert!(!pruned.is_error(), "{}", pruned.message);
+    assert!(
+        pruned.message.contains("Removed landed: ")
+            && pruned
+                .message
+                .contains("Kept pending: 1 change(s) not in trunk()"),
+        "{}",
+        pruned.message
+    );
+    assert!(!landed.exists());
+    assert!(pending.join("draft.txt").exists());
+
+    let pending = pending.to_str().expect("utf8 pending path");
+    let from_sibling = run(&["workspace", "prune", "--all", "--repo", pending]);
+    assert!(!from_sibling.is_error(), "{}", from_sibling.message);
+    let primary = run(&["workspace", "prune", "default", "--repo", pending]);
+    assert!(
+        primary.is_error() && primary.message.contains("holds the repository store"),
+        "{}",
+        primary.message
+    );
+    assert!(repo_path.join(".jj").exists());
 }

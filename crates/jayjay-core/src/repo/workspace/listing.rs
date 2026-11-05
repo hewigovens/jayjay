@@ -11,7 +11,7 @@ use pollster::FutureExt as _;
 
 use super::super::Repo;
 use super::super::support::{
-    block_on_result, load_repo_at_head, load_workspace_internal, short_change_id,
+    block_on_result, canonicalize, load_repo_at_head, load_workspace_internal, short_change_id,
 };
 use crate::repositories::normalize_repository_path;
 use crate::types::*;
@@ -89,6 +89,10 @@ impl Repo {
             (commit.id().clone(), files_changed),
         );
         Ok(files_changed)
+    }
+    pub(crate) fn workspace_parent(&self) -> PathBuf {
+        let path = canonicalize(&self.path);
+        path.parent().unwrap_or(&path).to_path_buf()
     }
 
     pub(super) fn recorded_workspace_root(&self, name: &WorkspaceName) -> Option<PathBuf> {

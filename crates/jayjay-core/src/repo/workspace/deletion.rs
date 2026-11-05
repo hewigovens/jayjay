@@ -37,6 +37,7 @@ impl Repo {
         expected_root: &str,
     ) -> JayResult<StagedWorkspace> {
         let original_root = self.verify_workspace_root(name, expected_root)?;
+        self.ensure_workspace_does_not_hold_store(name, &original_root)?;
         let parent = original_root.parent().ok_or_else(|| {
             JayError::internal(format!(
                 "workspace {name} at {} has no parent directory",

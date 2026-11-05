@@ -130,7 +130,7 @@ Before pushing a non-trivial behavior change, review the whole diff per [Code Re
 
 ## User-Facing Docs
 
-Feature work does **not** update the user guide, Help Book, website, or parity matrix. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md). An explicit documentation request authorizes edits to the requested docs outside that release pass; verify claims against the relevant source or release.
+Feature work does **not** update the user guide, Help Book, website, parity matrix, or agent skill. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md). An explicit documentation request authorizes edits to the requested docs outside that release pass; verify claims against the relevant source or release.
 
 Do not edit during a feature change:
 
@@ -138,6 +138,7 @@ Do not edit during a feature change:
 - `shell/mac/Resources/JayJayHelpBook/`
 - `agents/shell-parity.md`
 - `README.md` feature/shortcut lists, `UserGuide.md`
+- `skills/jayjay/SKILL.md`
 
 Update `agents/*.md` in the feature change only when the **contributor/agent contract** actually changed (crate boundaries, test placement, review-state rules, this workflow). A guide or skill step that misled you is a contract bug: fix it in the same change.
 

@@ -3,7 +3,7 @@ use std::path::PathBuf;
 use jayjay_core::external_tools::{ExternalToolInvocation, parse_external_tool_invocation};
 use jayjay_core::{
     JAYJAY_CONFIG_COMMAND, JAYJAY_IMPORT_COMMAND, JAYJAY_REVIEW_COMMAND, JAYJAY_TOOL_COMMAND,
-    JayResult,
+    JAYJAY_WORKSPACE_COMMAND, JayResult,
 };
 
 use super::arguments::{Arguments, Command};
@@ -32,6 +32,7 @@ impl TryFrom<Arguments> for Invocation {
                 Command::Config(args) => (JAYJAY_CONFIG_COMMAND, args.arguments),
                 Command::Review(args) => (JAYJAY_REVIEW_COMMAND, args.arguments),
                 Command::Import(args) => (JAYJAY_IMPORT_COMMAND, args.arguments),
+                Command::Workspace(args) => (JAYJAY_WORKSPACE_COMMAND, args.arguments),
                 Command::Tool(args) => (JAYJAY_TOOL_COMMAND, args.arguments),
             };
             forwarded.insert(0, name.to_owned());
