@@ -6,10 +6,13 @@ channel := if version =~ '-beta\.' { "beta" } else { "stable" }
 verify-release-base:
   bash "{{root}}/scripts/verify-release.sh" base "{{root}}" '@'
 
+require-pngquant:
+  @command -v pngquant >/dev/null || { echo "release builds need pngquant to shrink the Dock icons (brew install pngquant)" >&2; exit 1; }
+
 verify-publish-base:
   bash "{{root}}/scripts/verify-release.sh" base "{{root}}" 'v{{version}}'
 
-release: verify-release-base ffi-release help sync-icon
+release: verify-release-base require-pngquant ffi-release help sync-icon
   bash "{{root}}/scripts/macos/release.sh" release "{{version}}" "{{channel}}" "{{build_number}}" "{{signing_identity}}"
 
 # Publish the already-built release: create a public GitHub release, upload the zip, verify it,
@@ -64,5 +67,5 @@ verify-public-release:
 update-cask:
   bash "{{root}}/scripts/macos/update-cask.sh" "{{version}}" "{{channel}}" "{{build_number}}"
 
-release-dry-run: verify-release-base ffi-release help sync-icon
+release-dry-run: verify-release-base require-pngquant ffi-release help sync-icon
   bash "{{root}}/scripts/macos/release.sh" dry-run "{{version}}"

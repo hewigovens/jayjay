@@ -8,6 +8,8 @@ derived_data := root / "build" / "DerivedData"
 app_name := "JayJay"
 app := derived_data / "Build" / "Products" / "Debug" / (app_name + ".app")
 release_dir := root / "build" / "release"
+# Dock and Flock icons are flat artwork, so a 256-color palette keeps them visually lossless at about a tenth of the size.
+quantize := "pngquant --quality 80-95 --speed 1 --strip --force --ext .png"
 xcframework := project / "JayJayFFI.xcframework"
 swift_out := project / "Sources" / "JayJayCore"
 
@@ -169,6 +171,9 @@ sync-icon:
     "{{root}}/build/jayjay-dock-bird.png" \
     "{{project}}/Resources/DockIcon/jayjay-dock-light.png" \
     "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
+  if command -v pngquant >/dev/null; then
+    {{quantize}} "{{project}}"/Resources/DockIcon/jayjay-dock-{light,dark}.png
+  fi
 
 sync-flock-icons:
   #!/usr/bin/env bash
@@ -180,6 +185,7 @@ sync-flock-icons:
     swift "{{root}}/scripts/render-flock-icons.swift" "{{root}}/build/flock/$name.png" "{{project}}/Resources/Flock/$name.png"
   done
   sips -s format png -Z 512 "{{root}}/assets/flock/flock-feather.svg" --out "{{project}}/Resources/Flock/flock-feather.png" >/dev/null
+  {{quantize}} "{{project}}"/Resources/Flock/flock-*.png
 
 lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --strict --quiet
