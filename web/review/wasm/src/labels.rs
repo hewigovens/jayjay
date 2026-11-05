@@ -3,19 +3,18 @@ use serde_json::{Map, Value};
 pub(super) fn labels(languages: &str) -> Value {
     jayjay_i18n::set_preferred_languages(&languages.split(',').collect::<Vec<_>>());
     Value::Object(
-        review_labels()
+        settings_labels()
             .into_iter()
+            .chain(diff_labels())
+            .chain(review_labels())
+            .chain(file_list_labels())
             .chain(pull_labels())
             .map(|(key, value)| (key.to_owned(), Value::String(value)))
             .collect::<Map<_, _>>(),
     )
 }
 
-#[expect(
-    clippy::too_many_lines,
-    reason = "Keep the declarative review label table together"
-)]
-fn review_labels() -> Vec<(&'static str, String)> {
+fn settings_labels() -> Vec<(&'static str, String)> {
     vec![
         ("close", jayjay_i18n::common::close()),
         ("fontSection", jayjay_i18n::web::font_section()),
@@ -35,6 +34,11 @@ fn review_labels() -> Vec<(&'static str, String)> {
         ("jayjayLight", jayjay_i18n::theme::jayjay_light()),
         ("jayjayDark", jayjay_i18n::theme::jayjay_dark()),
         ("syntaxUnavailable", jayjay_i18n::web::syntax_unavailable()),
+    ]
+}
+
+fn diff_labels() -> Vec<(&'static str, String)> {
+    vec![
         ("allFiles", jayjay_i18n::web::all_files()),
         ("undoImport", jayjay_i18n::web::undo_import()),
         ("result", jayjay_i18n::web::result()),
@@ -56,6 +60,11 @@ fn review_labels() -> Vec<(&'static str, String)> {
         ("showAll", jayjay_i18n::diff::show_all()),
         ("added", jayjay_i18n::diff::added()),
         ("removed", jayjay_i18n::diff::removed()),
+    ]
+}
+
+fn review_labels() -> Vec<(&'static str, String)> {
+    vec![
         ("files", jayjay_i18n::web::files()),
         ("resizeFiles", jayjay_i18n::web::resize_files()),
         ("filterFiles", jayjay_i18n::web::filter_files()),
@@ -102,6 +111,11 @@ fn review_labels() -> Vec<(&'static str, String)> {
         ("localData", jayjay_i18n::web::local_data()),
         ("loadAvatars", jayjay_i18n::web::load_avatars()),
         ("importReplaces", jayjay_i18n::web::import_replaces()),
+    ]
+}
+
+fn file_list_labels() -> Vec<(&'static str, String)> {
+    vec![
         ("kind.added", jayjay_i18n::diff::added()),
         ("kind.modified", jayjay_i18n::repo::modified()),
         ("kind.removed", jayjay_i18n::diff::removed()),
