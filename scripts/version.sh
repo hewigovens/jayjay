@@ -5,7 +5,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 justfile="$root/shell/justfile"
 workspace_cargo="$root/Cargo.toml"
-projyml="$root/shell/mac/project.yml"
+xcproj="$root/shell/mac/JayJay.xcodeproj/project.xcproj"
 gpui_metainfo="$root/shell/gpui/linux/dev.hewig.JayJay.metainfo.xml"
 
 # base fields carry X.Y.Z without any -beta.N suffix: installed builds and their pings never see it.
@@ -14,8 +14,8 @@ fields=(
   "$justfile|^version := |version|justfile version"
   "$justfile|^build_number := |build|justfile build_number"
   "$workspace_cargo|^version = |base|Cargo workspace version"
-  "$projyml|MARKETING_VERSION: |base|project.yml marketing"
-  "$projyml|CURRENT_PROJECT_VERSION: |build|project.yml build"
+  "$xcproj|\"MARKETING_VERSION\": |base|Xcode project marketing"
+  "$xcproj|\"CURRENT_PROJECT_VERSION\": |build|Xcode project build"
   "$gpui_metainfo|<release version=\"|base|GPUI AppStream version"
 )
 
@@ -46,7 +46,7 @@ case "$cmd" in
       write_field "$file" "$prefix" "$(want "$which")"
     done
     write_gpui_release
-    echo "Set $version (build $build). Cargo.lock and the Xcode project regenerate on the next build."
+    echo "Set $version (build $build). Cargo.lock regenerates on the next build."
     ;;
   check)
     [ -n "$version" ] || { version="$(read_field "$justfile" '^version := ')" build="$(read_field "$justfile" '^build_number := ')"; }

@@ -1,0 +1,213 @@
+{
+  "default-configuration": "Debug",
+  "configurations": [
+    "Debug",
+    "Release",
+  ],
+  "localizations": {
+    "development": "en",
+    "supported": [
+      "Base",
+    ],
+  },
+  "packages": [
+    {
+      "kind": "remote",
+      "repository": "https://github.com/sparkle-project/Sparkle",
+      "version": {
+        "up-to-next-major-version": "2.7.0",
+      },
+    }, {
+      "kind": "local",
+      "path": ".",
+    }, {
+      "kind": "local",
+      "path": "Packages/JayJayDiffUI",
+    },
+  ],
+  "files": [
+    { "path": "<PROJECT>/../../build/help.noindex/JayJay.help", "target-membership": [ "JayJay/resources" ] },
+    { "path": "<PROJECT>/../../build/ssh-helpers", "target-membership": [ "JayJay/resources" ] },
+    {
+      "kind": "folder",
+      "path": "DockTilePlugin",
+      "target-membership": [
+        "JayJayDockTilePlugin",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "JayJayDockTilePlugin",
+          "exclusions": [
+            "Info.plist",
+          ],
+        },
+      ],
+    }, {
+      "kind": "group",
+      "path": "../../assets/fonts",
+      "children": [
+        { "path": "Seti.ttf", "target-membership": [ "JayJay/resources" ] },
+      ],
+    }, {
+      "kind": "group",
+      "path": "Resources",
+      "children": [
+        { "path": "app.icon", "target-membership": [ "JayJay/resources" ] },
+        { "path": "HelpFeatures.json", "target-membership": [ "JayJay/resources" ] },
+        { "path": "jay.aiff", "target-membership": [ "JayJay/resources" ] },
+        { "path": "PlatformLogos.xcassets", "target-membership": [ "JayJay/resources" ] },
+        { "kind": "folder", "path": "DockIcon", "target-membership": [ "JayJay" ] },
+        { "kind": "folder", "path": "Flock", "target-membership": [ "JayJay" ] },
+      ],
+    }, {
+      "kind": "folder",
+      "path": "Sources/JayJay",
+      "target-membership": [
+        "JayJay",
+      ],
+      "membership-exceptions": [
+        {
+          "target": "JayJayDockTilePlugin",
+          "inclusions": [
+            "App/DockIconView.swift",
+          ],
+        }, {
+          "target": "JayJayUITests",
+          "inclusions": [
+            "Shared/AccessibilityIdentifiers.swift",
+          ],
+        },
+      ],
+    },
+    { "kind": "folder", "path": "Tests/JayJayTests", "target-membership": [ "JayJayTests" ] },
+    { "kind": "folder", "path": "Tests/JayJayUITests", "target-membership": [ "JayJayUITests" ] },
+    {
+      "kind": "group",
+      "name": "Products",
+      "children": [
+        { "path": "<PRODUCTS>/JayJay.app", "id": "DE2F3A839F8BE420AB797DA9", "type": "wrapper.application", "index": false },
+        { "path": "<PRODUCTS>/JayJayDockTilePlugin.docktileplugin", "id": "3CC0D06088DE1C303239C825", "type": "wrapper.cfbundle", "index": false, "target-membership": [ { "build-phase": "JayJay/copy/Embed Dependencies", "code-sign-on-copy": true, "header-preservation": "remove-on-copy" } ] },
+        { "path": "<PRODUCTS>/JayJayTests.xctest", "id": "7C7637F9F97A0C4ADC97F842", "type": "wrapper.cfbundle", "index": false },
+        { "path": "<PRODUCTS>/JayJayUITests.xctest", "id": "878D2555FB2FCC10D7A92454", "type": "wrapper.cfbundle", "index": false },
+      ],
+    },
+  ],
+  "targets": [
+    {
+      "name": "JayJay",
+      "id": "F66A0386EC00D51C5E15E92A",
+      "product": "Products/JayJay.app",
+      "product-type": "application",
+      "dependencies": [
+        "JayJayDockTilePlugin",
+      ],
+      "build-phases": [
+        "compile-sources",
+        "resources",
+        "frameworks",
+        {
+          "kind": "copy",
+          "name": "Embed Dependencies",
+          "bundle-base-path": "plugins-directory",
+        },
+      ],
+      "package-product-members": [
+        {
+          "product-name": "JayJayCore",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "product-name": "JayJayDiffUI",
+          "build-phase": { "build-phase": "frameworks" },
+        }, {
+          "package": "Sparkle",
+          "product-name": "Sparkle",
+          "build-phase": { "build-phase": "frameworks" },
+        },
+      ],
+      "build-settings": {
+        "ASSETCATALOG_COMPILER_APPICON_NAME": "app",
+        "CURRENT_PROJECT_VERSION": "82",
+        "ENABLE_DEBUG_DYLIB": "NO",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "INFOPLIST_FILE": "Info.plist",
+        "INFOPLIST_KEY_CFBundleDisplayName": "JayJay",
+        "INFOPLIST_KEY_LSApplicationCategoryType": "public.app-category.developer-tools",
+        "LD_RUNPATH_SEARCH_PATHS": [
+          "$(inherited)",
+          "@executable_path/../Frameworks",
+        ],
+        "MARKETING_VERSION": "0.3.23",
+        "PRODUCT_BUNDLE_IDENTIFIER": "dev.hewig.jayjay",
+      },
+    }, {
+      "name": "JayJayDockTilePlugin",
+      "id": "965D831ABC6B58E886B95039",
+      "product": "Products/JayJayDockTilePlugin.docktileplugin",
+      "product-type": "bundle",
+      "build-phases": [
+        "compile-sources",
+        "resources",
+      ],
+      "build-settings": {
+        "INFOPLIST_FILE": "DockTilePlugin/Info.plist",
+        "LD_RUNPATH_SEARCH_PATHS": [
+          "$(inherited)",
+          "@executable_path/../Frameworks",
+        ],
+        "PRODUCT_BUNDLE_IDENTIFIER": "dev.hewig.jayjay.dock-tile-plugin",
+        "WRAPPER_EXTENSION": "docktileplugin",
+      },
+    }, {
+      "name": "JayJayTests",
+      "id": "513216AF4805B4424EA27142",
+      "product": "Products/JayJayTests.xctest",
+      "product-type": "bundle.unit-test",
+      "dependencies": [
+        "JayJay",
+      ],
+      "build-phases": [
+        "compile-sources",
+        "resources",
+      ],
+      "build-settings": {
+        "BUNDLE_LOADER": "$(TEST_HOST)",
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.jayjay.JayJayTests",
+        "TEST_HOST": "$(BUILT_PRODUCTS_DIR)/JayJay.app/Contents/MacOS/JayJay",
+      },
+    }, {
+      "name": "JayJayUITests",
+      "id": "6E9A1F3E4ABEF30F131E45D0",
+      "product": "Products/JayJayUITests.xctest",
+      "product-type": "bundle.ui-testing",
+      "test-host-target": "JayJay",
+      "dependencies": [
+        "JayJay",
+      ],
+      "build-phases": [
+        "compile-sources",
+        "resources",
+      ],
+      "build-settings": {
+        "GENERATE_INFOPLIST_FILE": "YES",
+        "PRODUCT_BUNDLE_IDENTIFIER": "com.jayjay.JayJayUITests",
+        "TEST_TARGET_NAME": "JayJay",
+      },
+    },
+  ],
+  "build-settings": {
+    "ALWAYS_SEARCH_USER_PATHS": "NO",
+    "COPY_PHASE_STRIP": "NO",
+    "DEBUG_INFORMATION_FORMAT[config=Release]": "dwarf-with-dsym",
+    "ENABLE_TESTABILITY[config=Debug]": "YES",
+    "MACOSX_DEPLOYMENT_TARGET": "26.0",
+    "ONLY_ACTIVE_ARCH[config=Debug]": "YES",
+    "PRODUCT_NAME": "$(TARGET_NAME)",
+    "SDKROOT": "macosx",
+    "SWIFT_ACTIVE_COMPILATION_CONDITIONS[config=Debug]": "DEBUG",
+    "SWIFT_COMPILATION_MODE[config=Release]": "wholemodule",
+    "SWIFT_OPTIMIZATION_LEVEL[config=Debug]": "-Onone",
+    "SWIFT_VERSION": "5.10",
+  },
+  "last-upgrade": "16.0",
+}

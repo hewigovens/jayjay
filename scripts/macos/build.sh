@@ -14,7 +14,6 @@ rm -f "$app_path/Contents/MacOS/jayjay-cli"
 if [[ "$configuration" == Debug ]]; then
   cargo build -p jayjay-cli
 fi
-xcodegen --spec "$project/project.yml" --project "$project"
 if [[ "$configuration" == Release ]]; then
   xcode JayJay Release ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
   cargo build --release -p jayjay-cli

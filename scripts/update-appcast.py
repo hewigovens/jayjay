@@ -24,7 +24,7 @@ signature = sys.argv[6] if len(sys.argv) > 6 else "PENDING"
 channel = sys.argv[7] if len(sys.argv) > 7 else "stable"
 
 # macOS deployment target — gate Sparkle so clients on older macOS aren't offered
-# an update they can't launch. Keep in sync with shell/mac/project.yml.
+# an update they can't launch. Keep in sync with MACOSX_DEPLOYMENT_TARGET in shell/mac/JayJay.xcodeproj.
 MINIMUM_SYSTEM_VERSION = "26.0"
 
 
