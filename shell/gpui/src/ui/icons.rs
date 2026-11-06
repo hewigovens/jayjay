@@ -112,6 +112,7 @@ pub mod glyph {
     pub const GIT_BRANCH: &str = "\u{ea68}";
     pub const GIT_MERGE: &str = "\u{eafe}";
     pub const GLOBE: &str = "\u{eb01}";
+    pub const HEART: &str = "\u{e2a1}";
     pub const HISTORY: &str = "\u{eb37}";
     pub const INFO: &str = "\u{ea74}";
     pub const KEYBOARD: &str = "\u{e2a0}";

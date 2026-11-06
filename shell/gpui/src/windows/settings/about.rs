@@ -46,7 +46,7 @@ pub(super) fn about_section(icon: gpui::AnyElement, t: &Theme) -> impl IntoEleme
                 .pt(px(8.))
                 .child(link_button(
                     "tb-sponsor",
-                    glyph::SPARKLE,
+                    glyph::HEART,
                     settings::sponsor(),
                     SPONSOR_URL,
                     t,
