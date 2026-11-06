@@ -19,6 +19,12 @@ extension Error {
                     return Localized.Repo.conflictEditorStale(path: path)
                 case let .FileEditorStale(path):
                     return Localized.Repo.fileEditorStale(path: path)
+                case .ConvergePlanStale:
+                    return Localized.Converge.stale
+                case .ConvergeBlocked:
+                    return Localized.Converge.immutableReason
+                case .ConvergeNotDivergent:
+                    return Localized.Converge.notDivergent
                 case .WorkingCopyStale:
                     return Localized.Repo.workingCopyIsStaleItsChange
                 case let .Refused(message):

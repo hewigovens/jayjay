@@ -93,10 +93,15 @@ jj workspace add --name route-experiment -r main "$root/flightdeck-route-experim
 # An empty, described change gives the command palette a blank backdrop to blur.
 jj describe -r route-experiment@ -m "wip: try weighted routing" >/dev/null
 
-# Two describes of one change from the same operation leave it divergent.
+# Two describes of one change from the same operation leave it divergent; the weighted one also rewrites the score, so the versions differ in content.
 jj new main -m "experiment: score routes by comfort"
 echo 'pub fn comfort_score(transfers: u32) -> u32 { 100 - transfers * 15 }' > src/comfort.rs
 base_op=$(jj op log --no-graph -n1 -T 'id.short(16)')
+cat > src/comfort.rs <<'RS'
+pub fn comfort_score(transfers: u32, walk_minutes: u32) -> u32 {
+    100u32.saturating_sub(transfers * 20 + walk_minutes / 2)
+}
+RS
 jj describe -m "experiment: score routes by comfort (weighted)"
 jj --at-op "$base_op" describe -m "experiment: score routes by comfort (linear)" >/dev/null 2>&1
 

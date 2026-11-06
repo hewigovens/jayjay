@@ -1,6 +1,24 @@
 import Foundation
 
 enum AID {
+    enum Converge {
+        static let apply = "converge.apply"
+        static let stale = "converge.stale"
+        static let customDescription = "converge.customDescription"
+        static let editDescription = "converge.editDescription"
+        static func keep(_ version: String) -> String {
+            "converge.keep.\(version)"
+        }
+
+        static func use(_ item: String, _ version: String) -> String {
+            "converge.use.\(item).\(version)"
+        }
+
+        static func changedFile(_ path: String) -> String {
+            "converge.changedFile.\(path)"
+        }
+    }
+
     enum OpenRemoteRepository {
         static let machine = "openRemoteRepository.machine"
         static let connect = "openRemoteRepository.connect"
@@ -230,8 +248,13 @@ enum AID {
         static let resetAll = "shortcuts.resetAll"
         static let message = "shortcuts.message"
         static let replace = "shortcuts.replace"
-        static func edit(_ id: String) -> String { "shortcuts.edit.\(id)" }
-        static func reset(_ id: String) -> String { "shortcuts.reset.\(id)" }
+        static func edit(_ id: String) -> String {
+            "shortcuts.edit.\(id)"
+        }
+
+        static func reset(_ id: String) -> String {
+            "shortcuts.reset.\(id)"
+        }
     }
 
     enum Settings {

@@ -11,6 +11,8 @@ struct SheetContainer<Content: View>: View {
     var confirmDisabled: Bool = false
     var confirmRole: ButtonRole?
     var confirmAccessibilityIdentifier: String?
+    var footerMessage: String?
+    var trailingActions = false
     let onCancel: () -> Void
     let onConfirm: () -> Void
     @ViewBuilder let content: () -> Content
@@ -20,6 +22,12 @@ struct SheetContainer<Content: View>: View {
             header
             content()
             HStack {
+                if let footerMessage {
+                    Text(footerMessage)
+                        .jayjayFont(11)
+                        .foregroundStyle(.secondary)
+                        .fixedSize(horizontal: false, vertical: true)
+                }
                 Spacer()
                 Button(cancelLabel) { onCancel() }
                     .disabled(cancelDisabled)
@@ -29,7 +37,9 @@ struct SheetContainer<Content: View>: View {
                     .buttonStyle(.borderedProminent)
                     .disabled(confirmDisabled)
                     .accessibilityIdentifier(confirmAccessibilityIdentifier ?? "")
-                Spacer()
+                if !trailingActions {
+                    Spacer()
+                }
             }
             .padding(.top, 10)
         }

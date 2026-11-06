@@ -14,7 +14,8 @@ use jayjay_core::{
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
 use jayjay_primitives::{
-    NoteAnchor, NoteEntry, ReviewFileRollup, ReviewGroupState, ReviewNoteStatus, ReviewStoreSummary,
+    ConvergeChoices, ConvergeOutcome, ConvergePlan, NoteAnchor, NoteEntry, ReviewFileRollup,
+    ReviewGroupState, ReviewNoteStatus, ReviewStoreSummary,
 };
 use jayjay_review::ReviewStore;
 
@@ -1128,6 +1129,18 @@ impl JayJayRepo {
 
     fn duplicate(&self, rev: String) -> Result<(), JayError> {
         self.inner.duplicate(&rev)
+    }
+
+    fn converge_preview(&self, rev: String) -> Result<ConvergePlan, JayError> {
+        self.inner.converge_preview(&rev)
+    }
+
+    fn converge_apply(
+        &self,
+        plan: ConvergePlan,
+        choices: ConvergeChoices,
+    ) -> Result<ConvergeOutcome, JayError> {
+        self.inner.converge_apply(&plan, &choices)
     }
 
     fn abandon(&self, rev: String) -> Result<(), JayError> {

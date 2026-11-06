@@ -287,9 +287,14 @@ extension DAGView {
     private func divergentCompareSection(
         entry: GraphEntry, rev: String, viewModel: DAGViewModel
     ) -> some View {
+        if entry.change.isDivergent {
+            Divider()
+            Button { onRequest?(.converge(rev: entry.change.changeId.id)) } label: {
+                Label(Localized.Converge.menu, systemImage: "arrow.triangle.merge")
+            }
+        }
         let divergentSiblings = viewModel.divergentSiblings(of: entry.change)
         if !divergentSiblings.isEmpty {
-            Divider()
             if divergentSiblings.count == 1 {
                 Button {
                     actions?.compareWith(from: divergentSiblings[0].commitId.id, to: rev)

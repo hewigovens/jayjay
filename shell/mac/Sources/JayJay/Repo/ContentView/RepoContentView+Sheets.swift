@@ -42,7 +42,7 @@ extension RepoContentView {
                 )
             case .bookmarkManager:
                 bookmarkManagerSheet
-            case .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect, .sshConnection:
+            case .converge, .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect, .sshConnection:
                 secondarySheet(for: modal)
             case .ratingPrompt:
                 RatingPromptView(
@@ -77,6 +77,8 @@ extension RepoContentView {
     @ViewBuilder
     private func secondarySheet(for modal: RepoModalState) -> some View {
         switch modal {
+            case let .converge(rev):
+                ConvergeSheet(viewModel: viewModel, revision: rev, onDismiss: { self.modal = nil })
             case .sshConnection:
                 SSHConnectionView(viewModel: viewModel, onDismiss: { self.modal = nil })
             case .workspaceCreate:

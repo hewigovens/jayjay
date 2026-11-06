@@ -17,6 +17,7 @@ pub enum JayError {
     WorkingCopyStale,
     ConvergePlanStale { change_id: String },
     ConvergeBlocked { change_id: String, reason: String },
+    ConvergeNotDivergent { change_id: String },
     Refused { message: String },
     Internal { message: String },
     Canceled,

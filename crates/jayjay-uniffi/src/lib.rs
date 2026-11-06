@@ -10,6 +10,8 @@ mod commit_message;
 mod compare;
 #[cfg(feature = "desktop")]
 mod config;
+#[cfg(feature = "desktop")]
+mod converge;
 mod dag;
 mod diff;
 mod diff_edit;

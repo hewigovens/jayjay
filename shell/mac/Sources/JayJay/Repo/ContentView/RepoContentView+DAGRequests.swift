@@ -21,7 +21,7 @@ extension RepoContentView {
                 windowManager.openRepo(workspace.path)
             case let .bisectBetween(first, second):
                 viewModel.startBisectBetween(first: first, second: second)
-            case .editDescription, .abandonSelection, .squashSelection, .deleteTagOnRemote, .createStackedPRs, .bisectFrom:
+            case .converge, .editDescription, .abandonSelection, .squashSelection, .deleteTagOnRemote, .createStackedPRs, .bisectFrom:
                 break
         }
     }

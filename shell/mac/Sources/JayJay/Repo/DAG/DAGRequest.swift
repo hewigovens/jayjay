@@ -2,6 +2,7 @@ import JayJayCore
 
 /// A DAG interaction the content view answers with presentation state — a sheet, a revset filter, a window — rather than a jj mutation.
 enum DAGRequest {
+    case converge(rev: String)
     case rebase(DAGRebaseRequest)
     case abandon(rev: String)
     case editDescription(rev: String, description: String)
@@ -20,6 +21,7 @@ enum DAGRequest {
 extension DAGRequest {
     var presentedModal: RepoModalState? {
         switch self {
+            case let .converge(rev): .converge(rev: rev)
             case let .editDescription(rev, description): .editDescription(rev: rev, description: description)
             case let .abandonSelection(revisions): .confirmChange(.abandonSelection(revisions: revisions))
             case let .squashSelection(revisions): .confirmChange(.squashSelection(revisions: revisions))

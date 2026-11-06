@@ -48,6 +48,25 @@ fixture_simple() {
   )
 }
 
+fixture_converge() {
+  jj git init "$fixtures/converge-light"
+  (
+    cd "$fixtures/converge-light"
+    printf 'base\n' > configuration.txt
+    jj describe -m "Convergence base"
+    jj new -m "Original configuration"
+    local base_op
+    base_op=$(jj --ignore-working-copy op log --no-graph -n 1 -T 'id')
+    printf 'base\nfallback = default\n' > configuration.txt
+    printf 'load()\n' > loader.txt
+    jj metaedit -m "Handle missing configuration" --author 'Alex Chen <alex@example.test>'
+    jj --at-op "$base_op" metaedit -m "Improve configuration fallback" --author 'Sam Lee <sam@example.test>'
+    jj status
+    jj bookmark create config-review -r @
+  )
+  copy_fixture converge-light converge-dark
+}
+
 fixture_description_height() {
   copy_fixture simple description-height
   (
@@ -533,6 +552,7 @@ rm -rf "$fixtures"
 mkdir -p "$fixtures/agent-skills-home"
 fixture_simple
 fixture_mutating_scenes
+fixture_converge
 fixture_description_height
 fixture_description_editing
 fixture_external_tools
