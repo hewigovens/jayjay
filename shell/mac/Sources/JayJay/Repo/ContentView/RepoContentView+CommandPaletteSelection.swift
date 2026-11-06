@@ -9,14 +9,16 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: Localized.Palette.newChildChange(change: short),
             icon: "plus.circle",
-            category: Localized.Repo.change
-        ) { viewModel.newChange(parent: selection) })
+            category: Localized.Repo.change,
+            shortcut: AppShortcut.newChange.symbol
+        ) { performShortcut(.newChange) })
         if viewModel.change(for: selection)?.isImmutable != true {
             items.append(CommandPaletteItem(
                 title: Localized.Palette.editSwitchTo(change: short),
                 icon: "pencil.circle",
-                category: Localized.Repo.change
-            ) { viewModel.edit(rev: selection) })
+                category: Localized.Repo.change,
+                shortcut: AppShortcut.editChange.symbol
+            ) { performShortcut(.editChange) })
             items.append(CommandPaletteItem(
                 title: Localized.Palette.runFormattersOn(change: short),
                 icon: "wand.and.stars",
@@ -38,14 +40,16 @@ extension RepoContentView {
             title: Localized.Palette.showEvolution(change: short),
             icon: "clock.arrow.circlepath",
             category: Localized.Repo.change,
-            keywords: ["evolog", "obslog", "history"]
-        ) { viewModel.showEvolog(rev: selection) })
+            keywords: ["evolog", "obslog", "history"],
+            shortcut: AppShortcut.showEvolution.symbol
+        ) { performShortcut(.showEvolution) })
         items.append(CommandPaletteItem(
             title: Localized.Palette.createBookmarkOn(change: short),
             icon: "bookmark",
-            category: Localized.Repo.change
+            category: Localized.Repo.change,
+            shortcut: AppShortcut.newBookmark.symbol
         ) {
-            presentBookmarkCreate(rev: selection)
+            performShortcut(.newBookmark)
         })
         return items
     }

@@ -2,6 +2,12 @@ import JayJayCore
 import SwiftUI
 
 struct RepositoryCommands: Commands {
+    private static let additionalShortcuts: [AppShortcut] = [
+        .fetch, .push, .rebaseOntoTrunk, .bisect, .cleanUpStaleBookmarks,
+        .toggleSideBySide, .toggleIgnoreWhitespace, .toggleTreeFileList,
+        .newChange, .editChange, .describeChange, .squashChange, .newBookmark, .showEvolution
+    ]
+
     private var tracker: ActiveRepoTracker {
         .shared
     }
@@ -51,12 +57,23 @@ struct RepositoryCommands: Commands {
             Button { tracker.handler?.showNewWorkspace() } label: {
                 Label(Localized.Menu.newWorkspaceEllipsis, systemImage: "plus.rectangle.on.folder")
             }
+            .keyboardShortcut(AppShortcut.newWorkspace)
             .disabled(tracker.handler == nil)
 
             Button { tracker.handler?.showPullRequestImport() } label: {
                 Label("\(PullRequestImportSheet.title)…", systemImage: "arrow.triangle.pull")
             }
+            .keyboardShortcut(AppShortcut.importPullRequest)
             .disabled(tracker.handler == nil)
+
+            Divider()
+            ForEach(Self.additionalShortcuts, id: \.self) { shortcut in
+                if let binding = ShortcutStore.shared.byID[shortcut.rawValue] {
+                    Button(binding.title) { tracker.handler?.performShortcut(shortcut) }
+                        .keyboardShortcut(shortcut)
+                        .disabled(tracker.handler == nil)
+                }
+            }
 
             Divider()
 

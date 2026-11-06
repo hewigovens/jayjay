@@ -36,6 +36,7 @@ mod repo;
 #[cfg(feature = "desktop")]
 mod repositories;
 mod review;
+mod shortcuts;
 #[cfg(feature = "desktop")]
 mod ssh;
 mod theme;

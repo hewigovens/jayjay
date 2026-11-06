@@ -5,6 +5,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     case appearance
     case fonts
     case diff
+    case shortcuts
     case workflow
     case integrations
     case jujutsu
@@ -19,6 +20,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var title: String {
         switch self {
             case .appearance: Localized.Settings.pageAppearance
+            case .shortcuts: Localized.Menu.keyboardShortcuts
             case .fonts: Localized.Settings.pageFonts
             case .diff: Localized.Settings.pageDiff
             case .workflow: Localized.Settings.pageWorkflow
@@ -33,6 +35,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var symbol: String {
         switch self {
             case .appearance: "paintbrush"
+            case .shortcuts: "keyboard"
             case .fonts: "textformat"
             case .diff: "doc.text.magnifyingglass"
             case .workflow: "checklist"
@@ -47,6 +50,7 @@ enum SettingsPage: String, CaseIterable, Identifiable {
     var color: Color {
         switch self {
             case .appearance: .purple
+            case .shortcuts: .blue
             case .fonts: .blue
             case .diff: .blue
             case .workflow: .orange

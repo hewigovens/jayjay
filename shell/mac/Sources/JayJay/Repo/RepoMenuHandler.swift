@@ -2,9 +2,12 @@ import SwiftUI
 
 @MainActor
 final class RepoMenuHandler: RepositoryMenuHandler {
+    func performShortcut(_ shortcut: AppShortcut) { onAction?(.shortcut(shortcut)) }
+
     var onAction: ((MenuAction) -> Void)?
 
     enum MenuAction {
+        case shortcut(AppShortcut)
         case commandPalette, undo, revsetFilter, bookmarkManager, overview, newWorkspace, pullRequestImport
     }
 

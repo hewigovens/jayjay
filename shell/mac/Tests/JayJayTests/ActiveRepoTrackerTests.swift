@@ -5,6 +5,7 @@ import XCTest
 @MainActor
 final class ActiveRepoTrackerTests: XCTestCase {
     private final class Handler: RepositoryMenuHandler {
+        func performShortcut(_: AppShortcut) {}
         func showCommandPalette() {}
         func showUndo() {}
         func showRevsetFilter() {}

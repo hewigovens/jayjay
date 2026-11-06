@@ -28,15 +28,16 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: Localized.Repo.refresh, icon: "arrow.triangle.2.circlepath", category: Localized.Menu.view, shortcut: AppShortcut.refresh.symbol
         ) {
-            viewModel.refresh()
+            performShortcut(.refresh)
         })
         items.append(CommandPaletteItem(
             title: Localized.Palette.bisectEllipsis,
             icon: "arrow.left.and.right",
             category: Localized.Menu.view,
-            keywords: ["bisect", "binary", "search", "bug", "regression"]
+            keywords: ["bisect", "binary", "search", "bug", "regression"],
+            shortcut: AppShortcut.bisect.symbol
         ) {
-            modal = .bisect(good: "trunk()", bad: "")
+            performShortcut(.bisect)
         })
         items.append(CommandPaletteItem(
             title: settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar,
@@ -49,14 +50,16 @@ extension RepoContentView {
             title: Localized.Palette.toggleSideBySideDiffTitle,
             icon: "rectangle.split.2x1",
             category: Localized.Menu.view,
-            keywords: ["diff", "split", "side", "by", "unified"]
-        ) { settings.sideBySideDiff.toggle() })
+            keywords: ["diff", "split", "side", "by", "unified"],
+            shortcut: AppShortcut.toggleSideBySide.symbol
+        ) { performShortcut(.toggleSideBySide) })
         items.append(CommandPaletteItem(
             title: Localized.Palette.toggleTreeFileList,
             icon: "list.bullet.indent",
             category: Localized.Menu.view,
-            keywords: ["tree", "file", "folder", "list"]
-        ) { settings.treeFileList.toggle() })
+            keywords: ["tree", "file", "folder", "list"],
+            shortcut: AppShortcut.toggleTreeFileList.symbol
+        ) { performShortcut(.toggleTreeFileList) })
         items.append(CommandPaletteItem(
             title: Localized.Palette.toggleAutoExpandDescriptions,
             icon: "arrow.up.and.line.horizontal.and.arrow.down",
@@ -73,8 +76,9 @@ extension RepoContentView {
             title: Localized.Palette.toggleIgnoreWhitespace,
             icon: "text.alignleft",
             category: Localized.Menu.view,
-            keywords: ["whitespace", "diff", "ignore"]
-        ) { settings.ignoreWhitespace.toggle() })
+            keywords: ["whitespace", "diff", "ignore"],
+            shortcut: AppShortcut.toggleIgnoreWhitespace.symbol
+        ) { performShortcut(.toggleIgnoreWhitespace) })
         items.append(CommandPaletteItem(
             title: Localized.Palette.toggleHideGitLfsBackedFiles,
             icon: "externaldrive",
@@ -101,7 +105,8 @@ extension RepoContentView {
             title: Localized.Menu.filterByRevsetEllipsis,
             icon: "line.3.horizontal.decrease",
             category: Localized.Repo.filter,
-            keywords: ["revset", "filter", "query"]
+            keywords: ["revset", "filter", "query"],
+            shortcut: AppShortcut.revsetFilter.symbol
         ) { revsetEditRequest += 1 }]
         let presetFilters = RevsetFilterPresets.all.map { (Localized.Palette.showFilter(filter: $0.label), $0.revset) }
         for (label, revset) in presetFilters + [
@@ -122,19 +127,20 @@ extension RepoContentView {
     private var gitPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items
-            .append(CommandPaletteItem(title: Localized.Repo.gitPullFetchRebase, icon: "arrow.down.circle", category: Localized.Palette.git) {
-                viewModel.gitFetch()
+            .append(CommandPaletteItem(title: Localized.Repo.gitPullFetchRebase, icon: "arrow.down.circle", category: Localized.Palette.git, shortcut: AppShortcut.fetch.symbol) {
+                performShortcut(.fetch)
             })
         items.append(CommandPaletteItem(
             title: Localized.Palette.rebaseWorkingCopyOntoTrunk,
             icon: "arrow.uturn.up",
             category: Localized.Palette.git,
-            keywords: ["rebase", "trunk", "main", "update"]
+            keywords: ["rebase", "trunk", "main", "update"],
+            shortcut: AppShortcut.rebaseOntoTrunk.symbol
         ) {
-            viewModel.rebase(rev: "@", dest: "trunk()", mode: .branch)
+            performShortcut(.rebaseOntoTrunk)
         })
-        items.append(CommandPaletteItem(title: Localized.Repo.gitPush, icon: "arrow.up.circle", category: Localized.Palette.git) {
-            viewModel.gitPush(bookmark: "")
+        items.append(CommandPaletteItem(title: Localized.Repo.gitPush, icon: "arrow.up.circle", category: Localized.Palette.git, shortcut: AppShortcut.push.symbol) {
+            performShortcut(.push)
         })
         items.append(contentsOf: cancelSyncPaletteItems)
         return items
@@ -157,8 +163,9 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: Localized.Palette.cleanUpStaleBookmarks,
             icon: "bookmark.slash",
-            category: Localized.Menu.repository
-        ) { viewModel.forgetStaleBookmarks() })
+            category: Localized.Menu.repository,
+            shortcut: AppShortcut.cleanUpStaleBookmarks.symbol
+        ) { performShortcut(.cleanUpStaleBookmarks) })
         items.append(CommandPaletteItem(
             title: Localized.Repo.repositoryList,
             icon: "list.bullet.rectangle",
@@ -177,13 +184,15 @@ extension RepoContentView {
         items.append(CommandPaletteItem(
             title: Localized.Repo.newWorkspace,
             icon: "folder.badge.plus",
-            category: Localized.Repo.workspace
+            category: Localized.Repo.workspace,
+            shortcut: AppShortcut.newWorkspace.symbol
         ) { modal = .workspaceCreate })
         items.append(CommandPaletteItem(
             title: "\(PullRequestImportSheet.title)…",
             icon: "arrow.triangle.pull",
             category: Localized.Repo.workspace,
-            keywords: ["pr", "github", "import", "checkout", "merge request"]
+            keywords: ["pr", "github", "import", "checkout", "merge request"],
+            shortcut: AppShortcut.importPullRequest.symbol
         ) { modal = .pullRequestImport })
         for workspace in viewModel.workspaces where !workspace.isCurrent {
             if workspace.isPathResolved {
@@ -286,7 +295,7 @@ extension RepoContentView {
                 category: Localized.Menu.help,
                 detail: feature.summary,
                 keywords: feature.commandPaletteKeywords,
-                shortcut: feature.shortcut
+                shortcut: feature.effectiveShortcut(in: ShortcutStore.shared)
             ) {
                 HelpBook.open(anchor: feature.helpAnchor)
             })
@@ -312,33 +321,9 @@ extension RepoContentView {
     }
 
     private var keybindPaletteItems: [CommandPaletteItem] {
-        var items: [CommandPaletteItem] = []
-        // Searchable keybind cheatsheet — info-only rows for keys that aren't commands (issue #87).
-        items.append(.keybind(
-            title: Localized.Menu.commandPalette, icon: "command", shortcut: AppShortcut.commandPalette.symbol,
-            keywords: ["palette", "command", "search"]
-        ))
-        items.append(.keybind(
-            title: Localized.Palette.nextPreviousChange, icon: "arrow.up.arrow.down", shortcut: "J / K",
-            keywords: ["move", "select", "next", "previous", "down", "up", "navigate", "ctrl", "n", "p"]
-        ))
-        items.append(.keybind(
-            title: Localized.Palette.markFileReviewed, icon: "checkmark.circle", shortcut: Localized.Palette.space,
-            keywords: ["review", "reviewed", "check", "diff"]
-        ))
-        items.append(.keybind(
-            title: Localized.Palette.findInDiff, icon: "magnifyingglass", shortcut: AppShortcut.findInDiff.symbol,
-            keywords: ["find", "search", "diff"]
-        ))
-        items.append(.keybind(
-            title: Localized.Repo.openRepository, icon: "folder.badge.plus", shortcut: AppShortcut.openRepository.symbol,
-            keywords: ["open", "repository", "repo"]
-        ))
-        items.append(.keybind(
-            title: Localized.Menu.keyboardShortcuts, icon: "keyboard", shortcut: AppShortcut.keyboardShortcuts.symbol,
-            keywords: ["shortcut", "shortcuts", "keys", "cheatsheet", "keybind", "help"]
-        ))
-        return items
+        ShortcutStore.shared.bindings.filter { !$0.chords.isEmpty }.map { binding in
+            .keybind(title: binding.title, shortcut: binding.chords.map { $0.joined() }.joined(separator: " / "))
+        }
     }
 
     private var cancelSyncPaletteItems: [CommandPaletteItem] {

@@ -6,6 +6,7 @@ final class AppSettings {
     /// UserDefaults key for the anonymous build and OS statistics preference.
     static let sendsAnonymousStatsKey = "jayjay.sendsAnonymousStats"
     static let updateChannelKey = "jayjay.updateChannel"
+    static let settingsPageKey = "jayjay.settingsPage"
 
     private enum StorageKeys {
         static let interfaceFontFamily = "jayjay.interfaceFontFamily"

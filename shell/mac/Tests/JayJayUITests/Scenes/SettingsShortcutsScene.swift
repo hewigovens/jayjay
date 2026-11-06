@@ -1,0 +1,120 @@
+import XCTest
+
+final class SettingsShortcutsScene: SceneBase {
+    override class var additionalLaunchArguments: [String] {
+        ["-jayjay.shortcutOverrides", "{}", "-jayjay.skipAbandonConfirmation", "NO"]
+    }
+
+    func testRebindConflictAndReset() throws {
+        let app = try XCTUnwrap(app)
+        app.menuBars.menuBarItems["View"].click()
+        attach(app.menuItems["Refresh"], name: "Refresh menu before rebind")
+        keyStroke(XCUIKeyboardKey.escape.rawValue)
+        keyStroke("/", modifiers: [.command])
+        app.buttons["Customize Shortcuts"].click()
+        let window = settingsWindow(in: app)
+        let search = window.textFields[AID.Shortcuts.search]
+        XCTAssertTrue(search.waitForExistence(timeout: 5))
+        attach(window, name: "Shortcuts settings")
+        search.click()
+        paste("Refresh")
+        let edit = window.buttons[AID.Shortcuts.edit("repo.refresh")]
+        XCTAssertTrue(edit.waitForExistence(timeout: 5))
+        edit.click()
+        keyStroke("r", modifiers: [.shift, .command])
+        XCTAssertTrue(window.buttons[AID.Shortcuts.reset("repo.refresh")].waitForExistence(timeout: 5))
+        app.menuBars.menuBarItems["View"].click()
+        attach(app.menuItems["Refresh"], name: "Refresh menu after rebind")
+        keyStroke(XCUIKeyboardKey.escape.rawValue)
+        edit.click()
+        search.click()
+        keyStroke(XCUIKeyboardKey.delete.rawValue)
+        XCTAssertEqual(edit.value as? String, "shift-cmd-r")
+        XCTAssertTrue(window.buttons[AID.Shortcuts.reset("repo.refresh")].exists)
+        edit.click()
+        keyStroke("l", modifiers: [.command])
+        XCTAssertTrue(window.staticTexts[AID.Shortcuts.message].waitForExistence(timeout: 5))
+        XCTAssertTrue(window.buttons[AID.Shortcuts.replace].exists)
+        XCTAssertTrue((window.staticTexts[AID.Shortcuts.message].value as? String ?? "").contains("Filter by Revset (Repository Window)"))
+        attach(window, name: "Shortcuts conflict")
+        keyStroke(.escape)
+        XCTAssertFalse(window.staticTexts[AID.Shortcuts.message].exists)
+        edit.click()
+        keyStroke("l", modifiers: [.command])
+        window.buttons[AID.Shortcuts.replace].click()
+        app.menuBars.menuBarItems["View"].click()
+        attach(app.menuItems["Refresh"], name: "Refresh menu after replacement")
+        keyStroke(XCUIKeyboardKey.escape.rawValue)
+        app.menuBars.menuBarItems["Repository"].click()
+        attach(app.menuItems["Filter by Revset…"], name: "Filter menu after replacement")
+        keyStroke(XCUIKeyboardKey.escape.rawValue)
+        search.click()
+        keyStroke("a", modifiers: [.command])
+        keyStroke(XCUIKeyboardKey.delete.rawValue)
+        window.buttons[AID.Shortcuts.resetAll].click()
+        XCTAssertFalse(window.buttons[AID.Shortcuts.reset("repo.refresh")].exists)
+        search.click()
+        paste("Bisect")
+        let bisect = window.buttons[AID.Shortcuts.edit("repo.bisect")]
+        XCTAssertTrue(bisect.waitForExistence(timeout: 5))
+        bisect.click()
+        keyStroke("b", modifiers: [.option, .command])
+        XCTAssertTrue(window.buttons[AID.Shortcuts.reset("repo.bisect")].waitForExistence(timeout: 5))
+        window.buttons[XCUIIdentifierCloseWindow].click()
+        app.windows["Keyboard Shortcuts"].buttons[XCUIIdentifierCloseWindow].click()
+        keyStroke("b", modifiers: [.option, .command])
+        XCTAssertTrue(app.textFields[AID.Bisect.sheetGood].waitForExistence(timeout: 5), "Rebound shortcut did not open Bisect after returning from Settings")
+        keyStroke(.escape)
+        keyStroke("p", modifiers: [.shift, .command])
+        let palette = app.textFields[AID.Palette.textField]
+        XCTAssertTrue(palette.waitForExistence(timeout: 5))
+        palette.click()
+        paste("Bisect")
+        keyStroke(.return)
+        XCTAssertTrue(app.textFields[AID.Bisect.sheetGood].waitForExistence(timeout: 5), "Palette did not dispatch the shared Bisect action")
+        keyStroke(.escape)
+        keyStroke(",", modifiers: [.command])
+        let reopened = settingsWindow(in: app)
+        let reopenedSearch = reopened.textFields[AID.Shortcuts.search]
+        reopenedSearch.click()
+        keyStroke("a", modifiers: [.command])
+        keyStroke(XCUIKeyboardKey.delete.rawValue)
+        reopened.buttons[AID.Shortcuts.resetAll].click()
+        reopenedSearch.click()
+        paste("Abandon")
+        let abandon = reopened.buttons[AID.Shortcuts.edit("changes.abandon")]
+        XCTAssertTrue(abandon.waitForExistence(timeout: 5))
+        abandon.click()
+        keyStroke(.delete, modifiers: [.command])
+        XCTAssertTrue(reopened.buttons[AID.Shortcuts.reset("changes.abandon")].waitForExistence(timeout: 5))
+        reopened.buttons[XCUIIdentifierCloseWindow].click()
+        let rows = try waitForDAGRows()
+        rows.firstMatch.click()
+        let summary = app.textFields[AID.CommitBox.summary]
+        XCTAssertTrue(summary.waitForExistence(timeout: 5))
+        summary.click()
+        paste("shortcut text input")
+        keyStroke(.delete, modifiers: [.command])
+        XCTAssertEqual(summary.value as? String, "", "Abandon stole the text field's delete chord")
+        XCTAssertFalse(app.sheets.firstMatch.exists)
+        keyStroke(.tab)
+        keyStroke(.tab)
+        keyStroke(.delete, modifiers: [.command])
+        XCTAssertTrue(app.sheets.buttons["Abandon"].waitForExistence(timeout: 5), "Rebound Abandon did not run in the Changes List")
+        keyStroke(.escape)
+        keyStroke(",", modifiers: [.command])
+        let finalSettings = settingsWindow(in: app)
+        let finalSearch = finalSettings.textFields[AID.Shortcuts.search]
+        finalSearch.click()
+        keyStroke("a", modifiers: [.command])
+        keyStroke(.delete)
+        finalSettings.buttons[AID.Shortcuts.resetAll].click()
+    }
+
+    private func attach(_ window: XCUIElement, name: String) {
+        let attachment = XCTAttachment(screenshot: window.screenshot())
+        attachment.name = name
+        attachment.lifetime = .keepAlways
+        add(attachment)
+    }
+}

@@ -1,9 +1,11 @@
 import JayJayCore
 import SwiftUI
 
-/// A 1Password-style keyboard cheatsheet shown on ⌘/. Two balanced columns of sectioned shortcuts; closes with Esc, the X, or the window's close button.
 struct KeyboardShortcutsView: View {
     @Environment(\.dismiss) private var dismiss
+    @AppStorage(AppSettings.settingsPageKey) private var settingsPage = SettingsPage.appearance
+    @Environment(\.openSettings) private var openSettings
+    @Environment(ShortcutStore.self) private var store
 
     var body: some View {
         VStack(spacing: 0) {
@@ -11,7 +13,7 @@ struct KeyboardShortcutsView: View {
             Divider()
             ScrollView {
                 HStack(alignment: .top, spacing: 32) {
-                    ForEach(Array(ShortcutGuide.columns.enumerated()), id: \.offset) { _, column in
+                    ForEach(Array(ShortcutGuide.columns(bindings: store.bindings).enumerated()), id: \.offset) { _, column in
                         VStack(alignment: .leading, spacing: 20) {
                             ForEach(column) { section in
                                 sectionBlock(section)
@@ -63,11 +65,11 @@ struct KeyboardShortcutsView: View {
                 .textCase(.uppercase)
             ForEach(section.entries) { entry in
                 HStack(spacing: 12) {
-                    Text(entry.label)
+                    Text(entry.title)
                         .jayjayFont(13)
                         .lineLimit(1)
                     Spacer(minLength: 8)
-                    KeyCapRow(keys: entry.keys)
+                    ShortcutKeyCaps(chords: entry.chords)
                 }
             }
         }
@@ -79,31 +81,12 @@ struct KeyboardShortcutsView: View {
                 .jayjayFont(11)
                 .foregroundStyle(.tertiary)
             Spacer()
+            Button(Localized.Shortcuts.customize) {
+                settingsPage = .shortcuts
+                openSettings()
+            }
         }
         .padding(.horizontal, 20)
         .padding(.vertical, 10)
-    }
-}
-
-/// Renders a shortcut as discrete key-cap chips.
-private struct KeyCapRow: View {
-    let keys: [String]
-
-    var body: some View {
-        HStack(spacing: 4) {
-            ForEach(Array(keys.enumerated()), id: \.offset) { _, key in
-                Text(key)
-                    .font(.system(size: 12, weight: .medium, design: .rounded))
-                    .foregroundStyle(.primary)
-                    .frame(minWidth: 18)
-                    .padding(.horizontal, 6)
-                    .padding(.vertical, 3)
-                    .background(Color.primary.opacity(0.07), in: RoundedRectangle(cornerRadius: 5))
-                    .overlay(
-                        RoundedRectangle(cornerRadius: 5)
-                            .stroke(Color.primary.opacity(0.12), lineWidth: 0.5)
-                    )
-            }
-        }
     }
 }

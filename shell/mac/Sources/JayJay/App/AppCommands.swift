@@ -10,6 +10,10 @@ struct AppCommands: Commands {
         CommandGroup(replacing: .singleWindowList) {}
 
         CommandGroup(after: .sidebar) {
+            Button(Localized.Repo.refresh) { ActiveRepoTracker.shared.handler?.performShortcut(.refresh) }
+                .keyboardShortcut(AppShortcut.refresh)
+                .disabled(ActiveRepoTracker.shared.handler == nil)
+
             Button { settings.sidebarHidden.toggle() } label: {
                 Label(settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar, systemImage: "sidebar.leading")
             }

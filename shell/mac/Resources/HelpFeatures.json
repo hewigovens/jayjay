@@ -1,6 +1,7 @@
 [
   {
     "id": "open",
+    "command": "app.open_repository",
     "title": "Open a repository",
     "summary": "Open a jj repo with Cmd+O, the Dock menu, or the jayjay CLI, switch workspaces from the title picker, and see every lane of work in the Repo Overview.",
     "category": "Getting Started",
@@ -55,6 +56,7 @@
   },
   {
     "id": "operations",
+    "command": "repo.undo_last_operation",
     "title": "Operate on changes",
     "summary": "Describe, commit, squash, abandon, duplicate, merge, absorb, back out, or undo changes.",
     "category": "Changes",
@@ -64,6 +66,7 @@
   },
   {
     "id": "bookmarks",
+    "command": "repo.bookmark_manager",
     "title": "Manage bookmarks and pull requests",
     "summary": "Use Bookmark Manager, bookmark chip actions, and forge links for GitHub, GitLab, Codeberg, or Cursor PRs.",
     "category": "Bookmarks",
@@ -99,6 +102,7 @@
   },
   {
     "id": "palette",
+    "command": "repo.command_palette",
     "title": "Use the command palette",
     "summary": "Search actions with Cmd+Shift+P, type help for feature help, or run raw jj commands with jj or !.",
     "category": "Tools",
@@ -108,6 +112,7 @@
   },
   {
     "id": "settings",
+    "command": "app.settings",
     "title": "Configure tools and settings",
     "summary": "Set appearance, diff behavior, external editor, terminal, CLI tools, jj config, fonts, and AI providers.",
     "category": "Settings",

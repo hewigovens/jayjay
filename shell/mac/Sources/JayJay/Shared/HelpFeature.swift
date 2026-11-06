@@ -8,8 +8,14 @@ struct HelpFeature: Decodable, Equatable, Identifiable {
     let category: String
     let keywords: [String]
     let shortcut: String?
+    let command: AppShortcut?
     let menuPath: String?
     let guideAnchor: String
+
+    func effectiveShortcut(in store: ShortcutStore) -> String? {
+        if let command { return store.byID[command.rawValue]?.primary?.caps.joined() }
+        return shortcut
+    }
 
     var helpAnchor: String {
         id

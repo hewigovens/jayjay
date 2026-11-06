@@ -8,7 +8,11 @@ enum KeyCode {
     static let delete: UInt16 = 51
     static let escape: UInt16 = 53
     static let keypadEnter: UInt16 = 76
+    static let home: UInt16 = 115
+    static let pageUp: UInt16 = 116
     static let forwardDelete: UInt16 = 117
+    static let end: UInt16 = 119
+    static let pageDown: UInt16 = 121
     static let leftArrow: UInt16 = 123
     static let rightArrow: UInt16 = 124
     static let downArrow: UInt16 = 125

@@ -310,6 +310,12 @@ struct DAGView: View {
             actions?.select(changeId: selectedId)
             return true
         }
+        if AppShortcut.abandon.matches(event), keyboardFocus?.isSuspended != true,
+           rebaseDrag == nil, bookmarkDrag == nil,
+           let selectedId, entries.contains(where: { $0.change.selectionRevision == selectedId && !$0.change.isImmutable }) {
+            onRequest?(.abandon(rev: selectedId))
+            return true
+        }
         switch event.horizontalNavigationKeyCode {
             case KeyCode.rightArrow:
                 selectFromKeyboard(navigationViewModel.selectedChangeId(acrossLanesRightward: true))

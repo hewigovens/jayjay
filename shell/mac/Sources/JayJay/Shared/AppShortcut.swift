@@ -1,108 +1,62 @@
 import AppKit
 import SwiftUI
 
-enum AppShortcut: CaseIterable {
-    case openRepository
-    case commandPalette
-    case refresh
-    case keyboardShortcuts
-    case settings
-    case toggleSidebar
-    case zoomIn
-    case zoomOut
-    case resetZoom
-    case revsetFilter
-    case bookmarkManager
-    case repoOverview
-    case filterOverviewLanes
-    case undoLastOperation
-    case showInFinder
-    case findInDiff
-    case saveEditedFile
-    case saveReviewNote
-    case expandAllFiles
-    case collapseAllFiles
-    case acceptLeftHunk
-    case acceptRightHunk
-    case previousHunk
-    case nextHunk
+enum AppShortcut: String, Decodable {
+    case openRepository = "app.open_repository"
+    case commandPalette = "repo.command_palette"
+    case refresh = "repo.refresh"
+    case keyboardShortcuts = "app.keyboard_shortcuts"
+    case settings = "app.settings"
+    case toggleSidebar = "repo.toggle_sidebar"
+    case zoomIn = "app.zoom_in"
+    case zoomOut = "app.zoom_out"
+    case resetZoom = "app.reset_zoom"
+    case revsetFilter = "repo.filter_by_revset"
+    case bookmarkManager = "repo.bookmark_manager"
+    case repoOverview = "repo.overview"
+    case filterOverviewLanes = "overview.filter_lanes"
+    case undoLastOperation = "repo.undo_last_operation"
+    case showInFinder = "repo.show_in_file_manager"
+    case findInDiff = "repo.find_in_diff"
+    case saveEditedFile = "text.save_file"
+    case saveReviewNote = "text.save_review_note"
+    case expandAllFiles = "diff_editor.expand_all_files"
+    case collapseAllFiles = "diff_editor.collapse_all_files"
+    case acceptLeftHunk = "merge.accept_left"
+    case acceptRightHunk = "merge.accept_right"
+    case previousHunk = "merge.previous_conflict"
+    case nextHunk = "merge.next_conflict"
 
-    var key: KeyEquivalent {
-        switch self {
-            case .openRepository, .repoOverview: "o"
-            case .commandPalette: "p"
-            case .refresh: "r"
-            case .keyboardShortcuts: "/"
-            case .settings: ","
-            case .toggleSidebar, .saveEditedFile: "s"
-            case .zoomIn: "+"
-            case .zoomOut: "-"
-            case .resetZoom: "0"
-            case .revsetFilter: "l"
-            case .bookmarkManager: "b"
-            case .filterOverviewLanes, .findInDiff, .showInFinder: "f"
-            case .undoLastOperation: "u"
-            case .saveReviewNote: .return
-            case .expandAllFiles: "e"
-            case .collapseAllFiles: "c"
-            case .acceptLeftHunk: .leftArrow
-            case .acceptRightHunk: .rightArrow
-            case .previousHunk: .upArrow
-            case .nextHunk: .downArrow
-        }
-    }
-
-    var modifiers: EventModifiers {
-        switch self {
-            case .commandPalette, .bookmarkManager, .repoOverview, .undoLastOperation: [.command, .shift]
-            case .toggleSidebar: [.control, .command]
-            case .showInFinder, .expandAllFiles, .collapseAllFiles: [.option, .command]
-            case .acceptLeftHunk, .acceptRightHunk, .previousHunk, .nextHunk: .option
-            default: .command
-        }
-    }
-
-    var keyCaps: [String] {
-        Self.modifierKeys.filter { modifiers.contains($0.modifier) }.map(\.glyph) + [keyGlyph]
-    }
+    case fetch = "repo.fetch"
+    case push = "repo.push"
+    case newWorkspace = "repo.new_workspace"
+    case importPullRequest = "repo.import_pull_request"
+    case rebaseOntoTrunk = "repo.rebase_onto_trunk"
+    case bisect = "repo.bisect"
+    case cleanUpStaleBookmarks = "repo.clean_up_stale_bookmarks"
+    case toggleSideBySide = "repo.toggle_side_by_side"
+    case toggleIgnoreWhitespace = "repo.toggle_ignore_whitespace"
+    case toggleTreeFileList = "repo.toggle_tree_file_list"
+    case newChange = "repo.new_change"
+    case editChange = "repo.edit_change"
+    case describeChange = "repo.describe_change"
+    case squashChange = "repo.squash_change"
+    case newBookmark = "repo.new_bookmark"
+    case showEvolution = "repo.show_evolution"
+    case abandon = "changes.abandon"
 
     var symbol: String {
-        keyCaps.joined()
+        ShortcutStore.shared.byID[rawValue]?.primary?.caps.joined() ?? ""
     }
 
     func matches(_ event: NSEvent) -> Bool {
-        Self.modifierKeys.allSatisfy { modifiers.contains($0.modifier) == event.modifierFlags.contains($0.flag) }
-            && event.charactersIgnoringModifiers?.lowercased() == String(key.character)
-    }
-
-    private struct ModifierKey {
-        let modifier: EventModifiers
-        let flag: NSEvent.ModifierFlags
-        let glyph: String
-    }
-
-    private static let modifierKeys = [
-        ModifierKey(modifier: .control, flag: .control, glyph: "⌃"),
-        ModifierKey(modifier: .option, flag: .option, glyph: "⌥"),
-        ModifierKey(modifier: .shift, flag: .shift, glyph: "⇧"),
-        ModifierKey(modifier: .command, flag: .command, glyph: "⌘")
-    ]
-
-    private var keyGlyph: String {
-        switch key {
-            case .return: "↩"
-            case .leftArrow: "←"
-            case .rightArrow: "→"
-            case .upArrow: "↑"
-            case .downArrow: "↓"
-            case "-": "−"
-            default: String(key.character).uppercased()
-        }
+        guard let binding = ShortcutStore.shared.byID[rawValue] else { return false }
+        return binding.effectiveChords.contains { $0.text == event.shortcutText }
     }
 }
 
 extension View {
     func keyboardShortcut(_ shortcut: AppShortcut) -> some View {
-        keyboardShortcut(shortcut.key, modifiers: shortcut.modifiers)
+        keyboardShortcut(ShortcutStore.shared.byID[shortcut.rawValue]?.primary?.keyboardShortcut)
     }
 }

@@ -35,6 +35,7 @@ struct RepoContentView: View {
                 sidebarWidth = settings.sidebarWidth
                 menuCoordinator.onAction = { action in
                     switch action {
+                        case let .shortcut(shortcut): performShortcut(shortcut)
                         case .commandPalette: showCommandPalette()
                         case .undo: showUndo()
                         case .bookmarkManager: modal = .bookmarkManager

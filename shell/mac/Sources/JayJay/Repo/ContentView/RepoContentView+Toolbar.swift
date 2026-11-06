@@ -27,7 +27,6 @@ extension RepoContentView {
                         }
                 }
             )
-            .keyboardShortcut(AppShortcut.refresh)
             syncButton(.pull, inFlight: viewModel.isPullingInFlight) {
                 if viewModel.isPullingInFlight {
                     viewModel.cancelPull()

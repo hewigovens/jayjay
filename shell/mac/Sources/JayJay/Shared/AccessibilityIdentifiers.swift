@@ -225,6 +225,15 @@ enum AID {
         }
     }
 
+    enum Shortcuts {
+        static let search = "shortcuts.search"
+        static let resetAll = "shortcuts.resetAll"
+        static let message = "shortcuts.message"
+        static let replace = "shortcuts.replace"
+        static func edit(_ id: String) -> String { "shortcuts.edit.\(id)" }
+        static func reset(_ id: String) -> String { "shortcuts.reset.\(id)" }
+    }
+
     enum Settings {
         static let hideReviewedFiles = "settings.hideReviewedFiles"
         static let sidebar = "settings.sidebar"

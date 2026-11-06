@@ -4,6 +4,7 @@ import SwiftUI
 /// Actions the Repository menu can invoke on the active window.
 @MainActor
 protocol RepositoryMenuHandler: AnyObject {
+    func performShortcut(_ shortcut: AppShortcut)
     func showCommandPalette()
     func showUndo()
     func showRevsetFilter()

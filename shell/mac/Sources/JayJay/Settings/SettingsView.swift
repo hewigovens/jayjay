@@ -2,9 +2,10 @@ import JayJayCore
 import SwiftUI
 
 struct SettingsView: View {
+    @Environment(ShortcutStore.self) private var shortcuts
     @ObservedObject var updater: SparkleUpdater
     let windowManager: RepoWindowManager
-    @State private var selection = SettingsPage.appearance
+    @AppStorage(AppSettings.settingsPageKey) private var selection = SettingsPage.appearance
     @State private var toolAvailability = SettingsSnapshot<[AiProvider: Bool]>()
     @State private var cliDiagnostics = SettingsSnapshot<[String: CliStatus]>()
     @State private var forgeLogins = SettingsSnapshot<[RepoHost: HostLogin]>()
@@ -45,6 +46,8 @@ struct SettingsView: View {
         switch selection {
             case .appearance:
                 SettingsAppearancePage()
+            case .shortcuts:
+                SettingsShortcutsPage(store: shortcuts)
             case .fonts:
                 SettingsFontsPage()
             case .diff:

@@ -6,6 +6,7 @@ private struct AppEnvironmentModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .environment(settings)
+            .environment(ShortcutStore.shared)
             .environment(\.jayjayTypography, settings.typography)
             .environment(\.appThemes, settings.appThemes)
             .environment(\.diffPalettes, settings.diffPalettes)
