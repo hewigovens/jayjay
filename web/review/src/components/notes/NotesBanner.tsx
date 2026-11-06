@@ -8,12 +8,14 @@ export function NotesBanner({
   labels,
   disabled,
   resolve,
+  update,
   locate,
 }: {
   items: ReviewNote[];
   labels: Labels;
   disabled: boolean;
   resolve: (id: string) => void;
+  update: (id: string, body: string) => Promise<boolean>;
   locate: (item: ReviewNote) => void;
 }) {
   if (!items.length) return null;
@@ -26,6 +28,7 @@ export function NotesBanner({
           labels={labels}
           disabled={disabled}
           resolve={resolve}
+          update={update}
           locate={() => locate(item)}
         />
       ))}

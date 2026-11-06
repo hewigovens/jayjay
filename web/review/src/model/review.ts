@@ -130,6 +130,7 @@ export type ReviewAction =
       body: string;
       ignoreWhitespace: boolean;
     }
+  | { kind: "updateNote"; id: string; body: string }
   | { kind: "resolveNote"; id: string };
 
 export const defaultOptions: DiffOptions = {

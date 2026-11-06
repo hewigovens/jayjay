@@ -147,6 +147,7 @@ export function ReviewWorkspace({
   }
 
   const disabled = pending || Boolean(error);
+  const update = (id: string, body: string) => mutate({ kind: "updateNote", id, body });
   const resolve = (id: string) => void mutate({ kind: "resolveNote", id });
   // The compact list re-renders the marked file's section; the wide layout re-renders the open file.
   async function toggleFile(index: number) {
@@ -219,6 +220,7 @@ export function ReviewWorkspace({
               labels={labels}
               disabled={locked}
               resolve={resolve}
+              update={update}
             />
           ))}
           {composing && (
@@ -409,6 +411,7 @@ export function ReviewWorkspace({
               labels={labels}
               disabled={disabled}
               resolve={resolve}
+              update={update}
               locate={locate}
             />
             {compact ? (

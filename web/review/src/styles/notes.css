@@ -34,7 +34,7 @@
   border-radius: 6px;
   background: var(--jj-page);
   font:
-    calc(12px * var(--jj-interface-scale, 1))/1.5 -apple-system,
+    calc(14px * var(--jj-interface-scale, 1))/1.5 -apple-system,
     BlinkMacSystemFont,
     "Segoe UI",
     sans-serif;
@@ -56,7 +56,7 @@
   align-items: flex-start;
   gap: 8px;
 }
-:where(.jayjay-review) .jj-note-resolve {
+:where(.jayjay-review) .jj-note-action {
   display: grid;
   place-items: center;
   flex: none;
@@ -68,7 +68,7 @@
   background: transparent;
   color: var(--jj-muted);
 }
-:where(.jayjay-review) .jj-note-resolve:hover {
+:where(.jayjay-review) .jj-note-action:hover {
   color: var(--jj-accent);
 }
 :where(.jayjay-review) .jj-review-note.jj-resolved {
@@ -82,7 +82,7 @@
 }
 :where(.jayjay-review) .jj-note-status {
   flex: none;
-  font-size: calc(10px * var(--jj-interface-scale, 1));
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   font-weight: 600;
   color: var(--jj-note-ink);
 }
@@ -92,7 +92,7 @@
   padding: 0;
   border: 0;
   background: transparent;
-  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-accent);
   text-align: left;
 }
@@ -110,7 +110,7 @@
   margin: 6px 0 0;
   padding-left: 8px;
   border-left: 2px solid var(--jj-note-border);
-  font: calc(10px * var(--jj-interface-scale, 1))/1.6 var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1))/1.6 var(--jj-mono);
   color: var(--jj-muted);
   white-space: pre-wrap;
   overflow-wrap: anywhere;
@@ -123,16 +123,16 @@
 }
 :where(.jayjay-review) .jj-note-actions button {
   padding: 3px 8px;
-  font-size: calc(11px * var(--jj-interface-scale, 1));
+  font-size: calc(12px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) .jj-note-composer .jj-note-heading {
   margin-bottom: 6px;
-  font-size: calc(11px * var(--jj-interface-scale, 1));
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
 :where(.jayjay-review) .jj-note-line {
   margin-left: auto;
-  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
 }
 :where(.jayjay-review) .jj-note-composer textarea {
   height: 80px;
@@ -148,7 +148,7 @@
   padding: 0 4px;
   border: 0;
   background: transparent;
-  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-note-ink);
 }
 :where(.jayjay-review) .jj-note-marker.jj-resolved {
@@ -169,6 +169,41 @@
 :where(.jayjay-review) .jj-notes-banner .jj-review-note {
   max-width: none;
   background: var(--jj-surface);
+}
+:where(.jayjay-review) .jj-notes-banner .jj-note-summary {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  min-width: 0;
+  padding: 0;
+  border: 0;
+  background: transparent;
+}
+:where(.jayjay-review) .jj-note-summary .jj-note-heading,
+:where(.jayjay-review) .jj-note-summary .jj-note-content {
+  display: contents;
+}
+:where(.jayjay-review) .jj-note-summary .jj-note-location {
+  flex: 0 1 auto;
+  max-width: 35%;
+}
+:where(.jayjay-review) .jj-note-summary p {
+  flex: 1 1 0;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-note-resolve-link {
+  flex: none;
+  padding: 0;
+  border: 0;
+  background: transparent;
+  color: var(--jj-accent);
+}
+:where(.jayjay-review) .jj-note-resolve-link:hover {
+  text-decoration: underline;
 }
 @container (max-width: 680px) {
   :where(.jayjay-review) .jj-note-row,

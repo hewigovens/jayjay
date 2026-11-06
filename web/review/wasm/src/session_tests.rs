@@ -15,6 +15,33 @@ fn note_actions_preserve_display_mode_native_schema_and_scope() {
     let initial = json!({"reviewed": {}, "notes": [], "future": {"preserve": true}}).to_string();
     let state = session.mutate(&json!({"kind": "addNote", "file": 0, "side": "new", "line": 2, "body": "Inspect duplicate", "ignoreWhitespace": true}).to_string(), &initial).unwrap();
     let stored: Value = serde_json::from_str(&state).unwrap();
+    let id = stored["notes"][0]["id"].as_str().unwrap();
+    let edited = session
+        .mutate(
+            &json!({"kind": "updateNote", "id": id, "body": "Edited note"}).to_string(),
+            &state,
+        )
+        .unwrap();
+    let edited: Value = serde_json::from_str(&edited).unwrap();
+    assert_eq!(edited["notes"][0]["body"], "Edited note");
+    for field in [
+        "id",
+        "path",
+        "line",
+        "side",
+        "anchor_excerpt",
+        "ignore_whitespace",
+        "created_at_ms",
+        "resolved",
+    ] {
+        assert_eq!(edited["notes"][0][field], stored["notes"][0][field]);
+    }
+    for action in [
+        json!({"kind": "updateNote", "id": id, "body": "  "}),
+        json!({"kind": "updateNote", "id": "outside-change", "body": "Edited"}),
+    ] {
+        assert!(session.mutate(&action.to_string(), &state).is_err());
+    }
     assert_eq!(stored["future"]["preserve"], true);
     assert_eq!(stored["notes"][0]["ignore_whitespace"], true);
     assert_eq!(

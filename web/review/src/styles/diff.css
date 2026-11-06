@@ -5,7 +5,7 @@
 }
 :where(.jayjay-review) .jj-diff-lines {
   width: 100%;
-  font: var(--jj-diff-font-size, 12px) / calc(19 / 12) var(--jj-mono);
+  font: var(--jj-diff-font-size, 12px) / calc(20 / 12) var(--jj-mono);
   tab-size: 4;
   background: var(--jj-diff-context-bg, transparent);
   color: var(--jj-diff-text, var(--jj-ink));
@@ -45,14 +45,14 @@
   left: 17px;
 }
 :where(.jayjay-review) .jj-line-number {
-  flex: 0 0 38px;
+  flex: 0 0 max(38px, calc(4ch + 8px));
   text-align: right;
   padding-right: 8px;
   color: var(--jj-diff-gutter-fg, var(--jj-muted));
   background: var(--jj-diff-gutter-bg, transparent);
   align-self: stretch;
   user-select: none;
-  font-size: calc(var(--jj-diff-font-size, 12px) * 11 / 12);
+  font-size: var(--jj-diff-font-size, 12px);
   opacity: var(--jj-diff-gutter-opacity, 0.8);
 }
 /* Dividers stretch the full row, which a wrapped line makes taller than its first line. */

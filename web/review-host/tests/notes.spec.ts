@@ -59,3 +59,34 @@ test("offers the whitespace toggle only after a note turns the mode on", async (
   await ready(page);
   await expect(toggle).toHaveCount(0);
 });
+
+test("edits persisted notes and saves composers with keyboard shortcuts", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  await page.getByRole("button", { name: "Add note: After 5", exact: true }).click();
+  const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
+  await draft.fill("Original note");
+  await draft.press("Meta+Enter");
+  await ready(page);
+  const note = page.locator(".jj-review-note").filter({ hasText: "Original note" });
+  await note.getByRole("button", { name: "Edit Review Note", exact: true }).click();
+  await expect(draft).toHaveValue("Original note");
+  await draft.fill("Discarded edit");
+  await draft.press("Escape");
+  await expect(note).toBeVisible();
+  await expect(note.getByRole("button", { name: "Edit Review Note", exact: true })).toBeFocused();
+  await note.getByRole("button", { name: "Edit Review Note", exact: true }).click();
+  await draft.fill("  ");
+  await draft.press("Meta+Enter");
+  await expect(draft).toBeVisible();
+  await draft.fill("Updated note");
+  await draft.press("Enter");
+  await expect(draft).toHaveValue("Updated note\n");
+  await draft.press("Control+Enter");
+  await ready(page);
+  await expect(page.locator(".jj-review-note")).toHaveText(/Updated note/);
+  await page.reload();
+  await ready(page);
+  await expect(page.locator(".jj-review-note")).toHaveText(/Updated note/);
+  await expect(page.locator(".jj-review-note")).toHaveCount(1);
+});

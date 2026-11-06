@@ -46,7 +46,7 @@
   border-radius: 6px;
   background: transparent;
   color: var(--jj-ink);
-  font-size: calc(12px * var(--jj-interface-scale, 1));
+  font-size: calc(14px * var(--jj-interface-scale, 1));
   font-weight: 500;
   padding-block: 4px;
 }
@@ -80,7 +80,7 @@
   text-align: left;
   padding: 6px 0;
   border-radius: 0;
-  font-size: calc(12px * var(--jj-interface-scale, 1));
+  font-size: calc(14px * var(--jj-interface-scale, 1));
 }
 :where(.jayjay-review) .jj-file-select:hover {
   background: transparent;
@@ -108,7 +108,7 @@
   display: flex;
   gap: 4px;
   min-width: 0;
-  font: calc(10px * var(--jj-interface-scale, 1)) var(--jj-mono);
+  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
   color: var(--jj-muted);
 }
 /* Snapping to whole monospace cells avoids a clipped-glyph gap before the ellipsis; the .1px slack keeps an exact fit whole. */

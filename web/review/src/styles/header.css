@@ -31,7 +31,7 @@
   -webkit-box-orient: vertical;
   -webkit-line-clamp: 2;
   margin: 8px 0 0;
-  font-size: calc(13px * var(--jj-interface-scale, 1));
+  font-size: calc(14px * var(--jj-interface-scale, 1));
   line-height: 1.5;
   color: var(--jj-ink);
   white-space: pre-wrap;
@@ -120,7 +120,7 @@
   align-items: center;
   gap: 6px;
   margin-top: 10px;
-  font-size: calc(11px * var(--jj-interface-scale, 1));
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
   white-space: nowrap;
   min-width: 0;
@@ -233,7 +233,7 @@
   border-radius: 5px;
   background: transparent;
   color: var(--jj-muted);
-  font-size: calc(11px * var(--jj-interface-scale, 1));
+  font-size: calc(12px * var(--jj-interface-scale, 1));
   white-space: nowrap;
   cursor: pointer;
 }

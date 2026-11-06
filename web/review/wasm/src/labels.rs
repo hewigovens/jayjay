@@ -95,6 +95,7 @@ fn review_labels() -> Vec<(&'static str, String)> {
         ("markReviewed", jayjay_i18n::web::mark_reviewed()),
         ("group", jayjay_i18n::web::group()),
         ("notes", jayjay_i18n::web::notes()),
+        ("editNote", jayjay_i18n::menu::edit_review_note()),
         ("addNote", jayjay_i18n::web::add_note()),
         ("noteBody", jayjay_i18n::web::note_body()),
         ("saveNote", jayjay_i18n::web::save_note()),

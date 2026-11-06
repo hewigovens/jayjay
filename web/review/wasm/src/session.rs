@@ -65,6 +65,10 @@ enum ReviewAction {
         body: String,
         ignore_whitespace: bool,
     },
+    UpdateNote {
+        id: String,
+        body: String,
+    },
     ResolveNote {
         id: String,
     },
@@ -306,6 +310,18 @@ impl ReviewSession {
                 )
                 .ok_or("Notes must anchor to a changed line")?;
                 store.add_note(anchor, body);
+            }
+            ReviewAction::UpdateNote { id, body } => {
+                if !store
+                    .list_notes(change_id, true)
+                    .iter()
+                    .any(|note| note.id == id)
+                {
+                    return Err("Unknown review note".into());
+                }
+                let body =
+                    jayjay_review::checked_note_body(&body).map_err(|error| error.to_string())?;
+                store.update_note(&id, body);
             }
             ReviewAction::ResolveNote { id } => {
                 if !store

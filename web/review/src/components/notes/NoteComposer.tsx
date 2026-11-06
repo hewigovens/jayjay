@@ -13,28 +13,40 @@ export interface NoteTarget {
 
 export function NoteComposer({
   target,
+  initialBody = "",
   labels,
   disabled,
   save,
   cancel,
 }: {
-  target: NoteTarget;
+  target: { anchor: Pick<DiffAnchor, "side" | "line"> };
+  initialBody?: string;
   labels: Labels;
   disabled: boolean;
   save: (body: string) => Promise<boolean>;
   cancel: () => void;
 }) {
   const bodyId = useId();
-  const [body, setBody] = useState("");
+  const [body, setBody] = useState(initialBody);
   return (
     <form
       className="jj-note-composer"
       onSubmit={(event) => {
         event.preventDefault();
-        void save(body);
+        if (!disabled && body.trim()) void save(body);
       }}
       onKeyDown={(event) => {
-        if (event.key === "Escape") cancel();
+        if (event.nativeEvent.isComposing) return;
+        if (event.key === "Escape" && !disabled) {
+          event.preventDefault();
+          event.stopPropagation();
+          cancel();
+        }
+        if (event.key === "Enter" && (event.metaKey || event.ctrlKey)) {
+          event.preventDefault();
+          event.stopPropagation();
+          if (!disabled && body.trim() && !event.repeat) event.currentTarget.requestSubmit();
+        }
       }}
     >
       <div className="jj-note-heading">
@@ -47,11 +59,12 @@ export function NoteComposer({
         id={bodyId}
         value={body}
         maxLength={16000}
+        disabled={disabled}
         autoFocus
         onChange={(event) => setBody(event.target.value)}
       />
       <div className="jj-note-actions">
-        <button type="button" onClick={cancel}>
+        <button type="button" disabled={disabled} onClick={cancel}>
           {labels.cancel}
         </button>
         <button className="jj-primary" disabled={disabled || !body.trim()}>
