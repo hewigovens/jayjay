@@ -43,12 +43,12 @@ class ScreenshotScene: SceneBase {
             "-jayjay.treeFileList", "NO",
             "-jayjay.sideBySideDiff", "NO",
             "-jayjay.hasCompletedOnboarding", "YES",
-            "-jayjay.windowFrame.repo-window", "{{80, 80}, {1100, 700}}",
+            "-jayjay.windowFrame.repo-window", "\"{{80, 600}, {1100, 700}}\"",
             "-jayjay.sidebarWidth", "240",
             "-jayjay.secondaryPaneWidth", "220",
             "-jayjay.fileColumnWidth", "220",
             "-jayjay.sidebarHidden", "NO",
-            "-commandPalette.frameOrigin", "{0, 0}"
+            "-commandPalette.frameOrigin", "\"{0, 0}\""
         ]
     }
 

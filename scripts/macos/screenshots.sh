@@ -15,6 +15,7 @@ cargo build -p jayjay-uniffi --features jayjay-core/mock
 # Binding generation rebuilds the default core, so retain the isolated library before wrapping it.
 cp "$target_dir/debug/libjayjay_uniffi.a" "$out/ffi/libjayjay_uniffi.a"
 bash "$root/scripts/macos/ffi.sh" wrap debug "$out/ffi/libjayjay_uniffi.a"
+bash "$root/scripts/ssh-helper.sh" "" debug
 bash "${root}/scripts/screenshot-fixture.sh" "${screenshot_root}"
 args=()
 if [ "$#" -eq 0 ]; then
