@@ -44,6 +44,8 @@ export function isImagePath(path: string): boolean {
 }
 /** From `jayjay_primitives::seti`; metrics are fractions of the em. */
 export interface FileGlyph {
+  light?: string;
+  dark?: string;
   glyph: string;
   scale: number;
   inkLeft: number;

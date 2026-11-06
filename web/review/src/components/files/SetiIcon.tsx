@@ -8,7 +8,14 @@ const SIZE = 18;
 export function SetiIcon({ icon }: { icon?: FileGlyph }) {
   if (!icon) return <FileIcon />;
   return (
-    <span className="jj-icon jj-seti" style={{ fontSize: SIZE * icon.scale }} aria-hidden="true">
+    <span
+      className="jj-icon jj-seti"
+      style={{
+        fontSize: SIZE * icon.scale,
+        color: icon.light && icon.dark ? `light-dark(${icon.light}, ${icon.dark})` : undefined,
+      }}
+      aria-hidden="true"
+    >
       <span
         style={{
           width: `${icon.inkWidth}em`,

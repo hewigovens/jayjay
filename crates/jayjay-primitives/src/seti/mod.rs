@@ -1,3 +1,4 @@
+mod colors;
 mod glyph;
 mod table;
 

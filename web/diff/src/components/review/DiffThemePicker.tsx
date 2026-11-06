@@ -9,7 +9,7 @@ import {
 } from "../../AppearanceSettings";
 import { FontSizeStepper } from "./FontSizeStepper";
 import { AppearanceSelect } from "./AppearanceSelect";
-import { ThemeIcon } from "../icons";
+import { ThemeIcon, AutoAppearanceIcon, LightAppearanceIcon, DarkAppearanceIcon } from "../icons";
 
 export function DiffThemePicker({
   labels,
@@ -38,11 +38,11 @@ export function DiffThemePicker({
           <fieldset className="appearance-options" aria-label={labels.appearance}>
             {(
               [
-                ["system", labels.appearanceSystem],
-                ["light", labels.appearanceLight],
-                ["dark", labels.appearanceDark],
+                ["system", labels.appearanceSystem, AutoAppearanceIcon],
+                ["light", labels.appearanceLight, LightAppearanceIcon],
+                ["dark", labels.appearanceDark, DarkAppearanceIcon],
               ] as const
-            ).map(([appearance, label]) => (
+            ).map(([appearance, label, AppearanceIcon]) => (
               <label key={appearance}>
                 <input
                   type="radio"
@@ -51,7 +51,10 @@ export function DiffThemePicker({
                   checked={(themes.appearance ?? "system") === appearance}
                   onChange={() => select({ ...themes, appearance })}
                 />
-                <span>{label}</span>
+                <span>
+                  <AppearanceIcon />
+                  {label}
+                </span>
               </label>
             ))}
           </fieldset>

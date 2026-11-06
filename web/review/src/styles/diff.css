@@ -12,6 +12,7 @@
 }
 :where(.jayjay-review) .jj-diff-row {
   display: grid;
+  padding-left: 10px;
 }
 :where(.jayjay-review) .jj-split .jj-diff-row {
   grid-template-columns: minmax(0, 1fr) minmax(0, 1fr);
@@ -36,13 +37,6 @@
 :where(.jayjay-review) .jj-diff-cell.jj-removed {
   background: var(--jj-diff-removed-bg, var(--jj-removed-bg));
   color: var(--jj-diff-removed-text, var(--jj-ink));
-}
-/* The first cell of a row starts past the change group's stripe, so the stripe never covers a line number. */
-:where(.jayjay-review) .jj-diff-row > .jj-diff-cell:first-child {
-  padding-left: 8px;
-}
-:where(.jayjay-review) .jj-diff-row > .jj-diff-cell:first-child > .jj-gutter-note {
-  left: 17px;
 }
 :where(.jayjay-review) .jj-line-number {
   flex: 0 0 max(38px, calc(4ch + 8px));
@@ -140,6 +134,7 @@
   z-index: 1;
   display: grid;
   grid-template-columns: 1fr 1fr;
+  padding-left: 10px;
   background: var(--jj-diff-separator-bg, var(--jj-surface));
   border-bottom: 1px solid var(--jj-border);
   color: var(--jj-diff-dim, var(--jj-muted));

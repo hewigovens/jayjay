@@ -14,7 +14,6 @@ import {
 } from "../icons";
 import { MiddlePath } from "./MiddlePath";
 import { ReviewToggle } from "./ReviewToggle";
-import { SetiIcon } from "./SetiIcon";
 import { ShortcutsDialog } from "./ShortcutsDialog";
 import { ToolButton } from "../ToolButton";
 import { toggled } from "../toggled";
@@ -71,7 +70,6 @@ function FileRow({
         }}
       >
         <span className={`jj-kind-dot jj-${kind}`} title={labels[`kind.${kind}`]} />
-        <SetiIcon icon={file.icon} />
         <span className="jj-file-text">
           <span className="jj-file-name">
             {name}

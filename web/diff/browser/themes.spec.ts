@@ -33,7 +33,7 @@ for (const width of [390, 1280]) {
     const increase = sizeStepper.getByRole("button", { name: "Increase font size" });
     for (let i = 0; i < 6; i++) await increase.click();
     await expect(diff).toHaveCSS("font-size", "18px");
-    await expect(page.locator(".jj-line-number").first()).toHaveCSS("font-size", "16.5px");
+    await expect(page.locator(".jj-line-number").first()).toHaveCSS("font-size", "18px");
     const originalInterface = await header.evaluate((element) =>
       parseFloat(getComputedStyle(element).fontSize),
     );

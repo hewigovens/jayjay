@@ -1,9 +1,17 @@
 /** @jsxRuntime automatic */
 
-export function Icon({ d, size = 14 }: { d: string; size?: number }) {
+export function Icon({
+  d,
+  size = 14,
+  className = "",
+}: {
+  d: string;
+  size?: number;
+  className?: string;
+}) {
   return (
     <svg
-      className="jj-icon"
+      className={`jj-icon ${className}`}
       viewBox="0 0 16 16"
       width={size}
       height={size}
@@ -32,6 +40,7 @@ export const HideReviewedIcon = () => (
 );
 export const FolderIcon = () => (
   <Icon
+    className="jj-folder-icon"
     size={12}
     d="M1.75 4.25c0-.55.45-1 1-1h3.2l1.5 1.5h5.8c.55 0 1 .45 1 1v6.5c0 .55-.45 1-1 1H2.75c-.55 0-1-.45-1-1v-8Z"
   />

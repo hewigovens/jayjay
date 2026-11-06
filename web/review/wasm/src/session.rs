@@ -38,7 +38,8 @@ fn snapshot(file: &ReviewFile) -> Option<ReviewFileSnapshot> {
 fn file_icon(path: &str) -> Value {
     let glyph = SetiGlyph::for_path(path);
     let metrics = glyph.metrics();
-    json!({ "glyph": glyph.0.to_string(), "scale": metrics.scale, "inkLeft": metrics.ink_left, "inkWidth": metrics.ink_width, "inkCenter": metrics.ink_center })
+    let (light, dark) = glyph.colors();
+    json!({ "light": light, "dark": dark, "glyph": glyph.0.to_string(), "scale": metrics.scale, "inkLeft": metrics.ink_left, "inkWidth": metrics.ink_width, "inkCenter": metrics.ink_center })
 }
 
 #[derive(Deserialize)]

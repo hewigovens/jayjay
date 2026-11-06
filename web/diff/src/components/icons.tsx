@@ -49,3 +49,22 @@ export const ThemeIcon = ({ size }: IconProps) => (
     d="M8 1.5a6.5 6.5 0 1 0 0 13 1.5 1.5 0 0 0 1.1-2.5.8.8 0 0 1 .6-1.3h1.8a3 3 0 0 0 3-3A6.2 6.2 0 0 0 8 1.5ZM4.5 6h.01M7 4h.01M10 4.5h.01M12 7h.01"
   />
 );
+
+export const AutoAppearanceIcon = () => (
+  <svg className="jj-icon" width="16" height="16" viewBox="0 0 16 16" aria-hidden="true">
+    <circle cx="8" cy="8" r="6" fill="none" stroke="currentColor" strokeWidth="1.4" />
+    <path d="M8 2a6 6 0 0 1 0 12Z" fill="currentColor" />
+  </svg>
+);
+export const LightAppearanceIcon = () => (
+  <Icon
+    size={16}
+    d="M8 4.5a3.5 3.5 0 1 0 0 7 3.5 3.5 0 0 0 0-7ZM8 1v1M8 14v1M1 8h1M14 8h1M3 3l.7.7M12.3 12.3l.7.7M3 13l.7-.7M12.3 3.7 13 3"
+  />
+);
+export const DarkAppearanceIcon = () => (
+  <Icon
+    size={16}
+    d="M6.5 2a6 6 0 1 0 7.5 7.5A5.5 5.5 0 0 1 6.5 2ZM12 1v3M10.5 2.5h3M14 5v2M13 6h2"
+  />
+);

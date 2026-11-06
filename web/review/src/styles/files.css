@@ -53,6 +53,9 @@
 :where(.jayjay-review) .jj-folder-row .jj-icon {
   color: var(--jj-muted);
 }
+:where(.jayjay-review) .jj-folder-row .jj-folder-icon {
+  color: light-dark(#2563eb, #7cb4ff);
+}
 :where(.jayjay-review) .jj-folder-row span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -88,7 +91,7 @@
 }
 :where(.jayjay-review) .jj-file-text {
   display: grid;
-  gap: 2px;
+  gap: 5px;
   min-width: 0;
   flex: 1;
 }
