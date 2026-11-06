@@ -88,7 +88,7 @@ ui-test-setup:
   bash "{{root}}/scripts/ui-test-fixtures.sh" "{{bundle_id}}"
 
 # Run the macOS UI test bundle. Pass test ids to narrow the run, e.g.:
-#   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch
+#   just shell::ui-test JayJayUITests/NewChangeScene/testContextMenuNewChangeClearsDraft
 ui-test *test_ids: ffi sync-icon help ui-test-setup
   bash "{{root}}/scripts/macos/test.sh" ui-test "$@"
 
