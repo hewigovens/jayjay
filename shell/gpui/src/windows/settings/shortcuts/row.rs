@@ -2,16 +2,18 @@ use super::pending_edit::PendingEdit;
 use super::view::ShortcutSettings;
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::ui::icons::glyph;
+use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::key_cap;
 use gpui::prelude::FluentBuilder as _;
-use gpui::{Context, Div, FontWeight, InteractiveElement, ParentElement, Styled, div, px, rgb};
+use gpui::{
+    Context, Div, FontWeight, InteractiveElement, IntoElement, ParentElement, Styled, div, px, rgb,
+};
 use jayjay_core::shortcuts::{EffectiveBindings, EffectiveEntry, ShortcutContext};
 use jayjay_i18n::{common, shortcuts};
+use std::rc::Rc;
 
-const CHORD_WIDTH: f32 = 170.;
+const CHORD_WIDTH: f32 = 112.;
 const RESET_WIDTH: f32 = 20.;
-const EDIT_SIZE: f32 = 20.;
 const EMPTY_WIDTH: f32 = 78.;
 
 impl ShortcutSettings {
@@ -66,7 +68,7 @@ impl ShortcutSettings {
         };
         let unbound = chords.is_empty();
         let mut caps = div()
-            .flex_1()
+            .flex_none()
             .flex()
             .items_center()
             .justify_center()
@@ -81,57 +83,79 @@ impl ShortcutSettings {
                 caps = caps.child(div().px(px(2.)).text_color(rgb(t.fg_faint)).child("/"));
             }
             for symbol in chord {
-                caps = caps.child(key_cap(symbol, t));
+                caps = caps.child(
+                    key_cap(symbol, t)
+                        .when(command.is_locked(), |cap| cap.text_color(rgb(t.fg_dim))),
+                );
             }
         }
-        let edit = (!command.is_locked() && !recording && pending.is_none()).then(|| {
-            let primary = entry
-                .chord
-                .map(|chord| KeyCaps::from(chord).to_string())
-                .unwrap_or_else(shortcuts::unbound);
-            Self::icon_button(
-                format!("shortcut-edit-{}", command.id()),
-                if unbound { glyph::PLUS } else { glyph::PENCIL },
-                format!("{}: {primary}", command.title()),
-                t,
-                cx,
-                move |this, window, cx| this.record(command, window, cx),
-            )
-        });
-        let (centered, trailing) = if unbound { (edit, None) } else { (None, edit) };
-        let caps = caps.children(centered.map(|edit| {
-            div()
-                .w(px(EMPTY_WIDTH))
+        let editable = !command.is_locked() && !recording && pending.is_none();
+        if unbound && editable {
+            caps = caps.child(
+                div()
+                    .w(px(EMPTY_WIDTH))
+                    .h(px(22.))
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .rounded_md()
+                    .border_1()
+                    .border_color(rgb(t.border))
+                    .child(icon(glyph::PLUS, 12., t.fg_dim)),
+            );
+        }
+        if recording && let Some(color) = border {
+            caps = caps
+                .min_w(px(EMPTY_WIDTH))
                 .h(px(22.))
-                .flex()
-                .items_center()
-                .justify_center()
+                .px(px(3.))
                 .rounded_md()
                 .border_1()
-                .border_color(rgb(t.border))
-                .child(edit)
-        }));
-        let chord = div()
+                .border_color(rgb(color));
+        }
+        let border = border
+            .filter(|_| !recording)
+            .map_or(gpui::transparent_black(), |color| rgb(color).into());
+        let inner = div()
             .when(recording, |cell| {
                 cell.track_focus(&self.recorder_focus)
                     .on_mouse_down_out(cx.listener(|this, _, _, cx| this.cancel(cx)))
             })
-            .flex_none()
-            .w(px(CHORD_WIDTH))
-            .h(px(28.))
-            .px(px(2.))
+            .h_full()
+            .px(px(3.))
             .flex()
             .items_center()
             .rounded_md()
-            .border_1()
-            .border_color(border.map_or(gpui::transparent_black(), |color| rgb(color).into()))
+            .when(!editable, |cell| cell.border_1().border_color(border))
+            .child(caps);
+        let chord = if editable {
+            let primary = entry
+                .chord
+                .map(|chord| KeyCaps::from(chord).to_string())
+                .unwrap_or_else(shortcuts::unbound);
+            Self::control(
+                format!("shortcut-edit-{}", command.id()).into(),
+                format!("{}: {primary}", command.title()),
+                t,
+                cx,
+                Rc::new(move |this, window, cx| this.record(command, window, cx)),
+            )
+            .h_full()
+            .rounded_md()
+            .border_color(gpui::transparent_black())
+            .child(inner)
+            .into_any_element()
+        } else {
+            inner.into_any_element()
+        };
+        let chord = div()
+            .flex_none()
+            .min_w(px(CHORD_WIDTH))
+            .flex()
+            .justify_end()
+            .h(px(28.))
             .text_size(ui_font_size(12.))
-            .when(command.is_locked(), |cell| cell.opacity(0.6))
-            .when(trailing.is_some(), |cell| {
-                cell.child(div().flex_none().w(px(EDIT_SIZE)))
-            })
-            .child(caps)
-            .children(trailing);
+            .child(chord);
         let reset = div().flex_none().w(px(RESET_WIDTH)).when(modified, |slot| {
             slot.child(Self::icon_button(
                 format!("shortcut-reset-{}", command.id()),
@@ -160,6 +184,7 @@ impl ShortcutSettings {
                             .flex_1()
                             .min_w_0()
                             .whitespace_normal()
+                            .when(command.is_locked(), |title| title.text_color(rgb(t.fg_dim)))
                             .child(command.title()),
                     )
                     .child(reset)
@@ -175,7 +200,7 @@ impl ShortcutSettings {
 
     fn note(&self, message: String, pending: bool, t: &Theme, cx: &Context<Self>) -> Div {
         let color = if pending { t.warning_fg } else { t.error_fg };
-        let mut actions = div().flex_none().w(px(CHORD_WIDTH)).flex().gap(px(6.));
+        let mut actions = div().flex_none().min_w(px(CHORD_WIDTH)).flex().gap(px(6.));
         if pending && self.replace_allowed {
             actions = actions.child(
                 Self::button(

@@ -5,7 +5,8 @@ use crate::ui::text_area::{TextArea, TextAreaUpdated};
 use gpui::prelude::FluentBuilder as _;
 use gpui::{
     AppContext, Context, Entity, FocusHandle, InteractiveElement, IntoElement, Modifiers,
-    ModifiersChangedEvent, ParentElement, Render, Styled, Subscription, Window, div, px,
+    ModifiersChangedEvent, ParentElement, Render, StatefulInteractiveElement, Styled, Subscription,
+    Window, div, px,
 };
 use jayjay_core::shortcuts::{
     EffectiveBindings, EffectiveEntry, KeyPlatform, ShortcutCommand, ShortcutContext,
@@ -76,6 +77,8 @@ impl Render for ShortcutSettings {
                     cx.notify();
                 }
             }))
+            .size_full()
+            .min_h_0()
             .flex()
             .flex_col()
             .gap(px(10.))
@@ -93,7 +96,7 @@ impl Render for ShortcutSettings {
                 None => groups.push((context, vec![entry])),
             }
         }
-        let mut list = div().flex().flex_col();
+        let mut list = div().flex().flex_col().pr(px(12.));
         for (context, entries) in groups {
             list = list.child(Self::group_title(context, &t));
             for entry in entries {
@@ -101,6 +104,13 @@ impl Render for ShortcutSettings {
                 list = list.child(self.row(entry, modified, &bindings, &t, cx));
             }
         }
+        let list = div()
+            .id("shortcuts-scroll")
+            .flex_1()
+            .min_h_0()
+            .overflow_y_scroll()
+            .scrollbar_width(px(0.))
+            .child(list);
         body.child(list).when(query.is_empty(), |body| {
             body.child(div().flex().child(Self::reset_all_button(&t, cx)))
         })

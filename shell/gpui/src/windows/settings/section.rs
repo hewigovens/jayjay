@@ -7,8 +7,8 @@ use crate::ui::icons::glyph;
 pub enum SettingsSection {
     Appearance,
     Fonts,
-    KeyboardShortcuts,
     Diff,
+    KeyboardShortcuts,
     Workflow,
     Integrations,
     Jujutsu,
@@ -21,8 +21,8 @@ impl SettingsSection {
     pub const ALL: [Self; 10] = [
         Self::Appearance,
         Self::Fonts,
-        Self::KeyboardShortcuts,
         Self::Diff,
+        Self::KeyboardShortcuts,
         Self::Workflow,
         Self::Integrations,
         Self::Jujutsu,

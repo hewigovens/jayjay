@@ -253,7 +253,18 @@ impl Render for SettingsView {
                             .font_weight(FontWeight::SEMIBOLD)
                             .child(active.label()),
                     )
-                    .child(
+                    .child(if active == SettingsSection::KeyboardShortcuts {
+                        div()
+                            .flex_1()
+                            .min_h_0()
+                            .flex()
+                            .flex_col()
+                            .px(px(20.))
+                            .pt(px(8.))
+                            .pb(px(16.))
+                            .child(self.section_body(&cfg, &t, window, cx))
+                            .into_any_element()
+                    } else {
                         div()
                             .id("settings-scroll")
                             .debug_selector(|| "settings-scroll".to_owned())
@@ -270,8 +281,9 @@ impl Render for SettingsView {
                                     .pt(px(8.))
                                     .pb(px(24.))
                                     .child(self.section_body(&cfg, &t, window, cx)),
-                            ),
-                    )
+                            )
+                            .into_any_element()
+                    })
                     .children(gift),
             );
         if let Some(d) = dropdown {

@@ -1,5 +1,6 @@
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
+use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
 
@@ -25,6 +26,7 @@ pub(crate) fn key_cap(label: impl Into<SharedString>, t: &Theme) -> Div {
         .border_1()
         .border_color(rgb(t.border))
         .bg(rgb(t.row_alt_bg))
+        .code_font()
         .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg))
         .text_center()
