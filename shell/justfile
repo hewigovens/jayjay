@@ -88,7 +88,7 @@ ui-test-setup:
   bash "{{root}}/scripts/ui-test-fixtures.sh" "{{bundle_id}}"
 
 # Run the macOS UI test bundle. Pass test ids to narrow the run, e.g.:
-#   just shell::ui-test JayJayUITests/CommandPaletteScene/testOpenAndSearch
+#   just shell::ui-test JayJayUITests/NewChangeScene/testContextMenuNewChangeClearsDraft
 ui-test *test_ids: ffi sync-icon help ui-test-setup
   bash "{{root}}/scripts/macos/test.sh" ui-test "$@"
 
@@ -191,7 +191,7 @@ lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --strict --quiet
 
 clean:
-  rm -rf "{{root}}/build" "{{xcframework}}" "{{project}}/JayJay.xcodeproj" "{{swift_out}}/JayJayCore.swift" "{{swift_out}}/Localized.swift"
+  rm -rf "{{root}}/build" "{{xcframework}}" "{{swift_out}}/JayJayCore.swift" "{{swift_out}}/Localized.swift"
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
   rm -f "{{project}}/Resources/DockIcon/jayjay-dock-light.png"
   rm -f "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"

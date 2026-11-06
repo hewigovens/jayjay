@@ -16,7 +16,6 @@ cargo build -p jayjay-uniffi --features jayjay-core/mock
 cp "$target_dir/debug/libjayjay_uniffi.a" "$out/ffi/libjayjay_uniffi.a"
 bash "$root/scripts/macos/ffi.sh" wrap debug "$out/ffi/libjayjay_uniffi.a"
 bash "${root}/scripts/screenshot-fixture.sh" "${screenshot_root}"
-xcodegen --spec "${project}/project.yml" --project "${project}"
 args=()
 if [ "$#" -eq 0 ]; then
   args+=(-only-testing:JayJayUITests/ReleaseScreenshots -only-testing:JayJayUITests/OverviewScreenshots)

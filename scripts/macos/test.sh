@@ -10,7 +10,6 @@ scheme=JayJayUITests
 
 case "$action" in
   test|ui-test)
-    xcodegen --spec "$project/project.yml" --project "$project"
     operation="test"
     ;;
   ui-test-build)

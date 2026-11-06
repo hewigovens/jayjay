@@ -32,7 +32,7 @@ concurrency:
 
 jobs:
   rust:
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -57,7 +57,7 @@ jobs:
         run: cargo check --locked -p jayjay-gpui
 
   swift:
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -67,7 +67,7 @@ jobs:
           toolchain: stable
 
       - name: Install tools
-        run: brew install just xcodegen xcbeautify swiftlint jj
+        run: brew install just xcbeautify swiftlint jj
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -89,7 +89,7 @@ jobs:
         run: just test-app
 
   swift-ui-build:
-    runs-on: macos-26
+    runs-on: xcode-27
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -99,7 +99,7 @@ jobs:
           toolchain: stable
 
       - name: Install tools
-        run: brew install just xcodegen xcbeautify
+        run: brew install just xcbeautify
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -124,7 +124,7 @@ jobs:
   swift-ui:
     name: swift-ui (${{ matrix.shard }}/3)
     needs: swift-ui-build
-    runs-on: macos-26
+    runs-on: xcode-27
     strategy:
       fail-fast: false
       matrix:

@@ -5,7 +5,6 @@ import SwiftUI
 final class CommandPalettePanel: FloatingPanel {
     init() {
         super.init(contentRect: NSRect(x: 0, y: 0, width: 480, height: 300))
-        isMovableByWindowBackground = true
         // Remember the position whenever the user drags the panel.
         NotificationCenter.default.addObserver(
             self,
@@ -16,6 +15,22 @@ final class CommandPalettePanel: FloatingPanel {
     }
 
     static let originKey = "commandPalette.frameOrigin"
+    private static let dragBandHeight: CGFloat = 44
+
+    // macOS 27 no longer moves this SwiftUI-hosted panel by its background, so drag it from the search row's padding.
+    override func sendEvent(_ event: NSEvent) {
+        if event.type == .leftMouseDown, isDragBand(event) {
+            performDrag(with: event)
+            return
+        }
+        super.sendEvent(event)
+    }
+
+    private func isDragBand(_ event: NSEvent) -> Bool {
+        guard let contentView, event.locationInWindow.y >= contentView.bounds.height - Self.dragBandHeight else { return false }
+        let hit = contentView.hitTest(contentView.superview?.convert(event.locationInWindow, from: nil) ?? event.locationInWindow)
+        return !(hit is NSText || hit is NSTextField)
+    }
 
     @objc private func saveFrameOrigin() {
         UserDefaults.standard.set(NSStringFromPoint(frame.origin), forKey: Self.originKey)

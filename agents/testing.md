@@ -88,7 +88,7 @@ Use accessibility identifiers from `shell/mac/Sources/JayJay/Shared/Accessibilit
 
 The sandboxed XCUITest runner cannot create repositories where the launched app can open them. Mutating scenes therefore use dedicated copies generated from a canonical fixture by `ui-test-fixtures.sh`; name those copies for the workflow, not for their source fixture. Each scene gets an isolated review store.
 
-Pass a test id to run one scene: `just test-ui JayJayUITests/CommandPaletteScene/testOpenAndSearch`.
+Pass a test id to run one scene: `just test-ui JayJayUITests/NewChangeScene/testContextMenuNewChangeClearsDraft`.
 
 Each test method launches and terminates the app. Extend a related workflow when it already reaches the required state; combining files alone saves no launches. Preserve separate tests for different startup conditions or failure modes. Keep expensive accessibility diagnostics inside assertion message autoclosures so successful runs do not enumerate the UI for a discarded message.
 
