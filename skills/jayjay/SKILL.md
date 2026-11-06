@@ -1,6 +1,6 @@
 ---
 name: jayjay
-description: Work with a person who reviews jj (Jujutsu) changes in the JayJay app. Use the `jayjay review` CLI to read and resolve their line-anchored review notes, pre-mark straightforward files as agent-reviewed, leave notes for critical risks, and print jj diff/merge tool config with `jayjay config`. Use when the user mentions JayJay, review notes, review marks, or asks you to address their review feedback in a jj repository.
+description: Work with a person who reviews jj (Jujutsu) changes in the JayJay app. Use the `jayjay review` CLI to read and resolve their line-anchored review notes, pre-mark straightforward files as agent-reviewed, leave notes for critical risks, print jj diff/merge tool config with `jayjay config`, and create sibling workspaces or check out pull requests with `jayjay workspace` and `jayjay import`. Use when the user mentions JayJay, review notes, review marks, or asks you to address their review feedback in a jj repository.
 ---
 
 # JayJay
@@ -65,6 +65,18 @@ jayjay review add-note --repo . --file <path> --line <n> [--side old] -m "…"
 ```
 
 The line must be a changed line on that side of the diff. Adding a note to a line that already has an active note updates it.
+
+## Sibling workspaces and pull requests
+
+When the user wants a change worked on in its own checkout, or a pull request checked out locally, use these instead of hand-built `jj workspace` and fetch commands:
+
+```bash
+jayjay workspace add <name> --repo .          # ../<name> on trunk(); -r <rev> picks another start
+jayjay import <PR or MR URL> --repo .         # fetches the head into ../pr-<number>; --name/--dest override
+jayjay workspace prune <name>... --repo .     # or --all; deletes only workspaces whose changes are in trunk() or empty
+```
+
+`import` reports the existing workspace instead of importing a pull request twice. `prune` keeps any workspace with pending work and says how many changes it holds; ask before pruning a workspace you did not create.
 
 ## Use JayJay as jj's diff and merge tool
 

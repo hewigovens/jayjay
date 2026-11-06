@@ -6,6 +6,116 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.23-beta.3</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>83</sparkle:version>
+            <sparkle:shortVersionString>0.3.23</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Sat, 07 Nov 2026 03:26:55 +0000</pubDate>
+            <description><![CDATA[
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="color-scheme" content="light dark">
+                  <title>JayJay 0.3.23-beta.3 — Release notes</title>
+                  <style>
+                    :root {
+                      color-scheme: light dark;
+                      --background: #f7f8fa;
+                      --surface: #ffffff;
+                      --text: #20242c;
+                      --muted: #626b78;
+                      --border: #dfe4ec;
+                      --accent: #1d4ed8;
+                      --tint: #eaf1ff;
+                      --notice: #fff5de;
+                      --notice-text: #79520b;
+                    }
+                    @media (prefers-color-scheme: dark) {
+                      :root {
+                        --background: #181b21;
+                        --surface: #22262e;
+                        --text: #edf0f6;
+                        --muted: #adb6c5;
+                        --border: #3b424f;
+                        --accent: #93baff;
+                        --tint: #283b5d;
+                        --notice: #3a301d;
+                        --notice-text: #f4cc7d;
+                      }
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                      margin: 0;
+                      padding: 24px;
+                      background: var(--background);
+                      color: var(--text);
+                      font: 13px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                      overflow-wrap: anywhere;
+                    }
+                    .release { max-width: 720px; margin: 0 auto; }
+                    header { padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+                    h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -0.035em; }
+                    .metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; color: var(--muted); }
+                    .version { padding: 3px 10px; border-radius: 7px; background: var(--tint); color: var(--accent); font-weight: 650; }
+                    .beta-notice { margin: 20px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--notice); color: var(--notice-text); }
+                    main h2 { margin: 24px 0 10px; font-size: 16px; line-height: 1.35; }
+                    main ul, main ol { margin: 0; padding: 16px 18px 16px 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+                    main li + li { margin-top: 10px; }
+                    main li::marker { color: var(--accent); }
+                    main li ul, main li ol { margin-top: 10px; padding: 0 0 0 18px; border: 0; }
+                    code { padding: 1px 4px; border-radius: 4px; background: var(--tint); font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: var(--surface); }
+                    pre code { padding: 0; background: transparent; }
+                    a { color: var(--accent); text-underline-offset: 3px; }
+                    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+                    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); }
+                    @media (max-width: 420px) { body { padding: 16px; } h1 { font-size: 24px; } }
+                    @media (prefers-contrast: more) { :root { --muted: var(--text); --border: var(--text); } }
+                  </style>
+                </head>
+                <body>
+                  <div class="release">
+                    <header>
+                      <h1>What’s new</h1>
+                      <div class="metadata"><span class="version">v0.3.23-beta.3</span><time datetime="2026-11-07">November 7, 2026</time></div>
+                    </header>
+                    <p class="beta-notice"><strong>Beta build · 83</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>
+                    <main>
+                <h2>Divergent changes</h2>
+                <ul>
+                  <li><strong>Resolve Divergent Change…</strong> in a divergent change’s menu opens a sheet that works like the merge editor. <strong>Keep A</strong> or <strong>Keep B</strong> takes one version whole, or decide the description, contents, author, and parents card by card, starting from the choices <code>jj converge</code> would make.</li>
+                  <li>Each card shows what differs, including the file diff between the versions. <strong>Use A</strong> / <strong>Use B</strong> or Option-Left / Option-Right override a choice, and <strong>Edit…</strong> writes your own description. The sheet lists the descendants, bookmarks, and workspaces that will move, then converges in one undoable operation.</li>
+                </ul>
+                <h2>Keyboard shortcuts</h2>
+                <ul>
+                  <li>A new <strong>Keyboard Shortcuts</strong> page in Settings lists every command with its shortcut. Search or show only modified ones, click a shortcut and press new keys to change it, and replace a conflicting shortcut or reset one or all.</li>
+                  <li>Menus, the command palette, and the shortcut reference show your shortcuts.</li>
+                </ul>
+                <h2>Appearance</h2>
+                <ul>
+                  <li>Built-in themes now color the whole repository window, not only diffs. Pick separate light and dark themes from Default, One, Gruvbox, Solarized, Catppuccin, Dracula, Nord, and Tokyo Night, with a preview of the window.</li>
+                  <li>The graph draws immutable changes as diamonds, as <code>jj log</code> does.</li>
+                </ul>
+                <h2>Command line</h2>
+                <ul>
+                  <li><code>jayjay import &lt;URL&gt;</code> checks out a GitHub pull request or GitLab merge request into a new <code>pr-&lt;number&gt;</code> workspace.</li>
+                  <li><code>jayjay workspace add &lt;name&gt;</code> creates a sibling workspace on <code>trunk()</code>, and <code>jayjay workspace prune</code> deletes sibling workspaces whose changes have landed or are empty, keeping any with pending work.</li>
+                </ul>
+                    </main>
+                    <footer><a href="https://github.com/hewigovens/jayjay/releases">All releases</a> · <a href="https://jayjay.hewig.dev/guide.html">User guide</a></footer>
+                  </div>
+                </body>
+                </html>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.23-beta.3/JayJay-0.3.23-beta.3.zip"
+                       sparkle:edSignature="qFdgW4/sdn2rI6RCbHT0YIQfIAyWCllndyjHdDyFK+vGVKRpaC8rNngG+oTaDVdz+a+ipi/zk8yxfNDRQnSNBg=="
+                       length="26760046"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.23-beta.2</title>
             <sparkle:channel>beta</sparkle:channel>
             <sparkle:version>82</sparkle:version>

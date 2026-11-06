@@ -1,0 +1,20 @@
+<h2>Divergent changes</h2>
+<ul>
+  <li><strong>Resolve Divergent Change…</strong> in a divergent change’s menu opens a sheet that works like the merge editor. <strong>Keep A</strong> or <strong>Keep B</strong> takes one version whole, or decide the description, contents, author, and parents card by card, starting from the choices <code>jj converge</code> would make.</li>
+  <li>Each card shows what differs, including the file diff between the versions. <strong>Use A</strong> / <strong>Use B</strong> or Option-Left / Option-Right override a choice, and <strong>Edit…</strong> writes your own description. The sheet lists the descendants, bookmarks, and workspaces that will move, then converges in one undoable operation.</li>
+</ul>
+<h2>Keyboard shortcuts</h2>
+<ul>
+  <li>A new <strong>Keyboard Shortcuts</strong> page in Settings lists every command with its shortcut. Search or show only modified ones, click a shortcut and press new keys to change it, and replace a conflicting shortcut or reset one or all.</li>
+  <li>Menus, the command palette, and the shortcut reference show your shortcuts.</li>
+</ul>
+<h2>Appearance</h2>
+<ul>
+  <li>Built-in themes now color the whole repository window, not only diffs. Pick separate light and dark themes from Default, One, Gruvbox, Solarized, Catppuccin, Dracula, Nord, and Tokyo Night, with a preview of the window.</li>
+  <li>The graph draws immutable changes as diamonds, as <code>jj log</code> does.</li>
+</ul>
+<h2>Command line</h2>
+<ul>
+  <li><code>jayjay import &lt;URL&gt;</code> checks out a GitHub pull request or GitLab merge request into a new <code>pr-&lt;number&gt;</code> workspace.</li>
+  <li><code>jayjay workspace add &lt;name&gt;</code> creates a sibling workspace on <code>trunk()</code>, and <code>jayjay workspace prune</code> deletes sibling workspaces whose changes have landed or are empty, keeping any with pending work.</li>
+</ul>
