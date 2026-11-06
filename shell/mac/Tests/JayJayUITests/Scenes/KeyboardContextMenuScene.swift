@@ -68,7 +68,7 @@ final class KeyboardContextMenuScene: SceneBase {
 
     private func openMenu(showing item: String, _ message: String) throws {
         keyStroke(.return, modifiers: [.control])
-        XCTAssertTrue(try XCTUnwrap(app).menuItems[item].waitForExistence(timeout: 3), message)
+        XCTAssertTrue(try XCTUnwrap(app).windows.menuItems[item].waitForExistence(timeout: 3), message)
     }
 
     private func waitForCopiedPath(_ path: String) {

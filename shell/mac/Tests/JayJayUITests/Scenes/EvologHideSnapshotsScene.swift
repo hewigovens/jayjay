@@ -84,10 +84,10 @@ final class EvologHideSnapshotsScene: SceneBase {
         XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
 
         rightClickCenter(rows.element(boundBy: 0))
-        let showEvolution = app.menuItems["Show evolution…"].firstMatch
+        let showEvolution = app.windows.menuItems["Show evolution…"].firstMatch
         XCTAssertTrue(showEvolution.waitForExistence(timeout: 5), "Show evolution menu item did not appear")
-        let copyChangeId = app.menuItems["Copy Change ID"].firstMatch
-        let copyCommitId = app.menuItems["Copy Commit ID"].firstMatch
+        let copyChangeId = app.windows.menuItems["Copy Change ID"].firstMatch
+        let copyCommitId = app.windows.menuItems["Copy Commit ID"].firstMatch
         XCTAssertTrue(copyChangeId.exists, "Copy Change ID menu item did not appear")
         XCTAssertTrue(copyCommitId.exists, "Copy Commit ID menu item did not appear")
         XCTAssertLessThan(showEvolution.frame.minY, copyChangeId.frame.minY)
