@@ -105,7 +105,7 @@ test("a shown image preview replaces its source", async ({ page }) => {
   await expect(page.locator(".jj-image-side img")).toHaveCount(2);
 });
 
-test("gives each file kind its own colour and a file-type icon", async ({ page }) => {
+test("gives each file kind its own colour and shows the open file icon", async ({ page }) => {
   await page.goto("/");
   await ready(page);
   await page.getByLabel("Import change", { exact: true }).setInputFiles({
@@ -131,7 +131,7 @@ test("gives each file kind its own colour and a file-type icon", async ({ page }
     .locator(".jj-kind-dot")
     .evaluateAll((dots) => dots.map((dot) => getComputedStyle(dot).backgroundColor));
   expect(new Set(colours).size).toBe(4);
-  await expect(page.locator(".jj-file-select .jj-seti")).toHaveCount(4);
+  await expect(page.locator(".jj-file-title .jj-seti")).toHaveCount(1);
   expect(
     await page.evaluate(async () => {
       await document.fonts.ready;
