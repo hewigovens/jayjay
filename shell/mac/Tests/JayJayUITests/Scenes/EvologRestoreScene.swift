@@ -11,7 +11,7 @@ final class EvologRestoreScene: SceneBase {
         XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
 
         rightClickCenter(rows.element(boundBy: 0))
-        let showEvolution = app.menuItems["Show evolution…"].firstMatch
+        let showEvolution = app.windows.menuItems["Show evolution…"].firstMatch
         XCTAssertTrue(showEvolution.waitForExistence(timeout: 5), "Show evolution menu item did not appear")
         showEvolution.click()
 
@@ -19,10 +19,10 @@ final class EvologRestoreScene: SceneBase {
         XCTAssertTrue(older.waitForExistence(timeout: 5), "Older evolution version did not appear")
         older.rightClick()
 
-        let restore = app.menuItems["Restore this version"].firstMatch
+        let restore = app.windows.menuItems["Restore this version"].firstMatch
         XCTAssertTrue(restore.waitForExistence(timeout: 5), "Restore menu item did not appear")
         XCTAssertTrue(restore.isEnabled)
-        let copyCommand = app.menuItems["Copy ‘jj restore’ command"].firstMatch
+        let copyCommand = app.windows.menuItems["Copy ‘jj restore’ command"].firstMatch
         XCTAssertTrue(copyCommand.waitForExistence(timeout: 5), "Copy restore command should remain as a secondary action")
         restore.click()
 

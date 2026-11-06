@@ -28,7 +28,7 @@ final class NewChangeScene: SceneBase {
             "add feature row missing"
         )
         target.rightClick()
-        let newChange = app.menuItems["New change on top"]
+        let newChange = app.windows.menuItems["New change on top"]
         XCTAssertTrue(newChange.waitForExistence(timeout: 3), "\"New change on top\" menu item missing")
         newChange.click()
 
@@ -49,5 +49,4 @@ final class NewChangeScene: SceneBase {
             "New working copy carried the previous change's commit message"
         )
     }
-
 }

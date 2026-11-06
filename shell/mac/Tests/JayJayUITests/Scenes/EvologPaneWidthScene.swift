@@ -49,7 +49,7 @@ final class EvologPaneWidthScene: SceneBase {
         let rows = dagRows(of: app)
         XCTAssertTrue(rows.firstMatch.waitForExistence(timeout: 10))
         rightClickCenter(rows.element(boundBy: 0))
-        clickCenter(app.menuItems["Show evolution…"].firstMatch, message: "Show evolution menu item did not appear")
+        clickCenter(app.windows.menuItems["Show evolution…"].firstMatch, message: "Show evolution menu item did not appear")
         clickCenter(app.element(AID.Evolog.hideSnapshots).firstMatch, message: "Hide snapshots checkbox missing")
     }
 
