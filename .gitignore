@@ -34,4 +34,3 @@ shell/mac/Resources/JayJayHelpBook/Contents/Resources/help-icon.png
 !.claude/
 .claude/settings.local.json
 /shell/mac/JayJay.provisionprofile
-shell/mac/JayJay.xcodeproj/project.pbxproj
