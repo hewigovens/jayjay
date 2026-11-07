@@ -151,7 +151,7 @@ impl RepoWindow {
                 {
                     return;
                 }
-                if view.handle_stacked_pr_key(ev, cx) {
+                if view.handle_stacked_pr_key(ev, cx) || view.converge.is_open() {
                     return;
                 }
                 if view.is_text_input_focused(window, cx) {
@@ -179,6 +179,7 @@ impl RepoWindow {
             .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg));
         root = Self::change_shortcuts(root, cx);
+        root = self.converge_actions(root, cx);
 
         if let Some(state) = self.stacked_pr.as_ref() {
             root = root.key_context(if state.active_input.is_some() {

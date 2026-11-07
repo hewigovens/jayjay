@@ -307,6 +307,9 @@ impl Render for RepoWindow {
                 stacked_pr, &t, cx,
             ));
         }
+        root = root.children(super::super::converge::converge_overlay(
+            self, &t, window, cx,
+        ));
         if self.rating_prompt {
             // Typing must not reach a text field under the prompt.
             window.focus(&self.focus_handle, cx);

@@ -286,8 +286,15 @@ impl RepoWindow {
             ));
         }
 
-        if !divergent_compares.is_empty() || bookmark_diff.is_some() || selected_rev.is_some() {
+        if change.is_divergent || bookmark_diff.is_some() || selected_rev.is_some() {
             items.push(ContextMenuItem::separator());
+        }
+        if change.is_divergent {
+            items.push(ContextMenuItem::new(
+                jayjay_i18n::converge::menu(),
+                glyph::GIT_MERGE,
+                ContextAction::ResolveDivergence(change.change_id.id.clone().into()),
+            ));
         }
         if divergent_compares.len() == 1 {
             items.push(ContextMenuItem::new(

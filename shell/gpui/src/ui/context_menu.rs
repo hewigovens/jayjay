@@ -37,6 +37,7 @@ pub enum ContextAction {
     DeleteTag(SharedString),
     DeleteRemoteTag(SharedString),
     OpenStackedPr(SharedString),
+    ResolveDivergence(SharedString),
     UploadChange(SharedString),
     UpdateFromGerrit(SharedString),
     MoveBookmark {

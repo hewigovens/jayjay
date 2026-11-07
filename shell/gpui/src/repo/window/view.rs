@@ -99,6 +99,7 @@ pub struct RepoWindow {
     pub(crate) pr_import: Option<PrImportState>,
     pub(crate) pending_rebase: Option<DagRebaseRequest>,
     pub(crate) stacked_pr: Option<StackedPrState>,
+    pub(crate) converge: super::converge::ConvergeState,
     pub(crate) stacked_pr_provider: std::sync::Arc<dyn crate::repo::StackedPrProvider>,
     fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
@@ -459,6 +460,7 @@ impl RepoWindow {
             }
             this.sync_diff_edit_loaded_files(cx);
             this.sync_commit_box_from_working_copy(cx);
+            this.open_pending_conflict_editor(cx);
             cx.notify();
         })
         .detach();
@@ -543,6 +545,7 @@ impl RepoWindow {
             pr_import: None,
             pending_rebase: None,
             stacked_pr: None,
+            converge: super::converge::ConvergeState::default(),
             stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
             fs_watcher: None,
             fs_watcher_armed: false,
@@ -722,6 +725,7 @@ impl RepoWindow {
             || self.confirmation.is_some()
             || self.pending_rebase.is_some()
             || self.stacked_pr.is_some()
+            || self.converge.is_open()
             || self.context_menu.is_some()
             || self.bookmark_picker.is_some()
             || self.revset_popup.is_some()

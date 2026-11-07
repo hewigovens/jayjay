@@ -17,6 +17,8 @@ impl RepoWindow {
             self.close_rating_prompt(cx);
         } else if self.stacked_pr.is_some() {
             self.close_stacked_pr(cx);
+        } else if self.converge.is_open() {
+            self.close_converge(cx);
         } else if self.pending_rebase.is_some() {
             self.cancel_drag_rebase(cx);
         } else if self.confirmation.is_some() {
@@ -70,6 +72,7 @@ impl RepoWindow {
         let covered = self.modal_overlay_open()
             || self.revset_popup.is_some()
             || self.stacked_pr.is_some()
+            || self.converge.is_open()
             || self.bookmark_picker.is_some()
             || self.repo_switcher.is_some()
             || self.is_text_input_focused(window, cx);

@@ -13,6 +13,7 @@ mod conflict_resolution;
 mod conflicts;
 mod context_expansion;
 mod context_menu_keyboard;
+mod converge;
 mod dag;
 mod dag_drag;
 mod dag_row;
@@ -87,7 +88,7 @@ pub(crate) use dag::{
     DagNodeStyle, LinePattern, NodeFill, NodeFlags, NodeShape, paint_node, stroke_line_pattern,
 };
 pub(crate) use dag_row::{
-    chip_width, compact_id, format_relative, format_when, id_cell, visible_chip_count,
+    chip_width, compact_id, first_line, format_relative, format_when, id_cell, visible_chip_count,
 };
 pub(crate) use gutter_menu::AbandonSelectedLinesRequest;
 pub(crate) use keyboard_focus::focus_ring;

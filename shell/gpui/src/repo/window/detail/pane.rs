@@ -56,6 +56,12 @@ pub(crate) fn detail_pane(
     let repo_path = vm.repo_path.clone();
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
+    let divergent_versions = vm
+        .graph
+        .changes
+        .iter()
+        .filter(|candidate| candidate.change_id.id == change.change_id.id)
+        .count();
     let selected_hunk = vm.selected_hunk().cloned();
     let hidden_only_files = vm
         .files
@@ -170,6 +176,7 @@ pub(crate) fn detail_pane(
                 stats: stats.as_ref(),
                 compare: compare.as_ref(),
                 file_count,
+                divergent_versions,
                 recently_copied: view.feedback.recently_copied.as_ref(),
                 bookmarks: bookmarks.as_ref(),
                 focused: view.focused_control(),

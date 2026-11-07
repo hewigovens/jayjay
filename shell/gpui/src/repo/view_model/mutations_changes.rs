@@ -1,9 +1,41 @@
 use gpui::Context;
-use jayjay_core::{FixSummary, JayResult, MutationEffect, RebaseMode};
+use jayjay_core::{
+    ConvergeChoices, ConvergeOutcome, ConvergePlan, FixSummary, JayResult, MutationEffect,
+    RebaseMode,
+};
 
 use super::RepoViewModel;
 
 impl RepoViewModel {
+    /// The successor keeps the change id, so selecting it by change id survives the refresh; a filter that hides it reveals the change's ancestors, and Back returns to the filter.
+    pub(crate) fn converge_change(
+        &mut self,
+        plan: ConvergePlan,
+        choices: ConvergeChoices,
+        cx: &mut Context<Self>,
+    ) -> gpui::Task<JayResult<(ConvergeOutcome, bool)>> {
+        let change_id = plan.change_id.clone();
+        let filter = self.revset().to_owned();
+        self.repo_result_task(
+            cx,
+            move |repo| {
+                let outcome = repo.converge_apply(&plan, &choices)?;
+                let hidden = repo
+                    .log(&format!("({filter}) & {}", outcome.successor_commit_id))
+                    .is_ok_and(|changes| changes.is_empty());
+                Ok((outcome, hidden))
+            },
+            move |vm, (outcome, hidden): &(ConvergeOutcome, bool), cx| {
+                vm.pending_file_selection = outcome.conflicted_paths.first().cloned();
+                if *hidden {
+                    vm.show_ancestors(&change_id, Some(outcome.successor_commit_id.clone()), cx);
+                } else {
+                    vm.refresh_selecting_revision(Some(&change_id), cx);
+                }
+            },
+        )
+    }
+
     pub(crate) fn edit_change(
         &mut self,
         rev: String,

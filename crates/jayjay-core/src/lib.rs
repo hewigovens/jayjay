@@ -13,6 +13,7 @@ pub mod agent_skills;
 mod cli;
 pub mod commit_message;
 pub mod compare;
+pub mod converge;
 pub mod dag;
 pub mod diff_edit;
 pub mod error_message;

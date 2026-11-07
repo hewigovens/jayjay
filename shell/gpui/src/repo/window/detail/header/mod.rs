@@ -1,4 +1,5 @@
 mod compare;
+mod divergent;
 mod metadata;
 
 use gpui::prelude::FluentBuilder;
@@ -14,6 +15,7 @@ use crate::app::theme::Theme;
 use crate::repo::RepoWindow;
 use crate::repo::window::FocusStop;
 use compare::compare_banner;
+use divergent::divergent_bar;
 use metadata::metadata_block;
 
 pub(super) struct DetailHeaderState<'a> {
@@ -22,6 +24,7 @@ pub(super) struct DetailHeaderState<'a> {
     pub stats: Option<&'a DiffStats>,
     pub compare: Option<&'a CompareState>,
     pub file_count: Option<usize>,
+    pub divergent_versions: usize,
     pub recently_copied: Option<&'a SharedString>,
     pub bookmarks: &'a [BookmarkInfo],
     pub focused: Option<FocusStop>,
@@ -63,5 +66,8 @@ pub(super) fn detail_header(
             cx,
         ))
         .child(metadata_block(&state, expanded, t, cx))
+        .when(change.is_divergent, |header| {
+            header.child(divergent_bar(change, state.divergent_versions, t, cx))
+        })
         .into_any_element()
 }
