@@ -95,6 +95,10 @@ final class ConvergeReview {
         selections[.contents] == nil && !contentsFollowParents ? plan?.conflictedPaths : nil
     }
 
+    var willConflict: Bool {
+        !(expectedConflicts ?? []).isEmpty
+    }
+
     var hint: String? {
         switch unresolvedItems.first {
             case .author: Localized.Converge.chooseAuthorHint

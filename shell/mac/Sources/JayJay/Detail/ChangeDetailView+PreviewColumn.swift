@@ -26,6 +26,11 @@ extension ChangeDetailView {
 
             Divider()
 
+            if !isCompareMode, detail.info.isDivergent, let onResolveDivergent {
+                divergentBar(onResolve: onResolveDivergent)
+                Divider()
+            }
+
             if !staleOrOrphanedReviewNotes.isEmpty {
                 staleReviewNotesSection
                 Divider()
@@ -133,6 +138,19 @@ extension ChangeDetailView {
             guard selectedHunk?.path == path else { return }
             fileEditor = session
         }
+    }
+
+    func openPendingConflictEditor() {
+        guard let path = actions?.takePendingConflictEditor(commitId: detail.info.commitId.id),
+              visibleDiff.contains(where: { $0.path == path })
+        else { return }
+        if !filteredDiff.contains(where: { $0.path == path }) {
+            fileFilter = ""
+            showNotedFilesOnly = false
+        }
+        selectedPath = path
+        selectedPaths = [path]
+        prepareConflictEditor(path: path)
     }
 
     func prepareConflictEditor(path: String) {

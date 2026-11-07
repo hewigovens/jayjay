@@ -14,6 +14,8 @@ struct DetailView: View {
     var onClearCompare: (() -> Void)?
     var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
+    var onResolveDivergent: ((String) -> Void)?
+    var divergentVersionCount = 0
     @Binding var activePane: ActivePane
     var evologEntries: [EvologEntry]?
     var evologRev: String?
@@ -58,6 +60,8 @@ struct DetailView: View {
                 onClearCompare: onClearCompare,
                 onReverseCompare: onReverseCompare,
                 onRevealChangeInDag: onRevealChangeInDag,
+                onResolveDivergent: onResolveDivergent,
+                divergentVersionCount: divergentVersionCount,
                 activePane: $activePane,
                 conflictedBookmarkNames: conflictedBookmarkNames,
                 onInteractionStateChanged: onInteractionStateChanged

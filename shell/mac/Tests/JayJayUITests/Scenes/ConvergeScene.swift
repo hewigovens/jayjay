@@ -21,6 +21,27 @@ final class ConvergeScene: SceneBase {
         try converge(in: app, appearance: "dark")
     }
 
+    func testConvergeAndResolveFromDetailOpensMergeEditor() throws {
+        let app = try XCTUnwrap(app)
+        app.terminate()
+        let conflictPath = Self.fixtureRoot.appendingPathComponent("converge-conflict").path
+        app.launchArguments = app.launchArguments.map { $0 == fixtureURL?.path ? conflictPath : $0 }
+        app.launch()
+        let target = dagRows(of: app).matching(NSPredicate(format: "value CONTAINS %@", "Tune settings")).firstMatch
+        XCTAssertTrue(target.waitForExistence(timeout: 10))
+        target.click()
+        let resolve = app.buttons[AID.Converge.detailResolve]
+        XCTAssertTrue(resolve.waitForExistence(timeout: 10))
+        resolve.click()
+        let sheet = app.sheets.firstMatch
+        let apply = sheet.buttons[AID.Converge.apply]
+        XCTAssertTrue(apply.waitForExistence(timeout: 10))
+        XCTAssertEqual(apply.label, "Converge & Resolve")
+        apply.click()
+        XCTAssertTrue(apply.waitForNonExistence(timeout: 10))
+        XCTAssertTrue(app.staticTexts[AID.Conflict.editorModal].waitForExistence(timeout: 20), "Merge editor did not open")
+    }
+
     private func converge(in app: XCUIApplication, appearance: String) throws {
         let target = dagRows(of: app).matching(NSPredicate(format: "value CONTAINS %@", "Handle missing configuration")).firstMatch
         XCTAssertTrue(target.waitForExistence(timeout: 10))

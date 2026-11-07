@@ -24,13 +24,21 @@ extension RepoViewModel {
         guard review.canApply, let plan = review.plan else { return }
         let choices = review.choices
         let requestId = review.requestId
+        let filter = revsetFilter.revset
         review.isApplying = true
         let started = performResult(
-            selectingResult: { $0.successorCommitId },
-            onSuccess: { _, _ in
+            selectingResult: { (result: ConvergeApplyResult) in result.outcome.successorCommitId },
+            onSuccess: { (viewModel: RepoViewModel, result: ConvergeApplyResult) in
+                let outcome = result.outcome
+                viewModel.pendingConflictEditor = outcome.conflictedPaths.first.map { (outcome.successorCommitId, $0) }
                 guard review.requestId == requestId else { return }
                 review.isApplying = false
                 onSuccess()
+            },
+            afterRefresh: { (viewModel: RepoViewModel, result: ConvergeApplyResult) in
+                if result.isHiddenByFilter {
+                    viewModel.applyFilter("", selecting: result.outcome.successorCommitId)
+                }
             },
             onFailure: { viewModel, error in
                 guard review.requestId == requestId else { return }
@@ -43,7 +51,11 @@ extension RepoViewModel {
                     review.error = error.friendlyDescription
                 }
             },
-            { try $0.convergeApply(plan: plan, choices: choices) }
+            { (repo: JayJayRepo) throws -> ConvergeApplyResult in
+                let outcome = try repo.convergeApply(plan: plan, choices: choices)
+                let isHiddenByFilter = (try? repo.log(revset: "(\(filter)) & \(outcome.successorCommitId)").isEmpty) ?? false
+                return ConvergeApplyResult(outcome: outcome, isHiddenByFilter: isHiddenByFilter)
+            }
         )
         if !started {
             review.isApplying = false
@@ -51,4 +63,19 @@ extension RepoViewModel {
             review.error = Localized.Converge.unavailable
         }
     }
+
+    func takePendingConflictEditor(commitId: String) -> String? {
+        guard let pending = pendingConflictEditor, pending.commitId == commitId else { return nil }
+        pendingConflictEditor = nil
+        return pending.path
+    }
+
+    func divergentVersionCount(of changeId: String) -> Int {
+        changes.count { $0.changeId.id == changeId }
+    }
+}
+
+private struct ConvergeApplyResult {
+    let outcome: ConvergeOutcome
+    let isHiddenByFilter: Bool
 }

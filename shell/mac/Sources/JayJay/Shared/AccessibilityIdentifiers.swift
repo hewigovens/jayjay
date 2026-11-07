@@ -6,6 +6,7 @@ enum AID {
         static let stale = "converge.stale"
         static let customDescription = "converge.customDescription"
         static let editDescription = "converge.editDescription"
+        static let detailResolve = "converge.detailResolve"
         static func keep(_ version: String) -> String {
             "converge.keep.\(version)"
         }

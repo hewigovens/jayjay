@@ -99,6 +99,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var opLogEntries: [OpLogEntry] = []
     var submoduleAttentionItems: [GitSubmoduleStatus] = []
     var pendingCommitMessage: String?
+    var pendingConflictEditor: (commitId: String, path: String)?
     var error: String?
     var workspaceVanished = false
     var isWorkingCopyStale = false

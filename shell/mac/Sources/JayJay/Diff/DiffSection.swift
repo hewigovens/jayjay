@@ -26,6 +26,7 @@ struct DiffSection: View {
     var onToggleFileReview: (() -> Void)?
     var compareFromRev: String?
     var lineStats: FileDiffStats?
+    var fitsContent = false
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
@@ -36,6 +37,7 @@ struct DiffSection: View {
     @State var contextExpansionDisplay = DiffContextExpansionDisplay()
     @State var richPreviewSelection: DiffRichPreviewSelection?
     @State var compactHeader = false
+    @State var fittedDiffHeight: CGFloat?
     @Environment(AppSettings.self) var settings
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
     @Environment(\.jayjayTypography) private var typography
@@ -52,6 +54,7 @@ struct DiffSection: View {
                     .padding(.bottom, 8)
             }
             diffContent
+                .frame(height: fitsContent && fittedDiffHeight == nil ? 320 : nil)
         }
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()

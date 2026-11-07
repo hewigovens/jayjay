@@ -143,6 +143,8 @@ struct RepoContentView: View {
                         onReverseCompare: viewModel.canReverseCompare
                             ? { viewModel.reverseCompare() } : nil,
                         onRevealChangeInDag: { viewModel.revealInGraph($0) },
+                        onResolveDivergent: { modal = .converge(rev: $0) },
+                        divergentVersionCount: viewModel.selectedChange.map { viewModel.divergentVersionCount(of: $0.info.changeId.id) } ?? 0,
                         activePane: Bindable(keyboardFocus).activePane,
                         evologEntries: viewModel.evologEntries,
                         evologRev: viewModel.evologRev,

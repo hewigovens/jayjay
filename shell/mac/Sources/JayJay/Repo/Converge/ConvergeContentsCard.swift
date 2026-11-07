@@ -66,10 +66,10 @@ struct ConvergeContentsCard: View {
                     diffStore: diffStore,
                     reviewStore: nil,
                     noteEditor: .constant(nil),
-                    compareFromRev: from
+                    compareFromRev: from,
+                    fitsContent: true
                 )
                 .id("\(from)|\(to)|\(hunk.path)")
-                .frame(height: 320)
             }
         } else {
             Text(Localized.Converge.loading).jayjayFont(12).foregroundStyle(.secondary).padding(10)

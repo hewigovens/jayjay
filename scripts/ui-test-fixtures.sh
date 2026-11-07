@@ -65,6 +65,22 @@ fixture_converge() {
     jj bookmark create config-review -r @
   )
   copy_fixture converge-light converge-dark
+  jj git init "$fixtures/converge-conflict"
+  (
+    cd "$fixtures/converge-conflict"
+    printf 'base\n' > settings.txt
+    jj describe -m "Settings base"
+    jj new -m "Tune settings"
+    jj new @- -m "Remote settings"
+    printf 'remote\n' > settings.txt
+    jj edit 'subject("Tune settings")'
+    local base_op
+    base_op=$(jj --ignore-working-copy op log --no-graph -n 1 -T 'id')
+    printf 'local\n' > settings.txt
+    jj status
+    jj --at-op "$base_op" restore --from 'subject("Remote settings")' --into 'subject("Tune settings")'
+    jj status
+  )
 }
 
 fixture_description_height() {

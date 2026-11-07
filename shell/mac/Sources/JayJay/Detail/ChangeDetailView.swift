@@ -17,6 +17,8 @@ struct ChangeDetailView: View {
     var onClearCompare: (() -> Void)?
     var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
+    var onResolveDivergent: ((String) -> Void)?
+    var divergentVersionCount = 0
     @Binding var activePane: ActivePane
     var conflictedBookmarkNames: Set<String> = []
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
@@ -173,6 +175,7 @@ struct ChangeDetailView: View {
         .onAppear {
             fileColumnWidth = appSettings.secondaryPaneWidth
             resetState()
+            openPendingConflictEditor()
         }
         // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.
         .onChange(of: paneMode.isDiffEdit) { _, isDiffEdit in
@@ -191,6 +194,7 @@ struct ChangeDetailView: View {
         }
         .onChange(of: detail.info.commitId) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
+            openPendingConflictEditor()
         }
         .onChange(of: appSettings.ignoreWhitespace) { _, _ in
             loadFileStats()

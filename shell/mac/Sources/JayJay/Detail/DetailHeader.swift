@@ -274,6 +274,22 @@ extension ChangeDetailView {
         Date(timeIntervalSince1970: Double(millis) / 1000.0).formatted(.dateTime.year().month().day().hour().minute().locale(Localized.locale))
     }
 
+    func divergentBar(onResolve: @escaping (String) -> Void) -> some View {
+        HStack(spacing: 10) {
+            Image(systemName: "arrow.triangle.branch")
+                .foregroundStyle(.orange)
+            Text(Localized.Converge.detailVersions(count: max(divergentVersionCount, 2)))
+                .jayjayFont(12, weight: .semibold)
+            Spacer()
+            Button(Localized.Converge.resolve) { onResolve(detail.info.changeId.id) }
+                .buttonStyle(.bordered)
+                .accessibilityIdentifier(AID.Converge.detailResolve)
+        }
+        .padding(.horizontal, 14)
+        .padding(.vertical, 8)
+        .background(.orange.opacity(0.08))
+    }
+
     func conflictBar(hunk: DiffHunk) -> some View {
         let path = hunk.path
         return HStack(spacing: 10) {

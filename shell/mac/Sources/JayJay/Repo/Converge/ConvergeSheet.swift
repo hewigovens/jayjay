@@ -13,7 +13,7 @@ struct ConvergeSheet: View {
             title: Localized.Converge.title,
             cancelLabel: Localized.Common.cancel,
             cancelDisabled: review.isApplying,
-            confirmLabel: review.isApplying ? Localized.Converge.applying : Localized.Converge.apply,
+            confirmLabel: confirmLabel,
             confirmDisabled: !review.canApply,
             confirmAccessibilityIdentifier: AID.Converge.apply,
             footerMessage: review.hint,
@@ -58,6 +58,13 @@ struct ConvergeSheet: View {
         .interactiveDismissDisabled(review.isApplying)
         .task { viewModel.previewConvergence(revision: revision, review: review) }
         .onDisappear { review.requestId = UUID() }
+    }
+
+    private var confirmLabel: String {
+        if review.isApplying {
+            return Localized.Converge.applying
+        }
+        return review.willConflict ? Localized.Converge.applyAndResolve : Localized.Converge.apply
     }
 
     @ViewBuilder

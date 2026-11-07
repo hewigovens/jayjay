@@ -31,4 +31,5 @@ protocol ChangeActions: AnyObject {
     )
     func resolveInEditor(rev: String, path: String, tool: String)
     func resolveWithMergeEditor(rev: String, path: String)
+    func takePendingConflictEditor(commitId: String) -> String?
 }
