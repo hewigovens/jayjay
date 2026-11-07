@@ -2,17 +2,19 @@ use std::sync::LazyLock;
 
 use gpui::{
     AnyElement, App, Div, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
-    Styled, div, px, rgb,
+    Styled, canvas, div, px, rgb,
 };
 use jayjay_core::diff::DiffLine;
-use jayjay_core::{FontSpecimen, HunkType, SpecimenChange, SpecimenFile};
+use jayjay_core::{FontSpecimen, SpecimenChange, SpecimenFile};
 
 use crate::app::fonts::{self, CodeText as _};
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_font_size};
 use crate::diff::file_status;
 use crate::diff::line::{content_row, gutter_cell, line_bg_color};
-use crate::repo::window::id_cell;
 use crate::repo::window::ref_chips;
+use crate::repo::window::{
+    DagNodeStyle, LinePattern, NodeFlags, id_cell, paint_node, stroke_line_pattern,
+};
 use crate::ui::primitives::capsule;
 
 static SPECIMEN: LazyLock<FontSpecimen> = LazyLock::new(FontSpecimen::default);
@@ -153,11 +155,6 @@ pub(super) fn theme_preview(pt: &Theme, cx: &App) -> AnyElement {
 }
 
 fn specimen_change_row(change: &SpecimenChange, ix: usize, count: usize, pt: &Theme) -> Div {
-    let node_color = if change.is_working_copy {
-        pt.selected_accent
-    } else {
-        pt.dag_node
-    };
     let mut chips = div()
         .flex()
         .flex_row()
@@ -208,47 +205,61 @@ fn specimen_change_row(change: &SpecimenChange, ix: usize, count: usize, pt: &Th
     if ix == 0 {
         row = row.bg(rgb(pt.selected_bg));
     }
-    row.child(specimen_graph_lane(ix > 0, ix + 1 < count, node_color, pt))
+    let node = DagNodeStyle::new(
+        NodeFlags {
+            is_working_copy: change.is_working_copy,
+            is_immutable: change.is_immutable,
+            has_bookmark: change.bookmark.is_some(),
+            ..NodeFlags::default()
+        },
+        pt,
+    );
+    let node = DagNodeStyle {
+        radius: DagNodeStyle::radius(node.shape, false),
+        ..node
+    };
+    row.child(specimen_graph_lane(ix > 0, ix + 1 < count, node, pt))
         .child(chips.flex_1().min_w_0())
 }
 
-fn specimen_graph_lane(has_top: bool, has_bottom: bool, node_color: u32, pt: &Theme) -> Div {
-    div()
-        .relative()
-        .flex()
-        .items_center()
-        .justify_center()
-        .flex_none()
-        .w(px(12.))
-        .h_full()
-        .children(has_top.then(|| {
-            div()
-                .absolute()
-                .top_0()
-                .h(gpui::relative(0.5))
-                .w(px(1.5))
-                .bg(rgb(pt.dag_line))
-        }))
-        .children(has_bottom.then(|| {
-            div()
-                .absolute()
-                .bottom_0()
-                .h(gpui::relative(0.5))
-                .w(px(1.5))
-                .bg(rgb(pt.dag_line))
-        }))
-        .child(div().w(px(7.)).h(px(7.)).rounded_full().bg(rgb(node_color)))
+fn specimen_graph_lane(has_top: bool, has_bottom: bool, node: DagNodeStyle, pt: &Theme) -> Div {
+    let line = pt.dag_line;
+    div().flex_none().w(px(14.)).h_full().child(
+        canvas(
+            |_, _, _| (),
+            move |bounds, _, window, _| {
+                let center = bounds.center();
+                let r = px(node.radius);
+                if has_top {
+                    stroke_line_pattern(
+                        window,
+                        center.x,
+                        bounds.top(),
+                        center.x,
+                        center.y - r,
+                        line,
+                        LinePattern::Solid,
+                    );
+                }
+                if has_bottom {
+                    stroke_line_pattern(
+                        window,
+                        center.x,
+                        center.y + r,
+                        center.x,
+                        bounds.bottom(),
+                        line,
+                        LinePattern::Solid,
+                    );
+                }
+                paint_node(window, center.x, center.y, node);
+            },
+        )
+        .size_full(),
+    )
 }
 
 fn specimen_file_row(file: &SpecimenFile, is_selected: bool, pt: &Theme) -> Div {
-    let letter = match file.hunk_type {
-        HunkType::Added => "A",
-        HunkType::Removed => "D",
-        HunkType::Modified => "M",
-        HunkType::Renamed => "R",
-        HunkType::Copied => "C",
-    };
-    let status_color = file_status::color_for_hunk_type(file.hunk_type, pt);
     let (directory, file_name) = file
         .path
         .split_at(file.path.rfind('/').map_or(0, |slash| slash + 1));
@@ -263,33 +274,25 @@ fn specimen_file_row(file: &SpecimenFile, is_selected: bool, pt: &Theme) -> Div 
     if is_selected {
         row = row.bg(rgb(pt.selected_bg));
     }
-    row.child(
-        div()
-            .flex_none()
-            .w(px(14.))
-            .code_text(11., pt)
-            .font_weight(FontWeight::BOLD)
-            .text_color(rgb(status_color))
-            .child(letter),
-    )
-    .child(
-        div()
-            .flex()
-            .flex_row()
-            .flex_1()
-            .min_w_0()
-            .text_size(ui_font_size(12.))
-            .child(
-                div()
-                    .text_color(rgb(pt.fg_dim))
-                    .child(SharedString::from(directory.to_owned())),
-            )
-            .child(
-                div()
-                    .font_weight(FontWeight::MEDIUM)
-                    .text_color(rgb(pt.fg))
-                    .truncate()
-                    .child(SharedString::from(file_name.to_owned())),
-            ),
-    )
+    row.child(file_status::badge(file.hunk_type, 14., pt))
+        .child(
+            div()
+                .flex()
+                .flex_row()
+                .flex_1()
+                .min_w_0()
+                .text_size(ui_font_size(12.))
+                .child(
+                    div()
+                        .text_color(rgb(pt.fg_dim))
+                        .child(SharedString::from(directory.to_owned())),
+                )
+                .child(
+                    div()
+                        .font_weight(FontWeight::MEDIUM)
+                        .text_color(rgb(pt.fg))
+                        .truncate()
+                        .child(SharedString::from(file_name.to_owned())),
+                ),
+        )
 }

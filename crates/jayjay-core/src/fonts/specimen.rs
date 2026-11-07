@@ -7,6 +7,7 @@ pub struct SpecimenChange {
     pub summary: String,
     pub bookmark: Option<String>,
     pub is_working_copy: bool,
+    pub is_immutable: bool,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -65,18 +66,21 @@ impl Default for FontSpecimen {
                     summary: "Teach the jay to land".to_owned(),
                     bookmark: None,
                     is_working_copy: true,
+                    is_immutable: false,
                 },
                 SpecimenChange {
                     change_id: short_id("mvwtqkpz", 3),
                     summary: "Count seeds in flight".to_owned(),
                     bookmark: Some("perch".to_owned()),
                     is_working_copy: false,
+                    is_immutable: false,
                 },
                 SpecimenChange {
                     change_id: short_id("kqrxvsln", 3),
                     summary: "Build the feeder".to_owned(),
                     bookmark: Some("main".to_owned()),
                     is_working_copy: false,
+                    is_immutable: true,
                 },
             ],
             files: vec![

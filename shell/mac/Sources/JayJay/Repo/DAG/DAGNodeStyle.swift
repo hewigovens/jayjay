@@ -36,23 +36,42 @@ struct DAGNodeStyle {
     }
 
     static func resolve(change: ChangeInfo) -> DAGNodeStyle {
-        let hasBookmark = !change.bookmarks.isEmpty
-        let shape: Shape = change.isImmutable ? .diamond : .circle
-        let circleRadius: CGFloat = hasBookmark ? nodeRadius + 1 : nodeRadius
-        let radius = shape == .diamond ? circleRadius * diamondRadiusScale : circleRadius
+        DAGNodeStyle(
+            isWorkingCopy: change.isWorkingCopy,
+            isImmutable: change.isImmutable,
+            hasConflict: change.hasConflict,
+            isEmpty: change.isEmpty,
+            hasBookmark: !change.bookmarks.isEmpty
+        )
+    }
 
-        let fill: Fill = if change.isWorkingCopy {
+    init(isWorkingCopy: Bool, isImmutable: Bool, hasConflict: Bool, isEmpty: Bool, hasBookmark: Bool) {
+        shape = isImmutable ? .diamond : .circle
+        radius = Self.radius(for: shape, hasBookmark: hasBookmark)
+        fill = if isWorkingCopy {
             .filled(.accentColor)
-        } else if change.hasConflict {
+        } else if hasConflict {
             .filled(.red)
-        } else if change.isEmpty {
+        } else if isEmpty {
             .outlined(.secondary, lineWidth: 1.5)
         } else if hasBookmark {
             .outlined(.accentColor, lineWidth: 1.8)
         } else {
             .filled(.secondary)
         }
+    }
 
-        return DAGNodeStyle(shape: shape, radius: radius, fill: fill)
+    static func radius(for shape: Shape, hasBookmark: Bool) -> CGFloat {
+        let circleRadius: CGFloat = hasBookmark ? nodeRadius + 1 : nodeRadius
+        return shape == .diamond ? circleRadius * diamondRadiusScale : circleRadius
+    }
+
+    func draw(_ path: Path, in ctx: GraphicsContext) {
+        switch fill {
+            case let .filled(color):
+                ctx.fill(path, with: .color(color))
+            case let .outlined(color, lineWidth):
+                ctx.stroke(path, with: .color(color), style: StrokeStyle(lineWidth: lineWidth))
+        }
     }
 }

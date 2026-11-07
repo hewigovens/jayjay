@@ -50,15 +50,16 @@ fn status_tile(hunk_type: HunkType, size: f32, color: u32) -> Div {
         .child(svg().path(path).size_full().text_color(rgb(color)))
 }
 
-pub(crate) fn badge(hunk_type: HunkType, theme: &Theme) -> Div {
+pub(crate) fn badge(hunk_type: HunkType, size: f32, theme: &Theme) -> Div {
     let fg = match hunk_type {
         HunkType::Added | HunkType::Copied => theme.file_badge_added_fg,
         HunkType::Removed => theme.file_badge_removed_fg,
         HunkType::Modified | HunkType::Renamed => theme.file_badge_modified_fg,
     };
     let bg_alpha = if theme.is_dark { 0x24 } else { 0x26 };
-    status_tile(hunk_type, theme.scaled_font_size(18.), fg)
-        .rounded(px(4.))
+    let size = theme.scaled_font_size(size);
+    status_tile(hunk_type, size, fg)
+        .rounded(px(size * 2. / 9.))
         .bg(rgba(with_alpha(
             color_for_hunk_type(hunk_type, theme),
             bg_alpha,

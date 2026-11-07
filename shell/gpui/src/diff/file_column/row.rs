@@ -208,7 +208,7 @@ fn status_indicator(
             .pt(px(t.scaled_font_size(4.)))
             .child(status_dot(hunk, t))
     } else {
-        block.child(file_status::badge(hunk.hunk_type, t))
+        block.child(file_status::badge(hunk.hunk_type, 18., t))
     };
     block.tooltip(text_tooltip(if has_conflict {
         jayjay_i18n::diff::conflicted()

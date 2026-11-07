@@ -130,12 +130,7 @@ struct DAGGraphColumn: View {
                 height: nodeStyle.radius * 2
             )
             let nodePath = nodeStyle.path(in: nodeRect)
-            switch nodeStyle.fill {
-                case let .filled(color):
-                    ctx.fill(nodePath, with: .color(color))
-                case let .outlined(color, lineWidth):
-                    ctx.stroke(nodePath, with: .color(color), style: StrokeStyle(lineWidth: lineWidth))
-            }
+            nodeStyle.draw(nodePath, in: ctx)
 
             if viewModel.isRebaseCandidate {
                 ctx.stroke(

@@ -61,7 +61,7 @@ struct ThemePreview: View {
 
     private func changeRow(_ change: SpecimenChange, hasTop: Bool, hasBottom: Bool, colors: AppColors) -> some View {
         HStack(spacing: 8) {
-            graphLane(hasTop: hasTop, hasBottom: hasBottom, isWorkingCopy: change.isWorkingCopy, colors: colors)
+            graphLane(hasTop: hasTop, hasBottom: hasBottom, change: change, colors: colors)
             HStack(alignment: .firstTextBaseline, spacing: 5) {
                 Text(change.changeId.highlighted(font: typography.identifierFont, prefixColor: colors.changeIdPrefix))
                 if change.isWorkingCopy {
@@ -85,30 +85,34 @@ struct ThemePreview: View {
         .frame(minHeight: 24)
     }
 
-    private func graphLane(hasTop: Bool, hasBottom: Bool, isWorkingCopy: Bool, colors: AppColors) -> some View {
+    private func graphLane(hasTop: Bool, hasBottom: Bool, change: SpecimenChange, colors: AppColors) -> some View {
         Canvas { ctx, size in
             let midX = size.width / 2
             let midY = size.height / 2
-            if hasTop {
+            let node = DAGNodeStyle(
+                isWorkingCopy: change.isWorkingCopy,
+                isImmutable: change.isImmutable,
+                hasConflict: false,
+                isEmpty: false,
+                hasBookmark: change.bookmark != nil
+            )
+            let r = DAGNodeStyle.radius(for: node.shape, hasBookmark: false)
+            let lineContext = ctx
+            let line = { (from: CGFloat, to: CGFloat) in
                 var path = Path()
-                path.move(to: CGPoint(x: midX, y: 0))
-                path.addLine(to: CGPoint(x: midX, y: midY))
-                ctx.stroke(path, with: .color(colors.graphLine), style: StrokeStyle(lineWidth: 1.5))
+                path.move(to: CGPoint(x: midX, y: from))
+                path.addLine(to: CGPoint(x: midX, y: to))
+                lineContext.stroke(path, with: .color(colors.graphLine), style: dagSolidStroke)
+            }
+            if hasTop {
+                line(0, midY - r)
             }
             if hasBottom {
-                var path = Path()
-                path.move(to: CGPoint(x: midX, y: midY))
-                path.addLine(to: CGPoint(x: midX, y: size.height))
-                ctx.stroke(path, with: .color(colors.graphLine), style: StrokeStyle(lineWidth: 1.5))
+                line(midY + r, size.height)
             }
-            let r: CGFloat = 3.5
-            let rect = CGRect(x: midX - r, y: midY - r, width: r * 2, height: r * 2)
-            ctx.fill(
-                Path(ellipseIn: rect),
-                with: .color(isWorkingCopy ? Color.accentColor : Color.secondary)
-            )
+            node.draw(node.path(in: CGRect(x: midX - r, y: midY - r, width: r * 2, height: r * 2)), in: ctx)
         }
-        .frame(width: 12, height: 24)
+        .frame(width: 14, height: 24)
     }
 
     private func chip(
@@ -138,18 +142,10 @@ struct ThemePreview: View {
     private func fileRow(_ file: SpecimenFile, colors: AppColors) -> some View {
         let directory = (file.path as NSString).deletingLastPathComponent + "/"
         let fileName = (file.path as NSString).lastPathComponent
-        let letter = switch file.hunkType {
-            case .added: "A"
-            case .removed: "D"
-            case .modified: "M"
-            case .renamed: "R"
-            case .copied: "C"
-        }
         return HStack(spacing: 8) {
-            Text(letter)
-                .jayjayFont(11, weight: .bold, design: .monospaced)
-                .foregroundStyle(colors.fileColor(for: file.hunkType))
-                .frame(width: 14, alignment: .leading)
+            file.hunkType.badge(scheme, colors: colors)
+                .jayjayFont(12)
+                .accessibilityLabel(file.hunkType.label)
             Text("\(Text(directory).foregroundStyle(.secondary))\(Text(fileName).fontWeight(.medium))")
                 .jayjayFont(12)
                 .lineLimit(1)

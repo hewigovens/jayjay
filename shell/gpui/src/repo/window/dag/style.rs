@@ -18,6 +18,15 @@ pub(crate) enum NodeFill {
     Outlined(u32, f32),
 }
 
+#[derive(Clone, Copy, Default)]
+pub(crate) struct NodeFlags {
+    pub is_working_copy: bool,
+    pub is_immutable: bool,
+    pub has_conflict: bool,
+    pub is_empty: bool,
+    pub has_bookmark: bool,
+}
+
 #[derive(Clone, Copy)]
 pub(crate) struct DagNodeStyle {
     pub shape: NodeShape,
@@ -27,36 +36,51 @@ pub(crate) struct DagNodeStyle {
 
 impl DagNodeStyle {
     pub fn resolve(change: &ChangeInfo, theme: &Theme) -> Self {
-        let has_bookmark = !change.bookmarks.is_empty();
-        let shape = if change.is_immutable {
+        Self::new(
+            NodeFlags {
+                is_working_copy: change.is_working_copy,
+                is_immutable: change.is_immutable,
+                has_conflict: change.has_conflict,
+                is_empty: change.is_empty,
+                has_bookmark: !change.bookmarks.is_empty(),
+            },
+            theme,
+        )
+    }
+
+    pub fn new(flags: NodeFlags, theme: &Theme) -> Self {
+        let shape = if flags.is_immutable {
             NodeShape::Diamond
         } else {
             NodeShape::Circle
         };
-        let circle_radius = if has_bookmark {
-            NODE_RADIUS_BASE + 1.0
-        } else {
-            NODE_RADIUS_BASE
-        };
-        let radius = match shape {
-            NodeShape::Diamond => circle_radius * FRAC_PI_2.sqrt(),
-            NodeShape::Circle => circle_radius,
-        };
-        let fill = if change.is_working_copy {
+        let fill = if flags.is_working_copy {
             NodeFill::Filled(theme.selected_accent)
-        } else if change.has_conflict {
+        } else if flags.has_conflict {
             NodeFill::Filled(theme.tag_conflict_fg)
-        } else if change.is_empty {
+        } else if flags.is_empty {
             NodeFill::Outlined(theme.dag_node, 1.5)
-        } else if has_bookmark {
+        } else if flags.has_bookmark {
             NodeFill::Outlined(theme.selected_accent, 1.8)
         } else {
             NodeFill::Filled(theme.dag_node)
         };
         Self {
             shape,
-            radius,
+            radius: Self::radius(shape, flags.has_bookmark),
             fill,
+        }
+    }
+
+    pub fn radius(shape: NodeShape, has_bookmark: bool) -> f32 {
+        let circle_radius = if has_bookmark {
+            NODE_RADIUS_BASE + 1.0
+        } else {
+            NODE_RADIUS_BASE
+        };
+        match shape {
+            NodeShape::Diamond => circle_radius * FRAC_PI_2.sqrt(),
+            NodeShape::Circle => circle_radius,
         }
     }
 }

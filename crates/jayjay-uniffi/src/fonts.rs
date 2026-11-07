@@ -32,6 +32,7 @@ pub struct SpecimenChange {
     pub summary: String,
     pub bookmark: Option<String>,
     pub is_working_copy: bool,
+    pub is_immutable: bool,
 }
 
 #[uniffi::remote(Record)]

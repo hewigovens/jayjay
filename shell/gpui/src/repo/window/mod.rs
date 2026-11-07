@@ -84,7 +84,7 @@ pub use view::{ActivePane, PanelBoundsSlot, RepoWindow};
 
 pub(crate) use context_expansion::ContextExpansionState;
 pub(crate) use dag::{
-    DagNodeStyle, LinePattern, NodeFill, NodeShape, paint_node, stroke_line_pattern,
+    DagNodeStyle, LinePattern, NodeFill, NodeFlags, NodeShape, paint_node, stroke_line_pattern,
 };
 pub(crate) use dag_row::{
     chip_width, compact_id, format_relative, format_when, id_cell, visible_chip_count,
