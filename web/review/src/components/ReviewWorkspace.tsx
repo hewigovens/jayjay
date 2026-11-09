@@ -17,6 +17,7 @@ import { useFolding } from "../hooks/useFolding";
 import { useLoadedSections } from "../hooks/useLoadedSections";
 import { useNoteJump } from "../hooks/useNoteJump";
 import type { ReviewController } from "../hooks/useReview";
+import { useSectionJump } from "../hooks/useSectionJump";
 import { DiffPane, lineLabel } from "./diff/DiffPane";
 import { ImageDiff } from "./diff/ImageDiff";
 import { Dialog } from "./Dialog";
@@ -93,6 +94,7 @@ export function ReviewWorkspace({
   const file = result?.overview.files[result.file];
   const path = file?.path;
   const { cacheKey, loaded, failed, load } = useLoadedSections(result, revision, renderFile);
+  const jump = useSectionJump(detail, loaded);
   const [filter, setFilter] = useState(noFileFilter);
   const [shortcuts, setShortcuts] = useState(false);
   const [sheet, setSheet] = useState(false);
@@ -109,11 +111,6 @@ export function ReviewWorkspace({
     return bottom > parseFloat(getComputedStyle(row).scrollMarginTop) + 1 && top < innerHeight;
   }
   const topSection = (rows: HTMLElement[]) => rows.findIndex(onScreen);
-  function jump(file: number) {
-    const section = sections().find((row) => Number(row.dataset.file) === file);
-    section?.focus({ preventScroll: true });
-    section?.scrollIntoView({ block: "start" });
-  }
   function openSheet() {
     const rows = sections();
     setSheetFile(Number(rows[Math.max(topSection(rows), 0)]?.dataset.file ?? 0));

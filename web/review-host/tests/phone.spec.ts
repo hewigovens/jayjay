@@ -102,6 +102,34 @@ test.describe("phone portrait", () => {
     await expect(sheet.getByRole("searchbox")).toHaveValue("cargo");
   });
 
+  test("a picked file stays on top while the files above it render", async ({ page }) => {
+    await page.addInitScript(() => {
+      const renders = new Set<number>();
+      const OriginalWorker = window.Worker;
+      window.Worker = class extends OriginalWorker {
+        postMessage(message: { kind?: string; id?: number }) {
+          if (message.kind === "render") renders.add(message.id!);
+          super.postMessage(message);
+        }
+        set onmessage(handler: (event: MessageEvent) => void) {
+          super.onmessage = (event) =>
+            renders.has(event.data.id) ? setTimeout(() => handler(event), 500) : handler(event);
+        }
+      };
+    });
+    await page.goto("/");
+    await ready(page);
+    await page.locator(".jj-files-button").click();
+    await page
+      .getByRole("dialog", { name: "Files" })
+      .getByRole("button", { name: "Cargo.toml", exact: true })
+      .click();
+    await expect(page.locator(".jj-file-section .jj-diff-lines")).toHaveCount(5);
+    await expect(
+      page.getByRole("checkbox", { name: "Mark reviewed: Cargo.toml", exact: true }),
+    ).toBeInViewport();
+  });
+
   test("J and K move between files and / opens the file filter", async ({ page }) => {
     await page.goto("/");
     await ready(page);
@@ -124,7 +152,7 @@ test.describe("phone portrait", () => {
       path: `f${index}.txt`,
       reviewIdentity: `${index}`,
       before: "",
-      after: Array.from({ length: 60 }, (_, line) => `line ${line}\n`).join(""),
+      after: Array.from({ length: 20 }, (_, line) => `line ${line}\n`).join(""),
     });
     await page.getByLabel("Import change", { exact: true }).setInputFiles({
       name: "change.json",
@@ -141,6 +169,8 @@ test.describe("phone portrait", () => {
     });
     await ready(page);
     const sections = page.locator(".jj-file-section");
+    // Every section renders before the scroll, so no late render above moves the file off the top.
+    await expect(page.locator(".jj-file-section .jj-diff-lines")).toHaveCount(6);
     await page.keyboard.press("j");
     await expect(sections.nth(1)).toBeFocused();
     await sections.nth(3).evaluate((section) => section.scrollIntoView({ block: "start" }));
@@ -170,7 +200,7 @@ test.describe("phone portrait", () => {
     await page.locator(".jj-files-button").click();
     await expect(page.getByRole("dialog", { name: "Files" })).toBeVisible();
     await page.setViewportSize({ width: 1000, height: 844 });
-    await expect(page.locator(".jj-file-rows .jj-file-select").first()).toBeVisible();
+    await expect(page.locator(".jj-files-button")).toBeHidden();
     await page.setViewportSize({ width: 390, height: 844 });
     await expect(page.locator(".jj-files-button")).toBeVisible();
     await expect(page.getByRole("dialog", { name: "Files" })).toBeHidden();
