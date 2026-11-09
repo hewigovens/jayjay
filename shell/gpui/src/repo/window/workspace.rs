@@ -4,7 +4,7 @@ use std::path::{Path, PathBuf};
 
 use gpui::Context;
 
-use super::{RepoWindow, TextModalAction, TextModalState};
+use super::{RepoModal, RepoWindow, TextModalAction, TextModalState};
 use crate::ui::overlay::TextPrompt;
 
 impl RepoWindow {
@@ -24,18 +24,20 @@ impl RepoWindow {
             );
             return;
         };
-        self.text_modal = Some(TextModalState::new(
-            TextPrompt::single_line(
-                jayjay_i18n::repo::new_workspace(),
-                format!("{}{}<name>", parent.display(), std::path::MAIN_SEPARATOR),
-                "",
-                jayjay_i18n::repo::workspace_name(),
-                jayjay_i18n::repo::create(),
-                cx,
-            ),
-            TextModalAction::CreateWorkspace(parent),
-        ));
-        cx.notify();
+        self.present_modal(
+            RepoModal::Text(TextModalState::new(
+                TextPrompt::single_line(
+                    jayjay_i18n::repo::new_workspace(),
+                    format!("{}{}<name>", parent.display(), std::path::MAIN_SEPARATOR),
+                    "",
+                    jayjay_i18n::repo::workspace_name(),
+                    jayjay_i18n::repo::create(),
+                    cx,
+                ),
+                TextModalAction::CreateWorkspace(parent),
+            )),
+            cx,
+        );
     }
 
     pub(super) fn submit_create_workspace(
@@ -54,7 +56,7 @@ impl RepoWindow {
             return;
         }
         let dest = parent.join(&name);
-        self.text_modal = None;
+        self.modal = None;
         let task = {
             let dest = dest.to_string_lossy().into_owned();
             let name = name.clone();

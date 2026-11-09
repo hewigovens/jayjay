@@ -1,5 +1,5 @@
-use super::RepoWindow;
 use super::stacked_pr::StackedPrPhase;
+use super::{RepoModal, RepoWindow};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum StackedPrSnapshot {
@@ -22,7 +22,7 @@ pub enum StackedPrSnapshot {
 
 impl RepoWindow {
     pub fn stacked_pr_snapshot(&self) -> StackedPrSnapshot {
-        let Some(state) = self.stacked_pr.as_ref() else {
+        let Some(RepoModal::StackedPr(state)) = &self.modal else {
             return StackedPrSnapshot::Closed;
         };
         match &state.phase {

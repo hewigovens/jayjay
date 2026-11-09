@@ -4,7 +4,7 @@ use std::sync::atomic::{AtomicU64, Ordering};
 use gpui::{AppContext, Context, KeyDownEvent};
 use jayjay_core::{Stack, StackedPrResult, SubmitStackLayer, is_valid_bookmark_name};
 
-use super::RepoWindow;
+use super::{RepoModal, RepoWindow};
 use crate::repo::StackedPrProvider;
 use crate::ui::input::LineInput;
 
@@ -97,29 +97,33 @@ impl StackedPrState {
 
 impl RepoWindow {
     fn stacked_pr_active_input(view: &mut Self) -> Option<&mut LineInput> {
-        let state = view.stacked_pr.as_mut()?;
+        let Some(RepoModal::StackedPr(state)) = &mut view.modal else {
+            return None;
+        };
         state.inputs.get_mut(state.active_input?)
     }
 
     pub(crate) fn activate_stacked_pr_input(&mut self, index: usize, cx: &mut Context<Self>) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         if !matches!(state.phase, StackedPrPhase::Preview(_)) || index >= state.inputs.len() {
             return;
         }
         LineInput::hide_for_owner(self, cx, Self::stacked_pr_active_input);
-        self.stacked_pr.as_mut().unwrap().active_input = Some(index);
+        if let Some(RepoModal::StackedPr(state)) = &mut self.modal {
+            state.active_input = Some(index);
+        }
         LineInput::show_for_owner(self, cx, Self::stacked_pr_active_input);
         cx.notify();
     }
 
     pub(crate) fn deactivate_stacked_pr_input(&mut self, cx: &mut Context<Self>) {
-        if self.stacked_pr.is_none() {
+        if !matches!(self.modal, Some(RepoModal::StackedPr(_))) {
             return;
         }
         LineInput::hide_for_owner(self, cx, Self::stacked_pr_active_input);
-        if let Some(state) = self.stacked_pr.as_mut() {
+        if let Some(RepoModal::StackedPr(state)) = &mut self.modal {
             state.active_input = None;
         }
         cx.notify();
@@ -131,12 +135,14 @@ impl RepoWindow {
 
     pub fn open_stacked_pr(&mut self, tip_rev: String, cx: &mut Context<Self>) {
         let provider = self.stacked_pr_provider.clone();
-        self.stacked_pr = Some(StackedPrState::new(tip_rev, provider));
-        self.start_stacked_pr_detection(cx);
+        let state = StackedPrState::new(tip_rev, provider);
+        if self.present_modal(RepoModal::StackedPr(state), cx) {
+            self.start_stacked_pr_detection(cx);
+        }
     }
 
     pub(crate) fn retry_stacked_pr(&mut self, cx: &mut Context<Self>) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         state.generation = next_stacked_pr_generation();
@@ -149,8 +155,7 @@ impl RepoWindow {
     }
 
     pub fn complete_stacked_pr(&mut self, cx: &mut Context<Self>) {
-        let Some(StackedPrPhase::Results(result)) =
-            self.stacked_pr.as_ref().map(|state| &state.phase)
+        let Some(StackedPrPhase::Results(result)) = self.stacked_pr().map(|state| &state.phase)
         else {
             return;
         };
@@ -162,7 +167,7 @@ impl RepoWindow {
     }
 
     fn start_stacked_pr_detection(&mut self, cx: &mut Context<Self>) {
-        let Some(state) = self.stacked_pr.as_ref() else {
+        let Some(RepoModal::StackedPr(state)) = &self.modal else {
             return;
         };
         let Some(repo) = self.vm.read(cx).repo.clone() else {
@@ -196,7 +201,7 @@ impl RepoWindow {
         result: jayjay_core::JayResult<Stack>,
         cx: &mut Context<Self>,
     ) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         if state.generation != generation {
@@ -224,7 +229,7 @@ impl RepoWindow {
         name: impl Into<String>,
         cx: &mut Context<Self>,
     ) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         if matches!(state.phase, StackedPrPhase::Preview(_))
@@ -241,7 +246,7 @@ impl RepoWindow {
         event: &KeyDownEvent,
         cx: &mut Context<Self>,
     ) -> bool {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return false;
         };
         if event.keystroke.key == "escape" {

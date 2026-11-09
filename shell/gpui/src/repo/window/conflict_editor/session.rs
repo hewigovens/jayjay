@@ -207,8 +207,10 @@ impl RepoWindow {
 
     pub(crate) fn exit_conflict_editor(&mut self, cx: &mut Context<Self>) {
         let session = self.conflict_editor.session;
+        let pending_open = self.conflict_editor.pending_open.take();
         self.conflict_editor = ConflictEditorState {
             session,
+            pending_open,
             ..Default::default()
         };
         cx.notify();

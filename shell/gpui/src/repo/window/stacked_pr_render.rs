@@ -13,7 +13,7 @@ use gpui::{
 };
 use jayjay_core::Stack;
 
-pub(super) fn stacked_pr_overlay(
+pub(crate) fn stacked_pr_overlay(
     state: &StackedPrState,
     t: &Theme,
     cx: &mut Context<RepoWindow>,

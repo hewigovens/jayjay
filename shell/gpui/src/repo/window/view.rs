@@ -30,14 +30,11 @@ use crate::ui::text_area::TextArea;
 use super::bookmark_picker::BookmarkPickerState;
 use super::commit_ai::CommitAiState;
 use super::commit_box::CommitBoxState;
-use super::confirmation::Confirmation;
-use super::dag_drag::DagRebaseRequest;
 use super::repo_switcher::RepoSwitcherState;
 use super::revset_filter::RevsetCompletionState;
-use super::stacked_pr::StackedPrState;
 use super::workspace_drafts::WorkspaceDrafts;
 use super::{
-    ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState, PrImportState,
+    ConflictEditorState, ContextExpansionState, DiffEditState, FileEditorState, RepoModal,
 };
 
 // Written by a canvas overlay during prepaint, read by mouse handlers.
@@ -84,22 +81,15 @@ pub struct RepoWindow {
     pub(crate) app_menu_titles: MenuTitleBounds,
     pub(crate) context_menu: Option<ContextMenuState>,
     pub(crate) bookmark_picker: Option<BookmarkPickerState>,
-    pub(crate) confirmation: Option<Confirmation>,
-    pub(crate) rating_prompt: bool,
     pub(crate) repo_switcher: Option<RepoSwitcherState>,
     pub(crate) commit_message: CommitMessageEditor,
     pub(crate) description: super::detail::DescriptionState,
     pub(crate) commit_box: CommitBoxState,
     pub(super) switching: Option<gpui::Task<()>>,
     pub(crate) commit_ai: CommitAiState,
-    pub(crate) text_modal: Option<TextModalState>,
-    pub(crate) bisect_sheet: Option<super::bisect::BisectSheet>,
+    pub(crate) modal: Option<RepoModal>,
     pub(crate) bisect_command: Entity<TextArea>,
     pub(crate) bisect_test_runner_open: bool,
-    pub(crate) pr_import: Option<PrImportState>,
-    pub(crate) pending_rebase: Option<DagRebaseRequest>,
-    pub(crate) stacked_pr: Option<StackedPrState>,
-    pub(crate) converge: super::converge::ConvergeState,
     pub(crate) stacked_pr_provider: std::sync::Arc<dyn crate::repo::StackedPrProvider>,
     fs_watcher: Option<RepoFsWatcher>,
     /// True once the watcher's start preconditions are met (repo open + `.jj`), even when the real OS watcher is suppressed under test; lets tests assert the decision.
@@ -530,22 +520,15 @@ impl RepoWindow {
             app_menu_titles: MenuTitleBounds::default(),
             context_menu: None,
             bookmark_picker: None,
-            confirmation: None,
-            rating_prompt: false,
             repo_switcher: None,
             commit_message,
             description: super::detail::DescriptionState::default(),
             commit_box: CommitBoxState::default(),
             switching: None,
             commit_ai: CommitAiState::default(),
-            text_modal: None,
-            bisect_sheet: None,
+            modal: None,
             bisect_command,
             bisect_test_runner_open: false,
-            pr_import: None,
-            pending_rebase: None,
-            stacked_pr: None,
-            converge: super::converge::ConvergeState::default(),
             stacked_pr_provider: std::sync::Arc::new(crate::repo::CoreStackedPrProvider),
             fs_watcher: None,
             fs_watcher_armed: false,
@@ -654,43 +637,40 @@ impl RepoWindow {
     }
 
     pub fn has_text_modal(&self) -> bool {
-        self.text_modal.is_some()
+        matches!(self.modal, Some(RepoModal::Text(_)))
     }
 
     /// Mirrors `summary_input()`/`description_input()`: `pub` so the separate `tests/` crate can drive the review-note composer without reaching `pub(crate)` state.
     pub fn text_modal_input(&self) -> Option<Entity<TextArea>> {
-        self.text_modal.as_ref().map(|m| m.prompt.input())
+        self.text_modal().map(|m| m.prompt.input())
     }
 
     pub fn text_modal_body_input(&self) -> Option<Entity<TextArea>> {
-        self.text_modal
-            .as_ref()
+        self.text_modal()
             .and_then(|modal| modal.prompt.body_input())
     }
 
     pub fn text_modal_context_input(&self) -> Option<Entity<TextArea>> {
-        self.text_modal
-            .as_ref()
+        self.text_modal()
             .and_then(|m| m.context.as_ref())
             .map(|context| context.input.clone())
     }
 
     /// Mirrors `text_modal_input()`: lets the tests crate assert header hints such as the New Workspace destination.
     pub fn text_modal_subtitle(&self) -> Option<SharedString> {
-        self.text_modal.as_ref().map(|m| m.prompt.subtitle.clone())
+        self.text_modal().map(|m| m.prompt.subtitle.clone())
     }
 
     /// `None` when the current modal has no checkbox row (only the split-files modal does).
     pub fn text_modal_checkbox_checked(&self) -> Option<bool> {
-        self.text_modal
-            .as_ref()
+        self.text_modal()
             .and_then(|m| m.checkbox.as_ref())
             .map(|c| c.checked)
     }
 
     /// `None` when the current modal has no file-list section (only the split-files modal does).
     pub fn text_modal_file_list(&self) -> Option<Vec<SharedString>> {
-        self.text_modal.as_ref().and_then(|m| m.file_list.clone())
+        self.text_modal().and_then(|m| m.file_list.clone())
     }
 
     pub fn notes_only_files(&self) -> bool {
@@ -719,13 +699,7 @@ impl RepoWindow {
     }
 
     pub(super) fn has_refresh_sensitive_interaction(&self) -> bool {
-        self.bisect_sheet.is_some()
-            || self.text_modal.is_some()
-            || self.pr_import.is_some()
-            || self.confirmation.is_some()
-            || self.pending_rebase.is_some()
-            || self.stacked_pr.is_some()
-            || self.converge.is_open()
+        !matches!(self.modal, None | Some(RepoModal::RatingPrompt))
             || self.context_menu.is_some()
             || self.bookmark_picker.is_some()
             || self.revset_popup.is_some()

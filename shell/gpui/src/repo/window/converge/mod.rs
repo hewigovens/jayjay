@@ -7,4 +7,4 @@ mod sheet;
 mod versions;
 
 pub(crate) use render::converge_overlay;
-pub(crate) use sheet::ConvergeState;
+pub(crate) use sheet::ConvergeSheet;

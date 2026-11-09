@@ -1,11 +1,11 @@
 use gpui::Context;
 
-use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, next_stacked_pr_generation};
+use super::{RepoModal, RepoWindow};
 
 impl RepoWindow {
     pub fn submit_stacked_pr(&mut self, cx: &mut Context<Self>) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         if !state.can_submit() {
@@ -29,7 +29,7 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             let result = task.await;
             let _ = this.update(cx, |view, cx| {
-                let Some(state) = view.stacked_pr.as_mut() else {
+                let Some(RepoModal::StackedPr(state)) = &mut view.modal else {
                     return;
                 };
                 if state.generation != generation {
@@ -48,14 +48,11 @@ impl RepoWindow {
 
     pub fn close_stacked_pr(&mut self, cx: &mut Context<Self>) {
         let submitting = self
-            .stacked_pr
-            .as_ref()
+            .stacked_pr()
             .is_some_and(|state| matches!(state.phase, StackedPrPhase::Submitting(_)));
         if submitting {
             return;
         }
-        if self.stacked_pr.take().is_some() {
-            cx.notify();
-        }
+        self.close_modal(|modal| matches!(modal, RepoModal::StackedPr(_)), cx);
     }
 }

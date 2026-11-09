@@ -5,7 +5,7 @@ use gpui::{
 };
 use jayjay_core::{BisectPhase, BisectState, BisectVerdict};
 
-use super::RepoWindow;
+use super::{RepoModal, RepoWindow};
 use crate::app::fonts::CodeText;
 use crate::app::theme::{FONT_BODY, FONT_META, Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
@@ -36,24 +36,24 @@ impl RepoWindow {
         } else {
             bad_input.clone()
         };
-        self.bisect_sheet = Some(BisectSheet {
-            good,
-            bad: bad_input,
-            range,
-            focus,
-            focus_pending: true,
-        });
-        cx.notify();
+        self.present_modal(
+            RepoModal::Bisect(BisectSheet {
+                good,
+                bad: bad_input,
+                range,
+                focus,
+                focus_pending: true,
+            }),
+            cx,
+        );
     }
 
     pub(crate) fn close_bisect_sheet(&mut self, cx: &mut Context<Self>) {
-        if self.bisect_sheet.take().is_some() {
-            cx.notify();
-        }
+        self.close_modal(|modal| matches!(modal, RepoModal::Bisect(_)), cx);
     }
 
     pub(crate) fn submit_bisect_sheet(&mut self, cx: &mut Context<Self>) {
-        let Some(sheet) = self.bisect_sheet.as_ref() else {
+        let Some(RepoModal::Bisect(sheet)) = &self.modal else {
             return;
         };
         let good = sheet.good.read(cx).text();
@@ -66,7 +66,7 @@ impl RepoWindow {
                 return;
             }
         };
-        self.bisect_sheet = None;
+        self.modal = None;
         self.vm.update(cx, |vm, cx| vm.start_bisect(range, cx));
     }
 

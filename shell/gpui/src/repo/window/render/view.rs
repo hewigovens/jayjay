@@ -1,11 +1,12 @@
 use gpui::{
-    Animation, AnimationExt as _, Context, InteractiveElement, IntoElement, ParentElement, Render,
-    StatefulInteractiveElement, Styled, Window, div, ease_in_out, px,
+    Animation, AnimationExt as _, AnyElement, Context, InteractiveElement, IntoElement,
+    ParentElement, Render, StatefulInteractiveElement, Styled, Window, div, ease_in_out, px,
 };
 
 use super::super::bisect::{bisect_bar, bisect_sheet_overlay};
 use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
+use super::super::converge::converge_overlay;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
 use super::super::rating_prompt::rating_prompt_overlay;
@@ -14,11 +15,13 @@ use super::super::repo_switcher::render_repo_switcher;
 use super::super::revset_filter::{render_revset_completions, render_revset_popup};
 use super::super::sidebar::sidebar;
 use super::super::sidebar_visibility::SIDEBAR_SLIDE;
+use super::super::stacked_pr_render::stacked_pr_overlay;
 use super::super::status_bar::status_bar;
-use super::super::{DragTarget, FocusStop, RepoWindow};
+use super::super::{DragTarget, FocusStop, RepoModal, RepoWindow};
 use super::layout::{file_column_wrapper, resize_handle};
 use super::overlays::{error_overlay, pr_import_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
+use crate::app::theme::Theme;
 use crate::repo::toolbar::{ToolbarActivity, ToolbarRepo};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
@@ -284,36 +287,17 @@ impl Render for RepoWindow {
         if self.diff_edit_take_pending_focus() {
             window.focus(&self.focus_handle, cx);
         }
-        if let Some(sheet) = self.bisect_sheet.as_mut() {
-            root = root.child(bisect_sheet_overlay(sheet, &t, window, cx));
-        }
-        if let Some(modal) = self.text_modal.as_mut() {
-            modal.prompt.take_focus(window, cx);
-            root = root.child(text_modal_overlay(modal, &t, cx));
-        }
-        if let Some(state) = self.pr_import.as_mut() {
-            state.take_focus(window, cx);
-            root = root.child(pr_import_overlay(state, &t, cx));
-        }
-        if let Some(confirmation) = self.confirmation.as_ref() {
-            root = root.child(confirmation_overlay(confirmation, &t, cx));
-        }
-        if let Some(request) = self.pending_rebase.as_ref() {
-            root = root.child(rebase_confirmation_overlay(request, &t, cx));
+        // Stacked PR, converge and the rating prompt cover an open file or conflict editor; the other sheets stay beneath it.
+        let over_editors = matches!(
+            self.modal,
+            Some(RepoModal::StackedPr(_) | RepoModal::Converge(_) | RepoModal::RatingPrompt)
+        );
+        if !over_editors {
+            root = root.children(self.modal_overlay(&t, window, cx));
         }
         root = self.append_editor_overlays(root, &t, window, cx);
-        if let Some(stacked_pr) = self.stacked_pr.as_ref() {
-            root = root.child(super::super::stacked_pr_render::stacked_pr_overlay(
-                stacked_pr, &t, cx,
-            ));
-        }
-        root = root.children(super::super::converge::converge_overlay(
-            self, &t, window, cx,
-        ));
-        if self.rating_prompt {
-            // Typing must not reach a text field under the prompt.
-            window.focus(&self.focus_handle, cx);
-            root = root.child(rating_prompt_overlay(&t, cx));
+        if over_editors {
+            root = root.children(self.modal_overlay(&t, window, cx));
         }
         if let Some(message) = self.feedback.toast.clone() {
             root = root.child(toast_overlay(message, &t));
@@ -322,5 +306,37 @@ impl Render for RepoWindow {
             root = root.child(error_overlay(message, &t, cx));
         }
         root.into_any_element()
+    }
+}
+
+impl RepoWindow {
+    fn modal_overlay(
+        &mut self,
+        t: &Theme,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) -> Option<AnyElement> {
+        Some(match self.modal.as_mut()? {
+            RepoModal::Text(modal) => {
+                modal.prompt.take_focus(window, cx);
+                text_modal_overlay(modal, t, cx)
+            }
+            RepoModal::Bisect(sheet) => bisect_sheet_overlay(sheet, t, window, cx),
+            RepoModal::PrImport(state) => {
+                state.take_focus(window, cx);
+                pr_import_overlay(state, t, cx)
+            }
+            RepoModal::Confirmation(confirmation) => confirmation_overlay(confirmation, t, cx),
+            RepoModal::Rebase(request) => rebase_confirmation_overlay(request, t, cx),
+            RepoModal::StackedPr(state) => stacked_pr_overlay(state, t, cx),
+            RepoModal::Converge(sheet) => {
+                converge_overlay(sheet, &self.focus_handle, &self.vm, t, window, cx)
+            }
+            RepoModal::RatingPrompt => {
+                // Typing must not reach a text field under the prompt.
+                window.focus(&self.focus_handle, cx);
+                rating_prompt_overlay(t, cx)
+            }
+        })
     }
 }

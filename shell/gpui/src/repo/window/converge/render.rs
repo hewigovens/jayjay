@@ -2,8 +2,9 @@ use std::sync::Arc;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    AnyElement, Context, Div, FontWeight, InteractiveElement, IntoElement, ParentElement,
-    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, relative, rgb,
+    AnyElement, Context, Div, Entity, FocusHandle, FontWeight, InteractiveElement, IntoElement,
+    ParentElement, SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px,
+    relative, rgb,
 };
 use jayjay_core::converge::ConvergeReview;
 
@@ -12,7 +13,8 @@ use super::contents::Loaded;
 use super::sheet::{ConvergePhase, ConvergeSheet};
 use crate::app::actions::{MergeNextHunk, MergePreviousHunk, MergeUseLeftHunk, MergeUseRightHunk};
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::window::RepoWindow;
+use crate::repo::view_model::RepoViewModel;
+use crate::repo::window::{RepoModal, RepoWindow};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_header, overlay_layer};
 use crate::ui::primitives::{button, icon_label};
@@ -22,7 +24,7 @@ pub(super) const FIRST_CARD_CHILD: usize = 3;
 
 impl RepoWindow {
     pub(crate) fn converge_actions(&self, root: Div, cx: &mut Context<Self>) -> Div {
-        if !self.converge.is_open() {
+        if !matches!(self.modal, Some(RepoModal::Converge(_))) {
             return root;
         }
         root.key_context("ConvergeSheet MergeHunks")
@@ -42,18 +44,19 @@ impl RepoWindow {
 }
 
 pub(crate) fn converge_overlay(
-    view: &mut RepoWindow,
+    sheet: &mut ConvergeSheet,
+    root_focus: &FocusHandle,
+    vm: &Entity<RepoViewModel>,
     t: &Theme,
     window: &mut Window,
     cx: &mut Context<RepoWindow>,
-) -> Option<AnyElement> {
-    let sheet = view.converge.sheet.as_mut()?;
-    sheet.take_focus(&view.focus_handle, window, cx);
-    let sheet = view.converge.sheet.as_ref()?;
+) -> AnyElement {
+    sheet.take_focus(root_focus, window, cx);
+    let sheet = &*sheet;
     let body = sheet
         .review
         .as_ref()
-        .map(|review| ConvergeBody::new(sheet, review, &view.vm.read(cx).graph.changes, t));
+        .map(|review| ConvergeBody::new(sheet, review, &vm.read(cx).graph.changes, t));
     let scroll = div()
         .id("converge-scroll")
         .flex()
@@ -79,7 +82,7 @@ pub(crate) fn converge_overlay(
         .children(body.as_ref().map(ConvergeBody::summary))
         .child(scroll)
         .child(footer(sheet, t, cx));
-    Some(overlay_layer().child(panel).into_any_element())
+    overlay_layer().child(panel).into_any_element()
 }
 
 fn notices(sheet: &ConvergeSheet, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {

@@ -4,7 +4,7 @@ use gpui::{App, AppContext, Context, Entity, Focusable, KeyDownEvent, Window};
 
 use jayjay_core::{JayError, PullRequestImportPreview, PullRequestImportWorkspace, SyncToken};
 
-use super::RepoWindow;
+use super::{RepoModal, RepoWindow};
 use crate::ui::text_area::TextArea;
 
 pub(crate) struct PrImportState {
@@ -150,8 +150,7 @@ impl RepoWindow {
             self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         }
-        self.pr_import = Some(PrImportState::new(cx));
-        cx.notify();
+        self.present_modal(RepoModal::PrImport(PrImportState::new(cx)), cx);
     }
 
     /// The repo-wide Tab cycle is suspended under modals, so the sheet routes Tab between its own fields.
@@ -161,7 +160,7 @@ impl RepoWindow {
         window: &mut Window,
         cx: &mut Context<Self>,
     ) -> bool {
-        let Some(state) = self.pr_import.as_ref() else {
+        let Some(RepoModal::PrImport(state)) = &self.modal else {
             return false;
         };
         let modifiers = &ev.keystroke.modifiers;
@@ -173,21 +172,19 @@ impl RepoWindow {
     }
 
     pub fn has_pr_import_modal(&self) -> bool {
-        self.pr_import.is_some()
+        matches!(self.modal, Some(RepoModal::PrImport(_)))
     }
 
     pub fn pr_import_error(&self) -> Option<&str> {
-        self.pr_import
-            .as_ref()
-            .and_then(|state| state.error.as_deref())
+        self.pr_import().and_then(|state| state.error.as_deref())
     }
 
     pub fn pr_import_url_input(&self) -> Option<Entity<TextArea>> {
-        self.pr_import.as_ref().map(|state| state.url_input.clone())
+        self.pr_import().map(|state| state.url_input.clone())
     }
 
     pub fn pr_import_workspace_fields(&self, cx: &App) -> Option<(String, String)> {
-        let state = self.pr_import.as_ref()?;
+        let state = self.pr_import()?;
         Some((
             state.name_input.read(cx).text(),
             state.dest_input.read(cx).text(),
@@ -199,14 +196,14 @@ impl RepoWindow {
         preview: PullRequestImportPreview,
         cx: &mut Context<Self>,
     ) {
-        if let Some(state) = self.pr_import.as_mut() {
+        if let Some(RepoModal::PrImport(state)) = &mut self.modal {
             state.apply_preview(preview, cx);
             cx.notify();
         }
     }
 
     pub fn submit_pr_import(&mut self, cx: &mut Context<Self>) {
-        let Some(state) = self.pr_import.as_ref() else {
+        let Some(RepoModal::PrImport(state)) = &self.modal else {
             return;
         };
         if !state.can_submit(cx) {
@@ -217,7 +214,7 @@ impl RepoWindow {
             return;
         }
         if let Some(workspace) = state.existing_workspace().cloned() {
-            self.pr_import = None;
+            self.modal = None;
             cx.notify();
             cx.defer(move |cx| super::open_repo_window(PathBuf::from(workspace.dest), cx));
             return;
@@ -227,14 +224,14 @@ impl RepoWindow {
 
     /// A running import keeps the sheet open until the canceled task reports back.
     pub fn cancel_pr_import(&mut self, cx: &mut Context<Self>) {
-        let Some(state) = self.pr_import.as_ref() else {
+        let Some(RepoModal::PrImport(state)) = &self.modal else {
             return;
         };
         if let Some(sync) = state.sync.as_ref() {
             sync.cancel();
         }
         if !state.importing {
-            self.pr_import = None;
+            self.modal = None;
             cx.notify();
         }
     }
@@ -244,7 +241,7 @@ impl RepoWindow {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             return;
         };
-        let Some(state) = self.pr_import.as_mut() else {
+        let Some(RepoModal::PrImport(state)) = &mut self.modal else {
             return;
         };
         let url = state.url_input.read(cx).text().trim().to_owned();
@@ -258,7 +255,7 @@ impl RepoWindow {
         cx.spawn(async move |this, cx| {
             let result = task.await;
             let _ = this.update(cx, |view, cx| {
-                let Some(state) = view.pr_import.as_mut() else {
+                let Some(RepoModal::PrImport(state)) = &mut view.modal else {
                     return;
                 };
                 state.finish(cx);
@@ -276,7 +273,7 @@ impl RepoWindow {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             return;
         };
-        let Some(state) = self.pr_import.as_mut() else {
+        let Some(RepoModal::PrImport(state)) = &mut self.modal else {
             return;
         };
         let Some(head) = state
@@ -304,17 +301,15 @@ impl RepoWindow {
                 }
                 match result {
                     Ok(created) => {
-                        view.pr_import = None;
-                        cx.notify();
+                        view.close_modal(|modal| matches!(modal, RepoModal::PrImport(_)), cx);
                         // Opening reads every repo window, including this one while it is still being updated.
                         cx.defer(move |cx| super::open_repo_window(PathBuf::from(created), cx));
                     }
                     Err(JayError::Canceled) => {
-                        view.pr_import = None;
-                        cx.notify();
+                        view.close_modal(|modal| matches!(modal, RepoModal::PrImport(_)), cx);
                     }
                     Err(error) => {
-                        if let Some(state) = view.pr_import.as_mut() {
+                        if let Some(RepoModal::PrImport(state)) = &mut view.modal {
                             state.finish(cx);
                             state.error = Some(error.to_string());
                         }

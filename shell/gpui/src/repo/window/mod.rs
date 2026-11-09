@@ -42,6 +42,7 @@ mod rating_prompt;
 mod rebase_confirmation;
 pub(crate) mod ref_chips;
 mod render;
+mod repo_modal;
 mod repo_switcher;
 mod review;
 mod revset_filter;
@@ -95,6 +96,7 @@ pub(crate) use keyboard_focus::focus_ring;
 pub(crate) use note_menu::AddNoteRequest;
 pub(crate) use picker::{opener as picker_opener, opener_bounds as picker_opener_bounds};
 pub(crate) use pr_import::PrImportState;
+pub(crate) use repo_modal::RepoModal;
 pub(crate) use view::{
     DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,
     FileTreeCacheSlot, LayoutState, PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX,

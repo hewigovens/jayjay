@@ -3,7 +3,7 @@ use gpui::{
     StatefulInteractiveElement, Styled, div, img, px, rgb,
 };
 
-use super::RepoWindow;
+use super::{RepoModal, RepoWindow};
 use crate::app::links::{self, REPOSITORY_URL, SPONSOR_URL};
 use crate::app::rating_prompt::RatingPromptStore;
 use crate::app::theme::{Theme, ui_font_size};
@@ -13,10 +13,9 @@ use crate::ui::primitives::button;
 
 impl RepoWindow {
     pub(super) fn record_successful_action(&mut self, cx: &mut Context<Self>) {
-        let can_show = !self.rating_prompt && !self.has_refresh_sensitive_interaction();
+        let can_show = self.modal.is_none() && !self.has_refresh_sensitive_interaction();
         if RatingPromptStore::record_action(cx, can_show) {
-            self.rating_prompt = true;
-            cx.notify();
+            self.present_modal(RepoModal::RatingPrompt, cx);
         }
     }
 
@@ -25,7 +24,7 @@ impl RepoWindow {
         ev: &KeyDownEvent,
         cx: &mut Context<Self>,
     ) -> bool {
-        if !self.rating_prompt {
+        if !self.rating_prompt_open() {
             return false;
         }
         if ev.keystroke.key == "enter" && !ev.keystroke.modifiers.modified() {
@@ -35,9 +34,7 @@ impl RepoWindow {
     }
 
     pub(super) fn close_rating_prompt(&mut self, cx: &mut Context<Self>) {
-        if std::mem::take(&mut self.rating_prompt) {
-            cx.notify();
-        }
+        self.close_modal(|modal| matches!(modal, RepoModal::RatingPrompt), cx);
     }
 
     fn open_prompt_link(&mut self, url: &str, cx: &mut Context<Self>) {

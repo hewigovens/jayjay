@@ -5,7 +5,7 @@ use gpui::{
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
-use crate::repo::window::{PrImportState, RepoWindow};
+use crate::repo::window::{PrImportState, RepoModal, RepoWindow};
 use crate::ui::icons::glyph;
 use crate::ui::overlay::{overlay_actions, overlay_card, overlay_header, overlay_layer};
 use crate::ui::primitives::button;
@@ -173,7 +173,7 @@ fn pr_import_preview(
                     )
                     .debug_selector(|| "pr-import-again".to_owned())
                     .on_click(cx.listener(|view, _, _, cx| {
-                        if let Some(state) = view.pr_import.as_mut() {
+                        if let Some(RepoModal::PrImport(state)) = &mut view.modal {
                             state.import_again = true;
                             cx.notify();
                         }

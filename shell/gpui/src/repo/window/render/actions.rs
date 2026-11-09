@@ -1,6 +1,6 @@
 use gpui::{Context, Div, InteractiveElement, Styled, Window, div, rgb};
 
-use super::super::RepoWindow;
+use super::super::{RepoModal, RepoWindow};
 use crate::app::actions::{
     CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, FilterByRevset,
     ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
@@ -106,8 +106,7 @@ impl RepoWindow {
                 if view.has_pr_import_modal() {
                     view.submit_pr_import(cx);
                 } else if view
-                    .text_modal
-                    .as_ref()
+                    .text_modal()
                     .is_some_and(|modal| modal.action.submits_on_enter())
                 {
                     view.submit_text_modal(cx);
@@ -151,7 +150,8 @@ impl RepoWindow {
                 {
                     return;
                 }
-                if view.handle_stacked_pr_key(ev, cx) || view.converge.is_open() {
+                if view.handle_stacked_pr_key(ev, cx)
+                    || matches!(view.modal, Some(RepoModal::Converge(_))) {
                     return;
                 }
                 if view.is_text_input_focused(window, cx) {
@@ -181,7 +181,7 @@ impl RepoWindow {
         root = Self::change_shortcuts(root, cx);
         root = self.converge_actions(root, cx);
 
-        if let Some(state) = self.stacked_pr.as_ref() {
+        if let Some(RepoModal::StackedPr(state)) = &self.modal {
             root = root.key_context(if state.active_input.is_some() {
                 "StackedPrPanel StackedPrInput"
             } else {

@@ -3,8 +3,8 @@ use jayjay_core::dag::SelectionClick;
 use jayjay_core::{DiffHunk, JayResult};
 
 use super::{
-    ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoWindow, TextModalAction,
-    TextModalState,
+    ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoModal, RepoWindow,
+    TextModalAction, TextModalState,
 };
 use crate::diff::projection::{self, ProjectionView};
 use crate::repo::view_model::RepoViewModel;
@@ -140,17 +140,19 @@ impl RepoWindow {
         action: TextModalAction,
         cx: &mut Context<Self>,
     ) {
-        self.text_modal = Some(TextModalState::new(
-            TextPrompt::commit_message(
-                jayjay_i18n::repo::edit_description(),
-                subtitle,
-                &description,
-                jayjay_i18n::common::save(),
-                cx,
-            ),
-            action,
-        ));
-        cx.notify();
+        self.present_modal(
+            RepoModal::Text(TextModalState::new(
+                TextPrompt::commit_message(
+                    jayjay_i18n::repo::edit_description(),
+                    subtitle,
+                    &description,
+                    jayjay_i18n::common::save(),
+                    cx,
+                ),
+                action,
+            )),
+            cx,
+        );
     }
 
     pub(crate) fn open_create_bookmark(&mut self, rev: String, cx: &mut Context<Self>) {
@@ -177,18 +179,20 @@ impl RepoWindow {
     }
 
     pub(crate) fn open_rename_bookmark(&mut self, name: String, cx: &mut Context<Self>) {
-        self.text_modal = Some(TextModalState::new(
-            TextPrompt::single_line(
-                jayjay_i18n::repo::rename_bookmark(),
-                name.clone(),
-                name.clone(),
-                jayjay_i18n::repo::new_name(),
-                jayjay_i18n::repo::rename(),
-                cx,
-            ),
-            TextModalAction::RenameBookmark { old_name: name },
-        ));
-        cx.notify();
+        self.present_modal(
+            RepoModal::Text(TextModalState::new(
+                TextPrompt::single_line(
+                    jayjay_i18n::repo::rename_bookmark(),
+                    name.clone(),
+                    name.clone(),
+                    jayjay_i18n::repo::new_name(),
+                    jayjay_i18n::repo::rename(),
+                    cx,
+                ),
+                TextModalAction::RenameBookmark { old_name: name },
+            )),
+            cx,
+        );
     }
 
     fn submit_rename_bookmark(&mut self, old_name: String, text: &str, cx: &mut Context<Self>) {
@@ -204,7 +208,7 @@ impl RepoWindow {
             self.show_toast(jayjay_i18n::repo::invalid_bookmark_name(&new_name), cx);
             return;
         }
-        self.text_modal = None;
+        self.modal = None;
         let task = self
             .vm
             .update(cx, |vm, cx| vm.rename_bookmark(old_name, new_name, cx));
@@ -219,18 +223,20 @@ impl RepoWindow {
         action: TextModalAction,
         cx: &mut Context<Self>,
     ) {
-        self.text_modal = Some(TextModalState::new(
-            TextPrompt::single_line(
-                title,
-                subtitle,
-                "",
-                placeholder,
-                jayjay_i18n::repo::create(),
-                cx,
-            ),
-            action,
-        ));
-        cx.notify();
+        self.present_modal(
+            RepoModal::Text(TextModalState::new(
+                TextPrompt::single_line(
+                    title,
+                    subtitle,
+                    "",
+                    placeholder,
+                    jayjay_i18n::repo::create(),
+                    cx,
+                ),
+                action,
+            )),
+            cx,
+        );
     }
 
     fn submit_create_ref(
@@ -255,7 +261,7 @@ impl RepoWindow {
             self.show_toast(kind.invalid_name(&name), cx);
             return;
         }
-        self.text_modal = None;
+        self.modal = None;
         let task = self
             .vm
             .update(cx, |vm, cx| create(vm, name.clone(), rev, cx));
@@ -270,34 +276,34 @@ impl RepoWindow {
     }
 
     pub(crate) fn close_text_modal(&mut self, cx: &mut Context<Self>) {
-        if self.text_modal.take().is_some() {
-            cx.notify();
-        }
+        self.close_modal(|modal| matches!(modal, RepoModal::Text(_)), cx);
     }
 
     /// Flips the modal's optional checkbox (currently only the split-files modal's "Parallel split"); a no-op if the open modal has none.
     pub fn toggle_text_modal_checkbox(&mut self, cx: &mut Context<Self>) {
-        if let Some(checkbox) = self.text_modal.as_mut().and_then(|m| m.checkbox.as_mut()) {
+        if let Some(RepoModal::Text(modal)) = &mut self.modal
+            && let Some(checkbox) = modal.checkbox.as_mut()
+        {
             checkbox.checked ^= true;
             cx.notify();
         }
     }
 
     pub fn submit_text_modal(&mut self, cx: &mut Context<Self>) {
-        let Some(modal) = self.text_modal.as_ref() else {
+        let Some(RepoModal::Text(modal)) = &self.modal else {
             return;
         };
         let text = modal.prompt.text(cx);
         match modal.action.clone() {
             TextModalAction::EditDescription { rev } => {
-                self.text_modal = None;
+                self.modal = None;
                 let task = self
                     .vm
                     .update(cx, |vm, cx| vm.describe_change(rev, text, cx));
                 task.detach();
             }
             TextModalAction::DiffEditDescription { session } => {
-                self.text_modal = None;
+                self.modal = None;
                 self.apply_diff_edit_description(session, text);
             }
             TextModalAction::CreateBookmark { rev } => {
@@ -320,7 +326,7 @@ impl RepoWindow {
                     self.show_toast(jayjay_i18n::repo::note_cannot_be_empty(), cx);
                     return;
                 }
-                self.text_modal = None;
+                self.modal = None;
                 self.save_review_note(target, text, cx);
             }
             TextModalAction::CreateWorkspace(parent) => {
@@ -333,11 +339,10 @@ impl RepoWindow {
                     return;
                 }
                 let parallel = self
-                    .text_modal
-                    .as_ref()
+                    .text_modal()
                     .and_then(|m| m.checkbox.as_ref())
                     .is_some_and(|c| c.checked);
-                self.text_modal = None;
+                self.modal = None;
                 self.confirm_split_files(request, message, parallel, cx);
             }
         }

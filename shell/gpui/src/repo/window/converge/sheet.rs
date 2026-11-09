@@ -8,20 +8,8 @@ use jayjay_core::converge::{ConvergeItem, ConvergeReview};
 use jayjay_core::{ConvergeOutcome, ConvergePlan, JayError, JayResult};
 
 use super::contents::ConvergeContents;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{RepoModal, RepoWindow};
 use crate::ui::text_area::TextArea;
-
-#[derive(Default)]
-pub(crate) struct ConvergeState {
-    pub(super) sheet: Option<ConvergeSheet>,
-    pending_editor: Option<(String, String)>,
-}
-
-impl ConvergeState {
-    pub(crate) fn is_open(&self) -> bool {
-        self.sheet.is_some()
-    }
-}
 
 pub(super) enum ConvergePhase {
     Loading,
@@ -67,7 +55,7 @@ impl ConvergeSheet {
 
 impl RepoWindow {
     pub fn open_converge(&mut self, revision: String, cx: &mut Context<Self>) {
-        self.converge.sheet = Some(ConvergeSheet {
+        let sheet = ConvergeSheet {
             revision,
             preview: None,
             review: None,
@@ -78,21 +66,23 @@ impl RepoWindow {
             expanded: HashSet::new(),
             scroll: ScrollHandle::new(),
             focus_pending: true,
-        });
-        self.load_converge_preview(cx);
+        };
+        if self.present_modal(RepoModal::Converge(sheet), cx) {
+            self.load_converge_preview(cx);
+        }
     }
 
     pub(crate) fn close_converge(&mut self, cx: &mut Context<Self>) {
-        if let Some(sheet) = &self.converge.sheet
+        if let Some(RepoModal::Converge(sheet)) = &self.modal
             && !matches!(sheet.phase, ConvergePhase::Applying)
         {
-            self.converge.sheet = None;
+            self.modal = None;
             cx.notify();
         }
     }
 
     pub(super) fn load_converge_preview(&mut self, cx: &mut Context<Self>) {
-        let Some(sheet) = self.converge.sheet.as_mut() else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
         sheet.phase = ConvergePhase::Loading;
@@ -113,7 +103,7 @@ impl RepoWindow {
     }
 
     fn finish_converge_preview(&mut self, result: JayResult<ConvergePlan>, cx: &mut Context<Self>) {
-        let Some(sheet) = self.converge.sheet.as_mut() else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
         match result {
@@ -136,14 +126,12 @@ impl RepoWindow {
     }
 
     pub(super) fn apply_converge(&mut self, cx: &mut Context<Self>) {
-        let Some(sheet) = self
-            .converge
-            .sheet
-            .as_mut()
-            .filter(|sheet| sheet.can_apply())
-        else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
+        if !sheet.can_apply() {
+            return;
+        }
         let text = sheet
             .description
             .as_ref()
@@ -175,18 +163,16 @@ impl RepoWindow {
         result: JayResult<ConvergeOutcome>,
         cx: &mut Context<Self>,
     ) {
-        let Some(sheet) = self
-            .converge
-            .sheet
-            .as_mut()
-            .filter(|sheet| matches!(sheet.phase, ConvergePhase::Applying))
-        else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
+        if !matches!(sheet.phase, ConvergePhase::Applying) {
+            return;
+        }
         match result {
             Ok(outcome) => {
-                self.converge.sheet = None;
-                self.converge.pending_editor = outcome
+                self.modal = None;
+                self.conflict_editor.pending_open = outcome
                     .conflicted_paths
                     .into_iter()
                     .next()
@@ -213,14 +199,12 @@ impl RepoWindow {
         cx: &mut Context<Self>,
         update: impl FnOnce(&mut ConvergeReview),
     ) {
-        let Some(sheet) = self
-            .converge
-            .sheet
-            .as_mut()
-            .filter(|sheet| sheet.is_interactive())
-        else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
+        if !sheet.is_interactive() {
+            return;
+        }
         let Some(review) = sheet.review.as_mut() else {
             return;
         };
@@ -256,7 +240,7 @@ impl RepoWindow {
 
     /// Waits for the post-converge refresh and file load, then opens the merge editor only if they landed on the successor's conflicted file.
     pub(crate) fn open_pending_conflict_editor(&mut self, cx: &mut Context<Self>) {
-        let Some((commit_id, path)) = self.converge.pending_editor.as_ref() else {
+        let Some((commit_id, path)) = self.conflict_editor.pending_open.as_ref() else {
             return;
         };
         let vm = self.vm.read(cx);
@@ -268,14 +252,14 @@ impl RepoWindow {
                 .selected_change()
                 .is_some_and(|change| &change.commit_id.id == commit_id)
             && vm.selected_hunk().is_some_and(|hunk| &hunk.path == path);
-        self.converge.pending_editor = None;
+        self.conflict_editor.pending_open = None;
         if ready {
             self.enter_selected_conflict_editor(cx);
         }
     }
 
     pub(super) fn toggle_converge_section(&mut self, id: &'static str, cx: &mut Context<Self>) {
-        if let Some(sheet) = self.converge.sheet.as_mut() {
+        if let Some(RepoModal::Converge(sheet)) = &mut self.modal {
             if !sheet.expanded.remove(id) {
                 sheet.expanded.insert(id);
             }

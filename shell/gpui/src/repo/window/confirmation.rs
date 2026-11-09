@@ -3,7 +3,7 @@ use gpui::{
     StatefulInteractiveElement,
 };
 
-use super::RepoWindow;
+use super::{RepoModal, RepoWindow};
 use crate::app::config::{self, AppConfig};
 use crate::app::theme::Theme;
 use crate::repo::view_model::RepoViewModel;
@@ -41,8 +41,7 @@ impl RepoWindow {
     ) {
         self.close_bookmark_picker(cx);
         self.close_repo_switcher(cx);
-        self.confirmation = Some(confirmation);
-        cx.notify();
+        self.present_modal(RepoModal::Confirmation(confirmation), cx);
     }
 
     pub(super) fn request_abandon(&mut self, rev: String, cx: &mut Context<Self>) {
@@ -67,13 +66,14 @@ impl RepoWindow {
     }
 
     pub(crate) fn cancel_confirmation(&mut self, cx: &mut Context<Self>) {
-        if self.confirmation.take().is_some() {
-            cx.notify();
-        }
+        self.close_modal(|modal| matches!(modal, RepoModal::Confirmation(_)), cx);
     }
 
     pub(crate) fn confirm(&mut self, cx: &mut Context<Self>) {
-        let Some(confirmation) = self.confirmation.take() else {
+        let Some(RepoModal::Confirmation(confirmation)) = self
+            .modal
+            .take_if(|modal| matches!(modal, RepoModal::Confirmation(_)))
+        else {
             return;
         };
         cx.notify();

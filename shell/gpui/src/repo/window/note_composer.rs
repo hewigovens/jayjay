@@ -5,7 +5,7 @@ use jayjay_core::diff::{DiffSpanStyle, build_diff_display_lines};
 use jayjay_review::{NoteAnchor, NoteEntry, NoteSide};
 
 use super::note_menu::{AddNoteRequest, display_line_index_for};
-use super::{RepoWindow, TextModalAction, TextModalContext, TextModalState};
+use super::{RepoModal, RepoWindow, TextModalAction, TextModalContext, TextModalState};
 use crate::ui::overlay::TextPrompt;
 use crate::ui::text_area::TextArea;
 
@@ -158,25 +158,27 @@ impl RepoWindow {
         let context_input = cx.new(|cx| {
             TextArea::selectable_code_block(context_text, context.len(), emphasized_line, cx)
         });
-        self.text_modal = Some(TextModalState {
-            prompt: TextPrompt::multiline(
-                title,
-                subtitle,
-                body,
-                jayjay_i18n::repo::note(),
-                primary_label,
-                130.,
-                cx,
-            ),
-            action: TextModalAction::ReviewNote(target),
-            context: Some(TextModalContext {
-                lines: context,
-                input: context_input,
+        self.present_modal(
+            RepoModal::Text(TextModalState {
+                prompt: TextPrompt::multiline(
+                    title,
+                    subtitle,
+                    body,
+                    jayjay_i18n::repo::note(),
+                    primary_label,
+                    130.,
+                    cx,
+                ),
+                action: TextModalAction::ReviewNote(target),
+                context: Some(TextModalContext {
+                    lines: context,
+                    input: context_input,
+                }),
+                checkbox: None,
+                file_list: None,
             }),
-            checkbox: None,
-            file_list: None,
-        });
-        cx.notify();
+            cx,
+        );
     }
 
     fn find_review_note(&self, note_id: &str, cx: &App) -> Option<NoteEntry> {

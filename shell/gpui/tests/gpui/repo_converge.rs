@@ -1,6 +1,7 @@
 use crate::harness::*;
 use gpui::{Modifiers, TestAppContext, VisualTestContext};
 use jayjay_core::Repo;
+use jayjay_gpui::app::actions::NewBookmark;
 use jj_test::{LinearFixture, current_op_id, run_jj_in};
 
 const MENU_LABEL: &str = "Resolve Divergent Change…";
@@ -146,4 +147,24 @@ fn converging_conflicting_contents_opens_the_merge_editor(cx: &mut TestAppContex
         assert_eq!(vm.selected_hunk().unwrap().path, "settings.txt");
         assert!(view.conflict_editor_active());
     });
+}
+
+#[gpui::test]
+fn a_shortcut_cannot_replace_an_open_converge_sheet(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let base_op = current_op_id(&fixture.path);
+    run_jj_in(&fixture.path, &["describe", "-m", "left"]);
+    run_jj_in(
+        &fixture.path,
+        &["--at-op", &base_op, "describe", "-m", "right"],
+    );
+    run_jj_in(&fixture.path, &["status"]);
+    let (view, cx) = open_focused(&fixture, cx);
+    click(cx, "divergent-resolve");
+
+    cx.dispatch_action(NewBookmark);
+    settle_visual(cx);
+
+    assert!(cx.debug_bounds("converge-sheet").is_some());
+    view.read_with(cx, |view, _| assert!(!view.has_text_modal()));
 }

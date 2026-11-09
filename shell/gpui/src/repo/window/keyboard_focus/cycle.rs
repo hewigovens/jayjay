@@ -101,7 +101,7 @@ impl RepoWindow {
     fn keyboard_focus_suspended(&self, cx: &App) -> bool {
         let vm = self.vm.read(cx);
         self.has_refresh_sensitive_interaction()
-            || self.rating_prompt
+            || self.rating_prompt_open()
             || self.find.query.is_some()
             || vm.repo.is_none()
             || vm.error.is_some()

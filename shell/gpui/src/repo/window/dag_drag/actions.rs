@@ -4,7 +4,7 @@ use jayjay_core::{ChangeInfo, RebaseMode};
 use super::payload::DagDrag;
 use super::state::DagRebaseRequest;
 use crate::app::config;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{RepoModal, RepoWindow};
 
 impl RepoWindow {
     pub(crate) fn drop_dag_drag_on_change(
@@ -46,8 +46,7 @@ impl RepoWindow {
                         .unwrap_or_default(),
                 };
                 if config::current(cx).features.confirm_drag_rebase {
-                    self.pending_rebase = Some(request);
-                    cx.notify();
+                    self.present_modal(RepoModal::Rebase(request), cx);
                 } else {
                     self.run_drag_rebase(request, cx);
                 }
@@ -56,7 +55,10 @@ impl RepoWindow {
     }
 
     pub(crate) fn confirm_drag_rebase(&mut self, cx: &mut Context<Self>) {
-        let Some(request) = self.pending_rebase.take() else {
+        let Some(RepoModal::Rebase(request)) = self
+            .modal
+            .take_if(|modal| matches!(modal, RepoModal::Rebase(_)))
+        else {
             return;
         };
         let all_shown = {
@@ -87,9 +89,7 @@ impl RepoWindow {
     }
 
     pub(crate) fn cancel_drag_rebase(&mut self, cx: &mut Context<Self>) {
-        if self.pending_rebase.take().is_some() {
-            cx.notify();
-        }
+        self.close_modal(|modal| matches!(modal, RepoModal::Rebase(_)), cx);
     }
 
     fn run_drag_rebase(&mut self, request: DagRebaseRequest, cx: &mut Context<Self>) {

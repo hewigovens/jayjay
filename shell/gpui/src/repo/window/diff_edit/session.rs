@@ -47,10 +47,10 @@ impl RepoWindow {
 
     pub fn exit_diff_edit(&mut self, cx: &mut Context<Self>) {
         if self.diff_edit.active {
-            if self.text_modal.as_ref().is_some_and(|modal| {
+            if self.text_modal().is_some_and(|modal| {
                 matches!(&modal.action, TextModalAction::DiffEditDescription { .. })
             }) {
-                self.text_modal = None;
+                self.modal = None;
             }
             self.diff_edit = DiffEditState::default();
             cx.notify();

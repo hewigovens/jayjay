@@ -52,7 +52,7 @@ impl RepoWindow {
         };
         if !opener
             || self.has_refresh_sensitive_interaction()
-            || self.rating_prompt
+            || self.rating_prompt_open()
             || self.find.query.is_some()
             || self.focused_control.is_some()
             || self.is_text_input_focused(window, cx)

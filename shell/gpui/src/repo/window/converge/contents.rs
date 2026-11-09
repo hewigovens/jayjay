@@ -5,7 +5,7 @@ use jayjay_core::diff::{FileDiff, compute_file_diff};
 use jayjay_core::{ConvergePlan, DiffHunk, DiffProjectionMode, projection};
 
 use super::sheet::ConvergeSheet;
-use crate::repo::window::RepoWindow;
+use crate::repo::window::{RepoModal, RepoWindow};
 
 pub(super) type Loaded<T> = Option<Result<Arc<T>, SharedString>>;
 
@@ -38,11 +38,18 @@ impl ConvergeSheet {
 }
 
 impl RepoWindow {
+    fn converge_contents(&mut self) -> Option<&mut ConvergeContents> {
+        match &mut self.modal {
+            Some(RepoModal::Converge(sheet)) => Some(&mut sheet.contents),
+            _ => None,
+        }
+    }
+
     pub(super) fn load_converge_contents(&mut self, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             return;
         };
-        let Some(sheet) = self.converge.sheet.as_mut() else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
         let Some((from, to)) = sheet.endpoints() else {
@@ -56,12 +63,7 @@ impl RepoWindow {
                 .background_spawn(async move { repo.interdiff_summary(&from, &to) })
                 .await;
             let _ = this.update(cx, |view, cx| {
-                let Some(contents) = view
-                    .converge
-                    .sheet
-                    .as_mut()
-                    .map(|sheet| &mut sheet.contents)
-                else {
+                let Some(contents) = view.converge_contents() else {
                     return;
                 };
                 let files = result.map(|detail| Arc::new(detail.diff));
@@ -81,19 +83,14 @@ impl RepoWindow {
     }
 
     pub(super) fn compare_converge_with(&mut self, commit_id: String, cx: &mut Context<Self>) {
-        if let Some(sheet) = self.converge.sheet.as_mut() {
+        if let Some(RepoModal::Converge(sheet)) = &mut self.modal {
             sheet.contents.target = Some(commit_id);
             self.load_converge_contents(cx);
         }
     }
 
     pub(super) fn toggle_converge_file(&mut self, path: String, cx: &mut Context<Self>) {
-        let Some(contents) = self
-            .converge
-            .sheet
-            .as_mut()
-            .map(|sheet| &mut sheet.contents)
-        else {
+        let Some(contents) = self.converge_contents() else {
             return;
         };
         if contents.selected_path.as_ref() == Some(&path) {
@@ -109,7 +106,7 @@ impl RepoWindow {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             return;
         };
-        let Some(sheet) = self.converge.sheet.as_mut() else {
+        let Some(RepoModal::Converge(sheet)) = &mut self.modal else {
             return;
         };
         let Some((from, to)) = sheet.endpoints() else {
@@ -144,12 +141,7 @@ impl RepoWindow {
                 })
                 .await;
             let _ = this.update(cx, |view, cx| {
-                if let Some(contents) = view
-                    .converge
-                    .sheet
-                    .as_mut()
-                    .map(|sheet| &mut sheet.contents)
-                {
+                if let Some(contents) = view.converge_contents() {
                     contents.diff = Some(result.map(Arc::new).map_err(crate::app::error_text));
                     cx.notify();
                 }

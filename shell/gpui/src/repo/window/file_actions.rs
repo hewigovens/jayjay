@@ -4,7 +4,7 @@ use std::sync::Arc;
 
 use gpui::{App, Context, Pixels, Point, SharedString};
 
-use super::{RepoWindow, TextModalAction, TextModalCheckbox, TextModalState};
+use super::{RepoModal, RepoWindow, TextModalAction, TextModalCheckbox, TextModalState};
 use crate::ui::context_menu::ContextMenuItem;
 use crate::ui::overlay::TextPrompt;
 
@@ -46,24 +46,26 @@ impl RepoWindow {
         let count = request.paths.len();
         let mut sorted_paths = request.paths.clone();
         sorted_paths.sort();
-        self.text_modal = Some(TextModalState {
-            prompt: TextPrompt::single_line(
-                jayjay_i18n::repo::split_files_title(count),
-                SharedString::default(),
-                "",
-                jayjay_i18n::repo::description_for_split_change(),
-                jayjay_i18n::repo::split(),
-                cx,
-            ),
-            action: TextModalAction::SplitFiles(request),
-            context: None,
-            checkbox: Some(TextModalCheckbox {
-                label: jayjay_i18n::repo::parallel_split().into(),
-                checked: false,
+        self.present_modal(
+            RepoModal::Text(TextModalState {
+                prompt: TextPrompt::single_line(
+                    jayjay_i18n::repo::split_files_title(count),
+                    SharedString::default(),
+                    "",
+                    jayjay_i18n::repo::description_for_split_change(),
+                    jayjay_i18n::repo::split(),
+                    cx,
+                ),
+                action: TextModalAction::SplitFiles(request),
+                context: None,
+                checkbox: Some(TextModalCheckbox {
+                    label: jayjay_i18n::repo::parallel_split().into(),
+                    checked: false,
+                }),
+                file_list: Some(sorted_paths.into_iter().map(SharedString::from).collect()),
             }),
-            file_list: Some(sorted_paths.into_iter().map(SharedString::from).collect()),
-        });
-        cx.notify();
+            cx,
+        );
     }
 
     /// Header's quick-split button (SwiftUI: the file-column toolbar's branch icon) targets the files currently marked reviewed, not the row multi-selection.

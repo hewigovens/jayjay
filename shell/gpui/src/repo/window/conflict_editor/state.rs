@@ -23,4 +23,6 @@ pub(crate) struct ConflictEditorState {
     pub(crate) selected_source: Option<(MergeHunkSource, String)>,
     pub(crate) saving: bool,
     pub(crate) sync: MergeSync,
+    /// The commit and path to open once the selection lands there, as after converging a divergent change.
+    pub(crate) pending_open: Option<(String, String)>,
 }

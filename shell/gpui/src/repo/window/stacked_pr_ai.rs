@@ -1,11 +1,11 @@
 use gpui::{AppContext, Context};
 
-use super::RepoWindow;
 use super::stacked_pr::{StackedPrPhase, next_stacked_pr_generation};
+use super::{RepoModal, RepoWindow};
 
 impl RepoWindow {
     pub fn generate_stacked_pr_names(&mut self, cx: &mut Context<Self>) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         if state.ai_in_flight || !matches!(state.phase, StackedPrPhase::Preview(_)) {
@@ -73,7 +73,7 @@ impl RepoWindow {
         result: Result<Vec<(usize, String)>, String>,
         cx: &mut Context<Self>,
     ) {
-        let Some(state) = self.stacked_pr.as_mut() else {
+        let Some(RepoModal::StackedPr(state)) = &mut self.modal else {
             return;
         };
         if generation != state.ai_generation {
