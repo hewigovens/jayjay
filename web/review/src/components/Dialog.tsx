@@ -17,19 +17,23 @@ export function Dialog({
   className,
   label,
   labelledBy,
+  open = true,
   onClose,
   children,
 }: {
   className?: string;
   label?: string;
   labelledBy?: string;
+  open?: boolean;
   onClose: () => void;
   children: ReactNode;
 }) {
   const dialog = useRef<HTMLDialogElement>(null);
   useEffect(() => {
-    dialog.current?.showModal();
-  }, []);
+    const element = dialog.current;
+    if (open && !element?.open) element?.showModal();
+    else if (!open && element?.open) element.close();
+  }, [open]);
   return (
     <dialog
       ref={dialog}

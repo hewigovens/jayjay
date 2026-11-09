@@ -1,6 +1,5 @@
 /** @jsxRuntime automatic */
-import { useMemo, useRef, useState } from "react";
-import { useFileShortcuts } from "../../hooks/useFileShortcuts";
+import { useMemo, useState } from "react";
 import type { Labels } from "../../model/diff";
 import {
   ChevronIcon,
@@ -14,7 +13,6 @@ import {
 } from "../icons";
 import { MiddlePath } from "./MiddlePath";
 import { ReviewToggle } from "./ReviewToggle";
-import { ShortcutsDialog } from "./ShortcutsDialog";
 import { ToolButton } from "../ToolButton";
 import { toggled } from "../toggled";
 import type { FileSummary, Overview } from "../../model/review";
@@ -94,6 +92,20 @@ function FileRow({
   );
 }
 
+interface FileFilter {
+  searching: boolean;
+  text: string;
+  hideReviewed: boolean;
+  onlyNotes: boolean;
+}
+
+export const noFileFilter: FileFilter = {
+  searching: false,
+  text: "",
+  hideReviewed: false,
+  onlyNotes: false,
+};
+
 export function FileColumn({
   overview,
   selected,
@@ -101,6 +113,8 @@ export function FileColumn({
   labels,
   select,
   toggle,
+  filter,
+  setFilter,
   onShowShortcuts,
   notes = true,
 }: {
@@ -110,6 +124,8 @@ export function FileColumn({
   labels: Labels;
   select: (index: number) => void;
   toggle: (index: number) => void;
+  filter: FileFilter;
+  setFilter: (filter: FileFilter) => void;
   onShowShortcuts?: () => void;
   notes?: boolean;
 }) {
@@ -129,49 +145,35 @@ export function FileColumn({
       return;
     }
   }
-  const [searching, setSearching] = useState(false);
-  const [filter, setFilter] = useState("");
-  const [hideReviewed, setHideReviewed] = useState(false);
-  const [onlyNotes, setOnlyNotes] = useState(false);
+  const { searching, text, hideReviewed, onlyNotes } = filter;
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
-  const [shortcuts, setShortcuts] = useState(false);
-  const list = useRef<HTMLDivElement>(null);
   const visible = useMemo(
     () =>
       new Set(
         overview.files.flatMap((file, index) =>
-          file.path.toLocaleLowerCase().includes(filter.toLocaleLowerCase()) &&
+          file.path.toLocaleLowerCase().includes(text.toLocaleLowerCase()) &&
           (!hideReviewed || file.review !== "reviewed") &&
           (!onlyNotes || file.noteCount > 0)
             ? [index]
             : [],
         ),
       ),
-    [overview.files, filter, hideReviewed, onlyNotes],
+    [overview.files, text, hideReviewed, onlyNotes],
   );
   const activeNotes = overview.notes.filter((note) => !note.note.resolved).length;
   const reviewed = overview.files.some((file) => file.review === "reviewed");
   const { counts } = overview;
-  const countLabel = filter
+  const countLabel = text
     ? counts.filtered[visible.size]
     : reviewed
       ? counts.reviewed
       : counts.files;
 
-  useFileShortcuts(
-    list,
-    selected,
-    select,
-    () => setSearching(true),
-    onShowShortcuts ?? (() => setShortcuts(true)),
-  );
-
   function folder(path: string) {
     setCollapsed((previous) => toggled(previous, path));
   }
   function closeSearch() {
-    setSearching(false);
-    setFilter("");
+    setFilter({ ...filter, searching: false, text: "" });
   }
   function mark(index: number, row: HTMLElement) {
     // Hiding reviewed files unmounts this row, which would drop focus to the page.
@@ -192,7 +194,7 @@ export function FileColumn({
             className="jj-notes-filter"
             aria-pressed={onlyNotes}
             label={labels.onlyNotes}
-            onClick={() => setOnlyNotes(!onlyNotes)}
+            onClick={() => setFilter({ ...filter, onlyNotes: !onlyNotes })}
           >
             {activeNotes}
           </ToolButton>
@@ -202,7 +204,7 @@ export function FileColumn({
             aria-pressed={hideReviewed}
             label={labels.hideReviewedFiles}
             title={hideReviewed ? labels.showingUnreviewed : labels.hideReviewedFiles}
-            onClick={() => setHideReviewed(!hideReviewed)}
+            onClick={() => setFilter({ ...filter, hideReviewed: !hideReviewed })}
           >
             <HideReviewedIcon />
           </ToolButton>
@@ -217,19 +219,15 @@ export function FileColumn({
         <ToolButton
           aria-pressed={searching}
           label={labels.filterFiles}
-          onClick={() => (searching ? closeSearch() : setSearching(true))}
+          onClick={() => (searching ? closeSearch() : setFilter({ ...filter, searching: true }))}
         >
           <SearchIcon />
         </ToolButton>
         <span className="jj-file-count" title={counts.reviewed}>
           {countLabel}
         </span>
-        {!onShowShortcuts && (
-          <ToolButton
-            label={labels.shortcuts}
-            aria-keyshortcuts="?"
-            onClick={() => setShortcuts(true)}
-          >
+        {onShowShortcuts && (
+          <ToolButton label={labels.shortcuts} aria-keyshortcuts="?" onClick={onShowShortcuts}>
             <KeyboardIcon />
           </ToolButton>
         )}
@@ -241,10 +239,15 @@ export function FileColumn({
             autoFocus
             aria-label={labels.filterFiles}
             placeholder={labels.filterFiles}
-            value={filter}
-            onChange={(event) => setFilter(event.target.value)}
+            value={text}
+            onChange={(event) => setFilter({ ...filter, text: event.target.value })}
             onKeyDown={(event) => {
-              if (event.key === "Escape") closeSearch();
+              if (event.key !== "Escape") return;
+              // A first Escape only clears the text, so it doesn't also close a dialog around the list.
+              if (text) {
+                event.preventDefault();
+                setFilter({ ...filter, text: "" });
+              } else closeSearch();
             }}
           />
           <ToolButton label={labels.cancel} onClick={closeSearch}>
@@ -252,11 +255,10 @@ export function FileColumn({
           </ToolButton>
         </div>
       )}
-      {shortcuts && <ShortcutsDialog labels={labels} onClose={() => setShortcuts(false)} />}
-      <div className="jj-file-rows" tabIndex={-1} ref={list}>
+      <div className="jj-file-rows" tabIndex={-1}>
         {visible.size === 0 && (
           <p className="jj-notice">
-            {filter
+            {text
               ? labels.noMatchingFiles
               : overview.files.length
                 ? labels.allFilesHidden

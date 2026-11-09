@@ -27,7 +27,7 @@ export function LazySection({
     if (near && !loaded) load(index);
   }, [near, loaded, index, version]);
   return (
-    <section className="jj-file-section" ref={element}>
+    <section className="jj-file-section" data-file={index} tabIndex={-1} ref={element}>
       {children}
     </section>
   );

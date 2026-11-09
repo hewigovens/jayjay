@@ -11,6 +11,7 @@ import { diffThemeAttributes, type DiffThemeSelection } from "../themes";
 import type { DiffAnchor, Labels } from "../model/diff";
 import { isImagePath, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
 import { useCompact } from "../hooks/useCompact";
+import { useFileShortcuts } from "../hooks/useFileShortcuts";
 import { useFilesWidth } from "../hooks/useFilesWidth";
 import { useFolding } from "../hooks/useFolding";
 import { useLoadedSections } from "../hooks/useLoadedSections";
@@ -18,12 +19,14 @@ import { useNoteJump } from "../hooks/useNoteJump";
 import type { ReviewController } from "../hooks/useReview";
 import { DiffPane, lineLabel } from "./diff/DiffPane";
 import { ImageDiff } from "./diff/ImageDiff";
+import { Dialog } from "./Dialog";
 import { ColumnResizer } from "./files/ColumnResizer";
-import { FileColumn } from "./files/FileColumn";
+import { FileColumn, noFileFilter } from "./files/FileColumn";
+import { ShortcutsDialog } from "./files/ShortcutsDialog";
 import { ChangeHeader } from "./header/ChangeHeader";
 import { DiffOptionControls } from "./header/DiffOptionControls";
 import { FileHeader } from "./header/FileHeader";
-import { NoteIcon } from "./icons";
+import { ListIcon, NoteIcon } from "./icons";
 import { LazySection } from "./LazySection";
 import { NoteBubble } from "./notes/NoteBubble";
 import { NoteComposer, type NoteTarget } from "./notes/NoteComposer";
@@ -89,6 +92,73 @@ export function ReviewWorkspace({
   const file = result?.overview.files[result.file];
   const path = file?.path;
   const { cacheKey, loaded, failed, load } = useLoadedSections(result, revision, renderFile);
+  const [filter, setFilter] = useState(noFileFilter);
+  const [shortcuts, setShortcuts] = useState(false);
+  const [sheet, setSheet] = useState(false);
+  const [sheetFile, setSheetFile] = useState(0);
+  const sheetPick = useRef<number | null>(null);
+  const showShortcuts = onShowShortcuts ?? (() => setShortcuts(true));
+
+  function sections() {
+    return [...(detail.current?.querySelectorAll<HTMLElement>(".jj-file-section") ?? [])];
+  }
+  // Below the host's pinned bar and above the bottom of the window.
+  function onScreen(row: HTMLElement) {
+    const { top, bottom } = row.getBoundingClientRect();
+    return bottom > parseFloat(getComputedStyle(row).scrollMarginTop) + 1 && top < innerHeight;
+  }
+  const topSection = (rows: HTMLElement[]) => rows.findIndex(onScreen);
+  function jump(file: number) {
+    const section = sections().find((row) => Number(row.dataset.file) === file);
+    section?.focus({ preventScroll: true });
+    section?.scrollIntoView({ block: "start" });
+  }
+  function openSheet() {
+    const rows = sections();
+    setSheetFile(Number(rows[Math.max(topSection(rows), 0)]?.dataset.file ?? 0));
+    setSheet(true);
+  }
+
+  const [sheetLayout, setSheetLayout] = useState(compact);
+  if (sheetLayout !== compact) {
+    setSheetLayout(compact);
+    setSheet(false);
+  }
+
+  useFileShortcuts({
+    rows: () =>
+      compact
+        ? sections()
+        : [...(columns.current?.querySelectorAll<HTMLElement>(".jj-file-select") ?? [])],
+    // Focus runs ahead of the selection while a pick renders, but a phone scroll can leave it off screen.
+    current: (rows, focused) =>
+      compact
+        ? focused >= 0 && onScreen(rows[focused])
+          ? focused
+          : topSection(rows)
+        : focused >= 0
+          ? focused
+          : rows.findIndex((row) => Number(row.dataset.file) === selected),
+    reviewed: (index) => result?.overview.files[index]?.review === "reviewed",
+    go: (row) => {
+      if (compact) return jump(Number(row.dataset.file));
+      row.focus();
+      select(Number(row.dataset.file));
+    },
+    list: () => (compact ? null : columns.current?.querySelector(".jj-file-rows")),
+    search: () => {
+      setFilter({ ...filter, searching: true });
+      if (!compact) return;
+      openSheet();
+      // The sheet opens in this event's commit; showModal focuses its first button, not the filter.
+      requestAnimationFrame(() =>
+        columns.current?.parentElement
+          ?.querySelector<HTMLElement>(".jj-file-sheet .jj-file-filter input")
+          ?.focus(),
+      );
+    },
+    showShortcuts,
+  });
 
   useEffect(() => {
     setTarget(null);
@@ -348,7 +418,7 @@ export function ReviewWorkspace({
         >
           {!compact && (
             <FileColumn
-              onShowShortcuts={onShowShortcuts}
+              onShowShortcuts={onShowShortcuts ? undefined : showShortcuts}
               overview={result.overview}
               selected={selected}
               disabled={disabled}
@@ -356,6 +426,8 @@ export function ReviewWorkspace({
               select={select}
               notes={notes}
               toggle={toggleFile}
+              filter={filter}
+              setFilter={setFilter}
             />
           )}
           {!compact && (
@@ -382,6 +454,18 @@ export function ReviewWorkspace({
             />
             {compact && (
               <div className="jj-pane-heading jj-diff-options">
+                <button
+                  className="jj-header-action jj-files-button"
+                  aria-haspopup="dialog"
+                  aria-keyshortcuts="/"
+                  title={labels.files}
+                  onClick={openSheet}
+                >
+                  <ListIcon />
+                  {result.overview.files.some((entry) => entry.review === "reviewed")
+                    ? result.overview.counts.reviewed
+                    : result.overview.counts.files}
+                </button>
                 <div className="jj-header-actions">
                   <DiffOptionControls labels={labels} options={options} configure={configure} />
                 </div>
@@ -484,6 +568,37 @@ export function ReviewWorkspace({
           </section>
         </div>
       )}
+      {result && compact && (
+        <Dialog
+          className="jj-file-sheet"
+          label={labels.files}
+          open={sheet}
+          onClose={() => {
+            setSheet(false);
+            // After the dialog hands focus back to its button, which would scroll the list to it.
+            if (sheetPick.current !== null) jump(sheetPick.current);
+            sheetPick.current = null;
+          }}
+        >
+          {sheet && (
+            <FileColumn
+              overview={result.overview}
+              selected={sheetFile}
+              disabled={disabled}
+              labels={labels}
+              select={(index) => {
+                sheetPick.current = index;
+                setSheet(false);
+              }}
+              notes={notes}
+              toggle={toggleFile}
+              filter={filter}
+              setFilter={setFilter}
+            />
+          )}
+        </Dialog>
+      )}
+      {shortcuts && <ShortcutsDialog labels={labels} onClose={() => setShortcuts(false)} />}
       {footer}
     </div>
   );

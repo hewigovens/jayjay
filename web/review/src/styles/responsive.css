@@ -29,8 +29,8 @@
     height: 640px;
   }
 }
-/* Matches useCompact: phones in either orientation, where two columns leave the diff no room. */
-@media (max-width: 680px), (max-height: 500px) {
+/* Matches useCompact. */
+@media (max-width: 680px) {
   :where(.jayjay-review) .jj-split .jj-diff-row {
     min-width: 800px;
   }

@@ -36,7 +36,7 @@ test.describe("phone portrait", () => {
   test("lists every file's diff in one scroll with its own mark", async ({ page }) => {
     await page.goto("/");
     await ready(page);
-    await expect(page.locator(".jj-file-column")).toHaveCount(0);
+    await expect(page.locator(".jj-file-column")).toBeHidden();
     await expect(page.locator(".jj-file-section")).toHaveCount(5);
     const toggle = page.getByRole("button", { name: "Expand description", exact: true });
     await toggle.click();
@@ -84,6 +84,96 @@ test.describe("phone portrait", () => {
     });
     await ready(page);
     await expect(group).not.toBeChecked();
+  });
+
+  test("the file sheet filters the list and jumps to the picked file", async ({ page }) => {
+    await page.goto("/");
+    await ready(page);
+    await page.locator(".jj-files-button").click();
+    const sheet = page.getByRole("dialog", { name: "Files" });
+    await expect(sheet).toBeVisible();
+    await sheet.getByRole("button", { name: "Filter files", exact: true }).click();
+    await sheet.getByRole("searchbox").fill("cargo");
+    await expect(sheet.locator(".jj-file-select")).toHaveCount(1);
+    await sheet.getByRole("button", { name: "Cargo.toml", exact: true }).click();
+    await expect(sheet).toBeHidden();
+    await expect(page.locator('.jj-diff-scroll[data-path="Cargo.toml"]')).toBeInViewport();
+    await page.locator(".jj-files-button").click();
+    await expect(sheet.getByRole("searchbox")).toHaveValue("cargo");
+  });
+
+  test("J and K move between files and / opens the file filter", async ({ page }) => {
+    await page.goto("/");
+    await ready(page);
+    const sections = page.locator(".jj-file-section");
+    await page.keyboard.press("j");
+    await expect(sections.nth(1)).toBeFocused();
+    await page.keyboard.press("j");
+    await expect(sections.nth(2)).toBeFocused();
+    await expect(sections.nth(2).locator(".jj-file-heading")).toBeInViewport();
+    await page.keyboard.press("k");
+    await expect(sections.nth(1)).toBeFocused();
+    await page.keyboard.press("/");
+    await expect(page.getByRole("dialog", { name: "Files" }).getByRole("searchbox")).toBeFocused();
+  });
+
+  test("J starts from the file on screen after a scroll", async ({ page }) => {
+    await page.goto("/");
+    await ready(page);
+    const file = (index: number) => ({
+      path: `f${index}.txt`,
+      reviewIdentity: `${index}`,
+      before: "",
+      after: Array.from({ length: 60 }, (_, line) => `line ${line}\n`).join(""),
+    });
+    await page.getByLabel("Import change", { exact: true }).setInputFiles({
+      name: "change.json",
+      mimeType: "application/json",
+      buffer: Buffer.from(
+        JSON.stringify({
+          schemaVersion: 1,
+          repositoryId: "test/repository",
+          changeId: "stable-change",
+          title: "Many files",
+          files: Array.from({ length: 6 }, (_, index) => file(index)),
+        }),
+      ),
+    });
+    await ready(page);
+    const sections = page.locator(".jj-file-section");
+    await page.keyboard.press("j");
+    await expect(sections.nth(1)).toBeFocused();
+    await sections.nth(3).evaluate((section) => section.scrollIntoView({ block: "start" }));
+    await page.keyboard.press("j");
+    await expect(sections.nth(4)).toBeFocused();
+  });
+
+  test("Escape clears the sheet's filter before closing the sheet", async ({ page }) => {
+    await page.goto("/");
+    await ready(page);
+    await page.locator(".jj-files-button").click();
+    const sheet = page.getByRole("dialog", { name: "Files" });
+    await sheet.getByRole("button", { name: "Filter files", exact: true }).click();
+    const search = sheet.getByRole("searchbox");
+    await search.fill("cargo");
+    await search.press("Escape");
+    await expect(sheet).toBeVisible();
+    await expect(search).toHaveValue("");
+    await expect(sheet.locator(".jj-file-select")).toHaveCount(5);
+    await search.press("Escape");
+    await expect(sheet).toBeHidden();
+  });
+
+  test("the sheet stays closed after the window widens and narrows again", async ({ page }) => {
+    await page.goto("/");
+    await ready(page);
+    await page.locator(".jj-files-button").click();
+    await expect(page.getByRole("dialog", { name: "Files" })).toBeVisible();
+    await page.setViewportSize({ width: 1000, height: 844 });
+    await expect(page.locator(".jj-file-rows .jj-file-select").first()).toBeVisible();
+    await page.setViewportSize({ width: 390, height: 844 });
+    await expect(page.locator(".jj-files-button")).toBeVisible();
+    await expect(page.getByRole("dialog", { name: "Files" })).toBeHidden();
   });
 
   async function longBundle(page: Page) {

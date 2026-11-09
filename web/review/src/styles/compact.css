@@ -32,3 +32,36 @@
 :where(.jayjay-review).jj-compact .jj-file-section .jj-header-actions {
   flex: none;
 }
+:where(.jayjay-review).jj-compact .jj-file-section:focus {
+  outline: none;
+}
+:where(.jayjay-review).jj-compact .jj-files-button {
+  gap: 6px;
+  min-width: 0;
+  color: var(--jj-ink);
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-dialog.jj-file-sheet {
+  inset: auto 0 0;
+  width: 100%;
+  max-width: none;
+  height: min(75dvh, 40rem);
+  max-height: none;
+  margin: 0;
+  padding: 0 0 env(safe-area-inset-bottom);
+  overflow: hidden;
+  border-width: 1px 0 0;
+  border-radius: 12px 12px 0 0;
+}
+:where(.jayjay-review) .jj-file-sheet[open] {
+  display: flex;
+  flex-direction: column;
+}
+:where(.jayjay-review) .jj-file-sheet .jj-file-column {
+  flex: 1;
+  border-right: 0;
+  background: var(--jj-surface);
+}
+:where(.jayjay-review) .jj-file-sheet .jj-file-select {
+  min-height: 40px;
+}

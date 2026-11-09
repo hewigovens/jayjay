@@ -125,3 +125,17 @@ test("marking a file scrolled to its end opens the next one at its top", async (
   await expect(scroll).toHaveAttribute("data-path", "second.txt");
   expect(await scroll.evaluate((node) => node.scrollTop)).toBe(0);
 });
+
+test("a short window keeps the file column and its shortcuts", async ({ page }) => {
+  await page.setViewportSize({ width: 1280, height: 450 });
+  await page.goto("/");
+  await ready(page);
+  const rows = page.locator(".jj-file-rows .jj-file-select");
+  await rows.first().click();
+  await ready(page);
+  await page.keyboard.press("j");
+  await ready(page);
+  await expect(page.locator('.jj-file-select[aria-current="true"]')).toHaveAccessibleName(
+    (await rows.nth(1).getAttribute("aria-label")) ?? "",
+  );
+});
