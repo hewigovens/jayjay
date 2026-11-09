@@ -140,7 +140,7 @@ extension ChangeDetailView {
     }
 
     private var visibleDiffStats: DiffStats? {
-        guard let stats = diffStats, stats.insertions > 0 || stats.deletions > 0 else { return nil }
+        guard let stats = diffStats?.value, stats.insertions > 0 || stats.deletions > 0 else { return nil }
         return stats
     }
 
@@ -179,7 +179,7 @@ extension ChangeDetailView {
 
     var compareBanner: some View {
         HStack(spacing: 8) {
-            if compareDisplay?.isCombinedSelection == true {
+            if comparison?.display?.isCombinedSelection == true {
                 Image(systemName: "square.stack.3d.up.fill")
                     .foregroundStyle(.orange)
                     .accessibilityLabel(Localized.Repo.combinedSelection)
@@ -196,14 +196,14 @@ extension ChangeDetailView {
                 .help(Localized.Repo.reverseCompareDirection)
                 .accessibilityIdentifier(AID.Compare.reverseDirection)
             }
-            Text(compareDisplay?.title ?? Localized.Repo.comparing)
+            Text(comparison?.display?.title ?? Localized.Repo.comparing)
                 .jayjayFont(12, weight: .medium)
                 .accessibilityIdentifier(AID.Compare.banner)
-            compareLabel(compareDisplay?.from ?? String(compareFromId?.prefix(8) ?? ""))
+            compareLabel(comparison?.display?.from ?? String(comparison?.fromId.prefix(8) ?? ""))
             Image(systemName: "arrow.right")
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
-            compareLabel(compareDisplay?.to ?? String(detailRevision.prefix(8)))
+            compareLabel(comparison?.display?.to ?? String(detailRevision.prefix(8)))
             Spacer()
             Text(Localized.Repo.filesChangedCount(count: detail.diff.count))
                 .jayjayFont(11)
@@ -347,7 +347,7 @@ extension ChangeDetailView {
     }
 
     private func isPreparing(_ resolution: ConflictResolution) -> Bool {
-        resolution == .inJayJay && conflictEditorPreparation != nil
+        resolution == .inJayJay && conflictEditor?.isPreparing == true
     }
 
     private func resolve(_ resolution: ConflictResolution, path: String) {

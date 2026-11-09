@@ -4,7 +4,7 @@ extension ChangeDetailView {
     func focusFileList() {
         NSApp.keyWindow?.makeFirstResponder(nil)
         activePane = .fileColumn
-        if !filteredDiff.contains(where: { $0.path == selectedPath }), let first = visibleSelectablePaths.first {
+        if !filteredDiff.contains(where: { $0.path == fileSelection.primary }), let first = visibleSelectablePaths.first {
             selectSingleFile(first)
         }
     }

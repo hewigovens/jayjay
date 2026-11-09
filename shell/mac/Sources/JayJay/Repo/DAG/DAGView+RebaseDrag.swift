@@ -27,21 +27,21 @@ extension DAGView {
 
     @ViewBuilder
     var rebaseDragOverlay: some View {
-        if let rebaseDrag, rebaseDrag.phase == .dragging {
-            DAGRebaseGhost(label: rebaseDrag.sourceLabel)
-                .position(x: rebaseDrag.location.x + 68, y: rebaseDrag.location.y - 18)
+        if let drag = rebaseDrag.state, drag.phase == .dragging {
+            DAGRebaseGhost(label: drag.sourceLabel)
+                .position(x: drag.location.x + 68, y: drag.location.y - 18)
                 .allowsHitTesting(false)
         }
     }
 
     func rebasePreviewText(for change: ChangeInfo) -> String? {
-        guard rebasePreviewTargetId == change.commitId.id,
-              let rebaseDrag
+        guard rebaseDrag.previewTargetId == change.commitId.id,
+              let drag = rebaseDrag.state
         else { return nil }
-        if let refusal = rebaseDrag.targetRefusal {
+        if let refusal = drag.targetRefusal {
             return refusal
         }
-        return Localized.Repo.rebaseOntoQuestion(source: rebaseDrag.sourceLabel, destination: DAGRebaseGesturePolicy.displayLabel(for: change))
+        return Localized.Repo.rebaseOntoQuestion(source: drag.sourceLabel, destination: DAGRebaseGesturePolicy.displayLabel(for: change))
     }
 
     private func handleRebaseGestureChanged(
@@ -50,11 +50,11 @@ extension DAGView {
         value: DragGesture.Value
     ) {
         // A bookmark-chip drag (started on a child view) wins over the row rebase.
-        guard bookmarkDrag == nil else { return }
+        guard bookmarkDrag.state == nil else { return }
         let action = DAGRebaseGesturePolicy.changeAction(
             entryIsImmutable: entry.change.isImmutable,
             sourceCommitId: entry.change.commitId.id,
-            rebaseDrag: rebaseDrag,
+            rebaseDrag: rebaseDrag.state,
             location: value.location
         )
 
@@ -64,7 +64,7 @@ extension DAGView {
             case .beginPress:
                 beginRebasePress(for: entry, layout: layout, location: value.location)
             case .cancelPress:
-                cancelRebaseDrag()
+                rebaseDrag.end()
             case .beginDragging:
                 beginDraggingIfNeeded()
                 updateRebaseDrag(location: value.location)
@@ -78,11 +78,11 @@ extension DAGView {
         layout: DAGLayout,
         value: DragGesture.Value
     ) {
-        guard bookmarkDrag == nil else { return }
+        guard bookmarkDrag.state == nil else { return }
         let action = DAGRebaseGesturePolicy.endAction(
             entryIsImmutable: entry.change.isImmutable,
             sourceCommitId: entry.change.commitId.id,
-            rebaseDrag: rebaseDrag,
+            rebaseDrag: rebaseDrag.state,
             startLocation: value.startLocation,
             location: value.location
         )
@@ -91,10 +91,10 @@ extension DAGView {
             case .ignore:
                 break
             case .select:
-                cancelRebaseDrag()
+                rebaseDrag.end()
                 selectEntry(entry)
             case .cancel:
-                cancelRebaseDrag()
+                rebaseDrag.end()
             case .confirmDrop:
                 updateRebaseDrag(location: value.location)
                 confirmRebaseDrop()
@@ -102,13 +102,13 @@ extension DAGView {
     }
 
     private func beginRebasePress(for entry: GraphEntry, layout: DAGLayout, location: CGPoint) {
-        guard rebaseDrag?.sourceCommitId != entry.change.commitId.id else { return }
+        guard rebaseDrag.state?.sourceCommitId != entry.change.commitId.id else { return }
         let seedLocation = rebaseDragSeedLocation(for: entry, layout: layout) ?? location
 
         activePane = .dag
-        rebaseArmTask?.cancel()
+        rebaseDrag.armTask?.cancel()
         let selection = selectionCommitIds(draggedWith: entry)
-        rebaseDrag = DAGRebaseDragState(
+        rebaseDrag.state = DAGRebaseDragState(
             sourceCommitId: entry.change.commitId.id,
             sourceChangeId: entry.change.changeId.id,
             sourceRev: DAGRebaseGesturePolicy.revision(for: entry.change),
@@ -132,99 +132,86 @@ extension DAGView {
 
     private func scheduleRebaseArm(for entry: GraphEntry) {
         let sourceCommitId = entry.change.commitId.id
-        rebaseArmTask = Task {
+        rebaseDrag.armTask = Task {
             try? await Task.sleep(for: .seconds(DAGRebaseGesturePolicy.armDuration))
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                guard var rebaseDrag,
-                      rebaseDrag.sourceCommitId == sourceCommitId,
-                      rebaseDrag.phase == .pressing
+                guard var drag = rebaseDrag.state,
+                      drag.sourceCommitId == sourceCommitId,
+                      drag.phase == .pressing
                 else { return }
-                rebaseDrag.phase = .armed
-                self.rebaseDrag = rebaseDrag
+                drag.phase = .armed
+                rebaseDrag.state = drag
             }
         }
     }
 
     private func beginDraggingIfNeeded() {
-        guard var rebaseDrag, rebaseDrag.phase != .dragging else { return }
-        rebaseDrag.phase = .dragging
-        if rebaseDrag.selectionCommitIds.isEmpty {
-            rebaseDrag.descendantCommitIds = Set(descendantCommitIds(entries: entries, commitId: rebaseDrag.sourceCommitId))
+        guard var drag = rebaseDrag.state, drag.phase != .dragging else { return }
+        drag.phase = .dragging
+        if drag.selectionCommitIds.isEmpty {
+            drag.descendantCommitIds = Set(descendantCommitIds(entries: entries, commitId: drag.sourceCommitId))
         } else {
-            rebaseDrag.selectionTargets = Set(
+            drag.selectionTargets = Set(
                 entries.lazy.filter { capabilities.canRebase(onto: $0.change) }.map(\.change.commitId.id)
             )
         }
-        self.rebaseDrag = rebaseDrag
+        rebaseDrag.state = drag
     }
 
     private func updateRebaseDrag(location: CGPoint) {
-        guard var rebaseDrag else { return }
+        guard var drag = rebaseDrag.state else { return }
         let hoveredCommitId = rowFrameCache.frames.first(where: { $0.value.contains(location) })?.key
         let normalizedTarget = DAGRebaseGesturePolicy.normalizedTargetCommitId(
-            sourceCommitId: rebaseDrag.sourceCommitId,
+            sourceCommitId: drag.sourceCommitId,
             hoveredCommitId: hoveredCommitId
         )
-        rebaseDrag.location = location
-        if normalizedTarget != rebaseDrag.hoveredCommitId {
-            rebaseDrag.hoveredCommitId = normalizedTarget
-            rebaseDrag.targetRefusal = normalizedTarget.flatMap {
-                DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: rebaseDrag, targetCommitId: $0)
+        drag.location = location
+        if normalizedTarget != drag.hoveredCommitId {
+            drag.hoveredCommitId = normalizedTarget
+            drag.targetRefusal = normalizedTarget.flatMap {
+                DAGRebaseGesturePolicy.targetRefusal(rebaseDrag: drag, targetCommitId: $0)
             }
         }
-        self.rebaseDrag = rebaseDrag
+        rebaseDrag.state = drag
         // A refusal shows at once; only a valid target waits for the preview delay.
-        updateRebasePreviewTarget(normalizedTarget, delayed: rebaseDrag.targetRefusal == nil)
+        updateRebasePreviewTarget(normalizedTarget, delayed: drag.targetRefusal == nil)
     }
 
     private func updateRebasePreviewTarget(_ commitId: String?, delayed: Bool) {
-        if commitId == rebasePreviewTargetId {
+        if commitId == rebaseDrag.previewTargetId {
             return
         }
-
-        rebasePreviewTask?.cancel()
-        rebasePreviewTask = nil
-        rebasePreviewTargetId = nil
-
+        rebaseDrag.clearPreview()
         guard let commitId else { return }
         guard delayed else {
-            rebasePreviewTargetId = commitId
+            rebaseDrag.previewTargetId = commitId
             return
         }
 
-        rebasePreviewTask = Task {
+        rebaseDrag.previewTask = Task {
             try? await Task.sleep(for: .milliseconds(DAGRebaseGesturePolicy.previewDelayMs))
             guard !Task.isCancelled else { return }
             await MainActor.run {
-                guard rebaseDrag?.hoveredCommitId == commitId else { return }
-                rebasePreviewTargetId = commitId
+                guard rebaseDrag.state?.hoveredCommitId == commitId else { return }
+                rebaseDrag.previewTargetId = commitId
             }
         }
     }
 
     func confirmRebaseDrop() {
         guard let request = DAGRebaseGesturePolicy.dropRequest(
-            rebaseDrag: rebaseDrag,
-            previewTargetCommitId: rebasePreviewTargetId,
-            hoveredCommitId: rebaseDrag?.hoveredCommitId,
+            rebaseDrag: rebaseDrag.state,
+            previewTargetCommitId: rebaseDrag.previewTargetId,
+            hoveredCommitId: rebaseDrag.state?.hoveredCommitId,
             entries: entries
         ) else {
-            cancelRebaseDrag()
+            rebaseDrag.end()
             return
         }
 
-        cancelRebaseDrag()
+        rebaseDrag.end()
         onRequest?(.rebase(request))
-    }
-
-    func cancelRebaseDrag() {
-        rebaseArmTask?.cancel()
-        rebaseArmTask = nil
-        rebasePreviewTask?.cancel()
-        rebasePreviewTask = nil
-        rebasePreviewTargetId = nil
-        rebaseDrag = nil
     }
 
     private func selectEntry(_ entry: GraphEntry) {

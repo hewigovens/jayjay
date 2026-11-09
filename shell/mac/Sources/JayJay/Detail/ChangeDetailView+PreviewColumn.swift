@@ -83,8 +83,8 @@ extension ChangeDetailView {
                             rollup: fileRollups[hunk.path] ?? .unreviewed
                         ),
                         onToggleFileReview: { toggleReview([hunk.path]) },
-                        compareFromRev: compareFromId,
-                        lineStats: fileStats[hunk.path]
+                        compareFromRev: comparison?.fromId,
+                        lineStats: fileStats?.value?[hunk.path]
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
                     .id("\(detail.info.commitId)|\(hunk.path)")
@@ -118,25 +118,27 @@ extension ChangeDetailView {
         .frame(maxHeight: .infinity)
         .background(appSettings.readingBackground(colorScheme))
         .overlay {
-            if conflictEditorPreparation != nil {
+            if conflictEditor?.isPreparing == true {
                 LoadingHUD(accessibilityIdentifier: AID.Conflict.editorPreparing)
-            } else if fileEditorPreparation != nil {
+            } else if fileEditor?.isPreparing == true {
                 LoadingHUD(accessibilityIdentifier: AID.FileEditor.preparing)
             }
         }
     }
 
     func prepareFileEditor(path: String, line: UInt32?) {
-        guard fileEditorPreparation == nil, conflictEditorPreparation == nil, let repo else { return }
-        let request = EditorPreparationRequest(revision: detailRevision)
-        fileEditorPreparation = request
+        guard fileEditor == nil, conflictEditor == nil, let repo else { return }
+        let presentation = EditorPresentation<WorkingCopyFileEditorSession>(revision: detailRevision)
+        fileEditor = presentation
         let session = WorkingCopyFileEditorSession(repo: repo, path: path, line: line)
         Task {
             await session.load()
-            guard fileEditorPreparation == request else { return }
-            fileEditorPreparation = nil
-            guard selectedHunk?.path == path else { return }
-            fileEditor = session
+            guard fileEditor?.id == presentation.id else { return }
+            if selectedHunk?.path == path {
+                fileEditor?.session = session
+            } else {
+                fileEditor = nil
+            }
         }
     }
 
@@ -148,29 +150,31 @@ extension ChangeDetailView {
             fileFilter = ""
             showNotedFilesOnly = false
         }
-        selectedPath = path
-        selectedPaths = [path]
+        fileSelection.primary = path
+        fileSelection.paths = [path]
         prepareConflictEditor(path: path)
     }
 
     func prepareConflictEditor(path: String) {
-        guard conflictEditorPreparation == nil,
-              fileEditorPreparation == nil,
+        guard fileEditor == nil,
+              conflictEditor == nil,
               let repo,
               let hunk = selectedHunk,
               hunk.path == path,
               Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode)
         else { return }
-        let request = EditorPreparationRequest(revision: detailRevision)
-        conflictEditorPreparation = request
+        let presentation = EditorPresentation<ConflictEditorSession>(revision: detailRevision)
+        conflictEditor = presentation
         let target = ConflictEditorTarget(repo: repo, rev: detailRevision, path: path)
         let session = ConflictEditorSession(target: target)
         Task {
             await session.load()
-            guard conflictEditorPreparation == request else { return }
-            conflictEditorPreparation = nil
-            guard selectedHunk?.path == path else { return }
-            conflictEditor = session
+            guard conflictEditor?.id == presentation.id else { return }
+            if selectedHunk?.path == path {
+                conflictEditor?.session = session
+            } else {
+                conflictEditor = nil
+            }
         }
     }
 

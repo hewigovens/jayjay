@@ -3,32 +3,16 @@ import SwiftUI
 
 extension ChangeDetailView {
     func resetState(preservingFileContext: Bool = false) {
-        let previousSelectedPath = selectedPath
-        let previousSelectedPaths = selectedPaths
-        let previousAnchorPath = fileSelectionAnchorPath
-        let previousShowFileFilter = showFileFilter
-        let previousFileFilter = fileFilter
-
         trackedGitLfsPaths = []
-        restoreFileSelection(
-            preserving: preservingFileContext,
-            previousSelectedPath: previousSelectedPath,
-            previousSelectedPaths: previousSelectedPaths,
-            previousAnchorPath: previousAnchorPath
-        )
-        if preservingFileContext {
-            showFileFilter = previousShowFileFilter
-            fileFilter = previousFileFilter
-        } else {
+        fileSelection = preservingFileContext
+            ? fileSelection.preserved(in: Set(detail.diff.map(\.path)))
+            : FileSelection()
+        if !preservingFileContext {
             showFileFilter = false
             fileFilter = ""
-            fileEditorPreparation = nil
             fileEditor = nil
         }
-        if !preservingFileContext || conflictEditorPreparation?.revision != detailRevision {
-            conflictEditorPreparation = nil
-        }
-        if !preservingFileContext || conflictEditor?.target.rev != detailRevision {
+        if !preservingFileContext || conflictEditor?.revision != detailRevision {
             conflictEditor = nil
         }
         paneMode = .files
@@ -46,55 +30,25 @@ extension ChangeDetailView {
             rev: detailRevision,
             commitId: detail.info.commitId.id,
             repo: repo,
-            compareFromRev: compareFromId,
+            compareFromRev: comparison?.fromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
         )
         refreshReviewState()
         reconcileFileSelection()
     }
 
-    private func restoreFileSelection(
-        preserving: Bool,
-        previousSelectedPath: String?,
-        previousSelectedPaths: Set<String>,
-        previousAnchorPath: String?
-    ) {
-        let availablePaths = Set(detail.diff.map(\.path))
-        if preserving,
-           let previousSelectedPath,
-           availablePaths.contains(previousSelectedPath)
-        {
-            selectedPath = previousSelectedPath
-
-            let preservedPaths = previousSelectedPaths.intersection(availablePaths)
-            selectedPaths = preservedPaths.isEmpty ? [previousSelectedPath] : preservedPaths
-
-            if let previousAnchorPath, availablePaths.contains(previousAnchorPath) {
-                fileSelectionAnchorPath = previousAnchorPath
-            } else {
-                fileSelectionAnchorPath = previousSelectedPath
-            }
-            return
-        }
-
-        selectedPath = nil
-        selectedPaths = []
-        fileSelectionAnchorPath = nil
-    }
-
     func loadDiffStats() {
         let rev = detailRevision
         // Key on commitId, not the (stable) changeId, so amends to a mutable change reload.
         let commitId = detail.info.commitId.id
-        guard diffStatsCommitId != commitId else { return }
-        diffStatsCommitId = commitId
-        diffStats = nil
+        guard diffStats?.key != commitId else { return }
+        diffStats = KeyedValue(key: commitId)
         guard let repo else { return }
         Task.detached {
             let stats = try? repo.diffStats(rev: rev)
             await MainActor.run {
-                guard diffStatsCommitId == commitId else { return }
-                diffStats = stats
+                guard diffStats?.key == commitId else { return }
+                diffStats?.value = stats
             }
         }
     }
@@ -105,14 +59,13 @@ extension ChangeDetailView {
         let rev = detailRevision
         let ignoreWhitespace = appSettings.ignoreWhitespace
         let key = "\(detail.info.commitId.id)|\(ignoreWhitespace)"
-        guard fileStatsKey != key else { return }
-        fileStatsKey = key
-        fileStats = [:]
+        guard fileStats?.key != key else { return }
+        fileStats = KeyedValue(key: key)
         Task.detached {
             let stats = (try? repo.diffFileStats(rev: rev, ignoreWhitespace: ignoreWhitespace)) ?? []
             await MainActor.run {
-                guard fileStatsKey == key else { return }
-                fileStats = Dictionary(uniqueKeysWithValues: stats.map { ($0.path, $0) })
+                guard fileStats?.key == key else { return }
+                fileStats?.value = Dictionary(uniqueKeysWithValues: stats.map { ($0.path, $0) })
             }
         }
     }
@@ -128,7 +81,7 @@ extension ChangeDetailView {
             await MainActor.run {
                 trackedGitLfsPaths = Set(paths)
                 if appSettings.hideGitLfsDiffs,
-                   let selectedPath,
+                   let selectedPath = fileSelection.primary,
                    trackedGitLfsPaths.contains(selectedPath)
                 {
                     reconcileFileSelection()

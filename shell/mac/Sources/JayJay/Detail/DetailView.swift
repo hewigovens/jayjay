@@ -9,16 +9,14 @@ struct DetailView: View {
     let onEditDescription: (String, String) -> Void
     let reviewStore: ReviewStore
     let diffStore: DiffStore
-    var compareFromId: String?
-    var compareDisplay: CompareDisplay?
+    var comparison: Comparison?
     var onClearCompare: (() -> Void)?
     var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
     var onResolveDivergent: ((String) -> Void)?
     var divergentVersionCount = 0
     @Binding var activePane: ActivePane
-    var evologEntries: [EvologEntry]?
-    var evologRev: String?
+    var evolog: EvologState?
     var evologTarget: ChangeInfo?
     var isRestoringEvologVersion = false
     var onRestoreEvologVersion: ((String) -> Void)?
@@ -28,10 +26,10 @@ struct DetailView: View {
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
 
     var body: some View {
-        if let entries = evologEntries, let rev = evologRev {
+        if let evolog, let entries = evolog.entries {
             EvologView(
                 entries: entries,
-                changeId: rev,
+                changeId: evolog.rev,
                 repo: repo,
                 diffStore: diffStore,
                 target: evologTarget,
@@ -40,7 +38,7 @@ struct DetailView: View {
                 onDismiss: { onDismissEvolog?() }
             )
             // EvologViewModel copies its entries at init, so a reload after a restore must remount it.
-            .id("\(rev)-\(entries.first?.commitId.id ?? "")")
+            .id("\(evolog.rev)-\(entries.first?.commitId.id ?? "")")
         } else if selectionWithoutDiffCount > 1 {
             ContentUnavailableView(
                 Localized.Repo.changesSelectedCount(count: selectionWithoutDiffCount),
@@ -55,8 +53,7 @@ struct DetailView: View {
                 repoPath: repoPath, repo: repo, detail: detail,
                 actions: actions, onEditDescription: onEditDescription,
                 reviewStore: reviewStore, diffStore: diffStore,
-                compareFromId: compareFromId,
-                compareDisplay: compareDisplay,
+                comparison: comparison,
                 onClearCompare: onClearCompare,
                 onReverseCompare: onReverseCompare,
                 onRevealChangeInDag: onRevealChangeInDag,
@@ -66,7 +63,7 @@ struct DetailView: View {
                 conflictedBookmarkNames: conflictedBookmarkNames,
                 onInteractionStateChanged: onInteractionStateChanged
             )
-            .id("\(detail.info.selectionRevision)|\(compareFromId ?? "")")
+            .id("\(detail.info.selectionRevision)|\(comparison?.fromId ?? "")")
         } else {
             ContentUnavailableView(
                 Localized.Repo.selectAChangeTitle, systemImage: "doc.text",

@@ -87,7 +87,7 @@ extension ChangeDetailView {
             rev: detailRevision,
             diffStore: diffStore,
             commitId: detail.info.commitId.id,
-            compareFromRev: compareFromId,
+            compareFromRev: comparison?.fromId,
             ignoreWhitespace: appSettings.ignoreWhitespace
         )
     }

@@ -69,10 +69,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     @ObservationIgnored var selectionLoadTask: Task<Void, Never>?
     @ObservationIgnored var lastKeyboardSelection: ContinuousClock.Instant?
     @ObservationIgnored var comparisonRequestId: UInt64 = 0
-    /// When set, the detail panel shows an interdiff (from → to).
-    var compareFromId: String?
-    var compareToId: String?
-    var compareDisplay: CompareDisplay?
+    var comparison: Comparison?
     var bookmarks: [BookmarkInfo] = []
     var tags: [TagInfo] = []
     /// Refs, tags and aliases the revset bar completes from; loaded with the graph, not on each keystroke.
@@ -160,8 +157,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var uploadTitle: String?
     var gerritUpdateTitle: String?
     var fixUnavailableReason: String?
-    var evologEntries: [EvologEntry]?
-    var evologRev: String?
+    var evolog: EvologState?
     var isRestoringEvologVersion = false
 
     convenience init(path: String, includeSubmoduleStatuses: Bool = false) throws {

@@ -9,18 +9,15 @@ extension RepoViewModel {
     }
 
     func select(changeId: String?, coalescing: Bool) {
-        let wasComparing = compareFromId != nil || compareToId != nil
+        let wasComparing = comparison != nil
         comparisonRequestId &+= 1
-        compareFromId = nil
-        compareToId = nil
-        compareDisplay = nil
+        comparison = nil
         let requestedRev = normalizedSelectionRevision(for: changeId)
         selectedChangeId = requestedRev
         selectedChangeIds = requestedRev.map { [$0] } ?? []
         selectedChangeAnchorId = requestedRev
-        if requestedRev != evologRev {
-            evologEntries = nil
-            evologRev = nil
+        if requestedRev != evolog?.rev {
+            evolog = nil
         }
         selectionLoadTask?.cancel()
         guard let requestedRev else {
@@ -65,9 +62,7 @@ extension RepoViewModel {
 
     func applySingleSelectedChange(_ detail: ChangeDetail?) {
         comparisonRequestId &+= 1
-        compareFromId = nil
-        compareToId = nil
-        compareDisplay = nil
+        comparison = nil
         selectedChange = detail
         selectedChangeId = detail?.info.selectionRevision
         selectedChangeIds = selectedChangeId.map { [$0] } ?? []
@@ -151,9 +146,7 @@ extension RepoViewModel {
         clearSingleChangePresentation()
         comparisonRequestId &+= 1
         selectionLoadTask?.cancel()
-        compareFromId = nil
-        compareToId = nil
-        compareDisplay = nil
+        comparison = nil
         selectedChange = nil
         selectedChangeId = primaryID ?? selectedIds.first
         selectedChangeIds = selectedIds
@@ -183,9 +176,7 @@ extension RepoViewModel {
         comparisonRequestId &+= 1
         let requestId = comparisonRequestId
         selectionLoadTask?.cancel()
-        compareFromId = from
-        compareToId = to
-        compareDisplay = display
+        comparison = Comparison(fromId: from, toId: to, display: display)
         self.selectedChangeIds = selectedChangeIds
         selectedChangeId = primarySelectionId ?? to
         selectedChangeAnchorId = selectionAnchorId
@@ -202,7 +193,7 @@ extension RepoViewModel {
                 viewModel.selectedChangeId = detail.info.selectionRevision
             }
             if let fromCommitId, !fromCommitId.isEmpty {
-                viewModel.compareFromId = fromCommitId
+                viewModel.comparison?.fromId = fromCommitId
             }
         } onFailure: { viewModel, error in
             guard viewModel.comparisonRequestId == requestId else { return }
@@ -217,23 +208,20 @@ extension RepoViewModel {
     }
 
     var canReverseCompare: Bool {
-        guard let from = compareFromId, let to = compareToId else { return false }
+        guard let comparison else { return false }
         guard selectedChangeIds.count > 1 else { return true }
         let selectedIds = Set(selectedChangeIds)
         let selectedChanges = changes.filter { selectedIds.contains($0.selectionRevision) }
-        return selectedChanges.contains { $0.matchesRevision(from) }
-            && selectedChanges.contains { $0.matchesRevision(to) }
+        return selectedChanges.contains { $0.matchesRevision(comparison.fromId) }
+            && selectedChanges.contains { $0.matchesRevision(comparison.toId) }
     }
 
     func reverseCompare() {
-        guard canReverseCompare,
-              let from = compareFromId,
-              let to = compareToId
-        else { return }
+        guard canReverseCompare, let comparison else { return }
         compareWith(
-            from: to,
-            to: from,
-            display: compareDisplay.map { reversedCompareDisplay(display: $0) },
+            from: comparison.toId,
+            to: comparison.fromId,
+            display: comparison.display.map { reversedCompareDisplay(display: $0) },
             selectedChangeIds: selectedChangeIds,
             primarySelectionId: selectedChangeIds.count > 1 ? selectedChangeId : nil,
             selectionAnchorId: selectedChangeIds.count > 1 ? selectedChangeAnchorId : nil

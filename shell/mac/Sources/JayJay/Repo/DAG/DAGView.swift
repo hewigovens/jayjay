@@ -26,14 +26,8 @@ struct DAGView: View {
     var selectionGraph: DagSelectionGraph?
 
     @State var rowFrameCache = DAGRowFrameCache()
-    @State var rebaseDrag: DAGRebaseDragState?
-    @State var rebaseArmTask: Task<Void, Never>?
-    @State var rebasePreviewTargetId: String?
-    @State var rebasePreviewTask: Task<Void, Never>?
-    @State var bookmarkDrag: BookmarkDragState?
-    @State var bookmarkArmTask: Task<Void, Never>?
-    @State var bookmarkPreviewTargetId: String?
-    @State var bookmarkPreviewTask: Task<Void, Never>?
+    @State var rebaseDrag = DAGDragSession<DAGRebaseDragState>()
+    @State var bookmarkDrag = DAGDragSession<BookmarkDragState>()
     @State private var keyboardReveal: DAGRevealRequest?
     @State private var laneEndBlink = false
     @State private var contextMenuRequest: SelectionContextMenuRequest?
@@ -92,8 +86,8 @@ struct DAGView: View {
             selectedId: selectedId,
             selectedIds: selectedIds,
             compareFromId: compareFromId,
-            rebaseDrag: rebaseDrag,
-            bookmarkDrag: bookmarkDrag,
+            rebaseDrag: rebaseDrag.state,
+            bookmarkDrag: bookmarkDrag.state,
             colorScheme: colorScheme,
             layout: layout,
             capabilities: capabilities,
@@ -212,10 +206,10 @@ struct DAGView: View {
         )
         .onChange(of: graphGeneration) { _, _ in
             contextMenuRequest = nil
-            if viewModel.shouldCancelRebaseDrag(for: rebaseDrag?.hoveredCommitId) {
-                cancelRebaseDrag()
+            if viewModel.shouldCancelRebaseDrag(for: rebaseDrag.state?.hoveredCommitId) {
+                rebaseDrag.end()
             }
-            cancelBookmarkDrag()
+            bookmarkDrag.end()
         }
     }
 
@@ -235,10 +229,10 @@ struct DAGView: View {
     }
 
     private func handleBookmarkKeyDown(_ event: NSEvent) -> Bool {
-        guard let bookmarkDrag, bookmarkDrag.phase != .pressing else { return false }
+        guard let drag = bookmarkDrag.state, drag.phase != .pressing else { return false }
         switch event.keyCode {
             case KeyCode.escape:
-                cancelBookmarkDrag()
+                bookmarkDrag.end()
                 return true
             case KeyCode.returnKey, KeyCode.keypadEnter:
                 confirmBookmarkDrop()
@@ -254,8 +248,8 @@ struct DAGView: View {
             selectedId: selectedId,
             selectedIds: selectedIds,
             compareFromId: compareFromId,
-            rebaseDrag: rebaseDrag,
-            bookmarkDrag: bookmarkDrag,
+            rebaseDrag: rebaseDrag.state,
+            bookmarkDrag: bookmarkDrag.state,
             colorScheme: colorScheme,
             layout: layout,
             capabilities: capabilities,
@@ -283,7 +277,7 @@ struct DAGView: View {
 
     private func handleContextMenuKeyDown(_ event: NSEvent) -> Bool {
         guard event.opensSelectionContextMenu, let selectedId, keyboardFocus?.isSuspended != true,
-              rebaseDrag == nil, bookmarkDrag == nil,
+              rebaseDrag.state == nil, bookmarkDrag.state == nil,
               entries.contains(where: { $0.change.selectionRevision == selectedId })
         else { return false }
         contextMenuRequest = SelectionContextMenuRequest(target: selectedId)
@@ -292,10 +286,10 @@ struct DAGView: View {
     }
 
     private func handleRebaseKeyDown(_ event: NSEvent) -> Bool {
-        guard let rebaseDrag, rebaseDrag.phase != .pressing else { return false }
+        guard let drag = rebaseDrag.state, drag.phase != .pressing else { return false }
         switch event.keyCode {
             case KeyCode.escape:
-                cancelRebaseDrag()
+                rebaseDrag.end()
                 return true
             case KeyCode.returnKey, KeyCode.keypadEnter:
                 confirmRebaseDrop()
@@ -311,8 +305,9 @@ struct DAGView: View {
             return true
         }
         if AppShortcut.abandon.matches(event), keyboardFocus?.isSuspended != true,
-           rebaseDrag == nil, bookmarkDrag == nil,
-           let selectedId, entries.contains(where: { $0.change.selectionRevision == selectedId && !$0.change.isImmutable }) {
+           rebaseDrag.state == nil, bookmarkDrag.state == nil,
+           let selectedId, entries.contains(where: { $0.change.selectionRevision == selectedId && !$0.change.isImmutable })
+        {
             onRequest?(.abandon(rev: selectedId))
             return true
         }

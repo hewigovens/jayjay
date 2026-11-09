@@ -27,7 +27,7 @@ extension RepoContentView {
                 graphGeneration: viewModel.graphGeneration,
                 selectedId: viewModel.selectedChangeId,
                 selectedIds: viewModel.selectedChangeIds,
-                compareFromId: viewModel.compareFromId,
+                compareFromId: viewModel.comparison?.fromId,
                 actions: viewModel,
                 onRequest: { handleDAGRequest($0) },
                 activePane: Bindable(keyboardFocus).activePane,

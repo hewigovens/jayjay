@@ -137,8 +137,7 @@ struct RepoContentView: View {
                         onEditDescription: { rev, description in modal = .editDescription(rev: rev, description: description) },
                         reviewStore: viewModel.reviewStore,
                         diffStore: viewModel.diffStore,
-                        compareFromId: viewModel.compareFromId,
-                        compareDisplay: viewModel.compareDisplay,
+                        comparison: viewModel.comparison,
                         onClearCompare: { viewModel.clearCompare() },
                         onReverseCompare: viewModel.canReverseCompare
                             ? { viewModel.reverseCompare() } : nil,
@@ -146,14 +145,13 @@ struct RepoContentView: View {
                         onResolveDivergent: { modal = .converge(rev: $0) },
                         divergentVersionCount: viewModel.selectedChange.map { viewModel.divergentVersionCount(of: $0.info.changeId.id) } ?? 0,
                         activePane: Bindable(keyboardFocus).activePane,
-                        evologEntries: viewModel.evologEntries,
-                        evologRev: viewModel.evologRev,
-                        evologTarget: viewModel.evologRev.flatMap { viewModel.change(for: $0) },
+                        evolog: viewModel.evolog,
+                        evologTarget: viewModel.evolog.flatMap { viewModel.change(for: $0.rev) },
                         isRestoringEvologVersion: viewModel.isRestoringEvologVersion,
                         onRestoreEvologVersion: { viewModel.restoreEvologVersion($0) },
                         onDismissEvolog: { viewModel.dismissEvolog() },
                         conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
-                        selectionWithoutDiffCount: viewModel.compareFromId == nil
+                        selectionWithoutDiffCount: viewModel.comparison == nil
                             ? viewModel.selectedChangeIds.count : 0,
                         onInteractionStateChanged: { detailInteractionActive = $0 }
                     )

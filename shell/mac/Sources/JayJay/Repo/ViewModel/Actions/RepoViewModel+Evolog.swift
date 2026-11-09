@@ -8,13 +8,12 @@ extension RepoViewModel {
         if selectedChangeId != rev {
             select(changeId: rev)
         }
-        evologRev = rev
-        evologEntries = nil
+        evolog = EvologState(rev: rev)
         loadEvolog(rev: rev)
     }
 
     func restoreEvologVersion(_ commitId: String) {
-        guard let rev = evologRev else { return }
+        guard let rev = evolog?.rev else { return }
         performResult(
             selecting: rev,
             gatedBy: RepoActionGate(
@@ -30,17 +29,16 @@ extension RepoViewModel {
         runRepoTask { repo in
             try repo.evolog(rev: rev)
         } onSuccess: { vm, entries in
-            guard vm.evologRev == rev else { return } // user moved on while loading
-            vm.evologEntries = entries
+            guard vm.evolog?.rev == rev else { return } // user moved on while loading
+            vm.evolog?.entries = entries
         } onFailure: { vm, error in
-            guard vm.evologRev == rev else { return } // don't clobber a newer request
-            vm.evologRev = nil
+            guard vm.evolog?.rev == rev else { return } // don't clobber a newer request
+            vm.evolog = nil
             vm.present(error: error)
         }
     }
 
     func dismissEvolog() {
-        evologRev = nil
-        evologEntries = nil
+        evolog = nil
     }
 }

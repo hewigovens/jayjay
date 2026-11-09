@@ -8,14 +8,12 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let viewModel = try XCTUnwrap(viewModel)
         let detail = try viewModel.repo.showSummary(rev: "@")
         viewModel.selectedChangeIds = ["first", "second"]
-        viewModel.compareFromId = "first"
-        viewModel.compareToId = "second"
+        viewModel.comparison = Comparison(fromId: "first", toId: "second", display: nil)
 
         viewModel.applySingleSelectedChange(detail)
 
         XCTAssertEqual(viewModel.selectedChangeIds, [detail.info.selectionRevision])
-        XCTAssertNil(viewModel.compareFromId)
-        XCTAssertNil(viewModel.compareToId)
+        XCTAssertNil(viewModel.comparison)
     }
 
     func testGraphGenerationAdvancesOnlyWhenTheGraphActuallyChanges() throws {
@@ -148,8 +146,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let third = oldest.selectionRevision
         viewModel.selectedChangeId = first
         viewModel.selectedChangeIds = [first]
-        viewModel.evologRev = first
-        viewModel.evologEntries = []
+        viewModel.evolog = EvologState(rev: first, entries: [])
         viewModel.prInfo = PrInfo(
             number: 7,
             state: .open,
@@ -164,12 +161,11 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
         XCTAssertEqual(viewModel.selectedChangeIds, [first, third])
         XCTAssertEqual(viewModel.selectedChangeId, third)
-        XCTAssertEqual(viewModel.compareFromId, oldest.commitId.id)
-        XCTAssertEqual(viewModel.compareToId, newest.commitId.id)
-        XCTAssertEqual(viewModel.compareDisplay?.title, "Comparing")
+        XCTAssertEqual(viewModel.comparison?.fromId, oldest.commitId.id)
+        XCTAssertEqual(viewModel.comparison?.toId, newest.commitId.id)
+        XCTAssertEqual(viewModel.comparison?.display?.title, "Comparing")
         XCTAssertTrue(viewModel.canReverseCompare)
-        XCTAssertNil(viewModel.evologRev)
-        XCTAssertNil(viewModel.evologEntries)
+        XCTAssertNil(viewModel.evolog)
         XCTAssertNil(viewModel.prInfo)
         XCTAssertNil(viewModel.prFetchTask)
         XCTAssertTrue(prFetchTask.isCancelled)
@@ -201,11 +197,11 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
             viewModel.updateSelection(changeId: oldest.selectionRevision, click: .toggle)
 
-            XCTAssertEqual(viewModel.compareFromId, oldest.commitId.id)
-            XCTAssertEqual(viewModel.compareToId, newest.commitId.id)
+            XCTAssertEqual(viewModel.comparison?.fromId, oldest.commitId.id)
+            XCTAssertEqual(viewModel.comparison?.toId, newest.commitId.id)
             XCTAssertEqual(viewModel.selectedChangeIds, [newest.selectionRevision, oldest.selectionRevision])
             XCTAssertEqual(viewModel.selectedChangeId, oldest.selectionRevision)
-            XCTAssertEqual(viewModel.compareDisplay?.isCombinedSelection, false)
+            XCTAssertEqual(viewModel.comparison?.display?.isCombinedSelection, false)
             XCTAssertTrue(viewModel.canReverseCompare)
             try await waitUntil("the comparison loads") { viewModel.repoTasks.isEmpty }
             XCTAssertNil(viewModel.error)
@@ -214,8 +210,8 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
             viewModel.reverseCompare()
             try await waitUntil("the reversed comparison loads") { viewModel.repoTasks.isEmpty }
-            XCTAssertEqual(viewModel.compareFromId, newest.commitId.id)
-            XCTAssertEqual(viewModel.compareToId, oldest.commitId.id)
+            XCTAssertEqual(viewModel.comparison?.fromId, newest.commitId.id)
+            XCTAssertEqual(viewModel.comparison?.toId, oldest.commitId.id)
             XCTAssertNil(viewModel.error)
         }
     }
@@ -255,7 +251,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.selectedChangeIds, [revisions[1], revisions[2]])
         XCTAssertEqual(viewModel.selectedChangeId, revisions[1])
         XCTAssertEqual(viewModel.selectedChangeAnchorId, revisions[2])
-        XCTAssertEqual(viewModel.compareDisplay?.isCombinedSelection, true)
+        XCTAssertEqual(viewModel.comparison?.display?.isCombinedSelection, true)
     }
 
     func testBatchSquashRetainsDivergentDestinationSelection() async throws {
@@ -317,8 +313,8 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         viewModel = try RepoViewModel(path: repoPath)
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.showEvolog(rev: "@")
-        try await waitUntil("the evolog loads") { viewModel.evologEntries != nil }
-        let entries = try XCTUnwrap(viewModel.evologEntries)
+        try await waitUntil("the evolog loads") { viewModel.evolog?.entries != nil }
+        let entries = try XCTUnwrap(viewModel.evolog?.entries)
         let v1 = try XCTUnwrap(entries.first {
             (try? viewModel.repo.fileContent(rev: $0.commitId.id, path: "restore.txt")) == "v1\n"
         })
@@ -328,7 +324,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.info, "A version is already being restored")
 
         try await waitUntil("the evolog reloads with the restored version") {
-            (viewModel.evologEntries?.count ?? 0) > entries.count
+            (viewModel.evolog?.entries?.count ?? 0) > entries.count
         }
         XCTAssertEqual(try String(contentsOf: file, encoding: .utf8), "v1\n")
         XCTAssertEqual(try runJj(["log", "--no-graph", "-r", "divergent()", "-T", "change_id"], in: repoPath), "")
@@ -480,23 +476,25 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
     func testCombinedComparisonCannotReverse() throws {
         let viewModel = try XCTUnwrap(viewModel)
-        viewModel.compareFromId = "roots"
-        viewModel.compareToId = "heads"
-        viewModel.compareDisplay = CompareDisplay(
-            title: "2 Changes Selected",
-            from: "oldest",
-            to: "newest",
-            isCombinedSelection: true
+        viewModel.comparison = Comparison(
+            fromId: "roots",
+            toId: "heads",
+            display: CompareDisplay(
+                title: "2 Changes Selected",
+                from: "oldest",
+                to: "newest",
+                isCombinedSelection: true
+            )
         )
         viewModel.selectedChangeIds = ["newest", "oldest"]
 
         XCTAssertFalse(viewModel.canReverseCompare)
         viewModel.reverseCompare()
 
-        XCTAssertEqual(viewModel.compareFromId, "roots")
-        XCTAssertEqual(viewModel.compareToId, "heads")
-        XCTAssertEqual(viewModel.compareDisplay?.from, "oldest")
-        XCTAssertEqual(viewModel.compareDisplay?.to, "newest")
+        XCTAssertEqual(viewModel.comparison?.fromId, "roots")
+        XCTAssertEqual(viewModel.comparison?.toId, "heads")
+        XCTAssertEqual(viewModel.comparison?.display?.from, "oldest")
+        XCTAssertEqual(viewModel.comparison?.display?.to, "newest")
     }
 
     func testFixAvailabilityFollowsTheJjConfigOnRefresh() async throws {

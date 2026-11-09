@@ -12,8 +12,7 @@ struct ChangeDetailView: View {
     let onEditDescription: (String, String) -> Void
     let reviewStore: ReviewStore
     let diffStore: DiffStore
-    var compareFromId: String?
-    var compareDisplay: CompareDisplay?
+    var comparison: Comparison?
     var onClearCompare: (() -> Void)?
     var onReverseCompare: (() -> Void)?
     var onRevealChangeInDag: ((String) -> Void)?
@@ -24,7 +23,7 @@ struct ChangeDetailView: View {
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
 
     var isCompareMode: Bool {
-        compareFromId != nil
+        comparison != nil
     }
 
     var showsReviewControls: Bool {
@@ -43,9 +42,7 @@ struct ChangeDetailView: View {
     @Namespace var metadataAnimation
     @State private var descriptionExpansion = DescriptionExpansion.preference
     @State var paneHeight: CGFloat = 0
-    @State var selectedPath: String?
-    @State var selectedPaths: Set<String> = []
-    @State var fileSelectionAnchorPath: String?
+    @State var fileSelection = FileSelection()
     @State var contextMenuRequest: SelectionContextMenuRequest?
     @State var collapsedDirs: Set<String> = []
     @State var fileTreeCache = FileTreeCache()
@@ -53,7 +50,7 @@ struct ChangeDetailView: View {
     @State var showFileFilter = false
     @State var fileFilter = ""
     @State var showNotedFilesOnly = false
-    @State var diffStats: DiffStats?
+    @State var diffStats: KeyedValue<DiffStats>?
     @State var paneMode: DetailPaneMode = .files
     @State private var fileColumnWidth: CGFloat = PaneLayout.secondaryPaneDefault
     @State var paneBeforeDiffEdit: ActivePane?
@@ -70,14 +67,10 @@ struct ChangeDetailView: View {
     @State var reviewNotesRequestId: UInt64 = 0
     // Lives here, not in DiffSection: the diff view is rebuilt on commit-id changes, and a background snapshot mid-typing would dismiss the editor sheet.
     @State var noteEditor: ReviewNoteEditorState?
-    @State var fileEditor: WorkingCopyFileEditorSession?
-    @State var fileEditorPreparation: EditorPreparationRequest?
-    @State var conflictEditor: ConflictEditorSession?
-    @State var conflictEditorPreparation: EditorPreparationRequest?
+    @State var fileEditor: EditorPresentation<WorkingCopyFileEditorSession>?
+    @State var conflictEditor: EditorPresentation<ConflictEditorSession>?
     @State var activeNoteCountsByPath: [String: Int] = [:]
-    @State var diffStatsCommitId: String?
-    @State var fileStats: [String: FileDiffStats] = [:]
-    @State var fileStatsKey: String?
+    @State var fileStats: KeyedValue<[String: FileDiffStats]>?
     @Environment(AppSettings.self) var appSettings
     @Environment(\.colorScheme) var colorScheme
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
@@ -148,7 +141,7 @@ struct ChangeDetailView: View {
                     repo: repo,
                     diffStore: diffStore,
                     actions: actions,
-                    diffStats: diffStats,
+                    diffStats: diffStats?.value,
                     settings: appSettings,
                     onDone: { paneMode = .files }
                 )
@@ -239,7 +232,7 @@ struct ChangeDetailView: View {
             )
             .frame(width: 440)
         }
-        .sheet(item: $fileEditor) { editor in
+        .sheet(item: $fileEditor.openSession()) { editor in
             WorkingCopyFileEditorView(
                 session: editor,
                 onSave: { data, content, completion in
@@ -254,7 +247,7 @@ struct ChangeDetailView: View {
             .appEnvironment(appSettings)
             .frame(minWidth: 900, idealWidth: 1040, minHeight: 600, idealHeight: 720)
         }
-        .sheet(item: $conflictEditor) { editor in
+        .sheet(item: $conflictEditor.openSession()) { editor in
             ConflictEditorView(
                 session: editor,
                 onSave: { data, content, completion in
@@ -277,9 +270,7 @@ struct ChangeDetailView: View {
             || paneMode.isDiffEdit
             || noteEditor != nil
             || fileEditor != nil
-            || fileEditorPreparation != nil
             || conflictEditor != nil
-            || conflictEditorPreparation != nil
     }
 
     private func confirmSplit(_ request: SplitSheetRequest, message: String, parallel: Bool) {
@@ -294,7 +285,7 @@ struct ChangeDetailView: View {
     }
 
     var selectedHunk: DiffHunk? {
-        if let selectedPath {
+        if let selectedPath = fileSelection.primary {
             return filteredDiff.first(where: { $0.path == selectedPath }) ?? filteredDiff.first
         }
         return filteredDiff.first

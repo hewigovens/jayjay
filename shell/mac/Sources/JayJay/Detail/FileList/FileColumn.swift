@@ -148,7 +148,7 @@ extension ChangeDetailView {
             }
             .listStyle(.plain)
             .scrollIndicators(.never)
-            .revealing(selectedPath, again: contextMenuRequest?.id, with: proxy)
+            .revealing(fileSelection.primary, again: contextMenuRequest?.id, with: proxy)
             .id(detail.info.commitId)
         }
     }
@@ -158,7 +158,7 @@ extension ChangeDetailView {
             filteredDiff: filteredDiff,
             treeEntries: fileTreeCache.entries(for: filteredDiff.map(\.path)),
             commitId: detail.info.commitId.id,
-            selectedPath: selectedPath,
+            selectedPath: fileSelection.primary,
             revealTrigger: contextMenuRequest?.id,
             collapsedDirs: $collapsedDirs,
             fileRowView: fileRowView
@@ -169,7 +169,7 @@ extension ChangeDetailView {
         let noteCount = activeNoteCountsByPath[hunk.path] ?? 0
         return FileRow(
             hunk: hunk,
-            isSelected: selectedPaths.contains(hunk.path),
+            isSelected: fileSelection.paths.contains(hunk.path),
             isPaneActive: activePane == .fileColumn,
             showReview: showsReviewControls && hunk.isReviewable,
             reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
@@ -181,7 +181,7 @@ extension ChangeDetailView {
         .contentShape(Rectangle())
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AID.FileList.row(hunk.path))
-        .accessibilityAddTraits(selectedPaths.contains(hunk.path) ? .isSelected : [])
+        .accessibilityAddTraits(fileSelection.paths.contains(hunk.path) ? .isSelected : [])
         .onTapGesture {
             activePane = .fileColumn
             NSApp.keyWindow?.makeFirstResponder(nil)

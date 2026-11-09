@@ -12,7 +12,7 @@ extension ChangeDetailView {
             case KeyCode.rightArrow: return true
             default: break
         }
-        if event.opensSelectionContextMenu, let selectedPath, keyboardFocus?.isSuspended != true,
+        if event.opensSelectionContextMenu, let selectedPath = fileSelection.primary, keyboardFocus?.isSuspended != true,
            filteredDiff.contains(where: { $0.path == selectedPath })
         {
             collapsedDirs = collapsedDirs.filter { !selectedPath.hasPrefix("\($0)/") }
@@ -30,7 +30,7 @@ extension ChangeDetailView {
 
     private func toggleReviewOnSelection() -> Bool {
         reconcileFileSelection()
-        let paths = selectedPaths
+        let paths = fileSelection.paths
             .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
             .sorted()
         guard showsReviewControls, !paths.isEmpty else { return false }
@@ -43,7 +43,7 @@ extension ChangeDetailView {
         let order = displayOrderedPaths
         let reviewed = !paths.allSatisfy { fileRollups[$0] == .reviewed }
         applyReviewMarks(paths: paths, reviewed: reviewed)
-        guard reviewed, let selectedPath, paths.contains(selectedPath),
+        guard reviewed, let selectedPath = fileSelection.primary, paths.contains(selectedPath),
               let position = order.firstIndex(of: selectedPath)
         else { return }
         let following = order[(position + 1)...] + order[..<position]
@@ -57,24 +57,26 @@ extension ChangeDetailView {
     func reconcileFileSelection() {
         let paths = filteredDiff.map(\.path)
         let available = Set(paths)
-        selectedPaths.formIntersection(available)
-        if selectedPath.map({ available.contains($0) }) != true {
+        var selection = fileSelection
+        selection.paths.formIntersection(available)
+        if selection.primary.map({ available.contains($0) }) != true {
             let order = visibleSelectablePaths
-            selectedPath = order.first(where: selectedPaths.contains) ?? order.first ?? paths.first
+            selection.primary = order.first(where: selection.paths.contains) ?? order.first ?? paths.first
         }
-        if let selectedPath {
-            selectedPaths.insert(selectedPath)
+        if let primary = selection.primary {
+            selection.paths.insert(primary)
         }
-        if fileSelectionAnchorPath.map({ available.contains($0) }) != true {
-            fileSelectionAnchorPath = selectedPath
+        if selection.anchor.map({ available.contains($0) }) != true {
+            selection.anchor = selection.primary
         }
+        fileSelection = selection
     }
 
     @discardableResult
     func moveFileSelection(by delta: Int) -> Bool {
         let paths = visibleSelectablePaths
         guard !paths.isEmpty else { return false }
-        let currentIdx: Int = if let cur = selectedPath, let idx = paths.firstIndex(of: cur) {
+        let currentIdx: Int = if let cur = fileSelection.primary, let idx = paths.firstIndex(of: cur) {
             idx
         } else {
             delta > 0 ? -1 : paths.count
@@ -102,8 +104,8 @@ extension ChangeDetailView {
 
     func contextSelectionPaths(for clickedPath: String) -> [String] {
         let activeSelection: Set<String> =
-            if selectedPaths.contains(clickedPath), selectedPaths.count > 1 {
-                selectedPaths
+            if fileSelection.paths.contains(clickedPath), fileSelection.paths.count > 1 {
+                fileSelection.paths
             } else {
                 [clickedPath]
             }
@@ -111,24 +113,15 @@ extension ChangeDetailView {
     }
 
     func handleFileSelection(_ path: String) {
-        let selection = applySelectionClick(
-            selection: orderedSelection(
-                selected: Array(selectedPaths),
-                primary: selectedPath,
-                anchor: fileSelectionAnchorPath
-            ),
+        fileSelection = FileSelection(applySelectionClick(
+            selection: fileSelection.ordered,
             click: SelectionClick(modifiers: NSEvent.modifierFlags),
             id: path,
             order: visibleSelectablePaths
-        )
-        selectedPaths = Set(selection.selected)
-        selectedPath = selection.primary
-        fileSelectionAnchorPath = selection.anchor
+        ))
     }
 
     func selectSingleFile(_ path: String) {
-        selectedPath = path
-        selectedPaths = [path]
-        fileSelectionAnchorPath = path
+        fileSelection = .single(path)
     }
 }
