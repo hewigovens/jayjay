@@ -120,6 +120,11 @@ impl ChangeInfo {
         }
     }
 
+    /// Review marks are keyed by change id, so a divergent change other than @ cannot carry them unambiguously.
+    pub fn accepts_review_marks(&self) -> bool {
+        !self.is_immutable && (self.is_working_copy || !self.is_divergent)
+    }
+
     /// "Alice", "Alice and Bob", or "Alice and 2 others", as GitHub credits a commit.
     pub fn credit_line(&self) -> String {
         let author = self.author.display_name();

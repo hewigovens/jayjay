@@ -118,9 +118,9 @@ impl RepoViewModel {
         self.diff_cache.load_failures.clear();
     }
 
-    /// A bare `is_working_copy` check would wrongly pass in compare mode, where review state doesn't apply.
     pub(crate) fn shows_review_controls(&self) -> bool {
-        self.selected_change().is_some_and(|c| c.is_working_copy)
+        self.selected_change()
+            .is_some_and(ChangeInfo::accepts_review_marks)
             && self.compare.is_none()
             && !self.has_multiple_change_selection()
     }

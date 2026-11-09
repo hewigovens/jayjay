@@ -242,6 +242,22 @@ fn an_unpushed_ancestor_is_reviewed_under_its_own_change_until_rewritten() {
 }
 
 #[test]
+fn an_immutable_working_copy_is_read_only() {
+    let (_temp, root, _) = two_group_edit();
+    run_jj_in(
+        &root,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "revset-aliases.'immutable_heads()'",
+            "@",
+        ],
+    );
+    assert!(error(WorkingCopyReview::open(&root)).contains("Immutable changes are read-only"));
+}
+
+#[test]
 fn concurrent_operations_are_rejected_without_reconciling_them() {
     let temp = init_jj_repo();
     let root = temp.path().join("repo");

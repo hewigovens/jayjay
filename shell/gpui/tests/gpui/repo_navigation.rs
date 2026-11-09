@@ -154,10 +154,20 @@ fn selecting_preloaded_file_invalidates_an_older_diff_request(cx: &mut TestAppCo
 }
 
 #[gpui::test]
-fn historical_diff_loading_skips_review_snapshots(cx: &mut TestAppContext) {
+fn immutable_diff_loading_skips_review_snapshots(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     run_jj_in(&fixture.path, &["describe", "-m", "historical files"]);
     run_jj_in(&fixture.path, &["new"]);
+    run_jj_in(
+        &fixture.path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "revset-aliases.'immutable_heads()'",
+            "@-",
+        ],
+    );
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
@@ -188,7 +198,7 @@ fn historical_diff_loading_skips_review_snapshots(cx: &mut TestAppContext) {
                 .loaded
                 .values()
                 .all(|loaded| loaded.review.is_none()),
-            "historical diffs must not compute review snapshots"
+            "immutable diffs must not compute review snapshots"
         );
     });
 }

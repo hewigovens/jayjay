@@ -232,25 +232,22 @@ final class DiffSectionProjectionTests: XCTestCase {
         XCTAssertFalse(DiffSection.usesProjectionNativeGutter(projection: nil))
     }
 
-    func testProjectedWorkingCopyDiffsReserveReviewNoteGutterColumn() {
+    func testProjectedReviewableDiffsReserveReviewNoteGutterColumn() {
         XCTAssertTrue(DiffSection.reservesReviewNoteGutterColumn(
-            isWorkingCopy: true,
             hasReviewStore: true,
             reviewChangeId: "change",
             reviewIdentity: "identity",
             compareFromRev: nil
         ))
         XCTAssertFalse(DiffSection.reservesReviewNoteGutterColumn(
-            isWorkingCopy: true,
             hasReviewStore: true,
             reviewChangeId: "change",
             reviewIdentity: "identity",
             compareFromRev: "other"
         ))
         XCTAssertFalse(DiffSection.reservesReviewNoteGutterColumn(
-            isWorkingCopy: false,
             hasReviewStore: true,
-            reviewChangeId: "change",
+            reviewChangeId: nil,
             reviewIdentity: "identity",
             compareFromRev: nil
         ))

@@ -18,7 +18,7 @@ use super::models::{
     WorkingCopyReviewFile, WorkingCopyReviewMark, WorkingCopyReviewNote, WorkingCopyReviewStatus,
 };
 
-/// An immutable view of @, or of another mutable change, that neither snapshots files nor reconciles operation heads.
+/// A pinned view of a mutable change, @ by default, that neither snapshots files nor reconciles operation heads.
 pub struct WorkingCopyReview {
     repo: Repo,
     detail: ChangeDetail,
@@ -30,15 +30,12 @@ impl WorkingCopyReview {
         Self::open_rev(path, "@")
     }
 
-    /// Writes are keyed by this change and refused once it is rewritten; immutable changes and revsets are refused.
+    /// Writes are keyed by this change and refused once it is rewritten; revsets are refused.
     pub fn open_change(path: &Path, change_id: &str) -> JayResult<Self> {
         if change_id.is_empty() || !change_id.chars().all(|c| c.is_ascii_lowercase()) {
             return Err(JayError::review("Name the change by its change id"));
         }
         let mut review = Self::open_rev(path, &format!("change_id({change_id})"))?;
-        if review.detail.info.is_immutable {
-            return Err(JayError::review("Immutable changes are read-only"));
-        }
         review.rev = format!("change_id({})", review.change_id());
         Ok(review)
     }
@@ -46,6 +43,9 @@ impl WorkingCopyReview {
     fn open_rev(path: &Path, rev: &str) -> JayResult<Self> {
         let repo = Self::load_repository(path)?;
         let detail = repo.show_summary(rev)?;
+        if detail.info.is_immutable {
+            return Err(JayError::review("Immutable changes are read-only"));
+        }
         Ok(Self {
             repo,
             detail,

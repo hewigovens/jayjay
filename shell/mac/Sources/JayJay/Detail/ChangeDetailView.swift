@@ -27,7 +27,7 @@ struct ChangeDetailView: View {
     }
 
     var showsReviewControls: Bool {
-        detail.info.isWorkingCopy && !isCompareMode
+        detail.info.acceptsReviewMarks && !isCompareMode
     }
 
     var detailRevision: String {

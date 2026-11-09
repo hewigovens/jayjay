@@ -327,20 +327,20 @@ fn add_review_note_absent_on_context_line(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn add_review_note_absent_on_non_working_copy_change(cx: &mut TestAppContext) {
+fn add_review_note_absent_on_immutable_change(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
 
     let items = view.update_in(cx, |view, _, cx| {
-        let parent_ix = view
+        let immutable_ix = view
             .view_model()
             .read(cx)
             .graph
             .changes
             .iter()
-            .position(|c| !c.is_working_copy)
-            .expect("fixture has an ancestor change");
+            .position(|c| c.is_immutable)
+            .expect("fixture has an immutable change");
         view.view_model()
-            .update(cx, |vm, cx| vm.select_change(parent_ix, cx));
+            .update(cx, |vm, cx| vm.select_change(immutable_ix, cx));
         view.build_diff_gutter_menu(&hunk, 1, cx)
     });
     assert!(no_note_items(&items));
@@ -422,22 +422,22 @@ fn active_note_counts_clear_after_switching_away_from_the_noted_change(cx: &mut 
     assert_eq!(active_note_counts(&view, cx).get("README.md"), Some(&1));
 
     view.update_in(cx, |view, _, cx| {
-        let parent_ix = view
+        let immutable_ix = view
             .view_model()
             .read(cx)
             .graph
             .changes
             .iter()
-            .position(|c| !c.is_working_copy)
-            .expect("fixture has an ancestor change");
+            .position(|c| c.is_immutable)
+            .expect("fixture has an immutable change");
         view.view_model()
-            .update(cx, |vm, cx| vm.select_change(parent_ix, cx));
+            .update(cx, |vm, cx| vm.select_change(immutable_ix, cx));
     });
     settle_visual(cx);
 
     assert!(
         active_note_counts(&view, cx).is_empty(),
-        "switching to a non-working-copy change must drop the previous change's note counts"
+        "switching to an immutable change must drop the previous change's note counts"
     );
 }
 
@@ -617,6 +617,16 @@ fn open_repo_and_select_readme(
     DiffHunk,
 ) {
     let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "revset-aliases.'immutable_heads()'",
+            "main-",
+        ],
+    );
     fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));

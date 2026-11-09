@@ -59,7 +59,7 @@ extension ChangeDetailView {
                         hunk: hunk,
                         rev: detailRevision,
                         commitId: detail.info.commitId.id,
-                        reviewChangeId: reviewChangeId,
+                        reviewChangeId: showsReviewControls ? reviewChangeId : nil,
                         repo: repo,
                         actions: actions,
                         isWorkingCopy: detail.info.isWorkingCopy,

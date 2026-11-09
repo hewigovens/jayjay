@@ -138,9 +138,7 @@ fn single_file_editor_header_is_working_copy_only(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn non_working_copy_changes_offer_restore_and_ignore_but_not_delete_or_review(
-    cx: &mut TestAppContext,
-) {
+fn mutable_ancestors_offer_restore_ignore_and_review_but_not_delete(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo(cx);
 
     let other_ix = view.read_with(cx, |view, cx| {
@@ -173,15 +171,12 @@ fn non_working_copy_changes_offer_restore_and_ignore_but_not_delete_or_review(
         !labels.iter().any(|l| l.contains("Delete")),
         "delete is working-copy-only: {labels:?}"
     );
-    assert!(
-        !labels.iter().any(|l| l.starts_with("Mark")),
-        "review marks apply to the working-copy session only: {labels:?}"
-    );
+    assert!(labels.iter().any(|l| l.starts_with("Mark")), "{labels:?}");
 }
 
 /// Restore rewrites the selected change, so an immutable change must not offer it — the same gate the change context menu applies to Abandon.
 #[gpui::test]
-fn immutable_changes_offer_no_restore_item(cx: &mut TestAppContext) {
+fn immutable_changes_offer_no_restore_or_review_items(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     fixture.add_tracked_working_copy_edits();
     // Colocated git HEAD tracks @-, so this tags "add feature"; tags() are inside the built-in immutable_heads(), and `jj st` imports the new ref.
@@ -214,8 +209,10 @@ fn immutable_changes_offer_no_restore_item(cx: &mut TestAppContext) {
 
     let labels = menu_labels(&view, cx, "feature.txt");
     assert!(
-        !labels.iter().any(|l| l.contains("Restore")),
-        "an immutable change must not offer restore: {labels:?}"
+        !labels
+            .iter()
+            .any(|l| l.contains("Restore") || l.starts_with("Mark")),
+        "an immutable change must not offer restore or review: {labels:?}"
     );
     assert!(
         labels.iter().any(|l| l == "Ignore & Untrack"),

@@ -9,7 +9,6 @@ extension DiffSection: DiffGutterReviewActions {
 
     var reservesReviewNoteGutterColumn: Bool {
         Self.reservesReviewNoteGutterColumn(
-            isWorkingCopy: isWorkingCopy,
             hasReviewStore: reviewStore != nil,
             reviewChangeId: reviewChangeId,
             reviewIdentity: hunk.reviewIdentity,
@@ -18,13 +17,12 @@ extension DiffSection: DiffGutterReviewActions {
     }
 
     nonisolated static func reservesReviewNoteGutterColumn(
-        isWorkingCopy: Bool,
         hasReviewStore: Bool,
         reviewChangeId: String?,
         reviewIdentity: String,
         compareFromRev: String?
     ) -> Bool {
-        isWorkingCopy && hasReviewStore && reviewChangeId != nil
+        hasReviewStore && reviewChangeId != nil
             && !reviewIdentity.isEmpty && compareFromRev == nil
     }
 
