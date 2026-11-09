@@ -11,6 +11,15 @@ on:
       - ".github/workflows/ci.yml"
       - "justfile"
       - "shell/justfile"
+      - "shell/release.just"
+      - ".swiftlint.yml"
+      - "docs/icon.svg"
+      - "scripts/macos/**"
+      - "scripts/build-help-book.sh"
+      - "scripts/prepare-app-bundle.sh"
+      - "scripts/render-dock-icons.swift"
+      - "scripts/lint-i18n.sh"
+      - "scripts/test-ui-shard.sh"
       - "scripts/ui-test-fixtures.sh"
   pull_request:
     paths:
@@ -21,6 +30,15 @@ on:
       - ".github/workflows/ci.yml"
       - "justfile"
       - "shell/justfile"
+      - "shell/release.just"
+      - ".swiftlint.yml"
+      - "docs/icon.svg"
+      - "scripts/macos/**"
+      - "scripts/build-help-book.sh"
+      - "scripts/prepare-app-bundle.sh"
+      - "scripts/render-dock-icons.swift"
+      - "scripts/lint-i18n.sh"
+      - "scripts/test-ui-shard.sh"
       - "scripts/ui-test-fixtures.sh"
 
 permissions:
@@ -37,7 +55,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@v1
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
 
@@ -62,7 +80,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@v1
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
 
@@ -72,8 +90,6 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
-          # The swift and swift-ui jobs build the same UniFFI artifacts; one shared entry keeps the repo under the 10 GB cache limit.
-          shared-key: swift
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Lint Swift
@@ -81,31 +97,6 @@ jobs:
 
       - name: Lint localization
         run: just lint-i18n
-
-      - name: Build app
-        run: just build
-
-      - name: Test app
-        run: just test-app
-
-  swift-ui-build:
-    runs-on: xcode-27
-    steps:
-      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
-
-      - name: Install Rust
-        uses: dtolnay/rust-toolchain@v1
-        with:
-          toolchain: stable
-
-      - name: Install tools
-        run: brew install just xcbeautify
-
-      - name: Cache Rust dependencies
-        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          shared-key: swift
-          save-if: false
 
       - name: Build app and UI test bundle
         run: just shell::ui-test-build
@@ -121,9 +112,12 @@ jobs:
           retention-days: 1
           if-no-files-found: error
 
+      - name: Test app
+        run: just test-app
+
   swift-ui:
     name: swift-ui (${{ matrix.shard }}/3)
-    needs: swift-ui-build
+    needs: swift
     runs-on: xcode-27
     strategy:
       fail-fast: false

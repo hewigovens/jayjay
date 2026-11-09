@@ -15,6 +15,7 @@ on:
       - "**/*.just"
       - "scripts/llvm-clang"
       - "scripts/build-diff-web.sh"
+      - "scripts/test-wasm.sh"
       - "scripts/with-wasm-toolchain.sh"
       - "scripts/wasm-bindgen-version.sh"
       - "wasm/**"
@@ -34,6 +35,7 @@ on:
       - "**/*.just"
       - "scripts/llvm-clang"
       - "scripts/build-diff-web.sh"
+      - "scripts/test-wasm.sh"
       - "scripts/with-wasm-toolchain.sh"
       - "scripts/wasm-bindgen-version.sh"
       - "wasm/**"
@@ -56,7 +58,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@v1
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown
@@ -71,6 +73,7 @@ jobs:
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           key: wasm
+          save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Install just
         run: cargo install --locked just
@@ -86,7 +89,7 @@ jobs:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
       - name: Install Rust
-        uses: dtolnay/rust-toolchain@v1
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
         with:
           toolchain: stable
           targets: wasm32-unknown-unknown

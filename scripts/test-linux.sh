@@ -29,7 +29,7 @@ exec container run --rm --name "$cache-$$" --platform linux/arm64 \
   --mount "type=bind,source=$root,target=/source,readonly" \
   --mount "type=volume,source=$cache,target=/cache" \
   --env CARGO_HOME=/cache/cargo --env CARGO_TARGET_DIR=/cache/target \
-  --env RUSTC_WRAPPER= --env CARGO_INCREMENTAL=0 \
+  --env CARGO_INCREMENTAL=0 \
   --env CARGO_PROFILE_DEV_DEBUG=0 --env CARGO_PROFILE_TEST_DEBUG=0 \
   "$image" bash -euo pipefail -c '
     mkdir /workspace

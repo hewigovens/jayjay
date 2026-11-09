@@ -45,7 +45,6 @@ list:
   @echo "  just shell::clean            Remove generated shell/macOS build artifacts"
   @echo "  just shell::release          Build, sign, notarize, and package for release"
   @echo "  just shell::release-dry-run  Build and package without signing/notarization"
-  @echo "  just shell::build-apple      Legacy Apple/XCFramework build flow"
   @echo "  just shell::gpui-run [/repo] Build and launch the GPUI shell (alpha)"
   @echo "  just shell::gpui-bundle      Build the GPUI .app bundle only"
   @echo "  just shell::gpui-appimage    Build the GPUI Linux AppImage"
@@ -198,8 +197,6 @@ clean:
   find "{{root}}" -name ".DS_Store" -delete
 
 import "release.just"
-
-build-apple: ffi-debug
 
 # === GPUI shell (alpha, cross-platform) ===
 

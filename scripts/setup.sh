@@ -52,7 +52,7 @@ check_xcode() {
   if xcodebuild -version >/dev/null 2>&1; then
     echo "✓ Xcode command-line build available"
   else
-    echo "✗ Xcode not found or not selected. Install Xcode 16+ from the App Store, then:"
+    echo "✗ Xcode not found or not selected. Install Xcode 27+ from the App Store, then:"
     echo "    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
     echo "    sudo xcodebuild -license accept"
   fi
