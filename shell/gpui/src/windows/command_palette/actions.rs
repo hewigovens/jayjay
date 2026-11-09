@@ -178,7 +178,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     },
     PaletteAction {
         id: "operation-log",
-        shortcut: Some(ShortcutCommand::RepoUndoLastOperation),
+        shortcut: Some(ShortcutCommand::RepoOperationLog),
         label: jayjay_i18n::repo::operation_log,
         keywords: &["operation", "operations", "op", "log", "undo", "restore"],
         glyph_str: glyph::HISTORY,

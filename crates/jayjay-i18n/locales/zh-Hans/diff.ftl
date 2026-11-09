@@ -98,5 +98,5 @@ diff-edit-keep-selected = 保留所选
 diff-edit-keep-selected-help = 此变更中只保留所选的行，其余的行将被丢弃
 diff-edit-discards = 将丢弃 { $count } 行
 diff-edit-discard-title = 要丢弃 { $count } 行未选中的内容吗？
-diff-edit-discard-message = 此变更中只会保留所选的行。可以用“撤销上次操作”找回被丢弃的行。
+diff-edit-discard-message = 此变更中只会保留所选的行。可以用撤销（⌘Z）找回被丢弃的行。
 diff-edit-discard-confirm = 丢弃并保留所选

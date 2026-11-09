@@ -389,9 +389,9 @@ final class RepoViewModelTests: RepoViewModelTestCase {
             selectionCommitIds: [second.commitId.id, first.commitId.id]
         )
 
-        var message: String?
-        viewModel.rebase(request: request, onSuccess: { _, feedback in message = feedback.message })
-        try await waitUntil("the rebase finishes") { message != nil }
+        viewModel.rebase(request: request)
+        try await waitUntil("the rebase finishes") { viewModel.actionNotice != nil }
+        let message = viewModel.actionNotice?.message
 
         XCTAssertEqual(message, "Rebased 2 changes onto destination.")
         let movedFirst = try XCTUnwrap(find("first"))
@@ -429,9 +429,9 @@ final class RepoViewModelTests: RepoViewModelTestCase {
             selectionCommitIds: [clean.commitId.id, conflicting.commitId.id]
         )
 
-        var message: String?
-        viewModel.rebase(request: request, onSuccess: { _, feedback in message = feedback.message })
-        try await waitUntil("the rebase finishes") { message != nil }
+        viewModel.rebase(request: request)
+        try await waitUntil("the rebase finishes") { viewModel.actionNotice != nil }
+        let message = viewModel.actionNotice?.message
 
         XCTAssertFalse(try viewModel.repo.showSummary(rev: clean.changeId.id).info.hasConflict)
         XCTAssertTrue(try viewModel.repo.showSummary(rev: conflicting.changeId.id).info.hasConflict)
@@ -468,9 +468,10 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
 
         var failure: String?
-        viewModel.rebase(request: request, onSuccess: { _, _ in XCTFail("stale rebase ran") }, onFailure: { _, message in failure = message })
+        viewModel.rebase(request: request, onFailure: { _, message in failure = message })
 
         XCTAssertEqual(failure, "Rebase cancelled: the changes moved while confirming")
+        XCTAssertNil(viewModel.actionNotice)
         XCTAssertEqual(try runJj(["log", "--no-graph", "-r", "parents(\(first.changeId.id))", "-T", "description"], in: repoPath), "base")
     }
 

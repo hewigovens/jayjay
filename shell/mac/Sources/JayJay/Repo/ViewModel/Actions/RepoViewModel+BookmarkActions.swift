@@ -39,16 +39,18 @@ extension RepoViewModel {
     }
 
     func deleteBookmark(name: String) {
-        perform(selecting: nil) { try $0.deleteBookmark(name: name) }
+        perform(selecting: nil, undoable: Localized.Repo.deletedBookmark(bookmark: name)) { try $0.deleteBookmark(name: name) }
     }
 
     /// DAG chip delete: drop this bookmark from `fromRev` only. A conflicted bookmark stays on its other targets.
     func removeBookmark(name: String, fromRev: String) {
-        perform(selecting: nil) { try $0.removeBookmarkFromRev(name: name, rev: fromRev) }
+        perform(selecting: nil, undoable: Localized.Repo.deletedBookmark(bookmark: name)) {
+            try $0.removeBookmarkFromRev(name: name, rev: fromRev)
+        }
     }
 
     func forgetBookmark(name: String) {
-        perform(selecting: nil) { try $0.forgetBookmark(name: name) }
+        perform(selecting: nil, undoable: Localized.Repo.forgotBookmark(bookmark: name)) { try $0.forgetBookmark(name: name) }
     }
 
     func renameBookmark(oldName: String, newName: String) {

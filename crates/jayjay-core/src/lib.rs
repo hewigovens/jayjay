@@ -40,6 +40,8 @@ mod log_file;
 mod merge_editor;
 #[cfg(any(test, feature = "mock"))]
 pub mod mock;
+#[cfg(feature = "repository")]
+mod operation_receipt;
 pub mod overview;
 pub mod palette;
 pub mod placeholder;
@@ -48,6 +50,8 @@ pub mod projection;
 mod repo;
 #[cfg(feature = "repository")]
 mod repository;
+#[cfg(feature = "repository")]
+pub use operation_receipt::take_mutation_operation_id;
 #[cfg(feature = "repository")]
 mod rooted_directory;
 #[cfg(feature = "repository")]

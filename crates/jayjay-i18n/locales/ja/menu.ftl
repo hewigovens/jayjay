@@ -8,7 +8,7 @@ menu-zoom-out = 縮小
 menu-reset-zoom = 実際のサイズ
 menu-repository = リポジトリ
 menu-command-palette = コマンド パレット
-menu-undo-last-operation = 直前の操作を取り消す
+menu-operation-log-ellipsis = 操作ログ…
 menu-filter-by-revset-ellipsis = revset で絞り込む…
 menu-bookmark-manager = ブックマーク マネージャー
 menu-repo-overview = リポジトリの概要
@@ -172,3 +172,6 @@ menu-commit-files =
     }
 menu-edit-file-at-line = { $line } 行目でファイルを編集
 menu-action-at-line = { $action }（{ $line } 行目）
+menu-undo-operation = 「{ $operation }」を取り消す
+menu-redo-operation = 「{ $operation }」をやり直す
+menu-redo = やり直す

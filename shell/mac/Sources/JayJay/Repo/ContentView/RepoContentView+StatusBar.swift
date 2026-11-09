@@ -98,8 +98,14 @@ extension RepoContentView {
     private var lastOpItem: StatusBarItem? {
         let desc = viewModel.currentOperationDescription
         guard !desc.isEmpty else { return nil }
-        return .action(id: "last-op", icon: OperationIcon.symbol(for: desc), text: desc, shrinks: true) {
-            showUndo()
+        return .action(
+            id: "last-op",
+            icon: OperationIcon.symbol(for: desc),
+            text: desc,
+            tooltip: AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis),
+            shrinks: true
+        ) {
+            showOperationLog()
         }
     }
 

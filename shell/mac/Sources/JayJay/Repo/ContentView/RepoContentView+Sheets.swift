@@ -34,9 +34,10 @@ extension RepoContentView {
                 changeConfirmationSheet(confirmation)
             case .submoduleAttention:
                 submoduleAttentionSheet
-            case .undoLog:
+            case let .operationLog(operationId):
                 UndoView(
                     entries: viewModel.opLogEntries,
+                    undoing: operationId,
                     onRestore: { opId in viewModel.opRestore(opId: opId) },
                     onDismiss: { self.modal = nil }
                 )
@@ -103,7 +104,7 @@ extension RepoContentView {
                         }
                     }
                 )
-            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .undoLog, .bookmarkManager, .ratingPrompt:
+            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .operationLog, .bookmarkManager, .ratingPrompt:
                 EmptyView()
         }
     }
@@ -169,7 +170,7 @@ extension RepoContentView {
 
     private func abandonSheet(rev: String) -> some View {
         DestructiveConfirmSheet(
-            title: Localized.Repo.abandonChange,
+            title: abandonTitle(rev: rev),
             message: Localized.Repo.abandonChangeMessage,
             confirmLabel: Localized.Menu.abandon,
             dontAskAgain: Binding(
@@ -182,6 +183,14 @@ extension RepoContentView {
                 modal = nil
             }
         )
+    }
+
+    private func abandonTitle(rev: String) -> String {
+        guard let change = viewModel.change(for: rev) else { return Localized.Repo.abandonChange }
+        let summary = commitSummary(message: change.description)
+        return summary.isEmpty
+            ? Localized.Repo.abandonChangeId(change: change.changeId.compact)
+            : Localized.Repo.abandonChangeNamed(change: change.changeId.compact, description: summary)
     }
 
     private func abandonSelectionSheet(revisions: [String]) -> some View {

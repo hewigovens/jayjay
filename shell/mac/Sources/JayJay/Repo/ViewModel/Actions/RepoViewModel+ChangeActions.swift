@@ -101,7 +101,7 @@ extension RepoViewModel {
     }
 
     func abandon(rev: String) {
-        perform(selecting: "@", beforeRefresh: { viewModel in
+        perform(selecting: "@", undoable: Localized.Repo.abandonedChanges(count: 1), beforeRefresh: { viewModel in
             viewModel.applySingleSelectedChange(nil)
         }, {
             try $0.abandon(rev: rev)
@@ -109,7 +109,7 @@ extension RepoViewModel {
     }
 
     func abandon(revs: [String]) {
-        perform(selecting: "@", beforeRefresh: { viewModel in
+        perform(selecting: "@", undoable: Localized.Repo.abandonedChanges(count: revs.count), beforeRefresh: { viewModel in
             viewModel.applySingleSelectedChange(nil)
         }, {
             try $0.abandonMany(revs: revs)
@@ -117,22 +117,22 @@ extension RepoViewModel {
     }
 
     func squash(rev: String) {
-        perform { try $0.squash(rev: rev, intoRev: nil) }
+        perform(undoable: Localized.Repo.squashedChanges(count: 1)) { try $0.squash(rev: rev, intoRev: nil) }
     }
 
     func squash(rev: String, into destination: String) {
-        perform(selecting: destination) { try $0.squash(rev: rev, intoRev: destination) }
+        perform(selecting: destination, undoable: Localized.Repo.squashedChanges(count: 1)) {
+            try $0.squash(rev: rev, intoRev: destination)
+        }
     }
 
     func parallelize(revs: [String]) {
         performResult(
             selecting: revs.first,
-            onSuccess: { viewModel, outcome in
+            undoable: { outcome in
                 switch outcome {
-                    case .changed:
-                        break
-                    case .unchanged:
-                        viewModel.info = Localized.Menu.nothingToParallelizeTheSelectionWould
+                    case .changed: Localized.Repo.parallelizedChanges(count: revs.count)
+                    case .unchanged: Localized.Menu.nothingToParallelizeTheSelectionWould
                 }
             },
             { try $0.parallelize(revs: revs) }
@@ -155,7 +155,11 @@ extension RepoViewModel {
     }
 
     func squash(revs: [String]) {
-        performResult(selectingResult: { $0 }, { try $0.squashMany(revs: revs) })
+        performResult(
+            selectingResult: { $0 },
+            undoable: { _ in Localized.Repo.squashedChanges(count: revs.count) },
+            { try $0.squashMany(revs: revs) }
+        )
     }
 
     func edit(rev: String) {
@@ -171,12 +175,10 @@ extension RepoViewModel {
 
     func absorb(rev: String) {
         performResult(
-            onSuccess: { viewModel, outcome in
+            undoable: { outcome in
                 switch outcome {
-                    case .changed:
-                        break
-                    case .unchanged:
-                        viewModel.info = Localized.Menu.nothingToAbsorbUseSquashInto
+                    case .changed: Localized.Repo.absorbedIntoAncestors
+                    case .unchanged: Localized.Menu.nothingToAbsorbUseSquashInto
                 }
             },
             { try $0.absorb(rev: rev) }
@@ -184,34 +186,38 @@ extension RepoViewModel {
     }
 
     func revertChange(rev: String) {
-        perform { try $0.revertChange(rev: rev) }
+        perform(undoable: Localized.Repo.revertedChange) { try $0.revertChange(rev: rev) }
     }
 
     func rebase(rev: String, dest: String, mode: RebaseMode) {
-        perform { try $0.rebase(rev: rev, dest: dest, mode: mode) }
+        perform(undoable: Localized.Repo.rebasedChanges(count: 1)) { try $0.rebase(rev: rev, dest: dest, mode: mode) }
     }
 
     func rebase(revs: [String], dest: String) {
-        perform { try $0.rebaseMany(revs: revs, dest: dest) }
+        perform(undoable: Localized.Repo.rebasedChanges(count: revs.count)) { try $0.rebaseMany(revs: revs, dest: dest) }
     }
 
     func merge(parents: [String]) {
-        perform { try $0.merge(parentRevs: parents) }
+        perform(undoable: Localized.Repo.createdMergeChange) { try $0.merge(parentRevs: parents) }
     }
 
     func duplicate(rev: String) {
-        perform { try $0.duplicate(rev: rev) }
+        perform(undoable: Localized.Repo.duplicatedChange) { try $0.duplicate(rev: rev) }
     }
 
-    func opLog() {
+    func loadOpLog() {
+        opLogEntries = nil
         runRepoTask {
             try $0.opLog()
         } onSuccess: { viewModel, entries in
             viewModel.opLogEntries = entries
+        } onFailure: { viewModel, error in
+            viewModel.opLogEntries = []
+            viewModel.present(error: error)
         }
     }
 
     func opRestore(opId: String) {
-        perform { try $0.opRestore(opId: opId) }
+        perform(undoable: Localized.Oplog.restoredOperation) { try $0.opRestore(opId: opId) }
     }
 }

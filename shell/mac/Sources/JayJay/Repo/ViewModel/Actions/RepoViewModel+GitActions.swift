@@ -59,10 +59,12 @@ extension RepoViewModel {
     }
 
     func forgetStaleBookmarks() {
-        performMessaging { repo in
-            let count = try repo.forgetStaleBookmarks()
-            return count > 0 ? Localized.Repo.forgotStaleBookmarks(count: Int(count)) : Localized.Repo.noStaleBookmarksFound
-        }
+        performResult(
+            undoable: { count in
+                count > 0 ? Localized.Repo.forgotStaleBookmarks(count: Int(count)) : Localized.Repo.noStaleBookmarksFound
+            },
+            { try $0.forgetStaleBookmarks() }
+        )
     }
 
     func openPR(bookmark: String) {

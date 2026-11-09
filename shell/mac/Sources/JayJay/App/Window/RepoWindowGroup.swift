@@ -31,6 +31,7 @@ struct RepoWindowGroup: Scene {
         .restorationBehavior(.disabled)
         .commands {
             AppInfoCommands(updater: updater)
+            UndoRedoCommands()
             RepositoryCommands()
             HelpCommands()
             AppCommands(settings: settings, windowManager: windowManager)

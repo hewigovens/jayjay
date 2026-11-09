@@ -2,7 +2,8 @@ import JayJayCore
 import SwiftUI
 
 struct UndoView: View {
-    let entries: [OpLogEntry]
+    let entries: [OpLogEntry]?
+    let undoing: String?
     let onRestore: (String) -> Void
     let onDismiss: () -> Void
 
@@ -15,15 +16,23 @@ struct UndoView: View {
         VStack(alignment: .leading, spacing: 0) {
             header
             Divider()
-            if entries.isEmpty {
-                emptyState
+            if let entries {
+                if entries.isEmpty {
+                    emptyState
+                } else {
+                    operationList(entries)
+                }
             } else {
-                operationList
+                LoadingStatus(label: Localized.Oplog.loadingOperationsEllipsis)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
             Divider()
             footer
         }
         .frame(width: 600, height: 480)
+        .onChange(of: entries?.map(\.id.id), initial: true) {
+            selectedId = entries?.restoreTarget(undoing: undoing)
+        }
     }
 
     private var header: some View {
@@ -49,7 +58,7 @@ struct UndoView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
-    private var operationList: some View {
+    private func operationList(_ entries: [OpLogEntry]) -> some View {
         List(entries, id: \.id.id, selection: $selectedId) { entry in
             HStack(spacing: 10) {
                 operationIcon(for: entry.description)
@@ -102,7 +111,7 @@ struct UndoView: View {
 
     private var isCurrentSelected: Bool {
         guard let id = selectedId else { return false }
-        return entries.first(where: { $0.id.id == id })?.isCurrent == true
+        return entries?.first(where: { $0.id.id == id })?.isCurrent == true
     }
 
     private func descriptionLabel(_ description: String) -> String {
@@ -117,5 +126,16 @@ struct UndoView: View {
             .jayjayFont(13)
             .foregroundStyle(style.color)
             .frame(width: 18)
+    }
+}
+
+extension [OpLogEntry] {
+    func restoreTarget(undoing operationId: String?) -> String? {
+        guard let entry = first(where: { entry in operationId.map { entry.id.id == $0 } ?? entry.isCurrent }),
+              entry.parentIds.count == 1,
+              let parent = entry.parentIds.first,
+              contains(where: { $0.id.id == parent })
+        else { return nil }
+        return parent
     }
 }

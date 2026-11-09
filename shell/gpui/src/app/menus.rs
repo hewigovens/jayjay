@@ -59,7 +59,10 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
         ]),
         Menu::new(jayjay_i18n::menu::repository()).items([
             MenuItem::action(jayjay_i18n::menu::command_palette(), OpenCommandPalette),
-            MenuItem::action(jayjay_i18n::menu::undo_last_operation(), OpenOperationLog),
+            MenuItem::action(
+                jayjay_i18n::menu::operation_log_ellipsis(),
+                OpenOperationLog,
+            ),
             MenuItem::separator(),
             MenuItem::action(
                 jayjay_i18n::menu::filter_by_revset_ellipsis(),

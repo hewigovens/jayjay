@@ -375,11 +375,11 @@ repo-delete-tag-title = { $remotes } のタグ { $name } を削除しますか�
 repo-delete-tag-message = タグをローカルで削除し、その削除を { $remotes } にプッシュします。このタグに紐づく GitHub リリースは下書きになり、タグが再び存在するまでダウンロードが機能しなくなります。
 repo-abandon-change-message =
     チェンジを取り除き、その子の親を付け替えます。
-    jj op restore で元に戻せます。
+    取り消す（⌘Z）で元に戻せます。
 repo-abandon-changes-title = { $count } 個のチェンジを破棄しますか？
 repo-abandon-changes-message =
     選択したチェンジを取り除き、その子孫の親を付け替えます。
-    jj op restore で元に戻せます。
+    取り消す（⌘Z）で元に戻せます。
 repo-abandon-count = { NUMBER($count) } 個を破棄
 repo-squash-changes-title = { $count } 個のチェンジをスカッシュしますか？
 repo-into-rev = { $rev } へ
@@ -527,3 +527,20 @@ repo-gerrit-updated = { $change } を Gerrit のパッチセット { $patchset }
 repo-unsupported-backend = このリポジトリは「{ $kind }」{ $store } バックエンドを使っているため、JayJay では開けません。JayJay が扱えるのは Git バックエンドの Jujutsu リポジトリです。
 repo-sync-abandoned-landed = 取り込み済みの変更を破棄しました: { $changes }
 repo-sync-conflicting-may-be-merged = 競合中（マージ済みの可能性あり）: { $names } — 破棄を検討してください
+repo-nothing-to-undo = 取り消せる操作はありません。
+repo-nothing-to-redo = やり直せる操作はありません。
+repo-undid-operation = 取り消しました: { $operation }
+repo-redid-operation = やり直しました: { $operation }
+repo-abandoned-changes = { $count } 個のチェンジを破棄しました
+repo-squashed-changes = { $count } 個のチェンジをスカッシュしました
+repo-rebased-changes = { $count } 個のチェンジをリベースしました
+repo-parallelized-changes = { $count } 個のチェンジを並列化しました
+repo-created-merge-change = マージチェンジを作成しました
+repo-duplicated-change = チェンジを複製しました
+repo-reverted-change = チェンジを元に戻しました
+repo-absorbed-into-ancestors = 祖先に吸収しました
+repo-forgot-bookmark = ブックマーク { $bookmark } を登録解除しました
+repo-restored-files = { $count } 個のファイルを復元しました
+repo-deleted-files = { $count } 個のファイルを削除しました
+repo-abandon-change-named = { $change }「{ $description }」を破棄しますか？
+repo-abandon-change-id = { $change } を破棄しますか？

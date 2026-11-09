@@ -3,8 +3,8 @@ use jj_lib::object_id::ObjectId as _;
 use jj_lib::op_walk;
 use jj_lib::operation::Operation;
 
-use super::Repo;
-use super::support::block_on_result;
+use super::super::Repo;
+use super::super::support::block_on_result;
 use crate::types::*;
 
 const OP_LOG_LIMIT: usize = 20;
@@ -28,6 +28,7 @@ impl Repo {
                 let metadata = op.metadata();
                 OpLogEntry {
                     id: ShortId::new(id.clone(), unique_prefix_len(id, &ids)),
+                    parent_ids: op.parent_ids().iter().map(|id| id.hex()).collect(),
                     description: shorten_embedded_ids(&metadata.description),
                     timestamp_millis: metadata.time.start.timestamp.0,
                     is_current: op.id() == repo.op_id(),
@@ -37,7 +38,7 @@ impl Repo {
         Ok(entries)
     }
 
-    /// `jj op restore`: put the repo view back as it was at `op_id`. Git refs and heads stay current, as the CLI keeps them, because they mirror the Git repo rather than jj history.
+    /// `jj op restore`: put the repo view back as it was at `op_id`.
     pub fn op_restore(&self, op_id: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
@@ -46,6 +47,19 @@ impl Repo {
             "resolve operation",
             op_walk::resolve_op_with_repo(&repo, op_id),
         )?;
+        self.restore_operation_view(
+            &target,
+            &format!("restore to operation {}", target.id().hex()),
+        )
+    }
+
+    /// Git refs and heads stay current, as the CLI keeps them, because they mirror the Git repo rather than jj history.
+    pub(super) fn restore_operation_view(
+        &self,
+        target: &Operation,
+        description: &str,
+    ) -> JayResult<()> {
+        let repo = self.get_repo();
         let target_view = block_on_result("load operation view", target.view())?;
         if target_view
             .get_wc_commit_id(self.workspace_name.as_ref())
@@ -65,7 +79,7 @@ impl Repo {
         };
         let mut tx = repo.start_transaction();
         tx.repo_mut().set_view(restored);
-        self.commit_transaction(tx, &format!("restore to operation {}", target.id().hex()))
+        self.commit_transaction(tx, description)
     }
 
     /// Whether the loaded repo matches the sole on-disk operation head.
@@ -101,7 +115,7 @@ fn unique_prefix_len(id: &str, all: &[String]) -> u32 {
 }
 
 /// jj writes full 128-hex operation ids (and 40-hex commit ids) into descriptions such as "restore to operation …"; show 12 characters like `jj op log`.
-fn shorten_embedded_ids(description: &str) -> String {
+pub(super) fn shorten_embedded_ids(description: &str) -> String {
     const COMMIT_ID_LEN: usize = 40;
     const OPERATION_ID_LEN: usize = 128;
     const SHORT_LEN: usize = 12;

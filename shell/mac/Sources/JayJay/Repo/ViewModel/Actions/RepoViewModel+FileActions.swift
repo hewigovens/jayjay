@@ -3,11 +3,11 @@ import JayJayCore
 
 extension RepoViewModel {
     func restoreFiles(rev: String, paths: [String]) {
-        perform(selecting: rev) { try $0.restoreFiles(rev: rev, paths: paths) }
+        perform(selecting: rev, undoable: Localized.Repo.restoredFiles(count: paths.count)) { try $0.restoreFiles(rev: rev, paths: paths) }
     }
 
     func deleteFiles(paths: [String]) {
-        perform { try $0.deleteFiles(paths: paths) }
+        perform(undoable: Localized.Repo.deletedFiles(count: paths.count)) { try $0.deleteFiles(paths: paths) }
     }
 
     func ignoreAndUntrack(paths: [String]) {

@@ -392,7 +392,7 @@ repo-delete-tag-title = Delete Tag { $name } on { $remotes }?
 repo-delete-tag-message = This removes the tag locally and pushes the deletion to { $remotes }. A GitHub release on this tag turns into a draft and its downloads stop working until the tag exists again.
 repo-abandon-change-message =
     This will remove the change and reparent its children.
-    You can undo this with jj op restore.
+    You can bring it back with Undo (⌘Z).
 repo-abandon-changes-title =
     { $count ->
         [one] Abandon { $count } Change?
@@ -400,7 +400,7 @@ repo-abandon-changes-title =
     }
 repo-abandon-changes-message =
     This will remove the selected changes and reparent their descendants.
-    You can undo this with jj op restore.
+    You can bring them back with Undo (⌘Z).
 repo-abandon-count = Abandon { NUMBER($count) }
 repo-squash-changes-title =
     { $count ->
@@ -607,3 +607,44 @@ repo-tagged-change-immutable-hint = { $target } · a tagged change becomes immut
 repo-sync-abandoned-merged = Abandoned merged: { $names }
 repo-sync-abandoned-landed = Abandoned landed changes: { $changes }
 repo-sync-conflicting-may-be-merged = Conflicting (may be merged): { $names } — consider abandoning
+repo-nothing-to-undo = Nothing to undo.
+repo-nothing-to-redo = Nothing to redo.
+repo-undid-operation = Undid { $operation }
+repo-redid-operation = Redid { $operation }
+repo-abandoned-changes =
+    { $count ->
+        [one] Abandoned { $count } change
+       *[other] Abandoned { $count } changes
+    }
+repo-squashed-changes =
+    { $count ->
+        [one] Squashed { $count } change
+       *[other] Squashed { $count } changes
+    }
+repo-rebased-changes =
+    { $count ->
+        [one] Rebased { $count } change
+       *[other] Rebased { $count } changes
+    }
+repo-parallelized-changes =
+    { $count ->
+        [one] Parallelized { $count } change
+       *[other] Parallelized { $count } changes
+    }
+repo-created-merge-change = Created a merge change
+repo-duplicated-change = Duplicated the change
+repo-reverted-change = Reverted the change
+repo-absorbed-into-ancestors = Absorbed into ancestors
+repo-forgot-bookmark = Forgot bookmark { $bookmark }
+repo-restored-files =
+    { $count ->
+        [one] Restored { $count } file
+       *[other] Restored { $count } files
+    }
+repo-deleted-files =
+    { $count ->
+        [one] Deleted { $count } file
+       *[other] Deleted { $count } files
+    }
+repo-abandon-change-named = Abandon { $change } “{ $description }”?
+repo-abandon-change-id = Abandon { $change }?

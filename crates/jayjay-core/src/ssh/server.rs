@@ -76,6 +76,7 @@ fn serve_stream(
                 &mut *writer,
                 &Response {
                     id: request.id,
+                    operation_id: crate::take_mutation_operation_id(),
                     result,
                     images,
                 },
@@ -84,6 +85,7 @@ fn serve_stream(
                     &mut *writer,
                     &Response {
                         id: request.id,
+                        operation_id: None,
                         result: Err(error),
                         images: HashMap::new(),
                     },

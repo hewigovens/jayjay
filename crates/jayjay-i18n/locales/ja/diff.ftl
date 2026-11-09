@@ -102,5 +102,5 @@ diff-edit-keep-selected = 選択部分を残す
 diff-edit-keep-selected-help = このチェンジには選択した行だけを残し、ほかの行は破棄します
 diff-edit-discards = { $count } 行を破棄します
 diff-edit-discard-title = 選択していない { $count } 行を破棄しますか？
-diff-edit-discard-message = このチェンジには選択した行だけが残ります。破棄した行は「直前の操作を取り消す」で元に戻せます。
+diff-edit-discard-message = このチェンジには選択した行だけが残ります。破棄した行は取り消し（⌘Z）で元に戻せます。
 diff-edit-discard-confirm = 破棄して選択部分を残す

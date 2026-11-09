@@ -67,9 +67,9 @@ extension RepoContentView {
         }
     }
 
-    func showUndo() {
-        viewModel.opLog()
-        modal = .undoLog
+    func showOperationLog(undoing operationId: String? = nil) {
+        viewModel.loadOpLog()
+        modal = .operationLog(undoing: operationId)
     }
 
     func presentBookmarkCreate(rev: String) {
@@ -104,19 +104,13 @@ extension RepoContentView {
     }
 
     func runDAGRebase(_ request: DAGRebaseRequest) {
-        viewModel.rebase(
-            request: request,
-            onSuccess: { repoViewModel, feedback in
-                let action = feedback.undoOperationId.map { operationId in
-                    RepoToastAction(title: Localized.Repo.undo) {
-                        repoViewModel.opRestore(opId: operationId)
-                    }
-                }
-                showToast(feedback.message, action: action)
-            },
-            onFailure: { _, message in
-                showToast(message)
-            }
-        )
+        viewModel.rebase(request: request, onFailure: { _, message in showToast(message) })
+    }
+
+    func showActionNotice(_ notice: RepoActionNotice) {
+        let action = notice.undoOperationId.map { operationId in
+            RepoToastAction(title: Localized.Repo.undo) { viewModel.undo(operationId: operationId) }
+        }
+        showToast(notice.message, action: action)
     }
 }

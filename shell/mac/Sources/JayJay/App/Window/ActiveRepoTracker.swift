@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 /// Actions the Repository menu can invoke on the active window.
@@ -6,12 +7,15 @@ import SwiftUI
 protocol RepositoryMenuHandler: AnyObject {
     func performShortcut(_ shortcut: AppShortcut)
     func showCommandPalette()
-    func showUndo()
+    func showOperationLog()
     func showRevsetFilter()
     func showBookmarkManager()
     func showOverview()
     func showNewWorkspace()
     func showPullRequestImport()
+    var operationSteps: UndoState? { get }
+    func undoOperation()
+    func redoOperation()
 }
 
 /// Tracks the active repo window's path, settings, and menu handler.

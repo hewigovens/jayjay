@@ -1,22 +1,26 @@
+import JayJayCore
 import SwiftUI
 
 @MainActor
 final class RepoMenuHandler: RepositoryMenuHandler {
-    func performShortcut(_ shortcut: AppShortcut) { onAction?(.shortcut(shortcut)) }
+    func performShortcut(_ shortcut: AppShortcut) {
+        onAction?(.shortcut(shortcut))
+    }
 
     var onAction: ((MenuAction) -> Void)?
+    weak var viewModel: RepoViewModel?
 
     enum MenuAction {
         case shortcut(AppShortcut)
-        case commandPalette, undo, revsetFilter, bookmarkManager, overview, newWorkspace, pullRequestImport
+        case commandPalette, operationLog, revsetFilter, bookmarkManager, overview, newWorkspace, pullRequestImport
     }
 
     func showCommandPalette() {
         onAction?(.commandPalette)
     }
 
-    func showUndo() {
-        onAction?(.undo)
+    func showOperationLog() {
+        onAction?(.operationLog)
     }
 
     func showRevsetFilter() {
@@ -37,5 +41,19 @@ final class RepoMenuHandler: RepositoryMenuHandler {
 
     func showPullRequestImport() {
         onAction?(.pullRequestImport)
+    }
+
+    var operationSteps: UndoState? {
+        viewModel?.operationSteps
+    }
+
+    func undoOperation() {
+        guard let steps = operationSteps, steps.undoDescription != nil else { return }
+        viewModel?.undo(operationId: steps.operationId)
+    }
+
+    func redoOperation() {
+        guard let steps = operationSteps, steps.redoDescription != nil else { return }
+        viewModel?.redo(operationId: steps.operationId)
     }
 }

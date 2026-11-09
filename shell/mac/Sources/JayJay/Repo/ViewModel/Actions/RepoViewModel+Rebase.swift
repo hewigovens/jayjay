@@ -1,25 +1,19 @@
 import Foundation
 import JayJayCore
 
-struct RepoRebaseFeedback {
-    let message: String
-    let undoOperationId: String?
-}
-
 private struct RepoRebaseRefreshResult {
     let graph: GraphWithLayout
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyDescription: String
     let hadConflicts: Bool
-    let undoOperationId: String?
+    let operationId: String?
     let context: RepoRefreshContext
 }
 
 extension RepoViewModel {
     func rebase(
         request: DAGRebaseRequest,
-        onSuccess: @escaping @MainActor (RepoViewModel, RepoRebaseFeedback) -> Void,
         onFailure: @escaping @MainActor (RepoViewModel, String) -> Void = { viewModel, message in
             viewModel.error = message
         }
@@ -60,10 +54,10 @@ extension RepoViewModel {
             viewModel.fetchPrInfo(bookmarks: result.selectedChange?.info.bookmarks ?? [])
             viewModel.resumePendingBackgroundRefresh()
 
-            onSuccess(viewModel, RepoRebaseFeedback(
+            viewModel.actionNotice = RepoActionNotice(
                 message: Self.rebaseMessage(for: request, hadConflicts: result.hadConflicts),
-                undoOperationId: result.undoOperationId
-            ))
+                undoOperationId: result.operationId
+            )
         } onFailure: { viewModel, error in
             viewModel.isLoading = false
             viewModel.isRefreshingInFlight = false
@@ -78,15 +72,16 @@ extension RepoViewModel {
         revset: String,
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRebaseRefreshResult {
-        let undoOperationId = try repo.opLog().first(where: { $0.isCurrent })?.id.id
         let rebasedChangeIds = try request.selectionCommitIds.isEmpty
             ? [request.sourceChangeId]
             : request.selectionCommitIds.map { try repo.showSummary(rev: $0).info.changeId.id }
-        if request.selectionCommitIds.isEmpty {
-            try repo.rebase(rev: request.sourceRev, dest: request.destRev, mode: .source)
-        } else {
-            try repo.rebaseMany(revs: request.selectionCommitIds, dest: request.destRev)
-        }
+        let operationId = try trackingOperation(repo: repo) { repo in
+            if request.selectionCommitIds.isEmpty {
+                _ = try repo.rebase(rev: request.sourceRev, dest: request.destRev, mode: .source)
+            } else {
+                try repo.rebaseMany(revs: request.selectionCommitIds, dest: request.destRev)
+            }
+        }.operationId
         try repo.refreshWorkingCopy()
 
         let graph = try repo.logGraphWithLayout(revset: revset)
@@ -108,7 +103,7 @@ extension RepoViewModel {
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
             workingCopyDescription: workingCopy?.description ?? "",
             hadConflicts: hadConflicts,
-            undoOperationId: undoOperationId,
+            operationId: operationId,
             context: RepoRefreshContext(repo: repo)
         )
     }

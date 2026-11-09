@@ -125,5 +125,5 @@ diff-edit-discard-title =
         [one] Discard { $count } Unselected Line?
        *[other] Discard { $count } Unselected Lines?
     }
-diff-edit-discard-message = Only the selected lines stay in this change. Undo Last Operation brings the discarded lines back.
+diff-edit-discard-message = Only the selected lines stay in this change. Undo (⌘Z) brings the discarded lines back.
 diff-edit-discard-confirm = Discard and Keep Selected

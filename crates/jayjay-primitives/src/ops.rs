@@ -4,9 +4,20 @@ use super::change::ShortId;
 pub struct OpLogEntry {
     /// Operation id. Its `short_len` is the prefix unique among the listed operations (op ids have no templater `shortest()`, so it's computed in `op_log`).
     pub id: ShortId,
+    #[serde(default)]
+    pub parent_ids: Vec<String>,
     pub description: String,
     pub timestamp_millis: i64,
     pub is_current: bool,
+}
+
+/// What `jj undo` and `jj redo` would act on from the loaded operation.
+#[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
+pub struct UndoState {
+    /// Full id of the loaded operation; undo and redo refuse to act once the repo has moved past it.
+    pub operation_id: String,
+    pub undo_description: Option<String>,
+    pub redo_description: Option<String>,
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]

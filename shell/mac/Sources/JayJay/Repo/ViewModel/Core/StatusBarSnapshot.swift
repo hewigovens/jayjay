@@ -4,11 +4,13 @@ import JayJayCore
 struct StatusBarSnapshot {
     let workingCopyStats: DiffStats?
     let currentOperationDescription: String
+    let undoState: UndoState
 
     static func load(from repo: JayJayRepo) -> StatusBarSnapshot {
         StatusBarSnapshot(
             workingCopyStats: try? repo.diffStats(rev: "@"),
-            currentOperationDescription: repo.currentOperationDescription()
+            currentOperationDescription: repo.currentOperationDescription(),
+            undoState: repo.undoState()
         )
     }
 }
@@ -17,5 +19,6 @@ extension RepoViewModel {
     func apply(_ snapshot: StatusBarSnapshot) {
         workingCopyStats = snapshot.workingCopyStats
         currentOperationDescription = snapshot.currentOperationDescription
+        undoState = snapshot.undoState
     }
 }

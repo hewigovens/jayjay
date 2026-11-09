@@ -1,5 +1,5 @@
 use jayjay_core::{
-    BisectState, BookmarkInfo, DiffStats, RepositoryContext, RevsetVocabulary, TagInfo,
+    BisectState, BookmarkInfo, DiffStats, RepositoryContext, RevsetVocabulary, TagInfo, UndoState,
     WorkspaceInfo,
 };
 use jayjay_core::{
@@ -76,5 +76,6 @@ pub struct RepositoryContext {
     pub fix_unavailable_reason: Option<String>,
     pub working_copy_stats: Option<DiffStats>,
     pub operation: String,
+    pub undo: UndoState,
     pub bisect_state: Option<BisectState>,
 }

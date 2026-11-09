@@ -61,21 +61,11 @@ extension RepoViewModel {
 
     func perform(
         selecting rev: String? = "@",
+        undoable message: String? = nil,
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         _ action: @escaping RepoOperation<Void>
     ) {
-        performResult(selecting: rev, beforeRefresh: beforeRefresh, action)
-    }
-
-    func performMessaging(
-        selecting rev: String? = "@",
-        _ action: @escaping RepoOperation<String>
-    ) {
-        performResult(
-            selecting: rev,
-            onSuccess: { viewModel, message in viewModel.info = message },
-            action
-        )
+        performResult(selecting: rev, undoable: message.map { message in { _ in message } }, beforeRefresh: beforeRefresh, action)
     }
 
     @discardableResult
@@ -83,6 +73,7 @@ extension RepoViewModel {
         selecting rev: String? = "@",
         selectingResult: ((Result) -> String)? = nil,
         gatedBy gate: RepoActionGate? = nil,
+        undoable: ((Result) -> String?)? = nil,
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void = { _, _ in },
         // A manual refresh clears `error`, so anything that sets it belongs here rather than in `onSuccess`.
@@ -101,22 +92,41 @@ extension RepoViewModel {
             self[keyPath: gate.state] = true
         }
         lastInternalMutationAt = Date()
-        runRepoTask(action) { viewModel, result in
+        pendingMutations += 1
+        let tracksOperation = undoable != nil
+        runRepoTask { repo -> (result: Result, operationId: String?) in
+            guard tracksOperation else { return try (action(repo), nil) }
+            return try Self.trackingOperation(repo: repo, action)
+        } onSuccess: { viewModel, tracked in
+            viewModel.pendingMutations -= 1
             if let gate {
                 viewModel[keyPath: gate.state] = false
             }
             viewModel.successActionSignal += 1
             beforeRefresh(viewModel)
-            onSuccess(viewModel, result)
-            viewModel.refresh(selecting: selectingResult.map { $0(result) } ?? rev)
-            afterRefresh(viewModel, result)
+            onSuccess(viewModel, tracked.result)
+            if let message = undoable?(tracked.result) {
+                viewModel.actionNotice = RepoActionNotice(message: message, undoOperationId: tracked.operationId)
+            }
+            viewModel.refresh(selecting: selectingResult.map { $0(tracked.result) } ?? rev)
+            afterRefresh(viewModel, tracked.result)
         } onFailure: { viewModel, error in
+            viewModel.pendingMutations -= 1
             if let gate {
                 viewModel[keyPath: gate.state] = false
             }
             onFailure(viewModel, error)
         }
         return true
+    }
+
+    static func trackingOperation<Result>(
+        repo: JayJayRepo,
+        _ action: RepoOperation<Result>
+    ) throws -> (result: Result, operationId: String?) {
+        _ = takeMutationOperationId()
+        let result = try action(repo)
+        return (result, takeMutationOperationId())
     }
 
     func runRepoTask<Result>(

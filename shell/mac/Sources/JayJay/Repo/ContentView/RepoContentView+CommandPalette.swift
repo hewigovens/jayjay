@@ -273,11 +273,11 @@ extension RepoContentView {
     private var appPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items.append(CommandPaletteItem(
-            title: Localized.Menu.undoLastOperation,
-            icon: "arrow.uturn.backward.circle",
+            title: Localized.Menu.operationLogEllipsis,
+            icon: "clock.arrow.circlepath",
             category: Localized.Menu.repository,
-            shortcut: AppShortcut.undoLastOperation.symbol
-        ) { showUndo() })
+            shortcut: AppShortcut.operationLog.symbol
+        ) { showOperationLog() })
         items.append(CommandPaletteItem(
             title: Localized.Repo.settings, icon: "gearshape", category: Localized.Palette.app, shortcut: AppShortcut.settings.symbol
         ) {

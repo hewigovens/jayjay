@@ -8,7 +8,7 @@ menu-zoom-out = Zoom Out
 menu-reset-zoom = Reset Zoom
 menu-repository = Repository
 menu-command-palette = Command Palette
-menu-undo-last-operation = Undo Last Operation
+menu-operation-log-ellipsis = Operation Log…
 menu-filter-by-revset-ellipsis = Filter by Revset…
 menu-bookmark-manager = Bookmark Manager
 menu-repo-overview = Repo Overview
@@ -172,3 +172,6 @@ menu-commit-files =
     }
 menu-edit-file-at-line = Edit File at Line { $line }
 menu-action-at-line = { $action } at Line { $line }
+menu-undo-operation = Undo { $operation }
+menu-redo-operation = Redo { $operation }
+menu-redo = Redo

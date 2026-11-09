@@ -6,7 +6,11 @@ final class UndoScene: SceneBase {
         keyStroke("u", modifiers: [.command, .shift])
 
         let title = app.staticTexts["Operation Log"]
-        XCTAssertTrue(title.waitForExistence(timeout: 5), "Undo/Operation Log view did not open")
+        XCTAssertTrue(title.waitForExistence(timeout: 5), "Operation Log did not open")
+        let restore = app.buttons["Restore"]
+        XCTAssertTrue(restore.waitForExistence(timeout: 5), "Restore button missing")
+        expectation(for: NSPredicate(format: "isEnabled == true"), evaluatedWith: restore)
+        waitForExpectations(timeout: 5)
 
         keyStroke(.escape)
     }

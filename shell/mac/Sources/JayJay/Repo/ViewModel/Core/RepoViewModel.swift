@@ -91,9 +91,13 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var workingCopyChangeId: String = ""
     var workingCopyStats: DiffStats?
     var currentOperationDescription: String = ""
+    var undoState: UndoState?
+    /// Mutations started and not yet finished; undo and redo wait for them so they never step past an action still landing.
+    var pendingMutations = 0
     var commitSummaryDraft: String = ""
     var commitDescriptionDraft: String = ""
-    var opLogEntries: [OpLogEntry] = []
+    /// `nil` while the Operation Log loads.
+    var opLogEntries: [OpLogEntry]?
     var submoduleAttentionItems: [GitSubmoduleStatus] = []
     var pendingCommitMessage: String?
     var pendingConflictEditor: (commitId: String, path: String)?
@@ -101,6 +105,9 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var workspaceVanished = false
     var isWorkingCopyStale = false
     var info: String?
+    var actionNotice: RepoActionNotice?
+    /// An operation the user asked to undo after the repo moved past it; the window shows it in the Operation Log instead.
+    var operationLogRequest: String?
     /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
     var pendingPushBookmark: String?
     var workspaces: [WorkspaceInfo] = []

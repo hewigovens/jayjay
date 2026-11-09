@@ -28,10 +28,10 @@ struct RepositoryCommands: Commands {
             .keyboardShortcut(AppShortcut.commandPalette)
             .disabled(tracker.handler == nil)
 
-            Button { tracker.handler?.showUndo() } label: {
-                Label(Localized.Menu.undoLastOperation, systemImage: "arrow.uturn.backward.circle")
+            Button { tracker.handler?.showOperationLog() } label: {
+                Label(Localized.Menu.operationLogEllipsis, systemImage: "clock.arrow.circlepath")
             }
-            .keyboardShortcut(AppShortcut.undoLastOperation)
+            .keyboardShortcut(AppShortcut.operationLog)
             .disabled(tracker.handler == nil)
 
             Divider()

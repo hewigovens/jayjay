@@ -1089,6 +1089,144 @@ fn op_restore_returns_the_view_to_the_target_operation() {
 }
 
 #[test]
+fn undo_and_redo_walk_the_operation_stack() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+    let description = |repo: &Repo| repo.log("@").expect("log")[0].description.trim().to_owned();
+    repo.describe("@", "first").expect("describe");
+    repo.describe("@", "second").expect("describe");
+    let state = repo.undo_state();
+    assert_eq!(state.undo_description.as_deref(), Some("describe"));
+    assert_eq!(state.redo_description, None);
+
+    assert_eq!(
+        repo.undo(&state.operation_id).expect("undo").as_deref(),
+        Some("describe")
+    );
+    assert_eq!(description(&repo), "first");
+    assert!(
+        repo.op_log().expect("op log")[0]
+            .description
+            .starts_with("undo: restore to operation ")
+    );
+    assert!(
+        repo.undo(&repo.undo_state().operation_id)
+            .expect("undo again")
+            .is_some()
+    );
+    assert_eq!(description(&repo), "initial change");
+
+    let state = repo.undo_state();
+    assert_eq!(state.redo_description.as_deref(), Some("describe"));
+    let stale = state.operation_id;
+    assert!(repo.redo(&stale).expect("redo").is_some());
+    assert_eq!(description(&repo), "first");
+    assert_eq!(
+        repo.undo(&stale).expect("stale undo"),
+        None,
+        "a moved-on repo must not be undone"
+    );
+    assert_eq!(description(&repo), "first");
+    assert!(
+        repo.redo(&repo.undo_state().operation_id)
+            .expect("redo again")
+            .is_some()
+    );
+    assert_eq!(description(&repo), "second");
+
+    let state = repo.undo_state();
+    assert_eq!(state.redo_description, None);
+    assert!(repo.redo(&state.operation_id).is_err());
+}
+
+#[test]
+fn mutation_receipt_survives_a_concurrent_action_and_ignores_refreshes() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+    jayjay_core::take_mutation_operation_id();
+    repo.describe("@", "first").expect("first action");
+    let first = repo.undo_state().operation_id;
+    std::thread::scope(|scope| {
+        scope
+            .spawn(|| repo.describe("@", "second").expect("second action"))
+            .join()
+            .unwrap();
+    });
+    repo.refresh_working_copy().expect("refresh");
+    assert_ne!(repo.undo_state().operation_id, first);
+    assert_eq!(
+        jayjay_core::take_mutation_operation_id(),
+        Some(first.clone())
+    );
+    assert_eq!(repo.undo(&first).expect("stale receipt"), None);
+    assert_eq!(repo.log("@").unwrap()[0].description.trim(), "second");
+
+    fs::write(repo.path().join("pending.txt"), "pending edits").unwrap();
+    repo.refresh_working_copy().expect("snapshot");
+    assert_eq!(jayjay_core::take_mutation_operation_id(), None);
+}
+
+#[test]
+fn undoing_file_deletion_restores_the_unsnapshotted_contents() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+    let file = repo.path().join("hello.txt");
+    fs::write(&file, "unsaved contents").unwrap();
+    repo.delete_files(&["hello.txt".to_owned()])
+        .expect("delete");
+    assert!(!file.exists());
+    let operation = jayjay_core::take_mutation_operation_id().expect("deletion receipt");
+    assert!(repo.undo(&operation).expect("undo deletion").is_some());
+    assert_eq!(fs::read_to_string(file).unwrap(), "unsaved contents");
+}
+
+#[test]
+fn a_new_operation_invalidates_redo() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+    repo.describe("@", "first").unwrap();
+    repo.undo(&repo.undo_state().operation_id).unwrap();
+    assert!(repo.undo_state().redo_description.is_some());
+    repo.describe("@", "replacement").unwrap();
+    let state = repo.undo_state();
+    assert_eq!(state.redo_description, None);
+    assert!(repo.redo(&state.operation_id).is_err());
+    assert_eq!(repo.log("@").unwrap()[0].description.trim(), "replacement");
+}
+
+#[test]
+fn undo_refuses_a_merge_of_concurrent_operations() {
+    let temp_dir = init_jj_repo();
+    let path = temp_dir.path().join("repo");
+    let base = Repo::open(&path).unwrap().undo_state().operation_id;
+    run_jj_in(&path, &["--at-op", &base, "describe", "-m", "one"]);
+    run_jj_in(&path, &["--at-op", &base, "describe", "-m", "two"]);
+    let repo = Repo::open(&path).unwrap();
+    let state = repo.undo_state();
+    assert_eq!(state.undo_description, None);
+    assert!(repo.undo(&state.operation_id).is_err());
+    let entries = repo.op_log().unwrap();
+    assert_eq!(entries[0].parent_ids.len(), 2);
+}
+
+#[test]
+fn undo_skips_operations_from_another_workspace() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let dest = temp_dir.path().join("repo-feature");
+    repo.workspace_add(dest.to_str().expect("utf8 dest"), "feature", "")
+        .expect("workspace add");
+    let feature = Repo::open(&dest).expect("open feature workspace");
+    feature.describe("@", "feature work").expect("describe");
+
+    let repo = Repo::open(&repo_path).expect("reopen repo");
+    let state = repo.undo_state();
+    assert_eq!(state.undo_description, None);
+    assert!(repo.undo(&state.operation_id).is_err());
+}
+
+#[test]
 fn op_restore_refuses_an_operation_that_predates_this_workspace() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

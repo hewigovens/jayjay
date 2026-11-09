@@ -56,7 +56,7 @@ const SECTIONS: &[ShortcutSection] = &[
             ShortcutEntry::Command(ShortcutCommand::RepoBookmarkManager),
             ShortcutEntry::Command(ShortcutCommand::RepoOverview),
             ShortcutEntry::Command(ShortcutCommand::OverviewFilterLanes),
-            ShortcutEntry::Command(ShortcutCommand::RepoUndoLastOperation),
+            ShortcutEntry::Command(ShortcutCommand::RepoOperationLog),
             ShortcutEntry::Command(ShortcutCommand::RepoShowInFileManager),
             ShortcutEntry::Command(ShortcutCommand::RepoFetch),
             ShortcutEntry::Command(ShortcutCommand::RepoPush),

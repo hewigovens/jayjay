@@ -18,7 +18,7 @@ impl ShortcutCommand {
                 KeyPlatform::Mac => "ctrl-cmd-s",
                 KeyPlatform::Other => "ctrl-alt-s",
             },
-            Self::RepoUndoLastOperation => "shift-mod-u",
+            Self::RepoOperationLog => "shift-mod-u",
             Self::RepoFilterByRevset => "mod-l",
             Self::RepoBookmarkManager => "shift-mod-b",
             Self::RepoOverview => "shift-mod-o",

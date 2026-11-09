@@ -13,6 +13,8 @@ pub struct RepositoryContext {
     pub fix_unavailable_reason: Option<String>,
     pub working_copy_stats: Option<DiffStats>,
     pub operation: String,
+    #[serde(default)]
+    pub undo: UndoState,
     pub bisect_state: Option<BisectState>,
 }
 
@@ -32,6 +34,7 @@ impl crate::repo::Repo {
             fix_unavailable_reason: self.fix_unavailable_reason(),
             working_copy_stats: self.diff_stats("@").ok(),
             operation: self.current_operation_description(),
+            undo: self.undo_state(),
             bisect_state: self.bisect_state(),
         })
     }

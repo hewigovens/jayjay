@@ -6,6 +6,6 @@ extension RepoViewModel {
     }
 
     func deleteTag(name: String) {
-        perform(selecting: nil) { try $0.deleteTag(name: name) }
+        perform(selecting: nil, undoable: Localized.Repo.deletedTag(tag: name)) { try $0.deleteTag(name: name) }
     }
 }

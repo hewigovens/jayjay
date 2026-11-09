@@ -218,6 +218,8 @@ api! {
         fn resolve_use_theirs(rev: Text, path: Text) -> ();
         fn op_log() -> Vec<OpLogEntry>;
         fn op_restore(op_id: Text) -> ();
+        fn undo(operation_id: Text) -> Option<String>;
+        fn redo(operation_id: Text) -> Option<String>;
         fn is_at_operation_head() -> bool;
         fn parallelize(revs: Strings) -> MutationEffect;
         fn converge_preview(rev: Text) -> ConvergePlan;
@@ -261,6 +263,7 @@ api! {
         fn working_copy_is_large() -> bool;
         fn merge_editor_name() -> Option<String>;
         fn current_operation_description() -> String;
+        fn undo_state() -> UndoState;
         fn trunk_name() -> String;
         fn default_revset_preset() -> RevsetPreset;
         fn revset_vocabulary(bookmarks: Bookmarks) -> RevsetVocabulary;

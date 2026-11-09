@@ -53,7 +53,9 @@ impl Repo {
         self.ensure_working_copy_fresh(&mut locked_ws, tx.base_repo().clone())?;
         self.keep_working_copy_mutable(&mut tx)?;
         self.sync_colocated_git(&mut tx)?;
+        tx.set_workspace_name(&self.workspace_name);
         let new_repo = block_on_result("commit tx", tx.commit(description))?;
+        let operation_id = new_repo.op_id().hex();
         self.set_repo(new_repo);
         let repo = block_on_result(
             context,
@@ -65,6 +67,7 @@ impl Repo {
         }
         block_on_result(context, locked_ws.finish(repo.op_id().clone()))?;
         self.set_repo(repo);
+        crate::operation_receipt::record(operation_id);
         Ok(())
     }
 
@@ -108,6 +111,10 @@ impl Repo {
     }
 
     pub fn refresh_working_copy(&self) -> JayResult<()> {
+        self.snapshot_working_copy().map(drop)
+    }
+
+    pub(super) fn snapshot_working_copy(&self) -> JayResult<Option<String>> {
         let _write = self.write_guard()?;
         let started = std::time::Instant::now();
         // Swift cooperative executor threads have small stacks; jj descendant rebases can need substantially more while polling tree merges.
@@ -124,7 +131,7 @@ impl Repo {
                 Err(payload) => std::panic::resume_unwind(payload),
             }
         })
-        .inspect(|()| {
+        .inspect(|_| {
             log::debug!(
                 "working-copy snapshot in {}ms",
                 started.elapsed().as_millis()
@@ -132,7 +139,7 @@ impl Repo {
         })
     }
 
-    fn refresh_working_copy_inner(&self) -> JayResult<()> {
+    fn refresh_working_copy_inner(&self) -> JayResult<Option<String>> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
         #[cfg(test)]
         if let Some(hook) = BEFORE_WORKING_COPY_LOCK.lock().unwrap().as_ref() {
@@ -189,14 +196,16 @@ impl Repo {
         &self,
         mut locked_ws: LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
-    ) -> JayResult<()> {
+    ) -> JayResult<Option<String>> {
+        let before = repo.op_id().clone();
         let repo = self.record_working_copy(&mut locked_ws, repo)?;
+        let operation_id = (repo.op_id() != &before).then(|| repo.op_id().hex());
         block_on_result(
             "finish working-copy snapshot",
             locked_ws.finish(repo.op_id().clone()),
         )?;
         self.set_repo(repo);
-        Ok(())
+        Ok(operation_id)
     }
 
     pub(super) fn record_working_copy(
@@ -212,6 +221,7 @@ impl Repo {
         self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
         let mut tx = repo.start_transaction();
         tx.set_is_snapshot(true);
+        tx.set_workspace_name(&self.workspace_name);
         // An immutable `@` (a bookmark it carries became protected) keeps its tree; the edits become a new change on top, as the CLI snapshots them.
         if self.is_commit_immutable_in(&tx, &wc_commit)? {
             let new_commit = block_on_result(

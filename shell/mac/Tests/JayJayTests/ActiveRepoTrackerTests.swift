@@ -1,5 +1,6 @@
 import AppKit
 @testable import JayJay
+import JayJayCore
 import XCTest
 
 @MainActor
@@ -7,12 +8,18 @@ final class ActiveRepoTrackerTests: XCTestCase {
     private final class Handler: RepositoryMenuHandler {
         func performShortcut(_: AppShortcut) {}
         func showCommandPalette() {}
-        func showUndo() {}
+        func showOperationLog() {}
         func showRevsetFilter() {}
         func showBookmarkManager() {}
         func showOverview() {}
         func showNewWorkspace() {}
         func showPullRequestImport() {}
+        var operationSteps: UndoState? {
+            nil
+        }
+
+        func undoOperation() {}
+        func redoOperation() {}
     }
 
     func testRepositoryListWindowClearsTheActiveRepository() throws {

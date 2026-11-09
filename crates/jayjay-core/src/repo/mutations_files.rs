@@ -79,11 +79,15 @@ impl Repo {
     /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
     pub fn delete_files(&self, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
+        self.refresh_working_copy()?;
         let directory = RootedDirectory::open(&self.path)?;
         for path in paths {
             directory.remove(Path::new(path), Removal::Tree)?;
         }
-        self.refresh_working_copy()
+        if let Some(operation_id) = self.snapshot_working_copy()? {
+            crate::operation_receipt::record(operation_id);
+        }
+        Ok(())
     }
 
     /// Add paths to .gitignore, then stop tracking them (`jj file untrack`).

@@ -16,7 +16,7 @@ enum AppShortcut: String, Decodable {
     case bookmarkManager = "repo.bookmark_manager"
     case repoOverview = "repo.overview"
     case filterOverviewLanes = "overview.filter_lanes"
-    case undoLastOperation = "repo.undo_last_operation"
+    case operationLog = "repo.undo_last_operation"
     case showInFinder = "repo.show_in_file_manager"
     case findInDiff = "repo.find_in_diff"
     case saveEditedFile = "text.save_file"

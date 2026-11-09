@@ -25,7 +25,11 @@ struct RepoRefreshContext {
         uploadTitle = context.uploadTitle
         gerritUpdateTitle = context.gerritUpdateTitle
         fixUnavailableReason = context.fixUnavailableReason
-        statusBar = StatusBarSnapshot(workingCopyStats: context.workingCopyStats, currentOperationDescription: context.operation)
+        statusBar = StatusBarSnapshot(
+            workingCopyStats: context.workingCopyStats,
+            currentOperationDescription: context.operation,
+            undoState: context.undo
+        )
     }
 }
 

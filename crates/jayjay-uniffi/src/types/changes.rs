@@ -2,7 +2,7 @@ use jayjay_core as core;
 use jayjay_core::dag::{MergeParentChoice, OrderedSelection, SelectionClick, SelectionState};
 use jayjay_core::{
     ChangeDetail, ChangeInfo, CommitAuthor, EdgeType, EvologEntry, EvologRow, GraphEdge,
-    GraphEntry, OpLogEntry, ShortId,
+    GraphEntry, OpLogEntry, ShortId, UndoState,
 };
 
 #[uniffi::remote(Record)]
@@ -121,9 +121,17 @@ pub struct ChangeDetail {
 #[uniffi::remote(Record)]
 pub struct OpLogEntry {
     pub id: core::ShortId,
+    pub parent_ids: Vec<String>,
     pub description: String,
     pub timestamp_millis: i64,
     pub is_current: bool,
+}
+
+#[uniffi::remote(Record)]
+pub struct UndoState {
+    pub operation_id: String,
+    pub undo_description: Option<String>,
+    pub redo_description: Option<String>,
 }
 
 #[uniffi::remote(Record)]

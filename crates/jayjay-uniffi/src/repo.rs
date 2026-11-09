@@ -9,7 +9,7 @@ use jayjay_core::{
     FileEditorData, FixSummary, GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand,
     JjCommandResult, MutationEffect, OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode,
     RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken,
-    TagInfo, ToolsConfig, WorkspaceInfo, WorkspacePresence,
+    TagInfo, ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
     diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -18,6 +18,11 @@ use jayjay_primitives::{ConvergeChoices, ConvergeOutcome, ConvergePlan, ReviewNo
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use jayjay_core::JayError;
 use jayjay_core::dag::DagLayout;
+
+#[uniffi::export]
+fn take_mutation_operation_id() -> Option<String> {
+    jayjay_core::take_mutation_operation_id()
+}
 
 #[uniffi::export]
 fn compose_bisect_range(good: String, bad: String, range: String) -> Result<String, JayError> {
@@ -1024,6 +1029,18 @@ impl JayJayRepo {
 
     fn op_restore(&self, op_id: String) -> Result<(), JayError> {
         self.inner.op_restore(&op_id)
+    }
+
+    fn undo(&self, operation_id: String) -> Result<Option<String>, JayError> {
+        self.inner.undo(&operation_id)
+    }
+
+    fn redo(&self, operation_id: String) -> Result<Option<String>, JayError> {
+        self.inner.redo(&operation_id)
+    }
+
+    fn undo_state(&self) -> UndoState {
+        self.inner.undo_state()
     }
 
     fn review_notes(

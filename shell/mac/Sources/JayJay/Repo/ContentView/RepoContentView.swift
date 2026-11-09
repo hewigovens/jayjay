@@ -37,7 +37,7 @@ struct RepoContentView: View {
                     switch action {
                         case let .shortcut(shortcut): performShortcut(shortcut)
                         case .commandPalette: showCommandPalette()
-                        case .undo: showUndo()
+                        case .operationLog: showOperationLog()
                         case .bookmarkManager: modal = .bookmarkManager
                         case .revsetFilter: revsetEditRequest += 1
                         case .overview: windowManager.openOverview(for: viewModel.repoPath)
@@ -45,6 +45,7 @@ struct RepoContentView: View {
                         case .pullRequestImport: modal = .pullRequestImport
                     }
                 }
+                menuCoordinator.viewModel = viewModel
                 ActiveRepoTracker.shared.register(
                     repoPath: viewModel.repoPath, settings: settings, handler: menuCoordinator
                 )
@@ -96,6 +97,16 @@ struct RepoContentView: View {
                 guard let msg, !msg.isEmpty else { return }
                 showToast(msg)
                 viewModel.info = nil
+            }
+            .onChange(of: viewModel.actionNotice) { _, notice in
+                guard let notice else { return }
+                showActionNotice(notice)
+                viewModel.actionNotice = nil
+            }
+            .onChange(of: viewModel.operationLogRequest) { _, operationId in
+                guard let operationId else { return }
+                viewModel.operationLogRequest = nil
+                showOperationLog(undoing: operationId)
             }
             .sheet(item: $modal) { modal in
                 modalView(for: modal)

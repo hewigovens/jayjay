@@ -15,7 +15,7 @@ impl ShortcutCommand {
             Self::RepoCommandPalette
             | Self::RepoRefresh
             | Self::RepoToggleSidebar
-            | Self::RepoUndoLastOperation
+            | Self::RepoOperationLog
             | Self::RepoFilterByRevset
             | Self::RepoBookmarkManager
             | Self::RepoOverview

@@ -9,6 +9,8 @@ pub(crate) struct Response {
     pub id: u64,
     pub result: JayResult<Value>,
     #[serde(default)]
+    pub operation_id: Option<String>,
+    #[serde(default)]
     pub images: HashMap<String, String>,
 }
 
@@ -28,7 +30,11 @@ impl Response {
                 value => qualify_paths(value, location),
             }
         }
-        serde_json::from_value(value).map_err(JayError::internal)
+        let decoded = serde_json::from_value(value).map_err(JayError::internal)?;
+        if let Some(operation_id) = self.operation_id {
+            crate::operation_receipt::record(operation_id);
+        }
+        Ok(decoded)
     }
 }
 
@@ -93,6 +99,7 @@ mod tests {
     fn decode(method: &str, value: Value) -> JayResult<Value> {
         Response {
             id: 1,
+            operation_id: None,
             result: Ok(value),
             images: HashMap::new(),
         }
