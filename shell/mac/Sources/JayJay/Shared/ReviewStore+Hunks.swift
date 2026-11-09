@@ -15,13 +15,12 @@ extension ReviewStore {
         if let cached = displayStatesCache[key] {
             return cached
         }
-        let states = reviewDisplayHunkStates(
+        let states = native.displayHunkStates(
             changeId: changeId,
             path: query.path,
             identity: query.identity,
             snapshot: query.snapshot,
-            mapping: query.mapping,
-            storePath: storePath
+            mapping: query.mapping
         )
         displayStatesCache[key] = states
         return states
@@ -34,13 +33,12 @@ extension ReviewStore {
         hunkIndex: UInt32,
         snapshot: ReviewFileSnapshot? = nil
     ) {
-        reviewMarkHunkReviewed(
+        native.markHunkReviewed(
             changeId: changeId,
             path: path,
             identity: identity,
             hunkIndex: hunkIndex,
-            snapshot: snapshot,
-            storePath: storePath
+            snapshot: snapshot
         )
         invalidateMarks(changeId: changeId, path: path)
     }
@@ -52,26 +50,24 @@ extension ReviewStore {
         hunkIndex: UInt32,
         snapshot: ReviewFileSnapshot? = nil
     ) {
-        reviewToggleHunk(
+        native.toggleHunk(
             changeId: changeId,
             path: path,
             identity: identity,
             hunkIndex: hunkIndex,
-            snapshot: snapshot,
-            storePath: storePath
+            snapshot: snapshot
         )
         invalidateMarks(changeId: changeId, path: path)
     }
 
     func toggleDisplayHunk(changeId: String, query: ReviewDisplayQuery, displayIndex: UInt32) {
-        reviewToggleDisplayHunkSnapshot(
+        native.toggleDisplayHunkSnapshot(
             changeId: changeId,
             path: query.path,
             identity: query.identity,
             snapshot: query.snapshot,
             mapping: query.mapping,
-            displayIndex: displayIndex,
-            storePath: storePath
+            displayIndex: displayIndex
         )
         invalidateMarks(changeId: changeId, path: query.path)
     }
@@ -83,13 +79,12 @@ extension ReviewStore {
         hunkIndices: [UInt32],
         snapshot: ReviewFileSnapshot? = nil
     ) {
-        reviewSetReviewedHunks(
+        native.setReviewedHunks(
             changeId: changeId,
             path: path,
             identity: identity,
             hunkIndices: hunkIndices,
-            snapshot: snapshot,
-            storePath: storePath
+            snapshot: snapshot
         )
         invalidateMarks(changeId: changeId, path: path)
     }

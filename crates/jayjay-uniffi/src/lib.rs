@@ -38,6 +38,8 @@ mod repo;
 #[cfg(feature = "desktop")]
 mod repositories;
 mod review;
+#[cfg(feature = "desktop")]
+mod shared_review_store;
 mod shortcuts;
 #[cfg(feature = "desktop")]
 mod ssh;

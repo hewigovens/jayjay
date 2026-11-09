@@ -3,10 +3,9 @@ import JayJayCore
 extension ReviewStore {
     func listNotes(changeId: String, includeResolved: Bool = false) -> [ReviewNote] {
         // The snapshot always keeps resolved notes — the diff gutter renders them as dimmed history markers — so only the returned list honors the filter.
-        let loaded = reviewListNotes(
+        let loaded = native.listNotes(
             changeId: changeId,
-            includeResolved: true,
-            storePath: storePath
+            includeResolved: true
         )
         notes = loaded
         return includeResolved ? loaded : loaded.filter { !$0.resolved }
@@ -14,14 +13,14 @@ extension ReviewStore {
 
     @discardableResult
     func addNote(anchor: NoteAnchor, body: String) -> ReviewNote {
-        let note = reviewAddNote(anchor: anchor, body: body, storePath: storePath)
+        let note = native.addNote(anchor: anchor, body: body)
         replace(note)
         return note
     }
 
     @discardableResult
     func updateNote(id: String, body: String) -> ReviewNote? {
-        guard let note = reviewUpdateNote(id: id, body: body, storePath: storePath) else {
+        guard let note = native.updateNote(id: id, body: body) else {
             return nil
         }
         replace(note)
@@ -29,13 +28,13 @@ extension ReviewStore {
     }
 
     func deleteNote(id: String) {
-        if reviewDeleteNote(id: id, storePath: storePath) {
+        if native.deleteNote(id: id) {
             notes.removeAll { $0.id == id }
         }
     }
 
     func resolveNote(id: String) {
-        guard let note = reviewResolveNote(id: id, storePath: storePath) else { return }
+        guard let note = native.resolveNote(id: id) else { return }
         replace(note)
     }
 

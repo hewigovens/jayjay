@@ -1,7 +1,7 @@
 import Foundation
 import JayJayCore
 
-/// Queries are answered from a per-file marks cache so per-gutter-line lookups never re-read the store from disk; mutations write through the Rust store (which read-modify-writes the shared file) and invalidate the cache.
+/// Queries are answered from a per-file marks cache over one long-lived Rust store, which re-reads the shared file only after another writer changed it; mutations write through it and invalidate the cache.
 @Observable
 final class ReviewStore {
     typealias ReviewNote = NoteEntry
@@ -18,7 +18,7 @@ final class ReviewStore {
         let query: String
     }
 
-    let storeURL: URL?
+    let native: SharedReviewStore
     var notes: [ReviewNote]
     /// Observable stand-in for the cache's contents: SwiftUI views read marks during render (gutter stripes, file rows), and without a tracked read a toggle would not re-render them until something else invalidated the view.
     private(set) var marksVersion: UInt64 = 0
@@ -28,18 +28,14 @@ final class ReviewStore {
     @ObservationIgnored var displayStatesCache: [DisplayStatesCacheKey: [ReviewGroupState]] = [:]
 
     init() {
-        storeURL = reviewStorePath().map { URL(fileURLWithPath: $0) }
+        native = SharedReviewStore(storePath: nil)
         notes = []
     }
 
     /// Test seam: persist to an explicit file instead of the shared store path.
     init(storeURL: URL) {
-        self.storeURL = storeURL
+        native = SharedReviewStore(storePath: storeURL.path)
         notes = []
-    }
-
-    var storePath: String? {
-        storeURL?.path
     }
 
     func isReviewed(changeId: String, path: String, identity: String) -> Bool {
@@ -64,34 +60,17 @@ final class ReviewStore {
         identity: String,
         snapshot: ReviewFileSnapshot? = nil
     ) {
-        reviewMarkReviewed(
+        native.markReviewed(
             changeId: changeId,
             path: path,
             identity: identity,
-            snapshot: snapshot,
-            storePath: storePath
+            snapshot: snapshot
         )
         invalidateMarks(changeId: changeId, path: path)
     }
 
     func markUnreviewed(changeId: String, path: String) {
-        reviewMarkUnreviewed(changeId: changeId, path: path, storePath: storePath)
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
-    func toggleReviewed(
-        changeId: String,
-        path: String,
-        identity: String,
-        snapshot: ReviewFileSnapshot? = nil
-    ) {
-        reviewToggleReviewed(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            snapshot: snapshot,
-            storePath: storePath
-        )
+        native.markUnreviewed(changeId: changeId, path: path)
         invalidateMarks(changeId: changeId, path: path)
     }
 
@@ -107,17 +86,16 @@ final class ReviewStore {
 
     func agentMarkedPaths(changeId: String) -> Set<String> {
         _ = marksVersion
-        return Set(reviewAgentMarkedPaths(changeId: changeId, storePath: storePath))
+        return Set(native.agentMarkedPaths(changeId: changeId))
     }
 
     func fileRollups(changeId: String, files: [ReviewFileQuery]) -> [String: ReviewFileRollup] {
         _ = marksVersion
-        let rollups = reviewFileRollups(
+        let rollups = native.fileRollups(
             changeId: changeId,
             paths: files.map(\.path),
             identities: files.map(\.identity),
-            snapshots: files.map(\.snapshot),
-            storePath: storePath
+            snapshots: files.map(\.snapshot)
         )
         var result: [String: ReviewFileRollup] = [:]
         for (file, rollup) in zip(files, rollups) {
@@ -133,16 +111,16 @@ final class ReviewStore {
 
     /// Clears only this change's marks: the store is shared, so other changes and windows keep their review state.
     func clearChange(changeId: String) {
-        reviewClearChange(changeId: changeId, storePath: storePath)
+        native.clearChange(changeId: changeId)
         invalidateAllMarks()
     }
 
     func summary() -> ReviewStoreSummary {
-        reviewStoreSummary(storePath: storePath)
+        native.summary()
     }
 
     func clearAll() {
-        reviewClearAll(storePath: storePath)
+        native.clearAll()
         applyExternalReset()
     }
 
@@ -158,12 +136,10 @@ final class ReviewStore {
         if let cached = marksCache[key] {
             return cached
         }
-        let marks = reviewFileMarks(
+        let marks = native.fileMarks(
             changeId: changeId,
             path: path,
-            identity: identity,
-            snapshot: nil,
-            storePath: storePath
+            identity: identity
         )
         marksCache[key] = marks
         return marks
