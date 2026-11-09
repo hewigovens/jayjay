@@ -476,3 +476,9 @@ click = クリック
 
 # Articles are in English.
 articles-are-in-english = 記事は英語です。
+
+# JayJay Diff
+jayjay-diff = JayJay Diff
+
+# <strong>JayJay Diff</strong> Review GitHub pull requests in your browser, with review marks that survive force-pushes.
+review-github-pull-requests-in-browser = <strong>JayJay Diff</strong> GitHub の Pull Request をブラウザでレビュー。レビュー済みの印は force-push 後も残ります。

@@ -476,3 +476,9 @@ click = 点击
 
 # Articles are in English.
 articles-are-in-english = 文章为英文。
+
+# JayJay Diff
+jayjay-diff = JayJay Diff
+
+# <strong>JayJay Diff</strong> Review GitHub pull requests in your browser, with review marks that survive force-pushes.
+review-github-pull-requests-in-browser = <strong>JayJay Diff</strong> 在浏览器里评审 GitHub Pull Request，已评审标记在 force-push 之后依然保留。

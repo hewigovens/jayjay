@@ -151,6 +151,13 @@ code { font-size: .86em; padding: 1px 6px; border-radius: 4px; background: var(-
 .more h3 { font-size: 16px; margin: 12px 0 4px; }
 .more p { font-size: 14px; color: var(--muted); }
 .guide-link { margin-top: 56px; font-size: 16px; }
+.diff-promo { display: flex; align-items: center; gap: 16px; margin-top: 56px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); color: var(--muted); text-decoration: none; transition: border-color .15s var(--ease); }
+.diff-promo:hover { border-color: var(--accent); }
+.diff-promo img { flex: none; border-radius: 8px; }
+.diff-promo p { margin: 0; }
+.diff-promo strong { display: block; color: var(--ink); font-weight: 600; }
+.diff-promo-go { margin-left: auto; color: var(--accent); font-size: 20px; }
+.diff-promo + .guide-link { margin-top: 32px; }
 @media (max-width: 960px) { .more { grid-template-columns: repeat(2, 1fr); } }
 
 /* ── Keyboard ── */
