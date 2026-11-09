@@ -37,7 +37,7 @@ extension RepoViewModel {
             },
             afterRefresh: { (viewModel: RepoViewModel, result: ConvergeApplyResult) in
                 if result.isHiddenByFilter {
-                    viewModel.applyFilter("", selecting: result.outcome.successorCommitId)
+                    viewModel.revealAncestors(of: plan.changeId, selecting: result.outcome.successorCommitId)
                 }
             },
             onFailure: { viewModel, error in
