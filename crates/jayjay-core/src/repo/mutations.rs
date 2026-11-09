@@ -33,21 +33,14 @@ impl Repo {
         })
     }
 
-    /// Create a new empty change on top of `parent_rev`.
-    /// Replicates the full `jj new` lifecycle:
-    /// 1. Snapshot working copy
-    /// 2. Create new commit with parent's tree
-    /// 3. Edit working copy to point at new commit
-    /// 4. Rebase descendants + sync working copy on disk
+    /// Create a new empty change on top of `parent_rev`, like `jj new`.
     pub fn new_change(&self, parent_rev: &str, message: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
-        // Step 1: snapshot working copy (same as jj CLI's workspace_helper)
         self.refresh_working_copy()?;
-        // Steps 2-4: create commit, edit @, rebase descendants, checkout
         self.with_resolved_commit_transaction(
             parent_rev,
             "new change",
-            true, // always rebase descendants (was false — the bug)
+            true,
             |_, parent, repo_mut| {
                 let tree = parent.tree();
                 let new_commit = repo_mut

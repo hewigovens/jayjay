@@ -198,6 +198,18 @@ fn entries_equal(left: Option<&Entry>, right: Option<&Entry>) -> JayResult<bool>
     }
 }
 
+/// A single `read` may return short on network filesystems, which would misalign the two sides.
+fn read_full(file: &mut File, buffer: &mut [u8]) -> std::io::Result<usize> {
+    let mut filled = 0;
+    while filled < buffer.len() {
+        match file.read(&mut buffer[filled..])? {
+            0 => break,
+            count => filled += count,
+        }
+    }
+    Ok(filled)
+}
+
 fn files_equal(left: &Path, right: &Path) -> JayResult<bool> {
     let left_metadata = fs::metadata(left).map_err(|error| io_error("read", left, error))?;
     let right_metadata = fs::metadata(right).map_err(|error| io_error("read", right, error))?;
@@ -209,11 +221,9 @@ fn files_equal(left: &Path, right: &Path) -> JayResult<bool> {
     let mut left_buffer = [0_u8; 64 * 1024];
     let mut right_buffer = [0_u8; 64 * 1024];
     loop {
-        let left_count = left_file
-            .read(&mut left_buffer)
+        let left_count = read_full(&mut left_file, &mut left_buffer)
             .map_err(|error| io_error("read", left, error))?;
-        let right_count = right_file
-            .read(&mut right_buffer)
+        let right_count = read_full(&mut right_file, &mut right_buffer)
             .map_err(|error| io_error("read", right, error))?;
         if left_count != right_count || left_buffer[..left_count] != right_buffer[..right_count] {
             return Ok(false);

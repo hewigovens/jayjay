@@ -286,6 +286,27 @@ fn tag_push_treats_pattern_operators_as_literal_name_characters() {
     );
 }
 
+#[test]
+fn bookmark_push_and_fetch_treat_pattern_operators_as_literal_name_characters() {
+    let fixture = LinearFixture::build();
+    let remote = fixture.add_bare_origin();
+    let repo = Repo::open(&fixture.path).unwrap();
+    for name in ["release", "staging", "release&staging"] {
+        repo.create_bookmark(name, "@-").unwrap();
+    }
+    repo.git_push("release&staging", &repo.sync_token())
+        .unwrap();
+    assert_eq!(
+        git_stdout(
+            remote.path(),
+            &["branch", "--list", "--format=%(refname:short)"]
+        ),
+        "release&staging"
+    );
+    repo.git_pull_bookmark("release&staging", &repo.sync_token())
+        .unwrap();
+}
+
 /// A clone source shaped like a jj option must reach jj as the source, never configure the clone.
 #[cfg(unix)]
 #[test]
@@ -382,4 +403,24 @@ fn delete_files_stays_inside_the_repository_and_unlinks_terminal_symlinks() {
         fs::read_to_string(outside.join("victim.txt")).unwrap(),
         "outside\n"
     );
+}
+
+#[test]
+fn submodule_commit_treats_glob_shaped_path_as_literal() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let hostile = "[ab].txt";
+    for path in [hostile, "a.txt", "b.txt"] {
+        fs::write(repo_path.join(path), "payload\n").expect("write file");
+    }
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    repo.commit_safe_submodule_updates("submodule update", &[hostile.to_owned()])
+        .expect("commit the named path");
+
+    let git_commit = git_stdout(
+        &repo_path,
+        &["show", "--name-only", "--format=", "HEAD~", "--"],
+    );
+    assert_eq!(git_commit, hostile, "git commits only the named path");
 }

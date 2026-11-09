@@ -41,6 +41,7 @@ enum GhCheckConclusion {
     Success,
     Failure,
     Neutral,
+    Skipped,
     Cancelled,
     TimedOut,
     ActionRequired,
@@ -60,7 +61,14 @@ impl GhCheckRun {
         }
         if self.status != GhCheckStatus::Completed {
             CheckState::Pending
-        } else if self.conclusion == Some(GhCheckConclusion::Success) {
+        } else if matches!(
+            self.conclusion,
+            Some(
+                GhCheckConclusion::Success
+                    | GhCheckConclusion::Neutral
+                    | GhCheckConclusion::Skipped
+            )
+        ) {
             CheckState::Success
         } else {
             CheckState::Failure

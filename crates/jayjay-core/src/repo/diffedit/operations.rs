@@ -51,7 +51,7 @@ impl Repo {
         ignore_whitespace: bool,
     ) -> JayResult<()> {
         let repo = self.get_repo();
-        let commit = self.resolve_commit(&repo, rev)?;
+        let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
         self.ensure_commit_mutable(&repo, &commit, rev)?;
         let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
         self.ensure_selections_are_current(&repo, &commit.tree(), &parent_tree, selections)?;
@@ -86,7 +86,7 @@ impl Repo {
         ignore_whitespace: bool,
     ) -> JayResult<()> {
         let repo = self.get_repo();
-        let source = self.resolve_commit(&repo, rev)?;
+        let source = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
         self.ensure_commit_mutable(&repo, &source, rev)?;
         let destination = self.resolve_commit(&repo, "@")?;
         self.ensure_commit_mutable(&repo, &destination, "@")?;

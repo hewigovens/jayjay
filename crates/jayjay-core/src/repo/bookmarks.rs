@@ -321,7 +321,7 @@ impl Repo {
         })
     }
 
-    /// Fetch the configured remotes, then forget bookmarks that are locally deleted or have no remote ref.
+    /// Fetch the configured remotes, then forget bookmarks that are deleted locally but still tracked on a remote.
     /// Forgetting never propagates deletions to remotes. Returns the number of bookmarks forgotten.
     pub fn forget_stale_bookmarks(&self) -> JayResult<u32> {
         let _ = self.run_jj(&["git", "fetch"]);
@@ -331,7 +331,7 @@ impl Repo {
         let bookmarks = self.list_bookmarks()?;
         let stale: Vec<&str> = bookmarks
             .iter()
-            .filter(|b| b.is_deleted || b.available_remotes.is_empty())
+            .filter(|b| b.is_deleted)
             .map(|b| b.name.as_str())
             .collect();
         let count = stale.len() as u32;

@@ -23,9 +23,10 @@ impl Repo {
             let _ = self.track_bookmark(bookmark, &self.default_remote());
         }
 
+        let pattern = exact_pattern(bookmark);
         let mut args = vec!["git", "push"];
         if !bookmark.is_empty() {
-            args.extend(["--bookmark", bookmark]);
+            args.extend(["--bookmark", &pattern]);
         }
         self.run_remote_command(&args, "git push failed", sync)
     }
@@ -33,7 +34,7 @@ impl Repo {
     /// A locally deleted tag that a remote still tracks pushes as a deletion; jj targets one remote per call, so each tracked remote gets its own push.
     pub fn git_push_tag(&self, tag: &str, sync: &SyncToken) -> JayResult<String> {
         let _enter = sync.enter();
-        let pattern = format!("exact:{}", format_string(tag));
+        let pattern = exact_pattern(tag);
         let remotes = tag_remotes(self.get_repo().view(), RefName::new(tag));
         if remotes.is_empty() {
             return self.run_remote_command(
@@ -82,9 +83,10 @@ impl Repo {
         }
         // `--bookmark` creates and tracks new remote bookmarks on its own; jj 0.42
         // has no `--allow-new` flag.
+        let patterns: Vec<String> = bookmarks.iter().map(|name| exact_pattern(name)).collect();
         let mut args = vec!["git", "push"];
-        for bookmark in bookmarks {
-            args.extend(["--bookmark", bookmark]);
+        for pattern in &patterns {
+            args.extend(["--bookmark", pattern]);
         }
         let output = self.run_jj_output(&args)?;
         self.ensure_success(&output, "git push failed")?;
@@ -161,8 +163,9 @@ impl Repo {
         if !remote.is_empty() {
             args.extend(["--remote", remote]);
         }
+        let pattern = exact_pattern(bookmark);
         if !bookmark.is_empty() {
-            args.extend(["-b", bookmark]);
+            args.extend(["-b", &pattern]);
         }
         let output = self.run_jj_output(&args)?;
         self.ensure_success(&output, "git fetch failed")?;
@@ -330,6 +333,10 @@ fn fetch_result(
             .push_str(&format!("\nPost-fetch cleanup failed: {error}")),
     }
     Ok(result)
+}
+
+fn exact_pattern(name: &str) -> String {
+    format!("exact:{}", format_string(name))
 }
 
 fn combine_output(stdout: &str, stderr: &str) -> String {

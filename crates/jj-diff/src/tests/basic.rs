@@ -240,3 +240,29 @@ fn unified_replacements_group_sides_without_changing_pairs_or_anchors() {
         .map(|(old, new)| (old.to_owned(), new.to_owned())),
     );
 }
+
+#[test]
+fn invisible_line_changes_render_as_distinct_rows() {
+    let diff = compute_file_diff("t.txt", "a\r\nb\r\n", "a\nb\n", false);
+    assert_eq!(diff.lines.iter().filter(|l| l.is_changed()).count(), 4);
+    assert_eq!(count_changed_lines("a\r\nb\r\n", "a\nb\n", false), (2, 2));
+    let diff = compute_file_diff("t.txt", "a\r\nb\r\n", "a\nb\n", true);
+    assert!(diff.lines.iter().all(|l| !l.is_changed()));
+    assert!(diff.whitespace_only_hidden);
+
+    let diff = compute_file_diff("t.txt", "foo \n", "foo\n", false);
+    let removed = diff
+        .lines
+        .iter()
+        .find(|l| l.style == DiffSpanStyle::Removed)
+        .expect("removed row");
+    assert_eq!(removed.text(), "foo ");
+    assert!(
+        removed
+            .spans
+            .iter()
+            .any(|span| span.style == DiffSpanStyle::Removed && span.text == " "),
+        "the dropped trailing space is marked: {:?}",
+        removed.spans
+    );
+}

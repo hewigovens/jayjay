@@ -8,7 +8,7 @@ use std::sync::LazyLock;
 use sha2::{Digest, Sha256};
 use tempfile::{NamedTempFile, TempDir};
 
-use crate::{JayError, JayResult, MAX_IMAGE_BYTES};
+use crate::{JayError, JayResult, MAX_IMAGE_BYTES, file_display};
 use jayjay_primitives::file_kind::IMAGE_EXTENSIONS;
 
 static CACHE: LazyLock<std::io::Result<ImageCache>> = LazyLock::new(ImageCache::new);
@@ -36,11 +36,8 @@ impl ImageCache {
         if bytes.len() > MAX_IMAGE_BYTES {
             return Err(JayError::refused("The image exceeds the preview limit."));
         }
-        let extension = source_path
-            .rsplit(['/', '\\'])
-            .next()
-            .and_then(|name| name.rsplit_once('.'))
-            .map(|(_, extension)| extension.to_ascii_lowercase())
+        let extension = file_display::extension(source_path)
+            .map(str::to_ascii_lowercase)
             .filter(|extension| IMAGE_EXTENSIONS.contains(&extension.as_str()))
             .ok_or_else(|| JayError::refused("Unsupported image preview extension."))?;
         let destination = self.directory.path().join(format!(

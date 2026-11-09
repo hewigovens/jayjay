@@ -12,7 +12,6 @@ repository.workspace = true
 default = ["storage", "all-languages"]
 all-languages = ["jj-diff/all-languages"]
 storage = []
-test-util = []
 
 [dependencies]
 jayjay-primitives = { version = "0.1.0", path = "../jayjay-primitives" }

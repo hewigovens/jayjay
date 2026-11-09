@@ -153,6 +153,12 @@ mod tests {
                 r#"[{"state":"SUCCESS"}]"#,
                 ChecksStatus::Passing,
             ),
+            (
+                "OPEN",
+                PrState::Open,
+                r#"[{"status":"COMPLETED","conclusion":"SKIPPED"},{"status":"COMPLETED","conclusion":"NEUTRAL"}]"#,
+                ChecksStatus::Passing,
+            ),
             ("OPEN", PrState::Open, "[]", ChecksStatus::None),
         ] {
             let json = pull_request_json(42, state, contexts);

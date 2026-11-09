@@ -31,12 +31,19 @@ impl Repo {
             return Ok("No safe submodule updates to commit.".to_owned());
         }
 
-        let mut add_args = vec!["add", "--"];
+        let mut add_args = vec!["--literal-pathspecs", "add", "--"];
         add_args.extend(paths.iter().map(String::as_str));
         let output = self.command_output("git", &add_args, "git add submodule updates")?;
         self.ensure_success(&output, "git add submodule updates")?;
 
-        let mut commit_args = vec!["commit", "-m", message, "--only", "--"];
+        let mut commit_args = vec![
+            "--literal-pathspecs",
+            "commit",
+            "-m",
+            message,
+            "--only",
+            "--",
+        ];
         commit_args.extend(paths.iter().map(String::as_str));
         let output = self.command_output("git", &commit_args, "git commit submodule updates")?;
         self.ensure_success(&output, "git commit submodule updates")?;

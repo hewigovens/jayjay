@@ -46,17 +46,6 @@ fn review_text_pair(hunk: &DiffHunk) -> Option<(&str, &str)> {
 }
 
 impl super::Repo {
-    pub fn review_file_snapshot(
-        &self,
-        rev: &str,
-        path: &str,
-        old_path: Option<&str>,
-    ) -> crate::types::JayResult<ReviewFileSnapshot> {
-        Ok(review_snapshot_from_hunk(
-            &self.load_review_hunk(rev, path, old_path)?,
-        ))
-    }
-
     /// A conflict-only placeholder has no tree-diff entry to load, so it stays the listed card without review content.
     pub(super) fn load_listed_review_hunk(
         &self,

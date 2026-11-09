@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
 
@@ -10,7 +11,6 @@ pub fn home_dir() -> Option<PathBuf> {
 
 /// A regular file with an execute bit. Shared with the shell CLI installers so their notion of "executable" cannot drift from detection's.
 pub fn is_executable_file(path: &Path) -> bool {
-    use std::os::unix::fs::MetadataExt;
     std::fs::metadata(path)
         .map(|meta| meta.is_file() && meta.mode() & 0o111 != 0)
         .unwrap_or(false)

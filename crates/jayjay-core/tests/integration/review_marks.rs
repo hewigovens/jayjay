@@ -248,3 +248,30 @@ fn prune_keeps_only_changes_still_mutable_in_a_known_repository() {
     assert_eq!(store.summary().marks, 1);
     assert!(store.is_reviewed(&working_copy.info.change_id.id, "a.txt", "id"));
 }
+
+#[test]
+fn status_reports_a_marked_projected_file_as_reviewed() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let _guard = review_store_env(&temp_dir.path().join("review_store.json"));
+    fs::write(repo_path.join("data.csv"), "name,value\nalpha,1\n").expect("write csv");
+    Repo::open(&repo_path)
+        .expect("open repo")
+        .refresh_working_copy()
+        .expect("snapshot csv");
+    let text = review_status_output(&repo_path, ReviewOutputFormat::Text).unwrap();
+    let commit = text
+        .lines()
+        .next()
+        .and_then(|line| line.strip_prefix("Commit "))
+        .unwrap()
+        .to_owned();
+
+    mark_review_file(&repo_path, "data.csv", None, NoteSide::New, &commit).unwrap();
+
+    let text = review_status_output(&repo_path, ReviewOutputFormat::Text).unwrap();
+    assert!(
+        text.contains(&format!("{:<26}data.csv  (agent)\n", "reviewed")),
+        "{text}"
+    );
+}

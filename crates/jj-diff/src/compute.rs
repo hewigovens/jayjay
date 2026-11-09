@@ -97,10 +97,16 @@ fn compute_file_diff_impl(
                 for i in 0..paired_count {
                     let old_ln = removed_indices[i];
                     let new_ln = added_indices[i];
-                    if let (Some((_old_byte, old_text)), Some((_new_byte, new_text))) = (
+                    if let (Some((old_byte, old_text)), Some((new_byte, new_text))) = (
                         old_line_index.get(old, old_ln),
                         new_line_index.get(new, new_ln),
                     ) {
+                        // Rows that differ only in trailing whitespace keep it, so the word diff can mark what changed.
+                        let (old_text, new_text) = if old_text == new_text {
+                            (untrimmed_line(old, old_byte), untrimmed_line(new, new_byte))
+                        } else {
+                            (old_text, new_text)
+                        };
                         result_lines.push(DiffLine {
                             old_line_no: Some(old_ln),
                             new_line_no: None,
@@ -224,4 +230,10 @@ fn apply_eof_markers(lines: &mut [DiffLine], no_eof_old: bool, no_eof_new: bool)
     if no_eof_new && let Some(idx) = lines.iter().rposition(|l| l.new_line_no.is_some()) {
         lines[idx].no_eof_newline = true;
     }
+}
+
+/// The line starting at byte `start`, keeping its trailing whitespace but not its line ending.
+fn untrimmed_line(text: &str, start: usize) -> &str {
+    let line = text[start..].split('\n').next().unwrap_or_default();
+    line.strip_suffix('\r').unwrap_or(line)
 }

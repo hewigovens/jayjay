@@ -243,14 +243,17 @@ fn forget_stale_bookmarks_works_from_a_workspace_without_git_dir() {
     run_jj_in(&sibling, &["bookmark", "create", "scratch", "-r", "@"]);
     let repo = Repo::open(&sibling).unwrap();
 
-    assert_eq!(repo.forget_stale_bookmarks().unwrap(), 2);
+    assert_eq!(repo.forget_stale_bookmarks().unwrap(), 1);
 
     assert!(find_bookmark(&repo, "feature").is_conflicted);
     assert!(!find_bookmark(&repo, "main").is_tracking_remote);
+    assert!(
+        find_bookmark(&repo, "scratch").has_local_target,
+        "a bookmark that was never pushed is not stale"
+    );
 
     repo.undo(&repo.undo_state().operation_id).unwrap().unwrap();
     assert!(find_bookmark(&repo, "main").is_deleted);
-    assert!(find_bookmark(&repo, "scratch").has_local_target);
 }
 
 #[test]

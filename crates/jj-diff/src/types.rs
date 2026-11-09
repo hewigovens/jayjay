@@ -113,7 +113,6 @@ pub enum ContextExpansionError {
     InvalidLineCount,
     InvalidRegion { region_id: u32 },
     MissingSourceLine { line_no: u32 },
-    // Constructed only by the FFI bridge when the expansion session lock is unusable.
     SessionUnavailable,
 }
 

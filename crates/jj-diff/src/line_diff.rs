@@ -31,19 +31,19 @@ pub(super) fn line_diff(old: &str, new: &str, ignore_whitespace: bool) -> Vec<Li
     ops
 }
 
-/// Each line paired with whether a newline ends it, so only an unterminated last line differs from its terminated twin.
+/// Each line paired with whether a newline ends it, so only an unterminated last line differs from its terminated twin. A CRLF line keeps its `\r` so an ending-only edit is a changed line.
 fn line_tokens(text: &str, ignore_whitespace: bool) -> Vec<(Cow<'_, str>, bool)> {
-    let count = text.lines().count();
-    let terminated = text.ends_with('\n');
-    text.lines()
-        .enumerate()
-        .map(|(ix, line)| {
+    text.split_inclusive('\n')
+        .map(|line| {
+            let (line, terminated) = line
+                .strip_suffix('\n')
+                .map_or((line, false), |line| (line, true));
             let line = if ignore_whitespace {
                 Cow::Owned(normalize_ws(line))
             } else {
                 Cow::Borrowed(line)
             };
-            (line, terminated || ix + 1 < count)
+            (line, terminated)
         })
         .collect()
 }

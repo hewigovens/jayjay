@@ -5,7 +5,7 @@ mod note_store;
 mod reconcile;
 mod replay;
 pub mod store;
-#[cfg(any(test, feature = "test-util"))]
+#[cfg(test)]
 pub mod test_util;
 
 pub use anchor::{build_note_anchor, change_group_index, checked_note_body, note_anchor};

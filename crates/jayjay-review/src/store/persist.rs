@@ -34,7 +34,7 @@ impl ReviewStore {
         serde_json::to_string(&self.state)
     }
 
-    #[cfg(any(test, feature = "test-util"))]
+    #[cfg(test)]
     pub fn in_memory_with_ids(id_source: Box<dyn IdSource>) -> Self {
         Self {
             state: StoredReviews::default(),

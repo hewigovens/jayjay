@@ -22,7 +22,6 @@ pub(super) fn launch(repo_path: Option<&Path>) {
     }
 }
 
-// Search order matches app::find_app_executable: sibling executable first, then PATH.
 pub(super) fn find_gpui_executable() -> Option<PathBuf> {
     sibling_gpui_executable().or_else(|| find_in_path(&gpui_executable_name()))
 }

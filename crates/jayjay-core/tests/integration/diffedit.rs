@@ -2,7 +2,8 @@ use std::fs;
 
 use jayjay_core::{DiffEditDestination, Repo};
 use jj_test::{
-    init_jj_repo, selection_for_lines, setup_source_change_with_child, whole_file_selection,
+    current_op_id, init_jj_repo, run_jj, selection_for_lines, setup_source_change_with_child,
+    whole_file_selection,
 };
 
 #[test]
@@ -276,4 +277,52 @@ fn diffedit_snapshots_unsnapshotted_working_copy_edit() {
         .find(|hunk| hunk.path == "hello.txt")
         .expect("diff edit must snapshot the un-snapshotted disk edit");
     assert_eq!(hello.new.content.as_deref(), Some("edit in progress\n"));
+}
+#[test]
+fn diffedit_remove_from_source_follows_a_divergent_working_copy_rewritten_by_the_snapshot() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    let base_op = current_op_id(&repo_path);
+    fs::write(repo_path.join("hello.txt"), "left\n").expect("write left");
+    run_jj(&["-R", repo_str, "describe", "-m", "left"]);
+    fs::write(repo_path.join("hello.txt"), "right\n").expect("write right");
+    run_jj(&[
+        "-R", repo_str, "--at-op", &base_op, "describe", "-m", "right",
+    ]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let stale = repo
+        .log("all()")
+        .expect("log")
+        .into_iter()
+        .find(|change| change.is_working_copy)
+        .expect("working copy in log");
+    assert!(stale.is_divergent, "fixture working copy must be divergent");
+    let selection = whole_file_selection(&repo, &stale.commit_id.id, "hello.txt");
+    let hello = selection.new_content.as_deref().expect("hello.txt content");
+    fs::write(repo_path.join("hello.txt"), hello).expect("match disk to the working copy");
+    fs::write(repo_path.join("work.txt"), "fresh edit\n").expect("write unsnapshotted edit");
+
+    repo.apply_diff_selection(
+        &stale.commit_id.id,
+        DiffEditDestination::RemoveFromSource,
+        &[selection],
+        "",
+        false,
+    )
+    .expect("remove hello.txt from the stale working-copy commit id");
+
+    let changes = repo.log("all()").expect("log after remove");
+    let siblings = changes
+        .iter()
+        .filter(|change| change.change_id.id == stale.change_id.id)
+        .count();
+    assert_eq!(siblings, 2, "the rewrite must not add a third version");
+    let current = repo.show("@").expect("show working copy").diff;
+    assert!(current.iter().all(|hunk| hunk.path != "hello.txt"));
+    assert!(
+        current.iter().any(|hunk| hunk.path == "work.txt"),
+        "the freshly snapshotted edit must stay in @"
+    );
 }

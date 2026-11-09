@@ -85,7 +85,7 @@ impl ThemeSeed {
         is_dark(self.background)
     }
 
-    pub fn selection_for(background: u32, accent: u32) -> u32 {
+    fn selection_for(background: u32, accent: u32) -> u32 {
         mix(
             background,
             accent,

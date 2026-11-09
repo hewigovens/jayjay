@@ -149,13 +149,12 @@ pub fn review_status_output(repo: &Path, format: ReviewOutputFormat) -> JayResul
         let mut state =
             store.file_review_state(&change_id, &hunk.path, &hunk.review_identity, None);
         if state.has_changed_since_review() {
-            let snapshot =
-                repo.review_file_snapshot(&commit_id, &hunk.path, hunk.old_path.as_deref())?;
+            let loaded = repo.load_listed_review_hunk(&commit_id, hunk)?;
             state = store.file_review_state(
                 &change_id,
                 &hunk.path,
-                &hunk.review_identity,
-                Some(&snapshot),
+                &loaded.review_identity,
+                Some(&review_snapshot_from_hunk(&loaded)),
             );
         }
         let groups = state.group_states();

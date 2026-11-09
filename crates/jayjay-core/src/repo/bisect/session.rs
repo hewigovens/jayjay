@@ -27,7 +27,7 @@ pub(super) enum RestoreTarget {
 }
 
 #[derive(Clone)]
-pub(in crate::repo) struct Session {
+pub(crate) struct Session {
     pub(super) range: Vec<CommitId>,
     pub(super) good_ends: Vec<String>,
     pub(super) bad_ends: Vec<String>,

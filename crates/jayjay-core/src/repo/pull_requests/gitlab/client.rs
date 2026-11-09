@@ -1,7 +1,7 @@
 use jayjay_network::{Fetch, HttpClient, encode_path_segment};
 
 use super::super::{ForgeClient, PrLookup};
-use super::merge_request::GitLabMrResponse;
+use super::merge_request::{GitLabMrResponse, MrHeadProject};
 use super::status::GitLabCommitStatus;
 use crate::repo::forge_auth::TokenProvider;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
@@ -39,7 +39,12 @@ fn lookup(
 // The listing is newest-first, so the first match is the freshest when no MR is open.
 fn pick_mr(mrs: Vec<GitLabMrResponse>, source_branch: &str) -> Option<GitLabMrResponse> {
     let mut fallback = None;
-    for mr in mrs.into_iter().filter(|mr| mr.matches(source_branch)) {
+    let same_project =
+        |mr: &GitLabMrResponse| !matches!(mr.head_project(), Some(MrHeadProject::Fork(_)));
+    for mr in mrs
+        .into_iter()
+        .filter(|mr| mr.matches(source_branch) && same_project(mr))
+    {
         if mr.is_open() {
             return Some(mr);
         }
@@ -153,11 +158,12 @@ mod tests {
     }
 
     #[test]
-    fn pick_ignores_other_branches() {
+    fn pick_ignores_other_branches_and_fork_merge_requests() {
         let chosen = pick_mr(
-            mrs(
-                r#"[{"iid":1,"state":"opened","title":"t","web_url":"u","source_branch":"other","sha":""}]"#,
-            ),
+            mrs(r#"[
+                {"iid":1,"state":"opened","title":"t","web_url":"u","source_branch":"other","sha":""},
+                {"iid":2,"state":"opened","title":"t","web_url":"u","source_branch":"b","sha":"","source_project_id":9,"target_project_id":7}
+            ]"#),
             "b",
         );
         assert!(chosen.is_none());

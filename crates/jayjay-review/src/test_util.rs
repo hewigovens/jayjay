@@ -1,4 +1,4 @@
-//! Deterministic `IdSource` impl. It must live in this crate — a helper crate linking jayjay-review would implement a different trait type than the in-test `crate::` one — and the `test-util` feature lets other crates' tests reuse it.
+//! Deterministic `IdSource` impl. It must live in this crate — a helper crate linking jayjay-review would implement a different trait type than the in-test `crate::` one.
 
 use crate::IdSource;
 
