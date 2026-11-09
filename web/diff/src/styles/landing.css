@@ -148,6 +148,13 @@
   margin: 12px 0 0;
   color: var(--jj-removed-ink);
   font-size: calc(14px * var(--jj-interface-scale, 1));
+  overflow-wrap: anywhere;
+}
+.landing-error p {
+  margin: 4px 0 0;
+}
+.landing-error a {
+  text-decoration: underline;
 }
 .landing-extension {
   margin: 32px 0 0;

@@ -10,6 +10,7 @@ pub(super) fn labels(languages: &str) -> Value {
             .chain(file_list_labels())
             .chain(pull_labels())
             .map(|(key, value)| (key.to_owned(), Value::String(value)))
+            .chain(error_labels())
             .collect::<Map<_, _>>(),
     )
 }
@@ -47,6 +48,8 @@ fn diff_labels() -> Vec<(&'static str, String)> {
         ("allLines", jayjay_i18n::web::all_lines()),
         ("eof", jayjay_i18n::web::eof()),
         ("empty", jayjay_i18n::web::empty()),
+        ("emptyFile", jayjay_i18n::web::empty_file()),
+        ("noTextChanges", jayjay_i18n::web::no_text_changes()),
         ("showRest", jayjay_i18n::web::show_rest()),
         ("whitespaceOnly", jayjay_i18n::web::whitespace_only()),
         ("lines", jayjay_i18n::web::lines()),
@@ -167,6 +170,9 @@ fn pull_labels() -> Vec<(&'static str, String)> {
             jayjay_i18n::web::pull_extension_detail(),
         ),
         ("pullInvalid", jayjay_i18n::web::pull_invalid()),
+        ("pullUnsupported", jayjay_i18n::web::pull_unsupported()),
+        ("pullSupported", jayjay_i18n::web::pull_supported()),
+        ("pullTwoDot", jayjay_i18n::web::pull_two_dot()),
         ("pullOnGitHub", jayjay_i18n::web::pull_on_github()),
         ("pullSignIn", jayjay_i18n::web::pull_sign_in()),
         ("pullDeviceCode", jayjay_i18n::web::pull_device_code()),
@@ -227,15 +233,20 @@ fn pull_labels() -> Vec<(&'static str, String)> {
             "pullSyncViewedFailed",
             jayjay_i18n::web::pull_sync_viewed_failed(),
         ),
-        ("pullError.not-found", jayjay_i18n::web::pull_not_found()),
         (
             "pullError.rate-limited",
             jayjay_i18n::web::pull_rate_limited(),
         ),
-        ("pullError.too-large", jayjay_i18n::web::pull_too_large()),
-        (
-            "pullError.unavailable",
-            jayjay_i18n::web::pull_unavailable(),
-        ),
     ]
+}
+
+fn error_labels() -> impl Iterator<Item = (String, Value)> {
+    ["pull", "compare", "commit"].into_iter().flat_map(|kind| {
+        [
+            ("not-found", jayjay_i18n::web::pull_not_found(kind)),
+            ("too-large", jayjay_i18n::web::pull_too_large(kind)),
+            ("unavailable", jayjay_i18n::web::pull_unavailable(kind)),
+        ]
+        .map(|(code, text)| (format!("{kind}Error.{code}"), Value::String(text)))
+    })
 }

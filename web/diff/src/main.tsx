@@ -74,7 +74,12 @@ function App() {
           />
         )
       ) : (
-        <Landing labels={labels} onOpen={open} />
+        <Landing
+          key={path}
+          labels={labels}
+          onOpen={open}
+          unsupported={path === "/" ? undefined : path + location.search}
+        />
       )}
     </main>
   );

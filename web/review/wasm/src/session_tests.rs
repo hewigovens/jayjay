@@ -167,3 +167,26 @@ fn files_load_on_demand_and_keep_their_review_state() {
     assert!(session.file_state(0, &state, false).is_ok());
     assert!(session.load(0, "\0", "").is_err());
 }
+
+#[test]
+fn notices_name_what_the_text_diff_leaves_out() {
+    let session = ReviewSession::parse(
+        &json!({
+            "schemaVersion": 1, "repositoryId": "repo", "changeId": "change", "title": "Review",
+            "files": [
+                {"path": "logo.bin", "reviewIdentity": "1", "binary": true},
+                {"path": "run.sh", "reviewIdentity": "2", "oldMode": "100644", "newMode": "100755"},
+                {"path": "a.txt", "reviewIdentity": "3"}
+            ]
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let files = &session.describe(r#"{"reviewed":{},"notes":[]}"#).unwrap()["files"];
+    assert_eq!(files[0]["notice"], "Binary file not shown.");
+    assert_eq!(
+        files[1]["notice"],
+        "File mode changed from 100644 to 100755."
+    );
+    assert_eq!(files[2]["notice"], Value::Null);
+}

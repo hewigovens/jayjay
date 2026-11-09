@@ -1,7 +1,13 @@
 import { useState } from "react";
 import type { Labels } from "@jayjay/review-web/types";
 import { ArrowIcon, GitHubIcon, StackIcon, SyncIcon } from "../icons";
-import { parseReviewRef, reviewPath, type ReviewRef } from "../../github/ReviewRef";
+import {
+  parseReviewRef,
+  reviewName,
+  reviewPath,
+  threeDotComparison,
+  type ReviewRef,
+} from "../../github/ReviewRef";
 import { samples } from "../../github/samples";
 
 const repository = "https://github.com/hewigovens/jayjay";
@@ -9,8 +15,21 @@ const app = "https://jayjay.hewig.dev";
 const extension =
   "https://chromewebstore.google.com/detail/open-in-diffshub/pgmcdokikomeilbkobgfmlihmilingpl";
 
-export function Landing({ labels, onOpen }: { labels: Labels; onOpen: (pull: ReviewRef) => void }) {
-  const [invalid, setInvalid] = useState(false);
+export function Landing({
+  labels,
+  onOpen,
+  unsupported,
+}: {
+  labels: Labels;
+  onOpen: (pull: ReviewRef) => void;
+  /** A forwarded path that names no review. */
+  unsupported?: string;
+}) {
+  const sent = unsupported && `https://github.com${unsupported}`;
+  const [rejected, setRejected] = useState<{ input: string; typed: boolean } | null>(
+    sent ? { input: sent, typed: false } : null,
+  );
+  const suggestion = rejected && threeDotComparison(rejected.input);
   const points = [
     [["J", "K"], labels.pullHowMove, labels.pullHowMoveDetail],
     [["Space"], labels.pullHowMark, labels.pullHowMarkDetail],
@@ -31,10 +50,9 @@ export function Landing({ labels, onOpen }: { labels: Labels; onOpen: (pull: Rev
           className="landing-field"
           onSubmit={(event) => {
             event.preventDefault();
-            const pull = parseReviewRef(
-              new FormData(event.currentTarget).get("url")?.toString() ?? "",
-            );
-            setInvalid(!pull);
+            const input = new FormData(event.currentTarget).get("url")?.toString() ?? "";
+            const pull = parseReviewRef(input);
+            setRejected(pull ? null : { input, typed: true });
             if (pull) onOpen(pull);
           }}
         >
@@ -45,19 +63,43 @@ export function Landing({ labels, onOpen }: { labels: Labels; onOpen: (pull: Rev
             spellCheck={false}
             autoComplete="off"
             aria-label={labels.pullUrl}
-            aria-invalid={invalid}
-            aria-describedby={invalid ? "landing-error" : undefined}
+            defaultValue={sent || undefined}
+            aria-invalid={Boolean(rejected)}
+            aria-describedby={rejected ? "landing-error" : undefined}
             placeholder={`https://github.com${reviewPath(samples[1])}`}
-            onInput={() => setInvalid(false)}
+            onInput={() => setRejected(null)}
           />
           <button type="submit" aria-label={labels.pullOpen} title={labels.pullOpen}>
             <ArrowIcon size={20} />
           </button>
         </form>
-        {invalid && (
-          <p id="landing-error" className="landing-error" role="alert">
-            {labels.pullInvalid}
-          </p>
+        {rejected && (
+          <div id="landing-error" className="landing-error" role="alert">
+            {!rejected.typed && (
+              <p>
+                {labels.pullUnsupported} <code>{rejected.input}</code>
+              </p>
+            )}
+            {suggestion ? (
+              <p>
+                {labels.pullTwoDot}{" "}
+                <a
+                  href={reviewPath(suggestion)}
+                  onClick={(event) => {
+                    event.preventDefault();
+                    onOpen(suggestion);
+                  }}
+                >
+                  <code>{reviewName(suggestion)}</code>
+                </a>
+              </p>
+            ) : (
+              <p>
+                {rejected.typed && `${labels.pullInvalid} `}
+                {labels.pullSupported}
+              </p>
+            )}
+          </div>
         )}
         <section className="landing-samples" aria-labelledby="landing-samples">
           <h2 id="landing-samples">{labels.pullSamples}</h2>

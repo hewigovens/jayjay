@@ -4,6 +4,10 @@ web-show-source = Show source
 web-all-lines = All lines
 web-eof = No newline at end of file
 web-empty = Paste some text or open two files to compare.
+web-binary-file = Binary file not shown.
+web-mode-changed = File mode changed from { $old } to { $new }.
+web-empty-file = This file is empty.
+web-no-text-changes = No text changes to show.
 web-show-rest = Show the rest of this diff
 web-whitespace-only = Only whitespace changed. Turn off “Ignore whitespace” to see it.
 web-lines = Diff lines
@@ -57,12 +61,27 @@ web-pull-url = Pull request URL
 web-pull-open = Open
 web-pull-extension = Open in Diff Viewer
 web-pull-extension-detail = adds a JayJay Diff button to GitHub pull requests in Chrome and Edge.
-web-pull-invalid = That isn’t a GitHub pull request or comparison URL, like github.com/owner/repository/pull/123 or github.com/owner/repository/compare/main...branch.
+web-pull-invalid = That isn’t a GitHub pull request, comparison, or commit URL.
+web-pull-unsupported = JayJay Diff can’t open this GitHub page:
+web-pull-supported = Try a URL like github.com/owner/repository/pull/123, github.com/owner/repository/compare/main...branch, or github.com/owner/repository/commit/1a2b3c4.
+web-pull-two-dot = JayJay Diff can’t open two-dot (..) comparisons. The three-dot (...) comparison shows the changes since the merge base:
 web-pull-on-github = Open on GitHub
-web-pull-not-found = This pull request doesn’t exist or isn’t public.
+web-pull-not-found = { $kind ->
+    [compare] This comparison doesn’t exist, or its repository is private.
+    [commit] This commit doesn’t exist, or its repository is private.
+   *[pull] This pull request doesn’t exist, or its repository is private.
+} JayJay Diff opens public repositories only.
 web-pull-rate-limited = GitHub is limiting requests right now. Sign in with GitHub to use your own limit, or try again in a few minutes.
-web-pull-too-large = This pull request is too large to review here.
-web-pull-unavailable = Couldn’t load this pull request from GitHub.
+web-pull-too-large = { $kind ->
+    [compare] This comparison changes
+    [commit] This commit changes
+   *[pull] This pull request changes
+} more than 2,000 files, too many to review here.
+web-pull-unavailable = { $kind ->
+    [compare] Couldn’t load this comparison from GitHub.
+    [commit] Couldn’t load this commit from GitHub.
+   *[pull] Couldn’t load this pull request from GitHub.
+}
 web-pull-sign-in = Sign in with GitHub
 web-pull-device-code = Enter this code on GitHub
 web-pull-copy-open = Copy code and open GitHub

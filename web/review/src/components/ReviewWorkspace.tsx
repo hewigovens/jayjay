@@ -59,7 +59,8 @@ export function ReviewWorkspace({
   headerActions?: ReactNode;
   errorActions?: ReactNode;
   footer?: ReactNode;
-  onRetry?: () => void;
+  /** Replaces the error's Retry, or hides it when null. */
+  onRetry?: (() => void) | null;
   /** Review notes in the diff, their per-line buttons, and the banner of notes the diff cannot place. */
   notes?: boolean;
   /** Looks up the author's avatar on Gravatar, GitHub, or GitLab, which shares their email hash or username with that service. */
@@ -271,7 +272,8 @@ export function ReviewWorkspace({
   }, [draftLost]);
 
   function diffPane(index: number, data: ReviewResult, stale = false) {
-    const filePath = data.overview.files[index].path;
+    const summary = data.overview.files[index];
+    const filePath = summary.path;
     const locked = disabled || stale;
     const annotation = (anchor: DiffAnchor) => {
       const key = anchorKey(filePath, anchor.side, anchor.line);
@@ -335,6 +337,12 @@ export function ReviewWorkspace({
       <DiffPane
         key={filePath}
         labels={labels}
+        empty={
+          summary.notice ??
+          (summary.kind === "added" || summary.kind === "removed"
+            ? labels.emptyFile
+            : labels.noTextChanges)
+        }
         view={data.diff}
         split={data.options.split}
         showAll={() => configure({ ...options, showAll: true })}
@@ -362,7 +370,7 @@ export function ReviewWorkspace({
         <ImageDiff
           key={filePath}
           version={data.session}
-          kind={data.overview.files[index].kind}
+          kind={summary.kind}
           labels={labels}
           keepSource={
             notes &&
@@ -374,7 +382,14 @@ export function ReviewWorkspace({
           {diff}
         </ImageDiff>
       );
-    return diff ?? <p className="jj-notice">{labels.loadingFile}</p>;
+    return (
+      <>
+        {summary.notice && data.diff?.rows.length ? (
+          <p className="jj-notice">{summary.notice}</p>
+        ) : null}
+        {diff ?? <p className="jj-notice">{labels.loadingFile}</p>}
+      </>
+    );
   }
 
   return (
@@ -389,13 +404,15 @@ export function ReviewWorkspace({
           <p>{error === "worker-stopped" ? labels.workerError : error}</p>
           <div className="jj-review-error-actions">
             {errorActions}
-            <button
-              className="jj-review-retry"
-              disabled={pending}
-              onClick={onRetry ?? review.retry}
-            >
-              {labels.retry}
-            </button>
+            {onRetry !== null && (
+              <button
+                className="jj-review-retry"
+                disabled={pending}
+                onClick={onRetry ?? review.retry}
+              >
+                {labels.retry}
+              </button>
+            )}
             {!result && headerActions}
           </div>
         </div>

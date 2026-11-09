@@ -190,7 +190,7 @@ impl ReviewSession {
             let rollup = store.file_review_state(&self.bundle.change_id, &file.path, &file.review_identity, self.snapshots[i].as_ref()).rollup();
             reviewed += usize::from(rollup == ReviewFileRollup::Reviewed);
             json!({ "path": file.path, "oldPath": file.old_path, "kind": kind, "icon": file_icon(&file.path), "added": added, "removed": removed,
-                "review": rollup, "noteCount": notes.iter().filter(|note| note.note.path == file.path && !note.note.resolved).count() })
+                "notice": file.notice(), "review": rollup, "noteCount": notes.iter().filter(|note| note.note.path == file.path && !note.note.resolved).count() })
         }).collect();
         let total = files.len();
         let counts = json!({ "files": jayjay_i18n::repo::file_count(total), "reviewed": jayjay_i18n::diff::reviewed_of_total(reviewed, total),

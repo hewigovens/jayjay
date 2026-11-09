@@ -40,6 +40,9 @@ export interface PullFile {
   removed: number;
   sha: string | null;
   oldSha?: string;
+  binary?: true;
+  oldMode?: string;
+  newMode?: string;
 }
 
 export type PullError = "not-found" | "rate-limited" | "unauthorized" | "too-large" | "unavailable";

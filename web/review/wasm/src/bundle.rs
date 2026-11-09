@@ -43,6 +43,12 @@ pub(crate) struct ReviewFile {
     pub added: Option<u32>,
     #[serde(default)]
     pub removed: Option<u32>,
+    #[serde(default)]
+    pub binary: bool,
+    #[serde(default)]
+    pub old_mode: Option<String>,
+    #[serde(default)]
+    pub new_mode: Option<String>,
 }
 
 #[derive(Deserialize, Clone, Copy, PartialEq, Eq, Debug)]
@@ -81,6 +87,18 @@ impl ReviewFile {
             (Some(("", after)), _) if !after.is_empty() => FileKind::Added,
             (Some((before, "")), _) if !before.is_empty() => FileKind::Removed,
             _ => FileKind::Modified,
+        }
+    }
+
+    pub fn notice(&self) -> Option<String> {
+        if self.binary {
+            return Some(jayjay_i18n::web::binary_file());
+        }
+        match (&self.old_mode, &self.new_mode) {
+            (Some(old), Some(new)) if old != new => {
+                Some(jayjay_i18n::web::mode_changed(old.as_str(), new.as_str()))
+            }
+            _ => None,
         }
     }
 

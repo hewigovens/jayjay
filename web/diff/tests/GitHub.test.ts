@@ -78,6 +78,7 @@ test("reads each file's kind, paths, line counts and blob IDs from a diff", () =
       "diff --git a/gone.txt b/gone.txt\ndeleted file mode 100644\nindex 6666666..0000000\n--- a/gone.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-bye\n",
       "diff --git a/logo.png b/logo.png\nindex 7777777..8888888 100644\nBinary files a/logo.png and b/logo.png differ\n",
       'diff --git "a/caf\\303\\251.md" "b/caf\\303\\251.md"\nindex 9999999..aaaaaaa 100644\n',
+      "diff --git a/run.sh b/run.sh\nold mode 100644\nnew mode 100755\n",
     ].join(""),
   );
 
@@ -109,7 +110,15 @@ test("reads each file's kind, paths, line counts and blob IDs from a diff", () =
     },
     { path: "added.txt", kind: "added", added: 2, removed: 0, sha: "5555555" },
     { path: "gone.txt", kind: "removed", added: 0, removed: 1, oldSha: "6666666", sha: null },
-    { path: "logo.png", kind: "modified", added: 0, removed: 0, oldSha: "7777777", sha: "8888888" },
+    {
+      path: "logo.png",
+      kind: "modified",
+      added: 0,
+      removed: 0,
+      oldSha: "7777777",
+      sha: "8888888",
+      binary: true,
+    },
     {
       path: "caf\u00e9.md",
       kind: "modified",
@@ -117,6 +126,15 @@ test("reads each file's kind, paths, line counts and blob IDs from a diff", () =
       removed: 0,
       oldSha: "9999999",
       sha: "aaaaaaa",
+    },
+    {
+      path: "run.sh",
+      kind: "modified",
+      added: 0,
+      removed: 0,
+      sha: null,
+      oldMode: "100644",
+      newMode: "100755",
     },
   ]);
 });
@@ -215,6 +233,44 @@ test("compares a branch with the default branch from their merge base", async ()
       owner: "o",
       repo: "r",
       head: "feature/x",
+    }),
+  ).rejects.toMatchObject({ code: "not-found" });
+});
+
+test("diffs a single commit against its first parent, and a fork's branch from the merge base", async () => {
+  const routes = {
+    "/repos/o/r": { private: false, default_branch: "main" },
+    "/repos/o/r/commits/09f2cf7": {
+      sha: "09f2cf76eccb",
+      commit: { message: "Fix it\n\nBecause", author: { name: "U", date: "2026-11-01T00:00:00Z" } },
+      author: null,
+      parents: [{ sha: "parent" }],
+    },
+    "https://github.com/o/r/commit/09f2cf76eccb.diff": modified("a.rs"),
+    "/repos/o/r/compare/main...user%3Afeature?per_page=100&page=1": {
+      total_commits: 0,
+      merge_base_commit: { sha: "base" },
+      commits: [],
+    },
+    "https://github.com/o/r/compare/main...user%3Afeature.diff": modified("b.rs"),
+  };
+  const commit = await github(routes).manifest({ owner: "o", repo: "r", sha: "09f2cf7" });
+  expect(commit).toMatchObject({
+    title: "Fix it",
+    body: "Because",
+    baseSha: "parent",
+    headSha: "09f2cf76eccb",
+    commit: "09f2cf76eccb",
+  });
+  expect(commit.files.map((file) => file.path)).toEqual(["a.rs"]);
+  const fork = await github(routes).manifest({ owner: "o", repo: "r", head: "user:feature" });
+  expect(fork).toMatchObject({ range: "main...user:feature", baseSha: "base" });
+  expect(fork.files.map((file) => file.path)).toEqual(["b.rs"]);
+  await expect(
+    github({ ...routes, "/repos/o/r": { private: true, default_branch: "main" } }).manifest({
+      owner: "o",
+      repo: "r",
+      sha: "09f2cf7",
     }),
   ).rejects.toMatchObject({ code: "not-found" });
 });

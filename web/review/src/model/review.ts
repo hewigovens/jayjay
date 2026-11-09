@@ -10,6 +10,11 @@ export interface ReviewFile {
   kind?: FileKind;
   added?: number;
   removed?: number;
+  /** A binary file reviews as empty text with a notice saying so. */
+  binary?: boolean;
+  /** Git's file modes, such as `100644`. */
+  oldMode?: string;
+  newMode?: string;
 }
 
 export interface ReviewBundle {
@@ -62,6 +67,8 @@ export interface FileSummary {
   icon?: FileGlyph;
   added: number;
   removed: number;
+  /** What the text diff leaves out, such as a binary file or a mode change. */
+  notice?: string | null;
   review: ReviewState;
   noteCount: number;
 }

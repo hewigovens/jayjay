@@ -121,6 +121,7 @@ export function DiffPane({
   split,
   showAll,
   labels,
+  empty = labels.empty,
   review,
   diffThemes,
 }: {
@@ -128,6 +129,7 @@ export function DiffPane({
   split: boolean;
   showAll: () => void;
   labels: Labels;
+  empty?: string;
   review?: ReviewControls;
   diffThemes?: DiffThemeSelection;
 }) {
@@ -135,7 +137,7 @@ export function DiffPane({
   const [limit, setLimit] = useState(rowLimit);
   const touch = useRef(false);
   const gutter = { armed, arm, touch };
-  if (view.rows.length === 0) return <div className="jj-empty-diff">{labels.empty}</div>;
+  if (view.rows.length === 0) return <div className="jj-empty-diff">{empty}</div>;
   const groupAt = (index: number) =>
     view.rows[index]?.cells.find((cell) => cell.anchor)?.anchor?.group;
   const splits = (index: number) =>

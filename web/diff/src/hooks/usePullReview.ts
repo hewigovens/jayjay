@@ -5,8 +5,15 @@ import type { Labels, ReviewBackend } from "@jayjay/review-web/types";
 import { GitHubSignIn } from "../github/GitHubSignIn";
 import { notesExport } from "../github/NotesExport";
 import { PullLoader, PullLoadError } from "../github/PullLoader";
-import type { PullCommit, PullStackEntry } from "../github/PullManifest";
-import { isPullRequest, reviewName, reviewPath, type ReviewRef } from "../github/ReviewRef";
+import type { PullCommit, PullError, PullStackEntry } from "../github/PullManifest";
+import {
+  atCommit,
+  isPullRequest,
+  reviewKind,
+  reviewName,
+  reviewPath,
+  type ReviewRef,
+} from "../github/ReviewRef";
 import { ViewedSync } from "../github/ViewedSync";
 
 export function usePullReview(client: LocalReviewClient, labels: Labels, pull: ReviewRef) {
@@ -20,6 +27,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
   const prefetch = useRef<AbortController>(undefined);
   const [signedIn, setSignedIn] = useState(() => GitHubSignIn.token !== null);
   const [needsSignIn, setNeedsSignIn] = useState(false);
+  const [failure, setFailure] = useState<PullError>();
   const [syncing, setSyncing] = useState(() => GitHubSignIn.canWrite);
   const [syncFailed, setSyncFailed] = useState(false);
   const sync = useRef<ViewedSync | null>(null);
@@ -62,13 +70,17 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
 
     async function localized<T>(work: () => Promise<T>) {
       try {
-        return await work();
+        const result = await work();
+        setFailure(undefined);
+        return result;
       } catch (error) {
         if (!(error instanceof PullLoadError)) throw error;
         // A revoked sign-in falls back to the site's limit until the reader signs in again.
         if (error.code === "unauthorized") signOut();
         setNeedsSignIn(error.code === "rate-limited" || error.code === "unauthorized");
-        throw new Error(labels[`pullError.${error.code}`]);
+        setFailure(error.code);
+        const kind = reviewKind(atCommit(pull, wanted.current));
+        throw new Error(labels[`${kind}Error.${error.code}`] ?? labels[`pullError.${error.code}`]);
       }
     }
 
@@ -77,13 +89,8 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
         localized(async () => {
           prefetch.current?.abort();
           const commit = wanted.current;
-          const next = await PullLoader.open(
-            { ...pull, commit },
-            GitHubSignIn.token,
-            signal,
-            undefined,
-            fresh,
-          );
+          const target = atCommit(pull, commit);
+          const next = await PullLoader.open(target, GitHubSignIn.token, signal, undefined, fresh);
           // The worker holds one session, which an abandoned open must not replace.
           signal?.throwIfAborted();
           const result = await client.open(next.bundle());
@@ -91,7 +98,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
           session = result.session;
           supplied = new Map();
           opened.current.set(session, {
-            target: { ...pull, commit },
+            target,
             headSha: next.manifest.headSha,
             title: next.manifest.title,
           });
@@ -191,6 +198,8 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     stack,
     signedIn,
     needsSignIn,
+    // Retrying can't make a missing, private, or oversized review appear.
+    retryable: failure !== "not-found" && failure !== "too-large",
     syncing,
     syncFailed,
     signOut,

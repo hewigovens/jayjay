@@ -96,9 +96,13 @@ test("opens a bundle from the manifest and loads each file's sides on request", 
   expect(requests).toHaveLength(7);
 });
 
-test("prefetches the files near the open one, a few at a time, and skips large ones", async () => {
+test("prefetches the files near the open one, a few at a time, and skips large and binary ones", async () => {
   const files = Array.from({ length: 2000 }, (_, index) =>
-    file(`f${index}`, "modified", index === 52 ? { added: 40_000 } : {}),
+    file(
+      `f${index}`,
+      "modified",
+      index === 52 ? { added: 40_000 } : index === 54 ? { added: 0, removed: 0, binary: true } : {},
+    ),
   );
   let active = 0;
   let peak = 0;
@@ -113,7 +117,9 @@ test("prefetches the files near the open one, a few at a time, and skips large o
   await loader.content(51);
   const loaded: number[] = [];
   await loader.prefetch(50, (index) => loaded.push(index), new AbortController().signal);
-  expect(loaded.sort((a, b) => a - b)).toEqual([48, 49, 53, 54, 55, 56, 57, 58, 59, 60]);
-  expect(fetched).toHaveLength(22);
+  expect(loaded.sort((a, b) => a - b)).toEqual([48, 49, 53, 55, 56, 57, 58, 59, 60]);
+  expect(fetched).toHaveLength(20);
+  expect(await loader.content(54)).toEqual({ before: "", after: "", images: null });
+  expect(fetched).toHaveLength(20);
   expect(peak).toBeLessThanOrEqual(8);
 });

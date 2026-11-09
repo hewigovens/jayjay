@@ -97,6 +97,8 @@ export class PullLoader {
         kind: file.kind,
         added: file.added,
         removed: file.removed,
+        ...(file.binary && { binary: true }),
+        ...(file.oldMode && { oldMode: file.oldMode, newMode: file.newMode }),
       })),
     };
     return JSON.stringify(bundle);
@@ -127,6 +129,7 @@ export class PullLoader {
     ].filter(
       (index) =>
         files[index] &&
+        !files[index].binary &&
         files[index].added + files[index].removed <= largeFile &&
         !this.contents.has(index),
     );
@@ -145,6 +148,7 @@ export class PullLoader {
   }
 
   private async fetchContent(file: PullFile): Promise<FileContent> {
+    if (file.binary && !isImagePath(file.path)) return { before: "", after: "", images: null };
     const { repository, baseSha, headSha } = this.manifest;
     const [before, after] = await Promise.all([
       file.kind === "added" ? null : this.raw(repository, baseSha, file.oldPath ?? file.path),

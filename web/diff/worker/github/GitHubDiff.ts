@@ -28,6 +28,12 @@ export function diffFiles(diff: string): PullFile[] {
       else if (line.startsWith("-")) file.removed++;
     } else if (line.startsWith("@@")) {
       inHunk = true;
+    } else if (line.startsWith("Binary files ") || line === "GIT binary patch") {
+      file.binary = true;
+    } else if (line.startsWith("old mode ")) {
+      file.oldMode = line.slice("old mode ".length);
+    } else if (line.startsWith("new mode ")) {
+      file.newMode = line.slice("new mode ".length);
     } else if (line.startsWith("new file mode")) {
       file.kind = "added";
     } else if (line.startsWith("deleted file mode")) {

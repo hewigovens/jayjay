@@ -9,7 +9,7 @@ import {
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import type { AppearanceSettings } from "../../AppearanceSettings";
-import { gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
+import { atCommit, gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
 import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
@@ -42,6 +42,7 @@ export function PullReview({
     stack,
     signedIn,
     needsSignIn,
+    retryable,
     syncing,
     syncFailed,
     signOut,
@@ -113,7 +114,11 @@ export function PullReview({
         }
         avatars
         fill
-        onRetry={() => (review.error === "worker-stopped" ? location.reload() : void refresh())}
+        onRetry={
+          retryable
+            ? () => (review.error === "worker-stopped" ? location.reload() : void refresh())
+            : null
+        }
         errorActions={
           needsSignIn && !signedIn && <SignInPanel labels={labels} onSignedIn={onSignedIn} />
         }
@@ -127,7 +132,7 @@ export function PullReview({
                 autoFocus={picked.current === "commits"}
                 onSelect={(sha) => {
                   picked.current = "commits";
-                  onOpen({ ...pull, commit: sha });
+                  onOpen(atCommit(pull, sha));
                 }}
               />
             )}

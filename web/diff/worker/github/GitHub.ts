@@ -6,7 +6,9 @@ import {
 } from "../../src/github/PullManifest";
 import {
   compareRange,
+  isCommit,
   isPullRequest,
+  type CommitRef,
   type CompareRef,
   type PullRequestRef,
   type ReviewRef,
@@ -60,6 +62,7 @@ export class GitHub {
   ) {}
 
   manifest(target: ReviewRef): Promise<PullManifest> {
+    if (isCommit(target)) return this.singleCommitManifest(target);
     if (!isPullRequest(target)) return this.compareManifest(target);
     return target.commit
       ? this.pullCommitManifest(target, target.commit)
@@ -105,13 +108,18 @@ export class GitHub {
     });
   }
 
+  private async singleCommitManifest({ owner, repo, sha }: CommitRef): Promise<PullManifest> {
+    const repository = `${owner}/${repo}`;
+    const [, commit] = await Promise.all([
+      this.publicRepository(repository),
+      this.get<GitHubCommit>(`/repos/${repository}/commits/${sha}`),
+    ]);
+    return this.commitManifest(repository, [commit], commit.sha, {});
+  }
+
   private async compareManifest(target: CompareRef): Promise<PullManifest> {
     const repository = `${target.owner}/${target.repo}`;
-    const { private: hidden, default_branch } = await this.get<{
-      private: boolean;
-      default_branch: string;
-    }>(`/repos/${repository}`);
-    if (hidden) throw new GitHubError("not-found", 404);
+    const { default_branch } = await this.publicRepository(repository);
     const range = compareRange({ ...target, base: target.base ?? default_branch });
     const path = range.split("/").map(encodeURIComponent).join("/");
     const [comparison, files] = await Promise.all([
@@ -187,6 +195,14 @@ export class GitHub {
       head: last?.sha ?? first.merge_base_commit.sha,
       commits,
     };
+  }
+
+  private async publicRepository(repository: string) {
+    const found = await this.get<{ private: boolean; default_branch: string }>(
+      `/repos/${repository}`,
+    );
+    if (found.private) throw new GitHubError("not-found", 404);
+    return found;
   }
 
   private async pull(repository: string, number: number) {
