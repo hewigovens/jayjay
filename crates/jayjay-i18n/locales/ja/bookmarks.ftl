@@ -9,4 +9,7 @@ bookmarks-active-count = アクティブ { NUMBER($count) }
 bookmarks-local-only-count = ローカルのみ { NUMBER($count) }
 bookmarks-remote-only-count = リモートのみ { NUMBER($count) }
 bookmarks-local = ローカル
+bookmarks-deleted = 削除済み
+bookmarks-conflicted = 競合
+bookmarks-remote-only = リモートのみ
 bookmarks-remote-is-at = { $lead } { $remote } は { $change }{ $summary } にあります。

@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 enum AppShortcut: String, Decodable {
@@ -47,6 +48,10 @@ enum AppShortcut: String, Decodable {
 
     var symbol: String {
         ShortcutStore.shared.byID[rawValue]?.primary?.caps.joined() ?? ""
+    }
+
+    func help(_ title: String) -> String {
+        symbol.isEmpty ? title : Localized.Common.withShortcut(title: title, shortcut: symbol)
     }
 
     func matches(_ event: NSEvent) -> Bool {

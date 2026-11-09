@@ -9,4 +9,7 @@ bookmarks-active-count = { NUMBER($count) } 個使用中
 bookmarks-local-only-count = { NUMBER($count) } 個僅限本機
 bookmarks-remote-only-count = { NUMBER($count) } 個僅限遠端
 bookmarks-local = 本機
+bookmarks-deleted = 已刪除
+bookmarks-conflicted = 有衝突
+bookmarks-remote-only = 僅限遠端
 bookmarks-remote-is-at = { $lead } { $remote } 位於 { $change }{ $summary }。

@@ -20,7 +20,6 @@ overview-rebase-lane-onto = レーンを { $trunk } にリベース
 overview-open-in-window = { $name } をウインドウで開く
 overview-show-in = { $name } を { $app } で表示
 overview-forget-delete-from-disk = { $name } を登録解除してディスクから削除…
-overview-filter-lanes-shortcut = レーンを絞り込む ({ $shortcut })
 overview-on-trunk = { $trunk } 上
 overview-commits-behind = { $trunk } より { $count } コミット遅れ
 overview-behind-short = { $trunk } より { NUMBER($count) } 遅れ

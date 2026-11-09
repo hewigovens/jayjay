@@ -53,13 +53,13 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                         .jayjayFont(13, weight: .medium, design: .monospaced)
                         .lineLimit(1)
                     if bookmark.isDeleted {
-                        badge("deleted", color: .red)
+                        badge(Localized.Bookmarks.deleted, color: .red)
                     }
                     if bookmark.isConflicted {
-                        badge("conflicted", color: .orange)
+                        badge(Localized.Bookmarks.conflicted, color: .orange)
                     }
                     if !bookmark.hasLocalTarget, !bookmark.isDeleted {
-                        badge("remote-only", color: .blue)
+                        badge(Localized.Bookmarks.remoteOnly, color: .blue)
                     } else if bookmark.hasLocalTarget, !bookmark.isTrackingRemote, !bookmark.isDeleted {
                         badge(Localized.Bookmarks.local, color: .secondary)
                     }

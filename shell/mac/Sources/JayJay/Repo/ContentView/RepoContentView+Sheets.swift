@@ -59,7 +59,6 @@ extension RepoContentView {
         BookmarkManagerView(
             bookmarks: viewModel.bookmarks,
             actions: viewModel,
-            repo: viewModel.repo,
             prHostName: viewModel.prHostName,
             onFilter: { target in
                 self.modal = nil

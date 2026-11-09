@@ -55,7 +55,7 @@ struct OverviewView: View {
                         Label(Localized.Overview.filterLanesTitle, systemImage: "magnifyingglass")
                     }
                     .keyboardShortcut(AppShortcut.filterOverviewLanes)
-                    .help(Localized.Overview.filterLanesShortcut(shortcut: AppShortcut.filterOverviewLanes.symbol))
+                    .help(AppShortcut.filterOverviewLanes.help(Localized.Overview.filterLanesTitle))
                 }
             }
         }
@@ -133,7 +133,7 @@ struct OverviewView: View {
                                 workspaceInfo: viewModel.workspaceInfo(named:),
                                 openWorkspace: { windowManager.openRepo($0.path) },
                                 rebaseOntoTrunk: viewModel.rebaseLaneOntoTrunk,
-                                abandon: { viewModel.pendingAbandon = $0 },
+                                abandon: requestAbandon,
                                 forgetWorkspace: requestForget
                             )
                         )
@@ -240,6 +240,14 @@ struct OverviewView: View {
                 .jayjayFont(11)
         }
         .foregroundStyle(tint ?? .secondary)
+    }
+
+    private func requestAbandon(_ request: OverviewAbandonRequest) {
+        if settings.skipAbandonConfirmation, request.commitIds.count == 1 {
+            viewModel.abandon(request)
+        } else {
+            viewModel.pendingAbandon = request
+        }
     }
 
     private func requestForget(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) {

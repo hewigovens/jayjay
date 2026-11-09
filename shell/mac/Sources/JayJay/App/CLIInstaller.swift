@@ -28,7 +28,14 @@ enum CLIInstaller {
         Bundle.main.executableURL?.deletingLastPathComponent().appendingPathComponent("jayjay-cli").path
     }
 
+    /// Only a symlink into a JayJay app bundle is ours to re-point or remove; anything else at the path belongs to the user.
+    static func isManagedLink(at path: String) -> Bool {
+        (try? FileManager.default.destinationOfSymbolicLink(atPath: path))?
+            .hasSuffix(".app/Contents/MacOS/jayjay-cli") ?? false
+    }
+
     static func uninstall() throws {
+        guard isManagedLink(at: installPath) else { throw CLIError.unmanaged(installPath) }
         try FileManager.default.removeItem(atPath: installPath)
     }
 
@@ -40,7 +47,9 @@ enum CLIInstaller {
             throw CLIError.notExecutable(cli)
         }
         try FileManager.default.createDirectory(atPath: installDir, withIntermediateDirectories: true)
-        try? FileManager.default.removeItem(atPath: installPath)
+        if (try? FileManager.default.attributesOfItem(atPath: installPath)) != nil {
+            try uninstall()
+        }
         try FileManager.default.createSymbolicLink(atPath: installPath, withDestinationPath: cli)
     }
 
@@ -86,11 +95,13 @@ enum CLIInstaller {
     enum CLIError: LocalizedError {
         case notBundled
         case notExecutable(String)
+        case unmanaged(String)
 
         var errorDescription: String? {
             switch self {
                 case .notBundled: Localized.Settings.cliBinaryNotFoundInApp
                 case let .notExecutable(path): Localized.Settings.cliNotExecutable(path: path)
+                case let .unmanaged(path): Localized.Settings.cliNotInstalledByJayjay(path: path)
             }
         }
     }

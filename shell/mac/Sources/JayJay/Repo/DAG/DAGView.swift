@@ -305,11 +305,20 @@ struct DAGView: View {
             return true
         }
         if AppShortcut.abandon.matches(event), keyboardFocus?.isSuspended != true,
-           rebaseDrag.state == nil, bookmarkDrag.state == nil,
-           let selectedId, entries.contains(where: { $0.change.selectionRevision == selectedId && !$0.change.isImmutable })
+           rebaseDrag.state == nil, bookmarkDrag.state == nil
         {
-            onRequest?(.abandon(rev: selectedId))
-            return true
+            let selection = navigationViewModel
+            if selection.hasMultipleSelection {
+                if selection.canAbandonSelection {
+                    onRequest?(.abandonSelection(revisions: selection.selectedRevisions))
+                    return true
+                }
+            } else if let selectedId,
+                      entries.contains(where: { $0.change.selectionRevision == selectedId && !$0.change.isImmutable })
+            {
+                onRequest?(.abandon(rev: selectedId))
+                return true
+            }
         }
         switch event.horizontalNavigationKeyCode {
             case KeyCode.rightArrow:

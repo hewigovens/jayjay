@@ -4,6 +4,7 @@ diff-edit-this-working-copy-file = Edit this working-copy file
 diff-edit-diff = Edit Diff
 diff-open-dedicated-diff-edit-mode = Open dedicated diff edit mode
 diff-switch-to-side-by-side = Switch to side-by-side
+diff-side-by-side-unavailable = Side-by-side needs both added and removed lines and no conflicts
 diff-switch-to-unified = Switch to unified
 diff-show-rendered-svg-preview = Show rendered SVG preview
 diff-show-rendered-markdown = Show rendered Markdown

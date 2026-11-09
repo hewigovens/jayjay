@@ -4,7 +4,6 @@ import SwiftUI
 struct BookmarkManagerView: View {
     let bookmarks: [BookmarkInfo]
     let actions: (any BookmarkActions)?
-    let repo: JayJayRepo?
     let prHostName: String?
     let onFilter: (BookmarkFilterTarget) -> Void
     let onDiffBookmark: (BookmarkDiffRequest) -> Void
@@ -164,8 +163,7 @@ extension BookmarkManagerView: BookmarkManagerRowActions {
     }
 
     func resolveBookmarkConflict(_ bookmark: BookmarkInfo) {
-        try? repo?.moveBookmark(name: bookmark.name, toRev: "@")
-        actions?.gitFetch()
+        actions?.moveBookmark(name: bookmark.name, toRev: "@")
     }
 
     func openPullRequest(for bookmark: BookmarkInfo) {

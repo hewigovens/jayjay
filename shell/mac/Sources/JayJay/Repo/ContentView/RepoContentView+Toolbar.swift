@@ -8,7 +8,7 @@ extension RepoContentView {
             let title = settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar
             toolbarButton(
                 .sidebarToggle,
-                help: "\(title) (\(AppShortcut.toggleSidebar.symbol))",
+                help: AppShortcut.toggleSidebar.help(title),
                 action: { settings.sidebarHidden.toggle() },
                 label: { Label(title, systemImage: "sidebar.leading") }
             )
@@ -61,7 +61,7 @@ extension RepoContentView {
         ToolbarItemGroup(placement: .primaryAction) {
             toolbarButton(
                 .finder,
-                help: "\(Localized.Common.showIn(app: "Finder")) (\(AppShortcut.showInFinder.symbol))",
+                help: AppShortcut.showInFinder.help(Localized.Common.showIn(app: "Finder")),
                 action: { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) },
                 label: { Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder") }
             )
@@ -77,7 +77,7 @@ extension RepoContentView {
                 .terminal,
                 help: Localized.Repo.openRepositoryIn(app: settings.terminal.title),
                 action: { settings.openInTerminal(at: viewModel.repoPath) },
-                label: { Label("Terminal", systemImage: "terminal") }
+                label: { Label(Localized.Settings.terminal, systemImage: "terminal") }
             )
             .disabled(viewModel.repo.isRemote())
             toolbarButton(

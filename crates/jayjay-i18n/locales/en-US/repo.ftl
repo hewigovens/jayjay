@@ -432,8 +432,7 @@ repo-forgot-stale-bookmarks =
         [one] Forgot { $count } stale bookmark
        *[other] Forgot { $count } stale bookmarks
     }
-repo-refresh-shortcut = Refresh ({ $shortcut })
-repo-update-workspace-stale = Update Workspace — the working copy is stale ({ $shortcut })
+repo-update-workspace-stale = Update Workspace — the working copy is stale
 repo-create-workspace-from-pull-request-on = Create a workspace from a pull request on { $host }
 repo-resolved-bookmark-to-working-copy = Resolved { $bookmark } to @
 repo-moved-bookmark-to-parent = Moved { $bookmark } to @-

@@ -20,7 +20,6 @@ overview-rebase-lane-onto = 将泳道变基到 { $trunk }
 overview-open-in-window = 在窗口中打开 { $name }
 overview-show-in = 在 { $app } 中显示 { $name }
 overview-forget-delete-from-disk = 从磁盘忘记并删除 { $name }…
-overview-filter-lanes-shortcut = 筛选泳道（{ $shortcut }）
 overview-on-trunk = 位于 { $trunk }
 overview-commits-behind = 落后 { $trunk } { $count } 个提交
 overview-behind-short = 落后 { $trunk } { NUMBER($count) } 个

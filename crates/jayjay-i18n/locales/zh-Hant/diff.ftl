@@ -4,6 +4,7 @@ diff-edit-this-working-copy-file = 編輯此工作副本檔案
 diff-edit-diff = 編輯差異
 diff-open-dedicated-diff-edit-mode = 開啟專用的差異編輯模式
 diff-switch-to-side-by-side = 切換為並排
+diff-side-by-side-unavailable = 並排檢視需要同時有新增行與刪除行，且沒有衝突
 diff-switch-to-unified = 切換為統一
 diff-show-rendered-svg-preview = 顯示轉譯後的 SVG 預覽
 diff-show-rendered-markdown = 顯示轉譯後的 Markdown

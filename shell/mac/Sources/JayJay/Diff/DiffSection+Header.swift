@@ -199,10 +199,18 @@ extension DiffSection {
                 systemImage: effectiveSideBySideDiff ? "rectangle.split.2x1" : "text.justify"
             )
         }
-        .keyboardFocusStop(.diffLayout, action: toggle)
-        .help(effectiveSideBySideDiff ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide)
+        .disabled(isSideBySideUnavailable)
+        .keyboardFocusStop(.diffLayout, isAvailable: !isSideBySideUnavailable, action: toggle)
+        .help(
+            isSideBySideUnavailable ? Localized.Diff.sideBySideUnavailable
+                : effectiveSideBySideDiff ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide
+        )
         .accessibilityLabel(effectiveSideBySideDiff ? Localized.Diff.sideBySide : Localized.Diff.unified)
         .accessibilityIdentifier(AID.Diff.layoutToggle)
+    }
+
+    private var isSideBySideUnavailable: Bool {
+        settings.sideBySideDiff && !effectiveSideBySideDiff
     }
 
     private var effectiveSideBySideDiff: Bool {

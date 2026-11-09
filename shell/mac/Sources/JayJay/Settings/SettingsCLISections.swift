@@ -21,7 +21,12 @@ struct SettingsCLISections: View {
                         .textSelection(.enabled)
                     if cliInstalled {
                         Button(Localized.Common.uninstall) {
-                            try? CLIInstaller.uninstall()
+                            do {
+                                try CLIInstaller.uninstall()
+                                cliError = nil
+                            } catch {
+                                cliError = error.localizedDescription
+                            }
                             cliInstalled = CLIInstaller.isInstalled
                         }
                         Spacer().frame(width: 8)

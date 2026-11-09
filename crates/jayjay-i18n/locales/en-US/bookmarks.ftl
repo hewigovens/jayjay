@@ -9,4 +9,7 @@ bookmarks-active-count = { NUMBER($count) } active
 bookmarks-local-only-count = { NUMBER($count) } local-only
 bookmarks-remote-only-count = { NUMBER($count) } remote-only
 bookmarks-local = local
+bookmarks-deleted = deleted
+bookmarks-conflicted = conflicted
+bookmarks-remote-only = remote-only
 bookmarks-remote-is-at = { $lead } { $remote } is at { $change }{ $summary }.

@@ -20,7 +20,6 @@ overview-rebase-lane-onto = Rebase Lane onto { $trunk }
 overview-open-in-window = Open { $name } in Window
 overview-show-in = Show { $name } in { $app }
 overview-forget-delete-from-disk = Forget & Delete { $name } from Disk…
-overview-filter-lanes-shortcut = Filter lanes ({ $shortcut })
 overview-on-trunk = On { $trunk }
 overview-commits-behind =
     { $count ->

@@ -4,6 +4,7 @@ diff-edit-this-working-copy-file = この作業コピーのファイルを編集
 diff-edit-diff = 差分を編集
 diff-open-dedicated-diff-edit-mode = 差分編集モードを開く
 diff-switch-to-side-by-side = 左右並べての表示に切り替え
+diff-side-by-side-unavailable = 左右並べての表示には追加行と削除行の両方が必要で、コンフリクトがあると使えません
 diff-switch-to-unified = 統合表示に切り替え
 diff-show-rendered-svg-preview = SVG のレンダリング結果を表示
 diff-show-rendered-markdown = Markdown のレンダリング結果を表示
