@@ -26,4 +26,5 @@ Over SSH, programs run outside the desktop session, so start GUI runs in the log
 
 - Passing UI runs discard attachments. For a failing scene, download the `ui-test-xcresult` artifact: `xcrun xcresulttool get test-results tests` gives the failure message, the exported accessibility hierarchy dump shows which element a query hit, and the screen recording shows what the scene saw.
 - The GPUI workflow runs the Rust tests on Linux and Windows; a Windows-only failure is usually a path or ref-name portability issue (see [Testing](testing.md#gpui-tests)).
+- Two OS jobs running the same command are not duplicates when they compile different platform code; measure with `gh run view <run-id> --json jobs` before proposing to merge or drop CI jobs.
 - A blank or stale Help window has its own diagnosis in [Help Book](help-book.md).

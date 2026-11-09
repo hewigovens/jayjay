@@ -15,7 +15,7 @@ Consider delegation when a bounded subtask can run independently and its result 
 - Where a behavior lives across core, SwiftUI, and GPUI.
 - One failing CI job, with the job name and log pinned.
 - A log, trace, or diff too large for the parent to ingest whole.
-- A named read-only skill such as `gpui-parity-audit` or `ci-workflow-audit` that is not the whole user request.
+- A named read-only skill such as `gpui-parity-audit` that is not the whole user request.
 - Mechanical implementation or a cleanup round, as a delegate.
 
 Do not spawn when:

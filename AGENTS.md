@@ -42,9 +42,19 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 
 ## Feature Loop
 
-Order: understand → implement → focused validation → cleanup → revalidate affected behavior → describe → triage. Formatting and lint gates apply when committing or publishing; see below. Triage means running the `review-triage` skill on the described change: `jayjay review status` shows every file, `mark` clears straightforward changes on the agent's behalf, and changes requiring human judgment stay unreviewed without commentary. Reserve notes for concrete, unresolved critical risks the reviewer could otherwise miss.
+Order: understand → implement → focused validation → cleanup → revalidate affected behavior → prove → describe → triage. Formatting and lint gates apply when committing or publishing; see below. Triage means running the `review-triage` skill on the described change: `jayjay review status` shows every file, `mark` clears straightforward changes on the agent's behalf, and changes requiring human judgment stay unreviewed without commentary. Reserve notes for concrete, unresolved critical risks the reviewer could otherwise miss.
 
-A change to what the user sees also follows the [Visual Change Workflow](agents/design.md#visual-change-workflow), which decides whether it starts with a mockup and what visual evidence accompanies it.
+A task is not done without proof matched to what changed, shown or linked in the final report. A build or an unrelated green test proves only that it compiles.
+
+- **Behavior or bug fix:** the named test or command that exercises it and its result; a bug fix shows the failing scenario now passing.
+- **User-visible UI:** something visual from the running app — a screenshot for a static change, a named passing UI test scene, or a recording for interaction or motion. Appearance changes also follow the [Visual Change Workflow](agents/design.md#visual-change-workflow), which decides whether the change starts with a mockup.
+- **Architecture** (crate or module boundaries, data flow, ownership, state machines): a before/after diagram of the affected boundary, such as Mermaid in the report.
+- **Performance:** a before/after measurement with its command and conditions.
+- **Documentation:** the diff plus link and command checks.
+
+Keep proof files outside source, in the session scratchpad.
+
+Before reporting done, check the loop's tail again, however long the session ran: proof for the change, `jj describe` for a meaningful diff, and the triage `status` summary in the report. A described change without a triage pass is not done.
 
 Implement in a **sibling jj workspace**, including documentation changes. Use the workspace recipe below rather than git worktrees or harness-created hidden worktrees.
 

@@ -1,8 +1,7 @@
 ---
 name: review-triage
-description: Pre-mark straightforward files and hunks of a change as reviewed through the jayjay review CLI, and flag only critical risks before a human review starts.
+description: Pre-mark straightforward files and hunks of a change as reviewed through the jayjay review CLI, and flag only critical risks before a human review starts. Run it after `jj describe` on every finished task change (the Feature Loop's last step), or when asked to triage or pre-review a change.
 argument-hint: "[workspace-path]"
-disable-model-invocation: true
 ---
 
 # Review Triage
@@ -11,6 +10,7 @@ Clears straightforward changes so the reviewer starts on what matters. Marks wri
 
 ## When to use
 
+- A task's change was just described; this is the Feature Loop's last step, not an optional extra.
 - The user asks to triage, pre-review, or clear the trivial files of a change before reviewing it.
 - Complements human review; leave changes requiring human judgment unreviewed.
 
