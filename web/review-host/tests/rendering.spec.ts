@@ -218,3 +218,50 @@ test("keeps a host's generic class and token names out of the review", async ({ 
   });
   expect(await fingerprint()).toBe(before);
 });
+
+test("a very long diff renders its first rows until the reader asks for the rest", async ({
+  page,
+}) => {
+  await page.goto("/");
+  await ready(page);
+  const lines = Array.from({ length: 6000 }, (_, line) => `line ${line}\n`).join("");
+  await bundle(page, lines);
+  const rows = page.locator(".jj-diff-row");
+  await expect(rows).toHaveCount(2000);
+  const group = page.getByRole("checkbox", { name: /Change group 1/ });
+  await expect(group).toBeDisabled();
+  await page.getByRole("button", { name: "Show the rest of this diff" }).click();
+  await expect(rows).toHaveCount(6002);
+  await expect(group).toBeEnabled();
+});
+
+test("the row limit stops before a change group rather than inside it", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  const before = Array.from({ length: 3000 }, (_, line) => `line ${line}\n`);
+  const after = before.map((text, line) =>
+    line < 700 || (line >= 800 && line < 2000) ? `edited ${text}` : text,
+  );
+  await page.getByLabel("Import change", { exact: true }).setInputFiles({
+    name: "change.json",
+    mimeType: "application/json",
+    buffer: Buffer.from(
+      JSON.stringify({
+        schemaVersion: 1,
+        repositoryId: "test/repository",
+        changeId: "stable-change",
+        title: "Two groups",
+        files: [
+          { path: "a.txt", reviewIdentity: "1", before: before.join(""), after: after.join("") },
+        ],
+      }),
+    ),
+  });
+  await ready(page);
+  const groups = page.locator(".jj-group-toggle");
+  await expect(groups).toHaveCount(1);
+  await expect(groups).toBeEnabled();
+  expect(await page.locator(".jj-diff-row").count()).toBeLessThan(2000);
+  await page.getByRole("button", { name: "Show the rest of this diff" }).click();
+  await expect(groups).toHaveCount(2);
+});

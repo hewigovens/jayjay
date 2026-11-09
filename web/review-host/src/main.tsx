@@ -1,5 +1,6 @@
 import { useEffect, useState } from "react";
 import { createRoot } from "react-dom/client";
+import { loadLabels } from "@jayjay/review-web/labels";
 import { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import { LocalReview } from "./LocalReview";
@@ -14,8 +15,7 @@ function Host() {
   useEffect(() => {
     const instance = new LocalReviewClient({ databaseName: "jayjay-review-tests" });
     setClient(instance);
-    void instance
-      .labels()
+    void loadLabels()
       .then(setLabels)
       .catch((error) => setError(error.message));
     return () => instance.dispose();

@@ -263,6 +263,7 @@ export function ReviewWorkspace({
       });
     const diff = data.diff && (
       <DiffPane
+        key={filePath}
         labels={labels}
         view={data.diff}
         split={data.options.split}
@@ -303,7 +304,7 @@ export function ReviewWorkspace({
           {diff}
         </ImageDiff>
       );
-    return diff ?? <p className="jj-empty-diff">{labels.noFiles}</p>;
+    return diff ?? <p className="jj-notice">{labels.loadingFile}</p>;
   }
 
   return (

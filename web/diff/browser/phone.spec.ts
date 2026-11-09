@@ -7,10 +7,11 @@ async function expectNoSidewaysScroll(page: Page) {
   ).toBeLessThanOrEqual(0);
 }
 
-test("the landing page fits a phone", async ({ page }) => {
+test("the landing page fits a phone and starts no diff engine", async ({ page }) => {
   await page.goto("/");
   await expect(page.getByRole("button", { name: "Open" })).toBeVisible();
   await expectNoSidewaysScroll(page);
+  expect(page.workers()).toHaveLength(0);
 });
 
 test("header actions are touch-sized and pickers open as a sheet", async ({ page }) => {

@@ -4,7 +4,7 @@ import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels, ReviewBackend } from "@jayjay/review-web/types";
 import { GitHubSignIn } from "../github/GitHubSignIn";
 import { notesExport } from "../github/NotesExport";
-import { PullLoader, PullLoadError, type FileContent } from "../github/PullLoader";
+import { PullLoader, PullLoadError } from "../github/PullLoader";
 import type { PullCommit, PullStackEntry } from "../github/PullManifest";
 import { isPullRequest, reviewName, reviewPath, type ReviewRef } from "../github/ReviewRef";
 import { ViewedSync } from "../github/ViewedSync";
@@ -52,6 +52,14 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
       return pending;
     }
 
+    function prefetchAround(index: number) {
+      prefetch.current?.abort();
+      if (!loader) return;
+      const controller = new AbortController();
+      prefetch.current = controller;
+      void loader.prefetch(index, supply, controller.signal);
+    }
+
     async function localized<T>(work: () => Promise<T>) {
       try {
         return await work();
@@ -76,14 +84,12 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
             undefined,
             fresh,
           );
-          const first = new Map<number, FileContent>();
-          if (next.manifest.files.length) first.set(0, await next.content(0));
           // The worker holds one session, which an abandoned open must not replace.
           signal?.throwIfAborted();
-          const result = await client.open(next.bundle(first));
+          const result = await client.open(next.bundle());
           loader = next;
           session = result.session;
-          supplied = new Map([[0, Promise.resolve()]]);
+          supplied = new Map();
           opened.current.set(session, {
             target: { ...pull, commit },
             headSha: next.manifest.headSha,
@@ -92,13 +98,11 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
           setCommits(next.manifest.commits);
           // Only the whole pull request's manifest follows the stack; a commit keeps what it showed.
           if (!commit) setStack(next.manifest.stack);
-          const controller = new AbortController();
-          prefetch.current = controller;
-          void loader.prefetch(supply, controller.signal);
           return result;
         }),
       render: (selection) =>
         localized(async () => {
+          prefetchAround(selection.file);
           await supply(selection.file);
           return client.render(selection);
         }),

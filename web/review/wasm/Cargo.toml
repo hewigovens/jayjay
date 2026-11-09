@@ -9,6 +9,10 @@ publish = false
 [lib]
 crate-type = ["cdylib", "rlib"]
 
+[[bin]]
+name = "export-web-labels"
+path = "src/bin/export_web_labels.rs"
+
 [features]
 default = []
 rust = ["jj-diff/lang-rust"]

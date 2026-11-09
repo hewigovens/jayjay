@@ -4,6 +4,7 @@ set -euo pipefail
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 cd "$root"
 npm run themes
+cargo run --locked -p jj-diff-web --bin export-web-labels -- web/review/src/wasm/labels
 bindgen="${WASM_BINDGEN:-$root/target/web-tools/bin/wasm-bindgen}"
 if [[ ! -x "$bindgen" && -z "${WASM_BINDGEN:-}" ]]; then bindgen=wasm-bindgen; fi
 version="$(bash "$root/scripts/wasm-bindgen-version.sh")"
@@ -15,7 +16,7 @@ fi
 for pack in base rust web python swift shell data systems jvm other; do
   features=(--no-default-features)
   if [[ "$pack" != base ]]; then features+=(--features "$pack"); fi
-  bash "$root/scripts/with-wasm-toolchain.sh" cargo build --locked -p jj-diff-web "${features[@]}" --target wasm32-unknown-unknown --release
+  bash "$root/scripts/with-wasm-toolchain.sh" cargo build --locked -p jj-diff-web --lib "${features[@]}" --target wasm32-unknown-unknown --release
   "$bindgen" target/wasm32-unknown-unknown/release/jj_diff_web.wasm \
     --target web --out-dir "web/review/src/wasm/$pack" --out-name "jj_diff_$pack"
 done

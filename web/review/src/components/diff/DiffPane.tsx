@@ -16,6 +16,8 @@ interface ReviewControls {
   marker?: (anchor: DiffAnchor) => ReactNode;
 }
 
+const rowLimit = 2000;
+
 export function lineLabel(labels: Labels, side: DiffAnchor["side"], line: number) {
   return `${side === "new" ? labels.after : labels.before} ${line}`;
 }
@@ -130,9 +132,28 @@ export function DiffPane({
   diffThemes?: DiffThemeSelection;
 }) {
   const [armed, arm] = useState<string | null>(null);
+  const [limit, setLimit] = useState(rowLimit);
   const touch = useRef(false);
   const gutter = { armed, arm, touch };
   if (view.rows.length === 0) return <div className="jj-empty-diff">{labels.empty}</div>;
+  const groupAt = (index: number) =>
+    view.rows[index]?.cells.find((cell) => cell.anchor)?.anchor?.group;
+  const splits = (index: number) =>
+    index > 0 && groupAt(index) !== undefined && groupAt(index) === groupAt(index - 1);
+  // A group's checkbox marks all its rows, so the cut backs off to the group's start.
+  let end = Math.min(limit, view.rows.length);
+  let start = end;
+  while (splits(start)) start--;
+  if (start > 0) end = start;
+  // A note or draft past the cut keeps its row rendered.
+  if (review?.annotation)
+    for (let index = view.rows.length - 1; index >= end; index--)
+      if (view.rows[index].cells.some((cell) => cell.anchor && review.annotation!(cell.anchor))) {
+        end = index + 1;
+        while (splits(end)) end++;
+        break;
+      }
+  const cutGroup = splits(end) ? groupAt(end) : undefined;
   const blocks: ReactNode[] = [];
   let pending: { group: number; rows: ReactNode[] } | null = null;
   const flush = () => {
@@ -146,7 +167,7 @@ export function DiffPane({
             type="checkbox"
             className="jj-group-toggle"
             checked={state === "reviewed"}
-            disabled={review.disabled}
+            disabled={review.disabled || group === cutGroup}
             aria-label={`${labels.group} ${group + 1} · ${labels[state]}`}
             title={`${labels.group} ${group + 1} · ${labels[state]}`}
             onChange={() => review.toggle(group)}
@@ -157,7 +178,7 @@ export function DiffPane({
     );
     pending = null;
   };
-  view.rows.forEach((row, index) => {
+  view.rows.slice(0, end).forEach((row, index) => {
     if (row.cells[0].style === "separator") {
       flush();
       blocks.push(
@@ -213,6 +234,12 @@ export function DiffPane({
     pending!.rows.push(line, notes);
   });
   flush();
+  if (end < view.rows.length)
+    blocks.push(
+      <button className="jj-context-row" key="rest" onClick={() => setLimit(Infinity)}>
+        ↓ {labels.showRest}
+      </button>,
+    );
   return (
     <div
       className={`jj-diff-lines ${split ? "jj-split" : "jj-unified"}`}

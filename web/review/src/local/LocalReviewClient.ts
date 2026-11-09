@@ -1,5 +1,4 @@
 import type { ReviewSelection } from "../model/backend";
-import type { Labels } from "../model/diff";
 import type { ReviewAction, ReviewResult } from "../model/review";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 
@@ -11,7 +10,7 @@ export class LocalReviewClient {
     number,
     { resolve: (value: unknown) => void; reject: (error: Error) => void }
   >();
-  private ready: Promise<Labels>;
+  private ready: Promise<void>;
 
   constructor({ databaseName }: { databaseName: string }) {
     this.worker.onmessage = ({ data }: MessageEvent<WorkerResponse>) => {
@@ -45,9 +44,6 @@ export class LocalReviewClient {
     return this.send(request);
   }
 
-  labels() {
-    return this.ready;
-  }
   open(bundle: string): Promise<ReviewResult>;
   open(): Promise<ReviewResult | null>;
   open(bundle?: string) {

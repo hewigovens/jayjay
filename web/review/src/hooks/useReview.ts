@@ -36,6 +36,7 @@ export function useReview(backend: ReviewBackend) {
     // Retry replays only opens and renders; a failed mutation may have committed, so retrying it re-renders instead of writing twice.
     if (render || !current.current) lastOperation.current = { operation, kind };
     committing.current = !render;
+    let unrendered: ReviewResult | undefined;
     setPending(true);
     setError("");
     try {
@@ -52,6 +53,7 @@ export function useReview(backend: ReviewBackend) {
         kind: "render",
       };
       if (kind === "replace") setRevision((value) => value + 1);
+      if (kind === "replace" && !next.diff && next.overview.files[next.file]) unrendered = next;
       return true;
     } catch (error) {
       if (token === generation.current) {
@@ -61,6 +63,11 @@ export function useReview(backend: ReviewBackend) {
       return false;
     } finally {
       if (token === generation.current) committing.current = false;
+      // A backend may open before the first file's content arrives; render it next.
+      if (unrendered) {
+        const { session, file, options } = unrendered;
+        void run((signal) => backend.render({ session, file, options }, signal), "render");
+      }
     }
   }
 

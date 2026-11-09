@@ -14,8 +14,11 @@ export interface FileContent {
   images: Partial<Record<ImageSide, Blob>> | null;
 }
 
-// Each file is two requests to raw.githubusercontent.com, which the browser multiplexes over HTTP/2.
-const concurrency = 24;
+// raw.githubusercontent.com limits how fast one reader may fetch.
+const concurrency = 4;
+const ahead = 10;
+const behind = 2;
+const largeFile = 3000;
 const imageTypes: Record<string, string> = {
   png: "image/png",
   jpg: "image/jpeg",
@@ -67,7 +70,7 @@ export class PullLoader {
     return new PullLoader((await response.json()) as PullManifest, fetcher);
   }
 
-  bundle(loaded: Map<number, FileContent>): string {
+  bundle(): string {
     const { manifest } = this;
     const bundle: ReviewBundle = {
       schemaVersion: 1,
@@ -86,19 +89,15 @@ export class PullLoader {
         ? `${manifest.author.id}+${manifest.author.login}@users.noreply.github.com`
         : "",
       changeIdPrefix: 0,
-      files: manifest.files.map((file, index) => {
-        const content = loaded.get(index);
-        return {
-          path: file.path,
-          ...(file.oldPath && { oldPath: file.oldPath }),
-          // Both blob IDs name the diff before the content loads; without the old one, the base commit stands in for it.
-          reviewIdentity: `${file.kind}|${file.oldPath ?? ""}|${file.oldSha ?? manifest.baseSha}|${file.sha ?? ""}`,
-          kind: file.kind,
-          added: file.added,
-          removed: file.removed,
-          ...(content && { before: content.before, after: content.after }),
-        };
-      }),
+      files: manifest.files.map((file) => ({
+        path: file.path,
+        ...(file.oldPath && { oldPath: file.oldPath }),
+        // Both blob IDs name the diff before the content loads; without the old one, the base commit stands in for it.
+        reviewIdentity: `${file.kind}|${file.oldPath ?? ""}|${file.oldSha ?? manifest.baseSha}|${file.sha ?? ""}`,
+        kind: file.kind,
+        added: file.added,
+        removed: file.removed,
+      })),
     };
     return JSON.stringify(bundle);
   }
@@ -115,14 +114,26 @@ export class PullLoader {
     return pending;
   }
 
-  async prefetch(loaded: (index: number, content: FileContent) => unknown, signal: AbortSignal) {
-    let next = 0;
-    const { length } = this.manifest.files;
+  async prefetch(
+    around: number,
+    loaded: (index: number, content: FileContent) => unknown,
+    signal: AbortSignal,
+  ) {
+    if ((navigator as { connection?: { saveData?: boolean } }).connection?.saveData) return;
+    const { files } = this.manifest;
+    const queue = [
+      ...Array.from({ length: ahead }, (_, step) => around + step + 1),
+      ...Array.from({ length: behind }, (_, step) => around - step - 1),
+    ].filter(
+      (index) =>
+        files[index] &&
+        files[index].added + files[index].removed <= largeFile &&
+        !this.contents.has(index),
+    );
     await Promise.all(
-      Array.from({ length: Math.min(concurrency, length) }, async () => {
-        while (next < length && !signal.aborted) {
-          const index = next++;
-          if (this.contents.has(index)) continue;
+      Array.from({ length: Math.min(concurrency, queue.length) }, async () => {
+        for (let index = queue.shift(); index !== undefined; index = queue.shift()) {
+          if (signal.aborted) return;
           try {
             await loaded(index, await this.content(index));
           } catch {

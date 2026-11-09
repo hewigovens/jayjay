@@ -25,7 +25,13 @@ function current(session: number) {
   return active;
 }
 
-async function render(session: number, file: number, options: DiffOptions): Promise<ReviewResult> {
+// An open may leave its first file unrendered until the host loads it; every other render needs the file.
+async function render(
+  session: number,
+  file: number,
+  options: DiffOptions,
+  opening = false,
+): Promise<ReviewResult> {
   const selected = current(session);
   const source = selected.bundle.files[file];
   const { module, pack, syntaxUnavailable } = await engineForPath(source?.path ?? "");
@@ -38,23 +44,25 @@ async function render(session: number, file: number, options: DiffOptions): Prom
   const start = performance.now();
   const overview = JSON.parse(selected.session.overview(state));
   const { before, after } = source ?? {};
-  if (source && (before === undefined || after === undefined))
-    throw new Error("Review file is not loaded");
-  const diff = source
-    ? JSON.parse(
-        module.render_diff(
-          source.path,
-          before!,
-          after!,
-          options.ignoreWhitespace,
-          options.showAll,
-          options.split,
-        ),
-      )
-    : null;
-  const review = source
-    ? JSON.parse(selected.session.file_review(file, state, options.ignoreWhitespace))
-    : { groupStates: [] };
+  const loaded = before !== undefined && after !== undefined;
+  if (source && !loaded && !opening) throw new Error("Review file is not loaded");
+  const diff =
+    source && loaded
+      ? JSON.parse(
+          module.render_diff(
+            source.path,
+            before,
+            after,
+            options.ignoreWhitespace,
+            options.showAll,
+            options.split,
+          ),
+        )
+      : null;
+  const review =
+    source && loaded
+      ? JSON.parse(selected.session.file_review(file, state, options.ignoreWhitespace))
+      : { groupStates: [] };
   return {
     overview,
     diff,
@@ -74,7 +82,7 @@ async function handle(request: WorkerRequest): Promise<unknown> {
   switch (request.kind) {
     case "init": {
       storage = new BrowserReviewStorage(request.databaseName);
-      return JSON.parse(base.ui_labels(navigator.languages.join(",")));
+      return;
     }
     case "open": {
       const raw = request.bundle ?? (await storage.readStored("active-bundle"));
@@ -84,7 +92,7 @@ async function handle(request: WorkerRequest): Promise<unknown> {
       await storage.writeStored("active-bundle", raw);
       active?.session.free();
       active = { bundle, session, version: ++version };
-      return render(version, 0, defaultOptions);
+      return render(version, 0, defaultOptions, true);
     }
     case "load": {
       const selected = current(request.session);

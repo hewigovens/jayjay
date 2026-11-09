@@ -13,7 +13,7 @@ const file = (path: string, kind: PullFile["kind"], extra: Partial<PullFile> = {
   ...extra,
 });
 
-async function open(blobs: Record<string, BodyInit>, files: PullFile[], requests: string[] = []) {
+function open(files: PullFile[], raw: (url: string) => Promise<Response>) {
   const manifest: PullManifest = {
     repository: "o/r",
     number: 7,
@@ -28,34 +28,40 @@ async function open(blobs: Record<string, BodyInit>, files: PullFile[], requests
   };
   return PullLoader.open({ owner: "o", repo: "r", number: 7 }, null, undefined, async (input) => {
     const url = String(input);
-    if (url === "/api/o/r/pull/7") return Response.json(manifest);
+    return url === "/api/o/r/pull/7" ? Response.json(manifest) : raw(url);
+  });
+}
+
+function blobs(contents: Record<string, BodyInit>, requests: string[]) {
+  return async (url: string) => {
     requests.push(url);
     const key = url.replace("https://raw.githubusercontent.com/o/r/", "");
-    return key in blobs ? new Response(blobs[key]) : new Response("", { status: 404 });
-  });
+    return key in contents ? new Response(contents[key]) : new Response("", { status: 404 });
+  };
 }
 
 test("opens a bundle from the manifest and loads each file's sides on request", async () => {
   const requests: string[] = [];
   const loader = await open(
-    {
-      "base/old%20name.rs": "fn a() {}\n",
-      "head/src/new%20name.rs": "fn b() {}\n",
-      "base/gone.txt": "bye\n",
-      "head/logo.png": png,
-      "base/logo.png": png,
-    },
     [
       file("src/new name.rs", "renamed", { oldPath: "old name.rs" }),
       file("gone.txt", "removed", { sha: null }),
       file("logo.png", "modified"),
       file("submodule", "modified"),
     ],
-    requests,
+    blobs(
+      {
+        "base/old%20name.rs": "fn a() {}\n",
+        "head/src/new%20name.rs": "fn b() {}\n",
+        "base/gone.txt": "bye\n",
+        "head/logo.png": png,
+        "base/logo.png": png,
+      },
+      requests,
+    ),
   );
 
-  const first = new Map([[0, await loader.content(0)]]);
-  const bundle = JSON.parse(loader.bundle(first)) as ReviewBundle;
+  const bundle = JSON.parse(loader.bundle()) as ReviewBundle;
   expect(bundle).toMatchObject({
     repositoryId: "github.com/o/r",
     changeId: "pull/7",
@@ -69,9 +75,9 @@ test("opens a bundle from the manifest and loads each file's sides on request", 
     path: "src/new name.rs",
     oldPath: "old name.rs",
     kind: "renamed",
-    before: "fn a() {}\n",
-    after: "fn b() {}\n",
   });
+  expect(requests).toHaveLength(0);
+  expect(await loader.content(0)).toMatchObject({ before: "fn a() {}\n", after: "fn b() {}\n" });
   expect(bundle.files[1]).toEqual({
     path: "gone.txt",
     reviewIdentity: "removed||base|",
@@ -90,13 +96,24 @@ test("opens a bundle from the manifest and loads each file's sides on request", 
   expect(requests).toHaveLength(7);
 });
 
-test("prefetches only the files nobody asked for yet", async () => {
-  const loader = await open({ "base/a": "1", "head/a": "2", "base/b": "3", "head/b": "4" }, [
-    file("a", "modified"),
-    file("b", "modified"),
-  ]);
-  await loader.content(0);
+test("prefetches the files near the open one, a few at a time, and skips large ones", async () => {
+  const files = Array.from({ length: 2000 }, (_, index) =>
+    file(`f${index}`, "modified", index === 52 ? { added: 40_000 } : {}),
+  );
+  let active = 0;
+  let peak = 0;
+  const fetched: string[] = [];
+  const loader = await open(files, async (url) => {
+    fetched.push(url);
+    peak = Math.max(peak, ++active);
+    await new Promise((resolve) => setTimeout(resolve, 1));
+    active--;
+    return new Response("x\n");
+  });
+  await loader.content(51);
   const loaded: number[] = [];
-  await loader.prefetch((index) => loaded.push(index), new AbortController().signal);
-  expect(loaded).toEqual([1]);
+  await loader.prefetch(50, (index) => loaded.push(index), new AbortController().signal);
+  expect(loaded.sort((a, b) => a - b)).toEqual([48, 49, 53, 54, 55, 56, 57, 58, 59, 60]);
+  expect(fetched).toHaveLength(22);
+  expect(peak).toBeLessThanOrEqual(8);
 });
