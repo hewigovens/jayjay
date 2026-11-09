@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { HideReviewedIcon, TreeIcon } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
 import { ArrowIcon, GitHubIcon, StackIcon, SyncIcon } from "../icons";
 import {
@@ -33,6 +34,8 @@ export function Landing({
   const points = [
     [["J", "K"], labels.pullHowMove, labels.pullHowMoveDetail],
     [["Space"], labels.pullHowMark, labels.pullHowMarkDetail],
+    [<HideReviewedIcon size={18} />, labels.pullFeatureHide, labels.pullFeatureHideDetail],
+    [<TreeIcon size={18} />, labels.pullFeatureTree, labels.pullFeatureTreeDetail],
     [<StackIcon size={18} />, labels.pullFeatureStacks, labels.pullFeatureStacksDetail],
     [<SyncIcon size={18} />, labels.pullFeatureSync, labels.pullFeatureSyncDetail],
   ] as const;
@@ -45,7 +48,9 @@ export function Landing({
           JayJay Diff
         </h1>
         <p className="landing-tagline">{labels.pullHeading}</p>
-        <p className="landing-lede">{labels.pullLede}</p>
+        <p className="landing-lede">
+          <strong>{labels.pullLedeLead}</strong> {labels.pullLede}
+        </p>
         <form
           className="landing-field"
           onSubmit={(event) => {

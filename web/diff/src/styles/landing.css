@@ -41,6 +41,7 @@
   font-weight: 500;
   line-height: 1.2;
   letter-spacing: -0.02em;
+  text-wrap: balance;
 }
 .landing-lede {
   max-width: 56ch;
@@ -48,6 +49,10 @@
   color: var(--jj-muted);
   font-size: calc(17px * var(--jj-interface-scale, 1));
   line-height: 1.45;
+}
+.landing-lede strong {
+  color: var(--jj-ink);
+  font-weight: 600;
 }
 .landing-field {
   display: flex;

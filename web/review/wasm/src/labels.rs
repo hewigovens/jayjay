@@ -161,7 +161,18 @@ fn file_list_labels() -> Vec<(&'static str, String)> {
 fn pull_labels() -> Vec<(&'static str, String)> {
     vec![
         ("pullHeading", jayjay_i18n::web::pull_heading()),
+        ("pullLedeLead", jayjay_i18n::web::pull_lede_lead()),
         ("pullLede", jayjay_i18n::web::pull_lede()),
+        ("pullFeatureHide", jayjay_i18n::web::pull_feature_hide()),
+        (
+            "pullFeatureHideDetail",
+            jayjay_i18n::web::pull_feature_hide_detail(),
+        ),
+        ("pullFeatureTree", jayjay_i18n::web::pull_feature_tree()),
+        (
+            "pullFeatureTreeDetail",
+            jayjay_i18n::web::pull_feature_tree_detail(),
+        ),
         ("pullUrl", jayjay_i18n::web::pull_url()),
         ("pullOpen", jayjay_i18n::web::pull_open()),
         ("pullExtension", jayjay_i18n::web::pull_extension()),

@@ -27,7 +27,9 @@ export function Icon({
   );
 }
 
-export const TreeIcon = () => <Icon d="M2.5 3.5h11M5.5 8h8M5.5 12.5h8M2.5 6.5v6" />;
+export const TreeIcon = ({ size }: { size?: number }) => (
+  <Icon size={size} d="M2.5 3.5h11M5.5 8h8M5.5 12.5h8M2.5 6.5v6" />
+);
 export const ListIcon = () => (
   <Icon d="M5 3.5h8.5M5 8h8.5M5 12.5h8.5M2.25 3.5h.5M2.25 8h.5M2.25 12.5h.5" />
 );
@@ -35,8 +37,11 @@ export const KeyboardIcon = () => (
   <Icon d="M2 4.5h12v7H2ZM4.5 7h.01M7 7h.01M9 7h.01M11.5 7h.01M5.5 9.5h5" />
 );
 export const SearchIcon = () => <Icon d="M7 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM10.6 10.6l3.4 3.4" />;
-export const HideReviewedIcon = () => (
-  <Icon d="M2 8s2.2-4.5 6-4.5S14 8 14 8s-2.2 4.5-6 4.5S2 8 2 8ZM8 9.75a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5ZM2.5 13.5l11-11" />
+export const HideReviewedIcon = ({ size }: { size?: number }) => (
+  <Icon
+    size={size}
+    d="M2 8s2.2-4.5 6-4.5S14 8 14 8s-2.2 4.5-6 4.5S2 8 2 8ZM8 9.75a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5ZM2.5 13.5l11-11"
+  />
 );
 export const FolderIcon = () => (
   <Icon
