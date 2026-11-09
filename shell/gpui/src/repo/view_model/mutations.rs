@@ -433,6 +433,7 @@ impl RepoViewModel {
                     Ok(())
                 }
                 Err(error) => {
+                    log::warn!("jj git init failed: {error}");
                     vm.finish_repo_task(cx);
                     vm.present_error(&error);
                     cx.notify();

@@ -16,6 +16,10 @@ pub fn is_executable_file(path: &Path) -> bool {
         .unwrap_or(false)
 }
 
+pub fn launch_target(path: PathBuf) -> PathBuf {
+    path
+}
+
 pub fn executable_names(name: &str) -> Vec<String> {
     vec![name.to_owned()]
 }

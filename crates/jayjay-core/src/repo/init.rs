@@ -8,12 +8,14 @@ pub fn init_jj_git_repo(path: &Path) -> JayResult<()> {
     if let Some(location) = RemoteLocation::from_path(path) {
         return init_repository(&location);
     }
-    let output = environment::command(environment::require_jj()?)
+    let jj = environment::require_jj()?;
+    log::info!("running {jj} git init");
+    let output = environment::command(&jj)
         .current_dir(path)
         .args(["git", "init"])
         .output()
         .map_err(|e| JayError::Internal {
-            message: format!("jj git init: {e}"),
+            message: format!("jj git init: could not run {jj}: {e}"),
         })?;
     if output.status.success() {
         return Ok(());

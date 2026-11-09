@@ -89,6 +89,7 @@ pub fn find_existing_binary(name: &str) -> Option<String> {
 fn find_existing_candidate(candidates: Vec<PathBuf>) -> Option<String> {
     for path in candidates {
         if is_executable_file(&path) {
+            let path = platform::launch_target(path);
             return Some(path.to_string_lossy().into_owned());
         }
     }
@@ -293,9 +294,13 @@ fn check_cli(binary: &str) -> CliStatus {
             },
         };
     }
+    let version = command_version_text(&resolved).unwrap_or_else(|| {
+        log::warn!("{resolved} did not report a version");
+        String::new()
+    });
     CliStatus {
         is_installed: true,
-        version: command_version_text(&resolved).unwrap_or_default(),
+        version,
         path: resolved,
     }
 }

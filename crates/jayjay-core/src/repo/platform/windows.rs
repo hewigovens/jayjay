@@ -77,6 +77,34 @@ pub fn system_path_entries() -> Vec<PathBuf> {
     vec![system32(), system_root()]
 }
 
+/// Scoop's shim reports only that its target could not start; launching the target itself yields the OS error.
+pub fn launch_target(path: PathBuf) -> PathBuf {
+    let is_exe = path
+        .extension()
+        .is_some_and(|ext| ext.eq_ignore_ascii_case("exe"));
+    if !is_exe {
+        return path;
+    }
+    std::fs::read_to_string(path.with_extension("shim"))
+        .ok()
+        .and_then(|shim| scoop_shim_target(&shim))
+        .unwrap_or(path)
+}
+
+/// A shim that adds arguments or environment, or expands variables, has to run as the shim.
+fn scoop_shim_target(shim: &str) -> Option<PathBuf> {
+    let mut lines = shim
+        .trim_start_matches('\u{feff}')
+        .lines()
+        .filter(|line| !line.trim().is_empty());
+    let target = lines.next()?.strip_prefix("path = ")?;
+    if lines.next().is_some() || target.contains('%') {
+        return None;
+    }
+    let target = PathBuf::from(target.trim().trim_matches('"'));
+    (target.is_absolute() && has_executable_extension(&target)).then_some(target)
+}
+
 /// A bare name would let Command search the inherited PATH, relative entries included.
 pub fn command(program: OsString) -> Command {
     let program = if Path::new(&program).components().count() == 1 {
@@ -92,6 +120,33 @@ pub fn command(program: OsString) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn launches_the_target_of_a_plain_scoop_shim() {
+        let dir = tempfile::tempdir().unwrap();
+        let shim = dir.path().join("jj.exe");
+        let write = |text: &str| std::fs::write(dir.path().join("jj.shim"), text).unwrap();
+        assert_eq!(launch_target(shim.clone()), shim);
+
+        let target = r"C:\Users\名 user\scoop\apps\jj\current\jj.exe";
+        write(&format!("\u{feff}path = \"{target}\"\r\n"));
+        assert_eq!(launch_target(shim.clone()), PathBuf::from(target));
+        assert_eq!(
+            launch_target(dir.path().join("jj.cmd")),
+            dir.path().join("jj.cmd")
+        );
+
+        for kept in [
+            format!("path = \"{target}\"\r\nargs = --flag\r\n"),
+            format!("path = \"{target}\"\r\nJJ_CONFIG = C:\\config.toml\r\n"),
+            "path = \"%USERPROFILE%\\scoop\\apps\\jj\\current\\jj.exe\"\r\n".to_owned(),
+            "path = \"apps\\jj\\current\\jj.exe\"\r\n".to_owned(),
+            "path = \"C:\\scoop\\apps\\tool\\current\\tool.ps1\"\r\n".to_owned(),
+        ] {
+            write(&kept);
+            assert_eq!(launch_target(shim.clone()), shim, "{kept}");
+        }
+    }
 
     #[test]
     fn native_home_precedes_unix_home_and_supports_legacy_fallback() {
