@@ -5,16 +5,8 @@ import JayJayCore
 enum DetailPaneMode {
     /// Default file list + diff section.
     case files
-    case annotate(lines: [AnnotationLine], path: String)
+    case annotate(lines: [AnnotationLine], path: String, error: String? = nil)
     case diffEdit
-
-    var isFiles: Bool {
-        if case .files = self {
-            true
-        } else {
-            false
-        }
-    }
 
     var isDiffEdit: Bool {
         if case .diffEdit = self {

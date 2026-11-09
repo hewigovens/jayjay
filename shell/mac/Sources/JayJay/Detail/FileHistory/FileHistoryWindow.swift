@@ -55,7 +55,7 @@ struct FileHistoryWindow: View {
                 self.history = history
                 error = nil
             case let .failure(failure):
-                error = failure.localizedDescription
+                error = failure.friendlyDescription
         }
     }
 }

@@ -5,7 +5,9 @@ import SwiftUI
 struct AnnotateView: View {
     let lines: [AnnotationLine]
     let path: String
+    let error: String?
     let onSelectChange: (String) -> Void
+    let onRetry: () -> Void
     let onDismiss: () -> Void
 
     /// Per-line syntax spans, computed once from the file content (no repo needed).
@@ -18,25 +20,40 @@ struct AnnotateView: View {
         VStack(spacing: 0) {
             header
             Divider()
-            GeometryReader { geo in
-                ScrollView([.horizontal, .vertical]) {
-                    VStack(alignment: .leading, spacing: 0) {
-                        ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
-                            HStack(alignment: .top, spacing: 0) {
-                                gutterView(line: line)
-                                highlightedText(index: idx, fallback: line.text)
-                                    .textSelection(.enabled)
-                            }
-                            .padding(.vertical, 1)
-                        }
-                    }
-                    .padding(12)
-                    .frame(minWidth: geo.size.width, minHeight: geo.size.height, alignment: .topLeading)
+            if let error {
+                ContentUnavailableView {
+                    Image(systemName: "exclamationmark.triangle")
+                } description: {
+                    Text(error)
+                } actions: {
+                    Button(Localized.Repo.retry, action: onRetry)
                 }
+                .frame(maxWidth: .infinity, maxHeight: .infinity)
+            } else {
+                lineList
             }
         }
         // Re-run when lines arrive: annotate loads them async after this view first appears.
         .task(id: lines.count) { await computeHighlights() }
+    }
+
+    private var lineList: some View {
+        GeometryReader { geo in
+            ScrollView([.horizontal, .vertical]) {
+                VStack(alignment: .leading, spacing: 0) {
+                    ForEach(Array(lines.enumerated()), id: \.offset) { idx, line in
+                        HStack(alignment: .top, spacing: 0) {
+                            gutterView(line: line)
+                            highlightedText(index: idx, fallback: line.text)
+                                .textSelection(.enabled)
+                        }
+                        .padding(.vertical, 1)
+                    }
+                }
+                .padding(12)
+                .frame(minWidth: geo.size.width, minHeight: geo.size.height, alignment: .topLeading)
+            }
+        }
     }
 
     private var header: some View {
@@ -47,9 +64,11 @@ struct AnnotateView: View {
                 .jayjayFont(13, weight: .semibold, design: .monospaced)
                 .lineLimit(1)
             Spacer()
-            Text(Localized.Repo.lineCount(count: lines.count))
-                .jayjayFont(11)
-                .foregroundStyle(.secondary)
+            if error == nil {
+                Text(Localized.Repo.lineCount(count: lines.count))
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
+            }
             Button(Localized.Repo.exitAnnotate, action: onDismiss)
                 .keyboardShortcut(.cancelAction)
                 .help(Localized.Repo.closeAnnotateViewEsc)

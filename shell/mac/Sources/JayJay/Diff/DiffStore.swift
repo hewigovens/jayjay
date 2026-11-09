@@ -94,6 +94,7 @@ final class DiffStore {
             supportsFileEditor: hunk.supportsFileEditor
         )
 
+        var fetchFailed = false
         let needsProjectionModeReload = hunk.projection != nil
             && projectionMode != nil
             && hunk.projection?.mode != projectionMode
@@ -102,10 +103,12 @@ final class DiffStore {
             newContent: content.newText,
             projectionModeChanged: needsProjectionModeReload
         ) {
-            let loaded = await loadFileContent(
+            let fetched = await loadFileContent(
                 repo: repo, hunk: hunk, rev: rev, fromRev: compareFromRev,
                 projectionMode: projectionMode
             )
+            fetchFailed = fetched == nil
+            let loaded = fetched ?? DiffLoadedContent(oldContent: "", newContent: "")
             content = DiffLoadedContent(
                 oldContent: loaded.oldContent,
                 newContent: loaded.newContent,
@@ -128,7 +131,10 @@ final class DiffStore {
             diff: diff,
             content: content
         )
-        await cache.set(key, value: cached)
+        // A failed fetch still renders, but uncached so the next load retries it.
+        if !fetchFailed {
+            await cache.set(key, value: cached)
+        }
         return cached
     }
 

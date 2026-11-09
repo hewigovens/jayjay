@@ -147,7 +147,7 @@ extension PaletteRoot {
                     onJjCommandFinished(commandResult)
                 }
             } catch {
-                jjError = error is CancellationError ? Localized.Palette.repositoryOperationWasCancelled : error.localizedDescription
+                jjError = error is CancellationError ? Localized.Palette.repositoryOperationWasCancelled : error.friendlyDescription
             }
             isRunning = false
         }

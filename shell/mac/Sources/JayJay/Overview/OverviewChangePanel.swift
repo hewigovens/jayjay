@@ -3,7 +3,7 @@ import SwiftUI
 
 struct OverviewChangePanel: View {
     let change: OverviewChange
-    let files: [FileDiffStats]?
+    let files: Result<[FileDiffStats], any Error>?
     let onClose: () -> Void
     let onShowInGraph: () -> Void
 
@@ -64,12 +64,17 @@ struct OverviewChangePanel: View {
 
     @ViewBuilder
     private var fileList: some View {
-        if let files {
-            if files.isEmpty {
+        switch files {
+            case let .failure(error):
+                Text(error.friendlyDescription)
+                    .jayjayFont(11)
+                    .foregroundStyle(.red)
+                    .textSelection(.enabled)
+            case let .success(files) where files.isEmpty:
                 Text(Localized.Overview.noFileChanges)
                     .jayjayFont(11)
                     .foregroundStyle(.tertiary)
-            } else {
+            case let .success(files):
                 OverviewPanelSection(title: Localized.Repo.fileCount(count: files.count)) {
                     ForEach(files, id: \.path) { file in
                         HStack(spacing: 6) {
@@ -92,9 +97,8 @@ struct OverviewChangePanel: View {
                         }
                     }
                 }
-            }
-        } else {
-            LoadingStatus(label: Localized.Diff.loadingFilesEllipsis)
+            case nil:
+                LoadingStatus(label: Localized.Diff.loadingFilesEllipsis)
         }
     }
 }

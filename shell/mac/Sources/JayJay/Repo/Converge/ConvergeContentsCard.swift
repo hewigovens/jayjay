@@ -123,6 +123,7 @@ struct ConvergeContentsCard: View {
         error = nil
         let repo = repo
         let result = await Task.detached { Result { try repo.interdiffSummary(fromRev: from, toRev: to).diff } }.value
+        guard !Task.isCancelled else { return }
         switch result {
             case let .success(diff):
                 hunks = diff

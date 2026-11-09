@@ -54,14 +54,9 @@ extension DiffSection: DiffGutterEditActions {
 
         let oldContent = loadedOldContent ?? hunk.oldContent
         let newContent = loadedNewContent ?? hunk.newContent
-        let selectedKeys: Set<String> = Set(
-            fileDiff.lines.enumerated().compactMap { index, line in
-                let displayLine = index + 1
-                guard lineRange.contains(displayLine),
-                      line.style == .added || line.style == .removed
-                else { return nil }
-                return diffEditLineKey(line)
-            }
+        let selectedKeys = Self.changedLineKeys(
+            in: loadedDisplayLines ?? diffDisplayLines(lines: fileDiff.lines),
+            lineRange: lineRange
         )
         guard !selectedKeys.isEmpty else { return }
 
@@ -101,6 +96,16 @@ extension DiffSection: DiffGutterEditActions {
                 )
             }
         }
+    }
+}
+
+extension DiffSection {
+    /// The gutter numbers display rows, which order a changed block differently from `FileDiff.lines`.
+    nonisolated static func changedLineKeys(in displayLines: [DiffLine], lineRange: ClosedRange<Int>) -> Set<String> {
+        Set(displayLines.enumerated().compactMap { index, line in
+            guard lineRange.contains(index + 1), line.style == .added || line.style == .removed else { return nil }
+            return diffEditLineKey(line)
+        })
     }
 }
 

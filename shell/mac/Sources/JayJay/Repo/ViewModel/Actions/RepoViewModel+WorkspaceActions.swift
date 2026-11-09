@@ -31,8 +31,9 @@ extension RepoViewModel {
     @MainActor
     func forgetWorkspace(_ workspace: WorkspaceInfo, deleteFromDisk: Bool) async -> Bool {
         lastInternalMutationAt = Date()
+        let warning: String?
         do {
-            let warning = try await awaitRepoTask {
+            warning = try await awaitRepoTask {
                 if deleteFromDisk {
                     return try $0.workspaceForgetAndDelete(
                         name: workspace.name,
@@ -45,15 +46,16 @@ extension RepoViewModel {
                 )
                 return nil
             }
-            if let warning {
-                error = warning
-            }
         } catch {
             present(error: error)
             return false
         }
         successActionSignal += 1
         refresh()
+        // A manual refresh clears `error`, so the warning goes up after it.
+        if let warning {
+            error = warning
+        }
         return true
     }
 }

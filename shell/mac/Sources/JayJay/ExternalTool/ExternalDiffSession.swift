@@ -15,11 +15,12 @@ final class ExternalDiffSession {
     var files: [ExternalDiffFileState] = []
     var isLoading = true
     var isSaving = false
-    var errorMessage: String?
+    private(set) var loadError: String?
+    var saveError: String?
     private let onLoadFailure: () -> Void
 
     var canSave: Bool {
-        editable && !isLoading && !isSaving && errorMessage == nil
+        editable && !isLoading && !isSaving && loadError == nil
     }
 
     init(left: String, right: String, editable: Bool, onLoadFailure: @escaping () -> Void = {}) {
@@ -49,7 +50,7 @@ final class ExternalDiffSession {
             }
             files = states
         } catch {
-            errorMessage = error.friendlyDescription
+            loadError = error.friendlyDescription
             onLoadFailure()
         }
         isLoading = false
@@ -58,7 +59,7 @@ final class ExternalDiffSession {
     func save() {
         guard canSave else { return }
         isSaving = true
-        errorMessage = nil
+        saveError = nil
         let selections = files.compactMap(\.selection)
         Task {
             do {
@@ -72,7 +73,7 @@ final class ExternalDiffSession {
                 }.value
                 Darwin.exit(0)
             } catch {
-                errorMessage = error.friendlyDescription
+                saveError = error.friendlyDescription
                 isSaving = false
             }
         }

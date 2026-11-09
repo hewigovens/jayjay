@@ -75,6 +75,35 @@ final class ExternalDiffSessionTests: XCTestCase {
         XCTAssertEqual(deleted.selection?.selectedExecutable, true)
     }
 
+    func testFailedSaveKeepsTheSessionOpenForRetry() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "jayjay-external-diff-save-error-tests-\(UUID().uuidString)")
+        let left = directory.appending(path: "left")
+        let right = directory.appending(path: "right")
+        try FileManager.default.createDirectory(at: left, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: right, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Data("a\n".utf8).write(to: right.appending(path: "a.txt"))
+        try Data("b\n".utf8).write(to: right.appending(path: "b.txt"))
+        let session = ExternalDiffSession(left: left.path, right: right.path, editable: true)
+        await session.load()
+        XCTAssertEqual(session.files.count, 2)
+        // Two selections cannot be written to a single-file destination, so the apply fails before writing anything.
+        try FileManager.default.removeItem(at: right)
+        try Data().write(to: right)
+
+        session.save()
+        let deadline = Date().addingTimeInterval(10)
+        while session.isSaving, Date() < deadline {
+            try await Task.sleep(for: .milliseconds(20))
+        }
+
+        XCTAssertFalse(session.isSaving)
+        XCTAssertNotNil(session.saveError)
+        XCTAssertNil(session.loadError, "a failed save keeps the file list instead of the load-failure screen")
+        XCTAssertTrue(session.canSave, "Done stays available after a failed save")
+    }
+
     func testFailedLoadDisablesSaving() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "jayjay-external-diff-error-tests-\(UUID().uuidString)")
@@ -92,7 +121,7 @@ final class ExternalDiffSessionTests: XCTestCase {
 
         await session.load()
 
-        XCTAssertNotNil(session.errorMessage)
+        XCTAssertNotNil(session.loadError)
         XCTAssertFalse(session.canSave)
         XCTAssertEqual(
             exitState.exitCode(for: .diff(left: session.left, right: session.right, editable: true)),

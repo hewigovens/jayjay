@@ -17,6 +17,9 @@ struct ExternalDiffToolView: View {
         VStack(spacing: 0) {
             header
             Divider()
+            if let saveError = session.saveError {
+                DismissibleErrorBanner(message: saveError) { session.saveError = nil }
+            }
             content
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
@@ -62,11 +65,11 @@ struct ExternalDiffToolView: View {
     private var content: some View {
         if session.isLoading {
             LoadingStatus(label: Localized.Merge.loadingComparisonEllipsis)
-        } else if let error = session.errorMessage {
+        } else if let loadError = session.loadError {
             ContentUnavailableView(
                 Localized.Merge.couldntOpenToolSession,
                 systemImage: "exclamationmark.triangle",
-                description: Text(error)
+                description: Text(loadError)
             )
         } else if session.files.isEmpty {
             ContentUnavailableView(

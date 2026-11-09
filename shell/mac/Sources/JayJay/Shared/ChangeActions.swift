@@ -3,7 +3,6 @@ import JayJayCore
 
 protocol ChangeActions: AnyObject {
     func select(changeId: String?)
-    func describeChange(rev: String, message: String)
     func restoreFiles(rev: String, paths: [String])
     func deleteFiles(paths: [String])
     func ignoreAndUntrack(paths: [String])

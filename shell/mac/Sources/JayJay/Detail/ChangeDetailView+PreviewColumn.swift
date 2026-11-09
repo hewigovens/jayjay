@@ -36,9 +36,9 @@ extension ChangeDetailView {
                 Divider()
             }
 
-            if case let .annotate(lines, path) = paneMode {
+            if case let .annotate(lines, path, error) = paneMode {
                 AnnotateView(
-                    lines: lines, path: path,
+                    lines: lines, path: path, error: error,
                     onSelectChange: { changeId in
                         paneMode = .files
                         if let onRevealChangeInDag {
@@ -47,6 +47,7 @@ extension ChangeDetailView {
                             actions?.select(changeId: changeId)
                         }
                     },
+                    onRetry: { loadAnnotate(rev: detailRevision, path: path) },
                     onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

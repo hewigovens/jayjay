@@ -73,6 +73,22 @@ final class DiffCacheTests: XCTestCase {
         XCTAssertNil(DiffStore.effectiveProjectionMode(hunk: plainHunk(), mode: nil))
     }
 
+    func testFailedContentLoadIsNotCached() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "jayjay-diff-store-tests-\(UUID().uuidString)")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try initJjGitRepo(path: directory.path)
+        let repo = try JayJayRepo.open(path: directory.path)
+        let store = DiffStore()
+        let hunk = plainHunk()
+
+        _ = await store.loadDiff(hunk: hunk, rev: "no-such-revision", commitId: "c1", repo: repo)
+
+        let cached = await store.cachedDiff(hunk: hunk, rev: "no-such-revision", commitId: "c1")
+        XCTAssertNil(cached, "a failed fetch must be retried, not served as an empty diff")
+    }
+
     // MARK: - LRU eviction
 
     func testEvictsLeastRecentlyUsedPastBudget() async {

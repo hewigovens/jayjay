@@ -180,10 +180,15 @@ extension ChangeDetailView {
         guard let repo else { return }
         paneMode = .annotate(lines: [], path: path)
         Task.detached {
-            let lines = try? repo.annotateFile(rev: rev, path: path)
+            let result = Result { try repo.annotateFile(rev: rev, path: path) }
             await MainActor.run {
-                guard case let .annotate(_, currentPath) = paneMode, currentPath == path else { return }
-                paneMode = .annotate(lines: lines ?? [], path: path)
+                guard case let .annotate(_, currentPath, _) = paneMode, currentPath == path else { return }
+                switch result {
+                    case let .success(lines):
+                        paneMode = .annotate(lines: lines, path: path)
+                    case let .failure(error):
+                        paneMode = .annotate(lines: [], path: path, error: error.friendlyDescription)
+                }
             }
         }
     }

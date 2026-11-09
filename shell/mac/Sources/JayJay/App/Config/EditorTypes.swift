@@ -47,13 +47,6 @@ extension AppSettings {
             }
         }
 
-        var isTerminalEditor: Bool {
-            switch self {
-                case .vim: true
-                default: false
-            }
-        }
-
         /// The tool name to pass to `jj resolve --tool`. Uses jj's built-in merge tool config
         /// which materializes proper git-style conflict markers for the editor.
         var jjMergeTool: String? {

@@ -227,10 +227,6 @@ extension DAGView {
         }
     }
 
-    private func rebaseMovementDistance(for rebaseDrag: DAGRebaseDragState, to location: CGPoint) -> CGFloat {
-        DAGRebaseGesturePolicy.movementDistance(from: rebaseDrag.startLocation, to: location)
-    }
-
     private func rebaseDragSeedLocation(for entry: GraphEntry, layout: DAGLayout) -> CGPoint? {
         guard let rowFrame = rowFrameCache.frames[entry.change.commitId.id], let rowIndex = entries.firstIndex(where: { $0.change.commitId.id == entry.change.commitId.id }) else { return nil }
         let lane = layout.lane(for: entry.change.commitId.id)

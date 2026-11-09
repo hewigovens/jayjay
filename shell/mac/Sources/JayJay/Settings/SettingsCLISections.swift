@@ -25,7 +25,7 @@ struct SettingsCLISections: View {
                                 try CLIInstaller.uninstall()
                                 cliError = nil
                             } catch {
-                                cliError = error.localizedDescription
+                                cliError = error.friendlyDescription
                             }
                             cliInstalled = CLIInstaller.isInstalled
                         }
@@ -38,7 +38,7 @@ struct SettingsCLISections: View {
                                 try CLIInstaller.install()
                                 cliError = nil
                             } catch {
-                                cliError = error.localizedDescription
+                                cliError = error.friendlyDescription
                             }
                             cliInstalled = CLIInstaller.isInstalled
                         }

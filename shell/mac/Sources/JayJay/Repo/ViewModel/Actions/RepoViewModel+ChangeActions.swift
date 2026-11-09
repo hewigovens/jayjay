@@ -2,10 +2,6 @@ import Foundation
 import JayJayCore
 
 extension RepoViewModel {
-    func describeChange(rev: String, message: String) {
-        describe(rev: rev, message: message)
-    }
-
     func describe(rev: String, message: String) {
         perform(selecting: rev) { try $0.describe(rev: rev, message: message) }
     }

@@ -15,7 +15,7 @@ final class OverviewViewModel {
     var selectedLaneId: String?
     var selectedChangeId: String?
     var isLanePanelShown = false
-    private(set) var selectedChangeFiles: [FileDiffStats]?
+    private(set) var selectedChangeFiles: Result<[FileDiffStats], any Error>?
     var filter = "" {
         didSet {
             rebuildLayout()
@@ -190,7 +190,7 @@ final class OverviewViewModel {
         selectedChangeFiles = nil
         guard let repo, let selectedChangeId else { return }
         let files = await Task.detached {
-            (try? repo.diffFileStats(rev: selectedChangeId, ignoreWhitespace: false)) ?? []
+            Result { try repo.diffFileStats(rev: selectedChangeId, ignoreWhitespace: false) }
         }.value
         guard selectedChangeId == self.selectedChangeId else { return }
         selectedChangeFiles = files

@@ -241,7 +241,7 @@ extension DAGView {
                     ? Localized.Menu.rebaseTheSelectedChangesWhilePreserving
                     : Localized.Menu.rebaseRequiresMutableChangesAndA
             )
-        } else if let sel = selectedId, sel != entry.change.changeId.id {
+        } else if let sel = selectedId, sel != entry.change.selectionRevision {
             Divider()
             let selRev = viewModel.selectedRevision(for: sel)
             Button { actions?.compareWith(from: selRev, to: rev) } label: {
