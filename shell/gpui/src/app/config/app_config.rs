@@ -171,12 +171,9 @@ impl AppConfig {
         let Some(path) = Self::config_path() else {
             return Ok(());
         };
-        if let Some(dir) = path.parent() {
-            std::fs::create_dir_all(dir)?;
-        }
         let contents = toml::to_string_pretty(self)
             .map_err(|e| std::io::Error::other(format!("toml serialize: {e}")))?;
-        std::fs::write(path, contents)
+        jayjay_core::write_atomically(&path, contents.as_bytes())
     }
 
     pub fn record_opened_repo(&mut self, path: &Path) {

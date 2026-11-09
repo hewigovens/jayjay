@@ -94,11 +94,14 @@ impl OverviewView {
                         .iter()
                         .map(|name| capsule(format!("{name}@"), t.tag_wc_bg, t.tag_wc_fg, 9.)),
                 )
-                .children(
-                    change
-                        .has_conflict
-                        .then(|| capsule("conflict", t.tag_conflict_bg, t.tag_conflict_fg, 9.)),
-                )
+                .children(change.has_conflict.then(|| {
+                    capsule(
+                        jayjay_i18n::repo::conflict_badge(),
+                        t.tag_conflict_bg,
+                        t.tag_conflict_fg,
+                        9.,
+                    )
+                }))
                 .into_any_element()
         });
         let body = text.body.clone().map(|body| {

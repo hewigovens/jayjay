@@ -187,7 +187,7 @@ impl SettingsView {
             return;
         };
         cx.write_to_clipboard(ClipboardItem::new_string(code));
-        crate::platform::open_url(&uri);
+        crate::app::links::open_url(cx, &uri);
     }
 
     fn cancel_forge_sign_in(&mut self, cx: &mut Context<Self>) {

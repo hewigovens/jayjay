@@ -13,7 +13,6 @@ impl RepoViewModel {
         };
         self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         let generation = self.loading.pr_gen;
-        self.loading.pr = true;
         Self::background_update(
             cx,
             async move { repo.pull_request_info(&bookmark) },
@@ -22,7 +21,6 @@ impl RepoViewModel {
                 if vm.loading.pr_gen != generation {
                     return;
                 }
-                vm.loading.pr = false;
                 vm.pr_info = info;
                 cx.notify();
             },

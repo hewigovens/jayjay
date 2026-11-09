@@ -26,8 +26,15 @@ impl RepoWindow {
     }
 
     pub(super) fn recompute_find_matches(&mut self, cx: &App) {
-        self.find.matches.clear();
-        self.find.current = 0;
+        let previous = std::mem::take(&mut self.find.matches);
+        let current = std::mem::take(&mut self.find.current);
+        self.collect_find_matches(cx);
+        if self.find.matches == previous {
+            self.find.current = current;
+        }
+    }
+
+    fn collect_find_matches(&mut self, cx: &App) {
         let Some(query) = self.find.query.as_ref().map(LineInput::text) else {
             return;
         };
@@ -54,7 +61,7 @@ impl RepoWindow {
         }
     }
 
-    pub(crate) fn find_advance(&mut self, prev: bool, cx: &mut Context<Self>) {
+    pub fn find_advance(&mut self, prev: bool, cx: &mut Context<Self>) {
         if self.find.matches.is_empty() {
             cx.notify();
             return;
@@ -110,6 +117,10 @@ impl RepoWindow {
 
     pub fn find_match_count(&self) -> usize {
         self.find.matches.len()
+    }
+
+    pub fn find_current_match(&self) -> usize {
+        self.find.current
     }
 
     pub fn find_query_text(&self) -> Option<&str> {

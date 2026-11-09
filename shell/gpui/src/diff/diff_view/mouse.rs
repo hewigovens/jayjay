@@ -39,6 +39,9 @@ where
         }),
     )
     .on_mouse_move(cx.listener(move |v, ev: &MouseMoveEvent, _, cx| {
+        if ev.pressed_button != Some(MouseButton::Left) {
+            return;
+        }
         let col = col_offset + pixel_to_col(&bounds, ev.position.x, advance);
         v.extend_diff_selection(ix, col, side, cx);
     }))

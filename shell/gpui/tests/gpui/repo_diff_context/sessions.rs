@@ -135,4 +135,18 @@ fn expansion_recomputes_find_matches_over_revealed_context(cx: &mut TestAppConte
             "revealed context rows join the match set"
         );
     });
+
+    view.update(cx, |view, cx| {
+        view.find_advance(false, cx);
+        view.find_advance(false, cx);
+        view.view_model().update(cx, |_, cx| cx.notify());
+    });
+    settle_visual(cx);
+    view.read_with(cx, |view, _| {
+        assert_eq!(
+            view.find_current_match(),
+            2,
+            "an unrelated view-model notify keeps the current match"
+        );
+    });
 }

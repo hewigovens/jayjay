@@ -60,7 +60,7 @@ fn layer_card(
                 .text_size(ui_font_size(9.))
                 .font_weight(gpui::FontWeight::SEMIBOLD)
                 .text_color(rgb(t.file_added_color))
-                .child("new"),
+                .child(jayjay_i18n::repo::new_badge()),
         );
     }
     let mut column = div().flex().flex_col().flex_1().min_w_0().gap(px(4.));

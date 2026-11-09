@@ -32,11 +32,7 @@ pub(super) fn command_view(
         Some(CommandOutput::Done {
             display, exit_code, ..
         }) => {
-            let hint = if *exit_code == 0 {
-                SharedString::from("exit 0")
-            } else {
-                SharedString::from(format!("exit {exit_code}"))
-            };
+            let hint = SharedString::from(format!("exit {exit_code}"));
             let color = if *exit_code == 0 {
                 t.added_fg
             } else {
@@ -59,9 +55,6 @@ pub(super) fn command_view(
             col = col
                 .child(super::render::divider(t))
                 .child(output_pane(output, t));
-        }
-        Some(CommandOutput::Running { .. }) => {
-            col = col.child(discovery(history, t, cx));
         }
         _ => {
             col = col.child(discovery(history, t, cx));

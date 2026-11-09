@@ -53,15 +53,17 @@ pub(crate) fn renders_as_markdown(path: &str, projection: Option<&DiffProjection
 }
 
 pub(crate) fn is_svg_path(path: &str) -> bool {
-    path.rsplit('.')
-        .next()
-        .is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
+    extension(path).is_some_and(|ext| ext.eq_ignore_ascii_case("svg"))
 }
 
 fn is_markdown_path(path: &str) -> bool {
-    path.rsplit('.')
-        .next()
+    extension(path)
         .is_some_and(|ext| ext.eq_ignore_ascii_case("md") || ext.eq_ignore_ascii_case("markdown"))
+}
+
+fn extension(path: &str) -> Option<&str> {
+    let name = path.rsplit('/').next()?;
+    name.rsplit_once('.').map(|(_, extension)| extension)
 }
 
 fn is_html_path(path: &str) -> bool {

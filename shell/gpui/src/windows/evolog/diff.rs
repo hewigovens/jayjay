@@ -290,11 +290,7 @@ fn comparison_header(
         .child(div().flex_1());
 
     if let Some(file_count) = file_count {
-        let label = if file_count == 1 {
-            "1 file changed".to_owned()
-        } else {
-            jayjay_i18n::repo::files_changed_count(file_count)
-        };
+        let label = jayjay_i18n::repo::files_changed_count(file_count);
         header = header.child(
             div()
                 .text_size(ui_font_size(11.))

@@ -158,11 +158,14 @@ fn workspace_row(workspace: WorkspaceInfo, t: &Theme) -> AnyElement {
                     FONT_ID,
                     t,
                 ))
-                .children(
-                    workspace
-                        .has_conflict
-                        .then(|| capsule("conflict", t.tag_conflict_bg, t.tag_conflict_fg, 9.)),
-                )
+                .children(workspace.has_conflict.then(|| {
+                    capsule(
+                        jayjay_i18n::repo::conflict_badge(),
+                        t.tag_conflict_bg,
+                        t.tag_conflict_fg,
+                        9.,
+                    )
+                }))
                 .child(div().flex_1())
                 .child(
                     div()

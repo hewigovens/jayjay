@@ -2,6 +2,8 @@
 
 use std::env;
 use std::io;
+#[cfg(unix)]
+use std::os::unix::fs::symlink;
 use std::path::{Path, PathBuf};
 
 use jayjay_core::is_executable_file;
@@ -268,9 +270,6 @@ fn install_symlink(bin_dir: &Path, target: &Path) -> io::Result<PathBuf> {
     symlink(target, &link)?;
     Ok(link)
 }
-
-#[cfg(unix)]
-use std::os::unix::fs::symlink;
 
 #[cfg(not(unix))]
 fn symlink(_target: &Path, _link: &Path) -> io::Result<()> {

@@ -66,7 +66,6 @@ impl RepoWindow {
         let Some(commit) = self.selected_commit_id(cx) else {
             return;
         };
-        self.diff_edit.stats_commit = Some(commit.clone());
         let epoch = self.diff_edit.epoch;
         let ignore_whitespace = self.vm.read(cx).ignore_whitespace;
         cx.spawn(async move |this, cx| {

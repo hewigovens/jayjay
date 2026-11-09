@@ -2,14 +2,14 @@
 //! `(hunks identity, visible indices, collapsed_dirs)`.
 //!
 //! Without a cache, per-mouse-move notifies during a drag would rebuild the whole
-//! tree each event. `hunks` identity is the live `Arc<Vec<DiffHunk>>` address of the
-//! *unfiltered* file list (`vm.files`), which stays stable across renders; callers
+//! tree each event. `hunks` identity is a `Weak` to the *unfiltered* file list
+//! (`vm.files`), which stays stable across renders and pins the address against reuse; callers
 //! must not pre-filter into a transient `Arc` before calling `visible`, since a
 //! freshly allocated `Arc` has no stable address to key on. `visible_indices` and
 //! `collapsed` are compared by content since callers rebuild those each render.
 
 use std::collections::HashSet;
-use std::sync::Arc;
+use std::sync::{Arc, Weak};
 
 use jayjay_core::file_tree::build_file_tree;
 use jayjay_core::{DiffHunk, FileTreeEntry};
@@ -22,7 +22,7 @@ pub(crate) struct FileTreeCache {
 }
 
 struct Entry {
-    identity: usize,
+    identity: Weak<Vec<DiffHunk>>,
     visible_indices: Vec<usize>,
     collapsed: HashSet<String>,
     visible: Arc<Vec<FileTreeEntry>>,
@@ -38,9 +38,9 @@ impl FileTreeCache {
         visible_indices: &Arc<Vec<usize>>,
         collapsed: &HashSet<String>,
     ) -> Arc<Vec<FileTreeEntry>> {
-        let identity = Arc::as_ptr(hunks) as usize;
+        let identity = Arc::downgrade(hunks);
         if let Some(entry) = &self.entry
-            && entry.identity == identity
+            && entry.identity.ptr_eq(&identity)
             && &entry.visible_indices == visible_indices.as_ref()
             && &entry.collapsed == collapsed
         {

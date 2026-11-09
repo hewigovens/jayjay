@@ -44,7 +44,6 @@ pub struct DiffEditState {
     pub(super) focus_pending: bool,
     /// Supersession token: a bump abandons every in-flight card load and stats query.
     pub(super) epoch: u64,
-    pub(super) stats_commit: Option<String>,
     pub(super) loaded_ignore_whitespace: bool,
     pub(super) loaded_commit: Option<String>,
     pub(super) stats: Option<HashMap<String, FileDiffStats>>,
@@ -66,7 +65,6 @@ impl Default for DiffEditState {
             working_copy: false,
             focus_pending: false,
             epoch: 0,
-            stats_commit: None,
             loaded_ignore_whitespace: false,
             loaded_commit: None,
             stats: None,

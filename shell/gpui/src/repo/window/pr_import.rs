@@ -250,14 +250,19 @@ impl RepoWindow {
             state.error = None;
         }
         state.begin(false, sync.clone(), cx);
-        let task =
-            cx.background_spawn(async move { repo.pull_request_import_preview(&url, &sync) });
+        let task = cx.background_spawn({
+            let sync = sync.clone();
+            async move { repo.pull_request_import_preview(&url, &sync) }
+        });
         cx.spawn(async move |this, cx| {
             let result = task.await;
             let _ = this.update(cx, |view, cx| {
                 let Some(RepoModal::PrImport(state)) = &mut view.modal else {
                     return;
                 };
+                if !state.sync.as_ref().is_some_and(|current| current.is(&sync)) {
+                    return;
+                }
                 state.finish(cx);
                 match result {
                     Ok(preview) => state.apply_preview(preview, cx),

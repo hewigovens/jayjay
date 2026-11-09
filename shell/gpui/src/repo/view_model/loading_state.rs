@@ -11,7 +11,6 @@ pub struct LoadingState {
     pub diff: bool,
     pub(crate) annotate: bool,
     pub more: bool,
-    pub(super) pr: bool,
     pub refresh_indicator: bool,
     pub(super) change_gen: u64,
     pub diff_gen: u64,

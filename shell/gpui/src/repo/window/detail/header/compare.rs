@@ -43,7 +43,9 @@ pub(super) fn compare_banner(
             div()
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
-                .child(SharedString::from(files_changed_label(file_count))),
+                .child(SharedString::from(jayjay_i18n::repo::files_changed_count(
+                    file_count,
+                ))),
         );
     }
 
@@ -113,12 +115,4 @@ fn compare_label(label: &str, t: &Theme) -> AnyElement {
         .text_color(rgb(t.fg))
         .child(SharedString::from(label.to_owned()))
         .into_any_element()
-}
-
-fn files_changed_label(file_count: usize) -> String {
-    if file_count == 1 {
-        "1 file changed".to_string()
-    } else {
-        jayjay_i18n::repo::files_changed_count(file_count)
-    }
 }

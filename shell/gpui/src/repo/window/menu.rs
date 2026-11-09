@@ -1,4 +1,5 @@
 use super::RepoWindow;
+use crate::diff::DetailMode;
 use crate::repo::view_model::RepoViewModel;
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::AppMenuState;
@@ -231,10 +232,15 @@ impl RepoWindow {
                     self.vm.read(cx).files.as_ref().and_then(|files| {
                         files.iter().position(|h| h.path.as_str() == path.as_ref())
                     });
+                let vm = self.vm.read(cx);
+                let switches_file = target_ix.is_some() && target_ix != vm.selected_file_ix;
+                let annotating = matches!(vm.detail_mode, DetailMode::Annotate);
                 if let Some(ix) = target_ix {
                     self.select_file(ix, cx);
                 }
-                self.toggle_annotate(cx);
+                if !(annotating && switches_file) {
+                    self.toggle_annotate(cx);
+                }
             }
             ContextAction::ShowBookmarkDiff(request) => {
                 self.vm

@@ -21,7 +21,6 @@ impl RepoWindow {
             .diff
             .as_ref()
             .map(|diff| {
-                let display_lines = build_diff_display_lines(&diff.lines);
                 let view_mode = vm.view_mode.effective_for_diff(Some(diff));
                 let label_cols = self.diff.wrap_cache.borrow_mut().moved_label_cols(diff, cx);
                 if view_mode == DiffViewMode::Unified {
@@ -38,7 +37,7 @@ impl RepoWindow {
                         .unwrap_or(w_ix)
                 } else {
                     // SBS pairs Removed/Added and may wrap each side, so translate line_ix through pairing first, then through wrap.
-                    let line_to_row = sbs_line_to_row(&display_lines);
+                    let line_to_row = sbs_line_to_row(&build_diff_display_lines(&diff.lines));
                     let row_ix = line_to_row.get(line_ix).copied().unwrap_or(line_ix_u32);
                     let old_cols = wrap_cols_from_bounds(self.diff.sbs_old_bounds.get(), advance);
                     let new_cols = wrap_cols_from_bounds(self.diff.sbs_new_bounds.get(), advance);
