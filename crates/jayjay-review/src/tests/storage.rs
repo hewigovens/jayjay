@@ -248,3 +248,37 @@ fn review_writer_process() {
         store.add_note(anchor, &format!("{writer} note {index}"));
     }
 }
+
+#[test]
+fn prune_drops_only_rejected_changes_and_persists() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("review_store.json");
+    let mut store = ReviewStore::load_from(path.clone());
+    store.mark_reviewed("keep", "a.txt", "id");
+    store.mark_reviewed("gone", "b.txt", "id");
+    store.add_note(
+        NoteAnchor {
+            change_id: "keep".into(),
+            ..anchor()
+        },
+        "stays",
+    );
+    store.add_note(
+        NoteAnchor {
+            change_id: "gone".into(),
+            ..anchor()
+        },
+        "goes",
+    );
+    let keep = |change_id: &str| change_id == "keep";
+
+    let expected = ReviewStoreSummary { marks: 1, notes: 1 };
+    assert_eq!(store.prunable(keep), expected);
+    assert_eq!(store.prune(keep).unwrap(), expected);
+
+    let reloaded = ReviewStore::load_from(path);
+    assert!(reloaded.is_reviewed("keep", "a.txt", "id"));
+    assert!(!reloaded.is_reviewed("gone", "b.txt", "id"));
+    assert_eq!(reloaded.list_notes("keep", true).len(), 1);
+    assert!(reloaded.list_notes("gone", true).is_empty());
+}

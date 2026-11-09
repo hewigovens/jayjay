@@ -88,8 +88,8 @@ pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]
 pub use repo::{
     AiProvider, CloneRequest, DeviceSignIn, DiffExcerpt, HostLogin, JjConfigEntry, JjConfigSection,
-    JjUserConfig, RepoHost, ReviewNotesReport, ReviewOutputFormat, SyncToken, TokenSource,
-    UserIdentity, WorkingCopyReview, WorkingCopyReviewFile, WorkingCopyReviewMark,
+    JjUserConfig, RepoHost, ReviewNotesReport, ReviewOutputFormat, ReviewPrune, SyncToken,
+    TokenSource, UserIdentity, WorkingCopyReview, WorkingCopyReviewFile, WorkingCopyReviewMark,
     WorkingCopyReviewNote, WorkingCopyReviewStatus, add_review_note, branch_name_slug,
     check_jj_environment, compose_bisect_range, enclosing_workspace_root, find_existing_binary,
     home_dir, init_jj_git_repo, is_executable_file, is_valid_bookmark_name,

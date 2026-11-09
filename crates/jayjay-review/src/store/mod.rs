@@ -1,6 +1,7 @@
 mod models;
 mod persist;
 mod persistence;
+mod prune;
 mod transaction;
 
 #[cfg(test)]

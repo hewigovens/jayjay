@@ -2,6 +2,7 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use jayjay_core::diff::ReviewFileSnapshot;
+use jayjay_core::{JayError, ReviewPrune};
 use jayjay_primitives::{
     NoteAnchor, NoteEntry, ReviewFileRollup, ReviewGroupState, ReviewMarkSource, ReviewStoreSummary,
 };
@@ -163,6 +164,17 @@ impl SharedReviewStore {
             snapshot.as_ref(),
             hunk_indices,
         );
+    }
+
+    /// Opens every repository before touching the store, so a slow repository never holds the store lock.
+    fn prune_preview(&self, repo_paths: Vec<String>) -> Result<ReviewStoreSummary, JayError> {
+        let prune = ReviewPrune::for_repositories(&repo_paths)?;
+        Ok(prune.preview(&self.fresh()))
+    }
+
+    fn prune(&self, repo_paths: Vec<String>) -> Result<ReviewStoreSummary, JayError> {
+        let prune = ReviewPrune::for_repositories(&repo_paths)?;
+        prune.apply(&mut self.store())
     }
 
     fn clear_all(&self) {

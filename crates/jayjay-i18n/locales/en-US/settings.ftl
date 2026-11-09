@@ -138,6 +138,13 @@ settings-review-summary =
     }
 settings-clear-review-title = Clear all review marks and notes?
 settings-clear-review-message = Removes { $summary } for every repository. This cannot be undone.
+settings-prune-review = Prune…
+settings-prune-review-title = Prune review data?
+settings-prune-review-confirm = Prune
+settings-prune-review-message = Removes { $summary } that no longer belong to a mutable change in your recent repositories, including all review data for repositories not in that list. This cannot be undone.
+settings-prune-review-nothing-title = Nothing to prune
+settings-prune-review-nothing = Every review mark and note belongs to a mutable change in your recent repositories.
+settings-prune-review-failed-title = Couldn't prune review data
 settings-custom = Custom
 settings-file-explorer = File Explorer
 settings-cli-install-is-not-supported-on = CLI install is not supported on this platform yet

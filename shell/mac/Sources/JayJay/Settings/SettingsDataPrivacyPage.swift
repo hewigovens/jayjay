@@ -6,6 +6,8 @@ struct SettingsDataPrivacyPage: View {
     let windowManager: RepoWindowManager
     @State private var reviewSummary = ReviewStoreSummary(marks: 0, notes: 0)
     @State private var confirmClearReviewData = false
+    @State private var pruneOutcome: PruneOutcome?
+    @State private var isCheckingPrune = false
     @AppStorage(DebugMode.defaultsKey) private var debugMode = isPrereleaseBuild()
 
     var body: some View {
@@ -48,12 +50,15 @@ struct SettingsDataPrivacyPage: View {
             HStack {
                 SettingsLabel(Localized.Settings.reviewMarksAndNotes, icon: "checkmark.circle")
                 Spacer()
-                Text(reviewSummaryText)
+                Text(reviewSummary.text)
                     .foregroundStyle(.secondary)
+                Button(Localized.Settings.pruneReview) { checkPrune() }
+                    .disabled(reviewSummary.isEmpty || isCheckingPrune)
+                    .accessibilityIdentifier(AID.Settings.pruneReviewData)
                 Button(Localized.Common.clearEllipsis, role: .destructive) {
                     confirmClearReviewData = true
                 }
-                .disabled(reviewSummary.marks == 0 && reviewSummary.notes == 0)
+                .disabled(reviewSummary.isEmpty)
                 .accessibilityIdentifier(AID.Settings.clearReviewData)
             }
             .task { reviewSummary = ReviewStore().summary() }
@@ -61,7 +66,15 @@ struct SettingsDataPrivacyPage: View {
                 Button(Localized.Common.clear, role: .destructive) { clearReviewData() }
                 Button(Localized.Common.cancel, role: .cancel) {}
             } message: {
-                Text(Localized.Settings.clearReviewMessage(summary: reviewSummaryText))
+                Text(Localized.Settings.clearReviewMessage(summary: reviewSummary.text))
+            }
+            .alert(pruneOutcome?.title ?? "", isPresented: isShowingPruneOutcome, presenting: pruneOutcome) { outcome in
+                if case .confirm = outcome {
+                    Button(Localized.Settings.pruneReviewConfirm, role: .destructive) { pruneReviewData() }
+                    Button(Localized.Common.cancel, role: .cancel) {}
+                }
+            } message: { outcome in
+                Text(outcome.message)
             }
         } header: {
             Text(Localized.Settings.reviewData)
@@ -70,13 +83,91 @@ struct SettingsDataPrivacyPage: View {
         }
     }
 
-    private var reviewSummaryText: String {
-        Localized.Settings.reviewSummary(marks: Int(reviewSummary.marks), notes: Int(reviewSummary.notes))
+    private var isShowingPruneOutcome: Binding<Bool> {
+        Binding(get: { pruneOutcome != nil }, set: {
+            if !$0 {
+                pruneOutcome = nil
+            }
+        })
+    }
+
+    /// Open windows can belong to repositories that dropped off the recent list.
+    private var pruneRepoPaths: [String] {
+        Array(Set(settings.recentRepos + windowManager.openRepoPaths))
+    }
+
+    private func checkPrune() {
+        isCheckingPrune = true
+        let paths = pruneRepoPaths
+        Task {
+            let result = await Task.detached(priority: .userInitiated) {
+                Result { try SharedReviewStore(storePath: nil).prunePreview(repoPaths: paths) }
+            }.value
+            isCheckingPrune = false
+            switch result {
+                case let .success(removable):
+                    pruneOutcome = removable.isEmpty ? .nothing : .confirm(removable)
+                case let .failure(error):
+                    pruneOutcome = .failed(error.friendlyDescription)
+            }
+        }
+    }
+
+    private func pruneReviewData() {
+        let paths = pruneRepoPaths
+        Task {
+            let result = await Task.detached(priority: .userInitiated) {
+                Result {
+                    let store = SharedReviewStore(storePath: nil)
+                    _ = try store.prune(repoPaths: paths)
+                    return store.summary()
+                }
+            }.value
+            switch result {
+                case let .success(remaining):
+                    reviewSummary = remaining
+                    windowManager.reloadReviewState()
+                case let .failure(error):
+                    pruneOutcome = .failed(error.friendlyDescription)
+            }
+        }
     }
 
     private func clearReviewData() {
         ReviewStore().clearAll()
         reviewSummary = ReviewStoreSummary(marks: 0, notes: 0)
         windowManager.reloadReviewState()
+    }
+}
+
+private enum PruneOutcome {
+    case confirm(ReviewStoreSummary)
+    case nothing
+    case failed(String)
+
+    var title: String {
+        switch self {
+            case .confirm: Localized.Settings.pruneReviewTitle
+            case .nothing: Localized.Settings.pruneReviewNothingTitle
+            case .failed: Localized.Settings.pruneReviewFailedTitle
+        }
+    }
+
+    var message: String {
+        switch self {
+            case let .confirm(removable): Localized.Settings.pruneReviewMessage(summary: removable.text)
+            case .nothing: Localized.Settings.pruneReviewNothing
+            case let .failed(message): message
+        }
+    }
+}
+
+private extension ReviewStoreSummary {
+    var isEmpty: Bool {
+        marks == 0 && notes == 0
+    }
+
+    var text: String {
+        Localized.Settings.reviewSummary(marks: Int(marks), notes: Int(notes))
     }
 }

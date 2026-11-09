@@ -1,9 +1,10 @@
 use std::fs;
 
 use jayjay_core::{
-    Repo, ReviewOutputFormat, mark_review_file, review_status_output, unmark_review_files,
+    Repo, ReviewOutputFormat, ReviewPrune, mark_review_file, review_status_output,
+    unmark_review_files,
 };
-use jayjay_primitives::{NoteSide, ReviewGroupState};
+use jayjay_primitives::{NoteSide, ReviewGroupState, ReviewStoreSummary};
 use jayjay_review::ReviewStore;
 use jj_test::{add_two_group_edit, init_jj_repo, review_store_env, run_jj_in};
 
@@ -222,4 +223,28 @@ fn failed_mark_save_is_a_cli_error() {
         "{}",
         outcome.message
     );
+}
+
+#[test]
+fn prune_keeps_only_changes_still_mutable_in_a_known_repository() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let working_copy = Repo::open(&repo_path).unwrap().show_summary("@").unwrap();
+    let mut store = ReviewStore::load_from(temp_dir.path().join("review_store.json"));
+    let root = "z".repeat(32);
+    for change_id in [working_copy.info.change_id.id.as_str(), &root, "gone"] {
+        store.mark_reviewed(change_id, "a.txt", "id");
+    }
+
+    assert!(
+        ReviewPrune::for_repositories(&[repo_path.clone(), temp_dir.path().join("unmounted")])
+            .is_err(),
+        "an unavailable repository must block the prune, not lose its review data"
+    );
+    let prune = ReviewPrune::for_repositories(&[&repo_path]).unwrap();
+    let removed = ReviewStoreSummary { marks: 2, notes: 0 };
+    assert_eq!(prune.preview(&store), removed);
+    assert_eq!(prune.apply(&mut store).unwrap(), removed);
+    assert_eq!(store.summary().marks, 1);
+    assert!(store.is_reviewed(&working_copy.info.change_id.id, "a.txt", "id"));
 }

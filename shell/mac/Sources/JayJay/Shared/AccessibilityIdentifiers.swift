@@ -264,6 +264,7 @@ enum AID {
         static let agentSkill = "settings.agentSkill"
         static let copyJJToolConfig = "settings.copyJJToolConfig"
         static let clearReviewData = "settings.clearReviewData"
+        static let pruneReviewData = "settings.pruneReviewData"
         static let confirmWorkspaceDelete = "settings.confirmWorkspaceDelete"
         static let confirmAbandon = "settings.confirmAbandon"
         static let jjConfigMissing = "settings.jjConfigMissing"
