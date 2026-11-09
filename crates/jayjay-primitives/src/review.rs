@@ -148,6 +148,12 @@ pub struct ReviewStoreSummary {
     pub notes: u32,
 }
 
+impl ReviewStoreSummary {
+    pub fn is_empty(&self) -> bool {
+        self.marks == 0 && self.notes == 0
+    }
+}
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Default, Serialize, Deserialize)]
 #[serde(rename_all = "snake_case")]
 pub enum ReviewGroupState {

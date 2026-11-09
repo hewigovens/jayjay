@@ -149,17 +149,20 @@ pub(crate) fn open_repo_paths(
     cx: &App,
 ) -> Vec<String> {
     let mut paths = vec![current_path.to_owned()];
-    for handle in cx.windows() {
-        if handle == current_window {
-            continue;
-        }
-        let Some(handle) = handle.downcast::<RepoWindow>() else {
-            continue;
-        };
-        let Ok(view) = handle.read(cx) else { continue };
-        paths.push(view.vm.read(cx).repo_path.to_string());
-    }
+    paths.extend(repo_window_paths(Some(current_window), cx));
     let mut seen = std::collections::HashSet::new();
     paths.retain(|path| seen.insert(path.clone()));
     paths
+}
+
+/// Skip the window being updated: reading its own view from inside that update would fail.
+pub(crate) fn repo_window_paths(except: Option<AnyWindowHandle>, cx: &App) -> Vec<String> {
+    cx.windows()
+        .into_iter()
+        .filter(|handle| Some(*handle) != except)
+        .filter_map(|handle| {
+            let view = handle.downcast::<RepoWindow>()?.read(cx).ok()?;
+            Some(view.vm.read(cx).repo_path.to_string())
+        })
+        .collect()
 }

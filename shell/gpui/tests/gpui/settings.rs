@@ -6,10 +6,11 @@ use gpui::{
 use jayjay_core::{HostLogin, RepoHost, TokenSource};
 use jayjay_gpui::app::actions::OpenAbout;
 use jayjay_gpui::app::config::current as current_config;
+use jayjay_gpui::repo::window::shared_review_store;
 use jayjay_gpui::windows::settings::cli_diagnostics::CliDiagnostics;
 use jayjay_gpui::windows::settings::tools::AiToolStatuses;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, run_jj_in};
 
 #[gpui::test]
 fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestAppContext) {
@@ -788,16 +789,71 @@ fn clearing_review_data_empties_the_store_and_repaints_open_repo_windows(cx: &mu
 
     click_setting(&mut settings_cx, "settings-clear-review-data");
     assert!(settings_cx.debug_bounds("confirmation").is_some());
-    click_setting(&mut settings_cx, "settings-clear-review-cancel");
+    click_setting(&mut settings_cx, "settings-review-prompt-cancel");
     assert_eq!(visible(repo_cx), ["README.md", "feature.txt", "wip1.txt"]);
 
     click_setting(&mut settings_cx, "settings-clear-review-data");
-    click_setting(&mut settings_cx, "settings-clear-review-submit");
+    click_setting(&mut settings_cx, "settings-review-prompt-submit");
     assert_eq!(
         visible(repo_cx),
         ["README.md", "feature.txt", "wip1.txt", "wip2.txt"]
     );
     assert!(repo_cx.debug_bounds("file-row-3").is_some());
+}
+
+#[gpui::test]
+fn pruning_review_data_keeps_marks_of_changes_mutable_in_an_open_repo(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    let (repo, repo_cx) = open_fixture(&fixture, cx);
+    let ix = select_file(&repo, "wip2.txt", repo_cx);
+    let (change_id, identity) = repo.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let hunk = &vm.files.as_ref().expect("files loaded")[ix];
+        let change = vm.selected_change().expect("selected change");
+        (change.change_id.id.clone(), hunk.review_identity.clone())
+    });
+    repo.update_in(repo_cx, |view, _, cx| {
+        view.toggle_reviewed(
+            change_id.clone(),
+            "wip2.txt".to_owned(),
+            identity.clone(),
+            cx,
+        );
+    });
+    let store = repo_cx.cx.update(shared_review_store);
+    store.borrow_mut().mark_reviewed("gone", "a.txt", "id");
+
+    repo_cx
+        .cx
+        .update(|cx| SettingsView::open_section(SettingsSection::DataPrivacy, cx));
+    let window = repo_cx
+        .cx
+        .windows()
+        .last()
+        .copied()
+        .expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, &repo_cx.cx);
+    settle_visual(&mut settings_cx);
+
+    click_setting(&mut settings_cx, "settings-prune-review-data");
+    assert!(settings_cx.debug_bounds("confirmation").is_some());
+    run_jj_in(&fixture.path, &["new"]);
+    let log = run_jj_in(
+        &fixture.path,
+        &["log", "-r", "@", "--no-graph", "-T", "change_id"],
+    );
+    let new_change = String::from_utf8(log.stdout).unwrap().trim().to_owned();
+    store.borrow_mut().mark_reviewed(&new_change, "b.txt", "id");
+    click_setting(&mut settings_cx, "settings-review-prompt-submit");
+
+    let store = store.borrow();
+    assert!(store.is_reviewed(&change_id, "wip2.txt", &identity));
+    assert!(
+        store.is_reviewed(&new_change, "b.txt", "id"),
+        "a change created while the prompt was up keeps its marks"
+    );
+    assert!(!store.is_reviewed("gone", "a.txt", "id"));
 }
 
 #[gpui::test]

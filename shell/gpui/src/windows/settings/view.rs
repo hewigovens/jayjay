@@ -48,7 +48,8 @@ pub struct SettingsView {
     pub(super) custom_terminal_command: Entity<TextArea>,
     pub(super) edited_theme_dark: Option<bool>,
     pub(super) review_summary: Option<ReviewStoreSummary>,
-    pub(super) confirm_clear_review: bool,
+    pub(super) review_prompt: Option<data_privacy::ReviewDataPrompt>,
+    pub(super) checking_prune: bool,
     pub(super) sidebar: ResizablePane,
     pub(super) shortcuts: Entity<super::shortcuts::ShortcutSettings>,
     flock: Option<Entity<super::flock::FlockView>>,
@@ -110,7 +111,8 @@ impl SettingsView {
                             custom_terminal_command,
                             edited_theme_dark: None,
                             review_summary: None,
-                            confirm_clear_review: false,
+                            review_prompt: None,
+                            checking_prune: false,
                             sidebar: Self::sidebar_pane(cx),
                             flock: None,
                         };
@@ -186,8 +188,7 @@ impl Render for SettingsView {
             )
             .on_action(
                 cx.listener(|this, _: &crate::app::actions::Dismiss, window, cx| {
-                    if this.confirm_clear_review {
-                        this.confirm_clear_review = false;
+                    if this.review_prompt.take().is_some() {
                         cx.notify();
                     } else if !(this.section == SettingsSection::Flock
                         && this
@@ -294,12 +295,8 @@ impl Render for SettingsView {
         {
             root = root.child(sheet);
         }
-        if self.confirm_clear_review {
-            root = root.child(data_privacy::clear_review_confirmation(
-                self.review_summary,
-                &t,
-                cx,
-            ));
+        if let Some(prompt) = &self.review_prompt {
+            root = root.child(prompt.render(self.review_summary, &t, cx));
         }
         root
     }
