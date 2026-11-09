@@ -46,7 +46,7 @@ jobs:
           JJ_VERSION: v0.47.1
           RUST_TARGET: ${{ matrix.target }}
         run: |
-          Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-$env:RUST_TARGET.zip" -OutFile "$env:RUNNER_TEMP/jj.zip"
+          Invoke-WebRequest "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-$env:RUST_TARGET.zip" -OutFile "$env:RUNNER_TEMP/jj.zip" -MaximumRetryCount 5 -RetryIntervalSec 10
           Expand-Archive "$env:RUNNER_TEMP/jj.zip" "$env:RUNNER_TEMP/jj-bin"
           Add-Content $env:GITHUB_PATH "$env:RUNNER_TEMP/jj-bin"
 
