@@ -44,8 +44,7 @@ struct WorkingCopyFileEditorView: View {
                     .jayjayFont(11, weight: .semibold)
                     .foregroundStyle(.orange)
             }
-            Button(Localized.Common.cancel, action: onDone)
-                .keyboardShortcut(.cancelAction)
+            DiscardingCancelButton(hasChanges: session.hasChanges, onCancel: onDone)
                 .accessibilityIdentifier(AID.FileEditor.cancel)
             Button(session.isSaving ? Localized.Repo.savingEllipsis : Localized.Common.save, action: save)
                 .keyboardShortcut(AppShortcut.saveEditedFile)

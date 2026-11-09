@@ -5,8 +5,10 @@ import SwiftUI
 struct MergeHunkList: View {
     let highlights: [MergeHunkHighlights]
     let result: String
+    let picks: [UInt32: MergeHunkSource]
     @Binding var selectedHunk: UInt32?
     let scroll: MergeScrollCoordinator
+    let sideHelp: (MergeHunkSource) -> String
     let onUseSource: (MergeEditorHunk, MergeHunkSource) -> Void
 
     @State private var hunkFrames: [UInt32: CGRect] = [:]
@@ -23,7 +25,9 @@ struct MergeHunkList: View {
                         MergeHunkCard(
                             highlights: item,
                             isUnresolved: unresolved,
+                            pick: picks[item.hunk.index],
                             isSelected: selectedHunk == item.id,
+                            sideHelp: sideHelp,
                             onSelect: { selectedHunk = item.id },
                             onUseSource: { source in
                                 selectedHunk = item.id
@@ -118,7 +122,9 @@ private struct MergeHunkFrames: PreferenceKey {
 private struct MergeHunkCard: View {
     let highlights: MergeHunkHighlights
     let isUnresolved: Bool
+    let pick: MergeHunkSource?
     let isSelected: Bool
+    let sideHelp: (MergeHunkSource) -> String
     let onSelect: () -> Void
     let onUseSource: (MergeHunkSource) -> Void
 
@@ -132,7 +138,7 @@ private struct MergeHunkCard: View {
                     .jayjayFont(11, weight: .semibold)
                     .accessibilityIdentifier(AID.Conflict.hunkCard(highlights.id))
                     .accessibilityValue(isSelected ? Localized.Merge.selected : "")
-                Text(isUnresolved ? Localized.Merge.unresolved : Localized.Repo.resolved)
+                Text(statusTitle)
                     .jayjayFont(10, weight: .medium)
                     .foregroundStyle(isUnresolved ? .orange : .green)
                 Spacer()
@@ -180,6 +186,13 @@ private struct MergeHunkCard: View {
         .accessibilityElement(children: .contain)
     }
 
+    private var statusTitle: String {
+        if isUnresolved {
+            return Localized.Merge.unresolved
+        }
+        return pick.map { Localized.Merge.usingSource(source: $0.label) } ?? Localized.Repo.resolved
+    }
+
     private func actionButton(
         _ title: String,
         shortcut: AppShortcut? = nil,
@@ -197,7 +210,7 @@ private struct MergeHunkCard: View {
             .foregroundStyle(.secondary)
         }
         .buttonStyle(.plain)
-        .disabled(!isUnresolved)
-        .help(source.useHelp)
+        .disabled(!isUnresolved && (pick == nil || pick == source))
+        .help(sideHelp(source))
     }
 }

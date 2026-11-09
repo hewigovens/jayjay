@@ -10,6 +10,13 @@ pub struct ConflictEditorData {
     pub left: String,
     pub base: String,
     pub right: String,
+    /// jj's description of each side, e.g. `nlqwxzwn 7dd24e73 "subject" (rebase destination)`; `None` when jj recorded no labels.
+    #[serde(default)]
+    pub left_label: Option<String>,
+    #[serde(default)]
+    pub base_label: Option<String>,
+    #[serde(default)]
+    pub right_label: Option<String>,
     pub result: String,
     pub marker_length: u32,
     pub side_count: u32,
@@ -22,6 +29,12 @@ pub enum MergeHunkSource {
     Left,
     Base,
     Right,
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+pub struct MergeHunkPick {
+    pub index: u32,
+    pub source: MergeHunkSource,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]

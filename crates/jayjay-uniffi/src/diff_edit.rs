@@ -104,6 +104,10 @@ impl DiffEditSession {
         self.read(diff_edit::DiffEditSession::summary_text)
     }
 
+    fn discarded_lines(&self, paths: Vec<String>) -> u32 {
+        self.read(|session| session.discarded_lines(&paths))
+    }
+
     fn selections(
         &self,
         paths: Vec<String>,

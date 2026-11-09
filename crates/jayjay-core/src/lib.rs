@@ -82,7 +82,7 @@ pub use jj_command::{JjCommand, JjCommandResult};
 #[cfg(feature = "repository")]
 pub use log_file::LogFile;
 #[cfg(feature = "repository")]
-pub use merge_editor::{MergeEditorHunkExt, MergeScrollMap};
+pub use merge_editor::{MergeEditorHunkExt, MergeScrollMap, pick_merge_hunk};
 #[cfg(feature = "repository")]
 pub(crate) use repo::jj_binary;
 #[cfg(feature = "repository")]

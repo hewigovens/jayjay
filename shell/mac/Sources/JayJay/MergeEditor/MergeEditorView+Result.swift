@@ -23,8 +23,10 @@ extension MergeEditorView {
                 MergeHunkList(
                     highlights: session.highlights?.hunks ?? [],
                     result: session.result,
+                    picks: session.picks,
                     selectedHunk: $selectedHunk,
                     scroll: scroll,
+                    sideHelp: session.sideHelp,
                     onUseSource: useHunkSource
                 )
             } else {
@@ -93,13 +95,13 @@ extension MergeEditorView {
     func useSelectedHunk(_ source: MergeHunkSource) {
         ensureHunkSelection()
         guard let selectedHunk,
-              let hunk = unresolvedHunks.first(where: { $0.id == selectedHunk })?.hunk
+              let hunk = session.highlights?.hunks.first(where: { $0.id == selectedHunk })?.hunk
         else { return }
         useHunkSource(hunk, source)
     }
 
     func useHunkSource(_ hunk: MergeEditorHunk, _ source: MergeHunkSource) {
-        guard session.useHunkSource(hunk, source) else { return }
+        guard session.useHunkSource(hunk, source, undoManager: undoManager) else { return }
         let remaining = unresolvedHunks
         selectedHunk = remaining.first(where: { $0.id > hunk.index })?.id
             ?? remaining.first(where: { $0.id != hunk.index })?.id

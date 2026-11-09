@@ -40,6 +40,8 @@ pub struct DiffEditSession {
     collapsed: HashSet<String>,
     collapse_touched: bool,
     focused: Option<String>,
+    skipped: HashSet<String>,
+    stat_lines: HashMap<String, u32>,
 }
 
 impl DiffEditSession {
@@ -47,6 +49,7 @@ impl DiffEditSession {
     pub fn load(&mut self, file: DiffEditFile) {
         let changed: BTreeSet<u32> = file.changed_lines.iter().copied().collect();
         let path = file.path.clone();
+        self.skipped.remove(&path);
         let selected = if self.select_all_pending.remove(&path) {
             changed.clone()
         } else {
@@ -69,12 +72,15 @@ impl DiffEditSession {
     pub fn skip(&mut self, path: &str) {
         self.select_all_pending.remove(path);
         self.files.remove(path);
+        self.skipped.insert(path.to_owned());
     }
 
     /// Forgets every loaded card: row numbers silently remap when the whitespace mode or the commit changes.
     pub fn unload(&mut self) {
         self.files.clear();
         self.select_all_pending.clear();
+        self.skipped.clear();
+        self.stat_lines.clear();
     }
 
     pub fn is_loaded(&self, path: &str) -> bool {
@@ -216,6 +222,18 @@ impl DiffEditSession {
         jayjay_i18n::diff::edit_selection(files, lines)
     }
 
+    /// Changed rows that `RemoveFromSource` would drop from `paths`: unselected rows of loaded cards, and every row of a card not loaded yet, counted from its stats.
+    pub fn discarded_lines(&self, paths: &[String]) -> u32 {
+        paths
+            .iter()
+            .map(|path| match self.files.get(path) {
+                Some(loaded) => loaded.changed.difference(&loaded.selected).count() as u32,
+                None if self.skipped.contains(path) => 0,
+                None => self.stat_lines.get(path).copied().unwrap_or_default(),
+            })
+            .sum()
+    }
+
     /// The apply request in card order; invert for `RemoveFromSource` so the rewrite removes the unselected rows.
     pub fn selections(
         &self,
@@ -261,6 +279,15 @@ impl DiffEditSession {
 
     /// Replaces the seed with the per-file policy, unless the user already folded something by hand.
     pub fn apply_stats(&mut self, paths: &[String], stats: &[FileDiffStats]) {
+        self.stat_lines = stats
+            .iter()
+            .map(|file| {
+                (
+                    file.path.clone(),
+                    file.insertions.saturating_add(file.deletions),
+                )
+            })
+            .collect();
         if self.collapse_touched {
             return;
         }

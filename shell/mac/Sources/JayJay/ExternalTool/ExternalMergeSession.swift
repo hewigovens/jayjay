@@ -20,11 +20,13 @@ final class ExternalMergeSession: MergeEditingSession {
     var result = ""
     var resultMode = MergeResultMode.hunks
     var selectedSource: MergeHunkSource?
+    var picks: [UInt32: MergeHunkSource] = [:]
     var highlights: MergeEditorHighlights?
     private(set) var isTextMerge = false
     var isLoading = true
     var isSaving = false
-    var errorMessage: String?
+    private(set) var loadError: String?
+    var actionError: String?
     private let onLoadFailure: () -> Void
 
     init(
@@ -97,10 +99,14 @@ final class ExternalMergeSession: MergeEditingSession {
             isTextMerge = merge.isText
             highlights = prepared.1
         } catch {
-            errorMessage = error.friendlyDescription
+            loadError = error.friendlyDescription
             onLoadFailure()
         }
         isLoading = false
+    }
+
+    func sideLabel(_: MergeHunkSource) -> String? {
+        nil
     }
 
     func useSource(_ source: MergeHunkSource) {
@@ -118,7 +124,7 @@ final class ExternalMergeSession: MergeEditingSession {
     func save() {
         guard !isSaving, canSave else { return }
         isSaving = true
-        errorMessage = nil
+        actionError = nil
         let output = outputPath
         let content = result
         let source = selectedSourcePath
@@ -133,7 +139,7 @@ final class ExternalMergeSession: MergeEditingSession {
                 }.value
                 Darwin.exit(0)
             } catch {
-                errorMessage = error.friendlyDescription
+                actionError = error.friendlyDescription
                 isSaving = false
             }
         }

@@ -63,6 +63,24 @@ fn loads_and_applies_an_embedded_conflict_edit() {
 }
 
 #[test]
+fn labels_each_side_with_the_change_jj_recorded_for_it() {
+    let (_temp_dir, repo) = conflict_fixture();
+    let editor = repo.conflict_editor("@", "hello.txt").expect("load editor");
+
+    for (content, label) in [
+        (&editor.left, &editor.left_label),
+        (&editor.right, &editor.right_label),
+    ] {
+        let label = label.as_deref().expect("side label");
+        assert!(
+            label.contains(&format!("\"{}\"", content.trim_end())),
+            "{label}"
+        );
+    }
+    assert!(editor.base_label.is_some());
+}
+
+#[test]
 fn tree_conflicts_do_not_offer_the_file_conflict_editor() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

@@ -12,10 +12,12 @@ final class ConflictEditorSession: Identifiable, MergeEditingSession {
     var result = ""
     var resultMode = MergeResultMode.hunks
     var selectedSource: MergeHunkSource?
+    var picks: [UInt32: MergeHunkSource] = [:]
     var highlights: MergeEditorHighlights?
     var isLoading = true
     var isSaving = false
-    var errorMessage: String?
+    private(set) var loadError: String?
+    var actionError: String?
 
     init(target: ConflictEditorTarget) {
         self.target = target
@@ -78,9 +80,17 @@ final class ConflictEditorSession: Identifiable, MergeEditingSession {
             result = prepared.0.result
             highlights = prepared.1
         } catch {
-            errorMessage = error.friendlyDescription
+            loadError = error.friendlyDescription
         }
         isLoading = false
+    }
+
+    func sideLabel(_ source: MergeHunkSource) -> String? {
+        switch source {
+            case .left: data?.leftLabel
+            case .base: data?.baseLabel
+            case .right: data?.rightLabel
+        }
     }
 
     func useSource(_ source: MergeHunkSource) {

@@ -8,7 +8,7 @@ use jayjay_core::diff::{
 };
 #[cfg(feature = "desktop")]
 use jayjay_core::{
-    DiffEditRange, MergeEditorHunk, MergeEditorHunkExt, MergeHunkSource,
+    DiffEditRange, MergeEditorHunk, MergeEditorHunkExt, MergeHunkPick,
     external_tools::{
         ExternalDiffFile, ExternalDiffSelection, ExternalMerge, ExternalToolInvocation,
     },
@@ -134,12 +134,14 @@ fn external_conflict_marker_count(content: String, marker_length: u32) -> u64 {
 
 #[cfg(feature = "desktop")]
 #[uniffi::export]
-fn merge_result_use_source(
+fn merge_result_pick_hunk(
+    original: String,
+    hunks: Vec<MergeEditorHunk>,
+    picks: Vec<MergeHunkPick>,
     result: String,
-    hunk: MergeEditorHunk,
-    source: MergeHunkSource,
+    pick: MergeHunkPick,
 ) -> Result<String, JayError> {
-    hunk.use_source(&result, source)
+    jayjay_core::pick_merge_hunk(&original, &hunks, &picks, &result, pick)
 }
 
 #[cfg(feature = "desktop")]

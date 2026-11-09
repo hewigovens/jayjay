@@ -30,9 +30,11 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         try scroll(leftScroll, by: -1800, following: [rightBar, hunks.scrollBars.firstMatch])
         try scroll(hunks, by: 1800, following: [rightBar])
         XCTAssertEqual(first.value as? String, "Selected")
-        clickCenter(app.buttons[AID.Conflict.hunkUse(0, "left")])
+        let acceptFirstLeft = app.buttons[AID.Conflict.hunkUse(0, "left")]
+        clickCenter(acceptFirstLeft)
         let second = app.element(AID.Conflict.hunkCard(1))
         XCTAssertTrue(waitForSelection(second))
+        assertUndoRedo(of: acceptFirstLeft, app: app)
         XCTAssertTrue(waitForVisibleActions(for: second, in: hunks, app: app))
         app.staticTexts["Conflict 2"].click()
         app.typeKey(.downArrow, modifierFlags: .option)
@@ -63,6 +65,9 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         let third = app.element(AID.Conflict.hunkCard(2))
         XCTAssertTrue(waitForSelection(third))
         clickCenter(app.buttons[AID.Conflict.editorCancel])
+        let discard = app.buttons["Discard Changes"]
+        XCTAssertTrue(discard.waitForExistence(timeout: 5), "Cancel with picked hunks should ask before discarding")
+        discard.click()
     }
 
     private func scroll(
@@ -90,6 +95,14 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
             file: file,
             line: line
         )
+    }
+
+    private func assertUndoRedo(of pickedAction: XCUIElement, app: XCUIApplication) {
+        XCTAssertTrue(pickedAction.wait(for: \.isEnabled, toEqual: false, timeout: 5), "The picked side should be disabled")
+        app.typeKey("z", modifierFlags: .command)
+        XCTAssertTrue(pickedAction.wait(for: \.isEnabled, toEqual: true, timeout: 5), "Command-Z should undo the hunk pick")
+        app.typeKey("z", modifierFlags: [.command, .shift])
+        XCTAssertTrue(pickedAction.wait(for: \.isEnabled, toEqual: false, timeout: 5), "Shift-Command-Z should redo the hunk pick")
     }
 
     private func waitForVisibleActions(for card: XCUIElement, in viewport: XCUIElement, app: XCUIApplication) -> Bool {

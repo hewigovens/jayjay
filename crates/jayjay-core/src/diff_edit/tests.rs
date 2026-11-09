@@ -146,6 +146,40 @@ fn apply_builds_card_ordered_ranges_and_inverts_for_remove_from_source() {
 }
 
 #[test]
+fn discard_count_covers_unselected_rows_and_unopened_cards_but_not_skipped_ones() {
+    let mut session = DiffEditSession::default();
+    let cards = strings(&["a", "b", "bin"]);
+    session.apply_stats(
+        &cards,
+        &[
+            file_diff_stats("a", 4),
+            file_diff_stats("b", 5),
+            file_diff_stats("bin", 2),
+        ],
+    );
+    session.load(diff_edit_file("a", &[2, 3, 4, 9]));
+    session.select_lines("a", &[2, 3]);
+    session.skip("bin");
+
+    assert_eq!(
+        session.discarded_lines(&cards),
+        2 + 5,
+        "b is not loaded yet, so all of its rows go"
+    );
+
+    session.load(diff_edit_file("b", &[1, 2, 3, 4, 5]));
+    session.select_file("b");
+    assert_eq!(session.discarded_lines(&cards), 2);
+
+    session.unload();
+    assert_eq!(
+        session.discarded_lines(&cards),
+        0,
+        "old-mode stats must not outlive a reset"
+    );
+}
+
+#[test]
 fn collapse_seeds_from_the_aggregate_then_the_per_file_pass_replaces_it() {
     let cards = strings(
         &(1..=40)

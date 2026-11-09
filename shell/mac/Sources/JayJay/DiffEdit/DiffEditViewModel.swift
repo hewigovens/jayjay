@@ -26,6 +26,8 @@ final class DiffEditViewModel {
     var focusedPath: String?
     var fileStats: [String: FileDiffStats] = [:]
     var isPreparingRemoval = false
+    var discardedLines: UInt32 = 0
+    var pendingDiscard: UInt32?
     var removalTask: Task<Void, Never>?
     var applyLoadFailurePath: String?
     var applyStalePath: String?
@@ -87,6 +89,11 @@ final class DiffEditViewModel {
         selectionSummary = core.summaryText()
         shouldDeselect = core.shouldDeselect()
         isSelectingAll = core.isSelectingAll()
+        discardedLines = core.discardedLines(paths: rewritablePaths)
+    }
+
+    var rewritablePaths: [String] {
+        detail.diff.filter(\.isDiffEditRewritable).map(\.path)
     }
 
     func refreshCollapse() {
@@ -103,6 +110,7 @@ final class DiffEditViewModel {
         bulkSelectionTask?.cancel()
         removalTask?.cancel()
         isPreparingRemoval = false
+        pendingDiscard = nil
         core.unload()
         loadedFiles = [:]
         refreshSelection(paths: cardPaths)
@@ -142,6 +150,7 @@ final class DiffEditViewModel {
         else { return }
         fileStats = Dictionary(uniqueKeysWithValues: stats.map { ($0.path, $0) })
         core.applyStats(paths: cardPaths, stats: stats)
+        discardedLines = core.discardedLines(paths: rewritablePaths)
         refreshCollapse()
     }
 

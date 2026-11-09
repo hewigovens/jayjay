@@ -66,7 +66,7 @@ diff-show-more-lines = Show { NUMBER($count) }
 diff-show-all = Show all
 diff-unmodified-lines-action = { $action } unmodified lines
 diff-jump-to-moved-copy = Jump to moved copy at { $location }
-diff-edit-load-failed = Failed to load { $path }. Done was not applied — try again.
+diff-edit-load-failed = Failed to load { $path }. Keep Selected was not applied — try again.
 diff-review-notes-on-file =
     { $count ->
         [one] { $count } review note on this file
@@ -110,6 +110,20 @@ diff-preview-unavailable = (preview unavailable)
 diff-markdown-metadata = { NUMBER($count) } blocks, { $size }
 diff-couldnt-open-file-editor = Couldn’t Open File Editor
 diff-empty-markdown = (empty Markdown document)
-diff-edit-selection-stale = { $path } changed after its selection was rendered. Done was not applied — refresh and try again.
+diff-edit-selection-stale = { $path } changed after its selection was rendered. Keep Selected was not applied — refresh and try again.
 diff-includes-agent-marks = { $label }, includes agent marks
 diff-mode-changed = mode
+diff-edit-keep-selected = Keep Selected
+diff-edit-keep-selected-help = Keep only the selected lines in this change and discard the rest
+diff-edit-discards =
+    { $count ->
+        [one] Discards { $count } line
+       *[other] Discards { $count } lines
+    }
+diff-edit-discard-title =
+    { $count ->
+        [one] Discard { $count } Unselected Line?
+       *[other] Discard { $count } Unselected Lines?
+    }
+diff-edit-discard-message = Only the selected lines stay in this change. Undo Last Operation brings the discarded lines back.
+diff-edit-discard-confirm = Discard and Keep Selected

@@ -48,13 +48,23 @@ extension MergeEditorView {
             HStack {
                 Text(source.label)
                     .jayjayFont(12, weight: .semibold)
+                if let label = session.sideLabel(source) {
+                    Text(label)
+                        .jayjayFont(11, design: .monospaced)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .truncationMode(.tail)
+                        .help(label)
+                }
                 Spacer()
-                Button(Localized.Merge.useSource(source: source.label)) { session.useSource(source) }
-                    .buttonStyle(.plain)
-                    .jayjayFont(11, weight: .medium)
-                    .foregroundStyle(.secondary)
-                    .disabled(!session.canUseSources)
-                    .accessibilityIdentifier(AID.ExternalTool.useSource(source.slug))
+                Button(Localized.Merge.useSource(source: source.label)) {
+                    session.useWholeSource(source, undoManager: undoManager)
+                }
+                .buttonStyle(.plain)
+                .jayjayFont(11, weight: .medium)
+                .foregroundStyle(.secondary)
+                .disabled(!session.canUseSources)
+                .accessibilityIdentifier(AID.ExternalTool.useSource(source.slug))
             }
             .padding(.horizontal, 10)
             .padding(.vertical, 7)

@@ -1,6 +1,6 @@
 use jayjay_core as core;
 use jayjay_core::{
-    ConflictEditorData, FileEditorData, MergeEditorHunk, MergeHunkSource, MergePane,
+    ConflictEditorData, FileEditorData, MergeEditorHunk, MergeHunkPick, MergeHunkSource, MergePane,
 };
 
 #[uniffi::remote(Record)]
@@ -12,6 +12,9 @@ pub struct ConflictEditorData {
     pub left: String,
     pub base: String,
     pub right: String,
+    pub left_label: Option<String>,
+    pub base_label: Option<String>,
+    pub right_label: Option<String>,
     pub result: String,
     pub marker_length: u32,
     pub side_count: u32,
@@ -24,6 +27,12 @@ pub enum MergeHunkSource {
     Left,
     Base,
     Right,
+}
+
+#[uniffi::remote(Record)]
+pub struct MergeHunkPick {
+    pub index: u32,
+    pub source: MergeHunkSource,
 }
 
 #[uniffi::remote(Record)]

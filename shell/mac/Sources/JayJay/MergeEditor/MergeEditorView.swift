@@ -11,6 +11,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
     @State var showsBase = false
     @State var selectedHunk: UInt32?
     @State var scroll = MergeScrollCoordinator()
+    @Environment(\.undoManager) var undoManager
 
     let headerAccessibilityIdentifier: String?
     let onCancel: () -> Void
@@ -73,8 +74,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
             }
             Spacer()
             resolutionStatus
-            Button(Localized.Common.cancel, action: onCancel)
-                .keyboardShortcut(.cancelAction)
+            DiscardingCancelButton(hasChanges: session.hasEdits, onCancel: onCancel)
                 .accessibilityIdentifier(AID.Conflict.editorCancel)
             Button(saveTitle, action: onSave)
                 .keyboardShortcut(.defaultAction)
@@ -95,7 +95,7 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
             )
             .foregroundStyle(.orange)
             .jayjayFont(11, weight: .semibold)
-        } else if !session.isLoading, session.errorMessage == nil {
+        } else if !session.isLoading, session.loadError == nil {
             if session.canSave {
                 Label(Localized.Repo.resolved, systemImage: "checkmark.circle.fill")
                     .foregroundStyle(.green)
@@ -123,14 +123,26 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
         if session.isLoading {
             LoadingStatus(label: Localized.Merge.loadingConflictSidesEllipsis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if let errorMessage = session.errorMessage {
+        } else if let loadError = session.loadError {
             ContentUnavailableView(
                 Localized.Merge.couldntOpenMergeSession,
                 systemImage: "exclamationmark.triangle",
-                description: Text(errorMessage)
+                description: Text(loadError)
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if session.showsSources {
+        } else {
+            VStack(spacing: 0) {
+                if let actionError = session.actionError {
+                    actionErrorBanner(actionError)
+                }
+                editor
+            }
+        }
+    }
+
+    @ViewBuilder
+    private var editor: some View {
+        if session.showsSources {
             VSplitView {
                 sourcesPane
                     .frame(minHeight: 220, idealHeight: 300)
@@ -141,5 +153,25 @@ struct MergeEditorView<Session: MergeEditingSession>: View {
         } else {
             resultPane
         }
+    }
+
+    private func actionErrorBanner(_ message: String) -> some View {
+        HStack(spacing: 6) {
+            Image(systemName: "exclamationmark.triangle")
+                .foregroundStyle(.orange)
+            Text(message)
+                .jayjayFont(12)
+                .textSelection(.enabled)
+            Spacer(minLength: 8)
+            Button(Localized.Repo.dismiss) { session.actionError = nil }
+                .buttonStyle(.plain)
+                .jayjayFont(12)
+                .foregroundStyle(Color.accentColor)
+        }
+        .padding(.horizontal, 10)
+        .padding(.vertical, 6)
+        .background(Color.primary.opacity(0.04), in: RoundedRectangle(cornerRadius: 8, style: .continuous))
+        .padding(.horizontal, 16)
+        .padding(.vertical, 8)
     }
 }

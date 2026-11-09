@@ -36,8 +36,7 @@ struct DiffEditHeader: View {
             }
             .disabled(session.selectionToggleDisabled)
             .controlSize(.small)
-            Button(Localized.Common.cancel, action: session.onDone)
-                .keyboardShortcut(.cancelAction)
+            DiscardingCancelButton(hasChanges: session.shouldDeselect, onCancel: session.onDone)
                 .accessibilityIdentifier(AID.DiffEdit.cancel)
         }
         .controlSize(.small)

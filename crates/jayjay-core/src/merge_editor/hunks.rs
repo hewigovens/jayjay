@@ -4,7 +4,7 @@ use jj_lib::merge::Merge;
 
 use crate::diff::{FileDiff, compute_file_diff};
 use crate::file_display::optional_bytes_to_display;
-use crate::{JayError, JayResult, MergeEditorHunk, MergeHunkSource};
+use crate::{JayError, JayResult, MergeEditorHunk, MergeHunkPick, MergeHunkSource};
 
 const HUNK_CONTEXT_LINES: usize = 3;
 
@@ -49,6 +49,52 @@ pub(crate) fn merge_editor_hunks<T: AsRef<[u8]>>(
         .collect()
 }
 
+/// Applies `pick` to `result`. While `result` is exactly the loaded markers with `picks` applied, it is rebuilt from the original markers, so a resolved hunk can switch sides.
+pub fn pick_merge_hunk(
+    original: &str,
+    hunks: &[MergeEditorHunk],
+    picks: &[MergeHunkPick],
+    result: &str,
+    pick: MergeHunkPick,
+) -> JayResult<String> {
+    let hunk = hunks
+        .iter()
+        .find(|hunk| hunk.index == pick.index)
+        .ok_or_else(|| JayError::internal(format!("no conflict hunk {}", pick.index + 1)))?;
+    if result_with_picks(original, hunks, picks) != result {
+        return hunk.use_source(result, pick.source);
+    }
+    let mut picks = picks.to_vec();
+    picks.retain(|existing| existing.index != pick.index);
+    picks.push(pick);
+    Ok(result_with_picks(original, hunks, &picks))
+}
+
+fn result_with_picks(original: &str, hunks: &[MergeEditorHunk], picks: &[MergeHunkPick]) -> String {
+    let mut replacements = picks
+        .iter()
+        .filter_map(|pick| {
+            let hunk = hunks.iter().find(|hunk| hunk.index == pick.index)?;
+            let start = hunk.occurrence_start(original)?;
+            Some((start..start + hunk.raw.len(), side(hunk, pick.source)))
+        })
+        .collect::<Vec<_>>();
+    replacements.sort_by_key(|(range, _)| std::cmp::Reverse(range.start));
+    let mut result = original.to_owned();
+    for (range, side) in replacements {
+        result.replace_range(range, side);
+    }
+    result
+}
+
+fn side(hunk: &MergeEditorHunk, source: MergeHunkSource) -> &str {
+    match source {
+        MergeHunkSource::Left => &hunk.left,
+        MergeHunkSource::Base => &hunk.base,
+        MergeHunkSource::Right => &hunk.right,
+    }
+}
+
 pub trait MergeEditorHunkExt {
     fn use_source(&self, result: &str, source: MergeHunkSource) -> JayResult<String>;
     fn display_diff(&self, path: &str, result: &str) -> FileDiff;
@@ -56,11 +102,7 @@ pub trait MergeEditorHunkExt {
 
 impl MergeEditorHunkExt for MergeEditorHunk {
     fn use_source(&self, result: &str, source: MergeHunkSource) -> JayResult<String> {
-        let replacement = match source {
-            MergeHunkSource::Left => &self.left,
-            MergeHunkSource::Base => &self.base,
-            MergeHunkSource::Right => &self.right,
-        };
+        let replacement = side(self, source);
         let Some(start) = self.occurrence_start(result) else {
             return Err(JayError::Internal {
                 message: format!(
@@ -206,6 +248,77 @@ mod tests {
         assert_eq!(resolved, "top\nleft\nmiddle\nright\nbottom\n");
         assert!(!first.is_unresolved(&resolved));
         assert!(!second.is_unresolved(&resolved));
+    }
+
+    #[test]
+    fn a_resolved_hunk_switches_sides_until_the_result_is_edited_by_hand() {
+        let hunk = |index: u32, raw: &str, side: &str| MergeEditorHunk {
+            index,
+            occurrence: 0,
+            raw: raw.to_owned(),
+            left: format!("{side} left\n"),
+            base: format!("{side} base\n"),
+            right: format!("{side} right\n"),
+        };
+        let (one, two) = ("<<<<<<< 1\nx\n>>>>>>> 1\n", "<<<<<<< 2\ny\n>>>>>>> 2\n");
+        let hunks = [hunk(0, one, "one"), hunk(1, two, "two")];
+        let original = format!("top\n{one}middle\n{two}");
+        let pick = |index, source| MergeHunkPick { index, source };
+
+        let first = pick_merge_hunk(
+            &original,
+            &hunks,
+            &[],
+            &original,
+            pick(0, MergeHunkSource::Left),
+        )
+        .unwrap();
+        let picks = [pick(0, MergeHunkSource::Left)];
+        let both = pick_merge_hunk(
+            &original,
+            &hunks,
+            &picks,
+            &first,
+            pick(1, MergeHunkSource::Right),
+        )
+        .unwrap();
+        let picks = [
+            pick(0, MergeHunkSource::Left),
+            pick(1, MergeHunkSource::Right),
+        ];
+        let switched = pick_merge_hunk(
+            &original,
+            &hunks,
+            &picks,
+            &both,
+            pick(0, MergeHunkSource::Base),
+        )
+        .unwrap();
+        assert_eq!(switched, "top\none base\nmiddle\ntwo right\n");
+
+        let edited = format!("// edited\n{first}");
+        assert!(
+            pick_merge_hunk(
+                &original,
+                &hunks,
+                &picks[..1],
+                &edited,
+                pick(0, MergeHunkSource::Right)
+            )
+            .is_err()
+        );
+        assert_eq!(
+            pick_merge_hunk(
+                &original,
+                &hunks,
+                &picks[..1],
+                &edited,
+                pick(1, MergeHunkSource::Right)
+            )
+            .unwrap(),
+            "// edited\ntop\none left\nmiddle\ntwo right\n",
+            "an unresolved hunk still resolves in place after a hand edit"
+        );
     }
 
     #[test]
