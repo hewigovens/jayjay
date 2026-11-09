@@ -12,7 +12,7 @@ final class SelectionTransformScene: SceneBase {
 
         select([0, 2], rows: rows, step: "no-op selection")
         rightClickCenter(rows.element(boundBy: 0))
-        let noOpItem = app.menuItems["Parallelize 2 selected"]
+        let noOpItem = app.menuItems["Parallelize 2 Selected"]
         XCTAssertTrue(noOpItem.waitForExistence(timeout: 5), "Parallelize menu item missing")
         XCTAssertTrue(noOpItem.isEnabled)
         noOpItem.click()
@@ -25,7 +25,7 @@ final class SelectionTransformScene: SceneBase {
         let changeIds = (0 ..< 3).map { rows.element(boundBy: $0).identifier }
         select([0, 1, 2], rows: rows, step: "run selection")
         rightClickCenter(rows.element(boundBy: 1))
-        let parallelize = app.menuItems["Parallelize 3 selected"]
+        let parallelize = app.menuItems["Parallelize 3 Selected"]
         XCTAssertTrue(parallelize.waitForExistence(timeout: 5), "parallelize menu item missing")
         XCTAssertTrue(parallelize.isEnabled)
         parallelize.click()
@@ -46,10 +46,10 @@ final class SelectionTransformScene: SceneBase {
 
         select([0, 2], rows: rows, step: "sibling selection")
         rightClickCenter(rows.element(boundBy: 0))
-        let merge = app.menuItems["Merge 2 selected"]
+        let merge = app.menuItems["Merge 2 Selected"]
         XCTAssertTrue(merge.waitForExistence(timeout: 5), "merge menu item missing")
         XCTAssertTrue(merge.isEnabled, "parallelized changes should be independent heads")
-        let stillChained = app.menuItems["Parallelize 2 selected"]
+        let stillChained = app.menuItems["Parallelize 2 Selected"]
         XCTAssertTrue(stillChained.waitForExistence(timeout: 5))
         XCTAssertFalse(stillChained.isEnabled, "siblings must not stay parallelizable")
         app.typeKey(.escape, modifierFlags: [])
@@ -58,7 +58,7 @@ final class SelectionTransformScene: SceneBase {
         let beforeMerge = rows.allElementsBoundByIndex.map(\.identifier)
         let firstParentPrefix = String(rows.element(boundBy: 2).identifier.dropFirst("dag.row.".count).prefix(8))
         rightClickCenter(rows.element(boundBy: 0))
-        let mergeThree = app.menuItems["Merge 3 selected"]
+        let mergeThree = app.menuItems["Merge 3 Selected"]
         XCTAssertTrue(mergeThree.waitForExistence(timeout: 5))
         mergeThree.hover()
         let choice = app.menuItems.matching(NSPredicate(format: "title BEGINSWITH %@", firstParentPrefix)).firstMatch

@@ -854,7 +854,7 @@ impl JayJayRepo {
         self.inner.absorb(&rev)
     }
 
-    fn revert_change(&self, rev: String) -> Result<(), JayError> {
+    fn revert_change(&self, rev: String) -> Result<String, JayError> {
         self.inner.revert_change(&rev)
     }
 
@@ -862,7 +862,7 @@ impl JayJayRepo {
         self.inner.merge(&parent_revs)
     }
 
-    fn duplicate(&self, rev: String) -> Result<(), JayError> {
+    fn duplicate(&self, rev: String) -> Result<String, JayError> {
         self.inner.duplicate(&rev)
     }
 
@@ -886,9 +886,8 @@ impl JayJayRepo {
         self.inner.abandon_many(&revs)
     }
 
-    fn rebase(&self, rev: String, dest: String, mode: RebaseMode) -> Result<(), JayError> {
-        self.inner.rebase(&rev, &dest, mode)?;
-        Ok(())
+    fn rebase(&self, rev: String, dest: String, mode: RebaseMode) -> Result<String, JayError> {
+        self.inner.rebase(&rev, &dest, mode)
     }
 
     fn rebase_many(&self, revs: Vec<String>, dest: String) -> Result<(), JayError> {

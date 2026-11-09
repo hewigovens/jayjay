@@ -58,6 +58,12 @@ struct RepoContentView: View {
                     }
                 }
             }
+            .onChange(of: availableMenuShortcuts, initial: true) { _, shortcuts in
+                menuCoordinator.availableShortcuts = shortcuts
+            }
+            .onChange(of: viewModel.hasWebRemote, initial: true) { _, hasWebRemote in
+                menuCoordinator.canViewRemoteRepository = hasWebRemote
+            }
             .onChange(of: viewModel.revset) {
                 showSidebar()
             }
@@ -126,6 +132,10 @@ struct RepoContentView: View {
             .onDisappear {
                 viewModel.setBackgroundRefreshSuspended(false)
             }
+    }
+
+    private var availableMenuShortcuts: Set<AppShortcut> {
+        availableShortcuts(among: RepositoryCommands.menuShortcuts)
     }
 
     private var contentLayout: some View {

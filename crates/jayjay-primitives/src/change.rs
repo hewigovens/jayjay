@@ -107,6 +107,9 @@ pub struct ChangeInfo {
     pub is_empty: bool,
     pub is_immutable: bool,
     pub is_divergent: bool,
+    /// Whether the first parent, the one squashing folds into, is immutable.
+    #[serde(default)]
+    pub has_immutable_parent: bool,
     pub new_change: NewChangeEligibility,
 }
 
@@ -231,6 +234,7 @@ mod change_info_tests {
             is_empty: false,
             is_immutable: false,
             is_divergent: false,
+            has_immutable_parent: false,
             new_change: NewChangeEligibility {
                 on_top: true,
                 before: true,

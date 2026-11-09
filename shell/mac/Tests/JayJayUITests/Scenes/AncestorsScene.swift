@@ -10,7 +10,7 @@ final class AncestorsScene: SceneBase {
         XCTAssertTrue(newer.exists)
 
         rightClickCenter(target)
-        app.menuItems["Show ancestors…"].click()
+        app.menuItems["Show Ancestors…"].click()
         XCTAssertTrue(newer.waitForNonExistence(timeout: 10))
         XCTAssertTrue(target.isSelected)
         XCTAssertTrue(rows.matching(NSPredicate(format: "value CONTAINS %@", "initial")).firstMatch.exists)

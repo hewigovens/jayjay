@@ -53,6 +53,16 @@ impl Repo {
                 (is_immutable, has_immutable_child)
             }
         };
+        let has_immutable_parent =
+            commit
+                .parent_ids()
+                .first()
+                .is_some_and(|parent| match immutable_ids {
+                    Some(ids) => ids.commits.contains(&parent.hex()),
+                    None => self.commit(repo, parent).is_ok_and(|parent| {
+                        self.is_commit_immutable(repo, &parent).unwrap_or(false)
+                    }),
+                });
         let has_children = !repo.view().heads().contains(commit.id());
         let discardable_working_copy = is_working_copy
             && is_empty
@@ -89,6 +99,7 @@ impl Repo {
             is_empty,
             is_immutable,
             is_divergent,
+            has_immutable_parent,
             new_change,
         }
     }

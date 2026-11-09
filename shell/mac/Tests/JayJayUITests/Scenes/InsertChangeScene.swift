@@ -13,8 +13,8 @@ final class InsertChangeScene: SceneBase {
         let originalTopId = try XCTUnwrap(originalIds.first)
 
         rows.element(boundBy: 0).rightClick()
-        let insertBefore = app.menuItems["New change before"]
-        XCTAssertTrue(insertBefore.waitForExistence(timeout: 3), "\"New change before\" menu item missing")
+        let insertBefore = app.menuItems["New Change Before"]
+        XCTAssertTrue(insertBefore.waitForExistence(timeout: 3), "\"New Change Before\" menu item missing")
         insertBefore.click()
 
         let predicate = NSPredicate { _, _ in

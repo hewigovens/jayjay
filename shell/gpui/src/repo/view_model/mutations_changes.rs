@@ -158,11 +158,12 @@ impl RepoViewModel {
         rev: String,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+        let task = self.repo_result_task(
             cx,
             move |repo| repo.duplicate(&rev),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
-        )
+            |vm, result: &String, cx| vm.refresh_selecting_revision(Some(result), cx),
+        );
+        cx.spawn(async move |_, _| task.await.map(drop))
     }
 
     pub(crate) fn absorb_change(
@@ -182,11 +183,12 @@ impl RepoViewModel {
         rev: String,
         cx: &mut Context<Self>,
     ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+        let task = self.repo_result_task(
             cx,
             move |repo| repo.revert_change(&rev),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
-        )
+            |vm, result: &String, cx| vm.refresh_selecting_revision(Some(result), cx),
+        );
+        cx.spawn(async move |_, _| task.await.map(drop))
     }
 
     pub(crate) fn fix_changes(

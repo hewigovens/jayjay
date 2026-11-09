@@ -6,6 +6,7 @@ private struct RepoRebaseRefreshResult {
     let selectedChange: ChangeDetail?
     let workingCopyChangeId: String
     let workingCopyDescription: String
+    let moved: Bool
     let hadConflicts: Bool
     let operationId: String?
     let context: RepoRefreshContext
@@ -24,6 +25,15 @@ extension RepoViewModel {
             MainActor.assumeIsolated { onFailure(self, Localized.Repo.rebaseCancelledTheChangesMovedWhile) }
             return
         }
+        rebase(request.command, onFailure: onFailure)
+    }
+
+    func rebase(
+        _ command: RepoRebaseCommand,
+        onFailure: @escaping @MainActor (RepoViewModel, String) -> Void = { viewModel, message in
+            viewModel.error = message
+        }
+    ) {
         lastInternalMutationAt = Date()
         isRefreshingInFlight = true
         error = nil
@@ -32,7 +42,7 @@ extension RepoViewModel {
         runRepoTask { [requestedRevset = revset, includeSubmoduleStatuses] repo in
             try Self.rebaseAndReload(
                 repo: repo,
-                request: request,
+                command: command,
                 revset: requestedRevset,
                 includeSubmoduleStatuses: includeSubmoduleStatuses
             )
@@ -55,8 +65,8 @@ extension RepoViewModel {
             viewModel.resumePendingBackgroundRefresh()
 
             viewModel.actionNotice = RepoActionNotice(
-                message: Self.rebaseMessage(for: request, hadConflicts: result.hadConflicts),
-                undoOperationId: result.operationId
+                message: command.feedbackMessage(moved: result.moved, hadConflicts: result.hadConflicts),
+                undoOperationId: result.moved ? result.operationId : nil
             )
         } onFailure: { viewModel, error in
             viewModel.isLoading = false
@@ -68,49 +78,45 @@ extension RepoViewModel {
 
     private static func rebaseAndReload(
         repo: JayJayRepo,
-        request: DAGRebaseRequest,
+        command: RepoRebaseCommand,
         revset: String,
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRebaseRefreshResult {
-        let rebasedChangeIds = try request.selectionCommitIds.isEmpty
-            ? [request.sourceChangeId]
-            : request.selectionCommitIds.map { try repo.showSummary(rev: $0).info.changeId.id }
-        let operationId = try trackingOperation(repo: repo) { repo in
-            if request.selectionCommitIds.isEmpty {
-                _ = try repo.rebase(rev: request.sourceRev, dest: request.destRev, mode: .source)
-            } else {
-                try repo.rebaseMany(revs: request.selectionCommitIds, dest: request.destRev)
+        let source = try repo.showSummary(rev: command.sourceRev).info
+        let tracked = try trackingOperation(repo: repo) { repo -> (moved: Bool, preferredRev: String, rebasedRevset: String) in
+            if command.selectionRevs.isEmpty {
+                let rebased = try repo.rebase(rev: command.sourceRev, dest: command.destRev, mode: command.mode)
+                let revset = command.mode == .branch ? "(\(command.destRev))..\(rebased)" : rebased
+                return (rebased != source.commitId.id, rebased, revset)
             }
-        }.operationId
+            let rebasedChangeIds = try command.selectionRevs.map { try repo.showSummary(rev: $0).info.changeId.id }
+            try repo.rebaseMany(revs: command.selectionRevs, dest: command.destRev)
+            return (true, source.changeId.id, rebasedChangeIds.joined(separator: " | "))
+        }
+        let (moved, preferredRev, rebasedRevset) = tracked.result
+        let operationId = tracked.operationId
         try repo.refreshWorkingCopy()
 
         let graph = try repo.logGraphWithLayout(revset: revset)
-        let graphEntries = graph.entries
-        let log = graphEntries.map(\.change)
+        let log = graph.entries.map(\.change)
         let selectedChange = try loadSelectedDetail(
             repo: repo,
             log: log,
-            preferredRev: request.sourceChangeId,
+            preferredRev: preferredRev,
             includeSubmoduleStatuses: includeSubmoduleStatuses
         )
         let workingCopy = log.first(where: { $0.isWorkingCopy })
-        let hadConflicts = try repo.log(revset: rebasedChangeIds.joined(separator: " | "))
-            .contains(where: \.hasConflict)
+        let hadConflicts = try moved && repo.log(revset: rebasedRevset).contains(where: \.hasConflict)
 
         return try RepoRebaseRefreshResult(
             graph: graph,
             selectedChange: selectedChange,
             workingCopyChangeId: workingCopy?.changeId.id ?? "",
             workingCopyDescription: workingCopy?.description ?? "",
+            moved: moved,
             hadConflicts: hadConflicts,
             operationId: operationId,
             context: RepoRefreshContext(repo: repo)
         )
-    }
-
-    private static func rebaseMessage(for request: DAGRebaseRequest, hadConflicts: Bool) -> String {
-        let base = Localized.Repo.rebasedOnto(source: request.sourceLabel, destination: request.destLabel)
-        guard hadConflicts else { return base }
-        return Localized.Repo.rebasedWithConflicts(message: base)
     }
 }

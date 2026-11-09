@@ -167,9 +167,9 @@ api! {
         fn rebase_many(revs: Strings, dest: Text) -> ();
         fn squash_many(revs: Strings) -> String;
         fn merge(parent_revs: Strings) -> ();
-        fn duplicate(rev: Text) -> ();
+        fn duplicate(rev: Text) -> String;
         fn absorb(rev: Text) -> MutationEffect;
-        fn revert_change(rev: Text) -> ();
+        fn revert_change(rev: Text) -> String;
         fn split(rev: Text, paths: Strings, message: Text, parallel: bool) -> ();
         fn evolog(rev: Text) -> Vec<EvologEntry>;
         fn log(revset_str: Text) -> Vec<ChangeInfo>;

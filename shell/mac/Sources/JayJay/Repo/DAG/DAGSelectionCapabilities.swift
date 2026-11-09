@@ -16,7 +16,8 @@ final class DAGSelectionCapabilities {
             canParallelize: false,
             canFix: false,
             canRebaseOnto: [],
-            canMergeWith: []
+            canMergeWith: [],
+            availableCommands: []
         )
         rowByCommitId = [:]
     }
@@ -29,24 +30,8 @@ final class DAGSelectionCapabilities {
         )
     }
 
-    var canAbandon: Bool {
-        state.canAbandon
-    }
-
-    var canSquash: Bool {
-        state.canSquash
-    }
-
-    var canMerge: Bool {
-        state.canMerge
-    }
-
-    var canParallelize: Bool {
-        state.canParallelize
-    }
-
-    var canFix: Bool {
-        state.canFix
+    func isAvailable(_ command: SelectionCommand) -> Bool {
+        state.availableCommands.contains(command)
     }
 
     func canRebase(onto change: ChangeInfo) -> Bool {

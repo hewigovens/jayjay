@@ -310,7 +310,7 @@ fn show_ancestors_preserves_target_and_returns_to_custom_filter(cx: &mut TestApp
     let action = view.read_with(cx, |view, cx| {
         view.build_change_menu(&target, cx)
             .into_iter()
-            .find(|item| item.label.as_ref() == "Show ancestors…")
+            .find(|item| item.label.as_ref() == "Show Ancestors…")
             .expect("ancestors menu item")
             .action
     });

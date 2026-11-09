@@ -2,35 +2,47 @@ import AppKit
 import JayJayCore
 
 extension RepoContentView {
-    private func canPerformShortcut(_ shortcut: AppShortcut) -> Bool {
-        guard NSApp.keyWindow?.representedURL?.repositoryLocationPath == viewModel.repoPath || commandPanel.isKeyWindow,
-              modal == nil, !viewModel.isLoading else { return false }
-        let change = viewModel.selectedChangeId.flatMap { viewModel.change(for: $0) }
-        switch shortcut {
-            case .fetch: return !viewModel.isPullingInFlight
-            case .push: return !viewModel.isPushingInFlight
-            case .newChange, .newBookmark, .showEvolution: return change != nil
-            case .editChange: return change?.isImmutable == false
-            case .describeChange: return change?.isImmutable == false && change?.isWorkingCopy == false
-            case .squashChange:
-                guard let change, !change.isImmutable, let parent = change.parents.first else { return false }
-                return viewModel.change(for: parent)?.isImmutable != true
-            default: return true
-        }
+    /// The shortcuts that would act now; the Repository menu reads these for the window it targets.
+    func availableShortcuts(among shortcuts: [AppShortcut]) -> Set<AppShortcut> {
+        guard modal == nil, !viewModel.isLoading else { return [] }
+        let selected = viewModel.selectedChangeId.flatMap(viewModel.change(for:))
+        let selectedCommands = selected.map { availableChangeCommands(change: $0) } ?? []
+        return Set(shortcuts.filter { shortcut in
+            if shortcut == .rebaseOntoTrunk, viewModel.selectedChangeIds.count > 1 {
+                return viewModel.selectionCapabilities.isAvailable(.rebaseOntoTrunk)
+            }
+            if let command = shortcut.changeCommand {
+                guard selected == nil else { return selectedCommands.contains(command) }
+                return shortcutTarget(for: command).map { availableChangeCommands(change: $0).contains(command) } ?? false
+            }
+            switch shortcut {
+                case .fetch: return !viewModel.isPullingInFlight
+                case .push: return !viewModel.isPushingInFlight
+                default: return true
+            }
+        })
     }
 
     func performShortcut(_ shortcut: AppShortcut) {
-        guard canPerformShortcut(shortcut) else { return }
+        guard NSApp.keyWindow?.representedURL?.repositoryLocationPath == viewModel.repoPath || commandPanel.isKeyWindow,
+              availableShortcuts(among: [shortcut]).contains(shortcut) else { return }
+        if shortcut == .rebaseOntoTrunk, viewModel.selectedChangeIds.count > 1 {
+            handleDAGRequest(.rebaseSelectionOntoTrunk(revisions: viewModel.selectedChangeIds))
+            return
+        }
+        if let command = shortcut.changeCommand {
+            if let change = shortcutTarget(for: command) {
+                command.perform(on: change, actions: viewModel, onRequest: handleDAGRequest)
+            }
+            return
+        }
         switch shortcut {
             case .refresh: viewModel.refresh()
             case .fetch: viewModel.gitFetch()
             case .push: viewModel.gitPush(bookmark: "")
-            case .rebaseOntoTrunk: viewModel.rebase(rev: "@", dest: "trunk()", mode: .branch)
             case .bisect: modal = .bisect(good: "trunk()", bad: "")
             case .cleanUpStaleBookmarks: viewModel.forgetStaleBookmarks()
-            case .toggleSideBySide, .toggleIgnoreWhitespace, .toggleTreeFileList:
-                performDisplayShortcut(shortcut)
-            default: performSelectionShortcut(shortcut)
+            default: performDisplayShortcut(shortcut)
         }
     }
 
@@ -43,16 +55,9 @@ extension RepoContentView {
         }
     }
 
-    private func performSelectionShortcut(_ shortcut: AppShortcut) {
-        guard let selection = viewModel.selectedChangeId, let change = viewModel.change(for: selection) else { return }
-        switch shortcut {
-            case .newChange: viewModel.newChange(parent: selection)
-            case .editChange: viewModel.edit(rev: selection)
-            case .describeChange: modal = .editDescription(rev: selection, description: change.description)
-            case .squashChange: viewModel.squash(rev: selection)
-            case .newBookmark: presentBookmarkCreate(rev: selection)
-            case .showEvolution: viewModel.showEvolog(rev: selection)
-            default: break
-        }
+    /// Rebase onto Trunk falls back to the working copy when nothing is selected; the other change commands need a selection.
+    private func shortcutTarget(for command: ChangeCommand) -> ChangeInfo? {
+        viewModel.selectedChangeId.flatMap(viewModel.change(for:))
+            ?? (command == .rebaseOntoTrunk ? viewModel.changes.first(where: \.isWorkingCopy) : nil)
     }
 }

@@ -28,8 +28,8 @@ final class NewChangeScene: SceneBase {
             "add feature row missing"
         )
         target.rightClick()
-        let newChange = app.windows.menuItems["New change on top"]
-        XCTAssertTrue(newChange.waitForExistence(timeout: 3), "\"New change on top\" menu item missing")
+        let newChange = app.windows.menuItems["New Change on Top"]
+        XCTAssertTrue(newChange.waitForExistence(timeout: 3), "\"New Change on Top\" menu item missing")
         newChange.click()
 
         // The new @ should have a different change-id and an empty commit box.

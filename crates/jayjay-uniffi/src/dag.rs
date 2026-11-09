@@ -1,10 +1,11 @@
 use std::collections::HashMap;
 use std::sync::Arc;
 
-use jayjay_core::GraphEntry;
 use jayjay_core::dag::{
-    self, DagLayout, OrderedSelection, SelectionClick, SelectionGraph, SelectionState,
+    self, ChangeCommand, DagLayout, OrderedSelection, SelectionClick, SelectionCommand,
+    SelectionGraph, SelectionState,
 };
+use jayjay_core::{ChangeInfo, GraphEntry};
 
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct DagLayoutData {
@@ -76,6 +77,81 @@ impl DagSelectionGraph {
             last_row: span.last_row as u32,
         })
     }
+}
+
+#[uniffi::remote(Enum)]
+pub enum ChangeCommand {
+    NewChange,
+    NewChangeBefore,
+    NewChangeAfter,
+    Edit,
+    Describe,
+    SquashIntoParent,
+    MoveChangesToWorkingCopy,
+    RebaseOntoTrunk,
+    Fix,
+    CreateBookmark,
+    CreateTag,
+    ShowEvolution,
+    Duplicate,
+    Absorb,
+    Revert,
+    Abandon,
+}
+
+#[uniffi::remote(Enum)]
+pub enum SelectionCommand {
+    Merge,
+    Squash,
+    Parallelize,
+    Fix,
+    RebaseOntoTrunk,
+    Abandon,
+}
+
+#[uniffi::export]
+fn change_commands() -> Vec<ChangeCommand> {
+    ChangeCommand::ALL.to_vec()
+}
+
+#[uniffi::export]
+fn available_change_commands(change: ChangeInfo) -> Vec<ChangeCommand> {
+    ChangeCommand::available(&change)
+}
+
+#[uniffi::export]
+fn change_command_title(command: ChangeCommand) -> String {
+    command.title()
+}
+
+#[uniffi::export]
+fn change_command_accelerator(command: ChangeCommand) -> Option<String> {
+    command.accelerator().map(String::from)
+}
+
+#[uniffi::export]
+fn change_command_shortcut_id(command: ChangeCommand) -> Option<String> {
+    command.shortcut().map(|shortcut| shortcut.id().to_owned())
+}
+
+#[uniffi::export]
+fn selection_commands() -> Vec<SelectionCommand> {
+    SelectionCommand::ALL.to_vec()
+}
+
+#[uniffi::export]
+fn selection_command_title(command: SelectionCommand, count: u32) -> String {
+    command.title(count as usize)
+}
+
+#[uniffi::export]
+fn selection_command_accelerator(command: SelectionCommand) -> Option<String> {
+    command.accelerator().map(String::from)
+}
+
+#[uniffi::export]
+fn selection_command_help(command: SelectionCommand, available: bool) -> String {
+    command.help(available)
 }
 
 #[uniffi::export]

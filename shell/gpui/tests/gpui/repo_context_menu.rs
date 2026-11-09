@@ -7,7 +7,7 @@ use jayjay_gpui::app::config;
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
 
-const NEW_CHANGE: &str = "New change on top";
+const NEW_CHANGE: &str = "New Change on Top";
 const COPY_PATH: &str = "Copy Path";
 
 #[gpui::test]
@@ -150,7 +150,7 @@ fn keyboard_menu_reveals_a_selected_change_scrolled_out_of_view(cx: &mut TestApp
         .debug_bounds(row_selector)
         .expect("opening the menu reveals the selected change");
     let menu = cx
-        .debug_bounds("context-menu-New change on top")
+        .debug_bounds("context-menu-New Change on Top")
         .expect("menu opened");
     assert!(menu.top() >= row.top(), "menu anchors to the revealed row");
 }

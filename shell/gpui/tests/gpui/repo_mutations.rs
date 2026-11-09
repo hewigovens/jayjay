@@ -39,8 +39,8 @@ fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestA
     );
     settle_visual(cx);
     assert!(menu_shows(cx, "Duplicate"));
-    assert!(menu_shows(cx, "Absorb into ancestors"));
-    assert!(menu_shows(cx, "Revert change"));
+    assert!(menu_shows(cx, "Absorb into Ancestors"));
+    assert!(menu_shows(cx, "Revert Change"));
 }
 
 #[gpui::test]
@@ -271,18 +271,18 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
         let menu = view.build_change_menu(&clicked, cx);
         let labels: Vec<_> = menu.iter().map(|item| item.label.to_string()).collect();
         for expected in [
-            "New change before",
-            "New change after",
-            "Edit (modify this change)",
-            "Squash into parent",
-            "Move changes to working copy",
-            "Rebase selected onto this",
-            "Squash selected into this",
-            "Merge with selected",
-            "Create bookmark here…",
-            "Create tag here…",
+            "New Change Before",
+            "New Change After",
+            "Edit Change",
+            "Squash into Parent",
+            "Move Changes to Working Copy",
+            "Rebase Selected onto This",
+            "Squash Selected into This",
+            "Merge with Selected",
+            "Create Bookmark Here…",
+            "Create Tag Here…",
             "Create / Update Stacked PRs…",
-            "Show evolution…",
+            "Show Evolution…",
             "Copy Change ID",
             "Copy Commit ID",
             "More Actions",
@@ -293,9 +293,9 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
             );
         }
         let position = |label: &str| labels.iter().position(|item| item == label).unwrap();
-        assert!(position("Edit (modify this change)") < position("Create bookmark here…"));
-        assert!(position("Create bookmark here…") < position("Show evolution…"));
-        assert!(position("Show evolution…") < position("Copy Change ID"));
+        assert!(position("Edit Change") < position("Create Bookmark Here…"));
+        assert!(position("Create Bookmark Here…") < position("Show Evolution…"));
+        assert!(position("Show Evolution…") < position("Copy Change ID"));
         assert!(position("Copy Change ID") < position("Copy Commit ID"));
         assert!(position("Copy Commit ID") < position("More Actions"));
         let more_actions = menu
@@ -308,56 +308,16 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
                 .iter()
                 .map(|item| item.label.as_ref())
                 .collect::<Vec<_>>(),
-            ["Duplicate", "Absorb into ancestors", "Revert change"]
+            ["Duplicate", "Absorb into Ancestors", "Revert Change"]
         );
         assert!(
             !menu
                 .iter()
-                .find(|item| item.label.as_ref() == "Merge with selected")
+                .find(|item| item.label.as_ref() == "Merge with Selected")
                 .expect("merge action")
                 .enabled,
             "ancestor and descendant changes are not independent merge heads"
         );
-    });
-}
-
-#[gpui::test]
-fn change_menu_hides_squash_when_parent_is_immutable(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    install_test_globals(cx);
-    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
-    settle(cx);
-
-    view.update(cx, |view, cx| {
-        let clicked = view
-            .view_model()
-            .read(cx)
-            .graph
-            .changes
-            .iter()
-            .find(|change| change.description.trim() == "add feature")
-            .expect("add feature change")
-            .clone();
-        let parent_id = clicked.parents.first().expect("first parent").clone();
-        view.view_model().update(cx, |vm, _| {
-            Arc::make_mut(&mut vm.graph.changes)
-                .iter_mut()
-                .find(|change| change.commit_id.id == parent_id)
-                .expect("visible parent")
-                .is_immutable = true;
-        });
-
-        let labels: Vec<_> = view
-            .build_change_menu(&clicked, cx)
-            .iter()
-            .map(|item| item.label.to_string())
-            .collect();
-        assert!(
-            labels
-                .iter()
-                .any(|label| label == "Edit (modify this change)")
-        );
-        assert!(!labels.iter().any(|label| label == "Squash into parent"));
     });
 }
 
@@ -385,43 +345,12 @@ fn immutable_change_menu_keeps_read_only_evolution_action(cx: &mut TestAppContex
             .map(|item| item.label.to_string())
             .collect::<Vec<_>>();
 
-        assert!(labels.iter().any(|label| label == "Show evolution…"));
+        assert!(labels.iter().any(|label| label == "Show Evolution…"));
         assert!(
             !labels
                 .iter()
                 .any(|label| label == "Create / Update Stacked PRs…")
         );
-    });
-}
-
-#[gpui::test]
-fn change_menu_keeps_squash_when_parent_is_outside_loaded_page(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    install_test_globals(cx);
-    let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
-    settle(cx);
-
-    view.update(cx, |view, cx| {
-        let clicked = view
-            .view_model()
-            .read(cx)
-            .graph
-            .changes
-            .iter()
-            .find(|change| change.description.trim() == "add feature")
-            .expect("add feature change")
-            .clone();
-        let parent_id = clicked.parents.first().expect("first parent").clone();
-        view.view_model().update(cx, |vm, _| {
-            Arc::make_mut(&mut vm.graph.changes).retain(|change| change.commit_id.id != parent_id);
-        });
-
-        let labels: Vec<_> = view
-            .build_change_menu(&clicked, cx)
-            .iter()
-            .map(|item| item.label.to_string())
-            .collect();
-        assert!(labels.iter().any(|label| label == "Squash into parent"));
     });
 }
 

@@ -71,6 +71,7 @@ pub struct RepositoryContext {
     pub workspaces: Option<Vec<WorkspaceInfo>>,
     pub trunk_name: String,
     pub pr_host_name: Option<String>,
+    pub has_web_remote: bool,
     pub upload_title: Option<String>,
     pub gerrit_update_title: Option<String>,
     pub fix_unavailable_reason: Option<String>,

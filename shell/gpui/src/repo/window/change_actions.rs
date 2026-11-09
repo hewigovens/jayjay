@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use gpui::{App, Context};
 use jayjay_core::compare;
-use jayjay_core::dag::MergeParentChoice;
+use jayjay_core::dag::{ChangeCommand, MergeParentChoice, SelectionCommand};
 use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect, RebaseMode};
 
 use super::RepoWindow;
@@ -144,6 +144,19 @@ impl RepoWindow {
             )
             .with_enabled(vm.selection_state().can_fix)
             .with_disabled_reason(vm.fix_unavailable_reason.clone()),
+            ContextMenuItem::new(
+                SelectionCommand::RebaseOntoTrunk.title(count),
+                glyph::ARROW_UP,
+                change_action(ChangeAction::RebaseMany {
+                    revs: revisions.clone(),
+                    dest: "trunk()".to_owned(),
+                }),
+            )
+            .with_enabled(
+                vm.selection_state()
+                    .available_commands
+                    .contains(&SelectionCommand::RebaseOntoTrunk),
+            ),
             ContextMenuItem::separator(),
             ContextMenuItem::new(
                 jayjay_i18n::menu::abandon_selected(count),
@@ -170,16 +183,7 @@ impl RepoWindow {
 
     fn build_single_change_menu(&self, change: &ChangeInfo, cx: &App) -> Vec<ContextMenuItem> {
         let rev = change.selection_revision().to_owned();
-        let can_squash_into_parent = {
-            let vm = self.vm.read(cx);
-            change.parents.first().is_some_and(|parent_id| {
-                vm.graph
-                    .changes
-                    .iter()
-                    .find(|parent| parent.commit_id.id == *parent_id)
-                    .is_none_or(|parent| !parent.is_immutable)
-            })
-        };
+        let available = |command: ChangeCommand| command.is_available(change);
         let (bookmark_diff, selected_rev, compare_with_selected, divergent_compares) = {
             let vm = self.vm.read(cx);
             let selected = if vm.has_multiple_change_selection() {
@@ -212,16 +216,16 @@ impl RepoWindow {
             ));
             items.push(ContextMenuItem::separator());
         }
-        if change.new_change.on_top {
+        if available(ChangeCommand::NewChange) {
             items.push(ContextMenuItem::new(
-                jayjay_i18n::menu::new_change_on_top(),
+                ChangeCommand::NewChange.title(),
                 glyph::PLUS,
                 ContextAction::NewChangeOnTop(rev.clone().into()),
             ));
         }
-        if change.new_change.before {
+        if available(ChangeCommand::NewChangeBefore) {
             items.push(ContextMenuItem::new(
-                jayjay_i18n::menu::new_change_before(),
+                ChangeCommand::NewChangeBefore.title(),
                 glyph::ARROW_DOWN,
                 change_action(ChangeAction::Insert {
                     rev: rev.clone(),
@@ -229,9 +233,9 @@ impl RepoWindow {
                 }),
             ));
         }
-        if change.new_change.after {
+        if available(ChangeCommand::NewChangeAfter) {
             items.push(ContextMenuItem::new(
-                jayjay_i18n::menu::new_change_after(),
+                ChangeCommand::NewChangeAfter.title(),
                 glyph::ARROW_UP,
                 change_action(ChangeAction::Insert {
                     rev: rev.clone(),
@@ -240,47 +244,49 @@ impl RepoWindow {
             ));
         }
         items.push(ContextMenuItem::separator());
-        if !change.is_immutable {
+        if available(ChangeCommand::Edit) {
             items.push(ContextMenuItem::new(
-                jayjay_i18n::menu::edit_modify_this_change(),
+                ChangeCommand::Edit.title(),
                 glyph::PENCIL,
                 change_action(ChangeAction::Edit { rev: rev.clone() }),
             ));
-            if !change.is_working_copy {
-                items.push(ContextMenuItem::new(
-                    jayjay_i18n::menu::describe_ellipsis(),
-                    glyph::EDIT_CODE,
-                    ContextAction::EditDescription {
-                        rev: rev.clone().into(),
-                        description: change.description.clone().into(),
-                    },
-                ));
-            }
-            if can_squash_into_parent {
-                items.push(ContextMenuItem::new(
-                    jayjay_i18n::menu::squash_into_parent(),
+        }
+        if available(ChangeCommand::Describe) {
+            items.push(ContextMenuItem::new(
+                ChangeCommand::Describe.title(),
+                glyph::EDIT_CODE,
+                ContextAction::EditDescription {
+                    rev: rev.clone().into(),
+                    description: change.description.clone().into(),
+                },
+            ));
+        }
+        if available(ChangeCommand::SquashIntoParent) {
+            items.push(ContextMenuItem::new(
+                ChangeCommand::SquashIntoParent.title(),
+                glyph::ARROW_DOWN,
+                change_action(ChangeAction::Squash {
+                    rev: rev.clone(),
+                    into: None,
+                }),
+            ));
+        }
+        if available(ChangeCommand::MoveChangesToWorkingCopy) {
+            items.push(
+                ContextMenuItem::new(
+                    ChangeCommand::MoveChangesToWorkingCopy.title(),
                     glyph::ARROW_DOWN,
                     change_action(ChangeAction::Squash {
                         rev: rev.clone(),
-                        into: None,
+                        into: Some("@".to_owned()),
                     }),
-                ));
-            }
-            if !change.is_working_copy {
-                items.push(
-                    ContextMenuItem::new(
-                        jayjay_i18n::menu::move_changes_to_working_copy(),
-                        glyph::ARROW_DOWN,
-                        change_action(ChangeAction::Squash {
-                            rev: rev.clone(),
-                            into: Some("@".to_owned()),
-                        }),
-                    )
-                    .with_shortcut('m'),
-                );
-            }
+                )
+                .with_shortcut('m'),
+            );
+        }
+        if available(ChangeCommand::RebaseOntoTrunk) {
             items.push(ContextMenuItem::new(
-                jayjay_i18n::menu::rebase_onto_trunk(),
+                ChangeCommand::RebaseOntoTrunk.title(),
                 glyph::ARROW_UP,
                 change_action(ChangeAction::RebaseOntoTrunk { rev: rev.clone() }),
             ));
@@ -368,12 +374,12 @@ impl RepoWindow {
 
         items.push(ContextMenuItem::separator());
         items.push(ContextMenuItem::new(
-            jayjay_i18n::menu::create_bookmark_here_ellipsis(),
+            ChangeCommand::CreateBookmark.title(),
             glyph::BOOKMARK,
             ContextAction::CreateBookmark(rev.clone().into()),
         ));
         items.push(ContextMenuItem::new(
-            jayjay_i18n::menu::create_tag_here_ellipsis(),
+            ChangeCommand::CreateTag.title(),
             glyph::TAG,
             ContextAction::CreateTag(change.commit_id.id.clone().into()),
         ));
@@ -412,7 +418,7 @@ impl RepoWindow {
             ContextAction::ShowAncestors(change.commit_id.id.clone().into()),
         ));
         items.push(ContextMenuItem::new(
-            jayjay_i18n::menu::show_evolution_ellipsis(),
+            ChangeCommand::ShowEvolution.title(),
             glyph::HISTORY,
             ContextAction::OpenEvologFor(rev.clone().into()),
         ));
@@ -434,19 +440,19 @@ impl RepoWindow {
         ]);
 
         let mut more_actions = vec![ContextMenuItem::new(
-            jayjay_i18n::menu::duplicate(),
+            ChangeCommand::Duplicate.title(),
             glyph::COPY,
             change_action(ChangeAction::Duplicate { rev: rev.clone() }),
         )];
-        if !change.is_immutable {
+        if available(ChangeCommand::Absorb) {
             more_actions.push(ContextMenuItem::new(
-                jayjay_i18n::menu::absorb_into_ancestors(),
+                ChangeCommand::Absorb.title(),
                 glyph::ARROW_DOWN,
                 change_action(ChangeAction::Absorb { rev: rev.clone() }),
             ));
         }
         more_actions.push(ContextMenuItem::new(
-            jayjay_i18n::menu::revert_change(),
+            ChangeCommand::Revert.title(),
             glyph::HISTORY,
             change_action(ChangeAction::Revert { rev: rev.clone() }),
         ));
@@ -464,10 +470,10 @@ impl RepoWindow {
             }),
         ));
 
-        if !change.is_immutable {
+        if available(ChangeCommand::Fix) {
             items.push(
                 ContextMenuItem::new(
-                    jayjay_i18n::menu::run_formatters_jj_fix(),
+                    ChangeCommand::Fix.title(),
                     glyph::BRACES,
                     change_action(ChangeAction::Fix {
                         revs: vec![rev.clone()],
@@ -475,11 +481,13 @@ impl RepoWindow {
                 )
                 .with_disabled_reason(self.vm.read(cx).fix_unavailable_reason.clone()),
             );
+        }
+        if available(ChangeCommand::Abandon) {
             items.push(ContextMenuItem::separator());
             let label = if change.is_divergent {
                 jayjay_i18n::menu::abandon_resolve_divergence()
             } else {
-                jayjay_i18n::menu::abandon()
+                ChangeCommand::Abandon.title()
             };
             items.push(ContextMenuItem::new(
                 label,

@@ -101,7 +101,7 @@ extension RepoViewModel {
     }
 
     func abandon(rev: String) {
-        perform(selecting: "@", undoable: Localized.Repo.abandonedChanges(count: 1), beforeRefresh: { viewModel in
+        perform(selecting: survivingParent(ofAbandoned: [rev]), undoable: Localized.Repo.abandonedChanges(count: 1), beforeRefresh: { viewModel in
             viewModel.applySingleSelectedChange(nil)
         }, {
             try $0.abandon(rev: rev)
@@ -109,15 +109,23 @@ extension RepoViewModel {
     }
 
     func abandon(revs: [String]) {
-        perform(selecting: "@", undoable: Localized.Repo.abandonedChanges(count: revs.count), beforeRefresh: { viewModel in
+        perform(selecting: survivingParent(ofAbandoned: revs), undoable: Localized.Repo.abandonedChanges(count: revs.count), beforeRefresh: { viewModel in
             viewModel.applySingleSelectedChange(nil)
         }, {
             try $0.abandonMany(revs: revs)
         })
     }
 
+    /// Abandoning leaves parents untouched, so their commit ids still resolve after the refresh.
+    private func survivingParent(ofAbandoned revs: [String]) -> String {
+        let abandoned = revs.compactMap { change(for: $0) }
+        let abandonedIds = Set(abandoned.map(\.commitId.id))
+        return abandoned.lazy.flatMap(\.parents).first { !abandonedIds.contains($0) } ?? "@"
+    }
+
     func squash(rev: String) {
-        perform(undoable: Localized.Repo.squashedChanges(count: 1)) { try $0.squash(rev: rev, intoRev: nil) }
+        let destination = change(for: rev)?.parents.first.flatMap { change(for: $0)?.selectionRevision }
+        perform(selecting: destination ?? "@", undoable: Localized.Repo.squashedChanges(count: 1)) { try $0.squash(rev: rev, intoRev: nil) }
     }
 
     func squash(rev: String, into destination: String) {
@@ -186,23 +194,16 @@ extension RepoViewModel {
     }
 
     func revertChange(rev: String) {
-        perform(undoable: Localized.Repo.revertedChange) { try $0.revertChange(rev: rev) }
+        performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.revertedChange }) { try $0.revertChange(rev: rev) }
     }
 
-    func rebase(rev: String, dest: String, mode: RebaseMode) {
-        perform(undoable: Localized.Repo.rebasedChanges(count: 1)) { try $0.rebase(rev: rev, dest: dest, mode: mode) }
-    }
-
-    func rebase(revs: [String], dest: String) {
-        perform(undoable: Localized.Repo.rebasedChanges(count: revs.count)) { try $0.rebaseMany(revs: revs, dest: dest) }
-    }
-
+    /// The merge becomes the working copy.
     func merge(parents: [String]) {
         perform(undoable: Localized.Repo.createdMergeChange) { try $0.merge(parentRevs: parents) }
     }
 
     func duplicate(rev: String) {
-        perform(undoable: Localized.Repo.duplicatedChange) { try $0.duplicate(rev: rev) }
+        performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.duplicatedChange }) { try $0.duplicate(rev: rev) }
     }
 
     func loadOpLog() {

@@ -432,7 +432,7 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
 
     repo.new_change("@", "child change")
         .expect("create child working copy");
-    repo.revert_change("@-").expect("revert parent change");
+    let reverted_id = repo.revert_change("@-").expect("revert parent change");
 
     let current = repo.show("@").expect("show unchanged working copy");
     assert_eq!(current.info.description.trim(), "child change");
@@ -447,6 +447,7 @@ fn revert_change_uses_jj_revert_and_creates_reverse_change() {
         "expected revert description, got {:?}",
         reverted.description
     );
+    assert_eq!(reverted.commit_id.id, reverted_id);
     assert_eq!(reverted.parents, vec![current.info.commit_id.id.clone()]);
     let reverted = repo.show(&reverted.change_id.id).expect("show revert");
     assert_eq!(

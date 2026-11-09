@@ -28,8 +28,8 @@ final class BisectScene: SceneBase {
             initial.click()
         }
         rightClickCenter(feature)
-        let between = app.menuItems["Bisect between"]
-        XCTAssertTrue(between.waitForExistence(timeout: 3), "Bisect between missing")
+        let between = app.menuItems["Bisect Between"]
+        XCTAssertTrue(between.waitForExistence(timeout: 3), "Bisect Between missing")
         between.click()
 
         let good = app.buttons[AID.Bisect.good]

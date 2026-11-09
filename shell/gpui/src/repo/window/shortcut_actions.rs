@@ -5,6 +5,7 @@ use crate::app::actions::{
 };
 use crate::ui::context_menu::ContextAction;
 use gpui::{Context, Div, InteractiveElement};
+use jayjay_core::dag::SelectionCommand;
 use jayjay_core::shortcuts::ShortcutCommand;
 use std::sync::Arc;
 
@@ -32,10 +33,35 @@ impl RepoWindow {
             view.run_shortcut(ShortcutCommand::ChangesAbandon, cx)
         }))
         .on_action(cx.listener(|view, _: &OpenBisect, _, cx| view.open_bisect_sheet(None, cx)))
-        .on_action(cx.listener(|view, _: &RebaseOntoTrunk, _, cx| {
-            let rev = "@".to_owned();
-            view.run_change_action(Arc::new(ChangeAction::RebaseOntoTrunk { rev }), cx)
-        }))
+        .on_action(
+            cx.listener(|view, _: &RebaseOntoTrunk, _, cx| view.rebase_selection_onto_trunk(cx)),
+        )
+    }
+
+    pub(crate) fn rebase_selection_onto_trunk(&mut self, cx: &mut Context<Self>) {
+        let vm = self.vm.read(cx);
+        if vm.has_multiple_change_selection() {
+            if vm
+                .selection_state()
+                .available_commands
+                .contains(&SelectionCommand::RebaseOntoTrunk)
+            {
+                let revs = vm.selected_revisions();
+                self.run_change_action(
+                    Arc::new(ChangeAction::RebaseMany {
+                        revs,
+                        dest: "trunk()".to_owned(),
+                    }),
+                    cx,
+                );
+            }
+            return;
+        }
+        let rev = vm.selected_change().map_or_else(
+            || "@".to_owned(),
+            |change| change.selection_revision().to_owned(),
+        );
+        self.run_change_action(Arc::new(ChangeAction::RebaseOntoTrunk { rev }), cx)
     }
 
     pub(super) fn run_shortcut(&mut self, command: ShortcutCommand, cx: &mut Context<Self>) {

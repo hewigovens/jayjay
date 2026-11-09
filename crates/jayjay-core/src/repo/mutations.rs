@@ -415,8 +415,8 @@ impl Repo {
         self.commit_transaction_rebase(tx, "merge")
     }
 
-    /// Duplicate a revision (`jj duplicate`).
-    pub fn duplicate(&self, rev: &str) -> JayResult<()> {
+    /// Duplicate a revision (`jj duplicate`), returning the copy's commit id.
+    pub fn duplicate(&self, rev: &str) -> JayResult<String> {
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
         if commits[0].parent_ids().is_empty() {
@@ -427,8 +427,14 @@ impl Repo {
         let descriptions = HashMap::new();
         let duplicated =
             jj_lib::rewrite::duplicate_commits_onto_parents(tx.repo_mut(), &targets, &descriptions);
-        block_on_result("duplicate", duplicated)?;
-        self.commit_transaction(tx, "duplicate")
+        let stats = block_on_result("duplicate", duplicated)?;
+        let copy = stats
+            .duplicated_commits
+            .get(&targets[0])
+            .map(|copy| copy.id().hex())
+            .ok_or_else(|| JayError::internal("duplicate wrote no copy"))?;
+        self.commit_transaction(tx, "duplicate")?;
+        Ok(copy)
     }
 
     /// `jj absorb --from rev`: each hunk moves into the mutable ancestor that last touched those lines; hunks without an unambiguous home stay in the source.
@@ -464,8 +470,8 @@ impl Repo {
         Ok(MutationEffect::Changed)
     }
 
-    /// `jj revert -r rev --onto @`: a new child of `@` whose tree takes back `rev`'s changes.
-    pub fn revert_change(&self, rev: &str) -> JayResult<()> {
+    /// `jj revert -r rev --onto @`: a new child of `@` whose tree takes back `rev`'s changes; returns its commit id.
+    pub fn revert_change(&self, rev: &str) -> JayResult<String> {
         let _write = self.write_guard()?;
         let (repo, commits) = self.snapshot_and_follow_commits(&[rev.to_owned()])?;
         let target = &commits[0];
@@ -503,8 +509,9 @@ impl Repo {
             .new_commit(vec![onto.id().clone()], reverted_tree)
             .set_description(description)
             .write();
-        block_on_result("revert", write)?;
-        self.commit_transaction_rebase(tx, &format!("revert commit {}", target.id().hex()))
+        let reverted = block_on_result("revert", write)?;
+        self.commit_transaction_rebase(tx, &format!("revert commit {}", target.id().hex()))?;
+        Ok(reverted.id().hex())
     }
 
     /// `jj split -r rev -m message -- paths`: the named files become a commit described by `message` that keeps the change id; the rest becomes a new change on top, or a sibling when `parallel`. Workspaces on `rev` move to the remainder.

@@ -11,7 +11,7 @@ final class EvologRestoreScene: SceneBase {
         XCTAssertTrue(rows.element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")
 
         rightClickCenter(rows.element(boundBy: 0))
-        let showEvolution = app.windows.menuItems["Show evolution…"].firstMatch
+        let showEvolution = app.windows.menuItems["Show Evolution…"].firstMatch
         XCTAssertTrue(showEvolution.waitForExistence(timeout: 5), "Show evolution menu item did not appear")
         showEvolution.click()
 

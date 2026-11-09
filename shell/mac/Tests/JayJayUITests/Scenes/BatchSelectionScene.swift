@@ -21,10 +21,10 @@ final class BatchSelectionScene: SceneBase {
         }
 
         rightClickCenter(second)
-        let squash = app.menuItems["Squash 3 selected…"]
+        let squash = app.menuItems["Squash 3 Selected…"]
         XCTAssertTrue(squash.waitForExistence(timeout: 3))
         XCTAssertTrue(squash.isEnabled)
-        let abandon = app.menuItems["Abandon 3 selected…"]
+        let abandon = app.menuItems["Abandon 3 Selected…"]
         XCTAssertTrue(abandon.waitForExistence(timeout: 3))
         XCTAssertTrue(abandon.isEnabled)
         squash.click()
@@ -38,7 +38,7 @@ final class BatchSelectionScene: SceneBase {
         app.buttons["Cancel"].click()
 
         rightClickCenter(destination)
-        let rebase = app.menuItems["Rebase 3 selected onto this"]
+        let rebase = app.menuItems["Rebase 3 Selected onto This"]
         XCTAssertTrue(rebase.waitForExistence(timeout: 3))
         XCTAssertTrue(rebase.isEnabled)
     }

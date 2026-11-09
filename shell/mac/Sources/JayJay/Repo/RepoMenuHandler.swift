@@ -2,13 +2,22 @@ import JayJayCore
 import SwiftUI
 
 @MainActor
+@Observable
 final class RepoMenuHandler: RepositoryMenuHandler {
+    /// Pushed by the window whenever what its shortcuts would act on changes, so the Repository menu disables what would do nothing.
+    var availableShortcuts: Set<AppShortcut> = []
+    var canViewRemoteRepository = false
+
+    func canPerformShortcut(_ shortcut: AppShortcut) -> Bool {
+        availableShortcuts.contains(shortcut)
+    }
+
     func performShortcut(_ shortcut: AppShortcut) {
         onAction?(.shortcut(shortcut))
     }
 
-    var onAction: ((MenuAction) -> Void)?
-    weak var viewModel: RepoViewModel?
+    @ObservationIgnored var onAction: ((MenuAction) -> Void)?
+    @ObservationIgnored weak var viewModel: RepoViewModel?
 
     enum MenuAction {
         case shortcut(AppShortcut)

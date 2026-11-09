@@ -2,56 +2,20 @@ import JayJayCore
 import SwiftUI
 
 extension RepoContentView {
-    func changePaletteItems(selection: String) -> [CommandPaletteItem] {
-        var items: [CommandPaletteItem] = []
-        let short = String(selection.prefix(8))
-        // Safe actions — show selected change ID so user knows the target
-        items.append(CommandPaletteItem(
-            title: Localized.Palette.newChildChange(change: short),
-            icon: "plus.circle",
-            category: Localized.Repo.change,
-            shortcut: AppShortcut.newChange.symbol
-        ) { performShortcut(.newChange) })
-        if viewModel.change(for: selection)?.isImmutable != true {
-            items.append(CommandPaletteItem(
-                title: Localized.Palette.editSwitchTo(change: short),
-                icon: "pencil.circle",
-                category: Localized.Repo.change,
-                shortcut: AppShortcut.editChange.symbol
-            ) { performShortcut(.editChange) })
-            items.append(CommandPaletteItem(
-                title: Localized.Palette.runFormattersOn(change: short),
-                icon: "wand.and.stars",
-                category: Localized.Repo.change,
-                keywords: ["format", "formatter", "fix", "lint"]
-            ) { viewModel.fix(revs: [selection]) })
-        }
-        items.append(CommandPaletteItem(
-            title: Localized.Palette.duplicateChange(change: short),
-            icon: "doc.on.doc",
-            category: Localized.Repo.change
-        ) { viewModel.duplicate(rev: selection) })
-        items.append(CommandPaletteItem(
-            title: Localized.Palette.revertChange(change: short),
-            icon: "arrow.uturn.backward",
-            category: Localized.Repo.change
-        ) { viewModel.revertChange(rev: selection) })
-        items.append(CommandPaletteItem(
-            title: Localized.Palette.showEvolution(change: short),
-            icon: "clock.arrow.circlepath",
-            category: Localized.Repo.change,
-            keywords: ["evolog", "obslog", "history"],
-            shortcut: AppShortcut.showEvolution.symbol
-        ) { performShortcut(.showEvolution) })
-        items.append(CommandPaletteItem(
-            title: Localized.Palette.createBookmarkOn(change: short),
-            icon: "bookmark",
-            category: Localized.Repo.change,
-            shortcut: AppShortcut.newBookmark.symbol
-        ) {
-            performShortcut(.newBookmark)
-        })
-        return items
+    func changePaletteItems(change: ChangeInfo) -> [CommandPaletteItem] {
+        let target = String(change.changeId.id.prefix(8))
+        return availableChangeCommands(change: change)
+            .filter { $0 != .fix || viewModel.fixUnavailableReason == nil }
+            .map { command in
+                CommandPaletteItem(
+                    title: command.title,
+                    icon: command.systemImage,
+                    category: Localized.Repo.change,
+                    detail: target,
+                    keywords: command.paletteKeywords,
+                    shortcut: command.shortcut?.symbol
+                ) { command.perform(on: change, actions: viewModel, onRequest: handleDAGRequest) }
+            }
     }
 
     var multiSelectionPaletteItems: [CommandPaletteItem] {
@@ -59,27 +23,35 @@ extension RepoContentView {
         guard revisions.count > 1 else {
             return []
         }
-        var items: [CommandPaletteItem] = []
-        if viewModel.selectionCapabilities.canParallelize {
-            items.append(CommandPaletteItem(
-                title: Localized.Menu.parallelizeSelected(count: revisions.count),
-                icon: "arrow.triangle.branch",
-                category: Localized.Repo.change,
-                keywords: ["parallel", "independent", "sibling", "split", "stack"]
-            ) {
-                viewModel.parallelize(revs: revisions)
-            })
+        let capabilities = viewModel.selectionCapabilities
+        return selectionCommands()
+            .filter { capabilities.isAvailable($0) && ($0 != .fix || viewModel.fixUnavailableReason == nil) }
+            .flatMap { command in
+                let choices: [(parents: [String], label: String?)] = command == .merge
+                    ? mergeParentChoices(changes: viewModel.changes.filter { revisions.contains($0.selectionRevision) })
+                    .map { ($0.parents, $0.label) }
+                    : [(revisions, nil)]
+                return choices.map { parents, detail in
+                    CommandPaletteItem(
+                        title: command.title(count: revisions.count),
+                        icon: command.systemImage,
+                        category: Localized.Repo.change,
+                        detail: detail,
+                        keywords: ["selection", "stack"]
+                    ) { command.perform(on: parents, actions: viewModel, onRequest: handleDAGRequest) }
+                }
+            }
+    }
+}
+
+private extension ChangeCommand {
+    var paletteKeywords: [String] {
+        switch self {
+            case .fix: ["format", "formatter", "fix", "lint"]
+            case .showEvolution: ["evolog", "obslog", "history"]
+            case .moveChangesToWorkingCopy: ["squash", "into"]
+            case .rebaseOntoTrunk: ["main", "update"]
+            default: []
         }
-        if viewModel.selectionCapabilities.canFix {
-            items.append(CommandPaletteItem(
-                title: Localized.Menu.fixSelected(count: revisions.count),
-                icon: "wand.and.stars",
-                category: Localized.Repo.change,
-                keywords: ["format", "formatter", "fix", "lint", "stack"]
-            ) {
-                viewModel.fix(revs: revisions)
-            })
-        }
-        return items
     }
 }

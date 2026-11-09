@@ -377,7 +377,7 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     repo_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(repo_cx);
 
-    assert!(menu_shows(repo_cx, "Resolve conflict (set to @)"));
+    assert!(menu_shows(repo_cx, "Resolve Conflict (Set to @)"));
     assert!(
         repo_cx.debug_bounds("bookmark-picker-panel").is_some(),
         "a right-click menu opens over the picker, not instead of it"
@@ -385,7 +385,7 @@ fn bookmark_picker_menu_offers_no_removal_for_a_conflicted_bookmark(cx: &mut Tes
     keys(repo_cx, "enter");
     assert!(
         repo_cx.debug_bounds("bookmark-picker-panel").is_some()
-            && menu_shows(repo_cx, "Resolve conflict (set to @)"),
+            && menu_shows(repo_cx, "Resolve Conflict (Set to @)"),
         "keys are not routed to the picker while its menu is open"
     );
     assert!(

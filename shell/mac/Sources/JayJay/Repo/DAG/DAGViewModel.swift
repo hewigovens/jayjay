@@ -34,11 +34,7 @@ struct DAGViewModel {
     }
 
     var canAbandonSelection: Bool {
-        capabilities.canAbandon
-    }
-
-    var canSquashSelection: Bool {
-        capabilities.canSquash
+        capabilities.isAvailable(.abandon)
     }
 
     func canRebaseSelection(onto target: ChangeInfo) -> Bool {
@@ -46,19 +42,7 @@ struct DAGViewModel {
     }
 
     var mergeParentChoices: [MergeParentChoice] {
-        canMergeSelection ? JayJayCore.mergeParentChoices(changes: selectedChanges) : []
-    }
-
-    var canMergeSelection: Bool {
-        capabilities.canMerge
-    }
-
-    var canParallelizeSelection: Bool {
-        capabilities.canParallelize
-    }
-
-    var canFixSelection: Bool {
-        capabilities.canFix
+        capabilities.isAvailable(.merge) ? JayJayCore.mergeParentChoices(changes: selectedChanges) : []
     }
 
     func canMergeSelectedChange(with target: ChangeInfo) -> Bool {
@@ -166,11 +150,6 @@ struct DAGViewModel {
             cache.changesByRevision = changes
         }
         return cache.changesByRevision?[changeId]
-    }
-
-    func canSquashIntoParent(_ target: ChangeInfo) -> Bool {
-        guard let parentId = target.parents.first else { return false }
-        return change(for: parentId).map { !$0.isImmutable } ?? true
     }
 
     func bookmarkDiffRequest(from selectedId: String, to target: ChangeInfo) -> BookmarkDiffRequest? {

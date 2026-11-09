@@ -285,3 +285,28 @@ fn absorb_leaves_a_hunk_whose_only_home_is_immutable_in_the_source() {
         .collect();
     assert_eq!(changed, ["README.md", "wip1.txt", "wip2.txt"]);
 }
+
+#[test]
+fn a_change_records_whether_its_parent_is_immutable() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(&repo_path, &["describe", "-m", "protected"]);
+    run_jj_in(&repo_path, &["new", "-m", "child"]);
+    run_git(&repo_path, &["tag", "release"]);
+    run_jj_in(&repo_path, &["new", "-m", "grandchild"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let has_immutable_parent = |subject: &str| {
+        let rev = format!("subject(exact:{subject})");
+        let logged = repo.log(&rev).expect("log")[0].has_immutable_parent;
+        let shown = repo
+            .show_summary(&rev)
+            .expect("show")
+            .info
+            .has_immutable_parent;
+        assert_eq!(logged, shown, "{subject}");
+        logged
+    };
+    assert!(has_immutable_parent("child"));
+    assert!(!has_immutable_parent("grandchild"));
+}

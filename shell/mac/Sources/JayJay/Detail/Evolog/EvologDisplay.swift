@@ -73,6 +73,7 @@ extension EvologEntry {
             isEmpty: false,
             isImmutable: false,
             isDivergent: false,
+            hasImmutableParent: false,
             newChange: NewChangeEligibility(onTop: false, before: false, after: false)
         )
     }

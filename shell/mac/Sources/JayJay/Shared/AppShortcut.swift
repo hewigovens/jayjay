@@ -46,6 +46,15 @@ enum AppShortcut: String, Decodable {
     case showEvolution = "repo.show_evolution"
     case abandon = "changes.abandon"
 
+    private static let changeCommands = Dictionary(
+        JayJayCore.changeCommands().compactMap { command in command.shortcut.map { ($0, command) } },
+        uniquingKeysWith: { first, _ in first }
+    )
+
+    var changeCommand: ChangeCommand? {
+        Self.changeCommands[self]
+    }
+
     var symbol: String {
         ShortcutStore.shared.byID[rawValue]?.primary?.caps.joined() ?? ""
     }

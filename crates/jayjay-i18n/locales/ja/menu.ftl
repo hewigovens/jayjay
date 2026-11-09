@@ -48,7 +48,7 @@ menu-update-workspace = ワークスペースを更新
 menu-new-change-on-top = 上に新しいチェンジ
 menu-new-change-before = 前に新しいチェンジ
 menu-new-change-after = 後に新しいチェンジ
-menu-edit-modify-this-change = 編集（このチェンジを修正）
+menu-edit-change = チェンジを編集
 menu-describe-ellipsis = 説明を編集…
 menu-squash-into-parent = 親にスカッシュ
 menu-move-changes-to-working-copy = 変更を作業コピーへ移動
@@ -129,6 +129,7 @@ menu-parallelize-selected = 選択した { NUMBER($count) } 個を並列化
 menu-fix-selected = 選択した { NUMBER($count) } 個にフォーマッターを実行 (jj fix)
 menu-abandon-selected = 選択した { NUMBER($count) } 個を破棄…
 menu-rebase-count-selected-onto-this = 選択した { NUMBER($count) } 個をここにリベース
+menu-rebase-selected-onto-trunk = 選択した { NUMBER($count) } 個をトランクにリベース
 menu-parent-numbered = 親 { NUMBER($index) }: { $id }
 menu-split-files =
     { $count ->

@@ -424,6 +424,7 @@ repo-cant-rebase-selection-here = Can't rebase the selection here
 repo-move-bookmark-here = Move { $bookmark } here?
 repo-rebase-onto-question = Rebase { $source } onto { $destination }?
 repo-rebased-onto = Rebased { $source } onto { $destination }.
+repo-already-on = { $source } is already on { $destination }.
 repo-removing-workspace = Cannot switch to a workspace while it is being removed.
 repo-remove-title-from-recent = Remove { $title } from Recent
 repo-suggest-branch-names-with = Suggest branch names with { $provider }
@@ -620,11 +621,6 @@ repo-squashed-changes =
     { $count ->
         [one] Squashed { $count } change
        *[other] Squashed { $count } changes
-    }
-repo-rebased-changes =
-    { $count ->
-        [one] Rebased { $count } change
-       *[other] Rebased { $count } changes
     }
 repo-parallelized-changes =
     { $count ->

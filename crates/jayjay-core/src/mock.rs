@@ -24,6 +24,7 @@ pub fn change_info(change_id: &str, commit_id: &str) -> ChangeInfo {
         is_empty: false,
         is_immutable: false,
         is_divergent: false,
+        has_immutable_parent: false,
         new_change: NewChangeEligibility {
             on_top: true,
             before: true,

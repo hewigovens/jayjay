@@ -1,6 +1,6 @@
 use std::collections::{HashMap, HashSet};
 
-use super::DagLayout;
+use super::{DagLayout, SelectionCommand};
 use crate::types::{EdgeType, GraphEntry};
 
 #[derive(Debug, Clone, Default, PartialEq, Eq)]
@@ -15,6 +15,7 @@ pub struct SelectionState {
     /// Indexed by graph row, as is `can_merge_with`.
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
+    pub available_commands: Vec<SelectionCommand>,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -115,7 +116,7 @@ impl SelectionGraph {
                 .windows(2)
                 .all(|pair| self.reaches(pair[0], pair[1]));
 
-        SelectionState {
+        let mut state = SelectionState {
             can_abandon: mutable,
             can_squash: mutable && contiguous,
             can_diff: contiguous && oldest_has_one_parent,
@@ -133,7 +134,13 @@ impl SelectionGraph {
                         && !descendants.contains(&ix)
                 })
                 .collect(),
-        }
+            available_commands: Vec::new(),
+        };
+        state.available_commands = SelectionCommand::ALL
+            .into_iter()
+            .filter(|command| command.is_available(&state))
+            .collect();
+        state
     }
 
     /// At a lane's end, continues to the next segment drawn in the same column, entering at its top.

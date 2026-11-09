@@ -4,8 +4,8 @@ import SwiftUI
 extension RepoContentView {
     func showCommandPalette() {
         var items = viewPaletteItems + filterPaletteItems + gitPaletteItems + repositoryPaletteItems
-        if let selection = viewModel.selectedChangeId {
-            items += changePaletteItems(selection: selection)
+        if let change = viewModel.selectedChangeId.flatMap(viewModel.change(for:)) {
+            items += changePaletteItems(change: change)
         }
         items += multiSelectionPaletteItems
         items += workspacePaletteItems + zoomPaletteItems + toolsPaletteItems + appPaletteItems
@@ -127,18 +127,15 @@ extension RepoContentView {
     private var gitPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
         items
-            .append(CommandPaletteItem(title: Localized.Repo.gitPullFetchRebase, icon: "arrow.down.circle", category: Localized.Palette.git, shortcut: AppShortcut.fetch.symbol) {
+            .append(CommandPaletteItem(
+                title: Localized.Menu.pull,
+                icon: "arrow.down.circle",
+                category: Localized.Palette.git,
+                keywords: ["git", "fetch", "rebase", "sync"],
+                shortcut: AppShortcut.fetch.symbol
+            ) {
                 performShortcut(.fetch)
             })
-        items.append(CommandPaletteItem(
-            title: Localized.Palette.rebaseWorkingCopyOntoTrunk,
-            icon: "arrow.uturn.up",
-            category: Localized.Palette.git,
-            keywords: ["rebase", "trunk", "main", "update"],
-            shortcut: AppShortcut.rebaseOntoTrunk.symbol
-        ) {
-            performShortcut(.rebaseOntoTrunk)
-        })
         items.append(CommandPaletteItem(title: Localized.Repo.gitPush, icon: "arrow.up.circle", category: Localized.Palette.git, shortcut: AppShortcut.push.symbol) {
             performShortcut(.push)
         })
@@ -245,18 +242,22 @@ extension RepoContentView {
 
     private var toolsPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
-        items.append(CommandPaletteItem(
-            title: Localized.Common.showIn(app: "Finder"), icon: "folder", category: Localized.Palette.tools, shortcut: AppShortcut.showInFinder.symbol
-        ) {
-            RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
-        })
-        items.append(CommandPaletteItem(
-            title: Localized.Menu.viewRemoteRepository,
-            icon: "globe",
-            category: Localized.Palette.tools
-        ) {
-            RepositoryCommands.openRemoteRepository(repo: viewModel.repo)
-        })
+        if !viewModel.repoPath.isSSHLocation {
+            items.append(CommandPaletteItem(
+                title: Localized.Common.showIn(app: "Finder"), icon: "folder", category: Localized.Palette.tools, shortcut: AppShortcut.showInFinder.symbol
+            ) {
+                RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
+            })
+        }
+        if viewModel.hasWebRemote {
+            items.append(CommandPaletteItem(
+                title: Localized.Menu.viewRemoteRepository,
+                icon: "globe",
+                category: Localized.Palette.tools
+            ) {
+                RepositoryCommands.openRemoteRepository(repo: viewModel.repo)
+            })
+        }
         items.append(CommandPaletteItem(
             title: Localized.Menu.openIn(app: settings.externalEditor.title),
             icon: "curlybraces",

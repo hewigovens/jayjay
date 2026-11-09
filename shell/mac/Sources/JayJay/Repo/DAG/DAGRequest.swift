@@ -4,6 +4,9 @@ import JayJayCore
 enum DAGRequest {
     case converge(rev: String)
     case rebase(DAGRebaseRequest)
+    case rebaseCommand(RepoRebaseCommand)
+    case rebaseOntoTrunk(ChangeInfo)
+    case rebaseSelectionOntoTrunk(revisions: [String])
     case abandon(rev: String)
     case editDescription(rev: String, description: String)
     case abandonSelection(revisions: [String])
@@ -28,7 +31,7 @@ extension DAGRequest {
             case let .deleteTagOnRemote(name): .confirmTagDeleteOnRemote(name: name)
             case let .createStackedPRs(rev): .stackedPr(rev: rev)
             case let .bisectFrom(commitId): .bisect(good: "trunk()", bad: commitId)
-            case .rebase, .abandon, .createBookmark, .createTag, .showAncestors, .openWorkspace, .bisectBetween: nil
+            case .rebase, .rebaseCommand, .rebaseOntoTrunk, .rebaseSelectionOntoTrunk, .abandon, .createBookmark, .createTag, .showAncestors, .openWorkspace, .bisectBetween: nil
         }
     }
 }

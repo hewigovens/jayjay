@@ -8,6 +8,9 @@ pub struct RepositoryContext {
     pub workspaces: Option<Vec<WorkspaceInfo>>,
     pub trunk_name: String,
     pub pr_host_name: Option<String>,
+    /// The URL itself is fetched on demand, where the SSH client validates it.
+    #[serde(default)]
+    pub has_web_remote: bool,
     pub upload_title: Option<String>,
     pub gerrit_update_title: Option<String>,
     pub fix_unavailable_reason: Option<String>,
@@ -29,6 +32,7 @@ impl crate::repo::Repo {
             workspaces: self.workspace_list().ok(),
             trunk_name: self.trunk_name(),
             pr_host_name: self.pr_host_name(),
+            has_web_remote: self.remote_web_url().is_some(),
             upload_title: self.upload_title(),
             gerrit_update_title: self.gerrit_update_title(),
             fix_unavailable_reason: self.fix_unavailable_reason(),

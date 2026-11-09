@@ -27,14 +27,14 @@ final class InterdiffScene: SceneBase {
         XCTAssertTrue(app.element(AID.Compare.combinedSelection).exists)
 
         rightClickCenter(second)
-        let merge = app.windows.menuItems["Merge 3 selected"]
+        let merge = app.windows.menuItems["Merge 3 Selected"]
         XCTAssertTrue(merge.waitForExistence(timeout: 3))
         XCTAssertFalse(
             merge.isEnabled,
             "Linear changes cannot be merged as independent heads"
         )
-        XCTAssertFalse(app.windows.menuItems["New change on top"].exists)
-        XCTAssertFalse(app.windows.menuItems["Create bookmark here…"].exists)
+        XCTAssertFalse(app.windows.menuItems["New Change on Top"].exists)
+        XCTAssertFalse(app.windows.menuItems["Create Bookmark Here…"].exists)
         app.typeKey(.escape, modifierFlags: [])
 
         app.typeKey(.escape, modifierFlags: [])

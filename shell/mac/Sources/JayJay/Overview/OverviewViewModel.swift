@@ -218,7 +218,7 @@ final class OverviewViewModel {
     func rebaseLaneOntoTrunk(_ lane: OverviewLane) {
         guard let root = lane.changes.last else { return }
         let rev = root.commitId.id
-        mutate { try $0.rebase(rev: rev, dest: "trunk()", mode: .source) }
+        mutate { _ = try $0.rebase(rev: rev, dest: "trunk()", mode: .source) }
     }
 
     func abandon(_ request: OverviewAbandonRequest) {

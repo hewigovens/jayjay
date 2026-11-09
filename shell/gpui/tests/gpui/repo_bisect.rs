@@ -51,7 +51,7 @@ fn bisect_between_selects_the_result_and_restores_the_working_copy(cx: &mut Test
     cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(cx);
     let item = cx
-        .debug_bounds("context-menu-Bisect between")
+        .debug_bounds("context-menu-Bisect Between")
         .expect("bisect between");
     cx.simulate_mouse_down(item.center(), MouseButton::Left, Modifiers::default());
     settle_visual(cx);

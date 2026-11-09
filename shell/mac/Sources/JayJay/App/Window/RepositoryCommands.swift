@@ -2,7 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct RepositoryCommands: Commands {
-    private static let additionalShortcuts: [AppShortcut] = [
+    static let menuShortcuts: [AppShortcut] = [
         .fetch, .push, .rebaseOntoTrunk, .bisect, .cleanUpStaleBookmarks,
         .toggleSideBySide, .toggleIgnoreWhitespace, .toggleTreeFileList,
         .newChange, .editChange, .describeChange, .squashChange, .newBookmark, .showEvolution
@@ -67,11 +67,11 @@ struct RepositoryCommands: Commands {
             .disabled(tracker.handler == nil)
 
             Divider()
-            ForEach(Self.additionalShortcuts, id: \.self) { shortcut in
+            ForEach(Self.menuShortcuts, id: \.self) { shortcut in
                 if let binding = ShortcutStore.shared.byID[shortcut.rawValue] {
                     Button(binding.title) { tracker.handler?.performShortcut(shortcut) }
                         .keyboardShortcut(shortcut)
-                        .disabled(tracker.handler == nil)
+                        .disabled(tracker.handler?.canPerformShortcut(shortcut) != true)
                 }
             }
 
@@ -83,7 +83,7 @@ struct RepositoryCommands: Commands {
             } label: {
                 Label(Localized.Menu.viewRemoteRepository, systemImage: "globe")
             }
-            .disabled(repoPath == nil)
+            .disabled(tracker.handler?.canViewRemoteRepository != true)
 
             Button {
                 guard let repoPath else { return }
@@ -92,7 +92,7 @@ struct RepositoryCommands: Commands {
                 Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder")
             }
             .keyboardShortcut(AppShortcut.showInFinder)
-            .disabled(repoPath == nil)
+            .disabled(repoPath?.isSSHLocation != false)
 
             if let settings {
                 Button {

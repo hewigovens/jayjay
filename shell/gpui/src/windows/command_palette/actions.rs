@@ -1,5 +1,4 @@
 use jayjay_core::shortcuts::{EffectiveBindings, ShortcutCommand};
-use std::sync::Arc;
 
 use gpui::{App, Context, Entity};
 
@@ -7,7 +6,7 @@ use crate::app::config::{self, AppearanceMode};
 use crate::app::key_caps::KeyCaps;
 use crate::app::links::GUIDE_URL;
 use crate::app::tools;
-use crate::repo::window::{ChangeAction, RepoWindow};
+use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::windows::keyboard_shortcuts::KeyboardShortcutsView;
 use crate::windows::open_remote_repository::OpenRemoteRepositoryView;
@@ -297,7 +296,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         id: "git-pull-fetch-rebase",
         shortcut: Some(ShortcutCommand::RepoFetch),
-        label: jayjay_i18n::repo::git_pull_fetch_rebase,
+        label: jayjay_i18n::menu::pull,
         keywords: &["git", "pull", "fetch", "rebase", "sync"],
         glyph_str: glyph::ARROW_DOWN,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_fetch),
@@ -305,17 +304,10 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
     PaletteAction {
         id: "rebase-working-copy-onto-trunk",
         shortcut: Some(ShortcutCommand::RepoRebaseOntoTrunk),
-        label: jayjay_i18n::palette::rebase_working_copy_onto_trunk,
+        label: jayjay_i18n::menu::rebase_onto_trunk,
         keywords: &["rebase", "trunk", "main", "update", "working copy"],
         glyph_str: glyph::ARROW_UP,
-        dispatch: |ctx, cx| {
-            with_repo_window(ctx, cx, |view, cx| {
-                let action = ChangeAction::RebaseOntoTrunk {
-                    rev: "@".to_owned(),
-                };
-                view.run_change_action(Arc::new(action), cx);
-            })
-        },
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::rebase_selection_onto_trunk),
     },
     PaletteAction {
         id: "parallelize-selected-changes",

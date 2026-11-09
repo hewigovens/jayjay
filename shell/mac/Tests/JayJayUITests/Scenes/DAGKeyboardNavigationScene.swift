@@ -30,7 +30,7 @@ final class DAGKeyboardNavigationScene: SceneBase {
         XCTAssertTrue(waitForHittable(selected, isHittable: false), "Scrolling did not move the selection out of view")
 
         keyStroke(.return, modifiers: [.control])
-        XCTAssertTrue(app.windows.menuItems["Show evolution…"].waitForExistence(timeout: 3), "Control-Return did not open the menu for the scrolled-out selection")
+        XCTAssertTrue(app.windows.menuItems["Show Evolution…"].waitForExistence(timeout: 3), "Control-Return did not open the menu for the scrolled-out selection")
         XCTAssertTrue(selected.isHittable, "The menu opened without revealing the selected change")
         keyStroke(.escape)
     }

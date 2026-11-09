@@ -30,6 +30,7 @@ func mockChangeInfo(
         isEmpty: isEmpty,
         isImmutable: isImmutable,
         isDivergent: isDivergent,
+        hasImmutableParent: false,
         newChange: NewChangeEligibility(onTop: true, before: true, after: true)
     )
 }

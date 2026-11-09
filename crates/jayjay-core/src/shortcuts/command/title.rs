@@ -1,6 +1,7 @@
 use jayjay_i18n::{menu, merge, palette, repo, shortcuts};
 
 use super::ShortcutCommand;
+use crate::dag::ChangeCommand;
 
 impl ShortcutCommand {
     pub fn title(self) -> String {
@@ -26,18 +27,19 @@ impl ShortcutCommand {
             Self::RepoPush => repo::git_push(),
             Self::RepoNewWorkspace => menu::new_workspace_ellipsis(),
             Self::RepoImportPullRequest => menu::new_workspace_from_pull_request_ellipsis(),
-            Self::RepoRebaseOntoTrunk => menu::rebase_onto_trunk(),
             Self::RepoBisect => repo::bisect(),
+            Self::RepoRebaseOntoTrunk => ChangeCommand::RebaseOntoTrunk.title(),
+            Self::RepoNewChange => ChangeCommand::NewChange.title(),
+            Self::RepoEditChange => ChangeCommand::Edit.title(),
+            Self::RepoDescribeChange => ChangeCommand::Describe.title(),
+            Self::RepoSquashChange => ChangeCommand::SquashIntoParent.title(),
+            Self::RepoNewBookmark => ChangeCommand::CreateBookmark.title(),
+            Self::RepoShowEvolution => ChangeCommand::ShowEvolution.title(),
+            Self::ChangesAbandon => ChangeCommand::Abandon.title(),
             Self::RepoCleanUpStaleBookmarks => palette::clean_up_stale_bookmarks(),
             Self::RepoToggleSideBySide => palette::toggle_side_by_side_diff_title(),
             Self::RepoToggleIgnoreWhitespace => palette::toggle_ignore_whitespace(),
             Self::RepoToggleTreeFileList => palette::toggle_tree_file_list(),
-            Self::RepoNewChange => menu::new_change_on_top(),
-            Self::RepoEditChange => menu::edit_modify_this_change(),
-            Self::RepoDescribeChange => menu::describe_ellipsis(),
-            Self::RepoSquashChange => menu::squash_into_parent(),
-            Self::RepoNewBookmark => menu::create_bookmark_here_ellipsis(),
-            Self::RepoShowEvolution => menu::show_evolution_ellipsis(),
             Self::RepoCopyDiffSelection => shortcuts::copy_diff_selection(),
             Self::RepoSwitchPane => shortcuts::switch_active_pane(),
             Self::RepoCyclePanes => shortcuts::cycle_focused_pane(),
@@ -51,7 +53,6 @@ impl ShortcutCommand {
             Self::MergeAcceptRight => merge::accept_right(),
             Self::MergePreviousConflict => shortcuts::previous_conflict(),
             Self::MergeNextConflict => shortcuts::next_conflict(),
-            Self::ChangesAbandon => menu::abandon(),
             Self::ChangesNext => shortcuts::next_change(),
             Self::ChangesPrevious => shortcuts::previous_change(),
             Self::FilesNext => shortcuts::next_file(),

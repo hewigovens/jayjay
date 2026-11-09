@@ -158,7 +158,7 @@ extension DAGRow {
             if !change.isImmutable {
                 Divider()
                 Button(Localized.Overview.rebaseLaneOnto(trunk: trunkName)) {
-                    actions?.rebase(rev: change.commitId.id, dest: "trunk()", mode: .branch)
+                    onRequest?(.rebaseOntoTrunk(change))
                 }
             }
         }

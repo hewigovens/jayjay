@@ -50,6 +50,7 @@ pub struct ChangeInfo {
     pub is_empty: bool,
     pub is_immutable: bool,
     pub is_divergent: bool,
+    pub has_immutable_parent: bool,
     pub new_change: core::NewChangeEligibility,
 }
 
@@ -83,6 +84,7 @@ pub struct SelectionState {
     pub can_fix: bool,
     pub can_rebase_onto: Vec<bool>,
     pub can_merge_with: Vec<bool>,
+    pub available_commands: Vec<jayjay_core::dag::SelectionCommand>,
 }
 
 #[uniffi::remote(Record)]

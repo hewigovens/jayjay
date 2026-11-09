@@ -5,6 +5,8 @@ import SwiftUI
 /// Actions the Repository menu can invoke on the active window.
 @MainActor
 protocol RepositoryMenuHandler: AnyObject {
+    var canViewRemoteRepository: Bool { get }
+    func canPerformShortcut(_ shortcut: AppShortcut) -> Bool
     func performShortcut(_ shortcut: AppShortcut)
     func showCommandPalette()
     func showOperationLog()

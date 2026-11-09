@@ -107,6 +107,10 @@ extension RepoContentView {
         viewModel.rebase(request: request, onFailure: { _, message in showToast(message) })
     }
 
+    func runRebase(_ command: RepoRebaseCommand) {
+        viewModel.rebase(command, onFailure: { _, message in showToast(message) })
+    }
+
     func showActionNotice(_ notice: RepoActionNotice) {
         let action = notice.undoOperationId.map { operationId in
             RepoToastAction(title: Localized.Repo.undo) { viewModel.undo(operationId: operationId) }

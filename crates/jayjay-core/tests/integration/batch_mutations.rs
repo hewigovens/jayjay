@@ -151,7 +151,7 @@ fn duplicate_copies_a_change_onto_the_same_parents() {
     let repo = Repo::open(&repo_path).expect("open repo");
     let original = find_change(&repo, "original");
 
-    repo.duplicate(&original.change_id.id).expect("duplicate");
+    let copy_id = repo.duplicate(&original.change_id.id).expect("duplicate");
 
     let copies: Vec<_> = repo
         .log("all()")
@@ -164,6 +164,7 @@ fn duplicate_copies_a_change_onto_the_same_parents() {
         .iter()
         .find(|change| change.change_id.id != original.change_id.id)
         .expect("a copy with its own change id");
+    assert_eq!(copy.commit_id.id, copy_id);
     assert_eq!(copy.parents, original.parents);
     assert_eq!(
         repo.file_content(&copy.commit_id.id, "a.txt")

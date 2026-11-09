@@ -161,6 +161,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var prFetchTask: Task<Void, Never>?
     var trunkName = "trunk"
     var prHostName: String?
+    var hasWebRemote = false
     var uploadTitle: String?
     var gerritUpdateTitle: String?
     var fixUnavailableReason: String?

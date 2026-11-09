@@ -39,16 +39,16 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
         );
 
         let menu = view.build_change_menu(&vm.graph.changes[1], cx);
-        assert!(!menu_item(&menu, "Merge 3 selected").enabled);
+        assert!(!menu_item(&menu, "Merge 3 Selected").enabled);
         for label in [
-            "Squash 3 selected…",
-            "Parallelize 3 selected",
-            "Abandon 3 selected…",
+            "Squash 3 Selected…",
+            "Parallelize 3 Selected",
+            "Abandon 3 Selected…",
         ] {
             assert!(menu_item(&menu, label).enabled, "{label}");
         }
         let destination_menu = view.build_change_menu(&vm.graph.changes[3], cx);
-        assert!(menu_item(&destination_menu, "Rebase 3 selected onto this").enabled);
+        assert!(menu_item(&destination_menu, "Rebase 3 Selected onto This").enabled);
     });
     assert!(cx.debug_bounds("compare-combined-selection").is_some());
     assert!(cx.debug_bounds("compare-reverse").is_none());
@@ -212,7 +212,7 @@ fn squash_batch_action_confirms_then_runs_as_one_mutation(cx: &mut TestAppContex
     let (view, cx) = open_fixture(&fixture, cx);
     select_first_three(&view, cx);
 
-    dispatch_menu_item(&view, cx, 1, "Squash 3 selected…");
+    dispatch_menu_item(&view, cx, 1, "Squash 3 Selected…");
     let confirm = cx
         .debug_bounds("confirmation-submit")
         .expect("squash confirmation");
@@ -237,7 +237,7 @@ fn parallelize_from_menu_or_palette_rewrites_the_selection_into_siblings(cx: &mu
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
     select_first_three(&view, cx);
-    dispatch_menu_item(&view, cx, 1, "Parallelize 3 selected");
+    dispatch_menu_item(&view, cx, 1, "Parallelize 3 Selected");
     view.read_with(cx, |view, cx| {
         assert_first_three_are_siblings(view.view_model().read(cx))
     });
@@ -273,7 +273,7 @@ fn merge_submenu_chooses_first_parent_and_creates_the_ordered_merge(cx: &mut Tes
     let (label, row_id, expected) = view.read_with(cx, |view, cx| {
         let changes = &view.view_model().read(cx).graph.changes;
         let menu = view.build_change_menu(&changes[0], cx);
-        let merge = menu_item(&menu, "Merge 3 selected");
+        let merge = menu_item(&menu, "Merge 3 Selected");
         assert!(merge.enabled);
         let choice = merge
             .submenu_items()
@@ -321,7 +321,7 @@ fn hovering_a_disabled_merge_item_keeps_its_submenu_closed(cx: &mut TestAppConte
             .clone()
     });
     hover_merge_item(&row_id, cx);
-    assert!(!menu_shows(cx, "First parent"));
+    assert!(!menu_shows(cx, "First Parent"));
 }
 
 #[gpui::test]
@@ -332,7 +332,7 @@ fn compare_with_selected_compares_the_selected_change_to_the_menu_target(cx: &mu
     settle_visual(cx);
     let [selected, target] = changes(&view, cx, [1, 2]);
 
-    dispatch_menu_item(&view, cx, 2, "Compare with selected");
+    dispatch_menu_item(&view, cx, 2, "Compare with Selected");
 
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
@@ -439,7 +439,7 @@ fn hover_merge_item(row_id: &str, cx: &mut VisualTestContext) {
     cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
     settle_visual(cx);
     let merge = cx
-        .debug_bounds("context-menu-Merge 3 selected")
+        .debug_bounds("context-menu-Merge 3 Selected")
         .expect("merge menu");
     cx.simulate_mouse_move(merge.center(), MouseButton::Left, Modifiers::default());
     settle_visual(cx);

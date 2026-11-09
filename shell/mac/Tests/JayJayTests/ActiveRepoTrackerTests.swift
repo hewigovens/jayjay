@@ -6,6 +6,11 @@ import XCTest
 @MainActor
 final class ActiveRepoTrackerTests: XCTestCase {
     private final class Handler: RepositoryMenuHandler {
+        let canViewRemoteRepository = false
+        func canPerformShortcut(_: AppShortcut) -> Bool {
+            false
+        }
+
         func performShortcut(_: AppShortcut) {}
         func showCommandPalette() {}
         func showOperationLog() {}

@@ -37,10 +37,6 @@ final class DAGViewModelTests: XCTestCase {
             selectedIds: ["left", "right"]
         )
 
-        XCTAssertTrue(heads.canMergeSelection)
-        XCTAssertTrue(heads.canAbandonSelection)
-        XCTAssertFalse(heads.canSquashSelection)
-        XCTAssertFalse(heads.canParallelizeSelection)
         XCTAssertTrue(heads.canRebaseSelection(onto: base.change))
         XCTAssertFalse(heads.canRebaseSelection(onto: child.change))
     }
@@ -145,36 +141,6 @@ final class DAGViewModelTests: XCTestCase {
         let viewModel = makeViewModel(entries: [entry], selectedId: nil)
 
         XCTAssertEqual(viewModel.selectedRevision(for: "change"), "commit")
-    }
-
-    func testDisallowsSquashIntoImmutableParent() {
-        let parent = makeEntry(
-            changeId: "parent",
-            commitId: "parent-commit",
-            isImmutable: true,
-            isDivergent: false
-        )
-        let child = makeEntry(
-            changeId: "child",
-            commitId: "child-commit",
-            parents: ["parent-commit"],
-            isDivergent: false
-        )
-        let viewModel = makeViewModel(entries: [child, parent], selectedId: nil)
-
-        XCTAssertFalse(viewModel.canSquashIntoParent(child.change))
-    }
-
-    func testAllowsSquashWhenParentIsOutsideLoadedPage() {
-        let child = makeEntry(
-            changeId: "child",
-            commitId: "child-commit",
-            parents: ["unloaded-parent-commit"],
-            isDivergent: false
-        )
-        let viewModel = makeViewModel(entries: [child], selectedId: nil)
-
-        XCTAssertTrue(viewModel.canSquashIntoParent(child.change))
     }
 
     func testScrollIdUsesCommitIdForDivergentChange() {

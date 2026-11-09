@@ -17,7 +17,7 @@ fn fix_menu_item(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> Conte
             .clone();
         view.build_change_menu(&change, cx)
             .into_iter()
-            .find(|item| item.label.as_ref() == "Run formatters (jj fix)")
+            .find(|item| item.label.as_ref() == "Run Formatters (jj fix)")
             .expect("fix menu item")
     })
 }

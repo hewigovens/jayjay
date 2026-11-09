@@ -7,6 +7,7 @@ struct RepoRefreshContext {
     let workspaces: [WorkspaceInfo]?
     let trunkName: String
     let prHostName: String?
+    let hasWebRemote: Bool
     let uploadTitle: String?
     let gerritUpdateTitle: String?
     let fixUnavailableReason: String?
@@ -22,6 +23,7 @@ struct RepoRefreshContext {
         workspaces = context.workspaces
         trunkName = context.trunkName
         prHostName = context.prHostName
+        hasWebRemote = context.hasWebRemote
         uploadTitle = context.uploadTitle
         gerritUpdateTitle = context.gerritUpdateTitle
         fixUnavailableReason = context.fixUnavailableReason
@@ -45,6 +47,7 @@ extension RepoViewModel {
         }
         trunkName = context.trunkName
         prHostName = context.prHostName
+        hasWebRemote = context.hasWebRemote
         uploadTitle = context.uploadTitle
         gerritUpdateTitle = context.gerritUpdateTitle
         fixUnavailableReason = context.fixUnavailableReason

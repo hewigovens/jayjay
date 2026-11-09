@@ -15,64 +15,40 @@ extension DAGView {
     @ViewBuilder
     private func multiSelectionContextMenu(viewModel: DAGViewModel) -> some View {
         let revisions = viewModel.selectedRevisions
-        if viewModel.canMergeSelection {
+        ForEach(selectionCommands(), id: \.self) { command in
+            if command == .abandon {
+                bisectBetweenButton(viewModel)
+                Divider()
+            }
+            selectionCommandItem(command, revisions: revisions, viewModel: viewModel)
+        }
+    }
+
+    @ViewBuilder
+    private func selectionCommandItem(_ command: SelectionCommand, revisions: [String], viewModel: DAGViewModel) -> some View {
+        let available = viewModel.capabilities.isAvailable(command)
+        let fixUnavailableReason = command == .fix ? actions?.fixUnavailableReason : nil
+        if command == .merge, available {
             Menu {
                 Section(Localized.Menu.firstParent) {
                     ForEach(viewModel.mergeParentChoices, id: \.parents) { choice in
-                        Button(choice.label) { actions?.merge(parents: choice.parents) }
+                        Button(choice.label) { command.perform(on: choice.parents, actions: actions, onRequest: onRequest) }
                     }
                 }
             } label: {
-                Label(Localized.Menu.mergeSelected(count: revisions.count), systemImage: "arrow.triangle.merge")
+                Label(command.title(count: revisions.count), systemImage: command.systemImage)
             }
-            .help(Localized.Menu.chooseTheFirstParentForThe)
+            .help(selectionCommandHelp(command: command, available: true))
         } else {
-            Button {} label: {
-                Label(Localized.Menu.mergeSelected(count: revisions.count), systemImage: "arrow.triangle.merge")
+            Button(role: command == .abandon ? .destructive : nil) {
+                command.perform(on: revisions, actions: actions, onRequest: onRequest)
+            } label: {
+                Label(command.title(count: revisions.count), systemImage: command.systemImage)
             }
-            .disabled(true)
-            .help(Localized.Menu.mergeRequiresIndependentHeads)
+            .keyboardShortcut(command.accelerator.map { KeyboardShortcut($0, modifiers: []) })
+            .disabled(!available || fixUnavailableReason != nil)
+            .help(fixUnavailableReason ?? selectionCommandHelp(command: command, available: available))
         }
-
-        Button { onRequest?(.squashSelection(revisions: revisions)) } label: {
-            Label(Localized.Menu.squashSelected(count: revisions.count), systemImage: "arrow.down.left.circle")
-        }
-        .disabled(!viewModel.canSquashSelection)
-        .help(
-            viewModel.canSquashSelection
-                ? Localized.Menu.combineTheSelectedRangeIntoIts
-                : Localized.Menu.squashRequiresAConsecutiveLinearRange
-        )
-
-        Button { actions?.parallelize(revs: revisions) } label: {
-            Label(Localized.Menu.parallelizeSelected(count: revisions.count), systemImage: "arrow.triangle.branch")
-        }
-        .disabled(!viewModel.canParallelizeSelection)
-        .help(
-            viewModel.canParallelizeSelection
-                ? Localized.Menu.makeTheSelectedChangesIndependentSiblings
-                : Localized.Menu.parallelizeRequiresTwoOrMoreMutable
-        )
-
-        fixButton(
-            Localized.Menu.fixSelected(count: revisions.count),
-            revs: revisions,
-            selectionCanFix: viewModel.canFixSelection
-        )
-
-        bisectBetweenButton(viewModel)
-
-        Divider()
-        Button(role: .destructive) { onRequest?(.abandonSelection(revisions: revisions)) } label: {
-            Label(Localized.Menu.abandonSelected(count: revisions.count), systemImage: "trash")
-        }
-        .keyboardShortcut("a", modifiers: [])
-        .disabled(!viewModel.canAbandonSelection)
-        .help(
-            viewModel.canAbandonSelection
-                ? Localized.Menu.abandonTheSelectedChanges
-                : Localized.Menu.immutableChangesCannotBeAbandoned
-        )
     }
 
     @ViewBuilder
@@ -103,38 +79,21 @@ extension DAGView {
             }
             Divider()
         }
-        // Navigation
-        if entry.change.newChange.onTop {
-            Button { actions?.newChange(parent: rev, message: "") } label: {
-                Label(Localized.Menu.newChangeOnTop, systemImage: "plus.circle")
-            }
-            .keyboardShortcut("n", modifiers: [])
-        }
-        if entry.change.newChange.before {
-            Button { actions?.insertChange(rev: rev, position: .before) } label: {
-                Label(Localized.Menu.newChangeBefore, systemImage: "arrow.down.circle")
-            }
-        }
-        if entry.change.newChange.after {
-            Button { actions?.insertChange(rev: rev, position: .after) } label: {
-                Label(Localized.Menu.newChangeAfter, systemImage: "arrow.up.circle")
-            }
+        let available = availableChangeCommands(change: entry.change)
+        ForEach([ChangeCommand.newChange, .newChangeBefore, .newChangeAfter], id: \.self) { command in
+            commandButton(command, change: entry.change, available: available)
         }
         Divider()
-        rewriteActionsSection(entry: entry, rev: rev, viewModel: viewModel)
+        ForEach([ChangeCommand.edit, .describe, .squashIntoParent, .moveChangesToWorkingCopy, .rebaseOntoTrunk, .fix], id: \.self) { command in
+            commandButton(command, change: entry.change, available: available)
+        }
 
         divergentCompareSection(entry: entry, rev: rev, viewModel: viewModel)
         selectionActionsSection(entry: entry, rev: rev, viewModel: viewModel)
 
         Divider()
-        Button { onRequest?(.createBookmark(rev: rev)) } label: {
-            Label(Localized.Menu.createBookmarkHereEllipsis, systemImage: "bookmark")
-        }
-        .keyboardShortcut("b", modifiers: [])
-        Button { onRequest?(.createTag(rev: entry.change.commitId.id)) } label: {
-            Label(Localized.Menu.createTagHereEllipsis, systemImage: "tag")
-        }
-        .keyboardShortcut("t", modifiers: [])
+        commandButton(.createBookmark, change: entry.change, available: available)
+        commandButton(.createTag, change: entry.change, available: available)
         if !entry.change.isImmutable {
             reviewActionsSection(rev: rev)
         }
@@ -145,13 +104,41 @@ extension DAGView {
                 TagMenuItems(name: name, isOnRemote: remoteTagNames.contains(name), actions: actions, onRequest: onRequest)
             }
         }
-        historySection(entry: entry, rev: rev)
+        Button { onRequest?(.showAncestors(changeId: entry.change.changeId.id, commitId: entry.change.commitId.id)) } label: {
+            Label(Localized.Menu.showAncestorsEllipsis, systemImage: "arrow.triangle.branch")
+        }
+        commandButton(.showEvolution, change: entry.change, available: available)
 
         identifierCopySection(change: entry.change)
-        moreActionsMenu(entry: entry, rev: rev)
-        if !entry.change.isImmutable {
+        Menu {
+            ForEach([ChangeCommand.duplicate, .absorb, .revert], id: \.self) { command in
+                commandButton(command, change: entry.change, available: available)
+            }
+        } label: {
+            Label(Localized.Menu.moreActions, systemImage: "ellipsis.circle")
+        }
+        if available.contains(.abandon) {
             Divider()
-            abandonButton(entry: entry, rev: rev)
+            commandButton(.abandon, change: entry.change, available: available)
+        }
+    }
+
+    @ViewBuilder
+    private func commandButton(_ command: ChangeCommand, change: ChangeInfo, available: [ChangeCommand]) -> some View {
+        if available.contains(command) {
+            let resolvesDivergence = command == .abandon && change.isDivergent
+            let fixUnavailableReason = command == .fix ? actions?.fixUnavailableReason : nil
+            Button(role: command == .abandon ? .destructive : nil) {
+                command.perform(on: change, actions: actions, onRequest: onRequest)
+            } label: {
+                Label(
+                    resolvesDivergence ? Localized.Menu.abandonResolveDivergence : command.title,
+                    systemImage: resolvesDivergence ? "arrow.triangle.merge" : command.systemImage
+                )
+            }
+            .keyboardShortcut(command.accelerator.map { KeyboardShortcut($0, modifiers: []) })
+            .disabled(fixUnavailableReason != nil)
+            .help(command == .fix ? fixUnavailableReason ?? Localized.Menu.rewriteTheseChangesAndTheirDescendants : "")
         }
     }
 
@@ -176,71 +163,6 @@ extension DAGView {
     }
 
     @ViewBuilder
-    private func rewriteActionsSection(entry: GraphEntry, rev: String, viewModel: DAGViewModel) -> some View {
-        if !entry.change.isImmutable {
-            Button { actions?.edit(rev: rev) } label: {
-                Label(Localized.Menu.editModifyThisChange, systemImage: "pencil.circle")
-            }
-            .keyboardShortcut("e", modifiers: [])
-            if !entry.change.isWorkingCopy {
-                Button { onRequest?(.editDescription(rev: rev, description: entry.change.description)) } label: {
-                    Label(Localized.Menu.describeEllipsis, systemImage: "square.and.pencil")
-                }
-                .keyboardShortcut("d", modifiers: [])
-            }
-            if viewModel.canSquashIntoParent(entry.change) {
-                Button { actions?.squash(rev: rev) } label: {
-                    Label(Localized.Menu.squashIntoParent, systemImage: "arrow.down.left.circle")
-                }
-                .keyboardShortcut("s", modifiers: [])
-            }
-            if !entry.change.isWorkingCopy {
-                Button { actions?.squash(rev: rev, into: "@") } label: {
-                    Label(
-                        Localized.Menu.moveChangesToWorkingCopy,
-                        systemImage: "tray.and.arrow.down"
-                    )
-                }
-                .keyboardShortcut("m", modifiers: [])
-            }
-            Button { actions?.rebase(rev: rev, dest: "trunk()", mode: .branch) } label: {
-                Label(Localized.Menu.rebaseOntoTrunk, systemImage: "arrow.uturn.up")
-            }
-            .keyboardShortcut("r", modifiers: [])
-            fixButton(Localized.Menu.runFormattersJjFix, revs: [rev])
-        }
-    }
-
-    @ViewBuilder
-    private func historySection(entry: GraphEntry, rev: String) -> some View {
-        Button { onRequest?(.showAncestors(changeId: entry.change.changeId.id, commitId: entry.change.commitId.id)) } label: {
-            Label(Localized.Menu.showAncestorsEllipsis, systemImage: "arrow.triangle.branch")
-        }
-        Button { actions?.showEvolog(rev: rev) } label: {
-            Label(Localized.Menu.showEvolutionEllipsis, systemImage: "clock.arrow.circlepath")
-        }
-        .keyboardShortcut("v", modifiers: [])
-    }
-
-    private func moreActionsMenu(entry: GraphEntry, rev: String) -> some View {
-        Menu {
-            Button { actions?.duplicate(rev: rev) } label: {
-                Label(Localized.Menu.duplicate, systemImage: "doc.on.doc")
-            }
-            if !entry.change.isImmutable {
-                Button { actions?.absorb(rev: rev) } label: {
-                    Label(Localized.Menu.absorbIntoAncestors, systemImage: "arrow.down.to.line")
-                }
-            }
-            Button { actions?.revertChange(rev: rev) } label: {
-                Label(Localized.Menu.revertChange, systemImage: "arrow.uturn.backward")
-            }
-        } label: {
-            Label(Localized.Menu.moreActions, systemImage: "ellipsis.circle")
-        }
-    }
-
-    @ViewBuilder
     private func identifierCopySection(change: ChangeInfo) -> some View {
         Divider()
         Button { copyToPasteboard(change.changeId.id) } label: {
@@ -251,31 +173,6 @@ extension DAGView {
             Label(Localized.Menu.copyCommitId, systemImage: "doc.on.doc")
         }
         Divider()
-    }
-
-    private func fixButton(_ title: String, revs: [String], selectionCanFix: Bool = true) -> some View {
-        Button { actions?.fix(revs: revs) } label: {
-            Label(title, systemImage: "wand.and.stars")
-        }
-        .disabled(!selectionCanFix || actions?.fixUnavailableReason != nil)
-        .help(
-            actions?.fixUnavailableReason ?? (
-                selectionCanFix
-                    ? Localized.Menu.rewriteTheseChangesAndTheirDescendants
-                    : Localized.Menu.immutableChangesCannotBeRewritten
-            )
-        )
-    }
-
-    private func abandonButton(entry: GraphEntry, rev: String) -> some View {
-        Button(role: .destructive) { onRequest?(.abandon(rev: rev)) } label: {
-            if entry.change.isDivergent {
-                Label(Localized.Menu.abandonResolveDivergence, systemImage: "arrow.triangle.merge")
-            } else {
-                Label(Localized.Menu.abandon, systemImage: "trash")
-            }
-        }
-        .keyboardShortcut("a", modifiers: [])
     }
 
     private func copyToPasteboard(_ value: String) {
@@ -330,7 +227,9 @@ extension DAGView {
         if viewModel.hasMultipleSelection {
             Divider()
             let revisions = viewModel.selectedRevisions
-            Button { actions?.rebase(revs: revisions, dest: rev) } label: {
+            Button {
+                onRequest?(.rebaseCommand(.selection(revisions, onto: rev, destLabel: DAGRebaseGesturePolicy.displayLabel(for: entry.change))))
+            } label: {
                 Label(
                     Localized.Menu.rebaseCountSelectedOntoThis(count: revisions.count),
                     systemImage: "arrow.uturn.up"
@@ -356,7 +255,14 @@ extension DAGView {
             // Rebase and squash rewrite the selected change; this row is only the destination.
             let selectedImmutable = viewModel.change(for: sel)?.isImmutable ?? false
             if !selectedImmutable {
-                Button { actions?.rebase(rev: selRev, dest: rev, mode: .source) } label: {
+                Button {
+                    onRequest?(.rebaseCommand(RepoRebaseCommand(
+                        sourceRev: selRev,
+                        sourceLabel: viewModel.change(for: sel).map(DAGRebaseGesturePolicy.displayLabel(for:)) ?? selRev,
+                        destRev: rev,
+                        destLabel: DAGRebaseGesturePolicy.displayLabel(for: entry.change)
+                    )))
+                } label: {
                     Label(Localized.Menu.rebaseSelectedOntoThis, systemImage: "arrow.uturn.up")
                 }
                 if !entry.change.isImmutable {

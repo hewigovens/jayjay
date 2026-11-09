@@ -7,8 +7,8 @@ extension RepoContentView {
             return
         }
         switch request {
-            case let .rebase(rebase):
-                confirmRebase(rebase)
+            case .rebase, .rebaseCommand, .rebaseOntoTrunk, .rebaseSelectionOntoTrunk:
+                handleRebaseRequest(request)
             case let .abandon(rev):
                 confirmAbandon(rev)
             case let .createBookmark(rev):
@@ -26,11 +26,22 @@ extension RepoContentView {
         }
     }
 
-    private func confirmRebase(_ request: DAGRebaseRequest) {
-        if settings.confirmDragRebase {
-            modal = .confirmChange(.rebase(request: request))
-        } else {
-            runDAGRebase(request)
+    private func handleRebaseRequest(_ request: DAGRequest) {
+        switch request {
+            case let .rebase(drop):
+                if settings.confirmDragRebase {
+                    modal = .confirmChange(.rebase(request: drop))
+                } else {
+                    runDAGRebase(drop)
+                }
+            case let .rebaseCommand(command):
+                runRebase(command)
+            case let .rebaseOntoTrunk(change):
+                runRebase(.ontoTrunk(change, trunkName: viewModel.trunkName))
+            case let .rebaseSelectionOntoTrunk(revisions):
+                runRebase(.selection(revisions, onto: "trunk()", destLabel: viewModel.trunkName))
+            default:
+                break
         }
     }
 

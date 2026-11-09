@@ -301,6 +301,36 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         )
     }
 
+    func testDuplicateSelectsTheCopyAndAbandonSelectsTheParent() async throws {
+        let repoPath = try XCTUnwrap(viewModel?.repoPath)
+        viewModel = nil
+        _ = try runJj(["describe", "-m", "base"], in: repoPath)
+        _ = try runJj(["new", "-m", "target"], in: repoPath)
+        _ = try runJj(["new"], in: repoPath)
+
+        viewModel = try RepoViewModel(path: repoPath)
+        let viewModel = try XCTUnwrap(viewModel)
+        try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
+        let base = try viewModel.repo.showSummary(rev: "subject(exact:base)").info
+        let target = try viewModel.repo.showSummary(rev: "subject(exact:target)").info
+
+        viewModel.duplicate(rev: target.changeId.id)
+        try await waitUntil("the duplicate finishes") {
+            !viewModel.isRefreshingInFlight && viewModel.successActionSignal != 0
+        }
+        let copy = try XCTUnwrap(viewModel.selectedChange?.info)
+        XCTAssertNotEqual(copy.changeId.id, target.changeId.id)
+        XCTAssertEqual(copy.description.trimmingCharacters(in: .whitespacesAndNewlines), "target")
+
+        let signal = viewModel.successActionSignal
+        viewModel.abandon(rev: copy.changeId.id)
+        try await waitUntil("the abandon finishes") {
+            !viewModel.isRefreshingInFlight && viewModel.successActionSignal != signal
+        }
+        XCTAssertNil(viewModel.error)
+        XCTAssertEqual(viewModel.selectedChange?.info.changeId.id, base.changeId.id)
+    }
+
     func testEvologRestoreRunsOnceAtATimeAndReloadsTheEvolog() async throws {
         let repoPath = try XCTUnwrap(viewModel?.repoPath)
         viewModel = nil
@@ -397,6 +427,20 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let movedFirst = try XCTUnwrap(find("first"))
         XCTAssertEqual(movedFirst.parents, [destination.commitId.id])
         XCTAssertEqual(try XCTUnwrap(find("second")).parents, [movedFirst.commitId.id])
+    }
+
+    func testRebaseOntoTrunkSaysSoWhenTheChangeIsAlreadyThere() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        try viewModel.repo.describe(rev: "@", message: "work")
+        let work = try viewModel.repo.showSummary(rev: "@").info
+
+        viewModel.rebase(.ontoTrunk(work, trunkName: "main"))
+        try await waitUntil("the rebase finishes") { viewModel.actionNotice != nil }
+        let feedback = viewModel.actionNotice
+
+        XCTAssertEqual(feedback?.message, "work is already on main.")
+        XCTAssertNil(feedback?.undoOperationId, "nothing moved, so there is nothing to undo")
+        XCTAssertEqual(try viewModel.repo.showSummary(rev: "@").info.commitId.id, work.commitId.id)
     }
 
     func testSelectionDropReportsConflictsOutsideTheDraggedChange() async throws {

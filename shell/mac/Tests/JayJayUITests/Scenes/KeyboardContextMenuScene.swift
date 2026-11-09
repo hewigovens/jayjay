@@ -13,7 +13,7 @@ final class KeyboardContextMenuScene: SceneBase {
         XCTAssertTrue(selectedRow.isSelected)
         keyStroke("v")
         XCTAssertFalse(app.element(AID.Evolog.entryList).exists)
-        try openMenu(showing: "Show evolution…", "Control-Return did not open the selected change menu")
+        try openMenu(showing: "Show Evolution…", "Control-Return did not open the selected change menu")
         captureMenu("Change menu")
         keyStroke("v")
         XCTAssertTrue(app.element(AID.Evolog.entryList).waitForExistence(timeout: 10), "V did not run Show Evolution")
