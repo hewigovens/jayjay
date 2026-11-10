@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { Exports } from "../worker/Exports";
-import type { NotesExport } from "../src/github/NotesExport";
+import { maxExportBytes, type NotesExport } from "../src/github/NotesExport";
 
 const body: NotesExport = {
   review: "/o/r/pull/7",
@@ -24,13 +24,13 @@ const body: NotesExport = {
   ],
 };
 
-function exports() {
+function exports(allow: (key: string) => boolean = () => true) {
   const stored = new Map<string, string>();
   const kv = {
     put: async (key: string, value: string) => void stored.set(key, value),
     get: async (key: string) => stored.get(key) ?? null,
   };
-  return new Exports(kv);
+  return new Exports(kv, { limit: async ({ key }) => ({ success: allow(key) }) });
 }
 
 test("stores an export under an unguessable link that serves Markdown and JSON", async () => {
@@ -65,4 +65,46 @@ test("refuses bodies that are not an export or are too large", async () => {
   expect((await post(JSON.stringify({ ...body, title: "x".repeat(1024 * 1024) }))).status).toBe(
     413,
   );
+});
+
+test("refuses an oversized body without buffering past the limit", async () => {
+  const lying = new Request("https://x/api/exports", {
+    method: "POST",
+    headers: { "content-length": String(2 * maxExportBytes) },
+    body: "{}",
+  });
+  expect((await exports().create(lying)).status).toBe(413);
+
+  let pulled = 0;
+  const chunk = new Uint8Array(64 * 1024);
+  const oversized = new ReadableStream<Uint8Array>({
+    pull(controller) {
+      pulled += chunk.byteLength;
+      if (pulled > 4 * maxExportBytes) controller.close();
+      else controller.enqueue(chunk);
+    },
+  });
+  const unsized = new Request("https://x/api/exports", {
+    method: "POST",
+    body: oversized,
+    duplex: "half",
+  } as RequestInit);
+  expect((await exports().create(unsized)).status).toBe(413);
+  expect(pulled).toBeLessThan(maxExportBytes + 4 * chunk.byteLength);
+});
+
+test("rate-limits exports per client address", async () => {
+  const keys: string[] = [];
+  const store = exports((key) => keys.push(key) <= 1);
+  const post = () =>
+    store.create(
+      new Request("https://x/api/exports", {
+        method: "POST",
+        headers: { "cf-connecting-ip": "203.0.113.9" },
+        body: JSON.stringify(body),
+      }),
+    );
+  expect((await post()).status).toBe(201);
+  expect((await post()).status).toBe(429);
+  expect(keys).toEqual(["203.0.113.9", "203.0.113.9"]);
 });

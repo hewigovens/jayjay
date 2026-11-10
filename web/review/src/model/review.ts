@@ -40,12 +40,28 @@ export type ReviewState = "reviewed" | "unreviewed" | "partial" | "changed_since
 export type FileKind = "added" | "modified" | "removed" | "renamed" | "copied";
 export type ImageSide = "old" | "new";
 
-const IMAGE_EXTENSIONS = new Set(["png", "jpg", "jpeg", "gif", "webp", "bmp", "ico", "svg"]);
+const IMAGE_TYPES = new Map([
+  ["png", "image/png"],
+  ["jpg", "image/jpeg"],
+  ["jpeg", "image/jpeg"],
+  ["gif", "image/gif"],
+  ["webp", "image/webp"],
+  ["bmp", "image/bmp"],
+  ["ico", "image/x-icon"],
+  ["svg", "image/svg+xml"],
+]);
 
-/** Whether a path names an image the browser can show, by an extension after a name (`.png` alone is not one). */
-export function isImagePath(path: string): boolean {
+/** The MIME type of an image the browser can show, by an extension after a name (`.png` alone is not one); `undefined` for any other path. */
+export function imageType(path: string): string | undefined {
   const dot = path.lastIndexOf(".");
-  return dot > path.lastIndexOf("/") + 1 && IMAGE_EXTENSIONS.has(path.slice(dot + 1).toLowerCase());
+  return dot > path.lastIndexOf("/") + 1
+    ? IMAGE_TYPES.get(path.slice(dot + 1).toLowerCase())
+    : undefined;
+}
+
+/** Whether a path names an image the browser can show; see `imageType`. */
+export function isImagePath(path: string): boolean {
+  return imageType(path) !== undefined;
 }
 /** From `jayjay_primitives::seti`; metrics are fractions of the em. */
 export interface FileGlyph {

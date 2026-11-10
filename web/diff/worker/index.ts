@@ -8,6 +8,7 @@ interface Env {
   GITHUB_TOKEN?: string;
   GITHUB_CLIENT_ID: string;
   STORE: KVNamespace;
+  EXPORT_LIMIT: RateLimit;
 }
 
 const prefix = "/api/";
@@ -43,9 +44,9 @@ export default {
     )
       return login(request, env, pathname);
     if (request.method === "POST" && pathname === "/api/exports")
-      return new Exports(env.STORE).create(request);
+      return new Exports(env.STORE, env.EXPORT_LIMIT).create(request);
     if (request.method === "GET" && pathname.startsWith("/api/exports/"))
-      return new Exports(env.STORE).read(pathname.slice("/api/exports/".length));
+      return new Exports(env.STORE, env.EXPORT_LIMIT).read(pathname.slice("/api/exports/".length));
     const target = pathname.startsWith(prefix)
       ? parseReviewRef(pathname.slice(prefix.length))
       : null;

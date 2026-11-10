@@ -13,5 +13,3 @@ APPCAST_ORIGIN = "https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/
 binding = "DB"
 database_name = "jayjay_stats"
 database_id = "d9051c69-6cce-4504-bb87-c06a08f9b950"
-
-# HASH_SECRET is a secret, NOT a var:  wrangler secret put HASH_SECRET

@@ -8,7 +8,7 @@
     "dev": "npm run wasm && vite --host 127.0.0.1",
     "build": "npm run wasm && npm run build:ui",
     "preview": "vite preview --host 127.0.0.1",
-    "check": "npm run check --workspace @jayjay/review-web && tsc --noEmit && oxlint src",
+    "check": "tsc --noEmit && oxlint src tests",
     "test:browser": "playwright test",
     "build:ui": "tsc --noEmit && vite build"
   },

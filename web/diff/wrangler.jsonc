@@ -12,6 +12,13 @@
 			"id": "24132426320e47da8d1391bef9c2a979"
 		}
 	],
+	"ratelimits": [
+		{
+			"name": "EXPORT_LIMIT",
+			"namespace_id": "1001",
+			"simple": { "limit": 60, "period": 60 }
+		}
+	],
 	"routes": [
 		{
 			"pattern": "diff.hewig.dev",

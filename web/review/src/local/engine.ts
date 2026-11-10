@@ -48,8 +48,11 @@ async function wasmResponse(url: string): Promise<Response> {
   if (cache) {
     try {
       await cache.put(url, response.clone());
+      const current = new Set(Object.values(wasmUrls).map((wasm) => new Request(wasm).url));
+      for (const stale of await cache.keys())
+        if (!current.has(stale.url)) await cache.delete(stale);
     } catch {
-      /* Quota failures leave the current diff usable. */
+      /* Cache failures leave the current diff usable. */
     }
   }
   return response;

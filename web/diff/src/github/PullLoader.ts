@@ -1,4 +1,4 @@
-import { isImagePath, type ImageSide, type ReviewBundle } from "@jayjay/review-web/types";
+import { imageType, type ImageSide, type ReviewBundle } from "@jayjay/review-web/types";
 import type { PullError, PullFile, PullManifest } from "./PullManifest";
 import { reviewPath, type ReviewRef } from "./ReviewRef";
 
@@ -19,16 +19,6 @@ const concurrency = 4;
 const ahead = 10;
 const behind = 2;
 const largeFile = 3000;
-const imageTypes: Record<string, string> = {
-  png: "image/png",
-  jpg: "image/jpeg",
-  jpeg: "image/jpeg",
-  gif: "image/gif",
-  webp: "image/webp",
-  bmp: "image/bmp",
-  ico: "image/x-icon",
-  svg: "image/svg+xml",
-};
 const errors = new Set<string>([
   "not-found",
   "rate-limited",
@@ -148,15 +138,13 @@ export class PullLoader {
   }
 
   private async fetchContent(file: PullFile): Promise<FileContent> {
-    if (file.binary && !isImagePath(file.path)) return { before: "", after: "", images: null };
+    const type = imageType(file.path);
+    if (file.binary && !type) return { before: "", after: "", images: null };
     const { repository, baseSha, headSha } = this.manifest;
     const [before, after] = await Promise.all([
       file.kind === "added" ? null : this.raw(repository, baseSha, file.oldPath ?? file.path),
       file.kind === "removed" ? null : this.raw(repository, headSha, file.path),
     ]);
-    const type = isImagePath(file.path)
-      ? imageTypes[file.path.slice(file.path.lastIndexOf(".") + 1).toLowerCase()]
-      : undefined;
     const images = type
       ? {
           ...(before && { old: new Blob([before], { type }) }),

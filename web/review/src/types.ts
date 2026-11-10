@@ -14,4 +14,4 @@ export type {
   ReviewResult,
   ReviewState,
 } from "./model/review";
-export { defaultOptions, isImagePath } from "./model/review";
+export { defaultOptions, imageType, isImagePath } from "./model/review";

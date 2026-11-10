@@ -17,6 +17,13 @@ import { ToolButton } from "../ToolButton";
 import { toggled } from "../toggled";
 import type { FileSummary, Overview } from "../../model/review";
 
+function folders(path: string): string[] {
+  const result: string[] = [];
+  for (let slash = path.indexOf("/"); slash !== -1; slash = path.indexOf("/", slash + 1))
+    result.push(path.slice(0, slash));
+  return result;
+}
+
 function FileRow({
   file,
   index,
@@ -160,6 +167,10 @@ export function FileColumn({
       ),
     [overview.files, text, hideReviewed, onlyNotes],
   );
+  const shownFolders = useMemo(
+    () => new Set([...visible].flatMap((index) => folders(overview.files[index].path))),
+    [overview.files, visible],
+  );
   const activeNotes = overview.notes.filter((note) => !note.note.resolved).length;
   const reviewed = overview.files.some((file) => file.review === "reviewed");
   const { counts } = overview;
@@ -267,14 +278,9 @@ export function FileColumn({
         )}
         {tree
           ? overview.tree.map((entry) => {
-              if ([...collapsed].some((path) => entry.path.startsWith(`${path}/`))) return null;
+              if (folders(entry.path).some((path) => collapsed.has(path))) return null;
               if (entry.file === null) {
-                if (
-                  !overview.files.some(
-                    (file, index) => visible.has(index) && file.path.startsWith(`${entry.path}/`),
-                  )
-                )
-                  return null;
+                if (!shownFolders.has(entry.path)) return null;
                 const open = !collapsed.has(entry.path);
                 return (
                   <button
