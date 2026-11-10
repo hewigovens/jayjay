@@ -112,18 +112,17 @@ extension RepoViewModel {
         rev: String,
         data: ConflictEditorData,
         content: String,
-        completion: @escaping @MainActor (Bool) -> Void
+        completion: @escaping @MainActor (String?) -> Void
     ) {
         lastInternalMutationAt = Date()
         runRepoTask {
             try $0.applyConflictEditor(rev: rev, data: data, content: content)
         } onSuccess: { viewModel, _ in
             viewModel.successActionSignal += 1
-            completion(true)
+            completion(nil)
             viewModel.refresh(selecting: rev)
-        } onFailure: { viewModel, error in
-            viewModel.present(error: error)
-            completion(false)
+        } onFailure: { _, error in
+            completion(error.friendlyDescription)
         }
     }
 

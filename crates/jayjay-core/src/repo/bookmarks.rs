@@ -7,7 +7,7 @@ use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
 use jj_lib::op_store::RefTarget;
 use jj_lib::ref_name::{RefName, RemoteName, RemoteNameBuf};
-use jj_lib::repo::{ReadonlyRepo, Repo as _};
+use jj_lib::repo::{MutableRepo, ReadonlyRepo, Repo as _};
 
 use super::Repo;
 use super::ref_name::ensure_valid_ref_name;
@@ -241,27 +241,31 @@ impl Repo {
     /// `jj bookmark forget`: drop the local bookmark and stop tracking its remote counterparts, so nothing is staged for a push. The `git` remote is left to the export, which drops a colocated branch along with its bookmark, as the CLI does.
     pub fn forget_bookmark(&self, name: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
-        self.with_repo_transaction("forget bookmark", false, move |_, repo_mut| {
-            let bookmark = RefName::new(name);
-            let remotes: Vec<RemoteNameBuf> = repo_mut
-                .view()
-                .all_remote_bookmarks()
-                .filter(|(symbol, _)| {
-                    symbol.name == bookmark && symbol.remote != REMOTE_NAME_FOR_LOCAL_GIT_REPO
-                })
-                .map(|(symbol, _)| symbol.remote.to_owned())
-                .collect();
-            if remotes.is_empty() && repo_mut.view().get_local_bookmark(bookmark).is_absent() {
-                return Err(JayError::Internal {
-                    message: format!("bookmark '{name}' not found"),
-                });
-            }
-            self.set_bookmark_target(repo_mut, name, RefTarget::absent());
-            for remote in &remotes {
-                repo_mut.untrack_remote_bookmark(bookmark.to_remote_symbol(remote));
-            }
-            Ok(())
+        self.with_repo_transaction("forget bookmark", false, |_, repo_mut| {
+            self.forget_bookmark_in(repo_mut, name)
         })
+    }
+
+    fn forget_bookmark_in(&self, repo_mut: &mut MutableRepo, name: &str) -> JayResult<()> {
+        let bookmark = RefName::new(name);
+        let remotes: Vec<RemoteNameBuf> = repo_mut
+            .view()
+            .all_remote_bookmarks()
+            .filter(|(symbol, _)| {
+                symbol.name == bookmark && symbol.remote != REMOTE_NAME_FOR_LOCAL_GIT_REPO
+            })
+            .map(|(symbol, _)| symbol.remote.to_owned())
+            .collect();
+        if remotes.is_empty() && repo_mut.view().get_local_bookmark(bookmark).is_absent() {
+            return Err(JayError::Internal {
+                message: format!("bookmark '{name}' not found"),
+            });
+        }
+        self.set_bookmark_target(repo_mut, name, RefTarget::absent());
+        for remote in &remotes {
+            repo_mut.untrack_remote_bookmark(bookmark.to_remote_symbol(remote));
+        }
+        Ok(())
     }
 
     pub fn rename_bookmark(&self, old_name: &str, new_name: &str) -> JayResult<()> {
@@ -331,10 +335,13 @@ impl Repo {
             .map(|b| b.name.as_str())
             .collect();
         let count = stale.len() as u32;
-        for name in stale {
-            self.forget_bookmark(name)?;
-        }
         if count > 0 {
+            // One operation, so a single undo restores every bookmark.
+            self.with_repo_transaction("forget stale bookmarks", false, |_, repo_mut| {
+                stale
+                    .iter()
+                    .try_for_each(|name| self.forget_bookmark_in(repo_mut, name))
+            })?;
             self.reload()?;
         }
         Ok(count)

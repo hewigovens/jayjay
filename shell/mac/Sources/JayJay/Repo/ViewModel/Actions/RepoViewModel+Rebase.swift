@@ -82,19 +82,20 @@ extension RepoViewModel {
         revset: String,
         includeSubmoduleStatuses: Bool
     ) throws -> RepoRebaseRefreshResult {
-        let source = try repo.showSummary(rev: command.sourceRev).info
-        let tracked = try trackingOperation(repo: repo) { repo -> (moved: Bool, preferredRev: String, rebasedRevset: String) in
+        let tracked = try trackingOperation(repo: repo) { repo -> (preferredRev: String, rebasedRevset: String) in
             if command.selectionRevs.isEmpty {
                 let rebased = try repo.rebase(rev: command.sourceRev, dest: command.destRev, mode: command.mode)
-                let revset = command.mode == .branch ? "(\(command.destRev))..\(rebased)" : rebased
-                return (rebased != source.commitId.id, rebased, revset)
+                return (rebased, command.mode == .branch ? "(\(command.destRev))..\(rebased)" : rebased)
             }
+            let source = try repo.showSummary(rev: command.sourceRev).info
             let rebasedChangeIds = try command.selectionRevs.map { try repo.showSummary(rev: $0).info.changeId.id }
             try repo.rebaseMany(revs: command.selectionRevs, dest: command.destRev)
-            return (true, source.changeId.id, rebasedChangeIds.joined(separator: " | "))
+            return (source.changeId.id, rebasedChangeIds.joined(separator: " | "))
         }
-        let (moved, preferredRev, rebasedRevset) = tracked.result
+        let (preferredRev, rebasedRevset) = tracked.result
         let operationId = tracked.operationId
+        // A rebase of changes already in place records no operation.
+        let moved = operationId != nil
         try repo.refreshWorkingCopy()
 
         let graph = try repo.logGraphWithLayout(revset: revset)

@@ -396,6 +396,7 @@ repo-move-bookmark-here = { $bookmark } をここへ移動しますか？
 repo-rebase-onto-question = { $source } を { $destination } にリベースしますか？
 repo-rebased-onto = { $source } を { $destination } にリベースしました。
 repo-already-on = { $source } はすでに { $destination } の上にあります。
+repo-changes-already-on = { $count } 個のチェンジはすでに { $destination } の上にあります。
 repo-removing-workspace = 削除中のワークスペースには切り替えられません。
 repo-remove-title-from-recent = { $title } を最近使った項目から削除
 repo-suggest-branch-names-with = { $provider } でブランチ名を提案

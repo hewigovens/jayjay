@@ -306,6 +306,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         viewModel = nil
         _ = try runJj(["describe", "-m", "base"], in: repoPath)
         _ = try runJj(["new", "-m", "target"], in: repoPath)
+        _ = try runJj(["new", "-m", "top"], in: repoPath)
         _ = try runJj(["new"], in: repoPath)
 
         viewModel = try RepoViewModel(path: repoPath)
@@ -313,6 +314,7 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         try viewModel.setGraph(viewModel.repo.logGraph(revset: "all()"))
         let base = try viewModel.repo.showSummary(rev: "subject(exact:base)").info
         let target = try viewModel.repo.showSummary(rev: "subject(exact:target)").info
+        let top = try viewModel.repo.showSummary(rev: "subject(exact:top)").info
 
         viewModel.duplicate(rev: target.changeId.id)
         try await waitUntil("the duplicate finishes") {
@@ -329,6 +331,14 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         }
         XCTAssertNil(viewModel.error)
         XCTAssertEqual(viewModel.selectedChange?.info.changeId.id, base.changeId.id)
+
+        let abandonSignal = viewModel.successActionSignal
+        viewModel.abandon(revs: [top.changeId.id, base.changeId.id])
+        try await waitUntil("the batch abandon finishes") {
+            !viewModel.isRefreshingInFlight && viewModel.successActionSignal != abandonSignal
+        }
+        XCTAssertNil(viewModel.error)
+        XCTAssertEqual(viewModel.selectedChange?.info.changeId.id, target.changeId.id, "the parent between two abandoned changes is rewritten")
     }
 
     func testEvologRestoreRunsOnceAtATimeAndReloadsTheEvolog() async throws {
@@ -427,6 +437,11 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         let movedFirst = try XCTUnwrap(find("first"))
         XCTAssertEqual(movedFirst.parents, [destination.commitId.id])
         XCTAssertEqual(try XCTUnwrap(find("second")).parents, [movedFirst.commitId.id])
+
+        viewModel.actionNotice = nil
+        viewModel.rebase(.selection([second.changeId.id, first.changeId.id], onto: destination.changeId.id, destLabel: "destination"))
+        try await waitUntil("the repeated rebase finishes") { viewModel.actionNotice != nil }
+        XCTAssertEqual(viewModel.actionNotice?.message, "2 changes are already on destination.")
     }
 
     func testRebaseOntoTrunkSaysSoWhenTheChangeIsAlreadyThere() async throws {

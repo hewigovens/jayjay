@@ -57,7 +57,11 @@ struct RepoRebaseCommand {
     }
 
     func feedbackMessage(moved: Bool, hadConflicts: Bool) -> String {
-        guard moved else { return Localized.Repo.alreadyOn(source: sourceLabel, destination: destLabel) }
+        guard moved else {
+            return selectionRevs.isEmpty
+                ? Localized.Repo.alreadyOn(source: sourceLabel, destination: destLabel)
+                : Localized.Repo.changesAlreadyOn(count: selectionRevs.count, destination: destLabel)
+        }
         let base = Localized.Repo.rebasedOnto(source: sourceLabel, destination: destLabel)
         return hadConflicts ? Localized.Repo.rebasedWithConflicts(message: base) : base
     }

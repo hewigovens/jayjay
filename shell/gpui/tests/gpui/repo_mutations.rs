@@ -407,7 +407,7 @@ fn duplicate_change_context_action_refreshes_the_graph(cx: &mut TestAppContext) 
     });
     view.update(cx, |view, cx| {
         view.dispatch_context_action(
-            ContextAction::Change(Arc::new(ChangeAction::Duplicate { rev })),
+            ContextAction::Change(Arc::new(ChangeAction::Duplicate { rev: rev.clone() })),
             cx,
         );
     });
@@ -424,10 +424,9 @@ fn duplicate_change_context_action_refreshes_the_graph(cx: &mut TestAppContext) 
                 .count(),
             2
         );
-        assert!(
-            vm.selected_change()
-                .is_some_and(|change| change.is_working_copy)
-        );
+        let selected = vm.selected_change().expect("the copy is selected");
+        assert_eq!(selected.description.trim(), "add hello");
+        assert_ne!(selected.selection_revision(), rev);
     });
 }
 

@@ -80,5 +80,10 @@ final class ExternalMergeSessionTests: XCTestCase {
         XCTAssertNotNil(session.actionError)
         XCTAssertNil(session.loadError, "a failed pick must keep the editor open")
         XCTAssertEqual(session.result, "edited by hand\n")
+
+        session.resultChanged()
+        session.actionError = nil
+        XCTAssertFalse(session.useHunkSource(hunk, .right, undoManager: undoManager))
+        XCTAssertNil(session.actionError, "a hand edit retires the picks, leaving no side that could only fail")
     }
 }

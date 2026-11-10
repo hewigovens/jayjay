@@ -35,7 +35,7 @@ struct MergeEditState: Equatable {
 
 extension MergeEditingSession {
     var hasEdits: Bool {
-        highlights.map { result != $0.resultText } ?? false
+        selectedSource != nil || highlights.map { result != $0.resultText } ?? false
     }
 
     var editState: MergeEditState {
@@ -49,6 +49,7 @@ extension MergeEditingSession {
 
     func resultChanged() {
         selectedSource = nil
+        picks = [:]
     }
 
     func recordingUndo(_ undoManager: UndoManager?, _ change: () -> Void) {
@@ -77,7 +78,7 @@ extension MergeEditingSession {
     }
 
     func useHunkSource(_ hunk: MergeEditorHunk, _ source: MergeHunkSource, undoManager: UndoManager?) -> Bool {
-        guard let highlights else { return false }
+        guard let highlights, canUseHunkSource(hunk, source) else { return false }
         do {
             let updated = try mergeResultPickHunk(
                 original: highlights.resultText,
@@ -97,6 +98,14 @@ extension MergeEditingSession {
             actionError = error.friendlyDescription
             return false
         }
+    }
+
+    /// A resolved hunk can only switch sides while its pick is still what produced the result.
+    func canUseHunkSource(_ hunk: MergeEditorHunk, _ source: MergeHunkSource) -> Bool {
+        if mergeHunkIsUnresolved(result: result, hunk: hunk) {
+            return true
+        }
+        return picks[hunk.index].map { $0 != source } ?? false
     }
 
     func sideHelp(_ source: MergeHunkSource) -> String {

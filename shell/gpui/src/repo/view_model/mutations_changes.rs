@@ -161,7 +161,9 @@ impl RepoViewModel {
         let task = self.repo_result_task(
             cx,
             move |repo| repo.duplicate(&rev),
-            |vm, result: &String, cx| vm.refresh_selecting_revision(Some(result), cx),
+            |vm, result: &String, cx| {
+                vm.refresh_preferring(false, Some((String::new(), result.clone())), cx)
+            },
         );
         cx.spawn(async move |_, _| task.await.map(drop))
     }
@@ -186,7 +188,9 @@ impl RepoViewModel {
         let task = self.repo_result_task(
             cx,
             move |repo| repo.revert_change(&rev),
-            |vm, result: &String, cx| vm.refresh_selecting_revision(Some(result), cx),
+            |vm, result: &String, cx| {
+                vm.refresh_preferring(false, Some((String::new(), result.clone())), cx)
+            },
         );
         cx.spawn(async move |_, _| task.await.map(drop))
     }

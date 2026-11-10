@@ -5,7 +5,7 @@ use crate::app::actions::{
 };
 use crate::ui::context_menu::ContextAction;
 use gpui::{Context, Div, InteractiveElement};
-use jayjay_core::dag::SelectionCommand;
+use jayjay_core::dag::{ChangeCommand, SelectionCommand};
 use jayjay_core::shortcuts::ShortcutCommand;
 use std::sync::Arc;
 
@@ -57,10 +57,11 @@ impl RepoWindow {
             }
             return;
         }
-        let rev = vm.selected_change().map_or_else(
-            || "@".to_owned(),
-            |change| change.selection_revision().to_owned(),
-        );
+        let rev = match vm.selected_change() {
+            Some(change) if !ChangeCommand::RebaseOntoTrunk.is_available(change) => return,
+            Some(change) => change.selection_revision().to_owned(),
+            None => "@".to_owned(),
+        };
         self.run_change_action(Arc::new(ChangeAction::RebaseOntoTrunk { rev }), cx)
     }
 

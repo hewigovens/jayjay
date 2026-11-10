@@ -22,7 +22,7 @@ protocol ChangeActions: AnyObject {
         rev: String,
         data: ConflictEditorData,
         content: String,
-        completion: @escaping @MainActor (Bool) -> Void
+        completion: @escaping @MainActor (String?) -> Void
     )
     func applyWorkingCopyFileEditor(
         data: FileEditorData,

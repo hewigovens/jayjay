@@ -425,6 +425,11 @@ repo-move-bookmark-here = Move { $bookmark } here?
 repo-rebase-onto-question = Rebase { $source } onto { $destination }?
 repo-rebased-onto = Rebased { $source } onto { $destination }.
 repo-already-on = { $source } is already on { $destination }.
+repo-changes-already-on =
+    { $count ->
+        [one] { $count } change is already on { $destination }.
+       *[other] { $count } changes are already on { $destination }.
+    }
 repo-removing-workspace = Cannot switch to a workspace while it is being removed.
 repo-remove-title-from-recent = Remove { $title } from Recent
 repo-suggest-branch-names-with = Suggest branch names with { $provider }

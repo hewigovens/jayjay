@@ -2,7 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct ConflictEditorView: View {
-    typealias Save = (ConflictEditorData, String, @escaping @MainActor (Bool) -> Void) -> Void
+    typealias Save = (ConflictEditorData, String, @escaping @MainActor (String?) -> Void) -> Void
 
     @State private var session: ConflictEditorSession
     let onSave: Save
@@ -26,9 +26,10 @@ struct ConflictEditorView: View {
     private func save() {
         guard let data = session.data, data.isText, !session.isSaving else { return }
         session.isSaving = true
-        onSave(data, session.result) { success in
+        onSave(data, session.result) { failure in
             session.isSaving = false
-            if success {
+            session.actionError = failure
+            if failure == nil {
                 onDone()
             }
         }

@@ -35,6 +35,10 @@ final class EditUndoRouterTests: XCTestCase {
         XCTAssertEqual(history.undoTitle, manager.undoMenuItemTitle)
         XCTAssertFalse(EditUndoRouter.acceptsRepoSteps(window))
 
+        text.isEditable = false
+        XCTAssertTrue(EditUndoRouter.acceptsRepoSteps(window), "read-only text holds focus for selection only")
+        XCTAssertFalse(EditUndoRouter.LocalHistory(window: window).canUndo)
+
         window.representedURL = nil
         window.makeFirstResponder(list)
         XCTAssertFalse(EditUndoRouter.acceptsRepoSteps(window))

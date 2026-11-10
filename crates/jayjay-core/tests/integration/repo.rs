@@ -1211,6 +1211,22 @@ fn undo_refuses_a_merge_of_concurrent_operations() {
 }
 
 #[test]
+fn undo_runs_out_at_the_operation_that_added_the_workspace() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+    repo.describe("@", "work").expect("describe");
+    for _ in 0..8 {
+        let state = repo.undo_state();
+        if state.undo_description.is_none() {
+            return;
+        }
+        repo.undo(&state.operation_id)
+            .expect("an offered undo must succeed");
+    }
+    panic!("undo never ran out");
+}
+
+#[test]
 fn undo_skips_operations_from_another_workspace() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

@@ -390,6 +390,7 @@ repo-move-bookmark-here = 要將 { $bookmark } 移到這裡嗎？
 repo-rebase-onto-question = 要將 { $source } 重定基底到 { $destination } 嗎？
 repo-rebased-onto = 已將 { $source } 重定基底到 { $destination }。
 repo-already-on = { $source } 已在 { $destination } 之上。
+repo-changes-already-on = { $count } 個變更已在 { $destination } 之上。
 repo-removing-workspace = 工作區移除期間無法切換。
 repo-remove-title-from-recent = 從最近使用中移除 { $title }
 repo-suggest-branch-names-with = 使用 { $provider } 建議分支名稱

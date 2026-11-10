@@ -116,11 +116,11 @@ extension RepoViewModel {
         })
     }
 
-    /// Abandoning leaves parents untouched, so their commit ids still resolve after the refresh.
     private func survivingParent(ofAbandoned revs: [String]) -> String {
         let abandoned = revs.compactMap { change(for: $0) }
         let abandonedIds = Set(abandoned.map(\.commitId.id))
-        return abandoned.lazy.flatMap(\.parents).first { !abandonedIds.contains($0) } ?? "@"
+        let parent = abandoned.lazy.flatMap(\.parents).first { !abandonedIds.contains($0) }
+        return parent.flatMap { change(for: $0)?.selectionRevision } ?? "@"
     }
 
     func squash(rev: String) {
@@ -194,7 +194,7 @@ extension RepoViewModel {
     }
 
     func revertChange(rev: String) {
-        performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.revertedChange }) { try $0.revertChange(rev: rev) }
+        performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.revertedChange }, { try $0.revertChange(rev: rev) })
     }
 
     /// The merge becomes the working copy.
@@ -203,7 +203,7 @@ extension RepoViewModel {
     }
 
     func duplicate(rev: String) {
-        performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.duplicatedChange }) { try $0.duplicate(rev: rev) }
+        performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.duplicatedChange }, { try $0.duplicate(rev: rev) })
     }
 
     func loadOpLog() {

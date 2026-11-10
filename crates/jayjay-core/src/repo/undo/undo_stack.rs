@@ -82,9 +82,18 @@ impl Repo {
         let Some(parent) = single_parent(&target)? else {
             return Ok(None);
         };
+        let restore = restored_operation(repo, parent, UNDO_PREFIX)?;
+        // Before the operation that added this workspace there is no working copy to restore.
+        let view = block_on_result("load operation view", restore.view())?;
+        if view
+            .get_wc_commit_id(self.workspace_name.as_ref())
+            .is_none()
+        {
+            return Ok(None);
+        }
         Ok(Some(RestoreStep {
             description: summary(&target),
-            restore: restored_operation(repo, parent, UNDO_PREFIX)?,
+            restore,
         }))
     }
 

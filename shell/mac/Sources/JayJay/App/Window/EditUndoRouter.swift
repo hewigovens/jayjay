@@ -26,7 +26,7 @@ final class EditUndoRouter {
         @MainActor
         static func manager(in window: NSWindow?) -> UndoManager? {
             let responder = window?.firstResponder
-            if responder is NSText {
+            if EditUndoRouter.isTextInput(responder) {
                 return responder?.undoManager
             }
             return EditUndoRouter.acceptsRepoSteps(window) ? nil : responder?.undoManager ?? window?.undoManager
@@ -80,7 +80,12 @@ final class EditUndoRouter {
 
     static func acceptsRepoSteps(_ window: NSWindow?) -> Bool {
         guard let window else { return false }
-        return window.representedURL != nil && window.attachedSheet == nil && window.sheetParent == nil && !(window.firstResponder is NSText)
+        return window.representedURL != nil && window.attachedSheet == nil && window.sheetParent == nil && !isTextInput(window.firstResponder)
+    }
+
+    /// Read-only text (the description, diff panes) takes focus for selection but has nothing of its own to undo.
+    private static func isTextInput(_ responder: NSResponder?) -> Bool {
+        (responder as? NSText)?.isEditable == true
     }
 
     private func observeFirstResponder(of window: NSWindow?) {
