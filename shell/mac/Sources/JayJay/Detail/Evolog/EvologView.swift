@@ -261,7 +261,7 @@ struct EvologView: View {
             ProgressView().controlSize(.small)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.interdiffError {
-            loadError(error) { viewModel.loadInterdiff() }
+            DiffLoadErrorView(message: error) { viewModel.loadInterdiff() }
         } else if let detail = viewModel.interdiffDetail {
             if detail.diff.isEmpty {
                 ContentUnavailableView(
@@ -329,7 +329,7 @@ struct EvologView: View {
                     ProgressView().controlSize(.small)
                         .frame(maxWidth: .infinity, maxHeight: .infinity)
                 } else if let error = viewModel.fileError {
-                    loadError(error) { viewModel.loadFile(path: viewModel.selectedPath) }
+                    DiffLoadErrorView(message: error) { viewModel.loadFile(path: viewModel.selectedPath) }
                 } else if let hunk = viewModel.selectedHunk,
                           let from = viewModel.selectedFromCommitId,
                           let to = viewModel.selectedToCommitId
@@ -357,17 +357,6 @@ struct EvologView: View {
                 }
             }
         )
-    }
-
-    private func loadError(_ message: String, retry: @escaping () -> Void) -> some View {
-        ContentUnavailableView {
-            Label(Localized.Repo.couldntLoadDiff, systemImage: "exclamationmark.triangle")
-        } description: {
-            Text(message)
-        } actions: {
-            Button(Localized.Repo.retry, action: retry)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func fileList(detail: ChangeDetail) -> some View {

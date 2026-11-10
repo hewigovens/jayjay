@@ -38,15 +38,9 @@ struct FileHistoryComparisonDiff: View {
                     description: Text(Localized.Repo.theFileIsTheSameIn)
                 )
             case let .failure(error):
-                ContentUnavailableView {
-                    Label(Localized.Repo.couldntLoadDiff, systemImage: "exclamationmark.triangle")
-                } description: {
-                    Text(error.friendlyDescription)
-                } actions: {
-                    Button(Localized.Repo.retry) {
-                        loaded = nil
-                        attempt += 1
-                    }
+                DiffLoadErrorView(message: error.friendlyDescription) {
+                    loaded = nil
+                    attempt += 1
                 }
             case nil:
                 Color.clear

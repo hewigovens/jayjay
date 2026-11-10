@@ -53,6 +53,8 @@ extension DiffSection {
                     ? Localized.Diff.thisFileWasCopiedItsContents
                     : Localized.Diff.thisFileWasRenamedItsContents
             )
+        } else if let loadError {
+            DiffLoadErrorView(message: loadError) { loadAttempt += 1 }
         } else if shouldShowBlockingProgress {
             LoadingStatus(label: Localized.Diff.loadingDiffEllipsis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)

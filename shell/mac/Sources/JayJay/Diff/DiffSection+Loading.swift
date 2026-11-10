@@ -51,6 +51,7 @@ extension DiffSection {
             String(settings.ignoreWhitespace),
             projectionModeKey
         ].joined(separator: "|")
+        loadError = nil
         if let content = placeholderContent {
             resetContextExpansion()
             loadedDiff = DiffSectionLoadedDiff(
@@ -95,7 +96,13 @@ extension DiffSection {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: requestedProjectionMode
         ) {
-            await applyLoaded(cached, path: path, basis: basis)
+            if let error = cached.loadError {
+                guard !Task.isCancelled, hunk.path == path else { return }
+                clearLoadedContent()
+                loadError = error
+            } else {
+                await applyLoaded(cached, path: path, basis: basis)
+            }
         }
         isComputing = false
     }

@@ -6,6 +6,7 @@ final class DiffStore {
     struct CachedDiff {
         let diff: FileDiff
         let content: DiffLoadedContent
+        var loadError: String?
     }
 
     struct CacheKeyParts {
@@ -70,7 +71,7 @@ final class DiffStore {
             supportsFileEditor: hunk.supportsFileEditor
         )
 
-        var fetchFailed = false
+        var loadError: String?
         let needsProjectionModeReload = hunk.projection != nil
             && projectionMode != nil
             && hunk.projection?.mode != projectionMode
@@ -83,8 +84,10 @@ final class DiffStore {
                 repo: repo, hunk: hunk, rev: rev, fromRev: compareFromRev,
                 projectionMode: projectionMode
             )
-            fetchFailed = fetched == nil
-            let loaded = fetched ?? DiffLoadedContent(oldContent: "", newContent: "")
+            if case let .failure(error) = fetched {
+                loadError = error.friendlyDescription
+            }
+            let loaded = (try? fetched.get()) ?? DiffLoadedContent(oldContent: "", newContent: "")
             content = DiffLoadedContent(
                 oldContent: loaded.oldContent,
                 newContent: loaded.newContent,
@@ -105,10 +108,10 @@ final class DiffStore {
 
         let cached = CachedDiff(
             diff: diff,
-            content: content
+            content: content,
+            loadError: loadError
         )
-        // A failed fetch still renders, but uncached so the next load retries it.
-        if !fetchFailed {
+        if loadError == nil {
             await cache.set(key, value: cached)
         }
         return cached

@@ -18,10 +18,14 @@ extension DiffStore {
         rev: String?,
         fromRev: String?,
         projectionMode: DiffProjectionMode?
-    ) async -> DiffLoadedContent? {
-        try? await Self.fetchContent(
-            repo: repo, hunk: hunk, rev: rev, fromRev: fromRev, projectionMode: projectionMode
-        )
+    ) async -> Result<DiffLoadedContent, Error> {
+        do {
+            return try await .success(Self.fetchContent(
+                repo: repo, hunk: hunk, rev: rev, fromRev: fromRev, projectionMode: projectionMode
+            ))
+        } catch {
+            return .failure(error)
+        }
     }
 
     private static func fetchContent(

@@ -32,6 +32,8 @@ struct DiffSection: View {
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
     @State var loadedDiff: DiffSectionLoadedDiff?
     @State var isComputing = false
+    @State var loadError: String?
+    @State var loadAttempt = 0
     @State var selectedLineRange: ClosedRange<Int>?
     @State var contextExpansion = ContextExpansionSession()
     @State var contextExpansionDisplay = DiffContextExpansionDisplay()
@@ -62,7 +64,7 @@ struct DiffSection: View {
         .onChange(of: diffCommands?.expandAllContextRequest) { _, _ in
             expandAllContext()
         }
-        .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(settings.language ?? "")|\(projectionModeKey)") {
+        .task(id: "\(compareFromRev ?? "")|\(rev ?? "")|\(hunk.path)|\(settings.ignoreWhitespace)|\(settings.language ?? "")|\(projectionModeKey)|\(loadAttempt)") {
             await computeDiffAsync()
         }
         .environment(\.diffTypography, typography.diffTypography)

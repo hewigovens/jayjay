@@ -83,8 +83,9 @@ final class DiffCacheTests: XCTestCase {
         let store = DiffStore()
         let hunk = plainHunk()
 
-        _ = await store.loadDiff(hunk: hunk, rev: "no-such-revision", commitId: "c1", repo: repo)
+        let loaded = await store.loadDiff(hunk: hunk, rev: "no-such-revision", commitId: "c1", repo: repo)
 
+        XCTAssertNotNil(loaded?.loadError)
         let cached = await store.cachedDiff(hunk: hunk, rev: "no-such-revision", commitId: "c1")
         XCTAssertNil(cached, "a failed fetch must be retried, not served as an empty diff")
     }
