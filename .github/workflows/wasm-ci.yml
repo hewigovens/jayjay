@@ -87,6 +87,8 @@ jobs:
     name: Review web
     runs-on: ubuntu-24.04
     timeout-minutes: 30
+    outputs:
+      playwright: ${{ steps.playwright.outputs.version }}
     steps:
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
@@ -133,11 +135,46 @@ jobs:
           npm run check --workspaces
           npm test --workspace @jayjay/diff
 
+      - name: Read Playwright version
+        id: playwright
+        run: echo "version=$(node -p "require('@playwright/test/package.json').version")" >> "$GITHUB_OUTPUT"
+
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a # v7.0.1
+        with:
+          name: review-web-build
+          path: |
+            web/review-host/dist
+            web/review/src/wasm
+          retention-days: 1
+          if-no-files-found: error
+
+  browser:
+    name: Browser tests
+    needs: review-web
+    runs-on: ubuntu-24.04
+    timeout-minutes: 15
+    # The image ships the browsers and their system libraries, which took up to 13 minutes to install from the Ubuntu mirrors.
+    container:
+      image: mcr.microsoft.com/playwright:v${{ needs.review-web.outputs.playwright }}-noble
+      options: --ipc=host
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1 # v7.1.0
+        with:
+          node-version: 24
+
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: review-web-build
+          path: web
+
+      - name: Install packages
+        run: npm ci
+
       - name: Test in Chromium and WebKit
         working-directory: web/review-host
-        run: |
-          npx playwright install --with-deps chromium webkit
-          npm run test:browser
+        run: npm run test:browser
 
       - name: Test JayJay Diff on phones
         working-directory: web/diff
