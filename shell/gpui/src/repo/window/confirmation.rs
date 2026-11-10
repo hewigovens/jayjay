@@ -46,8 +46,7 @@ impl RepoWindow {
 
     pub(super) fn request_abandon(&mut self, rev: String, cx: &mut Context<Self>) {
         if config::current(cx).features.skip_abandon_confirmation {
-            let task = self.vm.update(cx, |vm, cx| vm.abandon_change(rev, cx));
-            task.detach();
+            self.abandon(vec![rev], cx);
             return;
         }
         self.request_confirmation(
@@ -61,6 +60,19 @@ impl RepoWindow {
                     toggle: |config| config.features.skip_abandon_confirmation ^= true,
                 }),
             },
+            cx,
+        );
+    }
+
+    fn abandon(&mut self, revs: Vec<String>, cx: &mut Context<Self>) {
+        let count = revs.len();
+        let task = self.vm.update(cx, |vm, cx| match revs.as_slice() {
+            [rev] => vm.abandon_change(rev.clone(), cx),
+            _ => vm.abandon_changes(revs, cx),
+        });
+        self.notify_rewrite(
+            task,
+            move |_| jayjay_i18n::repo::abandoned_changes(count),
             cx,
         );
     }
@@ -82,17 +94,16 @@ impl RepoWindow {
                 self.delete_workspace(name, path, cx)
             }
             ConfirmedAction::SquashChanges { revs } => {
+                let count = revs.len();
                 let task = self.vm.update(cx, |vm, cx| vm.squash_changes(revs, cx));
-                task.detach();
+                self.notify_rewrite(
+                    task,
+                    move |_| jayjay_i18n::repo::squashed_changes(count),
+                    cx,
+                );
             }
-            ConfirmedAction::AbandonChange { rev } => {
-                let task = self.vm.update(cx, |vm, cx| vm.abandon_change(rev, cx));
-                task.detach();
-            }
-            ConfirmedAction::AbandonChanges { revs } => {
-                let task = self.vm.update(cx, |vm, cx| vm.abandon_changes(revs, cx));
-                task.detach();
-            }
+            ConfirmedAction::AbandonChange { rev } => self.abandon(vec![rev], cx),
+            ConfirmedAction::AbandonChanges { revs } => self.abandon(revs, cx),
             ConfirmedAction::DeleteRemoteTag { name } => {
                 self.git_push(name, RepoViewModel::delete_tag_and_push, cx);
             }

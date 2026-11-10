@@ -52,7 +52,7 @@ mod repo;
 #[cfg(feature = "repository")]
 mod repository;
 #[cfg(feature = "repository")]
-pub use operation_receipt::take_mutation_operation_id;
+pub use operation_receipt::{capture_mutation_operation_id, take_mutation_operation_id};
 #[cfg(feature = "repository")]
 mod rooted_directory;
 #[cfg(feature = "repository")]

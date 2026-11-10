@@ -55,7 +55,7 @@ impl DagDrag {
         }
     }
 
-    pub(super) fn label_for_change(change: &ChangeInfo) -> String {
+    pub(crate) fn label_for_change(change: &ChangeInfo) -> String {
         change
             .bookmarks
             .first()

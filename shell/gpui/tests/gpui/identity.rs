@@ -1,17 +1,9 @@
 use crate::harness::*;
-use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext};
+use gpui::{Entity, TestAppContext, VisualTestContext};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::identity_dialog::IdentityDialog;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
 use jj_test::{init_colocated, scoped_env};
-
-fn click(cx: &mut VisualTestContext, selector: &'static str) {
-    let bounds = cx
-        .debug_bounds(selector)
-        .unwrap_or_else(|| panic!("missing {selector}"));
-    cx.simulate_click(bounds.center(), Modifiers::default());
-    settle_visual(cx);
-}
 
 fn displayed_changes(repo: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> usize {
     repo.read_with(cx, |view, cx| {

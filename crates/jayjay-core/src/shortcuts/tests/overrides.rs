@@ -116,3 +116,65 @@ fn stored_round_trip_semantics() {
     );
     assert!(!out.contains_key(ShortcutCommand::RepoRefresh.id()));
 }
+
+#[test]
+fn taking_an_alias_keeps_the_other_commands_primary_chord() {
+    let platform = KeyPlatform::Windows;
+    let ctrl_y = Chord::parse("ctrl-y").unwrap();
+    let redo = ShortcutCommand::RepoRedo.default_chord(platform);
+    let mut overrides = ShortcutOverrides::default();
+    let bindings = EffectiveBindings::resolve(&overrides, platform);
+    assert!(matches!(
+        overrides.assign(ShortcutCommand::RepoRefresh, ctrl_y, &bindings, false),
+        Err(AssignError::Conflict)
+    ));
+    overrides
+        .assign(ShortcutCommand::RepoRefresh, ctrl_y, &bindings, true)
+        .unwrap();
+    let reloaded = ShortcutOverrides::from_stored(overrides.to_stored(), platform);
+    let bindings = EffectiveBindings::resolve(&reloaded, platform);
+    assert_eq!(
+        bindings
+            .entry(ShortcutCommand::RepoRedo)
+            .chords()
+            .collect::<Vec<_>>(),
+        redo.into_iter().collect::<Vec<_>>()
+    );
+    assert_eq!(
+        bindings.conflicts(ShortcutCommand::RepoRedo, ctrl_y),
+        vec![ShortcutCommand::RepoRefresh]
+    );
+}
+
+#[test]
+fn assigning_the_default_chord_checks_the_aliases_it_restores() {
+    let platform = KeyPlatform::Windows;
+    let ctrl_y = Chord::parse("ctrl-y").unwrap();
+    let redo = ShortcutCommand::RepoRedo.default_chord(platform).unwrap();
+    let mut overrides = ShortcutOverrides::default();
+    overrides
+        .assign(
+            ShortcutCommand::RepoRefresh,
+            ctrl_y,
+            &EffectiveBindings::resolve(&overrides, platform),
+            true,
+        )
+        .unwrap();
+    let bindings = EffectiveBindings::resolve(&overrides, platform);
+    assert!(matches!(
+        overrides.assign(ShortcutCommand::RepoRedo, redo, &bindings, false),
+        Err(AssignError::Conflict)
+    ));
+    overrides
+        .assign(ShortcutCommand::RepoRedo, redo, &bindings, true)
+        .unwrap();
+    let bindings = EffectiveBindings::resolve(&overrides, platform);
+    assert_eq!(
+        bindings
+            .entry(ShortcutCommand::RepoRedo)
+            .chords()
+            .collect::<Vec<_>>(),
+        vec![redo, ctrl_y]
+    );
+    assert_eq!(bindings.effective_chord(ShortcutCommand::RepoRefresh), None);
+}

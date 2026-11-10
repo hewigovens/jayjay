@@ -54,14 +54,8 @@ impl RepoWindow {
     }
 
     pub(super) fn delete_tag(&mut self, tag: String, cx: &mut Context<Self>) {
-        let task = self.vm.update(cx, |vm, cx| vm.delete_tag(tag.clone(), cx));
-        cx.spawn(async move |this, cx| {
-            if task.await.is_ok() {
-                let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(jayjay_i18n::repo::deleted_tag(&tag), cx);
-                });
-            }
-        })
-        .detach();
+        let message = jayjay_i18n::repo::deleted_tag(&tag);
+        let task = self.vm.update(cx, |vm, cx| vm.delete_tag(tag, cx));
+        self.notify_rewrite(task, move |_| message, cx);
     }
 }

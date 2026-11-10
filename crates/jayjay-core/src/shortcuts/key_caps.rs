@@ -7,7 +7,7 @@ impl Chord {
         let mut caps = self.modifiers.symbols(platform);
         caps.push(match platform {
             KeyPlatform::Mac => self.mac_key_cap(),
-            KeyPlatform::Other => self.other_key_cap(),
+            KeyPlatform::Windows | KeyPlatform::Other => self.other_key_cap(),
         });
         caps
     }

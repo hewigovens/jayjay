@@ -51,6 +51,7 @@ mod repo_review_notes;
 mod repo_revset_filter;
 mod repo_sidebar_visibility;
 mod repo_stacked_pr;
+mod repo_undo;
 mod repo_window_lifecycle;
 mod repo_workspace_switch;
 mod repo_workspaces;

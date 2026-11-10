@@ -25,6 +25,8 @@ actions!(
         OpenBookmarkManager,
         OpenOverview,
         OpenOperationLog,
+        UndoOperation,
+        RedoOperation,
         FilterByRevset,
         OpenRepoInEditor,
         OpenRepoInTerminal,

@@ -5,7 +5,7 @@ use gpui::{
     IntoElement, ParentElement, Render, SharedString, Size, Styled, TitlebarOptions, WeakEntity,
     Window, WindowBounds, WindowOptions, div, px, rgb,
 };
-use jayjay_core::{OpLogEntry, Repo};
+use jayjay_core::{OpLogEntry, Repo, capture_mutation_operation_id};
 
 use super::chrome::{footer, header};
 use super::rows::operation_list;
@@ -22,6 +22,8 @@ pub struct OperationLogView {
     parent: WeakEntity<RepoWindow>,
     entries: Option<Arc<Vec<OpLogEntry>>>,
     selected_id: Option<String>,
+    /// An operation Undo was asked to undo after the repo moved past it; its parent is preselected instead.
+    undoing: Option<String>,
     error: Option<SharedString>,
     loading: bool,
     restoring: bool,
@@ -33,6 +35,7 @@ impl OperationLogView {
         repo: Arc<Repo>,
         parent: Entity<RepoWindow>,
         vm: Entity<RepoViewModel>,
+        undoing: Option<String>,
         cx: &mut App,
     ) {
         let bounds = Bounds::centered(
@@ -67,6 +70,7 @@ impl OperationLogView {
                             parent: parent.downgrade(),
                             entries: None,
                             selected_id: None,
+                            undoing,
                             error: None,
                             loading: true,
                             restoring: false,
@@ -98,6 +102,9 @@ impl OperationLogView {
                 view.loading = false;
                 match result {
                     Ok(entries) => {
+                        if let Some(undoing) = view.undoing.take() {
+                            view.selected_id = restore_target(&entries, &undoing);
+                        }
                         if !entries
                             .iter()
                             .any(|entry| view.selected_id.as_deref() == Some(entry.id.as_str()))
@@ -132,14 +139,18 @@ impl OperationLogView {
         cx.notify();
         cx.spawn(async move |this, cx| {
             let result = cx
-                .background_spawn(async move { repo.op_restore(&op_id) })
+                .background_spawn(async move {
+                    let (restored, operation_id) =
+                        capture_mutation_operation_id(|| repo.op_restore(&op_id));
+                    restored.map(|()| operation_id)
+                })
                 .await;
             let _ = this.update(cx, move |view, cx| {
                 view.restoring = false;
                 match result {
-                    Ok(()) => {
+                    Ok(operation_id) => {
                         view.selected_id = None;
-                        view.refresh_parent(cx);
+                        view.refresh_parent(operation_id, cx);
                         view.load(cx);
                     }
                     Err(error) => {
@@ -152,11 +163,15 @@ impl OperationLogView {
         .detach();
     }
 
-    fn refresh_parent(&self, cx: &mut Context<Self>) {
+    fn refresh_parent(&self, operation_id: Option<String>, cx: &mut Context<Self>) {
         let _ = self.parent.update(cx, |view, cx| {
             let vm = view.view_model();
             vm.update(cx, |vm, cx| vm.refresh(false, cx));
-            view.show_toast(jayjay_i18n::oplog::restored_operation(), cx);
+            view.present_toast(
+                jayjay_i18n::oplog::restored_operation().into(),
+                operation_id,
+                cx,
+            );
         });
     }
 
@@ -169,6 +184,20 @@ impl OperationLogView {
             .and_then(|entries| entries.iter().find(|entry| entry.id.as_str() == selected))
             .is_some_and(|entry| entry.is_current)
     }
+}
+
+/// Restoring the parent of `operation_id` undoes it, when it has exactly one listed parent.
+fn restore_target(entries: &[OpLogEntry], operation_id: &str) -> Option<String> {
+    let entry = entries
+        .iter()
+        .find(|entry| entry.id.as_str() == operation_id)?;
+    let [parent] = entry.parent_ids.as_slice() else {
+        return None;
+    };
+    entries
+        .iter()
+        .any(|entry| entry.id.as_str() == parent)
+        .then(|| parent.clone())
 }
 
 impl Focusable for OperationLogView {

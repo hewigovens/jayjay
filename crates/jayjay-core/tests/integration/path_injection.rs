@@ -413,7 +413,10 @@ fn submodule_commit_treats_glob_shaped_path_as_literal() {
     for path in [hostile, "a.txt", "b.txt"] {
         fs::write(repo_path.join(path), "payload\n").expect("write file");
     }
-    for (key, value) in [("user.name", "Test User"), ("user.email", "test@example.com")] {
+    for (key, value) in [
+        ("user.name", "Test User"),
+        ("user.email", "test@example.com"),
+    ] {
         git_stdout(&repo_path, &["config", key, value]);
     }
     let repo = Repo::open(&repo_path).expect("open repo");

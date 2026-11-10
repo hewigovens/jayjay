@@ -6,6 +6,7 @@ use crate::app::config::{self, AppearanceMode};
 use crate::app::key_caps::KeyCaps;
 use crate::app::links::GUIDE_URL;
 use crate::app::tools;
+use crate::repo::view_model::OperationStep;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::glyph;
 use crate::windows::keyboard_shortcuts::KeyboardShortcutsView;
@@ -179,9 +180,33 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         id: "operation-log",
         shortcut: Some(ShortcutCommand::RepoOperationLog),
         label: jayjay_i18n::repo::operation_log,
-        keywords: &["operation", "operations", "op", "log", "undo", "restore"],
+        keywords: &["operation", "operations", "op", "log", "restore"],
         glyph_str: glyph::HISTORY,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_operation_log),
+    },
+    PaletteAction {
+        id: "undo-operation",
+        shortcut: Some(ShortcutCommand::RepoUndo),
+        label: jayjay_i18n::repo::undo,
+        keywords: &["undo", "operation", "op", "back"],
+        glyph_str: glyph::ARROW_UTURN_BACK,
+        dispatch: |ctx, cx| {
+            with_repo_window(ctx, cx, |view, cx| {
+                view.step_operation(OperationStep::Undo, cx)
+            });
+        },
+    },
+    PaletteAction {
+        id: "redo-operation",
+        shortcut: Some(ShortcutCommand::RepoRedo),
+        label: jayjay_i18n::menu::redo,
+        keywords: &["redo", "operation", "op", "again"],
+        glyph_str: glyph::ARROW_RIGHT,
+        dispatch: |ctx, cx| {
+            with_repo_window(ctx, cx, |view, cx| {
+                view.step_operation(OperationStep::Redo, cx)
+            });
+        },
     },
     PaletteAction {
         id: "open-in-terminal",

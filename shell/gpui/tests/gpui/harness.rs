@@ -20,6 +20,14 @@ pub(crate) fn settle(cx: &mut TestAppContext) {
     }
 }
 
+pub(crate) fn click(cx: &mut VisualTestContext, selector: &'static str) {
+    let bounds = cx
+        .debug_bounds(selector)
+        .unwrap_or_else(|| panic!("missing {selector}"));
+    cx.simulate_click(bounds.center(), Modifiers::default());
+    settle_visual(cx);
+}
+
 /// The slide-out timer fires on the test clock even at zero duration, so advance it before asserting on what is mounted.
 pub(crate) fn settle_slide(cx: &mut VisualTestContext) {
     settle_visual(cx);

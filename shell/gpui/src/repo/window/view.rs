@@ -249,10 +249,16 @@ impl Default for ScrollHandles {
     }
 }
 
+#[derive(Clone, PartialEq)]
+pub(crate) struct Toast {
+    pub(crate) message: SharedString,
+    pub(crate) undo_operation_id: Option<String>,
+}
+
 #[derive(Default)]
 pub(crate) struct FeedbackState {
     pub(crate) recently_copied: Option<SharedString>,
-    pub(crate) toast: Option<SharedString>,
+    pub(crate) toast: Option<Toast>,
     pub(crate) pending_push_bookmark: Option<SharedString>,
 }
 
@@ -596,7 +602,10 @@ impl RepoWindow {
     }
 
     pub fn toast(&self) -> Option<SharedString> {
-        self.feedback.toast.clone()
+        self.feedback
+            .toast
+            .as_ref()
+            .map(|toast| toast.message.clone())
     }
 
     pub fn revset_editor_text(&self) -> Option<String> {

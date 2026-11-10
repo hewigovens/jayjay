@@ -136,14 +136,14 @@ impl RepoWindow {
 
     pub(crate) fn forget_stale_bookmarks(&mut self, cx: &mut Context<Self>) {
         let task = self.vm.update(cx, |vm, cx| vm.forget_stale_bookmarks(cx));
-        Self::spawn_ok(cx, task, |view, count, cx| {
-            let message = if count == 0 {
-                jayjay_i18n::repo::no_stale_bookmarks_found()
-            } else {
-                jayjay_i18n::repo::forgot_stale_bookmarks(count)
-            };
-            view.show_toast(message, cx);
-        });
+        self.notify_rewrite(
+            task,
+            |rewrite| match rewrite.value {
+                0 => jayjay_i18n::repo::no_stale_bookmarks_found(),
+                count => jayjay_i18n::repo::forgot_stale_bookmarks(count),
+            },
+            cx,
+        );
     }
 
     pub(crate) fn forget_workspace(
@@ -319,7 +319,7 @@ impl RepoWindow {
         .detach();
     }
 
-    fn spawn_ok<T, E, Fut>(
+    pub(super) fn spawn_ok<T, E, Fut>(
         cx: &mut Context<Self>,
         task: Fut,
         update: impl FnOnce(&mut Self, T, &mut Context<Self>) + 'static,

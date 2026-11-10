@@ -60,6 +60,10 @@ impl EntityInputHandler for TextArea {
             sanitize_single_line(new_text)
         };
         let range = self.replacement_range(range_utf16.as_ref());
+        // Committing a composition finishes the step its first marked text recorded.
+        if self.marked_range.is_none() {
+            self.history.record(self.snapshot(), &range, &text);
+        }
         self.content =
             (self.content[0..range.start].to_owned() + &text + &self.content[range.end..]).into();
         self.selection
@@ -81,6 +85,9 @@ impl EntityInputHandler for TextArea {
             return;
         }
         let range = self.replacement_range(range_utf16.as_ref());
+        if self.marked_range.is_none() {
+            self.history.record(self.snapshot(), &range, "");
+        }
         self.content =
             (self.content[0..range.start].to_owned() + new_text + &self.content[range.end..])
                 .into();

@@ -6,7 +6,7 @@ use jayjay_core::{
 
 use std::sync::Arc;
 
-use super::RepoViewModel;
+use super::{RepoViewModel, Rewrite};
 
 pub struct DiffEditApplyRequest {
     pub rev: String,
@@ -102,11 +102,11 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.abandon(&rev),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
+            |vm, _, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
@@ -187,11 +187,11 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.delete_bookmark(&name),
-            |vm, cx| vm.refresh(false, cx),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 
@@ -227,11 +227,11 @@ impl RepoViewModel {
         name: String,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.remove_bookmark_from_rev(&name, &rev),
-            |vm, cx| vm.refresh(false, cx),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 
@@ -252,11 +252,11 @@ impl RepoViewModel {
         &mut self,
         name: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.delete_tag(&name),
-            |vm, cx| vm.refresh(false, cx),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 
@@ -353,8 +353,8 @@ impl RepoViewModel {
     pub(crate) fn forget_stale_bookmarks(
         &mut self,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<u32>> {
-        self.repo_result_task(
+    ) -> gpui::Task<JayResult<Rewrite<u32>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.forget_stale_bookmarks(),
             |vm, _count, cx| vm.refresh(false, cx),

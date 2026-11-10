@@ -234,16 +234,20 @@ impl RepoWindow {
                 })
                 .detach(),
             // No review-store cleanup after restore: marks and notes key on content identity, so a restored file's stale mark can never match again (SwiftUI likewise does nothing).
-            FileBatchAction::Restore { rev, from, paths } => self
-                .vm
-                .update(cx, |vm, cx| {
+            FileBatchAction::Restore { rev, from, paths } => {
+                let message = jayjay_i18n::repo::restored_files(paths.len());
+                let task = self.vm.update(cx, |vm, cx| {
                     vm.restore_files(rev.clone(), from.clone(), paths.clone(), cx)
-                })
-                .detach(),
-            FileBatchAction::Delete { paths } => self
-                .vm
-                .update(cx, |vm, cx| vm.delete_files(paths.clone(), cx))
-                .detach(),
+                });
+                self.notify_rewrite(task, move |_| message, cx);
+            }
+            FileBatchAction::Delete { paths } => {
+                let message = jayjay_i18n::repo::deleted_files(paths.len());
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.delete_files(paths.clone(), cx));
+                self.notify_rewrite(task, move |_| message, cx);
+            }
             FileBatchAction::IgnoreAndUntrack { paths } => self
                 .vm
                 .update(cx, |vm, cx| vm.ignore_and_untrack(paths.clone(), cx))

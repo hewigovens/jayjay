@@ -60,7 +60,7 @@ impl Chord {
             "cmd" | "command" | "super" | "platform" => Ok(Some(ModifierFlag::Cmd)),
             "mod" if allow_mod => Ok(Some(match platform {
                 KeyPlatform::Mac => ModifierFlag::Cmd,
-                KeyPlatform::Other => ModifierFlag::Ctrl,
+                KeyPlatform::Windows | KeyPlatform::Other => ModifierFlag::Ctrl,
             })),
             "mod" => Err(ChordError::UnsupportedModifier),
             _ => Ok(None),
@@ -68,7 +68,7 @@ impl Chord {
     }
 
     pub fn validate(self, platform: KeyPlatform) -> Result<(), ChordError> {
-        if platform == KeyPlatform::Other && self.modifiers.cmd {
+        if platform != KeyPlatform::Mac && self.modifiers.cmd {
             return Err(ChordError::UnsupportedModifier);
         }
         let has_chord_modifier = self.modifiers.ctrl
@@ -87,7 +87,7 @@ impl Chord {
     fn is_reserved(self, platform: KeyPlatform) -> bool {
         let platform_specs = match platform {
             KeyPlatform::Mac => RESERVED_MAC,
-            KeyPlatform::Other => RESERVED_OTHER,
+            KeyPlatform::Windows | KeyPlatform::Other => RESERVED_OTHER,
         };
         RESERVED_ALL
             .iter()

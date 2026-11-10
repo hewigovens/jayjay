@@ -12,7 +12,7 @@ impl Modifiers {
     pub fn symbols(self, platform: KeyPlatform) -> Vec<String> {
         let names = match platform {
             KeyPlatform::Mac => ["⌃", "⌥", "⇧", "⌘"],
-            KeyPlatform::Other => ["Ctrl", "Alt", "Shift", "Super"],
+            KeyPlatform::Windows | KeyPlatform::Other => ["Ctrl", "Alt", "Shift", "Super"],
         };
         [self.ctrl, self.alt, self.shift, self.cmd]
             .into_iter()

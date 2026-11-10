@@ -1,10 +1,12 @@
 mod caret;
+mod edit_history;
 mod line_edit;
 mod line_input;
 mod render;
 mod selection;
 
 pub use caret::CaretBlink;
+pub(crate) use edit_history::{EditHistory, HistoryStep, TextSnapshot};
 pub use line_edit::LineEdit;
 pub(crate) use line_edit::LineEditKeyResult;
 pub use line_input::LineInput;

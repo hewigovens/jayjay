@@ -215,19 +215,12 @@ impl RepoWindow {
             Some(rev) => vm.remove_bookmark_from_rev(bookmark.clone(), rev.to_string(), cx),
             None => vm.delete_bookmark(bookmark.clone(), cx),
         });
-        cx.spawn(async move |this, cx| {
-            if task.await.is_ok() {
-                let message = if conflicted {
-                    jayjay_i18n::repo::removed_bookmark_from_change(&bookmark)
-                } else {
-                    jayjay_i18n::repo::deleted_bookmark(&bookmark)
-                };
-                let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(message, cx);
-                });
-            }
-        })
-        .detach();
+        let message = if conflicted {
+            jayjay_i18n::repo::removed_bookmark_from_change(&bookmark)
+        } else {
+            jayjay_i18n::repo::deleted_bookmark(&bookmark)
+        };
+        self.notify_rewrite(task, move |_| message, cx);
     }
 
     pub(super) fn open_pr_for_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {

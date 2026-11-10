@@ -26,19 +26,21 @@ impl EffectiveBindings {
     pub fn resolve(overrides: &ShortcutOverrides, platform: KeyPlatform) -> Self {
         let entries = ShortcutCommand::all()
             .iter()
-            .map(|&command| {
-                let chord = overrides
-                    .entry(command)
-                    .map(|entry| match entry {
+            .map(|&command| match overrides.entry(command) {
+                // A customized command keeps only the chord the user chose; its aliases come with the default.
+                Some(entry) => EffectiveEntry {
+                    command,
+                    chord: match entry {
                         Override::Unbound => None,
                         Override::Chord(chord) => Some(*chord),
-                    })
-                    .unwrap_or_else(|| command.default_chord(platform));
-                EffectiveEntry {
+                    },
+                    aliases: Vec::new(),
+                },
+                None => EffectiveEntry {
                     command,
-                    chord,
+                    chord: command.default_chord(platform),
                     aliases: command.aliases(platform),
-                }
+                },
             })
             .collect();
         Self { platform, entries }

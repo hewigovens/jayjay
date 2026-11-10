@@ -7,6 +7,8 @@ use jayjay_core::{ChangeInfo, InsertPosition, MutationEffect, RebaseMode};
 
 use super::RepoWindow;
 use super::confirmation::{Confirmation, ConfirmedAction};
+use super::dag_drag::DagDrag;
+use super::rebase_subject::RebaseSubject;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::glyph;
 
@@ -526,28 +528,41 @@ impl RepoWindow {
     }
 
     pub(crate) fn run_change_action(&mut self, action: Arc<ChangeAction>, cx: &mut Context<Self>) {
-        let task = match action.as_ref() {
-            ChangeAction::Edit { rev } => {
-                self.vm.update(cx, |vm, cx| vm.edit_change(rev.clone(), cx))
-            }
+        match action.as_ref() {
+            ChangeAction::Edit { rev } => self
+                .vm
+                .update(cx, |vm, cx| vm.edit_change(rev.clone(), cx))
+                .detach(),
             ChangeAction::Insert { rev, at } => self
                 .vm
-                .update(cx, |vm, cx| vm.insert_change(rev.clone(), *at, cx)),
-            ChangeAction::Squash { rev, into } => self
-                .vm
-                .update(cx, |vm, cx| vm.squash_change(rev.clone(), into.clone(), cx)),
-            ChangeAction::Rebase { rev, dest } => self.vm.update(cx, |vm, cx| {
-                vm.rebase_change(rev.clone(), dest.clone(), RebaseMode::Source, cx)
-            }),
-            ChangeAction::RebaseOntoTrunk { rev } => self.vm.update(cx, |vm, cx| {
-                vm.rebase_change(rev.clone(), "trunk()".to_owned(), RebaseMode::Branch, cx)
-            }),
-            ChangeAction::RebaseMany { revs, dest } => self.vm.update(cx, |vm, cx| {
-                vm.rebase_changes(revs.clone(), dest.clone(), cx)
-            }),
-            ChangeAction::Merge { parents } => self
-                .vm
-                .update(cx, |vm, cx| vm.merge_changes(parents.clone(), cx)),
+                .update(cx, |vm, cx| vm.insert_change(rev.clone(), *at, cx))
+                .detach(),
+            ChangeAction::Squash { rev, into } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.squash_change(rev.clone(), into.clone(), cx));
+                self.notify_rewrite(task, |_| jayjay_i18n::repo::squashed_changes(1), cx);
+            }
+            ChangeAction::Rebase { rev, dest } => {
+                self.rebase_change(rev, dest, RebaseMode::Source, cx);
+            }
+            ChangeAction::RebaseOntoTrunk { rev } => {
+                self.rebase_change(rev, "trunk()", RebaseMode::Branch, cx);
+            }
+            ChangeAction::RebaseMany { revs, dest } => {
+                let subject = RebaseSubject::Changes { count: revs.len() };
+                let destination = self.rebase_label(dest, cx);
+                let task = self.vm.update(cx, |vm, cx| {
+                    vm.rebase_changes(revs.clone(), dest.clone(), cx)
+                });
+                self.notify_rebase(task, subject, destination, cx);
+            }
+            ChangeAction::Merge { parents } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.merge_changes(parents.clone(), cx));
+                self.notify_rewrite(task, |_| jayjay_i18n::repo::created_merge_change(), cx);
+            }
             ChangeAction::SquashMany { revs } => {
                 let count = revs.len();
                 self.request_confirmation(
@@ -561,7 +576,6 @@ impl RepoWindow {
                     },
                     cx,
                 );
-                return;
             }
             ChangeAction::AbandonMany { revs } => {
                 let count = revs.len();
@@ -575,57 +589,57 @@ impl RepoWindow {
                     },
                     cx,
                 );
-                return;
             }
             ChangeAction::ParallelizeMany { revs } => {
+                let count = revs.len();
                 let task = self
                     .vm
                     .update(cx, |vm, cx| vm.parallelize_changes(revs.clone(), cx));
-                cx.spawn(async move |this, cx| {
-                    if let Ok(MutationEffect::Unchanged) = task.await {
-                        let _ = this.update(cx, move |view, cx| {
-                            view.show_toast(
-                                jayjay_i18n::menu::nothing_to_parallelize_the_selection_would(),
-                                cx,
-                            );
-                        });
-                    }
-                })
-                .detach();
-                return;
+                self.notify_rewrite(
+                    task,
+                    move |rewrite| match rewrite.value {
+                        MutationEffect::Changed => jayjay_i18n::repo::parallelized_changes(count),
+                        MutationEffect::Unchanged => {
+                            jayjay_i18n::menu::nothing_to_parallelize_the_selection_would()
+                        }
+                    },
+                    cx,
+                );
             }
-            ChangeAction::Duplicate { rev } => self
-                .vm
-                .update(cx, |vm, cx| vm.duplicate_change(rev.clone(), cx)),
+            ChangeAction::Duplicate { rev } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.duplicate_change(rev.clone(), cx));
+                self.notify_rewrite(task, |_| jayjay_i18n::repo::duplicated_change(), cx);
+            }
             ChangeAction::Absorb { rev } => {
                 let task = self
                     .vm
                     .update(cx, |vm, cx| vm.absorb_change(rev.clone(), cx));
-                cx.spawn(async move |this, cx| {
-                    if let Ok(MutationEffect::Unchanged) = task.await {
-                        let _ = this.update(cx, move |view, cx| {
-                            view.show_toast(
-                                jayjay_i18n::menu::nothing_to_absorb_use_squash_into(),
-                                cx,
-                            );
-                        });
-                    }
-                })
-                .detach();
-                return;
+                self.notify_rewrite(
+                    task,
+                    |rewrite| match rewrite.value {
+                        MutationEffect::Changed => jayjay_i18n::repo::absorbed_into_ancestors(),
+                        MutationEffect::Unchanged => {
+                            jayjay_i18n::menu::nothing_to_absorb_use_squash_into()
+                        }
+                    },
+                    cx,
+                );
             }
-            ChangeAction::Revert { rev } => self
-                .vm
-                .update(cx, |vm, cx| vm.revert_change(rev.clone(), cx)),
+            ChangeAction::Revert { rev } => {
+                let task = self
+                    .vm
+                    .update(cx, |vm, cx| vm.revert_change(rev.clone(), cx));
+                self.notify_rewrite(task, |_| jayjay_i18n::repo::reverted_change(), cx);
+            }
             ChangeAction::BisectFrom { commit_id } => {
                 self.open_bisect_sheet(Some(commit_id.clone()), cx);
-                return;
             }
             ChangeAction::BisectBetween { first, second } => {
                 self.vm.update(cx, |vm, cx| {
                     vm.start_bisect_between(first.clone(), second.clone(), cx)
                 });
-                return;
             }
             ChangeAction::Fix { revs } => {
                 let task = self
@@ -641,10 +655,31 @@ impl RepoWindow {
                     }
                 })
                 .detach();
-                return;
             }
+        }
+    }
+
+    fn rebase_change(&mut self, rev: &str, dest: &str, mode: RebaseMode, cx: &mut Context<Self>) {
+        let subject = RebaseSubject::Change {
+            label: self.rebase_label(rev, cx),
         };
-        task.detach();
+        let destination = self.rebase_label(dest, cx);
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.rebase_change(rev.to_owned(), dest.to_owned(), mode, cx)
+        });
+        self.notify_rebase(task, subject, destination, cx);
+    }
+
+    fn rebase_label(&self, rev: &str, cx: &App) -> String {
+        let graph = &self.vm.read(cx).graph;
+        if rev == "trunk()" {
+            return graph.trunk_name.clone();
+        }
+        graph
+            .changes
+            .iter()
+            .find(|change| change.selection_revision() == rev || change.commit_id.id == rev)
+            .map_or_else(|| rev.to_owned(), DagDrag::label_for_change)
     }
 }
 

@@ -16,6 +16,10 @@ impl ShortcutOverrides {
             return Err(AssignError::LockedCommand);
         }
         let platform = bindings.platform();
+        // The default chord brings its aliases back, and it may be reserved for every other command.
+        if command.default_chord(platform) == Some(chord) {
+            return self.reset(command, bindings, replace);
+        }
         chord.validate(platform).map_err(AssignError::Invalid)?;
         clear_conflicts(self, command, chord, bindings, replace)?;
         self.set_entry(command, Override::Chord(chord), platform);
@@ -32,11 +36,13 @@ impl ShortcutOverrides {
             return Err(AssignError::LockedCommand);
         }
         let platform = bindings.platform();
-        let Some(default) = command.default_chord(platform) else {
-            self.remove_entry(command);
-            return Ok(());
-        };
-        clear_conflicts(self, command, default, bindings, replace)?;
+        for chord in command
+            .default_chord(platform)
+            .into_iter()
+            .chain(command.aliases(platform))
+        {
+            clear_conflicts(self, command, chord, bindings, replace)?;
+        }
         self.remove_entry(command);
         Ok(())
     }
@@ -58,10 +64,12 @@ fn clear_conflicts(
     }
     let platform = bindings.platform();
     for other in conflicts {
-        if other.default_chord(platform).is_some() {
-            overrides.set_entry(other, Override::Unbound, platform);
-        } else {
-            overrides.remove_entry(other);
+        match bindings.effective_chord(other) {
+            Some(primary) if primary != chord => overrides.pin_chord(other, primary),
+            _ if other.default_chord(platform).is_some() => {
+                overrides.set_entry(other, Override::Unbound, platform);
+            }
+            _ => overrides.remove_entry(other),
         }
     }
     Ok(())

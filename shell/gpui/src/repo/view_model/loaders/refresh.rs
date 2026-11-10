@@ -157,6 +157,7 @@ impl RepoViewModel {
                 self.gerrit_update_title = context.gerrit_update_title.map(SharedString::from);
                 self.working_copy_stats = context.working_copy_stats;
                 self.current_operation_description = context.operation;
+                self.undo_state = context.undo;
                 self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
                 let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
                 let new_selected = previous_selection

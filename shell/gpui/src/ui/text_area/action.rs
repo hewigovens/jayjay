@@ -1,4 +1,5 @@
 use gpui::{KeyBinding, actions};
+use jayjay_core::shortcuts::KeyPlatform;
 
 actions!(
     text_area,
@@ -32,7 +33,9 @@ actions!(
         Newline,
         Paste,
         Cut,
-        Copy
+        Copy,
+        Undo,
+        Redo
     ]
 );
 
@@ -64,7 +67,16 @@ pub fn key_bindings(mod_key: &str) -> Vec<KeyBinding> {
         KeyBinding::new(format!("{mod_key}-v").as_str(), Paste, Some("TextArea")),
         KeyBinding::new(format!("{mod_key}-x").as_str(), Cut, Some("TextArea")),
         KeyBinding::new(format!("{mod_key}-c").as_str(), Copy, Some("TextArea")),
+        KeyBinding::new(format!("{mod_key}-z").as_str(), Undo, Some("TextArea")),
+        KeyBinding::new(
+            format!("{mod_key}-shift-z").as_str(),
+            Redo,
+            Some("TextArea"),
+        ),
     ];
+    if KeyPlatform::current() == KeyPlatform::Windows {
+        bindings.push(KeyBinding::new("ctrl-y", Redo, Some("TextArea")));
+    }
     if mod_key == "cmd" {
         bindings.extend([
             KeyBinding::new("ctrl-a", Home, Some("TextArea")),

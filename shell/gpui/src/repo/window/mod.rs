@@ -36,10 +36,12 @@ mod nav;
 mod note_composer;
 mod note_menu;
 mod open;
+mod operation_steps;
 pub(crate) mod picker;
 mod pr_import;
 mod rating_prompt;
 mod rebase_confirmation;
+mod rebase_subject;
 pub(crate) mod ref_chips;
 mod render;
 mod repo_modal;
@@ -104,5 +106,5 @@ pub(crate) use view::{
     DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,
     FileTreeCacheSlot, LayoutState, PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX,
     SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalCheckbox,
-    TextModalContext, TextModalState,
+    TextModalContext, TextModalState, Toast,
 };

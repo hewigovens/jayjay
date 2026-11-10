@@ -101,10 +101,17 @@ impl Render for RepoWindow {
             .as_ref()
             .map(|state| render_context_menu(state, &t, &cx.entity()));
         #[cfg(not(target_os = "macos"))]
-        let app_menu_overlay = self
-            .app_menu
-            .as_ref()
-            .map(|state| render_app_menu(state, &self.app_menu_titles, &t, &cx.entity(), cx));
+        let app_menu_overlay = self.app_menu.as_ref().map(|state| {
+            let steps = self.vm.read(cx).operation_steps().cloned();
+            render_app_menu(
+                state,
+                steps.as_ref(),
+                &self.app_menu_titles,
+                &t,
+                &cx.entity(),
+                cx,
+            )
+        });
         #[cfg(target_os = "macos")]
         let app_menu_overlay: Option<gpui::AnyElement> = None;
         let picker_ime_focus = if self.modal_overlay_open() {
@@ -299,8 +306,8 @@ impl Render for RepoWindow {
         if over_editors {
             root = root.children(self.modal_overlay(&t, window, cx));
         }
-        if let Some(message) = self.feedback.toast.clone() {
-            root = root.child(toast_overlay(message, &t));
+        if let Some(toast) = self.feedback.toast.clone() {
+            root = root.child(toast_overlay(toast, &t, cx));
         }
         if let Some(message) = runtime_error {
             root = root.child(error_overlay(message, &t, cx));

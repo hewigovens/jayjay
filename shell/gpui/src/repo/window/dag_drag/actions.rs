@@ -4,6 +4,7 @@ use jayjay_core::{ChangeInfo, RebaseMode};
 use super::payload::DagDrag;
 use super::state::DagRebaseRequest;
 use crate::app::config;
+use crate::repo::window::rebase_subject::RebaseSubject;
 use crate::repo::window::{RepoModal, RepoWindow};
 
 impl RepoWindow {
@@ -93,26 +94,26 @@ impl RepoWindow {
     }
 
     fn run_drag_rebase(&mut self, request: DagRebaseRequest, cx: &mut Context<Self>) {
-        let source_label = request.source_label.clone();
-        let dest_label = request.dest_label.clone();
-        let task = self.vm.update(cx, |vm, cx| {
-            if request.selection_commit_ids.is_empty() {
+        let count = request.selection_commit_ids.len();
+        if count == 0 {
+            let task = self.vm.update(cx, |vm, cx| {
                 vm.rebase_change(request.source_rev, request.dest_rev, RebaseMode::Source, cx)
-            } else {
+            });
+            let subject = RebaseSubject::Change {
+                label: request.source_label,
+            };
+            self.notify_rebase(task, subject, request.dest_label, cx);
+        } else {
+            let task = self.vm.update(cx, |vm, cx| {
                 vm.rebase_changes(request.selection_commit_ids, request.dest_rev, cx)
-            }
-        });
-        cx.spawn(async move |this, cx| {
-            if task.await.is_ok() {
-                let _ = this.update(cx, move |view, cx| {
-                    view.show_toast(
-                        jayjay_i18n::repo::rebased_onto(&source_label, &dest_label),
-                        cx,
-                    );
-                });
-            }
-        })
-        .detach();
+            });
+            self.notify_rebase(
+                task,
+                RebaseSubject::Changes { count },
+                request.dest_label,
+                cx,
+            );
+        }
     }
 
     fn drop_working_copy_on_change(&mut self, change: ChangeInfo, cx: &mut Context<Self>) {

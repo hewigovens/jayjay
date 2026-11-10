@@ -41,3 +41,38 @@ fn conflict_detection() {
         Err(AssignError::LockedCommand)
     ));
 }
+
+#[test]
+fn redo_takes_ctrl_y_only_on_windows_and_drops_it_once_customized() {
+    let ctrl_y = Chord::parse("ctrl-y").unwrap();
+    for (platform, aliased) in [
+        (KeyPlatform::Windows, true),
+        (KeyPlatform::Other, false),
+        (KeyPlatform::Mac, false),
+    ] {
+        let bindings = EffectiveBindings::resolve(&ShortcutOverrides::default(), platform);
+        assert_eq!(
+            bindings
+                .entry(ShortcutCommand::RepoRedo)
+                .aliases
+                .contains(&ctrl_y),
+            aliased,
+            "{platform:?}"
+        );
+    }
+    let platform = KeyPlatform::Windows;
+    let mut overrides = ShortcutOverrides::default();
+    let custom = Chord::parse("ctrl-alt-y").unwrap();
+    overrides
+        .assign(
+            ShortcutCommand::RepoRedo,
+            custom,
+            &EffectiveBindings::resolve(&overrides, platform),
+            false,
+        )
+        .unwrap();
+    let redo = EffectiveBindings::resolve(&overrides, platform)
+        .entry(ShortcutCommand::RepoRedo)
+        .clone();
+    assert_eq!(redo.chords().collect::<Vec<_>>(), vec![custom]);
+}
