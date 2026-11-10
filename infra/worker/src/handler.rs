@@ -32,9 +32,6 @@ async fn proxy_appcast(env: &Env) -> Result<Response> {
     let Ok(response) = Fetch::Request(request).send().await else {
         return Ok(Response::empty()?.with_status(502));
     };
-    if !(200..300).contains(&response.status_code()) {
-        return Ok(Response::empty()?.with_status(502));
-    }
     let headers = Headers::new();
     headers.set("content-type", "application/xml; charset=utf-8")?;
     Response::from_body(response.body().clone()).map(|response| response.with_headers(headers))
