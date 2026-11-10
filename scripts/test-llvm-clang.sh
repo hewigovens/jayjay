@@ -15,7 +15,7 @@ compile() {
     "$repo_root/scripts/llvm-clang" --target=wasm32-unknown-unknown -c "$2" -o "$test_dir/output.o"
 }
 
-for grammar in tree-sitter-c tree-sitter-c-sharp tree-sitter-css tree-sitter-md; do
+for grammar in tree-sitter-c tree-sitter-c-sharp tree-sitter-css tree-sitter-md tree-sitter-sequel; do
   for source in stdio stdlib string; do
     compile "$grammar" "$legacy_sources/$source.c"
     test -s "$test_dir/output.o"

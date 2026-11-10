@@ -22,6 +22,6 @@ fi
 AR_wasm32_unknown_unknown="$llvm_ar" \
 CC_wasm32_unknown_unknown="$root/scripts/llvm-clang" \
 CXX_wasm32_unknown_unknown="$root/scripts/llvm-clang" \
-CFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=5" \
-CXXFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=5" \
+CFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=6" \
+CXXFLAGS_wasm32_unknown_unknown="-DJAYJAY_WASM_SYSROOT_REV=6" \
 "$@"
