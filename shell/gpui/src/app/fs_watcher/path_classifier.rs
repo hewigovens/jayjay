@@ -17,12 +17,14 @@ pub(super) struct PathClassifier {
 impl PathClassifier {
     pub(super) fn classify(&self, event: &notify::Event) -> EventClass {
         // Metadata-only events — Spotlight / Time Machine spam them on macOS.
+        // Windows reports every in-place write as `Modify(Any)`, with no finer kind to filter on.
         let interesting = matches!(
             &event.kind,
             EventKind::Create(_)
                 | EventKind::Remove(_)
                 | EventKind::Modify(ModifyKind::Data(_) | ModifyKind::Name(_))
-        );
+        ) || (cfg!(windows)
+            && matches!(&event.kind, EventKind::Modify(ModifyKind::Any)));
         if !interesting {
             return EventClass::Ignore;
         }
