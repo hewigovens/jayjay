@@ -1,0 +1,30 @@
+<h2>Undo and redo</h2>
+<ul>
+  <li><strong>⌘Z</strong> and <strong>⇧⌘Z</strong> undo and redo jj operations in a repository window; text fields and editor sheets keep their own undo. Every history rewrite shows an <strong>Undo</strong> toast that undoes exactly that operation.</li>
+  <li><strong>Undo Last Operation</strong> is now <strong>Operation Log</strong>, and opens with the operation before the current one selected.</li>
+</ul>
+<h2>Changes and selection</h2>
+<ul>
+  <li>The context menu, command palette, and Repository menu offer the same commands, and items that would do nothing are disabled. A rebase, duplicate, revert, squash, or abandon selects its result instead of jumping to <code>@</code>.</li>
+  <li><strong>Rebase onto Trunk</strong> rebases the selected change, and the Abandon shortcut abandons every selected change.</li>
+  <li>Review marks are offered on every mutable change, not only <code>@</code>. Settings can prune review data for changes that are no longer mutable.</li>
+</ul>
+<h2>Divergent changes</h2>
+<ul>
+  <li>When converging is expected to conflict, the sheet offers <strong>Converge &amp; Resolve</strong> and opens the merge editor on the first conflicted file. A divergent change’s detail header has a <strong>Resolve…</strong> button.</li>
+</ul>
+<h2>Editors</h2>
+<ul>
+  <li>Esc or Cancel asks before discarding edits in the merge and file editors. The merge editor labels each side with jj’s own labels, and picked hunks can be undone and picked again.</li>
+  <li>Diff Edit’s remove action reads <strong>Keep Selected</strong> and confirms before discarding unselected lines. <strong>Abandon Selected Lines</strong> now abandons exactly the lines you selected when a block mixes removed and added lines.</li>
+  <li>A failed save in the external diff tool keeps the window open with the error, and a diff, annotation, or file history that fails to load shows the error with <strong>Retry</strong> instead of an empty view.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+  <li>Pushing or fetching a bookmark whose name contains <code>|</code>, <code>&amp;</code>, or <code>~</code> no longer matches other bookmarks.</li>
+  <li>A skipped GitHub check counts as passing, and a fork’s merge request is no longer shown for a same-named bookmark. Stacked pull requests target the repository’s default branch.</li>
+  <li>A change that only alters line endings shows its lines as changed, and a trailing-whitespace change highlights the whitespace.</li>
+  <li><strong>Clean Up Stale Bookmarks</strong> keeps bookmarks that were never pushed and is a single undoable operation.</li>
+  <li>The CLI installer only replaces or removes a <code>jayjay</code> link it installed.</li>
+  <li>Large repositories list bookmarks and resolve revsets faster, and long diffs scroll with less work.</li>
+</ul>

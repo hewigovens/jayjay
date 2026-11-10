@@ -126,7 +126,7 @@
       ],
       "build-settings": {
         "ASSETCATALOG_COMPILER_APPICON_NAME": "app",
-        "CURRENT_PROJECT_VERSION": "83",
+        "CURRENT_PROJECT_VERSION": "84",
         "ENABLE_DEBUG_DYLIB": "NO",
         "GENERATE_INFOPLIST_FILE": "YES",
         "INFOPLIST_FILE": "Info.plist",
