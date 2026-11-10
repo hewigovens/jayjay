@@ -37,6 +37,17 @@ final class RepoPreviewSchemeHandlerTests: XCTestCase {
         XCTAssertEqual(RepoPreviewSchemeHandler.mimeType(forPathExtension: "unknownext"), "application/octet-stream")
     }
 
+    func testTextWithoutADeclaredCharsetIsServedAsUTF8() {
+        let utf8 = Data("<strong>⌘Z</strong>".utf8)
+        let latin1 = Data([0x63, 0x61, 0x66, 0xE9])
+
+        XCTAssertEqual(RepoPreviewSchemeHandler.textEncodingName(for: utf8, mimeType: "text/html"), "utf-8")
+        XCTAssertNil(RepoPreviewSchemeHandler.textEncodingName(for: latin1, mimeType: "text/html"))
+        let declared = Data("<meta charset=\"ISO-2022-JP\"><p>\u{1B}$BF|K\\8l\u{1B}(B</p>".utf8)
+        XCTAssertNil(RepoPreviewSchemeHandler.textEncodingName(for: declared, mimeType: "text/html"))
+        XCTAssertNil(RepoPreviewSchemeHandler.textEncodingName(for: utf8, mimeType: "image/png"))
+    }
+
     func testParentRelativePathInsideRootResolves() throws {
         let direct = try write("body {}", at: "assets/site.css")
         _ = try write("<html></html>", at: "docs/index.html")
