@@ -3,7 +3,7 @@
 use gpui::Context;
 use jayjay_core::JayResult;
 
-use super::RepoViewModel;
+use super::{RepoViewModel, Rewrite};
 
 impl RepoViewModel {
     /// Discard `paths` in `rev` back to a parent's content: `from` picks which parent on a merge (`jj restore --from`), `None` uses the auto-merged parent tree.
@@ -13,11 +13,11 @@ impl RepoViewModel {
         from: Option<String>,
         paths: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.restore_files(&rev, from.as_deref(), &paths),
-            |vm, cx| vm.refresh(false, cx),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 
@@ -39,11 +39,11 @@ impl RepoViewModel {
         &mut self,
         paths: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.delete_files(&paths),
-            |vm, cx| vm.refresh(false, cx),
+            |vm, _, cx| vm.refresh(false, cx),
         )
     }
 

@@ -1,8 +1,9 @@
 use gpui::KeyDownEvent;
+use jayjay_core::shortcuts::KeyPlatform;
 
 use super::LineEdit;
 use crate::ui::input::{
-    next_boundary, next_word_boundary, previous_boundary, previous_word_boundary,
+    HistoryStep, next_boundary, next_word_boundary, previous_boundary, previous_word_boundary,
     sanitize_single_line,
 };
 
@@ -67,6 +68,13 @@ impl LineEdit {
                             LineEditKeyResult::copied(text, true)
                         })
                         .unwrap_or_else(|| LineEditKeyResult::handled(false));
+                }
+                "z" if m.shift => {
+                    return LineEditKeyResult::handled(self.step_history(HistoryStep::Redo));
+                }
+                "z" => return LineEditKeyResult::handled(self.step_history(HistoryStep::Undo)),
+                "y" if KeyPlatform::current() == KeyPlatform::Windows && !m.shift => {
+                    return LineEditKeyResult::handled(self.step_history(HistoryStep::Redo));
                 }
                 _ => {}
             }

@@ -6,7 +6,7 @@ use jayjay_core::compare::CompareState;
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::{
     ChangeInfo, DiffHunk, DiffProjectionMode, DiffStats, PrInfo, Repo, RevsetFilterState,
-    RevsetPreset, RevsetVocabulary,
+    RevsetPreset, RevsetVocabulary, UndoState,
 };
 
 use super::BisectModel;
@@ -32,6 +32,7 @@ pub struct RepoViewModel {
     pub stats: StatsState,
     pub working_copy_stats: Option<DiffStats>,
     pub current_operation_description: String,
+    pub(crate) undo_state: UndoState,
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
     pub(crate) language: Option<String>,

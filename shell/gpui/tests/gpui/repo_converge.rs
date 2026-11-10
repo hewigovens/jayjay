@@ -1,18 +1,10 @@
 use crate::harness::*;
-use gpui::{Modifiers, TestAppContext, VisualTestContext};
+use gpui::TestAppContext;
 use jayjay_core::Repo;
 use jayjay_gpui::app::actions::NewBookmark;
 use jj_test::{LinearFixture, current_op_id, run_jj_in};
 
 const MENU_LABEL: &str = "Resolve Divergent Change…";
-
-fn click(cx: &mut VisualTestContext, selector: &'static str) {
-    let bounds = cx
-        .debug_bounds(selector)
-        .unwrap_or_else(|| panic!("missing {selector}"));
-    cx.simulate_click(bounds.center(), Modifiers::default());
-    settle_visual(cx);
-}
 
 fn letter_of(fixture: &LinearFixture, change_id: &str, subject: &str) -> char {
     let plan = Repo::open(&fixture.path)

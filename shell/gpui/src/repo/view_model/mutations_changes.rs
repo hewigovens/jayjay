@@ -4,7 +4,7 @@ use jayjay_core::{
     RebaseMode,
 };
 
-use super::RepoViewModel;
+use super::{RepoViewModel, Rewrite};
 
 impl RepoViewModel {
     /// The successor keeps the change id, so selecting it by change id survives the refresh; a filter that hides it reveals the change's ancestors, and Back returns to the filter.
@@ -54,12 +54,12 @@ impl RepoViewModel {
         rev: String,
         into: Option<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
         let selection = into.clone();
-        self.repo_write_task(
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.squash(&rev, into.as_deref()),
-            move |vm, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
+            move |vm, _, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
         )
     }
 
@@ -69,7 +69,7 @@ impl RepoViewModel {
         dest: String,
         mode: RebaseMode,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
+    ) -> gpui::Task<JayResult<Rewrite<String>>> {
         let change_id = self
             .graph
             .changes
@@ -77,14 +77,13 @@ impl RepoViewModel {
             .find(|change| change.change_id.id == rev || change.commit_id.id == rev)
             .map(|change| change.change_id.id.clone())
             .unwrap_or_default();
-        let task = self.repo_result_task(
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.rebase(&rev, &dest, mode),
             move |vm, rebased: &String, cx| {
                 vm.refresh_preferring(false, Some((change_id, rebased.clone())), cx)
             },
-        );
-        cx.spawn(async move |_, _| task.await.map(drop))
+        )
     }
 
     pub(crate) fn rebase_changes(
@@ -92,12 +91,12 @@ impl RepoViewModel {
         revs: Vec<String>,
         dest: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
         let selection = revs.first().cloned();
-        self.repo_write_task(
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.rebase_many(&revs, &dest),
-            move |vm, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
+            move |vm, _, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
         )
     }
 
@@ -105,24 +104,23 @@ impl RepoViewModel {
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        let task = self.repo_result_task(
+    ) -> gpui::Task<JayResult<Rewrite<String>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.squash_many(&revs),
             move |vm, destination: &String, cx| {
                 vm.refresh_selecting_revision(Some(destination), cx)
             },
-        );
-        cx.spawn(async move |_, _| task.await.map(drop))
+        )
     }
 
     pub(crate) fn parallelize_changes(
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<MutationEffect>> {
+    ) -> gpui::Task<JayResult<Rewrite<MutationEffect>>> {
         let selection = revs.first().cloned();
-        self.repo_result_task(
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.parallelize(&revs),
             move |vm, _, cx| vm.refresh_selecting_revision(selection.as_deref(), cx),
@@ -133,11 +131,11 @@ impl RepoViewModel {
         &mut self,
         revs: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.abandon_many(&revs),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
+            |vm, _, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
@@ -145,11 +143,11 @@ impl RepoViewModel {
         &mut self,
         parents: Vec<String>,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> gpui::Task<JayResult<Rewrite<()>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.merge(&parents),
-            |vm, cx| vm.refresh_selecting_revision(None, cx),
+            |vm, _, cx| vm.refresh_selecting_revision(None, cx),
         )
     }
 
@@ -157,23 +155,22 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        let task = self.repo_result_task(
+    ) -> gpui::Task<JayResult<Rewrite<String>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.duplicate(&rev),
             |vm, result: &String, cx| {
                 vm.refresh_preferring(false, Some((String::new(), result.clone())), cx)
             },
-        );
-        cx.spawn(async move |_, _| task.await.map(drop))
+        )
     }
 
     pub(crate) fn absorb_change(
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<MutationEffect>> {
-        self.repo_result_task(
+    ) -> gpui::Task<JayResult<Rewrite<MutationEffect>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.absorb(&rev),
             |vm, _, cx| vm.refresh_selecting_revision(None, cx),
@@ -184,15 +181,14 @@ impl RepoViewModel {
         &mut self,
         rev: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        let task = self.repo_result_task(
+    ) -> gpui::Task<JayResult<Rewrite<String>>> {
+        self.repo_rewrite_task(
             cx,
             move |repo| repo.revert_change(&rev),
             |vm, result: &String, cx| {
                 vm.refresh_preferring(false, Some((String::new(), result.clone())), cx)
             },
-        );
-        cx.spawn(async move |_, _| task.await.map(drop))
+        )
     }
 
     pub(crate) fn fix_changes(

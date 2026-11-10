@@ -8,7 +8,7 @@ use gpui::{AppContext, Context, SharedString};
 use jayjay_core::dag::{DagLayout, OrderedSelection};
 use jayjay_core::{
     BookmarkInfo, ChangeInfo, GraphEntry, Repo, RevsetFilterState, RevsetPreset, RevsetVocabulary,
-    TagInfo, WorkspaceInfo, default_revset_depth, default_revset_preset,
+    TagInfo, UndoState, WorkspaceInfo, default_revset_depth, default_revset_preset,
 };
 use std::cell::RefCell;
 use std::collections::HashSet;
@@ -165,6 +165,7 @@ impl RepoViewModel {
             stats: StatsState::default(),
             working_copy_stats: None,
             current_operation_description: String::new(),
+            undo_state: UndoState::default(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
             language: None,
@@ -221,6 +222,7 @@ impl RepoViewModel {
             stats: StatsState::default(),
             working_copy_stats: None,
             current_operation_description: String::new(),
+            undo_state: UndoState::default(),
             view_mode: DiffViewMode::Unified,
             ignore_whitespace: false,
             language: None,

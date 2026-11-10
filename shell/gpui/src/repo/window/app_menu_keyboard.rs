@@ -21,7 +21,8 @@ impl RepoWindow {
             self.close_app_menu(cx);
             return false;
         }
-        let rows = MenuRow::for_menu(&menu.menu_name, cx);
+        let steps = self.vm.read(cx).operation_steps().cloned();
+        let rows = MenuRow::for_menu(&menu.menu_name, steps.as_ref(), cx);
         match key.key.as_str() {
             "down" | "up" => {
                 let selected = MenuRow::step(&rows, menu.selected, key.key == "down");
@@ -58,7 +59,8 @@ impl RepoWindow {
                     current.checked_sub(1).unwrap_or(names.len() - 1)
                 };
                 let name = names[next].clone();
-                let first = MenuRow::step(&MenuRow::for_menu(&name, cx), None, true);
+                let first =
+                    MenuRow::step(&MenuRow::for_menu(&name, steps.as_ref(), cx), None, true);
                 self.open_named_app_menu(name, first, cx);
             }
             _ => return false,

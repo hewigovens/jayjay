@@ -23,6 +23,8 @@ const SECTIONS: &[ShortcutSection] = &[
             ShortcutEntry::Command(ShortcutCommand::AppKeyboardShortcuts),
             ShortcutEntry::Command(ShortcutCommand::AppSettings),
             ShortcutEntry::Command(ShortcutCommand::AppCloseWindow),
+            ShortcutEntry::Command(ShortcutCommand::RepoUndo),
+            ShortcutEntry::Command(ShortcutCommand::RepoRedo),
         ],
     },
     ShortcutSection {

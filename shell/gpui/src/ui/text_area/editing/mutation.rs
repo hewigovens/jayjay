@@ -1,10 +1,11 @@
-use gpui::{ClipboardItem, Context, EntityInputHandler, Window};
+use gpui::{ClipboardItem, Context, EntityInputHandler, SharedString, Window};
 
 use super::super::TextArea;
 use super::super::action::{
     Backspace, Copy, Cut, Delete, DeletePreviousWord, DeleteToLineEnd, DeleteToLineStart, Newline,
-    Paste,
+    Paste, Redo, Undo,
 };
+use crate::ui::input::{HistoryStep, TextSnapshot};
 
 impl TextArea {
     pub(crate) fn newline(&mut self, _: &Newline, window: &mut Window, cx: &mut Context<Self>) {
@@ -115,6 +116,37 @@ impl TextArea {
                 self.content[self.selection.range().clone()].to_string(),
             ));
             self.replace_text_in_range(None, "", window, cx);
+        }
+    }
+
+    pub(crate) fn undo(&mut self, _: &Undo, _: &mut Window, cx: &mut Context<Self>) {
+        self.step_history(HistoryStep::Undo, cx);
+    }
+
+    pub(crate) fn redo(&mut self, _: &Redo, _: &mut Window, cx: &mut Context<Self>) {
+        self.step_history(HistoryStep::Redo, cx);
+    }
+
+    fn step_history(&mut self, step: HistoryStep, cx: &mut Context<Self>) {
+        if !self.is_editable() {
+            // Read-only text has nothing of its own to undo, so the keys step jj operations.
+            cx.propagate();
+            return;
+        }
+        let Some(snapshot) = self.history.step(step, self.snapshot()) else {
+            return;
+        };
+        self.content = snapshot.text;
+        self.selection = snapshot.selection;
+        self.marked_range = None;
+        self.content_changed(cx);
+        self.show_caret(cx);
+    }
+
+    pub(crate) fn snapshot(&self) -> TextSnapshot<SharedString> {
+        TextSnapshot {
+            text: self.content.clone(),
+            selection: self.selection.clone(),
         }
     }
 

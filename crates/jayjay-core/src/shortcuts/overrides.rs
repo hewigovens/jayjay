@@ -33,8 +33,10 @@ impl ShortcutOverrides {
                 continue;
             }
             for value in &values {
+                // A pinned default may be a chord reserved for every other command.
                 if let Ok(chord) = Chord::parse(value)
-                    && chord.validate(platform).is_ok()
+                    && (chord.validate(platform).is_ok()
+                        || command.default_chord(platform) == Some(chord))
                 {
                     overrides.entries.insert(id, Override::Chord(chord));
                     break;
@@ -81,6 +83,12 @@ impl ShortcutOverrides {
 
     pub(crate) fn remove_entry(&mut self, command: ShortcutCommand) {
         self.entries.remove(command.id());
+    }
+
+    /// Stores `chord` even when it is the default, so the command keeps it without the aliases that come with the default.
+    pub(crate) fn pin_chord(&mut self, command: ShortcutCommand, chord: Chord) {
+        self.entries
+            .insert(command.id().to_owned(), Override::Chord(chord));
     }
 
     pub(crate) fn set_entry(

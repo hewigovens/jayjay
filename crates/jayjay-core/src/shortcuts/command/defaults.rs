@@ -16,9 +16,11 @@ impl ShortcutCommand {
             Self::RepoRefresh => "mod-r",
             Self::RepoToggleSidebar => match platform {
                 KeyPlatform::Mac => "ctrl-cmd-s",
-                KeyPlatform::Other => "ctrl-alt-s",
+                KeyPlatform::Windows | KeyPlatform::Other => "ctrl-alt-s",
             },
             Self::RepoOperationLog => "shift-mod-u",
+            Self::RepoUndo => "mod-z",
+            Self::RepoRedo => "shift-mod-z",
             Self::RepoFilterByRevset => "mod-l",
             Self::RepoBookmarkManager => "shift-mod-b",
             Self::RepoOverview => "shift-mod-o",
@@ -40,7 +42,7 @@ impl ShortcutCommand {
 
     pub fn aliases(self, platform: KeyPlatform) -> Vec<Chord> {
         let mut chords = Vec::new();
-        if let Some(rest) = self.locked_alias_specs(platform) {
+        if let Some(rest) = self.alias_specs(platform) {
             for spec in rest {
                 if let Ok(chord) = Chord::parse_default(spec, platform) {
                     chords.push(chord);
@@ -91,7 +93,7 @@ impl ShortcutCommand {
         Chord::parse_default(spec, platform).ok()
     }
 
-    fn locked_alias_specs(self, platform: KeyPlatform) -> Option<&'static [&'static str]> {
+    fn alias_specs(self, platform: KeyPlatform) -> Option<&'static [&'static str]> {
         match self {
             Self::ChangesNext => Some(&["down", "ctrl-n"]),
             Self::ChangesPrevious => Some(&["up", "ctrl-p"]),
@@ -100,9 +102,11 @@ impl ShortcutCommand {
             Self::DiffNextPreviousFileCard => Some(&["k"]),
             Self::DiffCollapseExpandFileCard => Some(&["right"]),
             Self::RepoSwitchPane => Some(&["l"]),
-            Self::RepoOpenContextMenu if platform == KeyPlatform::Other => {
+            Self::RepoOpenContextMenu if platform != KeyPlatform::Mac => {
                 Some(&["shift-f10", "menu"])
             }
+            // Ctrl+Y is the Windows redo convention; Linux desktops redo with Shift+Ctrl+Z only.
+            Self::RepoRedo if platform == KeyPlatform::Windows => Some(&["ctrl-y"]),
             _ => None,
         }
     }

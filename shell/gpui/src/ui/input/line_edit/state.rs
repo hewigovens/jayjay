@@ -1,13 +1,15 @@
 use std::ops::Range;
 
 use super::super::{
-    TextSelection, next_boundary, next_word_boundary, previous_boundary, previous_word_boundary,
+    EditHistory, HistoryStep, TextSelection, TextSnapshot, next_boundary, next_word_boundary,
+    previous_boundary, previous_word_boundary,
 };
 
 #[derive(Debug, Default, Clone)]
 pub struct LineEdit {
     pub(super) text: String,
     selection: TextSelection,
+    history: EditHistory,
 }
 
 impl LineEdit {
@@ -17,6 +19,7 @@ impl LineEdit {
         Self {
             text,
             selection: TextSelection::at(end),
+            history: EditHistory::default(),
         }
     }
 
@@ -31,6 +34,7 @@ impl LineEdit {
     pub(crate) fn set_text(&mut self, text: impl Into<String>) {
         self.text = text.into();
         self.move_to(self.text.len());
+        self.history.clear();
     }
 
     pub(crate) fn cursor_offset(&self) -> usize {
@@ -164,7 +168,29 @@ impl LineEdit {
     }
 
     pub(crate) fn replace_range(&mut self, range: Range<usize>, replacement: &str) {
+        self.history.record(self.snapshot(), &range, replacement);
+        self.replace_composing(range, replacement);
+    }
+
+    /// An IME composition's later updates and its commit belong to the undo step its first marked text recorded.
+    pub(crate) fn replace_composing(&mut self, range: Range<usize>, replacement: &str) {
         self.text.replace_range(range.clone(), replacement);
         self.move_to(range.start + replacement.len());
+    }
+
+    pub(super) fn step_history(&mut self, step: HistoryStep) -> bool {
+        let Some(snapshot) = self.history.step(step, self.snapshot()) else {
+            return false;
+        };
+        self.text = snapshot.text;
+        self.selection = snapshot.selection;
+        true
+    }
+
+    fn snapshot(&self) -> TextSnapshot {
+        TextSnapshot {
+            text: self.text.clone(),
+            selection: self.selection.clone(),
+        }
     }
 }

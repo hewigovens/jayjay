@@ -153,7 +153,7 @@ impl OverviewView {
         }
     }
 
-    pub(super) fn track(&mut self, task: Task<JayResult<()>>, cx: &mut Context<Self>) {
+    pub(super) fn track<T: 'static>(&mut self, task: Task<JayResult<T>>, cx: &mut Context<Self>) {
         self.action_error = None;
         cx.spawn(async move |this, cx| {
             if let Err(error) = task.await {

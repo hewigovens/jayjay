@@ -4,7 +4,7 @@ use jayjay_core::{DiffHunk, JayResult};
 
 use super::{
     ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoModal, RepoWindow,
-    TextModalAction, TextModalState,
+    TextModalAction, TextModalState, Toast,
 };
 use crate::diff::projection::{self, ProjectionView};
 use crate::repo::view_model::RepoViewModel;
@@ -104,7 +104,7 @@ impl RepoWindow {
             self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         };
-        OperationLogView::open(repo, cx.entity(), self.vm.clone(), cx);
+        OperationLogView::open(repo, cx.entity(), self.vm.clone(), None, cx);
     }
 
     pub(super) fn open_edit_description(
@@ -638,16 +638,33 @@ impl RepoWindow {
     }
 
     pub(crate) fn show_toast(&mut self, message: impl Into<SharedString>, cx: &mut Context<Self>) {
-        let message = message.into();
-        self.feedback.toast = Some(message.clone());
+        self.present_toast(message.into(), None, cx);
+    }
+
+    /// Stays up longer when it offers Undo, so there is time to reach the button.
+    pub(crate) fn present_toast(
+        &mut self,
+        message: SharedString,
+        undo_operation_id: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
+        let duration = if undo_operation_id.is_some() {
+            5000
+        } else {
+            1800
+        };
+        let toast = Toast {
+            message,
+            undo_operation_id,
+        };
+        self.feedback.toast = Some(toast.clone());
         cx.notify();
-        let id_for_clear = message;
         cx.spawn(async move |this, cx| {
             cx.background_executor()
-                .timer(std::time::Duration::from_millis(1800))
+                .timer(std::time::Duration::from_millis(duration))
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                if view.feedback.toast.as_ref() == Some(&id_for_clear) {
+                if view.feedback.toast.as_ref() == Some(&toast) {
                     view.feedback.toast = None;
                     cx.notify();
                 }

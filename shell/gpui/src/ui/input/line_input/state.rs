@@ -43,7 +43,11 @@ impl LineInput {
     }
 
     pub(crate) fn replace_range(&mut self, range: Range<usize>, text: &str) {
-        self.edit.replace_range(range, text);
+        if self.marked.is_some() {
+            self.edit.replace_composing(range, text);
+        } else {
+            self.edit.replace_range(range, text);
+        }
         self.marked = None;
         self.reveal_cursor_edge();
     }

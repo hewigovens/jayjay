@@ -7,9 +7,10 @@ use super::actions::{
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, ReportIssue, ResetZoom,
-    RevealLogs, SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles, ToggleIgnoreWhitespace,
-    ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
+    OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, RedoOperation,
+    ReportIssue, ResetZoom, RevealLogs, SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles,
+    ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, UndoOperation,
+    ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::repositories::repository_name;
@@ -35,10 +36,12 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
     vec![
         app_menu(),
         file_menu(&cfg.recent_repos),
-        Menu::new(jayjay_i18n::menu::edit()).items([MenuItem::action(
-            jayjay_i18n::menu::find_ellipsis(),
-            OpenFind,
-        )]),
+        Menu::new(jayjay_i18n::menu::edit()).items([
+            MenuItem::action(jayjay_i18n::repo::undo(), UndoOperation),
+            MenuItem::action(jayjay_i18n::menu::redo(), RedoOperation),
+            MenuItem::separator(),
+            MenuItem::action(jayjay_i18n::menu::find_ellipsis(), OpenFind),
+        ]),
         Menu::new(jayjay_i18n::menu::view()).items([
             MenuItem::action(
                 if cfg.layout.sidebar_hidden {

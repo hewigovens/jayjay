@@ -22,6 +22,8 @@ impl ShortcutAction for ShortcutCommand {
             Self::RepoRefresh => Box::new(Refresh),
             Self::RepoToggleSidebar => Box::new(ToggleSidebar),
             Self::RepoOperationLog => Box::new(OpenOperationLog),
+            Self::RepoUndo => Box::new(UndoOperation),
+            Self::RepoRedo => Box::new(RedoOperation),
             Self::RepoFilterByRevset => Box::new(FilterByRevset),
             Self::RepoBookmarkManager => Box::new(OpenBookmarkManager),
             Self::RepoOverview => Box::new(OpenOverview),

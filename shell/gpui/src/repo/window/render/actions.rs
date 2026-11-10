@@ -6,10 +6,12 @@ use crate::app::actions::{
     ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenOperationLog, OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenSettings, Refresh, SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager, ToggleSidebar,
+    OpenSettings, RedoOperation, Refresh, SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager,
+    ToggleSidebar, UndoOperation,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
+use crate::repo::view_model::OperationStep;
 use crate::ui::pane_drag::TrackPaneDrag;
 use crate::ui::text_area::Newline;
 use crate::windows::command_palette::CommandPalette;
@@ -52,6 +54,12 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &OpenOperationLog, _, cx| {
                 view.open_operation_log(cx);
+            }))
+            .on_action(cx.listener(|view, _: &UndoOperation, window, cx| {
+                view.operation_step_action(OperationStep::Undo, window, cx);
+            }))
+            .on_action(cx.listener(|view, _: &RedoOperation, window, cx| {
+                view.operation_step_action(OperationStep::Redo, window, cx);
             }))
             .on_action(cx.listener(|view, _: &OpenRepoInEditor, _, cx| {
                 view.open_repo_in_editor(cx);

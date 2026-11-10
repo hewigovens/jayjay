@@ -13,6 +13,13 @@ fn shortcut_bindings(stored: HashMap<String, Vec<String>>) -> Vec<ShortcutBindin
     EffectiveBindings::resolve(&overrides, KeyPlatform::Mac)
         .entries()
         .iter()
+        // The Edit menu owns ⌘Z and ⇧⌘Z through AppKit's responder chain, so they are not rebindable here.
+        .filter(|entry| {
+            !matches!(
+                entry.command,
+                ShortcutCommand::RepoUndo | ShortcutCommand::RepoRedo
+            )
+        })
         .map(|entry| ShortcutBinding::new(entry, stored.contains_key(entry.command.id())))
         .collect()
 }

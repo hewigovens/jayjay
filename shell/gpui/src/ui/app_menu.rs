@@ -8,9 +8,11 @@ use gpui::{
     StatefulInteractiveElement, Styled, Window, anchored, canvas, deferred, div,
     prelude::FluentBuilder as _, px, rgb,
 };
+use jayjay_core::UndoState;
 
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
+use crate::repo::view_model::OperationStep;
 use crate::repo::window::RepoWindow;
 use crate::repo::window::picker::{below, opener};
 use crate::ui::icons::{self, glyph};
@@ -39,7 +41,7 @@ pub(crate) enum MenuRow {
 }
 
 impl MenuRow {
-    pub(crate) fn for_menu(name: &SharedString, cx: &App) -> Vec<Self> {
+    pub(crate) fn for_menu(name: &SharedString, steps: Option<&UndoState>, cx: &App) -> Vec<Self> {
         let mut rows = Vec::new();
         if let Some(menu) = cx
             .get_menus()
@@ -48,6 +50,20 @@ impl MenuRow {
             .find(|menu| menu.name == *name)
         {
             Self::append(&menu, &mut rows);
+        }
+        for row in &mut rows {
+            if let Self::Action {
+                name,
+                action,
+                disabled,
+                ..
+            } = row
+                && let Some(step) = OperationStep::for_action(action.as_ref())
+            {
+                let description = steps.and_then(|steps| step.description(steps));
+                *name = step.menu_title(description);
+                *disabled = description.is_none();
+            }
         }
         rows
     }
@@ -105,12 +121,13 @@ impl MenuRow {
 
 pub(crate) fn render_app_menu(
     state: &AppMenuState,
+    steps: Option<&UndoState>,
     titles: &MenuTitleBounds,
     t: &Theme,
     view: &Entity<RepoWindow>,
     cx: &mut gpui::Context<RepoWindow>,
 ) -> AnyElement {
-    let rows = MenuRow::for_menu(&state.menu_name, cx);
+    let rows = MenuRow::for_menu(&state.menu_name, steps, cx);
     // Read at render time so the menu follows its title when zoom resizes the bar.
     let anchor = titles
         .borrow()

@@ -7,7 +7,7 @@ use gpui::{
 use jayjay_core::diff::DiffSpanStyle;
 
 use crate::app::theme::Theme;
-use crate::ui::input::{CaretBlink, TextSelection, line_ranges};
+use crate::ui::input::{CaretBlink, EditHistory, TextSelection, line_ranges};
 
 mod highlighting;
 
@@ -19,6 +19,7 @@ pub struct TextArea {
     pub(super) placeholder: SharedString,
     pub(super) selection: TextSelection,
     pub(super) marked_range: Option<Range<usize>>,
+    pub(super) history: EditHistory<SharedString>,
     pub(super) last_layout: Option<TextLayout>,
     /// Outlives `last_layout` so the IME can get caret bounds between an edit and the next paint.
     pub(super) last_key: Option<TextLayoutKey>,
@@ -121,6 +122,7 @@ impl TextArea {
             placeholder: placeholder.into(),
             selection: TextSelection::at(end),
             marked_range: None,
+            history: EditHistory::default(),
             last_layout: None,
             last_key: None,
             last_bounds: None,
@@ -303,6 +305,7 @@ impl TextArea {
         let end = self.content.len();
         self.selection = TextSelection::at(end);
         self.marked_range = None;
+        self.history.clear();
         self.last_layout = None;
         self.schedule_syntax_highlight(false, cx);
         cx.emit(TextAreaUpdated);

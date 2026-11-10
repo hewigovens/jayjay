@@ -207,7 +207,7 @@ fn field_text(text: &str) -> Option<String> {
 
 #[cfg(test)]
 mod tests {
-    use gpui::{Render, TestAppContext, VisualTestContext, div};
+    use gpui::{KeyDownEvent, Keystroke, Render, TestAppContext, VisualTestContext, div};
 
     use super::*;
 
@@ -259,6 +259,16 @@ mod tests {
             assert_eq!(owner.input.text(), "é 你");
             assert_eq!(owner.input.edit.selection_range(), 0.."é 你".len());
             assert_eq!(owner.edits, 2);
+        });
+
+        let undo = KeyDownEvent {
+            keystroke: Keystroke::parse("secondary-z").unwrap(),
+            is_held: false,
+            prefer_character_input: false,
+        };
+        owner.update(cx, |owner, _| {
+            owner.input.edit.handle_key(&undo, || None);
+            assert_eq!(owner.input.text(), "é ", "a composition undoes as one step");
         });
     }
 }
