@@ -1,16 +1,8 @@
 import JayJayCore
 import SwiftUI
 
-/// Pure display helpers for EvologView — formatters, label/icon mappings.
+/// Pure display helpers for EvologView: label and icon mappings.
 enum EvologDisplay {
-    static func timestamp(_ millis: Int64) -> String {
-        let date = Date(timeIntervalSince1970: Double(millis) / 1000)
-        let formatter = RelativeDateTimeFormatter()
-        formatter.locale = Localized.locale
-        formatter.unitsStyle = .abbreviated
-        return formatter.localizedString(for: date, relativeTo: Date())
-    }
-
     /// Shorten verbose jj operation strings for display. Falls back to the raw value.
     static func operationLabel(_ raw: String) -> String {
         if isSnapshotOperation(operation: raw) {

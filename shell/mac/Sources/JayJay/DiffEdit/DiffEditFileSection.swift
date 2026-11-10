@@ -23,7 +23,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @State var displayToFullMap: [Int: Int] = [:]
     @State var changedLines: Set<Int> = []
     @State private var supportsDiffEdit = false
-    @State private var loadError: String?
     @State private var isLoading = false
     @State private var measuredHeight: CGFloat?
     @State private var loadedKey: String?
@@ -125,11 +124,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         if isLoading {
             LoadingStatus(label: Localized.Repo.loadingFileDiffEllipsis)
                 .frame(maxWidth: .infinity, minHeight: 120)
-        } else if let loadError {
-            Text(loadError)
-                .jayjayFont(12)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, alignment: .leading)
         } else if let displayDiff {
             NativeDiffView(
                 diff: displayDiff,
@@ -192,7 +186,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         }
 
         isLoading = true
-        loadError = nil
 
         // Reuse DiffStore for file content loading (cached if already loaded by DiffSection); the request mode keeps auto-open formats on the processed rows their stats count.
         let cached = await diffStore.loadDiff(

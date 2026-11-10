@@ -148,6 +148,25 @@ final class DiffGutterGroupingTests: XCTestCase {
         XCTAssertEqual(items.last?.title, "Abandon Change Group")
     }
 
+    func test_changedRanges_matchesSingleLineExpansionForEveryLine() {
+        let lines = [
+            line(.added),
+            line(.context),
+            line(.removed),
+            line(.removed),
+            line(.added),
+            line(.separator),
+            line(.added),
+            line(.context),
+            line(.removed)
+        ]
+
+        XCTAssertEqual(
+            DiffGutterGrouping.changedRanges(in: lines),
+            (1 ... lines.count).map { DiffGutterGrouping.expandedChangedRange(in: lines, containing: $0 ... $0) }
+        )
+    }
+
     func test_expandedChangedRange_returnsNilForEmptyDiff() {
         XCTAssertNil(DiffGutterGrouping.expandedChangedRange(in: [], containing: 1 ... 1))
     }

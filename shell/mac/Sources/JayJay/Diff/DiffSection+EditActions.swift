@@ -42,10 +42,6 @@ extension DiffSection: DiffGutterEditActions {
     }
 
     func abandonSelectedLines(in lineRange: ClosedRange<Int>) {
-        abandonSelectedLines(lineRange: lineRange)
-    }
-
-    private func abandonSelectedLines(lineRange: ClosedRange<Int>) {
         guard let actions,
               let repo,
               let rev,

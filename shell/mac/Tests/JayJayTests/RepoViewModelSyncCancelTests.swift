@@ -29,13 +29,4 @@ final class RepoViewModelSyncCancelTests: RepoViewModelTestCase {
         XCTAssertNil(viewModel.error)
         XCTAssertNotNil(viewModel.refreshTask, "a canceled pull still refreshes: its remote phase may have landed")
     }
-
-    private func runJj(_ arguments: [String], in repoPath: String) throws {
-        let process = Process()
-        process.executableURL = try URL(fileURLWithPath: XCTUnwrap(findBinary(name: "jj")))
-        process.arguments = ["-R", repoPath] + arguments
-        try process.run()
-        process.waitUntilExit()
-        XCTAssertEqual(process.terminationStatus, 0, "jj \(arguments.joined(separator: " ")) failed")
-    }
 }

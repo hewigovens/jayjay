@@ -40,7 +40,7 @@ struct OnboardingView: View {
         .frame(width: Self.preferredSize.width, height: Self.preferredSize.height)
         .task {
             identity = await UserIdentity.configured()
-            jjStatus = JJEnvironment.check()
+            jjStatus = await JJEnvironment.check()
         }
         .identitySetup($identity, isPresented: $isSettingUpIdentity)
     }
@@ -98,10 +98,10 @@ struct OnboardingView: View {
             Text(Localized.Menu.welcomeToJayjay)
                 .jayjayFont(28, weight: .bold)
             Text(Localized.Onboarding.welcomeDescription)
-            .jayjayFont(14)
-            .foregroundStyle(.secondary)
-            .multilineTextAlignment(.center)
-            .frame(maxWidth: 340)
+                .jayjayFont(14)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 340)
             Spacer()
         }
         .padding(24)
@@ -146,7 +146,7 @@ struct OnboardingView: View {
                     }
                     .padding(.top, 8)
 
-                    Button(Localized.Onboarding.checkAgain) { jjStatus = JJEnvironment.check() }
+                    Button(Localized.Onboarding.checkAgain) { Task { jjStatus = await JJEnvironment.check() } }
                         .padding(.top, 4)
                 }
             } else {

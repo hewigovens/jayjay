@@ -110,7 +110,7 @@ final class DiffSectionProjectionTests: XCTestCase {
     }
 
     func testSameFileProjectionReloadKeepsCurrentDiffVisible() {
-        XCTAssertTrue(DiffSection.shouldKeepLoadedContentWhileLoading(
+        XCTAssertTrue(DiffSection.hasCurrentRenderableDiff(
             loadedPath: "analysis.ipynb",
             hunkPath: "analysis.ipynb",
             hasRenderedDiff: true,
@@ -122,13 +122,6 @@ final class DiffSectionProjectionTests: XCTestCase {
 
     func testProjectionModeSwitchDoesNotRenderOldModeDiff() {
         XCTAssertFalse(DiffSection.hasCurrentRenderableDiff(
-            loadedPath: "results.sarif",
-            hunkPath: "results.sarif",
-            hasRenderedDiff: true,
-            loadedProjectionMode: .processed,
-            requestedProjectionMode: .raw
-        ))
-        XCTAssertFalse(DiffSection.shouldKeepLoadedContentWhileLoading(
             loadedPath: "results.sarif",
             hunkPath: "results.sarif",
             hasRenderedDiff: true,
@@ -173,7 +166,7 @@ final class DiffSectionProjectionTests: XCTestCase {
     }
 
     func testInitialProjectionLoadShowsBlockingProgress() {
-        XCTAssertFalse(DiffSection.shouldKeepLoadedContentWhileLoading(
+        XCTAssertFalse(DiffSection.hasCurrentRenderableDiff(
             loadedPath: nil,
             hunkPath: "analysis.ipynb",
             hasRenderedDiff: false,
@@ -206,30 +199,6 @@ final class DiffSectionProjectionTests: XCTestCase {
             DiffGutterMetrics.richPreviewWidth(font: font)
         )
         XCTAssertLessThan(width, DiffGutterMetrics.unifiedWidth(displayLines: [line], font: font))
-    }
-
-    func testProjectionDiffsUseCompactNativeGutterInAllModes() {
-        let plist = testProjection(
-            pluginId: "plist",
-            pluginLabel: "Property list",
-            mode: .processed,
-            renderKind: .text,
-            virtualPath: "Info.plist.xml"
-        )
-        let rawNotebook = testProjection(pluginId: "ipynb", pluginLabel: "Notebook", mode: .raw)
-        let rawSarif = testProjection(
-            pluginId: "sarif",
-            pluginLabel: "SARIF",
-            mode: .raw,
-            renderKind: .markdown
-        )
-        let processedNotebook = testProjection(pluginId: "ipynb", pluginLabel: "Notebook", mode: .processed)
-
-        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: plist))
-        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: rawNotebook))
-        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: rawSarif))
-        XCTAssertTrue(DiffSection.usesProjectionNativeGutter(projection: processedNotebook))
-        XCTAssertFalse(DiffSection.usesProjectionNativeGutter(projection: nil))
     }
 
     func testProjectedReviewableDiffsReserveReviewNoteGutterColumn() {

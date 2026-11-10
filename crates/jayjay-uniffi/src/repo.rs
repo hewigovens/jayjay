@@ -9,8 +9,8 @@ use jayjay_core::{
     FileEditorData, FixSummary, GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand,
     JjCommandResult, MutationEffect, OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode,
     RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken,
-    TagInfo, ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
-    diff::{self, CollapsedDiff, FileDiff, ReviewFileSnapshot},
+    ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
+    diff::{self, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
 use jayjay_primitives::{ConvergeChoices, ConvergeOutcome, ConvergePlan, ReviewNoteStatus};
@@ -52,16 +52,6 @@ fn fix_summary_message(summary: FixSummary) -> String {
 #[uniffi::export]
 fn branch_name_slug(text: String) -> String {
     jayjay_core::branch_name_slug(&text)
-}
-
-#[uniffi::export]
-fn ancestors_revset(change_id: String) -> String {
-    jayjay_core::ancestors_revset(&change_id)
-}
-
-#[uniffi::export]
-fn bookmark_filter_revset(name: String, remote: Option<String>) -> String {
-    jayjay_core::bookmark_filter_revset(&name, remote.as_deref())
 }
 
 #[uniffi::export]
@@ -898,10 +888,6 @@ impl JayJayRepo {
         self.inner.list_bookmarks()
     }
 
-    fn list_tags(&self) -> Result<Vec<TagInfo>, JayError> {
-        self.inner.list_tags()
-    }
-
     fn revset_vocabulary(&self, bookmarks: Vec<BookmarkInfo>) -> jayjay_core::RevsetVocabulary {
         self.inner.revset_vocabulary(&bookmarks)
     }
@@ -1079,20 +1065,6 @@ impl JayJayRepo {
         ignore_whitespace: bool,
     ) -> FileDiff {
         diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
-    }
-
-    fn compute_native_diff_full_plain(
-        &self,
-        path: String,
-        old_content: String,
-        new_content: String,
-        ignore_whitespace: bool,
-    ) -> FileDiff {
-        diff::compute_file_diff_full_plain(&path, &old_content, &new_content, ignore_whitespace)
-    }
-
-    fn collapse_diff_with_mapping(&self, diff: FileDiff) -> CollapsedDiff {
-        diff::collapse_context_with_mapping(&diff)
     }
 
     fn apply_diff_selection(

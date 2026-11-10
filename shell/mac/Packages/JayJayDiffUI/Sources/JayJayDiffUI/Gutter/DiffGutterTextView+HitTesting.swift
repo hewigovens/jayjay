@@ -12,11 +12,11 @@ extension DiffGutterTextView {
         let fragmentRect = layoutManager.lineFragmentRect(forGlyphAt: glyphIndex, effectiveRange: nil)
         guard containerPoint.y <= fragmentRect.maxY else { return nil }
         let charIndex = layoutManager.characterIndexForGlyph(at: glyphIndex)
-        return entry(atCharIndex: charIndex)?.lineNumber
+        return entryIndex(atCharIndex: charIndex).map { entries[$0].lineNumber }
     }
 
     /// Binary search over `entries` (built in ascending range order).
-    private func entry(atCharIndex charIndex: Int) -> Entry? {
+    private func entryIndex(atCharIndex charIndex: Int) -> Int? {
         var low = 0
         var high = entries.count - 1
         while low <= high {
@@ -27,7 +27,7 @@ extension DiffGutterTextView {
             } else if charIndex >= NSMaxRange(candidate.range) {
                 low = mid + 1
             } else {
-                return candidate
+                return mid
             }
         }
         return nil
@@ -71,15 +71,9 @@ extension DiffGutterTextView {
             x: point.x - textContainerInset.width,
             y: point.y - textContainerInset.height
         )
-        let fraction = UnsafeMutablePointer<CGFloat>.allocate(capacity: 1)
-        defer { fraction.deallocate() }
-        let glyphIndex = layoutManager.glyphIndex(
-            for: containerPoint,
-            in: textContainer,
-            fractionOfDistanceThroughGlyph: fraction
-        )
+        let glyphIndex = layoutManager.glyphIndex(for: containerPoint, in: textContainer)
         let charIndex = layoutManager.characterIndexForGlyph(at: glyphIndex)
-        if let found = entries.firstIndex(where: { NSLocationInRange(charIndex, $0.range) }) {
+        if let found = entryIndex(atCharIndex: charIndex) {
             return found
         }
 

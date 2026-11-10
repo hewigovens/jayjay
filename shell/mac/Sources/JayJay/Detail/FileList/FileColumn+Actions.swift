@@ -153,7 +153,7 @@ extension ChangeDetailView {
             detail.diff.first(where: { $0.path == path && !$0.reviewIdentity.isEmpty })
         }
         commitReviewMarks(hunks, reviewed: reviewed)
-        refreshReviewedPaths()
+        applyKnownReviewRollups()
     }
 
     func commitReviewMarks(_ hunks: [DiffHunk], reviewed: Bool) {

@@ -121,7 +121,7 @@ final class EvologViewModel {
         return comparisonReversed ? (from: endpoints.to, to: endpoints.from) : endpoints
     }
 
-    private func loadInterdiff() {
+    func loadInterdiff() {
         selectedHunk = nil
         selectedPath = nil
         interdiffDetail = nil
@@ -198,19 +198,11 @@ final class EvologViewModel {
         }
     }
 
-    func retryInterdiff() {
-        loadInterdiff()
-    }
-
-    func copyCommitId(_ commitId: String) {
-        copyToPasteboard(commitId)
-    }
-
     func copyRestoreCommand(_ commitId: String, into rev: String) {
         copyToPasteboard("jj restore --from \(commitId) --into \(rev)")
     }
 
-    private func copyToPasteboard(_ value: String) {
+    func copyToPasteboard(_ value: String) {
         NSPasteboard.general.clearContents()
         NSPasteboard.general.setString(value, forType: .string)
     }

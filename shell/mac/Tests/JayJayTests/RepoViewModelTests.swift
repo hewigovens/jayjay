@@ -587,18 +587,4 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         }
         XCTAssertEqual(viewModel.error, "Formatters rewrote 0 of 1 change\nfixer failed on unsorted.txt: fixer exploded")
     }
-
-    private func runJj(_ arguments: [String], in repoPath: String) throws -> String {
-        let process = Process()
-        process.executableURL = try URL(fileURLWithPath: XCTUnwrap(findBinary(name: "jj")))
-        process.arguments = ["-R", repoPath] + arguments
-        let stdout = Pipe()
-        process.standardOutput = stdout
-        process.standardError = Pipe()
-        try process.run()
-        process.waitUntilExit()
-        XCTAssertEqual(process.terminationStatus, 0, "jj \(arguments.joined(separator: " ")) failed")
-        return String(decoding: stdout.fileHandleForReading.readDataToEndOfFile(), as: UTF8.self)
-            .trimmingCharacters(in: .whitespacesAndNewlines)
-    }
 }

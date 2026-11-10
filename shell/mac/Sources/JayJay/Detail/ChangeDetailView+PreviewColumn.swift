@@ -190,13 +190,7 @@ extension ChangeDetailView {
     }
 
     private var hiddenOnlyStateIcon: String {
-        if hiddenGitLfsCount > 0, hiddenSubmoduleCount > 0 {
-            return "externaldrive.badge.questionmark"
-        }
-        if hiddenGitLfsCount > 0 {
-            return "externaldrive.badge.questionmark"
-        }
-        return "square.stack.3d.up.slash"
+        hiddenGitLfsCount > 0 ? "externaldrive.badge.questionmark" : "square.stack.3d.up.slash"
     }
 
     private var hiddenOnlyStateDescription: String {

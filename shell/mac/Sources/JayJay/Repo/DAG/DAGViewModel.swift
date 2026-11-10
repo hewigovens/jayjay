@@ -3,9 +3,6 @@ import SwiftUI
 
 @MainActor
 struct DAGViewModel {
-    nonisolated private static let downArrowKeyCode: UInt16 = 125
-    nonisolated private static let upArrowKeyCode: UInt16 = 126
-
     let entries: [GraphEntry]
     let selectedId: String?
     let selectedIds: [String]
@@ -175,9 +172,9 @@ struct DAGViewModel {
         controlPressed: Bool
     ) -> Int? {
         switch keyCode {
-            case downArrowKeyCode:
+            case KeyCode.downArrow:
                 return 1
-            case upArrowKeyCode:
+            case KeyCode.upArrow:
                 return -1
             default:
                 break

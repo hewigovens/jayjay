@@ -247,9 +247,8 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
         viewModel.isRefreshingInFlight = true
 
         let staleRefresh = viewModel.startRepoTask { [viewModel] in
-            await viewModel.handleRefreshFailure(TestRefreshError.failed) {
-                probe.run()
-            }
+            let presence = probe.run()
+            await viewModel.applyRefreshFailure(TestRefreshError.failed, presence: presence)
         }
         while !probe.hasStarted {
             await Task.yield()

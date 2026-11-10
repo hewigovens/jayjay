@@ -28,19 +28,6 @@ extension RepoViewModel {
         self.error = error.friendlyDescription
     }
 
-    /// A vanished workspace closes the window; an undecided presence keeps the real error.
-    func handleRefreshFailure(
-        _ error: any Error,
-        workspacePresence: @Sendable () -> WorkspacePresence
-    ) async {
-        guard !Task.isCancelled else { return }
-        let presence = workspacePresence()
-        guard !Task.isCancelled else { return }
-        await MainActor.run {
-            applyRefreshFailure(error, presence: presence)
-        }
-    }
-
     @MainActor
     func applyRefreshFailure(_ error: any Error, presence: WorkspacePresence, context: RepoRefreshContext? = nil) {
         guard !Task.isCancelled, !isShuttingDown else { return }

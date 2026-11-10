@@ -99,7 +99,7 @@ extension DiffSection {
                             displayLines: loadedDisplayLines,
                             displayGroups: displayGroups,
                             reserveNoteColumn: reservesReviewNoteGutterColumn,
-                            compactGutterWidth: usesProjectionNativeGutter,
+                            compactGutterWidth: effectiveProjection != nil,
                             onExpandContext: expandContext,
                             resetSelectionGeneration: contextExpansionDisplay.selectionGeneration,
                             reviewStateGeneration: reviewStore?.marksVersion ?? 0,
@@ -149,14 +149,6 @@ extension DiffSection {
             showsNoteColumn: showsNoteColumn,
             hasVisibleNoteMarker: hasVisibleNoteMarker
         )
-    }
-
-    var usesProjectionNativeGutter: Bool {
-        Self.usesProjectionNativeGutter(projection: effectiveProjection)
-    }
-
-    nonisolated static func usesProjectionNativeGutter(projection: DiffProjection?) -> Bool {
-        projection != nil
     }
 
     /// Rooted at the repo checkout, not the file's directory, so parent-relative asset references stay resolvable and contained; the failable init rejects hunk paths that escape the root.

@@ -4,7 +4,7 @@ import SwiftUI
 @main
 struct JayJayApp: App {
     @NSApplicationDelegateAdaptor private var appDelegate: AppDelegate
-    @State private var settings = AppSettings()
+    @State private var settings: AppSettings
     @State private var flock: FlockModel
     @State private var repositoryStore = RepositoryStore()
     @State private var windowManager: RepoWindowManager

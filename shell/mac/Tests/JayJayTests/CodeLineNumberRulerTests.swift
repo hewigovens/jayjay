@@ -49,10 +49,7 @@ final class CodeLineNumberRulerTests: XCTestCase {
         window.contentView = host
         host.layoutSubtreeIfNeeded()
         window.displayIfNeeded()
-        func descendants(_ view: NSView) -> [NSView] {
-            view.subviews.flatMap { [$0] + descendants($0) }
-        }
-        let ruler = try XCTUnwrap(descendants(host).compactMap { $0 as? CodeLineNumberRuler }.first)
+        let ruler = try XCTUnwrap(host.descendants.compactMap { $0 as? CodeLineNumberRuler }.first)
         let editor = try XCTUnwrap(ruler.clientView as? NSTextView)
         XCTAssertEqual(editor.font?.pointSize, 20)
         XCTAssertEqual(editor.font?.familyName, family.nsFont(size: 20).familyName)
@@ -75,10 +72,7 @@ final class CodeLineNumberRulerTests: XCTestCase {
             let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 300, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
             window.contentView = host
             host.layoutSubtreeIfNeeded()
-            func descendants(_ view: NSView) -> [NSView] {
-                view.subviews.flatMap { [$0] + descendants($0) }
-            }
-            let ruler = try XCTUnwrap(descendants(host).compactMap { $0 as? CodeLineNumberRuler }.first)
+            let ruler = try XCTUnwrap(host.descendants.compactMap { $0 as? CodeLineNumberRuler }.first)
             let editor = try XCTUnwrap(ruler.clientView as? NSTextView)
             let layout = try XCTUnwrap(editor.layoutManager)
             let labels = ruler.lineLabels(in: editor.bounds)

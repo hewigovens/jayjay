@@ -20,10 +20,6 @@ final class CodeTextViewTypographyTests: XCTestCase {
         }
     }
 
-    private func descendants(_ view: NSView) -> [NSView] {
-        view.subviews.flatMap { [$0] + descendants($0) }
-    }
-
     private func settle(_ host: NSView) {
         host.layoutSubtreeIfNeeded()
         for _ in 0 ..< 5 {
@@ -37,7 +33,7 @@ final class CodeTextViewTypographyTests: XCTestCase {
         let window = NSWindow(contentRect: NSRect(x: 0, y: 0, width: 400, height: 200), styleMask: [.borderless], backing: .buffered, defer: false)
         window.contentView = host
         settle(host)
-        let editor = try XCTUnwrap(descendants(host).compactMap { $0 as? NSTextView }.first)
+        let editor = try XCTUnwrap(host.descendants.compactMap { $0 as? NSTextView }.first)
         let scroll = try XCTUnwrap(editor.enclosingScrollView)
         editor.insertText("edited ", replacementRange: NSRange(location: 0, length: 0))
         let selection = NSRange(location: 900, length: 4)

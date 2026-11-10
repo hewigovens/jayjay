@@ -1,10 +1,9 @@
 use jayjay_core as core;
 use jayjay_core::diff::{
-    ChangeGroup, CollapsedDiff, ConflictBlock, ConflictBlockSection, ConflictLineKind,
-    ContextExpansion, ContextExpansionFinish, ContextExpansionRequest, ContextExpansionReveal,
-    ContextRegion, DiffDisplayItem, DiffLine, DiffSide, DiffSpan, DiffSpanStyle,
-    DisplayLineMapping, FileDiff, LineSpan, MovedRow, RowSide, SideBySideRow, WrappedDiffLine,
-    WrappedSbsRow, WrappedSide,
+    ChangeGroup, ConflictLineKind, ContextExpansion, ContextExpansionFinish,
+    ContextExpansionRequest, ContextExpansionReveal, ContextRegion, DiffLine, DiffSide, DiffSpan,
+    DiffSpanStyle, DisplayLineMapping, FileDiff, LineSpan, MovedRow, RowSide, SideBySideRow,
+    WrappedDiffLine, WrappedSbsRow, WrappedSide,
 };
 use jayjay_core::diff_edit::{DiffEditFile, DiffEditFileDiff};
 use jayjay_core::syntax::SyntaxToken;
@@ -165,29 +164,6 @@ pub struct ChangeGroup {
     pub anchor_context: Vec<String>,
 }
 
-#[uniffi::remote(Record)]
-pub struct ConflictBlockSection {
-    pub label: String,
-    pub marker_line: u32,
-    pub content_start: u32,
-    pub line_end: u32,
-    pub kind: core::diff::ConflictLineKind,
-}
-
-#[uniffi::remote(Record)]
-pub struct ConflictBlock {
-    pub title: String,
-    pub line_start: u32,
-    pub line_end: u32,
-    pub sections: Vec<core::diff::ConflictBlockSection>,
-}
-
-#[uniffi::remote(Enum)]
-pub enum DiffDisplayItem {
-    Lines { line_start: u32, line_end: u32 },
-    ConflictBlock { block: core::diff::ConflictBlock },
-}
-
 #[uniffi::remote(Enum)]
 pub enum SyntaxToken {
     Plain,
@@ -237,12 +213,6 @@ pub struct FileDiff {
     pub language: String,
     pub lines: Vec<core::diff::DiffLine>,
     pub whitespace_only_hidden: bool,
-}
-
-#[uniffi::remote(Record)]
-pub struct CollapsedDiff {
-    pub diff: core::diff::FileDiff,
-    pub display_to_full: Vec<core::diff::DisplayLineMapping>,
 }
 
 #[uniffi::remote(Record)]

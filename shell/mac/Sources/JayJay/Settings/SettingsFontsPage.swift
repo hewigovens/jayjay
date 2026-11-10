@@ -60,8 +60,9 @@ struct SettingsFontsPage: View {
         }
         .formStyle(.grouped)
         .task {
-            userFamilies = AppSettings.FontFamily.installedUserFamilies()
-            fontGroups = await Task.detached { AppSettings.FontFamily.installedCodeFontGroups() }.value
+            (userFamilies, fontGroups) = await Task.detached {
+                (AppSettings.FontFamily.installedUserFamilies(), AppSettings.FontFamily.installedCodeFontGroups())
+            }.value
         }
     }
 

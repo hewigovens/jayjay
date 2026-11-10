@@ -158,7 +158,7 @@ struct EvologView: View {
                 .jayjayFont(12, weight: .medium)
                 .lineLimit(1)
             Spacer()
-            Text(EvologDisplay.timestamp(newest.timestampMillis))
+            Text(Date.abbreviatedRelativeLabel(millis: newest.timestampMillis))
                 .jayjayFont(10)
                 .foregroundStyle(.tertiary)
         }
@@ -179,7 +179,7 @@ struct EvologView: View {
                     .jayjayFont(12, weight: .medium)
                     .lineLimit(1)
                 Spacer()
-                Text(EvologDisplay.timestamp(entry.timestampMillis))
+                Text(Date.abbreviatedRelativeLabel(millis: entry.timestampMillis))
                     .jayjayFont(10)
                     .foregroundStyle(.tertiary)
             }
@@ -210,7 +210,7 @@ struct EvologView: View {
         .disabled(isRestoring || target?.isImmutable == true)
         .help(restoreHelp)
         Button {
-            viewModel.copyCommitId(commitId)
+            viewModel.copyToPasteboard(commitId)
         } label: {
             Label(Localized.Menu.copyCommitId, systemImage: "doc.on.doc")
         }
@@ -261,7 +261,7 @@ struct EvologView: View {
             ProgressView().controlSize(.small)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if let error = viewModel.interdiffError {
-            loadError(error) { viewModel.retryInterdiff() }
+            loadError(error) { viewModel.loadInterdiff() }
         } else if let detail = viewModel.interdiffDetail {
             if detail.diff.isEmpty {
                 ContentUnavailableView(

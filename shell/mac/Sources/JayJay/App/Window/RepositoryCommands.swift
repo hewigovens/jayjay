@@ -101,7 +101,7 @@ struct RepositoryCommands: Commands {
                 } label: {
                     Label(Localized.Menu.openIn(app: settings.externalEditor.title), systemImage: "curlybraces")
                 }
-                .disabled(repoPath == nil)
+                .disabled(repoPath?.isSSHLocation != false)
 
                 Button {
                     guard let repoPath else { return }
@@ -109,7 +109,7 @@ struct RepositoryCommands: Commands {
                 } label: {
                     Label(Localized.Menu.openIn(app: settings.terminal.title), systemImage: "terminal")
                 }
-                .disabled(repoPath == nil)
+                .disabled(repoPath?.isSSHLocation != false)
             }
         }
     }

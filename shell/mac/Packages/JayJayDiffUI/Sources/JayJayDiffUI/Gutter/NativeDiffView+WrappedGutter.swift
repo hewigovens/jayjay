@@ -34,6 +34,7 @@ extension NativeDiffView {
     ) -> CGFloat {
         var builder = GutterBuilder()
         var gutterWidth: CGFloat = 0
+        let changedRanges = DiffGutterGrouping.changedRanges(in: context.content.lines)
 
         for (index, row) in context.content.rows.enumerated() {
             let visualRows = index < context.content.visualLineCounts.count
@@ -60,7 +61,7 @@ extension NativeDiffView {
             let bgColor = line.style == .separator
                 ? context.style.theme.separatorBg
                 : context.style.theme.lineBg(line)
-            let stripeColor = stripeColor(for: line, lineNumber: lineNumber, context: context)
+            let stripeColor = stripeColor(for: line, lineNumber: lineNumber, changedRanges: changedRanges, context: context)
 
             if line.style == .separator {
                 for _ in 0 ..< visualRows {
@@ -131,6 +132,7 @@ extension NativeDiffView {
     private func stripeColor(
         for line: DiffLine,
         lineNumber: Int,
+        changedRanges: [ClosedRange<Int>?],
         context: NativeDiffGutterRenderContext
     ) -> NSColor {
         if context.review.reviewModeEnabled,
@@ -141,10 +143,7 @@ extension NativeDiffView {
         }
         return groupStripeColor(
             for: line,
-            groupRange: DiffGutterGrouping.expandedChangedRange(
-                in: context.content.lines,
-                containing: lineNumber ... lineNumber
-            ),
+            groupRange: changedRanges.indices.contains(lineNumber - 1) ? changedRanges[lineNumber - 1] : nil,
             theme: context.style.theme
         )
     }

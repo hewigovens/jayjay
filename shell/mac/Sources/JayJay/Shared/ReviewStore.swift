@@ -42,18 +42,6 @@ final class ReviewStore {
         fileMarks(changeId: changeId, path: path, identity: identity).fileMarked
     }
 
-    func fileRollup(
-        changeId: String,
-        path: String,
-        identity: String,
-        snapshot: ReviewFileSnapshot? = nil
-    ) -> ReviewFileRollup {
-        fileRollups(
-            changeId: changeId,
-            files: [ReviewFileQuery(path: path, identity: identity, snapshot: snapshot)]
-        )[path] ?? .unreviewed
-    }
-
     func markReviewed(
         changeId: String,
         path: String,
@@ -74,16 +62,6 @@ final class ReviewStore {
         invalidateMarks(changeId: changeId, path: path)
     }
 
-    /// One fresh store read for the whole file list, so refreshes observe marks written by other windows, GPUI, or the CLI.
-    func reviewedPaths(changeId: String, files: [(path: String, identity: String)]) -> Set<String> {
-        Set(fileRollups(
-            changeId: changeId,
-            files: files.map { ReviewFileQuery(path: $0.path, identity: $0.identity) }
-        ).compactMap { path, rollup in
-            rollup == .reviewed ? path : nil
-        })
-    }
-
     func agentMarkedPaths(changeId: String) -> Set<String> {
         _ = marksVersion
         return Set(native.agentMarkedPaths(changeId: changeId))
@@ -102,11 +80,6 @@ final class ReviewStore {
             result[file.path] = rollup
         }
         return result
-    }
-
-    /// Drops all cached marks so the next queries re-read the shared store; called when review state refreshes, since external writers never notify this process.
-    func invalidateMarksCache() {
-        invalidateAllMarks()
     }
 
     /// Clears only this change's marks: the store is shared, so other changes and windows keep their review state.
@@ -156,7 +129,8 @@ final class ReviewStore {
         marksVersion &+= 1
     }
 
-    private func invalidateAllMarks() {
+    /// Drops all cached marks so the next queries re-read the shared store; called when review state refreshes, since external writers never notify this process.
+    func invalidateAllMarks() {
         marksCache.removeAll()
         displayStatesCache.removeAll()
         marksVersion &+= 1

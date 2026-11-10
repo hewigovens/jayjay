@@ -26,23 +26,6 @@ extension ReviewStore {
         return states
     }
 
-    func markHunkReviewed(
-        changeId: String,
-        path: String,
-        identity: String,
-        hunkIndex: UInt32,
-        snapshot: ReviewFileSnapshot? = nil
-    ) {
-        native.markHunkReviewed(
-            changeId: changeId,
-            path: path,
-            identity: identity,
-            hunkIndex: hunkIndex,
-            snapshot: snapshot
-        )
-        invalidateMarks(changeId: changeId, path: path)
-    }
-
     func toggleHunkReviewed(
         changeId: String,
         path: String,

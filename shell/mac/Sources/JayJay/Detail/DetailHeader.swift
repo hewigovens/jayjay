@@ -147,23 +147,23 @@ extension ChangeDetailView {
     private func diffStatsView(_ stats: DiffStats, spelledOut: Bool = false) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: spelledOut ? 8 : 4) {
             if stats.insertions > 0 {
-                diffStat("+\(stats.insertions)", color: .green, caption: spelledOut ? "added" : nil, count: stats.insertions)
+                diffStat("+\(stats.insertions)", color: .green, caption: spelledOut ? Localized.Repo.addedLines(count: Int(stats.insertions)) : nil)
             }
             if stats.deletions > 0 {
-                diffStat("-\(stats.deletions)", color: .red, caption: spelledOut ? "removed" : nil, count: stats.deletions)
+                diffStat("-\(stats.deletions)", color: .red, caption: spelledOut ? Localized.Repo.removedLines(count: Int(stats.deletions)) : nil)
             }
         }
         .accessibilityElement(children: .ignore)
         .accessibilityIdentifier(AID.Detail.diffStats(insertions: stats.insertions, deletions: stats.deletions))
     }
 
-    private func diffStat(_ value: String, color: Color, caption: String?, count: UInt32) -> some View {
+    private func diffStat(_ value: String, color: Color, caption: String?) -> some View {
         HStack(alignment: .firstTextBaseline, spacing: 3) {
             Text(value)
                 .jayjayFont(11, weight: .semibold, design: .monospaced)
                 .foregroundStyle(color)
             if let caption {
-                Text("\(caption) \(count == 1 ? "line" : "lines")")
+                Text(caption)
                     .jayjayFont(11)
                     .foregroundStyle(color)
             }

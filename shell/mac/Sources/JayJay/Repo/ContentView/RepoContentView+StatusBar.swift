@@ -145,9 +145,9 @@ extension RepoContentView {
 extension PrInfo {
     var stateLabel: String {
         switch state {
-            case .open: "open"
-            case .closed: "closed"
-            case .merged: "merged"
+            case .open: Localized.Repo.prOpen
+            case .closed: Localized.Repo.closed
+            case .merged: Localized.Repo.merged
         }
     }
 

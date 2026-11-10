@@ -3,8 +3,8 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex};
 
 use jayjay_core::diff::{
-    self, ChangeGroup, CollapsedDiff, ConflictLineKind, DiffLine, DiffSpan, FileDiff,
-    SideBySideRow, WrappedDiffLine, WrappedSbsRow,
+    self, ChangeGroup, ConflictLineKind, DiffLine, DiffSpan, FileDiff, SideBySideRow,
+    WrappedDiffLine, WrappedSbsRow,
 };
 #[cfg(feature = "desktop")]
 use jayjay_core::{
@@ -256,16 +256,6 @@ fn diff_edit_auto_collapsed_paths(stats: Vec<FileDiffStats>) -> Vec<String> {
 }
 
 #[uniffi::export]
-fn diff_edit_starts_collapsed(file_count: u64, total_changed_lines: u64) -> bool {
-    jayjay_core::diff_edit_starts_collapsed(file_count as usize, total_changed_lines)
-}
-
-#[uniffi::export]
-fn diff_edit_collapses_while_stats_pending(file_count: u64) -> bool {
-    jayjay_core::diff_edit_collapses_while_stats_pending(file_count as usize)
-}
-
-#[uniffi::export]
 fn build_side_by_side_rows(lines: Vec<DiffLine>) -> Vec<SideBySideRow> {
     diff::build_side_by_side_rows(&lines)
 }
@@ -308,31 +298,6 @@ fn compute_file_diff(
     ignore_whitespace: bool,
 ) -> FileDiff {
     diff::compute_file_diff(&path, &old_content, &new_content, ignore_whitespace)
-}
-
-#[uniffi::export]
-fn compute_file_diff_full(
-    path: String,
-    old_content: String,
-    new_content: String,
-    ignore_whitespace: bool,
-) -> FileDiff {
-    diff::compute_file_diff_full(&path, &old_content, &new_content, ignore_whitespace)
-}
-
-#[uniffi::export]
-fn compute_file_diff_full_plain(
-    path: String,
-    old_content: String,
-    new_content: String,
-    ignore_whitespace: bool,
-) -> FileDiff {
-    diff::compute_file_diff_full_plain(&path, &old_content, &new_content, ignore_whitespace)
-}
-
-#[uniffi::export]
-fn collapse_diff_with_mapping(diff: FileDiff) -> CollapsedDiff {
-    diff::collapse_context_with_mapping(&diff)
 }
 
 #[uniffi::export]

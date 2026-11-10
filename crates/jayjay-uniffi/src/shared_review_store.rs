@@ -115,23 +115,6 @@ impl SharedReviewStore {
         );
     }
 
-    fn mark_hunk_reviewed(
-        &self,
-        change_id: String,
-        path: String,
-        identity: String,
-        hunk_index: u32,
-        snapshot: Option<ReviewFileSnapshot>,
-    ) {
-        self.store().mark_hunk_reviewed_snapshot(
-            &change_id,
-            &path,
-            &identity,
-            snapshot.as_ref(),
-            hunk_index,
-        );
-    }
-
     fn toggle_hunk(
         &self,
         change_id: String,

@@ -76,7 +76,7 @@ struct UndoView: View {
                                 .background(Capsule().fill(Color.accentColor))
                         }
                     }
-                    Text(EvologDisplay.timestamp(entry.timestampMillis))
+                    Text(Date.abbreviatedRelativeLabel(millis: entry.timestampMillis))
                         .jayjayFont(11)
                         .foregroundStyle(.tertiary)
                 }

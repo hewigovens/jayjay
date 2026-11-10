@@ -6,26 +6,6 @@ final class DiffStore {
     struct CachedDiff {
         let diff: FileDiff
         let content: DiffLoadedContent
-
-        var oldContent: String {
-            content.oldText
-        }
-
-        var newContent: String {
-            content.newText
-        }
-
-        var oldPreview: DiffPreview? {
-            content.oldPreview
-        }
-
-        var newPreview: DiffPreview? {
-            content.newPreview
-        }
-
-        var projection: DiffProjection? {
-            content.projection
-        }
     }
 
     struct CacheKeyParts {
@@ -39,10 +19,6 @@ final class DiffStore {
 
     private let cache = DiffCache()
     @ObservationIgnored private var preloadTask: Task<Void, Never>?
-
-    func clear() {
-        Task { await cache.clear() }
-    }
 
     func cachedDiff(
         hunk: DiffHunk,
@@ -220,12 +196,6 @@ actor DiffCache {
         order.append(key)
         totalBytes += bytes(value)
         evict()
-    }
-
-    func clear() {
-        entries.removeAll()
-        order.removeAll()
-        totalBytes = 0
     }
 
     private func touch(_ key: String) {

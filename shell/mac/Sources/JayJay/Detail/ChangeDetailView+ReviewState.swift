@@ -5,15 +5,11 @@ extension ChangeDetailView {
     /// One entry point for every mutation site; forgetting a member of the trio is how stale badges and banners happen.
     func refreshReviewState() {
         // External writers (other windows, GPUI, the CLI) can't invalidate this process's caches; refresh is the boundary where we re-read the shared store.
-        reviewStore.invalidateMarksCache()
-        refreshReviewedPaths()
+        reviewStore.invalidateAllMarks()
+        applyKnownReviewRollups()
         reconcileChangedReviewRollups()
         refreshNoteCounts()
         refreshReviewNotes()
-    }
-
-    func refreshReviewedPaths() {
-        applyKnownReviewRollups()
     }
 
     func rememberLoadedReviewSnapshot(for hunk: DiffHunk, snapshot: ReviewFileSnapshot?) {

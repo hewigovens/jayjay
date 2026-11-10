@@ -8,10 +8,21 @@ final class ConflictEditorSession: Identifiable, MergeEditingSession {
     let id = UUID()
     let target: ConflictEditorTarget
 
-    var data: ConflictEditorData?
-    var result = ""
+    var data: ConflictEditorData? {
+        didSet { updateUnresolvedCount() }
+    }
+
+    var result = "" {
+        didSet { updateUnresolvedCount() }
+    }
+
     var resultMode = MergeResultMode.hunks
-    var selectedSource: MergeHunkSource?
+    var selectedSource: MergeHunkSource? {
+        didSet { updateUnresolvedCount() }
+    }
+
+    /// Stored because the editor reads it several times per render and a marker scan walks the whole result.
+    private(set) var unresolvedCount = 0
     var picks: [UInt32: MergeHunkSource] = [:]
     var highlights: MergeEditorHighlights?
     var isLoading = true
@@ -27,9 +38,12 @@ final class ConflictEditorSession: Identifiable, MergeEditingSession {
         target.path
     }
 
-    var unresolvedCount: Int {
-        guard let data, selectedSource == nil else { return 0 }
-        return Int(externalConflictMarkerCount(content: result, markerLength: data.markerLength))
+    private func updateUnresolvedCount() {
+        guard let data, selectedSource == nil else {
+            unresolvedCount = 0
+            return
+        }
+        unresolvedCount = Int(externalConflictMarkerCount(content: result, markerLength: data.markerLength))
     }
 
     var left: String {

@@ -20,22 +20,6 @@ extension DiffSection {
         )
     }
 
-    nonisolated static func shouldKeepLoadedContentWhileLoading(
-        loadedPath: String?,
-        hunkPath: String,
-        hasRenderedDiff: Bool,
-        loadedProjectionMode: DiffProjectionMode?,
-        requestedProjectionMode: DiffProjectionMode?
-    ) -> Bool {
-        hasCurrentRenderableDiff(
-            loadedPath: loadedPath,
-            hunkPath: hunkPath,
-            hasRenderedDiff: hasRenderedDiff,
-            loadedProjectionMode: loadedProjectionMode,
-            requestedProjectionMode: requestedProjectionMode
-        )
-    }
-
     nonisolated static func hasCurrentRenderableDiff(
         loadedPath: String?,
         hunkPath: String,
@@ -95,7 +79,7 @@ extension DiffSection {
         }
 
         isComputing = true
-        if !Self.shouldKeepLoadedContentWhileLoading(
+        if !Self.hasCurrentRenderableDiff(
             loadedPath: loadedPath,
             hunkPath: path,
             hasRenderedDiff: fileDiff != nil,

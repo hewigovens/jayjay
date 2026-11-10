@@ -140,7 +140,7 @@ struct PullRequestImportSheet: View {
         let color: Color
         switch state {
             case .open:
-                label = Localized.Common.open
+                label = Localized.Repo.prOpen
                 color = .green
             case .closed:
                 label = Localized.Repo.closed

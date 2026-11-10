@@ -70,7 +70,7 @@ func appendNativeDiffLine(
         // ↵ sits lower than ⊘ in most monospace fonts; nudge it up to match visual center.
         arrowAttrs[.baselineOffset] = 1.5
         result.append(NSAttributedString(string: "↵", attributes: arrowAttrs))
-        result.append(NSAttributedString(string: "  no newline at EOF", attributes: dim))
+        result.append(NSAttributedString(string: "  \(Localized.Web.eof)", attributes: dim))
     }
     result.append(NSAttributedString(string: "\n", attributes: [.font: context.font]))
     bgColors.append(context.theme.lineBg(line))

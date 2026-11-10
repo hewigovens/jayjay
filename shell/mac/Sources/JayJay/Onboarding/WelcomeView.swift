@@ -102,7 +102,7 @@ struct WelcomeView: View {
             Image(nsImage: NSApplication.shared.applicationIconImage)
                 .resizable()
                 .frame(width: 80, height: 80)
-            Text("JayJay")
+            Text(AppMetadata.appName)
                 .jayjayFont(28, weight: .bold)
             Text(Localized.Settings.tagline)
                 .jayjayFont(14)

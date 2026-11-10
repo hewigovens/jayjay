@@ -258,16 +258,18 @@ extension RepoContentView {
                 RepositoryCommands.openRemoteRepository(repo: viewModel.repo)
             })
         }
-        items.append(CommandPaletteItem(
-            title: Localized.Menu.openIn(app: settings.externalEditor.title),
-            icon: "curlybraces",
-            category: Localized.Palette.tools
-        ) { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
-        items.append(CommandPaletteItem(
-            title: Localized.Menu.openIn(app: settings.terminal.title),
-            icon: "terminal",
-            category: Localized.Palette.tools
-        ) { settings.openInTerminal(at: viewModel.repoPath) })
+        if !viewModel.repoPath.isSSHLocation {
+            items.append(CommandPaletteItem(
+                title: Localized.Menu.openIn(app: settings.externalEditor.title),
+                icon: "curlybraces",
+                category: Localized.Palette.tools
+            ) { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) })
+            items.append(CommandPaletteItem(
+                title: Localized.Menu.openIn(app: settings.terminal.title),
+                icon: "terminal",
+                category: Localized.Palette.tools
+            ) { settings.openInTerminal(at: viewModel.repoPath) })
+        }
         return items
     }
 

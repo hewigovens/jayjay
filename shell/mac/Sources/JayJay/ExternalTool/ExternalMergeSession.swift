@@ -17,9 +17,17 @@ final class ExternalMergeSession: MergeEditingSession {
     var left = ""
     var base = ""
     var right = ""
-    var result = ""
+    var result = "" {
+        didSet { updateUnresolvedCount() }
+    }
+
     var resultMode = MergeResultMode.hunks
-    var selectedSource: MergeHunkSource?
+    var selectedSource: MergeHunkSource? {
+        didSet { updateUnresolvedCount() }
+    }
+
+    /// Stored because the editor reads it several times per render and a marker scan walks the whole result.
+    private(set) var unresolvedCount = 0
     var picks: [UInt32: MergeHunkSource] = [:]
     var highlights: MergeEditorHighlights?
     private(set) var isTextMerge = false
@@ -47,8 +55,8 @@ final class ExternalMergeSession: MergeEditingSession {
         self.onLoadFailure = onLoadFailure
     }
 
-    var unresolvedCount: Int {
-        selectedSource == nil
+    private func updateUnresolvedCount() {
+        unresolvedCount = selectedSource == nil
             ? Int(externalConflictMarkerCount(content: result, markerLength: markerLength))
             : 0
     }

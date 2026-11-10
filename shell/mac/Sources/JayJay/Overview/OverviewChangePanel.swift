@@ -42,7 +42,7 @@ struct OverviewChangePanel: View {
                         OverviewChip(text: "\(name)@", tint: colors.workspace)
                     }
                     if change.hasConflict {
-                        OverviewChip(text: "conflict", tint: .red)
+                        OverviewChip(text: Localized.Repo.conflictBadge, tint: .red)
                     }
                 }
             }

@@ -5,9 +5,9 @@ import SwiftUI
 extension BisectVerdict {
     var label: String {
         switch self {
-            case .good: "good"
-            case .bad: "bad"
-            case .skip: "skip"
+            case .good: Localized.Repo.good
+            case .bad: Localized.Repo.bad
+            case .skip: Localized.Repo.skip
         }
     }
 

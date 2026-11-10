@@ -20,14 +20,13 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     @ObservationIgnored private(set) var selectionGraph: DagSelectionGraph?
     @ObservationIgnored private var capabilitiesKey: (UInt64, [String])?
     @ObservationIgnored private var cachedCapabilities = DAGSelectionCapabilities.empty
-    var changes: [ChangeInfo] {
-        graphEntries.map(\.change)
-    }
+    private(set) var changes: [ChangeInfo] = []
 
     /// Pass `graph: nil` only where the entries were patched locally and no core call laid them out.
     func setGraph(_ entries: [GraphEntry], graph: GraphWithLayout? = nil) {
         let changed = entries != graphEntries
         graphEntries = entries
+        changes = entries.map(\.change)
         dagLayout = graph.map { DAGLayout(data: $0.layout) } ?? DAGLayout(entries: entries)
         selectionGraph = graph?.selection ?? DagSelectionGraph(entries: entries)
         if changed {

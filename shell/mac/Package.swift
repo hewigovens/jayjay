@@ -7,9 +7,6 @@ let package = Package(
     products: [
         .library(name: "JayJayCore", targets: ["JayJayCore"])
     ],
-    dependencies: [
-        .package(url: "https://github.com/sparkle-project/Sparkle", from: "2.7.0")
-    ],
     targets: [
         .binaryTarget(
             name: "JayJayFFI",

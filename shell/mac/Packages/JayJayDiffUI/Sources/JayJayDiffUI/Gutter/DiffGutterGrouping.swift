@@ -27,6 +27,28 @@ enum DiffGutterGrouping {
         guard selectedChangedIndices.allSatisfy({ lower ... upper ~= $0 }) else { return nil }
         return (lower + 1) ... (upper + 1)
     }
+
+    /// The run each line belongs to, as `expandedChangedRange` would return for that single line, in one linear pass.
+    static func changedRanges(in lines: [DiffLine]) -> [ClosedRange<Int>?] {
+        var ranges = [ClosedRange<Int>?](repeating: nil, count: lines.count)
+        var start = 0
+        while start < lines.count {
+            guard lines[start].isChangedInGutter else {
+                start += 1
+                continue
+            }
+            var end = start
+            while end + 1 < lines.count, lines[end + 1].isChangedInGutter {
+                end += 1
+            }
+            let range = (start + 1) ... (end + 1)
+            for index in start ... end {
+                ranges[index] = range
+            }
+            start = end + 1
+        }
+        return ranges
+    }
 }
 
 private extension DiffLine {

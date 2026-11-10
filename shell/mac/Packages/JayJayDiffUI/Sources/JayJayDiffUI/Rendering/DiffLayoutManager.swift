@@ -78,6 +78,58 @@ final class DiffLayoutManager: LineSpacingLayoutManager {
         rectsBuffer?.deallocate()
     }
 
+    /// Character offsets where each `lineRange` paragraph starts, so a draw pass starts at the first visible line instead of character 0.
+    private var lineStartsCache: (storage: ObjectIdentifier, length: Int, starts: [Int])?
+
+    override func processEditing(
+        for textStorage: NSTextStorage,
+        edited editMask: NSTextStorageEditActions,
+        range newCharRange: NSRange,
+        changeInLength delta: Int,
+        invalidatedRange invalidatedCharRange: NSRange
+    ) {
+        if editMask.contains(.editedCharacters) {
+            lineStartsCache = nil
+        }
+        super.processEditing(
+            for: textStorage,
+            edited: editMask,
+            range: newCharRange,
+            changeInLength: delta,
+            invalidatedRange: invalidatedCharRange
+        )
+    }
+
+    private func lineStarts(of textStorage: NSTextStorage) -> [Int] {
+        let storage = ObjectIdentifier(textStorage)
+        if let lineStartsCache, lineStartsCache.storage == storage, lineStartsCache.length == textStorage.length {
+            return lineStartsCache.starts
+        }
+        let text = textStorage.string as NSString
+        var starts: [Int] = []
+        var charPos = 0
+        while charPos < text.length {
+            starts.append(charPos)
+            charPos = NSMaxRange(text.lineRange(for: NSRange(location: charPos, length: 0)))
+        }
+        lineStartsCache = (storage, text.length, starts)
+        return starts
+    }
+
+    private static func lineIndex(containing location: Int, starts: [Int]) -> Int {
+        var low = 0
+        var high = starts.count
+        while low < high {
+            let mid = (low + high) / 2
+            if starts[mid] <= location {
+                low = mid + 1
+            } else {
+                high = mid
+            }
+        }
+        return max(0, low - 1)
+    }
+
     override func drawBackground(forGlyphRange glyphsToShow: NSRange, at origin: NSPoint) {
         guard let textStorage, let textContainer = textContainers.first else {
             super.drawBackground(forGlyphRange: glyphsToShow, at: origin)
@@ -90,12 +142,13 @@ final class DiffLayoutManager: LineSpacingLayoutManager {
             .filter { $0.length > 0 } ?? []
 
         let fullText = textStorage.string as NSString
-        var lineIndex = 0
-        var charPos = 0
+        let starts = lineStarts(of: textStorage)
+        let visibleChars = characterRange(forGlyphRange: glyphsToShow, actualGlyphRange: nil)
+        var lineIndex = Self.lineIndex(containing: visibleChars.location, starts: starts)
         var stripeRuns: [DiffStripeRun] = []
 
-        while charPos < fullText.length {
-            let lineRange = fullText.lineRange(for: NSRange(location: charPos, length: 0))
+        while lineIndex < starts.count, starts[lineIndex] <= NSMaxRange(visibleChars) {
+            let lineRange = fullText.lineRange(for: NSRange(location: starts[lineIndex], length: 0))
             let glyphRange = glyphRange(forCharacterRange: lineRange, actualCharacterRange: nil)
             if NSIntersectionRange(glyphRange, glyphsToShow).length > 0 {
                 enumerateLineFragments(forGlyphRange: glyphRange) { lineRect, _, _, lineGlyphRange, _ in
@@ -140,7 +193,6 @@ final class DiffLayoutManager: LineSpacingLayoutManager {
             }
 
             lineIndex += 1
-            charPos = NSMaxRange(lineRange)
         }
 
         drawStripeRuns(stripeRuns)
