@@ -1,13 +1,12 @@
 use super::selection::SelectionCache;
 use super::{DiffCache, GraphData, LoadingState, NotesState, ShownDiff, StatsState};
-use crate::diff::{DetailMode, DiffViewMode};
+use crate::diff::{Annotation, DetailMode, DiffViewMode};
 use gpui::SharedString;
 use jayjay_core::compare::CompareState;
 use jayjay_core::dag::OrderedSelection;
-use jayjay_core::diff::ConflictLineKind;
 use jayjay_core::{
-    AnnotationLine, ChangeInfo, DiffHunk, DiffProjectionMode, DiffStats, PrInfo, Repo,
-    RevsetFilterState, RevsetPreset, RevsetVocabulary,
+    ChangeInfo, DiffHunk, DiffProjectionMode, DiffStats, PrInfo, Repo, RevsetFilterState,
+    RevsetPreset, RevsetVocabulary,
 };
 
 use super::BisectModel;
@@ -42,7 +41,7 @@ pub struct RepoViewModel {
     /// Loaded with the graph, not on each keystroke.
     pub(crate) vocabulary: RevsetVocabulary,
     pub(crate) detail_mode: DetailMode,
-    pub(crate) annotate_lines: Option<Arc<Vec<AnnotationLine>>>,
+    pub(crate) annotation: Option<Arc<Annotation>>,
     pub(super) avatar_in_flight: HashSet<String>,
     pub pr_info: Option<PrInfo>,
     pub(crate) pr_host_name: Option<SharedString>,
@@ -105,11 +104,14 @@ impl RepoViewModel {
     pub(crate) fn selected_file_has_conflict(&self) -> bool {
         self.selected_hunk().is_some_and(|hunk| {
             self.conflicted_paths.contains(&hunk.path) || hunk.is_conflict_only_placeholder()
-        }) || self.shown.diff.as_ref().is_some_and(|diff| {
-            diff.lines
-                .iter()
-                .any(|line| line.conflict_kind != ConflictLineKind::None)
-        })
+        }) || self
+            .shown
+            .shape()
+            .is_some_and(|shape| shape.has_conflict_lines)
+    }
+
+    pub(crate) fn effective_view_mode(&self) -> DiffViewMode {
+        self.view_mode.effective_for(self.shown.shape())
     }
 
     pub(crate) fn clear_diff_cache_state(&mut self) {

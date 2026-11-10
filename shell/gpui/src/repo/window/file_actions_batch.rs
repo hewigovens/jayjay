@@ -259,7 +259,6 @@ fn restore_items(
     paths: &[String],
     changed_paths: &[String],
 ) -> Vec<ContextMenuItem> {
-    let label = jayjay_i18n::menu::restore_files_to_parent(paths.len());
     let rev = change.selection_revision().to_owned();
     if change.parents.len() > 1 {
         return change
@@ -269,7 +268,11 @@ fn restore_items(
             .map(|(ix, parent)| {
                 let short: String = parent.chars().take(8).collect();
                 ContextMenuItem::new(
-                    format!("{label} {}: {short}", ix + 1),
+                    jayjay_i18n::menu::restore_files_to_numbered_parent(
+                        paths.len(),
+                        &(ix + 1).to_string(),
+                        &short,
+                    ),
                     glyph::HISTORY,
                     batch(FileBatchAction::Restore {
                         rev: rev.clone(),
@@ -281,7 +284,7 @@ fn restore_items(
             .collect();
     }
     vec![ContextMenuItem::new(
-        label,
+        jayjay_i18n::menu::restore_files_to_parent(paths.len()),
         glyph::HISTORY,
         batch(FileBatchAction::Restore {
             rev,

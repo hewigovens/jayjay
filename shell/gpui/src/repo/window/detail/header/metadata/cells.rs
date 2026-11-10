@@ -121,9 +121,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
     if stats.insertions > 0 {
         row = row.child(diff_stat(
             format!("+{}", stats.insertions),
-            "added",
-            stats.insertions,
-            spelled_out,
+            spelled_out.then(|| jayjay_i18n::repo::added_lines(stats.insertions)),
             t.added_fg,
             t,
         ));
@@ -131,9 +129,7 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
     if stats.deletions > 0 {
         row = row.child(diff_stat(
             format!("-{}", stats.deletions),
-            "removed",
-            stats.deletions,
-            spelled_out,
+            spelled_out.then(|| jayjay_i18n::repo::removed_lines(stats.deletions)),
             t.removed_fg,
             t,
         ));
@@ -141,33 +137,26 @@ pub(super) fn diff_stats(stats: &DiffStats, spelled_out: bool, t: &Theme) -> Opt
     Some(row.into_any_element())
 }
 
-pub(super) fn diff_stat(
-    value: String,
-    caption: &str,
-    count: u32,
-    spelled_out: bool,
-    color: u32,
-    t: &Theme,
-) -> AnyElement {
-    let mut row = div().flex().flex_row().items_baseline().gap(px(3.)).child(
-        div()
-            .code_text(FONT_ID, t)
-            .font_weight(gpui::FontWeight::SEMIBOLD)
-            .text_color(rgb(color))
-            .child(SharedString::from(value)),
-    );
-    if spelled_out {
-        row = row.child(
+fn diff_stat(value: String, caption: Option<String>, color: u32, t: &Theme) -> AnyElement {
+    div()
+        .flex()
+        .flex_row()
+        .items_baseline()
+        .gap(px(3.))
+        .child(
+            div()
+                .code_text(FONT_ID, t)
+                .font_weight(gpui::FontWeight::SEMIBOLD)
+                .text_color(rgb(color))
+                .child(SharedString::from(value)),
+        )
+        .children(caption.map(|caption| {
             div()
                 .text_size(ui_font_size(FONT_ID))
                 .text_color(rgb(color))
-                .child(format!(
-                    "{caption} {}",
-                    if count == 1 { "line" } else { "lines" }
-                )),
-        );
-    }
-    row.into_any_element()
+                .child(caption)
+        }))
+        .into_any_element()
 }
 
 pub(super) fn bookmark_chip(

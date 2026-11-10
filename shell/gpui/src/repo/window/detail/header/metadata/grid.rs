@@ -68,6 +68,7 @@ pub(super) fn grid(
         ))
         .child(id_row(
             &jayjay_i18n::repo::change_colon(),
+            "change-id",
             &change.change_id,
             t.change_id_prefix,
             recently_copied,
@@ -76,6 +77,7 @@ pub(super) fn grid(
         ))
         .child(id_row(
             &jayjay_i18n::repo::commit_colon(),
+            "commit-id",
             &change.commit_id,
             t.commit_id_prefix,
             recently_copied,
@@ -186,13 +188,14 @@ fn label_cell(label: &str, t: &Theme) -> AnyElement {
 
 fn id_row(
     label: &str,
+    copy_id: &'static str,
     id: &jayjay_core::ShortId,
     prefix_color: u32,
     recently_copied: Option<&SharedString>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let copy_id: SharedString = label.trim_end_matches(':').into();
+    let copy_id = SharedString::new_static(copy_id);
     let value = div()
         .flex()
         .flex_row()

@@ -31,6 +31,7 @@ onboarding-ready = 準備完了
 onboarding-unpin-repository = リポジトリのピン留めを解除
 onboarding-pin-repository = リポジトリをピン留め
 onboarding-requires-jj = JayJay を使うには jj のインストールが必要です。{ $manager } または Cargo でインストールしてください:
+onboarding-requires-jj-from-package-manager = JayJay を使うには jj のインストールが必要です。ディストリビューションのパッケージマネージャーまたは Cargo でインストールしてください:
 onboarding-identity = ID: { $identity }
 onboarding-identity-not-set = jj の作成者 ID が設定されていません
 onboarding-current-directory-unavailable = 現在のディレクトリを特定できませんでした: { $error }

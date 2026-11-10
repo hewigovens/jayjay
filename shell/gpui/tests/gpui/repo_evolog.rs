@@ -151,7 +151,7 @@ fn evolog_modifier_selection_diffs_at_most_two_versions(cx: &mut TestAppContext)
     evolog
         .update(&mut evolog_cx.cx, |view, _, cx| {
             view.select_version(2, Modifiers::default(), cx);
-            view.select_version(1, secondary_modifiers(), cx);
+            view.select_version(1, Modifiers::secondary_key(), cx);
         })
         .expect("select versions");
     settle_visual(&mut evolog_cx);
@@ -405,21 +405,4 @@ fn evolog_restore_version_replaces_working_copy_tree(cx: &mut TestAppContext) {
             );
         })
         .expect("read endpoints after restore");
-}
-
-fn secondary_modifiers() -> Modifiers {
-    #[cfg(target_os = "macos")]
-    {
-        Modifiers {
-            platform: true,
-            ..Default::default()
-        }
-    }
-    #[cfg(not(target_os = "macos"))]
-    {
-        Modifiers {
-            control: true,
-            ..Default::default()
-        }
-    }
 }

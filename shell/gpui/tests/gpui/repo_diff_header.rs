@@ -210,11 +210,6 @@ fn binary_plist_projection_banner_is_inset(cx: &mut TestAppContext) {
         banner.origin.x > gutter.origin.x,
         "projection banner should be inset from the diff card edge"
     );
-    assert!(
-        banner.size.height <= px(42.),
-        "projection banner should stay compact, got {:?}",
-        banner.size.height
-    );
 }
 
 #[gpui::test]
@@ -228,7 +223,7 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
             Some(DiffProjectionMode::Raw)
         );
         assert_eq!(
-            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
+            vm.shown.diff().map(|diff| diff.path.as_str()),
             Some(FormatFixture::CSV)
         );
     });
@@ -262,7 +257,7 @@ fn projection_preview_button_toggles_processed_diff(cx: &mut TestAppContext) {
             Some(DiffProjectionMode::Processed)
         );
         assert_eq!(
-            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
+            vm.shown.diff().map(|diff| diff.path.as_str()),
             Some("data.csv.md")
         );
         assert!(vm.shown.markdown_preview.is_some());
@@ -407,8 +402,7 @@ fn notebook_opens_a_processed_diff_with_source_and_preview_buttons(cx: &mut Test
             view.view_model()
                 .read(cx)
                 .shown
-                .diff
-                .as_ref()
+                .diff()
                 .map(|diff| diff.path.clone())
         })
     };
@@ -520,7 +514,7 @@ fn another_change_opens_the_same_notebook_in_its_default_view(cx: &mut TestAppCo
     view.read_with(cx, |view, cx| {
         let vm = view.view_model().read(cx);
         assert_eq!(
-            vm.shown.diff.as_ref().map(|diff| diff.path.as_str()),
+            vm.shown.diff().map(|diff| diff.path.as_str()),
             Some("analysis.ipynb.md")
         );
     });

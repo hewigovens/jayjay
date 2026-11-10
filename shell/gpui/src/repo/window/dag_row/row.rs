@@ -199,9 +199,13 @@ fn summary_with_badge(
         return line;
     };
     let (label, bg, fg) = match badge {
-        BisectVerdict::Good => ("good", t.tag_added_bg, t.tag_added_fg),
-        BisectVerdict::Bad => ("bad", t.tag_removed_bg, t.tag_removed_fg),
-        BisectVerdict::Skip => ("skip", t.tag_divergent_bg, t.tag_divergent_fg),
+        BisectVerdict::Good => (jayjay_i18n::repo::good(), t.tag_added_bg, t.tag_added_fg),
+        BisectVerdict::Bad => (jayjay_i18n::repo::bad(), t.tag_removed_bg, t.tag_removed_fg),
+        BisectVerdict::Skip => (
+            jayjay_i18n::repo::skip(),
+            t.tag_divergent_bg,
+            t.tag_divergent_fg,
+        ),
     };
     div()
         .flex()
@@ -215,7 +219,7 @@ fn summary_with_badge(
                 .bg(rgb(bg))
                 .text_size(ui_font_size(FONT_TAG))
                 .text_color(rgb(fg))
-                .child(label.to_owned()),
+                .child(label),
         )
         .child(line)
         .into_any_element()

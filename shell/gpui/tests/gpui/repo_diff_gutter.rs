@@ -166,31 +166,28 @@ fn review_notes_context_blocks_empty_identity(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn abandon_selected_lines_absent_on_non_working_copy_change(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo_with_files(cx);
+fn abandon_selected_lines_absent_for_renamed_projected_and_compared_hunks(cx: &mut TestAppContext) {
+    let (_fixture, view, cx, hunk) = open_repo_with_multiline_feature_edit(cx);
+    let renamed = DiffHunk {
+        hunk_type: HunkType::Renamed,
+        ..hunk.clone()
+    };
+    let projected = DiffHunk {
+        projection: Some(diff_projection("notebook", DiffProjectionMode::Raw)),
+        ..hunk.clone()
+    };
 
-    let items = view.update_in(cx, |view, _, cx| {
-        let parent_ix = view
-            .view_model()
-            .read(cx)
-            .graph
-            .changes
-            .iter()
-            .position(|c| !c.is_working_copy)
-            .expect("fixture has an ancestor change");
-        view.view_model()
-            .update(cx, |vm, cx| vm.select_change(parent_ix, cx));
-        view.start_gutter_selection("a.txt".to_owned(), 0, cx);
-        view.build_diff_gutter_menu(&hunk("abc123", None), 0, cx)
-    });
-    assert!(no_abandon_item(&items));
-}
+    view.update_in(cx, |view, _, cx| {
+        view.start_gutter_selection("feature.txt".to_owned(), 0, cx);
+        view.extend_gutter_selection("feature.txt", 1, cx);
+        assert!(abandon_item(&view.build_diff_gutter_menu(&hunk, 0, cx)).is_some());
+        assert!(no_abandon_item(
+            &view.build_diff_gutter_menu(&renamed, 0, cx)
+        ));
+        assert!(no_abandon_item(
+            &view.build_diff_gutter_menu(&projected, 0, cx)
+        ));
 
-#[gpui::test]
-fn abandon_selected_lines_absent_in_compare_mode(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo_with_files(cx);
-
-    let items = view.update_in(cx, |view, _, cx| {
         let change = view
             .view_model()
             .read(cx)
@@ -200,37 +197,8 @@ fn abandon_selected_lines_absent_in_compare_mode(cx: &mut TestAppContext) {
         view.view_model().update(cx, |vm, _| {
             vm.compare = Some(compare::CompareState::new(&change))
         });
-        view.start_gutter_selection("a.txt".to_owned(), 0, cx);
-        view.build_diff_gutter_menu(&hunk("abc123", None), 0, cx)
+        assert!(no_abandon_item(&view.build_diff_gutter_menu(&hunk, 0, cx)));
     });
-    assert!(no_abandon_item(&items));
-}
-
-#[gpui::test]
-fn abandon_selected_lines_absent_for_renamed_hunk(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo_with_files(cx);
-
-    let renamed = DiffHunk {
-        hunk_type: HunkType::Renamed,
-        ..hunk("abc123", None)
-    };
-    let items = view.update_in(cx, |view, _, cx| {
-        view.start_gutter_selection("a.txt".to_owned(), 0, cx);
-        view.build_diff_gutter_menu(&renamed, 0, cx)
-    });
-    assert!(no_abandon_item(&items));
-}
-
-#[gpui::test]
-fn abandon_selected_lines_absent_for_projected_hunk(cx: &mut TestAppContext) {
-    let (_fixture, view, cx) = open_repo_with_files(cx);
-
-    let projection = diff_projection("notebook", DiffProjectionMode::Raw);
-    let items = view.update_in(cx, |view, _, cx| {
-        view.start_gutter_selection("a.txt".to_owned(), 0, cx);
-        view.build_diff_gutter_menu(&hunk("abc123", Some(projection)), 0, cx)
-    });
-    assert!(no_abandon_item(&items));
 }
 
 #[gpui::test]

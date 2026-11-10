@@ -14,8 +14,7 @@ pub(super) fn largest_region(
         view.view_model()
             .read(cx)
             .shown
-            .diff
-            .as_ref()
+            .diff()
             .expect("diff loaded")
             .lines
             .iter()

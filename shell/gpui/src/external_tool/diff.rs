@@ -39,11 +39,7 @@ impl ExternalDiffSession {
     }
 
     pub fn save_request(&self) -> ExternalDiffSave {
-        let selections: Vec<_> = self
-            .files
-            .iter()
-            .filter_map(ExternalDiffFile::selection)
-            .collect();
+        let selections: Vec<_> = self.files.iter().map(ExternalDiffFile::selection).collect();
         ExternalDiffSave {
             left: self.left.clone(),
             right: self.right.clone(),
@@ -209,8 +205,8 @@ impl ExternalDiffFile {
             .is_some_and(|line| self.selected.contains(line))
     }
 
-    pub fn selection(&self) -> Option<ExternalDiffSelection> {
-        Some(ExternalDiffSelection {
+    pub fn selection(&self) -> ExternalDiffSelection {
+        ExternalDiffSelection {
             file: DiffEditFileSelection {
                 path: self.hunk.path.clone(),
                 old_path: self.hunk.old_path.clone(),
@@ -222,7 +218,7 @@ impl ExternalDiffFile {
             selected_exists: self.selected_exists,
             selected_executable: self.selected_executable,
             whole_file_side: self.whole_file_side,
-        })
+        }
     }
 }
 

@@ -134,6 +134,7 @@ menu-parent-numbered = 父变更 { NUMBER($index) }：{ $id }
 menu-split-files = 将 { $count } 个文件拆分到新变更
 menu-move-files-to-working-copy = 将 { $count } 个文件移动到工作副本
 menu-restore-files-to-parent = 将 { $count } 个文件恢复到父变更
+menu-restore-files-to-numbered-parent = 将 { $count } 个文件恢复到父变更 { $parent }：{ $commit }
 menu-delete-files-from-disk = 从磁盘删除 { $count } 个文件
 menu-ignore-untrack-files = 忽略并取消跟踪 { $count } 个文件
 menu-mark-files-unreviewed = 将 { $count } 个文件标记为未评审

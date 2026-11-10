@@ -31,6 +31,7 @@ onboarding-ready = 就绪
 onboarding-unpin-repository = 取消固定仓库
 onboarding-pin-repository = 固定仓库
 onboarding-requires-jj = JayJay 需要安装 jj。可使用 { $manager } 或 Cargo 安装：
+onboarding-requires-jj-from-package-manager = JayJay 需要安装 jj。可使用发行版的包管理器或 Cargo 安装：
 onboarding-identity = 身份：{ $identity }
 onboarding-identity-not-set = 未设置 jj 作者身份
 onboarding-current-directory-unavailable = 无法解析当前目录：{ $error }

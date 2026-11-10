@@ -38,7 +38,7 @@ impl OverviewView {
             [
                 (jayjay_i18n::repo::change_count(count), t.fg_dim),
                 (
-                    format!("updated {}", format_relative(lane.latest_timestamp_millis)),
+                    jayjay_i18n::overview::updated(&format_relative(lane.latest_timestamp_millis)),
                     t.fg_dim,
                 ),
                 (

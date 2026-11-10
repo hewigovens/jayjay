@@ -146,6 +146,11 @@ menu-restore-files-to-parent =
         [one] Restore to Parent
        *[other] Restore { $count } Files to Parent
     }
+menu-restore-files-to-numbered-parent =
+    { $count ->
+        [one] Restore to Parent { $parent }: { $commit }
+       *[other] Restore { $count } Files to Parent { $parent }: { $commit }
+    }
 menu-delete-files-from-disk =
     { $count ->
         [one] Delete from Disk

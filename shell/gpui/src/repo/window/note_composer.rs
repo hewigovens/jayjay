@@ -193,7 +193,7 @@ impl RepoWindow {
 
     fn note_context_lines_at(&self, line: u32, side: NoteSide, cx: &App) -> Vec<NoteContextLine> {
         let vm = self.vm.read(cx);
-        let Some(fd) = vm.shown.diff.as_ref() else {
+        let Some(fd) = vm.shown.diff() else {
             return Vec::new();
         };
         let display_lines = build_diff_display_lines(&fd.lines);

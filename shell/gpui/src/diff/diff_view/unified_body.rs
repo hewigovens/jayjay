@@ -19,7 +19,7 @@ use super::state::ReviewDisplayState;
 use crate::app::fonts;
 use crate::app::theme::{Theme, with_alpha};
 use crate::diff::line::{
-    CODE_INSET, content_row, content_row_tint, interactive_gutter_column, interactive_gutter_row,
+    CODE_INSET, content_row, content_row_tint, gutter_column, interactive_gutter_row,
     line_bg_color, note_content_row, note_dot_cell, note_gutter_row, review_stripe_spacer,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
@@ -148,7 +148,7 @@ pub(super) fn unified_body(
         .h_full()
         .min_h_0()
         .child(
-            interactive_gutter_column(theme.as_ref(), shows_review)
+            gutter_column(theme.as_ref(), shows_review)
                 .debug_selector(|| "diff-gutter".to_owned())
                 .child(no_scrollbar_gutter(gutter).h_full()),
         )

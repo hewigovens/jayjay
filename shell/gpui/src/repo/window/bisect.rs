@@ -154,7 +154,7 @@ pub(super) fn bisect_bar(
         let kept = result
             .kept
             .iter()
-            .map(|change| jayjay_i18n::repo::kept_change(subject(&change.description)));
+            .map(|change| jayjay_i18n::repo::kept_change(&subject(&change.description)));
         for note in result.restore_note.clone().into_iter().chain(kept) {
             bar = bar.child(
                 div()
@@ -188,8 +188,11 @@ impl PhaseTitle for BisectPhase {
     }
 }
 
-fn subject(description: &str) -> &str {
-    description.lines().next().unwrap_or("a change")
+fn subject(description: &str) -> String {
+    description
+        .lines()
+        .next()
+        .map_or_else(jayjay_i18n::repo::a_change, str::to_owned)
 }
 
 fn bisect_actions(

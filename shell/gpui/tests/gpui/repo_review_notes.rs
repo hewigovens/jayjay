@@ -6,6 +6,7 @@ use gpui::{
     VisualTestContext,
 };
 use jayjay_core::compare;
+use jayjay_core::diff::DiffSpanStyle;
 use jayjay_core::mock::diff_projection;
 use jayjay_core::{DiffHunk, DiffProjectionMode};
 use jayjay_gpui::app::actions::SaveNoteComposer;
@@ -321,8 +322,17 @@ fn delete_review_note_via_menu_clears_row_dot_and_note(cx: &mut TestAppContext) 
 fn add_review_note_absent_on_context_line(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
 
-    // README.md has no context line in this fixture, so use an out-of-range index instead — `line_anchor` must reject both the same way.
-    let items = view.update_in(cx, |view, _, cx| view.build_diff_gutter_menu(&hunk, 99, cx));
+    let items = view.update_in(cx, |view, _, cx| {
+        let diff = view
+            .view_model()
+            .read(cx)
+            .shown
+            .diff()
+            .cloned()
+            .expect("README diff");
+        assert_eq!(diff.lines[0].style, DiffSpanStyle::Context);
+        view.build_diff_gutter_menu(&hunk, 0, cx)
+    });
     assert!(no_note_items(&items));
 }
 

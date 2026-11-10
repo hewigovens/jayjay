@@ -42,7 +42,7 @@ impl RepoWindow {
             return;
         }
         let vm = self.vm.read(cx);
-        let Some(diff) = vm.shown.diff.as_ref() else {
+        let Some(diff) = vm.shown.diff() else {
             return;
         };
         let q = query.to_lowercase();

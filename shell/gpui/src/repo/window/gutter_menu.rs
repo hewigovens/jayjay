@@ -90,7 +90,7 @@ impl RepoWindow {
         if !self.can_edit_selected_working_copy_file(cx) {
             return None;
         }
-        let raw_lines = &self.vm.read(cx).shown.diff.as_ref()?.lines;
+        let raw_lines = &self.vm.read(cx).shown.diff()?.lines;
         build_diff_display_lines(raw_lines)
             .get(line_ix)?
             .new_line_no
@@ -119,7 +119,7 @@ impl RepoWindow {
         if !is_editable_text(old_content) || !is_editable_text(new_content) {
             return None;
         }
-        let raw_lines = &vm.shown.diff.as_ref()?.lines;
+        let raw_lines = &vm.shown.diff()?.lines;
         if raw_lines
             .iter()
             .any(|line| line.conflict_kind != ConflictLineKind::None)

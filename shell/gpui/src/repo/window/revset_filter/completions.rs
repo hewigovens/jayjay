@@ -135,11 +135,11 @@ pub(super) fn completion_row(
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_faint))
                 .child(match entry.kind {
-                    RevsetCompletionKind::Function => "function",
-                    RevsetCompletionKind::Alias => "alias",
-                    RevsetCompletionKind::Bookmark => "bookmark",
-                    RevsetCompletionKind::Tag => "tag",
-                    RevsetCompletionKind::Workspace => "workspace",
+                    RevsetCompletionKind::Function => jayjay_i18n::repo::function(),
+                    RevsetCompletionKind::Alias => jayjay_i18n::repo::alias(),
+                    RevsetCompletionKind::Bookmark => jayjay_i18n::repo::bookmark(),
+                    RevsetCompletionKind::Tag => jayjay_i18n::repo::tag(),
+                    RevsetCompletionKind::Workspace => jayjay_i18n::repo::workspace(),
                 }),
         )
         .into_any_element()

@@ -4,7 +4,7 @@ use gpui::{Div, FontWeight, ParentElement, Pixels, SharedString, Styled, div, px
 use jayjay_core::diff::{ConflictLineKind, DiffLine, DiffSpanStyle, conflict_display_text};
 
 use crate::app::fonts::CodeText as _;
-use crate::app::theme::Theme;
+use crate::app::theme::{Theme, with_alpha};
 
 use super::super::spans::span_element;
 use super::colors::{line_bg_color, line_text_color};
@@ -107,7 +107,7 @@ pub fn conflict_stripe_overlay(kind: ConflictLineKind, theme: &Theme) -> Div {
 pub fn selection_overlay(cols: Range<usize>, advance: Pixels, theme: &Theme) -> Div {
     let left = CODE_INSET + cols.start as f32 * f32::from(advance);
     let width = (cols.end.saturating_sub(cols.start)) as f32 * f32::from(advance);
-    let bg = rgba(((theme.selected_bg as u64) << 8) as u32 | 0x66);
+    let bg = rgba(with_alpha(theme.selected_bg, 0x66));
     div()
         .absolute()
         .left(px(left))

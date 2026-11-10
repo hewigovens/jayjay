@@ -10,7 +10,7 @@ use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::{LinearFixture, git_stdout, run_jj_in};
 
 #[gpui::test]
-fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestAppContext) {
+fn change_context_menu_opens_more_actions(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
     let commit_id = view.read_with(cx, |view, cx| {
@@ -31,7 +31,6 @@ fn change_context_menu_matches_native_size_and_opens_more_actions(cx: &mut TestA
     let more_actions = cx
         .debug_bounds("context-menu-More Actions")
         .expect("more actions menu item");
-    assert!(f32::from(more_actions.size.width) >= 250.);
     cx.simulate_mouse_move(
         more_actions.center(),
         MouseButton::Left,

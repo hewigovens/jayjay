@@ -91,16 +91,6 @@ impl RepoWindow {
         (!paths.is_empty()).then_some((rev, paths))
     }
 
-    pub(crate) fn confirm_split_files(
-        &mut self,
-        request: Arc<SelectedFilesRequest>,
-        message: String,
-        parallel: bool,
-        cx: &mut Context<Self>,
-    ) {
-        self.run_split_files(request, message, parallel, false, cx);
-    }
-
     /// Commit the selected files with the commit-box message: core `split` on @ gives `jj commit FILESETS` semantics — the selected files become a finished change described by the message, the remainder stays as the working copy (with a fresh change id).
     pub(crate) fn commit_selected_files(
         &mut self,
@@ -113,7 +103,7 @@ impl RepoWindow {
         self.run_split_files(request, message, false, true, cx);
     }
 
-    fn run_split_files(
+    pub(crate) fn run_split_files(
         &mut self,
         request: Arc<SelectedFilesRequest>,
         message: String,

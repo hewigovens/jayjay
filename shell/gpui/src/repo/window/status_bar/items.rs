@@ -286,9 +286,9 @@ fn pr_link(pr: &PrInfo, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
         ChecksStatus::None => None,
     };
     let state = match pr.state {
-        PrState::Open => "open",
-        PrState::Closed => "closed",
-        PrState::Merged => "merged",
+        PrState::Open => jayjay_i18n::repo::pr_open(),
+        PrState::Closed => jayjay_i18n::repo::closed(),
+        PrState::Merged => jayjay_i18n::repo::merged(),
     };
     let url = SharedString::from(pr.url.clone());
     status_action(

@@ -110,9 +110,15 @@ pub(super) fn header_reserved_width(
 ) -> f32 {
     let text = |chars: usize, size: f32| chars as f32 * t.scaled_font_size(size) * 0.55;
     let compact = state.detail_width < COMPACT_HEADER_WIDTH;
-    let action = |label: &str| 28. + if compact { 0. } else { text(label.len(), 11.) };
+    let action = |label: &str| {
+        28. + if compact {
+            0.
+        } else {
+            text(label.width(), 11.)
+        }
+    };
     let mut reserved = 2. * DETAIL_INSET + 40. + 20.; // padding, inter-child gaps, file icon
-    reserved += 20. + 16. + text(status.len(), 10.); // copy button, status pill
+    reserved += 20. + 16. + text(status.width(), 10.); // copy button, status pill
     if let Some(stats) = state.line_stats {
         reserved += text(
             format!("+{} -{}", stats.insertions, stats.deletions).len(),

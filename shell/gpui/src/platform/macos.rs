@@ -23,7 +23,7 @@ pub const REPO_TRAFFIC_LIGHTS: (f32, f32) = (20., 19.);
 pub fn custom_terminal_label() -> String {
     jayjay_i18n::settings::terminal_app_name()
 }
-pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
+pub const JJ_PACKAGE_MANAGER: Option<(&str, &str)> = Some(("Homebrew", "brew install jj"));
 
 pub fn append_menu_bar(
     root: gpui::Div,

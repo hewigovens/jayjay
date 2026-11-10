@@ -434,8 +434,7 @@ fn collapsed_region_count(view: &gpui::Entity<RepoWindow>, cx: &mut VisualTestCo
         view.view_model()
             .read(cx)
             .shown
-            .diff
-            .as_ref()
+            .diff()
             .expect("diff loaded")
             .lines
             .iter()

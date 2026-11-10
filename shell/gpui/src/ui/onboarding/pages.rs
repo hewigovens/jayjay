@@ -73,7 +73,7 @@ fn welcome_page(logo: &Logo, t: &Theme) -> AnyElement {
                 .text_size(ui_font_size(14.))
                 .line_height(ui_font_size(20.))
                 .text_color(rgb(t.fg_dim))
-                .child("A native GUI for Jujutsu version control. Browse history, review diffs, and manage changes from one window."),
+                .child(jayjay_i18n::onboarding::welcome_description()),
         )
         .into_any_element()
 }
@@ -132,9 +132,12 @@ fn jj_check_page(
                         .text_size(ui_font_size(14.))
                         .line_height(ui_font_size(20.))
                         .text_color(rgb(t.fg_dim))
-                        .child(jayjay_i18n::onboarding::requires_jj(JJ_PACKAGE_MANAGER.0)),
+                        .child(match JJ_PACKAGE_MANAGER {
+                            Some((manager, _)) => jayjay_i18n::onboarding::requires_jj(manager),
+                            None => jayjay_i18n::onboarding::requires_jj_from_package_manager(),
+                        }),
                 )
-                .child(command_row(JJ_PACKAGE_MANAGER.1, t))
+                .children(JJ_PACKAGE_MANAGER.map(|(_, command)| command_row(command, t)))
                 .child(command_row("cargo install --locked jj-cli", t))
                 .child(
                     button(

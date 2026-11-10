@@ -89,8 +89,7 @@ fn context_controls_expand_in_unified_and_side_by_side_and_clear_selections(
             .view_model()
             .read(cx)
             .shown
-            .diff
-            .as_ref()
+            .diff()
             .expect("expanded diff")
             .lines
             .iter()
@@ -127,8 +126,7 @@ fn context_controls_expand_in_unified_and_side_by_side_and_clear_selections(
             view.view_model()
                 .read(cx)
                 .shown
-                .diff
-                .as_ref()
+                .diff()
                 .expect("fully expanded diff")
                 .lines
                 .iter()
@@ -177,8 +175,7 @@ fn buttons_stay_stable_when_reveals_shrink_a_large_region(cx: &mut TestAppContex
         view.view_model()
             .read(cx)
             .shown
-            .diff
-            .as_ref()
+            .diff()
             .expect("diff loaded")
             .lines
             .iter()

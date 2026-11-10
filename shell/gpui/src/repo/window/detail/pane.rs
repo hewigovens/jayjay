@@ -45,11 +45,11 @@ pub(crate) fn detail_pane(
     };
 
     let stats = vm.stats.change.clone();
-    let view_mode = vm.view_mode;
+    let view_mode = vm.effective_view_mode();
     let detail_mode = vm.detail_mode;
-    let annotate_lines = vm.annotate_lines.clone();
+    let annotation = vm.annotation.clone();
     let loading_annotate = vm.loading.annotate;
-    let current_diff = vm.shown.diff.clone();
+    let current_diff = vm.shown.diff().cloned();
     let current_projection = vm.shown.projection.clone();
     let current_svg_preview = vm.shown.svg_preview.clone();
     let current_markdown_preview = vm.shown.markdown_preview.clone();
@@ -134,7 +134,7 @@ pub(crate) fn detail_pane(
         html_external_url: html_external_url.as_deref(),
         view_mode,
         detail_mode,
-        annotate_lines,
+        annotation,
         loading_annotate,
         path_just_copied,
         can_resolve_conflict: compare.is_none(),

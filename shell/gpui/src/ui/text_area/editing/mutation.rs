@@ -94,11 +94,6 @@ impl TextArea {
             return;
         }
         if let Some(text) = cx.read_from_clipboard().and_then(|item| item.text()) {
-            let text = if self.multiline {
-                text
-            } else {
-                text.replace(['\n', '\r'], " ")
-            };
             self.replace_text_in_range(None, &text, window, cx);
         }
     }

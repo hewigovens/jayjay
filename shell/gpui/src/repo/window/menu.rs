@@ -161,7 +161,7 @@ impl RepoWindow {
                 self.move_bookmark(name, to_rev, cx);
             }
             ContextAction::PushBookmark(name) => {
-                self.push_bookmark(name, cx);
+                self.git_push_bookmark(name.to_string(), cx);
             }
             ContextAction::PullBookmark(name) => {
                 self.git_pull_bookmark(name.to_string(), cx);

@@ -146,6 +146,11 @@ menu-restore-files-to-parent =
         [1] 親の状態に戻す
        *[other] { $count } 個のファイルを親の状態に戻す
     }
+menu-restore-files-to-numbered-parent =
+    { $count ->
+        [1] 親 { $parent } の状態に戻す: { $commit }
+       *[other] { $count } 個のファイルを親 { $parent } の状態に戻す: { $commit }
+    }
 menu-delete-files-from-disk =
     { $count ->
         [1] ディスクから削除

@@ -13,7 +13,7 @@ pub fn file_manager_name() -> String {
 pub fn custom_terminal_label() -> String {
     jayjay_i18n::settings::terminal_command()
 }
-pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("Homebrew", "brew install jj");
+pub const JJ_PACKAGE_MANAGER: Option<(&str, &str)> = None;
 
 pub fn reveal_path(path: &Path) -> bool {
     let target = if path.is_file() {

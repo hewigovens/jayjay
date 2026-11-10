@@ -17,7 +17,7 @@ pub fn file_manager_name() -> String {
 pub fn custom_terminal_label() -> String {
     jayjay_i18n::settings::terminal_command_powershell()
 }
-pub const JJ_PACKAGE_MANAGER: (&str, &str) = ("WinGet", "winget install jj-vcs.jj");
+pub const JJ_PACKAGE_MANAGER: Option<(&str, &str)> = Some(("WinGet", "winget install jj-vcs.jj"));
 
 pub fn open_url(target: &str) -> bool {
     jayjay_core::tools::windows_shell::open(target)

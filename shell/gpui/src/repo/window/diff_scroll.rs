@@ -18,10 +18,9 @@ impl RepoWindow {
         let line_ix_u32 = line_ix as u32;
         let item_ix = vm
             .shown
-            .diff
-            .as_ref()
+            .diff()
             .map(|diff| {
-                let view_mode = vm.view_mode.effective_for_diff(Some(diff));
+                let view_mode = vm.effective_view_mode();
                 let label_cols = self.diff.wrap_cache.borrow_mut().moved_label_cols(diff, cx);
                 if view_mode == DiffViewMode::Unified {
                     let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
@@ -62,7 +61,7 @@ impl RepoWindow {
         line_no: u32,
         cx: &mut Context<Self>,
     ) {
-        let Some(diff) = self.vm.read(cx).shown.diff.clone() else {
+        let Some(diff) = self.vm.read(cx).shown.diff().cloned() else {
             return;
         };
         let target = build_diff_display_lines(&diff.lines)

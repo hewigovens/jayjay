@@ -541,12 +541,12 @@ impl RepoViewModel {
     }
 
     pub(crate) fn clear_file_selection(&mut self, cx: &mut Context<Self>) {
-        if self.selected_file_ix.is_none() && self.shown.diff.is_none() {
+        if self.selected_file_ix.is_none() && self.shown.diff().is_none() {
             return;
         }
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         self.selected_file_ix = None;
-        self.shown.diff = None;
+        self.shown.set_diff(None);
         self.shown.projection = None;
         self.shown.svg_preview = None;
         self.shown.markdown_preview = None;
@@ -562,7 +562,7 @@ impl RepoViewModel {
         self.files = None;
         self.tracked_lfs_paths = Arc::default();
         self.conflicted_paths = Arc::default();
-        self.shown.diff = None;
+        self.shown.set_diff(None);
         self.shown.projection = None;
         self.shown.svg_preview = None;
         self.shown.markdown_preview = None;

@@ -158,7 +158,7 @@ fn current_badge(is_current: bool, t: &Theme) -> AnyElement {
         .debug_selector(|| "operation-log-current-badge".to_owned())
         .flex_none()
         .child(capsule(
-            "current",
+            jayjay_i18n::repo::current_badge(),
             t.toggle_active_bg,
             t.toggle_active_fg,
             9.,

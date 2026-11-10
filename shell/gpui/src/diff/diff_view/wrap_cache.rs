@@ -6,6 +6,7 @@ use std::sync::Arc;
 
 use gpui::{App, Pixels, WindowTextSystem, px};
 use jayjay_core::FileSizeFormatter;
+use jayjay_core::diff::side_by_side::SideBySideRow;
 use jayjay_core::diff::{
     DiffLine, FileDiff, WrappedDiffLine, WrappedSbsRow, build_diff_display_lines,
     build_side_by_side_rows, sbs_line_to_row, wrap_diff_lines, wrap_sbs_rows,
@@ -54,6 +55,8 @@ struct UnifiedEntry {
 
 struct SbsEntry {
     diff: Arc<FileDiff>,
+    // Unwrapped rows for `diff`, kept so a width change only rewraps.
+    source_rows: Arc<Vec<SideBySideRow>>,
     old_cols: u32,
     new_cols: u32,
     rows: Arc<CachedSbsRows>,
@@ -63,7 +66,7 @@ struct SbsEntry {
 pub(crate) struct CachedSbsRows {
     rows: Vec<WrappedSbsRow>,
     /// Per source row, the display line shown on the new side.
-    new_display_lines: Vec<Option<usize>>,
+    new_display_lines: Arc<Vec<Option<usize>>>,
 }
 
 impl CachedSbsRows {
@@ -176,12 +179,17 @@ impl DiffWrapCache {
             Arc::ptr_eq(&entry.diff, fd) && entry.cols == cols && entry.label_cols == label_cols
         });
         if !hit {
-            let mut display_lines = build_diff_display_lines(&fd.lines);
-            for line in &mut display_lines {
-                self.file_size_formatter()
-                    .localize_binary_spans(&mut line.spans);
-            }
-            let display_lines = Arc::new(display_lines);
+            let display_lines = match self.unified.as_ref() {
+                Some(entry) if Arc::ptr_eq(&entry.diff, fd) => entry.display_lines.clone(),
+                _ => {
+                    let mut display_lines = build_diff_display_lines(&fd.lines);
+                    for line in &mut display_lines {
+                        self.file_size_formatter()
+                            .localize_binary_spans(&mut line.spans);
+                    }
+                    Arc::new(display_lines)
+                }
+            };
             let lines = Arc::new(wrap_diff_lines(&display_lines, cols, label_cols));
             self.unified = Some(UnifiedEntry {
                 diff: fd.clone(),
@@ -245,6 +253,32 @@ impl DiffWrapCache {
         {
             return entry.rows.clone();
         }
+        let (source_rows, new_display_lines) = match self.sbs.as_ref() {
+            Some(entry) if Arc::ptr_eq(&entry.diff, fd) => (
+                entry.source_rows.clone(),
+                entry.rows.new_display_lines.clone(),
+            ),
+            _ => self.side_by_side_source(fd),
+        };
+        let rows = Arc::new(CachedSbsRows {
+            rows: wrap_sbs_rows(&source_rows, old_cols, new_cols, label_cols),
+            new_display_lines,
+        });
+        self.sbs = Some(SbsEntry {
+            diff: fd.clone(),
+            source_rows,
+            old_cols,
+            new_cols,
+            label_cols,
+            rows: rows.clone(),
+        });
+        rows
+    }
+
+    fn side_by_side_source(
+        &self,
+        fd: &FileDiff,
+    ) -> (Arc<Vec<SideBySideRow>>, Arc<Vec<Option<usize>>>) {
         let mut rows = build_side_by_side_rows(&fd.lines);
         for row in &mut rows {
             self.file_size_formatter()
@@ -259,18 +293,7 @@ impl DiffWrapCache {
                 new_display_lines[row_ix as usize] = Some(line_ix);
             }
         }
-        let rows = Arc::new(CachedSbsRows {
-            rows: wrap_sbs_rows(&rows, old_cols, new_cols, label_cols),
-            new_display_lines,
-        });
-        self.sbs = Some(SbsEntry {
-            diff: fd.clone(),
-            old_cols,
-            new_cols,
-            label_cols,
-            rows: rows.clone(),
-        });
-        rows
+        (Arc::new(rows), Arc::new(new_display_lines))
     }
 }
 

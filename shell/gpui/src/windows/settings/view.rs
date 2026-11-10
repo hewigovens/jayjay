@@ -116,17 +116,7 @@ impl SettingsView {
                             sidebar: Self::sidebar_pane(cx),
                             flock: None,
                         };
-                        // Direct opens must kick off the same lazy loads a sidebar click would.
-                        match section {
-                            SettingsSection::Fonts => view.ensure_font_catalog_loaded(cx),
-                            SettingsSection::Integrations => view.ensure_tools_loaded(cx),
-                            SettingsSection::Jujutsu => view.ensure_jj_config_loaded(cx),
-                            SettingsSection::DataPrivacy => view.refresh_review_summary(cx),
-                            SettingsSection::Flock | SettingsSection::About => {
-                                view.ensure_flock(cx)
-                            }
-                            _ => {}
-                        }
+                        view.load_section(section, cx);
                         view
                     })
                 },
@@ -303,6 +293,17 @@ impl Render for SettingsView {
 }
 
 impl SettingsView {
+    pub(super) fn load_section(&mut self, section: SettingsSection, cx: &mut Context<Self>) {
+        match section {
+            SettingsSection::Fonts => self.ensure_font_catalog_loaded(cx),
+            SettingsSection::Integrations => self.ensure_tools_loaded(cx),
+            SettingsSection::Jujutsu => self.ensure_jj_config_loaded(cx),
+            SettingsSection::DataPrivacy => self.refresh_review_summary(cx),
+            SettingsSection::Flock | SettingsSection::About => self.ensure_flock(cx),
+            _ => {}
+        }
+    }
+
     pub(super) fn ensure_flock(&mut self, cx: &mut Context<Self>) {
         if self.flock.is_none() {
             let flock = cx.new(super::flock::FlockView::new);

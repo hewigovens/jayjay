@@ -31,7 +31,7 @@ impl RepoViewModel {
         );
         self.diff_cache.load_failures.remove(&cache_key);
         if let Some(cached) = self.diff_cache.loaded.get(&cache_key).cloned() {
-            self.shown.diff = Some(cached.diff);
+            self.shown.set_diff(Some(cached.diff));
             self.shown.projection = cached.projection;
             self.shown.svg_preview = cached.svg_preview;
             self.shown.markdown_preview = cached.markdown_preview;
@@ -46,7 +46,7 @@ impl RepoViewModel {
             return;
         }
 
-        self.shown.diff = None;
+        self.shown.set_diff(None);
         self.shown.projection = None;
         self.shown.svg_preview = None;
         self.shown.markdown_preview = None;
@@ -99,7 +99,7 @@ impl RepoViewModel {
                                 review: loaded.review,
                             },
                         );
-                        vm.shown.diff = Some(file_diff);
+                        vm.shown.set_diff(Some(file_diff));
                         vm.shown.projection = loaded.projection;
                         vm.shown.svg_preview = loaded.svg_preview.map(Arc::new);
                         vm.shown.markdown_preview = loaded.markdown_preview.map(Arc::new);
@@ -114,12 +114,12 @@ impl RepoViewModel {
                     }
                     Err(error) => {
                         vm.diff_cache.load_failures.insert(cache_key);
-                        vm.shown.diff = Some(Arc::new(FileDiff {
+                        vm.shown.set_diff(Some(Arc::new(FileDiff {
                             path: fallback_path,
                             language: String::new(),
                             lines: Vec::new(),
                             whitespace_only_hidden: false,
-                        }));
+                        })));
                         vm.shown.projection = None;
                         vm.shown.svg_preview = None;
                         vm.shown.markdown_preview = None;

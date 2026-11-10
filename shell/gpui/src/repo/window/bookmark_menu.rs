@@ -230,10 +230,6 @@ impl RepoWindow {
         .detach();
     }
 
-    pub(super) fn push_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
-        self.git_push_bookmark(name.to_string(), cx);
-    }
-
     pub(super) fn open_pr_for_bookmark(&mut self, name: SharedString, cx: &mut Context<Self>) {
         let Some(repo) = self.vm.read(cx).repo.clone() else {
             self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);

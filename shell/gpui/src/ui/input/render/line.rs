@@ -112,29 +112,17 @@ fn caret_slot(visible: bool, theme: &Theme, id: Option<&'static str>, reserve_wi
         slot = slot.mr(-px(1.));
     }
     if visible {
-        if let Some(id) = id {
-            slot = slot.child(
-                div()
-                    .id(id)
-                    .debug_selector(move || id.to_owned())
-                    .absolute()
-                    .left(px(0.))
-                    .top(px(0.))
-                    .w(px(1.))
-                    .h(px(16.))
-                    .bg(rgb(theme.fg)),
-            );
-        } else {
-            slot = slot.child(
-                div()
-                    .absolute()
-                    .left(px(0.))
-                    .top(px(0.))
-                    .w(px(1.))
-                    .h(px(16.))
-                    .bg(rgb(theme.fg)),
-            );
-        }
+        let caret = div()
+            .absolute()
+            .left(px(0.))
+            .top(px(0.))
+            .w(px(1.))
+            .h(px(16.))
+            .bg(rgb(theme.fg));
+        slot = match id {
+            Some(id) => slot.child(caret.id(id).debug_selector(move || id.to_owned())),
+            None => slot.child(caret),
+        };
     }
     slot
 }

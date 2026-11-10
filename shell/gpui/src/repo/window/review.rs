@@ -185,7 +185,7 @@ impl RepoWindow {
 
     pub fn selected_review_group_states(&self, cx: &App) -> Vec<ReviewGroupState> {
         let vm = self.vm.read(cx);
-        self.review_display_state(vm.selected_hunk(), vm.shown.diff.as_ref(), cx)
+        self.review_display_state(vm.selected_hunk(), vm.shown.diff(), cx)
             .map(|state| state.group_states.clone())
             .unwrap_or_default()
     }

@@ -35,7 +35,7 @@ impl LineEdit {
     pub(crate) fn handle_key(
         &mut self,
         ev: &KeyDownEvent,
-        clipboard_text: Option<&str>,
+        clipboard_text: impl FnOnce() -> Option<String>,
     ) -> LineEditKeyResult {
         let key = ev.keystroke.key.as_str();
         let m = &ev.keystroke.modifiers;
@@ -47,8 +47,8 @@ impl LineEdit {
                     return LineEditKeyResult::handled(false);
                 }
                 "v" => {
-                    if let Some(text) = clipboard_text {
-                        self.replace_selection(&sanitize_single_line(text));
+                    if let Some(text) = clipboard_text() {
+                        self.replace_selection(&sanitize_single_line(&text));
                         return LineEditKeyResult::handled(true);
                     }
                     return LineEditKeyResult::handled(false);

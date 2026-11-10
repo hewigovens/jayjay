@@ -34,7 +34,7 @@ impl RepoWindow {
     /// `None` while no diff is loaded yet.
     pub fn diff_render_rows(&self, cx: &App) -> Option<Arc<DiffRenderRows>> {
         let notes = self.notes_for_selected_hunk(cx);
-        let fd = self.vm.read(cx).shown.diff.clone()?;
+        let fd = self.vm.read(cx).shown.diff().cloned()?;
         let advance = fonts::mono_advance(cx, px(theme(cx).code_font_size()));
         let cols = wrap_cols_from_bounds(self.diff.unified_bounds.get(), advance);
         let mut cache = self.diff.wrap_cache.borrow_mut();

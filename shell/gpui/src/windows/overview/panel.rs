@@ -279,7 +279,7 @@ pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElemen
         .flex_col()
         .gap(px(6.))
         .child(section_title(
-            format!("{count} FILE{}", if count == 1 { "" } else { "S" }),
+            jayjay_i18n::repo::file_count(count).to_uppercase(),
             t,
         ))
         .children(files.iter().map(|file| {

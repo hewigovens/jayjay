@@ -130,7 +130,7 @@ fn build_lines(
                 DiffSpanStyle::Context,
                 typeset.shape(
                     input.placeholder.clone(),
-                    vec![(placeholder_len, text_run_color(true, typeset.color), None)],
+                    vec![(placeholder_len, hsla(0., 0., 0.55, 0.62), None)],
                     window,
                 ),
             ));
@@ -377,14 +377,6 @@ fn word_wrap_boundary(text: &str, fit: usize) -> usize {
         .next_back()
         .filter(|boundary| *boundary > 0)
         .unwrap_or(fit)
-}
-
-fn text_run_color(is_placeholder: bool, content_color: gpui::Hsla) -> gpui::Hsla {
-    if is_placeholder {
-        hsla(0., 0., 0.55, 0.62)
-    } else {
-        content_color
-    }
 }
 
 #[cfg(test)]

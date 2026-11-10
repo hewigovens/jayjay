@@ -113,10 +113,7 @@ impl RepoWindow {
         let Some(ms) = self.active_multi_select(cx) else {
             return Vec::new();
         };
-        self.ordered_visible_file_paths(cx)
-            .into_iter()
-            .filter(|path| ms.selection.contains(path))
-            .collect()
+        ms.selection.ordered(&self.ordered_visible_file_paths(cx))
     }
 
     pub(crate) fn multi_selected_hunk_indices(&self) -> Arc<HashSet<usize>> {
@@ -152,10 +149,13 @@ impl RepoWindow {
                 .files
                 .as_ref()
                 .map(|files| {
+                    let paths: Vec<String> = files.iter().map(|hunk| hunk.path.clone()).collect();
+                    let selected: HashSet<String> =
+                        ms.selection.ordered(&paths).into_iter().collect();
                     files
                         .iter()
                         .enumerate()
-                        .filter(|(_, hunk)| ms.selection.contains(&hunk.path))
+                        .filter(|(_, hunk)| selected.contains(&hunk.path))
                         .map(|(ix, _)| ix)
                         .collect()
                 })

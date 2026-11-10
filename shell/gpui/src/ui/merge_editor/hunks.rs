@@ -181,8 +181,8 @@ pub(crate) fn merge_hunk_card(
                         .gap(px(8.))
                         .code_text(10., t)
                         .text_color(rgb(t.fg_faint))
-                        .child("− Left")
-                        .child("+ Right"),
+                        .child(format!("− {}", jayjay_i18n::repo::left()))
+                        .child(format!("+ {}", jayjay_i18n::repo::right())),
                 ),
         )
         .child(

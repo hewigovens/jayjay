@@ -73,7 +73,11 @@ impl Element for TextAreaElement {
                         width,
                         ..key.clone()
                     };
-                    let layout = layout_text(input.read(cx), key, bounds, window, theme(cx));
+                    let input = input.read(cx);
+                    if let Some(layout) = input.last_layout.as_ref().filter(|l| l.key == key) {
+                        return size(width, layout.line_height * layout.lines.len() as f32);
+                    }
+                    let layout = layout_text(input, key, bounds, window, theme(cx));
                     size(width, layout.line_height * layout.lines.len() as f32)
                 });
             return (layout, ());

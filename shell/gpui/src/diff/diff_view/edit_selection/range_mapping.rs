@@ -1,8 +1,8 @@
 use std::collections::HashSet;
 use std::ops::RangeInclusive;
 
-use jayjay_core::DiffEditRange;
 use jayjay_core::diff::{DiffLine, DiffSpanStyle, compute_file_diff_full};
+use jayjay_core::{DiffEditRange, diff_edit_ranges};
 
 /// Matches by (style, old_line_no, new_line_no): collapsing only elides unchanged context and never renumbers changed lines.
 pub(crate) fn display_range_to_diff_edit_range(
@@ -32,7 +32,7 @@ pub(crate) fn display_range_to_diff_edit_range(
         .map(|(ix, _)| (ix + 1) as u32)
         .collect();
 
-    collapse_into_ranges(&full_line_numbers)
+    diff_edit_ranges(full_line_numbers)
 }
 
 #[derive(PartialEq, Eq, Hash, Clone, Copy)]
@@ -58,31 +58,4 @@ impl ChangedLineKey {
             _ => None,
         }
     }
-}
-
-fn collapse_into_ranges(sorted_line_numbers: &[u32]) -> Vec<DiffEditRange> {
-    let mut ranges = Vec::new();
-    let mut iter = sorted_line_numbers.iter().copied();
-    let Some(first) = iter.next() else {
-        return ranges;
-    };
-    let mut start = first;
-    let mut previous = first;
-    for line_no in iter {
-        if line_no == previous + 1 {
-            previous = line_no;
-            continue;
-        }
-        ranges.push(DiffEditRange {
-            start_line: start,
-            end_line: previous,
-        });
-        start = line_no;
-        previous = line_no;
-    }
-    ranges.push(DiffEditRange {
-        start_line: start,
-        end_line: previous,
-    });
-    ranges
 }

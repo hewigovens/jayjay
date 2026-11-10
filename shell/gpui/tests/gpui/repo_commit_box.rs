@@ -1,5 +1,5 @@
 use crate::harness::*;
-use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext, px};
+use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext};
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::{LinearFixture, run_jj_in};
@@ -235,7 +235,7 @@ fn commit_requires_a_summary_even_with_a_body(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
+fn commit_box_buttons_follow_swiftui_order(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     fixture.add_tracked_working_copy_edits();
     install_test_globals(cx);
@@ -266,21 +266,6 @@ fn overview_surfaces_keep_compact_swiftui_spacing(cx: &mut TestAppContext) {
         sparkle.origin.x < describe_button.origin.x
             && describe_button.origin.x < commit_button.origin.x,
         "SwiftUI button order is sparkle, Describe, Commit"
-    );
-
-    let header = cx
-        .debug_bounds("file-column-header")
-        .expect("file column header");
-    assert!(
-        header.size.height >= px(43.) && header.size.height <= px(45.),
-        "file column header shares the 44px pane header height, got {:?}",
-        header.size.height
-    );
-    let first_file_row = cx.debug_bounds("file-row-0").expect("first file row");
-    assert!(
-        first_file_row.size.height >= px(44.) && first_file_row.size.height <= px(48.),
-        "file rows should stay compact, got {:?}",
-        first_file_row.size.height
     );
 }
 

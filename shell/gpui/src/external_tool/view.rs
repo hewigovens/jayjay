@@ -93,19 +93,30 @@ impl ExternalToolWindow {
 
     fn header(&self, cx: &mut Context<Self>) -> impl IntoElement {
         let t = theme(cx);
+        let merge = match &self.state {
+            ExternalToolState::Merge {
+                session, result, ..
+            } => {
+                let text = result.read(cx).text();
+                Some((
+                    session.is_text_merge(),
+                    session.unresolved_count(&text),
+                    session.can_save(&text),
+                ))
+            }
+            _ => None,
+        };
         let status = {
             match &self.state {
                 ExternalToolState::Loading => jayjay_i18n::repo::loading_ellipsis(),
                 ExternalToolState::Diff(session) => {
                     jayjay_i18n::merge::changed_files(session.files.len())
                 }
-                ExternalToolState::Merge {
-                    session, result, ..
-                } => {
-                    let count = session.unresolved_count(&result.read(cx).text());
-                    if !session.is_text {
+                ExternalToolState::Merge { .. } => {
+                    let (is_text, count, can_save) = merge.unwrap_or_default();
+                    if !is_text {
                         jayjay_i18n::merge::non_text_conflict()
-                    } else if count == 0 && session.can_save(&result.read(cx).text()) {
+                    } else if count == 0 && can_save {
                         jayjay_i18n::merge::ready_to_save()
                     } else if count == 0 {
                         jayjay_i18n::merge::unresolved_conflict_markers()
@@ -125,9 +136,7 @@ impl ExternalToolWindow {
         );
         let can_save = match &self.state {
             ExternalToolState::Diff(session) => session.editable,
-            ExternalToolState::Merge {
-                session, result, ..
-            } => session.can_save(&result.read(cx).text()),
+            ExternalToolState::Merge { .. } => merge.is_some_and(|(_, _, can_save)| can_save),
             ExternalToolState::Loading | ExternalToolState::Error => false,
         };
         let cancel_label = if editable {
@@ -172,12 +181,8 @@ impl ExternalToolWindow {
                     .on_click(cx.listener(|view, _, _, _| (view.exit)(view.close_exit_code()))),
             );
         if editable && can_save {
-            let label = match &self.state {
-                ExternalToolState::Merge {
-                    session, result, ..
-                } if session.unresolved_count(&result.read(cx).text()) > 0 => {
-                    jayjay_i18n::repo::save_partial()
-                }
+            let label = match merge {
+                Some((_, count, _)) if count > 0 => jayjay_i18n::repo::save_partial(),
                 _ => jayjay_i18n::repo::done(),
             };
             header = header.child(
@@ -186,12 +191,8 @@ impl ExternalToolWindow {
                     .on_click(cx.listener(|view, _, _, cx| view.save(cx))),
             );
         } else if matches!(&self.state, ExternalToolState::Merge { .. }) {
-            let message = match &self.state {
-                ExternalToolState::Merge {
-                    session, result, ..
-                } if session.is_text_merge()
-                    && session.unresolved_count(&result.read(cx).text()) > 0 =>
-                {
+            let message = match merge {
+                Some((true, count, _)) if count > 0 => {
                     jayjay_i18n::merge::resolve_all_conflict_blocks_before_saving()
                 }
                 _ => jayjay_i18n::merge::choose_a_side_to_save_this(),

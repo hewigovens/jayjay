@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use gpui::{App, Menu, MenuItem, PathPromptOptions};
 
@@ -12,6 +12,7 @@ use super::actions::{
     ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
+use super::repositories::repository_name;
 use super::tools;
 use crate::app::links::GUIDE_URL;
 use crate::windows::settings::{SettingsSection, SettingsView};
@@ -147,7 +148,7 @@ fn open_recent_menu(recent_repos: &[String]) -> Menu {
         .iter()
         .map(|path| {
             MenuItem::action(
-                recent_repo_label(path),
+                repository_name(path),
                 OpenRecentRepository { path: path.clone() },
             )
         })
@@ -158,15 +159,6 @@ fn open_recent_menu(recent_repos: &[String]) -> Menu {
         ClearRecentRepositories,
     ));
     Menu::new(jayjay_i18n::menu::open_recent()).items(items)
-}
-
-fn recent_repo_label(path: &str) -> String {
-    Path::new(path)
-        .file_name()
-        .and_then(|name| name.to_str())
-        .filter(|name| !name.is_empty())
-        .unwrap_or(path)
-        .to_owned()
 }
 
 fn register_global_actions(cx: &mut App) {
@@ -202,33 +194,29 @@ fn register_global_actions(cx: &mut App) {
             crate::platform::reveal_path(&path);
         }
     });
-    cx.on_action(|_: &ZoomIn, cx| toggle(cx, |c| c.zoom(1.)));
-    cx.on_action(|_: &ZoomOut, cx| toggle(cx, |c| c.zoom(-1.)));
-    cx.on_action(|_: &ResetZoom, cx| toggle(cx, AppConfig::reset_zoom));
+    cx.on_action(|_: &ZoomIn, cx| config::update(cx, |c| c.zoom(1.)));
+    cx.on_action(|_: &ZoomOut, cx| config::update(cx, |c| c.zoom(-1.)));
+    cx.on_action(|_: &ResetZoom, cx| config::update(cx, AppConfig::reset_zoom));
     cx.on_action(|_: &ToggleSideBySideDiff, cx| {
-        toggle(cx, |c| {
+        config::update(cx, |c| {
             c.diff.side_by_side ^= true;
         })
     });
     cx.on_action(|_: &ToggleIgnoreWhitespace, cx| {
-        toggle(cx, |c| {
+        config::update(cx, |c| {
             c.diff.ignore_whitespace ^= true;
         })
     });
     cx.on_action(|_: &ToggleHideGitLfsFiles, cx| {
-        toggle(cx, |c| {
+        config::update(cx, |c| {
             c.diff.hide_git_lfs ^= true;
         })
     });
     cx.on_action(|_: &ToggleTreeFileList, cx| {
-        toggle(cx, |c| {
+        config::update(cx, |c| {
             c.diff.tree_file_list ^= true;
         })
     });
-}
-
-fn toggle(cx: &mut App, mutate: impl FnOnce(&mut config::AppConfig)) {
-    config::update(cx, mutate);
 }
 
 pub(crate) fn prompt_open_repository(cx: &mut App) {

@@ -67,14 +67,7 @@ pub(super) fn sidebar(
                     this.open_dropdown = None;
                     this.fonts.pending_dropdown = None;
                     this.scroll.set_offset(Default::default());
-                    match section {
-                        SettingsSection::Fonts => this.ensure_font_catalog_loaded(cx),
-                        SettingsSection::Integrations => this.ensure_tools_loaded(cx),
-                        SettingsSection::Jujutsu => this.ensure_jj_config_loaded(cx),
-                        SettingsSection::DataPrivacy => this.refresh_review_summary(cx),
-                        SettingsSection::Flock | SettingsSection::About => this.ensure_flock(cx),
-                        _ => {}
-                    }
+                    this.load_section(section, cx);
                     cx.notify();
                 }))
                 .child(

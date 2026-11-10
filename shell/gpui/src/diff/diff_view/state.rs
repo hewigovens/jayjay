@@ -8,6 +8,7 @@ use jayjay_markdown::MarkdownDocument;
 use jayjay_review::{ReviewFileRollup, ReviewGroupState, ReviewNoteStatus};
 
 use super::review_row_map::ReviewRowMap;
+use crate::diff::Annotation;
 use crate::diff::MarkdownImageCacheSlot;
 use crate::diff::projection::ProjectionView;
 use crate::repo::window::{ConflictResolution, DiffWrapCacheSlot, FocusStop, PanelBoundsSlot};
@@ -20,8 +21,8 @@ pub enum DiffViewMode {
 }
 
 impl DiffViewMode {
-    pub(crate) fn effective_for_diff(self, diff: Option<&FileDiff>) -> Self {
-        if diff.is_some_and(|diff| !can_use_side_by_side(diff)) {
+    pub(crate) fn effective_for(self, shape: Option<DiffShape>) -> Self {
+        if shape.is_some_and(|shape| !shape.side_by_side) {
             Self::Unified
         } else {
             self
@@ -29,26 +30,26 @@ impl DiffViewMode {
     }
 }
 
-fn can_use_side_by_side(diff: &FileDiff) -> bool {
-    is_two_column_diff(diff) && !has_conflict_lines(diff)
+/// Line-kind facts about a loaded diff, computed once so renders don't rescan every line.
+#[derive(Debug, Clone, Copy)]
+pub(crate) struct DiffShape {
+    side_by_side: bool,
+    pub(crate) has_conflict_lines: bool,
 }
 
-fn is_two_column_diff(diff: &FileDiff) -> bool {
-    let has_added = diff
-        .lines
-        .iter()
-        .any(|line| line.style == DiffSpanStyle::Added);
-    let has_removed = diff
-        .lines
-        .iter()
-        .any(|line| line.style == DiffSpanStyle::Removed);
-    has_added && has_removed
-}
-
-fn has_conflict_lines(diff: &FileDiff) -> bool {
-    diff.lines
-        .iter()
-        .any(|line| line.conflict_kind != ConflictLineKind::None)
+impl DiffShape {
+    pub(crate) fn of(diff: &FileDiff) -> Self {
+        let (mut added, mut removed, mut conflict) = (false, false, false);
+        for line in &diff.lines {
+            added |= line.style == DiffSpanStyle::Added;
+            removed |= line.style == DiffSpanStyle::Removed;
+            conflict |= line.conflict_kind != ConflictLineKind::None;
+        }
+        Self {
+            side_by_side: added && removed && !conflict,
+            has_conflict_lines: conflict,
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -76,7 +77,7 @@ pub struct DiffViewState<'a> {
     pub(crate) html_external_url: Option<&'a str>,
     pub(crate) view_mode: DiffViewMode,
     pub(crate) detail_mode: DetailMode,
-    pub(crate) annotate_lines: Option<std::sync::Arc<Vec<jayjay_core::AnnotationLine>>>,
+    pub(crate) annotation: Option<Arc<Annotation>>,
     pub(crate) loading_annotate: bool,
     pub(crate) path_just_copied: bool,
     pub(crate) can_resolve_conflict: bool,
@@ -167,7 +168,7 @@ mod tests {
         ]);
 
         assert_eq!(
-            DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
+            DiffViewMode::SideBySide.effective_for(Some(DiffShape::of(&diff))),
             DiffViewMode::Unified
         );
     }
@@ -177,7 +178,7 @@ mod tests {
         let diff = file_diff(&[line(DiffSpanStyle::Added, ConflictLineKind::None)]);
 
         assert_eq!(
-            DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
+            DiffViewMode::SideBySide.effective_for(Some(DiffShape::of(&diff))),
             DiffViewMode::Unified
         );
     }
@@ -187,7 +188,7 @@ mod tests {
         let diff = file_diff(&[line(DiffSpanStyle::Removed, ConflictLineKind::None)]);
 
         assert_eq!(
-            DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
+            DiffViewMode::SideBySide.effective_for(Some(DiffShape::of(&diff))),
             DiffViewMode::Unified
         );
     }
@@ -200,7 +201,7 @@ mod tests {
         ]);
 
         assert_eq!(
-            DiffViewMode::SideBySide.effective_for_diff(Some(&diff)),
+            DiffViewMode::SideBySide.effective_for(Some(DiffShape::of(&diff))),
             DiffViewMode::SideBySide
         );
     }
@@ -208,7 +209,7 @@ mod tests {
     #[test]
     fn effective_view_mode_keeps_requested_mode_while_diff_loads() {
         assert_eq!(
-            DiffViewMode::SideBySide.effective_for_diff(None),
+            DiffViewMode::SideBySide.effective_for(None),
             DiffViewMode::SideBySide
         );
     }

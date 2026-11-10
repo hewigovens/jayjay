@@ -139,16 +139,36 @@ fn bookmark_meta(bookmark: &BookmarkInfo, t: &Theme) -> AnyElement {
 fn status_chips(bookmark: &BookmarkInfo, t: &Theme) -> Vec<AnyElement> {
     let mut chips = Vec::new();
     if bookmark.is_deleted {
-        chips.push(capsule("deleted", t.tag_removed_bg, t.tag_removed_fg, 9.).into_any_element());
+        chips.push(
+            capsule(
+                jayjay_i18n::bookmarks::deleted(),
+                t.tag_removed_bg,
+                t.tag_removed_fg,
+                9.,
+            )
+            .into_any_element(),
+        );
     }
     if bookmark.is_conflicted {
         chips.push(
-            capsule("conflicted", t.tag_conflict_bg, t.tag_conflict_fg, 9.).into_any_element(),
+            capsule(
+                jayjay_i18n::bookmarks::conflicted(),
+                t.tag_conflict_bg,
+                t.tag_conflict_fg,
+                9.,
+            )
+            .into_any_element(),
         );
     }
     if !bookmark.has_local_target && !bookmark.is_deleted {
         chips.push(
-            capsule("remote-only", t.toggle_active_bg, t.toggle_active_fg, 9.).into_any_element(),
+            capsule(
+                jayjay_i18n::bookmarks::remote_only(),
+                t.toggle_active_bg,
+                t.toggle_active_fg,
+                9.,
+            )
+            .into_any_element(),
         );
     } else if bookmark.has_local_target && !bookmark.is_tracking_remote && !bookmark.is_deleted {
         chips.push(

@@ -241,7 +241,7 @@ fn summary_row(
 
 fn pr_state_badge(state: jayjay_core::PrState, t: &Theme) -> gpui::Div {
     let (label, color) = match state {
-        jayjay_core::PrState::Open => (jayjay_i18n::common::open(), t.success_fg),
+        jayjay_core::PrState::Open => (jayjay_i18n::repo::pr_open(), t.success_fg),
         jayjay_core::PrState::Closed => (jayjay_i18n::repo::closed(), t.error_fg),
         jayjay_core::PrState::Merged => (jayjay_i18n::repo::merged(), t.note_accent),
     };

@@ -26,5 +26,7 @@ pub use render::diff_view;
 pub(crate) use rows::row_index_for_line;
 pub use rows::{DiffRenderRow, DiffRenderRows, NoteDotKind};
 pub use state::{DetailMode, DiffViewMode};
-pub(crate) use state::{DiffViewState, FindState, ReviewDisplayState, SvgPreviewContent};
+pub(crate) use state::{
+    DiffShape, DiffViewState, FindState, ReviewDisplayState, SvgPreviewContent,
+};
 pub(crate) use wrap_cache::DiffWrapCache;

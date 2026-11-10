@@ -40,8 +40,7 @@ fn switching_files_discards_an_in_flight_expansion_and_restarts_collapsed(cx: &m
             view.view_model()
                 .read(cx)
                 .shown
-                .diff
-                .as_ref()
+                .diff()
                 .map(|diff| diff.path.as_str()),
             Some("other.txt"),
             "the stale completion must not overwrite the newly selected file"
@@ -87,8 +86,7 @@ fn rapid_show_more_then_show_all_applies_the_latest_request(cx: &mut TestAppCont
             view.view_model()
                 .read(cx)
                 .shown
-                .diff
-                .as_ref()
+                .diff()
                 .expect("fully expanded diff")
                 .lines
                 .iter()

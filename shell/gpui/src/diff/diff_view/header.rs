@@ -13,8 +13,8 @@ use self::path::*;
 use super::DiffViewMode;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::tag_for_hunk;
+use crate::diff::line_stats;
 use crate::diff::projection::{self, ProjectionView};
-use crate::diff::{file_status, line_stats};
 use crate::repo::window::{FocusStop, RepoWindow};
 
 const DIFF_HEADER_STATUS_FONT: f32 = 11.;
@@ -225,12 +225,4 @@ fn hunk_status_pill(label: String, bg: u32, fg: u32, t: &Theme) -> impl IntoElem
         .text_size(ui_font_size(PILL_FONT_SIZE))
         .font_weight(FontWeight::MEDIUM)
         .child(SharedString::from(label))
-}
-
-pub(super) fn hunk_is_submodule(hunk: &DiffHunk) -> bool {
-    file_status::is_submodule(hunk)
-}
-
-pub(super) fn hunk_is_git_lfs(hunk: &DiffHunk) -> bool {
-    file_status::is_lfs(hunk)
 }

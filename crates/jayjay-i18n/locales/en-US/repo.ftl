@@ -143,7 +143,11 @@ repo-fetch-create-workspace = Fetch & Create Workspace
 repo-remote = Remote
 repo-head = Head
 repo-workspace = Workspace
+repo-function = Function
+repo-alias = Alias
+repo-tag = Tag
 repo-import-again = Import Again
+repo-pr-open = Open
 repo-closed = Closed
 repo-merged = Merged
 repo-initializing-ellipsis = Initializing…
@@ -514,6 +518,16 @@ repo-line-count =
     { $count ->
         [one] { $count } line
        *[other] { $count } lines
+    }
+repo-added-lines =
+    { $count ->
+        [one] added line
+       *[other] added lines
+    }
+repo-removed-lines =
+    { $count ->
+        [one] removed line
+       *[other] removed lines
     }
 repo-stack-summary =
     { $count ->

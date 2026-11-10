@@ -1,6 +1,6 @@
-use gpui::{Div, FontWeight, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 use jayjay_core::diff::side_by_side::{RowSide, SideBySideRow};
-use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle, conflict_display_text};
+use jayjay_core::diff::{ConflictLineKind, DiffSpanStyle};
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::Theme;
@@ -70,7 +70,7 @@ fn side_gutter(
     conflict_kind: ConflictLineKind,
     theme: &Theme,
 ) -> Div {
-    let bg = side_bg_color(style, conflict_kind, theme);
+    let bg = line_bg_color(style, conflict_kind, theme);
     div()
         .flex()
         .flex_row()
@@ -82,29 +82,8 @@ fn side_gutter(
 }
 
 fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div {
-    let bg = side_bg_color(side.style, side.conflict_kind, theme);
+    let bg = line_bg_color(side.style, side.conflict_kind, theme);
     let base_text_fg = line_text_color(side.style, side.conflict_kind, theme);
-
-    if let Some(label) = conflict_label(side) {
-        return div()
-            .relative()
-            .flex()
-            .items_center()
-            .flex_1()
-            .min_w_0()
-            .h(px(theme.code_line_height()))
-            .bg(rgb(bg))
-            .code_text(12., theme)
-            .line_height(px(theme.code_line_height()))
-            .text_color(rgb(base_text_fg))
-            .font_weight(FontWeight::MEDIUM)
-            .px(px(16.))
-            .child(conflict_stripe_overlay(side.conflict_kind, theme))
-            .child(SharedString::from(conflict_display_line(
-                label,
-                side.conflict_kind,
-            )));
-    }
 
     let mut text_row = div()
         .flex()
@@ -135,26 +114,6 @@ fn side_content(side: &RowSide, theme: &Theme, find_query: Option<&str>) -> Div 
         .relative()
         .child(conflict_stripe_overlay(side.conflict_kind, theme))
         .child(text_row)
-}
-
-fn side_bg_color(style: DiffSpanStyle, conflict_kind: ConflictLineKind, theme: &Theme) -> u32 {
-    line_bg_color(style, conflict_kind, theme)
-}
-
-fn conflict_label(side: &RowSide) -> Option<String> {
-    match side.conflict_kind {
-        ConflictLineKind::Start | ConflictLineKind::End | ConflictLineKind::Section => {
-            conflict_display_text(side.conflict_kind, &side.text())
-        }
-        _ => None,
-    }
-}
-
-fn conflict_display_line(label: String, kind: ConflictLineKind) -> String {
-    match kind {
-        ConflictLineKind::Section => format!("    {label}"),
-        _ => format!("  {label}"),
-    }
 }
 
 fn separator_gutter(theme: &Theme) -> Div {

@@ -343,7 +343,7 @@ impl RepoWindow {
                     .and_then(|m| m.checkbox.as_ref())
                     .is_some_and(|c| c.checked);
                 self.modal = None;
-                self.confirm_split_files(request, message, parallel, cx);
+                self.run_split_files(request, message, parallel, false, cx);
             }
         }
         cx.notify();

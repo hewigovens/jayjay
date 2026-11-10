@@ -20,32 +20,47 @@ fn change_color(change_id: &str) -> u32 {
     ANNOTATE_PALETTE[(h as usize) % ANNOTATE_PALETTE.len()]
 }
 
-/// Per-line syntax-token spans for the whole file via core's `highlight_file`
-/// (no diff, no repo) — shared with the SwiftUI shell.
-fn highlight_lines(path: &str, lines: &[AnnotationLine]) -> Vec<Vec<DiffSpan>> {
-    let full_text = lines
-        .iter()
-        .map(|l| l.text.as_str())
-        .collect::<Vec<_>>()
-        .join("\n");
-    highlight_file(path, &full_text)
+/// Blame lines with their syntax spans, highlighted once at load rather than on every render.
+pub(crate) struct Annotation {
+    lines: Vec<AnnotationLine>,
+    highlights: Vec<Vec<DiffSpan>>,
+}
+
+impl Annotation {
+    pub(crate) fn new(path: &str, lines: Vec<AnnotationLine>) -> Self {
+        let full_text = lines
+            .iter()
+            .map(|l| l.text.as_str())
+            .collect::<Vec<_>>()
+            .join("\n");
+        let highlights = highlight_file(path, &full_text);
+        Self { lines, highlights }
+    }
+
+    pub(crate) fn is_empty(&self) -> bool {
+        self.lines.is_empty()
+    }
 }
 
 pub fn annotate_body(
-    path: String,
-    lines: Arc<Vec<AnnotationLine>>,
+    annotation: Arc<Annotation>,
     theme: Theme,
     scroll: UniformListScrollHandle,
 ) -> AnyElement {
-    let count = lines.len();
+    let count = annotation.lines.len();
     let theme = Arc::new(theme);
-    let highlights = Arc::new(highlight_lines(&path, &lines));
     let list = uniform_list(
         "annotate-lines",
         count,
         move |range: std::ops::Range<usize>, _w, _cx| {
             range
-                .map(|ix| annotate_row(&lines[ix], highlights.get(ix).map(Vec::as_slice), &theme))
+                .map(|ix| {
+                    annotate_row(
+                        &annotation.lines[ix],
+                        annotation.highlights.get(ix).map(Vec::as_slice),
+                        &theme,
+                    )
+                })
                 .collect()
         },
     )
@@ -78,7 +93,7 @@ fn annotate_row(line: &AnnotationLine, spans: Option<&[DiffSpan]>, t: &Theme) ->
         .child(stripe(stripe_color, t))
         .child(line_no_cell(line.line_number, t))
         .child(change_cell(id_prefix, id_rest, t))
-        .child(author_cell(&author_initials, &line.author, t))
+        .child(author_cell(&author_initials, t))
         .child(date_cell(&line.timestamp, t))
         .child(text_cell(&line.text, spans, t))
         .into_any_element()
@@ -124,8 +139,7 @@ fn change_cell(id_prefix: String, id_rest: String, t: &Theme) -> Div {
         )
 }
 
-fn author_cell(initials: &str, full_name: &str, t: &Theme) -> Div {
-    let _ = full_name; // todo: hover tooltip with full name
+fn author_cell(initials: &str, t: &Theme) -> Div {
     div()
         .flex_none()
         .w(px(28.))
@@ -173,7 +187,7 @@ fn text_cell(text: &str, spans: Option<&[DiffSpan]>, t: &Theme) -> Div {
 
 #[cfg(test)]
 mod tests {
-    use super::highlight_lines;
+    use super::Annotation;
     use jayjay_core::AnnotationLine;
     use jayjay_core::diff::syntax::SyntaxToken;
 
@@ -194,12 +208,13 @@ mod tests {
             line("    let x = 1;", 2),
             line("}", 3),
         ];
-        let spans = highlight_lines("main.rs", &lines);
+        let annotation = Annotation::new("main.rs", lines);
 
         // One span vec per source line, in order.
-        assert_eq!(spans.len(), lines.len());
+        assert_eq!(annotation.highlights.len(), annotation.lines.len());
         // Tree-sitter should classify at least one non-plain token (e.g. `fn`).
-        let has_token = spans
+        let has_token = annotation
+            .highlights
             .iter()
             .flatten()
             .any(|s| s.token != SyntaxToken::Plain);

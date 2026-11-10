@@ -15,18 +15,7 @@ pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
 const INTERACTIVE_GUTTER_WIDTH: f32 = GUTTER_NUMBER_WIDTH * 2. + NOTE_DOT_WIDTH;
 pub const REVIEW_STRIPE_WIDTH: f32 = 6.;
 
-/// Width must stay pixel-matched to `interactive_gutter_column` so swapping between a placeholder and the real diff never shifts the layout.
 pub fn gutter_column(theme: &Theme, shows_review: bool) -> Div {
-    div()
-        .flex_none()
-        .w(px(interactive_gutter_width(shows_review)))
-        .h_full()
-        .bg(rgb(theme.diff_gutter_bg))
-        .border_r_1()
-        .border_color(rgb(theme.border))
-}
-
-pub fn interactive_gutter_column(theme: &Theme, shows_review: bool) -> Div {
     div()
         .flex_none()
         .w(px(interactive_gutter_width(shows_review)))

@@ -6,9 +6,7 @@ use gpui::{
 use jayjay_core::{DiffProjection, HunkType};
 
 use super::find_bar::render_find_bar;
-use super::header::{
-    FileHeaderState, ProjectionHeaderState, file_header, hunk_is_git_lfs, hunk_is_submodule,
-};
+use super::header::{FileHeaderState, ProjectionHeaderState, file_header};
 use super::note_banner::stale_notes_banner;
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
 use super::sbs_body::{SideBySideBodyState, side_by_side_body};
@@ -16,6 +14,7 @@ use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
 use super::unified_body::{UnifiedBodyState, unified_body};
 use crate::app::theme::{Theme, theme, ui_font_size, with_alpha};
+use crate::diff::file_status;
 use crate::diff::markdown_diff::{MarkdownDiffState, MarkdownImages, markdown_diff_view};
 use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection::{self, ProjectionView};
@@ -85,9 +84,7 @@ pub fn diff_view(
     };
 
     let is_annotating = matches!(state.detail_mode, DetailMode::Annotate);
-    let view_mode = state
-        .view_mode
-        .effective_for_diff(state.file_diff.map(AsRef::as_ref));
+    let view_mode = state.view_mode;
     let header = file_header(
         FileHeaderState {
             hunk,
@@ -135,14 +132,13 @@ pub fn diff_view(
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
             loading_status(jayjay_i18n::diff::loading_annotations_ellipsis(), &t)
-        } else if let Some(lines) = state.annotate_lines.as_ref() {
-            if lines.is_empty() {
+        } else if let Some(annotation) = state.annotation.as_ref() {
+            if annotation.is_empty() {
                 placeholder_inner(jayjay_i18n::diff::no_annotations_available(), &t)
                     .into_any_element()
             } else {
                 crate::diff::annotate_view::annotate_body(
-                    hunk.path.clone(),
-                    lines.clone(),
+                    annotation.clone(),
                     t.clone(),
                     scroll.clone(),
                 )
@@ -179,7 +175,7 @@ pub fn diff_view(
             },
             cx,
         )
-    } else if hunk_is_submodule(hunk) {
+    } else if file_status::is_submodule(hunk) {
         placeholder_card(
             glyph::PACKAGE,
             jayjay_i18n::diff::git_submodule(),
@@ -187,7 +183,7 @@ pub fn diff_view(
             &t,
         )
         .into_any_element()
-    } else if hunk_is_git_lfs(hunk) {
+    } else if file_status::is_lfs(hunk) {
         placeholder_card(
             glyph::DATABASE,
             jayjay_i18n::diff::git_lfs_backed_file(),

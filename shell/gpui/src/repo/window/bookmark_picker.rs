@@ -122,8 +122,7 @@ impl RepoWindow {
         let Some(state) = self.bookmark_picker.as_ref() else {
             return Vec::new();
         };
-        let bookmarks = self.vm.read(cx).graph.bookmarks.clone();
-        picker_actions(&bookmark_sections(state, &bookmarks))
+        picker_actions(&bookmark_sections(state, &self.vm.read(cx).graph.bookmarks))
     }
 }
 

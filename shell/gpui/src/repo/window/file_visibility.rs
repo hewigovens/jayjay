@@ -87,7 +87,7 @@ impl RepoWindow {
     ) -> Vec<usize> {
         let counts = self.vm.read(cx).active_note_counts();
         let rollups = change_id
-            .filter(|_| show_review)
+            .filter(|_| show_review && self.file_column.hide_reviewed)
             .map(|change_id| {
                 let vm = self.vm.read(cx);
                 self.review_rollups_with_vm(change_id, files.iter(), vm)

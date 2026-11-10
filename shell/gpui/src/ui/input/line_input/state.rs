@@ -57,8 +57,9 @@ impl LineInput {
         ev: &KeyDownEvent,
         cx: &mut Context<T>,
     ) -> LineEditKeyResult {
-        let clipboard_text = cx.read_from_clipboard().and_then(|item| item.text());
-        let result = self.edit.handle_key(ev, clipboard_text.as_deref());
+        let result = self
+            .edit
+            .handle_key(ev, || cx.read_from_clipboard().and_then(|item| item.text()));
         if let Some(text) = result.copy_to_clipboard.as_ref() {
             cx.write_to_clipboard(ClipboardItem::new_string(text.clone()));
         }

@@ -31,6 +31,7 @@ onboarding-ready = Ready
 onboarding-unpin-repository = Unpin Repository
 onboarding-pin-repository = Pin Repository
 onboarding-requires-jj = JayJay requires jj to be installed. Install it with { $manager } or Cargo:
+onboarding-requires-jj-from-package-manager = JayJay requires jj to be installed. Install it with your distribution’s package manager or Cargo:
 onboarding-identity = Identity: { $identity }
 onboarding-identity-not-set = jj author identity is not set
 onboarding-current-directory-unavailable = Could not resolve the current directory: { $error }
