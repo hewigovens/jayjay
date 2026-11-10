@@ -4,6 +4,9 @@ mod macos;
 #[cfg(all(unix, not(target_os = "macos")))]
 mod linux;
 pub(crate) mod powershell;
+// Rex has no app outside macOS yet, so nothing else launches it.
+#[cfg(target_os = "macos")]
+mod rex;
 #[cfg(unix)]
 mod unix;
 #[cfg(windows)]

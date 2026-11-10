@@ -2,6 +2,7 @@ use std::process::Command;
 
 use super::super::launcher::{EditorLaunch, detach_stdio};
 use super::super::terminal::Terminal;
+use super::rex;
 use super::unix::shell_line;
 
 pub const DEFAULT_EDITOR: &str = "vscode";
@@ -52,17 +53,16 @@ pub fn spawn_terminal(term: Terminal, cwd: &str, command: Option<&str>, custom: 
         }
         Terminal::ITerm => run_applescript(&iterm_script(&shell_line(cwd, command))),
         Terminal::Ghostty => spawn_ghostty(cwd, command),
-        Terminal::Rex if command.is_none() => open_rex(cwd),
-        Terminal::Rex
-        | Terminal::PowerShell
+        Terminal::Rex => match command {
+            Some(c) => rex::run(cwd, c, |cwd, c| terminal_app_script(cwd, Some(c))),
+            None => rex::open(cwd),
+        },
+        Terminal::PowerShell
         | Terminal::GnomeTerminal
         | Terminal::Konsole
         | Terminal::LxTerminal
         | Terminal::Alacritty
-        | Terminal::Kitty => run_applescript(&format!(
-            "tell application \"Terminal\" to do script \"{}\"",
-            escape_double_quotes(&shell_line(cwd, command)),
-        )),
+        | Terminal::Kitty => terminal_app_script(cwd, command),
     }
 }
 
@@ -81,11 +81,11 @@ fn spawn_ghostty(cwd: &str, command: Option<&str>) -> bool {
     detach_stdio(&mut cmd).spawn().is_ok()
 }
 
-/// Rex's folder-open handler cannot launch a command.
-fn open_rex(cwd: &str) -> bool {
-    detach_stdio(Command::new("/usr/bin/open").args(["-b", "com.superlogical.rex", cwd]))
-        .spawn()
-        .is_ok()
+fn terminal_app_script(cwd: &str, command: Option<&str>) -> bool {
+    run_applescript(&format!(
+        "tell application \"Terminal\" to do script \"{}\"",
+        escape_double_quotes(&shell_line(cwd, command)),
+    ))
 }
 
 fn run_applescript(source: &str) -> bool {
