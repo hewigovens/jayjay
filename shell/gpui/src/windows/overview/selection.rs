@@ -1,6 +1,8 @@
 use std::ops::Range;
 
-use gpui::{App, AppContext, Bounds, Context, KeyDownEvent, Pixels, Window, point, px};
+use gpui::{
+    App, AppContext, Bounds, Context, KeyDownEvent, Pixels, SharedString, Window, point, px,
+};
 use jayjay_core::overview::OverviewGroup;
 use jayjay_core::{FileDiffStats, OverviewLane};
 
@@ -13,7 +15,7 @@ pub(super) struct Selection {
     pub(super) lane: Option<String>,
     pub(super) change: Option<String>,
     pub(super) lane_panel: bool,
-    pub(super) files: Option<Vec<FileDiffStats>>,
+    pub(super) files: Option<Result<Vec<FileDiffStats>, SharedString>>,
     pub(super) text: Option<PanelText>,
 }
 
@@ -128,7 +130,8 @@ impl OverviewView {
             let requested = commit_id.clone();
             let files = cx
                 .background_spawn(async move {
-                    repo.diff_file_stats(&requested, false).unwrap_or_default()
+                    repo.diff_file_stats(&requested, false)
+                        .map_err(crate::app::error_text)
                 })
                 .await;
             let _ = this.update(cx, |view, cx| {

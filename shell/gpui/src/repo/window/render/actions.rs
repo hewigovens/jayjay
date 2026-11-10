@@ -90,6 +90,7 @@ impl RepoWindow {
             .on_action(
                 cx.listener(|view, _: &crate::app::actions::CloseWindow, window, cx| {
                     if !view.dismiss_overlay(window, cx) {
+                        crate::repo::window::remember_window_bounds(window, cx);
                         RepoListWindow::open_if_last_repo_window(cx);
                         window.remove_window();
                     }

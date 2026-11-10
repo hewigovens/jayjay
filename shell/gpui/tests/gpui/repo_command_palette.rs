@@ -43,7 +43,7 @@ fn command_palette_supports_line_editing_keys(cx: &mut TestAppContext) {
         assert_eq!(palette.query_text(), "alpha beta |gamma");
     });
 
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("alpha beta gamma");
     cx.simulate_keystrokes("alt-backspace");
 
@@ -59,11 +59,52 @@ fn command_palette_supports_line_editing_keys(cx: &mut TestAppContext) {
     });
 
     cx.simulate_input("alpha beta gamma");
-    cx.simulate_keystrokes("ctrl-a alt-right ctrl-k");
+    cx.simulate_keystrokes("home alt-right ctrl-k");
 
     palette.read_with(cx, |palette, _| {
         assert_eq!(palette.query_text(), "alpha");
     });
+}
+
+#[gpui::test]
+fn command_palette_copies_cuts_and_pastes_with_the_platform_shortcuts(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    let (palette, cx) = cx.add_window_view(|_, cx| CommandPalette::new("".into(), None, cx));
+    let cx: &mut VisualTestContext = cx;
+
+    cx.focus(&palette);
+    cx.simulate_input("alpha");
+    cx.simulate_keystrokes("secondary-a secondary-x");
+    palette.read_with(cx, |palette, _| assert_eq!(palette.query_text(), ""));
+    assert_eq!(clipboard_text(cx).as_deref(), Some("alpha"));
+
+    cx.simulate_keystrokes("secondary-v secondary-a secondary-c");
+    cx.simulate_input("beta ");
+    cx.simulate_keystrokes("secondary-v");
+    palette.read_with(cx, |palette, _| {
+        assert_eq!(palette.query_text(), "beta alpha")
+    });
+}
+
+#[gpui::test]
+fn command_palette_scrolls_the_keyboard_selection_into_view(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    cx.update(|cx| CommandPalette::open("".into(), None, cx));
+    let window = cx.windows().last().copied().expect("palette window");
+    let mut palette_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut palette_cx);
+    let first_row = "command-palette-action-refresh";
+    let list_top = palette_cx.debug_bounds(first_row).expect("first row").top();
+
+    for _ in 0..80 {
+        palette_cx.simulate_keystrokes("down");
+    }
+    settle_visual(&mut palette_cx);
+
+    assert!(
+        palette_cx.debug_bounds(first_row).expect("first row").top() < list_top,
+        "moving the selection to the last row must scroll the list"
+    );
 }
 
 #[gpui::test]
@@ -184,7 +225,7 @@ fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
         assert_eq!(view.find_query_text(), Some("alpha beta |gamma"));
     });
 
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("alpha beta gamma");
     cx.simulate_keystrokes("alt-backspace");
 

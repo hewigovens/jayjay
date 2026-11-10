@@ -166,7 +166,10 @@ fn register_global_actions(cx: &mut App) {
     cx.on_action(|_: &OpenAbout, cx| {
         SettingsView::open_section(SettingsSection::About, cx);
     });
-    cx.on_action(|_: &Quit, cx| cx.quit());
+    cx.on_action(|_: &Quit, cx| {
+        crate::repo::window::remember_frontmost_repo_window_bounds(cx);
+        cx.quit();
+    });
     cx.on_action(|_: &OpenRepository, cx| prompt_open_repository(cx));
     cx.on_action(|_: &OpenSshRepository, cx| {
         crate::windows::open_remote_repository::OpenRemoteRepositoryView::open(cx);

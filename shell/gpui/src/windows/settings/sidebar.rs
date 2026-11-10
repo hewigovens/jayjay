@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, App, ClickEvent, Context, Focusable, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, App, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement,
+    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
 use super::{SettingsSection, SettingsView};
@@ -57,18 +57,7 @@ pub(super) fn sidebar(
                     }))
                 })
                 .on_click(cx.listener(move |this, _: &ClickEvent, window, cx| {
-                    if this.section == section {
-                        return;
-                    }
-                    this.shortcuts
-                        .update(cx, |shortcuts, cx| shortcuts.cancel(cx));
-                    this.focus_handle(cx).focus(window, cx);
-                    this.section = section;
-                    this.open_dropdown = None;
-                    this.fonts.pending_dropdown = None;
-                    this.scroll.set_offset(Default::default());
-                    this.load_section(section, cx);
-                    cx.notify();
+                    this.select_section(section, window, cx);
                 }))
                 .child(
                     div()

@@ -37,6 +37,17 @@ pub struct CloneRepositoryView {
 
 impl CloneRepositoryView {
     pub fn open(cx: &mut App) {
+        if let Some(handle) = cx
+            .windows()
+            .into_iter()
+            .find_map(|handle| handle.downcast::<Self>())
+        {
+            let _ = handle.update(cx, |view, window, cx| {
+                window.activate_window();
+                window.focus(&view.source.read(cx).focus_handle(cx), cx);
+            });
+            return;
+        }
         let location =
             CloneRequest::default_location(&crate::app::config::current(cx).recent_repos);
         let bounds = Bounds::centered(None, size(px(520.), px(250.)), cx);

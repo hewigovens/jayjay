@@ -149,22 +149,55 @@ impl AppConfig {
         AppDirs::new().map(|dirs| dirs.config.join("config.toml"))
     }
 
-    pub fn load() -> Self {
+    /// Errs when the file cannot be read or backed up, so the caller can avoid saving over values it never saw.
+    pub fn load() -> std::io::Result<Self> {
         let Some(path) = Self::config_path() else {
-            return Self::default();
+            return Ok(Self::default());
         };
-        match std::fs::read_to_string(&path) {
-            Ok(contents) => Self::parse(&contents),
-            Err(_) => Self::default(),
+        let with_path = |error: std::io::Error| {
+            std::io::Error::new(error.kind(), format!("{}: {error}", path.display()))
+        };
+        let contents = match std::fs::read_to_string(&path) {
+            Ok(contents) => contents,
+            Err(error) if error.kind() == std::io::ErrorKind::NotFound => {
+                return Ok(Self::default());
+            }
+            Err(error) => return Err(with_path(error)),
+        };
+        let (config, complete) = Self::parse(&contents).unwrap_or_else(|error| {
+            log::warn!("config.toml: {} is not valid TOML: {error}", path.display());
+            (Self::default(), false)
+        });
+        if !complete {
+            let backup = path.with_extension("toml.bak");
+            std::fs::copy(&path, &backup).map_err(with_path)?;
+            log::warn!(
+                "config.toml: {} has values that could not be read; the original is kept at {}",
+                path.display(),
+                backup.display()
+            );
         }
+        Ok(config)
     }
 
-    pub(crate) fn parse(contents: &str) -> Self {
-        let mut config: Self = toml::from_str(contents).unwrap_or_default();
+    /// The flag is false when a value was dropped, so the caller knows a save would lose it.
+    pub(crate) fn parse(contents: &str) -> Result<(Self, bool), toml::de::Error> {
+        let table: toml::Table = toml::from_str(contents)?;
+        let (mut config, complete) = match toml::Value::Table(table.clone()).try_into() {
+            Ok(config) => (config, true),
+            Err(_) => (Self::from_valid_entries(table), false),
+        };
         config
             .interface_font_size
             .get_or_insert(config.code_font_size);
-        config
+        Ok((config, complete))
+    }
+
+    /// Drops only the values that fail to deserialize, so one bad entry does not reset every other setting.
+    fn from_valid_entries(table: toml::Table) -> Self {
+        let mut kept = toml::Table::new();
+        keep_valid_entries(&mut kept, &[], table);
+        toml::Value::Table(kept).try_into().unwrap_or_default()
     }
 
     pub(super) fn save(&self) -> std::io::Result<()> {
@@ -202,6 +235,37 @@ impl AppConfig {
     }
 }
 
+fn keep_valid_entries(root: &mut toml::Table, path: &[String], entries: toml::Table) {
+    let is_valid = |root: &toml::Table| toml::Value::Table(root.clone()).try_into::<AppConfig>();
+    for (key, value) in entries {
+        let nested = value.as_table().cloned();
+        table_at(root, path).insert(key.clone(), value);
+        let Err(error) = is_valid(root) else {
+            continue;
+        };
+        let mut entry_path = path.to_vec();
+        entry_path.push(key.clone());
+        if let Some(entries) = nested {
+            table_at(root, path).insert(key.clone(), toml::Table::new().into());
+            if is_valid(root).is_ok() {
+                keep_valid_entries(root, &entry_path, entries);
+                continue;
+            }
+        }
+        table_at(root, path).remove(&key);
+        log::warn!("config.toml: ignoring `{}`: {error}", entry_path.join("."));
+    }
+}
+
+fn table_at<'a>(root: &'a mut toml::Table, path: &[String]) -> &'a mut toml::Table {
+    path.iter().fold(root, |table, key| {
+        table
+            .get_mut(key)
+            .and_then(toml::Value::as_table_mut)
+            .expect("parent table kept before its entries")
+    })
+}
+
 fn normalize_repo_path(path: &Path) -> String {
     match jayjay_core::ssh::RemoteLocation::from_path(path) {
         Some(location) => location.encode(),
@@ -226,7 +290,26 @@ mod tests {
 
     #[test]
     fn empty_config_file_uses_defaults() {
-        assert_eq!(AppConfig::parse(""), AppConfig::default());
+        assert_eq!(AppConfig::parse("").unwrap(), (AppConfig::default(), true));
+    }
+
+    #[test]
+    fn a_file_that_is_not_toml_is_an_error() {
+        assert!(AppConfig::parse("appearance = [").is_err());
+    }
+
+    #[test]
+    fn one_invalid_value_keeps_the_other_settings() {
+        let (cfg, complete) = AppConfig::parse(
+            "appearance = \"Dark\"\nrecent_repos = [\"/r\"]\n[diff]\ntree_file_list = 3\nside_by_side = true\n[telemetry]\nenabled = false\n",
+        )
+        .unwrap();
+        assert!(!complete);
+        assert_eq!(cfg.appearance, AppearanceMode::System);
+        assert_eq!(cfg.recent_repos, ["/r"]);
+        assert!(cfg.diff.side_by_side);
+        assert!(!cfg.diff.tree_file_list);
+        assert!(!cfg.telemetry.enabled);
     }
 
     #[test]
@@ -296,7 +379,7 @@ mod tests {
 
     #[test]
     fn pre_split_config_keeps_the_code_font_and_seeds_the_interface_size() {
-        let config = AppConfig::parse("font_family = \"menlo\"\nfont_size = 15.0\n");
+        let (config, _) = AppConfig::parse("font_family = \"menlo\"\nfont_size = 15.0\n").unwrap();
         assert_eq!(config.code_font_family, "menlo");
         assert_eq!(config.code_font_size(), 15.);
         assert_eq!(config.interface_font_family, "");

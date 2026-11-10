@@ -120,7 +120,7 @@ impl OverviewView {
         let actions = panel_actions([show_in_graph_button(t, cx, move |view, cx| {
             view.show_in_graph(lane_ix, Some(commit_id.clone()), cx);
         })]);
-        let files = file_list(self.selection.files.as_deref(), t);
+        let files = file_list(self.selection.files.as_ref(), t);
         panel_frame(
             "overview-change-panel",
             t,
@@ -259,7 +259,10 @@ fn section_title(title: impl Into<SharedString>, t: &Theme) -> gpui::Div {
         .child(title.into())
 }
 
-pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElement {
+pub(super) fn file_list(
+    files: Option<&Result<Vec<FileDiffStats>, SharedString>>,
+    t: &Theme,
+) -> AnyElement {
     let note = |text: String| {
         div()
             .text_size(ui_font_size(11.))
@@ -267,8 +270,20 @@ pub(super) fn file_list(files: Option<&[FileDiffStats]>, t: &Theme) -> AnyElemen
             .child(text)
             .into_any_element()
     };
-    let Some(files) = files else {
-        return loading_label(jayjay_i18n::diff::loading_files_ellipsis(), t).into_any_element();
+    let files = match files {
+        None => {
+            return loading_label(jayjay_i18n::diff::loading_files_ellipsis(), t)
+                .into_any_element();
+        }
+        Some(Err(error)) => {
+            return div()
+                .debug_selector(|| "overview-files-error".to_owned())
+                .text_size(ui_font_size(11.))
+                .text_color(rgb(t.error_fg))
+                .child(error.clone())
+                .into_any_element();
+        }
+        Some(Ok(files)) => files,
     };
     if files.is_empty() {
         return note(jayjay_i18n::overview::no_file_changes());

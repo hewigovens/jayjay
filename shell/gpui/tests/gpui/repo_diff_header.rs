@@ -880,3 +880,42 @@ fn open_format_repo_with_selected_file<'a>(
 
     (fixture, view, cx)
 }
+
+#[gpui::test]
+fn annotate_shows_why_blame_failed_to_load(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    let (view, cx) = crate::harness::open_fixture(&fixture, cx);
+    select_file(&view, "README.md", cx);
+    let blob = jj_test::git_stdout(
+        &fixture.path,
+        &[
+            "rev-parse",
+            &format!(
+                "{}:README.md",
+                crate::harness::selected_commit_id(&view, cx)
+            ),
+        ],
+    );
+    fs::remove_file(
+        fixture
+            .path
+            .join(".git/objects")
+            .join(&blob[..2])
+            .join(&blob[2..]),
+    )
+    .expect("drop the blob");
+
+    view.update_in(cx, |view, _, cx| {
+        view.dispatch_context_action(
+            jayjay_gpui::ui::context_menu::ContextAction::ToggleAnnotateFor("README.md".into()),
+            cx,
+        )
+    });
+    settle_visual(cx);
+
+    assert!(
+        cx.debug_bounds("annotate-error").is_some(),
+        "a failed blame must show its error, not the generic unavailable note"
+    );
+}

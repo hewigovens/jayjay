@@ -1,7 +1,7 @@
 use std::path::{Path, PathBuf};
 
 use gpui::{
-    AnyWindowHandle, App, AppContext, Bounds, Entity, Point, TitlebarOptions, WindowBounds,
+    AnyWindowHandle, App, AppContext, Bounds, Entity, Point, TitlebarOptions, Window, WindowBounds,
     WindowHandle, WindowOptions, px, size,
 };
 use jayjay_core::repositories::normalize_repository_path;
@@ -21,13 +21,7 @@ pub fn open_repo_window(path: PathBuf, cx: &mut App) {
         return;
     }
     let bounds = Bounds::centered(None, size(px(1080.), px(720.)), cx);
-    if let Ok(handle) = RepoWindow::open(path, WindowBounds::Windowed(bounds), cx) {
-        let _ = handle.update(cx, |_, window, cx| {
-            window.on_window_should_close(cx, |_, cx| {
-                RepoListWindow::open_if_last_repo_window(cx);
-                true
-            });
-        });
+    if RepoWindow::open(path, WindowBounds::Windowed(bounds), cx).is_ok() {
         cx.defer(RepoListWindow::close);
     }
 }
@@ -64,8 +58,35 @@ impl RepoWindow {
                 })
             },
         )?;
-        handle.update(cx, |view, window, cx| view.attach_to_window(window, cx))?;
+        handle.update(cx, |view, window, cx| {
+            view.attach_to_window(window, cx);
+            window.on_window_should_close(cx, |window, cx| {
+                remember_window_bounds(window, cx);
+                RepoListWindow::open_if_last_repo_window(cx);
+                true
+            });
+        })?;
         Ok(handle)
+    }
+}
+
+pub(crate) fn remember_window_bounds(window: &Window, cx: &mut App) {
+    let bounds = window.window_bounds();
+    config::update(cx, move |c| c.window = bounds.into());
+}
+
+/// Quit closes windows without their close hooks, so the frontmost repo window saves its bounds first.
+pub(crate) fn remember_frontmost_repo_window_bounds(cx: &mut App) {
+    let repo_window = cx
+        .active_window()
+        .and_then(|handle| handle.downcast::<RepoWindow>())
+        .or_else(|| {
+            cx.windows()
+                .into_iter()
+                .find_map(|handle| handle.downcast::<RepoWindow>())
+        });
+    if let Some(handle) = repo_window {
+        let _ = handle.update(cx, |_, window, cx| remember_window_bounds(window, cx));
     }
 }
 

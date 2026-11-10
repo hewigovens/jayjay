@@ -30,9 +30,11 @@ impl RepoViewModel {
         Self::background_update(
             cx,
             async move {
-                repo.annotate_file(&rev, &path)
-                    .ok()
-                    .map(|lines| Arc::new(Annotation::new(&path, lines)))
+                Some(
+                    repo.annotate_file(&rev, &path)
+                        .map(|lines| Arc::new(Annotation::new(&path, lines)))
+                        .map_err(crate::app::error_text),
+                )
             },
             move |vm, result, cx| {
                 if vm.loading.annotate_gen != generation {

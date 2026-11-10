@@ -243,3 +243,34 @@ fn symlinked_directories_are_not_followed() {
         "writes behind a symlink must not reach the watcher, saw {seen:?}"
     );
 }
+
+#[test]
+fn a_save_inside_the_debounce_window_still_reaches_the_view() {
+    let fixture = jj_test::LinearFixture::build();
+    let (tx, rx) = flume::unbounded::<FsEvent>();
+    let filter: IsRelevantWcChange = Arc::new(|_| true);
+    let _watcher = RepoFsWatcher::new(&fixture.path, tx, filter).expect("start watcher");
+    std::thread::sleep(Duration::from_millis(500));
+    while rx.try_recv().is_ok() {}
+
+    std::fs::write(fixture.path.join("README.md"), "first save\n").expect("first save");
+    assert_eq!(
+        rx.recv_timeout(Duration::from_secs(5)),
+        Ok(FsEvent::WorkingCopy)
+    );
+    std::thread::sleep(Duration::from_millis(300));
+    let second_save = Instant::now();
+    std::fs::write(fixture.path.join("README.md"), "second save\n").expect("second save");
+
+    let deadline = second_save + WC_DEBOUNCE * 2;
+    let mut after_second_save = false;
+    while !after_second_save && Instant::now() < deadline {
+        if let Ok(FsEvent::WorkingCopy) = rx.recv_timeout(Duration::from_millis(100)) {
+            after_second_save = Instant::now() > second_save;
+        }
+    }
+    assert!(
+        after_second_save,
+        "a save inside the debounce window must trigger a trailing refresh"
+    );
+}

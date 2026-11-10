@@ -7,10 +7,40 @@ use jayjay_core::{HostLogin, RepoHost, TokenSource};
 use jayjay_gpui::app::actions::OpenAbout;
 use jayjay_gpui::app::config::current as current_config;
 use jayjay_gpui::repo::window::shared_review_store;
+use jayjay_gpui::windows::clone_repository::CloneRepositoryView;
+use jayjay_gpui::windows::keyboard_shortcuts::KeyboardShortcutsView;
 use jayjay_gpui::windows::settings::cli_diagnostics::CliDiagnostics;
 use jayjay_gpui::windows::settings::tools::AiToolStatuses;
 use jayjay_gpui::windows::settings::{SettingsSection, SettingsView};
 use jj_test::{LinearFixture, run_jj_in};
+
+#[gpui::test]
+fn reopening_settings_shortcuts_and_clone_focuses_the_existing_window(cx: &mut TestAppContext) {
+    install_test_globals(cx);
+    for _ in 0..2 {
+        cx.update(|cx| {
+            SettingsView::open(cx);
+            KeyboardShortcutsView::open(cx);
+            CloneRepositoryView::open(cx);
+        });
+    }
+    assert_eq!(cx.windows().len(), 3);
+
+    cx.update(|cx| SettingsView::open_section(SettingsSection::Fonts, cx));
+    let window = cx
+        .windows()
+        .into_iter()
+        .find(|window| window.downcast::<SettingsView>().is_some())
+        .expect("settings window");
+    let mut settings_cx = VisualTestContext::from_window(window, cx);
+    settle_visual(&mut settings_cx);
+    assert!(
+        settings_cx
+            .debug_bounds("dd-btn-interface-font-family")
+            .is_some(),
+        "reopening at a section shows that section"
+    );
+}
 
 #[gpui::test]
 fn settings_content_scrolls_and_jujutsu_config_loads_from_state(cx: &mut TestAppContext) {

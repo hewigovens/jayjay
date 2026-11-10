@@ -76,6 +76,21 @@ fn cmd_w_dismisses_open_overlay_before_closing_repo_window(cx: &mut TestAppConte
 }
 
 #[gpui::test]
+fn cmd_w_remembers_the_window_bounds(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    install_test_globals(cx);
+    cx.update(|cx| cx.bind_keys([KeyBinding::new("cmd-w", CloseWindow, None)]));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+    focus_view(&view, cx);
+
+    cx.simulate_keystrokes("cmd-w");
+
+    assert!(cx.cx.read(|cx| config::current(cx).window.is_set()));
+}
+
+#[gpui::test]
 fn native_close_of_last_repo_window_opens_repo_list(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);

@@ -1,8 +1,8 @@
 use std::path::{Path, PathBuf};
-use std::sync::Mutex;
+use std::sync::{Arc, Mutex};
 use std::time::Instant;
 
-use flume::Sender;
+use flume::{Receiver, RecvTimeoutError, Sender};
 use notify::{Config, RecommendedWatcher, RecursiveMode, Watcher};
 
 use super::debounce::{Debounce, next_event};
@@ -26,20 +26,32 @@ impl RepoFsWatcher {
             op_heads_dir: op_heads_dir.clone(),
             repo_root: repo_root.clone(),
         };
-        let debounce = Mutex::new(Debounce::fresh());
+        let debounce = Arc::new(Mutex::new(Debounce::fresh()));
+        let (wake_tx, wake_rx) = flume::bounded::<()>(1);
+        spawn_flusher(
+            debounce.clone(),
+            wake_rx,
+            tx.clone(),
+            is_relevant_wc_change.clone(),
+        );
 
         let handler = move |res: notify::Result<notify::Event>| {
             let Ok(event) = res else {
                 return;
             };
-            if let Some(out) = next_event(
+            match next_event(
                 &classifier,
                 &debounce,
                 &event,
                 Instant::now(),
                 is_relevant_wc_change.as_ref(),
             ) {
-                let _ = tx.send(out);
+                Some(out) => {
+                    let _ = tx.send(out);
+                }
+                None => {
+                    let _ = wake_tx.try_send(());
+                }
             }
         };
         // pnpm's node_modules symlinks make the inotify walk revisit the same trees.
@@ -54,6 +66,34 @@ impl RepoFsWatcher {
         }
         Some(Self { _watcher: watcher })
     }
+}
+
+/// Replays events held by the debounce window; exits once the watcher's handler, and with it `wake`, is dropped.
+fn spawn_flusher(
+    debounce: Arc<Mutex<Debounce>>,
+    wake: Receiver<()>,
+    tx: Sender<FsEvent>,
+    is_relevant_wc_change: IsRelevantWcChange,
+) {
+    std::thread::spawn(move || {
+        loop {
+            let due = debounce.lock().expect("debounce lock").next_flush();
+            let woke = match due {
+                Some(due) => wake.recv_deadline(due),
+                None => wake.recv().map_err(|_| RecvTimeoutError::Disconnected),
+            };
+            if woke == Err(RecvTimeoutError::Disconnected) {
+                return;
+            }
+            let events = debounce
+                .lock()
+                .expect("debounce lock")
+                .flush(Instant::now(), is_relevant_wc_change.as_ref());
+            if events.into_iter().any(|event| tx.send(event).is_err()) {
+                return;
+            }
+        }
+    });
 }
 
 /// Operations land in the primary repo; a secondary workspace's `.jj/repo` is only a pointer to it.

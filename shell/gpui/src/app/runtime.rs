@@ -16,7 +16,13 @@ const SETI_FONT: &[u8] = include_bytes!("../../../../assets/fonts/Seti.ttf");
 pub(crate) fn run(launch: GuiLaunch) {
     let launched_at = Instant::now();
     jayjay_core::LogFile::install("gpui", env!("CARGO_PKG_VERSION"));
-    let cfg = AppConfig::load();
+    let (cfg, persist_config) = match AppConfig::load() {
+        Ok(cfg) => (cfg, true),
+        Err(error) => {
+            log::error!("config not loaded; settings changes stay unsaved this session: {error}");
+            (AppConfig::default(), false)
+        }
+    };
     jayjay_i18n::set_preferred_languages(&cfg.preferred_languages());
     jayjay_i18n::set_number_locale(&crate::platform::numeric_locale());
     super::cli_install::repair_broken_link();
@@ -36,7 +42,11 @@ pub(crate) fn run(launch: GuiLaunch) {
         cx.bind_keys(super::actions::app_key_bindings(&cfg.shortcut_overrides()));
 
         let fonts_started = Instant::now();
-        cx.set_global(AppConfigStore::new(cfg));
+        cx.set_global(if persist_config {
+            AppConfigStore::new(cfg)
+        } else {
+            AppConfigStore::new_ephemeral(cfg)
+        });
         log::info!(
             "fonts resolved in {}ms",
             fonts_started.elapsed().as_millis()

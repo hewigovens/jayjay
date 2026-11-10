@@ -133,15 +133,20 @@ pub fn diff_view(
         if state.loading_annotate {
             loading_status(jayjay_i18n::diff::loading_annotations_ellipsis(), &t)
         } else if let Some(annotation) = state.annotation.as_ref() {
-            if annotation.is_empty() {
-                placeholder_inner(jayjay_i18n::diff::no_annotations_available(), &t)
-                    .into_any_element()
-            } else {
-                crate::diff::annotate_view::annotate_body(
+            match annotation {
+                Err(error) => placeholder_inner(error.clone(), &t)
+                    .text_color(rgb(t.error_fg))
+                    .debug_selector(|| "annotate-error".to_owned())
+                    .into_any_element(),
+                Ok(annotation) if annotation.is_empty() => {
+                    placeholder_inner(jayjay_i18n::diff::no_annotations_available(), &t)
+                        .into_any_element()
+                }
+                Ok(annotation) => crate::diff::annotate_view::annotate_body(
                     annotation.clone(),
                     t.clone(),
                     scroll.clone(),
-                )
+                ),
             }
         } else {
             placeholder_inner(jayjay_i18n::diff::annotations_unavailable(), &t).into_any_element()

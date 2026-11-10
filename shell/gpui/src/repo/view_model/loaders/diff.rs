@@ -17,6 +17,10 @@ impl RepoViewModel {
         // Every request supersedes the previous one, even a cache hit, or an older in-flight miss can overwrite the cached selection.
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         let generation = self.loading.diff_gen;
+        if matches!(self.detail_mode, DetailMode::Annotate) {
+            self.loading.annotate_gen = self.loading.annotate_gen.wrapping_add(1);
+            self.annotation = None;
+        }
         let compare_from_rev = self
             .compare
             .as_ref()

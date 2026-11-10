@@ -22,7 +22,7 @@ impl AppConfigStore {
         }
     }
 
-    /// Test-only config state that never writes the user's real config file.
+    /// Never writes the config file: used by tests, and when the user's file could not be loaded so defaults must not replace it.
     pub fn new_ephemeral(config: AppConfig) -> Self {
         fonts::sync_from_config(&config);
         Self {

@@ -40,7 +40,7 @@ impl LineEdit {
         let key = ev.keystroke.key.as_str();
         let m = &ev.keystroke.modifiers;
 
-        if m.platform && !m.alt && !m.control {
+        if m.secondary() && !m.alt && !(m.platform && m.control) {
             match key {
                 "a" => {
                     self.select_all();
@@ -68,11 +68,12 @@ impl LineEdit {
                         })
                         .unwrap_or_else(|| LineEditKeyResult::handled(false));
                 }
-                "backspace" | "delete" => {
-                    return LineEditKeyResult::handled(self.delete_to_start());
-                }
                 _ => {}
             }
+        }
+
+        if m.platform && !m.alt && !m.control && matches!(key, "backspace" | "delete") {
+            return LineEditKeyResult::handled(self.delete_to_start());
         }
 
         if m.control && !m.platform && !m.alt {

@@ -57,10 +57,29 @@ pub struct SettingsView {
 
 impl SettingsView {
     pub fn open(cx: &mut App) {
-        Self::open_section(SettingsSection::Appearance, cx);
+        Self::open_window(None, cx);
     }
 
     pub fn open_section(section: SettingsSection, cx: &mut App) {
+        Self::open_window(Some(section), cx);
+    }
+
+    fn open_window(section: Option<SettingsSection>, cx: &mut App) {
+        if let Some(handle) = cx
+            .windows()
+            .into_iter()
+            .find_map(|handle| handle.downcast::<Self>())
+        {
+            let _ = handle.update(cx, |view, window, cx| {
+                window.activate_window();
+                if let Some(section) = section {
+                    view.select_section(section, window, cx);
+                }
+                window.focus(&view.focus_handle, cx);
+            });
+            return;
+        }
+        let section = section.unwrap_or(SettingsSection::Appearance);
         let bounds = Bounds::centered(None, size(px(800.), px(560.)), cx);
         let window_handle = cx
             .open_window(
@@ -293,6 +312,26 @@ impl Render for SettingsView {
 }
 
 impl SettingsView {
+    pub(super) fn select_section(
+        &mut self,
+        section: SettingsSection,
+        window: &mut Window,
+        cx: &mut Context<Self>,
+    ) {
+        if self.section == section {
+            return;
+        }
+        self.shortcuts
+            .update(cx, |shortcuts, cx| shortcuts.cancel(cx));
+        self.focus_handle.focus(window, cx);
+        self.section = section;
+        self.open_dropdown = None;
+        self.fonts.pending_dropdown = None;
+        self.scroll.set_offset(Default::default());
+        self.load_section(section, cx);
+        cx.notify();
+    }
+
     pub(super) fn load_section(&mut self, section: SettingsSection, cx: &mut Context<Self>) {
         match section {
             SettingsSection::Fonts => self.ensure_font_catalog_loaded(cx),

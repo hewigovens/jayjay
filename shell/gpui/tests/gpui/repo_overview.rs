@@ -249,3 +249,44 @@ fn overscrolling_a_tall_overview_builds_the_lanes_it_settles_on(cx: &mut TestApp
     scroll_wheel(&mut overview_cx, anchor, px(100_000.));
     assert_eq!(built_lanes(&lanes, &mut overview_cx), top);
 }
+
+#[gpui::test]
+fn change_panel_shows_why_its_files_failed_to_load(cx: &mut TestAppContext) {
+    let fixture = fixture_with_lanes();
+    std::fs::write(fixture.path.join("rank.txt"), "unique rank body\n").expect("write rank.txt");
+    run_jj_in(
+        &fixture.path,
+        &[
+            "squash",
+            "--into",
+            "subject(\"search: rank\")",
+            "root:rank.txt",
+        ],
+    );
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let rank = change_with_subject(&view, repo_cx, "search: rank");
+    let blob = jj_test::git_stdout(
+        &fixture.path,
+        &["rev-parse", &format!("{}:rank.txt", rank.commit_id.id)],
+    );
+    std::fs::remove_file(
+        fixture
+            .path
+            .join(".git/objects")
+            .join(&blob[..2])
+            .join(&blob[2..]),
+    )
+    .expect("drop the blob");
+    let mut overview_cx = open_overview(&view, repo_cx);
+
+    overview_cx.dispatch_action(OpenOverviewFilter);
+    overview_cx.simulate_input("rank");
+    overview_cx.simulate_keystrokes("enter down");
+    settle_visual(&mut overview_cx);
+
+    assert!(overview_cx.debug_bounds("overview-change-panel").is_some());
+    assert!(
+        overview_cx.debug_bounds("overview-files-error").is_some(),
+        "a failed file load must not read as an empty change"
+    );
+}

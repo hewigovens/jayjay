@@ -1,6 +1,4 @@
-use std::borrow::Cow;
-
-use gpui::{App, Entity, FocusHandle, Focusable, SharedString, Subscription};
+use gpui::{App, Entity, FocusHandle, Focusable, ScrollHandle, SharedString, Subscription};
 
 use super::rows::DynamicRow;
 use crate::repo::window::RepoWindow;
@@ -13,7 +11,8 @@ pub struct CommandPalette {
     pub(super) repo_path: SharedString,
     pub(super) repo_window: Option<Entity<RepoWindow>>,
     pub(super) dynamic_rows: Vec<DynamicRow>,
-    pub(super) candidates: Cow<'static, [String]>,
+    pub(super) candidates: Vec<String>,
+    pub(super) list_scroll: ScrollHandle,
     pub(super) output: CommandOutput,
     pub(super) history: Vec<String>,
     pub(super) history_index: Option<usize>,

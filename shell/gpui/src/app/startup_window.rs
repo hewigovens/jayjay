@@ -72,33 +72,11 @@ pub fn open_startup_window(path: Option<PathBuf>, cx: &mut App) {
         WindowBounds::Windowed(initial_bounds)
     };
 
-    let window_handle = match RepoWindow::open(path, initial_window_bounds, cx) {
-        Ok(handle) => handle,
-        Err(error) => {
-            log::error!("failed to open window: {error}");
-            cx.quit();
-            return;
-        }
-    };
-    let _ = window_handle.update(cx, |_, window, cx| {
-        window.on_window_should_close(cx, |window, cx| {
-            let (bounds, maximized) = match window.window_bounds() {
-                WindowBounds::Maximized(bounds) => (bounds, true),
-                WindowBounds::Windowed(bounds) | WindowBounds::Fullscreen(bounds) => {
-                    (bounds, false)
-                }
-            };
-            config::update(cx, move |c| {
-                c.window.x = f32::from(bounds.origin.x);
-                c.window.y = f32::from(bounds.origin.y);
-                c.window.width = f32::from(bounds.size.width);
-                c.window.height = f32::from(bounds.size.height);
-                c.window.maximized = maximized;
-            });
-            RepoListWindow::open_if_last_repo_window(cx);
-            true
-        });
-    });
+    if let Err(error) = RepoWindow::open(path, initial_window_bounds, cx) {
+        log::error!("failed to open window: {error}");
+        cx.quit();
+        return;
+    }
     cx.activate(true);
 }
 

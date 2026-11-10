@@ -55,7 +55,15 @@ pub(super) fn action_list(
         &config::current(cx).shortcut_overrides(),
         KeyPlatform::current(),
     );
-    let mut col = div().flex().flex_col().flex_1().min_h_0().py(px(4.));
+    let mut col = div()
+        .id("command-palette-list")
+        .track_scroll(&palette.list_scroll)
+        .overflow_y_scroll()
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_h_0()
+        .py(px(4.));
     for (vis_ix, action_ix) in visible.iter().enumerate() {
         let Some(row) = rows::row(*action_ix, &palette.dynamic_rows) else {
             continue;

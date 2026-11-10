@@ -1,5 +1,5 @@
 use gpui::{
-    App, AppContext, Bounds, Context, Entity, Focusable, KeyDownEvent, SharedString,
+    App, AppContext, Bounds, Context, Entity, Focusable, KeyDownEvent, ScrollHandle, SharedString,
     TitlebarOptions, Window, WindowBounds, WindowKind, WindowOptions, px, size,
 };
 
@@ -18,8 +18,11 @@ impl CommandPalette {
         repo_window: Option<Entity<RepoWindow>>,
         cx: &mut Context<Self>,
     ) -> Self {
-        cx.observe_global::<AppConfigStore>(|_, cx| cx.notify())
-            .detach();
+        cx.observe_global::<AppConfigStore>(|palette: &mut Self, cx| {
+            palette.candidates = rows::search_candidates(&palette.dynamic_rows);
+            cx.notify();
+        })
+        .detach();
         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
         let dynamic_rows = repo_window
             .as_ref()
@@ -43,6 +46,7 @@ impl CommandPalette {
             repo_window,
             dynamic_rows,
             candidates,
+            list_scroll: ScrollHandle::new(),
             output: CommandOutput::Idle,
             history: Vec::new(),
             history_index: None,
@@ -157,6 +161,7 @@ impl CommandPalette {
         }
         if let Some(next) = navigation::move_index(Some(self.selected), visible_len, direction) {
             self.selected = next;
+            self.list_scroll.scroll_to_item(next);
             cx.notify();
         }
     }
@@ -237,6 +242,7 @@ impl CommandPalette {
 
     fn on_query_edited(&mut self, cx: &mut Context<Self>) {
         self.selected = 0;
+        self.list_scroll.scroll_to_item(0);
         self.history_index = None;
         if !matches!(self.output, CommandOutput::Running { .. }) {
             self.output = CommandOutput::Idle;

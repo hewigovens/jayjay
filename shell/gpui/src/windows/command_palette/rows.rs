@@ -1,7 +1,6 @@
 //! The single mapping from a palette row index to its source — `ACTIONS` first, then help topics, then dynamic rows; search, dispatch, and rendering all consume this one ordering.
 
-use std::borrow::Cow;
-use std::sync::{Arc, OnceLock};
+use std::sync::Arc;
 
 use jayjay_core::{ChangeInfo, ShortId, WorkspaceInfo, revset_presets};
 
@@ -65,30 +64,21 @@ pub(super) fn row(ix: usize, dynamic: &[DynamicRow]) -> Option<PaletteRow<'_>> {
     dynamic.get(dynamic_ix).map(PaletteRow::Dynamic)
 }
 
-/// Fuzzy-search haystacks, one per row in row order; the static sources are built once per process.
-pub(super) fn search_candidates(dynamic: &[DynamicRow]) -> Cow<'static, [String]> {
-    static CANDIDATES: OnceLock<Vec<String>> = OnceLock::new();
-    let base = CANDIDATES.get_or_init(|| {
-        let mut candidates: Vec<String> = ACTIONS
-            .iter()
-            .map(|action| {
-                format!(
-                    "{} {} {}",
-                    (action.label)(),
-                    action.id,
-                    action.keywords.join(" ")
-                )
-            })
-            .collect();
-        candidates.extend(help::topics().iter().map(HelpTopic::search_text));
-        candidates
-    });
-    if dynamic.is_empty() {
-        return Cow::Borrowed(base);
-    }
-    let mut candidates = base.clone();
-    candidates.extend(dynamic.iter().map(|row| row.search.clone()));
-    Cow::Owned(candidates)
+/// Fuzzy-search haystacks, one per row in row order; rebuilt on each config change so they follow the chosen language.
+pub(super) fn search_candidates(dynamic: &[DynamicRow]) -> Vec<String> {
+    ACTIONS
+        .iter()
+        .map(|action| {
+            format!(
+                "{} {} {}",
+                (action.label)(),
+                action.id,
+                action.keywords.join(" ")
+            )
+        })
+        .chain(help::topics().iter().map(HelpTopic::search_text))
+        .chain(dynamic.iter().map(|row| row.search.clone()))
+        .collect()
 }
 
 fn cancel_sync_rows(sync: &SyncActivity) -> Vec<DynamicRow> {

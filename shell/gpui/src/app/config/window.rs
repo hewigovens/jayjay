@@ -1,3 +1,4 @@
+use gpui::WindowBounds;
 use serde::{Deserialize, Serialize};
 
 #[derive(Serialize, Deserialize, Clone, Debug, PartialEq)]
@@ -19,6 +20,22 @@ impl Default for WindowState {
             width: 0.0,
             height: 0.0,
             maximized: false,
+        }
+    }
+}
+
+impl From<WindowBounds> for WindowState {
+    fn from(bounds: WindowBounds) -> Self {
+        let (bounds, maximized) = match bounds {
+            WindowBounds::Maximized(bounds) => (bounds, true),
+            WindowBounds::Windowed(bounds) | WindowBounds::Fullscreen(bounds) => (bounds, false),
+        };
+        Self {
+            x: f32::from(bounds.origin.x),
+            y: f32::from(bounds.origin.y),
+            width: f32::from(bounds.size.width),
+            height: f32::from(bounds.size.height),
+            maximized,
         }
     }
 }

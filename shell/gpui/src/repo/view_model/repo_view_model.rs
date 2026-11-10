@@ -41,7 +41,7 @@ pub struct RepoViewModel {
     /// Loaded with the graph, not on each keystroke.
     pub(crate) vocabulary: RevsetVocabulary,
     pub(crate) detail_mode: DetailMode,
-    pub(crate) annotation: Option<Arc<Annotation>>,
+    pub(crate) annotation: Option<Result<Arc<Annotation>, SharedString>>,
     pub(super) avatar_in_flight: HashSet<String>,
     pub pr_info: Option<PrInfo>,
     pub(crate) pr_host_name: Option<SharedString>,

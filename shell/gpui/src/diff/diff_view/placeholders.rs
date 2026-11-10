@@ -1,4 +1,4 @@
-use gpui::{IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
@@ -62,7 +62,7 @@ pub(super) fn placeholder(
         )
 }
 
-pub(super) fn placeholder_inner(text: impl Into<SharedString>, t: &Theme) -> impl IntoElement {
+pub(super) fn placeholder_inner(text: impl Into<SharedString>, t: &Theme) -> Div {
     div()
         .flex()
         .size_full()

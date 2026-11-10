@@ -77,7 +77,7 @@ pub struct DiffViewState<'a> {
     pub(crate) html_external_url: Option<&'a str>,
     pub(crate) view_mode: DiffViewMode,
     pub(crate) detail_mode: DetailMode,
-    pub(crate) annotation: Option<Arc<Annotation>>,
+    pub(crate) annotation: Option<Result<Arc<Annotation>, gpui::SharedString>>,
     pub(crate) loading_annotate: bool,
     pub(crate) path_just_copied: bool,
     pub(crate) can_resolve_conflict: bool,

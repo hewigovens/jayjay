@@ -23,6 +23,17 @@ pub struct KeyboardShortcutsView {
 
 impl KeyboardShortcutsView {
     pub fn open(cx: &mut App) {
+        if let Some(handle) = cx
+            .windows()
+            .into_iter()
+            .find_map(|handle| handle.downcast::<Self>())
+        {
+            let _ = handle.update(cx, |view, window, cx| {
+                window.activate_window();
+                window.focus(&view.focus_handle, cx);
+            });
+            return;
+        }
         let bounds = Bounds::centered(None, size(px(720.), px(560.)), cx);
         let handle = cx
             .open_window(

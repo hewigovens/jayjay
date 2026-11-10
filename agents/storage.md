@@ -103,7 +103,7 @@ Apple owns the physical preferences-file lifecycle. Code and tests should addres
 
 ### GPUI
 
-`shell/gpui/src/app/config/` owns the serde-backed TOML schema. `AppConfig::load()` returns defaults when the file is absent or malformed; `config::update` clones the current configuration, applies one mutation, saves the complete TOML document, and publishes the new process-global snapshot.
+`shell/gpui/src/app/config/` owns the serde-backed TOML schema. `AppConfig::load()` returns defaults when the file is absent. When a value cannot be read it drops that value, and when the file is not TOML it starts from defaults; either way it first copies the original to `config.toml.bak`, and it fails without saving when the file cannot be read or backed up; `config::update` clones the current configuration, applies one mutation, saves the complete TOML document, and publishes the new process-global snapshot.
 
 Missing TOML fields use defaults and unknown fields are ignored. Tests must install `AppConfigStore::new_ephemeral`, which updates in memory without touching the user's real file.
 
