@@ -14,7 +14,7 @@ use super::cache::RepoCache;
 use super::command_process::RunningJjProcesses;
 use super::git::lfs::LfsCache;
 use super::log;
-use super::resolve::{CommitEmptiness, CommitRefNames};
+use super::resolve::{AliasMaps, CommitEmptiness, CommitRefNames};
 use super::support::{
     block_on_result, canonicalize, load_repo_at_head, load_workspace, load_workspace_internal,
     op_is_ancestor_of,
@@ -30,6 +30,7 @@ pub struct Repo {
     repo: RwLock<Arc<ReadonlyRepo>>,
     pub(super) running_jj_processes: RunningJjProcesses,
     pub(super) immutable_ids_cache: RepoCache<log::ImmutableIds>,
+    pub(super) alias_maps_cache: RepoCache<AliasMaps>,
     pub(super) commit_tags_cache: RepoCache<CommitRefNames>,
     pub(super) commit_bookmarks_cache: RepoCache<CommitRefNames>,
     pub(super) commit_emptiness: CommitEmptiness,
@@ -71,6 +72,7 @@ impl Repo {
             repo: RwLock::new(repo),
             running_jj_processes: RunningJjProcesses::default(),
             immutable_ids_cache: RepoCache::default(),
+            alias_maps_cache: RepoCache::default(),
             commit_tags_cache: RepoCache::default(),
             commit_bookmarks_cache: RepoCache::default(),
             commit_emptiness: CommitEmptiness::default(),
@@ -119,7 +121,7 @@ impl Repo {
             return;
         }
         drop(current);
-        if let Err(error) = self.replace_with_loaded_head() {
+        if let Err(error) = self.reload() {
             // Reload failed; fall back to the candidate rather than block writes.
             self.replace_repo(repo);
             debug_assert!(false, "set_repo reconcile failed: {error}");
@@ -142,10 +144,6 @@ impl Repo {
     }
 
     pub(super) fn reload(&self) -> JayResult<()> {
-        self.replace_with_loaded_head()
-    }
-
-    fn replace_with_loaded_head(&self) -> JayResult<()> {
         let workspace = load_workspace_internal(&self.path, "reload workspace")?;
         let repo = load_repo_at_head(&workspace, "reload repo")?;
         self.replace_repo(repo);

@@ -22,12 +22,16 @@ fn detect_stack_builds_linear_layers_with_dependent_bases() {
 
     // base → layer one → layer two(@)
     run_jj(&["-R", repo_str, "describe", "-m", "base change"]);
-    run_jj(&["-R", repo_str, "bookmark", "create", "base", "-r", "@"]);
+    run_jj(&[
+        "-R", repo_str, "bookmark", "create", "base", "master", "-r", "@",
+    ]);
     run_jj(&["-R", repo_str, "new", "-m", "layer one"]);
     run_jj(&["-R", repo_str, "new", "-m", "layer two"]);
 
     let repo = Repo::open(&repo_path).expect("open repo");
     let stack = repo.detect_stack("base", "@").expect("detect stack");
+
+    assert_eq!(stack.base_bookmark, "master");
 
     assert_eq!(stack.layers.len(), 2);
     assert_eq!(stack.layers[0].title, "layer one");

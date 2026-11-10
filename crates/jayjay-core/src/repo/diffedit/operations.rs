@@ -5,13 +5,34 @@ use jj_lib::commit::Commit;
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
-use jj_lib::repo_path::RepoPath;
+use jj_lib::repo_path::{RepoPath, RepoPathBuf};
 use jj_lib::rewrite::{CommitWithSelection, squash_commits};
 
-use super::partition::partition_file_selection;
+use super::partition::{PartitionedSelection, partition_file_selection};
 use crate::repo::Repo;
 use crate::repo::support::block_on_result;
 use crate::types::*;
+
+/// Which half of a partitioned selection a rewritten tree keeps.
+#[derive(Clone, Copy)]
+enum TreeSide {
+    Selected,
+    Remaining,
+}
+
+impl TreeSide {
+    /// The file text this side keeps, or `None` where it deletes the file.
+    fn text(self, partition: &PartitionedSelection) -> Option<&str> {
+        match self {
+            Self::Selected => partition
+                .selected_exists
+                .then_some(partition.selected_text.as_str()),
+            Self::Remaining => partition
+                .remaining_exists
+                .then_some(partition.remaining_text.as_str()),
+        }
+    }
+}
 
 impl Repo {
     pub fn apply_diff_selection(
@@ -62,12 +83,13 @@ impl Repo {
             "remove selected changes",
             true,
             |repo, commit, repo_mut| {
-                let remaining_tree = self.build_remaining_tree(
+                let partitions = self.partition_selections(selections, ignore_whitespace)?;
+                let remaining_tree = self.build_side_tree(
                     repo,
                     commit,
                     &parent_tree,
-                    selections,
-                    ignore_whitespace,
+                    &partitions,
+                    TreeSide::Remaining,
                 )?;
                 let write = repo_mut
                     .rewrite_commit(commit)
@@ -99,13 +121,9 @@ impl Repo {
         self.ensure_selections_are_current(&repo, &source.tree(), &parent_tree, selections)?;
 
         let mut tx = repo.start_transaction();
-        let source_selection = self.build_commit_selection(
-            &repo,
-            &source,
-            parent_tree,
-            selections,
-            ignore_whitespace,
-        )?;
+        let partitions = self.partition_selections(selections, ignore_whitespace)?;
+        let source_selection =
+            self.build_commit_selection(&repo, &source, parent_tree, &partitions)?;
         let squashed = block_on_result(
             "move selected changes to working copy",
             squash_commits(tx.repo_mut(), &[source_selection], &destination, true),
@@ -138,19 +156,15 @@ impl Repo {
                 self.ensure_commit_mutable(repo, commit, rev)?;
                 let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
                 self.ensure_selections_are_current(repo, &commit.tree(), &parent_tree, selections)?;
-                let source_selection = self.build_commit_selection(
-                    repo,
-                    commit,
-                    parent_tree,
-                    selections,
-                    ignore_whitespace,
-                )?;
-                let remaining_tree = self.build_remaining_tree(
+                let partitions = self.partition_selections(selections, ignore_whitespace)?;
+                let source_selection =
+                    self.build_commit_selection(repo, commit, parent_tree, &partitions)?;
+                let remaining_tree = self.build_side_tree(
                     repo,
                     commit,
                     &source_selection.parent_tree,
-                    selections,
-                    ignore_whitespace,
+                    &partitions,
+                    TreeSide::Remaining,
                 )?;
                 let rewritten_source = block_on_result(
                     "rewrite source commit",
@@ -190,19 +204,15 @@ impl Repo {
                 self.ensure_commit_mutable(repo, commit, rev)?;
                 let parent_tree = self.load_parent_tree(repo, commit, "load parent tree")?;
                 self.ensure_selections_are_current(repo, &commit.tree(), &parent_tree, selections)?;
-                let source_selection = self.build_commit_selection(
-                    repo,
-                    commit,
-                    parent_tree,
-                    selections,
-                    ignore_whitespace,
-                )?;
-                let remaining_tree = self.build_remaining_tree(
+                let partitions = self.partition_selections(selections, ignore_whitespace)?;
+                let source_selection =
+                    self.build_commit_selection(repo, commit, parent_tree, &partitions)?;
+                let remaining_tree = self.build_side_tree(
                     repo,
                     commit,
                     &source_selection.parent_tree,
-                    selections,
-                    ignore_whitespace,
+                    &partitions,
+                    TreeSide::Remaining,
                 )?;
                 let write = repo_mut
                     .rewrite_commit(commit)
@@ -223,17 +233,38 @@ impl Repo {
         )
     }
 
+    /// Partitions each selected file once, for both the selected and the remaining tree; files with no selected line are dropped.
+    fn partition_selections(
+        &self,
+        selections: &[DiffEditFileSelection],
+        ignore_whitespace: bool,
+    ) -> JayResult<Vec<(RepoPathBuf, PartitionedSelection)>> {
+        let mut partitions = Vec::new();
+        for selection in selections {
+            let repo_path = self.parse_repo_path(&selection.path)?;
+            let partition = partition_file_selection(selection, ignore_whitespace)?;
+            if partition.selected_changed_lines > 0 {
+                partitions.push((repo_path, partition));
+            }
+        }
+        if partitions.is_empty() {
+            return Err(JayError::Internal {
+                message: "no changes selected".to_owned(),
+            });
+        }
+        Ok(partitions)
+    }
+
     // Takes the parent tree the caller already ran the staleness guard against, so validation and rewrite use the same base.
     fn build_commit_selection(
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
         parent_tree: MergedTree,
-        selections: &[DiffEditFileSelection],
-        ignore_whitespace: bool,
+        partitions: &[(RepoPathBuf, PartitionedSelection)],
     ) -> JayResult<CommitWithSelection> {
         let selected_tree =
-            self.build_selected_tree(repo, commit, &parent_tree, selections, ignore_whitespace)?;
+            self.build_side_tree(repo, commit, &parent_tree, partitions, TreeSide::Selected)?;
         Ok(CommitWithSelection {
             commit: commit.clone(),
             selected_tree,
@@ -241,90 +272,40 @@ impl Repo {
         })
     }
 
-    fn build_selected_tree(
+    fn build_side_tree(
         &self,
         repo: &Arc<ReadonlyRepo>,
         commit: &Commit,
         parent_tree: &MergedTree,
-        selections: &[DiffEditFileSelection],
-        ignore_whitespace: bool,
+        partitions: &[(RepoPathBuf, PartitionedSelection)],
+        side: TreeSide,
     ) -> JayResult<MergedTree> {
         let source_tree = commit.tree();
-        let mut builder = MergedTreeBuilder::new(parent_tree.clone());
-        let mut selected_any = false;
-
-        for selection in selections {
-            let repo_path = self.parse_repo_path(&selection.path)?;
-            let partition = partition_file_selection(selection, ignore_whitespace)?;
-            if partition.selected_changed_lines == 0 {
-                continue;
-            }
-            selected_any = true;
-
-            if partition.selected_exists {
-                let new_value = self.write_selected_file_value(
-                    repo,
-                    &source_tree,
-                    parent_tree,
-                    repo_path.as_ref(),
-                    &partition.selected_text,
-                )?;
-                builder.set_or_remove(repo_path, Some(new_value));
-            } else {
-                builder.set_or_remove(repo_path, None);
-            }
+        let base = match side {
+            TreeSide::Selected => parent_tree.clone(),
+            TreeSide::Remaining => source_tree.clone(),
+        };
+        let mut builder = MergedTreeBuilder::new(base);
+        for (repo_path, partition) in partitions {
+            let value = side
+                .text(partition)
+                .map(|text| {
+                    self.write_selected_file_value(
+                        repo,
+                        &source_tree,
+                        parent_tree,
+                        repo_path.as_ref(),
+                        text,
+                    )
+                })
+                .transpose()?;
+            builder.set_or_remove(repo_path.clone(), value);
         }
-
-        if !selected_any {
-            return Err(JayError::Internal {
-                message: "no changes selected".to_owned(),
-            });
-        }
-
-        block_on_result("write selected tree", builder.write_tree())
-    }
-
-    fn build_remaining_tree(
-        &self,
-        repo: &Arc<ReadonlyRepo>,
-        commit: &Commit,
-        parent_tree: &MergedTree,
-        selections: &[DiffEditFileSelection],
-        ignore_whitespace: bool,
-    ) -> JayResult<MergedTree> {
-        let source_tree = commit.tree();
-        let mut builder = MergedTreeBuilder::new(source_tree.clone());
-        let mut selected_any = false;
-
-        for selection in selections {
-            let repo_path = self.parse_repo_path(&selection.path)?;
-            let partition = partition_file_selection(selection, ignore_whitespace)?;
-            if partition.selected_changed_lines == 0 {
-                continue;
-            }
-            selected_any = true;
-
-            if partition.remaining_exists {
-                let new_value = self.write_selected_file_value(
-                    repo,
-                    &source_tree,
-                    parent_tree,
-                    repo_path.as_ref(),
-                    &partition.remaining_text,
-                )?;
-                builder.set_or_remove(repo_path, Some(new_value));
-            } else {
-                builder.set_or_remove(repo_path, None);
-            }
-        }
-
-        if !selected_any {
-            return Err(JayError::Internal {
-                message: "no changes selected".to_owned(),
-            });
-        }
-
-        block_on_result("write remaining tree", builder.write_tree())
+        let context = match side {
+            TreeSide::Selected => "write selected tree",
+            TreeSide::Remaining => "write remaining tree",
+        };
+        block_on_result(context, builder.write_tree())
     }
 
     fn write_selected_file_value(

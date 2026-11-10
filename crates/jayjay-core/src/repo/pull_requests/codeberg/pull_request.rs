@@ -72,12 +72,14 @@ impl CodebergPrResponse {
         self.head.as_ref().is_some_and(|branch| branch.name == head)
     }
 
+    /// A fork's branch can share the bookmark's name.
+    pub(super) fn is_head_of(&self, remote: &HostedRepo, head: &str) -> bool {
+        self.matches(head) && self.head_repo_matches(remote)
+    }
+
     // Editing a fork's same-named branch PR, or a closed or merged one, would hijack someone else's review.
     pub(crate) fn is_stack_layer_of(&self, remote: &HostedRepo, head: &str) -> bool {
-        self.state == CodebergPrState::Open
-            && !self.merged
-            && self.head.as_ref().is_some_and(|branch| branch.name == head)
-            && self.head_repo_matches(remote)
+        self.state == CodebergPrState::Open && !self.merged && self.is_head_of(remote, head)
     }
 
     fn head_repo_matches(&self, remote: &HostedRepo) -> bool {

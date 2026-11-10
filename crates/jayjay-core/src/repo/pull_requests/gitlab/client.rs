@@ -1,4 +1,5 @@
 use jayjay_network::{Fetch, HttpClient, encode_path_segment};
+use serde::Deserialize;
 
 use super::super::{ForgeClient, PrLookup};
 use super::merge_request::{GitLabMrResponse, MrHeadProject};
@@ -67,6 +68,19 @@ fn branch_merge_requests_path(remote: &HostedRepo, source_branch: &str) -> Strin
 
 pub(crate) fn merge_request_path(remote: &HostedRepo, iid: u32) -> String {
     format!("{}/{iid}", merge_requests_path(remote))
+}
+
+/// The project's default branch, or `None` when GitLab doesn't report one (an empty project).
+pub(crate) fn default_branch(
+    api: &ForgeClient<impl Fetch, impl TokenProvider>,
+    remote: &HostedRepo,
+) -> Option<String> {
+    #[derive(Deserialize)]
+    struct Project {
+        default_branch: Option<String>,
+    }
+    let project: Project = api.get(&format!("projects/{}", project_id(remote))).ok()?;
+    project.default_branch.filter(|branch| !branch.is_empty())
 }
 
 pub(crate) fn project_path(id: u64) -> String {

@@ -266,13 +266,11 @@ impl Repo {
 
     /// Resolve a file by accepting "ours" (side #1).
     pub fn resolve_use_ours(&self, rev: &str, path: &str) -> JayResult<()> {
-        let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":ours")
     }
 
     /// Resolve a file by accepting "theirs" (side #2).
     pub fn resolve_use_theirs(&self, rev: &str, path: &str) -> JayResult<()> {
-        let _write = self.write_guard()?;
         self.resolve_with_tool(rev, path, ":theirs")
     }
 }

@@ -3,8 +3,7 @@ mod macos;
 
 #[cfg(all(unix, not(target_os = "macos")))]
 mod linux;
-#[cfg(any(windows, test))]
-mod powershell;
+pub(crate) mod powershell;
 #[cfg(unix)]
 mod unix;
 #[cfg(windows)]

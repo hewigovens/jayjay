@@ -1,6 +1,7 @@
 use super::connection::{self, Connection};
 use super::helper::Helper;
 use super::{RemoteDirectory, RemoteLocation};
+use crate::tools::powershell;
 use crate::{JayError, JayResult};
 use base64::Engine;
 use serde::de::DeserializeOwned;
@@ -233,8 +234,8 @@ function Test-Helper($path) {{ (Test-Path -LiteralPath $path) -and ((Get-FileHas
             connection::run(
                 machine,
                 &powershell(&format!(
-                    "$upload = '{}'; try {{ if (-not (Test-Helper $upload)) {{ throw 'The uploaded SSH helper does not match.' }}; Move-Item -Force -LiteralPath $upload -Destination $exe }} finally {{ Remove-Item -Force -LiteralPath $upload -ErrorAction SilentlyContinue }}; [Console]::Out.Write($exe)",
-                    upload.replace('\'', "''")
+                    "$upload = {}; try {{ if (-not (Test-Helper $upload)) {{ throw 'The uploaded SSH helper does not match.' }}; Move-Item -Force -LiteralPath $upload -Destination $exe }} finally {{ Remove-Item -Force -LiteralPath $upload -ErrorAction SilentlyContinue }}; [Console]::Out.Write($exe)",
+                    powershell::quote(upload)
                 )),
                 b"",
             )?

@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::process::Output;
 
 use gix::remote::Direction;
@@ -45,14 +46,24 @@ impl Repo {
         Ok(output)
     }
 
-    pub(super) fn latest_patch_set(&self, number: u64) -> JayResult<Option<PatchSet>> {
+    /// The newest patch set of each change, from one `ls-remote`.
+    pub(super) fn latest_patch_sets(&self, numbers: &[u64]) -> JayResult<HashMap<u64, PatchSet>> {
+        if numbers.is_empty() {
+            return Ok(HashMap::new());
+        }
         let remote = self.gerrit_push_url()?;
-        let pattern = format!("{}*", change_ref_prefix(number));
-        let output = self.store_git(
-            &["ls-remote", "--", &remote, &pattern],
-            "list Gerrit patch sets",
-        )?;
-        Ok(latest_in(&Self::stdout_text(&output), number))
+        let patterns: Vec<String> = numbers
+            .iter()
+            .map(|number| format!("{}*", change_ref_prefix(*number)))
+            .collect();
+        let mut args = vec!["ls-remote", "--", &remote];
+        args.extend(patterns.iter().map(String::as_str));
+        let output = self.store_git(&args, "list Gerrit patch sets")?;
+        let listing = Self::stdout_text(&output);
+        Ok(numbers
+            .iter()
+            .filter_map(|&number| Some((number, latest_in(&listing, number)?)))
+            .collect())
     }
 
     /// Imported so jj can load the commit and gc keeps it.

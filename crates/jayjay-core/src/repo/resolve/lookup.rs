@@ -26,14 +26,12 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         rev: &str,
     ) -> JayResult<JjCommit> {
-        let settings = repo.settings();
-        let aliases_map = self.revset_aliases_map(settings)?;
-        let fileset_aliases_map = self.fileset_aliases_map(settings)?;
+        let aliases = self.alias_maps(repo)?;
         let expression = self
             .parse_revset(
-                &aliases_map,
-                &fileset_aliases_map,
-                settings.user_email(),
+                &aliases.revsets,
+                &aliases.filesets,
+                repo.settings().user_email(),
                 rev,
             )
             .map_err(|e| JayError::RevNotFound {

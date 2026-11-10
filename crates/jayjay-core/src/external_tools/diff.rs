@@ -1,3 +1,4 @@
+use std::collections::HashSet;
 use std::path::Path;
 
 use crate::diff::{DiffSpanStyle, FileDiff, collapse_context_with_mapping, compute_file_diff_full};
@@ -43,9 +44,15 @@ pub fn load_external_diff(
         .into_iter()
         .map(prepare_file)
         .collect();
-    let paths: Vec<_> = files.iter().map(|file| file.hunk.path.clone()).collect();
-    for file in &mut files {
-        file.topology_group = topology_group(&paths, &file.hunk.path);
+    let groups: Vec<_> = {
+        let topology = PathTopology::new(files.iter().map(|file| file.hunk.path.as_str()));
+        files
+            .iter()
+            .map(|file| topology.group(&file.hunk.path))
+            .collect()
+    };
+    for (file, group) in files.iter_mut().zip(groups) {
+        file.topology_group = group;
     }
     Ok(files)
 }
@@ -113,19 +120,38 @@ fn prepare_file(scanned: ScannedExternalDiff) -> ExternalDiffFile {
     }
 }
 
-fn topology_group(paths: &[String], selected: &str) -> Option<String> {
-    let selected_path = Path::new(selected);
-    let mut related = paths.iter().filter(|candidate| {
-        candidate.as_str() != selected
-            && (selected_path.starts_with(Path::new(candidate))
-                || Path::new(candidate).starts_with(selected_path))
-    });
-    let first = related.next()?;
-    std::iter::once(selected)
-        .chain(std::iter::once(first.as_str()))
-        .chain(related.map(String::as_str))
-        .min_by_key(|path| Path::new(path).components().count())
-        .map(str::to_owned)
+/// A file and a path beneath it cannot coexist in one tree; such paths are grouped under the shallowest of them.
+struct PathTopology<'a> {
+    paths: HashSet<&'a str>,
+    parents: HashSet<&'a str>,
+}
+
+impl<'a> PathTopology<'a> {
+    fn new(paths: impl IntoIterator<Item = &'a str>) -> Self {
+        let paths: HashSet<&str> = paths.into_iter().collect();
+        let parents = paths
+            .iter()
+            .flat_map(|path| proper_ancestors(path))
+            .collect();
+        Self { paths, parents }
+    }
+
+    fn group(&self, selected: &str) -> Option<String> {
+        proper_ancestors(selected)
+            .filter(|ancestor| self.paths.contains(ancestor))
+            .last()
+            .or_else(|| self.parents.contains(selected).then_some(selected))
+            .map(str::to_owned)
+    }
+}
+
+/// Nearest first.
+fn proper_ancestors(path: &str) -> impl Iterator<Item = &str> {
+    Path::new(path)
+        .ancestors()
+        .skip(1)
+        .filter_map(Path::to_str)
+        .filter(|ancestor| !ancestor.is_empty())
 }
 
 fn changed_line_count(diff: &FileDiff, style: DiffSpanStyle) -> u32 {
@@ -139,7 +165,7 @@ mod tests {
     use crate::mock::diff_hunk;
     use crate::{DiffContent, DiffHunk, HunkType};
 
-    use super::{ScannedExternalDiff, load_external_diff, prepare_file, topology_group};
+    use super::{PathTopology, ScannedExternalDiff, load_external_diff, prepare_file};
 
     fn scanned(hunk: crate::DiffHunk) -> ScannedExternalDiff {
         let old_exists = hunk.old.content.is_some() || hunk.old.preview.is_some();
@@ -159,18 +185,13 @@ mod tests {
 
     #[test]
     fn groups_paths_that_cannot_coexist_in_one_tree() {
-        let paths = vec![
-            "item".to_owned(),
-            "item/child.txt".to_owned(),
-            "other.txt".to_owned(),
-        ];
+        let topology =
+            PathTopology::new(["item", "item/child.txt", "item/sub/deep.txt", "other.txt"]);
 
-        assert_eq!(topology_group(&paths, "item"), Some("item".to_owned()));
-        assert_eq!(
-            topology_group(&paths, "item/child.txt"),
-            Some("item".to_owned())
-        );
-        assert_eq!(topology_group(&paths, "other.txt"), None);
+        assert_eq!(topology.group("item"), Some("item".to_owned()));
+        assert_eq!(topology.group("item/child.txt"), Some("item".to_owned()));
+        assert_eq!(topology.group("item/sub/deep.txt"), Some("item".to_owned()));
+        assert_eq!(topology.group("other.txt"), None);
     }
 
     #[test]

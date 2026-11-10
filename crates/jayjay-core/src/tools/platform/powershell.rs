@@ -1,7 +1,8 @@
+#[cfg(any(windows, test))]
 use base64::{Engine, engine::general_purpose::STANDARD};
 
 /// PowerShell also closes single-quoted strings at U+2018–U+201B.
-pub(super) fn quote(value: &str) -> String {
+pub(crate) fn quote(value: &str) -> String {
     let mut quoted = String::with_capacity(value.len() + 2);
     quoted.push('\'');
     for c in value.chars() {
@@ -14,6 +15,7 @@ pub(super) fn quote(value: &str) -> String {
     quoted
 }
 
+#[cfg(any(windows, test))]
 pub(super) fn terminal_payload(cwd: &str, command: Option<&str>) -> String {
     let script = format!(
         "Set-Location -LiteralPath {} -ErrorAction Stop; {}",

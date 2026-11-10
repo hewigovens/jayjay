@@ -8,7 +8,6 @@ use jj_lib::object_id::ObjectId as _;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::rewrite::merge_commit_trees;
 
-use super::patch_set::PatchSet;
 use super::uploads::{GerritUpload, GerritUploadStore};
 use crate::repo::git::landed::{change_label, trailer_jj_change_ids, without_gerrit_trailer};
 use crate::repo::support::block_on_result;
@@ -19,27 +18,31 @@ impl Repo {
     /// Refuses an upload that would replace a patch set made in Gerrit since JayJay's last upload.
     pub(crate) fn ensure_gerrit_not_ahead(&self, commit: &str) -> JayResult<()> {
         let repo = self.get_repo();
-        for id in self.revset_commits(&repo, &format!("mutable() & ::{commit}"))? {
-            let local = self.commit(&repo, &id)?;
-            let Some(upload) = self.gerrit_upload(&local.change_id().hex())? else {
-                continue;
-            };
-            if let Some(latest) = self.newer_patch_set(&upload)? {
+        let locals = self
+            .revset_commits(&repo, &format!("mutable() & ::{commit}"))?
+            .iter()
+            .map(|id| {
+                let local = self.commit(&repo, id)?;
+                Ok((local.change_id().hex(), local))
+            })
+            .collect::<JayResult<Vec<_>>>()?;
+        let uploads = self.gerrit_uploads(locals)?;
+        let numbers: Vec<u64> = uploads.iter().map(|(_, upload)| upload.number).collect();
+        let latest = self.latest_patch_sets(&numbers)?;
+        for (local, upload) in &uploads {
+            if let Some(latest) = latest
+                .get(&upload.number)
+                .filter(|latest| latest.commit != upload.commit)
+            {
                 return Err(JayError::refused(
                     jayjay_i18n::repo::gerrit_newer_patch_set(
-                        &change_label(&local),
+                        &change_label(local),
                         &latest.number.to_string(),
                     ),
                 ));
             }
         }
         Ok(())
-    }
-
-    fn newer_patch_set(&self, upload: &GerritUpload) -> JayResult<Option<PatchSet>> {
-        Ok(self
-            .latest_patch_set(upload.number)?
-            .filter(|latest| latest.commit != upload.commit))
     }
 
     pub fn gerrit_update_title(&self) -> Option<String> {
@@ -56,9 +59,15 @@ impl Repo {
         let label = change_label(&local);
         let change = local.change_id().hex();
         let upload = self
-            .gerrit_upload(&change)?
+            .gerrit_uploads([(change.clone(), ())])?
+            .pop()
+            .map(|(_, upload)| upload)
             .ok_or_else(|| JayError::refused(jayjay_i18n::repo::gerrit_not_uploaded(&label)))?;
-        let Some(latest) = self.newer_patch_set(&upload)? else {
+        let Some(latest) = self
+            .latest_patch_sets(&[upload.number])?
+            .remove(&upload.number)
+            .filter(|latest| latest.commit != upload.commit)
+        else {
             return Ok(jayjay_i18n::repo::gerrit_up_to_date(&label));
         };
         let patch_set = latest.number.to_string();

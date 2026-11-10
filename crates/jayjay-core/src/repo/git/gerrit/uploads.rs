@@ -85,9 +85,13 @@ impl Repo {
             return;
         };
         let repo = self.get_repo();
+        let numbers = change_numbers(summary);
+        let Ok(mut latest) = self.latest_patch_sets(&numbers) else {
+            return;
+        };
         let mut uploads = Vec::new();
-        for number in change_numbers(summary) {
-            let Ok(Some(patch_set)) = self.latest_patch_set(number) else {
+        for number in numbers {
+            let Some(patch_set) = latest.remove(&number) else {
                 continue;
             };
             let Some(commit) = CommitId::try_from_hex(&patch_set.commit)
@@ -113,12 +117,27 @@ impl Repo {
         GerritUploadStore::load().record(&self.gerrit_repository_key(), uploads, &live);
     }
 
-    pub(super) fn gerrit_upload(&self, change: &str) -> JayResult<Option<GerritUpload>> {
-        let Some(upload) = GerritUploadStore::load().get(&self.gerrit_repository_key(), change)
-        else {
-            return Ok(None);
-        };
-        Ok((upload.url == self.gerrit_push_url()?).then_some(upload))
+    /// JayJay's last upload of each change to the current Gerrit server, tagged with the caller's `T`.
+    pub(super) fn gerrit_uploads<T>(
+        &self,
+        changes: impl IntoIterator<Item = (String, T)>,
+    ) -> JayResult<Vec<(T, GerritUpload)>> {
+        let mut store = GerritUploadStore::load();
+        let repository = self.gerrit_repository_key();
+        let mut push_url = None;
+        let mut uploads = Vec::new();
+        for (change, tag) in changes {
+            let Some(upload) = store.get(&repository, &change) else {
+                continue;
+            };
+            if push_url.is_none() {
+                push_url = Some(self.gerrit_push_url()?);
+            }
+            if push_url.as_ref() == Some(&upload.url) {
+                uploads.push((tag, upload));
+            }
+        }
+        Ok(uploads)
     }
 
     pub(super) fn live_change_ids(&self) -> JayResult<HashSet<String>> {

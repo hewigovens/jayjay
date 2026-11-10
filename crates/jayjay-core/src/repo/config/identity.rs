@@ -2,9 +2,12 @@ use std::path::PathBuf;
 
 use jj_lib::config::{ConfigFile, ConfigSource, StackedConfig};
 
-use super::{ConfigEnv, JJ_CONFIG_USER_EMAIL, JJ_CONFIG_USER_NAME};
+use super::ConfigEnv;
 use crate::repo::subprocess_command;
 use crate::types::*;
+
+const JJ_CONFIG_USER_NAME: &str = "user.name";
+const JJ_CONFIG_USER_EMAIL: &str = "user.email";
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct UserIdentity {

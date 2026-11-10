@@ -67,7 +67,7 @@ pub fn apply_external_diff_selections(
         });
     }
     for operation in prepared {
-        match &operation.content {
+        let selected_text = match &operation.content {
             PreparedContent::KeepNew => continue,
             PreparedContent::OldEntry(source) => {
                 if operation.selected_exists {
@@ -88,10 +88,7 @@ pub fn apply_external_diff_selections(
                 }
                 continue;
             }
-            PreparedContent::Lines(_) => {}
-        }
-        let PreparedContent::Lines(selected_text) = &operation.content else {
-            unreachable!();
+            PreparedContent::Lines(selected_text) => selected_text,
         };
         if !operation.selected_exists {
             remove_output_path(

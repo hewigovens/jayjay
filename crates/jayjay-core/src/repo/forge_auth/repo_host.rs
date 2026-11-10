@@ -11,7 +11,7 @@ const CLI_TIMEOUT: Duration = Duration::from_secs(5);
 const TOKEN_TTL: Duration = Duration::from_secs(300);
 const REFRESH_BACKOFF: Duration = Duration::from_secs(60);
 
-static TOKENS: Mutex<[TokenSlot; 4]> = Mutex::new([TokenSlot::EMPTY; 4]);
+static TOKENS: [Mutex<TokenSlot>; 4] = [const { Mutex::new(TokenSlot::EMPTY) }; 4];
 
 pub(super) struct TokenSlot {
     /// A missing token is cached too, so an absent login isn't re-probed per request.
@@ -177,10 +177,12 @@ impl RepoHost {
         )
     }
 
-    /// Shared with keychain writes, so a sign-out can't race a refresh.
+    /// Shared with keychain writes, so a sign-out can't race a refresh; per host, so a slow CLI for one forge doesn't stall the others.
     pub(super) fn with_slot<T>(self, body: impl FnOnce(&mut TokenSlot) -> T) -> T {
-        let mut tokens = TOKENS.lock().unwrap_or_else(PoisonError::into_inner);
-        body(&mut tokens[self as usize])
+        let mut slot = TOKENS[self as usize]
+            .lock()
+            .unwrap_or_else(PoisonError::into_inner);
+        body(&mut slot)
     }
 }
 

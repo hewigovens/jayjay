@@ -15,7 +15,7 @@ use jj_lib::workspace::{
     DefaultWorkspaceLoaderFactory, Workspace, WorkspaceLoadError, WorkspaceLoaderFactory as _,
 };
 
-use super::config::{ConfigEnv, working_copy_factories};
+use super::config::ConfigEnv;
 use crate::types::*;
 
 /// Shell worker threads (Swift's cooperative pool, GCD) give Rust 512 KiB of stack, which jj-lib's merge and rebase futures overflow; work entered with less than the red zone left moves to a grown stack, while the CLI's main thread pays nothing. Growing maps a fresh 32 MiB stack each time, so wrap a loop of `block_on` calls in one `on_worker_stack` rather than paying that per item.
@@ -58,7 +58,7 @@ pub(crate) fn load_workspace(path: &Path) -> Result<Workspace, String> {
         .settings_for_workspace(loader.as_ref())
         .map_err(|error| error.to_string())?;
     let store_factories = jj_lib::default_backend_factories::default_backend_factories();
-    let wc_factories = working_copy_factories();
+    let wc_factories = jj_lib::default_backend_factories::default_working_copy_factories();
     loader
         .load(&settings, &store_factories, &wc_factories)
         .map_err(error_chain)

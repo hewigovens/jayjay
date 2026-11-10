@@ -7,5 +7,6 @@ mod expressions;
 mod lookup;
 mod rewrites;
 
+pub(super) use aliases::AliasMaps;
 pub(super) use commit_emptiness::CommitEmptiness;
 pub(super) use commit_ref_names::CommitRefNames;

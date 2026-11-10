@@ -1,7 +1,7 @@
 use jj_lib::backend::MergedTreeValueExt as _;
 use jj_lib::conflicts::{
     ConflictMarkerStyle, ConflictMaterializeOptions, MaterializedFileConflictValue,
-    MaterializedFileValue, MaterializedTreeValue, materialize_merge_result_to_bytes,
+    MaterializedTreeValue, materialize_merge_result_to_bytes,
 };
 use jj_lib::files::{FileMergeHunkLevel, MergeOptions};
 use jj_lib::merge::SameChange;
@@ -9,18 +9,10 @@ use jj_lib::object_id::ObjectId;
 
 pub(super) use crate::file_display::is_image_path;
 use crate::file_display::{MAX_DIFF_BYTES, MAX_IMAGE_BYTES, bytes_to_display};
+use crate::filesystem::read_to_limit;
 use crate::image_cache::ImageCache;
 use crate::repo::support::block_on_result;
 use crate::types::*;
-
-/// Reads at most `limit + 1` bytes, capping peak allocation. Returns `(bytes, truncated)`;
-/// on truncation the buffer is cleared (the content gets a placeholder instead).
-async fn read_capped(
-    file: &mut MaterializedFileValue,
-    limit: usize,
-) -> std::io::Result<(Vec<u8>, bool)> {
-    crate::filesystem::read_to_limit(&mut file.reader, limit).await
-}
 
 pub(super) enum ImagePreviewResult {
     Image(DiffPreview),
@@ -38,7 +30,7 @@ pub(super) fn extract_image_preview(
     };
     let (bytes, truncated) = block_on_result(
         &format!("read image {}", path.as_internal_file_string()),
-        read_capped(&mut file, MAX_IMAGE_BYTES),
+        read_to_limit(&mut file.reader, MAX_IMAGE_BYTES),
     )?;
     if truncated {
         return Ok((ImagePreviewResult::None, false));
@@ -125,7 +117,7 @@ pub(super) fn materialized_to_content(
         MaterializedTreeValue::File(mut file) => {
             let (bytes, truncated) = block_on_result(
                 &format!("read file {}", path.as_internal_file_string()),
-                read_capped(&mut file, MAX_DIFF_BYTES),
+                read_to_limit(&mut file.reader, MAX_DIFF_BYTES),
             )?;
             if truncated {
                 return Ok(MaterializedContent::Display(format!(

@@ -10,6 +10,7 @@ mod terminal;
 pub use config::ToolsConfig;
 pub use file_url::{repo_file_path, repo_file_url};
 pub use launcher::{detach_stdio, editor_opens_at_line, open_in_editor, open_in_terminal};
+pub(crate) use platform::powershell;
 #[cfg(windows)]
 pub use platform::windows_shell;
 pub use platform::{DEFAULT_EDITOR, EDITOR_OPTIONS, TERMINAL_OPTIONS, run_terminal_tool};

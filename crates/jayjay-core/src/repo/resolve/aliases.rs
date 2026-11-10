@@ -1,8 +1,9 @@
 use std::collections::HashSet;
-use std::sync::OnceLock;
+use std::sync::{Arc, OnceLock};
 
 use jj_lib::config::{ConfigGetResultExt, ConfigValue};
 use jj_lib::fileset::FilesetAliasesMap;
+use jj_lib::repo::ReadonlyRepo;
 use jj_lib::revset::RevsetAliasesMap;
 use jj_lib::settings::UserSettings;
 
@@ -19,6 +20,12 @@ const DEFAULT_REVSET_ALIAS_TEMPLATE: &str = r#"if(
   ""
 )"#;
 
+/// Alias tables parsed from one repo snapshot's settings.
+pub(crate) struct AliasMaps {
+    pub(crate) revsets: RevsetAliasesMap,
+    pub(crate) filesets: FilesetAliasesMap,
+}
+
 struct AliasConfig {
     definition: String,
     doc: Option<String>,
@@ -27,18 +34,25 @@ struct AliasConfig {
 impl Repo {
     /// The aliases this config defines, under the names the revset parser accepts them by.
     pub(crate) fn revset_aliases(&self) -> Vec<RevsetName> {
-        let Ok(aliases) = self.revset_aliases_map(self.get_repo().settings()) else {
+        let Ok(aliases) = self.alias_maps(&self.get_repo()) else {
             return Vec::new();
         };
-        let functions = aliases.function_names().map(RevsetName::called);
-        let symbols = aliases.symbol_names().map(RevsetName::bare);
+        let functions = aliases.revsets.function_names().map(RevsetName::called);
+        let symbols = aliases.revsets.symbol_names().map(RevsetName::bare);
         functions.chain(symbols).collect()
     }
 
-    pub(crate) fn revset_aliases_map(
-        &self,
-        settings: &UserSettings,
-    ) -> JayResult<RevsetAliasesMap> {
+    pub(crate) fn alias_maps(&self, repo: &Arc<ReadonlyRepo>) -> JayResult<Arc<AliasMaps>> {
+        self.alias_maps_cache.get_or_try_init(repo, || {
+            let settings = repo.settings();
+            Ok(AliasMaps {
+                revsets: self.revset_aliases_map(settings)?,
+                filesets: self.fileset_aliases_map(settings)?,
+            })
+        })
+    }
+
+    fn revset_aliases_map(&self, settings: &UserSettings) -> JayResult<RevsetAliasesMap> {
         let mut aliases_map = RevsetAliasesMap::new();
         let mut loaded = HashSet::new();
         for name in settings.table_keys(REVSET_ALIASES) {

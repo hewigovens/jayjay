@@ -10,7 +10,6 @@ use jj_lib::repo::{ReadonlyRepo, Repo as JjRepo};
 use jj_lib::revset::{
     self, ResolvedRevset, ResolvedRevsetExpression, SymbolResolver, UserRevsetExpression,
 };
-use jj_lib::settings::UserSettings;
 use jj_lib::transaction::Transaction;
 
 use super::Repo;
@@ -173,8 +172,7 @@ impl Repo {
         tx: &Transaction,
         commit: &Commit,
     ) -> JayResult<bool> {
-        let revset =
-            self.evaluate_revset_in(tx.repo(), tx.base_repo().settings(), "immutable()")?;
+        let revset = self.evaluate_revset_in(tx.repo(), tx.base_repo(), "immutable()")?;
         block_on(revset.containing_fn()(commit.id()))
             .map_err(|e| JayError::internal(format!("immutable() check: {e}")))
     }
@@ -348,7 +346,7 @@ impl Repo {
         repo: &Arc<ReadonlyRepo>,
         revset_str: &str,
     ) -> JayResult<Arc<ResolvedRevsetExpression>> {
-        let expression = self.parse_revset_str(repo.settings(), revset_str)?;
+        let expression = self.parse_revset_str(repo, revset_str)?;
         let (resolved, _) = self
             .resolve_typed_revset(repo.as_ref(), expression)?
             .into_inner();
@@ -360,30 +358,29 @@ impl Repo {
         repo: &'a Arc<ReadonlyRepo>,
         revset_str: &str,
     ) -> JayResult<Box<dyn jj_lib::revset::Revset + 'a>> {
-        self.evaluate_revset_in(repo.as_ref(), repo.settings(), revset_str)
+        self.evaluate_revset_in(repo.as_ref(), repo, revset_str)
     }
 
     fn evaluate_revset_in<'a>(
         &self,
         repo: &'a dyn JjRepo,
-        settings: &UserSettings,
+        base: &Arc<ReadonlyRepo>,
         revset_str: &str,
     ) -> JayResult<Box<dyn jj_lib::revset::Revset + 'a>> {
-        let expression = self.parse_revset_str(settings, revset_str)?;
+        let expression = self.parse_revset_str(base, revset_str)?;
         self.evaluate_typed_revset(repo, expression)
     }
 
     fn parse_revset_str(
         &self,
-        settings: &UserSettings,
+        repo: &Arc<ReadonlyRepo>,
         revset_str: &str,
     ) -> JayResult<Arc<UserRevsetExpression>> {
-        let aliases_map = self.revset_aliases_map(settings)?;
-        let fileset_aliases_map = self.fileset_aliases_map(settings)?;
+        let aliases = self.alias_maps(repo)?;
         self.parse_revset(
-            &aliases_map,
-            &fileset_aliases_map,
-            settings.user_email(),
+            &aliases.revsets,
+            &aliases.filesets,
+            repo.settings().user_email(),
             revset_str,
         )
         .map_err(|e| JayError::Internal {

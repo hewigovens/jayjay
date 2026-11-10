@@ -145,16 +145,4 @@ impl Repo {
     ) {
         repo_mut.set_local_bookmark_target(RefName::new(name), target);
     }
-
-    pub(crate) fn update_local_bookmark(
-        &self,
-        name: &str,
-        target: RefTarget,
-        description: &str,
-    ) -> JayResult<()> {
-        self.with_repo_transaction(description, false, move |_, repo_mut| {
-            self.set_bookmark_target(repo_mut, name, target);
-            Ok(())
-        })
-    }
 }

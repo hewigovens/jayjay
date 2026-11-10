@@ -1,11 +1,10 @@
 use std::cell::LazyCell;
-use std::collections::{BTreeMap, BTreeSet, HashSet};
 use std::sync::Arc;
 
 use jj_lib::backend::CommitId;
 use jj_lib::git::REMOTE_NAME_FOR_LOCAL_GIT_REPO;
 use jj_lib::object_id::ObjectId;
-use jj_lib::op_store::RefTarget;
+use jj_lib::op_store::{RefTarget, RemoteRef};
 use jj_lib::ref_name::{RefName, RemoteName, RemoteNameBuf};
 use jj_lib::repo::{MutableRepo, ReadonlyRepo, Repo as _};
 
@@ -31,42 +30,40 @@ impl Repo {
     pub fn list_bookmarks(&self) -> JayResult<Vec<BookmarkInfo>> {
         let repo = self.get_repo();
         let mut bookmarks = Vec::new();
-        let mut local_names: HashSet<String> = HashSet::new();
-        for (name, target) in repo.view().local_bookmarks() {
-            local_names.insert(name.as_str().to_owned());
+        let mut orphans = Vec::new();
+        let default_remote = LazyCell::new(|| self.default_remote());
+        for (name, refs) in repo.view().bookmarks() {
+            let local_target = refs.local_target;
             // jj's synthetic `git` remote mirrors the local git refs; it is not a remote the bookmark can track or sync with.
-            let remote_refs: Vec<_> = repo
-                .view()
-                .all_remote_bookmarks()
-                .filter(|(sym, _)| {
-                    sym.name == name
-                        && sym.remote.as_str() != REMOTE_NAME_FOR_LOCAL_GIT_REPO.as_str()
-                })
+            let remote_refs: Vec<_> = refs
+                .remote_refs
+                .into_iter()
+                .filter(|(remote, _)| *remote != REMOTE_NAME_FOR_LOCAL_GIT_REPO)
                 .collect();
+            if local_target.is_absent() {
+                orphans.extend(orphan_bookmark(&repo, name, &remote_refs, &default_remote));
+                continue;
+            }
             let tracked_remotes: Vec<String> = remote_refs
                 .iter()
                 .filter(|(_, remote_ref)| remote_ref.is_tracked())
-                .map(|(sym, _)| sym.remote.as_str().to_owned())
-                .collect::<BTreeSet<_>>()
-                .into_iter()
+                .map(|(remote, _)| remote.as_str().to_owned())
                 .collect();
             let available_remotes: Vec<String> = remote_refs
                 .iter()
-                .map(|(sym, _)| sym.remote.as_str().to_owned())
-                .collect::<BTreeSet<_>>()
-                .into_iter()
+                .map(|(remote, _)| remote.as_str().to_owned())
                 .collect();
 
-            let local_target_commit = target.as_normal();
-            let mut remote_targets: Vec<RemoteBookmarkTarget> = remote_refs
+            let local_target_commit = local_target.as_normal();
+            let remote_targets: Vec<RemoteBookmarkTarget> = remote_refs
                 .iter()
                 .filter(|(_, remote_ref)| remote_ref.is_tracked())
-                .map(|(sym, remote_ref)| {
-                    let (change_id, description) = self.summary_at_target(&remote_ref.target);
+                .map(|(remote, remote_ref)| {
+                    let (change_id, description) = summary_at_target(&repo, &remote_ref.target);
                     let (status, ahead, behind) =
                         self.remote_sync_status(&repo, local_target_commit, &remote_ref.target);
                     RemoteBookmarkTarget {
-                        remote: sym.remote.as_str().to_owned(),
+                        remote: remote.as_str().to_owned(),
                         change_id: change_id.id,
                         description,
                         status,
@@ -75,97 +72,35 @@ impl Repo {
                     }
                 })
                 .collect();
-            remote_targets.sort_by(|a, b| a.remote.cmp(&b.remote));
 
-            let (change_id, description) = self.summary_at_target(target);
+            let (change_id, description) = summary_at_target(&repo, local_target);
             bookmarks.push(BookmarkInfo {
                 name: name.as_str().to_owned(),
                 change_id,
                 description,
                 is_tracking_remote: !tracked_remotes.is_empty(),
-                is_deleted: target.is_absent(),
-                is_conflicted: !target.is_resolved(),
+                is_deleted: false,
+                is_conflicted: !local_target.is_resolved(),
                 tracked_remotes,
                 available_remotes,
                 has_local_target: true,
                 remote_targets,
             });
         }
-
-        // Synthesize entries for remote bookmarks whose name has no local target.
-        // A tracked ref with no local target is a bookmark deleted locally but still on the remote (jj's "(deleted)"); an untracked one is remote-only.
-        let mut orphans: BTreeMap<String, Vec<(String, RefTarget, bool)>> = BTreeMap::new();
-        for (sym, remote_ref) in repo.view().all_remote_bookmarks() {
-            let name = sym.name.as_str();
-            if local_names.contains(name)
-                || remote_ref.target.is_absent()
-                || sym.remote == REMOTE_NAME_FOR_LOCAL_GIT_REPO
-            {
-                continue;
-            }
-            orphans.entry(name.to_owned()).or_default().push((
-                sym.remote.as_str().to_owned(),
-                remote_ref.target.clone(),
-                remote_ref.is_tracked(),
-            ));
-        }
-        let default_remote = LazyCell::new(|| self.default_remote());
-        for (name, mut refs) in orphans {
-            refs.sort_by(|a, b| a.0.cmp(&b.0));
-            let remotes: Vec<String> = refs.iter().map(|(r, _, _)| r.clone()).collect();
-            let tracked_remotes: Vec<String> = refs
-                .iter()
-                .filter(|(_, _, tracked)| *tracked)
-                .map(|(remote, _, _)| remote.clone())
-                .collect();
-            let first_target = &refs
-                .iter()
-                .find(|(remote, _, _)| *remote == *default_remote)
-                .unwrap_or(&refs[0])
-                .1;
-            let (change_id, description) = self.summary_at_target(first_target);
-            bookmarks.push(BookmarkInfo {
-                name,
-                change_id,
-                description,
-                is_tracking_remote: false,
-                is_deleted: !tracked_remotes.is_empty(),
-                is_conflicted: !first_target.is_resolved(),
-                tracked_remotes,
-                available_remotes: remotes,
-                has_local_target: false,
-                remote_targets: Vec::new(),
-            });
-        }
-
+        bookmarks.extend(orphans);
         Ok(bookmarks)
     }
 
-    /// Returns `(change_id, change_id_short_len, first_description_line)` for a ref target. The short length is the repo-wide unique change-id prefix, to match how the DAG highlights change ids.
-    fn summary_at_target(&self, target: &RefTarget) -> (ShortId, String) {
-        let Some(commit_id) = target.as_normal() else {
-            return (ShortId::new(String::new(), 0), String::new());
-        };
-        let repo = self.get_repo();
-        match repo.store().get_commit(commit_id) {
-            Ok(commit) => {
-                let description = commit.description().lines().next().unwrap_or("").to_owned();
-                (short_change_id(&*repo, &commit), description)
-            }
-            Err(_) => (ShortId::new(String::new(), 0), String::new()),
-        }
-    }
-
     pub(super) fn remote_bookmark_change_id(&self, name: &str, remote: &str) -> Option<String> {
-        self.get_repo()
-            .view()
+        let repo = self.get_repo();
+        repo.view()
             .all_remote_bookmarks()
             .find(|(symbol, remote_ref)| {
                 symbol.name.as_str() == name
                     && symbol.remote.as_str() == remote
                     && !remote_ref.target.is_absent()
             })
-            .map(|(_, remote_ref)| self.summary_at_target(&remote_ref.target).0.id)
+            .map(|(_, remote_ref)| summary_at_target(&repo, &remote_ref.target).0.id)
     }
 
     pub fn create_bookmark(&self, name: &str, rev: &str) -> JayResult<()> {
@@ -205,7 +140,10 @@ impl Repo {
 
     pub fn delete_bookmark(&self, name: &str) -> JayResult<()> {
         let _write = self.write_guard()?;
-        self.update_local_bookmark(name, RefTarget::absent(), "delete bookmark")
+        self.with_repo_transaction("delete bookmark", false, |_, repo_mut| {
+            self.set_bookmark_target(repo_mut, name, RefTarget::absent());
+            Ok(())
+        })
     }
 
     /// Drop this bookmark from the commit `rev` resolves to. Pass the DAG chip's commit id so a working-copy snapshot cannot miss the target. Remaining targets stay; one remaining target resolves the conflict; none deletes the bookmark.
@@ -375,6 +313,58 @@ impl Repo {
             _ => (RemoteSyncStatus::Diverged, 0, 0),
         }
     }
+}
+
+/// An entry for a name with no local target. A tracked ref is a bookmark deleted locally but still on the remote (jj's "(deleted)"); an untracked one is remote-only.
+fn orphan_bookmark(
+    repo: &ReadonlyRepo,
+    name: &RefName,
+    remote_refs: &[(&RemoteName, &RemoteRef)],
+    default_remote: &str,
+) -> Option<BookmarkInfo> {
+    let refs: Vec<_> = remote_refs
+        .iter()
+        .filter(|(_, remote_ref)| !remote_ref.target.is_absent())
+        .collect();
+    let first_target = &refs
+        .iter()
+        .find(|(remote, _)| remote.as_str() == default_remote)
+        .or(refs.first())?
+        .1
+        .target;
+    let tracked_remotes: Vec<String> = refs
+        .iter()
+        .filter(|(_, remote_ref)| remote_ref.is_tracked())
+        .map(|(remote, _)| remote.as_str().to_owned())
+        .collect();
+    let (change_id, description) = summary_at_target(repo, first_target);
+    Some(BookmarkInfo {
+        name: name.as_str().to_owned(),
+        change_id,
+        description,
+        is_tracking_remote: false,
+        is_deleted: !tracked_remotes.is_empty(),
+        is_conflicted: !first_target.is_resolved(),
+        tracked_remotes,
+        available_remotes: refs
+            .iter()
+            .map(|(remote, _)| remote.as_str().to_owned())
+            .collect(),
+        has_local_target: false,
+        remote_targets: Vec::new(),
+    })
+}
+
+/// The change id, with the repo-wide unique prefix length the DAG highlights, and the first description line of a ref target.
+fn summary_at_target(repo: &ReadonlyRepo, target: &RefTarget) -> (ShortId, String) {
+    let Some(commit) = target
+        .as_normal()
+        .and_then(|commit_id| repo.store().get_commit(commit_id).ok())
+    else {
+        return (ShortId::new(String::new(), 0), String::new());
+    };
+    let description = commit.description().lines().next().unwrap_or("").to_owned();
+    (short_change_id(repo, &commit), description)
 }
 
 /// Drop `commit_id` from a bookmark target. `None` if that commit is not one of the added ids.

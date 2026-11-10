@@ -1,5 +1,6 @@
 use jayjay_network::graphql::{GraphQlRequest, GraphQlResponse, GraphQlResponseError};
 use jayjay_network::{Fetch, HttpClient, Method, encode_path_segment};
+use serde::Deserialize;
 use serde::de::DeserializeOwned;
 use serde_json::{Value, json};
 
@@ -37,11 +38,26 @@ impl<F: Fetch, T: TokenProvider> Api<F, T> {
     }
 
     pub(crate) fn repo_path(&self, path: &str) -> String {
+        format!("{}/{path}", self.repository_path())
+    }
+
+    fn repository_path(&self) -> String {
         format!(
-            "repos/{}/{}/{path}",
+            "repos/{}/{}",
             encode_path_segment(&self.owner),
             encode_path_segment(&self.repo)
         )
+    }
+
+    /// The repository's default branch, or `None` when GitHub doesn't report one.
+    pub(crate) fn default_branch(&self) -> Option<String> {
+        #[derive(Deserialize)]
+        struct Repository {
+            #[serde(default)]
+            default_branch: String,
+        }
+        let repository: Repository = self.client.get(&self.repository_path()).ok()?;
+        Some(repository.default_branch).filter(|branch| !branch.is_empty())
     }
 
     /// Binds `$owner` and `$repo` alongside `variables`.
@@ -70,10 +86,40 @@ impl<F: Fetch, T: TokenProvider> Api<F, T> {
 #[cfg(test)]
 mod tests {
     use jayjay_network::{MockFetch, Response};
-    use serde::Deserialize;
 
     use super::*;
     use crate::repo::forge_auth::{ForgeToken, TokenSource};
+
+    #[test]
+    fn default_branch_reads_the_repository() {
+        for (status, body, expected) in [
+            (200, r#"{"default_branch":"develop"}"#, Some("develop")),
+            (200, r#"{"default_branch":""}"#, None),
+            (404, r#"{"message":"Not Found"}"#, None),
+        ] {
+            let fetch = MockFetch::new(move |request| {
+                assert!(
+                    request.url.ends_with("/repos/owner/repo"),
+                    "{}",
+                    request.url
+                );
+                Response::ok(status, body)
+            });
+            let api = Api::new(
+                fetch,
+                Some(ForgeToken {
+                    secret: "token".into(),
+                    source: TokenSource::Stored,
+                }),
+                &HostedRepo {
+                    host: RepoHost::GitHub,
+                    owner: "owner".into(),
+                    repo: "repo".into(),
+                },
+            );
+            assert_eq!(api.default_branch().as_deref(), expected);
+        }
+    }
 
     #[test]
     fn graphql_errors_keep_their_status_when_partial_data_is_incompatible() {

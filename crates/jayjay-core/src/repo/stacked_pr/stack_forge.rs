@@ -6,10 +6,10 @@ use super::stack_link_outcome::StackLinkOutcome;
 use super::{cursor, github, gitlab};
 use crate::repo::Repo;
 use crate::repo::hosted_repo::{HostedRepo, RepoHost};
-use crate::repo::pull_requests::ForgeClient;
 use crate::repo::pull_requests::codeberg::codeberg_token;
 use crate::repo::pull_requests::cursor::Api as CursorApi;
 use crate::repo::pull_requests::github::Api as GitHubApi;
+use crate::repo::pull_requests::{self, ForgeClient};
 use crate::types::{JayError, JayResult, SubmittedLayer};
 
 pub(super) struct StackForge {
@@ -26,12 +26,17 @@ impl StackForge {
     pub(super) fn preflight(&self, repo: &Repo) -> JayResult<String> {
         match self.remote.host {
             RepoHost::GitHub => {
-                self.github().client().preflight()?;
-                Ok(repo.default_pull_request_base())
+                let api = self.github();
+                api.client().preflight()?;
+                Ok(api
+                    .default_branch()
+                    .unwrap_or_else(|| repo.default_pull_request_base()))
             }
             RepoHost::GitLab => {
-                self.gitlab().preflight()?;
-                Ok(repo.default_pull_request_base())
+                let api = self.gitlab();
+                api.preflight()?;
+                Ok(pull_requests::gitlab::default_branch(&api, &self.remote)
+                    .unwrap_or_else(|| repo.default_pull_request_base()))
             }
             RepoHost::Cursor => cursor::preflight(&self.cursor()),
             RepoHost::Codeberg => self.codeberg().preflight(),
