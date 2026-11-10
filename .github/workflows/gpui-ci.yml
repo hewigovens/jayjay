@@ -10,6 +10,7 @@ on:
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - "scripts/test-gpui-shard.sh"
       - ".github/workflows/gpui-ci.yml"
   pull_request:
     paths:
@@ -19,6 +20,7 @@ on:
       - "crates/**"
       - "Cargo.toml"
       - "Cargo.lock"
+      - "scripts/test-gpui-shard.sh"
       - ".github/workflows/gpui-ci.yml"
 
 permissions:
@@ -62,13 +64,18 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
+          shared-key: gpui
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Clippy
         run: cargo clippy --locked --workspace --all-targets -- -D warnings
 
       - name: Test
-        run: cargo test --locked --workspace
+        run: cargo test --locked --workspace --exclude jayjay-gpui
+
+      # The GPUI component tests run in the gpui job; building the GPUI unit tests here also fills the cache that job restores.
+      - name: Test GPUI units
+        run: cargo test --locked -p jayjay-gpui --lib --bins
 
   msrv:
     name: Minimum Rust version
@@ -121,7 +128,71 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
+          shared-key: gpui
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Test
-        run: cargo test --locked --workspace
+        run: cargo test --locked --workspace --exclude jayjay-gpui
+
+      # The GPUI component tests run in the gpui job; building the GPUI unit tests here also fills the cache that job restores.
+      - name: Test GPUI units
+        run: cargo test --locked -p jayjay-gpui --lib --bins
+
+  gpui:
+    name: GPUI tests (${{ matrix.os }} ${{ matrix.shard }}/2)
+    runs-on: ${{ matrix.os == 'linux' && 'ubuntu-latest' || 'windows-latest' }}
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [linux, windows]
+        shard: [1, 2]
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+
+      - name: Install Linux deps
+        if: matrix.os == 'linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+            gcc g++ clang libfontconfig-dev libwayland-dev \
+            libxkbcommon-x11-dev libx11-xcb-dev libssl-dev libzstd-dev \
+            vulkan-validationlayers libvulkan1
+
+      - name: Install jj (for component test fixtures)
+        if: matrix.os == 'linux'
+        env:
+          # Keep aligned with jj-lib pin in Cargo.toml.
+          JJ_VERSION: v0.47.1
+        run: |
+          curl -fsSL "https://github.com/jj-vcs/jj/releases/download/${JJ_VERSION}/jj-${JJ_VERSION}-x86_64-unknown-linux-musl.tar.gz" \
+            | tar -xz -C /tmp ./jj
+          sudo mv /tmp/jj /usr/local/bin/jj
+          jj --version
+
+      - name: Install jj (for component test fixtures)
+        if: matrix.os == 'windows'
+        shell: pwsh
+        env:
+          # Keep aligned with jj-lib pin in Cargo.toml.
+          JJ_VERSION: v0.47.1
+        run: |
+          $url = "https://github.com/jj-vcs/jj/releases/download/$env:JJ_VERSION/jj-$env:JJ_VERSION-x86_64-pc-windows-msvc.zip"
+          Invoke-WebRequest -Uri $url -OutFile jj.zip
+          Expand-Archive -Path jj.zip -DestinationPath "$env:USERPROFILE\jj-bin"
+          Add-Content -Path $env:GITHUB_PATH -Value "$env:USERPROFILE\jj-bin"
+          & "$env:USERPROFILE\jj-bin\jj.exe" --version
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: gpui
+          save-if: false
+
+      - name: Test
+        shell: bash
+        run: bash scripts/test-gpui-shard.sh ${{ matrix.shard }} 2
