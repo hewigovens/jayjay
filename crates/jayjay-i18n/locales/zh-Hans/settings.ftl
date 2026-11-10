@@ -166,3 +166,39 @@ settings-cli-was-linked-not-in-path =
     jayjay 已链接到 { $path }，但该目录不在你的 PATH 中。
     
     { $hint }
+
+settings-page-flock = Flock
+settings-flock-title = JayJay Flock
+settings-flock-dock-icon = Dock 图标
+settings-flock-dock-icon-detail = 所选的小鸟也会显示在“关于”中。
+settings-flock-claim = 送给赞助者的一份小礼物
+settings-flock-unlock = 通过 GitHub 解锁…
+settings-flock-verify = 验证赞助状态
+settings-flock-verify-detail = 获得一枚纪念羽毛，还有几只可以出现在 Dock 中的新小鸟。
+settings-flock-checking = 正在检查 GitHub 登录状态…
+settings-flock-another-account = 使用其他 GitHub 账号…
+settings-flock-not-sponsored = 未找到 { $login } 的个人赞助记录。请尝试其他账号，或成为赞助者来拆开你的礼物。
+settings-flock-thanks = 是你让这只小鸟飞了起来。
+settings-flock-feather-title = Flock 羽毛
+settings-flock-keep = 这枚羽毛永远属于你。
+settings-flock-replay = 重播羽毛动画
+settings-flock-your-feather = 你的羽毛
+settings-flock-privacy-detail = 我们会先尝试使用你现有的 GitHub 登录。如果无法确认赞助状态，登录时会请求只读的个人资料访问权限。
+settings-flock-sponsor = 成为赞助者
+settings-flock-icon-classic = 经典
+settings-flock-icon-fish-owl = 鱼鸮
+settings-flock-icon-golden-pheasant = 红腹锦鸡
+settings-flock-icon-kingfisher = 翠鸟
+settings-flock-icon-flycatcher = 鹟
+settings-flock-sign-in-failed = GitHub 无法验证此次登录，请重试。
+settings-flock-forget = 忘记此账号
+settings-flock-code-enter = 输入赞助码…
+settings-flock-code-title = 输入你的赞助码
+settings-flock-code-detail = 它在 GitHub Sponsors 的欢迎邮件里，无需登录。
+settings-flock-code-field = 赞助码
+settings-flock-code-name = 羽毛上的名字
+settings-flock-code-unlock = 解锁
+settings-flock-code-invalid = 赞助码不匹配，请检查后重试。
+settings-flock-about-icon = “关于”图标
+settings-flock-about-detail = 选择显示在“关于”中的小鸟。
+settings-flock-gift-detail = 获得一枚纪念羽毛，还有几只会出现在“关于”中的新小鸟。

@@ -170,3 +170,39 @@ settings-cli-was-linked-not-in-path =
     jayjay は { $path } にリンクされましたが、そのディレクトリは PATH に含まれていません。
     
     { $hint }
+
+settings-page-flock = Flock
+settings-flock-title = JayJay Flock
+settings-flock-dock-icon = Dock アイコン
+settings-flock-dock-icon-detail = 選んだ鳥は「情報」にも表示されます。
+settings-flock-claim = スポンサーへのささやかな贈り物
+settings-flock-unlock = GitHub でロック解除…
+settings-flock-verify = スポンサーシップを確認
+settings-flock-verify-detail = 記念の羽根と、Dock に並ぶ新しい鳥たちが手に入ります。
+settings-flock-checking = GitHub のサインインを確認中…
+settings-flock-another-account = 別の GitHub アカウントを使用…
+settings-flock-not-sponsored = { $login } への個人スポンサーシップが見つかりませんでした。別のアカウントを試すか、スポンサーになって贈り物を受け取ってください。
+settings-flock-thanks = あなたのおかげで、この鳥は飛び立てました。
+settings-flock-feather-title = Flock の羽根
+settings-flock-keep = この羽根はずっとあなたのものです。
+settings-flock-replay = 羽根のアニメーションをもう一度再生
+settings-flock-your-feather = あなたの羽根
+settings-flock-privacy-detail = まず既存の GitHub ログインを試します。それでスポンサーシップを確認できない場合は、サインインで読み取り専用のプロフィール アクセスを求めます。
+settings-flock-sponsor = スポンサーになる
+settings-flock-icon-classic = クラシック
+settings-flock-icon-fish-owl = シマフクロウ
+settings-flock-icon-golden-pheasant = キンケイ
+settings-flock-icon-kingfisher = カワセミ
+settings-flock-icon-flycatcher = ヒタキ
+settings-flock-sign-in-failed = GitHub でこのサインインを確認できませんでした。もう一度お試しください。
+settings-flock-forget = このアカウントを忘れる
+settings-flock-code-enter = スポンサー コードを入力…
+settings-flock-code-title = スポンサー コードを入力
+settings-flock-code-detail = GitHub Sponsors のウェルカム メールに記載されています。サインインは不要です。
+settings-flock-code-field = スポンサー コード
+settings-flock-code-name = 羽根に刻む名前
+settings-flock-code-unlock = ロック解除
+settings-flock-code-invalid = コードが一致しません。確認してもう一度お試しください。
+settings-flock-about-icon = 「情報」のアイコン
+settings-flock-about-detail = 「情報」に表示する鳥を選びます。
+settings-flock-gift-detail = 記念の羽根と、「情報」に登場する新しい鳥たちが手に入ります。

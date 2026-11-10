@@ -166,3 +166,39 @@ settings-cli-was-linked-not-in-path =
     jayjay 已連結到 { $path }，但該目錄不在你的 PATH 中。
     
     { $hint }
+
+settings-page-flock = Flock
+settings-flock-title = JayJay Flock
+settings-flock-dock-icon = Dock 圖示
+settings-flock-dock-icon-detail = 所選的小鳥也會顯示在「關於」中。
+settings-flock-claim = 送給贊助者的一份小禮物
+settings-flock-unlock = 透過 GitHub 解鎖…
+settings-flock-verify = 驗證贊助狀態
+settings-flock-verify-detail = 獲得一枚紀念羽毛，還有幾隻可以出現在 Dock 中的新小鳥。
+settings-flock-checking = 正在檢查 GitHub 登入狀態…
+settings-flock-another-account = 使用其他 GitHub 帳號…
+settings-flock-not-sponsored = 找不到 { $login } 的個人贊助紀錄。請嘗試其他帳號，或成為贊助者來拆開你的禮物。
+settings-flock-thanks = 是你讓這隻小鳥飛了起來。
+settings-flock-feather-title = Flock 羽毛
+settings-flock-keep = 這枚羽毛永遠屬於你。
+settings-flock-replay = 重播羽毛動畫
+settings-flock-your-feather = 你的羽毛
+settings-flock-privacy-detail = 我們會先嘗試使用你現有的 GitHub 登入。如果無法確認贊助狀態，登入時會要求唯讀的個人檔案存取權限。
+settings-flock-sponsor = 成為贊助者
+settings-flock-icon-classic = 經典
+settings-flock-icon-fish-owl = 魚鴞
+settings-flock-icon-golden-pheasant = 紅腹錦雞
+settings-flock-icon-kingfisher = 翠鳥
+settings-flock-icon-flycatcher = 鶲
+settings-flock-sign-in-failed = GitHub 無法驗證此次登入，請再試一次。
+settings-flock-forget = 忘記此帳號
+settings-flock-code-enter = 輸入贊助碼…
+settings-flock-code-title = 輸入你的贊助碼
+settings-flock-code-detail = 它在 GitHub Sponsors 的歡迎郵件裡，無需登入。
+settings-flock-code-field = 贊助碼
+settings-flock-code-name = 羽毛上的名字
+settings-flock-code-unlock = 解鎖
+settings-flock-code-invalid = 贊助碼不相符，請檢查後再試一次。
+settings-flock-about-icon = 「關於」圖示
+settings-flock-about-detail = 選擇顯示在「關於」中的小鳥。
+settings-flock-gift-detail = 獲得一枚紀念羽毛，還有幾隻會出現在「關於」中的新小鳥。
