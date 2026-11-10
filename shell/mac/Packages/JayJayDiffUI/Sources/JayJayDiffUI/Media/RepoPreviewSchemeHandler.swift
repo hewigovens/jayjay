@@ -35,11 +35,12 @@ final class RepoPreviewSchemeHandler: NSObject, WKURLSchemeHandler {
 
         do {
             let data = try Data(contentsOf: fileURL)
+            let mimeType = Self.mimeType(forPathExtension: fileURL.pathExtension)
             let response = URLResponse(
                 url: requestURL,
-                mimeType: Self.mimeType(forPathExtension: fileURL.pathExtension),
+                mimeType: mimeType,
                 expectedContentLength: data.count,
-                textEncodingName: nil
+                textEncodingName: Self.textEncodingName(for: data, mimeType: mimeType)
             )
             urlSchemeTask.didReceive(response)
             urlSchemeTask.didReceive(data)
@@ -77,6 +78,13 @@ final class RepoPreviewSchemeHandler: NSObject, WKURLSchemeHandler {
             return nil
         }
         return canonicalCandidate
+    }
+
+    /// WebKit reads text without a declared charset as Windows-1252; a transport charset outranks the document's own, so name UTF-8 only when it declares none.
+    static func textEncodingName(for data: Data, mimeType: String) -> String? {
+        guard mimeType.hasPrefix("text/"), String(data: data, encoding: .utf8) != nil else { return nil }
+        let declaresCharset = String(decoding: data.prefix(1024), as: UTF8.self).lowercased().contains("charset")
+        return declaresCharset ? nil : "utf-8"
     }
 
     static func mimeType(forPathExtension pathExtension: String) -> String {
