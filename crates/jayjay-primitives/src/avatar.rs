@@ -64,9 +64,25 @@ pub fn email_hash(email: &str) -> String {
     hex_sha256(email.trim().to_lowercase().as_bytes())
 }
 
+/// Both shells name the shared on-disk avatar file by this, so an alias shares its GitHub account's file.
+pub fn cache_key(email: &str) -> String {
+    let alias = github_alias::noreply_email(email);
+    email_hash(alias.as_deref().unwrap_or(email))
+}
+
+/// The fallback monogram's RGB color, keyed like the avatar file so an alias matches its GitHub account.
+pub fn monogram_color(email: &str) -> u32 {
+    const PALETTE: [u32; 8] = [
+        0x4a5568, 0x6b46c1, 0x2563eb, 0x059669, 0xd97706, 0xdc2626, 0xdb2777, 0x0891b2,
+    ];
+    let key = cache_key(email);
+    let byte = u8::from_str_radix(&key[..2], 16).unwrap_or(0) as usize;
+    PALETTE[byte % PALETTE.len()]
+}
+
 #[cfg(test)]
 mod tests {
-    use super::AvatarSource;
+    use super::{AvatarSource, cache_key, email_hash, monogram_color};
 
     fn source(email: &str) -> Option<AvatarSource> {
         AvatarSource::for_email(email, 96)
@@ -133,6 +149,65 @@ mod tests {
             other => panic!("expected gravatar url, got {other:?}"),
         }
         assert_eq!(source("  "), None);
+    }
+
+    #[test]
+    fn unusual_emails_follow_the_ascii_noreply_rules() {
+        assert_eq!(
+            source(" 12345+octocat@users.noreply.github.com\n"),
+            Some(AvatarSource::Url(
+                "https://avatars.githubusercontent.com/u/12345?size=96".to_owned()
+            ))
+        );
+        assert_eq!(
+            source("١٢+octocat@users.noreply.github.com"),
+            Some(AvatarSource::Url(
+                "https://github.com/octocat.png?size=96".to_owned()
+            ))
+        );
+        assert_eq!(
+            source("١٢+dependabot[bot]@users.noreply.github.com"),
+            Some(AvatarSource::Url(
+                "https://github.com/dependabot[bot].png?size=96".to_owned()
+            ))
+        );
+        assert_eq!(
+            source("a@b@users.noreply.github.com"),
+            Some(AvatarSource::Url(
+                "https://github.com/a@b.png?size=96".to_owned()
+            ))
+        );
+        for gravatar in [
+            "1-jöhn@users.noreply.gitlab.com",
+            "١-john@users.noreply.gitlab.com",
+        ] {
+            match source(gravatar) {
+                Some(AvatarSource::Url(url)) => {
+                    assert!(url.starts_with("https://gravatar.com/avatar/"), "{url}")
+                }
+                other => panic!("expected gravatar fallback for {gravatar}, got {other:?}"),
+            }
+        }
+    }
+
+    #[test]
+    fn monogram_color_follows_the_alias_resolved_email() {
+        assert_eq!(
+            monogram_color("NoReply@Anthropic.com"),
+            monogram_color("81847+claude@users.noreply.github.com")
+        );
+    }
+
+    #[test]
+    fn cache_key_normalizes_case_whitespace_and_aliases() {
+        assert_eq!(
+            cache_key(" Dev@Example.com\n"),
+            email_hash("dev@example.com")
+        );
+        assert_eq!(
+            cache_key("noreply@anthropic.com"),
+            email_hash("81847+claude@users.noreply.github.com")
+        );
     }
 
     #[test]

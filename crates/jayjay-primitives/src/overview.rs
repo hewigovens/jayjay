@@ -139,3 +139,42 @@ impl OverviewLane {
         self.base.kind == OverviewBaseKind::OlderTrunk
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::{OverviewBase, OverviewBaseKind, OverviewChange, OverviewLane};
+    use crate::change::ShortId;
+
+    fn lane(description: &str) -> OverviewLane {
+        let id = |id: &str| ShortId::new(id.to_owned(), 4);
+        let change = OverviewChange {
+            change_id: id("kxyz"),
+            commit_id: id("abcd"),
+            description: description.to_owned(),
+            full_description: description.to_owned(),
+            timestamp_millis: 0,
+            is_empty: false,
+            has_conflict: false,
+            bookmarks: Vec::new(),
+            workspaces: Vec::new(),
+        };
+        let base = OverviewBase {
+            change_id: id("zzzz"),
+            commit_id: id("0000"),
+            description: String::new(),
+            timestamp_millis: 0,
+            kind: OverviewBaseKind::Trunk,
+            bookmarks: Vec::new(),
+            behind_trunk: 0,
+        };
+        OverviewLane::new(vec![change], base, Vec::new())
+    }
+
+    #[test]
+    fn filter_trims_every_kind_of_whitespace() {
+        let lane = lane("Weather forecast");
+        assert!(lane.matches("\n"));
+        assert!(lane.matches("\tFORECAST\r\n"));
+        assert!(!lane.matches("\nrollup\n"));
+    }
+}

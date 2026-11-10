@@ -198,7 +198,7 @@ extension DiffSection {
         HStack(spacing: 8) {
             Image(systemName: projection.mode == .raw ? "doc.text" : projection.renderKind.iconName)
                 .foregroundStyle(projection.diagnostics.isEmpty ? Color.accentColor : .orange)
-            Text(DiffProjectionDisplayPolicy.title(for: projection))
+            Text(projectionTitle(projection: projection))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
                 .lineLimit(1)

@@ -103,8 +103,8 @@ extension DiffSection {
     }
 
     var shouldShowProjectionBanner: Bool {
-        guard let projection = effectiveProjection else { return false }
-        return DiffProjectionDisplayPolicy.showsBanner(for: projection, view: projectionView)
+        guard let projection = effectiveProjection, let projectionView else { return false }
+        return projectionShowsBanner(projection: projection, view: projectionView)
     }
 
     var effectiveProjection: DiffProjection? {
@@ -113,19 +113,19 @@ extension DiffSection {
 
     var shouldShowProjectionToggle: Bool {
         guard let projection = effectiveProjection else { return false }
-        return !DiffProjectionDisplayPolicy.opensAutomatically(projection)
+        return !projectionOpensAutomatically(projection: projection)
     }
 
     var projectionRequestMode: DiffProjectionMode? {
-        DiffProjectionDisplayPolicy.requestMode(for: effectiveProjection, view: projectionView)
+        projectionView.map { projectionViewRequestMode(view: $0) }
     }
 
-    var projectionView: DiffProjectionView? {
+    var projectionView: ProjectionView? {
         guard let projection = effectiveProjection else { return nil }
         switch selectedPreviewKind {
             case .projection: return .rendered
             case .source: return .source
-            default: return DiffProjectionDisplayPolicy.defaultView(for: projection)
+            default: return projectionDefaultView(projection: projection)
         }
     }
 
@@ -145,12 +145,6 @@ extension DiffSection {
     private var svgOpensPreview: Bool {
         isSvgFile && loadedPath == hunk.path && loadedDiff?.opensSvgPreview == true
             && loadedReviewNoteSummaries().isEmpty
-    }
-
-    /// A conflicted or binary side would render as a broken image.
-    nonisolated static func svgOpensPreview(oldContent: String?, newContent: String?) -> Bool {
-        let sides = [oldContent, newContent].compactMap { $0 }.filter { !$0.isEmpty }
-        return !sides.isEmpty && sides.allSatisfy { $0.contains("<svg") && !$0.contains("<<<<<<<") }
     }
 
     var activeMarkdownRichView: Bool {
@@ -195,7 +189,7 @@ extension DiffSection {
     }
 
     func toggleProjectionRichView() {
-        let opensRendered = effectiveProjection.map(DiffProjectionDisplayPolicy.defaultView) == .rendered
+        let opensRendered = effectiveProjection.map { projectionDefaultView(projection: $0) } == .rendered
         toggleDefaultPreview(.projection, previewing: activeProjectionRichView, opensPreview: opensRendered)
     }
 

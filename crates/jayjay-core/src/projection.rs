@@ -168,6 +168,11 @@ mod tests {
             assert_eq!(ProjectionView::default_for(&projection), view, "{plugin}");
             assert_eq!(default_mode(Some(&projection)), Some(mode), "{plugin}");
             assert_eq!(shows_source_toggle(&projection), source_toggle, "{plugin}");
+            assert_eq!(
+                opens_automatically(&projection),
+                plugin == "plist",
+                "{plugin}"
+            );
         }
     }
 

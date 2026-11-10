@@ -11,6 +11,19 @@ use crate::types::*;
 
 pub use platform::{home_dir, is_executable_file};
 
+/// Expands a bare `~` and a leading `~/` the way a shell does; jj's `expand_home_path` leaves a bare `~` alone.
+pub fn expand_home(path: &str) -> PathBuf {
+    let relative = match path {
+        "~" => Some(""),
+        _ => path.strip_prefix("~/"),
+    };
+    match relative.zip(home_dir()) {
+        Some(("", home)) => home,
+        Some((relative, home)) => home.join(relative),
+        None => PathBuf::from(path),
+    }
+}
+
 fn xdg_config_home() -> Option<PathBuf> {
     std::env::var_os("XDG_CONFIG_HOME")
         .filter(|value| !value.is_empty())
@@ -336,6 +349,20 @@ pub fn check_jj_environment() -> CliStatus {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn expand_home_expands_a_bare_tilde_and_a_leading_tilde_slash_only() {
+        let home = home_dir().expect("home directory");
+        assert_eq!(expand_home("~"), home);
+        assert_eq!(expand_home("~/src/repo"), home.join("src/repo"));
+        for unchanged in ["~other/repo", "/srv/~", "repo/~/x", ""] {
+            assert_eq!(
+                expand_home(unchanged),
+                PathBuf::from(unchanged),
+                "{unchanged:?}"
+            );
+        }
+    }
 
     // Tests below use Unix-style PATH (`:` separator, absolute paths starting with `/`),
     // so they rely on Unix semantics from `std::env::split_paths` / `Path::is_absolute`.

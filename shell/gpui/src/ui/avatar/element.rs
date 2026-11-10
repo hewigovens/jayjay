@@ -2,19 +2,9 @@
 
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, px, rgb};
 
-use jayjay_core::avatar::email_hash;
+use jayjay_core::avatar;
 
 use super::cache::cache_path;
-
-/// Stable palette index from the email — same email, same fallback color.
-fn initial_color(email: &str) -> u32 {
-    const PALETTE: &[u32] = &[
-        0x4a5568, 0x6b46c1, 0x2563eb, 0x059669, 0xd97706, 0xdc2626, 0xdb2777, 0x0891b2,
-    ];
-    let h = email_hash(email);
-    let byte = u8::from_str_radix(&h[..2], 16).unwrap_or(0) as usize;
-    PALETTE[byte % PALETTE.len()]
-}
 
 fn initial(name: &str) -> char {
     name.chars()
@@ -42,7 +32,7 @@ pub fn element(email: &str, name: &str, size: f32) -> AnyElement {
         .w(px(size))
         .h(px(size))
         .rounded_full()
-        .bg(rgb(initial_color(email)))
+        .bg(rgb(avatar::monogram_color(email)))
         .text_size(px(size * 0.55))
         .text_color(rgb(0xffffff))
         .child(SharedString::from(initial(name).to_string()))

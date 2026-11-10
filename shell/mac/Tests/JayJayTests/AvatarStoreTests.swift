@@ -1,4 +1,5 @@
 @testable import JayJay
+import JayJayCore
 import XCTest
 
 final class AvatarStoreTests: XCTestCase {
@@ -6,7 +7,7 @@ final class AvatarStoreTests: XCTestCase {
         let cachesDirectory = try XCTUnwrap(
             FileManager.default.urls(for: .cachesDirectory, in: .userDomainMask).first
         )
-        let key = AvatarStore.key("Person@example.com")
+        let key = avatarCacheKey(email: "Person@example.com")
 
         XCTAssertEqual(
             AvatarStore.diskURL(key),
@@ -15,9 +16,5 @@ final class AvatarStoreTests: XCTestCase {
                 .appendingPathComponent("avatars", isDirectory: true)
                 .appendingPathComponent("\(key).png")
         )
-    }
-
-    func testAliasEmailIsCachedUnderItsGitHubNoreplyAddress() {
-        XCTAssertEqual(AvatarStore.key("noreply@anthropic.com"), AvatarStore.key("81847+claude@users.noreply.github.com"))
     }
 }

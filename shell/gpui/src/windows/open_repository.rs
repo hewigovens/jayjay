@@ -1,4 +1,4 @@
-use std::path::{Path, PathBuf};
+use std::path::PathBuf;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
@@ -144,7 +144,7 @@ fn resolve_directory(input: &str) -> Result<PathBuf, String> {
     if input.is_empty() {
         return Err(jayjay_i18n::onboarding::enter_a_repository_path());
     }
-    let path = expand_home(input);
+    let path = jayjay_core::expand_home(input);
     let path = if path.is_absolute() {
         path
     } else {
@@ -163,18 +163,6 @@ fn resolve_directory(input: &str) -> Result<PathBuf, String> {
         ));
     }
     Ok(path)
-}
-
-fn expand_home(input: &str) -> PathBuf {
-    if input == "~" {
-        return jayjay_core::home_dir().unwrap_or_else(|| PathBuf::from(input));
-    }
-    if let Some(relative) = input.strip_prefix("~/")
-        && let Some(home) = jayjay_core::home_dir()
-    {
-        return home.join(relative);
-    }
-    Path::new(input).to_path_buf()
 }
 
 #[cfg(test)]

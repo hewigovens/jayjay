@@ -5,10 +5,12 @@ use gpui::{
     SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 use jayjay_core::ssh::ConnectionState;
-use jayjay_core::{BookmarkInfo, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrState};
+use jayjay_core::{
+    BookmarkInfo, BookmarkSync, ChangeInfo, ChecksStatus, DiffStats, PrInfo, PrState,
+};
 
 use super::RepoWindow;
-use super::model::{active_bookmark_sync_item_data, working_copy_stat_label};
+use super::model::working_copy_stat_label;
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{dot_separator, text_tooltip};
@@ -263,13 +265,13 @@ fn active_bookmark_sync_item(
     bookmarks: &[BookmarkInfo],
     t: &Theme,
 ) -> Option<AnyElement> {
-    active_bookmark_sync_item_data(changes, bookmarks).map(|(text, tooltip)| {
+    BookmarkSync::nearest_working_copy(changes, bookmarks).map(|sync| {
         status_item_base(
             StatusItemSpec::new(
                 "status-bookmark-sync",
                 Some(glyph::BOOKMARK),
-                text,
-                Some(tooltip.into()),
+                sync.text,
+                Some(sync.tooltip.into()),
                 false,
             ),
             t,

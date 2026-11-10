@@ -56,6 +56,7 @@ pub use config::{JjConfigEntry, JjConfigSection, JjUserConfig, UserIdentity, jj_
 pub(crate) use diffedit::partition_validated_text_selection;
 pub use environment::check_jj_environment;
 pub(crate) use environment::command as subprocess_command;
+pub use environment::expand_home;
 pub use environment::find_existing_binary;
 pub use environment::home_dir;
 pub use environment::is_executable_file;

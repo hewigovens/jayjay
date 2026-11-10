@@ -7,7 +7,6 @@ let dagRowLeadingPadding: CGFloat = 4
 let dagRowVerticalPadding: CGFloat = 8
 /// Used only until the refs row reports its bounds; the node then centers on that row, so it tracks the user font size.
 let dagFallbackNodeCenterY: CGFloat = 12
-let dagCompactVisibleLanes = 4
 let dagOverflowStroke = StrokeStyle(lineWidth: 1, dash: [10, 4, 10, 12])
 let dagIndirectEdgeStroke = StrokeStyle(lineWidth: 1, dash: [3, 3])
 let dagMissingEdgeStroke = StrokeStyle(lineWidth: 1, lineCap: .round, dash: [2, 2])
@@ -16,21 +15,21 @@ let dagSolidStroke = StrokeStyle(lineWidth: 1)
 /// Thin Swift wrapper over `jayjay_core::dag::DagLayout` (via uniffi).
 struct DAGLayout {
     private let lanes: [String: UInt32]
-    private let maxLaneCount: Int
     private let activeLaneIndicesPerRow: [[UInt32]]
     private let passThroughLaneIndicesPerRow: [[UInt32]]
     private let missingAncestryRows: [Bool]
     private let overflowRows: [Bool]
     private let displayLaneCountValue: UInt32
+    private let compact: Bool
 
     init(data: DagLayoutData) {
         lanes = data.lanes
-        maxLaneCount = Int(data.activeLanesPerRow.max() ?? 1)
         activeLaneIndicesPerRow = data.activeLaneIndicesPerRow
         passThroughLaneIndicesPerRow = data.passThroughLaneIndicesPerRow
         missingAncestryRows = data.missingAncestryRows
         overflowRows = data.overflowRows
         displayLaneCountValue = data.displayLaneCount
+        compact = data.compact
     }
 
     init(entries: [GraphEntry]) {
@@ -39,10 +38,6 @@ struct DAGLayout {
 
     func lane(for commitId: String) -> Int {
         Int(lanes[commitId] ?? 0)
-    }
-
-    func maxLanes() -> Int {
-        maxLaneCount
     }
 
     func displayLaneCount() -> Int {
@@ -54,8 +49,7 @@ struct DAGLayout {
     }
 
     func displayLane(for lane: Int) -> Int {
-        guard maxLanes() > dagCompactVisibleLanes else { return lane }
-        return min(lane, dagCompactVisibleLanes - 1)
+        compact ? min(lane, displayLaneCount() - 1) : lane
     }
 
     func activeLaneIndices(at row: Int) -> [Int] {

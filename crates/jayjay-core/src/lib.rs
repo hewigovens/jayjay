@@ -9,6 +9,7 @@ pub use jj_diff as diff;
 pub use jj_diff::syntax;
 #[cfg(feature = "repository")]
 pub mod agent_skills;
+mod bookmark_sync;
 #[cfg(feature = "repository")]
 mod cli;
 pub mod commit_message;
@@ -70,6 +71,7 @@ pub mod trunk;
 mod types;
 pub mod utf16;
 
+pub use bookmark_sync::BookmarkSync;
 #[cfg(feature = "repository")]
 pub use cli::run_app_cli_command;
 #[cfg(feature = "repository")]
@@ -95,8 +97,8 @@ pub use repo::{
     JjUserConfig, RepoHost, ReviewNotesReport, ReviewOutputFormat, ReviewPrune, SyncToken,
     TokenSource, UserIdentity, WorkingCopyReview, WorkingCopyReviewFile, WorkingCopyReviewMark,
     WorkingCopyReviewNote, WorkingCopyReviewStatus, add_review_note, branch_name_slug,
-    check_jj_environment, compose_bisect_range, enclosing_workspace_root, find_existing_binary,
-    home_dir, init_jj_git_repo, is_executable_file, is_valid_bookmark_name,
+    check_jj_environment, compose_bisect_range, enclosing_workspace_root, expand_home,
+    find_existing_binary, home_dir, init_jj_git_repo, is_executable_file, is_valid_bookmark_name,
     is_valid_workspace_name, jj_user_config, login_shell, login_shell_path, mark_review_file,
     resolve_review_note, review_display_group_map_from_hunk, review_notes_output,
     review_snapshot_from_hunk, review_status_output, unmark_review_files, use_system_keychain,

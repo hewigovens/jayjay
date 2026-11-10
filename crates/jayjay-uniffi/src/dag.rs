@@ -10,12 +10,12 @@ use jayjay_core::{ChangeInfo, GraphEntry};
 #[derive(uniffi::Record, Debug, Clone)]
 pub struct DagLayoutData {
     lanes: HashMap<String, u32>,
-    active_lanes_per_row: Vec<u32>,
     active_lane_indices_per_row: Vec<Vec<u32>>,
     pass_through_lane_indices_per_row: Vec<Vec<u32>>,
     missing_ancestry_rows: Vec<bool>,
     overflow_rows: Vec<bool>,
     display_lane_count: u32,
+    compact: bool,
 }
 
 /// Everything the shell needs from one load; sending the entries back into Rust would copy every string again.
@@ -204,16 +204,12 @@ fn selection_is_contiguous(selection: OrderedSelection, order: Vec<String>) -> b
 
 pub(crate) fn layout_data(layout: DagLayout) -> DagLayoutData {
     let display_lane_count = layout.display_lane_count();
+    let compact = layout.is_compact();
     DagLayoutData {
         lanes: layout
             .lanes
             .into_iter()
             .map(|(k, v)| (k, v as u32))
-            .collect(),
-        active_lanes_per_row: layout
-            .active_lanes_per_row
-            .iter()
-            .map(|&v| v as u32)
             .collect(),
         active_lane_indices_per_row: layout
             .active_lane_indices_per_row
@@ -228,6 +224,7 @@ pub(crate) fn layout_data(layout: DagLayout) -> DagLayoutData {
         missing_ancestry_rows: layout.missing_ancestry_rows,
         overflow_rows: layout.overflow_rows.to_vec(),
         display_lane_count: display_lane_count as u32,
+        compact,
     }
 }
 

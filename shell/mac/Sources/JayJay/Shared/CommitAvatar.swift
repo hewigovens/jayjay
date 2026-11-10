@@ -1,4 +1,5 @@
 import AppKit
+import JayJayCore
 import SwiftUI
 
 /// A circular author avatar: the cached image when available, else a stable
@@ -7,19 +8,23 @@ import SwiftUI
 struct CommitAvatar: View {
     let email: String
     var size: CGFloat = 20
+    private let cacheKey: String
+    private let monogramColor: Color
     @State private var image: NSImage?
 
     init(email: String, size: CGFloat = 20) {
         self.email = email
         self.size = size
-        _image = State(initialValue: AvatarStore.cachedImage(email))
+        cacheKey = avatarCacheKey(email: email)
+        monogramColor = Color(rgb: avatarMonogramColor(email: email))
+        _image = State(initialValue: Self.cachedImage(email: email, key: cacheKey))
     }
 
     var body: some View {
         content
             .frame(width: size, height: size)
             // Re-seed when a recycled row swaps to a different author.
-            .onChange(of: email) { image = AvatarStore.cachedImage(email) }
+            .onChange(of: email) { image = Self.cachedImage(email: email, key: cacheKey) }
             .task(id: email) {
                 let requested = email
                 guard image == nil, !requested.isEmpty else { return }
@@ -44,7 +49,7 @@ struct CommitAvatar: View {
 
     private var monogram: some View {
         Circle()
-            .fill(Self.monogramColor(email))
+            .fill(monogramColor)
             .overlay(
                 Text(Self.initial(email))
                     .font(.system(size: size * 0.5, weight: .semibold))
@@ -55,24 +60,14 @@ struct CommitAvatar: View {
 
     /// Initial from the email's username (after `+` for GitHub noreply addresses).
     private static func initial(_ email: String) -> String {
-        let username = AvatarStore.username(from: email)
+        let local = email.components(separatedBy: "@").first ?? ""
+        let username = local.components(separatedBy: "+").last ?? local
         let source = username.isEmpty ? email : username
         guard let ch = source.first(where: { $0.isLetter || $0.isNumber }) else { return "?" }
         return String(ch).uppercased()
     }
 
-    /// Deterministic monogram palette, shared with the GPUI shell's `initial_color`.
-    static let monogramPalette: [UInt32] = [
-        0x4A5568, 0x6B46C1, 0x2563EB, 0x059669, 0xD97706, 0xDC2626, 0xDB2777, 0x0891B2
-    ]
-
-    private static func monogramColor(_ email: String) -> Color {
-        let byte = UInt8(String(AvatarStore.key(email).prefix(2)), radix: 16) ?? 0
-        let hex = monogramPalette[Int(byte) % monogramPalette.count]
-        return Color(
-            red: Double((hex >> 16) & 0xFF) / 255,
-            green: Double((hex >> 8) & 0xFF) / 255,
-            blue: Double(hex & 0xFF) / 255
-        )
+    private static func cachedImage(email: String, key: String) -> NSImage? {
+        email.isEmpty ? nil : AvatarStore.cachedImage(key: key)
     }
 }

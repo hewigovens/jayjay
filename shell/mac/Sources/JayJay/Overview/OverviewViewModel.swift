@@ -7,7 +7,13 @@ final class OverviewViewModel {
     let repoPath: String
     private var repo: JayJayRepo?
     private(set) var snapshot: OverviewSnapshot? {
-        didSet { rebuildLayout() }
+        didSet {
+            laneIds = snapshot.map { overviewLaneIds(snapshot: $0) } ?? []
+            laneIndexById = Dictionary(uniqueKeysWithValues: laneIds.enumerated().map { ($1, $0) })
+            trunkName = snapshot.map { overviewTrunkName(snapshot: $0) } ?? "trunk"
+            laneFilter = snapshot.map { OverviewFilter(snapshot: $0) }
+            rebuildLayout()
+        }
     }
 
     private(set) var error: String?
@@ -25,9 +31,11 @@ final class OverviewViewModel {
 
     /// Cached because the canvas reads them on every update.
     private(set) var laneIds: [String] = []
+    private(set) var trunkName = "trunk"
     private(set) var visibleGroups: [OverviewGroup] = []
     private(set) var placement = OverviewPlacement(lanes: [], groups: [])
     @ObservationIgnored private var laneIndexById: [String: Int] = [:]
+    @ObservationIgnored private var laneFilter: OverviewFilter?
 
     var pendingAbandon: OverviewAbandonRequest?
     var pendingWorkspaceDelete: WorkspaceInfo?
@@ -46,33 +54,9 @@ final class OverviewViewModel {
         snapshot?.overview.lanes ?? []
     }
 
-    /// Divergent heads share a change id, so those lanes carry the commit id too.
-    private static func laneIds(for lanes: [OverviewLane]) -> [String] {
-        var seen: [String: Int] = [:]
-        for lane in lanes {
-            seen[lane.head.changeId.id, default: 0] += 1
-        }
-        return lanes.map { lane in
-            let changeId = lane.head.changeId.id
-            return seen[changeId] == 1 ? changeId : "\(changeId)/\(lane.head.commitId.id)"
-        }
-    }
-
     private func rebuildLayout() {
-        laneIds = Self.laneIds(for: lanes)
-        laneIndexById = Dictionary(uniqueKeysWithValues: laneIds.enumerated().map { ($1, $0) })
-        visibleGroups = snapshot.map { snapshot in
-            snapshot.groups.compactMap { group in
-                let lanes = group.lanes.filter { snapshot.overview.lanes[Int($0)].matches(filter: filter) }
-                return lanes.isEmpty ? nil : OverviewGroup(base: group.base, lanes: lanes)
-            }
-        } ?? []
+        visibleGroups = laneFilter?.visibleGroups(filter: filter) ?? []
         placement = OverviewPlacement(lanes: lanes, groups: visibleGroups)
-    }
-
-    var trunkName: String {
-        let bookmarks = snapshot?.groups.first { $0.base.kind == .trunk }?.base.bookmarks ?? []
-        return bookmarks.count == 1 ? bookmarks[0] : "trunk"
     }
 
     var selectedLane: OverviewLane? {
@@ -306,13 +290,6 @@ extension OverviewLane {
 
     var footer: String {
         attention.first ?? Localized.Overview.laneSummary(changes: Localized.Repo.changeCount(count: changes.count), age: Date.relativeLabel(millis: latestTimestampMillis))
-    }
-
-    func matches(filter: String) -> Bool {
-        let needle = filter.trimmingCharacters(in: .whitespaces)
-        guard !needle.isEmpty else { return true }
-        let haystacks = changes.flatMap { [$0.description, $0.changeId.id] + $0.bookmarks + $0.workspaces }
-        return haystacks.contains { $0.localizedCaseInsensitiveContains(needle) }
     }
 }
 

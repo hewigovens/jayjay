@@ -32,7 +32,7 @@ final class DiffStore {
         let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
             ignoreWhitespace: ignoreWhitespace, path: hunk.path,
-            projectionKey: Self.projectionKey(hunk: hunk, mode: projectionMode)
+            projectionKey: projectionCacheIdentity(projection: hunk.projection, mode: projectionMode)
         ))
         return await cache.get(key)
     }
@@ -54,7 +54,7 @@ final class DiffStore {
         let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
             ignoreWhitespace: ignoreWhitespace, path: hunk.path,
-            projectionKey: Self.projectionKey(hunk: hunk, mode: projectionMode)
+            projectionKey: projectionCacheIdentity(projection: hunk.projection, mode: projectionMode)
         ))
 
         if let cached = await cache.get(key) {
@@ -159,15 +159,6 @@ final class DiffStore {
         mode: DiffProjectionMode?
     ) -> DiffProjectionMode? {
         mode ?? hunk.projection?.mode
-    }
-
-    nonisolated private static func projectionKey(
-        hunk: DiffHunk,
-        mode: DiffProjectionMode?
-    ) -> String {
-        guard let projection = hunk.projection else { return "raw" }
-        let activeMode = effectiveProjectionMode(hunk: hunk, mode: mode) ?? projection.mode
-        return projection.identityPart(mode: activeMode)
     }
 }
 

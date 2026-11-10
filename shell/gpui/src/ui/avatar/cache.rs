@@ -2,20 +2,18 @@
 
 use std::path::PathBuf;
 
-use jayjay_core::avatar::{AvatarSource, email_hash};
-use jayjay_core::{AppDirs, github_alias};
+use jayjay_core::AppDirs;
+use jayjay_core::avatar::{self, AvatarSource};
 
 use super::resolve::{PIXEL_SIZE, bot_avatar_url, gitlab_avatar_url};
 
 const AVATAR_BYTE_CAP: u32 = 2 * 1024 * 1024; // hard cap 2MB
 
 pub fn cache_path(email: &str) -> Option<PathBuf> {
-    let alias = github_alias::noreply_email(email);
-    let email = alias.as_deref().unwrap_or(email);
     AppDirs::new().map(|dirs| {
         dirs.cache
             .join("avatars")
-            .join(format!("{}.png", email_hash(email)))
+            .join(format!("{}.png", avatar::cache_key(email)))
     })
 }
 
@@ -70,7 +68,7 @@ mod tests {
                 .join("Caches")
                 .join("dev.hewig.jayjay")
                 .join("avatars")
-                .join(format!("{}.png", email_hash(EMAIL)))
+                .join(format!("{}.png", avatar::cache_key(EMAIL)))
         );
     }
 }

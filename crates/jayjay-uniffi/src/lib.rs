@@ -4,6 +4,9 @@ uniffi::setup_scaffolding!();
 mod agent_skills;
 #[cfg(feature = "desktop")]
 mod ai;
+mod avatar;
+#[cfg(feature = "desktop")]
+mod bookmark_sync;
 #[cfg(feature = "desktop")]
 mod cli;
 mod commit_message;
@@ -23,7 +26,6 @@ mod fonts;
 #[cfg(feature = "desktop")]
 mod forge;
 mod fuzzy;
-mod github_alias;
 mod l10n;
 #[cfg(feature = "desktop")]
 mod log_file;
@@ -31,8 +33,10 @@ mod markdown;
 #[cfg(feature = "desktop")]
 mod merge_scroll;
 mod network;
+mod overview;
 mod palette;
 mod placeholder;
+mod projection;
 #[cfg(feature = "desktop")]
 mod repo;
 #[cfg(feature = "desktop")]

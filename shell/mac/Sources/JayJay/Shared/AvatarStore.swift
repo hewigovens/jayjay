@@ -1,5 +1,4 @@
 import AppKit
-import CryptoKit
 import JayJayCore
 
 /// Process-wide decoded-image cache (thread-safe) so scrolling never re-decodes or flashes.
@@ -15,24 +14,14 @@ actor AvatarStore {
     static let shared = AvatarStore()
     private var inFlight: [String: Task<NSImage?, Never>] = [:]
 
-    /// sha256(trimmed lowercased email) — shared with GPUI and the Gravatar hash, so both shells share the disk file.
-    static func key(_ email: String) -> String {
-        let email = githubAliasNoreplyEmail(email: email) ?? email
-        let normalized = email.trimmingCharacters(in: .whitespacesAndNewlines).lowercased()
-        return SHA256.hash(data: Data(normalized.utf8))
-            .map { String(format: "%02x", $0) }
-            .joined()
-    }
-
     /// Synchronous in-memory hit, used to seed a view with no load flash.
-    static func cachedImage(_ email: String) -> NSImage? {
-        guard !email.isEmpty else { return nil }
-        return avatarMemoryCache.object(forKey: key(email) as NSString)
+    static func cachedImage(key: String) -> NSImage? {
+        avatarMemoryCache.object(forKey: key as NSString)
     }
 
     func image(for email: String, pixelSize: Int) async -> NSImage? {
         guard !email.isEmpty else { return nil }
-        let k = Self.key(email)
+        let k = avatarCacheKey(email: email)
         if let cached = avatarMemoryCache.object(forKey: k as NSString) {
             return cached
         }
@@ -49,17 +38,15 @@ actor AvatarStore {
 
     private static func fetch(email: String, key: String, pixelSize: Int) async -> NSImage? {
         guard let fileURL = diskURL(key) else { return nil }
-        let email = githubAliasNoreplyEmail(email: email) ?? email
         if let data = try? Data(contentsOf: fileURL), let image = NSImage(data: data) {
             avatarMemoryCache.setObject(image, forKey: key as NSString)
             return image
         }
-        let imageURL: URL? = if let botID = botUserID(email) {
-            await botAvatarURL(id: botID, pixelSize: pixelSize)
-        } else if let gitlabUser = gitlabUsername(email) {
-            await gitlabAvatarURL(username: gitlabUser, pixelSize: pixelSize)
-        } else {
-            remoteURL(email: email, pixelSize: pixelSize)
+        let imageURL: URL? = switch avatarSource(email: email, pixelSize: UInt32(pixelSize)) {
+            case let .url(url)?: URL(string: url)
+            case let .gitHubBot(id)?: await botAvatarURL(id: id, pixelSize: pixelSize)
+            case let .gitLabUser(username)?: await gitlabAvatarURL(username: username, pixelSize: pixelSize)
+            case nil: nil
         }
         guard let imageURL,
               let (data, response) = try? await URLSession.shared.data(from: imageURL),

@@ -20,60 +20,6 @@ final class DiffSectionProjectionTests: XCTestCase {
         tempDir = nil
     }
 
-    func testPlistProjectionUsesProcessedModeWithoutRichToggle() {
-        let projection = testProjection(
-            pluginId: "plist",
-            pluginLabel: "Property list",
-            mode: .raw,
-            renderKind: .text,
-            virtualPath: "Info.plist.xml"
-        )
-
-        XCTAssertTrue(DiffProjectionDisplayPolicy.opensAutomatically(projection))
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .processed)
-    }
-
-    func testNotebookOpensProcessedDiffWithSourceToggle() {
-        let projection = testProjection(pluginId: "ipynb", pluginLabel: "Notebook", mode: .raw)
-
-        XCTAssertFalse(DiffProjectionDisplayPolicy.opensAutomatically(projection))
-        XCTAssertTrue(DiffProjectionDisplayPolicy.showsSourceToggle(projection))
-        XCTAssertEqual(DiffProjectionDisplayPolicy.defaultView(for: projection), .diff)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .processed)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, view: .source), .raw)
-    }
-
-    func testSarifOpensRenderedAndCanReturnToSource() {
-        let projection = testProjection(
-            pluginId: "sarif",
-            pluginLabel: "SARIF",
-            mode: .raw,
-            renderKind: .markdown
-        )
-
-        XCTAssertFalse(DiffProjectionDisplayPolicy.opensAutomatically(projection))
-        XCTAssertEqual(DiffProjectionDisplayPolicy.defaultView(for: projection), .rendered)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .processed)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, view: .source), .raw)
-    }
-
-    func testDelimitedProjectionStaysOnSource() {
-        let projection = testProjection(pluginId: "delimited", pluginLabel: "Table", mode: .raw, renderKind: .table)
-
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection), .raw)
-        XCTAssertEqual(DiffProjectionDisplayPolicy.requestMode(for: projection, view: .rendered), .processed)
-    }
-
-    func testSvgOpensPreviewOnlyWhenEverySideCanRender() {
-        let svg = "<svg xmlns=\"http://www.w3.org/2000/svg\"/>"
-
-        XCTAssertTrue(DiffSection.svgOpensPreview(oldContent: nil, newContent: svg))
-        XCTAssertTrue(DiffSection.svgOpensPreview(oldContent: svg, newContent: svg))
-        XCTAssertFalse(DiffSection.svgOpensPreview(oldContent: svg, newContent: "<<<<<<< conflict\n<svg/>"))
-        XCTAssertFalse(DiffSection.svgOpensPreview(oldContent: "<binary file>", newContent: svg))
-        XCTAssertFalse(DiffSection.svgOpensPreview(oldContent: nil, newContent: nil))
-    }
-
     func testFailedProjectionShowsItsRawFallback() {
         XCTAssertTrue(DiffSection.hasCurrentRenderableDiff(
             loadedPath: "broken.ipynb",
@@ -91,22 +37,6 @@ final class DiffSectionProjectionTests: XCTestCase {
         XCTAssertTrue(selection.isActive(.projection, path: "analysis.ipynb"))
         XCTAssertFalse(selection.isActive(.projection, path: "results.sarif"))
         XCTAssertFalse(selection.isActive(.markdown, path: "analysis.ipynb"))
-    }
-
-    func testPlistBannerExplainsBinaryPreview() {
-        let projection = testProjection(
-            pluginId: "plist",
-            pluginLabel: "Property list",
-            mode: .processed,
-            renderKind: .text,
-            virtualPath: "Info.plist.xml"
-        )
-
-        XCTAssertTrue(DiffProjectionDisplayPolicy.showsBanner(for: projection, view: .diff))
-        XCTAssertEqual(
-            DiffProjectionDisplayPolicy.title(for: projection),
-            "Binary property list on disk, previewed as XML"
-        )
     }
 
     func testSameFileProjectionReloadKeepsCurrentDiffVisible() {

@@ -391,9 +391,8 @@ final class DAGRowViewModelTests: XCTestCase {
             colorScheme: .light
         )
 
-        XCTAssertEqual(layout.maxLanes(), 6)
-        XCTAssertEqual(layout.displayLaneCount(), dagCompactVisibleLanes)
-        XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p5")), dagCompactVisibleLanes - 1)
+        XCTAssertEqual(layout.displayLaneCount(), 4)
+        XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p5")), 3)
         XCTAssertTrue(layout.hasLaneOverflow(at: 1))
         XCTAssertEqual(viewModel.graphWidth, layout.graphWidth)
     }
@@ -430,7 +429,6 @@ final class DAGRowViewModelTests: XCTestCase {
             colorScheme: .light
         )
 
-        XCTAssertEqual(layout.maxLanes(), 4)
         XCTAssertEqual(layout.displayLaneCount(), 4)
         XCTAssertEqual(layout.displayLane(for: layout.lane(for: "p3")), 3)
         XCTAssertFalse(layout.hasLaneOverflow(at: 1))

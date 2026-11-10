@@ -147,7 +147,7 @@ extension DiffSection {
                 displayGroups: changeGroups(lines: lines),
                 content: cached.content,
                 basis: basis,
-                opensSvgPreview: path.lowercased().hasSuffix(".svg") && svgOpensPreview(
+                opensSvgPreview: path.lowercased().hasSuffix(".svg") && JayJayCore.svgOpensPreview(
                     oldContent: cached.content.oldContent,
                     newContent: cached.content.newContent
                 )

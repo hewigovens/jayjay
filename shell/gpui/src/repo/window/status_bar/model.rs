@@ -1,32 +1,4 @@
-use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats, RemoteBookmarkTarget, RemoteSyncStatus};
-
-pub(super) fn active_bookmark_sync_item_data(
-    changes: &[ChangeInfo],
-    bookmarks: &[BookmarkInfo],
-) -> Option<(String, String)> {
-    let wc_index = changes.iter().position(|change| change.is_working_copy)?;
-    for change in &changes[wc_index..] {
-        for name in &change.bookmarks {
-            let Some(bookmark) = bookmarks.iter().find(|bookmark| bookmark.name == *name) else {
-                continue;
-            };
-            let Some(target) = primary_remote_target(bookmark) else {
-                continue;
-            };
-            let badge = sync_badge(target);
-            let text = if badge.is_empty() {
-                name.clone()
-            } else {
-                format!("{name} {badge}")
-            };
-            return Some((
-                text,
-                jayjay_i18n::repo::bookmark_vs_remote(name, &target.remote),
-            ));
-        }
-    }
-    None
-}
+use jayjay_core::DiffStats;
 
 pub(super) fn working_copy_stat_label(stats: &DiffStats) -> Option<String> {
     if stats.files_changed == 0 {
@@ -37,22 +9,4 @@ pub(super) fn working_copy_stat_label(stats: &DiffStats) -> Option<String> {
         text.push_str(&format!(" +{} -{}", stats.insertions, stats.deletions));
     }
     Some(text)
-}
-
-fn primary_remote_target(bookmark: &BookmarkInfo) -> Option<&RemoteBookmarkTarget> {
-    bookmark
-        .remote_targets
-        .iter()
-        .find(|target| target.remote == "origin")
-        .or_else(|| bookmark.remote_targets.first())
-}
-
-fn sync_badge(target: &RemoteBookmarkTarget) -> String {
-    match target.status {
-        RemoteSyncStatus::Deleted => jayjay_i18n::repo::deleted_on(&target.remote),
-        RemoteSyncStatus::Synced => "✓".to_owned(),
-        RemoteSyncStatus::Ahead => format!("↑{}", target.ahead),
-        RemoteSyncStatus::Behind => format!("↓{}", target.behind),
-        RemoteSyncStatus::Diverged => format!("↑{}↓{}", target.ahead, target.behind),
-    }
 }

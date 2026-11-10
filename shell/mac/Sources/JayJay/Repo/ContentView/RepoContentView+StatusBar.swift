@@ -109,36 +109,19 @@ extension RepoContentView {
         }
     }
 
-    /// Sync state of the nearest tracked bookmark at or below `@`, VSCode-style: `name ✓` synced, `↑N` ahead, `↓N` behind, `↑N↓M` diverged.
+    /// Sync state of the nearest bookmark at or below `@` that has a remote.
     private var activeBookmarkSyncItem: StatusBarItem? {
         let changes = viewModel.changes
         guard let wcIndex = changes.firstIndex(where: { $0.isWorkingCopy }) else { return nil }
         for change in changes[wcIndex...] {
             for name in change.bookmarks {
                 guard let bookmark = viewModel.bookmarks.first(where: { $0.name == name }),
-                      let target = primaryRemoteTarget(bookmark)
+                      let sync = bookmarkSync(bookmark: bookmark)
                 else { continue }
-                let badge = switch target.status {
-                    case .deleted: Localized.Repo.deletedOn(remote: target.remote)
-                    case .synced: "✓"
-                    case .ahead: "↑\(target.ahead)"
-                    case .behind: "↓\(target.behind)"
-                    case .diverged: "↑\(target.ahead)↓\(target.behind)"
-                    @unknown default: ""
-                }
-                return .text(
-                    id: "bookmark-sync",
-                    icon: "bookmark",
-                    text: badge.isEmpty ? name : "\(name) \(badge)",
-                    tooltip: Localized.Repo.bookmarkVsRemote(name: name, remote: target.remote)
-                )
+                return .text(id: "bookmark-sync", icon: "bookmark", text: sync.text, tooltip: sync.tooltip)
             }
         }
         return nil
-    }
-
-    private func primaryRemoteTarget(_ bookmark: BookmarkInfo) -> RemoteBookmarkTarget? {
-        bookmark.remoteTargets.first(where: { $0.remote == "origin" }) ?? bookmark.remoteTargets.first
     }
 }
 

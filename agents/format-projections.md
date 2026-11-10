@@ -42,7 +42,7 @@ SwiftUI also offers an inline HTML preview button (same on-disk-file requirement
 ## Implementation Rules
 
 1. Path matching is only a cheap affordance for the file list. Byte-aware `matches_input` must clear ambiguous projections, such as plain XML plist files.
-2. If the raw file is readable text, the default view is raw source and processed content is opt-in through the rich preview button. Auto-open a preview only when it shows at least as much as the source, or when the source is a machine format nobody reviews line by line. The default views live in `ProjectionView::default_for`, mirrored by `DiffProjectionDisplayPolicy`.
+2. If the raw file is readable text, the default view is raw source and processed content is opt-in through the rich preview button. Auto-open a preview only when it shows at least as much as the source, or when the source is a machine format nobody reviews line by line. The default views live in `ProjectionView::default_for`, which SwiftUI calls through UniFFI.
 3. If the raw file is binary and projection produces useful text, the default view can be processed with a banner that explains what is happening.
 4. Projection metadata must include plugin id, plugin version, mode, render kind, and virtual path. Cache keys and review identity must distinguish raw and processed modes.
 5. Projection failures should degrade to raw content or a binary placeholder with diagnostics. They should not make the whole file diff unusable.

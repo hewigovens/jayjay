@@ -89,14 +89,14 @@ extension DiffSection {
     private var richPreviewButtons: some View {
         if shouldShowProjectionToggle {
             richPreviewButton(
-                icon: DiffProjectionDisplayPolicy.iconName(for: effectiveProjection),
+                icon: effectiveProjection?.iconName ?? "sparkles",
                 active: activeProjectionRichView,
-                inactiveHelp: DiffProjectionDisplayPolicy.help(for: effectiveProjection),
-                activeHelp: DiffProjectionDisplayPolicy.activeHelp(for: effectiveProjection)
+                inactiveHelp: projectionHelp(projection: effectiveProjection),
+                activeHelp: projectionActiveHelp(projection: effectiveProjection)
             ) {
                 toggleProjectionRichView()
             }
-            if DiffProjectionDisplayPolicy.showsSourceToggle(effectiveProjection) {
+            if let effectiveProjection, projectionShowsSourceToggle(projection: effectiveProjection) {
                 richPreviewButton(
                     icon: "curlybraces",
                     active: projectionView == .source,

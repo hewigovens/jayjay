@@ -116,6 +116,10 @@ impl DagLayout {
         self.lanes.get(commit_id).copied().unwrap_or(0)
     }
 
+    pub fn is_compact(&self) -> bool {
+        self.compact
+    }
+
     fn max_lanes(&self) -> usize {
         self.active_lanes_per_row.iter().copied().max().unwrap_or(1)
     }

@@ -23,10 +23,7 @@ impl CloneRequest {
         if source.is_empty() {
             return Err(JayError::internal("Enter a repository URL."));
         }
-        let destination = jj_lib::file_util::expand_home_path(
-            location.trim(),
-            environment::home_dir().as_deref(),
-        );
+        let destination = environment::expand_home(location.trim());
         // jj runs from the parent folder, where a relative path would resolve a second time.
         if !destination.is_absolute() {
             return Err(JayError::internal("Enter a full path for the location."));
