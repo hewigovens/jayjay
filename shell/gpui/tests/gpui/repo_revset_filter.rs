@@ -65,7 +65,7 @@ fn revset_bar_edits_in_place_and_resets(cx: &mut TestAppContext) {
         "a long revset scrolls to keep its trailing caret inside the bar"
     );
 
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("@ | trunk()");
     keys(cx, "enter");
     view.read_with(cx, |view, cx| {
@@ -215,7 +215,7 @@ fn invalid_typed_revset_opens_the_popup_with_its_error(cx: &mut TestAppContext) 
     let before = graph_commit_ids(&view, cx);
 
     click(cx, "revset-summary");
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("invalid(");
     keys(cx, "enter");
     assert!(cx.debug_bounds("revset-popup-error").is_some());
@@ -354,7 +354,7 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
     settle_visual(cx);
     let retype = |cx: &mut VisualTestContext, text: &str| {
         click(cx, "revset-summary");
-        cx.simulate_keystrokes("cmd-a");
+        cx.simulate_keystrokes("secondary-a");
         cx.simulate_input(text);
         settle_visual(cx);
     };
@@ -415,7 +415,7 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
         Some("author_date(".to_owned())
     );
 
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("au");
     keys(cx, "escape");
     assert!(cx.debug_bounds("revset-completions").is_none());
@@ -452,7 +452,7 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
     );
     assert!(cx.debug_bounds("revset-popup-row-Bookmark-main").is_some());
 
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("@ | mai");
     settle_visual(cx);
     assert!(
@@ -460,7 +460,7 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
         "inside an expression the Bookmarks rows match nothing, so the bookmark completes"
     );
 
-    cx.simulate_keystrokes("cmd-a");
+    cx.simulate_keystrokes("secondary-a");
     cx.simulate_input("@ | min");
     settle_visual(cx);
     assert!(cx.debug_bounds("revset-popup-completions").is_some());
