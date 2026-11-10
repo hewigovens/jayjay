@@ -52,11 +52,6 @@ jobs:
           toolchain: stable
           targets: ${{ matrix.target }}
 
-      - uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
-        with:
-          key: ssh-${{ matrix.target }}
-          save-if: ${{ github.ref == 'refs/heads/main' }}
-
       - name: Build and pack helper
         shell: bash
         env:
