@@ -1,5 +1,5 @@
 /// <reference lib="webworker" />
-import { baseEngine, engineForPath } from "./engine";
+import { baseEngine, engineFor } from "./engine";
 import { BrowserReviewStorage } from "./BrowserReviewStorage";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 import {
@@ -34,7 +34,10 @@ async function render(
 ): Promise<ReviewResult> {
   const selected = current(session);
   const source = selected.bundle.files[file];
-  const { module, pack, syntaxUnavailable } = await engineForPath(source?.path ?? "");
+  const { module, pack, syntaxUnavailable } = await engineFor(
+    source?.path ?? "",
+    source?.after || source?.before || "",
+  );
   current(session);
   const state = await storage.readReview(selected.bundle.repositoryId);
   current(session);

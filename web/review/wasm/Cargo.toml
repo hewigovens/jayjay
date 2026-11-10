@@ -23,7 +23,7 @@ shell = ["jj-diff/lang-bash", "jj-diff/lang-fish", "jj-diff/lang-powershell", "j
 data = ["jj-diff/lang-fluent", "jj-diff/lang-json", "jj-diff/lang-toml", "jj-diff/lang-yaml", "jj-diff/lang-ini", "jj-diff/lang-xml", "jj-diff/lang-markdown"]
 systems = ["jj-diff/lang-c", "jj-diff/lang-cpp", "jj-diff/lang-csharp", "jj-diff/lang-go", "jj-diff/lang-zig"]
 jvm = ["jj-diff/lang-java", "jj-diff/lang-kotlin"]
-other = ["jj-diff/lang-ruby", "jj-diff/lang-php", "jj-diff/lang-nix", "jj-diff/lang-make", "jj-diff/lang-cmake", "jj-diff/lang-solidity", "jj-diff/lang-sql"]
+other = ["jj-diff/lang-ruby", "jj-diff/lang-php", "jj-diff/lang-nix", "jj-diff/lang-make", "jj-diff/lang-cmake", "jj-diff/lang-solidity", "jj-diff/lang-sql", "jj-diff/lang-lua"]
 
 [dependencies]
 jayjay-i18n = { path = "../../../crates/jayjay-i18n" }

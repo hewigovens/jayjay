@@ -100,6 +100,7 @@ tree-sitter-powershell = "0.26"
 tree-sitter-batch = "0.11"
 tree-sitter-ini = "1.4"
 tree-sitter-cmake = "0.7"
+tree-sitter-lua = "0.5"
 tree-sitter-language = "0.1"
 cc = "1.2"
 

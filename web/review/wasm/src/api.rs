@@ -21,8 +21,8 @@ pub fn ui_labels(languages: &str) -> String {
 }
 
 #[wasm_bindgen]
-pub fn language_pack(path: &str) -> String {
-    match jj_diff::syntax::language_for_path(path) {
+pub fn language_pack(path: &str, source: &str) -> String {
+    match jj_diff::syntax::language_for(path, source) {
         "rust" => "rust",
         "javascript" | "typescript" | "tsx" | "html" | "css" => "web",
         "python" => "python",
@@ -31,7 +31,7 @@ pub fn language_pack(path: &str) -> String {
         "fluent" | "json" | "toml" | "yaml" | "ini" | "xml" | "markdown" => "data",
         "c" | "cpp" | "csharp" | "go" | "zig" => "systems",
         "java" | "kotlin" => "jvm",
-        "ruby" | "php" | "nix" | "make" | "cmake" | "solidity" | "sql" => "other",
+        "ruby" | "php" | "nix" | "make" | "cmake" | "solidity" | "sql" | "lua" => "other",
         _ => "base",
     }
     .to_owned()

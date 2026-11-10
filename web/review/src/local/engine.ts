@@ -58,9 +58,9 @@ async function wasmResponse(url: string): Promise<Response> {
   return response;
 }
 
-export async function engineForPath(path: string) {
+export async function engineFor(path: string, source: string) {
   const base = await baseEngine;
-  const pack = base.language_pack(path);
+  const pack = base.language_pack(path, source);
   try {
     return { module: await engine(pack), pack, syntaxUnavailable: false };
   } catch (error) {

@@ -38,7 +38,7 @@ fn compute_file_diff_impl(
     collapse: bool,
     skip_highlight: bool,
 ) -> FileDiff {
-    let language = syntax::language_for_path(path);
+    let language = syntax::language_for(path, if new.is_empty() { old } else { new });
 
     if old.is_empty() && new.is_empty() {
         return FileDiff {

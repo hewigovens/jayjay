@@ -119,6 +119,18 @@ fn windows_build_and_script_sources_are_detected_and_highlighted() {
             ],
         ),
         (
+            "rex/lua/jayjay/init.lua",
+            "lua",
+            "-- Module\nlocal M = {}\nfunction M.setup(opts)\n  return opts.keys or \"none\"\nend\n",
+            &[
+                SyntaxToken::Comment,
+                SyntaxToken::Keyword,
+                SyntaxToken::Function,
+                SyntaxToken::Variable,
+                SyntaxToken::StringLit,
+            ],
+        ),
+        (
             "src/CMakeLists.txt",
             "cmake",
             "# Targets\nif(WIN32)\n  add_executable(app main.cpp)\n  set(NAME \"app\")\nendif()\n",
@@ -406,4 +418,32 @@ fn fluent_messages_terms_and_selectors_are_highlighted() {
             "Fluent should highlight {text:?} as {token:?}: {spans:?}"
         );
     }
+}
+
+#[test]
+fn a_shebang_names_the_language_only_when_the_extension_does_not() {
+    for (path, source, language) in [
+        ("bin/changes", "#!/bin/sh\necho hi\n", "shell"),
+        ("bin/changes", "#!/usr/bin/env lua\nprint(1)\n", "lua"),
+        (
+            "bin/changes",
+            "#! /usr/bin/env -S -u PYTHONPATH FOO=1 /usr/bin/python3.12 -u\nprint(1)\n",
+            "python",
+        ),
+        ("bin/changes", "#!/usr/bin/env -u\nprint(1)\n", "plaintext"),
+        ("bin/changes", "#!/usr/bin/perl\nprint 1;\n", "plaintext"),
+        ("bin/changes", "echo hi\n#!/bin/sh\n", "plaintext"),
+        ("bin/changes.py", "#!/bin/sh\necho hi\n", "python"),
+    ] {
+        let diff = compute_file_diff_full(path, "", source, false);
+        assert_eq!(diff.language, language, "{path}: {source:?}");
+    }
+    let removed = compute_file_diff_full("bin/changes", "#!/bin/sh\necho hi\n", "", false);
+    assert_eq!(removed.language, "shell");
+    let lines = highlight_file("bin/changes", "#!/bin/sh\necho \"hi\"\n");
+    assert!(
+        lines[1]
+            .iter()
+            .any(|span| span.token == SyntaxToken::StringLit)
+    );
 }

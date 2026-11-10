@@ -75,6 +75,8 @@ const HIGHLIGHTS: &[(&str, SyntaxToken)] = &[
     ("text.title", SyntaxToken::Type),
     ("text.uri", SyntaxToken::StringLit),
     ("tag.attribute", SyntaxToken::Attribute),
+    ("field", SyntaxToken::Variable),
+    ("method", SyntaxToken::Function),
 ];
 
 #[cfg(feature = "syntax")]
@@ -234,9 +236,54 @@ languages! {
     "lang-make": "make" => tree_sitter_make::LANGUAGE, tree_sitter_make::HIGHLIGHTS_QUERY;
     "lang-cmake": "cmake" => tree_sitter_cmake::LANGUAGE, tree_sitter_cmake::HIGHLIGHTS_QUERY;
     "lang-ini": "ini" => tree_sitter_ini::LANGUAGE, tree_sitter_ini::HIGHLIGHTS_QUERY;
+    "lang-lua": "lua" => tree_sitter_lua::LANGUAGE, tree_sitter_lua::HIGHLIGHTS_QUERY;
 }
 
-pub fn language_for_path(path: &str) -> &'static str {
+/// The extension decides; a file it does not place is read by its shebang.
+pub fn language_for(path: &str, source: &str) -> &'static str {
+    match language_for_path(path) {
+        "plaintext" => shebang_language(source).unwrap_or("plaintext"),
+        language => language,
+    }
+}
+
+fn shebang_language(source: &str) -> Option<&'static str> {
+    let mut words = source
+        .strip_prefix("#!")?
+        .lines()
+        .next()?
+        .split_whitespace();
+    let mut program = words.next()?;
+    if program.rsplit('/').next() == Some("env") {
+        program = loop {
+            match words.next()? {
+                "-u" | "-C" | "-P" | "--unset" | "--chdir" => {
+                    words.next();
+                }
+                word if word.starts_with('-') || word.contains('=') => {}
+                word => break word,
+            }
+        };
+    }
+    let interpreter = program
+        .rsplit('/')
+        .next()?
+        .trim_end_matches(|c: char| c.is_ascii_digit() || c == '.');
+    Some(match interpreter {
+        "sh" | "bash" | "zsh" | "dash" | "ksh" => "shell",
+        "fish" => "fish",
+        "python" => "python",
+        "ruby" => "ruby",
+        "node" => "javascript",
+        "lua" | "luajit" => "lua",
+        "php" => "php",
+        "pwsh" => "powershell",
+        "make" => "make",
+        _ => return None,
+    })
+}
+
+fn language_for_path(path: &str) -> &'static str {
     let basename = path.rsplit('/').next().unwrap_or(path);
     if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
         return "make";
@@ -290,6 +337,7 @@ pub fn language_for_path(path: &str) -> &'static str {
         "sol" => "solidity",
         "zig" => "zig",
         "nix" => "nix",
+        "lua" => "lua",
         "mk" => "make",
         _ => "plaintext",
     }

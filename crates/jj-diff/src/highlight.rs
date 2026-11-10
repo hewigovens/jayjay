@@ -8,7 +8,7 @@ pub fn highlight_file(path: &str, content: &str) -> Vec<Vec<DiffSpan>> {
     if content.is_empty() {
         return vec![];
     }
-    let language = syntax::language_for_path(path);
+    let language = syntax::language_for(path, content);
     let highlights = syntax::highlight(content, language);
     let line_index = LineIndex::from_text(content);
     let mut lines = Vec::new();
