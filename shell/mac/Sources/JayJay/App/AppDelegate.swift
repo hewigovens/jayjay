@@ -33,7 +33,11 @@ class AppDelegate: NSObject, NSApplicationDelegate {
 
     func applicationDidUpdate(_ notification: Notification) {
         guard let toolWindow = externalToolWindowController?.window else { return }
-        for window in NSApp.windows where window !== toolWindow {
+        // Suppress stray launch windows without dismissing the tool's confirmation dialogs.
+        for window in NSApp.windows where window !== toolWindow
+            && window.sheetParent == nil && window.parent == nil && window !== NSApp.modalWindow
+            && !(window is NSPanel)
+        {
             window.close()
         }
     }

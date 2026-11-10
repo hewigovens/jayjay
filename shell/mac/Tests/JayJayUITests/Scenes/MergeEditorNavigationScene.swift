@@ -65,7 +65,7 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         let third = app.element(AID.Conflict.hunkCard(2))
         XCTAssertTrue(waitForSelection(third))
         clickCenter(app.buttons[AID.Conflict.editorCancel])
-        let discard = app.buttons["Discard Changes"]
+        let discard = app.sheets.buttons["Discard Changes"].firstMatch
         XCTAssertTrue(discard.waitForExistence(timeout: 5), "Cancel with picked hunks should ask before discarding")
         discard.click()
     }

@@ -54,11 +54,12 @@ final class KeyboardPaneFocusScene: SceneBase {
         let featureFile = app.element(AID.FileList.row("feature.txt"))
         XCTAssertTrue(featureFile.waitForExistence(timeout: 10), "Shift-Tab did not hand navigation back to the DAG")
 
-        // The selected change is not the working copy, so Edit File is absent: file list, tree, filter, expand description, edit description, diff layout, edit diff, then sidebar toggle, refresh, pull, push, revset presets, and the revset.
-        for _ in 0 ..< 13 {
+        // The selected change is mutable but not the working copy, so Mark Reviewed participates and Edit File does not.
+        for _ in 0 ..< 14 {
             keyStroke(.tab)
         }
         keyStroke(.space)
+        XCTAssertTrue(app.element(AID.Toolbar.revsetBar).waitForNonExistence(timeout: 5), "Tab opened the presets picker instead of the inline revset editor")
         let revset = app.textFields[AID.Toolbar.revsetField]
         XCTAssertTrue(revset.waitForExistence(timeout: 5), "Space on the revset bar did not start editing it")
         keyStroke("a", modifiers: [.command])
