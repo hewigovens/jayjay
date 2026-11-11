@@ -3,12 +3,29 @@ use std::borrow::Cow;
 use crate::MarkdownImageAlign;
 use crate::text::{character_reference, escape_html, url_scheme};
 
+/// Where a rendered image may load from; inline `data:` images are allowed either way.
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
+pub enum MarkdownImages {
+    /// Document-relative paths, for previewing a checkout file.
+    #[default]
+    Local,
+    /// `https` URLs only, for a web page.
+    Remote,
+}
+
 pub(crate) struct RawHtmlImage<'a> {
     pub(crate) source: String,
     pub(crate) alt: String,
     pub(crate) title: Option<String>,
+    pub(crate) size: ImageSize,
     pub(crate) align: MarkdownImageAlign,
     pub(crate) rest: &'a str,
+}
+
+#[derive(Default)]
+pub(crate) struct ImageSize {
+    width: Option<String>,
+    height: Option<String>,
 }
 
 /// A `<p align>` wrapper that pulldown splits across raw HTML events: images inside keep its alignment until the swallowed `</p>`; a wrapper that never held an image is replayed as text.
@@ -43,11 +60,11 @@ pub(crate) enum RawHtml<'a> {
 }
 
 impl RawImageParagraphs {
-    pub(crate) fn classify<'a>(&mut self, html: &'a str) -> RawHtml<'a> {
+    pub(crate) fn classify<'a>(&mut self, html: &'a str, images: MarkdownImages) -> RawHtml<'a> {
         if self.consume_paragraph_end(html) {
             return RawHtml::Skip;
         }
-        if let Some(image) = raw_html_image(html) {
+        if let Some(image) = raw_html_image(html, images) {
             let align = match self.wrapper.as_mut() {
                 Some(wrapper) if image.align == MarkdownImageAlign::None => {
                     wrapper.matched = true;
@@ -107,7 +124,7 @@ fn raw_html_image_paragraph_end(input: &str) -> bool {
     input.trim().eq_ignore_ascii_case("</p>")
 }
 
-pub(crate) fn raw_html_image(input: &str) -> Option<RawHtmlImage<'_>> {
+pub(crate) fn raw_html_image(input: &str, images: MarkdownImages) -> Option<RawHtmlImage<'_>> {
     let mut image_input = input.trim();
     let mut wrapped_in_paragraph = false;
     let mut align = MarkdownImageAlign::None;
@@ -124,7 +141,7 @@ pub(crate) fn raw_html_image(input: &str) -> Option<RawHtmlImage<'_>> {
     let image_tag_end = closing_angle_bracket(image_input)?;
     let image_tag = &image_input[..=image_tag_end];
     let attributes = html_attributes(image_tag);
-    let source = sanitized_image_source(attributes.get("src")?)?;
+    let source = images.sanitized_source(attributes.get("src")?)?;
 
     let mut rest = &image_input[image_tag_end + 1..];
     if wrapped_in_paragraph {
@@ -141,9 +158,37 @@ pub(crate) fn raw_html_image(input: &str) -> Option<RawHtmlImage<'_>> {
             .get("title")
             .filter(|title| !title.is_empty())
             .cloned(),
+        size: ImageSize {
+            width: attributes.get("width").and_then(|value| dimension(value)),
+            height: attributes.get("height").and_then(|value| dimension(value)),
+        },
         align,
         rest,
     })
+}
+
+impl RawHtmlImage<'_> {
+    pub(crate) fn html(&self, align: MarkdownImageAlign) -> String {
+        let image = image_html(&self.source, &self.alt, self.title.as_deref(), &self.size);
+        match align {
+            MarkdownImageAlign::None => image,
+            MarkdownImageAlign::Center => format!("<p class=\"image-align-center\">{image}</p>"),
+        }
+    }
+}
+
+/// A pixel count or percentage; a `px` suffix is dropped.
+fn dimension(value: &str) -> Option<String> {
+    let value = value.trim();
+    let digits = value.bytes().take_while(u8::is_ascii_digit).count();
+    let percent = match &value[digits..] {
+        "%" => "%",
+        unit if unit.is_empty() || unit.eq_ignore_ascii_case("px") => "",
+        _ => return None,
+    };
+    (1..=5)
+        .contains(&digits)
+        .then(|| format!("{}{percent}", &value[..digits]))
 }
 
 /// A sanitized image source; a relative path is document-relative and the consumer still contains it to the checkout.
@@ -172,17 +217,30 @@ fn data_image_parts(source: &str) -> Option<(&str, &str)> {
     Some((&rest[..subtype_end], &rest[payload..]))
 }
 
-/// `source` is already decoded, by pulldown-cmark or `html_attributes`, so references in it are literal file name text.
-pub(crate) fn sanitized_image_source(source: &str) -> Option<String> {
-    let trimmed = source.trim();
-    if trimmed.is_empty() {
-        return None;
+impl MarkdownImages {
+    /// `source` is already decoded, by pulldown-cmark or `html_attributes`, so references in it are literal file name text.
+    pub(crate) fn sanitized_source(self, source: &str) -> Option<String> {
+        let trimmed = source.trim();
+        if trimmed.is_empty() {
+            return None;
+        }
+        if let Some(safe_data_source) = sanitized_data_image_source(trimmed) {
+            return Some(safe_data_source.to_owned());
+        }
+        match self {
+            Self::Local => sanitized_relative_source(trimmed),
+            Self::Remote => is_https(trimmed).then(|| trimmed.to_owned()),
+        }
     }
+}
 
-    if let Some(safe_data_source) = sanitized_data_image_source(trimmed) {
-        return Some(safe_data_source.to_owned());
-    }
+fn is_https(source: &str) -> bool {
+    source
+        .get(.."https://".len())
+        .is_some_and(|scheme| scheme.eq_ignore_ascii_case("https://"))
+}
 
+fn sanitized_relative_source(trimmed: &str) -> Option<String> {
     // Absolute schemes (incl. http/https) are rejected since the preview WebView only loads jayjay-preview/data: URIs; scan a copy trimmed of C0 controls and spaces and stripped of tabs/newlines since URL parsing drops those before reading the scheme, or "ht\ttp://" would evade this check.
     let scheme_probe = strip_ascii_tab_and_newline(trimmed.trim_matches(|ch: char| ch <= ' '));
     if url_scheme(&scheme_probe).is_some() {
@@ -206,29 +264,24 @@ fn strip_ascii_tab_and_newline(value: &str) -> String {
         .collect()
 }
 
-pub(crate) fn image_html(source: &str, alt: &str, title: Option<&str>) -> String {
-    image_html_with_align(source, alt, title, MarkdownImageAlign::None)
-}
-
-pub(crate) fn image_html_with_align(
-    source: &str,
-    alt: &str,
-    title: Option<&str>,
-    align: MarkdownImageAlign,
-) -> String {
+pub(crate) fn image_html(source: &str, alt: &str, title: Option<&str>, size: &ImageSize) -> String {
     let mut attributes = format!(
         "src=\"{}\" alt=\"{}\"",
         escape_html(source),
         escape_html(alt)
     );
-    if let Some(title) = title.filter(|title| !title.is_empty()) {
-        attributes.push_str(&format!(" title=\"{}\"", escape_html(title)));
+    let optional = [
+        ("title", title.filter(|title| !title.is_empty())),
+        ("width", size.width.as_deref()),
+        ("height", size.height.as_deref()),
+        ("referrerpolicy", is_https(source).then_some("no-referrer")),
+    ];
+    for (name, value) in optional {
+        if let Some(value) = value {
+            attributes.push_str(&format!(" {name}=\"{}\"", escape_html(value)));
+        }
     }
-    let image = format!("<img {attributes} loading=\"lazy\" decoding=\"async\">");
-    match align {
-        MarkdownImageAlign::None => image,
-        MarkdownImageAlign::Center => format!("<p class=\"image-align-center\">{image}</p>"),
-    }
+    format!("<img {attributes} loading=\"lazy\" decoding=\"async\">")
 }
 
 fn paragraph_alignment(

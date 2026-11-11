@@ -1,6 +1,6 @@
 use crate::blocks::parse_markdown_blocks;
 use crate::{
-    MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownImageSource,
+    MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownImageSource, MarkdownImages,
     render_markdown_fragment, render_markdown_html,
 };
 
@@ -318,6 +318,40 @@ fn rejects_remote_and_obfuscated_image_sources() {
 }
 
 #[test]
+fn remote_images_render_from_https_with_safe_attributes_only() {
+    let html = render_markdown_fragment(
+        r#"<img width="1200" height=630px alt="Shot" src="https://github.com/user-attachments/assets/abc?a=1&amp;b=2" onerror="alert(1)" style="position:fixed">
+
+![badge](HTTPS://img.example/b.svg "Badge")
+
+<a href="https://example.com"><img src="https://img.example/c.png" width="50%" height="1&quot; onload=&quot;x"></a>
+"#,
+        MarkdownImages::Remote,
+    );
+
+    assert!(html.contains("<img src=\"https://github.com/user-attachments/assets/abc?a=1&amp;b=2\" alt=\"Shot\" width=\"1200\" height=\"630\" referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\">"), "{html}");
+    assert!(html.contains("<img src=\"HTTPS://img.example/b.svg\" alt=\"badge\" title=\"Badge\" referrerpolicy=\"no-referrer\""), "{html}");
+    assert!(html.contains("<a href=\"https://example.com\" rel=\"noopener noreferrer\"><img src=\"https://img.example/c.png\" alt=\"\" width=\"50%\" referrerpolicy=\"no-referrer\" loading=\"lazy\" decoding=\"async\"></a>"), "{html}");
+    for unsafe_markup in ["onerror", "style", "onload=\""] {
+        assert!(!html.contains(unsafe_markup), "{unsafe_markup} in {html}");
+    }
+
+    let rejected = [
+        "<img src=\"http://img.example/a.png\">",
+        "<img src=\"//img.example/a.png\">",
+        "<img src=\"a.png\">",
+        "<img src=\"javascript:alert(1)\">",
+        "<img src=\"data:image/svg+xml;base64,PHN2Zz4=\">",
+        "<b><img src=\"https:evil.example/a.png\"></b>",
+        "![x](http://img.example/a.png)",
+    ];
+    for markdown in rejected {
+        let html = render_markdown_fragment(markdown, MarkdownImages::Remote);
+        assert!(!html.contains("<img "), "{markdown:?} -> {html}");
+    }
+}
+
+#[test]
 fn escapes_raw_html_and_unsafe_links() {
     let html = render_markdown_html(
         r#"<script>alert(1)</script>
@@ -342,6 +376,7 @@ fn keeps_github_formatting_tags_and_drops_unsafe_markup() {
 <!-- hidden --><iframe src="https://e.com"></iframe><img src=x onerror=alert(1)><table><tr><td align=center onmouseover=y>c</td></tr></table>
 </details>
 "#,
+        MarkdownImages::Local,
     );
 
     assert!(
@@ -377,7 +412,8 @@ fn keeps_github_formatting_tags_and_drops_unsafe_markup() {
 #[test]
 fn raw_html_comments_and_links_span_events() {
     let html = render_markdown_fragment(
-        "<!--\n<b>hidden</b>\n-->\n\nvisible <a href=\"https://example.com/actual\">https://example.com/label</a>\n\n<p align=\"center\">\n\n**hello**\n\n</p>\n",
+        "<!--\n<b>hidden</b>\n<img src=\"hidden.png\">\n-->\n\nvisible <a href=\"https://example.com/actual\">https://example.com/label</a>\n\n<p align=\"center\">\n\n**hello**\n\n</p>\n",
+        MarkdownImages::Local,
     );
 
     assert!(
@@ -395,6 +431,7 @@ fn raw_html_comments_and_links_span_events() {
 fn raw_html_matches_whole_tag_names_and_decodes_hrefs() {
     let html = render_markdown_fragment(
         "<details-widget>a</details-widget> <pre-commit>b</pre-commit> <a href=\"https://example.com/?a=1&#38;b=2\">c</a> <a href=https://example.com/path/>d</a> <details open/>",
+        MarkdownImages::Local,
     );
 
     assert!(
@@ -417,6 +454,7 @@ fn raw_html_matches_whole_tag_names_and_decodes_hrefs() {
 fn raw_html_survives_unicode_tags_and_drops_control_prefixed_images() {
     let html = render_markdown_fragment(
         "<div>\n<\u{e9}>\n</div>\n\n<img src=\"\u{1}https://tracker.example/pixel\">\n",
+        MarkdownImages::Local,
     );
 
     assert!(html.contains("&lt;\u{e9}&gt;"), "{html}");

@@ -110,7 +110,7 @@ export interface Overview {
   changeId: string;
   title: string;
   description: string;
-  /** The description rendered as Markdown by `jayjay_markdown`, raw HTML limited to its safe formatting tags; absent from backends that predate it. */
+  /** The description rendered as Markdown by `jayjay_markdown`, raw HTML limited to its safe formatting tags and `https` images; absent from backends that predate it. */
   descriptionHtml?: string;
   author: string;
   /** From `jayjay_primitives::avatar::AvatarSource`; absent or null shows the monogram. */

@@ -3,7 +3,7 @@ use pulldown_cmark::{Event, Parser};
 use super::model::{
     MarkdownBlock, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow, block_text,
 };
-use crate::images::{RawHtml, RawImageParagraphs, keeps_raw_image_wrapper, sanitized_image_source};
+use crate::images::{MarkdownImages, RawHtml, RawImageParagraphs, keeps_raw_image_wrapper};
 use crate::markdown_options;
 
 pub fn parse_markdown_blocks(markdown: &str) -> Vec<MarkdownBlock> {
@@ -97,22 +97,24 @@ impl BlockParser {
                     text: math.to_string(),
                 });
             }
-            Event::Html(html) | Event::InlineHtml(html) => match self.raw_images.classify(&html) {
-                RawHtml::Image { image, align, rest } => {
-                    self.flush_text();
-                    self.push_block(MarkdownBlock::Image {
-                        source: image.source,
-                        alt: image.alt,
-                        title: image.title,
-                        align,
-                    });
-                    if let Some(rest) = rest {
-                        self.append_text(rest);
+            Event::Html(html) | Event::InlineHtml(html) => {
+                match self.raw_images.classify(&html, MarkdownImages::Local) {
+                    RawHtml::Image { image, align, rest } => {
+                        self.flush_text();
+                        self.push_block(MarkdownBlock::Image {
+                            source: image.source,
+                            alt: image.alt,
+                            title: image.title,
+                            align,
+                        });
+                        if let Some(rest) = rest {
+                            self.append_text(rest);
+                        }
                     }
+                    RawHtml::Skip => {}
+                    RawHtml::Text(text) => self.append_text(&text),
                 }
-                RawHtml::Skip => {}
-                RawHtml::Text(text) => self.append_text(&text),
-            },
+            }
             Event::FootnoteReference(label) => {
                 self.append_text("[^");
                 self.append_text(label.as_ref());
@@ -172,7 +174,10 @@ impl BlockParser {
         let standalone = self.text.as_ref().is_some_and(|text| {
             matches!(text.kind, TextKind::Paragraph) && text.text.trim().is_empty()
         });
-        match (standalone, sanitized_image_source(&image.source)) {
+        match (
+            standalone,
+            MarkdownImages::Local.sanitized_source(&image.source),
+        ) {
             (true, Some(source)) => self.pending_images.push(ImageBuilder {
                 source,
                 title: image.title,

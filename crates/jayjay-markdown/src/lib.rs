@@ -10,7 +10,7 @@ use pulldown_cmark::{Options, Parser};
 pub use blocks::{
     MarkdownBlock, MarkdownDocument, MarkdownImageAlign, MarkdownListItem, MarkdownTableRow,
 };
-pub use images::MarkdownImageSource;
+pub use images::{MarkdownImageSource, MarkdownImages};
 pub use mermaid::MermaidDiagram;
 
 const DOCUMENT_PREFIX: &str = r#"<!DOCTYPE html>
@@ -151,14 +151,14 @@ const DOCUMENT_SUFFIX: &str = r#"
 
 pub fn render_markdown_html(markdown: &str) -> String {
     let mut document = String::from(DOCUMENT_PREFIX);
-    document.push_str(&render_markdown_fragment(markdown));
+    document.push_str(&render_markdown_fragment(markdown, MarkdownImages::Local));
     document.push_str(DOCUMENT_SUFFIX);
     document
 }
 
 /// The rendered body alone, for a host page that styles it itself.
-pub fn render_markdown_fragment(markdown: &str) -> String {
-    html::render_markdown_events_html(Parser::new_ext(markdown, markdown_options()))
+pub fn render_markdown_fragment(markdown: &str, images: MarkdownImages) -> String {
+    html::render_markdown_events_html(Parser::new_ext(markdown, markdown_options()), images)
 }
 
 fn markdown_options() -> Options {

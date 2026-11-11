@@ -4,17 +4,17 @@ use pulldown_cmark::{CodeBlockKind, Event, HeadingLevel, Tag, TagEnd};
 
 use self::tags::heading_tag;
 use crate::images::{
-    RawHtml, RawImageParagraphs, image_html, image_html_with_align, keeps_raw_image_wrapper,
-    sanitized_image_source,
+    ImageSize, MarkdownImages, RawHtml, RawImageParagraphs, image_html, keeps_raw_image_wrapper,
 };
 use crate::raw_html::RawHtmlSanitizer;
 use crate::text::{escape_html, render_text_with_bare_autolinks};
 
 pub(crate) fn render_markdown_events_html<'a>(
     events: impl IntoIterator<Item = Event<'a>>,
+    images: MarkdownImages,
 ) -> String {
     let events = events.into_iter().collect::<Vec<_>>();
-    let mut renderer = HtmlRenderer::new(events);
+    let mut renderer = HtmlRenderer::new(events, images);
     renderer.render()
 }
 
@@ -26,12 +26,13 @@ struct HtmlRenderer<'a> {
     link_stack: Vec<bool>,
     pending_item_starts: usize,
     table_head_depth: usize,
+    images: MarkdownImages,
     raw_images: RawImageParagraphs,
     raw_html: RawHtmlSanitizer,
 }
 
 impl<'a> HtmlRenderer<'a> {
-    fn new(events: Vec<Event<'a>>) -> Self {
+    fn new(events: Vec<Event<'a>>, images: MarkdownImages) -> Self {
         Self {
             events,
             index: 0,
@@ -40,8 +41,9 @@ impl<'a> HtmlRenderer<'a> {
             link_stack: Vec::new(),
             pending_item_starts: 0,
             table_head_depth: 0,
+            images,
             raw_images: RawImageParagraphs::default(),
-            raw_html: RawHtmlSanitizer::default(),
+            raw_html: RawHtmlSanitizer::new(images),
         }
     }
 
@@ -73,9 +75,13 @@ impl<'a> HtmlRenderer<'a> {
             }) => {
                 self.flush_pending_items();
                 let alt = self.plain_text_until_image_end(self.index + 1);
-                if let Some(source) = sanitized_image_source(dest_url.as_ref()) {
-                    self.output
-                        .push_str(&image_html(&source, &alt, Some(title.as_ref())));
+                if let Some(source) = self.images.sanitized_source(dest_url.as_ref()) {
+                    self.output.push_str(&image_html(
+                        &source,
+                        &alt,
+                        Some(title.as_ref()),
+                        &ImageSize::default(),
+                    ));
                 } else {
                     self.output.push_str(&escape_html(&alt));
                 }
@@ -176,14 +182,13 @@ impl<'a> HtmlRenderer<'a> {
     }
 
     fn render_raw_html(&mut self, html: &str) {
-        match self.raw_images.classify(html) {
+        if self.raw_html.in_comment() {
+            self.output.push_str(&self.raw_html.sanitize(html));
+            return;
+        }
+        match self.raw_images.classify(html, self.images) {
             RawHtml::Image { image, align, rest } => {
-                self.output.push_str(&image_html_with_align(
-                    &image.source,
-                    &image.alt,
-                    image.title.as_deref(),
-                    align,
-                ));
+                self.output.push_str(&image.html(align));
                 if let Some(rest) = rest {
                     self.output.push_str(&self.raw_html.sanitize(rest));
                 }

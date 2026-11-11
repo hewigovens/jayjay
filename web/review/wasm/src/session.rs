@@ -121,7 +121,10 @@ impl ReviewSession {
         let filtered_labels = (0..=total)
             .map(|shown| jayjay_i18n::repo::files_filtered(shown, total))
             .collect();
-        let description_html = jayjay_markdown::render_markdown_fragment(&bundle.description);
+        let description_html = jayjay_markdown::render_markdown_fragment(
+            &bundle.description,
+            jayjay_markdown::MarkdownImages::Remote,
+        );
         Ok(Self {
             bundle,
             snapshots,

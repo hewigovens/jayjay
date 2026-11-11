@@ -1,7 +1,8 @@
-use crate::images::unescape_html_attribute;
+use crate::MarkdownImageAlign;
+use crate::images::{MarkdownImages, raw_html_image, unescape_html_attribute};
 use crate::text::{character_reference, escape_html, sanitized_link};
 
-/// Formatting tags GitHub keeps in Markdown, such as Dependabot's `<details>` release notes; any other markup is shown as text.
+/// Formatting tags GitHub keeps in Markdown, such as Dependabot's `<details>` release notes; besides these and an `<img>` with an allowed source, markup is shown as text.
 const ALLOWED_TAGS: &[&str] = &[
     "a",
     "b",
@@ -49,9 +50,21 @@ const ALLOWED_TAGS: &[&str] = &[
 pub(crate) struct RawHtmlSanitizer {
     in_comment: bool,
     open_links: usize,
+    images: MarkdownImages,
 }
 
 impl RawHtmlSanitizer {
+    pub(crate) fn new(images: MarkdownImages) -> Self {
+        Self {
+            images,
+            ..Self::default()
+        }
+    }
+
+    pub(crate) fn in_comment(&self) -> bool {
+        self.in_comment
+    }
+
     /// Whether text is inside a raw `<a>`, where an autolink would nest anchors.
     pub(crate) fn in_link(&self) -> bool {
         self.open_links > 0
@@ -76,8 +89,10 @@ impl RawHtmlSanitizer {
             if let Some(after) = rest.strip_prefix("<!--") {
                 self.in_comment = true;
                 rest = after;
-            } else if let Some((tag, after)) =
-                rest.starts_with('<').then(|| allowed_tag(rest)).flatten()
+            } else if let Some((tag, after)) = rest
+                .starts_with('<')
+                .then(|| allowed_tag(rest, self.images))
+                .flatten()
             {
                 if tag == "</a>" {
                     self.open_links = self.open_links.saturating_sub(1);
@@ -100,7 +115,7 @@ impl RawHtmlSanitizer {
 }
 
 /// An allowed start or end tag at the front of `input`, rebuilt, and the input after it.
-fn allowed_tag(input: &str) -> Option<(String, &str)> {
+fn allowed_tag(input: &str, images: MarkdownImages) -> Option<(String, &str)> {
     let end = tag_end(input)?;
     let inner = &input[1..end];
     let (closing, inner) = match inner.strip_prefix('/') {
@@ -111,6 +126,10 @@ fn allowed_tag(input: &str) -> Option<(String, &str)> {
         .find(|ch: char| ch.is_ascii_whitespace() || ch == '/')
         .unwrap_or(inner.len());
     let name = inner[..name_end].to_ascii_lowercase();
+    if name == "img" && !closing {
+        let image = raw_html_image(&input[..=end], images)?;
+        return Some((image.html(MarkdownImageAlign::None), &input[end + 1..]));
+    }
     if !ALLOWED_TAGS.contains(&name.as_str()) {
         return None;
     }

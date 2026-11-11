@@ -112,6 +112,9 @@
 :where(.jayjay-review) .jj-markdown img {
   max-width: 100%;
 }
+:where(.jayjay-review) .jj-markdown img[width] {
+  height: auto;
+}
 :where(.jayjay-review) .jj-description-toggle {
   margin-top: 2px;
 }
