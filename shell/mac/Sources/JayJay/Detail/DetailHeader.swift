@@ -109,7 +109,7 @@ extension ChangeDetailView {
 
     private func person(_ person: CommitAuthor) -> some View {
         HStack(spacing: 5) {
-            CommitAvatar(email: person.email, size: 14)
+            CommitAvatar(author: person, size: 14)
             Text(person.name)
                 .jayjayFont(11)
             Text("<\(person.email)>")
@@ -127,7 +127,7 @@ extension ChangeDetailView {
         return HStack(spacing: 5) {
             HStack(spacing: -4) {
                 ForEach(Array(people.prefix(3).enumerated()), id: \.offset) { index, person in
-                    CommitAvatar(email: person.email, size: 14)
+                    CommitAvatar(author: person, size: 14)
                         .background(Circle().fill(.background).padding(-1.5))
                         .zIndex(Double(-index))
                 }

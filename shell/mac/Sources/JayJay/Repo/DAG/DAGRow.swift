@@ -89,7 +89,7 @@ struct DAGRow: View {
                 .fixedSize(horizontal: true, vertical: false)
                 .help(Localized.Repo.commitNamed(id: change.commitId.id))
                 .accessibilityLabel(Localized.Repo.commitLabel(id: change.commitId.compact))
-                CommitAvatar(email: change.author.email, size: 14)
+                CommitAvatar(author: change.author, size: 14)
                 Text(change.author.name)
                 Text(Date.relativeLabel(millis: change.committedAtMillis)).foregroundStyle(.secondary)
             }

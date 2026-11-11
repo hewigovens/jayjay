@@ -10,13 +10,15 @@ struct CommitAvatar: View {
     var size: CGFloat = 20
     private let cacheKey: String
     private let monogramColor: Color
+    private let monogramInitial: String
     @State private var image: NSImage?
 
-    init(email: String, size: CGFloat = 20) {
-        self.email = email
+    init(author: CommitAuthor, size: CGFloat = 20) {
+        email = author.email
         self.size = size
         cacheKey = avatarCacheKey(email: email)
         monogramColor = Color(rgb: avatarMonogramColor(email: email))
+        monogramInitial = avatarMonogramInitial(author: author)
         _image = State(initialValue: Self.cachedImage(email: email, key: cacheKey))
     }
 
@@ -51,20 +53,11 @@ struct CommitAvatar: View {
         Circle()
             .fill(monogramColor)
             .overlay(
-                Text(Self.initial(email))
+                Text(monogramInitial)
                     .font(.system(size: size * 0.5, weight: .semibold))
                     .foregroundStyle(.white)
             )
             .frame(width: size, height: size)
-    }
-
-    /// Initial from the email's username (after `+` for GitHub noreply addresses).
-    private static func initial(_ email: String) -> String {
-        let local = email.components(separatedBy: "@").first ?? ""
-        let username = local.components(separatedBy: "+").last ?? local
-        let source = username.isEmpty ? email : username
-        guard let ch = source.first(where: { $0.isLetter || $0.isNumber }) else { return "?" }
-        return String(ch).uppercased()
     }
 
     private static func cachedImage(email: String, key: String) -> NSImage? {

@@ -1,3 +1,4 @@
+use jayjay_core::CommitAuthor;
 use jayjay_core::avatar::{self, AvatarSource};
 
 #[uniffi::remote(Enum)]
@@ -20,4 +21,9 @@ fn avatar_source(email: &str, pixel_size: u32) -> Option<AvatarSource> {
 #[uniffi::export]
 fn avatar_monogram_color(email: &str) -> u32 {
     avatar::monogram_color(email)
+}
+
+#[uniffi::export]
+fn avatar_monogram_initial(author: CommitAuthor) -> String {
+    author.monogram_initial().to_string()
 }

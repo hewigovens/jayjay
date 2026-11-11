@@ -265,8 +265,7 @@ fn meta_row(change: &ChangeInfo, row_ix: usize, t: &Theme) -> impl IntoElement {
             t,
         ))
         .child(crate::ui::avatar::with_name(
-            &change.author.email,
-            &change.author.name,
+            &change.author,
             FONT_ID,
             t.fg_dim,
         ))

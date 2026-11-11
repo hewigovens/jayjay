@@ -13,7 +13,7 @@ use crate::ui::primitives::dot_separator;
 use crate::ui::primitives::text_tooltip;
 
 pub(super) fn person(person: &CommitAuthor, id: impl Into<ElementId>, t: &Theme) -> AnyElement {
-    crate::ui::avatar::with_name(&person.email, &person.name, FONT_ID, t.fg)
+    crate::ui::avatar::with_name(person, FONT_ID, t.fg)
         .id(id)
         .flex_none()
         .tooltip(text_tooltip(identity(person)))
@@ -52,11 +52,7 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
                 .border_1()
                 .border_color(rgb(t.detail_bg))
                 .when(index > 0, |avatar| avatar.ml(px(-AVATAR_OVERLAP)))
-                .child(crate::ui::avatar::element(
-                    &person.email,
-                    &person.name,
-                    AVATAR_SIZE,
-                ))
+                .child(crate::ui::avatar::element(person, AVATAR_SIZE))
         });
     div()
         .id("detail-author")

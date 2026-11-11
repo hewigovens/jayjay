@@ -2,20 +2,13 @@
 
 use gpui::{AnyElement, IntoElement, ParentElement, SharedString, Styled, div, img, px, rgb};
 
-use jayjay_core::avatar;
+use jayjay_core::{CommitAuthor, avatar};
 
 use super::cache::cache_path;
 
-fn initial(name: &str) -> char {
-    name.chars()
-        .find(|c| c.is_alphanumeric())
-        .map(|c| c.to_uppercase().next().unwrap_or('?'))
-        .unwrap_or('?')
-}
-
 /// Circular avatar: the cached image if present, else a colored monogram (never hits the network).
-pub fn element(email: &str, name: &str, size: f32) -> AnyElement {
-    if let Some(path) = cache_path(email)
+pub fn element(author: &CommitAuthor, size: f32) -> AnyElement {
+    if let Some(path) = cache_path(&author.email)
         && path.exists()
     {
         return img(path)
@@ -32,9 +25,9 @@ pub fn element(email: &str, name: &str, size: f32) -> AnyElement {
         .w(px(size))
         .h(px(size))
         .rounded_full()
-        .bg(rgb(avatar::monogram_color(email)))
+        .bg(rgb(avatar::monogram_color(&author.email)))
         .text_size(px(size * 0.55))
         .text_color(rgb(0xffffff))
-        .child(SharedString::from(initial(name).to_string()))
+        .child(SharedString::from(author.monogram_initial().to_string()))
         .into_any_element()
 }

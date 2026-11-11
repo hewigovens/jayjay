@@ -1,6 +1,6 @@
 use serde::Serialize;
 
-use crate::{github_alias, hex_sha256};
+use crate::{CommitAuthor, github_alias, hex_sha256};
 
 #[derive(Debug, PartialEq, Serialize)]
 #[serde(tag = "kind", content = "value", rename_all = "camelCase")]
@@ -80,9 +80,22 @@ pub fn monogram_color(email: &str) -> u32 {
     PALETTE[byte % PALETTE.len()]
 }
 
+impl CommitAuthor {
+    pub fn monogram_initial(&self) -> char {
+        let local = self.email.split('@').next().unwrap_or_default();
+        let username = local.rsplit('+').next().unwrap_or_default();
+        [self.name.as_str(), username]
+            .into_iter()
+            .find_map(|text| text.chars().find(|c| c.is_alphanumeric()))
+            .and_then(|c| c.to_uppercase().next())
+            .unwrap_or('?')
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::{AvatarSource, cache_key, email_hash, monogram_color};
+    use crate::CommitAuthor;
 
     fn source(email: &str) -> Option<AvatarSource> {
         AvatarSource::for_email(email, 96)
@@ -196,6 +209,18 @@ mod tests {
             monogram_color("NoReply@Anthropic.com"),
             monogram_color("81847+claude@users.noreply.github.com")
         );
+    }
+
+    #[test]
+    fn monogram_initial_prefers_the_name_then_the_email_username() {
+        let initial =
+            |name: &str, email: &str| CommitAuthor::new(name, email, 0).monogram_initial();
+        assert_eq!(
+            initial("ada lovelace", "12345+octocat@users.noreply.github.com"),
+            'A'
+        );
+        assert_eq!(initial("", "12345+octocat@users.noreply.github.com"), 'O');
+        assert_eq!(initial("", ""), '?');
     }
 
     #[test]
