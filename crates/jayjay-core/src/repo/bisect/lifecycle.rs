@@ -31,8 +31,8 @@ impl Repo {
         self.ensure_idle()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
-        let first_commit = self.resolve_commit(&repo, first)?;
-        let second_commit = self.resolve_commit(&repo, second)?;
+        let first_commit = self.resolve_current_commit(&repo, first)?;
+        let second_commit = self.resolve_current_commit(&repo, second)?;
         if first_commit.id() == second_commit.id() {
             return Err(JayError::refused(
                 jayjay_i18n::repo::bisect_needs_two_changes(),

@@ -585,3 +585,28 @@ fn stopping_after_returning_to_the_original_empty_change_preserves_it() {
     assert_eq!(restored.commit_id.id, original.commit_id.id);
     assert!(repo.bisect_state().is_none());
 }
+
+#[test]
+fn a_bad_end_rewritten_by_the_start_snapshot_bisects_its_current_version() {
+    let stack = BisectStack::build();
+    let repo = Repo::open(&stack.path).expect("open");
+    let good = find_change(&repo, BisectStack::GOOD).change_id.id;
+    let stale = find_change(&repo, BisectStack::BAD_END).commit_id.id;
+    fs::write(stack.path.join("work.txt"), "unsnapshotted edit\n").expect("write edit");
+
+    repo.start_bisect_between(&good, &stale)
+        .expect("start from the pre-snapshot commit id");
+    let (_, state) = mark_until_done(&repo, false);
+
+    let result = state.result.expect("result");
+    assert!(result.bad[0].description.contains(BisectStack::FIRST_BAD));
+    let restored = working_copy(&repo);
+    assert!(changed_paths(&repo, "@").contains(&"work.txt".to_owned()));
+    let versions = repo
+        .log("all()")
+        .expect("log")
+        .into_iter()
+        .filter(|change| change.change_id.id == restored.change_id.id)
+        .count();
+    assert_eq!(versions, 1, "bisect must not revive the stale bad end");
+}
