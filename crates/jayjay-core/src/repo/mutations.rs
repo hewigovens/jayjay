@@ -124,7 +124,7 @@ impl Repo {
         self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
             self.ensure_commit_mutable(repo, commit, rev)?;
             let dest = if let Some(into_rev) = into {
-                self.resolve_commit(repo, into_rev)?
+                self.follow_rewrites(repo, self.resolve_commit(repo, into_rev)?, into_rev)?
             } else {
                 // The mutability gate above already rejected the parentless root commit.
                 let first_parent =

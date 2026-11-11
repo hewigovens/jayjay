@@ -180,7 +180,7 @@ impl Repo {
         let commit = if data.is_working_copy {
             self.working_copy_commit(&repo)?
         } else {
-            self.resolve_commit(&repo, rev)?
+            self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?
         };
         if encode_reverse_hex(commit.change_id().as_bytes()) != data.change_id {
             return Err(JayError::ConflictEditorStale {

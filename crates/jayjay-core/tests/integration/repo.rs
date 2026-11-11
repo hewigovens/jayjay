@@ -747,6 +747,30 @@ fn squash_into_explicit_grandparent_target() {
 }
 
 #[test]
+fn squash_into_follows_a_working_copy_rewritten_by_the_snapshot() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    fs::write(repo_path.join("a.txt"), "from A\n").expect("write a.txt");
+    repo.describe("@", "source").expect("describe A");
+    repo.new_change("@", "target").expect("create B");
+    let target = repo.show("@").expect("show target").info;
+    fs::write(repo_path.join("work.txt"), "fresh edit\n").expect("write unsnapshotted edit");
+
+    repo.squash("@-", Some(&target.commit_id.id))
+        .expect("squash into the stale working-copy commit id");
+
+    let changes = repo.log("all()").expect("log after squash");
+    let versions = changes
+        .iter()
+        .filter(|change| change.change_id.id == target.change_id.id)
+        .count();
+    assert_eq!(versions, 1, "the squash must not leave a divergent target");
+    let paths = changed_paths(&repo, "@");
+    assert!(paths.contains(&"a.txt".to_owned()) && paths.contains(&"work.txt".to_owned()));
+}
+
+#[test]
 fn open_fails_on_conflict_markers_in_global_gitconfig() {
     if let Ok(repo_path) = std::env::var("JAYJAY_BROKEN_GITCONFIG_REPO") {
         let error = match Repo::open(std::path::Path::new(&repo_path)) {

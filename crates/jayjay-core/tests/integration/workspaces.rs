@@ -76,6 +76,35 @@ fn workspace_root_from_a_subdirectory_is_the_nearest_workspace() {
 }
 
 #[test]
+fn workspace_add_on_a_revision_follows_a_working_copy_rewritten_by_the_snapshot() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let parent = repo.show("@").expect("show working copy").info;
+    std::fs::write(repo_path.join("work.txt"), "fresh edit\n").expect("write unsnapshotted edit");
+    let dest = temp_dir.path().join("repo-feature");
+
+    repo.workspace_add(
+        dest.to_str().expect("utf8 dest"),
+        "feature",
+        &parent.commit_id.id,
+    )
+    .expect("workspace add on the stale working-copy commit id");
+
+    let versions = repo
+        .log("all()")
+        .expect("log after workspace add")
+        .into_iter()
+        .filter(|change| change.change_id.id == parent.change_id.id)
+        .count();
+    assert_eq!(
+        versions, 1,
+        "the new workspace must not revive the pre-snapshot commit"
+    );
+    assert!(dest.join("work.txt").exists());
+}
+
+#[test]
 fn workspace_forget_rejects_the_current_workspace() {
     let temp_dir = init_jj_repo();
     let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");

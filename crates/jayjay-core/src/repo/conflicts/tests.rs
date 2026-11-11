@@ -271,6 +271,36 @@ fn applies_to_a_divergent_working_copy_after_snapshots_rewrite_its_commit() {
 }
 
 #[test]
+fn applies_to_a_descendant_the_snapshot_rebased() {
+    let (temp_dir, repo) = conflict_fixture();
+    let repo_path = temp_dir.path().join("repo");
+    repo.describe("@", "merge").expect("describe merge");
+    let merge = repo.show("@").expect("show conflicted merge").info;
+    repo.edit("left").expect("edit a parent of the merge");
+    let editor = repo
+        .conflict_editor(&merge.commit_id.id, "hello.txt")
+        .expect("load descendant conflict");
+    assert!(!editor.is_working_copy);
+    fs::write(repo_path.join("other.txt"), "fresh edit\n").expect("write unsnapshotted edit");
+
+    repo.apply_conflict_editor(&merge.commit_id.id, &editor, "combined\n")
+        .expect("apply to the stale merge commit id");
+
+    let changes = repo.log("all()").expect("log after apply");
+    assert!(
+        changes.iter().all(|change| !change.is_divergent),
+        "the apply must not revive the pre-snapshot parent"
+    );
+    let resolved = changes
+        .iter()
+        .find(|change| change.change_id.id == merge.change_id.id)
+        .expect("resolved merge");
+    assert!(!resolved.has_conflict);
+    let working_copy = repo.show("@").expect("show working copy").info;
+    assert!(resolved.parents.contains(&working_copy.commit_id.id));
+}
+
+#[test]
 fn rejects_a_conflict_edit_after_the_sides_changed_underneath() {
     let (temp_dir, repo) = conflict_fixture();
     let editor = repo.conflict_editor("@", "hello.txt").expect("load editor");

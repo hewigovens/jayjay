@@ -42,7 +42,7 @@ impl Repo {
         let parents = if rev.is_empty() {
             block_on_result("load parents", self.working_copy_commit(&repo)?.parents())?
         } else {
-            vec![self.resolve_commit(&repo, rev)?]
+            vec![self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?]
         };
         if !dest.exists() {
             std::fs::create_dir(&dest).map_err(|error| {
