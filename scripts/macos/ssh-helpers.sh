@@ -36,7 +36,7 @@ mkdir -p "$staged" "$assets" "$work/helpers"
 
 entries=()
 for target in "${targets[@]}"; do
-  tar -xzf "$work/artifacts/ssh-helper-$target/ssh-helper-$target.tgz" -C "$work/helpers"
+  tar -xzf "$work"/artifacts/*/"ssh-helper-$target.tgz" -C "$work/helpers"
   executable="$work/helpers/$target/jayjay-ssh"
   [[ "$target" == *-windows-msvc ]] && executable+=.exe
   # A link in the artifact would publish whatever local file it points at.
