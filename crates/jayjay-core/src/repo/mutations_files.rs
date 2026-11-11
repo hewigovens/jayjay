@@ -19,11 +19,8 @@ impl Repo {
     pub fn restore_files(&self, rev: &str, from: Option<&str>, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.restore(rev, paths, |repo| {
-            from.map(|f| {
-                self.resolve_commit(repo, f)
-                    .and_then(|commit| self.follow_rewrites(repo, commit, f))
-            })
-            .transpose()
+            from.map(|f| self.resolve_current_commit(repo, f))
+                .transpose()
         })
     }
 
@@ -44,7 +41,7 @@ impl Repo {
         self.refresh_working_copy()?;
 
         let repo = self.get_repo();
-        let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
+        let commit = self.resolve_current_commit(&repo, rev)?;
         let source = resolve_source(&repo)?;
         self.ensure_commit_mutable(&repo, &commit, rev)?;
         let repo_paths = self.parse_repo_paths(paths)?;
@@ -135,7 +132,7 @@ impl Repo {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
-        let source = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
+        let source = self.resolve_current_commit(&repo, rev)?;
         self.ensure_commit_mutable(&repo, &source, rev)?;
         let destination = self.working_copy_commit(&repo)?;
         self.ensure_commit_mutable(&repo, &destination, "@")?;

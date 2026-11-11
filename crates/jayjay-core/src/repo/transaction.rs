@@ -70,8 +70,7 @@ impl Repo {
         F: FnOnce(&Arc<ReadonlyRepo>, &Commit, &mut MutableRepo) -> JayResult<()>,
     {
         let repo = self.get_repo();
-        let commit = self.resolve_commit(&repo, rev)?;
-        let commit = self.follow_rewrites(&repo, commit, rev)?;
+        let commit = self.resolve_current_commit(&repo, rev)?;
         self.with_existing_commit_transaction(repo, commit, description, rebase_descendants, update)
     }
 

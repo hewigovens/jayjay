@@ -124,7 +124,7 @@ impl Repo {
         self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
             self.ensure_commit_mutable(repo, commit, rev)?;
             let dest = if let Some(into_rev) = into {
-                self.follow_rewrites(repo, self.resolve_commit(repo, into_rev)?, into_rev)?
+                self.resolve_current_commit(repo, into_rev)?
             } else {
                 // The mutability gate above already rejected the parentless root commit.
                 let first_parent =
@@ -204,8 +204,8 @@ impl Repo {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
         let repo = self.get_repo();
-        let commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
-        let dest_commit = self.follow_rewrites(&repo, self.resolve_commit(&repo, dest)?, dest)?;
+        let commit = self.resolve_current_commit(&repo, rev)?;
+        let dest_commit = self.resolve_current_commit(&repo, dest)?;
         let roots = match mode {
             RebaseMode::Source => vec![commit.clone()],
             RebaseMode::Branch => self.branch_roots(&repo, &commit, &dest_commit)?,
@@ -614,7 +614,7 @@ impl Repo {
         let repo = self.get_repo();
         let commits = revs
             .iter()
-            .map(|rev| self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev))
+            .map(|rev| self.resolve_current_commit(&repo, rev))
             .collect::<JayResult<_>>()?;
         Ok((repo, commits))
     }

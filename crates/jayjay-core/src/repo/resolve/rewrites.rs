@@ -15,6 +15,14 @@ const MAX_REWRITE_HOPS: usize = 100;
 const MAX_OP_SCAN: usize = 1000;
 
 impl Repo {
+    pub(crate) fn resolve_current_commit(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        rev: &str,
+    ) -> JayResult<Commit> {
+        self.follow_rewrites(repo, self.resolve_commit(repo, rev)?, rev)
+    }
+
     // A mutation must not target a hidden commit: a snapshot may have just rewritten the commit the shell selected, so follow the operation log's predecessor records to its visible successor.
     pub(crate) fn follow_rewrites(
         &self,

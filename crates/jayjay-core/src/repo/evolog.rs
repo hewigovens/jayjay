@@ -12,7 +12,7 @@ impl Repo {
     pub fn evolog(&self, rev: &str) -> JayResult<Vec<EvologEntry>> {
         let repo = self.get_repo();
         // A divergent change is shown by commit id, which a restore hides; start from its successor so the reload includes the new version.
-        let head = self.follow_rewrites(&repo, self.resolve_commit(&repo, rev)?, rev)?;
+        let head = self.resolve_current_commit(&repo, rev)?;
         on_worker_stack(|| {
             let mut entries = Vec::new();
             let stream = walk_predecessors(repo.as_ref(), &[head.id().clone()]);
