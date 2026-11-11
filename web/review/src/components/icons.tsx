@@ -34,7 +34,7 @@ export const ListIcon = () => (
   <Icon d="M5 3.5h8.5M5 8h8.5M5 12.5h8.5M2.25 3.5h.5M2.25 8h.5M2.25 12.5h.5" />
 );
 export const KeyboardIcon = () => (
-  <Icon d="M2 4.5h12v7H2ZM4.5 7h.01M7 7h.01M9 7h.01M11.5 7h.01M5.5 9.5h5" />
+  <Icon d="M1 3h14v10H1ZM4 6.25h.01M6.67 6.25h.01M9.33 6.25h.01M12 6.25h.01M5.25 9.75h5.5" />
 );
 export const SearchIcon = () => <Icon d="M7 12a5 5 0 1 0 0-10 5 5 0 0 0 0 10ZM10.6 10.6l3.4 3.4" />;
 export const HideReviewedIcon = ({ size }: { size?: number }) => (

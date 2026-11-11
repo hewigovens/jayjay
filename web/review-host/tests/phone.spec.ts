@@ -86,20 +86,20 @@ test.describe("phone portrait", () => {
     await expect(group).not.toBeChecked();
   });
 
-  test("the file sheet filters the list and jumps to the picked file", async ({ page }) => {
+  test("the file drawer filters the list and jumps to the picked file", async ({ page }) => {
     await page.goto("/");
     await ready(page);
     await page.locator(".jj-files-button").click();
-    const sheet = page.getByRole("dialog", { name: "Files" });
-    await expect(sheet).toBeVisible();
-    await sheet.getByRole("button", { name: "Filter files", exact: true }).click();
-    await sheet.getByRole("searchbox").fill("cargo");
-    await expect(sheet.locator(".jj-file-select")).toHaveCount(1);
-    await sheet.getByRole("button", { name: "Cargo.toml", exact: true }).click();
-    await expect(sheet).toBeHidden();
+    const drawer = page.getByRole("dialog", { name: "Files" });
+    await expect(drawer).toBeVisible();
+    await drawer.getByRole("button", { name: "Filter files", exact: true }).click();
+    await drawer.getByRole("searchbox").fill("cargo");
+    await expect(drawer.locator(".jj-file-select")).toHaveCount(1);
+    await drawer.getByRole("button", { name: "Cargo.toml", exact: true }).click();
+    await expect(drawer).toBeHidden();
     await expect(page.locator('.jj-diff-scroll[data-path="Cargo.toml"]')).toBeInViewport();
     await page.locator(".jj-files-button").click();
-    await expect(sheet.getByRole("searchbox")).toHaveValue("cargo");
+    await expect(drawer.getByRole("searchbox")).toHaveValue("cargo");
   });
 
   test("a picked file stays on top while the files above it render", async ({ page }) => {
@@ -178,23 +178,23 @@ test.describe("phone portrait", () => {
     await expect(sections.nth(4)).toBeFocused();
   });
 
-  test("Escape clears the sheet's filter before closing the sheet", async ({ page }) => {
+  test("Escape clears the drawer's filter before closing the drawer", async ({ page }) => {
     await page.goto("/");
     await ready(page);
     await page.locator(".jj-files-button").click();
-    const sheet = page.getByRole("dialog", { name: "Files" });
-    await sheet.getByRole("button", { name: "Filter files", exact: true }).click();
-    const search = sheet.getByRole("searchbox");
+    const drawer = page.getByRole("dialog", { name: "Files" });
+    await drawer.getByRole("button", { name: "Filter files", exact: true }).click();
+    const search = drawer.getByRole("searchbox");
     await search.fill("cargo");
     await search.press("Escape");
-    await expect(sheet).toBeVisible();
+    await expect(drawer).toBeVisible();
     await expect(search).toHaveValue("");
-    await expect(sheet.locator(".jj-file-select")).toHaveCount(5);
+    await expect(drawer.locator(".jj-file-select")).toHaveCount(5);
     await search.press("Escape");
-    await expect(sheet).toBeHidden();
+    await expect(drawer).toBeHidden();
   });
 
-  test("the sheet stays closed after the window widens and narrows again", async ({ page }) => {
+  test("the drawer stays closed after the window widens and narrows again", async ({ page }) => {
     await page.goto("/");
     await ready(page);
     await page.locator(".jj-files-button").click();

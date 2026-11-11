@@ -69,6 +69,28 @@
   padding-right: 8px;
   border-radius: 8px;
 }
+:where(.jayjay-review) :is(.jj-folder-row, .jj-file-row) {
+  position: relative;
+  padding-left: var(--jj-row-indent);
+}
+:where(.jayjay-review)
+  :is(.jj-folder-row, .jj-file-row)
+  + :is(.jj-folder-row, .jj-file-row)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -6px;
+  left: calc(var(--jj-row-indent) + var(--jj-toggle-size, 16px) + 22px);
+  border-top: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-folder-row + .jj-folder-row::before,
+:where(.jayjay-review) .jj-file-row + .jj-folder-row::before {
+  left: calc(var(--jj-row-indent) + 30px);
+}
+:where(.jayjay-review) .jj-file-row.jj-selected::before,
+:where(.jayjay-review) .jj-file-row.jj-selected + ::before {
+  display: none;
+}
 :where(.jayjay-review) .jj-file-row.jj-selected {
   background: color-mix(in srgb, var(--jj-accent) 16%, transparent);
 }
@@ -183,8 +205,8 @@
   display: grid;
   flex: none;
   place-items: center;
-  width: 16px;
-  height: 16px;
+  width: var(--jj-toggle-size, 16px);
+  height: var(--jj-toggle-size, 16px);
   color: color-mix(in srgb, var(--jj-muted) 55%, transparent);
 }
 :where(.jayjay-review) .jj-review-toggle > input {

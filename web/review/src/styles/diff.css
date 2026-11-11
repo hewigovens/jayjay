@@ -3,12 +3,25 @@
   max-height: 65vh;
   background: var(--jj-diff-context-bg, transparent);
 }
+/* Registered so ch resolves once against the diff font and rows in other fonts inherit the length. */
+@property --jj-number-width {
+  syntax: "<length>";
+  inherits: true;
+  initial-value: 38px;
+}
 :where(.jayjay-review) .jj-diff-lines {
+  --jj-number-width: calc(var(--jj-line-digits, 4) * 1ch + 8px);
+  --jj-gutter-width: calc(2 * var(--jj-number-width));
+  --jj-marker-width: 16px;
+  --jj-code-inset: calc(var(--jj-gutter-width) + var(--jj-marker-width));
   width: 100%;
   font: var(--jj-diff-font-size, 12px) / calc(20 / 12) var(--jj-mono);
   tab-size: 4;
   background: var(--jj-diff-context-bg, transparent);
   color: var(--jj-diff-text, var(--jj-ink));
+}
+:where(.jayjay-review) .jj-split {
+  --jj-gutter-width: var(--jj-number-width);
 }
 :where(.jayjay-review) .jj-diff-row {
   display: grid;
@@ -39,9 +52,9 @@
   color: var(--jj-diff-removed-text, var(--jj-ink));
 }
 :where(.jayjay-review) .jj-line-number {
-  flex: 0 0 max(38px, calc(4ch + 8px));
+  flex: 0 0 var(--jj-number-width);
   text-align: right;
-  padding-right: 8px;
+  padding-right: 6px;
   color: var(--jj-diff-gutter-fg, var(--jj-muted));
   background: var(--jj-diff-gutter-bg, transparent);
   align-self: stretch;
@@ -58,7 +71,7 @@
   box-shadow: inset -1px 0 var(--jj-border);
 }
 :where(.jayjay-review) .jj-marker {
-  flex: 0 0 20px;
+  flex: 0 0 var(--jj-marker-width);
   text-align: center;
   user-select: none;
   color: var(--jj-diff-gutter-fg, var(--jj-muted));
@@ -119,7 +132,7 @@
   border: 0;
   border-radius: 0;
   border-block: 1px solid var(--jj-border);
-  padding: 3px 20px 3px 74px;
+  padding: 3px 20px 3px calc(10px + var(--jj-gutter-width));
   color: var(--jj-diff-dim, var(--jj-accent));
   background: var(
     --jj-diff-separator-bg,
@@ -197,8 +210,8 @@
   position: absolute;
   top: 0;
   bottom: 0;
-  left: 9px;
-  width: 67px;
+  left: 0;
+  width: var(--jj-gutter-width);
   z-index: 2;
   display: flex;
   align-items: flex-start;
@@ -207,9 +220,6 @@
   border-radius: 0;
   background: transparent;
   cursor: pointer;
-}
-:where(.jayjay-review) .jj-split .jj-gutter-note {
-  width: 29px;
 }
 :where(.jayjay-review) .jj-gutter-note:hover {
   background: transparent;

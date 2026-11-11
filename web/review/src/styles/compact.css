@@ -41,27 +41,37 @@
   color: var(--jj-ink);
   white-space: nowrap;
 }
-:where(.jayjay-review) .jj-dialog.jj-file-sheet {
-  inset: auto 0 0;
-  width: 100%;
+:where(.jayjay-review) .jj-dialog.jj-file-drawer {
+  inset: 0 auto 0 0;
+  width: min(86vw, 22rem);
   max-width: none;
-  height: min(75dvh, 40rem);
+  height: 100dvh;
   max-height: none;
   margin: 0;
-  padding: 0 0 env(safe-area-inset-bottom);
+  padding: env(safe-area-inset-top) 0 env(safe-area-inset-bottom) env(safe-area-inset-left);
   overflow: hidden;
-  border-width: 1px 0 0;
-  border-radius: 12px 12px 0 0;
+  border-width: 0 1px 0 0;
+  border-radius: 0;
 }
-:where(.jayjay-review) .jj-file-sheet[open] {
+:where(.jayjay-review) .jj-file-drawer[open] {
   display: flex;
   flex-direction: column;
 }
-:where(.jayjay-review) .jj-file-sheet .jj-file-column {
+@media (prefers-reduced-motion: no-preference) {
+  :where(.jayjay-review) .jj-file-drawer[open] {
+    animation: jj-drawer-in 0.18s ease-out;
+  }
+}
+@keyframes jj-drawer-in {
+  from {
+    translate: -100% 0;
+  }
+}
+:where(.jayjay-review) .jj-file-drawer .jj-file-column {
   flex: 1;
   border-right: 0;
   background: var(--jj-surface);
 }
-:where(.jayjay-review) .jj-file-sheet .jj-file-select {
+:where(.jayjay-review) .jj-file-drawer .jj-file-select {
   min-height: 40px;
 }

@@ -97,9 +97,9 @@ export function ReviewWorkspace({
   const jump = useSectionJump(detail, loaded);
   const [filter, setFilter] = useState(noFileFilter);
   const [shortcuts, setShortcuts] = useState(false);
-  const [sheet, setSheet] = useState(false);
-  const [sheetFile, setSheetFile] = useState(0);
-  const sheetPick = useRef<number | null>(null);
+  const [drawer, setDrawer] = useState(false);
+  const [drawerFile, setDrawerFile] = useState(0);
+  const drawerPick = useRef<number | null>(null);
   const showShortcuts = onShowShortcuts ?? (() => setShortcuts(true));
 
   function sections() {
@@ -111,16 +111,16 @@ export function ReviewWorkspace({
     return bottom > parseFloat(getComputedStyle(row).scrollMarginTop) + 1 && top < innerHeight;
   }
   const topSection = (rows: HTMLElement[]) => rows.findIndex(onScreen);
-  function openSheet() {
+  function openDrawer() {
     const rows = sections();
-    setSheetFile(Number(rows[Math.max(topSection(rows), 0)]?.dataset.file ?? 0));
-    setSheet(true);
+    setDrawerFile(Number(rows[Math.max(topSection(rows), 0)]?.dataset.file ?? 0));
+    setDrawer(true);
   }
 
-  const [sheetLayout, setSheetLayout] = useState(compact);
-  if (sheetLayout !== compact) {
-    setSheetLayout(compact);
-    setSheet(false);
+  const [drawerLayout, setDrawerLayout] = useState(compact);
+  if (drawerLayout !== compact) {
+    setDrawerLayout(compact);
+    setDrawer(false);
   }
 
   useFileShortcuts({
@@ -147,11 +147,11 @@ export function ReviewWorkspace({
     search: () => {
       setFilter({ ...filter, searching: true });
       if (!compact) return;
-      openSheet();
-      // The sheet opens in this event's commit; showModal focuses its first button, not the filter.
+      openDrawer();
+      // The drawer opens in this event's commit; showModal focuses its first button, not the filter.
       requestAnimationFrame(() =>
         columns.current?.parentElement
-          ?.querySelector<HTMLElement>(".jj-file-sheet .jj-file-filter input")
+          ?.querySelector<HTMLElement>(".jj-file-drawer .jj-file-filter input")
           ?.focus(),
       );
     },
@@ -473,7 +473,7 @@ export function ReviewWorkspace({
                   aria-haspopup="dialog"
                   aria-keyshortcuts="/"
                   title={labels.files}
-                  onClick={openSheet}
+                  onClick={openDrawer}
                 >
                   <ListIcon />
                   {result.overview.files.some((entry) => entry.review === "reviewed")
@@ -584,25 +584,25 @@ export function ReviewWorkspace({
       )}
       {result && compact && (
         <Dialog
-          className="jj-file-sheet"
+          className="jj-file-drawer"
           label={labels.files}
-          open={sheet}
+          open={drawer}
           onClose={() => {
-            setSheet(false);
+            setDrawer(false);
             // After the dialog hands focus back to its button, which would scroll the list to it.
-            if (sheetPick.current !== null) jump(sheetPick.current);
-            sheetPick.current = null;
+            if (drawerPick.current !== null) jump(drawerPick.current);
+            drawerPick.current = null;
           }}
         >
-          {sheet && (
+          {drawer && (
             <FileColumn
               overview={result.overview}
-              selected={sheetFile}
+              selected={drawerFile}
               disabled={disabled}
               labels={labels}
               select={(index) => {
-                sheetPick.current = index;
-                setSheet(false);
+                drawerPick.current = index;
+                setDrawer(false);
               }}
               notes={notes}
               toggle={toggleFile}

@@ -1,5 +1,5 @@
 /** @jsxRuntime automatic */
-import { useMemo, useState } from "react";
+import { useMemo, useState, type CSSProperties } from "react";
 import type { Labels } from "../../model/diff";
 import {
   ChevronIcon,
@@ -52,7 +52,7 @@ function FileRow({
   return (
     <div
       className={`jj-file-row jj-${file.review} ${selected === index ? "jj-selected" : ""}`}
-      style={{ paddingLeft: 8 + depth * 12 }}
+      style={{ "--jj-row-indent": `${8 + depth * 12}px` } as CSSProperties}
     >
       <ReviewToggle file={file} labels={labels} disabled={disabled} toggle={() => toggle(index)} />
       {/* Safari leaves a clicked button unfocused, and Space needs it focused. */}
@@ -286,7 +286,7 @@ export function FileColumn({
                   <button
                     className="jj-folder-row"
                     key={`dir:${entry.path}`}
-                    style={{ paddingLeft: 10 + entry.depth * 12 }}
+                    style={{ "--jj-row-indent": `${10 + entry.depth * 12}px` } as CSSProperties}
                     aria-expanded={open}
                     onClick={() => folder(entry.path)}
                   >

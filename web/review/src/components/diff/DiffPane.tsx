@@ -138,6 +138,14 @@ export function DiffPane({
   const touch = useRef(false);
   const gutter = { armed, arm, touch };
   if (view.rows.length === 0) return <div className="jj-empty-diff">{empty}</div>;
+  const lastLine = view.rows.reduce(
+    (last, row) =>
+      row.cells.reduce(
+        (line, cell) => Math.max(line, Number(cell.oldLine) || 0, cell.newLine ?? 0),
+        last,
+      ),
+    0,
+  );
   const groupAt = (index: number) =>
     view.rows[index]?.cells.find((cell) => cell.anchor)?.anchor?.group;
   const splits = (index: number) =>
@@ -245,6 +253,7 @@ export function DiffPane({
   return (
     <div
       className={`jj-diff-lines ${split ? "jj-split" : "jj-unified"}`}
+      style={{ "--jj-line-digits": Math.max(String(lastLine).length, 2) } as CSSProperties}
       {...diffThemeAttributes(diffThemes)}
     >
       {split && (

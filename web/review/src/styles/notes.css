@@ -6,7 +6,7 @@
   position: sticky;
   left: 0;
   width: 100cqi;
-  padding: 4px 16px 8px 104px;
+  padding: 4px 16px 8px calc(10px + var(--jj-code-inset));
 }
 :where(.jayjay-review) .jj-split .jj-note-row {
   display: grid;
@@ -15,11 +15,11 @@
 }
 :where(.jayjay-review) .jj-split .jj-note-slot {
   grid-column: 1;
-  padding: 4px 16px 8px 66px;
+  padding: 4px 16px 8px calc(10px + var(--jj-code-inset));
 }
 :where(.jayjay-review) .jj-split .jj-note-slot.jj-new {
   grid-column: 2;
-  padding-left: 59px;
+  padding-left: calc(6px + var(--jj-code-inset));
 }
 :where(.jayjay-review) .jj-note-slot {
   display: grid;
@@ -210,10 +210,7 @@
   :where(.jayjay-review) .jj-split .jj-note-row {
     display: grid;
     grid-template-columns: minmax(0, 1fr);
-    padding: 4px 10px 8px 104px;
-  }
-  :where(.jayjay-review) .jj-split .jj-note-row {
-    padding-left: 66px;
+    padding: 4px 10px 8px calc(10px + var(--jj-code-inset));
   }
   :where(.jayjay-review) .jj-split .jj-note-slot,
   :where(.jayjay-review) .jj-split .jj-note-slot.jj-new {

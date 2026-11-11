@@ -14,9 +14,8 @@
     min-height: 40px;
     min-width: 40px;
   }
-  :where(.jayjay-review) .jj-review-toggle {
-    width: 18px;
-    height: 18px;
+  :where(.jayjay-review) {
+    --jj-toggle-size: 18px;
   }
 }
 @media (max-width: 1000px) and (min-height: 501px) {
@@ -40,6 +39,33 @@
   :where(.jayjay-review) .jj-result-footer {
     flex-wrap: wrap;
   }
+  /* One number per line: the new line, or the old line of a removed one. */
+  :where(.jayjay-review) .jj-unified .jj-diff-cell:not(.jj-removed) > .jj-line-number:first-child,
+  :where(.jayjay-review) .jj-unified .jj-removed > .jj-line-number + .jj-line-number {
+    display: none;
+  }
+  :where(.jayjay-review) .jj-unified {
+    --jj-gutter-width: var(--jj-number-width);
+    --jj-marker-width: 14px;
+  }
+  :where(.jayjay-review) .jj-unified .jj-diff-row {
+    padding-left: 8px;
+  }
+  :where(.jayjay-review) .jj-unified .jj-diff-cell {
+    padding-right: 8px;
+  }
+  :where(.jayjay-review) .jj-unified .jj-line-number {
+    padding-right: 4px;
+  }
+  :where(.jayjay-review) .jj-unified .jj-gutter-note {
+    width: var(--jj-code-inset);
+  }
+  :where(.jayjay-review) .jj-unified .jj-context-row {
+    padding-inline: 12px;
+  }
+  :where(.jayjay-review) .jj-unified .jj-note-row {
+    padding-left: 12px;
+  }
   :where(.jayjay-review) .jj-review-columns {
     display: flex;
     flex-direction: column;
@@ -55,7 +81,7 @@
     font-size: calc(12px * var(--jj-interface-scale, 1));
   }
   :where(.jayjay-review) .jj-change-header h1 {
-    flex: 1 1 auto;
+    flex: 1 1 0;
     font-size: calc(18px * var(--jj-interface-scale, 1));
   }
   /* The host's actions take their own row, so a long title keeps the width. */
