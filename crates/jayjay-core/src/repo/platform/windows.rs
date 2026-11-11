@@ -1,6 +1,6 @@
 use std::ffi::{OsStr, OsString};
 use std::os::windows::process::CommandExt;
-use std::path::{Path, PathBuf};
+use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
 use windows_sys::Win32::System::Threading::CREATE_NO_WINDOW;
@@ -77,6 +77,8 @@ pub fn system_path_entries() -> Vec<PathBuf> {
     vec![system32(), system_root()]
 }
 
+const MAX_LINK_HOPS: u32 = 32;
+
 /// Scoop's shim reports only that its target could not start; launching the target itself yields the OS error.
 pub fn launch_target(path: PathBuf) -> PathBuf {
     let is_exe = path
@@ -88,7 +90,30 @@ pub fn launch_target(path: PathBuf) -> PathBuf {
     std::fs::read_to_string(path.with_extension("shim"))
         .ok()
         .and_then(|shim| scoop_shim_target(&shim))
+        .map(|target| {
+            let mut hops = MAX_LINK_HOPS;
+            resolve_links(&target, &mut hops).unwrap_or(target)
+        })
         .unwrap_or(path)
+}
+
+/// Windows refuses some callers passage through a junction a non-admin made (error 448), which Scoop's `current` is; reading each link names its target without passing through it.
+/// A link's target can itself lead through links, so it is resolved the same way; `None` once links that lead back to each other use up the hops.
+fn resolve_links(path: &Path, hops: &mut u32) -> Option<PathBuf> {
+    let mut resolved = PathBuf::new();
+    for component in path.components() {
+        resolved.push(component);
+        if !matches!(component, Component::Normal(_)) {
+            continue;
+        }
+        if let Ok(target) = std::fs::read_link(&resolved)
+            && target.is_absolute()
+        {
+            *hops = hops.checked_sub(1)?;
+            resolved = resolve_links(&target, hops)?;
+        }
+    }
+    Some(resolved)
 }
 
 /// A shim that adds arguments or environment, or expands variables, has to run as the shim.
@@ -146,6 +171,38 @@ mod tests {
             write(&kept);
             assert_eq!(launch_target(shim.clone()), shim, "{kept}");
         }
+    }
+
+    #[test]
+    fn launches_a_scoop_shim_target_without_passing_through_its_junctions() {
+        let dir = tempfile::tempdir().unwrap();
+        let root = dir.path();
+        let junction = |link: PathBuf, target: PathBuf| {
+            let linked = command("cmd.exe".into())
+                .args(["/c", "mklink", "/j"])
+                .args([link, target])
+                .output()
+                .unwrap();
+            assert!(linked.status.success(), "{linked:?}");
+        };
+        let launched = |target: PathBuf| {
+            let shim = format!("path = \"{}\"\r\n", target.display());
+            std::fs::write(root.join("jj.shim"), shim).unwrap();
+            launch_target(root.join("jj.exe"))
+        };
+
+        // `current` points back through the `apps` junction, so its target needs resolving too.
+        std::fs::create_dir_all(root.join(r"stock\jj\0.1")).unwrap();
+        junction(root.join("apps"), root.join("stock"));
+        junction(root.join(r"stock\jj\current"), root.join(r"apps\jj\0.1"));
+        assert_eq!(
+            launched(root.join(r"apps\jj\current\jj.exe")),
+            root.join(r"stock\jj\0.1\jj.exe")
+        );
+
+        junction(root.join("a"), root.join("b"));
+        junction(root.join("b"), root.join("a"));
+        assert_eq!(launched(root.join(r"a\jj.exe")), root.join(r"a\jj.exe"));
     }
 
     #[test]
