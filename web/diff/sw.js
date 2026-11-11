@@ -36,7 +36,8 @@ async function page(request) {
   const store = await caches.open(cache);
   try {
     const response = await fetch(request);
-    if (response.ok) await store.put("/", response.clone());
+    if (response.ok && response.headers.get("content-type")?.startsWith("text/html"))
+      await store.put("/", response.clone());
     return response;
   } catch (error) {
     const hit = await store.match("/");

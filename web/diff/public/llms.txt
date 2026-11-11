@@ -1,0 +1,21 @@
+# JayJay Diff
+
+> JayJay Diff reviews any public GitHub pull request, comparison, or commit in the browser, with review marks that survive force-pushes.
+
+Each hunk has a stable review identity, fingerprinted from its content and nearby context, so after a rebase only the hunks that changed come back for review. Marks and notes stay in the reader's browser. Signing in with GitHub is optional; it raises the rate limit and can sync marks with GitHub's Viewed boxes.
+
+## Open a review
+
+Swap `github.com` for `diff.hewig.dev` in a GitHub URL, or paste the URL on the home page.
+
+- Pull request: `https://diff.hewig.dev/<owner>/<repo>/pull/<number>`
+- One commit of a pull request: `https://diff.hewig.dev/<owner>/<repo>/pull/<number>/commits/<sha>`
+- Comparison: `https://diff.hewig.dev/<owner>/<repo>/compare/<base>...<head>`
+- Commit: `https://diff.hewig.dev/<owner>/<repo>/commit/<sha>`
+
+Only public repositories open. The pages render in the browser from JavaScript.
+
+## Links
+
+- [JayJay, the desktop app for Jujutsu (jj)](https://jayjay.hewig.dev/)
+- [Source on GitHub](https://github.com/hewigovens/jayjay)
