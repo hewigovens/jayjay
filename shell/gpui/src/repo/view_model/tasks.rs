@@ -12,10 +12,12 @@ pub(crate) struct ActionSucceeded;
 impl EventEmitter<ActionSucceeded> for RepoViewModel {}
 
 #[derive(Clone, Copy, PartialEq, Eq)]
-enum RepoTaskKind {
+pub(super) enum RepoTaskKind {
     Action,
     /// Fetch and push report their own progress instead of the refresh indicator.
     QuietAction,
+    /// Undo and redo step through history rather than act, so they never raise the rating prompt.
+    OperationStep,
     /// Reads that open an editor; not an action of their own.
     Load,
 }
@@ -92,7 +94,7 @@ impl RepoViewModel {
         self.run_repo_task(cx, RepoTaskKind::Load, read, on_success)
     }
 
-    fn run_repo_task<T>(
+    pub(super) fn run_repo_task<T>(
         &mut self,
         cx: &mut Context<Self>,
         kind: RepoTaskKind,
@@ -115,7 +117,7 @@ impl RepoViewModel {
         // Stamp before the write so the FS echo from our own jj mutation is ignored.
         self.last_internal_mutation_at = Some(std::time::Instant::now());
         self.loading.operations += 1;
-        if kind == RepoTaskKind::Action {
+        if matches!(kind, RepoTaskKind::Action | RepoTaskKind::OperationStep) {
             self.begin_refreshing(cx);
         } else {
             self.begin_repo_task(cx);
@@ -131,7 +133,7 @@ impl RepoViewModel {
                 match result {
                     Ok(value) => {
                         on_success(vm, &value, cx);
-                        if kind != RepoTaskKind::Load {
+                        if matches!(kind, RepoTaskKind::Action | RepoTaskKind::QuietAction) {
                             cx.emit(ActionSucceeded);
                         }
                         Ok(value)

@@ -7,9 +7,11 @@ final class RepoViewModelUndoTests: RepoViewModelTestCase {
         let (viewModel, doomed) = try abandonFixture()
         let notice = try await abandon(doomed, in: viewModel)
         XCTAssertEqual(notice.undoOperationId, viewModel.repo.undoState().operationId)
+        let successSignal = viewModel.successActionSignal
 
         try viewModel.undo(operationId: XCTUnwrap(notice.undoOperationId))
         try await waitUntil("the undo finishes") { viewModel.info != nil }
+        XCTAssertEqual(viewModel.successActionSignal, successSignal, "undo must not count toward the rating prompt")
 
         XCTAssertEqual(try viewModel.repo.log(revset: "subject(exact:doomed)").count, 1)
         XCTAssertNil(viewModel.operationLogRequest)

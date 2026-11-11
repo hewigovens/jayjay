@@ -54,3 +54,24 @@ fn the_prompt_is_modal_and_return_escape_or_dont_show_again_close_it(cx: &mut Te
     assert!(cx.debug_bounds("rating-prompt").is_none());
     assert!(cx.update(|_, cx| cx.global::<RatingPromptStore>().state().dismissed));
 }
+
+#[gpui::test]
+fn undo_and_redo_do_not_raise_the_prompt(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    focus_view(&view, cx);
+    raise_prompt(&view, "described", cx);
+    keys(cx, "escape");
+    cx.update(|_, cx| {
+        cx.set_global(RatingPromptStore::in_memory(RatingPromptState {
+            next_prompt_at: 0,
+            ..RatingPromptState::default()
+        }))
+    });
+
+    keys(cx, "secondary-z");
+    assert!(cx.debug_bounds("rating-prompt").is_none());
+    keys(cx, "secondary-shift-z");
+    assert!(cx.debug_bounds("rating-prompt").is_none());
+    change_with_subject(&view, cx, "described");
+}

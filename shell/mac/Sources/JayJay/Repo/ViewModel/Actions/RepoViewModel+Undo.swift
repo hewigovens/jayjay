@@ -21,6 +21,7 @@ extension RepoViewModel {
         _ action: @escaping RepoOperation<String?>
     ) {
         performResult(
+            signalsSuccess: false,
             onSuccess: { viewModel, description in
                 if let description {
                     viewModel.info = message(description)

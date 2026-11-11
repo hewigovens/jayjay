@@ -1,6 +1,7 @@
 use gpui::{Context, Task};
 use jayjay_core::{JayResult, UndoState};
 
+use super::tasks::RepoTaskKind;
 use super::{OperationStep, RepoViewModel};
 
 impl RepoViewModel {
@@ -15,8 +16,9 @@ impl RepoViewModel {
         operation_id: String,
         cx: &mut Context<Self>,
     ) -> Task<JayResult<Option<String>>> {
-        self.repo_result_task(
+        self.run_repo_task(
             cx,
+            RepoTaskKind::OperationStep,
             move |repo| match step {
                 OperationStep::Undo => repo.undo(&operation_id),
                 OperationStep::Redo => repo.redo(&operation_id),

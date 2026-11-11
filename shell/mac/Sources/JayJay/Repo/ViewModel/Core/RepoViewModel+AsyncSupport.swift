@@ -61,6 +61,8 @@ extension RepoViewModel {
         selectingResult: ((Result) -> String)? = nil,
         gatedBy gate: RepoActionGate? = nil,
         undoable: ((Result) -> String?)? = nil,
+        // Undo and redo step through history rather than act, so they never count toward the rating prompt.
+        signalsSuccess: Bool = true,
         beforeRefresh: @escaping @MainActor (RepoViewModel) -> Void = { _ in },
         onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void = { _, _ in },
         // A manual refresh clears `error`, so anything that sets it belongs here rather than in `onSuccess`.
@@ -89,7 +91,9 @@ extension RepoViewModel {
             if let gate {
                 viewModel[keyPath: gate.state] = false
             }
-            viewModel.successActionSignal += 1
+            if signalsSuccess {
+                viewModel.successActionSignal += 1
+            }
             beforeRefresh(viewModel)
             onSuccess(viewModel, tracked.result)
             if let message = undoable?(tracked.result) {
