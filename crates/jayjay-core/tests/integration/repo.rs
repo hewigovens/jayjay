@@ -811,6 +811,22 @@ fn open_fails_on_conflict_markers_in_global_gitconfig() {
 }
 
 #[test]
+fn squash_into_itself_changes_nothing() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.new_change("@", "child").expect("new child change");
+    fs::write(repo_path.join("a.txt"), "edit\n").expect("write a.txt");
+    repo.refresh_working_copy().expect("snapshot");
+    let before = current_op_id(&repo_path);
+
+    repo.squash("@", Some("@")).expect("squash into itself");
+
+    assert_eq!(current_op_id(&repo_path), before);
+    assert!(changed_paths(&repo, "@").contains(&"a.txt".to_owned()));
+}
+
+#[test]
 fn squash_root_commit_is_rejected() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

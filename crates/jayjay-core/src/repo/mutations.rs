@@ -121,46 +121,56 @@ impl Repo {
     pub fn squash(&self, rev: &str, into: Option<&str>) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
-        self.with_resolved_commit_transaction(rev, "squash", true, |repo, commit, repo_mut| {
-            self.ensure_commit_mutable(repo, commit, rev)?;
-            let dest = if let Some(into_rev) = into {
-                self.resolve_current_commit(repo, into_rev)?
-            } else {
-                // The mutability gate above already rejected the parentless root commit.
-                let first_parent =
-                    commit
-                        .parent_ids()
-                        .first()
-                        .ok_or_else(|| JayError::Internal {
-                            message: "cannot squash root commit".to_owned(),
-                        })?;
-                repo.store()
-                    .get_commit(first_parent)
-                    .map_err(|e| JayError::Internal {
-                        message: format!("get parent: {e}"),
-                    })?
-            };
-            // Squash rewrites the destination as well as the source.
-            self.ensure_commit_mutable(repo, &dest, into.unwrap_or("the parent"))?;
+        let repo = self.get_repo();
+        let commit = self.resolve_current_commit(&repo, rev)?;
+        self.ensure_commit_mutable(&repo, &commit, rev)?;
+        let dest = if let Some(into_rev) = into {
+            self.resolve_current_commit(&repo, into_rev)?
+        } else {
+            // The mutability gate above already rejected the parentless root commit.
+            let first_parent = commit
+                .parent_ids()
+                .first()
+                .ok_or_else(|| JayError::Internal {
+                    message: "cannot squash root commit".to_owned(),
+                })?;
+            repo.store()
+                .get_commit(first_parent)
+                .map_err(|e| JayError::Internal {
+                    message: format!("get parent: {e}"),
+                })?
+        };
+        // Squash rewrites the destination as well as the source.
+        self.ensure_commit_mutable(&repo, &dest, into.unwrap_or("the parent"))?;
+        // Like `jj squash`, which drops the destination from its sources and records no operation.
+        if dest.id() == commit.id() {
+            return Ok(());
+        }
+        self.with_existing_commit_transaction(
+            repo,
+            commit,
+            "squash",
+            true,
+            |repo, commit, repo_mut| {
+                let parent_tree = self.load_parent_tree(repo, commit, "parent tree")?;
+                let source = CommitWithSelection {
+                    selected_tree: commit.tree(),
+                    parent_tree,
+                    commit: commit.clone(),
+                };
 
-            let parent_tree = self.load_parent_tree(repo, commit, "parent tree")?;
-            let source = CommitWithSelection {
-                selected_tree: commit.tree(),
-                parent_tree,
-                commit: commit.clone(),
-            };
+                let result =
+                    block_on_result("squash", squash_commits(repo_mut, &[source], &dest, false))?;
 
-            let result =
-                block_on_result("squash", squash_commits(repo_mut, &[source], &dest, false))?;
+                if let Some(squashed) = result {
+                    let combined = combined_description(dest.description(), commit.description());
+                    let write = squashed.commit_builder.set_description(combined).write();
+                    block_on_result("write squashed", write)?;
+                }
 
-            if let Some(squashed) = result {
-                let combined = combined_description(dest.description(), commit.description());
-                let write = squashed.commit_builder.set_description(combined).write();
-                block_on_result("write squashed", write)?;
-            }
-
-            Ok(())
-        })
+                Ok(())
+            },
+        )
     }
 
     /// Switch the working copy to point at an existing revision (`jj edit`).
