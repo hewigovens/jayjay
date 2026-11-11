@@ -537,6 +537,7 @@ repo-sync-abandoned-landed = 取り込み済みの変更を破棄しました: {
 repo-sync-conflicting-may-be-merged = 競合中（マージ済みの可能性あり）: { $names } — 破棄を検討してください
 repo-nothing-to-undo = 取り消せる操作はありません。
 repo-nothing-to-redo = やり直せる操作はありません。
+repo-undo-snapshot-refused = 取り消す操作は作業コピーの編集のスナップショットです。以前の状態は操作ログから復元できます。
 repo-undid-operation = 取り消しました: { $operation }
 repo-redid-operation = やり直しました: { $operation }
 repo-abandoned-changes = { $count } 個のチェンジを破棄しました

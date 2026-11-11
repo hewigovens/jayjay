@@ -339,7 +339,7 @@ impl RepoWindow {
         );
     }
 
-    fn spawn_update<T, Fut>(
+    pub(super) fn spawn_update<T, Fut>(
         cx: &mut Context<Self>,
         task: impl FnOnce(&mut AsyncApp) -> Fut + 'static,
         update: impl FnOnce(&mut Self, T, &mut Context<Self>) + 'static,

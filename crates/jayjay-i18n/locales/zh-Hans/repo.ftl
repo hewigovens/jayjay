@@ -531,6 +531,7 @@ repo-sync-abandoned-landed = 已放弃已合入的变更：{ $changes }
 repo-sync-conflicting-may-be-merged = 冲突（可能已合并）：{ $names } — 建议放弃
 repo-nothing-to-undo = 没有可撤销的操作。
 repo-nothing-to-redo = 没有可重做的操作。
+repo-undo-snapshot-refused = 要撤销的操作是工作副本编辑的快照。可在操作日志中恢复到更早的状态。
 repo-undid-operation = 已撤销：{ $operation }
 repo-redid-operation = 已重做：{ $operation }
 repo-abandoned-changes = 已放弃 { $count } 个变更

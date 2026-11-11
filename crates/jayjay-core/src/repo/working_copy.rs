@@ -111,10 +111,11 @@ impl Repo {
     }
 
     pub fn refresh_working_copy(&self) -> JayResult<()> {
-        self.snapshot_working_copy().map(drop)
+        self.snapshot_working_copy(None).map(drop)
     }
 
-    pub(super) fn snapshot_working_copy(&self) -> JayResult<Option<String>> {
+    /// Records disk edits as an app `action` operation, or as a plain snapshot when `None`.
+    pub(super) fn snapshot_working_copy(&self, action: Option<&str>) -> JayResult<Option<String>> {
         let _write = self.write_guard()?;
         let started = std::time::Instant::now();
         // Swift cooperative executor threads have small stacks; jj descendant rebases can need substantially more while polling tree merges.
@@ -122,7 +123,7 @@ impl Repo {
             let worker = std::thread::Builder::new()
                 .name("jayjay-wc-refresh".to_owned())
                 .stack_size(WORKING_COPY_REFRESH_STACK_SIZE)
-                .spawn_scoped(scope, || self.refresh_working_copy_inner())
+                .spawn_scoped(scope, || self.refresh_working_copy_inner(action))
                 .map_err(|error| JayError::Internal {
                     message: format!("start working-copy refresh: {error}"),
                 })?;
@@ -139,7 +140,7 @@ impl Repo {
         })
     }
 
-    fn refresh_working_copy_inner(&self) -> JayResult<Option<String>> {
+    fn refresh_working_copy_inner(&self, action: Option<&str>) -> JayResult<Option<String>> {
         let mut workspace = load_workspace_internal(&self.path, "load workspace for snapshot")?;
         #[cfg(test)]
         if let Some(hook) = BEFORE_WORKING_COPY_LOCK.lock().unwrap().as_ref() {
@@ -147,7 +148,7 @@ impl Repo {
         }
         let (locked_ws, repo) =
             self.lock_fresh_working_copy(&mut workspace, "snapshot working copy")?;
-        self.snapshot_locked_working_copy(locked_ws, repo)
+        self.snapshot_locked_working_copy(locked_ws, repo, action)
     }
 
     /// Locks before loading the head: a snapshot that lands while we wait would otherwise be rewritten from a stale head, forking `@`.
@@ -196,9 +197,10 @@ impl Repo {
         &self,
         mut locked_ws: LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
+        action: Option<&str>,
     ) -> JayResult<Option<String>> {
         let before = repo.op_id().clone();
-        let repo = self.record_working_copy(&mut locked_ws, repo)?;
+        let repo = self.record_working_copy(&mut locked_ws, repo, action)?;
         let operation_id = (repo.op_id() != &before).then(|| repo.op_id().hex());
         block_on_result(
             "finish working-copy snapshot",
@@ -212,6 +214,7 @@ impl Repo {
         &self,
         locked_ws: &mut LockedWorkspace<'_>,
         repo: Arc<ReadonlyRepo>,
+        action: Option<&str>,
     ) -> JayResult<Arc<ReadonlyRepo>> {
         let wc_commit = self.working_copy_commit(&repo)?;
         let new_tree = self.snapshot_tree(&repo, locked_ws, "snapshot working copy")?;
@@ -220,7 +223,7 @@ impl Repo {
         }
         self.sync_colocated_index(&repo, &wc_commit.tree(), &new_tree)?;
         let mut tx = repo.start_transaction();
-        tx.set_is_snapshot(true);
+        tx.set_is_snapshot(action.is_none());
         tx.set_workspace_name(&self.workspace_name);
         // An immutable `@` (a bookmark it carries became protected) keeps its tree; the edits become a new change on top, as the CLI snapshots them.
         if self.is_commit_immutable_in(&tx, &wc_commit)? {
@@ -246,7 +249,7 @@ impl Repo {
         block_on_result("rebase descendants after snapshot", rebase)?;
         block_on_result(
             "commit snapshot operation",
-            tx.commit("snapshot working copy"),
+            tx.commit(action.unwrap_or("snapshot working copy")),
         )
     }
 
@@ -426,7 +429,7 @@ mod tests {
                 repo_loader.load_at_head(Some(&repo.workspace_name)),
             )
             .expect("load head");
-            repo.snapshot_locked_working_copy(locked_ws, head)
+            repo.snapshot_locked_working_copy(locked_ws, head, None)
                 .expect("snapshot under the held lock");
             refresh
                 .join()

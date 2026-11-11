@@ -24,7 +24,7 @@ impl Repo {
         let repo = match block_on(repo_loader.load_operation(&last_seen)) {
             Ok(operation) => {
                 let seen = block_on_result(context, repo_loader.load_at(&operation))?;
-                self.record_working_copy(&mut locked_ws, seen)?;
+                self.record_working_copy(&mut locked_ws, seen, None)?;
                 let head = block_on_result(
                     context,
                     repo_loader.load_at_head(Some(&self.workspace_name)),

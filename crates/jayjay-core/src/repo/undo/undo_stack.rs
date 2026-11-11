@@ -32,7 +32,16 @@ impl Repo {
         }
     }
 
-    /// `jj undo`, returning what it undid, or `None` when the repo already moved past `operation_id` (a snapshot of new edits counts).
+    /// Why undo is unavailable from the loaded operation, or `None` when it is available.
+    pub fn undo_unavailable_reason(&self) -> Option<String> {
+        match self.undo_step(&self.get_repo()) {
+            Ok(Some(_)) => None,
+            Err(JayError::Refused { message }) => Some(message),
+            _ => Some(jayjay_i18n::repo::nothing_to_undo()),
+        }
+    }
+
+    /// `jj undo`, returning what it undid, or `None` when the repo already moved past `operation_id` (a snapshot of new edits counts); refuses to revert a snapshot.
     pub fn undo(&self, operation_id: &str) -> JayResult<Option<String>> {
         self.step_from(
             operation_id,
@@ -78,6 +87,10 @@ impl Repo {
         let target = restored_operation(repo, repo.operation().clone(), UNDO_PREFIX)?;
         if !self.performed_here(&target) {
             return Ok(None);
+        }
+        // Reverting a snapshot would delete the edits it recorded from disk.
+        if target.metadata().is_snapshot {
+            return Err(JayError::refused(jayjay_i18n::repo::undo_snapshot_refused()));
         }
         let Some(parent) = single_parent(&target)? else {
             return Ok(None);

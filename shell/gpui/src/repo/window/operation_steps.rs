@@ -1,4 +1,4 @@
-use gpui::{Context, Task, Window};
+use gpui::{AppContext as _, Context, Task, Window};
 use jayjay_core::JayResult;
 
 use super::RepoWindow;
@@ -38,10 +38,29 @@ impl RepoWindow {
             return;
         };
         if step.description(&state).is_none() {
-            self.show_toast(step.nothing_to_step(), cx);
+            match step {
+                OperationStep::Undo => self.explain_unavailable_undo(cx),
+                OperationStep::Redo => self.show_toast(jayjay_i18n::repo::nothing_to_redo(), cx),
+            }
             return;
         }
         self.step_from(step, state.operation_id, cx);
+    }
+
+    /// Core knows why, such as a working-copy snapshot that undo would delete from disk.
+    fn explain_unavailable_undo(&mut self, cx: &mut Context<Self>) {
+        let Some(repo) = self.vm.read(cx).repo.clone() else {
+            return;
+        };
+        Self::spawn_update(
+            cx,
+            move |cx| cx.background_spawn(async move { repo.undo_unavailable_reason() }),
+            |view, reason, cx| {
+                if let Some(reason) = reason {
+                    view.show_toast(reason, cx);
+                }
+            },
+        );
     }
 
     pub(crate) fn undo_toast_operation(&mut self, operation_id: String, cx: &mut Context<Self>) {

@@ -629,6 +629,7 @@ repo-sync-abandoned-landed = Abandoned landed changes: { $changes }
 repo-sync-conflicting-may-be-merged = Conflicting (may be merged): { $names } — consider abandoning
 repo-nothing-to-undo = Nothing to undo.
 repo-nothing-to-redo = Nothing to redo.
+repo-undo-snapshot-refused = The operation to undo is a snapshot of working-copy edits. Restore an earlier state from the Operation Log.
 repo-undid-operation = Undid { $operation }
 repo-redid-operation = Redid { $operation }
 repo-abandoned-changes =

@@ -1222,6 +1222,63 @@ fn undoing_file_deletion_restores_the_unsnapshotted_contents() {
 }
 
 #[test]
+fn undo_stops_at_a_working_copy_snapshot() {
+    let temp_dir = init_jj_repo();
+    let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");
+    let file = repo.path().join("added.txt");
+    fs::write(&file, "new edits").unwrap();
+    repo.refresh_working_copy().expect("snapshot");
+    let state = repo.undo_state();
+    assert_eq!(state.undo_description, None);
+    assert!(repo.undo(&state.operation_id).is_err());
+    assert!(file.exists());
+    assert_eq!(repo.undo_state().operation_id, state.operation_id);
+
+    repo.describe("@", "work").expect("describe");
+    let state = repo.undo_state();
+    assert_eq!(
+        repo.undo(&state.operation_id).expect("undo").as_deref(),
+        Some("describe")
+    );
+    assert!(file.exists());
+    let state = repo.undo_state();
+    assert_eq!(state.undo_description, None);
+    assert_eq!(
+        repo.redo(&state.operation_id).expect("redo").as_deref(),
+        Some("describe")
+    );
+    assert!(file.exists());
+    assert_eq!(repo.log("@").unwrap()[0].description.trim(), "work");
+}
+
+#[test]
+fn undo_reverts_ignore_and_untrack_one_step_at_a_time() {
+    let temp_dir = init_jj_repo();
+    let path = temp_dir.path().join("repo");
+    let repo = Repo::open(&path).expect("open repo");
+    fs::write(path.join("secret.env"), "token").unwrap();
+    repo.refresh_working_copy().expect("snapshot");
+    repo.ignore_and_untrack(&["secret.env".to_owned()])
+        .expect("ignore and untrack");
+    let tracked =
+        || String::from_utf8_lossy(&run_jj_in(&path, &["file", "list"]).stdout).into_owned();
+    assert!(!tracked().contains("secret.env"));
+
+    repo.undo(&repo.undo_state().operation_id)
+        .expect("undo untrack");
+    assert!(tracked().contains("secret.env"));
+    assert!(path.join(".gitignore").exists());
+
+    repo.undo(&repo.undo_state().operation_id)
+        .expect("undo ignore");
+    assert!(!path.join(".gitignore").exists());
+    assert_eq!(
+        fs::read_to_string(path.join("secret.env")).unwrap(),
+        "token"
+    );
+}
+
+#[test]
 fn a_new_operation_invalidates_redo() {
     let temp_dir = init_jj_repo();
     let repo = Repo::open(&temp_dir.path().join("repo")).expect("open repo");

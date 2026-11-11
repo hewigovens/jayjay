@@ -150,21 +150,22 @@ fn undo_toast_undoes_its_rewrite_and_nothing_after_the_repo_moved_on(cx: &mut Te
 }
 
 #[gpui::test]
-fn undo_with_nothing_left_to_undo_says_so_without_an_error(cx: &mut TestAppContext) {
+fn undo_after_a_working_copy_snapshot_explains_why_and_keeps_the_file(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
-    focus_view(&view, cx);
-    for _ in 0..20 {
-        if toast(&view, cx) == "Nothing to undo." {
-            break;
-        }
-        keys(cx, "secondary-z");
-    }
-    assert_eq!(toast(&view, cx), "Nothing to undo.");
-
+    let file = fixture.path.join("added.txt");
+    std::fs::write(&file, "new edits").unwrap();
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
+    });
+    settle_visual(cx);
     let operation = current_op_id(&fixture.path);
+    focus_view(&view, cx);
+
     keys(cx, "secondary-z");
+    assert!(file.exists());
     assert_eq!(current_op_id(&fixture.path), operation);
+    assert_eq!(toast(&view, cx), jayjay_i18n::repo::undo_snapshot_refused());
     view.read_with(cx, |view, cx| {
         assert!(view.view_model().read(cx).error.is_none());
     });

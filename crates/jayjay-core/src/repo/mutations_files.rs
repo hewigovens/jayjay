@@ -73,7 +73,7 @@ impl Repo {
         )
     }
 
-    /// Delete files from disk (working copy only). jj will pick up the deletion on next snapshot.
+    /// Delete files from disk (working copy only), recorded as its own undoable operation.
     pub fn delete_files(&self, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         self.refresh_working_copy()?;
@@ -81,13 +81,13 @@ impl Repo {
         for path in paths {
             directory.remove(Path::new(path), Removal::Tree)?;
         }
-        if let Some(operation_id) = self.snapshot_working_copy()? {
+        if let Some(operation_id) = self.snapshot_working_copy(Some("delete files"))? {
             crate::operation_receipt::record(operation_id);
         }
         Ok(())
     }
 
-    /// Add paths to .gitignore, then stop tracking them (`jj file untrack`).
+    /// Add paths to .gitignore as its own undoable operation, then stop tracking them (`jj file untrack`).
     pub fn ignore_and_untrack(&self, paths: &[String]) -> JayResult<()> {
         let _write = self.write_guard()?;
         // Reject control chars first: a newline would inject extra .gitignore patterns.
@@ -96,6 +96,7 @@ impl Repo {
         if paths.is_empty() {
             return Ok(());
         }
+        self.refresh_working_copy()?;
         let directory = RootedDirectory::open(&self.path)?;
         let mut file = directory.open_regular_append(Path::new(".gitignore"))?;
         let mut existing = Vec::new();
@@ -123,7 +124,7 @@ impl Repo {
             }
         }
 
-        self.refresh_working_copy()?;
+        self.snapshot_working_copy(Some("ignore files"))?;
         self.untrack_paths(&self.parse_repo_paths(paths)?)
     }
 

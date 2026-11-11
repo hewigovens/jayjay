@@ -264,6 +264,7 @@ api! {
         fn merge_editor_name() -> Option<String>;
         fn current_operation_description() -> String;
         fn undo_state() -> UndoState;
+        fn undo_unavailable_reason() -> Option<String>;
         fn trunk_name() -> String;
         fn default_revset_preset() -> RevsetPreset;
         fn revset_vocabulary(bookmarks: Bookmarks) -> RevsetVocabulary;

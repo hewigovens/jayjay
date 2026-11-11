@@ -42,13 +42,6 @@ impl OperationStep {
         }
     }
 
-    pub(crate) fn nothing_to_step(self) -> String {
-        match self {
-            Self::Undo => repo::nothing_to_undo(),
-            Self::Redo => repo::nothing_to_redo(),
-        }
-    }
-
     pub(crate) fn stepped(self, operation: &str) -> String {
         match self {
             Self::Undo => repo::undid_operation(operation),
