@@ -5,7 +5,7 @@ use gpui::{
 
 use super::actions::PaletteCtx;
 use super::help;
-use super::rows::{self, DynamicKind, PaletteRow};
+use super::rows::{self, DynamicKind, DynamicRow, PaletteRow};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
 use crate::app::theme::{Theme, observe_window_appearance};
@@ -25,19 +25,7 @@ impl CommandPalette {
         })
         .detach();
         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
-        let dynamic_rows = repo_window
-            .as_ref()
-            .map(|window| {
-                let window = window.read(cx);
-                let vm = window.view_model().read(cx);
-                rows::dynamic_rows(
-                    vm.graph.workspaces.as_ref(),
-                    vm.selected_change(),
-                    &window.sync_activity,
-                    &vm.default_revset.revset,
-                )
-            })
-            .unwrap_or_default();
+        let dynamic_rows = Self::repo_rows(repo_window.as_ref(), cx);
         let candidates = rows::search_candidates(&dynamic_rows);
         Self {
             query: Default::default(),
@@ -56,6 +44,28 @@ impl CommandPalette {
     }
 
     pub fn open(repo_path: SharedString, repo_window: Option<Entity<RepoWindow>>, cx: &mut App) {
+        if let Some(handle) = cx
+            .windows()
+            .into_iter()
+            .filter_map(|handle| handle.downcast::<Self>())
+            .find(|handle| {
+                handle
+                    .read(cx)
+                    .is_ok_and(|palette| palette.repo_window == repo_window)
+            })
+        {
+            let _ = handle.update(cx, |view, window, cx| {
+                view.repo_path = repo_path;
+                view.dynamic_rows = Self::repo_rows(view.repo_window.as_ref(), cx);
+                view.candidates = rows::search_candidates(&view.dynamic_rows);
+                view.selected = 0;
+                view.list_scroll.scroll_to_item(0);
+                window.activate_window();
+                window.focus(&view.focus_handle, cx);
+                cx.notify();
+            });
+            return;
+        }
         let bounds = Bounds::centered(None, size(px(640.), px(480.)), cx);
         let handle = cx
             .open_window(
@@ -83,6 +93,21 @@ impl CommandPalette {
                 LineInput::show_for_owner(view, cx, Self::query_input);
             });
         }
+    }
+
+    fn repo_rows(repo_window: Option<&Entity<RepoWindow>>, cx: &App) -> Vec<DynamicRow> {
+        repo_window
+            .map(|window| {
+                let window = window.read(cx);
+                let vm = window.view_model().read(cx);
+                rows::dynamic_rows(
+                    vm.graph.workspaces.as_ref(),
+                    vm.selected_change(),
+                    &window.sync_activity,
+                    &vm.default_revset.revset,
+                )
+            })
+            .unwrap_or_default()
     }
 
     fn query_input(palette: &mut Self) -> Option<&mut LineInput> {

@@ -250,19 +250,40 @@ fn find_bar_supports_line_editing_keys(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn open_command_palette_action_opens_the_palette_from_the_repo_window(cx: &mut TestAppContext) {
+fn reopening_the_palette_reuses_it_and_acts_on_the_current_selection(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, repo_cx) = open_fixture(&fixture, cx);
     repo_cx.focus(&view);
     repo_cx.dispatch_action(OpenCommandPalette);
     settle_visual(repo_cx);
-    assert!(
-        repo_cx
-            .cx
-            .windows()
-            .iter()
-            .any(|window| window.downcast::<CommandPalette>().is_some())
-    );
+
+    view.update_in(repo_cx, |view, _, cx| view.select_change(1, cx));
+    settle_visual(repo_cx);
+    let parent = view.read_with(repo_cx, |view, cx| {
+        let selected = view.view_model().read(cx).selected_change();
+        selected.expect("selected change").commit_id.id.clone()
+    });
+    repo_cx.focus(&view);
+    repo_cx.dispatch_action(OpenCommandPalette);
+    settle_visual(repo_cx);
+
+    let palettes: Vec<_> = repo_cx
+        .cx
+        .windows()
+        .into_iter()
+        .filter(|window| window.downcast::<CommandPalette>().is_some())
+        .collect();
+    assert_eq!(palettes.len(), 1);
+    let mut palette_cx = VisualTestContext::from_window(palettes[0], &repo_cx.cx);
+    click_palette_row(&mut palette_cx, "new child", "command-palette-new-child");
+    settle_visual(repo_cx);
+
+    view.read_with(repo_cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert!(vm.error.is_none(), "{:?}", vm.error);
+        let selected = vm.selected_change().expect("selected change");
+        assert_eq!(selected.parents.first(), Some(&parent));
+    });
 }
 
 fn open_palette_for(view: &gpui::Entity<RepoWindow>, cx: &mut TestAppContext) -> VisualTestContext {
