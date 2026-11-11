@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::path::{Path, PathBuf};
 use std::process::{self, Command};
-use std::time::{Duration, SystemTime, UNIX_EPOCH};
+use std::time::{Duration, Instant, SystemTime, UNIX_EPOCH};
 use std::{env, fs, thread};
 
 use serde::Deserialize;
@@ -12,7 +12,8 @@ use crate::tools::launcher::detach_stdio;
 
 use super::app;
 
-const TAB_POLLS: u32 = 50;
+/// An app that has to start first opens the folder only once it is ready, which took up to 21 seconds when measured.
+const TAB_WAIT: Duration = Duration::from_secs(45);
 const TAB_POLL_INTERVAL: Duration = Duration::from_millis(200);
 
 pub(super) struct Cli(String);
@@ -78,7 +79,8 @@ impl Cli {
     }
 
     fn tab_in(&self, folder: &Path, known: &HashSet<String>) -> Option<Tab> {
-        for _ in 0..TAB_POLLS {
+        let deadline = Instant::now() + TAB_WAIT;
+        while Instant::now() < deadline {
             thread::sleep(TAB_POLL_INTERVAL);
             let Some(tabs) = self.sessions().and_then(|sessions| self.tabs(&sessions)) else {
                 continue;
