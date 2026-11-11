@@ -24,6 +24,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     @State var changedLines: Set<Int> = []
     @State private var supportsDiffEdit = false
     @State private var isLoading = false
+    @State private var loadError: String?
+    @State private var loadAttempt = 0
     @State private var measuredHeight: CGFloat?
     @State private var loadedKey: String?
     @State private var contentGeneration: UInt64 = 0
@@ -53,7 +55,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             RoundedRectangle(cornerRadius: 14, style: .continuous)
                 .stroke(borderColor, lineWidth: isFocused ? 2 : 1)
         )
-        .task(id: loadKey) {
+        .task(id: "\(loadKey)|\(loadAttempt)") {
             await loadDiff()
         }
         .environment(\.diffTypography, typography.diffTypography)
@@ -124,6 +126,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         if isLoading {
             LoadingStatus(label: Localized.Repo.loadingFileDiffEllipsis)
                 .frame(maxWidth: .infinity, minHeight: 120)
+        } else if let loadError {
+            DiffLoadErrorView(message: loadError) { loadAttempt += 1 }
         } else if let displayDiff {
             NativeDiffView(
                 diff: displayDiff,
@@ -186,6 +190,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
         }
 
         isLoading = true
+        loadError = nil
 
         // Reuse DiffStore for file content loading (cached if already loaded by DiffSection); the request mode keeps auto-open formats on the processed rows their stats count.
         let cached = await diffStore.loadDiff(
@@ -193,6 +198,16 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             ignoreWhitespace: settings.ignoreWhitespace,
             projectionMode: projectionDefaultMode(projection: hunk.projection)
         )
+        if let error = cached?.loadError {
+            guard !Task.isCancelled, loadKey == key else { return }
+            supportsDiffEdit = false
+            changedLines = []
+            displayDiff = nil
+            loadedKey = nil
+            loadError = error
+            isLoading = false
+            return
+        }
         let loaded = await DiffEditLoadedFile.make(
             hunk: hunk, oldContent: cached?.content.oldContent, newContent: cached?.content.newContent,
             ignoreWhitespace: settings.ignoreWhitespace
