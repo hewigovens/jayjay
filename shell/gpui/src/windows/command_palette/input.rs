@@ -4,6 +4,7 @@ use gpui::{
 };
 
 use super::actions::PaletteCtx;
+use super::help;
 use super::rows::{self, DynamicKind, PaletteRow};
 use super::state::{CommandOutput, CommandPalette};
 use crate::app::config::AppConfigStore;
@@ -94,11 +95,21 @@ impl CommandPalette {
             .map(jayjay_core::JjCommand::into_raw)
     }
 
+    /// Matching rows with help topics after every other row, in their own section.
     pub(super) fn matches(&self) -> Vec<usize> {
-        jayjay_core::fuzzy::rank(self.query.text(), &self.candidates)
+        let mut ranked: Vec<usize> = jayjay_core::fuzzy::rank(self.query.text(), &self.candidates)
             .into_iter()
             .map(|ix| ix as usize)
-            .collect()
+            .collect();
+        ranked.sort_by_key(|&ix| help::topic_for_row(ix).is_some());
+        ranked
+    }
+
+    /// Position in `visible` of the first help topic, which the Help header precedes.
+    pub(super) fn help_section_start(visible: &[usize]) -> Option<usize> {
+        visible
+            .iter()
+            .position(|&ix| help::topic_for_row(ix).is_some())
     }
 
     pub(super) fn on_key(
@@ -139,7 +150,7 @@ impl CommandPalette {
                 if let Some(direction) =
                     navigation::list_nav_from_key(ev, ListNavKeys::COMMAND_PALETTE)
                 {
-                    self.handle_list_nav(direction, is_jj, visible.len(), cx);
+                    self.handle_list_nav(direction, is_jj, &visible, cx);
                     return;
                 }
                 self.handle_line_edit_key(ev, cx);
@@ -152,16 +163,17 @@ impl CommandPalette {
         &mut self,
         direction: ListNav,
         is_jj: bool,
-        visible_len: usize,
+        visible: &[usize],
         cx: &mut Context<Self>,
     ) {
         if is_jj {
             self.recall_command_history(matches!(direction, ListNav::Previous), cx);
             return;
         }
-        if let Some(next) = navigation::move_index(Some(self.selected), visible_len, direction) {
+        if let Some(next) = navigation::move_index(Some(self.selected), visible.len(), direction) {
             self.selected = next;
-            self.list_scroll.scroll_to_item(next);
+            let header = Self::help_section_start(visible).is_some_and(|start| next >= start);
+            self.list_scroll.scroll_to_item(next + usize::from(header));
             cx.notify();
         }
     }

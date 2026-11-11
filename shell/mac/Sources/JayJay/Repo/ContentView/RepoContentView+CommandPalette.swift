@@ -293,12 +293,13 @@ extension RepoContentView {
         var items: [CommandPaletteItem] = []
         for feature in HelpFeatureIndex.bundled {
             items.append(CommandPaletteItem(
-                title: feature.commandPaletteTitle,
+                title: feature.title,
                 icon: "questionmark.circle",
                 category: Localized.Menu.help,
                 detail: feature.summary,
                 keywords: feature.commandPaletteKeywords,
-                shortcut: feature.effectiveShortcut(in: ShortcutStore.shared)
+                shortcut: feature.effectiveShortcut(in: ShortcutStore.shared),
+                isHelpTopic: true
             ) {
                 HelpBook.open(anchor: feature.helpAnchor)
             })

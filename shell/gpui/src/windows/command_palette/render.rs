@@ -8,6 +8,7 @@ use jayjay_core::shortcuts::{EffectiveBindings, KeyPlatform};
 use super::rows::{self, PaletteRow};
 use super::state::CommandPalette;
 use crate::app::theme::{Theme, ui_font_size};
+use crate::repo::window::picker::section_header;
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
 use crate::ui::primitives::icon_label;
@@ -64,10 +65,18 @@ pub(super) fn action_list(
         .flex_1()
         .min_h_0()
         .py(px(4.));
+    let help_start = CommandPalette::help_section_start(visible);
     for (vis_ix, action_ix) in visible.iter().enumerate() {
         let Some(row) = rows::row(*action_ix, &palette.dynamic_rows) else {
             continue;
         };
+        if help_start == Some(vis_ix) {
+            col = col.child(section_header(
+                "command-palette-help-section",
+                jayjay_i18n::menu::help(),
+                t,
+            ));
+        }
         col = col.child(action_row(
             *action_ix,
             row,
@@ -101,7 +110,7 @@ fn action_row(
         PaletteRow::Dynamic(row) => (row.selector.clone(), row.label.clone(), row.glyph),
         PaletteRow::Help(topic) => (
             format!("command-palette-help-{}", topic.id),
-            topic.palette_title(),
+            topic.title.clone(),
             glyph::INFO,
         ),
     };

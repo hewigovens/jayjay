@@ -21,14 +21,15 @@ enum CommandPaletteHistory {
 }
 
 enum CommandPaletteSearch {
-    /// Fuzzy-rank items against the query, best match first.
+    /// Fuzzy-rank items against the query, best match first, with help topics after every other match.
     static func rank(query: String, items: [CommandPaletteItem]) -> [CommandPaletteItem] {
         let normalizedQuery = normalize(query: query)
         let candidates = items.map { item in
             ([item.title, item.category, item.detail ?? "", item.shortcut ?? ""] + item.keywords)
                 .joined(separator: " ")
         }
-        return fuzzyRank(query: normalizedQuery, candidates: candidates).map { items[Int($0)] }
+        let ranked = fuzzyRank(query: normalizedQuery, candidates: candidates).map { items[Int($0)] }
+        return ranked.filter { !$0.isHelpTopic } + ranked.filter(\.isHelpTopic)
     }
 
     static func normalize(query: String) -> String {

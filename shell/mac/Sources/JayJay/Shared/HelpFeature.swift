@@ -1,5 +1,4 @@
 import Foundation
-import JayJayCore
 
 struct HelpFeature: Decodable, Equatable, Identifiable {
     let id: String
@@ -13,16 +12,14 @@ struct HelpFeature: Decodable, Equatable, Identifiable {
     let guideAnchor: String
 
     func effectiveShortcut(in store: ShortcutStore) -> String? {
-        if let command { return store.byID[command.rawValue]?.primary?.caps.joined() }
+        if let command {
+            return store.byID[command.rawValue]?.primary?.caps.joined()
+        }
         return shortcut
     }
 
     var helpAnchor: String {
         id
-    }
-
-    var commandPaletteTitle: String {
-        Localized.Repo.helpTitle(title: title)
     }
 
     var commandPaletteKeywords: [String] {

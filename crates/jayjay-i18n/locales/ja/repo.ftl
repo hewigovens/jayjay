@@ -512,7 +512,6 @@ repo-working-copy-is-stale-its-change = 作業コピーが古くなっていま�
 repo-canceled = キャンセルしました
 repo-no-repository-found-at = { $name } に Jujutsu リポジトリが見つかりません
 repo-revision-not-found = リビジョンが見つかりません: { $revision }
-repo-help-title = ヘルプ: { $title }
 repo-review-note-count = レビュー メモ { $count } 件
 repo-bisect-range-hint = 範囲はそのまま使用されます。それ以外の場合は (Good)..(Bad) になります。
 repo-diff-selection-stale = { $path }: 差分の表示後にファイルが変更されました — 更新して再試行してください

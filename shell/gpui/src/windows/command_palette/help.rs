@@ -24,10 +24,6 @@ pub(super) struct HelpTopic {
 }
 
 impl HelpTopic {
-    pub(super) fn palette_title(&self) -> String {
-        jayjay_i18n::palette::help_topic(&self.title)
-    }
-
     /// The public guide opened at this topic's anchor; GPUI has no bundled Help Book, so this mirrors SwiftUI's online-guide fallback.
     pub(super) fn guide_url(&self) -> String {
         format!("{GUIDE_URL}#{}", self.guide_anchor)
@@ -35,8 +31,9 @@ impl HelpTopic {
 
     pub(super) fn search_text(&self) -> String {
         format!(
-            "{} {} {} {}",
-            self.palette_title(),
+            "{} {} {} {} {}",
+            jayjay_i18n::menu::help(),
+            self.title,
             self.keywords.join(" "),
             self.summary,
             self.category

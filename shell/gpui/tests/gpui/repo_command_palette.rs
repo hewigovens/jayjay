@@ -105,6 +105,14 @@ fn command_palette_scrolls_the_keyboard_selection_into_view(cx: &mut TestAppCont
         palette_cx.debug_bounds(first_row).expect("first row").top() < list_top,
         "moving the selection to the last row must scroll the list"
     );
+    let last_row = palette_cx
+        .debug_bounds("command-palette-help-settings")
+        .expect("last help row");
+    let viewport = palette_cx.update(|window, _| window.viewport_size());
+    assert!(
+        last_row.bottom() <= viewport.height,
+        "the Help header must not leave the selected last row scrolled out of view"
+    );
 }
 
 #[gpui::test]
@@ -359,6 +367,45 @@ fn command_palette_new_child_creates_a_change_on_the_selection(cx: &mut TestAppC
         assert!(selected.is_working_copy);
         assert_eq!(selected.parents.first(), Some(&parent_commit));
     });
+}
+
+#[gpui::test]
+fn command_palette_lists_help_topics_in_their_own_section_after_commands(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let before = view.read_with(repo_cx, |view, cx| {
+        view.view_model().read(cx).graph.changes.len()
+    });
+    {
+        let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
+        palette_cx.simulate_input("duplicate");
+        settle_visual(&mut palette_cx);
+        let mut top = |selector: &'static str| {
+            palette_cx
+                .debug_bounds(selector)
+                .unwrap_or_else(|| panic!("missing {selector}"))
+                .top()
+        };
+        let command = top("command-palette-duplicate-change");
+        let header = top("command-palette-help-section");
+        let topic = top("command-palette-help-operations");
+        assert!(command < header && header < topic);
+        palette_cx.simulate_keystrokes("enter");
+        settle_visual(&mut palette_cx);
+        assert_eq!(crate::harness::opened_url(&mut palette_cx.cx), None);
+    }
+    settle_visual(repo_cx);
+    view.read_with(repo_cx, |view, cx| {
+        assert_eq!(view.view_model().read(cx).graph.changes.len(), before + 1);
+    });
+
+    let mut palette_cx = open_palette_for(&view, &mut repo_cx.cx.clone());
+    palette_cx.simulate_input("leave review notes");
+    palette_cx.simulate_keystrokes("enter");
+    assert_eq!(
+        crate::harness::opened_url(&mut palette_cx.cx).as_deref(),
+        Some("https://jayjay.hewig.dev/guide.html#review-notes")
+    );
 }
 
 #[gpui::test]

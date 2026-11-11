@@ -609,7 +609,6 @@ repo-working-copy-is-stale-its-change = Working copy is stale: its change was re
 repo-canceled = Canceled
 repo-no-repository-found-at = No Jujutsu repository found at { $name }
 repo-revision-not-found = Revision not found: { $revision }
-repo-help-title = Help: { $title }
 repo-review-note-count =
     { $count ->
         [one] { $count } review note

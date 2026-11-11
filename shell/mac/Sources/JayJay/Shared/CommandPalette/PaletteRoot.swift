@@ -79,12 +79,23 @@ struct PaletteRoot: View {
         } else {
             ScrollViewReader { proxy in
                 let visible = filtered
+                let helpStart = visible.firstIndex(where: \.isHelpTopic)
                 if visible.isEmpty, shouldOfferFeatureRequest {
                     emptyHelpResult
                 } else {
                     ScrollView {
                         LazyVStack(spacing: 0) {
                             ForEach(Array(visible.enumerated()), id: \.element.id) { index, item in
+                                if index == helpStart {
+                                    Text(Localized.Menu.help)
+                                        .font(.system(size: 11, weight: .semibold))
+                                        .foregroundStyle(.secondary)
+                                        .frame(maxWidth: .infinity, alignment: .leading)
+                                        .padding(.horizontal, 14)
+                                        .padding(.top, 8)
+                                        .padding(.bottom, 3)
+                                        .accessibilityAddTraits(.isHeader)
+                                }
                                 Button {
                                     if let action = item.action {
                                         action()

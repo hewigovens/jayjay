@@ -55,4 +55,3 @@ palette-revert-change = Revert Change ({ $change })
 palette-create-bookmark-on = Create Bookmark on { $change }
 palette-show-evolution = Show Evolution ({ $change })
 palette-theme = Theme: { $theme }
-palette-help-topic = Help: { $title }

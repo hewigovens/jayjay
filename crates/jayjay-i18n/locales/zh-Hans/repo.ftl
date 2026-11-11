@@ -506,7 +506,6 @@ repo-working-copy-is-stale-its-change = 工作副本已过期：其变更在此�
 repo-canceled = 已取消
 repo-no-repository-found-at = 未在 { $name } 找到 Jujutsu 仓库
 repo-revision-not-found = 未找到修订：{ $revision }
-repo-help-title = 帮助：{ $title }
 repo-review-note-count = { $count } 条评审备注
 repo-bisect-range-hint = 范围将按原样使用。否则两端将变为 (好)..(坏)。
 repo-diff-selection-stale = { $path }：自差异渲染后文件已发生变更 — 请刷新并重试

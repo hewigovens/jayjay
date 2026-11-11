@@ -55,4 +55,3 @@ palette-revert-change = 还原变更（{ $change }）
 palette-create-bookmark-on = 在 { $change } 上创建书签
 palette-show-evolution = 显示演化（{ $change }）
 palette-theme = 主题：{ $theme }
-palette-help-topic = 帮助：{ $title }

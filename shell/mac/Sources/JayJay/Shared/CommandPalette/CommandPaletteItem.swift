@@ -12,6 +12,8 @@ struct CommandPaletteItem: Identifiable {
     let shortcut: String?
     /// Nil for info-only "cheatsheet" rows that document a keybind but run nothing.
     let action: (() -> Void)?
+    /// Listed after every other match, under the Help section header.
+    let isHelpTopic: Bool
 
     var isInfo: Bool {
         action == nil
@@ -24,6 +26,7 @@ struct CommandPaletteItem: Identifiable {
         detail: String? = nil,
         keywords: [String] = [],
         shortcut: String? = nil,
+        isHelpTopic: Bool = false,
         action: (() -> Void)? = nil
     ) {
         self.title = title
@@ -32,6 +35,7 @@ struct CommandPaletteItem: Identifiable {
         self.detail = detail
         self.keywords = keywords
         self.shortcut = shortcut
+        self.isHelpTopic = isHelpTopic
         self.action = action
     }
 
