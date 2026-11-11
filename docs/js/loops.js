@@ -1,6 +1,20 @@
 // Plays a showcase loop only while it is on screen and in the current theme, drawing the pointer from the take's click cues and the step captions on its clock; under reduced motion the poster stands in.
 (function () {
-  if (matchMedia('(prefers-reduced-motion: reduce)').matches || !('IntersectionObserver' in window)) return;
+  const loops = document.querySelectorAll('video.loop');
+  if (!('IntersectionObserver' in window)) {
+    loops.forEach(video => { video.poster = video.dataset.poster; });
+    return;
+  }
+  // A hidden theme's video never intersects, so only the posters a reader can reach are fetched.
+  const near = new IntersectionObserver(entries => {
+    for (const { target, isIntersecting } of entries) {
+      if (!isIntersecting) continue;
+      target.poster = target.dataset.poster;
+      near.unobserve(target);
+    }
+  }, { rootMargin: '600px' });
+  loops.forEach(video => near.observe(video));
+  if (matchMedia('(prefers-reduced-motion: reduce)').matches) return;
   const move = 0.5, lead = 0.08;
   const ease = p => (p < 0.5 ? 2 * p * p : 1 - Math.pow(-2 * p + 2, 2) / 2);
 

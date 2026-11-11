@@ -33,6 +33,9 @@
   --kbd-edge: #363c4a;
 }
 
+@font-face { font-family: Inter; font-weight: 400 700; font-display: swap; src: url(../fonts/inter-latin.woff2) format("woff2"); }
+@font-face { font-family: "JetBrains Mono"; font-weight: 400 500; font-display: swap; src: url(../fonts/jetbrains-mono-latin.woff2) format("woff2"); }
+
 *, *::before, *::after { margin: 0; padding: 0; box-sizing: border-box; }
 html { scroll-behavior: smooth; }
 body {
@@ -208,6 +211,14 @@ kbd { display: inline-flex; align-items: center; justify-content: center; min-wi
 .post-card h3 { font-size: 20px; margin: 4px 0 8px; line-height: 1.25; }
 .post-card p { font-size: 14px; color: var(--muted); }
 @media (max-width: 760px) { .posts { grid-template-columns: 1fr; } }
+
+/* ── Tutorial ── */
+.watch { margin-top: 48px; }
+.steps { margin-top: 16px; padding-left: 24px; font-size: 16px; color: var(--muted); }
+.hero .steps { display: flex; flex-wrap: wrap; justify-content: center; gap: 4px 40px; margin-top: 32px; }
+.show.first { margin-top: 0; }
+.show-text h2 { font-size: 32px; line-height: 1.15; letter-spacing: -.01em; margin-top: 8px; }
+.show + .cta { margin-top: 96px; }
 
 /* ── Footer ── */
 footer { border-top: 1px solid var(--line); padding: 32px 0 48px; font-size: 13px; color: var(--muted); }

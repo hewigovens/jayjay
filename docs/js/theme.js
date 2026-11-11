@@ -24,6 +24,7 @@
 
   function applyTheme(dark) {
     document.documentElement.setAttribute('data-theme', dark ? 'dark' : 'light');
+    document.querySelectorAll('source[data-dark]').forEach(source => { source.media = dark ? 'all' : 'not all'; });
     updateIcon(dark);
   }
 

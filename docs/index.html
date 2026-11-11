@@ -74,10 +74,6 @@
   <link rel="icon" href="favicon.ico" sizes="32x32">
   <link rel="icon" href="favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="imgs/tour-dark.webp">
   <link rel="stylesheet" href="css/landing.css">
   <script src="js/theme.js"></script>
 
@@ -131,8 +127,11 @@
     </div>
     <div class="wrap wide">
       <div class="hero-shot">
-        <img class="dark-only" src="imgs/tour-dark.webp" alt="JayJay — DAG graph and diff (dark)" width="2560" height="1300" loading="eager">
-        <img class="light-only" src="imgs/tour.webp" alt="JayJay — DAG graph and diff (light)" width="2560" height="1300" loading="eager">
+        <picture>
+          <source data-dark media="(prefers-color-scheme: dark)" srcset="imgs/tour-dark-1280.webp 1280w, imgs/tour-dark.webp 2560w" sizes="(max-width: 1280px) 100vw, 1280px">
+          <script>document.currentScript.previousElementSibling.media = document.documentElement.dataset.theme === 'dark' ? 'all' : 'not all';</script>
+          <img src="imgs/tour.webp" srcset="imgs/tour-1280.webp 1280w, imgs/tour.webp 2560w" sizes="(max-width: 1280px) 100vw, 1280px" alt="JayJay — DAG graph and side-by-side diff for Jujutsu repos" width="2560" height="1300" fetchpriority="high">
+        </picture>
         <button class="play-btn" type="button" aria-haspopup="dialog">
           <svg width="10" height="12" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           Watch the 12-second tour
@@ -172,8 +171,8 @@
     </div>
     <div class="wrap wide spot">
       <div class="show-img">
-        <img class="dark-only" src="imgs/side-by-side-dark.webp" alt="Side-by-side tree diff" width="2200" height="1400" loading="lazy">
-        <img class="light-only" src="imgs/side-by-side.webp" alt="Side-by-side tree diff" width="2200" height="1400" loading="lazy">
+        <img class="dark-only" src="imgs/side-by-side-dark.webp" srcset="imgs/side-by-side-dark-1100.webp 1100w, imgs/side-by-side-dark.webp 2200w" sizes="(max-width: 1280px) calc(100vw - 64px), 1216px" alt="Side-by-side tree diff" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="imgs/side-by-side.webp" srcset="imgs/side-by-side-1100.webp 1100w, imgs/side-by-side.webp 2200w" sizes="(max-width: 1280px) calc(100vw - 64px), 1216px" alt="Side-by-side tree diff" width="2200" height="1400" loading="lazy">
       </div>
     </div>
 
@@ -186,8 +185,8 @@
           <p class="note">Coding agents can read your notes and mark files with the <code>jayjay</code> CLI. Install the <a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay skill</a> with <code>npx skills add hewigovens/jayjay --skill jayjay</code>, or on macOS from Settings &gt; Integrations.</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="imgs/review-dark.webp" alt="Working-copy review with a reviewed hunk and inline note" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="imgs/review.webp" alt="Working-copy review with a reviewed hunk and inline note" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="imgs/review-dark.webp" srcset="imgs/review-dark-1100.webp 1100w, imgs/review-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Working-copy review with a reviewed hunk and inline note" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="imgs/review.webp" srcset="imgs/review-1100.webp 1100w, imgs/review.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Working-copy review with a reviewed hunk and inline note" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -199,8 +198,8 @@
         </div>
         <div class="show-img" data-captions="0 Open Edit Diff on a change|1.8 Pick lines in two files|6.6 Split them into a new change">
           <div class="loop-stage">
-            <video class="dark-only loop" muted loop playsinline preload="none" poster="imgs/loop-split-lines-dark.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change" data-cues="0.48 0.961 0.217, 2.29 0.297 0.249, 3.58 0.277 0.157, 4.86 0.297 0.336, 5.54 0.297 0.358, 7.03 0.475 0.946, 8.71 0.636 0.946"><source src="https://media.hewig.dev/split-lines-dark-3bb22a3f.mp4" type="video/mp4"></video>
-            <video class="light-only loop" muted loop playsinline preload="none" poster="imgs/loop-split-lines.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change" data-cues="0.51 0.961 0.217, 2.34 0.297 0.249, 3.61 0.277 0.157, 4.90 0.297 0.336, 5.58 0.297 0.358, 7.07 0.475 0.946, 8.75 0.636 0.946"><source src="https://media.hewig.dev/split-lines-3d6f59a5.mp4" type="video/mp4"></video>
+            <video class="dark-only loop" muted loop playsinline preload="none" data-poster="imgs/loop-split-lines-dark.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change" data-cues="0.48 0.961 0.217, 2.29 0.297 0.249, 3.58 0.277 0.157, 4.86 0.297 0.336, 5.54 0.297 0.358, 7.03 0.475 0.946, 8.71 0.636 0.946"><source src="https://media.hewig.dev/split-lines-dark-3bb22a3f.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" data-poster="imgs/loop-split-lines.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change" data-cues="0.51 0.961 0.217, 2.34 0.297 0.249, 3.61 0.277 0.157, 4.90 0.297 0.336, 5.58 0.297 0.358, 7.07 0.475 0.946, 8.75 0.636 0.946"><source src="https://media.hewig.dev/split-lines-3d6f59a5.mp4" type="video/mp4"></video>
           </div>
         </div>
       </div>
@@ -212,8 +211,8 @@
           <p>Shift-click two changes, two bookmarks, or a PR branch and its base to see exactly what moved between them. For a divergent change, <strong>Compare Divergent Versions</strong> shows which one to keep.</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="imgs/interdiff-dark.webp" alt="Interdiff" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="imgs/interdiff.webp" alt="Interdiff" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="imgs/interdiff-dark.webp" srcset="imgs/interdiff-dark-1100.webp 1100w, imgs/interdiff-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Interdiff" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="imgs/interdiff.webp" srcset="imgs/interdiff-1100.webp 1100w, imgs/interdiff.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Interdiff" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -226,8 +225,8 @@
         </div>
         <div class="show-img" data-captions="0 Right-click the top of a stack|4.7 Name a branch per change|8.2 One PR per change">
           <div class="loop-stage">
-            <video class="dark-only loop" muted loop playsinline preload="none" poster="imgs/loop-stacked-prs-dark.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change" data-cues="0.44 0.125 0.234, 2.20 0.214 0.684, 5.17 0.519 0.404, 6.66 0.628 0.408, 8.45 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-dark-1cfb814a.mp4" type="video/mp4"></video>
-            <video class="light-only loop" muted loop playsinline preload="none" poster="imgs/loop-stacked-prs.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change" data-cues="0.47 0.125 0.234, 2.25 0.214 0.684, 5.25 0.519 0.404, 6.74 0.628 0.408, 8.53 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4" type="video/mp4"></video>
+            <video class="dark-only loop" muted loop playsinline preload="none" data-poster="imgs/loop-stacked-prs-dark.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change" data-cues="0.44 0.125 0.234, 2.20 0.214 0.684, 5.17 0.519 0.404, 6.66 0.628 0.408, 8.45 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-dark-1cfb814a.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" data-poster="imgs/loop-stacked-prs.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change" data-cues="0.47 0.125 0.234, 2.25 0.214 0.684, 5.25 0.519 0.404, 6.74 0.628 0.408, 8.53 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4" type="video/mp4"></video>
           </div>
         </div>
       </div>
@@ -239,8 +238,8 @@
           <p>Take Left, Right, or Base per hunk in the built-in merge editor, edit the raw markers, and save a partial resolution when work remains. Or hand off to your configured external tool.</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="imgs/conflict-resolver-dark.webp" alt="Built-in merge editor" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="imgs/conflict-resolver.webp" alt="Built-in merge editor" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="imgs/conflict-resolver-dark.webp" srcset="imgs/conflict-resolver-dark-1100.webp 1100w, imgs/conflict-resolver-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Built-in merge editor" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="imgs/conflict-resolver.webp" srcset="imgs/conflict-resolver-1100.webp 1100w, imgs/conflict-resolver.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Built-in merge editor" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -251,8 +250,8 @@
           <p>Every snapshot of a change over time, with filtering and one-click restore. Undo a rebase or recover lost work without touching the op log by hand.</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="imgs/evolog-dark.webp" alt="Change evolution log" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="imgs/evolog.webp" alt="Change evolution log" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="imgs/evolog-dark.webp" srcset="imgs/evolog-dark-1100.webp 1100w, imgs/evolog-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Change evolution log" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="imgs/evolog.webp" srcset="imgs/evolog-1100.webp 1100w, imgs/evolog.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Change evolution log" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -264,8 +263,8 @@
         </div>
         <div class="show-img" data-captions="0 Abandon a change|6 Open the operation log|8.2 Restore the operation before it">
           <div class="loop-stage">
-            <video class="dark-only loop" muted loop playsinline preload="none" poster="imgs/loop-undo-dark.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log" data-cues="0.44 0.125 0.234, 2.21 0.214 0.920, 4.39 0.527 0.604, 6.61 0.786 0.987, 8.78 0.365 0.348, 10.08 0.673 0.740, 12.28 0.125 0.312"><source src="https://media.hewig.dev/undo-dark-b1554907.mp4" type="video/mp4"></video>
-            <video class="light-only loop" muted loop playsinline preload="none" poster="imgs/loop-undo.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log" data-cues="0.42 0.125 0.234, 2.18 0.214 0.920, 4.32 0.527 0.604, 6.49 0.786 0.987, 8.61 0.365 0.348, 9.92 0.673 0.740, 12.10 0.125 0.312"><source src="https://media.hewig.dev/undo-b5280b09.mp4" type="video/mp4"></video>
+            <video class="dark-only loop" muted loop playsinline preload="none" data-poster="imgs/loop-undo-dark.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log" data-cues="0.44 0.125 0.234, 2.21 0.214 0.920, 4.39 0.527 0.604, 6.61 0.786 0.987, 8.78 0.365 0.348, 10.08 0.673 0.740, 12.28 0.125 0.312"><source src="https://media.hewig.dev/undo-dark-b1554907.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" data-poster="imgs/loop-undo.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log" data-cues="0.42 0.125 0.234, 2.18 0.214 0.920, 4.32 0.527 0.604, 6.49 0.786 0.987, 8.61 0.365 0.348, 9.92 0.673 0.740, 12.10 0.125 0.312"><source src="https://media.hewig.dev/undo-b5280b09.mp4" type="video/mp4"></video>
           </div>
         </div>
       </div>
@@ -445,6 +444,7 @@
       <div class="foot-links">
         <a href="blog/">Blog</a>
         <a href="guide.html">Guide</a>
+        <a href="tutorial/">Video tutorial</a>
         <a href="https://diff.hewig.dev">JayJay Diff</a>
         <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>

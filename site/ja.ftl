@@ -393,12 +393,6 @@ language = 言語
 # Toggle theme
 toggle-theme = テーマを切り替え
 
-# JayJay — DAG graph and diff (dark)
-jayjay-dag-graph-and-diff-dark = JayJay — DAG グラフと差分（ダーク）
-
-# JayJay — DAG graph and diff (light)
-jayjay-dag-graph-and-diff-light = JayJay — DAG グラフと差分（ライト）
-
 # JayJay in action
 jayjay-in-action = JayJay のデモ
 
@@ -479,6 +473,9 @@ articles-are-in-english = 記事は英語です。
 
 # JayJay Diff
 jayjay-diff = JayJay Diff
+
+# Video tutorial
+video-tutorial = 動画チュートリアル
 
 # <strong>JayJay Diff</strong> Review GitHub pull requests in your browser, with review marks that survive force-pushes.
 review-github-pull-requests-in-browser = <strong>JayJay Diff</strong> GitHub の Pull Request をブラウザでレビュー。レビュー済みの印は force-push 後も残ります。

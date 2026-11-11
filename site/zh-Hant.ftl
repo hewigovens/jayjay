@@ -393,12 +393,6 @@ language = 語言
 # Toggle theme
 toggle-theme = 切換主題
 
-# JayJay — DAG graph and diff (dark)
-jayjay-dag-graph-and-diff-dark = JayJay — DAG 圖與差異（深色）
-
-# JayJay — DAG graph and diff (light)
-jayjay-dag-graph-and-diff-light = JayJay — DAG 圖與差異（淺色）
-
 # JayJay in action
 jayjay-in-action = JayJay 示範
 
@@ -479,6 +473,9 @@ articles-are-in-english = 文章為英文。
 
 # JayJay Diff
 jayjay-diff = JayJay Diff
+
+# Video tutorial
+video-tutorial = 影片教學
 
 # <strong>JayJay Diff</strong> Review GitHub pull requests in your browser, with review marks that survive force-pushes.
 review-github-pull-requests-in-browser = <strong>JayJay Diff</strong> 在瀏覽器裡審查 GitHub Pull Request，已審查標記在 force-push 之後依然保留。

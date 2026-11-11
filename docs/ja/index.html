@@ -77,10 +77,6 @@
   <link rel="icon" href="../favicon.ico" sizes="32x32">
   <link rel="icon" href="../favicon.svg" type="image/svg+xml">
   <link rel="apple-touch-icon" href="../apple-touch-icon.png">
-  <link rel="preconnect" href="https://fonts.googleapis.com">
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
-  <link rel="preload" as="image" href="../imgs/tour-dark.webp">
   <link rel="stylesheet" href="../css/landing.css">
   <script src="../js/theme.js"></script>
 
@@ -134,8 +130,11 @@
     </div>
     <div class="wrap wide">
       <div class="hero-shot">
-        <img class="dark-only" src="../imgs/tour-dark.webp" alt="JayJay — DAG グラフと差分（ダーク）" width="2560" height="1300" loading="eager">
-        <img class="light-only" src="../imgs/tour.webp" alt="JayJay — DAG グラフと差分（ライト）" width="2560" height="1300" loading="eager">
+        <picture>
+          <source data-dark media="(prefers-color-scheme: dark)" srcset="../imgs/tour-dark-1280.webp 1280w, ../imgs/tour-dark.webp 2560w" sizes="(max-width: 1280px) 100vw, 1280px">
+          <script>document.currentScript.previousElementSibling.media = document.documentElement.dataset.theme === 'dark' ? 'all' : 'not all';</script>
+          <img src="../imgs/tour.webp" srcset="../imgs/tour-1280.webp 1280w, ../imgs/tour.webp 2560w" sizes="(max-width: 1280px) 100vw, 1280px" alt="JayJay — Jujutsu リポジトリの DAG グラフと左右並べての差分" width="2560" height="1300" fetchpriority="high">
+        </picture>
         <button class="play-btn" type="button" aria-haspopup="dialog">
           <svg width="10" height="12" viewBox="0 0 20 22" aria-hidden="true"><path d="M2 1.5v19l17-9.5z" fill="currentColor" stroke="currentColor" stroke-width="2" stroke-linejoin="round"/></svg>
           12 秒のツアーを見る
@@ -175,8 +174,8 @@
     </div>
     <div class="wrap wide spot">
       <div class="show-img">
-        <img class="dark-only" src="../imgs/side-by-side-dark.webp" alt="ファイルツリー付きの左右並べての差分" width="2200" height="1400" loading="lazy">
-        <img class="light-only" src="../imgs/side-by-side.webp" alt="ファイルツリー付きの左右並べての差分" width="2200" height="1400" loading="lazy">
+        <img class="dark-only" src="../imgs/side-by-side-dark.webp" srcset="../imgs/side-by-side-dark-1100.webp 1100w, ../imgs/side-by-side-dark.webp 2200w" sizes="(max-width: 1280px) calc(100vw - 64px), 1216px" alt="ファイルツリー付きの左右並べての差分" width="2200" height="1400" loading="lazy">
+        <img class="light-only" src="../imgs/side-by-side.webp" srcset="../imgs/side-by-side-1100.webp 1100w, ../imgs/side-by-side.webp 2200w" sizes="(max-width: 1280px) calc(100vw - 64px), 1216px" alt="ファイルツリー付きの左右並べての差分" width="2200" height="1400" loading="lazy">
       </div>
     </div>
 
@@ -189,8 +188,8 @@
           <p class="note">コーディングエージェントは <code>jayjay</code> CLI でメモを読み、ファイルをマークできます。<a href="https://github.com/hewigovens/jayjay/tree/main/skills/jayjay">JayJay スキル</a>は <code>npx skills add hewigovens/jayjay --skill jayjay</code> でインストールするか、macOS では「設定」&gt;「連携」から追加できます。</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="../imgs/review-dark.webp" alt="レビュー済みのハンクとインラインメモがある作業コピーのレビュー" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="../imgs/review.webp" alt="レビュー済みのハンクとインラインメモがある作業コピーのレビュー" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="../imgs/review-dark.webp" srcset="../imgs/review-dark-1100.webp 1100w, ../imgs/review-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="レビュー済みのハンクとインラインメモがある作業コピーのレビュー" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="../imgs/review.webp" srcset="../imgs/review-1100.webp 1100w, ../imgs/review.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="レビュー済みのハンクとインラインメモがある作業コピーのレビュー" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -202,8 +201,8 @@
         </div>
         <div class="show-img" data-captions="0 チェンジで「差分を編集」を開く|1.8 2 つのファイルから行を選ぶ|6.6 新しいチェンジに分割">
           <div class="loop-stage">
-            <video class="dark-only loop" muted loop playsinline preload="none" poster="../imgs/loop-split-lines-dark.webp" width="2880" height="1800" aria-label="差分編集 — 選択した行を新しいチェンジに分割" data-cues="0.48 0.961 0.217, 2.29 0.297 0.249, 3.58 0.277 0.157, 4.86 0.297 0.336, 5.54 0.297 0.358, 7.03 0.475 0.946, 8.71 0.636 0.946"><source src="https://media.hewig.dev/split-lines-dark-3bb22a3f.mp4" type="video/mp4"></video>
-            <video class="light-only loop" muted loop playsinline preload="none" poster="../imgs/loop-split-lines.webp" width="2880" height="1800" aria-label="差分編集 — 選択した行を新しいチェンジに分割" data-cues="0.51 0.961 0.217, 2.34 0.297 0.249, 3.61 0.277 0.157, 4.90 0.297 0.336, 5.58 0.297 0.358, 7.07 0.475 0.946, 8.75 0.636 0.946"><source src="https://media.hewig.dev/split-lines-3d6f59a5.mp4" type="video/mp4"></video>
+            <video class="dark-only loop" muted loop playsinline preload="none" data-poster="../imgs/loop-split-lines-dark.webp" width="2880" height="1800" aria-label="差分編集 — 選択した行を新しいチェンジに分割" data-cues="0.48 0.961 0.217, 2.29 0.297 0.249, 3.58 0.277 0.157, 4.86 0.297 0.336, 5.54 0.297 0.358, 7.03 0.475 0.946, 8.71 0.636 0.946"><source src="https://media.hewig.dev/split-lines-dark-3bb22a3f.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" data-poster="../imgs/loop-split-lines.webp" width="2880" height="1800" aria-label="差分編集 — 選択した行を新しいチェンジに分割" data-cues="0.51 0.961 0.217, 2.34 0.297 0.249, 3.61 0.277 0.157, 4.90 0.297 0.336, 5.58 0.297 0.358, 7.07 0.475 0.946, 8.75 0.636 0.946"><source src="https://media.hewig.dev/split-lines-3d6f59a5.mp4" type="video/mp4"></video>
           </div>
         </div>
       </div>
@@ -215,8 +214,8 @@
           <p>2 つのチェンジやブックマーク、PR ブランチとそのベースを Shift+クリックすると、その間で何が変わったかがひと目でわかります。チェンジが分岐しているときは、<strong>分岐したバージョンを比較</strong>でどちらを残すか判断できます。</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="../imgs/interdiff-dark.webp" alt="Interdiff" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="../imgs/interdiff.webp" alt="Interdiff" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="../imgs/interdiff-dark.webp" srcset="../imgs/interdiff-dark-1100.webp 1100w, ../imgs/interdiff-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Interdiff" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="../imgs/interdiff.webp" srcset="../imgs/interdiff-1100.webp 1100w, ../imgs/interdiff.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="Interdiff" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -229,8 +228,8 @@
         </div>
         <div class="show-img" data-captions="0 スタックの先端を右クリック|4.7 チェンジごとにブランチ名を付ける|8.2 チェンジごとに 1 つの PR">
           <div class="loop-stage">
-            <video class="dark-only loop" muted loop playsinline preload="none" poster="../imgs/loop-stacked-prs-dark.webp" width="2880" height="1800" aria-label="チェンジごとに 1 ブランチのスタック PR プレビュー" data-cues="0.44 0.125 0.234, 2.20 0.214 0.684, 5.17 0.519 0.404, 6.66 0.628 0.408, 8.45 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-dark-1cfb814a.mp4" type="video/mp4"></video>
-            <video class="light-only loop" muted loop playsinline preload="none" poster="../imgs/loop-stacked-prs.webp" width="2880" height="1800" aria-label="チェンジごとに 1 ブランチのスタック PR プレビュー" data-cues="0.47 0.125 0.234, 2.25 0.214 0.684, 5.25 0.519 0.404, 6.74 0.628 0.408, 8.53 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4" type="video/mp4"></video>
+            <video class="dark-only loop" muted loop playsinline preload="none" data-poster="../imgs/loop-stacked-prs-dark.webp" width="2880" height="1800" aria-label="チェンジごとに 1 ブランチのスタック PR プレビュー" data-cues="0.44 0.125 0.234, 2.20 0.214 0.684, 5.17 0.519 0.404, 6.66 0.628 0.408, 8.45 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-dark-1cfb814a.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" data-poster="../imgs/loop-stacked-prs.webp" width="2880" height="1800" aria-label="チェンジごとに 1 ブランチのスタック PR プレビュー" data-cues="0.47 0.125 0.234, 2.25 0.214 0.684, 5.25 0.519 0.404, 6.74 0.628 0.408, 8.53 0.527 0.707"><source src="https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4" type="video/mp4"></video>
           </div>
         </div>
       </div>
@@ -242,8 +241,8 @@
           <p>内蔵のマージエディタでハンクごとに左、右、ベースを選んだり、競合マーカーを直接編集したりできます。途中まで解決して保存することも、設定済みの外部ツールに任せることも可能です。</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="../imgs/conflict-resolver-dark.webp" alt="内蔵のマージエディタ" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="../imgs/conflict-resolver.webp" alt="内蔵のマージエディタ" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="../imgs/conflict-resolver-dark.webp" srcset="../imgs/conflict-resolver-dark-1100.webp 1100w, ../imgs/conflict-resolver-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="内蔵のマージエディタ" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="../imgs/conflict-resolver.webp" srcset="../imgs/conflict-resolver-1100.webp 1100w, ../imgs/conflict-resolver.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="内蔵のマージエディタ" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -254,8 +253,8 @@
           <p>チェンジのスナップショットを時系列で確認し、絞り込みやワンクリックでの復元ができます。リベースの取り消しも失った作業の復旧も、操作ログを手で触らずに行えます。</p>
         </div>
         <div class="show-img">
-          <img class="dark-only" src="../imgs/evolog-dark.webp" alt="チェンジの変遷ログ" width="2200" height="1400" loading="lazy">
-          <img class="light-only" src="../imgs/evolog.webp" alt="チェンジの変遷ログ" width="2200" height="1400" loading="lazy">
+          <img class="dark-only" src="../imgs/evolog-dark.webp" srcset="../imgs/evolog-dark-1100.webp 1100w, ../imgs/evolog-dark.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="チェンジの変遷ログ" width="2200" height="1400" loading="lazy">
+          <img class="light-only" src="../imgs/evolog.webp" srcset="../imgs/evolog-1100.webp 1100w, ../imgs/evolog.webp 2200w" sizes="(max-width: 860px) 100vw, 580px" alt="チェンジの変遷ログ" width="2200" height="1400" loading="lazy">
         </div>
       </div>
 
@@ -267,8 +266,8 @@
         </div>
         <div class="show-img" data-captions="0 チェンジを破棄|6 操作ログを開く|8.2 その直前の操作を復元">
           <div class="loop-stage">
-            <video class="dark-only loop" muted loop playsinline preload="none" poster="../imgs/loop-undo-dark.webp" width="2880" height="1800" aria-label="チェンジを破棄し、操作ログから復元する" data-cues="0.44 0.125 0.234, 2.21 0.214 0.920, 4.39 0.527 0.604, 6.61 0.786 0.987, 8.78 0.365 0.348, 10.08 0.673 0.740, 12.28 0.125 0.312"><source src="https://media.hewig.dev/undo-dark-b1554907.mp4" type="video/mp4"></video>
-            <video class="light-only loop" muted loop playsinline preload="none" poster="../imgs/loop-undo.webp" width="2880" height="1800" aria-label="チェンジを破棄し、操作ログから復元する" data-cues="0.42 0.125 0.234, 2.18 0.214 0.920, 4.32 0.527 0.604, 6.49 0.786 0.987, 8.61 0.365 0.348, 9.92 0.673 0.740, 12.10 0.125 0.312"><source src="https://media.hewig.dev/undo-b5280b09.mp4" type="video/mp4"></video>
+            <video class="dark-only loop" muted loop playsinline preload="none" data-poster="../imgs/loop-undo-dark.webp" width="2880" height="1800" aria-label="チェンジを破棄し、操作ログから復元する" data-cues="0.44 0.125 0.234, 2.21 0.214 0.920, 4.39 0.527 0.604, 6.61 0.786 0.987, 8.78 0.365 0.348, 10.08 0.673 0.740, 12.28 0.125 0.312"><source src="https://media.hewig.dev/undo-dark-b1554907.mp4" type="video/mp4"></video>
+            <video class="light-only loop" muted loop playsinline preload="none" data-poster="../imgs/loop-undo.webp" width="2880" height="1800" aria-label="チェンジを破棄し、操作ログから復元する" data-cues="0.42 0.125 0.234, 2.18 0.214 0.920, 4.32 0.527 0.604, 6.49 0.786 0.987, 8.61 0.365 0.348, 9.92 0.673 0.740, 12.10 0.125 0.312"><source src="https://media.hewig.dev/undo-b5280b09.mp4" type="video/mp4"></video>
           </div>
         </div>
       </div>
@@ -449,6 +448,7 @@
       <div class="foot-links">
         <a hreflang="en" href="../blog/">ブログ</a>
         <a hreflang="en" href="../guide.html">ガイド</a>
+        <a hreflang="en" href="../tutorial/">動画チュートリアル</a>
         <a href="https://diff.hewig.dev">JayJay Diff</a>
         <a href="https://github.com/hewigovens/jayjay">GitHub</a>
         <a href="https://github.com/hewigovens/jayjay/releases">リリース</a>

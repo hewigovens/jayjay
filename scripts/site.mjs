@@ -90,7 +90,8 @@ function render(lang, strings) {
       return `"mainEntity": [\n${entries.join(',\n')}\n    ]`;
     })
     .replace(/\b(href|src|poster)="(?!https?:|#|\.\.\/)([^"]+)"/g, (m, name, target) => `${name}="../${target}"`)
-    .replace(/href="\.\.\/(guide\.html|blog\/|privacy\.html)/g, (m, target) => `hreflang="en" href="../${target}`);
+    .replace(/\bsrcset="([^"]+)"/g, (m, x) => `srcset="${x.replace(/(^|, )/g, '$1../')}"`)
+    .replace(/href="\.\.\/(guide\.html|blog\/|tutorial\/|privacy\.html)/g, (m, target) => `hreflang="en" href="../${target}`);
 
   const body = page.slice(page.indexOf('<body')).replace(/<!--[\s\S]*?-->|<(script|pre|code|kbd)\b[\s\S]*?<\/\1>|<a class="post-card"[\s\S]*?<\/a>/g, '');
   for (const [, text] of body.matchAll(/>([^<]*[A-Za-z]{3,} [a-z]{2,} [a-z]{2,}[^<]*)</g)) missing.add(text.trim());

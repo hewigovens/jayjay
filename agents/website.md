@@ -7,6 +7,7 @@ Load this file when changing the public site at [jayjay.hewig.dev](https://jayja
 - `docs/index.html` is the landing page and FAQ (`/#faq`). `docs/ja/`, `docs/zh-hans/`, and `docs/zh-hant/` are its generated translations; they share `docs/css/landing.css` and the scripts. The guide, blog, and privacy page stay English, and translated pages label links to them as English.
 - `docs/guide.html` is the public workflow guide and user-doc source of truth; `UserGuide.md` only points to it.
 - `docs/blog/` contains the blog index and posts.
+- `docs/tutorial/` is the English video watch page; it reuses `landing.css` and lists each clip as a `VideoObject`. Update its clip URLs, posters, and durations when a take is republished.
 - `docs/llms.txt` is the machine-readable project summary; `docs/sitemap.xml` and `docs/robots.txt` cover discovery.
 - `docs/css/`, `docs/js/`, `docs/imgs/`, and the site icons are shared website assets.
 - `docs/appcast.xml` is the Sparkle update feed, not website content. Load [Release](release.md) before changing it.

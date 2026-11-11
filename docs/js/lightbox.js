@@ -21,7 +21,7 @@
   function close() { lb.classList.remove('open'); }
   document.querySelectorAll('.show-img img, .shot img').forEach(function (img) {
     img.addEventListener('click', function () {
-      lbImg.src = img.currentSrc || img.src;
+      lbImg.src = img.src;
       lb.classList.add('open');
     });
   });

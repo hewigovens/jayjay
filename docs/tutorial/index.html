@@ -1,0 +1,208 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JayJay video tutorial — a 12-second tour and three jj workflows</title>
+  <meta name="description" content="Watch JayJay, the native GUI for Jujutsu (jj): a 12-second tour of the change graph and diff, then short clips on splitting lines, stacked pull requests, and undo.">
+  <meta name="author" content="hewigovens">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://jayjay.hewig.dev/tutorial/">
+
+  <meta property="og:type" content="video.other">
+  <meta property="og:site_name" content="JayJay">
+  <meta property="og:url" content="https://jayjay.hewig.dev/tutorial/">
+  <meta property="og:title" content="JayJay video tutorial — a 12-second tour and three jj workflows">
+  <meta property="og:description" content="A 12-second tour of the change graph and diff, then short clips on splitting lines, stacked pull requests, and undo.">
+  <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
+  <meta property="og:video" content="https://media.hewig.dev/tour-7416ccff.mp4">
+  <meta property="og:video:type" content="video/mp4">
+
+  <script type="application/ld+json">
+  [
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": "JayJay in 12 seconds: the Jujutsu change graph and diff",
+      "description": "A tour of JayJay, the native GUI for Jujutsu (jj): select a change in the graph, open its diff, jump to the working copy, open a file, and mark it reviewed.",
+      "thumbnailUrl": "https://jayjay.hewig.dev/imgs/tour.webp",
+      "uploadDate": "2026-10-01T12:49:38Z",
+      "duration": "PT12S",
+      "contentUrl": "https://media.hewig.dev/tour-7416ccff.mp4"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": "Split selected lines into a new jj change",
+      "description": "Open Edit Diff on a change in JayJay, pick lines in two files, and split them into a new change.",
+      "thumbnailUrl": "https://jayjay.hewig.dev/imgs/loop-split-lines.webp",
+      "uploadDate": "2026-10-20T23:51:33Z",
+      "duration": "PT12S",
+      "contentUrl": "https://media.hewig.dev/split-lines-3d6f59a5.mp4"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": "Create stacked pull requests from a jj stack",
+      "description": "Right-click the top of a stack in JayJay, name a branch per change, and open one pull request per change.",
+      "thumbnailUrl": "https://jayjay.hewig.dev/imgs/loop-stacked-prs.webp",
+      "uploadDate": "2026-10-20T23:51:37Z",
+      "duration": "PT11S",
+      "contentUrl": "https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4"
+    },
+    {
+      "@context": "https://schema.org",
+      "@type": "VideoObject",
+      "name": "Undo an abandoned change from the jj operation log",
+      "description": "Abandon a change in JayJay, open the operation log, and restore the operation before it.",
+      "thumbnailUrl": "https://jayjay.hewig.dev/imgs/loop-undo.webp",
+      "uploadDate": "2026-10-20T23:51:40Z",
+      "duration": "PT13S",
+      "contentUrl": "https://media.hewig.dev/undo-b5280b09.mp4"
+    }
+  ]
+  </script>
+
+  <link rel="icon" href="../favicon.ico" sizes="32x32">
+  <link rel="icon" href="../favicon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="stylesheet" href="../css/landing.css">
+  <script src="../js/theme.js"></script>
+</head>
+
+<body>
+  <nav>
+    <div class="wrap nav">
+      <a class="brand" href="../"><img src="../icon.svg" alt=""> JayJay</a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="../#features">Features</a>
+          <a href="../#shortcuts">Shortcuts</a>
+          <a href="../#install">Install</a>
+          <a href="../#faq">FAQ</a>
+          <a href="../blog/">Blog</a>
+          <a href="../guide.html">Guide</a>
+          <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon"></span></button>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
+      </div>
+    </div>
+  </nav>
+
+  <main>
+    <header class="hero">
+      <div class="wrap">
+        <h1>JayJay in 12 seconds</h1>
+        <p class="lede">The change graph and the diff, in one window. Three everyday jj workflows follow.</p>
+      </div>
+      <div class="wrap wide">
+        <div class="show-img watch">
+          <video controls playsinline preload="none" data-poster="../imgs/tour-1280.webp" src="https://media.hewig.dev/tour-7416ccff.mp4" data-dark="https://media.hewig.dev/tour-dark-283eba50.mp4" data-dark-poster="../imgs/tour-dark-1280.webp" width="2560" height="1300" aria-label="JayJay tour: the change graph and diff"></video>
+        </div>
+      </div>
+      <div class="wrap">
+        <ol class="steps">
+          <li>Select a change in the graph</li>
+          <li>Open its diff</li>
+          <li>Jump to the working copy</li>
+          <li>Open a file</li>
+          <li>Mark it reviewed</li>
+        </ol>
+      </div>
+    </header>
+
+    <section>
+      <div class="wrap">
+        <div class="show first">
+          <div class="show-text">
+            <div class="eyebrow"><span>Sp</span>lit</div>
+            <h2>Split exactly the lines you mean</h2>
+            <p>Pick hunks or individual lines from any file in the change, then split that selection into a clean child or parallel change.</p>
+            <ol class="steps">
+              <li>Open Edit Diff on a change</li>
+              <li>Pick lines in two files</li>
+              <li>Split them into a new change</li>
+            </ol>
+          </div>
+          <div class="show-img">
+            <video controls muted loop playsinline preload="none" data-poster="../imgs/loop-split-lines.webp" src="https://media.hewig.dev/split-lines-3d6f59a5.mp4" data-dark="https://media.hewig.dev/split-lines-dark-3bb22a3f.mp4" data-dark-poster="../imgs/loop-split-lines-dark.webp" width="2880" height="1800" aria-label="Diff edit — split selected lines into a new change"></video>
+          </div>
+        </div>
+
+        <div class="show rev">
+          <div class="show-text">
+            <div class="eyebrow"><span>St</span>acked pull requests</div>
+            <h2>One PR per change, stacked</h2>
+            <p>Right-click the tip of a linear stack and choose <strong>Create / Update Stacked PRs</strong>. JayJay names a branch per change, pushes them, and opens one GitHub PR, GitLab MR, or Cursor Origin PR per change with dependent bases.</p>
+            <ol class="steps">
+              <li>Right-click the top of a stack</li>
+              <li>Name a branch per change</li>
+              <li>One PR per change</li>
+            </ol>
+          </div>
+          <div class="show-img">
+            <video controls muted loop playsinline preload="none" data-poster="../imgs/loop-stacked-prs.webp" src="https://media.hewig.dev/stacked-prs-bb4bb1b9.mp4" data-dark="https://media.hewig.dev/stacked-prs-dark-1cfb814a.mp4" data-dark-poster="../imgs/loop-stacked-prs-dark.webp" width="2880" height="1800" aria-label="Stacked PRs preview with one branch per change"></video>
+          </div>
+        </div>
+
+        <div class="show">
+          <div class="show-text">
+            <div class="eyebrow"><span>O</span>peration log</div>
+            <h2>Undo anything</h2>
+            <p>Every abandon, rebase, and split is an operation. Click the last one in the status bar, or press <kbd>⌘</kbd><kbd>⇧</kbd><kbd>U</kbd>, to open the operation log and restore the repository to any earlier point.</p>
+            <ol class="steps">
+              <li>Abandon a change</li>
+              <li>Open the operation log</li>
+              <li>Restore the operation before it</li>
+            </ol>
+          </div>
+          <div class="show-img">
+            <video controls muted loop playsinline preload="none" data-poster="../imgs/loop-undo.webp" src="https://media.hewig.dev/undo-b5280b09.mp4" data-dark="https://media.hewig.dev/undo-dark-b1554907.mp4" data-dark-poster="../imgs/loop-undo-dark.webp" width="2880" height="1800" aria-label="Abandon a change, then restore it from the operation log"></video>
+          </div>
+        </div>
+
+        <div class="cta">
+          <a class="btn btn-p" href="https://github.com/hewigovens/jayjay/releases/latest">Download for macOS</a>
+          <a class="btn btn-o" href="../#install">Install on Linux</a>
+          <a class="btn btn-o" href="../guide.html">Read the guide</a>
+        </div>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="wrap foot">
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a></p>
+      <div class="foot-links">
+        <a href="../blog/">Blog</a>
+        <a href="../guide.html">Guide</a>
+        <a href="https://diff.hewig.dev">JayJay Diff</a>
+        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
+        <a href="https://discord.gg/ekknRNkVrT">Discord</a>
+        <a href="../privacy.html">Privacy</a>
+      </div>
+    </div>
+  </footer>
+
+  <script>
+    const clips = document.querySelectorAll('video[data-dark]');
+    clips.forEach(video => { video.dataset.light = video.getAttribute('src'); });
+    function showTheme() {
+      const dark = document.documentElement.dataset.theme === 'dark';
+      clips.forEach(video => {
+        const src = dark ? video.dataset.dark : video.dataset.light;
+        video.poster = dark ? video.dataset.darkPoster : video.dataset.poster;
+        if (video.getAttribute('src') !== src) video.src = src;
+      });
+    }
+    showTheme();
+    new MutationObserver(showTheme).observe(document.documentElement, { attributeFilter: ['data-theme'] });
+  </script>
+</body>
+
+</html>
