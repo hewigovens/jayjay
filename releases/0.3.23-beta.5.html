@@ -1,0 +1,16 @@
+<h2>Diffs and previews</h2>
+<ul>
+  <li>Lua files are highlighted, and a script with no file extension, such as <code>bin/tool</code>, is highlighted by the interpreter named on its <code>#!</code> line.</li>
+  <li>A file that fails to load in Diff Edit shows the error with <strong>Retry</strong> instead of an empty card.</li>
+  <li>A previewed HTML file that declares no character set is read as UTF-8, so symbols such as <code>⌘</code> no longer appear garbled.</li>
+</ul>
+<h2>Terminal</h2>
+<ul>
+  <li>With Rex as the terminal, a command such as a terminal editor opens in a new Rex tab instead of falling back to Terminal, including when Rex has to start first.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+  <li>With unsaved edits in the working copy, squashing into a chosen change, creating a workspace on a revision, applying a merge editor result to a change other than <code>@</code>, and <strong>Bisect Between</strong> now act on the current version of the change. Before, they could leave a divergent copy behind, and the bisect stopped before its first step.</li>
+  <li>Squashing a change into itself does nothing instead of rewriting it with a doubled description.</li>
+  <li>The letter on an author’s placeholder avatar comes from the author’s name instead of the email address.</li>
+</ul>
