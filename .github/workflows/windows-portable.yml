@@ -27,9 +27,11 @@ jobs:
           - arch: x64
             target: x86_64-pc-windows-msvc
             runner: windows-2025
+            cargo_about_sha256: 1C03E5890238562497C2D89A3B75B02560AF349C1FC3E713D3284F532A5CD748
           - arch: arm64
             target: aarch64-pc-windows-msvc
             runner: windows-11-arm
+            cargo_about_sha256: 1251A3CDF09538EB91A4F95AF34EA719913DB98C54574E1165052616E9AD93EC
     runs-on: ${{ matrix.runner }}
     defaults:
       run:
@@ -59,7 +61,14 @@ jobs:
           cache-on-failure: true
 
       - name: Install pinned license generator
-        run: cargo install cargo-about --version 0.9.2 --features cli --locked
+        env:
+          ARCHIVE: cargo-about-0.9.2-${{ matrix.target }}
+          SHA256: ${{ matrix.cargo_about_sha256 }}
+        run: |
+          Invoke-WebRequest "https://github.com/EmbarkStudios/cargo-about/releases/download/0.9.2/$env:ARCHIVE.tar.gz" -OutFile "$env:RUNNER_TEMP/cargo-about.tar.gz"
+          if ((Get-FileHash "$env:RUNNER_TEMP/cargo-about.tar.gz" -Algorithm SHA256).Hash -ne $env:SHA256) { throw "cargo-about archive does not match its pinned SHA-256" }
+          tar -xzf "$env:RUNNER_TEMP/cargo-about.tar.gz" -C $env:RUNNER_TEMP
+          Add-Content $env:GITHUB_PATH "$env:RUNNER_TEMP/$env:ARCHIVE"
 
       - name: Download the SSH helper manifest
         if: github.event_name == 'release'
