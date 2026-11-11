@@ -28,7 +28,9 @@
 	"assets": {
 		"not_found_handling": "single-page-application",
 		"run_worker_first": [
-			"/api/*"
+			"/api/*",
+			// Without this the app shell answers probes such as /.well-known/ard.json with HTML.
+			"/.well-known/*"
 		]
 	}
 	// Secret: GITHUB_TOKEN, a token with no scopes, only to raise GitHub's API rate limit (`wrangler secret put GITHUB_TOKEN`).
