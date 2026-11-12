@@ -143,7 +143,16 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var isBackgroundRefreshSuspended = false
     var pendingBackgroundRefresh: BackgroundRefreshRequest?
     /// True while a refresh task is running — gates FS-triggered re-entry.
-    var isRefreshingInFlight: Bool = false
+    var isRefreshingInFlight: Bool = false {
+        didSet {
+            if !isRefreshingInFlight {
+                isRefreshingSilently = false
+            }
+        }
+    }
+
+    /// A background refresh leaves the toolbar spinner still.
+    var isRefreshingSilently = false
     /// Refresh context such as bookmarks lands after the first graph paint.
     var hasFinishedFirstLoad = false
     var isPullingInFlight = false

@@ -69,6 +69,18 @@ extension RepoViewModel {
         selectedChangeAnchorId = selectedChangeId
     }
 
+    /// Call before `changes` is replaced: a revset that is not a change in the graph (bookmark, fork point) can move unseen, so it never counts as intact.
+    func compoundSelectionIsIntact(in refreshed: [ChangeInfo]) -> Bool {
+        guard comparison != nil || selectedChangeIds.count > 1 else { return false }
+        let isIntact = { (revision: String) in
+            guard let was = self.changes.first(where: { $0.matchesRevision(revision) }) else { return false }
+            return refreshed.contains { $0.commitId.id == was.commitId.id && $0.matchesRevision(revision) }
+        }
+        guard selectedChangeIds.allSatisfy(isIntact) else { return false }
+        guard let comparison, comparison.display?.isCombinedSelection != true else { return true }
+        return isIntact(comparison.fromRevision) && isIntact(comparison.toId)
+    }
+
     func compareWith(from: String, to: String) {
         compareWith(
             from: from,

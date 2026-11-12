@@ -44,9 +44,14 @@ extension RepoViewModel {
         resumePendingBackgroundRefresh()
     }
 
-    func fetchPrInfo(bookmarks: [String]) {
-        clearPrInfo()
-        guard !isShuttingDown, let bookmark = bookmarks.first else { return }
+    func fetchPrInfo(bookmarks: [String], keepingShown: Bool = false) {
+        let bookmark = isShuttingDown ? nil : bookmarks.first
+        if keepingShown, bookmark != nil {
+            prFetchTask?.cancel()
+        } else {
+            clearPrInfo()
+        }
+        guard let bookmark else { return }
         prFetchTask = startRepoTask { [weak self, repo] in
             let info = repo.pullRequestInfo(bookmark: bookmark)
             guard !Task.isCancelled else { return }
@@ -143,6 +148,7 @@ extension RepoViewModel {
         }
         refreshTask?.cancel()
         isRefreshingInFlight = true
+        isRefreshingSilently = isAutoTriggered
         isLoading = graphEntries.isEmpty
         // A background refresh must not dismiss an error the user is still reading; manual refresh is an explicit retry.
         if !isAutoTriggered {
@@ -218,7 +224,11 @@ extension RepoViewModel {
             }
             return selectionBaseline
         }
-        let selectsLoadedChange = selectionBaseline == nil || selectionBaseline == selectedChangeIds
+        // A mutation picks its own selection, so only a background refresh keeps a compare or multi-selection.
+        let keepsSelection = isAutoTriggered && compoundSelectionIsIntact(in: content.graph.entries.map(\.change))
+        let selectsLoadedChange = !keepsSelection
+            && (selectionBaseline == nil || selectionBaseline == selectedChangeIds)
+        let shown = comparison == nil ? selectedChange?.info : nil
         apply(content, selectsLoadedChange: selectsLoadedChange)
         canLoadMore = Self.canLoadMore(
             revset: revset,
@@ -228,9 +238,24 @@ extension RepoViewModel {
         guard isRefreshComplete else { return baseline }
         isRefreshingInFlight = false
         hasFinishedFirstLoad = true
-        fetchPrInfo(bookmarks: selectedChange?.info.bookmarks ?? [])
+        if !keepsSelection {
+            refreshPrInfo(replacing: shown, isAutoTriggered: isAutoTriggered)
+        }
         resumePendingBackgroundRefresh()
         return baseline
+    }
+
+    @MainActor
+    private func refreshPrInfo(replacing shown: ChangeInfo?, isAutoTriggered: Bool) {
+        let info = selectedChange?.info
+        let bookmarks = info?.bookmarks ?? []
+        guard let shown, shown.commitId.id == info?.commitId.id else {
+            fetchPrInfo(bookmarks: bookmarks)
+            return
+        }
+        if !isAutoTriggered || shown.bookmarks.first != bookmarks.first {
+            fetchPrInfo(bookmarks: bookmarks, keepingShown: true)
+        }
     }
 
     @MainActor

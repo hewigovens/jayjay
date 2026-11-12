@@ -10,7 +10,7 @@ extension ChangeDetailView {
             canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
             onEdit: { onEditDescription(detailRevision, detail.info.description) }
         )
-        .id("\(detailRevision)|\(detail.info.commitId)")
+        .id("\(detailRevision)|\(detail.info.commitId.id)")
     }
 
     static func canEnterDiffEdit(info: ChangeInfo, isCompareMode: Bool) -> Bool {

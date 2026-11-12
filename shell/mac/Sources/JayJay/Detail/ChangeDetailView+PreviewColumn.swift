@@ -88,7 +88,7 @@ extension ChangeDetailView {
                         lineStats: fileStats?.value?[hunk.path]
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
-                    .id("\(detail.info.commitId)|\(hunk.path)")
+                    .id("\(detail.info.commitId.id)|\(hunk.path)")
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {

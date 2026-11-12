@@ -18,13 +18,15 @@ extension RepoContentView {
                 help: viewModel.refreshMode.help,
                 action: { viewModel.runRefresh() },
                 label: {
-                    RefreshSpinner(animating: viewModel.isRefreshingInFlight || isSwitchingWorkspace)
-                        .overlay(alignment: .topTrailing) {
-                            if viewModel.refreshMode.showsBadge {
-                                Circle().fill(.orange).frame(width: 7, height: 7).offset(x: 3, y: -3)
-                                    .accessibilityIdentifier(AID.Toolbar.staleBadge)
-                            }
+                    RefreshSpinner(
+                        animating: (viewModel.isRefreshingInFlight && !viewModel.isRefreshingSilently) || isSwitchingWorkspace
+                    )
+                    .overlay(alignment: .topTrailing) {
+                        if viewModel.refreshMode.showsBadge {
+                            Circle().fill(.orange).frame(width: 7, height: 7).offset(x: 3, y: -3)
+                                .accessibilityIdentifier(AID.Toolbar.staleBadge)
                         }
+                    }
                 }
             )
             syncButton(.pull, inFlight: viewModel.isPullingInFlight) {

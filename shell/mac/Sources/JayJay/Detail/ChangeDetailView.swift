@@ -185,7 +185,7 @@ struct ChangeDetailView: View {
                 NSApp.keyWindow?.makeFirstResponder(nil)
             }
         }
-        .onChange(of: detail.info.commitId) { _, _ in
+        .onChange(of: detail.info.commitId.id) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
             openPendingConflictEditor()
         }

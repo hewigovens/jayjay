@@ -149,7 +149,7 @@ extension ChangeDetailView {
             .listStyle(.plain)
             .scrollIndicators(.never)
             .revealing(fileSelection.primary, again: contextMenuRequest?.id, with: proxy)
-            .id(detail.info.commitId)
+            .id(detail.info.commitId.id)
         }
     }
 

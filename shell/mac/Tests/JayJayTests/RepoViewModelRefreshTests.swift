@@ -220,6 +220,56 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
         XCTAssertEqual(viewModel.selectedChangeIds, ["first", "second"])
     }
 
+    func testBackgroundRefreshIsSilentAndKeepsACompareUntilAnEndIsRewritten() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let root = URL(fileURLWithPath: viewModel.repoPath)
+        for name in ["first", "second"] {
+            try "\(name)\n".write(to: root.appending(path: "\(name).txt"), atomically: true, encoding: .utf8)
+            try runJj(["commit", "-m", name], in: viewModel.repoPath)
+        }
+        viewModel.refresh()
+        XCTAssertFalse(viewModel.isRefreshingSilently)
+        try await waitUntil("the refresh finishes") { !viewModel.isRefreshingInFlight }
+        let first = try XCTUnwrap(viewModel.changes.first { $0.description.hasPrefix("first") })
+        let second = try XCTUnwrap(viewModel.changes.first { $0.description.hasPrefix("second") })
+        viewModel.compareWith(from: first.selectionRevision, to: second.selectionRevision)
+        try await waitUntil("the compare loads") { viewModel.comparison?.fromId == first.commitId.id }
+        let comparison = viewModel.comparison
+        let workingCopy = viewModel.changes.first { $0.isWorkingCopy }?.commitId.id
+
+        try "edit\n".write(to: root.appending(path: "edit.txt"), atomically: true, encoding: .utf8)
+        viewModel.handleWorkingCopyChange()
+        XCTAssertTrue(viewModel.isRefreshingInFlight)
+        XCTAssertTrue(viewModel.isRefreshingSilently)
+        try await waitUntil("the background refresh finishes") { !viewModel.isRefreshingInFlight }
+        XCTAssertNotEqual(viewModel.changes.first { $0.isWorkingCopy }?.commitId.id, workingCopy)
+        XCTAssertEqual(viewModel.comparison, comparison)
+
+        try runJj(["describe", "-r", second.changeId.id, "-m", "second rewritten"], in: viewModel.repoPath)
+        viewModel.handleOperationChange()
+        XCTAssertTrue(viewModel.isRefreshingInFlight)
+        try await waitUntil("the background refresh finishes") { !viewModel.isRefreshingInFlight }
+        XCTAssertNil(viewModel.comparison)
+    }
+
+    func testBackgroundRefreshDropsACompareAgainstABookmark() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let root = URL(fileURLWithPath: viewModel.repoPath)
+        try "first\n".write(to: root.appending(path: "first.txt"), atomically: true, encoding: .utf8)
+        try runJj(["commit", "-m", "first"], in: viewModel.repoPath)
+        try runJj(["bookmark", "create", "mark", "-r", "@-"], in: viewModel.repoPath)
+        viewModel.refresh()
+        try await waitUntil("the refresh finishes") { !viewModel.isRefreshingInFlight }
+        let first = try XCTUnwrap(viewModel.changes.first { $0.description.hasPrefix("first") })
+        viewModel.compareWith(from: "\"mark\"", to: first.selectionRevision)
+        try await waitUntil("the compare loads") { viewModel.comparison?.fromId == first.commitId.id }
+
+        try "edit\n".write(to: root.appending(path: "edit.txt"), atomically: true, encoding: .utf8)
+        viewModel.handleWorkingCopyChange()
+        try await waitUntil("the background refresh finishes") { !viewModel.isRefreshingInFlight }
+        XCTAssertNil(viewModel.comparison)
+    }
+
     func testWorkingCopyEventIsNeverTakenForOurSnapshotEcho() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         try await snapshotAnEdit(viewModel, file: "echo.txt")
