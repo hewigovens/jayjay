@@ -22,17 +22,3 @@ min_calls = 1
 
 [functions.timing]
 judged = false
-min_percent_change = 50
-metrics = ["avg", "total"]
-min_calls = 1
-
-# Specify thread names to compare. List only threads expected to have
-# the same workload across runs. Unlisted threads are ignored.
-#
-# [threads]
-# names = ["main"]
-#
-# [threads.alloc]
-# judged = false
-# min_percent_change = 20
-# metrics = ["total"]

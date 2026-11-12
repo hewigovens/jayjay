@@ -24,4 +24,4 @@ The uninstrumented elapsed time covers workload setup/validation and result disp
 
 This measures the shared diff engine, not shell rendering or end-to-end interaction latency, and does not enable CPU sampling.
 
-In CI, `.github/workflows/hotpath-benchmark.yml` runs `warm`, `expand`, `wrap` and `sbs` natively and under Callgrind on every push to `main` and every pull request, and reports each as the `jj-diff-<scenario>` series to [hotpath-cloud](https://hotpath.rs/cloud). Instruction counts and allocations are judged under `hotpath/policy.toml`; timings are shown but not judged.
+In CI, `.github/workflows/hotpath-benchmark.yml` runs only on pushes to `main` affecting the diff engine, its dependencies, or benchmark configuration. One job builds once, then runs `warm`, `expand`, `wrap` and `sbs` sequentially, each natively and under Callgrind, and uploads each as a separate `jj-diff-<scenario>` series to [hotpath-cloud](https://hotpath.rs/cloud). Instruction counts and allocations are judged under `hotpath/policy.toml`; timings are shown but not judged. Pull requests do not run benchmarks or relay reports.

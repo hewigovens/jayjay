@@ -3,14 +3,15 @@
 ![macOS](https://img.shields.io/badge/macOS-26-blue)
 [![Linux](https://img.shields.io/badge/Linux-GPUI-93c5fd?style=flat-square&logo=linux&logoColor=white&labelColor=1e1e2e)](#linux)
 ![Rust](https://img.shields.io/badge/rust-1.97.1%2B-orange)
-![License](https://img.shields.io/badge/license-BSL--1.1-green)
+[![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
+[![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
 [![Discord](https://img.shields.io/badge/Discord-join-5865f2?style=flat-square&logo=discord&logoColor=white&labelColor=1e1e2e)](https://discord.gg/ekknRNkVrT)
 [![Ask DeepWiki](https://img.shields.io/badge/DeepWiki-ask-5b6ee1?style=flat-square&labelColor=1e1e2e)](https://deepwiki.com/hewigovens/jayjay)
 
 [![CI](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/ci.yml)
 [![GPUI CI](https://github.com/hewigovens/jayjay/actions/workflows/gpui-ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/gpui-ci.yml)
-[![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
-[![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
+[![Cargo Audit](https://github.com/hewigovens/jayjay/actions/workflows/cargo-audit.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/cargo-audit.yml)
+[![AppImage](https://github.com/hewigovens/jayjay/actions/workflows/appimage.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/appimage.yml)
 [![hotpath-cloud](https://img.shields.io/endpoint?url=https://hotpath.rs/badge-cloud.json)](https://hotpath.rs/app/repos/hewigovens/jayjay)
 
 **JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows beta, a web diff viewer, and reusable Rust and React libraries for diff and review tooling.**
