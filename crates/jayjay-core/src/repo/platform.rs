@@ -19,5 +19,5 @@ pub use unix::{
 #[cfg(windows)]
 pub use windows::{
     command, executable_names, home_dir, is_executable_file, launch_target,
-    launchctl_ssh_auth_sock, system_path_entries, system32,
+    launchctl_ssh_auth_sock, registry_path, system_path_entries, system32,
 };

@@ -1,9 +1,13 @@
+mod registry;
+
 use std::ffi::{OsStr, OsString};
 use std::os::windows::process::CommandExt;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
 use windows_sys::Win32::System::Threading::CREATE_NO_WINDOW;
+
+pub use registry::registry_path;
 
 /// PATHEXT can also list document types, which Command cannot launch.
 const EXECUTABLE_EXTENSIONS: [&str; 4] = ["com", "exe", "bat", "cmd"];

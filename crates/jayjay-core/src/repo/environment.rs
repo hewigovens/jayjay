@@ -183,9 +183,9 @@ fn resolve_login_shell_path() -> Option<String> {
         };
         run_shell_path_command(&shell, command)
     }
-    #[cfg(not(unix))]
+    #[cfg(windows)]
     {
-        None
+        platform::registry_path()
     }
 }
 
