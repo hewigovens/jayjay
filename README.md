@@ -11,6 +11,7 @@
 [![GPUI CI](https://github.com/hewigovens/jayjay/actions/workflows/gpui-ci.yml/badge.svg)](https://github.com/hewigovens/jayjay/actions/workflows/gpui-ci.yml)
 [![Release](https://img.shields.io/github/v/release/hewigovens/jayjay?include_prereleases)](https://github.com/hewigovens/jayjay/releases)
 [![Downloads](https://img.shields.io/github/downloads/hewigovens/jayjay/total?style=flat-square&color=a6e3a1&labelColor=1e1e2e)](https://github.com/hewigovens/jayjay/releases)
+[![hotpath-cloud](https://img.shields.io/endpoint?url=https://hotpath.rs/badge-cloud.json)](https://hotpath.rs/app/repos/hewigovens/jayjay)
 
 **JayJay is a native GUI for [Jujutsu](https://github.com/jj-vcs/jj) on macOS and Linux, with a Windows beta, a web diff viewer, and reusable Rust and React libraries for diff and review tooling.**
 

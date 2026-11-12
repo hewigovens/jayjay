@@ -86,6 +86,8 @@ lang-yaml = ["dep:tree-sitter-yaml", "syntax"]
 lang-zig = ["dep:tree-sitter-zig", "syntax"]
 hotpath = ["dep:hotpath", "hotpath/hotpath"]
 hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
+hotpath-cloud = ["hotpath", "hotpath/hotpath-cloud"]
+hotpath-callgrind = ["hotpath", "hotpath/hotpath-callgrind"]
 
 [dependencies]
 jayjay-i18n = { version = "0.1.0", path = "../jayjay-i18n" }
