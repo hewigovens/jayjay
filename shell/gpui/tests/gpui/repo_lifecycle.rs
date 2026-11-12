@@ -1,8 +1,9 @@
 use std::fs;
-use std::time::Instant;
+use std::sync::Arc;
+use std::time::{Duration, Instant};
 
 use crate::harness::*;
-use gpui::{AppContext, Modifiers, TestAppContext, VisualTestContext};
+use gpui::{AppContext, Entity, Modifiers, TestAppContext, VisualTestContext};
 use jayjay_gpui::app::config;
 use jayjay_gpui::app::startup_window::open_startup_window;
 use jayjay_gpui::repo::RepoWindow;
@@ -653,4 +654,142 @@ fn pathless_first_launch_finishes_onboarding_in_repo_list(cx: &mut TestAppContex
                 .all(|handle| handle.downcast::<RepoWindow>().is_none())
         );
     });
+}
+
+fn boot_selecting(
+    fixture: &LinearFixture,
+    description: &str,
+    cx: &mut TestAppContext,
+) -> Entity<RepoViewModel> {
+    install_test_globals(cx);
+    let vm = cx.new(|_| RepoViewModel::new(fixture.path.clone()));
+    vm.update(cx, |vm, cx| vm.boot(cx));
+    settle(cx);
+    vm.update(cx, |vm, cx| {
+        let ix = vm
+            .graph
+            .changes
+            .iter()
+            .position(|change| change.description.trim() == description)
+            .expect("fixture change");
+        vm.select_change(ix, cx);
+    });
+    settle(cx);
+    cx.executor().advance_clock(Duration::from_secs(1));
+    settle(cx);
+    vm
+}
+
+#[gpui::test]
+fn auto_refresh_keeps_an_unchanged_commit_on_screen_without_the_indicator(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = boot_selecting(&fixture, "add feature", cx);
+    let (files, diff) = vm.read_with(cx, |vm, _| {
+        (
+            vm.files.clone().expect("files"),
+            vm.shown.diff().cloned().expect("diff"),
+        )
+    });
+    let blanked = ever(&vm, cx, |vm| {
+        vm.files.is_none() || vm.shown.diff().is_none()
+    });
+    let indicated = ever(&vm, cx, |vm| vm.loading.refresh_indicator);
+
+    fs::write(
+        fixture.path.join("README.md"),
+        "# Sample project\nUpdated\n",
+    )
+    .expect("edit");
+    vm.update(cx, |vm, cx| vm.handle_working_copy_change(cx));
+    settle(cx);
+
+    assert!(!blanked.get());
+    assert!(!indicated.get());
+    vm.read_with(cx, |vm, _| {
+        assert!(Arc::ptr_eq(&files, vm.files.as_ref().expect("files")));
+        assert!(Arc::ptr_eq(&diff, vm.shown.diff().expect("diff")));
+    });
+}
+
+#[gpui::test]
+fn auto_refresh_reloads_an_edited_working_copy_in_place(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    let (view, cx) = open_fixture(&fixture, cx);
+    select_file(&view, "feature.txt", cx);
+    let vm = view.read_with(cx, |view, _| view.view_model().clone());
+    let blanked = ever(&vm, cx, |vm| {
+        vm.files.is_none() || vm.shown.diff().is_none()
+    });
+
+    fs::write(
+        fixture.path.join("feature.txt"),
+        "feature\nrewritten on disk\n",
+    )
+    .expect("edit");
+    vm.update(cx, |vm, cx| vm.handle_working_copy_change(cx));
+    settle_visual(cx);
+
+    assert!(!blanked.get());
+    vm.read_with(cx, |vm, _| {
+        assert_eq!(
+            vm.selected_hunk().map(|hunk| hunk.path.as_str()),
+            Some("feature.txt")
+        );
+        let diff = vm.shown.diff().expect("diff");
+        assert!(
+            diff.lines
+                .iter()
+                .any(|line| line.text().contains("rewritten on disk"))
+        );
+    });
+}
+
+#[gpui::test]
+fn refresh_follows_a_selected_change_rewritten_elsewhere(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = boot_selecting(&fixture, "add feature", cx);
+    let (change_id, commit_id) = vm.read_with(cx, |vm, _| {
+        let change = vm.selected_change().expect("selected");
+        (change.change_id.id.clone(), change.commit_id.id.clone())
+    });
+    let blanked = ever(&vm, cx, |vm| vm.files.is_none());
+
+    fs::write(
+        fixture.path.join("rewritten.txt"),
+        "added to older change\n",
+    )
+    .expect("write");
+    run_jj_in(
+        &fixture.path,
+        &["squash", "--into", &change_id, "root:\"rewritten.txt\""],
+    );
+    vm.update(cx, |vm, cx| vm.handle_operation_change(cx));
+    settle(cx);
+
+    assert!(!blanked.get());
+    vm.read_with(cx, |vm, _| {
+        let selected = vm.selected_change().expect("selected");
+        assert_eq!(selected.change_id.id, change_id);
+        assert_ne!(selected.commit_id.id, commit_id);
+        let files = vm.files.as_ref().expect("files");
+        assert!(files.iter().any(|file| file.path == "rewritten.txt"));
+    });
+}
+
+#[gpui::test]
+fn manual_refresh_shows_the_indicator_for_its_minimum_duration(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let vm = boot_selecting(&fixture, "add feature", cx);
+
+    vm.update(cx, |vm, cx| vm.refresh(false, cx));
+    settle(cx);
+    vm.read_with(cx, |vm, _| {
+        assert!(!vm.loading.refreshing);
+        assert!(vm.loading.refresh_indicator);
+    });
+
+    cx.executor().advance_clock(Duration::from_secs(1));
+    settle(cx);
+    vm.read_with(cx, |vm, _| assert!(!vm.loading.refresh_indicator));
 }

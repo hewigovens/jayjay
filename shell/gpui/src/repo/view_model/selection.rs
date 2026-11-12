@@ -23,21 +23,49 @@ impl RepoViewModel {
         revision: Option<&str>,
         cx: &mut Context<Self>,
     ) {
-        self.selected = revision.and_then(|revision| {
-            self.graph.changes.iter().position(|change| {
-                change.change_id.id == revision || change.commit_id.id == revision
+        // `selected` keeps naming the change whose detail is on screen until the refresh lands.
+        let selection = revision
+            .and_then(|revision| {
+                self.graph.changes.iter().find(|change| {
+                    change.change_id.id == revision || change.commit_id.id == revision
+                })
             })
-        });
-        self.refresh(false, cx);
+            .map(|change| (change.change_id.id.clone(), change.commit_id.id.clone()));
+        self.refresh_preferring(false, selection, cx);
     }
 
     pub fn select_change(&mut self, ix: usize, cx: &mut Context<Self>) {
         // Consumed synchronously so a superseded `select_change` can't leave it for an unrelated later selection.
         let restore_path = self.pending_file_selection.take();
+        self.clear_error();
+        self.clear_detail_state();
+        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset.
+        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
+        self.pr_info = None;
+        self.load_change_detail(ix, restore_path, cx);
+    }
+
+    pub(super) fn reload_change_in_place(
+        &mut self,
+        ix: usize,
+        restore_path: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
+        // The cache is keyed by change id, so a diff still in flight for the retired commit must not land in it.
+        self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
+        self.clear_diff_cache_state();
+        self.load_change_detail(ix, restore_path, cx);
+    }
+
+    fn load_change_detail(
+        &mut self,
+        ix: usize,
+        restore_path: Option<String>,
+        cx: &mut Context<Self>,
+    ) {
         self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
         let generation = self.loading.change_gen;
         self.compare = None;
-        self.clear_error();
         self.selected = Some(ix);
         match self.graph.changes.get(ix) {
             Some(change) => self
@@ -45,11 +73,7 @@ impl RepoViewModel {
                 .replace(change.selection_revision().to_owned()),
             None => self.selected_changes.clear(),
         }
-        self.clear_detail_state();
-        self.loading.files = true;
-        // Bump pr_gen so a stale fetch from the prior selection can't overwrite this reset.
-        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
-        self.pr_info = None;
+        self.loading.files = self.files.is_none();
 
         if let Some(change) = self.graph.changes.get(ix).cloned() {
             for person in std::iter::once(&change.author).chain(&change.co_authors) {
@@ -97,7 +121,9 @@ impl RepoViewModel {
                     Ok(detail) => {
                         let files = Arc::new(detail.diff);
                         vm.files = Some(files.clone());
-                        if !files.is_empty() {
+                        if files.is_empty() {
+                            vm.clear_file_selection(cx);
+                        } else {
                             let ix = restore_path
                                 .as_ref()
                                 .and_then(|path| files.iter().position(|f| &f.path == path))
@@ -106,14 +132,15 @@ impl RepoViewModel {
                             let hunk = files[ix].clone();
                             vm.load_diff_async(rev, hunk, cx);
                             vm.preload_diffs_async(files.clone(), cx);
-                            if is_working_copy {
-                                vm.load_tracked_lfs_paths(files, cx);
-                            }
+                        }
+                        if is_working_copy && !files.is_empty() {
+                            vm.load_tracked_lfs_paths(files, cx);
+                        } else {
+                            vm.tracked_lfs_paths = Arc::default();
                         }
                     }
                     Err(error) => {
-                        vm.files = None;
-                        vm.selected_file_ix = None;
+                        vm.clear_detail_state();
                         vm.present_error(error);
                     }
                 }
@@ -147,7 +174,6 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
-        self.stats.per_file = Arc::default();
         let generation = self.loading.change_gen;
         let ignore_whitespace = self.ignore_whitespace;
         Self::background_update(
@@ -546,13 +572,7 @@ impl RepoViewModel {
         }
         self.loading.diff_gen = self.loading.diff_gen.wrapping_add(1);
         self.selected_file_ix = None;
-        self.shown.set_diff(None);
-        self.shown.projection = None;
-        self.shown.svg_preview = None;
-        self.shown.markdown_preview = None;
-        self.shown.old_content = None;
-        self.shown.new_content = None;
-        self.shown.supports_file_editor = false;
+        self.shown.clear();
         cx.notify();
     }
 
@@ -562,13 +582,7 @@ impl RepoViewModel {
         self.files = None;
         self.tracked_lfs_paths = Arc::default();
         self.conflicted_paths = Arc::default();
-        self.shown.set_diff(None);
-        self.shown.projection = None;
-        self.shown.svg_preview = None;
-        self.shown.markdown_preview = None;
-        self.shown.old_content = None;
-        self.shown.new_content = None;
-        self.shown.supports_file_editor = false;
+        self.shown.clear();
         self.clear_diff_cache_state();
         self.stats.change = None;
         self.stats.per_file = Arc::default();

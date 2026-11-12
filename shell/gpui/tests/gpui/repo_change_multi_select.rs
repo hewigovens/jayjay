@@ -372,6 +372,83 @@ fn divergent_compare_uses_commit_ids_for_one_or_several_siblings(cx: &mut TestAp
     assert_compare(&view, cx, &third.commit_id.id, &target.commit_id.id);
 }
 
+#[gpui::test]
+fn background_refresh_keeps_a_multi_selection_and_compare_until_a_member_is_rewritten(
+    cx: &mut TestAppContext,
+) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let member = view.read_with(cx, |view, cx| {
+        view.view_model().read(cx).graph.changes[2]
+            .change_id
+            .id
+            .clone()
+    });
+    let edit_working_copy = |text: &str, cx: &mut VisualTestContext| {
+        std::fs::write(fixture.path.join("README.md"), text).expect("edit");
+        view.update(cx, |view, cx| {
+            view.view_model()
+                .update(cx, |vm, cx| vm.handle_working_copy_change(cx));
+        });
+        settle_visual(cx);
+    };
+    let rewrite_member = |description: &str, cx: &mut VisualTestContext| {
+        run_jj_in(
+            &fixture.path,
+            &["describe", "-r", &member, "-m", description],
+        );
+        view.update(cx, |view, cx| {
+            view.view_model()
+                .update(cx, |vm, cx| vm.handle_operation_change(cx));
+        });
+        settle_visual(cx);
+    };
+    let shown = |cx: &mut VisualTestContext| {
+        view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            (
+                vm.selected_change_indices(),
+                vm.compare.clone(),
+                vm.files.clone(),
+            )
+        })
+    };
+
+    view.update_in(cx, |view, _, cx| {
+        view.select_change(1, cx);
+        view.handle_change_row_click(2, Modifiers::secondary_key(), cx);
+    });
+    settle_visual(cx);
+    let (rows, compare, files) = shown(cx);
+    assert_eq!(rows, vec![1, 2]);
+    assert!(compare.is_some());
+
+    edit_working_copy("# Sample project\nedit\n", cx);
+    let (rows_after, compare_after, files_after) = shown(cx);
+    assert_eq!((rows_after, compare_after), (rows, compare));
+    assert!(Arc::ptr_eq(
+        &files.expect("files"),
+        &files_after.expect("files")
+    ));
+
+    rewrite_member("add hello rewritten", cx);
+    let (rows, compare, _) = shown(cx);
+    assert_eq!(rows.len(), 1);
+    assert!(compare.is_none());
+
+    view.update_in(cx, |view, _, cx| view.select_change(1, cx));
+    settle_visual(cx);
+    dispatch_menu_item(&view, cx, 2, "Compare with Selected");
+    let (_, compare, _) = shown(cx);
+    assert!(compare.is_some());
+
+    edit_working_copy("# Sample project\nedit again\n", cx);
+    assert_eq!(shown(cx).1, compare);
+
+    rewrite_member("add hello rewritten again", cx);
+    assert!(shown(cx).1.is_none());
+}
+
 // `graph.changes` mirrors `graph.entries`, so a forged change has to be written to both.
 fn edit_change(vm: &mut RepoViewModel, row: usize, edit: impl Fn(&mut ChangeInfo)) {
     edit(&mut Arc::make_mut(&mut vm.graph.changes)[row]);

@@ -10,6 +10,8 @@ use crate::diff::{DetailMode, projection};
 
 impl RepoViewModel {
     pub(crate) fn load_diff_async(&mut self, rev: String, hunk: DiffHunk, cx: &mut Context<Self>) {
+        // Reloading the file already on screen swaps it when the new diff lands instead of blanking first.
+        let keeps_shown = self.shown.source_path.as_deref() == Some(hunk.path.as_str());
         let projection_mode = match &self.projection_mode_override {
             Some((path, mode)) if *path == hunk.path => Some(*mode),
             _ => projection::default_mode(hunk.projection.as_ref()),
@@ -19,7 +21,9 @@ impl RepoViewModel {
         let generation = self.loading.diff_gen;
         if matches!(self.detail_mode, DetailMode::Annotate) {
             self.loading.annotate_gen = self.loading.annotate_gen.wrapping_add(1);
-            self.annotation = None;
+            if !keeps_shown {
+                self.annotation = None;
+            }
         }
         let compare_from_rev = self
             .compare
@@ -36,6 +40,7 @@ impl RepoViewModel {
         self.diff_cache.load_failures.remove(&cache_key);
         if let Some(cached) = self.diff_cache.loaded.get(&cache_key).cloned() {
             self.shown.set_diff(Some(cached.diff));
+            self.shown.source_path = Some(hunk.path);
             self.shown.projection = cached.projection;
             self.shown.svg_preview = cached.svg_preview;
             self.shown.markdown_preview = cached.markdown_preview;
@@ -50,13 +55,9 @@ impl RepoViewModel {
             return;
         }
 
-        self.shown.set_diff(None);
-        self.shown.projection = None;
-        self.shown.svg_preview = None;
-        self.shown.markdown_preview = None;
-        self.shown.old_content = None;
-        self.shown.new_content = None;
-        self.shown.supports_file_editor = false;
+        if !keeps_shown {
+            self.shown.clear();
+        }
         self.loading.diff = true;
 
         let Some(repo) = self.repo.clone() else {
@@ -104,6 +105,7 @@ impl RepoViewModel {
                             },
                         );
                         vm.shown.set_diff(Some(file_diff));
+                        vm.shown.source_path = Some(fallback_path.clone());
                         vm.shown.projection = loaded.projection;
                         vm.shown.svg_preview = loaded.svg_preview.map(Arc::new);
                         vm.shown.markdown_preview = loaded.markdown_preview.map(Arc::new);
@@ -118,18 +120,14 @@ impl RepoViewModel {
                     }
                     Err(error) => {
                         vm.diff_cache.load_failures.insert(cache_key);
+                        vm.shown.clear();
+                        vm.shown.source_path = Some(fallback_path.clone());
                         vm.shown.set_diff(Some(Arc::new(FileDiff {
                             path: fallback_path,
                             language: String::new(),
                             lines: Vec::new(),
                             whitespace_only_hidden: false,
                         })));
-                        vm.shown.projection = None;
-                        vm.shown.svg_preview = None;
-                        vm.shown.markdown_preview = None;
-                        vm.shown.old_content = None;
-                        vm.shown.new_content = None;
-                        vm.shown.supports_file_editor = false;
                         vm.present_error(error);
                     }
                 }

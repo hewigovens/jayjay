@@ -93,7 +93,11 @@ impl RepoViewModel {
         if !is_auto_triggered {
             self.clear_error();
         }
-        self.begin_refreshing(cx);
+        if is_auto_triggered {
+            self.begin_repo_task(cx);
+        } else {
+            self.begin_refreshing(cx);
+        }
         self.loading.refresh_gen = self.loading.refresh_gen.wrapping_add(1);
         let generation = self.loading.refresh_gen;
         let revset = self.revset().to_owned();
@@ -123,7 +127,7 @@ impl RepoViewModel {
                         return;
                     }
                 }
-                vm.apply_refresh_result(result, previous_selection, cx);
+                vm.apply_refresh_result(result, previous_selection, is_auto_triggered, cx);
             },
         );
     }
@@ -132,11 +136,14 @@ impl RepoViewModel {
         &mut self,
         result: JayResult<RefreshData>,
         previous_selection: Option<(String, String)>,
+        is_auto_triggered: bool,
         cx: &mut Context<Self>,
     ) {
         let pending_error = self.pending_error.take();
         match result {
             Ok(data) => {
+                let previous_changes = self.graph.changes.clone();
+                let shown = self.selected_change().cloned();
                 self.working_copy_stale = data.working_copy_stale;
                 let entries = data.entries;
                 let context = data.context;
@@ -174,16 +181,26 @@ impl RepoViewModel {
                     .or(if changes.is_empty() { None } else { Some(0) });
                 self.graph.changes = Arc::new(changes);
                 self.graph.entries = Arc::new(entries);
-                // Re-select even if the index is unchanged — file contents may have.
-                if let Some(ix) = new_selected {
-                    // Keep the user's place in the file column across a background reload.
-                    if self.pending_file_selection.is_none() {
-                        self.pending_file_selection = self
-                            .selected_file_ix
-                            .and_then(|file_ix| self.files.as_ref()?.get(file_ix))
-                            .map(|file| file.path.clone());
-                    }
-                    self.select_change(ix, cx);
+
+                let restore_path = self.pending_file_selection.take().or_else(|| {
+                    self.selected_file_ix
+                        .and_then(|file_ix| self.files.as_ref()?.get(file_ix))
+                        .map(|file| file.path.clone())
+                });
+                // A mutation picks its own selection, so only a background refresh keeps a compare or multi-selection.
+                if is_auto_triggered && self.compound_selection_intact(&previous_changes) {
+                    self.selected = shown.and_then(|shown| {
+                        let mut changes = self.graph.changes.iter();
+                        changes.position(|change| change.commit_id.id == shown.commit_id.id)
+                    });
+                } else if let Some(ix) = new_selected {
+                    self.reselect_after_refresh(
+                        ix,
+                        shown.as_ref(),
+                        restore_path,
+                        is_auto_triggered,
+                        cx,
+                    );
                 } else {
                     self.loading.change_gen = self.loading.change_gen.wrapping_add(1);
                     self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
@@ -201,6 +218,58 @@ impl RepoViewModel {
             Err(error) => self.present_error(error),
         }
         cx.notify();
+    }
+
+    fn compound_selection_intact(&self, previous: &[ChangeInfo]) -> bool {
+        let intact = |revision: &str| {
+            previous
+                .iter()
+                .find(|change| change.selection_revision() == revision)
+                .is_some_and(|was| {
+                    self.graph.changes.iter().any(|now| {
+                        now.commit_id.id == was.commit_id.id && now.selection_revision() == revision
+                    })
+                })
+        };
+        (self.compare.is_some() || self.has_multiple_change_selection())
+            && self.selected_changes.selected.iter().all(|rev| intact(rev))
+            // A combined diff is built from the selected commits; any other revset (bookmark, fork point) can move unseen.
+            && self.compare.as_ref().is_none_or(|compare| {
+                compare.display.is_combined_selection
+                    || (intact(&compare.from_rev) && intact(&compare.to_rev))
+            })
+    }
+
+    fn reselect_after_refresh(
+        &mut self,
+        ix: usize,
+        shown: Option<&ChangeInfo>,
+        restore_path: Option<String>,
+        is_auto_triggered: bool,
+        cx: &mut Context<Self>,
+    ) {
+        let target = self.graph.changes[ix].clone();
+        let shows_its_detail = self.compare.is_none()
+            && !self.has_multiple_change_selection()
+            && (self.files.is_some() || self.loading.files);
+        match shown.filter(|_| shows_its_detail) {
+            // A commit id fixes its tree and parents, so the loaded detail is still current.
+            Some(shown) if shown.commit_id.id == target.commit_id.id => {
+                self.selected = Some(ix);
+                self.selected_changes
+                    .replace(target.selection_revision().to_owned());
+                if !is_auto_triggered || shown.bookmarks.first() != target.bookmarks.first() {
+                    self.refresh_pr_info(&target, cx);
+                }
+            }
+            Some(shown) if shown.change_id.id == target.change_id.id => {
+                self.reload_change_in_place(ix, restore_path, cx);
+            }
+            _ => {
+                self.pending_file_selection = restore_path;
+                self.select_change(ix, cx);
+            }
+        }
     }
 }
 

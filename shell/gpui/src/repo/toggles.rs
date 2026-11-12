@@ -31,6 +31,7 @@ impl RepoViewModel {
         if self.compare.is_none()
             && let Some(rev) = self.selected_revision()
         {
+            self.stats.per_file = Arc::default();
             self.load_file_stats(rev, cx);
         }
         let rev = self

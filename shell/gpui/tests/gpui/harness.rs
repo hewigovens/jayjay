@@ -1,4 +1,6 @@
+use std::cell::Cell;
 use std::path::PathBuf;
+use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use gpui::{
@@ -11,6 +13,7 @@ use jayjay_gpui::app::config::{AppConfig, AppConfigStore};
 use jayjay_gpui::app::rating_prompt::{RatingPromptState, RatingPromptStore};
 use jayjay_gpui::app::theme::Theme;
 use jayjay_gpui::repo::RepoWindow;
+use jayjay_gpui::repo::view_model::RepoViewModel;
 use jj_test::{LinearFixture, run_git, run_jj_in};
 
 pub(crate) fn settle(cx: &mut TestAppContext) {
@@ -387,4 +390,23 @@ pub(crate) fn repo_window_count(cx: &VisualTestContext) -> usize {
         .iter()
         .filter(|window| window.downcast::<RepoWindow>().is_some())
         .count()
+}
+
+/// Whether the view model ever notified in a state where `holds`, so a transient blank is caught too.
+pub(crate) fn ever(
+    vm: &Entity<RepoViewModel>,
+    cx: &mut TestAppContext,
+    holds: impl Fn(&RepoViewModel) -> bool + 'static,
+) -> Rc<Cell<bool>> {
+    let seen = Rc::new(Cell::new(false));
+    cx.update(|cx| {
+        let seen = seen.clone();
+        cx.observe(vm, move |vm, cx| {
+            if holds(vm.read(cx)) {
+                seen.set(true);
+            }
+        })
+        .detach();
+    });
+    seen
 }

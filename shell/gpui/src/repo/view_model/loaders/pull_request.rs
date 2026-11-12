@@ -8,10 +8,11 @@ impl RepoViewModel {
         let Some(repo) = self.repo.clone() else {
             return;
         };
+        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         let Some(bookmark) = change.bookmarks.first().cloned() else {
+            self.pr_info = None;
             return;
         };
-        self.loading.pr_gen = self.loading.pr_gen.wrapping_add(1);
         let generation = self.loading.pr_gen;
         Self::background_update(
             cx,

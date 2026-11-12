@@ -384,6 +384,8 @@ fn edit_change_context_action_makes_target_the_working_copy(cx: &mut TestAppCont
         let selected = vm.selected_change().expect("selected edited change");
         assert!(selected.is_working_copy);
         assert_eq!(selected.description.trim(), "add hello");
+        let files = vm.files.as_ref().expect("the edited change's files");
+        assert!(files.iter().any(|file| file.path == "hello.txt"));
     });
 }
 

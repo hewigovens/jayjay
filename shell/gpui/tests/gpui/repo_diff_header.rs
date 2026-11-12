@@ -1,8 +1,8 @@
 use std::fs;
 
 use crate::harness::{
-    install_test_globals, load_selected_change_files, open_repo, rendered_height, select_file,
-    selector, settle_visual, zoom_to_max,
+    ever, install_test_globals, load_selected_change_files, open_repo, rendered_height,
+    select_file, selector, settle_visual, zoom_to_max,
 };
 use gpui::{Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_core::DiffProjectionMode;
@@ -879,6 +879,21 @@ fn open_format_repo_with_selected_file<'a>(
     settle_visual(cx);
 
     (fixture, view, cx)
+}
+
+#[gpui::test]
+fn background_reload_keeps_a_projected_diff_on_screen(cx: &mut TestAppContext) {
+    let (fixture, view, cx) = open_format_repo_with_selected_file(cx, FormatFixture::NOTEBOOK);
+    let vm = view.read_with(cx, |view, _| view.view_model().clone());
+    let blanked = ever(&vm, cx, |vm| vm.shown.diff().is_none());
+
+    let notebook = fixture.path.join(FormatFixture::NOTEBOOK);
+    let source = fs::read_to_string(&notebook).expect("read notebook");
+    fs::write(&notebook, format!("{source}\n")).expect("edit notebook");
+    vm.update(cx, |vm, cx| vm.handle_working_copy_change(cx));
+    settle_visual(cx);
+
+    assert!(!blanked.get());
 }
 
 #[gpui::test]
