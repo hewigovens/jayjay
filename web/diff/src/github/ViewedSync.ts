@@ -20,8 +20,10 @@ interface FilesPage {
   } | null;
 }
 
+export class AppRestrictedError extends Error {}
+
 export class ViewedSync {
-  private writes = new Map<string, Promise<void>>();
+  private writes = new Map<string, Promise<boolean>>();
 
   private constructor(
     private id: string,
@@ -62,7 +64,7 @@ export class ViewedSync {
     return this.viewed.get(path) === true;
   }
 
-  // Queued behind the file's earlier writes so they reach GitHub in order.
+  // Queued behind the file's earlier writes so they reach GitHub in order; resolves to whether GitHub was asked to change the box.
   set(path: string, viewed: boolean) {
     const write = (this.writes.get(path) ?? Promise.resolve())
       .catch(() => {})
@@ -77,10 +79,11 @@ export class ViewedSync {
   }
 
   private async write(path: string, viewed: boolean) {
-    if (!this.viewed.has(path) || this.isViewed(path) === viewed) return;
+    if (!this.viewed.has(path) || this.isViewed(path) === viewed) return false;
     this.viewed.set(path, viewed);
     try {
       await graphql(this.fetcher, this.token, viewed ? mark : unmark, { id: this.id, path });
+      return true;
     } catch (error) {
       this.viewed.set(path, !viewed);
       throw error;
@@ -106,7 +109,10 @@ async function graphql<T>(
     data?: T;
     errors?: { type?: string; message: string }[];
   };
-  if (body.errors?.length || !body.data)
-    throw new Error(body.errors?.[0]?.type ?? body.errors?.[0]?.message ?? "GitHub GraphQL error");
+  const error = body.errors?.[0];
+  // GitHub marks an organization's OAuth app restriction only in the message.
+  if (error?.type === "FORBIDDEN" && error.message.includes("OAuth App access restrictions"))
+    throw new AppRestrictedError(error.message);
+  if (error || !body.data) throw new Error(error?.type ?? error?.message ?? "GitHub GraphQL error");
   return body.data;
 }

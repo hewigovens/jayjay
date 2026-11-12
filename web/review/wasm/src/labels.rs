@@ -245,6 +245,10 @@ fn pull_labels() -> Vec<(&'static str, String)> {
             jayjay_i18n::web::pull_sync_viewed_failed(),
         ),
         (
+            "pullSyncViewedRestricted",
+            jayjay_i18n::web::pull_sync_viewed_restricted(),
+        ),
+        (
             "pullError.rate-limited",
             jayjay_i18n::web::pull_rate_limited(),
         ),

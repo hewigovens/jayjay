@@ -44,7 +44,7 @@ export function PullReview({
     needsSignIn,
     retryable,
     syncing,
-    syncFailed,
+    syncFailure,
     signOut,
     notes,
     onSignedIn,
@@ -84,7 +84,7 @@ export function PullReview({
               <SyncViewedButton
                 labels={labels}
                 syncing={syncing}
-                failed={syncFailed}
+                failure={syncFailure}
                 onEnabled={enableSync}
               />
             )}

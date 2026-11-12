@@ -117,6 +117,7 @@ web-pull-sync-viewed = レビュー済みのファイルを GitHub の「表示�
 web-pull-sync-viewed-scope = 「表示済み」ボックスにチェックを入れるには、公開リポジトリへの書き込み権限が必要です。このサイトでは、それ以外の目的には使用しません。
 web-pull-syncing-viewed = レビュー済みのファイルは GitHub の「表示済み」チェックボックスに同期されます
 web-pull-sync-viewed-failed = GitHub の「表示済み」チェックボックスを更新できませんでした。
+web-pull-sync-viewed-restricted = この Organization はサードパーティ製アプリを制限しているため、「表示済み」チェックボックスを更新できません。GitHub で JayJay Diff のアクセスをリクエストしてください。
 web-pull-commits = コミット
 web-pull-all-commits = すべてのコミット
 web-pull-stack = スタックされたプル リクエスト

@@ -1,5 +1,5 @@
 import { expect, test } from "vitest";
-import { ViewedSync } from "../src/github/ViewedSync";
+import { AppRestrictedError, ViewedSync } from "../src/github/ViewedSync";
 
 const pull = { owner: "o", repo: "r", number: 7 };
 const page = (nodes: [string, string][], endCursor: string | null) => ({
@@ -37,9 +37,9 @@ test("reads Viewed boxes across pages and writes only the ones that differ", asy
   expect(["a.rs", "b.rs", "c.rs"].map((path) => sync.isViewed(path))).toEqual([true, false, false]);
   expect(requests[1].variables.after).toBe("c1");
 
-  await sync.set("a.rs", true);
-  await sync.set("unknown.rs", true);
-  await sync.set("b.rs", true);
+  expect(await sync.set("a.rs", true)).toBe(false);
+  expect(await sync.set("unknown.rs", true)).toBe(false);
+  expect(await sync.set("b.rs", true)).toBe(true);
   expect(requests).toHaveLength(3);
   expect(requests[2].query).toContain("markFileAsViewed");
   expect(requests[2].variables).toEqual({ id: "PR_1", path: "b.rs" });
@@ -71,4 +71,26 @@ test("writes a file's Viewed changes one at a time, in order", async () => {
   pending.shift()!();
   await unmarked;
   expect(sync.isViewed("a.rs")).toBe(false);
+});
+
+test("tells an organization's OAuth app restriction apart from other failures", async () => {
+  const replies: unknown[] = [
+    page([["a.rs", "UNVIEWED"]], null),
+    {
+      data: { markFileAsViewed: null },
+      errors: [
+        {
+          type: "FORBIDDEN",
+          message: "the `o` organization has enabled OAuth App access restrictions",
+        },
+      ],
+    },
+    { errors: [{ type: "FORBIDDEN", message: "Resource not accessible" }] },
+  ];
+  const sync = await ViewedSync.load(pull, "t", undefined, async () =>
+    Response.json(replies.shift()),
+  );
+
+  await expect(sync.set("a.rs", true)).rejects.toBeInstanceOf(AppRestrictedError);
+  await expect(sync.set("a.rs", true)).rejects.not.toBeInstanceOf(AppRestrictedError);
 });

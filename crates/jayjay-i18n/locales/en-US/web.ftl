@@ -117,6 +117,7 @@ web-pull-sync-viewed = Sync reviewed files to GitHub’s Viewed checkboxes
 web-pull-sync-viewed-scope = Ticking Viewed boxes needs write access to your public repositories. This site uses it for nothing else.
 web-pull-syncing-viewed = Reviewed files sync to GitHub’s Viewed checkboxes
 web-pull-sync-viewed-failed = Couldn’t update Viewed checkboxes on GitHub.
+web-pull-sync-viewed-restricted = This organization restricts third-party apps, so Viewed checkboxes can’t be updated. Request access for JayJay Diff on GitHub.
 web-pull-commits = Commits
 web-pull-all-commits = All commits
 web-pull-stack = Stacked pull requests

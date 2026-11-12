@@ -117,6 +117,7 @@ web-pull-sync-viewed = 将已评审的文件同步到 GitHub 的“已查看”�
 web-pull-sync-viewed-scope = 勾选“已查看”复选框需要你公开仓库的写入权限。本站不会将它用于任何其他用途。
 web-pull-syncing-viewed = 已评审的文件会同步到 GitHub 的“已查看”复选框
 web-pull-sync-viewed-failed = 无法更新 GitHub 上的“已查看”复选框。
+web-pull-sync-viewed-restricted = 该组织限制了第三方应用，因此无法更新“已查看”复选框。请在 GitHub 上为 JayJay Diff 申请访问权限。
 web-pull-commits = 提交
 web-pull-all-commits = 所有提交
 web-pull-stack = 堆叠的 Pull Request

@@ -14,7 +14,9 @@ import {
   reviewPath,
   type ReviewRef,
 } from "../github/ReviewRef";
-import { ViewedSync } from "../github/ViewedSync";
+import { AppRestrictedError, ViewedSync } from "../github/ViewedSync";
+
+export type SyncFailure = "failed" | "restricted";
 
 export function usePullReview(client: LocalReviewClient, labels: Labels, pull: ReviewRef) {
   const path = reviewPath({ ...pull, commit: undefined });
@@ -29,11 +31,15 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
   const [needsSignIn, setNeedsSignIn] = useState(false);
   const [failure, setFailure] = useState<PullError>();
   const [syncing, setSyncing] = useState(() => GitHubSignIn.canWrite);
-  const [syncFailed, setSyncFailed] = useState(false);
+  const [syncFailure, setSyncFailure] = useState<SyncFailure>();
   const sync = useRef<ViewedSync | null>(null);
   // Set when the reader turns syncing on, so files they reviewed before then get checked on GitHub too.
   const pushReviewed = useRef(false);
   useEffect(() => () => prefetch.current?.abort(), []);
+
+  function syncFailed(error: unknown) {
+    setSyncFailure(error instanceof AppRestrictedError ? "restricted" : "failed");
+  }
 
   function signOut() {
     GitHubSignIn.signOut();
@@ -123,7 +129,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
           if (file)
             sync.current
               ?.set(file.path, file.review === "reviewed")
-              .catch(() => setSyncFailed(true));
+              .then((written) => written && setSyncFailure(undefined), syncFailed);
           return result;
         }),
       image: async (selection, side) =>
@@ -181,8 +187,8 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
             await latest.current.mutate({ kind: "setFile", file: index, reviewed: true });
         } else if (push && file.review === "reviewed") await loaded.set(file.path, true);
       }
-    })().catch(() => {
-      if (!controller.signal.aborted) setSyncFailed(true);
+    })().catch((error: unknown) => {
+      if (!controller.signal.aborted) syncFailed(error);
     });
     return () => controller.abort();
   }, [syncing, session]);
@@ -201,7 +207,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     // Retrying can't make a missing, private, or oversized review appear.
     retryable: failure !== "not-found" && failure !== "too-large",
     syncing,
-    syncFailed,
+    syncFailure,
     signOut,
     notes: () =>
       review.result && displayed
@@ -219,7 +225,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     },
     enableSync: () => {
       pushReviewed.current = true;
-      setSyncFailed(false);
+      setSyncFailure(undefined);
       setSignedIn(true);
       setSyncing(true);
     },
