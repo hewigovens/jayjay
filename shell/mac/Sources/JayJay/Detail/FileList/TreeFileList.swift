@@ -1,7 +1,7 @@
 import JayJayCore
 import SwiftUI
 
-struct TreeFileList<RowContent: View>: View {
+struct TreeFileList<RowContent: View, FolderMenu: View>: View {
     let filteredDiff: [DiffHunk]
     let treeEntries: [FileTreeEntry]
     let commitId: String
@@ -9,6 +9,7 @@ struct TreeFileList<RowContent: View>: View {
     let revealTrigger: UUID?
     @Binding var collapsedDirs: Set<String>
     let fileRowView: (DiffHunk) -> RowContent
+    @ViewBuilder let folderMenu: (String) -> FolderMenu
 
     var body: some View {
         ScrollViewReader { proxy in
@@ -58,7 +59,7 @@ struct TreeFileList<RowContent: View>: View {
                     .foregroundStyle(.tertiary)
                     .jayjayFont(9)
                     .frame(width: 10)
-                Image(systemName: "folder").foregroundStyle(.secondary).jayjayFont(11)
+                Image(systemName: "folder").foregroundStyle(.secondary).jayjayFont(13)
                 Text(entry.name).jayjayFont(12, weight: .medium)
                 Spacer(minLength: 0)
             }
@@ -66,6 +67,7 @@ struct TreeFileList<RowContent: View>: View {
             .padding(.leading, CGFloat(entry.depth) * 12)
         }
         .buttonStyle(.plain)
+        .contextMenu { folderMenu(entry.path) }
     }
 
     private func pruneCollapsedDirs() {

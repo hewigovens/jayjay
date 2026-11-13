@@ -161,7 +161,8 @@ extension ChangeDetailView {
             selectedPath: fileSelection.primary,
             revealTrigger: contextMenuRequest?.id,
             collapsedDirs: $collapsedDirs,
-            fileRowView: fileRowView
+            fileRowView: fileRowView,
+            folderMenu: folderContextMenu
         )
     }
 

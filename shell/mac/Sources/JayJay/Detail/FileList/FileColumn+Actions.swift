@@ -56,6 +56,14 @@ extension ChangeDetailView {
     }
 
     @ViewBuilder
+    func folderContextMenu(for folder: String) -> some View {
+        let paths = filteredDiff.filter { $0.isReviewable && $0.path.hasPrefix("\(folder)/") }.map(\.path)
+        if showsReviewControls, !paths.isEmpty {
+            Button(reviewActionLabel(for: paths)) { toggleReview(paths) }
+        }
+    }
+
+    @ViewBuilder
     private func singleFileActions(path: String, isSubmodulePlaceholder: Bool) -> some View {
         Button(Localized.Menu.openIn(app: appSettings.externalEditor.title)) {
             appSettings.openInEditor(filePath: path, repoPath: repoPath)
