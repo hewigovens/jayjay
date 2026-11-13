@@ -297,6 +297,10 @@ test.describe("phone portrait", () => {
     await page.getByRole("button", { name: "Add note: After 100", exact: true }).click();
     const draft = page.getByRole("textbox", { name: "Write a review note", exact: true });
     await draft.fill("Keep this draft");
+    // The loading placeholder is taller than the rendered file, which would read as a collapse.
+    await expect(
+      page.locator('.jj-diff-scroll[data-path="next.txt"] .jj-diff-cell').first(),
+    ).toBeVisible();
     await page.evaluate(() => {
       const state = window as unknown as { shortest: number };
       state.shortest = Infinity;
