@@ -22,4 +22,6 @@ For a JSON report, prefix a command with `HOTPATH_OUTPUT_FORMAT=json HOTPATH_OUT
 
 The uninstrumented elapsed time covers workload setup/validation and result disposal, not fixture preparation, profiler startup, or report generation, so it is not comparable to one instrumented function's timing.
 
-This measures the shared diff engine, not shell rendering or end-to-end interaction latency, and does not enable CPU sampling or CI thresholds.
+This measures the shared diff engine, not shell rendering or end-to-end interaction latency, and does not enable CPU sampling.
+
+In CI, `.github/workflows/hotpath-benchmark.yml` runs only on pushes to `main` affecting the diff engine, its dependencies, or benchmark configuration. One job builds once, then runs `warm`, `expand`, `wrap` and `sbs` sequentially, each natively and under Callgrind, and uploads each as a separate `jj-diff-<scenario>` series to [hotpath-cloud](https://hotpath.rs/cloud). Instruction counts and allocations are judged under `hotpath/policy.toml`; timings are shown but not judged. Pull requests do not run benchmarks or relay reports.
