@@ -5,10 +5,14 @@ import { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import { useDiffThemes } from "./hooks/useDiffThemes";
 import { Landing } from "./components/landing/Landing";
+import { PatchReview } from "./components/review/PatchReview";
 import { PullReview } from "./components/review/PullReview";
 import { parseReviewRef, reviewPath, type ReviewRef } from "./github/ReviewRef";
+import type { Patch } from "./Patch";
 import "@jayjay/review-web/styles.css";
 import "./style.css";
+
+const patchPath = "/patch";
 
 // Matches the static shell in index.html, so nothing jumps while the labels load.
 function Loading({ error }: { error: string }) {
@@ -33,6 +37,7 @@ function App() {
   const [labels, setLabels] = useState<Labels>();
   const [error, setError] = useState("");
   const [path, setPath] = useState(location.pathname);
+  const [opened, setOpened] = useState<Patch>();
 
   useEffect(() => {
     void loadLabels()
@@ -44,14 +49,17 @@ function App() {
   }, []);
 
   const pull = parseReviewRef(path);
+  // A patch lives only in this tab's memory, so a reload of its page has nothing to show.
+  const patch = path === patchPath ? opened : undefined;
   useEffect(() => {
     if (pull && reviewPath(pull) !== location.pathname)
       history.replaceState(null, "", reviewPath(pull));
+    if (path === patchPath && !opened) history.replaceState(null, "", "/");
   }, [path]);
   // The diff engine starts with the first review, so the landing page never downloads it.
   useEffect(() => {
-    if (pull && !client) setClient(new LocalReviewClient({ databaseName: "jayjay-pr" }));
-  }, [Boolean(pull)]);
+    if ((pull || patch) && !client) setClient(new LocalReviewClient({ databaseName: "jayjay-pr" }));
+  }, [Boolean(pull || patch)]);
   useEffect(() => () => client?.dispose(), [client]);
 
   const open = (next: ReviewRef) => {
@@ -61,7 +69,7 @@ function App() {
 
   if (!labels) return <Loading error={error} />;
   return (
-    <main className={pull ? "jayjay-review pull-page" : "jayjay-review"}>
+    <main className={pull || patch ? "jayjay-review pull-page" : "jayjay-review"}>
       {pull ? (
         client && (
           <PullReview
@@ -73,12 +81,27 @@ function App() {
             selectTheme={select}
           />
         )
+      ) : patch ? (
+        client && (
+          <PatchReview
+            client={client}
+            labels={labels}
+            patch={patch}
+            themes={themes}
+            selectTheme={select}
+          />
+        )
       ) : (
         <Landing
           key={path}
           labels={labels}
           onOpen={open}
-          unsupported={path === "/" ? undefined : path + location.search}
+          onOpenPatch={(next) => {
+            setOpened(next);
+            history.pushState(null, "", patchPath);
+            setPath(patchPath);
+          }}
+          unsupported={path === "/" || path === patchPath ? undefined : path + location.search}
         />
       )}
     </main>

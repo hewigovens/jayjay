@@ -103,6 +103,7 @@
   color: var(--jj-ink);
 }
 .landing-field button:focus-visible,
+.landing-patch button:focus-visible,
 .landing-samples a:focus-visible {
   outline: 2px solid var(--jj-accent);
   outline-offset: 2px;
@@ -138,14 +139,16 @@
   font: calc(14px * var(--jj-interface-scale, 1))/1.6 var(--landing-mono);
 }
 .landing-samples code,
-.landing-extension a,
+.landing-patch a,
+.landing-patch button,
 .landing-footer p a {
   text-decoration: underline;
   text-decoration-color: var(--jj-kbd-edge);
   text-underline-offset: 3px;
 }
 .landing-samples a:hover code,
-.landing-extension a:hover,
+.landing-patch a:hover,
+.landing-patch button:hover,
 .landing-footer p a:hover {
   text-decoration-color: currentColor;
 }
@@ -161,13 +164,26 @@
 .landing-error a {
   text-decoration: underline;
 }
-.landing-extension {
-  margin: 32px 0 0;
+.landing-patch {
+  margin: 12px 0 0;
   color: var(--jj-muted);
   font-size: calc(15px * var(--jj-interface-scale, 1));
 }
-.landing-extension a {
+.landing-patch a,
+.landing-patch button {
   color: var(--jj-ink);
+}
+.landing-patch button {
+  padding: 0;
+  border: 0;
+  border-radius: 4px;
+  background: none;
+  font: inherit;
+  cursor: pointer;
+}
+.landing-dropping {
+  outline: 2px dashed var(--jj-accent);
+  outline-offset: -8px;
 }
 .landing-section {
   padding-top: 72px;

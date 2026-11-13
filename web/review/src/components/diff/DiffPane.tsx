@@ -127,7 +127,8 @@ export function DiffPane({
 }: {
   view: DiffView;
   split: boolean;
-  showAll: () => void;
+  /** Omit when the view already holds every line the host has. */
+  showAll?: () => void;
   labels: Labels;
   empty?: string;
   review?: ReviewControls;
@@ -191,10 +192,17 @@ export function DiffPane({
   view.rows.slice(0, end).forEach((row, index) => {
     if (row.cells[0].style === "separator") {
       flush();
+      const hidden = row.cells[0].spans.map((span) => span.text).join("");
       blocks.push(
-        <button className="jj-context-row" key={index} onClick={showAll} title={labels.showAll}>
-          ↕ {row.cells[0].spans.map((span) => span.text).join("")} · {labels.showAll}
-        </button>,
+        showAll ? (
+          <button className="jj-context-row" key={index} onClick={showAll} title={labels.showAll}>
+            ↕ {hidden} · {labels.showAll}
+          </button>
+        ) : (
+          <div className="jj-context-row" key={index}>
+            ↕ {hidden}
+          </div>
+        ),
       );
       return;
     }

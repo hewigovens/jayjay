@@ -9,7 +9,7 @@ async function expectNoSidewaysScroll(page: Page) {
 
 test("the landing page fits a phone and starts no diff engine", async ({ page }) => {
   await page.goto("/");
-  await expect(page.getByRole("button", { name: "Open" })).toBeVisible();
+  await expect(page.getByRole("button", { name: "Open", exact: true })).toBeVisible();
   await expectNoSidewaysScroll(page);
   expect(page.workers()).toHaveLength(0);
 });

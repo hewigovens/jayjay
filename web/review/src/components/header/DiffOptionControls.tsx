@@ -7,10 +7,12 @@ export function DiffOptionControls({
   labels,
   options,
   configure,
+  allLines,
 }: {
   labels: Labels;
   options: DiffOptions;
   configure: (next: DiffOptions) => void;
+  allLines: boolean;
 }) {
   return (
     <>
@@ -26,15 +28,17 @@ export function DiffOptionControls({
           <span className="jj-label">{labels.ignoreWhitespace}</span>
         </label>
       )}
-      <label className={`jj-header-action ${options.showAll ? "jj-active" : ""}`}>
-        <input
-          type="checkbox"
-          checked={options.showAll}
-          onChange={(event) => configure({ ...options, showAll: event.target.checked })}
-        />
-        <AllLinesIcon />
-        <span className="jj-label">{labels.allLines}</span>
-      </label>
+      {allLines && (
+        <label className={`jj-header-action ${options.showAll ? "jj-active" : ""}`}>
+          <input
+            type="checkbox"
+            checked={options.showAll}
+            onChange={(event) => configure({ ...options, showAll: event.target.checked })}
+          />
+          <AllLinesIcon />
+          <span className="jj-label">{labels.allLines}</span>
+        </label>
+      )}
       <button
         className="jj-header-action"
         title={options.split ? labels.switchToUnified : labels.switchToSideBySide}

@@ -48,6 +48,7 @@ export function ReviewWorkspace({
   onRetry,
   notes = true,
   avatars = false,
+  allLines = true,
   fill = false,
   diffThemes,
 }: {
@@ -66,6 +67,8 @@ export function ReviewWorkspace({
   notes?: boolean;
   /** Looks up the author's avatar on Gravatar, GitHub, or GitLab, which shares their email hash or username with that service. */
   avatars?: boolean;
+  /** The All lines option; turn it off when files hold only the lines around their changes. */
+  allLines?: boolean;
   /** Fills the host's height edge to edge instead of sitting in a bordered card; the phone-width list still scrolls with the page. */
   fill?: boolean;
   /** Diff-only palettes with an optional appearance override. Omit to use the host CSS colors. */
@@ -206,7 +209,7 @@ export function ReviewWorkspace({
         {
           ...options,
           ignoreWhitespace: item.note.ignore_whitespace,
-          showAll: options.showAll || (item.status === "current" && !folded(entry)),
+          showAll: options.showAll || (allLines && item.status === "current" && !folded(entry)),
         },
         index,
       )
@@ -342,7 +345,7 @@ export function ReviewWorkspace({
         }
         view={data.diff}
         split={data.options.split}
-        showAll={() => configure({ ...options, showAll: true })}
+        showAll={allLines ? () => configure({ ...options, showAll: true }) : undefined}
         review={{
           states: data.groupStates,
           disabled: locked,
@@ -481,7 +484,12 @@ export function ReviewWorkspace({
                     : result.overview.counts.files}
                 </button>
                 <div className="jj-header-actions">
-                  <DiffOptionControls labels={labels} options={options} configure={configure} />
+                  <DiffOptionControls
+                    labels={labels}
+                    options={options}
+                    configure={configure}
+                    allLines={allLines}
+                  />
                 </div>
               </div>
             )}
@@ -492,7 +500,12 @@ export function ReviewWorkspace({
                 disabled={disabled}
                 toggleReviewed={() => toggleFiles([result.file])}
                 controls={
-                  <DiffOptionControls labels={labels} options={options} configure={configure} />
+                  <DiffOptionControls
+                    labels={labels}
+                    options={options}
+                    configure={configure}
+                    allLines={allLines}
+                  />
                 }
               />
             )}

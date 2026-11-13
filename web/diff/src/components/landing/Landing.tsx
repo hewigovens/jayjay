@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useRef, useState, type ClipboardEvent, type DragEvent } from "react";
 import { HideReviewedIcon, TreeIcon } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
 import { ArrowIcon, GitHubIcon, StackIcon, SyncIcon } from "../icons";
@@ -10,6 +10,7 @@ import {
   type ReviewRef,
 } from "../../github/ReviewRef";
 import { samples } from "../../github/samples";
+import { parsePatch, PatchError, type Patch } from "../../Patch";
 
 const repository = "https://github.com/hewigovens/jayjay";
 const app = "https://jayjay.hewig.dev";
@@ -19,10 +20,12 @@ const extension =
 export function Landing({
   labels,
   onOpen,
+  onOpenPatch,
   unsupported,
 }: {
   labels: Labels;
   onOpen: (pull: ReviewRef) => void;
+  onOpenPatch: (patch: Patch) => void;
   /** A forwarded path that names no review. */
   unsupported?: string;
 }) {
@@ -31,6 +34,36 @@ export function Landing({
     sent ? { input: sent, typed: false } : null,
   );
   const suggestion = rejected && threeDotComparison(rejected.input);
+  const [patchError, setPatchError] = useState<PatchError["code"]>();
+  const [dropping, setDropping] = useState(false);
+  const picker = useRef<HTMLInputElement>(null);
+
+  async function openPatch(text: string, title: string, name?: string) {
+    try {
+      onOpenPatch(await parsePatch(text, title, name));
+    } catch (error) {
+      if (!(error instanceof PatchError)) throw error;
+      setRejected(null);
+      setPatchError(error.code);
+    }
+  }
+
+  async function openFile(file: File | undefined) {
+    if (file) await openPatch(await file.text(), file.name, file.name);
+  }
+
+  function drop(event: DragEvent) {
+    event.preventDefault();
+    setDropping(false);
+    void openFile(event.dataTransfer.files[0]);
+  }
+
+  function paste(event: ClipboardEvent) {
+    const text = event.clipboardData.getData("text/plain");
+    if (!/^diff --git /m.test(text)) return;
+    event.preventDefault();
+    void openPatch(text, labels.pullPatchPasted);
+  }
   const points = [
     [["J", "K"], labels.pullHowMove, labels.pullHowMoveDetail],
     [["Space"], labels.pullHowMark, labels.pullHowMarkDetail],
@@ -41,7 +74,19 @@ export function Landing({
   ] as const;
 
   return (
-    <div className="landing">
+    <div
+      className={dropping ? "landing landing-dropping" : "landing"}
+      onDragOver={(event) => {
+        if (!event.dataTransfer.types.includes("Files")) return;
+        event.preventDefault();
+        setDropping(true);
+      }}
+      onDragLeave={(event) => {
+        if (!event.currentTarget.contains(event.relatedTarget as Node | null)) setDropping(false);
+      }}
+      onDrop={drop}
+      onPaste={paste}
+    >
       <div className="landing-wrap landing-hero">
         <h1>
           <img src="/favicon.svg" alt="" width="28" height="28" />
@@ -72,7 +117,10 @@ export function Landing({
             aria-invalid={Boolean(rejected)}
             aria-describedby={rejected ? "landing-error" : undefined}
             placeholder={`https://github.com${reviewPath(samples[1])}`}
-            onInput={() => setRejected(null)}
+            onInput={() => {
+              setRejected(null);
+              setPatchError(undefined);
+            }}
           />
           <button type="submit" aria-label={labels.pullOpen} title={labels.pullOpen}>
             <ArrowIcon size={20} />
@@ -106,6 +154,29 @@ export function Landing({
             )}
           </div>
         )}
+        <p className="landing-patch">
+          <button type="button" onClick={() => picker.current?.click()}>
+            {labels.pullPatchOpen}
+          </button>
+          {labels.pullPatchDetail}
+          <input
+            ref={picker}
+            type="file"
+            accept=".diff,.patch,.txt,text/*"
+            hidden
+            onChange={(event) => {
+              void openFile(event.currentTarget.files?.[0]);
+              event.currentTarget.value = "";
+            }}
+          />
+          <span aria-hidden="true"> · </span>
+          <a href={extension}>{labels.pullExtension}</a> {labels.pullExtensionDetail}
+        </p>
+        {patchError && (
+          <p className="landing-error" role="alert">
+            {labels[`patchError.${patchError}`]}
+          </p>
+        )}
         <section className="landing-samples" aria-labelledby="landing-samples">
           <h2 id="landing-samples">{labels.pullSamples}</h2>
           <ul>
@@ -126,9 +197,6 @@ export function Landing({
             ))}
           </ul>
         </section>
-        <p className="landing-extension">
-          <a href={extension}>{labels.pullExtension}</a> {labels.pullExtensionDetail}
-        </p>
       </div>
       <section className="landing-wrap landing-section" aria-labelledby="landing-how">
         <h2 id="landing-how">{labels.pullHow}</h2>

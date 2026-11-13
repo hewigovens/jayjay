@@ -14,8 +14,8 @@ export const samples: PullSample[] = [
   {
     owner: "jj-vcs",
     repo: "jj",
-    number: 10570,
-    title: "git push: don't validate commits that are on the remote as a tag",
+    number: 10654,
+    title: "Let terms cancel out in directory/file conflicts",
   },
   {
     owner: "zed-industries",
