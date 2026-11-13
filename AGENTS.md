@@ -54,7 +54,7 @@ A task is not done without proof matched to what changed, shown or linked in the
 
 Keep proof files outside source, in the session scratchpad.
 
-Before reporting done, check the loop's tail again, however long the session ran: proof for the change, `jj describe` for a meaningful diff, and the triage `status` summary in the report. A described change without a triage pass is not done.
+Before reporting done, check the loop's tail again, however long the session ran: proof for the change, `jj describe` for a meaningful diff, the triage `status` summary in the report, and the task-completion cleanup below. A described change without a triage pass is not done.
 
 Implement in a **sibling jj workspace**, including documentation changes. Use the workspace recipe below rather than git worktrees or harness-created hidden worktrees.
 
@@ -77,7 +77,9 @@ jj bookmark set review/<topic> -r @
 
 Keep changes awaiting review in the default workspace or a registered sibling workspace. Do not forget a sibling merely because the session ended. Once the task's sibling has nothing pending — its `@` is empty and its changes are in `main@origin` — forget it and remove its directory and its container volumes ([Testing](agents/testing.md#gpui-tests)) without asking. Otherwise forget a sibling only when the user explicitly requests cleanup. Never remove another task's sibling. Likewise, delete a bookmark this task created once its change has landed on `main@origin`, including when it was squash-merged under a new commit.
 
-At task completion, after the last repository-fixture tests and any workspace-directory removal, clean orphaned repo config:
+At task completion, remove what the task left outside its change. Quit the app instances it launched, each by PID ([Run & Debug](agents/run-debug.md)). Delete the scratch repositories, fixtures, logs, and other intermediate files it created in the session scratchpad or a temporary directory, keeping only the proof files the final report links to. Take temporary test or debug code back out of the workspace and confirm the diff holds none. Leave what the user or another task created.
+
+Then, after the last repository-fixture tests and any scratch-repository or workspace-directory removal, clean orphaned repo config:
 
 ```bash
 printf 'y\n' | JJ_INTERACTIVE=1 jj config gc
