@@ -1,0 +1,16 @@
+<h2>Review</h2>
+<ul>
+  <li>In the tree file list, right-clicking a folder offers <strong>Mark N Files as Reviewed</strong> for the files listed under it, or <strong>Unreviewed</strong> when they all are.</li>
+</ul>
+<h2>Diffs</h2>
+<ul>
+  <li>A changed <code>.zip</code>, <code>.jar</code>, <code>.aar</code>, <code>.apk</code> or similar archive shows one line per file with its checksum, size and path instead of a binary placeholder. Nothing is decompressed.</li>
+  <li>A notebook, table or other structured file whose other side cannot be read, such as one over the size limit, keeps that side’s placeholder instead of looking deleted.</li>
+</ul>
+<h2>Fixes</h2>
+<ul>
+  <li>Undo no longer reverts a working-copy snapshot, which deleted the edits the snapshot had recorded from disk. Deleting a file or ignoring one from the app stays undoable.</li>
+  <li>The detail pane stays steady across background refreshes: an unchanged change is no longer rebuilt, a compare or multi-selection whose changes are unchanged is kept, the toolbar spinner stays off, and the pull request badge updates without clearing first.</li>
+  <li>The command palette lists help topics in their own <strong>Help</strong> section after every other match.</li>
+  <li>The rating prompt does not appear in response to undo or redo.</li>
+</ul>
