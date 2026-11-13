@@ -41,7 +41,7 @@ fn bisect_between_selects_the_result_and_restores_the_working_copy(cx: &mut Test
 
     view.update_in(cx, |view, _, cx| {
         view.handle_change_row_click(feature_ix, Modifiers::default(), cx);
-        view.handle_change_row_click(initial_ix, Modifiers::secondary_key(), cx);
+        view.handle_change_row_click(initial_ix, Modifiers::secondary_key(cx), cx);
     });
     settle_visual(cx);
 

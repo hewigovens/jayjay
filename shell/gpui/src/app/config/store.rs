@@ -60,6 +60,7 @@ where
             cx.clear_key_bindings();
             cx.bind_keys(crate::app::actions::app_key_bindings(
                 &next.shortcut_overrides(),
+                cx,
             ));
         }
         store.config = Arc::new(next);

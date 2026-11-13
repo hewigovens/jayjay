@@ -16,7 +16,7 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
     view.update_in(cx, |view, _, cx| {
-        view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
+        view.handle_change_row_click(1, Modifiers::secondary_key(cx), cx);
     });
     settle_visual(cx);
     view.read_with(cx, |view, cx| {
@@ -83,7 +83,7 @@ fn two_revision_selection_falls_back_to_comparing_siblings_or_a_merge(cx: &mut T
         let [newest, oldest] = changes(&view, cx, [0, 1]);
         assert_eq!(oldest.parents.len(), if is_merge { 2 } else { 1 });
         view.update_in(cx, |view, _, cx| {
-            view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
+            view.handle_change_row_click(1, Modifiers::secondary_key(cx), cx);
         });
         settle_visual(cx);
 
@@ -157,7 +157,7 @@ fn indirect_visible_edge_disables_related_merge_selection(cx: &mut TestAppContex
                 },
             ]);
         });
-        view.handle_change_row_click(1, Modifiers::secondary_key(), cx);
+        view.handle_change_row_click(1, Modifiers::secondary_key(cx), cx);
     });
 
     view.read_with(cx, |view, cx| {
@@ -173,7 +173,7 @@ fn nonconsecutive_selection_compares_outermost_changes(cx: &mut TestAppContext) 
     let (view, cx) = open_fixture(&fixture, cx);
 
     view.update_in(cx, |view, _, cx| {
-        view.handle_change_row_click(2, Modifiers::secondary_key(), cx);
+        view.handle_change_row_click(2, Modifiers::secondary_key(cx), cx);
     });
     settle_visual(cx);
 
@@ -416,7 +416,7 @@ fn background_refresh_keeps_a_multi_selection_and_compare_until_a_member_is_rewr
 
     view.update_in(cx, |view, _, cx| {
         view.select_change(1, cx);
-        view.handle_change_row_click(2, Modifiers::secondary_key(), cx);
+        view.handle_change_row_click(2, Modifiers::secondary_key(cx), cx);
     });
     settle_visual(cx);
     let (rows, compare, files) = shown(cx);

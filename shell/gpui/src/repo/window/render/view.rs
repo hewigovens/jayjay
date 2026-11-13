@@ -220,8 +220,7 @@ impl Render for RepoWindow {
             } else {
                 pane.with_animation(
                     ("sidebar-slide", self.layout.sidebar_slide),
-                    Animation::new(crate::app::motion::animation_duration(cx, SIDEBAR_SLIDE))
-                        .with_easing(ease_in_out),
+                    Animation::new(SIDEBAR_SLIDE).with_easing(ease_in_out),
                     move |pane, delta| {
                         let shown = if closing { 1. - delta } else { delta };
                         pane.w(px(full * shown))

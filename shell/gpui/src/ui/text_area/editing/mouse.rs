@@ -1,4 +1,4 @@
-use gpui::{Context, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ScrollWheelEvent, Window, px};
+use gpui::{Context, MouseDownEvent, MouseMoveEvent, MouseUpEvent, ScrollEvent, Window, px};
 
 use super::super::{TextArea, TextAreaScrolled};
 
@@ -33,9 +33,9 @@ impl TextArea {
         }
     }
 
-    pub(crate) fn on_scroll_wheel(
+    pub(crate) fn on_scroll(
         &mut self,
-        event: &ScrollWheelEvent,
+        event: &ScrollEvent,
         window: &mut Window,
         cx: &mut Context<Self>,
     ) {

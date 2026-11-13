@@ -246,10 +246,7 @@ impl FlockView {
         })
         .with_animation(
             ("flock-replay", self.replay),
-            Animation::new(crate::app::motion::animation_duration(
-                cx,
-                Duration::from_millis(650),
-            )),
+            Animation::new(Duration::from_millis(650)),
             |card, delta| card.opacity(1. - 0.2 * (delta * std::f32::consts::PI).sin()),
         )
         .into_any_element()

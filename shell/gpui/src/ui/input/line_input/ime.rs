@@ -261,13 +261,13 @@ mod tests {
             assert_eq!(owner.edits, 2);
         });
 
-        let undo = KeyDownEvent {
-            keystroke: Keystroke::parse("secondary-z").unwrap(),
-            is_held: false,
-            prefer_character_input: false,
-        };
-        owner.update(cx, |owner, _| {
-            owner.input.edit.handle_key(&undo, || None);
+        owner.update(cx, |owner, cx| {
+            let undo = KeyDownEvent {
+                keystroke: Keystroke::parse_with_os("secondary-z", cx.platform_info().os).unwrap(),
+                is_held: false,
+                prefer_character_input: false,
+            };
+            owner.input.edit.handle_key(&undo, cx, || None);
             assert_eq!(owner.input.text(), "é ", "a composition undoes as one step");
         });
     }

@@ -31,7 +31,11 @@ impl RepoWindow {
         self.layout.sidebar_closing = hidden;
         if hidden {
             let slide = self.layout.sidebar_slide;
-            let duration = crate::app::motion::animation_duration(cx, SIDEBAR_SLIDE);
+            let duration = if cx.reduce_motion() {
+                Duration::ZERO
+            } else {
+                SIDEBAR_SLIDE
+            };
             cx.spawn(async move |this, cx| {
                 cx.background_executor().timer(duration).await;
                 let _ = this.update(cx, |view, cx| {

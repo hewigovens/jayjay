@@ -9,7 +9,6 @@ mod gpui_assets;
 pub mod key_caps;
 pub mod links;
 pub mod menus;
-pub mod motion;
 pub mod rating_prompt;
 pub mod recent_revsets;
 pub mod repositories;

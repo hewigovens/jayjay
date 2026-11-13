@@ -56,7 +56,7 @@ impl RepoWindow {
         {
             selection.replace(primary);
         }
-        selection.apply(click_from_modifiers(&modifiers), path, &ordered);
+        selection.apply(click_from_modifiers(&modifiers, cx), path, &ordered);
         if let Some(primary_ix) = selection
             .primary
             .as_deref()

@@ -77,6 +77,7 @@ pub struct OpenRecentRepository {
 
 pub fn app_key_bindings(
     overrides: &jayjay_core::shortcuts::ShortcutOverrides,
+    cx: &gpui::App,
 ) -> Vec<gpui::KeyBinding> {
     let mut bindings = Vec::new();
     for entry in EffectiveBindings::resolve(overrides, KeyPlatform::current()).entries() {
@@ -93,7 +94,7 @@ pub fn app_key_bindings(
                         }),
                         false,
                         None,
-                        &gpui::DummyKeyboardMapper,
+                        cx,
                     )
                     .expect("registry chord"),
                 );

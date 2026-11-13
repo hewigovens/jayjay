@@ -1,4 +1,4 @@
-use gpui::KeyDownEvent;
+use gpui::{App, KeyDownEvent};
 use jayjay_core::shortcuts::KeyPlatform;
 
 use super::LineEdit;
@@ -36,12 +36,13 @@ impl LineEdit {
     pub(crate) fn handle_key(
         &mut self,
         ev: &KeyDownEvent,
+        cx: &App,
         clipboard_text: impl FnOnce() -> Option<String>,
     ) -> LineEditKeyResult {
         let key = ev.keystroke.key.as_str();
         let m = &ev.keystroke.modifiers;
 
-        if m.secondary() && !m.alt && !(m.platform && m.control) {
+        if m.secondary(cx) && !m.alt && !(m.platform && m.control) {
             match key {
                 "a" => {
                     self.select_all();

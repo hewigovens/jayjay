@@ -90,7 +90,8 @@ fn batch_menu_offers_the_swiftui_action_set_on_the_working_copy(cx: &mut TestApp
     let (_fixture, view, cx) = open_repo(cx);
 
     click(&view, cx, "wip1.txt", Modifiers::default());
-    click(&view, cx, "wip2.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "wip2.txt", secondary);
 
     let labels = menu_labels(&view, cx, "wip1.txt");
     for expected in [
@@ -260,7 +261,8 @@ fn restore_returns_files_to_parent_content_and_clears_the_selection(cx: &mut Tes
     let (fixture, view, cx) = open_repo(cx);
 
     click(&view, cx, "README.md", Modifiers::default());
-    click(&view, cx, "feature.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "feature.txt", secondary);
     dispatch_menu_item(&view, cx, "README.md", "Restore 2 Files to Parent");
 
     assert_no_vm_error(&view, cx);
@@ -429,7 +431,8 @@ fn review_toggle_marks_and_unmarks_the_whole_selection(cx: &mut TestAppContext) 
     let (_fixture, view, cx) = open_repo(cx);
 
     click(&view, cx, "wip1.txt", Modifiers::default());
-    click(&view, cx, "wip2.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "wip2.txt", secondary);
     dispatch_menu_item(&view, cx, "wip1.txt", "Mark 2 Files as Reviewed");
 
     let (change_id, identities) = view.read_with(cx, |view, cx| {

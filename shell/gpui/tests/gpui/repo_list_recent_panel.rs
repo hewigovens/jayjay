@@ -16,6 +16,7 @@ fn recent_panel_toggles_and_keeps_the_pinned_column_at_welcome_width(cx: &mut Te
             .into_owned()
     };
     install_test_globals(cx);
+    cx.update(|cx| cx.set_reduce_motion(false));
     cx.update(RepoListWindow::open);
     let window = cx.windows().last().copied().expect("repo list window");
     let mut visual = VisualTestContext::from_window(window, cx);

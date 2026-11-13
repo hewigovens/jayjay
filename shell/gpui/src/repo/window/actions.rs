@@ -21,7 +21,7 @@ impl RepoWindow {
         modifiers: Modifiers,
         cx: &mut Context<Self>,
     ) {
-        match click_from_modifiers(&modifiers) {
+        match click_from_modifiers(&modifiers, cx) {
             SelectionClick::Replace => self.select_change(ix, cx),
             click => self.update_change_selection(ix, click, cx),
         }

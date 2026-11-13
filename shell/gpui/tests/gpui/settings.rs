@@ -1,7 +1,7 @@
 use crate::harness::{install_test_globals, open_fixture, select_file, settle_visual};
 use gpui::{
-    Modifiers, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point,
-    px, size,
+    Modifiers, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase, VisualTestContext, point, px,
+    size,
 };
 use jayjay_core::{HostLogin, RepoHost, TokenSource};
 use jayjay_gpui::app::actions::OpenAbout;
@@ -453,11 +453,11 @@ fn long_dropdowns_stay_inside_the_window_and_scroll_to_every_option(cx: &mut Tes
         "{panel:?} overflows the window"
     );
 
-    settings_cx.simulate_event(ScrollWheelEvent {
+    settings_cx.simulate_event(ScrollEvent {
         position: panel.center(),
         delta: ScrollDelta::Pixels(point(px(0.), px(-2000.))),
-        modifiers: Modifiers::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     settle_visual(&mut settings_cx);
     let last = settings_cx
@@ -762,11 +762,11 @@ fn scroll_settings(cx: &mut VisualTestContext, delta: f32) {
     let scroll = cx
         .debug_bounds("settings-scroll")
         .expect("settings scroll area");
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: scroll.center(),
         delta: ScrollDelta::Pixels(point(px(0.), px(delta))),
-        modifiers: Modifiers::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     settle_visual(cx);
 }

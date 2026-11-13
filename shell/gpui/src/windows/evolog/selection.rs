@@ -41,8 +41,11 @@ impl EvologView {
             return;
         };
         let order: Vec<_> = rows.iter().map(|row| row.start.to_string()).collect();
-        self.selection
-            .apply_pair(click_from_modifiers(&modifiers), index.to_string(), &order);
+        self.selection.apply_pair(
+            click_from_modifiers(&modifiers, cx),
+            index.to_string(),
+            &order,
+        );
         self.comparison_reversed = false;
         if row.is_collapsed_run() {
             self.expanded_runs.insert(row.start);

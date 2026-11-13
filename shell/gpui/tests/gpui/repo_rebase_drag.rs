@@ -70,7 +70,7 @@ fn dragging_part_of_a_selection_rebases_every_selected_change(cx: &mut TestAppCo
     let feature_row = row_of(&view, cx, &feature.commit_id.id);
     view.update(cx, |view, cx| {
         view.handle_change_row_click(hello_row, Modifiers::default(), cx);
-        view.handle_change_row_click(feature_row, Modifiers::secondary_key(), cx);
+        view.handle_change_row_click(feature_row, Modifiers::secondary_key(cx), cx);
     });
     settle_visual(cx);
 

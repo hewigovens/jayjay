@@ -413,7 +413,8 @@ fn header_split_button_targets_reviewed_files_not_the_row_selection(cx: &mut Tes
 
     // Multi-selecting both files without reviewing them must not surface the header's quick-split control.
     click(&view, cx, "wip1.txt", Modifiers::default());
-    click(&view, cx, "wip2.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "wip2.txt", secondary);
     assert!(
         cx.debug_bounds("file-split-reviewed").is_none(),
         "quick-split targets reviewed files, not the multi-selection"

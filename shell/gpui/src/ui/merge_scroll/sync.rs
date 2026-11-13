@@ -180,7 +180,7 @@ pub(crate) trait MergeSynchronized: Sized + 'static {
         cards: Vec<Stateful<Div>>,
         cx: &mut Context<Self>,
     ) -> Stateful<Div> {
-        merge_hunk_list_container(id, cards, &self.merge_sync().hunk_list.handle).on_scroll_wheel(
+        merge_hunk_list_container(id, cards, &self.merge_sync().hunk_list.handle).on_scroll(
             cx.listener(|_, _, window, cx| {
                 // The container's own scroll handler applies the delta during this dispatch.
                 cx.defer_in(window, |view, _, cx| view.merge_hunk_list_scrolled(cx));

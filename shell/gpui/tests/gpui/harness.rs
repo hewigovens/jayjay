@@ -4,8 +4,8 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use gpui::{
-    Entity, Focusable, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta,
-    ScrollWheelEvent, TestAppContext, TouchPhase, VisualTestContext, point, px,
+    Entity, Focusable, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta, ScrollEvent,
+    TestAppContext, TouchPhase, VisualTestContext, point, px,
 };
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::actions::ZoomIn;
@@ -74,11 +74,11 @@ pub(crate) fn drag_handle(cx: &mut VisualTestContext, handle: &'static str, dx: 
 }
 
 pub(crate) fn scroll_wheel(cx: &mut VisualTestContext, position: Point<Pixels>, dy: Pixels) {
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position,
         delta: ScrollDelta::Pixels(point(px(0.), dy)),
-        modifiers: Default::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     settle_visual(cx);
 }
@@ -192,6 +192,7 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
     cx.update(|cx| {
         cx.bind_keys(jayjay_gpui::app::actions::app_key_bindings(
             &Default::default(),
+            cx,
         ));
         let mut config = AppConfig::default();
         config.onboarding.completed = true;
@@ -201,7 +202,7 @@ pub(crate) fn install_test_globals(cx: &mut TestAppContext) {
             ..RatingPromptState::default()
         }));
         cx.set_global(Theme::light());
-        jayjay_gpui::app::motion::reduce_for_tests(cx);
+        cx.set_reduce_motion(true);
         let opened = Arc::new(Mutex::new(None));
         cx.set_global(OpenedUrl(opened.clone()));
         jayjay_gpui::app::links::install_url_opener(cx, move |url| {

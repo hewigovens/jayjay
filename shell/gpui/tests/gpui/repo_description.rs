@@ -3,8 +3,8 @@ use crate::harness::{
     settle_visual, zoom_to_max,
 };
 use gpui::{
-    Entity, Focusable, Modifiers, Pixels, ScrollDelta, ScrollWheelEvent, TestAppContext,
-    TouchPhase, VisualContext, VisualTestContext, point, px, size,
+    Entity, Focusable, Modifiers, Pixels, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase,
+    VisualContext, VisualTestContext, point, px, size,
 };
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::{FocusStop, RepoWindow};
@@ -58,11 +58,11 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     assert_eq!(viewport.size.height, line);
     let title_before = cx.debug_bounds("description-title").unwrap();
     let before = cx.debug_bounds("description-text").unwrap().origin.y;
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: viewport.center(),
         delta: ScrollDelta::Pixels(point(px(0.), px(-300.))),
-        modifiers: Default::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);
@@ -84,11 +84,11 @@ fn description_fits_content_and_scrolls_above_the_cap(cx: &mut TestAppContext) {
     assert!(diff_row.bottom() < px(1000.));
     let title_before = cx.debug_bounds("description-title").unwrap();
     let before = cx.debug_bounds("description-text").unwrap().origin.y;
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: expanded.center(),
         delta: ScrollDelta::Pixels(point(px(0.), px(-300.))),
-        modifiers: Default::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     settle_visual(cx);
     assert!(cx.debug_bounds("description-text").unwrap().origin.y < before);

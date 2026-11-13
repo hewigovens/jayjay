@@ -40,6 +40,18 @@ actions!(
 );
 
 pub fn key_bindings(mod_key: &str) -> Vec<KeyBinding> {
+    let [select_all, paste, cut, copy, undo, redo] = if mod_key == "cmd" {
+        ["cmd-a", "cmd-v", "cmd-x", "cmd-c", "cmd-z", "cmd-shift-z"]
+    } else {
+        [
+            "ctrl-a",
+            "ctrl-v",
+            "ctrl-x",
+            "ctrl-c",
+            "ctrl-z",
+            "ctrl-shift-z",
+        ]
+    };
     let mut bindings = vec![
         KeyBinding::new("backspace", Backspace, Some("TextArea")),
         KeyBinding::new("delete", Delete, Some("TextArea")),
@@ -63,16 +75,12 @@ pub fn key_bindings(mod_key: &str) -> Vec<KeyBinding> {
         KeyBinding::new("shift-end", SelectEnd, Some("TextArea")),
         KeyBinding::new("enter", Newline, Some("TextArea")),
         KeyBinding::new("shift-enter", Newline, Some("TextArea")),
-        KeyBinding::new(format!("{mod_key}-a").as_str(), SelectAll, Some("TextArea")),
-        KeyBinding::new(format!("{mod_key}-v").as_str(), Paste, Some("TextArea")),
-        KeyBinding::new(format!("{mod_key}-x").as_str(), Cut, Some("TextArea")),
-        KeyBinding::new(format!("{mod_key}-c").as_str(), Copy, Some("TextArea")),
-        KeyBinding::new(format!("{mod_key}-z").as_str(), Undo, Some("TextArea")),
-        KeyBinding::new(
-            format!("{mod_key}-shift-z").as_str(),
-            Redo,
-            Some("TextArea"),
-        ),
+        KeyBinding::new(select_all, SelectAll, Some("TextArea")),
+        KeyBinding::new(paste, Paste, Some("TextArea")),
+        KeyBinding::new(cut, Cut, Some("TextArea")),
+        KeyBinding::new(copy, Copy, Some("TextArea")),
+        KeyBinding::new(undo, Undo, Some("TextArea")),
+        KeyBinding::new(redo, Redo, Some("TextArea")),
     ];
     if KeyPlatform::current() == KeyPlatform::Windows {
         bindings.push(KeyBinding::new("ctrl-y", Redo, Some("TextArea")));

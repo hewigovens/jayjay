@@ -79,7 +79,8 @@ fn secondary_click_toggles_files_in_and_out_of_the_selection(cx: &mut TestAppCon
     click(&view, cx, "wip1.txt", Modifiers::default());
     assert_eq!(selection(&view, cx), ["wip1.txt"]);
 
-    click(&view, cx, "wip2.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "wip2.txt", secondary);
     assert_eq!(selection(&view, cx), ["wip1.txt", "wip2.txt"]);
     assert_eq!(
         primary_path(&view, cx).as_deref(),
@@ -87,7 +88,7 @@ fn secondary_click_toggles_files_in_and_out_of_the_selection(cx: &mut TestAppCon
         "toggle-add moves the primary selection to the added file"
     );
 
-    click(&view, cx, "wip1.txt", Modifiers::secondary_key());
+    click(&view, cx, "wip1.txt", secondary);
     assert_eq!(
         selection(&view, cx),
         ["wip2.txt"],
@@ -131,7 +132,8 @@ fn switching_changes_clears_the_multi_selection(cx: &mut TestAppContext) {
     let (_fixture, view, cx) = open_repo(cx);
 
     click(&view, cx, "wip1.txt", Modifiers::default());
-    click(&view, cx, "wip2.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "wip2.txt", secondary);
     assert_eq!(selection(&view, cx).len(), 2);
 
     let other_ix = view.read_with(cx, |view, cx| {
@@ -158,7 +160,8 @@ fn batch_menu_targets_the_whole_selection_and_drops_single_file_items(cx: &mut T
     let (_fixture, view, cx) = open_repo(cx);
 
     click(&view, cx, "wip1.txt", Modifiers::default());
-    click(&view, cx, "wip2.txt", Modifiers::secondary_key());
+    let secondary = cx.read(Modifiers::secondary_key);
+    click(&view, cx, "wip2.txt", secondary);
 
     let items = view.read_with(cx, |view, cx| view.build_file_context_menu("wip1.txt", cx));
     let labels = menu_labels(&items);

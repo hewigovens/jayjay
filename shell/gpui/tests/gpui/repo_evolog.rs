@@ -151,7 +151,7 @@ fn evolog_modifier_selection_diffs_at_most_two_versions(cx: &mut TestAppContext)
     evolog
         .update(&mut evolog_cx.cx, |view, _, cx| {
             view.select_version(2, Modifiers::default(), cx);
-            view.select_version(1, Modifiers::secondary_key(), cx);
+            view.select_version(1, Modifiers::secondary_key(cx), cx);
         })
         .expect("select versions");
     settle_visual(&mut evolog_cx);

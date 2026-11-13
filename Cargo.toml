@@ -5,7 +5,7 @@ resolver = "2"
 [workspace.package]
 version = "0.3.23"
 edition = "2024"
-rust-version = "1.97.1"
+rust-version = "1.98.1"
 license = "Apache-2.0"
 repository = "https://github.com/hewigovens/jayjay"
 
@@ -64,8 +64,8 @@ unic-langid = "0.9"
 sys-locale = "0.3"
 
 # One tag for both so a bump moves every gpui reference together
-gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.24.4" }
-gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.24.4" }
+gpui = { git = "https://github.com/zed-industries/zed", tag = "v1.28.1" }
+gpui_platform = { git = "https://github.com/zed-industries/zed", tag = "v1.28.1" }
 
 tree-sitter = "0.27"
 tree-sitter-highlight = "0.27"

@@ -2,8 +2,8 @@ use std::fs;
 
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{
-    Entity, Pixels, Point, ScrollDelta, ScrollWheelEvent, TestAppContext, TouchPhase,
-    VisualTestContext, point, px, size,
+    Entity, Pixels, Point, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase, VisualTestContext,
+    point, px, size,
 };
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
@@ -78,11 +78,11 @@ fn markdown_document_is_clamped_to_the_pane_width(cx: &mut TestAppContext) {
 }
 
 fn scroll_pane(cx: &mut VisualTestContext, at: Point<Pixels>) {
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: at,
         delta: ScrollDelta::Pixels(point(px(0.), px(-300.))),
-        modifiers: Default::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     settle_visual(cx);
 }

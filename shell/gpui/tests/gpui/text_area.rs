@@ -223,7 +223,7 @@ fn code_editor_highlights_markdown_structure(cx: &mut TestAppContext) {
 
 #[gpui::test]
 fn long_content_scrolls_caret_into_view_and_wheel_scrolls(cx: &mut TestAppContext) {
-    use gpui::{ScrollDelta, ScrollWheelEvent, TouchPhase, point, px, size};
+    use gpui::{ScrollDelta, ScrollEvent, TouchPhase, point, px, size};
 
     install_text_area_test_bindings(cx);
     let (input, cx) = cx.add_window_view(|_, cx| TextArea::new("", "Message", true, 80., cx));
@@ -243,11 +243,11 @@ fn long_content_scrolls_caret_into_view_and_wheel_scrolls(cx: &mut TestAppContex
     });
 
     let wheel = |cx: &mut VisualTestContext, dy: f32| {
-        cx.simulate_event(ScrollWheelEvent {
+        cx.simulate_event(ScrollEvent {
             position: point(px(50.), px(40.)),
             delta: ScrollDelta::Pixels(point(px(0.), px(dy))),
-            modifiers: Default::default(),
             touch_phase: TouchPhase::Moved,
+            ..Default::default()
         });
         cx.run_until_parked();
     };
@@ -343,9 +343,7 @@ fn text_area_reports_caret_bounds_while_composing(cx: &mut TestAppContext) {
 fn code_spacing_change_keeps_text_and_top_line_and_clicks_land_on_spaced_lines(
     cx: &mut TestAppContext,
 ) {
-    use gpui::{
-        Modifiers, MouseButton, ScrollDelta, ScrollWheelEvent, TouchPhase, point, px, size,
-    };
+    use gpui::{Modifiers, MouseButton, ScrollDelta, ScrollEvent, TouchPhase, point, px, size};
     use jayjay_gpui::app::config::AppConfig;
 
     install_text_area_test_bindings(cx);
@@ -356,11 +354,11 @@ fn code_spacing_change_keeps_text_and_top_line_and_clicks_land_on_spaced_lines(
     let cx: &mut VisualTestContext = cx;
     cx.simulate_resize(size(px(300.), px(220.)));
     cx.run_until_parked();
-    cx.simulate_event(ScrollWheelEvent {
+    cx.simulate_event(ScrollEvent {
         position: point(px(50.), px(40.)),
         delta: ScrollDelta::Pixels(point(px(0.), px(-180.))),
-        modifiers: Default::default(),
         touch_phase: TouchPhase::Moved,
+        ..Default::default()
     });
     cx.run_until_parked();
     input.read_with(cx, |input, _| assert_eq!(input.scroll_offset_y(), px(180.)));

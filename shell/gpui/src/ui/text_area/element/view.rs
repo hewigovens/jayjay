@@ -318,7 +318,7 @@ mod tests {
 
     #[gpui::test]
     fn scrolling_reuses_the_shaped_line_layout(cx: &mut gpui::TestAppContext) {
-        use gpui::{ScrollDelta, ScrollWheelEvent, TouchPhase, VisualTestContext, size};
+        use gpui::{ScrollDelta, ScrollEvent, TouchPhase, VisualTestContext, size};
 
         cx.update(|cx| cx.set_global(crate::app::theme::Theme::light()));
         let content = (0..1_000)
@@ -334,11 +334,11 @@ mod tests {
             input.last_layout.as_ref().unwrap().lines.clone()
         });
 
-        cx.simulate_event(ScrollWheelEvent {
+        cx.simulate_event(ScrollEvent {
             position: point(px(100.), px(100.)),
             delta: ScrollDelta::Pixels(point(px(0.), px(-180.))),
-            modifiers: Default::default(),
             touch_phase: TouchPhase::Moved,
+            ..Default::default()
         });
         cx.run_until_parked();
 
