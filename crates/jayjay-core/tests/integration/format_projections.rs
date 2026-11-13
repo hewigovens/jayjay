@@ -269,3 +269,40 @@ fn markdown_source_diff_is_not_projected() {
             .is_some_and(|content| content.contains("# Notes"))
     );
 }
+
+#[test]
+fn archive_projection_lists_files_and_leaves_non_archives_alone() {
+    let (fixture, repo) = fixture_repo();
+    fs::write(
+        fixture.path.join("pointer.jar"),
+        "version https://git-lfs.github.com/spec/v1\noid sha256:496634778d7b9bdbdb4b98b43a08a00ce8d794ed135a0cb1f345bf6febc5b9b4\nsize 742800\n",
+    )
+    .expect("write LFS pointer");
+    repo.refresh_working_copy().expect("snapshot");
+
+    let projected = hunk(&repo, FormatFixture::ARCHIVE);
+    let projection = projected.projection.as_ref().expect("projection metadata");
+    assert_eq!(projection.plugin_id, "archive");
+    assert_eq!(projection.virtual_path, "wrapper.jar.txt");
+    assert_eq!(
+        projected.new.content.as_deref(),
+        Some(
+            "bc5bfa58          88  META-INF/MANIFEST.MF\nbc747417          28  org/gradle/wrapper/Download.class\nc7bd4596          31  org/gradle/wrapper/GradleWrapperMain.class\n"
+        )
+    );
+
+    let detail = repo.show_summary("@").expect("show summary");
+    let listed = |path: &str| {
+        detail
+            .diff
+            .iter()
+            .find(|hunk| hunk.path == path)
+            .unwrap_or_else(|| panic!("summary contains {path}"))
+            .projection
+            .as_ref()
+            .map(|projection| projection.plugin_id.clone())
+    };
+    assert_eq!(listed(FormatFixture::ARCHIVE).as_deref(), Some("archive"));
+    assert_eq!(listed("pointer.jar"), None);
+    assert!(hunk(&repo, "pointer.jar").projection.is_none());
+}

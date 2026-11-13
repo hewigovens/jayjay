@@ -1,3 +1,4 @@
+mod archive;
 mod delimited;
 mod ipynb;
 mod markdown;

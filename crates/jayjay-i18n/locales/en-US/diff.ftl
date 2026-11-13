@@ -45,9 +45,11 @@ diff-restore-equal-widths = Restore equal widths
 diff-large-markdown-preview-truncated-to-keep = Large Markdown preview truncated to keep JayJay responsive.
 diff-no-differences = No differences
 diff-binary-property-list-on-disk-previewed = Binary property list on disk, previewed as XML
+diff-archive-on-disk-previewed = Archive on disk, previewed as a file listing
 diff-show-table-preview = Show table preview
 diff-show-notebook-preview = Show notebook preview
 diff-show-property-list-preview = Show property list preview
+diff-show-archive-file-listing = Show archive file listing
 diff-show-sarif-report-preview = Show SARIF report preview
 diff-show-rich-preview = Show rich preview
 diff-whitespace-only-changes-hidden-by-the = Whitespace-only changes hidden by the 'Ignore whitespace' setting.
@@ -99,6 +101,7 @@ diff-plugin-notebook = Notebook
 diff-plugin-delimited-table = Delimited table
 diff-plugin-property-list = Property list
 diff-plugin-sarif-report = SARIF report
+diff-plugin-archive = Archive
 diff-review-note-count =
     { $count ->
         [one] Review Note

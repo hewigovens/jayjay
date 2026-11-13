@@ -23,6 +23,7 @@ impl ProjectionView {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiffProjectionPlugin {
+    Archive,
     Delimited,
     Ipynb,
     Plist,
@@ -33,6 +34,7 @@ pub enum DiffProjectionPlugin {
 impl DiffProjectionPlugin {
     fn from_projection(projection: &DiffProjection) -> Self {
         match projection.plugin_id.as_str() {
+            "archive" => Self::Archive,
             "delimited" => Self::Delimited,
             "ipynb" => Self::Ipynb,
             "plist" => Self::Plist,
@@ -42,12 +44,12 @@ impl DiffProjectionPlugin {
     }
 
     fn opens_automatically(self) -> bool {
-        matches!(self, Self::Plist)
+        matches!(self, Self::Archive | Self::Plist)
     }
 
     fn default_view(self) -> ProjectionView {
         match self {
-            Self::Plist | Self::Ipynb => ProjectionView::Diff,
+            Self::Archive | Self::Plist | Self::Ipynb => ProjectionView::Diff,
             Self::Sarif => ProjectionView::Rendered,
             Self::Delimited | Self::Other => ProjectionView::Source,
         }
@@ -55,6 +57,7 @@ impl DiffProjectionPlugin {
 
     fn help(self) -> String {
         match self {
+            Self::Archive => jayjay_i18n::diff::show_archive_file_listing(),
             Self::Delimited => jayjay_i18n::diff::show_table_preview(),
             Self::Ipynb => jayjay_i18n::diff::show_notebook_preview(),
             Self::Plist => jayjay_i18n::diff::show_property_list_preview(),
@@ -91,13 +94,14 @@ pub fn shows_banner(projection: &DiffProjection, view: ProjectionView) -> bool {
 }
 
 pub fn title(projection: &DiffProjection) -> String {
-    if projection.diagnostics.is_empty() {
-        if DiffProjectionPlugin::from_projection(projection) == DiffProjectionPlugin::Plist {
-            return jayjay_i18n::diff::binary_property_list_on_disk_previewed();
-        }
-        return jayjay_i18n::diff::projection_preview(&projection.plugin_label);
+    if !projection.diagnostics.is_empty() {
+        return jayjay_i18n::diff::projection_preview_unavailable(&projection.plugin_label);
     }
-    jayjay_i18n::diff::projection_preview_unavailable(&projection.plugin_label)
+    match DiffProjectionPlugin::from_projection(projection) {
+        DiffProjectionPlugin::Archive => jayjay_i18n::diff::archive_on_disk_previewed(),
+        DiffProjectionPlugin::Plist => jayjay_i18n::diff::binary_property_list_on_disk_previewed(),
+        _ => jayjay_i18n::diff::projection_preview(&projection.plugin_label),
+    }
 }
 
 pub fn help(projection: Option<&DiffProjection>) -> String {
@@ -140,6 +144,12 @@ mod tests {
     fn formats_open_in_their_most_reviewable_view() {
         for (plugin, view, mode, source_toggle) in [
             (
+                "archive",
+                ProjectionView::Diff,
+                DiffProjectionMode::Processed,
+                false,
+            ),
+            (
                 "delimited",
                 ProjectionView::Source,
                 DiffProjectionMode::Raw,
@@ -170,7 +180,7 @@ mod tests {
             assert_eq!(shows_source_toggle(&projection), source_toggle, "{plugin}");
             assert_eq!(
                 opens_automatically(&projection),
-                plugin == "plist",
+                matches!(plugin, "archive" | "plist"),
                 "{plugin}"
             );
         }

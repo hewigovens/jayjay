@@ -20,6 +20,7 @@ impl FormatFixture {
     pub const XML_PLIST: &'static str = "PlainInfo.plist";
     pub const CSV: &'static str = "data.csv";
     pub const SARIF: &'static str = "results.sarif";
+    pub const ARCHIVE: &'static str = "wrapper.jar";
 
     pub fn build() -> Self {
         let linear = LinearFixture::build();
@@ -39,6 +40,7 @@ fn write_format_files(repo: &Path) {
     copy_fixture(FormatFixture::HTML, repo.join(FormatFixture::HTML));
     copy_fixture(FormatFixture::CSV, repo.join(FormatFixture::CSV));
     copy_fixture(FormatFixture::SARIF, repo.join(FormatFixture::SARIF));
+    copy_fixture(FormatFixture::ARCHIVE, repo.join(FormatFixture::ARCHIVE));
     copy_fixture(
         FormatFixture::XML_PLIST,
         repo.join(FormatFixture::XML_PLIST),

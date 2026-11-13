@@ -3,6 +3,7 @@ import JayJayCore
 extension DiffProjection {
     var iconName: String {
         switch pluginId {
+            case "archive": "archivebox"
             case "delimited": "tablecells"
             case "plist": "doc.text"
             case "sarif": "checklist"

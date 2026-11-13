@@ -1,16 +1,17 @@
 use crate::types::*;
 
 use super::{
-    FormatInput, ProjectionPair, delimited::DelimitedPlugin, ipynb::IpynbPlugin,
-    plist::PlistPlugin, sarif::SarifPlugin, types::DiffFormatPlugin,
+    FormatInput, ProjectionPair, archive::ArchivePlugin, delimited::DelimitedPlugin,
+    ipynb::IpynbPlugin, plist::PlistPlugin, sarif::SarifPlugin, types::DiffFormatPlugin,
 };
 
 static IPYNB: IpynbPlugin = IpynbPlugin;
 static PLIST: PlistPlugin = PlistPlugin;
 static DELIMITED: DelimitedPlugin = DelimitedPlugin;
 static SARIF: SarifPlugin = SarifPlugin;
+static ARCHIVE: ArchivePlugin = ArchivePlugin;
 
-static PLUGINS: [&'static dyn DiffFormatPlugin; 4] = [&IPYNB, &PLIST, &DELIMITED, &SARIF];
+static PLUGINS: [&'static dyn DiffFormatPlugin; 5] = [&IPYNB, &PLIST, &DELIMITED, &SARIF, &ARCHIVE];
 
 fn plugin_for_path(path: &str) -> Option<&'static dyn DiffFormatPlugin> {
     PLUGINS

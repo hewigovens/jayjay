@@ -202,7 +202,15 @@ fn project_materialized(
         new: new_bytes,
     };
     match formats::project_pair(input) {
-        Some(Ok(projected)) => Ok(Some(projected)),
+        Some(Ok(mut projected)) => {
+            projected.old_content = projected
+                .old_content
+                .or_else(|| old_materialized.raw_string());
+            projected.new_content = projected
+                .new_content
+                .or_else(|| new_materialized.raw_string());
+            Ok(Some(projected))
+        }
         Some(Err(err)) => {
             let mut projection = formats::projection_for_input(input, DiffProjectionMode::Raw);
             if let Some(projection) = projection.as_mut() {
@@ -304,7 +312,27 @@ fn normalize_git_lfs_content(
 
 #[cfg(test)]
 mod tests {
-    use super::normalize_git_lfs_content;
+    use super::super::materialize::MaterializedContent;
+    use super::{normalize_git_lfs_content, project_materialized};
+
+    #[test]
+    fn projection_keeps_the_placeholder_of_a_side_it_cannot_read() {
+        let old = MaterializedContent::File(b"name,value\na,1\n".to_vec());
+        let new = MaterializedContent::Display("<file too large to display>".to_owned());
+
+        let projected = project_materialized("data.csv", &old, &new)
+            .expect("project")
+            .expect("projected pair");
+        assert!(
+            projected
+                .old_content
+                .is_some_and(|table| table.starts_with("| name"))
+        );
+        assert_eq!(
+            projected.new_content.as_deref(),
+            Some("<file too large to display>")
+        );
+    }
 
     #[test]
     fn normalizes_pointer_against_binary_placeholder() {

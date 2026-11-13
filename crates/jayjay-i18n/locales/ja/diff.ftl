@@ -45,9 +45,11 @@ diff-restore-equal-widths = 同じ幅に戻す
 diff-large-markdown-preview-truncated-to-keep = JayJay の応答性を保つため、大きな Markdown のプレビューを途中で省略しました。
 diff-no-differences = 差分はありません
 diff-binary-property-list-on-disk-previewed = ディスク上はバイナリのプロパティ リストです。XML としてプレビューしています
+diff-archive-on-disk-previewed = ディスク上はアーカイブです。ファイル一覧としてプレビューしています
 diff-show-table-preview = 表のプレビューを表示
 diff-show-notebook-preview = ノートブックのプレビューを表示
 diff-show-property-list-preview = プロパティ リストのプレビューを表示
+diff-show-archive-file-listing = アーカイブのファイル一覧を表示
 diff-show-sarif-report-preview = SARIF レポートのプレビューを表示
 diff-show-rich-preview = リッチ プレビューを表示
 diff-whitespace-only-changes-hidden-by-the = 「空白の変更を無視」設定により、空白のみの変更は非表示になっています。
@@ -84,6 +86,7 @@ diff-plugin-notebook = ノートブック
 diff-plugin-delimited-table = 区切り形式の表
 diff-plugin-property-list = プロパティ リスト
 diff-plugin-sarif-report = SARIF レポート
+diff-plugin-archive = アーカイブ
 diff-review-note-count =
     { $count ->
         [1] レビュー メモ
