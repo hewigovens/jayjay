@@ -46,7 +46,7 @@ export const HideReviewedIcon = ({ size }: { size?: number }) => (
 export const FolderIcon = () => (
   <Icon
     className="jj-folder-icon"
-    size={12}
+    size={18}
     d="M1.75 4.25c0-.55.45-1 1-1h3.2l1.5 1.5h5.8c.55 0 1 .45 1 1v6.5c0 .55-.45 1-1 1H2.75c-.55 0-1-.45-1-1v-8Z"
   />
 );

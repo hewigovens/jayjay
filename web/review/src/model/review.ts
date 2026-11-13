@@ -37,6 +37,10 @@ export interface AvatarSource {
 }
 
 export type ReviewState = "reviewed" | "unreviewed" | "partial" | "changed_since_review";
+/** A folder's state over the files listed under it: theirs when they agree, otherwise partial. */
+export function folderReview(files: ReviewState[]): ReviewState {
+  return files.every((state) => state === files[0]) ? files[0] : "partial";
+}
 export type FileKind = "added" | "modified" | "removed" | "renamed" | "copied";
 export type ImageSide = "old" | "new";
 
@@ -145,7 +149,7 @@ export interface ReviewResult {
 }
 
 export type ReviewAction =
-  | { kind: "setFile"; file: number; reviewed: boolean }
+  | { kind: "setFiles"; files: number[]; reviewed: boolean }
   | { kind: "setGroup"; file: number; group: number; reviewed: boolean; ignoreWhitespace: boolean }
   | {
       kind: "addNote";

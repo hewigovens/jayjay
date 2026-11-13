@@ -121,15 +121,17 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
         }),
       mutate: (selection, action) =>
         localized(async () => {
-          if ("file" in action) await supply(action.file);
+          const files =
+            action.kind === "setFiles" ? action.files : "file" in action ? [action.file] : [];
+          await Promise.all(files.map(supply));
           const result = await client.mutate(selection, action);
-          const file =
-            (action.kind === "setFile" || action.kind === "setGroup") &&
-            result.overview.files[action.file];
-          if (file)
-            sync.current
-              ?.set(file.path, file.review === "reviewed")
-              .then((written) => written && setSyncFailure(undefined), syncFailed);
+          if (action.kind === "setFiles" || action.kind === "setGroup")
+            for (const index of files) {
+              const file = result.overview.files[index];
+              sync.current
+                ?.set(file.path, file.review === "reviewed")
+                .then((written) => written && setSyncFailure(undefined), syncFailed);
+            }
           return result;
         }),
       image: async (selection, side) =>
@@ -184,7 +186,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
         if (controller.signal.aborted) return;
         if (loaded.isViewed(file.path)) {
           if (file.review !== "reviewed")
-            await latest.current.mutate({ kind: "setFile", file: index, reviewed: true });
+            await latest.current.mutate({ kind: "setFiles", files: [index], reviewed: true });
         } else if (push && file.review === "reviewed") await loaded.set(file.path, true);
       }
     })().catch((error: unknown) => {

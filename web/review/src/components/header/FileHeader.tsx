@@ -64,7 +64,13 @@ export function FileHeader({
             {controls}
           </>
         ) : (
-          <ReviewToggle file={file} labels={labels} disabled={disabled} toggle={toggleReviewed} />
+          <ReviewToggle
+            review={file.review}
+            path={file.path}
+            labels={labels}
+            disabled={disabled}
+            toggle={toggleReviewed}
+          />
         )}
       </div>
     </div>

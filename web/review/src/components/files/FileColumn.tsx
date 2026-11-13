@@ -15,7 +15,7 @@ import { MiddlePath } from "./MiddlePath";
 import { ReviewToggle } from "./ReviewToggle";
 import { ToolButton } from "../ToolButton";
 import { toggled } from "../toggled";
-import type { FileSummary, Overview } from "../../model/review";
+import { folderReview, type FileSummary, type Overview } from "../../model/review";
 
 function folders(path: string): string[] {
   const result: string[] = [];
@@ -44,7 +44,7 @@ function FileRow({
   disabled: boolean;
   labels: Labels;
   select: (index: number) => void;
-  toggle: (index: number) => void;
+  toggle: (files: number[]) => void;
   mark: (index: number, row: HTMLElement) => void;
 }) {
   const kind = file.kind ?? "modified";
@@ -54,7 +54,13 @@ function FileRow({
       className={`jj-file-row jj-${file.review} ${selected === index ? "jj-selected" : ""}`}
       style={{ "--jj-row-indent": `${8 + depth * 12}px` } as CSSProperties}
     >
-      <ReviewToggle file={file} labels={labels} disabled={disabled} toggle={() => toggle(index)} />
+      <ReviewToggle
+        review={file.review}
+        path={file.path}
+        labels={labels}
+        disabled={disabled}
+        toggle={() => toggle([index])}
+      />
       {/* Safari leaves a clicked button unfocused, and Space needs it focused. */}
       <button
         className="jj-file-select"
@@ -130,7 +136,7 @@ export function FileColumn({
   disabled: boolean;
   labels: Labels;
   select: (index: number) => void;
-  toggle: (index: number) => void;
+  toggle: (files: number[]) => void;
   filter: FileFilter;
   setFilter: (filter: FileFilter) => void;
   onShowShortcuts?: () => void;
@@ -194,7 +200,7 @@ export function FileColumn({
       const at = rows.indexOf(row);
       (rows[at + 1] ?? rows[at - 1] ?? list)?.focus();
     }
-    toggle(index);
+    toggle([index]);
   }
 
   return (
@@ -282,18 +288,35 @@ export function FileColumn({
               if (entry.file === null) {
                 if (!shownFolders.has(entry.path)) return null;
                 const open = !collapsed.has(entry.path);
+                const inside = [...visible].filter((index) =>
+                  overview.files[index].path.startsWith(`${entry.path}/`),
+                );
                 return (
-                  <button
+                  <div
                     className="jj-folder-row"
                     key={`dir:${entry.path}`}
-                    style={{ "--jj-row-indent": `${10 + entry.depth * 12}px` } as CSSProperties}
-                    aria-expanded={open}
-                    onClick={() => folder(entry.path)}
+                    style={{ "--jj-row-indent": `${6 + entry.depth * 12}px` } as CSSProperties}
                   >
-                    <ChevronIcon open={open} />
-                    <FolderIcon />
-                    <span>{entry.name}</span>
-                  </button>
+                    {/* The review toggle sits between two halves of the folder button; this half is for the pointer only. */}
+                    <button tabIndex={-1} aria-hidden="true" onClick={() => folder(entry.path)}>
+                      <ChevronIcon open={open} />
+                    </button>
+                    <ReviewToggle
+                      review={folderReview(inside.map((index) => overview.files[index].review))}
+                      path={entry.path}
+                      labels={labels}
+                      disabled={disabled}
+                      toggle={() => toggle(inside)}
+                    />
+                    <button
+                      className="jj-folder-name"
+                      aria-expanded={open}
+                      onClick={() => folder(entry.path)}
+                    >
+                      <FolderIcon />
+                      <span>{entry.name}</span>
+                    </button>
+                  </div>
                 );
               }
               return visible.has(entry.file) ? (

@@ -61,13 +61,16 @@ fn revised_content_invalidates_marks_and_notes_across_serialized_sessions() {
     let first = session("v1", "different\n");
     let marked = first
         .mutate(
-            r#"{"kind":"setFile","file":0,"reviewed":true}"#,
+            r#"{"kind":"setFiles","files":[0],"reviewed":true}"#,
             r#"{"reviewed":{},"notes":[]}"#,
         )
         .unwrap();
     assert_eq!(
         first
-            .mutate(r#"{"kind":"setFile","file":0,"reviewed":true}"#, &marked)
+            .mutate(
+                r#"{"kind":"setFiles","files":[0],"reviewed":true}"#,
+                &marked
+            )
             .unwrap(),
         marked
     );
@@ -110,7 +113,7 @@ fn counts_use_the_catalog_plural_for_each_number() {
     assert_eq!(counts["files"], "1 file");
     assert_eq!(counts["filtered"], json!(["0 of 1 files", "1 of 1 files"]));
     let marked = session
-        .mutate(r#"{"kind":"setFile","file":0,"reviewed":true}"#, empty)
+        .mutate(r#"{"kind":"setFiles","files":[0],"reviewed":true}"#, empty)
         .unwrap();
     assert_eq!(
         session.describe(&marked).unwrap()["counts"]["reviewed"],
@@ -132,7 +135,7 @@ fn files_load_on_demand_and_keep_their_review_state() {
     let empty = r#"{"reviewed":{},"notes":[]}"#;
     let first = session("v1", "foo\nbaz\n");
     let state = first
-        .mutate(r#"{"kind":"setFile","file":0,"reviewed":true}"#, empty)
+        .mutate(r#"{"kind":"setFiles","files":[0],"reviewed":true}"#, empty)
         .unwrap();
     let state = first.mutate(r#"{"kind":"addNote","file":0,"side":"new","line":2,"body":"Check","ignoreWhitespace":false}"#, &state).unwrap();
 
@@ -155,7 +158,10 @@ fn files_load_on_demand_and_keep_their_review_state() {
     assert!(session.file_state(0, &state, false).is_err());
     assert!(
         session
-            .mutate(r#"{"kind":"setFile","file":0,"reviewed":false}"#, &state)
+            .mutate(
+                r#"{"kind":"setFiles","files":[0],"reviewed":false}"#,
+                &state
+            )
             .is_err()
     );
 
@@ -189,4 +195,27 @@ fn notices_name_what_the_text_diff_leaves_out() {
         "File mode changed from 100644 to 100755."
     );
     assert_eq!(files[2]["notice"], Value::Null);
+}
+
+#[test]
+fn one_action_marks_several_files() {
+    let file = |path: &str| json!({"path": path, "reviewIdentity": "v1", "before": "foo\n", "after": "bar\n"});
+    let session = ReviewSession::parse(
+        &json!({
+            "schemaVersion": 1, "repositoryId": "repo", "changeId": "change", "title": "Review",
+            "files": [file("src/a.txt"), file("src/b.txt"), file("top.txt")]
+        })
+        .to_string(),
+    )
+    .unwrap();
+    let state = session
+        .mutate(
+            r#"{"kind":"setFiles","files":[0,1],"reviewed":true}"#,
+            r#"{"reviewed":{},"notes":[]}"#,
+        )
+        .unwrap();
+    let files = session.describe(&state).unwrap()["files"].clone();
+    assert_eq!(files[0]["review"], "reviewed");
+    assert_eq!(files[1]["review"], "reviewed");
+    assert_eq!(files[2]["review"], "unreviewed");
 }

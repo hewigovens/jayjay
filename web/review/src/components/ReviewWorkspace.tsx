@@ -218,27 +218,27 @@ export function ReviewWorkspace({
   const update = (id: string, body: string) => mutate({ kind: "updateNote", id, body });
   const resolve = (id: string) => void mutate({ kind: "resolveNote", id });
   // The compact list re-renders the marked file's section; the wide layout re-renders the open file.
-  async function toggleFile(index: number) {
-    if (!result) return;
+  async function toggleFiles(indices: number[]) {
+    if (!result || !indices.length) return;
     const { files } = result.overview;
-    const marking = files[index].review !== "reviewed";
+    const marking = indices.some((index) => files[index].review !== "reviewed");
     // The rendered rows give display order; the compact list has none and stays put.
     const order = [
       ...(columns.current?.querySelectorAll<HTMLButtonElement>(".jj-file-select") ?? []),
     ].map((row) => Number(row.dataset.file));
     if (
       !(await mutate(
-        { kind: "setFile", file: index, reviewed: marking },
-        compact ? index : undefined,
+        { kind: "setFiles", files: indices, reviewed: marking },
+        compact ? indices[0] : undefined,
       )) ||
       !marking ||
-      index !== selected ||
+      !indices.includes(selected) ||
       target
     )
       return;
-    const position = order.indexOf(index);
+    const position = order.indexOf(selected);
     const next = [...order.slice(position + 1), ...order.slice(0, Math.max(position, 0))].find(
-      (file) => files[file].review !== "reviewed",
+      (file) => files[file].review !== "reviewed" && !indices.includes(file),
     );
     columns.current
       ?.querySelector<HTMLButtonElement>(`.jj-file-select[data-file="${next}"]`)
@@ -439,7 +439,7 @@ export function ReviewWorkspace({
               labels={labels}
               select={select}
               notes={notes}
-              toggle={toggleFile}
+              toggle={toggleFiles}
               filter={filter}
               setFilter={setFilter}
             />
@@ -490,7 +490,7 @@ export function ReviewWorkspace({
                 file={file}
                 labels={labels}
                 disabled={disabled}
-                toggleReviewed={() => toggleFile(result.file)}
+                toggleReviewed={() => toggleFiles([result.file])}
                 controls={
                   <DiffOptionControls labels={labels} options={options} configure={configure} />
                 }
@@ -530,7 +530,7 @@ export function ReviewWorkspace({
                         file={entry}
                         labels={labels}
                         disabled={disabled}
-                        toggleReviewed={() => toggleFile(index)}
+                        toggleReviewed={() => toggleFiles([index])}
                       />
                       <div
                         className="jj-diff-scroll"
@@ -605,7 +605,7 @@ export function ReviewWorkspace({
                 setDrawer(false);
               }}
               notes={notes}
-              toggle={toggleFile}
+              toggle={toggleFiles}
               filter={filter}
               setFilter={setFilter}
             />

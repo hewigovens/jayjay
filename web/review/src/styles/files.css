@@ -39,21 +39,35 @@
   display: flex;
   align-items: center;
   gap: 4px;
-  width: 100%;
   min-height: 28px;
-  text-align: left;
-  border: 0;
-  border-radius: 6px;
-  background: transparent;
   color: var(--jj-ink);
   font-size: calc(14px * var(--jj-interface-scale, 1));
   font-weight: 500;
-  padding-block: 4px;
 }
-:where(.jayjay-review) .jj-folder-row .jj-icon {
+:where(.jayjay-review) .jj-folder-row > button {
+  display: flex;
+  align-items: center;
+  align-self: stretch;
+  gap: 4px;
+  min-width: 0;
+  padding: 4px 0;
+  border: 0;
+  border-radius: 6px;
+  background: transparent;
+  color: inherit;
+  font-size: inherit;
+  text-align: left;
+}
+:where(.jayjay-review) .jj-folder-row > button:hover {
+  background: transparent;
+}
+:where(.jayjay-review) .jj-folder-name {
+  flex: 1;
+}
+:where(.jayjay-review) .jj-folder-row > button .jj-icon {
   color: var(--jj-muted);
 }
-:where(.jayjay-review) .jj-folder-row .jj-folder-icon {
+:where(.jayjay-review) .jj-folder-row > button .jj-folder-icon {
   color: light-dark(#2563eb, #7cb4ff);
 }
 :where(.jayjay-review) .jj-folder-row span {

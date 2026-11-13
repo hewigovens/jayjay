@@ -49,8 +49,8 @@ fn file_icon(path: &str) -> Value {
     rename_all_fields = "camelCase"
 )]
 enum ReviewAction {
-    SetFile {
-        file: usize,
+    SetFiles {
+        files: Vec<usize>,
         reviewed: bool,
     },
     SetGroup {
@@ -236,17 +236,19 @@ impl ReviewSession {
         let mut store = Self::store(state)?;
         let change_id = &self.bundle.change_id;
         match action {
-            ReviewAction::SetFile { file, reviewed } => {
-                let Loaded { file, snapshot, .. } = self.loaded(file)?;
-                if reviewed {
-                    store.mark_reviewed_snapshot(
-                        change_id,
-                        &file.path,
-                        &file.review_identity,
-                        Some(snapshot),
-                    );
-                } else {
-                    store.mark_unreviewed(change_id, &file.path);
+            ReviewAction::SetFiles { files, reviewed } => {
+                for file in files {
+                    let Loaded { file, snapshot, .. } = self.loaded(file)?;
+                    if reviewed {
+                        store.mark_reviewed_snapshot(
+                            change_id,
+                            &file.path,
+                            &file.review_identity,
+                            Some(snapshot),
+                        );
+                    } else {
+                        store.mark_unreviewed(change_id, &file.path);
+                    }
                 }
             }
             ReviewAction::SetGroup {

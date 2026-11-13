@@ -25,7 +25,7 @@ export function useReview(backend: ReviewBackend) {
   // Opens, imports, and mutations commit in the backend even when superseded, so only renders may replace an in-flight operation.
   const committing = useRef(false);
 
-  // Renders may be superseded; mutations touch one file; anything else (open, import, undo) can change every file's review state.
+  // Renders may be superseded; mutations touch one file; anything else (open, import, undo, marking several files) can change every file's review state.
   async function run(operation: Operation, kind: RunKind = "replace"): Promise<boolean> {
     const render = kind === "render";
     if (committing.current) return false;
@@ -117,7 +117,7 @@ export function useReview(backend: ReviewBackend) {
           action,
           signal,
         ),
-      "mutate",
+      action.kind === "setFiles" && action.files.length > 1 ? "replace" : "mutate",
     );
   }
 

@@ -1,5 +1,5 @@
 import { expect, test } from "@playwright/test";
-import { manifest } from "./pullFixture";
+import { manifest, sha } from "./pullFixture";
 
 test("files without a text diff say why", async ({ page }) => {
   const files = [
@@ -31,4 +31,32 @@ test("files without a text diff say why", async ({ page }) => {
   );
   await pane("pkg/__init__.py").scrollIntoViewIfNeeded();
   await expect(pane("pkg/__init__.py")).toHaveText("This file is empty.");
+});
+
+test("a folder's checkbox reviews every file under it", async ({ page }) => {
+  const files = ["src/a.rs", "src/b.rs", "docs/c.md"].map((path, index) => ({
+    path,
+    kind: "modified",
+    added: 1,
+    removed: 1,
+    sha: `c${index}`,
+    oldSha: `d${index}`,
+  }));
+  await page.route("**/api/octo/demo/pull/7", (route) =>
+    route.fulfill({ json: { ...manifest, files } }),
+  );
+  await page.route("https://raw.githubusercontent.com/**", (route) =>
+    route.fulfill({ body: route.request().url().includes(sha("a")) ? "before\n" : "after\n" }),
+  );
+  await page.goto("/octo/demo/pull/7");
+  const mark = (path: string) =>
+    page
+      .locator(".jj-file-column")
+      .getByRole("checkbox", { name: `Mark reviewed: ${path}`, exact: true });
+  await page.getByRole("button", { name: "3 files", exact: true }).click();
+  await mark("src").click();
+  await expect(mark("src/a.rs")).toBeChecked();
+  await expect(mark("src/b.rs")).toBeChecked();
+  await expect(mark("src")).toBeChecked();
+  await expect(mark("docs/c.md")).not.toBeChecked();
 });

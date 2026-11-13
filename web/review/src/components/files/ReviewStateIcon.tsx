@@ -23,7 +23,7 @@ export function ReviewStateIcon({ state, size = 16 }: { state: ReviewState; size
         <path
           className="jj-review-check"
           d="M20 6 9 17l-5-5"
-          transform="translate(6 6) scale(0.5)"
+          transform="translate(6 7) scale(0.5)"
           fill="none"
           stroke="currentColor"
           strokeWidth="6"

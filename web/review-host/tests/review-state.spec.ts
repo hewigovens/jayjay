@@ -101,3 +101,34 @@ test("rejects malformed UTF-8 and empty imports without replacing review data", 
       ).toBeChecked();
     }
 });
+
+test("a folder's checkbox marks the files under it and follows their state", async ({ page }) => {
+  await page.goto("/");
+  await ready(page);
+  const files = page.locator(".jj-file-column");
+  const mark = (path: string) =>
+    files.getByRole("checkbox", { name: `Mark reviewed: ${path}`, exact: true });
+  await mark("src").click();
+  await ready(page);
+  await expect(mark("src")).toBeChecked();
+  await expect(mark("src/greeting.rs")).toBeChecked();
+  await expect(mark("src/web/session.ts")).toBeChecked();
+  await expect(mark("config/settings.json")).not.toBeChecked();
+
+  await mark("src/web/session.ts").click();
+  await ready(page);
+  await expect(mark("src")).toHaveJSProperty("indeterminate", true);
+  await page.getByRole("button", { name: "Filter files", exact: true }).click();
+  const filter = page.getByRole("searchbox", { name: "Filter files", exact: true });
+  await filter.fill("greeting");
+  await expect(mark("src")).toBeChecked();
+  await filter.fill("");
+  await mark("src").click();
+  await ready(page);
+  await expect(mark("src/web/session.ts")).toBeChecked();
+
+  await mark("src").click();
+  await ready(page);
+  await expect(mark("src")).not.toBeChecked();
+  await expect(mark("src/greeting.rs")).not.toBeChecked();
+});

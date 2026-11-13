@@ -20,7 +20,7 @@ export const samples: PullSample[] = [
   {
     owner: "zed-industries",
     repo: "zed",
-    number: 66419,
-    title: "Introduce an application HTTP client crate",
+    number: 65970,
+    title: "gpui: Make `Modifiers::secondary` web platform aware",
   },
 ];
