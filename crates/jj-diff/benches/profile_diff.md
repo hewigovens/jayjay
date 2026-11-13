@@ -12,6 +12,7 @@ The first form reports p50/p95 timings and call counts per instrumented function
 
 - `cold`: one collapsed diff, including first-use grammar initialization and empty highlight caches. A single sample cannot establish a latency distribution; repeat the command for more cold observations.
 - `warm`: prepare the identical diff before starting the profiler, then compute it 100 times with cached syntax highlights. Line matching and diff construction still run.
+- `edits`: the same file with every twentieth line changed (300 edits), computed 100 times with cached syntax highlights. Unlike `warm`, line matching and the word diff of each changed pair dominate.
 - `expand`: prepare a collapsed diff, then reveal ten lines 100 times in the same region. This includes copying the growing result. The first reveal obtains shared cached highlights; later reveals reuse the session's retained highlights.
 - `wrap`: prepare a full highlighted diff, then wrap all 6,001 rows at 80 columns 100 times.
 - `sbs`: prepare the same full diff, then rebuild its 6,000 side-by-side rows and wrap them at changing widths (40 through 89 columns and back). This follows the Rust operations used by the macOS side-by-side resize handler, without Swift/UniFFI conversion or native text rendering.
@@ -24,4 +25,4 @@ The uninstrumented elapsed time covers workload setup/validation and result disp
 
 This measures the shared diff engine, not shell rendering or end-to-end interaction latency, and does not enable CPU sampling.
 
-In CI, `.github/workflows/hotpath-benchmark.yml` runs only on pushes to `main` affecting the diff engine, its dependencies, or benchmark configuration. One job builds once, then runs `warm`, `expand`, `wrap` and `sbs` sequentially, each natively and under Callgrind, and uploads each as a separate `jj-diff-<scenario>` series to [hotpath-cloud](https://hotpath.rs/cloud). Instruction counts and allocations are judged under `hotpath/policy.toml`; timings are shown but not judged. Pull requests do not run benchmarks or relay reports.
+In CI, `.github/workflows/hotpath-benchmark.yml` runs only on pushes to `main` affecting the diff engine, its dependencies, or benchmark configuration. One job builds once, then runs every scenario sequentially, each natively and under Callgrind, and uploads each as a separate `jj-diff-<scenario>` series to [hotpath-cloud](https://hotpath.rs/cloud). Instruction counts and allocations are judged under `hotpath/policy.toml`; timings are shown but not judged. Pull requests do not run benchmarks or relay reports.

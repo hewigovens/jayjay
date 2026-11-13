@@ -21,12 +21,12 @@ fn main() {
         [scenario]
             if matches!(
                 scenario.as_str(),
-                "cold" | "warm" | "expand" | "wrap" | "sbs"
+                "cold" | "warm" | "edits" | "expand" | "wrap" | "sbs"
             ) =>
         {
             scenario.as_str()
         }
-        _ => panic!("usage: profile_diff [cold|warm|expand|wrap|sbs]"),
+        _ => panic!("usage: profile_diff [cold|warm|edits|expand|wrap|sbs]"),
     };
 
     let mut lines: Vec<_> = (0..6000)
@@ -37,7 +37,11 @@ fn main() {
         })
         .collect();
     let old = lines.join("\n") + "\n";
-    lines[3000] = "let value_3000: u32 = 9999 + 2; // changed".to_owned();
+    let edit_spacing = if scenario == "edits" { 20 } else { 6000 };
+    let edited_lines = 6000 / edit_spacing;
+    for i in (edit_spacing / 2..6000).step_by(edit_spacing) {
+        lines[i] = format!("let value_{i}: u32 = 9999 + 2; // changed");
+    }
     let new = lines.join("\n") + "\n";
     drop(lines);
 
@@ -48,7 +52,7 @@ fn main() {
         _ => Some(compute_file_diff("large.rs", &old, &new, false)),
     };
     if let Some(diff) = &prepared {
-        check_diff(diff);
+        check_diff(diff, edited_lines);
     }
 
     #[cfg(feature = "hotpath")]
@@ -59,8 +63,11 @@ fn main() {
 
     let started = Instant::now();
     match scenario {
-        "cold" => check_diff(&black_box(compute_file_diff("large.rs", &old, &new, false))),
-        "warm" => {
+        "cold" => check_diff(
+            &black_box(compute_file_diff("large.rs", &old, &new, false)),
+            edited_lines,
+        ),
+        "warm" | "edits" => {
             for _ in 0..100 {
                 black_box(compute_file_diff("large.rs", &old, &new, false));
             }
@@ -110,13 +117,13 @@ fn main() {
     eprintln!("{scenario}: workload elapsed {:?}", started.elapsed());
 }
 
-fn check_diff(diff: &FileDiff) {
+fn check_diff(diff: &FileDiff, edited_lines: usize) {
     assert_eq!(
         diff.lines
             .iter()
             .filter(|line| matches!(line.style, DiffSpanStyle::Added | DiffSpanStyle::Removed))
             .count(),
-        2
+        edited_lines * 2
     );
     assert!(
         diff.lines

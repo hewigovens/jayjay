@@ -13,6 +13,7 @@ use super::types::{DiffSpan, DiffSpanStyle};
 /// - `DiffSpanStyle::Unchanged` for matching text within the changed line (no word highlight)
 ///
 /// Syntax tokens are overlaid on top of the word-level diff styles.
+#[cfg_attr(feature = "hotpath", hotpath::measure)]
 pub(super) fn word_diff_paired_line(
     old_line: &str,
     old_byte_offset: usize,

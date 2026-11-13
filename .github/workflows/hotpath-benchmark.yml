@@ -46,7 +46,7 @@ jobs:
         run: |
           bench_args=(--locked -q -p jj-diff --bench profile_diff --features "hotpath-alloc,hotpath-cloud,hotpath-callgrind")
           cargo bench "${bench_args[@]}" --no-run
-          for scenario in warm expand wrap sbs; do
+          for scenario in cold warm edits expand wrap sbs; do
             (
               echo "::group::$scenario"
               report_dir="$RUNNER_TEMP/hotpath/$scenario"
