@@ -59,3 +59,5 @@ jayjay-core = { path = "../../crates/jayjay-core", features = ["mock"] }
 gpui = { workspace = true, features = ["test-support"] }
 jj-test = { path = "../../crates/jj-test" }
 tempfile = { workspace = true }
+
+[lints]
