@@ -5,6 +5,16 @@ use std::net::TcpListener;
 use std::os::unix::fs::PermissionsExt;
 use tempfile::TempDir;
 
+// Cargo 1.100 moved test binaries a few directories deeper than the bin outputs.
+fn built_helper() -> std::path::PathBuf {
+    std::env::current_exe()
+        .unwrap()
+        .ancestors()
+        .map(|directory| directory.join("jayjay-ssh"))
+        .find(|helper| helper.is_file())
+        .expect("build jayjay-ssh before running the live SSH test")
+}
+
 struct SshFixture {
     server: Child,
     directory: TempDir,
@@ -71,17 +81,7 @@ impl SshFixture {
         Self { server, directory }
     }
     fn connect(&self) -> Arc<Connection> {
-        let helper = std::env::current_exe()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .parent()
-            .unwrap()
-            .join("jayjay-ssh");
-        assert!(
-            helper.is_file(),
-            "build jayjay-ssh before running the live SSH test"
-        );
+        let helper = built_helper();
         let mut command = Command::new("ssh");
         command
             .args(["-T", "-a", "-F"])
@@ -264,13 +264,6 @@ fn real_ssh_facade_deploys_helper_and_reconnects_shared_workspaces() {
             .unwrap()
             .success()
     );
-    let binary = std::env::current_exe()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .parent()
-        .unwrap()
-        .join("jayjay-ssh");
     let target = format!(
         "{}-{}",
         std::env::consts::ARCH,
@@ -282,7 +275,15 @@ fn real_ssh_facade_deploys_helper_and_reconnects_shared_workspaces() {
     );
     let helpers = directory.join("helpers").join(target);
     std::fs::create_dir_all(&helpers).unwrap();
-    std::fs::copy(binary, helpers.join("jayjay-ssh")).unwrap();
+    std::fs::copy(built_helper(), helpers.join("jayjay-ssh")).unwrap();
+    let deployed = directory.join("remote-home/.local/share/jayjay/helpers");
+    for copy in ["stale", "recent"] {
+        std::fs::create_dir_all(deployed.join(copy)).unwrap();
+    }
+    std::fs::File::open(deployed.join("stale"))
+        .unwrap()
+        .set_modified(std::time::SystemTime::now() - Duration::from_secs(2 * 24 * 3600))
+        .unwrap();
     let bin = directory.join("bin");
     std::fs::create_dir(&bin).unwrap();
     let ssh = bin.join("ssh");
@@ -304,8 +305,8 @@ fn real_ssh_facade_deploys_helper_and_reconnects_shared_workspaces() {
         .env("JAYJAY_SSH_MACHINES_PATH", directory.join("machines.json"))
         .status().unwrap();
     assert!(status.success());
-    let deployed = directory.join("remote-home/.local/share/jayjay/helpers");
-    assert_eq!(std::fs::read_dir(deployed).unwrap().count(), 1);
+    assert_eq!(std::fs::read_dir(&deployed).unwrap().count(), 2);
+    assert!(deployed.join("recent").exists());
 }
 
 #[test]

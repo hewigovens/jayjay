@@ -1,5 +1,6 @@
 mod config;
 mod connection;
+mod deploy;
 mod helper;
 mod host_path;
 mod images;

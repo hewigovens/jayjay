@@ -1,12 +1,9 @@
 use super::connection::{self, Connection};
 use super::helper::Helper;
 use super::{RemoteDirectory, RemoteLocation};
-use crate::tools::powershell;
 use crate::{JayError, JayResult};
-use base64::Engine;
 use serde::de::DeserializeOwned;
 use std::collections::HashMap;
-use std::path::Path;
 use std::sync::{
     Arc, LazyLock, Mutex,
     atomic::{AtomicBool, Ordering},
@@ -91,9 +88,9 @@ impl MachineConnection {
         let host = Host::probe(machine)?;
         let helper = Helper::locate(host.target)?;
         let command = if host.platform == HostPlatform::Windows {
-            install_windows_helper(machine, &helper.hash, &helper.path)?
+            helper.deploy_windows(machine)?
         } else {
-            install_unix_helper(machine, &helper.hash, &helper.bytes)?
+            helper.deploy_unix(machine)?
         };
         let connection = Connection::connect(machine, &command)?;
         let shared = match &existing {
@@ -169,82 +166,6 @@ impl Host {
             platform: HostPlatform::Windows,
         })
     }
-}
-
-/// Installs the helper under ~/.local/share/jayjay/helpers/<hash> unless an identical copy is there, and returns the command that runs it.
-fn install_unix_helper(machine: &str, hash: &str, bytes: &[u8]) -> JayResult<String> {
-    let base = format!("\"$HOME/.local/share/jayjay/helpers/{hash}\"");
-    let verify = format!(
-        "verify() {{ if command -v sha256sum >/dev/null; then sum=$(sha256sum \"$1\"); else sum=$(shasum -a 256 \"$1\"); fi; [ \"${{sum%% *}}\" = {hash} ]; }}; base={base}"
-    );
-    let installed = connection::run(machine, &format!("sh -c '{verify}; [ -x \"$base/jayjay-ssh\" ] && verify \"$base/jayjay-ssh\" && printf installed'"), b"").unwrap_or_default();
-    if installed != "installed" {
-        connection::run(
-            machine,
-            &format!(
-                "sh -c 'set -eu; umask 077; {verify}; mkdir -p \"$base\"; temporary=\"$base/.upload.$$\"; trap \"rm -f \\\"\\$temporary\\\"\" 0 1 2 15; cat > \"$temporary\"; verify \"$temporary\"; chmod 700 \"$temporary\"; mv \"$temporary\" \"$base/jayjay-ssh\"'"
-            ),
-            bytes,
-        )?;
-    }
-    Ok(format!("exec {base}/jayjay-ssh"))
-}
-
-/// Installs the helper under %LOCALAPPDATA%\\JayJay\\helpers\\<hash> and returns the command that runs it. PowerShell does the checks because cmd and PowerShell login shells can both start it, but it can't read a large upload from stdin, so the file goes over scp.
-fn install_windows_helper(machine: &str, hash: &str, executable: &Path) -> JayResult<String> {
-    let powershell = |body: &str| {
-        let script = format!(
-            r#"$ErrorActionPreference = 'Stop'
-$ProgressPreference = 'SilentlyContinue'
-[Console]::OutputEncoding = [Text.Encoding]::UTF8
-$dir = Join-Path $env:LOCALAPPDATA 'JayJay\helpers\{hash}'
-$exe = Join-Path $dir 'jayjay-ssh.exe'
-$upload = Join-Path $dir "upload.$PID.tmp"
-function Test-Helper($path) {{ (Test-Path -LiteralPath $path) -and ((Get-FileHash -LiteralPath $path -Algorithm SHA256).Hash -eq '{hash}') }}
-{body}"#
-        );
-        let utf16: Vec<u8> = script.encode_utf16().flat_map(u16::to_le_bytes).collect();
-        format!(
-            "powershell -NoProfile -NonInteractive -EncodedCommand {}",
-            base64::engine::general_purpose::STANDARD.encode(utf16)
-        )
-    };
-    let check = connection::run(
-        machine,
-        &powershell(
-            "if (Test-Helper $exe) { [Console]::Out.Write($exe) } else { New-Item -ItemType Directory -Force -Path $dir | Out-Null; [Console]::Out.Write(\"upload:$upload\") }",
-        ),
-        b"",
-    )?;
-    // cmd strips the quotes around a path holding any of these and PowerShell expands or re-quotes some, so the helper would not start.
-    let check = check.trim();
-    if check.is_empty()
-        || check.contains([
-            '"', '&', '(', ')', '@', '^', '|', '<', '>', '%', '$', '`', '\u{2018}', '\u{2019}',
-            '\0', '\r', '\n',
-        ])
-    {
-        return Err(JayError::internal(format!(
-            "The SSH helper can't be started from {check}."
-        )));
-    }
-    let path = match check.strip_prefix("upload:") {
-        Some(upload) => {
-            connection::upload(machine, executable, &super::host_path::wire_form(upload))?;
-            connection::run(
-                machine,
-                &powershell(&format!(
-                    "$upload = {}; try {{ if (-not (Test-Helper $upload)) {{ throw 'The uploaded SSH helper does not match.' }}; Move-Item -Force -LiteralPath $upload -Destination $exe }} finally {{ Remove-Item -Force -LiteralPath $upload -ErrorAction SilentlyContinue }}; [Console]::Out.Write($exe)",
-                    powershell::quote(upload)
-                )),
-                b"",
-            )?
-            .trim()
-            .to_owned()
-        }
-        None => check.to_owned(),
-    };
-    Ok(format!("cmd /c \"{path}\""))
 }
 
 pub fn browse(machine: &str, path: &str) -> JayResult<RemoteDirectory> {
