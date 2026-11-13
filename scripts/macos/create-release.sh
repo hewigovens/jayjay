@@ -24,7 +24,7 @@ if [ -s "$gpui_notes" ]; then
   {
     printf '<h2>macOS</h2>\n\n'
     cat "$swiftui_notes"
-    printf '\n\n<h2>Linux GPUI</h2>\n\n'
+    printf '\n\n<h2>GPUI for Linux and Windows</h2>\n\n'
     cat "$gpui_notes"
   } >"$github_notes"
 fi
