@@ -163,6 +163,7 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
         } else {
             let is_collapsed = collapsed.contains(&entry.path);
             let dir_path = entry.path.clone();
+            let menu_path = entry.path.clone();
             tree_dir_row(
                 entry,
                 ix,
@@ -170,6 +171,9 @@ pub(super) fn tree_body(state: TreeBodyState, cx: &mut Context<RepoWindow>) -> A
                 &theme,
                 cx.listener(move |view, _event, _window, cx| {
                     view.toggle_dir(dir_path.clone(), cx);
+                }),
+                cx.listener(move |view, ev: &MouseDownEvent, _window, cx| {
+                    view.open_folder_context_menu(&menu_path, ev.position, cx);
                 }),
             )
         };
@@ -258,15 +262,17 @@ where
     finish_file_row(row, &state, content)
 }
 
-fn tree_dir_row<F>(
+fn tree_dir_row<F, FR>(
     entry: &FileTreeEntry,
     ix: usize,
     is_collapsed: bool,
     t: &Theme,
     on_click: F,
+    on_right_click: FR,
 ) -> AnyElement
 where
     F: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
+    FR: Fn(&MouseDownEvent, &mut Window, &mut App) + 'static,
 {
     let indent = (entry.depth as f32) * 14.0;
     let chevron_glyph = if is_collapsed {
@@ -289,9 +295,10 @@ where
         .relative()
         .cursor_pointer()
         .on_click(on_click)
+        .on_mouse_down(MouseButton::Right, on_right_click)
         .child(row_separator(36. + indent, t))
         .child(icons::icon(chevron_glyph, 10., t.fg_faint))
-        .child(icons::icon(glyph::FOLDER, 12., t.fg_dim))
+        .child(icons::icon(glyph::FOLDER, 14., t.fg_dim))
         .child(super::file_name_container(
             div()
                 .flex_1()

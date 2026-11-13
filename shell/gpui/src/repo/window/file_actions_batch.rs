@@ -1,7 +1,7 @@
 use std::collections::HashSet;
 use std::sync::Arc;
 
-use gpui::{App, Context};
+use gpui::{App, Context, Pixels, Point};
 use jayjay_core::{ChangeInfo, DiffHunk};
 use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot};
 
@@ -108,6 +108,38 @@ impl RepoWindow {
             }),
         ));
         items
+    }
+
+    pub(crate) fn open_folder_context_menu(
+        &mut self,
+        folder: &str,
+        anchor: Point<Pixels>,
+        cx: &mut Context<Self>,
+    ) {
+        let items = self.build_folder_context_menu(folder, cx);
+        self.open_context_menu(anchor, items, cx);
+    }
+
+    /// A folder's menu marks the listed files under it together.
+    pub fn build_folder_context_menu(&self, folder: &str, cx: &App) -> Vec<ContextMenuItem> {
+        let (show_review, change_id) = self.review_file_context(cx);
+        let vm = self.vm.read(cx);
+        let Some(change) = vm.selected_change_for_file_ops().filter(|_| show_review) else {
+            return Vec::new();
+        };
+        let files = vm.files.as_deref().map(Vec::as_slice).unwrap_or_default();
+        let prefix = format!("{folder}/");
+        let hunks: Vec<&DiffHunk> = self
+            .visible_indices(files, change_id.as_deref(), show_review, cx)
+            .into_iter()
+            .map(|ix| &files[ix])
+            .filter(|hunk| hunk.path.starts_with(&prefix) && !hunk.review_identity.is_empty())
+            .collect();
+        if hunks.is_empty() {
+            return Vec::new();
+        }
+        let paths: Vec<String> = hunks.iter().map(|hunk| hunk.path.clone()).collect();
+        vec![self.review_toggle_item(&paths, change, &hunks, vm)]
     }
 
     /// SwiftUI parity: the toggle marks every selected file reviewed unless all of them already are, in which case it unmarks them all.

@@ -1,8 +1,10 @@
+use std::fs;
+
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext, px, size};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, run_jj_in};
 
 /// Working copy with four files in list order: README.md, feature.txt, wip1.txt, wip2.txt.
 fn open_repo(
@@ -47,6 +49,19 @@ fn primary_path(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> Option
             .read(cx)
             .selected_hunk()
             .map(|h| h.path.clone())
+    })
+}
+
+fn reviewed(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, path: &str) -> bool {
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        let change_id = vm.selected_change().expect("change").change_id.id.clone();
+        let hunk = vm
+            .files
+            .as_ref()
+            .and_then(|files| files.iter().find(|h| h.path == path).cloned())
+            .expect("hunk");
+        view.is_reviewed(&change_id, &hunk.path, &hunk.review_identity)
     })
 }
 
@@ -223,19 +238,6 @@ fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
     let selected = selection(&view, cx);
     assert!(selected.len() >= 2, "range selection active: {selected:?}");
 
-    let reviewed = |view: &Entity<RepoWindow>, cx: &mut VisualTestContext, path: &str| {
-        view.read_with(cx, |view, cx| {
-            let vm = view.view_model().read(cx);
-            let change_id = vm.selected_change().expect("change").change_id.id.clone();
-            let hunk = vm
-                .files
-                .as_ref()
-                .and_then(|files| files.iter().find(|h| h.path == path).cloned())
-                .expect("hunk");
-            view.is_reviewed(&change_id, &hunk.path, &hunk.review_identity)
-        })
-    };
-
     view.update_in(cx, |view, _, cx| {
         view.toggle_reviewed_for_selected_files(cx)
     });
@@ -269,6 +271,44 @@ fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
             "{path} unmarked with the selection"
         );
     }
+}
+
+#[gpui::test]
+fn a_folder_menu_toggles_the_review_marks_of_the_files_under_it(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fs::create_dir_all(fixture.path.join("src/nested")).unwrap();
+    for path in ["src/a.txt", "src/nested/b.txt", "top.txt"] {
+        fs::write(fixture.path.join(path), "new file\n").unwrap();
+    }
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.tree_file_list = true));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    let run_folder_menu = |cx: &mut VisualTestContext, label: &str| {
+        let items = view.read_with(cx, |view, cx| view.build_folder_context_menu("src", cx));
+        assert_eq!(menu_labels(&items), [label]);
+        let action = items[0].action.clone();
+        view.update_in(cx, |view, _, cx| view.dispatch_context_action(action, cx));
+        settle_visual(cx);
+    };
+
+    run_folder_menu(cx, "Mark 2 Files as Reviewed");
+    assert!(reviewed(&view, cx, "src/a.txt"));
+    assert!(reviewed(&view, cx, "src/nested/b.txt"));
+    assert!(!reviewed(&view, cx, "top.txt"));
+
+    mark_reviewed(&view, cx, "src/a.txt");
+    run_folder_menu(cx, "Mark 2 Files as Reviewed");
+    assert!(
+        reviewed(&view, cx, "src/a.txt"),
+        "a partly reviewed folder marks the rest"
+    );
+
+    run_folder_menu(cx, "Mark 2 Files as Unreviewed");
+    assert!(!reviewed(&view, cx, "src/a.txt"));
+    assert!(!reviewed(&view, cx, "src/nested/b.txt"));
 }
 
 #[gpui::test]
