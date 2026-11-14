@@ -106,7 +106,6 @@ menu-check-for-updates-ellipsis = Check for Updates…
 menu-install-command-line-tool-ellipsis = Install Command Line Tool…
 menu-jayjay-help = JayJay Help
 menu-choose-the-first-parent-for-the = Choose the first parent for the new merge change
-menu-merge-requires-independent-heads = Merge requires independent heads
 menu-combine-the-selected-range-into-its = Combine the selected range into its oldest change
 menu-squash-requires-a-consecutive-linear-range = Squash requires a consecutive linear range of mutable changes
 menu-make-the-selected-changes-independent-siblings = Make the selected changes independent siblings

@@ -201,7 +201,6 @@ impl RepoWindow {
                     (
                         selected.selection_revision().to_owned(),
                         selected.is_immutable,
-                        vm.can_merge_selected_change_with(change),
                     )
                 }),
                 selected_other.map(|selected| compare::CompareState::between(selected, change)),
@@ -340,7 +339,7 @@ impl RepoWindow {
                 ContextAction::ShowBookmarkDiff(request),
             ));
         }
-        if let Some((selected_rev, selected_immutable, can_merge)) = selected_rev {
+        if let Some((selected_rev, selected_immutable)) = selected_rev {
             // Rebase and squash rewrite the selected change; the menu target is only a destination.
             if !selected_immutable {
                 items.push(ContextMenuItem::new(
@@ -362,16 +361,13 @@ impl RepoWindow {
                     ));
                 }
             }
-            items.push(
-                ContextMenuItem::new(
-                    jayjay_i18n::menu::merge_with_selected(),
-                    glyph::GIT_MERGE,
-                    change_action(ChangeAction::Merge {
-                        parents: vec![selected_rev, rev.clone()],
-                    }),
-                )
-                .with_enabled(can_merge),
-            );
+            items.push(ContextMenuItem::new(
+                jayjay_i18n::menu::merge_with_selected(),
+                glyph::GIT_MERGE,
+                change_action(ChangeAction::Merge {
+                    parents: vec![selected_rev, rev.clone()],
+                }),
+            ));
         }
 
         items.push(ContextMenuItem::separator());

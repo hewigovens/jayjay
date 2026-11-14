@@ -274,16 +274,10 @@ extension DAGView {
                     }
                 }
             }
-            let canMerge = viewModel.canMergeSelectedChange(with: entry.change)
             Button { actions?.merge(parents: [selRev, rev]) } label: {
                 Label(Localized.Menu.mergeWithSelected, systemImage: "arrow.triangle.merge")
             }
-            .disabled(!canMerge)
-            .help(
-                canMerge
-                    ? Localized.Menu.createANewChangeWithBoth
-                    : Localized.Menu.mergeRequiresIndependentHeads
-            )
+            .help(Localized.Menu.createANewChangeWithBoth)
         }
     }
 }

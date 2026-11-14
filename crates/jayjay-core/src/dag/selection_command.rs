@@ -49,8 +49,7 @@ impl SelectionCommand {
 
     pub fn help(self, available: bool) -> String {
         match self {
-            Self::Merge if available => menu::choose_the_first_parent_for_the(),
-            Self::Merge => menu::merge_requires_independent_heads(),
+            Self::Merge => menu::choose_the_first_parent_for_the(),
             Self::Squash if available => menu::combine_the_selected_range_into_its(),
             Self::Squash => menu::squash_requires_a_consecutive_linear_range(),
             Self::Parallelize if available => {

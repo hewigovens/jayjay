@@ -106,7 +106,6 @@ menu-check-for-updates-ellipsis = アップデートを確認…
 menu-install-command-line-tool-ellipsis = コマンド ライン ツールをインストール…
 menu-jayjay-help = JayJay ヘルプ
 menu-choose-the-first-parent-for-the = 新しいマージ チェンジの第 1 親を選択
-menu-merge-requires-independent-heads = マージには独立したヘッドが必要です
 menu-combine-the-selected-range-into-its = 選択した範囲を最も古いチェンジにまとめる
 menu-squash-requires-a-consecutive-linear-range = スカッシュには、可変のチェンジが連続した直線状の範囲が必要です
 menu-make-the-selected-changes-independent-siblings = 選択したチェンジを独立した兄弟にする

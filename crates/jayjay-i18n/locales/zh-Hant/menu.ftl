@@ -106,7 +106,6 @@ menu-check-for-updates-ellipsis = 檢查更新項目…
 menu-install-command-line-tool-ellipsis = 安裝指令列工具…
 menu-jayjay-help = JayJay 輔助說明
 menu-choose-the-first-parent-for-the = 為新的合併變更選擇第一個父變更
-menu-merge-requires-independent-heads = 合併需要彼此獨立的頭部
 menu-combine-the-selected-range-into-its = 將所選範圍合併到其中最早的變更
 menu-squash-requires-a-consecutive-linear-range = 壓縮需要連續的可變變更線性範圍
 menu-make-the-selected-changes-independent-siblings = 讓所選變更成為彼此獨立的兄弟變更

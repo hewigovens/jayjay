@@ -44,7 +44,7 @@ final class DAGPerformanceTests: XCTestCase {
                 )
             )
             for target in Self.entries.prefix(20) {
-                XCTAssertTrue(viewModel.canMergeSelectedChange(with: target.change))
+                XCTAssertFalse(viewModel.canRebaseSelection(onto: target.change))
             }
             XCTAssertLessThan(start.duration(to: .now), .milliseconds(200))
         }

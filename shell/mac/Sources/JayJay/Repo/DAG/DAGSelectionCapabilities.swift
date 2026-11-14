@@ -16,7 +16,6 @@ final class DAGSelectionCapabilities {
             canParallelize: false,
             canFix: false,
             canRebaseOnto: [],
-            canMergeWith: [],
             availableCommands: []
         )
         rowByCommitId = [:]
@@ -36,10 +35,6 @@ final class DAGSelectionCapabilities {
 
     func canRebase(onto change: ChangeInfo) -> Bool {
         row(of: change).map { state.canRebaseOnto[$0] } ?? false
-    }
-
-    func canMerge(with change: ChangeInfo) -> Bool {
-        row(of: change).map { state.canMergeWith[$0] } ?? false
     }
 
     private func row(of change: ChangeInfo) -> Int? {

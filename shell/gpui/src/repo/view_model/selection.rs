@@ -5,7 +5,7 @@ use std::sync::Arc;
 use gpui::Context;
 use jayjay_core::compare::{self, CompareState};
 use jayjay_core::dag::{LaneSpan, SelectionClick, SelectionGraph, SelectionState};
-use jayjay_core::{ChangeInfo, DiffHunk, GraphEntry};
+use jayjay_core::{DiffHunk, GraphEntry};
 
 use super::RepoViewModel;
 use crate::ui::navigation::ListNav;
@@ -484,24 +484,12 @@ impl RepoViewModel {
         self.selection_state().can_merge
     }
 
-    pub fn can_merge_selected_change_with(&self, target: &ChangeInfo) -> bool {
-        self.row_of(target)
-            .is_some_and(|ix| self.selection_state().can_merge_with[ix])
-    }
-
     pub fn can_rebase_selected_changes_onto(&self, target_ix: usize) -> bool {
         self.selection_state()
             .can_rebase_onto
             .get(target_ix)
             .copied()
             .unwrap_or(false)
-    }
-
-    fn row_of(&self, change: &ChangeInfo) -> Option<usize> {
-        self.graph
-            .changes
-            .iter()
-            .position(|candidate| candidate.commit_id == change.commit_id)
     }
 
     fn selection_cache(&self) -> RefMut<'_, SelectionCache> {

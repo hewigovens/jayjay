@@ -48,8 +48,6 @@ final class DAGViewModelTests: XCTestCase {
 
         XCTAssertEqual(viewModel.selectedRevisions, ["first"])
         XCTAssertEqual(viewModel.change(for: "shared")?.commitId.id, "first")
-        XCTAssertTrue(viewModel.canMergeSelectedChange(with: second.change))
-        XCTAssertFalse(viewModel.canMergeSelectedChange(with: first.change))
     }
 
     func testCancelsMissingHoverTarget() {

@@ -48,7 +48,7 @@ final class SelectionTransformScene: SceneBase {
         rightClickCenter(rows.element(boundBy: 0))
         let merge = app.menuItems["Merge 2 Selected"]
         XCTAssertTrue(merge.waitForExistence(timeout: 5), "merge menu item missing")
-        XCTAssertTrue(merge.isEnabled, "parallelized changes should be independent heads")
+        XCTAssertTrue(merge.isEnabled)
         let stillChained = app.menuItems["Parallelize 2 Selected"]
         XCTAssertTrue(stillChained.waitForExistence(timeout: 5))
         XCTAssertFalse(stillChained.isEnabled, "siblings must not stay parallelizable")
