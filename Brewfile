@@ -7,3 +7,4 @@ brew "xcbeautify"  # Prettifies xcodebuild output
 brew "swiftlint"   # Swift linter (just lint)
 brew "swiftformat" # Swift formatter (just format)
 brew "gh"          # GitHub CLI — PR status, checks, optional PR creation
+brew "node"        # npm for the web workspaces; just lint, just format, and jj fix on web/ need it

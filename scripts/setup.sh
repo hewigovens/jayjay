@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# Dev bootstrap: brew + rust + Brewfile tools, configure jj fix, check Xcode.
+# Dev bootstrap: brew + rust + Brewfile tools + web dependencies, configure jj fix, check Xcode.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
@@ -33,11 +33,17 @@ install_rust() {
   . "$HOME/.cargo/env"
 }
 
+install_web_deps() {
+  echo "→ installing web workspace dependencies (npm ci)"
+  (cd "$root" && npm ci --no-audit --no-fund)
+}
+
 configure_jj_fix() {
   # A git clone has no .jj yet — colocate a jj workspace so jj works here.
   if [ ! -d "$root/.jj/repo" ]; then
     echo "→ initializing jj workspace (colocated with git)"
     (cd "$root" && jj git init --colocate)
+    (cd "$root" && jj bookmark track main@origin 2>/dev/null) || true
   fi
   if [ -f "$root/.jj/repo/config.toml" ]; then
     echo "✓ jj fix already configured (.jj/repo/config.toml)"
@@ -55,6 +61,8 @@ check_xcode() {
     echo "✗ Xcode not found or not selected. Install Xcode 27+ from the App Store, then:"
     echo "    sudo xcode-select -s /Applications/Xcode.app/Contents/Developer"
     echo "    sudo xcodebuild -license accept"
+    echo "    sudo xcodebuild -runFirstLaunch"
+    return 1
   fi
 }
 
@@ -62,7 +70,12 @@ have brew Homebrew install_brew
 have cargo Rust install_rust
 brew_bundle
 configure_jj_fix
-check_xcode
+# Only web lint and format need these, so a failed install must not stop the bootstrap.
+install_web_deps || echo "✗ npm ci failed; just lint, just format, and jj fix on web/ need it. Rerun: npm ci"
 
 echo
-echo "Setup complete. Try: just build"
+if check_xcode; then
+  echo "Setup complete. Try: just build"
+else
+  echo "Setup incomplete: finish the Xcode steps above, then try: just build"
+fi

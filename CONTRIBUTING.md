@@ -15,7 +15,20 @@ Building the macOS app requires macOS 26+, Rust 1.98.1+, and Xcode 27+. Bootstra
 ./scripts/setup.sh
 ```
 
-The script installs Homebrew and Rust when needed, installs the tools in [Brewfile](Brewfile), and initializes a colocated jj workspace. Xcode must be installed separately.
+The script installs Homebrew and Rust when needed, installs the tools in [Brewfile](Brewfile) and the web workspace dependencies (`npm ci`), and initializes a colocated jj workspace. Building and running the app needs no Node; `just lint`, `just format`, and `jj fix` on `web/` do.
+
+Xcode must be installed separately. After installing it, select it and finish its first-run setup:
+
+```bash
+sudo xcode-select -s /Applications/Xcode.app/Contents/Developer
+sudo xcodebuild -license accept
+sudo xcodebuild -runFirstLaunch
+```
+
+Optional on a development machine:
+
+- **UI tests without a password prompt:** `sudo automationmodetool enable-automationmode-without-authentication` stops macOS asking for a password each time XCUITest enables Automation Mode (`just test-ui`).
+- **Build cache:** `cargo install --locked mbx`, then `mbx setup`, shares compiled Rust work across checkouts and sibling workspaces. `mbx setup` prints the path of its `cargo` shim and does not edit shell startup files; put the shim's directory ahead of `~/.cargo/bin` on `PATH`, or let it add a mise wrapper if you use mise. Builds work without it, uncached.
 
 ## Development
 
@@ -29,8 +42,8 @@ just test-ui <test-id>   # One XCUITest scene
 just test                # All workspace Rust tests (publish)
 just test-app            # Swift unit tests
 just test-gpui           # GPUI component tests
-just lint                # Clippy + SwiftLint (publish)
-just format              # rustfmt + SwiftFormat (publish)
+just lint                # Clippy + SwiftLint + web tsc/oxlint (publish)
+just format              # rustfmt + SwiftFormat + oxfmt (publish)
 just build               # macOS app (not the inner loop)
 just run                 # Build and launch
 ```

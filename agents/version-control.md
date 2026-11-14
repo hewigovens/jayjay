@@ -45,7 +45,7 @@ The sibling-workspace rule and the `jj workspace add` recipe are in `AGENTS.md` 
 
 Each JJ workspace gets its own Cargo `target/` by default. Preserve that isolation for concurrent builds; do not share a `CARGO_TARGET_DIR` because Cargo will serialize processes on the shared build-directory lock.
 
-Rust builds are cached by mbx, which `mbx setup` installs as a `cargo` shim on `PATH`; no `rustc-wrapper` is configured. Keep running plain `cargo` so the shim applies. mbx shares compiled work across checkouts and reflinks it into each isolated target, so restored outputs share physical storage with the cache until either copy changes.
+Rust builds are cached by mbx when the machine has it ([setup](../CONTRIBUTING.md#setup)): `mbx setup` installs a `cargo` shim whose directory must precede `~/.cargo/bin` on `PATH`; no `rustc-wrapper` is configured. Keep running plain `cargo` so the shim applies. mbx shares compiled work across checkouts and reflinks it into each isolated target, so restored outputs share physical storage with the cache until either copy changes. Without mbx, plain `cargo` builds uncached and the isolation rules here still apply.
 
 Keep each workspace's default target when builds run concurrently. Let mbx manage incremental artifacts; do not force a shared target or override incremental settings.
 
