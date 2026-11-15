@@ -16,7 +16,7 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 - Playful jaybird theme: blue gradient `#3B82F6` to `#1E3A8A`, orange accent `#F59E0B`, light blue `#93C5FD`. Brand colors are accents; selection and meaningful state stay distinguishable from decoration.
 - Register: technical but polished. Anti-reference: cluttered enterprise tools and generic SaaS dashboards.
 - Platform baseline: Apple's [Designing for macOS](https://developer.apple.com/design/human-interface-guidelines/designing-for-macos) and the HIG topics under it. Depart from it when the developer workflow gives a reason, and say the reason.
-- Both shells are the product: SwiftUI on macOS, GPUI on Linux. This guide applies to each. GPUI shares the hierarchy, vocabulary, and palette, and follows the host desktop's conventions where the HIG is macOS-specific.
+- Both shells are the product: SwiftUI on macOS, GPUI on Linux and Windows. This guide applies to each. GPUI shares the hierarchy, vocabulary, and palette, and follows the host desktop's conventions where the HIG is macOS-specific.
 
 ## Interaction Principles
 

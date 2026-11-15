@@ -51,14 +51,14 @@ immutable; add the next numbered migration and checksum for every schema change.
 
 ## Shipped User Docs
 
-Feature PRs do not update the user guide, Help Book, website, parity matrix, or agent skill. Do that once per release from `v<previous>..@`. Skip a file whose topic did not ship in this range. Canonical sources, in order:
+Feature PRs do not update the user guide, Help Book, website, platform differences and gaps, or agent skill. Do that once per release from `v<previous>..@`. Skip a file whose topic did not ship in this range. Canonical sources, in order:
 
 - `docs/guide.html` — public user guide (workflow source of truth)
 - `docs/imgs/` — screenshots shared with the Help Book
 - `shell/mac/Resources/JayJayHelpBook/` — topic HTML reused from the guide; rebuild with `just shell::help`
 - `docs/llms.txt` — machine-readable feature summary, only if the feature list changed
 - `docs/index.html` FAQ — only if the range answers a common question; then translate and run `just site` per [Website](website.md#translated-landing-pages)
-- `agents/shell-parity.md` — matrix rows aligned to the guide, including closed gaps
+- `agents/shell-parity.md` — intentional platform differences and remaining gaps; remove gaps closed in this release
 - `README.md` — only install, positioning, or requirements changes; do not duplicate the guide
 - `UserGuide.md` — stub pointing at the web guide; do not grow a second copy of the guide
 - `skills/jayjay/SKILL.md` — shipped agent skill; document `jayjay` CLI commands and flags new in this range, then move `AGENTS.md` and `agents/*.md` recipes onto them now that the installed `jayjay` runs them

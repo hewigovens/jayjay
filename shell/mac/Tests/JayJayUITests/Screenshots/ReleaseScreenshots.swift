@@ -47,7 +47,9 @@ final class ReleaseScreenshots: ScreenshotScene {
         gutter.coordinate(withNormalizedOffset: .zero).withOffset(CGVector(dx: 12, dy: 12)).click()
         clickCenter(app.buttons[AID.FileList.review("README.md")], message: "README review control missing")
         selectFile("src/stations.rs", in: app)
-        capture("review", frame: mainFrame)
+        let files = app.element(AID.FileList.column).frame
+        let frame = CGRect(x: files.minX, y: mainFrame.minY + 52, width: mainFrame.maxX - files.minX, height: 300)
+        capture("review", frame: frame)
     }
 
     func testSideBySide() throws {
@@ -67,6 +69,35 @@ final class ReleaseScreenshots: ScreenshotScene {
         let app = try XCTUnwrap(app)
         selectLowChange("comfort (weighted)", in: app)
         capture("divergent-diff", frame: mainFrame)
+    }
+
+    func testResolveDivergence() throws {
+        try skipUnlessEnglish()
+        let app = try XCTUnwrap(app)
+        selectLowChange("comfort (weighted)", in: app)
+        rightClickCenter(row("comfort (weighted)", in: app))
+        clickCenter(app.menuItems["Resolve Divergent Change…"], message: "Resolve Divergent Change missing")
+        let sheet = app.sheets.firstMatch
+        XCTAssertTrue(sheet.buttons[AID.Converge.apply].waitForExistence(timeout: 10), "Divergence sheet missing")
+        capture("resolve-divergence", window: sheet)
+    }
+
+    func testMergeSelected() throws {
+        try skipUnlessEnglish()
+        let app = try XCTUnwrap(app)
+        selectChange("prefer the fastest", in: app)
+        XCUIElement.perform(withKeyModifiers: .command) {
+            self.row("include transfer time", in: app).click()
+        }
+        XCTAssertTrue(app.element(AID.Compare.banner).waitForExistence(timeout: 5), "Compare banner missing")
+        rightClickCenter(row("include transfer time", in: app))
+        let merge = app.menuItems["Merge 2 Selected"]
+        XCTAssertTrue(merge.waitForExistence(timeout: 5), "Merge selection menu missing")
+        XCTAssertTrue(merge.isEnabled, "Ancestor and descendant merge unavailable")
+        merge.hover()
+        keyStroke(.rightArrow)
+        keyStroke(.downArrow)
+        capture("merge-selected", frame: mainFrame)
     }
 
     func testInterdiff() throws {
@@ -218,6 +249,14 @@ final class ReleaseScreenshots: ScreenshotScene {
         capture("settings-appearance", window: settingsWindow(in: app))
     }
 
+    func testSettingsShortcuts() throws {
+        let app = try XCTUnwrap(app)
+        keyStroke(",", modifiers: [.command])
+        selectSettingsPage("shortcuts", in: app)
+        XCTAssertTrue(settingsWindow(in: app).textFields[AID.Shortcuts.search].waitForExistence(timeout: 5), "Shortcut search missing")
+        capture("settings-shortcuts", window: settingsWindow(in: app))
+    }
+
     func testSettingsIntegrations() throws {
         let app = try XCTUnwrap(app)
         keyStroke(",", modifiers: [.command])
@@ -297,7 +336,7 @@ final class ReleaseScreenshots: ScreenshotScene {
 
     /// The change context menu is an NSHostingMenu, which drops accessibility identifiers, so these scenes find the item by its English title.
     private func skipUnlessEnglish() throws {
-        try XCTSkipIf(Self.languages != "(en)", "Stacked PR scenes match the English menu title")
+        try XCTSkipIf(Self.languages != "(en)", "Context menu scenes match English menu titles")
     }
 
     private func mainWindow(_ app: XCUIApplication) -> XCUIElement {
@@ -325,7 +364,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         XCTAssertTrue(target.waitForExistence(timeout: 10), "Change \(subject) missing")
         // The capture window shows only the top of the graph, so lower rows are scrolled into view first.
         let visible = { graph.frame.insetBy(dx: 0, dy: 8).contains(CGPoint(x: target.frame.midX, y: target.frame.midY)) }
-        for _ in 0..<8 where !visible() {
+        for _ in 0 ..< 8 where !visible() {
             graph.scroll(byDeltaX: 0, deltaY: -200)
             settle()
         }

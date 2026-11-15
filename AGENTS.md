@@ -25,7 +25,7 @@ Within the authorized scope, choose the approach from the code and evidence. Res
 | reviewing a patch | [Code Review](agents/code-review.md) |
 | landing page, FAQ, blog, public guide | [Website](agents/website.md) — **release only** |
 | in-app Help Book | [Help Book](agents/help-book.md) — **release only** |
-| parity matrix | [Parity](agents/shell-parity.md) — **release only** |
+| platform differences and gaps | [Parity](agents/shell-parity.md) — **release only** |
 | version bump, notarize, appcast | [Release](agents/release.md) |
 | run or drive the app, debug a CI or test-runner failure | [Run & Debug](agents/run-debug.md) |
 | recording product or guide videos, writing a scene | [Video](agents/video.md) |
@@ -142,7 +142,7 @@ Before pushing a non-trivial behavior change, review the whole diff per [Code Re
 
 ## User-Facing Docs
 
-Feature work does **not** update the user guide, Help Book, website, parity matrix, or agent skill. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md). An explicit documentation request authorizes edits to the requested docs outside that release pass; verify claims against the relevant source or release.
+Feature work does **not** update the user guide, Help Book, website, platform differences and gaps, or agent skill. Those are one release pass over `v<previous>..@`. See [Release](agents/release.md). An explicit documentation request authorizes edits to the requested docs outside that release pass; verify claims against the relevant source or release.
 
 Do not edit during a feature change:
 

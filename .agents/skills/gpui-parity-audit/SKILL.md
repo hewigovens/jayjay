@@ -1,7 +1,7 @@
 ---
 name: gpui-parity-audit
 description: Check GPUI Linux and Windows parity against SwiftUI workflows, or close identified gaps when implementation is requested.
-argument-hint: "[feature-or-parity-row]"
+argument-hint: "[workflow-or-platform-gap]"
 ---
 
 # GPUI Parity Audit
@@ -10,12 +10,12 @@ Load [Shell Parity](../../../agents/shell-parity.md) and [GPUI](../../../agents/
 
 ## Procedure
 
-1. Use the parity matrix as an index of release claims; current source and tests establish implementation status. For each requested row, map the SwiftUI implementation, the GPUI implementation, the shared Rust or UniFFI contract, the tests, and the guide claim.
-2. Classify at affordance granularity. Confirm implementation and tests before calling anything absent; a row is not a feature-level verdict. Parity covers UX and design as well as features: an affordance that exists but breaks a [Design](../../../agents/design.md#invariants) invariant or buries what the user scans for is a gap.
+1. Use the user guide for shared workflow claims and the platform differences document for intentional boundaries and known gaps; current source and tests establish implementation status. For each requested workflow, map the SwiftUI implementation, the GPUI implementation, the shared Rust or UniFFI contract, the tests, and the guide claim.
+2. Classify at affordance granularity. Confirm implementation and tests before calling anything absent; a listed gap is not a feature-level verdict. Parity covers UX and design as well as features: an affordance that exists but breaks a [Design](../../../agents/design.md#invariants) invariant or buries what the user scans for is a gap.
 3. When closing an authorized gap, reuse the existing shared contract. Put new shared behavior in Rust core and shell-specific interaction in GPUI. Add one focused regression for state-sensitive behavior, such as commit-draft preservation across change movement.
 4. For implementation, validate the changed behavior using [Testing](../../../agents/testing.md) and the [inner-loop policy](../../../AGENTS.md#inner-loop). Linux- or Windows-only paths need evidence from that platform; a macOS build establishes neither. Do not repeat passing tests or run lint solely to finish an audit.
-5. Feature changes list rows for the release docs pass. Edit the parity matrix, user guide, `docs/llms.txt`, or Help Book only during that pass or an explicit request to update those docs, per [AGENTS.md](../../../AGENTS.md#user-facing-docs).
+5. Feature changes identify differences and gaps for the release docs pass. Edit the platform differences document, user guide, `docs/llms.txt`, or Help Book only during that pass or an explicit request to update those docs, per [AGENTS.md](../../../AGENTS.md#user-facing-docs).
 
 ## Report
 
-Per row: status with evidence, intentional platform boundary or real gap, and what remains documented as missing. Limit parity conclusions to the affordances and platforms verified.
+Per workflow: status with evidence, intentional platform boundary or real gap, and what remains documented as missing. Limit parity conclusions to the affordances and platforms verified.

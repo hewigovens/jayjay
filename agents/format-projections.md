@@ -38,7 +38,7 @@ Format adapters live in `jayjay-core` beside diff materialization. `jj-diff` sta
 
 Markdown (`.md`, `.markdown`), SVG (`.svg`), and HTML (`.html`, `.htm`) are not projections. Markdown and HTML stay raw by default, and Markdown uses a header preview button to render the post-change content in JayJay. SVG opens rendered, showing both sides. HTML uses a header external-open button for working-copy files that exist on disk, delegating rendering to the user's default app so linked CSS, images, fonts, and browser security policy behave like a normal local file.
 
-SwiftUI also offers an inline HTML preview button (same on-disk-file requirement as external-open) that renders the file through the sandboxed `PreviewWebView`/`RepoPreviewSchemeHandler` used for Markdown, loading the actual file as the main document rather than diff content, with content JavaScript disabled and a help-text hint when the file contains `<script>`. External-open remains available alongside it for HTML that needs real script execution. This inline preview is SwiftUI-only by design; GPUI keeps external-open only (see [Shell Feature Parity Guide](shell-parity.md)).
+SwiftUI also offers an inline HTML preview button (same on-disk-file requirement as external-open) that renders the file through the sandboxed `PreviewWebView`/`RepoPreviewSchemeHandler` used for Markdown, loading the actual file as the main document rather than diff content, with content JavaScript disabled and a help-text hint when the file contains `<script>`. External-open remains available alongside it for HTML that needs real script execution. This inline preview is SwiftUI-only by design; GPUI keeps external-open only (see [Platform Differences and Remaining Gaps](shell-parity.md)).
 
 ## Implementation Rules
 

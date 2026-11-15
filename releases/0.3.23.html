@@ -1,0 +1,48 @@
+<p>This stable release brings together the improvements from six betas.</p>
+
+<h2>Remote repositories over SSH</h2>
+<ul>
+  <li>Open a jj repository on a macOS, Linux, or Windows host from <strong>File → Open Remote Repository…</strong>. Choose a host from your SSH config, browse its folders, and work with the same graph and diff tools as a local repository.</li>
+  <li>JayJay downloads and verifies the host’s helper on first connect. The status bar shows the connection state and offers Disconnect and Reconnect. Remote working copies refresh automatically; review marks and notes stay on this Mac.</li>
+  <li>A disconnected write is never retried automatically. Unresponsive hosts disconnect when a request is canceled, missing checkouts report an error, and unused helper copies are cleaned up on the host.</li>
+</ul>
+
+<h2>Resolve divergent changes</h2>
+<ul>
+  <li>Choose <strong>Resolve Divergent Change…</strong> from a change’s menu or <strong>Resolve…</strong> in its detail header. Keep one version whole, or choose the description, contents, author, and parents card by card, starting from jj’s automatic choices.</li>
+  <li>Preview the file differences and the descendants, bookmarks, and workspaces that will move, then converge in one undoable operation. <strong>Converge &amp; Resolve</strong> opens the merge editor when the result needs conflict resolution.</li>
+</ul>
+
+<h2>Shortcuts and appearance</h2>
+<ul>
+  <li><strong>Settings → Keyboard Shortcuts</strong> lets you search commands, record new shortcuts, replace conflicts, and reset individual shortcuts or all of them. Menus, the command palette, and the shortcut reference follow your choices.</li>
+  <li>Built-in light and dark themes now color the whole repository window. Immutable changes appear as diamonds in the graph, as in <code>jj log</code>.</li>
+  <li>The new <strong>Flock</strong> settings page lets GitHub sponsors unlock a keepsake feather and extra Dock icons, also shown in About.</li>
+</ul>
+
+<h2>Review and editing</h2>
+<ul>
+  <li>Review any mutable change. Clicking a file’s review mark or <strong>Mark Reviewed</strong> in the diff header moves to the next unreviewed file. A folder’s context menu marks its listed files reviewed or unreviewed, and Settings can prune review data for changes that are no longer mutable.</li>
+  <li>SVG and SARIF files have rendered previews, notebooks show a Markdown text diff with a preview, and ZIP-family archives show a file listing with checksums and sizes without decompression. Lua and extensionless scripts with a recognized shebang get syntax highlighting.</li>
+  <li><strong>⌘Z</strong> and <strong>⇧⌘Z</strong> undo and redo repository operations, while text fields keep their own undo. History rewrites offer an <strong>Undo</strong> toast. Undo no longer rolls back working-copy snapshots and the disk edits they recorded.</li>
+  <li>Merge two or more selected changes, including an ancestor and its descendants, and choose the first parent. Change commands act on the selection and select their result.</li>
+  <li>Editors ask before discarding edits; failed loads offer Retry, and failed external-tool saves keep the window open. Diff Edit’s <strong>Keep Selected</strong> confirms before discarding unselected lines, and <strong>Abandon Selected Lines</strong> handles mixed added and removed lines correctly.</li>
+</ul>
+
+<h2>Gerrit, workspaces, and the command line</h2>
+<ul>
+  <li>Gerrit remotes offer <strong>Upload to Gerrit</strong> and <strong>Update from Gerrit</strong>. Upload refuses to overwrite a newer remote patch set, and Pull cleans up the empty local copies of submitted changes.</li>
+  <li>Pull, push, and bookmark tracking follow the configured remote. Repository-specific <code>jayjay.upload-command</code> and <code>jayjay.sync-command</code> can replace Upload and Pull.</li>
+  <li><code>jayjay import &lt;URL&gt;</code> imports a GitHub pull request or GitLab merge request into a sibling workspace. <code>jayjay workspace add &lt;name&gt;</code> creates one on <code>trunk()</code>; <code>jayjay workspace prune</code> removes landed or empty siblings while keeping pending work.</li>
+  <li>A workspace chip offers <strong>Rebase Lane onto Trunk</strong>. Rex opens terminal commands in a new tab, including when it needs to launch first.</li>
+</ul>
+
+<h2>Reliability</h2>
+<ul>
+  <li>The detail pane stays steady during background refreshes, retaining unchanged diffs, comparisons, and multi-selections.</li>
+  <li>Squash, workspace creation, conflict application, and bisect follow working-copy snapshot rewrites instead of using stale revisions. Squashing a change into itself leaves it unchanged.</li>
+  <li>Bookmark names containing revset operators are handled literally. Stale-bookmark cleanup preserves never-pushed bookmarks and is undoable; stacked pull requests use the repository’s default branch.</li>
+  <li>Line-ending-only and trailing-whitespace edits remain visible. Unreadable sides of structured diffs keep their placeholders, and HTML previews without a declared character set use UTF-8.</li>
+  <li>File deletion and ignore-file additions stay inside the repository through symbolic links. SVG previews render as inert images, and the app bundles third-party license notices.</li>
+  <li>Built on jj 0.47.1, with faster bookmark and revset lookups and less repeated work in long diffs. Working-copy rewrites in colocated repositories preserve the Git staging area.</li>
+</ul>

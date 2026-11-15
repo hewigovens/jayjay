@@ -38,6 +38,8 @@
       <li>A divergent change has multiple commits with the same change ID. Right-click one and choose <strong>Compare Divergent Version</strong>, or choose an entry from <strong>Compare Divergent Versions</strong> when there are several alternatives. Inspect the differences before deciding which version to abandon.</li>
       <li>Shift-click selects multiple changes for batch actions. A consecutive direct-parent chain shows its combined changes; exactly two revisions outside a valid linear range compare their endpoint trees, including siblings and merges. Larger independent selections remain selected for batch actions. Use <strong>Compare with selected</strong> for an explicit comparison between two revisions.</li>
     </ul>
+    <h2>Resolve a divergent change</h2>
+    <p>Right-click a divergent change and choose <strong>Resolve Divergent Change…</strong>, or click <strong>Resolve…</strong> in its detail header. Choose <strong>Keep A</strong> or <strong>Keep B</strong> to keep one version, or use the description, contents, author, and parents cards to combine them. <strong>Use A</strong> and <strong>Use B</strong> override jj’s automatic choices; <strong>Edit…</strong> lets you write a description. Review the file differences and the descendants, bookmarks, and workspaces that will move, then choose <strong>Converge</strong>. This is one undoable operation; <strong>Converge &amp; Resolve</strong> opens the merge editor when the result has conflicts. Cancel leaves the versions unchanged. If the repository changed after the preview, reopen the sheet before applying.</p>
     <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#compare">Online guide with screenshots</a></p>
   </div>
   </div>

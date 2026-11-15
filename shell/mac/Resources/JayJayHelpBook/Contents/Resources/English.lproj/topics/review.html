@@ -31,8 +31,9 @@
     <a name="review"></a>
     <p class="eyebrow">Diffs</p>
     <h1>Review changed files</h1>
-    <p>Open a repository, select a change in the history sidebar, then select a file in its file list to read the diff. With the file list focused, press <code>Space</code> to toggle the selected file’s reviewed state, or click the file’s review mark or <strong>Mark Reviewed</strong> in the diff header. Marking a file moves on to the next unreviewed file after it, so files you skipped stay behind. Reviewing records local progress; it does not change file contents or publish feedback.</p>
+    <p>Open a repository, select a mutable change in the history sidebar, then select a file in its file list to read the diff. With the file list focused, press <code>Space</code> to toggle the selected file’s reviewed state, or click the file’s review mark or <strong>Mark Reviewed</strong> in the diff header. Marking a file moves on to the next unreviewed file after it, so files you skipped stay behind. Reviewing records local progress; it does not change file contents or publish feedback.</p>
     <ul>
+      <li>In the tree file list, right-click a folder to mark its listed files reviewed, or unreviewed when all are reviewed. <strong>Settings &gt; Data &amp; Privacy &gt; Prune…</strong> removes review data for changes that are no longer mutable in recent repositories.</li>
       <li>The diff header shows a file-type or language icon, the file's status pill and added and removed line counts next to its name. <strong>Mark Reviewed</strong>, Preview, the Unified/Side-by-side toggle, <strong>Edit Diff</strong>, and <strong>Edit File</strong> sit on the right and drop to icons when the pane is narrow; <code>Tab</code> reaches Edit File after Edit Diff. The command palette also toggles the diff layout.</li>
       <li>The file list header puts its controls first and one count last: filter matches while filtering, review progress once a file is reviewed, otherwise the file total.</li>
       <li>Tabs occupy four visual cells when wrapping and selecting diff text.</li>
@@ -40,7 +41,7 @@
       <li>Binary sizes follow your locale. Hover over a size to see the exact byte count.</li>
       <li>Use <code>Cmd+F</code> to search in the current diff.</li>
       <li>Select text in either diff pane and press <code>Cmd+C</code> to copy it without gutter line numbers. Side-by-side copies preserve the original source lines, joining wrapped rows and skipping blank alignment rows in both plain text and rich text.</li>
-      <li>Syntax highlighting includes PowerShell, Batch, INI, CMake, XML-family, and Fluent (<code>.ftl</code>) files alongside the other supported source formats.</li>
+      <li>Syntax highlighting includes Lua, extensionless scripts with a recognized shebang, PowerShell, Batch, INI, CMake, XML-family, and Fluent (<code>.ftl</code>) files alongside the other supported source formats.</li>
       <li>Use <strong>Show 10</strong> or <strong>Show all</strong> on an unmodified-lines row to reveal collapsed context in place.</li>
       <li>Click a changed group's gutter stripe to review that hunk. File rows show unreviewed, partial, reviewed, or changed-since-review state.</li>
       <li>Review marks are local and survive app restarts. A uniquely matching hunk stays reviewed across edits and rebases, so changing one hunk does not discard review work on the others.</li>
@@ -50,6 +51,7 @@
       <li>For a changed regular text file in the current working copy, use <strong>Edit File</strong> in the diff header. JayJay opens a large modal editor with syntax highlighting already prepared, soft-wraps long lines, and leaves the diff detail intact underneath; press <code>Cmd+S</code> to save or <code>Esc</code> to cancel. Historical, compare-mode, conflicted, removed, projected, and image files stay read-only, and JayJay refuses to overwrite a file that changed after the editor opened.</li>
       <li>Use the rich preview icon for Markdown, SVG, notebooks, CSV/TSV tables, and SARIF reports when a rendered view is easier to read; a rendered SVG fits its own size and scales down to the pane. SVG and SARIF files open rendered, and the preview icon returns to the source; SVG stays on source when the file has notes. Notebooks open as a text diff of their Markdown, with Preview and Source buttons. Other text-backed files still open raw by default, so normal diff review remains available. Fenced <code>mermaid</code> blocks in rendered Markdown become diagrams offline; unsupported or oversized diagrams stay as source code. Pinch to zoom the preview, or turn Preview off to return to the source diff. Working-copy HTML files render inline without running page scripts; the external-open icon launches the file in the default app for linked CSS and images.</li>
       <li>Image files render as images. Drag the divider between the two versions to give either side more room; double-click it to reset.</li>
+      <li>ZIP-family archives, including JAR, AAR, and APK files, show checksums, sizes, and paths as a file listing without decompression.</li>
       <li>Binary property lists open as XML with a banner. Plain XML property lists stay raw.</li>
     </ul>
     <p><a href="../Start.html">Back to JayJay Help</a> · <a href="https://jayjay.hewig.dev/guide.html#diffs">Online guide with screenshots</a></p>

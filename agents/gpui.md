@@ -1,8 +1,8 @@
 # GPUI Shell Guide
 
-Load this file before changing the GPUI shell's layout, state ownership, globals, caches, or rendering conventions. Crate boundaries live in [Architecture Guide](architecture.md); review marks and notes in [Review State Guide](review-state.md). Cross-shell user-visible gaps are listed in [Shell Feature Parity Guide](shell-parity.md) and refreshed at release.
+Load this file before changing the GPUI shell's layout, state ownership, globals, caches, or rendering conventions. Crate boundaries live in [Architecture Guide](architecture.md); review marks and notes in [Review State Guide](review-state.md). Cross-shell user-visible gaps are listed in [Platform Differences and Remaining Gaps](shell-parity.md) and refreshed at release.
 
-`shell/gpui` is the Linux parity shell, packaged as an AppImage via `just gpui-appimage`; CI also runs its tests on Windows, so keep fixtures and path handling portable. The shell builds on macOS for development, but the shipped macOS product remains SwiftUI and GPUI macOS integrations are not a parity target. GPUI links the Rust crates directly — no UniFFI, no Swift. Its Cargo package version is synchronized with the SwiftUI release version by `just set-version`.
+`shell/gpui` is the Linux and Windows product shell. Linux ships AppImage and Debian packages; Windows ships Store packages and portable ZIPs. Keep fixtures and path handling portable across both platforms. The shell builds on macOS for development, but the shipped macOS product remains SwiftUI and GPUI macOS integrations are not a parity target. GPUI links the Rust crates directly — no UniFFI, no Swift. Its Cargo package version is synchronized with the SwiftUI release version by `just set-version`.
 
 ## File Layout
 

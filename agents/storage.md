@@ -136,4 +136,4 @@ These files are content-derived or process-scoped. Callers must tolerate their a
 4. Use atomic replacement for user-authored shared files and refresh from disk before mutating a long-lived snapshot.
 5. Add a path override or in-memory constructor so tests cannot write production data.
 6. Test round trips, malformed input, duplicate/normalization rules, and two independently loaded writers when the store is cross-process.
-7. Update this inventory when storage ownership or shell-sharing behavior changes. Refresh [Shell Feature Parity Guide](shell-parity.md) in the release shipped-docs pass if a user-visible workflow changed.
+7. Update this inventory when storage ownership or shell-sharing behavior changes. Refresh [Platform Differences and Remaining Gaps](shell-parity.md) in the release shipped-docs pass if a user-visible workflow changed.

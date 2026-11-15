@@ -2,7 +2,7 @@
 
 Load this file before creating, updating, or landing pull requests. Follow the submission requirements in [CONTRIBUTING.md](../CONTRIBUTING.md), and load [Version Control Guide](version-control.md) before changing descriptions, history, or bookmarks.
 
-JayJay publishes pull requests to GitHub from jj bookmarks. Keep each pull request focused on one logical change. Feature PRs leave the user guide, Help Book, website, and [shell-parity](shell-parity.md) matrix to the [release](release.md) docs pass. Explicit documentation requests follow the exception in [AGENTS.md](../AGENTS.md#user-facing-docs).
+JayJay publishes pull requests to GitHub from jj bookmarks. Keep each pull request focused on one logical change. Feature PRs leave the user guide, Help Book, website, and [platform differences and gaps](shell-parity.md) to the [release](release.md) docs pass. Explicit documentation requests follow the exception in [AGENTS.md](../AGENTS.md#user-facing-docs).
 
 ## Describe the change
 
