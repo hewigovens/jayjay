@@ -12,9 +12,8 @@ pub struct SelectionState {
     pub can_merge: bool,
     pub can_parallelize: bool,
     pub can_fix: bool,
-    /// Indexed by graph row, as is `can_merge_with`.
+    /// Indexed by graph row.
     pub can_rebase_onto: Vec<bool>,
-    pub can_merge_with: Vec<bool>,
     pub available_commands: Vec<SelectionCommand>,
 }
 
@@ -88,14 +87,12 @@ impl SelectionGraph {
         if selected.is_empty() || selected.len() != unique.len() {
             return SelectionState {
                 can_rebase_onto: vec![false; self.rows.len()],
-                can_merge_with: vec![false; self.rows.len()],
                 ..SelectionState::default()
             };
         }
 
         let mut ordered: Vec<usize> = selected.iter().copied().collect();
         ordered.sort_unstable();
-        let ancestors = self.reachable(&ordered, &|ix| &self.rows[ix].parents);
         let descendants = self.reachable(&ordered, &|ix| &self.children[ix]);
 
         let all_mutable = ordered.iter().all(|&ix| !self.rows[ix].is_immutable);
@@ -108,8 +105,6 @@ impl SelectionGraph {
         let oldest_has_one_parent = ordered
             .last()
             .is_some_and(|&ix| self.rows[ix].parent_commit_ids.len() == 1);
-        // Merge parents must be independent heads: no selected change may be an ancestor of another.
-        let can_merge = ordered.len() > 1 && !ordered.iter().any(|ix| ancestors.contains(ix));
         // Parallelize needs one connected run: each selected change descended from the next, possibly through unselected changes.
         let can_parallelize = mutable
             && ordered
@@ -120,19 +115,12 @@ impl SelectionGraph {
             can_abandon: mutable,
             can_squash: mutable && contiguous,
             can_diff: contiguous && oldest_has_one_parent,
-            can_merge,
+            // Like `jj new`, merge accepts an ancestor of another parent.
+            can_merge: ordered.len() > 1,
             can_parallelize,
             can_fix: all_mutable,
             can_rebase_onto: (0..self.rows.len())
                 .map(|ix| mutable && !selected.contains(&ix) && !descendants.contains(&ix))
-                .collect(),
-            can_merge_with: (0..self.rows.len())
-                .map(|ix| {
-                    (ordered.len() == 1 || can_merge)
-                        && !selected.contains(&ix)
-                        && !ancestors.contains(&ix)
-                        && !descendants.contains(&ix)
-                })
                 .collect(),
             available_commands: Vec::new(),
         };
@@ -286,10 +274,7 @@ mod tests {
         assert!(range.can_squash);
         assert!(range.can_diff);
         assert!(range.can_fix && state(&["c"]).can_fix);
-        assert!(
-            !range.can_merge,
-            "one selected change is the other's ancestor"
-        );
+        assert!(range.can_merge, "jj accepts an ancestor as a merge parent");
     }
 
     #[test]
@@ -314,7 +299,7 @@ mod tests {
             !heads.can_squash,
             "siblings are adjacent but not parent-linked"
         );
-        assert!(heads.can_merge, "independent heads are what merge wants");
+        assert!(heads.can_merge);
     }
 
     #[test]
@@ -334,7 +319,6 @@ mod tests {
         assert!(!off_page.can_fix);
         let every_row_refused = vec![false; fixture().len()];
         assert_eq!(off_page.can_rebase_onto, every_row_refused);
-        assert_eq!(off_page.can_merge_with, every_row_refused);
     }
 
     #[test]
@@ -445,31 +429,26 @@ mod tests {
             target: "other".to_owned(),
             edge_type: EdgeType::Indirect,
         });
-        let state = graph(&entries).state(&["child".to_owned()]);
+        let selected = ["child".to_owned(), "other".to_owned()];
         assert!(
-            !state.can_merge_with[1],
+            graph(&entries).state(&selected).can_parallelize,
             "an indirect edge still means the row is an ancestor"
         );
 
         entries[0].edges.pop();
-        let state = graph(&entries).state(&["child".to_owned()]);
         assert!(
-            state.can_merge_with[1],
+            !graph(&entries).state(&selected).can_parallelize,
             "with only the missing edge left there is no path between them"
         );
     }
 
     #[test]
-    fn merge_refuses_a_row_on_either_side_of_the_selection() {
+    fn a_single_change_offers_no_selection_command_but_fix() {
         let selection = state(&["c"]);
         assert!(!selection.can_abandon);
         assert!(!selection.can_squash);
         assert!(!selection.can_diff);
         assert!(selection.can_rebase_onto.iter().all(|allowed| !allowed));
         assert!(!selection.can_merge, "one change cannot merge with itself");
-        assert!(selection.can_merge_with[row("i")], "an unrelated head can");
-        assert!(!selection.can_merge_with[row("a")], "an ancestor cannot");
-        assert!(!selection.can_merge_with[row("d")], "a descendant cannot");
-        assert!(!selection.can_merge_with[row("c")], "nor itself");
     }
 }

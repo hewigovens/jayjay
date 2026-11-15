@@ -83,7 +83,6 @@ pub struct SelectionState {
     pub can_parallelize: bool,
     pub can_fix: bool,
     pub can_rebase_onto: Vec<bool>,
-    pub can_merge_with: Vec<bool>,
     pub available_commands: Vec<jayjay_core::dag::SelectionCommand>,
 }
 

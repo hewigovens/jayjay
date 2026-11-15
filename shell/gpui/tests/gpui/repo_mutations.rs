@@ -309,14 +309,6 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
                 .collect::<Vec<_>>(),
             ["Duplicate", "Absorb into Ancestors", "Revert Change"]
         );
-        assert!(
-            !menu
-                .iter()
-                .find(|item| item.label.as_ref() == "Merge with Selected")
-                .expect("merge action")
-                .enabled,
-            "ancestor and descendant changes are not independent merge heads"
-        );
     });
 }
 

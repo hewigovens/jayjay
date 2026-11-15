@@ -2,7 +2,7 @@ use std::sync::Arc;
 
 use crate::harness::*;
 use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualTestContext};
-use jayjay_core::{ChangeInfo, EdgeType, GraphEdge, GraphEntry};
+use jayjay_core::ChangeInfo;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::view_model::RepoViewModel;
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
@@ -39,8 +39,8 @@ fn consecutive_selection_loads_combined_diff_and_topology_gates_batch_menu(
         );
 
         let menu = view.build_change_menu(&vm.graph.changes[1], cx);
-        assert!(!menu_item(&menu, "Merge 3 Selected").enabled);
         for label in [
+            "Merge 3 Selected",
             "Squash 3 Selected…",
             "Parallelize 3 Selected",
             "Abandon 3 Selected…",
@@ -131,40 +131,6 @@ fn two_revision_selection_falls_back_to_comparing_siblings_or_a_merge(cx: &mut T
             .expect("multi-selection explanation");
         assert!(f32::from(content.size.width) <= 460.);
     }
-}
-
-#[gpui::test]
-fn indirect_visible_edge_disables_related_merge_selection(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let (view, cx) = open_fixture(&fixture, cx);
-
-    view.update_in(cx, |view, _, cx| {
-        view.view_model().update(cx, |vm, _| {
-            let descendant = vm.graph.changes[0].clone();
-            let ancestor = vm.graph.changes[2].clone();
-            vm.graph.changes = Arc::new(vec![descendant.clone(), ancestor.clone()]);
-            vm.graph.entries = Arc::new(vec![
-                GraphEntry {
-                    change: descendant,
-                    edges: vec![GraphEdge {
-                        target: ancestor.commit_id.id.clone(),
-                        edge_type: EdgeType::Indirect,
-                    }],
-                },
-                GraphEntry {
-                    change: ancestor,
-                    edges: Vec::new(),
-                },
-            ]);
-        });
-        view.handle_change_row_click(1, Modifiers::secondary_key(cx), cx);
-    });
-
-    view.read_with(cx, |view, cx| {
-        let vm = view.view_model().read(cx);
-        assert_eq!(vm.selected_change_indices(), vec![0, 1]);
-        assert!(!vm.can_merge_selected_changes());
-    });
 }
 
 #[gpui::test]
@@ -306,22 +272,6 @@ fn merge_submenu_chooses_first_parent_and_creates_the_ordered_merge(cx: &mut Tes
             .find(|change| change.is_working_copy);
         assert_eq!(merged.expect("merge working copy").parents, expected);
     });
-}
-
-#[gpui::test]
-fn hovering_a_disabled_merge_item_keeps_its_submenu_closed(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let (view, cx) = open_fixture(&fixture, cx);
-    select_first_three(&view, cx);
-
-    let row_id = view.read_with(cx, |view, cx| {
-        view.view_model().read(cx).graph.changes[0]
-            .commit_id
-            .id
-            .clone()
-    });
-    hover_merge_item(&row_id, cx);
-    assert!(!menu_shows(cx, "First Parent"));
 }
 
 #[gpui::test]

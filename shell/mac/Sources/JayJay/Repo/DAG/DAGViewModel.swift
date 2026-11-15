@@ -42,10 +42,6 @@ struct DAGViewModel {
         capabilities.isAvailable(.merge) ? JayJayCore.mergeParentChoices(changes: selectedChanges) : []
     }
 
-    func canMergeSelectedChange(with target: ChangeInfo) -> Bool {
-        capabilities.canMerge(with: target)
-    }
-
     private var selectedChanges: [ChangeInfo] {
         if let changes = cache.selectedChanges {
             return changes

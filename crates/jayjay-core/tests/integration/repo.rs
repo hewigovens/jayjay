@@ -613,7 +613,7 @@ fn move_to_working_copy_abandons_an_emptied_source_and_keeps_its_message() {
 }
 
 #[test]
-fn merge_rejects_changes_from_the_same_line_of_history() {
+fn merge_accepts_an_ancestor_parent_and_rejects_a_repeated_one() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
     let repo = Repo::open(&repo_path).expect("open repo");
@@ -621,25 +621,14 @@ fn merge_rejects_changes_from_the_same_line_of_history() {
     repo.describe("@", "parent").expect("describe parent");
     repo.new_change("@", "child").expect("create child");
 
-    let err = repo
-        .merge(&[
-            "description(\"parent\")".to_owned(),
-            "description(\"child\")".to_owned(),
-        ])
-        .expect_err("linear changes must not create a redundant merge");
+    let parent = "description(\"parent\")".to_owned();
+    repo.merge(&[parent.clone(), parent.clone()])
+        .expect_err("one change cannot be both parents");
 
-    assert!(
-        err.to_string().contains("independent heads"),
-        "unexpected error: {err}"
-    );
-    assert_eq!(
-        repo.show("@")
-            .expect("show unchanged working copy")
-            .info
-            .description
-            .trim(),
-        "child"
-    );
+    repo.merge(&[parent, "description(\"child\")".to_owned()])
+        .expect("jj new accepts an ancestor of another parent");
+    let merge = repo.show("@").expect("show merge").info;
+    assert_eq!(merge.parents.len(), 2);
 }
 
 /// Look up a revision in the log by its description (trimmed).

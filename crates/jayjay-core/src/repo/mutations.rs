@@ -1,4 +1,4 @@
-use std::collections::HashMap;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use futures::TryStreamExt as _;
@@ -392,18 +392,9 @@ impl Repo {
         let _write = self.write_guard()?;
         require_multiple_revisions(parent_revs, "Merge")?;
         let (repo, parents) = self.snapshot_and_follow_commits(parent_revs)?;
-        for (index, parent) in parents.iter().enumerate() {
-            for other in &parents[index + 1..] {
-                let related = parent.id() == other.id()
-                    || block_on_result("merge", repo.index().is_ancestor(parent.id(), other.id()))?
-                    || block_on_result("merge", repo.index().is_ancestor(other.id(), parent.id()))?;
-                if related {
-                    return Err(JayError::Internal {
-                        message: "Merge requires independent heads; one selected change is an ancestor of another"
-                            .to_owned(),
-                    });
-                }
-            }
+        let mut distinct = HashSet::new();
+        if !parents.iter().all(|parent| distinct.insert(parent.id())) {
+            return Err(JayError::internal("Merge requires distinct changes"));
         }
 
         let mut tx = repo.start_transaction();
