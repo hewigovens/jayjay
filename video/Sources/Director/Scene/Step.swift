@@ -18,7 +18,7 @@ struct Step: Decodable {
     let label: String?
     let timeout: TimeInterval
 
-    private static let cued: Set = ["click", "doubleClick", "rightClick", "menu", "key", "paste"]
+    private static let cued: Set = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "scroll"]
     private static let waiting: Set = ["click", "doubleClick", "rightClick", "menu", "wait", "waitGone", "scroll"]
     private static let actions = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "wait", "waitGone", "beat", "scroll"]
 

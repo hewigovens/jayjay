@@ -18,16 +18,18 @@ extension RepoContentView {
         } else {
             HStack(spacing: 8) {
                 if conflicted > 0, let conflicts = RevsetFilterPresets.preset(id: "conflicts") {
-                    Button(Localized.Repo.conflictedCount(count: conflicted), systemImage: "exclamationmark.triangle.fill") {
-                        viewModel.applyFilter(conflicts.revset)
+                    Button { viewModel.applyFilter(conflicts.revset) } label: {
+                        Label("\(conflicted)", systemImage: "exclamationmark.triangle.fill")
                     }
                     .foregroundStyle(.red)
+                    .help(Localized.Repo.conflictedCount(count: conflicted))
                 }
                 if divergent > 0 {
-                    Button(Localized.Repo.divergentCount(count: divergent), systemImage: "arrow.triangle.branch") {
-                        viewModel.applyFilter("divergent()")
+                    Button { viewModel.applyFilter("divergent()") } label: {
+                        Label("\(divergent)", systemImage: "arrow.triangle.branch")
                     }
                     .foregroundStyle(.orange)
+                    .help(Localized.Repo.divergentCount(count: divergent))
                 }
             }
             .buttonStyle(.plain)
