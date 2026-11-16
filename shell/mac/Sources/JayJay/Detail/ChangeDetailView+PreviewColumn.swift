@@ -40,6 +40,23 @@ extension ChangeDetailView {
         .padding(.vertical, 12)
     }
 
+    /// Change-level view controls: they apply to every file in the change, so they live on the change header rather than each file.
+    private var viewControls: some View {
+        HStack(spacing: 12) {
+            Picker(Localized.Diff.unified, selection: Bindable(appSettings).sideBySideDiff) {
+                Image(systemName: "text.justify").help(Localized.Diff.unified).tag(false)
+                Image(systemName: "rectangle.split.2x1").help(Localized.Diff.sideBySide).tag(true)
+            }
+            .pickerStyle(.segmented)
+            .labelsHidden()
+            .fixedSize()
+            .accessibilityIdentifier(AID.Diff.layoutToggle)
+            fileListToggle
+        }
+        .padding(.top, 10)
+        .padding(.trailing, PaneLayout.detailInset)
+    }
+
     private var fileListToggle: some View {
         Button {
             appSettings.showsFileList.toggle()
@@ -49,8 +66,6 @@ extension ChangeDetailView {
         }
         .buttonStyle(.plain)
         .help(appSettings.showsFileList ? Localized.Repo.hideFileList : Localized.Repo.showFileList)
-        .padding(.top, 14)
-        .padding(.trailing, PaneLayout.detailInset)
     }
 
     // MARK: - Preview column
@@ -80,7 +95,7 @@ extension ChangeDetailView {
                 Divider()
             }
         }
-        .overlay(alignment: .topTrailing) { fileListToggle }
+        .overlay(alignment: .topTrailing) { viewControls }
         .background(appSettings.readingBackground(colorScheme))
         .background(Color.primary.opacity(0.05))
     }

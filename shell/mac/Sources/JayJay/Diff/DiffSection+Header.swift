@@ -27,7 +27,6 @@ extension DiffSection {
             HStack(spacing: 2) {
                 fileReviewButton
                 richPreviewButtons
-                sideBySideButton
                 if canOpenDiffEdit {
                     Button(action: openDiffEdit) {
                         actionLabel(Localized.Diff.editDiff, systemImage: "square.and.pencil")
@@ -189,33 +188,5 @@ extension DiffSection {
                 .jayjayFont(10)
                 .foregroundStyle(.secondary)
         }
-    }
-
-    private var sideBySideButton: some View {
-        let toggle = { settings.sideBySideDiff.toggle() }
-        return Button(action: toggle) {
-            actionLabel(
-                effectiveSideBySideDiff ? Localized.Diff.sideBySide : Localized.Diff.unified,
-                systemImage: effectiveSideBySideDiff ? "rectangle.split.2x1" : "text.justify"
-            )
-        }
-        .disabled(isSideBySideUnavailable)
-        .keyboardFocusStop(.diffLayout, isAvailable: !isSideBySideUnavailable, action: toggle)
-        .help(
-            isSideBySideUnavailable ? Localized.Diff.sideBySideUnavailable
-                : effectiveSideBySideDiff ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide
-        )
-        .accessibilityLabel(effectiveSideBySideDiff ? Localized.Diff.sideBySide : Localized.Diff.unified)
-        .accessibilityIdentifier(AID.Diff.layoutToggle)
-    }
-
-    private var isSideBySideUnavailable: Bool {
-        settings.sideBySideDiff && !effectiveSideBySideDiff
-    }
-
-    private var effectiveSideBySideDiff: Bool {
-        guard settings.sideBySideDiff else { return false }
-        guard let fileDiff else { return true }
-        return canUseSideBySide(fileDiff)
     }
 }
