@@ -62,17 +62,10 @@ extension RepoContentView {
 
         ToolbarItemGroup(placement: .primaryAction) {
             toolbarButton(
-                .finder,
-                help: AppShortcut.showInFinder.help(Localized.Common.showIn(app: "Finder")),
-                action: { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) },
-                label: { Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder") }
-            )
-            .disabled(viewModel.repo.isRemote())
-            toolbarButton(
                 .editor,
                 help: Localized.Repo.openRepositoryIn(app: settings.externalEditor.title),
                 action: { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) },
-                label: { Label(Localized.Settings.editor, systemImage: "curlybraces") }
+                label: { Label { Text(Localized.Settings.editor) } icon: { settings.externalEditor.toolbarIcon } }
             )
             .disabled(viewModel.repo.isRemote())
             toolbarButton(
@@ -82,12 +75,6 @@ extension RepoContentView {
                 label: { Label(Localized.Settings.terminal, systemImage: "terminal") }
             )
             .disabled(viewModel.repo.isRemote())
-            toolbarButton(
-                .settings,
-                help: Localized.Repo.settings,
-                action: { openSettings() },
-                label: { Label(Localized.Repo.settings, systemImage: "gearshape") }
-            )
         }
     }
 

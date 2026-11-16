@@ -15,15 +15,8 @@ struct SyncArrowIndicator: View {
 
         var arrowSystemImage: String {
             switch self {
-                case .pull: "arrow.down"
-                case .push: "arrow.up"
-            }
-        }
-
-        var sign: CGFloat {
-            switch self {
-                case .pull: 1
-                case .push: -1
+                case .pull: "tray.and.arrow.down"
+                case .push: "tray.and.arrow.up"
             }
         }
     }
@@ -42,13 +35,8 @@ struct SyncArrowIndicator: View {
             Label {
                 Text(animating ? Localized.Repo.cancelDirection(direction: direction.label) : direction.label)
             } icon: {
-                ZStack {
-                    Image(systemName: "circle")
-                    Image(systemName: direction.arrowSystemImage)
-                        .scaleEffect(0.55)
-                        .offset(y: motionEnabled ? direction.sign * (-2 + 4 * progress) : 0)
-                        .opacity(motionEnabled ? phaseOpacity(progress) : 1)
-                }
+                Image(systemName: direction.arrowSystemImage)
+                    .opacity(motionEnabled ? 0.35 + 0.65 * phaseOpacity(progress) : 1)
             }
         }
         .onChange(of: motionEnabled, initial: true) { _, enabled in
