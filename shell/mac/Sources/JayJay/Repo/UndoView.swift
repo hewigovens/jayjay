@@ -6,6 +6,8 @@ struct UndoView: View {
     let undoing: String?
     let onRestore: (String) -> Void
     let onDismiss: () -> Void
+    /// Shown as the window's trailing inspector rather than a sheet: no fixed size, and Restore leaves it open.
+    var isPanel = false
 
     @State private var selectedId: String?
     @Environment(\.colorScheme) private var colorScheme
@@ -29,7 +31,7 @@ struct UndoView: View {
             Divider()
             footer
         }
-        .frame(width: 600, height: 480)
+        .frame(width: isPanel ? nil : 600, height: isPanel ? nil : 480)
         .onChange(of: entries?.map(\.id.id), initial: true) {
             selectedId = entries?.restoreTarget(undoing: undoing)
         }
@@ -95,12 +97,16 @@ struct UndoView: View {
     private var footer: some View {
         HStack {
             Spacer()
-            Button(Localized.Common.cancel) { onDismiss() }
-                .keyboardShortcut(.cancelAction)
+            if !isPanel {
+                Button(Localized.Common.cancel) { onDismiss() }
+                    .keyboardShortcut(.cancelAction)
+            }
             Button(Localized.Repo.restore) {
                 guard let id = selectedId else { return }
                 onRestore(id)
-                onDismiss()
+                if !isPanel {
+                    onDismiss()
+                }
             }
             .keyboardShortcut(.defaultAction)
             .disabled(selectedId == nil || isCurrentSelected)

@@ -2,6 +2,8 @@ import JayJayCore
 import SwiftUI
 
 struct RepoContentView: View {
+    @State var showsOperationLog = false
+    @State var opLogUndoing: String?
     @State private var hasSettledSidebarWidth = false
     @Bindable var viewModel: RepoViewModel
     let isSwitchingWorkspace: Bool
@@ -28,7 +30,7 @@ struct RepoContentView: View {
     @Environment(\.colorScheme) var colorScheme
 
     var body: some View {
-        contentLayout
+        contentLayoutWithOperationLog
             .frame(minWidth: 800, minHeight: 500)
             .environment(diffCommands)
             .onAppear {
@@ -140,6 +142,26 @@ struct RepoContentView: View {
 
     private var availableMenuShortcuts: Set<AppShortcut> {
         availableShortcuts(among: RepositoryCommands.menuShortcuts)
+    }
+
+    private var contentLayoutWithOperationLog: some View {
+        contentLayout
+        .inspector(isPresented: $showsOperationLog) {
+            UndoView(
+                entries: viewModel.opLogEntries,
+                undoing: opLogUndoing,
+                onRestore: { opId in viewModel.opRestore(opId: opId) },
+                onDismiss: { showsOperationLog = false },
+                isPanel: true
+            )
+            .inspectorColumnWidth(min: 260, ideal: 320, max: 480)
+        }
+        .onChange(of: showsOperationLog, initial: true) { _, shown in
+            if shown { viewModel.loadOpLog() }
+        }
+        .onChange(of: viewModel.currentOperationDescription) {
+            if showsOperationLog { viewModel.loadOpLog() }
+        }
     }
 
     private var contentLayout: some View {

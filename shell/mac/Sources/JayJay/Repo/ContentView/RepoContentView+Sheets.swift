@@ -34,13 +34,6 @@ extension RepoContentView {
                 changeConfirmationSheet(confirmation)
             case .submoduleAttention:
                 submoduleAttentionSheet
-            case let .operationLog(operationId):
-                UndoView(
-                    entries: viewModel.opLogEntries,
-                    undoing: operationId,
-                    onRestore: { opId in viewModel.opRestore(opId: opId) },
-                    onDismiss: { self.modal = nil }
-                )
             case .bookmarkManager:
                 bookmarkManagerSheet
             case .converge, .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect, .sshConnection:
@@ -104,7 +97,7 @@ extension RepoContentView {
                         }
                     }
                 )
-            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .operationLog, .bookmarkManager, .ratingPrompt:
+            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .bookmarkManager, .ratingPrompt:
                 EmptyView()
         }
     }

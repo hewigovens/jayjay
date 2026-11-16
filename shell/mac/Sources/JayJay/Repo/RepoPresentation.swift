@@ -9,7 +9,6 @@ enum RepoModalState: Identifiable {
     case stackedPr(rev: String)
     case confirmChange(RepoChangeConfirmation)
     case submoduleAttention
-    case operationLog(undoing: String?)
     case bookmarkManager
     case sshConnection
     case workspaceCreate
@@ -28,7 +27,6 @@ enum RepoModalState: Identifiable {
             case let .stackedPr(rev): "stacked-pr-\(rev)"
             case let .confirmChange(confirmation): confirmation.id
             case .submoduleAttention: "submodule-attention"
-            case .operationLog: "operation-log"
             case .bookmarkManager: "bookmark-manager"
             case .sshConnection: "ssh-connection"
             case .workspaceCreate: "workspace-create"

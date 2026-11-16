@@ -67,9 +67,10 @@ extension RepoContentView {
         }
     }
 
+    /// The op log is repo-wide history, so it opens as the window's trailing inspector beside the content rather than a modal sheet.
     func showOperationLog(undoing operationId: String? = nil) {
-        viewModel.loadOpLog()
-        modal = .operationLog(undoing: operationId)
+        opLogUndoing = operationId
+        showsOperationLog = true
     }
 
     func presentBookmarkCreate(rev: String) {

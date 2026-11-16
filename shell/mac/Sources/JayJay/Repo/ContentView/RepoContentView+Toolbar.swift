@@ -68,7 +68,11 @@ extension RepoContentView {
                     .help(viewModel.sshErrorMessage ?? viewModel.sshStatusLabel)
             }
             Button(Localized.Menu.operationLogEllipsis, systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90") {
-                showOperationLog()
+                if showsOperationLog {
+                    showsOperationLog = false
+                } else {
+                    showOperationLog()
+                }
             }
             .help(viewModel.currentOperationDescription.isEmpty
                 ? AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis)
