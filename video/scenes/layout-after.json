@@ -1,0 +1,95 @@
+{
+  "setup": [
+    "bash",
+    "scripts/screenshot-fixture.sh",
+    "/Users/Shared/jayjay-example"
+  ],
+  "repo": "/Users/Shared/jayjay-example/flightdeck",
+  "rows": "/Users/Shared/jayjay-example/rows.tsv",
+  "window": [
+    60,
+    60,
+    1440,
+    860
+  ],
+  "env": {
+    "JJ_CONFIG": "/Users/Shared/jayjay-example/jj-config.toml",
+    "JAYJAY_REPOSITORIES_PATH": "/Users/Shared/jayjay-example/repositories.json",
+    "JAYJAY_RECENT_REVSETS_PATH": "/Users/Shared/jayjay-example/recent-revsets.json",
+    "JAYJAY_REVIEW_STORE_PATH": "/Users/Shared/jayjay-example/review-store.json"
+  },
+  "defaults": {
+    "ApplePersistenceIgnoreState": true,
+    "jayjay.appearanceMode": "dark",
+    "jayjay.tintWindowWithWallpaper": false,
+    "jayjay.fontFamily": "system",
+    "jayjay.fontSize": 12,
+    "jayjay.treeFileList": false,
+    "jayjay.sideBySideDiff": false,
+    "jayjay.hideReviewedFiles": false,
+    "jayjay.sidebarHidden": false,
+    "jayjay.sidebarWidth": "",
+    "jayjay.secondaryPaneWidth": "",
+    "jayjay.fileColumnWidth": "",
+    "jayjay.hasCompletedOnboarding": true,
+    "jayjay.sponsorDismissed": true,
+    "jayjay.windowFrame.repo-window": "${window}"
+  },
+  "prelude": [
+    {
+      "wait": {
+        "idPrefix": "dag.row."
+      },
+      "timeout": 30
+    },
+    {
+      "click": {
+        "row": "include transfer time"
+      }
+    },
+    {
+      "beat": 1
+    }
+  ],
+  "steps": [
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "id": "diff.layoutToggle",
+        "x": 48,
+        "y": 10
+      },
+      "label": "One unified / side-by-side control for the whole change"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "scroll": {
+        "idPrefix": "diff.section",
+        "index": 0
+      },
+      "lines": 12,
+      "label": "Every stacked file switches"
+    },
+    {
+      "beat": 2.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "id": "diff.layoutToggle",
+        "x": 14,
+        "y": 10
+      },
+      "label": "Back to unified"
+    },
+    {
+      "beat": 3
+    }
+  ]
+}

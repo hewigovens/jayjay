@@ -1,0 +1,263 @@
+{
+  "setup": [
+    "bash",
+    "scripts/screenshot-fixture.sh",
+    "/Users/Shared/jayjay-example"
+  ],
+  "repo": "/Users/Shared/jayjay-example/flightdeck",
+  "rows": "/Users/Shared/jayjay-example/rows.tsv",
+  "window": [
+    60,
+    60,
+    1440,
+    860
+  ],
+  "env": {
+    "JJ_CONFIG": "/Users/Shared/jayjay-example/jj-config.toml",
+    "JAYJAY_REPOSITORIES_PATH": "/Users/Shared/jayjay-example/repositories.json",
+    "JAYJAY_RECENT_REVSETS_PATH": "/Users/Shared/jayjay-example/recent-revsets.json",
+    "JAYJAY_REVIEW_STORE_PATH": "/Users/Shared/jayjay-example/review-store.json"
+  },
+  "defaults": {
+    "ApplePersistenceIgnoreState": true,
+    "jayjay.appearanceMode": "dark",
+    "jayjay.tintWindowWithWallpaper": false,
+    "jayjay.fontFamily": "system",
+    "jayjay.fontSize": 12,
+    "jayjay.treeFileList": false,
+    "jayjay.sideBySideDiff": false,
+    "jayjay.hideReviewedFiles": false,
+    "jayjay.sidebarHidden": false,
+    "jayjay.sidebarWidth": "",
+    "jayjay.secondaryPaneWidth": "",
+    "jayjay.fileColumnWidth": "",
+    "jayjay.hasCompletedOnboarding": true,
+    "jayjay.sponsorDismissed": true,
+    "jayjay.windowFrame.repo-window": "${window}"
+  },
+  "prelude": [
+    {
+      "wait": {
+        "idPrefix": "dag.row."
+      },
+      "timeout": 30
+    },
+    {
+      "click": {
+        "row": "include transfer time"
+      }
+    },
+    {
+      "beat": 1
+    }
+  ],
+  "steps": [
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "row": "include transfer time"
+      },
+      "label": "Header spans files + diffs: title, compact IDs, details in columns, no status bar"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "scroll": {
+        "idPrefix": "diff.section",
+        "index": 0
+      },
+      "lines": 18,
+      "label": "Nothing selected: every file's diff stacked. Scrolling collapses the header to one line"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "scroll": {
+        "idPrefix": "diff.section",
+        "index": 0
+      },
+      "lines": -30,
+      "label": "Back at the top the details return; no expand button"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "file": "src/routes.rs"
+      },
+      "label": "File rows: name + folder only, same +/- badge everywhere. Click opens one file"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "key": "escape",
+      "label": "Esc (or the file count) returns to all files"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "file.visibilityToggle",
+      "label": "File list is an index you can hide (Option-Command-S)"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "file.visibilityToggle",
+      "label": "While hidden, its toggle sits in the change header"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "id": "diff.layoutToggle",
+        "x": 48,
+        "y": 10
+      },
+      "label": "One unified / side-by-side control for the whole change"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "id": "diff.layoutToggle",
+        "x": 14,
+        "y": 10
+      },
+      "label": "Back to unified"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "detail.reviewToggle",
+      "label": "Review is a mode you turn on: each file's diff header gets Mark Reviewed"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "detail.reviewToggle",
+      "label": "Off again: no review circles anywhere; notes always show"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "detail.editDescription",
+      "label": "Edit opens the message editor in place, for any mutable change"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "key": "escape",
+      "label": "Esc cancels"
+    },
+    {
+      "wait": "detail.editDescription",
+      "timeout": 3
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "toolbar.operationLog",
+      "label": "Op log opens as a trailing inspector beside the content"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": "toolbar.operationLog",
+      "label": "Toolbar button closes it"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "label": "System sidebar toggle at the sidebar's edge (Control-Command-S)",
+      "key": "ctrl+cmd+s"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "label": "Sidebar returns with its scroll and selection",
+      "key": "ctrl+cmd+s"
+    },
+    {
+      "beat": 3.5
+    },
+    {
+      "beat": 1.8
+    },
+    {
+      "click": {
+        "idPrefix": "dag.row.",
+        "index": 0
+      },
+      "label": "Working copy: read-only header too; the sidebar is just history"
+    },
+    {
+      "beat": 3.5
+    }
+  ]
+}
