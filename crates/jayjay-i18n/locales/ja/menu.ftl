@@ -41,7 +41,6 @@ menu-show-bookmark-diff = ブックマークの差分を表示
 menu-copy-bookmark-name = ブックマーク名をコピー
 menu-rename-ellipsis = 名前を変更…
 menu-track-remote = リモートを追跡
-menu-pull-request = Pull Request
 menu-first-parent = 第 1 親
 menu-bisect-between = この範囲で二分探索
 menu-update-workspace = ワークスペースを更新

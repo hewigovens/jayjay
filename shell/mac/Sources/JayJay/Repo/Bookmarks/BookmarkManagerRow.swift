@@ -37,13 +37,6 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
         return "@\(first)"
     }
 
-    private var pullRequestLabel: String {
-        if let prHostName {
-            return Localized.Repo.pullRequestOn(host: prHostName)
-        }
-        return Localized.Menu.pullRequest
-    }
-
     var body: some View {
         HStack(spacing: 10) {
             statusIcon
@@ -112,9 +105,9 @@ struct BookmarkManagerRow<Actions: BookmarkManagerRowActions>: View {
                     Label(Localized.Menu.push, systemImage: "arrow.up.circle")
                 }
             }
-            if canOpenPR {
+            if canOpenPR, let prHostName {
                 Button { actions.openPullRequest(for: bookmark) } label: {
-                    Label(pullRequestLabel, systemImage: "arrow.up.right.square")
+                    Label(Localized.Repo.pullRequestOn(host: prHostName), systemImage: "arrow.up.right.square")
                 }
             }
             if bookmark.isDeleted {

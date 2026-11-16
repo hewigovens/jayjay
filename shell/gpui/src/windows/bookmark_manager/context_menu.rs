@@ -67,14 +67,13 @@ pub(super) fn bookmark_menu_items(
             BookmarkContextAction::Push(bookmark.name.clone()),
         ));
     }
-    if bookmark.is_tracking_remote
+    if let Some(host_name) = pr_host_name
+        && bookmark.is_tracking_remote
         && !bookmark.is_deleted
         && !trunk::is_trunk_bookmark(&bookmark.name)
     {
         items.push(PopupMenuEntry::item(
-            pr_host_name
-                .map(jayjay_i18n::repo::pull_request_on)
-                .unwrap_or_else(jayjay_i18n::menu::pull_request),
+            jayjay_i18n::repo::pull_request_on(host_name),
             glyph::EXTERNAL_LINK,
             BookmarkContextAction::OpenPullRequest(bookmark.name.clone()),
         ));
@@ -133,34 +132,28 @@ mod tests {
         }
     }
 
+    fn labels(bookmark: &BookmarkInfo, pr_host_name: Option<&str>) -> Vec<String> {
+        bookmark_menu_items(bookmark, pr_host_name)
+            .into_iter()
+            .filter_map(|entry| match entry {
+                PopupMenuEntry::Item { label, .. } => Some(label.to_string()),
+                PopupMenuEntry::Separator => None,
+            })
+            .collect()
+    }
+
     #[test]
     fn deleted_bookmark_offers_only_cleanup() {
         let mut bookmark = bookmark("stale");
         bookmark.is_deleted = true;
 
-        let labels: Vec<_> = bookmark_menu_items(&bookmark, Some("GitHub"))
-            .into_iter()
-            .filter_map(|entry| match entry {
-                PopupMenuEntry::Item { label, .. } => Some(label.to_string()),
-                PopupMenuEntry::Separator => None,
-            })
-            .collect();
-
-        assert_eq!(labels, ["Forget (clean up)"]);
+        assert_eq!(labels(&bookmark, Some("GitHub")), ["Forget (clean up)"]);
     }
 
     #[test]
     fn tracked_bookmark_matches_swiftui_actions() {
-        let labels: Vec<_> = bookmark_menu_items(&bookmark("feature"), Some("GitHub"))
-            .into_iter()
-            .filter_map(|entry| match entry {
-                PopupMenuEntry::Item { label, .. } => Some(label.to_string()),
-                PopupMenuEntry::Separator => None,
-            })
-            .collect();
-
         assert_eq!(
-            labels,
+            labels(&bookmark("feature"), Some("GitHub")),
             [
                 "Reveal",
                 "Diff",
@@ -169,6 +162,14 @@ mod tests {
                 "Rename",
                 "Delete",
             ]
+        );
+    }
+
+    #[test]
+    fn unknown_host_keeps_git_actions_without_pull_request() {
+        assert_eq!(
+            labels(&bookmark("feature"), None),
+            ["Reveal", "Diff", "Push", "Rename", "Delete"]
         );
     }
 }

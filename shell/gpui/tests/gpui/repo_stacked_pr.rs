@@ -118,6 +118,7 @@ fn open_stack_with_existing_first(
 #[gpui::test]
 fn change_menu_gates_entry_on_mutability(cx: &mut TestAppContext) {
     let fixture = stacked_fixture();
+    fixture.add_origin("https://github.com/example/repo.git");
     install_test_globals(cx);
     let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;

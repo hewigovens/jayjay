@@ -4,7 +4,7 @@ use jayjay_core::{RemoteSyncStatus, Repo};
 use jayjay_gpui::app::actions::OpenBookmarkManager;
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::windows::bookmark_manager::BookmarkManagerView;
-use jj_test::{LinearFixture, run_jj_in};
+use jj_test::{LinearFixture, run_git, run_jj_in};
 
 fn open_manager(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> VisualTestContext {
     repo_cx.focus(view);
@@ -19,6 +19,39 @@ fn open_manager(view: &Entity<RepoWindow>, repo_cx: &mut VisualTestContext) -> V
     let mut manager_cx = VisualTestContext::from_window(manager_window, &repo_cx.cx);
     settle_visual(&mut manager_cx);
     manager_cx
+}
+
+#[gpui::test]
+fn bookmark_manager_follows_a_forge_capability_change(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let _remote = create_tracked_bookmark(&fixture, "tracked");
+    let (view, repo_cx) = open_fixture(&fixture, cx);
+    let mut manager_cx = open_manager(&view, repo_cx);
+
+    run_git(
+        &fixture.path,
+        &[
+            "remote",
+            "set-url",
+            "origin",
+            "https://github.com/example/repo.git",
+        ],
+    );
+    view.update_in(&mut manager_cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx));
+    });
+    settle_visual(&mut manager_cx);
+    let row = manager_cx
+        .debug_bounds("bookmark-row-tracked")
+        .expect("tracked bookmark row");
+    manager_cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(&mut manager_cx);
+
+    assert!(
+        manager_cx
+            .debug_bounds("bookmark-context-Pull Request on GitHub")
+            .is_some()
+    );
 }
 
 #[gpui::test]

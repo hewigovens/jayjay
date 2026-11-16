@@ -61,6 +61,10 @@ impl LinearFixture {
         run_jj_in(&self.path, &["st"]);
     }
 
+    pub fn add_origin(&self, url: &str) {
+        run_git(&self.path, &["remote", "add", "origin", url]);
+    }
+
     pub fn add_bare_origin(&self) -> TempDir {
         self.add_bare_remote("origin")
     }

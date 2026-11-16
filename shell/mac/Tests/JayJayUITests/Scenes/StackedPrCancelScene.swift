@@ -2,8 +2,12 @@ import XCTest
 
 /// Opens the stacked-PR panel from a change's context menu, confirms the preview
 /// renders, and cancels — so the flow is exercised without pushing or creating
-/// any PRs (read-only; safe on the shared `simple` fixture).
+/// any PRs (read-only; the fixture has a supported forge remote but no network).
 final class StackedPrCancelScene: SceneBase {
+    override class var fixtureName: String {
+        "stacked-pr"
+    }
+
     func testOpenStackedPrPanelThenCancel() throws {
         let app = try XCTUnwrap(app)
         let rows = dagRows(of: app)
@@ -12,6 +16,11 @@ final class StackedPrCancelScene: SceneBase {
         // Open "Create / Update Stacked PRs…" from the tip change's context menu.
         rightClickCenter(rows.element(boundBy: 0))
         let menuItem = app.menuItems["Create / Update Stacked PRs…"]
+        if !menuItem.waitForExistence(timeout: 3) {
+            // The forge capability arrives with the first full refresh, after the rows.
+            keyStroke(.escape)
+            rightClickCenter(rows.element(boundBy: 0))
+        }
         XCTAssertTrue(menuItem.waitForExistence(timeout: 3), "Stacked PRs menu item missing")
         menuItem.click()
 

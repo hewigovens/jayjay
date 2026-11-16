@@ -144,11 +144,13 @@ extension DAGView {
 
     @ViewBuilder
     private func reviewActionsSection(rev: String) -> some View {
-        Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
-            Label(
-                Localized.Menu.createUpdateStackedPrsEllipsis,
-                systemImage: "square.stack.3d.up.fill"
-            )
+        if prHostName != nil {
+            Button { onRequest?(.createStackedPRs(rev: rev)) } label: {
+                Label(
+                    Localized.Menu.createUpdateStackedPrsEllipsis,
+                    systemImage: "square.stack.3d.up.fill"
+                )
+            }
         }
         if let uploadTitle {
             Button { actions?.upload(rev: rev) } label: {

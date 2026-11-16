@@ -14,7 +14,7 @@ impl RepoWindow {
         rev: Option<&str>,
         cx: &App,
     ) -> Vec<ContextMenuItem> {
-        let pull_request_label = self.pull_request_menu_label(cx);
+        let pr_host_name = self.vm.read(cx).pr_host_name.clone();
         let conflicted = self.bookmark_is_conflicted(name, cx);
         let move_label = if conflicted {
             jayjay_i18n::menu::resolve_conflict_set_to()
@@ -82,9 +82,11 @@ impl RepoWindow {
             ));
         }
 
-        if !trunk::is_trunk_bookmark(name) {
+        if let Some(host_name) = pr_host_name.as_deref()
+            && !trunk::is_trunk_bookmark(name)
+        {
             items.push(ContextMenuItem::new(
-                pull_request_label,
+                jayjay_i18n::repo::pull_request_on(host_name),
                 glyph::ARROW_CIRCLE_RIGHT,
                 ContextAction::OpenPRForBookmark(name.to_owned().into()),
             ));
@@ -142,15 +144,6 @@ impl RepoWindow {
             ));
         }
         items
-    }
-
-    fn pull_request_menu_label(&self, cx: &App) -> String {
-        self.vm
-            .read(cx)
-            .pr_host_name
-            .as_ref()
-            .map(|host| jayjay_i18n::repo::pull_request_on(host))
-            .unwrap_or_else(jayjay_i18n::menu::pull_request)
     }
 
     pub(super) fn bookmark_is_conflicted(&self, name: &str, cx: &App) -> bool {

@@ -243,6 +243,7 @@ fn change_context_action_confirms_then_abandons_change(cx: &mut TestAppContext) 
 #[gpui::test]
 fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    fixture.add_origin("https://github.com/example/repo.git");
     install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);
@@ -315,6 +316,7 @@ fn change_menu_exposes_full_mutation_set_and_selected_pair_actions(cx: &mut Test
 #[gpui::test]
 fn immutable_change_menu_keeps_read_only_evolution_action(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
+    fixture.add_origin("https://github.com/example/repo.git");
     install_test_globals(cx);
     let view = cx.new(|cx| RepoWindow::new(fixture.path.clone(), cx));
     settle(cx);

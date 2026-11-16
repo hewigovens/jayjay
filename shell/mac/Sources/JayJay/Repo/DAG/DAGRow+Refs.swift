@@ -114,8 +114,8 @@ extension DAGRow {
             Button(Localized.Menu.push) {
                 actions?.gitPush(bookmark: name)
             }
-            if !isTrunkBookmark(name: name) {
-                Button(pullRequestLabel) {
+            if let prHostName, !isTrunkBookmark(name: name) {
+                Button(Localized.Repo.pullRequestOn(host: prHostName)) {
                     actions?.openPR(bookmark: name)
                 }
             }
@@ -185,12 +185,5 @@ extension DAGRow {
             font: typography.identifierFont,
             prefixColor: appThemes.colors(for: colorScheme).changeIdPrefix
         ))
-    }
-
-    private var pullRequestLabel: String {
-        if let prHostName {
-            return Localized.Repo.pullRequestOn(host: prHostName)
-        }
-        return Localized.Menu.pullRequest
     }
 }

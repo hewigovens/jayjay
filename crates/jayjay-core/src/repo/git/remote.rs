@@ -188,7 +188,19 @@ pub(crate) fn git_remote_to_web_url(raw: &str) -> Option<String> {
     if let Some(remote) = HostedRepo::parse(raw) {
         return Some(remote.web_url());
     }
-    Some(format!("https://{host}/{path}"))
+    // gix-url strips the brackets from IPv6 SSH hosts; a web URL needs them.
+    let host = if host.contains(':') && !host.starts_with('[') {
+        format!("[{host}]")
+    } else {
+        host.to_owned()
+    };
+    let (scheme, port) = match &url.scheme {
+        Scheme::Http => ("http", url.port),
+        Scheme::Https => ("https", url.port),
+        _ => ("https", None),
+    };
+    let port = port.map(|port| format!(":{port}")).unwrap_or_default();
+    Some(format!("{scheme}://{host}{port}/{path}"))
 }
 
 #[cfg(test)]
@@ -279,6 +291,26 @@ mod tests {
                 "https://cursor.com/codebase/acme/checkout",
             ),
             ("ssh://git@host:2222/o/r.git", "https://host/o/r"),
+            (
+                "https://forge.example:8443/team/repo.git",
+                "https://forge.example:8443/team/repo",
+            ),
+            (
+                "http://forge.example/team/repo.git",
+                "http://forge.example/team/repo",
+            ),
+            (
+                "https://token:s3cret@forge.example/team/repo.git",
+                "https://forge.example/team/repo",
+            ),
+            (
+                "https://[::1]:8443/team/repo.git",
+                "https://[::1]:8443/team/repo",
+            ),
+            (
+                "ssh://git@[2001:db8::1]:2222/team/repo.git",
+                "https://[2001:db8::1]/team/repo",
+            ),
         ];
         for (raw, expected) in cases {
             assert_eq!(

@@ -41,7 +41,6 @@ menu-show-bookmark-diff = Show Bookmark Diff
 menu-copy-bookmark-name = Copy Bookmark Name
 menu-rename-ellipsis = Rename…
 menu-track-remote = Track Remote
-menu-pull-request = Pull Request
 menu-first-parent = First Parent
 menu-bisect-between = Bisect Between
 menu-update-workspace = Update Workspace

@@ -41,7 +41,6 @@ menu-show-bookmark-diff = 显示书签差异
 menu-copy-bookmark-name = 复制书签名称
 menu-rename-ellipsis = 重命名…
 menu-track-remote = 跟踪远程
-menu-pull-request = Pull Request
 menu-first-parent = 第一个父变更
 menu-bisect-between = 在两者之间二分查找
 menu-update-workspace = 更新工作区

@@ -155,6 +155,43 @@ fn keyboard_menu_reveals_a_selected_change_scrolled_out_of_view(cx: &mut TestApp
     assert!(menu.top() >= row.top(), "menu anchors to the revealed row");
 }
 
+#[gpui::test]
+fn forge_actions_are_offered_only_for_supported_forges(cx: &mut TestAppContext) {
+    for (remote, supported) in [
+        ("https://forge.example/team/repo.git", false),
+        ("https://github.com/example/repo.git", true),
+    ] {
+        let fixture = LinearFixture::build();
+        fixture.add_origin(remote);
+        run_jj_in(
+            &fixture.path,
+            &["bookmark", "create", "feature", "-r", "@-"],
+        );
+        let (view, cx) = open_fixture(&fixture, cx);
+
+        let stacked_prs = view.read_with(cx, |view, cx| {
+            let vm = view.view_model().read(cx);
+            let change = vm.graph.changes.iter().find(|change| !change.is_immutable);
+            view.build_change_menu(change.expect("mutable change"), cx)
+                .iter()
+                .any(|item| item.label.as_ref() == "Create / Update Stacked PRs…")
+        });
+        assert_eq!(stacked_prs, supported, "{remote}: stacked PRs");
+
+        let chip = cx
+            .debug_bounds("dag-bookmark-feature")
+            .expect("feature bookmark chip");
+        cx.simulate_mouse_down(chip.center(), MouseButton::Right, Modifiers::default());
+        settle_visual(cx);
+        assert!(menu_shows(cx, "Push"), "{remote}: Push must stay available");
+        assert_eq!(
+            menu_shows(cx, "Pull Request on GitHub"),
+            supported,
+            "{remote}: pull request"
+        );
+    }
+}
+
 fn focus_summary(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
     view.update_in(cx, |view, window, cx| {
         view.summary_input()

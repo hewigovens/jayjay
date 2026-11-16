@@ -78,6 +78,7 @@ impl BookmarkManagerView {
                         cx.observe_global::<Theme>(|_, cx| cx.notify()).detach();
                         cx.observe(&vm, |view: &mut Self, vm, cx| {
                             view.bookmarks = vm.read(cx).graph.bookmarks.clone();
+                            view.pr_host_name = vm.read(cx).pr_host_name.clone();
                             cx.notify();
                         })
                         .detach();

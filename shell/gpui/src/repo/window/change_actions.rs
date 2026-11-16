@@ -382,12 +382,14 @@ impl RepoWindow {
             ContextAction::CreateTag(change.commit_id.id.clone().into()),
         ));
         if !change.is_immutable {
-            items.push(ContextMenuItem::new(
-                jayjay_i18n::menu::create_update_stacked_prs_ellipsis(),
-                glyph::GIT_BRANCH,
-                ContextAction::OpenStackedPr(rev.clone().into()),
-            ));
             let vm = self.vm.read(cx);
+            if vm.pr_host_name.is_some() {
+                items.push(ContextMenuItem::new(
+                    jayjay_i18n::menu::create_update_stacked_prs_ellipsis(),
+                    glyph::GIT_BRANCH,
+                    ContextAction::OpenStackedPr(rev.clone().into()),
+                ));
+            }
             if let Some(title) = vm.upload_title.clone() {
                 items.push(ContextMenuItem::new(
                     title,

@@ -216,6 +216,28 @@ fixture_remote_bookmarks() {
   )
 }
 
+# A supported forge remote, so forge actions are offered.
+fixture_stacked_pr() {
+  copy_fixture simple stacked-pr
+  (
+    cd "$fixtures/stacked-pr"
+    git remote add origin https://github.com/example/stacked-pr.git
+  )
+}
+
+# A tracked bookmark on a host no forge integration recognizes.
+fixture_unknown_host() {
+  copy_fixture simple unknown-host
+  (
+    cd "$fixtures/unknown-host"
+    git remote add origin https://forge.example/team/repo.git
+    git update-ref 'refs/remotes/origin/feature' HEAD~1
+    jj status
+    jj bookmark create feature -r 'subject("add feature")'
+    jj bookmark track feature@origin
+  )
+}
+
 # Simple plus structured files for projection/rendering checks.
 fixture_formats() {
   copy_fixture simple formats
@@ -555,6 +577,8 @@ fixture_clone_hang
 fixture_bookmark_diff
 fixture_revset_completion
 fixture_remote_bookmarks
+fixture_stacked_pr
+fixture_unknown_host
 fixture_formats
 fixture_review_notes
 fixture_evolog_hide_snapshots
