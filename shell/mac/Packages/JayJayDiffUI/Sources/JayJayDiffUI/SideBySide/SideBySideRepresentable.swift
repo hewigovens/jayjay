@@ -9,6 +9,8 @@ public struct SideBySideRepresentable: NSViewRepresentable {
     public var onExpandContext: ((ContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
     public var revealFeedback: ContextExpansionReveal?
+    /// Set to size the view to its rows instead of scrolling inside, as in a stack of file diffs.
+    public var onContentHeightChanged: ((CGFloat) -> Void)?
 
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.diffPalettes) private var diffPalettes
@@ -19,12 +21,14 @@ public struct SideBySideRepresentable: NSViewRepresentable {
         diff: FileDiff,
         onExpandContext: ((ContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
-        revealFeedback: ContextExpansionReveal? = nil
+        revealFeedback: ContextExpansionReveal? = nil,
+        onContentHeightChanged: ((CGFloat) -> Void)? = nil
     ) {
         self.diff = diff
         self.onExpandContext = onExpandContext
         self.resetSelectionGeneration = resetSelectionGeneration
         self.revealFeedback = revealFeedback
+        self.onContentHeightChanged = onContentHeightChanged
     }
 
     public func makeCoordinator() -> SideBySideCoordinator {
@@ -70,6 +74,12 @@ public struct SideBySideRepresentable: NSViewRepresentable {
         context.coordinator.revealFeedback = revealFeedback
         context.coordinator.reduceMotion = reduceMotion
         context.coordinator.applySelectionResetGeneration(resetSelectionGeneration)
+        // The panes hold the same rows, so the left pane's height sizes both.
+        for container in [context.coordinator.leftContainer, context.coordinator.rightContainer].compactMap(\.self) {
+            container.setFitsContent(onContentHeightChanged != nil)
+        }
+        context.coordinator.leftContainer?.onContentHeightChanged = onContentHeightChanged
         context.coordinator.renderIfNeeded()
+        context.coordinator.leftContainer?.reportContentHeightIfNeeded()
     }
 }

@@ -8,17 +8,21 @@ public struct SideBySideDiffView: View {
     public var onExpandContext: ((ContextExpansionRequest) -> Void)?
     public var resetSelectionGeneration: UInt64
     public var revealFeedback: ContextExpansionReveal?
+    /// Set to size the view to its rows instead of scrolling inside, as in a stack of file diffs.
+    public var onContentHeightChanged: ((CGFloat) -> Void)?
 
     public init(
         diff: FileDiff,
         onExpandContext: ((ContextExpansionRequest) -> Void)? = nil,
         resetSelectionGeneration: UInt64 = 0,
-        revealFeedback: ContextExpansionReveal? = nil
+        revealFeedback: ContextExpansionReveal? = nil,
+        onContentHeightChanged: ((CGFloat) -> Void)? = nil
     ) {
         self.diff = diff
         self.onExpandContext = onExpandContext
         self.resetSelectionGeneration = resetSelectionGeneration
         self.revealFeedback = revealFeedback
+        self.onContentHeightChanged = onContentHeightChanged
     }
 
     public var body: some View {
@@ -26,7 +30,8 @@ public struct SideBySideDiffView: View {
             diff: diff,
             onExpandContext: onExpandContext,
             resetSelectionGeneration: resetSelectionGeneration,
-            revealFeedback: revealFeedback
+            revealFeedback: revealFeedback,
+            onContentHeightChanged: onContentHeightChanged
         )
     }
 }

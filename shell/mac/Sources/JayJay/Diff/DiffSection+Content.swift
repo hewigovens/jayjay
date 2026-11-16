@@ -78,7 +78,7 @@ extension DiffSection {
                     projectionBanner(projection)
                 }
                 Group {
-                    if settings.sideBySideDiff, !fitsContent, canUseSideBySide(diff) {
+                    if settings.sideBySideDiff, canUseSideBySide(diff) {
                         VStack(alignment: .leading, spacing: 0) {
                             // Side-by-side has no review gutter yet; without this bridge the file's advertised notes would be unreachable until the user guesses to switch views.
                             if reviewNotesEnabled, !unresolvedReviewNoteSummaries.isEmpty {
@@ -89,8 +89,10 @@ extension DiffSection {
                                 diff: diff,
                                 onExpandContext: expandContext,
                                 resetSelectionGeneration: contextExpansionDisplay.selectionGeneration,
-                                revealFeedback: contextExpansionDisplay.revealFeedback
+                                revealFeedback: contextExpansionDisplay.revealFeedback,
+                                onContentHeightChanged: fitsContent ? { fittedDiffHeight = $0 } : nil
                             )
+                            .frame(height: fitsContent ? fittedDiffHeight ?? diff.estimatedCardHeight(typography: settings.typography) : nil)
                         }
                         .id("sbs-\(hunk.path)")
                     } else {
