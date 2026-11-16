@@ -15,6 +15,7 @@ list:
   @echo "just test-rust crate   Package-scoped cargo test (inner loop)"
   @echo "just test-wasm         Link the portable UniFFI WASM surface with LLVM clang"
   @echo "just test-ui [test-ids] UI tests; pass test ids to run some scenes"
+  @echo "just test-ui-vm [test-ids] UI tests in a macOS VM clone (VMPal)"
   @echo "just test-ui-shard i n UI tests for shard i of n, balanced by test count; CI shards"
   @echo "just test              All workspace Rust tests (publish)"
   @echo "just test-app          Run macOS app tests"
@@ -75,6 +76,9 @@ test-app:
 
 test-ui *test_ids:
   just shell::ui-test {{test_ids}}
+
+test-ui-vm *test_ids:
+  just shell::ui-test-vm {{test_ids}}
 
 # Balance whole UI scene classes across count shards by test-method count (every test relaunches the app), so CI can split the serial XCUITest bundle across runners; index is 1-based and `recipe` selects the shell runner (ui-test builds, ui-test-prebuilt reuses a ui-test-build output).
 test-ui-shard index count recipe="shell::ui-test":
