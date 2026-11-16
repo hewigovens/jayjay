@@ -21,6 +21,7 @@ struct ChangeDetailView: View {
     @Binding var activePane: ActivePane
     var conflictedBookmarkNames: Set<String> = []
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
+    var workingCopyEditor: AnyView?
 
     var isCompareMode: Bool {
         comparison != nil

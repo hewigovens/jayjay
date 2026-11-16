@@ -43,29 +43,33 @@ extension RepoContentView {
                 bisect: viewModel.bisect.state,
                 selectionGraph: viewModel.selectionGraph
             )
-            if shouldShowCommitBox {
-                Divider()
-                CommitBox(
-                    description: viewModel.workingCopyDescription,
-                    summary: $viewModel.commitSummaryDraft,
-                    details: $viewModel.commitDescriptionDraft,
-                    onSaveDescription: { viewModel.describeWorkingCopy(message: $0) },
-                    onCommit: {
-                        await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport)
-                    },
-                    onGenerateMessage: {
-                        await viewModel.generateCommitMessage(using: settings.aiProviderOrder)
-                    },
-                    aiProvider: viewModel.aiProvider
-                )
-                .task(id: settings.aiProviderOrder) {
-                    let label = await settings.aiProviderOrder.firstReadyLabel()
-                    if !Task.isCancelled {
-                        viewModel.aiProvider = label
-                    }
+        }
+    }
+
+    /// Edits the working copy's message from the change header, since the message belongs to the change rather than the change list.
+    var workingCopyEditor: AnyView? {
+        guard shouldShowCommitBox else { return nil }
+        return AnyView(
+            CommitBox(
+                description: viewModel.workingCopyDescription,
+                summary: $viewModel.commitSummaryDraft,
+                details: $viewModel.commitDescriptionDraft,
+                onSaveDescription: { viewModel.describeWorkingCopy(message: $0) },
+                onCommit: {
+                    await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport)
+                },
+                onGenerateMessage: {
+                    await viewModel.generateCommitMessage(using: settings.aiProviderOrder)
+                },
+                aiProvider: viewModel.aiProvider
+            )
+            .task(id: settings.aiProviderOrder) {
+                let label = await settings.aiProviderOrder.firstReadyLabel()
+                if !Task.isCancelled {
+                    viewModel.aiProvider = label
                 }
             }
-        }
+        )
     }
 
     func pushFollowUpBanner(_ name: String) -> some View {

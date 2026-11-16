@@ -7,7 +7,7 @@ enum KeyboardFocusStop: CaseIterable {
 
     var isInSidebar: Bool {
         switch self {
-            case .dag, .commitSummary, .commitDescription: true
+            case .dag: true
             default: false
         }
     }

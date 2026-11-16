@@ -37,7 +37,6 @@ extension RepoContentView {
                 }
             }
         }
-
     }
 
     @ToolbarContentBuilder

@@ -22,7 +22,16 @@ extension ChangeDetailView {
             if isCompareMode {
                 compareBanner
             } else {
-                detailHeader
+                if detail.info.isWorkingCopy, let workingCopyEditor {
+                    VStack(alignment: .leading, spacing: 10) {
+                        workingCopyEditor
+                        metadataSection
+                    }
+                    .padding(.horizontal, PaneLayout.detailInset)
+                    .padding(.vertical, 12)
+                } else {
+                    detailHeader
+                }
             }
 
             Divider()

@@ -24,6 +24,7 @@ struct DetailView: View {
     var conflictedBookmarkNames: Set<String> = []
     var selectionWithoutDiffCount = 0
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
+    var workingCopyEditor: AnyView?
 
     var body: some View {
         if let evolog, let entries = evolog.entries {
@@ -61,7 +62,8 @@ struct DetailView: View {
                 divergentVersionCount: divergentVersionCount,
                 activePane: $activePane,
                 conflictedBookmarkNames: conflictedBookmarkNames,
-                onInteractionStateChanged: onInteractionStateChanged
+                onInteractionStateChanged: onInteractionStateChanged,
+                workingCopyEditor: workingCopyEditor
             )
             .id("\(detail.info.selectionRevision)|\(comparison?.fromId ?? "")")
         } else {

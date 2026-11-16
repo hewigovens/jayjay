@@ -181,7 +181,8 @@ struct RepoContentView: View {
                     conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
                     selectionWithoutDiffCount: viewModel.comparison == nil
                         ? viewModel.selectedChangeIds.count : 0,
-                    onInteractionStateChanged: { detailInteractionActive = $0 }
+                    onInteractionStateChanged: { detailInteractionActive = $0 },
+                    workingCopyEditor: workingCopyEditor
                 )
                 .disabled(!viewModel.sshConnected)
                 Divider()
