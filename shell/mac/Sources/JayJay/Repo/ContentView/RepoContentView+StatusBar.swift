@@ -36,9 +36,6 @@ extension RepoContentView {
                 RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
             })
         }
-        if let bookmark = activeBookmarkSyncItem {
-            items.append(bookmark)
-        }
         if let pr = viewModel.prInfo, let url = URL(string: pr.url) {
             items.append(.link(
                 id: "pr",
@@ -110,19 +107,6 @@ extension RepoContentView {
     }
 
     /// Sync state of the nearest bookmark at or below `@` that has a remote.
-    private var activeBookmarkSyncItem: StatusBarItem? {
-        let changes = viewModel.changes
-        guard let wcIndex = changes.firstIndex(where: { $0.isWorkingCopy }) else { return nil }
-        for change in changes[wcIndex...] {
-            for name in change.bookmarks {
-                guard let bookmark = viewModel.bookmarks.first(where: { $0.name == name }),
-                      let sync = bookmarkSync(bookmark: bookmark)
-                else { continue }
-                return .text(id: "bookmark-sync", icon: "bookmark", text: sync.text, tooltip: sync.tooltip)
-            }
-        }
-        return nil
-    }
 }
 
 extension PrInfo {
