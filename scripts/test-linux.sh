@@ -9,9 +9,8 @@ jj_version="$(sed -n 's/^jj-lib = { version = "\([^"]*\)".*/\1/p' "$root/Cargo.t
 command -v container >/dev/null || { echo "Install Apple's container CLI: brew install container; container system start" >&2; exit 1; }
 
 image_key="$( { printf '%s\n' "$rust_version" "$jj_version"; cat "$context/Containerfile"; } | shasum -a 256 | cut -c 1-16)"
-workspace_key="$(printf '%s' "$root" | shasum -a 256 | cut -c 1-16)"
 image="jayjay-linux-test:$image_key"
-cache="jayjay-linux-test-$workspace_key"
+cache="jayjay-linux-test"
 
 if ! container image inspect "$image" >/dev/null 2>&1; then
   container build --platform linux/arm64 \
@@ -21,7 +20,7 @@ fi
 if ! container volume inspect "$cache" >/dev/null 2>&1; then
   container volume create -s 16G "$cache"
 fi
-printf 'Linux test image: %s; workspace cache volume: %s\n' "$image" "$cache" >&2
+printf 'Linux test image: %s; cache volume: %s\n' "$image" "$cache" >&2
 
 [[ $# -gt 0 ]] || set -- --workspace
 exec container run --rm --name "$cache-$$" --platform linux/arm64 \
