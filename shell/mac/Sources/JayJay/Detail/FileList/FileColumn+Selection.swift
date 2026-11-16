@@ -10,6 +10,9 @@ extension ChangeDetailView {
                 keyboardFocus?.focusPane(.dag)
                 return true
             case KeyCode.rightArrow: return true
+            case KeyCode.escape where fileSelection.primary != nil:
+                fileSelection = FileSelection()
+                return true
             default: break
         }
         if event.opensSelectionContextMenu, let selectedPath = fileSelection.primary, keyboardFocus?.isSuspended != true,
@@ -60,8 +63,7 @@ extension ChangeDetailView {
         var selection = fileSelection
         selection.paths.formIntersection(available)
         if selection.primary.map({ available.contains($0) }) != true {
-            let order = visibleSelectablePaths
-            selection.primary = order.first(where: selection.paths.contains) ?? order.first ?? paths.first
+            selection.primary = visibleSelectablePaths.first(where: selection.paths.contains)
         }
         if let primary = selection.primary {
             selection.paths.insert(primary)

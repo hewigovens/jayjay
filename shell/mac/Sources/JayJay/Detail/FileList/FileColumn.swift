@@ -88,11 +88,14 @@ extension ChangeDetailView {
                 .help(Localized.Repo.filterFiles)
                 .accessibilityIdentifier(AID.FileList.filterToggle)
                 Spacer(minLength: 8)
-                Text(fileCountLabel)
-                    .jayjayFont(12)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .help(showsReviewedCount ? reviewedCountHelp : "")
+                Button { fileSelection = FileSelection() } label: {
+                    Text(fileCountLabel)
+                        .jayjayFont(12)
+                        .foregroundStyle(fileSelection.primary == nil ? .primary : .secondary)
+                        .lineLimit(1)
+                }
+                .buttonStyle(.plain)
+                .help(showsReviewedCount ? reviewedCountHelp : "")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)

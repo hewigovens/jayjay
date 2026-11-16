@@ -126,6 +126,11 @@ extension ChangeDetailView {
                     .id("\(detail.info.commitId.id)|\(hunk.path)")
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
+            } else if !filteredDiff.isEmpty {
+                FileOverview(hunks: filteredDiff, stats: fileStats?.value ?? [:]) { path in
+                    activePane = .fileColumn
+                    handleFileSelection(path)
+                }
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(
                     hiddenOnlyStateTitle,

@@ -291,10 +291,7 @@ struct ChangeDetailView: View {
     }
 
     var selectedHunk: DiffHunk? {
-        if let selectedPath = fileSelection.primary {
-            return filteredDiff.first(where: { $0.path == selectedPath }) ?? filteredDiff.first
-        }
-        return filteredDiff.first
+        fileSelection.primary.flatMap { selectedPath in filteredDiff.first(where: { $0.path == selectedPath }) }
     }
 }
 
