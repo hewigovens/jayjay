@@ -7,8 +7,8 @@ extension ChangeDetailView {
             description: detail.info.description,
             expanded: descriptionExpanded,
             expandedHeight: DescriptionHeight.expanded(paneHeight: paneHeight),
-            canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
-            onEdit: { onEditDescription(detailRevision, detail.info.description) }
+            canEditDescription: !detail.info.isImmutable,
+            onEdit: { isEditingDescription = true }
         )
         .id("\(detailRevision)|\(detail.info.commitId.id)")
     }

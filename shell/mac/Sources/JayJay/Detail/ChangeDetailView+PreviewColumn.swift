@@ -14,6 +14,32 @@ extension ChangeDetailView {
         .zIndex(1)
     }
 
+    /// Opened from the header's Edit button; the working copy also gets Commit.
+    private var descriptionEditor: some View {
+        VStack(alignment: .leading, spacing: 0) {
+            if detail.info.isWorkingCopy, let workingCopyEditor {
+                VStack(alignment: .leading, spacing: 8) {
+                    workingCopyEditor
+                    Button(Localized.Repo.done) { isEditingDescription = false }
+                        .keyboardShortcut(.cancelAction)
+                }
+            } else {
+                DescriptionEditorSheet(
+                    revision: detailRevision,
+                    description: detail.info.description,
+                    onCancel: { isEditingDescription = false },
+                    onSave: { message in
+                        actions?.describe(rev: detailRevision, message: message)
+                        isEditingDescription = false
+                    },
+                    width: nil
+                )
+            }
+        }
+        .padding(.horizontal, PaneLayout.detailInset)
+        .padding(.vertical, 12)
+    }
+
     // MARK: - Preview column
 
     /// Spans the file and preview columns so both read as belonging to this change.
@@ -22,13 +48,8 @@ extension ChangeDetailView {
             if isCompareMode {
                 compareBanner
             } else {
-                if detail.info.isWorkingCopy, let workingCopyEditor {
-                    VStack(alignment: .leading, spacing: 10) {
-                        workingCopyEditor
-                        metadataSection
-                    }
-                    .padding(.horizontal, PaneLayout.detailInset)
-                    .padding(.vertical, 12)
+                if isEditingDescription {
+                    descriptionEditor
                 } else {
                     detailHeader
                 }

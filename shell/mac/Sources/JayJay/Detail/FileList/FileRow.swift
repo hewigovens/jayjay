@@ -61,9 +61,9 @@ struct FileRow: View {
                 } else {
                     hunk.hunkType.badge(colorScheme, colors: colors)
                         .jayjayFont(18)
-                    .foregroundStyle(statusColor)
-                    .accessibilityLabel(hunk.hunkType.label)
-                    .help(hunk.hunkType.label)
+                        .foregroundStyle(statusColor)
+                        .accessibilityLabel(hunk.hunkType.label)
+                        .help(hunk.hunkType.label)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {

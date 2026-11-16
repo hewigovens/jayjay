@@ -72,6 +72,7 @@ struct ChangeDetailView: View {
     @State var conflictEditor: EditorPresentation<ConflictEditorSession>?
     @State var activeNoteCountsByPath: [String: Int] = [:]
     @State var fileStats: KeyedValue<[String: FileDiffStats]>?
+    @State var isEditingDescription = false
     @Environment(AppSettings.self) var appSettings
     @Environment(\.colorScheme) var colorScheme
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
@@ -197,6 +198,7 @@ struct ChangeDetailView: View {
             loadFileStats()
         }
         .onChange(of: detailRevision) { _, _ in
+            isEditingDescription = false
             descriptionExpansion = .preference
         }
         .onChange(of: appSettings.autoExpandDescription) { _, _ in

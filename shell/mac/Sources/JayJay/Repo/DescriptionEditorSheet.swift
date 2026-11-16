@@ -6,14 +6,16 @@ struct DescriptionEditorSheet: View {
     let original: String
     let onCancel: () -> Void
     let onSave: (String) -> Void
+    let width: CGFloat?
     @State private var summary: String
     @State private var details: String
 
-    init(revision: String, description: String, onCancel: @escaping () -> Void, onSave: @escaping (String) -> Void) {
+    init(revision: String, description: String, onCancel: @escaping () -> Void, onSave: @escaping (String) -> Void, width: CGFloat? = 520) {
         self.revision = revision
         original = description
         self.onCancel = onCancel
         self.onSave = onSave
+        self.width = width
         _summary = State(initialValue: commitSummary(message: description))
         _details = State(initialValue: commitBody(message: description))
     }
@@ -31,6 +33,6 @@ struct DescriptionEditorSheet: View {
                 CommitMessageEditor(summary: $summary, details: $details, bodyHeight: 190, focusSummaryAtEnd: true)
             }
         )
-        .frame(width: 520)
+        .frame(width: width)
     }
 }
