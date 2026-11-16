@@ -177,6 +177,7 @@ extension ChangeDetailView {
             agentMarked: agentMarkedPaths.contains(hunk.path),
             noteCount: noteCount,
             hasConflict: conflictedPaths.contains(hunk.path),
+            showsFolder: !appSettings.treeFileList,
             onToggleReview: { toggleReview([hunk.path]) }
         )
         .contentShape(Rectangle())

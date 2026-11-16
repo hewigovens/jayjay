@@ -5,7 +5,6 @@ struct FileRow: View {
     @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.appThemes) private var appThemes
-    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     /// macOS List adds 8 pt of its own on each side; this nets out to a 4 pt inset so the selection covers the row.
     static let listInsets = EdgeInsets(top: 0, leading: -4, bottom: 0, trailing: -4)
 
@@ -17,6 +16,8 @@ struct FileRow: View {
     var agentMarked: Bool = false
     var noteCount: Int = 0
     var hasConflict: Bool = false
+    /// Tree mode already shows the folders, so the row drops its folder line there.
+    var showsFolder = true
     var onToggleReview: (() -> Void)?
 
     var reviewChrome: FileRowReviewChrome {
@@ -58,19 +59,8 @@ struct FileRow: View {
                         .foregroundStyle(.red)
                         .jayjayFont(11)
                 } else {
-                    Group {
-                        if !showReview {
-                            hunk.hunkType.badge(colorScheme, colors: colors)
-                                .jayjayFont(18)
-                        } else if differentiateWithoutColor {
-                            hunk.hunkType.icon
-                                .jayjayFont(12)
-                        } else {
-                            Circle()
-                                .frame(width: 6, height: 6)
-                                .padding(.top, 4 * typography.interfaceScale)
-                        }
-                    }
+                    hunk.hunkType.badge(colorScheme, colors: colors)
+                        .jayjayFont(18)
                     .foregroundStyle(statusColor)
                     .accessibilityLabel(hunk.hunkType.label)
                     .help(hunk.hunkType.label)
@@ -122,16 +112,16 @@ struct FileRow: View {
                             .help(noteCount.reviewNoteCountLabel)
                         }
                     }
-                    Text(hunk.hunkType.hasSource
-                        ? hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path
-                        : hunk.path)
-                        .jayjayFont(10, design: .monospaced)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .accessibilityLabel(hunk.hunkType.hasSource
-                            ? hunk.oldPath.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path
-                            : hunk.path)
+                    if let locationLine {
+                        Text(locationLine)
+                            .jayjayFont(10, design: .monospaced)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .accessibilityLabel(hunk.hunkType.hasSource
+                                ? hunk.oldPath.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path
+                                : hunk.path)
+                    }
                 }
 
                 Spacer(minLength: 0)
@@ -145,6 +135,16 @@ struct FileRow: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(isPaneActive ? 0.28 : 0.14) : .clear)
         )
+    }
+
+    /// The file name is already the row title, so only a move or the containing folder adds information.
+    private var locationLine: String? {
+        if hunk.hunkType.hasSource, let oldPath = hunk.oldPath {
+            return "\(oldPath) → \(hunk.path)"
+        }
+        guard showsFolder else { return nil }
+        let folder = (hunk.path as NSString).deletingLastPathComponent
+        return folder.isEmpty ? nil : folder + "/"
     }
 
     private func color(colors: AppColors) -> Color {
