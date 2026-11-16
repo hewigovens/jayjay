@@ -346,7 +346,7 @@ final class AppSettings {
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         hideReviewedFiles = defaults.bool(forKey: StorageKeys.hideReviewedFiles)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
-        autoExpandDescription = defaults.bool(forKey: StorageKeys.autoExpandDescription)
+        autoExpandDescription = defaults.object(forKey: StorageKeys.autoExpandDescription) as? Bool ?? true
         tintWindowWithWallpaper = defaults.object(forKey: StorageKeys.tintWindowWithWallpaper) as? Bool ?? false
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)
         skipWorkspaceDeleteConfirmation = defaults.bool(forKey: StorageKeys.skipWorkspaceDeleteConfirmation)

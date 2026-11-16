@@ -18,59 +18,87 @@ extension ChangeDetailView {
         }
     }
 
+    /// Side-by-side groups when the header is wide, one stacked grid otherwise.
     private var metadataGrid: some View {
+        ViewThatFits(in: .horizontal) {
+            HStack(alignment: .top, spacing: 32) {
+                metadataColumn { authorRows }
+                metadataColumn { identifierRows }
+                metadataColumn { referenceRows }
+                Spacer(minLength: 0)
+            }
+            metadataColumn {
+                authorRows
+                identifierRows
+                referenceRows
+            }
+        }
+    }
+
+    private func metadataColumn(@ViewBuilder _ rows: () -> some View) -> some View {
         Grid(alignment: .leadingFirstTextBaseline, horizontalSpacing: 8, verticalSpacing: 5) {
-            IdentifierRow(label: Localized.Repo.authorColon) {
-                person(detail.info.author)
-            }
-            if !detail.info.coAuthors.isEmpty {
-                IdentifierRow(label: Localized.Repo.coAuthorsColon) {
-                    VStack(alignment: .leading, spacing: 5) {
-                        ForEach(Array(detail.info.coAuthors.enumerated()), id: \.offset) { person($0.element) }
-                    }
+            rows()
+        }
+        .fixedSize()
+    }
+
+    @ViewBuilder private var authorRows: some View {
+        IdentifierRow(label: Localized.Repo.authorColon) {
+            person(detail.info.author)
+        }
+        if !detail.info.coAuthors.isEmpty {
+            IdentifierRow(label: Localized.Repo.coAuthorsColon) {
+                VStack(alignment: .leading, spacing: 5) {
+                    ForEach(Array(detail.info.coAuthors.enumerated()), id: \.offset) { person($0.element) }
                 }
             }
-            IdentifierRow(label: Localized.Repo.dateColon) {
-                Text(formatTimestamp(detail.info.author.timestampMillis))
-                    .jayjayFont(11)
-                    .textSelection(.enabled)
+        }
+        IdentifierRow(label: Localized.Repo.dateColon) {
+            Text(formatTimestamp(detail.info.author.timestampMillis))
+                .jayjayFont(11)
+                .textSelection(.enabled)
+        }
+    }
+
+    @ViewBuilder private var identifierRows: some View {
+        IdentifierRow(label: Localized.Repo.changeColon) {
+            IdentifierText(
+                value: detail.info.changeId.id,
+                prefixLength: Int(detail.info.changeId.shortLen),
+                prefixStyle: .changeId
+            )
+            CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
+        }
+        IdentifierRow(label: Localized.Repo.commitColon) {
+            IdentifierText(
+                value: detail.info.commitId.id,
+                prefixLength: Int(detail.info.commitId.shortLen),
+                prefixStyle: .commitId
+            )
+            .accessibilityIdentifier(AID.Detail.commitId)
+            .accessibilityValue(detail.info.commitId.id)
+            CopyIconButton(value: detail.info.commitId.id, help: Localized.Repo.copyCommit)
+        }
+        if !detail.info.parents.isEmpty {
+            IdentifierRow(label: Localized.Repo.parentsColon) {
+                IdentifierText(value: detail.info.parents.map { String($0.prefix(12)) }.joined(separator: ", "))
             }
-            IdentifierRow(label: Localized.Repo.changeColon) {
-                IdentifierText(
-                    value: detail.info.changeId.id,
-                    prefixLength: Int(detail.info.changeId.shortLen),
-                    prefixStyle: .changeId
-                )
-                CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
+        }
+    }
+
+    @ViewBuilder private var referenceRows: some View {
+        if !detail.info.bookmarks.isEmpty {
+            IdentifierRow(label: Localized.Repo.bookmarksColon) {
+                ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0, showsCopy: true) }
             }
-            IdentifierRow(label: Localized.Repo.commitColon) {
-                IdentifierText(
-                    value: detail.info.commitId.id,
-                    prefixLength: Int(detail.info.commitId.shortLen),
-                    prefixStyle: .commitId
-                )
-                .accessibilityIdentifier(AID.Detail.commitId)
-                .accessibilityValue(detail.info.commitId.id)
-                CopyIconButton(value: detail.info.commitId.id, help: Localized.Repo.copyCommit)
+        }
+        if !detail.info.tags.isEmpty {
+            IdentifierRow(label: Localized.Repo.tagsColon) {
+                ForEach(detail.info.tags, id: \.self) { tagChip($0) }
             }
-            if !detail.info.parents.isEmpty {
-                IdentifierRow(label: Localized.Repo.parentsColon) {
-                    IdentifierText(value: detail.info.parents.map { String($0.prefix(12)) }.joined(separator: ", "))
-                }
-            }
-            if !detail.info.bookmarks.isEmpty {
-                IdentifierRow(label: Localized.Repo.bookmarksColon) {
-                    ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0, showsCopy: true) }
-                }
-            }
-            if !detail.info.tags.isEmpty {
-                IdentifierRow(label: Localized.Repo.tagsColon) {
-                    ForEach(detail.info.tags, id: \.self) { tagChip($0) }
-                }
-            }
-            if let visibleDiffStats {
-                IdentifierRow(label: Localized.Repo.changesColon) { diffStatsView(visibleDiffStats, spelledOut: true) }
-            }
+        }
+        if let visibleDiffStats {
+            IdentifierRow(label: Localized.Repo.changesColon) { diffStatsView(visibleDiffStats, spelledOut: true) }
         }
     }
 
