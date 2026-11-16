@@ -16,7 +16,8 @@ extension ChangeDetailView {
 
     // MARK: - Preview column
 
-    var previewColumn: some View {
+    /// Spans the file and preview columns so both read as belonging to this change.
+    var commitHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
             if isCompareMode {
                 compareBanner
@@ -35,7 +36,11 @@ extension ChangeDetailView {
                 staleReviewNotesSection
                 Divider()
             }
+        }
+    }
 
+    var previewColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
             if case let .annotate(lines, path, error) = paneMode {
                 AnnotateView(
                     lines: lines, path: path, error: error,

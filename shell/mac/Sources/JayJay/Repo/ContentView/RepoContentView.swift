@@ -146,7 +146,9 @@ struct RepoContentView: View {
         NavigationSplitView(columnVisibility: sidebarVisibility) {
             sidebar
                 .onGeometryChange(for: CGFloat.self, of: \.size.width) { width in
-                    if hasSettledSidebarWidth, width > 0 { settings.sidebarWidth = width }
+                    if hasSettledSidebarWidth, width > 0 {
+                        settings.sidebarWidth = width
+                    }
                 }
                 .toolbar { sidebarToolbarContent }
                 .disabled(!viewModel.sshConnected)
@@ -156,32 +158,32 @@ struct RepoContentView: View {
         } detail: {
             VStack(spacing: 0) {
                 BisectBar(viewModel: viewModel)
-                    DetailView(
-                        repoPath: viewModel.repoPath, repo: viewModel.repo,
-                        detail: viewModel.selectedChange,
-                        actions: viewModel,
-                        onEditDescription: { rev, description in modal = .editDescription(rev: rev, description: description) },
-                        reviewStore: viewModel.reviewStore,
-                        diffStore: viewModel.diffStore,
-                        comparison: viewModel.comparison,
-                        onClearCompare: { viewModel.clearCompare() },
-                        onReverseCompare: viewModel.canReverseCompare
-                            ? { viewModel.reverseCompare() } : nil,
-                        onRevealChangeInDag: { viewModel.revealInGraph($0) },
-                        onResolveDivergent: { modal = .converge(rev: $0) },
-                        divergentVersionCount: viewModel.selectedChange.map { viewModel.divergentVersionCount(of: $0.info.changeId.id) } ?? 0,
-                        activePane: Bindable(keyboardFocus).activePane,
-                        evolog: viewModel.evolog,
-                        evologTarget: viewModel.evolog.flatMap { viewModel.change(for: $0.rev) },
-                        isRestoringEvologVersion: viewModel.isRestoringEvologVersion,
-                        onRestoreEvologVersion: { viewModel.restoreEvologVersion($0) },
-                        onDismissEvolog: { viewModel.dismissEvolog() },
-                        conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
-                        selectionWithoutDiffCount: viewModel.comparison == nil
-                            ? viewModel.selectedChangeIds.count : 0,
-                        onInteractionStateChanged: { detailInteractionActive = $0 }
-                    )
-                    .disabled(!viewModel.sshConnected)
+                DetailView(
+                    repoPath: viewModel.repoPath, repo: viewModel.repo,
+                    detail: viewModel.selectedChange,
+                    actions: viewModel,
+                    onEditDescription: { rev, description in modal = .editDescription(rev: rev, description: description) },
+                    reviewStore: viewModel.reviewStore,
+                    diffStore: viewModel.diffStore,
+                    comparison: viewModel.comparison,
+                    onClearCompare: { viewModel.clearCompare() },
+                    onReverseCompare: viewModel.canReverseCompare
+                        ? { viewModel.reverseCompare() } : nil,
+                    onRevealChangeInDag: { viewModel.revealInGraph($0) },
+                    onResolveDivergent: { modal = .converge(rev: $0) },
+                    divergentVersionCount: viewModel.selectedChange.map { viewModel.divergentVersionCount(of: $0.info.changeId.id) } ?? 0,
+                    activePane: Bindable(keyboardFocus).activePane,
+                    evolog: viewModel.evolog,
+                    evologTarget: viewModel.evolog.flatMap { viewModel.change(for: $0.rev) },
+                    isRestoringEvologVersion: viewModel.isRestoringEvologVersion,
+                    onRestoreEvologVersion: { viewModel.restoreEvologVersion($0) },
+                    onDismissEvolog: { viewModel.dismissEvolog() },
+                    conflictedBookmarkNames: viewModel.conflictedBookmarkNames,
+                    selectionWithoutDiffCount: viewModel.comparison == nil
+                        ? viewModel.selectedChangeIds.count : 0,
+                    onInteractionStateChanged: { detailInteractionActive = $0 }
+                )
+                .disabled(!viewModel.sshConnected)
                 Divider()
                 statusBar
             }
