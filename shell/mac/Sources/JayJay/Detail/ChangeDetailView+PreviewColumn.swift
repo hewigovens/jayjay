@@ -94,7 +94,11 @@ extension ChangeDetailView {
                 Divider()
             }
         }
-        .overlay(alignment: .topTrailing) { viewControls }
+        .overlay(alignment: .topTrailing) {
+            if !detail.diff.isEmpty, !isEditingDescription {
+                viewControls
+            }
+        }
         .background(appSettings.readingBackground(colorScheme))
         .background(Color.primary.opacity(0.05))
     }
