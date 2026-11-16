@@ -2,7 +2,17 @@ import JayJayCore
 import SwiftUI
 
 extension ChangeDetailView {
-    private var detailHeader: some View {
+    @ViewBuilder private var detailHeader: some View {
+        if descriptionExpanded.wrappedValue {
+            expandedHeader
+        } else {
+            compactHeaderRow
+                .padding(.horizontal, PaneLayout.detailInset)
+                .frame(minHeight: PaneLayout.headerHeight)
+        }
+    }
+
+    private var expandedHeader: some View {
         VStack(alignment: .leading, spacing: descriptionExpanded.wrappedValue ? 12 : 0) {
             descriptionSection()
             metadataSection

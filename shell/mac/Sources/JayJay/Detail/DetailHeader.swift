@@ -102,6 +102,35 @@ extension ChangeDetailView {
         }
     }
 
+    /// The scrolled-away header: just enough to know which change the diffs belong to, on the same line as the view controls.
+    var compactHeaderRow: some View {
+        let summary = commitSummary(message: detail.info.description)
+        return HStack(spacing: 8) {
+            Text(summary.isEmpty ? Localized.Repo.noDescription : summary)
+                .jayjayFont(13, weight: .semibold)
+                .foregroundStyle(summary.isEmpty ? .tertiary : .primary)
+                .layoutPriority(1)
+            bylineSeparator
+            IdentifierText(
+                value: detail.info.changeId.compact,
+                prefixLength: Int(detail.info.changeId.shortLen),
+                prefixStyle: .changeId
+            )
+            IdentifierText(
+                value: detail.info.commitId.compact,
+                prefixLength: Int(detail.info.commitId.shortLen),
+                prefixStyle: .commitId
+            )
+            bylineSeparator
+            bylineAuthors
+            Spacer(minLength: 0)
+            // Room for the change-level view controls overlaid at the trailing edge.
+            Color.clear.frame(width: 120, height: 1)
+        }
+        .lineLimit(1)
+        .truncationMode(.tail)
+    }
+
     private var byline: some View {
         ViewThatFits(in: .horizontal) {
             byline(showsDate: true)
