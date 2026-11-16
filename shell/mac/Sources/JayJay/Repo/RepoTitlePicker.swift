@@ -50,7 +50,7 @@ struct RepoTitlePicker: View {
         .buttonStyle(.plain)
         .fixedSize()
         .background(PickerAnchorView(anchor: anchor))
-        .help(Localized.Repo.switchRepositoryOrWorkspace)
+        .help("\(standardizedRepoPath)\n\(Localized.Repo.switchRepositoryOrWorkspace)")
         .accessibilityLabel(Localized.Repo.switchRepositoryOrWorkspaceTitle)
         .accessibilityIdentifier(AID.Toolbar.repositoryTitle)
         .onAppear(perform: refresh)

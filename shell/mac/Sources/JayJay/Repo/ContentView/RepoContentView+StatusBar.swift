@@ -28,13 +28,6 @@ extension RepoContentView {
             if !viewModel.sshConnected {
                 items.append(.action(id: "ssh-reconnect", icon: "arrow.clockwise", text: Localized.Ssh.reconnect) { viewModel.reconnectSSH() })
             }
-        } else {
-            items.append(.action(
-                id: "path", icon: "folder", text: viewModel.repoPath,
-                tooltip: Localized.Common.showIn(app: "Finder"), shrinks: true
-            ) {
-                RepositoryActions.showInFinder(repoPath: viewModel.repoPath)
-            })
         }
         if let pr = viewModel.prInfo, let url = URL(string: pr.url) {
             items.append(.link(
