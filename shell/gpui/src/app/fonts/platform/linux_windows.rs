@@ -1,3 +1,5 @@
+use std::panic::{self, AssertUnwindSafe};
+
 use font_kit::family_name::FamilyName;
 use font_kit::font::Font;
 use font_kit::handle::Handle;
@@ -6,24 +8,26 @@ use font_kit::source::SystemSource;
 use jayjay_core::is_user_font_path;
 
 /// With no code font saved, the first installed coding font wins over fontconfig's pick.
-pub(super) fn platform_default_mono() -> String {
+pub(crate) fn platform_default_mono() -> String {
     default_mono_from(&jayjay_core::coding_font_families().collect::<Vec<_>>())
 }
 
 fn default_mono_from(candidates: &[&str]) -> String {
-    super::super::pick(candidates)
+    super::pick(candidates)
         .or_else(system_monospace)
         .unwrap_or_else(|| "monospace".to_owned())
 }
 
 /// GPUI loads families by exact name, so the fontconfig `monospace` alias only helps once it is resolved to an installed face; otherwise text falls back to a proportional font while widths are still measured as monospace.
-fn system_monospace() -> Option<String> {
-    SystemSource::new()
-        .select_best_match(&[FamilyName::Monospace], &Properties::new())
-        .ok()?
-        .load()
-        .ok()
-        .map(|font| font.family_name())
+pub(super) fn system_monospace() -> Option<String> {
+    unless_panicked(|| {
+        SystemSource::new()
+            .select_best_match(&[FamilyName::Monospace], &Properties::new())
+            .ok()?
+            .load()
+            .ok()
+            .map(|font| font.family_name())
+    })
 }
 
 pub(crate) fn monospaced_families() -> Vec<String> {
@@ -41,11 +45,15 @@ fn families_where(include: impl Fn(&Handle) -> bool) -> Vec<String> {
         .unwrap_or_default()
         .into_iter()
         .filter(|family| {
-            source
-                .select_family_by_name(family)
-                .is_ok_and(|handles| handles.fonts().first().is_some_and(&include))
+            unless_panicked(|| source.select_family_by_name(family).ok())
+                .is_some_and(|handles| handles.fonts().first().is_some_and(&include))
         })
         .collect()
+}
+
+/// font-kit unwraps each fontconfig face's file and index, so one malformed entry panics the query.
+fn unless_panicked<T>(lookup: impl FnOnce() -> Option<T>) -> Option<T> {
+    panic::catch_unwind(AssertUnwindSafe(lookup)).ok().flatten()
 }
 
 /// The fixed-pitch flag misses some mono fonts (Nerd Font patches), so compare advances.

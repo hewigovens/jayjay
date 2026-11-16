@@ -1,6 +1,5 @@
 use std::sync::{Arc, OnceLock, RwLock};
 
-use font_kit::source::SystemSource;
 use gpui::{App, FontFeatures, Pixels, Styled, TextRun, Window, black, font, px};
 use jayjay_core::mono_font_family;
 
@@ -95,7 +94,7 @@ pub(crate) fn sync_from_config(config: &AppConfig) {
     let unchanged = with_active(|fonts| fonts.resolved_from.as_ref() == Some(&preferences));
     let resolved = (!unchanged).then(|| {
         (
-            pick(&[&preferences.0]).unwrap_or_else(|| SYSTEM_UI_FONT.to_owned()),
+            platform::pick(&[&preferences.0]).unwrap_or_else(|| SYSTEM_UI_FONT.to_owned()),
             resolve_preference(&preferences.1),
         )
     });
@@ -173,15 +172,7 @@ fn resolve_preference(preference: &str) -> String {
     if family.is_empty() {
         return default_mono().to_owned();
     }
-    pick(&[&family]).unwrap_or_else(|| default_mono().to_owned())
-}
-
-fn pick(candidates: &[&str]) -> Option<String> {
-    let source = SystemSource::new();
-    candidates
-        .iter()
-        .find(|name| source.select_family_by_name(name).is_ok())
-        .map(|name| (*name).to_owned())
+    platform::pick(&[&family]).unwrap_or_else(|| default_mono().to_owned())
 }
 
 #[cfg(test)]

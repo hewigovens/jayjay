@@ -1,28 +1,17 @@
+#[cfg(target_os = "linux")]
+mod fontconfig;
 #[cfg(not(target_os = "macos"))]
-mod linux;
+mod linux_windows;
 #[cfg(target_os = "macos")]
 mod macos;
+#[cfg(not(target_os = "linux"))]
+mod macos_windows;
 
+#[cfg(target_os = "linux")]
+pub(super) use fontconfig::pick;
 #[cfg(not(target_os = "macos"))]
-pub(super) fn platform_default_mono() -> String {
-    linux::platform_default_mono()
-}
-
+pub(super) use linux_windows::{monospaced_families, platform_default_mono, user_families};
 #[cfg(target_os = "macos")]
-pub(super) fn platform_default_mono() -> String {
-    macos::platform_default_mono()
-}
-
-#[cfg(not(target_os = "macos"))]
-pub(super) use linux::{monospaced_families, user_families};
-
-/// font-kit's CoreText source loads every font into memory and has no file paths; GPUI ships on Linux and Windows only.
-#[cfg(target_os = "macos")]
-pub(super) fn monospaced_families() -> Vec<String> {
-    Vec::new()
-}
-
-#[cfg(target_os = "macos")]
-pub(super) fn user_families() -> Vec<String> {
-    Vec::new()
-}
+pub(super) use macos::{monospaced_families, platform_default_mono, user_families};
+#[cfg(not(target_os = "linux"))]
+pub(super) use macos_windows::pick;
