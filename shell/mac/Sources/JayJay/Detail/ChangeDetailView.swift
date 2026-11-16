@@ -75,6 +75,7 @@ struct ChangeDetailView: View {
     @State var isEditingDescription = false
     @Environment(AppSettings.self) var appSettings
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.appThemes) var appThemes
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
     @Environment(RepoWindowManager.self) var windowManager: RepoWindowManager?
 

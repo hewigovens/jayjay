@@ -265,18 +265,17 @@ extension ChangeDetailView {
 
     private func bookmarkChip(_ name: String, showsCopy: Bool) -> some View {
         let conflicted = conflictedBookmarkNames.contains(name)
+        let bookmark = appThemes.colors(for: colorScheme).bookmark
         return HStack(spacing: 4) {
             HStack(spacing: 3) {
-                if conflicted {
-                    Image(systemName: "exclamationmark.triangle.fill")
-                        .jayjayFont(9, weight: .semibold)
-                        .foregroundStyle(.orange)
-                }
+                Image(systemName: conflicted ? "exclamationmark.triangle.fill" : "bookmark")
+                    .jayjayFont(9, weight: .semibold)
+                    .foregroundStyle(conflicted ? .orange : bookmark)
                 Text(name).jayjayFont(11, design: .monospaced)
             }
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(
-                conflicted ? Color.orange.opacity(0.18) : Color.accentColor.opacity(0.15),
+                conflicted ? Color.orange.opacity(0.18) : bookmark.opacity(colorScheme == .dark ? 0.16 : 0.14),
                 in: .capsule
             )
             if showsCopy {
