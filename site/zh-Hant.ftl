@@ -171,6 +171,9 @@ packages-are-on-github-releases = 安裝套件在 <a class="link" href="https://
 # Windows: <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Get JayJay from the Microsoft Store</a>, or download a <a href="https://github.com/hewigovens/jayjay/releases">portable beta ZIP</a>. Install <code>jj</code> separately.
 windows-get-jayjay-from-the-microsoft = Windows：<a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">從 Microsoft Store 取得 JayJay</a>，或下載<a href="https://github.com/hewigovens/jayjay/releases">可攜式測試版 ZIP</a>。需另行安裝 <code>jj</code>。
 
+# JayJay is source-available: <a href="https://github.com/hewigovens/jayjay">browse the code on GitHub</a>.
+jayjay-is-source-available-browse-the = JayJay 的原始碼是公開的：<a href="https://github.com/hewigovens/jayjay">在 GitHub 上查看程式碼</a>。
+
 # Built for jj, not bolted onto git
 built-for-jj-not-bolted-onto = 為 jj 而生，不是幫 git 套殼
 

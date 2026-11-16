@@ -70,6 +70,8 @@ nav { position: sticky; top: 0; z-index: 100; background: var(--nav-bg); backdro
 .nav-links { display: flex; gap: 24px; font-size: 13px; color: var(--muted); }
 .nav-links a { text-decoration: none; transition: color .15s var(--ease); }
 .nav-links a:hover { color: var(--ink); }
+.nav-gh { display: inline-flex; align-items: center; gap: 6px; }
+.nav-gh svg { width: 14px; height: 14px; }
 .theme-btn, .lang-btn { background: none; border: 0; cursor: pointer; color: var(--muted); font-size: 13px; width: 32px; height: 32px; display: inline-flex; align-items: center; justify-content: center; transition: color .15s var(--ease); }
 .theme-btn:hover, .lang-btn:hover { color: var(--ink); }
 .theme-icon { display: inline-flex; width: 16px; height: 16px; }
@@ -155,6 +157,7 @@ code { font-size: .86em; padding: 1px 6px; border-radius: 4px; background: var(-
 .more h3 { font-size: 16px; margin: 12px 0 4px; }
 .more p { font-size: 14px; color: var(--muted); }
 .guide-link { margin-top: 56px; font-size: 16px; }
+.guide-link + .guide-link { margin-top: 12px; }
 .diff-promo { display: flex; align-items: center; gap: 16px; margin-top: 56px; padding: 18px 20px; border: 1px solid var(--line); border-radius: 14px; background: var(--bg); color: var(--muted); text-decoration: none; transition: border-color .15s var(--ease); }
 .diff-promo:hover { border-color: var(--accent); }
 .diff-promo img { flex: none; border-radius: 8px; }

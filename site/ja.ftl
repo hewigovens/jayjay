@@ -171,6 +171,9 @@ packages-are-on-github-releases = パッケージは <a class="link" href="https
 # Windows: <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Get JayJay from the Microsoft Store</a>, or download a <a href="https://github.com/hewigovens/jayjay/releases">portable beta ZIP</a>. Install <code>jj</code> separately.
 windows-get-jayjay-from-the-microsoft = Windows：<a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store から入手</a>するか、<a href="https://github.com/hewigovens/jayjay/releases">ポータブルなベータ版 ZIP</a> をダウンロードしてください。<code>jj</code> は別途インストールが必要です。
 
+# JayJay is source-available: <a href="https://github.com/hewigovens/jayjay">browse the code on GitHub</a>.
+jayjay-is-source-available-browse-the = JayJay のソースコードは公開しています。<a href="https://github.com/hewigovens/jayjay">GitHub でコードを見る</a>
+
 # Built for jj, not bolted onto git
 built-for-jj-not-bolted-onto = git の延長ではなく、jj のために
 
