@@ -663,3 +663,5 @@ repo-deleted-files =
     }
 repo-abandon-change-named = Abandon { $change } “{ $description }”?
 repo-abandon-change-id = Abandon { $change }?
+repo-show-file-list = Show File List
+repo-hide-file-list = Hide File List

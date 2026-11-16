@@ -40,6 +40,19 @@ extension ChangeDetailView {
         .padding(.vertical, 12)
     }
 
+    private var fileListToggle: some View {
+        Button {
+            appSettings.showsFileList.toggle()
+        } label: {
+            Image(systemName: "sidebar.squares.leading")
+                .foregroundStyle(appSettings.showsFileList ? Color.accentColor : .secondary)
+        }
+        .buttonStyle(.plain)
+        .help(appSettings.showsFileList ? Localized.Repo.hideFileList : Localized.Repo.showFileList)
+        .padding(.top, 14)
+        .padding(.trailing, PaneLayout.detailInset)
+    }
+
     // MARK: - Preview column
 
     /// Spans the file and preview columns so both read as belonging to this change.
@@ -67,6 +80,9 @@ extension ChangeDetailView {
                 Divider()
             }
         }
+        .overlay(alignment: .topTrailing) { fileListToggle }
+        .background(appSettings.readingBackground(colorScheme))
+        .background(Color.primary.opacity(0.05))
     }
 
     var previewColumn: some View {
@@ -127,10 +143,16 @@ extension ChangeDetailView {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             } else if !filteredDiff.isEmpty {
-                FileOverview(hunks: filteredDiff, stats: fileStats?.value ?? [:]) { path in
-                    activePane = .fileColumn
-                    handleFileSelection(path)
-                }
+                AllFilesDiff(
+                    hunks: filteredDiff,
+                    rev: detailRevision,
+                    commitId: detail.info.commitId.id,
+                    repo: repo,
+                    actions: actions,
+                    isWorkingCopy: detail.info.isWorkingCopy,
+                    diffStore: diffStore,
+                    stats: fileStats?.value ?? [:]
+                )
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(
                     hiddenOnlyStateTitle,

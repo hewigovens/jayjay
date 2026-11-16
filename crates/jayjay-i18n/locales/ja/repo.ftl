@@ -551,3 +551,5 @@ repo-restored-files = { $count } 個のファイルを復元しました
 repo-deleted-files = { $count } 個のファイルを削除しました
 repo-abandon-change-named = { $change }「{ $description }」を破棄しますか？
 repo-abandon-change-id = { $change } を破棄しますか？
+repo-show-file-list = ファイルリストを表示
+repo-hide-file-list = ファイルリストを隠す

@@ -545,3 +545,5 @@ repo-restored-files = 已恢復 { $count } 個檔案
 repo-deleted-files = 已刪除 { $count } 個檔案
 repo-abandon-change-named = 要捨棄 { $change }「{ $description }」嗎？
 repo-abandon-change-id = 要捨棄 { $change } 嗎？
+repo-show-file-list = 顯示檔案列表
+repo-hide-file-list = 隱藏檔案列表

@@ -153,6 +153,7 @@ struct ChangeDetailView: View {
                     commitHeader
                     ResizableSplit(
                         width: $fileColumnWidth,
+                        isLeadingHidden: !appSettings.showsFileList,
                         range: PaneLayout.secondaryPaneRange(detailWidth:),
                         onEnded: { appSettings.secondaryPaneWidth = $0 },
                         dividerIdentifier: AID.FileList.columnDivider,

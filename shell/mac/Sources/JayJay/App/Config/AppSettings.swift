@@ -30,6 +30,7 @@ final class AppSettings {
         static let treeFileList = "jayjay.treeFileList"
         static let autoExpandDescription = "jayjay.autoExpandDescription"
         static let showReviewMarks = "jayjay.showReviewMarks"
+        static let showsFileList = "jayjay.showsFileList"
         static let tintWindowWithWallpaper = "jayjay.tintWindowWithWallpaper"
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let sidebarHidden = "jayjay.sidebarHidden"
@@ -193,6 +194,10 @@ final class AppSettings {
         didSet { defaults.set(showReviewMarks, forKey: StorageKeys.showReviewMarks) }
     }
 
+    var showsFileList: Bool {
+        didSet { defaults.set(showsFileList, forKey: StorageKeys.showsFileList) }
+    }
+
     var autoExpandDescription: Bool {
         didSet { defaults.set(autoExpandDescription, forKey: StorageKeys.autoExpandDescription) }
     }
@@ -352,6 +357,7 @@ final class AppSettings {
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         hideReviewedFiles = defaults.bool(forKey: StorageKeys.hideReviewedFiles)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
+        showsFileList = defaults.object(forKey: StorageKeys.showsFileList) as? Bool ?? true
         showReviewMarks = defaults.bool(forKey: StorageKeys.showReviewMarks)
         autoExpandDescription = defaults.object(forKey: StorageKeys.autoExpandDescription) as? Bool ?? true
         tintWindowWithWallpaper = defaults.object(forKey: StorageKeys.tintWindowWithWallpaper) as? Bool ?? false

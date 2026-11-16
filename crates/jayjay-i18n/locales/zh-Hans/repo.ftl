@@ -545,3 +545,5 @@ repo-restored-files = 已恢复 { $count } 个文件
 repo-deleted-files = 已删除 { $count } 个文件
 repo-abandon-change-named = 放弃 { $change }“{ $description }”？
 repo-abandon-change-id = 放弃 { $change }？
+repo-show-file-list = 显示文件列表
+repo-hide-file-list = 隐藏文件列表
