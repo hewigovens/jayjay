@@ -74,6 +74,15 @@ struct RepositoryCommands: Commands {
                         .disabled(tracker.handler?.canPerformShortcut(shortcut) != true)
                 }
             }
+            if let settings {
+                Button(settings.showsFileList ? Localized.Repo.hideFileList : Localized.Repo.showFileList) {
+                    settings.showsFileList.toggle()
+                }
+                .keyboardShortcut("s", modifiers: [.command, .option])
+                .disabled(tracker.handler == nil)
+                Toggle(Localized.Settings.showReviewMarks, isOn: Bindable(settings).showReviewMarks)
+                    .disabled(tracker.handler == nil)
+            }
 
             Divider()
 

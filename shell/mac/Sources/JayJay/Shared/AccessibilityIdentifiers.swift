@@ -121,6 +121,7 @@ enum AID {
     enum Detail {
         static let pane = "detail.pane"
         static let editDescription = "detail.editDescription"
+        static let reviewToggle = "detail.reviewToggle"
         static let description = "detail.description"
         static let descriptionTitle = "detail.descriptionTitle"
         static let descriptionBody = "detail.descriptionBody"

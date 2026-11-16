@@ -26,12 +26,6 @@ struct SettingsDiffPage: View {
                     SettingsLabel(Localized.Settings.treeView, icon: "list.bullet.indent")
                 }
                 Toggle(isOn: Binding(
-                    get: { settings.showReviewMarks },
-                    set: { settings.showReviewMarks = $0 }
-                )) {
-                    SettingsLabel(Localized.Settings.showReviewMarks, icon: "checkmark.circle")
-                }
-                Toggle(isOn: Binding(
                     get: { settings.hideReviewedFiles },
                     set: { settings.hideReviewedFiles = $0 }
                 )) {

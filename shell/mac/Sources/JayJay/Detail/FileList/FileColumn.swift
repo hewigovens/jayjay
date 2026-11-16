@@ -12,7 +12,7 @@ extension ChangeDetailView {
         return VStack(spacing: 0) {
             HStack(spacing: 6) {
                 fileListToggle
-                if showsReviewControls, activeReviewNoteCount > 0 {
+                if activeReviewNoteCount > 0 {
                     Button {
                         showNotedFilesOnly.toggle()
                     } label: {
@@ -176,7 +176,7 @@ extension ChangeDetailView {
             hunk: hunk,
             isSelected: fileSelection.paths.contains(hunk.path),
             isPaneActive: activePane == .fileColumn,
-            showReview: showsReviewControls && hunk.isReviewable,
+            showReview: false,
             reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
             agentMarked: agentMarkedPaths.contains(hunk.path),
             noteCount: noteCount,

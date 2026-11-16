@@ -63,9 +63,18 @@ extension RepoContentView {
                 }
                 .help(pr.title)
             }
-            if sshMachine(location: viewModel.repoPath) != nil, !viewModel.sshConnected {
-                Button(Localized.Ssh.reconnect, systemImage: "arrow.clockwise") { viewModel.reconnectSSH() }
-                    .help(viewModel.sshErrorMessage ?? viewModel.sshStatusLabel)
+            if let machine = sshMachine(location: viewModel.repoPath) {
+                Menu {
+                    Button(Localized.Ssh.connection) { modal = .sshConnection }
+                    Button(Localized.Ssh.copyPath) { viewModel.copySSHPath() }
+                    if !viewModel.sshConnected {
+                        Divider()
+                        Button(Localized.Ssh.reconnect) { viewModel.reconnectSSH() }
+                    }
+                } label: {
+                    Label(machine, systemImage: viewModel.sshConnected ? "network" : "network.slash")
+                }
+                .help(viewModel.sshErrorMessage ?? "\(machine) · \(viewModel.sshStatusLabel)")
             }
             Button(Localized.Menu.operationLogEllipsis, systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90") {
                 if showsOperationLog {

@@ -39,6 +39,16 @@ extension ChangeDetailView {
     /// Change-level view controls: they apply to every file in the change, so they live on the change header rather than each file.
     private var viewControls: some View {
         HStack(spacing: 12) {
+            if detail.info.acceptsReviewMarks, !isCompareMode {
+                // Review is a mode you enter: off, files carry no review state; on, each file's diff header gets its Mark Reviewed control.
+                Toggle(isOn: Bindable(appSettings).showReviewMarks) {
+                    Label(Localized.Settings.showReviewMarks, systemImage: "checkmark.circle")
+                }
+                .toggleStyle(.button)
+                .labelStyle(.iconOnly)
+                .help(Localized.Settings.showReviewMarks)
+                .accessibilityIdentifier(AID.Detail.reviewToggle)
+            }
             Picker(Localized.Diff.unified, selection: Bindable(appSettings).sideBySideDiff) {
                 Image(systemName: "text.justify").help(Localized.Diff.unified).tag(false)
                 Image(systemName: "rectangle.split.2x1").help(Localized.Diff.sideBySide).tag(true)
@@ -104,6 +114,48 @@ extension ChangeDetailView {
         .background(Color.primary.opacity(0.05))
     }
 
+    func diffSection(_ hunk: DiffHunk) -> some View {
+        VStack(spacing: 0) {
+            if conflictedPaths.contains(hunk.path) {
+                conflictBar(hunk: hunk)
+            }
+            DiffSection(
+                hunk: hunk,
+                rev: detailRevision,
+                commitId: detail.info.commitId.id,
+                reviewChangeId: detail.info.acceptsReviewMarks ? reviewChangeId : nil,
+                repo: repo,
+                actions: actions,
+                isWorkingCopy: detail.info.isWorkingCopy,
+                diffStore: diffStore,
+                reviewStore: reviewStore,
+                staleNoteIds: staleReviewNoteIds,
+                noteEditor: $noteEditor,
+                onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
+                onEditFile: canEditWorkingCopyFile(hunk)
+                    ? { prepareFileEditor(path: hunk.path, line: $0) }
+                    : nil,
+                onOpenInExternalEditor: canEditWorkingCopyFile(hunk)
+                    ? { appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath, line: $0) }
+                    : nil,
+                onReviewStateChanged: { refreshReviewState() },
+                onReviewSnapshotLoaded: { loadedHunk, snapshot in
+                    rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
+                },
+                fileReview: .chrome(
+                    showReview: showsReviewControls && hunk.isReviewable,
+                    rollup: fileRollups[hunk.path] ?? .unreviewed
+                ),
+                onToggleFileReview: { toggleReview([hunk.path]) },
+                compareFromRev: comparison?.fromId,
+                lineStats: fileStats?.value?[hunk.path],
+                fitsContent: true
+            )
+            // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
+            .id("\(detail.info.commitId.id)|\(hunk.path)")
+        }
+    }
+
     var previewColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
             if case let .annotate(lines, path, error) = paneMode {
@@ -121,61 +173,16 @@ extension ChangeDetailView {
                     onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let hunk = selectedHunk {
-                VStack(spacing: 0) {
-                    if conflictedPaths.contains(hunk.path) {
-                        conflictBar(hunk: hunk)
-                    }
-                    DiffSection(
-                        hunk: hunk,
-                        rev: detailRevision,
-                        commitId: detail.info.commitId.id,
-                        reviewChangeId: showsReviewControls ? reviewChangeId : nil,
-                        repo: repo,
-                        actions: actions,
-                        isWorkingCopy: detail.info.isWorkingCopy,
-                        diffStore: diffStore,
-                        reviewStore: reviewStore,
-                        staleNoteIds: staleReviewNoteIds,
-                        noteEditor: $noteEditor,
-                        onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
-                        onEditFile: canEditWorkingCopyFile(hunk)
-                            ? { prepareFileEditor(path: hunk.path, line: $0) }
-                            : nil,
-                        onOpenInExternalEditor: canEditWorkingCopyFile(hunk)
-                            ? { appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath, line: $0) }
-                            : nil,
-                        onReviewStateChanged: { refreshReviewState() },
-                        onReviewSnapshotLoaded: { loadedHunk, snapshot in
-                            rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
-                        },
-                        fileReview: .chrome(
-                            showReview: showsReviewControls && hunk.isReviewable,
-                            rollup: fileRollups[hunk.path] ?? .unreviewed
-                        ),
-                        onToggleFileReview: { toggleReview([hunk.path]) },
-                        compareFromRev: comparison?.fromId,
-                        lineStats: fileStats?.value?[hunk.path]
-                    )
-                    // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
-                    .id("\(detail.info.commitId.id)|\(hunk.path)")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
-                }
             } else if !filteredDiff.isEmpty {
+                // One file or all of them, in the same scroll view, so the header collapses the same way for both.
                 AllFilesDiff(
-                    hunks: filteredDiff,
-                    rev: detailRevision,
-                    commitId: detail.info.commitId.id,
-                    repo: repo,
-                    actions: actions,
-                    isWorkingCopy: detail.info.isWorkingCopy,
-                    diffStore: diffStore,
-                    stats: fileStats?.value ?? [:],
+                    hunks: selectedHunk.map { [$0] } ?? filteredDiff,
                     onScrolledChange: { scrolled in
                         withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) {
                             descriptionExpansion = scrolled ? .collapsed : .preference
                         }
-                    }
+                    },
+                    section: diffSection
                 )
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(

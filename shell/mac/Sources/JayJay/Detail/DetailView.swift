@@ -25,6 +25,7 @@ struct DetailView: View {
     var selectionWithoutDiffCount = 0
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
     var workingCopyEditor: ((@escaping () -> Void) -> AnyView?)?
+    var editDescriptionRequest = 0
 
     var body: some View {
         if let evolog, let entries = evolog.entries {
@@ -63,7 +64,8 @@ struct DetailView: View {
                 activePane: $activePane,
                 conflictedBookmarkNames: conflictedBookmarkNames,
                 onInteractionStateChanged: onInteractionStateChanged,
-                workingCopyEditor: workingCopyEditor
+                workingCopyEditor: workingCopyEditor,
+                editDescriptionRequest: editDescriptionRequest
             )
             .id("\(detail.info.selectionRevision)|\(comparison?.fromId ?? "")")
         } else {

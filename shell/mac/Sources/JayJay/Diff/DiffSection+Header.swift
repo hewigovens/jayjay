@@ -23,6 +23,12 @@ extension DiffSection {
             if let lineStats, lineStats.hasLineChanges {
                 LineStatsLabel(stats: lineStats)
             }
+            if settings.sideBySideDiff, let fileDiff, !canUseSideBySide(fileDiff) {
+                Text(Localized.Diff.unified)
+                    .jayjayFont(11)
+                    .foregroundStyle(.secondary)
+                    .help(Localized.Diff.sideBySideUnavailable)
+            }
             Spacer(minLength: 8)
             HStack(spacing: 2) {
                 fileReviewButton

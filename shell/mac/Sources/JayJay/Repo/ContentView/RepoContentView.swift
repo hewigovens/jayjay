@@ -3,6 +3,7 @@ import SwiftUI
 
 struct RepoContentView: View {
     @State var showsOperationLog = false
+    @State var editDescriptionRequest = 0
     @State var opLogUndoing: String?
     @State private var hasSettledSidebarWidth = false
     @Bindable var viewModel: RepoViewModel
@@ -204,7 +205,8 @@ struct RepoContentView: View {
                     selectionWithoutDiffCount: viewModel.comparison == nil
                         ? viewModel.selectedChangeIds.count : 0,
                     onInteractionStateChanged: { detailInteractionActive = $0 },
-                    workingCopyEditor: workingCopyEditor(onDone:)
+                    workingCopyEditor: workingCopyEditor(onDone:),
+                    editDescriptionRequest: editDescriptionRequest
                 )
                 .disabled(!viewModel.sshConnected)
             }

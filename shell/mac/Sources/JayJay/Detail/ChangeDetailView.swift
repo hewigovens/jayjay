@@ -22,6 +22,7 @@ struct ChangeDetailView: View {
     var conflictedBookmarkNames: Set<String> = []
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
     var workingCopyEditor: ((@escaping () -> Void) -> AnyView?)?
+    var editDescriptionRequest = 0
 
     var isCompareMode: Bool {
         comparison != nil
@@ -198,6 +199,9 @@ struct ChangeDetailView: View {
         }
         .onChange(of: appSettings.ignoreWhitespace) { _, _ in
             loadFileStats()
+        }
+        .onChange(of: editDescriptionRequest) {
+            if !detail.info.isImmutable { isEditingDescription = true }
         }
         .onChange(of: detailRevision) { _, _ in
             isEditingDescription = false

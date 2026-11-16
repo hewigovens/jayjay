@@ -2,6 +2,11 @@ import JayJayCore
 
 extension RepoContentView {
     func handleDAGRequest(_ request: DAGRequest) {
+        // Describing the selected change edits it in place in the header; other changes still use the sheet.
+        if case let .editDescription(rev, _) = request, rev == viewModel.selectedChange?.info.selectionRevision {
+            editDescriptionRequest += 1
+            return
+        }
         if let presented = request.presentedModal {
             modal = presented
             return
