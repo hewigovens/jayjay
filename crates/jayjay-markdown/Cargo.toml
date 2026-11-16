@@ -19,7 +19,7 @@ pulldown-cmark = { workspace = true }
 roxmltree = { version = "0.21", optional = true }
 
 [dev-dependencies]
-resvg = "0.49"
+resvg = "0.50"
 
 [lints]
 workspace = true
