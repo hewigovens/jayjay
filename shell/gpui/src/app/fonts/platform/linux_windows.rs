@@ -45,13 +45,16 @@ fn families_where(include: impl Fn(&Handle) -> bool) -> Vec<String> {
         .unwrap_or_default()
         .into_iter()
         .filter(|family| {
-            unless_panicked(|| source.select_family_by_name(family).ok())
-                .is_some_and(|handles| handles.fonts().first().is_some_and(&include))
+            unless_panicked(|| {
+                let handles = source.select_family_by_name(family).ok()?;
+                Some(handles.fonts().first().is_some_and(&include))
+            })
+            .unwrap_or_default()
         })
         .collect()
 }
 
-/// font-kit unwraps each fontconfig face's file and index, so one malformed entry panics the query.
+/// font-kit panics on some malformed faces (a fontconfig entry without an index), so a lookup that panics counts as not found.
 fn unless_panicked<T>(lookup: impl FnOnce() -> Option<T>) -> Option<T> {
     panic::catch_unwind(AssertUnwindSafe(lookup)).ok().flatten()
 }

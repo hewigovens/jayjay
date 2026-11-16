@@ -217,16 +217,16 @@ impl Element for TextAreaElement {
                 window.paint_quad(selection);
             }
             for line in &prepaint.lines[prepaint.visible_lines.clone()] {
-                line.shaped
-                    .paint(
-                        point(text.left(), text.top() + line.top - prepaint.scroll_y),
-                        prepaint.line_height,
-                        gpui::TextAlign::Left,
-                        None,
-                        window,
-                        cx,
-                    )
-                    .unwrap();
+                if let Err(error) = line.shaped.paint(
+                    point(text.left(), text.top() + line.top - prepaint.scroll_y),
+                    prepaint.line_height,
+                    gpui::TextAlign::Left,
+                    None,
+                    window,
+                    cx,
+                ) {
+                    log::warn!("text area line paint failed: {error}");
+                }
             }
             if focus_handle.is_focused(window)
                 && let Some(cursor) = prepaint.cursor.take()
@@ -268,16 +268,16 @@ impl TextAreaElement {
                 let Some(number) = &line.number else {
                     continue;
                 };
-                number
-                    .paint(
-                        number_origin(gutter, number, line.top - prepaint.scroll_y),
-                        prepaint.line_height,
-                        gpui::TextAlign::Left,
-                        None,
-                        window,
-                        cx,
-                    )
-                    .unwrap();
+                if let Err(error) = number.paint(
+                    number_origin(gutter, number, line.top - prepaint.scroll_y),
+                    prepaint.line_height,
+                    gpui::TextAlign::Left,
+                    None,
+                    window,
+                    cx,
+                ) {
+                    log::warn!("text area line number paint failed: {error}");
+                }
             }
         });
     }
