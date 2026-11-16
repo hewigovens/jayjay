@@ -185,8 +185,6 @@ struct RepoContentView: View {
                     workingCopyEditor: workingCopyEditor
                 )
                 .disabled(!viewModel.sshConnected)
-                Divider()
-                statusBar
             }
             .background(paneBackground)
         }

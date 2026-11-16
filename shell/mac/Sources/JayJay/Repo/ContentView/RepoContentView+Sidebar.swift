@@ -7,9 +7,8 @@ extension RepoContentView {
             HStack(spacing: 8) {
                 BookmarkPicker(bookmarks: viewModel.bookmarks, isLoaded: viewModel.hasFinishedFirstLoad, actions: viewModel)
                 Spacer(minLength: 8)
-                Text(Localized.Repo.changeCount(count: viewModel.changes.count))
+                changeListStatus
                     .jayjayFont(12)
-                    .foregroundStyle(.secondary)
                     .lineLimit(1)
             }
             .padding(.leading, 8)

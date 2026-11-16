@@ -57,6 +57,22 @@ extension RepoContentView {
         ToolbarSpacer(.flexible)
 
         ToolbarItemGroup(placement: .primaryAction) {
+            if let pr = viewModel.prInfo, let url = URL(string: pr.url) {
+                Link(destination: url) {
+                    Label("#\(pr.number) \(pr.stateLabel)", systemImage: pr.checksIcon)
+                }
+                .help(pr.title)
+            }
+            if sshMachine(location: viewModel.repoPath) != nil, !viewModel.sshConnected {
+                Button(Localized.Ssh.reconnect, systemImage: "arrow.clockwise") { viewModel.reconnectSSH() }
+                    .help(viewModel.sshErrorMessage ?? viewModel.sshStatusLabel)
+            }
+            Button(Localized.Menu.operationLogEllipsis, systemImage: "clock.arrow.trianglehead.counterclockwise.rotate.90") {
+                showOperationLog()
+            }
+            .help(viewModel.currentOperationDescription.isEmpty
+                ? AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis)
+                : "\(AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis))\n\(viewModel.currentOperationDescription)")
             toolbarButton(
                 .editor,
                 help: Localized.Repo.openRepositoryIn(app: settings.externalEditor.title),
@@ -102,6 +118,11 @@ extension RepoContentView {
         .accessibilityIdentifier(direction.accessibilityIdentifier)
     }
 
+    private var titleContext: String? {
+        let parts = [sshContext, activeBookmarkSync].compactMap(\.self)
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     /// The nearest tracked bookmark at or below the working copy, shown as quiet title context.
     private var activeBookmarkSync: String? {
         let changes = viewModel.changes
@@ -123,7 +144,7 @@ extension RepoContentView {
                 repoPath: viewModel.repoPath,
                 repositoryName: viewModel.repositoryName,
                 workspaces: viewModel.workspaces,
-                context: activeBookmarkSync,
+                context: titleContext,
                 onFilterWorkspace: { workspace in
                     viewModel.filterByWorkspace(name: workspace.name)
                 },
