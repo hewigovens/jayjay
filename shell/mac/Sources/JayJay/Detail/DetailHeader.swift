@@ -63,7 +63,7 @@ extension ChangeDetailView {
     @ViewBuilder private var identifierRows: some View {
         IdentifierRow(label: Localized.Repo.changeColon) {
             IdentifierText(
-                value: detail.info.changeId.id,
+                value: detail.info.changeId.compact,
                 prefixLength: Int(detail.info.changeId.shortLen),
                 prefixStyle: .changeId
             )
@@ -71,7 +71,7 @@ extension ChangeDetailView {
         }
         IdentifierRow(label: Localized.Repo.commitColon) {
             IdentifierText(
-                value: detail.info.commitId.id,
+                value: detail.info.commitId.compact,
                 prefixLength: Int(detail.info.commitId.shortLen),
                 prefixStyle: .commitId
             )
@@ -81,7 +81,7 @@ extension ChangeDetailView {
         }
         if !detail.info.parents.isEmpty {
             IdentifierRow(label: Localized.Repo.parentsColon) {
-                IdentifierText(value: detail.info.parents.map { String($0.prefix(12)) }.joined(separator: ", "))
+                IdentifierText(value: detail.info.parents.map { String($0.prefix(8)) }.joined(separator: ", "))
             }
         }
     }
