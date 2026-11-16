@@ -10,6 +10,8 @@ struct Step: Decodable {
         case wait(Target)
         case waitGone(Target)
         case beat(TimeInterval)
+        /// Scroll wheel over the target; positive lines scroll the content down (toward the end).
+        case scroll(Target, lines: Int)
     }
 
     let action: Action
@@ -17,11 +19,11 @@ struct Step: Decodable {
     let timeout: TimeInterval
 
     private static let cued: Set = ["click", "doubleClick", "rightClick", "menu", "key", "paste"]
-    private static let waiting: Set = ["click", "doubleClick", "rightClick", "menu", "wait", "waitGone"]
-    private static let actions = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "wait", "waitGone", "beat"]
+    private static let waiting: Set = ["click", "doubleClick", "rightClick", "menu", "wait", "waitGone", "scroll"]
+    private static let actions = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "wait", "waitGone", "beat", "scroll"]
 
     init(from decoder: Decoder) throws {
-        try decoder.rejectUnknownKeys(allowed: Set(Self.actions + ["label", "timeout"]))
+        try decoder.rejectUnknownKeys(allowed: Set(Self.actions + ["label", "timeout", "lines"]))
         let container = try decoder.container(keyedBy: AnyKey.self)
         let named = container.allKeys.filter { Self.actions.contains($0.stringValue) }
         guard named.count == 1, let key = named.first else {
@@ -57,6 +59,8 @@ struct Step: Decodable {
                 action = try .wait(container.decode(Target.self, forKey: key))
             case "waitGone":
                 action = try .waitGone(container.decode(Target.self, forKey: key))
+            case "scroll":
+                action = try .scroll(container.decode(Target.self, forKey: key), lines: container.decodeIfPresent(Int.self, forKey: AnyKey("lines")) ?? 10)
             default:
                 action = try .beat(container.decode(TimeInterval.self, forKey: key))
         }
@@ -72,6 +76,7 @@ struct Step: Decodable {
             case let .wait(target): "wait for \(target.summary)"
             case let .waitGone(target): "wait for \(target.summary) to go"
             case let .beat(seconds): "beat \(seconds)"
+            case let .scroll(target, lines): "scroll \(lines) lines over \(target.summary)"
         }
     }
 }

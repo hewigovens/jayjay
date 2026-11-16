@@ -32,6 +32,7 @@ struct DescriptionPreview: View {
                     .fixedSize()
                     .keyboardFocusStop(.editDescription, action: onEdit)
                     .accessibilityLabel(Localized.Repo.editDescriptionSentence)
+                    .accessibilityIdentifier(AID.Detail.editDescription)
                     .help(Localized.Repo.editDescriptionSentence)
                 }
             }

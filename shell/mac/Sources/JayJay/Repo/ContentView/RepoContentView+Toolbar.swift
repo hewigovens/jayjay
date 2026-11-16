@@ -74,6 +74,7 @@ extension RepoContentView {
                     showOperationLog()
                 }
             }
+            .accessibilityIdentifier(AID.Toolbar.operationLog)
             .help(viewModel.currentOperationDescription.isEmpty
                 ? AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis)
                 : "\(AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis))\n\(viewModel.currentOperationDescription)")

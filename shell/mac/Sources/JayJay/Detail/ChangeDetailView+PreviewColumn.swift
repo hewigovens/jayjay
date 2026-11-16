@@ -65,6 +65,7 @@ extension ChangeDetailView {
         }
         .buttonStyle(.plain)
         .help(appSettings.showsFileList ? Localized.Repo.hideFileList : Localized.Repo.showFileList)
+        .accessibilityIdentifier(AID.FileList.visibilityToggle)
     }
 
     // MARK: - Preview column

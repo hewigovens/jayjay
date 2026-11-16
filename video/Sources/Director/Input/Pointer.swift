@@ -16,6 +16,20 @@ enum Pointer {
         }
     }
 
+    /// Spread over several small wheel events so the take shows a smooth scroll rather than a jump.
+    static func scroll(at point: CGPoint, lines: Int, check: () throws -> Void) async throws {
+        post(.mouseMoved, at: point, button: .left)
+        try? await Task.sleep(for: .milliseconds(120))
+        let step = lines >= 0 ? -1 : 1
+        for _ in 0 ..< abs(lines) {
+            try check()
+            guard let event = CGEvent(scrollWheelEvent2Source: nil, units: .line, wheelCount: 1, wheel1: Int32(step), wheel2: 0, wheel3: 0) else { return }
+            event.location = point
+            event.post(tap: .cghidEventTap)
+            try? await Task.sleep(for: .milliseconds(30))
+        }
+    }
+
     private static func post(_ type: CGEventType, at point: CGPoint, button: CGMouseButton, clickState: Int = 0) {
         guard let event = CGEvent(mouseEventSource: nil, mouseType: type, mouseCursorPosition: point, mouseButton: button) else { return }
         if clickState > 0 {

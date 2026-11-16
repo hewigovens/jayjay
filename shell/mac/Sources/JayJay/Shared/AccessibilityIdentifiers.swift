@@ -38,6 +38,7 @@ enum AID {
 
     enum Toolbar {
         static let sidebarToggle = "toolbar.sidebarToggle"
+        static let operationLog = "toolbar.operationLog"
         static let pull = "toolbar.pull"
         static let push = "toolbar.push"
         static let revsetBar = "toolbar.revsetBar"
@@ -73,6 +74,7 @@ enum AID {
 
     enum FileList {
         static let column = "file.column"
+        static let visibilityToggle = "file.visibilityToggle"
         static let columnDivider = "file.columnDivider"
         static let filterField = "file.filterField"
         static let filterToggle = "file.filterToggle"
@@ -118,10 +120,10 @@ enum AID {
 
     enum Detail {
         static let pane = "detail.pane"
+        static let editDescription = "detail.editDescription"
         static let description = "detail.description"
         static let descriptionTitle = "detail.descriptionTitle"
         static let descriptionBody = "detail.descriptionBody"
-        static let descriptionExpansion = "detail.descriptionExpansion"
         static let commitId = "detail.commitId"
         static let selectionWithoutDiff = "detail.selectionWithoutDiff"
 
