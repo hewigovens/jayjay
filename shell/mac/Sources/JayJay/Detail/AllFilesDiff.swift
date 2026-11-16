@@ -11,6 +11,8 @@ struct AllFilesDiff: View {
     let isWorkingCopy: Bool
     let diffStore: DiffStore
     let stats: [String: FileDiffStats]
+    /// Reports whether the diffs have scrolled away from the top, so the change header can shrink to its compact form.
+    let onScrolledChange: (Bool) -> Void
 
     var body: some View {
         ScrollView {
@@ -33,6 +35,9 @@ struct AllFilesDiff: View {
                     Divider()
                 }
             }
+        }
+        .onScrollGeometryChange(for: Bool.self) { $0.contentOffset.y > 24 } action: { _, scrolled in
+            onScrolledChange(scrolled)
         }
     }
 }

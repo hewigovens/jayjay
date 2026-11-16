@@ -12,7 +12,7 @@ extension DiffSection {
                 .textSelection(.enabled)
                 .help(hunk.path)
                 .accessibilityIdentifier(AID.Diff.section)
-            CopyIconButton(value: hunk.path, help: Localized.Diff.copyPath)
+                .copyContextMenu(hunk.path, label: Localized.Diff.copyPath)
             Text(hunk.hunkType.label)
                 .jayjayFont(10, weight: .medium)
                 .foregroundStyle(statusColor)

@@ -33,7 +33,7 @@ private struct DetailDescriptionSection: View {
         if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             HStack(alignment: .center, spacing: 8) {
                 Text(Localized.Repo.noDescription)
-                    .jayjayFont(20, weight: .semibold)
+                    .jayjayFont(17, weight: .semibold)
                     .foregroundStyle(.tertiary)
                 if canEditDescription {
                     Button(Localized.Repo.addDescription, systemImage: "pencil", action: onEdit)
@@ -42,7 +42,6 @@ private struct DetailDescriptionSection: View {
                         .jayjayFont(12)
                         .foregroundStyle(.secondary)
                 }
-                DescriptionExpansionToggle(expanded: expanded) { expanded.toggle() }
             }
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity, minHeight: PaneLayout.headerHeight, alignment: .leading)
@@ -52,8 +51,7 @@ private struct DetailDescriptionSection: View {
                 collapsedHeight: DescriptionHeight.collapsed,
                 expandedHeight: expandedHeight,
                 expanded: expanded,
-                onEdit: canEditDescription ? onEdit : nil,
-                onToggleExpansion: { expanded.toggle() }
+                onEdit: canEditDescription ? onEdit : nil
             )
         }
     }

@@ -47,17 +47,20 @@ extension ChangeDetailView {
             .labelsHidden()
             .fixedSize()
             .accessibilityIdentifier(AID.Diff.layoutToggle)
-            fileListToggle
+            if !appSettings.showsFileList {
+                fileListToggle
+            }
         }
         .padding(.top, 10)
         .padding(.trailing, PaneLayout.detailInset)
     }
 
-    private var fileListToggle: some View {
+    /// Lives in the file list header; while the list is hidden it moves to the change header so it can be brought back.
+    var fileListToggle: some View {
         Button {
             appSettings.showsFileList.toggle()
         } label: {
-            Image(systemName: "sidebar.squares.leading")
+            Image(systemName: "list.bullet.rectangle.portrait")
                 .foregroundStyle(appSettings.showsFileList ? Color.accentColor : .secondary)
         }
         .buttonStyle(.plain)
@@ -162,7 +165,12 @@ extension ChangeDetailView {
                     actions: actions,
                     isWorkingCopy: detail.info.isWorkingCopy,
                     diffStore: diffStore,
-                    stats: fileStats?.value ?? [:]
+                    stats: fileStats?.value ?? [:],
+                    onScrolledChange: { scrolled in
+                        withAnimation(reduceMotion ? nil : .smooth(duration: 0.25)) {
+                            descriptionExpansion = scrolled ? .collapsed : .preference
+                        }
+                    }
                 )
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 ContentUnavailableView(

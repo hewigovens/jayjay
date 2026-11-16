@@ -41,7 +41,7 @@ struct ChangeDetailView: View {
     }
 
     @Namespace var metadataAnimation
-    @State private var descriptionExpansion = DescriptionExpansion.preference
+    @State var descriptionExpansion = DescriptionExpansion.preference
     @State var paneHeight: CGFloat = 0
     @State var fileSelection = FileSelection()
     @State var contextMenuRequest: SelectionContextMenuRequest?
@@ -297,6 +297,6 @@ struct ChangeDetailView: View {
     }
 }
 
-private enum DescriptionExpansion {
+enum DescriptionExpansion {
     case preference, expanded, collapsed
 }

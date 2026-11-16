@@ -11,13 +11,14 @@ extension ChangeDetailView {
         let noteAccent = appSettings.appThemes.colors(for: colorScheme).noteAccent
         return VStack(spacing: 0) {
             HStack(spacing: 6) {
+                fileListToggle
                 if showsReviewControls, activeReviewNoteCount > 0 {
                     Button {
                         showNotedFilesOnly.toggle()
                     } label: {
                         HStack(spacing: 3) {
                             Image(systemName: "text.bubble.fill")
-                                .jayjayFont(14)
+                                .jayjayFont(13)
                             Text("\(activeReviewNoteCount)")
                                 .jayjayFont(10, weight: .medium)
                         }
@@ -49,7 +50,7 @@ extension ChangeDetailView {
                     } label: {
                         Image(systemName: "arrow.branch")
                             .foregroundStyle(.secondary)
-                            .jayjayFont(14)
+                            .jayjayFont(13)
                     }
                     .buttonStyle(.plain)
                     .help(Localized.Repo.splitCheckedFiles(count: reviewedPaths.count))
@@ -61,7 +62,7 @@ extension ChangeDetailView {
                     } label: {
                         Image(systemName: appSettings.hideReviewedFiles ? "eye.slash.fill" : "eye.slash")
                             .foregroundStyle(appSettings.hideReviewedFiles ? Color.accentColor : .secondary)
-                            .jayjayFont(14)
+                            .jayjayFont(13)
                     }
                     .buttonStyle(.plain)
                     .help(appSettings.hideReviewedFiles ? Localized.Repo.showingOnlyUnreviewedFiles : Localized.Settings.hideReviewed)
@@ -71,7 +72,7 @@ extension ChangeDetailView {
                 } label: {
                     Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
                         .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
-                        .jayjayFont(14)
+                        .jayjayFont(13)
                 }
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
@@ -81,7 +82,7 @@ extension ChangeDetailView {
                 } label: {
                     Image(systemName: "magnifyingglass")
                         .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
-                        .jayjayFont(14)
+                        .jayjayFont(13)
                 }
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.filterToggle, action: toggleFileFilter)

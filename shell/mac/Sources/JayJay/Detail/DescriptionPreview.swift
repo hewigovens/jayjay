@@ -8,7 +8,6 @@ struct DescriptionPreview: View {
     let expandedHeight: CGFloat
     let expanded: Bool
     let onEdit: (() -> Void)?
-    let onToggleExpansion: () -> Void
 
     var body: some View {
         let title = commitSummary(message: description)
@@ -16,7 +15,7 @@ struct DescriptionPreview: View {
         VStack(alignment: .leading, spacing: 0) {
             HStack(alignment: .center, spacing: 8) {
                 Text(title)
-                    .jayjayFont(20, weight: .semibold)
+                    .jayjayFont(17, weight: .semibold)
                     .textSelection(.enabled)
                     .fixedSize(horizontal: false, vertical: true)
                     .accessibilityIdentifier(AID.Detail.descriptionTitle)
@@ -35,7 +34,6 @@ struct DescriptionPreview: View {
                     .accessibilityLabel(Localized.Repo.editDescriptionSentence)
                     .help(Localized.Repo.editDescriptionSentence)
                 }
-                DescriptionExpansionToggle(expanded: expanded, action: onToggleExpansion)
             }
             .padding(.vertical, 6)
             .frame(maxWidth: .infinity, minHeight: PaneLayout.headerHeight, alignment: .leading)

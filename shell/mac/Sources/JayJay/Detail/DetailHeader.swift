@@ -67,7 +67,7 @@ extension ChangeDetailView {
                 prefixLength: Int(detail.info.changeId.shortLen),
                 prefixStyle: .changeId
             )
-            CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
+            .copyContextMenu(detail.info.changeId.id, label: Localized.Repo.copyChange)
         }
         IdentifierRow(label: Localized.Repo.commitColon) {
             IdentifierText(
@@ -77,7 +77,7 @@ extension ChangeDetailView {
             )
             .accessibilityIdentifier(AID.Detail.commitId)
             .accessibilityValue(detail.info.commitId.id)
-            CopyIconButton(value: detail.info.commitId.id, help: Localized.Repo.copyCommit)
+            .copyContextMenu(detail.info.commitId.id, label: Localized.Repo.copyCommit)
         }
         if !detail.info.parents.isEmpty {
             IdentifierRow(label: Localized.Repo.parentsColon) {
@@ -89,7 +89,7 @@ extension ChangeDetailView {
     @ViewBuilder private var referenceRows: some View {
         if !detail.info.bookmarks.isEmpty {
             IdentifierRow(label: Localized.Repo.bookmarksColon) {
-                ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0, showsCopy: true) }
+                ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0) }
             }
         }
         if !detail.info.tags.isEmpty {
@@ -118,7 +118,7 @@ extension ChangeDetailView {
                 prefixLength: Int(detail.info.changeId.shortLen),
                 prefixStyle: .changeId
             )
-            CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
+            .copyContextMenu(detail.info.changeId.id, label: Localized.Repo.copyChange)
             if showsDate {
                 bylineSeparator
                 Text(formatTimestamp(detail.info.author.timestampMillis))
@@ -129,7 +129,7 @@ extension ChangeDetailView {
             if let visibleDiffStats {
                 diffStatsView(visibleDiffStats)
             }
-            ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0, showsCopy: false) }
+            ForEach(detail.info.bookmarks, id: \.self) { bookmarkChip($0) }
             ForEach(detail.info.tags, id: \.self) { tagChip($0) }
         }
         .lineLimit(1)
@@ -250,7 +250,7 @@ extension ChangeDetailView {
         .help(Localized.Repo.tagNamed(name: name))
     }
 
-    private func bookmarkChip(_ name: String, showsCopy: Bool) -> some View {
+    private func bookmarkChip(_ name: String) -> some View {
         let conflicted = conflictedBookmarkNames.contains(name)
         let bookmark = appThemes.colors(for: colorScheme).bookmark
         return HStack(spacing: 4) {
@@ -265,11 +265,9 @@ extension ChangeDetailView {
                 conflicted ? Color.orange.opacity(0.18) : bookmark.opacity(colorScheme == .dark ? 0.16 : 0.14),
                 in: .capsule
             )
-            if showsCopy {
-                CopyIconButton(value: name, help: Localized.Repo.copyBookmarkName)
-            }
         }
         .lineLimit(1)
+        .copyContextMenu(name, label: Localized.Repo.copyBookmarkName)
         .help(
             conflicted
                 ? Localized.Repo.conflictedBookmarkNamed(name: name)
