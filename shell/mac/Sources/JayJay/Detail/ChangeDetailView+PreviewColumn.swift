@@ -34,6 +34,16 @@ extension ChangeDetailView {
         }
         .padding(.horizontal, PaneLayout.detailInset)
         .padding(.vertical, 12)
+        // The focused text field takes Escape before SwiftUI's exit command sees it, so watch for the key while editing.
+        .background(
+            KeyDownMonitor(yieldsToText: { _ in false }) { event in
+                guard event.keyCode == KeyCode.escape else { return false }
+                isEditingDescription = false
+                return true
+            }
+            .frame(width: 0, height: 0)
+            .allowsHitTesting(false)
+        )
     }
 
     /// Change-level view controls: they apply to every file in the change, so they live on the change header rather than each file.

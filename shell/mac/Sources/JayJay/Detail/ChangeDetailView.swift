@@ -200,6 +200,10 @@ struct ChangeDetailView: View {
         .onChange(of: appSettings.ignoreWhitespace) { _, _ in
             loadFileStats()
         }
+        // Like diff edit, the inline editor owns the keyboard: otherwise the pane focus handler eats Escape to clear the Edit button's focus.
+        .onChange(of: isEditingDescription) { _, editing in
+            keyboardFocus?.isSuspended = editing || paneMode.isDiffEdit
+        }
         .onChange(of: editDescriptionRequest) {
             if !detail.info.isImmutable { isEditingDescription = true }
         }
