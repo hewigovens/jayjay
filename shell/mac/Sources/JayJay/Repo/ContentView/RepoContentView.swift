@@ -2,10 +2,10 @@ import JayJayCore
 import SwiftUI
 
 struct RepoContentView: View {
+    @State private var hasSettledSidebarWidth = false
     @Bindable var viewModel: RepoViewModel
     let isSwitchingWorkspace: Bool
     let onSwitchWorkspace: (String) -> Void
-    @State var sidebarWidth: CGFloat = 360
     @State var revsetEditRequest = 0
     @State var refCreateName = ""
     @State var modal: RepoModalState?
@@ -32,7 +32,6 @@ struct RepoContentView: View {
             .frame(minWidth: 800, minHeight: 500)
             .environment(diffCommands)
             .onAppear {
-                sidebarWidth = settings.sidebarWidth
                 menuCoordinator.onAction = { action in
                     switch action {
                         case let .shortcut(shortcut): performShortcut(shortcut)
@@ -46,6 +45,11 @@ struct RepoContentView: View {
                     }
                 }
                 menuCoordinator.viewModel = viewModel
+                // NavigationSplitView reports interim widths while it first lays out; persist only the user's later resizes.
+                Task { @MainActor in
+                    try? await Task.sleep(for: .seconds(1))
+                    hasSettledSidebarWidth = true
+                }
                 ActiveRepoTracker.shared.register(
                     repoPath: viewModel.repoPath, settings: settings, handler: menuCoordinator
                 )
@@ -139,18 +143,19 @@ struct RepoContentView: View {
     }
 
     private var contentLayout: some View {
-        VStack(spacing: 0) {
-            BisectBar(viewModel: viewModel)
-            ResizableSplit(
-                width: $sidebarWidth,
-                isLeadingHidden: settings.sidebarHidden,
-                range: PaneLayout.sidebarRange(windowWidth:),
-                onEnded: { settings.sidebarWidth = $0 },
-                dividerIdentifier: AID.Sidebar.divider,
-                leading: {
-                    sidebar
-                },
-                trailing: {
+        NavigationSplitView(columnVisibility: sidebarVisibility) {
+            sidebar
+                .onGeometryChange(for: CGFloat.self, of: \.size.width) { width in
+                    if hasSettledSidebarWidth, width > 0 { settings.sidebarWidth = width }
+                }
+                .toolbar { sidebarToolbarContent }
+                .disabled(!viewModel.sshConnected)
+                .navigationSplitViewColumnWidth(
+                    min: PaneLayout.sidebar.lowerBound, ideal: settings.sidebarWidth, max: PaneLayout.sidebar.upperBound
+                )
+        } detail: {
+            VStack(spacing: 0) {
+                BisectBar(viewModel: viewModel)
                     DetailView(
                         repoPath: viewModel.repoPath, repo: viewModel.repo,
                         detail: viewModel.selectedChange,
@@ -176,14 +181,19 @@ struct RepoContentView: View {
                             ? viewModel.selectedChangeIds.count : 0,
                         onInteractionStateChanged: { detailInteractionActive = $0 }
                     )
-                    .background(paneBackground)
-                }
-            )
-            .disabled(!viewModel.sshConnected)
-            Divider()
-            statusBar
+                    .disabled(!viewModel.sshConnected)
+                Divider()
+                statusBar
+            }
+            .background(paneBackground)
         }
-        .background(paneBackground)
+    }
+
+    private var sidebarVisibility: Binding<NavigationSplitViewVisibility> {
+        Binding(
+            get: { settings.sidebarHidden ? .detailOnly : .all },
+            set: { settings.sidebarHidden = $0 == .detailOnly }
+        )
     }
 
     private var paneBackground: Color {

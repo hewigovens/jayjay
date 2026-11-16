@@ -2,17 +2,10 @@ import JayJayCore
 import SwiftUI
 
 extension RepoContentView {
+    /// Lives on the sidebar column so it sits above the sidebar and hides with it.
     @ToolbarContentBuilder
-    var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
-            let title = settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar
-            toolbarButton(
-                .sidebarToggle,
-                help: AppShortcut.toggleSidebar.help(title),
-                action: { settings.sidebarHidden.toggle() },
-                label: { Label(title, systemImage: "sidebar.leading") }
-            )
-            .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
+    var sidebarToolbarContent: some ToolbarContent {
+        ToolbarItemGroup(placement: .automatic) {
             toolbarButton(
                 .refresh,
                 help: viewModel.refreshMode.help,
@@ -45,6 +38,10 @@ extension RepoContentView {
             }
         }
 
+    }
+
+    @ToolbarContentBuilder
+    var toolbarContent: some ToolbarContent {
         repositoryTitle
 
         ToolbarItem(placement: .principal) {

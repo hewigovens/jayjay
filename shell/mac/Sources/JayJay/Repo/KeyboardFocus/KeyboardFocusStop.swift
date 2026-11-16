@@ -2,7 +2,7 @@
 enum KeyboardFocusStop: CaseIterable {
     case dag, fileList, treeToggle, filterToggle
     case expandDescription, editDescription, markReviewed, diffLayout, editDiff, editFile
-    case sidebarToggle, refresh, pull, push, revsetBack, revsetPresets, revsetFilter, revsetReset, editor, terminal
+    case refresh, pull, push, revsetBack, revsetPresets, revsetFilter, revsetReset, editor, terminal
     case commitSummary, commitDescription
 
     var isInSidebar: Bool {
