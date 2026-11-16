@@ -6,6 +6,8 @@ struct RepoTitlePicker: View {
     let repoPath: String
     let repositoryName: String
     let workspaces: [WorkspaceInfo]
+    /// Quiet context under the repository name, such as the nearest bookmark and its sync state.
+    var context: String?
     let onFilterWorkspace: (WorkspaceInfo) -> Void
     let onSwitchWorkspace: (WorkspaceInfo) -> Void
     let onOpenWorkspaceInNewWindow: (WorkspaceInfo) -> Void
@@ -28,17 +30,24 @@ struct RepoTitlePicker: View {
         workspaces.count > 1 ? workspaces.first(where: \.isCurrent)?.name : nil
     }
 
+    private var subtitle: String? {
+        let parts = [currentWorkspaceName, context].compactMap(\.self)
+        return parts.isEmpty ? nil : parts.joined(separator: " · ")
+    }
+
     var body: some View {
         Button(action: togglePanel) {
             HStack(spacing: 4) {
-                Text(repositoryName)
-                    .fontWeight(.semibold)
-                if let currentWorkspaceName {
-                    Text("/")
-                        .foregroundStyle(.tertiary)
-                    Text(currentWorkspaceName)
+                VStack(alignment: .leading, spacing: 0) {
+                    Text(repositoryName)
                         .fontWeight(.semibold)
+                    if let subtitle {
+                        Text(subtitle)
+                            .font(.caption)
+                            .foregroundStyle(.secondary)
+                    }
                 }
+                .lineLimit(1)
                 Image(systemName: "chevron.down")
                     .font(.caption2)
                     .foregroundStyle(.secondary)

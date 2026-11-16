@@ -42,7 +42,6 @@ extension RepoContentView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
         repositoryTitle
-        activeBookmark
 
         ToolbarItem(placement: .principal) {
             RevsetBar(
@@ -103,23 +102,8 @@ extension RepoContentView {
         .accessibilityIdentifier(direction.accessibilityIdentifier)
     }
 
-    /// The nearest bookmark at or below the working copy, so the title says which line of work follows.
-    private var activeBookmark: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            if let sync = activeBookmarkSync {
-                Label(sync.text, systemImage: "bookmark")
-                    .labelStyle(.titleAndIcon)
-                    .jayjayFont(12)
-                    .foregroundStyle(.secondary)
-                    .lineLimit(1)
-                    .fixedSize()
-                    .help(sync.tooltip)
-            }
-        }
-        .sharedBackgroundVisibility(.hidden)
-    }
-
-    private var activeBookmarkSync: (text: String, tooltip: String)? {
+    /// The nearest tracked bookmark at or below the working copy, shown as quiet title context.
+    private var activeBookmarkSync: String? {
         let changes = viewModel.changes
         guard let wcIndex = changes.firstIndex(where: { $0.isWorkingCopy }) else { return nil }
         for change in changes[wcIndex...] {
@@ -127,7 +111,7 @@ extension RepoContentView {
                 guard let bookmark = viewModel.bookmarks.first(where: { $0.name == name }),
                       let sync = bookmarkSync(bookmark: bookmark)
                 else { continue }
-                return (sync.text, sync.tooltip)
+                return sync.text
             }
         }
         return nil
@@ -139,6 +123,7 @@ extension RepoContentView {
                 repoPath: viewModel.repoPath,
                 repositoryName: viewModel.repositoryName,
                 workspaces: viewModel.workspaces,
+                context: activeBookmarkSync,
                 onFilterWorkspace: { workspace in
                     viewModel.filterByWorkspace(name: workspace.name)
                 },
