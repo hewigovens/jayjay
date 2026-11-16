@@ -79,10 +79,26 @@ fn apply_command_environment(command: &mut Command) {
 fn command_path() -> Option<String> {
     let login_shell_path = cached_login_shell_path().as_ref().cloned();
     let inherited_path = std::env::var("PATH").ok();
-    join_path_entries(path_entries_from_values(
-        [login_shell_path, inherited_path],
-        home_dir(),
-    ))
+    let mut entries = path_entries_from_values([login_shell_path, inherited_path], home_dir());
+    let shim_targets: Vec<PathBuf> = CHILD_STARTED_TOOLS
+        .iter()
+        .filter_map(|name| shim_target_dir(name, &entries))
+        .collect();
+    entries.splice(0..0, shim_targets);
+    join_path_entries(entries)
+}
+
+/// jj and gh start these by name and would find the shim JayJay itself launches around; the target's folder ahead on PATH makes them start the target too.
+const CHILD_STARTED_TOOLS: [&str; 1] = ["git"];
+
+fn shim_target_dir(name: &str, entries: &[PathBuf]) -> Option<PathBuf> {
+    let shim = binary_candidates(name, entries)
+        .into_iter()
+        .find(|path| is_executable_file(path))?;
+    let target = platform::launch_target(shim.clone());
+    (target != shim)
+        .then(|| target.parent().map(Path::to_path_buf))
+        .flatten()
 }
 
 /// Resolve a CLI binary from PATH, login-shell PATH, and common fallback paths.
@@ -114,9 +130,13 @@ fn binary_candidates_from_paths(
     path_values: [Option<String>; 2],
     home: Option<PathBuf>,
 ) -> Vec<PathBuf> {
+    binary_candidates(name, &path_entries_from_values(path_values, home))
+}
+
+fn binary_candidates(name: &str, entries: &[PathBuf]) -> Vec<PathBuf> {
     let names = platform::executable_names(name);
-    path_entries_from_values(path_values, home)
-        .into_iter()
+    entries
+        .iter()
         .flat_map(|entry| names.iter().map(move |name| entry.join(name)))
         .collect()
 }
@@ -467,6 +487,22 @@ mod tests {
         let document = dir.path().join("fake.txt");
         std::fs::write(&document, "").unwrap();
         assert!(!is_executable_file(&document));
+    }
+
+    #[cfg(windows)]
+    #[test]
+    fn finds_the_folder_a_shimmed_tool_runs_from() {
+        let dir = tempfile::tempdir().unwrap();
+        let shims = dir.path().join("shims");
+        std::fs::create_dir(&shims).unwrap();
+        std::fs::write(shims.join("git.exe"), "").unwrap();
+        let entries = [dir.path().join("empty"), shims.clone()];
+        assert_eq!(shim_target_dir("git", &entries), None);
+
+        let target = dir.path().join(r"apps\git\2.0\cmd");
+        let shim = format!("path = \"{}\"\r\n", target.join("git.exe").display());
+        std::fs::write(shims.join("git.shim"), shim).unwrap();
+        assert_eq!(shim_target_dir("git", &entries), Some(target));
     }
 
     #[cfg(unix)]
