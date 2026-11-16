@@ -39,6 +39,8 @@ just shell::record video/examples/hero.json video/examples/hero-dark.json
 - `<scene>.cues.jsonl`: the time of every click, key, and paste in seconds, and each click's position as fractions of the clip, for drawing the pointer in the edit.
 - `<scene>.log`: the app's error output.
 
+For a captioned clip, `swift video/tools/captions.swift <take>.mov <out>.mp4` reads the take's cues and overlays a caption card for each `label` that is a sentence (one-word labels stay cue names) and a ring at each click, at half the take's resolution. Cues before `--from` (default 1.0 s, the prelude) are skipped; `--rings-only` draws only the rings. It needs `ffmpeg` on `PATH`.
+
 A failed take is kept as `<scene>.failed.mov` and never replaces a good clip; `--no-capture` leaves every output alone. Ctrl-C stops after the current step and finishes the clip as `<scene>.failed.mov`, releases held modifiers, restores the clipboard, and quits the app; a second Ctrl-C quits at once and leaves an unfinished `<scene>.partial.mov`.
 
 A take owns the screen. It launches the app in the background, waits until the keyboard and mouse have been idle for 2 s, brings the app forward once, and then stops, without clicking or typing, if another window, including a sheet or second window of the app, covers a target, or the app loses focus at any point; such a stop also ends the run, so the next scene never opens in front of someone. After a paste it restores the clipboard, unless something was copied since. Record only when nobody, including another agent session, is using the screen. The terminal needs Screen Recording and Accessibility.
