@@ -49,6 +49,7 @@ settings-display = Display
 settings-side-by-side = Side-by-side diff
 settings-ignore-whitespace = Ignore whitespace changes
 settings-tree-view = Tree view for files
+settings-show-review-marks = Show review marks
 settings-hide-reviewed = Hide reviewed files
 settings-auto-expand = Auto-expand descriptions
 settings-large-files = Large Files

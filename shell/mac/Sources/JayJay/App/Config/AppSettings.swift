@@ -29,6 +29,7 @@ final class AppSettings {
         static let hideReviewedFiles = "jayjay.hideReviewedFiles"
         static let treeFileList = "jayjay.treeFileList"
         static let autoExpandDescription = "jayjay.autoExpandDescription"
+        static let showReviewMarks = "jayjay.showReviewMarks"
         static let tintWindowWithWallpaper = "jayjay.tintWindowWithWallpaper"
         static let sidebarWidth = "jayjay.sidebarWidth"
         static let sidebarHidden = "jayjay.sidebarHidden"
@@ -185,6 +186,11 @@ final class AppSettings {
 
     var treeFileList: Bool {
         didSet { defaults.set(treeFileList, forKey: StorageKeys.treeFileList) }
+    }
+
+    /// Review marks are an opt-in workflow; by default a change's files carry no review state.
+    var showReviewMarks: Bool {
+        didSet { defaults.set(showReviewMarks, forKey: StorageKeys.showReviewMarks) }
     }
 
     var autoExpandDescription: Bool {
@@ -346,6 +352,7 @@ final class AppSettings {
         enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
         hideReviewedFiles = defaults.bool(forKey: StorageKeys.hideReviewedFiles)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
+        showReviewMarks = defaults.bool(forKey: StorageKeys.showReviewMarks)
         autoExpandDescription = defaults.object(forKey: StorageKeys.autoExpandDescription) as? Bool ?? true
         tintWindowWithWallpaper = defaults.object(forKey: StorageKeys.tintWindowWithWallpaper) as? Bool ?? false
         skipAbandonConfirmation = defaults.bool(forKey: StorageKeys.skipAbandonConfirmation)

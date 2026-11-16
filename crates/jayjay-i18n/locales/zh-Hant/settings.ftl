@@ -49,6 +49,7 @@ settings-display = 顯示
 settings-side-by-side = 並排差異
 settings-ignore-whitespace = 忽略空白變更
 settings-tree-view = 以樹狀顯示檔案
+settings-show-review-marks = 顯示審查標記
 settings-hide-reviewed = 隱藏已審查的檔案
 settings-auto-expand = 自動展開描述
 settings-large-files = 大型檔案

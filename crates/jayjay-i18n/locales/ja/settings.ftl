@@ -49,6 +49,7 @@ settings-display = 表示
 settings-side-by-side = 左右並べて差分を表示
 settings-ignore-whitespace = 空白の変更を無視
 settings-tree-view = ファイルをツリー表示
+settings-show-review-marks = レビューマークを表示
 settings-hide-reviewed = レビュー済みのファイルを隠す
 settings-auto-expand = 説明を自動的に展開
 settings-large-files = 大きなファイル

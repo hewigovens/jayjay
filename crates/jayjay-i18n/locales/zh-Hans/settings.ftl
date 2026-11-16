@@ -49,6 +49,7 @@ settings-display = 显示
 settings-side-by-side = 并排差异
 settings-ignore-whitespace = 忽略空白变更
 settings-tree-view = 文件树视图
+settings-show-review-marks = 显示评审标记
 settings-hide-reviewed = 隐藏已评审文件
 settings-auto-expand = 自动展开说明
 settings-large-files = 大文件
