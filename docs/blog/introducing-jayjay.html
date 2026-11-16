@@ -1,0 +1,177 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>JayJay: a native jj client, and review tools for working with agents — JayJay</title>
+  <meta name="description" content="A native Jujutsu client for macOS, Linux, and Windows, with review tools for coding agents: marks that survive rebases, agent triage, and a browser diff.">
+  <meta name="author" content="hewigovens">
+  <meta name="theme-color" content="#ffffff" media="(prefers-color-scheme: light)">
+  <meta name="theme-color" content="#0b0d14" media="(prefers-color-scheme: dark)">
+  <link rel="canonical" href="https://jayjay.hewig.dev/blog/introducing-jayjay.html">
+  <meta property="og:type" content="article">
+  <meta property="og:site_name" content="JayJay">
+  <meta property="og:url" content="https://jayjay.hewig.dev/blog/introducing-jayjay.html">
+  <meta property="og:title" content="JayJay: a native jj client, and review tools for working with agents">
+  <meta property="og:description" content="A native Jujutsu client for macOS, Linux, and Windows, with review tools for coding agents: marks that survive rebases, agent triage, and a browser diff.">
+  <meta property="og:image" content="https://jayjay.hewig.dev/imgs/home.png">
+  <meta property="article:published_time" content="2026-11-16">
+  <meta property="article:modified_time" content="2026-11-16">
+  <script type="application/ld+json">
+  {
+    "@context": "https://schema.org",
+    "@type": "BlogPosting",
+    "headline": "JayJay: a native jj client, and review tools for working with agents",
+    "description": "A native Jujutsu client for macOS, Linux, and Windows, with review tools for coding agents: marks that survive rebases, agent triage, and a browser diff.",
+    "datePublished": "2026-11-16",
+    "dateModified": "2026-11-16",
+    "url": "https://jayjay.hewig.dev/blog/introducing-jayjay.html",
+    "image": "https://jayjay.hewig.dev/imgs/home.png",
+    "author": {
+      "@type": "Person",
+      "name": "hewigovens",
+      "url": "https://github.com/hewigovens"
+    },
+    "publisher": {
+      "@type": "Organization",
+      "name": "JayJay",
+      "url": "https://jayjay.hewig.dev/"
+    }
+  }
+  </script>
+  <link rel="icon" href="../favicon.ico" sizes="32x32">
+  <link rel="icon" href="../icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="../apple-touch-icon.png">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <script src="../js/theme.js"></script>
+  <link rel="stylesheet" href="../css/help-common.css">
+  <link rel="stylesheet" href="../css/guide.css">
+  <link rel="stylesheet" href="../css/blog.css">
+</head>
+
+<body class="guide-page blog-page">
+  <nav class="site-nav">
+    <div class="wrap nav">
+      <a class="brand" href="../index.html"><img src="../icon.svg" alt="JayJay"> JayJay</a>
+      <div class="nav-right">
+        <div class="nav-links">
+          <a href="../index.html#features">Features</a>
+          <a href="../index.html#shortcuts">Shortcuts</a>
+          <a href="../index.html#install">Install</a>
+          <a href="../index.html#faq">FAQ</a>
+          <a href="index.html" class="active">Blog</a>
+          <a href="../guide.html">Guide</a>
+          <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        </div>
+        <button class="theme-btn" aria-label="Toggle theme"><span class="theme-icon"></span></button>
+        <a class="nav-dl" href="https://github.com/hewigovens/jayjay/releases/latest">Download</a>
+      </div>
+    </div>
+  </nav>
+  <header class="guide-container g-head">
+    <div class="sec-label"><a href="index.html">Blog</a></div>
+    <h1>JayJay: a native jj client, and review tools for working with agents</h1>
+    <p>A full Jujutsu client built around reviewing what your agents changed.</p>
+    <p class="post-meta">By <a href="https://github.com/hewigovens">hewigovens</a> · <time datetime="2026-11-16">16 November 2026</time></p>
+  </header>
+  <main class="guide-container">
+    <div class="guide-layout">
+      <nav class="toc" aria-label="Contents">
+        <h2>Contents</h2>
+        <ol>
+          <li><a href="#why">Why it exists</a></li>
+          <li><a href="#features">What it does</a></li>
+          <li><a href="#diff">Try the review in a browser</a></li>
+          <li><a href="#native">Native</a></li>
+          <li><a href="#install">Install</a></li>
+          <li><a href="#know">What to know first</a></li>
+          <li><a href="#ask">The ask</a></li>
+        </ol>
+      </nav>
+      <article class="guide-content">
+        <section class="g intro">
+          <p>JayJay is a native client for <a href="https://jj-vcs.dev">Jujutsu</a>, and a small suite around it:</p>
+          <ul>
+            <li><strong>The app</strong> is a full jj client with review built in, on macOS, Linux, and Windows.</li>
+            <li><strong>The <code>jayjay</code> command and agent skill</strong> let a coding agent take part in the review.</li>
+            <li><strong><a href="https://diff.hewig.dev">JayJay Diff</a></strong> is the same review in a browser, for GitHub pull requests.</li>
+          </ul>
+          <p>Every part has the same purpose: to help you focus your attention on what an agent changed, and to show that you did. It is free and needs no account.</p>
+          <figure class="shot">
+            <img class="dark-only" src="../imgs/home-dark.webp" alt="JayJay showing the change graph, the changed files, and a diff" width="2200" height="1400">
+            <img class="light-only" src="../imgs/home.webp" alt="JayJay showing the change graph, the changed files, and a diff" width="2200" height="1400">
+          </figure>
+        </section>
+        <section class="g" id="why">
+          <h2>Why it exists <a href="#why" aria-label="Link to Why it exists">#</a></h2>
+          <p>Agents made writing code cheap. They did not make reading it cheap. I now have several agents working in several workspaces, and the slow part of my day is looking at what they did. An agent can write the code, the tests, and a review of its own diff. What it cannot supply is proof of human attention: the fact that a person looked.</p>
+          <p>Jujutsu is the right base for that. History is meant to be rewritten, a change keeps its ID through every rewrite, every operation can be undone, and a workspace is one command. I tried the GUIs that existed, and none of them felt native or was made for reviewing, so I built one.</p>
+        </section>
+        <section class="g" id="features">
+          <h2>What it does <a href="#features" aria-label="Link to What it does">#</a></h2>
+          <p><strong>Review file by file, and keep your place.</strong> Mark a file or a hunk as reviewed and it hides. The next unreviewed file opens by itself. Marks belong to the content, so a rebase that changes nothing keeps them. After a force push you see only what really changed.</p>
+          <p><strong>Let an agent clear the trivial part first.</strong> <code>jayjay review mark</code> lets an agent mark the files that need no human judgment, such as a rename or a generated file. They show up with an Agent badge, and the rest waits for you.</p>
+          <figure class="shot">
+            <img src="../imgs/launch-agent-review.webp" alt="Two files with the Agent badge, three still unreviewed, and the diff of the next one" width="1864" height="710" loading="lazy">
+            <figcaption>Two files cleared by an agent, three left for a person.</figcaption>
+          </figure>
+          <p><strong>Leave notes on a line, and have the agent answer them.</strong> Notes are anchored to lines in the diff. An agent reads them with <code>jayjay review notes</code>, fixes the code, and resolves them. It can leave notes for you too.</p>
+          <p><strong>Reshape the change after you read it.</strong> Split the reviewed files into their own change, or pick hunks and line ranges in Diff Edit. Drag to rebase. Undo anything.</p>
+          <p><strong>Publish a stack as pull requests.</strong> One pull request per change, with Viewed marks kept in sync with GitHub.</p>
+          <p><strong>See every workspace at once.</strong> Repo Overview shows each workspace and lane, including the ones agents are working in.</p>
+          <p>Around the review is a full jj client: the change graph, rebase, squash and split, bookmarks, revsets, workspaces, conflicts, the operation log, and a command palette that runs raw <code>jj</code> in the window. The <a href="../guide.html">guide</a> covers each of them.</p>
+        </section>
+        <section class="g" id="diff">
+          <h2>Try the review in a browser <a href="#diff" aria-label="Link to Try the review in a browser">#</a></h2>
+          <p>You do not need jj, or an install, to see the idea. <a href="https://diff.hewig.dev">JayJay Diff</a> is not only for jj changes: it opens any public GitHub pull request, comparison, or commit with the same review marks. Swap <code>github.com</code> for <code>diff.hewig.dev</code> in the URL:</p>
+          <pre tabindex="0"><code>https://diff.hewig.dev/&lt;owner&gt;/&lt;repo&gt;/pull/&lt;number&gt;</code></pre>
+          <p>Each hunk is fingerprinted from its content and the lines around it, so after a force push or a rebase only the hunks that changed come back for review. Marks and notes stay in your browser. Signing in with GitHub is optional; it raises the rate limit and can sync your marks with GitHub's Viewed boxes.</p>
+        </section>
+        <section class="g" id="native">
+          <h2>Native <a href="#native" aria-label="Link to Native">#</a></h2>
+          <p>The core is Rust, built on jj-lib. The macOS app is SwiftUI and AppKit, and the Linux and Windows apps are GPUI. Nothing is a web view. It stays fast on large repositories, which is the reason I started.</p>
+        </section>
+        <section class="g" id="install">
+          <h2>Install <a href="#install" aria-label="Link to Install">#</a></h2>
+          <p>macOS 26 or later, Apple silicon:</p>
+          <pre tabindex="0"><code>brew install --cask hewigovens/tap/jayjay</code></pre>
+          <p>Linux, x86_64 and aarch64 (Debian package, AppImage, or <code>jayjay-appimage</code> on AUR):</p>
+          <pre tabindex="0"><code>curl -fsSL https://jayjay.hewig.dev/install.sh | bash</code></pre>
+          <p>Windows (beta): <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a>.</p>
+        </section>
+        <section class="g" id="know">
+          <h2>What to know first <a href="#know" aria-label="Link to What to know first">#</a></h2>
+          <ul>
+            <li>The app is for people who already use jj. It does not teach jj and it is not a Git client. JayJay Diff works on any GitHub repository.</li>
+            <li>The apps are free and source-available under <a href="https://github.com/hewigovens/jayjay/blob/main/LICENSE">BSL 1.1</a>, which converts to Apache-2.0 in 2030. The Rust crates are Apache-2.0 today.</li>
+            <li>Anonymous statistics are the app version, platform, OS version, CPU architecture, and random identifiers. They never include repositories, files, or commands, and you can turn them off. The <a href="../privacy.html">privacy page</a> has the details.</li>
+            <li>It is one person's project and it is not finished. Codex and Claude wrote almost all of the code; I reviewed it in JayJay.</li>
+          </ul>
+        </section>
+        <section class="g" id="ask">
+          <h2>The ask <a href="#ask" aria-label="Link to The ask">#</a></h2>
+          <p>If you do not use jj, start with <a href="https://diff.hewig.dev">JayJay Diff</a> on a pull request you have to review anyway. If you do, try the app on a real working copy and tell me the first step that confused you or was missing. <a href="https://github.com/hewigovens/jayjay/issues">GitHub issues</a> or <a href="https://discord.gg/ekknRNkVrT">Discord</a> both work.</p>
+          <p>If you want the longer story of how a GitHub Desktop patch became this, I wrote that separately: <a href="https://hewig.dev/posts/proof-of-human-attention/">Proof of Human Attention</a>.</p>
+        </section>
+        <a class="backtop" href="#">↑ Back to top</a>
+      </article>
+    </div>
+  </main>
+  <footer>
+    <div class="wrap foot">
+      <p class="spons">Enjoy JayJay? <a href="https://github.com/hewigovens/jayjay" aria-label="Star it on GitHub">★ it on GitHub</a> or <a href="https://github.com/sponsors/hewigovens">♥ Sponsor</a></p>
+      <div class="foot-links">
+        <a href="../index.html">Home</a>
+        <a href="index.html">Blog</a>
+        <a href="https://github.com/hewigovens/jayjay">GitHub</a>
+        <a href="https://github.com/hewigovens/jayjay/releases">Releases</a>
+        <a href="https://github.com/hewigovens/jayjay/issues">Support</a>
+        <a href="https://discord.gg/ekknRNkVrT">Discord</a>
+      </div>
+    </div>
+  </footer>
+</body>
+
+</html>

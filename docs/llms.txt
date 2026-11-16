@@ -14,6 +14,7 @@ Beta updates are opt-in via the Beta update channel in Settings. Anonymous build
 - [FAQ](https://jayjay.hewig.dev/#faq)
 - [Video tutorial](https://jayjay.hewig.dev/tutorial/) — a 12-second tour and short clips on splitting lines, stacked pull requests, and undo
 - [Blog](https://jayjay.hewig.dev/blog/)
+- [JayJay: a native jj client, and review tools for working with agents](https://jayjay.hewig.dev/blog/introducing-jayjay.html) — what JayJay is, the review workflow with agents, JayJay Diff, install commands, and licence.
 - [Why jj? A Jujutsu cheatsheet for Git users](https://jayjay.hewig.dev/blog/why-jj-git-cheatsheet.html) — key differences from Git, eight essential commands, and a first jj workflow; links to the official references and a brief JayJay introduction.
 - [Issues](https://github.com/hewigovens/jayjay/issues)
 - Email feedback is available from Help > Send Feedback

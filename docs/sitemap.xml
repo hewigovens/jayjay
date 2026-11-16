@@ -26,7 +26,7 @@
   </url>
   <url>
     <loc>https://jayjay.hewig.dev/blog/</loc>
-    <lastmod>2026-11-03</lastmod>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>weekly</changefreq>
     <priority>0.7</priority>
   </url>
@@ -63,6 +63,12 @@
   <url>
     <loc>https://jayjay.hewig.dev/blog/scaling-git-replacing-git-and-history.html</loc>
     <lastmod>2026-11-03</lastmod>
+    <changefreq>monthly</changefreq>
+    <priority>0.6</priority>
+  </url>
+  <url>
+    <loc>https://jayjay.hewig.dev/blog/introducing-jayjay.html</loc>
+    <lastmod>2026-11-16</lastmod>
     <changefreq>monthly</changefreq>
     <priority>0.6</priority>
   </url>
