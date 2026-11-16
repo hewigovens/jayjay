@@ -182,7 +182,7 @@ struct RepoContentView: View {
                     selectionWithoutDiffCount: viewModel.comparison == nil
                         ? viewModel.selectedChangeIds.count : 0,
                     onInteractionStateChanged: { detailInteractionActive = $0 },
-                    workingCopyEditor: workingCopyEditor
+                    workingCopyEditor: workingCopyEditor(onDone:)
                 )
                 .disabled(!viewModel.sshConnected)
             }

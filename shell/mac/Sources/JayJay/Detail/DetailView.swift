@@ -24,7 +24,7 @@ struct DetailView: View {
     var conflictedBookmarkNames: Set<String> = []
     var selectionWithoutDiffCount = 0
     var onInteractionStateChanged: (Bool) -> Void = { _ in }
-    var workingCopyEditor: AnyView?
+    var workingCopyEditor: ((@escaping () -> Void) -> AnyView?)?
 
     var body: some View {
         if let evolog, let entries = evolog.entries {

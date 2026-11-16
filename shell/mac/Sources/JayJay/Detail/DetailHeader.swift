@@ -98,7 +98,7 @@ extension ChangeDetailView {
             }
         }
         if let visibleDiffStats {
-            IdentifierRow(label: Localized.Repo.changesColon) { diffStatsView(visibleDiffStats, spelledOut: true) }
+            IdentifierRow(label: Localized.Repo.changesColon) { diffStatsView(visibleDiffStats) }
         }
     }
 
@@ -140,11 +140,6 @@ extension ChangeDetailView {
             CommitAvatar(author: person, size: 14)
             Text(person.name)
                 .jayjayFont(11)
-            Text("<\(person.email)>")
-                .jayjayFont(11)
-                .foregroundStyle(.secondary)
-                .lineLimit(1)
-                .truncationMode(.middle)
         }
         .textSelection(.enabled)
         .help(person.identity)
@@ -172,30 +167,22 @@ extension ChangeDetailView {
         return stats
     }
 
-    private func diffStatsView(_ stats: DiffStats, spelledOut: Bool = false) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: spelledOut ? 8 : 4) {
+    private func diffStatsView(_ stats: DiffStats) -> some View {
+        HStack(alignment: .firstTextBaseline, spacing: 4) {
             if stats.insertions > 0 {
-                diffStat("+\(stats.insertions)", color: .green, caption: spelledOut ? Localized.Repo.addedLines(count: Int(stats.insertions)) : nil)
+                Text("+\(stats.insertions)").foregroundStyle(.green)
             }
             if stats.deletions > 0 {
-                diffStat("-\(stats.deletions)", color: .red, caption: spelledOut ? Localized.Repo.removedLines(count: Int(stats.deletions)) : nil)
+                Text("-\(stats.deletions)").foregroundStyle(.red)
             }
         }
+        .jayjayFont(11, weight: .semibold, design: .monospaced)
         .accessibilityElement(children: .ignore)
+        .accessibilityLabel([
+            stats.insertions > 0 ? Localized.Repo.addedLines(count: Int(stats.insertions)) : nil,
+            stats.deletions > 0 ? Localized.Repo.removedLines(count: Int(stats.deletions)) : nil,
+        ].compactMap(\.self).joined(separator: ", "))
         .accessibilityIdentifier(AID.Detail.diffStats(insertions: stats.insertions, deletions: stats.deletions))
-    }
-
-    private func diffStat(_ value: String, color: Color, caption: String?) -> some View {
-        HStack(alignment: .firstTextBaseline, spacing: 3) {
-            Text(value)
-                .jayjayFont(11, weight: .semibold, design: .monospaced)
-                .foregroundStyle(color)
-            if let caption {
-                Text(caption)
-                    .jayjayFont(11)
-                    .foregroundStyle(color)
-            }
-        }
     }
 
     private var bylineSeparator: some View {

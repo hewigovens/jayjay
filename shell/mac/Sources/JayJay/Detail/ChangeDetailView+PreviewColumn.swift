@@ -17,12 +17,8 @@ extension ChangeDetailView {
     /// Opened from the header's Edit button; the working copy also gets Commit.
     private var descriptionEditor: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if detail.info.isWorkingCopy, let workingCopyEditor {
-                VStack(alignment: .leading, spacing: 8) {
-                    workingCopyEditor
-                    Button(Localized.Repo.done) { isEditingDescription = false }
-                        .keyboardShortcut(.cancelAction)
-                }
+            if detail.info.isWorkingCopy, let editor = workingCopyEditor?({ isEditingDescription = false }) {
+                editor
             } else {
                 DescriptionEditorSheet(
                     revision: detailRevision,

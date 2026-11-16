@@ -129,7 +129,7 @@ struct FileRow: View {
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
-        .frame(minHeight: PaneLayout.fileRowHeight(scale: typography.interfaceScale))
+        .frame(minHeight: locationLine == nil ? nil : PaneLayout.fileRowHeight(scale: typography.interfaceScale))
         .help(hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path)
         .background(
             RoundedRectangle(cornerRadius: 8, style: .continuous)

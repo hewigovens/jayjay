@@ -46,7 +46,7 @@ extension RepoContentView {
     }
 
     /// Edits the working copy's message from the change header, since the message belongs to the change rather than the change list.
-    var workingCopyEditor: AnyView? {
+    func workingCopyEditor(onDone: @escaping () -> Void) -> AnyView? {
         guard shouldShowCommitBox else { return nil }
         return AnyView(
             CommitBox(
@@ -60,7 +60,8 @@ extension RepoContentView {
                 onGenerateMessage: {
                     await viewModel.generateCommitMessage(using: settings.aiProviderOrder)
                 },
-                aiProvider: viewModel.aiProvider
+                aiProvider: viewModel.aiProvider,
+                onDone: onDone
             )
             .task(id: settings.aiProviderOrder) {
                 let label = await settings.aiProviderOrder.firstReadyLabel()

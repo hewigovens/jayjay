@@ -10,6 +10,7 @@ struct CommitBox: View {
     let onCommit: (String) async -> Bool
     let onGenerateMessage: () async -> String?
     let aiProvider: String
+    var onDone: (() -> Void)?
 
     @State private var isGenerating = false
     @State private var isCommitting = false
@@ -31,6 +32,11 @@ struct CommitBox: View {
             CommitMessageEditor(summary: $summary, details: $details, participatesInPaneNavigation: true)
 
             HStack(spacing: 8) {
+                if let onDone {
+                    Button(Localized.Repo.done, action: onDone)
+                        .controlSize(.small)
+                        .keyboardShortcut(.cancelAction)
+                }
                 Spacer()
                 Button {
                     isGenerating = true
@@ -76,7 +82,6 @@ struct CommitBox: View {
                 .accessibilityIdentifier(AID.CommitBox.commit)
             }
         }
-        .padding(12)
         .onAppear { prefillIfEmpty(description) }
         .onChange(of: description) { _, newValue in prefillIfEmpty(newValue) }
     }
