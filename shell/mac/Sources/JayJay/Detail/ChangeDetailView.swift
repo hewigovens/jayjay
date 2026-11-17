@@ -149,7 +149,8 @@ struct ChangeDetailView: View {
                     onDone: { paneMode = .files }
                 )
             } else {
-                Group {
+                VStack(spacing: 0) {
+                    changeHeader
                     if detail.diff.isEmpty {
                         previewColumn
                     } else {

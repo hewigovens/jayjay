@@ -54,6 +54,9 @@ final class DescriptionHeightScene: SceneBase {
         select("Long description", in: app)
         let file = app.element(AID.FileList.row("wip1.txt")).firstMatch
         XCTAssertTrue(file.waitForExistence(timeout: 5))
+        let headerTitle = app.staticTexts[AID.Detail.descriptionTitle].firstMatch
+        XCTAssertLessThan(headerTitle.frame.minX, file.frame.maxX, "The change header does not span the file list")
+        XCTAssertGreaterThan(file.frame.minY, headerTitle.frame.maxY, "The file list starts beside the change header instead of below it")
         file.click()
         let diff = app.textViews[AID.Diff.text].firstMatch
         XCTAssertTrue(diff.waitForExistence(timeout: 10))

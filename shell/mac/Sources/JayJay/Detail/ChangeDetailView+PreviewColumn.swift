@@ -14,9 +14,7 @@ extension ChangeDetailView {
         .zIndex(1)
     }
 
-    // MARK: - Preview column
-
-    var previewColumn: some View {
+    var changeHeader: some View {
         VStack(alignment: .leading, spacing: 0) {
             if isCompareMode {
                 compareBanner
@@ -35,7 +33,14 @@ extension ChangeDetailView {
                 staleReviewNotesSection
                 Divider()
             }
+        }
+        .background(appSettings.readingBackground(colorScheme))
+    }
 
+    // MARK: - Preview column
+
+    var previewColumn: some View {
+        VStack(alignment: .leading, spacing: 0) {
             if case let .annotate(lines, path, error) = paneMode {
                 AnnotateView(
                     lines: lines, path: path, error: error,
