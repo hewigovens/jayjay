@@ -1,6 +1,6 @@
 use crate::harness::{
-    focus_view, install_test_globals, keys, load_selected_change_files, open_repo, rendered_height,
-    settle_visual, zoom_to_max,
+    click, clipboard_text, focus_view, install_test_globals, keys, load_selected_change_files,
+    open_fixture, open_repo, rendered_height, selected_commit_id, settle_visual, zoom_to_max,
 };
 use gpui::{
     Entity, Focusable, Modifiers, Pixels, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase,
@@ -521,4 +521,33 @@ fn select(view: &Entity<RepoWindow>, cx: &mut VisualTestContext, subject: &str) 
             .update(cx, |vm, cx| vm.select_change(ix, cx));
     });
     settle_visual(cx);
+}
+
+#[gpui::test]
+fn byline_shows_both_ids_and_drops_the_date_before_the_commit_id(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    cx.simulate_resize(gpui::size(gpui::px(1600.), gpui::px(800.)));
+    settle_visual(cx);
+    assert!(cx.debug_bounds("detail-commit-id").is_some());
+    assert!(cx.debug_bounds("detail-byline-date").is_some());
+    click(cx, "copy-commit-id");
+    assert_eq!(clipboard_text(cx), Some(selected_commit_id(&view, cx)));
+
+    let mut commit_without_date = false;
+    for width in (500..1600).rev().step_by(20) {
+        cx.simulate_resize(gpui::size(gpui::px(width as f32), gpui::px(800.)));
+        settle_visual(cx);
+        let date = cx.debug_bounds("detail-byline-date").is_some();
+        let commit = cx.debug_bounds("detail-commit-id").is_some();
+        assert!(
+            !date || commit,
+            "the commit ID dropped before the date at {width}px"
+        );
+        commit_without_date |= commit && !date;
+    }
+    assert!(
+        commit_without_date,
+        "no width kept the commit ID once the date dropped"
+    );
 }

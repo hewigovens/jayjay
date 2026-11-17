@@ -24,9 +24,14 @@ pub(super) fn byline(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let shows_date = byline_width(change, stats, bookmarks, t, cx) <= budget;
+    let width = |shows_date, shows_commit| {
+        byline_width(change, stats, bookmarks, shows_date, shows_commit, t, cx)
+    };
+    let shows_date = width(true, true) <= budget;
+    let shows_commit = shows_date || width(false, true) <= budget;
     let compact = compact_id(&change.change_id);
     let change_copy_id = SharedString::new_static("change-id");
+    let commit_copy_id = SharedString::new_static("commit-id");
 
     let mut row = div()
         .debug_selector(|| "detail-metadata".to_owned())
@@ -57,9 +62,36 @@ pub(super) fn byline(
             t,
             cx,
         ));
+    if shows_commit {
+        let commit = compact_id(&change.commit_id);
+        row = row
+            .child(
+                div()
+                    .debug_selector(|| "detail-commit-id".to_owned())
+                    .child(id_cell(
+                        &commit,
+                        change.commit_id.short_len,
+                        t.commit_id_prefix,
+                        FONT_ID,
+                        t,
+                    )),
+            )
+            .child(
+                copy_feedback_button(
+                    commit_copy_id.clone(),
+                    change.commit_id.id.clone(),
+                    recently_copied == Some(&commit_copy_id),
+                    t.fg_faint,
+                    t,
+                    cx,
+                )
+                .debug_selector(|| "copy-commit-id".to_owned()),
+            );
+    }
     if shows_date {
         row = row.child(separator(t)).child(
             div()
+                .debug_selector(|| "detail-byline-date".to_owned())
                 .flex_none()
                 .text_size(ui_font_size(FONT_ID))
                 .text_color(rgb(t.fg_dim))
@@ -92,6 +124,8 @@ fn byline_width(
     change: &ChangeInfo,
     stats: Option<&DiffStats>,
     bookmarks: &[BookmarkInfo],
+    shows_date: bool,
+    shows_commit: bool,
     t: &Theme,
     cx: &App,
 ) -> f32 {
@@ -102,15 +136,22 @@ fn byline_width(
     ));
     let ui_text = |s: &str| f32::from(fonts::ui_text_width(cx, s, px(meta)));
 
-    let mut children = 7usize;
+    let mut children = 5usize;
     let mut width = byline_avatars_width(change)
         + 5.
         + ui_text(&change.credit_line())
-        + 2. * ui_text("·")
+        + ui_text("·")
         + compact_id_len(change.change_id.short_len) as f32 * mono_char
         + 20.
-        + ui_text(&format_when(change.author.timestamp_millis))
         + 8.;
+    if shows_commit {
+        children += 2;
+        width += compact_id_len(change.commit_id.short_len) as f32 * mono_char + 20.;
+    }
+    if shows_date {
+        children += 2;
+        width += ui_text("·") + ui_text(&format_when(change.author.timestamp_millis));
+    }
     if let Some(stats) = stats
         && (stats.insertions > 0 || stats.deletions > 0)
     {
