@@ -114,8 +114,8 @@ impl DiffThemeColors {
         let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
         let added_bg = seed.tint(seed.green, pick(0.16, 0.18));
         let removed_bg = seed.tint(seed.red, pick(0.16, 0.11));
-        let added_word_bg = seed.tint(seed.green, pick(0.45, 0.40));
-        let removed_word_bg = seed.tint(seed.red, pick(0.45, 0.28));
+        let added_word_bg = seed.tint(seed.green, pick(0.38, 0.40));
+        let removed_word_bg = seed.tint(seed.red, pick(0.38, 0.28));
         let token_floors = |line: f32, word: f32| {
             [
                 (bg, line),
@@ -125,7 +125,7 @@ impl DiffThemeColors {
                 (removed_word_bg, word),
             ]
         };
-        let token_color = |color| readable_on(color, fg, &token_floors(4.5, 2.8));
+        let token_color = |color| seed.vivid(color, &token_floors(4.5, 2.8));
         let conflict_header_bg = seed.tint(seed.yellow, pick(0.16, 0.22));
         let conflict_section_bg = seed.tint(seed.yellow, pick(0.10, 0.12));
         let find_match_bg = seed.tint(seed.yellow, pick(0.45, 0.55));
@@ -172,15 +172,11 @@ impl DiffThemeColors {
                 &[(removed_bg, 4.5), (removed_word_bg, 2.8)],
             ),
             text_dim: readable_on(seed.muted, fg, &[(bg, 4.5)]),
-            tok_keyword: token_color(mix(seed.red, fg, pick(0.30, 0.20))),
-            tok_string: token_color(if dark {
-                mix(seed.cyan, fg, 0.45)
-            } else {
-                mix(seed.blue, fg, 0.60)
-            }),
-            tok_comment: readable_on(seed.muted, fg, &token_floors(3.5, 2.3)),
-            tok_number: token_color(mix(seed.blue, fg, pick(0.40, 0.35))),
-            tok_type: token_color(mix(seed.magenta, fg, pick(0.30, 0.25))),
+            tok_keyword: token_color(seed.magenta),
+            tok_string: token_color(seed.green),
+            tok_comment: readable_on(seed.muted, fg, &token_floors(3.0, 2.0)),
+            tok_number: token_color(seed.orange),
+            tok_type: token_color(seed.cyan),
             group_stripe: seed.blue,
             group_stripe_alpha: if dark { 0.55 } else { 0.42 },
             find_match_bg,

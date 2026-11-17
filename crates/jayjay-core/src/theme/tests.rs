@@ -90,8 +90,8 @@ fn catalog_color_themes_have_unique_ids_names_and_meet_contrast_thresholds() {
                 4.5,
             ),
         ];
-        let line_bgs = [c.context_bg, c.added_bg, c.removed_bg].map(|bg| (bg, 4.5, 3.5));
-        let word_bgs = [c.added_word_bg, c.removed_word_bg].map(|bg| (bg, 2.8, 2.3));
+        let line_bgs = [c.context_bg, c.added_bg, c.removed_bg].map(|bg| (bg, 4.5, 3.0));
+        let word_bgs = [c.added_word_bg, c.removed_word_bg].map(|bg| (bg, 2.8, 2.0));
         for (bg, token_min, comment_min) in line_bgs.into_iter().chain(word_bgs) {
             checks.extend([
                 ("keyword", c.tok_keyword, bg, token_min),
@@ -149,6 +149,75 @@ fn catalog_color_themes_have_unique_ids_names_and_meet_contrast_thresholds() {
                     theme.id
                 ));
             }
+        }
+    }
+    assert!(failures.is_empty(), "{}", failures.join("\n"));
+}
+
+/// CIE76 colour difference.
+fn delta_e(a: u32, b: u32) -> f32 {
+    let lab = |color: u32| {
+        let linear = |shift: u32| {
+            let c = ((color >> shift) & 0xff) as f32 / 255.;
+            if c <= 0.040_45 {
+                c / 12.92
+            } else {
+                ((c + 0.055) / 1.055).powf(2.4)
+            }
+        };
+        let (r, g, b) = (linear(16), linear(8), linear(0));
+        let f = |t: f32| {
+            if t > 0.008_856 {
+                t.cbrt()
+            } else {
+                7.787 * t + 16. / 116.
+            }
+        };
+        let x = f((0.4124 * r + 0.3576 * g + 0.1805 * b) / 0.950_47);
+        let y = f(0.2126 * r + 0.7152 * g + 0.0722 * b);
+        let z = f((0.0193 * r + 0.1192 * g + 0.9505 * b) / 1.088_83);
+        [116. * y - 16., 500. * (x - y), 200. * (y - z)]
+    };
+    let (a, b) = (lab(a), lab(b));
+    a.iter()
+        .zip(b)
+        .map(|(a, b)| (a - b).powi(2))
+        .sum::<f32>()
+        .sqrt()
+}
+
+#[test]
+fn catalog_syntax_tokens_stay_distinct_from_each_other_and_from_text() {
+    let mut failures = Vec::new();
+    for theme in color_themes() {
+        let c = &theme.colors;
+        let code = [
+            ("keyword", c.tok_keyword),
+            ("string", c.tok_string),
+            ("number", c.tok_number),
+            ("type", c.tok_type),
+            ("text", c.text_context),
+        ];
+        for (i, (a_label, a)) in code.iter().enumerate() {
+            for (b_label, b) in &code[i + 1..] {
+                let distance = delta_e(*a, *b);
+                if distance < 15. {
+                    failures.push(format!(
+                        "{} {a_label}/{b_label}: ΔE {distance:.1}",
+                        theme.id
+                    ));
+                }
+            }
+        }
+        let comment_distance = delta_e(c.tok_comment, c.text_context);
+        if comment_distance < 5.
+            || contrast_ratio(c.tok_comment, c.context_bg)
+                >= contrast_ratio(c.text_context, c.context_bg)
+        {
+            failures.push(format!(
+                "{} comment is not quieter than text: ΔE {comment_distance:.1}",
+                theme.id
+            ));
         }
     }
     assert!(failures.is_empty(), "{}", failures.join("\n"));
