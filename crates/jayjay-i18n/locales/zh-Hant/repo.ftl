@@ -387,7 +387,6 @@ repo-rebase-changes-title = 要重定 { $count } 個變更的基底嗎？
 repo-invalid-workspace-name = 工作區名稱無效：{ $name }
 repo-delete-workspace-title = 要刪除工作區 { $name } 嗎？
 repo-delete-workspace-message = 這會關閉其視窗、忘記該工作區，並從磁碟刪除其目錄：{ $path }
-repo-open-repository-in = 在 { $app } 中開啟儲存庫
 repo-cancel-direction = 取消{ $direction }
 repo-cant-rebase-selection-here = 無法在此重定所選內容的基底
 repo-move-bookmark-here = 要將 { $bookmark } 移到這裡嗎？

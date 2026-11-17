@@ -393,7 +393,6 @@ repo-delete-workspace-title = ワークスペース { $name } を削除します
 repo-delete-workspace-message =
     ウインドウを閉じ、ワークスペースを登録解除して、ディレクトリをディスクから削除します:
     { $path }
-repo-open-repository-in = リポジトリを { $app } で開く
 repo-cancel-direction = { $direction }をキャンセル
 repo-cant-rebase-selection-here = 選択したものをここにリベースできません
 repo-move-bookmark-here = { $bookmark } をここへ移動しますか？

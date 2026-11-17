@@ -61,34 +61,26 @@ extension RepoContentView {
         ToolbarSpacer(.flexible)
 
         ToolbarItemGroup(placement: .primaryAction) {
-            toolbarButton(
-                .finder,
-                help: AppShortcut.showInFinder.help(Localized.Common.showIn(app: "Finder")),
-                action: { RepositoryActions.showInFinder(repoPath: viewModel.repoPath) },
-                label: { Label(Localized.Common.showIn(app: "Finder"), systemImage: "folder") }
-            )
-            .disabled(viewModel.repo.isRemote())
-            toolbarButton(
-                .editor,
-                help: Localized.Repo.openRepositoryIn(app: settings.externalEditor.title),
-                action: { settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath) },
-                label: { Label(Localized.Settings.editor, systemImage: "curlybraces") }
-            )
-            .disabled(viewModel.repo.isRemote())
-            toolbarButton(
-                .terminal,
-                help: Localized.Repo.openRepositoryIn(app: settings.terminal.title),
-                action: { settings.openInTerminal(at: viewModel.repoPath) },
-                label: { Label(Localized.Settings.terminal, systemImage: "terminal") }
-            )
-            .disabled(viewModel.repo.isRemote())
-            toolbarButton(
-                .settings,
-                help: Localized.Repo.settings,
-                action: { openSettings() },
-                label: { Label(Localized.Repo.settings, systemImage: "gearshape") }
-            )
+            appButton(.editor, app: settings.externalEditor.title, glyph: settings.externalEditor.toolbarGlyph) {
+                settings.openInEditor(filePath: ".", repoPath: viewModel.repoPath)
+            }
+            appButton(.terminal, app: settings.terminal.title, glyph: settings.terminal.toolbarGlyph) {
+                settings.openInTerminal(at: viewModel.repoPath)
+            }
         }
+    }
+
+    private func appButton(
+        _ stop: KeyboardFocusStop,
+        app: String,
+        glyph: ToolbarAppMark.Glyph,
+        action: @escaping () -> Void
+    ) -> some View {
+        let title = Localized.Menu.openIn(app: app)
+        return toolbarButton(stop, help: title, action: action) {
+            Label { Text(title) } icon: { ToolbarAppMark(glyph: glyph) }
+        }
+        .disabled(viewModel.repo.isRemote())
     }
 
     /// The label carries the Tab stop so the focus ring draws inside the toolbar item.

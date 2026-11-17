@@ -1,0 +1,15 @@
+The editor and terminal marks in the toolbar are single-colour paths from these projects. Product names and logos are trademarks of their owners and identify the app a button opens.
+
+Simple Icons (https://simpleicons.org)
+Marks: Cursor, Ghostty, iTerm2, Vim, VSCodium, Zed
+License: CC0 1.0 Universal (https://creativecommons.org/publicdomain/zero/1.0/)
+
+Codicons by Microsoft (https://github.com/microsoft/vscode-codicons)
+Mark: VS Code (codicon "vscode"), used unmodified
+License: Creative Commons Attribution 4.0 International (https://creativecommons.org/licenses/by/4.0/)
+
+Dashboard Icons (https://github.com/homarr-labs/dashboard-icons)
+Mark: Rex
+License: Apache License 2.0 (https://www.apache.org/licenses/LICENSE-2.0), full text in DashboardIcons.LICENSE
+
+The pull and push icons are Octicons repo-push by GitHub, with the book drawn wider; the pull icon also flips its arrow and swaps the book's inner edges. See Octicons.LICENSE.

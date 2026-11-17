@@ -56,6 +56,7 @@
         { "path": "HelpFeatures.json", "target-membership": [ "JayJay/resources" ] },
         { "path": "jay.aiff", "target-membership": [ "JayJay/resources" ] },
         { "path": "PlatformLogos.xcassets", "target-membership": [ "JayJay/resources" ] },
+        { "path": "ToolbarIcons.xcassets", "target-membership": [ "JayJay/resources" ] },
         { "kind": "folder", "path": "DockIcon", "target-membership": [ "JayJay" ] },
         { "kind": "folder", "path": "Flock", "target-membership": [ "JayJay" ] },
       ],

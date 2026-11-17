@@ -422,7 +422,6 @@ repo-delete-workspace-title = Delete Workspace { $name }?
 repo-delete-workspace-message =
     This closes its window, forgets the workspace, and deletes its directory from disk:
     { $path }
-repo-open-repository-in = Open repository in { $app }
 repo-cancel-direction = Cancel { $direction }
 repo-cant-rebase-selection-here = Can't rebase the selection here
 repo-move-bookmark-here = Move { $bookmark } here?

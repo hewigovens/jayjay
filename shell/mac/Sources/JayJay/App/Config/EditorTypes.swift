@@ -22,6 +22,18 @@ extension AppSettings {
             }
         }
 
+        var toolbarGlyph: ToolbarAppMark.Glyph {
+            switch self {
+                case .vscode: .asset("editor.vscode")
+                case .vscodium: .asset("editor.vscodium")
+                case .cursor: .asset("editor.cursor", size: 14)
+                case .zed: .asset("editor.zed")
+                case .vim: .asset("editor.vim")
+                case .xcode: .symbol("hammer.fill", size: 10.5)
+                case .custom: .symbol("chevron.left.forwardslash.chevron.right", size: 11)
+            }
+        }
+
         var command: String {
             switch self {
                 case .vscode: "code"

@@ -19,6 +19,15 @@ extension AppSettings {
             }
         }
 
+        var toolbarGlyph: ToolbarAppMark.Glyph {
+            switch self {
+                case .iterm: .asset("terminal.iterm", size: 13.5)
+                case .ghostty: .asset("terminal.ghostty", size: 14)
+                case .rex: .asset("terminal.rex", size: 15)
+                case .terminal, .custom: .symbol("apple.terminal")
+            }
+        }
+
         var bundleId: String {
             switch self {
                 case .terminal: "com.apple.Terminal"

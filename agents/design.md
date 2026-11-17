@@ -50,8 +50,8 @@ repo (operation log, bookmarks, remotes)
 
 - **Color means kind, following jj's defaults:** change IDs and bookmarks magenta, commit IDs blue, the working copy and workspaces green, conflicts red, divergence orange. A role is the same color everywhere it is drawn. The accent color is for selection and focus.
 - **Themes keep their own hues.** Derive a role from the theme's palette by lightening or darkening it, not by fading it toward the text color, and check it on the row, header, and selected-row backgrounds of every built-in theme.
-- **One glyph, one meaning.** SF Symbols first on macOS. Where no symbol says it, use the Octicons glyph GPUI already ships, as a template image: pull and push are the repository book with a down or up arrow.
-- **Another app is shown by its own mark in one color** on the same tile as every other app, tinted with the surrounding foreground. Full-color app icons and run-time masks of them do not belong in the toolbar; an app without a bundled mark gets the generic symbol.
+- **One glyph, one meaning.** SF Symbols first on macOS. Where no symbol says it, use an Octicons glyph (the set GPUI ships) as a template image, redrawn only to match the neighbouring symbols: pull and push are the repository book, widened, with a down or up arrow.
+- **Another app is shown by its own mark in one color** on the same tile as every other app, tinted with the surrounding foreground. Full-color app icons and run-time masks of them do not belong in the toolbar; an app without a bundled mark gets an SF Symbol: the hammer for Xcode, otherwise the generic code or terminal symbol.
 
 ## Invariants
 

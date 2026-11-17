@@ -81,9 +81,9 @@ final class KeyboardFocusTests: XCTestCase {
     func testPaneChangesAndUnregisteringClearTheFocusedControl() {
         let focus = KeyboardFocus()
         let token = UUID()
-        focus.register(.settings, token: token) {}
+        focus.register(.terminal, token: token) {}
         focus.handleKey(Self.key(KeyCode.tab))
-        XCTAssertEqual(focus.control, .settings)
+        XCTAssertEqual(focus.control, .terminal)
         XCTAssertTrue(focus.handleKey(Self.key(KeyCode.escape)))
         XCTAssertNil(focus.control)
         XCTAssertFalse(focus.handleKey(Self.key(KeyCode.escape)))
@@ -93,9 +93,9 @@ final class KeyboardFocusTests: XCTestCase {
         XCTAssertNil(focus.control)
 
         focus.handleKey(Self.key(KeyCode.tab))
-        focus.unregister(.settings, token: UUID())
-        XCTAssertEqual(focus.control, .settings, "a stale token must not remove a live registration")
-        focus.unregister(.settings, token: token)
+        focus.unregister(.terminal, token: UUID())
+        XCTAssertEqual(focus.control, .terminal, "a stale token must not remove a live registration")
+        focus.unregister(.terminal, token: token)
         XCTAssertNil(focus.control)
     }
 

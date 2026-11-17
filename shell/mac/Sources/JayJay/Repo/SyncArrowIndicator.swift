@@ -13,10 +13,10 @@ struct SyncArrowIndicator: View {
             }
         }
 
-        var arrowSystemImage: String {
+        var imageName: String {
             switch self {
-                case .pull: "arrow.down"
-                case .push: "arrow.up"
+                case .pull: "sync.pull"
+                case .push: "sync.push"
             }
         }
 
@@ -32,42 +32,33 @@ struct SyncArrowIndicator: View {
     let animating: Bool
 
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
-    @State private var startedAt = Date()
-
-    private let duration = 0.7
+    @State private var finished = 0
 
     var body: some View {
-        TimelineView(.animation(paused: !motionEnabled)) { context in
-            let progress = motionEnabled ? progress(at: context.date) : 0
-            Label {
-                Text(animating ? Localized.Repo.cancelDirection(direction: direction.label) : direction.label)
-            } icon: {
-                ZStack {
-                    Image(systemName: "circle")
-                    Image(systemName: direction.arrowSystemImage)
-                        .scaleEffect(0.55)
-                        .offset(y: motionEnabled ? direction.sign * (-2 + 4 * progress) : 0)
-                        .opacity(motionEnabled ? phaseOpacity(progress) : 1)
+        Label {
+            Text(animating ? Localized.Repo.cancelDirection(direction: direction.label) : direction.label)
+        } icon: {
+            Image(direction.imageName)
+                .resizable()
+                .frame(width: 19.3, height: 16)
+                .keyframeAnimator(initialValue: 0, repeating: animating && !reduceMotion) { icon, nudge in
+                    icon.offset(y: direction.sign * nudge)
+                } keyframes: { _ in
+                    CubicKeyframe(1.5, duration: 0.35)
+                    CubicKeyframe(0, duration: 0.35)
+                    CubicKeyframe(0, duration: 0.2)
                 }
+                .keyframeAnimator(initialValue: 0, trigger: finished) { icon, bounce in
+                    icon.offset(y: direction.sign * bounce)
+                } keyframes: { _ in
+                    SpringKeyframe(-2, duration: 0.12, spring: .snappy)
+                    SpringKeyframe(0, duration: 0.4, spring: .bouncy)
+                }
+        }
+        .onChange(of: animating) { wasAnimating, isAnimating in
+            if wasAnimating, !isAnimating, !reduceMotion {
+                finished += 1
             }
         }
-        .onChange(of: motionEnabled, initial: true) { _, enabled in
-            if enabled {
-                startedAt = Date()
-            }
-        }
-    }
-
-    private var motionEnabled: Bool {
-        animating && !reduceMotion
-    }
-
-    private func progress(at date: Date) -> CGFloat {
-        let elapsed = max(0, date.timeIntervalSince(startedAt))
-        return CGFloat(elapsed.truncatingRemainder(dividingBy: duration) / duration)
-    }
-
-    private func phaseOpacity(_ progress: CGFloat) -> Double {
-        Double(min(min(progress * 5, (1 - progress) * 5), 1))
     }
 }

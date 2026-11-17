@@ -387,7 +387,6 @@ repo-rebase-changes-title = 变基 { $count } 个变更？
 repo-invalid-workspace-name = 工作区名称无效：{ $name }
 repo-delete-workspace-title = 删除工作区 { $name }？
 repo-delete-workspace-message = 这将关闭其窗口、忘记该工作区，并从磁盘删除其目录：{ $path }
-repo-open-repository-in = 在 { $app } 中打开仓库
 repo-cancel-direction = 取消{ $direction }
 repo-cant-rebase-selection-here = 无法在此变基所选内容
 repo-move-bookmark-here = 将 { $bookmark } 移动到这里？
