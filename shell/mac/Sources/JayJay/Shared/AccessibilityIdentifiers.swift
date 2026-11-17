@@ -48,6 +48,8 @@ enum AID {
 
     enum Sidebar {
         static let divider = "sidebar.divider"
+        static let divergentCount = "sidebar.divergentCount"
+        static let conflictedCount = "sidebar.conflictedCount"
     }
 
     enum Picker {

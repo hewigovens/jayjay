@@ -17,7 +17,7 @@ use jayjay_primitives::{ConvergeChoices, ConvergeOutcome, ConvergePlan, ReviewNo
 
 use crate::dag::{DagSelectionGraph, GraphWithLayout, layout_data};
 use jayjay_core::JayError;
-use jayjay_core::dag::DagLayout;
+use jayjay_core::dag::{DagLayout, GraphCounts};
 
 #[uniffi::export]
 fn take_mutation_operation_id() -> Option<String> {
@@ -445,10 +445,12 @@ impl JayJayRepo {
         let dag_layout = DagLayout::compute(&entries);
         let selection = Arc::new(DagSelectionGraph::from_entries(&entries, &dag_layout));
         let layout = layout_data(dag_layout);
+        let counts = GraphCounts::new(entries.iter().map(|entry| &entry.change));
         Ok(GraphWithLayout {
             entries,
             layout,
             selection,
+            counts,
         })
     }
 

@@ -3,7 +3,7 @@ use gpui::{AppContext, Entity, Modifiers, TestAppContext, VisualContext, VisualT
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextAction;
-use jj_test::LinearFixture;
+use jj_test::{LinearFixture, current_op_id, run_jj_in};
 
 fn graph_commit_ids(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) -> Vec<String> {
     view.read_with(cx, |view, cx| {
@@ -21,6 +21,31 @@ fn click(cx: &mut VisualTestContext, selector: &'static str) {
     let bounds = cx.debug_bounds(selector).expect(selector);
     cx.simulate_click(bounds.center(), Modifiers::default());
     settle_visual(cx);
+}
+
+#[gpui::test]
+fn change_list_divergent_badge_filters_to_divergent_changes(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let base_op = current_op_id(&fixture.path);
+    run_jj_in(&fixture.path, &["describe", "-m", "left"]);
+    run_jj_in(
+        &fixture.path,
+        &["--at-op", &base_op, "describe", "-m", "right"],
+    );
+    run_jj_in(&fixture.path, &["status"]);
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let cx: &mut VisualTestContext = cx;
+    settle_visual(cx);
+
+    assert!(cx.debug_bounds("sidebar-conflicts").is_none());
+    click(cx, "sidebar-divergent");
+    view.read_with(cx, |view, cx| {
+        let vm = view.view_model().read(cx);
+        assert_eq!(vm.revset(), "divergent()");
+        assert_eq!(vm.graph.changes.len(), 2);
+        assert!(vm.graph.changes.iter().all(|change| change.is_divergent));
+    });
 }
 
 #[gpui::test]

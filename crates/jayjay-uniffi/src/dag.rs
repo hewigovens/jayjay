@@ -2,8 +2,8 @@ use std::collections::HashMap;
 use std::sync::Arc;
 
 use jayjay_core::dag::{
-    self, ChangeCommand, DagLayout, OrderedSelection, SelectionClick, SelectionCommand,
-    SelectionGraph, SelectionState,
+    self, ChangeCommand, DagLayout, GraphCounts, OrderedSelection, SelectionClick,
+    SelectionCommand, SelectionGraph, SelectionState,
 };
 use jayjay_core::{ChangeInfo, GraphEntry};
 
@@ -24,6 +24,13 @@ pub struct GraphWithLayout {
     pub entries: Vec<GraphEntry>,
     pub layout: DagLayoutData,
     pub selection: Arc<DagSelectionGraph>,
+    pub counts: GraphCounts,
+}
+
+#[uniffi::remote(Record)]
+pub struct GraphCounts {
+    pub divergent: u32,
+    pub conflicted: u32,
 }
 
 #[derive(uniffi::Record, Debug, Clone)]
@@ -157,6 +164,11 @@ fn selection_command_help(command: SelectionCommand, available: bool) -> String 
 #[uniffi::export]
 fn compute_dag_layout(entries: Vec<GraphEntry>) -> DagLayoutData {
     layout_data(DagLayout::compute(&entries))
+}
+
+#[uniffi::export]
+fn graph_counts(entries: Vec<GraphEntry>) -> GraphCounts {
+    GraphCounts::new(entries.iter().map(|entry| &entry.change))
 }
 
 #[uniffi::export]

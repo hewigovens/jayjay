@@ -1,8 +1,10 @@
+use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, App, ClickEvent, Context, Entity, InteractiveElement, IntoElement, MouseDownEvent,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    ParentElement, Role, SharedString, StatefulInteractiveElement, Styled, Window, div, px, rgb,
     uniform_list,
 };
+use jayjay_core::dag::GraphCounts;
 
 use super::bisect_row_styles::BisectRowStyles;
 use super::bookmark_picker::{bookmarks_header_button, listed_bookmark_count};
@@ -13,7 +15,7 @@ use super::{ActivePane, RepoWindow};
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
 use crate::ui::context_menu::ContextMenuItem;
-use crate::ui::icons::glyph;
+use crate::ui::icons::{glyph, icon};
 use crate::ui::primitives::{button, icon_button, icon_label, no_scrollbar_gutter, text_tooltip};
 
 pub(super) fn sidebar(
@@ -34,6 +36,7 @@ pub(super) fn sidebar(
         )
     };
     let change_count = changes.len();
+    let counts = GraphCounts::new(changes.iter());
 
     let body: AnyElement = if !repo_open {
         div().into_any_element()
@@ -248,6 +251,28 @@ pub(super) fn sidebar(
                 cx,
             ))
             .child(div().flex_1())
+            .when(counts.divergent > 0, |header| {
+                header.child(count_badge(
+                    "sidebar-divergent",
+                    glyph::GIT_BRANCH,
+                    t.tag_divergent_fg,
+                    counts.divergent,
+                    jayjay_i18n::repo::divergent_count(counts.divergent as usize),
+                    "divergent()",
+                    cx,
+                ))
+            })
+            .when(counts.conflicted > 0, |header| {
+                header.child(count_badge(
+                    "sidebar-conflicts",
+                    glyph::WARNING,
+                    t.tag_conflict_fg,
+                    counts.conflicted,
+                    jayjay_i18n::repo::conflicted_count(counts.conflicted as usize),
+                    "conflicts()",
+                    cx,
+                ))
+            })
             .child(
                 div()
                     .flex_none()
@@ -272,6 +297,36 @@ pub(super) fn sidebar(
         col = col.child(commit_box_editor(view, t, cx));
     }
     col.into_any_element()
+}
+
+fn count_badge(
+    id: &'static str,
+    glyph_str: &'static str,
+    color: u32,
+    count: u32,
+    label: String,
+    revset: &'static str,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    div()
+        .id(id)
+        .debug_selector(move || id.to_owned())
+        .flex()
+        .flex_none()
+        .flex_row()
+        .items_center()
+        .gap(px(2.))
+        .text_size(ui_font_size(12.))
+        .font_weight(gpui::FontWeight::MEDIUM)
+        .text_color(rgb(color))
+        .role(Role::Button)
+        .aria_label(label.clone())
+        .cursor_pointer()
+        .tooltip(text_tooltip(label))
+        .on_click(cx.listener(move |view, _: &ClickEvent, _, cx| view.apply_revset(revset, cx)))
+        .child(icon(glyph_str, 11., color))
+        .child(count.to_string())
+        .into_any_element()
 }
 
 fn push_follow_up_banner(

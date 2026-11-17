@@ -59,19 +59,6 @@ extension RepoContentView {
         if let wc = workingCopyStatItem {
             items.append(wc)
         }
-        if let divergent = divergentItem {
-            items.append(divergent)
-        }
-        let conflictedCount = viewModel.changes.filter(\.hasConflict).count
-        if conflictedCount > 0, let conflicts = RevsetFilterPresets.preset(id: "conflicts") {
-            items.append(.action(
-                id: "conflicts",
-                icon: "exclamationmark.triangle.fill",
-                text: Localized.Repo.conflictedCount(count: conflictedCount)
-            ) {
-                viewModel.applyFilter(conflicts.revset)
-            })
-        }
         return items
     }
 
@@ -83,15 +70,6 @@ extension RepoContentView {
             text += " +\(stats.insertions) −\(stats.deletions)"
         }
         return .text(id: "wc-stat", icon: "pencil", text: text, tooltip: Localized.Repo.workingCopyChanges)
-    }
-
-    /// Count of divergent change-ids in view; clicking filters to `divergent()`.
-    private var divergentItem: StatusBarItem? {
-        let ids = Set(viewModel.changes.filter(\.isDivergent).map(\.changeId.id))
-        guard !ids.isEmpty else { return nil }
-        return .action(id: "divergent", icon: "arrow.triangle.branch", text: Localized.Repo.divergentCount(count: ids.count)) {
-            viewModel.applyFilter("divergent()")
-        }
     }
 
     /// The repo's current operation; clicking opens the Operation Log.

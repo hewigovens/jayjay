@@ -7,6 +7,13 @@ extension RepoContentView {
             HStack(spacing: 8) {
                 BookmarkPicker(bookmarks: viewModel.bookmarks, isLoaded: viewModel.hasFinishedFirstLoad, actions: viewModel)
                 Spacer(minLength: 8)
+                let counts = viewModel.changeCounts
+                if counts.divergent > 0 {
+                    countBadge(.divergent, count: Int(counts.divergent))
+                }
+                if counts.conflicted > 0 {
+                    countBadge(.conflicted, count: Int(counts.conflicted))
+                }
                 Text(Localized.Repo.changeCount(count: viewModel.changes.count))
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
@@ -68,6 +75,26 @@ extension RepoContentView {
         }
     }
 
+    private func countBadge(_ kind: ChangeCountKind, count: Int) -> some View {
+        let label = kind.label(count: count)
+        return Button {
+            viewModel.applyFilter(kind.revset)
+        } label: {
+            HStack(spacing: 2) {
+                Image(systemName: kind.systemImage).imageScale(.small)
+                Text(count, format: .number)
+            }
+            .jayjayFont(12, weight: .medium)
+            .foregroundStyle(kind.tint)
+            .fixedSize()
+            .contentShape(Rectangle())
+        }
+        .buttonStyle(.plain)
+        .help(label)
+        .accessibilityLabel(label)
+        .accessibilityIdentifier(kind.accessibilityId)
+    }
+
     func pushFollowUpBanner(_ name: String) -> some View {
         HStack(spacing: 6) {
             Image(systemName: "bookmark.fill").foregroundStyle(.green).jayjayFont(11)
@@ -91,5 +118,44 @@ extension RepoContentView {
 
     private var shouldShowCommitBox: Bool {
         viewModel.selectedChange?.info.isWorkingCopy == true
+    }
+}
+
+private enum ChangeCountKind {
+    case divergent, conflicted
+
+    var systemImage: String {
+        switch self {
+            case .divergent: "arrow.triangle.branch"
+            case .conflicted: "exclamationmark.triangle.fill"
+        }
+    }
+
+    var tint: Color {
+        switch self {
+            case .divergent: .orange
+            case .conflicted: .red
+        }
+    }
+
+    var revset: String {
+        switch self {
+            case .divergent: "divergent()"
+            case .conflicted: "conflicts()"
+        }
+    }
+
+    var accessibilityId: String {
+        switch self {
+            case .divergent: AID.Sidebar.divergentCount
+            case .conflicted: AID.Sidebar.conflictedCount
+        }
+    }
+
+    func label(count: Int) -> String {
+        switch self {
+            case .divergent: Localized.Repo.divergentCount(count: count)
+            case .conflicted: Localized.Repo.conflictedCount(count: count)
+        }
     }
 }

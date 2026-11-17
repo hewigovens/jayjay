@@ -1,5 +1,3 @@
-use std::collections::HashSet;
-
 use gpui::{
     AnyElement, ClickEvent, Context, Div, InteractiveElement, IntoElement, ParentElement,
     SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
@@ -115,7 +113,6 @@ pub(super) fn leading_items(
 }
 
 pub(super) fn trailing_items(
-    changes: &[ChangeInfo],
     working_copy_stats: Option<&DiffStats>,
     operation: &str,
     t: &Theme,
@@ -156,46 +153,6 @@ pub(super) fn trailing_items(
         );
     }
 
-    let divergent_count = changes
-        .iter()
-        .filter(|change| change.is_divergent)
-        .map(|change| change.change_id.id.as_str())
-        .collect::<HashSet<_>>()
-        .len();
-    if divergent_count > 0 {
-        items.push(status_action(
-            StatusItemSpec::new(
-                "status-divergent",
-                Some(glyph::GIT_BRANCH),
-                jayjay_i18n::repo::divergent_count(divergent_count),
-                None,
-                false,
-            ),
-            t,
-            cx,
-            |view, _, _, cx| {
-                view.select_first_status_match(|change| change.is_divergent, cx);
-            },
-        ));
-    }
-
-    let conflict_count = changes.iter().filter(|change| change.has_conflict).count();
-    if conflict_count > 0 {
-        items.push(status_action(
-            StatusItemSpec::new(
-                "status-conflicts",
-                Some(glyph::WARNING),
-                jayjay_i18n::repo::conflicted_count(conflict_count),
-                None,
-                false,
-            ),
-            t,
-            cx,
-            |view, _, _, cx| {
-                view.select_first_status_match(|change| change.has_conflict, cx);
-            },
-        ));
-    }
     items
 }
 
