@@ -48,7 +48,7 @@ struct AppCommands: Commands {
         CommandGroup(after: .pasteboard) {
             Button {
                 if let window = NSApp.keyWindow,
-                   let tv = findDiffTextView(in: window.contentView)
+                   let tv = window.contentView?.diffTextView
                 {
                     window.makeFirstResponder(tv)
                     let item = NSMenuItem()
@@ -109,20 +109,5 @@ struct AppCommands: Commands {
                 Label(Localized.Menu.openRecent, systemImage: "clock")
             }
         }
-    }
-
-    private static let diffTextViewID = NSUserInterfaceItemIdentifier("diffTextView")
-
-    private func findDiffTextView(in view: NSView?) -> NSTextView? {
-        guard let view else { return nil }
-        if let tv = view as? NSTextView, tv.identifier == Self.diffTextViewID {
-            return tv
-        }
-        for sub in view.subviews {
-            if let found = findDiffTextView(in: sub) {
-                return found
-            }
-        }
-        return nil
     }
 }

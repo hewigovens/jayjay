@@ -10,6 +10,7 @@ extension ChangeDetailView {
                 keyboardFocus?.focusPane(.dag)
                 return true
             case KeyCode.rightArrow: return true
+            case KeyCode.pageUp, KeyCode.pageDown, KeyCode.home, KeyCode.end: return scrollDiff(event)
             default: break
         }
         if event.opensSelectionContextMenu, let selectedPath = fileSelection.primary, keyboardFocus?.isSuspended != true,
@@ -26,6 +27,19 @@ extension ChangeDetailView {
             controlPressed: isCtrl
         ) else { return false }
         return moveFileSelection(by: delta)
+    }
+
+    private func scrollDiff(_ event: NSEvent) -> Bool {
+        guard event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
+              let diff = NSApp.keyWindow?.contentView?.diffTextView
+        else { return false }
+        switch event.keyCode {
+            case KeyCode.pageUp: diff.scrollPageUp(nil)
+            case KeyCode.pageDown: diff.scrollPageDown(nil)
+            case KeyCode.home: diff.scrollToBeginningOfDocument(nil)
+            default: diff.scrollToEndOfDocument(nil)
+        }
+        return true
     }
 
     private func toggleReviewOnSelection() -> Bool {
