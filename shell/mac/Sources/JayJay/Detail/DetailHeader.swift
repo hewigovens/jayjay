@@ -76,12 +76,13 @@ extension ChangeDetailView {
 
     private var byline: some View {
         ViewThatFits(in: .horizontal) {
-            byline(showsDate: true)
-            byline(showsDate: false)
+            byline(showsDate: true, showsCommit: true)
+            byline(showsDate: false, showsCommit: true)
+            byline(showsDate: false, showsCommit: false)
         }
     }
 
-    private func byline(showsDate: Bool) -> some View {
+    private func byline(showsDate: Bool, showsCommit: Bool) -> some View {
         HStack(spacing: 6) {
             bylineAuthors
             bylineSeparator
@@ -91,6 +92,17 @@ extension ChangeDetailView {
                 prefixStyle: .changeId
             )
             CopyIconButton(value: detail.info.changeId.id, help: Localized.Repo.copyChange)
+            if showsCommit {
+                IdentifierText(
+                    value: detail.info.commitId.compact,
+                    prefixLength: Int(detail.info.commitId.shortLen),
+                    prefixStyle: .commitId
+                )
+                .help(Localized.Repo.commitNamed(id: detail.info.commitId.id))
+                .accessibilityIdentifier(AID.Detail.commitId)
+                .accessibilityValue(detail.info.commitId.id)
+                CopyIconButton(value: detail.info.commitId.id, help: Localized.Repo.copyCommit)
+            }
             if showsDate {
                 bylineSeparator
                 Text(formatTimestamp(detail.info.author.timestampMillis))
