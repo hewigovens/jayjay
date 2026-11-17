@@ -146,6 +146,8 @@ extension ChangeDetailView {
             }
             .listStyle(.plain)
             .scrollIndicators(.never)
+            // The list estimates rows it has not laid out at its minimum height, and scrolling to a row past them falls short by the difference.
+            .environment(\.defaultMinListRowHeight, PaneLayout.fileRowHeight(scale: typography.interfaceScale))
             .revealing(fileSelection.primary, again: contextMenuRequest?.id, with: proxy)
             .id(detail.info.commitId.id)
         }
