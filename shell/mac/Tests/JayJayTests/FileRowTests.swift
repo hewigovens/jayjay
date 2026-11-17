@@ -67,6 +67,16 @@ final class FileRowTests: XCTestCase {
         )
     }
 
+    func testSecondLineShowsTheFolderOrTheWholeMove() {
+        func detail(_ path: String, oldPath: String? = nil, type: HunkType = .modified) -> String? {
+            FileRow(hunk: testHunk(path: path, oldPath: oldPath, hunkType: type), isSelected: false).pathDetail
+        }
+        XCTAssertNil(detail("README.md"))
+        XCTAssertEqual(detail("shell/mac/Sources/JayJay/Detail/DetailHeader.swift"), "shell/mac/Sources/JayJay/Detail")
+        XCTAssertEqual(detail("new/name.rs", oldPath: "old.rs", type: .renamed), "old.rs → new/name.rs")
+        XCTAssertEqual(detail("src/same.rs", oldPath: "src/same.rs", type: .copied), "src")
+    }
+
     func testReviewedStyleOnlyAppliesWhenReviewControlsAreVisible() {
         XCTAssertFalse(
             FileRow(hunk: hunk(), isSelected: false, showReview: false, reviewRollup: .reviewed).showsReviewedStyle

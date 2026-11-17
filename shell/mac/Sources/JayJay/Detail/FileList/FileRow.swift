@@ -19,6 +19,19 @@ struct FileRow: View {
     var hasConflict: Bool = false
     var onToggleReview: (() -> Void)?
 
+    private var movedFrom: String? {
+        guard hunk.hunkType.hasSource, let oldPath = hunk.oldPath, oldPath != hunk.path else { return nil }
+        return oldPath
+    }
+
+    var pathDetail: String? {
+        if let movedFrom {
+            return "\(movedFrom) → \(hunk.path)"
+        }
+        guard let slash = hunk.path.lastIndex(of: "/") else { return nil }
+        return String(hunk.path[..<slash])
+    }
+
     var reviewChrome: FileRowReviewChrome {
         FileRowReviewChrome.chrome(showReview: showReview, rollup: reviewRollup)
     }
@@ -122,16 +135,14 @@ struct FileRow: View {
                             .help(noteCount.reviewNoteCountLabel)
                         }
                     }
-                    Text(hunk.hunkType.hasSource
-                        ? hunk.oldPath.map { "\($0) → \(hunk.path)" } ?? hunk.path
-                        : hunk.path)
-                        .jayjayFont(10, design: .monospaced)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .accessibilityLabel(hunk.hunkType.hasSource
-                            ? hunk.oldPath.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path
-                            : hunk.path)
+                    if let pathDetail {
+                        Text(pathDetail)
+                            .jayjayFont(10, design: .monospaced)
+                            .foregroundStyle(.secondary)
+                            .lineLimit(1)
+                            .truncationMode(.middle)
+                            .accessibilityLabel(movedFrom.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path)
+                    }
                 }
 
                 Spacer(minLength: 0)
