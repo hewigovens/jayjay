@@ -1,7 +1,7 @@
 use std::fs;
 
-use jayjay_core::Repo;
 use jayjay_core::diff::{ConflictLineKind, compute_file_diff_full};
+use jayjay_core::{OpLogEntry, Repo};
 use jj_test::{
     change_by_description, changed_paths, current_op_id, git_stdout, init_jj_repo, run_git, run_jj,
     run_jj_in,
@@ -502,6 +502,21 @@ fn split_parallel_makes_a_sibling_and_moves_the_working_copy_to_the_remainder() 
     );
     assert_eq!(changed_paths(&repo, &first.commit_id.id), ["other.txt"]);
     assert_eq!(changed_paths(&repo, "@"), ["hello.txt"]);
+}
+
+#[test]
+fn repository_context_lists_operations_without_snapshotting() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let ids = |entries: Vec<OpLogEntry>| entries.into_iter().map(|op| op.id.id).collect::<Vec<_>>();
+    let before = ids(repo.op_log().expect("op log"));
+    std::fs::write(repo_path.join("pending.txt"), "edit").expect("write file");
+
+    let listed = ids(repo.repository_context().expect("context").operations);
+
+    assert_eq!(listed, before);
+    assert_eq!(repo.op_log().expect("op log").len(), before.len() + 1);
 }
 
 #[test]

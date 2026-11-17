@@ -7,6 +7,7 @@ import XCTest
 final class ActiveRepoTrackerTests: XCTestCase {
     private final class Handler: RepositoryMenuHandler {
         let canViewRemoteRepository = false
+        let canRestoreOperation = false
         let reviewMode = ReviewMode.unavailable
         func canPerformShortcut(_: AppShortcut) -> Bool {
             false
@@ -14,7 +15,6 @@ final class ActiveRepoTrackerTests: XCTestCase {
 
         func performShortcut(_: AppShortcut) {}
         func showCommandPalette() {}
-        func showOperationLog() {}
         func showRevsetFilter() {}
         func showBookmarkManager() {}
         func showOverview() {}
@@ -24,6 +24,7 @@ final class ActiveRepoTrackerTests: XCTestCase {
             nil
         }
 
+        func restoreOperation() {}
         func undoOperation() {}
         func redoOperation() {}
     }

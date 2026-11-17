@@ -80,10 +80,10 @@ extension RepoContentView {
             id: "last-op",
             icon: OperationIcon.symbol(for: desc),
             text: desc,
-            tooltip: AppShortcut.operationLog.help(Localized.Menu.operationLogEllipsis),
+            tooltip: AppShortcut.operationLog.help(Localized.Repo.operationLog),
             shrinks: true
         ) {
-            showOperationLog()
+            showsOperationLog.toggle()
         }
     }
 

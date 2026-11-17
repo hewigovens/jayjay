@@ -186,6 +186,7 @@ final class ReleaseScreenshots: ScreenshotScene {
         keyStroke("u", modifiers: [.command, .shift])
         XCTAssertTrue(app.element(AID.Panel.operationLog).waitForExistence(timeout: 5), "Operation Log missing")
         capture("undo-operation-log", frame: mainFrame)
+        keyStroke("u", modifiers: [.command, .shift])
     }
 
     func testCommandPalette() throws {

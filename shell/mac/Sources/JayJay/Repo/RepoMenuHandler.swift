@@ -7,6 +7,7 @@ final class RepoMenuHandler: RepositoryMenuHandler {
     /// Pushed by the window whenever what its shortcuts would act on changes, so the Repository menu disables what would do nothing.
     var availableShortcuts: Set<AppShortcut> = []
     var canViewRemoteRepository = false
+    var canRestoreOperation = false
     var reviewMode = ReviewMode.unavailable
 
     func canPerformShortcut(_ shortcut: AppShortcut) -> Bool {
@@ -22,15 +23,11 @@ final class RepoMenuHandler: RepositoryMenuHandler {
 
     enum MenuAction {
         case shortcut(AppShortcut)
-        case commandPalette, operationLog, revsetFilter, bookmarkManager, overview, newWorkspace, pullRequestImport
+        case commandPalette, revsetFilter, bookmarkManager, overview, newWorkspace, pullRequestImport, restoreOperation
     }
 
     func showCommandPalette() {
         onAction?(.commandPalette)
-    }
-
-    func showOperationLog() {
-        onAction?(.operationLog)
     }
 
     func showRevsetFilter() {
@@ -51,6 +48,10 @@ final class RepoMenuHandler: RepositoryMenuHandler {
 
     func showPullRequestImport() {
         onAction?(.pullRequestImport)
+    }
+
+    func restoreOperation() {
+        onAction?(.restoreOperation)
     }
 
     var operationSteps: UndoState? {

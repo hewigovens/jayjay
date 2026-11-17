@@ -10,13 +10,14 @@ protocol RepositoryMenuHandler: AnyObject {
     func canPerformShortcut(_ shortcut: AppShortcut) -> Bool
     func performShortcut(_ shortcut: AppShortcut)
     func showCommandPalette()
-    func showOperationLog()
     func showRevsetFilter()
     func showBookmarkManager()
     func showOverview()
     func showNewWorkspace()
     func showPullRequestImport()
     var operationSteps: UndoState? { get }
+    var canRestoreOperation: Bool { get }
+    func restoreOperation()
     func undoOperation()
     func redoOperation()
 }

@@ -13,6 +13,15 @@ impl Repo {
     /// The 20 most recent operations, newest first. Snapshots first so the current entry already holds pending edits and restoring to it later cannot drop them.
     pub fn op_log(&self) -> JayResult<Vec<OpLogEntry>> {
         self.refresh_working_copy()?;
+        self.walk_recent_operations()
+    }
+
+    /// `op_log` as of the loaded operation, for a refresh that has already snapshotted; empty when the walk fails.
+    pub fn recent_operations(&self) -> Vec<OpLogEntry> {
+        self.walk_recent_operations().unwrap_or_default()
+    }
+
+    fn walk_recent_operations(&self) -> JayResult<Vec<OpLogEntry>> {
         let repo = self.get_repo();
         let ops: Vec<Operation> = block_on_result(
             "walk operations",

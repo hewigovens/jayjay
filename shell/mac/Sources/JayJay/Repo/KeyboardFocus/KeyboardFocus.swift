@@ -82,7 +82,7 @@ final class KeyboardFocus {
             }
             return true
         }
-        guard !isSuspended, let control, !control.isTextInput else { return false }
+        guard !isSuspended, let control, !control.ownsKeys else { return false }
         switch event.keyCode {
             case KeyCode.space, KeyCode.returnKey, KeyCode.keypadEnter:
                 registrations[control]?.action()
@@ -113,7 +113,7 @@ final class KeyboardFocus {
                 focusPane(.fileColumn)
             default:
                 control = next
-                if next.isTextInput {
+                if next.ownsKeys {
                     registrations[next]?.action()
                 }
         }

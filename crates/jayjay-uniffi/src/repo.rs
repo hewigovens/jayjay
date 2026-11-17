@@ -1010,8 +1010,8 @@ impl JayJayRepo {
         self.inner.diff_excerpt()
     }
 
-    fn op_log(&self) -> Result<Vec<OpLogEntry>, JayError> {
-        self.inner.op_log()
+    fn recent_operations(&self) -> Vec<OpLogEntry> {
+        self.inner.recent_operations()
     }
 
     fn op_restore(&self, op_id: String) -> Result<(), JayError> {

@@ -18,6 +18,8 @@ pub struct RepositoryContext {
     pub operation: String,
     #[serde(default)]
     pub undo: UndoState,
+    #[serde(default)]
+    pub operations: Vec<OpLogEntry>,
     pub bisect_state: Option<BisectState>,
 }
 
@@ -39,6 +41,7 @@ impl crate::repo::Repo {
             working_copy_stats: self.diff_stats("@").ok(),
             operation: self.current_operation_description(),
             undo: self.undo_state(),
+            operations: self.recent_operations(),
             bisect_state: self.bisect_state(),
         })
     }

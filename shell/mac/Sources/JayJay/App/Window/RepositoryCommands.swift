@@ -28,12 +28,6 @@ struct RepositoryCommands: Commands {
             .keyboardShortcut(AppShortcut.commandPalette)
             .disabled(tracker.handler == nil)
 
-            Button { tracker.handler?.showOperationLog() } label: {
-                Label(Localized.Menu.operationLogEllipsis, systemImage: "clock.arrow.circlepath")
-            }
-            .keyboardShortcut(AppShortcut.operationLog)
-            .disabled(tracker.handler == nil)
-
             Divider()
 
             Button { tracker.handler?.showRevsetFilter() } label: {

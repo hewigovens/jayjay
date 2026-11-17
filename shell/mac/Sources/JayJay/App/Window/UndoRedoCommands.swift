@@ -18,6 +18,8 @@ struct UndoRedoCommands: Commands {
             Button(redoTitle) { router.redo(repo: repo) }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!router.local.canRedo && repo?.operationSteps?.redoDescription == nil)
+            Button(Localized.Menu.restoreSelectedOperation) { repo?.restoreOperation() }
+                .disabled(repo?.canRestoreOperation != true)
         }
     }
 

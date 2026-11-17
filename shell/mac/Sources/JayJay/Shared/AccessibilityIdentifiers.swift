@@ -40,6 +40,7 @@ enum AID {
         static let sidebarToggle = "toolbar.sidebarToggle"
         static let pull = "toolbar.pull"
         static let push = "toolbar.push"
+        static let operationLog = "toolbar.operationLog"
         static let revsetBar = "toolbar.revsetBar"
         static let revsetField = "toolbar.revsetField"
         static let repositoryTitle = "toolbar.repositoryTitle"

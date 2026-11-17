@@ -67,9 +67,34 @@ extension RepoContentView {
         }
     }
 
-    func showOperationLog(undoing operationId: String? = nil) {
-        viewModel.loadOpLog()
-        modal = .operationLog(undoing: operationId)
+    func showOperationLog(undoing operationId: String) {
+        operationLogUndoing = operationId
+        operationLogSelection = viewModel.opLogEntries?.restoreTarget(undoing: operationId)
+        showsOperationLog = true
+    }
+
+    var operationLogPanel: some View {
+        UndoView(entries: viewModel.opLogEntries, undoing: operationLogUndoing, selectedId: $operationLogSelection, isShown: showsOperationLog) { opId in
+            restoreOperation(opId)
+        }
+        .background(settings.navigationBackground(colorScheme))
+        .onChange(of: showsOperationLog) { _, shown in
+            if !shown {
+                operationLogUndoing = nil
+            }
+        }
+    }
+
+    var restorableOperation: String? {
+        guard showsOperationLog, viewModel.sshConnected, let id = operationLogSelection,
+              viewModel.opLogEntries?.contains(where: { $0.id.id == id && !$0.isCurrent }) == true
+        else { return nil }
+        return id
+    }
+
+    func restoreOperation(_ opId: String) {
+        operationLogUndoing = nil
+        viewModel.opRestore(opId: opId)
     }
 
     func presentBookmarkCreate(rev: String) {

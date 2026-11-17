@@ -4,18 +4,19 @@ import SwiftUI
 struct UndoView: View {
     let entries: [OpLogEntry]?
     let undoing: String?
+    @Binding var selectedId: String?
+    let isShown: Bool
     let onRestore: (String) -> Void
-    let onDismiss: () -> Void
 
-    @State private var selectedId: String?
+    @State private var contextMenuRequest: SelectionContextMenuRequest?
+    @FocusState private var isListFocused: Bool
+    @Environment(KeyboardFocus.self) private var focus: KeyboardFocus?
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.jayjayTypography) private var typography
     @Environment(\.appThemes) private var appThemes
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            header
-            Divider()
             if let entries {
                 if entries.isEmpty {
                     emptyState
@@ -26,27 +27,23 @@ struct UndoView: View {
                 LoadingStatus(label: Localized.Oplog.loadingOperationsEllipsis)
                     .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
-            Divider()
-            footer
         }
-        .frame(width: 600, height: 480)
-        .onChange(of: entries?.map(\.id.id), initial: true) {
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        .accessibilityElement(children: .contain)
+        .accessibilityIdentifier(AID.Panel.operationLog)
+        .onChange(of: entries?.map(\.id.id), initial: true) { _, ids in
+            // A refresh must not retarget a pending Restore; a hidden pane keeps following the default.
+            if isShown, let selectedId, ids?.contains(selectedId) == true {
+                return
+            }
             selectedId = entries?.restoreTarget(undoing: undoing)
         }
-    }
-
-    private var header: some View {
-        HStack {
-            Image(systemName: "clock.arrow.circlepath")
-                .font(.system(size: 16))
-                .foregroundStyle(.secondary)
-            Text(Localized.Repo.operationLog)
-                .jayjayFont(15, weight: .semibold)
-                .accessibilityIdentifier(AID.Panel.operationLog)
-            Spacer()
+        .onChange(of: isShown) { _, shown in
+            isListFocused = shown
+            if !shown {
+                selectedId = entries?.restoreTarget(undoing: nil)
+            }
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
     }
 
     private var emptyState: some View {
@@ -88,30 +85,24 @@ struct UndoView: View {
             }
             .padding(.vertical, 2)
             .contentShape(Rectangle())
+            .selectionContextMenu(for: entry.id.id, request: $contextMenuRequest) {
+                Button(Localized.Repo.restore) { onRestore(entry.id.id) }
+                    .disabled(entry.isCurrent)
+            }
         }
         .listStyle(.plain)
-    }
-
-    private var footer: some View {
-        HStack {
-            Spacer()
-            Button(Localized.Common.cancel) { onDismiss() }
-                .keyboardShortcut(.cancelAction)
-            Button(Localized.Repo.restore) {
-                guard let id = selectedId else { return }
-                onRestore(id)
-                onDismiss()
-            }
-            .keyboardShortcut(.defaultAction)
-            .disabled(selectedId == nil || isCurrentSelected)
+        .scrollContentBackground(.hidden)
+        .background(KeyboardOwner())
+        .focused($isListFocused)
+        .keyboardFocusStop(.operationLogList, isAvailable: isShown) { isListFocused = true }
+        .onChange(of: isListFocused) { _, focused in
+            focus?.updateInputFocus(.operationLogList, isFocused: focused)
         }
-        .padding(.horizontal, 16)
-        .padding(.vertical, 12)
-    }
-
-    private var isCurrentSelected: Bool {
-        guard let id = selectedId else { return false }
-        return entries?.first(where: { $0.id.id == id })?.isCurrent == true
+        .onKeyPress(.return, phases: .down) { press in
+            guard press.modifiers == .control, let selectedId else { return .ignored }
+            contextMenuRequest = SelectionContextMenuRequest(target: selectedId)
+            return .handled
+        }
     }
 
     private func descriptionLabel(_ description: String) -> String {

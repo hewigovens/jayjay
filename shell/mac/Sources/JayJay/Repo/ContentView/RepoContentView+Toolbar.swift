@@ -53,7 +53,10 @@ extension RepoContentView {
                 bookmarks: viewModel.bookmarks,
                 workspaces: viewModel.workspaces.map(\.name),
                 vocabulary: viewModel.revsetVocabulary,
-                editRequest: revsetEditRequest
+                editRequest: revsetEditRequest,
+                room: toolbarRoom,
+                pane: operationLog,
+                paneWidth: operationLogWidth
             )
         }
         .sharedBackgroundVisibility(.hidden)
@@ -68,6 +71,22 @@ extension RepoContentView {
                 settings.openInTerminal(at: viewModel.repoPath)
             }
         }
+
+        ToolbarItem(placement: .primaryAction) {
+            let title = showsOperationLog ? Localized.Menu.hideOperationLog : Localized.Menu.showOperationLog
+            OperationLogToolbarSlot(reveal: operationLog, paneWidth: operationLogWidth, room: toolbarRoom) {
+                toolbarButton(
+                    .operationLog,
+                    help: AppShortcut.operationLog.help(title),
+                    action: { showsOperationLog.toggle() },
+                    label: { Label(title, systemImage: "clock.arrow.circlepath") }
+                )
+                .accessibilityIdentifier(AID.Toolbar.operationLog)
+                .padding(.horizontal, 1)
+                .glassEffect(.regular.interactive(), in: .capsule)
+            }
+        }
+        .sharedBackgroundVisibility(.hidden)
     }
 
     private func appButton(

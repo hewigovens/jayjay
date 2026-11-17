@@ -67,7 +67,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         XCTAssertEqual(revset.value as? String, "all()", "The keyboard-opened revset editor did not take typing")
         keyStroke(.escape)
         XCTAssertTrue(revset.waitForNonExistence(timeout: 5), "Escape did not end editing the revset")
-        for _ in 0 ..< 3 {
+        for _ in 0 ..< 4 {
             keyStroke(.tab)
         }
         keyStroke(.downArrow)

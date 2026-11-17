@@ -1,6 +1,6 @@
 use jayjay_core::{
-    BisectState, BookmarkInfo, DiffStats, RepositoryContext, RevsetVocabulary, TagInfo, UndoState,
-    WorkspaceInfo,
+    BisectState, BookmarkInfo, DiffStats, OpLogEntry, RepositoryContext, RevsetVocabulary, TagInfo,
+    UndoState, WorkspaceInfo,
 };
 use jayjay_core::{
     JayError,
@@ -78,5 +78,6 @@ pub struct RepositoryContext {
     pub working_copy_stats: Option<DiffStats>,
     pub operation: String,
     pub undo: UndoState,
+    pub operations: Vec<OpLogEntry>,
     pub bisect_state: Option<BisectState>,
 }

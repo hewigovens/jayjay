@@ -8,6 +8,9 @@ struct RevsetBar: View {
     let workspaces: [String]
     let vocabulary: RevsetVocabulary
     let editRequest: Int
+    let room: ToolbarRoom
+    let pane: PaneReveal
+    let paneWidth: CGFloat
 
     @State private var anchor = PickerAnchor()
     @State private var panel = PickerPanel()
@@ -91,7 +94,7 @@ struct RevsetBar: View {
         }
         .padding(.leading, 4)
         .padding(.trailing, isNarrowed && !isEditing ? 4 : 10)
-        .frame(minWidth: 280, idealWidth: 485, maxWidth: 485, minHeight: 28, maxHeight: 28)
+        .frame(width: room.revsetWidth(paneShown: pane.isShown, paneWidth: paneWidth), height: 28)
         .background(background, in: Capsule())
         .overlay {
             if isEditing {

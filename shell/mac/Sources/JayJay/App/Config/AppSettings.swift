@@ -8,6 +8,8 @@ final class AppSettings {
     static let updateChannelKey = "jayjay.updateChannel"
     static let settingsPageKey = "jayjay.settingsPage"
     static let showsStatusBarKey = "jayjay.showsStatusBar"
+    static let showsOperationLogKey = "jayjay.showsOperationLog"
+    static let operationLogWidthKey = "jayjay.operationLogWidth"
 
     private enum StorageKeys {
         static let interfaceFontFamily = "jayjay.interfaceFontFamily"

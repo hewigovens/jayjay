@@ -5,6 +5,7 @@ struct AppCommands: Commands {
     let settings: AppSettings
     let windowManager: RepoWindowManager
     @AppStorage(AppSettings.showsStatusBarKey) var showsStatusBar = true
+    @AppStorage(AppSettings.showsOperationLogKey) var showsOperationLog = false
 
     var body: some Commands {
         CommandGroup(replacing: .windowArrangement) {}
@@ -25,6 +26,12 @@ struct AppCommands: Commands {
                 Label(showsStatusBar ? Localized.Menu.hideStatusBar : Localized.Menu.showStatusBar, systemImage: "rectangle.bottomthird.inset.filled")
             }
             .keyboardShortcut(AppShortcut.toggleStatusBar)
+            .disabled(ActiveRepoTracker.shared.handler == nil)
+
+            Button { showsOperationLog.toggle() } label: {
+                Label(showsOperationLog ? Localized.Menu.hideOperationLog : Localized.Menu.showOperationLog, systemImage: "clock.arrow.circlepath")
+            }
+            .keyboardShortcut(AppShortcut.operationLog)
             .disabled(ActiveRepoTracker.shared.handler == nil)
 
             Divider()

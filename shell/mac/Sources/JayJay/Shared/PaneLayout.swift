@@ -1,10 +1,12 @@
-import CoreGraphics
+import Foundation
 
 /// The sidebar keeps room for a minimum secondary pane and preview, the secondary pane for a minimum preview; GPUI applies the same rule.
 enum PaneLayout {
     static let sidebar: ClosedRange<CGFloat> = 240 ... 600
     static let secondaryPane: ClosedRange<CGFloat> = 220 ... 480
     static let secondaryPaneDefault: CGFloat = 300
+    static let operationLog: ClosedRange<CGFloat> = 220 ... 560
+    static let operationLogDefault: CGFloat = 320
     static let previewMin: CGFloat = 420
     static let dividerWidth: CGFloat = 1
     static let headerHeight: CGFloat = 44
@@ -17,6 +19,11 @@ enum PaneLayout {
 
     static func sidebarRange(windowWidth: CGFloat) -> ClosedRange<CGFloat> {
         sidebar.fitted(in: windowWidth - 2 * dividerWidth - secondaryPane.lowerBound - previewMin)
+    }
+
+    static func operationLogWidth(defaults: UserDefaults = .standard) -> CGFloat {
+        let stored = defaults.object(forKey: AppSettings.operationLogWidthKey) as? Double
+        return min(max(stored.map { CGFloat($0) } ?? operationLogDefault, operationLog.lowerBound), operationLog.upperBound)
     }
 
     static func secondaryPaneRange(detailWidth: CGFloat) -> ClosedRange<CGFloat> {

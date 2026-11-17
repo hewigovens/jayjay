@@ -54,6 +54,21 @@ extension RepoContentView {
             shortcut: AppShortcut.toggleStatusBar.symbol
         ) { showsStatusBar.toggle() })
         items.append(CommandPaletteItem(
+            title: showsOperationLog ? Localized.Menu.hideOperationLog : Localized.Menu.showOperationLog,
+            icon: "clock.arrow.circlepath",
+            category: Localized.Menu.view,
+            keywords: ["toggle", "operation", "undo", "restore", "op", "log", "history"],
+            shortcut: AppShortcut.operationLog.symbol
+        ) { showsOperationLog.toggle() })
+        if let operation = restorableOperation {
+            items.append(CommandPaletteItem(
+                title: Localized.Menu.restoreSelectedOperation,
+                icon: "clock.arrow.circlepath",
+                category: Localized.Menu.view,
+                keywords: ["operation", "undo", "restore", "op", "log"]
+            ) { restoreOperation(operation) })
+        }
+        items.append(CommandPaletteItem(
             title: Localized.Palette.toggleSideBySideDiffTitle,
             icon: "rectangle.split.2x1",
             category: Localized.Menu.view,
@@ -299,12 +314,6 @@ extension RepoContentView {
 
     private var appPaletteItems: [CommandPaletteItem] {
         var items: [CommandPaletteItem] = []
-        items.append(CommandPaletteItem(
-            title: Localized.Menu.operationLogEllipsis,
-            icon: "clock.arrow.circlepath",
-            category: Localized.Menu.repository,
-            shortcut: AppShortcut.operationLog.symbol
-        ) { showOperationLog() })
         items.append(CommandPaletteItem(
             title: Localized.Repo.settings, icon: "gearshape", category: Localized.Palette.app, shortcut: AppShortcut.settings.symbol
         ) {

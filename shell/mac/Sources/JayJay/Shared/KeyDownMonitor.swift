@@ -66,6 +66,9 @@ struct KeyDownMonitor: NSViewRepresentable {
                 if let text = window.firstResponder as? NSText, yieldsToText(text) {
                     return event
                 }
+                if event.keyCode != KeyCode.tab, let responder = window.firstResponder as? NSView, responder.isInKeyboardOwner {
+                    return event
+                }
                 if onKeyDown(event) {
                     return nil
                 }

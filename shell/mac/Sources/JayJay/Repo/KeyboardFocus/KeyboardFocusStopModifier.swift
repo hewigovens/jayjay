@@ -20,7 +20,7 @@ private struct KeyboardFocusStopModifier: ViewModifier {
     func body(content: Content) -> some View {
         content
             .overlay {
-                if focus?.control == stop, !stop.isTextInput {
+                if focus?.control == stop, !stop.ownsKeys {
                     RoundedRectangle(cornerRadius: 4, style: .continuous)
                         .stroke(Color.accentColor, lineWidth: 1.5)
                         .padding(-3)

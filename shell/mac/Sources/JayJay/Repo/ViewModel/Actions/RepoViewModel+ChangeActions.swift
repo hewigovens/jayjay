@@ -202,18 +202,6 @@ extension RepoViewModel {
         performResult(selectingResult: { $0 }, undoable: { _ in Localized.Repo.duplicatedChange }, { try $0.duplicate(rev: rev) })
     }
 
-    func loadOpLog() {
-        opLogEntries = nil
-        runRepoTask {
-            try $0.opLog()
-        } onSuccess: { viewModel, entries in
-            viewModel.opLogEntries = entries
-        } onFailure: { viewModel, error in
-            viewModel.opLogEntries = []
-            viewModel.present(error: error)
-        }
-    }
-
     func opRestore(opId: String) {
         perform(undoable: Localized.Oplog.restoredOperation) { try $0.opRestore(opId: opId) }
     }

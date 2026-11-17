@@ -30,7 +30,8 @@ struct RepoRefreshContext {
         statusBar = StatusBarSnapshot(
             workingCopyStats: context.workingCopyStats,
             currentOperationDescription: context.operation,
-            undoState: context.undo
+            undoState: context.undo,
+            operations: context.operations
         )
     }
 }

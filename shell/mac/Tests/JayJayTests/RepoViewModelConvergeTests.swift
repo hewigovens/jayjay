@@ -9,7 +9,8 @@ final class RepoViewModelConvergeTests: RepoViewModelTestCase {
         let file = URL(fileURLWithPath: viewModel.repoPath).appendingPathComponent("configuration.txt")
         try "base\n".write(to: file, atomically: true, encoding: .utf8)
         try viewModel.repo.describe(rev: "@", message: "original")
-        let operation = try XCTUnwrap(viewModel.repo.opLog().first).id.id
+        try viewModel.repo.refreshWorkingCopy()
+        let operation = viewModel.repo.undoState().operationId
         try viewModel.repo.describe(rev: "@", message: "left")
         try jj(viewModel, "--at-op", operation, "describe", "-m", "right")
 
@@ -42,7 +43,8 @@ final class RepoViewModelConvergeTests: RepoViewModelTestCase {
         try jj(viewModel, "new", "@-", "-m", "right source")
         try "right\n".write(to: file, atomically: true, encoding: .utf8)
         try jj(viewModel, "edit", "subject(original)")
-        let operation = try XCTUnwrap(viewModel.repo.opLog().first).id.id
+        try viewModel.repo.refreshWorkingCopy()
+        let operation = viewModel.repo.undoState().operationId
         try "left\n".write(to: file, atomically: true, encoding: .utf8)
         try viewModel.repo.describe(rev: "@", message: "left")
         try jj(viewModel, "--at-op", operation, "restore", "--from", "subject('right source')", "--into", "subject(original)")
