@@ -374,6 +374,14 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::git_push_default),
     },
     PaletteAction {
+        id: "reconnect-ssh",
+        shortcut: Some(ShortcutCommand::RepoReconnectSsh),
+        label: jayjay_i18n::ssh::reconnect,
+        keywords: &["ssh", "remote", "reconnect", "connection"],
+        glyph_str: glyph::SYNC,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::reconnect_ssh),
+    },
+    PaletteAction {
         id: "clean-up-stale-bookmarks",
         shortcut: Some(ShortcutCommand::RepoCleanUpStaleBookmarks),
         label: jayjay_i18n::palette::clean_up_stale_bookmarks,

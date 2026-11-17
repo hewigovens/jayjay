@@ -1,4 +1,4 @@
-use jayjay_i18n::{menu, merge, palette, repo, shortcuts};
+use jayjay_i18n::{menu, merge, palette, repo, shortcuts, ssh};
 
 use super::ShortcutCommand;
 use crate::dag::ChangeCommand;
@@ -28,6 +28,7 @@ impl ShortcutCommand {
             Self::RepoFindInDiff => palette::find_in_diff(),
             Self::RepoFetch => menu::pull(),
             Self::RepoPush => repo::git_push(),
+            Self::RepoReconnectSsh => ssh::reconnect(),
             Self::RepoNewWorkspace => menu::new_workspace_ellipsis(),
             Self::RepoImportPullRequest => menu::new_workspace_from_pull_request_ellipsis(),
             Self::RepoBisect => repo::bisect(),

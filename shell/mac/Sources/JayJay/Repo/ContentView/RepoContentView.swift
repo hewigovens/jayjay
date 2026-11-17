@@ -144,6 +144,7 @@ struct RepoContentView: View {
 
     private var contentLayout: some View {
         VStack(spacing: 0) {
+            SSHReconnectBar(viewModel: viewModel)
             BisectBar(viewModel: viewModel)
             ResizableSplit(
                 width: $sidebarWidth,

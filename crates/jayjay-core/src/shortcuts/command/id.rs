@@ -26,6 +26,7 @@ impl ShortcutCommand {
             Self::RepoFindInDiff => "repo.find_in_diff",
             Self::RepoFetch => "repo.fetch",
             Self::RepoPush => "repo.push",
+            Self::RepoReconnectSsh => "repo.reconnect_ssh",
             Self::RepoNewWorkspace => "repo.new_workspace",
             Self::RepoImportPullRequest => "repo.import_pull_request",
             Self::RepoRebaseOntoTrunk => "repo.rebase_onto_trunk",

@@ -3,7 +3,7 @@ import SwiftUI
 
 struct RepositoryCommands: Commands {
     static let menuShortcuts: [AppShortcut] = [
-        .fetch, .push, .rebaseOntoTrunk, .bisect, .cleanUpStaleBookmarks,
+        .fetch, .push, .reconnectSSH, .rebaseOntoTrunk, .bisect, .cleanUpStaleBookmarks,
         .toggleSideBySide, .toggleIgnoreWhitespace, .toggleTreeFileList,
         .newChange, .editChange, .describeChange, .squashChange, .newBookmark, .showEvolution
     ]

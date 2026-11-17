@@ -31,6 +31,7 @@ enum AppShortcut: String, Decodable {
 
     case fetch = "repo.fetch"
     case push = "repo.push"
+    case reconnectSSH = "repo.reconnect_ssh"
     case newWorkspace = "repo.new_workspace"
     case importPullRequest = "repo.import_pull_request"
     case rebaseOntoTrunk = "repo.rebase_onto_trunk"

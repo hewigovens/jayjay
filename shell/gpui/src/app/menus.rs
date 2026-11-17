@@ -7,10 +7,10 @@ use super::actions::{
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, RedoOperation,
-    ReportIssue, ResetZoom, RevealLogs, SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles,
-    ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar, ToggleStatusBar,
-    ToggleTreeFileList, UndoOperation, ZoomIn, ZoomOut,
+    OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, ReconnectSsh,
+    RedoOperation, ReportIssue, ResetZoom, RevealLogs, SendFeedback, ShowRepoInFileManager,
+    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar,
+    ToggleStatusBar, ToggleTreeFileList, UndoOperation, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::repositories::repository_name;
@@ -88,6 +88,7 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
                 NewWorkspaceFromPullRequest,
             ),
             MenuItem::separator(),
+            MenuItem::action(jayjay_i18n::ssh::reconnect(), ReconnectSsh),
             MenuItem::action(
                 jayjay_i18n::menu::view_remote_repository(),
                 OpenRemoteRepository,

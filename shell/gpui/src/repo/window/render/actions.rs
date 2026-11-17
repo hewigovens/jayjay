@@ -6,8 +6,8 @@ use crate::app::actions::{
     ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenOperationLog, OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenSettings, RedoOperation, Refresh, SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager,
-    ToggleSidebar, ToggleStatusBar, UndoOperation,
+    OpenSettings, ReconnectSsh, RedoOperation, Refresh, SaveFileEditor, SaveNoteComposer,
+    ShowRepoInFileManager, ToggleSidebar, ToggleStatusBar, UndoOperation,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -88,6 +88,7 @@ impl RepoWindow {
             .on_action(cx.listener(|view, _: &ForgetStaleBookmarks, _, cx| {
                 view.forget_stale_bookmarks(cx);
             }))
+            .on_action(cx.listener(|view, _: &ReconnectSsh, _, cx| view.reconnect_ssh(cx)))
             .on_action(
                 cx.listener(|view, _: &CopyDiffSelection, _, cx| view.copy_diff_selection(cx)),
             )

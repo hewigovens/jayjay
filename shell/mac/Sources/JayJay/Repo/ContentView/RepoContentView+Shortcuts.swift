@@ -19,6 +19,7 @@ extension RepoContentView {
                 case .fetch: return !viewModel.isPullingInFlight
                 case .push: return !viewModel.isPushingInFlight
                 case .toggleReviewMode: return viewModel.selectedReviewMode.isSwitchable
+                case .reconnectSSH: return !viewModel.sshConnected && !viewModel.sshConnectionBusy
                 default: return true
             }
         })
@@ -53,6 +54,7 @@ extension RepoContentView {
             case .toggleIgnoreWhitespace: settings.ignoreWhitespace.toggle()
             case .toggleTreeFileList: settings.treeFileList.toggle()
             case .toggleReviewMode: viewModel.toggleReviewMode()
+            case .reconnectSSH: viewModel.reconnectSSH()
             default: break
         }
     }

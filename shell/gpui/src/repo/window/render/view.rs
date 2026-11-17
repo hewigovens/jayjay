@@ -15,6 +15,7 @@ use super::super::repo_switcher::render_repo_switcher;
 use super::super::revset_filter::{render_revset_completions, render_revset_popup};
 use super::super::sidebar::sidebar;
 use super::super::sidebar_visibility::SIDEBAR_SLIDE;
+use super::super::ssh_reconnect::ssh_reconnect_bar;
 use super::super::stacked_pr_render::stacked_pr_overlay;
 use super::super::status_bar::status_bar;
 use super::super::{DragTarget, FocusStop, RepoModal, RepoWindow};
@@ -271,6 +272,10 @@ impl Render for RepoWindow {
                 .child(div().absolute().inset_0().block_mouse_except_scroll());
         }
         root = root.child(body);
+        // Outside the dimmed, mouse-blocked body so a disconnected repository stays reconnectable.
+        if let Some(bar) = ssh_reconnect_bar(self, &t, cx) {
+            root = root.child(bar);
+        }
         if crate::app::config::current(cx).layout.show_status_bar {
             root = root.child(status_bar(self, &t, cx));
         }

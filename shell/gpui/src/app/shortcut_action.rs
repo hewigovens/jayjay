@@ -32,6 +32,7 @@ impl ShortcutAction for ShortcutCommand {
             Self::RepoFindInDiff => Box::new(OpenFind),
             Self::RepoFetch => Box::new(GitFetchOrigin),
             Self::RepoPush => Box::new(GitPushDefault),
+            Self::RepoReconnectSsh => Box::new(ReconnectSsh),
             Self::RepoNewWorkspace => Box::new(NewWorkspace),
             Self::RepoImportPullRequest => Box::new(NewWorkspaceFromPullRequest),
             Self::RepoRebaseOntoTrunk => Box::new(RebaseOntoTrunk),

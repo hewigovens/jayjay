@@ -26,6 +26,7 @@ impl ShortcutCommand {
             | Self::RepoFindInDiff
             | Self::RepoFetch
             | Self::RepoPush
+            | Self::RepoReconnectSsh
             | Self::RepoNewWorkspace
             | Self::RepoImportPullRequest
             | Self::RepoRebaseOntoTrunk

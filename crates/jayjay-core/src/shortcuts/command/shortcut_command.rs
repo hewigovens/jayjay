@@ -22,6 +22,7 @@ pub enum ShortcutCommand {
     RepoFindInDiff,
     RepoFetch,
     RepoPush,
+    RepoReconnectSsh,
     RepoNewWorkspace,
     RepoImportPullRequest,
     RepoRebaseOntoTrunk,
@@ -74,7 +75,7 @@ impl ShortcutCommand {
     }
 }
 
-const ALL: [ShortcutCommand; 59] = [
+const ALL: [ShortcutCommand; 60] = [
     ShortcutCommand::AppOpenRepository,
     ShortcutCommand::AppKeyboardShortcuts,
     ShortcutCommand::AppZoomIn,
@@ -97,6 +98,7 @@ const ALL: [ShortcutCommand; 59] = [
     ShortcutCommand::RepoFindInDiff,
     ShortcutCommand::RepoFetch,
     ShortcutCommand::RepoPush,
+    ShortcutCommand::RepoReconnectSsh,
     ShortcutCommand::RepoNewWorkspace,
     ShortcutCommand::RepoImportPullRequest,
     ShortcutCommand::RepoRebaseOntoTrunk,

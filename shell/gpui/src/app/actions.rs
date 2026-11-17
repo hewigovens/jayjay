@@ -35,6 +35,7 @@ actions!(
         GitFetchOrigin,
         GitPushDefault,
         ForgetStaleBookmarks,
+        ReconnectSsh,
         ToggleSideBySideDiff,
         ToggleIgnoreWhitespace,
         ToggleHideGitLfsFiles,

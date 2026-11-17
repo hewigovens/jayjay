@@ -51,6 +51,7 @@ mod revset_filter;
 mod shortcut_actions;
 mod sidebar;
 mod sidebar_visibility;
+mod ssh_reconnect;
 mod stacked_pr;
 mod stacked_pr_ai;
 mod stacked_pr_layers;

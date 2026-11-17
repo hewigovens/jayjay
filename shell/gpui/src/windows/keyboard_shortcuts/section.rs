@@ -63,6 +63,7 @@ const SECTIONS: &[ShortcutSection] = &[
             ShortcutEntry::Command(ShortcutCommand::RepoShowInFileManager),
             ShortcutEntry::Command(ShortcutCommand::RepoFetch),
             ShortcutEntry::Command(ShortcutCommand::RepoPush),
+            ShortcutEntry::Command(ShortcutCommand::RepoReconnectSsh),
             ShortcutEntry::Command(ShortcutCommand::RepoNewWorkspace),
             ShortcutEntry::Command(ShortcutCommand::RepoImportPullRequest),
             ShortcutEntry::Command(ShortcutCommand::RepoRebaseOntoTrunk),

@@ -173,6 +173,14 @@ extension RepoContentView {
             category: Localized.Menu.repository,
             shortcut: AppShortcut.repoOverview.symbol
         ) { windowManager.openOverview(for: viewModel.repoPath) })
+        if !viewModel.sshConnected {
+            items.append(CommandPaletteItem(
+                title: Localized.Ssh.reconnect,
+                icon: "arrow.clockwise",
+                category: Localized.Menu.repository,
+                shortcut: AppShortcut.reconnectSSH.symbol
+            ) { performShortcut(.reconnectSSH) })
+        }
         items.append(CommandPaletteItem(
             title: Localized.Palette.cleanUpStaleBookmarks,
             icon: "bookmark.slash",
