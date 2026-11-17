@@ -39,6 +39,7 @@ private struct DetailDescriptionSection: View {
                     Button(Localized.Repo.addDescription, systemImage: "pencil", action: onEdit)
                         .buttonStyle(.plain)
                         .keyboardFocusStop(.editDescription, action: onEdit)
+                        .accessibilityIdentifier(AID.Detail.editDescription)
                         .jayjayFont(12)
                         .foregroundStyle(.secondary)
                 }

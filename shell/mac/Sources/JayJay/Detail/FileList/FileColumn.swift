@@ -21,6 +21,7 @@ extension ChangeDetailView {
                 .buttonStyle(.plain)
                 .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
                 .help(appSettings.treeFileList ? Localized.Repo.showingFilesAsATree : Localized.Repo.showingFilesAsAFlatList)
+                .accessibilityIdentifier(AID.FileList.treeToggle)
                 Button {
                     toggleFileFilter()
                 } label: {

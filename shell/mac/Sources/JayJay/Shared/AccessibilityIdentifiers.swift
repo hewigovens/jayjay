@@ -52,6 +52,12 @@ enum AID {
         static let conflictedCount = "sidebar.conflictedCount"
     }
 
+    enum StatusBar {
+        static func item(_ id: String) -> String {
+            "statusBar.\(id)"
+        }
+    }
+
     enum Picker {
         static let overview = "picker.overview"
         static let filterByWorkspace = "picker.filterByWorkspace"
@@ -78,6 +84,7 @@ enum AID {
         static let columnDivider = "file.columnDivider"
         static let filterField = "file.filterField"
         static let filterToggle = "file.filterToggle"
+        static let treeToggle = "file.treeToggle"
         static let reviewMode = "file.reviewMode"
 
         static func row(_ path: String) -> String {
@@ -120,6 +127,7 @@ enum AID {
 
     enum Detail {
         static let pane = "detail.pane"
+        static let editDescription = "detail.editDescription"
         static let description = "detail.description"
         static let descriptionTitle = "detail.descriptionTitle"
         static let descriptionBody = "detail.descriptionBody"

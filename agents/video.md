@@ -58,7 +58,7 @@ Top-level keys, all optional; `extends` names a base file whose keys a scene ove
 | `prelude` | Steps played before `steps`, usually from the base file |
 | `steps` | The take |
 
-A step is one action plus an optional `label` (the cue name, on clicks, `menu`, `key`, and `paste`) and `timeout` (seconds to wait for the target, default 10, on clicks, `menu`, `wait`, and `waitGone`):
+A step is one action plus an optional `label` (the cue name, on clicks, `menu`, `key`, `paste`, and `scroll`) and `timeout` (seconds to wait for the target, default 10, on clicks, `menu`, `wait`, `waitGone`, and `scroll`):
 
 | Action | Does |
 | --- | --- |
@@ -68,6 +68,7 @@ A step is one action plus an optional `label` (the cue name, on clicks, `menu`, 
 | `paste` | Put text on the pasteboard and press ⌘V; typing goes through the input method |
 | `wait`, `waitGone` | Wait until the target is on screen, or gone |
 | `beat` | Hold for the edit, in seconds |
+| `scroll` | Turn the wheel over the target's center, `lines` lines (default 10, at most 1000) toward the content's end, or toward its start when negative |
 
 A target is a string (an accessibility identifier from `AID` in `shell/mac/Sources/JayJay/Shared/AccessibilityIdentifiers.swift`) or an object whose matchers must all hold: `id`, `idPrefix`, `label` (title, description, placeholder, or value), `role` (`button` or `AXButton`), `menuItem`, `row` (a graph row by subject), `lane` (an Overview lane by its head's text in the rows file: the subject, or a workspace name such as `default@` when the fixture writes working-copy names there; a divergent head has no lane name), `file` (a file-list row by path), and `index` for the nth match. `line` is a regular expression that picks the first matching line of the element's text, for clicks such as a diff gutter row.
 

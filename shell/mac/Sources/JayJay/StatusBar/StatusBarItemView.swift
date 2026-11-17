@@ -5,6 +5,11 @@ struct StatusBarItemView: View {
     let item: StatusBarItem
 
     var body: some View {
+        content.accessibilityIdentifier(AID.StatusBar.item(item.id))
+    }
+
+    @ViewBuilder
+    private var content: some View {
         switch item {
             case let .text(_, icon, text, tooltip, _):
                 HStack(spacing: 3) {

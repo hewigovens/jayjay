@@ -10,18 +10,20 @@ struct Step: Decodable {
         case wait(Target)
         case waitGone(Target)
         case beat(TimeInterval)
+        /// Positive lines scroll the content toward its end.
+        case scroll(Target, lines: Int)
     }
 
     let action: Action
     let label: String?
     let timeout: TimeInterval
 
-    private static let cued: Set = ["click", "doubleClick", "rightClick", "menu", "key", "paste"]
-    private static let waiting: Set = ["click", "doubleClick", "rightClick", "menu", "wait", "waitGone"]
-    private static let actions = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "wait", "waitGone", "beat"]
+    private static let cued: Set = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "scroll"]
+    private static let waiting: Set = ["click", "doubleClick", "rightClick", "menu", "wait", "waitGone", "scroll"]
+    private static let actions = ["click", "doubleClick", "rightClick", "menu", "key", "paste", "wait", "waitGone", "beat", "scroll"]
 
     init(from decoder: Decoder) throws {
-        try decoder.rejectUnknownKeys(allowed: Set(Self.actions + ["label", "timeout"]))
+        try decoder.rejectUnknownKeys(allowed: Set(Self.actions + ["label", "timeout", "lines"]))
         let container = try decoder.container(keyedBy: AnyKey.self)
         let named = container.allKeys.filter { Self.actions.contains($0.stringValue) }
         guard named.count == 1, let key = named.first else {
@@ -30,7 +32,7 @@ struct Step: Decodable {
                 debugDescription: "a step takes exactly one of \(Self.actions.joined(separator: ", "))"
             ))
         }
-        for (option, allowed) in [("label", Self.cued), ("timeout", Self.waiting)] where container.contains(AnyKey(option)) && !allowed.contains(key.stringValue) {
+        for (option, allowed) in [("label", Self.cued), ("timeout", Self.waiting), ("lines", ["scroll"])] where container.contains(AnyKey(option)) && !allowed.contains(key.stringValue) {
             throw DecodingError.dataCorruptedError(forKey: AnyKey(option), in: container, debugDescription: "\(key.stringValue) takes no \(option)")
         }
         label = try container.decodeIfPresent(String.self, forKey: AnyKey("label"))
@@ -57,6 +59,12 @@ struct Step: Decodable {
                 action = try .wait(container.decode(Target.self, forKey: key))
             case "waitGone":
                 action = try .waitGone(container.decode(Target.self, forKey: key))
+            case "scroll":
+                let lines = try container.decodeIfPresent(Int.self, forKey: AnyKey("lines")) ?? 10
+                guard lines != 0, (-1000 ... 1000).contains(lines) else {
+                    throw DecodingError.dataCorruptedError(forKey: AnyKey("lines"), in: container, debugDescription: "lines must be between -1000 and 1000, and not 0")
+                }
+                action = try .scroll(container.decode(Target.self, forKey: key), lines: lines)
             default:
                 action = try .beat(container.decode(TimeInterval.self, forKey: key))
         }
@@ -72,6 +80,7 @@ struct Step: Decodable {
             case let .wait(target): "wait for \(target.summary)"
             case let .waitGone(target): "wait for \(target.summary) to go"
             case let .beat(seconds): "beat \(seconds)"
+            case let .scroll(target, lines): "scroll \(lines) lines over \(target.summary)"
         }
     }
 }

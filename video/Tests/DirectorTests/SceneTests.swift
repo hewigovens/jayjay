@@ -95,9 +95,17 @@ final class SceneTests: XCTestCase {
 
     func testStepOptionThatDoesNothingFails() throws {
         try write("beat.json", #"{"steps": [{"beat": 1, "label": "pause"}]}"#)
+        try write("click.json", #"{"steps": [{"click": "file.column", "lines": 3}]}"#)
+        try write("scroll.json", #"{"steps": [{"scroll": "file.column", "lines": -9223372036854775808}]}"#)
 
         XCTAssertThrowsError(try Scene.load(folder.appendingPathComponent("beat.json"))) { error in
             XCTAssertTrue("\(error)".contains("beat takes no label"), "\(error)")
+        }
+        XCTAssertThrowsError(try Scene.load(folder.appendingPathComponent("click.json"))) { error in
+            XCTAssertTrue("\(error)".contains("click takes no lines"), "\(error)")
+        }
+        XCTAssertThrowsError(try Scene.load(folder.appendingPathComponent("scroll.json"))) { error in
+            XCTAssertTrue("\(error)".contains("lines must be between"), "\(error)")
         }
     }
 

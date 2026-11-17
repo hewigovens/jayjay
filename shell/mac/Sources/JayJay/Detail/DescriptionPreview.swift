@@ -34,6 +34,7 @@ struct DescriptionPreview: View {
                     .keyboardFocusStop(.editDescription, action: onEdit)
                     .accessibilityLabel(Localized.Repo.editDescriptionSentence)
                     .help(Localized.Repo.editDescriptionSentence)
+                    .accessibilityIdentifier(AID.Detail.editDescription)
                 }
                 DescriptionExpansionToggle(expanded: expanded, action: onToggleExpansion)
             }

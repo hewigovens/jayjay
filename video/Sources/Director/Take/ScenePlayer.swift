@@ -50,6 +50,15 @@ struct ScenePlayer {
                 }
             case let .beat(seconds):
                 try await hold(for: .seconds(seconds))
+            case let .scroll(target, lines):
+                let hit = try await find(target, within: step.timeout)
+                cues.add(step.label ?? "scroll", at: hit.point)
+                try await Pointer.scroll(at: hit.point, lines: lines) {
+                    try requireFocus()
+                    if let covering = session.coveringApp(at: hit.point, over: hit.element) {
+                        throw SafetyStop("\(covering) covers it; stopped without scrolling")
+                    }
+                }
         }
     }
 
