@@ -78,6 +78,19 @@ final class KeyboardFocusTests: XCTestCase {
         XCTAssertNil(focus.control)
     }
 
+    func testTabFromAnAbsentStopKeepsItsPlaceInTheCycle() {
+        let focus = KeyboardFocus()
+        focus.register(.expandDescription, token: UUID()) {}
+        focus.register(.refresh, token: UUID()) {}
+        focus.isSidebarHidden = true
+
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
+        XCTAssertEqual(focus.control, .expandDescription)
+        focus.activePane = .fileColumn
+        XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab, modifiers: .shift)))
+        XCTAssertEqual(focus.control, .refresh)
+    }
+
     func testPaneChangesAndUnregisteringClearTheFocusedControl() {
         let focus = KeyboardFocus()
         let token = UUID()

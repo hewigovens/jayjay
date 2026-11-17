@@ -98,9 +98,13 @@ final class KeyboardFocus {
         let stops = KeyboardFocusStop.allCases.filter {
             ($0 == .dag || registrations[$0] != nil) && !(isSidebarHidden && $0.isInSidebar)
         }
+        guard let first = stops.first, let last = stops.last else { return }
         let current = control ?? (activePane == .dag ? .dag : .fileList)
-        let index = stops.firstIndex(of: current) ?? 0
-        let next = stops[(index + (backward ? stops.count - 1 : 1)) % stops.count]
+        // A current stop that is not on screen still has its place in the cycle, so moving from it never skips a neighbour.
+        let rank = { (stop: KeyboardFocusStop) in KeyboardFocusStop.allCases.firstIndex(of: stop) ?? 0 }
+        let next = backward
+            ? stops.last { rank($0) < rank(current) } ?? last
+            : stops.first { rank($0) > rank(current) } ?? first
         NSApp.keyWindow?.makeFirstResponder(nil)
         switch next {
             case .dag:

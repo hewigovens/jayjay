@@ -135,13 +135,25 @@ struct FileRow: View {
                             .help(noteCount.reviewNoteCountLabel)
                         }
                     }
-                    if let pathDetail {
+                    // A move truncates each side on its own, so the arrow and the destination never fall into the elided middle.
+                    if let movedFrom {
+                        HStack(spacing: 4) {
+                            Text(movedFrom).truncationMode(.middle)
+                            Text(verbatim: "→").fixedSize()
+                            Text(hunk.path).truncationMode(.middle)
+                        }
+                        .jayjayFont(10, design: .monospaced)
+                        .foregroundStyle(.secondary)
+                        .lineLimit(1)
+                        .accessibilityElement(children: .ignore)
+                        .accessibilityLabel(Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: movedFrom, new: hunk.path))
+                    } else if let pathDetail {
                         Text(pathDetail)
                             .jayjayFont(10, design: .monospaced)
                             .foregroundStyle(.secondary)
                             .lineLimit(1)
                             .truncationMode(.middle)
-                            .accessibilityLabel(movedFrom.map { Localized.Diff.movedFromTo(kind: hunk.hunkType.label, old: $0, new: hunk.path) } ?? hunk.path)
+                            .accessibilityLabel(hunk.path)
                     }
                 }
 
