@@ -5,13 +5,13 @@
 use gpui::{Div, ParentElement, SharedString, Styled, div, px, rgb};
 
 const FONT: &str = "Octicons";
-pub(crate) const ICON_GRID: f32 = 16.;
 pub(crate) const SETI_FONT: &str = "seti";
-pub const ARROW_DOWN_SVG: &str = "icons/arrow-down.svg";
-pub const ARROW_UP_SVG: &str = "icons/arrow-up.svg";
+/// Prefix of the app marks keyed by `jayjay_core::ToolMark::name`.
+pub const MARK_PREFIX: &str = "marks/";
+pub const SYNC_PULL_SVG: &str = "icons/sync-pull.svg";
+pub const SYNC_PUSH_SVG: &str = "icons/sync-push.svg";
 pub const EXPAND_VERTICAL_SVG: &str = "icons/expand-vertical.svg";
 pub const COLLAPSE_VERTICAL_SVG: &str = "icons/collapse-vertical.svg";
-pub const CIRCLE_SVG: &str = "icons/circle.svg";
 pub const CHECK_SVG: &str = "icons/check.svg";
 pub const CIRCLE_HALF_SVG: &str = "icons/circle-half.svg";
 /// Full color, drawn with `img` rather than tinted with `svg`.
@@ -20,12 +20,16 @@ pub const HEART_CIRCLE_SVG: &str = "icons/heart-circle.svg";
 /// Every SVG the shell renders, paired with its bytes, so registering an icon is one entry here rather than a constant plus a match arm in the asset source.
 pub const SVG_ASSETS: &[(&str, &[u8])] = &[
     (
-        ARROW_DOWN_SVG,
-        include_bytes!("../../assets/icons/arrow-down.svg"),
+        SYNC_PULL_SVG,
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/sync.pull.imageset/sync.pull.svg"
+        ),
     ),
     (
-        ARROW_UP_SVG,
-        include_bytes!("../../assets/icons/arrow-up.svg"),
+        SYNC_PUSH_SVG,
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/sync.push.imageset/sync.push.svg"
+        ),
     ),
     (
         EXPAND_VERTICAL_SVG,
@@ -35,7 +39,6 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
         COLLAPSE_VERTICAL_SVG,
         include_bytes!("../../assets/icons/collapse-vertical.svg"),
     ),
-    (CIRCLE_SVG, include_bytes!("../../assets/icons/circle.svg")),
     (CHECK_SVG, include_bytes!("../../assets/icons/check.svg")),
     (
         CIRCLE_HALF_SVG,
@@ -64,6 +67,74 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
         include_bytes!("../../assets/icons/arrow-right.svg"),
     ),
     (COPY_SVG, include_bytes!("../../assets/icons/copy.svg")),
+    (
+        "marks/editor.vscode",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/editor.vscode.imageset/editor.vscode.svg"
+        ),
+    ),
+    (
+        "marks/editor.vscodium",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/editor.vscodium.imageset/editor.vscodium.svg"
+        ),
+    ),
+    (
+        "marks/editor.cursor",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/editor.cursor.imageset/editor.cursor.svg"
+        ),
+    ),
+    (
+        "marks/editor.zed",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/editor.zed.imageset/editor.zed.svg"
+        ),
+    ),
+    (
+        "marks/editor.vim",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/editor.vim.imageset/editor.vim.svg"
+        ),
+    ),
+    (
+        "marks/editor.neovim",
+        include_bytes!("../../assets/icons/apps/editor.neovim.svg"),
+    ),
+    (
+        "marks/editor.sublime",
+        include_bytes!("../../assets/icons/apps/editor.sublime.svg"),
+    ),
+    (
+        "marks/terminal.iterm",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/terminal.iterm.imageset/terminal.iterm.svg"
+        ),
+    ),
+    (
+        "marks/terminal.ghostty",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/terminal.ghostty.imageset/terminal.ghostty.svg"
+        ),
+    ),
+    (
+        "marks/terminal.rex",
+        include_bytes!(
+            "../../../mac/Resources/ToolbarIcons.xcassets/terminal.rex.imageset/terminal.rex.svg"
+        ),
+    ),
+    (
+        "marks/terminal.gnome-terminal",
+        include_bytes!("../../assets/icons/apps/terminal.gnome-terminal.svg"),
+    ),
+    (
+        "marks/terminal.alacritty",
+        include_bytes!("../../assets/icons/apps/terminal.alacritty.svg"),
+    ),
+    (
+        "marks/terminal.kitty",
+        include_bytes!("../../assets/icons/apps/terminal.kitty.svg"),
+    ),
 ];
 pub const REFRESH_SVG: &str = "icons/refresh.svg";
 pub const SIDEBAR_LEADING_SVG: &str = "icons/sidebar-leading.svg";
@@ -158,4 +229,29 @@ pub(crate) fn icon(glyph_str: &'static str, size: f32, color: u32) -> Div {
         .text_size(px(size))
         .text_color(rgb(color))
         .child(SharedString::from(glyph_str))
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+    use jayjay_core::{EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolMark};
+
+    #[test]
+    fn every_offered_tool_mark_is_bundled() {
+        let marks = EDITOR_OPTIONS
+            .iter()
+            .filter_map(|(id, _)| ToolMark::editor(id))
+            .chain(
+                TERMINAL_OPTIONS
+                    .iter()
+                    .filter_map(|(id, _)| ToolMark::terminal(id)),
+            );
+        for mark in marks {
+            let path = format!("{MARK_PREFIX}{}", mark.name);
+            assert!(
+                SVG_ASSETS.iter().any(|(name, _)| *name == path),
+                "{path} is not bundled"
+            );
+        }
+    }
 }

@@ -116,7 +116,7 @@ pub use revset::{
 pub use theme::{ColorTheme, DiffThemeColors, RepoColors, ThemeSeed, color_themes};
 #[cfg(feature = "repository")]
 pub use tools::{
-    EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolsConfig, editor_opens_at_line, open_in_editor,
+    EDITOR_OPTIONS, TERMINAL_OPTIONS, ToolMark, ToolsConfig, editor_opens_at_line, open_in_editor,
     open_in_terminal, repo_file_path, repo_file_url,
 };
 pub use types::*;

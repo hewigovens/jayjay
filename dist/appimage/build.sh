@@ -32,6 +32,9 @@ if [[ -n "$manifest" ]]; then
 else
   install -Dm755 "$(dirname "$binary")/jayjay-ssh" "$appdir/usr/bin/jayjay-ssh"
 fi
+for license in shell/gpui/assets/fonts/Octicons.LICENSE shell/mac/Resources/ToolbarIcons.LICENSE shell/mac/Resources/DashboardIcons.LICENSE; do
+  install -Dm644 "$root/$license" "$appdir/usr/share/jayjay/licenses/$(basename "$license")"
+done
 "$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"

@@ -6,7 +6,7 @@ use gpui::{
 };
 
 use crate::app::theme::{theme, ui_font_size};
-use crate::app::{repositories, tools};
+use crate::app::{config, repositories, tools};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{
@@ -14,12 +14,18 @@ use crate::repo::window::{
 };
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
+use jayjay_core::ToolMark;
 
 pub(crate) struct ToolbarActivity {
     pub(crate) is_refreshing: bool,
     pub(crate) refresh: RefreshMode,
     pub(crate) is_fetching: bool,
     pub(crate) is_pushing: bool,
+}
+
+pub(crate) struct ToolButton {
+    pub(crate) tooltip: SharedString,
+    pub(crate) mark: Option<ToolMark>,
 }
 
 pub(crate) struct ToolbarRepo {
@@ -42,8 +48,15 @@ pub(crate) fn toolbar(
 
     let repo_name = repositories::repository_name(&repo.root_path);
     let repo_name_selector = format!("repo-title-repository-{repo_name}");
-    let open_editor_label = SharedString::from(tools::open_in_editor_label(cx));
-    let open_terminal_label = SharedString::from(tools::open_in_terminal_label(cx));
+    let config = config::current(cx);
+    let editor = ToolButton {
+        tooltip: tools::open_in_editor_label(cx).into(),
+        mark: ToolMark::editor(&config.tools.external_editor),
+    };
+    let terminal = ToolButton {
+        tooltip: tools::open_in_terminal_label(cx).into(),
+        mark: ToolMark::terminal(&config.tools.terminal),
+    };
 
     div()
         .id(SharedString::from("toolbar"))
@@ -134,12 +147,6 @@ pub(crate) fn toolbar(
         .child(div().flex_1())
         .child(revset_bar)
         .child(div().flex_1())
-        .child(buttons::tools_cluster(
-            open_editor_label,
-            open_terminal_label,
-            focused,
-            &t,
-            cx,
-        ))
+        .child(buttons::tools_cluster(editor, terminal, focused, &t, cx))
         .into_any_element()
 }

@@ -96,10 +96,10 @@ mod tests {
             [
                 FocusStop::RevsetPresets,
                 FocusStop::RevsetFilter,
-                FocusStop::FileManager
+                FocusStop::Editor
             ]
         );
-        assert_eq!(walk(stops, FocusStop::Dag, 1, true), [FocusStop::Settings]);
+        assert_eq!(walk(stops, FocusStop::Dag, 1, true), [FocusStop::Terminal]);
     }
 
     #[test]
@@ -128,7 +128,7 @@ mod tests {
         );
         assert_eq!(
             walk(stops, FocusStop::FileList, 1, true),
-            [FocusStop::Settings]
+            [FocusStop::Terminal]
         );
     }
 }

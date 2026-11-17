@@ -4,7 +4,6 @@ use gpui::{
 };
 
 use crate::app::theme::Theme;
-use crate::ui::icons;
 use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, text_tooltip};
 
 /// Leading/trailing get the capsule's fully rounded outer caps; inner segments stay flat-sided.
@@ -40,20 +39,6 @@ pub(crate) fn group_item(
         GroupEdge::Trailing => el.rounded_r_full(),
         GroupEdge::Inner => el,
     }
-}
-
-pub(crate) fn group_icon_item(
-    id: impl Into<SharedString>,
-    glyph_str: &'static str,
-    tooltip: impl Into<SharedString>,
-    edge: GroupEdge,
-    theme: &Theme,
-) -> Stateful<Div> {
-    group_item(id, tooltip, edge, theme).child(icons::icon(
-        glyph_str,
-        icons::ICON_GRID,
-        theme.fg_dim,
-    ))
 }
 
 /// Supplies the shared background for `group_item`s and rounds only the outer ends.

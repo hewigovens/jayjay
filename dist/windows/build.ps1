@@ -29,6 +29,8 @@ try {
     Copy-Item crates/LICENSE "$payload/CORE-LICENSE.txt"
     Copy-Item shell/gpui/assets/fonts/Octicons.LICENSE "$payload/OCTICONS-LICENSE.txt"
     Copy-Item assets/fonts/Seti.LICENSE "$payload/SETI-LICENSE.txt"
+    Copy-Item shell/mac/Resources/ToolbarIcons.LICENSE "$payload/TOOLBAR-ICONS-LICENSE.txt"
+    Copy-Item shell/mac/Resources/DashboardIcons.LICENSE "$payload/DASHBOARD-ICONS-LICENSE.txt"
     Copy-Item dist/windows/README.txt $payload
     if ($SshHelpers) {
         New-Item -ItemType Directory -Path "$payload/ssh-helpers" | Out-Null

@@ -4,12 +4,14 @@ mod config;
 mod editor;
 mod file_url;
 mod launcher;
+mod mark;
 mod platform;
 mod terminal;
 
 pub use config::ToolsConfig;
 pub use file_url::{repo_file_path, repo_file_url};
 pub use launcher::{detach_stdio, editor_opens_at_line, open_in_editor, open_in_terminal};
+pub use mark::ToolMark;
 pub(crate) use platform::powershell;
 #[cfg(windows)]
 pub use platform::windows_shell;

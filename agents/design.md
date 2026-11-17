@@ -62,7 +62,7 @@ Three parts of the model are easy to get wrong:
 - **Themes keep their own hues.** Derive a role from the theme's palette by lightening or darkening it, not by fading it toward the text color, and check it on the row, header, and selected-row backgrounds of every built-in theme.
 - **One glyph, one meaning.** SF Symbols first on macOS. Where no symbol says it, use an Octicons glyph (the set GPUI ships) as a template image, redrawn only to match the neighbouring symbols: pull and push are the repository book, widened, with a down or up arrow.
 - **Size a glyph by its ink, against its neighbours.** A custom or third-party mark in a 16-point box can still look a third smaller than the symbols beside it. Measure the drawn width and height of each icon in the group from a capture, then widen the artwork or scale the mark until the group reads as one set; scale a filled mark slightly smaller than a line mark.
-- **Another app is shown by its own mark in one color** on the same tile as every other app, tinted with the surrounding foreground. Full-color app icons and run-time masks of them do not belong in the toolbar; an app without a bundled mark gets an SF Symbol: the hammer for Xcode, otherwise the generic code or terminal symbol.
+- **Another app is shown by its own mark in one color** on the same tile as every other app, tinted with the surrounding foreground. Full-color app icons and run-time masks of them do not belong in the toolbar; an app without a bundled mark gets the shell's generic code or terminal symbol (on macOS, the hammer for Xcode).
 
 ## Invariants
 

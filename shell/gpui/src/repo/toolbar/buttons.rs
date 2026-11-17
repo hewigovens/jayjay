@@ -1,25 +1,28 @@
 use std::time::Duration;
 
 use gpui::{
-    Animation, AnimationExt as _, AnyElement, ClickEvent, Context, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Transformation, Window, div,
-    percentage, point, px, rgb, svg,
+    Animation, AnimationExt as _, AnyElement, App, ClickEvent, Context, InteractiveElement,
+    IntoElement, ParentElement, SharedString, StatefulInteractiveElement, Styled, Transformation,
+    div, percentage, point, px, rgb, rgba, svg,
 };
 
-use crate::app::actions::{ShowRepoInFileManager, ToggleSidebar};
+use crate::app::actions::ToggleSidebar;
 use crate::app::key_caps::KeyCaps;
-use crate::app::theme::Theme;
-use crate::repo::toolbar::ToolbarActivity;
+use crate::app::theme::{Theme, with_alpha};
+use crate::repo::toolbar::{ToolButton, ToolbarActivity};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
-use crate::ui::button_group::{self, GroupEdge, group_icon_item, group_item};
+use crate::ui::button_group::{self, GroupEdge, group_item};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::TOOLBAR_ICON_SIZE;
-use crate::windows::settings::SettingsView;
+
+const SYNC_ICON_HEIGHT: f32 = TOOLBAR_ICON_SIZE * 0.8;
+const SYNC_ICON_ASPECT: f32 = 19.3 / 16.;
+const MARK_TILE: f32 = TOOLBAR_ICON_SIZE * 1.125;
+const MARK_SIZE: f32 = TOOLBAR_ICON_SIZE * 0.78;
 
 #[derive(Clone, Copy)]
 enum RepoToolAction {
-    FileManager,
     Editor,
     Terminal,
 }
@@ -27,9 +30,22 @@ enum RepoToolAction {
 impl RepoToolAction {
     fn focus_stop(self) -> FocusStop {
         match self {
-            Self::FileManager => FocusStop::FileManager,
             Self::Editor => FocusStop::Editor,
             Self::Terminal => FocusStop::Terminal,
+        }
+    }
+
+    fn id(self) -> &'static str {
+        match self {
+            Self::Editor => "tb-open-editor",
+            Self::Terminal => "tb-open-terminal",
+        }
+    }
+
+    fn fallback_glyph(self) -> &'static str {
+        match self {
+            Self::Editor => glyph::BRACES,
+            Self::Terminal => glyph::TERMINAL,
         }
     }
 }
@@ -50,8 +66,8 @@ impl SyncAction {
 
     fn icon_path(self) -> &'static str {
         match self {
-            Self::FetchOrigin => icons::ARROW_DOWN_SVG,
-            Self::PushDefault => icons::ARROW_UP_SVG,
+            Self::FetchOrigin => icons::SYNC_PULL_SVG,
+            Self::PushDefault => icons::SYNC_PUSH_SVG,
         }
     }
 
@@ -149,45 +165,31 @@ pub(super) fn sync_cluster(
 }
 
 pub(super) fn tools_cluster(
-    open_editor_label: SharedString,
-    open_terminal_label: SharedString,
+    editor: ToolButton,
+    terminal: ToolButton,
     focused: Option<FocusStop>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let file_manager_label = SharedString::from(KeyCaps::tooltip(
-        crate::platform::show_in_file_manager_label().to_owned(),
-        &ShowRepoInFileManager,
-        cx,
-    ));
     button_group::button_group(
         t,
         vec![
             repo_tool_button(
-                RepoToolAction::FileManager,
-                file_manager_label,
+                RepoToolAction::Editor,
+                editor,
                 focused,
                 GroupEdge::Leading,
                 t,
                 cx,
             ),
             repo_tool_button(
-                RepoToolAction::Editor,
-                open_editor_label,
-                focused,
-                GroupEdge::Inner,
-                t,
-                cx,
-            ),
-            repo_tool_button(
                 RepoToolAction::Terminal,
-                open_terminal_label,
+                terminal,
                 focused,
-                GroupEdge::Inner,
+                GroupEdge::Trailing,
                 t,
                 cx,
             ),
-            settings_button(focused, GroupEdge::Trailing, t),
         ],
     )
     .into_any_element()
@@ -262,6 +264,7 @@ fn sync_button(
         animating,
         action.direction(),
         t,
+        cx,
     ))
     .into_any_element()
 }
@@ -272,95 +275,75 @@ fn sync_icon(
     animating: bool,
     direction: f32,
     t: &Theme,
+    cx: &App,
 ) -> AnyElement {
-    // Even, so the arrow's inset lands on whole pixels and it stays centred in the circle.
-    let arrow_size = (TOOLBAR_ICON_SIZE / 4.).round() * 2.;
-    let arrow_inset = (TOOLBAR_ICON_SIZE - arrow_size) / 2.;
-    let circle = svg()
-        .path(icons::CIRCLE_SVG)
-        .w(px(TOOLBAR_ICON_SIZE))
-        .h(px(TOOLBAR_ICON_SIZE))
+    let icon = svg()
+        .path(path)
+        .w(px(SYNC_ICON_HEIGHT * SYNC_ICON_ASPECT))
+        .h(px(SYNC_ICON_HEIGHT))
         .text_color(rgb(t.fg_dim));
-    let arrow = svg().path(path).size_full().text_color(rgb(t.fg_dim));
-    let arrow = if !animating {
-        arrow.into_any_element()
-    } else {
-        arrow
-            .with_animation(
-                animation_id,
-                Animation::new(Duration::from_millis(700)).repeat(),
-                move |arrow, delta| {
-                    let offset = direction * (-2. + 4. * delta);
-                    let opacity = (delta.min(1. - delta) * 5.).min(1.);
-                    arrow
-                        .opacity(opacity)
-                        .with_transformation(Transformation::translate(point(px(0.), px(offset))))
-                },
-            )
-            .into_any_element()
-    };
-    let arrow = div()
-        .absolute()
-        .top(px(arrow_inset))
-        .left(px(arrow_inset))
-        .w(px(arrow_size))
-        .h(px(arrow_size))
-        .child(arrow);
-    div()
-        .relative()
-        .flex_none()
-        .w(px(TOOLBAR_ICON_SIZE))
-        .h(px(TOOLBAR_ICON_SIZE))
-        .child(circle)
-        .child(arrow)
-        .into_any_element()
+    if !animating || cx.reduce_motion() {
+        return icon.into_any_element();
+    }
+    icon.with_animation(
+        animation_id,
+        Animation::new(Duration::from_millis(900)).repeat(),
+        move |icon, delta| {
+            let nudge = 1.5 * (std::f32::consts::PI * (delta / 0.78).min(1.)).sin();
+            icon.with_transformation(Transformation::translate(point(
+                px(0.),
+                px(direction * nudge),
+            )))
+        },
+    )
+    .into_any_element()
 }
 
 fn repo_tool_button(
     action: RepoToolAction,
-    tooltip: SharedString,
+    button: ToolButton,
     focused: Option<FocusStop>,
     edge: GroupEdge,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let (id, glyph_str) = repo_tool_id_and_glyph(action);
+    let selector = format!(
+        "toolbar-mark-{}",
+        button.mark.map_or("generic", |mark| mark.name)
+    );
+    let mark = match button.mark {
+        Some(mark) => svg()
+            .path(SharedString::from(format!(
+                "{}{}",
+                icons::MARK_PREFIX,
+                mark.name
+            )))
+            .size(px(MARK_SIZE * mark.scale))
+            .text_color(rgb(t.fg_dim))
+            .into_any_element(),
+        None => icons::icon(action.fallback_glyph(), MARK_SIZE, t.fg_dim).into_any_element(),
+    };
     focus_ring(
-        group_icon_item(id, glyph_str, tooltip, edge, t),
+        group_item(action.id(), button.tooltip, edge, t).child(
+            div()
+                .flex()
+                .items_center()
+                .justify_center()
+                .size(px(MARK_TILE))
+                .rounded(px(MARK_TILE * 0.27))
+                .bg(rgba(with_alpha(t.fg, 0x1a)))
+                .debug_selector(move || selector.clone())
+                .child(mark),
+        ),
         focused == Some(action.focus_stop()),
         t,
     )
     .on_click(
         cx.listener(move |view, _ev: &ClickEvent, _w, cx| match action {
-            RepoToolAction::FileManager => view.show_repo_in_file_manager(cx),
             RepoToolAction::Editor => view.open_repo_in_editor(cx),
             RepoToolAction::Terminal => view.open_repo_in_terminal(cx),
         }),
     )
-    .into_any_element()
-}
-
-fn repo_tool_id_and_glyph(action: RepoToolAction) -> (&'static str, &'static str) {
-    match action {
-        RepoToolAction::FileManager => ("tb-file-manager", glyph::FOLDER),
-        RepoToolAction::Editor => ("tb-open-editor", glyph::BRACES),
-        RepoToolAction::Terminal => ("tb-open-terminal", glyph::TERMINAL),
-    }
-}
-
-fn settings_button(focused: Option<FocusStop>, edge: GroupEdge, t: &Theme) -> AnyElement {
-    focus_ring(
-        group_icon_item(
-            "tb-settings",
-            glyph::GEAR,
-            jayjay_i18n::repo::settings(),
-            edge,
-            t,
-        ),
-        focused == Some(FocusStop::Settings),
-        t,
-    )
-    .on_click(|_ev: &ClickEvent, _w: &mut Window, cx: &mut gpui::App| SettingsView::open(cx))
     .into_any_element()
 }
 
