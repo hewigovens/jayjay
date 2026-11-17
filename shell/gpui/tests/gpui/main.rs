@@ -24,6 +24,7 @@ mod repo_diff_header;
 mod repo_diff_notes;
 mod repo_evolog;
 mod repo_file_actions;
+mod repo_file_column;
 mod repo_file_editor;
 mod repo_file_filter;
 mod repo_file_history;

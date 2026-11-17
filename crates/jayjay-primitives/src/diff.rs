@@ -30,6 +30,24 @@ impl DiffHunk {
         std::iter::once(self.path.as_str()).chain(renamed_from)
     }
 
+    /// The source of a rename or copy whose path changed.
+    pub fn moved_from(&self) -> Option<&str> {
+        self.old_path
+            .as_deref()
+            .filter(|old| self.hunk_type.has_source() && *old != self.path)
+    }
+
+    /// The line under a file's name: a move's full source → destination, otherwise the containing folder, and nothing for a root file.
+    pub fn path_detail(&self) -> Option<String> {
+        match self.moved_from() {
+            Some(old) => Some(format!("{old} → {}", self.path)),
+            None => self
+                .path
+                .rsplit_once('/')
+                .map(|(folder, _)| folder.to_owned()),
+        }
+    }
+
     /// A conflicted path can equal its parents' auto-merge and therefore have no ordinary tree-diff entry; summary loading inserts this card so shells can still open the resolver.
     pub fn is_conflict_only_placeholder(&self) -> bool {
         self.review_identity.is_empty()
@@ -186,6 +204,45 @@ mod tests {
         let mut ordinary_empty_file = placeholder.clone();
         ordinary_empty_file.review_identity = "blob-identity".to_owned();
         assert!(!ordinary_empty_file.is_conflict_only_placeholder());
+    }
+
+    #[test]
+    fn path_detail_names_the_folder_or_the_whole_move() {
+        let hunk = |path: &str, old_path: Option<&str>, hunk_type| DiffHunk {
+            path: path.to_owned(),
+            old_path: old_path.map(str::to_owned),
+            old: DiffContent::default(),
+            new: DiffContent::default(),
+            hunk_type,
+            supports_conflict_editor: false,
+            supports_file_editor: false,
+            review_identity: String::new(),
+            projection: None,
+            matches_source: false,
+        };
+        let detail = |path, old_path, hunk_type| hunk(path, old_path, hunk_type).path_detail();
+        assert_eq!(detail("README.md", None, HunkType::Modified), None);
+        assert_eq!(
+            detail(
+                "shell/mac/Sources/Detail Header.swift",
+                None,
+                HunkType::Added
+            )
+            .as_deref(),
+            Some("shell/mac/Sources")
+        );
+        assert_eq!(
+            detail("文档/设计/说明.md", None, HunkType::Modified).as_deref(),
+            Some("文档/设计")
+        );
+        assert_eq!(
+            detail("new/name.rs", Some("old.rs"), HunkType::Renamed).as_deref(),
+            Some("old.rs → new/name.rs")
+        );
+        assert_eq!(
+            detail("src/same.rs", Some("src/same.rs"), HunkType::Copied).as_deref(),
+            Some("src")
+        );
     }
 
     fn stats(path: &str, insertions: u32, deletions: u32) -> FileDiffStats {

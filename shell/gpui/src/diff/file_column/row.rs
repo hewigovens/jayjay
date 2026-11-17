@@ -99,11 +99,24 @@ where
 
 pub(super) fn file_text_content(
     name: impl Into<SharedString>,
-    path: impl Into<SharedString>,
+    hunk: &DiffHunk,
+    path_chars: usize,
     name_opacity: f32,
     agent_badge: Option<AnyElement>,
     t: &Theme,
 ) -> Div {
+    let path_line = hunk.path_detail().map(|detail| {
+        let selector = format!("file-detail-{}={detail}", hunk.path);
+        div()
+            .debug_selector(move || selector.clone())
+            .code_text(10., t)
+            .line_height(px(t.scaled_code_font_size(PATH_LINE_HEIGHT)))
+            .text_color(rgb(t.fg_dim))
+            .truncate()
+            .child(SharedString::from(elided_path_detail(
+                hunk, &detail, path_chars,
+            )))
+    });
     div()
         .flex()
         .flex_col()
@@ -128,14 +141,22 @@ pub(super) fn file_text_content(
                 )
                 .children(agent_badge),
         )
-        .child(
-            div()
-                .code_text(10., t)
-                .line_height(px(t.scaled_code_font_size(PATH_LINE_HEIGHT)))
-                .text_color(rgb(t.fg_dim))
-                .truncate()
-                .child(path.into()),
-        )
+        .children(path_line)
+}
+
+/// A move elides each side on its own, so the arrow and the destination never fall into the elided middle.
+fn elided_path_detail(hunk: &DiffHunk, detail: &str, path_chars: usize) -> String {
+    match hunk.moved_from() {
+        Some(old) => {
+            let side = path_chars.saturating_sub(3) / 2;
+            format!(
+                "{} → {}",
+                super::flat::middle_elide(old, side),
+                super::flat::middle_elide(&hunk.path, side)
+            )
+        }
+        None => super::flat::middle_elide(detail, path_chars),
+    }
 }
 
 fn file_text_block_height(t: &Theme) -> f32 {
@@ -147,13 +168,6 @@ const PATH_LINE_HEIGHT: f32 = 13.;
 /// The path line is code text, so its share of the row follows the code size.
 pub(crate) fn file_row_height(t: &Theme) -> f32 {
     t.scaled_font_size(46. - PATH_LINE_HEIGHT) + t.scaled_code_font_size(PATH_LINE_HEIGHT)
-}
-
-pub(super) fn display_path(hunk: &DiffHunk) -> String {
-    match (&hunk.old_path, hunk.hunk_type.has_source()) {
-        (Some(old), true) if *old != hunk.path => format!("{old} → {}", hunk.path),
-        _ => hunk.path.clone(),
-    }
 }
 
 pub(super) fn file_text_limits(width: f32, t: &Theme) -> (usize, usize) {
@@ -276,4 +290,25 @@ fn note_badge(count: usize, t: &Theme) -> AnyElement {
         .text_color(rgb(t.note_accent))
         .child(SharedString::from(format!("\u{25cf}{count}")))
         .into_any_element()
+}
+
+#[cfg(test)]
+mod tests {
+    use jayjay_core::HunkType;
+    use jayjay_core::mock::diff_hunk;
+
+    #[test]
+    fn an_elided_move_keeps_its_arrow_and_both_file_names() {
+        let hunk = jayjay_core::DiffHunk {
+            old_path: Some("docs/guides/getting-started.md".to_owned()),
+            hunk_type: HunkType::Renamed,
+            ..diff_hunk("docs/reference/getting-started.md")
+        };
+        let detail = hunk.path_detail().expect("move detail");
+        let elided = super::elided_path_detail(&hunk, &detail, 40);
+        assert!(elided.chars().count() <= 40, "{elided}");
+        let (old, new) = elided.split_once(" → ").expect("arrow kept");
+        assert!(old.starts_with("docs/") && old.ends_with(".md"), "{elided}");
+        assert!(new.starts_with("docs/") && new.ends_with(".md"), "{elided}");
+    }
 }

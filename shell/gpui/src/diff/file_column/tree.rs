@@ -10,7 +10,7 @@ use jayjay_core::{DiffHunk, FileTreeEntry};
 use jayjay_review::ReviewFileRollup;
 
 use super::row::{
-    FileRowHandlers, FileRowState, agent_badge, display_path, file_name_opacity, file_row_height,
+    FileRowHandlers, FileRowState, agent_badge, file_name_opacity, file_row_height,
     file_text_content, file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg,
     row_separator,
 };
@@ -218,11 +218,10 @@ where
     let text_px = (column_width - fixed_chrome - indent).max(80.0);
     let (basename_chars, path_chars) = file_text_limits(text_px, theme);
     let name = super::flat::middle_elide(&entry.name, basename_chars);
-    let path = display_path(hunk);
-    let path_display = super::flat::middle_elide(&path, path_chars);
     let content = file_text_content(
         SharedString::from(name),
-        SharedString::from(path_display),
+        hunk,
+        path_chars,
         name_opacity,
         agent_marked.then(|| agent_badge(&hunk.path, theme)),
         theme,
@@ -305,7 +304,7 @@ where
                 .min_w_0()
                 .text_size(ui_font_size(12.))
                 .font_weight(gpui::FontWeight::MEDIUM)
-                .text_color(rgb(t.fg_dim))
+                .text_color(rgb(t.fg))
                 .child(SharedString::from(entry.name.clone())),
         ))
         .into_any_element()
