@@ -74,4 +74,4 @@ Use the agent's native severity labels when available. Otherwise use:
 - **Medium**: edge-case correctness bug, stale state, or incorrect error handling.
 - **Low**: minor correctness bug with limited impact.
 
-When asked to fix issues, make the smallest scoped patch that also covers the sibling sites of each finding, rerun the affected checks, and re-review the resulting diff before handing it back.
+When asked to fix issues, make the smallest scoped patch that also covers the sibling sites of each finding, rerun the affected checks, and re-review the resulting diff before handing it back. When the findings came from an independent reviewer, that reviewer verifies the fixes: resume the same session or agent with the fixed files, and ask for a status per finding plus any defect the fixes introduced.
