@@ -104,11 +104,13 @@ struct ChangeDetailView: View {
         }
     }
 
+    var fileFilterMatches: [DiffHunk] {
+        guard !fileFilter.isEmpty else { return visibleDiff }
+        return visibleDiff.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
+    }
+
     var filteredDiff: [DiffHunk] {
-        var result = visibleDiff
-        if !fileFilter.isEmpty {
-            result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
-        }
+        var result = fileFilterMatches
         if appSettings.hideReviewedFiles, showsReviewMarks {
             result = result.filter { !reviewedPaths.contains($0.path) }
         }

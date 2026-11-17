@@ -92,29 +92,17 @@ extension ChangeDetailView {
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
                 }
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
-                ContentUnavailableView(
+                emptyState(
                     hiddenOnlyStateTitle,
-                    systemImage: hiddenOnlyStateIcon,
-                    description: Text(hiddenOnlyStateDescription)
+                    icon: hiddenOnlyStateIcon,
+                    description: hiddenOnlyStateDescription,
+                    action: hiddenGitLfsCount > 0 ? (Localized.Repo.showGitLfsFiles, { appSettings.hideGitLfsDiffs = false }) : nil
                 )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
             } else if visibleDiff.isEmpty {
-                ContentUnavailableView(
-                    Localized.Repo.noFilesChanged,
-                    systemImage: "doc.badge.minus",
-                    description: Text(Localized.Repo.thisRevisionDoesNotModifyAny)
-                )
-                .frame(maxWidth: .infinity, maxHeight: .infinity)
-                .accessibilityIdentifier(AID.Detail.noFilesChanged)
+                emptyState(Localized.Repo.noFilesChanged, icon: "doc", description: Localized.Repo.thisRevisionDoesNotModifyAny)
+                    .accessibilityIdentifier(AID.Detail.noFilesChanged)
             } else {
-                Spacer()
-                ContentUnavailableView(
-                    Localized.Repo.selectAFile,
-                    systemImage: "doc.text.magnifyingglass",
-                    description: Text(Localized.Repo.chooseAFileToInspect)
-                )
-                .frame(maxWidth: .infinity)
-                Spacer()
+                unlistedFilesState
             }
         }
         .frame(maxHeight: .infinity)
@@ -178,6 +166,64 @@ extension ChangeDetailView {
                 conflictEditor = nil
             }
         }
+    }
+
+    /// The list is empty while the change has files: name the first filter that emptied it and offer to undo it.
+    @ViewBuilder private var unlistedFilesState: some View {
+        let matches = fileFilterMatches
+        let noted = showNotedFilesOnly && showsReviewControls
+            ? matches.filter { activeNoteCountsByPath[$0.path] != nil }
+            : matches
+        if matches.isEmpty {
+            emptyState(
+                Localized.Repo.noMatchingFilesTitle,
+                icon: "magnifyingglass",
+                description: Localized.Repo.noFilePathContains(query: fileFilter),
+                action: (Localized.Repo.clearFilter, dismissFileFilter)
+            )
+        } else if noted.isEmpty {
+            emptyState(
+                Localized.Repo.noFilesWithReviewNotes,
+                icon: "text.bubble",
+                description: fileFilter.isEmpty
+                    ? Localized.Repo.noFileHasAnOpenReviewNote
+                    : Localized.Repo.noMatchingFileHasAnOpenReviewNote(query: fileFilter),
+                action: (Localized.Repo.showAllFiles, { showNotedFilesOnly = false })
+            )
+        } else {
+            emptyState(
+                Localized.Repo.allFilesReviewed,
+                icon: "checkmark.circle",
+                description: Localized.Repo.reviewedFilesHidden(count: noted.count),
+                action: (Localized.Repo.showReviewedFiles, { appSettings.hideReviewedFiles = false })
+            )
+        }
+    }
+
+    private func emptyState(_ title: String, icon: String, description: String, action: (String, () -> Void)? = nil) -> some View {
+        ContentUnavailableView {
+            Label(title, systemImage: icon)
+        } description: {
+            if case let (label, perform)? = action {
+                let button = Button(label, action: perform)
+                    .buttonStyle(InlineTextButtonStyle())
+                    .keyboardFocusStop(.emptyStateAction, action: perform)
+                    .accessibilityIdentifier(AID.Detail.emptyStateAction)
+                ViewThatFits(in: .horizontal) {
+                    HStack(alignment: .firstTextBaseline, spacing: 4) {
+                        Text(description)
+                        button
+                    }
+                    VStack(spacing: 4) {
+                        Text(description)
+                        button
+                    }
+                }
+            } else {
+                Text(description)
+            }
+        }
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private var hiddenOnlyStateTitle: String {

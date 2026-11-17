@@ -236,7 +236,21 @@ repo-click-to-select-this-change = Click to select this change
 repo-no-files-changed = No Files Changed
 repo-this-revision-does-not-modify-any = This revision does not modify any tracked files.
 repo-select-a-file = Select a File
-repo-choose-a-file-to-inspect = Choose a file to inspect.
+repo-no-matching-files-title = No Matching Files
+repo-no-file-path-contains = No file path contains “{ $query }”.
+repo-clear-filter = Clear Filter
+repo-all-files-reviewed = All Files Reviewed
+repo-reviewed-files-hidden =
+    { $count ->
+        [one] { NUMBER($count) } file is hidden.
+       *[other] { NUMBER($count) } files are hidden.
+    }
+repo-show-reviewed-files = Show Reviewed Files
+repo-no-files-with-review-notes = No Files with Review Notes
+repo-no-file-has-an-open-review-note = No file in this change has an open review note.
+repo-no-matching-file-has-an-open-review-note = No file matching “{ $query }” has an open review note.
+repo-show-all-files = Show All Files
+repo-show-git-lfs-files = Show Git LFS Files
 repo-only-git-managed-changes-hidden = Only Git-managed Changes Hidden
 repo-only-git-lfs-backed-files-hidden = Only Git LFS-backed Files Hidden
 repo-only-git-submodule-changes-hidden = Only Git Submodule Changes Hidden

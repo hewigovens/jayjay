@@ -77,7 +77,6 @@ enum AID {
         static let filterField = "file.filterField"
         static let filterToggle = "file.filterToggle"
         static let reviewMode = "file.reviewMode"
-        static let empty = "file.empty"
 
         static func row(_ path: String) -> String {
             "file.row.\(path)"
@@ -126,6 +125,7 @@ enum AID {
         static let commitId = "detail.commitId"
         static let selectionWithoutDiff = "detail.selectionWithoutDiff"
         static let noFilesChanged = "detail.noFilesChanged"
+        static let emptyStateAction = "detail.emptyStateAction"
 
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.
         static func diffStats(insertions: UInt32, deletions: UInt32) -> String {

@@ -116,11 +116,7 @@ extension ChangeDetailView {
             Divider()
 
             if filteredDiff.isEmpty {
-                Text(emptyFileListLabel)
-                    .jayjayFont(12)
-                    .foregroundStyle(.secondary)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
-                    .accessibilityIdentifier(AID.FileList.empty)
+                Spacer(minLength: 0)
             } else if appSettings.treeFileList {
                 treeFileList
             } else {
@@ -210,13 +206,6 @@ extension ChangeDetailView {
     /// In review mode the count reads as progress from the start, not only after the first mark.
     private var showsReviewProgress: Bool {
         showsReviewMarks && !reviewableDiff.isEmpty && (!reviewedPaths.isEmpty || reviewMode == .on)
-    }
-
-    private var emptyFileListLabel: String {
-        if !fileFilter.isEmpty {
-            return Localized.Repo.noMatchingFiles
-        }
-        return Localized.Repo.allFilesHidden
     }
 
     private var fileCountLabel: String {
