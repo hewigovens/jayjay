@@ -19,7 +19,11 @@ struct JayJayApp: App {
         setPreferredLanguages(languages: Locale.preferredLanguages)
         setNumberLocale(locale: Locale.current.identifier(.bcp47))
         // With saved state consulted, SwiftUI presents the previous session's scenes instead of the launch route.
-        UserDefaults.standard.register(defaults: ["ApplePersistenceIgnoreState": true])
+        UserDefaults.standard.register(defaults: [
+            "ApplePersistenceIgnoreState": true,
+            // AppKit otherwise opens a bare launch path as a document, and SwiftUI then skips the launch route's window.
+            "NSTreatUnknownArgumentsAsOpen": false
+        ])
 
         NSWindow.allowsAutomaticWindowTabbing = false
         if let helpers = Bundle.main.resourceURL?.appendingPathComponent("ssh-helpers") {
