@@ -139,7 +139,9 @@ fn single_file_editor_header_is_working_copy_only(cx: &mut TestAppContext) {
 }
 
 #[gpui::test]
-fn mutable_ancestors_offer_restore_ignore_and_review_but_not_delete(cx: &mut TestAppContext) {
+fn mutable_ancestors_offer_restore_ignore_and_review_in_review_mode_but_not_delete(
+    cx: &mut TestAppContext,
+) {
     let (_fixture, view, cx) = open_repo(cx);
 
     let other_ix = view.read_with(cx, |view, cx| {
@@ -172,6 +174,11 @@ fn mutable_ancestors_offer_restore_ignore_and_review_but_not_delete(cx: &mut Tes
         !labels.iter().any(|l| l.contains("Delete")),
         "delete is working-copy-only: {labels:?}"
     );
+    assert!(!labels.iter().any(|l| l.starts_with("Mark")), "{labels:?}");
+
+    view.update(cx, |view, cx| view.toggle_review_mode(cx));
+    settle_visual(cx);
+    let labels = menu_labels(&view, cx, "feature.txt");
     assert!(labels.iter().any(|l| l.starts_with("Mark")), "{labels:?}");
 }
 

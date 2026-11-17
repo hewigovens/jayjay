@@ -5,6 +5,7 @@ pub enum FocusStop {
     FileList,
     TreeToggle,
     FilterToggle,
+    ReviewMode,
     ExpandDescription,
     EditDescription,
     MarkReviewed,
@@ -26,11 +27,12 @@ pub enum FocusStop {
 }
 
 impl FocusStop {
-    pub(super) const CYCLE: [Self; 22] = [
+    pub(super) const CYCLE: [Self; 23] = [
         Self::Dag,
         Self::FileList,
         Self::TreeToggle,
         Self::FilterToggle,
+        Self::ReviewMode,
         Self::ExpandDescription,
         Self::EditDescription,
         Self::MarkReviewed,

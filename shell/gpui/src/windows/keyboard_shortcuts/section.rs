@@ -85,6 +85,7 @@ const SECTIONS: &[ShortcutSection] = &[
             ShortcutEntry::Command(ShortcutCommand::RepoFindInDiff),
             ShortcutEntry::Command(ShortcutCommand::RepoCopyDiffSelection),
             ShortcutEntry::Command(ShortcutCommand::FilesMarkReviewed),
+            ShortcutEntry::Command(ShortcutCommand::RepoToggleReviewMode),
             ShortcutEntry::Command(ShortcutCommand::TextSaveReviewNote),
             ShortcutEntry::Command(ShortcutCommand::TextSaveFile),
             ShortcutEntry::Command(ShortcutCommand::DiffEditorExpandAllFiles),

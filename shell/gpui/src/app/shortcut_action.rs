@@ -41,6 +41,7 @@ impl ShortcutAction for ShortcutCommand {
             Self::RepoToggleSideBySide => Box::new(ToggleSideBySideDiff),
             Self::RepoToggleIgnoreWhitespace => Box::new(ToggleIgnoreWhitespace),
             Self::RepoToggleTreeFileList => Box::new(ToggleTreeFileList),
+            Self::RepoToggleReviewMode => Box::new(ToggleReviewMode),
             Self::RepoNewChange => Box::new(NewChange),
             Self::RepoEditChange => Box::new(EditChange),
             Self::RepoDescribeChange => Box::new(DescribeChange),
@@ -60,7 +61,6 @@ impl ShortcutAction for ShortcutCommand {
             Self::ChangesAbandon => Box::new(AbandonChange),
             Self::RepoSwitchPane
             | Self::RepoCyclePanes
-            | Self::RepoToggleReviewMode
             | Self::RepoOpenContextMenu
             | Self::ChangesNext
             | Self::ChangesPrevious

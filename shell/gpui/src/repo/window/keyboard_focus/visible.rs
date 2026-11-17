@@ -4,6 +4,7 @@ use super::stop::FocusStop;
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct VisibleStops {
     pub(super) file_column: bool,
+    pub(super) review_mode: bool,
     pub(super) expand_description: bool,
     pub(super) mark_reviewed: bool,
     pub(super) diff_layout: bool,
@@ -25,6 +26,7 @@ impl VisibleStops {
             FocusStop::FileList | FocusStop::TreeToggle | FocusStop::FilterToggle => {
                 self.file_column
             }
+            FocusStop::ReviewMode => self.file_column && self.review_mode,
             FocusStop::ExpandDescription => self.expand_description,
             FocusStop::MarkReviewed => self.mark_reviewed,
             FocusStop::DiffLayout => self.diff_layout,
@@ -67,6 +69,7 @@ mod tests {
 
     const ALL: VisibleStops = VisibleStops {
         file_column: true,
+        review_mode: true,
         expand_description: true,
         mark_reviewed: true,
         diff_layout: true,

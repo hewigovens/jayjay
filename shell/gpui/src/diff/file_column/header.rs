@@ -8,7 +8,8 @@ use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::glyph;
 use crate::ui::input::{LineInput, line_input_content};
-use crate::ui::primitives::{icon_button, text_tooltip};
+use crate::ui::primitives::{CheckCircleState, check_circle, icon_button, text_tooltip};
+use jayjay_review::ReviewMode;
 
 pub(super) struct FileHeaderState {
     pub reviewed: usize,
@@ -17,6 +18,7 @@ pub(super) struct FileHeaderState {
     pub visible_count: usize,
     pub loading: bool,
     pub show_review: bool,
+    pub review_mode: ReviewMode,
     pub hide_reviewed: bool,
     pub active_note_count: usize,
     pub notes_only: bool,
@@ -38,6 +40,7 @@ pub(super) fn file_column_header(
         visible_count,
         loading,
         show_review,
+        review_mode,
         hide_reviewed,
         active_note_count,
         notes_only,
@@ -46,12 +49,13 @@ pub(super) fn file_column_header(
         tree_mode,
         focused,
     } = state;
-    let shows_reviewed = show_review && reviewed > 0;
+    // In review mode the count reads as progress from the start, not only after the first mark.
+    let shows_progress = show_review && (reviewed > 0 || review_mode == ReviewMode::On);
     let label = if loading {
         jayjay_i18n::repo::loading_ellipsis()
     } else if file_filter_has_query {
         jayjay_i18n::repo::files_filtered(visible_count, count)
-    } else if shows_reviewed {
+    } else if shows_progress {
         jayjay_i18n::diff::reviewed_of_total(reviewed, count)
     } else {
         jayjay_i18n::repo::file_count(visible_count)
@@ -81,12 +85,75 @@ pub(super) fn file_column_header(
         row = row.border_b_1().border_color(rgb(t.border));
     }
 
-    if show_review && active_note_count > 0 {
-        let (bg, fg) = if notes_only {
-            (t.toggle_active_bg, t.toggle_active_fg)
-        } else {
-            (t.toggle_inactive_bg, t.toggle_inactive_fg)
-        };
+    let (bg, fg) = toggle_colors(tree_mode, t);
+    row = row.child(
+        focus_ring(
+            icon_button("toggle-file-tree", tree_glyph, 14., 24., 22., fg, t),
+            focused == Some(FocusStop::TreeToggle),
+            t,
+        )
+        .debug_selector(|| "toggle-file-tree".to_owned())
+        .bg(rgb(bg))
+        .tooltip(text_tooltip(tree_help))
+        .on_click(|_, _, cx| config::update(cx, |c| c.diff.tree_file_list ^= true)),
+    );
+
+    let (bg, fg) = toggle_colors(file_filter_active, t);
+    row = row.child(
+        focus_ring(
+            icon_button("toggle-file-filter", glyph::SEARCH, 14., 24., 22., fg, t),
+            focused == Some(FocusStop::FilterToggle),
+            t,
+        )
+        .debug_selector(|| "toggle-file-filter".to_owned())
+        .bg(rgb(bg))
+        .tooltip(text_tooltip(jayjay_i18n::repo::filter_files()))
+        .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
+            view.toggle_file_filter(window, cx);
+        })),
+    );
+
+    if review_mode.is_switchable() {
+        let on = review_mode == ReviewMode::On;
+        row = row.child(
+            focus_ring(
+                div()
+                    .id("toggle-review-mode")
+                    .flex()
+                    .items_center()
+                    .justify_center()
+                    .w(px(24.))
+                    .h(px(22.))
+                    .rounded_md()
+                    .cursor_pointer()
+                    .hover(|s| s.bg(rgb(t.row_alt_bg)))
+                    .child(check_circle(
+                        "review-mode-glyph",
+                        if on {
+                            CheckCircleState::On
+                        } else {
+                            CheckCircleState::CheckOutline
+                        },
+                        if on { t.selected_accent } else { t.fg_dim },
+                        t,
+                    )),
+                focused == Some(FocusStop::ReviewMode),
+                t,
+            )
+            .debug_selector(move || format!("toggle-review-mode-{}", if on { "on" } else { "off" }))
+            .tooltip(text_tooltip(if on {
+                jayjay_i18n::repo::turn_off_review_mode()
+            } else {
+                jayjay_i18n::repo::turn_on_review_mode()
+            }))
+            .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+                view.toggle_review_mode(cx);
+            })),
+        );
+    }
+
+    if active_note_count > 0 {
+        let (bg, fg) = toggle_colors(notes_only, t);
         row = row.child(
             div()
                 .id("file-notes-only")
@@ -116,7 +183,7 @@ pub(super) fn file_column_header(
         );
     }
 
-    if shows_reviewed {
+    if show_review && reviewed > 0 {
         row = row.child(
             icon_button(
                 "file-split-reviewed",
@@ -139,11 +206,7 @@ pub(super) fn file_column_header(
 
     // The eye stays visible while the filter is on even once nothing is reviewed, or the toggle would be unrecoverable.
     if show_review && (reviewed > 0 || hide_reviewed) {
-        let (bg, fg) = if hide_reviewed {
-            (t.toggle_active_bg, t.toggle_active_fg)
-        } else {
-            (t.toggle_inactive_bg, t.toggle_inactive_fg)
-        };
+        let (bg, fg) = toggle_colors(hide_reviewed, t);
         row = row.child(
             icon_button(
                 "file-hide-reviewed",
@@ -171,35 +234,13 @@ pub(super) fn file_column_header(
         );
     }
 
-    let (bg, fg) = if tree_mode {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
-    row = row.child(
-        focus_ring(
-            icon_button("toggle-file-tree", tree_glyph, 14., 24., 22., fg, t),
-            focused == Some(FocusStop::TreeToggle),
-            t,
-        )
-        .debug_selector(|| "toggle-file-tree".to_owned())
-        .bg(rgb(bg))
-        .tooltip(text_tooltip(tree_help))
-        .on_click(|_, _, cx| config::update(cx, |c| c.diff.tree_file_list ^= true)),
-    );
-
-    let (bg, fg) = if file_filter_active {
-        (t.toggle_active_bg, t.toggle_active_fg)
-    } else {
-        (t.toggle_inactive_bg, t.toggle_inactive_fg)
-    };
     let count_label = div()
         .id("file-count")
         .flex_none()
         .text_size(ui_font_size(12.))
         .text_color(rgb(t.fg_dim))
         .child(SharedString::from(label));
-    let count_label = if shows_reviewed {
+    let count_label = if shows_progress {
         count_label
             .debug_selector(|| "file-reviewed-count".to_owned())
             .tooltip(text_tooltip(if agent_marked > 0 {
@@ -210,21 +251,15 @@ pub(super) fn file_column_header(
     } else {
         count_label
     };
-    row.child(
-        focus_ring(
-            icon_button("toggle-file-filter", glyph::SEARCH, 14., 24., 22., fg, t),
-            focused == Some(FocusStop::FilterToggle),
-            t,
-        )
-        .debug_selector(|| "toggle-file-filter".to_owned())
-        .bg(rgb(bg))
-        .tooltip(text_tooltip(jayjay_i18n::repo::filter_files()))
-        .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
-            view.toggle_file_filter(window, cx);
-        })),
-    )
-    .child(div().flex_1().min_w(px(8.)))
-    .child(count_label)
+    row.child(div().flex_1().min_w(px(8.))).child(count_label)
+}
+
+fn toggle_colors(active: bool, t: &Theme) -> (u32, u32) {
+    if active {
+        (t.toggle_active_bg, t.toggle_active_fg)
+    } else {
+        (t.toggle_inactive_bg, t.toggle_inactive_fg)
+    }
 }
 
 pub(super) fn file_filter_bar(

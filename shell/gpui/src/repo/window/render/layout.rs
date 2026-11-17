@@ -31,13 +31,15 @@ pub(super) fn file_column_wrapper(
     let tree_scroll = view.scrolls.tree_files.clone();
     let tree_cache = view.file_tree_cache.clone();
     let multi_selected = view.multi_selected_hunk_indices();
+    let review_mode = view.review_mode(cx);
+    let show_marks = review_mode.shows_marks();
     let vm = view.vm.read(cx);
     let files = vm.files.clone();
     let selected_file_ix = vm.selected_file_ix;
     let loading_files = vm.loading.files;
     let change_id = vm.selected_change().map(|c| c.change_id.id.clone());
     let show_review = vm.shows_review_controls();
-    let review_rollups = match (show_review, files.as_ref(), change_id.as_ref()) {
+    let review_rollups = match (show_marks, files.as_ref(), change_id.as_ref()) {
         (true, Some(files), Some(change_id)) => {
             view.review_rollups_with_vm(change_id, files.iter(), vm)
         }
@@ -48,7 +50,7 @@ pub(super) fn file_column_wrapper(
         .filter(|rollup| **rollup == jayjay_review::ReviewFileRollup::Reviewed)
         .count();
     let review_rollups = std::sync::Arc::new(review_rollups);
-    let agent_marked = std::sync::Arc::new(match (show_review, change_id.as_ref()) {
+    let agent_marked = std::sync::Arc::new(match (show_marks, change_id.as_ref()) {
         (true, Some(change_id)) => view.agent_marked_paths(change_id),
         _ => std::collections::HashSet::new(),
     });
@@ -63,7 +65,7 @@ pub(super) fn file_column_wrapper(
             &vm.tracked_lfs_paths,
         ))
     });
-    let hide_reviewed = show_review && view.file_column.hide_reviewed;
+    let hide_reviewed = show_marks && view.file_column.hide_reviewed;
     let notes_only = show_review && view.file_column.notes_only;
     div()
         .debug_selector(|| "file-column".to_owned())
@@ -83,7 +85,8 @@ pub(super) fn file_column_wrapper(
                 review_rollups,
                 agent_marked,
                 reviewed_count,
-                show_review,
+                show_review: show_marks,
+                review_mode,
                 hide_reviewed,
                 note_counts,
                 conflicted,

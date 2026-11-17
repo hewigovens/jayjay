@@ -9,7 +9,9 @@ use std::sync::Arc;
 use gpui::{App, Context, Global, ScrollStrategy};
 use jayjay_core::DiffHunk;
 use jayjay_core::file_tree::build_file_tree;
-use jayjay_review::{ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState, ReviewMarkSource};
+use jayjay_review::{
+    ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState, ReviewMarkSource, ReviewMode,
+};
 
 use super::RepoWindow;
 use crate::diff::ReviewDisplayState;
@@ -150,13 +152,13 @@ impl RepoWindow {
     ) -> Option<Arc<ReviewDisplayState>> {
         let hunk = hunk?;
         let file_diff = file_diff?;
-        let vm = self.vm.read(cx);
-        if !vm.shows_review_controls()
+        if !self.shows_review_marks(cx)
             || hunk.projection.is_some()
             || hunk.review_identity.is_empty()
         {
             return None;
         }
+        let vm = self.vm.read(cx);
         let change_id = vm.selected_change()?.change_id.id.clone();
         let review = loaded_review_snapshot(vm, hunk)?;
         let rows = self.diff.wrap_cache.borrow_mut().review_rows(file_diff);
@@ -197,11 +199,11 @@ impl RepoWindow {
         display_group: u32,
         cx: &mut Context<Self>,
     ) {
+        if !self.shows_review_marks(cx) {
+            return;
+        }
         let (change_id, path, identity, review) = {
             let vm = self.vm.read(cx);
-            if !vm.shows_review_controls() {
-                return;
-            }
             let Some(change_id) = vm
                 .selected_change()
                 .map(|change| change.change_id.id.clone())
@@ -240,6 +242,38 @@ impl RepoWindow {
                 display_group,
             );
         });
+        cx.notify();
+    }
+
+    pub fn review_mode(&self, cx: &App) -> ReviewMode {
+        let vm = self.vm.read(cx);
+        let Some(change) = vm.selected_change().filter(|_| vm.shows_review_controls()) else {
+            return ReviewMode::Unavailable;
+        };
+        let mut store = self.review_store.borrow_mut();
+        store.refresh_if_stale();
+        store.review_mode(change)
+    }
+
+    pub(crate) fn shows_review_marks(&self, cx: &App) -> bool {
+        self.review_mode(cx).shows_marks()
+    }
+
+    pub fn toggle_review_mode(&mut self, cx: &mut Context<Self>) {
+        let mode = self.review_mode(cx);
+        let Some(change_id) = self
+            .vm
+            .read(cx)
+            .selected_change()
+            .filter(|_| mode.is_switchable())
+            .map(|change| change.change_id.id.clone())
+        else {
+            return;
+        };
+        mutate(&self.review_store, |store| {
+            store.set_review_mode(&change_id, mode != ReviewMode::On)
+        });
+        self.reconcile_file_selection(cx);
         cx.notify();
     }
 
@@ -326,10 +360,10 @@ impl RepoWindow {
     }
 
     pub(crate) fn selected_file_review(&self, cx: &App) -> Option<ReviewFileRollup> {
-        let vm = self.vm.read(cx);
-        if !vm.shows_review_controls() {
+        if !self.shows_review_marks(cx) {
             return None;
         }
+        let vm = self.vm.read(cx);
         let change_id = &vm.selected_change()?.change_id.id;
         let hunk = vm.selected_hunk().filter(|hunk| {
             !hunk.review_identity.is_empty() && !crate::diff::file_status::is_submodule(hunk)
@@ -339,11 +373,11 @@ impl RepoWindow {
     }
 
     pub(crate) fn toggle_reviewed_for_selected_file(&mut self, cx: &mut Context<Self>) {
+        if !self.shows_review_marks(cx) {
+            return;
+        }
         let (change_id, path, identity) = {
             let vm = self.vm.read(cx);
-            if !vm.shows_review_controls() {
-                return;
-            }
             let Some(change_id) = vm.selected_change().map(|c| c.change_id.id.clone()) else {
                 return;
             };

@@ -48,6 +48,7 @@ mod repo_pr_import;
 mod repo_rating_prompt;
 mod repo_rebase_drag;
 mod repo_ref_drag;
+mod repo_review_mode;
 mod repo_review_notes;
 mod repo_revset_filter;
 mod repo_sidebar_visibility;

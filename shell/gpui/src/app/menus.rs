@@ -9,8 +9,8 @@ use super::actions::{
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
     OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, ReconnectSsh,
     RedoOperation, ReportIssue, ResetZoom, RevealLogs, SendFeedback, ShowRepoInFileManager,
-    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar,
-    ToggleStatusBar, ToggleTreeFileList, UndoOperation, ZoomIn, ZoomOut,
+    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleReviewMode, ToggleSideBySideDiff,
+    ToggleSidebar, ToggleStatusBar, ToggleTreeFileList, UndoOperation, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::repositories::repository_name;
@@ -80,6 +80,7 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
                 jayjay_i18n::menu::filter_by_revset_ellipsis(),
                 FilterByRevset,
             ),
+            MenuItem::action(jayjay_i18n::menu::review_mode(), ToggleReviewMode),
             MenuItem::action(jayjay_i18n::menu::bookmark_manager(), OpenBookmarkManager),
             MenuItem::action(jayjay_i18n::menu::repo_overview(), OpenOverview),
             MenuItem::action(jayjay_i18n::menu::new_workspace_ellipsis(), NewWorkspace),

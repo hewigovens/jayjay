@@ -157,6 +157,7 @@ impl RepoWindow {
                 crate::app::config::update(cx, |config| config.diff.tree_file_list ^= true);
             }
             FocusStop::FilterToggle => self.toggle_file_filter(window, cx),
+            FocusStop::ReviewMode => self.toggle_review_mode(cx),
             FocusStop::ExpandDescription => {
                 self.description.expanded ^= true;
                 cx.notify();
@@ -219,6 +220,7 @@ impl RepoWindow {
             .flatten();
         VisibleStops {
             file_column: self.shows_file_column(cx),
+            review_mode: self.review_mode(cx).is_switchable(),
             expand_description: detail_change.is_some(),
             mark_reviewed: self.selected_file_review(cx).is_some(),
             diff_layout: vm.selected_hunk().is_some(),

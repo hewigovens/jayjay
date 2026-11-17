@@ -293,6 +293,14 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |_, cx| config::update(cx, |c| c.diff.tree_file_list ^= true),
     },
     PaletteAction {
+        id: "toggle-review-mode",
+        shortcut: Some(ShortcutCommand::RepoToggleReviewMode),
+        label: jayjay_i18n::palette::toggle_review_mode,
+        keywords: &["review", "mode", "marks", "reviewed", "change"],
+        glyph_str: glyph::CHECK,
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::toggle_review_mode),
+    },
+    PaletteAction {
         id: "toggle-auto-expand-descriptions",
         shortcut: None,
         label: jayjay_i18n::palette::toggle_auto_expand_descriptions,

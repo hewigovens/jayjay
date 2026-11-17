@@ -7,7 +7,7 @@ use crate::app::actions::{
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenOperationLog, OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
     OpenSettings, ReconnectSsh, RedoOperation, Refresh, SaveFileEditor, SaveNoteComposer,
-    ShowRepoInFileManager, ToggleSidebar, ToggleStatusBar, UndoOperation,
+    ShowRepoInFileManager, ToggleReviewMode, ToggleSidebar, ToggleStatusBar, UndoOperation,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -69,6 +69,9 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &ShowRepoInFileManager, _, cx| {
                 view.show_repo_in_file_manager(cx);
+            }))
+            .on_action(cx.listener(|view, _: &ToggleReviewMode, _, cx| {
+                view.toggle_review_mode(cx);
             }))
             .on_action(cx.listener(|view, _: &ToggleSidebar, _, cx| {
                 view.toggle_sidebar(cx);

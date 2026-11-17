@@ -40,6 +40,7 @@ actions!(
         ToggleIgnoreWhitespace,
         ToggleHideGitLfsFiles,
         ToggleTreeFileList,
+        ToggleReviewMode,
         ToggleSidebar,
         ToggleStatusBar,
         ZoomIn,

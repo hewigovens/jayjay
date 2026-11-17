@@ -6,7 +6,7 @@ use gpui::{
     UniformListScrollHandle, div, rgb,
 };
 use jayjay_core::DiffHunk;
-use jayjay_review::ReviewFileRollup;
+use jayjay_review::{ReviewFileRollup, ReviewMode};
 
 use super::flat::{FlatBodyState, flat_body};
 use super::header::{FileHeaderState, file_column_header, file_filter_bar};
@@ -44,6 +44,7 @@ pub struct FileColumnState<'a> {
     pub(crate) agent_marked: Arc<HashSet<String>>,
     pub(crate) reviewed_count: usize,
     pub(crate) show_review: bool,
+    pub(crate) review_mode: ReviewMode,
     pub(crate) hide_reviewed: bool,
     /// Empty when the notes session isn't active; drives both the per-row badge and the header's noted-files filter toggle.
     pub(crate) note_counts: Arc<HashMap<String, usize>>,
@@ -74,6 +75,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         agent_marked,
         reviewed_count,
         show_review,
+        review_mode,
         hide_reviewed,
         note_counts,
         conflicted,
@@ -107,6 +109,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                         visible_count: 0,
                         loading,
                         show_review,
+                        review_mode,
                         hide_reviewed,
                         active_note_count: 0,
                         notes_only: false,
@@ -212,6 +215,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 visible_count,
                 loading,
                 show_review,
+                review_mode,
                 hide_reviewed,
                 active_note_count,
                 notes_only,

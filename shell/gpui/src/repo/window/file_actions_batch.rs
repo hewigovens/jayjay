@@ -57,7 +57,7 @@ impl RepoWindow {
             })
             .collect();
         let mut items = Vec::new();
-        if vm.shows_review_controls()
+        if self.shows_review_marks(cx)
             && hunks.len() == paths.len()
             && hunks.iter().all(|hunk| !hunk.review_identity.is_empty())
         {
@@ -124,7 +124,10 @@ impl RepoWindow {
     pub fn build_folder_context_menu(&self, folder: &str, cx: &App) -> Vec<ContextMenuItem> {
         let (show_review, change_id) = self.review_file_context(cx);
         let vm = self.vm.read(cx);
-        let Some(change) = vm.selected_change_for_file_ops().filter(|_| show_review) else {
+        let Some(change) = vm
+            .selected_change_for_file_ops()
+            .filter(|_| show_review && self.shows_review_marks(cx))
+        else {
             return Vec::new();
         };
         let files = vm.files.as_deref().map(Vec::as_slice).unwrap_or_default();
@@ -213,7 +216,7 @@ impl RepoWindow {
             let Some(change) = vm.selected_change_for_file_ops() else {
                 return;
             };
-            if !vm.shows_review_controls() {
+            if !self.shows_review_marks(cx) {
                 return;
             }
             let hunks = hunks_for_paths(vm.files.as_deref().map(Vec::as_slice), &paths);

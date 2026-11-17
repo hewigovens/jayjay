@@ -208,6 +208,16 @@ pub enum ReviewMode {
     Off,
 }
 
+impl ReviewMode {
+    pub fn shows_marks(self) -> bool {
+        matches!(self, Self::WorkingCopy | Self::On)
+    }
+
+    pub fn is_switchable(self) -> bool {
+        matches!(self, Self::On | Self::Off)
+    }
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReviewGroupStates {
     /// A mark with no group snapshot to break it down: identity-only file marks, binaries, images.
