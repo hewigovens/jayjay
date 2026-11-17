@@ -7,9 +7,10 @@ cd "$root"
 
 # Product, font, and key names that stay English in every locale.
 names="JayJay|JayJay Feedback|Codex CLI|Claude CLI|Codex|Claude|Terminal|Finder|Frog|Homebrew|Seti|Octicons|Segoe Fluent Icons|Segoe MDL2 Assets|Ghostty|Rex|VSCodium|Visual Studio Code|Cursor|Zed|Xcode|Vim|Ctrl|Alt|Shift|Super|Enter|Esc|Space|Tab|Return"
-# Generated bindings, CLI help, model prompts, and the GitHub issue template stay English.
+# Generated bindings, CLI help, AppleScript errors, model prompts, and the GitHub issue template stay English.
 english=(
   shell/gpui/src/startup/arguments.rs
+  shell/mac/Sources/JayJay/App/Scripting
   shell/mac/Sources/JayJayCore
   shell/mac/Sources/JayJay/Shared/AI/AppleIntelligence.swift
   shell/mac/Sources/JayJay/Shared/HelpBook.swift
