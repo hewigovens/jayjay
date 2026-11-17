@@ -129,6 +129,7 @@ pub fn diff_view(
         || state.projection_view == Some(ProjectionView::Rendered)
             && projection_has_markdown_preview;
 
+    let mut shows_markdown = false;
     let body: AnyElement = if is_annotating {
         if state.loading_annotate {
             loading_status(jayjay_i18n::diff::loading_annotations_ellipsis(), &t)
@@ -163,6 +164,7 @@ pub fn diff_view(
             &t,
         )
     } else if can_render_markdown_preview {
+        shows_markdown = true;
         markdown_diff_view(
             MarkdownDiffState {
                 document: state.markdown_preview,
@@ -256,6 +258,9 @@ pub fn diff_view(
             }
         }
     };
+    if !shows_markdown {
+        state.markdown_bounds.set(None);
+    }
 
     let find_bar = find.query.map(|q| render_find_bar(q, &find, &t, cx));
     let show_conflict_bar = state.can_resolve_conflict && state.selected_file_has_conflict;

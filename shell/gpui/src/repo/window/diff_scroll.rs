@@ -1,4 +1,4 @@
-use gpui::{App, Context, ScrollStrategy, px};
+use gpui::{App, Context, KeyDownEvent, ScrollStrategy, point, px};
 use jayjay_core::diff::{DiffSpanStyle, build_diff_display_lines};
 
 use super::RepoWindow;
@@ -11,6 +11,34 @@ use crate::diff::wrap::{
 };
 
 impl RepoWindow {
+    pub(super) fn handle_diff_page_key(
+        &mut self,
+        ev: &KeyDownEvent,
+        cx: &mut Context<Self>,
+    ) -> bool {
+        if ev.keystroke.modifiers.modified() {
+            return false;
+        }
+        let handle = if self.diff.markdown_bounds.get().is_some() {
+            self.diff.markdown_scroll.clone()
+        } else {
+            self.scrolls.diff.0.borrow().base_handle.clone()
+        };
+        let offset = handle.offset();
+        let bottom = -handle.max_offset().y;
+        let page = handle.bounds().size.height;
+        let y = match ev.keystroke.key.as_str() {
+            "pageup" => offset.y + page,
+            "pagedown" => offset.y - page,
+            "home" => px(0.),
+            "end" => bottom,
+            _ => return false,
+        };
+        handle.set_offset(point(offset.x, y.clamp(bottom, px(0.))));
+        cx.notify();
+        true
+    }
+
     pub(super) fn scroll_diff_to_line(&self, line_ix: usize, cx: &App) {
         let vm = self.vm.read(cx);
         let advance = fonts::mono_advance(cx, px(theme(cx).code_font_size()));

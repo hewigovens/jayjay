@@ -2,8 +2,8 @@ use std::fs;
 
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
 use gpui::{
-    Entity, Pixels, Point, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase, VisualTestContext,
-    point, px, size,
+    Entity, Focusable, Pixels, Point, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase,
+    VisualTestContext, point, px, size,
 };
 use jayjay_gpui::repo::RepoWindow;
 use jj_test::{LinearFixture, run_jj_in};
@@ -28,6 +28,33 @@ fn scrolling_a_long_markdown_preview_moves_its_content(cx: &mut TestAppContext) 
         px(-300.),
         "scrolling over the preview should move its content, not leave it stuck"
     );
+}
+
+#[gpui::test]
+fn page_down_scrolls_the_markdown_preview_only_while_it_is_shown(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo_with_markdown_files(cx, &[("BIG.md", 400)]);
+    select_and_preview(&view, cx, "BIG.md");
+    view.update_in(cx, |view, window, cx| {
+        view.focus_handle(cx).focus(window, cx)
+    });
+
+    cx.simulate_keystrokes("pagedown");
+    settle_visual(cx);
+    let (preview, diff) = view.read_with(cx, |view, _| {
+        (
+            view.markdown_preview_scroll_offset_y(),
+            view.diff_scroll_offset_y(),
+        )
+    });
+    assert!(preview < px(0.), "Page Down should scroll the preview");
+    assert_eq!(diff, px(0.), "the hidden text diff should not move");
+
+    view.update_in(cx, |view, _, cx| view.toggle_markdown_rich_preview(cx));
+    settle_visual(cx);
+    cx.simulate_keystrokes("pagedown");
+    settle_visual(cx);
+    let diff = view.read_with(cx, |view, _| view.diff_scroll_offset_y());
+    assert!(diff < px(0.), "Page Down should scroll the text diff again");
 }
 
 #[gpui::test]

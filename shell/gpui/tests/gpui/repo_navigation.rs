@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use crate::harness::*;
 use gpui::{
-    AppContext, Focusable, Modifiers, ScrollStrategy, TestAppContext, VisualTestContext, px,
+    AppContext, Focusable, Modifiers, ScrollStrategy, TestAppContext, VisualTestContext, px, size,
 };
 use jayjay_core::compare;
 use jayjay_gpui::app::{actions::ToggleIgnoreWhitespace, menus};
@@ -698,3 +698,41 @@ fn marking_from_the_header_or_row_moves_past_skipped_files(cx: &mut TestAppConte
 }
 
 const FOCUS_STOPS: usize = 30;
+
+#[gpui::test]
+fn page_keys_scroll_the_diff(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let body: String = (0..600).map(|i| format!("line {i}\n")).collect();
+    fs::write(fixture.path.join("long.txt"), body).unwrap();
+    run_jj_in(&fixture.path, &["st"]);
+
+    install_test_globals(cx);
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    cx.simulate_resize(size(px(1200.), px(800.)));
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    select_file(&view, "long.txt", cx);
+    view.update_in(cx, |view, window, cx| {
+        view.focus_handle(cx).focus(window, cx)
+    });
+    let offset = |cx: &mut VisualTestContext| {
+        settle_visual(cx);
+        view.read_with(cx, |view, _| view.diff_scroll_offset_y())
+    };
+
+    cx.simulate_keystrokes("pagedown");
+    let one_page = offset(cx);
+    assert!(one_page < px(0.), "Page Down should scroll the diff");
+    cx.simulate_keystrokes("pagedown");
+    assert_eq!(offset(cx), one_page * 2.);
+    cx.simulate_keystrokes("pageup");
+    assert_eq!(offset(cx), one_page);
+
+    cx.simulate_keystrokes("end");
+    let bottom = offset(cx);
+    assert!(bottom < one_page * 2.);
+    cx.simulate_keystrokes("pagedown");
+    assert_eq!(offset(cx), bottom, "Page Down stops at the end");
+    cx.simulate_keystrokes("home");
+    assert_eq!(offset(cx), px(0.));
+}

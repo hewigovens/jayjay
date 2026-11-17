@@ -19,6 +19,9 @@ impl RepoWindow {
             self.move_selection(direction, cx);
             return true;
         }
+        if self.handle_diff_page_key(ev, cx) {
+            return true;
+        }
 
         let m = &ev.keystroke.modifiers;
         if m.platform || m.alt || m.control {
