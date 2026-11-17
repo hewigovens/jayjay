@@ -125,6 +125,7 @@ enum AID {
         static let descriptionExpansion = "detail.descriptionExpansion"
         static let commitId = "detail.commitId"
         static let selectionWithoutDiff = "detail.selectionWithoutDiff"
+        static let noFilesChanged = "detail.noFilesChanged"
 
         /// Counts are encoded in the id so UI tests assert on existence, not a11y value.
         static func diffStats(insertions: UInt32, deletions: UInt32) -> String {

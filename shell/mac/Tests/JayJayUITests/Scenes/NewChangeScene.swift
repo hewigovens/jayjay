@@ -48,5 +48,11 @@ final class NewChangeScene: SceneBase {
             .completed,
             "New working copy carried the previous change's commit message"
         )
+
+        XCTAssertTrue(app.element(AID.Detail.noFilesChanged).waitForExistence(timeout: 5), "The empty change did not show its empty state")
+        let fileColumn = app.element(AID.FileList.column)
+        XCTAssertFalse(fileColumn.exists, "The empty change kept its file column")
+        rows.matching(NSPredicate(format: "value CONTAINS %@", "add feature")).firstMatch.click()
+        XCTAssertTrue(fileColumn.waitForExistence(timeout: 10), "The file column did not come back for a change with files")
     }
 }

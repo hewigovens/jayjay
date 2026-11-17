@@ -147,22 +147,33 @@ struct ChangeDetailView: View {
                     onDone: { paneMode = .files }
                 )
             } else {
-                ResizableSplit(
-                    width: $fileColumnWidth,
-                    range: PaneLayout.secondaryPaneRange(detailWidth:),
-                    onEnded: { appSettings.secondaryPaneWidth = $0 },
-                    dividerIdentifier: AID.FileList.columnDivider,
-                    leading: {
-                        fileColumn
-                            .accessibilityElement(children: .contain)
-                            .accessibilityIdentifier(AID.FileList.column)
-                    },
-                    trailing: {
+                Group {
+                    if detail.diff.isEmpty {
                         previewColumn
+                    } else {
+                        ResizableSplit(
+                            width: $fileColumnWidth,
+                            range: PaneLayout.secondaryPaneRange(detailWidth:),
+                            onEnded: { appSettings.secondaryPaneWidth = $0 },
+                            dividerIdentifier: AID.FileList.columnDivider,
+                            leading: {
+                                fileColumn
+                                    .accessibilityElement(children: .contain)
+                                    .accessibilityIdentifier(AID.FileList.column)
+                            },
+                            trailing: {
+                                previewColumn
+                            }
+                        )
                     }
-                )
+                }
                 .accessibilityElement(children: .contain)
                 .accessibilityIdentifier(AID.Detail.pane)
+            }
+        }
+        .onChange(of: detail.diff.isEmpty, initial: true) { _, isEmpty in
+            if isEmpty, activePane == .fileColumn {
+                activePane = .dag
             }
         }
         .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { paneHeight = $0 }

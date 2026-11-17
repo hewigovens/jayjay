@@ -105,6 +105,7 @@ extension ChangeDetailView {
                     description: Text(Localized.Repo.thisRevisionDoesNotModifyAny)
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
+                .accessibilityIdentifier(AID.Detail.noFilesChanged)
             } else {
                 Spacer()
                 ContentUnavailableView(

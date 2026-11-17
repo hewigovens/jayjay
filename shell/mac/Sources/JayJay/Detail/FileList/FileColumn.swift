@@ -213,9 +213,6 @@ extension ChangeDetailView {
     }
 
     private var emptyFileListLabel: String {
-        if detail.diff.isEmpty {
-            return Localized.Repo.noFiles
-        }
         if !fileFilter.isEmpty {
             return Localized.Repo.noMatchingFiles
         }
