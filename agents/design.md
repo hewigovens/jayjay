@@ -27,6 +27,32 @@ Clean, modern, approachable. The blue jaybird mascot adds personality without ma
 5. **Jujutsu-native** - Embrace changes, bookmarks, revsets, and working-copy semantics rather than forcing git branch/commit mental models.
 6. **Palette, not terminal** - The command palette runs raw jj (`jj …` or `!…` prefix). When copy, help, or issue replies suggest a jj command, point to the palette rather than "the terminal".
 
+## Information Hierarchy
+
+jj's own containment decides where things go:
+
+```
+repo (operation log, bookmarks, remotes)
+└─ workspace (working copy @)
+   └─ history (revset) → change → files → hunks
+```
+
+- **One level per region.** Scope narrows left to right and top to bottom: window chrome (toolbar, title, menus) is repo and workspace scope, the sidebar is history, the detail pane is one change with its files and their hunks.
+- **A fact appears once, at the level it describes.** When two regions could show it, one owns it and the other shows it only while the first is hidden, the way the change list carries conflict and divergence counts only when the status bar is off. A file row leads with the file name and gives the folder as the secondary line; it does not repeat the name.
+- **An action sits with what it acts on.** The toolbar holds frequent repo-scope actions. App-level destinations such as Settings and Show in Finder live in the menus and the palette. A file-scope action sits on the file; a choice that applies to the whole change is one control on the change, not one per file.
+- **Viewing is the default; a workflow is a mode.** Outside the working copy, review marks appear only while the change is in review mode ([Review State](review-state.md)). The working copy is the exception because its marks also pick files to split or commit, and it keeps its always-visible description box for the same reason: describing and committing `@` is the most frequent action.
+- **Identity is compact, detail is on demand.** IDs show at jj's short length with the unique prefix emphasized, and keep a visible copy control. The change header stays compact by default because descriptions run long; nothing in it pushes the diff down.
+- **Views of a wider scope sit beside the content.** History that belongs to the repo, such as the operation log, opens next to the change it would affect rather than over it.
+- **Showing or hiding a window region is a View menu item** with a matching command, persisted app-wide like the sidebar toggle. It is not a Settings row.
+- **Optional chrome is never the only path.** Anything a user would be stuck without needs an entry point outside the region they can hide: reconnecting a disconnected SSH repository has its own banner, menu item, and command, whether or not the status bar is shown.
+
+## Color and Icons
+
+- **Color means kind, following jj's defaults:** change IDs and bookmarks magenta, commit IDs blue, the working copy and workspaces green, conflicts red, divergence orange. A role is the same color everywhere it is drawn. The accent color is for selection and focus.
+- **Themes keep their own hues.** Derive a role from the theme's palette by lightening or darkening it, not by fading it toward the text color, and check it on the row, header, and selected-row backgrounds of every built-in theme.
+- **One glyph, one meaning.** SF Symbols first on macOS. Where no symbol says it, use the Octicons glyph GPUI already ships, as a template image: pull and push are the repository book with a down or up arrow.
+- **Another app is shown by its own mark in one color** on the same tile as every other app, tinted with the surrounding foreground. Full-color app icons and run-time masks of them do not belong in the toolbar; an app without a bundled mark gets the generic symbol.
+
 ## Invariants
 
 A visual change that breaks one of these is a bug, whatever the design.
