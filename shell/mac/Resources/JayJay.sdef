@@ -22,7 +22,7 @@
             <element type="repository" description="Every open repository, frontmost first.">
                 <cocoa key="scriptRepositories"/>
             </element>
-            <property name="front repository" code="Jjfr" type="repository" access="r" description="The frontmost visible, loaded repository window, ignoring utility windows. Missing value if none is available.">
+            <property name="front repository" code="Jjfr" type="repository" access="r" description="The frontmost repository window, or a hidden or minimized one when none is visible. Missing value when no repository is open.">
                 <cocoa key="frontRepository"/>
             </property>
         </class>
@@ -41,7 +41,7 @@
                 <cocoa key="selectedChangeIDs"/>
                 <type type="text" list="yes"/>
             </property>
-            <property name="window id" code="Jjwi" type="integer" access="r" description="The window number of the repository window, as used by screencapture -l.">
+            <property name="window id" code="Jjwi" type="integer" access="r" description="The window number of the repository window, as used by screencapture -l. Missing value while the window is hidden.">
                 <cocoa key="windowID"/>
             </property>
             <property name="error message" code="Jjem" type="text" access="r" description="The error the window is showing. Missing value when there is none.">

@@ -13,15 +13,15 @@ extension RepoWindowManager {
     }
 
     var scriptingRepositories: [ScriptRepository] {
-        rankedScriptingModels.map { ScriptRepository(viewModel: $0.model) }
+        rankedScriptingModels.map(ScriptRepository.init)
     }
 
     var frontScriptingRepository: ScriptRepository? {
-        rankedScriptingModels.first { !$0.isMiniaturized }.map { ScriptRepository(viewModel: $0.model) }
+        rankedScriptingModels.first.map(ScriptRepository.init)
     }
 
     /// Ordered front to back, then hidden, then minimized: a hidden app has no visible windows but its repositories stay scriptable.
-    private var rankedScriptingModels: [(model: RepoViewModel, isMiniaturized: Bool)] {
+    private var rankedScriptingModels: [RepoViewModel] {
         compactRegistrations()
         let windows = liveRepoWindows
         let path = { (window: NSWindow) in
@@ -38,6 +38,6 @@ extension RepoWindowManager {
             }
             .map { (model: $0.model, path: $0.path, rank: visible.firstIndex(of: $0.path) ?? visible.count + (minimized.contains($0.path) ? 1 : 0)) }
             .sorted { ($0.rank, $0.path) < ($1.rank, $1.path) }
-            .map { ($0.model, minimized.contains($0.path)) }
+            .map(\.model)
     }
 }

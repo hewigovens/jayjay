@@ -39,7 +39,7 @@ final class OpenRepositoryScriptCommand: NSScriptCommand {
                     throw ScriptError(number: -1712, message: "The repository window did not appear within 30 seconds.")
                 }
                 await model.waitForFirstLoad()
-                try ScriptRepository.requireLoaded(model, reportingError: !wasLoaded)
+                try ScriptRepository.requireLoaded(model, reportingError: !wasLoaded || model.graphEntries.isEmpty)
                 return ScriptRepository(viewModel: model)
             }
             return nil

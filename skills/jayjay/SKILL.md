@@ -105,7 +105,7 @@ EOF
 | `selected change ids of r` | Full change IDs of the selection, as a list; `{}` when nothing is selected |
 | `refresh r` | Snapshots and reloads, for example after you ran `jj` |
 | `error message of r`, `notice of r` | The error or the latest notice the window shows; `missing value` when there is none |
-| `window id of r` | The window number, for `screencapture -x -o -l <id> <file.png>` to capture that window without focusing it |
+| `window id of r` | The window number, for `screencapture -x -o -l <id> <file.png>` to capture that window without focusing it; `missing value` while JayJay is hidden |
 
 - Each command returns once the window has finished loading, so run them back to back with no `delay`.
 - `<revision>` is any jj revision expression that resolves to exactly one change (`@`, a change ID or unique prefix, a bookmark). The change must already be in the graph: if it is not, set a revset that includes it first.
@@ -116,7 +116,7 @@ EOF
   osascript -e 'tell application "JayJay" to get selected change ids of front repository'
   ```
 
-- Errors come back as AppleScript errors with a message: `-1728` means no such repository, change or file (not open, unknown, ambiguous, or outside the current revset), `-10000` means the app tried and failed (for example an invalid revset), `-1700` a malformed argument such as a relative path, `-1712` that the window did not appear within 30 seconds.
+- Errors come back as AppleScript errors with a message: `-1728` means no such repository, change or file (not open, unknown, ambiguous, or outside the current revset), `-10000` means the app tried and failed (for example an invalid revset), `-1700` a malformed argument such as a relative path, `-1712` that the window did not appear within 30 seconds, `-1708` that JayJay has not finished onboarding.
 - The first script from a terminal makes macOS ask the user to allow it to control JayJay. If `osascript` hangs or fails with `-1743`, ask the user to approve the prompt (System Settings ▸ Privacy & Security ▸ Automation); do not retry in a loop.
 - If JayJay answers that it does not understand a command, the installed version predates scripting; say so instead of falling back to simulated clicks or keystrokes.
 
