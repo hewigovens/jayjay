@@ -43,7 +43,7 @@ extension RepoViewModel {
 
     private func loadSelectedChange(_ requestedRev: String) {
         let includeSubmoduleStatuses = includeSubmoduleStatuses
-        runRepoTask {
+        selectionLoadTask = runRepoTask {
             try Self.loadSummaryWithConflicts(
                 repo: $0,
                 rev: requestedRev,

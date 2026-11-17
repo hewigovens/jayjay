@@ -136,13 +136,25 @@ extension ChangeDetailView {
         guard let path = actions?.takePendingConflictEditor(commitId: detail.info.commitId.id),
               visibleDiff.contains(where: { $0.path == path })
         else { return }
+        selectFile(path)
+        prepareConflictEditor(path: path)
+    }
+
+    func showRequestedFile() {
+        guard let request = actions?.fileRevealRequest, request.revision == detailRevision else { return }
+        if !paneMode.isDiffEdit, visibleDiff.contains(where: { $0.path == request.path }) {
+            selectFile(request.path)
+        }
+        actions?.finishFileReveal(shown: !paneMode.isDiffEdit && selectedHunk?.path == request.path)
+    }
+
+    private func selectFile(_ path: String) {
         if !filteredDiff.contains(where: { $0.path == path }) {
             fileFilter = ""
             showNotedFilesOnly = false
         }
         fileSelection.primary = path
         fileSelection.paths = [path]
-        prepareConflictEditor(path: path)
     }
 
     func prepareConflictEditor(path: String) {

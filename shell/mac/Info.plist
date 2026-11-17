@@ -40,6 +40,10 @@
 	</array>
 	<key>CFBundleVersion</key>
 	<string>1</string>
+	<key>NSAppleScriptEnabled</key>
+	<true/>
+	<key>OSAScriptingDefinition</key>
+	<string>JayJay.sdef</string>
 	<key>NSDockTilePlugIn</key>
 	<string>JayJayDockTilePlugin.docktileplugin</string>
 	<key>SUAutomaticallyUpdate</key>

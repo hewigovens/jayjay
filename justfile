@@ -15,6 +15,7 @@ list:
   @echo "just test-rust crate   Package-scoped cargo test (inner loop)"
   @echo "just test-wasm         Link the portable UniFFI WASM surface with LLVM clang"
   @echo "just test-ui [test-ids] UI tests; pass test ids to run some scenes"
+  @echo "just test-applescript   AppleScript automation test against an isolated app copy"
   @echo "just test-ui-vm [test-ids] UI tests in a macOS VM clone (VMPal)"
   @echo "just test-ui-shard i n UI tests for shard i of n, balanced by test count; CI shards"
   @echo "just test              All workspace Rust tests (publish)"
@@ -76,6 +77,10 @@ test-app:
 
 test-ui *test_ids:
   just shell::ui-test {{test_ids}}
+
+# Uses an isolated app copy and its own defaults domain, so it never touches an installed build.
+test-applescript: build
+  bash "{{root}}/scripts/test-applescript.sh" "{{root}}/build/DerivedData/Build/Products/Debug/JayJay.app"
 
 test-ui-vm *test_ids:
   just shell::ui-test-vm {{test_ids}}

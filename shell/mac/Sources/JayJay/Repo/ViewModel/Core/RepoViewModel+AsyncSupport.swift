@@ -120,13 +120,14 @@ extension RepoViewModel {
         return (result, takeMutationOperationId())
     }
 
+    @discardableResult
     func runRepoTask<Result>(
         _ operation: @escaping RepoOperation<Result>,
         onSuccess: @escaping @MainActor (RepoViewModel, Result) -> Void,
         onFailure: @escaping @MainActor (RepoViewModel, any Error) -> Void = { viewModel, error in
             viewModel.present(error: error)
         }
-    ) {
+    ) -> Task<Void, Never> {
         startRepoTask { [weak self, repo] in
             let outcome = Swift.Result { try operation(repo) }
             await self?.applyRepoTaskOutcome(

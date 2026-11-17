@@ -341,15 +341,6 @@ extension RepoViewModel {
         resumePendingBackgroundRefresh()
     }
 
-    /// Follows refreshes that supersede the awaited one; returns early only when one ends without a successor.
-    @MainActor
-    func waitForFirstLoad() async {
-        while !hasFinishedFirstLoad, let task = refreshTask {
-            await task.value
-            guard refreshTask != task else { return }
-        }
-    }
-
     func resumePendingBackgroundRefresh(afterFailure: Bool = false) {
         if afterFailure, pendingBackgroundRefresh != nil {
             pendingBackgroundRefresh = .reload

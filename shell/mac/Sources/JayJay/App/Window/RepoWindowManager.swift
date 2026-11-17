@@ -5,12 +5,12 @@ import SwiftUI
 @MainActor
 @Observable
 final class RepoWindowManager {
-    private struct WorkspaceKey: Hashable {
+    struct WorkspaceKey: Hashable {
         let repositoryStorePath: String
         let name: String
     }
 
-    private struct RegisteredRepo {
+    struct RegisteredRepo {
         weak var viewModel: RepoViewModel?
         let path: String
         let workspace: WorkspaceKey
@@ -25,7 +25,8 @@ final class RepoWindowManager {
     var pendingRepoAfterOnboarding: String?
     /// SwiftUI's launch presentation is only a hint; applied once the first scene registers its window actions.
     var launchScene: LaunchScene?
-    private var registeredRepos: [ObjectIdentifier: RegisteredRepo] = [:]
+    private(set) var registeredRepos: [ObjectIdentifier: RegisteredRepo] = [:]
+    let registrationWaiters = RegistrationWaiters()
     private var removalCountsByRepoPath: [String: Int] = [:]
     private var removalCountsByWorkspace: [WorkspaceKey: Int] = [:]
     private var pendingReveals: [String: (headChangeId: String, rev: String)] = [:]
@@ -130,7 +131,7 @@ final class RepoWindowManager {
         NSApp.windows.filter { $0.isVisible || $0.isMiniaturized }
     }
 
-    private var liveRepoWindows: [NSWindow] {
+    var liveRepoWindows: [NSWindow] {
         let overviews = Set(overviewWindows.values.compactMap { $0.window.map(ObjectIdentifier.init) })
         return liveWindows.filter { !overviews.contains(ObjectIdentifier($0)) }
     }
@@ -197,13 +198,17 @@ final class RepoWindowManager {
     func register(_ viewModel: RepoViewModel) -> Bool {
         let path = normalizedRepositoryPath(path: viewModel.repoPath)
         let workspace = workspaceKey(for: viewModel)
-        guard !isRemovingRepo(at: path), removalCountsByWorkspace[workspace] == nil else { return false }
+        guard !isRemovingRepo(at: path), removalCountsByWorkspace[workspace] == nil else {
+            registrationWaiters.resume(for: path, with: nil)
+            return false
+        }
         compactRegistrations()
         registeredRepos[ObjectIdentifier(viewModel)] = RegisteredRepo(
             viewModel: viewModel,
             path: path,
             workspace: workspace
         )
+        registrationWaiters.resume(for: path, with: viewModel)
         return true
     }
 
@@ -278,7 +283,7 @@ final class RepoWindowManager {
         removalCountsByRepoPath[normalizedRepositoryPath(path: path)] != nil
     }
 
-    private func compactRegistrations() {
+    func compactRegistrations() {
         registeredRepos = registeredRepos.filter { $0.value.viewModel != nil }
     }
 

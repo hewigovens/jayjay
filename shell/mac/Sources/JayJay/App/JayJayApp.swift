@@ -50,6 +50,7 @@ struct JayJayApp: App {
         appDelegate.settings = initialSettings
         appDelegate.externalToolInvocation = tool
         appDelegate.openRepositoryPicker = { manager.openRepositoryPicker() }
+        ScriptingHost.windowManager = manager
         appDelegate.openHandler = { manager.openRepo($0) }
         appDelegate.showRepoSelector = { manager.showRepoList() }
         appDelegate.reopenWindows = { manager.reopen() }

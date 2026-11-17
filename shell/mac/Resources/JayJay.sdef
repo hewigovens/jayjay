@@ -1,0 +1,80 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE dictionary SYSTEM "file://localhost/System/Library/DTDs/sdef.dtd">
+<dictionary title="JayJay Terminology">
+    <suite name="Standard Suite" code="????" description="Common commands for all applications.">
+        <command name="count" code="corecnte" description="Return the number of elements of a particular class within an object.">
+            <cocoa class="NSCountCommand"/>
+            <direct-parameter type="specifier" description="The objects to be counted."/>
+            <parameter name="each" code="kocl" type="type" optional="yes" hidden="yes" description="The class of the elements to be counted.">
+                <cocoa key="ObjectClass"/>
+            </parameter>
+            <result type="integer" description="The count."/>
+        </command>
+        <command name="exists" code="coredoex" description="Verify that an object exists.">
+            <cocoa class="NSExistsCommand"/>
+            <direct-parameter type="any" description="The object to check."/>
+            <result type="boolean" description="True if it exists."/>
+        </command>
+    </suite>
+    <suite name="JayJay Suite" code="Jjay" description="Inspect and navigate repository windows.">
+        <class name="application" code="capp" description="The JayJay application.">
+            <cocoa class="NSApplication"/>
+            <element type="repository" description="Every open repository, frontmost first.">
+                <cocoa key="scriptRepositories"/>
+            </element>
+            <property name="front repository" code="Jjfr" type="repository" access="r" description="The frontmost visible, loaded repository window, ignoring utility windows. Missing value if none is available.">
+                <cocoa key="frontRepository"/>
+            </property>
+        </class>
+        <class name="repository" code="Jjrp" plural="repositories" description="A repository displayed in a window.">
+            <cocoa class="ScriptRepository"/>
+            <property name="id" code="ID  " type="text" access="r" description="The workspace root the repository window shows.">
+                <cocoa key="path"/>
+            </property>
+            <property name="path" code="Jjpa" type="text" access="r" description="The workspace root the repository window shows.">
+                <cocoa key="path"/>
+            </property>
+            <property name="revset" code="Jjrv" type="text" access="rw" description="The revset shown in the graph. Setting it reloads the graph before returning.">
+                <cocoa key="revset"/>
+            </property>
+            <property name="selected change ids" code="Jjsi" access="r" description="Full change IDs in selection order, deduplicated. Empty when nothing is selected.">
+                <cocoa key="selectedChangeIDs"/>
+                <type type="text" list="yes"/>
+            </property>
+            <property name="window id" code="Jjwi" type="integer" access="r" description="The window number of the repository window, as used by screencapture -l.">
+                <cocoa key="windowID"/>
+            </property>
+            <property name="error message" code="Jjem" type="text" access="r" description="The error the window is showing. Missing value when there is none.">
+                <cocoa key="errorMessage"/>
+            </property>
+            <property name="notice" code="Jjnt" type="text" access="r" description="The latest notice the window is showing, such as the result of an action. Missing value when there is none.">
+                <cocoa key="notice"/>
+            </property>
+            <responds-to command="refresh">
+                <cocoa method="handleRefreshCommand:"/>
+            </responds-to>
+        </class>
+        <command name="open repository" code="JjayJjop" description="Open a repository window and return after its graph has loaded.">
+            <cocoa class="OpenRepositoryScriptCommand"/>
+            <direct-parameter type="text" description="Absolute local path inside a jj workspace."/>
+            <result type="repository" description="The repository, loaded."/>
+        </command>
+        <command name="refresh" code="JjayJjrf" description="Reload the repository and return after the graph has reloaded.">
+            <direct-parameter type="repository" description="The repository to refresh."/>
+        </command>
+        <command name="select change" code="JjaySlch" description="Select a change and show its diff. Returns after the detail pane shows it.">
+            <cocoa class="SelectChangeScriptCommand"/>
+            <direct-parameter type="text" description="A jj revision expression."/>
+            <parameter name="in" code="Jjin" type="repository" optional="yes" description="The repository to select in. Defaults to the front repository.">
+                <cocoa key="repository"/>
+            </parameter>
+        </command>
+        <command name="show file" code="JjayShfl" description="Select a file of the selected change and show its diff. Returns after the file list shows it.">
+            <cocoa class="ShowFileScriptCommand"/>
+            <direct-parameter type="text" description="File path relative to the workspace root."/>
+            <parameter name="in" code="Jjin" type="repository" optional="yes" description="The repository to show the file in. Defaults to the front repository.">
+                <cocoa key="repository"/>
+            </parameter>
+        </command>
+    </suite>
+</dictionary>

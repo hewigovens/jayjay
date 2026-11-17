@@ -107,6 +107,7 @@ just test-rust <crate>            # cargo test -p <crate>
 just test-rust <crate> <filter>
 just test-gpui                    # or: cargo test -p jayjay-gpui <filter>
 just test-ui JayJayUITests/<Scene>/<test>
+just test-applescript             # macOS scripting dictionary, real Apple events
 just ffi                          # only when UniFFI / Swift bindings changed
 ```
 

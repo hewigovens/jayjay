@@ -10,6 +10,31 @@ Load this file to launch or drive a JayJay build, or to debug a CI, test-runner,
 - Relaunching kills the process together with any unsaved modal.
 - Running instances snapshot the repository on every filesystem event; quit them before divergence cleanup or history rewrites (see [Version Control](version-control.md)).
 
+## Driving the macOS App With AppleScript
+
+The SwiftUI app has a scripting dictionary (`shell/mac/Resources/JayJay.sdef`), so `osascript` can open a repository, change the revset, select a change, and read the selection without synthetic clicks or keystrokes. Prefer it over UI automation whenever it covers the step.
+
+```applescript
+tell application "JayJay"
+    set r to open repository "/abs/path/to/workspace"
+    set revset of r to "mine()"
+    select change "@-" in r
+    show file "src/main.rs" in r
+    get selected change ids of r
+    refresh r
+    set windowID to window id of r
+end tell
+do shell script "screencapture -x -o -l " & windowID & " /tmp/jayjay.png"
+```
+
+- A repository is addressed by its workspace root: `repository id "/abs/path"`, `repositories` (front first), or `front repository` (`missing value` when none is open). A reference stays pinned to that path and fails with `-1728` once its window closes or switches workspace.
+- Every command returns only after the window has settled, so chain them without `delay`. `select change` takes any jj revision expression that resolves to one change already shown by the current revset; it never changes the revset to find it.
+- `show file` takes a path relative to the workspace root and selects that file of the selected change; there is no jump to a line yet. `window id` is the number `screencapture -l` takes, so a window can be captured without focusing it. `error message` and `notice` return what the window is showing (`missing value` when nothing), which outlives the toast.
+- Errors: `-1700` malformed argument, `-1708` app not ready (onboarding), `-1712` window did not appear within 30 s, `-1728` no such repository, change or file, `-10000` the operation ran and failed (invalid revset, load error), with the app's own message.
+- `tell application "JayJay"` reaches whichever JayJay LaunchServices picks, and debug builds share the installed app's bundle ID. To script a specific build, use an isolated copy with its own bundle ID the way `scripts/test-applescript.sh` does.
+- The first Apple event from a terminal or agent raises macOS's Automation consent dialog on that Mac's screen and blocks until someone answers. Over SSH or on an unattended Mac the call hangs; do not retry in a loop or try to bypass it.
+- `just test-applescript` builds the app and runs the acceptance cases with real Apple events. Run it after any change to the dictionary or the scripting classes: a wrong `.sdef` entry or Cocoa key compiles and then fails only at runtime. Terminology and four-character codes are a public contract once released; add, do not rename.
+
 ## Windows Builds From macOS
 
 `just shell::gpui-windows` cross-builds `target/x86_64-pc-windows-msvc/release/jayjay-gpui.exe` with `cargo-xwin`, for checking Windows behavior in a VM; CI's portable ZIP remains the release build. gpui precompiles its DirectX shaders only on a Windows build host, so the recipe keeps debug assertions on, which makes the app compile `shaders.hlsl` and `color_text_raster.hlsl` at startup from the gpui checkout path baked into the binary. Copy those files from `~/.cargo/git/checkouts/zed-*/<rev>/crates/gpui_windows/src/` (the revision in `Cargo.lock`) to the same path under `C:\` in the VM, or the app panics with "Recreating GPU state for DirectWrite: The system cannot find the path specified." Runtime shader compilation adds a few hundred milliseconds whenever a window opens, so use these builds to compare behavior, not absolute startup times. Prefix `JAYJAY_PRERELEASE=1` to get Debug mode on by default.

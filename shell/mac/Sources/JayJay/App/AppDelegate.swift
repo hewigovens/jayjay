@@ -2,6 +2,18 @@ import AppKit
 import JayJayCore
 
 class AppDelegate: NSObject, NSApplicationDelegate {
+    func application(_ sender: NSApplication, delegateHandlesKey key: String) -> Bool {
+        key == "frontRepository" || key == "scriptRepositories"
+    }
+
+    @MainActor @objc var frontRepository: ScriptRepository? {
+        ScriptingHost.windowManager?.frontScriptingRepository
+    }
+
+    @MainActor @objc var scriptRepositories: [ScriptRepository] {
+        ScriptingHost.windowManager?.scriptingRepositories ?? []
+    }
+
     var openRepositoryPicker: (() -> Void)?
     var openHandler: ((String) -> Void)?
     var showRepoSelector: (() -> Void)?

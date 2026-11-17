@@ -53,6 +53,7 @@
       "path": "Resources",
       "children": [
         { "path": "app.icon", "target-membership": [ "JayJay/resources" ] },
+        { "path": "JayJay.sdef", "target-membership": [ "JayJay/resources" ] },
         { "path": "HelpFeatures.json", "target-membership": [ "JayJay/resources" ] },
         { "path": "jay.aiff", "target-membership": [ "JayJay/resources" ] },
         { "path": "PlatformLogos.xcassets", "target-membership": [ "JayJay/resources" ] },

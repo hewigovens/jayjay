@@ -183,6 +183,7 @@ struct ChangeDetailView: View {
             fileColumnWidth = appSettings.secondaryPaneWidth
             resetState()
             openPendingConflictEditor()
+            showRequestedFile()
         }
         // Diff edit must own j/k: the DAG's earlier-installed key monitor would otherwise consume them whenever the DAG was the active pane.
         .onChange(of: paneMode.isDiffEdit) { _, isDiffEdit in
@@ -202,6 +203,10 @@ struct ChangeDetailView: View {
         .onChange(of: detail.info.commitId.id) { _, _ in
             resetState(preservingFileContext: detail.info.isWorkingCopy)
             openPendingConflictEditor()
+            showRequestedFile()
+        }
+        .onChange(of: actions?.fileRevealRequest?.id) { _, _ in
+            showRequestedFile()
         }
         .onChange(of: appSettings.ignoreWhitespace) { _, _ in
             loadFileStats()

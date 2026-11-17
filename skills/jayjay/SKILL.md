@@ -1,6 +1,6 @@
 ---
 name: jayjay
-description: Work with a person who reviews jj (Jujutsu) changes in the JayJay app. Use the `jayjay review` CLI to read and resolve their line-anchored review notes, pre-mark straightforward files as agent-reviewed, leave notes for critical risks, print jj diff/merge tool config with `jayjay config`, and create sibling workspaces or check out pull requests with `jayjay workspace` and `jayjay import`. Use when the user mentions JayJay, review notes, review marks, or asks you to address their review feedback in a jj repository.
+description: Work with a person who reviews jj (Jujutsu) changes in the JayJay app. Use the `jayjay review` CLI to read and resolve their line-anchored review notes, pre-mark straightforward files as agent-reviewed, leave notes for critical risks, print jj diff/merge tool config with `jayjay config`, create sibling workspaces or check out pull requests with `jayjay workspace` and `jayjay import`, and on macOS drive the running app with AppleScript (open a repository, set the revset, select a change, read the selection). Use when the user mentions JayJay, review notes, review marks, asks you to address their review feedback in a jj repository, or asks you to show something in JayJay.
 ---
 
 # JayJay
@@ -77,6 +77,48 @@ jayjay workspace prune <name>... --repo .     # or --all; deletes only workspace
 ```
 
 `import` reports the existing workspace instead of importing a pull request twice. `prune` keeps any workspace with pending work and says how many changes it holds; ask before pruning a workspace you did not create.
+
+## Show something in the app (macOS)
+
+On macOS, JayJay is scriptable through AppleScript, so you can put a repository, a revset, or a change in front of the user, or read what they have selected. This controls the window the user is looking at: do it when they ask ("show me that change in JayJay", "what do I have selected?"), not as a side effect. It only navigates; change the repository with `jj` as usual.
+
+```bash
+osascript <<'EOF'
+tell application "JayJay"
+    set r to open repository "/abs/path/to/workspace"
+    set revset of r to "trunk()..@"
+    select change "@-" in r
+    show file "src/main.rs" in r
+    get selected change ids of r
+end tell
+EOF
+```
+
+| Script | Does |
+| --- | --- |
+| `open repository "<abs path>"` | Opens or activates the window for the jj workspace containing that path and returns the repository |
+| `front repository`, `repositories`, `repository id "<workspace root>"` | The frontmost repository (`missing value` if none), all open ones front first, or one by its root |
+| `path of r`, `revset of r` | The workspace root; the revset shown in the graph |
+| `set revset of r to "<revset>"` | Reloads the graph with that revset; `""` resets to the default |
+| `select change "<revision>" in r` | Selects one change and shows its diff; `in r` defaults to the front repository |
+| `show file "<path>" in r` | Selects that file of the selected change and shows its diff; the path is relative to the workspace root |
+| `selected change ids of r` | Full change IDs of the selection, as a list; `{}` when nothing is selected |
+| `refresh r` | Snapshots and reloads, for example after you ran `jj` |
+| `error message of r`, `notice of r` | The error or the latest notice the window shows; `missing value` when there is none |
+| `window id of r` | The window number, for `screencapture -x -o -l <id> <file.png>` to capture that window without focusing it |
+
+- Each command returns once the window has finished loading, so run them back to back with no `delay`.
+- `<revision>` is any jj revision expression that resolves to exactly one change (`@`, a change ID or unique prefix, a bookmark). The change must already be in the graph: if it is not, set a revset that includes it first.
+- `show file` needs one selected change that contains the file; it cannot jump to a line yet.
+- To act on what the user selected, read `selected change ids` and pass those IDs to `jj`:
+
+  ```bash
+  osascript -e 'tell application "JayJay" to get selected change ids of front repository'
+  ```
+
+- Errors come back as AppleScript errors with a message: `-1728` means no such repository, change or file (not open, unknown, ambiguous, or outside the current revset), `-10000` means the app tried and failed (for example an invalid revset), `-1700` a malformed argument such as a relative path, `-1712` that the window did not appear within 30 seconds.
+- The first script from a terminal makes macOS ask the user to allow it to control JayJay. If `osascript` hangs or fails with `-1743`, ask the user to approve the prompt (System Settings ▸ Privacy & Security ▸ Automation); do not retry in a loop.
+- If JayJay answers that it does not understand a command, the installed version predates scripting; say so instead of falling back to simulated clicks or keystrokes.
 
 ## Use JayJay as jj's diff and merge tool
 

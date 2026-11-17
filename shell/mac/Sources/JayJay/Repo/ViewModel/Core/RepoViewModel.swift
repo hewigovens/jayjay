@@ -102,6 +102,8 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var submoduleAttentionItems: [GitSubmoduleStatus] = []
     var pendingCommitMessage: String?
     var pendingConflictEditor: (commitId: String, path: String)?
+    var fileRevealRequest: FileRevealRequest?
+    @ObservationIgnored var fileRevealCompletion: CheckedContinuation<Bool, Never>?
     var error: String?
     var workspaceVanished = false
     var isWorkingCopyStale = false
