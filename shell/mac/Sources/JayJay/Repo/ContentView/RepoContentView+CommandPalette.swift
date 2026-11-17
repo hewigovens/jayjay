@@ -47,6 +47,13 @@ extension RepoContentView {
             shortcut: AppShortcut.toggleSidebar.symbol
         ) { settings.sidebarHidden.toggle() })
         items.append(CommandPaletteItem(
+            title: showsStatusBar ? Localized.Menu.hideStatusBar : Localized.Menu.showStatusBar,
+            icon: "rectangle.bottomthird.inset.filled",
+            category: Localized.Menu.view,
+            keywords: ["toggle", "status", "bar", "footer"],
+            shortcut: AppShortcut.toggleStatusBar.symbol
+        ) { showsStatusBar.toggle() })
+        items.append(CommandPaletteItem(
             title: Localized.Palette.toggleSideBySideDiffTitle,
             icon: "rectangle.split.2x1",
             category: Localized.Menu.view,

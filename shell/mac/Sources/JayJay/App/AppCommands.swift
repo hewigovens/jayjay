@@ -4,6 +4,7 @@ import SwiftUI
 struct AppCommands: Commands {
     let settings: AppSettings
     let windowManager: RepoWindowManager
+    @AppStorage(AppSettings.showsStatusBarKey) var showsStatusBar = true
 
     var body: some Commands {
         CommandGroup(replacing: .windowArrangement) {}
@@ -18,6 +19,12 @@ struct AppCommands: Commands {
                 Label(settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar, systemImage: "sidebar.leading")
             }
             .keyboardShortcut(AppShortcut.toggleSidebar)
+            .disabled(ActiveRepoTracker.shared.handler == nil)
+
+            Button { showsStatusBar.toggle() } label: {
+                Label(showsStatusBar ? Localized.Menu.hideStatusBar : Localized.Menu.showStatusBar, systemImage: "rectangle.bottomthird.inset.filled")
+            }
+            .keyboardShortcut(AppShortcut.toggleStatusBar)
             .disabled(ActiveRepoTracker.shared.handler == nil)
 
             Divider()

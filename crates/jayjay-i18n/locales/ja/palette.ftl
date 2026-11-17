@@ -14,6 +14,7 @@ palette-toggle-tree-file-list = ファイル一覧のツリー表示を切り替
 palette-toggle-review-mode = レビュー モードを切り替え
 palette-toggle-auto-expand-descriptions = 説明の自動展開を切り替え
 palette-hide-show-sidebar = サイドバーを隠す / 表示
+palette-hide-show-status-bar = ステータスバーを隠す / 表示
 palette-parallelize-selected-changes = 選択したチェンジを並列化
 palette-run-formatters-on-selected-changes-jj = 選択したチェンジにフォーマッターを実行 (jj fix)
 palette-clean-up-stale-bookmarks = 古いブックマークを整理

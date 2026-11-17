@@ -14,6 +14,7 @@ palette-toggle-tree-file-list = Toggle Tree File List
 palette-toggle-review-mode = Toggle Review Mode
 palette-toggle-auto-expand-descriptions = Toggle Auto-Expand Descriptions
 palette-hide-show-sidebar = Hide / Show Sidebar
+palette-hide-show-status-bar = Hide / Show Status Bar
 palette-parallelize-selected-changes = Parallelize Selected Changes
 palette-run-formatters-on-selected-changes-jj = Run Formatters on Selected Changes (jj fix)
 palette-clean-up-stale-bookmarks = Clean Up Stale Bookmarks

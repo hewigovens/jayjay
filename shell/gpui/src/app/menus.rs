@@ -9,8 +9,8 @@ use super::actions::{
     OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
     OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, RedoOperation,
     ReportIssue, ResetZoom, RevealLogs, SendFeedback, ShowRepoInFileManager, ToggleHideGitLfsFiles,
-    ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar, ToggleTreeFileList, UndoOperation,
-    ZoomIn, ZoomOut,
+    ToggleIgnoreWhitespace, ToggleSideBySideDiff, ToggleSidebar, ToggleStatusBar,
+    ToggleTreeFileList, UndoOperation, ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::repositories::repository_name;
@@ -50,6 +50,14 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
                     jayjay_i18n::menu::hide_sidebar()
                 },
                 ToggleSidebar,
+            ),
+            MenuItem::action(
+                if cfg.layout.show_status_bar {
+                    jayjay_i18n::menu::hide_status_bar()
+                } else {
+                    jayjay_i18n::menu::show_status_bar()
+                },
+                ToggleStatusBar,
             ),
             MenuItem::separator(),
             MenuItem::action(jayjay_i18n::menu::zoom_in(), ZoomIn).disabled(

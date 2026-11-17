@@ -32,6 +32,7 @@ const SECTIONS: &[ShortcutSection] = &[
         title: jayjay_i18n::menu::view,
         entries: &[
             ShortcutEntry::Command(ShortcutCommand::RepoToggleSidebar),
+            ShortcutEntry::Command(ShortcutCommand::RepoToggleStatusBar),
             ShortcutEntry::Command(ShortcutCommand::RepoFilterByRevset),
             ShortcutEntry::Command(ShortcutCommand::AppZoomIn),
             ShortcutEntry::Command(ShortcutCommand::AppZoomOut),

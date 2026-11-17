@@ -17,6 +17,7 @@ impl ShortcutCommand {
             Self::RepoCommandPalette => menu::command_palette(),
             Self::RepoRefresh => repo::refresh(),
             Self::RepoToggleSidebar => palette::hide_show_sidebar(),
+            Self::RepoToggleStatusBar => palette::hide_show_status_bar(),
             Self::RepoOperationLog => menu::operation_log_ellipsis(),
             Self::RepoUndo => repo::undo(),
             Self::RepoRedo => menu::redo(),

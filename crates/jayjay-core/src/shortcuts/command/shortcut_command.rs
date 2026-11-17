@@ -11,6 +11,7 @@ pub enum ShortcutCommand {
     RepoCommandPalette,
     RepoRefresh,
     RepoToggleSidebar,
+    RepoToggleStatusBar,
     RepoOperationLog,
     RepoUndo,
     RepoRedo,
@@ -73,7 +74,7 @@ impl ShortcutCommand {
     }
 }
 
-const ALL: [ShortcutCommand; 58] = [
+const ALL: [ShortcutCommand; 59] = [
     ShortcutCommand::AppOpenRepository,
     ShortcutCommand::AppKeyboardShortcuts,
     ShortcutCommand::AppZoomIn,
@@ -85,6 +86,7 @@ const ALL: [ShortcutCommand; 58] = [
     ShortcutCommand::RepoCommandPalette,
     ShortcutCommand::RepoRefresh,
     ShortcutCommand::RepoToggleSidebar,
+    ShortcutCommand::RepoToggleStatusBar,
     ShortcutCommand::RepoOperationLog,
     ShortcutCommand::RepoUndo,
     ShortcutCommand::RepoRedo,

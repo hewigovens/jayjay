@@ -14,6 +14,7 @@ impl ShortcutCommand {
             Self::RepoCommandPalette => "repo.command_palette",
             Self::RepoRefresh => "repo.refresh",
             Self::RepoToggleSidebar => "repo.toggle_sidebar",
+            Self::RepoToggleStatusBar => "repo.toggle_status_bar",
             // Saved bindings keep the id from when this command was Undo Last Operation.
             Self::RepoOperationLog => "repo.undo_last_operation",
             Self::RepoUndo => "repo.undo",

@@ -319,6 +319,14 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::toggle_sidebar),
     },
     PaletteAction {
+        id: "hide-show-status-bar",
+        shortcut: Some(ShortcutCommand::RepoToggleStatusBar),
+        label: jayjay_i18n::palette::hide_show_status_bar,
+        keywords: &["status", "bar", "hide", "show", "footer"],
+        glyph_str: glyph::APP_WINDOW,
+        dispatch: |_, cx| config::update(cx, |c| c.layout.show_status_bar ^= true),
+    },
+    PaletteAction {
         id: "git-pull-fetch-rebase",
         shortcut: Some(ShortcutCommand::RepoFetch),
         label: jayjay_i18n::menu::pull,

@@ -14,6 +14,7 @@ palette-toggle-tree-file-list = 切換樹狀檔案列表
 palette-toggle-review-mode = 切換審查模式
 palette-toggle-auto-expand-descriptions = 切換自動展開描述
 palette-hide-show-sidebar = 隱藏 / 顯示側邊欄
+palette-hide-show-status-bar = 隱藏 / 顯示狀態列
 palette-parallelize-selected-changes = 平行化所選變更
 palette-run-formatters-on-selected-changes-jj = 對所選變更執行格式化工具（jj fix）
 palette-clean-up-stale-bookmarks = 清理過期書籤

@@ -9,6 +9,7 @@ enum AppShortcut: String, Decodable {
     case keyboardShortcuts = "app.keyboard_shortcuts"
     case settings = "app.settings"
     case toggleSidebar = "repo.toggle_sidebar"
+    case toggleStatusBar = "repo.toggle_status_bar"
     case zoomIn = "app.zoom_in"
     case zoomOut = "app.zoom_out"
     case resetZoom = "app.reset_zoom"

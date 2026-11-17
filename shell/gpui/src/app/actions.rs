@@ -40,6 +40,7 @@ actions!(
         ToggleHideGitLfsFiles,
         ToggleTreeFileList,
         ToggleSidebar,
+        ToggleStatusBar,
         ZoomIn,
         ZoomOut,
         ResetZoom,

@@ -7,7 +7,7 @@ use crate::app::actions::{
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
     OpenOperationLog, OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
     OpenSettings, RedoOperation, Refresh, SaveFileEditor, SaveNoteComposer, ShowRepoInFileManager,
-    ToggleSidebar, UndoOperation,
+    ToggleSidebar, ToggleStatusBar, UndoOperation,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -72,6 +72,9 @@ impl RepoWindow {
             }))
             .on_action(cx.listener(|view, _: &ToggleSidebar, _, cx| {
                 view.toggle_sidebar(cx);
+            }))
+            .on_action(cx.listener(|_, _: &ToggleStatusBar, _, cx| {
+                crate::app::config::update(cx, |c| c.layout.show_status_bar ^= true);
             }))
             .on_action(cx.listener(|view, _: &OpenRemoteRepository, _, cx| {
                 view.open_remote_repository(cx);

@@ -23,6 +23,7 @@ struct RepoContentView: View {
     @State var toastDismissTask: Task<Void, Never>?
     @State var menuCoordinator = RepoMenuHandler()
     @Environment(AppSettings.self) var settings
+    @AppStorage(AppSettings.showsStatusBarKey) var showsStatusBar = true
     @Environment(RepoWindowManager.self) var windowManager
     @Environment(\.openSettings) var openSettings
     @Environment(\.colorScheme) var colorScheme
@@ -183,8 +184,10 @@ struct RepoContentView: View {
                 }
             )
             .disabled(!viewModel.sshConnected)
-            Divider()
-            statusBar
+            if showsStatusBar {
+                Divider()
+                statusBar
+            }
         }
         .background(paneBackground)
     }

@@ -8,6 +8,7 @@ use serde::{Deserialize, Serialize};
 pub struct LayoutConfig {
     pub(crate) sidebar_width: f32,
     pub(crate) sidebar_hidden: bool,
+    pub show_status_bar: bool,
     #[serde(alias = "file_column_width")]
     pub(crate) secondary_pane_width: f32,
     pub recent_repos_panel: bool,
@@ -20,6 +21,7 @@ impl Default for LayoutConfig {
         Self {
             sidebar_width: 360.0,
             sidebar_hidden: false,
+            show_status_bar: true,
             secondary_pane_width: SECONDARY_PANE_DEFAULT,
             recent_repos_panel: false,
             recent_repos_panel_width: RECENT_PANEL_DEFAULT,

@@ -4,6 +4,7 @@ use std::time::{Duration, Instant};
 
 use crate::harness::*;
 use gpui::{AppContext, Entity, Modifiers, TestAppContext, VisualTestContext};
+use jayjay_gpui::app::actions::ToggleStatusBar;
 use jayjay_gpui::app::config;
 use jayjay_gpui::app::startup_window::open_startup_window;
 use jayjay_gpui::repo::RepoWindow;
@@ -239,6 +240,15 @@ fn status_bar_renders_swiftui_style_items(cx: &mut TestAppContext) {
         cx.debug_bounds(header).is_some(),
         "sidebar header shows the change count"
     );
+
+    focus_view(&view, cx);
+    cx.dispatch_action(ToggleStatusBar);
+    settle_visual(cx);
+    assert!(cx.debug_bounds("status-path").is_none());
+    assert!(!cx.update(|_, cx| config::current(cx).layout.show_status_bar));
+    cx.dispatch_action(ToggleStatusBar);
+    settle_visual(cx);
+    assert!(cx.debug_bounds("status-path").is_some());
 }
 
 #[gpui::test]

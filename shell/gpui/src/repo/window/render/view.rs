@@ -270,7 +270,10 @@ impl Render for RepoWindow {
                 .opacity(0.6)
                 .child(div().absolute().inset_0().block_mouse_except_scroll());
         }
-        root = root.child(body).child(status_bar(self, &t, cx));
+        root = root.child(body);
+        if crate::app::config::current(cx).layout.show_status_bar {
+            root = root.child(status_bar(self, &t, cx));
+        }
 
         if let Some(menu) = context_menu_overlay {
             root = root.child(menu);
