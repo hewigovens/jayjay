@@ -37,12 +37,22 @@ repo (operation log, bookmarks, remotes)
    └─ history (revset) → change → files → hunks
 ```
 
+Three parts of the model are easy to get wrong:
+
+- **Bookmarks are labels, not places.** You are on a change, not on a branch. A bookmark sits next to the change it labels, with its sync state; it does not frame the window.
+- **There are two time axes.** The operation log is repo time and belongs at window level. The evolog is change time and belongs inside the change.
+- **The working copy is a change.** `@` has the same anatomy as any other change: description, metadata, files. Where it behaves differently, the difference is a stated exception with a reason.
+
 - **One level per region.** Scope narrows left to right and top to bottom: window chrome (toolbar, title, menus) is repo and workspace scope, the sidebar is history, the detail pane is one change with its files and their hunks.
 - **A fact appears once, at the level it describes.** When two regions could show it, one owns it and the other shows it only while the first is hidden, the way the change list carries conflict and divergence counts only when the status bar is off. A file row leads with the file name and gives the folder as the secondary line; it does not repeat the name.
 - **An action sits with what it acts on.** The toolbar holds frequent repo-scope actions. App-level destinations such as Settings and Show in Finder live in the menus and the palette. A file-scope action sits on the file; a choice that applies to the whole change is one control on the change, not one per file.
 - **Viewing is the default; a workflow is a mode.** Outside the working copy, review marks appear only while the change is in review mode ([Review State](review-state.md)). The working copy is the exception because its marks also pick files to split or commit, and it keeps its always-visible description box for the same reason: describing and committing `@` is the most frequent action.
 - **Identity is compact, detail is on demand.** IDs show at jj's short length with the unique prefix emphasized, and keep a visible copy control. The change header stays compact by default because descriptions run long; nothing in it pushes the diff down.
+- **An alternate view replaces content at its own level.** Evolog and annotate swap in for the diff inside the change; they do not stack beside it or open a second window.
 - **Views of a wider scope sit beside the content.** History that belongs to the repo, such as the operation log, opens next to the change it would affect rather than over it.
+- **Every toolbar button and context-menu item also exists in the menu bar,** with its shortcut shown there, and in the command palette. A toolbar button is a convenience, never the only route, which is what lets a rarely used one leave the toolbar.
+- **The toolbar follows the platform's order:** navigation leading, one dominant control in the centre (the revset field), a few frequent actions trailing as monochrome symbols with tooltips that name what they open.
+- **Standard controls carry modes.** A two-way mode is a segmented control; a list's flat or tree form is a toggle in that list's header; an empty state is one short, calm message, not a prompt; an edit form opens from an Edit button with Save and Cancel, Return to save and Escape to cancel.
 - **Showing or hiding a window region is a View menu item** with a matching command, persisted app-wide like the sidebar toggle. It is not a Settings row.
 - **Optional chrome is never the only path.** Anything a user would be stuck without needs an entry point outside the region they can hide: reconnecting a disconnected SSH repository has its own banner, menu item, and command, whether or not the status bar is shown.
 
@@ -51,6 +61,7 @@ repo (operation log, bookmarks, remotes)
 - **Color means kind, following jj's defaults:** change IDs and bookmarks magenta, commit IDs blue, the working copy and workspaces green, conflicts red, divergence orange. A role is the same color everywhere it is drawn. The accent color is for selection and focus.
 - **Themes keep their own hues.** Derive a role from the theme's palette by lightening or darkening it, not by fading it toward the text color, and check it on the row, header, and selected-row backgrounds of every built-in theme.
 - **One glyph, one meaning.** SF Symbols first on macOS. Where no symbol says it, use an Octicons glyph (the set GPUI ships) as a template image, redrawn only to match the neighbouring symbols: pull and push are the repository book, widened, with a down or up arrow.
+- **Size a glyph by its ink, against its neighbours.** A custom or third-party mark in a 16-point box can still look a third smaller than the symbols beside it. Measure the drawn width and height of each icon in the group from a capture, then widen the artwork or scale the mark until the group reads as one set; scale a filled mark slightly smaller than a line mark.
 - **Another app is shown by its own mark in one color** on the same tile as every other app, tinted with the surrounding foreground. Full-color app icons and run-time masks of them do not belong in the toolbar; an app without a bundled mark gets an SF Symbol: the hammer for Xcode, otherwise the generic code or terminal symbol.
 
 ## Invariants
