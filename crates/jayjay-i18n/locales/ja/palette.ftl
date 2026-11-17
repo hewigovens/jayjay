@@ -11,6 +11,7 @@ palette-toggle-side-by-side-diff = 左右並べての差分表示を切り替え
 palette-toggle-ignore-whitespace = 空白の無視を切り替え
 palette-toggle-hide-git-lfs-backed-files = Git LFS 管理ファイルの非表示を切り替え
 palette-toggle-tree-file-list = ファイル一覧のツリー表示を切り替え
+palette-toggle-review-mode = レビュー モードを切り替え
 palette-toggle-auto-expand-descriptions = 説明の自動展開を切り替え
 palette-hide-show-sidebar = サイドバーを隠す / 表示
 palette-parallelize-selected-changes = 選択したチェンジを並列化

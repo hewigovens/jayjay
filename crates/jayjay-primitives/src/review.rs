@@ -198,6 +198,16 @@ impl ReviewFileRollup {
     }
 }
 
+/// Whether a change's files carry review marks, and whether the person can switch that for the change.
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Hash)]
+pub enum ReviewMode {
+    Unavailable,
+    /// `@` always shows marks: they also pick the files to split or commit.
+    WorkingCopy,
+    On,
+    Off,
+}
+
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum ReviewGroupStates {
     /// A mark with no group snapshot to break it down: identity-only file marks, binaries, images.

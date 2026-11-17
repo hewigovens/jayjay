@@ -77,7 +77,7 @@ public extension NativeDiffView {
 
         let noteActions = gutterActions as? any DiffGutterNoteActions
         // The column is reserved whenever notes are possible, so adding or removing the first note never shifts the gutter.
-        let loadsNoteMarkers = reviewModeEnabled && noteActions?.reviewNotesEnabled == true
+        let loadsNoteMarkers = !showsLineCheckboxes && noteActions?.reviewNotesEnabled == true
         let showsNoteColumn = reserveNoteColumn || loadsNoteMarkers
         let noteSummariesByLine = loadsNoteMarkers
             ? noteSummariesByDisplayLine(displayLines: displayLines, groups: groups, notes: reviewNotes)

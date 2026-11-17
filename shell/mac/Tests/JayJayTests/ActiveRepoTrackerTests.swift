@@ -7,6 +7,7 @@ import XCTest
 final class ActiveRepoTrackerTests: XCTestCase {
     private final class Handler: RepositoryMenuHandler {
         let canViewRemoteRepository = false
+        let reviewMode = ReviewMode.unavailable
         func canPerformShortcut(_: AppShortcut) -> Bool {
             false
         }

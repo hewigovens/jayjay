@@ -4,6 +4,7 @@ mod marks;
 mod note_store;
 mod reconcile;
 mod replay;
+mod review_mode;
 pub mod store;
 #[cfg(test)]
 pub mod test_util;
@@ -13,7 +14,7 @@ pub use file_state::display_group_states;
 pub use jayjay_primitives::{
     HunkType, JayError, JayResult, NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewDiffProvider,
     ReviewFileDiff, ReviewFileRollup, ReviewFileState, ReviewGroupState, ReviewHunk,
-    ReviewMarkSource, ReviewNoteStatus, ReviewStoreSummary,
+    ReviewMarkSource, ReviewMode, ReviewNoteStatus, ReviewStoreSummary,
 };
 pub use jj_diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 pub use marks::ReviewFileMarks;

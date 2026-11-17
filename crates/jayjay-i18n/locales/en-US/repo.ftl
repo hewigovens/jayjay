@@ -536,6 +536,8 @@ repo-stack-summary =
     }
 repo-branch-name-placeholder = branch name
 repo-files-reviewed-progress = { NUMBER($reviewed) } of { NUMBER($total) } files reviewed
+repo-turn-on-review-mode = Turn on review mode
+repo-turn-off-review-mode = Turn off review mode
 repo-files-filtered = { NUMBER($shown) } of { NUMBER($total) } files
 repo-bookmark-deleted-on-remote = { $bookmark } was deleted on { $remote }.
 repo-bookmark-diverged-from-remote = { $bookmark } and { $remote } have each moved on.

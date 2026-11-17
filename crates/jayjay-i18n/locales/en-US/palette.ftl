@@ -11,6 +11,7 @@ palette-toggle-side-by-side-diff = Toggle Side-by-side Diff
 palette-toggle-ignore-whitespace = Toggle Ignore Whitespace
 palette-toggle-hide-git-lfs-backed-files = Toggle Hide Git LFS-backed Files
 palette-toggle-tree-file-list = Toggle Tree File List
+palette-toggle-review-mode = Toggle Review Mode
 palette-toggle-auto-expand-descriptions = Toggle Auto-Expand Descriptions
 palette-hide-show-sidebar = Hide / Show Sidebar
 palette-parallelize-selected-changes = Parallelize Selected Changes

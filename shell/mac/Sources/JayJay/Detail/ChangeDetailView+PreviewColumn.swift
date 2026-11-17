@@ -80,7 +80,7 @@ extension ChangeDetailView {
                             rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
                         },
                         fileReview: .chrome(
-                            showReview: showsReviewControls && hunk.isReviewable,
+                            showReview: showsReviewMarks && hunk.isReviewable,
                             rollup: fileRollups[hunk.path] ?? .unreviewed
                         ),
                         onToggleFileReview: { toggleReview([hunk.path]) },

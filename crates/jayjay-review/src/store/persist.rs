@@ -63,6 +63,7 @@ impl ReviewStore {
         self.mutate(|store| {
             store.state.reviewed.clear();
             store.state.notes.clear();
+            store.state.review_modes.clear();
         })
     }
 }

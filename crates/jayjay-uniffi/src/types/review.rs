@@ -1,7 +1,7 @@
 use jayjay_core::diff::{ReviewFileSnapshot, ReviewGroupFingerprint};
 use jayjay_primitives as primitives;
 use jayjay_primitives::{
-    NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewFileRollup, ReviewGroupState,
+    NoteAnchor, NoteEntry, NoteSide, NoteStatus, ReviewFileRollup, ReviewGroupState, ReviewMode,
     ReviewNoteStatus, ReviewStoreSummary,
 };
 use jayjay_review::ReviewFileMarks;
@@ -70,6 +70,14 @@ pub enum ReviewFileRollup {
     Partial,
     Reviewed,
     ChangedSinceReview,
+}
+
+#[uniffi::remote(Enum)]
+pub enum ReviewMode {
+    Unavailable,
+    WorkingCopy,
+    On,
+    Off,
 }
 
 #[uniffi::remote(Record)]

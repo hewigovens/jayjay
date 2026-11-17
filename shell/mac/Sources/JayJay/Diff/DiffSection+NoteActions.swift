@@ -64,7 +64,7 @@ struct ReviewNoteEditorState: Identifiable {
 
 extension DiffSection: DiffGutterNoteActions {
     var reviewNotesEnabled: Bool {
-        reviewModeEnabled
+        reservesReviewNoteGutterColumn && hunk.projection == nil
     }
 
     func activeNotes(anchor: DiffReviewNoteAnchor) -> [DiffReviewNoteSummary] {

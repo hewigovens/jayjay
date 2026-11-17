@@ -33,7 +33,7 @@ extension ChangeDetailView {
         let paths = fileSelection.paths
             .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
             .sorted()
-        guard showsReviewControls, !paths.isEmpty else { return false }
+        guard showsReviewMarks, !paths.isEmpty else { return false }
         toggleReview(paths)
         return true
     }

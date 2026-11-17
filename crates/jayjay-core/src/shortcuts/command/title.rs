@@ -42,6 +42,7 @@ impl ShortcutCommand {
             Self::RepoToggleSideBySide => palette::toggle_side_by_side_diff_title(),
             Self::RepoToggleIgnoreWhitespace => palette::toggle_ignore_whitespace(),
             Self::RepoToggleTreeFileList => palette::toggle_tree_file_list(),
+            Self::RepoToggleReviewMode => palette::toggle_review_mode(),
             Self::RepoCopyDiffSelection => shortcuts::copy_diff_selection(),
             Self::RepoSwitchPane => shortcuts::switch_active_pane(),
             Self::RepoCyclePanes => shortcuts::cycle_focused_pane(),

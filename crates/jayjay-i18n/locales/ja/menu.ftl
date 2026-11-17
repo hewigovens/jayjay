@@ -15,6 +15,7 @@ menu-repo-overview = リポジトリの概要
 menu-new-workspace-ellipsis = 新規ワークスペース…
 menu-new-workspace-from-pull-request-ellipsis = pull request から新規ワークスペース…
 menu-view-remote-repository = リモート リポジトリを表示
+menu-review-mode = レビュー モード
 menu-help = ヘルプ
 menu-keyboard-shortcuts = キーボード ショートカット
 menu-jayjay-user-guide = JayJay ユーザー ガイド

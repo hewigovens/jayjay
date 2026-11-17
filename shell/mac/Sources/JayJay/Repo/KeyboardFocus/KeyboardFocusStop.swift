@@ -1,6 +1,6 @@
 /// Tab stops in declaration order; controls and inputs register while visible.
 enum KeyboardFocusStop: CaseIterable {
-    case dag, fileList, treeToggle, filterToggle
+    case dag, fileList, treeToggle, filterToggle, reviewMode
     case expandDescription, editDescription, markReviewed, diffLayout, editDiff, editFile
     case sidebarToggle, refresh, pull, push, revsetBack, revsetPresets, revsetFilter, revsetReset, finder, editor, terminal, settings
     case commitSummary, commitDescription

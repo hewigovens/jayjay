@@ -6,6 +6,7 @@ import SwiftUI
 @MainActor
 protocol RepositoryMenuHandler: AnyObject {
     var canViewRemoteRepository: Bool { get }
+    var reviewMode: ReviewMode { get }
     func canPerformShortcut(_ shortcut: AppShortcut) -> Bool
     func performShortcut(_ shortcut: AppShortcut)
     func showCommandPalette()

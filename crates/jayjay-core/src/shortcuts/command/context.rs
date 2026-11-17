@@ -33,6 +33,7 @@ impl ShortcutCommand {
             | Self::RepoToggleSideBySide
             | Self::RepoToggleIgnoreWhitespace
             | Self::RepoToggleTreeFileList
+            | Self::RepoToggleReviewMode
             | Self::RepoNewChange
             | Self::RepoEditChange
             | Self::RepoDescribeChange

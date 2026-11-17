@@ -7,6 +7,7 @@ final class RepoMenuHandler: RepositoryMenuHandler {
     /// Pushed by the window whenever what its shortcuts would act on changes, so the Repository menu disables what would do nothing.
     var availableShortcuts: Set<AppShortcut> = []
     var canViewRemoteRepository = false
+    var reviewMode = ReviewMode.unavailable
 
     func canPerformShortcut(_ shortcut: AppShortcut) -> Bool {
         availableShortcuts.contains(shortcut)

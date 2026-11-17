@@ -11,6 +11,7 @@ palette-toggle-side-by-side-diff = 切換並排差異
 palette-toggle-ignore-whitespace = 切換忽略空白
 palette-toggle-hide-git-lfs-backed-files = 切換隱藏 Git LFS 檔案
 palette-toggle-tree-file-list = 切換樹狀檔案列表
+palette-toggle-review-mode = 切換審查模式
 palette-toggle-auto-expand-descriptions = 切換自動展開描述
 palette-hide-show-sidebar = 隱藏 / 顯示側邊欄
 palette-parallelize-selected-changes = 平行化所選變更

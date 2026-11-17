@@ -22,7 +22,7 @@ extension ChangeDetailView {
         }
 
         if !includesSubmodulePlaceholder {
-            if showsReviewControls, !includesUnreviewableFile {
+            if showsReviewMarks, !includesUnreviewableFile {
                 Button(reviewLabel) {
                     applyReviewMarks(
                         paths: contextPaths,
@@ -58,7 +58,7 @@ extension ChangeDetailView {
     @ViewBuilder
     func folderContextMenu(for folder: String) -> some View {
         let paths = filteredDiff.filter { $0.isReviewable && $0.path.hasPrefix("\(folder)/") }.map(\.path)
-        if showsReviewControls, !paths.isEmpty {
+        if showsReviewMarks, !paths.isEmpty {
             Button(reviewActionLabel(for: paths)) { toggleReview(paths) }
         }
     }
@@ -156,7 +156,7 @@ extension ChangeDetailView {
 
     /// Marks carry the fingerprints of a diff that has been viewed; a file marked straight from the list keeps a whole-file baseline.
     func applyReviewMarks(paths: [String], reviewed: Bool) {
-        guard showsReviewControls else { return }
+        guard showsReviewMarks else { return }
         let hunks = paths.compactMap { path in
             detail.diff.first(where: { $0.path == path && !$0.reviewIdentity.isEmpty })
         }

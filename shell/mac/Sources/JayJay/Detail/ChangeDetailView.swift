@@ -108,7 +108,7 @@ struct ChangeDetailView: View {
         if !fileFilter.isEmpty {
             result = result.filter { $0.path.localizedCaseInsensitiveContains(fileFilter) }
         }
-        if appSettings.hideReviewedFiles, showsReviewControls {
+        if appSettings.hideReviewedFiles, showsReviewMarks {
             result = result.filter { !reviewedPaths.contains($0.path) }
         }
         if showNotedFilesOnly, showsReviewControls {
@@ -199,6 +199,9 @@ struct ChangeDetailView: View {
             descriptionExpansion = .preference
         }
         .onChange(of: reviewStore.resetGeneration) { _, _ in
+            refreshReviewState()
+        }
+        .onChange(of: showsReviewMarks) { _, _ in
             refreshReviewState()
         }
         .onChange(of: filteredDiff.map(\.path)) { _, _ in

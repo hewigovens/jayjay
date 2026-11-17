@@ -15,6 +15,7 @@ menu-repo-overview = Repo Overview
 menu-new-workspace-ellipsis = New Workspace…
 menu-new-workspace-from-pull-request-ellipsis = New Workspace from Pull Request…
 menu-view-remote-repository = View Remote Repository
+menu-review-mode = Review Mode
 menu-help = Help
 menu-keyboard-shortcuts = Keyboard Shortcuts
 menu-jayjay-user-guide = JayJay User Guide

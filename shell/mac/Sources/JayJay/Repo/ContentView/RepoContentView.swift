@@ -61,6 +61,9 @@ struct RepoContentView: View {
             .onChange(of: availableMenuShortcuts, initial: true) { _, shortcuts in
                 menuCoordinator.availableShortcuts = shortcuts
             }
+            .onChange(of: viewModel.selectedReviewMode, initial: true) { _, mode in
+                menuCoordinator.reviewMode = mode
+            }
             .onChange(of: viewModel.hasWebRemote, initial: true) { _, hasWebRemote in
                 menuCoordinator.canViewRemoteRepository = hasWebRemote
             }

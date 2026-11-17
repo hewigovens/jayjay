@@ -30,6 +30,10 @@ impl ReviewStore {
             store.state.reviewed.retain(|key, _| keep(change_of(key)));
             store
                 .state
+                .review_modes
+                .retain(|change_id, _| keep(change_id));
+            store
+                .state
                 .notes
                 .retain(|note| note.parsed().is_none_or(|note| keep(&note.change_id)));
             Ok(removed)

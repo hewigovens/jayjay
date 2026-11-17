@@ -54,7 +54,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         let featureFile = app.element(AID.FileList.row("feature.txt"))
         XCTAssertTrue(featureFile.waitForExistence(timeout: 10), "Shift-Tab did not hand navigation back to the DAG")
 
-        // The selected change is mutable but not the working copy, so Mark Reviewed participates and Edit File does not.
+        // The selected change is mutable but not the working copy, so the Review toggle participates instead of Mark Reviewed and Edit File does not.
         for _ in 0 ..< 14 {
             keyStroke(.tab)
         }

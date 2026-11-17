@@ -3,6 +3,7 @@ use crate::store::{ReviewEntryState, StoredReviews};
 use crate::test_util::SequentialIds;
 
 mod owned;
+mod review_mode;
 #[cfg(feature = "storage")]
 mod storage;
 

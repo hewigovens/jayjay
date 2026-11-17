@@ -24,7 +24,7 @@ extension ChangeDetailView {
     }
 
     func reconcileChangedReviewRollups() {
-        guard showsReviewControls else { return }
+        guard showsReviewMarks else { return }
         let hunks = visibleDiff.filter { hunk in
             fileRollups[hunk.path] == .changedSinceReview
                 && !resolvedReviewSnapshotKeys.contains(hunk.reviewSnapshotKey)
@@ -44,7 +44,7 @@ extension ChangeDetailView {
             }
             let resolved = loaded
             await MainActor.run {
-                guard showsReviewControls,
+                guard showsReviewMarks,
                       reviewChangeId == changeId,
                       reviewSnapshotRequestId == requestId
                 else {
@@ -62,6 +62,12 @@ extension ChangeDetailView {
     }
 
     func applyKnownReviewRollups() {
+        guard showsReviewMarks else {
+            fileRollups = [:]
+            agentMarkedPaths = []
+            reviewedPaths = []
+            return
+        }
         let files = visibleDiff.map { hunk in
             ReviewFileQuery(
                 path: hunk.path,

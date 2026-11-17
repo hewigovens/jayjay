@@ -38,6 +38,7 @@ enum AppShortcut: String, Decodable {
     case toggleSideBySide = "repo.toggle_side_by_side"
     case toggleIgnoreWhitespace = "repo.toggle_ignore_whitespace"
     case toggleTreeFileList = "repo.toggle_tree_file_list"
+    case toggleReviewMode = "repo.toggle_review_mode"
     case newChange = "repo.new_change"
     case editChange = "repo.edit_change"
     case describeChange = "repo.describe_change"

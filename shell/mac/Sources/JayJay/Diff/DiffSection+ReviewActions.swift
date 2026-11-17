@@ -4,7 +4,7 @@ import SwiftUI
 
 extension DiffSection: DiffGutterReviewActions {
     var reviewModeEnabled: Bool {
-        reservesReviewNoteGutterColumn && hunk.projection == nil
+        reviewNotesEnabled && fileReview != .hidden
     }
 
     var reservesReviewNoteGutterColumn: Bool {

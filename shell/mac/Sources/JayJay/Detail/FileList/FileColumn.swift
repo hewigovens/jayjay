@@ -11,6 +11,28 @@ extension ChangeDetailView {
         let noteAccent = appSettings.appThemes.colors(for: colorScheme).noteAccent
         return VStack(spacing: 0) {
             HStack(spacing: 6) {
+                Button {
+                    appSettings.treeFileList.toggle()
+                } label: {
+                    Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
+                        .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
+                        .jayjayFont(14)
+                }
+                .buttonStyle(.plain)
+                .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
+                .help(appSettings.treeFileList ? Localized.Repo.showingFilesAsATree : Localized.Repo.showingFilesAsAFlatList)
+                Button {
+                    toggleFileFilter()
+                } label: {
+                    Image(systemName: "magnifyingglass")
+                        .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
+                        .jayjayFont(14)
+                }
+                .buttonStyle(.plain)
+                .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
+                .help(Localized.Repo.filterFiles)
+                .accessibilityIdentifier(AID.FileList.filterToggle)
+                reviewModeToggle
                 if showsReviewControls, activeReviewNoteCount > 0 {
                     Button {
                         showNotedFilesOnly.toggle()
@@ -55,7 +77,7 @@ extension ChangeDetailView {
                     .help(Localized.Repo.splitCheckedFiles(count: reviewedPaths.count))
                     .accessibilityIdentifier(AID.SplitSheet.openButton)
                 }
-                if showsReviewControls, !reviewedPaths.isEmpty || appSettings.hideReviewedFiles {
+                if showsReviewMarks, !reviewedPaths.isEmpty || appSettings.hideReviewedFiles {
                     Button {
                         appSettings.hideReviewedFiles.toggle()
                     } label: {
@@ -66,33 +88,12 @@ extension ChangeDetailView {
                     .buttonStyle(.plain)
                     .help(appSettings.hideReviewedFiles ? Localized.Repo.showingOnlyUnreviewedFiles : Localized.Settings.hideReviewed)
                 }
-                Button {
-                    appSettings.treeFileList.toggle()
-                } label: {
-                    Image(systemName: appSettings.treeFileList ? "list.bullet.indent" : "list.bullet")
-                        .foregroundStyle(appSettings.treeFileList ? Color.accentColor : .secondary)
-                        .jayjayFont(14)
-                }
-                .buttonStyle(.plain)
-                .keyboardFocusStop(.treeToggle) { appSettings.treeFileList.toggle() }
-                .help(appSettings.treeFileList ? Localized.Repo.showingFilesAsATree : Localized.Repo.showingFilesAsAFlatList)
-                Button {
-                    toggleFileFilter()
-                } label: {
-                    Image(systemName: "magnifyingglass")
-                        .foregroundStyle(showFileFilter ? Color.accentColor : .secondary)
-                        .jayjayFont(14)
-                }
-                .buttonStyle(.plain)
-                .keyboardFocusStop(.filterToggle, action: toggleFileFilter)
-                .help(Localized.Repo.filterFiles)
-                .accessibilityIdentifier(AID.FileList.filterToggle)
                 Spacer(minLength: 8)
                 Text(fileCountLabel)
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
                     .lineLimit(1)
-                    .help(showsReviewedCount ? reviewedCountHelp : "")
+                    .help(showsReviewProgress ? reviewedCountHelp : "")
             }
             .padding(.horizontal, 14)
             .padding(.vertical, 6)
@@ -172,7 +173,7 @@ extension ChangeDetailView {
             hunk: hunk,
             isSelected: fileSelection.paths.contains(hunk.path),
             isPaneActive: activePane == .fileColumn,
-            showReview: showsReviewControls && hunk.isReviewable,
+            showReview: showsReviewMarks && hunk.isReviewable,
             reviewRollup: fileRollups[hunk.path] ?? .unreviewed,
             agentMarked: agentMarkedPaths.contains(hunk.path),
             noteCount: noteCount,
@@ -203,7 +204,12 @@ extension ChangeDetailView {
     }
 
     private var showsReviewedCount: Bool {
-        showsReviewControls && !reviewableDiff.isEmpty && !reviewedPaths.isEmpty
+        showsReviewMarks && !reviewableDiff.isEmpty && !reviewedPaths.isEmpty
+    }
+
+    /// In review mode the count reads as progress from the start, not only after the first mark.
+    private var showsReviewProgress: Bool {
+        showsReviewMarks && !reviewableDiff.isEmpty && (!reviewedPaths.isEmpty || reviewMode == .on)
     }
 
     private var emptyFileListLabel: String {
@@ -219,7 +225,7 @@ extension ChangeDetailView {
     private var fileCountLabel: String {
         var parts = if !fileFilter.isEmpty {
             [Localized.Repo.filesFiltered(shown: filteredDiff.count, total: visibleDiff.count)]
-        } else if showsReviewedCount {
+        } else if showsReviewProgress {
             [Localized.Diff.reviewedOfTotal(reviewed: reviewedPaths.count, total: reviewableDiff.count)]
         } else {
             [Localized.Repo.fileCount(count: filteredDiff.count)]

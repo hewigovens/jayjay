@@ -52,6 +52,9 @@ impl ReviewStore {
         if identity.is_empty() {
             return;
         }
+        if source.is_user() {
+            self.keep_review_mode(change_id);
+        }
         let k = key(change_id, path);
         let previous = self.state.reviewed.get(&k).cloned();
         let prior = self.file_review_state(change_id, path, identity, snapshot);
@@ -69,7 +72,7 @@ impl ReviewStore {
                     ReviewGroupState::Reviewed,
                 );
             }
-            None => self.mark_reviewed_snapshot(change_id, path, identity, snapshot),
+            None => self.write_reviewed(change_id, path, identity, snapshot),
         }
         // The writes above already record a person's ownership.
         if source == ReviewMarkSource::User {

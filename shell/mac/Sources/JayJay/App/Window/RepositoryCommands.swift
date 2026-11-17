@@ -74,6 +74,14 @@ struct RepositoryCommands: Commands {
                         .disabled(tracker.handler?.canPerformShortcut(shortcut) != true)
                 }
             }
+            Toggle(isOn: Binding(
+                get: { tracker.handler?.reviewMode == .on },
+                set: { _ in tracker.handler?.performShortcut(.toggleReviewMode) }
+            )) {
+                Label(Localized.Menu.reviewMode, systemImage: "checkmark.circle")
+            }
+            .keyboardShortcut(AppShortcut.toggleReviewMode)
+            .disabled(tracker.handler?.reviewMode.isSwitchable != true)
 
             Divider()
 

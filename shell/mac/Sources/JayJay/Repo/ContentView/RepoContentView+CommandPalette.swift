@@ -60,6 +60,15 @@ extension RepoContentView {
             keywords: ["tree", "file", "folder", "list"],
             shortcut: AppShortcut.toggleTreeFileList.symbol
         ) { performShortcut(.toggleTreeFileList) })
+        if viewModel.selectedReviewMode.isSwitchable {
+            items.append(CommandPaletteItem(
+                title: Localized.Palette.toggleReviewMode,
+                icon: "checkmark.circle",
+                category: Localized.Menu.view,
+                keywords: ["review", "mark", "reviewed", "files"],
+                shortcut: AppShortcut.toggleReviewMode.symbol
+            ) { performShortcut(.toggleReviewMode) })
+        }
         items.append(CommandPaletteItem(
             title: Localized.Palette.toggleAutoExpandDescriptions,
             icon: "arrow.up.and.line.horizontal.and.arrow.down",

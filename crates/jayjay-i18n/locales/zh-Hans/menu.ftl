@@ -15,6 +15,7 @@ menu-repo-overview = 仓库概览
 menu-new-workspace-ellipsis = 新建工作区…
 menu-new-workspace-from-pull-request-ellipsis = 从 Pull Request 新建工作区…
 menu-view-remote-repository = 查看远程仓库
+menu-review-mode = 评审模式
 menu-help = 帮助
 menu-keyboard-shortcuts = 键盘快捷键
 menu-jayjay-user-guide = JayJay 用户指南

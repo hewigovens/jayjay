@@ -29,6 +29,7 @@ pub enum ShortcutCommand {
     RepoToggleSideBySide,
     RepoToggleIgnoreWhitespace,
     RepoToggleTreeFileList,
+    RepoToggleReviewMode,
     RepoNewChange,
     RepoEditChange,
     RepoDescribeChange,
@@ -72,7 +73,7 @@ impl ShortcutCommand {
     }
 }
 
-const ALL: [ShortcutCommand; 57] = [
+const ALL: [ShortcutCommand; 58] = [
     ShortcutCommand::AppOpenRepository,
     ShortcutCommand::AppKeyboardShortcuts,
     ShortcutCommand::AppZoomIn,
@@ -102,6 +103,7 @@ const ALL: [ShortcutCommand; 57] = [
     ShortcutCommand::RepoToggleSideBySide,
     ShortcutCommand::RepoToggleIgnoreWhitespace,
     ShortcutCommand::RepoToggleTreeFileList,
+    ShortcutCommand::RepoToggleReviewMode,
     ShortcutCommand::RepoNewChange,
     ShortcutCommand::RepoEditChange,
     ShortcutCommand::RepoDescribeChange,

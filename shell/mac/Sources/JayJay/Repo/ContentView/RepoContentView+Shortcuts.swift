@@ -18,6 +18,7 @@ extension RepoContentView {
             switch shortcut {
                 case .fetch: return !viewModel.isPullingInFlight
                 case .push: return !viewModel.isPushingInFlight
+                case .toggleReviewMode: return viewModel.selectedReviewMode.isSwitchable
                 default: return true
             }
         })
@@ -51,6 +52,7 @@ extension RepoContentView {
             case .toggleSideBySide: settings.sideBySideDiff.toggle()
             case .toggleIgnoreWhitespace: settings.ignoreWhitespace.toggle()
             case .toggleTreeFileList: settings.treeFileList.toggle()
+            case .toggleReviewMode: viewModel.toggleReviewMode()
             default: break
         }
     }

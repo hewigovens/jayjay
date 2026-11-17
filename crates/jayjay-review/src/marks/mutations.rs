@@ -15,18 +15,28 @@ impl ReviewStore {
         identity: &str,
         snapshot: Option<&ReviewFileSnapshot>,
     ) {
-        self.mutate(|store| {
-            if identity.is_empty() {
-                return;
-            }
-            let fingerprints = snapshot.map(|s| s.fingerprints.as_slice()).unwrap_or(&[]);
-            let state = ReviewFileState::fully_reviewed(fingerprints.len());
-            store.write_file(change_id, path, identity, fingerprints, &state, Vec::new());
+        self.mutate_marks(change_id, |store| {
+            store.write_reviewed(change_id, path, identity, snapshot)
         })
     }
 
+    pub(super) fn write_reviewed(
+        &mut self,
+        change_id: &str,
+        path: &str,
+        identity: &str,
+        snapshot: Option<&ReviewFileSnapshot>,
+    ) {
+        if identity.is_empty() {
+            return;
+        }
+        let fingerprints = snapshot.map(|s| s.fingerprints.as_slice()).unwrap_or(&[]);
+        let state = ReviewFileState::fully_reviewed(fingerprints.len());
+        self.write_file(change_id, path, identity, fingerprints, &state, Vec::new());
+    }
+
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             let k = key(change_id, path);
             store.state.reviewed.remove(&k);
         })
@@ -53,7 +63,7 @@ impl ReviewStore {
         identity: &str,
         snapshot: Option<&ReviewFileSnapshot>,
     ) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             let reviewed = store
                 .file_review_state(change_id, path, identity, snapshot)
                 .is_fully_reviewed();
@@ -83,7 +93,7 @@ impl ReviewStore {
         snapshot: Option<&ReviewFileSnapshot>,
         hunk_idx: u32,
     ) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             if identity.is_empty() {
                 return;
             }
@@ -104,7 +114,7 @@ impl ReviewStore {
     }
 
     pub fn mark_hunk_unreviewed(&mut self, change_id: &str, path: &str, hunk_idx: u32) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             let k = key(change_id, path);
             let Some(entry) = store.state.reviewed.get_mut(&k) else {
                 return;
@@ -151,7 +161,7 @@ impl ReviewStore {
         snapshot: &ReviewFileSnapshot,
         hunk_idx: u32,
     ) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             store.set_hunk_state(
                 change_id,
                 path,
@@ -186,7 +196,7 @@ impl ReviewStore {
         snapshot: Option<&ReviewFileSnapshot>,
         hunk_idx: u32,
     ) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             let reviewed = match snapshot {
                 Some(snapshot) => {
                     store.hunk_state(change_id, path, identity, snapshot, hunk_idx)
@@ -216,7 +226,7 @@ impl ReviewStore {
         mapping: &[Vec<u32>],
         display_index: u32,
     ) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             let Some(indices) = mapping.get(display_index as usize) else {
                 return;
             };
@@ -261,7 +271,7 @@ impl ReviewStore {
         snapshot: Option<&ReviewFileSnapshot>,
         hunk_indices: Vec<u32>,
     ) {
-        self.mutate(|store| {
+        self.mutate_marks(change_id, |store| {
             if identity.is_empty() {
                 return;
             }
@@ -300,6 +310,7 @@ impl ReviewStore {
         self.mutate(|store| {
             let prefix = format!("{change_id}|");
             store.state.reviewed.retain(|k, _| !k.starts_with(&prefix));
+            store.state.review_modes.remove(change_id);
         })
     }
 }

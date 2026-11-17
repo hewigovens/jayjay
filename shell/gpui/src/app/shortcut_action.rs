@@ -58,6 +58,7 @@ impl ShortcutAction for ShortcutCommand {
             Self::ChangesAbandon => Box::new(AbandonChange),
             Self::RepoSwitchPane
             | Self::RepoCyclePanes
+            | Self::RepoToggleReviewMode
             | Self::RepoOpenContextMenu
             | Self::ChangesNext
             | Self::ChangesPrevious

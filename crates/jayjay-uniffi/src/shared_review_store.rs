@@ -2,9 +2,10 @@ use std::path::PathBuf;
 use std::sync::{Arc, Mutex, MutexGuard};
 
 use jayjay_core::diff::ReviewFileSnapshot;
-use jayjay_core::{JayError, ReviewPrune};
+use jayjay_core::{ChangeInfo, JayError, ReviewPrune};
 use jayjay_primitives::{
-    NoteAnchor, NoteEntry, ReviewFileRollup, ReviewGroupState, ReviewMarkSource, ReviewStoreSummary,
+    NoteAnchor, NoteEntry, ReviewFileRollup, ReviewGroupState, ReviewMarkSource, ReviewMode,
+    ReviewStoreSummary,
 };
 use jayjay_review::{ReviewFileMarks, ReviewStore};
 
@@ -71,6 +72,14 @@ impl SharedReviewStore {
     ) -> Vec<ReviewGroupState> {
         self.fresh()
             .display_hunk_states(&change_id, &path, &identity, &snapshot, &mapping)
+    }
+
+    fn review_mode(&self, change: ChangeInfo) -> ReviewMode {
+        self.fresh().review_mode(&change)
+    }
+
+    fn set_review_mode(&self, change_id: String, on: bool) {
+        self.store().set_review_mode(&change_id, on);
     }
 
     fn summary(&self) -> ReviewStoreSummary {

@@ -26,6 +26,7 @@ final class ReviewStore {
     private(set) var resetGeneration: UInt64 = 0
     @ObservationIgnored private var marksCache: [MarksCacheKey: ReviewFileMarks] = [:]
     @ObservationIgnored var displayStatesCache: [DisplayStatesCacheKey: [ReviewGroupState]] = [:]
+    @ObservationIgnored private var reviewModeCache: [ChangeInfo: ReviewMode] = [:]
 
     init() {
         native = SharedReviewStore(storePath: nil)
@@ -82,6 +83,21 @@ final class ReviewStore {
         return result
     }
 
+    func reviewMode(for change: ChangeInfo) -> ReviewMode {
+        _ = marksVersion
+        if let cached = reviewModeCache[change] {
+            return cached
+        }
+        let mode = native.reviewMode(change: change)
+        reviewModeCache[change] = mode
+        return mode
+    }
+
+    func setReviewMode(_ on: Bool, for change: ChangeInfo) {
+        native.setReviewMode(changeId: change.changeId.id, on: on)
+        invalidateAllMarks()
+    }
+
     /// Clears only this change's marks: the store is shared, so other changes and windows keep their review state.
     func clearChange(changeId: String) {
         native.clearChange(changeId: changeId)
@@ -126,6 +142,7 @@ final class ReviewStore {
         displayStatesCache = displayStatesCache.filter { key, _ in
             key.changeId != changeId || key.path != path
         }
+        reviewModeCache = reviewModeCache.filter { change, _ in change.changeId.id != changeId }
         marksVersion &+= 1
     }
 
@@ -133,6 +150,7 @@ final class ReviewStore {
     func invalidateAllMarks() {
         marksCache.removeAll()
         displayStatesCache.removeAll()
+        reviewModeCache.removeAll()
         marksVersion &+= 1
     }
 }

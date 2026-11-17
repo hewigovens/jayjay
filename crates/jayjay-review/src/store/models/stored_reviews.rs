@@ -10,6 +10,8 @@ pub(crate) struct StoredReviews {
     pub(crate) reviewed: HashMap<String, ReviewEntry>,
     #[serde(default, skip_serializing_if = "Vec::is_empty")]
     pub(crate) notes: Vec<StoredNote>,
+    #[serde(default, skip_serializing_if = "HashMap::is_empty")]
+    pub(crate) review_modes: HashMap<String, bool>,
     #[serde(flatten)]
     pub(crate) extra: serde_json::Map<String, serde_json::Value>,
 }
