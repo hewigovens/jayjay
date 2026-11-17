@@ -120,10 +120,7 @@ fn sync_only_tracks_explicitly_requested_bookmarks() {
     let message = repo
         .git_push("bob-feature", &repo.sync_token())
         .expect("up-to-date push");
-    assert!(
-        message.contains("Nothing changed") && !message.contains("create a bookmark"),
-        "{message}"
-    );
+    assert_eq!(message, "bob-feature is already up to date on origin.");
     let mut tracked: Vec<_> = repo
         .list_bookmarks()
         .unwrap()
@@ -141,6 +138,41 @@ fn sync_only_tracks_explicitly_requested_bookmarks() {
             .unwrap()
             .iter()
             .any(|b| b.name == "alice-feature" && b.has_local_target && b.is_tracking_remote)
+    );
+}
+
+fn pushed_main() -> (LinearFixture, tempfile::TempDir, Repo) {
+    let fixture = LinearFixture::build();
+    let origin = fixture.add_bare_origin();
+    run_jj_in(&fixture.path, &["git", "push", "-b", "main"]);
+    let repo = Repo::open(&fixture.path).expect("open repo");
+    (fixture, origin, repo)
+}
+
+#[test]
+fn a_push_with_no_bookmark_ahead_says_so_in_one_sentence() {
+    let (fixture, _origin, repo) = pushed_main();
+    run_jj_in(&fixture.path, &["describe", "-m", "pushed elsewhere"]);
+    run_jj_in(&fixture.path, &["bookmark", "set", "main", "-r", "@"]);
+    run_jj_in(&fixture.path, &["git", "push", "-b", "main"]);
+    let message = repo.git_push("", &repo.sync_token()).expect("push");
+    assert_eq!(message, "Nothing to push: no bookmark is ahead of origin.");
+}
+
+#[test]
+fn a_push_jj_held_back_keeps_its_warning() {
+    let (fixture, _origin, repo) = pushed_main();
+    run_jj_in(
+        &fixture.path,
+        &["bookmark", "create", "revsets.git-push", "-r", "@"],
+    );
+    let message = repo.git_push("", &repo.sync_token()).expect("push");
+    assert!(
+        message.starts_with("Nothing was pushed to origin.\nWarning:")
+            && message.contains("revsets.git-push@origin")
+            && message.contains("\nHint:")
+            && !message.contains("Nothing changed"),
+        "{message}"
     );
 }
 

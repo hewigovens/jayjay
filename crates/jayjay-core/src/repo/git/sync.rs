@@ -19,16 +19,14 @@ impl Repo {
     /// Tracks only an explicitly requested bookmark before pushing.
     pub fn git_push(&self, bookmark: &str, sync: &SyncToken) -> JayResult<String> {
         let _enter = sync.enter();
-        if !bookmark.is_empty() {
-            let _ = self.track_bookmark(bookmark, &self.default_remote());
-        }
-
+        let remote = self.default_remote();
         let pattern = exact_pattern(bookmark);
         let mut args = vec!["git", "push"];
         if !bookmark.is_empty() {
+            let _ = self.track_bookmark(bookmark, &remote);
             args.extend(["--bookmark", &pattern]);
         }
-        self.run_remote_command(&args, "git push failed", sync)
+        self.run_push(&args, bookmark, &remote, sync)
     }
 
     /// A locally deleted tag that a remote still tracks pushes as a deletion; jj targets one remote per call, so each tracked remote gets its own push.
@@ -37,22 +35,51 @@ impl Repo {
         let pattern = exact_pattern(tag);
         let remotes = tag_remotes(self.get_repo().view(), RefName::new(tag));
         if remotes.is_empty() {
-            return self.run_remote_command(
-                &["git", "push", "--tag", &pattern],
-                "git push failed",
-                sync,
-            );
+            let remote = self.default_remote();
+            return self.run_push(&["git", "push", "--tag", &pattern], tag, &remote, sync);
         }
         let mut messages = Vec::new();
         for remote in &remotes {
-            let remote = format!("--remote={remote}");
-            messages.push(self.run_remote_command(
-                &["git", "push", &remote, "--tag", &pattern],
-                "git push failed",
+            let arg = format!("--remote={remote}");
+            messages.push(self.run_push(
+                &["git", "push", &arg, "--tag", &pattern],
+                tag,
+                remote,
                 sync,
             )?);
         }
         Ok(messages.join("\n"))
+    }
+
+    /// A push that moved no remote ref reads as one sentence plus jj's warnings, which say why a bookmark was held back.
+    fn run_push(
+        &self,
+        args: &[&str],
+        name: &str,
+        remote: &str,
+        sync: &SyncToken,
+    ) -> JayResult<String> {
+        self.reload()?;
+        let before = self.get_repo();
+        let output = self.run_remote_command(args, "git push failed", sync)?;
+        let remote_name = RemoteName::new(remote);
+        if before.view().get_remote_view(remote_name)
+            != self.get_repo().view().get_remote_view(remote_name)
+        {
+            return Ok(output);
+        }
+        let warnings = push_warnings(&output);
+        Ok(if !warnings.is_empty() {
+            format!(
+                "{}\n{}",
+                jayjay_i18n::repo::nothing_pushed_to(remote),
+                warnings.join("\n")
+            )
+        } else if name.is_empty() {
+            jayjay_i18n::repo::nothing_to_push(remote)
+        } else {
+            jayjay_i18n::repo::already_up_to_date_on(name, remote)
+        })
     }
 
     pub(super) fn run_remote_command(
@@ -337,6 +364,22 @@ fn fetch_result(
 
 fn exact_pattern(name: &str) -> String {
     format!("exact:{}", format_string(name))
+}
+
+/// Drops the empty default-revset warning that `nothing_to_push` restates; a ref name cannot hold the space before `revsets.git-push:`.
+fn push_warnings(output: &str) -> Vec<&str> {
+    let mut keep = false;
+    output
+        .lines()
+        .filter(|line| {
+            if line.starts_with("Warning:") {
+                keep = !line.contains(" in revsets.git-push:");
+            } else if !line.starts_with(char::is_whitespace) && !line.starts_with("Hint:") {
+                keep = false;
+            }
+            keep
+        })
+        .collect()
 }
 
 fn combine_output(stdout: &str, stderr: &str) -> String {
