@@ -133,6 +133,14 @@ fn catalog_color_themes_have_unique_ids_names_and_meet_contrast_thresholds() {
                 checks.push(("graph line", r.graph_line, bg, 3.0));
             }
         }
+        let r = &theme.repo;
+        for (label, fg) in [
+            ("selected change id prefix", r.change_id_prefix),
+            ("selected commit id prefix", r.commit_id_prefix),
+            ("selected bookmark", r.bookmark),
+        ] {
+            checks.push((label, fg, theme.seed.selection, 4.5));
+        }
         for (label, fg, bg, min_ratio) in checks {
             let ratio = contrast_ratio(fg, bg);
             if ratio < min_ratio {

@@ -248,7 +248,7 @@ extension ChangeDetailView {
             }
             .padding(.horizontal, 6).padding(.vertical, 2)
             .background(
-                conflicted ? Color.orange.opacity(0.18) : Color.accentColor.opacity(0.15),
+                conflicted ? Color.orange.opacity(0.18) : appThemes.colors(for: colorScheme).bookmark.opacity(colorScheme == .dark ? 0.16 : 0.14),
                 in: .capsule
             )
             if showsCopy {

@@ -73,6 +73,7 @@ struct ChangeDetailView: View {
     @State var fileStats: KeyedValue<[String: FileDiffStats]>?
     @Environment(AppSettings.self) var appSettings
     @Environment(\.colorScheme) var colorScheme
+    @Environment(\.appThemes) var appThemes
     @Environment(KeyboardFocus.self) var keyboardFocus: KeyboardFocus?
     @Environment(RepoWindowManager.self) var windowManager: RepoWindowManager?
 

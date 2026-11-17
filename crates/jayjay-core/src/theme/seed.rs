@@ -1,4 +1,4 @@
-use super::color::{is_dark, mix};
+use super::color::{is_dark, mix, readable_on};
 
 /// A theme file needs only `background` and `foreground`; the rest derive from them.
 #[derive(Clone, Copy, Debug, PartialEq, Eq)]
@@ -103,6 +103,15 @@ impl ThemeSeed {
             color,
             self.foreground,
             if self.is_dark() { 0.45 } else { 0.5 },
+        )
+    }
+
+    /// `color` lightened on dark backgrounds or darkened on light ones until it meets every `(background, min_ratio)` floor, so it keeps its hue.
+    pub fn vivid(&self, color: u32, floors: &[(u32, f32)]) -> u32 {
+        readable_on(
+            color,
+            if self.is_dark() { 0xffffff } else { 0x000000 },
+            floors,
         )
     }
 

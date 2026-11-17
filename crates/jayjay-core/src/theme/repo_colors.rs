@@ -26,8 +26,8 @@ impl RepoColors {
             media_frame_bg: 0x14171c,
             graph_line: 0x3478f6,
             workspace: 0x42d96b,
-            bookmark: 0xd86bf2,
-            change_id_prefix: 0xc099f5,
+            bookmark: 0xde81f4,
+            change_id_prefix: 0xde81f4,
             commit_id_prefix: 0x78b7ff,
             file_added: seed.green,
             file_removed: seed.red,
@@ -46,7 +46,7 @@ impl RepoColors {
             graph_line: 0x5982b8,
             workspace: 0x128a3e,
             bookmark: 0x9635c9,
-            change_id_prefix: 0x7c4fc2,
+            change_id_prefix: 0x9635c9,
             commit_id_prefix: 0x175cd3,
             file_added: seed.green,
             file_removed: seed.red,
@@ -63,14 +63,16 @@ impl RepoColors {
         // Text tokens are drawn on the background, on the surface in the graph pane, and on selection fills.
         let text_floors = [(bg, 4.5), (seed.surface, 4.5), (seed.selection, 3.0)];
         let text = |color: u32| readable_on(color, fg, &text_floors);
+        let id_floors = [(bg, 4.5), (seed.surface, 4.5), (seed.selection, 4.5)];
+        let id = |color: u32| seed.vivid(color, &id_floors);
         Self {
             navigation_bg: Some(seed.surface),
             media_frame_bg: mix(bg, fg, if seed.is_dark() { 0.03 } else { 0.06 }),
             graph_line: readable_on(seed.blue, fg, &[(bg, 3.0), (seed.surface, 3.0)]),
             workspace: text(seed.green),
-            bookmark: text(seed.magenta),
-            change_id_prefix: text(mix(seed.magenta, seed.blue, 0.35)),
-            commit_id_prefix: text(seed.blue),
+            bookmark: id(seed.magenta),
+            change_id_prefix: id(seed.magenta),
+            commit_id_prefix: id(seed.blue),
             file_added: text(seed.green),
             file_removed: text(seed.red),
             file_modified: text(seed.blue),
