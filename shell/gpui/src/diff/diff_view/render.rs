@@ -69,18 +69,25 @@ pub fn diff_view(
                 .child(placeholder_card(icon, title, body, &t))
                 .into_any_element();
         }
-        let (title, body) = if state.no_changes {
-            (
-                jayjay_i18n::repo::no_files_changed(),
-                jayjay_i18n::repo::this_revision_does_not_modify_any(),
-            )
-        } else {
-            (
-                jayjay_i18n::diff::select_a_file(),
-                jayjay_i18n::diff::choose_a_file_from_the_list(),
-            )
-        };
-        return placeholder(title, body, &t).into_any_element();
+        if state.no_changes {
+            return div()
+                .debug_selector(|| "no-files-changed".to_owned())
+                .flex()
+                .flex_1()
+                .size_full()
+                .child(placeholder(
+                    jayjay_i18n::repo::no_files_changed(),
+                    jayjay_i18n::repo::this_revision_does_not_modify_any(),
+                    &t,
+                ))
+                .into_any_element();
+        }
+        return placeholder(
+            jayjay_i18n::diff::select_a_file(),
+            jayjay_i18n::diff::choose_a_file_from_the_list(),
+            &t,
+        )
+        .into_any_element();
     };
 
     let is_annotating = matches!(state.detail_mode, DetailMode::Annotate);

@@ -45,6 +45,7 @@ impl Render for RepoWindow {
         self.sync_revset_editor(window, cx);
         self.sync_keyboard_focus(window, cx);
         self.sync_refresh_gate(cx);
+        self.sync_file_column_pane(cx);
         self.sync_changes_focus(window, cx);
         self.sync_diff_edit_change(cx);
         self.sync_editors(cx);
@@ -233,18 +234,21 @@ impl Render for RepoWindow {
         let content = if self.diff_edit_active() {
             row.child(diff_edit_view(self, &t, cx))
         } else {
-            row.child(file_column_wrapper(self, file_column_width, cx))
-                .child(resize_handle(DragTarget::FileColumn, &t, cx))
-                .child(
-                    div()
-                        .id("diff-pane-focus")
-                        .debug_selector(|| "diff-pane-focus".to_owned())
-                        .focusable()
-                        .flex()
-                        .flex_1()
-                        .min_w_0()
-                        .child(detail_pane(self, &t, window, cx)),
-                )
+            if self.shows_file_column(cx) {
+                row = row
+                    .child(file_column_wrapper(self, file_column_width, cx))
+                    .child(resize_handle(DragTarget::FileColumn, &t, cx));
+            }
+            row.child(
+                div()
+                    .id("diff-pane-focus")
+                    .debug_selector(|| "diff-pane-focus".to_owned())
+                    .focusable()
+                    .flex()
+                    .flex_1()
+                    .min_w_0()
+                    .child(detail_pane(self, &t, window, cx)),
+            )
         };
         let mut body = div().relative().flex().flex_col().flex_1().min_h_0().child(
             crate::repo::toolbar::toolbar(

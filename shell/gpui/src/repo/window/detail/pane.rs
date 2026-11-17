@@ -21,12 +21,18 @@ pub(crate) fn detail_pane(
     let file_review = view.selected_file_review(cx);
     let viewport_width = f32::from(window.viewport_size().width);
     let (sidebar_width, file_column_width) = view.layout.fitted(viewport_width);
-    let handles = if view.layout.sidebar_hidden { 1. } else { 2. };
-    let detail_width = (viewport_width
-        - sidebar_width
-        - file_column_width
-        - handles * crate::ui::resize_handle::RESIZE_HANDLE_WIDTH)
-        .max(0.);
+    let handle = crate::ui::resize_handle::RESIZE_HANDLE_WIDTH;
+    let sidebar_handle = if view.layout.sidebar_hidden {
+        0.
+    } else {
+        handle
+    };
+    let file_column = if view.shows_file_column(cx) {
+        file_column_width + handle
+    } else {
+        0.
+    };
+    let detail_width = (viewport_width - sidebar_width - sidebar_handle - file_column).max(0.);
     let vm = view.vm.read(cx);
     if let Some(count) = vm.selection_without_diff_count() {
         return multi_selection_no_diff(count, t);

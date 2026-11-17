@@ -1,4 +1,4 @@
-use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
+use gpui::{AnyElement, Context, InteractiveElement, IntoElement, ParentElement, Styled, div, px};
 
 use crate::app::theme::Theme;
 use crate::diff::{FileColumnState, file_column};
@@ -66,6 +66,7 @@ pub(super) fn file_column_wrapper(
     let hide_reviewed = show_review && view.file_column.hide_reviewed;
     let notes_only = show_review && view.file_column.notes_only;
     div()
+        .debug_selector(|| "file-column".to_owned())
         .w(px(width))
         .h_full()
         .child(file_column(

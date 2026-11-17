@@ -7,7 +7,7 @@ use gpui::{App, Context, Window};
 use jayjay_core::DiffHunk;
 use jayjay_review::ReviewFileRollup;
 
-use super::RepoWindow;
+use super::{ActivePane, RepoWindow};
 use crate::diff::file_status::{is_lfs, is_submodule};
 use crate::ui::input::LineInput;
 
@@ -118,6 +118,24 @@ impl RepoWindow {
             visible += usize::from(!lfs_hidden && !submodule_hidden);
         }
         (!files.is_empty() && visible == 0).then_some(HiddenGitFiles { lfs, submodules })
+    }
+
+    /// An empty change has nothing to list, so the diff pane carries its one empty state alone.
+    pub(crate) fn shows_file_column(&self, cx: &App) -> bool {
+        self.vm
+            .read(cx)
+            .files
+            .as_ref()
+            .is_none_or(|files| !files.is_empty())
+    }
+
+    pub(crate) fn sync_file_column_pane(&mut self, cx: &App) {
+        if self.active_pane == ActivePane::FileColumn
+            && !self.layout.sidebar_hidden
+            && !self.shows_file_column(cx)
+        {
+            self.active_pane = ActivePane::Sidebar;
+        }
     }
 
     /// `pub` wrapper around `visible_indices` so the separate `tests/` crate can assert the filter's effect without reaching `pub(crate)` state.

@@ -3,6 +3,7 @@ use super::stop::FocusStop;
 /// The conditional stops; everything else in the cycle is on screen whenever the repo window renders its panes.
 #[derive(Clone, Copy, Debug, Default)]
 pub(super) struct VisibleStops {
+    pub(super) file_column: bool,
     pub(super) expand_description: bool,
     pub(super) mark_reviewed: bool,
     pub(super) diff_layout: bool,
@@ -21,6 +22,9 @@ impl VisibleStops {
             return false;
         }
         match stop {
+            FocusStop::FileList | FocusStop::TreeToggle | FocusStop::FilterToggle => {
+                self.file_column
+            }
             FocusStop::ExpandDescription => self.expand_description,
             FocusStop::MarkReviewed => self.mark_reviewed,
             FocusStop::DiffLayout => self.diff_layout,
@@ -34,15 +38,26 @@ impl VisibleStops {
         }
     }
 
-    /// The stop after `current`, wrapping at both ends; a `current` that has left the screen restarts the cycle.
+    /// The stop after `current`, wrapping at both ends; a `current` that has left the screen keeps its place in the cycle.
     pub(super) fn next(self, current: FocusStop, backward: bool) -> FocusStop {
-        let stops: Vec<FocusStop> = FocusStop::CYCLE
+        let rank = |stop: FocusStop| FocusStop::CYCLE.iter().position(|s| *s == stop);
+        let stops = FocusStop::CYCLE
             .into_iter()
-            .filter(|stop| self.includes(*stop))
-            .collect();
-        let index = stops.iter().position(|stop| *stop == current).unwrap_or(0);
-        let step = if backward { stops.len() - 1 } else { 1 };
-        stops[(index + step) % stops.len()]
+            .filter(|stop| self.includes(*stop));
+        let found = if backward {
+            stops.clone().rev().find(|stop| rank(*stop) < rank(current))
+        } else {
+            stops.clone().find(|stop| rank(*stop) > rank(current))
+        };
+        found
+            .or_else(|| {
+                if backward {
+                    stops.clone().next_back()
+                } else {
+                    stops.clone().next()
+                }
+            })
+            .unwrap_or(FocusStop::Dag)
     }
 }
 
@@ -51,6 +66,7 @@ mod tests {
     use super::*;
 
     const ALL: VisibleStops = VisibleStops {
+        file_column: true,
         expand_description: true,
         mark_reviewed: true,
         diff_layout: true,
@@ -103,10 +119,19 @@ mod tests {
     }
 
     #[test]
-    fn a_stop_that_left_the_screen_restarts_the_cycle() {
+    fn a_stop_that_left_the_screen_keeps_its_place() {
+        let stops = VisibleStops {
+            expand_description: true,
+            sidebar_hidden: true,
+            ..VisibleStops::default()
+        };
         assert_eq!(
-            walk(VisibleStops::default(), FocusStop::EditDiff, 1, false),
-            [FocusStop::FileList]
+            walk(stops, FocusStop::FileList, 1, false),
+            [FocusStop::ExpandDescription]
+        );
+        assert_eq!(
+            walk(stops, FocusStop::EditDiff, 1, false),
+            [FocusStop::SidebarToggle]
         );
     }
 

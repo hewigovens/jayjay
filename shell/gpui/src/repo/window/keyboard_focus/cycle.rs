@@ -207,6 +207,7 @@ impl RepoWindow {
             !editing_revset && RevsetFilter::of(vm.revset()).kind != RevsetFilterKind::Default;
         if vm.selection_without_diff_count().is_some() {
             return VisibleStops {
+                file_column: self.shows_file_column(cx),
                 revset_back,
                 revset_reset,
                 sidebar_hidden: self.layout.sidebar_hidden,
@@ -217,6 +218,7 @@ impl RepoWindow {
             .then(|| vm.selected_change())
             .flatten();
         VisibleStops {
+            file_column: self.shows_file_column(cx),
             expand_description: detail_change.is_some(),
             mark_reviewed: self.selected_file_review(cx).is_some(),
             diff_layout: vm.selected_hunk().is_some(),
