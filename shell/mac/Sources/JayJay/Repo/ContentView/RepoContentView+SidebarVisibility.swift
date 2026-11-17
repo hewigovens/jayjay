@@ -6,10 +6,11 @@ extension RepoContentView {
         keyboardFocus.activePane = .dag
     }
 
-    func handleSidebarVisibilityChange(hidden: Bool) {
+    func handleSidebarVisibilityChange(hidden: Bool, animated: Bool) {
         if hidden, keyboardFocus.control?.isInSidebar == true {
             windowManager.repoWindow(at: viewModel.repoPath)?.makeFirstResponder(nil)
         }
         keyboardFocus.isSidebarHidden = hidden
+        sidebarReveal.animate(toShown: !hidden, in: windowManager.repoWindow(at: viewModel.repoPath), animated: animated && !reduceMotion)
     }
 }

@@ -6,6 +6,8 @@ struct RepoContentView: View {
     let isSwitchingWorkspace: Bool
     let onSwitchWorkspace: (String) -> Void
     @State var sidebarWidth: CGFloat = 360
+    /// The sidebar's width on screen, which a narrow window holds below `sidebarWidth`.
+    @State var sidebarShownWidth: CGFloat = 360
     @State var operationLogWidth = PaneLayout.operationLogWidth()
     @State var toolbarRoom = ToolbarRoom()
     @State var revsetEditRequest = 0
@@ -13,6 +15,7 @@ struct RepoContentView: View {
     @State var modal: RepoModalState?
     @State var operationLogUndoing: String?
     @State var operationLogSelection: String?
+    @State var sidebarReveal = PaneReveal(shown: true)
     @State var operationLog = PaneReveal(shown: UserDefaults.standard.bool(forKey: AppSettings.showsOperationLogKey))
     @State var detailInteractionActive = false
     @State var workspaceName = ""
@@ -83,8 +86,8 @@ struct RepoContentView: View {
                 showSidebar()
                 keyboardFocus.activePane = .dag
             }
-            .onChange(of: settings.sidebarHidden, initial: true) { _, hidden in
-                handleSidebarVisibilityChange(hidden: hidden)
+            .onChange(of: settings.sidebarHidden, initial: true) { wasHidden, hidden in
+                handleSidebarVisibilityChange(hidden: hidden, animated: wasHidden != hidden)
             }
             .onChange(of: viewModel.workspaceVanished) { _, vanished in
                 guard vanished else { return }
@@ -166,6 +169,7 @@ struct RepoContentView: View {
                         dividerIdentifier: AID.Sidebar.divider,
                         leading: {
                             sidebar
+                                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { sidebarShownWidth = $0 }
                         },
                         trailing: {
                             DetailView(

@@ -2,7 +2,7 @@ import Foundation
 
 /// The sidebar keeps room for a minimum secondary pane and preview, the secondary pane for a minimum preview; GPUI applies the same rule.
 enum PaneLayout {
-    static let sidebar: ClosedRange<CGFloat> = 240 ... 600
+    static let sidebar: ClosedRange<CGFloat> = 270 ... 600
     static let secondaryPane: ClosedRange<CGFloat> = 220 ... 480
     static let secondaryPaneDefault: CGFloat = 300
     static let operationLog: ClosedRange<CGFloat> = 220 ... 560

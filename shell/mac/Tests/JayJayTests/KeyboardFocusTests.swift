@@ -59,6 +59,7 @@ final class KeyboardFocusTests: XCTestCase {
         }
         focus.register(.commitSummary, token: UUID()) {}
         focus.register(.refresh, token: UUID()) {}
+        focus.register(.terminal, token: UUID()) {}
 
         focus.isSidebarHidden = true
         XCTAssertEqual(focus.activePane, .fileColumn, "j/k must not drive a pane nobody can see")
@@ -66,7 +67,7 @@ final class KeyboardFocusTests: XCTestCase {
         XCTAssertEqual(focus.activePane, .fileColumn)
 
         XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
-        XCTAssertEqual(focus.control, .refresh)
+        XCTAssertEqual(focus.control, .terminal, "the sync buttons leave with the sidebar")
         XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
         XCTAssertNil(focus.control)
         XCTAssertEqual(activated, [.fileList], "the wrap-around must skip the hidden pane and its inputs")
@@ -81,14 +82,14 @@ final class KeyboardFocusTests: XCTestCase {
     func testTabFromAnAbsentStopKeepsItsPlaceInTheCycle() {
         let focus = KeyboardFocus()
         focus.register(.expandDescription, token: UUID()) {}
-        focus.register(.refresh, token: UUID()) {}
+        focus.register(.terminal, token: UUID()) {}
         focus.isSidebarHidden = true
 
         XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab)))
         XCTAssertEqual(focus.control, .expandDescription)
         focus.activePane = .fileColumn
         XCTAssertTrue(focus.handleKey(Self.key(KeyCode.tab, modifiers: .shift)))
-        XCTAssertEqual(focus.control, .refresh)
+        XCTAssertEqual(focus.control, .terminal)
     }
 
     func testPaneChangesAndUnregisteringClearTheFocusedControl() {

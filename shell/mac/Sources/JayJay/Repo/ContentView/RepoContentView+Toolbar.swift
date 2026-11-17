@@ -4,48 +4,55 @@ import SwiftUI
 extension RepoContentView {
     @ToolbarContentBuilder
     var toolbarContent: some ToolbarContent {
-        ToolbarItemGroup(placement: .navigation) {
-            let title = settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar
-            toolbarButton(
-                .sidebarToggle,
-                help: AppShortcut.toggleSidebar.help(title),
-                action: { settings.sidebarHidden.toggle() },
-                label: { Label(title, systemImage: "sidebar.leading") }
-            )
-            .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
-            toolbarButton(
-                .refresh,
-                help: viewModel.refreshMode.help,
-                action: { viewModel.runRefresh() },
-                label: {
-                    RefreshSpinner(
-                        animating: (viewModel.isRefreshingInFlight && !viewModel.isRefreshingSilently) || isSwitchingWorkspace
+        ToolbarItem(placement: .navigation) {
+            ToolbarCollapse(reveal: sidebarReveal, trailingOrigin: sidebarShownWidth + PaneLayout.dividerWidth + 12) {
+                let title = settings.sidebarHidden ? Localized.Menu.showSidebar : Localized.Menu.hideSidebar
+                toolbarButton(
+                    .sidebarToggle,
+                    help: AppShortcut.toggleSidebar.help(title),
+                    action: { settings.sidebarHidden.toggle() },
+                    label: { Label(title, systemImage: "sidebar.leading") }
+                )
+                .accessibilityIdentifier(AID.Toolbar.sidebarToggle)
+            } collapsing: {
+                HStack(spacing: 0) {
+                    toolbarButton(
+                        .refresh,
+                        help: viewModel.refreshMode.help,
+                        action: { viewModel.runRefresh() },
+                        label: {
+                            RefreshSpinner(
+                                animating: (viewModel.isRefreshingInFlight && !viewModel.isRefreshingSilently) || isSwitchingWorkspace
+                            )
+                            .overlay(alignment: .topTrailing) {
+                                if viewModel.refreshMode.showsBadge {
+                                    Circle().fill(.orange).frame(width: 7, height: 7).offset(x: 3, y: -3)
+                                        .accessibilityIdentifier(AID.Toolbar.staleBadge)
+                                }
+                            }
+                        }
                     )
-                    .overlay(alignment: .topTrailing) {
-                        if viewModel.refreshMode.showsBadge {
-                            Circle().fill(.orange).frame(width: 7, height: 7).offset(x: 3, y: -3)
-                                .accessibilityIdentifier(AID.Toolbar.staleBadge)
+                    syncButton(.pull, inFlight: viewModel.isPullingInFlight) {
+                        if viewModel.isPullingInFlight {
+                            viewModel.cancelPull()
+                        } else {
+                            viewModel.gitFetch()
+                        }
+                    }
+                    syncButton(.push, inFlight: viewModel.isPushingInFlight) {
+                        if viewModel.isPushingInFlight {
+                            viewModel.cancelPush()
+                        } else {
+                            viewModel.gitPush(bookmark: "")
                         }
                     }
                 }
-            )
-            syncButton(.pull, inFlight: viewModel.isPullingInFlight) {
-                if viewModel.isPullingInFlight {
-                    viewModel.cancelPull()
-                } else {
-                    viewModel.gitFetch()
-                }
+            } trailing: {
+                repositoryTitle
             }
-            syncButton(.push, inFlight: viewModel.isPushingInFlight) {
-                if viewModel.isPushingInFlight {
-                    viewModel.cancelPush()
-                } else {
-                    viewModel.gitPush(bookmark: "")
-                }
-            }
+            .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { toolbarRoom.leadingItemWidth = $0 }
         }
-
-        repositoryTitle
+        .sharedBackgroundVisibility(.hidden)
 
         ToolbarItem(placement: .principal) {
             RevsetBar(
@@ -130,35 +137,32 @@ extension RepoContentView {
         .accessibilityIdentifier(direction.accessibilityIdentifier)
     }
 
-    private var repositoryTitle: some ToolbarContent {
-        ToolbarItem(placement: .navigation) {
-            RepoTitlePicker(
-                repoPath: viewModel.repoPath,
-                repositoryName: viewModel.repositoryName,
-                workspaces: viewModel.workspaces,
-                onFilterWorkspace: { workspace in
-                    viewModel.filterByWorkspace(name: workspace.name)
-                },
-                onSwitchWorkspace: { workspace in
-                    guard workspace.isPathResolved else { return }
-                    windowManager.switchRepo(from: viewModel, to: workspace.path, changePath: onSwitchWorkspace)
-                },
-                onOpenWorkspaceInNewWindow: { workspace in
-                    guard workspace.isPathResolved else { return }
-                    windowManager.openRepo(workspace.path)
-                },
-                onForget: { workspace in
-                    removeWorkspace(workspace, deleteFromDisk: false)
-                },
-                onForgetDelete: { workspace in
-                    guard workspace.isPathResolved else { return }
-                    requestWorkspaceDelete(workspace)
-                },
-                onCreateWorkspace: { modal = .workspaceCreate },
-                onOpenOverview: { windowManager.openOverview(for: viewModel.repoPath) }
-            )
-        }
-        .sharedBackgroundVisibility(.hidden)
+    private var repositoryTitle: some View {
+        RepoTitlePicker(
+            repoPath: viewModel.repoPath,
+            repositoryName: viewModel.repositoryName,
+            workspaces: viewModel.workspaces,
+            onFilterWorkspace: { workspace in
+                viewModel.filterByWorkspace(name: workspace.name)
+            },
+            onSwitchWorkspace: { workspace in
+                guard workspace.isPathResolved else { return }
+                windowManager.switchRepo(from: viewModel, to: workspace.path, changePath: onSwitchWorkspace)
+            },
+            onOpenWorkspaceInNewWindow: { workspace in
+                guard workspace.isPathResolved else { return }
+                windowManager.openRepo(workspace.path)
+            },
+            onForget: { workspace in
+                removeWorkspace(workspace, deleteFromDisk: false)
+            },
+            onForgetDelete: { workspace in
+                guard workspace.isPathResolved else { return }
+                requestWorkspaceDelete(workspace)
+            },
+            onCreateWorkspace: { modal = .workspaceCreate },
+            onOpenOverview: { windowManager.openOverview(for: viewModel.repoPath) }
+        )
     }
 }
 

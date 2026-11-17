@@ -13,9 +13,12 @@ final class SidebarToggleScene: SceneBase {
         let divider = app.element(AID.Sidebar.divider)
         XCTAssertTrue(divider.waitForExistence(timeout: 5), "Sidebar divider missing")
         let sidebarWidth = divider.frame.minX
+        let pull = app.toolbars.buttons[AID.Toolbar.pull]
+        XCTAssertTrue(pull.exists, "Pull is missing while the sidebar is shown")
 
         app.buttons[AID.Toolbar.sidebarToggle].click()
         XCTAssertTrue(divider.waitForNonExistence(timeout: 5), "The sidebar stayed visible")
+        XCTAssertTrue(pull.waitForNonExistence(timeout: 5), "Pull stayed in the toolbar with the sidebar hidden")
         XCTAssertTrue(rows.firstMatch.waitForNonExistence(timeout: 5), "The hidden history pane stayed reachable")
         XCTAssertEqual(column.frame.minX, app.windows.firstMatch.frame.minX, accuracy: 2, "The detail pane did not take the freed width")
         // A narrow window squeezes the file column below its stored width while the sidebar is shown, so hiding may give that back.
