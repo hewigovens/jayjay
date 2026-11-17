@@ -99,7 +99,7 @@ struct PickerPanelRoot: View {
 
     private var rowList: some View {
         ScrollViewReader { proxy in
-            ScrollView(.vertical, showsIndicators: true) {
+            ScrollView(.vertical, showsIndicators: false) {
                 LazyVStack(alignment: .leading, spacing: 0) {
                     ForEach(filteredSections) { section in
                         if let title = section.title {
