@@ -80,7 +80,8 @@ fn hiding_every_file_shows_the_hidden_only_diff_placeholder(cx: &mut TestAppCont
     assert!(visible_paths(&view, cx).is_empty());
     assert!(cx.debug_bounds("hidden-git-files-placeholder").is_some());
 
-    set_diff_config(cx, |diff| diff.hide_git_lfs = false);
+    crate::harness::click(cx, "empty-state-action");
+    assert!(!cx.cx.read(|cx| config::current(cx).diff.hide_git_lfs));
     assert!(cx.debug_bounds("hidden-git-files-placeholder").is_none());
     assert_eq!(visible_paths(&view, cx), ["model.bin"]);
 }

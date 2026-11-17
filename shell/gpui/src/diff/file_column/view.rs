@@ -16,7 +16,6 @@ use crate::app::theme::theme;
 use crate::repo::window::{FileTreeCacheSlot, FocusStop, RepoWindow};
 use crate::ui::input::LineInput;
 use crate::ui::loading::loading_status;
-use crate::ui::primitives::placeholder;
 
 pub(crate) fn file_name_container(name: impl IntoElement) -> impl IntoElement {
     div()
@@ -124,12 +123,13 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
             if let Some(input) = file_filter {
                 column = column.child(file_filter_bar(input, &file_filter_focus, cx, &t));
             }
-            let body = if loading {
-                loading_status(jayjay_i18n::diff::loading_files_ellipsis(), &t)
-            } else {
-                placeholder(jayjay_i18n::repo::no_files(), &t)
-            };
-            return column.child(body).into_any_element();
+            if loading {
+                column = column.child(loading_status(
+                    jayjay_i18n::diff::loading_files_ellipsis(),
+                    &t,
+                ));
+            }
+            return column.into_any_element();
         }
     };
 
@@ -139,14 +139,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
 
     let file_filter_has_query = file_filter.is_some_and(|input| !input.is_empty());
     let body = if visible_count == 0 {
-        placeholder(
-            if file_filter_has_query {
-                jayjay_i18n::repo::no_matching_files()
-            } else {
-                jayjay_i18n::repo::all_files_hidden()
-            },
-            &t,
-        )
+        div().into_any_element()
     } else if tree_mode {
         let tree = tree_cache
             .borrow_mut()

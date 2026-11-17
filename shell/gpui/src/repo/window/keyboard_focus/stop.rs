@@ -8,6 +8,7 @@ pub enum FocusStop {
     ReviewMode,
     ExpandDescription,
     EditDescription,
+    UnlistedFilesAction,
     MarkReviewed,
     DiffLayout,
     EditDiff,
@@ -27,7 +28,7 @@ pub enum FocusStop {
 }
 
 impl FocusStop {
-    pub(super) const CYCLE: [Self; 23] = [
+    pub(super) const CYCLE: [Self; 24] = [
         Self::Dag,
         Self::FileList,
         Self::TreeToggle,
@@ -35,6 +36,7 @@ impl FocusStop {
         Self::ReviewMode,
         Self::ExpandDescription,
         Self::EditDescription,
+        Self::UnlistedFilesAction,
         Self::MarkReviewed,
         Self::DiffLayout,
         Self::EditDiff,

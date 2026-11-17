@@ -20,7 +20,7 @@ use crate::diff::media_diff::diff_body_with_gutter;
 use crate::diff::projection::{self, ProjectionView};
 use crate::diff::svg_diff::{SvgDiffContent, svg_diff_view};
 use crate::diff::{hunk_is_image, image_diff_view};
-use crate::repo::window::{ConflictResolution, RepoWindow};
+use crate::repo::window::{ConflictResolution, FocusStop, RepoWindow, UnlistedFiles, focus_ring};
 use crate::ui::context_menu::{ContextAction, ContextMenuItem};
 use crate::ui::icons::{self, glyph};
 use crate::ui::loading::loading_status;
@@ -48,6 +48,61 @@ fn hidden_only_placeholder(
     }
 }
 
+/// Selector, glyph, title, line and the label of the action that undoes the cause.
+fn unlisted_files_copy(
+    unlisted: &UnlistedFiles,
+) -> (&'static str, &'static str, String, String, Option<String>) {
+    match unlisted {
+        UnlistedFiles::GitHidden(hidden) => {
+            let (glyph, title, body) = hidden_only_placeholder(hidden);
+            let action = (hidden.lfs > 0).then(jayjay_i18n::repo::show_git_lfs_files);
+            ("hidden-git-files-placeholder", glyph, title, body, action)
+        }
+        UnlistedFiles::NoMatch(query) => (
+            "unlisted-no-match",
+            glyph::SEARCH,
+            jayjay_i18n::repo::no_matching_files_title(),
+            jayjay_i18n::repo::no_file_path_contains(query),
+            Some(jayjay_i18n::repo::clear_filter()),
+        ),
+        UnlistedFiles::NoNotedFiles(query) => (
+            "unlisted-no-noted",
+            glyph::FILTER,
+            jayjay_i18n::repo::no_files_with_review_notes(),
+            if query.is_empty() {
+                jayjay_i18n::repo::no_file_has_an_open_review_note()
+            } else {
+                jayjay_i18n::repo::no_matching_file_has_an_open_review_note(query)
+            },
+            Some(jayjay_i18n::repo::show_all_files()),
+        ),
+        UnlistedFiles::AllReviewed(count) => (
+            "unlisted-all-reviewed",
+            glyph::LIST_CHECKS,
+            jayjay_i18n::repo::all_files_reviewed(),
+            jayjay_i18n::repo::reviewed_files_hidden(*count),
+            Some(jayjay_i18n::repo::show_reviewed_files()),
+        ),
+    }
+}
+
+fn empty_state(
+    selector: &'static str,
+    glyph: &'static str,
+    title: String,
+    body: String,
+    action: Option<AnyElement>,
+    t: &Theme,
+) -> AnyElement {
+    div()
+        .debug_selector(move || selector.to_owned())
+        .flex()
+        .flex_1()
+        .size_full()
+        .child(placeholder_card(glyph, title, body, action, t))
+        .into_any_element()
+}
+
 pub fn diff_view(
     state: DiffViewState<'_>,
     find: FindState<'_>,
@@ -59,28 +114,37 @@ pub fn diff_view(
     state.wrap_cache.borrow_mut().hide();
 
     let Some(hunk) = state.hunk else {
-        if let Some(hidden) = state.hidden_only_files.as_ref() {
-            let (icon, title, body) = hidden_only_placeholder(hidden);
-            return div()
-                .debug_selector(|| "hidden-git-files-placeholder".to_owned())
-                .flex()
-                .flex_1()
-                .size_full()
-                .child(placeholder_card(icon, title, body, &t))
-                .into_any_element();
-        }
         if state.no_changes {
-            return div()
-                .debug_selector(|| "no-files-changed".to_owned())
-                .flex()
-                .flex_1()
-                .size_full()
-                .child(placeholder(
-                    jayjay_i18n::repo::no_files_changed(),
-                    jayjay_i18n::repo::this_revision_does_not_modify_any(),
+            return empty_state(
+                "no-files-changed",
+                glyph::FILE_CODE,
+                jayjay_i18n::repo::no_files_changed(),
+                jayjay_i18n::repo::this_revision_does_not_modify_any(),
+                None,
+                &t,
+            );
+        }
+        if let Some(unlisted) = state.unlisted_files.as_ref() {
+            let (selector, glyph, title, body, action) = unlisted_files_copy(unlisted);
+            let action = action.map(|label| {
+                focus_ring(
+                    div()
+                        .id("empty-state-action")
+                        .debug_selector(|| "empty-state-action".to_owned())
+                        .px(px(2.))
+                        .rounded_sm()
+                        .cursor_pointer()
+                        .hover(|style| style.underline())
+                        .on_click(cx.listener(|view, _, window, cx| {
+                            view.show_unlisted_files(window, cx);
+                        }))
+                        .child(label),
+                    state.focused == Some(FocusStop::UnlistedFilesAction),
                     &t,
-                ))
-                .into_any_element();
+                )
+                .into_any_element()
+            });
+            return empty_state(selector, glyph, title, body, action, &t);
         }
         return placeholder(
             jayjay_i18n::diff::select_a_file(),
@@ -194,6 +258,7 @@ pub fn diff_view(
             glyph::PACKAGE,
             jayjay_i18n::diff::git_submodule(),
             jayjay_i18n::diff::this_submodule_has_working_copy_changes(),
+            None,
             &t,
         )
         .into_any_element()
@@ -202,6 +267,7 @@ pub fn diff_view(
             glyph::DATABASE,
             jayjay_i18n::diff::git_lfs_backed_file(),
             jayjay_i18n::diff::this_file_is_tracked_through_git(),
+            None,
             &t,
         )
         .into_any_element()
@@ -217,8 +283,14 @@ pub fn diff_view(
                 jayjay_i18n::diff::this_file_was_renamed_its_contents(),
             )
         };
-        placeholder_card(icon, jayjay_i18n::diff::no_content_changes(), message, &t)
-            .into_any_element()
+        placeholder_card(
+            icon,
+            jayjay_i18n::diff::no_content_changes(),
+            message,
+            None,
+            &t,
+        )
+        .into_any_element()
     } else {
         match (state.file_diff, view_mode) {
             (None, _) if hunk.projection.is_some() => diff_body_with_gutter(

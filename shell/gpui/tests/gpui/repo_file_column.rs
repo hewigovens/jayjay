@@ -1,6 +1,6 @@
 use std::fs;
 
-use crate::harness::{keys, open_fixture, open_focused, settle_visual};
+use crate::harness::{click, keys, open_fixture, open_focused, select_file, settle_visual};
 use gpui::TestAppContext;
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::{ActivePane, FocusStop};
@@ -70,5 +70,66 @@ fn an_empty_change_hides_the_file_column_and_its_tab_stops(cx: &mut TestAppConte
     assert_eq!(
         view.read_with(cx, |view, _| view.active_pane()),
         ActivePane::Sidebar
+    );
+}
+
+#[gpui::test]
+fn a_search_with_no_match_says_so_once_and_clears_from_the_diff_area(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    click(cx, "toggle-file-filter");
+    cx.simulate_input("zzz");
+    settle_visual(cx);
+    assert!(cx.debug_bounds("unlisted-no-match").is_some());
+    assert!(cx.debug_bounds("file-column").is_some());
+
+    click(cx, "empty-state-action");
+    view.read_with(cx, |view, cx| {
+        assert!(!view.file_filter_visible());
+        assert_eq!(view.visible_file_paths(cx), ["wip1.txt", "wip2.txt"]);
+    });
+    assert!(cx.debug_bounds("unlisted-no-match").is_none());
+}
+
+#[gpui::test]
+fn hiding_every_reviewed_file_offers_to_show_them_from_the_keyboard(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_focused(&fixture, cx);
+    cx.cx
+        .update(|cx| config::update(cx, |config| config.diff.hide_reviewed_files = true));
+    for path in ["wip1.txt", "wip2.txt"] {
+        let ix = select_file(&view, path, cx);
+        view.update_in(cx, |view, _, cx| {
+            let hunk = view.view_model().read(cx).files.as_ref().expect("files")[ix].clone();
+            let change_id = view
+                .view_model()
+                .read(cx)
+                .selected_change()
+                .expect("change")
+                .change_id
+                .id
+                .clone();
+            view.toggle_reviewed(change_id, hunk.path, hunk.review_identity, cx);
+        });
+        settle_visual(cx);
+    }
+    assert!(cx.debug_bounds("unlisted-all-reviewed").is_some());
+
+    for _ in 0..8 {
+        if view.read_with(cx, |view, _| view.focused_control())
+            == Some(FocusStop::UnlistedFilesAction)
+        {
+            break;
+        }
+        keys(cx, "tab");
+    }
+    keys(cx, "space");
+    assert!(
+        !cx.cx
+            .read(|cx| config::current(cx).diff.hide_reviewed_files)
+    );
+    assert_eq!(
+        view.read_with(cx, |view, cx| view.visible_file_paths(cx)),
+        ["wip1.txt", "wip2.txt"]
     );
 }

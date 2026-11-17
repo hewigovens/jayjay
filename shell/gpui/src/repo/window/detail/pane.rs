@@ -69,11 +69,10 @@ pub(crate) fn detail_pane(
         .filter(|candidate| candidate.change_id.id == change.change_id.id)
         .count();
     let selected_hunk = vm.selected_hunk().cloned();
-    let hidden_only_files = vm
-        .files
-        .as_ref()
-        .filter(|_| selected_hunk.is_none())
-        .and_then(|files| view.hidden_only_files(files, &vm.tracked_lfs_paths));
+    let unlisted_files = selected_hunk
+        .is_none()
+        .then(|| view.unlisted_files(cx))
+        .flatten();
     let file_stats = vm.stats.per_file.clone();
     let selected_file_has_conflict = vm.selected_file_has_conflict();
     let projection_view = selected_hunk
@@ -120,7 +119,7 @@ pub(crate) fn detail_pane(
             .as_ref()
             .and_then(|hunk| file_stats.get(&hunk.path)),
         no_changes: file_count == Some(0),
-        hidden_only_files,
+        unlisted_files,
         file_diff: current_diff.as_ref(),
         loaded_projection: current_projection.as_ref(),
         projection_view,

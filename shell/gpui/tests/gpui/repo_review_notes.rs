@@ -405,6 +405,24 @@ fn noted_files_filter_shows_only_files_with_active_notes(cx: &mut TestAppContext
 }
 
 #[gpui::test]
+fn notes_only_with_no_noted_match_offers_to_show_all_files(cx: &mut TestAppContext) {
+    let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
+    add_note_and_save(&view, cx, &hunk, "only readme has notes");
+    view.update_in(cx, |view, _, cx| view.toggle_notes_only_files(cx));
+    crate::harness::click(cx, "toggle-file-filter");
+    cx.simulate_input("feature");
+    settle_visual(cx);
+    assert!(cx.debug_bounds("unlisted-no-noted").is_some());
+
+    crate::harness::click(cx, "empty-state-action");
+    assert!(!view.read_with(cx, |view, _| view.notes_only_files()));
+    assert_eq!(
+        view.read_with(cx, |view, cx| view.visible_file_paths(cx)),
+        ["feature.txt"]
+    );
+}
+
+#[gpui::test]
 fn notes_only_filter_auto_clears_when_the_last_active_note_resolves(cx: &mut TestAppContext) {
     let (_fixture, view, cx, hunk) = open_repo_and_select_readme(cx);
     add_note_and_save(&view, cx, &hunk, "temporary");

@@ -16,6 +16,14 @@ pub(crate) struct HiddenGitFiles {
     pub(crate) submodules: usize,
 }
 
+/// Why a change with files lists none of them, named for the first filter in list order that hid them all.
+pub(crate) enum UnlistedFiles {
+    GitHidden(HiddenGitFiles),
+    NoMatch(String),
+    NoNotedFiles(String),
+    AllReviewed(usize),
+}
+
 fn lfs_hidden(hunk: &DiffHunk, hide_lfs: bool, tracked_lfs_paths: &HashSet<String>) -> bool {
     hide_lfs && (is_lfs(hunk) || tracked_lfs_paths.contains(&hunk.path))
 }
@@ -38,13 +46,7 @@ impl RepoWindow {
         let notes_only = show_review && self.file_column.notes_only;
         let hide_lfs = self.file_column.hide_git_lfs;
         let submodule_support = self.file_column.enable_git_submodule_support;
-        let query = self
-            .file_column
-            .filter
-            .as_ref()
-            .map(LineInput::text)
-            .unwrap_or_default()
-            .to_lowercase();
+        let query = self.file_query().to_lowercase();
         if query.is_empty() && !hide_reviewed && !notes_only && !hide_lfs && submodule_support {
             return (0..files.len()).collect();
         }
@@ -103,21 +105,86 @@ impl RepoWindow {
         )
     }
 
-    pub(crate) fn hidden_only_files(
-        &self,
-        files: &[DiffHunk],
-        tracked_lfs_paths: &HashSet<String>,
-    ) -> Option<HiddenGitFiles> {
-        let (mut lfs, mut submodules, mut visible) = (0, 0, 0);
-        for hunk in files {
-            let lfs_hidden = lfs_hidden(hunk, self.file_column.hide_git_lfs, tracked_lfs_paths);
-            let submodule_hidden =
-                submodule_hidden(hunk, self.file_column.enable_git_submodule_support);
-            lfs += usize::from(lfs_hidden);
-            submodules += usize::from(submodule_hidden);
-            visible += usize::from(!lfs_hidden && !submodule_hidden);
+    fn file_query(&self) -> &str {
+        self.file_column
+            .filter
+            .as_ref()
+            .map(LineInput::text)
+            .unwrap_or_default()
+    }
+
+    pub(crate) fn unlisted_files(&self, cx: &App) -> Option<UnlistedFiles> {
+        let vm = self.vm.read(cx);
+        let files = vm.files.as_ref().filter(|files| !files.is_empty())?;
+        let (show_review, change_id) = self.review_file_context(cx);
+        if !self
+            .visible_indices(files, change_id.as_deref(), show_review, cx)
+            .is_empty()
+        {
+            return None;
         }
-        (!files.is_empty() && visible == 0).then_some(HiddenGitFiles { lfs, submodules })
+        let (hide_lfs, submodule_support) = (
+            self.file_column.hide_git_lfs,
+            self.file_column.enable_git_submodule_support,
+        );
+        let lfs = |hunk: &&DiffHunk| lfs_hidden(hunk, hide_lfs, &vm.tracked_lfs_paths);
+        let submodule = |hunk: &&DiffHunk| submodule_hidden(hunk, submodule_support);
+        let query = self.file_query();
+        let lowercase = query.to_lowercase();
+        let matches: Vec<&DiffHunk> = files
+            .iter()
+            .filter(|hunk| !lfs(hunk) && !submodule(hunk))
+            .collect();
+        if matches.is_empty() {
+            return Some(UnlistedFiles::GitHidden(HiddenGitFiles {
+                lfs: files.iter().filter(lfs).count(),
+                submodules: files.iter().filter(submodule).count(),
+            }));
+        }
+        let matches: Vec<&DiffHunk> = matches
+            .into_iter()
+            .filter(|hunk| hunk.path.to_lowercase().contains(&lowercase))
+            .collect();
+        if matches.is_empty() {
+            return Some(UnlistedFiles::NoMatch(query.to_owned()));
+        }
+        let noted = if show_review && self.file_column.notes_only {
+            let counts = vm.active_note_counts();
+            matches
+                .iter()
+                .filter(|hunk| counts.contains_key(&hunk.path))
+                .count()
+        } else {
+            matches.len()
+        };
+        Some(if noted == 0 {
+            UnlistedFiles::NoNotedFiles(query.to_owned())
+        } else {
+            UnlistedFiles::AllReviewed(noted)
+        })
+    }
+
+    pub(crate) fn has_unlisted_files_action(&self, cx: &App) -> bool {
+        self.vm.read(cx).selected_hunk().is_none()
+            && match self.unlisted_files(cx) {
+                Some(UnlistedFiles::GitHidden(hidden)) => hidden.lfs > 0,
+                Some(_) => true,
+                None => false,
+            }
+    }
+
+    pub fn show_unlisted_files(&mut self, window: &mut Window, cx: &mut Context<Self>) {
+        match self.unlisted_files(cx) {
+            Some(UnlistedFiles::GitHidden(hidden)) if hidden.lfs > 0 => {
+                crate::app::config::update(cx, |c| c.diff.hide_git_lfs = false);
+            }
+            Some(UnlistedFiles::NoMatch(_)) => self.dismiss_file_filter(window, cx),
+            Some(UnlistedFiles::NoNotedFiles(_)) => self.toggle_notes_only_files(cx),
+            Some(UnlistedFiles::AllReviewed(_)) => {
+                crate::app::config::update(cx, |c| c.diff.hide_reviewed_files = false);
+            }
+            Some(UnlistedFiles::GitHidden(_)) | None => {}
+        }
     }
 
     /// An empty change has nothing to list, so the diff pane carries its one empty state alone.

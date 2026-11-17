@@ -75,7 +75,7 @@ pub use conflict_resolution::ConflictResolution;
 pub use diff_edit::{DiffEditSnapshot, DiffEditState};
 pub use file_actions_batch::FileBatchAction;
 pub(crate) use file_editor::FileEditorState;
-pub(crate) use file_visibility::HiddenGitFiles;
+pub(crate) use file_visibility::{HiddenGitFiles, UnlistedFiles};
 pub use keyboard_focus::FocusStop;
 pub use open::open_repo_window;
 pub(crate) use open::{

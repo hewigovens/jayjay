@@ -1,4 +1,4 @@
-use gpui::{Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
+use gpui::{AnyElement, Div, IntoElement, ParentElement, SharedString, Styled, div, px, rgb};
 
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons;
@@ -7,6 +7,7 @@ pub(super) fn placeholder_card(
     glyph_str: &'static str,
     title: impl Into<SharedString>,
     body: impl Into<SharedString>,
+    action: Option<AnyElement>,
     t: &Theme,
 ) -> impl IntoElement {
     div()
@@ -27,9 +28,15 @@ pub(super) fn placeholder_card(
         )
         .child(
             div()
+                .flex()
+                .flex_row()
+                .flex_wrap()
+                .justify_center()
+                .gap(px(4.))
                 .text_size(ui_font_size(11.))
                 .text_color(rgb(t.fg_dim))
-                .child(body.into()),
+                .child(body.into())
+                .children(action),
         )
 }
 
