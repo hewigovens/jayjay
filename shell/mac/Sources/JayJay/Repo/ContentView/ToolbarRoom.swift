@@ -1,7 +1,7 @@
 import Foundation
 import Observation
 
-/// Shares the toolbar's width so nothing overflows while a part can still give: the revset field narrows first, then the Operation Log toggle gives up its seat above the pane. Kept out of view state so a resize only invalidates the views that read it.
+/// Shares the window's width so nothing overflows while a part can still give: the Operation Log pane narrows below the user's width, the revset field narrows, then the Operation Log toggle gives up its seat above the pane. Kept out of view state so a resize only invalidates the views that read it.
 @MainActor @Observable
 final class ToolbarRoom {
     static let revsetWidth: ClosedRange<CGFloat> = 200 ... 485
@@ -12,14 +12,26 @@ final class ToolbarRoom {
 
     var toolbarWidth: CGFloat = 0
     var leadingItemWidth: CGFloat = 0
+    var isSidebarHidden = false
+    /// Only a drag changes it; a narrow window draws the pane narrower without forgetting it.
+    var preferredOperationLogWidth = PaneLayout.operationLogWidth()
 
-    func seatsPaneToggle(paneWidth: CGFloat) -> Bool {
-        leadingItemWidth > 0 && flexibleWidth - Self.revsetWidth.lowerBound >= paneWidth - Self.paneToggleWidth
+    var operationLogRange: ClosedRange<CGFloat> {
+        guard toolbarWidth > 0 else { return PaneLayout.operationLog }
+        return PaneLayout.operationLogRange(windowWidth: toolbarWidth, sidebarShown: !isSidebarHidden)
     }
 
-    func revsetWidth(paneShown: Bool, paneWidth: CGFloat) -> CGFloat {
+    var operationLogWidth: CGFloat {
+        min(max(preferredOperationLogWidth, operationLogRange.lowerBound), operationLogRange.upperBound)
+    }
+
+    var seatsPaneToggle: Bool {
+        leadingItemWidth > 0 && flexibleWidth - Self.revsetWidth.lowerBound >= operationLogWidth - Self.paneToggleWidth
+    }
+
+    func revsetWidth(paneShown: Bool) -> CGFloat {
         guard leadingItemWidth > 0 else { return Self.revsetWidth.upperBound }
-        let seat = paneShown && seatsPaneToggle(paneWidth: paneWidth) ? paneWidth - Self.paneToggleWidth : 0
+        let seat = paneShown && seatsPaneToggle ? operationLogWidth - Self.paneToggleWidth : 0
         return min(max(flexibleWidth - seat, Self.revsetWidth.lowerBound), Self.revsetWidth.upperBound)
     }
 

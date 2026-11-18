@@ -63,8 +63,7 @@ extension RepoContentView {
                 vocabulary: viewModel.revsetVocabulary,
                 editRequest: revsetEditRequest,
                 room: toolbarRoom,
-                pane: operationLog,
-                paneWidth: operationLogWidth
+                pane: operationLog
             )
         }
         .sharedBackgroundVisibility(.hidden)
@@ -82,7 +81,7 @@ extension RepoContentView {
 
         ToolbarItem(placement: .primaryAction) {
             let title = showsOperationLog ? Localized.Menu.hideOperationLog : Localized.Menu.showOperationLog
-            OperationLogToolbarSlot(reveal: operationLog, paneWidth: operationLogWidth, room: toolbarRoom) {
+            OperationLogToolbarSlot(reveal: operationLog, room: toolbarRoom) {
                 toolbarButton(
                     .operationLog,
                     help: AppShortcut.operationLog.help(title),

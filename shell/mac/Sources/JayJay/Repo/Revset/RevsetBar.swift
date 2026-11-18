@@ -10,7 +10,6 @@ struct RevsetBar: View {
     let editRequest: Int
     let room: ToolbarRoom
     let pane: PaneReveal
-    let paneWidth: CGFloat
 
     @State private var anchor = PickerAnchor()
     @State private var panel = PickerPanel()
@@ -94,7 +93,7 @@ struct RevsetBar: View {
         }
         .padding(.leading, 4)
         .padding(.trailing, isNarrowed && !isEditing ? 4 : 10)
-        .frame(width: room.revsetWidth(paneShown: pane.isShown, paneWidth: paneWidth), height: 28)
+        .frame(width: room.revsetWidth(paneShown: pane.isShown), height: 28)
         .background(background, in: Capsule())
         .overlay {
             if isEditing {

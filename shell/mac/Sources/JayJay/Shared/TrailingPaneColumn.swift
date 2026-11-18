@@ -4,14 +4,15 @@ import SwiftUI
 struct TrailingPaneColumn<Content: View>: View {
     let reveal: PaneReveal
     @Binding var width: CGFloat
-    let range: ClosedRange<CGFloat>
+    /// Read in this body, not the caller's, so a window resize only invalidates the pane.
+    let range: () -> ClosedRange<CGFloat>
     let onResizeEnded: (CGFloat) -> Void
     let content: Content
 
     init(
         reveal: PaneReveal,
         width: Binding<CGFloat>,
-        range: ClosedRange<CGFloat>,
+        range: @escaping () -> ClosedRange<CGFloat>,
         onResizeEnded: @escaping (CGFloat) -> Void,
         @ViewBuilder content: () -> Content
     ) {
@@ -38,7 +39,7 @@ struct TrailingPaneColumn<Content: View>: View {
         }
         .overlay(alignment: .leading) {
             if reveal.isShown {
-                PaneDivider(position: $width, range: range, onEnded: onResizeEnded, paneEdge: .trailing)
+                PaneDivider(position: $width, range: range(), onEnded: onResizeEnded, paneEdge: .trailing)
                     .frame(width: PaneDivider.hitWidth)
                     .offset(x: (PaneLayout.dividerWidth - PaneDivider.hitWidth) / 2)
             }

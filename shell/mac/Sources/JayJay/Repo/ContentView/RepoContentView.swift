@@ -8,7 +8,6 @@ struct RepoContentView: View {
     @State var sidebarWidth: CGFloat = 360
     /// The sidebar's width on screen, which a narrow window holds below `sidebarWidth`.
     @State var sidebarShownWidth: CGFloat = 360
-    @State var operationLogWidth = PaneLayout.operationLogWidth()
     @State var toolbarRoom = ToolbarRoom()
     @State var revsetEditRequest = 0
     @State var refCreateName = ""
@@ -205,9 +204,9 @@ struct RepoContentView: View {
                 }
                 TrailingPaneColumn(
                     reveal: operationLog,
-                    width: $operationLogWidth,
-                    range: PaneLayout.operationLog,
-                    onResizeEnded: { storedOperationLogWidth = $0 },
+                    width: Binding { toolbarRoom.operationLogWidth } set: { toolbarRoom.preferredOperationLogWidth = $0 },
+                    range: { toolbarRoom.operationLogRange },
+                    onResizeEnded: { _ in storedOperationLogWidth = toolbarRoom.preferredOperationLogWidth },
                     content: { operationLogPanel }
                 )
                 .disabled(!viewModel.sshConnected)

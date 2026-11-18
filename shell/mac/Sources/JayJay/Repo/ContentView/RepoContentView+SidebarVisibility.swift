@@ -11,6 +11,7 @@ extension RepoContentView {
             windowManager.repoWindow(at: viewModel.repoPath)?.makeFirstResponder(nil)
         }
         keyboardFocus.isSidebarHidden = hidden
+        toolbarRoom.isSidebarHidden = hidden
         sidebarReveal.animate(toShown: !hidden, in: windowManager.repoWindow(at: viewModel.repoPath), animated: animated && !reduceMotion)
     }
 }

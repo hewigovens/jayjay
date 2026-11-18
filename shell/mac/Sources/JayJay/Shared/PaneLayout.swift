@@ -21,6 +21,11 @@ enum PaneLayout {
         sidebar.fitted(in: windowWidth - 2 * dividerWidth - secondaryPane.lowerBound - previewMin)
     }
 
+    static func operationLogRange(windowWidth: CGFloat, sidebarShown: Bool) -> ClosedRange<CGFloat> {
+        let sidebarRoom = sidebarShown ? sidebar.lowerBound + dividerWidth : 0
+        return operationLog.fitted(in: windowWidth - sidebarRoom - secondaryPane.lowerBound - dividerWidth - previewMin)
+    }
+
     static func operationLogWidth(defaults: UserDefaults = .standard) -> CGFloat {
         let stored = defaults.object(forKey: AppSettings.operationLogWidthKey) as? Double
         return min(max(stored.map { CGFloat($0) } ?? operationLogDefault, operationLog.lowerBound), operationLog.upperBound)
