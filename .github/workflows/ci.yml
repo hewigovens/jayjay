@@ -90,6 +90,7 @@ jobs:
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
+          shared-key: swift
           save-if: ${{ github.ref == 'refs/heads/main' }}
 
       - name: Lint Swift
@@ -111,6 +112,26 @@ jobs:
           path: ui-test-products.tgz
           retention-days: 1
           if-no-files-found: error
+
+  # Unit tests build on their own runner so the UI shards start as soon as the build products are uploaded.
+  swift-test:
+    runs-on: xcode-27
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Install Rust
+        uses: dtolnay/rust-toolchain@683b588c487a69d01f6c6ddf40f036ff682cc2c8 # v1
+        with:
+          toolchain: stable
+
+      - name: Install tools
+        run: brew install just xcbeautify jj
+
+      - name: Cache Rust dependencies
+        uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
+        with:
+          shared-key: swift
+          save-if: false
 
       - name: Test app
         run: just test-app
