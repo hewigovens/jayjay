@@ -18,6 +18,12 @@ extension RepoViewModel {
 }
 
 extension RepoViewModel {
+    var showsWorkingCopyDraft: Bool {
+        workingCopyDescription.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty || !commitDraftIsClean(
+            summary: commitSummaryDraft, body: commitDescriptionDraft, message: workingCopyDescription
+        )
+    }
+
     /// A clean box follows the working copy; a typed draft is never replaced, even when @ moves to a described change.
     func applyWorkingCopy(changeId: String, description: String) {
         let previousDescription = workingCopyDescription

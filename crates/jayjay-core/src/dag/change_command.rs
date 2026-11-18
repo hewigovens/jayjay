@@ -1,4 +1,4 @@
-use jayjay_i18n::menu;
+use jayjay_i18n::{menu, repo};
 
 use crate::shortcuts::ShortcutCommand;
 use crate::types::ChangeInfo;
@@ -10,6 +10,7 @@ pub enum ChangeCommand {
     NewChangeAfter,
     Edit,
     Describe,
+    Commit,
     SquashIntoParent,
     MoveChangesToWorkingCopy,
     RebaseOntoTrunk,
@@ -24,12 +25,13 @@ pub enum ChangeCommand {
 }
 
 impl ChangeCommand {
-    pub const ALL: [Self; 16] = [
+    pub const ALL: [Self; 17] = [
         Self::NewChange,
         Self::NewChangeBefore,
         Self::NewChangeAfter,
         Self::Edit,
         Self::Describe,
+        Self::Commit,
         Self::SquashIntoParent,
         Self::MoveChangesToWorkingCopy,
         Self::RebaseOntoTrunk,
@@ -59,8 +61,12 @@ impl ChangeCommand {
             Self::Edit | Self::RebaseOntoTrunk | Self::Fix | Self::Absorb | Self::Abandon => {
                 mutable
             }
-            // The working copy is described in the commit box, and moving its changes onto itself does nothing.
+            // The working copy is described from its commit box or its header, and moving its changes onto itself does nothing.
             Self::Describe | Self::MoveChangesToWorkingCopy => mutable && !change.is_working_copy,
+            // An undescribed working copy is committed from the commit box, which asks for the message.
+            Self::Commit => {
+                mutable && change.is_working_copy && !change.description.trim().is_empty()
+            }
             Self::SquashIntoParent => {
                 mutable && !change.parents.is_empty() && !change.has_immutable_parent
             }
@@ -79,6 +85,7 @@ impl ChangeCommand {
             Self::NewChangeAfter => menu::new_change_after(),
             Self::Edit => menu::edit_change(),
             Self::Describe => menu::describe_ellipsis(),
+            Self::Commit => repo::commit(),
             Self::SquashIntoParent => menu::squash_into_parent(),
             Self::MoveChangesToWorkingCopy => menu::move_changes_to_working_copy(),
             Self::RebaseOntoTrunk => menu::rebase_onto_trunk(),
@@ -165,6 +172,20 @@ mod tests {
         assert!(!ChangeCommand::MoveChangesToWorkingCopy.is_available(&working_copy));
         assert!(ChangeCommand::Edit.is_available(&working_copy));
         assert!(ChangeCommand::SquashIntoParent.is_available(&working_copy));
+    }
+
+    #[test]
+    fn only_a_described_working_copy_is_committed_from_the_menu() {
+        let described = |change: &mut ChangeInfo| change.description = "message\n".to_owned();
+        assert!(ChangeCommand::Commit.is_available(&change(|change| {
+            change.is_working_copy = true;
+            described(change);
+        })));
+        assert!(!ChangeCommand::Commit.is_available(&change(|change| {
+            change.is_working_copy = true;
+            change.description = "\n".to_owned();
+        })));
+        assert!(!ChangeCommand::Commit.is_available(&change(described)));
     }
 
     #[test]

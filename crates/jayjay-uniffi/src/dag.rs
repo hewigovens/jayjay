@@ -93,6 +93,7 @@ pub enum ChangeCommand {
     NewChangeAfter,
     Edit,
     Describe,
+    Commit,
     SquashIntoParent,
     MoveChangesToWorkingCopy,
     RebaseOntoTrunk,

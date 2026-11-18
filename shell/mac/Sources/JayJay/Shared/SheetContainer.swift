@@ -15,6 +15,8 @@ struct SheetContainer<Content: View>: View {
     var trailingActions = false
     let onCancel: () -> Void
     let onConfirm: () -> Void
+    var titleAccessory: AnyView?
+    var additionalActions: AnyView?
     @ViewBuilder let content: () -> Content
 
     var body: some View {
@@ -32,6 +34,7 @@ struct SheetContainer<Content: View>: View {
                 Button(cancelLabel) { onCancel() }
                     .disabled(cancelDisabled)
                     .keyboardShortcut(.cancelAction)
+                additionalActions
                 Button(confirmLabel, role: confirmRole) { onConfirm() }
                     .keyboardShortcut(.defaultAction)
                     .buttonStyle(.borderedProminent)
@@ -57,6 +60,7 @@ struct SheetContainer<Content: View>: View {
                         .foregroundStyle(.secondary)
                 }
                 Text(title)
+                titleAccessory
             }
             .jayjayFont(14, weight: .semibold)
             .fixedSize(horizontal: inlineHeaderIcon != nil, vertical: false)

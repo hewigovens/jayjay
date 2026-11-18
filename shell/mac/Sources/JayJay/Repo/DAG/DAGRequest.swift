@@ -9,6 +9,7 @@ enum DAGRequest {
     case rebaseSelectionOntoTrunk(revisions: [String])
     case abandon(rev: String)
     case editDescription(rev: String, description: String)
+    case commitWorkingCopy
     case abandonSelection(revisions: [String])
     case squashSelection(revisions: [String])
     case createBookmark(rev: String)
@@ -31,7 +32,7 @@ extension DAGRequest {
             case let .deleteTagOnRemote(name): .confirmTagDeleteOnRemote(name: name)
             case let .createStackedPRs(rev): .stackedPr(rev: rev)
             case let .bisectFrom(commitId): .bisect(good: "trunk()", bad: commitId)
-            case .rebase, .rebaseCommand, .rebaseOntoTrunk, .rebaseSelectionOntoTrunk, .abandon, .createBookmark, .createTag, .showAncestors, .openWorkspace, .bisectBetween: nil
+            case .rebase, .rebaseCommand, .rebaseOntoTrunk, .rebaseSelectionOntoTrunk, .abandon, .commitWorkingCopy, .createBookmark, .createTag, .showAncestors, .openWorkspace, .bisectBetween: nil
         }
     }
 }

@@ -4,10 +4,9 @@ import SwiftUI
 extension ChangeDetailView {
     func descriptionSection() -> some View {
         DetailDescriptionSection(
-            description: detail.info.description,
+            change: detail.info,
             expanded: descriptionExpanded,
             expandedHeight: DescriptionHeight.expanded(paneHeight: paneHeight),
-            canEditDescription: !detail.info.isWorkingCopy && !detail.info.isImmutable,
             onEdit: { onEditDescription(detailRevision, detail.info.description) }
         )
         .id("\(detailRevision)|\(detail.info.commitId.id)")
@@ -23,19 +22,18 @@ extension ChangeDetailView {
 }
 
 private struct DetailDescriptionSection: View {
-    let description: String
+    let change: ChangeInfo
     @Binding var expanded: Bool
     let expandedHeight: CGFloat
-    let canEditDescription: Bool
     let onEdit: () -> Void
 
     var body: some View {
-        if description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
+        if change.description.trimmingCharacters(in: .whitespacesAndNewlines).isEmpty {
             HStack(alignment: .center, spacing: 8) {
                 Text(Localized.Repo.noDescription)
                     .jayjayFont(20, weight: .semibold)
                     .foregroundStyle(.tertiary)
-                if canEditDescription {
+                if !change.isWorkingCopy, !change.isImmutable {
                     Button(Localized.Repo.addDescription, systemImage: "pencil", action: onEdit)
                         .buttonStyle(.plain)
                         .keyboardFocusStop(.editDescription, action: onEdit)
@@ -49,11 +47,11 @@ private struct DetailDescriptionSection: View {
             .frame(maxWidth: .infinity, minHeight: PaneLayout.headerHeight, alignment: .leading)
         } else {
             DescriptionPreview(
-                description: description,
+                description: change.description,
                 collapsedHeight: DescriptionHeight.collapsed,
                 expandedHeight: expandedHeight,
                 expanded: expanded,
-                onEdit: canEditDescription ? onEdit : nil,
+                onEdit: change.isImmutable ? nil : onEdit,
                 onToggleExpansion: { expanded.toggle() }
             )
         }

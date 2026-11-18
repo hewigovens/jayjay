@@ -30,6 +30,19 @@ final class RepoViewModelTests: RepoViewModelTestCase {
         XCTAssertGreaterThan(viewModel.graphGeneration, generation)
     }
 
+    func testCommitBoxVisibilityFollowsSavedDescriptionAndUnsavedDraft() throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.applyWorkingCopy(changeId: "same", description: "")
+        XCTAssertTrue(viewModel.showsWorkingCopyDraft)
+
+        viewModel.commitSummaryDraft = "Local draft"
+        viewModel.applyWorkingCopy(changeId: "same", description: "External description\n")
+        XCTAssertTrue(viewModel.showsWorkingCopyDraft)
+
+        viewModel.commitSummaryDraft = "External description"
+        XCTAssertFalse(viewModel.showsWorkingCopyDraft)
+    }
+
     func testDraftSurvivesMoveToEmptyWorkingCopy() throws {
         let viewModel = try XCTUnwrap(viewModel)
         viewModel.applyWorkingCopy(changeId: "old", description: "")
@@ -91,6 +104,49 @@ final class RepoViewModelTests: RepoViewModelTestCase {
 
         XCTAssertEqual(viewModel.commitSummaryDraft, "")
         XCTAssertEqual(viewModel.commitDescriptionDraft, "")
+    }
+
+    func testCommitReportsFailureAndPreservesTheDraft() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        _ = try runJj(["config", "set", "--repo", #"revset-aliases."immutable_heads()""#, "@"], in: viewModel.repoPath)
+        viewModel.commitSummaryDraft = "Keep this draft"
+
+        let committed = await viewModel.commit(message: viewModel.commitSummaryDraft, manageSubmodules: false)
+
+        XCTAssertFalse(committed)
+        XCTAssertNotNil(viewModel.error)
+        XCTAssertEqual(viewModel.commitSummaryDraft, "Keep this draft")
+    }
+
+    func testSuccessfulCommitReturnsAfterCreatingTheNewWorkingCopy() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        let committed = await viewModel.commit(message: "Saved from editor", manageSubmodules: false)
+
+        XCTAssertTrue(committed)
+        XCTAssertEqual(try viewModel.repo.showSummary(rev: "@-").info.description, "Saved from editor")
+        XCTAssertEqual(try viewModel.repo.showSummary(rev: "@").info.description, "")
+    }
+
+    func testCommitWithAnotherMessageKeepsATypedDraft() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.applyWorkingCopy(changeId: "same", description: "Saved description\n")
+        viewModel.commitSummaryDraft = "Typed draft"
+
+        let committed = await viewModel.commit(message: "Saved description\n", manageSubmodules: false)
+
+        XCTAssertTrue(committed)
+        XCTAssertEqual(viewModel.commitSummaryDraft, "Typed draft")
+    }
+
+    func testASecondCommitIsRefusedWhileOneIsInFlight() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        async let first = viewModel.commit(message: "Only once", manageSubmodules: false)
+        async let second = viewModel.commit(message: "Only once", manageSubmodules: false)
+
+        let outcomes = await [first, second]
+
+        XCTAssertEqual(outcomes.filter(\.self).count, 1)
+        XCTAssertEqual(try viewModel.repo.showSummary(rev: "@--").info.description, "")
     }
 
     func testNewChangeClearsCommitBox() async throws {

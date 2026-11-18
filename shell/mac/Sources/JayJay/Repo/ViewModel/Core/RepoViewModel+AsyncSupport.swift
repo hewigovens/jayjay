@@ -62,6 +62,29 @@ extension RepoViewModel {
         performResult(selecting: rev, undoable: message.map { message in { _ in message } }, beforeRefresh: beforeRefresh, action)
     }
 
+    /// `perform` for a caller that waits for the outcome; keep its bookkeeping in step with `performResult`.
+    @MainActor
+    func performAwaiting(
+        selecting rev: String? = "@",
+        beforeRefresh: @MainActor (RepoViewModel) -> Void = { _ in },
+        _ action: @escaping RepoOperation<Void>
+    ) async -> Bool {
+        guard repo.sshState() == .connected, !isShuttingDown else { return false }
+        lastInternalMutationAt = Date()
+        pendingMutations += 1
+        defer { pendingMutations -= 1 }
+        do {
+            try await awaitRepoTask(action)
+        } catch {
+            present(error: error)
+            return false
+        }
+        successActionSignal += 1
+        beforeRefresh(self)
+        refresh(selecting: rev)
+        return true
+    }
+
     @discardableResult
     func performResult<Result>(
         selecting rev: String? = "@",

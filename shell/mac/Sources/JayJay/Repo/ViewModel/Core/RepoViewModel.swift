@@ -97,6 +97,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var pendingMutations = 0
     var commitSummaryDraft: String = ""
     var commitDescriptionDraft: String = ""
+    var isCommitting = false
     /// `nil` until the first refresh.
     var recentOperations: RecentOperations?
     var submoduleAttentionItems: [GitSubmoduleStatus] = []

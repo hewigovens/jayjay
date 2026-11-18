@@ -62,8 +62,12 @@ extension RepoContentView {
             if case .submoduleAttention = modal {
                 modal = nil
             }
-        } else if modal == nil {
-            modal = .submoduleAttention
+        } else {
+            switch modal {
+                case nil: modal = .submoduleAttention
+                case let .editDescription(rev, _) where viewModel.change(for: rev)?.isWorkingCopy == true: modal = .submoduleAttention
+                default: break
+            }
         }
     }
 

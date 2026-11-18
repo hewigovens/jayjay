@@ -6,10 +6,12 @@ extension RepoContentView {
     func modalView(for modal: RepoModalState) -> some View {
         switch modal {
             case let .editDescription(rev, description):
+                let selected = viewModel.selectedChange?.info
                 DescriptionEditorSheet(
                     revision: rev,
                     description: description,
-                    onCancel: { self.modal = nil },
+                    workingCopy: selected?.isWorkingCopy == true && selected?.selectionRevision == rev ? viewModel : nil,
+                    onDismiss: { self.modal = nil },
                     onSave: { message in
                         viewModel.describe(rev: rev, message: message)
                         self.modal = nil

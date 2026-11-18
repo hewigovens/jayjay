@@ -21,6 +21,7 @@ extension ChangeCommand {
             case .newChangeAfter: "arrow.up.circle"
             case .edit: "pencil.circle"
             case .describe: "square.and.pencil"
+            case .commit: "checkmark.circle"
             case .squashIntoParent: "arrow.down.left.circle"
             case .moveChangesToWorkingCopy: "tray.and.arrow.down"
             case .rebaseOntoTrunk: "arrow.uturn.up"
@@ -47,6 +48,7 @@ extension ChangeCommand {
         let rev = change.selectionRevision
         switch self {
             case .describe: return .editDescription(rev: rev, description: change.description)
+            case .commit: return .commitWorkingCopy
             case .rebaseOntoTrunk: return .rebaseOntoTrunk(change)
             case .createBookmark: return .createBookmark(rev: rev)
             case .createTag: return .createTag(rev: change.commitId.id)

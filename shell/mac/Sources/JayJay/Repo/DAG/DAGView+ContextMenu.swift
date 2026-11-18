@@ -84,7 +84,7 @@ extension DAGView {
             commandButton(command, change: entry.change, available: available)
         }
         Divider()
-        ForEach([ChangeCommand.edit, .describe, .squashIntoParent, .moveChangesToWorkingCopy, .rebaseOntoTrunk, .fix], id: \.self) { command in
+        ForEach([ChangeCommand.edit, .describe, .commit, .squashIntoParent, .moveChangesToWorkingCopy, .rebaseOntoTrunk, .fix], id: \.self) { command in
             commandButton(command, change: entry.change, available: available)
         }
 

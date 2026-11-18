@@ -11,6 +11,15 @@ extension RepoContentView {
                 handleRebaseRequest(request)
             case let .abandon(rev):
                 confirmAbandon(rev)
+            case .commitWorkingCopy:
+                // A typed draft with a summary is what the commit box would commit; without one the saved description stands.
+                let hasDraft = viewModel.showsWorkingCopyDraft && !viewModel.commitSummaryDraft.trimmingCharacters(in: .whitespaces).isEmpty
+                let message = hasDraft
+                    ? joinCommitMessage(summary: viewModel.commitSummaryDraft, body: viewModel.commitDescriptionDraft)
+                    : viewModel.workingCopyDescription
+                Task {
+                    await viewModel.commit(message: message, manageSubmodules: settings.enableGitSubmoduleSupport)
+                }
             case let .createBookmark(rev):
                 presentBookmarkCreate(rev: rev)
             case let .createTag(rev):

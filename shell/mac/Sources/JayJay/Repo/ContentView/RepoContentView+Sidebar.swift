@@ -50,27 +50,9 @@ extension RepoContentView {
                 bisect: viewModel.bisect.state,
                 selectionGraph: viewModel.selectionGraph
             )
-            if shouldShowCommitBox {
+            if viewModel.selectedChange?.info.isWorkingCopy == true, viewModel.showsWorkingCopyDraft {
                 Divider()
-                CommitBox(
-                    description: viewModel.workingCopyDescription,
-                    summary: $viewModel.commitSummaryDraft,
-                    details: $viewModel.commitDescriptionDraft,
-                    onSaveDescription: { viewModel.describeWorkingCopy(message: $0) },
-                    onCommit: {
-                        await viewModel.commit(message: $0, manageSubmodules: settings.enableGitSubmoduleSupport)
-                    },
-                    onGenerateMessage: {
-                        await viewModel.generateCommitMessage(using: settings.aiProviderOrder)
-                    },
-                    aiProvider: viewModel.aiProvider
-                )
-                .task(id: settings.aiProviderOrder) {
-                    let label = await settings.aiProviderOrder.firstReadyLabel()
-                    if !Task.isCancelled {
-                        viewModel.aiProvider = label
-                    }
-                }
+                CommitBox(viewModel: viewModel)
             }
         }
     }
@@ -114,10 +96,6 @@ extension RepoContentView {
         }
         .padding(.horizontal, 12).padding(.vertical, 6)
         .glassEffect(in: RoundedRectangle(cornerRadius: 8))
-    }
-
-    private var shouldShowCommitBox: Bool {
-        viewModel.selectedChange?.info.isWorkingCopy == true
     }
 }
 

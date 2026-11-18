@@ -7,12 +7,21 @@ extension RepoViewModel {
     }
 
     func describeWorkingCopy(message: String) {
-        perform { try $0.describe(rev: "@", message: message) }
+        perform(beforeRefresh: { viewModel in
+            // The fields become what was saved, so stray whitespace does not read as an unsaved draft.
+            viewModel.commitSummaryDraft = commitSummary(message: message)
+            viewModel.commitDescriptionDraft = commitBody(message: message)
+        }, {
+            try $0.describe(rev: "@", message: message)
+        })
     }
 
     @MainActor
     @discardableResult
     func commit(message: String, manageSubmodules: Bool) async -> Bool {
+        guard !isCommitting else { return false }
+        isCommitting = true
+        defer { isCommitting = false }
         if manageSubmodules {
             do {
                 let blockedSubmodules = try await awaitRepoTask { try $0.submoduleStatuses() }
@@ -29,18 +38,21 @@ extension RepoViewModel {
 
         // Capture before the commit rewrites the graph; the committed change keeps this id and only its marks should clear.
         let committedChangeId = changes.first(where: \.isWorkingCopy)?.changeId.id
-        perform(selecting: "@", beforeRefresh: { viewModel in
+        // Text typed in the commit box survives a commit made with another message, such as the description sheet's.
+        let commitsDraft = !showsWorkingCopyDraft || joinCommitMessage(summary: commitSummaryDraft, body: commitDescriptionDraft) == message
+        return await performAwaiting(beforeRefresh: { viewModel in
             if let committedChangeId {
                 viewModel.reviewStore.clearChange(changeId: committedChangeId)
             }
             viewModel.submoduleAttentionItems = []
             viewModel.pendingCommitMessage = nil
-            viewModel.commitSummaryDraft = ""
-            viewModel.commitDescriptionDraft = ""
+            if commitsDraft {
+                viewModel.commitSummaryDraft = ""
+                viewModel.commitDescriptionDraft = ""
+            }
         }, {
             try $0.jjCommit(message: message)
         })
-        return true
     }
 
     @MainActor
