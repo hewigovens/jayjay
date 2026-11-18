@@ -20,6 +20,14 @@ struct SyncArrowIndicator: View {
             }
         }
 
+        /// The upload glyph reads larger than the download one at equal size.
+        var size: CGFloat {
+            switch self {
+                case .pull: 19
+                case .push: 18
+            }
+        }
+
         var sign: CGFloat {
             switch self {
                 case .pull: 1
@@ -40,7 +48,7 @@ struct SyncArrowIndicator: View {
         } icon: {
             Image(direction.imageName)
                 .resizable()
-                .frame(width: 19.3, height: 16)
+                .frame(width: direction.size, height: direction.size)
                 .keyframeAnimator(initialValue: 0, repeating: animating && !reduceMotion) { icon, nudge in
                     icon.offset(y: direction.sign * nudge)
                 } keyframes: { _ in
