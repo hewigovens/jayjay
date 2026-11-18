@@ -1,10 +1,21 @@
+#[cfg(not(target_os = "macos"))]
+use gpui::App;
 use gpui::{Context, Keystroke, Window};
 
 use super::RepoWindow;
 #[cfg(not(target_os = "macos"))]
-use crate::ui::app_menu::MenuRow;
+use crate::ui::app_menu::{MenuRow, WindowMenuState};
 
 impl RepoWindow {
+    #[cfg(not(target_os = "macos"))]
+    pub(super) fn window_menu_state(&self, cx: &App) -> WindowMenuState {
+        WindowMenuState {
+            steps: self.vm.read(cx).operation_steps().cloned(),
+            restores_operation: self.selected_restorable_operation(cx).is_some(),
+            operation_log_shown: self.layout.operation_log_visible(),
+        }
+    }
+
     /// Arrow keys walk the open menu bar menu, Enter runs the selected item; Escape is the window's Dismiss.
     #[cfg(not(target_os = "macos"))]
     pub(super) fn handle_app_menu_key(
@@ -21,8 +32,8 @@ impl RepoWindow {
             self.close_app_menu(cx);
             return false;
         }
-        let steps = self.vm.read(cx).operation_steps().cloned();
-        let rows = MenuRow::for_menu(&menu.menu_name, steps.as_ref(), cx);
+        let state = self.window_menu_state(cx);
+        let rows = MenuRow::for_menu(&menu.menu_name, &state, cx);
         match key.key.as_str() {
             "down" | "up" => {
                 let selected = MenuRow::step(&rows, menu.selected, key.key == "down");
@@ -59,8 +70,7 @@ impl RepoWindow {
                     current.checked_sub(1).unwrap_or(names.len() - 1)
                 };
                 let name = names[next].clone();
-                let first =
-                    MenuRow::step(&MenuRow::for_menu(&name, steps.as_ref(), cx), None, true);
+                let first = MenuRow::step(&MenuRow::for_menu(&name, &state, cx), None, true);
                 self.open_named_app_menu(name, first, cx);
             }
             _ => return false,

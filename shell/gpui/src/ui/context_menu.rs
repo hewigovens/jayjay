@@ -6,13 +6,13 @@ use std::sync::Arc;
 
 use gpui::prelude::FluentBuilder;
 use gpui::{
-    Anchor, AnyElement, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    Anchor, AnyElement, App, Entity, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
     ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled, anchored,
     canvas, deferred, div, point, px, rgb,
 };
 use jayjay_core::compare::{BookmarkDiffRequest, CompareState};
-use unicode_width::UnicodeWidthStr;
 
+use crate::app::fonts::ui_text_width;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::window::{
     AbandonSelectedLinesRequest, AddNoteRequest, ChangeAction, ConflictResolution, FileBatchAction,
@@ -21,10 +21,16 @@ use crate::repo::window::{
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::text_tooltip;
 
-const MENU_MIN_WIDTH: f32 = 260.;
+const MENU_MIN_WIDTH: f32 = 140.;
 const MENU_MAX_WIDTH: f32 = 420.;
 const MENU_ROW_HEIGHT: f32 = 28.;
 const MENU_SEPARATOR_HEIGHT: f32 = 9.;
+const MENU_EDGE_MARGIN: f32 = 6.;
+const MENU_FONT: f32 = 13.;
+const MENU_ICON_SIZE: f32 = 13.;
+const MENU_CARET_SIZE: f32 = 10.;
+const MENU_ROW_GAP: f32 = 6.;
+const MENU_ROW_PADDING_X: f32 = 12.;
 
 #[derive(Clone)]
 pub enum ContextAction {
@@ -61,6 +67,7 @@ pub enum ContextAction {
     },
     OpenEvologFor(SharedString),
     ShowAncestors(SharedString),
+    RestoreOperation(SharedString),
     UpdateWorkspace,
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
@@ -200,9 +207,13 @@ pub(crate) enum MenuLevel {
 
 pub(crate) fn render_context_menu(
     state: &ContextMenuState,
+    viewport_width: Pixels,
     t: &Theme,
     view: &Entity<RepoWindow>,
+    cx: &App,
 ) -> AnyElement {
+    let width = menu_width(&state.items, t, cx);
+    let origin = menu_origin(state.anchor, width, viewport_width);
     let backdrop_view = view.clone();
     let backdrop = div()
         .id("context-menu-backdrop")
@@ -227,10 +238,11 @@ pub(crate) fn render_context_menu(
 
     let menu = anchored()
         .anchor(Anchor::TopLeft)
-        .position(state.anchor)
-        .snap_to_window_with_margin(px(6.))
+        .position(origin)
+        .snap_to_window_with_margin(px(MENU_EDGE_MARGIN))
         .child(menu_panel(
             &state.items,
+            width,
             MenuLevel::Main,
             state.selected_index,
             t,
@@ -239,13 +251,20 @@ pub(crate) fn render_context_menu(
 
     let submenu = state.submenu_index.and_then(|index| {
         let items = state.items.get(index)?.submenu_items()?;
+        let submenu_width = menu_width(items, t, cx);
+        let x = if origin.x < state.anchor.x {
+            origin.x - submenu_width + px(2.)
+        } else {
+            origin.x + width - px(2.)
+        };
         Some(
             anchored()
                 .anchor(Anchor::TopLeft)
-                .position(submenu_position(state, index))
-                .snap_to_window_with_margin(px(6.))
+                .position(point(x, origin.y + submenu_offset(state, index)))
+                .snap_to_window_with_margin(px(MENU_EDGE_MARGIN))
                 .child(menu_panel(
                     items,
+                    submenu_width,
                     MenuLevel::Submenu,
                     state.submenu_selected_index,
                     t,
@@ -267,32 +286,56 @@ pub(crate) fn render_context_menu(
     deferred(overlay).with_priority(4).into_any_element()
 }
 
-fn submenu_position(state: &ContextMenuState, index: usize) -> Point<Pixels> {
-    let y = state.items.iter().take(index).fold(px(4.), |offset, item| {
+/// Opens leftward from the pointer when the menu would cross the trailing edge, as native menus do.
+fn menu_origin(anchor: Point<Pixels>, width: Pixels, viewport_width: Pixels) -> Point<Pixels> {
+    if anchor.x + width + px(MENU_EDGE_MARGIN) > viewport_width
+        && anchor.x - width >= px(MENU_EDGE_MARGIN)
+    {
+        point(anchor.x - width, anchor.y)
+    } else {
+        anchor
+    }
+}
+
+fn submenu_offset(state: &ContextMenuState, index: usize) -> Pixels {
+    state.items.iter().take(index).fold(px(4.), |offset, item| {
         offset
             + if item.is_separator {
                 px(MENU_SEPARATOR_HEIGHT)
             } else {
                 px(MENU_ROW_HEIGHT)
             }
-    });
-    point(
-        state.anchor.x + menu_width(&state.items) - px(2.),
-        state.anchor.y + y,
-    )
+    })
 }
 
-fn menu_width(items: &[ContextMenuItem]) -> Pixels {
-    let longest_label = items
+/// Fits the longest label, the shortcut letters and the submenu caret at the current zoom.
+fn menu_width(items: &[ContextMenuItem], t: &Theme, cx: &App) -> Pixels {
+    let size = px(t.scaled_font_size(MENU_FONT));
+    let label = items
         .iter()
-        .map(|item| item.label.width())
-        .max()
-        .unwrap_or_default() as f32;
-    px((54. + longest_label * 7.).clamp(MENU_MIN_WIDTH, MENU_MAX_WIDTH))
+        .map(|item| ui_text_width(cx, &item.label, size))
+        .fold(px(0.), Pixels::max);
+    let shortcut = items
+        .iter()
+        .filter_map(|item| item.shortcut)
+        .map(|shortcut| {
+            ui_text_width(cx, &shortcut.to_ascii_uppercase().to_string(), size) + px(MENU_ROW_GAP)
+        })
+        .fold(px(0.), Pixels::max);
+    let caret = if items.iter().any(|item| item.submenu.is_some()) {
+        px(MENU_ROW_GAP + MENU_CARET_SIZE)
+    } else {
+        px(0.)
+    };
+    let chrome = px(2. * MENU_ROW_PADDING_X + MENU_ICON_SIZE + MENU_ROW_GAP + 2.);
+    let scale = t.scaled_font_size(1.);
+    (chrome + label + shortcut + caret)
+        .clamp(px(MENU_MIN_WIDTH * scale), px(MENU_MAX_WIDTH * scale))
 }
 
 fn menu_panel(
     items: &[ContextMenuItem],
+    width: Pixels,
     level: MenuLevel,
     selected: Option<usize>,
     t: &Theme,
@@ -301,7 +344,7 @@ fn menu_panel(
     let mut col = div()
         .flex()
         .flex_col()
-        .w(menu_width(items))
+        .w(width)
         .py(px(4.))
         .bg(rgb(t.detail_bg))
         .border_1()
@@ -345,10 +388,10 @@ fn menu_row(
         .flex()
         .flex_row()
         .items_center()
-        .gap(px(6.))
-        .px(px(12.))
+        .gap(px(MENU_ROW_GAP))
+        .px(px(MENU_ROW_PADDING_X))
         .py(px(6.))
-        .text_size(ui_font_size(13.))
+        .text_size(ui_font_size(MENU_FONT))
         .text_color(rgb(t.fg))
         .when(selected && enabled, |row| row.bg(rgb(t.selected_bg)));
     let hover_view = view.clone();
@@ -379,7 +422,7 @@ fn menu_row(
         .when_some(item.tooltip.clone(), |row, tooltip| {
             row.tooltip(text_tooltip(tooltip))
         })
-        .child(icons::icon(item.glyph, 13., t.fg_dim))
+        .child(icons::icon(item.glyph, MENU_ICON_SIZE, t.fg_dim))
         .child(
             div()
                 .flex_1()
@@ -395,7 +438,7 @@ fn menu_row(
         );
     }
     if has_submenu {
-        row = row.child(icons::icon(glyph::CARET_RIGHT, 10., t.fg_dim));
+        row = row.child(icons::icon(glyph::CARET_RIGHT, MENU_CARET_SIZE, t.fg_dim));
     }
     row.into_any_element()
 }

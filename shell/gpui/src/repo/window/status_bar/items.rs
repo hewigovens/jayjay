@@ -132,7 +132,7 @@ pub(super) fn trailing_items(
             t,
             cx,
             |view, _, _, cx| {
-                view.open_operation_log(cx);
+                view.toggle_operation_log(cx);
             },
         ));
     }

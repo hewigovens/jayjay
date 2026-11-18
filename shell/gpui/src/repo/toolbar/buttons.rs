@@ -6,12 +6,12 @@ use gpui::{
     div, percentage, point, px, rgb, rgba, svg,
 };
 
-use crate::app::actions::ToggleSidebar;
+use crate::app::actions::{ToggleOperationLog, ToggleSidebar};
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, with_alpha};
 use crate::repo::toolbar::{ToolButton, ToolbarActivity};
 use crate::repo::view_model::RefreshMode;
-use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
+use crate::repo::window::{FocusStop, RepoWindow, focus_ring, operation_log_title};
 use crate::ui::button_group::{self, GroupEdge, group_item};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::TOOLBAR_ICON_SIZE;
@@ -190,6 +190,28 @@ pub(super) fn tools_cluster(
                 t,
                 cx,
             ),
+        ],
+    )
+    .into_any_element()
+}
+
+pub(super) fn operation_log_toggle(
+    shown: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let tooltip = KeyCaps::tooltip(operation_log_title(shown), &ToggleOperationLog, cx);
+    button_group::button_group(
+        t,
+        vec![
+            group_item("tb-operation-log", tooltip, GroupEdge::Leading, t)
+                .rounded_full()
+                .debug_selector(|| "toolbar-operation-log".to_owned())
+                .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
+                    view.toggle_operation_log(cx);
+                }))
+                .child(icons::icon(glyph::HISTORY, TOOLBAR_ICON_SIZE, t.fg_dim))
+                .into_any_element(),
         ],
     )
     .into_any_element()

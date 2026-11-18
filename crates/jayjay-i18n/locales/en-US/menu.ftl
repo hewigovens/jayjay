@@ -13,7 +13,6 @@ menu-zoom-out = Zoom Out
 menu-reset-zoom = Reset Zoom
 menu-repository = Repository
 menu-command-palette = Command Palette
-menu-operation-log-ellipsis = Operation Log…
 menu-filter-by-revset-ellipsis = Filter by Revset…
 menu-bookmark-manager = Bookmark Manager
 menu-repo-overview = Repo Overview

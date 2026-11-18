@@ -98,6 +98,7 @@ pub struct RepoWindow {
     /// The row j/k last stopped at and a count that restarts its dimming animation.
     pub(crate) lane_end_blink: Option<(usize, usize)>,
     pub(crate) review_store: super::review::SharedReviewStore,
+    pub(crate) operation_log: super::operation_log::OperationLogPane,
 }
 
 #[derive(Default)]
@@ -132,6 +133,10 @@ pub(crate) struct LayoutState {
     pub(crate) sidebar_closing: bool,
     pub(crate) sidebar_slide: usize,
     pub(crate) file_column_width: f32,
+    pub(crate) operation_log_shown: bool,
+    pub(crate) operation_log_width: f32,
+    /// The width of the last render, which decides whether the operation log has room.
+    pub(crate) viewport_width: f32,
     pub(crate) drag: Option<PaneDrag<DragTarget>>,
 }
 
@@ -343,6 +348,7 @@ pub enum ActivePane {
 pub(crate) enum DragTarget {
     Sidebar,
     FileColumn,
+    OperationLog,
 }
 
 pub(crate) const SIDEBAR_MIN: f32 = 240.;
@@ -352,6 +358,9 @@ pub(crate) const SECONDARY_PANE_MIN: f32 = 220.;
 pub(crate) const SECONDARY_PANE_MAX: f32 = 480.;
 /// Both shells fit the sidebar and file column so the preview keeps at least this.
 pub(crate) const PREVIEW_MIN: f32 = 420.;
+pub(crate) const OPERATION_LOG_MIN: f32 = 220.;
+pub(crate) const OPERATION_LOG_MAX: f32 = 560.;
+pub(crate) const OPERATION_LOG_DEFAULT: f32 = 320.;
 
 impl RepoWindow {
     pub fn new(path: PathBuf, cx: &mut Context<Self>) -> Self {
@@ -389,6 +398,7 @@ impl RepoWindow {
                 this.reconcile_file_selection(cx);
             }
             this.apply_sidebar_hidden(cfg.layout.sidebar_hidden, cx);
+            this.apply_operation_log_shown(cfg.layout.show_operation_log, cx);
             cx.notify();
         })
         .detach();
@@ -469,6 +479,9 @@ impl RepoWindow {
             .has_global::<crate::app::config::AppConfigStore>()
             .then(|| crate::app::config::current(cx));
         let sidebar_hidden = cfg.as_ref().is_some_and(|cfg| cfg.layout.sidebar_hidden);
+        let operation_log_shown = cfg
+            .as_ref()
+            .is_some_and(|cfg| cfg.layout.show_operation_log);
         Self {
             vm,
             focus_handle: cx.focus_handle(),
@@ -485,6 +498,9 @@ impl RepoWindow {
                 sidebar_closing: false,
                 sidebar_slide: 0,
                 file_column_width: SECONDARY_PANE_DEFAULT,
+                operation_log_shown,
+                operation_log_width: OPERATION_LOG_DEFAULT,
+                viewport_width: 0.,
                 drag: None,
             },
             file_column: FileColumnUiState {
@@ -541,6 +557,7 @@ impl RepoWindow {
             offline: false,
             lane_end_blink: None,
             review_store,
+            operation_log: super::operation_log::OperationLogPane::new(cx),
         }
     }
 
@@ -555,6 +572,10 @@ impl RepoWindow {
                 .secondary_pane_width
                 .clamp(SECONDARY_PANE_MIN, SECONDARY_PANE_MAX);
         }
+        self.layout.operation_log_width = cfg
+            .layout
+            .operation_log_width
+            .clamp(OPERATION_LOG_MIN, OPERATION_LOG_MAX);
         // `boot` only restores window layout; the repo is opened async from `RepoWindow::new`.
     }
 

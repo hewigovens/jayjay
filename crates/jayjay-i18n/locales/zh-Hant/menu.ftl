@@ -13,7 +13,6 @@ menu-zoom-out = 縮小
 menu-reset-zoom = 重設縮放
 menu-repository = 儲存庫
 menu-command-palette = 指令面板
-menu-operation-log-ellipsis = 操作記錄…
 menu-filter-by-revset-ellipsis = 依 Revset 篩選…
 menu-bookmark-manager = 書籤管理器
 menu-repo-overview = 儲存庫概覽

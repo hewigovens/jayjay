@@ -13,7 +13,6 @@ menu-zoom-out = 縮小
 menu-reset-zoom = 実際のサイズ
 menu-repository = リポジトリ
 menu-command-palette = コマンド パレット
-menu-operation-log-ellipsis = 操作ログ…
 menu-filter-by-revset-ellipsis = revset で絞り込む…
 menu-bookmark-manager = ブックマーク マネージャー
 menu-repo-overview = リポジトリの概要

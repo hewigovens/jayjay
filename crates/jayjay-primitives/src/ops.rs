@@ -23,6 +23,30 @@ impl Default for RecentOperations {
     }
 }
 
+impl RecentOperations {
+    pub fn entries(&self) -> &[OpLogEntry] {
+        match self {
+            Self::Entries(entries) => entries,
+            Self::Failed(_) => &[],
+        }
+    }
+
+    /// The only listed parent of `undoing`, or of the current operation without one.
+    pub fn restore_target(&self, undoing: Option<&str>) -> Option<&str> {
+        let entries = self.entries();
+        let entry = entries
+            .iter()
+            .find(|entry| undoing.map_or(entry.is_current, |id| entry.id.as_str() == id))?;
+        let [parent] = entry.parent_ids.as_slice() else {
+            return None;
+        };
+        entries
+            .iter()
+            .any(|entry| entry.id.as_str() == parent)
+            .then_some(parent.as_str())
+    }
+}
+
 /// What `jj undo` and `jj redo` would act on from the loaded operation.
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct UndoState {
@@ -79,4 +103,40 @@ pub struct AnnotationLine {
     pub timestamp: String,
     pub line_number: u32,
     pub text: String,
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn entry(id: &str, parents: &[&str], is_current: bool) -> OpLogEntry {
+        OpLogEntry {
+            id: ShortId {
+                id: id.to_owned(),
+                short_len: 1,
+            },
+            parent_ids: parents.iter().map(|&parent| parent.to_owned()).collect(),
+            description: String::new(),
+            timestamp_millis: 0,
+            is_current,
+        }
+    }
+
+    #[test]
+    fn restore_target_is_the_only_listed_parent() {
+        let operations = RecentOperations::Entries(vec![
+            entry("c", &["b"], true),
+            entry("b", &["a"], false),
+            entry("a", &["root"], false),
+            entry("m", &["a", "b"], false),
+        ]);
+        assert_eq!(operations.restore_target(None), Some("b"));
+        assert_eq!(operations.restore_target(Some("b")), Some("a"));
+        assert_eq!(operations.restore_target(Some("a")), None);
+        assert_eq!(operations.restore_target(Some("m")), None);
+        assert_eq!(
+            RecentOperations::Failed("x".into()).restore_target(None),
+            None
+        );
+    }
 }

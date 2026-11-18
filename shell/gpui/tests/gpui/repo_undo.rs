@@ -7,7 +7,6 @@ use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::repo::window::ChangeAction;
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jayjay_gpui::windows::command_palette::CommandPalette;
-use jayjay_gpui::windows::operation_log::OperationLogView;
 use jj_test::{LinearFixture, current_op_id, run_jj_in};
 
 fn run_palette_command(
@@ -124,7 +123,6 @@ fn undo_toast_undoes_its_rewrite_and_nothing_after_the_repo_moved_on(cx: &mut Te
 
     duplicate_hello(&view, cx);
     run_jj_in(&fixture.path, &["describe", "-m", "moved on"]);
-    let windows = cx.cx.windows().len();
     click(cx, "toast-undo");
 
     assert_eq!(hello_copies(&view, cx), 2);
@@ -139,14 +137,7 @@ fn undo_toast_undoes_its_rewrite_and_nothing_after_the_repo_moved_on(cx: &mut Te
             .expect("working copy");
         assert_eq!(working_copy.description.trim(), "moved on");
     });
-    assert_eq!(cx.cx.windows().len(), windows + 1);
-    assert!(
-        cx.cx
-            .windows()
-            .last()
-            .and_then(|window| window.downcast::<OperationLogView>())
-            .is_some()
-    );
+    assert!(cx.debug_bounds("operation-log-pane").is_some());
 }
 
 #[gpui::test]
@@ -214,4 +205,27 @@ fn menu_undo_and_redo_edit_the_focused_text(cx: &mut TestAppContext) {
     settle_visual(cx);
     assert_eq!(summary.read_with(cx, |input, _| input.text()), "draft");
     assert_eq!(current_op_id(&fixture.path), operation);
+}
+
+#[gpui::test]
+fn restoring_from_the_pane_forgets_the_refused_undo(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    duplicate_hello(&view, cx);
+    run_jj_in(&fixture.path, &["describe", "-m", "moved on"]);
+    click(cx, "toast-undo");
+    keys(cx, "ctrl-enter");
+    let restore = jayjay_i18n::repo::restore();
+    click(cx, selector(format!("context-menu-{restore}")));
+
+    for step in 0..20 {
+        run_jj_in(&fixture.path, &["describe", "-m", &format!("later {step}")]);
+    }
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
+    });
+    settle_visual(cx);
+    keys(cx, "ctrl-enter");
+
+    assert!(menu_shows(cx, &restore));
 }

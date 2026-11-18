@@ -13,7 +13,6 @@ menu-zoom-out = 缩小
 menu-reset-zoom = 重置缩放
 menu-repository = 仓库
 menu-command-palette = 命令面板
-menu-operation-log-ellipsis = 操作日志…
 menu-filter-by-revset-ellipsis = 按 Revset 筛选…
 menu-bookmark-manager = 书签管理器
 menu-repo-overview = 仓库概览

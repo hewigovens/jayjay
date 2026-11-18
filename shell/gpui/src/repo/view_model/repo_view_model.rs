@@ -5,8 +5,8 @@ use gpui::SharedString;
 use jayjay_core::compare::CompareState;
 use jayjay_core::dag::OrderedSelection;
 use jayjay_core::{
-    ChangeInfo, DiffHunk, DiffProjectionMode, DiffStats, PrInfo, Repo, RevsetFilterState,
-    RevsetPreset, RevsetVocabulary, UndoState,
+    ChangeInfo, DiffHunk, DiffProjectionMode, DiffStats, PrInfo, RecentOperations, Repo,
+    RevsetFilterState, RevsetPreset, RevsetVocabulary, UndoState,
 };
 
 use super::BisectModel;
@@ -33,6 +33,9 @@ pub struct RepoViewModel {
     pub working_copy_stats: Option<DiffStats>,
     pub current_operation_description: String,
     pub(crate) undo_state: UndoState,
+    pub(crate) restoring_operation: bool,
+    /// `None` until the first refresh lands.
+    pub(crate) operations: Option<Arc<RecentOperations>>,
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
     pub(crate) language: Option<String>,

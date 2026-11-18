@@ -22,7 +22,7 @@ impl ShortcutAction for ShortcutCommand {
             Self::RepoRefresh => Box::new(Refresh),
             Self::RepoToggleSidebar => Box::new(ToggleSidebar),
             Self::RepoToggleStatusBar => Box::new(ToggleStatusBar),
-            Self::RepoOperationLog => Box::new(OpenOperationLog),
+            Self::RepoOperationLog => Box::new(ToggleOperationLog),
             Self::RepoUndo => Box::new(UndoOperation),
             Self::RepoRedo => Box::new(RedoOperation),
             Self::RepoFilterByRevset => Box::new(FilterByRevset),

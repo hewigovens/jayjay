@@ -4,7 +4,6 @@ use jayjay_core::JayResult;
 use super::RepoWindow;
 use crate::repo::view_model::{OperationStep, Rewrite};
 use crate::ui::text_area::{Redo, Undo};
-use crate::windows::operation_log::OperationLogView;
 
 impl RepoWindow {
     /// Stepping refreshes the repo, which would close an open sheet or editor and drop what it holds.
@@ -83,15 +82,9 @@ impl RepoWindow {
         });
         Self::spawn_ok(cx, task, move |view, stepped, cx| match stepped {
             Some(operation) => view.show_toast(step.stepped(&operation), cx),
-            None => view.open_operation_log_undoing(operation_id, cx),
+            None => view.show_operation_log_undoing(operation_id, cx),
         });
         true
-    }
-
-    fn open_operation_log_undoing(&mut self, operation_id: String, cx: &mut Context<Self>) {
-        if let Some(repo) = self.vm.read(cx).repo.clone() {
-            OperationLogView::open(repo, cx.entity(), self.vm.clone(), Some(operation_id), cx);
-        }
     }
 
     /// One toast per rewrite, offering Undo for the operation it produced.

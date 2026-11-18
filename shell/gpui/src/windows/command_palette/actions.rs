@@ -182,7 +182,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         label: jayjay_i18n::repo::operation_log,
         keywords: &["operation", "operations", "op", "log", "restore"],
         glyph_str: glyph::HISTORY,
-        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::open_operation_log),
+        dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::toggle_operation_log),
     },
     PaletteAction {
         id: "undo-operation",

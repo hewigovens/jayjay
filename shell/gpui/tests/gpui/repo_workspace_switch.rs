@@ -1,6 +1,6 @@
 use crate::harness::*;
 use gpui::{Entity, Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext};
-use jayjay_gpui::app::actions::{OpenBookmarkManager, OpenOperationLog, OpenOverview};
+use jayjay_gpui::app::actions::{OpenBookmarkManager, OpenOverview};
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::{RepoWindow, open_repo_window};
 use jj_test::{LinearFixture, run_jj_in};
@@ -112,7 +112,7 @@ fn failed_switch_keeps_the_source_workspace_and_its_draft(cx: &mut TestAppContex
     open_child_windows(&view, cx);
 
     pick_workspace("broken", Modifiers::default(), cx);
-    assert_eq!(child_window_count(cx), 3);
+    assert_eq!(child_window_count(cx), 2);
 
     assert_eq!(current_workspace(&view, cx), source);
     assert_eq!(repo_window_count(cx), 1);
@@ -261,7 +261,6 @@ fn open_child_windows(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
     cx.focus(view);
     cx.dispatch_action(OpenOverview);
     cx.dispatch_action(OpenBookmarkManager);
-    cx.dispatch_action(OpenOperationLog);
     settle_visual(cx);
 }
 
@@ -279,7 +278,7 @@ fn switching_workspaces_closes_the_windows_opened_for_the_old_one(cx: &mut TestA
     add_workspace(&fixture, "first");
     let (view, cx) = open_fixture(&fixture, cx);
     open_child_windows(&view, cx);
-    assert_eq!(child_window_count(cx), 3);
+    assert_eq!(child_window_count(cx), 2);
     let old_vm = view.read_with(cx, |view, _| view.view_model().downgrade());
 
     pick_workspace("first", Modifiers::default(), cx);

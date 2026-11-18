@@ -211,3 +211,24 @@ fn set_tree_file_list(cx: &mut VisualTestContext, tree: bool) {
     cx.update(|_, cx| config::update(cx, |config| config.diff.tree_file_list = tree));
     settle_visual(cx);
 }
+
+#[gpui::test]
+fn the_change_menu_widens_with_the_interface_zoom(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (_view, cx) = open_focused(&fixture, cx);
+    let menu_width = |cx: &mut VisualTestContext| {
+        keys(cx, "shift-f10");
+        let width = pane_width(cx, selector(format!("context-menu-{NEW_CHANGE}")));
+        keys(cx, "escape");
+        width
+    };
+    let font_size =
+        |cx: &mut VisualTestContext| cx.cx.update(|cx| config::current(cx).interface_font_size());
+    let (width, size) = (menu_width(cx), font_size(cx));
+    zoom_to_max(cx);
+    let (zoomed, zoomed_size) = (menu_width(cx), font_size(cx));
+    assert!(
+        zoomed >= width * zoomed_size / size * 0.8,
+        "the labels grow with the zoom but {width} at {size}pt grew only to {zoomed} at {zoomed_size}pt"
+    );
+}

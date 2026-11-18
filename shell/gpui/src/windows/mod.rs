@@ -7,7 +7,6 @@ pub mod identity_dialog;
 pub mod keyboard_shortcuts;
 pub mod open_remote_repository;
 pub mod open_repository;
-pub mod operation_log;
 pub mod overview;
 pub mod repo_list;
 pub mod settings;

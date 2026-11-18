@@ -9,6 +9,7 @@ use super::super::confirmation::confirmation_overlay;
 use super::super::converge::converge_overlay;
 use super::super::detail::detail_pane;
 use super::super::diff_edit::diff_edit_view;
+use super::super::operation_log::operation_log_pane;
 use super::super::rating_prompt::rating_prompt_overlay;
 use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
@@ -39,6 +40,7 @@ impl Render for RepoWindow {
         {
             self.focus_handle.focus(window, cx);
         }
+        self.layout.viewport_width = f32::from(window.viewport_size().width);
         self.open_revealed_context_menu(window, cx);
         self.selected_change_bounds.set(None);
         self.selected_file_bounds.set(None);
@@ -46,6 +48,7 @@ impl Render for RepoWindow {
         self.sync_keyboard_focus(window, cx);
         self.sync_refresh_gate(cx);
         self.sync_file_column_pane(cx);
+        self.sync_operation_log(window, cx);
         self.sync_changes_focus(window, cx);
         self.sync_diff_edit_change(cx);
         self.sync_editors(cx);
@@ -98,16 +101,15 @@ impl Render for RepoWindow {
             }
         };
 
-        let context_menu_overlay = self
-            .context_menu
-            .as_ref()
-            .map(|state| render_context_menu(state, &t, &cx.entity()));
+        let context_menu_overlay = self.context_menu.as_ref().map(|state| {
+            render_context_menu(state, window.viewport_size().width, &t, &cx.entity(), cx)
+        });
         #[cfg(not(target_os = "macos"))]
         let app_menu_overlay = self.app_menu.as_ref().map(|state| {
-            let steps = self.vm.read(cx).operation_steps().cloned();
+            let window_state = self.window_menu_state(cx);
             render_app_menu(
                 state,
-                steps.as_ref(),
+                &window_state,
                 &self.app_menu_titles,
                 &t,
                 &cx.entity(),
@@ -231,7 +233,7 @@ impl Render for RepoWindow {
                 .into_any_element()
             });
         }
-        let content = if self.diff_edit_active() {
+        let mut content = if self.diff_edit_active() {
             row.child(diff_edit_view(self, &t, cx))
         } else {
             if self.shows_file_column(cx) {
@@ -250,11 +252,19 @@ impl Render for RepoWindow {
                     .child(detail_pane(self, &t, window, cx)),
             )
         };
+        if let Some(width) = self
+            .layout
+            .operation_log_pane_width(f32::from(window.viewport_size().width))
+        {
+            content = content
+                .child(resize_handle(DragTarget::OperationLog, &t, cx))
+                .child(operation_log_pane(self, width, &t, cx));
+        }
         let mut body = div().relative().flex().flex_col().flex_1().min_h_0().child(
             crate::repo::toolbar::toolbar(
                 toolbar_repo,
                 self.repo_switcher_button_bounds.clone(),
-                self.layout.sidebar_hidden,
+                &self.layout,
                 super::super::revset_filter::revset_bar(self, &t, cx),
                 ToolbarActivity {
                     is_refreshing,

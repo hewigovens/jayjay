@@ -187,6 +187,9 @@ impl RepoWindow {
                 self.open_edit_description(rev.to_string(), description.to_string(), cx)
             }
             ContextAction::ShowAncestors(commit_id) => self.show_ancestors(&commit_id, cx),
+            ContextAction::RestoreOperation(operation) => {
+                self.restore_operation(operation.to_string(), cx)
+            }
             ContextAction::UpdateWorkspace => {
                 self.vm
                     .update(cx, |vm, cx| vm.update_stale_workspace(cx))

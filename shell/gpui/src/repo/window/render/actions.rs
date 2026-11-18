@@ -5,9 +5,10 @@ use crate::app::actions::{
     CopyDiffSelection, DiffEditCollapseAll, DiffEditExpandAll, FilterByRevset,
     ForgetStaleBookmarks, GitFetchOrigin, GitPushDefault, NewWorkspace,
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
-    OpenOperationLog, OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenSettings, ReconnectSsh, RedoOperation, Refresh, SaveFileEditor, SaveNoteComposer,
-    ShowRepoInFileManager, ToggleReviewMode, ToggleSidebar, ToggleStatusBar, UndoOperation,
+    OpenOverview, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenSettings,
+    ReconnectSsh, RedoOperation, Refresh, RestoreSelectedOperation, SaveFileEditor,
+    SaveNoteComposer, ShowRepoInFileManager, ToggleOperationLog, ToggleReviewMode, ToggleSidebar,
+    ToggleStatusBar, UndoOperation,
 };
 use crate::app::theme::Theme;
 use crate::platform::append_menu_bar;
@@ -52,8 +53,13 @@ impl RepoWindow {
             .on_action(cx.listener(|view, _: &FilterByRevset, window, cx| {
                 view.begin_revset_edit(window, cx);
             }))
-            .on_action(cx.listener(|view, _: &OpenOperationLog, _, cx| {
-                view.open_operation_log(cx);
+            .on_action(cx.listener(|view, _: &ToggleOperationLog, _, cx| {
+                view.toggle_operation_log(cx);
+            }))
+            .on_action(cx.listener(|view, _: &RestoreSelectedOperation, _, cx| {
+                if let Some(operation) = view.selected_restorable_operation(cx) {
+                    view.restore_operation(operation, cx);
+                }
             }))
             .on_action(cx.listener(|view, _: &UndoOperation, window, cx| {
                 view.operation_step_action(OperationStep::Undo, window, cx);

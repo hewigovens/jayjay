@@ -10,7 +10,7 @@ use crate::app::{config, repositories, tools};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{
-    FocusStop, PanelBoundsSlot, RepoWindow, picker_opener, picker_opener_bounds,
+    FocusStop, LayoutState, PanelBoundsSlot, RepoWindow, picker_opener, picker_opener_bounds,
 };
 use crate::ui::icons;
 use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
@@ -38,7 +38,7 @@ pub(crate) struct ToolbarRepo {
 pub(crate) fn toolbar(
     repo: ToolbarRepo,
     repo_switcher_bounds: PanelBoundsSlot,
-    sidebar_hidden: bool,
+    layout: &LayoutState,
     revset_bar: AnyElement,
     activity: ToolbarActivity,
     focused: Option<FocusStop>,
@@ -88,7 +88,7 @@ pub(crate) fn toolbar(
             }),
         )
         .child(buttons::sync_cluster(
-            sidebar_hidden,
+            layout.sidebar_hidden,
             activity,
             focused,
             &t,
@@ -148,5 +148,10 @@ pub(crate) fn toolbar(
         .child(revset_bar)
         .child(div().flex_1())
         .child(buttons::tools_cluster(editor, terminal, focused, &t, cx))
+        .child(buttons::operation_log_toggle(
+            layout.operation_log_visible(),
+            &t,
+            cx,
+        ))
         .into_any_element()
 }

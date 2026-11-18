@@ -36,6 +36,7 @@ mod nav;
 mod note_composer;
 mod note_menu;
 mod open;
+mod operation_log;
 mod operation_steps;
 pub(crate) mod picker;
 mod pr_import;
@@ -82,6 +83,7 @@ pub(crate) use open::{
     remember_frontmost_repo_window_bounds, remember_window_bounds, repo_window_paths,
     reveal_in_repo_window,
 };
+pub(crate) use operation_log::operation_log_title;
 pub use review::install_from_path as install_review_store_from_path;
 pub use review::install_in_memory as install_in_memory_review_store;
 pub(crate) use review::mutate as mutate_review_store;
@@ -105,7 +107,7 @@ pub(crate) use pr_import::PrImportState;
 pub(crate) use repo_modal::RepoModal;
 pub(crate) use view::{
     DiffRichPreviewKind, DiffRichPreviewSelection, DiffWrapCacheSlot, DragTarget,
-    FileTreeCacheSlot, LayoutState, PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX,
-    SECONDARY_PANE_MIN, SIDEBAR_MAX, SIDEBAR_MIN, TextModalAction, TextModalCheckbox,
-    TextModalContext, TextModalState, Toast,
+    FileTreeCacheSlot, LayoutState, OPERATION_LOG_DEFAULT, OPERATION_LOG_MAX, OPERATION_LOG_MIN,
+    PREVIEW_MIN, SECONDARY_PANE_DEFAULT, SECONDARY_PANE_MAX, SECONDARY_PANE_MIN, SIDEBAR_MAX,
+    SIDEBAR_MIN, TextModalAction, TextModalCheckbox, TextModalContext, TextModalState, Toast,
 };

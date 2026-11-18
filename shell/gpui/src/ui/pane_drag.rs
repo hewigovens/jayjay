@@ -23,6 +23,11 @@ impl<P> PaneDrag<P> {
     pub(crate) fn width_at(&self, x: f32, min: f32, max: f32) -> f32 {
         (self.start_width + x - self.start_x).clamp(min, max)
     }
+
+    /// `width_at` for a pane whose handle is on its leading edge.
+    pub(crate) fn trailing_width_at(&self, x: f32, min: f32, max: f32) -> f32 {
+        (self.start_width - (x - self.start_x)).clamp(min, max)
+    }
 }
 
 /// The largest width a pane may take from `room`, never below its minimum.

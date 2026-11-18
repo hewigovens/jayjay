@@ -1,51 +1,63 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb, uniform_list,
+    AnyElement, ClickEvent, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, canvas, div, px, rgb,
+    uniform_list,
 };
 use jayjay_core::OpLogEntry;
 
-use super::OperationLogView;
 use crate::app::fonts;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
-use crate::repo::window::{compact_id, format_when, id_cell};
+use crate::repo::window::{PanelBoundsSlot, RepoWindow, compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::{capsule, no_scrollbar_gutter};
 
 pub(super) fn operation_list(
-    entries: Arc<Vec<OpLogEntry>>,
-    selected_id: Option<String>,
+    view: &RepoWindow,
     theme: Theme,
-    cx: &mut Context<OperationLogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let count = entries.len();
+    let pane = &view.operation_log;
+    let count = pane
+        .seen
+        .as_ref()
+        .map_or(0, |operations| operations.entries().len());
     let theme = Arc::new(theme);
     let list = uniform_list(
         "operation-log",
         count,
-        cx.processor(move |_this, range: std::ops::Range<usize>, _w, cx| {
+        cx.processor(move |view, range: std::ops::Range<usize>, _w, cx| {
+            let pane = &view.operation_log;
+            let Some(operations) = pane.seen.clone() else {
+                return Vec::new();
+            };
+            pane.selected_bounds.set(None);
             range
-                .map(|ix| {
-                    let entry = entries[ix].clone();
-                    let selected = selected_id.as_deref() == Some(entry.id.as_str());
-                    operation_row(entry, selected, theme.clone(), cx)
+                .filter_map(|ix| operations.entries().get(ix).cloned())
+                .map(|entry| {
+                    let selected = pane.selected.as_deref() == Some(entry.id.as_str());
+                    let bounds = selected.then(|| pane.selected_bounds.clone());
+                    operation_row(entry, bounds, theme.clone(), cx)
                 })
                 .collect()
         }),
-    );
+    )
+    .track_scroll(&pane.scroll);
     no_scrollbar_gutter(list).h_full().into_any_element()
 }
 
 fn operation_row(
     entry: OpLogEntry,
-    selected: bool,
+    selected_bounds: Option<PanelBoundsSlot>,
     t: Arc<Theme>,
-    cx: &mut Context<OperationLogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let selected = selected_bounds.is_some();
     let id = entry.id.id.clone();
     let select_id = id.clone();
+    let menu_id = id.clone();
     let description = description_label(&entry.description);
     let glyph_str = operation_glyph(&entry.description);
     let is_current = entry.is_current;
@@ -54,12 +66,13 @@ fn operation_row(
     let (bg, fg) = if selected {
         (t.selected_bg, t.fg)
     } else {
-        (t.detail_bg, t.fg)
+        (t.sidebar_bg, t.fg)
     };
 
     div()
         .id(SharedString::from(format!("operation-log-row-{id}")))
         .debug_selector(move || format!("operation-log-row-{id}"))
+        .relative()
         .flex()
         .flex_row()
         .items_center()
@@ -73,8 +86,22 @@ fn operation_row(
         .border_color(rgb(t.row_border))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .on_click(cx.listener(move |view, _: &ClickEvent, _, cx| {
+        .on_click(cx.listener(move |view, _: &ClickEvent, window, cx| {
+            window.focus(&view.operation_log.focus, cx);
             view.select_operation(select_id.clone(), cx);
+        }))
+        .on_mouse_down(
+            MouseButton::Right,
+            cx.listener(move |view, event: &MouseDownEvent, window, cx| {
+                cx.stop_propagation();
+                window.focus(&view.operation_log.focus, cx);
+                view.open_operation_menu(menu_id.clone(), event.position, cx);
+            }),
+        )
+        .children(selected_bounds.map(|slot| {
+            canvas(move |bounds, _, _| slot.set(Some(bounds)), |_, _, _, _| {})
+                .absolute()
+                .size_full()
         }))
         .child(icons::icon(glyph_str, 14., t.fg_dim))
         .child(operation_text(
@@ -95,7 +122,7 @@ fn operation_text(
     is_current: bool,
     fg: u32,
     t: &Theme,
-    cx: &mut Context<OperationLogView>,
+    cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let description_width = text_width(&description, px(t.scaled_font_size(13.)), cx);
     let description_selector = if is_current {
@@ -166,11 +193,7 @@ fn current_badge(is_current: bool, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn text_width(
-    text: &str,
-    font_size: gpui::Pixels,
-    cx: &mut Context<OperationLogView>,
-) -> gpui::Pixels {
+fn text_width(text: &str, font_size: gpui::Pixels, cx: &mut Context<RepoWindow>) -> gpui::Pixels {
     px(f32::from(fonts::ui_text_width(cx, text, font_size)).ceil() + 2.)
 }
 

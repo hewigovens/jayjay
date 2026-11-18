@@ -11,7 +11,6 @@ use crate::repo::view_model::RepoViewModel;
 use crate::ui::overlay::TextPrompt;
 use crate::ui::selection::click_from_modifiers;
 use crate::windows::bookmark_manager::BookmarkManagerView;
-use crate::windows::operation_log::OperationLogView;
 use crate::windows::overview::OverviewView;
 
 impl RepoWindow {
@@ -97,14 +96,6 @@ impl RepoWindow {
             return;
         }
         OverviewView::open(cx.entity(), self.vm.clone(), cx);
-    }
-
-    pub(crate) fn open_operation_log(&mut self, cx: &mut Context<Self>) {
-        let Some(repo) = self.vm.read(cx).repo.clone() else {
-            self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
-            return;
-        };
-        OperationLogView::open(repo, cx.entity(), self.vm.clone(), None, cx);
     }
 
     pub(super) fn open_edit_description(

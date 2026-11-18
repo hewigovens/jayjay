@@ -25,12 +25,13 @@ shell/gpui/src/
 │   ├── view_model/    RepoViewModel: domain state, loaders (incl. review_notes reconciliation),
 │   │                  mutations (incl. abandon_selected_diff_lines), tasks
 │   └── window/        RepoWindow view: render, actions, sidebar, DAG, detail, review, status bar,
-│                      gutter_menu/note_menu/note_composer (review-note + abandon-lines UI)
+│                      operation_log/ (trailing pane), gutter_menu/note_menu/note_composer
+│                      (review-note + abandon-lines UI)
 ├── ui/            reusable widgets: overlay/ (dimmed layer + card + text prompt), text_area/,
 │                  input/, avatar/ (+cache), context_menu, button_group, scrollbar
 │                  (uniform-list + free-form ScrollHandle variants)
-└── windows/       secondary GPUI windows: settings/, bookmark_manager, operation_log/,
-                   command_palette/, evolog, file_history — each opened via a static `open(...)`
+└── windows/       secondary GPUI windows: settings/, bookmark_manager, command_palette/,
+                   evolog, file_history — each opened via a static `open(...)`
 ```
 
 ## Conventions

@@ -5,17 +5,19 @@ use gpui::{App, Menu, MenuItem, PathPromptOptions};
 use super::actions::{
     ClearRecentRepositories, CloneRepository, FilterByRevset, NewWorkspace,
     NewWorkspaceFromPullRequest, OpenAbout, OpenBookmarkManager, OpenCommandPalette, OpenFind,
-    OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOperationLog, OpenOverview,
-    OpenRecentRepository, OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal,
-    OpenRepository, OpenSettings, OpenSshRepository, OpenUserGuide, Quit, ReconnectSsh,
-    RedoOperation, ReportIssue, ResetZoom, RevealLogs, SendFeedback, ShowRepoInFileManager,
-    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleReviewMode, ToggleSideBySideDiff,
-    ToggleSidebar, ToggleStatusBar, ToggleTreeFileList, UndoOperation, ZoomIn, ZoomOut,
+    OpenJujutsuDocumentation, OpenKeyboardShortcuts, OpenOverview, OpenRecentRepository,
+    OpenRemoteRepository, OpenRepoInEditor, OpenRepoInTerminal, OpenRepository, OpenSettings,
+    OpenSshRepository, OpenUserGuide, Quit, ReconnectSsh, RedoOperation, ReportIssue, ResetZoom,
+    RestoreSelectedOperation, RevealLogs, SendFeedback, ShowRepoInFileManager,
+    ToggleHideGitLfsFiles, ToggleIgnoreWhitespace, ToggleOperationLog, ToggleReviewMode,
+    ToggleSideBySideDiff, ToggleSidebar, ToggleStatusBar, ToggleTreeFileList, UndoOperation,
+    ZoomIn, ZoomOut,
 };
 use super::config::{self, AppConfig, current};
 use super::repositories::repository_name;
 use super::tools;
 use crate::app::links::GUIDE_URL;
+use crate::repo::window::operation_log_title;
 use crate::windows::settings::{SettingsSection, SettingsView};
 
 const JUJUTSU_DOCS_URL: &str = "https://jj-vcs.github.io/jj/latest/";
@@ -39,6 +41,10 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
         Menu::new(jayjay_i18n::menu::edit()).items([
             MenuItem::action(jayjay_i18n::repo::undo(), UndoOperation),
             MenuItem::action(jayjay_i18n::menu::redo(), RedoOperation),
+            MenuItem::action(
+                jayjay_i18n::menu::restore_selected_operation(),
+                RestoreSelectedOperation,
+            ),
             MenuItem::separator(),
             MenuItem::action(jayjay_i18n::menu::find_ellipsis(), OpenFind),
         ]),
@@ -59,6 +65,10 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
                 },
                 ToggleStatusBar,
             ),
+            MenuItem::action(
+                operation_log_title(cfg.layout.show_operation_log),
+                ToggleOperationLog,
+            ),
             MenuItem::separator(),
             MenuItem::action(jayjay_i18n::menu::zoom_in(), ZoomIn).disabled(
                 cfg.interface_font_size().min(cfg.code_font_size()) >= AppConfig::MAX_FONT_SIZE,
@@ -71,10 +81,6 @@ fn app_menus(cx: &mut App) -> Vec<Menu> {
         ]),
         Menu::new(jayjay_i18n::menu::repository()).items([
             MenuItem::action(jayjay_i18n::menu::command_palette(), OpenCommandPalette),
-            MenuItem::action(
-                jayjay_i18n::menu::operation_log_ellipsis(),
-                OpenOperationLog,
-            ),
             MenuItem::separator(),
             MenuItem::action(
                 jayjay_i18n::menu::filter_by_revset_ellipsis(),

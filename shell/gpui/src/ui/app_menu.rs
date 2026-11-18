@@ -10,11 +10,12 @@ use gpui::{
 };
 use jayjay_core::UndoState;
 
+use crate::app::actions::{RestoreSelectedOperation, ToggleOperationLog};
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::repo::view_model::OperationStep;
-use crate::repo::window::RepoWindow;
 use crate::repo::window::picker::{below, opener};
+use crate::repo::window::{RepoWindow, operation_log_title};
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
 use crate::ui::title_bar;
@@ -26,6 +27,12 @@ pub(crate) type MenuTitleBounds = Rc<RefCell<HashMap<SharedString, Bounds<Pixels
 pub struct AppMenuState {
     pub(crate) menu_name: SharedString,
     pub(crate) selected: Option<usize>,
+}
+
+pub(crate) struct WindowMenuState {
+    pub(crate) steps: Option<UndoState>,
+    pub(crate) restores_operation: bool,
+    pub(crate) operation_log_shown: bool,
 }
 
 /// One line of an open menu; submenus are flattened under their label.
@@ -41,7 +48,7 @@ pub(crate) enum MenuRow {
 }
 
 impl MenuRow {
-    pub(crate) fn for_menu(name: &SharedString, steps: Option<&UndoState>, cx: &App) -> Vec<Self> {
+    pub(crate) fn for_menu(name: &SharedString, state: &WindowMenuState, cx: &App) -> Vec<Self> {
         let mut rows = Vec::new();
         if let Some(menu) = cx
             .get_menus()
@@ -58,11 +65,19 @@ impl MenuRow {
                 disabled,
                 ..
             } = row
-                && let Some(step) = OperationStep::for_action(action.as_ref())
             {
-                let description = steps.and_then(|steps| step.description(steps));
-                *name = step.menu_title(description);
-                *disabled = description.is_none();
+                if let Some(step) = OperationStep::for_action(action.as_ref()) {
+                    let description = state
+                        .steps
+                        .as_ref()
+                        .and_then(|steps| step.description(steps));
+                    *name = step.menu_title(description);
+                    *disabled = description.is_none();
+                } else if action.as_any().is::<RestoreSelectedOperation>() {
+                    *disabled = !state.restores_operation;
+                } else if action.as_any().is::<ToggleOperationLog>() {
+                    *name = operation_log_title(state.operation_log_shown);
+                }
             }
         }
         rows
@@ -121,13 +136,13 @@ impl MenuRow {
 
 pub(crate) fn render_app_menu(
     state: &AppMenuState,
-    steps: Option<&UndoState>,
+    window_state: &WindowMenuState,
     titles: &MenuTitleBounds,
     t: &Theme,
     view: &Entity<RepoWindow>,
     cx: &mut gpui::Context<RepoWindow>,
 ) -> AnyElement {
-    let rows = MenuRow::for_menu(&state.menu_name, steps, cx);
+    let rows = MenuRow::for_menu(&state.menu_name, window_state, cx);
     // Read at render time so the menu follows its title when zoom resizes the bar.
     let anchor = titles
         .borrow()

@@ -3,7 +3,9 @@ use std::time::Duration;
 
 use gpui::{Context, SharedString};
 use jayjay_core::dag::DagLayout;
-use jayjay_core::{ChangeInfo, GraphEntry, JayError, JayResult, Repo, RepositoryContext};
+use jayjay_core::{
+    ChangeInfo, GraphEntry, JayError, RecentOperations, Repo, RepositoryContext, UndoState,
+};
 
 use super::super::{PendingRefresh, RepoViewModel};
 
@@ -134,7 +136,7 @@ impl RepoViewModel {
 
     fn apply_refresh_result(
         &mut self,
-        result: JayResult<RefreshData>,
+        result: Result<RefreshData, RefreshFailure>,
         previous_selection: Option<(String, String)>,
         is_auto_triggered: bool,
         cx: &mut Context<Self>,
@@ -163,8 +165,7 @@ impl RepoViewModel {
                 self.upload_title = context.upload_title.map(SharedString::from);
                 self.gerrit_update_title = context.gerrit_update_title.map(SharedString::from);
                 self.working_copy_stats = context.working_copy_stats;
-                self.current_operation_description = context.operation;
-                self.undo_state = context.undo;
+                self.apply_operation_history(context.operation, context.undo, context.operations);
                 self.graph.dag_layout = Arc::new(DagLayout::compute(&entries));
                 let changes: Vec<ChangeInfo> = entries.iter().map(|e| e.change.clone()).collect();
                 let new_selected = previous_selection
@@ -215,9 +216,29 @@ impl RepoViewModel {
                 }
                 self.bisect.state = context.bisect_state;
             }
-            Err(error) => self.present_error(error),
+            Err(failure) => {
+                if let Some(context) = failure.context {
+                    self.apply_operation_history(
+                        context.operation,
+                        context.undo,
+                        context.operations,
+                    );
+                }
+                self.present_error(failure.error);
+            }
         }
         cx.notify();
+    }
+
+    fn apply_operation_history(
+        &mut self,
+        operation: String,
+        undo: UndoState,
+        operations: RecentOperations,
+    ) {
+        self.current_operation_description = operation;
+        self.undo_state = undo;
+        self.operations = Some(Arc::new(operations));
     }
 
     fn compound_selection_intact(&self, previous: &[ChangeInfo]) -> bool {
@@ -279,15 +300,34 @@ struct RefreshData {
     context: RepositoryContext,
 }
 
-fn refresh_graph_blocking(repo: &Repo, revset: &str) -> JayResult<RefreshData> {
+/// A graph that fails to load still reports the operation that broke it.
+struct RefreshFailure {
+    error: JayError,
+    context: Option<Box<RepositoryContext>>,
+}
+
+impl From<JayError> for RefreshFailure {
+    fn from(error: JayError) -> Self {
+        Self {
+            error,
+            context: None,
+        }
+    }
+}
+
+fn refresh_graph_blocking(repo: &Repo, revset: &str) -> Result<RefreshData, RefreshFailure> {
     let working_copy_stale = match repo.refresh_working_copy() {
         Ok(()) => false,
         Err(JayError::WorkingCopyStale) => true,
-        Err(error) => return Err(error),
+        Err(error) => return Err(error.into()),
     };
+    let entries = repo.log_graph(revset).map_err(|error| RefreshFailure {
+        error,
+        context: repo.repository_context().ok().map(Box::new),
+    })?;
     Ok(RefreshData {
         working_copy_stale,
-        entries: repo.log_graph(revset)?,
+        entries,
         context: repo.repository_context()?,
     })
 }

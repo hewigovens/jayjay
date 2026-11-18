@@ -1,4 +1,4 @@
-use crate::repo::window::SECONDARY_PANE_DEFAULT;
+use crate::repo::window::{OPERATION_LOG_DEFAULT, SECONDARY_PANE_DEFAULT};
 use crate::windows::repo_list::RECENT_PANEL_DEFAULT;
 use crate::windows::settings::SETTINGS_SIDEBAR_DEFAULT;
 use serde::{Deserialize, Serialize};
@@ -9,6 +9,8 @@ pub struct LayoutConfig {
     pub(crate) sidebar_width: f32,
     pub(crate) sidebar_hidden: bool,
     pub show_status_bar: bool,
+    pub(crate) show_operation_log: bool,
+    pub(crate) operation_log_width: f32,
     #[serde(alias = "file_column_width")]
     pub(crate) secondary_pane_width: f32,
     pub recent_repos_panel: bool,
@@ -22,6 +24,8 @@ impl Default for LayoutConfig {
             sidebar_width: 360.0,
             sidebar_hidden: false,
             show_status_bar: true,
+            show_operation_log: false,
+            operation_log_width: OPERATION_LOG_DEFAULT,
             secondary_pane_width: SECONDARY_PANE_DEFAULT,
             recent_repos_panel: false,
             recent_repos_panel_width: RECENT_PANEL_DEFAULT,
