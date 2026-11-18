@@ -7,8 +7,8 @@ final class ToolbarRoom {
     static let revsetWidth: ClosedRange<CGFloat> = 200 ... 485
     /// The Operation Log toggle and the margins around it, which its pane's width already covers.
     static let paneToggleWidth: CGFloat = 51
-    /// The window controls, the trailing items and the margins between items.
-    private static let fixedWidth: CGFloat = 250
+    /// The window controls, trailing items, and the padding and margins AppKit adds around toolbar items.
+    private static let fixedWidth: CGFloat = 282
 
     var toolbarWidth: CGFloat = 0
     var leadingItemWidth: CGFloat = 0
