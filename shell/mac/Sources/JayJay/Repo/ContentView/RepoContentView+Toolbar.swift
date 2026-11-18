@@ -50,6 +50,7 @@ extension RepoContentView {
             } trailing: {
                 repositoryTitle
             }
+            .accessibilityElement(children: .contain)
             .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { toolbarRoom.leadingItemWidth = $0 }
         }
         .sharedBackgroundVisibility(.hidden)
