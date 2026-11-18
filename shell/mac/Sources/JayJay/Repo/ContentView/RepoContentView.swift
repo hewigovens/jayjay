@@ -99,6 +99,7 @@ struct RepoContentView: View {
             .toolbar { toolbarContent }
             // The system otherwise fills the toolbar with its own background once a pane has toggled.
             .toolbarBackgroundVisibility(.hidden, for: .windowToolbar)
+            .background(TitleBarDoubleClick().frame(width: 0, height: 0).allowsHitTesting(false))
             .environment(keyboardFocus)
             .background(
                 KeyDownMonitor(
