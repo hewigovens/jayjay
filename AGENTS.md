@@ -131,6 +131,15 @@ Green tests are not the finish line. Re-read the **whole diff**, not just the la
 
 After cleanup edits, re-run the affected validation. If cleanup changed nothing, the previous results still apply.
 
+### Sweep
+
+**Sweep** a change or a stack means this whole pass:
+
+1. The two cleanup rounds above, over code and comments: clean up, dedupe, reuse, simplify.
+2. Fold every fix into the logical change it fixes (`jj squash --into <change> <paths>`), so the stack holds one change per feature or fix and no change that only repairs an earlier one in the same stack. A fix for something already on `main` stays its own change.
+
+"Sweep and push" continues with [Ready to commit or publish](#ready-to-commit-or-publish).
+
 ### Check divergent changes
 
 During the loop — especially after concurrent agent or workspace work, snapshots, or history edits — run `jj --ignore-working-copy log -r 'divergent()'`. Run it again before declaring the change ready. Resolve divergent versions created by this task, preserve the intended workspace version, and leave unrelated pre-existing divergence untouched.
