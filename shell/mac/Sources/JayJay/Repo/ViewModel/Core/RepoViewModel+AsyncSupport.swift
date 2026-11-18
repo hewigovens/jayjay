@@ -29,10 +29,17 @@ extension RepoViewModel {
     }
 
     @MainActor
-    func applyRefreshFailure(_ error: any Error, presence: WorkspacePresence, context: RepoRefreshContext? = nil) {
+    func applyRefreshFailure(
+        _ error: any Error,
+        presence: WorkspacePresence,
+        context: RepoRefreshContext? = nil,
+        statusBar: StatusBarSnapshot? = nil
+    ) {
         guard !Task.isCancelled, !isShuttingDown else { return }
         if let context {
             apply(context)
+        } else if let statusBar {
+            apply(statusBar)
         }
         isLoading = false
         isRefreshingInFlight = false

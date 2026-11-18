@@ -202,7 +202,7 @@ extension RepoViewModel {
                 guard !Task.isCancelled else { return }
                 // A failed snapshot must still populate the context omitted from the first paint.
                 let context = shouldLoadBeforeSnapshot ? try? RepoRefreshContext(repo: repo) : nil
-                await self?.applyRefreshFailure(error, presence: repo.workspacePresence(), context: context)
+                await self?.applyRefreshFailure(error, presence: repo.workspacePresence(), context: context, statusBar: context == nil && repo.sshState() == .connected ? .load(from: repo) : nil)
             }
         }
     }

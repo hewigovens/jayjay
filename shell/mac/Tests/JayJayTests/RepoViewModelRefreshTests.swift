@@ -165,6 +165,25 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
         XCTAssertFalse(viewModel.isRefreshingInFlight)
     }
 
+    func testFailedGraphStillShowsTheNewOperation() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        try runJj(["bookmark", "create", "doomed", "-r", "@"], in: viewModel.repoPath)
+        viewModel.refresh()
+        try await waitUntil("the initial refresh finishes") { !viewModel.isRefreshingInFlight }
+        viewModel.applyFilter("doomed", selecting: "@")
+        try await waitUntil("the filtered refresh finishes") { !viewModel.isRefreshingInFlight }
+        XCTAssertNil(viewModel.error)
+
+        try runJj(["bookmark", "delete", "doomed"], in: viewModel.repoPath)
+        let operationId = try runJj(["op", "log", "-n1", "--no-graph", "-T", "id"], in: viewModel.repoPath)
+        viewModel.refresh()
+        try await waitUntil("the failed refresh finishes") { !viewModel.isRefreshingInFlight }
+
+        XCTAssertNotNil(viewModel.error)
+        XCTAssertEqual(viewModel.recentOperations?.entries.first?.id.id, operationId)
+        XCTAssertEqual(viewModel.undoState?.operationId, operationId)
+    }
+
     func testQueuedWorkingCopyAndOperationEventsShareOneRefresh() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         try await snapshotAnEdit(viewModel, file: "before.txt")
