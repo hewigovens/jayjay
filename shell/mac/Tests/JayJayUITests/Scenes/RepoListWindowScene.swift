@@ -13,7 +13,7 @@ final class RepoListWindowScene: SceneBase {
         let app = try XCTUnwrap(app)
         let pinned = openRepo(named: "simple", in: app)
         chooseRepositoryList(in: app, from: pinned)
-        let recent = openRepo(named: "formats", in: app)
+        _ = openRepo(named: "formats", in: app)
         XCTAssertTrue(waitForWindowCount(2, in: app), "Opening a second repository did not leave both windows open")
 
         // Overlapping windows on a small screen stack their close buttons; close through the Window menu instead.

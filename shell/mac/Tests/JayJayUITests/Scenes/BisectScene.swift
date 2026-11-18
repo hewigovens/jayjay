@@ -41,7 +41,7 @@ final class BisectScene: SceneBase {
         let status = app.descendants(matching: .any)[AID.Bisect.status]
         let found = NSPredicate { _, _ in
             (status.value as? String)?.contains("First bad change") == true
-                || (status.label as? String)?.contains("First bad change") == true
+                || status.label.contains("First bad change")
                 || status.staticTexts.firstMatch.label.contains("First bad change")
         }
         XCTAssertEqual(
