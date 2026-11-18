@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// One toolbar item whose middle controls narrow to nothing as `reveal` hides, sliding what follows them into their place.
+/// One toolbar item whose middle capsule narrows to nothing as `reveal` hides, sliding what follows it into its place.
 /// The item keeps its full width throughout: one that changes size re-lays out the toolbar mid-animation and can strand items in the overflow menu.
 struct ToolbarCollapse<Leading: View, Collapsing: View, Trailing: View>: View {
     let reveal: PaneReveal
@@ -29,32 +29,37 @@ struct ToolbarCollapse<Leading: View, Collapsing: View, Trailing: View>: View {
     }
 
     private var content: some View {
-        HStack(spacing: Self.spacing) {
-            HStack(spacing: 0) {
-                leading()
-                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { leadingWidth = $0 }
-                collapsing()
-                    .fixedSize()
-                    .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { collapsingWidth = $0 }
-                    .frame(width: collapsingWidth * reveal.progress, alignment: .leading)
-                    .clipped()
-                    .opacity(reveal.progress)
-                    .allowsHitTesting(reveal.progress == 1)
-                    .accessibilityHidden(!reveal.isShown)
-            }
-            .padding(.horizontal, Self.capsulePadding)
-            .glassEffect(.regular.interactive(), in: .capsule)
+        HStack(spacing: 0) {
+            leading()
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { leadingWidth = $0 }
+                .padding(.horizontal, Self.capsulePadding)
+                .glassEffect(.regular.interactive(), in: .capsule)
+            collapsing()
+                .fixedSize()
+                .onGeometryChange(for: CGFloat.self) { $0.size.width } action: { collapsingWidth = $0 }
+                .frame(width: collapsingWidth * reveal.progress, alignment: .leading)
+                .clipped()
+                .padding(.horizontal, Self.capsulePadding * reveal.progress)
+                .glassEffect(.regular.interactive(), in: .capsule)
+                .opacity(reveal.progress)
+                .padding(.leading, Self.spacing * reveal.progress)
+                .allowsHitTesting(reveal.progress == 1)
+                .accessibilityHidden(!reveal.isShown)
             trailing()
-                .padding(.leading, gap * reveal.progress)
+                .padding(.leading, Self.spacing + gap * reveal.progress)
         }
         .fixedSize()
-        .padding(.trailing, (collapsingWidth + gap) * (1 - reveal.progress))
+        .padding(.trailing, (collapsingCapsule + Self.spacing + gap) * (1 - reveal.progress))
+    }
+
+    private var collapsingCapsule: CGFloat {
+        collapsingWidth + 2 * Self.capsulePadding
     }
 
     private var gap: CGFloat {
-        // From widths that hold still while the capsule animates: a measurement of the capsule itself arrives a frame late.
-        let capsule = leadingWidth + collapsingWidth + 2 * Self.capsulePadding
-        return max(0, trailingOrigin - windowOrigin - capsule - Self.spacing)
+        // From widths that hold still while the capsules animate: a measurement of a capsule itself arrives a frame late.
+        let capsules = leadingWidth + 2 * Self.capsulePadding + Self.spacing + collapsingCapsule
+        return max(0, trailingOrigin - windowOrigin - capsules - Self.spacing)
     }
 }
 
