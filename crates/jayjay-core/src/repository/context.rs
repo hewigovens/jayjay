@@ -19,7 +19,7 @@ pub struct RepositoryContext {
     #[serde(default)]
     pub undo: UndoState,
     #[serde(default)]
-    pub operations: Vec<OpLogEntry>,
+    pub operations: RecentOperations,
     pub bisect_state: Option<BisectState>,
 }
 

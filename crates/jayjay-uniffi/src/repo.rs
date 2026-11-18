@@ -7,9 +7,9 @@ use jayjay_core::{
     CloneRequest, ConflictEditorData, DiffEditDestination, DiffEditFileSelection, DiffExcerpt,
     DiffHunk, DiffProjectionMode, DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats,
     FileEditorData, FixSummary, GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand,
-    JjCommandResult, MutationEffect, OpLogEntry, PrInfo, PullRequestImportPreview, RebaseMode,
-    RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken,
-    ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
+    JjCommandResult, MutationEffect, PrInfo, PullRequestImportPreview, RebaseMode,
+    RecentOperations, RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult,
+    SubmitStackLayer, SyncToken, ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
     diff::{self, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -1010,7 +1010,7 @@ impl JayJayRepo {
         self.inner.diff_excerpt()
     }
 
-    fn recent_operations(&self) -> Vec<OpLogEntry> {
+    fn recent_operations(&self) -> RecentOperations {
         self.inner.recent_operations()
     }
 

@@ -2,7 +2,7 @@ import JayJayCore
 import SwiftUI
 
 struct UndoView: View {
-    let entries: [OpLogEntry]?
+    let operations: RecentOperations?
     let undoing: String?
     @Binding var selectedId: String?
     let isShown: Bool
@@ -17,42 +17,43 @@ struct UndoView: View {
 
     var body: some View {
         VStack(alignment: .leading, spacing: 0) {
-            if let entries {
-                if entries.isEmpty {
-                    emptyState
-                } else {
+            switch operations {
+                case let .entries(entries) where entries.isEmpty:
+                    statusMessage(Text(Localized.Repo.noOperationsFound))
+                case let .entries(entries):
                     operationList(entries)
-                }
-            } else {
-                LoadingStatus(label: Localized.Oplog.loadingOperationsEllipsis)
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+                case let .failed(message):
+                    statusMessage(Text(message).textSelection(.enabled))
+                case nil:
+                    LoadingStatus(label: Localized.Oplog.loadingOperationsEllipsis)
+                        .frame(maxWidth: .infinity, maxHeight: .infinity)
             }
         }
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AID.Panel.operationLog)
-        .onChange(of: entries?.map(\.id.id), initial: true) { _, ids in
+        .onChange(of: operations?.entries.map(\.id.id), initial: true) { _, ids in
             // A refresh must not retarget a pending Restore; a hidden pane keeps following the default.
             if isShown, let selectedId, ids?.contains(selectedId) == true {
                 return
             }
-            selectedId = entries?.restoreTarget(undoing: undoing)
+            selectedId = operations?.entries.restoreTarget(undoing: undoing)
         }
         .onChange(of: isShown) { _, shown in
             isListFocused = shown
             if !shown {
-                selectedId = entries?.restoreTarget(undoing: nil)
+                selectedId = operations?.entries.restoreTarget(undoing: nil)
             }
         }
     }
 
-    private var emptyState: some View {
-        VStack(spacing: 8) {
-            Text(Localized.Repo.noOperationsFound)
-                .jayjayFont(13)
-                .foregroundStyle(.secondary)
-        }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+    private func statusMessage(_ text: some View) -> some View {
+        text
+            .jayjayFont(13)
+            .foregroundStyle(.secondary)
+            .multilineTextAlignment(.center)
+            .padding(.horizontal, 16)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 
     private func operationList(_ entries: [OpLogEntry]) -> some View {
@@ -117,6 +118,15 @@ struct UndoView: View {
             .jayjayFont(13)
             .foregroundStyle(style.color)
             .frame(width: 18)
+    }
+}
+
+extension RecentOperations {
+    var entries: [OpLogEntry] {
+        switch self {
+            case let .entries(entries): entries
+            case .failed: []
+        }
     }
 }
 

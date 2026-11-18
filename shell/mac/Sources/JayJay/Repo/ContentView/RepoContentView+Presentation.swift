@@ -69,12 +69,12 @@ extension RepoContentView {
 
     func showOperationLog(undoing operationId: String) {
         operationLogUndoing = operationId
-        operationLogSelection = viewModel.opLogEntries?.restoreTarget(undoing: operationId)
+        operationLogSelection = viewModel.recentOperations?.entries.restoreTarget(undoing: operationId)
         showsOperationLog = true
     }
 
     var operationLogPanel: some View {
-        UndoView(entries: viewModel.opLogEntries, undoing: operationLogUndoing, selectedId: $operationLogSelection, isShown: showsOperationLog) { opId in
+        UndoView(operations: viewModel.recentOperations, undoing: operationLogUndoing, selectedId: $operationLogSelection, isShown: showsOperationLog) { opId in
             restoreOperation(opId)
         }
         .background(settings.navigationBackground(colorScheme))
@@ -87,7 +87,7 @@ extension RepoContentView {
 
     var restorableOperation: String? {
         guard showsOperationLog, viewModel.sshConnected, let id = operationLogSelection,
-              viewModel.opLogEntries?.contains(where: { $0.id.id == id && !$0.isCurrent }) == true
+              viewModel.recentOperations?.entries.contains(where: { $0.id.id == id && !$0.isCurrent }) == true
         else { return nil }
         return id
     }

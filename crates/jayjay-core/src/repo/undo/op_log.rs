@@ -5,6 +5,7 @@ use jj_lib::operation::Operation;
 
 use super::super::Repo;
 use super::super::support::block_on_result;
+use crate::error_message::unwrap_command_error;
 use crate::types::*;
 
 const OP_LOG_LIMIT: usize = 20;
@@ -16,9 +17,12 @@ impl Repo {
         self.walk_recent_operations()
     }
 
-    /// `op_log` as of the loaded operation, for a refresh that has already snapshotted; empty when the walk fails.
-    pub fn recent_operations(&self) -> Vec<OpLogEntry> {
-        self.walk_recent_operations().unwrap_or_default()
+    /// `op_log` as of the loaded operation, for a refresh that has already snapshotted.
+    pub fn recent_operations(&self) -> RecentOperations {
+        match self.walk_recent_operations() {
+            Ok(entries) => RecentOperations::Entries(entries),
+            Err(error) => RecentOperations::Failed(unwrap_command_error(&error.to_string())),
+        }
     }
 
     fn walk_recent_operations(&self) -> JayResult<Vec<OpLogEntry>> {

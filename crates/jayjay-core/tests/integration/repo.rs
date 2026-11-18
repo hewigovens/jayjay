@@ -1,7 +1,7 @@
 use std::fs;
 
 use jayjay_core::diff::{ConflictLineKind, compute_file_diff_full};
-use jayjay_core::{OpLogEntry, Repo};
+use jayjay_core::{OpLogEntry, RecentOperations, Repo};
 use jj_test::{
     change_by_description, changed_paths, current_op_id, git_stdout, init_jj_repo, run_git, run_jj,
     run_jj_in,
@@ -513,10 +513,43 @@ fn repository_context_lists_operations_without_snapshotting() {
     let before = ids(repo.op_log().expect("op log"));
     std::fs::write(repo_path.join("pending.txt"), "edit").expect("write file");
 
-    let listed = ids(repo.repository_context().expect("context").operations);
+    let RecentOperations::Entries(operations) =
+        repo.repository_context().expect("context").operations
+    else {
+        panic!("expected operation entries");
+    };
+    let listed = ids(operations);
 
     assert_eq!(listed, before);
     assert_eq!(repo.op_log().expect("op log").len(), before.len() + 1);
+}
+
+#[test]
+fn recent_operations_reports_a_damaged_operation_store() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let RecentOperations::Entries(entries) = repo.recent_operations() else {
+        panic!("expected operation entries on a fresh repository");
+    };
+    assert!(!entries.is_empty());
+
+    let parent_id = &entries[0].parent_ids[0];
+    fs::remove_file(
+        repo_path
+            .join(".jj/repo/op_store/operations")
+            .join(parent_id),
+    )
+    .expect("remove parent operation");
+
+    let RecentOperations::Failed(message) = repo.recent_operations() else {
+        panic!("expected a failed walk");
+    };
+    assert!(!message.is_empty());
+    assert!(matches!(
+        repo.repository_context().expect("context").operations,
+        RecentOperations::Failed(_)
+    ));
 }
 
 #[test]

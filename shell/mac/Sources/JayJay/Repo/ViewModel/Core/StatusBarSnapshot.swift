@@ -5,7 +5,7 @@ struct StatusBarSnapshot {
     let workingCopyStats: DiffStats?
     let currentOperationDescription: String
     let undoState: UndoState
-    let operations: [OpLogEntry]
+    let operations: RecentOperations
 
     static func load(from repo: JayJayRepo) -> StatusBarSnapshot {
         StatusBarSnapshot(
@@ -22,6 +22,6 @@ extension RepoViewModel {
         workingCopyStats = snapshot.workingCopyStats
         currentOperationDescription = snapshot.currentOperationDescription
         undoState = snapshot.undoState
-        opLogEntries = snapshot.operations
+        recentOperations = snapshot.operations
     }
 }

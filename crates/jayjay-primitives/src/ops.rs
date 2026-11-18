@@ -11,6 +11,18 @@ pub struct OpLogEntry {
     pub is_current: bool,
 }
 
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub enum RecentOperations {
+    Entries(Vec<OpLogEntry>),
+    Failed(String),
+}
+
+impl Default for RecentOperations {
+    fn default() -> Self {
+        Self::Entries(Vec::new())
+    }
+}
+
 /// What `jj undo` and `jj redo` would act on from the loaded operation.
 #[derive(Debug, Clone, Default, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
 pub struct UndoState {
