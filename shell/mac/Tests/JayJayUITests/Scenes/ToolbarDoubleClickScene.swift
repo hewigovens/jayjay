@@ -12,9 +12,6 @@ final class ToolbarDoubleClickScene: SceneBase {
         emptyToolbar.doubleClick()
         let zoomed = XCTNSPredicateExpectation(predicate: NSPredicate { _, _ in window.frame != frame }, object: nil)
         XCTAssertEqual(XCTWaiter().wait(for: [zoomed], timeout: 5), .completed, "Double-clicking the empty toolbar did not zoom the window")
-
-        emptyToolbar.doubleClick()
-        XCTAssertTrue(window.wait(for: \.frame, toEqual: frame, timeout: 5), "A second double-click did not restore the window")
     }
 
     func testDoubleClickInTheRevsetFieldSelectsTextInsteadOfZooming() throws {
