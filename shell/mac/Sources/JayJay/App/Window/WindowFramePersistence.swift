@@ -31,7 +31,7 @@ struct WindowFramePersistence: NSViewRepresentable {
     func makeNSView(context: Context) -> NSView {
         let view = WindowAttachmentView()
         let coordinator = context.coordinator
-        view.onAttach = { window in
+        view.onAttach = { [coordinator] window in
             let restored = WindowFrameStore.restore(window, key: key, defaults: defaults)
             // SwiftUI places the window in the run-loop turn the content attaches in; input and accessibility requests arrive only after the loop has waited.
             coordinator.settling = true

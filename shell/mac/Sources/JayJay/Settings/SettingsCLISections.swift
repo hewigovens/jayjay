@@ -91,7 +91,7 @@ struct SettingsCLISections: View {
         }
     }
 
-    private static func readLogins() -> [RepoHost: HostLogin] {
+    @Sendable nonisolated private static func readLogins() -> [RepoHost: HostLogin] {
         Dictionary(uniqueKeysWithValues: tokenHosts().map { ($0, hostLogin(host: $0)) })
     }
 
