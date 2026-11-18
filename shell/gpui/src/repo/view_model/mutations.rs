@@ -44,16 +44,29 @@ impl RepoViewModel {
         )
     }
 
+    /// `None` while another commit is in flight.
     pub fn commit_working_copy(
         &mut self,
         message: String,
         cx: &mut Context<Self>,
-    ) -> gpui::Task<JayResult<()>> {
-        self.repo_write_task(
+    ) -> Option<gpui::Task<JayResult<()>>> {
+        if self.committing {
+            return None;
+        }
+        self.committing = true;
+        let commit = self.repo_write_task(
             cx,
             move |repo| repo.jj_commit(&message),
             |vm, cx| vm.refresh_selecting_revision(None, cx),
-        )
+        );
+        Some(cx.spawn(async move |this, cx| {
+            let result = commit.await;
+            let _ = this.update(cx, |vm, cx| {
+                vm.committing = false;
+                cx.notify();
+            });
+            result
+        }))
     }
 
     /// Split `paths` out of `rev` into a new change described by `message` (`jj split`; on @ this is also `jj commit FILESETS`); `parallel` makes the split parts siblings sharing `rev`'s parents instead of parent/child. The remainder keeps the rest under a fresh change id.

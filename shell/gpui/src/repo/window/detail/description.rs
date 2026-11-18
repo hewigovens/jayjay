@@ -154,7 +154,7 @@ fn edit_button(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> Option<AnyElement> {
-    if change.is_immutable || change.is_working_copy {
+    if !change.edits_description_in_header() {
         return None;
     }
 

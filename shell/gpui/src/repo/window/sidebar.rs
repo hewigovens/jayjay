@@ -224,6 +224,7 @@ pub(super) fn sidebar(
         vm.selected_change()
             .is_some_and(|change| change.is_working_copy)
             && !vm.has_multiple_change_selection()
+            && view.shows_working_copy_draft(cx)
     };
 
     let mut col = div()
@@ -407,7 +408,12 @@ fn commit_box_editor(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>)
                 .items_center()
                 .justify_end()
                 .gap(px(8.))
-                .child(super::commit_ai::generate_button(view, t, cx))
+                .child(super::commit_ai::generate_button(
+                    view,
+                    RepoWindow::generate_commit_message,
+                    t,
+                    cx,
+                ))
                 .child(commit_box_button(
                     "describe-working-copy",
                     jayjay_i18n::repo::describe(),

@@ -262,6 +262,16 @@ impl RepoWindow {
                 },
             ));
         }
+        if available(ChangeCommand::Commit) {
+            items.push(
+                ContextMenuItem::new(
+                    ChangeCommand::Commit.title(),
+                    glyph::CHECK,
+                    ContextAction::CommitWorkingCopy(rev.clone().into()),
+                )
+                .with_enabled(!self.vm.read(cx).committing),
+            );
+        }
         if available(ChangeCommand::SquashIntoParent) {
             items.push(ContextMenuItem::new(
                 ChangeCommand::SquashIntoParent.title(),

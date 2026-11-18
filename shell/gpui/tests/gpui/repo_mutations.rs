@@ -95,6 +95,7 @@ fn committing_working_copy_selects_new_working_copy(cx: &mut TestAppContext) {
 
     vm.update(cx, |vm, cx| {
         vm.commit_working_copy("commit from gpui".to_owned(), cx)
+            .expect("no commit in flight")
             .detach();
     });
     settle(cx);

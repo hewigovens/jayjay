@@ -123,6 +123,11 @@ impl ChangeInfo {
         }
     }
 
+    /// An undescribed working copy is described in its commit box instead.
+    pub fn edits_description_in_header(&self) -> bool {
+        !self.is_immutable && !(self.is_working_copy && self.description.trim().is_empty())
+    }
+
     /// Review marks are keyed by change id, so a divergent change other than @ cannot carry them unambiguously.
     pub fn accepts_review_marks(&self) -> bool {
         !self.is_immutable && (self.is_working_copy || !self.is_divergent)

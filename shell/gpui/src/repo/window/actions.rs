@@ -1,6 +1,6 @@
 use gpui::{App, Context, Modifiers, ScrollStrategy, SharedString, Task, point, px};
 use jayjay_core::dag::SelectionClick;
-use jayjay_core::{DiffHunk, JayResult};
+use jayjay_core::{DiffHunk, JayResult, commit_message};
 
 use super::{
     ActivePane, DiffRichPreviewKind, DiffRichPreviewSelection, RepoModal, RepoWindow,
@@ -104,10 +104,15 @@ impl RepoWindow {
         description: String,
         cx: &mut Context<Self>,
     ) {
+        let working_copy = self
+            .vm
+            .read(cx)
+            .working_copy_change()
+            .is_some_and(|change| change.selection_revision() == rev);
         self.open_description_modal(
             rev.clone(),
             description,
-            TextModalAction::EditDescription { rev },
+            TextModalAction::EditDescription { rev, working_copy },
             cx,
         );
     }
@@ -286,7 +291,10 @@ impl RepoWindow {
         };
         let text = modal.prompt.text(cx);
         match modal.action.clone() {
-            TextModalAction::EditDescription { rev } => {
+            TextModalAction::EditDescription {
+                working_copy: true, ..
+            } if self.vm.read(cx).committing => {}
+            TextModalAction::EditDescription { rev, .. } => {
                 self.modal = None;
                 let task = self
                     .vm
@@ -374,41 +382,141 @@ impl RepoWindow {
         let Some(message) = self.commit_message_requiring_summary(cx) else {
             return;
         };
-        let committed_change_id = self
-            .vm
-            .read(cx)
-            .working_copy_change()
-            .map(|c| c.change_id.id.clone());
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.commit_working_copy(message, cx));
+        self.commit_working_copy(message, cx).detach();
+    }
+
+    /// The editor stays open when the commit fails.
+    pub(super) fn commit_from_description_sheet(&mut self, cx: &mut Context<Self>) {
+        let Some(rev) = self.working_copy_sheet_rev() else {
+            return;
+        };
+        let Some(RepoModal::Text(modal)) = &self.modal else {
+            return;
+        };
+        if modal.prompt.input().read(cx).text().trim().is_empty() {
+            self.show_toast(jayjay_i18n::repo::summary_required(), cx);
+            return;
+        }
+        let message = modal.prompt.text(cx);
+        if !self.working_copy_is(&rev, cx) {
+            return;
+        }
+        let task = self.commit_working_copy(message, cx);
         cx.spawn(async move |this, cx| {
-            if task.await.is_ok() {
+            if task.await {
                 let _ = this.update(cx, |view, cx| {
-                    if let Some(change_id) = committed_change_id {
-                        super::review::mutate(&view.review_store, |store| {
-                            store.clear_change(&change_id);
-                        });
+                    if view.working_copy_sheet_rev() == Some(rev) {
+                        view.close_text_modal(cx);
                     }
-                    view.clear_commit_box(cx);
                 });
             }
         })
         .detach();
     }
 
-    /// `jj describe` on @: saves the box message as the working copy's description without starting a new change, so the inputs keep mirroring @ and stay put.
+    fn working_copy_sheet_rev(&self) -> Option<String> {
+        match &self.text_modal()?.action {
+            TextModalAction::EditDescription {
+                rev,
+                working_copy: true,
+            } => Some(rev.clone()),
+            _ => None,
+        }
+    }
+
+    /// An outside commit can move @ under an open sheet or menu, which would commit the new, empty change instead.
+    fn working_copy_is(&mut self, rev: &str, cx: &mut Context<Self>) -> bool {
+        let current = self
+            .vm
+            .read(cx)
+            .working_copy_change()
+            .is_some_and(|change| change.selection_revision() == rev);
+        if !current {
+            self.show_toast(
+                jayjay_i18n::repo::working_copy_moved_nothing_committed(),
+                cx,
+            );
+        }
+        current
+    }
+
+    pub(super) fn commit_working_copy_from_menu(&mut self, rev: &str, cx: &mut Context<Self>) {
+        if !self.working_copy_is(rev, cx) {
+            return;
+        }
+        let message = self.with_working_copy_draft(cx, |draft| draft.menu_commit_message());
+        self.commit_working_copy(message, cx).detach();
+    }
+
+    /// Resolves to whether the commit landed.
+    pub(super) fn commit_working_copy(
+        &mut self,
+        message: String,
+        cx: &mut Context<Self>,
+    ) -> Task<bool> {
+        let clears_draft =
+            self.with_working_copy_draft(cx, |draft| draft.is_committed_by(&message));
+        let committed_change_id = self
+            .vm
+            .read(cx)
+            .working_copy_change()
+            .map(|c| c.change_id.id.clone());
+        let Some(task) = self
+            .vm
+            .update(cx, |vm, cx| vm.commit_working_copy(message, cx))
+        else {
+            return Task::ready(false);
+        };
+        // A pending reply describes the diff this commit moves to @-.
+        self.cancel_pending_commit_message_generation();
+        cx.spawn(async move |this, cx| {
+            if task.await.is_err() {
+                return false;
+            }
+            let _ = this.update(cx, |view, cx| {
+                if let Some(change_id) = committed_change_id {
+                    super::review::mutate(&view.review_store, |store| {
+                        store.clear_change(&change_id);
+                    });
+                }
+                if clears_draft {
+                    view.clear_commit_box(cx);
+                }
+            });
+            true
+        })
+    }
+
+    /// `jj describe` on @: saves the box message as the working copy's description without starting a new change.
     pub fn describe_working_copy_from_input(&mut self, cx: &mut Context<Self>) {
         let message = self.commit_message.text(cx);
         if message.is_empty() {
             self.show_toast(jayjay_i18n::repo::description_required(), cx);
             return;
         }
-        // Unlike commit, a pending AI generation stays valid: describe leaves the inputs (its snapshot) and the working-copy diff untouched, and the untouched-snapshot guard already drops replies once the user types.
-        let task = self
-            .vm
-            .update(cx, |vm, cx| vm.describe_change("@".to_owned(), message, cx));
-        task.detach();
+        // Unlike commit, describe leaves the diff untouched, so a pending generation stays valid.
+        let task = self.vm.update(cx, |vm, cx| {
+            vm.describe_change("@".to_owned(), message.clone(), cx)
+        });
+        cx.spawn(async move |this, cx| {
+            if task.await.is_ok() {
+                // Untouched fields become what was saved, so stray whitespace does not read as an unsaved draft.
+                let _ = this.update(cx, |view, cx| {
+                    if view.commit_message.text(cx) != message {
+                        return;
+                    }
+                    let summary = commit_message::summary(&message);
+                    let body = commit_message::body(&message);
+                    view.commit_message
+                        .summary
+                        .update(cx, |input, cx| input.set_text(summary, cx));
+                    view.commit_message
+                        .body
+                        .update(cx, |input, cx| input.set_text(body, cx));
+                });
+            }
+        })
+        .detach();
     }
 
     pub fn select_file(&mut self, ix: usize, cx: &mut Context<Self>) {
@@ -457,7 +565,7 @@ impl RepoWindow {
             self.show_toast(jayjay_i18n::repo::immutable_change_cannot_be_edited(), cx);
             return;
         }
-        if change.is_working_copy {
+        if !change.edits_description_in_header() {
             return;
         }
         self.open_edit_description(

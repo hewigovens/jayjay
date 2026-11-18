@@ -47,6 +47,34 @@ pub fn update(original: &str, edited_summary: &str, edited_body: &str) -> String
     }
 }
 
+/// The commit box's fields beside the working copy's saved description.
+pub struct WorkingCopyDraft<'a> {
+    pub summary: &'a str,
+    pub body: &'a str,
+    pub description: &'a str,
+}
+
+impl WorkingCopyDraft<'_> {
+    pub fn is_shown(&self) -> bool {
+        self.description.trim().is_empty()
+            || !draft_is_clean(self.summary, self.body, self.description)
+    }
+
+    /// A shown draft that has a summary, else the saved description.
+    pub fn menu_commit_message(&self) -> String {
+        if self.is_shown() && !self.summary.trim().is_empty() {
+            join(self.summary, self.body)
+        } else {
+            self.description.to_owned()
+        }
+    }
+
+    /// A draft survives a commit made with another message.
+    pub fn is_committed_by(&self, message: &str) -> bool {
+        !self.is_shown() || join(self.summary, self.body) == message
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -102,5 +130,30 @@ mod tests {
         assert_eq!(join("feat: x", "details\nmore"), "feat: x\n\ndetails\nmore");
         assert_eq!(join("feat: x", ""), "feat: x");
         assert_eq!(join("  feat: x  ", "  body  "), "feat: x\n\n  body  ");
+    }
+
+    #[test]
+    fn a_working_copy_draft_shows_until_it_matches_the_saved_description() {
+        let draft = |summary, body, description| WorkingCopyDraft {
+            summary,
+            body,
+            description,
+        };
+        assert!(draft("", "", "").is_shown());
+        assert!(draft("typed", "", "saved\n").is_shown());
+        assert!(!draft("saved", "", "saved\n").is_shown());
+
+        let saved = draft("saved", "", "saved\n");
+        assert_eq!(saved.menu_commit_message(), "saved\n");
+        assert!(saved.is_committed_by("saved\n"));
+
+        let typed = draft("typed", "body", "saved\n");
+        assert_eq!(typed.menu_commit_message(), "typed\n\nbody");
+        assert!(typed.is_committed_by("typed\n\nbody"));
+        assert!(!typed.is_committed_by("saved\n"));
+        assert_eq!(
+            draft("", "body only", "saved\n").menu_commit_message(),
+            "saved\n"
+        );
     }
 }

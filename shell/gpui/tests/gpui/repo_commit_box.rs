@@ -1,5 +1,7 @@
 use crate::harness::*;
-use gpui::{Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use gpui::{
+    Entity, Keystroke, Modifiers, MouseButton, TestAppContext, VisualContext, VisualTestContext,
+};
 use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jayjay_gpui::ui::context_menu::ContextAction;
 use jj_test::{LinearFixture, run_jj_in};
@@ -554,4 +556,196 @@ fn review_marks_are_shared_across_windows(cx: &mut TestAppContext) {
             "A should observe the unmark B made"
         );
     });
+}
+
+fn working_copy_rev(view: &RepoWindow, cx: &gpui::App) -> gpui::SharedString {
+    view.view_model()
+        .read(cx)
+        .graph
+        .changes
+        .iter()
+        .find(|change| change.is_working_copy)
+        .expect("working copy")
+        .selection_revision()
+        .to_owned()
+        .into()
+}
+
+fn description_of(fixture: &LinearFixture, rev: &str) -> String {
+    let output = run_jj_in(
+        &fixture.path,
+        &["log", "--no-graph", "-r", rev, "-T", "description"],
+    );
+    String::from_utf8_lossy(&output.stdout).trim().to_owned()
+}
+
+#[gpui::test]
+fn a_described_working_copy_commits_once_from_its_change_menu(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let parent = description_of(&fixture, "@-");
+    run_jj_in(&fixture.path, &["describe", "-m", "saved description"]);
+    let (view, cx) = open_fixture(&fixture, cx);
+    assert!(cx.debug_bounds("commit-box-editor").is_none());
+
+    let commit_id = selected_commit_id(&view, cx);
+    let row = cx
+        .debug_bounds(selector(format!("dag-change-{commit_id}")))
+        .expect("working-copy row");
+    cx.simulate_mouse_down(row.center(), MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    assert!(menu_shows(cx, &jayjay_i18n::repo::commit()));
+    keys(cx, "escape");
+    view.update(cx, |view, cx| {
+        let rev = working_copy_rev(view, cx);
+        view.dispatch_context_action(ContextAction::CommitWorkingCopy(rev.clone()), cx);
+        view.dispatch_context_action(ContextAction::CommitWorkingCopy(rev), cx);
+    });
+    settle_visual(cx);
+
+    assert_eq!(description_of(&fixture, "@-"), "saved description");
+    assert_eq!(description_of(&fixture, "@--"), parent);
+    assert!(cx.debug_bounds("commit-box-editor").is_some());
+}
+
+#[gpui::test]
+fn committing_the_saved_description_from_the_sheet_keeps_a_typed_draft(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let summary = view.read_with(cx, |view, _| view.summary_input().clone());
+    cx.focus(&summary);
+    cx.simulate_input("typed draft");
+    run_jj_in(&fixture.path, &["describe", "-m", "saved description"]);
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
+    });
+    settle_visual(cx);
+    assert!(cx.debug_bounds("commit-box-editor").is_some());
+
+    click(cx, "edit-description");
+    click(cx, "text-modal-commit");
+
+    assert_eq!(description_of(&fixture, "@-"), "saved description");
+    view.read_with(cx, |view, cx| {
+        assert!(!view.has_text_modal());
+        assert_eq!(view.summary_input().read(cx).text(), "typed draft");
+    });
+}
+
+fn open_working_copy_sheet<'a>(
+    fixture: &LinearFixture,
+    cx: &'a mut TestAppContext,
+) -> (Entity<RepoWindow>, &'a mut VisualTestContext) {
+    run_jj_in(&fixture.path, &["describe", "-m", "saved description"]);
+    let (view, cx) = open_fixture(fixture, cx);
+    click(cx, "edit-description");
+    (view, cx)
+}
+
+#[gpui::test]
+fn a_landing_sheet_commit_leaves_a_sheet_opened_since_alone(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_working_copy_sheet(&fixture, cx);
+    start_sheet_commit(cx);
+    cx.update(|window, cx| {
+        window.dispatch_keystroke(Keystroke::parse("escape").unwrap(), cx);
+    });
+    view.update(cx, |view, cx| {
+        assert!(!view.has_text_modal());
+        view.dispatch_context_action(ContextAction::CreateBookmark("@".into()), cx);
+    });
+    settle_visual(cx);
+
+    assert_eq!(description_of(&fixture, "@-"), "saved description");
+    assert!(view.read_with(cx, |view, _| view.has_text_modal()));
+}
+
+#[gpui::test]
+fn saving_the_sheet_while_its_commit_runs_does_not_describe(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_working_copy_sheet(&fixture, cx);
+    start_sheet_commit(cx);
+    view.update(cx, |view, cx| {
+        view.text_modal_input()
+            .expect("summary")
+            .update(cx, |input, cx| input.set_text("described meanwhile", cx));
+        view.submit_text_modal(cx);
+    });
+    settle_visual(cx);
+
+    assert_eq!(description_of(&fixture, "@-"), "saved description");
+    assert_eq!(description_of(&fixture, "@"), "");
+}
+
+#[gpui::test]
+fn a_commit_refuses_once_the_working_copy_moved_under_it(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_working_copy_sheet(&fixture, cx);
+    let rev = view.read_with(cx, working_copy_rev);
+    view.update_in(cx, |view, _, cx| {
+        view.text_modal_input()
+            .expect("summary")
+            .update(cx, |input, cx| input.set_text("sheet message", cx));
+    });
+    run_jj_in(&fixture.path, &["new"]);
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
+    });
+    settle_visual(cx);
+    let refused = Some(jayjay_i18n::repo::working_copy_moved_nothing_committed());
+
+    click(cx, "text-modal-commit");
+    assert_eq!(
+        view.read_with(cx, |view, _| view.toast()).as_deref(),
+        refused.as_deref()
+    );
+    assert!(view.read_with(cx, |view, _| view.has_text_modal()));
+
+    keys(cx, "escape");
+    view.update(cx, |view, cx| {
+        view.dispatch_context_action(ContextAction::CommitWorkingCopy(rev), cx);
+    });
+    settle_visual(cx);
+    assert_eq!(
+        view.read_with(cx, |view, _| view.toast()).as_deref(),
+        refused.as_deref()
+    );
+    assert_eq!(description_of(&fixture, "@"), "");
+    assert_eq!(description_of(&fixture, "@-"), "saved description");
+}
+
+#[gpui::test]
+fn another_change_saves_its_description_while_the_working_copy_commits(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let parent = view.read_with(cx, |view, cx| {
+        view.view_model()
+            .read(cx)
+            .graph
+            .changes
+            .iter()
+            .find(|change| !change.is_working_copy)
+            .expect("parent")
+            .selection_revision()
+            .to_owned()
+    });
+    view.update(cx, |view, cx| {
+        view.summary_input()
+            .update(cx, |input, cx| input.set_text("committed", cx));
+        view.commit_working_copy_from_input(cx);
+        view.dispatch_context_action(
+            ContextAction::EditDescription {
+                rev: parent.clone().into(),
+                description: "".into(),
+            },
+            cx,
+        );
+        view.text_modal_input()
+            .expect("summary")
+            .update(cx, |input, cx| input.set_text("described meanwhile", cx));
+        view.submit_text_modal(cx);
+    });
+    settle_visual(cx);
+
+    assert_eq!(description_of(&fixture, &parent), "described meanwhile");
+    assert_eq!(description_of(&fixture, "@-"), "committed");
 }

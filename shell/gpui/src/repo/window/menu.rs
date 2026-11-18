@@ -190,6 +190,7 @@ impl RepoWindow {
             ContextAction::RestoreOperation(operation) => {
                 self.restore_operation(operation.to_string(), cx)
             }
+            ContextAction::CommitWorkingCopy(rev) => self.commit_working_copy_from_menu(&rev, cx),
             ContextAction::UpdateWorkspace => {
                 self.vm
                     .update(cx, |vm, cx| vm.update_stale_workspace(cx))

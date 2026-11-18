@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, App, AppContext, Context, Entity, Focusable, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px,
 };
 
 use super::{overlay_actions, overlay_card, overlay_header, overlay_layer};
@@ -49,6 +49,7 @@ impl PromptStyle {
 pub(crate) struct PromptSlots {
     before_input: Vec<AnyElement>,
     after_input: Vec<AnyElement>,
+    leading_actions: Vec<AnyElement>,
 }
 
 impl PromptSlots {
@@ -59,7 +60,13 @@ impl PromptSlots {
         Self {
             before_input: before_input.into_iter().collect(),
             after_input: after_input.into_iter().collect(),
+            leading_actions: Vec::new(),
         }
+    }
+
+    pub fn with_leading_actions(mut self, actions: Vec<AnyElement>) -> Self {
+        self.leading_actions = actions;
+        self
     }
 }
 
@@ -222,12 +229,24 @@ impl TextPrompt {
         } else {
             primary.opacity(0.45)
         };
-        panel = panel.child(overlay_actions(
+        let actions = overlay_actions(
             button(style.cancel_id, jayjay_i18n::common::cancel(), t, false)
                 .debug_selector(|| style.cancel_id.to_owned())
                 .on_click(cx.listener(move |view, _, _, cx| on_cancel(view, cx))),
             primary,
-        ));
+        );
+        panel = panel.child(if slots.leading_actions.is_empty() {
+            actions
+        } else {
+            div()
+                .flex()
+                .flex_row()
+                .items_center()
+                .gap(px(8.))
+                .children(slots.leading_actions)
+                .child(div().flex_1())
+                .child(actions)
+        });
         overlay_layer().child(panel).into_any_element()
     }
 }

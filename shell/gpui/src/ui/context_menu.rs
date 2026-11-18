@@ -69,6 +69,7 @@ pub enum ContextAction {
     ShowAncestors(SharedString),
     RestoreOperation(SharedString),
     UpdateWorkspace,
+    CommitWorkingCopy(SharedString),
     OpenFileHistoryFor(SharedString),
     ToggleAnnotateFor(SharedString),
     ShowBookmarkDiff(BookmarkDiffRequest),

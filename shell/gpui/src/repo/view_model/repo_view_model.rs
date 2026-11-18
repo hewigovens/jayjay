@@ -36,6 +36,7 @@ pub struct RepoViewModel {
     pub(crate) restoring_operation: bool,
     /// `None` until the first refresh lands.
     pub(crate) operations: Option<Arc<RecentOperations>>,
+    pub(crate) committing: bool,
     pub view_mode: DiffViewMode,
     pub(crate) ignore_whitespace: bool,
     pub(crate) language: Option<String>,

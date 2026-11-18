@@ -304,6 +304,8 @@ pub(crate) struct TextModalCheckbox {
 pub(crate) enum TextModalAction {
     EditDescription {
         rev: String,
+        /// The working copy's sheet also commits and generates its message.
+        working_copy: bool,
     },
     DiffEditDescription {
         session: u64,

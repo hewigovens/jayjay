@@ -559,3 +559,4 @@ repo-restored-files = 已恢復 { $count } 個檔案
 repo-deleted-files = 已刪除 { $count } 個檔案
 repo-abandon-change-named = 要捨棄 { $change }「{ $description }」嗎？
 repo-abandon-change-id = 要捨棄 { $change } 嗎？
+repo-working-copy-moved-nothing-committed = 工作副本在提交前已變更，未提交任何內容。

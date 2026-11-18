@@ -4,8 +4,9 @@ use std::rc::Rc;
 use std::sync::{Arc, Mutex};
 
 use gpui::{
-    Entity, Focusable, Global, Modifiers, MouseButton, Pixels, Point, ScrollDelta, ScrollEvent,
-    TestAppContext, TouchPhase, VisualTestContext, point, px,
+    Entity, Focusable, Global, InputEvent, Modifiers, MouseButton, MouseDownEvent, MouseUpEvent,
+    Pixels, Point, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase, VisualTestContext, point,
+    px,
 };
 use jayjay_core::ChangeInfo;
 use jayjay_gpui::app::actions::ZoomIn;
@@ -410,4 +411,35 @@ pub(crate) fn ever(
         .detach();
     });
     seen
+}
+
+/// Starts the sheet's commit without running the executor, so the test acts while it is in flight.
+pub(crate) fn start_sheet_commit(cx: &mut VisualTestContext) {
+    let position = cx
+        .debug_bounds("text-modal-commit")
+        .expect("sheet commit")
+        .center();
+    cx.update(|window, cx| {
+        window.dispatch_event(
+            MouseDownEvent {
+                button: MouseButton::Left,
+                position,
+                modifiers: Modifiers::default(),
+                click_count: 1,
+                first_mouse: false,
+            }
+            .to_platform_input(),
+            cx,
+        );
+        window.dispatch_event(
+            MouseUpEvent {
+                button: MouseButton::Left,
+                position,
+                modifiers: Modifiers::default(),
+                click_count: 1,
+            }
+            .to_platform_input(),
+            cx,
+        );
+    });
 }

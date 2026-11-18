@@ -681,3 +681,4 @@ repo-deleted-files =
     }
 repo-abandon-change-named = Abandon { $change } “{ $description }”?
 repo-abandon-change-id = Abandon { $change }?
+repo-working-copy-moved-nothing-committed = The working copy changed before the commit; nothing was committed.

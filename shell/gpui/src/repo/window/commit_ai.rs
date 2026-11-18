@@ -1,15 +1,18 @@
 use std::sync::Arc;
 
 use gpui::{
-    AnyElement, AppContext, ClickEvent, Context, InteractiveElement, IntoElement, SharedString,
-    StatefulInteractiveElement, Styled,
+    AnyElement, AppContext, ClickEvent, Context, Entity, InteractiveElement, IntoElement,
+    SharedString, StatefulInteractiveElement, Styled,
 };
 use jayjay_core::{AiProvider, DiffExcerpt, Repo, commit_message};
 
-use super::RepoWindow;
+use super::{RepoModal, RepoWindow};
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
 use crate::ui::primitives::{icon_button, inert_icon_button, text_tooltip};
+use crate::ui::text_area::TextArea;
+
+type MessageInputs = (Entity<TextArea>, Entity<TextArea>);
 
 /// Seam between the commit box and the AI CLIs so component tests can mock generation.
 pub trait CommitMessageProvider: Send + Sync {
@@ -143,6 +146,25 @@ impl RepoWindow {
 
     /// Generate a commit message from the working-copy diff and fill the commit box inputs.
     pub fn generate_commit_message(&mut self, cx: &mut Context<Self>) {
+        let target = (
+            self.commit_message.summary.clone(),
+            self.commit_message.body.clone(),
+        );
+        self.generate_message_into(target, cx);
+    }
+
+    pub(super) fn generate_description_sheet_message(&mut self, cx: &mut Context<Self>) {
+        let Some(RepoModal::Text(modal)) = &self.modal else {
+            return;
+        };
+        let Some(body) = modal.prompt.body_input() else {
+            return;
+        };
+        let target = (modal.prompt.input(), body);
+        self.generate_message_into(target, cx);
+    }
+
+    fn generate_message_into(&mut self, target: MessageInputs, cx: &mut Context<Self>) {
         if self.commit_ai.in_flight {
             return;
         }
@@ -154,10 +176,7 @@ impl RepoWindow {
             self.show_toast(jayjay_i18n::repo::repository_not_open(), cx);
             return;
         };
-        let snapshot = (
-            self.commit_message.summary.read(cx).text(),
-            self.commit_message.body.read(cx).text(),
-        );
+        let snapshot = (target.0.read(cx).text(), target.1.read(cx).text());
         self.commit_ai.generation += 1;
         let generation = self.commit_ai.generation;
         self.commit_ai.in_flight = true;
@@ -168,7 +187,7 @@ impl RepoWindow {
                 .background_spawn(async move { run_generation(provider.as_ref(), &repo) })
                 .await;
             let _ = this.update(cx, move |view, cx| {
-                view.finish_generation(generation, snapshot, outcome, cx);
+                view.finish_generation(generation, target, snapshot, outcome, cx);
             });
         })
         .detach();
@@ -177,6 +196,7 @@ impl RepoWindow {
     fn finish_generation(
         &mut self,
         generation: u64,
+        (summary_input, body_input): MessageInputs,
         snapshot: (String, String),
         outcome: GenerateOutcome,
         cx: &mut Context<Self>,
@@ -189,20 +209,16 @@ impl RepoWindow {
         cx.notify();
         match outcome {
             GenerateOutcome::Message(message) => {
-                let untouched = self.commit_message.summary.read(cx).text() == snapshot.0
-                    && self.commit_message.body.read(cx).text() == snapshot.1;
+                let untouched = summary_input.read(cx).text() == snapshot.0
+                    && body_input.read(cx).text() == snapshot.1;
                 // The user typed while the AI ran; their words win and the reply is dropped.
                 if !untouched {
                     return;
                 }
                 let summary = commit_message::summary(&message);
                 let body = commit_message::body(&message);
-                self.commit_message
-                    .summary
-                    .update(cx, |input, cx| input.set_text(summary, cx));
-                self.commit_message
-                    .body
-                    .update(cx, |input, cx| input.set_text(body, cx));
+                summary_input.update(cx, |input, cx| input.set_text(summary, cx));
+                body_input.update(cx, |input, cx| input.set_text(body, cx));
             }
             GenerateOutcome::EmptyDiff => {
                 self.show_toast(jayjay_i18n::repo::working_copy_has_no_changes_to(), cx);
@@ -213,8 +229,9 @@ impl RepoWindow {
 }
 
 /// Sparkle button beside the commit controls; dimmed while generating or when no CLI is installed.
-pub(super) fn generate_button(
+pub(crate) fn generate_button(
     view: &RepoWindow,
+    generate: fn(&mut RepoWindow, &mut Context<RepoWindow>),
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -239,7 +256,7 @@ pub(super) fn generate_button(
             t.fg_dim,
             t,
         )
-        .on_click(cx.listener(|view, _: &ClickEvent, _w, cx| view.generate_commit_message(cx)))
+        .on_click(cx.listener(move |view, _: &ClickEvent, _w, cx| generate(view, cx)))
     } else {
         inert_icon_button(
             "commit-ai-generate",

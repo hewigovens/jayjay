@@ -1,5 +1,5 @@
 use gpui::{App, Context};
-use jayjay_core::commit_message;
+use jayjay_core::commit_message::{self, WorkingCopyDraft};
 
 use super::RepoWindow;
 
@@ -41,6 +41,28 @@ impl CommitBoxState {
 }
 
 impl RepoWindow {
+    pub(super) fn with_working_copy_draft<R>(
+        &self,
+        cx: &App,
+        read: impl FnOnce(&WorkingCopyDraft) -> R,
+    ) -> R {
+        let summary = self.commit_message.summary.read(cx).text();
+        let body = self.commit_message.body.read(cx).text();
+        let vm = self.vm.read(cx);
+        let description = vm
+            .working_copy_change()
+            .map_or("", |change| change.description.as_str());
+        read(&WorkingCopyDraft {
+            summary: &summary,
+            body: &body,
+            description,
+        })
+    }
+
+    pub(super) fn shows_working_copy_draft(&self, cx: &App) -> bool {
+        self.with_working_copy_draft(cx, |draft| draft.is_shown())
+    }
+
     pub(super) fn unsaved_commit_draft(&self, cx: &App) -> Option<CommitDraft> {
         let summary = self.commit_message.summary.read(cx).text();
         let body = self.commit_message.body.read(cx).text();

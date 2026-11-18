@@ -1,5 +1,5 @@
 use gpui::{App, Context, Entity, Focusable, KeyDownEvent, Window};
-use jayjay_core::{RevsetFilter, RevsetFilterKind};
+use jayjay_core::{ChangeInfo, RevsetFilter, RevsetFilterKind};
 
 use super::stop::FocusStop;
 use super::visible::VisibleStops;
@@ -225,8 +225,7 @@ impl RepoWindow {
             expand_description: detail_change.is_some(),
             mark_reviewed: self.selected_file_review(cx).is_some(),
             diff_layout: vm.selected_hunk().is_some(),
-            edit_description: detail_change
-                .is_some_and(|change| !change.is_immutable && !change.is_working_copy),
+            edit_description: detail_change.is_some_and(ChangeInfo::edits_description_in_header),
             edit_diff: detail_change.is_some_and(|change| {
                 !change.has_conflict && !change.is_empty && !change.is_immutable
             }),
@@ -234,7 +233,8 @@ impl RepoWindow {
             unlisted_files_action: self.has_unlisted_files_action(cx),
             revset_back,
             revset_reset,
-            commit_box: detail_change.is_some_and(|change| change.is_working_copy),
+            commit_box: detail_change.is_some_and(|change| change.is_working_copy)
+                && self.shows_working_copy_draft(cx),
             sidebar_hidden: self.layout.sidebar_hidden,
         }
     }

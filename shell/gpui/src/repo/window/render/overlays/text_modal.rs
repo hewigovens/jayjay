@@ -6,16 +6,18 @@ use jayjay_core::diff::DiffSpanStyle;
 
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, with_alpha};
+use crate::repo::window::commit_ai::generate_button;
 use crate::repo::window::note_composer::NoteContextLine;
-use crate::repo::window::{RepoWindow, TextModalState};
+use crate::repo::window::{RepoWindow, TextModalAction};
 use crate::ui::overlay::{PromptSlots, PromptStyle};
-use crate::ui::primitives::checkbox_row;
+use crate::ui::primitives::{button, checkbox_row, text_tooltip};
 
 pub(crate) fn text_modal_overlay(
-    modal: &TextModalState,
+    view: &RepoWindow,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
-) -> AnyElement {
+) -> Option<AnyElement> {
+    let modal = view.text_modal()?;
     let before_input = modal.context.as_ref().and_then(|context| {
         (!context.lines.is_empty()).then(|| note_context_preview(&context.lines, &context.input, t))
     });
@@ -37,18 +39,57 @@ pub(crate) fn text_modal_overlay(
     if let Some(paths) = modal.file_list.as_ref() {
         after_input.push(file_list_preview(paths, t));
     }
-    modal.prompt.overlay(
-        &PromptStyle {
-            // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
-            key_context: modal.context.is_some().then_some("NoteComposer"),
-            ..PromptStyle::new(520., "text-modal-cancel", "text-modal-primary")
-        },
-        t,
-        cx,
-        PromptSlots::new(before_input, after_input),
-        |view, cx| view.close_text_modal(cx),
-        |view, cx| view.submit_text_modal(cx),
-    )
+    let committing = view.vm.read(cx).committing;
+    let working_copy = matches!(
+        modal.action,
+        TextModalAction::EditDescription {
+            working_copy: true,
+            ..
+        }
+    );
+    let leading_actions = if working_copy {
+        working_copy_actions(view, committing, t, cx)
+    } else {
+        Vec::new()
+    };
+    modal
+        .prompt
+        .overlay(
+            &PromptStyle {
+                // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
+                key_context: modal.context.is_some().then_some("NoteComposer"),
+                primary_enabled: !(working_copy && committing),
+                ..PromptStyle::new(520., "text-modal-cancel", "text-modal-primary")
+            },
+            t,
+            cx,
+            PromptSlots::new(before_input, after_input).with_leading_actions(leading_actions),
+            |view, cx| view.close_text_modal(cx),
+            |view, cx| view.submit_text_modal(cx),
+        )
+        .into()
+}
+
+fn working_copy_actions(
+    view: &RepoWindow,
+    committing: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> Vec<AnyElement> {
+    let commit = button("text-modal-commit", jayjay_i18n::repo::commit(), t, false)
+        .debug_selector(|| "text-modal-commit".to_owned())
+        .tooltip(text_tooltip(
+            jayjay_i18n::repo::describe_start_new_change_jj_commit(),
+        ));
+    let commit = if committing {
+        commit.opacity(0.45)
+    } else {
+        commit.on_click(cx.listener(|view, _, _, cx| view.commit_from_description_sheet(cx)))
+    };
+    vec![
+        generate_button(view, RepoWindow::generate_description_sheet_message, t, cx),
+        commit.into_any_element(),
+    ]
 }
 
 fn note_context_preview(

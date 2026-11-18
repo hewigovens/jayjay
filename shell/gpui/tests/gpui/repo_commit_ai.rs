@@ -354,3 +354,32 @@ fn generate_with_pending_wc_changes_reads_the_current_diff(cx: &mut TestAppConte
         "the prompt must contain the post-load edit"
     );
 }
+
+#[gpui::test]
+fn a_commit_that_keeps_the_draft_drops_the_pending_reply(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    fixture.add_tracked_working_copy_edits();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let mock = MockAi::new(Some("Codex"), Ok("Add: stale ai reply"));
+    view.update_in(cx, |view, _, cx| {
+        view.set_commit_message_provider(mock.clone(), cx);
+        view.summary_input()
+            .update(cx, |input, cx| input.set_text("typed draft", cx));
+    });
+    run_jj_in(&fixture.path, &["describe", "-m", "saved description"]);
+    view.update(cx, |view, cx| {
+        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
+    });
+    settle_visual(cx);
+    click(cx, "edit-description");
+
+    view.update_in(cx, |view, _, cx| view.generate_commit_message(cx));
+    start_sheet_commit(cx);
+    settle_visual(cx);
+
+    assert_eq!(mock.calls(), 1);
+    view.read_with(cx, |view, cx| {
+        assert!(!view.has_text_modal(), "the commit landed");
+        assert_eq!(view.summary_input().read(cx).text(), "typed draft");
+    });
+}

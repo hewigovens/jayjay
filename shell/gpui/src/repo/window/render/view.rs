@@ -347,7 +347,7 @@ impl RepoWindow {
         Some(match self.modal.as_mut()? {
             RepoModal::Text(modal) => {
                 modal.prompt.take_focus(window, cx);
-                text_modal_overlay(modal, t, cx)
+                text_modal_overlay(self, t, cx)?
             }
             RepoModal::Bisect(sheet) => bisect_sheet_overlay(sheet, t, window, cx),
             RepoModal::PrImport(state) => {
