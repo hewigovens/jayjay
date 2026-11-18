@@ -49,6 +49,17 @@ concurrency:
   cancel-in-progress: true
 
 jobs:
+  lint:
+    runs-on: ubuntu-24.04
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+
+      - name: Lint Swift
+        run: docker run --rm -v "$PWD:/work" -w /work ghcr.io/realm/swiftlint:0.65.1 lint --config .swiftlint.yml --strict
+
+      - name: Lint localization
+        run: bash scripts/lint-i18n.sh
+
   rust:
     runs-on: xcode-27
     steps:
@@ -85,19 +96,13 @@ jobs:
           toolchain: stable
 
       - name: Install tools
-        run: brew install just xcbeautify swiftlint jj
+        run: brew install just xcbeautify jj
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
         with:
           shared-key: swift
           save-if: ${{ github.ref == 'refs/heads/main' }}
-
-      - name: Lint Swift
-        run: swiftlint lint --config .swiftlint.yml --strict
-
-      - name: Lint localization
-        run: just lint-i18n
 
       - name: Build app and UI test bundle
         run: just shell::ui-test-build
