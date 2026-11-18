@@ -85,7 +85,7 @@ extension RepoContentView {
         if viewModel.selectedReviewMode.isSwitchable {
             items.append(CommandPaletteItem(
                 title: Localized.Palette.toggleReviewMode,
-                icon: "checkmark.circle",
+                icon: ReviewMode.symbolName,
                 category: Localized.Menu.view,
                 keywords: ["review", "mark", "reviewed", "files"],
                 shortcut: AppShortcut.toggleReviewMode.symbol

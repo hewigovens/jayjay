@@ -17,7 +17,7 @@ extension ChangeDetailView {
             let isOn = mode == .on
             let toggle = { reviewStore.setReviewMode(!isOn, for: detail.info) }
             Toggle(isOn: Binding(get: { isOn }, set: { _ in toggle() })) {
-                Image(systemName: isOn ? "checkmark.circle.fill" : "checkmark.circle")
+                Image(systemName: ReviewMode.symbolName)
                     .foregroundStyle(isOn ? Color.accentColor : .secondary)
                     .jayjayFont(14)
             }

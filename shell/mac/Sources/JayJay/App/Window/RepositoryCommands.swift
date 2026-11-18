@@ -72,7 +72,7 @@ struct RepositoryCommands: Commands {
                 get: { tracker.handler?.reviewMode == .on },
                 set: { _ in tracker.handler?.performShortcut(.toggleReviewMode) }
             )) {
-                Label(Localized.Menu.reviewMode, systemImage: "checkmark.circle")
+                Label(Localized.Menu.reviewMode, systemImage: ReviewMode.symbolName)
             }
             .keyboardShortcut(AppShortcut.toggleReviewMode)
             .disabled(tracker.handler?.reviewMode.isSwitchable != true)
