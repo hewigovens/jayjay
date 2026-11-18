@@ -1,5 +1,8 @@
-use crate::harness::{install_test_globals, keys, settle, settle_visual};
-use gpui::{AppContext, Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext};
+use crate::harness::{
+    drag_handle, install_test_globals, keys, load_selected_change_files, settle, settle_slide,
+    settle_visual,
+};
+use gpui::{AppContext, Entity, Modifiers, TestAppContext, VisualContext, VisualTestContext, px};
 use jayjay_core::{DEFAULT_REVSET_DEPTH, build_default_revset};
 use jayjay_gpui::repo::RepoWindow;
 use jayjay_gpui::ui::context_menu::ContextAction;
@@ -49,22 +52,56 @@ fn change_list_divergent_badge_filters_to_divergent_changes(cx: &mut TestAppCont
 }
 
 #[gpui::test]
-fn sidebar_toggle_leads_the_sync_group(cx: &mut TestAppContext) {
+fn column_toggles_hold_still_while_sync_controls_leave_with_the_sidebar(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     install_test_globals(cx);
-    let (_, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
     let cx: &mut VisualTestContext = cx;
+    load_selected_change_files(&view, cx);
     settle_visual(cx);
 
     let toggle = cx
         .debug_bounds("toolbar-sidebar-toggle")
         .expect("sidebar toggle");
-    let refresh = cx.debug_bounds("toolbar-refresh").expect("refresh button");
     let sync_cluster = cx.debug_bounds("toolbar-sync-cluster").expect("sync group");
-    assert_eq!(toggle.origin.x + toggle.size.width, refresh.origin.x);
-    assert_eq!(toggle.origin.x, sync_cluster.origin.x);
-    let bar = cx.debug_bounds("revset-bar").expect("revset bar");
-    assert!(bar.origin.x > sync_cluster.origin.x + sync_cluster.size.width);
+    let log_toggle = cx
+        .debug_bounds("toolbar-operation-log")
+        .expect("operation log toggle");
+    assert!(toggle.origin.x + toggle.size.width < sync_cluster.origin.x);
+    let title = cx.debug_bounds("repo-switcher-button").expect("title");
+    let files = cx.debug_bounds("file-column").expect("file column");
+    assert_eq!(title.origin.x, files.origin.x + px(4.));
+
+    view.update_in(cx, |view, _, cx| view.toggle_sidebar(cx));
+    settle_slide(cx);
+    assert!(cx.debug_bounds("toolbar-refresh").is_none());
+    let hidden = cx
+        .debug_bounds("toolbar-sidebar-toggle")
+        .expect("sidebar toggle");
+    assert_eq!(hidden.origin, toggle.origin);
+    let title = cx.debug_bounds("repo-switcher-button").expect("title");
+    assert!(title.origin.x > hidden.origin.x + hidden.size.width);
+
+    click(cx, "toolbar-operation-log");
+    settle_slide(cx);
+    assert!(cx.debug_bounds("operation-log-pane").is_some());
+    let open = cx
+        .debug_bounds("toolbar-operation-log")
+        .expect("operation log toggle");
+    assert_eq!(open.origin, log_toggle.origin);
+
+    drag_handle(cx, "operation-log-resize-handle", -40.);
+    let dragged = cx
+        .debug_bounds("toolbar-operation-log")
+        .expect("operation log toggle");
+    assert_eq!(dragged.origin, log_toggle.origin);
+
+    click(cx, "toolbar-operation-log");
+    settle_slide(cx);
+    let closed = cx
+        .debug_bounds("toolbar-operation-log")
+        .expect("operation log toggle");
+    assert_eq!(closed.origin, log_toggle.origin);
 }
 
 #[gpui::test]
@@ -403,10 +440,9 @@ fn revset_editor_completes_the_symbol_being_typed(cx: &mut TestAppContext) {
     retype(cx, "min");
     let bar = cx.debug_bounds("revset-bar").expect("revset bar");
     let list = cx.debug_bounds("revset-completions").expect("list");
-    assert_eq!(
-        (list.origin.x, list.size.width),
-        (bar.origin.x, bar.size.width),
-        "the list sits under the bar, edge to edge"
+    assert!(
+        (list.origin.x - bar.origin.x).abs() <= px(0.5) && list.size.width == bar.size.width,
+        "the list sits under the bar, edge to edge, at whole pixels"
     );
     keys(cx, "down enter");
     assert_eq!(
@@ -464,10 +500,9 @@ fn revset_popup_lists_completions_above_its_own_rows(cx: &mut TestAppContext) {
     click(cx, "revset-presets");
     let bar = cx.debug_bounds("revset-bar").expect("revset bar");
     let popup = cx.debug_bounds("revset-popup").expect("popup");
-    assert_eq!(
-        (popup.origin.x, popup.size.width),
-        (bar.origin.x, bar.size.width),
-        "the popup sits under the bar, edge to edge"
+    assert!(
+        (popup.origin.x - bar.origin.x).abs() <= px(0.5) && popup.size.width == bar.size.width,
+        "the popup sits under the bar, edge to edge, at whole pixels"
     );
     cx.simulate_input("ma");
     settle_visual(cx);

@@ -1,5 +1,5 @@
 use gpui::{
-    Animation, AnimationExt as _, AnyElement, Context, InteractiveElement, IntoElement,
+    Animation, AnimationExt as _, AnyElement, App, Context, Div, InteractiveElement, IntoElement,
     ParentElement, Render, StatefulInteractiveElement, Styled, Window, div, ease_in_out, px,
 };
 
@@ -15,7 +15,7 @@ use super::super::rebase_confirmation::rebase_confirmation_overlay;
 use super::super::repo_switcher::render_repo_switcher;
 use super::super::revset_filter::{render_revset_completions, render_revset_popup};
 use super::super::sidebar::sidebar;
-use super::super::sidebar_visibility::SIDEBAR_SLIDE;
+use super::super::sidebar_visibility::COLUMN_SLIDE;
 use super::super::ssh_reconnect::ssh_reconnect_bar;
 use super::super::stacked_pr_render::stacked_pr_overlay;
 use super::super::status_bar::status_bar;
@@ -24,7 +24,12 @@ use super::layout::{file_column_wrapper, resize_handle};
 use super::overlays::{error_overlay, pr_import_overlay, text_modal_overlay, toast_overlay};
 use super::repo_init::{repo_init_error_pane, repo_loading_pane};
 use crate::app::theme::Theme;
-use crate::repo::toolbar::{ToolbarActivity, ToolbarRepo};
+use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
+use crate::repo::toolbar::{
+    LEADING_TOGGLE_ROOM, TITLE_INSET, TOOLBAR_TRAILING_INSET, TRAILING_TOGGLE_ROOM,
+    ToolbarActivity, ToolbarRepo, operation_log_strip, operation_log_toggle, sidebar_strip,
+    sidebar_toggle_button,
+};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::render_app_menu;
 use crate::ui::context_menu::render_context_menu;
@@ -55,7 +60,7 @@ impl Render for RepoWindow {
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
         self.sync_review_notes(cx);
         let t = crate::app::theme::theme_for_window(window, cx).clone();
-        let (_, file_column_width) = self.layout.fitted(f32::from(window.viewport_size().width));
+        let (_, file_column_width) = self.layout.fitted(self.layout.viewport_width);
         let (toolbar_repo, bookmarks, workspaces, is_refreshing, refresh_mode) = {
             let vm = self.vm.read(cx);
             let bookmarks = vm.graph.bookmarks.clone();
@@ -76,8 +81,12 @@ impl Render for RepoWindow {
                 vm.refresh_mode(),
             )
         };
-        let is_fetching = self.sync_activity.is_fetching();
-        let is_pushing = self.sync_activity.is_pushing();
+        let activity = ToolbarActivity {
+            is_refreshing,
+            refresh: refresh_mode,
+            is_fetching: self.sync_activity.is_fetching(),
+            is_pushing: self.sync_activity.is_pushing(),
+        };
         let init_error = {
             let vm = self.vm.read(cx);
             if vm.repo.is_none() {
@@ -203,45 +212,52 @@ impl Render for RepoWindow {
             return root.into_any_element();
         }
 
-        let mut row = div().flex().flex_row().flex_1().min_h_0();
+        let viewport_width = self.layout.viewport_width;
+        let sidebar_full = self.layout.sidebar_pane_width(viewport_width) + RESIZE_HANDLE_WIDTH;
+        let sidebar_slide = self.column_slide(
+            "sidebar",
+            self.layout.sidebar_slide,
+            !self.layout.sidebar_hidden,
+            cx,
+        );
+        let operation_log_width = self.layout.operation_log_pane_width(viewport_width);
+        let operation_log_full =
+            operation_log_width.map_or(0., |width| width + RESIZE_HANDLE_WIDTH);
+        let operation_log_slide = self.column_slide(
+            "operation-log",
+            self.layout.operation_log_slide,
+            self.layout.operation_log_visible(),
+            cx,
+        );
+
+        let mut body = div().relative().flex().flex_row().flex_1().min_h_0();
         if !self.layout.sidebar_hidden || self.layout.sidebar_closing {
-            let closing = self.layout.sidebar_closing;
-            let pane_width = self
-                .layout
-                .sidebar_pane_width(f32::from(window.viewport_size().width));
-            let full = pane_width + RESIZE_HANDLE_WIDTH;
-            let pane = div()
+            let pane_width = sidebar_full - RESIZE_HANDLE_WIDTH;
+            let column = div()
                 .flex()
                 .flex_row()
                 .flex_none()
                 .overflow_hidden()
                 .h_full()
-                .w(px(full))
-                .child(sidebar(self, &t, pane_width, cx))
+                .child(under_strip(
+                    sidebar_strip(activity, self.focused_control, cx),
+                    sidebar(self, &t, pane_width, cx),
+                    pane_width,
+                ))
                 .child(resize_handle(DragTarget::Sidebar, &t, cx));
-            row = row.child(if self.layout.sidebar_slide == 0 {
-                pane.into_any_element()
-            } else {
-                pane.with_animation(
-                    ("sidebar-slide", self.layout.sidebar_slide),
-                    Animation::new(SIDEBAR_SLIDE).with_easing(ease_in_out),
-                    move |pane, delta| {
-                        let shown = if closing { 1. - delta } else { delta };
-                        pane.w(px(full * shown))
-                    },
-                )
-                .into_any_element()
-            });
+            body = body.child(sidebar_slide.width(column, move |shown| sidebar_full * shown));
         }
-        let mut content = if self.diff_edit_active() {
-            row.child(diff_edit_view(self, &t, cx))
+
+        let mut content = div().flex().flex_row().flex_1().min_h_0();
+        content = if self.diff_edit_active() {
+            content.child(diff_edit_view(self, &t, cx))
         } else {
             if self.shows_file_column(cx) {
-                row = row
+                content = content
                     .child(file_column_wrapper(self, file_column_width, cx))
                     .child(resize_handle(DragTarget::FileColumn, &t, cx));
             }
-            row.child(
+            content.child(
                 div()
                     .id("diff-pane-focus")
                     .debug_selector(|| "diff-pane-focus".to_owned())
@@ -252,34 +268,57 @@ impl Render for RepoWindow {
                     .child(detail_pane(self, &t, window, cx)),
             )
         };
-        if let Some(width) = self
-            .layout
-            .operation_log_pane_width(f32::from(window.viewport_size().width))
-        {
-            content = content
-                .child(resize_handle(DragTarget::OperationLog, &t, cx))
-                .child(operation_log_pane(self, width, &t, cx));
-        }
-        let mut body = div().relative().flex().flex_col().flex_1().min_h_0().child(
+        let leading = sidebar_slide.width(div(), move |shown| {
+            (LEADING_TOGGLE_ROOM - sidebar_full * shown).max(TITLE_INSET)
+        });
+        let trailing = operation_log_slide.width(div(), move |shown| {
+            (TRAILING_TOGGLE_ROOM - operation_log_full * shown).max(TOOLBAR_TRAILING_INSET)
+        });
+        let mut centre = div().flex().flex_col().flex_1().min_w_0().h_full().child(
             crate::repo::toolbar::toolbar(
                 toolbar_repo,
                 self.repo_switcher_button_bounds.clone(),
-                &self.layout,
+                leading,
                 super::super::revset_filter::revset_bar(self, &t, cx),
-                ToolbarActivity {
-                    is_refreshing,
-                    refresh: refresh_mode,
-                    is_fetching,
-                    is_pushing,
-                },
+                trailing,
                 self.focused_control,
                 cx,
             ),
         );
         if let Some(bar) = bisect_bar(self, &t, cx) {
-            body = body.child(bar);
+            centre = centre.child(bar);
         }
-        body = body.child(content);
+        body = body.child(centre.child(content));
+
+        if let Some(width) = operation_log_width {
+            let column = div()
+                .flex()
+                .flex_row()
+                .flex_none()
+                .overflow_hidden()
+                .h_full()
+                .child(resize_handle(DragTarget::OperationLog, &t, cx))
+                .child(under_strip(
+                    operation_log_strip(cx),
+                    operation_log_pane(self, width, &t, cx),
+                    width,
+                ));
+            body = body
+                .child(operation_log_slide.width(column, move |shown| operation_log_full * shown));
+        }
+        body =
+            body.child(toolbar_corner().left(px(TOOLBAR_LEADING_INSET)).child(
+                sidebar_toggle_button(self.layout.sidebar_hidden, self.focused_control, &t, cx),
+            ))
+            .child(
+                toolbar_corner()
+                    .right(px(TOOLBAR_TRAILING_INSET))
+                    .child(operation_log_toggle(
+                        self.layout.operation_log_visible(),
+                        &t,
+                        cx,
+                    )),
+            );
         if offline {
             body = body
                 .opacity(0.6)
@@ -337,7 +376,67 @@ impl Render for RepoWindow {
     }
 }
 
+fn under_strip(strip: AnyElement, pane: AnyElement, width: f32) -> Div {
+    div()
+        .flex()
+        .flex_col()
+        .flex_none()
+        .w(px(width))
+        .h_full()
+        .child(strip)
+        .child(div().flex_1().min_h_0().child(pane))
+}
+
+/// A column toggle's slot over the top row, so it holds still while the column slides.
+fn toolbar_corner() -> Div {
+    div()
+        .absolute()
+        .top_0()
+        .h(px(TOOLBAR_HEIGHT))
+        .flex()
+        .items_center()
+}
+
+#[derive(Clone, Copy)]
+struct ColumnSlide {
+    id: (&'static str, usize),
+    shown: bool,
+    animated: bool,
+}
+
+impl ColumnSlide {
+    fn width<E: Styled + IntoElement + 'static>(
+        self,
+        element: E,
+        width_at: impl Fn(f32) -> f32 + 'static,
+    ) -> AnyElement {
+        let shown = self.shown;
+        if !self.animated {
+            return element
+                .w(px(width_at(if shown { 1. } else { 0. })))
+                .into_any_element();
+        }
+        element
+            .with_animation(
+                self.id,
+                Animation::new(COLUMN_SLIDE).with_easing(ease_in_out),
+                move |element, delta| {
+                    element.w(px(width_at(if shown { delta } else { 1. - delta })))
+                },
+            )
+            .into_any_element()
+    }
+}
+
 impl RepoWindow {
+    fn column_slide(&self, id: &'static str, slide: usize, shown: bool, cx: &App) -> ColumnSlide {
+        ColumnSlide {
+            id: (id, slide),
+            shown,
+            animated: slide != 0 && !cx.reduce_motion(),
+        }
+    }
+
     fn modal_overlay(
         &mut self,
         t: &Theme,

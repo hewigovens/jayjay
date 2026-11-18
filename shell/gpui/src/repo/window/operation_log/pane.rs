@@ -93,7 +93,18 @@ impl RepoWindow {
             return;
         }
         self.layout.operation_log_shown = shown;
+        self.layout.operation_log_slide += 1;
+        self.layout.operation_log_closing = !shown;
         if !shown {
+            self.finish_closing_slide(
+                |layout| {
+                    (
+                        layout.operation_log_slide,
+                        &mut layout.operation_log_closing,
+                    )
+                },
+                cx,
+            );
             self.operation_log.undoing = None;
             self.operation_log.select_restore_target();
         }

@@ -99,7 +99,7 @@ impl SyncAction {
     }
 }
 
-fn sidebar_toggle_button(
+pub(crate) fn sidebar_toggle_button(
     sidebar_hidden: bool,
     focused: Option<FocusStop>,
     t: &Theme,
@@ -111,13 +111,15 @@ fn sidebar_toggle_button(
         jayjay_i18n::menu::hide_sidebar()
     };
     let tooltip = KeyCaps::tooltip(title, &ToggleSidebar, cx);
-    focus_ring(
-        group_item("tb-sidebar-toggle", tooltip, GroupEdge::Leading, t).child(
-            svg()
-                .path(icons::SIDEBAR_LEADING_SVG)
-                .size(px(TOOLBAR_ICON_SIZE))
-                .text_color(rgb(t.fg_dim)),
-        ),
+    let toggle = focus_ring(
+        group_item("tb-sidebar-toggle", tooltip, GroupEdge::Leading, t)
+            .rounded_full()
+            .child(
+                svg()
+                    .path(icons::SIDEBAR_LEADING_SVG)
+                    .size(px(TOOLBAR_ICON_SIZE))
+                    .text_color(rgb(t.fg_dim)),
+            ),
         focused == Some(FocusStop::SidebarToggle),
         t,
     )
@@ -125,11 +127,11 @@ fn sidebar_toggle_button(
     .on_click(cx.listener(|view, _ev: &ClickEvent, _w, cx| {
         view.toggle_sidebar(cx);
     }))
-    .into_any_element()
+    .into_any_element();
+    button_group::button_group(t, vec![toggle]).into_any_element()
 }
 
 pub(super) fn sync_cluster(
-    sidebar_hidden: bool,
     activity: ToolbarActivity,
     focused: Option<FocusStop>,
     t: &Theme,
@@ -138,12 +140,11 @@ pub(super) fn sync_cluster(
     button_group::button_group(
         t,
         vec![
-            sidebar_toggle_button(sidebar_hidden, focused, t, cx),
             refresh_button(
                 activity.is_refreshing,
                 activity.refresh,
                 focused,
-                GroupEdge::Inner,
+                GroupEdge::Leading,
                 t,
                 cx,
             ),
@@ -201,7 +202,7 @@ pub(super) fn tools_cluster(
     .into_any_element()
 }
 
-pub(super) fn operation_log_toggle(
+pub(crate) fn operation_log_toggle(
     shown: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,

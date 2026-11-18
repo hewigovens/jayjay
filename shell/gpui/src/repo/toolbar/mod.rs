@@ -1,8 +1,8 @@
 mod buttons;
 
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    ParentElement, SharedString, Styled, div, px, rgb,
+    AnyElement, Context, Div, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    ParentElement, SharedString, Stateful, Styled, div, px, rgb,
 };
 
 use crate::app::theme::{theme, ui_font_size};
@@ -10,10 +10,10 @@ use crate::app::{config, repositories, tools};
 use crate::platform::{TOOLBAR_HEIGHT, TOOLBAR_LEADING_INSET};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::{
-    FocusStop, LayoutState, PanelBoundsSlot, RepoWindow, picker_opener, picker_opener_bounds,
+    FocusStop, PanelBoundsSlot, RepoWindow, picker_opener, picker_opener_bounds,
 };
 use crate::ui::icons;
-use crate::ui::primitives::TOOLBAR_BUTTON_HEIGHT;
+use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH};
 use jayjay_core::ToolMark;
 
 pub(crate) struct ToolbarActivity {
@@ -35,12 +35,75 @@ pub(crate) struct ToolbarRepo {
     pub(crate) workspace: Option<SharedString>,
 }
 
+pub(crate) const TOOLBAR_TRAILING_INSET: f32 = 12.;
+const TOOLBAR_GAP: f32 = 6.;
+pub(crate) const LEADING_TOGGLE_ROOM: f32 =
+    TOOLBAR_LEADING_INSET + TOOLBAR_BUTTON_WIDTH + TOOLBAR_GAP;
+pub(crate) const TRAILING_TOGGLE_ROOM: f32 =
+    TOOLBAR_GAP + TOOLBAR_BUTTON_WIDTH + TOOLBAR_TRAILING_INSET;
+/// The repository name's text lines up with the file list's beside the sidebar.
+pub(crate) const TITLE_INSET: f32 = 4.;
+
+pub(crate) use buttons::{operation_log_toggle, sidebar_toggle_button};
+
+/// A toolbar-height strip that zooms the window on a double click, as a title bar does.
+fn strip(id: &'static str, cx: &mut Context<RepoWindow>) -> Stateful<Div> {
+    div()
+        .id(id)
+        .flex()
+        .flex_row()
+        .flex_none()
+        .items_center()
+        .h(px(TOOLBAR_HEIGHT))
+        .gap(px(TOOLBAR_GAP))
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
+                if ev.click_count == 2 {
+                    window.zoom_window();
+                }
+                // Title-bar clicks take no focus of their own, so an open revset edit would otherwise survive them.
+                let on_bar = view
+                    .revset_bar_bounds
+                    .get()
+                    .is_some_and(|bounds| bounds.contains(&ev.position));
+                if view.revset_editor.is_some() && !on_bar {
+                    view.focus_handle.focus(window, cx);
+                }
+            }),
+        )
+}
+
+/// Refresh, pull and push after the sidebar toggle's room, so they leave with the sidebar.
+pub(crate) fn sidebar_strip(
+    activity: ToolbarActivity,
+    focused: Option<FocusStop>,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    let t = theme(cx).clone();
+    strip("toolbar-sidebar-strip", cx)
+        .w_full()
+        .pl(px(LEADING_TOGGLE_ROOM))
+        .bg(rgb(t.sidebar_bg))
+        .child(buttons::sync_cluster(activity, focused, &t, cx))
+        .into_any_element()
+}
+
+pub(crate) fn operation_log_strip(cx: &mut Context<RepoWindow>) -> AnyElement {
+    let t = theme(cx).clone();
+    strip("toolbar-operation-log-strip", cx)
+        .w_full()
+        .bg(rgb(t.sidebar_bg))
+        .into_any_element()
+}
+
+/// `leading` and `trailing` keep room for the column toggles.
 pub(crate) fn toolbar(
     repo: ToolbarRepo,
     repo_switcher_bounds: PanelBoundsSlot,
-    layout: &LayoutState,
+    leading: AnyElement,
     revset_bar: AnyElement,
-    activity: ToolbarActivity,
+    trailing: AnyElement,
     focused: Option<FocusStop>,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -58,42 +121,13 @@ pub(crate) fn toolbar(
         mark: ToolMark::terminal(&config.tools.terminal),
     };
 
-    div()
-        .id(SharedString::from("toolbar"))
-        .flex()
-        .flex_row()
-        .items_center()
+    strip("toolbar", cx)
         .w_full()
-        .h(px(TOOLBAR_HEIGHT))
-        .pl(px(TOOLBAR_LEADING_INSET))
-        .pr(px(12.))
-        .gap(px(6.))
+        .min_w_0()
         .bg(rgb(t.toolbar_bg))
         .border_b_1()
         .border_color(rgb(t.border))
-        .on_mouse_down(
-            MouseButton::Left,
-            cx.listener(|view, ev: &MouseDownEvent, window, cx| {
-                if ev.click_count == 2 {
-                    window.zoom_window();
-                }
-                // Title-bar clicks take no focus of their own, so an open revset edit would otherwise survive them.
-                let on_bar = view
-                    .revset_bar_bounds
-                    .get()
-                    .is_some_and(|bounds| bounds.contains(&ev.position));
-                if view.revset_editor.is_some() && !on_bar {
-                    view.focus_handle.focus(window, cx);
-                }
-            }),
-        )
-        .child(buttons::sync_cluster(
-            layout.sidebar_hidden,
-            activity,
-            focused,
-            &t,
-            cx,
-        ))
+        .child(div().flex_none().mr(px(-TOOLBAR_GAP)).child(leading))
         .child(picker_opener(
             div()
                 .id("repo-switcher-button")
@@ -148,10 +182,6 @@ pub(crate) fn toolbar(
         .child(revset_bar)
         .child(div().flex_1())
         .child(buttons::tools_cluster(editor, terminal, focused, &t, cx))
-        .child(buttons::operation_log_toggle(
-            layout.operation_log_visible(),
-            &t,
-            cx,
-        ))
+        .child(div().flex_none().ml(px(-TOOLBAR_GAP)).child(trailing))
         .into_any_element()
 }

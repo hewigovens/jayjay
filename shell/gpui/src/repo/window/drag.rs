@@ -23,15 +23,15 @@ impl LayoutState {
         room.min(OPERATION_LOG_MAX)
     }
 
-    /// Like `sidebar_max`, the pane leaves the sidebar, file column and preview their minimums: it narrows, then hides below its own; only a drag changes the stored width.
+    /// Open or sliding closed; narrows, then hides, so the other panes keep their minimums.
     pub(crate) fn operation_log_pane_width(&self, viewport_width: f32) -> Option<f32> {
         let max = self.operation_log_max(viewport_width);
-        (self.operation_log_shown && max >= OPERATION_LOG_MIN)
+        ((self.operation_log_shown || self.operation_log_closing) && max >= OPERATION_LOG_MIN)
             .then(|| self.operation_log_width.min(max))
     }
 
     pub(crate) fn operation_log_visible(&self) -> bool {
-        self.operation_log_pane_width(self.viewport_width).is_some()
+        self.operation_log_shown && self.operation_log_pane_width(self.viewport_width).is_some()
     }
 
     fn content_width(&self, viewport_width: f32) -> f32 {

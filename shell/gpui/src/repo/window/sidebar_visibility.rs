@@ -2,9 +2,9 @@ use std::time::Duration;
 
 use gpui::Context;
 
-use super::{ActivePane, FocusStop, RepoWindow};
+use super::{ActivePane, FocusStop, LayoutState, RepoWindow};
 
-pub(crate) const SIDEBAR_SLIDE: Duration = Duration::from_millis(250);
+pub(crate) const COLUMN_SLIDE: Duration = Duration::from_millis(250);
 
 impl RepoWindow {
     pub fn toggle_sidebar(&mut self, cx: &mut Context<Self>) {
@@ -30,22 +30,10 @@ impl RepoWindow {
         self.layout.sidebar_slide += 1;
         self.layout.sidebar_closing = hidden;
         if hidden {
-            let slide = self.layout.sidebar_slide;
-            let duration = if cx.reduce_motion() {
-                Duration::ZERO
-            } else {
-                SIDEBAR_SLIDE
-            };
-            cx.spawn(async move |this, cx| {
-                cx.background_executor().timer(duration).await;
-                let _ = this.update(cx, |view, cx| {
-                    if view.layout.sidebar_slide == slide {
-                        view.layout.sidebar_closing = false;
-                        cx.notify();
-                    }
-                });
-            })
-            .detach();
+            self.finish_closing_slide(
+                |layout| (layout.sidebar_slide, &mut layout.sidebar_closing),
+                cx,
+            );
             if self.active_pane == ActivePane::Sidebar {
                 self.active_pane = ActivePane::FileColumn;
             }
@@ -54,6 +42,31 @@ impl RepoWindow {
             }
         }
         cx.notify();
+    }
+
+    /// Unmounts a closing column once its slide ends, unless a later toggle started another.
+    pub(crate) fn finish_closing_slide(
+        &mut self,
+        column: fn(&mut LayoutState) -> (usize, &mut bool),
+        cx: &mut Context<Self>,
+    ) {
+        let (slide, _) = column(&mut self.layout);
+        let duration = if cx.reduce_motion() {
+            Duration::ZERO
+        } else {
+            COLUMN_SLIDE
+        };
+        cx.spawn(async move |this, cx| {
+            cx.background_executor().timer(duration).await;
+            let _ = this.update(cx, |view, cx| {
+                let (current, closing) = column(&mut view.layout);
+                if current == slide {
+                    *closing = false;
+                    cx.notify();
+                }
+            });
+        })
+        .detach();
     }
 
     pub fn sidebar_hidden(&self) -> bool {

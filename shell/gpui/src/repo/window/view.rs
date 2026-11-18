@@ -134,6 +134,8 @@ pub(crate) struct LayoutState {
     pub(crate) sidebar_slide: usize,
     pub(crate) file_column_width: f32,
     pub(crate) operation_log_shown: bool,
+    pub(crate) operation_log_closing: bool,
+    pub(crate) operation_log_slide: usize,
     pub(crate) operation_log_width: f32,
     /// The width of the last render, which decides whether the operation log has room.
     pub(crate) viewport_width: f32,
@@ -501,6 +503,8 @@ impl RepoWindow {
                 sidebar_slide: 0,
                 file_column_width: SECONDARY_PANE_DEFAULT,
                 operation_log_shown,
+                operation_log_closing: false,
+                operation_log_slide: 0,
                 operation_log_width: OPERATION_LOG_DEFAULT,
                 viewport_width: 0.,
                 drag: None,
