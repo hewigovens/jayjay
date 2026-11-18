@@ -297,7 +297,7 @@ pub(super) const ACTIONS: &[PaletteAction] = &[
         shortcut: Some(ShortcutCommand::RepoToggleReviewMode),
         label: jayjay_i18n::palette::toggle_review_mode,
         keywords: &["review", "mode", "marks", "reviewed", "change"],
-        glyph_str: glyph::CHECK,
+        glyph_str: glyph::LIST_CHECKS,
         dispatch: |ctx, cx| with_repo_window(ctx, cx, RepoWindow::toggle_review_mode),
     },
     PaletteAction {

@@ -6,9 +6,9 @@ use gpui::{
 use crate::app::config;
 use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
-use crate::ui::icons::glyph;
+use crate::ui::icons::{glyph, icon};
 use crate::ui::input::{LineInput, line_input_content};
-use crate::ui::primitives::{CheckCircleState, check_circle, icon_button, text_tooltip};
+use crate::ui::primitives::{icon_button, text_tooltip};
 use jayjay_review::ReviewMode;
 
 pub(super) struct FileHeaderState {
@@ -127,15 +127,10 @@ pub(super) fn file_column_header(
                     .rounded_md()
                     .cursor_pointer()
                     .hover(|s| s.bg(rgb(t.row_alt_bg)))
-                    .child(check_circle(
-                        "review-mode-glyph",
-                        if on {
-                            CheckCircleState::On
-                        } else {
-                            CheckCircleState::CheckOutline
-                        },
+                    .child(icon(
+                        glyph::LIST_CHECKS,
+                        14.,
                         if on { t.selected_accent } else { t.fg_dim },
-                        t,
                     )),
                 focused == Some(FocusStop::ReviewMode),
                 t,

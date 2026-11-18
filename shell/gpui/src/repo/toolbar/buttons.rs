@@ -16,8 +16,6 @@ use crate::ui::button_group::{self, GroupEdge, group_item};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::TOOLBAR_ICON_SIZE;
 
-const SYNC_ICON_HEIGHT: f32 = TOOLBAR_ICON_SIZE * 0.8;
-const SYNC_ICON_ASPECT: f32 = 19.3 / 16.;
 const MARK_TILE: f32 = TOOLBAR_ICON_SIZE * 1.125;
 const MARK_SIZE: f32 = TOOLBAR_ICON_SIZE * 0.78;
 
@@ -82,6 +80,14 @@ impl SyncAction {
         match self {
             Self::FetchOrigin => jayjay_i18n::menu::pull(),
             Self::PushDefault => jayjay_i18n::menu::push(),
+        }
+    }
+
+    /// The upload glyph reads larger than the download one at equal size.
+    fn icon_size(self) -> f32 {
+        match self {
+            Self::FetchOrigin => TOOLBAR_ICON_SIZE * 1.07,
+            Self::PushDefault => TOOLBAR_ICON_SIZE * 1.02,
         }
     }
 
@@ -280,35 +286,21 @@ fn sync_button(
         }),
     )
     .debug_selector(move || action.id().to_owned())
-    .child(sync_icon(
-        action.icon_path(),
-        id,
-        animating,
-        action.direction(),
-        t,
-        cx,
-    ))
+    .child(sync_icon(action, animating, t, cx))
     .into_any_element()
 }
 
-fn sync_icon(
-    path: &'static str,
-    animation_id: &'static str,
-    animating: bool,
-    direction: f32,
-    t: &Theme,
-    cx: &App,
-) -> AnyElement {
+fn sync_icon(action: SyncAction, animating: bool, t: &Theme, cx: &App) -> AnyElement {
     let icon = svg()
-        .path(path)
-        .w(px(SYNC_ICON_HEIGHT * SYNC_ICON_ASPECT))
-        .h(px(SYNC_ICON_HEIGHT))
+        .path(action.icon_path())
+        .size(px(action.icon_size()))
         .text_color(rgb(t.fg_dim));
+    let direction = action.direction();
     if !animating || cx.reduce_motion() {
         return icon.into_any_element();
     }
     icon.with_animation(
-        animation_id,
+        action.id(),
         Animation::new(Duration::from_millis(900)).repeat(),
         move |icon, delta| {
             let nudge = 1.5 * (std::f32::consts::PI * (delta / 0.78).min(1.)).sin();
