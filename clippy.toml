@@ -1,1 +1,4 @@
 too-many-lines-threshold = 120
+disallowed-methods = [
+  { path = "gpui::StatefulInteractiveElement::tooltip", reason = "use HelpTag::help, which applies the app's tooltip delay" },
+]

@@ -11,7 +11,7 @@ use crate::diff::projection;
 use crate::repo::window::ref_chips::copy_feedback_button;
 use crate::repo::window::{RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 pub(super) fn file_editor_button(
     compact: bool,
@@ -27,9 +27,7 @@ pub(super) fn file_editor_button(
             false,
             t,
         )
-        .tooltip(text_tooltip(
-            jayjay_i18n::diff::edit_this_working_copy_file(),
-        ))
+        .help(jayjay_i18n::diff::edit_this_working_copy_file())
         .on_click(cx.listener(|view, _, _, cx| {
             view.enter_selected_file_editor(None, cx);
         })),
@@ -53,9 +51,7 @@ pub(super) fn edit_diff_button(
             false,
             t,
         )
-        .tooltip(text_tooltip(
-            jayjay_i18n::diff::open_dedicated_diff_edit_mode(),
-        ))
+        .help(jayjay_i18n::diff::open_dedicated_diff_edit_mode())
         .on_click(cx.listener(|view, _, _, cx| view.enter_diff_edit(cx))),
         focused,
         t,
@@ -88,7 +84,7 @@ pub(super) fn mark_reviewed_button(
             reviewed,
             t,
         )
-        .tooltip(text_tooltip(help))
+        .help(help)
         .on_click(cx.listener(|view, _, _, cx| view.toggle_reviewed_for_selected_file(cx))),
         focused,
         t,
@@ -111,10 +107,10 @@ pub(super) fn view_mode_button(
             false,
             t,
         )
-        .tooltip(text_tooltip(match mode {
+        .help(match mode {
             DiffViewMode::Unified => jayjay_i18n::diff::switch_to_side_by_side(),
             DiffViewMode::SideBySide => jayjay_i18n::diff::switch_to_unified(),
-        }))
+        })
         .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
             view.toggle_view_mode(cx);
         })),
@@ -161,11 +157,11 @@ pub(super) fn source_button(
         active,
         t,
     )
-    .tooltip(text_tooltip(if active {
+    .help(if active {
         jayjay_i18n::diff::show_notebook_diff()
     } else {
         jayjay_i18n::diff::show_source_diff()
-    }))
+    })
     .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
         view.toggle_projection_source(cx);
     }))
@@ -216,9 +212,7 @@ pub(super) fn markdown_preview_button(
 
 pub(super) fn html_external_open_button(url: String, t: &Theme) -> AnyElement {
     header_action("open-html-external", glyph::EXTERNAL_LINK, None, false, t)
-        .tooltip(text_tooltip(
-            jayjay_i18n::diff::open_working_copy_html_in_default(),
-        ))
+        .help(jayjay_i18n::diff::open_working_copy_html_in_default())
         .on_click(move |_, _, cx| crate::app::links::open_url(cx, &url))
         .into_any_element()
 }
@@ -278,7 +272,7 @@ where
         active,
         t,
     )
-    .tooltip(text_tooltip(help))
+    .help(help)
     .on_click(on_click)
     .into_any_element()
 }

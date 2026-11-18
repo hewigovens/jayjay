@@ -1,43 +1,92 @@
+use std::time::Duration;
+
 use gpui::{
-    AnyView, App, AppContext, BoxShadow, Context, IntoElement, ParentElement, Render, SharedString,
-    Styled, Window, div, hsla, px, rgb,
+    App, AppContext, BoxShadow, Context, InteractiveElement, IntoElement, ParentElement, Render,
+    SharedString, StatefulInteractiveElement, Styled, Window, div, hsla, px, rgb,
 };
 
 use crate::app::theme::{Theme, theme, ui_font_size};
+use crate::repo::window::RepoWindow;
+use crate::windows::bookmark_manager::BookmarkManagerView;
+use crate::windows::evolog::EvologView;
+use crate::windows::overview::OverviewView;
 
-pub(crate) fn text_tooltip(
-    label: impl Into<SharedString>,
-) -> impl Fn(&mut Window, &mut App) -> AnyView {
-    let label = label.into();
-    move |_, cx| {
-        cx.new(|_| TextTooltip {
-            label: label.clone(),
-        })
-        .into()
+/// About an AppKit help tag's delay; gpui's half second fires while the pointer is still travelling.
+const HELP_TAG_DELAY: Duration = Duration::from_millis(1000);
+
+pub(crate) trait HelpTag: StatefulInteractiveElement {
+    fn help(self, label: impl Into<SharedString>) -> Self {
+        self.help_tag(label.into(), true)
     }
+
+    /// For a row of an open menu, which the menu must not hide.
+    fn menu_help(self, label: impl Into<SharedString>) -> Self {
+        self.help_tag(label.into(), false)
+    }
+
+    fn help_tag(self, label: SharedString, hides_under_menu: bool) -> Self {
+        #[allow(clippy::disallowed_methods)]
+        self.tooltip(move |_, cx| {
+            cx.new(|_| TextTooltip {
+                label: label.clone(),
+                hides_under_menu,
+            })
+            .into()
+        })
+        .tooltip_show_delay(HELP_TAG_DELAY)
+    }
+}
+
+impl<E: StatefulInteractiveElement> HelpTag for E {}
+
+/// A window whose own menu covers what lies under it.
+pub(crate) trait MenuHost: Render {
+    fn menu_open(&self) -> bool;
+}
+
+fn menu_open(window: &Window, cx: &App) -> bool {
+    fn open<V: MenuHost>(window: &Window, cx: &App) -> bool {
+        window
+            .root::<V>()
+            .flatten()
+            .is_some_and(|root| root.read(cx).menu_open())
+    }
+    open::<RepoWindow>(window, cx)
+        || open::<EvologView>(window, cx)
+        || open::<BookmarkManagerView>(window, cx)
+        || open::<OverviewView>(window, cx)
 }
 
 struct TextTooltip {
     label: SharedString,
+    hides_under_menu: bool,
 }
 
 impl Render for TextTooltip {
-    fn render(&mut self, _: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+    fn render(&mut self, window: &mut Window, cx: &mut Context<Self>) -> impl IntoElement {
+        // gpui shows a pending tooltip even under a menu opened during its delay.
+        if self.hides_under_menu && menu_open(window, cx) {
+            return div();
+        }
         let theme = theme(cx);
-        div().pl(px(6.)).pt(px(8.)).child(
-            div()
-                .px(px(8.))
-                .py(px(4.))
-                .rounded_sm()
-                .bg(rgb(theme.detail_bg))
-                .border_1()
-                .border_color(rgb(theme.border))
-                .shadow(tooltip_shadow(theme))
-                .max_w(px(480.))
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(theme.fg))
-                .child(self.label.clone()),
-        )
+        div()
+            .debug_selector(|| "help-tag".to_owned())
+            .pl(px(6.))
+            .pt(px(8.))
+            .child(
+                div()
+                    .px(px(8.))
+                    .py(px(4.))
+                    .rounded_sm()
+                    .bg(rgb(theme.detail_bg))
+                    .border_1()
+                    .border_color(rgb(theme.border))
+                    .shadow(tooltip_shadow(theme))
+                    .max_w(px(480.))
+                    .text_size(ui_font_size(11.))
+                    .text_color(rgb(theme.fg))
+                    .child(self.label.clone()),
+            )
     }
 }
 

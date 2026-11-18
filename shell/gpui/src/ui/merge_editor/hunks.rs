@@ -10,7 +10,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::key_caps::KeyCaps;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::{content_row, line_bg_color};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 fn merge_hunk_action_link(
     id: impl Into<SharedString>,
@@ -41,7 +41,7 @@ fn merge_hunk_action_link(
         action = action
             .cursor_pointer()
             .hover(|style| style.bg(rgb(t.row_alt_bg)).underline())
-            .tooltip(text_tooltip(help));
+            .help(help);
     } else {
         action = action.opacity(0.45);
     }

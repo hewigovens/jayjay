@@ -13,7 +13,7 @@ use super::text::{compact_id, first_line, format_relative, id_cell};
 use crate::app::theme::{FONT_BODY, FONT_ID, FONT_TAG, Theme, ui_font_size};
 use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost, DagDragSelection};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 const DAG_ROW_GAP: f32 = 5.;
 const DAG_LINE_HEIGHT: f32 = 1.3;
@@ -241,7 +241,7 @@ fn summary_line(change: &ChangeInfo, summary: &str, row_ix: usize, t: &Theme) ->
             .font_weight(gpui::FontWeight::MEDIUM)
             .text_color(rgb(t.fg))
             .line_clamp(2)
-            .tooltip(text_tooltip(change.description.clone()))
+            .help(change.description.clone())
             .child(SharedString::from(summary.to_owned()))
             .into_any_element()
     }

@@ -10,7 +10,7 @@ use crate::app::fonts::CodeText;
 use crate::app::theme::{FONT_BODY, FONT_META, Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::overlay::{overlay_card, overlay_header, overlay_layer};
-use crate::ui::primitives::{button, icon_button, inert_icon_button, small_button, text_tooltip};
+use crate::ui::primitives::{HelpTag, button, icon_button, inert_icon_button, small_button};
 use crate::ui::text_area::TextArea;
 
 pub(crate) struct BisectSheet {
@@ -379,9 +379,7 @@ fn stop_button(enabled: bool, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyEle
     };
     button
         .debug_selector(|| "bisect-stop".to_owned())
-        .tooltip(text_tooltip(
-            jayjay_i18n::repo::stop_bisecting_and_restore_the_working(),
-        ))
+        .help(jayjay_i18n::repo::stop_bisecting_and_restore_the_working())
         .into_any_element()
 }
 

@@ -20,8 +20,7 @@ use crate::ui::icons::{self, glyph};
 use crate::ui::loading::loading_status;
 use crate::ui::pane_drag::TrackPaneDrag as _;
 use crate::ui::primitives::{
-    capsule, icon_button, no_scrollbar_gutter, placeholder, placeholder_err, small_button,
-    text_tooltip,
+    HelpTag, capsule, icon_button, no_scrollbar_gutter, placeholder, placeholder_err, small_button,
 };
 use crate::ui::resizable_pane::ResizablePane;
 use crate::ui::resize_handle::resize_handle;
@@ -440,7 +439,7 @@ fn comparison_bar(
                     t,
                 )
                 .debug_selector(|| "file-history-swap".to_owned())
-                .tooltip(text_tooltip(jayjay_i18n::repo::swap_base_and_target()))
+                .help(jayjay_i18n::repo::swap_base_and_target())
                 .on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.swap_endpoints(cx))),
             );
     }
@@ -465,7 +464,7 @@ fn comparison_bar(
         bar = bar.child(
             small_button("file-history-clear", jayjay_i18n::common::clear(), t)
                 .debug_selector(|| "file-history-clear".to_owned())
-                .tooltip(text_tooltip(jayjay_i18n::repo::clear_the_pinned_base_esc()))
+                .help(jayjay_i18n::repo::clear_the_pinned_base_esc())
                 .on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.clear_base(cx))),
         );
     }
@@ -475,9 +474,7 @@ fn comparison_bar(
 fn pin_button(view: &FileHistoryView, t: &Theme, cx: &mut Context<FileHistoryView>) -> AnyElement {
     let mut button = small_button("file-history-pin", jayjay_i18n::repo::pin_as_base(), t)
         .debug_selector(|| "file-history-pin".to_owned())
-        .tooltip(text_tooltip(
-            jayjay_i18n::repo::pin_the_selected_revision_as_the(),
-        ));
+        .help(jayjay_i18n::repo::pin_the_selected_revision_as_the());
     if view.comparison.target().is_some() {
         button = button.on_click(cx.listener(|view, _: &ClickEvent, _, cx| view.pin_selected(cx)));
     } else {
@@ -508,7 +505,7 @@ fn endpoint_label(
         .flex_row()
         .items_center()
         .gap(px(4.))
-        .tooltip(text_tooltip(help))
+        .help(help)
         .child(
             div()
                 .text_size(ui_font_size(10.))

@@ -10,7 +10,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::line_input_content;
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 const WIDTH: f32 = 495.;
 const HEIGHT: f32 = 28.;
@@ -221,7 +221,7 @@ fn bar_icon(
             .rounded_full()
             .cursor_pointer()
             .hover(|s| s.bg(rgb(t.row_alt_bg)))
-            .when_some(tooltip, |el, tooltip| el.tooltip(text_tooltip(tooltip)))
+            .when_some(tooltip, |el, tooltip| el.help(tooltip))
             .child(icons::icon(glyph_str, 12., color)),
         focused,
         t,

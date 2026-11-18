@@ -20,7 +20,9 @@ use crate::repo::window::{compact_id, format_when, id_cell};
 use crate::ui::icons::{self, glyph};
 use crate::ui::loading::loading_status;
 use crate::ui::pane_drag::TrackPaneDrag;
-use crate::ui::primitives::{checkbox_row, no_scrollbar_gutter, placeholder, placeholder_err};
+use crate::ui::primitives::{
+    MenuHost, checkbox_row, no_scrollbar_gutter, placeholder, placeholder_err,
+};
 use crate::ui::resize_handle::resize_handle;
 
 mod context_menu;
@@ -487,4 +489,10 @@ fn evolog_row(
                 )),
         )
         .into_any_element()
+}
+
+impl MenuHost for EvologView {
+    fn menu_open(&self) -> bool {
+        self.context_menu.is_some()
+    }
 }

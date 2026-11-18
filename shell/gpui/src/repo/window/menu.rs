@@ -5,11 +5,18 @@ use crate::repo::view_model::RepoViewModel;
 use crate::ui::app_menu::AppMenuState;
 use crate::ui::context_menu::{ContextAction, ContextMenuItem, ContextMenuState, MenuLevel};
 use crate::ui::icons::glyph;
+use crate::ui::primitives::MenuHost;
 use crate::windows::evolog::EvologView;
 use crate::windows::file_history::FileHistoryView;
 #[cfg(not(target_os = "macos"))]
 use gpui::SharedString;
 use gpui::{App, ClipboardItem, Context, Pixels, Point};
+
+impl MenuHost for RepoWindow {
+    fn menu_open(&self) -> bool {
+        self.context_menu.is_some()
+    }
+}
 
 impl RepoWindow {
     #[cfg(not(target_os = "macos"))]

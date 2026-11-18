@@ -20,7 +20,7 @@ use crate::repo::window::RepoWindow;
 use crate::ui::loading::loading_status;
 use crate::ui::overlay::{PromptSlots, PromptStyle, TextPrompt};
 use crate::ui::popup_menu::PopupMenu;
-use crate::ui::primitives::{placeholder, placeholder_err};
+use crate::ui::primitives::{MenuHost, placeholder, placeholder_err};
 use crate::ui::text_area::{Newline, TextArea};
 use chrome::{BookmarkStats, footer, header, stats_bar};
 use context_menu::render_context_menu as render_bookmark_context_menu;
@@ -399,5 +399,11 @@ impl Render for BookmarkManagerView {
             root = root.child(modal);
         }
         root
+    }
+}
+
+impl MenuHost for BookmarkManagerView {
+    fn menu_open(&self) -> bool {
+        self.context_menu.is_some()
     }
 }

@@ -1,6 +1,6 @@
 use gpui::{
-    AnyElement, Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    AnyElement, Div, ElementId, InteractiveElement, ParentElement, SharedString, Stateful, Styled,
+    div, px, rgb, rgba,
 };
 use jayjay_core::diff::{DiffLine, DiffSpanStyle};
 use jayjay_review::ReviewGroupState;
@@ -8,7 +8,7 @@ use jayjay_review::ReviewGroupState;
 use super::colors::line_bg_color;
 use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, with_alpha};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 pub const NOTE_DOT_WIDTH: f32 = 14.;
 pub const GUTTER_NUMBER_WIDTH: f32 = 34.;
@@ -124,7 +124,7 @@ pub fn review_stripe(
         .bg(rgb(color))
         .cursor_pointer()
         .hover(move |s| s.bg(rgba(with_alpha(color, 0xb8))))
-        .tooltip(text_tooltip(label))
+        .help(label)
 }
 
 pub fn review_stripe_spacer() -> Div {

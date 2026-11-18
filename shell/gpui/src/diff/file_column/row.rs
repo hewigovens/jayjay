@@ -9,7 +9,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{CheckCircleState, check_circle, text_tooltip};
+use crate::ui::primitives::{CheckCircleState, HelpTag, check_circle};
 
 #[derive(Clone, Copy)]
 pub(super) struct FileRowState<'a> {
@@ -89,7 +89,7 @@ where
     };
     check_circle(id, state, accent, t)
         .debug_selector(move || selector.clone())
-        .tooltip(text_tooltip(label))
+        .help(label)
         .on_click(move |ev, w, cx| {
             cx.stop_propagation();
             on_click(ev, w, cx);
@@ -224,11 +224,11 @@ fn status_indicator(
     } else {
         block.child(file_status::badge(hunk.hunk_type, 18., t))
     };
-    block.tooltip(text_tooltip(if has_conflict {
+    block.help(if has_conflict {
         jayjay_i18n::diff::conflicted()
     } else {
         file_status::label(hunk.hunk_type)
-    }))
+    })
 }
 
 pub(super) fn finish_file_row(
@@ -267,9 +267,7 @@ pub(super) fn agent_badge(path: &str, t: &Theme) -> AnyElement {
         .font_weight(gpui::FontWeight::SEMIBOLD)
         .text_color(rgb(t.fg_dim))
         .debug_selector(move || selector.clone())
-        .tooltip(text_tooltip(
-            jayjay_i18n::repo::includes_changes_marked_by_an_agent(),
-        ))
+        .help(jayjay_i18n::repo::includes_changes_marked_by_an_agent())
         .child(SharedString::from(jayjay_i18n::repo::agent()))
         .into_any_element()
 }

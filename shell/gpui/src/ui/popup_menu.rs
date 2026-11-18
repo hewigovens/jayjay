@@ -50,6 +50,7 @@ pub(crate) fn render_popup_menu<A: Clone + 'static>(
         .top_0()
         .left_0()
         .size_full()
+        .occlude()
         .on_mouse_down(MouseButton::Left, {
             let on_dismiss = on_dismiss.clone();
             move |_: &MouseDownEvent, window, cx| {

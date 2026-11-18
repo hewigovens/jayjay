@@ -8,7 +8,7 @@ use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::{glyph, icon};
 use crate::ui::input::{LineInput, line_input_content};
-use crate::ui::primitives::{icon_button, text_tooltip};
+use crate::ui::primitives::{HelpTag, icon_button};
 use jayjay_review::ReviewMode;
 
 pub(super) struct FileHeaderState {
@@ -94,7 +94,7 @@ pub(super) fn file_column_header(
         )
         .debug_selector(|| "toggle-file-tree".to_owned())
         .bg(rgb(bg))
-        .tooltip(text_tooltip(tree_help))
+        .help(tree_help)
         .on_click(|_, _, cx| config::update(cx, |c| c.diff.tree_file_list ^= true)),
     );
 
@@ -107,7 +107,7 @@ pub(super) fn file_column_header(
         )
         .debug_selector(|| "toggle-file-filter".to_owned())
         .bg(rgb(bg))
-        .tooltip(text_tooltip(jayjay_i18n::repo::filter_files()))
+        .help(jayjay_i18n::repo::filter_files())
         .on_click(cx.listener(|view, _event: &ClickEvent, window, cx| {
             view.toggle_file_filter(window, cx);
         })),
@@ -136,11 +136,11 @@ pub(super) fn file_column_header(
                 t,
             )
             .debug_selector(move || format!("toggle-review-mode-{}", if on { "on" } else { "off" }))
-            .tooltip(text_tooltip(if on {
+            .help(if on {
                 jayjay_i18n::repo::turn_off_review_mode()
             } else {
                 jayjay_i18n::repo::turn_on_review_mode()
-            }))
+            })
             .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                 view.toggle_review_mode(cx);
             })),
@@ -169,11 +169,11 @@ pub(super) fn file_column_header(
                 .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                     view.toggle_notes_only_files(cx);
                 }))
-                .tooltip(text_tooltip(if notes_only {
+                .help(if notes_only {
                     jayjay_i18n::repo::showing_only_files_with_review_notes()
                 } else {
                     jayjay_i18n::repo::show_only_files_with_review_notes()
-                }))
+                })
                 .child(SharedString::from(format!("\u{25cf} {active_note_count}"))),
         );
     }
@@ -190,9 +190,7 @@ pub(super) fn file_column_header(
                 t,
             )
             .debug_selector(|| "file-split-reviewed".to_owned())
-            .tooltip(text_tooltip(jayjay_i18n::repo::split_checked_files(
-                reviewed,
-            )))
+            .help(jayjay_i18n::repo::split_checked_files(reviewed))
             .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                 view.open_reviewed_files_split_modal(cx);
             })),
@@ -218,11 +216,11 @@ pub(super) fn file_column_header(
             )
             .debug_selector(|| "file-hide-reviewed".to_owned())
             .bg(rgb(bg))
-            .tooltip(text_tooltip(if hide_reviewed {
+            .help(if hide_reviewed {
                 jayjay_i18n::repo::showing_only_unreviewed_files()
             } else {
                 jayjay_i18n::settings::hide_reviewed()
-            }))
+            })
             .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
                 view.toggle_hide_reviewed_files(cx);
             })),
@@ -238,11 +236,11 @@ pub(super) fn file_column_header(
     let count_label = if shows_progress {
         count_label
             .debug_selector(|| "file-reviewed-count".to_owned())
-            .tooltip(text_tooltip(if agent_marked > 0 {
+            .help(if agent_marked > 0 {
                 jayjay_i18n::diff::files_reviewed_with_agent(reviewed, count, agent_marked)
             } else {
                 jayjay_i18n::repo::files_reviewed_progress(reviewed, count)
-            }))
+            })
     } else {
         count_label
     };
@@ -325,7 +323,7 @@ pub(super) fn file_filter_bar(
                 t,
             )
             .debug_selector(|| "file-filter-close".to_owned())
-            .tooltip(text_tooltip(jayjay_i18n::diff::close_file_filter()))
+            .help(jayjay_i18n::diff::close_file_filter())
             .on_click(cx.listener(|view, _: &ClickEvent, window, cx| {
                 view.dismiss_file_filter(window, cx);
             })),

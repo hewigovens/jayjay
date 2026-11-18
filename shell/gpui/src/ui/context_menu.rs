@@ -19,7 +19,7 @@ use crate::repo::window::{
     RepoWindow,
 };
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 const MENU_MIN_WIDTH: f32 = 140.;
 const MENU_MAX_WIDTH: f32 = 420.;
@@ -222,6 +222,7 @@ pub(crate) fn render_context_menu(
         .top_0()
         .left_0()
         .size_full()
+        .occlude()
         .on_mouse_down(MouseButton::Left, {
             let v = backdrop_view.clone();
             move |_: &MouseDownEvent, _, cx| {
@@ -420,9 +421,7 @@ fn menu_row(
         row.opacity(0.45)
     };
     let mut row = row
-        .when_some(item.tooltip.clone(), |row, tooltip| {
-            row.tooltip(text_tooltip(tooltip))
-        })
+        .when_some(item.tooltip.clone(), |row, tooltip| row.menu_help(tooltip))
         .child(icons::icon(item.glyph, MENU_ICON_SIZE, t.fg_dim))
         .child(
             div()

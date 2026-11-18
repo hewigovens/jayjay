@@ -12,7 +12,7 @@ use crate::repo::view_model::RefreshMode;
 use crate::repo::window::dag_drag::{DagDrag, DagDragGhost};
 use crate::repo::window::ref_chips;
 use crate::ui::icons::{glyph, icon};
-use crate::ui::primitives::{capsule, text_tooltip};
+use crate::ui::primitives::{HelpTag, capsule};
 
 const CHIP_GAP: f32 = 5.;
 const CHAR_WIDTH_FACTOR: f32 = 0.6;
@@ -167,7 +167,7 @@ pub(super) fn tags_row(
         row = row.child(
             capsule(format!("+{hidden}"), t.row_alt_bg, t.fg, FONT_TAG)
                 .id(("overflow", row_ix))
-                .tooltip(text_tooltip(names)),
+                .help(names),
         );
     }
     row
@@ -277,9 +277,7 @@ fn working_copy_chip(row_ix: usize, stale: bool, t: &Theme) -> impl IntoElement 
         )
         .id(("stale", row_ix))
         .debug_selector(|| "dag-stale-working-copy".to_owned())
-        .tooltip(text_tooltip(
-            jayjay_i18n::repo::working_copy_is_stale_another_workspace(),
-        )),
+        .help(jayjay_i18n::repo::working_copy_is_stale_another_workspace()),
     )
 }
 

@@ -1,11 +1,10 @@
 use gpui::{
-    AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    AnyElement, InteractiveElement, IntoElement, ParentElement, SharedString, Styled, div, px, rgb,
 };
 use jayjay_core::diff::{DiffSpan, DiffSpanStyle, TAB_SPACES};
 
 use crate::app::theme::Theme;
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 /// Render one DiffSpan, optionally splitting on a case-insensitive `query`
 /// match so we can highlight find results inline.
@@ -65,7 +64,7 @@ pub fn span_element(
                 "file-size-{line_style:?}-{tooltip}-{}",
                 span.text
             )))
-            .tooltip(text_tooltip(tooltip.clone()))
+            .help(tooltip.clone())
             .child(element)
             .into_any_element()
     } else {

@@ -1,10 +1,11 @@
 use gpui::{
     AnyElement, App, CursorStyle, DispatchPhase, InteractiveElement, IntoElement, MouseButton,
     MouseDownEvent, MouseMoveEvent, MouseUpEvent, ParentElement, Pixels, Point, SharedString,
-    StatefulInteractiveElement, Styled, Window, canvas, div, px, rgb,
+    Styled, Window, canvas, div, px, rgb,
 };
 
 use crate::app::theme::Theme;
+use crate::ui::primitives::HelpTag;
 
 pub(super) struct ImageDiffSplit {
     fraction: f32,
@@ -63,9 +64,7 @@ impl ImageDiffSplit {
                     .flex()
                     .justify_center()
                     .cursor(CursorStyle::ResizeLeftRight)
-                    .tooltip(crate::ui::primitives::text_tooltip(
-                        jayjay_i18n::diff::drag_to_resize_images_double_click(),
-                    ))
+                    .help(jayjay_i18n::diff::drag_to_resize_images_double_click())
                     .debug_selector(|| "image-comparison-divider".to_owned())
                     .on_mouse_down(MouseButton::Left, move |event: &MouseDownEvent, _, cx| {
                         down_state.update(cx, |state, _| {

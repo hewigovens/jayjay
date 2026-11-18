@@ -17,7 +17,7 @@ use crate::repo::view_model::RepoViewModel;
 use crate::repo::window::RepoWindow;
 use crate::ui::loading::loading_status;
 use crate::ui::popup_menu::{PopupMenu, render_popup_menu};
-use crate::ui::primitives::{placeholder, placeholder_err};
+use crate::ui::primitives::{MenuHost, placeholder, placeholder_err};
 use crate::ui::text_area::Newline;
 
 mod actions;
@@ -305,5 +305,11 @@ impl Render for OverviewView {
             .child(body)
             .children(menu)
             .children(confirmation)
+    }
+}
+
+impl MenuHost for OverviewView {
+    fn menu_open(&self) -> bool {
+        self.menu.is_some()
     }
 }

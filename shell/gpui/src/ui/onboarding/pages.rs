@@ -11,7 +11,7 @@ use crate::app::theme::{Theme, ui_font_size};
 use crate::platform::JJ_PACKAGE_MANAGER;
 use crate::ui::icons::{self, glyph};
 use crate::ui::logo::Logo;
-use crate::ui::primitives::{button, checkbox_glyph, text_tooltip};
+use crate::ui::primitives::{HelpTag, button, checkbox_glyph};
 use crate::windows::identity_dialog::IdentityDialog;
 
 pub(super) fn onboarding_pane(
@@ -280,7 +280,7 @@ fn stats_toggle(t: &Theme, cx: &mut Context<OnboardingView>) -> impl IntoElement
                 .child(checkbox_glyph(enabled, t)),
         )
         .child(jayjay_i18n::telemetry::opt_in())
-        .tooltip(text_tooltip(jayjay_i18n::telemetry::opt_in_detail()))
+        .help(jayjay_i18n::telemetry::opt_in_detail())
         .on_click(cx.listener(move |_, _, _, cx| {
             config::update(cx, |cfg| cfg.telemetry.enabled = !enabled);
             cx.notify();

@@ -10,7 +10,7 @@ use crate::repo::window::commit_ai::generate_button;
 use crate::repo::window::note_composer::NoteContextLine;
 use crate::repo::window::{RepoWindow, TextModalAction};
 use crate::ui::overlay::{PromptSlots, PromptStyle};
-use crate::ui::primitives::{button, checkbox_row, text_tooltip};
+use crate::ui::primitives::{HelpTag, button, checkbox_row};
 
 pub(crate) fn text_modal_overlay(
     view: &RepoWindow,
@@ -78,9 +78,7 @@ fn working_copy_actions(
 ) -> Vec<AnyElement> {
     let commit = button("text-modal-commit", jayjay_i18n::repo::commit(), t, false)
         .debug_selector(|| "text-modal-commit".to_owned())
-        .tooltip(text_tooltip(
-            jayjay_i18n::repo::describe_start_new_change_jj_commit(),
-        ));
+        .help(jayjay_i18n::repo::describe_start_new_change_jj_commit());
     let commit = if committing {
         commit.opacity(0.45)
     } else {

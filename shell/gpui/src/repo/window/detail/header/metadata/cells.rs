@@ -1,7 +1,7 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, Context, Div, ElementId, InteractiveElement, IntoElement, ParentElement,
-    SharedString, StatefulInteractiveElement, Styled, div, px, rgb,
+    SharedString, Styled, div, px, rgb,
 };
 use jayjay_core::{ChangeInfo, CommitAuthor, DiffStats};
 
@@ -9,14 +9,14 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_ID, Theme, ui_font_size};
 use crate::repo::RepoWindow;
 use crate::repo::window::ref_chips::{self, copy_feedback_button};
+use crate::ui::primitives::HelpTag;
 use crate::ui::primitives::dot_separator;
-use crate::ui::primitives::text_tooltip;
 
 pub(super) fn person(person: &CommitAuthor, id: impl Into<ElementId>, t: &Theme) -> AnyElement {
     crate::ui::avatar::with_name(person, FONT_ID, t.fg)
         .id(id)
         .flex_none()
-        .tooltip(text_tooltip(identity(person)))
+        .help(identity(person))
         .child(
             div()
                 .min_w_0()
@@ -77,13 +77,13 @@ pub(super) fn byline_authors(change: &ChangeInfo, t: &Theme) -> AnyElement {
                 .text_color(rgb(t.fg))
                 .child(SharedString::from(change.credit_line())),
         )
-        .tooltip(text_tooltip(
+        .help(
             people
                 .into_iter()
                 .map(identity)
                 .collect::<Vec<_>>()
                 .join("\n"),
-        ))
+        )
         .into_any_element()
 }
 

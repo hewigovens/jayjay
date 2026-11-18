@@ -13,7 +13,7 @@ use crate::diff::file_row_height;
 use crate::repo::window::dag_row::{first_line, text_line_height};
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph, icon};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 const COLLAPSED_HEIGHT: f32 = 80.;
 const BODY_FONT: f32 = 12.;
@@ -92,11 +92,11 @@ pub(super) fn description_block(
             .size(px(18.))
             .text_color(rgb(t.fg_dim)),
     )
-    .tooltip(text_tooltip(if expanded {
+    .help(if expanded {
         jayjay_i18n::repo::collapse_description()
     } else {
         jayjay_i18n::repo::expand_description()
-    }))
+    })
     .on_click(cx.listener(|view, _, _, cx| {
         view.description.expanded = !view.description.expanded;
         cx.notify();
@@ -182,11 +182,11 @@ fn edit_button(
         })
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)))
-        .tooltip(text_tooltip(if is_empty {
+        .help(if is_empty {
             jayjay_i18n::repo::add_description()
         } else {
             jayjay_i18n::repo::edit_description_sentence()
-        }))
+        })
         .on_click(cx.listener(|view, _, _, cx| view.edit_selected_description(cx)))
         .into_any_element(),
     )

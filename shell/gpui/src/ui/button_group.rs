@@ -4,7 +4,7 @@ use gpui::{
 };
 
 use crate::app::theme::Theme;
-use crate::ui::primitives::{TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH, text_tooltip};
+use crate::ui::primitives::{HelpTag, TOOLBAR_BUTTON_HEIGHT, TOOLBAR_BUTTON_WIDTH};
 
 /// Leading/trailing get the capsule's fully rounded outer caps; inner segments stay flat-sided.
 #[derive(Clone, Copy, PartialEq, Eq)]
@@ -33,7 +33,7 @@ pub(crate) fn group_item(
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
         .active(|s| s.bg(rgb(theme.selected_bg)))
-        .tooltip(text_tooltip(tooltip));
+        .help(tooltip);
     match edge {
         GroupEdge::Leading => el.rounded_l_full(),
         GroupEdge::Trailing => el.rounded_r_full(),

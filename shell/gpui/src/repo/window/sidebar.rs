@@ -16,7 +16,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{FONT_META, HEADER_HEIGHT, Theme, ui_font_size};
 use crate::ui::context_menu::ContextMenuItem;
 use crate::ui::icons::{glyph, icon};
-use crate::ui::primitives::{button, icon_button, icon_label, no_scrollbar_gutter, text_tooltip};
+use crate::ui::primitives::{HelpTag, button, icon_button, icon_label, no_scrollbar_gutter};
 
 pub(super) fn sidebar(
     view: &RepoWindow,
@@ -323,7 +323,7 @@ fn count_badge(
         .role(Role::Button)
         .aria_label(label.clone())
         .cursor_pointer()
-        .tooltip(text_tooltip(label))
+        .help(label)
         .on_click(cx.listener(move |view, _: &ClickEvent, _, cx| view.apply_revset(revset, cx)))
         .child(icon(glyph_str, 11., color))
         .child(count.to_string())
@@ -380,7 +380,7 @@ fn push_follow_up_banner(
             .child(
                 icon_button("pending-push-dismiss", glyph::X, 12., 24., 24., t.fg_dim, t)
                     .debug_selector(|| "pending-push-dismiss".to_owned())
-                    .tooltip(text_tooltip(jayjay_i18n::repo::dismiss()))
+                    .help(jayjay_i18n::repo::dismiss())
                     .on_click(cx.listener(|view, _: &ClickEvent, _window, cx| {
                         view.dismiss_pending_push(cx);
                     })),
@@ -451,7 +451,7 @@ fn commit_box_button(
     let tooltip = tooltip.into();
     button(id, label, t, primary)
         .debug_selector(move || id.to_owned())
-        .tooltip(text_tooltip(tooltip))
+        .help(tooltip)
         .on_click(cx.listener(move |view, _: &ClickEvent, _w, cx| handler(view, cx)))
 }
 

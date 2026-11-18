@@ -11,7 +11,7 @@ use super::RepoWindow;
 use super::model::working_copy_stat_label;
 use crate::app::theme::{FONT_META, Theme, ui_font_size};
 use crate::ui::icons::{glyph, icon};
-use crate::ui::primitives::{dot_separator, text_tooltip};
+use crate::ui::primitives::{HelpTag, dot_separator};
 
 struct StatusItemSpec {
     id: &'static str,
@@ -209,7 +209,7 @@ fn status_item_base(spec: StatusItemSpec, t: &Theme) -> Stateful<Div> {
         item = item.flex_none();
     }
     if let Some(tooltip) = spec.tooltip {
-        item = item.tooltip(text_tooltip(tooltip));
+        item = item.help(tooltip);
     }
     if let Some(glyph_str) = spec.glyph {
         item = item.child(icon(glyph_str, 10., t.fg_dim));

@@ -1,13 +1,13 @@
 use gpui::{
     Anchor, AnyElement, ClipboardItem, Entity, InteractiveElement, IntoElement, MouseButton,
-    MouseDownEvent, ParentElement, Pixels, Point, SharedString, StatefulInteractiveElement, Styled,
-    anchored, deferred, div, px, rgb,
+    MouseDownEvent, ParentElement, Pixels, Point, SharedString, Styled, anchored, deferred, div,
+    px, rgb,
 };
 
 use super::EvologView;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::ui::icons::glyph;
-use crate::ui::primitives::{icon_label, text_tooltip};
+use crate::ui::primitives::{HelpTag, icon_label};
 
 pub(super) struct EvologContextMenuState {
     pub anchor: Point<Pixels>,
@@ -24,6 +24,7 @@ pub(super) fn render_context_menu(
     let backdrop_view = view.clone();
     let backdrop = div()
         .id("evolog-menu-backdrop")
+        .occlude()
         .absolute()
         .top_0()
         .left_0()
@@ -153,7 +154,7 @@ fn menu_row(
             theme.fg_dim,
         ));
     let row = match &item.tooltip {
-        Some(help) => row.tooltip(text_tooltip(help.clone())),
+        Some(help) => row.menu_help(help.clone()),
         None => row,
     };
     if item.enabled {

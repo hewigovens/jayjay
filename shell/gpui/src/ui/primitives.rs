@@ -15,4 +15,4 @@ pub(crate) use chips::{capsule, icon_chip, icon_label, key_cap};
 pub(crate) use layout::{
     divider_h, dot_separator, no_scrollbar_gutter, placeholder, placeholder_err,
 };
-pub(crate) use tooltip::text_tooltip;
+pub(crate) use tooltip::{HelpTag, MenuHost};

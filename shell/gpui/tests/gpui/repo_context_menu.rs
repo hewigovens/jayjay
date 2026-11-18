@@ -213,6 +213,58 @@ fn set_tree_file_list(cx: &mut VisualTestContext, tree: bool) {
 }
 
 #[gpui::test]
+fn an_open_context_menu_hides_tooltips_and_holds_new_ones_back(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (_view, cx) = open_fixture(&fixture, cx);
+    let hover = |cx: &mut VisualTestContext, at| {
+        cx.simulate_mouse_move(at, None, Modifiers::default());
+        cx.executor()
+            .advance_clock(std::time::Duration::from_secs(2));
+        settle_visual(cx);
+    };
+    let summary = cx
+        .debug_bounds("dag-summary-1")
+        .expect("row summary")
+        .center();
+    hover(cx, summary);
+    assert!(
+        cx.debug_bounds("help-tag").is_some(),
+        "the summary shows its description"
+    );
+
+    cx.simulate_mouse_down(summary, MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    assert!(menu_shows(cx, NEW_CHANGE));
+    assert!(cx.debug_bounds("help-tag").is_none());
+
+    let refresh = cx
+        .debug_bounds("toolbar-refresh")
+        .expect("refresh")
+        .center();
+    hover(cx, refresh);
+    assert!(menu_shows(cx, NEW_CHANGE));
+    assert!(cx.debug_bounds("help-tag").is_none());
+}
+
+#[gpui::test]
+fn a_tooltip_pending_when_a_menu_opens_stays_hidden(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (_view, cx) = open_fixture(&fixture, cx);
+    let summary = cx
+        .debug_bounds("dag-summary-1")
+        .expect("row summary")
+        .center();
+    cx.simulate_mouse_move(summary, None, Modifiers::default());
+    cx.simulate_mouse_down(summary, MouseButton::Right, Modifiers::default());
+    cx.executor()
+        .advance_clock(std::time::Duration::from_secs(2));
+    settle_visual(cx);
+
+    assert!(menu_shows(cx, NEW_CHANGE));
+    assert!(cx.debug_bounds("help-tag").is_none());
+}
+
+#[gpui::test]
 fn the_change_menu_widens_with_the_interface_zoom(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (_view, cx) = open_focused(&fixture, cx);
@@ -231,4 +283,38 @@ fn the_change_menu_widens_with_the_interface_zoom(cx: &mut TestAppContext) {
         zoomed >= width * zoomed_size / size * 0.8,
         "the labels grow with the zoom but {width} at {size}pt grew only to {zoomed} at {zoomed_size}pt"
     );
+}
+
+#[gpui::test]
+fn a_disabled_menu_row_shows_its_reason(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    run_jj_in(
+        &fixture.path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "fix.tools.broken.patterns",
+            "[\"glob:*\"]",
+        ],
+    );
+    let (_view, cx) = open_fixture(&fixture, cx);
+    let summary = cx
+        .debug_bounds("dag-summary-1")
+        .expect("row summary")
+        .center();
+    cx.simulate_mouse_down(summary, MouseButton::Right, Modifiers::default());
+    settle_visual(cx);
+    let fix = cx
+        .debug_bounds(selector(format!(
+            "context-menu-{}",
+            jayjay_core::dag::ChangeCommand::Fix.title()
+        )))
+        .expect("Fix row")
+        .center();
+    cx.simulate_mouse_move(fix, None, Modifiers::default());
+    cx.executor()
+        .advance_clock(std::time::Duration::from_secs(2));
+    settle_visual(cx);
+    assert!(cx.debug_bounds("help-tag").is_some());
 }

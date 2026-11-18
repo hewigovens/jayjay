@@ -9,7 +9,7 @@ use jayjay_core::{AiProvider, DiffExcerpt, Repo, commit_message};
 use super::{RepoModal, RepoWindow};
 use crate::app::theme::Theme;
 use crate::ui::icons::glyph;
-use crate::ui::primitives::{icon_button, inert_icon_button, text_tooltip};
+use crate::ui::primitives::{HelpTag, icon_button, inert_icon_button};
 use crate::ui::text_area::TextArea;
 
 type MessageInputs = (Entity<TextArea>, Entity<TextArea>);
@@ -269,6 +269,6 @@ pub(crate) fn generate_button(
         .opacity(0.5)
     };
     base.debug_selector(|| "commit-ai-generate".to_owned())
-        .tooltip(text_tooltip(tooltip))
+        .help(tooltip)
         .into_any_element()
 }

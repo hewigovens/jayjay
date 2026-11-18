@@ -13,7 +13,7 @@ use crate::app::theme::Theme;
 use crate::platform::TOOLBAR_LEADING_INSET;
 use crate::ui::icons;
 use crate::ui::pane_drag::TrackPaneDrag;
-use crate::ui::primitives::{TOOLBAR_ICON_SIZE, divider_h, svg_icon_button, text_tooltip};
+use crate::ui::primitives::{HelpTag, TOOLBAR_ICON_SIZE, divider_h, svg_icon_button};
 use crate::ui::resize_handle::resize_handle;
 use crate::ui::title_bar;
 
@@ -170,11 +170,11 @@ fn panel_toggle(panel_shown: bool, t: &Theme) -> Stateful<Div> {
     .absolute()
     .top(px(8.))
     .left(px(TOOLBAR_LEADING_INSET))
-    .tooltip(text_tooltip(if panel_shown {
+    .help(if panel_shown {
         jayjay_i18n::onboarding::hide_recent_repositories()
     } else {
         jayjay_i18n::onboarding::show_recent_repositories()
-    }))
+    })
     .on_click(|_, _, cx| {
         config::update(cx, |cfg| {
             cfg.layout.recent_repos_panel = !cfg.layout.recent_repos_panel;

@@ -1,6 +1,6 @@
 use gpui::{
     AnyElement, Context, FontWeight, HighlightStyle, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, StyledText, div, px, rgb,
+    ParentElement, SharedString, Styled, StyledText, div, px, rgb,
 };
 use jayjay_core::SetiGlyph;
 use unicode_width::UnicodeWidthStr;
@@ -13,7 +13,7 @@ use crate::diff::file_column::head_elide;
 use crate::diff::projection;
 use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::text_tooltip;
+use crate::ui::primitives::HelpTag;
 
 pub(super) const PATH_FONT_SIZE: f32 = 13.;
 const PATH_LINE_HEIGHT: f32 = 16.;
@@ -56,7 +56,7 @@ pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl I
         .line_height(px(t.scaled_font_size(PATH_LINE_HEIGHT)))
         .font_weight(FontWeight::MEDIUM)
         .text_color(rgb(t.fg))
-        .tooltip(text_tooltip(path.to_owned()));
+        .help(path.to_owned());
     if dir_len > 0 {
         text.child(StyledText::new(display).with_highlights([(
             0..dir_len,
@@ -88,7 +88,7 @@ pub(super) fn source_path_label(
         .truncate()
         .code_text(11., t)
         .text_color(rgb(t.fg_dim))
-        .tooltip(text_tooltip(old_path.to_owned()))
+        .help(old_path.to_owned())
         .child(SharedString::from(old_path.to_owned()));
     div()
         .flex()
