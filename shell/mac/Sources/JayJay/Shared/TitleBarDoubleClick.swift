@@ -56,10 +56,11 @@ private extension NSWindow {
     }
 
     func performTitleBarDoubleClick() {
-        switch UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick") {
-            case "Minimize": performMiniaturize(nil)
-            case "None": break
-            default: performZoom(nil)
+        let action = UserDefaults.standard.string(forKey: "AppleActionOnDoubleClick")
+        if action == "Minimize" {
+            performMiniaturize(nil)
+        } else if action != "None" {
+            performZoom(nil)
         }
     }
 }
