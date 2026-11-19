@@ -137,7 +137,7 @@ pub(crate) fn toolbar(
                 .h(px(TOOLBAR_BUTTON_HEIGHT))
                 .px(px(TITLE_PADDING))
                 .rounded_sm()
-                .text_size(ui_font_size(13.))
+                .text_size(ui_font_size(15.))
                 .text_color(rgb(t.fg))
                 .cursor_pointer()
                 .hover(|style| style.bg(rgb(t.toolbar_hover_bg)))

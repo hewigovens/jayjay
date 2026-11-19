@@ -43,6 +43,7 @@ struct RepoTitlePicker: View {
                     .font(.caption2)
                     .foregroundStyle(.secondary)
             }
+            .font(.system(size: 15))
             .padding(.horizontal, 8)
             .frame(minHeight: 30)
             .contentShape(Rectangle())
