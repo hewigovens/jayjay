@@ -131,6 +131,16 @@ fn moves_are_found_across_grammars() {
             "func small() {\n    x(1)\n}\n",
             "func big() {\n    let a = 1\n    let b = 2\n    let c = 3\n}\n",
         ),
+        (
+            "moved.kt",
+            "fun small() {\n    x(1)\n}\n",
+            "fun big() {\n    val a = 1\n    val b = 2\n    val c = 3\n}\n",
+        ),
+        (
+            "moved.rb",
+            "def small\n  x(1)\nend\n",
+            "def big\n  a = 1\n  b = 2\n  c = 3\nend\n",
+        ),
     ] {
         let (old, new) = if path.ends_with(".json") {
             (

@@ -8,3 +8,4 @@ brew "swiftlint"   # Swift linter (just lint)
 brew "swiftformat" # Swift formatter (just format)
 brew "gh"          # GitHub CLI — PR status, checks, optional PR creation
 brew "node"        # npm for the web workspaces; just lint, just format, and jj fix on web/ need it
+brew "cmake"       # wasmtime-c-api-impl's build script installs its headers with cmake (jj-diff's WebAssembly grammars)

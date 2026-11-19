@@ -25,6 +25,7 @@ list:
   @echo "just ffi               Rebuild UniFFI Swift bindings"
   @echo "just format            Format Rust, Swift, and web sources (publish)"
   @echo "just lint              Lint Rust (clippy), Swift (swiftlint), and web (tsc, oxlint) (publish)"
+  @echo "just wasm-grammars     Rebuild jj-diff's bundled WebAssembly grammars from Cargo.lock"
   @echo "just profile diff|refresh [--alloc] args  Hotpath profile of jj-diff or a repo refresh"
   @echo "just site [--check]    Generate the translated landing pages from docs/index.html"
   @echo "just clean             Remove generated build artifacts"
@@ -50,6 +51,10 @@ ssh-helper target="" profile="debug":
 
 test-wasm:
   bash "{{root}}/scripts/test-wasm.sh"
+
+# Needs node for npx; tree-sitter-cli downloads its wasi-sdk on first use.
+wasm-grammars:
+  bash "{{root}}/scripts/wasm-grammars.sh"
 
 test:
   cargo test --workspace

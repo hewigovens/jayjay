@@ -3,6 +3,8 @@ use std::ops::{ControlFlow, Range};
 
 use tree_sitter::{Language, Node, ParseOptions, Parser};
 
+use crate::syntax::with_wasm_store;
+
 const MAX_ATOMS: usize = 16_000;
 const ROOT: u16 = u16::MAX;
 
@@ -33,16 +35,17 @@ impl<'a> SyntaxTree<'a> {
         language: &Language,
         check: &dyn Fn() -> Option<()>,
     ) -> Option<Self> {
-        let mut parser = Parser::new();
-        parser.set_language(language).ok()?;
-        let mut progress = |_: &tree_sitter::ParseState| {
-            check().map_or(ControlFlow::Break(()), ControlFlow::Continue)
-        };
-        let tree = parser.parse_with_options(
-            &mut |offset, _| &text.as_bytes()[offset..],
-            None,
-            Some(ParseOptions::new().progress_callback(&mut progress)),
-        );
+        let tree = with_wasm_store(&mut Parser::new(), language, |parser| {
+            parser.set_language(language).ok()?;
+            let mut progress = |_: &tree_sitter::ParseState| {
+                check().map_or(ControlFlow::Break(()), ControlFlow::Continue)
+            };
+            parser.parse_with_options(
+                &mut |offset, _| &text.as_bytes()[offset..],
+                None,
+                Some(ParseOptions::new().progress_callback(&mut progress)),
+            )
+        });
         check()?;
         let tree = tree.filter(|tree| !tree.root_node().has_error())?;
         let mut syntax = Self {
