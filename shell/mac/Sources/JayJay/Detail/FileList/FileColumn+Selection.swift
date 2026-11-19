@@ -20,7 +20,11 @@ extension ChangeDetailView {
             contextMenuRequest = SelectionContextMenuRequest(target: selectedPath)
             return true
         }
-        let isCtrl = event.modifierFlags.intersection(.deviceIndependentFlagsMask) == .control
+        let modifiers = event.modifierFlags.intersection(.deviceIndependentFlagsMask)
+        if modifiers == .command, event.charactersIgnoringModifiers == "a" {
+            return selectAllFiles()
+        }
+        let isCtrl = modifiers == .control
         guard let delta = DAGViewModel.selectionDelta(
             keyCode: event.keyCode,
             charactersIgnoringModifiers: event.charactersIgnoringModifiers,
@@ -133,6 +137,13 @@ extension ChangeDetailView {
             id: path,
             order: visibleSelectablePaths
         ))
+    }
+
+    private func selectAllFiles() -> Bool {
+        let paths = visibleSelectablePaths
+        guard let primary = fileSelection.primary.flatMap({ paths.contains($0) ? $0 : nil }) ?? paths.first else { return false }
+        fileSelection = FileSelection(primary: primary, paths: Set(paths), anchor: primary)
+        return true
     }
 
     func selectSingleFile(_ path: String) {

@@ -60,6 +60,23 @@ final class FileSelectionScrollScene: SceneBase {
         XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-01.swift")].label, "Unreviewed")
     }
 
+    func testSelectAllMarksEveryFile() throws {
+        let app = try XCTUnwrap(app)
+        let first = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-01.swift")).firstMatch
+        let second = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-02.swift")).firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        first.click()
+
+        keyStroke("a", modifiers: .command)
+        XCTAssertTrue(second.wait(for: \.isSelected, toEqual: true, timeout: 5), "Command-A did not select every file")
+        XCTAssertTrue(first.isSelected)
+        let secondReview = app.buttons[AID.FileList.review("src/modules/module-02.swift")]
+        keyStroke(.space)
+        XCTAssertTrue(secondReview.wait(for: \.label, toEqual: "Reviewed", timeout: 5))
+        keyStroke(.space)
+        XCTAssertTrue(secondReview.wait(for: \.label, toEqual: "Unreviewed", timeout: 5))
+    }
+
     func testRefreshKeepsTheSelectedFileVisible() throws {
         let app = try XCTUnwrap(app)
         let first = fileRows(of: app).matching(identifier: AID.FileList.row("assets/logo.bin")).firstMatch
