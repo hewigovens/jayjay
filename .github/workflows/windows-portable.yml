@@ -43,6 +43,11 @@ jobs:
         with:
           toolchain: 1.99.0-${{ matrix.target }}
 
+      - name: Test winget submission guard
+        if: matrix.arch == 'x64'
+        shell: bash
+        run: bash dist/windows/test-winget-submission.sh
+
       - name: Install jj for the extracted CLI test
         env:
           JJ_VERSION: v0.47.1
@@ -144,6 +149,49 @@ jobs:
           $msix = Get-ChildItem packages/*.msix | Select-Object -ExpandProperty FullName
           msstore publish $msix --appId 9PJRQ1HG25VB
           if ($LASTEXITCODE) { throw 'msstore publish failed' }
+
+  winget:
+    name: Submit to winget
+    if: github.event_name == 'release' && startsWith(github.event.release.tag_name, 'v') && !github.event.release.prerelease && !contains(github.event.release.tag_name, '-')
+    needs: publish
+    runs-on: windows-2025
+    environment: release
+    concurrency:
+      group: winget-submit
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
+        with:
+          persist-credentials: false
+
+      - name: Check for an open package pull request
+        id: existing-pr
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: bash dist/windows/winget/check-open-pr.sh
+
+      - name: Download winget manifests
+        if: steps.existing-pr.outputs.submit == 'true'
+        uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c # v8.0.1
+        with:
+          name: winget-manifests
+          path: winget
+
+      - name: Open the winget-pkgs pull request
+        if: steps.existing-pr.outputs.submit == 'true'
+        env:
+          # wingetcreate falls back to an interactive GitHub login without a token.
+          WINGET_CREATE_GITHUB_TOKEN: ${{ secrets.WINGET_GITHUB_TOKEN }}
+          TAG_NAME: ${{ github.event.release.tag_name }}
+        run: |
+          if (-not $env:WINGET_CREATE_GITHUB_TOKEN) { throw 'WINGET_GITHUB_TOKEN is not set in the release environment' }
+          $version = $env:TAG_NAME -replace '^v', ''
+          $wingetcreate = "$env:RUNNER_TEMP/wingetcreate.exe"
+          Invoke-WebRequest https://github.com/microsoft/winget-create/releases/download/v1.12.13.0/wingetcreate.exe -OutFile $wingetcreate
+          if ((Get-FileHash $wingetcreate -Algorithm SHA256).Hash -ne '24042BD37915805615E6CF969AC57C6439124C3FE85823327F5F3FB24BD9FFEA') { throw 'wingetcreate.exe hash mismatch' }
+          & $wingetcreate submit --no-open --prtitle "Update: hewig.JayJay to $version" "winget/manifests/h/hewig/JayJay/$version"
+          if ($LASTEXITCODE) { throw 'wingetcreate submit failed' }
 
   publish:
     # The only job with write credentials.
