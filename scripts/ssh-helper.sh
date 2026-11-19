@@ -21,7 +21,7 @@ if [[ "$target" == *-linux-musl && "$(uname -s)" == Darwin ]]; then
     --mount "type=volume,source=$cache,target=/cache" \
     --env CARGO_HOME=/cache/cargo --env CARGO_TARGET_DIR=/cache/target \
     "rust:$rust_version-slim-trixie" bash -euo pipefail -c '
-      apt-get update -qq && apt-get install -y -qq --no-install-recommends musl-tools >/dev/null
+      apt-get update -qq && apt-get install -y -qq --no-install-recommends musl-tools cmake >/dev/null
       rustup target add "$0" >/dev/null
       mkdir /workspace
       tar -C /source --exclude=./.git --exclude=./.jj --exclude=./target --exclude=./build -cf - . | tar -C /workspace -xf -

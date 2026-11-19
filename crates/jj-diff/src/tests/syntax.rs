@@ -535,3 +535,41 @@ fn cpp_keeps_the_highlights_it_shares_with_c() {
         );
     }
 }
+
+#[test]
+fn webassembly_grammars_are_highlighted() {
+    for (path, source) in [
+        (
+            "Main.kt",
+            "// note\nfun greet(name: String) = \"Hello $name\"\n",
+        ),
+        (
+            "Program.cs",
+            "// note\npublic class Greeter { string Name = \"Hello\"; }\n",
+        ),
+        (
+            "query.sql",
+            "-- note\nSELECT name FROM users WHERE id = 'a';\n",
+        ),
+        (
+            "greet.rb",
+            "# note\ndef greet(name)\n  \"Hello #{name}\"\nend\n",
+        ),
+        (
+            "index.php",
+            "<?php\n// note\nfunction greet($name) { return \"Hello\"; }\n",
+        ),
+    ] {
+        let spans: Vec<_> = highlight_file(path, source).into_iter().flatten().collect();
+        for token in [
+            SyntaxToken::Comment,
+            SyntaxToken::Keyword,
+            SyntaxToken::StringLit,
+        ] {
+            assert!(
+                spans.iter().any(|span| span.token == token),
+                "{path} should highlight {token:?}: {spans:?}"
+            );
+        }
+    }
+}

@@ -1,3 +1,5 @@
+#[cfg(feature = "wasm-grammars")]
+mod bundled;
 #[cfg(feature = "syntax")]
 #[cfg_attr(target_family = "wasm", path = "syntax/wasm.rs")]
 mod cache;
@@ -5,8 +7,23 @@ mod cache;
 mod fluent;
 #[cfg(feature = "lang-markdown")]
 mod markdown;
+#[cfg(wasm_grammars)]
+mod wasm_grammar;
 
+use tree_sitter::Language;
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
+
+#[cfg(wasm_grammars)]
+pub(crate) use wasm_grammar::with_wasm_store;
+
+#[cfg(not(wasm_grammars))]
+pub(crate) fn with_wasm_store<T, R>(
+    owner: &mut T,
+    _language: &Language,
+    run: impl FnOnce(&mut T) -> R,
+) -> R {
+    run(owner)
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SyntaxToken {
@@ -111,7 +128,16 @@ pub(crate) fn highlight(source: &str, language: &str) -> Vec<HighlightSpan> {
 }
 
 fn highlight_with_config(source: &str, config: &HighlightConfiguration) -> Vec<HighlightSpan> {
-    let mut highlighter = Highlighter::new();
+    with_wasm_store(&mut Highlighter::new(), &config.language, |highlighter| {
+        highlight_spans(highlighter, source, config)
+    })
+}
+
+fn highlight_spans(
+    highlighter: &mut Highlighter,
+    source: &str,
+    config: &HighlightConfiguration,
+) -> Vec<HighlightSpan> {
     let highlights = match highlighter.highlight(config, source.as_bytes(), None, None, |_| None) {
         Ok(h) => h,
         Err(_) => return vec![],
@@ -138,6 +164,18 @@ fn highlight_with_config(source: &str, config: &HighlightConfiguration) -> Vec<H
     spans
 }
 
+#[cfg(feature = "syntax")]
+trait Grammar {
+    fn language(&self) -> Option<Language>;
+}
+
+#[cfg(feature = "syntax")]
+impl<T: Clone + Into<Language>> Grammar for T {
+    fn language(&self) -> Option<Language> {
+        Some(self.clone().into())
+    }
+}
+
 // tree-sitter-solidity 1.2.13 anchors a capture inside a grouped pattern, which tree-sitter 0.27 rejects, so the whole query failed to compile and Solidity was never highlighted.
 #[cfg(feature = "lang-solidity")]
 static SOLIDITY_HIGHLIGHT_QUERY: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
@@ -161,10 +199,10 @@ fn without_neovim_extensions(query: &str) -> String {
 /// One table drives both highlighting and the syntax matcher, so a language supported by one is supported by the other.
 macro_rules! languages {
     ($($feature:literal: $name:literal $(| $alias:literal)* => $grammar:expr, $query:expr;)*) => {
-        pub(crate) fn grammar(language: &str) -> Option<tree_sitter::Language> {
+        pub(crate) fn grammar(language: &str) -> Option<Language> {
             match language {
                 $(#[cfg(feature = $feature)]
-                $name $(| $alias)* => Some($grammar.into()),)*
+                $name $(| $alias)* => $grammar.language(),)*
                 _ => None,
             }
         }
@@ -178,7 +216,7 @@ macro_rules! languages {
                 $name $(| $alias)* => {
                     fn build_config() -> Option<HighlightConfiguration> {
                         let mut config =
-                            HighlightConfiguration::new($grammar.into(), $name, &without_neovim_extensions($query), "", "").ok()?;
+                            HighlightConfiguration::new($grammar.language()?, $name, &without_neovim_extensions($query), "", "").ok()?;
                         config.configure(&HIGHLIGHT_NAMES);
                         Some(config)
                     }
@@ -209,17 +247,17 @@ languages! {
     "lang-python": "python" => tree_sitter_python::LANGUAGE, tree_sitter_python::HIGHLIGHTS_QUERY;
     "lang-go": "go" => tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY;
     "lang-c": "c" => tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY;
-    "lang-csharp": "csharp" => tree_sitter_c_sharp::LANGUAGE, tree_sitter_c_sharp::HIGHLIGHTS_QUERY;
+    "lang-csharp": "csharp" => bundled::CSHARP, bundled::CSHARP_QUERY;
     "lang-cpp": "cpp" => tree_sitter_cpp::LANGUAGE, &[
         tree_sitter_c::HIGHLIGHT_QUERY,
         tree_sitter_cpp::HIGHLIGHT_QUERY,
     ].join("\n");
     "lang-json": "json" => tree_sitter_json::LANGUAGE, tree_sitter_json::HIGHLIGHTS_QUERY;
     "lang-toml": "toml" => tree_sitter_toml_ng::LANGUAGE, tree_sitter_toml_ng::HIGHLIGHTS_QUERY;
-    "lang-ruby": "ruby" => tree_sitter_ruby::LANGUAGE, tree_sitter_ruby::HIGHLIGHTS_QUERY;
+    "lang-ruby": "ruby" => bundled::RUBY, bundled::RUBY_QUERY;
     "lang-java": "java" => tree_sitter_java::LANGUAGE, tree_sitter_java::HIGHLIGHTS_QUERY;
-    "lang-kotlin": "kotlin" => tree_sitter_kotlin_sg::LANGUAGE, tree_sitter_kotlin_sg::HIGHLIGHTS_QUERY;
-    "lang-php": "php" => tree_sitter_php::LANGUAGE_PHP, tree_sitter_php::HIGHLIGHTS_QUERY;
+    "lang-kotlin": "kotlin" => bundled::KOTLIN, bundled::KOTLIN_QUERY;
+    "lang-php": "php" => bundled::PHP, bundled::PHP_QUERY;
     "lang-markdown": "markdown" => tree_sitter_md::LANGUAGE, tree_sitter_md::HIGHLIGHT_QUERY_BLOCK;
     "lang-markdown": "markdown_inline" => tree_sitter_md::INLINE_LANGUAGE, tree_sitter_md::HIGHLIGHT_QUERY_INLINE;
     "lang-css": "css" => tree_sitter_css::LANGUAGE, tree_sitter_css::HIGHLIGHTS_QUERY;
@@ -232,7 +270,7 @@ languages! {
     "lang-yaml": "yaml" => tree_sitter_yaml::LANGUAGE, tree_sitter_yaml::HIGHLIGHTS_QUERY;
     "lang-swift": "swift" => tree_sitter_swift::LANGUAGE, tree_sitter_swift::HIGHLIGHTS_QUERY;
     "lang-solidity": "solidity" => tree_sitter_solidity::LANGUAGE, SOLIDITY_HIGHLIGHT_QUERY.as_str();
-    "lang-sql": "sql" => tree_sitter_sequel::LANGUAGE, tree_sitter_sequel::HIGHLIGHTS_QUERY;
+    "lang-sql": "sql" => bundled::SQL, bundled::SQL_QUERY;
     "lang-xml": "xml" => tree_sitter_xml::LANGUAGE_XML, tree_sitter_xml::XML_HIGHLIGHT_QUERY;
     "lang-zig": "zig" => tree_sitter_zig::LANGUAGE, tree_sitter_zig::HIGHLIGHTS_QUERY;
     "lang-nix": "nix" => tree_sitter_nix::LANGUAGE, tree_sitter_nix::HIGHLIGHTS_QUERY;

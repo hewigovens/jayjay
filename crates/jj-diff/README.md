@@ -79,6 +79,8 @@ jj-diff = { version = "0.1", default-features = false, features = ["lang-rust", 
 | `lang-yaml` | `.yaml`, `.yml` |
 | `lang-zig` | `.zig` |
 
+On native targets, `lang-csharp`, `lang-kotlin`, `lang-php`, `lang-ruby`, and `lang-sql` load gzipped WebAssembly builds of their grammars into wasmtime's Pulley interpreter instead of linking them, which keeps binaries smaller; building them needs `cmake` on the host. WebAssembly targets link all grammars.
+
 ## License
 
 Apache-2.0

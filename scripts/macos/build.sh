@@ -35,6 +35,9 @@ if [[ "$configuration" == Release ]]; then
   cp "$mermaid/ondine-LICENSE.txt" "$licenses/Ondine.LICENSE"
   cp "$mermaid/pele-LICENSE.txt" "$licenses/Pele.LICENSE"
   cp "$root/crates/jj-diff/grammars/fluent/LICENSE" "$licenses/tree-sitter-fluent.LICENSE"
+  for license in "$root"/crates/jj-diff/grammars/wasm/*.LICENSE; do
+    cp "$license" "$licenses/tree-sitter-$(basename "$license")"
+  done
 else
   xcode JayJay Debug build
 fi

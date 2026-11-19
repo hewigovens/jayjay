@@ -62,8 +62,10 @@ jobs:
         include:
           - arch: x86_64
             runner: ubuntu-latest
+            cmake_sha256: 5a1133ff103c71eb5120e2cc3de922733e7d8a26a98ae716397e8676adb367bf
           - arch: aarch64
             runner: ubuntu-24.04-arm
+            cmake_sha256: b4cc788d63112b2749b40627e719eb5d3b8ed8f00c36d77189f4019cfe64bc9e
     steps:
       - name: Install Linux deps
         run: |
@@ -72,6 +74,14 @@ jobs:
             ca-certificates curl build-essential clang pkg-config \
             libfontconfig1-dev libwayland-dev libxkbcommon-x11-dev libx11-xcb-dev \
             squashfs-tools librsvg2-bin patchelf
+
+      # wasmtime-c-api-impl's build script needs CMake 3.18 or later; Ubuntu 20.04 ships 3.16.
+      - name: Install CMake
+        run: |
+          curl -fsSL -o cmake.tar.gz "https://github.com/Kitware/CMake/releases/download/v3.31.6/cmake-3.31.6-linux-${{ matrix.arch }}.tar.gz"
+          echo "${{ matrix.cmake_sha256 }}  cmake.tar.gz" | sha256sum -c -
+          tar -xzf cmake.tar.gz --strip-components=1 -C /usr/local
+          rm cmake.tar.gz
 
       - uses: actions/checkout@9c091bb21b7c1c1d1991bb908d89e4e9dddfe3e0 # v7.0.0
 
