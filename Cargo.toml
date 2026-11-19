@@ -50,7 +50,6 @@ toml = "1.1"
 pulldown-cmark = { version = "0.13.6", default-features = false }
 dunce = "1"
 etcetera = "0.11"
-gethostname = "1"
 rand = "0.10"
 shell-words = "1.1.1"
 url = "2"

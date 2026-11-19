@@ -27,7 +27,6 @@ repository = [
     "dep:futures",
     "dep:gix",
     "dep:gix-url",
-    "dep:gethostname",
     "jayjay-network/blocking",
     "jayjay-network/json",
     "dep:jayjay-review",
@@ -97,7 +96,6 @@ csv = { workspace = true, optional = true }
 dunce = { workspace = true, optional = true }
 flate2 = { workspace = true, optional = true }
 etcetera = { workspace = true, optional = true }
-gethostname = { workspace = true, optional = true }
 rand = { workspace = true, optional = true }
 tempfile = { workspace = true, optional = true }
 url = { workspace = true, optional = true }
@@ -112,7 +110,7 @@ zbus-secret-service-keyring-store = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]
 windows-native-keyring-store = { workspace = true, optional = true }
-windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Com", "Win32_System_Console", "Win32_System_Registry", "Win32_System_Threading", "Win32_UI_Shell", "Win32_UI_Shell_Common", "Win32_UI_WindowsAndMessaging"] }
+windows-sys = { version = "0.61.2", features = ["Win32_Foundation", "Win32_System_Com", "Win32_System_Console", "Win32_System_Registry", "Win32_System_SystemInformation", "Win32_System_Threading", "Win32_UI_Shell", "Win32_UI_Shell_Common", "Win32_UI_WindowsAndMessaging"] }
 
 [[bench]]
 name = "profile_refresh"

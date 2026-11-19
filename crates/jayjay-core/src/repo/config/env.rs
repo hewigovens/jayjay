@@ -9,6 +9,7 @@ use jj_lib::secure_config::SecureConfig;
 use jj_lib::settings::UserSettings;
 use jj_lib::workspace::WorkspaceLoader;
 
+use super::super::platform;
 use super::super::support::canonicalize;
 use crate::types::*;
 
@@ -44,7 +45,7 @@ impl ConfigEnv {
             home_dir,
             user_config_dir,
             system_config_dir,
-            gethostname::gethostname().to_string_lossy().into_owned(),
+            platform::hostname().to_string_lossy().into_owned(),
             environment,
         )
     }

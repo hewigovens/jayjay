@@ -1,10 +1,14 @@
 mod registry;
 
 use std::ffi::{OsStr, OsString};
+use std::os::windows::ffi::OsStringExt;
 use std::os::windows::process::CommandExt;
 use std::path::{Component, Path, PathBuf};
 use std::process::Command;
 
+use windows_sys::Win32::System::SystemInformation::{
+    ComputerNamePhysicalDnsHostname, GetComputerNameExW,
+};
 use windows_sys::Win32::System::Threading::CREATE_NO_WINDOW;
 
 pub use registry::registry_path;
@@ -134,6 +138,23 @@ fn scoop_shim_target(shim: &str) -> Option<PathBuf> {
     (target.is_absolute() && has_executable_extension(&target)).then_some(target)
 }
 
+pub fn hostname() -> OsString {
+    let mut buffer = [0u16; 256];
+    let mut size = buffer.len() as u32;
+    // SAFETY: `size` holds the buffer's length in UTF-16 units going in and the name's length coming out.
+    let found = unsafe {
+        GetComputerNameExW(
+            ComputerNamePhysicalDnsHostname,
+            buffer.as_mut_ptr(),
+            &mut size,
+        )
+    };
+    if found == 0 {
+        return OsString::new();
+    }
+    OsString::from_wide(&buffer[..(size as usize).min(buffer.len())])
+}
+
 /// A bare name would let Command search the inherited PATH, relative entries included.
 pub fn command(program: OsString) -> Command {
     let program = if Path::new(&program).components().count() == 1 {
@@ -149,6 +170,11 @@ pub fn command(program: OsString) -> Command {
 #[cfg(test)]
 mod tests {
     use super::*;
+
+    #[test]
+    fn hostname_is_read_from_the_system() {
+        assert!(!hostname().is_empty());
+    }
 
     #[test]
     fn launches_the_target_of_a_plain_scoop_shim() {

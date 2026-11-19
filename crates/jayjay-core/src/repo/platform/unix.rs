@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::os::unix::ffi::OsStringExt;
 use std::os::unix::fs::MetadataExt;
 use std::path::{Path, PathBuf};
 use std::process::Command;
@@ -40,4 +41,32 @@ pub fn system_path_entries() -> Vec<PathBuf> {
 
 pub fn command(program: OsString) -> Command {
     Command::new(program)
+}
+
+pub fn hostname() -> OsString {
+    let mut buffer = [0u8; 256];
+    // SAFETY: the length passed bounds the writable buffer.
+    if unsafe { libc::gethostname(buffer.as_mut_ptr().cast(), buffer.len()) } != 0 {
+        return OsString::new();
+    }
+    let end = buffer
+        .iter()
+        .position(|&byte| byte == 0)
+        .unwrap_or(buffer.len());
+    OsString::from_vec(buffer[..end].to_vec())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn hostname_matches_uname() {
+        let output = Command::new("uname").arg("-n").output().unwrap();
+        assert!(output.status.success());
+        assert_eq!(
+            Some(hostname().as_encoded_bytes()),
+            output.stdout.strip_suffix(b"\n")
+        );
+    }
 }

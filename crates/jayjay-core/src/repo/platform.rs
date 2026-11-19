@@ -14,10 +14,11 @@ pub use linux::launchctl_ssh_auth_sock;
 pub use macos::launchctl_ssh_auth_sock;
 #[cfg(unix)]
 pub use unix::{
-    command, executable_names, home_dir, is_executable_file, launch_target, system_path_entries,
+    command, executable_names, home_dir, hostname, is_executable_file, launch_target,
+    system_path_entries,
 };
 #[cfg(windows)]
 pub use windows::{
-    command, executable_names, home_dir, is_executable_file, launch_target,
+    command, executable_names, home_dir, hostname, is_executable_file, launch_target,
     launchctl_ssh_auth_sock, registry_path, system_path_entries, system32,
 };
