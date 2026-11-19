@@ -155,6 +155,11 @@ extension DiffSection {
         richPreviewSelection?.isActive(.html, path: hunk.path) ?? false
     }
 
+    /// These replace the diff text with a view that reports no content height.
+    var showsRichView: Bool {
+        activeSvgRichView || activeMarkdownRichView || activeHTMLRichView || canRenderProjectionAsMarkdown
+    }
+
     var activeProjectionRichView: Bool {
         projectionView == .rendered
     }

@@ -60,21 +60,32 @@ final class FileSelectionScrollScene: SceneBase {
         XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-01.swift")].label, "Unreviewed")
     }
 
-    func testSelectAllMarksEveryFile() throws {
+    func testSelectAllStacksEveryDiffAndMarksEveryFile() throws {
         let app = try XCTUnwrap(app)
         let first = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-01.swift")).firstMatch
         let second = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-02.swift")).firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         first.click()
+        XCTAssertTrue(app.buttons[AID.Diff.layoutToggle].isEnabled)
 
         keyStroke("a", modifiers: .command)
         XCTAssertTrue(second.wait(for: \.isSelected, toEqual: true, timeout: 5), "Command-A did not select every file")
         XCTAssertTrue(first.isSelected)
+        XCTAssertFalse(app.buttons[AID.Diff.layoutToggle].isEnabled, "Stacked diffs offered a layout they cannot show")
         let secondReview = app.buttons[AID.FileList.review("src/modules/module-02.swift")]
         keyStroke(.space)
         XCTAssertTrue(secondReview.wait(for: \.label, toEqual: "Reviewed", timeout: 5))
         keyStroke(.space)
         XCTAssertTrue(secondReview.wait(for: \.label, toEqual: "Unreviewed", timeout: 5))
+
+        let editStackedFile = app.buttons[AID.FileEditor.open("a-root.txt")]
+        XCTAssertTrue(editStackedFile.waitForExistence(timeout: 5), "The selected files' diffs were not stacked")
+        keyStroke(.end)
+        XCTAssertTrue(waitForHittable(editStackedFile, isHittable: false), "End did not scroll the stacked diffs")
+        keyStroke(.home)
+        XCTAssertTrue(waitForHittable(editStackedFile, isHittable: true))
+        editStackedFile.click()
+        XCTAssertTrue(app.textViews[AID.FileEditor.content].waitForExistence(timeout: 10), "Edit File did nothing for a stacked file")
     }
 
     func testRefreshKeepsTheSelectedFileVisible() throws {

@@ -55,7 +55,7 @@ struct AppCommands: Commands {
         CommandGroup(after: .pasteboard) {
             Button {
                 if let window = NSApp.keyWindow,
-                   let tv = window.contentView?.diffTextView
+                   let tv = window.activeDiffTextView
                 {
                     window.makeFirstResponder(tv)
                     let item = NSMenuItem()

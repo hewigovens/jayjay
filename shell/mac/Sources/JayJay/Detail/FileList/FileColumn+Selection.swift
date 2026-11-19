@@ -37,6 +37,15 @@ extension ChangeDetailView {
         guard event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
               let diff = NSApp.keyWindow?.contentView?.diffTextView
         else { return false }
+        if selectedHunks.count > 1 {
+            let stack = diff.enclosingScrollView?.superview?.enclosingScrollView
+            switch event.keyCode {
+                case KeyCode.pageUp: stack?.pageUp(nil)
+                case KeyCode.pageDown: stack?.pageDown(nil)
+                default: stackScrollEdge = event.keyCode == KeyCode.end ? .bottom : .top
+            }
+            return true
+        }
         switch event.keyCode {
             case KeyCode.pageUp: diff.scrollPageUp(nil)
             case KeyCode.pageDown: diff.scrollPageDown(nil)

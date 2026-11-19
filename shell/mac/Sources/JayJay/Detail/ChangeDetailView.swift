@@ -43,6 +43,7 @@ struct ChangeDetailView: View {
     @State private var descriptionExpansion = DescriptionExpansion.preference
     @State var paneHeight: CGFloat = 0
     @State var fileSelection = FileSelection()
+    @State var stackScrollEdge: VerticalEdge?
     @State var contextMenuRequest: SelectionContextMenuRequest?
     @State var collapsedDirs: Set<String> = []
     @State var fileTreeCache = FileTreeCache()
