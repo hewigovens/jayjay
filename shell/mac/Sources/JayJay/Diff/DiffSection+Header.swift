@@ -75,7 +75,7 @@ extension DiffSection {
             let reviewed = fileReview == .reviewed
             let title = reviewed ? Localized.Repo.reviewed : Localized.Diff.markReviewed
             Button(action: onToggleFileReview) {
-                actionLabel(title, systemImage: fileReview.systemImage(for: colorScheme))
+                actionLabel(title, systemImage: fileReview.systemImage)
             }
             .buttonStyle(HeaderActionButtonStyle(isActive: reviewed))
             .keyboardFocusStop(.markReviewed, action: onToggleFileReview)

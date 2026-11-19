@@ -84,7 +84,6 @@ pub struct Theme {
     pub(crate) file_removed_color: u32,
     pub(crate) file_modified_color: u32,
     pub(crate) file_renamed_color: u32,
-    pub(crate) file_lfs_color: u32,
     /// Badge glyphs sit on a faint tint of the status color, so light themes need a deepened variant to stay legible.
     pub(crate) file_badge_added_fg: u32,
     pub(crate) file_badge_removed_fg: u32,

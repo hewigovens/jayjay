@@ -5,16 +5,6 @@ use jayjay_core::{DiffHunk, HunkType};
 use crate::app::theme::{Theme, with_alpha};
 use crate::ui::icons;
 
-pub(crate) fn color(hunk: &DiffHunk, theme: &Theme) -> u32 {
-    if is_submodule(hunk) {
-        return theme.file_renamed_color;
-    }
-    if is_lfs(hunk) {
-        return theme.file_lfs_color;
-    }
-    color_for_hunk_type(hunk.hunk_type, theme)
-}
-
 pub(crate) fn color_for_hunk_type(hunk_type: HunkType, theme: &Theme) -> u32 {
     match hunk_type {
         HunkType::Added => theme.file_added_color,

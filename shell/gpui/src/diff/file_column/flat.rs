@@ -12,8 +12,8 @@ use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use super::row::{
-    FileRowHandlers, FileRowState, agent_badge, file_name_opacity, file_row_height,
-    file_text_content, file_text_inset, file_text_limits, finish_file_row, review_checkbox, row_bg,
+    FILE_TEXT_INSET, FileRowHandlers, FileRowState, agent_badge, file_name_opacity,
+    file_row_height, file_text_content, file_text_limits, finish_file_row, review_checkbox, row_bg,
     row_separator,
 };
 use crate::app::theme::Theme;
@@ -223,7 +223,7 @@ where
         theme,
     );
 
-    let mut row = div()
+    let row = div()
         .id(("file", ix))
         .debug_selector(move || format!("file-row-{ix}"))
         .flex()
@@ -241,17 +241,17 @@ where
         .cursor_pointer()
         .on_click(on_click)
         .on_mouse_down(MouseButton::Right, on_right_click)
-        .child(row_separator(6. + file_text_inset(show_review), theme));
-    if show_review {
-        row = row.child(review_checkbox(
+        .child(row_separator(6. + FILE_TEXT_INSET, theme));
+    let review_mark = show_review.then(|| {
+        review_checkbox(
             ("review-flat", ix),
             review_rollup,
             agent_marked,
             theme,
             on_review_click,
-        ));
-    }
-    finish_file_row(row, &state, content)
+        )
+    });
+    finish_file_row(row, &state, content, review_mark)
 }
 
 #[cfg(test)]

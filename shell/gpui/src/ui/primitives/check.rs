@@ -11,14 +11,10 @@ pub enum CheckCircleState {
     Off,
     /// Filled with a dash: some of the selection is on.
     Partial,
-    /// Outlined check: the parts seen so far are done, but not all of them.
-    CheckOutline,
-    /// Left half filled: done before, changed since.
-    HalfFilled,
     On,
 }
 
-/// Circular check shared by the file list's review mark and diff edit's selection checkbox; callers attach their own click handler.
+/// Circular check for diff edit's selection checkbox; callers attach their own click handler.
 pub(crate) fn check_circle(
     id: impl Into<ElementId>,
     state: CheckCircleState,
@@ -48,34 +44,71 @@ pub(crate) fn check_circle(
                 .bg(rgb(accent))
                 .child(div().w(px(6.)).h(px(2.)).rounded_full().bg(rgb(0xffffff)));
         }
-        CheckCircleState::CheckOutline => {
-            circle = circle.child(check_mark(accent));
-        }
-        CheckCircleState::HalfFilled => {
-            // The half disc fills its whole viewBox, so at the 12px inner size it meets the border with no gap.
-            circle = circle.child(
-                svg()
-                    .path(icons::CIRCLE_HALF_SVG)
-                    .w(px(12.))
-                    .h(px(12.))
-                    .text_color(rgb(accent)),
-            );
-        }
         CheckCircleState::On => {
-            circle = circle.bg(rgb(accent)).child(check_mark(0xffffff));
+            circle = circle
+                .bg(rgb(accent))
+                .child(mark_svg(icons::CHECK_SVG, 0xffffff));
         }
     }
     circle
 }
 
-// An SVG check centers geometrically; the icon-font glyph sits visibly off-center in a 14px circle.
+#[derive(Clone, Copy, PartialEq, Eq)]
+pub enum CheckSquareState {
+    Off,
+    /// Outlined dash: some of it is done.
+    Dash,
+    /// Left half filled: done before, changed since.
+    HalfFilled,
+    On,
+}
 
-fn check_mark(color: u32) -> gpui::Svg {
-    svg()
-        .path(icons::CHECK_SVG)
-        .w(px(8.))
-        .h(px(8.))
-        .text_color(rgb(color))
+/// Square review mark; the check is drawn in the row background so it reads as cut out of the fill.
+pub(crate) fn check_square(
+    id: impl Into<ElementId>,
+    state: CheckSquareState,
+    accent: u32,
+    t: &Theme,
+) -> Stateful<Div> {
+    let square = div()
+        .id(id)
+        .flex_none()
+        .flex()
+        .items_center()
+        .justify_center()
+        .relative()
+        .w(px(14.))
+        .h(px(14.))
+        .rounded(px(3.))
+        .border_1()
+        .border_color(rgb(if state == CheckSquareState::Off {
+            t.fg_faint
+        } else {
+            accent
+        }))
+        .cursor_pointer();
+    match state {
+        CheckSquareState::Off => square,
+        CheckSquareState::Dash => square.child(mark_svg(icons::MINUS_SVG, accent)),
+        CheckSquareState::HalfFilled => square.child(
+            div()
+                .absolute()
+                .left_0()
+                .top_0()
+                .w(px(6.))
+                .h_full()
+                .rounded_l(px(2.))
+                .bg(rgb(accent)),
+        ),
+        CheckSquareState::On => square
+            .bg(rgb(accent))
+            .child(mark_svg(icons::CHECK_SVG, t.detail_bg)),
+    }
+}
+
+// An SVG mark centers geometrically; an icon-font glyph sits visibly off-center in a 14px box.
+fn mark_svg(path: &'static str, color: u32) -> gpui::Svg {
+    svg().path(path).w(px(8.)).h(px(8.)).text_color(rgb(color))
 }
 
 pub(crate) fn checkbox_glyph(checked: bool, theme: &Theme) -> Div {

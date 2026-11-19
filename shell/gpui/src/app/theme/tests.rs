@@ -99,7 +99,6 @@ fn a_selected_theme_recolors_chrome_repo_and_diff_surfaces_while_preserving_font
     assert_ne!(themed.file_removed_color, default.file_removed_color);
     assert_ne!(themed.file_modified_color, default.file_modified_color);
     assert_ne!(themed.file_renamed_color, default.file_renamed_color);
-    assert_ne!(themed.file_lfs_color, default.file_lfs_color);
     assert_ne!(themed.note_accent, default.note_accent);
     assert_ne!(themed.syntax, default.syntax);
     assert_ne!(themed.success_fg, default.success_fg);

@@ -7,7 +7,7 @@ final class FileRowTests: XCTestCase {
     @MainActor
     func testChangedIndicatorKeepsLeftHalfFilledInBothAppearances() throws {
         for scheme in [ColorScheme.light, .dark] {
-            let icon = Image(systemName: FileRowReviewChrome.changedSinceReview.systemImage(for: scheme))
+            let icon = Image(systemName: FileRowReviewChrome.changedSinceReview.systemImage)
                 .font(.system(size: 40))
                 .foregroundStyle(.green)
                 .environment(\.colorScheme, scheme)

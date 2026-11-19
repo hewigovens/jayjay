@@ -9,7 +9,7 @@ use crate::app::fonts::CodeText as _;
 use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::diff::file_status;
 use crate::ui::icons::{self, glyph};
-use crate::ui::primitives::{CheckCircleState, HelpTag, check_circle};
+use crate::ui::primitives::{CheckSquareState, HelpTag, check_square};
 
 #[derive(Clone, Copy)]
 pub(super) struct FileRowState<'a> {
@@ -59,25 +59,24 @@ where
     FRev: Fn(&ClickEvent, &mut Window, &mut App) + 'static,
 {
     let selector = format!("{}-{}", id.0, id.1);
-    // Mirrors the SwiftUI chrome: outlined check for partial, half-filled green for changed since review.
     let (state, accent, label) = match rollup {
         ReviewFileRollup::Unreviewed => (
-            CheckCircleState::Off,
-            t.file_added_color,
+            CheckSquareState::Off,
+            t.fg_faint,
             jayjay_i18n::repo::unreviewed(),
         ),
         ReviewFileRollup::Partial => (
-            CheckCircleState::CheckOutline,
+            CheckSquareState::Dash,
             t.fg_dim,
             jayjay_i18n::repo::partially_reviewed(),
         ),
         ReviewFileRollup::Reviewed => (
-            CheckCircleState::On,
+            CheckSquareState::On,
             t.file_added_color,
             jayjay_i18n::repo::reviewed(),
         ),
         ReviewFileRollup::ChangedSinceReview => (
-            CheckCircleState::HalfFilled,
+            CheckSquareState::HalfFilled,
             t.file_added_color,
             jayjay_i18n::repo::changed_since_review(),
         ),
@@ -87,7 +86,7 @@ where
     } else {
         label.to_owned()
     };
-    check_circle(id, state, accent, t)
+    check_square(id, state, accent, t)
         .debug_selector(move || selector.clone())
         .help(label)
         .on_click(move |ev, w, cx| {
@@ -177,10 +176,7 @@ pub(super) fn file_text_limits(width: f32, t: &Theme) -> (usize, usize) {
     )
 }
 
-pub(super) fn file_text_inset(show_review: bool) -> f32 {
-    let review_col = if show_review { 22. } else { 0. };
-    review_col + 14.
-}
+pub(super) const FILE_TEXT_INSET: f32 = 14.;
 
 pub(super) fn row_separator(inset: f32, t: &Theme) -> AnyElement {
     div()
@@ -193,21 +189,7 @@ pub(super) fn row_separator(inset: f32, t: &Theme) -> AnyElement {
         .into_any_element()
 }
 
-fn status_dot(hunk: &DiffHunk, t: &Theme) -> impl IntoElement {
-    div()
-        .flex_none()
-        .w(px(6.))
-        .h(px(6.))
-        .rounded_full()
-        .bg(rgb(file_status::color(hunk, t)))
-}
-
-fn status_indicator(
-    hunk: &DiffHunk,
-    show_review: bool,
-    has_conflict: bool,
-    t: &Theme,
-) -> Stateful<Div> {
+fn status_indicator(hunk: &DiffHunk, has_conflict: bool, t: &Theme) -> Stateful<Div> {
     let block = div()
         .id(SharedString::from(format!("file-status-{}", hunk.path)))
         .flex_none()
@@ -217,10 +199,6 @@ fn status_indicator(
         .items_start();
     let block = if has_conflict {
         block.child(icons::icon(glyph::WARNING, 11., t.file_removed_color))
-    } else if show_review {
-        block
-            .pt(px(t.scaled_font_size(4.)))
-            .child(status_dot(hunk, t))
     } else {
         block.child(file_status::badge(hunk.hunk_type, 18., t))
     };
@@ -231,24 +209,21 @@ fn status_indicator(
     })
 }
 
+/// The status badge leads whether or not review marks show, so the name never shifts; the review mark trails.
 pub(super) fn finish_file_row(
     row: impl ParentElement + IntoElement,
     state: &FileRowState,
     content: impl IntoElement,
+    review_mark: Option<AnyElement>,
 ) -> AnyElement {
     let t = state.theme;
     let mut row = row
-        .child(status_indicator(
-            state.hunk,
-            state.show_review,
-            state.has_conflict,
-            t,
-        ))
+        .child(status_indicator(state.hunk, state.has_conflict, t))
         .child(super::file_name_container(content));
     if state.note_count > 0 {
         row = row.child(note_badge(state.note_count, t));
     }
-    row.into_any_element()
+    row.children(review_mark).into_any_element()
 }
 
 pub(super) fn agent_badge(path: &str, t: &Theme) -> AnyElement {

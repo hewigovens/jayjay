@@ -110,7 +110,6 @@ impl Theme {
             file_removed_color: repo.file_removed,
             file_modified_color: repo.file_modified,
             file_renamed_color: repo.file_renamed,
-            file_lfs_color: repo.file_lfs,
             file_badge_added_fg: seed.deep(repo.file_added),
             file_badge_removed_fg: seed.deep(repo.file_removed),
             file_badge_modified_fg: seed.deep(repo.file_modified),
