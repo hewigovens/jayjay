@@ -4,6 +4,7 @@ use gpui::{
 };
 use jayjay_core::{BookmarkInfo, ChangeInfo, DiffStats};
 
+use super::super::DetailHeaderState;
 use super::cells::{
     bookmark_chip, byline_authors, byline_avatars_width, diff_stats, separator, tag_chip,
 };
@@ -16,19 +17,27 @@ use crate::repo::window::dag_row::{compact_id, compact_id_len, format_when, id_c
 use crate::repo::window::ref_chips::copy_feedback_button;
 
 pub(super) fn byline(
-    change: &ChangeInfo,
-    stats: Option<&DiffStats>,
-    recently_copied: Option<&SharedString>,
-    bookmarks: &[BookmarkInfo],
-    budget: f32,
+    state: &DetailHeaderState<'_>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let width = |shows_date, shows_commit| {
+    let DetailHeaderState {
+        change,
+        stats,
+        recently_copied,
+        bookmarks,
+        diff_actions,
+        focused,
+        ..
+    } = *state;
+    let budget = state.detail_width - 2. * DETAIL_INSET;
+    let width = |shows_date, shows_commit, compact| {
         byline_width(change, stats, bookmarks, shows_date, shows_commit, t, cx)
+            + diff_actions.width(compact, t, cx)
     };
-    let shows_date = width(true, true) <= budget;
-    let shows_commit = shows_date || width(false, true) <= budget;
+    let shows_date = width(true, true, false) <= budget;
+    let labelled = shows_date || width(false, true, false) <= budget;
+    let shows_commit = labelled || width(false, true, true) <= budget;
     let compact = compact_id(&change.change_id);
     let change_copy_id = SharedString::new_static("change-id");
     let commit_copy_id = SharedString::new_static("commit-id");
@@ -100,7 +109,9 @@ pub(super) fn byline(
                 ))),
         );
     }
-    row = row.child(div().flex_1().min_w(px(8.)));
+    row = row
+        .child(div().flex_1().min_w(px(8.)))
+        .children(diff_actions.render(!labelled, focused, t, cx));
     if let Some(stats) = stats.and_then(|stats| diff_stats(stats, false, t)) {
         row = row.child(stats);
     }

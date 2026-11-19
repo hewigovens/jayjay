@@ -27,6 +27,8 @@ struct DiffSection: View {
     var compareFromRev: String?
     var lineStats: FileDiffStats?
     var fitsContent = false
+    /// The change header shows the layout toggle and Edit Diff itself, since they apply to every file.
+    var showsSharedActions = true
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).

@@ -37,7 +37,7 @@ pub(super) fn file_editor_button(
     .into_any_element()
 }
 
-pub(super) fn edit_diff_button(
+pub(crate) fn edit_diff_button(
     compact: bool,
     focused: bool,
     t: &Theme,
@@ -92,7 +92,7 @@ pub(super) fn mark_reviewed_button(
     .into_any_element()
 }
 
-pub(super) fn view_mode_button(
+pub(crate) fn view_mode_button(
     mode: DiffViewMode,
     compact: bool,
     focused: bool,
@@ -311,7 +311,7 @@ fn mode_glyph(mode: DiffViewMode) -> &'static str {
     }
 }
 
-pub(super) fn mode_label(mode: DiffViewMode) -> String {
+pub(crate) fn mode_label(mode: DiffViewMode) -> String {
     match mode {
         DiffViewMode::Unified => jayjay_i18n::diff::unified(),
         DiffViewMode::SideBySide => jayjay_i18n::diff::side_by_side(),

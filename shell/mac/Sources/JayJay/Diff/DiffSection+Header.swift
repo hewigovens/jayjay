@@ -27,15 +27,17 @@ extension DiffSection {
             HStack(spacing: 2) {
                 fileReviewButton
                 richPreviewButtons
-                sideBySideButton
-                if canOpenDiffEdit {
-                    Button(action: openDiffEdit) {
-                        actionLabel(Localized.Diff.editDiff, systemImage: "square.and.pencil")
+                if showsSharedActions {
+                    sideBySideButton
+                    if canOpenDiffEdit {
+                        Button(action: openDiffEdit) {
+                            actionLabel(Localized.Diff.editDiff, systemImage: "square.and.pencil")
+                        }
+                        .keyboardFocusStop(.editDiff, action: openDiffEdit)
+                        .help(Localized.Diff.openDedicatedDiffEditMode)
+                        .accessibilityLabel(Localized.Diff.editDiff)
+                        .accessibilityIdentifier(AID.DiffEdit.open)
                     }
-                    .keyboardFocusStop(.editDiff, action: openDiffEdit)
-                    .help(Localized.Diff.openDedicatedDiffEditMode)
-                    .accessibilityLabel(Localized.Diff.editDiff)
-                    .accessibilityIdentifier(AID.DiffEdit.open)
                 }
                 if canEditFile {
                     Button(action: editFile) {

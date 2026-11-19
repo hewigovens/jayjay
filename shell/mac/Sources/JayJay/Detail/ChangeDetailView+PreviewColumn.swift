@@ -90,7 +90,8 @@ extension ChangeDetailView {
                         ),
                         onToggleFileReview: { toggleReview([hunk.path]) },
                         compareFromRev: comparison?.fromId,
-                        lineStats: fileStats?.value?[hunk.path]
+                        lineStats: fileStats?.value?[hunk.path],
+                        showsSharedActions: false
                     )
                     // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
                     .id("\(detail.info.commitId.id)|\(hunk.path)")
