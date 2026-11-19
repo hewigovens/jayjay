@@ -36,3 +36,24 @@ test.each(["/o/r/pull/7", reviewPath(samples[0])])(
     }
   },
 );
+
+test.each([
+  ["/o/r/pull/7", "public, max-age=60"],
+  [`/o/r/pull/7/commits/${"a".repeat(40)}`, "public, max-age=86400"],
+  [`/o/r/commit/${"a".repeat(40)}`, "public, max-age=86400"],
+  ["/o/r/commit/aaaaaaa", "public, max-age=60"],
+])("%s is cached for as long as it can stay true", async (path, expected) => {
+  vi.stubGlobal("caches", { default: { match: async () => undefined, put: async () => {} } });
+  vi.spyOn(GitHub.prototype, "manifest").mockResolvedValue({ title: "T" } as PullManifest);
+  const env = { STORE: { get: async () => null } } as unknown as Parameters<typeof worker.fetch>[1];
+  const context = { waitUntil: () => {} } as unknown as ExecutionContext;
+  try {
+    const request = new Request(`https://diff.hewig.dev/api${path}`) as Parameters<
+      typeof worker.fetch
+    >[0];
+    expect((await worker.fetch(request, env, context)).headers.get("cache-control")).toBe(expected);
+  } finally {
+    vi.restoreAllMocks();
+    vi.unstubAllGlobals();
+  }
+});

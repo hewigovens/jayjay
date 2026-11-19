@@ -32,23 +32,29 @@ test("the commit sidebar opens commits in place of the picker, and stays hidden 
   await expect(sidebar).toBeHidden();
 });
 
-test("a pull request with a body opens on its description, and J moves to the first file", async ({
+test("a pull request's body opens collapsed and a commit's message opens expanded", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 850 });
   await page.route("**/api/octo/demo/pull/7", (route) =>
     route.fulfill({ json: { ...manifest, body: "Greets in Spanish too." } }),
   );
+  await page.route(`**/api/octo/demo/pull/7/commits/${sha("e")}`, (route) =>
+    route.fulfill({
+      json: { ...manifest, title: "Add the greeting", body: "Says hello.", commit: sha("e") },
+    }),
+  );
   await page.route("https://raw.githubusercontent.com/**", (route) =>
     route.fulfill({ body: route.request().url().includes(sha("a")) ? "a\n" : "b\n" }),
   );
   await page.goto("/octo/demo/pull/7");
-  const body = page.locator(".jj-description-body");
-  await expect(body).toHaveText("Greets in Spanish too.");
-  await expect(
-    page.getByRole("button", { name: "Pull request description", exact: true }),
-  ).toHaveAttribute("aria-current", "true");
-  await page.keyboard.press("j");
-  await expect(body).toHaveCount(0);
-  await expect(page.locator(".jj-file-heading h2")).toHaveText("src/greet.rs");
+  const description = page.locator(".jj-change-description");
+  await expect(description).toHaveText("Greets in Spanish too.");
+  await expect(description).not.toHaveClass(/jj-expanded/);
+  await page
+    .getByRole("complementary", { name: "Commits", exact: true })
+    .getByRole("button", { name: /Add the greeting/ })
+    .click();
+  await expect(description).toHaveText("Says hello.");
+  await expect(description).toHaveClass(/jj-expanded/);
 });

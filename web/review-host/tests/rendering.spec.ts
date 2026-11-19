@@ -279,23 +279,3 @@ test("a file row gives its folder under the name in the tree and the flat list",
   await page.getByRole("button", { name: "Showing files as a tree", exact: true }).click();
   await expect(row.locator(".jj-file-path")).toHaveText("src/web");
 });
-
-test("the description opens in place of the diff and J returns to the files", async ({ page }) => {
-  await page.goto("/");
-  await ready(page);
-  const files = page.locator(".jj-file-column");
-  const row = files.getByRole("button", { name: "Description", exact: true });
-  const body = page.locator(".jj-review-detail .jj-description-body");
-  await expect(body).toHaveCount(0);
-  await expect(page.locator(".jj-change-description")).toHaveCount(0);
-
-  await row.click();
-  await expect(body).not.toBeEmpty();
-  await expect(row).toHaveAttribute("aria-current", "true");
-  await expect(page.locator(".jj-file-heading")).toHaveCount(0);
-  await page.keyboard.press("j");
-  await expect(body).toHaveCount(0);
-  await expect(page.locator(".jj-file-heading h2")).toBeVisible();
-  await page.keyboard.press("k");
-  await expect(body).toBeVisible();
-});

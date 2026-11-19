@@ -11,7 +11,6 @@ import type { Labels } from "../../model/diff";
 import {
   ChevronIcon,
   CloseIcon,
-  FileIcon,
   FolderIcon,
   HideReviewedIcon,
   KeyboardIcon,
@@ -176,7 +175,6 @@ export function FileColumn({
   setFilter,
   onShowShortcuts,
   notes = true,
-  description,
   marks = true,
   onReviewMode,
   header,
@@ -191,8 +189,6 @@ export function FileColumn({
   setFilter: (filter: FileFilter) => void;
   onShowShortcuts?: () => void;
   notes?: boolean;
-  /** A row above the files for the change's description, which the host shows in place of a file. */
-  description?: { label: string; open: boolean; show: () => void };
   /** Review mode: off hides the marks and everything that acts on them, and file rows show their kind as a badge. */
   marks?: boolean;
   /** Adds the review mode toggle to the tools. */
@@ -301,7 +297,7 @@ export function FileColumn({
   }
 
   return (
-    <aside className="jj-file-column" aria-label={labels.files}>
+    <aside className={`jj-file-column ${marks ? "" : "jj-marks-off"}`} aria-label={labels.files}>
       {header}
       <div className="jj-pane-heading jj-file-tools">
         {notes && (activeNotes > 0 || onlyNotes) && (
@@ -380,23 +376,6 @@ export function FileColumn({
         </div>
       )}
       <div className="jj-file-rows" tabIndex={-1}>
-        {description && (
-          <div
-            className={`jj-file-row jj-description-row ${description.open ? "jj-selected" : ""}`}
-          >
-            <button
-              className="jj-description-select"
-              aria-current={description.open ? "true" : undefined}
-              onClick={(event) => {
-                event.currentTarget.focus();
-                description.show();
-              }}
-            >
-              <FileIcon />
-              {description.label}
-            </button>
-          </div>
-        )}
         {visible.size === 0 && (
           <p className="jj-notice">
             {text

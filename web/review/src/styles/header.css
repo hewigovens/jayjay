@@ -118,18 +118,6 @@
 :where(.jayjay-review) .jj-markdown img[width] {
   height: auto;
 }
-:where(.jayjay-review) .jj-description-body {
-  max-width: 88ch;
-  margin: 0;
-  padding: 16px 14px 48px;
-  font-size: calc(14px * var(--jj-interface-scale, 1));
-  line-height: 1.6;
-  white-space: pre-wrap;
-  overflow-wrap: anywhere;
-}
-:where(.jayjay-review) .jj-description-body.jj-markdown {
-  white-space: normal;
-}
 :where(.jayjay-review) .jj-description-toggle {
   margin-top: 2px;
 }

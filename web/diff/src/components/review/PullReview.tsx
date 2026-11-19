@@ -10,7 +10,15 @@ import {
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import type { AppearanceSettings } from "../../AppearanceSettings";
-import { atCommit, gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
+import { GitHubSignIn } from "../../github/GitHubSignIn";
+import { PullLoader } from "../../github/PullLoader";
+import {
+  atCommit,
+  gitHubUrl,
+  isCommit,
+  isPullRequest,
+  type ReviewRef,
+} from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
 import { useReviewMode } from "../../hooks/useReviewMode";
 import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
@@ -75,6 +83,13 @@ export function PullReview({
     }
   }
   const openCommit = (sha: string | undefined) => onOpen(atCommit(pull, sha));
+  // A commit's manifest takes about a second cold, so it starts loading before the click, which can then find it in the HTTP cache.
+  const warmed = useRef(new Set<string>());
+  function warmCommit(sha: string) {
+    if (warmed.current.has(sha)) return;
+    warmed.current.add(sha);
+    void PullLoader.open(atCommit(pull, sha), GitHubSignIn.token).catch(() => undefined);
+  }
   // The picker that opened this review has taken its focus back; a later remount, as on rotation, must not. Skipped while another pull request loads, when no picker is mounted to take it.
   useEffect(() => {
     if (shown !== undefined) picked.current = undefined;
@@ -149,6 +164,7 @@ export function PullReview({
             selected={pull.commit}
             labels={labels}
             onSelect={openCommit}
+            onWarm={warmCommit}
           />
         )}
         <ReviewWorkspace
@@ -178,15 +194,13 @@ export function PullReview({
                   picked.current = "commits";
                   openCommit(sha);
                 }}
+                onWarm={warmCommit}
               />
             )
           }
           reviewMode={reviewMode}
           onReviewMode={toggleReviewMode}
-          descriptionLabel={
-            isPullRequest(pull) && shown === "" ? labels.pullDescription : undefined
-          }
-          descriptionFirst={isPullRequest(pull) && !pull.commit}
+          descriptionExpanded={Boolean(shown) || isCommit(pull)}
           onRetry={
             retryable
               ? () => (review.error === "worker-stopped" ? location.reload() : void refresh())

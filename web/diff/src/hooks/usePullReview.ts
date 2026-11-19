@@ -113,7 +113,12 @@ export function usePullReview(
             headSha: next.manifest.headSha,
             title: next.manifest.title,
           });
-          setCommits(next.manifest.commits);
+          // A commit's manifest may be a day old, so a list that already names the commit stays until a refresh.
+          setCommits((current) =>
+            !fresh && commit && current.some((entry) => entry.sha === commit)
+              ? current
+              : next.manifest.commits,
+          );
           // Only the whole pull request's manifest follows the stack; a commit keeps what it showed.
           if (!commit) setStack(next.manifest.stack);
           return result;

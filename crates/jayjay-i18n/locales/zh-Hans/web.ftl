@@ -126,7 +126,6 @@ web-pull-sync-viewed-failed = 无法更新 GitHub 上的“已查看”复选框
 web-pull-sync-viewed-restricted = 该组织限制了第三方应用，因此无法更新“已查看”复选框。请在 GitHub 上为 JayJay Diff 申请访问权限。
 web-pull-commits = 提交
 web-pull-all-commits = 所有提交
-web-pull-description = Pull Request 描述
 web-pull-stack = 堆叠的 Pull Request
 web-pull-merged = 已合并
 web-pull-closed = 已关闭

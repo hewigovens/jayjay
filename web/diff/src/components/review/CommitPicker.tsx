@@ -11,12 +11,14 @@ export function CommitPicker({
   labels,
   autoFocus,
   onSelect,
+  onWarm,
 }: {
   commits: PullCommit[];
   selected: string | undefined;
   labels: Labels;
   autoFocus: boolean;
   onSelect: (sha: string | undefined) => void;
+  onWarm: (sha: string) => void;
 }) {
   const position = commits.findIndex((commit) => commit.sha === selected) + 1;
   const current = commits[position - 1]?.title ?? labels.pullAllCommits;
@@ -33,7 +35,7 @@ export function CommitPicker({
           <ChevronIcon open />
         </>
       }
-      items={commitItems(commits, selected, labels, onSelect)}
+      items={commitItems(commits, selected, labels, onSelect, onWarm)}
     />
   );
 }

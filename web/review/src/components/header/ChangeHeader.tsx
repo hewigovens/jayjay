@@ -3,10 +3,22 @@ import { useState, type ReactNode } from "react";
 import type { Labels } from "../../model/diff";
 import type { Overview } from "../../model/review";
 import { Avatar } from "../Avatar";
-import { ChangeDescription } from "./ChangeDescription";
 import { ExpandIcon } from "../icons";
 import { ToolButton } from "../ToolButton";
 import { DiffStats } from "./DiffStats";
+
+// Joins terminal-wrapped commit message lines into paragraphs, keeping list items, indented lines and blank lines.
+function reflow(text: string): string {
+  return text
+    .split(/\n\s*\n/)
+    .map((paragraph) =>
+      paragraph.split("\n").reduce((out, line) => {
+        const keep = /^(\s|[-*+] |\d+[.)] )/.test(line);
+        return out === "" ? line : keep ? `${out}\n${line}` : `${out} ${line.trim()}`;
+      }, ""),
+    )
+    .join("\n\n");
+}
 
 export function ChangeHeader({
   overview,
@@ -14,18 +26,16 @@ export function ChangeHeader({
   hideChangeId = false,
   actions,
   avatars,
-  inlineDescription = true,
+  descriptionExpanded,
 }: {
   overview: Overview;
   labels: Labels;
   hideChangeId?: boolean;
   actions?: ReactNode;
   avatars: boolean;
-  /** Off where the description has its own view, so the header is the title and byline alone. */
-  inlineDescription?: boolean;
+  descriptionExpanded: boolean;
 }) {
-  const [expanded, setExpanded] = useState(false);
-  const description = inlineDescription && overview.description;
+  const [expanded, setExpanded] = useState(descriptionExpanded);
   const added = overview.files.reduce((sum, file) => sum + file.added, 0);
   const removed = overview.files.reduce((sum, file) => sum + file.removed, 0);
   const prefix = Math.min(overview.changeIdPrefix ?? 2, overview.changeId.length);
@@ -39,7 +49,7 @@ export function ChangeHeader({
     <header className="jj-change-header">
       <div className="jj-change-title">
         <h1>{overview.title}</h1>
-        {description && (
+        {overview.description && (
           <ToolButton
             className="jj-description-toggle"
             aria-expanded={expanded}
@@ -51,12 +61,17 @@ export function ChangeHeader({
         )}
         {actions && <div className="jj-change-actions">{actions}</div>}
       </div>
-      {description && (
-        <ChangeDescription
-          overview={overview}
-          className={`jj-change-description ${expanded ? "jj-expanded" : ""}`}
-        />
-      )}
+      {overview.description &&
+        (overview.descriptionHtml ? (
+          <div
+            className={`jj-change-description jj-markdown ${expanded ? "jj-expanded" : ""}`}
+            dangerouslySetInnerHTML={{ __html: overview.descriptionHtml }}
+          />
+        ) : (
+          <p className={`jj-change-description ${expanded ? "jj-expanded" : ""}`}>
+            {reflow(overview.description)}
+          </p>
+        ))}
       <div className="jj-byline">
         {overview.author && (
           <>

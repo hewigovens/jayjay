@@ -81,7 +81,29 @@
   border-radius: 8px;
 }
 :where(.jayjay-review) :is(.jj-folder-row, .jj-file-row) {
+  position: relative;
   padding-left: var(--jj-row-indent);
+}
+/* A hairline between rows, inset past the row's leading controls. */
+:where(.jayjay-review)
+  :is(.jj-folder-row, .jj-file-row)
+  + :is(.jj-folder-row, .jj-file-row)::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  right: -6px;
+  left: calc(var(--jj-row-indent) + var(--jj-toggle-size, 16px) + 22px);
+  border-top: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-marks-off .jj-file-row::before {
+  left: calc(var(--jj-row-indent) + 24px);
+}
+:where(.jayjay-review) :is(.jj-folder-row, .jj-file-row) + .jj-folder-row::before {
+  left: calc(var(--jj-row-indent) + 14px);
+}
+:where(.jayjay-review) .jj-file-row:is(.jj-selected, :hover)::before,
+:where(.jayjay-review) .jj-file-row:is(.jj-selected, :hover) + ::before {
+  display: none;
 }
 :where(.jayjay-review) .jj-file-row:not(.jj-selected):hover {
   background: color-mix(in srgb, var(--jj-ink) 5%, transparent);
@@ -102,26 +124,6 @@
   border-radius: 0;
   font-size: calc(14px * var(--jj-interface-scale, 1));
 }
-:where(.jayjay-review) .jj-description-row {
-  margin-bottom: 4px;
-  padding-left: 8px;
-}
-:where(.jayjay-review) .jj-description-select {
-  flex: 1;
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  padding: 6px 0;
-  border: 0;
-  background: transparent;
-  font-size: calc(14px * var(--jj-interface-scale, 1));
-  font-weight: 500;
-  text-align: left;
-}
-:where(.jayjay-review) .jj-description-select .jj-icon {
-  color: var(--jj-muted);
-}
-:where(.jayjay-review) .jj-description-select:hover,
 :where(.jayjay-review) .jj-file-select:hover {
   background: transparent;
   color: inherit;

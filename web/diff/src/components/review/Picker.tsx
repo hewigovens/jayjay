@@ -1,11 +1,14 @@
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
 import { ToolButton } from "@jayjay/review-web/react";
+import { useHoverIntent } from "../../hooks/useHoverIntent";
 
 export interface PickerItem {
   key: string;
   current: boolean;
   content: ReactNode;
   pick: () => void;
+  // Starts loading what a pick will open.
+  warm?: () => void;
 }
 
 export function Picker({
@@ -26,6 +29,7 @@ export function Picker({
   const root = useRef<HTMLDivElement>(null);
   const toggle = useRef<HTMLButtonElement>(null);
   const id = useId();
+  const intent = useHoverIntent();
 
   useEffect(() => {
     if (!open) return;
@@ -79,6 +83,7 @@ export function Picker({
               <button
                 className="picker-row"
                 aria-current={item.current}
+                {...intent(item.warm)}
                 onClick={() => {
                   close();
                   if (!item.current) item.pick();

@@ -1,4 +1,4 @@
-import { parseReviewRef, reviewPath } from "../src/github/ReviewRef";
+import { parseReviewRef, reviewPath, isCommit } from "../src/github/ReviewRef";
 import { GitHub, GitHubError } from "./github/GitHub";
 import { Exports } from "./Exports";
 import { GitHubLogin } from "./github/GitHubLogin";
@@ -69,10 +69,11 @@ export default {
     const token =
       /^Bearer (\S+)$/.exec(request.headers.get("authorization") ?? "")?.[1] ?? env.GITHUB_TOKEN;
     try {
-      // A short edge cache absorbs reloads and shared links; new pushes show up within a minute.
       const manifest = await new GitHub(token).manifest(target);
       if (sample) context.waitUntil(env.STORE.put(sample, JSON.stringify(manifest)));
-      const response = json(manifest, 200, 60);
+      // A commit named by its full SHA never changes, so it keeps for a day; anything that may follow a ref keeps for a minute, so new pushes show up.
+      const pinned = target.commit ?? (isCommit(target) && target.sha.length === 40);
+      const response = json(manifest, 200, pinned ? 86400 : 60);
       context.waitUntil(caches.default.put(request, response.clone()));
       return response;
     } catch (error) {

@@ -38,6 +38,7 @@ export function commitItems(
   selected: string | undefined,
   labels: Labels,
   onSelect: (sha: string | undefined) => void,
+  onWarm: (sha: string) => void,
 ): PickerItem[] {
   return [
     {
@@ -57,6 +58,7 @@ export function commitItems(
         key: commit.sha,
         current: commit.sha === selected,
         pick: () => onSelect(commit.sha),
+        warm: commit.sha === selected ? undefined : () => onWarm(commit.sha),
         content: (
           <>
             <span className="picker-title">{commit.title}</span>
