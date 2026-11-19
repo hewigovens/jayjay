@@ -431,6 +431,41 @@ fn a_shebang_names_the_language_only_when_the_extension_does_not() {
             "python",
         ),
         ("bin/changes", "#!/usr/bin/env -u\nprint(1)\n", "plaintext"),
+        (
+            "bin/changes",
+            "#!/usr/bin/env -S uv run --script\nprint(1)\n",
+            "python",
+        ),
+        (
+            "bin/changes",
+            "#!/usr/bin/env nix-shell\n#! nix-shell -p jq\n#! nix-shell -i python3\nprint(1)\n",
+            "python",
+        ),
+        (
+            "bin/changes",
+            "#!/usr/bin/env nix-shell\n#! nix-shell -p jq\necho hi\n",
+            "shell",
+        ),
+        (
+            "bin/changes",
+            "#!/usr/bin/env nix-shell\n#! nix-shell -i perl\nprint 1;\n",
+            "plaintext",
+        ),
+        (
+            "bin/changes",
+            "#!/usr/bin/env nix-shell\n\n#! other -i ruby\n#! nix-shell -i 'python3'\nprint(1)\n",
+            "python",
+        ),
+        (
+            "bin/changes",
+            "#!/usr/bin/env nix-shell\n#! nix-shell -i\necho hi\n",
+            "plaintext",
+        ),
+        (
+            "bin/changes",
+            "#!/usr/bin/env -S uv run runner --script\necho hi\n",
+            "plaintext",
+        ),
         ("bin/changes", "#!/usr/bin/perl\nprint 1;\n", "plaintext"),
         ("bin/changes", "echo hi\n#!/bin/sh\n", "plaintext"),
         ("bin/changes.py", "#!/bin/sh\necho hi\n", "python"),
@@ -446,4 +481,36 @@ fn a_shebang_names_the_language_only_when_the_extension_does_not() {
             .iter()
             .any(|span| span.token == SyntaxToken::StringLit)
     );
+}
+
+#[test]
+fn file_names_pick_a_grammar_only_where_the_format_is_certain() {
+    let unit = "[Unit]\nDescription=Sync\n";
+    for (path, source, language) in [
+        ("flake.lock", "{}\n", "json"),
+        ("ios/Podfile.lock", "PODS:\n", "yaml"),
+        ("yarn.lock", "# yarn lockfile v1\n", "plaintext"),
+        (".env.production", "A=1\n", "shell"),
+        (".env.local.php", "<?php return [];\n", "php"),
+        ("home/.zshrc", "export A=1\n", "shell"),
+        ("notes.zshrc", "export A=1\n", "plaintext"),
+        ("units/sync.service", unit, "ini"),
+        ("mock/list.service", "[\n  1\n]\n", "plaintext"),
+        (
+            "avahi/ssh.service",
+            "<?xml version=\"1.0\"?>\n<service-group/>\n",
+            "plaintext",
+        ),
+        (
+            "Report.command",
+            "#!/usr/bin/env python3\nprint(1)\n",
+            "python",
+        ),
+    ] {
+        assert_eq!(
+            crate::syntax::language_for(path, source),
+            language,
+            "{path}"
+        );
+    }
 }

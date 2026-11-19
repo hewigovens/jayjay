@@ -242,9 +242,32 @@ languages! {
 /// The extension decides; a file it does not place is read by its shebang.
 pub fn language_for(path: &str, source: &str) -> &'static str {
     match language_for_path(path) {
-        "plaintext" => shebang_language(source).unwrap_or("plaintext"),
+        "plaintext" => shebang_language(source)
+            .or_else(|| language_for_ambiguous_name(path, source))
+            .unwrap_or("plaintext"),
         language => language,
     }
+}
+
+/// Names other formats share, so the content has to agree before they are highlighted.
+fn language_for_ambiguous_name(path: &str, source: &str) -> Option<&'static str> {
+    let name = path.rsplit('/').next()?.to_ascii_lowercase();
+    if name.starts_with(".env.") {
+        return Some("shell");
+    }
+    let (_, ext) = name.rsplit_once('.')?;
+    let starts_with_section = || {
+        source
+            .lines()
+            .map(str::trim_start)
+            .find(|line| !line.is_empty() && !line.starts_with(['#', ';']))
+            .is_some_and(|line| {
+                let line = line.trim_end();
+                line.len() > 2 && line.starts_with('[') && line.ends_with(']')
+            })
+    };
+    (matches!(ext, "service" | "socket" | "timer" | "desktop") && starts_with_section())
+        .then_some("ini")
 }
 
 fn shebang_language(source: &str) -> Option<&'static str> {
@@ -265,31 +288,78 @@ fn shebang_language(source: &str) -> Option<&'static str> {
             }
         };
     }
+    match program.rsplit('/').next()? {
+        // The body is written for the interpreter a `#! nix-shell -i` line names, bash when none does.
+        "nix-shell" => match nix_shell_interpreter(source) {
+            Some(interpreter) => interpreter_language(interpreter?),
+            None => Some("shell"),
+        },
+        "uv" => (words.next() == Some("run")
+            && words
+                .take_while(|word| word.starts_with('-') && *word != "--")
+                .any(|word| matches!(word, "--script" | "-s")))
+        .then_some("python"),
+        interpreter => interpreter_language(interpreter),
+    }
+}
+
+/// The `-i` operand on the `#! nix-shell` lines, which Nix reads from anywhere in the file; the inner option is empty when the flag has no operand.
+fn nix_shell_interpreter(source: &str) -> Option<Option<&str>> {
+    let mut arguments = source.lines().skip(1).flat_map(|line| {
+        let mut words = line.strip_prefix("#!").unwrap_or("").split_whitespace();
+        (words.next() == Some("nix-shell"))
+            .then_some(words)
+            .into_iter()
+            .flatten()
+    });
+    arguments.find(|word| *word == "-i")?;
+    Some(arguments.next().map(|word| word.trim_matches(['\'', '"'])))
+}
+
+fn interpreter_language(program: &str) -> Option<&'static str> {
     let interpreter = program
         .rsplit('/')
         .next()?
         .trim_end_matches(|c: char| c.is_ascii_digit() || c == '.');
     Some(match interpreter {
-        "sh" | "bash" | "zsh" | "dash" | "ksh" => "shell",
+        "sh" | "bash" | "zsh" | "dash" | "ksh" | "ash" | "bats" => "shell",
         "fish" => "fish",
-        "python" => "python",
+        "python" | "pypy" => "python",
         "ruby" => "ruby",
-        "node" => "javascript",
+        "node" | "nodejs" | "zx" => "javascript",
+        "deno" | "bun" | "ts-node" | "tsx" => "typescript",
         "lua" | "luajit" => "lua",
         "php" => "php",
-        "pwsh" => "powershell",
+        "pwsh" | "powershell" => "powershell",
         "make" => "make",
+        "swift" => "swift",
+        "cargo" => "rust",
         _ => return None,
     })
 }
 
 fn language_for_path(path: &str) -> &'static str {
     let basename = path.rsplit('/').next().unwrap_or(path);
-    if matches!(basename, "Makefile" | "makefile" | "GNUmakefile") {
-        return "make";
-    }
-    if basename == "CMakeLists.txt" {
-        return "cmake";
+    match basename {
+        "Makefile" | "makefile" | "GNUmakefile" | "Makefile.am" => return "make",
+        "CMakeLists.txt" => return "cmake",
+        "Gemfile" | "Rakefile" | "Podfile" | "Fastfile" | "Appfile" | "Matchfile" | "Brewfile"
+        | "Vagrantfile" | "Guardfile" | "Dangerfile" => return "ruby",
+        "PKGBUILD" | "APKBUILD" | ".env" | ".envrc" | ".profile" | ".bashrc" | ".bash_profile"
+        | ".bash_aliases" | ".bash_logout" | ".zshrc" | ".zshenv" | ".zprofile" => return "shell",
+        ".npmrc" | ".gitmodules" | ".pylintrc" | ".flake8" | ".hgrc" | "setup.cfg" => return "ini",
+        // YAML is a superset of JSON, so it covers the rc files that may hold either.
+        ".clang-format" | ".clang-tidy" | ".yamllint" | ".gemrc" | ".prettierrc" | ".eslintrc"
+        | ".babelrc" | ".stylelintrc" => return "yaml",
+        "BUILD" | "WORKSPACE" | "SConstruct" | "SConscript" | "Tiltfile" => return "python",
+        "Cargo.lock" | "Pipfile" | "poetry.lock" | "uv.lock" | "pdm.lock" | "Gopkg.lock" => {
+            return "toml";
+        }
+        "flake.lock" | "Pipfile.lock" | "composer.lock" | "deno.lock" | "Package.resolved" => {
+            return "json";
+        }
+        "Podfile.lock" | "pubspec.lock" | "pixi.lock" | "CITATION.cff" => return "yaml",
+        _ => {}
     }
     let name = basename.to_ascii_lowercase();
     if let Some(stem) = name.strip_suffix(".config")
@@ -303,42 +373,48 @@ fn language_for_path(path: &str) -> &'static str {
     let ext = name.rsplit_once('.').map_or("", |(_, ext)| ext);
     match ext {
         "rs" => "rust",
-        "swift" => "swift",
+        "swift" | "swiftinterface" => "swift",
         "js" | "cjs" | "mjs" | "jsx" => "javascript",
-        "ts" => "typescript",
+        "ts" | "mts" | "cts" => "typescript",
         "tsx" => "tsx",
-        "py" => "python",
+        "py" | "pyi" | "pyw" | "bzl" | "bazel" => "python",
         "go" => "go",
         "java" => "java",
         "kt" | "kts" => "kotlin",
         "c" | "h" => "c",
         "cs" | "csx" => "csharp",
-        "cpp" | "cc" | "cxx" | "hpp" | "hxx" | "hh" | "inl" | "ixx" => "cpp",
-        "rb" => "ruby",
-        "sh" | "bash" | "zsh" => "shell",
+        "cpp" | "cc" | "cxx" | "c++" | "hpp" | "hxx" | "hh" | "h++" | "inl" | "ixx" | "ipp"
+        | "tpp" | "ino" | "cu" | "cuh" => "cpp",
+        "rb" | "gemspec" | "podspec" | "rake" | "ru" => "ruby",
+        "sh" | "bash" | "zsh" | "ksh" | "bats" | "ebuild" | "env" => "shell",
         "fish" => "fish",
         "ftl" => "fluent",
-        "html" | "htm" => "html",
-        "css" | "scss" => "css",
-        "json" => "json",
+        "html" | "htm" | "vue" | "svelte" => "html",
+        "css" | "scss" | "pcss" | "postcss" => "css",
+        "json" | "jsonc" | "jsonl" | "ndjson" | "geojson" | "webmanifest" | "xcstrings"
+        | "tfstate" | "code-workspace" => "json",
         "php" | "phtml" => "php",
         "toml" => "toml",
         "yaml" | "yml" => "yaml",
-        "md" | "markdown" => "markdown",
-        "sql" => "sql",
+        "md" | "markdown" | "mdx" | "mdown" | "mkd" | "mdc" | "rmd" | "qmd" => "markdown",
+        "sql" | "psql" | "pgsql" | "mysql" | "ddl" | "dml" => "sql",
         "xml" | "xsd" | "xsl" | "xslt" | "svg" | "plist" | "entitlements" | "xib"
         | "storyboard" | "xcscheme" | "xcworkspacedata" | "xaml" | "csproj" | "fsproj"
         | "vbproj" | "vcxproj" | "props" | "targets" | "resx" | "nuspec" | "slnx" | "manifest"
-        | "appxmanifest" | "wxs" | "wxi" | "filters" | "ruleset" | "runsettings" => "xml",
+        | "appxmanifest" | "wxs" | "wxi" | "filters" | "ruleset" | "runsettings" | "xhtml"
+        | "rss" | "atom" | "kml" | "gpx" | "xlf" | "xliff" | "wsdl" | "pom" | "stringsdict"
+        | "xcprivacy" | "iml" | "fxml" | "qrc" | "glade" | "tmx" | "ps1xml" | "vsixmanifest" => {
+            "xml"
+        }
         "ps1" | "psm1" | "psd1" => "powershell",
         "bat" | "cmd" => "batch",
-        "ini" | "editorconfig" | "gitconfig" => "ini",
+        "ini" | "editorconfig" | "gitconfig" | "properties" => "ini",
         "cmake" => "cmake",
         "sol" => "solidity",
-        "zig" => "zig",
+        "zig" | "zon" => "zig",
         "nix" => "nix",
-        "lua" => "lua",
-        "mk" => "make",
+        "lua" | "rockspec" => "lua",
+        "mk" | "mak" => "make",
         _ => "plaintext",
     }
 }
