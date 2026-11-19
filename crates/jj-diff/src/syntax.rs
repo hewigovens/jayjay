@@ -210,7 +210,10 @@ languages! {
     "lang-go": "go" => tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY;
     "lang-c": "c" => tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY;
     "lang-csharp": "csharp" => tree_sitter_c_sharp::LANGUAGE, tree_sitter_c_sharp::HIGHLIGHTS_QUERY;
-    "lang-cpp": "cpp" => tree_sitter_cpp::LANGUAGE, tree_sitter_cpp::HIGHLIGHT_QUERY;
+    "lang-cpp": "cpp" => tree_sitter_cpp::LANGUAGE, &[
+        tree_sitter_c::HIGHLIGHT_QUERY,
+        tree_sitter_cpp::HIGHLIGHT_QUERY,
+    ].join("\n");
     "lang-json": "json" => tree_sitter_json::LANGUAGE, tree_sitter_json::HIGHLIGHTS_QUERY;
     "lang-toml": "toml" => tree_sitter_toml_ng::LANGUAGE, tree_sitter_toml_ng::HIGHLIGHTS_QUERY;
     "lang-ruby": "ruby" => tree_sitter_ruby::LANGUAGE, tree_sitter_ruby::HIGHLIGHTS_QUERY;

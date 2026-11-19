@@ -514,3 +514,24 @@ fn file_names_pick_a_grammar_only_where_the_format_is_certain() {
         );
     }
 }
+
+#[test]
+fn cpp_keeps_the_highlights_it_shares_with_c() {
+    let source = "#include <vector>\n// note\nclass Counter {\n    int count = 1;\n    const char* name = \"n\";\n};\n";
+    let diff = compute_file_diff_full("src/counter.cpp", "", source, false);
+    let spans: Vec<_> = diff.lines.iter().flat_map(|line| &line.spans).collect();
+    for (text, token) in [
+        ("// note", SyntaxToken::Comment),
+        ("class", SyntaxToken::Keyword),
+        ("int", SyntaxToken::Type),
+        ("1", SyntaxToken::Number),
+        ("\"n\"", SyntaxToken::StringLit),
+    ] {
+        assert!(
+            spans
+                .iter()
+                .any(|span| span.text == text && span.token == token),
+            "C++ should highlight {text:?} as {token:?}: {spans:?}"
+        );
+    }
+}
