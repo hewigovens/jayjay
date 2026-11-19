@@ -169,10 +169,13 @@ test.describe("phone portrait", () => {
     });
     await ready(page);
     const sections = page.locator(".jj-file-section");
-    // Every section renders before the scroll, so no late render above moves the file off the top.
-    await expect(page.locator(".jj-file-section .jj-diff-lines")).toHaveCount(6);
+    // The sections above the scroll target render first, so none grows under it afterwards.
+    for (let index = 0; index < 4; index++)
+      await expect(sections.nth(index).locator(".jj-diff-lines")).toHaveCount(1);
     await page.keyboard.press("j");
     await expect(sections.nth(1)).toBeFocused();
+    // The wheel takes over from the jump, which otherwise holds its file at the top while sections below render.
+    await page.mouse.wheel(0, 1);
     await sections.nth(3).evaluate((section) => section.scrollIntoView({ block: "start" }));
     await page.keyboard.press("j");
     await expect(sections.nth(4)).toBeFocused();

@@ -29,6 +29,8 @@ export interface PullCommit {
   title: string;
   // The GitHub login, or the commit's author name without one.
   author: string;
+  /** The GitHub account's avatar, when the commit has one. */
+  avatar?: string;
   timestampMillis: number;
 }
 

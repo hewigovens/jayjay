@@ -3,6 +3,7 @@
   position: relative;
   display: grid;
   grid-template-columns: min(var(--jj-files-width, var(--jj-files-default)), 60%) minmax(0, 1fr);
+  grid-template-rows: auto minmax(0, 1fr);
   height: max(560px, calc(100dvh - 220px));
   border: 1px solid var(--jj-border);
   border-radius: 7px;
@@ -20,9 +21,10 @@
   border-right: 1px solid var(--jj-border);
   background: var(--jj-page);
 }
-/* Stays inside the file column, so the diff's hunk toggles at its left edge keep their clicks. */
+/* Spans the row under the change header, and stays inside the file column so the diff's hunk toggles at its left edge keep their clicks. */
 :where(.jayjay-review) .jj-column-resizer {
   position: absolute;
+  grid-area: 2 / 1 / 3 / -1;
   z-index: 2;
   top: 0;
   bottom: 0;

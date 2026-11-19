@@ -13,12 +13,14 @@ export function Picker({
   button,
   items,
   autoFocus,
+  className = "",
 }: {
   label: string;
   button: ReactNode;
   items: PickerItem[];
   // The review remounts its header with what it opens, so the picker takes the focus back after a pick.
   autoFocus: boolean;
+  className?: string;
 }) {
   const [open, setOpen] = useState(false);
   const root = useRef<HTMLDivElement>(null);
@@ -58,7 +60,7 @@ export function Picker({
   };
 
   return (
-    <div className="picker" ref={root} onKeyDown={open ? keyDown : undefined}>
+    <div className={`picker ${className}`} ref={root} onKeyDown={open ? keyDown : undefined}>
       <ToolButton
         ref={toggle}
         className="picker-toggle"

@@ -126,6 +126,7 @@ web-pull-sync-viewed-failed = 無法更新 GitHub 上的「已檢視」核取方
 web-pull-sync-viewed-restricted = 此組織限制了第三方應用程式，因此無法更新「已檢視」核取方塊。請在 GitHub 上為 JayJay Diff 申請存取權限。
 web-pull-commits = 提交
 web-pull-all-commits = 所有提交
+web-pull-description = Pull Request 描述
 web-pull-stack = 堆疊的 Pull Request
 web-pull-merged = 已合併
 web-pull-closed = 已關閉

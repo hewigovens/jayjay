@@ -132,6 +132,9 @@ fn file_list_labels() -> Vec<(&'static str, String)> {
         ),
         ("switchToUnified", jayjay_i18n::diff::switch_to_unified()),
         ("copyPath", jayjay_i18n::diff::copy_path()),
+        ("description", jayjay_i18n::converge::description()),
+        ("reviewModeOn", jayjay_i18n::repo::turn_on_review_mode()),
+        ("reviewModeOff", jayjay_i18n::repo::turn_off_review_mode()),
         ("expandDescription", jayjay_i18n::repo::expand_description()),
         (
             "collapseDescription",
@@ -237,6 +240,7 @@ fn pull_labels() -> Vec<(&'static str, String)> {
         ("pullFooter", jayjay_i18n::web::pull_footer()),
         ("pullCommits", jayjay_i18n::web::pull_commits()),
         ("pullAllCommits", jayjay_i18n::web::pull_all_commits()),
+        ("pullDescription", jayjay_i18n::web::pull_description()),
         ("pullStack", jayjay_i18n::web::pull_stack()),
         ("pullMerged", jayjay_i18n::web::pull_merged()),
         ("pullClosed", jayjay_i18n::web::pull_closed()),

@@ -53,7 +53,7 @@ test("sharing follows the displayed session while another commit loads", async (
   const labels = {} as Labels;
   let state: ReturnType<typeof usePullReview>;
   function Host({ target }: { target: ReviewRef }) {
-    state = usePullReview(client, labels, target);
+    state = usePullReview(client, labels, target, true);
     return null;
   }
   const root = createRoot(document.createElement("div"));

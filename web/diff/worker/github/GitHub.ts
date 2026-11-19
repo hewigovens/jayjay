@@ -263,6 +263,7 @@ function pullCommit({ sha, commit, author }: GitHubCommit): PullCommit {
     sha,
     title: commit.message.split("\n", 1)[0],
     author: author?.login ?? commit.author?.name ?? "",
+    ...(author && { avatar: `https://avatars.githubusercontent.com/u/${author.id}?s=64` }),
     timestampMillis: Date.parse(commit.author?.date ?? "") || 0,
   };
 }

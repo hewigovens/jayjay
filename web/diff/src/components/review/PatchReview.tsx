@@ -8,6 +8,7 @@ import {
 } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels, ReviewBackend } from "@jayjay/review-web/types";
+import { useReviewMode } from "../../hooks/useReviewMode";
 import type { AppearanceSettings } from "../../AppearanceSettings";
 import type { Patch } from "../../Patch";
 import { DiffThemePicker } from "./DiffThemePicker";
@@ -44,6 +45,7 @@ export function PatchReview({
   );
   const review = useReview(backend);
   const [shortcuts, setShortcuts] = useState(false);
+  const [reviewMode, toggleReviewMode] = useReviewMode();
   useEffect(() => {
     document.title = `${patch.title} · JayJay Diff`;
   }, [patch]);
@@ -82,6 +84,9 @@ export function PatchReview({
         }
         allLines={false}
         fill
+        statusBar={false}
+        reviewMode={reviewMode}
+        onReviewMode={toggleReviewMode}
         onRetry={null}
       />
     </>

@@ -16,6 +16,7 @@ import { useFilesWidth } from "../hooks/useFilesWidth";
 import { useFolding } from "../hooks/useFolding";
 import { useLoadedSections } from "../hooks/useLoadedSections";
 import { useNoteJump } from "../hooks/useNoteJump";
+import { useOverdue } from "../hooks/useOverdue";
 import type { ReviewController } from "../hooks/useReview";
 import { useSectionJump } from "../hooks/useSectionJump";
 import { DiffPane, lineLabel } from "./diff/DiffPane";
@@ -24,6 +25,7 @@ import { Dialog } from "./Dialog";
 import { ColumnResizer } from "./files/ColumnResizer";
 import { FileColumn, noFileFilter } from "./files/FileColumn";
 import { ShortcutsDialog } from "./files/ShortcutsDialog";
+import { ChangeDescription } from "./header/ChangeDescription";
 import { ChangeHeader } from "./header/ChangeHeader";
 import { DiffOptionControls } from "./header/DiffOptionControls";
 import { FileHeader } from "./header/FileHeader";
@@ -50,6 +52,11 @@ export function ReviewWorkspace({
   avatars = false,
   allLines = true,
   fill = false,
+  statusBar = true,
+  descriptionLabel,
+  descriptionFirst = false,
+  reviewMode = true,
+  onReviewMode,
   diffThemes,
 }: {
   review: ReviewController;
@@ -71,6 +78,16 @@ export function ReviewWorkspace({
   allLines?: boolean;
   /** Fills the host's height edge to edge instead of sitting in a bordered card; the phone-width list still scrolls with the page. */
   fill?: boolean;
+  /** The bar under the diff with the saved, loading, or failed state and the render time. */
+  statusBar?: boolean;
+  /** Names the description's row and view; "Description" when omitted. */
+  descriptionLabel?: string;
+  /** Opens on the description instead of the first file, where the change has one. */
+  descriptionFirst?: boolean;
+  /** Off hides review marks, Mark reviewed, Space marking, and reviewed-file filtering; notes stay. */
+  reviewMode?: boolean;
+  /** Adds a review mode toggle to the file list's tools. */
+  onReviewMode?: () => void;
   /** Diff-only palettes with an optional appearance override. Omit to use the host CSS colors. */
   diffThemes?: DiffThemeSelection;
 }) {
@@ -88,6 +105,7 @@ export function ReviewWorkspace({
     image,
   } = review;
   const compact = useCompact();
+  const overdue = useOverdue(pending);
   const [target, setTarget] = useState<NoteTarget | null>(null);
   const [expanded, setExpanded] = useState<Set<string>>(() => new Set());
   const detail = useRef<HTMLElement>(null);
@@ -104,6 +122,17 @@ export function ReviewWorkspace({
   const [drawerFile, setDrawerFile] = useState(0);
   const drawerPick = useRef<number | null>(null);
   const showShortcuts = onShowShortcuts ?? (() => setShortcuts(true));
+  const [describing, setDescribing] = useState(descriptionFirst);
+  // Another change starts where the host asked, whatever the last one was showing.
+  const identity = result && `${result.overview.repositoryId}\0${result.overview.changeId}`;
+  const [described, setDescribed] = useState(identity);
+  if (identity && described !== identity) {
+    setDescribed(identity);
+    setDescribing(descriptionFirst);
+  }
+  // The phone list keeps the description in the header, where it expands in place.
+  const describable = !compact && Boolean(result?.overview.description);
+  const showDescription = describable && describing;
 
   function sections() {
     return [...(detail.current?.querySelectorAll<HTMLElement>(".jj-file-section") ?? [])];
@@ -124,13 +153,18 @@ export function ReviewWorkspace({
   if (drawerLayout !== compact) {
     setDrawerLayout(compact);
     setDrawer(false);
+    setDescribing(false);
   }
 
   useFileShortcuts({
     rows: () =>
       compact
         ? sections()
-        : [...(columns.current?.querySelectorAll<HTMLElement>(".jj-file-select") ?? [])],
+        : [
+            ...(columns.current?.querySelectorAll<HTMLElement>(
+              ".jj-description-select, .jj-file-select",
+            ) ?? []),
+          ],
     // Focus runs ahead of the selection while a pick renders, but a phone scroll can leave it off screen.
     current: (rows, focused) =>
       compact
@@ -139,12 +173,19 @@ export function ReviewWorkspace({
           : topSection(rows)
         : focused >= 0
           ? focused
-          : rows.findIndex((row) => Number(row.dataset.file) === selected),
-    reviewed: (index) => result?.overview.files[index]?.review === "reviewed",
+          : rows.findIndex((row) =>
+              showDescription
+                ? row.dataset.file === undefined
+                : Number(row.dataset.file) === selected,
+            ),
+    // N and P pass over the description row, which has no file.
+    reviewed: (index) =>
+      Number.isNaN(index) || (reviewMode && result?.overview.files[index]?.review === "reviewed"),
     go: (row) => {
       if (compact) return jump(Number(row.dataset.file));
       row.focus();
-      select(Number(row.dataset.file));
+      setDescribing(row.dataset.file === undefined);
+      if (row.dataset.file !== undefined) select(Number(row.dataset.file));
     },
     list: () => (compact ? null : columns.current?.querySelector(".jj-file-rows")),
     search: () => {
@@ -165,6 +206,9 @@ export function ReviewWorkspace({
     setTarget(null);
     setExpanded(new Set());
   }, [compact ? undefined : path]);
+  useEffect(() => {
+    if (showDescription) setTarget(null);
+  }, [showDescription]);
   useLayoutEffect(() => {
     diffScroll.current?.scrollTo(0, 0);
   }, [path]);
@@ -179,7 +223,7 @@ export function ReviewWorkspace({
   }, [result]);
 
   const jumpTarget = useNoteJump(detail, result, pending, compact, loaded);
-  const { folded, unfold } = useFolding(detail, result, compact, target?.path);
+  const { folded, unfold } = useFolding(detail, result, compact && reviewMode, target?.path);
 
   async function saveNote(body: string) {
     if (!target) return false;
@@ -236,7 +280,8 @@ export function ReviewWorkspace({
       )) ||
       !marking ||
       !indices.includes(selected) ||
-      target
+      target ||
+      showDescription
     )
       return;
     const position = order.indexOf(selected);
@@ -347,19 +392,21 @@ export function ReviewWorkspace({
         split={data.options.split}
         showAll={allLines ? () => configure({ ...options, showAll: true }) : undefined}
         review={{
-          states: data.groupStates,
+          states: reviewMode ? data.groupStates : [],
           disabled: locked,
-          toggle: (group) =>
-            void mutate(
-              {
-                kind: "setGroup",
-                file: index,
-                group,
-                reviewed: data.groupStates[group] !== "reviewed",
-                ignoreWhitespace: data.options.ignoreWhitespace,
-              },
-              index,
-            ),
+          toggle: !reviewMode
+            ? undefined
+            : (group) =>
+                void mutate(
+                  {
+                    kind: "setGroup",
+                    file: index,
+                    group,
+                    reviewed: data.groupStates[group] !== "reviewed",
+                    ignoreWhitespace: data.options.ignoreWhitespace,
+                  },
+                  index,
+                ),
           ...(notes && { note, annotation, marker }),
         }}
       />
@@ -387,7 +434,7 @@ export function ReviewWorkspace({
         {summary.notice && data.diff?.rows.length ? (
           <p className="jj-notice">{summary.notice}</p>
         ) : null}
-        {diff ?? <p className="jj-notice">{labels.loadingFile}</p>}
+        {diff ?? <p className="jj-notice jj-pending-notice">{labels.loadingFile}</p>}
       </>
     );
   }
@@ -433,15 +480,37 @@ export function ReviewWorkspace({
               : undefined
           }
         >
+          <ChangeHeader
+            overview={result.overview}
+            labels={labels}
+            hideChangeId={hideChangeId}
+            actions={headerActions}
+            avatars={avatars}
+            inlineDescription={compact}
+          />
           {!compact && (
             <FileColumn
               onShowShortcuts={onShowShortcuts ? undefined : showShortcuts}
               overview={result.overview}
-              selected={selected}
+              selected={showDescription ? -1 : selected}
               disabled={disabled}
               labels={labels}
-              select={select}
+              select={(index) => {
+                setDescribing(false);
+                select(index);
+              }}
+              description={
+                describable
+                  ? {
+                      label: descriptionLabel ?? labels.description,
+                      open: showDescription,
+                      show: () => setDescribing(true),
+                    }
+                  : undefined
+              }
               notes={notes}
+              marks={reviewMode}
+              onReviewMode={onReviewMode}
               toggle={toggleFiles}
               filter={filter}
               setFilter={setFilter}
@@ -457,18 +526,11 @@ export function ReviewWorkspace({
             />
           )}
           <section
-            className="jj-review-detail"
+            className={`jj-review-detail ${overdue && !showDescription ? "jj-overdue" : ""}`}
             aria-label={labels.result}
             aria-busy={pending}
             ref={detail}
           >
-            <ChangeHeader
-              overview={result.overview}
-              labels={labels}
-              hideChangeId={hideChangeId}
-              actions={headerActions}
-              avatars={avatars}
-            />
             {compact && (
               <div className="jj-pane-heading jj-diff-options">
                 <button
@@ -479,7 +541,7 @@ export function ReviewWorkspace({
                   onClick={openDrawer}
                 >
                   <ListIcon />
-                  {result.overview.files.some((entry) => entry.review === "reviewed")
+                  {reviewMode && result.overview.files.some((entry) => entry.review === "reviewed")
                     ? result.overview.counts.reviewed
                     : result.overview.counts.files}
                 </button>
@@ -493,105 +555,137 @@ export function ReviewWorkspace({
                 </div>
               </div>
             )}
-            {!compact && file && (
-              <FileHeader
-                file={file}
-                labels={labels}
-                disabled={disabled}
-                toggleReviewed={() => toggleFiles([result.file])}
-                controls={
-                  <DiffOptionControls
-                    labels={labels}
-                    options={options}
-                    configure={configure}
-                    allLines={allLines}
-                  />
-                }
-              />
-            )}
-            {result.syntaxUnavailable && (
-              <p className="jj-notice">
-                {labels.syntaxUnavailable}{" "}
-                <button onClick={() => select(selected)}>{labels.retry}</button>
-              </p>
-            )}
-            {!compact && result.diff?.whitespaceOnlyHidden && (
-              <p className="jj-notice">{labels.whitespaceOnly}</p>
-            )}
-            <NotesBanner
-              items={unplaced}
-              labels={labels}
-              disabled={disabled}
-              resolve={resolve}
-              update={update}
-              locate={locate}
-            />
-            {compact ? (
-              <div className="jj-file-sections">
-                {result.overview.files.map((entry, index) => {
-                  const section = loaded.get(entry.path);
-                  const current = section?.key === cacheKey;
-                  return (
-                    <LazySection
-                      key={entry.path}
-                      index={index}
-                      version={cacheKey}
-                      loaded={current || folded(entry)}
-                      load={load}
-                    >
-                      <FileHeader
-                        file={entry}
-                        labels={labels}
-                        disabled={disabled}
-                        toggleReviewed={() => toggleFiles([index])}
-                      />
-                      <div
-                        className="jj-diff-scroll"
-                        data-path={entry.path}
-                        aria-label={`${labels.lines}: ${entry.path}`}
-                      >
-                        {!folded(entry) && (
-                          <>
-                            {failed.has(index) && !current && (
-                              <p className="jj-notice">
-                                {labels.renderError}{" "}
-                                <button onClick={() => load(index)}>{labels.retry}</button>
-                              </p>
-                            )}
-                            {section
-                              ? diffPane(section.file, section.data, !current)
-                              : !failed.has(index) && (
-                                  <p className="jj-notice">{labels.loadingFile}</p>
-                                )}
-                          </>
-                        )}
-                      </div>
-                    </LazySection>
-                  );
-                })}
-                {!result.overview.files.length && (
-                  <p className="jj-empty-diff">{labels.noChangedFiles}</p>
-                )}
-              </div>
+            {showDescription ? (
+              <>
+                <div className="jj-pane-heading">
+                  <h2>{descriptionLabel ?? labels.description}</h2>
+                </div>
+                <div
+                  className="jj-diff-scroll"
+                  tabIndex={0}
+                  aria-label={descriptionLabel ?? labels.description}
+                >
+                  <ChangeDescription overview={result.overview} className="jj-description-body" />
+                </div>
+              </>
             ) : (
-              <div
-                ref={diffScroll}
-                className="jj-diff-scroll"
-                data-path={path}
-                tabIndex={0}
-                aria-label={labels.lines}
-              >
-                {file ? (
-                  diffPane(result.file, result)
-                ) : (
-                  <p className="jj-empty-diff">{labels.noChangedFiles}</p>
+              <>
+                {!compact && file && (
+                  <FileHeader
+                    file={file}
+                    labels={labels}
+                    marks={reviewMode}
+                    disabled={disabled}
+                    toggleReviewed={() => toggleFiles([result.file])}
+                    controls={
+                      <DiffOptionControls
+                        labels={labels}
+                        options={options}
+                        configure={configure}
+                        allLines={allLines}
+                      />
+                    }
+                  />
                 )}
+                {result.syntaxUnavailable && (
+                  <p className="jj-notice">
+                    {labels.syntaxUnavailable}{" "}
+                    <button onClick={() => select(selected)}>{labels.retry}</button>
+                  </p>
+                )}
+                {!compact && result.diff?.whitespaceOnlyHidden && (
+                  <p className="jj-notice">{labels.whitespaceOnly}</p>
+                )}
+                <NotesBanner
+                  items={unplaced}
+                  labels={labels}
+                  disabled={disabled}
+                  resolve={resolve}
+                  update={update}
+                  locate={locate}
+                />
+                {compact ? (
+                  <div className="jj-file-sections">
+                    {result.overview.files.map((entry, index) => {
+                      const section = loaded.get(entry.path);
+                      const current = section?.key === cacheKey;
+                      return (
+                        <LazySection
+                          key={entry.path}
+                          index={index}
+                          version={cacheKey}
+                          loaded={current || folded(entry)}
+                          load={load}
+                        >
+                          <FileHeader
+                            file={entry}
+                            labels={labels}
+                            marks={reviewMode}
+                            disabled={disabled}
+                            toggleReviewed={() => toggleFiles([index])}
+                          />
+                          <div
+                            className="jj-diff-scroll"
+                            data-path={entry.path}
+                            aria-label={`${labels.lines}: ${entry.path}`}
+                            style={
+                              section || folded(entry)
+                                ? undefined
+                                : ({
+                                    "--jj-pending-lines": entry.added + entry.removed,
+                                  } as CSSProperties)
+                            }
+                          >
+                            {!folded(entry) && (
+                              <>
+                                {failed.has(index) && !current && (
+                                  <p className="jj-notice">
+                                    {labels.renderError}{" "}
+                                    <button onClick={() => load(index)}>{labels.retry}</button>
+                                  </p>
+                                )}
+                                {section
+                                  ? diffPane(section.file, section.data, !current)
+                                  : !failed.has(index) && (
+                                      <p className="jj-notice jj-pending-notice">
+                                        {labels.loadingFile}
+                                      </p>
+                                    )}
+                              </>
+                            )}
+                          </div>
+                        </LazySection>
+                      );
+                    })}
+                    {!result.overview.files.length && (
+                      <p className="jj-empty-diff">{labels.noChangedFiles}</p>
+                    )}
+                  </div>
+                ) : (
+                  <div
+                    ref={diffScroll}
+                    className="jj-diff-scroll"
+                    data-path={path}
+                    tabIndex={0}
+                    aria-label={labels.lines}
+                  >
+                    {file ? (
+                      diffPane(result.file, result)
+                    ) : (
+                      <p className="jj-empty-diff">{labels.noChangedFiles}</p>
+                    )}
+                  </div>
+                )}
+              </>
+            )}
+            {statusBar && (
+              <div className="jj-result-footer" aria-live="polite">
+                <span>
+                  {overdue ? labels.loadingFile : error ? labels.engineError : savedLabel}
+                </span>
+                <span>{result.elapsed.toFixed(1)} ms</span>
               </div>
             )}
-            <div className="jj-result-footer" aria-live="polite">
-              <span>{pending ? labels.loadingFile : error ? labels.engineError : savedLabel}</span>
-              <span>{result.elapsed.toFixed(1)} ms</span>
-            </div>
           </section>
         </div>
       )}
@@ -618,6 +712,8 @@ export function ReviewWorkspace({
                 setDrawer(false);
               }}
               notes={notes}
+              marks={reviewMode}
+              onReviewMode={onReviewMode}
               toggle={toggleFiles}
               filter={filter}
               setFilter={setFilter}

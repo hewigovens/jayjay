@@ -126,6 +126,7 @@ web-pull-sync-viewed-failed = GitHub の「表示済み」チェックボック�
 web-pull-sync-viewed-restricted = この Organization はサードパーティ製アプリを制限しているため、「表示済み」チェックボックスを更新できません。GitHub で JayJay Diff のアクセスをリクエストしてください。
 web-pull-commits = コミット
 web-pull-all-commits = すべてのコミット
+web-pull-description = プル リクエストの説明
 web-pull-stack = スタックされたプル リクエスト
 web-pull-merged = マージ済み
 web-pull-closed = クローズ済み

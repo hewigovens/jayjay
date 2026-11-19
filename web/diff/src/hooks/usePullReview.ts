@@ -18,7 +18,12 @@ import { AppRestrictedError, ViewedSync } from "../github/ViewedSync";
 
 export type SyncFailure = "failed" | "restricted";
 
-export function usePullReview(client: LocalReviewClient, labels: Labels, pull: ReviewRef) {
+export function usePullReview(
+  client: LocalReviewClient,
+  labels: Labels,
+  pull: ReviewRef,
+  reviewMode: boolean,
+) {
   const path = reviewPath({ ...pull, commit: undefined });
   // Read on each open, so picking a commit reopens the review in place and keeps the last one on screen until it is ready.
   const wanted = useRef(pull.commit);
@@ -174,7 +179,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
     const token = GitHubSignIn.token;
     sync.current = null;
     // GitHub's Viewed boxes belong to the whole pull request, not one commit.
-    if (!syncing || shown !== "" || !token || !isPullRequest(pull)) return;
+    if (!reviewMode || !syncing || shown !== "" || !token || !isPullRequest(pull)) return;
     const controller = new AbortController();
     void (async () => {
       const loaded = await ViewedSync.load(pull, token, controller.signal);
@@ -193,7 +198,7 @@ export function usePullReview(client: LocalReviewClient, labels: Labels, pull: R
       if (!controller.signal.aborted) syncFailed(error);
     });
     return () => controller.abort();
-  }, [syncing, session]);
+  }, [syncing, session, reviewMode]);
   useEffect(() => {
     document.title = `${reviewName(pull)} · JayJay Diff`;
   }, [path]);

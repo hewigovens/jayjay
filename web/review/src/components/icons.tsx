@@ -43,12 +43,21 @@ export const HideReviewedIcon = ({ size }: { size?: number }) => (
     d="M2 8s2.2-4.5 6-4.5S14 8 14 8s-2.2 4.5-6 4.5S2 8 2 8ZM8 9.75a1.75 1.75 0 1 0 0-3.5 1.75 1.75 0 0 0 0 3.5ZM2.5 13.5l11-11"
   />
 );
+// Octicons file-directory, the folder the GPUI shell draws.
 export const FolderIcon = () => (
-  <Icon
-    className="jj-folder-icon"
-    size={18}
-    d="M1.75 4.25c0-.55.45-1 1-1h3.2l1.5 1.5h5.8c.55 0 1 .45 1 1v6.5c0 .55-.45 1-1 1H2.75c-.55 0-1-.45-1-1v-8Z"
-  />
+  <svg
+    className="jj-icon"
+    viewBox="0 0 16 16"
+    width="15"
+    height="15"
+    fill="currentColor"
+    aria-hidden="true"
+  >
+    <path d="M0 2.75C0 1.784.784 1 1.75 1H5c.55 0 1.07.26 1.4.7l.9 1.2a.25.25 0 0 0 .2.1h6.75c.966 0 1.75.784 1.75 1.75v8.5A1.75 1.75 0 0 1 14.25 15H1.75A1.75 1.75 0 0 1 0 13.25Zm1.75-.25a.25.25 0 0 0-.25.25v10.5c0 .138.112.25.25.25h12.5a.25.25 0 0 0 .25-.25v-8.5a.25.25 0 0 0-.25-.25H7.5c-.55 0-1.07-.26-1.4-.7l-.9-1.2a.25.25 0 0 0-.2-.1Z" />
+  </svg>
+);
+export const ReviewModeIcon = () => (
+  <Icon d="M2 4.5 3.5 6 6 3.5M8.5 4.75H14M2 11l1.5 1.5L6 10M8.5 11.25H14" />
 );
 export const ChevronIcon = ({ open }: { open: boolean }) => (
   <Icon size={10} d={open ? "M4 6l4 4 4-4" : "M6 4l4 4-4 4"} />

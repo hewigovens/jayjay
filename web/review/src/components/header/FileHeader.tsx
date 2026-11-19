@@ -15,12 +15,14 @@ export function FileHeader({
   disabled,
   toggleReviewed,
   controls,
+  marks,
 }: {
   file: FileSummary;
   labels: Labels;
   disabled: boolean;
   toggleReviewed: () => void;
   controls?: ReactNode;
+  marks: boolean;
 }) {
   const kind = file.kind ?? "modified";
   return (
@@ -43,34 +45,38 @@ export function FileHeader({
       <div className="jj-header-actions">
         {controls ? (
           <>
-            <label
-              className={`jj-header-action jj-review-action ${file.review === "reviewed" ? "jj-active" : ""}`}
-            >
-              <input
-                type="checkbox"
-                checked={file.review === "reviewed"}
-                disabled={disabled}
-                aria-label={labels.markReviewed}
-                onChange={toggleReviewed}
-              />
-              <ReviewStateIcon
-                state={file.review === "reviewed" ? "reviewed" : "unreviewed"}
-                size={14}
-              />
-              <span className="jj-label">
-                {file.review === "reviewed" ? labels.reviewed : labels.markReviewed}
-              </span>
-            </label>
+            {marks && (
+              <label
+                className={`jj-header-action jj-review-action ${file.review === "reviewed" ? "jj-active" : ""}`}
+              >
+                <input
+                  type="checkbox"
+                  checked={file.review === "reviewed"}
+                  disabled={disabled}
+                  aria-label={labels.markReviewed}
+                  onChange={toggleReviewed}
+                />
+                <ReviewStateIcon
+                  state={file.review === "reviewed" ? "reviewed" : "unreviewed"}
+                  size={14}
+                />
+                <span className="jj-label">
+                  {file.review === "reviewed" ? labels.reviewed : labels.markReviewed}
+                </span>
+              </label>
+            )}
             {controls}
           </>
         ) : (
-          <ReviewToggle
-            review={file.review}
-            path={file.path}
-            labels={labels}
-            disabled={disabled}
-            toggle={toggleReviewed}
-          />
+          marks && (
+            <ReviewToggle
+              review={file.review}
+              path={file.path}
+              labels={labels}
+              disabled={disabled}
+              toggle={toggleReviewed}
+            />
+          )
         )}
       </div>
     </div>

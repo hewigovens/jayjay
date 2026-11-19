@@ -7,7 +7,8 @@ import type { ReviewState } from "../../model/review";
 interface ReviewControls {
   states: ReviewState[];
   disabled: boolean;
-  toggle: (group: number) => void;
+  /** Leave out to hide the change groups' review stripes. */
+  toggle?: (group: number) => void;
   /** Leave out to hide the per-line note buttons. */
   note?: (anchor: DiffAnchor) => void;
   /** Content shown under an anchored line, such as its notes or a note composer. */
@@ -171,17 +172,18 @@ export function DiffPane({
     if (!pending) return;
     const { group, rows } = pending;
     const state = review?.states[group] ?? "unreviewed";
+    const toggle = review?.toggle;
     blocks.push(
       <div className={`jj-review-group jj-${state}`} key={`group:${blocks.length}`}>
-        {review && (
+        {toggle && (
           <input
             type="checkbox"
             className="jj-group-toggle"
             checked={state === "reviewed"}
-            disabled={review.disabled || group === cutGroup}
+            disabled={review?.disabled || group === cutGroup}
             aria-label={`${labels.group} ${group + 1} · ${labels[state]}`}
             title={`${labels.group} ${group + 1} · ${labels[state]}`}
-            onChange={() => review.toggle(group)}
+            onChange={() => toggle(group)}
           />
         )}
         {rows}

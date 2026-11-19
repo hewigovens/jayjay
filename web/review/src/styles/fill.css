@@ -42,6 +42,7 @@
   box-shadow: 0 4px 16px rgb(0 0 0 / 0.06);
   color: var(--jj-muted);
   font-size: calc(13px * var(--jj-interface-scale, 1));
+  animation: jj-appear 0.15s 0.3s backwards;
 }
 :where(.jayjay-review) .jj-loading-mark {
   position: relative;

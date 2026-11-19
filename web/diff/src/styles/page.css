@@ -36,11 +36,25 @@ main.pull-page {
   padding: 0;
 }
 
-.pull-page > .jj-review-workspace:not(.jj-review-empty) {
+.pull-body {
+  display: flex;
   flex: 1;
+  min-height: 0;
+}
+:is(.pull-page, .pull-body) > .jj-review-workspace {
+  flex: 1;
+  min-width: 0;
+}
+:is(.pull-page, .pull-body) > .jj-review-workspace:not(.jj-review-empty) {
   height: auto;
   min-height: 0;
 }
-.pull-page > .jj-review-empty {
+:is(.pull-page, .pull-body) > .jj-review-empty {
   min-height: 100dvh;
+}
+/* Matches the review's phone layout, which scrolls with the page. */
+@media (max-width: 680px) {
+  .pull-body {
+    display: contents;
+  }
 }

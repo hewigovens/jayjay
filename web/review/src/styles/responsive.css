@@ -80,7 +80,7 @@
   :where(.jayjay-review) .jj-file-heading h2 {
     font-size: calc(12px * var(--jj-interface-scale, 1));
   }
-  :where(.jayjay-review) .jj-change-header h1 {
+  :where(.jayjay-review) .jj-change-title h1 {
     flex: 1 1 0;
     font-size: calc(18px * var(--jj-interface-scale, 1));
   }

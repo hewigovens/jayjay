@@ -4,7 +4,20 @@ export default defineConfig({
   testDir: "./browser",
   expect: { timeout: 15_000 },
   fullyParallel: true,
-  use: { baseURL: "http://127.0.0.1:5174", locale: "en-US" },
+  use: {
+    baseURL: "http://127.0.0.1:5174",
+    locale: "en-US",
+    // Review mode starts off; the specs about marks run with it on.
+    storageState: {
+      cookies: [],
+      origins: [
+        {
+          origin: "http://127.0.0.1:5174",
+          localStorage: [{ name: "jayjay.diff.reviewMode", value: "on" }],
+        },
+      ],
+    },
+  },
   projects: [
     { name: "chromium", use: { ...devices["Pixel 7"] } },
     { name: "webkit", use: { ...devices["iPhone 13"] } },

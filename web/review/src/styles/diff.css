@@ -271,6 +271,21 @@
 :where(.jayjay-review) .jj-notice {
   border-bottom: 1px solid var(--jj-border);
 }
+:where(.jayjay-review) .jj-pending-notice {
+  min-height: calc(min(var(--jj-pending-lines, 0), 24) * var(--jj-diff-font-size, 12px) * 20 / 12);
+  animation: jj-appear 0.15s 0.3s backwards;
+}
+@keyframes jj-appear {
+  from {
+    opacity: 0;
+  }
+}
+:where(.jayjay-review) .jj-review-detail > .jj-diff-scroll {
+  transition: opacity 0.15s;
+}
+:where(.jayjay-review) .jj-overdue > .jj-diff-scroll {
+  opacity: 0.5;
+}
 :where(.jayjay-review) .jj-result-footer {
   display: flex;
   align-items: center;

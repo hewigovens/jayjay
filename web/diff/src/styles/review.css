@@ -133,20 +133,44 @@
   font: calc(11px * var(--jj-interface-scale, 1))/calc(18px * var(--jj-interface-scale, 1))
     var(--jj-mono);
 }
+.picker-ref b {
+  color: var(--jj-accent);
+  font-weight: 650;
+}
 .picker-title {
   grid-column: 2;
   overflow: hidden;
+  color: var(--jj-ink);
+  font-weight: 600;
   line-height: calc(18px * var(--jj-interface-scale, 1));
   text-overflow: ellipsis;
   white-space: nowrap;
 }
-.picker-title:first-child {
+.picker-title:first-child,
+.picker-title:first-child ~ .picker-meta {
   grid-column: 1 / -1;
+}
+.picker-all {
+  display: flex;
+  justify-content: space-between;
+}
+.picker-all > span {
+  color: var(--jj-muted);
+  font-weight: 400;
 }
 .picker-meta {
   grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
   color: var(--jj-muted);
   font-size: calc(11px * var(--jj-interface-scale, 1));
+  white-space: nowrap;
+}
+.picker-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
 }
 
 .pull-brand {
@@ -159,29 +183,64 @@
   display: block;
 }
 
+.pull-page {
+  --sidebar-width: 264px;
+}
 .pull-app-bar {
   display: flex;
   align-items: center;
   flex-wrap: wrap;
   flex: none;
-  padding: 0 16px;
+  min-height: 44px;
+  padding-right: 16px;
   border-bottom: 1px solid var(--jj-border);
 }
-.pull-home {
-  display: inline-flex;
+.pull-app-lead {
+  display: flex;
   align-items: center;
-  gap: 8px;
-  min-height: 40px;
+  align-self: stretch;
+  gap: 4px;
+  padding: 0 10px;
+}
+.pull-app-lead .share-feedback {
+  right: auto;
+  left: 0;
+}
+.pull-app-title {
+  display: flex;
+  align-items: center;
+  gap: 4px;
+  min-width: 0;
+}
+.pull-repo {
+  min-width: 0;
+  overflow: hidden;
   color: var(--jj-muted);
-  font-size: calc(12px * var(--jj-interface-scale, 1));
-  font-weight: 600;
+  font: calc(12px * var(--jj-interface-scale, 1)) var(--jj-mono);
   text-decoration: none;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
-.pull-home img {
-  display: block;
-}
-.pull-home:hover {
+.pull-repo:hover {
   color: var(--jj-ink);
+}
+/* The sidebar's top: it covers the bar's bottom border so the column runs to the top of the window, and the repository name lines up with the change title. */
+@media (min-width: 681px) and (min-height: 501px) {
+  .pull-app-lead {
+    box-sizing: border-box;
+    width: 0;
+    min-width: max-content;
+    transition: width 0.2s ease;
+  }
+  .sidebar-open > .pull-app-lead {
+    width: var(--sidebar-width);
+    margin-bottom: -1px;
+    border-right: 1px solid var(--jj-border);
+    background: var(--jj-page);
+  }
+  .sidebar-open > .pull-app-title {
+    padding-left: 11px;
+  }
 }
 
 .pull-app-actions {
@@ -190,14 +249,68 @@
   gap: 8px;
   margin-left: auto;
 }
+/* The contents keep their width while the column opens and closes, so rows don't rewrap mid-animation. */
+.commit-sidebar {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--jj-page);
+  visibility: hidden;
+  transition:
+    width 0.2s ease,
+    visibility 0s 0.2s;
+}
+.commit-sidebar.open {
+  width: var(--sidebar-width);
+  visibility: visible;
+  transition: width 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  .pull-app-lead,
+  .commit-sidebar,
+  .commit-sidebar.open {
+    transition: none;
+  }
+}
+.commit-sidebar > * {
+  width: var(--sidebar-width);
+  border-right: 1px solid var(--jj-border);
+}
+.commit-sidebar .picker-row {
+  padding-block: 8px;
+}
+.commit-sidebar ol {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 0 6px 8px;
+  list-style: none;
+}
+/* The sidebar owns the commit list while it is open; phones keep the picker. */
+@media (min-width: 681px) and (min-height: 501px) {
+  .pull-page:has(.commit-sidebar.open) .commit-picker {
+    display: none;
+  }
+}
 @media (max-width: 680px), (max-height: 500px) {
   .pull-app-bar {
-    padding-inline: 10px;
+    padding-right: 10px;
+  }
+  .pull-app-lead {
+    padding: 4px 6px;
+  }
+  .pull-repo,
+  .commit-sidebar,
+  .commit-sidebar-toggle {
+    display: none;
   }
   .pull-app-actions {
     gap: 2px;
   }
-  .pull-app-actions .jj-tool {
+  .pull-app-bar .jj-tool {
     min-width: 40px;
     min-height: 40px;
   }

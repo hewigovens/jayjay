@@ -1,16 +1,20 @@
 /** @jsxRuntime automatic */
-import { useMemo, useState, type CSSProperties } from "react";
+import { useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
 import type { Labels } from "../../model/diff";
 import {
   ChevronIcon,
   CloseIcon,
+  FileIcon,
   FolderIcon,
   HideReviewedIcon,
   KeyboardIcon,
   ListIcon,
+  ReviewModeIcon,
   SearchIcon,
   TreeIcon,
 } from "../icons";
+import { ContextMenu, type ContextMenuItem } from "../ContextMenu";
+import { KindBadge } from "./KindBadge";
 import { MiddlePath } from "./MiddlePath";
 import { ReviewToggle } from "./ReviewToggle";
 import { ToolButton } from "../ToolButton";
@@ -24,10 +28,29 @@ function folders(path: string): string[] {
   return result;
 }
 
+interface MenuTarget {
+  x: number;
+  y: number;
+  path: string;
+  files: number[];
+  /** The file's own row, which a mark may unmount. */
+  row: HTMLElement | null;
+}
+
+// Opens a row's context menu on right click, the Menu key, or ⌃Return, as the desktop app does.
+type RowMenu = (
+  path: string,
+  files: number[],
+) => {
+  onContextMenu: (event: MouseEvent) => void;
+  onKeyDown: (event: KeyboardEvent) => void;
+};
+
 function FileRow({
   file,
   index,
   name,
+  folder,
   depth,
   selected,
   disabled,
@@ -35,10 +58,13 @@ function FileRow({
   select,
   toggle,
   mark,
+  menu,
+  marks,
 }: {
   file: FileSummary;
   index: number;
   name: string;
+  folder: string;
   depth: number;
   selected: number;
   disabled: boolean;
@@ -46,21 +72,26 @@ function FileRow({
   select: (index: number) => void;
   toggle: (files: number[]) => void;
   mark: (index: number, row: HTMLElement) => void;
+  menu: RowMenu;
+  marks: boolean;
 }) {
   const kind = file.kind ?? "modified";
   const shownPath = file.oldPath ? `${file.oldPath} → ${file.path}` : file.path;
   return (
     <div
-      className={`jj-file-row jj-${file.review} ${selected === index ? "jj-selected" : ""}`}
+      className={`jj-file-row ${marks ? `jj-${file.review}` : ""} ${selected === index ? "jj-selected" : ""}`}
       style={{ "--jj-row-indent": `${8 + depth * 12}px` } as CSSProperties}
+      {...menu(file.path, [index])}
     >
-      <ReviewToggle
-        review={file.review}
-        path={file.path}
-        labels={labels}
-        disabled={disabled}
-        toggle={() => toggle([index])}
-      />
+      {marks && (
+        <ReviewToggle
+          review={file.review}
+          path={file.path}
+          labels={labels}
+          disabled={disabled}
+          toggle={() => toggle([index])}
+        />
+      )}
       {/* Safari leaves a clicked button unfocused, and Space needs it focused. */}
       <button
         className="jj-file-select"
@@ -69,18 +100,22 @@ function FileRow({
         aria-label={file.path}
         aria-description={labels[`kind.${kind}`]}
         aria-keyshortcuts="Space J K N P"
-        title={`${shownPath} · ${labels[file.review]}`}
+        title={marks ? `${shownPath} · ${labels[file.review]}` : shownPath}
         onClick={(event) => {
           event.currentTarget.focus();
           select(index);
         }}
         onKeyDown={(event) => {
-          if (event.key !== " ") return;
+          if (event.key !== " " || !marks) return;
           event.preventDefault();
           if (!event.repeat && !disabled) mark(index, event.currentTarget);
         }}
       >
-        <span className={`jj-kind-dot jj-${kind}`} title={labels[`kind.${kind}`]} />
+        {marks ? (
+          <span className={`jj-kind-dot jj-${kind}`} title={labels[`kind.${kind}`]} />
+        ) : (
+          <KindBadge kind={kind} label={labels[`kind.${kind}`]} />
+        )}
         <span className="jj-file-text">
           <span className="jj-file-name">
             {name}
@@ -90,15 +125,19 @@ function FileRow({
               </span>
             )}
           </span>
-          <span className="jj-file-path">
-            {file.oldPath && (
-              <>
-                <MiddlePath path={file.oldPath} className="jj-old-path" />
-                <span aria-hidden="true">→</span>
-              </>
-            )}
-            <MiddlePath path={file.path} />
-          </span>
+          {file.oldPath ? (
+            <span className="jj-file-path">
+              <MiddlePath path={file.oldPath} className="jj-old-path" />
+              <span aria-hidden="true">→</span>
+              <MiddlePath path={file.path} />
+            </span>
+          ) : (
+            folder && (
+              <span className="jj-file-path">
+                <MiddlePath path={folder} />
+              </span>
+            )
+          )}
         </span>
       </button>
     </div>
@@ -130,6 +169,9 @@ export function FileColumn({
   setFilter,
   onShowShortcuts,
   notes = true,
+  description,
+  marks = true,
+  onReviewMode,
 }: {
   overview: Overview;
   selected: number;
@@ -141,6 +183,12 @@ export function FileColumn({
   setFilter: (filter: FileFilter) => void;
   onShowShortcuts?: () => void;
   notes?: boolean;
+  /** A row above the files for the change's description, which the host shows in place of a file. */
+  description?: { label: string; open: boolean; show: () => void };
+  /** Review mode: off hides the marks and everything that acts on them, and file rows show their kind as a badge. */
+  marks?: boolean;
+  /** Adds the review mode toggle to the tools. */
+  onReviewMode?: () => void;
 }) {
   const [tree, setTree] = useState(() => {
     try {
@@ -158,8 +206,48 @@ export function FileColumn({
       return;
     }
   }
-  const { searching, text, hideReviewed, onlyNotes } = filter;
+  const { searching, text, onlyNotes } = filter;
+  const hideReviewed = marks && filter.hideReviewed;
   const [collapsed, setCollapsed] = useState<Set<string>>(() => new Set());
+  const [menu, setMenu] = useState<MenuTarget | null>(null);
+  const rowMenu: RowMenu = (path, files) => {
+    const open = (row: Element, x: number, y: number) =>
+      setMenu({ x, y, path, files, row: row.querySelector<HTMLElement>(".jj-file-select") });
+    return {
+      onContextMenu: (event) => {
+        event.preventDefault();
+        // The Menu key reports no pointer position.
+        const box = event.currentTarget.getBoundingClientRect();
+        if (event.clientX === 0 && event.clientY === 0)
+          open(event.currentTarget, box.left + 24, box.bottom);
+        else open(event.currentTarget, event.clientX, event.clientY);
+      },
+      onKeyDown: (event) => {
+        if (event.key !== "Enter" || !event.ctrlKey) return;
+        event.preventDefault();
+        const box = event.currentTarget.getBoundingClientRect();
+        open(event.currentTarget, box.left + 24, box.bottom);
+      },
+    };
+  };
+  // Built on each render, so the open menu follows a mark made or a load finished meanwhile.
+  function menuItems({ path, files, row }: MenuTarget): ContextMenuItem[] {
+    const copy = {
+      label: labels.copyPath,
+      run: () => void navigator.clipboard?.writeText(path).catch(() => undefined),
+    };
+    if (!marks) return [copy];
+    const review = folderReview(files.map((index) => overview.files[index].review));
+    return [
+      {
+        label: labels.markReviewed,
+        checked: review === "reviewed" ? true : review === "unreviewed" ? false : "mixed",
+        disabled,
+        run: () => (row ? mark(files[0], row) : toggle(files)),
+      },
+      copy,
+    ];
+  }
   const visible = useMemo(
     () =>
       new Set(
@@ -182,7 +270,7 @@ export function FileColumn({
   const { counts } = overview;
   const countLabel = text
     ? counts.filtered[visible.size]
-    : reviewed
+    : marks && reviewed
       ? counts.reviewed
       : counts.files;
 
@@ -216,7 +304,16 @@ export function FileColumn({
             {activeNotes}
           </ToolButton>
         )}
-        {(reviewed || hideReviewed) && (
+        {onReviewMode && (
+          <ToolButton
+            aria-pressed={marks}
+            label={marks ? labels.reviewModeOff : labels.reviewModeOn}
+            onClick={onReviewMode}
+          >
+            <ReviewModeIcon />
+          </ToolButton>
+        )}
+        {marks && (reviewed || hideReviewed) && (
           <ToolButton
             aria-pressed={hideReviewed}
             label={labels.hideReviewedFiles}
@@ -240,7 +337,7 @@ export function FileColumn({
         >
           <SearchIcon />
         </ToolButton>
-        <span className="jj-file-count" title={counts.reviewed}>
+        <span className="jj-file-count" title={marks ? counts.reviewed : undefined}>
           {countLabel}
         </span>
         {onShowShortcuts && (
@@ -273,6 +370,23 @@ export function FileColumn({
         </div>
       )}
       <div className="jj-file-rows" tabIndex={-1}>
+        {description && (
+          <div
+            className={`jj-file-row jj-description-row ${description.open ? "jj-selected" : ""}`}
+          >
+            <button
+              className="jj-description-select"
+              aria-current={description.open ? "true" : undefined}
+              onClick={(event) => {
+                event.currentTarget.focus();
+                description.show();
+              }}
+            >
+              <FileIcon />
+              {description.label}
+            </button>
+          </div>
+        )}
         {visible.size === 0 && (
           <p className="jj-notice">
             {text
@@ -296,18 +410,21 @@ export function FileColumn({
                     className="jj-folder-row"
                     key={`dir:${entry.path}`}
                     style={{ "--jj-row-indent": `${6 + entry.depth * 12}px` } as CSSProperties}
+                    {...rowMenu(entry.path, inside)}
                   >
                     {/* The review toggle sits between two halves of the folder button; this half is for the pointer only. */}
                     <button tabIndex={-1} aria-hidden="true" onClick={() => folder(entry.path)}>
                       <ChevronIcon open={open} />
                     </button>
-                    <ReviewToggle
-                      review={folderReview(inside.map((index) => overview.files[index].review))}
-                      path={entry.path}
-                      labels={labels}
-                      disabled={disabled}
-                      toggle={() => toggle(inside)}
-                    />
+                    {marks && (
+                      <ReviewToggle
+                        review={folderReview(inside.map((index) => overview.files[index].review))}
+                        path={entry.path}
+                        labels={labels}
+                        disabled={disabled}
+                        toggle={() => toggle(inside)}
+                      />
+                    )}
                     <button
                       className="jj-folder-name"
                       aria-expanded={open}
@@ -325,6 +442,7 @@ export function FileColumn({
                   file={overview.files[entry.file]}
                   index={entry.file}
                   name={entry.name}
+                  folder={entry.path.slice(0, Math.max(entry.path.lastIndexOf("/"), 0))}
                   depth={entry.depth}
                   selected={selected}
                   disabled={disabled}
@@ -332,6 +450,8 @@ export function FileColumn({
                   select={select}
                   toggle={toggle}
                   mark={mark}
+                  menu={rowMenu}
+                  marks={marks}
                 />
               ) : null;
             })
@@ -341,7 +461,8 @@ export function FileColumn({
                   key={file.path}
                   file={file}
                   index={index}
-                  name={file.path.split("/").at(-1) ?? file.path}
+                  name={file.path.slice(file.path.lastIndexOf("/") + 1)}
+                  folder={file.path.slice(0, Math.max(file.path.lastIndexOf("/"), 0))}
                   depth={0}
                   selected={selected}
                   disabled={disabled}
@@ -349,10 +470,21 @@ export function FileColumn({
                   select={select}
                   toggle={toggle}
                   mark={mark}
+                  menu={rowMenu}
+                  marks={marks}
                 />
               ) : null,
             )}
       </div>
+      {menu && menu.files.every((index) => index < overview.files.length) && (
+        <ContextMenu
+          x={menu.x}
+          y={menu.y}
+          label={menu.path}
+          items={menuItems(menu)}
+          onClose={() => setMenu(null)}
+        />
+      )}
     </aside>
   );
 }

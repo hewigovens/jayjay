@@ -11,13 +11,17 @@ import type { Labels } from "@jayjay/review-web/types";
 import type { AppearanceSettings } from "../../AppearanceSettings";
 import { atCommit, gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
-import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
+import { useReviewMode } from "../../hooks/useReviewMode";
+import { GitHubIcon, RefreshIcon, SidebarIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
 import { CommitPicker } from "./CommitPicker";
+import { CommitSidebar } from "./CommitSidebar";
 import { DiffThemePicker } from "./DiffThemePicker";
 import { ShareNotesButton } from "./ShareNotesButton";
 import { StackPicker } from "./StackPicker";
 import { SyncViewedButton } from "./SyncViewedButton";
+
+const sidebarKey = "jayjay.diff.commitSidebar";
 
 export function PullReview({
   client,
@@ -34,6 +38,7 @@ export function PullReview({
   pull: ReviewRef;
   onOpen: (pull: ReviewRef) => void;
 }) {
+  const [reviewMode, toggleReviewMode] = useReviewMode();
   const {
     review,
     refresh,
@@ -49,27 +54,41 @@ export function PullReview({
     notes,
     onSignedIn,
     enableSync,
-  } = usePullReview(client, labels, pull);
+  } = usePullReview(client, labels, pull, reviewMode);
   const [shortcuts, setShortcuts] = useState(false);
   const picked = useRef<"commits" | "stack">(undefined);
+  const [sidebar, setSidebar] = useState(() => {
+    try {
+      return localStorage.getItem(sidebarKey) !== "hidden";
+    } catch {
+      return true;
+    }
+  });
+  function toggleSidebar() {
+    setSidebar(!sidebar);
+    try {
+      localStorage.setItem(sidebarKey, sidebar ? "hidden" : "shown");
+    } catch {
+      return;
+    }
+  }
+  const openCommit = (sha: string | undefined) => onOpen(atCommit(pull, sha));
 
   return (
     <>
       {review.result && (
-        <nav className="pull-app-bar">
-          <a href="/" className="pull-home">
-            <img src="/favicon.svg" alt="" width="20" height="20" />
-            JayJay Diff
-          </a>
-          <div className="pull-app-actions">
-            <DiffThemePicker labels={labels} themes={themes} select={selectTheme} />
-            <ToolButton
-              label={labels.shortcuts}
-              aria-keyshortcuts="?"
-              onClick={() => setShortcuts(true)}
-            >
-              <KeyboardIcon />
-            </ToolButton>
+        <nav className={`pull-app-bar ${sidebar && commits.length > 1 ? "sidebar-open" : ""}`}>
+          <div className="pull-app-lead">
+            {commits.length > 1 && (
+              <ToolButton
+                className="commit-sidebar-toggle"
+                aria-pressed={sidebar}
+                label={labels.pullCommits}
+                onClick={toggleSidebar}
+              >
+                <SidebarIcon />
+              </ToolButton>
+            )}
             {!review.error && (
               <ToolButton
                 label={labels.pullRefresh}
@@ -80,7 +99,7 @@ export function PullReview({
               </ToolButton>
             )}
             <ShareNotesButton labels={labels} notes={notes} />
-            {shown === "" && isPullRequest(pull) && (
+            {reviewMode && shown === "" && isPullRequest(pull) && (
               <SyncViewedButton
                 labels={labels}
                 syncing={syncing}
@@ -88,74 +107,107 @@ export function PullReview({
                 onEnabled={enableSync}
               />
             )}
+          </div>
+          <div className="pull-app-title">
+            <ToolLink href={gitHubUrl(pull)} label={labels.pullOnGitHub}>
+              <GitHubIcon />
+            </ToolLink>
+            <a className="pull-repo" href={`https://github.com/${pull.owner}/${pull.repo}`}>
+              {pull.owner}/{pull.repo}
+            </a>
+          </div>
+          <div className="pull-app-actions">
+            <DiffThemePicker labels={labels} themes={themes} select={selectTheme} />
+            <ToolButton
+              label={labels.shortcuts}
+              aria-keyshortcuts="?"
+              onClick={() => setShortcuts(true)}
+            >
+              <KeyboardIcon />
+            </ToolButton>
             {signedIn && (
               <ToolButton label={labels.pullSignOut} onClick={signOut}>
                 <SignOutIcon />
               </ToolButton>
             )}
-            <ToolLink href={gitHubUrl(pull)} label={labels.pullOnGitHub}>
-              <GitHubIcon />
-            </ToolLink>
           </div>
         </nav>
       )}
       {shortcuts && <ShortcutsDialog labels={labels} onClose={() => setShortcuts(false)} />}
-      <ReviewWorkspace
-        key={shown ?? ""}
-        review={review}
-        diffThemes={themes}
-        hideChangeId={isPullRequest(pull) && shown === ""}
-        onShowShortcuts={() => setShortcuts(true)}
-        labels={labels}
-        brand={
-          <a className="pull-brand" href="/" aria-label="JayJay Diff" title="JayJay Diff">
-            <img src="/favicon.svg" alt="" width="28" height="28" />
-          </a>
-        }
-        avatars
-        fill
-        onRetry={
-          retryable
-            ? () => (review.error === "worker-stopped" ? location.reload() : void refresh())
-            : null
-        }
-        errorActions={
-          needsSignIn && !signedIn && <SignInPanel labels={labels} onSignedIn={onSignedIn} />
-        }
-        headerActions={
-          <>
-            {commits.length > 1 && (
-              <CommitPicker
-                commits={commits}
-                selected={pull.commit}
-                labels={labels}
-                autoFocus={picked.current === "commits"}
-                onSelect={(sha) => {
-                  picked.current = "commits";
-                  onOpen(atCommit(pull, sha));
-                }}
-              />
-            )}
-            {stack && isPullRequest(pull) && (
-              <StackPicker
-                stack={stack}
-                number={pull.number}
-                labels={labels}
-                autoFocus={picked.current === "stack"}
-                onSelect={(number) => {
-                  picked.current = "stack";
-                  onOpen({ owner: pull.owner, repo: pull.repo, number });
-                }}
-              />
-            )}
-            {review.error && !review.result && (
-              <a className="pull-error-link" href={gitHubUrl(pull)}>
-                {labels.pullOnGitHub}
-              </a>
-            )}
-          </>
-        }
-      />
+      <div className="pull-body">
+        {review.result && commits.length > 1 && (
+          <CommitSidebar
+            open={sidebar}
+            commits={commits}
+            selected={pull.commit}
+            labels={labels}
+            onSelect={openCommit}
+          />
+        )}
+        <ReviewWorkspace
+          key={shown ?? ""}
+          review={review}
+          diffThemes={themes}
+          hideChangeId={isPullRequest(pull) && shown === ""}
+          onShowShortcuts={() => setShortcuts(true)}
+          labels={labels}
+          brand={
+            <a className="pull-brand" href="/" aria-label="JayJay Diff" title="JayJay Diff">
+              <img src="/favicon.svg" alt="" width="28" height="28" />
+            </a>
+          }
+          avatars
+          fill
+          statusBar={false}
+          reviewMode={reviewMode}
+          onReviewMode={toggleReviewMode}
+          descriptionLabel={
+            isPullRequest(pull) && shown === "" ? labels.pullDescription : undefined
+          }
+          descriptionFirst={isPullRequest(pull) && !pull.commit}
+          onRetry={
+            retryable
+              ? () => (review.error === "worker-stopped" ? location.reload() : void refresh())
+              : null
+          }
+          errorActions={
+            needsSignIn && !signedIn && <SignInPanel labels={labels} onSignedIn={onSignedIn} />
+          }
+          headerActions={
+            <>
+              {commits.length > 1 && (
+                <CommitPicker
+                  commits={commits}
+                  selected={pull.commit}
+                  labels={labels}
+                  autoFocus={picked.current === "commits"}
+                  onSelect={(sha) => {
+                    picked.current = "commits";
+                    openCommit(sha);
+                  }}
+                />
+              )}
+              {stack && isPullRequest(pull) && (
+                <StackPicker
+                  stack={stack}
+                  number={pull.number}
+                  labels={labels}
+                  autoFocus={picked.current === "stack"}
+                  onSelect={(number) => {
+                    picked.current = "stack";
+                    onOpen({ owner: pull.owner, repo: pull.repo, number });
+                  }}
+                />
+              )}
+              {review.error && !review.result && (
+                <a className="pull-error-link" href={gitHubUrl(pull)}>
+                  {labels.pullOnGitHub}
+                </a>
+              )}
+            </>
+          }
+        />
+      </div>
     </>
   );
 }

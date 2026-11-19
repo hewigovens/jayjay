@@ -67,9 +67,6 @@
 :where(.jayjay-review) .jj-folder-row > button .jj-icon {
   color: var(--jj-muted);
 }
-:where(.jayjay-review) .jj-folder-row > button .jj-folder-icon {
-  color: light-dark(#2563eb, #7cb4ff);
-}
 :where(.jayjay-review) .jj-folder-row span {
   overflow: hidden;
   text-overflow: ellipsis;
@@ -79,31 +76,15 @@
   display: flex;
   align-items: center;
   gap: 8px;
-  min-height: 44px;
+  min-height: 30px;
   padding-right: 8px;
   border-radius: 8px;
 }
 :where(.jayjay-review) :is(.jj-folder-row, .jj-file-row) {
-  position: relative;
   padding-left: var(--jj-row-indent);
 }
-:where(.jayjay-review)
-  :is(.jj-folder-row, .jj-file-row)
-  + :is(.jj-folder-row, .jj-file-row)::before {
-  content: "";
-  position: absolute;
-  top: 0;
-  right: -6px;
-  left: calc(var(--jj-row-indent) + var(--jj-toggle-size, 16px) + 22px);
-  border-top: 1px solid var(--jj-border);
-}
-:where(.jayjay-review) .jj-folder-row + .jj-folder-row::before,
-:where(.jayjay-review) .jj-file-row + .jj-folder-row::before {
-  left: calc(var(--jj-row-indent) + 30px);
-}
-:where(.jayjay-review) .jj-file-row.jj-selected::before,
-:where(.jayjay-review) .jj-file-row.jj-selected + ::before {
-  display: none;
+:where(.jayjay-review) .jj-file-row:not(.jj-selected):hover {
+  background: color-mix(in srgb, var(--jj-ink) 5%, transparent);
 }
 :where(.jayjay-review) .jj-file-row.jj-selected {
   background: color-mix(in srgb, var(--jj-accent) 16%, transparent);
@@ -121,13 +102,33 @@
   border-radius: 0;
   font-size: calc(14px * var(--jj-interface-scale, 1));
 }
+:where(.jayjay-review) .jj-description-row {
+  margin-bottom: 4px;
+  padding-left: 8px;
+}
+:where(.jayjay-review) .jj-description-select {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  padding: 6px 0;
+  border: 0;
+  background: transparent;
+  font-size: calc(14px * var(--jj-interface-scale, 1));
+  font-weight: 500;
+  text-align: left;
+}
+:where(.jayjay-review) .jj-description-select .jj-icon {
+  color: var(--jj-muted);
+}
+:where(.jayjay-review) .jj-description-select:hover,
 :where(.jayjay-review) .jj-file-select:hover {
   background: transparent;
   color: inherit;
 }
 :where(.jayjay-review) .jj-file-text {
   display: grid;
-  gap: 5px;
+  gap: 3px;
   min-width: 0;
   flex: 1;
 }
@@ -253,4 +254,60 @@
 }
 :where(.jayjay-review) .jj-review-toggle > input:disabled {
   cursor: default;
+}
+/* A pointer marks a folder from its context menu; touch has no right click, so it keeps the checkbox. */
+@media (hover: hover) {
+  :where(.jayjay-review) .jj-folder-row > .jj-review-toggle {
+    display: none;
+  }
+}
+:where(.jayjay-review) .jj-context-menu {
+  position: fixed;
+  z-index: 20;
+  display: grid;
+  min-width: 180px;
+  padding: 4px;
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+  background: var(--jj-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.16);
+}
+:where(.jayjay-review) .jj-context-menu > button {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  padding: 5px 10px 5px 6px;
+  border: 0;
+  border-radius: 5px;
+  background: transparent;
+  font-size: calc(13px * var(--jj-interface-scale, 1));
+  text-align: left;
+}
+:where(.jayjay-review) .jj-context-menu > button:is(:hover, :focus-visible):not(:disabled) {
+  outline: none;
+  background: var(--jj-accent);
+  color: var(--jj-page);
+}
+:where(.jayjay-review) .jj-menu-check {
+  display: grid;
+  place-items: center;
+  width: 14px;
+}
+:where(.jayjay-review) .jj-kind-badge {
+  display: grid;
+  flex: none;
+  margin-top: 1px;
+  border-radius: 4px;
+  color: var(--jj-kind-modified);
+  background: color-mix(in srgb, currentColor 15%, transparent);
+}
+:where(.jayjay-review) .jj-kind-badge.jj-added,
+:where(.jayjay-review) .jj-kind-badge.jj-copied {
+  color: var(--jj-kind-added);
+}
+:where(.jayjay-review) .jj-kind-badge.jj-removed {
+  color: var(--jj-kind-removed);
+}
+:where(.jayjay-review) .jj-kind-badge.jj-renamed {
+  color: var(--jj-kind-renamed);
 }

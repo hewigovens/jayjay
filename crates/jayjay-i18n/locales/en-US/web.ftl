@@ -126,6 +126,7 @@ web-pull-sync-viewed-failed = Couldn’t update Viewed checkboxes on GitHub.
 web-pull-sync-viewed-restricted = This organization restricts third-party apps, so Viewed checkboxes can’t be updated. Request access for JayJay Diff on GitHub.
 web-pull-commits = Commits
 web-pull-all-commits = All commits
+web-pull-description = Pull request description
 web-pull-stack = Stacked pull requests
 web-pull-merged = Merged
 web-pull-closed = Closed
