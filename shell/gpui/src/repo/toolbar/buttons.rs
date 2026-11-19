@@ -16,6 +16,8 @@ use crate::ui::button_group::{self, GroupEdge, group_item};
 use crate::ui::icons::{self, glyph};
 use crate::ui::primitives::TOOLBAR_ICON_SIZE;
 
+/// The sidebar and refresh symbols' ink sits smaller in its box than SF Symbols' does.
+const TOOLBAR_SYMBOL_SIZE: f32 = TOOLBAR_ICON_SIZE * 1.2;
 const MARK_TILE: f32 = TOOLBAR_ICON_SIZE * 1.125;
 const MARK_SIZE: f32 = TOOLBAR_ICON_SIZE * 0.78;
 
@@ -117,7 +119,7 @@ pub(crate) fn sidebar_toggle_button(
             .child(
                 svg()
                     .path(icons::SIDEBAR_LEADING_SVG)
-                    .size(px(TOOLBAR_ICON_SIZE))
+                    .size(px(TOOLBAR_SYMBOL_SIZE))
                     .text_color(rgb(t.fg_dim)),
             ),
         focused == Some(FocusStop::SidebarToggle),
@@ -365,8 +367,7 @@ fn repo_tool_button(
 fn refresh_icon(is_refreshing: bool, t: &Theme) -> AnyElement {
     let icon = svg()
         .path(icons::REFRESH_SVG)
-        .w(px(TOOLBAR_ICON_SIZE))
-        .h(px(TOOLBAR_ICON_SIZE))
+        .size(px(TOOLBAR_SYMBOL_SIZE))
         .text_color(rgb(t.fg_dim));
     if is_refreshing {
         icon.with_animation(

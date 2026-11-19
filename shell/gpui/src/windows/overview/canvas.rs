@@ -254,8 +254,8 @@ fn lines(
 ) -> AnyElement {
     let g = placement.geometry;
     let line = t.dag_line;
-    let muted = mix(t.dag_line, t.sidebar_bg, 0.45);
-    let background = t.sidebar_bg;
+    let muted = mix(t.dag_line, t.detail_bg, 0.45);
+    let background = t.detail_bg;
     let warning = t.warning_fg;
     let stems: Vec<(f32, f32, f32)> = placement
         .lanes_in(span)
@@ -351,7 +351,7 @@ fn node(change: &OverviewChange, t: &Theme) -> gpui::Div {
     } else if !change.workspaces.is_empty() {
         t.tag_wc_fg
     } else if change.is_empty {
-        t.sidebar_bg
+        t.detail_bg
     } else {
         t.fg_dim
     };

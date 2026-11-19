@@ -112,3 +112,26 @@ fn a_selected_theme_recolors_chrome_repo_and_diff_surfaces_while_preserving_font
     assert_eq!(themed.code_font_size, default.code_font_size);
     assert_eq!(themed.code_line_spacing, default.code_line_spacing);
 }
+
+#[test]
+fn only_the_side_panels_take_the_navigation_surface() {
+    let seed = jayjay_core::ThemeSeed::dark();
+    let derive = |navigation_bg| {
+        Theme::from_seed(
+            &seed,
+            jayjay_core::DiffThemeColors::dark(),
+            jayjay_core::RepoColors {
+                navigation_bg,
+                ..jayjay_core::RepoColors::dark()
+            },
+        )
+    };
+    let (plain, tinted) = (derive(None), derive(Some(0x3a1020)));
+    assert_eq!(
+        (plain.detail_bg, plain.row_alt_bg, plain.row_border),
+        (tinted.detail_bg, tinted.row_alt_bg, tinted.row_border)
+    );
+    assert_ne!(plain.sidebar_bg, tinted.sidebar_bg);
+    assert_ne!(plain.sidebar_row_alt_bg, tinted.sidebar_row_alt_bg);
+    assert_ne!(plain.sidebar_row_border, tinted.sidebar_row_border);
+}

@@ -10,6 +10,9 @@ impl Theme {
         let fg = seed.foreground;
         let pick = |on_dark: f32, on_light: f32| if dark { on_dark } else { on_light };
         let tag_bg = mix(bg, fg, pick(0.09, 0.075));
+        // SwiftUI's sidebar surface; seeded themes fall back to their surface.
+        let navigation = repo.navigation_bg.unwrap_or(seed.surface);
+        let toolbar_group = mix(navigation, fg, pick(0.06, 0.045));
         let tag_fg = mix(fg, bg, pick(0.15, 0.25));
         Self {
             is_dark: dark,
@@ -17,11 +20,17 @@ impl Theme {
             code_font_size: AppConfig::DEFAULT_FONT_SIZE,
             code_line_spacing: AppConfig::MIN_LINE_SPACING,
 
-            sidebar_bg: bg,
+            sidebar_bg: navigation,
             detail_bg: bg,
             header_bg: if dark { seed.surface } else { bg },
             row_alt_bg: mix(bg, fg, pick(0.06, 0.045)),
-            selected_bg: seed.selection,
+            sidebar_row_alt_bg: toolbar_group,
+            // Leans toward the accent to stay visible on the dark side panels.
+            selected_bg: if dark {
+                mix(seed.selection, seed.accent, 0.15)
+            } else {
+                seed.selection
+            },
 
             fg,
             fg_dim: seed.muted,
@@ -29,6 +38,7 @@ impl Theme {
 
             border: seed.border,
             row_border: mix(bg, fg, pick(0.08, 0.065)),
+            sidebar_row_border: mix(navigation, fg, pick(0.08, 0.065)),
 
             selected_accent: seed.accent,
             success_fg: diff.text_added,
@@ -127,12 +137,9 @@ impl Theme {
             toggle_inactive_bg: tag_bg,
             toggle_inactive_fg: tag_fg,
 
-            toolbar_bg: if dark { seed.surface } else { bg },
-            toolbar_group_bg: if dark {
-                mix(seed.surface, fg, 0.05)
-            } else {
-                seed.surface
-            },
+            toolbar_group_bg: toolbar_group,
+            toolbar_hover_bg: mix(toolbar_group, fg, pick(0.1, 0.08)),
+            toolbar_field_bg: mix(bg, fg, pick(0.04, 0.035)),
         }
     }
 }

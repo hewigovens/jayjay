@@ -247,7 +247,7 @@ impl Render for OverviewView {
                             .h_full()
                             .overflow_scroll()
                             .track_scroll(&self.scroll)
-                            .bg(rgb(t.sidebar_bg))
+                            .bg(rgb(t.detail_bg))
                             .on_click(cx.listener(|view, _: &ClickEvent, _, cx| {
                                 view.clear_change();
                                 view.selection.lane_panel = false;
@@ -299,7 +299,7 @@ impl Render for OverviewView {
             .flex()
             .flex_col()
             .size_full()
-            .bg(rgb(t.sidebar_bg))
+            .bg(rgb(t.detail_bg))
             .text_color(rgb(t.fg))
             .child(header)
             .child(body)

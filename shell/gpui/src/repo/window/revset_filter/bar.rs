@@ -12,9 +12,9 @@ use crate::ui::icons::{self, glyph};
 use crate::ui::input::line_input_content;
 use crate::ui::primitives::HelpTag;
 
-const WIDTH: f32 = 495.;
+const WIDTH: f32 = 485.;
 const HEIGHT: f32 = 28.;
-const MIN_WIDTH: f32 = 280.;
+const MIN_WIDTH: f32 = 200.;
 
 /// The graph's filter in the title bar: click the revset to edit it in place, the filter icon for presets, bookmarks and recent revsets.
 pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -32,7 +32,7 @@ pub(crate) fn revset_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWind
     } else if narrowed {
         t.toggle_active_bg
     } else {
-        t.toolbar_group_bg
+        t.toolbar_field_bg
     };
 
     let bordered = editing || focused == Some(FocusStop::RevsetFilter);
@@ -220,7 +220,7 @@ fn bar_icon(
             .h_full()
             .rounded_full()
             .cursor_pointer()
-            .hover(|s| s.bg(rgb(t.row_alt_bg)))
+            .hover(|s| s.bg(rgb(t.toolbar_hover_bg)))
             .when_some(tooltip, |el, tooltip| el.help(tooltip))
             .child(icons::icon(glyph_str, 12., color)),
         focused,

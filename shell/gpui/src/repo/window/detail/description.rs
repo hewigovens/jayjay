@@ -6,17 +6,18 @@ use gpui::{
 };
 use jayjay_core::ChangeInfo;
 
-use crate::app::fonts::CodeText as _;
 use crate::app::theme::{HEADER_HEIGHT, Theme, ui_font_size};
 use crate::diff::DETAIL_INSET;
 use crate::diff::file_row_height;
-use crate::repo::window::dag_row::{first_line, text_line_height};
+use crate::repo::window::dag_row::first_line;
 use crate::repo::window::{FocusStop, RepoWindow, focus_ring};
 use crate::ui::icons::{self, glyph, icon};
 use crate::ui::primitives::HelpTag;
 
 const COLLAPSED_HEIGHT: f32 = 80.;
 const BODY_FONT: f32 = 12.;
+/// AppKit's natural leading, so the collapsed cap fits two lines as in SwiftUI.
+const BODY_LINE_HEIGHT: f32 = 1.25;
 
 /// The expanded body still leaves most of the pane to the diff, so its cap follows the window instead of a fixed size.
 pub(super) fn expanded_height(viewport_height: Pixels) -> Pixels {
@@ -41,7 +42,7 @@ pub(super) fn description_block(
     let has_body = !body.is_empty();
     let expanded = state.expanded;
 
-    let line_height = text_line_height(t, BODY_FONT);
+    let line_height = t.scaled_font_size(BODY_FONT) * BODY_LINE_HEIGHT;
     let collapsed_cap = whole_lines(COLLAPSED_HEIGHT.min(file_row_height(t) - 12.), line_height);
     let cap = if expanded {
         whole_lines(f32::from(expanded_height), line_height)
@@ -63,7 +64,8 @@ pub(super) fn description_block(
         .overflow_y_scroll()
         .child(
             div()
-                .code_text(BODY_FONT, t)
+                .text_size(ui_font_size(BODY_FONT))
+                .line_height(px(line_height))
                 .text_color(rgb(t.fg))
                 .debug_selector(|| "description-text".to_owned())
                 .child(SharedString::from(body)),

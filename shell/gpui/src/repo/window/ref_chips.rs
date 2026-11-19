@@ -62,7 +62,7 @@ pub(crate) fn copy_feedback_button(
         (glyph::COPY, idle_color)
     };
     let element_id = SharedString::from(format!("copy-{id}"));
-    icon_button(element_id, glyph_str, 12., 20., 20., color, t).on_click(cx.listener(
+    icon_button(element_id, glyph_str, 10., 18., 18., color, t).on_click(cx.listener(
         move |view, _, _, cx| {
             cx.write_to_clipboard(ClipboardItem::new_string(value.clone()));
             view.mark_copied(id.clone(), cx);

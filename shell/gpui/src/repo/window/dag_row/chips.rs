@@ -165,7 +165,7 @@ pub(super) fn tags_row(
             .collect::<Vec<_>>()
             .join(", ");
         row = row.child(
-            capsule(format!("+{hidden}"), t.row_alt_bg, t.fg, FONT_TAG)
+            capsule(format!("+{hidden}"), t.sidebar_row_alt_bg, t.fg, FONT_TAG)
                 .id(("overflow", row_ix))
                 .help(names),
         );

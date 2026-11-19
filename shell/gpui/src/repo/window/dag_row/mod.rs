@@ -4,9 +4,7 @@ pub(crate) use chips::{chip_width, visible_chip_count};
 mod row;
 mod text;
 
-pub(super) use row::{
-    ChipMenus, ChipRightClick, DagDrop, DagRow, dag_row, node_center_offset, text_line_height,
-};
+pub(super) use row::{ChipMenus, ChipRightClick, DagDrop, DagRow, dag_row, node_center_offset};
 pub(crate) use text::{
     compact_id, compact_id_len, first_line, format_relative, format_when, id_cell,
 };

@@ -286,12 +286,25 @@ impl Render for RepoWindow {
         let trailing = operation_log_slide.width(div(), move |shown| {
             (TRAILING_TOGGLE_ROOM - operation_log_full * shown).max(TOOLBAR_TRAILING_INSET)
         });
+        let sidebar_room = if self.layout.sidebar_hidden {
+            0.
+        } else {
+            sidebar_full
+        };
+        let operation_log_room = if self.layout.operation_log_visible() {
+            operation_log_full
+        } else {
+            0.
+        };
         let mut centre = div().flex().flex_col().flex_1().min_w_0().h_full().child(
             crate::repo::toolbar::toolbar(
                 toolbar_repo,
                 self.repo_switcher_button_bounds.clone(),
                 leading,
-                super::super::revset_filter::revset_bar(self, &t, cx),
+                centred_on_window(
+                    super::super::revset_filter::revset_bar(self, &t, cx),
+                    sidebar_room - operation_log_room,
+                ),
                 trailing,
                 self.focused_control,
                 cx,
@@ -397,6 +410,27 @@ fn under_strip(strip: AnyElement, pane: AnyElement, width: f32) -> Div {
         .h_full()
         .child(strip)
         .child(div().flex_1().min_h_0().child(pane))
+}
+
+/// Centres the revset bar on the window, as SwiftUI does; the balancing room gives way first.
+fn centred_on_window(bar: AnyElement, offset: f32) -> AnyElement {
+    let balance = |width: f32| {
+        let mut room = div().flex_none().w(px(width.max(0.)));
+        room.style().flex_shrink = Some(8.);
+        room
+    };
+    div()
+        .flex()
+        .flex_row()
+        .items_center()
+        .flex_1()
+        .min_w_0()
+        .child(balance(-offset))
+        .child(div().flex_1())
+        .child(bar)
+        .child(div().flex_1())
+        .child(balance(offset))
+        .into_any_element()
 }
 
 /// A column toggle's slot over the top row, so it holds still while the column slides.

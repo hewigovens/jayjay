@@ -83,9 +83,9 @@ fn operation_row(
         .py(px(8.))
         .bg(rgb(bg))
         .border_b_1()
-        .border_color(rgb(t.row_border))
+        .border_color(rgb(t.sidebar_row_border))
         .cursor_pointer()
-        .hover(|s| s.bg(rgb(t.row_alt_bg)))
+        .hover(|s| s.bg(rgb(t.sidebar_row_alt_bg)))
         .on_click(cx.listener(move |view, _: &ClickEvent, window, cx| {
             window.focus(&view.operation_log.focus, cx);
             view.select_operation(select_id.clone(), cx);

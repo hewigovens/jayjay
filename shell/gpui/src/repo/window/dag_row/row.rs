@@ -17,7 +17,6 @@ use crate::ui::primitives::HelpTag;
 
 const DAG_ROW_GAP: f32 = 5.;
 const DAG_LINE_HEIGHT: f32 = 1.3;
-const TEXT_LINE_HEIGHT: f32 = 1.618;
 
 pub(crate) type ChipRightClick =
     Arc<dyn Fn(&str, &MouseDownEvent, &mut Window, &mut App) + Send + Sync + 'static>;
@@ -98,7 +97,7 @@ where
     } else if is_compare_source {
         rgb(t.tag_divergent_bg)
     } else {
-        rgb(t.row_alt_bg)
+        rgb(t.sidebar_row_alt_bg)
     };
 
     let row_selector = format!("dag-change-{}", change.commit_id.id);
@@ -276,10 +275,6 @@ fn meta_row(change: &ChangeInfo, row_ix: usize, t: &Theme) -> impl IntoElement {
                     change.committed_at_millis,
                 ))),
         )
-}
-
-pub(crate) fn text_line_height(t: &Theme, base: f32) -> f32 {
-    t.scaled_font_size(base) * TEXT_LINE_HEIGHT
 }
 
 pub(crate) fn refs_row_height(t: &Theme) -> f32 {

@@ -18,12 +18,14 @@ pub struct Theme {
     pub(crate) detail_bg: u32,
     pub(crate) header_bg: u32,
     pub(crate) row_alt_bg: u32,
+    pub(crate) sidebar_row_alt_bg: u32,
     pub(crate) selected_bg: u32,
     pub(crate) fg: u32,
     pub(crate) fg_dim: u32,
     pub(crate) fg_faint: u32,
     pub(crate) border: u32,
     pub(crate) row_border: u32,
+    pub(crate) sidebar_row_border: u32,
     pub(crate) selected_accent: u32,
     pub success_fg: u32,
     pub(crate) wc_accent: u32,
@@ -103,8 +105,9 @@ pub struct Theme {
     pub(crate) toggle_active_fg: u32,
     pub(crate) toggle_inactive_bg: u32,
     pub(crate) toggle_inactive_fg: u32,
-    pub(crate) toolbar_bg: u32,
     pub(crate) toolbar_group_bg: u32,
+    pub(crate) toolbar_hover_bg: u32,
+    pub(crate) toolbar_field_bg: u32,
 }
 
 impl Global for Theme {}

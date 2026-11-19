@@ -125,9 +125,7 @@ pub(crate) fn toolbar(
     strip("toolbar", cx)
         .w_full()
         .min_w_0()
-        .bg(rgb(t.toolbar_bg))
-        .border_b_1()
-        .border_color(rgb(t.border))
+        .bg(rgb(t.detail_bg))
         .child(div().flex_none().mr(px(-TOOLBAR_GAP)).child(leading))
         .child(picker_opener(
             div()
@@ -142,7 +140,7 @@ pub(crate) fn toolbar(
                 .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))
                 .cursor_pointer()
-                .hover(|style| style.bg(rgb(t.row_alt_bg)))
+                .hover(|style| style.bg(rgb(t.toolbar_hover_bg)))
                 .on_mouse_down(
                     MouseButton::Left,
                     cx.listener(|view, _: &MouseDownEvent, window, cx| {
@@ -179,9 +177,7 @@ pub(crate) fn toolbar(
             RepoWindow::close_repo_switcher,
             cx,
         ))
-        .child(div().flex_1())
         .child(revset_bar)
-        .child(div().flex_1())
         .child(buttons::tools_cluster(editor, terminal, focused, &t, cx))
         .child(div().flex_none().ml(px(-TOOLBAR_GAP)).child(trailing))
         .into_any_element()

@@ -14,16 +14,20 @@ pub enum GroupEdge {
     Trailing,
 }
 
-/// No background or border of its own at rest — `button_group` supplies the shared fill; only a hover/press fill is scoped to this segment.
+/// No background or border of its own at rest — `button_group` supplies the shared fill; hover and press light a pill inset in this segment.
 pub(crate) fn group_item(
     id: impl Into<SharedString>,
     tooltip: impl Into<SharedString>,
     edge: GroupEdge,
     theme: &Theme,
 ) -> Stateful<Div> {
-    let tooltip = tooltip.into();
+    let id = id.into();
+    let hover = theme.toolbar_hover_bg;
+    let pressed = theme.selected_bg;
     let el = div()
-        .id(id.into())
+        .id(id.clone())
+        .group(id.clone())
+        .relative()
         .flex()
         .flex_none()
         .items_center()
@@ -31,9 +35,16 @@ pub(crate) fn group_item(
         .w(px(TOOLBAR_BUTTON_WIDTH))
         .h_full()
         .cursor_pointer()
-        .hover(|s| s.bg(rgb(theme.row_alt_bg)))
-        .active(|s| s.bg(rgb(theme.selected_bg)))
-        .help(tooltip)
+        .child(
+            div()
+                .id("hover")
+                .absolute()
+                .inset(px(3.))
+                .rounded_full()
+                .group_hover(id.clone(), move |s| s.bg(rgb(hover)))
+                .group_active(id, move |s| s.bg(rgb(pressed))),
+        )
+        .help(tooltip.into())
         // Keeps a double click from zooming the window and, like a native toolbar button, leaves focus put.
         .on_mouse_down(MouseButton::Left, |_, window, _| window.prevent_default());
     match edge {
