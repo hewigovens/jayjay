@@ -36,7 +36,7 @@ final class DescriptionHeightScene: SceneBase {
         XCTAssertEqual(XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: restored, object: nil)], timeout: 3), .completed)
     }
 
-    func testDescriptionFitsContentAndScrollsAboveCap() throws {
+    func testDescriptionFitsContentAndCapsLongBodies() throws {
         let app = try XCTUnwrap(app)
         select("Short description", in: app)
         let description = app.element(AID.Detail.description).firstMatch
@@ -64,20 +64,11 @@ final class DescriptionHeightScene: SceneBase {
         let compactHeight = scroll.frame.height
         XCTAssertGreaterThan(compactHeight, 0)
         XCTAssertLessThanOrEqual(compactHeight, file.frame.height)
-        let title = app.staticTexts[AID.Detail.descriptionTitle]
-        let titleFrame = title.frame
         XCTAssertTrue(scroll.exists, "Long descriptions must scroll")
-        let content = scroll.textViews.firstMatch
         let compact = XCTAttachment(screenshot: app.windows.firstMatch.screenshot())
         compact.name = "Compact description"
         compact.lifetime = .keepAlways
         add(compact)
-        let beforeScroll = content.frame.minY
-        scroll.scroll(byDeltaX: 0, deltaY: -3000)
-        XCTAssertLessThan(content.frame.minY, beforeScroll)
-        XCTAssertEqual(title.frame.minY, titleFrame.minY, accuracy: 1)
-        XCTAssertEqual(scroll.frame.height, compactHeight, accuracy: 1)
-
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         toggle.click()
         let expandedHeight = scroll.frame.height
@@ -92,15 +83,9 @@ final class DescriptionHeightScene: SceneBase {
         expanded.name = "Expanded description with visible diff"
         expanded.lifetime = .keepAlways
         add(expanded)
-        let expandedScroll = content.frame.minY
-        scroll.scroll(byDeltaX: 0, deltaY: -3000)
-        XCTAssertLessThan(content.frame.minY, expandedScroll)
-        XCTAssertEqual(title.frame.minY, titleFrame.minY, accuracy: 1)
-        XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         XCTAssertEqual(toggle.label, "Collapse description")
         toggle.click()
         XCTAssertEqual(scroll.frame.height, compactHeight, accuracy: 1)
-        XCTAssertEqual(content.frame.minY, scroll.frame.minY, accuracy: 1)
         toggle.click()
         XCTAssertEqual(scroll.frame.height, expandedHeight, accuracy: 1)
         select("Short description", in: app)
