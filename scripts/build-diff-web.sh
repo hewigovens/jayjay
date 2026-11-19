@@ -13,10 +13,12 @@ if ! command -v "$bindgen" >/dev/null || [[ "$("$bindgen" --version)" != "wasm-b
   echo "Or set WASM_BINDGEN to a matching executable." >&2
   exit 1
 fi
-for pack in base rust web python swift shell data systems jvm other; do
-  features=(--no-default-features)
-  if [[ "$pack" != base ]]; then features+=(--features "$pack"); fi
-  bash "$root/scripts/with-wasm-toolchain.sh" cargo build --locked -p jj-diff-web --lib "${features[@]}" --target wasm32-unknown-unknown --release
-  "$bindgen" target/wasm32-unknown-unknown/release/jj_diff_web.wasm \
-    --target web --out-dir "web/review/src/wasm/$pack" --out-name "jj_diff_$pack"
+bash "$root/scripts/web-grammars.sh"
+# Grammars link into the engine at run time, sharing its memory, growable function table, stack pointer, and the C library functions tree-sitter lets them import.
+link=(-C link-arg=--export-table -C link-arg=--growable-table -C link-arg=--export=__stack_pointer)
+for symbol in $(node -p 'require("./web/review/src/wasm/grammars.json").imports.join(" ")'); do
+  link+=(-C "link-arg=--export=$symbol")
 done
+bash "$root/scripts/with-wasm-toolchain.sh" cargo rustc --locked -p jj-diff-web --lib --crate-type cdylib --target wasm32-unknown-unknown --release -- "${link[@]}"
+"$bindgen" target/wasm32-unknown-unknown/release/jj_diff_web.wasm \
+  --target web --out-dir web/review/src/wasm/engine --out-name jj_diff --experimental-reset-state-function

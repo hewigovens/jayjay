@@ -1,70 +1,29 @@
-import type * as Engine from "../wasm/base/jj_diff_base";
+import init, * as bindings from "../wasm/engine/jj_diff";
+import { cachedWasm, engineUrl } from "./assets";
 
-type EngineModule = typeof Engine;
-const imports = import.meta.glob<EngineModule>("../wasm/*/jj_diff_*.js");
-const wasmUrls = import.meta.glob<string>("../wasm/*/*_bg.wasm", {
-  query: "?url",
-  import: "default",
-  eager: true,
-});
-const modules = new Map<string, Promise<EngineModule>>();
+export type Engine = typeof bindings;
 
-export function engine(pack = "base"): Promise<EngineModule> {
-  let pending = modules.get(pack);
-  if (!pending) {
-    const load = imports[`../wasm/${pack}/jj_diff_${pack}.js`];
-    if (!load) return Promise.reject(new Error(`Unknown language pack: ${pack}`));
-    pending = Promise.all([
-      load(),
-      wasmResponse(wasmUrls[`../wasm/${pack}/jj_diff_${pack}_bg.wasm`]),
-    ]).then(async ([module, response]) => {
-      await module.default({ module_or_path: response });
-      module.ui_labels(navigator.languages.join(","));
-      return module;
-    });
-    modules.set(pack, pending);
-    void pending.catch(() => modules.delete(pack));
-  }
-  return pending;
-}
+export const engine: Promise<Engine> = (async () => {
+  if (!engineUrl) throw new Error("The review engine is missing; run scripts/build-diff-web.sh");
+  await init({ module_or_path: await cachedWasm(engineUrl) });
+  bindings.ui_labels(navigator.languages.join(","));
+  return bindings;
+})();
 
-export const baseEngine = engine();
+void engine.catch(() => {});
 
-void baseEngine.catch(() => {});
+let instance = 0;
 
-async function wasmResponse(url: string): Promise<Response> {
-  let cache: Cache | undefined;
-  // Dev asset URLs are not content-hashed, so a cached pack would outlive a rebuilt wasm-bindgen glue module.
-  if (import.meta.env.PROD)
-    try {
-      cache = await caches.open("jayjay-syntax-v1");
-      const response = await cache.match(url, { ignoreVary: true });
-      if (response) return response;
-    } catch {
-      /* Cache availability does not prevent online diffing. */
-    }
-  const response = await fetch(url);
-  if (!response.ok) throw new Error(`WASM download failed: ${response.status}`);
-  if (cache) {
-    try {
-      await cache.put(url, response.clone());
-      const current = new Set(Object.values(wasmUrls).map((wasm) => new Request(wasm).url));
-      for (const stale of await cache.keys())
-        if (!current.has(stale.url)) await cache.delete(stale);
-    } catch {
-      /* Cache failures leave the current diff usable. */
-    }
-  }
-  return response;
-}
+// Increments whenever the engine is replaced, so work that awaited can tell its objects and linked grammars are gone.
+export const engineInstance = () => instance;
 
-export async function engineFor(path: string, source: string) {
-  const base = await baseEngine;
-  const pack = base.language_pack(path, source);
-  try {
-    return { module: await engine(pack), pack, syntaxUnavailable: false };
-  } catch (error) {
-    if (pack === "base") throw error;
-    return { module: base, pack: "base", syntaxUnavailable: true };
-  }
+// V8 reports Wasm stack exhaustion as a RangeError, which leaves the shadow stack pointer as unrecoverable as a trap does.
+export const isTrap = (error: unknown) =>
+  error instanceof WebAssembly.RuntimeError || error instanceof RangeError;
+
+// A trap can leave the instance's memory, stack pointer, or allocator inconsistent, so it is replaced rather than reused; objects from the old instance stop working.
+export function resetEngine() {
+  instance++;
+  bindings.__wbg_reset_state();
+  bindings.ui_labels(navigator.languages.join(","));
 }

@@ -15,7 +15,6 @@ function result(session: number): ReviewResult {
     groupStates: [],
     options: defaultOptions,
     elapsed: 0,
-    pack: "base",
     syntaxUnavailable: false,
     overview: {
       repositoryId: "github.com/o/r",

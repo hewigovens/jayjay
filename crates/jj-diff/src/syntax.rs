@@ -1,14 +1,24 @@
-#[cfg(feature = "wasm-grammars")]
+#[cfg(wasm_grammars)]
 mod bundled;
-#[cfg(feature = "syntax")]
-#[cfg_attr(target_family = "wasm", path = "syntax/wasm.rs")]
+#[cfg(all(feature = "syntax", not(target_family = "wasm")))]
 mod cache;
-#[cfg(feature = "lang-fluent")]
+#[cfg(all(feature = "lang-fluent", not(target_family = "wasm")))]
 mod fluent;
 #[cfg(feature = "lang-markdown")]
 mod markdown;
+#[cfg(target_family = "wasm")]
+mod runtime;
 #[cfg(wasm_grammars)]
 mod wasm_grammar;
+#[cfg(all(feature = "syntax", not(target_family = "wasm")))]
+mod web_grammar;
+
+#[cfg(target_family = "wasm")]
+pub use runtime::register_grammar;
+#[cfg(target_family = "wasm")]
+pub(crate) use runtime::{grammar, with_config_for_language};
+#[cfg(all(feature = "syntax", not(target_family = "wasm")))]
+pub use web_grammar::WebGrammar;
 
 use tree_sitter::Language;
 use tree_sitter_highlight::{HighlightConfiguration, HighlightEvent, Highlighter};
@@ -96,7 +106,7 @@ const HIGHLIGHTS: &[(&str, SyntaxToken)] = &[
     ("method", SyntaxToken::Function),
 ];
 
-#[cfg(feature = "syntax")]
+#[cfg(any(feature = "syntax", target_family = "wasm"))]
 static HIGHLIGHT_NAMES: std::sync::LazyLock<Vec<&str>> =
     std::sync::LazyLock::new(|| HIGHLIGHTS.iter().map(|(name, _)| *name).collect());
 
@@ -164,12 +174,12 @@ fn highlight_spans(
     spans
 }
 
-#[cfg(feature = "syntax")]
+#[cfg(all(feature = "syntax", not(target_family = "wasm")))]
 trait Grammar {
     fn language(&self) -> Option<Language>;
 }
 
-#[cfg(feature = "syntax")]
+#[cfg(all(feature = "syntax", not(target_family = "wasm")))]
 impl<T: Clone + Into<Language>> Grammar for T {
     fn language(&self) -> Option<Language> {
         Some(self.clone().into())
@@ -177,7 +187,7 @@ impl<T: Clone + Into<Language>> Grammar for T {
 }
 
 // tree-sitter-solidity 1.2.13 anchors a capture inside a grouped pattern, which tree-sitter 0.27 rejects, so the whole query failed to compile and Solidity was never highlighted.
-#[cfg(feature = "lang-solidity")]
+#[cfg(all(feature = "lang-solidity", not(target_family = "wasm")))]
 static SOLIDITY_HIGHLIGHT_QUERY: std::sync::LazyLock<String> = std::sync::LazyLock::new(|| {
     tree_sitter_solidity::HIGHLIGHT_QUERY.replace(
         "((expression(identifier)) @type .)",
@@ -186,7 +196,7 @@ static SOLIDITY_HIGHLIGHT_QUERY: std::sync::LazyLock<String> = std::sync::LazyLo
 });
 
 // Some grammars ship Neovim-dialect queries: tree-sitter-highlight keeps the last of `@comment @spell` and ignores `#lua-match?`, which would apply its capture to every node.
-#[cfg(feature = "syntax")]
+#[cfg(all(feature = "syntax", not(target_family = "wasm")))]
 fn without_neovim_extensions(query: &str) -> String {
     query
         .replace(" @nospell", "")
@@ -196,9 +206,10 @@ fn without_neovim_extensions(query: &str) -> String {
         .replace("%d", "\\d")
 }
 
-/// One table drives both highlighting and the syntax matcher, so a language supported by one is supported by the other.
+/// One table drives highlighting, the syntax matcher, and the grammar files the web build links at run time, so every surface supports the same languages.
 macro_rules! languages {
-    ($($feature:literal: $name:literal $(| $alias:literal)* => $grammar:expr, $query:expr;)*) => {
+    ($($feature:literal: $name:literal $(| $alias:literal)* $(from $file:literal)? => $grammar:expr, $query:expr;)*) => {
+        #[cfg(not(target_family = "wasm"))]
         pub(crate) fn grammar(language: &str) -> Option<Language> {
             match language {
                 $(#[cfg(feature = $feature)]
@@ -207,6 +218,7 @@ macro_rules! languages {
             }
         }
 
+        #[cfg(not(target_family = "wasm"))]
         fn with_config_for_language<R>(
             language: &str,
             _use_config: impl FnOnce(&HighlightConfiguration) -> R,
@@ -224,6 +236,17 @@ macro_rules! languages {
                 })*
                 _ => None,
             }
+        }
+
+        /// Every language name with its grammar file and finished highlight query, which the web build turns into its run-time assets.
+        #[cfg(all(feature = "syntax", not(target_family = "wasm")))]
+        pub fn web_grammars() -> Vec<WebGrammar> {
+            let grammars = std::iter::empty::<WebGrammar>();
+            $(#[cfg(feature = $feature)]
+            let grammars = grammars.chain([$name $(, $alias)*].map(|language| {
+                WebGrammar::new(language, [$($file,)? $name][0], &without_neovim_extensions($query))
+            }));)*
+            grammars.collect()
         }
     };
 }
@@ -247,7 +270,7 @@ languages! {
     "lang-python": "python" => tree_sitter_python::LANGUAGE, tree_sitter_python::HIGHLIGHTS_QUERY;
     "lang-go": "go" => tree_sitter_go::LANGUAGE, tree_sitter_go::HIGHLIGHTS_QUERY;
     "lang-c": "c" => tree_sitter_c::LANGUAGE, tree_sitter_c::HIGHLIGHT_QUERY;
-    "lang-csharp": "csharp" => bundled::CSHARP, bundled::CSHARP_QUERY;
+    "lang-csharp": "csharp" from "c_sharp" => bundled::CSHARP, bundled::CSHARP_QUERY;
     "lang-cpp": "cpp" => tree_sitter_cpp::LANGUAGE, &[
         tree_sitter_c::HIGHLIGHT_QUERY,
         tree_sitter_cpp::HIGHLIGHT_QUERY,
@@ -262,7 +285,7 @@ languages! {
     "lang-markdown": "markdown_inline" => tree_sitter_md::INLINE_LANGUAGE, tree_sitter_md::HIGHLIGHT_QUERY_INLINE;
     "lang-css": "css" => tree_sitter_css::LANGUAGE, tree_sitter_css::HIGHLIGHTS_QUERY;
     "lang-html": "html" => tree_sitter_html::LANGUAGE, tree_sitter_html::HIGHLIGHTS_QUERY;
-    "lang-bash": "shell" | "bash" => tree_sitter_bash::LANGUAGE, tree_sitter_bash::HIGHLIGHT_QUERY;
+    "lang-bash": "shell" | "bash" from "bash" => tree_sitter_bash::LANGUAGE, tree_sitter_bash::HIGHLIGHT_QUERY;
     "lang-batch": "batch" => tree_sitter_batch::LANGUAGE, tree_sitter_batch::HIGHLIGHTS_QUERY;
     "lang-fish": "fish" => tree_sitter_fish::language(), tree_sitter_fish::HIGHLIGHTS_QUERY;
     "lang-fluent": "fluent" => fluent::LANGUAGE, fluent::HIGHLIGHTS_QUERY;
@@ -279,7 +302,7 @@ languages! {
     "lang-ini": "ini" => tree_sitter_ini::LANGUAGE, tree_sitter_ini::HIGHLIGHTS_QUERY;
     "lang-lua": "lua" => tree_sitter_lua::LANGUAGE, tree_sitter_lua::HIGHLIGHTS_QUERY;
     "lang-dart": "dart" => bundled::DART, bundled::DART_QUERY;
-    "lang-dockerfile": "dockerfile" => bundled::DOCKERFILE, bundled::DOCKERFILE_QUERY;
+    "lang-dockerfile": "dockerfile" from "containerfile" => bundled::DOCKERFILE, bundled::DOCKERFILE_QUERY;
     "lang-just": "just" => bundled::JUST, bundled::JUST_QUERY;
     "lang-proto": "proto" => bundled::PROTO, bundled::PROTO_QUERY;
     "lang-r": "r" => bundled::R, bundled::R_QUERY;

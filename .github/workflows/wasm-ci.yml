@@ -15,10 +15,12 @@ on:
       - "**/*.just"
       - "scripts/llvm-clang"
       - "scripts/build-diff-web.sh"
+      - "scripts/grammar-wasm.sh"
       - "scripts/test-wasm.sh"
+      - "scripts/web-grammar-parity.mjs"
+      - "scripts/web-grammars.sh"
       - "scripts/with-wasm-toolchain.sh"
       - "scripts/wasm-bindgen-version.sh"
-      - "wasm/**"
       - "web/**"
       - "package.json"
       - "package-lock.json"
@@ -35,10 +37,12 @@ on:
       - "**/*.just"
       - "scripts/llvm-clang"
       - "scripts/build-diff-web.sh"
+      - "scripts/grammar-wasm.sh"
       - "scripts/test-wasm.sh"
+      - "scripts/web-grammar-parity.mjs"
+      - "scripts/web-grammars.sh"
       - "scripts/with-wasm-toolchain.sh"
       - "scripts/wasm-bindgen-version.sh"
-      - "wasm/**"
       - "web/**"
       - "package.json"
       - "package-lock.json"
@@ -67,7 +71,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang python3
+          sudo apt-get install -y clang
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -107,7 +111,7 @@ jobs:
       - name: Install build dependencies
         run: |
           sudo apt-get update
-          sudo apt-get install -y clang python3
+          sudo apt-get install -y clang
 
       - name: Cache Rust dependencies
         uses: Swatinem/rust-cache@6323deb102c322ba6fcbdcafc7e3dddab59af2b6 # v2.9.2
@@ -117,6 +121,16 @@ jobs:
 
       - name: Test review session
         run: cargo test --locked -p jj-diff-web
+
+      # Each cached grammar's name hashes its source version, the tree-sitter CLI version, and the build scripts, so a restored older cache only reuses grammars that are unchanged; the build prunes the rest. The CLI caches the WASI SDK here too.
+      - name: Cache web grammars
+        uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        with:
+          path: |
+            ~/.cache/jayjay-web-grammars
+            ~/.cache/tree-sitter
+          key: web-grammars-${{ hashFiles('Cargo.lock', 'scripts/web-grammars.sh', 'scripts/grammar-wasm.sh', 'crates/jj-diff/grammars/fluent/**') }}
+          restore-keys: web-grammars-
 
       - name: Read wasm-bindgen version
         id: wasm-bindgen
@@ -129,11 +143,15 @@ jobs:
 
       - name: Build and check the web review
         run: |
+          export JAYJAY_GRAMMAR_CACHE="$HOME/.cache/jayjay-web-grammars"
           npm ci
           npm run format:check
           npm run build --workspace @jayjay/review-host
           npm run check --workspaces
           npm test --workspace @jayjay/diff
+
+      - name: Compare web and native highlighting
+        run: node scripts/web-grammar-parity.mjs
 
       - name: Read Playwright version
         id: playwright
