@@ -4644,12 +4644,13 @@ dependencies = [
 name = "jayjay-review"
 version = "0.1.0"
 dependencies = [
+ "getrandom 0.4.3",
+ "hex",
  "jayjay-primitives",
  "jj-diff",
  "serde",
  "serde_json",
  "tempfile",
- "uuid",
 ]
 
 [[package]]

@@ -11,7 +11,20 @@ pub struct UuidIdSource;
 
 impl IdSource for UuidIdSource {
     fn next_id(&mut self) -> String {
-        uuid::Uuid::new_v4().to_string()
+        let mut bytes = [0u8; 16];
+        getrandom::fill(&mut bytes).expect("system random source");
+        // Version 4 and variant bits keep new ids in the UUID shape that stored notes already use.
+        bytes[6] = (bytes[6] & 0x0f) | 0x40;
+        bytes[8] = (bytes[8] & 0x3f) | 0x80;
+        let hex = hex::encode(bytes);
+        format!(
+            "{}-{}-{}-{}-{}",
+            &hex[..8],
+            &hex[8..12],
+            &hex[12..16],
+            &hex[16..20],
+            &hex[20..]
+        )
     }
 }
 
