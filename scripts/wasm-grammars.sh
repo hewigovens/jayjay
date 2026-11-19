@@ -4,7 +4,7 @@ set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out="$root/crates/jj-diff/grammars/wasm"
-registry="${CARGO_HOME:-$HOME/.cargo}/registry/src"
+source "$root/scripts/grammar-wasm.sh"
 
 # name, crate in Cargo.lock or git repository@commit, grammar directory, highlight query
 grammars=(
@@ -21,16 +21,6 @@ grammars=(
   "just https://github.com/casey/tree-sitter-just@5685543a6e64f66335e25518c9ae8ffa1dae3d01 . queries-flavored/helix/highlights.scm"
 )
 
-locked_version() {
-  local versions
-  versions="$(awk -v name="$1" '$0 == "name = \"" name "\"" { getline; gsub(/version = |"/, ""); print }' "$root/Cargo.lock")"
-  if [[ -z "$versions" || "$versions" == *$'\n'* ]]; then
-    echo "expected exactly one locked version of $1, found: ${versions:-none}" >&2
-    exit 1
-  fi
-  echo "$versions"
-}
-
 # Crates without a LICENSE file get the MIT text cargo-about generated for them while they were linked natively.
 mit_license() {
   grep -q '^license = "MIT"$' "$1/Cargo.toml" || { echo "$1 is not MIT licensed" >&2; exit 1; }
@@ -44,7 +34,6 @@ THE SOFTWARE IS PROVIDED "AS IS", WITHOUT WARRANTY OF ANY KIND, EXPRESS OR IMPLI
 EOF
 }
 
-cli_version="$(locked_version tree-sitter)"
 cargo fetch --locked --manifest-path "$root/Cargo.toml"
 work="$(mktemp -d)"
 trap 'rm -rf "$work"' EXIT
@@ -53,17 +42,10 @@ trap 'rm -rf "$work"' EXIT
 for entry in "${grammars[@]}"; do
   read -r name crate dir query <<< "$entry"
   src="$work/$name"
-  if [[ "$crate" == https://* ]]; then
-    version="${crate#*@}"
-    crate="${crate%@*}"
-    git clone --quiet "$crate" "$src"
-    git -C "$src" checkout --quiet "$version"
-  else
-    version="$(locked_version "$crate")"
-    cp -R "$(ls -d "$registry"/*/"$crate-$version" | head -n 1)" "$src"
-  fi
-  chmod -R u+w "$src"
-  (cd "$src/$dir" && npx -y "tree-sitter-cli@$cli_version" build --wasm -o "$work/$name.wasm" .)
+  version="$(source_version "$crate")"
+  fetch_source "$crate" "$src"
+  crate="${crate%@*}"
+  build_wasm "$src/$dir" "$work/$name.wasm" "$name"
   gzip -9 -n -c "$work/$name.wasm" > "$out/$name.wasm.gz"
   cp "$src/$query" "$out/$name.scm"
   if compgen -G "$src/LICENSE*" > /dev/null; then

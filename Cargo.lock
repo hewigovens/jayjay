@@ -5067,6 +5067,8 @@ dependencies = [
  "jj-diff",
  "serde",
  "serde_json",
+ "tree-sitter",
+ "tree-sitter-language",
  "wasm-bindgen",
 ]
 

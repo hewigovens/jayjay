@@ -87,9 +87,9 @@ const backend: ReviewBackend = {
 // client.dispose() terminates its worker and rejects outstanding requests.
 ```
 
-`loadLabels` imports the reader's locale from per-locale JSON that the WASM build exports from the Fluent catalog, so a host can render before any WASM loads. The local entry point creates a dedicated module worker, loads the grammar-free base and requested syntax packs, and stores canonical review JSON in the named IndexedDB database. It also supplies `exportState`, `importState`, and guarded `restoreState`. Share a database name only when sharing source and review state on the same origin is intended. Syntax caches are disposable; source/state remain in IndexedDB.
+`loadLabels` imports the reader's locale from per-locale JSON that the WASM build exports from the Fluent catalog, so a host can render before any WASM loads. The local entry point creates a dedicated module worker, loads the review engine, links each language's Tree-sitter grammar into it on first use, and stores canonical review JSON in the named IndexedDB database. It also supplies `exportState`, `importState`, and guarded `restoreState`. Share a database name only when sharing source and review state on the same origin is intended. Syntax caches are disposable; source/state remain in IndexedDB.
 
-Vite needs `worker: { format: "es" }`; TypeScript needs `jsx: "react-jsx"` and bundler module resolution. WASM packs get hashed URLs and load on demand. The host owns offline caching and installation. A server-only consumer importing `/react` and `/types` needs no WASM assets at runtime.
+Vite needs `worker: { format: "es" }`; TypeScript needs `jsx: "react-jsx"` and bundler module resolution. The engine, one `.wasm` grammar per language, and its highlight query get hashed URLs and load on demand; a grammar that fails to load leaves its files without syntax highlighting. The host owns offline caching and installation. A server-only consumer importing `/react` and `/types` needs no WASM assets at runtime.
 
 ## Source layout
 
@@ -98,8 +98,8 @@ Vite needs `worker: { format: "es" }`; TypeScript needs `jsx: "react-jsx"` and b
 - `hooks/`: `useReview` (the review state machine), `useCompact` (the narrow-screen layout switch), and the hooks `ReviewWorkspace` composes for lazy sections, folding, note jumps, file shortcuts, and the file column width.
 - `components/`: `ReviewWorkspace` and its parts, grouped as `header/`, `files/`, `diff/`, and `notes/`, plus the `ToolButton`, `Dialog`, and icon primitives hosts reuse.
 - `styles/`: one stylesheet per area, imported in cascade order by `styles.css`.
-- `local/`: the optional worker backend (`LocalReviewClient`, its worker protocol, WASM pack loading, and IndexedDB storage).
-- `wasm/`: generated wasm-bindgen packs and label catalogs (ignored by version control).
+- `local/`: the optional worker backend (`LocalReviewClient`, its worker protocol, engine loading, run-time grammar linking, and IndexedDB storage).
+- `wasm/`: the generated engine, grammars and highlight queries, and label catalogs (ignored by version control).
 
 ## Build and consume
 

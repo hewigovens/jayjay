@@ -61,7 +61,7 @@ lang-batch = ["dep:tree-sitter-batch", "syntax"]
 lang-c = ["dep:tree-sitter-c", "syntax"]
 lang-cmake = ["dep:tree-sitter-cmake", "syntax"]
 lang-cpp = ["dep:tree-sitter-cpp", "dep:tree-sitter-c", "syntax"]
-lang-csharp = ["dep:tree-sitter-c-sharp", "wasm-grammars"]
+lang-csharp = ["wasm-grammars"]
 lang-css = ["dep:tree-sitter-css", "syntax"]
 lang-dart = ["wasm-grammars"]
 lang-dockerfile = ["wasm-grammars"]
@@ -74,27 +74,27 @@ lang-java = ["dep:tree-sitter-java", "syntax"]
 lang-javascript = ["dep:tree-sitter-javascript", "syntax"]
 lang-json = ["dep:tree-sitter-json", "syntax"]
 lang-just = ["wasm-grammars"]
-lang-kotlin = ["dep:tree-sitter-kotlin-sg", "wasm-grammars"]
+lang-kotlin = ["wasm-grammars"]
 lang-lua = ["dep:tree-sitter-lua", "syntax"]
 lang-make = ["dep:tree-sitter-make", "syntax"]
 lang-markdown = ["dep:tree-sitter-md", "syntax"]
 lang-nix = ["dep:tree-sitter-nix", "syntax"]
-lang-php = ["dep:tree-sitter-php", "wasm-grammars"]
+lang-php = ["wasm-grammars"]
 lang-powershell = ["dep:tree-sitter-powershell", "syntax"]
 lang-proto = ["wasm-grammars"]
 lang-python = ["dep:tree-sitter-python", "syntax"]
 lang-r = ["wasm-grammars"]
-lang-ruby = ["dep:tree-sitter-ruby", "wasm-grammars"]
+lang-ruby = ["wasm-grammars"]
 lang-rust = ["dep:tree-sitter-rust", "syntax"]
 lang-solidity = ["dep:tree-sitter-solidity", "syntax"]
-lang-sql = ["dep:tree-sitter-sequel", "wasm-grammars"]
+lang-sql = ["wasm-grammars"]
 lang-swift = ["dep:tree-sitter-swift", "syntax"]
 lang-toml = ["dep:tree-sitter-toml-ng", "syntax"]
 lang-typescript = ["dep:tree-sitter-typescript", "dep:tree-sitter-javascript", "syntax"]
 lang-xml = ["dep:tree-sitter-xml", "syntax"]
 lang-yaml = ["dep:tree-sitter-yaml", "syntax"]
 lang-zig = ["dep:tree-sitter-zig", "syntax"]
-# Grammars in grammars/wasm run as interpreted WebAssembly on native targets, so a language costs a few hundred kilobytes; the web build links the ones with a crate dependency and shows the rest as plain text.
+# Grammars in grammars/wasm run as interpreted WebAssembly on native targets, so a language costs a few hundred kilobytes.
 wasm-grammars = ["dep:tree-sitter", "dep:wasmtime", "dep:flate2", "syntax"]
 hotpath = ["dep:hotpath", "hotpath/hotpath"]
 hotpath-alloc = ["hotpath", "hotpath/hotpath-alloc"]
@@ -111,6 +111,21 @@ unicode-width = { workspace = true }
 unicode-segmentation = { workspace = true }
 tree-sitter-highlight = { workspace = true }
 tree-sitter = { workspace = true }
+
+# Never built: pins the grammars `just wasm-grammars` compiles to WebAssembly in Cargo.lock.
+[target.'cfg(any())'.dependencies]
+tree-sitter-c-sharp = { workspace = true }
+tree-sitter-kotlin-sg = { workspace = true }
+tree-sitter-php = { workspace = true }
+tree-sitter-ruby = { workspace = true }
+tree-sitter-sequel = { workspace = true }
+tree-sitter-containerfile = { workspace = true }
+tree-sitter-dart = { workspace = true }
+tree-sitter-proto = { workspace = true }
+tree-sitter-r = { workspace = true }
+
+# The web build links grammars into its engine at run time instead.
+[target.'cfg(not(target_family = "wasm"))'.dependencies]
 tree-sitter-rust = { workspace = true, optional = true }
 tree-sitter-javascript = { workspace = true, optional = true }
 tree-sitter-typescript = { workspace = true, optional = true }
@@ -139,22 +154,6 @@ tree-sitter-ini = { workspace = true, optional = true }
 tree-sitter-cmake = { workspace = true, optional = true }
 tree-sitter-lua = { workspace = true, optional = true }
 tree-sitter-language = { workspace = true, optional = true }
-
-[target.'cfg(target_family = "wasm")'.dependencies]
-tree-sitter-c-sharp = { workspace = true, optional = true }
-tree-sitter-kotlin-sg = { workspace = true, optional = true }
-tree-sitter-php = { workspace = true, optional = true }
-tree-sitter-ruby = { workspace = true, optional = true }
-tree-sitter-sequel = { workspace = true, optional = true }
-
-# Never built: pins the grammars `just wasm-grammars` compiles to WebAssembly in Cargo.lock.
-[target.'cfg(any())'.dependencies]
-tree-sitter-containerfile = { workspace = true }
-tree-sitter-dart = { workspace = true }
-tree-sitter-proto = { workspace = true }
-tree-sitter-r = { workspace = true }
-
-[target.'cfg(not(target_family = "wasm"))'.dependencies]
 tree-sitter = { workspace = true, features = ["wasm"], optional = true }
 wasmtime = { workspace = true, optional = true }
 flate2 = { workspace = true, optional = true }

@@ -1,15 +1,17 @@
 use tree_sitter_highlight::HighlightConfiguration;
 
-use super::{HighlightSpan, SyntaxToken, highlight_with_config, with_config_for_language};
+use super::{HighlightSpan, SyntaxToken, grammar, highlight_with_config, with_config_for_language};
+
+pub(super) const INLINE: &str = "markdown_inline";
 
 pub(super) fn merge_block_and_inline(
     source: &str,
     block_spans: Vec<HighlightSpan>,
 ) -> Vec<HighlightSpan> {
     // Markdown has separate block and inline grammars; block structure wins where their spans overlap.
-    let Some(inline_spans) = with_config_for_language("markdown_inline", |config| {
-        inline_highlights(source, config)
-    }) else {
+    let Some(inline_spans) =
+        with_config_for_language(INLINE, |config| inline_highlights(source, config))
+    else {
         return block_spans;
     };
     merge_highlights(block_spans, inline_spans, source.len())
@@ -17,10 +19,10 @@ pub(super) fn merge_block_and_inline(
 
 fn inline_highlights(source: &str, config: &HighlightConfiguration) -> Vec<HighlightSpan> {
     let mut parser = tree_sitter::Parser::new();
-    if parser
-        .set_language(&tree_sitter_md::LANGUAGE.into())
-        .is_err()
-    {
+    let Some(block) = grammar("markdown") else {
+        return vec![];
+    };
+    if parser.set_language(&block).is_err() {
         return vec![];
     }
     let Some(tree) = parser.parse(source, None) else {

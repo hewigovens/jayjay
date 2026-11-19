@@ -14,7 +14,7 @@ test("loads syntax on demand, navigates files, and persists group marks and note
   await page.goto("/");
   await ready(page);
   expect(wasm.length).toBeGreaterThan(0);
-  expect(wasm.every((url) => /jj_diff_(base|rust)_bg/.test(url))).toBe(true);
+  expect(wasm.every((url) => /\/(jj_diff_bg|rust)-[\w-]+\.wasm$/.test(url))).toBe(true);
   await page.getByRole("button", { name: "Showing files as a tree", exact: true }).click();
   await expect(page.getByRole("button", { name: "src/greeting.rs", exact: true })).toHaveAttribute(
     "aria-current",

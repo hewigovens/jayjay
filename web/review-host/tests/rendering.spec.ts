@@ -1,8 +1,8 @@
 import { expect, test } from "@playwright/test";
 import { bundle, ready } from "./support";
 
-test("reviews a file without syntax when its language pack cannot load", async ({ page }) => {
-  await page.route("**/jj_diff_data_bg*.wasm", (route) => route.abort("failed"));
+test("reviews a file without syntax when its grammar cannot load", async ({ page }) => {
+  await page.route("**/assets/json-*.wasm", (route) => route.abort("failed"));
   await page.goto("/");
   await ready(page);
   await page.getByRole("button", { name: "config/settings.json", exact: true }).click();
@@ -162,7 +162,7 @@ test("ignores a slow syntax result after selecting another file", async ({ page 
   const requestStarted = new Promise<void>((resolve) => {
     requested = resolve;
   });
-  await page.route("**/jj_diff_web_bg*.wasm", async (route) => {
+  await page.route("**/assets/typescript-*.wasm", async (route) => {
     requested();
     await blocked;
     await route.continue();

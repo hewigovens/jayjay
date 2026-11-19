@@ -115,7 +115,8 @@ impl SideHighlights {
     /// Offsets cover every source line, so lines revealed after construction still resolve.
     #[cfg_attr(feature = "hotpath", hotpath::measure(impl_type = "SideHighlights"))]
     pub(crate) fn full(source: &str, line_index: &LineIndex, language: &str) -> Arc<Self> {
-        if language == "plaintext" || source.is_empty() {
+        // A grammar the web engine has not linked yet may arrive later, so its plain result is not cached.
+        if language == "plaintext" || source.is_empty() || syntax::grammar(language).is_none() {
             return Arc::new(Self::default());
         }
         HIGHLIGHTS.get_or_insert_with(source, language, || {

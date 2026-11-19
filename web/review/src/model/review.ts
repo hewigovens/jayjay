@@ -143,7 +143,6 @@ export interface ReviewResult {
   groupStates: ReviewState[];
   options: DiffOptions;
   elapsed: number;
-  pack: string;
   syntaxUnavailable: boolean;
   canUndoImport?: boolean;
 }
