@@ -1,8 +1,6 @@
 #!/usr/bin/env bash
+# Tree-sitter's C runtime compiles for wasm32 with an LLVM clang that has the WebAssembly backend, which Apple's clang lacks.
 set -euo pipefail
-
-script_dir="$(cd "$(dirname "$0")" && pwd)"
-repo_root="$(cd "$script_dir/.." && pwd)"
 
 if [[ -n "${JAYJAY_WASM_CLANG:-}" ]]; then
   clang="$JAYJAY_WASM_CLANG"
@@ -13,34 +11,9 @@ elif [[ -x /usr/local/opt/llvm/bin/clang ]]; then
 else
   clang="$(command -v clang || true)"
   if [[ -z "$clang" ]] || ! "$clang" --print-targets 2>/dev/null | grep -q wasm32; then
-    echo "WASM syntax highlighting needs an LLVM clang with the wasm32 target; install Homebrew llvm or set JAYJAY_WASM_CLANG" >&2
+    echo "WASM builds need an LLVM clang with the wasm32 target; install Homebrew llvm or set JAYJAY_WASM_CLANG" >&2
     exit 1
   fi
 fi
 
-flags=(
-  "-I$repo_root/wasm/sysroot/include"
-  -Wno-incompatible-pointer-types
-)
-wasm_headers="${DEP_TREE_SITTER_LANGUAGE_WASM_HEADERS:-${JAYJAY_WASM_HEADERS:-}}"
-if [[ -n "$wasm_headers" ]]; then
-  flags+=("-I$wasm_headers")
-fi
-
-args=("$@")
-case "${CARGO_PKG_NAME:-}" in
-  tree-sitter-batch|tree-sitter-c|tree-sitter-c-sharp|tree-sitter-cmake|tree-sitter-css|tree-sitter-lua|tree-sitter-md|tree-sitter-powershell|tree-sitter-sequel)
-    # These grammar releases still compile the old per-grammar libc; Tree-sitter 0.27 now supplies it once in the runtime.
-    if [[ "${DEP_TREE_SITTER_LANGUAGE_WASM_SRC:-}" == */wasm/unsupported/tree-sitter-0.26 ]]; then
-      for i in "${!args[@]}"; do
-        case "${args[$i]}" in
-          "$DEP_TREE_SITTER_LANGUAGE_WASM_SRC/stdio.c"|"$DEP_TREE_SITTER_LANGUAGE_WASM_SRC/stdlib.c"|"$DEP_TREE_SITTER_LANGUAGE_WASM_SRC/string.c")
-            args[$i]="$repo_root/wasm/grammar-stdlib.c"
-            ;;
-        esac
-      done
-    fi
-    ;;
-esac
-
-exec "$clang" "${flags[@]}" "${args[@]}"
+exec "$clang" "$@"
