@@ -14,6 +14,12 @@ struct SettingsDiffPage: View {
                     SettingsLabel(Localized.Settings.sideBySide, icon: "rectangle.split.2x1")
                 }
                 Toggle(isOn: Binding(
+                    get: { settings.showAllFileDiffs },
+                    set: { settings.showAllFileDiffs = $0 }
+                )) {
+                    SettingsLabel(Localized.Settings.showAllFileDiffs, icon: "rectangle.grid.1x2")
+                }
+                Toggle(isOn: Binding(
                     get: { settings.ignoreWhitespace },
                     set: { settings.ignoreWhitespace = $0 }
                 )) {

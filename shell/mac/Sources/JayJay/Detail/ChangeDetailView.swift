@@ -229,6 +229,9 @@ struct ChangeDetailView: View {
             contextMenuRequest = nil
             reconcileFileSelection()
         }
+        .onChange(of: appSettings.showAllFileDiffs) { _, _ in
+            reconcileFileSelection()
+        }
         .onChange(of: hasRefreshSensitiveInteraction, initial: true) { _, active in
             onInteractionStateChanged(active)
         }

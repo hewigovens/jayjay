@@ -11,7 +11,7 @@ final class AppSettings {
     static let showsOperationLogKey = "jayjay.showsOperationLog"
     static let operationLogWidthKey = "jayjay.operationLogWidth"
 
-    private enum StorageKeys {
+    enum StorageKeys {
         static let interfaceFontFamily = "jayjay.interfaceFontFamily"
         static let interfaceFontSize = "jayjay.interfaceFontSize"
         // Pre-split names: the single font setting always drove code text.
@@ -26,6 +26,7 @@ final class AppSettings {
         static let diffPaletteDark = "jayjay.diffPaletteDark"
 
         static let sideBySideDiff = "jayjay.sideBySideDiff"
+        static let showAllFileDiffs = "jayjay.showAllFileDiffs"
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
         static let hideGitLfsDiffs = "jayjay.hideGitLfsDiffs"
         static let showGitSubmoduleChanges = "jayjay.showGitSubmoduleChanges"
@@ -168,6 +169,10 @@ final class AppSettings {
 
     var sideBySideDiff: Bool {
         didSet { defaults.set(sideBySideDiff, forKey: StorageKeys.sideBySideDiff) }
+    }
+
+    var showAllFileDiffs: Bool {
+        didSet { defaults.set(showAllFileDiffs, forKey: StorageKeys.showAllFileDiffs) }
     }
 
     var ignoreWhitespace: Bool {
@@ -344,6 +349,7 @@ final class AppSettings {
         lightColorTheme = colorTheme(id: lightPaletteId, isDark: false)
         darkColorTheme = colorTheme(id: darkPaletteId, isDark: true)
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
+        showAllFileDiffs = defaults.bool(forKey: StorageKeys.showAllFileDiffs)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true
         showGitSubmoduleChanges = defaults.bool(forKey: StorageKeys.showGitSubmoduleChanges)
@@ -359,13 +365,8 @@ final class AppSettings {
             ?? defaults.number(forKey: StorageKeys.legacyFileColumnWidth)
         secondaryPaneWidth = min(max(storedPaneWidth ?? PaneLayout.secondaryPaneDefault, PaneLayout.secondaryPane.lowerBound), PaneLayout.secondaryPane.upperBound)
         sidebarHidden = defaults.bool(forKey: StorageKeys.sidebarHidden)
-        var seenRecentRepos = Set<String>()
-        recentRepos = (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
-            .filter { !$0.isEmpty }
-            .map(Self.standardizedRepositoryPath)
-            .filter { seenRecentRepos.insert($0).inserted }
-        lastOpenedRepo = defaults.string(forKey: StorageKeys.lastOpenedRepo)
-            .flatMap { $0.isEmpty ? nil : Self.standardizedRepositoryPath($0) }
+        recentRepos = Self.storedRecentRepos(in: defaults)
+        lastOpenedRepo = Self.storedLastOpenedRepo(in: defaults)
         hasCompletedOnboarding = defaults.bool(forKey: StorageKeys.hasCompletedOnboarding)
         showsRecentRepositoriesPanel = defaults.bool(forKey: StorageKeys.showsRecentRepositoriesPanel)
         externalEditor = ExternalEditor(rawValue: defaults.string(forKey: StorageKeys.externalEditor) ?? "") ?? .vscode

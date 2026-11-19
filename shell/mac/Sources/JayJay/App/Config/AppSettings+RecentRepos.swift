@@ -21,6 +21,19 @@ extension AppSettings {
         }
     }
 
+    static func storedRecentRepos(in defaults: UserDefaults) -> [String] {
+        var seen = Set<String>()
+        return (defaults.stringArray(forKey: StorageKeys.recentRepos) ?? [])
+            .filter { !$0.isEmpty }
+            .map(standardizedRepositoryPath)
+            .filter { seen.insert($0).inserted }
+    }
+
+    static func storedLastOpenedRepo(in defaults: UserDefaults) -> String? {
+        defaults.string(forKey: StorageKeys.lastOpenedRepo)
+            .flatMap { $0.isEmpty ? nil : standardizedRepositoryPath($0) }
+    }
+
     static func standardizedRepositoryPath(_ path: String) -> String {
         path.standardizedRepositoryLocation
     }

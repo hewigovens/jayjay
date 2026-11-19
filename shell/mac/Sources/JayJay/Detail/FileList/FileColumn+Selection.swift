@@ -11,6 +11,9 @@ extension ChangeDetailView {
                 return true
             case KeyCode.rightArrow: return true
             case KeyCode.pageUp, KeyCode.pageDown, KeyCode.home, KeyCode.end: return scrollDiff(event)
+            case KeyCode.escape where appSettings.showAllFileDiffs && fileSelection.primary != nil:
+                fileSelection = FileSelection()
+                return true
             default: break
         }
         if event.opensSelectionContextMenu, let selectedPath = fileSelection.primary, keyboardFocus?.isSuspended != true,
@@ -37,7 +40,7 @@ extension ChangeDetailView {
         guard event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
               let diff = NSApp.keyWindow?.contentView?.diffTextView
         else { return false }
-        if selectedHunks.count > 1 {
+        if isStacked {
             let stack = diff.enclosingScrollView?.superview?.enclosingScrollView
             switch event.keyCode {
                 case KeyCode.pageUp: stack?.pageUp(nil)
@@ -86,6 +89,10 @@ extension ChangeDetailView {
         let available = Set(paths)
         var selection = fileSelection
         selection.paths.formIntersection(available)
+        if appSettings.showAllFileDiffs, selection.paths.isEmpty {
+            fileSelection = FileSelection()
+            return
+        }
         if selection.primary.map({ available.contains($0) }) != true {
             let order = visibleSelectablePaths
             selection.primary = order.first(where: selection.paths.contains) ?? order.first ?? paths.first
@@ -115,7 +122,7 @@ extension ChangeDetailView {
     }
 
     /// Tree mode includes files under collapsed folders.
-    private var displayOrderedPaths: [String] {
+    var displayOrderedPaths: [String] {
         let paths = filteredDiff.map(\.path)
         guard appSettings.treeFileList else { return paths }
         return fileTreeCache.entries(for: paths).compactMap { $0.hunkIndex == nil ? nil : $0.path }

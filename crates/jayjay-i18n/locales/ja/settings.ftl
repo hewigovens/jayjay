@@ -47,6 +47,7 @@ settings-reset-fonts = フォントをリセット
 
 settings-display = 表示
 settings-side-by-side = 左右並べて差分を表示
+settings-show-all-file-diffs = すべてのファイルの差分を 1 つのリストに表示
 settings-ignore-whitespace = 空白の変更を無視
 settings-tree-view = ファイルをツリー表示
 settings-hide-reviewed = レビュー済みのファイルを隠す

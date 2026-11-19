@@ -29,6 +29,8 @@ struct DiffSection: View {
     var fitsContent = false
     /// The change header shows the layout toggle and Edit Diff itself, since they apply to every file.
     var showsSharedActions = true
+    /// Set in a stack of files, where a large diff folds to a row that opens it alone.
+    var onShowAlone: (() -> Void)?
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
@@ -58,7 +60,7 @@ struct DiffSection: View {
                     .padding(.bottom, 8)
             }
             diffContent
-                .frame(height: fitsContent && (fittedDiffHeight == nil || showsRichView) ? 320 : nil)
+                .frame(height: fitsContent ? stackedContentHeight : nil)
         }
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()

@@ -4,7 +4,7 @@ import SwiftUI
 extension ChangeDetailView {
     var diffActions: some View {
         let sideBySide = appSettings.sideBySideDiff
-        let stacked = selectedHunks.count > 1
+        let stacked = isStacked
         let toggleLayout = { appSettings.sideBySideDiff.toggle() }
         let openDiffEdit = { paneMode = .diffEdit }
         return HStack(spacing: 2) {

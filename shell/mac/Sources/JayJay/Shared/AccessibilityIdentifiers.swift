@@ -110,6 +110,7 @@ enum AID {
         static let source = "diff.source"
         static let addReviewNote = "diff.addReviewNote"
         static let markReviewed = "diff.markReviewed"
+        static let showLargeDiff = "diff.showLargeDiff"
     }
 
     enum ReviewNote {

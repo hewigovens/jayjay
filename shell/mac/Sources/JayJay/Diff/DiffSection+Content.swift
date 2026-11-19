@@ -69,6 +69,16 @@ extension DiffSection {
             richPreviewWithGutter {
                 HTMLDiffView(location: htmlPreviewLocation)
             }
+        } else if foldsLargeDiff, let onShowAlone {
+            HStack(spacing: 8) {
+                Text(Localized.Diff.largeDiffFolded(count: fileDiff?.lines.count ?? 0))
+                    .foregroundStyle(.secondary)
+                Button(Localized.Diff.showDiff, action: onShowAlone)
+                    .buttonStyle(InlineTextButtonStyle())
+                    .accessibilityIdentifier(AID.Diff.showLargeDiff)
+            }
+            .jayjayFont(12)
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if hasCurrentRenderableDiff, let diff = fileDiff, !diff.lines.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 if diff.whitespaceOnlyHidden {
@@ -244,6 +254,24 @@ extension DiffSection {
         .padding(.horizontal, 10)
         .padding(.vertical, 6)
         .background(Color.orange.opacity(0.08))
+    }
+
+    /// Fitting a diff to its content lays out every line at once, so a larger one opens alone, in its own scroll view.
+    private static let stackedLineLimit = 3000
+
+    private var foldsLargeDiff: Bool {
+        onShowAlone != nil && hasCurrentRenderableDiff && (fileDiff?.lines.count ?? 0) > Self.stackedLineLimit
+    }
+
+    /// Nil once the diff text reports its own height; rich previews and unloaded diffs report none.
+    var stackedContentHeight: CGFloat? {
+        if showsRichView {
+            return 320
+        }
+        if foldsLargeDiff {
+            return 44
+        }
+        return fittedDiffHeight == nil ? 320 : nil
     }
 
     func canUseSideBySide(_ diff: FileDiff) -> Bool {

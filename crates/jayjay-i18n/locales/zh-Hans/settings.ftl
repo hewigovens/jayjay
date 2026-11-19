@@ -47,6 +47,7 @@ settings-reset-fonts = 重置字体
 
 settings-display = 显示
 settings-side-by-side = 并排差异
+settings-show-all-file-diffs = 在一个列表中显示所有文件的差异
 settings-ignore-whitespace = 忽略空白变更
 settings-tree-view = 文件树视图
 settings-hide-reviewed = 隐藏已评审文件

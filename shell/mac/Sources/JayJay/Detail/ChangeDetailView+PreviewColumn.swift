@@ -39,7 +39,7 @@ extension ChangeDetailView {
 
     // MARK: - Preview column
 
-    private func diffSection(for hunk: DiffHunk, fitsContent: Bool = false) -> some View {
+    private func diffSection(for hunk: DiffHunk, stacked: Bool = false) -> some View {
         VStack(spacing: 0) {
             if conflictedPaths.contains(hunk.path) {
                 conflictBar(hunk: hunk)
@@ -74,29 +74,33 @@ extension ChangeDetailView {
                 onToggleFileReview: { toggleReview([hunk.path]) },
                 compareFromRev: comparison?.fromId,
                 lineStats: fileStats?.value?[hunk.path],
-                fitsContent: fitsContent,
-                showsSharedActions: false
+                fitsContent: stacked,
+                showsSharedActions: false,
+                onShowAlone: stacked ? { selectSingleFile(hunk.path) } : nil
             )
             // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
             .id("\(detail.info.commitId.id)|\(hunk.path)")
         }
     }
 
-    var selectedHunks: [DiffHunk] {
+    /// The preview column shows the selected files, or every file while none is selected and all diffs are shown together.
+    var shownHunks: [DiffHunk] {
         let selected = fileSelection.paths
-        guard selected.count > 1 else { return [] }
+        let showsAll = selected.isEmpty && appSettings.showAllFileDiffs
+        guard showsAll || selected.count > 1 else { return selectedHunk.map { [$0] } ?? [] }
         let hunks = Dictionary(filteredDiff.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
-        return visibleSelectablePaths.compactMap { selected.contains($0) ? hunks[$0] : nil }
+        return showsAll
+            ? displayOrderedPaths.compactMap { hunks[$0] }
+            : visibleSelectablePaths.compactMap { selected.contains($0) ? hunks[$0] : nil }
     }
 
-    /// The preview column shows every selected file, or the primary one alone.
-    private var shownHunks: [DiffHunk] {
-        let selected = selectedHunks
-        return selected.count > 1 ? selected : selectedHunk.map { [$0] } ?? []
+    var isStacked: Bool {
+        shownHunks.count > 1
     }
 
     var previewColumn: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let shown = shownHunks
+        return VStack(alignment: .leading, spacing: 0) {
             if case let .annotate(lines, path, error) = paneMode {
                 AnnotateView(
                     lines: lines, path: path, error: error,
@@ -112,19 +116,19 @@ extension ChangeDetailView {
                     onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if selectedHunks.count > 1 {
+            } else if shown.count > 1 {
                 ScrollViewReader { proxy in
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 0) {
-                            ForEach(selectedHunks, id: \.path) { hunk in
-                                diffSection(for: hunk, fitsContent: true)
+                            ForEach(shown, id: \.path) { hunk in
+                                diffSection(for: hunk, stacked: true)
                                 Divider()
                             }
                         }
                     }
                     // The stack only estimates the height of files it has not shown, so the jump repeats while the files it lands on load.
                     .task(id: stackScrollEdge) {
-                        guard let edge = stackScrollEdge, let target = edge == .bottom ? selectedHunks.last : selectedHunks.first else { return }
+                        guard let edge = stackScrollEdge, let target = edge == .bottom ? shown.last : shown.first else { return }
                         for _ in 0 ..< 5 where !Task.isCancelled {
                             proxy.scrollTo(target.path, anchor: edge == .bottom ? .bottom : .top)
                             try? await Task.sleep(for: .milliseconds(120))
@@ -134,7 +138,7 @@ extension ChangeDetailView {
                         }
                     }
                 }
-            } else if let hunk = selectedHunk {
+            } else if let hunk = shown.first {
                 diffSection(for: hunk)
                     .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {

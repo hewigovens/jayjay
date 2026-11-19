@@ -47,6 +47,7 @@ settings-reset-fonts = Reset Fonts
 
 settings-display = Display
 settings-side-by-side = Side-by-side diff
+settings-show-all-file-diffs = Show all files' diffs in one list
 settings-ignore-whitespace = Ignore whitespace changes
 settings-tree-view = Tree view for files
 settings-hide-reviewed = Hide reviewed files
