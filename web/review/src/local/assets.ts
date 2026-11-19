@@ -72,13 +72,14 @@ export async function cachedWasm(url: string): Promise<ArrayBuffer> {
       /* Cache availability does not prevent online diffing. */
     }
   let response: Response;
+  let bytes: ArrayBuffer;
   try {
     response = await fetch(url);
+    bytes = await response.arrayBuffer();
   } catch (error) {
     throw new TransientError(`WASM download failed for ${url}: ${String(error)}`);
   }
   if (!response.ok) throw new TransientError(`WASM download failed: ${response.status} for ${url}`);
-  const bytes = await response.arrayBuffer();
   if (!isWasm(bytes)) throw new TransientError(`${url} did not return WebAssembly`);
   if (cache) {
     try {

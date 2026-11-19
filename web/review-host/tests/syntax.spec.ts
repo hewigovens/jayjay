@@ -146,6 +146,32 @@ test("a page served for a grammar is not cached, so the grammar loads later", as
   await expect(page.locator(".jj-diff-cell .jj-token-Number").first()).toBeVisible();
 });
 
+test("a grammar download cut off while its body arrives is tried again", async ({ page }) => {
+  const worker = page.waitForEvent("worker");
+  await page.goto("/");
+  await ready(page);
+  await (
+    await worker
+  ).evaluate(() => {
+    const download = self.fetch;
+    self.fetch = (input, init) => {
+      const url = input instanceof Request ? input.url : String(input);
+      if (!/\/json-[^/]*\.wasm$/.test(url)) return download(input, init);
+      self.fetch = download;
+      const body = new ReadableStream({
+        start: (stream) => stream.error(new TypeError("network error")),
+      });
+      return Promise.resolve(new Response(body));
+    };
+  });
+  await open(page, "config/settings.json");
+  await expect(notice(page)).toHaveCount(1);
+  await open(page, "src/greeting.rs");
+  await open(page, "config/settings.json");
+  await expect(notice(page)).toHaveCount(0);
+  await expect(page.locator(".jj-diff-cell .jj-token-Number").first()).toBeVisible();
+});
+
 test("a trap in grammar code restarts the engine and keeps the review working", async ({
   page,
 }) => {
