@@ -24,7 +24,7 @@
     "title": "Review changed files",
     "summary": "Review a change file by file, use rich previews for supported formats, mark files reviewed with Space, and hide completed files.",
     "category": "Diffs",
-    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "space", "hide reviewed", "side by side", "unified", "copy", "clipboard", "wrapped lines", "rich preview", "markdown", "mermaid", "diagram", "moved code", "file icons", "binary size", "md", "html", "htm", "notebook", "ipynb", "csv", "tsv", "sarif", "plist", "property list"],
+    "keywords": ["help", "review", "diff", "files", "changed files", "checkbox", "mark reviewed", "review mode", "space", "hide reviewed", "side by side", "unified", "copy", "clipboard", "wrapped lines", "rich preview", "markdown", "mermaid", "diagram", "moved code", "file icons", "binary size", "md", "html", "htm", "notebook", "ipynb", "csv", "tsv", "sarif", "plist", "property list"],
     "shortcut": "Space",
     "guideAnchor": "diffs"
   },
@@ -60,7 +60,7 @@
     "title": "Operate on changes",
     "summary": "Describe, commit, squash, abandon, duplicate, merge, absorb, back out, or undo changes.",
     "category": "Changes",
-    "keywords": ["help", "change", "commit", "describe", "squash", "abandon", "duplicate", "merge", "absorb", "back out", "undo", "operation log"],
+    "keywords": ["help", "change", "commit", "describe", "squash", "abandon", "duplicate", "merge", "absorb", "back out", "undo", "operation log", "commit box", "status bar"],
     "shortcut": "Cmd+Shift+U",
     "guideAnchor": "operations"
   },
@@ -116,7 +116,7 @@
     "title": "Configure tools and settings",
     "summary": "Set appearance, diff behavior, external editor, terminal, CLI tools, jj config, fonts, and AI providers.",
     "category": "Settings",
-    "keywords": ["help", "settings", "flock", "dock icon", "appearance", "language", "Japanese", "English", "relaunch", "Rex", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "diagnostics", "debug mode", "logs", "reveal logs", "feedback", "ai", "codex", "claude", "apple intelligence", "forge", "sign in", "sign out", "device code", "github", "gitlab", "codeberg", "cursor", "authentication", "token", "gh", "glab", "origin", "avatar"],
+    "keywords": ["help", "settings", "submodule", "git lfs", "applescript", "flock", "dock icon", "appearance", "language", "Japanese", "English", "relaunch", "Rex", "theme", "font", "zoom", "editor", "terminal", "cli", "jj config", "diagnostics", "debug mode", "logs", "reveal logs", "feedback", "ai", "codex", "claude", "apple intelligence", "forge", "sign in", "sign out", "device code", "github", "gitlab", "codeberg", "cursor", "authentication", "token", "gh", "glab", "origin", "avatar"],
     "shortcut": "Cmd+,",
     "menuPath": "JayJay > Settings...",
     "guideAnchor": "settings"

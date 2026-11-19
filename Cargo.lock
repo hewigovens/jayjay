@@ -4492,7 +4492,7 @@ checksum = "8f42a60cbdf9a97f5d2305f08a87dc4e09308d1276d28c869c684d7777685682"
 
 [[package]]
 name = "jayjay-cli"
-version = "0.3.24"
+version = "0.3.25"
 dependencies = [
  "clap",
  "dunce",
@@ -4554,7 +4554,7 @@ dependencies = [
 
 [[package]]
 name = "jayjay-gpui"
-version = "0.3.24"
+version = "0.3.25"
 dependencies = [
  "base64 0.23.1",
  "clap",
@@ -4850,7 +4850,7 @@ dependencies = [
 
 [[package]]
 name = "jj-diff-web"
-version = "0.3.24"
+version = "0.3.25"
 dependencies = [
  "jayjay-i18n",
  "jayjay-markdown",

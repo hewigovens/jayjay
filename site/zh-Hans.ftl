@@ -135,8 +135,8 @@ vs-code-vscodium-zed-xcode-vim = VS Code、VSCodium、Zed、Xcode、Vim、终端
 # Git interop
 git-interop = Git 互操作
 
-# Colocated Git repos, Git LFS, and submodules work out of the box.
-colocated-git-repos-git-lfs-and = 与 Git 共存的 jj 仓库、Git LFS、子模块，开箱即用。
+# Colocated Git repos and Git LFS work out of the box; submodules show the commit they point to.
+colocated-git-repos-and-git-lfs-work = 与 Git 共存的 jj 仓库和 Git LFS 开箱即用；子模块会显示它指向的提交。
 
 # <a class="link" href="guide.html">Read the full guide ›</a>
 read-the-full-guide = <a class="link" href="guide.html">阅读完整指南（英文）›</a>

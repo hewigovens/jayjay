@@ -6,6 +6,168 @@
         <description>JayJay updates</description>
         <language>en</language>
         <item>
+            <title>Version 0.3.25-beta.1</title>
+            <sparkle:channel>beta</sparkle:channel>
+            <sparkle:version>89</sparkle:version>
+            <sparkle:shortVersionString>0.3.25</sparkle:shortVersionString>
+            <sparkle:minimumSystemVersion>26.0</sparkle:minimumSystemVersion>
+            <pubDate>Thu, 19 Nov 2026 07:26:56 +0000</pubDate>
+            <description><![CDATA[
+                <!DOCTYPE html>
+                <html lang="en">
+                <head>
+                  <meta charset="utf-8">
+                  <meta name="viewport" content="width=device-width, initial-scale=1">
+                  <meta name="color-scheme" content="light dark">
+                  <title>JayJay 0.3.25-beta.1 — Release notes</title>
+                  <style>
+                    :root {
+                      color-scheme: light dark;
+                      --background: #f7f8fa;
+                      --surface: #ffffff;
+                      --text: #20242c;
+                      --muted: #626b78;
+                      --border: #dfe4ec;
+                      --accent: #1d4ed8;
+                      --tint: #eaf1ff;
+                      --notice: #fff5de;
+                      --notice-text: #79520b;
+                    }
+                    @media (prefers-color-scheme: dark) {
+                      :root {
+                        --background: #181b21;
+                        --surface: #22262e;
+                        --text: #edf0f6;
+                        --muted: #adb6c5;
+                        --border: #3b424f;
+                        --accent: #93baff;
+                        --tint: #283b5d;
+                        --notice: #3a301d;
+                        --notice-text: #f4cc7d;
+                      }
+                    }
+                    * { box-sizing: border-box; }
+                    body {
+                      margin: 0;
+                      padding: 24px;
+                      background: var(--background);
+                      color: var(--text);
+                      font: 13px/1.65 -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+                      overflow-wrap: anywhere;
+                    }
+                    .release { max-width: 720px; margin: 0 auto; }
+                    header { padding-bottom: 22px; border-bottom: 1px solid var(--border); }
+                    h1 { margin: 0 0 12px; font-size: 28px; line-height: 1.2; letter-spacing: -0.035em; }
+                    .metadata { display: flex; flex-wrap: wrap; align-items: center; gap: 10px 14px; color: var(--muted); }
+                    .version { padding: 3px 10px; border-radius: 7px; background: var(--tint); color: var(--accent); font-weight: 650; }
+                    .beta-notice { margin: 20px 0 0; padding: 12px 14px; border-radius: 10px; background: var(--notice); color: var(--notice-text); }
+                    main h2 { margin: 24px 0 10px; font-size: 16px; line-height: 1.35; }
+                    main ul, main ol { margin: 0; padding: 16px 18px 16px 34px; border: 1px solid var(--border); border-radius: 12px; background: var(--surface); }
+                    main li + li { margin-top: 10px; }
+                    main li::marker { color: var(--accent); }
+                    main li ul, main li ol { margin-top: 10px; padding: 0 0 0 18px; border: 0; }
+                    code { padding: 1px 4px; border-radius: 4px; background: var(--tint); font: 0.92em ui-monospace, SFMono-Regular, Menlo, monospace; }
+                    pre { overflow-x: auto; padding: 14px; border-radius: 10px; background: var(--surface); }
+                    pre code { padding: 0; background: transparent; }
+                    a { color: var(--accent); text-underline-offset: 3px; }
+                    a:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; border-radius: 2px; }
+                    footer { margin-top: 24px; padding-top: 16px; border-top: 1px solid var(--border); color: var(--muted); }
+                    @media (max-width: 420px) { body { padding: 16px; } h1 { font-size: 24px; } }
+                    @media (prefers-contrast: more) { :root { --muted: var(--text); --border: var(--text); } }
+                  </style>
+                </head>
+                <body>
+                  <div class="release">
+                    <header>
+                      <h1>What’s new</h1>
+                      <div class="metadata"><span class="version">v0.3.25-beta.1</span><time datetime="2026-11-19">November 19, 2026</time></div>
+                    </header>
+                    <p class="beta-notice"><strong>Beta build · 89</strong><br>Switch the update channel to Stable in Settings &gt; About to stay on production releases.</p>
+                    <main>
+                <h2>Operation Log</h2>
+                <ul>
+                  <li>The Operation Log opens as a resizable pane at the window’s trailing edge instead of a sheet. Show or hide it with its toolbar button, <strong>View → Show Operation Log</strong> (⇧⌘U), the last operation in the status bar, or the command palette. JayJay remembers whether it is open.</li>
+                  <li>While the pane is open, its toolbar button sits at the pane’s leading edge and the revset field narrows to make room. In a narrow window the pane gives up width so the sidebar, file list and diff keep their minimum sizes; widening the window restores the width you dragged it to.</li>
+                  <li>Restore an operation from its row’s context menu, ⌃Return, <strong>Edit → Restore Selected Operation</strong>, or the command palette. A refresh keeps the selected operation.</li>
+                  <li>When the operation history cannot be read, the pane shows the error instead of <strong>No operations found</strong>. When the revset stops evaluating, the operation list and status bar still show the operation that broke it.</li>
+                </ul>
+                
+                <h2>Toolbar and layout</h2>
+                <ul>
+                  <li>The sidebar toggle has its own capsule. Refresh, pull and push sit in a second capsule that narrows away when the sidebar hides and returns with it.</li>
+                  <li>Pull and push use a matching pair of tray icons, and review mode uses a list-with-checkmark icon so it no longer looks like a reviewed file’s mark.</li>
+                  <li>The toolbar no longer has Settings or Show in Finder buttons; both remain in the menus and the command palette. Editor and terminal buttons show the configured app’s icon.</li>
+                  <li>Double-clicking empty space between toolbar items acts like double-clicking the title bar, following your setting in System Settings.</li>
+                  <li>The repository title is larger and lines up with the change title. It no longer shifts while the sidebar animates or when switching between workspaces with names of different lengths.</li>
+                  <li>The change header, with its title, byline, description and divergence and stale-note bars, now spans the file list and the diff. Details stay collapsed by default.</li>
+                  <li>Panes are separated by a hairline that runs up through the toolbar.</li>
+                  <li><strong>View → Hide Status Bar</strong> and <strong>Hide / Show Status Bar</strong> in the command palette hide the status bar.</li>
+                </ul>
+                
+                <h2>Changes and commits</h2>
+                <ul>
+                  <li>The commit box in the sidebar appears only while the working copy has no description or holds an unsaved draft. Once a draft is saved, the space goes back to the change list.</li>
+                  <li>A described working copy is edited from its change header. Its <strong>Edit Description</strong> sheet offers <strong>Save</strong>, <strong>Commit</strong> and message generation, and stays open if the commit fails.</li>
+                  <li>A described working copy’s change menu and the command palette offer <strong>Commit</strong>, which commits an unsaved draft that has a summary, or otherwise the saved description.</li>
+                  <li>The change header shows the commit ID beside the change ID, each with its unique prefix highlighted and a copy button. In a narrow pane the date drops first, then the commit ID.</li>
+                  <li>The change list header shows how many changes are divergent or conflicted, moved from the status bar. Click a count to filter to <code>divergent()</code> or <code>conflicts()</code>.</li>
+                  <li>Change ID prefixes and bookmarks are magenta and commit ID prefixes are blue, as in <code>jj log</code>.</li>
+                </ul>
+                
+                <h2>Files and diffs</h2>
+                <ul>
+                  <li>File rows show the containing folder under the file name, in the flat list and the tree alike. Files at the repository root have no second line, and moves still show their full source and destination.</li>
+                  <li>An empty change shows <strong>No Files Changed</strong> once across the detail pane, with the file list hidden until the change has files.</li>
+                  <li>When a change has files but none are listed, the detail pane says why — no filter match, all files reviewed and hidden, no files with review notes, or Git LFS and submodule files hidden by settings — and ends with a link that undoes it, such as <strong>Clear Filter</strong> or <strong>Show Reviewed Files</strong>.</li>
+                  <li>With the file list focused, Page Up, Page Down, Home and End scroll the diff.</li>
+                  <li>Syntax colors stay distinct from one another in low-contrast themes.</li>
+                </ul>
+                
+                <h2>Review</h2>
+                <ul>
+                  <li>A mutable change other than the working copy has its own review mode, turned on from the file list header, <strong>Repository → Review Mode</strong>, or <strong>Toggle Review Mode</strong> in the command palette. It starts on when the change already has review marks or notes, and off otherwise.</li>
+                  <li>With review mode off, file rows show the change-type badge instead of review marks, the header shows the plain file count, and <strong>Mark Reviewed</strong>, Space marking and hiding reviewed files are off. Review notes still show. With it on, the header count shows review progress.</li>
+                </ul>
+                
+                <h2>Git submodules</h2>
+                <ul>
+                  <li>JayJay no longer manages Git submodules when you commit. The <strong>Submodule changes need attention</strong> sheet and the automatic submodule commit are gone, and Commit and Describe work in a repository with dirty submodules like any other.</li>
+                  <li>A submodule with uncommitted edits no longer gets its own row in the working copy. A submodule’s diff shows only which commit it points to.</li>
+                  <li><strong>Enable Git submodule support</strong> in Workflow settings is now <strong>Show Git submodule changes</strong> under <strong>Git LFS and Submodules</strong> in Diff settings, and only controls whether submodule changes are listed. Your existing choice carries over.</li>
+                </ul>
+                
+                <h2>Pull, push and remote repositories</h2>
+                <ul>
+                  <li>A failed pull shows Git’s own output instead of only “External git program failed”.</li>
+                  <li>Push says plainly when there is nothing to push, for example when no bookmark is ahead of the remote.</li>
+                  <li>A disconnected SSH repository shows a bar with <strong>Reconnect</strong> above its content. <strong>Reconnect</strong> is also in the Repository menu and the command palette.</li>
+                </ul>
+                
+                <h2>AppleScript</h2>
+                <ul>
+                  <li>JayJay has a scripting dictionary. Scripts can open a repository, address it by its workspace root, read and set its revset, refresh it, select a change, show one of its files, and read the selection, the window ID and any error or notice on screen.</li>
+                  <li>Each command returns once the window has settled, so scripts need no delays. The front repository falls back to a hidden or minimized window when no repository window is visible.</li>
+                </ul>
+                
+                <h2>Fixes</h2>
+                <ul>
+                  <li>Launching JayJay with a repository path as its argument opens that repository.</li>
+                  <li>A long rename in the file list keeps its arrow and destination visible.</li>
+                  <li>The keyboard-selected file stays in view in long file lists during fast key repeat.</li>
+                  <li>Picker panels, such as the repository and bookmark pickers, no longer show a scrollbar.</li>
+                </ul>
+                    </main>
+                    <footer><a href="https://github.com/hewigovens/jayjay/releases">All releases</a> · <a href="https://jayjay.hewig.dev/guide.html">User guide</a></footer>
+                  </div>
+                </body>
+                </html>
+            ]]></description>
+            <enclosure url="https://github.com/hewigovens/jayjay/releases/download/v0.3.25-beta.1/JayJay-0.3.25-beta.1.zip"
+                       sparkle:edSignature="L5Yk65suD/B2SS5QN9Q3cYKytFQIOIzLktDMPzAf8CoSom/+6xdB2kItmNkRNxv/UOEwLUzlYckcpgAr7ycUAA=="
+                       length="28731007"
+                       type="application/octet-stream"/>
+        </item>
+        <item>
             <title>Version 0.3.24</title>
             <sparkle:version>88</sparkle:version>
             <sparkle:shortVersionString>0.3.24</sparkle:shortVersionString>

@@ -183,10 +183,12 @@ final class ReleaseScreenshots: ScreenshotScene {
 
     func testOperationLog() throws {
         let app = try XCTUnwrap(app)
+        // At this window width the pane only gets its default width with the sidebar out of the way.
+        keyStroke("s", modifiers: [.command, .control])
         keyStroke("u", modifiers: [.command, .shift])
         XCTAssertTrue(app.element(AID.Panel.operationLog).waitForExistence(timeout: 5), "Operation Log missing")
+        settle()
         capture("undo-operation-log", frame: mainFrame)
-        keyStroke("u", modifiers: [.command, .shift])
     }
 
     func testCommandPalette() throws {

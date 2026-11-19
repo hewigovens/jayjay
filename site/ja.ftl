@@ -135,8 +135,8 @@ vs-code-vscodium-zed-xcode-vim = VS Code、VSCodium、Zed、Xcode、Vim、ター
 # Git interop
 git-interop = Git との連携
 
-# Colocated Git repos, Git LFS, and submodules work out of the box.
-colocated-git-repos-git-lfs-and = Git と同居する jj リポジトリ、Git LFS、サブモジュールにそのまま対応。
+# Colocated Git repos and Git LFS work out of the box; submodules show the commit they point to.
+colocated-git-repos-and-git-lfs-work = Git と同居する jj リポジトリや Git LFS にそのまま対応。サブモジュールは指しているコミットを表示します。
 
 # <a class="link" href="guide.html">Read the full guide ›</a>
 read-the-full-guide = <a class="link" href="guide.html">詳しいガイドを読む（英語）›</a>
