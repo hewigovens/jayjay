@@ -53,7 +53,7 @@ test("a folder's checkbox reviews every file under it", async ({ page }) => {
     page
       .locator(".jj-file-column")
       .getByRole("checkbox", { name: `Mark reviewed: ${path}`, exact: true });
-  await page.getByRole("button", { name: "3 files", exact: true }).click();
+  await page.getByRole("button", { name: "Files", exact: true }).click();
   await mark("src").click();
   await expect(mark("src/a.rs")).toBeChecked();
   await expect(mark("src/b.rs")).toBeChecked();

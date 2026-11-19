@@ -45,6 +45,7 @@ export function PatchReview({
   );
   const review = useReview(backend);
   const [shortcuts, setShortcuts] = useState(false);
+  const [filesSlot, setFilesSlot] = useState<HTMLElement | null>(null);
   const [reviewMode, toggleReviewMode] = useReviewMode();
   useEffect(() => {
     document.title = `${patch.title} · JayJay Diff`;
@@ -54,10 +55,13 @@ export function PatchReview({
     <>
       {review.result && (
         <nav className="pull-app-bar">
-          <a href="/" className="pull-home">
-            <img src="/favicon.svg" alt="" width="20" height="20" />
-            JayJay Diff
-          </a>
+          <div className="pull-app-lead">
+            <span className="pull-files-slot" ref={setFilesSlot} />
+            <a href="/" className="pull-home">
+              <img src="/favicon.svg" alt="" width="20" height="20" />
+              JayJay Diff
+            </a>
+          </div>
           <div className="pull-app-actions">
             <DiffThemePicker labels={labels} themes={themes} select={selectTheme} />
             <ToolButton
@@ -85,6 +89,7 @@ export function PatchReview({
         allLines={false}
         fill
         statusBar={false}
+        filesSlot={filesSlot}
         reviewMode={reviewMode}
         onReviewMode={toggleReviewMode}
         onRetry={null}

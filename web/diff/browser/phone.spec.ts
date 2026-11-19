@@ -17,6 +17,9 @@ test("the landing page fits a phone and starts no diff engine", async ({ page })
 test("header actions are touch-sized and pickers open as a sheet", async ({ page }) => {
   await openPull(page);
   await expectNoSidewaysScroll(page);
+  await page.locator(".pull-app-bar").getByRole("button", { name: "Files", exact: true }).click();
+  await expect(page.getByRole("dialog", { name: "Files" })).toBeVisible();
+  await page.keyboard.press("Escape");
   const actions = page.locator(".pull-app-bar .jj-tool:visible");
   expect(await actions.count()).toBeGreaterThanOrEqual(4);
   for (const box of await actions.evaluateAll((tools) =>

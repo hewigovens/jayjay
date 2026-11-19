@@ -1,10 +1,11 @@
-import { useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   ReviewWorkspace,
   ToolButton,
   ToolLink,
   ShortcutsDialog,
   KeyboardIcon,
+  SidebarIcon,
 } from "@jayjay/review-web/react";
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
@@ -12,7 +13,7 @@ import type { AppearanceSettings } from "../../AppearanceSettings";
 import { atCommit, gitHubUrl, isPullRequest, type ReviewRef } from "../../github/ReviewRef";
 import { usePullReview } from "../../hooks/usePullReview";
 import { useReviewMode } from "../../hooks/useReviewMode";
-import { GitHubIcon, RefreshIcon, SidebarIcon, SignOutIcon } from "../icons";
+import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
 import { CommitPicker } from "./CommitPicker";
 import { CommitSidebar } from "./CommitSidebar";
@@ -56,6 +57,7 @@ export function PullReview({
     enableSync,
   } = usePullReview(client, labels, pull, reviewMode);
   const [shortcuts, setShortcuts] = useState(false);
+  const [filesSlot, setFilesSlot] = useState<HTMLElement | null>(null);
   const picked = useRef<"commits" | "stack">(undefined);
   const [sidebar, setSidebar] = useState(() => {
     try {
@@ -73,12 +75,17 @@ export function PullReview({
     }
   }
   const openCommit = (sha: string | undefined) => onOpen(atCommit(pull, sha));
+  // The picker that opened this review has taken its focus back; a later remount, as on rotation, must not. Skipped while another pull request loads, when no picker is mounted to take it.
+  useEffect(() => {
+    if (shown !== undefined) picked.current = undefined;
+  }, [shown]);
 
   return (
     <>
       {review.result && (
         <nav className={`pull-app-bar ${sidebar && commits.length > 1 ? "sidebar-open" : ""}`}>
           <div className="pull-app-lead">
+            <span className="pull-files-slot" ref={setFilesSlot} />
             {commits.length > 1 && (
               <ToolButton
                 className="commit-sidebar-toggle"
@@ -159,6 +166,21 @@ export function PullReview({
           avatars
           fill
           statusBar={false}
+          filesSlot={filesSlot}
+          filesHeader={
+            commits.length > 1 && (
+              <CommitPicker
+                commits={commits}
+                selected={pull.commit}
+                labels={labels}
+                autoFocus={picked.current === "commits"}
+                onSelect={(sha) => {
+                  picked.current = "commits";
+                  openCommit(sha);
+                }}
+              />
+            )
+          }
           reviewMode={reviewMode}
           onReviewMode={toggleReviewMode}
           descriptionLabel={
@@ -175,18 +197,6 @@ export function PullReview({
           }
           headerActions={
             <>
-              {commits.length > 1 && (
-                <CommitPicker
-                  commits={commits}
-                  selected={pull.commit}
-                  labels={labels}
-                  autoFocus={picked.current === "commits"}
-                  onSelect={(sha) => {
-                    picked.current = "commits";
-                    openCommit(sha);
-                  }}
-                />
-              )}
               {stack && isPullRequest(pull) && (
                 <StackPicker
                   stack={stack}

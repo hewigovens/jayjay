@@ -40,9 +40,6 @@ export const SyncIcon = ({ size }: IconProps) => (
 export const CommitIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.5 8h4M10.5 8h4" />
 );
-export const SidebarIcon = ({ size }: IconProps) => (
-  <Icon size={size} d="M2.5 3.5h11v9h-11zM6 3.5v9" />
-);
 export const StackIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M8 2l6 3-6 3-6-3 6-3ZM2 8l6 3 6-3M2 11l6 3 6-3" />
 );

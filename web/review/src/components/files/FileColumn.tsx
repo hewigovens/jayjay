@@ -1,5 +1,12 @@
 /** @jsxRuntime automatic */
-import { useMemo, useState, type CSSProperties, type KeyboardEvent, type MouseEvent } from "react";
+import {
+  useMemo,
+  useState,
+  type CSSProperties,
+  type KeyboardEvent,
+  type MouseEvent,
+  type ReactNode,
+} from "react";
 import type { Labels } from "../../model/diff";
 import {
   ChevronIcon,
@@ -172,6 +179,7 @@ export function FileColumn({
   description,
   marks = true,
   onReviewMode,
+  header,
 }: {
   overview: Overview;
   selected: number;
@@ -189,6 +197,7 @@ export function FileColumn({
   marks?: boolean;
   /** Adds the review mode toggle to the tools. */
   onReviewMode?: () => void;
+  header?: ReactNode;
 }) {
   const [tree, setTree] = useState(() => {
     try {
@@ -293,6 +302,7 @@ export function FileColumn({
 
   return (
     <aside className="jj-file-column" aria-label={labels.files}>
+      {header}
       <div className="jj-pane-heading jj-file-tools">
         {notes && (activeNotes > 0 || onlyNotes) && (
           <ToolButton

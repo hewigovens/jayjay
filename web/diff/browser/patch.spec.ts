@@ -43,7 +43,7 @@ test("a picked diff file opens in the browser at its own line numbers", async ({
   const unopened = page
     .locator(".jj-file-column")
     .getByRole("checkbox", { name: "Mark reviewed: docs/b.md", exact: true });
-  await page.getByRole("button", { name: "2 files", exact: true }).click();
+  await page.getByRole("button", { name: "Files", exact: true }).click();
   await unopened.click();
   await expect(unopened).toBeChecked();
   expect(sent).toEqual([]);

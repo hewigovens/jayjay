@@ -62,6 +62,37 @@
   font-size: calc(12px * var(--jj-interface-scale, 1));
   font-variant-numeric: tabular-nums;
 }
+.commit-picker {
+  border-bottom: 1px solid var(--jj-border);
+}
+.commit-picker .picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 0;
+  color: var(--jj-muted);
+  text-align: left;
+}
+.commit-current {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--jj-ink);
+  font-size: calc(13px * var(--jj-interface-scale, 1));
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (min-width: 681px) and (min-height: 501px) {
+  .commit-picker .picker-menu {
+    right: auto;
+    left: 6px;
+  }
+}
 .picker-menu {
   position: absolute;
   z-index: 10;
@@ -205,6 +236,25 @@
 .pull-app-lead .share-feedback {
   right: auto;
   left: 0;
+}
+.pull-files-slot {
+  display: contents;
+}
+.pull-home {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding-left: 6px;
+  color: var(--jj-muted);
+  font-size: calc(12px * var(--jj-interface-scale, 1));
+  font-weight: 600;
+  text-decoration: none;
+}
+.pull-home img {
+  display: block;
+}
+.pull-home:hover {
+  color: var(--jj-ink);
 }
 .pull-app-title {
   display: flex;

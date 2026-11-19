@@ -41,6 +41,10 @@
   color: var(--jj-ink);
   white-space: nowrap;
 }
+:where(.jayjay-review) .jj-files-total {
+  font-size: calc(12px * var(--jj-interface-scale, 1));
+  white-space: nowrap;
+}
 :where(.jayjay-review) .jj-dialog.jj-file-drawer {
   inset: 0 auto 0 0;
   width: min(86vw, 22rem);

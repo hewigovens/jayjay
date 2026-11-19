@@ -7,6 +7,7 @@ import {
   type CSSProperties,
   type ReactNode,
 } from "react";
+import { createPortal } from "react-dom";
 import { diffThemeAttributes, type DiffThemeSelection } from "../themes";
 import type { DiffAnchor, Labels } from "../model/diff";
 import { isImagePath, type ImageSide, type ReviewNote, type ReviewResult } from "../model/review";
@@ -29,13 +30,14 @@ import { ChangeDescription } from "./header/ChangeDescription";
 import { ChangeHeader } from "./header/ChangeHeader";
 import { DiffOptionControls } from "./header/DiffOptionControls";
 import { FileHeader } from "./header/FileHeader";
-import { ListIcon, NoteIcon } from "./icons";
+import { ListIcon, NoteIcon, SidebarIcon } from "./icons";
 import { LazySection } from "./LazySection";
 import { NoteBubble } from "./notes/NoteBubble";
 import { NoteComposer, type NoteTarget } from "./notes/NoteComposer";
 import { NotesBanner } from "./notes/NotesBanner";
 import { anchorKey, placeNotes } from "./notes/notePlacement";
 import { toggled } from "./toggled";
+import { ToolButton } from "./ToolButton";
 
 export function ReviewWorkspace({
   review,
@@ -57,6 +59,8 @@ export function ReviewWorkspace({
   descriptionFirst = false,
   reviewMode = true,
   onReviewMode,
+  filesSlot,
+  filesHeader,
   diffThemes,
 }: {
   review: ReviewController;
@@ -88,6 +92,10 @@ export function ReviewWorkspace({
   reviewMode?: boolean;
   /** Adds a review mode toggle to the file list's tools. */
   onReviewMode?: () => void;
+  /** An element in the host's toolbar that takes the phone list's Files button; the file count stays above the list. */
+  filesSlot?: HTMLElement | null;
+  /** Shown above the file list: at the top of the file column, or above the phone list's file count. */
+  filesHeader?: ReactNode;
   /** Diff-only palettes with an optional appearance override. Omit to use the host CSS colors. */
   diffThemes?: DiffThemeSelection;
 }) {
@@ -262,6 +270,10 @@ export function ReviewWorkspace({
   }
 
   const disabled = pending || Boolean(error);
+  const filesTotal =
+    reviewMode && result?.overview.files.some((entry) => entry.review === "reviewed")
+      ? result.overview.counts.reviewed
+      : result?.overview.counts.files;
   const update = (id: string, body: string) => mutate({ kind: "updateNote", id, body });
   const resolve = (id: string) => void mutate({ kind: "resolveNote", id });
   // The compact list re-renders the marked file's section; the wide layout re-renders the open file.
@@ -491,6 +503,7 @@ export function ReviewWorkspace({
           {!compact && (
             <FileColumn
               onShowShortcuts={onShowShortcuts ? undefined : showShortcuts}
+              header={filesHeader}
               overview={result.overview}
               selected={showDescription ? -1 : selected}
               disabled={disabled}
@@ -531,20 +544,37 @@ export function ReviewWorkspace({
             aria-busy={pending}
             ref={detail}
           >
-            {compact && (
-              <div className="jj-pane-heading jj-diff-options">
-                <button
-                  className="jj-header-action jj-files-button"
+            {compact &&
+              filesSlot &&
+              createPortal(
+                <ToolButton
+                  className="jj-files-button"
                   aria-haspopup="dialog"
                   aria-keyshortcuts="/"
-                  title={labels.files}
+                  label={labels.files}
                   onClick={openDrawer}
                 >
-                  <ListIcon />
-                  {reviewMode && result.overview.files.some((entry) => entry.review === "reviewed")
-                    ? result.overview.counts.reviewed
-                    : result.overview.counts.files}
-                </button>
+                  <SidebarIcon />
+                </ToolButton>,
+                filesSlot,
+              )}
+            {compact && filesHeader}
+            {compact && (
+              <div className="jj-pane-heading jj-diff-options">
+                {filesSlot ? (
+                  <span className="jj-files-total">{filesTotal}</span>
+                ) : (
+                  <button
+                    className="jj-header-action jj-files-button"
+                    aria-haspopup="dialog"
+                    aria-keyshortcuts="/"
+                    title={labels.files}
+                    onClick={openDrawer}
+                  >
+                    <ListIcon />
+                    {filesTotal}
+                  </button>
+                )}
                 <div className="jj-header-actions">
                   <DiffOptionControls
                     labels={labels}
