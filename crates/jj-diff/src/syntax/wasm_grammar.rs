@@ -119,20 +119,26 @@ mod tests {
     }
 
     #[test]
-    fn bundled_grammars_match_the_locked_crates() {
+    fn bundled_grammars_match_their_pinned_sources() {
         let root = Path::new(env!("CARGO_MANIFEST_DIR"));
         let lock = std::fs::read_to_string(root.join("../../Cargo.lock")).unwrap();
         let locked: Vec<_> = lock.lines().zip(lock.lines().skip(1)).collect();
+        let script = std::fs::read_to_string(root.join("../../scripts/wasm-grammars.sh")).unwrap();
         let versions = std::fs::read_to_string(root.join("grammars/wasm/versions")).unwrap();
         for line in versions.lines() {
-            let (name, version) = line.split_once(' ').unwrap();
-            let entry = (
-                format!("name = \"{name}\""),
-                format!("version = \"{version}\""),
-            );
+            let (source, version) = line.split_once(' ').unwrap();
+            let pinned = if source.starts_with("https://") {
+                script.contains(&format!(" {source}@{version} "))
+            } else {
+                let entry = (
+                    format!("name = \"{source}\""),
+                    format!("version = \"{version}\""),
+                );
+                locked.contains(&(entry.0.as_str(), entry.1.as_str()))
+            };
             assert!(
-                locked.contains(&(entry.0.as_str(), entry.1.as_str())),
-                "{name} {version} is not the locked version; run `just wasm-grammars`"
+                pinned,
+                "{source} {version} is not the pinned version; run `just wasm-grammars`"
             );
         }
     }

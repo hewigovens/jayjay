@@ -425,6 +425,12 @@ fn a_shebang_names_the_language_only_when_the_extension_does_not() {
     for (path, source, language) in [
         ("bin/changes", "#!/bin/sh\necho hi\n", "shell"),
         ("bin/changes", "#!/usr/bin/env lua\nprint(1)\n", "lua"),
+        ("bin/changes", "#!/usr/bin/env Rscript\nprint(1)\n", "r"),
+        (
+            "bin/changes",
+            "#!/usr/bin/env just --justfile\nbuild:\n",
+            "just",
+        ),
         (
             "bin/changes",
             "#! /usr/bin/env -S -u PYTHONPATH FOO=1 /usr/bin/python3.12 -u\nprint(1)\n",
@@ -559,6 +565,26 @@ fn webassembly_grammars_are_highlighted() {
             "index.php",
             "<?php\n// note\nfunction greet($name) { return \"Hello\"; }\n",
         ),
+        (
+            "Dockerfile",
+            "# note\nFROM rust:1.90 AS build\nENTRYPOINT [\"/app\"]\n",
+        ),
+        (
+            "api.proto",
+            "// note\nsyntax = \"proto3\";\nmessage User { string name = 1; }\n",
+        ),
+        (
+            "justfile",
+            "# note\nset shell := [\"bash\", \"-c\"]\nbuild:\n  cargo build\n",
+        ),
+        (
+            "main.dart",
+            "// note\nclass Greeter { final String name = \"Hello\"; }\n",
+        ),
+        (
+            "analysis.R",
+            "# note\nscore <- function(x) if (x > 0) \"up\" else \"down\"\n",
+        ),
     ] {
         let spans: Vec<_> = highlight_file(path, source).into_iter().flatten().collect();
         for token in [
@@ -571,5 +597,26 @@ fn webassembly_grammars_are_highlighted() {
                 "{path} should highlight {token:?}: {spans:?}"
             );
         }
+    }
+}
+
+#[test]
+fn bundled_grammar_files_are_detected_by_name() {
+    for (path, language) in [
+        ("Dockerfile", "dockerfile"),
+        ("deploy/Dockerfile.dev", "dockerfile"),
+        ("app.dockerfile", "dockerfile"),
+        ("Containerfile", "dockerfile"),
+        ("justfile", "just"),
+        ("Justfile", "just"),
+        (".justfile", "just"),
+        ("infra/worker.just", "just"),
+        ("api/v1/user.proto", "proto"),
+        ("lib/main.dart", "dart"),
+        ("analysis.R", "r"),
+        ("analysis.r", "r"),
+        ("dockerfiles/README.md", "markdown"),
+    ] {
+        assert_eq!(crate::syntax::language_for(path, ""), language, "{path}");
     }
 }

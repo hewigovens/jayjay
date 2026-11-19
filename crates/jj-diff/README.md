@@ -55,6 +55,8 @@ jj-diff = { version = "0.1", default-features = false, features = ["lang-rust", 
 | `lang-cpp` | `.cpp`, `.cc`, `.cxx`, `.hpp` |
 | `lang-csharp` | `.cs` |
 | `lang-css` | `.css`, `.scss` |
+| `lang-dart` | `.dart` |
+| `lang-dockerfile` | `Dockerfile`, `Dockerfile.*`, `Containerfile`, `.dockerfile`, `.containerfile` |
 | `lang-fish` | `.fish` |
 | `lang-fluent` | `.ftl` |
 | `lang-go` | `.go` |
@@ -62,12 +64,15 @@ jj-diff = { version = "0.1", default-features = false, features = ["lang-rust", 
 | `lang-java` | `.java` |
 | `lang-javascript` | `.js`, `.cjs`, `.mjs`, `.jsx` |
 | `lang-json` | `.json` |
+| `lang-just` | `justfile`, `.justfile`, `.just` |
 | `lang-kotlin` | `.kt`, `.kts` |
 | `lang-make` | `Makefile`, `.mk` |
 | `lang-markdown` | `.md`, `.markdown` |
 | `lang-nix` | `.nix` |
 | `lang-php` | `.php`, `.phtml` |
+| `lang-proto` | `.proto` |
 | `lang-python` | `.py` |
+| `lang-r` | `.R`, `.r` |
 | `lang-ruby` | `.rb` |
 | `lang-rust` | `.rs` |
 | `lang-solidity` | `.sol` |
@@ -79,7 +84,7 @@ jj-diff = { version = "0.1", default-features = false, features = ["lang-rust", 
 | `lang-yaml` | `.yaml`, `.yml` |
 | `lang-zig` | `.zig` |
 
-On native targets, `lang-csharp`, `lang-kotlin`, `lang-php`, `lang-ruby`, and `lang-sql` load gzipped WebAssembly builds of their grammars into wasmtime's Pulley interpreter instead of linking them, which keeps binaries smaller; building them needs `cmake` on the host. WebAssembly targets link all grammars.
+On native targets, `lang-csharp`, `lang-dart`, `lang-dockerfile`, `lang-just`, `lang-kotlin`, `lang-php`, `lang-proto`, `lang-r`, `lang-ruby`, and `lang-sql` load gzipped WebAssembly builds of their grammars into wasmtime's Pulley interpreter instead of linking them, so each costs a few hundred kilobytes at most; building them needs `cmake` on the host. WebAssembly targets link the other grammars and C#, Kotlin, PHP, Ruby, and SQL; Dart, Dockerfile, Just, Protobuf, and R are plain text there.
 
 ## License
 

@@ -1,18 +1,24 @@
 #!/usr/bin/env bash
-# Rebuild the WebAssembly grammars jj-diff bundles from the grammar crates locked in Cargo.lock.
+# Rebuild the WebAssembly grammars jj-diff bundles from the grammar crates locked in Cargo.lock or the git commits pinned below.
 set -euo pipefail
 
 root="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 out="$root/crates/jj-diff/grammars/wasm"
 registry="${CARGO_HOME:-$HOME/.cargo}/registry/src"
 
-# name, crate, grammar directory inside the crate
+# name, crate in Cargo.lock or git repository@commit, grammar directory, highlight query
 grammars=(
-  "kotlin tree-sitter-kotlin-sg ."
-  "c_sharp tree-sitter-c-sharp ."
-  "sql tree-sitter-sequel ."
-  "ruby tree-sitter-ruby ."
-  "php tree-sitter-php php"
+  "kotlin tree-sitter-kotlin-sg . queries/highlights.scm"
+  "c_sharp tree-sitter-c-sharp . queries/highlights.scm"
+  "sql tree-sitter-sequel . queries/highlights.scm"
+  "ruby tree-sitter-ruby . queries/highlights.scm"
+  "php tree-sitter-php php queries/highlights.scm"
+  "containerfile tree-sitter-containerfile . queries/highlights.scm"
+  "dart tree-sitter-dart . queries/highlights.scm"
+  "proto tree-sitter-proto . queries/highlights.scm"
+  "r tree-sitter-r . queries/highlights.scm"
+  # The tree-sitter-just crate depends on tree-sitter 0.25 and omits the query files its bindings include, so it cannot be locked here.
+  "just https://github.com/casey/tree-sitter-just@5685543a6e64f66335e25518c9ae8ffa1dae3d01 . queries-flavored/helix/highlights.scm"
 )
 
 locked_version() {
@@ -45,16 +51,23 @@ trap 'rm -rf "$work"' EXIT
 
 : > "$work/versions"
 for entry in "${grammars[@]}"; do
-  read -r name crate dir <<< "$entry"
-  version="$(locked_version "$crate")"
-  src="$(ls -d "$registry"/*/"$crate-$version" | head -n 1)"
-  cp -R "$src" "$work/$name"
-  chmod -R u+w "$work/$name"
-  (cd "$work/$name/$dir" && npx -y "tree-sitter-cli@$cli_version" build --wasm -o "$work/$name.wasm" .)
+  read -r name crate dir query <<< "$entry"
+  src="$work/$name"
+  if [[ "$crate" == https://* ]]; then
+    version="${crate#*@}"
+    crate="${crate%@*}"
+    git clone --quiet "$crate" "$src"
+    git -C "$src" checkout --quiet "$version"
+  else
+    version="$(locked_version "$crate")"
+    cp -R "$(ls -d "$registry"/*/"$crate-$version" | head -n 1)" "$src"
+  fi
+  chmod -R u+w "$src"
+  (cd "$src/$dir" && npx -y "tree-sitter-cli@$cli_version" build --wasm -o "$work/$name.wasm" .)
   gzip -9 -n -c "$work/$name.wasm" > "$out/$name.wasm.gz"
-  cp "$src/queries/highlights.scm" "$out/$name.scm"
-  if [[ -f "$src/LICENSE" ]]; then
-    cp "$src/LICENSE" "$out/$name.LICENSE"
+  cp "$src/$query" "$out/$name.scm"
+  if compgen -G "$src/LICENSE*" > /dev/null; then
+    cat "$src"/LICENSE* > "$out/$name.LICENSE"
   else
     mit_license "$src" "$crate" "$version" > "$out/$name.LICENSE"
   fi

@@ -141,6 +141,11 @@ fn moves_are_found_across_grammars() {
             "def small\n  x(1)\nend\n",
             "def big\n  a = 1\n  b = 2\n  c = 3\nend\n",
         ),
+        (
+            "moved.dart",
+            "void small() {\n  x(1);\n}\n",
+            "void big() {\n  final a = 1;\n  final b = 2;\n  final c = 3;\n}\n",
+        ),
     ] {
         let (old, new) = if path.ends_with(".json") {
             (

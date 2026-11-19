@@ -278,6 +278,11 @@ languages! {
     "lang-cmake": "cmake" => tree_sitter_cmake::LANGUAGE, tree_sitter_cmake::HIGHLIGHTS_QUERY;
     "lang-ini": "ini" => tree_sitter_ini::LANGUAGE, tree_sitter_ini::HIGHLIGHTS_QUERY;
     "lang-lua": "lua" => tree_sitter_lua::LANGUAGE, tree_sitter_lua::HIGHLIGHTS_QUERY;
+    "lang-dart": "dart" => bundled::DART, bundled::DART_QUERY;
+    "lang-dockerfile": "dockerfile" => bundled::DOCKERFILE, bundled::DOCKERFILE_QUERY;
+    "lang-just": "just" => bundled::JUST, bundled::JUST_QUERY;
+    "lang-proto": "proto" => bundled::PROTO, bundled::PROTO_QUERY;
+    "lang-r": "r" => bundled::R, bundled::R_QUERY;
 }
 
 /// The extension decides; a file it does not place is read by its shebang.
@@ -375,6 +380,8 @@ fn interpreter_language(program: &str) -> Option<&'static str> {
         "make" => "make",
         "swift" => "swift",
         "cargo" => "rust",
+        "just" => "just",
+        "Rscript" => "r",
         _ => return None,
     })
 }
@@ -403,6 +410,12 @@ fn language_for_path(path: &str) -> &'static str {
         _ => {}
     }
     let name = basename.to_ascii_lowercase();
+    if matches!(name.split('.').next(), Some("dockerfile" | "containerfile")) {
+        return "dockerfile";
+    }
+    if name == "justfile" {
+        return "just";
+    }
     if let Some(stem) = name.strip_suffix(".config")
         && (matches!(stem, "web" | "app" | "nuget" | "packages")
             || stem.starts_with("web.")
@@ -456,6 +469,11 @@ fn language_for_path(path: &str) -> &'static str {
         "nix" => "nix",
         "lua" | "rockspec" => "lua",
         "mk" | "mak" => "make",
+        "dart" => "dart",
+        "dockerfile" | "containerfile" => "dockerfile",
+        "just" | "justfile" => "just",
+        "proto" => "proto",
+        "r" => "r",
         _ => "plaintext",
     }
 }
