@@ -96,8 +96,6 @@ pub struct DiffViewState<'a> {
     pub(crate) review: Option<Arc<ReviewDisplayState>>,
     /// Already scoped to this hunk's path + identity and gated by the notes session; unified view only.
     pub(crate) notes: &'a [ReviewNoteStatus],
-    /// Stale/Orphaned notes across the whole selected change, not just this hunk; reuses the already-loaded reconciliation report rather than re-running it.
-    pub(crate) stale_or_orphaned_notes: &'a [ReviewNoteStatus],
     pub(crate) context_expansion_error: Option<gpui::SharedString>,
     pub(crate) focused: Option<FocusStop>,
 }

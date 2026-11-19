@@ -7,7 +7,7 @@ use super::super::bisect::{bisect_bar, bisect_sheet_overlay};
 use super::super::bookmark_picker::render_bookmark_picker;
 use super::super::confirmation::confirmation_overlay;
 use super::super::converge::converge_overlay;
-use super::super::detail::detail_pane;
+use super::super::detail::{change_header, detail_pane};
 use super::super::diff_edit::diff_edit_view;
 use super::super::operation_log::operation_log_pane;
 use super::super::rating_prompt::rating_prompt_overlay;
@@ -248,16 +248,21 @@ impl Render for RepoWindow {
             body = body.child(sidebar_slide.width(column, move |shown| sidebar_full * shown));
         }
 
-        let mut content = div().flex().flex_row().flex_1().min_h_0();
-        content = if self.diff_edit_active() {
-            content.child(diff_edit_view(self, &t, cx))
+        let content = if self.diff_edit_active() {
+            div()
+                .flex()
+                .flex_row()
+                .flex_1()
+                .min_h_0()
+                .child(diff_edit_view(self, &t, cx))
         } else {
+            let mut columns = div().flex().flex_row().flex_1().min_h_0();
             if self.shows_file_column(cx) {
-                content = content
+                columns = columns
                     .child(file_column_wrapper(self, file_column_width, cx))
                     .child(resize_handle(DragTarget::FileColumn, &t, cx));
             }
-            content.child(
+            columns = columns.child(
                 div()
                     .id("diff-pane-focus")
                     .debug_selector(|| "diff-pane-focus".to_owned())
@@ -266,7 +271,14 @@ impl Render for RepoWindow {
                     .flex_1()
                     .min_w_0()
                     .child(detail_pane(self, &t, window, cx)),
-            )
+            );
+            div()
+                .flex()
+                .flex_col()
+                .flex_1()
+                .min_h_0()
+                .children(change_header(self, &t, window, cx))
+                .child(columns)
         };
         let leading = sidebar_slide.width(div(), move |shown| {
             (LEADING_TOGGLE_ROOM - sidebar_full * shown).max(TITLE_INSET)

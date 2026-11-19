@@ -1,4 +1,4 @@
-//! Above-the-diff banner for Stale/Orphaned review notes; reuses `RepoViewModel::stale_or_orphaned_notes` rather than running its own reconcile.
+//! The change header's banner for Stale/Orphaned review notes; reuses `RepoViewModel::stale_or_orphaned_notes` rather than running its own reconcile.
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
@@ -11,7 +11,7 @@ use crate::app::theme::{Theme, ui_font_size, with_alpha};
 use crate::repo::window::RepoWindow;
 use crate::ui::primitives::button;
 
-pub(super) fn stale_notes_banner(
+pub(crate) fn stale_notes_banner(
     notes: &[ReviewNoteStatus],
     t: &Theme,
     cx: &mut Context<RepoWindow>,

@@ -24,7 +24,7 @@ pub(crate) use bounds::bounds_capture;
 pub(crate) use diff_view::{
     DETAIL_INSET, DiffShape, DiffViewState, DiffWrapCache, FindState, ReviewDisplayState,
     SvgPreviewContent, diff_view, display_range_to_diff_edit_range, row_index_for_line,
-    selection_covers_whole_change_group,
+    selection_covers_whole_change_group, stale_notes_banner,
 };
 pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use file_column::{FileColumnState, file_column};

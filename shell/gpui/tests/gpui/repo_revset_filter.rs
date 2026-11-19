@@ -69,8 +69,11 @@ fn column_toggles_hold_still_while_sync_controls_leave_with_the_sidebar(cx: &mut
         .expect("operation log toggle");
     assert!(toggle.origin.x + toggle.size.width < sync_cluster.origin.x);
     let title = cx.debug_bounds("repo-switcher-button").expect("title");
-    let files = cx.debug_bounds("file-column").expect("file column");
-    assert_eq!(title.origin.x, files.origin.x + px(4.));
+    let header_title = cx
+        .debug_bounds("description-title")
+        .or_else(|| cx.debug_bounds("description-empty"))
+        .expect("change header title");
+    assert_eq!(title.origin.x + px(10.), header_title.origin.x);
 
     view.update_in(cx, |view, _, cx| view.toggle_sidebar(cx));
     settle_slide(cx);

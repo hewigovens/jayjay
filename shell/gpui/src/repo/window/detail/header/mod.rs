@@ -55,7 +55,7 @@ pub(super) fn detail_header(
         .min_h_0()
         .pb(px(if expanded { 18. } else { 0. }))
         .bg(rgb(t.detail_bg))
-        // Collapsed, the byline row draws the rule inside its fixed height so it shares a pixel row with the file rows' separators; an auto-height box would add the border below.
+        // Collapsed, the byline row draws the rule inside its fixed height; an auto-height box would add the border below.
         .when(expanded, |el| el.border_b_1().border_color(rgb(t.border)))
         .child(description_block(
             change,

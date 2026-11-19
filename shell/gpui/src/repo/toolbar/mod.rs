@@ -41,8 +41,9 @@ pub(crate) const LEADING_TOGGLE_ROOM: f32 =
     TOOLBAR_LEADING_INSET + TOOLBAR_BUTTON_WIDTH + TOOLBAR_GAP;
 pub(crate) const TRAILING_TOGGLE_ROOM: f32 =
     TOOLBAR_GAP + TOOLBAR_BUTTON_WIDTH + TOOLBAR_TRAILING_INSET;
-/// The repository name's text lines up with the file list's beside the sidebar.
-pub(crate) const TITLE_INSET: f32 = 4.;
+/// Aligns the repository name's text with the change header's.
+pub(crate) const TITLE_INSET: f32 = crate::diff::DETAIL_INSET - TITLE_PADDING;
+const TITLE_PADDING: f32 = 10.;
 
 pub(crate) use buttons::{operation_log_toggle, sidebar_toggle_button};
 
@@ -136,7 +137,7 @@ pub(crate) fn toolbar(
                 .items_center()
                 .gap(px(5.))
                 .h(px(TOOLBAR_BUTTON_HEIGHT))
-                .px(px(10.))
+                .px(px(TITLE_PADDING))
                 .rounded_sm()
                 .text_size(ui_font_size(13.))
                 .text_color(rgb(t.fg))

@@ -7,7 +7,7 @@ use super::super::{ConflictResolution, DiffRichPreviewKind, RepoWindow};
 use super::description;
 use super::header::{DetailHeaderState, detail_header};
 use crate::app::theme::{Theme, ui_font_size};
-use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view};
+use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view, stale_notes_banner};
 use crate::ui::icons::{self, glyph};
 
 pub(crate) fn detail_pane(
@@ -44,7 +44,6 @@ pub(crate) fn detail_pane(
             .into_any_element();
     };
 
-    let stats = vm.stats.change.clone();
     let view_mode = vm.effective_view_mode();
     let detail_mode = vm.detail_mode;
     let annotation = vm.annotation.clone();
@@ -56,12 +55,6 @@ pub(crate) fn detail_pane(
     let repo_path = vm.repo_path.clone();
     let compare = vm.compare.clone();
     let file_count = vm.files.as_ref().map(|files| files.len());
-    let divergent_versions = vm
-        .graph
-        .changes
-        .iter()
-        .filter(|candidate| candidate.change_id.id == change.change_id.id)
-        .count();
     let selected_hunk = vm.selected_hunk().cloned();
     let unlisted_files = selected_hunk
         .is_none()
@@ -86,8 +79,6 @@ pub(crate) fn detail_pane(
     let path_just_copied =
         view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
     let notes = view.notes_for_selected_hunk(cx);
-    let stale_or_orphaned_notes = vm.stale_or_orphaned_notes();
-    let bookmarks = vm.graph.bookmarks.clone();
     let review = view.review_display_state(selected_hunk.as_ref(), current_diff.as_ref(), cx);
 
     let conflict_resolutions = if selected_file_has_conflict {
@@ -150,7 +141,6 @@ pub(crate) fn detail_pane(
         shows_review: vm.shows_review_controls(),
         review,
         notes: &notes,
-        stale_or_orphaned_notes: &stale_or_orphaned_notes,
         context_expansion_error: view.context_expansion_error(),
         focused: view.focused_control(),
     };
@@ -168,25 +158,6 @@ pub(crate) fn detail_pane(
         .flex_1()
         .min_w_0()
         .min_h_0()
-        .child(detail_header(
-            DetailHeaderState {
-                change: &change,
-                description: &view.description,
-                stats: stats.as_ref(),
-                compare: compare.as_ref(),
-                file_count,
-                divergent_versions,
-                recently_copied: view.feedback.recently_copied.as_ref(),
-                bookmarks: bookmarks.as_ref(),
-                focused: view.focused_control(),
-                expanded_description_height: description::expanded_height(
-                    window.viewport_size().height,
-                ),
-                detail_width,
-            },
-            t,
-            cx,
-        ))
         .child(diff_view(
             diff_state,
             find,
@@ -195,6 +166,64 @@ pub(crate) fn detail_pane(
             cx,
         ))
         .into_any_element()
+}
+
+/// Spans the file column and the diff; `None` while no single change is shown.
+pub(crate) fn change_header(
+    view: &RepoWindow,
+    t: &Theme,
+    window: &mut Window,
+    cx: &mut Context<RepoWindow>,
+) -> Option<AnyElement> {
+    let vm = view.vm.read(cx);
+    if vm.selection_without_diff_count().is_some() {
+        return None;
+    }
+    let change = vm.selected_change()?.clone();
+    let divergent_versions = vm
+        .graph
+        .changes
+        .iter()
+        .filter(|candidate| candidate.change_id.id == change.change_id.id)
+        .count();
+    let stats = vm.stats.change.clone();
+    let compare = vm.compare.clone();
+    let file_count = vm.files.as_ref().map(|files| files.len());
+    let bookmarks = vm.graph.bookmarks.clone();
+    let stale_or_orphaned_notes = vm.stale_or_orphaned_notes();
+    let width = view
+        .layout
+        .centre_width(f32::from(window.viewport_size().width));
+    let header = detail_header(
+        DetailHeaderState {
+            change: &change,
+            description: &view.description,
+            stats: stats.as_ref(),
+            compare: compare.as_ref(),
+            file_count,
+            divergent_versions,
+            recently_copied: view.feedback.recently_copied.as_ref(),
+            bookmarks: bookmarks.as_ref(),
+            focused: view.focused_control(),
+            expanded_description_height: description::expanded_height(
+                window.viewport_size().height,
+            ),
+            detail_width: width,
+        },
+        t,
+        cx,
+    );
+    Some(
+        div()
+            .debug_selector(|| "change-header".to_owned())
+            .flex()
+            .flex_col()
+            .flex_none()
+            .w_full()
+            .child(header)
+            .children(stale_notes_banner(&stale_or_orphaned_notes, t, cx))
+            .into_any_element(),
+    )
 }
 
 fn multi_selection_no_diff(count: usize, t: &Theme) -> AnyElement {

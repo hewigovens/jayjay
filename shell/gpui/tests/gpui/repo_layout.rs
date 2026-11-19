@@ -142,3 +142,20 @@ fn dag_rows_keep_two_line_summaries_compact_without_clipping_metadata(cx: &mut T
         }
     }
 }
+
+#[gpui::test]
+fn the_change_header_spans_the_file_column_and_the_diff(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (_view, cx) = open_fixture(&fixture, cx);
+    let header = cx.debug_bounds("change-header").expect("change header");
+    let files = cx.debug_bounds("file-column").expect("file column");
+    let detail = cx.debug_bounds("detail-pane").expect("detail pane");
+
+    assert_eq!(header.origin.x, files.origin.x);
+    assert_eq!(
+        header.origin.x + header.size.width,
+        detail.origin.x + detail.size.width
+    );
+    assert!(files.origin.y >= header.origin.y + header.size.height);
+    assert!(detail.origin.y >= header.origin.y + header.size.height);
+}

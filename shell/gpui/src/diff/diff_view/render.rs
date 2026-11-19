@@ -7,7 +7,6 @@ use jayjay_core::{DiffProjection, HunkType};
 
 use super::find_bar::render_find_bar;
 use super::header::{FileHeaderState, ProjectionHeaderState, file_header};
-use super::note_banner::stale_notes_banner;
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
 use super::sbs_body::{SideBySideBodyState, side_by_side_body};
 use super::sbs_note_banner::with_sbs_note_banner;
@@ -347,7 +346,6 @@ pub fn diff_view(
         let view = state.projection_view.unwrap_or(ProjectionView::Source);
         projection::shows_banner(projection, view).then(|| render_projection_banner(projection, &t))
     });
-    let stale_notes_bar = stale_notes_banner(state.stale_or_orphaned_notes, &t, cx);
 
     let mut root = div()
         .flex()
@@ -370,9 +368,6 @@ pub fn diff_view(
         root = root.child(super::context_controls::context_error_banner(
             message, &t, cx,
         ));
-    }
-    if let Some(bar) = stale_notes_bar {
-        root = root.child(bar);
     }
     root.child(div().flex().flex_col().flex_1().min_h_0().child(body))
         .into_any_element()
