@@ -57,20 +57,6 @@ extension RepoContentView {
         }
     }
 
-    func handleSubmoduleAttentionChange() {
-        if viewModel.submoduleAttentionItems.isEmpty {
-            if case .submoduleAttention = modal {
-                modal = nil
-            }
-        } else {
-            switch modal {
-                case nil: modal = .submoduleAttention
-                case let .editDescription(rev, _) where viewModel.change(for: rev)?.isWorkingCopy == true: modal = .submoduleAttention
-                default: break
-            }
-        }
-    }
-
     func showOperationLog(undoing operationId: String) {
         operationLogUndoing = operationId
         operationLogSelection = viewModel.recentOperations?.entries.restoreTarget(undoing: operationId)

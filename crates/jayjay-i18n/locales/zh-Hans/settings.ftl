@@ -51,15 +51,14 @@ settings-ignore-whitespace = 忽略空白变更
 settings-tree-view = 文件树视图
 settings-hide-reviewed = 隐藏已评审文件
 settings-auto-expand = 自动展开说明
-settings-large-files = 大文件
+settings-lfs-and-submodules = Git LFS 与子模块
 settings-hide-lfs = 隐藏 Git LFS 文件
+settings-show-submodule-changes = 显示 Git 子模块变更
 
 settings-confirmations = 确认
 settings-confirm-abandon = 放弃变更前确认
 settings-confirm-workspace-delete = 删除工作区前确认
 settings-confirm-drag-rebase = 拖动变基前确认
-settings-repository-behavior = 仓库行为
-settings-submodule-support = 启用 Git 子模块支持
 
 settings-coding-agents = 编程智能体
 settings-agent-skill = 与编程智能体集成

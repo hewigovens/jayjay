@@ -249,8 +249,6 @@ api! {
         fn fix(revs: Strings) -> FixSummary;
         fn jj_commit(message: Text) -> ();
         fn git_lfs_paths(paths: Strings) -> Vec<String>;
-        fn submodule_statuses() -> Vec<GitSubmoduleStatus>;
-        fn commit_safe_submodule_updates(message: Text, paths: Strings) -> String;
         fn git_push(bookmark: Text, sync: Sync) -> String;
         fn git_push_tag(tag: Text, sync: Sync) -> String;
         fn git_fetch(sync: Sync) -> FetchResult;

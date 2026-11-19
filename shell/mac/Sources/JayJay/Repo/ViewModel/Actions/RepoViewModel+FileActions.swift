@@ -61,7 +61,6 @@ extension RepoViewModel {
         ignoreWhitespace: Bool
     ) {
         lastInternalMutationAt = Date()
-        let includeSubmoduleStatuses = includeSubmoduleStatuses
         runRepoTask {
             try $0.applyDiffSelection(
                 rev: rev,
@@ -73,8 +72,7 @@ extension RepoViewModel {
             // The mutation already updated @; reload only this change's detail.
             let detail = try Self.loadSummaryWithConflicts(
                 repo: $0,
-                rev: rev,
-                includeSubmoduleStatuses: includeSubmoduleStatuses
+                rev: rev
             )
             return (detail, StatusBarSnapshot.load(from: $0))
         } onSuccess: { viewModel, result in

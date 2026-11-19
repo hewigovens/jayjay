@@ -404,29 +404,3 @@ fn delete_files_stays_inside_the_repository_and_unlinks_terminal_symlinks() {
         "outside\n"
     );
 }
-
-#[test]
-fn submodule_commit_treats_glob_shaped_path_as_literal() {
-    let temp_dir = init_jj_repo();
-    let repo_path = temp_dir.path().join("repo");
-    let hostile = "[ab].txt";
-    for path in [hostile, "a.txt", "b.txt"] {
-        fs::write(repo_path.join(path), "payload\n").expect("write file");
-    }
-    for (key, value) in [
-        ("user.name", "Test User"),
-        ("user.email", "test@example.com"),
-    ] {
-        git_stdout(&repo_path, &["config", key, value]);
-    }
-    let repo = Repo::open(&repo_path).expect("open repo");
-
-    repo.commit_safe_submodule_updates("submodule update", &[hostile.to_owned()])
-        .expect("commit the named path");
-
-    let git_commit = git_stdout(
-        &repo_path,
-        &["show", "--name-only", "--format=", "HEAD~", "--"],
-    );
-    assert_eq!(git_commit, hostile, "git commits only the named path");
-}

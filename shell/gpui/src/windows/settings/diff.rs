@@ -60,15 +60,25 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                 t,
             ),
             form_section(
-                settings::large_files(),
-                [toggle_field(
-                    glyph::DATABASE,
-                    settings::hide_lfs(),
-                    cfg.diff.hide_git_lfs,
-                    |c| c.diff.hide_git_lfs ^= true,
-                    "diff-lfs",
-                    t,
-                )],
+                settings::lfs_and_submodules(),
+                [
+                    toggle_field(
+                        glyph::DATABASE,
+                        settings::hide_lfs(),
+                        cfg.diff.hide_git_lfs,
+                        |c| c.diff.hide_git_lfs ^= true,
+                        "diff-lfs",
+                        t,
+                    ),
+                    toggle_field(
+                        glyph::SUBMODULE,
+                        settings::show_submodule_changes(),
+                        cfg.diff.show_git_submodule_changes,
+                        |c| c.diff.show_git_submodule_changes ^= true,
+                        "diff-submodules",
+                        t,
+                    ),
+                ],
                 t,
             ),
         ])

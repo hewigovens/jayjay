@@ -28,8 +28,8 @@ fn lfs_hidden(hunk: &DiffHunk, hide_lfs: bool, tracked_lfs_paths: &HashSet<Strin
     hide_lfs && (is_lfs(hunk) || tracked_lfs_paths.contains(&hunk.path))
 }
 
-fn submodule_hidden(hunk: &DiffHunk, submodule_support: bool) -> bool {
-    !submodule_support && is_submodule(hunk)
+fn submodule_hidden(hunk: &DiffHunk, show_submodules: bool) -> bool {
+    !show_submodules && is_submodule(hunk)
 }
 
 impl RepoWindow {
@@ -45,9 +45,9 @@ impl RepoWindow {
         let hide_reviewed = show_review && self.file_column.hide_reviewed;
         let notes_only = show_review && self.file_column.notes_only;
         let hide_lfs = self.file_column.hide_git_lfs;
-        let submodule_support = self.file_column.enable_git_submodule_support;
+        let show_submodules = self.file_column.show_git_submodule_changes;
         let query = self.file_query().to_lowercase();
-        if query.is_empty() && !hide_reviewed && !notes_only && !hide_lfs && submodule_support {
+        if query.is_empty() && !hide_reviewed && !notes_only && !hide_lfs && show_submodules {
             return (0..files.len()).collect();
         }
         files
@@ -55,7 +55,7 @@ impl RepoWindow {
             .enumerate()
             .filter(|(_, hunk)| {
                 if lfs_hidden(hunk, hide_lfs, tracked_lfs_paths)
-                    || submodule_hidden(hunk, submodule_support)
+                    || submodule_hidden(hunk, show_submodules)
                 {
                     return false;
                 }
@@ -123,12 +123,12 @@ impl RepoWindow {
         {
             return None;
         }
-        let (hide_lfs, submodule_support) = (
+        let (hide_lfs, show_submodules) = (
             self.file_column.hide_git_lfs,
-            self.file_column.enable_git_submodule_support,
+            self.file_column.show_git_submodule_changes,
         );
         let lfs = |hunk: &&DiffHunk| lfs_hidden(hunk, hide_lfs, &vm.tracked_lfs_paths);
-        let submodule = |hunk: &&DiffHunk| submodule_hidden(hunk, submodule_support);
+        let submodule = |hunk: &&DiffHunk| submodule_hidden(hunk, show_submodules);
         let query = self.file_query();
         let lowercase = query.to_lowercase();
         let matches: Vec<&DiffHunk> = files

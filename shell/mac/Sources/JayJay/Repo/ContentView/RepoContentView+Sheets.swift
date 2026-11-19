@@ -34,8 +34,6 @@ extension RepoContentView {
                 StackedPrPanel(viewModel: viewModel, tipRev: rev, onDismiss: { self.modal = nil })
             case let .confirmChange(confirmation):
                 changeConfirmationSheet(confirmation)
-            case .submoduleAttention:
-                submoduleAttentionSheet
             case .bookmarkManager:
                 bookmarkManagerSheet
             case .converge, .workspaceCreate, .pullRequestImport, .confirmWorkspaceDelete, .confirmTagDeleteOnRemote, .bisect, .sshConnection:
@@ -99,7 +97,7 @@ extension RepoContentView {
                         }
                     }
                 )
-            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .submoduleAttention, .bookmarkManager, .ratingPrompt:
+            case .editDescription, .createBookmark, .createTag, .stackedPr, .confirmChange, .bookmarkManager, .ratingPrompt:
                 EmptyView()
         }
     }
@@ -351,19 +349,6 @@ extension RepoContentView {
                 await viewModel.forgetWorkspace(workspace, deleteFromDisk: deleteFromDisk)
             }
         }
-    }
-
-    private var submoduleAttentionSheet: some View {
-        SubmoduleAttentionSheet(
-            repoPath: viewModel.repoPath,
-            submoduleStatuses: viewModel.submoduleAttentionItems,
-            onClose: {
-                viewModel.submoduleAttentionItems = []
-                viewModel.pendingCommitMessage = nil
-                modal = nil
-            },
-            onAutoCommit: { await viewModel.commitWithSafeSubmoduleUpdates() }
-        )
     }
 
     private func submitRefCreate(_ onCreate: (String) -> Void) {

@@ -37,7 +37,7 @@ extension DiffSection {
             placeholderMessage(
                 systemImage: "shippingbox.fill",
                 title: Localized.Diff.gitSubmodule,
-                description: Localized.Diff.thisSubmoduleHasWorkingCopyChanges
+                description: Localized.Diff.submoduleShowsCommitOnly
             )
         } else if isGitLfsPlaceholder {
             placeholderMessage(

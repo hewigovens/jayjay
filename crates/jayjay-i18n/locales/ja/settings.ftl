@@ -51,15 +51,14 @@ settings-ignore-whitespace = 空白の変更を無視
 settings-tree-view = ファイルをツリー表示
 settings-hide-reviewed = レビュー済みのファイルを隠す
 settings-auto-expand = 説明を自動的に展開
-settings-large-files = 大きなファイル
+settings-lfs-and-submodules = Git LFS とサブモジュール
 settings-hide-lfs = Git LFS 管理ファイルを隠す
+settings-show-submodule-changes = Git サブモジュールの変更を表示
 
 settings-confirmations = 確認
 settings-confirm-abandon = チェンジを破棄する前に確認
 settings-confirm-workspace-delete = ワークスペースを削除する前に確認
 settings-confirm-drag-rebase = ドラッグでのリベースを確認
-settings-repository-behavior = リポジトリの動作
-settings-submodule-support = Git サブモジュールのサポートを有効にする
 
 settings-coding-agents = コーディングエージェント
 settings-agent-skill = コーディングエージェントと連携

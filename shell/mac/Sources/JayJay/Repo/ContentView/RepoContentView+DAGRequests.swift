@@ -18,7 +18,7 @@ extension RepoContentView {
                     ? joinCommitMessage(summary: viewModel.commitSummaryDraft, body: viewModel.commitDescriptionDraft)
                     : viewModel.workingCopyDescription
                 Task {
-                    await viewModel.commit(message: message, manageSubmodules: settings.enableGitSubmoduleSupport)
+                    await viewModel.commit(message: message)
                 }
             case let .createBookmark(rev):
                 presentBookmarkCreate(rev: rev)

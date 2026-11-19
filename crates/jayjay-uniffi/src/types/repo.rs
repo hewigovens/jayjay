@@ -1,8 +1,8 @@
 use jayjay_core as core;
 use jayjay_core::{
     AnnotationLine, BookmarkFilterTarget, BookmarkInfo, ChecksStatus, CliStatus, FetchResult,
-    FixSummary, FixToolFailure, GitSubmoduleStatus, InsertPosition, JjCommandResult, PrInfo,
-    PrState, PullRequestImportPreview, PullRequestImportRemote, PullRequestImportSource,
+    FixSummary, FixToolFailure, InsertPosition, JjCommandResult, PrInfo, PrState,
+    PullRequestImportPreview, PullRequestImportRemote, PullRequestImportSource,
     PullRequestImportWorkspace, RemoteBookmarkTarget, RemoteSyncStatus, RevsetCompletion,
     RevsetCompletionKind, RevsetFilter, RevsetFilterKind, RevsetFilterState, RevsetName,
     RevsetPreset, RevsetSuggestion, RevsetSuggestionKind, RevsetVocabulary, TagInfo,
@@ -168,14 +168,6 @@ pub enum WorkspacePresence {
     Exists,
     Gone,
     Unknown,
-}
-
-#[uniffi::remote(Record)]
-pub struct GitSubmoduleStatus {
-    pub path: String,
-    pub has_new_commits: bool,
-    pub has_modified_content: bool,
-    pub has_untracked_content: bool,
 }
 
 #[uniffi::remote(Enum)]

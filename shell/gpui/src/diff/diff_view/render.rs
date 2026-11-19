@@ -256,7 +256,7 @@ pub fn diff_view(
         placeholder_card(
             glyph::PACKAGE,
             jayjay_i18n::diff::git_submodule(),
-            jayjay_i18n::diff::this_submodule_has_working_copy_changes(),
+            jayjay_i18n::diff::submodule_shows_commit_only(),
             None,
             &t,
         )

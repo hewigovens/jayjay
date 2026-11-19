@@ -1,11 +1,9 @@
 mod colocated;
 mod commit;
 mod gerrit;
-mod import;
 mod landed;
 pub(super) mod lfs;
 mod remote;
-mod submodules;
 mod sync;
 mod upload;
 

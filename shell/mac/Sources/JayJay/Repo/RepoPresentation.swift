@@ -8,7 +8,6 @@ enum RepoModalState: Identifiable {
     case confirmTagDeleteOnRemote(name: String)
     case stackedPr(rev: String)
     case confirmChange(RepoChangeConfirmation)
-    case submoduleAttention
     case bookmarkManager
     case sshConnection
     case workspaceCreate
@@ -26,7 +25,6 @@ enum RepoModalState: Identifiable {
             case let .confirmTagDeleteOnRemote(name): "tag-delete-remote-\(name)"
             case let .stackedPr(rev): "stacked-pr-\(rev)"
             case let .confirmChange(confirmation): confirmation.id
-            case .submoduleAttention: "submodule-attention"
             case .bookmarkManager: "bookmark-manager"
             case .sshConnection: "ssh-connection"
             case .workspaceCreate: "workspace-create"

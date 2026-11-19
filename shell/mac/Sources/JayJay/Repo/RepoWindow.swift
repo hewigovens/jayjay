@@ -12,7 +12,6 @@ struct RepoWindow: View {
     @State private var viewModel: RepoViewModel?
     @State private var initError: String?
     @State private var repoMissing = false
-    @Environment(AppSettings.self) private var settings
     @Environment(RepoWindowManager.self) private var windowManager
 
     var body: some View {
@@ -52,7 +51,6 @@ struct RepoWindow: View {
     private func openRepo() async {
         let path = repoPath
         guard viewModel?.repoPath != path else { return }
-        let includeSubmodules = settings.enableGitSubmoduleSupport
         // Off the main thread so the app stays responsive while loading large checkouts.
         let result = await Task.detached {
             Result {
@@ -73,8 +71,7 @@ struct RepoWindow: View {
                     repo: opened.repo,
                     primaryRoot: opened.primaryRoot,
                     workingCopyIsLarge: opened.workingCopyIsLarge,
-                    defaultRevsetPreset: opened.defaultRevsetPreset,
-                    includeSubmoduleStatuses: includeSubmodules
+                    defaultRevsetPreset: opened.defaultRevsetPreset
                 )
                 if let windowNumber, let draft = windowManager.workspaceDrafts.draft(for: path, in: windowNumber) {
                     model.commitSummaryDraft = draft.summary

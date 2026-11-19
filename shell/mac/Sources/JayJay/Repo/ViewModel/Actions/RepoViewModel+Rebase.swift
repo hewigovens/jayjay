@@ -37,14 +37,12 @@ extension RepoViewModel {
         lastInternalMutationAt = Date()
         isRefreshingInFlight = true
         error = nil
-        let includeSubmoduleStatuses = includeSubmoduleStatuses
 
-        runRepoTask { [requestedRevset = revset, includeSubmoduleStatuses] repo in
+        runRepoTask { [requestedRevset = revset] repo in
             try Self.rebaseAndReload(
                 repo: repo,
                 command: command,
-                revset: requestedRevset,
-                includeSubmoduleStatuses: includeSubmoduleStatuses
+                revset: requestedRevset
             )
         } onSuccess: { viewModel, result in
             viewModel.successActionSignal += 1
@@ -79,8 +77,7 @@ extension RepoViewModel {
     private static func rebaseAndReload(
         repo: JayJayRepo,
         command: RepoRebaseCommand,
-        revset: String,
-        includeSubmoduleStatuses: Bool
+        revset: String
     ) throws -> RepoRebaseRefreshResult {
         let tracked = try trackingOperation(repo: repo) { repo -> (preferredRev: String, rebasedRevset: String) in
             if command.selectionRevs.isEmpty {
@@ -103,8 +100,7 @@ extension RepoViewModel {
         let selectedChange = try loadSelectedDetail(
             repo: repo,
             log: log,
-            preferredRev: preferredRev,
-            includeSubmoduleStatuses: includeSubmoduleStatuses
+            preferredRev: preferredRev
         )
         let workingCopy = log.first(where: { $0.isWorkingCopy })
         let hadConflicts = try moved && repo.log(revset: rebasedRevset).contains(where: \.hasConflict)

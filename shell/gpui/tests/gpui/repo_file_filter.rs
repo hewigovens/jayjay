@@ -64,7 +64,7 @@ fn lfs_and_submodule_files_follow_their_visibility_settings(cx: &mut TestAppCont
 
     set_diff_config(cx, |diff| diff.hide_git_lfs = false);
     assert!(visible_paths(&view, cx).contains(&"model.bin".to_owned()));
-    set_diff_config(cx, |diff| diff.enable_git_submodule_support = true);
+    set_diff_config(cx, |diff| diff.show_git_submodule_changes = true);
     assert!(visible_paths(&view, cx).contains(&"vendor/sub".to_owned()));
 }
 

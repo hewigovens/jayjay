@@ -6,10 +6,10 @@ use jayjay_core::{
     AnnotationLine, BisectState, BisectVerdict, BookmarkInfo, ChangeDetail, ChangeInfo, CliStatus,
     CloneRequest, ConflictEditorData, DiffEditDestination, DiffEditFileSelection, DiffExcerpt,
     DiffHunk, DiffProjectionMode, DiffStats, EvologEntry, EvologRow, FetchResult, FileDiffStats,
-    FileEditorData, FixSummary, GitSubmoduleStatus, GraphEntry, InsertPosition, JjCommand,
-    JjCommandResult, MutationEffect, PrInfo, PullRequestImportPreview, RebaseMode,
-    RecentOperations, RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult,
-    SubmitStackLayer, SyncToken, ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
+    FileEditorData, FixSummary, GraphEntry, InsertPosition, JjCommand, JjCommandResult,
+    MutationEffect, PrInfo, PullRequestImportPreview, RebaseMode, RecentOperations,
+    RecentRevsetStore, Repo, RevsetPreset, Stack, StackedPrResult, SubmitStackLayer, SyncToken,
+    ToolsConfig, UndoState, WorkspaceInfo, WorkspacePresence,
     diff::{self, FileDiff, ReviewFileSnapshot},
     review_display_group_map_from_hunk, review_snapshot_from_hunk,
 };
@@ -988,18 +988,6 @@ impl JayJayRepo {
 
     fn jj_commit(&self, message: String) -> Result<(), JayError> {
         self.inner.jj_commit(&message)
-    }
-
-    fn submodule_statuses(&self) -> Result<Vec<GitSubmoduleStatus>, JayError> {
-        self.inner.submodule_statuses()
-    }
-
-    fn commit_safe_submodule_updates(
-        &self,
-        message: String,
-        paths: Vec<String>,
-    ) -> Result<String, JayError> {
-        self.inner.commit_safe_submodule_updates(&message, &paths)
     }
 
     fn git_lfs_paths(&self, paths: Vec<String>) -> Result<Vec<String>, JayError> {

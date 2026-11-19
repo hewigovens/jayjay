@@ -28,15 +28,6 @@ struct SettingsWorkflowPage: View {
                     SettingsLabel(Localized.Settings.confirmDragRebase, icon: "arrow.up.forward.app")
                 }
             }
-
-            Section(Localized.Settings.repositoryBehavior) {
-                Toggle(isOn: Binding(
-                    get: { settings.enableGitSubmoduleSupport },
-                    set: { settings.enableGitSubmoduleSupport = $0 }
-                )) {
-                    SettingsLabel(Localized.Settings.submoduleSupport, icon: "square.stack.3d.up")
-                }
-            }
         }
         .formStyle(.grouped)
     }

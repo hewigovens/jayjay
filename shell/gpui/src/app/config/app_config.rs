@@ -332,6 +332,19 @@ mod tests {
     }
 
     #[test]
+    fn submodule_visibility_keeps_its_stored_key() {
+        let (cfg, complete) =
+            AppConfig::parse("[diff]\nenable_git_submodule_support = true\n").unwrap();
+        assert!(complete);
+        assert!(cfg.diff.show_git_submodule_changes);
+        let saved = toml::to_string(&cfg).unwrap();
+        assert!(
+            saved.contains("enable_git_submodule_support = true"),
+            "{saved}"
+        );
+    }
+
+    #[test]
     fn restoring_a_recent_repo_keeps_the_startup_entry_first() {
         let mut cfg = AppConfig::default();
         for ix in 0..AppConfig::MAX_RECENT_REPOS {

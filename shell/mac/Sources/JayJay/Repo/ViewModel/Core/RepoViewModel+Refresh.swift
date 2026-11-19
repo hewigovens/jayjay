@@ -156,7 +156,6 @@ extension RepoViewModel {
         }
         let currentSelection = selectedChangeId
         let requestedRevset = revset
-        let includeSubmoduleStatuses = includeSubmoduleStatuses
         let shouldLoadBeforeSnapshot = graphEntries.isEmpty && snapshotWorkingCopy
         // A requested revision wins the first pass; later passes preserve subsequent user selections.
         let initialSelectionBaseline = preferredRev == nil ? selectedChangeIds : nil
@@ -166,7 +165,6 @@ extension RepoViewModel {
                 repo: repo,
                 revset: requestedRevset,
                 preferredRev: preferredRev ?? currentSelection,
-                includeSubmoduleStatuses: includeSubmoduleStatuses,
                 includeContext: includeContext
             )
         }
@@ -287,19 +285,17 @@ extension RepoViewModel {
         let nextRevset = Self.buildDefaultRevset(depth: nextDepth)
         let previousIds = Set(graphEntries.map(\.change.changeId))
         let preferredRev = selectedChangeId
-        let includeSubmoduleStatuses = includeSubmoduleStatuses
 
         refreshTask?.cancel()
         isRefreshingInFlight = true
         error = nil
 
-        refreshTask = startRepoTask { [weak self, repo, includeSubmoduleStatuses] in
+        refreshTask = startRepoTask { [weak self, repo] in
             do {
                 let content = try Self.loadRefreshContent(
                     repo: repo,
                     revset: nextRevset,
-                    preferredRev: preferredRev,
-                    includeSubmoduleStatuses: includeSubmoduleStatuses
+                    preferredRev: preferredRev
                 )
                 guard !Task.isCancelled else { return }
 
@@ -368,7 +364,6 @@ extension RepoViewModel {
         repo: JayJayRepo,
         revset: String,
         preferredRev: String?,
-        includeSubmoduleStatuses: Bool,
         includeContext: Bool = true
     ) throws -> RepoRefreshContent {
         let graph = try repo.logGraphWithLayout(revset: revset)
@@ -376,8 +371,7 @@ extension RepoViewModel {
         let selectedChange = try loadSelectedDetail(
             repo: repo,
             log: log,
-            preferredRev: preferredRev,
-            includeSubmoduleStatuses: includeSubmoduleStatuses
+            preferredRev: preferredRev
         )
         let workingCopy = log.first(where: { $0.isWorkingCopy })
         return try RepoRefreshContent(

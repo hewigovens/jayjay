@@ -28,7 +28,7 @@ final class AppSettings {
         static let sideBySideDiff = "jayjay.sideBySideDiff"
         static let ignoreWhitespace = "jayjay.ignoreWhitespace"
         static let hideGitLfsDiffs = "jayjay.hideGitLfsDiffs"
-        static let enableGitSubmoduleSupport = "jayjay.showGitSubmoduleChanges"
+        static let showGitSubmoduleChanges = "jayjay.showGitSubmoduleChanges"
         static let hideReviewedFiles = "jayjay.hideReviewedFiles"
         static let treeFileList = "jayjay.treeFileList"
         static let autoExpandDescription = "jayjay.autoExpandDescription"
@@ -178,8 +178,8 @@ final class AppSettings {
         didSet { defaults.set(hideGitLfsDiffs, forKey: StorageKeys.hideGitLfsDiffs) }
     }
 
-    var enableGitSubmoduleSupport: Bool {
-        didSet { defaults.set(enableGitSubmoduleSupport, forKey: StorageKeys.enableGitSubmoduleSupport) }
+    var showGitSubmoduleChanges: Bool {
+        didSet { defaults.set(showGitSubmoduleChanges, forKey: StorageKeys.showGitSubmoduleChanges) }
     }
 
     var hideReviewedFiles: Bool {
@@ -346,7 +346,7 @@ final class AppSettings {
         sideBySideDiff = defaults.bool(forKey: StorageKeys.sideBySideDiff)
         ignoreWhitespace = defaults.bool(forKey: StorageKeys.ignoreWhitespace)
         hideGitLfsDiffs = defaults.object(forKey: StorageKeys.hideGitLfsDiffs) as? Bool ?? true
-        enableGitSubmoduleSupport = defaults.object(forKey: StorageKeys.enableGitSubmoduleSupport) as? Bool ?? false
+        showGitSubmoduleChanges = defaults.bool(forKey: StorageKeys.showGitSubmoduleChanges)
         hideReviewedFiles = defaults.bool(forKey: StorageKeys.hideReviewedFiles)
         treeFileList = defaults.bool(forKey: StorageKeys.treeFileList)
         autoExpandDescription = defaults.bool(forKey: StorageKeys.autoExpandDescription)

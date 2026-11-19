@@ -51,15 +51,14 @@ settings-ignore-whitespace = Ignore whitespace changes
 settings-tree-view = Tree view for files
 settings-hide-reviewed = Hide reviewed files
 settings-auto-expand = Auto-expand descriptions
-settings-large-files = Large Files
+settings-lfs-and-submodules = Git LFS and Submodules
 settings-hide-lfs = Hide Git LFS-backed files
+settings-show-submodule-changes = Show Git submodule changes
 
 settings-confirmations = Confirmations
 settings-confirm-abandon = Confirm before abandoning changes
 settings-confirm-workspace-delete = Confirm before deleting a workspace
 settings-confirm-drag-rebase = Confirm drag-to-rebase
-settings-repository-behavior = Repository Behavior
-settings-submodule-support = Enable Git submodule support
 
 settings-coding-agents = Coding Agents
 settings-agent-skill = Integrate with coding agents

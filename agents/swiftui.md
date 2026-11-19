@@ -10,7 +10,7 @@ shell/mac/
 │   ├── App/            JayJayApp, AppDelegate, CLIInstaller, SparkleUpdater, LaunchArguments,
 │   │                   AppInfoCommands, HelpCommands; Config/, Watcher/, Window/
 │   ├── Repo/           RepoWindow, RepoMenuHandler, ActivePane, RepoPresentation, RepoToast,
-│   │   │               CommitBox, UndoView, SubmoduleAttentionSheet
+│   │   │               CommitBox, UndoView
 │   │   ├── ContentView/    RepoContentView (+Sidebar, +StatusBar, +Toolbar, +CommandPalette,
 │   │   │                   +Presentation, +Sheets)
 │   │   ├── DAG/            DAGView (+BookmarkDrag, +ContextMenu, +RebaseDrag), DAGViewModel,

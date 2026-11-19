@@ -42,12 +42,10 @@ extension RepoViewModel {
     }
 
     private func loadSelectedChange(_ requestedRev: String) {
-        let includeSubmoduleStatuses = includeSubmoduleStatuses
         selectionLoadTask = runRepoTask {
             try Self.loadSummaryWithConflicts(
                 repo: $0,
-                rev: requestedRev,
-                includeSubmoduleStatuses: includeSubmoduleStatuses
+                rev: requestedRev
             )
         } onSuccess: { viewModel, detail in
             guard viewModel.selectedChangeId == requestedRev else { return }
@@ -247,8 +245,7 @@ extension RepoViewModel {
     /// Load summary and add working-copy-only shell projections.
     static func loadSummaryWithConflicts(
         repo: JayJayRepo,
-        rev: String,
-        includeSubmoduleStatuses: Bool = false
+        rev: String
     ) throws -> ChangeDetail {
         var detail = try repo.showSummary(rev: rev)
         var hunks = detail.diff
@@ -272,61 +269,16 @@ extension RepoViewModel {
                     )
                 }
             }
-
-            if includeSubmoduleStatuses {
-                appendMissingSubmodulePlaceholders(repo: repo, hunks: &hunks)
-            }
         }
 
         detail = ChangeDetail(info: detail.info, diff: hunks)
         return detail
     }
 
-    private static func appendMissingSubmodulePlaceholders(
-        repo: JayJayRepo,
-        hunks: inout [DiffHunk]
-    ) {
-        let submoduleStatuses = (try? repo.submoduleStatuses()) ?? []
-        let existingPaths = Set(hunks.map(\.path))
-        let missing = submoduleStatuses
-            .filter { !existingPaths.contains($0.path) }
-            .sorted { $0.path < $1.path }
-        for status in missing {
-            let label = submodulePlaceholderLabel(for: status)
-            hunks.append(DiffHunk(
-                path: status.path,
-                oldPath: nil,
-                oldContent: label,
-                newContent: label,
-                oldPreview: nil,
-                newPreview: nil,
-                hunkType: .modified,
-                reviewIdentity: "",
-                projection: nil
-            ))
-        }
-    }
-
-    private static func submodulePlaceholderLabel(for status: GitSubmoduleStatus) -> String {
-        if status.hasNewCommits,
-           status.hasModifiedContent || status.hasUntrackedContent
-        {
-            return "<git submodule: updated commit + dirty working tree>"
-        }
-        if status.hasNewCommits {
-            return "<git submodule: updated commit>"
-        }
-        if status.hasModifiedContent || status.hasUntrackedContent {
-            return "<git submodule: dirty working tree>"
-        }
-        return "<git submodule>"
-    }
-
     static func loadSelectedDetail(
         repo: JayJayRepo,
         log: [ChangeInfo],
-        preferredRev: String?,
-        includeSubmoduleStatuses: Bool = false
+        preferredRev: String?
     ) throws -> ChangeDetail? {
         var candidates = [String]()
         if let preferredRev, !preferredRev.isEmpty {
@@ -340,8 +292,7 @@ extension RepoViewModel {
         for candidate in candidates {
             guard let detail = try? loadSummaryWithConflicts(
                 repo: repo,
-                rev: candidate,
-                includeSubmoduleStatuses: includeSubmoduleStatuses
+                rev: candidate
             ) else { continue }
             if log.contains(where: { $0.commitId == detail.info.commitId }) {
                 return detail

@@ -210,14 +210,15 @@ fn collapse_seeds_from_the_aggregate_then_the_per_file_pass_replaces_it() {
 }
 
 #[test]
-fn synthetic_cards_count_toward_collapse_without_overriding_manual_choices() {
+fn reapplying_stats_keeps_manual_collapse_choices() {
     for (count, collapsed) in [(3, false), (31, true)] {
         let mut cards = strings(&["a"]);
-        cards.extend((1..count).map(|ix| format!("submodule-{ix}")));
-        let stats = [FileDiffStats {
+        cards.extend((1..count).map(|ix| format!("f{ix}")));
+        let mut stats = vec![FileDiffStats {
             deletions: 1000,
             ..file_diff_stats("a", 1)
         }];
+        stats.extend(cards[1..].iter().map(|path| file_diff_stats(path, 0)));
         let mut session = DiffEditSession::default();
 
         session.apply_stats(&cards, &stats);
@@ -227,9 +228,9 @@ fn synthetic_cards_count_toward_collapse_without_overriding_manual_choices() {
                 .all(|path| session.is_collapsed(path) == collapsed)
         );
 
-        session.toggle_collapse("submodule-1");
+        session.toggle_collapse("f1");
         session.apply_stats(&cards, &stats);
-        assert_eq!(session.is_collapsed("submodule-1"), !collapsed);
+        assert_eq!(session.is_collapsed("f1"), !collapsed);
         assert_eq!(session.is_collapsed("a"), collapsed);
     }
 }

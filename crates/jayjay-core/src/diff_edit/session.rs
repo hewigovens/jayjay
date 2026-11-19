@@ -296,29 +296,14 @@ impl DiffEditSession {
         } else {
             paths.to_vec()
         };
-        // Synthetic cards (dirty-only submodules) are absent from the jj tree diff, so count them or the file threshold disagrees with what is on screen.
-        let known: HashSet<&str> = stats.iter().map(|file| file.path.as_str()).collect();
-        let mut policy = stats.to_vec();
-        policy.extend(
-            cards
-                .iter()
-                .filter(|path| !known.contains(path.as_str()))
-                .map(|path| FileDiffStats {
-                    path: path.clone(),
-                    insertions: 0,
-                    deletions: 0,
-                }),
-        );
-        let total: u64 = policy
+        let total: u64 = stats
             .iter()
             .map(|file| u64::from(file.insertions) + u64::from(file.deletions))
             .sum();
-        self.collapsed = if diff_edit_starts_collapsed(policy.len(), total) {
+        self.collapsed = if diff_edit_starts_collapsed(cards.len(), total) {
             cards.into_iter().collect()
         } else {
-            diff_edit_auto_collapsed_paths(&policy)
-                .into_iter()
-                .collect()
+            diff_edit_auto_collapsed_paths(stats).into_iter().collect()
         };
     }
 

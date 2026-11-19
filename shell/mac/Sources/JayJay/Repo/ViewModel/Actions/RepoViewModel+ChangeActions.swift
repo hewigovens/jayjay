@@ -18,24 +18,10 @@ extension RepoViewModel {
 
     @MainActor
     @discardableResult
-    func commit(message: String, manageSubmodules: Bool) async -> Bool {
+    func commit(message: String) async -> Bool {
         guard !isCommitting else { return false }
         isCommitting = true
         defer { isCommitting = false }
-        if manageSubmodules {
-            do {
-                let blockedSubmodules = try await awaitRepoTask { try $0.submoduleStatuses() }
-                if !blockedSubmodules.isEmpty {
-                    pendingCommitMessage = message
-                    submoduleAttentionItems = blockedSubmodules
-                    return false
-                }
-            } catch {
-                self.error = error.friendlyDescription
-                return false
-            }
-        }
-
         // Capture before the commit rewrites the graph; the committed change keeps this id and only its marks should clear.
         let committedChangeId = changes.first(where: \.isWorkingCopy)?.changeId.id
         // Text typed in the commit box survives a commit made with another message, such as the description sheet's.
@@ -44,8 +30,6 @@ extension RepoViewModel {
             if let committedChangeId {
                 viewModel.reviewStore.clearChange(changeId: committedChangeId)
             }
-            viewModel.submoduleAttentionItems = []
-            viewModel.pendingCommitMessage = nil
             if commitsDraft {
                 viewModel.commitSummaryDraft = ""
                 viewModel.commitDescriptionDraft = ""
@@ -53,44 +37,6 @@ extension RepoViewModel {
         }, {
             try $0.jjCommit(message: message)
         })
-    }
-
-    @MainActor
-    @discardableResult
-    func commitWithSafeSubmoduleUpdates() async -> Bool {
-        guard let message = pendingCommitMessage else { return false }
-
-        let safePaths = submoduleAttentionItems
-            .filter { $0.hasNewCommits && !$0.hasModifiedContent && !$0.hasUntrackedContent }
-            .map(\.path)
-        guard !safePaths.isEmpty else { return false }
-        let committedChangeId = changes.first(where: \.isWorkingCopy)?.changeId.id
-
-        isLoading = true
-        do {
-            let infoMessage = try await awaitRepoTask {
-                try $0.commitSafeSubmoduleUpdates(
-                    message: "\(message) (submodule)",
-                    paths: safePaths
-                )
-            }
-
-            if let committedChangeId {
-                reviewStore.clearChange(changeId: committedChangeId)
-            }
-            submoduleAttentionItems = []
-            pendingCommitMessage = nil
-            commitSummaryDraft = ""
-            commitDescriptionDraft = ""
-            info = infoMessage
-            refresh(selecting: "@")
-            isLoading = false
-            return true
-        } catch {
-            self.error = error.friendlyDescription
-            isLoading = false
-            return false
-        }
     }
 
     func newChange(parent: String, message: String = "") {

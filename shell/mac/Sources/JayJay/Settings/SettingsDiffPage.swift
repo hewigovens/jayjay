@@ -41,12 +41,18 @@ struct SettingsDiffPage: View {
                 }
             }
 
-            Section(Localized.Settings.largeFiles) {
+            Section(Localized.Settings.lfsAndSubmodules) {
                 Toggle(isOn: Binding(
                     get: { settings.hideGitLfsDiffs },
                     set: { settings.hideGitLfsDiffs = $0 }
                 )) {
                     SettingsLabel(Localized.Settings.hideLfs, icon: "externaldrive")
+                }
+                Toggle(isOn: Binding(
+                    get: { settings.showGitSubmoduleChanges },
+                    set: { settings.showGitSubmoduleChanges = $0 }
+                )) {
+                    SettingsLabel(Localized.Settings.showSubmoduleChanges, icon: "square.stack.3d.up")
                 }
             }
         }

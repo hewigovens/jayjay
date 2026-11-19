@@ -2,7 +2,6 @@ import JayJayCore
 import SwiftUI
 
 struct WorkingCopyMessageActions: View {
-    @Environment(AppSettings.self) private var settings
     let viewModel: RepoViewModel
     @Binding var summary: String
     @Binding var details: String
@@ -27,7 +26,7 @@ struct WorkingCopyMessageActions: View {
         }
         let commit = Button {
             Task {
-                if await viewModel.commit(message: message, manageSubmodules: settings.enableGitSubmoduleSupport) {
+                if await viewModel.commit(message: message) {
                     onCommitted()
                 }
             }

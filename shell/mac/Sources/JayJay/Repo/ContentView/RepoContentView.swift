@@ -140,9 +140,6 @@ struct RepoContentView: View {
             .onChange(of: viewModel.successActionSignal) {
                 handleSuccessActionSignalChange()
             }
-            .onChange(of: viewModel.submoduleAttentionItems.count) {
-                handleSubmoduleAttentionChange()
-            }
             .onChange(of: backgroundRefreshSuspended, initial: true) { _, suspended in
                 viewModel.setBackgroundRefreshSuspended(suspended)
             }

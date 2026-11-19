@@ -114,7 +114,6 @@ extension DiffEditViewModel {
 }
 
 extension DiffHunk {
-    /// Submodule placeholders are synthesized shell-side and absent from the jj tree diff; reloading one would fail and abort the whole apply.
     var isDiffEditRewritable: Bool {
         projection == nil && !hunkType.hasSource && !isSubmodulePlaceholder
     }

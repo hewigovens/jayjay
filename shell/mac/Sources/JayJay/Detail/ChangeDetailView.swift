@@ -97,7 +97,7 @@ struct ChangeDetailView: View {
             {
                 return false
             }
-            if !appSettings.enableGitSubmoduleSupport, hunk.isSubmodulePlaceholder {
+            if !appSettings.showGitSubmoduleChanges, hunk.isSubmodulePlaceholder {
                 return false
             }
             return true
@@ -128,7 +128,7 @@ struct ChangeDetailView: View {
     }
 
     var hiddenSubmoduleCount: Int {
-        guard !appSettings.enableGitSubmoduleSupport else { return 0 }
+        guard !appSettings.showGitSubmoduleChanges else { return 0 }
         return detail.diff.filter(\.isSubmodulePlaceholder).count
     }
 

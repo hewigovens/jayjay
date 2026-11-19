@@ -51,15 +51,14 @@ settings-ignore-whitespace = 忽略空白變更
 settings-tree-view = 以樹狀顯示檔案
 settings-hide-reviewed = 隱藏已審查的檔案
 settings-auto-expand = 自動展開描述
-settings-large-files = 大型檔案
+settings-lfs-and-submodules = Git LFS 與子模組
 settings-hide-lfs = 隱藏 Git LFS 檔案
+settings-show-submodule-changes = 顯示 Git 子模組變更
 
 settings-confirmations = 確認
 settings-confirm-abandon = 捨棄變更前先確認
 settings-confirm-workspace-delete = 刪除工作區前先確認
 settings-confirm-drag-rebase = 拖移重定基底前先確認
-settings-repository-behavior = 儲存庫行為
-settings-submodule-support = 啟用 Git 子模組支援
 
 settings-coding-agents = 程式開發代理程式
 settings-agent-skill = 與程式開發代理程式整合

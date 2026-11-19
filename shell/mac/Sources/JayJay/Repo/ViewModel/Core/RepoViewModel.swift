@@ -100,8 +100,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var isCommitting = false
     /// `nil` until the first refresh.
     var recentOperations: RecentOperations?
-    var submoduleAttentionItems: [GitSubmoduleStatus] = []
-    var pendingCommitMessage: String?
     var pendingConflictEditor: (commitId: String, path: String)?
     var fileRevealRequest: FileRevealRequest?
     @ObservationIgnored var fileRevealCompletion: CheckedContinuation<Bool, Never>?
@@ -169,7 +167,6 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var isImportingPullRequest = false
     var pullRequestImportSync: JayJaySyncToken?
     var bisect = BisectModel()
-    var includeSubmoduleStatuses: Bool
     var prInfo: PrInfo?
     var prFetchTask: Task<Void, Never>?
     var trunkName = "trunk"
@@ -181,15 +178,14 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var evolog: EvologState?
     var isRestoringEvologVersion = false
 
-    convenience init(path: String, includeSubmoduleStatuses: Bool = false) throws {
+    convenience init(path: String) throws {
         let repo = try JayJayRepo.open(path: path)
         self.init(
             path: path,
             repo: repo,
             primaryRoot: repo.primaryRoot(),
             workingCopyIsLarge: repo.workingCopyIsLarge(),
-            defaultRevsetPreset: repo.defaultRevsetPreset(),
-            includeSubmoduleStatuses: includeSubmoduleStatuses
+            defaultRevsetPreset: repo.defaultRevsetPreset()
         )
     }
 
@@ -200,13 +196,11 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
         repo: JayJayRepo,
         primaryRoot: String,
         workingCopyIsLarge: Bool,
-        defaultRevsetPreset: RevsetPreset,
-        includeSubmoduleStatuses: Bool = false
+        defaultRevsetPreset: RevsetPreset
     ) {
         repoPath = path
         repositoryName = primaryRoot.repositoryLocationURL.repositoryDisplayName
         self.primaryRoot = primaryRoot
-        self.includeSubmoduleStatuses = includeSubmoduleStatuses
         self.repo = repo
         sshState = repo.sshState()
         self.defaultRevsetPreset = defaultRevsetPreset
