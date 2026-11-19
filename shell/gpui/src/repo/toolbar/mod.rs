@@ -47,7 +47,7 @@ const TITLE_PADDING: f32 = 10.;
 
 pub(crate) use buttons::{operation_log_toggle, sidebar_toggle_button};
 
-/// A toolbar-height strip that zooms the window on a double click, as a title bar does.
+/// Zooms the window on a double click in its empty space, as a title bar does.
 fn strip(id: &'static str, cx: &mut Context<RepoWindow>) -> Stateful<Div> {
     div()
         .id(id)
@@ -60,14 +60,14 @@ fn strip(id: &'static str, cx: &mut Context<RepoWindow>) -> Stateful<Div> {
         .on_mouse_down(
             MouseButton::Left,
             cx.listener(|view, ev: &MouseDownEvent, window, cx| {
-                if ev.click_count == 2 {
-                    window.zoom_window();
-                }
-                // Title-bar clicks take no focus of their own, so an open revset edit would otherwise survive them.
                 let on_bar = view
                     .revset_bar_bounds
                     .get()
                     .is_some_and(|bounds| bounds.contains(&ev.position));
+                if ev.click_count == 2 && !on_bar && !window.default_prevented() {
+                    window.zoom_window();
+                }
+                // Title-bar clicks take no focus of their own, so an open revset edit would otherwise survive them.
                 if view.revset_editor.is_some() && !on_bar {
                     view.focus_handle.focus(window, cx);
                 }

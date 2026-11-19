@@ -1,5 +1,5 @@
 use gpui::{
-    AnyElement, Div, InteractiveElement, ParentElement, SharedString, Stateful,
+    AnyElement, Div, InteractiveElement, MouseButton, ParentElement, SharedString, Stateful,
     StatefulInteractiveElement, Styled, div, px, rgb,
 };
 
@@ -33,7 +33,9 @@ pub(crate) fn group_item(
         .cursor_pointer()
         .hover(|s| s.bg(rgb(theme.row_alt_bg)))
         .active(|s| s.bg(rgb(theme.selected_bg)))
-        .help(tooltip);
+        .help(tooltip)
+        // Keeps a double click from zooming the window and, like a native toolbar button, leaves focus put.
+        .on_mouse_down(MouseButton::Left, |_, window, _| window.prevent_default());
     match edge {
         GroupEdge::Leading => el.rounded_l_full(),
         GroupEdge::Trailing => el.rounded_r_full(),
