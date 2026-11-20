@@ -126,25 +126,29 @@ test("a grammar that cannot link is not loaded again", async ({ page }) => {
   expect(await (await worker).evaluate(() => Reflect.get(self, "compiled"))).toBe(1);
 });
 
-test("a page served for a grammar is not cached, so the grammar loads later", async ({ page }) => {
-  await page.route("**/assets/json-*.wasm", (route) =>
-    route.fulfill({ contentType: "text/html", body: "<!doctype html><title>JayJay</title>" }),
-  );
-  await page.goto("/");
-  await ready(page);
-  await open(page, "config/settings.json");
-  await expect(notice(page)).toHaveCount(1);
-  const cached = await page.evaluate(async () =>
-    (await (await caches.open("jayjay-syntax-v1")).keys()).map((request) => request.url),
-  );
-  expect(cached.some((url) => url.includes("/json-"))).toBe(false);
-  expect(cached.some((url) => url.includes("/rust-"))).toBe(true);
-  await page.unroute("**/assets/json-*.wasm");
-  await open(page, "src/greeting.rs");
-  await open(page, "config/settings.json");
-  await expect(notice(page)).toHaveCount(0);
-  await expect(page.locator(".jj-diff-cell .jj-token-Number").first()).toBeVisible();
-});
+for (const [served, response] of [
+  ["a page", { contentType: "text/html", body: "<!doctype html><title>JayJay</title>" }],
+  ["a cut-off module", { contentType: "application/wasm", body: trappingGrammar.subarray(0, 24) }],
+] as const)
+  test(`${served} served for a grammar is not cached, so the grammar loads later`, async ({
+    page,
+  }) => {
+    await page.route("**/assets/json-*.wasm", (route) => route.fulfill(response));
+    await page.goto("/");
+    await ready(page);
+    await open(page, "config/settings.json");
+    await expect(notice(page)).toHaveCount(1);
+    const cached = await page.evaluate(async () =>
+      (await (await caches.open("jayjay-syntax-v1")).keys()).map((request) => request.url),
+    );
+    expect(cached.some((url) => url.includes("/json-"))).toBe(false);
+    expect(cached.some((url) => url.includes("/rust-"))).toBe(true);
+    await page.unroute("**/assets/json-*.wasm");
+    await open(page, "src/greeting.rs");
+    await open(page, "config/settings.json");
+    await expect(notice(page)).toHaveCount(0);
+    await expect(page.locator(".jj-diff-cell .jj-token-Number").first()).toBeVisible();
+  });
 
 test("a grammar download cut off while its body arrives is tried again", async ({ page }) => {
   const worker = page.waitForEvent("worker");

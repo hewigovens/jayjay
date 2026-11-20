@@ -48,9 +48,6 @@ export function grammarManifest(): GrammarManifest {
   return { imports: strings(imports) ? imports : [], languages };
 }
 
-const isWasm = (bytes: ArrayBuffer) =>
-  String.fromCharCode(...new Uint8Array(bytes.slice(0, 4))) === "\0asm";
-
 export function grammarQuery(language: string): Promise<string> {
   const load = queries[`../wasm/queries/${language}.scm`];
   if (!load) return Promise.reject(new Error(`No highlight query for ${language}`));
@@ -59,7 +56,7 @@ export function grammarQuery(language: string): Promise<string> {
   });
 }
 
-// Fetches a WASM asset, through the Cache API in production; a response that is not WebAssembly, such as a host's fallback page, is neither used nor cached.
+// Fetches a WASM asset, through the Cache API in production; a response that is not a valid module, such as a host's fallback page or a cut-off file, is neither used nor cached.
 export async function cachedWasm(url: string): Promise<ArrayBuffer> {
   let cache: Cache | undefined;
   // Dev asset URLs are not content-hashed, so a cached file would outlive a rebuild.
@@ -67,7 +64,7 @@ export async function cachedWasm(url: string): Promise<ArrayBuffer> {
     try {
       cache = await caches.open("jayjay-syntax-v1");
       const cached = await (await cache.match(url, { ignoreVary: true }))?.arrayBuffer();
-      if (cached && isWasm(cached)) return cached;
+      if (cached && WebAssembly.validate(cached)) return cached;
     } catch {
       /* Cache availability does not prevent online diffing. */
     }
@@ -80,7 +77,8 @@ export async function cachedWasm(url: string): Promise<ArrayBuffer> {
     throw new TransientError(`WASM download failed for ${url}: ${String(error)}`);
   }
   if (!response.ok) throw new TransientError(`WASM download failed: ${response.status} for ${url}`);
-  if (!isWasm(bytes)) throw new TransientError(`${url} did not return WebAssembly`);
+  if (!WebAssembly.validate(bytes))
+    throw new TransientError(`${url} did not return valid WebAssembly`);
   if (cache) {
     try {
       await cache.put(

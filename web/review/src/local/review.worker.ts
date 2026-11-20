@@ -1,7 +1,7 @@
 /// <reference lib="webworker" />
 import type { ReviewSession } from "../wasm/engine/jj_diff";
 import { BrowserReviewStorage } from "./BrowserReviewStorage";
-import { engine, engineInstance, isTrap, resetEngine, type Engine } from "./engine";
+import { engineInstance, isTrap, loadEngine, resetEngine, type Engine } from "./engine";
 import { GrammarRegistry } from "./GrammarRegistry";
 import type { WorkerRequest, WorkerResponse } from "./protocol";
 import {
@@ -139,12 +139,14 @@ async function render(
 }
 
 async function handle(request: WorkerRequest): Promise<unknown> {
-  bindings ??= await engine;
+  if (request.kind === "init") {
+    storage = new BrowserReviewStorage(request.databaseName);
+    // Started here so the download overlaps whatever the page fetches before its first request.
+    void loadEngine().catch(() => {});
+    return;
+  }
+  bindings ??= await loadEngine();
   switch (request.kind) {
-    case "init": {
-      storage = new BrowserReviewStorage(request.databaseName);
-      return;
-    }
     case "open": {
       const raw = request.bundle ?? (await storage.readStored("active-bundle"));
       if (raw === undefined) return null;

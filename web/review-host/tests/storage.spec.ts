@@ -148,3 +148,15 @@ test("does not acknowledge a failed browser-storage write", async ({ page }) => 
     "Saved on this device",
   );
 });
+
+test("a failed engine download is tried again on Retry", async ({ page }) => {
+  let offline = true;
+  await page.route("**/assets/jj_diff_bg-*.wasm", (route) =>
+    offline ? route.abort() : route.fallback(),
+  );
+  await page.goto("/");
+  await expect(page.getByRole("alert")).toContainText("WASM download failed");
+  offline = false;
+  await page.getByRole("button", { name: "Retry", exact: true }).click();
+  await ready(page);
+});

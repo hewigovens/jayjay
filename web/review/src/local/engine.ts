@@ -3,14 +3,21 @@ import { cachedWasm, engineUrl } from "./assets";
 
 export type Engine = typeof bindings;
 
-export const engine: Promise<Engine> = (async () => {
-  if (!engineUrl) throw new Error("The review engine is missing; run scripts/build-diff-web.sh");
-  await init({ module_or_path: await cachedWasm(engineUrl) });
-  bindings.ui_labels(navigator.languages.join(","));
-  return bindings;
-})();
+let loading: Promise<Engine> | undefined;
 
-void engine.catch(() => {});
+// A failed load is forgotten, so the next request downloads the engine again.
+export function loadEngine(): Promise<Engine> {
+  loading ??= (async () => {
+    if (!engineUrl) throw new Error("The review engine is missing; run scripts/build-diff-web.sh");
+    await init({ module_or_path: await cachedWasm(engineUrl) });
+    bindings.ui_labels(navigator.languages.join(","));
+    return bindings;
+  })().catch((error: unknown) => {
+    loading = undefined;
+    throw error;
+  });
+  return loading;
+}
 
 let instance = 0;
 
