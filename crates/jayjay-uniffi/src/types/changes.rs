@@ -117,6 +117,7 @@ pub enum EdgeType {
 pub struct ChangeDetail {
     pub info: core::ChangeInfo,
     pub diff: Vec<core::DiffHunk>,
+    pub renames_pending: bool,
 }
 
 #[uniffi::remote(Record)]

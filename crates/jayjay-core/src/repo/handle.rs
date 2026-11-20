@@ -37,6 +37,7 @@ pub struct Repo {
     /// A changed-file count costs a full parent-tree diff; re-diff only workspaces whose working-copy commit moved.
     pub(super) workspace_files_changed_cache: RwLock<HashMap<String, (CommitId, u32)>>,
     pub(super) lfs_cache: Mutex<LfsCache>,
+    pub(super) copy_records: super::diff::CopyRecordsCache,
     pub(super) write_lock: Arc<parking_lot::ReentrantMutex<()>>,
     pub(super) bisect: Mutex<Option<super::bisect::Session>>,
     pub(super) bisect_execution: Mutex<()>,
@@ -78,6 +79,7 @@ impl Repo {
             commit_emptiness: CommitEmptiness::default(),
             workspace_files_changed_cache: RwLock::new(HashMap::new()),
             lfs_cache: Mutex::new(LfsCache::default()),
+            copy_records: Default::default(),
             bisect: Mutex::new(None),
             bisect_execution: Mutex::new(()),
             bisect_closed: AtomicBool::new(false),

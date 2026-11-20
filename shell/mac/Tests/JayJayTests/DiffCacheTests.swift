@@ -31,6 +31,12 @@ final class DiffCacheTests: XCTestCase {
         XCTAssertNotEqual(on, off)
     }
 
+    func testKeyDistinguishesRenameSource() {
+        let added = key(commitId: "c1", rev: nil, ignoreWhitespace: false)
+        let renamed = key(commitId: "c1", rev: nil, oldPath: "old/f", ignoreWhitespace: false)
+        XCTAssertNotEqual(added, renamed, "a file paired with its rename source would reuse the diff loaded while it was listed as added")
+    }
+
     func testKeyDistinguishesCompareSide() {
         let plain = key(commitId: "c1", rev: nil, compareFromRev: nil, ignoreWhitespace: false)
         let compare = key(commitId: "c1", rev: nil, compareFromRev: "c0", ignoreWhitespace: false)
@@ -144,6 +150,7 @@ final class DiffCacheTests: XCTestCase {
         commitId: String?,
         rev: String?,
         compareFromRev: String? = nil,
+        oldPath: String? = nil,
         ignoreWhitespace: Bool,
         projectionKey: String = "raw"
     ) -> String {
@@ -153,6 +160,7 @@ final class DiffCacheTests: XCTestCase {
             compareFromRev: compareFromRev,
             ignoreWhitespace: ignoreWhitespace,
             path: "f",
+            oldPath: oldPath,
             projectionKey: projectionKey
         ))
     }

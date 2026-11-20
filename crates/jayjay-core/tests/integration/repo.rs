@@ -1464,3 +1464,40 @@ fn opening_a_repo_with_an_unknown_backend_names_the_backend() {
     let message = error.to_string();
     assert!(message.contains("“piper” commit backend"), "{message}");
 }
+
+#[test]
+fn deferred_summary_lists_files_before_pairing_many_renames() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo_str = repo_path.to_str().expect("repo path utf-8");
+    let content = |index: usize| format!("file {index}\n{}", "shared line\n".repeat(8));
+    fs::create_dir(repo_path.join("old")).expect("create old dir");
+    for index in 0..101 {
+        fs::write(repo_path.join(format!("old/{index}.txt")), content(index)).expect("write file");
+    }
+    run_jj(&["-R", repo_str, "new"]);
+    fs::rename(repo_path.join("old"), repo_path.join("new")).expect("rename dir");
+    run_jj(&["-R", repo_str, "status"]);
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let deferred = repo
+        .show_summary_deferring_renames("@")
+        .expect("deferred summary");
+    assert!(deferred.renames_pending);
+    assert_eq!(deferred.diff.len(), 202);
+
+    let full = repo.show_summary("@").expect("full summary");
+    assert!(!full.renames_pending);
+    assert_eq!(full.diff.len(), 101);
+    assert!(
+        full.diff
+            .iter()
+            .all(|hunk| hunk.hunk_type == jayjay_core::HunkType::Renamed)
+    );
+
+    let cached = repo
+        .show_summary_deferring_renames("@")
+        .expect("summary after detection");
+    assert!(!cached.renames_pending, "known renames were left out");
+    assert_eq!(cached.diff.len(), 101);
+}

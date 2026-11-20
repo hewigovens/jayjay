@@ -204,6 +204,9 @@ pub enum EdgeType {
 pub struct ChangeDetail {
     pub info: ChangeInfo,
     pub diff: Vec<super::DiffHunk>,
+    /// Set by a summary that showed its files before pairing renames; the full summary replaces it.
+    #[serde(default)]
+    pub renames_pending: bool,
 }
 
 #[cfg(test)]

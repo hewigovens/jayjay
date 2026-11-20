@@ -48,6 +48,20 @@ fixture_simple() {
   )
 }
 
+fixture_many_renames() {
+  jj git init --colocate "$fixtures/many-renames"
+  (
+    cd "$fixtures/many-renames"
+    mkdir old
+    for index in $(seq 0 100); do
+      { echo "file $index"; for line in {1..8}; do echo "shared line"; done; } > "old/$index.txt"
+    done
+    jj describe -m "many files"
+    jj new
+    mv old new
+  )
+}
+
 fixture_converge() {
   jj git init "$fixtures/converge-light"
   (
@@ -585,6 +599,7 @@ fixture_evolog_hide_snapshots
 fixture_evolog_restore
 fixture_context_expansion
 fixture_complex
+fixture_many_renames
 copy_fixture complex file-selection-scroll
 printf 'Root file\n' > "$fixtures/file-selection-scroll/a-root.txt"
 for area in $(seq -f '%02g' 5 24); do rm -r "$fixtures/file-selection-scroll/src/features/area-$area"; done

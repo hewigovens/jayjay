@@ -196,6 +196,7 @@ api! {
         fn track_bookmark(name: Text, remote: Text) -> ();
         fn forget_stale_bookmarks() -> u32;
         fn show_summary(rev: Text) -> ChangeDetail;
+        fn show_summary_deferring_renames(rev: Text) -> ChangeDetail;
         fn show(rev: Text) -> ChangeDetail;
         fn file_content(rev: Text, path: Text) -> String;
         fn show_file(rev: Text, path: Text) -> DiffHunk;

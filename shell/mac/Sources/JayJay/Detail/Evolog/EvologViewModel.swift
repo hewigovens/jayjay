@@ -135,7 +135,7 @@ final class EvologViewModel {
         else { return }
         if from == to {
             guard let index = orderedSelectedIndices.first else { return }
-            interdiffDetail = ChangeDetail(info: entries[index].asPlaceholderInfo(), diff: [])
+            interdiffDetail = ChangeDetail(info: entries[index].asPlaceholderInfo(), diff: [], renamesPending: false)
             return
         }
         interdiffLoading = true

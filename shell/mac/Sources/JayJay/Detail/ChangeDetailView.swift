@@ -207,6 +207,10 @@ struct ChangeDetailView: View {
             openPendingConflictEditor()
             showRequestedFile()
         }
+        .onChange(of: [detail.info.commitId.id, String(detail.renamesPending)]) { old, new in
+            guard old.first == new.first else { return }
+            resetState(preservingFileContext: true)
+        }
         .onChange(of: actions?.fileRevealRequest?.id) { _, _ in
             showRequestedFile()
         }

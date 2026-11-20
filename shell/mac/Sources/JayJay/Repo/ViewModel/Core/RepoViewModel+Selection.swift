@@ -65,6 +65,34 @@ extension RepoViewModel {
         selectedChangeId = detail?.info.selectionRevision
         selectedChangeIds = selectedChangeId.map { [$0] } ?? []
         selectedChangeAnchorId = selectedChangeId
+        if let detail, detail.renamesPending {
+            loadPendingRenames(for: detail)
+        }
+    }
+
+    /// A change large enough to defer rename detection shows its files first; this replaces them once the renames are paired.
+    private func loadPendingRenames(for detail: ChangeDetail) {
+        let commitId = detail.info.commitId.id
+        guard pendingRenamesCommitId != commitId else { return }
+        pendingRenamesCommitId = commitId
+        let rev = detail.info.selectionRevision
+        let finish = { (viewModel: RepoViewModel) in
+            if viewModel.pendingRenamesCommitId == commitId {
+                viewModel.pendingRenamesCommitId = nil
+            }
+        }
+        runRepoTask {
+            try Self.loadSummaryWithConflicts(repo: $0, rev: rev, deferringRenames: false)
+        } onSuccess: { viewModel, full in
+            finish(viewModel)
+            guard viewModel.comparison == nil,
+                  let shown = viewModel.selectedChange, shown.renamesPending,
+                  shown.info.commitId.id == full.info.commitId.id
+            else { return }
+            viewModel.selectedChange = full
+        } onFailure: { viewModel, _ in
+            finish(viewModel)
+        }
     }
 
     /// Call before `changes` is replaced: a revset that is not a change in the graph (bookmark, fork point) can move unseen, so it never counts as intact.
@@ -245,9 +273,10 @@ extension RepoViewModel {
     /// Load summary and add working-copy-only shell projections.
     static func loadSummaryWithConflicts(
         repo: JayJayRepo,
-        rev: String
+        rev: String,
+        deferringRenames: Bool = true
     ) throws -> ChangeDetail {
-        var detail = try repo.showSummary(rev: rev)
+        var detail = try deferringRenames ? repo.showSummaryDeferringRenames(rev: rev) : repo.showSummary(rev: rev)
         var hunks = detail.diff
         if detail.info.isWorkingCopy {
             let trackedGitLfsPaths = Set((try? repo.gitLfsPaths(paths: hunks.map(\.path))) ?? [])
@@ -271,7 +300,7 @@ extension RepoViewModel {
             }
         }
 
-        detail = ChangeDetail(info: detail.info, diff: hunks)
+        detail = ChangeDetail(info: detail.info, diff: hunks, renamesPending: detail.renamesPending)
         return detail
     }
 

@@ -463,6 +463,10 @@ impl JayJayRepo {
         self.inner.show_summary(&rev)
     }
 
+    fn show_summary_deferring_renames(&self, rev: String) -> Result<ChangeDetail, JayError> {
+        self.inner.show_summary_deferring_renames(&rev)
+    }
+
     fn show_file(&self, rev: String, path: String) -> Result<DiffHunk, JayError> {
         self.inner.show_file(&rev, &path)
     }

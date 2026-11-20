@@ -68,6 +68,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var selectedChangeIds: [String] = []
     @ObservationIgnored var selectedChangeAnchorId: String?
     @ObservationIgnored var selectionLoadTask: Task<Void, Never>?
+    @ObservationIgnored var pendingRenamesCommitId: String?
     @ObservationIgnored var lastKeyboardSelection: ContinuousClock.Instant?
     @ObservationIgnored var comparisonRequestId: UInt64 = 0
     var comparison: Comparison?

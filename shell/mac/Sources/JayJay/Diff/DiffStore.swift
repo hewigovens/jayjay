@@ -15,6 +15,7 @@ final class DiffStore {
         let compareFromRev: String?
         let ignoreWhitespace: Bool
         let path: String
+        let oldPath: String?
         let projectionKey: String
     }
 
@@ -32,7 +33,7 @@ final class DiffStore {
         guard !hunk.isSubmodulePlaceholder, !hunk.isContentFreeRenameOrCopy else { return nil }
         let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
-            ignoreWhitespace: ignoreWhitespace, path: hunk.path,
+            ignoreWhitespace: ignoreWhitespace, path: hunk.path, oldPath: hunk.oldPath,
             projectionKey: projectionCacheIdentity(projection: hunk.projection, mode: projectionMode)
         ))
         return await cache.get(key)
@@ -54,7 +55,7 @@ final class DiffStore {
 
         let key = Self.key(CacheKeyParts(
             commitId: commitId, rev: rev, compareFromRev: compareFromRev,
-            ignoreWhitespace: ignoreWhitespace, path: hunk.path,
+            ignoreWhitespace: ignoreWhitespace, path: hunk.path, oldPath: hunk.oldPath,
             projectionKey: projectionCacheIdentity(projection: hunk.projection, mode: projectionMode)
         ))
 
@@ -150,7 +151,7 @@ final class DiffStore {
     nonisolated static func key(_ parts: CacheKeyParts) -> String {
         let base = (parts.commitId?.isEmpty == false ? parts.commitId : parts.rev) ?? ""
         let identity = parts.compareFromRev.map { "\($0)→\(base)" } ?? base
-        return "\(identity)|\(parts.ignoreWhitespace ? "iw" : "")|\(parts.projectionKey)|\(Localized.locale.identifier)|\(parts.path)"
+        return "\(identity)|\(parts.ignoreWhitespace ? "iw" : "")|\(parts.projectionKey)|\(Localized.locale.identifier)|\(parts.oldPath ?? "")|\(parts.path)"
     }
 
     nonisolated static func shouldLoadFileContent(

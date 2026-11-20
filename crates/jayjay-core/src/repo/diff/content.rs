@@ -13,8 +13,15 @@ use crate::types::*;
 impl Repo {
     /// Walk tree diff and return file list WITHOUT content (fast).
     pub(super) fn diff_file_list(&self, trees: &TreePair) -> JayResult<Vec<DiffHunk>> {
+        let mut files = self.diff_paths(trees)?;
+        trees.apply_copies(&self.copy_records, &mut files)?;
+        Ok(files)
+    }
+
+    /// The file list before renames and copies are paired.
+    pub(super) fn diff_paths(&self, trees: &TreePair) -> JayResult<Vec<DiffHunk>> {
         let mut diff_stream = trees.before.diff(&trees.after, &EverythingMatcher);
-        let mut files = on_worker_stack(|| -> JayResult<Vec<DiffHunk>> {
+        on_worker_stack(|| -> JayResult<Vec<DiffHunk>> {
             let mut files = Vec::new();
             while let Some(TreeDiffEntry { path, values }) = block_on(diff_stream.next()) {
                 let values = resolve_diff_values(&path, values)?;
@@ -49,9 +56,7 @@ impl Repo {
                 });
             }
             Ok(files)
-        })?;
-        trees.apply_copies(&mut files)?;
-        Ok(files)
+        })
     }
 
     /// Walk tree diff and return all hunks WITH content.
@@ -83,7 +88,7 @@ impl Repo {
             }
             Ok(diff)
         })?;
-        trees.apply_copies(&mut diff)?;
+        trees.apply_copies(&self.copy_records, &mut diff)?;
         // The walk materialized copies as additions; diff them against their source instead.
         for hunk in diff
             .iter_mut()

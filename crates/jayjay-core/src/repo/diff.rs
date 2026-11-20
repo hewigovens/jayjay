@@ -1,5 +1,6 @@
 mod content;
 mod copies;
+mod copy_cache;
 mod current_text;
 mod entry;
 mod formats;
@@ -23,6 +24,7 @@ use jj_lib::repo_path::RepoPath;
 use crate::types::*;
 
 use self::copies::{SourceLookup, apply_copy_records};
+pub(super) use self::copy_cache::CopyRecordsCache;
 use self::entry::{
     compute_review_identity, first_diff_content, materialize_diff_content, source_values,
 };
@@ -46,19 +48,37 @@ impl TreePair {
         }
     }
 
-    fn apply_copies(&self, hunks: &mut Vec<DiffHunk>) -> JayResult<()> {
+    fn apply_copies(&self, cache: &CopyRecordsCache, hunks: &mut Vec<DiffHunk>) -> JayResult<()> {
         let store = self.repo.store();
         let mut copies = CopyRecords::default();
-        for (root, head) in &self.copy_endpoints {
-            let records = block_on_result("load copy records", async {
-                store
-                    .get_copy_records(None, root, head)?
-                    .try_collect::<Vec<_>>()
-                    .await
+        for endpoints in &self.copy_endpoints {
+            let records = cache.get_or_load(endpoints, || {
+                block_on_result("load copy records", async {
+                    store
+                        .get_copy_records(None, &endpoints.0, &endpoints.1)?
+                        .try_collect::<Vec<_>>()
+                        .await
+                })
             })?;
-            copies.add_records(records);
+            copies.add_records(records.iter().cloned());
         }
         apply_copy_records(hunks, &copies, self)
+    }
+
+    /// Past this many added-file and source-file pairs, a summary can show its files before their renames are known.
+    const DEFERRED_RENAME_PAIRS: usize = 10_000;
+
+    fn renames_are_slow(&self, cache: &CopyRecordsCache, hunks: &[DiffHunk]) -> bool {
+        let count = |matches: fn(HunkType) -> bool| {
+            hunks.iter().filter(|hunk| matches(hunk.hunk_type)).count()
+        };
+        let added = count(|kind| kind == HunkType::Added);
+        let sources = count(|kind| matches!(kind, HunkType::Removed | HunkType::Modified));
+        added * sources > Self::DEFERRED_RENAME_PAIRS
+            && !self
+                .copy_endpoints
+                .iter()
+                .all(|endpoints| cache.contains(endpoints))
     }
 }
 
@@ -168,8 +188,22 @@ impl Repo {
 
     /// Fast: returns change info + file list WITHOUT content.
     pub fn show_summary(&self, rev: &str) -> JayResult<ChangeDetail> {
+        self.summary(rev, false)
+    }
+
+    /// `show_summary` that leaves renames out when detecting them would hold up the file list, and says so in `renames_pending`; `show_summary` then completes it.
+    pub fn show_summary_deferring_renames(&self, rev: &str) -> JayResult<ChangeDetail> {
+        self.summary(rev, true)
+    }
+
+    fn summary(&self, rev: &str, defers_slow_renames: bool) -> JayResult<ChangeDetail> {
         let (trees, info) = self.commit_trees(rev)?;
-        let mut diff = self.diff_file_list(&trees)?;
+        let mut diff = self.diff_paths(&trees)?;
+        let renames_pending =
+            defers_slow_renames && trees.renames_are_slow(&self.copy_records, &diff);
+        if !renames_pending {
+            trees.apply_copies(&self.copy_records, &mut diff)?;
+        }
         if info.has_conflict {
             for (path, supported) in self.conflict_summaries(rev)? {
                 if let Some(hunk) = diff.iter_mut().find(|hunk| hunk.path == path) {
@@ -179,14 +213,22 @@ impl Repo {
                 }
             }
         }
-        Ok(ChangeDetail { info, diff })
+        Ok(ChangeDetail {
+            info,
+            diff,
+            renames_pending,
+        })
     }
 
     /// Full: returns change info + file list WITH content (slow for large changesets).
     pub fn show(&self, rev: &str) -> JayResult<ChangeDetail> {
         let (trees, info) = self.commit_trees(rev)?;
         let diff = self.diff_all_files(&trees)?;
-        Ok(ChangeDetail { info, diff })
+        Ok(ChangeDetail {
+            info,
+            diff,
+            renames_pending: false,
+        })
     }
 
     /// A file's text at `rev` with conflict markers materialized; empty when the path is absent. Binary, oversized and non-file paths yield the diff view's placeholder text rather than raw bytes.
@@ -314,7 +356,11 @@ impl Repo {
     pub fn interdiff_summary(&self, from_rev: &str, to_rev: &str) -> JayResult<ChangeDetail> {
         let (trees, info) = self.interdiff_trees(from_rev, to_rev)?;
         let diff = self.diff_file_list(&trees)?;
-        Ok(ChangeDetail { info, diff })
+        Ok(ChangeDetail {
+            info,
+            diff,
+            renames_pending: false,
+        })
     }
 
     pub fn interdiff_file(&self, from_rev: &str, to_rev: &str, path: &str) -> JayResult<DiffHunk> {
