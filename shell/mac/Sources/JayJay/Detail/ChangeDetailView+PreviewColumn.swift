@@ -125,6 +125,7 @@ extension ChangeDetailView {
                                 Divider()
                             }
                         }
+                        .background(EnclosingScrollView(handle: stackScroll))
                     }
                     // The stack only estimates the height of files it has not shown, so the jump repeats while the files it lands on load.
                     .task(id: stackScrollEdge) {

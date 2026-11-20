@@ -48,6 +48,19 @@ fixture_simple() {
   )
 }
 
+# Image diffs only, so the stacked list holds no diff text view.
+fixture_image_stack() {
+  jj git init --colocate "$fixtures/image-stack"
+  (
+    cd "$fixtures/image-stack"
+    jj describe -m "initial"
+    jj new
+    for name in a b c d; do
+      base64 -d <<< "iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAYAAAAfFcSJAAAADUlEQVR42mNk+M9QDwADhgGAWjR9awAAAABJRU5ErkJggg==" > "$name.png"
+    done
+  )
+}
+
 fixture_many_renames() {
   jj git init --colocate "$fixtures/many-renames"
   (
@@ -600,6 +613,7 @@ fixture_evolog_restore
 fixture_context_expansion
 fixture_complex
 fixture_many_renames
+fixture_image_stack
 copy_fixture complex file-selection-scroll
 printf 'Root file\n' > "$fixtures/file-selection-scroll/a-root.txt"
 for area in $(seq -f '%02g' 5 24); do rm -r "$fixtures/file-selection-scroll/src/features/area-$area"; done

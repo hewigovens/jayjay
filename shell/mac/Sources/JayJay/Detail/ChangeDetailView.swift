@@ -44,6 +44,7 @@ struct ChangeDetailView: View {
     @State var paneHeight: CGFloat = 0
     @State var fileSelection = FileSelection()
     @State var stackScrollEdge: VerticalEdge?
+    @State var stackScroll = EnclosingScrollView.Handle()
     @State var contextMenuRequest: SelectionContextMenuRequest?
     @State var collapsedDirs: Set<String> = []
     @State var fileTreeCache = FileTreeCache()

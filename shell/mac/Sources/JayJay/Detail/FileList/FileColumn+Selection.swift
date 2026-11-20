@@ -37,18 +37,16 @@ extension ChangeDetailView {
     }
 
     private func scrollDiff(_ event: NSEvent) -> Bool {
-        guard event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]),
-              let diff = NSApp.keyWindow?.contentView?.diffTextView
-        else { return false }
+        guard event.modifierFlags.isDisjoint(with: [.command, .control, .option, .shift]) else { return false }
         if isStacked {
-            let stack = diff.enclosingScrollView?.superview?.enclosingScrollView
             switch event.keyCode {
-                case KeyCode.pageUp: stack?.pageUp(nil)
-                case KeyCode.pageDown: stack?.pageDown(nil)
+                case KeyCode.pageUp: stackScroll.scrollView?.pageUp(nil)
+                case KeyCode.pageDown: stackScroll.scrollView?.pageDown(nil)
                 default: stackScrollEdge = event.keyCode == KeyCode.end ? .bottom : .top
             }
             return true
         }
+        guard let diff = NSApp.keyWindow?.contentView?.diffTextView else { return false }
         switch event.keyCode {
             case KeyCode.pageUp: diff.scrollPageUp(nil)
             case KeyCode.pageDown: diff.scrollPageDown(nil)
