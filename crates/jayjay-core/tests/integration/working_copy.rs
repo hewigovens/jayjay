@@ -144,6 +144,30 @@ fn snapshot_tracks_only_new_files_matching_the_auto_track_setting() {
 }
 
 #[test]
+fn snapshot_leaves_new_files_over_the_size_limit_untracked() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    fs::write(repo_path.join("large.bin"), vec![b'x'; 1024 * 1024 + 1]).expect("write large file");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let tracks_large_file = |repo: &Repo| {
+        repo.refresh_working_copy().expect("snapshot working copy");
+        let current = repo.show("@").expect("show working copy");
+        current.diff.iter().any(|hunk| hunk.path == "large.bin")
+    };
+    assert!(
+        !tracks_large_file(&repo),
+        "a new file over jj's default 1MiB limit stays untracked"
+    );
+
+    run_jj_in(
+        &repo_path,
+        &["config", "set", "--repo", "snapshot.max-new-file-size", "0"],
+    );
+    let repo = Repo::open(&repo_path).expect("reopen repo with the limit lifted");
+    assert!(tracks_large_file(&repo), "a zero limit tracks any size");
+}
+
+#[test]
 fn working_copy_event_filter_respects_local_gitignore() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");

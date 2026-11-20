@@ -13,6 +13,7 @@ use jj_lib::object_id::ObjectId as _;
 use jj_lib::op_store::OpStoreError;
 use jj_lib::repo::{ReadonlyRepo, Repo as _};
 use jj_lib::repo_path::RepoPathBuf;
+use jj_lib::settings::{HumanByteSize, UserSettings};
 use jj_lib::transaction::Transaction;
 use jj_lib::working_copy::{SnapshotOptions, WorkingCopyFreshness};
 use jj_lib::workspace::{LockedWorkspace, Workspace};
@@ -267,7 +268,7 @@ impl Repo {
             progress: None,
             start_tracking_matcher: &*start_tracking_matcher,
             force_tracking_matcher: &NothingMatcher,
-            max_new_file_size: u64::MAX,
+            max_new_file_size: max_new_file_size(repo.settings())?,
         };
         let (tree, _) = block_on_result(context, locked_ws.locked_wc().snapshot(&options))?;
         Ok(tree)
@@ -360,6 +361,18 @@ impl Repo {
             .map(|m| m.len() > LARGE_TREE_STATE_BYTES)
             .unwrap_or(false)
     }
+}
+
+/// 0 lifts the limit; jj-lib has no default for `snapshot.max-new-file-size`, so unset means jj-cli's 1MiB.
+fn max_new_file_size(settings: &UserSettings) -> JayResult<u64> {
+    let size = settings
+        .get_value_with("snapshot.max-new-file-size", HumanByteSize::try_from)
+        .optional()
+        .map_err(|error| {
+            JayError::internal(format!("Invalid snapshot.max-new-file-size: {error}"))
+        })?
+        .map_or(1024 * 1024, |HumanByteSize(bytes)| bytes);
+    Ok(if size == 0 { u64::MAX } else { size })
 }
 
 #[cfg(test)]
