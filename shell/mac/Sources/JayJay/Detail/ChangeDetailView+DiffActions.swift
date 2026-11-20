@@ -4,7 +4,6 @@ import SwiftUI
 extension ChangeDetailView {
     var diffActions: some View {
         let sideBySide = appSettings.sideBySideDiff
-        let stacked = isStacked
         let toggleLayout = { appSettings.sideBySideDiff.toggle() }
         let openDiffEdit = { paneMode = .diffEdit }
         return HStack(spacing: 2) {
@@ -14,9 +13,8 @@ extension ChangeDetailView {
                     Text(sideBySide ? Localized.Diff.sideBySide : Localized.Diff.unified)
                 }
             }
-            .disabled(stacked)
-            .keyboardFocusStop(.diffLayout, isAvailable: !stacked, action: toggleLayout)
-            .help(stacked ? Localized.Diff.sideBySideUnavailable : sideBySide ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide)
+            .keyboardFocusStop(.diffLayout, action: toggleLayout)
+            .help(sideBySide ? Localized.Diff.switchToUnified : Localized.Diff.switchToSideBySide)
             .accessibilityIdentifier(AID.Diff.layoutToggle)
             if canEnterDiffEdit, let hunk = selectedHunk, hunk.projection == nil {
                 Button(action: openDiffEdit) {

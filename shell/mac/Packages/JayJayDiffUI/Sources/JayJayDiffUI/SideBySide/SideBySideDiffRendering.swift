@@ -9,7 +9,7 @@ extension SideBySideRepresentable {
         gutterContainer.widthTracksTextView = true
         gutterContainer.lineFragmentPadding = 0
 
-        let gutterScrollView = NSScrollView()
+        let gutterScrollView = DiffScrollView()
         gutterScrollView.hasVerticalScroller = false
         gutterScrollView.hasHorizontalScroller = false
         gutterScrollView.autohidesScrollers = true
@@ -29,7 +29,7 @@ extension SideBySideRepresentable {
         gutterTextView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         gutterScrollView.documentView = gutterTextView
 
-        let scrollView = NSScrollView()
+        let scrollView = DiffScrollView()
         scrollView.hasVerticalScroller = true
         scrollView.hasHorizontalScroller = false
         scrollView.autohidesScrollers = true
@@ -54,6 +54,7 @@ extension SideBySideRepresentable {
         textView.usesFindBar = true
         textView.isIncrementalSearchingEnabled = true
         textView.identifier = NSUserInterfaceItemIdentifier("diffTextView")
+        textView.setAccessibilityIdentifier("diff.sideBySide")
         textView.minSize = NSSize(width: 0, height: 0)
         textView.maxSize = NSSize(width: CGFloat.greatestFiniteMagnitude, height: CGFloat.greatestFiniteMagnitude)
         scrollView.documentView = textView

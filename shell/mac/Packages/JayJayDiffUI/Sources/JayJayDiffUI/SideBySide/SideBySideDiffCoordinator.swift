@@ -147,6 +147,7 @@ public final class SideBySideCoordinator: NSObject, NSSplitViewDelegate, NSTextV
         (left.textView as? DiffTextView)?.copyRows = DiffCopyRow.rows(wrapped, side: \.old)
         (right.textView as? DiffTextView)?.copyRows = DiffCopyRow.rows(wrapped, side: \.new)
         renderVisualRows(wrapped.map(\.row), fonts: (code: font, badge: badgeFont), theme: theme, left: left, right: right)
+        left.container.reportContentHeightIfNeeded()
     }
 
     private func renderVisualRows(

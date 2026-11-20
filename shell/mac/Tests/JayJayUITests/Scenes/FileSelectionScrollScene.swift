@@ -66,12 +66,10 @@ final class FileSelectionScrollScene: SceneBase {
         let second = fileRows(of: app).matching(identifier: AID.FileList.row("src/modules/module-02.swift")).firstMatch
         XCTAssertTrue(first.waitForExistence(timeout: 10))
         first.click()
-        XCTAssertTrue(app.buttons[AID.Diff.layoutToggle].isEnabled)
 
         keyStroke("a", modifiers: .command)
         XCTAssertTrue(second.wait(for: \.isSelected, toEqual: true, timeout: 5), "Command-A did not select every file")
         XCTAssertTrue(first.isSelected)
-        XCTAssertFalse(app.buttons[AID.Diff.layoutToggle].isEnabled, "Stacked diffs offered a layout they cannot show")
         let secondReview = app.buttons[AID.FileList.review("src/modules/module-02.swift")]
         keyStroke(.space)
         XCTAssertTrue(secondReview.wait(for: \.label, toEqual: "Reviewed", timeout: 5))

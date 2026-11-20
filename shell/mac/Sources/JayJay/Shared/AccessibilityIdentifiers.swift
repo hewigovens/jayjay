@@ -105,6 +105,7 @@ enum AID {
         static let section = "diff.section"
         static let gutter = "diff.gutter"
         static let text = "diff.text"
+        static let sideBySide = "diff.sideBySide"
         static let layoutToggle = "diff.layoutToggle"
         static let preview = "diff.preview"
         static let source = "diff.source"
