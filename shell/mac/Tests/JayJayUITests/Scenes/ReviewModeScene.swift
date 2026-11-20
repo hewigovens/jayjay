@@ -8,7 +8,7 @@ final class ReviewModeScene: SceneBase {
         let isOn = NSPredicate(format: "value == 1")
         let isOff = NSPredicate(format: "value == 0")
         rows.firstMatch.click()
-        XCTAssertTrue(app.buttons[AID.FileList.review("wip1.txt")].waitForExistence(timeout: 10), "The working copy lost its review circles")
+        XCTAssertTrue(app.buttons[AID.FileList.review("wip1.txt")].waitForExistence(timeout: 10), "The working copy lost its review marks")
         XCTAssertFalse(toggle.exists, "The working copy offers a review mode toggle")
 
         let featureChange = rows.matching(NSPredicate(format: "value CONTAINS %@", "add feature")).firstMatch
@@ -19,7 +19,7 @@ final class ReviewModeScene: SceneBase {
         XCTAssertTrue(toggle.waitForExistence(timeout: 5))
         XCTAssertTrue(isOff.evaluate(with: toggle), "Review mode started on for a change without marks")
         XCTAssertTrue(app.staticTexts["1 file"].exists, "The file count did not stay plain with review mode off")
-        XCTAssertFalse(featureReview.exists, "Review circles showed with review mode off")
+        XCTAssertFalse(featureReview.exists, "Review marks showed with review mode off")
         XCTAssertFalse(app.buttons[AID.Diff.markReviewed].exists, "Mark Reviewed showed with review mode off")
         featureRow.click()
         keyStroke(.space)

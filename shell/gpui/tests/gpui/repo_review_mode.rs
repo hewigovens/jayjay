@@ -48,9 +48,13 @@ fn review_toggle(cx: &mut VisualTestContext) -> Option<bool> {
 fn review_mode_is_per_change_outside_the_working_copy(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_focused(&fixture, cx);
+    let mark = cx
+        .debug_bounds("review-flat-0")
+        .expect("@ keeps its review marks");
+    let row = cx.debug_bounds("file-row-0").expect("file row");
     assert!(
-        cx.debug_bounds("review-flat-0").is_some(),
-        "@ keeps its review circles"
+        mark.left() > row.center().x,
+        "the review mark trails the file name"
     );
     assert_eq!(review_toggle(cx), None, "@ offers no review mode toggle");
 

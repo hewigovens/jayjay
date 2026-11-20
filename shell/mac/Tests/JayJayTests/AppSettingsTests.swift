@@ -146,7 +146,6 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(defaultLightColors.fileRemoved, .red)
         XCTAssertEqual(defaultLightColors.fileModified, .blue)
         XCTAssertEqual(defaultLightColors.fileRenamed, .blue)
-        XCTAssertEqual(defaultLightColors.fileLfs, .purple)
         XCTAssertEqual(defaultLightColors.noteAccent, .orange)
 
         let defaultDarkColors = settings.appThemes.colors(for: .dark)
@@ -155,7 +154,6 @@ final class AppSettingsTests: XCTestCase {
         XCTAssertEqual(defaultDarkColors.fileRemoved, .red)
         XCTAssertEqual(defaultDarkColors.fileModified, .blue)
         XCTAssertEqual(defaultDarkColors.fileRenamed, .blue)
-        XCTAssertEqual(defaultDarkColors.fileLfs, .purple)
         XCTAssertEqual(defaultDarkColors.noteAccent, .orange)
 
         settings.tintWindowWithWallpaper = true

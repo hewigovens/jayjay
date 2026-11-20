@@ -55,10 +55,6 @@ struct AppColors: Equatable {
         isDefault ? .blue : Color(rgb: theme.repo.fileRenamed)
     }
 
-    var fileLfs: Color {
-        isDefault ? .purple : Color(rgb: theme.repo.fileLfs)
-    }
-
     var noteAccent: Color {
         isDefault ? .orange : Color(rgb: theme.repo.noteAccent)
     }

@@ -13,7 +13,6 @@ pub const SYNC_PUSH_SVG: &str = "icons/sync-push.svg";
 pub const EXPAND_VERTICAL_SVG: &str = "icons/expand-vertical.svg";
 pub const COLLAPSE_VERTICAL_SVG: &str = "icons/collapse-vertical.svg";
 pub const CHECK_SVG: &str = "icons/check.svg";
-pub const CIRCLE_HALF_SVG: &str = "icons/circle-half.svg";
 /// Full color, drawn with `img` rather than tinted with `svg`.
 pub const HEART_CIRCLE_SVG: &str = "icons/heart-circle.svg";
 
@@ -40,10 +39,6 @@ pub const SVG_ASSETS: &[(&str, &[u8])] = &[
         include_bytes!("../../assets/icons/collapse-vertical.svg"),
     ),
     (CHECK_SVG, include_bytes!("../../assets/icons/check.svg")),
-    (
-        CIRCLE_HALF_SVG,
-        include_bytes!("../../assets/icons/circle-half.svg"),
-    ),
     (
         HEART_CIRCLE_SVG,
         include_bytes!("../../assets/icons/heart-circle.svg"),

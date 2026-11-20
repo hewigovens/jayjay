@@ -5,7 +5,6 @@ struct FileRow: View {
     @Environment(\.jayjayTypography) private var typography
     @Environment(\.colorScheme) private var colorScheme
     @Environment(\.appThemes) private var appThemes
-    @Environment(\.accessibilityDifferentiateWithoutColor) private var differentiateWithoutColor
     /// macOS List adds 8 pt of its own on each side; this nets out to a 4 pt inset so the selection covers the row.
     static let listInsets = EdgeInsets(top: 0, leading: -4, bottom: 0, trailing: -4)
 
@@ -50,43 +49,17 @@ struct FileRow: View {
 
     var body: some View {
         let colors = appThemes.colors(for: colorScheme)
-        let statusColor = color(colors: colors)
         HStack(spacing: 8) {
-            if showReview {
-                Button {
-                    onToggleReview?()
-                } label: {
-                    Image(systemName: reviewChrome.systemImage(for: colorScheme))
-                        .foregroundStyle(reviewChrome.tint)
-                        .jayjayFont(14)
-                }
-                .buttonStyle(.plain)
-                .accessibilityIdentifier(AID.FileList.review(hunk.path))
-                .accessibilityLabel(reviewAccessibilityLabel)
-            }
-
             HStack(alignment: .top, spacing: 8) {
                 if hasConflict {
                     Image(systemName: "exclamationmark.triangle.fill")
                         .foregroundStyle(.red)
                         .jayjayFont(11)
                 } else {
-                    Group {
-                        if !showReview {
-                            hunk.hunkType.badge(colorScheme, colors: colors)
-                                .jayjayFont(18)
-                        } else if differentiateWithoutColor {
-                            hunk.hunkType.icon
-                                .jayjayFont(12)
-                        } else {
-                            Circle()
-                                .frame(width: 6, height: 6)
-                                .padding(.top, 4 * typography.interfaceScale)
-                        }
-                    }
-                    .foregroundStyle(statusColor)
-                    .accessibilityLabel(hunk.hunkType.label)
-                    .help(hunk.hunkType.label)
+                    hunk.hunkType.badge(colorScheme, colors: colors)
+                        .jayjayFont(18)
+                        .accessibilityLabel(hunk.hunkType.label)
+                        .help(hunk.hunkType.label)
                 }
 
                 VStack(alignment: .leading, spacing: 2) {
@@ -159,6 +132,19 @@ struct FileRow: View {
 
                 Spacer(minLength: 0)
             }
+
+            if showReview {
+                Button {
+                    onToggleReview?()
+                } label: {
+                    Image(systemName: reviewChrome.systemImage)
+                        .foregroundStyle(reviewChrome.tint)
+                        .jayjayFont(14)
+                }
+                .buttonStyle(.plain)
+                .accessibilityIdentifier(AID.FileList.review(hunk.path))
+                .accessibilityLabel(reviewAccessibilityLabel)
+            }
         }
         .padding(.horizontal, 8)
         .padding(.vertical, 6)
@@ -168,15 +154,5 @@ struct FileRow: View {
             RoundedRectangle(cornerRadius: 8, style: .continuous)
                 .fill(isSelected ? Color.accentColor.opacity(isPaneActive ? 0.28 : 0.14) : .clear)
         )
-    }
-
-    private func color(colors: AppColors) -> Color {
-        if hunk.isSubmodulePlaceholder {
-            return colors.fileRenamed
-        }
-        if hunk.isGitLfsPlaceholder {
-            return colors.fileLfs
-        }
-        return colors.fileColor(for: hunk.hunkType)
     }
 }

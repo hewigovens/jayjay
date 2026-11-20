@@ -1,7 +1,6 @@
 /** @jsxRuntime automatic */
 import type { ReviewState } from "../../model/review";
 
-// Built from the GPUI shell's circle, check, and circle-half icons (shell/gpui/assets/icons).
 export function ReviewStateIcon({ state, size = 16 }: { state: ReviewState; size?: number }) {
   const reviewed = state === "reviewed";
   return (
