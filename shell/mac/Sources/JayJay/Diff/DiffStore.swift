@@ -129,16 +129,20 @@ final class DiffStore {
         guard let repo, let rev else { return }
         // Cancel any in-flight preload so rapid commit navigation doesn't pile up detached tasks all racing the FFI.
         preloadTask?.cancel()
+        // Past half the cache, warming more files would evict the first ones, which are read first.
+        let budget = cache.budgetBytes / 2
         preloadTask = Task.detached(priority: .utility) { [weak self] in
+            var preloaded = 0
             for hunk in hunks {
-                if Task.isCancelled {
+                if Task.isCancelled || preloaded > budget {
                     return
                 }
-                _ = await self?.loadDiff(
+                let loaded = await self?.loadDiff(
                     hunk: hunk, rev: rev, commitId: commitId, repo: repo,
                     compareFromRev: compareFromRev, ignoreWhitespace: ignoreWhitespace,
                     projectionMode: projectionMode
                 )
+                preloaded += loaded.map(DiffCache.bytes) ?? 0
             }
         }
     }
@@ -169,7 +173,7 @@ actor DiffCache {
     private var entries: [String: DiffStore.CachedDiff] = [:]
     private var order: [String] = [] // LRU recency; front = least recently used
     private var totalBytes = 0
-    private let budgetBytes: Int
+    let budgetBytes: Int
 
     init(budgetBytes: Int = 64 * 1024 * 1024) {
         self.budgetBytes = budgetBytes
@@ -183,12 +187,12 @@ actor DiffCache {
 
     func set(_ key: String, value: DiffStore.CachedDiff) {
         if let existing = entries[key] {
-            totalBytes -= bytes(existing)
+            totalBytes -= Self.bytes(existing)
             order.removeAll { $0 == key }
         }
         entries[key] = value
         order.append(key)
-        totalBytes += bytes(value)
+        totalBytes += Self.bytes(value)
         evict()
     }
 
@@ -202,12 +206,13 @@ actor DiffCache {
         while totalBytes > budgetBytes, order.count > 1, let oldest = order.first {
             order.removeFirst()
             if let removed = entries.removeValue(forKey: oldest) {
-                totalBytes -= bytes(removed)
+                totalBytes -= Self.bytes(removed)
             }
         }
     }
 
-    private func bytes(_ diff: DiffStore.CachedDiff) -> Int {
-        diff.content.oldText.utf8.count + diff.content.newText.utf8.count
+    /// An estimate: a rendered line holds its text again plus highlight spans, which outweigh the source text.
+    static func bytes(_ diff: DiffStore.CachedDiff) -> Int {
+        diff.content.oldText.utf8.count + diff.content.newText.utf8.count + diff.diff.lines.count * 2048
     }
 }
