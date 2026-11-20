@@ -1,6 +1,6 @@
 import { expect, test } from "vitest";
 import { GitHub, GitHubError } from "../worker/github/GitHub";
-import { diffFiles } from "../worker/github/GitHubDiff";
+import { streamDiffFiles } from "../worker/github/GitHubDiff";
 
 function github(routes: Record<string, unknown>, requests: string[] = []) {
   return new GitHub(undefined, async (input) => {
@@ -12,6 +12,16 @@ function github(routes: Record<string, unknown>, requests: string[] = []) {
       : Response.json(routes[path]);
   });
 }
+
+// A few bytes at a time, so lines and files span chunks as they do off the network.
+const inChunks = (diff: string) =>
+  new ReadableStream<Uint8Array>({
+    start(controller) {
+      const bytes = new TextEncoder().encode(diff);
+      for (let at = 0; at < bytes.length; at += 7) controller.enqueue(bytes.slice(at, at + 7));
+      controller.close();
+    },
+  });
 
 const modified = (path: string, lines = "-a\n+b\n") =>
   `diff --git a/${path} b/${path}\nindex 1111111..2222222 100644\n--- a/${path}\n+++ b/${path}\n@@ -1 +1 @@\n${lines}`;
@@ -68,18 +78,26 @@ test("diffs against the merge base and reads the files from GitHub's diff", asyn
   expect(requests).toHaveLength(4);
 });
 
-test("reads each file's kind, paths, line counts and blob IDs from a diff", () => {
-  const files = diffFiles(
-    [
-      modified("src/lib.rs", "@@ -5,3 +5,4 @@\n context\n-old\n+new\n+--- not a header\n"),
-      "diff --git a/old name.rs b/new name.rs\nsimilarity index 90%\nrename from old name.rs\nrename to new name.rs\nindex 3333333..4444444 100644\n--- a/old name.rs\n+++ b/new name.rs\n@@ -1 +1 @@\n-x\n+y\n",
-      "diff --git a/moved.rs b/elsewhere/moved.rs\nsimilarity index 100%\nrename from moved.rs\nrename to elsewhere/moved.rs\n",
-      "diff --git a/added.txt b/added.txt\nnew file mode 100644\nindex 0000000..5555555\n--- /dev/null\n+++ b/added.txt\n@@ -0,0 +1,2 @@\n+one\n+two\n",
-      "diff --git a/gone.txt b/gone.txt\ndeleted file mode 100644\nindex 6666666..0000000\n--- a/gone.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-bye\n",
-      "diff --git a/logo.png b/logo.png\nindex 7777777..8888888 100644\nBinary files a/logo.png and b/logo.png differ\n",
-      'diff --git "a/caf\\303\\251.md" "b/caf\\303\\251.md"\nindex 9999999..aaaaaaa 100644\n',
-      "diff --git a/run.sh b/run.sh\nold mode 100644\nnew mode 100755\n",
-    ].join(""),
+test("stops reading a diff once it lists more files than the limit", async () => {
+  const diff = ["a", "b", "c", "d", "e"].map((path) => modified(path)).join("");
+  expect(await streamDiffFiles(inChunks(diff), 2)).toHaveLength(3);
+});
+
+test("reads each file's kind, paths, line counts and blob IDs from a diff", async () => {
+  const files = await streamDiffFiles(
+    inChunks(
+      [
+        modified("src/lib.rs", "@@ -5,3 +5,4 @@\n context\n-old\n+new\n+--- not a header\n"),
+        "diff --git a/old name.rs b/new name.rs\nsimilarity index 90%\nrename from old name.rs\nrename to new name.rs\nindex 3333333..4444444 100644\n--- a/old name.rs\n+++ b/new name.rs\n@@ -1 +1 @@\n-x\n+y\n",
+        "diff --git a/moved.rs b/elsewhere/moved.rs\nsimilarity index 100%\nrename from moved.rs\nrename to elsewhere/moved.rs\n",
+        "diff --git a/added.txt b/added.txt\nnew file mode 100644\nindex 0000000..5555555\n--- /dev/null\n+++ b/added.txt\n@@ -0,0 +1,2 @@\n+one\n+two\n",
+        "diff --git a/gone.txt b/gone.txt\ndeleted file mode 100644\nindex 6666666..0000000\n--- a/gone.txt\n+++ /dev/null\n@@ -1 +0,0 @@\n-bye\n",
+        "diff --git a/logo.png b/logo.png\nindex 7777777..8888888 100644\nBinary files a/logo.png and b/logo.png differ\n",
+        'diff --git "a/caf\\303\\251.md" "b/caf\\303\\251.md"\nindex 9999999..aaaaaaa 100644\n',
+        "diff --git a/run.sh b/run.sh\nold mode 100644\nnew mode 100755\n",
+      ].join(""),
+    ),
+    Infinity,
   );
 
   expect(files).toEqual([
@@ -297,7 +315,7 @@ test("maps GitHub failures to the errors the page explains", async () => {
       },
       "https://github.com/o/r/pull/1.diff": "",
     }).manifest(pull);
-  await expect(pullWith({ changed_files: 2001 })).rejects.toMatchObject({ code: "too-large" });
+  await expect(pullWith({ changed_files: 5001 })).rejects.toMatchObject({ code: "too-large" });
   await expect(pullWith({ base: { sha: "a", repo: { private: true } } })).rejects.toMatchObject({
     code: "not-found",
   });

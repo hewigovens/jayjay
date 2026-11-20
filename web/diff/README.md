@@ -46,4 +46,4 @@ npm run deploy
 
 `wrangler.jsonc` serves it at `diff.hewig.dev`, a custom domain on the `hewig.dev` Cloudflare zone; the first deploy creates the DNS record and certificate.
 
-Limits: public repositories only, other than through a diff file; at most 2,000 files; binary files other than images review as empty text.
+Limits: public repositories only, other than through a diff file; at most 5,000 files; binary files other than images review as empty text.

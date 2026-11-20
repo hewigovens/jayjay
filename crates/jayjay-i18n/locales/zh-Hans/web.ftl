@@ -83,7 +83,7 @@ web-pull-too-large = { $kind ->
     [compare] 此比较涉及
     [commit] 此提交涉及
    *[pull] 此 Pull Request 涉及
-} 超过 2,000 个文件，数量太多，无法在这里评审。
+} 超过 5,000 个文件，数量太多，无法在这里评审。
 web-pull-unavailable = { $kind ->
     [compare] 无法从 GitHub 加载此比较。
     [commit] 无法从 GitHub 加载此提交。

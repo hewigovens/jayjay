@@ -50,4 +50,4 @@ export interface PullFile {
 export type PullError = "not-found" | "rate-limited" | "unauthorized" | "too-large" | "unavailable";
 
 // The bundle loader's limit in web/review/wasm/src/bundle.rs.
-export const maxFiles = 2000;
+export const maxFiles = 5000;

@@ -118,7 +118,7 @@ Install the tarball in another Vite app with `npm install /tmp/jayjay-review-web
 
 ## Review bundles
 
-Import a UTF-8 JSON bundle (up to 32 MiB and 2,000 text files):
+Import a UTF-8 JSON bundle (up to 32 MiB and 5,000 text files):
 
 ```json
 {

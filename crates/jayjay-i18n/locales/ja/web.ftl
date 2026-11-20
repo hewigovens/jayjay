@@ -83,7 +83,7 @@ web-pull-too-large = { $kind ->
     [compare] この比較の変更は
     [commit] このコミットの変更は
    *[pull] このプル リクエストの変更は
-} 2,000 ファイルを超えており、ここでレビューするには多すぎます。
+} 5,000 ファイルを超えており、ここでレビューするには多すぎます。
 web-pull-unavailable = { $kind ->
     [compare] GitHub からこの比較を読み込めませんでした。
     [commit] GitHub からこのコミットを読み込めませんでした。

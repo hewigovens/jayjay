@@ -122,7 +122,7 @@ impl ReviewBundle {
             || bundle.repository_id.is_empty()
             || bundle.change_id.is_empty()
             || bundle.change_id.contains('|')
-            || bundle.files.len() > 2000
+            || bundle.files.len() > 5000
             || bundle.author_email.len() > 320
         {
             return Err("Unsupported review bundle or missing repository/change identity".into());

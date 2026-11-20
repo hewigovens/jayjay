@@ -13,7 +13,7 @@ import {
   type PullRequestRef,
   type ReviewRef,
 } from "../../src/github/ReviewRef";
-import { diffFiles } from "./GitHubDiff";
+import { streamDiffFiles } from "./GitHubDiff";
 import { pullStack } from "./pullStack";
 
 export interface GitHubPull {
@@ -227,9 +227,10 @@ export class GitHub {
   // github.com serves diffs outside the API rate limit.
   private async diff(path: string) {
     const response = await this.fetcher(`https://github.com${path}`, {
-      headers: { "user-agent": "jayjay-pr" },
+      // Local workerd asks for no compression by itself, and a large diff is a quarter the size gzipped.
+      headers: { "user-agent": "jayjay-pr", "accept-encoding": "gzip" },
     });
-    if (response.ok) return diffFiles(await response.text());
+    if (response.ok && response.body) return streamDiffFiles(response.body, maxFiles);
     if (response.status === 404) throw new GitHubError("not-found", 404);
     throw new GitHubError(
       response.status === 429 ? "rate-limited" : "unavailable",

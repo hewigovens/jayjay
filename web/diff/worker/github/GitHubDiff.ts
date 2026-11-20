@@ -5,13 +5,55 @@ const encoder = new TextEncoder();
 const decoder = new TextDecoder();
 
 export function diffFiles(diff: string): PullFile[] {
-  const files: PullFile[] = [];
-  let file: PullFile | undefined;
-  let inHunk = false;
-  for (const line of diff.split("\n")) {
-    if (line.startsWith("diff --git ")) {
+  const files = new DiffFiles();
+  for (const line of diff.split("\n")) files.read(line);
+  return files.list;
+}
+
+// Reads the files of a diff as it arrives, so a large one is never held whole, and stops once it lists more than `limit`.
+export async function streamDiffFiles(diff: ReadableStream<Uint8Array>, limit: number) {
+  const files = new DiffFiles();
+  const text = new TextDecoder();
+  const source = diff.getReader();
+  let rest = "";
+  for (;;) {
+    const { done, value } = await source.read();
+    const chunk = text.decode(value, { stream: !done });
+    // Only the chunk is searched for a line end, so a line spanning many chunks is not scanned again for each.
+    const end = done ? chunk.length : chunk.lastIndexOf("\n");
+    if (end < 0) {
+      rest += chunk;
+      continue;
+    }
+    for (const line of (rest + chunk.slice(0, end)).split("\n")) files.read(line);
+    rest = chunk.slice(end + 1);
+    if (done) break;
+    if (files.list.length > limit) {
+      await source.cancel();
+      break;
+    }
+  }
+  return files.list;
+}
+
+class DiffFiles {
+  readonly list: PullFile[] = [];
+  private file: PullFile | undefined;
+  private inHunk = false;
+
+  read(line: string) {
+    const { file } = this;
+    const header = line.startsWith("diff --git ");
+    if (file && this.inHunk && !header) {
+      if (line.startsWith("+")) file.added++;
+      else if (line.startsWith("-")) file.removed++;
+      return;
+    }
+    // A substring keeps the whole chunk it was cut from alive, so what a file keeps is cut from a copy of its line.
+    line = decoder.decode(encoder.encode(line));
+    if (header) {
       const [oldPath, path] = headerPaths(line.slice("diff --git ".length));
-      file = {
+      this.file = {
         path,
         ...(oldPath !== path && { oldPath }),
         kind: "modified",
@@ -19,15 +61,12 @@ export function diffFiles(diff: string): PullFile[] {
         removed: 0,
         sha: null,
       };
-      files.push(file);
-      inHunk = false;
+      this.list.push(this.file);
+      this.inHunk = false;
     } else if (!file) {
-      continue;
-    } else if (inHunk) {
-      if (line.startsWith("+")) file.added++;
-      else if (line.startsWith("-")) file.removed++;
+      return;
     } else if (line.startsWith("@@")) {
-      inHunk = true;
+      this.inHunk = true;
     } else if (line.startsWith("Binary files ") || line === "GIT binary patch") {
       file.binary = true;
     } else if (line.startsWith("old mode ")) {
@@ -49,7 +88,6 @@ export function diffFiles(diff: string): PullFile[] {
       if (after && !missing.test(after)) file.sha = after;
     }
   }
-  return files;
 }
 
 // Unquoted paths split in half, which is exact unless the file was renamed, when `rename` lines name it.

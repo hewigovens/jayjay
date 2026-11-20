@@ -83,7 +83,7 @@ web-pull-too-large = { $kind ->
     [compare] This comparison changes
     [commit] This commit changes
    *[pull] This pull request changes
-} more than 2,000 files, too many to review here.
+} more than 5,000 files, too many to review here.
 web-pull-unavailable = { $kind ->
     [compare] Couldn’t load this comparison from GitHub.
     [commit] Couldn’t load this commit from GitHub.
