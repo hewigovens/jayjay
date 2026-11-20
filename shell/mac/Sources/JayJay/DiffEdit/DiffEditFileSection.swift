@@ -16,7 +16,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     let onToggleFile: () -> Void
     let onSelectFile: () -> Void
     let onToggleLine: (Int) -> Void
-    let onSelectHunk: (ClosedRange<Int>) -> Void
+    let onToggleGroup: ([Int]) -> Void
     let onLoaded: (DiffEditLoadedFile) -> Void
 
     @State private var displayDiff: FileDiff?

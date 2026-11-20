@@ -5,6 +5,35 @@ final class DiffEditScene: SceneBase {
         "complex"
     }
 
+    func testGutterAndMenuToggleTheSameChangeGroup() throws {
+        let app = try XCTUnwrap(app)
+        let open = app.buttons[AID.DiffEdit.open]
+        XCTAssertTrue(open.waitForExistence(timeout: 10))
+        open.click()
+
+        let card = app.buttons[AID.DiffEdit.fileToggle("docs/guides/guide-01.md")]
+        XCTAssertTrue(card.waitForExistence(timeout: 5))
+        card.click()
+        let gutter = app.textViews[AID.Diff.gutter].firstMatch
+        XCTAssertTrue(gutter.waitForExistence(timeout: 10))
+        let stripe = gutter.coordinate(withNormalizedOffset: .zero)
+            .withOffset(CGVector(dx: 12, dy: 12))
+
+        stripe.click()
+        stripe.rightClick()
+        let deselect = app.menuItems["Deselect Change Group"]
+        XCTAssertTrue(deselect.waitForExistence(timeout: 3))
+        deselect.click()
+
+        stripe.rightClick()
+        let select = app.menuItems["Select Change Group"]
+        XCTAssertTrue(select.waitForExistence(timeout: 3))
+        select.click()
+        stripe.click()
+        stripe.rightClick()
+        XCTAssertTrue(select.waitForExistence(timeout: 3))
+    }
+
     func testLargeRepositoryStartsCollapsedAndCanExpand() throws {
         let app = try XCTUnwrap(app)
         XCTAssertTrue(dagRows(of: app).element(boundBy: 0).waitForExistence(timeout: 10), "DAG never populated")

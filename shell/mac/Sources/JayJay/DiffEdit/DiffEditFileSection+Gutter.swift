@@ -14,13 +14,13 @@ extension DiffEditFileSection {
     }
 
     func selectChangeGroup(_ lineRange: ClosedRange<Int>) {
-        let mapped = ClosedRange(
-            uncheckedBounds: (
-                displayToFullMap[lineRange.lowerBound] ?? lineRange.lowerBound,
-                displayToFullMap[lineRange.upperBound] ?? lineRange.upperBound
-            )
-        )
-        onSelectHunk(mapped)
+        onToggleGroup(lineRange.compactMap { displayToFullMap[$0] })
+    }
+
+    func changeGroupActionTitle(for lineRange: ClosedRange<Int>) -> String {
+        lineRange.allSatisfy { lineCheckboxState(for: $0) == .selected }
+            ? Localized.Diff.deselectChangeGroup
+            : Localized.Diff.selectChangeGroup
     }
 
     func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {

@@ -41,6 +41,7 @@ diff-drag-to-resize-images-double-click = Drag to resize images. Double-click to
 diff-no-post-change-markdown-content = No post-change Markdown content.
 diff-image = Image
 diff-select-change-group = Select Change Group
+diff-deselect-change-group = Deselect Change Group
 diff-select-file = Select File
 diff-image-comparison-divider = Image comparison divider
 diff-restore-equal-widths = Restore equal widths

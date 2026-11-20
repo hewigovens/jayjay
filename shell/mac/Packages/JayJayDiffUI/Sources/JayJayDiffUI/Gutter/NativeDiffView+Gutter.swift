@@ -57,7 +57,7 @@ extension NativeDiffView {
             }
             items.append(
                 DiffGutterMenuItem(
-                    title: Localized.Diff.selectChangeGroup,
+                    title: selectionActions.changeGroupActionTitle(for: groupRange),
                     enabled: true,
                     action: { selectionActions.selectChangeGroup(groupRange) }
                 )

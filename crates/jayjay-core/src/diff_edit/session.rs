@@ -142,6 +142,20 @@ impl DiffEditSession {
             .extend(lines.iter().filter(|line| loaded.changed.contains(line)));
     }
 
+    pub fn toggle_lines(&mut self, path: &str, lines: &[u32]) {
+        let Some(loaded) = self.files.get_mut(path) else {
+            return;
+        };
+        let changed = lines.iter().filter(|line| loaded.changed.contains(line));
+        if changed.clone().all(|line| loaded.selected.contains(line)) {
+            for line in changed {
+                loaded.selected.remove(line);
+            }
+        } else {
+            loaded.selected.extend(changed);
+        }
+    }
+
     pub fn toggle_all(&mut self, paths: &[String]) -> Vec<String> {
         if self.should_deselect() {
             self.select_all_pending.clear();
