@@ -91,6 +91,7 @@ class SceneBase: XCTestCase {
             // The runner machine's own settings must not decide how a scene's descriptions open.
             app.launchArguments += ["-jayjay.autoExpandDescription", "NO"]
             app.launchArguments += ["-jayjay.hideReviewedFiles", "NO"]
+            app.launchArguments += ["-jayjay.sideBySideDiff", "NO"]
             app.launchArguments += ["-jayjay.diffPaletteLight", ""]
             app.launchArguments += ["-jayjay.diffPaletteDark", ""]
         }
