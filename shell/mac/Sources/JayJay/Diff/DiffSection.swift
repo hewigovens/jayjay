@@ -58,7 +58,7 @@ struct DiffSection: View {
                     .padding(.bottom, 8)
             }
             diffContent
-                .frame(height: fitsContent && fittedDiffHeight == nil ? 320 : nil)
+                .frame(height: fitsContent && (fittedDiffHeight == nil || showsRichView) ? 320 : nil)
         }
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()

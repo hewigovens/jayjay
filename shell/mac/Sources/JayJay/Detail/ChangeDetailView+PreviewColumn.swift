@@ -39,6 +39,62 @@ extension ChangeDetailView {
 
     // MARK: - Preview column
 
+    private func diffSection(for hunk: DiffHunk, fitsContent: Bool = false) -> some View {
+        VStack(spacing: 0) {
+            if conflictedPaths.contains(hunk.path) {
+                conflictBar(hunk: hunk)
+            }
+            DiffSection(
+                hunk: hunk,
+                rev: detailRevision,
+                commitId: detail.info.commitId.id,
+                reviewChangeId: showsReviewControls ? reviewChangeId : nil,
+                repo: repo,
+                actions: actions,
+                isWorkingCopy: detail.info.isWorkingCopy,
+                diffStore: diffStore,
+                reviewStore: reviewStore,
+                staleNoteIds: staleReviewNoteIds,
+                noteEditor: $noteEditor,
+                onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
+                onEditFile: canEditWorkingCopyFile(hunk)
+                    ? { prepareFileEditor(path: hunk.path, line: $0) }
+                    : nil,
+                onOpenInExternalEditor: canEditWorkingCopyFile(hunk)
+                    ? { appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath, line: $0) }
+                    : nil,
+                onReviewStateChanged: { refreshReviewState() },
+                onReviewSnapshotLoaded: { loadedHunk, snapshot in
+                    rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
+                },
+                fileReview: .chrome(
+                    showReview: showsReviewMarks && hunk.isReviewable,
+                    rollup: fileRollups[hunk.path] ?? .unreviewed
+                ),
+                onToggleFileReview: { toggleReview([hunk.path]) },
+                compareFromRev: comparison?.fromId,
+                lineStats: fileStats?.value?[hunk.path],
+                fitsContent: fitsContent,
+                showsSharedActions: false
+            )
+            // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
+            .id("\(detail.info.commitId.id)|\(hunk.path)")
+        }
+    }
+
+    var selectedHunks: [DiffHunk] {
+        let selected = fileSelection.paths
+        guard selected.count > 1 else { return [] }
+        let hunks = Dictionary(filteredDiff.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
+        return visibleSelectablePaths.compactMap { selected.contains($0) ? hunks[$0] : nil }
+    }
+
+    /// The preview column shows every selected file, or the primary one alone.
+    private var shownHunks: [DiffHunk] {
+        let selected = selectedHunks
+        return selected.count > 1 ? selected : selectedHunk.map { [$0] } ?? []
+    }
+
     var previewColumn: some View {
         VStack(alignment: .leading, spacing: 0) {
             if case let .annotate(lines, path, error) = paneMode {
@@ -56,47 +112,31 @@ extension ChangeDetailView {
                     onDismiss: { paneMode = .files }
                 )
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
-            } else if let hunk = selectedHunk {
-                VStack(spacing: 0) {
-                    if conflictedPaths.contains(hunk.path) {
-                        conflictBar(hunk: hunk)
+            } else if selectedHunks.count > 1 {
+                ScrollViewReader { proxy in
+                    ScrollView {
+                        LazyVStack(alignment: .leading, spacing: 0) {
+                            ForEach(selectedHunks, id: \.path) { hunk in
+                                diffSection(for: hunk, fitsContent: true)
+                                Divider()
+                            }
+                        }
                     }
-                    DiffSection(
-                        hunk: hunk,
-                        rev: detailRevision,
-                        commitId: detail.info.commitId.id,
-                        reviewChangeId: showsReviewControls ? reviewChangeId : nil,
-                        repo: repo,
-                        actions: actions,
-                        isWorkingCopy: detail.info.isWorkingCopy,
-                        diffStore: diffStore,
-                        reviewStore: reviewStore,
-                        staleNoteIds: staleReviewNoteIds,
-                        noteEditor: $noteEditor,
-                        onOpenDiffEdit: canEnterDiffEdit ? { paneMode = .diffEdit } : nil,
-                        onEditFile: canEditWorkingCopyFile(hunk)
-                            ? { prepareFileEditor(path: hunk.path, line: $0) }
-                            : nil,
-                        onOpenInExternalEditor: canEditWorkingCopyFile(hunk)
-                            ? { appSettings.openInEditor(filePath: hunk.path, repoPath: repoPath, line: $0) }
-                            : nil,
-                        onReviewStateChanged: { refreshReviewState() },
-                        onReviewSnapshotLoaded: { loadedHunk, snapshot in
-                            rememberLoadedReviewSnapshot(for: loadedHunk, snapshot: snapshot)
-                        },
-                        fileReview: .chrome(
-                            showReview: showsReviewMarks && hunk.isReviewable,
-                            rollup: fileRollups[hunk.path] ?? .unreviewed
-                        ),
-                        onToggleFileReview: { toggleReview([hunk.path]) },
-                        compareFromRev: comparison?.fromId,
-                        lineStats: fileStats?.value?[hunk.path],
-                        showsSharedActions: false
-                    )
-                    // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
-                    .id("\(detail.info.commitId.id)|\(hunk.path)")
-                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
+                    // The stack only estimates the height of files it has not shown, so the jump repeats while the files it lands on load.
+                    .task(id: stackScrollEdge) {
+                        guard let edge = stackScrollEdge, let target = edge == .bottom ? selectedHunks.last : selectedHunks.first else { return }
+                        for _ in 0 ..< 5 where !Task.isCancelled {
+                            proxy.scrollTo(target.path, anchor: edge == .bottom ? .bottom : .top)
+                            try? await Task.sleep(for: .milliseconds(120))
+                        }
+                        if !Task.isCancelled {
+                            stackScrollEdge = nil
+                        }
+                    }
                 }
+            } else if let hunk = selectedHunk {
+                diffSection(for: hunk)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .topLeading)
             } else if visibleDiff.isEmpty, hiddenDiffCount > 0 {
                 emptyState(
                     hiddenOnlyStateTitle,
@@ -130,7 +170,7 @@ extension ChangeDetailView {
         Task {
             await session.load()
             guard fileEditor?.id == presentation.id else { return }
-            if selectedHunk?.path == path {
+            if shownHunks.contains(where: { $0.path == path }) {
                 fileEditor?.session = session
             } else {
                 fileEditor = nil
@@ -167,8 +207,7 @@ extension ChangeDetailView {
         guard fileEditor == nil,
               conflictEditor == nil,
               let repo,
-              let hunk = selectedHunk,
-              hunk.path == path,
+              let hunk = shownHunks.first(where: { $0.path == path }),
               Self.canEnterConflictEditor(info: detail.info, hunk: hunk, isCompareMode: isCompareMode)
         else { return }
         let presentation = EditorPresentation<ConflictEditorSession>(revision: detailRevision)
@@ -178,7 +217,7 @@ extension ChangeDetailView {
         Task {
             await session.load()
             guard conflictEditor?.id == presentation.id else { return }
-            if selectedHunk?.path == path {
+            if shownHunks.contains(where: { $0.path == path }) {
                 conflictEditor?.session = session
             } else {
                 conflictEditor = nil

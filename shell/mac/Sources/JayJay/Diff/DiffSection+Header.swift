@@ -43,7 +43,7 @@ extension DiffSection {
                     Button(action: editFile) {
                         actionLabel(Localized.Diff.editFile, systemImage: "pencil")
                     }
-                    .keyboardFocusStop(.editFile, action: editFile)
+                    .keyboardFocusStop(.editFile, isAvailable: !fitsContent, action: editFile)
                     .help(Localized.Diff.editThisWorkingCopyFile)
                     .accessibilityLabel(Localized.Diff.editFile)
                     .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
@@ -80,7 +80,7 @@ extension DiffSection {
                 actionLabel(title, systemImage: fileReview.systemImage)
             }
             .buttonStyle(HeaderActionButtonStyle(isActive: reviewed))
-            .keyboardFocusStop(.markReviewed, action: onToggleFileReview)
+            .keyboardFocusStop(.markReviewed, isAvailable: !fitsContent, action: onToggleFileReview)
             .help(reviewed ? Localized.Menu.markFilesUnreviewed(count: 1) : title)
             .accessibilityLabel(title)
             .accessibilityIdentifier(AID.Diff.markReviewed)
