@@ -35,6 +35,10 @@ fi
 for license in shell/gpui/assets/fonts/Octicons.LICENSE shell/mac/Resources/ToolbarIcons.LICENSE shell/mac/Resources/DashboardIcons.LICENSE; do
   install -Dm644 "$root/$license" "$appdir/usr/share/jayjay/licenses/$(basename "$license")"
 done
+install -Dm644 "$root/crates/jj-diff/grammars/fluent/LICENSE" "$appdir/usr/share/jayjay/licenses/tree-sitter-fluent.LICENSE"
+for license in "$root"/crates/jj-diff/grammars/wasm/*.LICENSE; do
+  install -Dm644 "$license" "$appdir/usr/share/jayjay/licenses/tree-sitter-$(basename "$license")"
+done
 "$root/dist/appimage/libraries.sh" bundle "$appdir"
 install -Dm644 "$root/shell/gpui/linux/$app_id.desktop" "$appdir/usr/share/applications/$app_id.desktop"
 install -Dm644 "$root/shell/gpui/linux/$app_id.metainfo.xml" "$appdir/usr/share/metainfo/$app_id.metainfo.xml"

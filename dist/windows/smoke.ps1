@@ -105,6 +105,8 @@ fn main() {
     if ((($wrapped.Out.Trim() -split '\r?\n') -join ',') -cne (($expectedArgs | Select-Object -Skip 2) -join ',')) { throw 'Batch wrapper changed literal tool arguments' }
     Write-Host 'PASS: extracted CLI help/version/config/review/errors, terminal helper, batch arguments, launcher argv/stdio/wait/exit contract'
 
+    # The app opens on the first file's diff, which runs a WebAssembly grammar, so a build that crashes loading one exits before the check below.
+    Set-Content -LiteralPath "$repo/Dockerfile" -Value 'FROM scratch'
     $start = [Diagnostics.ProcessStartInfo]::new($gui)
     $start.UseShellExecute = $false
     $start.RedirectStandardError = $true

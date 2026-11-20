@@ -16,6 +16,6 @@ Settings offers Windows editors and terminals. System Editor uses VISUAL or EDIT
 
 Configuration and history use your Windows user application-data directories; portable describes deployment, not a separate data profile. No installation or CLI installer is required. There are no automatic updates or notifications. This beta is unsigned, so Windows may show a trust/SmartScreen warning.
 
-SHA256SUMS verifies the extracted files; the adjacent .zip.sha256 verifies the archive. LICENSE.txt covers the app; CORE-LICENSE.txt and THIRD-PARTY-*.html contain core and dependency terms. OCTICONS-LICENSE.txt and SETI-LICENSE.txt cover the embedded icon fonts; TOOLBAR-ICONS-LICENSE.txt and DASHBOARD-ICONS-LICENSE.txt cover the toolbar's app marks.
+SHA256SUMS verifies the extracted files; the adjacent .zip.sha256 verifies the archive. LICENSE.txt covers the app; CORE-LICENSE.txt and THIRD-PARTY-*.html contain core and dependency terms. OCTICONS-LICENSE.txt and SETI-LICENSE.txt cover the embedded icon fonts; TOOLBAR-ICONS-LICENSE.txt and DASHBOARD-ICONS-LICENSE.txt cover the toolbar's app marks. The grammar-licenses folder covers the bundled syntax-highlighting grammars.
 
 Desktop interaction, rendering, DPI/scaling, editor/terminal integration and authentication need testing on an actual Windows desktop. Automated build, headless CLI and launch checks alone do not establish those behaviors.

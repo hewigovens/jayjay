@@ -35,6 +35,9 @@ try {
     Copy-Item shell/mac/Resources/ToolbarIcons.LICENSE "$payload/TOOLBAR-ICONS-LICENSE.txt"
     Copy-Item shell/mac/Resources/DashboardIcons.LICENSE "$payload/DASHBOARD-ICONS-LICENSE.txt"
     Copy-Item dist/windows/README.txt $payload
+    New-Item -ItemType Directory -Path "$payload/grammar-licenses" | Out-Null
+    Copy-Item crates/jj-diff/grammars/fluent/LICENSE "$payload/grammar-licenses/tree-sitter-fluent.LICENSE"
+    Get-ChildItem crates/jj-diff/grammars/wasm -Filter *.LICENSE | ForEach-Object { Copy-Item $_.FullName "$payload/grammar-licenses/tree-sitter-$($_.Name)" }
     if ($SshHelpers) {
         New-Item -ItemType Directory -Path "$payload/ssh-helpers" | Out-Null
         Copy-Item -LiteralPath $SshHelpers "$payload/ssh-helpers/manifest.json"
