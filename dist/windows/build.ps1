@@ -6,6 +6,7 @@ $target = @{ x64 = "x86_64-pc-windows-msvc"; arm64 = "aarch64-pc-windows-msvc" }
 $root = (Resolve-Path "$PSScriptRoot/../..").Path
 Push-Location $root
 $savedFlags = $env:CARGO_ENCODED_RUSTFLAGS
+$savedCFlags = $env:CFLAGS
 try {
     if ((rustc --version) -notmatch '^rustc 1\.99\.0 ') { throw "Use Rust 1.99.0 for the portable beta." }
     if ((cargo about --version) -notmatch '0\.9\.2$') { throw "Install cargo-about 0.9.2: cargo install cargo-about --version 0.9.2 --features cli --locked" }
@@ -17,6 +18,8 @@ try {
     cargo fetch --locked
     if ($LASTEXITCODE) { throw "Dependency source fetch failed" }
     $env:CARGO_ENCODED_RUSTFLAGS = @('-Ctarget-feature=+crt-static', '-Clink-arg=/Brepro', "--remap-path-prefix=$root=.") -join [char]0x1f
+    # tree-sitter declares wasmtime's statically linked C API as DLL imports unless this is defined; ring compiles with clang on ARM64, which only takes the -D spelling.
+    $env:CFLAGS = "$env:CFLAGS -DLIBWASM_STATIC".Trim()
     cargo build --locked --release --target $target -p jayjay-gpui -p jayjay-cli
     if ($LASTEXITCODE) { throw "Release build failed" }
     $payload = Join-Path $root "build/windows-payload"
@@ -45,5 +48,6 @@ try {
     & "$PSScriptRoot/msix.ps1" -Payload $payload -Version $Version -AppVersion $appVersion -OutputDirectory $OutputDirectory -Architecture $Architecture
 } finally {
     $env:CARGO_ENCODED_RUSTFLAGS = $savedFlags
+    $env:CFLAGS = $savedCFlags
     Pop-Location
 }
