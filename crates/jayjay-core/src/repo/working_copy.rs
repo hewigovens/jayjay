@@ -4,7 +4,9 @@ use std::sync::Mutex;
 
 use futures::StreamExt as _;
 use jj_lib::commit::Commit;
-use jj_lib::matchers::{EverythingMatcher, FilesMatcher, NothingMatcher};
+use jj_lib::config::ConfigGetResultExt as _;
+use jj_lib::fileset::{self, FilesetDiagnostics, FilesetParseContext};
+use jj_lib::matchers::{EverythingMatcher, FilesMatcher, Matcher, NothingMatcher};
 use jj_lib::merged_tree::MergedTree;
 use jj_lib::merged_tree_builder::MergedTreeBuilder;
 use jj_lib::object_id::ObjectId as _;
@@ -253,22 +255,44 @@ impl Repo {
         )
     }
 
-    /// Snapshots with jj's defaults: every unignored new file starts tracked.
     fn snapshot_tree(
         &self,
         repo: &Arc<ReadonlyRepo>,
         locked_ws: &mut LockedWorkspace<'_>,
         context: &str,
     ) -> JayResult<MergedTree> {
+        let start_tracking_matcher = self.auto_track_matcher(repo)?;
         let options = SnapshotOptions {
             base_ignores: base_git_ignores(repo, &self.path)?,
             progress: None,
-            start_tracking_matcher: &EverythingMatcher,
+            start_tracking_matcher: &*start_tracking_matcher,
             force_tracking_matcher: &NothingMatcher,
             max_new_file_size: u64::MAX,
         };
         let (tree, _) = block_on_result(context, locked_ws.locked_wc().snapshot(&options))?;
         Ok(tree)
+    }
+
+    /// jj-lib has no default for `snapshot.auto-track`; the CLI's `all()` comes from jj-cli's config.
+    fn auto_track_matcher(&self, repo: &ReadonlyRepo) -> JayResult<Box<dyn Matcher>> {
+        let settings = repo.settings();
+        let invalid = |error: &dyn std::fmt::Display| {
+            JayError::internal(format!("Invalid snapshot.auto-track: {error}"))
+        };
+        let Some(pattern) = settings
+            .get_string("snapshot.auto-track")
+            .optional()
+            .map_err(|error| invalid(&error))?
+        else {
+            return Ok(Box::new(EverythingMatcher));
+        };
+        let context = FilesetParseContext {
+            aliases_map: &self.fileset_aliases_map(settings)?,
+            path_converter: &self.path_converter(),
+        };
+        let expression = fileset::parse(&mut FilesetDiagnostics::new(), &pattern, &context)
+            .map_err(|error| invalid(&error))?;
+        Ok(expression.to_matcher())
     }
 
     /// `jj file untrack`: drop `paths` from the working-copy change and its on-disk state, leaving the files in place; a path that is not ignored would only be tracked again by the next snapshot, so it is refused.
