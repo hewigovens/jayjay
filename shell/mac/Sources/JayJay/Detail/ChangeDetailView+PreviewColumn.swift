@@ -127,12 +127,17 @@ extension ChangeDetailView {
                         }
                         .background(EnclosingScrollView(handle: stackScroll))
                     }
-                    // The stack only estimates the height of files it has not shown, so the jump repeats while the files it lands on load.
+                    // The stack only estimates the height of files it has not shown, so the jump repeats until the files it lands on stop resizing it.
                     .task(id: stackScrollEdge) {
                         guard let edge = stackScrollEdge, let target = edge == .bottom ? shown.last : shown.first else { return }
-                        for _ in 0 ..< 5 where !Task.isCancelled {
+                        var height: CGFloat?
+                        var settledPasses = 0
+                        for _ in 0 ..< 40 where !Task.isCancelled && settledPasses < 5 {
                             proxy.scrollTo(target.path, anchor: edge == .bottom ? .bottom : .top)
                             try? await Task.sleep(for: .milliseconds(120))
+                            let newHeight = stackScroll.scrollView?.documentView?.frame.height
+                            settledPasses = newHeight == height ? settledPasses + 1 : 0
+                            height = newHeight
                         }
                         if !Task.isCancelled {
                             stackScrollEdge = nil
