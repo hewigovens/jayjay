@@ -10,7 +10,7 @@ test("the commit sidebar opens commits in place of the picker, and stays hidden 
   );
   await openPull(page);
   const sidebar = page.getByRole("complementary", { name: "Commits", exact: true });
-  const picker = page.locator(".commit-picker");
+  const picker = page.locator(".jj-commit-picker");
   await expect(picker).toBeHidden();
   await expect(sidebar.getByRole("button", { name: "All commits" })).toHaveAttribute(
     "aria-current",

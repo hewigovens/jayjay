@@ -1,13 +1,14 @@
+/** @jsxRuntime automatic */
 import { useEffect, useId, useRef, useState, type KeyboardEvent, type ReactNode } from "react";
-import { ToolButton } from "@jayjay/review-web/react";
 import { useHoverIntent } from "../../hooks/useHoverIntent";
+import { ToolButton } from "../ToolButton";
 
 export interface PickerItem {
   key: string;
   current: boolean;
   content: ReactNode;
   pick: () => void;
-  // Starts loading what a pick will open.
+  /** Starts loading what a pick will open. */
   warm?: () => void;
 }
 
@@ -15,14 +16,14 @@ export function Picker({
   label,
   button,
   items,
-  autoFocus,
+  autoFocus = false,
   className = "",
 }: {
   label: string;
   button: ReactNode;
   items: PickerItem[];
-  // The review remounts its header with what it opens, so the picker takes the focus back after a pick.
-  autoFocus: boolean;
+  /** For a host that remounts the picker with what a pick opens: the picker takes the focus back. */
+  autoFocus?: boolean;
   className?: string;
 }) {
   const [open, setOpen] = useState(false);
@@ -54,7 +55,7 @@ export function Picker({
     const step = { ArrowDown: 1, ArrowUp: -1 }[event.key];
     if (!step) return;
     event.preventDefault();
-    const rows = [...(root.current?.querySelectorAll<HTMLElement>(".picker-row") ?? [])];
+    const rows = [...(root.current?.querySelectorAll<HTMLElement>(".jj-picker-row") ?? [])];
     rows[
       Math.max(
         0,
@@ -64,10 +65,10 @@ export function Picker({
   };
 
   return (
-    <div className={`picker ${className}`} ref={root} onKeyDown={open ? keyDown : undefined}>
+    <div className={`jj-picker ${className}`} ref={root} onKeyDown={open ? keyDown : undefined}>
       <ToolButton
         ref={toggle}
-        className="picker-toggle"
+        className="jj-picker-toggle"
         autoFocus={autoFocus}
         aria-expanded={open}
         aria-controls={open ? id : undefined}
@@ -77,11 +78,11 @@ export function Picker({
         {button}
       </ToolButton>
       {open && (
-        <ol id={id} className="picker-menu" aria-label={label}>
+        <ol id={id} className="jj-picker-menu" aria-label={label}>
           {items.map((item) => (
             <li key={item.key}>
               <button
-                className="picker-row"
+                className="jj-picker-row"
                 aria-current={item.current}
                 {...intent(item.warm)}
                 onClick={() => {

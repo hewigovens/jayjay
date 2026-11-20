@@ -1,0 +1,188 @@
+:where(.jayjay-review) .jj-picker {
+  position: relative;
+}
+:where(.jayjay-review) .jj-picker-toggle {
+  grid-auto-flow: column;
+  gap: 4px;
+  padding: 0 6px;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
+  font-variant-numeric: tabular-nums;
+}
+:where(.jayjay-review) .jj-commit-picker {
+  border-bottom: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-commit-picker .jj-picker-toggle {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  height: auto;
+  min-height: 40px;
+  padding: 0 14px;
+  border-radius: 0;
+  color: var(--jj-muted);
+  text-align: left;
+}
+:where(.jayjay-review) .jj-commit-current {
+  flex: 1;
+  min-width: 0;
+  overflow: hidden;
+  color: var(--jj-ink);
+  font-size: calc(13px * var(--jj-interface-scale, 1));
+  font-weight: 600;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+@media (min-width: 681px) and (min-height: 501px) {
+  :where(.jayjay-review) .jj-commit-picker .jj-picker-menu {
+    right: auto;
+    left: 6px;
+  }
+}
+:where(.jayjay-review) .jj-picker-menu {
+  position: absolute;
+  z-index: 10;
+  top: calc(100% + 4px);
+  right: 0;
+  width: min(30rem, calc(100vw - 32px));
+  max-height: min(60vh, 28rem);
+  overflow: auto;
+  margin: 0;
+  padding: 4px;
+  list-style: none;
+  border: 1px solid var(--jj-border);
+  border-radius: 8px;
+  background: var(--jj-surface);
+  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
+}
+@media (max-width: 680px), (max-height: 500px) {
+  :where(.jayjay-review) .jj-picker-menu {
+    position: fixed;
+    top: auto;
+    right: 8px;
+    bottom: max(8px, env(safe-area-inset-bottom));
+    left: 8px;
+    width: auto;
+    max-height: 60dvh;
+    padding: 6px;
+    border-radius: 12px;
+    box-shadow: 0 -8px 32px rgb(0 0 0 / 0.2);
+  }
+}
+:where(.jayjay-review) .jj-picker-row {
+  display: grid;
+  grid-template-columns: auto minmax(0, 1fr);
+  column-gap: 8px;
+  width: 100%;
+  padding: 6px 8px;
+  border: 0;
+  border-radius: 5px;
+  background: none;
+  color: var(--jj-ink);
+  font: inherit;
+  font-size: calc(12px * var(--jj-interface-scale, 1));
+  text-align: left;
+  cursor: pointer;
+}
+:where(.jayjay-review) .jj-picker-row:hover,
+:where(.jayjay-review) .jj-picker-row:focus-visible {
+  background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
+  outline: none;
+}
+@media (hover: none) {
+  :where(.jayjay-review) .jj-picker-row {
+    min-height: 44px;
+  }
+}
+:where(.jayjay-review) .jj-picker-row[aria-current="true"] {
+  background: color-mix(in srgb, var(--jj-accent) 14%, transparent);
+}
+:where(.jayjay-review) .jj-picker-ref {
+  color: var(--jj-muted);
+  font: calc(11px * var(--jj-interface-scale, 1))/calc(18px * var(--jj-interface-scale, 1))
+    var(--jj-mono);
+}
+:where(.jayjay-review) .jj-picker-ref b {
+  color: var(--jj-accent);
+  font-weight: 650;
+}
+:where(.jayjay-review) .jj-picker-title {
+  grid-column: 2;
+  overflow: hidden;
+  color: var(--jj-ink);
+  font-weight: 600;
+  line-height: calc(18px * var(--jj-interface-scale, 1));
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-picker-title:first-child,
+:where(.jayjay-review) .jj-picker-title:first-child ~ .jj-picker-meta {
+  grid-column: 1 / -1;
+}
+:where(.jayjay-review) .jj-picker-all {
+  display: flex;
+  justify-content: space-between;
+}
+:where(.jayjay-review) .jj-picker-all > span {
+  color: var(--jj-muted);
+  font-weight: 400;
+}
+:where(.jayjay-review) .jj-picker-meta {
+  grid-column: 2;
+  display: flex;
+  align-items: center;
+  gap: 5px;
+  min-width: 0;
+  color: var(--jj-muted);
+  font-size: calc(11px * var(--jj-interface-scale, 1));
+  white-space: nowrap;
+}
+:where(.jayjay-review) .jj-picker-author {
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+/* The contents keep their width while the column opens and closes, so rows don't rewrap mid-animation. */
+:where(.jayjay-review) .jj-commit-sidebar {
+  display: flex;
+  flex-direction: column;
+  flex: none;
+  width: 0;
+  min-height: 0;
+  overflow: hidden;
+  background: var(--jj-page);
+  visibility: hidden;
+  transition:
+    width 0.2s ease,
+    visibility 0s 0.2s;
+}
+:where(.jayjay-review) .jj-commit-sidebar.jj-open {
+  width: var(--jj-commit-sidebar-width, 264px);
+  visibility: visible;
+  transition: width 0.2s ease;
+}
+@media (prefers-reduced-motion: reduce) {
+  :where(.jayjay-review) .jj-commit-sidebar,
+  :where(.jayjay-review) .jj-commit-sidebar.jj-open {
+    transition: none;
+  }
+}
+:where(.jayjay-review) .jj-commit-sidebar > * {
+  width: var(--jj-commit-sidebar-width, 264px);
+  border-right: 1px solid var(--jj-border);
+}
+:where(.jayjay-review) .jj-commit-sidebar .jj-picker-row {
+  padding-block: 8px;
+}
+:where(.jayjay-review) .jj-commit-sidebar ol {
+  flex: 1;
+  overflow: auto;
+  margin: 0;
+  padding: 0 6px 8px;
+  list-style: none;
+}
+@media (max-width: 680px), (max-height: 500px) {
+  :where(.jayjay-review) .jj-commit-sidebar {
+    display: none;
+  }
+}

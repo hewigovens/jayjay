@@ -63,6 +63,9 @@ export const ReviewModeIcon = () => (
 export const ChevronIcon = ({ open }: { open: boolean }) => (
   <Icon size={10} d={open ? "M4 6l4 4 4-4" : "M6 4l4 4-4 4"} />
 );
+export const CommitIcon = () => (
+  <Icon d="M8 10.5a2.5 2.5 0 1 0 0-5 2.5 2.5 0 0 0 0 5ZM1.5 8h4M10.5 8h4" />
+);
 export const FileIcon = () => <Icon d="M4 1.75h5.25L12.5 5v9.25H4V1.75ZM9 1.75V5.25h3.5" />;
 export const CopyIcon = () => (
   <Icon size={12} d="M5.5 5.5V2.75h7.75v7.75H10.5M2.75 5.5h7.75v7.75H2.75V5.5Z" />

@@ -1,7 +1,7 @@
+import { Picker } from "@jayjay/review-web/react";
 import type { Labels } from "@jayjay/review-web/types";
 import type { PullStackEntry } from "../../github/PullManifest";
 import { StackIcon } from "../icons";
-import { Picker } from "./Picker";
 
 export function StackPicker({
   stack,
@@ -34,9 +34,9 @@ export function StackPicker({
         pick: () => onSelect(entry.number),
         content: (
           <>
-            <code className="picker-ref">#{entry.number}</code>
-            <span className="picker-title">{entry.title}</span>
-            {state[entry.state] && <span className="picker-meta">{state[entry.state]}</span>}
+            <code className="jj-picker-ref">#{entry.number}</code>
+            <span className="jj-picker-title">{entry.title}</span>
+            {state[entry.state] && <span className="jj-picker-meta">{state[entry.state]}</span>}
           </>
         ),
       }))}

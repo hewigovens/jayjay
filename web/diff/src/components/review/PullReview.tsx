@@ -1,5 +1,7 @@
-import { useEffect, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import {
+  CommitPicker,
+  CommitSidebar,
   ReviewWorkspace,
   ToolButton,
   ToolLink,
@@ -10,6 +12,7 @@ import {
 import type { LocalReviewClient } from "@jayjay/review-web/local";
 import type { Labels } from "@jayjay/review-web/types";
 import type { AppearanceSettings } from "../../AppearanceSettings";
+import { commitEntries } from "../../github/commitEntries";
 import { GitHubSignIn } from "../../github/GitHubSignIn";
 import { PullLoader } from "../../github/PullLoader";
 import {
@@ -23,8 +26,6 @@ import { usePullReview } from "../../hooks/usePullReview";
 import { useReviewMode } from "../../hooks/useReviewMode";
 import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
-import { CommitPicker } from "./CommitPicker";
-import { CommitSidebar } from "./CommitSidebar";
 import { DiffThemePicker } from "./DiffThemePicker";
 import { ShareNotesButton } from "./ShareNotesButton";
 import { StackPicker } from "./StackPicker";
@@ -64,6 +65,7 @@ export function PullReview({
     onSignedIn,
     enableSync,
   } = usePullReview(client, labels, pull, reviewMode);
+  const entries = useMemo(() => commitEntries(commits), [commits]);
   const [shortcuts, setShortcuts] = useState(false);
   const [filesSlot, setFilesSlot] = useState<HTMLElement | null>(null);
   const picked = useRef<"commits" | "stack">(undefined);
@@ -160,8 +162,9 @@ export function PullReview({
         {review.result && commits.length > 1 && (
           <CommitSidebar
             open={sidebar}
-            commits={commits}
+            commits={entries}
             selected={pull.commit}
+            all
             labels={labels}
             onSelect={openCommit}
             onWarm={warmCommit}
@@ -186,8 +189,9 @@ export function PullReview({
           filesHeader={
             commits.length > 1 && (
               <CommitPicker
-                commits={commits}
+                commits={entries}
                 selected={pull.commit}
+                all
                 labels={labels}
                 autoFocus={picked.current === "commits"}
                 onSelect={(sha) => {
