@@ -57,8 +57,11 @@ export function isNotesExport(value: unknown): value is NotesExport {
     body.notes.every(
       (note) =>
         typeof note?.path === "string" &&
-        typeof note.body === "string" &&
-        Number.isSafeInteger(note.line),
+        (note.side === "old" || note.side === "new") &&
+        Number.isSafeInteger(note.line) &&
+        typeof note.status === "string" &&
+        typeof note.excerpt === "string" &&
+        typeof note.body === "string",
     ) &&
     body.files.every((file) => typeof file?.path === "string" && typeof file.review === "string")
   );

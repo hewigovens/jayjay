@@ -62,6 +62,8 @@ test("refuses bodies that are not an export or are too large", async () => {
     exports().create(new Request("https://x/api/exports", { method: "POST", body: text }));
   expect((await post("{}")).status).toBe(400);
   expect((await post(JSON.stringify({ ...body, review: "/../etc/pull/1" }))).status).toBe(400);
+  const { excerpt: _, ...unanchored } = body.notes[0];
+  expect((await post(JSON.stringify({ ...body, notes: [unanchored] }))).status).toBe(400);
   expect((await post(JSON.stringify({ ...body, title: "x".repeat(1024 * 1024) }))).status).toBe(
     413,
   );
