@@ -68,6 +68,31 @@ impl RepoWindow {
         cx.notify();
     }
 
+    /// Selects every visible file, keeping the primary file when it is still visible.
+    pub fn select_all_files(&mut self, cx: &mut Context<Self>) -> bool {
+        let Some(change_id) = self.file_select_change_id(cx) else {
+            return false;
+        };
+        let ordered = self.ordered_visible_file_paths(cx);
+        let primary = self
+            .vm
+            .read(cx)
+            .selected_hunk()
+            .map(|hunk| hunk.path.clone())
+            .filter(|path| ordered.contains(path))
+            .or_else(|| ordered.first().cloned());
+        let Some(primary) = primary else {
+            return false;
+        };
+        if let Some(primary_ix) = self.file_hunk_index(&primary, cx) {
+            self.focus_file(primary_ix, cx);
+        }
+        let selection = OrderedSelection::new(ordered, Some(primary.clone()), Some(primary));
+        self.set_file_multi_select(selection, Some(change_id), cx);
+        cx.notify();
+        true
+    }
+
     pub(crate) fn collapse_file_multi_select(&mut self, hunk_ix: usize, cx: &App) {
         let Some(path) = self.file_path_at(hunk_ix, cx) else {
             return;

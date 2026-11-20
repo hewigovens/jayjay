@@ -24,6 +24,16 @@ impl RepoWindow {
         }
 
         let m = &ev.keystroke.modifiers;
+        if ev.keystroke.key == "a"
+            && m.secondary(cx)
+            && !m.alt
+            && !m.shift
+            && !(m.platform && m.control)
+            && matches!(self.active_pane, ActivePane::FileColumn)
+            && self.diff.selection.is_none()
+        {
+            return self.select_all_files(cx);
+        }
         if m.platform || m.alt || m.control {
             return false;
         }

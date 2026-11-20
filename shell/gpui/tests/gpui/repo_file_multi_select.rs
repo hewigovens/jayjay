@@ -1,8 +1,8 @@
 use std::fs;
 
 use crate::harness::{install_test_globals, load_selected_change_files, settle_visual};
-use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext, px, size};
-use jayjay_gpui::repo::RepoWindow;
+use gpui::{Entity, Focusable, Modifiers, TestAppContext, VisualTestContext, px, size};
+use jayjay_gpui::repo::{ActivePane, RepoWindow};
 use jayjay_gpui::ui::context_menu::ContextMenuItem;
 use jj_test::{LinearFixture, run_jj_in};
 
@@ -274,6 +274,79 @@ fn space_toggles_review_marks_for_the_whole_selection(cx: &mut TestAppContext) {
             "{path} unmarked with the selection"
         );
     }
+}
+
+fn focus_file_list(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
+    view.update_in(cx, |view, window, cx| {
+        view.set_active_pane(ActivePane::FileColumn);
+        view.focus_handle(cx).focus(window, cx);
+    });
+}
+
+#[gpui::test]
+fn select_all_keeps_the_primary_file_and_space_marks_every_file(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_repo(cx);
+    click(&view, cx, "feature.txt", Modifiers::default());
+    focus_file_list(&view, cx);
+
+    cx.simulate_keystrokes("secondary-a");
+    assert_eq!(
+        selection(&view, cx),
+        ["README.md", "feature.txt", "wip1.txt", "wip2.txt"]
+    );
+    assert_eq!(primary_path(&view, cx).as_deref(), Some("feature.txt"));
+
+    cx.simulate_keystrokes("space");
+    settle_visual(cx);
+    for path in ["README.md", "feature.txt", "wip1.txt", "wip2.txt"] {
+        assert!(reviewed(&view, cx, path), "{path} marked with select all");
+    }
+}
+
+#[gpui::test]
+fn select_all_skips_files_under_collapsed_folders_and_leaves_text_fields_alone(
+    cx: &mut TestAppContext,
+) {
+    let fixture = LinearFixture::build();
+    fs::create_dir_all(fixture.path.join("src")).unwrap();
+    for path in ["src/a.txt", "src/b.txt", "top.txt"] {
+        fs::write(fixture.path.join(path), "new file\n").unwrap();
+    }
+    run_jj_in(&fixture.path, &["st"]);
+    install_test_globals(cx);
+    cx.update(|cx| jayjay_gpui::app::config::update(cx, |c| c.diff.tree_file_list = true));
+    let (view, cx) = cx.add_window_view(|_, cx| RepoWindow::new(fixture.path.clone(), cx));
+    load_selected_change_files(&view, cx);
+    settle_visual(cx);
+    click(&view, cx, "top.txt", Modifiers::default());
+    focus_file_list(&view, cx);
+    view.update_in(cx, |view, _, cx| view.toggle_dir("src".to_owned(), cx));
+
+    cx.simulate_keystrokes("secondary-a");
+    let selected = selection(&view, cx);
+    assert!(selected.contains(&"top.txt".to_owned()), "{selected:?}");
+    assert!(
+        selected.iter().all(|path| !path.starts_with("src/")),
+        "collapsed files stay out: {selected:?}"
+    );
+
+    view.update_in(cx, |view, _, cx| view.toggle_dir("src".to_owned(), cx));
+    click(&view, cx, "top.txt", Modifiers::default());
+    let toggle = cx
+        .debug_bounds("toggle-file-filter")
+        .expect("file filter button");
+    cx.simulate_click(toggle.center(), Modifiers::default());
+    settle_visual(cx);
+    let input = cx
+        .debug_bounds("file-filter-input")
+        .expect("file filter input");
+    cx.simulate_click(input.center(), Modifiers::default());
+    cx.simulate_keystrokes("secondary-a");
+    assert_eq!(
+        selection(&view, cx),
+        ["top.txt"],
+        "the filter field keeps its own select all"
+    );
 }
 
 #[gpui::test]
