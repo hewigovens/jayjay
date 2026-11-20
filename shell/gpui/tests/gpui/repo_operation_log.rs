@@ -201,13 +201,13 @@ fn the_diff_header_compacts_for_the_room_the_pane_leaves(cx: &mut TestAppContext
     cx.simulate_resize(size(px(1400.), px(900.)));
     view.update(cx, |view, cx| view.select_file(0, cx));
     settle_visual(cx);
-    let labelled = pane_width(cx, "toggle-mode");
+    let labelled = pane_width(cx, "mark-reviewed");
 
     click(cx, "toolbar-operation-log");
     assert!(cx.debug_bounds("operation-log-pane").is_some());
     assert!(
-        pane_width(cx, "toggle-mode") < labelled,
-        "the view-mode control drops its label once the pane narrows the diff"
+        pane_width(cx, "mark-reviewed") < labelled,
+        "Mark Reviewed drops its label once the pane narrows the diff"
     );
 }
 

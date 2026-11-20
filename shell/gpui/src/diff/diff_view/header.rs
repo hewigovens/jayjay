@@ -9,8 +9,8 @@ use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats, HunkType};
 use jayjay_review::ReviewFileRollup;
 
 use self::controls::*;
+pub(crate) use self::controls::{edit_diff_button, mode_label, view_mode_button};
 use self::path::*;
-use super::DiffViewMode;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::tag_for_hunk;
 use crate::diff::line_stats;
@@ -33,7 +33,6 @@ pub(super) struct ProjectionHeaderState<'a> {
 pub(super) struct FileHeaderState<'a> {
     pub(super) hunk: &'a DiffHunk,
     pub(super) line_stats: Option<&'a FileDiffStats>,
-    pub(super) view_mode: DiffViewMode,
     pub(super) projection: ProjectionHeaderState<'a>,
     pub(super) active_markdown_preview: bool,
     pub(super) can_render_markdown_preview: bool,
@@ -43,7 +42,6 @@ pub(super) struct FileHeaderState<'a> {
     pub(super) just_copied: bool,
     pub(super) html_external_url: Option<&'a str>,
     pub(super) can_edit_file: bool,
-    pub(super) can_edit_diff: bool,
     pub(super) file_review: Option<ReviewFileRollup>,
     pub(super) detail_width: f32,
     pub(super) focused: Option<FocusStop>,
@@ -180,21 +178,6 @@ pub(super) fn file_header(
     }
     if state.can_render_svg_preview {
         actions = actions.child(svg_preview_button(state.active_svg_preview, compact, t, cx));
-    }
-    actions = actions.child(view_mode_button(
-        state.view_mode,
-        compact,
-        state.focused == Some(FocusStop::DiffLayout),
-        t,
-        cx,
-    ));
-    if state.can_edit_diff {
-        actions = actions.child(edit_diff_button(
-            compact,
-            state.focused == Some(FocusStop::EditDiff),
-            t,
-            cx,
-        ));
     }
     if state.can_edit_file {
         actions = actions.child(file_editor_button(

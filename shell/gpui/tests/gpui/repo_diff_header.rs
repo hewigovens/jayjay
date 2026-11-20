@@ -53,7 +53,7 @@ fn diff_header_keeps_medium_repo_paths_visible(cx: &mut TestAppContext) {
 
     let path_bounds = cx.debug_bounds("diff-file-path").expect("path bounds");
     let copy = cx.debug_bounds("diff-copy-path").expect("copy path button");
-    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
+    let header = cx.debug_bounds("diff-header").expect("diff header");
     let advance = cx.cx.update(|cx| fonts::mono_advance(cx, px(13.)));
     let mono_estimate = f32::from(advance) * target.chars().count() as f32;
     let actual_width = f32::from(path_bounds.size.width);
@@ -62,8 +62,8 @@ fn diff_header_keeps_medium_repo_paths_visible(cx: &mut TestAppContext) {
         "path header width {actual_width} should track the text, mono estimate {mono_estimate}"
     );
     assert!(
-        mode.origin.x - (copy.origin.x + copy.size.width) > px(24.),
-        "copy button should stay with the path instead of pinning to the mode toggle"
+        header.right() - copy.right() > px(24.),
+        "copy button should stay with the path instead of pinning to the header's trailing edge"
     );
 }
 
@@ -97,11 +97,13 @@ fn diff_header_opens_working_copy_html_in_default_app(cx: &mut TestAppContext) {
     let button = cx
         .debug_bounds("open-html-external")
         .expect("html external-open button");
-    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
-    let gap = mode.origin.x - (button.origin.x + button.size.width);
+    let edit_file = cx
+        .debug_bounds("edit-working-copy-file")
+        .expect("edit file button");
+    let gap = edit_file.origin.x - button.right();
     assert!(
         gap >= px(0.) && gap <= px(8.),
-        "html external-open button should sit with the header actions, just before the mode toggle; gap was {gap:?}"
+        "html external-open button should sit with the header actions, just before Edit File; gap was {gap:?}"
     );
 
     cx.simulate_click(button.center(), Modifiers::default());
@@ -164,15 +166,31 @@ fn mutable_change_shows_description_pencil_and_header_edit_diff(cx: &mut TestApp
     let title = cx
         .debug_bounds("description-title")
         .expect("description title");
+    let byline = cx.debug_bounds("detail-metadata").expect("change byline");
     assert_eq!(pencil.origin.x, title.right() + px(8.));
-    assert!(
-        edit_diff.origin.y > pencil.origin.y,
-        "Edit Diff lives in the diff header below the description, got {edit_diff:?} vs {pencil:?}"
-    );
+    for (label, action) in [("Edit Diff", edit_diff), ("layout toggle", mode)] {
+        assert!(
+            action.top() >= byline.top() && action.bottom() <= byline.bottom(),
+            "{label} lives in the change byline, got {action:?} vs {byline:?}"
+        );
+    }
     assert!(
         edit_diff.origin.x > mode.origin.x,
         "Edit Diff should sit right of the view-mode toggle"
     );
+
+    let expand = cx
+        .debug_bounds("description-expansion")
+        .expect("description expansion");
+    cx.simulate_click(expand.center(), Modifiers::default());
+    settle_visual(cx);
+    assert!(cx.debug_bounds("detail-metadata-grid").is_some());
+    for selector in ["toggle-mode", "edit-diff"] {
+        assert!(
+            cx.debug_bounds(selector).is_some(),
+            "{selector} stays with the expanded description"
+        );
+    }
 }
 
 #[gpui::test]
@@ -342,11 +360,13 @@ fn svg_preview_button_toggles_rendered_svg(cx: &mut TestAppContext) {
     let toggle = cx
         .debug_bounds("toggle-svg-preview")
         .expect("svg preview toggle");
-    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
-    let gap = mode.origin.x - (toggle.origin.x + toggle.size.width);
+    let edit_file = cx
+        .debug_bounds("edit-working-copy-file")
+        .expect("edit file button");
+    let gap = edit_file.origin.x - toggle.right();
     assert!(
         gap >= px(0.) && gap <= px(8.),
-        "svg preview button should sit with the header actions, just before the mode toggle; gap was {gap:?}"
+        "svg preview button should sit with the header actions, just before Edit File; gap was {gap:?}"
     );
 
     view.read_with(cx, |view, cx| {
@@ -607,11 +627,13 @@ fn markdown_preview_button_toggles_rendered_markdown(cx: &mut TestAppContext) {
     let toggle = cx
         .debug_bounds("toggle-markdown-preview")
         .expect("markdown preview toggle");
-    let mode = cx.debug_bounds("toggle-mode").expect("mode toggle");
-    let gap = mode.origin.x - (toggle.origin.x + toggle.size.width);
+    let edit_file = cx
+        .debug_bounds("edit-working-copy-file")
+        .expect("edit file button");
+    let gap = edit_file.origin.x - toggle.right();
     assert!(
         gap >= px(0.) && gap <= px(8.),
-        "markdown preview button should sit with the header actions, just before the mode toggle; gap was {gap:?}"
+        "markdown preview button should sit with the header actions, just before Edit File; gap was {gap:?}"
     );
 
     view.read_with(cx, |view, cx| {

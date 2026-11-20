@@ -159,7 +159,6 @@ pub fn diff_view(
         FileHeaderState {
             hunk,
             line_stats: state.line_stats,
-            view_mode,
             projection: ProjectionHeaderState {
                 projection: state.effective_projection(),
                 view: state.projection_view,
@@ -172,7 +171,6 @@ pub fn diff_view(
             just_copied: state.path_just_copied,
             html_external_url: state.html_external_url,
             can_edit_file: state.can_edit_file,
-            can_edit_diff: state.can_edit_diff,
             file_review: state.file_review,
             detail_width: state.detail_width,
             focused: state.focused,

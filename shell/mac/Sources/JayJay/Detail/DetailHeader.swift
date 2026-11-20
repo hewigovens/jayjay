@@ -8,9 +8,13 @@ extension ChangeDetailView {
 
     @ViewBuilder var metadataSection: some View {
         if descriptionExpanded.wrappedValue {
-            metadataGrid
-                .matchedGeometryEffect(id: "metadata", in: metadataAnimation, properties: .position, anchor: .topLeading)
-                .transition(.identity)
+            HStack(alignment: .bottom, spacing: 8) {
+                metadataGrid
+                Spacer(minLength: 0)
+                diffActions
+            }
+            .matchedGeometryEffect(id: "metadata", in: metadataAnimation, properties: .position, anchor: .topLeading)
+            .transition(.identity)
         } else {
             byline
                 .matchedGeometryEffect(id: "metadata", in: metadataAnimation, properties: .position, anchor: .topLeading)
@@ -110,6 +114,7 @@ extension ChangeDetailView {
                     .foregroundStyle(.secondary)
             }
             Spacer(minLength: 8)
+            diffActions
             if let visibleDiffStats {
                 diffStatsView(visibleDiffStats)
             }
@@ -217,6 +222,7 @@ extension ChangeDetailView {
                 .foregroundStyle(.secondary)
             compareLabel(comparison?.display?.to ?? String(detailRevision.prefix(8)))
             Spacer()
+            diffActions
             Text(Localized.Repo.filesChangedCount(count: detail.diff.count))
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)

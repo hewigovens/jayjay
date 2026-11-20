@@ -293,6 +293,11 @@ fn compare_with_selected_compares_the_selected_change_to_the_menu_target(cx: &mu
         assert!(vm.error.is_none(), "{:?}", vm.error);
         assert!(vm.files.as_ref().is_some_and(|files| !files.is_empty()));
     });
+    settle_visual(cx);
+    assert!(
+        cx.debug_bounds("toggle-mode").is_some(),
+        "the compare banner keeps the layout toggle"
+    );
 }
 
 #[gpui::test]

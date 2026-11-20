@@ -5,7 +5,7 @@ use gpui::{
 
 use super::super::{ConflictResolution, DiffRichPreviewKind, RepoWindow};
 use super::description;
-use super::header::{DetailHeaderState, detail_header};
+use super::header::{DetailHeaderState, DiffActions, detail_header};
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view, stale_notes_banner};
 use crate::ui::icons::{self, glyph};
@@ -17,7 +17,6 @@ pub(crate) fn detail_pane(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let can_edit_file = view.can_edit_selected_working_copy_file(cx);
-    let can_edit_diff = view.can_enter_diff_edit(cx);
     let file_review = view.selected_file_review(cx);
     let viewport_width = f32::from(window.viewport_size().width);
     let (_, file_column_width) = view.layout.fitted(viewport_width);
@@ -129,7 +128,6 @@ pub(crate) fn detail_pane(
         path_just_copied,
         can_resolve_conflict: compare.is_none(),
         can_edit_file,
-        can_edit_diff,
         file_review,
         detail_width,
         selected_file_has_conflict,
@@ -175,10 +173,15 @@ pub(crate) fn change_header(
     window: &mut Window,
     cx: &mut Context<RepoWindow>,
 ) -> Option<AnyElement> {
+    let can_edit_diff = view.can_enter_diff_edit(cx);
     let vm = view.vm.read(cx);
     if vm.selection_without_diff_count().is_some() {
         return None;
     }
+    let diff_actions = DiffActions {
+        view_mode: vm.selected_hunk().map(|_| vm.effective_view_mode()),
+        can_edit_diff,
+    };
     let change = vm.selected_change()?.clone();
     let divergent_versions = vm
         .graph
@@ -209,6 +212,7 @@ pub(crate) fn change_header(
                 window.viewport_size().height,
             ),
             detail_width: width,
+            diff_actions,
         },
         t,
         cx,

@@ -2,7 +2,7 @@ mod byline;
 mod cells;
 mod grid;
 
-use gpui::{AnyElement, Context};
+use gpui::{AnyElement, Context, IntoElement, ParentElement, Styled, div, px};
 
 use super::DetailHeaderState;
 use crate::app::theme::Theme;
@@ -18,23 +18,22 @@ pub(super) fn metadata_block(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     if expanded {
-        grid(
-            state.change,
-            state.stats,
-            state.recently_copied,
-            state.bookmarks,
-            t,
-            cx,
-        )
+        div()
+            .flex()
+            .flex_row()
+            .items_end()
+            .pr(px(DETAIL_INSET))
+            .child(div().flex_1().min_w_0().child(grid(
+                state.change,
+                state.stats,
+                state.recently_copied,
+                state.bookmarks,
+                t,
+                cx,
+            )))
+            .children(state.diff_actions.render(false, state.focused, t, cx))
+            .into_any_element()
     } else {
-        byline(
-            state.change,
-            state.stats,
-            state.recently_copied,
-            state.bookmarks,
-            state.detail_width - 2. * DETAIL_INSET,
-            t,
-            cx,
-        )
+        byline(state, t, cx)
     }
 }

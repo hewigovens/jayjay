@@ -1,4 +1,5 @@
 mod compare;
+mod diff_actions;
 mod divergent;
 mod metadata;
 
@@ -15,6 +16,7 @@ use crate::app::theme::Theme;
 use crate::repo::RepoWindow;
 use crate::repo::window::FocusStop;
 use compare::compare_banner;
+pub(super) use diff_actions::DiffActions;
 use divergent::divergent_bar;
 use metadata::metadata_block;
 
@@ -30,6 +32,7 @@ pub(super) struct DetailHeaderState<'a> {
     pub focused: Option<FocusStop>,
     pub expanded_description_height: Pixels,
     pub detail_width: f32,
+    pub diff_actions: DiffActions,
 }
 
 pub(super) fn detail_header(
@@ -43,7 +46,13 @@ pub(super) fn detail_header(
             .flex()
             .flex_col()
             .bg(rgb(t.detail_bg))
-            .child(compare_banner(compare, state.file_count, t, cx))
+            .child(compare_banner(
+                compare,
+                state.file_count,
+                state.diff_actions.render(false, state.focused, t, cx),
+                t,
+                cx,
+            ))
             .into_any_element();
     }
 

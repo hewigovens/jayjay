@@ -125,15 +125,11 @@ pub(super) fn header_reserved_width(
             11.,
         );
     }
-    reserved += action(&super::controls::mode_label(state.view_mode));
     if state.file_review.is_some() {
         reserved += action(&jayjay_i18n::diff::mark_reviewed());
     }
     if state.can_edit_file {
         reserved += action(&jayjay_i18n::diff::edit_file());
-    }
-    if state.can_edit_diff {
-        reserved += action(&jayjay_i18n::diff::edit_diff());
     }
     if state.is_annotating {
         reserved += 100.;

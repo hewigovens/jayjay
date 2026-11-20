@@ -22,7 +22,7 @@ shell/mac/
 │   │       ├── Core/       RepoViewModel, +Refresh, +Selection, +AsyncSupport, +WindowActivity, StatusBarSnapshot
 │   │       └── Actions/    +ChangeActions, +BookmarkActions, +FileActions, +GitActions, +Rebase,
 │   │                       +Evolog, +CommitMessage, +WorkspaceActions
-│   ├── Detail/         DetailView, ChangeDetailView (+PreviewColumn, +State, +ReviewState),
+│   ├── Detail/         DetailView, ChangeDetailView (+PreviewColumn, +DiffActions, +State, +ReviewState),
 │   │   │               DetailHeader, DetailDescription, ReviewNotesSection, SplitSheet,
 │   │   │               AnnotateView, FileHistoryView
 │   │   ├── FileList/       FileColumn (+Actions, +Selection), FileRow, TreeFileList

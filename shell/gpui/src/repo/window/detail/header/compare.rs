@@ -13,6 +13,7 @@ use crate::ui::icons::{glyph, icon};
 pub(super) fn compare_banner(
     compare: &CompareState,
     file_count: Option<usize>,
+    diff_actions: Option<AnyElement>,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
@@ -36,7 +37,8 @@ pub(super) fn compare_banner(
         .child(compare_label(&compare.display.from, t))
         .child(icon(glyph::ARROW_RIGHT, 10., t.fg_dim))
         .child(compare_label(&compare.display.to, t))
-        .child(div().flex_1());
+        .child(div().flex_1())
+        .children(diff_actions);
 
     if let Some(file_count) = file_count {
         row = row.child(
