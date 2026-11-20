@@ -60,9 +60,7 @@ export function FileHeader({
                   state={file.review === "reviewed" ? "reviewed" : "unreviewed"}
                   size={14}
                 />
-                <span className="jj-label">
-                  {file.review === "reviewed" ? labels.reviewed : labels.markReviewed}
-                </span>
+                <span className="jj-label">{labels.reviewed}</span>
               </label>
             )}
             {controls}

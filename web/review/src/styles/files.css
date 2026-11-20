@@ -77,14 +77,14 @@
   align-items: center;
   gap: 8px;
   min-height: 30px;
-  padding-right: 8px;
   border-radius: 8px;
 }
 :where(.jayjay-review) :is(.jj-folder-row, .jj-file-row) {
   position: relative;
   padding-left: var(--jj-row-indent);
+  padding-right: 8px;
 }
-/* A hairline between rows, inset past the row's leading controls. */
+/* A hairline between rows, inset past the row's status badge. */
 :where(.jayjay-review)
   :is(.jj-folder-row, .jj-file-row)
   + :is(.jj-folder-row, .jj-file-row)::before {
@@ -92,11 +92,8 @@
   position: absolute;
   top: 0;
   right: -6px;
-  left: calc(var(--jj-row-indent) + var(--jj-toggle-size, 16px) + 22px);
-  border-top: 1px solid var(--jj-border);
-}
-:where(.jayjay-review) .jj-marks-off .jj-file-row::before {
   left: calc(var(--jj-row-indent) + 24px);
+  border-top: 1px solid var(--jj-border);
 }
 :where(.jayjay-review) :is(.jj-folder-row, .jj-file-row) + .jj-folder-row::before {
   left: calc(var(--jj-row-indent) + 14px);
@@ -175,24 +172,6 @@
   overflow: hidden;
   text-overflow: ellipsis;
 }
-:where(.jayjay-review) .jj-kind-dot {
-  flex: none;
-  width: 6px;
-  height: 6px;
-  margin-top: 5px;
-  border-radius: 50%;
-  background: var(--jj-kind-modified);
-}
-:where(.jayjay-review) .jj-kind-dot.jj-added,
-:where(.jayjay-review) .jj-kind-dot.jj-copied {
-  background: var(--jj-kind-added);
-}
-:where(.jayjay-review) .jj-kind-dot.jj-removed {
-  background: var(--jj-kind-removed);
-}
-:where(.jayjay-review) .jj-kind-dot.jj-renamed {
-  background: var(--jj-kind-renamed);
-}
 :where(.jayjay-review) .jj-seti {
   display: flex;
   justify-content: center;
@@ -240,7 +219,7 @@
   height: 100%;
 }
 :where(.jayjay-review) .jj-review-toggle:has(> input:focus-visible) {
-  border-radius: 50%;
+  border-radius: 4px;
   outline: 2px solid var(--jj-accent);
   outline-offset: 1px;
 }
@@ -251,7 +230,7 @@
 :where(.jayjay-review) .jj-review-toggle[data-state="changed_since_review"] {
   color: var(--jj-reviewed-ink);
 }
-:where(.jayjay-review) .jj-review-icon[data-state="reviewed"] .jj-review-check {
+:where(.jayjay-review) .jj-review-check {
   stroke: var(--jj-surface);
 }
 :where(.jayjay-review) .jj-review-toggle > input:disabled {

@@ -128,8 +128,8 @@ test("gives each file kind its own colour and shows the open file icon", async (
   });
   await ready(page);
   const colours = await page
-    .locator(".jj-kind-dot")
-    .evaluateAll((dots) => dots.map((dot) => getComputedStyle(dot).backgroundColor));
+    .locator(".jj-file-row .jj-kind-badge")
+    .evaluateAll((badges) => badges.map((badge) => getComputedStyle(badge).color));
   expect(new Set(colours).size).toBe(4);
   await expect(page.locator(".jj-file-title .jj-seti")).toHaveCount(1);
   expect(

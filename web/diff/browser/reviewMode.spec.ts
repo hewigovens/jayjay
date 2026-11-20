@@ -3,7 +3,7 @@ import { openPull } from "./pullFixture";
 
 test.use({ storageState: { cookies: [], origins: [] } });
 
-test("review mode starts off with status badges, and turning it on brings back the marks", async ({
+test("review mode starts off without marks, and turning it on brings them back", async ({
   page,
 }) => {
   await page.setViewportSize({ width: 1280, height: 850 });
@@ -17,7 +17,6 @@ test("review mode starts off with status badges, and turning it on brings back t
   await expect(sync).toHaveCount(0);
 
   await files.getByRole("button", { name: "Turn on review mode", exact: true }).click();
-  await expect(files.locator(".jj-kind-badge")).toHaveCount(0);
   await expect(mark).toHaveCount(2);
   await expect(page.locator(".jj-group-toggle")).toHaveCount(1);
   await expect(sync).toHaveCount(1);

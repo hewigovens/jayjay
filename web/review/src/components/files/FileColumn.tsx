@@ -89,15 +89,6 @@ function FileRow({
       style={{ "--jj-row-indent": `${8 + depth * 12}px` } as CSSProperties}
       {...menu(file.path, [index])}
     >
-      {marks && (
-        <ReviewToggle
-          review={file.review}
-          path={file.path}
-          labels={labels}
-          disabled={disabled}
-          toggle={() => toggle([index])}
-        />
-      )}
       {/* Safari leaves a clicked button unfocused, and Space needs it focused. */}
       <button
         className="jj-file-select"
@@ -117,11 +108,7 @@ function FileRow({
           if (!event.repeat && !disabled) mark(index, event.currentTarget);
         }}
       >
-        {marks ? (
-          <span className={`jj-kind-dot jj-${kind}`} title={labels[`kind.${kind}`]} />
-        ) : (
-          <KindBadge kind={kind} label={labels[`kind.${kind}`]} />
-        )}
+        <KindBadge kind={kind} label={labels[`kind.${kind}`]} />
         <span className="jj-file-text">
           <span className="jj-file-name">
             {name}
@@ -146,6 +133,15 @@ function FileRow({
           )}
         </span>
       </button>
+      {marks && (
+        <ReviewToggle
+          review={file.review}
+          path={file.path}
+          labels={labels}
+          disabled={disabled}
+          toggle={() => toggle([index])}
+        />
+      )}
     </div>
   );
 }
@@ -297,7 +293,7 @@ export function FileColumn({
   }
 
   return (
-    <aside className={`jj-file-column ${marks ? "" : "jj-marks-off"}`} aria-label={labels.files}>
+    <aside className="jj-file-column" aria-label={labels.files}>
       {header}
       <div className="jj-pane-heading jj-file-tools">
         {notes && (activeNotes > 0 || onlyNotes) && (
@@ -401,9 +397,14 @@ export function FileColumn({
                     style={{ "--jj-row-indent": `${6 + entry.depth * 12}px` } as CSSProperties}
                     {...rowMenu(entry.path, inside)}
                   >
-                    {/* The review toggle sits between two halves of the folder button; this half is for the pointer only. */}
-                    <button tabIndex={-1} aria-hidden="true" onClick={() => folder(entry.path)}>
+                    <button
+                      className="jj-folder-name"
+                      aria-expanded={open}
+                      onClick={() => folder(entry.path)}
+                    >
                       <ChevronIcon open={open} />
+                      <FolderIcon />
+                      <span>{entry.name}</span>
                     </button>
                     {marks && (
                       <ReviewToggle
@@ -414,14 +415,6 @@ export function FileColumn({
                         toggle={() => toggle(inside)}
                       />
                     )}
-                    <button
-                      className="jj-folder-name"
-                      aria-expanded={open}
-                      onClick={() => folder(entry.path)}
-                    >
-                      <FolderIcon />
-                      <span>{entry.name}</span>
-                    </button>
                   </div>
                 );
               }

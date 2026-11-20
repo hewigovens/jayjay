@@ -13,12 +13,26 @@ export function ReviewStateIcon({ state, size = 16 }: { state: ReviewState; size
       aria-hidden="true"
     >
       {reviewed ? (
-        <circle cx="12" cy="12" r="11" fill="currentColor" />
+        <rect x="2" y="2" width="20" height="20" rx="5" fill="currentColor" />
       ) : (
-        <circle cx="12" cy="12" r="10" fill="none" stroke="currentColor" strokeWidth="2" />
+        <rect
+          x="3"
+          y="3"
+          width="18"
+          height="18"
+          rx="4"
+          fill="none"
+          stroke="currentColor"
+          strokeWidth="2"
+        />
       )}
-      {state === "changed_since_review" && <path d="M12 2a10 10 0 0 0 0 20z" fill="currentColor" />}
-      {(reviewed || state === "partial") && (
+      {state === "changed_since_review" && (
+        <path d="M12 3H7a4 4 0 0 0-4 4v10a4 4 0 0 0 4 4h5z" fill="currentColor" />
+      )}
+      {state === "partial" && (
+        <path d="M8 12h8" stroke="currentColor" strokeWidth="2.5" strokeLinecap="round" />
+      )}
+      {reviewed && (
         <path
           className="jj-review-check"
           d="M20 6 9 17l-5-5"
