@@ -115,6 +115,35 @@ fn refresh_working_copy_respects_git_excludes_file() {
 }
 
 #[test]
+fn snapshot_tracks_only_new_files_matching_the_auto_track_setting() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    run_jj_in(
+        &repo_path,
+        &[
+            "config",
+            "set",
+            "--repo",
+            "snapshot.auto-track",
+            "glob:*.rs",
+        ],
+    );
+    fs::write(repo_path.join("tracked.rs"), "fn main() {}\n").expect("write matching file");
+    fs::write(repo_path.join("notes.txt"), "scratch\n").expect("write unmatched file");
+
+    let repo = Repo::open(&repo_path).expect("open repo");
+    repo.refresh_working_copy().expect("snapshot working copy");
+
+    let current = repo.show("@").expect("show working copy");
+    let tracked = |path: &str| current.diff.iter().any(|hunk| hunk.path == path);
+    assert!(tracked("tracked.rs"), "a matching new file is tracked");
+    assert!(
+        !tracked("notes.txt"),
+        "an unmatched new file stays untracked"
+    );
+}
+
+#[test]
 fn working_copy_event_filter_respects_local_gitignore() {
     let temp_dir = init_jj_repo();
     let repo_path = temp_dir.path().join("repo");
