@@ -6,7 +6,19 @@ extension ChangeDetailView {
         let sideBySide = appSettings.sideBySideDiff
         let toggleLayout = { appSettings.sideBySideDiff.toggle() }
         let openDiffEdit = { paneMode = .diffEdit }
+        let showAllFiles = { fileSelection = FileSelection() }
         return HStack(spacing: 2) {
+            if appSettings.showAllFileDiffs, !fileSelection.paths.isEmpty, filteredDiff.count > 1 {
+                Button(action: showAllFiles) {
+                    HStack(spacing: 4) {
+                        Image(systemName: "rectangle.grid.1x2")
+                        Text(Localized.Repo.showAllFiles)
+                    }
+                }
+                .keyboardFocusStop(.showAllFiles, action: showAllFiles)
+                .help(Localized.Repo.returnToAllFileDiffs)
+                .accessibilityIdentifier(AID.Diff.showAllFiles)
+            }
             Button(action: toggleLayout) {
                 HStack(spacing: 4) {
                     Image(systemName: sideBySide ? "rectangle.split.2x1" : "text.justify")

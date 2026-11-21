@@ -13,6 +13,7 @@ final class DiffEditViewModel {
     let onDone: () -> Void
 
     let core = JayJayCore.DiffEditSession()
+    let cardHeights = StackedDiffHeights()
     let fileSelectionByPath: [String: DiffEditFileSelectionState]
 
     var loadedFiles: [String: DiffEditFile] = [:]

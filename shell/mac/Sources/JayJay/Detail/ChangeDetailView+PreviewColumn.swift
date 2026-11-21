@@ -76,7 +76,8 @@ extension ChangeDetailView {
                 lineStats: fileStats?.value?[hunk.path],
                 fitsContent: stacked,
                 showsSharedActions: false,
-                onShowAlone: stacked ? { selectSingleFile(hunk.path) } : nil
+                onShowAlone: stacked ? { selectSingleFile(hunk.path) } : nil,
+                stackedHeights: stacked ? stackedHeights : nil
             )
             // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
             .id("\(detail.info.commitId.id)|\(hunk.oldPath ?? "")|\(hunk.path)")

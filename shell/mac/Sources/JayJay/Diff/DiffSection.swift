@@ -31,6 +31,7 @@ struct DiffSection: View {
     var showsSharedActions = true
     /// Set in a stack of files, where a large diff folds to a row that opens it alone.
     var onShowAlone: (() -> Void)?
+    var stackedHeights: StackedDiffHeights?
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
@@ -59,8 +60,10 @@ struct DiffSection: View {
                 expansionErrorBanner(message)
                     .padding(.bottom, 8)
             }
-            diffContent
+            // Without the stack, a diff that has nothing to show yet has no view to take the height.
+            ZStack { diffContent }
                 .frame(height: fitsContent ? stackedContentHeight : nil)
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackedHeights?.record($0, of: hunk.path, in: commitId) }
         }
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()

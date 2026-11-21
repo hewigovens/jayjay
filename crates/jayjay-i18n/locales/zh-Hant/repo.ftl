@@ -237,6 +237,7 @@ repo-no-files-with-review-notes = 沒有帶審查備註的檔案
 repo-no-file-has-an-open-review-note = 此變更中沒有檔案帶有未解決的審查備註。
 repo-no-matching-file-has-an-open-review-note = 符合「{ $query }」的檔案都沒有未解決的審查備註。
 repo-show-all-files = 顯示所有檔案
+repo-return-to-all-file-diffs = 返回所有檔案的差異
 repo-show-git-lfs-files = 顯示 Git LFS 檔案
 repo-only-git-managed-changes-hidden = 僅隱藏了 Git 管理的變更
 repo-only-git-lfs-backed-files-hidden = 僅隱藏了 Git LFS 檔案

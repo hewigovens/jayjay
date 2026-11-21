@@ -112,6 +112,7 @@ enum AID {
         static let addReviewNote = "diff.addReviewNote"
         static let markReviewed = "diff.markReviewed"
         static let showLargeDiff = "diff.showLargeDiff"
+        static let showAllFiles = "diff.showAllFiles"
     }
 
     enum ReviewNote {

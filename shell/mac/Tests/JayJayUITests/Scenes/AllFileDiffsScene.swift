@@ -27,6 +27,11 @@ final class AllFileDiffsScene: SceneBase {
         XCTAssertTrue(root.wait(for: \.isSelected, toEqual: false, timeout: 5), "Escape did not return to every diff")
         XCTAssertTrue(stackedBelowRoot.waitForExistence(timeout: 5))
 
+        root.click()
+        app.buttons[AID.Diff.showAllFiles].click()
+        XCTAssertTrue(root.wait(for: \.isSelected, toEqual: false, timeout: 5), "Show All Files did not return to every diff")
+        XCTAssertTrue(stackedBelowRoot.waitForExistence(timeout: 5))
+
         keyStroke(.end)
         let showLargeDiff = app.buttons[AID.Diff.showLargeDiff]
         XCTAssertTrue(showLargeDiff.waitForExistence(timeout: 10), "A large diff was not folded in the stack")

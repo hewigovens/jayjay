@@ -277,7 +277,11 @@ extension DiffSection {
         if foldsLargeDiff {
             return 44
         }
-        return fittedDiffHeight == nil ? 320 : nil
+        return fittedDiffHeight == nil ? (awaitsDiffText ? stackedHeights?.height(of: hunk.path, in: commitId) : nil) ?? 320 : nil
+    }
+
+    private var awaitsDiffText: Bool {
+        loadError == nil && (isComputing || loadedPath != hunk.path || fileDiff?.lines.isEmpty == false)
     }
 
     func canUseSideBySide(_ diff: FileDiff) -> Bool {

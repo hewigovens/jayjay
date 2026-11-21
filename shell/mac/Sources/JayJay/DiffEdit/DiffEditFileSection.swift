@@ -8,6 +8,7 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
     var commitId: String?
     let repo: JayJayRepo?
     let diffStore: DiffStore
+    let heights: StackedDiffHeights
     let selection: DiffEditFileSelectionState
     let stats: FileDiffStats?
     let isCollapsed: Bool
@@ -48,6 +49,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             header
             if !isCollapsed {
                 content
+                    .frame(height: awaitsMeasuredHeight ? heights.height(of: hunk.path, in: commitId) : nil)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { heights.record($0, of: hunk.path, in: commitId) }
             }
         }
         .padding(14)
@@ -119,6 +122,10 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var awaitsMeasuredHeight: Bool {
+        measuredHeight == nil && loadError == nil && (loadedKey == nil || displayDiff != nil)
     }
 
     @ViewBuilder

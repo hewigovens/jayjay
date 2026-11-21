@@ -43,6 +43,7 @@ struct DiffEditView: View {
                                 commitId: session.sessionCommit,
                                 repo: session.repo,
                                 diffStore: session.diffStore,
+                                heights: session.cardHeights,
                                 selection: session.fileSelection(for: hunk.path),
                                 stats: session.fileStats[hunk.path],
                                 isCollapsed: session.collapsedPaths.contains(hunk.path),
