@@ -178,7 +178,6 @@ impl RepoWindow {
         else {
             return;
         };
-        self.operation_log.undoing = None;
         Self::spawn_ok(cx, task, |view, operation, cx| {
             view.present_toast(
                 jayjay_i18n::oplog::restored_operation().into(),
