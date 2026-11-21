@@ -52,63 +52,6 @@
   font-size: calc(11px * var(--jj-interface-scale, 1));
   color: var(--jj-muted);
 }
-.picker {
-  position: relative;
-}
-.picker-toggle {
-  grid-auto-flow: column;
-  gap: 4px;
-  padding: 0 6px;
-  font-size: calc(12px * var(--jj-interface-scale, 1));
-  font-variant-numeric: tabular-nums;
-}
-.commit-picker {
-  border-bottom: 1px solid var(--jj-border);
-}
-.commit-picker .picker-toggle {
-  display: flex;
-  align-items: center;
-  gap: 8px;
-  width: 100%;
-  height: auto;
-  min-height: 40px;
-  padding: 0 14px;
-  border-radius: 0;
-  color: var(--jj-muted);
-  text-align: left;
-}
-.commit-current {
-  flex: 1;
-  min-width: 0;
-  overflow: hidden;
-  color: var(--jj-ink);
-  font-size: calc(13px * var(--jj-interface-scale, 1));
-  font-weight: 600;
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-@media (min-width: 681px) and (min-height: 501px) {
-  .commit-picker .picker-menu {
-    right: auto;
-    left: 6px;
-  }
-}
-.picker-menu {
-  position: absolute;
-  z-index: 10;
-  top: calc(100% + 4px);
-  right: 0;
-  width: min(30rem, calc(100vw - 32px));
-  max-height: min(60vh, 28rem);
-  overflow: auto;
-  margin: 0;
-  padding: 4px;
-  list-style: none;
-  border: 1px solid var(--jj-border);
-  border-radius: 8px;
-  background: var(--jj-surface);
-  box-shadow: 0 8px 24px rgb(0 0 0 / 0.14);
-}
 @media (max-width: 680px), (max-height: 500px) {
   .share-feedback {
     position: fixed;
@@ -118,90 +61,6 @@
     left: 16px;
     width: auto;
   }
-  .picker-menu {
-    position: fixed;
-    top: auto;
-    right: 8px;
-    bottom: max(8px, env(safe-area-inset-bottom));
-    left: 8px;
-    width: auto;
-    max-height: 60dvh;
-    padding: 6px;
-    border-radius: 12px;
-    box-shadow: 0 -8px 32px rgb(0 0 0 / 0.2);
-  }
-}
-.picker-row {
-  display: grid;
-  grid-template-columns: auto minmax(0, 1fr);
-  column-gap: 8px;
-  width: 100%;
-  padding: 6px 8px;
-  border: 0;
-  border-radius: 5px;
-  background: none;
-  color: var(--jj-ink);
-  font: inherit;
-  font-size: calc(12px * var(--jj-interface-scale, 1));
-  text-align: left;
-  cursor: pointer;
-}
-.picker-row:hover,
-.picker-row:focus-visible {
-  background: color-mix(in srgb, var(--jj-ink) 7%, transparent);
-  outline: none;
-}
-@media (hover: none) {
-  .picker-row {
-    min-height: 44px;
-  }
-}
-.picker-row[aria-current="true"] {
-  background: color-mix(in srgb, var(--jj-accent) 14%, transparent);
-}
-.picker-ref {
-  color: var(--jj-muted);
-  font: calc(11px * var(--jj-interface-scale, 1))/calc(18px * var(--jj-interface-scale, 1))
-    var(--jj-mono);
-}
-.picker-ref b {
-  color: var(--jj-accent);
-  font-weight: 650;
-}
-.picker-title {
-  grid-column: 2;
-  overflow: hidden;
-  color: var(--jj-ink);
-  font-weight: 600;
-  line-height: calc(18px * var(--jj-interface-scale, 1));
-  text-overflow: ellipsis;
-  white-space: nowrap;
-}
-.picker-title:first-child,
-.picker-title:first-child ~ .picker-meta {
-  grid-column: 1 / -1;
-}
-.picker-all {
-  display: flex;
-  justify-content: space-between;
-}
-.picker-all > span {
-  color: var(--jj-muted);
-  font-weight: 400;
-}
-.picker-meta {
-  grid-column: 2;
-  display: flex;
-  align-items: center;
-  gap: 5px;
-  min-width: 0;
-  color: var(--jj-muted);
-  font-size: calc(11px * var(--jj-interface-scale, 1));
-  white-space: nowrap;
-}
-.picker-author {
-  overflow: hidden;
-  text-overflow: ellipsis;
 }
 
 .pull-brand {
@@ -216,6 +75,7 @@
 
 .pull-page {
   --sidebar-width: 264px;
+  --jj-commit-sidebar-width: var(--sidebar-width);
 }
 .pull-app-bar {
   display: flex;
@@ -299,49 +159,14 @@
   gap: 8px;
   margin-left: auto;
 }
-/* The contents keep their width while the column opens and closes, so rows don't rewrap mid-animation. */
-.commit-sidebar {
-  display: flex;
-  flex-direction: column;
-  flex: none;
-  width: 0;
-  min-height: 0;
-  overflow: hidden;
-  background: var(--jj-page);
-  visibility: hidden;
-  transition:
-    width 0.2s ease,
-    visibility 0s 0.2s;
-}
-.commit-sidebar.open {
-  width: var(--sidebar-width);
-  visibility: visible;
-  transition: width 0.2s ease;
-}
 @media (prefers-reduced-motion: reduce) {
-  .pull-app-lead,
-  .commit-sidebar,
-  .commit-sidebar.open {
+  .pull-app-lead {
     transition: none;
   }
 }
-.commit-sidebar > * {
-  width: var(--sidebar-width);
-  border-right: 1px solid var(--jj-border);
-}
-.commit-sidebar .picker-row {
-  padding-block: 8px;
-}
-.commit-sidebar ol {
-  flex: 1;
-  overflow: auto;
-  margin: 0;
-  padding: 0 6px 8px;
-  list-style: none;
-}
 /* The sidebar owns the commit list while it is open; phones keep the picker. */
 @media (min-width: 681px) and (min-height: 501px) {
-  .pull-page:has(.commit-sidebar.open) .commit-picker {
+  .pull-page:has(.jj-commit-sidebar.jj-open) .jj-commit-picker {
     display: none;
   }
 }
@@ -353,7 +178,6 @@
     padding: 4px 6px;
   }
   .pull-repo,
-  .commit-sidebar,
   .commit-sidebar-toggle {
     display: none;
   }

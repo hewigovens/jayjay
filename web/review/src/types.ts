@@ -1,4 +1,5 @@
 export type { ReviewBackend, ReviewSelection } from "./model/backend";
+export type { CommitEntry } from "./model/commits";
 export type { DiffAnchor, DiffCell, DiffSpan, DiffView, Labels } from "./model/diff";
 export type {
   AvatarSource,

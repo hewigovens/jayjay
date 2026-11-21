@@ -10,4 +10,5 @@
 @import "./styles/images.css";
 @import "./styles/dialog.css";
 @import "./styles/shortcuts.css";
+@import "./styles/commits.css";
 @import "./generated/diffThemes.css";
