@@ -184,7 +184,7 @@ impl RepoWindow {
     }
 }
 
-fn hunk_supports_file_editor(hunk: &DiffHunk) -> bool {
+pub(crate) fn hunk_supports_file_editor(hunk: &DiffHunk) -> bool {
     hunk.hunk_type != HunkType::Removed
         && hunk.projection.is_none()
         && hunk.new.preview.is_none()

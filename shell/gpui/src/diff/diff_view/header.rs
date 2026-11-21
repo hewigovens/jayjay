@@ -9,7 +9,9 @@ use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats, HunkType};
 use jayjay_review::ReviewFileRollup;
 
 use self::controls::*;
-pub(crate) use self::controls::{edit_diff_button, mode_label, view_mode_button};
+pub(crate) use self::controls::{
+    edit_diff_button, mode_label, show_all_files_button, view_mode_button,
+};
 use self::path::*;
 use crate::app::theme::{Theme, ui_font_size};
 use crate::diff::line::tag_for_hunk;

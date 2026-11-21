@@ -59,6 +59,7 @@ impl Render for RepoWindow {
         self.sync_editors(cx);
         // Cheap unless a note-affecting write happened (a single `stat` + small `Vec` compare); see `sync_review_notes`'s docs for why this can't just be a `mutate()`-only refresh.
         self.sync_review_notes(cx);
+        self.sync_diff_stack(cx);
         let t = crate::app::theme::theme_for_window(window, cx).clone();
         let (_, file_column_width) = self.layout.fitted(self.layout.viewport_width);
         let (toolbar_repo, bookmarks, workspaces, is_refreshing, refresh_mode) = {

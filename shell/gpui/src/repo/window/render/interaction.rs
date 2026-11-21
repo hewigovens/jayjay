@@ -42,6 +42,8 @@ impl RepoWindow {
             vm.multi_selection_primary_index()
         } {
             self.select_change(selected, cx);
+        } else if self.shows_file_alone(cx) {
+            self.show_all_file_diffs(cx);
         } else {
             return false;
         }

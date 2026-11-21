@@ -10,7 +10,7 @@ use crate::repo::window::RepoWindow;
 use crate::ui::icons::{self, glyph};
 use crate::ui::input::{LineInput, line_input_content};
 
-pub(super) fn render_find_bar(
+pub(crate) fn render_find_bar(
     query: &LineInput,
     find: &FindState<'_>,
     t: &Theme,
@@ -25,6 +25,7 @@ pub(super) fn render_find_bar(
         jayjay_i18n::repo::match_position(match_current + 1, match_count)
     };
     div()
+        .debug_selector(|| "find-bar".to_owned())
         .flex()
         .flex_row()
         .items_center()

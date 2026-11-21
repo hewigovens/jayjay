@@ -540,7 +540,7 @@ impl RepoWindow {
         vm.update(cx, |vm, cx| vm.select_file(ix, cx));
     }
 
-    fn reset_diff_panel_for_new_file(&mut self, cx: &mut Context<Self>) {
+    pub(super) fn reset_diff_panel_for_new_file(&mut self, cx: &mut Context<Self>) {
         self.diff.selection = None;
         self.diff.gutter_selection = None;
         self.diff.rich_preview = None;

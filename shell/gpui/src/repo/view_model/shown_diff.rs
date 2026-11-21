@@ -24,6 +24,10 @@ impl ShownDiff {
         self.diff.as_ref().map(|(diff, _)| diff)
     }
 
+    pub(crate) fn is_for(&self, path: &str) -> bool {
+        self.source_path.as_deref() == Some(path)
+    }
+
     pub(crate) fn shape(&self) -> Option<DiffShape> {
         self.diff.as_ref().map(|(_, shape)| *shape)
     }

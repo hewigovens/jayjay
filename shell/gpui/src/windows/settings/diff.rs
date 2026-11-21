@@ -41,6 +41,14 @@ pub(super) fn diff_section(cfg: &AppConfig, t: &Theme) -> AnyElement {
                         t,
                     ),
                     toggle_field(
+                        glyph::LIST,
+                        settings::show_all_file_diffs(),
+                        cfg.diff.show_all_file_diffs,
+                        |c| c.diff.show_all_file_diffs ^= true,
+                        "diff-show-all",
+                        t,
+                    ),
+                    toggle_field(
                         glyph::EYE_OFF,
                         settings::hide_reviewed(),
                         cfg.diff.hide_reviewed_files,

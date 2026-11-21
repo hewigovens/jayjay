@@ -2,18 +2,18 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
-    MouseUpEvent, ParentElement, Pixels, Styled, UniformListScrollHandle, div, px, rgb, rgba,
-    uniform_list,
+    MouseUpEvent, ParentElement, Pixels, Styled, div, px, rgb, rgba,
 };
 use jayjay_core::diff::{FileDiff, WrappedDiffLine};
 use jayjay_review::ReviewNoteStatus;
 
 use super::context_controls::context_controls;
 use super::gutter_mouse::attach_gutter_selection_handlers;
-use super::mouse::attach_selection_handlers;
+use super::mouse::{SelectionCell, attach_selection_handlers};
 use super::moved_label::moved_label;
 use super::review_stripe::review_stripe_cell;
 use super::row_anchor::{VisibleRows, scroll_to_row};
+use super::row_list::RowPlacement;
 use super::rows::{DiffRenderRow, DiffRenderRows};
 use super::state::ReviewDisplayState;
 use crate::app::fonts;
@@ -23,16 +23,15 @@ use crate::diff::line::{
     line_bg_color, note_content_row, note_dot_cell, note_gutter_row, review_stripe_spacer,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
-use crate::diff::{DiffSelection, GutterLineSelection, SbsSide, bounds_capture};
+use crate::diff::{DiffSelection, GutterLineSelection, SbsSide};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) struct UnifiedBodyState<'a> {
     pub(super) file_diff: &'a Arc<FileDiff>,
     pub(super) theme: Theme,
     pub(super) query: Option<String>,
-    pub(super) scroll: UniformListScrollHandle,
+    pub(super) placement: RowPlacement,
     pub(super) bounds: PanelBoundsSlot,
     pub(super) wrap_cache: &'a DiffWrapCacheSlot,
     pub(super) notes: &'a [ReviewNoteStatus],
@@ -48,7 +47,7 @@ pub(super) fn unified_body(
         file_diff,
         theme,
         query,
-        scroll,
+        placement,
         bounds,
         wrap_cache,
         notes,
@@ -68,22 +67,27 @@ pub(super) fn unified_body(
         .borrow_mut()
         .rows(file_diff, wrap_cols, notes, label_cols);
     let count = rendered.rows.len();
-    if let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::Unified {
-        diff: file_diff.clone(),
-        lines: lines.clone(),
-        rendered: rendered.clone(),
-    }) {
-        scroll_to_row(&scroll, row, theme.code_line_height());
+    if let Some(scroll) = placement.scroll()
+        && let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::Unified {
+            diff: file_diff.clone(),
+            lines: lines.clone(),
+            rendered: rendered.clone(),
+        })
+    {
+        scroll_to_row(scroll, row, theme.code_line_height());
     }
+    let row_height = theme.code_line_height();
+    let shows_selection = placement.shows_selection();
 
     let gutter_lines = lines.clone();
     let gutter_rendered = rendered.clone();
     let gutter_theme = theme.clone();
     let gutter_path = file_diff.path.clone();
     let gutter_review = review.clone();
-    let gutter = uniform_list(
+    let gutter = placement.rows(
         "diff-gutter",
         count,
+        row_height,
         cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
             let selection = view.diff.gutter_selection.clone();
             range
@@ -104,8 +108,7 @@ pub(super) fn unified_body(
                 })
                 .collect()
         }),
-    )
-    .track_scroll(&scroll);
+    );
 
     let content_lines = lines;
     let content_rendered = rendered;
@@ -113,11 +116,12 @@ pub(super) fn unified_body(
     let content_query = query;
     let content_bounds = bounds.clone();
     let content_path = file_diff.path.clone();
-    let content = uniform_list(
+    let content = placement.rows(
         "diff-content",
         count,
+        row_height,
         cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
-            let sel = view.diff.selection;
+            let sel = view.diff.selection.filter(|_| shows_selection);
             let gutter_sel = view.diff.gutter_selection.clone();
             range
                 .map(|ix| {
@@ -133,15 +137,24 @@ pub(super) fn unified_body(
                             query: content_query.as_deref(),
                             advance,
                             bounds: &content_bounds,
+                            extends_selection: shows_selection,
                         },
                         cx,
                     )
                 })
                 .collect()
         }),
-    )
-    .track_scroll(&scroll);
+    );
 
+    let scrollbar = placement.scroll().map(|scroll| {
+        vertical_uniform_scrollbar(
+            scroll.clone(),
+            bounds.clone(),
+            px(count as f32 * row_height),
+            theme.as_ref(),
+            cx,
+        )
+    });
     div()
         .flex()
         .flex_row()
@@ -150,7 +163,7 @@ pub(super) fn unified_body(
         .child(
             gutter_column(theme.as_ref(), shows_review)
                 .debug_selector(|| "diff-gutter".to_owned())
-                .child(no_scrollbar_gutter(gutter).h_full()),
+                .child(gutter),
         )
         .child(
             div()
@@ -159,21 +172,15 @@ pub(super) fn unified_body(
                 .min_w_0()
                 .h_full()
                 .bg(rgb(theme.diff_context_bg))
-                .child(bounds_capture(bounds.clone()))
+                .child(placement.bounds_capture(bounds))
                 .on_mouse_up(
                     MouseButton::Left,
                     cx.listener(|v, _: &MouseUpEvent, _, cx| {
                         v.finish_diff_selection(cx);
                     }),
                 )
-                .child(no_scrollbar_gutter(content).h_full())
-                .child(vertical_uniform_scrollbar(
-                    scroll,
-                    bounds,
-                    px(count as f32 * theme.code_line_height()),
-                    theme.as_ref(),
-                    cx,
-                )),
+                .child(content)
+                .children(scrollbar),
         )
         .into_any_element()
 }
@@ -265,6 +272,7 @@ struct ContentRowState<'a> {
     query: Option<&'a str>,
     advance: Pixels,
     bounds: &'a PanelBoundsSlot,
+    extends_selection: bool,
 }
 
 fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> AnyElement {
@@ -279,6 +287,7 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
         query,
         advance,
         bounds,
+        extends_selection,
     } = state;
     match &rendered.rows[ix] {
         DiffRenderRow::Line(w_ix) => {
@@ -319,11 +328,14 @@ fn content_row_at(state: ContentRowState<'_>, cx: &mut Context<RepoWindow>) -> A
             }
             attach_selection_handlers(
                 row,
-                line_ix,
-                SbsSide::Unified,
-                advance,
-                col_start,
-                bounds.clone(),
+                SelectionCell {
+                    ix: line_ix,
+                    side: SbsSide::Unified,
+                    advance,
+                    col_offset: col_start,
+                    bounds: bounds.clone(),
+                    extends: extends_selection,
+                },
                 cx,
             )
             .into_any_element()

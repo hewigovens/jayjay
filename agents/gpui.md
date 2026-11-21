@@ -26,10 +26,12 @@ shell/gpui/src/
 │   │                  mutations (incl. abandon_selected_diff_lines), tasks
 │   └── window/        RepoWindow view: render, actions, sidebar, DAG, detail, review, status bar,
 │                      operation_log/ (trailing pane), gutter_menu/note_menu/note_composer
-│                      (review-note + abandon-lines UI)
+│                      (review-note + abandon-lines UI); diff_stack/ (every file's diff in one
+│                      scrolling list: block layout, scroll anchoring, per-file wrap caches)
 ├── ui/            reusable widgets: overlay/ (dimmed layer + card + text prompt), text_area/,
 │                  input/, avatar/ (+cache), context_menu, button_group, scrollbar
-│                  (uniform-list + free-form ScrollHandle variants)
+│                  (uniform-list + free-form ScrollHandle variants), clipped_rows (equal-height
+│                  rows culled by the enclosing clip, for row lists inside an outer scroll)
 └── windows/       secondary GPUI windows: settings/, bookmark_manager, command_palette/,
                    evolog, file_history — each opened via a static `open(...)`
 ```

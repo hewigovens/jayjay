@@ -3,11 +3,14 @@ use gpui::{
     rgb,
 };
 
+use super::super::diff_stack::diff_stack;
 use super::super::{ConflictResolution, DiffRichPreviewKind, RepoWindow};
 use super::description;
 use super::header::{DetailHeaderState, DiffActions, detail_header};
 use crate::app::theme::{Theme, ui_font_size};
-use crate::diff::{DiffViewState, FindState, SvgPreviewContent, diff_view, stale_notes_banner};
+use crate::diff::{
+    DiffViewState, FindState, SvgPreviewContent, diff_view, render_find_bar, stale_notes_banner,
+};
 use crate::ui::icons::{self, glyph};
 
 pub(crate) fn detail_pane(
@@ -42,6 +45,25 @@ pub(crate) fn detail_pane(
             .child(jayjay_i18n::repo::select_a_change())
             .into_any_element();
     };
+
+    let find = FindState {
+        query: view.find.query.as_ref(),
+        ime_focus: view.find_ime_focus(window, cx),
+        match_count: view.find.matches.len(),
+        match_current: view.find.current,
+    };
+    if let Some(plan) = view.diff.stack.plan.as_ref() {
+        return div()
+            .debug_selector(|| "detail-pane".to_owned())
+            .flex()
+            .flex_col()
+            .flex_1()
+            .min_w_0()
+            .min_h_0()
+            .children(find.query.map(|query| render_find_bar(query, &find, t, cx)))
+            .child(diff_stack(view, plan, detail_width, t, window, cx))
+            .into_any_element();
+    }
 
     let view_mode = vm.effective_view_mode();
     let detail_mode = vm.detail_mode;
@@ -78,7 +100,12 @@ pub(crate) fn detail_pane(
     let path_just_copied =
         view.feedback.recently_copied.as_ref().map(|s| s.as_ref()) == Some("path");
     let notes = view.notes_for_selected_hunk(cx);
-    let review = view.review_display_state(selected_hunk.as_ref(), current_diff.as_ref(), cx);
+    let review = view.review_display_state(
+        selected_hunk.as_ref(),
+        current_diff.as_ref(),
+        &view.diff.wrap_cache,
+        cx,
+    );
 
     let conflict_resolutions = if selected_file_has_conflict {
         ConflictResolution::options(
@@ -142,13 +169,6 @@ pub(crate) fn detail_pane(
         context_expansion_error: view.context_expansion_error(),
         focused: view.focused_control(),
     };
-    let find = FindState {
-        query: view.find.query.as_ref(),
-        ime_focus: view.find_ime_focus(window, cx),
-        match_count: view.find.matches.len(),
-        match_current: view.find.current,
-    };
-
     div()
         .debug_selector(|| "detail-pane".to_owned())
         .flex()
@@ -181,6 +201,7 @@ pub(crate) fn change_header(
     let diff_actions = DiffActions {
         view_mode: vm.selected_hunk().map(|_| vm.effective_view_mode()),
         can_edit_diff,
+        shows_file_alone: view.shows_file_alone(cx),
     };
     let change = vm.selected_change()?.clone();
     let divergent_versions = vm

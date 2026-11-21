@@ -36,7 +36,8 @@ pub(super) fn file_column_wrapper(
     let show_marks = review_mode.shows_marks();
     let vm = view.vm.read(cx);
     let files = vm.files.clone();
-    let selected_file_ix = vm.selected_file_ix;
+    // A stack shows every file, so the list marks none as the one on show.
+    let selected_file_ix = vm.selected_file_ix.filter(|_| !view.shows_diff_stack());
     let loading_files = vm.loading.files;
     let change_id = vm.selected_change().map(|c| c.change_id.id.clone());
     let show_review = vm.shows_review_controls();

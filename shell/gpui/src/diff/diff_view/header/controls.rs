@@ -37,6 +37,22 @@ pub(super) fn file_editor_button(
     .into_any_element()
 }
 
+pub(crate) fn show_all_files_button(
+    compact: bool,
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> AnyElement {
+    header_action(
+        "show-all-files",
+        glyph::LIST,
+        (!compact).then(jayjay_i18n::repo::show_all_files),
+        false,
+        t,
+    )
+    .on_click(cx.listener(|view, _, _, cx| view.show_all_file_diffs(cx)))
+    .into_any_element()
+}
+
 pub(crate) fn edit_diff_button(
     compact: bool,
     focused: bool,
