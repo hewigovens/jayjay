@@ -45,6 +45,7 @@ struct DiffSection: View {
     @State var richPreviewSelection: DiffRichPreviewSelection?
     @State var compactHeader = false
     @State var fittedDiffHeight: CGFloat?
+    @State private var pinnedHeaderOffset: CGFloat = 0
     @Environment(AppSettings.self) var settings
     @Environment(DiffCommands.self) private var diffCommands: DiffCommands?
     @Environment(\.jayjayTypography) private var typography
@@ -52,10 +53,15 @@ struct DiffSection: View {
     @Environment(\.appThemes) var appThemes
 
     var body: some View {
-        VStack(alignment: .leading, spacing: 0) {
+        let headerHeight = PaneLayout.fileRowHeight(scale: typography.interfaceScale)
+        return VStack(alignment: .leading, spacing: 0) {
             diffHeader
                 .padding(.horizontal, PaneLayout.detailInset)
-                .frame(minHeight: PaneLayout.fileRowHeight(scale: typography.interfaceScale))
+                .frame(minHeight: headerHeight)
+                .background(pinnedHeaderBackground)
+                .overlay(alignment: .bottom) { Divider().opacity(pinnedHeaderOffset > 0 ? 1 : 0) }
+                .offset(y: pinnedHeaderOffset)
+                .zIndex(1)
             if let message = contextExpansionDisplay.errorMessage {
                 expansionErrorBanner(message)
                     .padding(.bottom, 8)
@@ -66,6 +72,11 @@ struct DiffSection: View {
                 .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackedHeights?.record($0, of: hunk.path, in: heightBasis) }
                 .onChange(of: heightBasis) { _, basis in stackedHeights?.carry(hunk.path, to: basis) }
         }
+        // A stacked file's header stays at the top of the list while its diff scrolls under it, until the file's end carries it away.
+        .onGeometryChange(for: CGFloat.self) { proxy in
+            guard fitsContent, let visible = proxy.bounds(of: .scrollView) else { return 0 }
+            return min(max(visible.minY, 0), max(proxy.size.height - headerHeight, 0))
+        } action: { pinnedHeaderOffset = $0 }
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()
         }
@@ -76,6 +87,12 @@ struct DiffSection: View {
             await computeDiffAsync()
         }
         .environment(\.diffTypography, typography.diffTypography)
+    }
+
+    /// A tinted window has no reading background to cover the rows a pinned header sits over, so it takes a material.
+    private var pinnedHeaderBackground: AnyShapeStyle {
+        guard fitsContent else { return AnyShapeStyle(.clear) }
+        return settings.tintsWindow(in: colorScheme) ? AnyShapeStyle(.regularMaterial) : AnyShapeStyle(settings.readingBackground(colorScheme))
     }
 
     private func expansionErrorBanner(_ message: String) -> some View {

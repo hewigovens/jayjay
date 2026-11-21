@@ -35,6 +35,12 @@ final class AllFileDiffsScene: SceneBase {
         keyStroke(.end)
         let showLargeDiff = app.buttons[AID.Diff.showLargeDiff]
         XCTAssertTrue(showLargeDiff.waitForExistence(timeout: 10), "A large diff was not folded in the stack")
+        let editLong = app.buttons[AID.FileEditor.open("zy-long.txt")]
+        XCTAssertTrue(editLong.waitForExistence(timeout: 5))
+        XCTAssertTrue(
+            app.windows.firstMatch.frame.contains(editLong.frame),
+            "The header of the file in view scrolled away with its first lines"
+        )
         showLargeDiff.click()
         XCTAssertTrue(generated.wait(for: \.isSelected, toEqual: true, timeout: 5), "Show Diff did not open the large diff alone")
         XCTAssertTrue(stackedBelowRoot.waitForNonExistence(timeout: 5))
