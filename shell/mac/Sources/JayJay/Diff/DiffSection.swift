@@ -63,7 +63,8 @@ struct DiffSection: View {
             // Without the stack, a diff that has nothing to show yet has no view to take the height.
             ZStack { diffContent }
                 .frame(height: fitsContent ? stackedContentHeight : nil)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackedHeights?.record($0, of: hunk.path, in: commitId) }
+                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackedHeights?.record($0, of: hunk.path, in: heightBasis) }
+                .onChange(of: heightBasis) { _, basis in stackedHeights?.carry(hunk.path, to: basis) }
         }
         .onChange(of: hunk.path) { _, _ in
             resetRichViewState()

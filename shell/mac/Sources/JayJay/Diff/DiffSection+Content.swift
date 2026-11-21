@@ -277,7 +277,17 @@ extension DiffSection {
         if foldsLargeDiff {
             return 44
         }
-        return fittedDiffHeight == nil ? (awaitsDiffText ? stackedHeights?.height(of: hunk.path, in: commitId) : nil) ?? 320 : nil
+        return fittedDiffHeight == nil ? (awaitsDiffText ? stackedHeights?.height(of: hunk.path, in: heightBasis) : nil) ?? 320 : nil
+    }
+
+    var heightBasis: StackedDiffHeights.Basis {
+        .init(
+            commitId: commitId,
+            compareFromRev: compareFromRev,
+            ignoreWhitespace: settings.ignoreWhitespace,
+            typography: settings.typography,
+            columns: fileDiff.map(canUseSideBySide) == false ? .alwaysUnified : settings.sideBySideDiff ? .sideBySide : .unified
+        )
     }
 
     private var awaitsDiffText: Bool {

@@ -49,8 +49,9 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
             header
             if !isCollapsed {
                 content
-                    .frame(height: awaitsMeasuredHeight ? heights.height(of: hunk.path, in: commitId) : nil)
-                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { heights.record($0, of: hunk.path, in: commitId) }
+                    .frame(height: awaitsMeasuredHeight ? heights.height(of: hunk.path, in: heightBasis) : nil)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { heights.record($0, of: hunk.path, in: heightBasis) }
+                    .onChange(of: heightBasis) { _, basis in heights.carry(hunk.path, to: basis) }
             }
         }
         .padding(14)
@@ -122,6 +123,10 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 .jayjayFont(11)
                 .foregroundStyle(.secondary)
         }
+    }
+
+    private var heightBasis: StackedDiffHeights.Basis {
+        .init(commitId: commitId, ignoreWhitespace: settings.ignoreWhitespace, typography: typography)
     }
 
     private var awaitsMeasuredHeight: Bool {
