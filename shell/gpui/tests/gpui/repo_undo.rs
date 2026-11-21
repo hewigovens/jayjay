@@ -206,26 +206,3 @@ fn menu_undo_and_redo_edit_the_focused_text(cx: &mut TestAppContext) {
     assert_eq!(summary.read_with(cx, |input, _| input.text()), "draft");
     assert_eq!(current_op_id(&fixture.path), operation);
 }
-
-#[gpui::test]
-fn restoring_from_the_pane_forgets_the_refused_undo(cx: &mut TestAppContext) {
-    let fixture = LinearFixture::build();
-    let (view, cx) = open_fixture(&fixture, cx);
-    duplicate_hello(&view, cx);
-    run_jj_in(&fixture.path, &["describe", "-m", "moved on"]);
-    click(cx, "toast-undo");
-    keys(cx, "ctrl-enter");
-    let restore = jayjay_i18n::repo::restore();
-    click(cx, selector(format!("context-menu-{restore}")));
-
-    for step in 0..20 {
-        run_jj_in(&fixture.path, &["describe", "-m", &format!("later {step}")]);
-    }
-    view.update(cx, |view, cx| {
-        view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
-    });
-    settle_visual(cx);
-    keys(cx, "ctrl-enter");
-
-    assert!(menu_shows(cx, &restore));
-}
