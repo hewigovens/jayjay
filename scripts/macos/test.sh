@@ -34,6 +34,6 @@ else
   xcode "$scheme" Debug "${args[@]}"
 fi
 if [[ "$action" == test ]]; then
-  cd "$root/shell/mac/Packages/JayJayDiffUI"
-  swift test
+  (cd "$root/shell/mac/Packages/JayJayDiffUI" && swift test)
+  (cd "$root/shell/mac/Packages/JayJayReviewUI" && swift test)
 fi
