@@ -619,6 +619,7 @@ printf 'Root file\n' > "$fixtures/file-selection-scroll/a-root.txt"
 for area in $(seq -f '%02g' 5 24); do rm -r "$fixtures/file-selection-scroll/src/features/area-$area"; done
 copy_fixture file-selection-scroll all-file-diffs
 seq 1 3500 > "$fixtures/all-file-diffs/zz-generated.txt"
+seq 1 400 > "$fixtures/all-file-diffs/zy-long.txt"
 fixture_conflict
 fixture_dag_long
 fixture_parallelize
