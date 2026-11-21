@@ -18,6 +18,13 @@ final class OperationLogSelectionTests: XCTestCase {
         XCTAssertEqual(concurrent.restoreTarget(undoing: "b"), "a")
     }
 
+    func testRefreshClearsAnExpiredRestoreTargetUntilAnotherIsSelected() {
+        let refreshed = Array(entries.dropLast())
+        XCTAssertNil(refreshed.retainedRestoreTarget("a"))
+        XCTAssertNil(refreshed.retainedRestoreTarget(nil))
+        XCTAssertEqual(refreshed.retainedRestoreTarget("b"), "b")
+    }
+
     func testRestoreTargetIsTheOperationBeforeTheOneBeingUndone() {
         XCTAssertEqual(entries.restoreTarget(undoing: nil), "b")
         XCTAssertEqual(entries.restoreTarget(undoing: "b"), "a")

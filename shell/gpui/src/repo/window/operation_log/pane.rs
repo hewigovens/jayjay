@@ -38,6 +38,10 @@ impl OperationLogPane {
         }
     }
 
+    pub(crate) fn is_focused(&self, window: &Window) -> bool {
+        self.focus.is_focused(window)
+    }
+
     fn select_restore_target(&mut self) {
         self.selected = self
             .seen
@@ -116,15 +120,19 @@ impl RepoWindow {
         let operations = self.vm.read(cx).operations.clone();
         let pane = &mut self.operation_log;
         if pane.seen.as_ref().map(Arc::as_ptr) != operations.as_ref().map(Arc::as_ptr) {
+            let first_load = pane.seen.is_none();
             pane.seen = operations;
-            let listed = pane.seen.as_ref().is_some_and(|operations| {
-                operations
-                    .entries()
-                    .iter()
-                    .any(|entry| pane.selected.as_deref() == Some(entry.id.as_str()))
-            });
-            if !(self.layout.operation_log_shown && listed) {
+            if first_load || !self.layout.operation_log_shown {
                 pane.select_restore_target();
+            } else {
+                pane.selected = pane.selected.take().filter(|id| {
+                    pane.seen.as_ref().is_some_and(|operations| {
+                        operations
+                            .entries()
+                            .iter()
+                            .any(|entry| entry.id.as_str() == id)
+                    })
+                });
             }
         }
         let visible = self.layout.operation_log_visible();

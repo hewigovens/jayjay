@@ -32,12 +32,12 @@ struct UndoView: View {
         .frame(maxWidth: .infinity, maxHeight: .infinity)
         .accessibilityElement(children: .contain)
         .accessibilityIdentifier(AID.Panel.operationLog)
-        .onChange(of: operations?.entries.map(\.id.id), initial: true) { _, ids in
-            // A refresh must not retarget a pending Restore; a hidden pane keeps following the default.
-            if isShown, let selectedId, ids?.contains(selectedId) == true {
-                return
+        .onChange(of: operations?.entries.map(\.id.id), initial: true) { previous, ids in
+            if isShown, previous != nil, previous != ids {
+                selectedId = operations?.entries.retainedRestoreTarget(selectedId)
+            } else {
+                selectedId = operations?.entries.restoreTarget(undoing: undoing)
             }
-            selectedId = operations?.entries.restoreTarget(undoing: undoing)
         }
         .onChange(of: isShown) { _, shown in
             isListFocused = shown
@@ -131,6 +131,11 @@ extension RecentOperations {
 }
 
 extension [OpLogEntry] {
+    /// Refreshing an open pane can only keep or clear the selected target.
+    func retainedRestoreTarget(_ selectedId: String?) -> String? {
+        selectedId.flatMap { id in contains(where: { $0.id.id == id }) ? id : nil }
+    }
+
     func restoreTarget(undoing operationId: String?) -> String? {
         guard let entry = first(where: { entry in operationId.map { entry.id.id == $0 } ?? entry.isCurrent }),
               entry.parentIds.count == 1,

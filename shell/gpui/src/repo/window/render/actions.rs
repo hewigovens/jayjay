@@ -182,6 +182,9 @@ impl RepoWindow {
                 if view.handle_find_key(ev, cx) {
                     return;
                 }
+                if view.operation_log.is_focused(window) {
+                    return;
+                }
                 if view.handle_context_menu_opener(ev, window, cx) {
                     cx.stop_propagation();
                     return;

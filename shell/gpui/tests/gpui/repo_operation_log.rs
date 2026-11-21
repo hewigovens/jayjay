@@ -111,6 +111,43 @@ fn a_refresh_whose_revset_broke_still_reports_the_operation_that_broke_it(cx: &m
 }
 
 #[gpui::test]
+fn restore_stays_unavailable_after_the_selected_operation_disappears(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    click(cx, "toolbar-operation-log");
+    let operations = run_jj_in(
+        &fixture.path,
+        &["op", "log", "-n", "3", "--no-graph", "-T", "id ++ \"\\n\""],
+    );
+    let operations = String::from_utf8(operations.stdout).unwrap();
+    let selected = operations.lines().nth(2).expect("older operation");
+    click(cx, selector(format!("operation-log-row-{selected}")));
+    run_jj_in(&fixture.path, &["op", "abandon", selected]);
+
+    for description in ["new head", "another head"] {
+        run_jj_in(&fixture.path, &["describe", "-m", description]);
+        view.update(cx, |view, cx| {
+            view.view_model().update(cx, |vm, cx| vm.refresh(false, cx))
+        });
+        settle_visual(cx);
+        cx.update(|window, cx| window.dispatch_action(Box::new(RestoreSelectedOperation), cx));
+        settle_visual(cx);
+        let output = run_jj_in(
+            &fixture.path,
+            &[
+                "log",
+                "-r",
+                "@",
+                "--no-graph",
+                "-T",
+                "description.first_line()",
+            ],
+        );
+        assert_eq!(String::from_utf8(output.stdout).unwrap(), description);
+    }
+}
+
+#[gpui::test]
 fn a_second_restore_waits_for_the_first(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
     let (view, cx) = open_fixture(&fixture, cx);
@@ -214,7 +251,7 @@ fn the_diff_header_compacts_for_the_room_the_pane_leaves(cx: &mut TestAppContext
 #[gpui::test]
 fn closing_the_focused_pane_returns_keys_to_the_changes_list(cx: &mut TestAppContext) {
     let fixture = LinearFixture::build();
-    let (_view, cx) = open_focused(&fixture, cx);
+    let (view, cx) = open_focused(&fixture, cx);
     cx.cx.update(|cx| {
         config::update(cx, |cfg| {
             cfg.shortcuts.insert(
@@ -228,6 +265,9 @@ fn closing_the_focused_pane_returns_keys_to_the_changes_list(cx: &mut TestAppCon
     for close in ["shortcut", "room"] {
         keys(cx, "secondary-shift-u");
         assert!(cx.debug_bounds("operation-log-pane").is_some());
+        let selected = selected_commit_id(&view, cx);
+        keys(cx, "j");
+        assert_eq!(selected_commit_id(&view, cx), selected);
         match close {
             "shortcut" => keys(cx, "secondary-shift-u"),
             _ => {
