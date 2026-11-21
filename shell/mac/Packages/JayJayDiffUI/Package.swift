@@ -8,13 +8,13 @@ let package = Package(
         .library(name: "JayJayDiffUI", targets: ["JayJayDiffUI"])
     ],
     dependencies: [
-        .package(path: "../..") // JayJayCore from shell/mac/Package.swift
+        .package(name: "JayJayCore", path: "../..") // Named, so the folder holding shell/mac/Package.swift can have any name.
     ],
     targets: [
         .target(
             name: "JayJayDiffUI",
             dependencies: [
-                .product(name: "JayJayCore", package: "mac")
+                .product(name: "JayJayCore", package: "JayJayCore")
             ],
             path: "Sources/JayJayDiffUI",
             exclude: ["Resources/Mermaid"]

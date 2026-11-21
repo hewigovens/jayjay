@@ -30,6 +30,38 @@ wrap() {
     -output "${xcframework}" | xcbeautify
 }
 
+portable() {
+  local out="${1:?portable needs an output directory}"
+  shift
+  local targets=("$@")
+  [[ ${#targets[@]} -gt 0 ]] || targets=(aarch64-apple-darwin aarch64-apple-ios aarch64-apple-ios-sim)
+  # Its own target folder: the library's path under a target is the desktop build's too.
+  local build="${CARGO_TARGET_DIR:-$target_dir}/portable"
+  local bindings="$build/bindings" libraries=() target
+  export MACOSX_DEPLOYMENT_TARGET="${MACOSX_DEPLOYMENT_TARGET:-26.0}" IPHONEOS_DEPLOYMENT_TARGET="${IPHONEOS_DEPLOYMENT_TARGET:-26.0}"
+  cd "$root"
+  for target in "${targets[@]}"; do
+    cargo build --locked --release --target "$target" -p jayjay-uniffi --no-default-features --target-dir "$build"
+    libraries+=(-library "$build/$target/release/$lib_name" -headers "$bindings/Headers")
+  done
+  cargo build --locked --release -p jayjay-uniffi --no-default-features --features bindgen --bin uniffi-bindgen --target-dir "$build"
+  rm -rf "$bindings" "$out/Package.swift" "$out/Sources" "$out/Packages" "$out/JayJayFFI.xcframework"
+  mkdir -p "$bindings/Headers" "$out/Sources/JayJayCore" "$out/Packages"
+  "$build/release/uniffi-bindgen" generate \
+    --library "$build/${targets[0]}/release/$lib_name" \
+    --language swift \
+    --out-dir "$bindings" \
+    --config "$uniffi_config"
+  cp "$bindings/JayJayFFI.h" "$bindings/Headers/"
+  cp "$bindings/JayJayFFI.modulemap" "$bindings/Headers/module.modulemap"
+  cp "$project/Package.swift" "$out/"
+  cp "$swift_out"/*+*.swift "$bindings/JayJayCore.swift" "$out/Sources/JayJayCore/"
+  cargo run --locked -q --release -p jayjay-i18n --bin l10n-swift --target-dir "$build" > "$out/Sources/JayJayCore/Localized.swift"
+  rsync -a --exclude .build --exclude .swiftpm --exclude .DS_Store "$project/Packages/" "$out/Packages/"
+  xcodebuild -create-xcframework "${libraries[@]}" -output "$out/JayJayFFI.xcframework" >/dev/null
+  echo "$out"
+}
+
 case "$1" in
   debug)
     staticlib="${target_dir}/debug/${lib_name}"
@@ -59,5 +91,9 @@ case "$1" in
     wrap release "$staticlib"
     ;;
   wrap) wrap "$2" "$3" ;;
-  *) echo "usage: $0 {debug|release <target> <deployment-target>|wrap <profile> <staticlib>}" >&2; exit 2 ;;
+  portable)
+    shift
+    portable "$@"
+    ;;
+  *) echo "usage: $0 {debug|release <target> <deployment-target>|wrap <profile> <staticlib>|portable <out-dir> [target...]}" >&2; exit 2 ;;
 esac

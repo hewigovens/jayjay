@@ -14,4 +14,6 @@ palettes and catalog strings, so a host links the portable library but none of t
   `FileKindBadge`, `ReviewStateIcon` and `ReviewMarkButton`. Set `\.diffThemes` to follow the host's theme, and
   `Localized.setLanguage` to follow its language.
 
-`just shell::test` runs `swift test` here against the app's XCFramework.
+`just shell::test` runs `swift test` here against the app's XCFramework. For another app,
+`just shell::ffi-portable <out>` writes JayJayCore (macOS and iOS slices of the portable library), JayJayDiffUI and
+this package into `<out>`; `just shell::test-portable` builds that and compiles this package for the iOS Simulator.
