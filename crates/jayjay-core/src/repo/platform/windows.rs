@@ -16,7 +16,7 @@ pub use registry::registry_path;
 /// PATHEXT can also list document types, which Command cannot launch.
 const EXECUTABLE_EXTENSIONS: [&str; 4] = ["com", "exe", "bat", "cmd"];
 
-pub fn launchctl_ssh_auth_sock() -> Option<String> {
+pub fn session_ssh_auth_sock() -> Option<String> {
     None
 }
 

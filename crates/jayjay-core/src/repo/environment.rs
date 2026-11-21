@@ -180,7 +180,7 @@ fn ssh_auth_sock() -> Option<String> {
     std::env::var("SSH_AUTH_SOCK")
         .ok()
         .filter(|value| !value.is_empty())
-        .or_else(platform::launchctl_ssh_auth_sock)
+        .or_else(platform::session_ssh_auth_sock)
 }
 
 pub fn login_shell_path() -> Option<String> {

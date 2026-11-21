@@ -9,9 +9,9 @@ mod unix;
 mod windows;
 
 #[cfg(all(unix, not(target_os = "macos")))]
-pub use linux::launchctl_ssh_auth_sock;
+pub use linux::session_ssh_auth_sock;
 #[cfg(target_os = "macos")]
-pub use macos::launchctl_ssh_auth_sock;
+pub use macos::launchctl_ssh_auth_sock as session_ssh_auth_sock;
 #[cfg(unix)]
 pub use unix::{
     command, executable_names, home_dir, hostname, is_executable_file, launch_target,
@@ -20,5 +20,5 @@ pub use unix::{
 #[cfg(windows)]
 pub use windows::{
     command, executable_names, home_dir, hostname, is_executable_file, launch_target,
-    launchctl_ssh_auth_sock, registry_path, system_path_entries, system32,
+    registry_path, session_ssh_auth_sock, system_path_entries, system32,
 };

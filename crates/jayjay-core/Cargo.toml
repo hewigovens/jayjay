@@ -38,6 +38,7 @@ repository = [
     "dep:windows-native-keyring-store",
     "dep:zbus-secret-service-keyring-store",
     "dep:libc",
+    "dep:socket2",
     "dep:log",
     "dep:parking_lot",
     "dep:percent-encoding",
@@ -106,6 +107,7 @@ apple-native-keyring-store = { workspace = true, optional = true }
 security-framework = { workspace = true, optional = true }
 
 [target.'cfg(all(unix, not(target_os = "macos")))'.dependencies]
+socket2 = { version = "0.6", optional = true }
 zbus-secret-service-keyring-store = { workspace = true, optional = true }
 
 [target.'cfg(windows)'.dependencies]

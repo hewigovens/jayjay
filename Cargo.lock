@@ -4745,6 +4745,7 @@ dependencies = [
  "serde_json",
  "sha2 0.11.1",
  "shell-words",
+ "socket2",
  "stacker",
  "tempfile",
  "url",
