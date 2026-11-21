@@ -1,4 +1,4 @@
-use std::collections::HashSet;
+use std::collections::{HashMap, HashSet};
 use std::sync::Arc;
 
 use gpui::{App, Context, Pixels, Point};
@@ -178,10 +178,11 @@ impl RepoWindow {
         vm: &crate::repo::view_model::RepoViewModel,
     ) -> (bool, FileBatchAction) {
         let change_id = change.change_id.id.clone();
+        let by_path: HashMap<_, _> = hunks.iter().map(|hunk| (&hunk.path, *hunk)).collect();
         let files = paths
             .iter()
             .map(|path| {
-                let hunk = hunks.iter().find(|hunk| &hunk.path == path);
+                let hunk = by_path.get(path);
                 (
                     path.clone(),
                     hunk.map(|hunk| hunk.review_identity.clone())
@@ -244,20 +245,12 @@ impl RepoWindow {
                 reviewed,
                 files,
             } => {
-                super::review::mutate(&self.review_store, |store| {
-                    for (path, identity, snapshot) in files {
-                        if *reviewed && !identity.is_empty() {
-                            store.mark_reviewed_snapshot(
-                                change_id,
-                                path,
-                                identity,
-                                snapshot.as_ref(),
-                            );
-                        } else if !*reviewed {
-                            store.mark_unreviewed(change_id, path);
-                        }
-                    }
+                let files = files.iter().map(|(path, identity, snapshot)| {
+                    (path.as_str(), identity.as_str(), snapshot.as_ref())
                 });
+                self.review_store
+                    .borrow_mut()
+                    .set_files_reviewed(change_id, files, *reviewed);
                 cx.notify();
             }
             FileBatchAction::Split(request) => self.open_split_files_modal(request.clone(), cx),

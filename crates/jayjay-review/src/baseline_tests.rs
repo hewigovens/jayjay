@@ -230,6 +230,40 @@ fn snapshotless_hunks_with_mismatched_identity_do_not_guess() {
 
 #[cfg(feature = "storage")]
 #[test]
+fn a_file_selection_is_published_in_one_write() {
+    let dir = tempfile::tempdir().unwrap();
+    let path = dir.path().join("review_store.json");
+    let mut writer = ReviewStore::load_from(path.clone());
+    let snapshot = snap(two_group_old(), two_group_new());
+    let files = [("a.txt", "id-a", Some(&snapshot)), ("b.txt", "id-b", None)];
+
+    for reviewed in [true, false] {
+        let selection = files.into_iter().inspect(|_| {
+            let reader = ReviewStore::load_from(path.clone());
+            assert_eq!(reader.is_reviewed("c1", "a.txt", "id-a"), !reviewed);
+        });
+        writer.set_files_reviewed("c1", selection, reviewed);
+        let reader = ReviewStore::load_from(path.clone());
+        assert_eq!(reader.is_reviewed("c1", "a.txt", "id-a"), reviewed);
+        assert_eq!(reader.is_reviewed("c1", "b.txt", "id-b"), reviewed);
+        if reviewed {
+            let amended = snap(
+                two_group_old(),
+                "head-1\nhead-2\nhead-3\nhead-4\naaa-edited\nmiddle\nbbb\ntail\n",
+            );
+            assert_eq!(
+                states(&reader, "amended", &amended),
+                [
+                    ReviewGroupState::ChangedSinceReview,
+                    ReviewGroupState::Reviewed
+                ],
+            );
+        }
+    }
+}
+
+#[cfg(feature = "storage")]
+#[test]
 fn two_independently_loaded_writers_preserve_unrelated_review_state() {
     let dir = tempfile::tempdir().unwrap();
     let path = dir.path().join("review_store.json");

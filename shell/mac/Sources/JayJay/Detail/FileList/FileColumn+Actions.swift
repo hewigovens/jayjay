@@ -157,26 +157,13 @@ extension ChangeDetailView {
     /// Marks carry the fingerprints of a diff that has been viewed; a file marked straight from the list keeps a whole-file baseline.
     func applyReviewMarks(paths: [String], reviewed: Bool) {
         guard showsReviewMarks else { return }
-        let hunks = paths.compactMap { path in
-            detail.diff.first(where: { $0.path == path && !$0.reviewIdentity.isEmpty })
+        let selected = Set(paths)
+        let files = detail.diff.compactMap { hunk -> ReviewFileQuery? in
+            guard selected.contains(hunk.path), !hunk.reviewIdentity.isEmpty else { return nil }
+            return ReviewFileQuery(path: hunk.path, identity: hunk.reviewIdentity, snapshot: reviewSnapshots[hunk.reviewSnapshotKey])
         }
-        commitReviewMarks(hunks, reviewed: reviewed)
+        reviewStore.setFilesReviewed(changeId: reviewChangeId, files: files, reviewed: reviewed)
         applyKnownReviewRollups()
-    }
-
-    func commitReviewMarks(_ hunks: [DiffHunk], reviewed: Bool) {
-        for hunk in hunks {
-            if reviewed {
-                reviewStore.markReviewed(
-                    changeId: reviewChangeId,
-                    path: hunk.path,
-                    identity: hunk.reviewIdentity,
-                    snapshot: reviewSnapshots[hunk.reviewSnapshotKey]
-                )
-            } else {
-                reviewStore.markUnreviewed(changeId: reviewChangeId, path: hunk.path)
-            }
-        }
     }
 
     func showInFinder(_ path: String) {

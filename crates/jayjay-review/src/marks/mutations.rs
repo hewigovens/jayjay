@@ -15,9 +15,28 @@ impl ReviewStore {
         identity: &str,
         snapshot: Option<&ReviewFileSnapshot>,
     ) {
+        self.set_files_reviewed(change_id, [(path, identity, snapshot)], true);
+    }
+
+    pub fn set_files_reviewed<'a>(
+        &mut self,
+        change_id: &str,
+        files: impl IntoIterator<Item = (&'a str, &'a str, Option<&'a ReviewFileSnapshot>)>,
+        reviewed: bool,
+    ) {
+        let mut files = files.into_iter().peekable();
+        if files.peek().is_none() {
+            return;
+        }
         self.mutate_marks(change_id, |store| {
-            store.write_reviewed(change_id, path, identity, snapshot)
-        })
+            for (path, identity, snapshot) in files {
+                if reviewed {
+                    store.write_reviewed(change_id, path, identity, snapshot);
+                } else {
+                    store.state.reviewed.remove(&key(change_id, path));
+                }
+            }
+        });
     }
 
     pub(super) fn write_reviewed(
@@ -36,10 +55,7 @@ impl ReviewStore {
     }
 
     pub fn mark_unreviewed(&mut self, change_id: &str, path: &str) {
-        self.mutate_marks(change_id, |store| {
-            let k = key(change_id, path);
-            store.state.reviewed.remove(&k);
-        })
+        self.set_files_reviewed(change_id, [(path, "", None)], false);
     }
 
     pub fn toggle(&mut self, change_id: &str, path: &str, identity: &str) {

@@ -9,6 +9,13 @@ use jayjay_primitives::{
 };
 use jayjay_review::{ReviewFileMarks, ReviewStore};
 
+#[derive(uniffi::Record)]
+pub struct ReviewFileQuery {
+    pub path: String,
+    pub identity: String,
+    pub snapshot: Option<ReviewFileSnapshot>,
+}
+
 /// One loaded copy of the shared review store per window: reads re-parse the file only after another writer changed it, and mutations still reload under the store lock.
 #[derive(uniffi::Object)]
 pub struct SharedReviewStore {
@@ -88,6 +95,17 @@ impl SharedReviewStore {
 
     fn list_notes(&self, change_id: String, include_resolved: bool) -> Vec<NoteEntry> {
         self.fresh().list_notes(&change_id, include_resolved)
+    }
+
+    fn set_files_reviewed(&self, change_id: String, files: Vec<ReviewFileQuery>, reviewed: bool) {
+        let files = files.iter().map(|file| {
+            (
+                file.path.as_str(),
+                file.identity.as_str(),
+                file.snapshot.as_ref(),
+            )
+        });
+        self.store().set_files_reviewed(&change_id, files, reviewed);
     }
 
     fn mark_reviewed(

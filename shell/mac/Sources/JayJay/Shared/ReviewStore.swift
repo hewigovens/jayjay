@@ -58,6 +58,12 @@ final class ReviewStore {
         invalidateMarks(changeId: changeId, path: path)
     }
 
+    func setFilesReviewed(changeId: String, files: [ReviewFileQuery], reviewed: Bool) {
+        guard !files.isEmpty else { return }
+        native.setFilesReviewed(changeId: changeId, files: files, reviewed: reviewed)
+        invalidateMarks(changeId: changeId, paths: Set(files.map(\.path)))
+    }
+
     func markUnreviewed(changeId: String, path: String) {
         native.markUnreviewed(changeId: changeId, path: path)
         invalidateMarks(changeId: changeId, path: path)
@@ -134,13 +140,16 @@ final class ReviewStore {
         return marks
     }
 
-    /// Evict only the mutated file so a toggle doesn't force a store re-read for every visible file.
     func invalidateMarks(changeId: String, path: String) {
+        invalidateMarks(changeId: changeId, paths: [path])
+    }
+
+    private func invalidateMarks(changeId: String, paths: Set<String>) {
         marksCache = marksCache.filter { key, _ in
-            key.changeId != changeId || key.path != path
+            key.changeId != changeId || !paths.contains(key.path)
         }
         displayStatesCache = displayStatesCache.filter { key, _ in
-            key.changeId != changeId || key.path != path
+            key.changeId != changeId || !paths.contains(key.path)
         }
         reviewModeCache = reviewModeCache.filter { change, _ in change.changeId.id != changeId }
         marksVersion &+= 1
