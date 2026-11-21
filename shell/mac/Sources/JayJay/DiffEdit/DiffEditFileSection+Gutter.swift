@@ -13,14 +13,8 @@ extension DiffEditFileSection {
         onSelectFile()
     }
 
-    func selectChangeGroup(_ lineRange: ClosedRange<Int>) {
-        let mapped = ClosedRange(
-            uncheckedBounds: (
-                displayToFullMap[lineRange.lowerBound] ?? lineRange.lowerBound,
-                displayToFullMap[lineRange.upperBound] ?? lineRange.upperBound
-            )
-        )
-        onSelectHunk(mapped)
+    func toggleChangeGroup(_ lineRange: ClosedRange<Int>) {
+        onToggleGroup(lineRange.compactMap { displayToFullMap[$0] })
     }
 
     func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {

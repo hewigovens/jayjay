@@ -55,11 +55,12 @@ extension NativeDiffView {
             if !items.isEmpty {
                 items.append(.separator)
             }
+            let isSelected = groupRange.allSatisfy { selectionActions.lineCheckboxState(for: $0) == .selected }
             items.append(
                 DiffGutterMenuItem(
-                    title: Localized.Diff.selectChangeGroup,
+                    title: isSelected ? Localized.Diff.deselectChangeGroup : Localized.Diff.selectChangeGroup,
                     enabled: true,
-                    action: { selectionActions.selectChangeGroup(groupRange) }
+                    action: { selectionActions.toggleChangeGroup(groupRange) }
                 )
             )
         }

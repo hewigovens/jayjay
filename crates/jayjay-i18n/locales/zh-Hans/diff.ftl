@@ -41,6 +41,7 @@ diff-drag-to-resize-images-double-click = 拖动以调整图像大小。双击�
 diff-no-post-change-markdown-content = 变更后没有 Markdown 内容。
 diff-image = 图像
 diff-select-change-group = 选择变更组
+diff-deselect-change-group = 取消选择变更组
 diff-select-file = 选择文件
 diff-image-comparison-divider = 图像比较分隔条
 diff-restore-equal-widths = 恢复等宽

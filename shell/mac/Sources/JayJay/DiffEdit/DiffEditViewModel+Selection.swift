@@ -75,8 +75,8 @@ extension DiffEditViewModel {
         refreshSelection(paths: [path])
     }
 
-    func selectHunk(path: String, range: ClosedRange<Int>) {
-        core.selectLines(path: path, lines: range.map(UInt32.init))
+    func toggleGroup(path: String, lines: [Int]) {
+        core.toggleLines(path: path, lines: lines.map(UInt32.init))
         refreshSelection(paths: [path])
     }
 

@@ -39,6 +39,22 @@ fn line_hunk_and_file_toggles_only_move_changed_rows() {
 }
 
 #[test]
+fn toggling_a_group_completes_then_clears_only_its_changed_rows() {
+    let mut session = DiffEditSession::default();
+    session.load(diff_edit_file("a", &[2, 3, 7]));
+    session.toggle_line("a", 7);
+    session.toggle_line("a", 2);
+
+    let group = &[2, 3, 4];
+    session.toggle_lines("a", group);
+    assert_eq!(session.selected_lines("a"), [2, 3, 7]);
+    session.toggle_lines("a", group);
+    assert_eq!(session.selected_lines("a"), [7]);
+    session.toggle_lines("a", group);
+    assert_eq!(session.selected_lines("a"), [2, 3, 7]);
+}
+
+#[test]
 fn reloading_a_file_keeps_only_the_rows_that_still_changed() {
     let mut session = DiffEditSession::default();
     session.load(diff_edit_file("a", &[2, 3, 7]));

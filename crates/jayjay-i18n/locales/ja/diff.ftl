@@ -41,6 +41,7 @@ diff-drag-to-resize-images-double-click = ドラッグで画像のサイズを�
 diff-no-post-change-markdown-content = 変更後の Markdown の内容はありません。
 diff-image = 画像
 diff-select-change-group = 変更グループを選択
+diff-deselect-change-group = 変更グループの選択を解除
 diff-select-file = ファイルを選択
 diff-image-comparison-divider = 画像比較の区切り線
 diff-restore-equal-widths = 同じ幅に戻す

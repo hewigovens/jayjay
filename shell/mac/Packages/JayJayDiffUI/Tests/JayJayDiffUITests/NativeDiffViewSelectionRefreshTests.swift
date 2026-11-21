@@ -117,7 +117,7 @@ private final class SelectionActions: DiffGutterSelectionActions {
 
     func selectFile() {}
 
-    func selectChangeGroup(_ lineRange: ClosedRange<Int>) {}
+    func toggleChangeGroup(_ lineRange: ClosedRange<Int>) {}
 
     func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {
         selected.contains(lineNumber) ? .selected : .unselected

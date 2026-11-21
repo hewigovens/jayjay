@@ -35,7 +35,7 @@ extension NativeDiffView {
             DiffGutterGrouping.expandedChangedRange(in: displayLines, containing: lineNumber ... lineNumber)
         }
         gutterTextView.activateGroup = selectionActions.map { actions in
-            { actions.selectChangeGroup($0) }
+            { actions.toggleChangeGroup($0) }
         }
         gutterTextView.toggleLineCheckbox = selectionActions.map { actions in
             { actions.toggleLineCheckbox($0) }

@@ -54,7 +54,7 @@ struct DiffEditView: View {
                                 onToggleFile: { session.toggleFileSelection(path: hunk.path) },
                                 onSelectFile: { session.selectFile(path: hunk.path) },
                                 onToggleLine: { session.toggleLineSelection(path: hunk.path, lineNumber: $0) },
-                                onSelectHunk: { session.selectHunk(path: hunk.path, range: $0) },
+                                onToggleGroup: { session.toggleGroup(path: hunk.path, lines: $0) },
                                 onLoaded: { session.fileLoaded(path: hunk.path, loaded: $0) }
                             )
                             .id(hunk.path)
