@@ -78,6 +78,28 @@ test("diffs against the merge base and reads the files from GitHub's diff", asyn
   expect(requests).toHaveLength(4);
 });
 
+test("rejects a pull request that grows past the file limit after its metadata is read", async () => {
+  const routes = {
+    "/repos/o/r/pulls/7": {
+      changed_files: 5000,
+      commits: 0,
+      base: { sha: "base", repo: { private: false } },
+      head: { sha: "head" },
+    },
+    "/repos/o/r/compare/base...head?per_page=1": { merge_base_commit: { sha: "base" } },
+    "https://github.com/o/r/pull/7.diff": Array.from(
+      { length: 5001 },
+      (_, index) => `diff --git a/${index} b/${index}\n`,
+    ).join(""),
+  };
+  await expect(github(routes).manifest({ owner: "o", repo: "r", number: 7 })).rejects.toMatchObject(
+    {
+      code: "too-large",
+      status: 413,
+    },
+  );
+});
+
 test("stops reading a diff once it lists more files than the limit", async () => {
   const diff = ["a", "b", "c", "d", "e"].map((path) => modified(path)).join("");
   expect(await streamDiffFiles(inChunks(diff), 2)).toHaveLength(3);

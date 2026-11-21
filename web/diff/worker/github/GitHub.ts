@@ -128,7 +128,6 @@ export class GitHub {
     ]);
     if (target.commit)
       return this.commitManifest(repository, comparison.commits, target.commit, { range });
-    if (files.length > maxFiles) throw new GitHubError("too-large", 413);
     return {
       repository,
       range,
@@ -151,7 +150,6 @@ export class GitHub {
     const commit = commits.find((commit) => commit.sha === sha);
     if (!commit) throw new GitHubError("not-found", 404);
     const files = await this.diff(`/${repository}/commit/${sha}.diff`);
-    if (files.length > maxFiles) throw new GitHubError("too-large", 413);
     const [title, ...body] = commit.commit.message.split("\n");
     return {
       repository,
@@ -230,7 +228,11 @@ export class GitHub {
       // Local workerd asks for no compression by itself, and a large diff is a quarter the size gzipped.
       headers: { "user-agent": "jayjay-pr", "accept-encoding": "gzip" },
     });
-    if (response.ok && response.body) return streamDiffFiles(response.body, maxFiles);
+    if (response.ok && response.body) {
+      const files = await streamDiffFiles(response.body, maxFiles);
+      if (files.length > maxFiles) throw new GitHubError("too-large", 413);
+      return files;
+    }
     if (response.status === 404) throw new GitHubError("not-found", 404);
     throw new GitHubError(
       response.status === 429 ? "rate-limited" : "unavailable",
