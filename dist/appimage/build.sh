@@ -32,7 +32,7 @@ if [[ -n "$manifest" ]]; then
 else
   install -Dm755 "$(dirname "$binary")/jayjay-ssh" "$appdir/usr/bin/jayjay-ssh"
 fi
-for license in shell/gpui/assets/fonts/Octicons.LICENSE shell/mac/Resources/ToolbarIcons.LICENSE shell/mac/Resources/DashboardIcons.LICENSE; do
+for license in assets/fonts/Seti.LICENSE shell/gpui/assets/fonts/Octicons.LICENSE shell/mac/Resources/ToolbarIcons.LICENSE shell/mac/Resources/DashboardIcons.LICENSE; do
   install -Dm644 "$root/$license" "$appdir/usr/share/jayjay/licenses/$(basename "$license")"
 done
 install -Dm644 "$root/crates/jj-diff/grammars/fluent/LICENSE" "$appdir/usr/share/jayjay/licenses/tree-sitter-fluent.LICENSE"

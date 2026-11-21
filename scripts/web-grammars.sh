@@ -49,9 +49,17 @@ cargo fetch --locked --manifest-path "$root/Cargo.toml"
 imports="$(ls -d "$registry"/*/"tree-sitter-$(locked_version tree-sitter)" | head -n 1)/src/wasm-stdlib/imports.txt"
 files="$(cargo run --locked --quiet -p jj-diff-web --bin export-web-grammars -- "$out" "$imports")"
 rm -f "$out"/grammars/*.wasm
+notices="$out/grammar-licenses.txt"
+: > "$notices"
+notice() {
+  printf 'tree-sitter-%s\n\n' "$1"
+  cat "$2"
+  printf '\n\n'
+}
 current=()
 for file in $files; do
   if [[ -f "$bundled/$file.wasm.gz" ]]; then
+    notice "$file" "$bundled/$file.LICENSE" >> "$notices"
     gunzip -c "$bundled/$file.wasm.gz" > "$out/grammars/$file.wasm"
     continue
   fi
@@ -61,6 +69,13 @@ for file in $files; do
     exit 1
   fi
   read -r _ crate dir <<< "$entry"
+  case "$crate" in
+    ./*) license="$root/$crate/LICENSE" ;;
+    *) license="$(ls -d "$registry"/*/"$crate-$(locked_version "$crate")" | head -n 1)/LICENSE" ;;
+  esac
+  # Several crates publish no license file, so their upstream one is kept in the repository.
+  [[ -f "$license" ]] || license="$root/crates/jj-diff/grammars/licenses/$crate.LICENSE"
+  notice "$file" "$license" >> "$notices"
   key="$(printf '%s %s %s %s %s' "$steps" "$crate" "$(source_version "$crate")" "$dir" "$(locked_version tree-sitter)" | shasum -a 256 | cut -c1-16)"
   cached="$cache/$file-$key.wasm"
   if [[ ! -f "$cached" ]]; then

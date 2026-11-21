@@ -178,4 +178,4 @@ All native review writers lock the same sidecar across reload and atomic save. U
 
 ## License
 
-[Apache-2.0](LICENSE), including the `wasm` crate, except the Seti icon font, which keeps its MIT license ([src/fonts/Seti.LICENSE](src/fonts/Seti.LICENSE)). The rest of JayJay's licensing is in the [repository README](../../README.md#license).
+The review package and its `wasm` crate use [Apache-2.0](LICENSE). The Seti font keeps its [MIT license](src/fonts/Seti.LICENSE). Both web hosts link to the bundled grammar notices generated at `src/wasm/grammar-licenses.txt`. The rest of JayJay's licensing is in the [repository README](../../README.md#license).
