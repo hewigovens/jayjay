@@ -32,7 +32,7 @@ fn live_github_fork_pr_preview_and_import() {
     assert_eq!(preview.remote.name, "joshka");
     assert_eq!(preview.remote.bookmark, "joshka/macos-ux-polish");
     assert_eq!(preview.head_commit_id.len(), 40);
-    assert!(preview.workspace.name.starts_with("pr-289"));
+    assert_eq!(preview.workspace.name, "pr-289");
 
     let dest = temp.path().join(&preview.workspace.name);
     let created = repo

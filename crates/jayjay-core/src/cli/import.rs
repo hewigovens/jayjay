@@ -15,7 +15,7 @@ pub(super) struct ImportCommand {
     #[arg(long, default_value = ".", allow_hyphen_values = true)]
     repo: String,
 
-    /// Workspace name (default: pr-<number>)
+    /// Workspace name (defaults to pr-<number> for forks or the head bookmark for same-repository requests)
     #[arg(long, allow_hyphen_values = true)]
     name: Option<String>,
 

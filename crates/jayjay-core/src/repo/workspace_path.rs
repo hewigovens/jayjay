@@ -42,6 +42,26 @@ pub fn is_valid_workspace_name(name: &str) -> bool {
     if name.starts_with('-') || name.ends_with('.') {
         return false;
     }
+    let stem = name
+        .split('.')
+        .next()
+        .unwrap_or_default()
+        .to_ascii_uppercase();
+    if matches!(
+        stem.as_str(),
+        "CON" | "PRN" | "AUX" | "NUL" | "CONIN$" | "CONOUT$"
+    ) || stem
+        .strip_prefix("COM")
+        .or_else(|| stem.strip_prefix("LPT"))
+        .is_some_and(|port| {
+            matches!(
+                port,
+                "1" | "2" | "3" | "4" | "5" | "6" | "7" | "8" | "9" | "¹" | "²" | "³"
+            )
+        })
+    {
+        return false;
+    }
     !name.chars().any(|ch| {
         ch.is_control()
             || ch.is_whitespace()
@@ -90,6 +110,8 @@ mod tests {
             "a*b",
             "a?b",
             "trailing.",
+            "cOm1",
+            "lpt².log",
             &"w".repeat(256),
         ];
         for name in bad {

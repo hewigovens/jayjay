@@ -1,7 +1,7 @@
 use jj_lib::object_id::ObjectId;
 use jj_lib::ref_name::{RefName, RemoteName, RemoteRefSymbol, WorkspaceName};
 
-use super::plan::{PrHeadRepo, PullRequestImportPlan};
+use super::plan::{PrHeadRepo, PullRequestImportPlan, ResolvedPullRequest};
 use super::{github, gitlab, plan, url};
 use crate::repo::Repo;
 use crate::repo::command_process::SyncToken;
@@ -21,7 +21,7 @@ impl Repo {
     ) -> JayResult<PullRequestImportPreview> {
         let plan = self.resolve_pull_request_import(url, sync)?;
         sync.check()?;
-        let (name, dest) = self.suggest_workspace_destination(plan.resolved.number)?;
+        let (name, dest) = self.suggest_workspace_destination(&plan.resolved)?;
         let existing_workspace = self.existing_pull_request_workspace(&plan)?;
         Ok(plan.into_preview(name, dest, existing_workspace))
     }
@@ -241,18 +241,23 @@ impl Repo {
 
     pub(super) fn suggest_workspace_destination(
         &self,
-        pr_number: u32,
+        pr: &ResolvedPullRequest,
     ) -> JayResult<(String, String)> {
-        let base = format!("pr-{pr_number}");
         let taken_names: Vec<String> = self
             .workspace_list()?
             .into_iter()
             .map(|workspace| workspace.name)
             .collect();
         let parent = self.workspace_parent();
-        let name = unique_name(&base, |candidate| {
+        let taken = |candidate: &str| {
             taken_names.iter().any(|name| name == candidate) || parent.join(candidate).exists()
-        });
+        };
+        let bookmark = pr.head_branch.replace('/', "-");
+        let name = (matches!(pr.head, PrHeadRepo::SameRepository)
+            && is_valid_workspace_name(&bookmark))
+        .then(|| unique_name(&bookmark, taken))
+        .filter(|name| is_valid_workspace_name(name))
+        .unwrap_or_else(|| unique_name(&format!("pr-{}", pr.number), taken));
         let dest = parent.join(&name).to_string_lossy().into_owned();
         Ok((name, dest))
     }

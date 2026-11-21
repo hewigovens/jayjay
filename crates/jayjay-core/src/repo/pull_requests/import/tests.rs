@@ -325,27 +325,34 @@ fn preview_finds_the_workspace_already_built_on_the_pull_request() {
 #[test]
 fn workspace_suggestion_skips_taken_names_and_existing_dirs() {
     let fixture = Fixture::new();
-    let suggest = || {
+    let mut pr = fixture.plan(&fixture.head, false).resolved;
+    let suggest = |pr: &ResolvedPullRequest| {
         fixture
             .repo
-            .suggest_workspace_destination(7)
+            .suggest_workspace_destination(pr)
             .expect("suggest")
     };
 
     let canonical_root = crate::repo::support::canonicalize(fixture.temp.path());
+    assert_eq!(suggest(&pr).0, "pr-1");
+    pr.head = PrHeadRepo::SameRepository;
     assert_eq!(
-        suggest(),
+        suggest(&pr),
         (
-            "pr-7".to_owned(),
-            canonical_root.join("pr-7").to_string_lossy().into_owned()
+            "feat-x".to_owned(),
+            canonical_root.join("feat-x").to_string_lossy().into_owned()
         )
     );
 
     fixture
-        .import(&fixture.plan(&fixture.head, false), "pr-7")
-        .expect("import");
-    assert_eq!(suggest().0, "pr-7-2");
+        .repo
+        .workspace_add(&fixture.path("other-dir"), "feat-x", "")
+        .expect("create workspace");
+    assert_eq!(suggest(&pr).0, "feat-x-2");
 
-    fs::create_dir(fixture.path("pr-7-2")).expect("create colliding dir");
-    assert_eq!(suggest().0, "pr-7-3");
+    fs::create_dir(fixture.path("feat-x-2")).expect("create colliding dir");
+    assert_eq!(suggest(&pr).0, "feat-x-3");
+
+    pr.head_branch = "Nul.txt".into();
+    assert_eq!(suggest(&pr).0, "pr-1");
 }
