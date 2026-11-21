@@ -3,6 +3,7 @@
 use std::sync::Arc;
 
 use gpui::{App, px};
+use jayjay_core::DiffHunk;
 use jayjay_review::ReviewNoteStatus;
 
 use super::RepoWindow;
@@ -14,14 +15,19 @@ use crate::diff::wrap::wrap_cols_from_bounds;
 impl RepoWindow {
     /// Notes cover every file in the change; filter to the selected hunk or a file would show another file's notes.
     pub(crate) fn notes_for_selected_hunk(&self, cx: &App) -> Vec<ReviewNoteStatus> {
-        let vm = self.vm.read(cx);
-        let Some(hunk) = vm.selected_hunk() else {
-            return Vec::new();
-        };
+        match self.vm.read(cx).selected_hunk() {
+            Some(hunk) => self.notes_for_hunk(hunk, cx),
+            None => Vec::new(),
+        }
+    }
+
+    pub(crate) fn notes_for_hunk(&self, hunk: &DiffHunk, cx: &App) -> Vec<ReviewNoteStatus> {
         if self.review_notes_context(hunk, cx).is_none() {
             return Vec::new();
         }
-        vm.notes
+        self.vm
+            .read(cx)
+            .notes
             .all
             .iter()
             .filter(|status| {

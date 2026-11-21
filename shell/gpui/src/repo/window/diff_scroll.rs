@@ -19,7 +19,9 @@ impl RepoWindow {
         if ev.keystroke.modifiers.modified() {
             return false;
         }
-        let handle = if self.diff.markdown_bounds.get().is_some() {
+        let handle = if self.shows_diff_stack() {
+            self.diff.stack.scroll.clone()
+        } else if self.diff.markdown_bounds.get().is_some() {
             self.diff.markdown_scroll.clone()
         } else {
             self.scrolls.diff.0.borrow().base_handle.clone()
@@ -77,6 +79,9 @@ impl RepoWindow {
                 }
             })
             .unwrap_or(line_ix);
+        if self.scroll_diff_stack_to_row(item_ix, cx) {
+            return;
+        }
         self.scrolls
             .diff
             .scroll_to_item(item_ix, ScrollStrategy::Center);

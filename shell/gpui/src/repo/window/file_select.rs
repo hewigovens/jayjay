@@ -62,6 +62,7 @@ impl RepoWindow {
             .as_deref()
             .and_then(|primary| self.file_hunk_index(primary, cx))
         {
+            self.diff.stack.solo = true;
             self.select_file(primary_ix, cx);
         }
         self.set_file_multi_select(selection, change_id, cx);
@@ -190,14 +191,26 @@ impl RepoWindow {
     }
 
     fn ordered_visible_file_paths(&self, cx: &App) -> Vec<String> {
-        if !crate::app::config::current(cx).diff.tree_file_list {
-            return self.visible_file_paths(cx);
-        }
+        let Some(files) = self.vm.read(cx).files.clone() else {
+            return Vec::new();
+        };
+        self.ordered_visible_file_indices(cx)
+            .into_iter()
+            .map(|ix| files[ix].path.clone())
+            .collect()
+    }
+
+    /// The listed files in the order the file column shows them.
+    pub(crate) fn ordered_visible_file_indices(&self, cx: &App) -> Vec<usize> {
         let (show_review, change_id) = self.review_file_context(cx);
         let Some(files) = self.vm.read(cx).files.clone() else {
             return Vec::new();
         };
-        let visible = Arc::new(self.visible_indices(&files, change_id.as_deref(), show_review, cx));
+        let visible = self.visible_indices(&files, change_id.as_deref(), show_review, cx);
+        if !crate::app::config::current(cx).diff.tree_file_list {
+            return visible;
+        }
+        let visible = Arc::new(visible);
         let tree =
             self.file_tree_cache
                 .borrow_mut()
@@ -205,7 +218,6 @@ impl RepoWindow {
         tree.iter()
             .filter_map(|entry| entry.hunk_index)
             .filter_map(|vix| visible.get(vix as usize).copied())
-            .filter_map(|ix| files.get(ix).map(|h| h.path.clone()))
             .collect()
     }
 

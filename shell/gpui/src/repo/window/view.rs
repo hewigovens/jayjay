@@ -1,3 +1,4 @@
+use super::diff_stack::DiffStackState;
 use crate::ui::commit_message_editor::CommitMessageEditor;
 use crate::ui::pane_drag::PaneDrag;
 use std::cell::{Cell, RefCell};
@@ -176,6 +177,7 @@ pub(crate) struct DiffPanelState {
     pub(crate) markdown_bounds: PanelBoundsSlot,
     pub(crate) markdown_images: MarkdownImageCacheSlot,
     pub(crate) wrap_cache: DiffWrapCacheSlot,
+    pub(crate) stack: DiffStackState,
     pub(crate) context_expansion: ContextExpansionState,
     /// `sync_review_notes`'s change-detection key: reviewable-files fingerprint + last raw note list, so a store write or a diff refresh (identity change) both trigger re-reconciliation.
     pub(crate) review_notes_sync_key: Option<(u64, Vec<NoteEntry>)>,
@@ -194,6 +196,7 @@ impl Default for DiffPanelState {
             markdown_bounds: Rc::new(Cell::new(None)),
             markdown_images: Rc::new(RefCell::new(MarkdownImageCache::default())),
             wrap_cache: Rc::new(RefCell::new(DiffWrapCache::default())),
+            stack: DiffStackState::default(),
             context_expansion: ContextExpansionState::default(),
             review_notes_sync_key: None,
         }

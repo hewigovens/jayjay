@@ -69,7 +69,7 @@ pub(super) fn placeholder(
         )
 }
 
-pub(super) fn placeholder_inner(text: impl Into<SharedString>, t: &Theme) -> Div {
+pub(crate) fn placeholder_inner(text: impl Into<SharedString>, t: &Theme) -> Div {
     div()
         .flex()
         .size_full()

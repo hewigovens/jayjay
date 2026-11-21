@@ -124,6 +124,7 @@ impl RepoWindow {
         let current = selected_file_ix.and_then(|ix| visible.iter().position(|v| *v == ix));
         if let Some(new_row) = navigation::move_index(current, visible.len(), direction) {
             let new = visible[new_row];
+            self.diff.stack.solo = true;
             if Some(new) != selected_file_ix {
                 self.select_file(new, cx);
             }
@@ -159,6 +160,7 @@ impl RepoWindow {
         let Some(hunk) = visible_indices.get(visible_hunk).copied() else {
             return;
         };
+        self.diff.stack.solo = true;
         if Some(hunk) != selected_hunk {
             self.select_file(hunk, cx);
         }

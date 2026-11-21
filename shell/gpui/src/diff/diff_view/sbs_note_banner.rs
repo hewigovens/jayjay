@@ -16,12 +16,30 @@ pub(super) fn with_sbs_note_banner(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
+    let Some(banner) = sbs_note_banner(notes, t, cx) else {
+        return body;
+    };
+    div()
+        .flex()
+        .flex_col()
+        .flex_1()
+        .min_h_0()
+        .child(banner)
+        .child(div().flex_1().min_h_0().child(body))
+        .into_any_element()
+}
+
+pub(super) fn sbs_note_banner(
+    notes: &[ReviewNoteStatus],
+    t: &Theme,
+    cx: &mut Context<RepoWindow>,
+) -> Option<AnyElement> {
     let count = notes
         .iter()
         .filter(|n| n.status == NoteStatus::Current && !n.note.resolved)
         .count();
     if count == 0 {
-        return body;
+        return None;
     }
     let label = format!(
         "\u{25cf} {}",
@@ -57,12 +75,5 @@ pub(super) fn with_sbs_note_banner(
                 .on_click(cx.listener(|view, _, _, cx| view.toggle_view_mode(cx)))
                 .child(jayjay_i18n::diff::show_in_unified()),
         );
-    div()
-        .flex()
-        .flex_col()
-        .flex_1()
-        .min_h_0()
-        .child(banner)
-        .child(div().flex_1().min_h_0().child(body))
-        .into_any_element()
+    Some(banner.into_any_element())
 }

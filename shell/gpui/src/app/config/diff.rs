@@ -10,6 +10,7 @@ pub struct DiffConfig {
     #[serde(rename = "enable_git_submodule_support")]
     pub show_git_submodule_changes: bool,
     pub tree_file_list: bool,
+    pub show_all_file_diffs: bool,
     pub hide_reviewed_files: bool,
     pub auto_expand_description: bool,
     pub palette: ThemeSelection,
@@ -23,6 +24,7 @@ impl Default for DiffConfig {
             hide_git_lfs: true,
             show_git_submodule_changes: false,
             tree_file_list: false,
+            show_all_file_diffs: false,
             hide_reviewed_files: false,
             auto_expand_description: false,
             palette: ThemeSelection::default(),

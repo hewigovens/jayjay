@@ -13,7 +13,7 @@ use jayjay_review::{
     ReviewFileRollup, ReviewFileSnapshot, ReviewGroupState, ReviewMarkSource, ReviewMode,
 };
 
-use super::RepoWindow;
+use super::{DiffWrapCacheSlot, RepoWindow};
 use crate::diff::ReviewDisplayState;
 use crate::repo::view_model::{DiffLoadState, LoadedReviewSnapshot, RepoViewModel};
 
@@ -148,6 +148,7 @@ impl RepoWindow {
         &self,
         hunk: Option<&DiffHunk>,
         file_diff: Option<&Arc<jayjay_core::diff::FileDiff>>,
+        wrap_cache: &DiffWrapCacheSlot,
         cx: &App,
     ) -> Option<Arc<ReviewDisplayState>> {
         let hunk = hunk?;
@@ -161,7 +162,7 @@ impl RepoWindow {
         let vm = self.vm.read(cx);
         let change_id = vm.selected_change()?.change_id.id.clone();
         let review = loaded_review_snapshot(vm, hunk)?;
-        let rows = self.diff.wrap_cache.borrow_mut().review_rows(file_diff);
+        let rows = wrap_cache.borrow_mut().review_rows(file_diff);
         // The map came from the loaded text pair; if the diff has since regrouped, hide stripes instead of labelling the wrong hunks.
         if review.display_groups.len() != rows.group_count {
             return None;
@@ -187,9 +188,14 @@ impl RepoWindow {
 
     pub fn selected_review_group_states(&self, cx: &App) -> Vec<ReviewGroupState> {
         let vm = self.vm.read(cx);
-        self.review_display_state(vm.selected_hunk(), vm.shown.diff(), cx)
-            .map(|state| state.group_states.clone())
-            .unwrap_or_default()
+        self.review_display_state(
+            vm.selected_hunk(),
+            vm.shown.diff(),
+            &self.diff.wrap_cache,
+            cx,
+        )
+        .map(|state| state.group_states.clone())
+        .unwrap_or_default()
     }
 
     pub(crate) fn toggle_review_hunk(

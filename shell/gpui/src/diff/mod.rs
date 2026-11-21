@@ -20,13 +20,17 @@ mod svg_preview;
 pub(crate) mod wrap;
 
 pub(crate) use annotate_view::Annotation;
-pub(crate) use bounds::bounds_capture;
+pub(crate) use bounds::{bounds_capture, column_bounds_capture};
 pub(crate) use diff_view::{
     DETAIL_INSET, DiffShape, DiffViewState, DiffWrapCache, FindState, ReviewDisplayState,
     SvgPreviewContent, diff_view, display_range_to_diff_edit_range, edit_diff_button, mode_label,
-    row_index_for_line, selection_covers_whole_change_group, stale_notes_banner, view_mode_button,
+    row_index_for_line, selection_covers_whole_change_group, show_all_files_button,
+    stale_notes_banner, view_mode_button,
 };
 pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
+pub(crate) use diff_view::{
+    StackedFileHeader, StackedRows, placeholder_inner, render_find_bar, stacked_file_header,
+};
 pub(crate) use file_column::{FileColumnState, file_column};
 pub(crate) use file_column::{FileTreeCache, file_row_height, middle_elide};
 pub(crate) use image_diff::{hunk_is_image, image_diff_view};

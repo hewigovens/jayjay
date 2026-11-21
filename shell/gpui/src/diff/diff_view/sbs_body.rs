@@ -2,35 +2,35 @@ use std::sync::Arc;
 
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, MouseButton, MouseUpEvent, ParentElement,
-    Pixels, Styled, UniformList, UniformListScrollHandle, div, px, rgb, uniform_list,
+    Pixels, Styled, div, px, rgb,
 };
 use jayjay_core::diff::FileDiff;
 
 use super::context_controls::context_controls;
 use super::gutter_mouse::with_right_click_menu;
-use super::mouse::attach_selection_handlers;
+use super::mouse::{SelectionCell, attach_selection_handlers};
 use super::moved_label::moved_label;
 use super::review_stripe::review_stripe_cell;
 use super::row_anchor::{VisibleRows, scroll_to_row};
+use super::row_list::RowPlacement;
 use super::state::ReviewDisplayState;
 use super::wrap_cache::CachedSbsRows;
 use crate::app::fonts;
 use crate::app::theme::Theme;
+use crate::diff::SbsSide;
 use crate::diff::line::REVIEW_STRIPE_WIDTH;
 use crate::diff::side_by_side::{
     SBS_GUTTER_WIDTH, sbs_new_content, sbs_new_gutter, sbs_old_content, sbs_old_gutter,
 };
 use crate::diff::wrap::{selection_cols_in_fragment, wrap_cols_from_bounds};
-use crate::diff::{SbsSide, bounds_capture};
 use crate::repo::window::{DiffWrapCacheSlot, PanelBoundsSlot, RepoWindow};
-use crate::ui::primitives::no_scrollbar_gutter;
 use crate::ui::scrollbar::vertical_uniform_scrollbar;
 
 pub(super) struct SideBySideBodyState<'a> {
     pub(super) file_diff: &'a Arc<FileDiff>,
     pub(super) theme: Theme,
     pub(super) query: Option<String>,
-    pub(super) scroll: UniformListScrollHandle,
+    pub(super) placement: RowPlacement,
     pub(super) old_bounds: PanelBoundsSlot,
     pub(super) new_bounds: PanelBoundsSlot,
     pub(super) wrap_cache: &'a DiffWrapCacheSlot,
@@ -46,7 +46,7 @@ pub(super) fn side_by_side_body(
         file_diff,
         theme,
         query,
-        scroll,
+        placement,
         old_bounds,
         new_bounds,
         wrap_cache,
@@ -63,12 +63,15 @@ pub(super) fn side_by_side_body(
         .borrow_mut()
         .side_by_side(file_diff, old_cols, new_cols, label_cols);
     let count = rows.len();
-    if let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::SideBySide {
-        diff: file_diff.clone(),
-        rows: rows.clone(),
-    }) {
-        scroll_to_row(&scroll, row, theme.code_line_height());
+    if let Some(scroll) = placement.scroll()
+        && let Some(row) = wrap_cache.borrow_mut().show(VisibleRows::SideBySide {
+            diff: file_diff.clone(),
+            rows: rows.clone(),
+        })
+    {
+        scroll_to_row(scroll, row, theme.code_line_height());
     }
+    let row_height = theme.code_line_height();
 
     let old_gutter_width = SBS_GUTTER_WIDTH
         + if shows_review {
@@ -80,9 +83,10 @@ pub(super) fn side_by_side_body(
         let rows = rows.clone();
         let theme = theme.clone();
         let review = review.clone();
-        uniform_list(
+        placement.rows(
             "sbs-old-gutter",
             count,
+            row_height,
             cx.processor(move |_view, range: std::ops::Range<usize>, _window, cx| {
                 range
                     .map(|ix| {
@@ -106,19 +110,20 @@ pub(super) fn side_by_side_body(
                             row = row.child(cell);
                         }
                         row.child(sbs_old_gutter(&rows[ix].row, &theme))
+                            .into_any_element()
                     })
                     .collect()
             }),
         )
-        .track_scroll(&scroll)
     };
     let new_gutter = {
         let rows = rows.clone();
         let theme = theme.clone();
         let path = file_diff.path.clone();
-        uniform_list(
+        placement.rows(
             "sbs-new-gutter",
             count,
+            row_height,
             cx.processor(move |_view, range: std::ops::Range<usize>, _window, cx| {
                 range
                     .map(|ix| {
@@ -130,11 +135,11 @@ pub(super) fn side_by_side_body(
                             }
                             None => gutter,
                         }
+                        .into_any_element()
                     })
                     .collect()
             }),
         )
-        .track_scroll(&scroll)
     };
 
     let old_content = sbs_content_list(
@@ -144,7 +149,7 @@ pub(super) fn side_by_side_body(
             rows: rows.clone(),
             theme: theme.clone(),
             query: query.clone(),
-            scroll: scroll.clone(),
+            placement: placement.clone(),
             side: SbsSide::Old,
             bounds: old_bounds.clone(),
             advance,
@@ -158,7 +163,7 @@ pub(super) fn side_by_side_body(
             rows,
             theme: theme.clone(),
             query,
-            scroll: scroll.clone(),
+            placement: placement.clone(),
             side: SbsSide::New,
             bounds: new_bounds.clone(),
             advance,
@@ -166,7 +171,7 @@ pub(super) fn side_by_side_body(
         cx,
     );
 
-    let gutter_panel = |list: UniformList, width: f32| {
+    let gutter_panel = |list: AnyElement, width: f32| {
         div()
             .flex_none()
             .w(px(width))
@@ -174,9 +179,9 @@ pub(super) fn side_by_side_body(
             .bg(rgb(theme.diff_gutter_bg))
             .border_r_1()
             .border_color(rgb(theme.border))
-            .child(no_scrollbar_gutter(list).h_full())
+            .child(list)
     };
-    let content_panel = |list: UniformList,
+    let content_panel = |list: AnyElement,
                          bounds: PanelBoundsSlot,
                          side: SbsSide,
                          show_scrollbar: bool,
@@ -187,7 +192,7 @@ pub(super) fn side_by_side_body(
             .min_w_0()
             .h_full()
             .bg(rgb(theme.diff_context_bg))
-            .child(bounds_capture(bounds.clone()))
+            .child(placement.bounds_capture(bounds.clone()))
             .on_mouse_up(
                 MouseButton::Left,
                 cx.listener(move |v, _: &MouseUpEvent, _, cx| {
@@ -199,8 +204,8 @@ pub(super) fn side_by_side_body(
                     }
                 }),
             )
-            .child(no_scrollbar_gutter(list).h_full());
-        if show_scrollbar {
+            .child(list);
+        if show_scrollbar && let Some(scroll) = placement.scroll() {
             panel = panel.child(vertical_uniform_scrollbar(
                 scroll.clone(),
                 bounds,
@@ -243,29 +248,31 @@ struct SbsContentState {
     rows: Arc<CachedSbsRows>,
     theme: Arc<Theme>,
     query: Arc<Option<String>>,
-    scroll: UniformListScrollHandle,
+    placement: RowPlacement,
     side: SbsSide,
     bounds: PanelBoundsSlot,
     advance: Pixels,
 }
 
-fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> UniformList {
+fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> AnyElement {
     let SbsContentState {
         id,
         count,
         rows,
         theme,
         query,
-        scroll,
+        placement,
         side,
         bounds,
         advance,
     } = state;
-    uniform_list(
+    let shows_selection = placement.shows_selection();
+    placement.rows(
         id,
         count,
+        theme.code_line_height(),
         cx.processor(move |view, range: std::ops::Range<usize>, _window, cx| {
-            let sel = view.diff.selection;
+            let sel = view.diff.selection.filter(|_| shows_selection);
             range
                 .map(|ix| {
                     let row = &rows[ix];
@@ -324,11 +331,14 @@ fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> Uni
                     }
                     attach_selection_handlers(
                         cell,
-                        row_ix,
-                        side,
-                        advance,
-                        col_start,
-                        bounds.clone(),
+                        SelectionCell {
+                            ix: row_ix,
+                            side,
+                            advance,
+                            col_offset: col_start,
+                            bounds: bounds.clone(),
+                            extends: shows_selection,
+                        },
                         cx,
                     )
                     .into_any_element()
@@ -336,5 +346,4 @@ fn sbs_content_list(state: SbsContentState, cx: &mut Context<RepoWindow>) -> Uni
                 .collect()
         }),
     )
-    .track_scroll(&scroll)
 }

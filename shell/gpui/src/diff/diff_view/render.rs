@@ -8,6 +8,7 @@ use jayjay_core::{DiffProjection, HunkType};
 use super::find_bar::render_find_bar;
 use super::header::{FileHeaderState, ProjectionHeaderState, file_header};
 use super::placeholders::{placeholder, placeholder_card, placeholder_inner};
+use super::row_list::RowPlacement;
 use super::sbs_body::{SideBySideBodyState, side_by_side_body};
 use super::sbs_note_banner::with_sbs_note_banner;
 use super::state::{DetailMode, DiffViewMode, DiffViewState, FindState};
@@ -306,7 +307,7 @@ pub fn diff_view(
                     file_diff: fd,
                     theme: t.clone(),
                     query: query.clone(),
-                    scroll: scroll.clone(),
+                    placement: RowPlacement::Scrolling(scroll.clone()),
                     bounds: state.unified_bounds.clone(),
                     wrap_cache: &state.wrap_cache,
                     notes: state.notes,
@@ -321,7 +322,7 @@ pub fn diff_view(
                         file_diff: fd,
                         theme: t.clone(),
                         query: query.clone(),
-                        scroll: scroll.clone(),
+                        placement: RowPlacement::Scrolling(scroll.clone()),
                         old_bounds: state.sbs_old_bounds.clone(),
                         new_bounds: state.sbs_new_bounds.clone(),
                         wrap_cache: &state.wrap_cache,
