@@ -155,6 +155,24 @@ final class FileSelectionScrollScene: SceneBase {
         XCTAssertTrue(waitForHittable(lastFolderFile, isHittable: true))
     }
 
+    func testCollapsingASelectedFolderKeepsItsDiffsInThePreview() throws {
+        try launchTreeMode()
+        let app = try XCTUnwrap(app)
+        let development = "config/environments/development.json"
+        let staging = "config/environments/staging.json"
+        let first = fileRows(of: app).matching(identifier: AID.FileList.row(development)).firstMatch
+        let second = fileRows(of: app).matching(identifier: AID.FileList.row(staging)).firstMatch
+        XCTAssertTrue(first.waitForExistence(timeout: 10))
+        first.click()
+        XCUIElement.perform(withKeyModifiers: .command) { second.click() }
+        XCTAssertTrue(first.isSelected)
+        XCTAssertTrue(second.isSelected)
+        app.buttons["config/environments"].click()
+        XCTAssertTrue(first.waitForNonExistence(timeout: 5))
+        XCTAssertTrue(app.buttons[AID.FileEditor.open(development)].waitForExistence(timeout: 5))
+        XCTAssertTrue(app.buttons[AID.FileEditor.open(staging)].waitForExistence(timeout: 5))
+    }
+
     func testSpaceRevealsNextUnreviewedFileInCollapsedFolder() throws {
         try launchTreeMode()
         let app = try XCTUnwrap(app)

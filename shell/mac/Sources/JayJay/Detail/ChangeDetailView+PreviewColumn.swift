@@ -90,9 +90,9 @@ extension ChangeDetailView {
         let showsAll = selected.isEmpty && appSettings.showAllFileDiffs
         guard showsAll || selected.count > 1 else { return selectedHunk.map { [$0] } ?? [] }
         let hunks = Dictionary(filteredDiff.map { ($0.path, $0) }, uniquingKeysWith: { first, _ in first })
-        return showsAll
-            ? displayOrderedPaths.compactMap { hunks[$0] }
-            : visibleSelectablePaths.compactMap { selected.contains($0) ? hunks[$0] : nil }
+        return displayOrderedPaths.compactMap { path in
+            showsAll || selected.contains(path) ? hunks[path] : nil
+        }
     }
 
     var isStacked: Bool {
@@ -199,10 +199,16 @@ extension ChangeDetailView {
 
     func showRequestedFile() {
         guard let request = actions?.fileRevealRequest, request.revision == detailRevision else { return }
-        if !paneMode.isDiffEdit, visibleDiff.contains(where: { $0.path == request.path }) {
-            selectFile(request.path)
+        guard !paneMode.isDiffEdit, visibleDiff.contains(where: { $0.path == request.path }) else {
+            actions?.finishFileReveal(shown: false)
+            return
         }
-        actions?.finishFileReveal(shown: !paneMode.isDiffEdit && selectedHunk?.path == request.path)
+        selectFile(request.path)
+        let shown = selectedHunk?.path == request.path
+        if shown {
+            paneMode = .files
+        }
+        actions?.finishFileReveal(shown: shown)
     }
 
     private func selectFile(_ path: String) {
@@ -210,8 +216,7 @@ extension ChangeDetailView {
             fileFilter = ""
             showNotedFilesOnly = false
         }
-        fileSelection.primary = path
-        fileSelection.paths = [path]
+        fileSelection.reveal(path, expanding: &collapsedDirs)
     }
 
     func prepareConflictEditor(path: String) {

@@ -9,6 +9,11 @@ struct FileSelection: Equatable {
         FileSelection(primary: path, paths: [path], anchor: path)
     }
 
+    mutating func reveal(_ path: String, expanding collapsedDirs: inout Set<String>) {
+        collapsedDirs = collapsedDirs.filter { !path.hasPrefix("\($0)/") }
+        self = .single(path)
+    }
+
     var ordered: OrderedSelection {
         orderedSelection(selected: Array(paths), primary: primary, anchor: anchor)
     }

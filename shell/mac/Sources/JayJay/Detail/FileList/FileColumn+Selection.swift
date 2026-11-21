@@ -58,10 +58,10 @@ extension ChangeDetailView {
 
     private func toggleReviewOnSelection() -> Bool {
         reconcileFileSelection()
-        let paths = fileSelection.paths
-            .filter { path in reviewableDiff.contains(where: { $0.path == path }) }
-            .sorted()
-        guard showsReviewMarks, !paths.isEmpty else { return false }
+        guard showsReviewMarks else { return false }
+        let selected = fileSelection.paths
+        let paths = reviewableDiff.compactMap { selected.contains($0.path) ? $0.path : nil }
+        guard !paths.isEmpty else { return false }
         toggleReview(paths)
         return true
     }
@@ -76,10 +76,7 @@ extension ChangeDetailView {
         else { return }
         let following = order[(position + 1)...] + order[..<position]
         guard let next = following.first(where: { !reviewedPaths.contains($0) }) else { return }
-        if isInCollapsedDir(next) {
-            collapsedDirs = collapsedDirs.filter { !next.hasPrefix("\($0)/") }
-        }
-        selectSingleFile(next)
+        fileSelection.reveal(next, expanding: &collapsedDirs)
     }
 
     func reconcileFileSelection() {
