@@ -131,8 +131,8 @@ struct ExternalDiffFileCard: View, DiffGutterSelectionActions {
         file.selectSide(.new)
     }
 
-    func selectChangeGroup(_ lineRange: ClosedRange<Int>) {
-        file.selectDisplayRange(lineRange)
+    func toggleChangeGroup(_ lineRange: ClosedRange<Int>) {
+        file.toggleDisplayRange(lineRange)
     }
 
     func lineCheckboxState(for lineNumber: Int) -> DiffGutterCheckboxState? {

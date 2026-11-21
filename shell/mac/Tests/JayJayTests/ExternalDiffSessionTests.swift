@@ -75,6 +75,32 @@ final class ExternalDiffSessionTests: XCTestCase {
         XCTAssertEqual(deleted.selection?.selectedExecutable, true)
     }
 
+    func testChangeGroupToggleCompletesThenClearsItsLines() async throws {
+        let directory = FileManager.default.temporaryDirectory
+            .appending(path: "jayjay-external-group-tests-\(UUID().uuidString)")
+        let left = directory.appending(path: "left")
+        let right = directory.appending(path: "right")
+        try FileManager.default.createDirectory(at: left, withIntermediateDirectories: true)
+        try FileManager.default.createDirectory(at: right, withIntermediateDirectories: true)
+        defer { try? FileManager.default.removeItem(at: directory) }
+        try Data("keep\n".utf8).write(to: left.appending(path: "a.txt"))
+        try Data("keep\none\ntwo\n".utf8).write(to: right.appending(path: "a.txt"))
+        let session = ExternalDiffSession(left: left.path, right: right.path, editable: true)
+
+        await session.load()
+
+        let file = try XCTUnwrap(session.files.first)
+        let group = file.displayToFull.filter { file.changedLines.contains($0.value) }.keys.sorted()
+        let range = try XCTUnwrap(group.first) ... XCTUnwrap(group.last)
+        XCTAssertEqual(group.count, 2)
+
+        file.toggleDisplayLine(range.lowerBound)
+        file.toggleDisplayRange(range)
+        XCTAssertEqual(file.selectedLines, file.changedLines)
+        file.toggleDisplayRange(range)
+        XCTAssertTrue(file.selectedLines.isEmpty)
+    }
+
     func testFailedSaveKeepsTheSessionOpenForRetry() async throws {
         let directory = FileManager.default.temporaryDirectory
             .appending(path: "jayjay-external-diff-save-error-tests-\(UUID().uuidString)")

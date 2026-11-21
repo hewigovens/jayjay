@@ -206,8 +206,13 @@ final class ExternalDiffFileState: Identifiable {
             || (executableChanged && selectedExecutable == newExecutable)
     }
 
-    func selectDisplayRange(_ range: ClosedRange<Int>) {
-        selectedLines.formUnion(range.compactMap { displayToFull[$0] })
+    func toggleDisplayRange(_ range: ClosedRange<Int>) {
+        let lines = Set(range.compactMap { displayToFull[$0] })
+        if lines.isSubset(of: selectedLines) {
+            selectedLines.subtract(lines)
+        } else {
+            selectedLines.formUnion(lines)
+        }
         syncExistsWithSelection()
     }
 

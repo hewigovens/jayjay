@@ -80,10 +80,6 @@ impl DiffEditSession {
         self.write(|session| session.select_file(&path));
     }
 
-    fn select_lines(&self, path: String, lines: Vec<u32>) {
-        self.write(|session| session.select_lines(&path, &lines));
-    }
-
     fn toggle_lines(&self, path: String, lines: Vec<u32>) {
         self.write(|session| session.toggle_lines(&path, &lines));
     }
