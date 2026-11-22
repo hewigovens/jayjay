@@ -14,8 +14,10 @@ desktop = [
     "jayjay-core/repository",
     "jayjay-core/watchman",
     "jayjay-review/storage",
-    "uniffi/cli",
+    "bindgen",
 ]
+# Lets a portable build generate bindings without compiling `desktop`.
+bindgen = ["uniffi/cli"]
 wasm = ["uniffi/wasm-unstable-single-threaded"]
 
 [lib]
@@ -24,7 +26,7 @@ crate-type = ["lib", "staticlib", "cdylib"]
 [[bin]]
 name = "uniffi-bindgen"
 path = "uniffi-bindgen.rs"
-required-features = ["desktop"]
+required-features = ["bindgen"]
 
 [dependencies]
 async-trait = { workspace = true }

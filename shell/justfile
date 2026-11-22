@@ -30,6 +30,8 @@ list:
   @echo "shell recipes:"
   @echo "  just shell::ffi               Rebuild Rust FFI, bindings, and XCFramework (debug)"
   @echo "  just shell::ffi-release       Rebuild Rust FFI, bindings, and XCFramework (release)"
+  @echo "  just shell::ffi-portable out  JayJayCore, JayJayDiffUI and JayJayReviewUI as packages for another app (macOS and iOS)"
+  @echo "  just shell::test-portable    Build the portable packages and JayJayReviewUI for the iOS Simulator"
   @echo "  just shell::help             Build the bundled macOS Help Book"
   @echo "  just shell::reset-help-cache Clear JayJay Help Viewer cache"
   @echo "  just shell::debug-help       Print Help Book bundle, cache, and log diagnostics"
@@ -67,6 +69,14 @@ ffi-debug:
 # Release pins the target and deployment flags and always regenerates.
 ffi-release:
   JAYJAY_PRERELEASE={{ if version =~ '-beta' { "1" } else { "" } }} bash "{{root}}/scripts/macos/ffi.sh" release "{{macos_target}}" "{{deployment_target}}"
+
+# JayJayCore without the desktop profile for another app, replacing the package in `out`.
+ffi-portable out *targets:
+  bash "{{root}}/scripts/macos/ffi.sh" portable "$@"
+
+# Nothing else here builds for iOS.
+test-portable: (ffi-portable root / "build/portable")
+  cd "{{root}}/build/portable/Packages/JayJayReviewUI" && xcodebuild -quiet -scheme JayJayReviewUI -destination "generic/platform=iOS Simulator" -derivedDataPath "{{root}}/build/DerivedData/portable" build
 
 # Generate the Swift bindings from the staticlib and wrap it in the XCFramework.
 _ffi-wrap profile staticlib:
