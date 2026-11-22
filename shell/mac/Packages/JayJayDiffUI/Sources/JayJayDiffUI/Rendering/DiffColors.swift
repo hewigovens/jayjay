@@ -88,36 +88,8 @@ public struct DiffColors: Equatable {
         NSColor(hex: palette.findMatchFg)
     }
 
-    /// Syntax tokens (GitHub-inspired)
-    var keyword: NSColor {
-        NSColor(hex: palette.tokKeyword)
-    }
-
-    var string: NSColor {
-        NSColor(hex: palette.tokString)
-    }
-
-    var comment: NSColor {
-        NSColor(hex: palette.tokComment)
-    }
-
-    var number: NSColor {
-        NSColor(hex: palette.tokNumber)
-    }
-
-    var type: NSColor {
-        NSColor(hex: palette.tokType)
-    }
-
     public func tokenColor(_ token: SyntaxToken, fallback: NSColor) -> NSColor {
-        switch token {
-            case .comment: comment
-            case .keyword, .operator: keyword
-            case .stringLit: string
-            case .number: number
-            case .type, .function, .attribute: type
-            default: fallback
-        }
+        palette.color(of: token).map { NSColor(hex: $0) } ?? fallback
     }
 
     func spanText(_ span: DiffSpan, lineStyle: DiffSpanStyle, conflictKind: ConflictLineKind) -> NSColor {

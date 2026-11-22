@@ -133,7 +133,7 @@ public struct UnifiedDiffReader: View {
         var code = AttributedString()
         for span in cell.spans {
             var run = AttributedString(span.text)
-            run.foregroundColor = Color(rgb: theme.color(of: span.token) ?? text)
+            run.foregroundColor = Color(rgb: span.token.flatMap(theme.color(of:)) ?? text)
             if let word, span.style == cell.style {
                 run.backgroundColor = Color(rgb: word)
             }

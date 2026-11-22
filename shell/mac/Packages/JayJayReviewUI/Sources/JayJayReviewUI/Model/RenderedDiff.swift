@@ -1,3 +1,5 @@
+import JayJayCore
+
 public struct RenderedDiff: Decodable, Sendable {
     public var rows: [Row]
 
@@ -21,25 +23,26 @@ public struct RenderedDiff: Decodable, Sendable {
         }
     }
 
-    public enum Token: String, Decodable, Sendable {
-        case keyword, string = "stringlit", comment, number, type, other
-
-        public init(from decoder: any Decoder) throws {
-            self = try Token(rawValue: decoder.singleValueContainer().decode(String.self).lowercased()) ?? .other
-        }
-    }
-
     public struct Span: Decodable, Sendable, Equatable {
         public var text: String
         /// A span styled like its cell is the changed part of the line.
         public var style: Style?
-        public var token: Token?
+        public var token: SyntaxToken?
 
-        public init(text: String, style: Style? = nil, token: Token? = nil) {
+        public init(text: String, style: Style? = nil, token: SyntaxToken? = nil) {
             self.text = text
             self.style = style
             self.token = token
         }
+
+        public init(from decoder: any Decoder) throws {
+            let container = try decoder.container(keyedBy: CodingKeys.self)
+            text = try container.decode(String.self, forKey: .text)
+            style = try container.decodeIfPresent(Style.self, forKey: .style)
+            token = try container.decodeIfPresent(String.self, forKey: .token).flatMap(SyntaxToken.init(wire:))
+        }
+
+        private enum CodingKeys: String, CodingKey { case text, style, token }
     }
 
     public struct Cell: Decodable, Sendable, Equatable {

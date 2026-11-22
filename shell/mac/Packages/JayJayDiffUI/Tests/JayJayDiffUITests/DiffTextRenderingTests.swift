@@ -42,7 +42,7 @@ final class DiffTextRenderingTests: XCTestCase {
         let unchangedString = DiffSpan(text: "\"0.3.\"", style: .unchanged, token: .stringLit)
 
         assertSameColor(theme.spanText(changedString, lineStyle: .added, conflictKind: .none), theme.addedText)
-        assertSameColor(theme.spanText(unchangedString, lineStyle: .added, conflictKind: .none), theme.string)
+        assertSameColor(theme.spanText(unchangedString, lineStyle: .added, conflictKind: .none), theme.tokenColor(.stringLit, fallback: theme.contextText))
     }
 
     func test_binarySizeTooltipReachesBothNativeRenderers() {

@@ -1,4 +1,5 @@
 import Foundation
+import JayJayCore
 @testable import JayJayReviewUI
 import Testing
 
@@ -24,6 +25,13 @@ struct WireTests {
 
         let bare = #"{"title":"","description":"","author":"","files":[]}"#
         #expect(try JSONDecoder().decode(ReviewOverview.self, from: Data(bare.utf8)).notes.isEmpty)
+    }
+
+    @Test func everyTokenTheReviewSendsKeepsItsKind() throws {
+        let names = ["Plain", "Keyword", "StringLit", "Comment", "Number", "Type", "Function", "Variable", "Operator", "Punctuation", "Attribute", "Later"]
+        let json = "[" + names.map { #"{"text":"","token":"\#($0)"}"# }.joined(separator: ",") + "]"
+        let tokens = try JSONDecoder().decode([RenderedDiff.Span].self, from: Data(json.utf8)).map(\.token)
+        #expect(tokens == [.plain, .keyword, .stringLit, .comment, .number, .type, .function, .variable, .operator, .punctuation, .attribute, nil])
     }
 
     @Test func actionsEncodeAsReviewWebSpellsThem() throws {
