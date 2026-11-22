@@ -65,6 +65,9 @@ extension RepoViewModel {
         selectedChangeId = detail?.info.selectionRevision
         selectedChangeIds = selectedChangeId.map { [$0] } ?? []
         selectedChangeAnchorId = selectedChangeId
+        if deferredRenameSummary?.info.commitId.id != detail?.info.commitId.id {
+            deferredRenameSummary = nil
+        }
         if let detail, detail.renamesPending {
             loadPendingRenames(for: detail)
         }
@@ -85,13 +88,21 @@ extension RepoViewModel {
             try Self.loadSummaryWithConflicts(repo: $0, rev: rev, deferringRenames: false)
         } onSuccess: { viewModel, full in
             finish(viewModel)
-            guard viewModel.comparison == nil,
-                  let shown = viewModel.selectedChange, shown.renamesPending,
-                  shown.info.commitId.id == full.info.commitId.id
-            else { return }
-            viewModel.selectedChange = full
+            viewModel.applyOrDeferRenameSummary(full)
         } onFailure: { viewModel, _ in
             finish(viewModel)
+        }
+    }
+
+    func applyOrDeferRenameSummary(_ summary: ChangeDetail) {
+        guard comparison == nil, let shown = selectedChange, shown.renamesPending,
+              shown.info.commitId.id == summary.info.commitId.id,
+              selectedChangeId == shown.info.selectionRevision
+        else { return }
+        if isBackgroundRefreshSuspended {
+            deferredRenameSummary = summary
+        } else {
+            selectedChange = summary
         }
     }
 

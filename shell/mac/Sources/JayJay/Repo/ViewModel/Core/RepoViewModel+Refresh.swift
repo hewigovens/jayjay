@@ -41,6 +41,10 @@ extension RepoViewModel {
     func setBackgroundRefreshSuspended(_ suspended: Bool) {
         guard isBackgroundRefreshSuspended != suspended else { return }
         isBackgroundRefreshSuspended = suspended
+        if !suspended, let summary = deferredRenameSummary {
+            deferredRenameSummary = nil
+            applyOrDeferRenameSummary(summary)
+        }
         resumePendingBackgroundRefresh()
     }
 

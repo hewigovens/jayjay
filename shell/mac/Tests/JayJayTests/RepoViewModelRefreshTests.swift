@@ -5,6 +5,27 @@ import XCTest
 
 @MainActor
 final class RepoViewModelRefreshTests: RepoViewModelTestCase {
+    func testRenameCompletionWaitsForEditingAndRechecksSelection() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        try await snapshotAnEdit(viewModel, file: "editing.txt")
+        let full = try XCTUnwrap(viewModel.selectedChange)
+        let provisional = ChangeDetail(info: full.info, diff: full.diff, renamesPending: true)
+
+        viewModel.setBackgroundRefreshSuspended(true)
+        viewModel.applySingleSelectedChange(provisional)
+        try await waitUntil("rename detection finishes") { viewModel.pendingRenamesCommitId == nil }
+        XCTAssertEqual(viewModel.selectedChange?.renamesPending, true)
+        viewModel.setBackgroundRefreshSuspended(false)
+        XCTAssertEqual(viewModel.selectedChange?.renamesPending, false)
+
+        viewModel.setBackgroundRefreshSuspended(true)
+        viewModel.applySingleSelectedChange(provisional)
+        try await waitUntil("rename detection finishes again") { viewModel.pendingRenamesCommitId == nil }
+        viewModel.select(changeId: "root()")
+        viewModel.setBackgroundRefreshSuspended(false)
+        XCTAssertEqual(viewModel.selectedChange?.renamesPending, true)
+    }
+
     func testAbandonLinesSupersedesAnOlderRefresh() async throws {
         let viewModel = try XCTUnwrap(viewModel)
         let fileURL = URL(fileURLWithPath: viewModel.repoPath).appending(path: "lines.txt")
