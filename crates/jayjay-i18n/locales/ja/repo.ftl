@@ -73,6 +73,7 @@ repo-no-file-selected = ファイルが選択されていません
 repo-editor-could-not-be-opened = エディターを開けませんでした
 repo-rebase-cancelled-the-changes-moved-while = リベースをキャンセルしました: 確認中にチェンジが移動しました
 repo-moved-working-copy = 作業コピーを移動しました
+repo-snapshot-out-of-date = 作業コピーの最新の変更が表示されていない可能性があります。
 repo-working-copy-is-stale-another-workspace = 作業コピーが古くなっています: 別のワークスペースがこのチェンジを書き換えました。コンテキスト メニューまたは更新ボタンから「ワークスペースを更新」してください。
 repo-collapse-description = 説明を折りたたむ
 repo-expand-description = 説明を展開

@@ -1,7 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use gpui::{Context, SharedString};
+use gpui::{Context, EventEmitter, SharedString};
 use jayjay_core::dag::DagLayout;
 use jayjay_core::{
     ChangeInfo, GraphEntry, JayError, RecentOperations, Repo, RepositoryContext, UndoState,
@@ -10,6 +10,10 @@ use jayjay_core::{
 use super::super::{PendingRefresh, RepoViewModel};
 
 const MUTATION_ECHO_WINDOW: Duration = Duration::from_secs(5);
+
+pub(crate) struct BackgroundSnapshotFailed(pub(crate) SharedString);
+
+impl EventEmitter<BackgroundSnapshotFailed> for RepoViewModel {}
 
 impl RepoViewModel {
     pub fn handle_operation_change(&mut self, cx: &mut Context<Self>) {
@@ -147,6 +151,9 @@ impl RepoViewModel {
                 let previous_changes = self.graph.changes.clone();
                 let shown = self.selected_change().cloned();
                 self.working_copy_stale = data.working_copy_stale;
+                if !data.working_copy_stale {
+                    self.background_snapshot_error = None;
+                }
                 let entries = data.entries;
                 let context = data.context;
                 self.fix_unavailable_reason =
@@ -224,7 +231,15 @@ impl RepoViewModel {
                         context.operations,
                     );
                 }
-                self.present_error(failure.error);
+                if is_auto_triggered && failure.during_snapshot {
+                    let message = crate::app::error_text(failure.error);
+                    if self.background_snapshot_error.is_none() {
+                        cx.emit(BackgroundSnapshotFailed(message.clone()));
+                    }
+                    self.background_snapshot_error = Some(message);
+                } else {
+                    self.present_error(failure.error);
+                }
             }
         }
         cx.notify();
@@ -304,6 +319,7 @@ struct RefreshData {
 struct RefreshFailure {
     error: JayError,
     context: Option<Box<RepositoryContext>>,
+    during_snapshot: bool,
 }
 
 impl From<JayError> for RefreshFailure {
@@ -311,6 +327,7 @@ impl From<JayError> for RefreshFailure {
         Self {
             error,
             context: None,
+            during_snapshot: false,
         }
     }
 }
@@ -319,11 +336,18 @@ fn refresh_graph_blocking(repo: &Repo, revset: &str) -> Result<RefreshData, Refr
     let working_copy_stale = match repo.refresh_working_copy() {
         Ok(()) => false,
         Err(JayError::WorkingCopyStale) => true,
-        Err(error) => return Err(error.into()),
+        Err(error) => {
+            return Err(RefreshFailure {
+                error,
+                context: None,
+                during_snapshot: true,
+            });
+        }
     };
     let entries = repo.log_graph(revset).map_err(|error| RefreshFailure {
         error,
         context: repo.repository_context().ok().map(Box::new),
+        during_snapshot: false,
     })?;
     Ok(RefreshData {
         working_copy_stale,

@@ -7,11 +7,7 @@ struct SSHReconnectBar: View {
     var body: some View {
         if !viewModel.sshConnected {
             let message = viewModel.sshErrorMessage ?? Localized.Ssh.errorDisconnected
-            HStack(spacing: 10) {
-                Image(systemName: "exclamationmark.triangle.fill")
-                    .foregroundStyle(.orange)
-                Text(sshMachine(location: viewModel.repoPath) ?? "")
-                    .jayjayFont(12, weight: .semibold)
+            NoticeBar(systemImage: "network.slash", tint: .red, title: sshMachine(location: viewModel.repoPath) ?? "") {
                 Text(message)
                     .jayjayFont(12)
                     .foregroundStyle(.secondary)
@@ -25,11 +21,6 @@ struct SSHReconnectBar: View {
                 .buttonStyle(.bordered)
                 .disabled(viewModel.sshConnectionBusy)
             }
-            .controlSize(.small)
-            .padding(.horizontal, PaneLayout.detailInset)
-            .padding(.vertical, 8)
-            .background(.orange.opacity(0.08))
-            Divider()
         }
     }
 }

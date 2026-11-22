@@ -20,7 +20,7 @@ use crate::diff::{
     DiffSelection, DiffWrapCache, FileTreeCache, GutterLineSelection, MarkdownImageCache,
     MarkdownImageCacheSlot,
 };
-use crate::repo::view_model::{ActionSucceeded, RepoViewModel};
+use crate::repo::view_model::{ActionSucceeded, BackgroundSnapshotFailed, RepoViewModel};
 #[cfg(not(target_os = "macos"))]
 use crate::ui::app_menu::{AppMenuState, MenuTitleBounds};
 use crate::ui::context_menu::ContextMenuState;
@@ -479,6 +479,10 @@ impl RepoWindow {
         .detach();
         cx.subscribe(&vm, |this, _, _: &ActionSucceeded, cx| {
             this.record_successful_action(cx)
+        })
+        .detach();
+        cx.subscribe(&vm, |this, _, failure: &BackgroundSnapshotFailed, cx| {
+            this.show_toast(failure.0.clone(), cx)
         })
         .detach();
         // `current` panics without the store; bare `cx.new(RepoWindow::new)` tests skip `install_test_globals`.

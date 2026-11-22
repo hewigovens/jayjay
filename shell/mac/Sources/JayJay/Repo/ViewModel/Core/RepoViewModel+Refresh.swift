@@ -165,15 +165,11 @@ extension RepoViewModel {
         let initialSelectionBaseline = preferredRev == nil ? selectedChangeIds : nil
         let repo = repo
         let load = { includeContext in
-            try Self.loadRefreshContent(
-                repo: repo,
-                revset: requestedRevset,
-                preferredRev: preferredRev ?? currentSelection,
-                includeContext: includeContext
-            )
+            try Self.loadRefreshContent(repo: repo, revset: requestedRevset, preferredRev: preferredRev ?? currentSelection, includeContext: includeContext)
         }
         refreshTask = startRepoTask { [weak self, repo] in
             var selectionBaseline = initialSelectionBaseline
+            var isSnapshotting = false
             do {
                 if shouldLoadBeforeSnapshot {
                     let content = try load(false)
@@ -187,9 +183,11 @@ extension RepoViewModel {
                 }
 
                 if snapshotWorkingCopy {
+                    isSnapshotting = true
                     let isStale = try Self.snapshotIsStale(repo)
-                    guard !Task.isCancelled else { return }
+                    isSnapshotting = false
                     await self?.applyWorkingCopyStale(isStale)
+                    guard !Task.isCancelled else { return }
                 }
 
                 let content = try load(true)
@@ -204,7 +202,8 @@ extension RepoViewModel {
                 guard !Task.isCancelled else { return }
                 // A failed snapshot must still populate the context omitted from the first paint.
                 let context = shouldLoadBeforeSnapshot ? try? RepoRefreshContext(repo: repo) : nil
-                await self?.applyRefreshFailure(error, presence: repo.workspacePresence(), context: context, statusBar: context == nil && repo.sshState() == .connected ? .load(from: repo) : nil)
+                let statusBar: StatusBarSnapshot? = context == nil && repo.sshState() == .connected ? .load(from: repo) : nil
+                await self?.applyRefreshFailure(error, presence: repo.workspacePresence(), context: context, statusBar: statusBar, showAsNotice: isAutoTriggered && isSnapshotting)
             }
         }
     }
@@ -264,6 +263,9 @@ extension RepoViewModel {
     private func applyWorkingCopyStale(_ isStale: Bool) {
         guard !isShuttingDown else { return }
         isWorkingCopyStale = isStale
+        if !isStale {
+            backgroundSnapshotError = nil
+        }
     }
 
     @MainActor

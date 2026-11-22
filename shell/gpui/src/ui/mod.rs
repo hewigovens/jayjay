@@ -13,6 +13,7 @@ pub(crate) mod merge_editor;
 pub(crate) mod merge_nav;
 pub(crate) mod merge_scroll;
 pub mod navigation;
+pub(crate) mod notice_bar;
 pub(crate) mod onboarding;
 pub(crate) mod overlay;
 pub(crate) mod pane_drag;

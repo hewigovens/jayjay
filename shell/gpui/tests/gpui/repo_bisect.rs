@@ -117,8 +117,8 @@ fn the_test_runner_opens_from_the_bar_and_closes_on_an_outside_click(cx: &mut Te
     settle_visual(cx);
     let runner = cx.debug_bounds("bisect-test-runner").expect("test runner");
     assert!(
-        runner.top() >= open.bottom(),
-        "the runner opens below its button"
+        runner.bottom() <= open.top(),
+        "the runner opens above its button"
     );
 
     let status = cx.debug_bounds("bisect-status").expect("status");

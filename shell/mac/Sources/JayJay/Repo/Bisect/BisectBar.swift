@@ -7,21 +7,16 @@ struct BisectBar: View {
 
     var body: some View {
         if let state = viewModel.bisect.state {
-            VStack(alignment: .leading, spacing: 4) {
-                HStack(spacing: 10) {
-                    Image(systemName: "point.topleft.down.to.point.bottomright.curvepath")
-                        .foregroundStyle(.purple)
-                    Text(state.phase.title)
-                        .jayjayFont(12, weight: .semibold)
-                    Text(state.status)
-                        .jayjayFont(12)
-                        .foregroundStyle(.secondary)
-                        .lineLimit(1)
-                        .truncationMode(.middle)
-                        .accessibilityIdentifier(AID.Bisect.status)
-                    Spacer(minLength: 8)
-                    actions(state)
-                }
+            NoticeBar(systemImage: "point.topleft.down.to.point.bottomright.curvepath", tint: .purple, title: state.phase.title) {
+                Text(state.status)
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .lineLimit(1)
+                    .truncationMode(.middle)
+                    .accessibilityIdentifier(AID.Bisect.status)
+                Spacer(minLength: 8)
+                actions(state)
+            } footer: {
                 if let error = state.commandError {
                     Text(error)
                         .jayjayFont(11)
@@ -36,11 +31,6 @@ struct BisectBar: View {
                     }
                 }
             }
-            .controlSize(.small)
-            .padding(.horizontal, PaneLayout.detailInset)
-            .padding(.vertical, 8)
-            .background(.purple.opacity(0.08))
-            Divider()
         }
     }
 

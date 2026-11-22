@@ -1,14 +1,15 @@
 use gpui::{
-    Anchor, AnyElement, AppContext, Context, Entity, Focusable, FontWeight, InteractiveElement,
-    IntoElement, ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, anchored,
-    deferred, div, px, rgb,
+    Anchor, AnyElement, AppContext, Context, Entity, Focusable, InteractiveElement, IntoElement,
+    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, anchored, deferred,
+    div, px, rgb,
 };
 use jayjay_core::{BisectPhase, BisectState, BisectVerdict};
 
 use super::{RepoModal, RepoWindow};
 use crate::app::fonts::CodeText;
-use crate::app::theme::{FONT_BODY, FONT_META, Theme, ui_font_size};
-use crate::ui::icons::{self, glyph};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::ui::icons::glyph;
+use crate::ui::notice_bar::{notice_bar, notice_bar_header};
 use crate::ui::overlay::{overlay_card, overlay_header, overlay_layer};
 use crate::ui::primitives::{HelpTag, button, icon_button, inert_icon_button, small_button};
 use crate::ui::text_area::TextArea;
@@ -105,41 +106,24 @@ pub(super) fn bisect_bar(
         act: !vm.bisect.is_busy() && !refreshing,
         stop: vm.bisect.can_stop() && (vm.bisect.command_is_running() || !refreshing),
     };
-    let header = div()
-        .flex()
-        .flex_row()
-        .items_center()
-        .gap(px(10.))
-        .child(icons::icon(glyph::ARROWS_LEFT_RIGHT, 13., t.bisect_accent))
-        .child(
-            div()
-                .flex_none()
-                .font_weight(FontWeight::SEMIBOLD)
-                .child(state.phase.title()),
-        )
-        .child(
-            div()
-                .debug_selector(|| "bisect-status".to_owned())
-                .flex_1()
-                .min_w_0()
-                .truncate()
-                .text_color(rgb(t.fg_dim))
-                .child(state.status.clone()),
-        )
-        .child(bisect_actions(view, &state, enabled, t, cx));
-    let mut bar = div()
+    let header = notice_bar_header(
+        glyph::ARROWS_LEFT_RIGHT,
+        t.bisect_accent,
+        state.phase.title(),
+    )
+    .child(
+        div()
+            .debug_selector(|| "bisect-status".to_owned())
+            .flex_1()
+            .min_w_0()
+            .truncate()
+            .text_color(rgb(t.fg_dim))
+            .child(state.status.clone()),
+    )
+    .child(bisect_actions(view, &state, enabled, t, cx));
+    let mut bar = notice_bar(t.bisect_bar_bg, t)
         .debug_selector(|| "bisect-bar".to_owned())
-        .flex()
-        .flex_col()
-        .gap(px(4.))
-        .w_full()
-        .px(px(12.))
-        .py(px(8.))
-        .bg(rgb(t.bisect_bar_bg))
-        .border_b_1()
-        .border_color(rgb(t.border))
-        .text_size(ui_font_size(FONT_BODY))
-        .text_color(rgb(t.fg))
+        .border_t_1()
         .child(header);
     if let Some(error) = state.command_error.clone() {
         bar = bar.child(
@@ -285,9 +269,9 @@ fn test_runner_button(
     let mut anchor = div().relative().child(button);
     if view.bisect_test_runner_open && enabled {
         anchor = anchor.child(
-            div().absolute().top_full().right_0().child(deferred(
+            div().absolute().bottom_full().right_0().child(deferred(
                 anchored()
-                    .anchor(Anchor::TopRight)
+                    .anchor(Anchor::BottomRight)
                     .snap_to_window_with_margin(px(6.))
                     .child(test_runner(view, state, t, cx)),
             )),
@@ -306,7 +290,7 @@ fn test_runner(
         .id("bisect-test-runner")
         .debug_selector(|| "bisect-test-runner".to_owned())
         .occlude()
-        .mt(px(4.))
+        .mb(px(4.))
         .w(px(340.))
         .flex()
         .flex_col()

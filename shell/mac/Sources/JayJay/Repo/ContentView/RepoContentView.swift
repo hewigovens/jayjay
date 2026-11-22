@@ -157,6 +157,11 @@ struct RepoContentView: View {
             HStack(spacing: 0) {
                 VStack(spacing: 0) {
                     SSHReconnectBar(viewModel: viewModel)
+                    if let snapshotError = viewModel.backgroundSnapshotError {
+                        NoticeBar(systemImage: "exclamationmark.triangle.fill", tint: .orange, title: Localized.Repo.snapshotOutOfDate)
+                            .help(snapshotError)
+                            .accessibilityHint(snapshotError)
+                    }
                     BisectBar(viewModel: viewModel)
                     ResizableSplit(
                         width: $sidebarWidth,

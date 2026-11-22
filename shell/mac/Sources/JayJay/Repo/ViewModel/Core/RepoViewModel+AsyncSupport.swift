@@ -33,7 +33,8 @@ extension RepoViewModel {
         _ error: any Error,
         presence: WorkspacePresence,
         context: RepoRefreshContext? = nil,
-        statusBar: StatusBarSnapshot? = nil
+        statusBar: StatusBarSnapshot? = nil,
+        showAsNotice: Bool = false
     ) {
         guard !Task.isCancelled, !isShuttingDown else { return }
         if let context {
@@ -46,6 +47,12 @@ extension RepoViewModel {
         hasFinishedFirstLoad = true
         if presence == .gone {
             workspaceVanished = true
+        } else if showAsNotice {
+            let message = error.friendlyDescription
+            if backgroundSnapshotError == nil {
+                info = message
+            }
+            backgroundSnapshotError = message
         } else {
             present(error: error)
         }
