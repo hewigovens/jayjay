@@ -85,8 +85,10 @@ impl Repo {
     /// Undoing an undo goes one step further back instead of redoing.
     fn undo_step(&self, repo: &ReadonlyRepo) -> JayResult<Option<RestoreStep>> {
         let target = restored_operation(repo, repo.operation().clone(), UNDO_PREFIX)?;
-        if !self.performed_here(&target) {
-            return Ok(None);
+        if let Some(workspace) = self.other_workspace(&target) {
+            return Err(JayError::refused(jayjay_i18n::repo::undo_other_workspace(
+                workspace,
+            )));
         }
         // Reverting a snapshot would delete the edits it recorded from disk.
         if target.metadata().is_snapshot {
@@ -112,7 +114,8 @@ impl Repo {
 
     fn redo_step(&self, repo: &ReadonlyRepo) -> JayResult<Option<RestoreStep>> {
         let target = restored_operation(repo, repo.operation().clone(), REDO_PREFIX)?;
-        if !target.metadata().description.starts_with(UNDO_PREFIX) || !self.performed_here(&target)
+        if !target.metadata().description.starts_with(UNDO_PREFIX)
+            || self.other_workspace(&target).is_some()
         {
             return Ok(None);
         }
@@ -129,12 +132,13 @@ impl Repo {
     }
 
     /// Like the CLI without `--allow-cross-workspace`: another workspace's operation is rarely the one meant.
-    fn performed_here(&self, operation: &Operation) -> bool {
+    fn other_workspace<'a>(&self, operation: &'a Operation) -> Option<&'a str> {
         operation
             .metadata()
             .workspace_name
             .as_ref()
-            .is_none_or(|name| *name == self.workspace_name)
+            .filter(|name| **name != self.workspace_name)
+            .map(|name| name.as_str())
     }
 }
 

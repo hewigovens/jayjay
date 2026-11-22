@@ -131,6 +131,11 @@ struct RepoContentView: View {
                 viewModel.operationLogRequest = nil
                 showOperationLog(undoing: operationId)
             }
+            .onChange(of: viewModel.undoUnavailableReason) { _, reason in
+                guard let reason else { return }
+                viewModel.undoUnavailableReason = nil
+                showToast(reason, action: RepoToastAction(title: Localized.Repo.operationLog) { showsOperationLog = true })
+            }
             .sheet(item: $modal) { modal in
                 modalView(for: modal)
             }

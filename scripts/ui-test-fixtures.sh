@@ -342,6 +342,15 @@ fixture_evolog_restore() {
   )
 }
 
+fixture_undo_blocked() {
+  copy_fixture simple undo-blocked
+  (
+    cd "$fixtures/undo-blocked"
+    echo "edits" > wip1.txt
+    jj st
+  )
+}
+
 # One boundary edit leaves exactly one 53-line unchanged region for collapsed-context expansion.
 fixture_context_expansion() {
   jj git init --colocate "$fixtures/context-expansion"
@@ -610,6 +619,7 @@ fixture_formats
 fixture_review_notes
 fixture_evolog_hide_snapshots
 fixture_evolog_restore
+fixture_undo_blocked
 fixture_context_expansion
 fixture_complex
 fixture_many_renames

@@ -18,9 +18,11 @@ struct RepoToastView: View {
 
     var body: some View {
         HStack(spacing: 12) {
-            Text(toast.message)
-                .jayjayFont(13, weight: .medium)
-                .foregroundStyle(colorScheme == .dark ? .white : .black)
+            WrappedWidth(maxWidth: 400) {
+                Text(toast.message)
+                    .jayjayFont(13, weight: .medium)
+                    .foregroundStyle(colorScheme == .dark ? .white : .black)
+            }
             if let action = toast.action {
                 Button(action.title) {
                     dismiss()
@@ -37,5 +39,20 @@ struct RepoToastView: View {
         .padding(.horizontal, 24)
         .padding(.vertical, 14)
         .glassEffect(in: RoundedRectangle(cornerRadius: 14, style: .continuous))
+    }
+}
+
+/// Hugs short content and wraps content wider than `maxWidth`; a `maxWidth` frame would pad short toasts out to it.
+private struct WrappedWidth: Layout {
+    let maxWidth: CGFloat
+
+    func sizeThatFits(proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) -> CGSize {
+        guard let content = subviews.first else { return .zero }
+        let ideal = content.sizeThatFits(.unspecified)
+        return ideal.width <= maxWidth ? ideal : content.sizeThatFits(ProposedViewSize(width: maxWidth, height: nil))
+    }
+
+    func placeSubviews(in bounds: CGRect, proposal _: ProposedViewSize, subviews: Subviews, cache _: inout ()) {
+        subviews.first?.place(at: bounds.origin, proposal: ProposedViewSize(bounds.size))
     }
 }
