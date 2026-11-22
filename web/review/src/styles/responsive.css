@@ -84,13 +84,13 @@
     flex: 1 1 0;
     font-size: calc(18px * var(--jj-interface-scale, 1));
   }
-  /* The host's actions take their own row, so a long title keeps the width. */
+  /* The host's actions take their own row, so a long title keeps the width; the basis offsets the margin, or the row fits beside a collapsed title. */
   :where(.jayjay-review) .jj-change-title {
     flex-wrap: wrap;
   }
   :where(.jayjay-review) .jj-change-actions {
     order: 1;
-    flex-basis: 100%;
+    flex-basis: calc(100% + 7px);
     margin-left: -7px;
   }
   :where(.jayjay-review) .jj-pane-heading {
