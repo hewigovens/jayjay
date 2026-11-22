@@ -1,12 +1,13 @@
 use gpui::{
     AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
-    StatefulInteractiveElement, Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, rgb,
 };
 use jayjay_core::ssh::{ConnectionState, RemoteLocation};
 
 use super::RepoWindow;
-use crate::app::theme::{FONT_BODY, FONT_META, Theme, ui_font_size};
-use crate::ui::icons::{self, glyph};
+use crate::app::theme::{FONT_META, Theme, ui_font_size};
+use crate::ui::icons::glyph;
+use crate::ui::notice_bar::{notice_bar, notice_bar_header};
 use crate::ui::primitives::small_button;
 
 impl RepoWindow {
@@ -59,32 +60,22 @@ pub(super) fn ssh_reconnect_bar(
         button.on_click(cx.listener(|view, _, _, cx| view.reconnect_ssh(cx)))
     };
     Some(
-        div()
+        notice_bar(t.error_bar_bg, t)
             .debug_selector(|| "ssh-reconnect-bar".to_owned())
-            .flex()
-            .flex_row()
-            .items_center()
-            .gap(px(10.))
-            .w_full()
-            .px(px(12.))
-            .py(px(8.))
-            .bg(rgb(t.header_bg))
             .border_t_1()
-            .border_color(rgb(t.border))
-            .text_size(ui_font_size(FONT_BODY))
-            .text_color(rgb(t.fg))
-            .child(icons::icon(glyph::CLOUD_OFF, 13., t.error_fg))
-            .child(div().flex_none().child(location.machine))
             .child(
-                div()
-                    .flex_1()
-                    .min_w_0()
-                    .truncate()
-                    .text_size(ui_font_size(FONT_META))
-                    .text_color(rgb(t.fg_dim))
-                    .child(detail),
+                notice_bar_header(glyph::CLOUD_OFF, t.error_fg, location.machine)
+                    .child(
+                        div()
+                            .flex_1()
+                            .min_w_0()
+                            .truncate()
+                            .text_size(ui_font_size(FONT_META))
+                            .text_color(rgb(t.fg_dim))
+                            .child(detail),
+                    )
+                    .child(button),
             )
-            .child(button)
             .into_any_element(),
     )
 }

@@ -803,3 +803,34 @@ fn manual_refresh_shows_the_indicator_for_its_minimum_duration(cx: &mut TestAppC
     settle(cx);
     vm.read_with(cx, |vm, _| assert!(!vm.loading.refresh_indicator));
 }
+
+#[gpui::test]
+fn a_background_snapshot_failure_warns_until_a_snapshot_succeeds(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let tree_state = fixture.path.join(".jj/working_copy/tree_state");
+    let intact = fs::read(&tree_state).expect("read tree state");
+    fs::write(&tree_state, "corrupt").expect("corrupt tree state");
+    let reload_in_background = |cx: &mut VisualTestContext| {
+        let vm = view.read_with(cx, |view, _| view.view_model().clone());
+        vm.update(cx, |vm, cx| vm.request_background_reload(cx));
+        settle_visual(cx);
+    };
+    let error = |cx: &mut VisualTestContext| {
+        view.read_with(cx, |view, cx| view.view_model().read(cx).error.clone())
+    };
+
+    reload_in_background(cx);
+    assert!(view.read_with(cx, |view, _| view.toast().is_some()));
+    assert_eq!(error(cx), None);
+    assert!(cx.debug_bounds("snapshot-warning-bar").is_some());
+
+    click(cx, "toolbar-refresh");
+    settle_visual(cx);
+    assert!(error(cx).is_some());
+    assert!(cx.debug_bounds("snapshot-warning-bar").is_some());
+
+    fs::write(&tree_state, intact).expect("restore tree state");
+    reload_in_background(cx);
+    assert!(cx.debug_bounds("snapshot-warning-bar").is_none());
+}

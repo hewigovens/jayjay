@@ -73,6 +73,7 @@ repo-no-file-selected = No file selected
 repo-editor-could-not-be-opened = Editor could not be opened
 repo-rebase-cancelled-the-changes-moved-while = Rebase cancelled: the changes moved while confirming
 repo-moved-working-copy = Moved working copy
+repo-snapshot-out-of-date = Working-copy changes may be out of date.
 repo-working-copy-is-stale-another-workspace = Working copy is stale: another workspace rewrote this change. Update Workspace from the context menu or the Refresh button.
 repo-collapse-description = Collapse description
 repo-expand-description = Expand description

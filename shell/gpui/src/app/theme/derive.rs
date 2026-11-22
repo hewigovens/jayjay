@@ -124,6 +124,8 @@ impl Theme {
             },
 
             warning_fg: seed.orange,
+            warning_bar_bg: mix(bg, seed.orange, 0.08),
+            error_bar_bg: mix(bg, seed.red, 0.08),
 
             find_match_bg: diff.find_match_bg,
             find_match_fg: diff.find_match_fg,

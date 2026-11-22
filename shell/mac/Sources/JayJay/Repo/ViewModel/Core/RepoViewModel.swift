@@ -107,6 +107,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     @ObservationIgnored var fileRevealCompletion: CheckedContinuation<Bool, Never>?
     var error: String?
     var workspaceVanished = false
+    var backgroundSnapshotError: String?
     var isWorkingCopyStale = false
     var info: String?
     var actionNotice: RepoActionNotice?

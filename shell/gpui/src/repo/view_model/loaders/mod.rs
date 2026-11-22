@@ -6,3 +6,5 @@ mod pull_request;
 mod refresh;
 mod review_notes;
 mod revset;
+
+pub(crate) use refresh::BackgroundSnapshotFailed;

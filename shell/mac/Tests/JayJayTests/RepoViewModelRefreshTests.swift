@@ -375,6 +375,31 @@ final class RepoViewModelRefreshTests: RepoViewModelTestCase {
 
         XCTAssertFalse(viewModel.hasFinishedFirstLoad)
     }
+
+    func testBackgroundSnapshotFailureWarnsUntilASnapshotSucceeds() async throws {
+        let viewModel = try XCTUnwrap(viewModel)
+        viewModel.refresh()
+        try await waitUntil("the initial refresh finishes") { !viewModel.isRefreshingInFlight }
+        let directory = URL(fileURLWithPath: viewModel.repoPath).appending(path: "unreadable")
+        try FileManager.default.createDirectory(at: directory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o111])
+        defer { try? FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path) }
+
+        viewModel.refresh(isAutoTriggered: true)
+        try await waitUntil("the background refresh fails") { !viewModel.isRefreshingInFlight }
+        XCTAssertNil(viewModel.error)
+        XCTAssertNotNil(viewModel.backgroundSnapshotError)
+        XCTAssertEqual(viewModel.info, viewModel.backgroundSnapshotError)
+
+        viewModel.refresh()
+        try await waitUntil("the manual refresh fails") { !viewModel.isRefreshingInFlight }
+        XCTAssertNotNil(viewModel.error)
+        XCTAssertNotNil(viewModel.backgroundSnapshotError)
+
+        try FileManager.default.setAttributes([.posixPermissions: 0o700], ofItemAtPath: directory.path)
+        viewModel.refresh(isAutoTriggered: true)
+        try await waitUntil("the background refresh succeeds") { !viewModel.isRefreshingInFlight }
+        XCTAssertNil(viewModel.backgroundSnapshotError)
+    }
 }
 
 private enum TestRefreshError: Error {

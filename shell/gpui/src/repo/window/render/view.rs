@@ -16,6 +16,7 @@ use super::super::repo_switcher::render_repo_switcher;
 use super::super::revset_filter::{render_revset_completions, render_revset_popup};
 use super::super::sidebar::sidebar;
 use super::super::sidebar_visibility::COLUMN_SLIDE;
+use super::super::snapshot_warning::snapshot_warning_bar;
 use super::super::ssh_reconnect::ssh_reconnect_bar;
 use super::super::stacked_pr_render::stacked_pr_overlay;
 use super::super::status_bar::status_bar;
@@ -297,7 +298,7 @@ impl Render for RepoWindow {
         } else {
             0.
         };
-        let mut centre = div().flex().flex_col().flex_1().min_w_0().h_full().child(
+        let centre = div().flex().flex_col().flex_1().min_w_0().h_full().child(
             crate::repo::toolbar::toolbar(
                 toolbar_repo,
                 self.repo_switcher_button_bounds.clone(),
@@ -311,9 +312,6 @@ impl Render for RepoWindow {
                 cx,
             ),
         );
-        if let Some(bar) = bisect_bar(self, &t, cx) {
-            centre = centre.child(bar);
-        }
         body = body.child(centre.child(content));
 
         if let Some(width) = operation_log_width {
@@ -351,6 +349,12 @@ impl Render for RepoWindow {
                 .child(div().absolute().inset_0().block_mouse_except_scroll());
         }
         root = root.child(body);
+        if let Some(bar) = snapshot_warning_bar(self, &t, cx) {
+            root = root.child(bar);
+        }
+        if let Some(bar) = bisect_bar(self, &t, cx) {
+            root = root.child(bar);
+        }
         // Outside the dimmed, mouse-blocked body so a disconnected repository stays reconnectable.
         if let Some(bar) = ssh_reconnect_bar(self, &t, cx) {
             root = root.child(bar);

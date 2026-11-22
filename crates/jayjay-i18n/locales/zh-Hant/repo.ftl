@@ -73,6 +73,7 @@ repo-no-file-selected = 未選取檔案
 repo-editor-could-not-be-opened = 無法開啟編輯器
 repo-rebase-cancelled-the-changes-moved-while = 已取消重定基底：確認期間變更已移動
 repo-moved-working-copy = 已移動工作副本
+repo-snapshot-out-of-date = 顯示的工作副本變更可能不是最新的。
 repo-working-copy-is-stale-another-workspace = 工作副本已過期：另一個工作區重寫了此變更。請從快速選單或重新整理按鈕更新工作區。
 repo-collapse-description = 收合描述
 repo-expand-description = 展開描述

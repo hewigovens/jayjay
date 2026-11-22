@@ -28,6 +28,7 @@ pub use diff_cache::DiffCache;
 pub use graph_data::GraphData;
 pub(crate) use loaded_content::DiffLoadState;
 pub use loaded_content::{LoadedDiff, LoadedReviewSnapshot, SvgPreviewContent};
+pub(crate) use loaders::BackgroundSnapshotFailed;
 pub use loading_state::{LoadingState, PendingRefresh};
 pub use notes_state::NotesState;
 pub(crate) use operation_step::OperationStep;
