@@ -1022,6 +1022,10 @@ impl JayJayRepo {
         self.inner.undo_state()
     }
 
+    fn undo_unavailable_reason(&self) -> Option<String> {
+        self.inner.undo_unavailable_reason()
+    }
+
     fn review_notes(
         &self,
         rev: String,

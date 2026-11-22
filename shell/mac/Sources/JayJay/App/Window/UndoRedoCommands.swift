@@ -14,7 +14,7 @@ struct UndoRedoCommands: Commands {
         CommandGroup(replacing: .undoRedo) {
             Button(undoTitle) { router.undo(repo: repo) }
                 .keyboardShortcut("z", modifiers: .command)
-                .disabled(!router.local.canUndo && repo?.operationSteps?.undoDescription == nil)
+                .disabled(!router.local.canUndo && repo == nil)
             Button(redoTitle) { router.redo(repo: repo) }
                 .keyboardShortcut("z", modifiers: [.command, .shift])
                 .disabled(!router.local.canRedo && repo?.operationSteps?.redoDescription == nil)

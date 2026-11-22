@@ -113,6 +113,7 @@ final class RepoViewModel: ChangeActions, DAGActions, BookmarkActions, TagAction
     var actionNotice: RepoActionNotice?
     /// An operation the user asked to undo after the repo moved past it; the window shows it in the Operation Log instead.
     var operationLogRequest: String?
+    var undoUnavailableReason: String?
     /// A tracked bookmark just moved by drag, awaiting an optional one-click push.
     var pendingPushBookmark: String?
     var workspaces: [WorkspaceInfo] = []

@@ -11,6 +11,14 @@ extension RepoViewModel {
         step(from: operationId, message: Localized.Repo.undidOperation) { try $0.undo(operationId: operationId) }
     }
 
+    func explainUnavailableUndo() {
+        runRepoTask {
+            $0.undoUnavailableReason()
+        } onSuccess: { viewModel, reason in
+            viewModel.undoUnavailableReason = reason
+        }
+    }
+
     func redo(operationId: String) {
         step(from: operationId, message: Localized.Repo.redidOperation) { try $0.redo(operationId: operationId) }
     }

@@ -59,8 +59,12 @@ final class RepoMenuHandler: RepositoryMenuHandler {
     }
 
     func undoOperation() {
-        guard let steps = operationSteps, steps.undoDescription != nil else { return }
-        viewModel?.undo(operationId: steps.operationId)
+        guard let steps = operationSteps else { return }
+        if steps.undoDescription == nil {
+            viewModel?.explainUnavailableUndo()
+        } else {
+            viewModel?.undo(operationId: steps.operationId)
+        }
     }
 
     func redoOperation() {

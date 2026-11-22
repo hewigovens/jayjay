@@ -1375,6 +1375,8 @@ fn undo_skips_operations_from_another_workspace() {
     let state = repo.undo_state();
     assert_eq!(state.undo_description, None);
     assert!(repo.undo(&state.operation_id).is_err());
+    let reason = repo.undo_unavailable_reason().expect("undo is unavailable");
+    assert!(reason.contains("feature"), "{reason}");
 }
 
 #[test]
