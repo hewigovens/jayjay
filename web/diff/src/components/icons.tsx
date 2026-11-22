@@ -40,6 +40,22 @@ export const SyncIcon = ({ size }: IconProps) => (
 export const StackIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M8 2l6 3-6 3-6-3 6-3ZM2 8l6 3 6-3M2 11l6 3 6-3" />
 );
+export const ApprovedIcon = ({ size }: IconProps) => <Icon size={size} d="M3 8.5 6.5 12 13 4.5" />;
+export const ChangesRequestedIcon = ({ size }: IconProps) => (
+  <Icon size={size} d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM8 4.5v4M8 11h.01" />
+);
+export const MergedIcon = ({ size }: IconProps) => (
+  <Icon
+    size={size}
+    d="M4.5 5.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM4.5 13.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM11.5 10.5a1.5 1.5 0 1 0 0-3 1.5 1.5 0 0 0 0 3ZM4.5 5.5v5M4.5 5.5c0 2.5 2 3.5 5.5 3.5"
+  />
+);
+export const ClosedIcon = ({ size }: IconProps) => (
+  <Icon
+    size={size}
+    d="M8 1.5a6.5 6.5 0 1 0 0 13 6.5 6.5 0 0 0 0-13ZM5.75 5.75l4.5 4.5M10.25 5.75l-4.5 4.5"
+  />
+);
 export const ArrowIcon = ({ size }: IconProps) => (
   <Icon size={size} d="M2.5 8h11M9 3.5 13.5 8 9 12.5" />
 );

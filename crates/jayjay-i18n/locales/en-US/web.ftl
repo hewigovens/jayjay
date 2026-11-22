@@ -130,6 +130,8 @@ web-pull-all-commits = All commits
 web-pull-stack = Stacked pull requests
 web-pull-merged = Merged
 web-pull-closed = Closed
+web-pull-approved = Approved
+web-pull-changes-requested = Changes requested
 
 web-font-section = Font
 web-font-diff = Diff

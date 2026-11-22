@@ -27,6 +27,7 @@ import { useReviewMode } from "../../hooks/useReviewMode";
 import { GitHubIcon, RefreshIcon, SignOutIcon } from "../icons";
 import { SignInPanel } from "../sign-in/SignInPanel";
 import { DiffThemePicker } from "./DiffThemePicker";
+import { PullStatus } from "./PullStatus";
 import { ShareNotesButton } from "./ShareNotesButton";
 import { StackPicker } from "./StackPicker";
 import { SyncViewedButton } from "./SyncViewedButton";
@@ -55,6 +56,8 @@ export function PullReview({
     shown,
     commits,
     stack,
+    state,
+    approval,
     signedIn,
     needsSignIn,
     retryable,
@@ -215,6 +218,9 @@ export function PullReview({
           }
           headerActions={
             <>
+              {isPullRequest(pull) && (
+                <PullStatus state={state} approval={approval} labels={labels} />
+              )}
               {stack && isPullRequest(pull) && (
                 <StackPicker
                   stack={stack}

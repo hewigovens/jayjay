@@ -16,12 +16,22 @@ export interface PullManifest {
   commit?: string;
   // Bottom first, this pull request included.
   stack?: PullStackEntry[];
+  state?: PullState;
+  approval?: PullApproval;
 }
+
+// Changes requested outweigh approvals; `reviewers` are the logins behind the state.
+export interface PullApproval {
+  state: "approved" | "changes-requested";
+  reviewers: string[];
+}
+
+export type PullState = "open" | "closed" | "merged";
 
 export interface PullStackEntry {
   number: number;
   title: string;
-  state: "open" | "closed" | "merged";
+  state: PullState;
 }
 
 export interface PullCommit {

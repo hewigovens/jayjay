@@ -33,6 +33,22 @@
   color: var(--jj-removed-ink);
   font-size: calc(11px * var(--jj-interface-scale, 1));
 }
+.pull-status {
+  display: inline-flex;
+  align-items: center;
+  gap: 4px;
+  padding: 0 6px;
+  color: var(--jj-reviewed-ink);
+  font-size: calc(12px * var(--jj-interface-scale, 1));
+  white-space: nowrap;
+}
+.pull-status-merged {
+  color: var(--jj-kind-renamed);
+}
+.pull-status-closed,
+.pull-status-changes-requested {
+  color: var(--jj-removed-ink);
+}
 .pull-synced {
   color: var(--jj-accent);
 }

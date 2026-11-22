@@ -2,8 +2,8 @@ import { expect, test } from "vitest";
 import { GitHub, GitHubError } from "../worker/github/GitHub";
 import { streamDiffFiles } from "../worker/github/GitHubDiff";
 
-function github(routes: Record<string, unknown>, requests: string[] = []) {
-  return new GitHub(undefined, async (input) => {
+function github(routes: Record<string, unknown>, requests: string[] = [], token?: string) {
+  return new GitHub(token, async (input) => {
     const path = String(input).replace("https://api.github.com", "");
     requests.push(path);
     if (!(path in routes)) return new Response("{}", { status: 404 });
@@ -376,4 +376,49 @@ test("follows a stack through base branches both ways", async () => {
     { number: 2, title: "P2", state: "open" },
     { number: 3, title: "P3", state: "open" },
   ]);
+});
+
+test("reads the state, and the approval from the reviews that still stand, changes requested first", async () => {
+  const review = (login: string | null, state: string) => ({ state, author: login && { login } });
+  for (const [reviews, reviewDecision, approval] of [
+    [
+      [review("a", "APPROVED"), review("b", "APPROVED")],
+      null,
+      { state: "approved", reviewers: ["a", "b"] },
+    ],
+    [[review("a", "APPROVED")], "REVIEW_REQUIRED", undefined],
+    [
+      [review("a", "APPROVED"), review(null, "CHANGES_REQUESTED")],
+      "CHANGES_REQUESTED",
+      { state: "changes-requested", reviewers: ["ghost"] },
+    ],
+    [[review("a", "DISMISSED")], null, undefined],
+  ] as const) {
+    const manifest = await github(
+      {
+        "/repos/o/r/pulls/2": {
+          title: "T",
+          state: "closed",
+          merged_at: "2026-11-01T00:00:00Z",
+          changed_files: 0,
+          commits: 0,
+          base: { ref: "main", sha: "s", repo: { private: false, default_branch: "main" } },
+          head: { ref: "two", sha: "h", repo: null },
+        },
+        "https://github.com/o/r/pull/2.diff": "",
+        "/repos/o/r/compare/s...h?per_page=1": { merge_base_commit: { sha: "s" } },
+        "/graphql": {
+          data: {
+            repository: {
+              pullRequest: { reviewDecision, latestOpinionatedReviews: { nodes: reviews } },
+            },
+          },
+        },
+      },
+      [],
+      "token",
+    ).manifest({ owner: "o", repo: "r", number: 2 });
+    expect(manifest.state).toBe("merged");
+    expect(manifest.approval).toEqual(approval);
+  }
 });

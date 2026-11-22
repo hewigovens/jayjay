@@ -5,7 +5,13 @@ import type { Labels, ReviewBackend } from "@jayjay/review-web/types";
 import { GitHubSignIn } from "../github/GitHubSignIn";
 import { notesExport } from "../github/NotesExport";
 import { PullLoader, PullLoadError } from "../github/PullLoader";
-import type { PullCommit, PullError, PullStackEntry } from "../github/PullManifest";
+import type {
+  PullApproval,
+  PullCommit,
+  PullError,
+  PullStackEntry,
+  PullState,
+} from "../github/PullManifest";
 import {
   atCommit,
   isPullRequest,
@@ -31,6 +37,8 @@ export function usePullReview(
   const opened = useRef(new Map<number, { target: ReviewRef; headSha: string; title: string }>());
   const [commits, setCommits] = useState<PullCommit[]>([]);
   const [stack, setStack] = useState<PullStackEntry[]>();
+  const [state, setState] = useState<PullState>();
+  const [approval, setApproval] = useState<PullApproval>();
   const prefetch = useRef<AbortController>(undefined);
   const [signedIn, setSignedIn] = useState(() => GitHubSignIn.token !== null);
   const [needsSignIn, setNeedsSignIn] = useState(false);
@@ -119,8 +127,12 @@ export function usePullReview(
               ? current
               : next.manifest.commits,
           );
-          // Only the whole pull request's manifest follows the stack; a commit keeps what it showed.
-          if (!commit) setStack(next.manifest.stack);
+          // Only the whole pull request's manifest follows the stack, state and reviews; a commit keeps what it showed.
+          if (!commit) {
+            setStack(next.manifest.stack);
+            setState(next.manifest.state);
+            setApproval(next.manifest.approval);
+          }
           return result;
         }),
       render: (selection) =>
@@ -214,6 +226,8 @@ export function usePullReview(
     shown,
     commits,
     stack,
+    state,
+    approval,
     signedIn,
     needsSignIn,
     // Retrying can't make a missing, private, or oversized review appear.

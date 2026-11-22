@@ -130,6 +130,8 @@ web-pull-all-commits = すべてのコミット
 web-pull-stack = スタックされたプル リクエスト
 web-pull-merged = マージ済み
 web-pull-closed = クローズ済み
+web-pull-approved = 承認済み
+web-pull-changes-requested = 変更リクエストあり
 
 web-font-section = フォント
 web-font-diff = 差分

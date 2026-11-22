@@ -1,5 +1,6 @@
 import {
   maxFiles,
+  type PullApproval,
   type PullCommit,
   type PullError,
   type PullManifest,
@@ -14,7 +15,7 @@ import {
   type ReviewRef,
 } from "../../src/github/ReviewRef";
 import { streamDiffFiles } from "./GitHubDiff";
-import { pullStack } from "./pullStack";
+import { pullStack, pullState } from "./pullStack";
 
 export interface GitHubPull {
   number: number;
@@ -51,6 +52,21 @@ export class GitHubError extends Error {
   }
 }
 
+const approvalQuery = `query($owner: String!, $name: String!, $number: Int!) {
+  repository(owner: $owner, name: $name) { pullRequest(number: $number) { reviewDecision
+    latestOpinionatedReviews(first: 100, writersOnly: true) { nodes { state author { login } } } } } }`;
+
+interface ApprovalReply {
+  data?: {
+    repository: {
+      pullRequest: {
+        reviewDecision: string | null;
+        latestOpinionatedReviews: { nodes: { state: string; author: { login: string } | null }[] };
+      } | null;
+    } | null;
+  };
+}
+
 const perPage = 100;
 // GitHub lists at most this many of a pull request's or comparison's commits.
 const maxCommits = 250;
@@ -73,13 +89,14 @@ export class GitHub {
     const repository = `${owner}/${repo}`;
     const pull = await this.pull(repository, number);
     if (pull.changed_files > maxFiles) throw new GitHubError("too-large", 413);
-    const [compare, commits, stack, files] = await Promise.all([
+    const [compare, commits, stack, approval, files] = await Promise.all([
       this.get<{ merge_base_commit: { sha: string } }>(
         `/repos/${repository}/compare/${pull.base.sha}...${pull.head.sha}?per_page=1`,
       ),
       this.commits(repository, number, pull),
       // A stack is a convenience; failing to follow it still shows the pull request.
       pullStack((path) => this.get(path), repository, pull).catch(() => undefined),
+      this.approval(owner, repo, number).catch(() => undefined),
       this.diff(`/${repository}/pull/${number}.diff`),
     ]);
     return {
@@ -93,7 +110,9 @@ export class GitHub {
       headSha: pull.head.sha,
       files,
       commits: commits.map(pullCommit),
+      state: pullState(pull),
       ...(stack && { stack }),
+      ...(approval && { approval }),
     };
   }
 
@@ -220,6 +239,38 @@ export class GitHub {
       ),
     );
     return lists.flat();
+  }
+
+  // Only reviewers with write access count, and approvals short of the branch's review rule don't. GraphQL answers no one without a token.
+  private async approval(
+    owner: string,
+    name: string,
+    number: number,
+  ): Promise<PullApproval | undefined> {
+    if (!this.token) return undefined;
+    const response = await this.fetcher("https://api.github.com/graphql", {
+      method: "POST",
+      headers: {
+        authorization: `Bearer ${this.token}`,
+        "content-type": "application/json",
+        "user-agent": "jayjay-pr",
+      },
+      body: JSON.stringify({ query: approvalQuery, variables: { owner, name, number } }),
+    });
+    if (!response.ok) return undefined;
+    const reply = (await response.json()) as ApprovalReply;
+    const pull = reply.data?.repository?.pullRequest;
+    const reviews = pull?.latestOpinionatedReviews.nodes ?? [];
+    const reviewers = (state: string) =>
+      reviews
+        .filter((review) => review.state === state)
+        .map((review) => review.author?.login ?? "ghost");
+    const blocking = reviewers("CHANGES_REQUESTED");
+    if (blocking.length) return { state: "changes-requested", reviewers: blocking };
+    const approving = reviewers("APPROVED");
+    return approving.length && pull?.reviewDecision !== "REVIEW_REQUIRED"
+      ? { state: "approved", reviewers: approving }
+      : undefined;
   }
 
   // github.com serves diffs outside the API rate limit.

@@ -242,6 +242,11 @@ fn pull_labels() -> Vec<(&'static str, String)> {
         ("pullStack", jayjay_i18n::web::pull_stack()),
         ("pullMerged", jayjay_i18n::web::pull_merged()),
         ("pullClosed", jayjay_i18n::web::pull_closed()),
+        ("pullApproved", jayjay_i18n::web::pull_approved()),
+        (
+            "pullChangesRequested",
+            jayjay_i18n::web::pull_changes_requested(),
+        ),
         ("pullSyncViewed", jayjay_i18n::web::pull_sync_viewed()),
         (
             "pullSyncViewedScope",

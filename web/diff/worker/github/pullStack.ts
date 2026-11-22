@@ -1,4 +1,4 @@
-import type { PullStackEntry } from "../../src/github/PullManifest";
+import type { PullStackEntry, PullState } from "../../src/github/PullManifest";
 import type { GitHubPull } from "./GitHub";
 
 // Bounds the API calls a stack costs: one per step each way.
@@ -47,6 +47,10 @@ export async function pullStack(
   return stack.length > 1 ? stack.map(stackEntry) : undefined;
 }
 
-function stackEntry({ number, title, state, merged_at }: GitHubPull): PullStackEntry {
-  return { number, title, state: merged_at ? "merged" : state };
+export function pullState({ state, merged_at }: GitHubPull): PullState {
+  return merged_at ? "merged" : state;
+}
+
+function stackEntry(pull: GitHubPull): PullStackEntry {
+  return { number: pull.number, title: pull.title, state: pullState(pull) };
 }

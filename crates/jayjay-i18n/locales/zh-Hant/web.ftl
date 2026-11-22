@@ -130,6 +130,8 @@ web-pull-all-commits = 所有提交
 web-pull-stack = 堆疊的 Pull Request
 web-pull-merged = 已合併
 web-pull-closed = 已關閉
+web-pull-approved = 已核准
+web-pull-changes-requested = 已要求變更
 
 web-font-section = 字型
 web-font-diff = 差異
