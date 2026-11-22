@@ -7,6 +7,7 @@ web-empty = テキストを貼り付けるか、2 つのファイルを開いて
 web-binary-file = バイナリ ファイルは表示されません。
 web-mode-changed = ファイル モードが { $old } から { $new } に変更されました。
 web-empty-file = このファイルは空です。
+web-file-too-large = 大きすぎるため、ここでは表示できません。
 web-no-text-changes = 表示できるテキストの変更はありません。
 web-show-rest = この差分の残りを表示
 web-whitespace-only = 空白のみが変更されています。表示するには「空白を無視」をオフにしてください。

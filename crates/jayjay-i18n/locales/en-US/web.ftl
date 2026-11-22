@@ -7,6 +7,7 @@ web-empty = Paste some text or open two files to compare.
 web-binary-file = Binary file not shown.
 web-mode-changed = File mode changed from { $old } to { $new }.
 web-empty-file = This file is empty.
+web-file-too-large = Too large to show here.
 web-no-text-changes = No text changes to show.
 web-show-rest = Show the rest of this diff
 web-whitespace-only = Only whitespace changed. Turn off “Ignore whitespace” to see it.

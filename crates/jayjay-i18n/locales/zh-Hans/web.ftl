@@ -7,6 +7,7 @@ web-empty = 粘贴一些文本，或打开两个文件进行比较。
 web-binary-file = 不显示二进制文件。
 web-mode-changed = 文件模式已从 { $old } 更改为 { $new }。
 web-empty-file = 此文件为空。
+web-file-too-large = 文件太大，无法在此显示。
 web-no-text-changes = 没有可显示的文本变更。
 web-show-rest = 显示此差异的其余部分
 web-whitespace-only = 只有空白发生了变更。关闭“忽略空白”即可查看。

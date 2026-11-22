@@ -40,9 +40,11 @@ shell/mac/
 │       │               CopyableRow, accessibility ids
 │       └── CommandPalette/  CommandPaletteItem, CommandPalettePanel, PaletteRoot (+RawJJ),
 │                            CommandPaletteSupport
-└── Packages/JayJayDiffUI/   AppKit diff rendering: NativeDiffView at the root, sources grouped
+├── Packages/JayJayDiffUI/   AppKit diff rendering: NativeDiffView at the root, sources grouped
                              into Gutter/, Notes/, SideBySide/, Rendering/, Text/, Media/;
                              own test target
+└── Packages/JayJayReviewUI/ SwiftUI review over a ReviewBackend for iOS and macOS hosts:
+                             Model/, Backend/, State/ (ReviewModel), Theme/, Views/; own test target
 ```
 
 Group sibling files into a responsibility folder once a feature grows past a few files (see `Repo/DAG/`); `Sources/JayJay` is a synchronized folder in `JayJay.xcodeproj`, so moves need no project edits — except the files other targets include by path (see Pinned paths below).
@@ -51,6 +53,7 @@ The ViewModel owns `JayJayRepo`; all jj operations go through it. `Core/` holds 
 
 ## Conventions
 
+- **JayJayReviewUI boundary**: it also ships to iOS, so it uses only what JayJayCore exposes without the `desktop` profile (palettes, `Localized`), SwiftUI rather than AppKit, and JSON from its `ReviewBackend` for everything about the repository.
 - **JayJayDiffUI boundary**: the package declares the gutter-action protocols (`DiffGutterContextActions` and its `Selection`/`Edit`/`Review`/`Note` sub-protocols, one file each under `Gutter/`) plus the anchor/summary value types in `Notes/`; the app target conforms via `DiffSection` and its `+EditActions`/`+ReviewActions`/`+NoteActions` extensions. The package stays app-agnostic and calls back only through those protocols.
 - **File splitting**: One primary type per file, named after the type (private helpers used only there stay put; a view keeps its `#Preview`). Split by responsibility, not line count: growing types that pick up a second job become `+Feature.swift` extension files (see `DAGView+*`, `DiffSection+*`, the `ViewModel/` folders); wide parameter lists become value types (e.g. `NoteAnchor`, `SplitSheetRequest`). Dense folders get responsibility subfolders (`Detail/FileList/`, `Repo/ContentView/`, the JayJayDiffUI `Gutter/`/`Notes/`/`Rendering/` layout).
 - **Project file**: `shell/mac/JayJay.xcodeproj/project.xcproj` is the checked-in JSON project format (Xcode 27+). Edit it in Xcode or by hand, then keep it canonical with `xcrun xcprojformatter --update shell/mac/JayJay.xcodeproj`.
