@@ -22,7 +22,8 @@ struct JayJayApp: App {
         UserDefaults.standard.register(defaults: [
             "ApplePersistenceIgnoreState": true,
             // AppKit otherwise opens a bare launch path as a document, and SwiftUI then skips the launch route's window.
-            "NSTreatUnknownArgumentsAsOpen": false
+            "NSTreatUnknownArgumentsAsOpen": false,
+            "NSInitialToolTipDelay": 1000
         ])
 
         NSWindow.allowsAutomaticWindowTabbing = false
