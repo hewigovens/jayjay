@@ -51,7 +51,7 @@ repo-working-copy-has-no-changes-to = 作業コピーに説明を付ける変更
 repo-generating-ellipsis = 生成中…
 repo-no-ai-available = 利用できる AI がありません
 repo-abandon-change = チェンジを破棄しますか？
-repo-this-removes-the-change-and-reparents = チェンジを取り除き、その子の親を付け替えます。jj op restore で元に戻せます。
+repo-this-removes-the-change = チェンジを取り除きます。jj op restore で元に戻せます。
 repo-dont-ask-again = 今後確認しない
 repo-result = 結果
 repo-hunks = ハンク
@@ -386,11 +386,11 @@ repo-on-change = 対象のチェンジ: { $rev }
 repo-delete-tag-title = { $remotes } のタグ { $name } を削除しますか？
 repo-delete-tag-message = タグをローカルで削除し、その削除を { $remotes } にプッシュします。このタグに紐づく GitHub リリースは下書きになり、タグが再び存在するまでダウンロードが機能しなくなります。
 repo-abandon-change-message =
-    チェンジを取り除き、その子の親を付け替えます。
+    チェンジを取り除きます。
     取り消す（⌘Z）で元に戻せます。
 repo-abandon-changes-title = { $count } 個のチェンジを破棄しますか？
 repo-abandon-changes-message =
-    選択したチェンジを取り除き、その子孫の親を付け替えます。
+    選択したチェンジを取り除きます。
     取り消す（⌘Z）で元に戻せます。
 repo-abandon-count = { NUMBER($count) } 個を破棄
 repo-squash-changes-title = { $count } 個のチェンジをスカッシュしますか？

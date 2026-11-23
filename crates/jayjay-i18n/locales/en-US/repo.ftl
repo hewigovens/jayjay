@@ -51,7 +51,7 @@ repo-working-copy-has-no-changes-to = Working copy has no changes to describe
 repo-generating-ellipsis = Generating…
 repo-no-ai-available = No AI available
 repo-abandon-change = Abandon Change?
-repo-this-removes-the-change-and-reparents = This removes the change and reparents its children. You can undo it with jj op restore.
+repo-this-removes-the-change = This removes the change. You can undo it with jj op restore.
 repo-dont-ask-again = Don't ask again
 repo-result = Result
 repo-hunks = Hunks
@@ -407,7 +407,7 @@ repo-on-change = On change: { $rev }
 repo-delete-tag-title = Delete Tag { $name } on { $remotes }?
 repo-delete-tag-message = This removes the tag locally and pushes the deletion to { $remotes }. A GitHub release on this tag turns into a draft and its downloads stop working until the tag exists again.
 repo-abandon-change-message =
-    This will remove the change and reparent its children.
+    This will remove the change.
     You can bring it back with Undo (⌘Z).
 repo-abandon-changes-title =
     { $count ->
@@ -415,7 +415,7 @@ repo-abandon-changes-title =
        *[other] Abandon { $count } Changes?
     }
 repo-abandon-changes-message =
-    This will remove the selected changes and reparent their descendants.
+    This will remove the selected changes.
     You can bring them back with Undo (⌘Z).
 repo-abandon-count = Abandon { NUMBER($count) }
 repo-squash-changes-title =

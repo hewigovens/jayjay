@@ -52,7 +52,7 @@ impl RepoWindow {
         self.request_confirmation(
             Confirmation {
                 title: jayjay_i18n::repo::abandon_change().into(),
-                message: jayjay_i18n::repo::this_removes_the_change_and_reparents().into(),
+                message: jayjay_i18n::repo::this_removes_the_change().into(),
                 confirm_label: jayjay_i18n::menu::abandon().into(),
                 action: ConfirmedAction::AbandonChange { rev },
                 dont_ask_again: Some(DontAskAgain {
