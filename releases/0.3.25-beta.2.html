@@ -1,0 +1,15 @@
+<h2>Read several files in one diff</h2>
+<ul>
+  <li>Select several files to scroll through their diffs together, or press ⌘A in the file list to select them all. Enable <strong>Show all files’ diffs in one list</strong> in Diff settings to start with the whole change.</li>
+  <li>Stacked diffs support unified and side-by-side layouts. The current file’s header stays visible as you scroll. You can focus on one file and return to the full list, and collapsing a folder keeps its selected files in the preview.</li>
+  <li>The layout switch and <strong>Edit Diff</strong> are in the change header. In Edit Diff, use a gutter stripe or its menu to deselect a change group. Background rename detection now preserves your line selections.</li>
+  <li>A checkbox at the end of each file row shows its review state. Marking several files together saves their marks in one operation.</li>
+</ul>
+
+<h2>Working copies and history</h2>
+<ul>
+  <li>Large changes show their file list while rename detection runs. Syntax highlighting now recognizes Dart, Dockerfile, Just, Protobuf and R, along with more extensionless scripts.</li>
+  <li>Working-copy snapshots respect <code>snapshot.auto-track</code> and <code>snapshot.max-new-file-size</code>. If an automatic snapshot fails, a notice tells you the view is out of date and clears after a successful snapshot.</li>
+  <li>When a snapshot or another workspace’s operation blocks Undo, ⌘Z explains why and offers to open the Operation Log. Undo is disabled while a repository action or refresh is in progress.</li>
+  <li>A pull request from the same repository uses its head bookmark to name the new workspace. Remote repository operations can find the macOS desktop SSH agent when you connect through SSH.</li>
+</ul>
