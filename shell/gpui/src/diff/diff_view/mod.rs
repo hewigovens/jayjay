@@ -28,7 +28,7 @@ pub(crate) use header::{
     DETAIL_INSET, edit_diff_button, mode_label, show_all_files_button, view_mode_button,
 };
 pub(crate) use note_banner::stale_notes_banner;
-pub(crate) use placeholders::placeholder_inner;
+pub(crate) use placeholders::placeholder_row;
 pub use render::diff_view;
 pub(crate) use rows::row_index_for_line;
 pub use rows::{DiffRenderRow, DiffRenderRows, NoteDotKind};

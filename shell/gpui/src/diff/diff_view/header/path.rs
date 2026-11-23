@@ -18,6 +18,11 @@ use crate::ui::primitives::HelpTag;
 pub(super) const PATH_FONT_SIZE: f32 = 13.;
 const PATH_LINE_HEIGHT: f32 = 16.;
 
+pub(crate) fn file_icon_width(path: &str, t: &Theme) -> f32 {
+    let metrics = SetiGlyph::for_path(path).metrics();
+    metrics.ink_width * t.scaled_font_size(PATH_FONT_SIZE * 1.5) * metrics.scale
+}
+
 pub(super) fn file_icon(path: &str, t: &Theme) -> impl IntoElement {
     let glyph = SetiGlyph::for_path(path);
     let metrics = glyph.metrics();
@@ -26,7 +31,7 @@ pub(super) fn file_icon(path: &str, t: &Theme) -> impl IntoElement {
     div()
         .flex()
         .flex_none()
-        .w(px(metrics.ink_width * size))
+        .w(px(file_icon_width(path, t)))
         .line_height(px(t.scaled_font_size(PATH_LINE_HEIGHT)))
         .relative()
         .top(px(1.))

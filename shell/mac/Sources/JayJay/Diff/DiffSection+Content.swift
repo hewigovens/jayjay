@@ -13,6 +13,10 @@ extension DiffSection {
         loadedNewPreview ?? hunk.newPreview
     }
 
+    private var showsMediaPreview: Bool {
+        isImageDiff || (isSvgFile && activeSvgRichView)
+    }
+
     private var isImageDiff: Bool {
         effectiveOldPreview?.imagePath != nil || effectiveNewPreview?.imagePath != nil
     }
@@ -36,7 +40,18 @@ extension DiffSection {
         } else if let placeholder {
             placeholder
         } else if let loadError {
-            DiffLoadErrorView(message: loadError) { loadAttempt += 1 }
+            if fitsContent {
+                DiffStackMessageRow(
+                    path: hunk.path,
+                    systemImage: "exclamationmark.triangle",
+                    title: Localized.Repo.couldntLoadDiff,
+                    description: loadError
+                ) {
+                    Button(Localized.Repo.retry) { loadAttempt += 1 }
+                }
+            } else {
+                DiffLoadErrorView(message: loadError) { loadAttempt += 1 }
+            }
         } else if shouldShowBlockingProgress {
             LoadingStatus(label: Localized.Diff.loadingDiffEllipsis)
                 .frame(maxWidth: .infinity, maxHeight: .infinity)
@@ -52,15 +67,14 @@ extension DiffSection {
                 HTMLDiffView(location: htmlPreviewLocation)
             }
         } else if foldsLargeDiff, let onShowAlone {
-            HStack(spacing: 8) {
-                Text(Localized.Diff.largeDiffFolded(count: fileDiff?.lines.count ?? 0))
-                    .foregroundStyle(.secondary)
+            DiffStackMessageRow(
+                path: hunk.path,
+                systemImage: "rectangle.compress.vertical",
+                title: Localized.Diff.largeDiffFolded(count: fileDiff?.lines.count ?? 0)
+            ) {
                 Button(Localized.Diff.showDiff, action: onShowAlone)
-                    .buttonStyle(InlineTextButtonStyle())
                     .accessibilityIdentifier(AID.Diff.showLargeDiff)
             }
-            .jayjayFont(12)
-            .frame(maxWidth: .infinity, maxHeight: .infinity)
         } else if hasCurrentRenderableDiff, let diff = fileDiff, !diff.lines.isEmpty {
             VStack(alignment: .leading, spacing: 6) {
                 if diff.whitespaceOnlyHidden {
@@ -108,11 +122,19 @@ extension DiffSection {
                 }
                 .frame(maxWidth: .infinity, maxHeight: fittedDiffHeight == nil ? .infinity : nil)
             }
-        } else if hunk.oldContent == nil, hunk.newContent == nil, !isComputing, loadedPath == hunk.path {
-            Text(Localized.Repo.noTextualPreviewAvailableForThis)
-                .foregroundStyle(.secondary)
-                .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+        } else if hasNoTextualPreview {
+            if fitsContent {
+                DiffStackMessageRow(path: hunk.path, systemImage: "info.circle", title: Localized.Repo.noTextualPreviewAvailableForThis)
+            } else {
+                Text(Localized.Repo.noTextualPreviewAvailableForThis)
+                    .foregroundStyle(.secondary)
+                    .frame(maxWidth: .infinity, maxHeight: .infinity, alignment: .center)
+            }
         }
+    }
+
+    private var hasNoTextualPreview: Bool {
+        hunk.oldContent == nil && hunk.newContent == nil && !isComputing && loadedPath == hunk.path
     }
 
     private func fittedHeight(of diff: FileDiff) -> CGFloat? {
@@ -164,23 +186,34 @@ extension DiffSection {
     }
 
     private var placeholder: DiffPlaceholderMessage? {
-        guard !isImageDiff, !(isSvgFile && activeSvgRichView) else { return nil }
+        guard !showsMediaPreview else { return nil }
         if hunk.isSubmodulePlaceholder {
-            return DiffPlaceholderMessage(systemImage: "shippingbox.fill", title: Localized.Diff.gitSubmodule, description: Localized.Diff.submoduleShowsCommitOnly)
+            return DiffPlaceholderMessage(
+                path: hunk.path,
+                systemImage: "shippingbox.fill",
+                title: Localized.Diff.gitSubmodule,
+                description: Localized.Diff.submoduleShowsCommitOnly,
+                isCompact: fitsContent
+            )
         }
         if isGitLfsPlaceholder {
             return DiffPlaceholderMessage(
+                path: hunk.path,
                 systemImage: "externaldrive.fill.badge.timemachine",
                 title: Localized.Diff.gitLfsBackedFile,
-                description: Localized.Diff.thisFileIsTrackedThroughGit
+                description: Localized.Diff.thisFileIsTrackedThroughGit,
+                isCompact: fitsContent
             )
         }
         guard hunk.isContentFreeRenameOrCopy else { return nil }
         let isCopy = hunk.hunkType == .copied
         return DiffPlaceholderMessage(
+            path: hunk.path,
             systemImage: isCopy ? "square.on.square" : "arrow.right.circle",
             title: Localized.Diff.noContentChanges,
-            description: isCopy ? Localized.Diff.thisFileWasCopiedItsContents : Localized.Diff.thisFileWasRenamedItsContents
+            description: isCopy ? Localized.Diff.thisFileWasCopiedItsContents : Localized.Diff.thisFileWasRenamedItsContents,
+            isCompact: fitsContent,
+            compactHidesDescription: true
         )
     }
 
@@ -256,16 +289,16 @@ extension DiffSection {
         onShowAlone != nil && hasCurrentRenderableDiff && (fileDiff?.lines.count ?? 0) > Self.stackedLineLimit
     }
 
-    /// Nil once the diff text reports its own height or a placeholder sizes itself; rich previews and unloaded diffs report none.
+    /// Nil once the diff text reports its own height or a message row sizes itself; rich previews and unloaded diffs report none.
     var stackedContentHeight: CGFloat? {
-        if placeholder != nil {
+        if placeholder != nil || (loadError != nil && !showsMediaPreview) {
             return nil
         }
         if showsRichView {
             return 320
         }
-        if foldsLargeDiff {
-            return 44
+        if !isImageDiff, foldsLargeDiff || (hasNoTextualPreview && !awaitsDiffText) {
+            return nil
         }
         return fittedDiffHeight == nil ? (awaitsDiffText ? stackedHeights?.height(of: hunk.path, in: heightBasis) : nil) ?? 320 : nil
     }
@@ -306,24 +339,31 @@ extension DiffSection {
 }
 
 private struct DiffPlaceholderMessage: View {
+    let path: String
     let systemImage: String
     let title: String
     let description: String
+    let isCompact: Bool
+    /// The file header's status badge already says what a rename or copy description would.
+    var compactHidesDescription = false
 
     var body: some View {
-        VStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .jayjayFont(24)
-                .foregroundStyle(.secondary)
-            Text(title)
-                .jayjayFont(14, weight: .semibold)
-            Text(description)
-                .jayjayFont(12)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 460)
+        if isCompact {
+            DiffStackMessageRow(path: path, systemImage: systemImage, title: title, description: compactHidesDescription ? nil : description)
+        } else {
+            VStack(spacing: 10) {
+                Image(systemName: systemImage)
+                    .jayjayFont(24)
+                    .foregroundStyle(.secondary)
+                Text(title)
+                    .jayjayFont(14, weight: .semibold)
+                Text(description)
+                    .jayjayFont(12)
+                    .foregroundStyle(.secondary)
+                    .multilineTextAlignment(.center)
+                    .frame(maxWidth: 460)
+            }
+            .frame(maxWidth: .infinity, maxHeight: .infinity)
         }
-        .padding(.vertical, 24)
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }

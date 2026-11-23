@@ -2,7 +2,7 @@ use crate::harness::{
     click, focus_view, install_test_globals, keys, load_selected_change_files, scroll_wheel,
     settle_visual,
 };
-use gpui::{Entity, Modifiers, TestAppContext, VisualTestContext, px};
+use gpui::{Entity, Focusable, Modifiers, TestAppContext, VisualTestContext, px};
 use jayjay_gpui::app::actions::ToggleIgnoreWhitespace;
 use jayjay_gpui::app::{config, menus};
 use jayjay_gpui::repo::RepoWindow;
@@ -237,4 +237,43 @@ fn the_file_scrolled_into_keeps_its_header_at_the_top(cx: &mut TestAppContext) {
     cx.simulate_click(pinned.center(), Modifiers::default());
     settle_visual(cx);
     assert_eq!(selected_path(&view, cx).as_deref(), Some("feature.txt"));
+}
+
+#[gpui::test]
+fn a_large_diff_folds_in_the_stack_and_opens_alone(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_stack_with(cx, |fixture| {
+        let lines: String = (0..3200).map(|line| format!("line {line}\n")).collect();
+        std::fs::write(fixture.path.join("feature.txt"), lines).expect("write a large file");
+    });
+    assert!(
+        cx.debug_bounds("stack-file-wip2.txt").is_some(),
+        "the folded file should leave room for the files after it"
+    );
+
+    click(cx, "stack-show-diff");
+    assert!(cx.debug_bounds("diff-stack").is_none());
+    assert_eq!(selected_path(&view, cx).as_deref(), Some("feature.txt"));
+}
+
+#[gpui::test]
+fn find_in_a_folded_file_opens_it_alone(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_stack_with(cx, |fixture| {
+        let lines: String = (0..3200).map(|line| format!("line {line}\n")).collect();
+        std::fs::write(fixture.path.join("feature.txt"), lines).expect("write a large file");
+    });
+    click(cx, "stack-file-feature.txt");
+    assert!(cx.debug_bounds("diff-stack").is_some());
+
+    view.update_in(cx, |view, window, cx| {
+        view.open_find(cx);
+        view.focus_handle(cx).focus(window, cx);
+    });
+    cx.simulate_input("line 3000");
+    settle_visual(cx);
+
+    assert!(view.read_with(cx, |view, _| view.find_match_count()) > 0);
+    assert!(
+        cx.debug_bounds("diff-stack").is_none(),
+        "a match in a folded file has no row to scroll to in the stack"
+    );
 }

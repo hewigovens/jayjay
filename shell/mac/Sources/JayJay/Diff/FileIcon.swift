@@ -14,9 +14,16 @@ struct FileIcon: View {
         return "seti"
     }()
 
+    private static let baseSize: CGFloat = 19.5
+
+    static func inkWidth(path: String, interfaceScale: CGFloat) -> CGFloat {
+        let icon = setiIconForPath(path: path)
+        return CGFloat(icon.inkWidth) * baseSize * interfaceScale * CGFloat(icon.scale)
+    }
+
     var body: some View {
         let icon = setiIconForPath(path: path)
-        let base = 19.5 * typography.interfaceScale
+        let base = Self.baseSize * typography.interfaceScale
         let size = base * CGFloat(icon.scale)
         // Seti draws glyphs about half an em above the baseline; this puts every ink center at one height beside the text.
         Text(icon.glyph)
@@ -24,7 +31,7 @@ struct FileIcon: View {
             .baselineOffset(0.23 * base - CGFloat(icon.inkCenter) * size)
             .fixedSize()
             .padding(.leading, -CGFloat(icon.inkLeft) * size)
-            .frame(width: CGFloat(icon.inkWidth) * size, alignment: .leading)
+            .frame(width: Self.inkWidth(path: path, interfaceScale: typography.interfaceScale), alignment: .leading)
             .foregroundStyle(.secondary)
             .accessibilityHidden(true)
     }

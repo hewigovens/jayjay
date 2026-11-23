@@ -14,9 +14,12 @@ use crate::diff::{
 };
 use crate::repo::view_model::{DiffLoadState, RepoViewModel};
 use crate::repo::window::{DiffWrapCacheSlot, RepoWindow};
+use crate::ui::icons::glyph;
 
 const DIVIDER: f32 = 1.;
 const MESSAGE_HEIGHT: f32 = 44.;
+const DETAILED_MESSAGE_HEIGHT: f32 = 76.;
+const STACKED_LINE_LIMIT: usize = 3000;
 const IMAGE_HEIGHT: f32 = 320.;
 /// Built past both edges of the view, so a short scroll shows rows that are already laid out.
 const OVERDRAW: f32 = 400.;
@@ -49,7 +52,20 @@ pub(super) enum StackBody {
     },
     Image,
     Loading,
-    Message(SharedString),
+    Message(StackMessage),
+}
+
+pub(super) struct StackMessage {
+    pub(super) glyph: &'static str,
+    pub(super) title: SharedString,
+    pub(super) detail: Option<SharedString>,
+    pub(super) action: Option<StackMessageAction>,
+}
+
+#[derive(Clone, Copy)]
+pub(super) enum StackMessageAction {
+    ShowDiff { supports_file_editor: bool },
+    Retry,
 }
 
 impl StackPlan {
@@ -222,10 +238,19 @@ impl RepoWindow {
         stack: &mut DiffStackState,
         cx: &App,
     ) -> StackBlock {
-        let message = |text: String| StackBlock {
+        let message = |glyph, title: String, detail: Option<String>, action| StackBlock {
             hunk_ix,
-            body_height: MESSAGE_HEIGHT,
-            body: StackBody::Message(text.into()),
+            body_height: if detail.is_some() {
+                DETAILED_MESSAGE_HEIGHT
+            } else {
+                MESSAGE_HEIGHT
+            },
+            body: StackBody::Message(StackMessage {
+                glyph,
+                title: title.into(),
+                detail: detail.map(Into::into),
+                action,
+            }),
         };
         if hunk_is_image(hunk) {
             return StackBlock {
@@ -235,32 +260,49 @@ impl RepoWindow {
             };
         }
         if is_submodule(hunk) {
-            return message(jayjay_i18n::diff::submodule_shows_commit_only());
+            return message(
+                glyph::PACKAGE,
+                jayjay_i18n::diff::git_submodule(),
+                Some(jayjay_i18n::diff::submodule_shows_commit_only()),
+                None,
+            );
         }
         if is_lfs(hunk) {
-            return message(jayjay_i18n::diff::this_file_is_tracked_through_git());
+            return message(
+                glyph::DATABASE,
+                jayjay_i18n::diff::git_lfs_backed_file(),
+                Some(jayjay_i18n::diff::this_file_is_tracked_through_git()),
+                None,
+            );
         }
         if hunk.is_content_free_rename_or_copy() {
-            return message(if hunk.hunk_type == jayjay_core::HunkType::Copied {
-                jayjay_i18n::diff::this_file_was_copied_its_contents()
+            let glyph = if hunk.hunk_type == jayjay_core::HunkType::Copied {
+                glyph::COPY
             } else {
-                jayjay_i18n::diff::this_file_was_renamed_its_contents()
-            });
+                glyph::ARROW_CIRCLE_RIGHT
+            };
+            return message(glyph, jayjay_i18n::diff::no_content_changes(), None, None);
         }
         let vm = self.vm.read(cx);
+        let state = vm.diff_load_state(hunk);
+        // A failed load leaves the selected file an empty shown diff, which would otherwise read as "no textual diff".
+        if matches!(state, DiffLoadState::Failed) {
+            return message(
+                glyph::WARNING,
+                jayjay_i18n::repo::couldnt_load_diff(),
+                None,
+                Some(StackMessageAction::Retry),
+            );
+        }
         // The selected file's shown diff carries what was done to it since it loaded, such as expanded context.
         let shown = (vm.selected_file_ix == Some(hunk_ix) && vm.shown.is_for(&hunk.path))
             .then(|| vm.shown.diff().cloned())
             .flatten()
             .map(|diff| (diff, vm.shown.supports_file_editor));
-        let loaded = match shown {
-            Some(loaded) => Some(loaded),
-            None => match vm.diff_load_state(hunk) {
-                DiffLoadState::Loaded(loaded) => Some((loaded.diff, loaded.supports_file_editor)),
-                DiffLoadState::Failed => return message(jayjay_i18n::repo::couldnt_load_diff()),
-                DiffLoadState::Missing => None,
-            },
-        };
+        let loaded = shown.or(match state {
+            DiffLoadState::Loaded(loaded) => Some((loaded.diff, loaded.supports_file_editor)),
+            DiffLoadState::Failed | DiffLoadState::Missing => None,
+        });
         let Some((diff, supports_file_editor)) = loaded else {
             return StackBlock {
                 hunk_ix,
@@ -269,7 +311,22 @@ impl RepoWindow {
             };
         };
         if diff.lines.is_empty() {
-            return message(jayjay_i18n::diff::no_textual_diff_binary_identical_or());
+            return message(
+                glyph::INFO,
+                jayjay_i18n::diff::no_textual_diff_binary_identical_or(),
+                None,
+                None,
+            );
+        }
+        if diff.lines.len() > STACKED_LINE_LIMIT {
+            return message(
+                glyph::UNFOLD_VERTICAL,
+                jayjay_i18n::diff::large_diff_folded(diff.lines.len()),
+                None,
+                Some(StackMessageAction::ShowDiff {
+                    supports_file_editor,
+                }),
+            );
         }
         let shape = match stack.shapes.get(&hunk.path) {
             Some((scanned, shape)) if Arc::ptr_eq(scanned, &diff) => *shape,
@@ -309,7 +366,21 @@ impl RepoWindow {
         }
     }
 
+    /// Find and scroll-to-line act on the selected file's rows, which the stack does not build for a folded file.
+    pub(crate) fn folds_selected_file(&self, cx: &App) -> bool {
+        self.shows_diff_stack()
+            && self
+                .vm
+                .read(cx)
+                .shown
+                .diff()
+                .is_some_and(|diff| diff.lines.len() > STACKED_LINE_LIMIT)
+    }
+
     pub(crate) fn stack_row_top(&self, row: usize, cx: &App) -> Option<f32> {
+        if self.diff.stack.solo {
+            return None;
+        }
         let plan = self.diff.stack.plan.as_ref()?;
         let vm = self.vm.read(cx);
         let selected = vm.selected_file_ix?;

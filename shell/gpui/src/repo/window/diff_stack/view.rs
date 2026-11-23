@@ -1,12 +1,12 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement,
+    AnyElement, Context, FontWeight, InteractiveElement, IntoElement, MouseButton, ParentElement,
     StatefulInteractiveElement, Styled, Window, div, px, rgb,
 };
 
-use super::plan::{StackBlock, StackBody, StackPlan};
+use super::plan::{StackBlock, StackBody, StackMessage, StackMessageAction, StackPlan};
 use crate::app::theme::Theme;
 use crate::diff::{
-    StackedFileHeader, StackedRows, image_diff_view, placeholder_inner, stacked_file_header,
+    StackedFileHeader, StackedRows, image_diff_view, placeholder_row, stacked_file_header,
 };
 use crate::repo::window::{RepoWindow, hunk_supports_file_editor};
 use crate::ui::loading::loading_status;
@@ -65,7 +65,12 @@ pub(crate) fn diff_stack(
             StackBody::Rows {
                 supports_file_editor: true,
                 ..
-            }
+            } | StackBody::Message(StackMessage {
+                action: Some(StackMessageAction::ShowDiff {
+                    supports_file_editor: true
+                }),
+                ..
+            })
         ) && working_copy
             && hunk_supports_file_editor(hunk)
             && !has_conflict.contains(&hunk.path);
@@ -154,7 +159,42 @@ pub(crate) fn diff_stack(
                     t,
                 ))
                 .into_any_element(),
-            StackBody::Message(message) => placeholder_inner(message.clone(), t).into_any_element(),
+            StackBody::Message(message) => {
+                let action = message.action.map(|action| {
+                    let (selector, label) = match action {
+                        StackMessageAction::ShowDiff { .. } => {
+                            ("stack-show-diff", jayjay_i18n::diff::show_diff())
+                        }
+                        StackMessageAction::Retry => ("stack-retry", jayjay_i18n::repo::retry()),
+                    };
+                    div()
+                        .debug_selector(move || selector.to_owned())
+                        .cursor_pointer()
+                        .font_weight(FontWeight::NORMAL)
+                        .text_color(rgb(t.selected_accent))
+                        .hover(|style| style.underline())
+                        .child(label)
+                        // Acts on press: the block's capture handler selects the file first, and that reload can replace this row before the release.
+                        .on_mouse_down(
+                            MouseButton::Left,
+                            cx.listener(move |view, _, _, cx| match action {
+                                StackMessageAction::ShowDiff { .. } => {
+                                    view.show_stacked_file_alone(hunk_ix, cx)
+                                }
+                                StackMessageAction::Retry => view.retry_stacked_diffs(cx),
+                            }),
+                        )
+                        .into_any_element()
+                });
+                placeholder_row(
+                    &hunk.path,
+                    message.glyph,
+                    message.title.clone(),
+                    message.detail.clone(),
+                    action,
+                    t,
+                )
+            }
         };
         let path = hunk.path.clone();
         list = list.child(

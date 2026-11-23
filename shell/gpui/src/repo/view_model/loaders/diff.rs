@@ -254,6 +254,22 @@ impl RepoViewModel {
         }
     }
 
+    pub(crate) fn retry_failed_diffs(&mut self, cx: &mut Context<Self>) {
+        let failed_selection = self
+            .selected_hunk()
+            .filter(|hunk| matches!(self.diff_load_state(hunk), DiffLoadState::Failed))
+            .cloned()
+            .zip(self.selected_revision());
+        self.diff_cache.load_failures.clear();
+        if let Some((hunk, rev)) = failed_selection {
+            self.load_diff_async(rev, hunk, cx);
+        }
+        if let Some(files) = self.files.clone() {
+            self.preload_diffs_async(files, cx);
+        }
+        cx.notify();
+    }
+
     pub(crate) fn diff_load_state(&self, hunk: &DiffHunk) -> DiffLoadState {
         let Some(rev) = self.selected_revision() else {
             return DiffLoadState::Missing;

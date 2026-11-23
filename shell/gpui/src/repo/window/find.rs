@@ -55,8 +55,12 @@ impl RepoWindow {
         }
     }
 
-    fn jump_to_current_match(&self, cx: &App) {
+    fn jump_to_current_match(&mut self, cx: &mut Context<Self>) {
         if let Some(&line_ix) = self.find.matches.get(self.find.current) {
+            if self.folds_selected_file(cx) {
+                self.diff.stack.solo = true;
+                cx.notify();
+            }
             self.scroll_diff_to_line(line_ix, cx);
         }
     }

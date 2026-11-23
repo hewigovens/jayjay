@@ -17,6 +17,16 @@ impl RepoWindow {
         cx.notify();
     }
 
+    pub(crate) fn show_stacked_file_alone(&mut self, hunk_ix: usize, cx: &mut Context<Self>) {
+        self.diff.stack.solo = true;
+        self.select_file(hunk_ix, cx);
+        cx.notify();
+    }
+
+    pub(crate) fn retry_stacked_diffs(&mut self, cx: &mut Context<Self>) {
+        self.vm.update(cx, |vm, cx| vm.retry_failed_diffs(cx));
+    }
+
     /// A click inside a stacked file makes it the selected one, so what follows acts on it without leaving the stack.
     pub(crate) fn activate_stacked_file(&mut self, hunk_ix: usize, cx: &mut Context<Self>) {
         if self.vm.read(cx).selected_file_ix == Some(hunk_ix) {

@@ -29,7 +29,7 @@ pub(crate) use diff_view::{
 };
 pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use diff_view::{
-    StackedFileHeader, StackedRows, placeholder_inner, render_find_bar, stacked_file_header,
+    StackedFileHeader, StackedRows, placeholder_row, render_find_bar, stacked_file_header,
 };
 pub(crate) use file_column::{FileColumnState, file_column};
 pub(crate) use file_column::{FileTreeCache, file_row_height, middle_elide};
