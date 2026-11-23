@@ -33,26 +33,8 @@ extension DiffSection {
                 hunkType: hunk.hunkType
             )
             .frame(maxWidth: .infinity, maxHeight: .infinity)
-        } else if hunk.isSubmodulePlaceholder {
-            placeholderMessage(
-                systemImage: "shippingbox.fill",
-                title: Localized.Diff.gitSubmodule,
-                description: Localized.Diff.submoduleShowsCommitOnly
-            )
-        } else if isGitLfsPlaceholder {
-            placeholderMessage(
-                systemImage: "externaldrive.fill.badge.timemachine",
-                title: Localized.Diff.gitLfsBackedFile,
-                description: Localized.Diff.thisFileIsTrackedThroughGit
-            )
-        } else if hunk.isContentFreeRenameOrCopy {
-            placeholderMessage(
-                systemImage: hunk.hunkType == .copied ? "square.on.square" : "arrow.right.circle",
-                title: Localized.Diff.noContentChanges,
-                description: hunk.hunkType == .copied
-                    ? Localized.Diff.thisFileWasCopiedItsContents
-                    : Localized.Diff.thisFileWasRenamedItsContents
-            )
+        } else if let placeholder {
+            placeholder
         } else if let loadError {
             DiffLoadErrorView(message: loadError) { loadAttempt += 1 }
         } else if shouldShowBlockingProgress {
@@ -181,20 +163,25 @@ extension DiffSection {
         return RepoPreviewLocation(root: URL(fileURLWithPath: repoPath, isDirectory: true), relativePath: hunk.path)
     }
 
-    private func placeholderMessage(systemImage: String, title: String, description: String) -> some View {
-        VStack(spacing: 10) {
-            Image(systemName: systemImage)
-                .jayjayFont(24)
-                .foregroundStyle(.secondary)
-            Text(title)
-                .jayjayFont(14, weight: .semibold)
-            Text(description)
-                .jayjayFont(12)
-                .foregroundStyle(.secondary)
-                .multilineTextAlignment(.center)
-                .frame(maxWidth: 460)
+    private var placeholder: DiffPlaceholderMessage? {
+        guard !isImageDiff, !(isSvgFile && activeSvgRichView) else { return nil }
+        if hunk.isSubmodulePlaceholder {
+            return DiffPlaceholderMessage(systemImage: "shippingbox.fill", title: Localized.Diff.gitSubmodule, description: Localized.Diff.submoduleShowsCommitOnly)
         }
-        .frame(maxWidth: .infinity, maxHeight: .infinity)
+        if isGitLfsPlaceholder {
+            return DiffPlaceholderMessage(
+                systemImage: "externaldrive.fill.badge.timemachine",
+                title: Localized.Diff.gitLfsBackedFile,
+                description: Localized.Diff.thisFileIsTrackedThroughGit
+            )
+        }
+        guard hunk.isContentFreeRenameOrCopy else { return nil }
+        let isCopy = hunk.hunkType == .copied
+        return DiffPlaceholderMessage(
+            systemImage: isCopy ? "square.on.square" : "arrow.right.circle",
+            title: Localized.Diff.noContentChanges,
+            description: isCopy ? Localized.Diff.thisFileWasCopiedItsContents : Localized.Diff.thisFileWasRenamedItsContents
+        )
     }
 
     private var whitespaceHiddenBanner: some View {
@@ -269,8 +256,11 @@ extension DiffSection {
         onShowAlone != nil && hasCurrentRenderableDiff && (fileDiff?.lines.count ?? 0) > Self.stackedLineLimit
     }
 
-    /// Nil once the diff text reports its own height; rich previews and unloaded diffs report none.
+    /// Nil once the diff text reports its own height or a placeholder sizes itself; rich previews and unloaded diffs report none.
     var stackedContentHeight: CGFloat? {
+        if placeholder != nil {
+            return nil
+        }
         if showsRichView {
             return 320
         }
@@ -312,5 +302,28 @@ extension DiffSection {
         let oldContent = hunk.oldContent ?? loadedOldContent
         let newContent = hunk.newContent ?? loadedNewContent
         return DiffPlaceholder.isGitLfs(oldContent) || DiffPlaceholder.isGitLfs(newContent)
+    }
+}
+
+private struct DiffPlaceholderMessage: View {
+    let systemImage: String
+    let title: String
+    let description: String
+
+    var body: some View {
+        VStack(spacing: 10) {
+            Image(systemName: systemImage)
+                .jayjayFont(24)
+                .foregroundStyle(.secondary)
+            Text(title)
+                .jayjayFont(14, weight: .semibold)
+            Text(description)
+                .jayjayFont(12)
+                .foregroundStyle(.secondary)
+                .multilineTextAlignment(.center)
+                .frame(maxWidth: 460)
+        }
+        .padding(.vertical, 24)
+        .frame(maxWidth: .infinity, maxHeight: .infinity)
     }
 }
