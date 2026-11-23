@@ -238,7 +238,6 @@ repo-no-files-with-review-notes = レビュー メモのあるファイルなし
 repo-no-file-has-an-open-review-note = このチェンジには未解決のレビュー メモがあるファイルはありません。
 repo-no-matching-file-has-an-open-review-note = 「{ $query }」に一致するファイルに未解決のレビュー メモはありません。
 repo-show-all-files = すべてのファイルを表示
-repo-return-to-all-file-diffs = すべてのファイルの差分に戻る
 repo-show-git-lfs-files = Git LFS ファイルを表示
 repo-only-git-managed-changes-hidden = Git 管理の変更だけが非表示
 repo-only-git-lfs-backed-files-hidden = Git LFS 管理ファイルだけが非表示

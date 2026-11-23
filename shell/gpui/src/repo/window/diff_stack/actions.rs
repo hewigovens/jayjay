@@ -7,7 +7,11 @@ impl RepoWindow {
         self.diff.stack.plan.is_some()
     }
 
-    /// Whether Show All Files would bring the stack back.
+    pub(crate) fn shows_all_file_diffs(&self, cx: &App) -> bool {
+        crate::app::config::current(cx).diff.show_all_file_diffs && !self.diff.stack.solo
+    }
+
+    /// Whether Escape would bring the stack back.
     pub(crate) fn shows_file_alone(&self, cx: &App) -> bool {
         self.diff.stack.solo && self.stackable_files(cx).is_some()
     }
@@ -15,6 +19,12 @@ impl RepoWindow {
     pub(crate) fn show_all_file_diffs(&mut self, cx: &mut Context<Self>) {
         self.diff.stack.solo = false;
         cx.notify();
+    }
+
+    pub(crate) fn toggle_show_all_file_diffs(&mut self, cx: &mut Context<Self>) {
+        let shows_all = self.shows_all_file_diffs(cx);
+        crate::app::config::update(cx, |config| config.diff.show_all_file_diffs = !shows_all);
+        self.show_all_file_diffs(cx);
     }
 
     pub(crate) fn show_stacked_file_alone(&mut self, hunk_ix: usize, cx: &mut Context<Self>) {
@@ -25,6 +35,29 @@ impl RepoWindow {
 
     pub(crate) fn retry_stacked_diffs(&mut self, cx: &mut Context<Self>) {
         self.vm.update(cx, |vm, cx| vm.retry_failed_diffs(cx));
+    }
+
+    pub(crate) fn toggle_stacked_file_collapse(&mut self, path: &str, cx: &mut Context<Self>) {
+        self.diff.stack.collapsed.toggle(path);
+        cx.notify();
+    }
+
+    pub(crate) fn expand_all_stacked_files(&mut self, cx: &mut Context<Self>) {
+        self.diff.stack.collapsed.expand_all();
+        cx.notify();
+    }
+
+    pub(crate) fn collapse_all_stacked_files(&mut self, cx: &mut Context<Self>) {
+        let Some(plan) = &self.diff.stack.plan else {
+            return;
+        };
+        let paths: Vec<String> = plan
+            .order
+            .iter()
+            .map(|ix| plan.files[*ix].path.clone())
+            .collect();
+        self.diff.stack.collapsed.collapse_all(paths);
+        cx.notify();
     }
 
     /// A click inside a stacked file makes it the selected one, so what follows acts on it without leaving the stack.

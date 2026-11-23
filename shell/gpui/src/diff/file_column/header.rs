@@ -25,6 +25,7 @@ pub(super) struct FileHeaderState {
     pub file_filter_active: bool,
     pub file_filter_has_query: bool,
     pub tree_mode: bool,
+    pub shows_all_files: bool,
     pub focused: Option<FocusStop>,
 }
 
@@ -47,6 +48,7 @@ pub(super) fn file_column_header(
         file_filter_active,
         file_filter_has_query,
         tree_mode,
+        shows_all_files,
         focused,
     } = state;
     // In review mode the count reads as progress from the start, not only after the first mark.
@@ -146,6 +148,17 @@ pub(super) fn file_column_header(
             })),
         );
     }
+
+    let (bg, fg) = toggle_colors(shows_all_files, t);
+    row = row.child(
+        icon_button("show-all-files", glyph::ROWS, 14., 24., 22., fg, t)
+            .debug_selector(|| "show-all-files".to_owned())
+            .bg(rgb(bg))
+            .help(jayjay_i18n::settings::show_all_file_diffs())
+            .on_click(cx.listener(|view, _event: &ClickEvent, _window, cx| {
+                view.toggle_show_all_file_diffs(cx);
+            })),
+    );
 
     if active_note_count > 0 {
         let (bg, fg) = toggle_colors(notes_only, t);

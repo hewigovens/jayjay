@@ -251,7 +251,6 @@ repo-no-files-with-review-notes = No Files with Review Notes
 repo-no-file-has-an-open-review-note = No file in this change has an open review note.
 repo-no-matching-file-has-an-open-review-note = No file matching “{ $query }” has an open review note.
 repo-show-all-files = Show All Files
-repo-return-to-all-file-diffs = Return to all files' diffs
 repo-show-git-lfs-files = Show Git LFS Files
 repo-only-git-managed-changes-hidden = Only Git-managed Changes Hidden
 repo-only-git-lfs-backed-files-hidden = Only Git LFS-backed Files Hidden

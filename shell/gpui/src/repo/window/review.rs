@@ -84,6 +84,8 @@ impl RepoWindow {
                 store.toggle(&change_id, &path, &identity);
             }
         });
+        let reviewed = self.is_reviewed(&change_id, &path, &identity);
+        self.diff.stack.collapsed.set(&path, reviewed);
         if self.file_column.hide_reviewed {
             self.reconcile_file_selection(cx);
         }

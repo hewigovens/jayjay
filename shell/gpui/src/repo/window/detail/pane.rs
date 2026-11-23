@@ -201,7 +201,7 @@ pub(crate) fn change_header(
     let diff_actions = DiffActions {
         view_mode: vm.selected_hunk().map(|_| vm.effective_view_mode()),
         can_edit_diff,
-        shows_file_alone: view.shows_file_alone(cx),
+        shows_stack: view.shows_diff_stack(),
     };
     let change = vm.selected_change()?.clone();
     let divergent_versions = vm

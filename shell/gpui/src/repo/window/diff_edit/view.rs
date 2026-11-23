@@ -45,7 +45,6 @@ pub(crate) fn diff_edit_view(
 fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
     let rev = view.diff_edit.change_id.as_deref().unwrap_or_default();
     let rev = rev.chars().take(12).collect::<String>();
-    let summary = view.diff_edit_selection_text();
     let selecting = view.diff_edit_selecting_all();
     let deselect = view.diff_edit_should_deselect();
     let toggle_label = if selecting {
@@ -89,12 +88,6 @@ fn header(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElem
         )
         .child(div().code_text(12., t).text_color(rgb(t.fg_dim)).child(rev))
         .child(div().flex_1())
-        .child(
-            div()
-                .text_size(ui_font_size(11.))
-                .text_color(rgb(t.fg_dim))
-                .child(summary),
-        )
         .child(collapse_all)
         .child(expand_all)
         .child(toggle)

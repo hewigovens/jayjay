@@ -99,6 +99,7 @@ pub(super) fn file_column_wrapper(
                 column_width: width,
                 tree_cache,
                 pane_active: view.active_pane() == ActivePane::FileColumn,
+                shows_all_files: view.shows_all_file_diffs(cx),
                 focused: view.focused_control(),
             },
             cx,

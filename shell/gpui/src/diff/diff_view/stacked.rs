@@ -133,6 +133,7 @@ pub(crate) struct StackedFileHeader<'a> {
     pub(crate) just_copied: bool,
     pub(crate) can_edit_file: bool,
     pub(crate) file_review: Option<ReviewFileRollup>,
+    pub(crate) collapsed: bool,
     pub(crate) detail_width: f32,
 }
 
@@ -159,6 +160,7 @@ pub(crate) fn stacked_file_header(
             html_external_url: None,
             can_edit_file: state.can_edit_file,
             file_review: state.file_review,
+            collapsed: Some(state.collapsed),
             detail_width: state.detail_width,
             focused: None,
         },

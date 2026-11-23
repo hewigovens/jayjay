@@ -10,7 +10,7 @@ pub use gutter::{
     GUTTER_NUMBER_WIDTH, NOTE_DOT_WIDTH, REVIEW_STRIPE_WIDTH, content_row_tint, gutter_cell,
     gutter_column, interactive_gutter_row, review_stripe, review_stripe_spacer,
 };
-pub use hunk_tag::tag_for_hunk;
+pub use hunk_tag::tag_for_hunk_type;
 pub use note_row::{note_content_row, note_dot_cell, note_gutter_row};
 
 #[cfg(test)]

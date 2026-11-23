@@ -55,7 +55,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         XCTAssertTrue(featureFile.waitForExistence(timeout: 10), "Shift-Tab did not hand navigation back to the DAG")
 
         // The selected change is mutable but not the working copy, so the Review toggle participates instead of Mark Reviewed and Edit File does not.
-        for _ in 0 ..< 14 {
+        for _ in 0 ..< 15 {
             keyStroke(.tab)
         }
         keyStroke(.space)
@@ -82,7 +82,7 @@ final class KeyboardPaneFocusScene: SceneBase {
         let open = app.buttons[AID.DiffEdit.open]
         XCTAssertTrue(open.waitForExistence(timeout: 10))
         open.click()
-        let first = app.buttons[AID.DiffEdit.fileToggle("wip1.txt")]
+        let first = app.buttons[AID.Diff.fileToggle("wip1.txt")]
         XCTAssertTrue(first.waitForExistence(timeout: 5))
         keyStroke(.tab)
         keyStroke(.downArrow)

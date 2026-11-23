@@ -6,6 +6,7 @@ use jayjay_primitives::{
 };
 
 use super::file::DiffEditFile;
+use crate::FileCollapse;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum DiffEditCheckbox {
@@ -37,7 +38,7 @@ struct LoadedFile {
 pub struct DiffEditSession {
     files: HashMap<String, LoadedFile>,
     select_all_pending: HashSet<String>,
-    collapsed: HashSet<String>,
+    collapsed: FileCollapse,
     collapse_touched: bool,
     focused: Option<String>,
     skipped: HashSet<String>,
@@ -287,7 +288,7 @@ impl DiffEditSession {
             None => diff_edit_collapses_while_stats_pending(paths.len()),
         };
         if collapse_all {
-            self.collapsed = paths.iter().cloned().collect();
+            self.collapsed.collapse_all(paths.iter().cloned());
         }
     }
 
@@ -314,37 +315,34 @@ impl DiffEditSession {
             .iter()
             .map(|file| u64::from(file.insertions) + u64::from(file.deletions))
             .sum();
-        self.collapsed = if diff_edit_starts_collapsed(cards.len(), total) {
-            cards.into_iter().collect()
-        } else {
-            diff_edit_auto_collapsed_paths(stats).into_iter().collect()
-        };
+        self.collapsed
+            .collapse_all(if diff_edit_starts_collapsed(cards.len(), total) {
+                cards
+            } else {
+                diff_edit_auto_collapsed_paths(stats)
+            });
     }
 
     pub fn toggle_collapse(&mut self, path: &str) {
         self.collapse_touched = true;
-        if !self.collapsed.remove(path) {
-            self.collapsed.insert(path.to_owned());
-        }
+        self.collapsed.toggle(path);
     }
 
     /// Collapses or expands the given card; false when it already was, so a shell can leave a key press unhandled.
     pub fn set_collapsed(&mut self, path: &str, collapsed: bool) -> bool {
-        if self.collapsed.contains(path) == collapsed {
-            return false;
-        }
-        self.toggle_collapse(path);
-        true
+        let moved = self.collapsed.set(path, collapsed);
+        self.collapse_touched |= moved;
+        moved
     }
 
     pub fn collapse_all(&mut self, paths: &[String]) {
         self.collapse_touched = true;
-        self.collapsed = paths.iter().cloned().collect();
+        self.collapsed.collapse_all(paths.iter().cloned());
     }
 
     pub fn expand_all(&mut self) {
         self.collapse_touched = true;
-        self.collapsed.clear();
+        self.collapsed.expand_all();
     }
 
     pub fn is_collapsed(&self, path: &str) -> bool {

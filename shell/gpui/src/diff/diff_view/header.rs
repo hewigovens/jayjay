@@ -3,19 +3,21 @@ mod path;
 
 use gpui::{
     AnyElement, Context, FontWeight, InteractiveElement, IntoElement, ParentElement, SharedString,
-    Styled, div, px, rgb,
+    StatefulInteractiveElement, Styled, div, px, rgb,
 };
 use jayjay_core::{DiffHunk, DiffProjection, FileDiffStats, HunkType};
 use jayjay_review::ReviewFileRollup;
 
 use self::controls::*;
 pub(crate) use self::controls::{
-    edit_diff_button, mode_label, show_all_files_button, view_mode_button,
+    collapse_chevron, edit_diff_button, file_collapse_buttons, mode_label, path_copy_button,
+    view_mode_button,
 };
 pub(crate) use self::path::file_icon_width;
 use self::path::*;
+pub(crate) use self::path::{file_icon, file_path_label, source_path_label};
 use crate::app::theme::{Theme, ui_font_size};
-use crate::diff::line::tag_for_hunk;
+use crate::diff::line::tag_for_hunk_type;
 use crate::diff::line_stats;
 use crate::diff::projection::{self, ProjectionView};
 use crate::repo::window::{FocusStop, RepoWindow};
@@ -46,6 +48,8 @@ pub(super) struct FileHeaderState<'a> {
     pub(super) html_external_url: Option<&'a str>,
     pub(super) can_edit_file: bool,
     pub(super) file_review: Option<ReviewFileRollup>,
+    /// `None` outside a stack, where files do not fold.
+    pub(super) collapsed: Option<bool>,
     pub(super) detail_width: f32,
     pub(super) focused: Option<FocusStop>,
 }
@@ -56,7 +60,7 @@ pub(super) fn file_header(
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
     let hunk = state.hunk;
-    let (label, bg, fg) = tag_for_hunk(hunk, t);
+    let (label, _, _) = tag_for_hunk_type(hunk.hunk_type, t);
     let old_path = hunk
         .old_path
         .as_ref()
@@ -84,8 +88,19 @@ pub(super) fn file_header(
         .debug_selector(|| "diff-header".to_owned())
         .bg(rgb(t.header_bg))
         .border_b_1()
-        .border_color(rgb(t.border))
-        .child(file_icon(&hunk.path, t));
+        .border_color(rgb(t.border));
+    if let Some(collapsed) = state.collapsed {
+        let path = hunk.path.clone();
+        let selector = format!("stack-file-chevron-{path}");
+        row = row.child(
+            collapse_chevron("stack-file-chevron", collapsed, t)
+                .debug_selector(move || selector.clone())
+                .on_click(
+                    cx.listener(move |view, _, _, cx| view.toggle_stacked_file_collapse(&path, cx)),
+                ),
+        );
+    }
+    row = row.child(file_icon(&hunk.path, t));
     if let Some(old_path) = old_path {
         row = row.child(source_path_label(
             old_path,
@@ -108,12 +123,13 @@ pub(super) fn file_header(
             t,
         ))
         .child(path_copy_button(
+            "path".into(),
             hunk.path.clone(),
             state.just_copied,
             t,
             cx,
         ))
-        .child(hunk_status_pill(label, bg, fg, t));
+        .child(hunk_status_pill(hunk.hunk_type, t));
     if let Some(stats) = state.line_stats.and_then(|stats| {
         line_stats(
             stats,
@@ -139,15 +155,6 @@ pub(super) fn file_header(
         .gap(px(2.));
     if state.is_annotating {
         actions = actions.child(exit_annotate_button(t, cx));
-    }
-    if let Some(rollup) = state.file_review {
-        actions = actions.child(mark_reviewed_button(
-            rollup == ReviewFileRollup::Reviewed,
-            compact,
-            state.focused == Some(FocusStop::MarkReviewed),
-            t,
-            cx,
-        ));
     }
     if let Some(projection) = state.projection.projection
         && !projection::opens_automatically(projection)
@@ -190,6 +197,15 @@ pub(super) fn file_header(
             cx,
         ));
     }
+    if let Some(rollup) = state.file_review {
+        actions = actions.child(mark_reviewed_button(
+            rollup == ReviewFileRollup::Reviewed,
+            compact,
+            state.focused == Some(FocusStop::MarkReviewed),
+            t,
+            cx,
+        ));
+    }
     row.child(path_group).child(actions).into_any_element()
 }
 
@@ -198,7 +214,8 @@ fn on_path_baseline(size: f32, t: &Theme) -> gpui::Pixels {
     px((t.scaled_font_size(PATH_FONT_SIZE) - t.scaled_font_size(size)) * BASELINE_BELOW_CENTER_EM)
 }
 
-fn hunk_status_pill(label: String, bg: u32, fg: u32, t: &Theme) -> impl IntoElement {
+pub(crate) fn hunk_status_pill(hunk_type: HunkType, t: &Theme) -> impl IntoElement {
+    let (label, bg, fg) = tag_for_hunk_type(hunk_type, t);
     div()
         .flex_none()
         .relative()

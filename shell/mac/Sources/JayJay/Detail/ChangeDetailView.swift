@@ -48,6 +48,7 @@ struct ChangeDetailView: View {
     @State var stackedHeights = StackedDiffHeights()
     @State var contextMenuRequest: SelectionContextMenuRequest?
     @State var collapsedDirs: Set<String> = []
+    @State var collapsedFiles: Set<String> = []
     @State var fileTreeCache = FileTreeCache()
     @State var splitRequest: SplitSheetRequest?
     @State var showFileFilter = false

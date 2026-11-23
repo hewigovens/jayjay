@@ -163,6 +163,11 @@ extension ChangeDetailView {
             return ReviewFileQuery(path: hunk.path, identity: hunk.reviewIdentity, snapshot: reviewSnapshots[hunk.reviewSnapshotKey])
         }
         reviewStore.setFilesReviewed(changeId: reviewChangeId, files: files, reviewed: reviewed)
+        if reviewed {
+            collapsedFiles.formUnion(files.map(\.path))
+        } else {
+            collapsedFiles.subtract(paths)
+        }
         applyKnownReviewRollups()
     }
 

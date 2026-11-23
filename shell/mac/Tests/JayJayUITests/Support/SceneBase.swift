@@ -92,6 +92,7 @@ class SceneBase: XCTestCase {
             app.launchArguments += ["-jayjay.autoExpandDescription", "NO"]
             app.launchArguments += ["-jayjay.hideReviewedFiles", "NO"]
             app.launchArguments += ["-jayjay.sideBySideDiff", "NO"]
+            app.launchArguments += ["-jayjay.showAllFileDiffs", "NO"]
             app.launchArguments += ["-jayjay.diffPaletteLight", ""]
             app.launchArguments += ["-jayjay.diffPaletteDark", ""]
         }

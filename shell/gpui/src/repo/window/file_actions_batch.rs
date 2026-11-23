@@ -248,9 +248,14 @@ impl RepoWindow {
                 let files = files.iter().map(|(path, identity, snapshot)| {
                     (path.as_str(), identity.as_str(), snapshot.as_ref())
                 });
-                self.review_store
-                    .borrow_mut()
-                    .set_files_reviewed(change_id, files, *reviewed);
+                self.review_store.borrow_mut().set_files_reviewed(
+                    change_id,
+                    files.clone(),
+                    *reviewed,
+                );
+                for (path, ..) in files {
+                    self.diff.stack.collapsed.set(path, *reviewed);
+                }
                 cx.notify();
             }
             FileBatchAction::Split(request) => self.open_split_files_modal(request.clone(), cx),

@@ -37,8 +37,6 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
 
     @Environment(AppSettings.self) private var settings
     @Environment(\.jayjayTypography) private var typography
-    @Environment(\.colorScheme) private var colorScheme
-    @Environment(\.appThemes) private var appThemes
 
     var selectedChangedLines: Set<Int> {
         selection.selectedChangedLines
@@ -67,16 +65,8 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
 
     private var header: some View {
         let selection = headerSelection
-        return HStack(spacing: 8) {
-            Button(action: onToggleCollapse) {
-                Image(systemName: isCollapsed ? "chevron.right" : "chevron.down")
-                    .jayjayFont(11)
-                    .foregroundStyle(.secondary)
-                    .frame(width: 12)
-            }
-            .buttonStyle(.plain)
-            .accessibilityIdentifier(AID.DiffEdit.fileToggle(hunk.path))
-            .accessibilityValue(isCollapsed ? "collapsed" : "expanded")
+        return HStack(alignment: .firstTextBaseline, spacing: 8) {
+            FileCollapseToggle(path: hunk.path, isCollapsed: isCollapsed, action: onToggleCollapse)
             if supportsDiffEdit {
                 Button(action: onToggleFile) {
                     Image(systemName: selection.state.systemImage)
@@ -87,20 +77,13 @@ struct DiffEditFileSection: View, DiffGutterSelectionActions {
                 }
                 .buttonStyle(.plain)
             }
-            hunk.hunkType.icon
-                .foregroundStyle(appThemes.colors(for: colorScheme).fileColor(for: hunk.hunkType))
-            Text(hunk.path)
-                .jayjayFont(13, weight: .semibold, design: .monospaced)
-                .textSelection(.enabled)
+            DiffFileTitle(hunk: hunk, stats: stats)
             if supportsDiffEdit, let partialText = selection.partialText {
                 Text(partialText)
                     .jayjayFont(10, weight: .semibold)
                     .padding(.horizontal, 8)
                     .padding(.vertical, 4)
                     .background(Color.accentColor.opacity(0.14), in: Capsule())
-            }
-            if let stats {
-                LineStatsLabel(stats: stats)
             }
             // Toggle lives on the filler, not the whole header, so the path's text selection and checkbox keep their own taps.
             HStack(spacing: 8) {

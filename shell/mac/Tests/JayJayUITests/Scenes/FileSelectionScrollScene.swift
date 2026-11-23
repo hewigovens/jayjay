@@ -52,7 +52,7 @@ final class FileSelectionScrollScene: SceneBase {
 
         app.buttons[AID.Diff.markReviewed].click()
         XCTAssertTrue(third.wait(for: \.isSelected, toEqual: true, timeout: 5))
-        XCTAssertTrue(app.buttons[AID.Diff.markReviewed].wait(for: \.label, toEqual: "Mark Reviewed", timeout: 5))
+        XCTAssertTrue(app.buttons[AID.Diff.markReviewed].wait(for: \.label, toEqual: "Unreviewed", timeout: 5))
         app.buttons[AID.FileList.review("src/modules/module-03.swift")].click()
         XCTAssertTrue(fourth.wait(for: \.isSelected, toEqual: true, timeout: 5))
         XCTAssertEqual(app.buttons[AID.FileList.review("src/modules/module-02.swift")].label, "Reviewed")

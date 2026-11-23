@@ -56,12 +56,6 @@ pub(crate) fn badge(hunk_type: HunkType, size: f32, theme: &Theme) -> Div {
         )))
 }
 
-pub(crate) fn disc(hunk_type: HunkType, color: u32, size: f32) -> Div {
-    status_tile(hunk_type, size, 0xffffff)
-        .rounded_full()
-        .bg(rgb(color))
-}
-
 pub(crate) fn is_submodule(hunk: &DiffHunk) -> bool {
     is_git_submodule(hunk.old.content.as_deref()) || is_git_submodule(hunk.new.content.as_deref())
 }

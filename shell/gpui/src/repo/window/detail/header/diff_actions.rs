@@ -3,7 +3,7 @@ use gpui::{AnyElement, App, Context, IntoElement, ParentElement, Styled, div, px
 use crate::app::fonts;
 use crate::app::theme::Theme;
 use crate::diff::{
-    DiffViewMode, edit_diff_button, mode_label, show_all_files_button, view_mode_button,
+    DiffViewMode, edit_diff_button, file_collapse_buttons, mode_label, view_mode_button,
 };
 use crate::repo::RepoWindow;
 use crate::repo::window::FocusStop;
@@ -14,13 +14,12 @@ pub(crate) struct DiffActions {
     /// `None` while no file diff is shown.
     pub(crate) view_mode: Option<DiffViewMode>,
     pub(crate) can_edit_diff: bool,
-    /// A file is shown alone although every file's diff is asked for.
-    pub(crate) shows_file_alone: bool,
+    pub(crate) shows_stack: bool,
 }
 
 impl DiffActions {
     fn is_empty(self) -> bool {
-        self.view_mode.is_none() && !self.can_edit_diff && !self.shows_file_alone
+        self.view_mode.is_none() && !self.can_edit_diff && !self.shows_stack
     }
 
     pub(super) fn render(
@@ -39,8 +38,8 @@ impl DiffActions {
             .flex_row()
             .items_center()
             .gap(px(2.));
-        if self.shows_file_alone {
-            actions = actions.child(show_all_files_button(compact, t, cx));
+        if self.shows_stack {
+            actions = actions.children(file_collapse_buttons(compact, t, cx));
         }
         if let Some(mode) = self.view_mode {
             actions = actions.child(view_mode_button(
@@ -77,9 +76,10 @@ impl DiffActions {
             12. + 12. + label
         };
         let widths: Vec<f32> = self
-            .shows_file_alone
-            .then(jayjay_i18n::repo::show_all_files)
+            .shows_stack
+            .then(jayjay_i18n::repo::expand_all)
             .into_iter()
+            .chain(self.shows_stack.then(jayjay_i18n::repo::collapse_all))
             .chain(self.view_mode.map(mode_label))
             .chain(self.can_edit_diff.then(jayjay_i18n::diff::edit_diff))
             .map(action)

@@ -73,7 +73,7 @@ enum AppShortcut: String, Decodable {
 }
 
 extension View {
-    func keyboardShortcut(_ shortcut: AppShortcut) -> some View {
-        keyboardShortcut(ShortcutStore.shared.byID[shortcut.rawValue]?.primary?.keyboardShortcut)
+    func keyboardShortcut(_ shortcut: AppShortcut?) -> some View {
+        keyboardShortcut(shortcut.flatMap { ShortcutStore.shared.byID[$0.rawValue]?.primary?.keyboardShortcut })
     }
 }

@@ -32,6 +32,10 @@ struct DiffSection: View {
     /// Set in a stack of files, where a large diff folds to a row that opens it alone.
     var onShowAlone: (() -> Void)?
     var stackedHeights: StackedDiffHeights?
+    var isCollapsed = false
+    var onToggleCollapse: (() -> Void)?
+    /// Called when the file folds while its header is pinned, since the rows that held it in view are gone.
+    var onRevealHeader: (() -> Void)?
 
     // Non-private members are read by the DiffSection+Content / +EditActions / +ReviewActions extensions.
     // Display lines and change groups are computed once per loaded diff; updateNSView re-runs per observed change and the FFI is O(diff bytes).
@@ -62,15 +66,22 @@ struct DiffSection: View {
                 .overlay(alignment: .bottom) { Divider().opacity(pinnedHeaderOffset > 0 ? 1 : 0) }
                 .offset(y: pinnedHeaderOffset)
                 .zIndex(1)
-            if let message = contextExpansionDisplay.errorMessage {
-                expansionErrorBanner(message)
-                    .padding(.bottom, 8)
+            if !isCollapsed {
+                if let message = contextExpansionDisplay.errorMessage {
+                    expansionErrorBanner(message)
+                        .padding(.bottom, 8)
+                }
+                // Without the stack, a diff that has nothing to show yet has no view to take the height.
+                ZStack { diffContent }
+                    .frame(height: fitsContent ? stackedContentHeight : nil)
+                    .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackedHeights?.record($0, of: hunk.path, in: heightBasis) }
+                    .onChange(of: heightBasis) { _, basis in stackedHeights?.carry(hunk.path, to: basis) }
             }
-            // Without the stack, a diff that has nothing to show yet has no view to take the height.
-            ZStack { diffContent }
-                .frame(height: fitsContent ? stackedContentHeight : nil)
-                .onGeometryChange(for: CGFloat.self) { $0.size.height } action: { stackedHeights?.record($0, of: hunk.path, in: heightBasis) }
-                .onChange(of: heightBasis) { _, basis in stackedHeights?.carry(hunk.path, to: basis) }
+        }
+        .onChange(of: isCollapsed) { _, collapsed in
+            if collapsed, pinnedHeaderOffset > 0 {
+                onRevealHeader?()
+            }
         }
         // A stacked file's header stays at the top of the list while its diff scrolls under it, until the file's end carries it away.
         .onGeometryChange(for: CGFloat.self) { proxy in

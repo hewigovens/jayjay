@@ -46,6 +46,35 @@ final class AllFileDiffsScene: SceneBase {
         XCTAssertTrue(stackedBelowRoot.waitForNonExistence(timeout: 5))
     }
 
+    func testStackedFilesFoldToTheirHeaders() throws {
+        let app = try XCTUnwrap(app)
+        let rootToggle = app.buttons[AID.Diff.fileToggle("a-root.txt")]
+        let diffText = app.textViews[AID.Diff.text].firstMatch
+        let isFolded = { (folded: Bool) in
+            let state = NSPredicate(format: "value == %@", folded ? "collapsed" : "expanded")
+            return XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: state, object: rootToggle)], timeout: 5) == .completed
+        }
+        XCTAssertTrue(rootToggle.waitForExistence(timeout: 10))
+        XCTAssertTrue(diffText.waitForExistence(timeout: 10))
+
+        app.buttons[AID.Diff.collapseAllFiles].click()
+        XCTAssertTrue(diffText.waitForNonExistence(timeout: 5), "Collapse All left a diff open")
+        app.buttons[AID.Diff.expandAllFiles].click()
+        XCTAssertTrue(diffText.waitForExistence(timeout: 5), "Expand All did not bring the diffs back")
+
+        rootToggle.click()
+        XCTAssertTrue(isFolded(true))
+        rootToggle.click()
+        XCTAssertTrue(isFolded(false))
+
+        let review = app.buttons.matching(identifier: AID.Diff.markReviewed).firstMatch
+        review.click()
+        XCTAssertTrue(isFolded(true), "A reviewed file stayed open")
+        XCTAssertEqual(review.label, "Reviewed")
+        review.click()
+        XCTAssertTrue(isFolded(false), "An unreviewed file stayed folded")
+    }
+
     func testStackedSideBySideDiffsScrollWithTheList() throws {
         let app = try XCTUnwrap(app)
         let editRoot = app.buttons[AID.FileEditor.open("a-root.txt")]

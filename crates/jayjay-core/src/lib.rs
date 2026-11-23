@@ -20,6 +20,7 @@ pub mod diff_edit;
 pub mod error_message;
 #[cfg(feature = "repository")]
 pub mod external_tools;
+mod file_collapse;
 #[cfg(feature = "repository")]
 mod file_display;
 mod file_size_formatter;
@@ -74,6 +75,7 @@ pub mod utf16;
 pub use bookmark_sync::BookmarkSync;
 #[cfg(feature = "repository")]
 pub use cli::run_app_cli_command;
+pub use file_collapse::FileCollapse;
 #[cfg(feature = "repository")]
 pub use file_display::MAX_IMAGE_BYTES;
 pub use file_size_formatter::FileSizeFormatter;

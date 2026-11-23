@@ -1,7 +1,7 @@
 use gpui::prelude::FluentBuilder;
 use gpui::{
     AnyElement, App, ClickEvent, Context, Div, InteractiveElement, IntoElement, ParentElement,
-    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb,
+    SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb, svg,
 };
 use jayjay_core::DiffProjection;
 
@@ -37,20 +37,48 @@ pub(super) fn file_editor_button(
     .into_any_element()
 }
 
-pub(crate) fn show_all_files_button(
+pub(crate) fn collapse_chevron(
+    id: impl Into<gpui::ElementId>,
+    collapsed: bool,
+    t: &Theme,
+) -> Stateful<Div> {
+    let glyph_str = if collapsed {
+        glyph::CARET_RIGHT
+    } else {
+        glyph::CARET_DOWN
+    };
+    div()
+        .id(id)
+        .flex_none()
+        .cursor_pointer()
+        .child(icons::icon(glyph_str, 10., t.fg_faint))
+}
+
+pub(crate) fn file_collapse_buttons(
     compact: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
-) -> AnyElement {
-    header_action(
-        "show-all-files",
-        glyph::LIST,
-        (!compact).then(jayjay_i18n::repo::show_all_files),
-        false,
-        t,
-    )
-    .on_click(cx.listener(|view, _, _, cx| view.show_all_file_diffs(cx)))
-    .into_any_element()
+) -> [AnyElement; 2] {
+    let button = |id: &'static str, path: &'static str, label: String| {
+        let icon = svg().path(path).size(px(12.)).text_color(rgb(t.fg_dim));
+        header_action_with(id, icon, (!compact).then(|| label.clone()), false, t).help(label)
+    };
+    [
+        button(
+            "stack-expand-all",
+            icons::EXPAND_VERTICAL_SVG,
+            jayjay_i18n::repo::expand_all(),
+        )
+        .on_click(cx.listener(|view, _, _, cx| view.expand_all_stacked_files(cx)))
+        .into_any_element(),
+        button(
+            "stack-collapse-all",
+            icons::COLLAPSE_VERTICAL_SVG,
+            jayjay_i18n::repo::collapse_all(),
+        )
+        .on_click(cx.listener(|view, _, _, cx| view.collapse_all_stacked_files(cx)))
+        .into_any_element(),
+    ]
 }
 
 pub(crate) fn edit_diff_button(
@@ -82,21 +110,16 @@ pub(super) fn mark_reviewed_button(
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    let label = if reviewed {
-        jayjay_i18n::repo::reviewed()
-    } else {
-        jayjay_i18n::diff::mark_reviewed()
-    };
     let help = if reviewed {
         jayjay_i18n::menu::mark_files_unreviewed(1)
     } else {
-        label.clone()
+        jayjay_i18n::menu::mark_files_reviewed(1)
     };
     focus_ring(
         header_action(
             "mark-reviewed",
             glyph::CHECK,
-            (!compact).then_some(label),
+            (!compact).then(jayjay_i18n::repo::reviewed),
             reviewed,
             t,
         )
@@ -255,13 +278,14 @@ pub(super) fn exit_annotate_button(t: &Theme, cx: &mut Context<RepoWindow>) -> A
         .into_any_element()
 }
 
-pub(super) fn path_copy_button(
+pub(crate) fn path_copy_button(
+    id: SharedString,
     value: String,
     just_copied: bool,
     t: &Theme,
     cx: &mut Context<RepoWindow>,
 ) -> AnyElement {
-    copy_feedback_button("path".into(), value, just_copied, t.fg_dim, t, cx)
+    copy_feedback_button(id, value, just_copied, t.fg_dim, t, cx)
         .debug_selector(|| "diff-copy-path".to_owned())
         .relative()
         .top(px(1.))
@@ -301,6 +325,17 @@ fn header_action(
     t: &Theme,
 ) -> Stateful<Div> {
     let fg = if active { t.toggle_active_fg } else { t.fg_dim };
+    header_action_with(id, icons::icon(glyph_str, 12., fg), label, active, t)
+}
+
+fn header_action_with(
+    id: &'static str,
+    icon: impl IntoElement,
+    label: Option<String>,
+    active: bool,
+    t: &Theme,
+) -> Stateful<Div> {
+    let fg = if active { t.toggle_active_fg } else { t.fg_dim };
     div()
         .id(SharedString::from(id))
         .debug_selector(move || id.to_owned())
@@ -316,7 +351,7 @@ fn header_action(
         .text_color(rgb(fg))
         .cursor_pointer()
         .hover(|s| s.bg(rgb(t.row_alt_bg)).text_color(rgb(t.fg)))
-        .child(icons::icon(glyph_str, 12., fg))
+        .child(icon)
         .when_some(label, |el, label| el.child(label))
 }
 

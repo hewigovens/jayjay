@@ -34,6 +34,7 @@ extension ChangeDetailView {
                 .help(Localized.Repo.filterFiles)
                 .accessibilityIdentifier(AID.FileList.filterToggle)
                 reviewModeToggle
+                showAllFilesToggle
                 if showsReviewControls, activeReviewNoteCount > 0 {
                     Button {
                         showNotedFilesOnly.toggle()
@@ -136,6 +137,28 @@ extension ChangeDetailView {
             .frame(width: 0, height: 0)
             .allowsHitTesting(false)
         )
+    }
+
+    /// A file picked from the list shows alone with the setting still on, so the toggle reads off and the next press brings every file back.
+    private var showAllFilesToggle: some View {
+        let showsAll = appSettings.showAllFileDiffs && fileSelection.paths.isEmpty
+        let toggle = {
+            appSettings.showAllFileDiffs = !showsAll
+            if !showsAll {
+                fileSelection = FileSelection()
+            }
+        }
+        return Button(action: toggle) {
+            Image(systemName: "rectangle.grid.1x2")
+                .foregroundStyle(showsAll ? Color.accentColor : .secondary)
+                .jayjayFont(14)
+        }
+        .buttonStyle(.plain)
+        .keyboardFocusStop(.showAllFiles, action: toggle)
+        .help(Localized.Settings.showAllFileDiffs)
+        .accessibilityLabel(Localized.Repo.showAllFiles)
+        .accessibilityValue(showsAll ? "on" : "off")
+        .accessibilityIdentifier(AID.Diff.showAllFiles)
     }
 
     private var flatFileList: some View {

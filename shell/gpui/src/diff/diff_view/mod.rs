@@ -25,7 +25,9 @@ pub(crate) use edit_selection::{
 };
 pub(crate) use find_bar::render_find_bar;
 pub(crate) use header::{
-    DETAIL_INSET, edit_diff_button, mode_label, show_all_files_button, view_mode_button,
+    DETAIL_INSET, collapse_chevron, edit_diff_button, file_collapse_buttons, file_icon,
+    file_path_label, hunk_status_pill, mode_label, path_copy_button, source_path_label,
+    view_mode_button,
 };
 pub(crate) use note_banner::stale_notes_banner;
 pub(crate) use placeholders::placeholder_row;

@@ -12,23 +12,7 @@ struct DiffEditHeader: View {
                 .jayjayFont(12, design: .monospaced)
                 .foregroundStyle(.secondary)
             Spacer()
-            Text(session.selectionSummary)
-                .jayjayFont(11)
-                .foregroundStyle(.secondary)
-            Button {
-                session.expandAllFiles()
-            } label: {
-                Label(Localized.Repo.expandAll, systemImage: "rectangle.expand.vertical")
-            }
-            .keyboardShortcut(AppShortcut.expandAllFiles)
-            .accessibilityIdentifier(AID.DiffEdit.expandAll)
-            Button {
-                session.collapseAllFiles()
-            } label: {
-                Label(Localized.Repo.collapseAll, systemImage: "rectangle.compress.vertical")
-            }
-            .keyboardShortcut(AppShortcut.collapseAllFiles)
-            .accessibilityIdentifier(AID.DiffEdit.collapseAll)
+            FileCollapseButtons(onExpandAll: session.expandAllFiles, onCollapseAll: session.collapseAllFiles)
             Button {
                 session.toggleBulkSelection()
             } label: {

@@ -56,6 +56,7 @@ pub struct FileColumnState<'a> {
     /// Per-window cache so tree mode reuses the built tree across render frames.
     pub(crate) tree_cache: FileTreeCacheSlot,
     pub(crate) pane_active: bool,
+    pub(crate) shows_all_files: bool,
     pub(crate) focused: Option<FocusStop>,
 }
 
@@ -85,6 +86,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
         column_width,
         tree_cache,
         pane_active,
+        shows_all_files,
         focused,
     } = state;
     let t = theme(cx).clone();
@@ -115,6 +117,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                         file_filter_active: file_filter.is_some(),
                         file_filter_has_query: file_filter.is_some_and(|input| !input.is_empty()),
                         tree_mode,
+                        shows_all_files,
                         focused,
                     },
                     cx,
@@ -215,6 +218,7 @@ pub fn file_column(state: FileColumnState<'_>, cx: &mut Context<RepoWindow>) -> 
                 file_filter_active: file_filter.is_some(),
                 file_filter_has_query,
                 tree_mode,
+                shows_all_files,
                 focused,
             },
             cx,

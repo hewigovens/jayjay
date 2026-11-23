@@ -23,7 +23,7 @@ pub(crate) fn file_icon_width(path: &str, t: &Theme) -> f32 {
     metrics.ink_width * t.scaled_font_size(PATH_FONT_SIZE * 1.5) * metrics.scale
 }
 
-pub(super) fn file_icon(path: &str, t: &Theme) -> impl IntoElement {
+pub(crate) fn file_icon(path: &str, t: &Theme) -> impl IntoElement {
     let glyph = SetiGlyph::for_path(path);
     let metrics = glyph.metrics();
     let size = t.scaled_font_size(PATH_FONT_SIZE * 1.5) * metrics.scale;
@@ -48,7 +48,7 @@ pub(super) fn file_icon(path: &str, t: &Theme) -> impl IntoElement {
         )
 }
 
-pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl IntoElement {
+pub(crate) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl IntoElement {
     let display = SharedString::from(head_elide(path, max_chars));
     let dir_len = display.rfind('/').map(|ix| ix + 1).unwrap_or(0);
     let text = div()
@@ -77,7 +77,7 @@ pub(super) fn file_path_label(path: &str, max_chars: usize, t: &Theme) -> impl I
 }
 
 /// Only a rename's source is struck through; a copy's source still exists.
-pub(super) fn source_path_label(
+pub(crate) fn source_path_label(
     old_path: &str,
     renamed: bool,
     t: &Theme,
@@ -123,6 +123,9 @@ pub(super) fn header_reserved_width(
         }
     };
     let mut reserved = 2. * DETAIL_INSET + 40. + 20.; // padding, inter-child gaps, file icon
+    if state.collapsed.is_some() {
+        reserved += 16.;
+    }
     reserved += 20. + 16. + text(status.width(), 10.); // copy button, status pill
     if let Some(stats) = state.line_stats {
         reserved += text(
@@ -131,7 +134,7 @@ pub(super) fn header_reserved_width(
         );
     }
     if state.file_review.is_some() {
-        reserved += action(&jayjay_i18n::diff::mark_reviewed());
+        reserved += action(&jayjay_i18n::repo::reviewed());
     }
     if state.can_edit_file {
         reserved += action(&jayjay_i18n::diff::edit_file());

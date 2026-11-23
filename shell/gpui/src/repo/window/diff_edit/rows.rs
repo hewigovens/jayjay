@@ -28,6 +28,7 @@ impl DiffEditRowModel {
 pub(super) struct DiffEditCardFile {
     pub(super) path: Arc<str>,
     pub(super) hunk_type: HunkType,
+    pub(super) old_path: Option<Arc<str>>,
     pub(super) supported: bool,
     pub(super) diff: Option<Arc<FileDiff>>,
     pub(super) changed_total: u32,
@@ -146,6 +147,11 @@ impl RepoWindow {
             files.push(DiffEditCardFile {
                 path: hunk.path.as_str().into(),
                 hunk_type: hunk.hunk_type,
+                old_path: hunk
+                    .old_path
+                    .as_deref()
+                    .filter(|old_path| *old_path != hunk.path)
+                    .map(Arc::from),
                 supported,
                 diff: preview,
                 changed_total: self.diff_edit.session.file_counts(&hunk.path).changed,

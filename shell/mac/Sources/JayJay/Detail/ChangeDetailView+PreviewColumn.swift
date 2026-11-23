@@ -39,8 +39,9 @@ extension ChangeDetailView {
 
     // MARK: - Preview column
 
-    private func diffSection(for hunk: DiffHunk, stacked: Bool = false) -> some View {
-        VStack(spacing: 0) {
+    private func diffSection(for hunk: DiffHunk, stackScroll proxy: ScrollViewProxy? = nil) -> some View {
+        let stacked = proxy != nil
+        return VStack(spacing: 0) {
             if conflictedPaths.contains(hunk.path) {
                 conflictBar(hunk: hunk)
             }
@@ -77,7 +78,10 @@ extension ChangeDetailView {
                 fitsContent: stacked,
                 showsSharedActions: false,
                 onShowAlone: stacked ? { selectSingleFile(hunk.path) } : nil,
-                stackedHeights: stacked ? stackedHeights : nil
+                stackedHeights: stacked ? stackedHeights : nil,
+                isCollapsed: stacked && collapsedFiles.contains(hunk.path),
+                onToggleCollapse: stacked ? { collapsedFiles.formSymmetricDifference([hunk.path]) } : nil,
+                onRevealHeader: { proxy?.scrollTo(hunk.path, anchor: .top) }
             )
             // Rebuild DiffSection on commit-id change so Abandon-Selected-Lines refreshes @State fileDiff.
             .id("\(detail.info.commitId.id)|\(hunk.oldPath ?? "")|\(hunk.path)")
@@ -122,7 +126,7 @@ extension ChangeDetailView {
                     ScrollView {
                         LazyVStack(alignment: .leading, spacing: 0) {
                             ForEach(shown, id: \.path) { hunk in
-                                diffSection(for: hunk, stacked: true)
+                                diffSection(for: hunk, stackScroll: proxy)
                                 Divider()
                             }
                         }

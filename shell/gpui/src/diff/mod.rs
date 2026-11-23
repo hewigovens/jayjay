@@ -23,9 +23,10 @@ pub(crate) use annotate_view::Annotation;
 pub(crate) use bounds::{bounds_capture, column_bounds_capture};
 pub(crate) use diff_view::{
     DETAIL_INSET, DiffShape, DiffViewState, DiffWrapCache, FindState, ReviewDisplayState,
-    SvgPreviewContent, diff_view, display_range_to_diff_edit_range, edit_diff_button, mode_label,
-    row_index_for_line, selection_covers_whole_change_group, show_all_files_button,
-    stale_notes_banner, view_mode_button,
+    SvgPreviewContent, collapse_chevron, diff_view, display_range_to_diff_edit_range,
+    edit_diff_button, file_collapse_buttons, file_icon, file_path_label, hunk_status_pill,
+    mode_label, path_copy_button, row_index_for_line, selection_covers_whole_change_group,
+    source_path_label, stale_notes_banner, view_mode_button,
 };
 pub use diff_view::{DetailMode, DiffRenderRow, DiffRenderRows, DiffViewMode, NoteDotKind};
 pub(crate) use diff_view::{

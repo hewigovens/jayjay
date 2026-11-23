@@ -113,6 +113,12 @@ enum AID {
         static let markReviewed = "diff.markReviewed"
         static let showLargeDiff = "diff.showLargeDiff"
         static let showAllFiles = "diff.showAllFiles"
+        static let expandAllFiles = "diff.expandAllFiles"
+        static let collapseAllFiles = "diff.collapseAllFiles"
+
+        static func fileToggle(_ path: String) -> String {
+            "diff.fileToggle.\(path)"
+        }
     }
 
     enum ReviewNote {
@@ -384,12 +390,6 @@ enum AID {
 
     enum DiffEdit {
         static let open = "diffEdit.open"
-        static let expandAll = "diffEdit.expandAll"
-        static let collapseAll = "diffEdit.collapseAll"
         static let cancel = "diffEdit.cancel"
-
-        static func fileToggle(_ path: String) -> String {
-            "diffEdit.fileToggle.\(path)"
-        }
     }
 }

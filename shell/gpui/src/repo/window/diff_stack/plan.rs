@@ -52,6 +52,7 @@ pub(super) enum StackBody {
     },
     Image,
     Loading,
+    Collapsed,
     Message(StackMessage),
 }
 
@@ -81,6 +82,7 @@ impl RepoWindow {
         if stack.revision != revision {
             stack.revision = revision;
             stack.solo = false;
+            stack.collapsed.expand_all();
             stack.heights.clear();
             stack.wraps.clear();
             stack.shapes.clear();
@@ -151,6 +153,9 @@ impl RepoWindow {
             .iter()
             .map(|ix| {
                 let hunk = &files[*ix];
+                if stack.collapsed.contains(&hunk.path) {
+                    return frame;
+                }
                 let body = stack
                     .heights
                     .get(&hunk.path)
@@ -169,6 +174,11 @@ impl RepoWindow {
                 Some(ix) if files[*ix].path == *path => block,
                 _ => order.iter().position(|ix| files[*ix].path == *path)?,
             };
+            // A file that just folded under the top edge has only its header left to keep there.
+            if stack.collapsed.contains(path) {
+                let folded_before = offset < plan.header_height + DIVIDER;
+                return Some((block, if folded_before { offset } else { 0. }));
+            }
             // Rows that changed height keep the row under the top edge there, not the distance into the file.
             let rows = (offset - plan.header_height).max(0.) / plan.line_height * line_height;
             Some((block, offset.min(header_height) + rows))
@@ -199,9 +209,12 @@ impl RepoWindow {
                     heights[block] = height;
                     changed = true;
                 }
-                stack
-                    .heights
-                    .insert(files[built.hunk_ix].path.clone(), built.body_height);
+                // A folded file keeps the height it had, for when it opens again out of view.
+                if !matches!(built.body, StackBody::Collapsed) {
+                    stack
+                        .heights
+                        .insert(files[built.hunk_ix].path.clone(), built.body_height);
+                }
             }
             planned = Some((range.start, blocks, top));
             if !changed {
@@ -252,6 +265,13 @@ impl RepoWindow {
                 action,
             }),
         };
+        if stack.collapsed.contains(&hunk.path) {
+            return StackBlock {
+                hunk_ix,
+                body_height: 0.,
+                body: StackBody::Collapsed,
+            };
+        }
         if hunk_is_image(hunk) {
             return StackBlock {
                 hunk_ix,
@@ -368,13 +388,15 @@ impl RepoWindow {
 
     /// Find and scroll-to-line act on the selected file's rows, which the stack does not build for a folded file.
     pub(crate) fn folds_selected_file(&self, cx: &App) -> bool {
+        let vm = self.vm.read(cx);
         self.shows_diff_stack()
-            && self
-                .vm
-                .read(cx)
+            && (vm
                 .shown
                 .diff()
                 .is_some_and(|diff| diff.lines.len() > STACKED_LINE_LIMIT)
+                || vm
+                    .selected_hunk()
+                    .is_some_and(|hunk| self.diff.stack.collapsed.contains(&hunk.path)))
     }
 
     pub(crate) fn stack_row_top(&self, row: usize, cx: &App) -> Option<f32> {

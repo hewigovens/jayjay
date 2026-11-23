@@ -244,7 +244,7 @@ fn the_diff_header_compacts_for_the_room_the_pane_leaves(cx: &mut TestAppContext
     assert!(cx.debug_bounds("operation-log-pane").is_some());
     assert!(
         pane_width(cx, "mark-reviewed") < labelled,
-        "Mark Reviewed drops its label once the pane narrows the diff"
+        "Reviewed drops its label once the pane narrows the diff"
     );
 }
 

@@ -50,7 +50,13 @@ fn every_file_shows_until_one_is_picked_from_the_list(cx: &mut TestAppContext) {
             "{path} is missing from the stack"
         );
     }
-    assert!(cx.debug_bounds("show-all-files").is_none());
+    click(cx, "show-all-files");
+    assert!(
+        cx.debug_bounds("diff-stack").is_none(),
+        "the toggle did not leave the stack"
+    );
+    click(cx, "show-all-files");
+    assert!(cx.debug_bounds("diff-stack").is_some());
 
     click(cx, "file-row-1");
     assert!(
@@ -83,6 +89,48 @@ fn a_click_in_a_stacked_file_selects_it_without_leaving_the_stack(cx: &mut TestA
 
     assert_eq!(selected_path(&view, cx).as_deref(), Some("wip1.txt"));
     assert!(cx.debug_bounds("diff-stack").is_some());
+}
+
+#[gpui::test]
+fn stacked_files_fold_to_their_headers(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_stack(cx);
+    let height = |cx: &mut VisualTestContext, path: &str| {
+        cx.debug_bounds(crate::harness::selector(format!("stack-file-{path}")))
+            .expect("stacked file")
+            .size
+            .height
+    };
+    let open = height(cx, "README.md");
+    let other = height(cx, "feature.txt");
+
+    click(cx, "stack-file-chevron-README.md");
+    let folded = height(cx, "README.md");
+    assert!(folded < open, "the chevron did not fold the file");
+    assert_eq!(height(cx, "feature.txt"), other);
+
+    click(cx, "stack-expand-all");
+    assert_eq!(height(cx, "README.md"), open);
+    click(cx, "stack-collapse-all");
+    for path in ["README.md", "feature.txt", "wip1.txt", "wip2.txt"] {
+        assert_eq!(height(cx, path), folded, "{path} stayed open");
+    }
+    click(cx, "stack-expand-all");
+
+    view.update_in(cx, |view, _, cx| {
+        view.toggle_reviewed_for_selected_files(cx)
+    });
+    settle_visual(cx);
+    assert_eq!(
+        height(cx, "README.md"),
+        folded,
+        "a reviewed file stayed open"
+    );
+    click(cx, "stack-file-README.md");
+    view.update_in(cx, |view, _, cx| {
+        view.toggle_reviewed_for_selected_files(cx)
+    });
+    settle_visual(cx);
+    assert_eq!(height(cx, "README.md"), open);
 }
 
 #[gpui::test]
@@ -276,4 +324,66 @@ fn find_in_a_folded_file_opens_it_alone(cx: &mut TestAppContext) {
         cx.debug_bounds("diff-stack").is_none(),
         "a match in a folded file has no row to scroll to in the stack"
     );
+}
+
+#[gpui::test]
+fn find_in_a_file_folded_by_hand_opens_it_alone(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_stack(cx);
+    click(cx, "stack-file-chevron-README.md");
+
+    view.update_in(cx, |view, window, cx| {
+        view.open_find(cx);
+        view.focus_handle(cx).focus(window, cx);
+    });
+    cx.simulate_input("e");
+    settle_visual(cx);
+
+    assert!(view.read_with(cx, |view, _| view.find_match_count()) > 0);
+    assert!(cx.debug_bounds("diff-stack").is_none());
+}
+
+#[gpui::test]
+fn folding_the_file_under_the_top_edge_keeps_its_header_there(cx: &mut TestAppContext) {
+    let (_fixture, view, cx) = open_stack_with(cx, |fixture| {
+        let lines: String = (0..600).map(|line| format!("line {line}\n")).collect();
+        for file in ["feature.txt", "wip1.txt"] {
+            std::fs::write(fixture.path.join(file), &lines).expect("write a long file");
+        }
+    });
+    let stack = cx.debug_bounds("diff-stack").expect("stack");
+    scroll_wheel(cx, stack.center(), px(-3000.));
+    settle_visual(cx);
+    let pinned = cx
+        .debug_bounds("stack-pinned-header")
+        .expect("pinned header");
+    cx.simulate_click(pinned.center(), Modifiers::default());
+    settle_visual(cx);
+
+    view.update_in(cx, |view, _, cx| {
+        view.toggle_reviewed_for_selected_files(cx)
+    });
+    settle_visual(cx);
+
+    let folded = cx
+        .debug_bounds("stack-file-feature.txt")
+        .expect("folded file");
+    assert_eq!(folded.top(), stack.top());
+}
+
+#[gpui::test]
+fn the_stack_scrolls_through_a_folded_file(cx: &mut TestAppContext) {
+    let (_fixture, _view, cx) = open_stack_with(cx, |fixture| {
+        let lines: String = (0..600).map(|line| format!("line {line}\n")).collect();
+        std::fs::write(fixture.path.join("feature.txt"), lines).expect("write a long file");
+    });
+    click(cx, "stack-file-chevron-README.md");
+    let stack = cx.debug_bounds("diff-stack").expect("stack");
+
+    scroll_wheel(cx, stack.center(), px(-20.));
+    settle_visual(cx);
+
+    let folded = cx
+        .debug_bounds("stack-file-README.md")
+        .expect("folded file");
+    assert_eq!(folded.top(), stack.top() - px(20.));
 }

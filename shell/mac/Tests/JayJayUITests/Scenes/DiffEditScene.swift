@@ -11,7 +11,7 @@ final class DiffEditScene: SceneBase {
         XCTAssertTrue(open.waitForExistence(timeout: 10))
         open.click()
 
-        let card = app.buttons[AID.DiffEdit.fileToggle("docs/guides/guide-01.md")]
+        let card = app.buttons[AID.Diff.fileToggle("docs/guides/guide-01.md")]
         XCTAssertTrue(card.waitForExistence(timeout: 5))
         card.click()
         let gutter = app.textViews[AID.Diff.gutter].firstMatch
@@ -42,14 +42,14 @@ final class DiffEditScene: SceneBase {
         XCTAssertTrue(open.waitForExistence(timeout: 5), "Edit Diff button did not appear")
         open.click()
 
-        let binaryCard = app.buttons[AID.DiffEdit.fileToggle("assets/logo.bin")]
-        let configCard = app.buttons[AID.DiffEdit.fileToggle("config/environments/development.json")]
+        let binaryCard = app.buttons[AID.Diff.fileToggle("assets/logo.bin")]
+        let configCard = app.buttons[AID.Diff.fileToggle("config/environments/development.json")]
         XCTAssertTrue(binaryCard.waitForExistence(timeout: 5), "Binary diff-edit file card did not appear")
         XCTAssertTrue(configCard.waitForExistence(timeout: 5), "Text diff-edit file card did not appear")
         XCTAssertEqual(binaryCard.value as? String, "collapsed", "Large repository should start auto-collapsed")
         XCTAssertEqual(configCard.value as? String, "collapsed", "Large repository should start auto-collapsed")
 
-        let expandAll = app.buttons[AID.DiffEdit.expandAll]
+        let expandAll = app.buttons[AID.Diff.expandAllFiles]
         XCTAssertTrue(expandAll.waitForExistence(timeout: 5), "Expand All button did not appear")
         expandAll.click()
         XCTAssertTrue(
@@ -58,7 +58,7 @@ final class DiffEditScene: SceneBase {
         )
 
         let preview = app.textViews[AID.Diff.text].firstMatch
-        let collapseAll = app.buttons[AID.DiffEdit.collapseAll]
+        let collapseAll = app.buttons[AID.Diff.collapseAllFiles]
         XCTAssertTrue(collapseAll.waitForExistence(timeout: 5), "Collapse All button did not appear")
         collapseAll.click()
         XCTAssertTrue(preview.waitForNonExistence(timeout: 5), "Collapse All did not hide file previews")

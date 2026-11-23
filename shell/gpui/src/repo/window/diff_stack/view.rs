@@ -81,6 +81,7 @@ pub(crate) fn diff_stack(
                 just_copied: copied && selected == Some(built.hunk_ix),
                 can_edit_file,
                 file_review: file_reviews.get(&hunk.path).copied(),
+                collapsed: matches!(built.body, StackBody::Collapsed),
                 detail_width,
             },
             t,
@@ -195,6 +196,7 @@ pub(crate) fn diff_stack(
                     t,
                 )
             }
+            StackBody::Collapsed => div().into_any_element(),
         };
         let path = hunk.path.clone();
         list = list.child(

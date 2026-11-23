@@ -4,29 +4,16 @@ import SwiftUI
 
 extension DiffSection {
     var diffHeader: some View {
-        let statusColor = appThemes.colors(for: colorScheme).fileColor(for: hunk.hunkType)
-        return HStack(alignment: .firstTextBaseline, spacing: 8) {
-            FileIcon(path: hunk.path)
-            renamePathLabel
-            FilePathLabel(path: hunk.path, size: 13)
-                .textSelection(.enabled)
-                .help(hunk.path)
-                .accessibilityIdentifier(AID.Diff.section)
-            CopyIconButton(value: hunk.path, help: Localized.Diff.copyPath)
-            Text(hunk.hunkType.label)
-                .jayjayFont(10, weight: .medium)
-                .foregroundStyle(statusColor)
-                .padding(.horizontal, 7)
-                .padding(.vertical, 1)
-                .background(statusColor.opacity(0.12), in: Capsule())
-                .fixedSize()
-            if let lineStats, lineStats.hasLineChanges {
-                LineStatsLabel(stats: lineStats)
+        HStack(alignment: .firstTextBaseline, spacing: 8) {
+            if let onToggleCollapse {
+                FileCollapseToggle(path: hunk.path, isCollapsed: isCollapsed, action: onToggleCollapse)
             }
+            DiffFileTitle(hunk: hunk, stats: lineStats)
             Spacer(minLength: 8)
             HStack(spacing: 2) {
-                fileReviewButton
-                richPreviewButtons
+                if !isCollapsed {
+                    richPreviewButtons
+                }
                 if showsSharedActions {
                     sideBySideButton
                     if canOpenDiffEdit {
@@ -48,6 +35,7 @@ extension DiffSection {
                     .accessibilityLabel(Localized.Diff.editFile)
                     .accessibilityIdentifier(AID.FileEditor.open(hunk.path))
                 }
+                fileReviewButton
             }
             .buttonStyle(HeaderActionButtonStyle())
             .fixedSize()
@@ -75,14 +63,14 @@ extension DiffSection {
     private var fileReviewButton: some View {
         if fileReview != .hidden, let onToggleFileReview {
             let reviewed = fileReview == .reviewed
-            let title = reviewed ? Localized.Repo.reviewed : Localized.Diff.markReviewed
+            let state = reviewed ? Localized.Repo.reviewed : Localized.Repo.unreviewed
             Button(action: onToggleFileReview) {
-                actionLabel(title, systemImage: fileReview.systemImage)
+                actionLabel(Localized.Repo.reviewed, systemImage: fileReview.systemImage)
             }
             .buttonStyle(HeaderActionButtonStyle(isActive: reviewed))
             .keyboardFocusStop(.markReviewed, isAvailable: !fitsContent, action: onToggleFileReview)
-            .help(reviewed ? Localized.Menu.markFilesUnreviewed(count: 1) : title)
-            .accessibilityLabel(title)
+            .help(reviewed ? Localized.Menu.markFilesUnreviewed(count: 1) : Localized.Menu.markFilesReviewed(count: 1))
+            .accessibilityLabel(state)
             .accessibilityIdentifier(AID.Diff.markReviewed)
         }
     }
@@ -175,22 +163,6 @@ extension DiffSection {
         .accessibilityIdentifier(identifier)
         .buttonStyle(HeaderActionButtonStyle(isActive: active))
         .help(active ? activeHelp : inactiveHelp)
-    }
-
-    @ViewBuilder
-    private var renamePathLabel: some View {
-        if hunk.hunkType.hasSource, let oldPath = hunk.oldPath {
-            Text(oldPath)
-                .jayjayFont(11, design: .monospaced)
-                .strikethrough(hunk.hunkType == .renamed)
-                .lineLimit(1)
-                .truncationMode(.middle)
-                .help(oldPath)
-                .foregroundStyle(.secondary)
-            Image(systemName: "arrow.right")
-                .jayjayFont(10)
-                .foregroundStyle(.secondary)
-        }
     }
 
     private var sideBySideButton: some View {
