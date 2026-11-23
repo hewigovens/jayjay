@@ -226,12 +226,11 @@
 :where(.jayjay-review) .jj-review-toggle[data-state="partial"] {
   color: var(--jj-muted);
 }
-:where(.jayjay-review) .jj-review-toggle[data-state="reviewed"],
-:where(.jayjay-review) .jj-review-toggle[data-state="changed_since_review"] {
+:where(.jayjay-review) .jj-review-toggle[data-state="reviewed"] {
   color: var(--jj-reviewed-ink);
 }
-:where(.jayjay-review) .jj-review-check {
-  stroke: var(--jj-surface);
+:where(.jayjay-review) .jj-review-toggle[data-state="changed_since_review"] {
+  color: color-mix(in srgb, var(--jj-stripe-changed) 75%, transparent);
 }
 :where(.jayjay-review) .jj-review-toggle > input:disabled {
   cursor: default;

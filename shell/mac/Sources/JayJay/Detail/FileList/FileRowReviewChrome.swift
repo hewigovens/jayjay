@@ -23,8 +23,8 @@ enum FileRowReviewChrome: Equatable {
         switch self {
             case .hidden, .unreviewed: "square"
             case .partial: "minus.square"
-            case .reviewed: "checkmark.square.fill"
-            case .changedSinceReview: "square.lefthalf.filled"
+            case .reviewed: "checkmark.square"
+            case .changedSinceReview: "dot.square"
         }
     }
 
@@ -34,7 +34,7 @@ enum FileRowReviewChrome: Equatable {
             case .unreviewed: Color.secondary.opacity(0.4)
             case .partial: Color.secondary
             case .reviewed: .green
-            case .changedSinceReview: .green
+            case .changedSinceReview: Color.orange.opacity(0.75)
         }
     }
 

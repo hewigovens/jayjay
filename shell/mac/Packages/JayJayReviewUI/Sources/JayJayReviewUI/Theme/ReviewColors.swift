@@ -1,6 +1,6 @@
 import SwiftUI
 
-/// From review-web's `base.css` (`--jj-kind-*`, `--jj-reviewed-ink`, `--jj-note-ink`).
+/// From review-web's `base.css` (`--jj-kind-*`, `--jj-reviewed-ink`, `--jj-stripe-changed`, `--jj-note-ink`).
 enum ReviewColors {
     static func kind(_ kind: FileKind) -> Color {
         switch kind {
@@ -12,6 +12,7 @@ enum ReviewColors {
     }
 
     static let reviewed = dynamic(light: 0x1C7C3A, dark: 0x5FD17F)
+    static let changed = dynamic(light: 0xE8890C, dark: 0xF5A742).opacity(0.75)
     static let note = dynamic(light: 0xB45309, dark: 0xEDC18A)
 
     private static func dynamic(light: UInt32, dark: UInt32) -> Color {

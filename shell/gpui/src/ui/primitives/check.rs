@@ -58,12 +58,12 @@ pub enum CheckSquareState {
     Off,
     /// Outlined dash: some of it is done.
     Dash,
-    /// Left half filled: done before, changed since.
-    HalfFilled,
+    /// Outlined dot: done before, changed since.
+    Dot,
     On,
 }
 
-/// Square review mark; the check is drawn in the row background so it reads as cut out of the fill.
+/// Outlined square review mark.
 pub(crate) fn check_square(
     id: impl Into<ElementId>,
     state: CheckSquareState,
@@ -76,7 +76,6 @@ pub(crate) fn check_square(
         .flex()
         .items_center()
         .justify_center()
-        .relative()
         .w(px(14.))
         .h(px(14.))
         .rounded(px(3.))
@@ -90,19 +89,10 @@ pub(crate) fn check_square(
     match state {
         CheckSquareState::Off => square,
         CheckSquareState::Dash => square.child(mark_svg(icons::MINUS_SVG, accent)),
-        CheckSquareState::HalfFilled => square.child(
-            div()
-                .absolute()
-                .left_0()
-                .top_0()
-                .w(px(6.))
-                .h_full()
-                .rounded_l(px(2.))
-                .bg(rgb(accent)),
-        ),
-        CheckSquareState::On => square
-            .bg(rgb(accent))
-            .child(mark_svg(icons::CHECK_SVG, t.detail_bg)),
+        CheckSquareState::Dot => {
+            square.child(div().w(px(4.)).h(px(4.)).rounded_full().bg(rgb(accent)))
+        }
+        CheckSquareState::On => square.child(mark_svg(icons::CHECK_SVG, accent)),
     }
 }
 

@@ -3,6 +3,7 @@ use gpui::{
     SharedString, Stateful, StatefulInteractiveElement, Styled, Window, div, px, rgb, rgba,
 };
 use jayjay_core::DiffHunk;
+use jayjay_core::theme::mix;
 use jayjay_review::ReviewFileRollup;
 
 use crate::app::fonts::CodeText as _;
@@ -76,8 +77,8 @@ where
             jayjay_i18n::repo::reviewed(),
         ),
         ReviewFileRollup::ChangedSinceReview => (
-            CheckSquareState::HalfFilled,
-            t.file_added_color,
+            CheckSquareState::Dot,
+            mix(t.detail_bg, t.warning_fg, 0.75),
             jayjay_i18n::repo::changed_since_review(),
         ),
     };

@@ -9,16 +9,24 @@ public struct ReviewStateIcon: View {
 
     public var body: some View {
         Image(systemName: symbol)
-            .foregroundStyle(state == .unreviewed ? AnyShapeStyle(.tertiary) : AnyShapeStyle(ReviewColors.reviewed))
+            .foregroundStyle(tint)
             .accessibilityHidden(true)
+    }
+
+    private var tint: AnyShapeStyle {
+        switch state {
+            case .unreviewed: AnyShapeStyle(.tertiary)
+            case .partial, .reviewed: AnyShapeStyle(ReviewColors.reviewed)
+            case .changedSinceReview: AnyShapeStyle(ReviewColors.changed)
+        }
     }
 
     private var symbol: String {
         switch state {
             case .unreviewed: "square"
             case .partial: "minus.square"
-            case .changedSinceReview: "square.lefthalf.filled"
-            case .reviewed: "checkmark.square.fill"
+            case .changedSinceReview: "dot.square"
+            case .reviewed: "checkmark.square"
         }
     }
 }
