@@ -26,6 +26,7 @@ struct ToolbarCollapse<Leading: View, Collapsing: View, Trailing: View>: View {
             content
         }
         .background(WindowLeadingEdgeReader { windowOrigin = $0 })
+        .background(ToolbarItemToolTipSilencer())
     }
 
     private var content: some View {
