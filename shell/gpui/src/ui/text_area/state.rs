@@ -107,6 +107,10 @@ impl TextArea {
         })
     }
 
+    pub(crate) fn set_height(&mut self, height: f32) {
+        self.height = height;
+    }
+
     pub fn new(
         content: impl Into<SharedString>,
         placeholder: impl Into<SharedString>,

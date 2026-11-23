@@ -1,4 +1,6 @@
-use gpui::{App, Context, Modifiers, ScrollStrategy, SharedString, Task, point, px};
+use gpui::{
+    App, Context, Modifiers, Pixels, Point, ScrollStrategy, SharedString, Size, Task, point, px,
+};
 use jayjay_core::dag::SelectionClick;
 use jayjay_core::{DiffHunk, JayResult, commit_message};
 
@@ -8,7 +10,7 @@ use super::{
 };
 use crate::diff::projection::{self, ProjectionView};
 use crate::repo::view_model::RepoViewModel;
-use crate::ui::overlay::TextPrompt;
+use crate::ui::overlay::{PromptSize, TextPrompt};
 use crate::ui::selection::click_from_modifiers;
 use crate::windows::bookmark_manager::BookmarkManagerView;
 use crate::windows::overview::OverviewView;
@@ -136,6 +138,11 @@ impl RepoWindow {
         action: TextModalAction,
         cx: &mut Context<Self>,
     ) {
+        let layout = &crate::app::config::current(cx).layout;
+        let size = PromptSize {
+            width: layout.description_editor_width,
+            body_height: layout.description_editor_body_height,
+        };
         self.present_modal(
             RepoModal::Text(TextModalState::new(
                 TextPrompt::commit_message(
@@ -143,6 +150,7 @@ impl RepoWindow {
                     subtitle,
                     &description,
                     jayjay_i18n::common::save(),
+                    size,
                     cx,
                 ),
                 action,
@@ -281,6 +289,43 @@ impl RepoWindow {
             && let Some(checkbox) = modal.checkbox.as_mut()
         {
             checkbox.checked ^= true;
+            cx.notify();
+        }
+    }
+
+    pub(crate) fn start_text_modal_resize(
+        &mut self,
+        position: Point<Pixels>,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(RepoModal::Text(modal)) = &mut self.modal {
+            modal.prompt.start_resize(position);
+            cx.notify();
+        }
+    }
+
+    pub(crate) fn resize_text_modal(
+        &mut self,
+        position: Point<Pixels>,
+        viewport: Size<Pixels>,
+        cx: &mut Context<Self>,
+    ) {
+        if let Some(RepoModal::Text(modal)) = &mut self.modal
+            && modal.prompt.is_resizing()
+        {
+            modal.prompt.resize_to(position, viewport, cx);
+            cx.notify();
+        }
+    }
+
+    pub(crate) fn end_text_modal_resize(&mut self, cx: &mut Context<Self>) {
+        if let Some(RepoModal::Text(modal)) = &mut self.modal
+            && let Some(size) = modal.prompt.end_resize()
+        {
+            crate::app::config::update(cx, move |c| {
+                c.layout.description_editor_width = size.width;
+                c.layout.description_editor_body_height = size.body_height;
+            });
             cx.notify();
         }
     }

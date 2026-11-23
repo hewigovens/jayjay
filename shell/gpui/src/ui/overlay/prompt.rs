@@ -1,14 +1,58 @@
 use gpui::{
     AnyElement, App, AppContext, Context, Entity, Focusable, InteractiveElement, IntoElement,
-    ParentElement, SharedString, StatefulInteractiveElement, Styled, Window, div, px,
+    ParentElement, Pixels, Point, SharedString, Size, StatefulInteractiveElement, Styled, Window,
+    div, px,
 };
 
 use super::{overlay_actions, overlay_card, overlay_header, overlay_layer};
 use crate::app::theme::Theme;
 use crate::ui::commit_message_editor::CommitMessageEditor;
 use crate::ui::icons::glyph;
+use crate::ui::pane_drag::pane_max;
 use crate::ui::primitives::button;
 use crate::ui::text_area::TextArea;
+
+#[derive(Clone, Copy, Debug, PartialEq)]
+pub(crate) struct PromptSize {
+    pub width: f32,
+    pub body_height: f32,
+}
+
+impl PromptSize {
+    pub(crate) const DEFAULT: Self = Self {
+        width: 680.,
+        body_height: 300.,
+    };
+    const MIN: Self = Self {
+        width: 520.,
+        body_height: 190.,
+    };
+    const MAX: Self = Self {
+        width: 960.,
+        body_height: 600.,
+    };
+    const WINDOW_MARGIN: f32 = 64.;
+    /// The card's header, summary field, actions and padding around the body.
+    const CHROME_HEIGHT: f32 = 170.;
+
+    fn fitted(self, viewport: Size<Pixels>) -> Self {
+        let room_width = f32::from(viewport.width) - Self::WINDOW_MARGIN;
+        let room_height = f32::from(viewport.height) - Self::WINDOW_MARGIN - Self::CHROME_HEIGHT;
+        // `max` then `min` rather than `clamp`, which passes a NaN from a hand-edited config straight through.
+        Self {
+            width: self.width.max(Self::MIN.width).min(pane_max(
+                Self::MIN.width,
+                Self::MAX.width,
+                room_width,
+            )),
+            body_height: self.body_height.max(Self::MIN.body_height).min(pane_max(
+                Self::MIN.body_height,
+                Self::MAX.body_height,
+                room_height,
+            )),
+        }
+    }
+}
 
 /// Window-owned prompt with shared input controls and submit/cancel actions.
 pub(crate) struct TextPrompt {
@@ -17,6 +61,10 @@ pub(crate) struct TextPrompt {
     pub primary_label: SharedString,
     input: PromptInput,
     focus_pending: bool,
+    /// What the user asked for; `shown` is that size fitted to the window, so a small window does not overwrite it.
+    size: Option<PromptSize>,
+    shown: Option<PromptSize>,
+    resize: Option<(Point<Pixels>, PromptSize)>,
 }
 
 enum PromptInput {
@@ -50,6 +98,7 @@ pub(crate) struct PromptSlots {
     before_input: Vec<AnyElement>,
     after_input: Vec<AnyElement>,
     leading_actions: Vec<AnyElement>,
+    corner: Option<AnyElement>,
 }
 
 impl PromptSlots {
@@ -61,11 +110,17 @@ impl PromptSlots {
             before_input: before_input.into_iter().collect(),
             after_input: after_input.into_iter().collect(),
             leading_actions: Vec::new(),
+            corner: None,
         }
     }
 
     pub fn with_leading_actions(mut self, actions: Vec<AnyElement>) -> Self {
         self.leading_actions = actions;
+        self
+    }
+
+    pub fn with_corner(mut self, corner: Option<AnyElement>) -> Self {
+        self.corner = corner;
         self
     }
 }
@@ -130,6 +185,9 @@ impl TextPrompt {
             primary_label: primary_label.into(),
             input: PromptInput::Text(input),
             focus_pending: true,
+            size: None,
+            shown: None,
+            resize: None,
         }
     }
 
@@ -153,14 +211,71 @@ impl TextPrompt {
         subtitle: impl Into<SharedString>,
         initial: &str,
         primary_label: impl Into<SharedString>,
+        size: PromptSize,
         cx: &mut Context<V>,
     ) -> Self {
         Self {
             title: title.into(),
             subtitle: subtitle.into(),
             primary_label: primary_label.into(),
-            input: PromptInput::CommitMessage(CommitMessageEditor::new(initial, 190., cx)),
+            input: PromptInput::CommitMessage(CommitMessageEditor::new(
+                initial,
+                size.body_height,
+                cx,
+            )),
             focus_pending: true,
+            size: Some(size),
+            shown: Some(size),
+            resize: None,
+        }
+    }
+
+    pub fn is_resizable(&self) -> bool {
+        self.size.is_some()
+    }
+
+    pub fn is_resizing(&self) -> bool {
+        self.resize.is_some()
+    }
+
+    pub fn start_resize(&mut self, position: Point<Pixels>) {
+        self.resize = self.shown.map(|shown| (position, shown));
+    }
+
+    pub fn resize_to(&mut self, position: Point<Pixels>, viewport: Size<Pixels>, cx: &mut App) {
+        let Some((start, from)) = self.resize else {
+            return;
+        };
+        // The card stays centred, so it grows twice as far as the grip moves.
+        let dragged = PromptSize {
+            width: from.width + 2. * f32::from(position.x - start.x),
+            body_height: from.body_height + 2. * f32::from(position.y - start.y),
+        }
+        .fitted(viewport);
+        self.size = Some(dragged);
+        self.show(dragged, cx);
+    }
+
+    pub fn end_resize(&mut self) -> Option<PromptSize> {
+        self.resize.take().and(self.size)
+    }
+
+    pub fn fit(&mut self, viewport: Size<Pixels>, cx: &mut App) {
+        if let Some(size) = self.size {
+            self.show(size.fitted(viewport), cx);
+        }
+    }
+
+    fn show(&mut self, size: PromptSize, cx: &mut App) {
+        if self.shown == Some(size) {
+            return;
+        }
+        self.shown = Some(size);
+        if let PromptInput::CommitMessage(editor) = &self.input {
+            editor.body.update(cx, |body, cx| {
+                body.set_height(size.body_height);
+                cx.notify();
+            });
         }
     }
 
@@ -194,7 +309,8 @@ impl TextPrompt {
         on_cancel: impl Fn(&mut V, &mut Context<V>) + 'static,
         on_submit: impl Fn(&mut V, &mut Context<V>) + 'static,
     ) -> AnyElement {
-        let mut panel = overlay_card(t, style.width).child(overlay_header(
+        let width = self.shown.map_or(style.width, |size| size.width);
+        let mut panel = overlay_card(t, width).child(overlay_header(
             glyph::PENCIL,
             t.fg_dim,
             self.title.clone(),
@@ -247,6 +363,8 @@ impl TextPrompt {
                 .child(div().flex_1())
                 .child(actions)
         });
-        overlay_layer().child(panel).into_any_element()
+        overlay_layer()
+            .child(panel.children(slots.corner))
+            .into_any_element()
     }
 }

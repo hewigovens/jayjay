@@ -1,6 +1,7 @@
 use gpui::{
-    AnyElement, Context, InteractiveElement, IntoElement, ParentElement, SharedString,
-    StatefulInteractiveElement, Styled, div, px, rgb, rgba,
+    AnyElement, Context, CursorStyle, InteractiveElement, IntoElement, MouseButton, MouseDownEvent,
+    MouseMoveEvent, MouseUpEvent, ParentElement, SharedString, StatefulInteractiveElement, Styled,
+    deferred, div, px, rgb, rgba,
 };
 use jayjay_core::diff::DiffSpanStyle;
 
@@ -52,22 +53,81 @@ pub(crate) fn text_modal_overlay(
     } else {
         Vec::new()
     };
-    modal
-        .prompt
-        .overlay(
-            &PromptStyle {
-                // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
-                key_context: modal.context.is_some().then_some("NoteComposer"),
-                primary_enabled: !(working_copy && committing),
-                ..PromptStyle::new(520., "text-modal-cancel", "text-modal-primary")
-            },
-            t,
-            cx,
-            PromptSlots::new(before_input, after_input).with_leading_actions(leading_actions),
-            |view, cx| view.close_text_modal(cx),
-            |view, cx| view.submit_text_modal(cx),
+    let resize_grip = modal.prompt.is_resizable().then(|| resize_grip(t, cx));
+    let resizing = modal.prompt.is_resizing();
+    let overlay = modal.prompt.overlay(
+        &PromptStyle {
+            // Composer's own key context: mod+Return saves only while this overlay's input has focus, never the commit box or other text modals, which don't set `context` so never wrap in it.
+            key_context: modal.context.is_some().then_some("NoteComposer"),
+            primary_enabled: !(working_copy && committing),
+            ..PromptStyle::new(520., "text-modal-cancel", "text-modal-primary")
+        },
+        t,
+        cx,
+        PromptSlots::new(before_input, after_input)
+            .with_leading_actions(leading_actions)
+            .with_corner(resize_grip),
+        |view, cx| view.close_text_modal(cx),
+        |view, cx| view.submit_text_modal(cx),
+    );
+    if !modal.prompt.is_resizable() {
+        return Some(overlay);
+    }
+    // Always mounted, so a release that lands before the next frame still ends the drag.
+    let mut tracker = div()
+        .absolute()
+        .inset_0()
+        .on_mouse_move(cx.listener(|view, ev: &MouseMoveEvent, window, cx| {
+            if ev.pressed_button == Some(MouseButton::Left) {
+                view.resize_text_modal(ev.position, window.viewport_size(), cx);
+            } else {
+                view.end_text_modal_resize(cx);
+            }
+        }))
+        .on_mouse_up(
+            MouseButton::Left,
+            cx.listener(|view, _: &MouseUpEvent, _, cx| view.end_text_modal_resize(cx)),
+        );
+    if resizing {
+        tracker = tracker.cursor(CursorStyle::ResizeUpLeftDownRight);
+    }
+    Some(
+        div()
+            .absolute()
+            .inset_0()
+            .child(overlay)
+            .child(deferred(tracker))
+            .into_any_element(),
+    )
+}
+
+fn resize_grip(t: &Theme, cx: &mut Context<RepoWindow>) -> AnyElement {
+    div()
+        .absolute()
+        .right_0()
+        .bottom_0()
+        .size(px(18.))
+        .cursor(CursorStyle::ResizeUpLeftDownRight)
+        .debug_selector(|| "text-modal-resize".to_owned())
+        .on_mouse_down(
+            MouseButton::Left,
+            cx.listener(|view, ev: &MouseDownEvent, _, cx| {
+                cx.stop_propagation();
+                view.start_text_modal_resize(ev.position, cx);
+            }),
         )
-        .into()
+        .child(
+            div()
+                .absolute()
+                .right(px(5.))
+                .bottom(px(5.))
+                .size(px(7.))
+                .border_r_2()
+                .border_b_2()
+                .rounded_br(px(3.))
+                .border_color(rgb(t.fg_dim)),
+        )
+        .into_any_element()
 }
 
 fn working_copy_actions(

@@ -43,10 +43,11 @@ struct DescriptionEditorSheet: View {
                 ))
             },
             content: {
-                CommitMessageEditor(summary: $summary, details: $details, bodyHeight: 190, focusSummaryAtEnd: true)
+                CommitMessageEditor(summary: $summary, details: $details, bodyHeight: 190 ... .infinity, focusSummaryAtEnd: true)
             }
         )
-        .frame(width: 520)
+        .frame(minWidth: 520, idealWidth: 680, maxWidth: 900, minHeight: 360, idealHeight: 480, maxHeight: 680)
+        .presentationSizing(.fitted)
         .disabled(workingCopy?.isCommitting == true)
         .interactiveDismissDisabled(workingCopy?.isCommitting == true)
     }

@@ -3,8 +3,8 @@ use crate::harness::{
     open_fixture, open_repo, rendered_height, selected_commit_id, settle_visual, zoom_to_max,
 };
 use gpui::{
-    Entity, Focusable, Modifiers, Pixels, ScrollDelta, ScrollEvent, TestAppContext, TouchPhase,
-    VisualContext, VisualTestContext, point, px, size,
+    Entity, Focusable, Modifiers, MouseButton, Pixels, Point, ScrollDelta, ScrollEvent,
+    TestAppContext, TouchPhase, VisualContext, VisualTestContext, point, px, size,
 };
 use jayjay_gpui::app::config;
 use jayjay_gpui::repo::{FocusStop, RepoWindow};
@@ -361,6 +361,53 @@ fn description_dialog_keeps_working_copy_draft_and_saves_summary_and_body(cx: &m
         assert_eq!(view.summary_input().read(cx).text(), "Keep WIP summary");
         assert_eq!(view.description_input().read(cx).text(), "Keep WIP body");
     });
+}
+
+#[gpui::test]
+fn description_dialog_resizes_within_the_window_and_remembers_its_size(cx: &mut TestAppContext) {
+    let fixture = LinearFixture::build();
+    let (view, cx) = open_repo(fixture.path.clone(), cx);
+    cx.simulate_resize(size(px(1400.), px(900.)));
+    select(&view, cx, "add hello");
+    click(cx, "edit-description");
+    let grip = |cx: &mut VisualTestContext| cx.debug_bounds("text-modal-resize").unwrap();
+    let drag_to = |cx: &mut VisualTestContext, to: Point<Pixels>| {
+        let from = grip(cx).center();
+        cx.simulate_mouse_down(from, MouseButton::Left, Modifiers::default());
+        cx.simulate_mouse_move(to, MouseButton::Left, Modifiers::default());
+        cx.simulate_mouse_up(to, MouseButton::Left, Modifiers::default());
+        settle_visual(cx);
+    };
+    let start = grip(cx);
+
+    drag_to(cx, start.center() + point(px(60.), px(40.)));
+    let grown = grip(cx);
+    assert_eq!(grown.origin, start.origin + point(px(60.), px(40.)));
+
+    drag_to(cx, point(px(1399.), px(899.)));
+    let capped = grip(cx);
+    assert!(capped.origin.x > grown.origin.x && capped.origin.y > grown.origin.y);
+    assert!(capped.right() < px(1400.) && capped.bottom() < px(900.));
+
+    drag_to(cx, point(px(1.), px(1.)));
+    let smallest = grip(cx);
+    assert!(smallest.origin.x < start.origin.x && smallest.origin.y < start.origin.y);
+
+    drag_to(cx, grown.center());
+    click(cx, "text-modal-cancel");
+    click(cx, "edit-description");
+    assert_eq!(grip(cx), grown);
+
+    cx.simulate_resize(size(px(800.), px(500.)));
+    settle_visual(cx);
+    assert!(grip(cx).right() < px(800.));
+    cx.simulate_resize(size(px(1400.), px(900.)));
+    settle_visual(cx);
+    assert_eq!(
+        grip(cx),
+        grown,
+        "a small window must not overwrite the chosen size"
+    );
 }
 
 #[gpui::test]

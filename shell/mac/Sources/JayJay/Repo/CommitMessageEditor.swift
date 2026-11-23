@@ -5,7 +5,7 @@ import SwiftUI
 struct CommitMessageEditor: View {
     @Binding var summary: String
     @Binding var details: String
-    var bodyHeight: CGFloat?
+    var bodyHeight: ClosedRange<CGFloat> = 50 ... 100
     var focusSummaryAtEnd = false
     var participatesInPaneNavigation = false
     @FocusState private var isSummaryFocused: Bool
@@ -50,7 +50,7 @@ struct CommitMessageEditor: View {
                     RoundedRectangle(cornerRadius: 8, style: .continuous)
                         .stroke(Color.primary.opacity(0.1), lineWidth: 1)
                 )
-                .frame(minHeight: bodyHeight ?? 50, maxHeight: bodyHeight ?? 100)
+                .frame(minHeight: bodyHeight.lowerBound, maxHeight: bodyHeight.upperBound)
         }
         .onChange(of: isSummaryFocused) { _, isFocused in
             guard focusSummaryAtEnd, !didSetInitialSelection, isFocused else { return }

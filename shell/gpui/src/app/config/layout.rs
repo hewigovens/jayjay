@@ -1,4 +1,5 @@
 use crate::repo::window::{OPERATION_LOG_DEFAULT, SECONDARY_PANE_DEFAULT};
+use crate::ui::overlay::PromptSize;
 use crate::windows::repo_list::RECENT_PANEL_DEFAULT;
 use crate::windows::settings::SETTINGS_SIDEBAR_DEFAULT;
 use serde::{Deserialize, Serialize};
@@ -16,6 +17,8 @@ pub struct LayoutConfig {
     pub recent_repos_panel: bool,
     pub recent_repos_panel_width: f32,
     pub(crate) settings_sidebar_width: f32,
+    pub(crate) description_editor_width: f32,
+    pub(crate) description_editor_body_height: f32,
 }
 
 impl Default for LayoutConfig {
@@ -30,6 +33,8 @@ impl Default for LayoutConfig {
             recent_repos_panel: false,
             recent_repos_panel_width: RECENT_PANEL_DEFAULT,
             settings_sidebar_width: SETTINGS_SIDEBAR_DEFAULT,
+            description_editor_width: PromptSize::DEFAULT.width,
+            description_editor_body_height: PromptSize::DEFAULT.body_height,
         }
     }
 }
