@@ -45,3 +45,4 @@ for bundle_name in "${stale_resource_bundles[@]}"; do
   rm -rf "$resources_dir/$bundle_name"
 done
 rm -rf "$resources_dir/Seti.LICENSE" "$resources_dir/Licenses"
+rm -f "$resources_dir"/jayjay-dock-*.png "$resources_dir"/flock-*.png

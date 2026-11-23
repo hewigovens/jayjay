@@ -2,6 +2,7 @@ import AppKit
 
 final class DockIconView: NSImageView {
     static let preferenceKey = "jayjay.flockDockIcon"
+    static let iconDirectory = "DockIcons"
     static let variantDidChange = Notification.Name("dev.hewig.jayjay.flockDockIconDidChange")
     private weak var dockTile: NSDockTile?
     private let lightImage: NSImage
@@ -24,10 +25,10 @@ final class DockIconView: NSImageView {
     }
 
     init?(frame frameRect: NSRect, dockTile: NSDockTile, bundle: Bundle, variant: String?) {
-        let customLightURL = variant.flatMap { bundle.url(forResource: "flock-\($0)-light", withExtension: "png") }
-        let customDarkURL = variant.flatMap { bundle.url(forResource: "flock-\($0)-dark", withExtension: "png") }
-        guard let lightURL = customLightURL ?? bundle.url(forResource: "jayjay-dock-light", withExtension: "png"),
-              let darkURL = customDarkURL ?? bundle.url(forResource: "jayjay-dock-dark", withExtension: "png"),
+        let customLightURL = variant.flatMap { bundle.url(forResource: "flock-\($0)-light", withExtension: "png", subdirectory: Self.iconDirectory) }
+        let customDarkURL = variant.flatMap { bundle.url(forResource: "flock-\($0)-dark", withExtension: "png", subdirectory: Self.iconDirectory) }
+        guard let lightURL = customLightURL ?? bundle.url(forResource: "jayjay-dock-light", withExtension: "png", subdirectory: Self.iconDirectory),
+              let darkURL = customDarkURL ?? bundle.url(forResource: "jayjay-dock-dark", withExtension: "png", subdirectory: Self.iconDirectory),
               let lightImage = NSImage(contentsOf: lightURL),
               let darkImage = NSImage(contentsOf: darkURL)
         else { return nil }

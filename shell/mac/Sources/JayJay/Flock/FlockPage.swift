@@ -7,7 +7,7 @@ struct FlockPage: View {
     @Environment(\.accessibilityReduceMotion) private var reduceMotion
     @State private var flying = false
     @State private var forgetError: String?
-    private static let featherImage = Bundle.main.url(forResource: "flock-feather", withExtension: "png")
+    private static let featherImage = Bundle.main.url(forResource: "flock-feather", withExtension: "png", subdirectory: DockIconView.iconDirectory)
         .flatMap { NSImage(contentsOf: $0) }
 
     var body: some View {

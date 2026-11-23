@@ -23,7 +23,7 @@ extension FlockIcon: @retroactive Identifiable {
         if let image = Self.images[resource] {
             return image
         }
-        guard let url = Bundle.main.url(forResource: resource, withExtension: "png"),
+        guard let url = Bundle.main.url(forResource: resource, withExtension: "png", subdirectory: DockIconView.iconDirectory),
               let image = NSImage(contentsOf: url)
         else { return NSApplication.shared.applicationIconImage }
         Self.images[resource] = image

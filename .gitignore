@@ -22,8 +22,8 @@ JayJayCore.swift
 .DS_Store
 /.wrangler/
 shell/mac/Resources/app.icon/Assets/jaybird.svg
-shell/mac/Resources/DockIcon/jayjay-dock-dark.png
-shell/mac/Resources/DockIcon/jayjay-dock-light.png
+shell/mac/Resources/DockIcons/jayjay-dock-dark.png
+shell/mac/Resources/DockIcons/jayjay-dock-light.png
 shell/mac/Resources/JayJayHelpBook/Contents/Resources/English.lproj/imgs/
 shell/mac/Resources/JayJayHelpBook/Contents/Resources/English.lproj/sty/
 shell/mac/Resources/JayJayHelpBook/Contents/Resources/English.lproj/JayJay.helpindex

@@ -178,27 +178,27 @@ sync-icon:
   #!/usr/bin/env bash
   set -euo pipefail
   cp "{{root}}/docs/icon.svg" "{{project}}/Resources/app.icon/Assets/jaybird.svg"
-  mkdir -p "{{root}}/build" "{{project}}/Resources/DockIcon"
+  mkdir -p "{{root}}/build" "{{project}}/Resources/DockIcons"
   sips -s format png "{{root}}/docs/icon.svg" --out "{{root}}/build/jayjay-dock-bird.png" >/dev/null
   swift "{{root}}/scripts/render-dock-icons.swift" \
     "{{root}}/build/jayjay-dock-bird.png" \
-    "{{project}}/Resources/DockIcon/jayjay-dock-light.png" \
-    "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
+    "{{project}}/Resources/DockIcons/jayjay-dock-light.png" \
+    "{{project}}/Resources/DockIcons/jayjay-dock-dark.png"
   if command -v pngquant >/dev/null; then
-    {{quantize}} "{{project}}"/Resources/DockIcon/jayjay-dock-{light,dark}.png
+    {{quantize}} "{{project}}"/Resources/DockIcons/jayjay-dock-{light,dark}.png
   fi
 
 sync-flock-icons:
   #!/usr/bin/env bash
   set -euo pipefail
-  mkdir -p "{{root}}/build/flock" "{{project}}/Resources/Flock"
+  mkdir -p "{{root}}/build/flock" "{{project}}/Resources/DockIcons"
   for artwork in "{{root}}"/assets/flock/flock-*-{light,dark}.svg; do
     name="$(basename "$artwork" .svg)"
     sips -s format png "$artwork" --out "{{root}}/build/flock/$name.png" >/dev/null
-    swift "{{root}}/scripts/render-flock-icons.swift" "{{root}}/build/flock/$name.png" "{{project}}/Resources/Flock/$name.png"
+    swift "{{root}}/scripts/render-flock-icons.swift" "{{root}}/build/flock/$name.png" "{{project}}/Resources/DockIcons/$name.png"
   done
-  sips -s format png -Z 512 "{{root}}/assets/flock/flock-feather.svg" --out "{{project}}/Resources/Flock/flock-feather.png" >/dev/null
-  {{quantize}} "{{project}}"/Resources/Flock/flock-*.png
+  sips -s format png -Z 512 "{{root}}/assets/flock/flock-feather.svg" --out "{{project}}/Resources/DockIcons/flock-feather.png" >/dev/null
+  {{quantize}} "{{project}}"/Resources/DockIcons/flock-*.png
 
 lint:
   swiftlint lint --config "{{root}}/.swiftlint.yml" --strict --quiet
@@ -206,8 +206,8 @@ lint:
 clean:
   rm -rf "{{root}}/build" "{{xcframework}}" "{{swift_out}}/JayJayCore.swift" "{{swift_out}}/Localized.swift"
   rm -f "{{project}}/Resources/app.icon/Assets/jaybird.svg"
-  rm -f "{{project}}/Resources/DockIcon/jayjay-dock-light.png"
-  rm -f "{{project}}/Resources/DockIcon/jayjay-dock-dark.png"
+  rm -f "{{project}}/Resources/DockIcons/jayjay-dock-light.png"
+  rm -f "{{project}}/Resources/DockIcons/jayjay-dock-dark.png"
   find "{{root}}" -name ".DS_Store" -delete
 
 import "release.just"
