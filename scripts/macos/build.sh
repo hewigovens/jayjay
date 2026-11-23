@@ -18,26 +18,29 @@ if [[ "$configuration" == Release ]]; then
   xcode JayJay Release ARCHS=arm64 ONLY_ACTIVE_ARCH=NO build
   cargo build --release -p jayjay-cli
   export JAYJAY_STRIP_APP=1
-  licenses="$app_path/Contents/Resources/Licenses"
-  rm -rf "$licenses"
-  mkdir -p "$licenses"
+  licenses="$app_path/Contents/Resources/Licenses.html"
   cargo fetch --locked
-  for crate in jayjay-uniffi jayjay-cli; do
-    cargo about generate --offline --locked --fail --manifest-path "$root/crates/$crate/Cargo.toml" \
-      --config "$root/dist/macos/about.toml" --output-file "$licenses/THIRD-PARTY-$crate.html" "$root/dist/licenses.hbs"
-  done
+  cargo about generate --offline --locked --fail --manifest-path "$root/crates/jayjay-uniffi/Cargo.toml" \
+    --config "$root/dist/macos/about.toml" --output-file "$licenses" "$root/dist/licenses.hbs"
   mermaid="$project/Packages/JayJayDiffUI/Sources/JayJayDiffUI/Resources/Mermaid"
-  cp "$derived_data/SourcePackages/checkouts/Sparkle/LICENSE" "$licenses/Sparkle.LICENSE"
-  cp "$root/assets/fonts/Seti.LICENSE" "$licenses/Seti.LICENSE"
-  cp "$root/shell/gpui/assets/fonts/Octicons.LICENSE" "$licenses/Octicons.LICENSE"
-  cp "$project/Resources/ToolbarIcons.LICENSE" "$licenses/ToolbarIcons.LICENSE"
-  cp "$project/Resources/DashboardIcons.LICENSE" "$licenses/DashboardIcons.LICENSE"
-  cp "$mermaid/ondine-LICENSE.txt" "$licenses/Ondine.LICENSE"
-  cp "$mermaid/pele-LICENSE.txt" "$licenses/Pele.LICENSE"
-  cp "$root/crates/jj-diff/grammars/fluent/LICENSE" "$licenses/tree-sitter-fluent.LICENSE"
+  bundled=(
+    "Sparkle $derived_data/SourcePackages/checkouts/Sparkle/LICENSE"
+    "Seti $root/assets/fonts/Seti.LICENSE"
+    "Octicons $root/shell/gpui/assets/fonts/Octicons.LICENSE"
+    "ToolbarIcons $project/Resources/ToolbarIcons.LICENSE"
+    "DashboardIcons $project/Resources/DashboardIcons.LICENSE"
+    "Ondine $mermaid/ondine-LICENSE.txt"
+    "Pele $mermaid/pele-LICENSE.txt"
+    "tree-sitter-fluent $root/crates/jj-diff/grammars/fluent/LICENSE"
+  )
   for license in "$root"/crates/jj-diff/grammars/wasm/*.LICENSE; do
-    cp "$license" "$licenses/tree-sitter-$(basename "$license")"
+    bundled+=("tree-sitter-$(basename "$license" .LICENSE) $license")
   done
+  for entry in "${bundled[@]}"; do
+    printf '<h2>%s</h2>\n<pre>' "${entry%% *}"
+    sed 's/&/\&amp;/g; s/</\&lt;/g; s/>/\&gt;/g' "${entry#* }"
+    printf '</pre>\n'
+  done >> "$licenses"
 else
   xcode JayJay Debug build
 fi

@@ -44,4 +44,4 @@ stale_resource_bundles=(
 for bundle_name in "${stale_resource_bundles[@]}"; do
   rm -rf "$resources_dir/$bundle_name"
 done
-rm -f "$resources_dir/Seti.LICENSE"
+rm -rf "$resources_dir/Seti.LICENSE" "$resources_dir/Licenses"
