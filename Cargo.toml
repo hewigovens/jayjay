@@ -11,7 +11,7 @@ repository = "https://github.com/hewigovens/jayjay"
 
 [workspace.dependencies]
 async-trait = "0.1"
-hotpath = { version = "0.31.1", default-features = false }
+hotpath = { version = "0.32.1", default-features = false }
 jj-lib = { version = "0.47.1", default-features = false }
 gix = { version = "0.90.0", default-features = false }
 gix-url = "0.40.1"
@@ -78,7 +78,7 @@ tree-sitter-css = "0.25"
 tree-sitter-html = "0.23"
 tree-sitter-go = "0.25"
 tree-sitter-c = "0.24"
-tree-sitter-c-sharp = "0.23"
+tree-sitter-c-sharp = "0.24"
 tree-sitter-cpp = "0.23"
 tree-sitter-bash = "0.25"
 tree-sitter-fish = "3.6"
@@ -106,7 +106,7 @@ tree-sitter-proto = "0.6"
 tree-sitter-r = "1.3"
 tree-sitter-language = "0.1"
 # Pinned to the wasmtime tree-sitter's wasm feature resolves, so feature unification turns on Pulley in that copy.
-wasmtime = { version = "=48.0.9", default-features = false, features = ["pulley"] }
+wasmtime = { version = "=48.0.10", default-features = false, features = ["pulley"] }
 cc = "1.2"
 
 [profile.dev]
