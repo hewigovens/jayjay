@@ -3,6 +3,7 @@ import SwiftUI
 
 struct DiffEditActionBar: View {
     let session: DiffEditViewModel
+    @State private var isEditingDescription = false
 
     var body: some View {
         VStack(spacing: 10) {
@@ -11,10 +12,12 @@ struct DiffEditActionBar: View {
                 Text(session.selectionSummary)
                     .jayjayFont(12, weight: .medium)
                 Spacer()
-                if !session.detail.info.isWorkingCopy {
-                    TextField(Localized.Diff.newChangeDescription, text: Bindable(session).newChangeMessage)
-                        .textFieldStyle(.roundedBorder)
-                        .frame(width: 260)
+                descriptionButton
+                if session.detail.info.isWorkingCopy {
+                    Button(Localized.Diff.editCommitSelected) { session.apply(.newParent) }
+                        .buttonStyle(.borderedProminent)
+                        .help(Localized.Diff.editCommitSelectedHelp)
+                } else {
                     Button(Localized.Repo.createNewChildChange) { session.apply(.newChild) }
                         .buttonStyle(.borderedProminent)
                     Button(Localized.Repo.createParallelChange) { session.apply(.newParallel) }
@@ -51,10 +54,38 @@ struct DiffEditActionBar: View {
                     Text(Localized.Diff.editDiscardMessage)
                 }
             }
-            .disabled(session.isPreparingRemoval)
+            .disabled(session.isPreparingRemoval || session.isSelectingAll)
             .padding(.horizontal, 18)
             .padding(.bottom, 12)
         }
         .background(.bar)
+        .sheet(isPresented: $isEditingDescription) {
+            DescriptionEditorSheet(
+                revision: String(session.detailRevision.prefix(12)),
+                description: session.newChangeMessage,
+                workingCopy: nil,
+                onDismiss: { isEditingDescription = false },
+                onSave: {
+                    session.newChangeMessage = $0
+                    isEditingDescription = false
+                }
+            )
+        }
+    }
+
+    private var descriptionButton: some View {
+        let summary = commitSummary(message: session.newChangeMessage)
+        return Button {
+            isEditingDescription = true
+        } label: {
+            Label(summary.isEmpty ? Localized.Repo.addDescriptionEllipsis : summary, systemImage: "pencil")
+                .lineLimit(1)
+                .truncationMode(.tail)
+                .foregroundStyle(summary.isEmpty ? .secondary : .primary)
+                .frame(width: 240, alignment: .leading)
+        }
+        .buttonStyle(.bordered)
+        .help(Localized.Repo.editDescription)
+        .accessibilityIdentifier(AID.DiffEdit.description)
     }
 }

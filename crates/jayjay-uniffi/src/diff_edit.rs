@@ -96,6 +96,10 @@ impl DiffEditSession {
         self.read(diff_edit::DiffEditSession::has_selection)
     }
 
+    fn has_deselected_lines(&self) -> bool {
+        self.read(diff_edit::DiffEditSession::has_deselected_lines)
+    }
+
     fn should_deselect(&self) -> bool {
         self.read(diff_edit::DiffEditSession::should_deselect)
     }

@@ -42,7 +42,16 @@ impl RepoWindow {
             self.vm
                 .update(cx, |vm, cx| vm.preload_diffs_async(files, cx));
         }
+        self.diff_edit.default_selection_pending = working_copy;
+        self.apply_default_diff_edit_selection(cx);
         cx.notify();
+    }
+
+    fn apply_default_diff_edit_selection(&mut self, cx: &mut Context<Self>) {
+        if self.diff_edit.default_selection_pending && self.vm.read(cx).files.is_some() {
+            self.diff_edit.default_selection_pending = false;
+            self.toggle_diff_edit_all(cx);
+        }
     }
 
     pub fn exit_diff_edit(&mut self, cx: &mut Context<Self>) {
@@ -184,6 +193,7 @@ impl RepoWindow {
                     .update(cx, |vm, cx| vm.preload_diffs_async(files, cx));
             }
         }
+        self.apply_default_diff_edit_selection(cx);
         self.ensure_diff_edit_files(cx);
     }
 

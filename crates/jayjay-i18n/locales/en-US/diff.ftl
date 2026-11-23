@@ -63,7 +63,6 @@ diff-show-rendered-html = Show rendered HTML
 diff-show-source-diff = Show source diff
 diff-show-notebook-diff = Show notebook diff
 diff-source = Source
-diff-new-change-description = New change description
 diff-nothing-selected = Nothing Selected
 diff-couldnt-load-all-files = Couldn't Load All Files
 diff-diff-changed = Diff Changed
@@ -90,7 +89,7 @@ diff-unmodified-lines =
         [one] { $count } unmodified line
        *[other] { $count } unmodified lines
     }
-diff-edit-hint = Select files, hunks, or line ranges to edit
+diff-edit-hint = Select files, hunks, or lines, then choose where they go
 diff-edit-selection =
     { $files ->
         [one] { $files } file
@@ -118,6 +117,8 @@ diff-empty-markdown = (empty Markdown document)
 diff-edit-selection-stale = { $path } changed after its selection was rendered. Keep Selected was not applied — refresh and try again.
 diff-includes-agent-marks = { $label }, includes agent marks
 diff-mode-changed = mode
+diff-edit-commit-selected = Commit Selected
+diff-edit-commit-selected-help = Commit the selected lines as a new change below the working copy
 diff-edit-keep-selected = Keep Selected
 diff-edit-keep-selected-help = Keep only the selected lines in this change and discard the rest
 diff-edit-discards =

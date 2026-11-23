@@ -21,8 +21,7 @@ fn line_group_file_and_select_all_update_full_diff_selection(cx: &mut TestAppCon
             .collect::<Vec<_>>();
         (vm.selected_hunk().unwrap().path.clone(), changed)
     });
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(&view, cx);
     view.update_in(cx, |view, _, cx| {
         view.toggle_diff_edit_display_line(&path, changed[0] as u32 + 1, cx);
         assert_eq!(view.diff_edit_selected(&path).len(), 1);

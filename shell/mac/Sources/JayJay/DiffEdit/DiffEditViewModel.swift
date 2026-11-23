@@ -24,6 +24,8 @@ final class DiffEditViewModel {
     var selectionSummary: String
     var shouldDeselect = false
     var isSelectingAll = false
+    var hasDeselectedLines = false
+    var didSelectByDefault = false
     var focusedPath: String?
     var fileStats: [String: FileDiffStats] = [:]
     var isPreparingRemoval = false
@@ -90,6 +92,7 @@ final class DiffEditViewModel {
         selectionSummary = core.summaryText()
         shouldDeselect = core.shouldDeselect()
         isSelectingAll = core.isSelectingAll()
+        hasDeselectedLines = core.hasDeselectedLines()
         discardedLines = core.discardedLines(paths: rewritablePaths)
     }
 

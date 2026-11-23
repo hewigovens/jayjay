@@ -41,6 +41,8 @@ pub struct DiffEditState {
     pub(super) known_unsupported: HashSet<String>,
     pub(super) change_id: Option<String>,
     pub(super) working_copy: bool,
+    /// The working copy starts fully selected, which has to wait for the file list.
+    pub(super) default_selection_pending: bool,
     pub(super) focus_pending: bool,
     /// Supersession token: a bump abandons every in-flight card load and stats query.
     pub(super) epoch: u64,
@@ -63,6 +65,7 @@ impl Default for DiffEditState {
             known_unsupported: HashSet::new(),
             change_id: None,
             working_copy: false,
+            default_selection_pending: false,
             focus_pending: false,
             epoch: 0,
             loaded_ignore_whitespace: false,

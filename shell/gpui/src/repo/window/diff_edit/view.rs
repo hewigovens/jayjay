@@ -116,65 +116,73 @@ fn action_bar(view: &RepoWindow, t: &Theme, cx: &mut Context<RepoWindow>) -> Any
                 .child(summary),
         )
         .child(div().flex_1());
-    if !working_copy {
-        let description = view
-            .diff_edit
-            .message
-            .lines()
-            .next()
-            .filter(|line| !line.trim().is_empty())
-            .map(str::to_owned)
-            .unwrap_or_else(jayjay_i18n::repo::add_description_ellipsis);
-        row = row
-            .child(
-                div()
-                    .id("diff-edit-description")
-                    .debug_selector(|| "diff-edit-description".to_owned())
-                    .w(px(260.))
-                    .h(px(t.scaled_control_height(28., 11.)))
-                    .px(px(7.))
-                    .flex()
-                    .items_center()
-                    .gap(px(6.))
-                    .overflow_hidden()
-                    .whitespace_nowrap()
-                    .rounded_md()
-                    .bg(rgb(t.toggle_inactive_bg))
-                    .text_color(rgb(t.toggle_inactive_fg))
-                    .text_size(ui_font_size(11.))
-                    .cursor_pointer()
-                    .hover(|s| s.bg(rgb(t.row_alt_bg)))
-                    .on_click(cx.listener(|view, _, _, cx| {
-                        view.open_diff_edit_description(cx);
-                    }))
-                    .child(icon(glyph::PENCIL, 13., t.fg_dim))
-                    .child(description),
-            )
-            .child(destination_button(
-                "diff-edit-child",
-                jayjay_i18n::repo::create_new_child_change(),
-                DiffEditDestination::NewChild,
-                true,
-                t,
-                cx,
-            ))
-            .child(destination_button(
-                "diff-edit-parallel",
-                jayjay_i18n::repo::create_parallel_change(),
-                DiffEditDestination::NewParallel,
-                false,
-                t,
-                cx,
-            ))
-            .child(destination_button(
-                "diff-edit-move",
-                jayjay_i18n::menu::move_to_working_copy(),
-                DiffEditDestination::MoveToWorkingCopy,
-                false,
-                t,
-                cx,
-            ));
-    }
+    let description = view
+        .diff_edit
+        .message
+        .lines()
+        .next()
+        .filter(|line| !line.trim().is_empty())
+        .map(str::to_owned)
+        .unwrap_or_else(jayjay_i18n::repo::add_description_ellipsis);
+    row = row.child(
+        div()
+            .id("diff-edit-description")
+            .debug_selector(|| "diff-edit-description".to_owned())
+            .w(px(260.))
+            .h(px(t.scaled_control_height(28., 11.)))
+            .px(px(7.))
+            .flex()
+            .items_center()
+            .gap(px(6.))
+            .overflow_hidden()
+            .whitespace_nowrap()
+            .rounded_md()
+            .bg(rgb(t.toggle_inactive_bg))
+            .text_color(rgb(t.toggle_inactive_fg))
+            .text_size(ui_font_size(11.))
+            .cursor_pointer()
+            .hover(|s| s.bg(rgb(t.row_alt_bg)))
+            .on_click(cx.listener(|view, _, _, cx| {
+                view.open_diff_edit_description(cx);
+            }))
+            .child(icon(glyph::PENCIL, 13., t.fg_dim))
+            .child(description),
+    );
+    row = if working_copy {
+        row.child(destination_button(
+            "diff-edit-commit",
+            jayjay_i18n::diff::edit_commit_selected(),
+            DiffEditDestination::NewParent,
+            true,
+            t,
+            cx,
+        ))
+    } else {
+        row.child(destination_button(
+            "diff-edit-child",
+            jayjay_i18n::repo::create_new_child_change(),
+            DiffEditDestination::NewChild,
+            true,
+            t,
+            cx,
+        ))
+        .child(destination_button(
+            "diff-edit-parallel",
+            jayjay_i18n::repo::create_parallel_change(),
+            DiffEditDestination::NewParallel,
+            false,
+            t,
+            cx,
+        ))
+        .child(destination_button(
+            "diff-edit-move",
+            jayjay_i18n::menu::move_to_working_copy(),
+            DiffEditDestination::MoveToWorkingCopy,
+            false,
+            t,
+            cx,
+        ))
+    };
     row = row.child(destination_button(
         "diff-edit-done",
         jayjay_i18n::repo::done(),

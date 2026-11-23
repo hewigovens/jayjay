@@ -8,6 +8,7 @@ fn diffedit_refuses_every_destination_for_an_immutable_source() {
     for destination in [
         DiffEditDestination::RemoveFromSource,
         DiffEditDestination::MoveToWorkingCopy,
+        DiffEditDestination::NewParent,
         DiffEditDestination::NewChild,
         DiffEditDestination::NewParallel,
     ] {

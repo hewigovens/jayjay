@@ -189,6 +189,12 @@ impl DiffEditSession {
     }
 
     /// True when the bulk control should offer Deselect All: a pending Select All counts, so the label does not flip back mid-load.
+    pub fn has_deselected_lines(&self) -> bool {
+        self.files
+            .values()
+            .any(|loaded| loaded.selected.len() < loaded.changed.len())
+    }
+
     pub fn should_deselect(&self) -> bool {
         self.is_selecting_all() || self.has_selection()
     }

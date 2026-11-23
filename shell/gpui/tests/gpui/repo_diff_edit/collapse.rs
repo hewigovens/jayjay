@@ -28,8 +28,7 @@ fn toggling_collapse_hides_and_restores_line_rows_preserving_selection(cx: &mut 
     let fixture = two_file_edits_fixture();
     let (view, cx) = open_fixture(&fixture, cx);
     select_file(&view, "edit.txt", cx);
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(&view, cx);
 
     let (rows_before, selected) = view.update_in(cx, |view, _, cx| {
         view.toggle_diff_edit_file("edit.txt", cx);
@@ -238,8 +237,7 @@ fn whitespace_toggle_reloads_diff_edit_files(cx: &mut TestAppContext) {
     run_jj_in(&fixture.path, &["st"]);
 
     let (view, cx) = open_fixture(&fixture, cx);
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(&view, cx);
 
     view.update_in(cx, |view, _, cx| {
         view.toggle_diff_edit_file("ws.txt", cx);

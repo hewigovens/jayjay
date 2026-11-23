@@ -20,7 +20,7 @@ struct DiffEditHeader: View {
             }
             .disabled(session.selectionToggleDisabled)
             .controlSize(.small)
-            DiscardingCancelButton(hasChanges: session.shouldDeselect, onCancel: session.onDone)
+            DiscardingCancelButton(hasChanges: session.hasSelectionChanges, onCancel: session.onDone)
                 .accessibilityIdentifier(AID.DiffEdit.cancel)
         }
         .controlSize(.small)

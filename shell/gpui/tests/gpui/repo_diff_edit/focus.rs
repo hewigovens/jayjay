@@ -134,8 +134,7 @@ fn space_toggles_selection_of_the_focused_file(cx: &mut TestAppContext) {
     let fixture = two_file_edits_fixture();
     let (view, cx) = open_fixture(&fixture, cx);
     select_file(&view, "edit.txt", cx);
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(&view, cx);
     focus_window(&view, cx);
     let paths = ordered_paths(&view, cx);
     let first = paths[0].clone();

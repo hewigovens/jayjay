@@ -19,7 +19,6 @@ final class DiffEditScene: SceneBase {
         let stripe = gutter.coordinate(withNormalizedOffset: .zero)
             .withOffset(CGVector(dx: 12, dy: 12))
 
-        stripe.click()
         stripe.rightClick()
         let deselect = app.menuItems["Deselect Change Group"]
         XCTAssertTrue(deselect.waitForExistence(timeout: 3))

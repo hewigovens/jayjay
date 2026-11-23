@@ -108,6 +108,7 @@ fn diffedit_rejects_stale_parent_side_for_every_destination() {
     for destination in [
         DiffEditDestination::RemoveFromSource,
         DiffEditDestination::MoveToWorkingCopy,
+        DiffEditDestination::NewParent,
         DiffEditDestination::NewChild,
         DiffEditDestination::NewParallel,
     ] {

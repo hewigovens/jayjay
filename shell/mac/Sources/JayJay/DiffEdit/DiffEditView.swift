@@ -80,6 +80,7 @@ struct DiffEditView: View {
         .safeAreaInset(edge: .bottom) {
             DiffEditActionBar(session: session)
         }
+        .onAppear { session.selectWorkingCopyByDefault() }
         .alert(Localized.Diff.nothingSelected, isPresented: Bindable(session).showEmptySelectionAlert) {
             Button(Localized.Repo.ok, role: .cancel) {}
         } message: {

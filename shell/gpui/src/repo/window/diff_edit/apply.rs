@@ -23,7 +23,10 @@ impl RepoWindow {
         let working_copy = self.diff_edit.working_copy;
         let summary = self.diff_edit.session.summary();
         let destinations = if working_copy {
-            vec![DiffEditDestination::RemoveFromSource]
+            vec![
+                DiffEditDestination::NewParent,
+                DiffEditDestination::RemoveFromSource,
+            ]
         } else {
             vec![
                 DiffEditDestination::NewChild,
@@ -47,9 +50,9 @@ impl RepoWindow {
         cx.notify();
     }
 
-    /// (change-id subtitle, current message, session) for the description modal; None while inactive or on the working copy.
+    /// (change-id subtitle, current message, session) for the description modal; None while inactive.
     pub(crate) fn diff_edit_description_context(&self) -> Option<(String, String, u64)> {
-        if !self.diff_edit.active || self.diff_edit.working_copy {
+        if !self.diff_edit.active {
             return None;
         }
         let subtitle = self

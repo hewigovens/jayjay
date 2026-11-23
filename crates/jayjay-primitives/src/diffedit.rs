@@ -4,6 +4,7 @@ use super::HunkType;
 pub enum DiffEditDestination {
     RemoveFromSource,
     MoveToWorkingCopy,
+    NewParent,
     NewChild,
     NewParallel,
 }

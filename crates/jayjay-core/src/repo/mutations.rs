@@ -554,6 +554,25 @@ impl Repo {
             target_tree
         };
         let message = if message.is_empty() { "split" } else { message };
+        self.split_into_trees(
+            &repo,
+            target,
+            selected_tree,
+            remainder_tree,
+            message,
+            parallel,
+        )
+    }
+
+    pub(super) fn split_into_trees(
+        &self,
+        repo: &Arc<ReadonlyRepo>,
+        target: &Commit,
+        selected_tree: MergedTree,
+        remainder_tree: MergedTree,
+        message: &str,
+        parallel: bool,
+    ) -> JayResult<()> {
         let legacy_bookmark_behavior = legacy_split_bookmark_behavior(repo.settings())?;
         let mut tx = repo.start_transaction();
         let first = {

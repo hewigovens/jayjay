@@ -20,6 +20,18 @@ extension DiffEditViewModel {
         return shouldDeselect ? false : repo == nil
     }
 
+    /// The working copy starts fully selected, so there only a deselected line counts as an edit to discard.
+    var hasSelectionChanges: Bool {
+        detail.info.isWorkingCopy ? hasDeselectedLines : shouldDeselect
+    }
+
+    /// Runs from the view, not init: SwiftUI builds and discards a view model on every parent redraw, and each would start loading every file.
+    func selectWorkingCopyByDefault() {
+        guard detail.info.isWorkingCopy, !didSelectByDefault else { return }
+        didSelectByDefault = true
+        toggleBulkSelection()
+    }
+
     func apply(_ destination: DiffEditDestination) {
         guard core.hasSelection() else {
             showEmptySelectionAlert = true

@@ -103,6 +103,46 @@ fn diffedit_remove_selected_lines_updates_working_copy_on_disk() {
     assert_eq!(refreshed_notes.new.content.as_deref(), Some(expected));
 }
 #[test]
+fn diffedit_new_parent_commits_selected_lines_below_the_working_copy() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+
+    let on_disk = "first line\ncommit me\nlast line\n";
+    fs::write(repo_path.join("notes.md"), on_disk).expect("write new file");
+    repo.refresh_working_copy()
+        .expect("snapshot working copy changes");
+
+    let selection = selection_for_lines(&repo, "@", "notes.md", &[(2, 2)]);
+    repo.apply_diff_selection(
+        "@",
+        DiffEditDestination::NewParent,
+        &[selection],
+        "commit one line",
+        false,
+    )
+    .expect("commit selected lines");
+
+    let notes = |rev: &str| {
+        let detail = repo.show(rev).expect("show change");
+        let content = detail
+            .diff
+            .iter()
+            .find(|hunk| hunk.path == "notes.md")
+            .and_then(|hunk| hunk.new.content.clone());
+        (detail.info.description, content)
+    };
+    assert_eq!(
+        notes("@-"),
+        ("commit one line".to_owned(), Some("commit me\n".to_owned()))
+    );
+    assert_eq!(notes("@").1.as_deref(), Some(on_disk));
+    assert_eq!(
+        fs::read_to_string(repo_path.join("notes.md")).expect("read working copy file"),
+        on_disk
+    );
+}
+#[test]
 fn diffedit_move_to_working_copy_moves_selected_file() {
     let (_temp_dir, _repo_path, repo) = setup_source_change_with_child();
     let selection = whole_file_selection(&repo, "@-", "notes.md");

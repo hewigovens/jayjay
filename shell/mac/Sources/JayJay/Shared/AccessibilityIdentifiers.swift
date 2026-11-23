@@ -391,5 +391,6 @@ enum AID {
     enum DiffEdit {
         static let open = "diffEdit.open"
         static let cancel = "diffEdit.cancel"
+        static let description = "diffEdit.description"
     }
 }

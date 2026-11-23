@@ -173,12 +173,23 @@ fn non_working_copy_shows_destinations_and_prefills_description(cx: &mut TestApp
     view.read_with(cx, |view, _| {
         let snapshot = view.diff_edit_snapshot();
         assert!(snapshot.working_copy);
+        assert!(
+            view.diff_edit_has_selection(),
+            "the working copy starts selected"
+        );
         assert_eq!(
             snapshot.destinations,
-            vec![DiffEditDestination::RemoveFromSource]
+            vec![
+                DiffEditDestination::NewParent,
+                DiffEditDestination::RemoveFromSource,
+            ]
         );
     });
-    assert!(cx.debug_bounds("diff-edit-description").is_none());
+    let edit_description = cx
+        .debug_bounds("diff-edit-description")
+        .expect("description button on the working copy");
+    cx.simulate_click(edit_description.center(), Modifiers::default());
+    assert!(view.read_with(cx, |view, _| view.has_text_modal()));
 }
 
 #[gpui::test]

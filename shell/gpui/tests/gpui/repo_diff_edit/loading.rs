@@ -36,6 +36,7 @@ fn uncached_file_is_hidden_until_entry_preload_finishes(cx: &mut TestAppContext)
     });
 
     settle_visual(cx);
+    clear_selection(&view, cx);
     view.update_in(cx, |view, _, cx| {
         let hunk = view
             .view_model()

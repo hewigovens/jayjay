@@ -53,6 +53,9 @@ impl Repo {
             DiffEditDestination::MoveToWorkingCopy => {
                 self.move_diff_selection_to_working_copy(rev, selections, ignore_whitespace)
             }
+            DiffEditDestination::NewParent => {
+                self.commit_diff_selection(rev, selections, message, ignore_whitespace)
+            }
             DiffEditDestination::NewChild => self.extract_diff_selection_as_new_child(
                 rev,
                 selections,
@@ -139,6 +142,38 @@ impl Repo {
             .write();
         block_on_result("write working-copy change", write)?;
         self.commit_transaction_rebase(tx, "move selected changes to working copy")
+    }
+
+    /// `jj split -r rev` over a line selection: the selection stays in `rev` under `message` and the rest moves to a new change on top, which a workspace on `rev` follows without touching its files.
+    fn commit_diff_selection(
+        &self,
+        rev: &str,
+        selections: &[DiffEditFileSelection],
+        message: &str,
+        ignore_whitespace: bool,
+    ) -> JayResult<()> {
+        let repo = self.get_repo();
+        let commit = self.resolve_current_commit(&repo, rev)?;
+        self.ensure_commit_mutable(&repo, &commit, rev)?;
+        let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
+        self.ensure_selections_are_current(&repo, &commit.tree(), &parent_tree, selections)?;
+        let partitions = self.partition_selections(selections, ignore_whitespace)?;
+        let selected_tree = self.build_side_tree(
+            &repo,
+            &commit,
+            &parent_tree,
+            &partitions,
+            TreeSide::Selected,
+        )?;
+        let message = self.diffedit_message(message, &commit);
+        self.split_into_trees(
+            &repo,
+            &commit,
+            selected_tree,
+            commit.tree(),
+            &message,
+            false,
+        )
     }
 
     fn extract_diff_selection_as_new_child(

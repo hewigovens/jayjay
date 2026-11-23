@@ -8,6 +8,21 @@ use jj_test::LinearFixture;
 
 pub(super) use crate::harness::{open_fixture, open_repo, select_file, settle_visual};
 
+pub(super) fn clear_selection(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
+    view.update_in(cx, |view, _, cx| {
+        if view.diff_edit_has_selection() {
+            view.toggle_diff_edit_all(cx);
+        }
+    });
+}
+
+/// The working copy starts fully selected; tests that build a selection line by line start from none.
+pub(super) fn enter_unselected(view: &Entity<RepoWindow>, cx: &mut VisualTestContext) {
+    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
+    settle_visual(cx);
+    clear_selection(view, cx);
+}
+
 pub(super) fn enter_and_select_line(
     view: &Entity<RepoWindow>,
     cx: &mut VisualTestContext,
@@ -28,8 +43,7 @@ pub(super) fn enter_and_select_line(
             line,
         )
     });
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(view, cx);
     view.update_in(cx, |view, _, cx| {
         view.toggle_diff_edit_display_line(&path, line as u32 + 1, cx);
     });
@@ -55,8 +69,7 @@ pub(super) fn enter_and_select_group(
             line,
         )
     });
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(view, cx);
     view.update_in(cx, |view, _, cx| {
         view.select_diff_edit_display_group(&path, line as u32 + 1, cx);
     });

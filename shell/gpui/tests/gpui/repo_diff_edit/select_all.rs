@@ -209,3 +209,24 @@ fn renamed_file_is_excluded_while_supported_edits_apply(cx: &mut TestAppContext)
         renamed
     );
 }
+
+#[gpui::test]
+fn working_copy_default_selection_waits_for_the_file_list(cx: &mut TestAppContext) {
+    let fixture = two_file_edits_fixture();
+    let (view, cx) = open_fixture(&fixture, cx);
+    let files = view.update_in(cx, |view, _, cx| {
+        let files = view.view_model().update(cx, |vm, _| vm.files.take());
+        view.enter_diff_edit(cx);
+        files
+    });
+    assert!(!view.read_with(cx, |view, _| view.diff_edit_has_selection()));
+
+    view.update_in(cx, |view, _, cx| {
+        view.view_model().update(cx, |vm, cx| {
+            vm.files = files;
+            cx.notify();
+        });
+    });
+    settle_visual(cx);
+    assert!(view.read_with(cx, |view, _| view.diff_edit_has_selection()));
+}

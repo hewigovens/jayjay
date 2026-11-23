@@ -82,6 +82,13 @@ fn select_all_claims_files_as_they_load_until_deselected() {
 
     session.load(diff_edit_file("b", &[4, 5]));
     assert_eq!(session.selected_lines("b"), [4, 5]);
+    assert!(
+        !session.has_deselected_lines(),
+        "a card still loading is not a deselection"
+    );
+    session.toggle_line("b", 4);
+    assert!(session.has_deselected_lines());
+    session.toggle_line("b", 4);
     session.skip("c");
     assert!(
         !session.is_selecting_all(),
@@ -100,7 +107,7 @@ fn summary_counts_only_files_with_selected_rows() {
     session.load(diff_edit_file("b", &[5]));
     assert_eq!(
         session.summary_text(),
-        "Select files, hunks, or line ranges to edit"
+        "Select files, hunks, or lines, then choose where they go"
     );
 
     session.toggle_line("a", 2);

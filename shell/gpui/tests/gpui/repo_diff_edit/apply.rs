@@ -21,8 +21,7 @@ fn new_parallel_splits_added_and_deleted_files(cx: &mut TestAppContext) {
     let (view, cx) = open_fixture(&fixture, cx);
     select_file(&view, "added.txt", cx);
     let source_change_id = selected_change_id(&view, cx);
-    view.update_in(cx, |view, _, cx| view.enter_diff_edit(cx));
-    settle_visual(cx);
+    enter_unselected(&view, cx);
     view.update_in(cx, |view, _, cx| {
         for path in ["added.txt", "deleted.txt"] {
             view.toggle_diff_edit_display_line(path, 1, cx);
@@ -158,8 +157,8 @@ fn done_with_empty_selection_is_inert(cx: &mut TestAppContext) {
     let before_edit = fs::read_to_string(fixture.path.join("edit.txt")).unwrap();
     let before_untouched = fs::read_to_string(fixture.path.join("untouched.txt")).unwrap();
     let (view, cx) = open_fixture(&fixture, cx);
+    enter_unselected(&view, cx);
     view.update_in(cx, |view, _, cx| {
-        view.enter_diff_edit(cx);
         view.start_diff_edit_apply(DiffEditDestination::RemoveFromSource, cx);
     });
 
