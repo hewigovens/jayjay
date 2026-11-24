@@ -168,8 +168,23 @@ x86_64-aarch64-appimage-debian-ubuntu-arch = x86_64 &amp; aarch64 · AppImage、
 # Packages are on <a class="link" href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>.
 packages-are-on-github-releases = 安装包在 <a class="link" href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> 上。
 
-# Windows: <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Get JayJay from the Microsoft Store</a>, or download a <a href="https://github.com/hewigovens/jayjay/releases">portable beta ZIP</a>. Install <code>jj</code> separately.
-windows-get-jayjay-from-the-microsoft = Windows：<a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">从 Microsoft Store 获取 JayJay</a>，或下载<a href="https://github.com/hewigovens/jayjay/releases">便携版测试版 ZIP</a>。需要另行安装 <code>jj</code>。
+# Operating system
+operating-system = 操作系统
+
+# Windows
+windows = Windows
+
+# Windows 10 1903 or later · x64 &amp; arm64 · beta
+windows-10-1903-or-later-x64-arm64-beta = Windows 10 1903 或更高版本 · x64 &amp; arm64 · 测试版
+
+# Add the JayJay source once, from an administrator PowerShell
+add-the-jayjay-source-once = 在以管理员身份运行的 PowerShell 中添加一次 JayJay 源
+
+# Install JayJay and jj
+install-jayjay-and-jj = 安装 JayJay 和 jj
+
+# Upgrade with <code>winget upgrade hewig.JayJay --source jayjay</code>. Or <a class="link" href="https://apps.microsoft.com/detail/9pjrq1hg25vb">get it from the Microsoft Store</a> (x64), or download the <a class="link" href="https://github.com/hewigovens/jayjay/releases">portable ZIP</a>.
+upgrade-with-winget-upgrade-hewig-jayjay = 使用 <code>winget upgrade hewig.JayJay --source jayjay</code> 升级。也可以从 <a class="link" href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> 获取（x64），或下载<a class="link" href="https://github.com/hewigovens/jayjay/releases">便携版 ZIP</a>。
 
 # JayJay is source-available: <a href="https://github.com/hewigovens/jayjay">browse the code on GitHub</a>.
 jayjay-is-source-available-browse-the = JayJay 的源代码是公开的：<a href="https://github.com/hewigovens/jayjay">在 GitHub 上查看代码</a>。
@@ -249,8 +264,8 @@ install-jayjay-appimage-from-aur-for = 为 x86_64 或 aarch64 安装 <a href="ht
 # Does JayJay work on Windows or Linux?
 does-jayjay-work-on-windows-or = JayJay 能在 Windows 或 Linux 上运行吗？
 
-# Linux and Windows use the GPUI shell and share the Rust core with macOS. Linux ships as an AppImage, Debian/Ubuntu package, and AUR package for x86_64 and aarch64; see the <a href="guide.html#gpui">guide</a>. Windows support is in beta. Install Windows x64 from the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a>, or use the portable ZIP from <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> for beta builds. Windows requires Windows 10 version 1903 or later, or Windows 11, with <code>jj</code> installed separately. The Store manages its updates; the portable ZIP has no automatic updater.
-linux-and-windows-use-the-gpui = Linux 和 Windows 使用 GPUI 界面，并与 macOS 共享 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 包和 AUR 包的形式提供，支持 x86_64 和 aarch64；详见<a href="guide.html#gpui">指南</a>（英文）。Windows 支持处于测试阶段。可从 <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> 安装 Windows x64 版，或使用 <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> 上的便携版 ZIP 获取测试版构建。Windows 需要 Windows 10 版本 1903 或更高版本，或 Windows 11，并需另行安装 <code>jj</code>。Store 版由 Store 管理更新；便携版 ZIP 没有自动更新功能。
+# Linux and Windows use the GPUI shell and share the Rust core with macOS. Linux ships as an AppImage, Debian/Ubuntu package, and AUR package for x86_64 and aarch64; see the <a href="guide.html#gpui">guide</a>. Windows support is in beta. On x64 or arm64, add the JayJay WinGet source with <code>winget source add --name jayjay --arg https://pkgs.hewig.dev/winget --type Microsoft.Rest --explicit</code>, then run <code>winget install hewig.JayJay --source jayjay</code>, and upgrade with <code>winget upgrade hewig.JayJay --source jayjay</code>. Windows x64 is also on the <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a>, and the portable ZIP is on <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a>. Windows requires Windows 10 version 1903 or later, or Windows 11, with <code>jj</code> installed separately (<code>winget install jj-vcs.jj</code>). The Store manages its updates; the portable ZIP has no automatic updater.
+linux-and-windows-use-the-gpui = Linux 和 Windows 使用 GPUI 界面，并与 macOS 共享 Rust 核心。Linux 版以 AppImage、Debian/Ubuntu 包和 AUR 包的形式提供，支持 x86_64 和 aarch64；详见<a href="guide.html#gpui">指南</a>（英文）。Windows 支持处于测试阶段。在 x64 或 arm64 上，先用 <code>winget source add --name jayjay --arg https://pkgs.hewig.dev/winget --type Microsoft.Rest --explicit</code> 添加 JayJay 的 WinGet 源，再运行 <code>winget install hewig.JayJay --source jayjay</code>；升级使用 <code>winget upgrade hewig.JayJay --source jayjay</code>。Windows x64 版也可从 <a href="https://apps.microsoft.com/detail/9pjrq1hg25vb">Microsoft Store</a> 安装，便携版 ZIP 在 <a href="https://github.com/hewigovens/jayjay/releases">GitHub Releases</a> 上。Windows 需要 Windows 10 版本 1903 或更高版本，或 Windows 11，并需另行安装 <code>jj</code>（<code>winget install jj-vcs.jj</code>）。Store 版由 Store 管理更新；便携版 ZIP 没有自动更新功能。
 
 # Can JayJay open a repository on another machine over SSH?
 can-jayjay-open-a-repository-on = JayJay 能通过 SSH 打开另一台机器上的仓库吗？
@@ -329,6 +344,12 @@ download-for-macos = 下载 macOS 版
 
 # Install on Linux
 install-on-linux = 在 Linux 上安装
+
+# Install on Windows
+install-on-windows = 在 Windows 上安装
+
+# Other platforms
+other-platforms = 其他平台
 
 # Releases
 releases = 发布记录

@@ -30,7 +30,7 @@ Arch Linux: install [`jayjay-appimage` from AUR](https://aur.archlinux.org/packa
 
 Linux prereleases: `curl -fsSL https://jayjay.hewig.dev/install.sh | bash -s -- --beta` installs the newest beta when it is newer than stable: the .deb on apt systems and the AppImage elsewhere. On Arch, remove an installed `jayjay-appimage` package with `sudo pacman -R jayjay-appimage` before using the AppImage installer. GPUI macOS builds are for development.
 
-Windows (beta): install from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch from the Start menu, or extract a GitHub prerelease ZIP and run `jayjay-gpui.exe` for the beta. Install `jj` separately on PATH. Store package updates are limited to stable releases.
+Windows (beta, x64 and arm64): add the JayJay WinGet source once from an administrator terminal (`winget source add --name jayjay --arg https://pkgs.hewig.dev/winget --type Microsoft.Rest --explicit`), then `winget install hewig.JayJay --source jayjay`; upgrade with `winget upgrade hewig.JayJay --source jayjay`. Or install x64 from the [Microsoft Store](https://apps.microsoft.com/detail/9pjrq1hg25vb) and launch from the Start menu, or extract a GitHub prerelease ZIP and run `jayjay-gpui.exe` for the beta. Install `jj` separately on PATH. Store package updates are limited to stable releases.
 
 ## Features
 
