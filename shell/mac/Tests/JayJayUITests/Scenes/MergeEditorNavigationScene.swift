@@ -70,33 +70,6 @@ final class MergeEditorNavigationScene: ExternalToolSceneBase {
         discard.click()
     }
 
-    private func scroll(
-        _ viewport: XCUIElement,
-        by deltaY: CGFloat,
-        following followers: [XCUIElement],
-        file: StaticString = #filePath,
-        line: UInt = #line
-    ) throws {
-        XCTAssertTrue(viewport.waitForExistence(timeout: 5), "Scroll viewport did not appear", file: file, line: line)
-        let bars = [viewport.scrollBars.firstMatch] + followers
-        let initialValues = try bars.map { try XCTUnwrap($0.value as? Double, "Expected a numeric scroll position", file: file, line: line) }
-        let center = viewport.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
-        center.hover()
-        center.scroll(byDeltaX: 0, deltaY: deltaY)
-        let moved = NSPredicate { _, _ in
-            zip(bars, initialValues).allSatisfy { bar, initial in
-                guard let current = bar.value as? Double else { return false }
-                return current != initial
-            }
-        }
-        XCTAssertTrue(
-            XCTWaiter().wait(for: [XCTNSPredicateExpectation(predicate: moved, object: nil)], timeout: 5) == .completed,
-            "Scroll viewport and followers did not move from \(initialValues); current positions: \(bars.map { String(describing: $0.value) })",
-            file: file,
-            line: line
-        )
-    }
-
     private func assertUndoRedo(of pickedAction: XCUIElement, app: XCUIApplication) {
         XCTAssertTrue(pickedAction.wait(for: \.isEnabled, toEqual: false, timeout: 5), "The picked side should be disabled")
         app.typeKey("z", modifierFlags: .command)

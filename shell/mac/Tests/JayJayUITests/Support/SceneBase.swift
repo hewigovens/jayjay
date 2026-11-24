@@ -161,6 +161,41 @@ class SceneBase: XCTestCase {
         ) == .completed
     }
 
+    func scroll(
+        _ viewport: XCUIElement,
+        by deltaY: CGFloat,
+        following followers: [XCUIElement],
+        file: StaticString = #filePath,
+        line: UInt = #line
+    ) throws {
+        XCTAssertTrue(viewport.waitForExistence(timeout: 5), "Scroll viewport did not appear", file: file, line: line)
+        let bars = [viewport.scrollBars.firstMatch] + followers
+        let initialValues = try bars.map { try XCTUnwrap($0.value as? Double, "Expected a numeric scroll position", file: file, line: line) }
+        let moved = { (count: Int) in
+            NSPredicate { _, _ in
+                zip(bars, initialValues).prefix(count).allSatisfy { bar, initial in
+                    guard let current = bar.value as? Double else { return false }
+                    return current != initial
+                }
+            }
+        }
+        let center = viewport.coordinate(withNormalizedOffset: CGVector(dx: 0.5, dy: 0.5))
+        // A slow runner can deliver the wheel event before the pointer reaches the viewport, so send it again when the viewport itself stayed put.
+        for _ in 0 ..< 2 {
+            center.hover()
+            center.scroll(byDeltaX: 0, deltaY: deltaY)
+            if wait(for: moved(1), object: nil, timeout: 2) {
+                break
+            }
+        }
+        XCTAssertTrue(
+            wait(for: moved(bars.count), object: nil, timeout: 5),
+            "Scroll viewport and followers did not move from \(initialValues); current positions: \(bars.map { String(describing: $0.value) })",
+            file: file,
+            line: line
+        )
+    }
+
     func clickDockItem(file: StaticString = #filePath, line: UInt = #line) {
         let tiles = XCUIApplication(bundleIdentifier: "com.apple.dock").dockItems.matching(identifier: "JayJay")
         XCTAssertTrue(
