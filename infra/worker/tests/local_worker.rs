@@ -154,12 +154,34 @@ impl LocalWorker {
         serde_json::from_str::<Value>(&output).unwrap()[0]["results"].take()
     }
 
+    fn put_object(&self, key: &str, contents: &str) {
+        let file = self.state.path().join("object");
+        std::fs::write(&file, contents).unwrap();
+        let path = format!("jayjay-packages/{key}");
+        wrangler(
+            self.state.path(),
+            &[
+                "r2",
+                "object",
+                "put",
+                &path,
+                "--local",
+                "--file",
+                file.to_str().unwrap(),
+            ],
+        );
+    }
+
     fn request(&self, method: &str, path: &str) -> Response {
+        self.send(method, path, String::new())
+    }
+
+    fn send(&self, method: &str, path: &str, body: String) -> Response {
         let request = ureq::http::Request::builder()
             .method(method)
             .uri(format!("{}{path}", self.url))
             .header("Accept-Encoding", "identity")
-            .body(())
+            .body(body)
             .unwrap();
         let mut response = self.agent.run(request).unwrap();
         let header = |name| {
@@ -319,11 +341,61 @@ fn telemetry_failure_does_not_break_responses(worker: &LocalWorker) {
     worker.sql("ALTER TABLE unavailable_pings RENAME TO pings");
 }
 
+fn winget_source_lists_portable_zips(worker: &LocalWorker) {
+    let json = |response: Response| {
+        assert_eq!(
+            (response.status, response.content_type.as_deref()),
+            (200, Some("application/json"))
+        );
+        serde_json::from_slice::<Value>(&response.body).unwrap()
+    };
+    let search = |body: Value| worker.send("POST", "/winget/manifestSearch", body.to_string());
+    assert_eq!(search(json!({})).status, 204);
+    worker.put_object(
+        "windows/JayJay-0.3.23-windows-x64.zip.sha256",
+        &format!("{}  JayJay-0.3.23-windows-x64.zip\n", "ab".repeat(32)),
+    );
+    assert_eq!(
+        json(worker.request("GET", "/winget/information"))["Data"]["Authentication"],
+        json!({ "AuthenticationType": "none" })
+    );
+    assert_eq!(
+        json(search(
+            json!({ "Query": { "KeyWord": "jayjay", "MatchType": "Substring" } })
+        ))["Data"][0]["Versions"],
+        json!([{ "PackageVersion": "0.3.23" }])
+    );
+    assert_eq!(
+        search(json!({ "Query": { "KeyWord": "git", "MatchType": "Exact" } })).status,
+        204
+    );
+    assert_eq!(search(json!({ "Query": "jayjay" })).status, 400);
+    let installer = json(worker.request(
+        "GET",
+        "/winget/packageManifests/hewig.JayJay?Version=0.3.23",
+    ))["Data"]["Versions"][0]["Installers"][0]
+        .take();
+    assert_eq!(
+        (&installer["InstallerUrl"], &installer["InstallerSha256"]),
+        (
+            &json!("https://pkgs.hewig.dev/windows/JayJay-0.3.23-windows-x64.zip"),
+            &json!("AB".repeat(32))
+        )
+    );
+    assert_eq!(
+        worker
+            .request("GET", "/winget/packageManifests/other.Package")
+            .status,
+        404
+    );
+    assert_eq!(worker.request("GET", "/winget/unknown").status, 404);
+}
+
 #[test]
 #[ignore = "builds the Worker and serves it with wrangler dev"]
 fn local_worker_and_d1() {
     let worker = LocalWorker::start();
-    let cases: [fn(&LocalWorker); 7] = [
+    let cases: [fn(&LocalWorker); 8] = [
         client_ping_writes_d1,
         legacy_appcast_routes_without_identity_do_not_write,
         probes_and_non_releases_do_not_write,
@@ -331,6 +403,7 @@ fn local_worker_and_d1() {
         upstream_error_status_keeps_legacy_proxy_response,
         upstream_connection_failure_returns_bad_gateway,
         telemetry_failure_does_not_break_responses,
+        winget_source_lists_portable_zips,
     ];
     for case in cases {
         worker.sql("DELETE FROM pings");

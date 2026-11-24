@@ -3,9 +3,13 @@ use worker::{
 };
 
 use crate::telemetry::Event;
+use crate::winget;
 
 #[event(fetch)]
 pub async fn fetch(req: Request, env: Env, _ctx: Context) -> Result<Response> {
+    if req.path().starts_with("/winget/") {
+        return winget::serve(req, &env).await;
+    }
     let channel = if req.path() == "/ping" {
         "gpui"
     } else {

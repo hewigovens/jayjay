@@ -175,15 +175,22 @@ jobs:
           path: packages
 
       - name: Attach the ZIP to the release
-        # On a rerun the attached ZIP and checksum are canonical.
+        # On a rerun the attached ZIP is canonical, so a missing checksum is rebuilt from it rather than from this build.
         run: |
           attached=$(gh release view "$TAG_NAME" --json assets --jq '.assets[].name')
-          for asset in packages/*.zip packages/*.zip.sha256; do
-            name=$(basename "$asset")
-            if grep -qx "$name" <<<"$attached"; then
-              gh release download "$TAG_NAME" -p "$name" -D packages --clobber
+          cd packages
+          for zip in *.zip; do
+            if grep -qx "$zip" <<<"$attached"; then
+              gh release download "$TAG_NAME" -p "$zip" --clobber
             else
-              gh release upload "$TAG_NAME" "$asset"
+              gh release upload "$TAG_NAME" "$zip"
+            fi
+            if grep -qx "$zip.sha256" <<<"$attached"; then
+              gh release download "$TAG_NAME" -p "$zip.sha256" --clobber
+              sha256sum "$zip" | cmp -s - "$zip.sha256" || { echo "$zip.sha256 does not match $zip" >&2; exit 1; }
+            else
+              sha256sum "$zip" > "$zip.sha256"
+              gh release upload "$TAG_NAME" "$zip.sha256"
             fi
           done
 

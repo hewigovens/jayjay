@@ -8,6 +8,8 @@ publish = false
 crate-type = ["cdylib"]
 
 [dependencies]
+serde.workspace = true
+serde_json.workspace = true
 url.workspace = true
 
 [target.'cfg(target_arch = "wasm32")'.dependencies]
@@ -15,7 +17,6 @@ worker = { version = "0.8.7", features = ["d1"] }
 
 [dev-dependencies]
 libc.workspace = true
-serde_json.workspace = true
 tempfile.workspace = true
 ureq.workspace = true
 

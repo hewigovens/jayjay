@@ -1,6 +1,8 @@
 name = "jayjay"
 main = "./build/index.js"
 compatibility_date = "2026-06-01"
+workers_dev = true
+routes = [{ pattern = "pkgs.hewig.dev/winget/*", zone_name = "hewig.dev" }]
 
 [build]
 command = "worker-build --release -- --locked"
@@ -13,3 +15,7 @@ APPCAST_ORIGIN = "https://raw.githubusercontent.com/hewigovens/jayjay/main/docs/
 binding = "DB"
 database_name = "jayjay_stats"
 database_id = "d9051c69-6cce-4504-bb87-c06a08f9b950"
+
+[[r2_buckets]]
+binding = "PACKAGES"
+bucket_name = "jayjay-packages"
