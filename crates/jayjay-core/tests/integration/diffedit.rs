@@ -2,8 +2,8 @@ use std::fs;
 
 use jayjay_core::{DiffEditDestination, Repo};
 use jj_test::{
-    current_op_id, init_jj_repo, run_jj, selection_for_lines, setup_source_change_with_child,
-    whole_file_selection,
+    current_op_id, init_jj_repo, run_jj, run_jj_in, selection_for_lines,
+    setup_source_change_with_child, whole_file_selection,
 };
 
 #[test]
@@ -113,9 +113,12 @@ fn diffedit_new_parent_commits_selected_lines_below_the_working_copy() {
     repo.refresh_working_copy()
         .expect("snapshot working copy changes");
 
+    let source = repo.show("@").expect("show working copy");
     let selection = selection_for_lines(&repo, "@", "notes.md", &[(2, 2)]);
+    fs::write(repo_path.join("unrelated.md"), "added after selection\n")
+        .expect("write unrelated file");
     repo.apply_diff_selection(
-        "@",
+        source.info.selection_revision(),
         DiffEditDestination::NewParent,
         &[selection],
         "commit one line",
@@ -137,6 +140,44 @@ fn diffedit_new_parent_commits_selected_lines_below_the_working_copy() {
         ("commit one line".to_owned(), Some("commit me\n".to_owned()))
     );
     assert_eq!(notes("@").1.as_deref(), Some(on_disk));
+    assert_eq!(
+        repo.file_content("@", "unrelated.md")
+            .expect("read unrelated file"),
+        "added after selection\n"
+    );
+    assert_eq!(
+        fs::read_to_string(repo_path.join("notes.md")).expect("read working copy file"),
+        on_disk
+    );
+}
+#[test]
+fn diffedit_new_parent_rejects_a_former_working_copy() {
+    let temp_dir = init_jj_repo();
+    let repo_path = temp_dir.path().join("repo");
+    let repo = Repo::open(&repo_path).expect("open repo");
+    let on_disk = "selected\nremaining\n";
+    fs::write(repo_path.join("notes.md"), on_disk).expect("write new file");
+    repo.refresh_working_copy().expect("snapshot working copy");
+
+    let source = repo.show("@").expect("show working copy");
+    let selection = selection_for_lines(&repo, "@", "notes.md", &[(1, 1)]);
+    run_jj_in(&repo_path, &["new", "-m", "new working copy"]);
+    let before = current_op_id(&repo_path);
+
+    let err = repo
+        .apply_diff_selection(
+            source.info.selection_revision(),
+            DiffEditDestination::NewParent,
+            &[selection],
+            "commit one line",
+            false,
+        )
+        .expect_err("reject a selection captured from a former working copy");
+    assert!(
+        err.to_string().contains("no longer the working copy"),
+        "{err}"
+    );
+    assert_eq!(current_op_id(&repo_path), before);
     assert_eq!(
         fs::read_to_string(repo_path.join("notes.md")).expect("read working copy file"),
         on_disk

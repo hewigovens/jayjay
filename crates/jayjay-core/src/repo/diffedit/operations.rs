@@ -144,7 +144,7 @@ impl Repo {
         self.commit_transaction_rebase(tx, "move selected changes to working copy")
     }
 
-    /// `jj split -r rev` over a line selection: the selection stays in `rev` under `message` and the rest moves to a new change on top, which a workspace on `rev` follows without touching its files.
+    /// Splits the current working-copy change into a parent containing the selection and a new working-copy change containing the remainder.
     fn commit_diff_selection(
         &self,
         rev: &str,
@@ -157,6 +157,11 @@ impl Repo {
         self.ensure_commit_mutable(&repo, &commit, rev)?;
         let parent_tree = self.load_parent_tree(&repo, &commit, "load parent tree")?;
         self.ensure_selections_are_current(&repo, &commit.tree(), &parent_tree, selections)?;
+        if self.working_copy_commit(&repo)?.id() != commit.id() {
+            return Err(JayError::internal(
+                "the selected change is no longer the working copy; select the working copy and retry",
+            ));
+        }
         let partitions = self.partition_selections(selections, ignore_whitespace)?;
         let selected_tree = self.build_side_tree(
             &repo,
